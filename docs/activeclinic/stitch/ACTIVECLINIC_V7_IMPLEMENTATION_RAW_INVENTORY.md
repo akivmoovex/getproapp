@@ -1,9 +1,11 @@
 # ActiveClinic V7 Implementation Raw Inventory
 
-**Generated:** 2026-08-12T10:25:10.674Z
-**Phase 5E:** Remaining partial closure
+**Generated:** 2026-08-12T10:31:44.770Z
+**Phase 6:** Verification refresh
 
 | Metric | Count |
 |---|---:|
 | Implementation records | 247 |
-| Phase 5E added | 4 |
+| GET routes discovered | 219 |
+| Views on disk | 249 |
+| Phase 6 added | 0 |

@@ -1,0 +1,470 @@
+{
+  "generated_at": "2026-08-12T10:31:44.770Z",
+  "verdict_candidate": "PHASE6_MAPPING_VERIFIED_WITH_GAPS",
+  "safety": {
+    "branch": "V7",
+    "head_sha": "4ab31c1bfe29a039de49c6535892c7d83acff66a",
+    "deployment_env": "testing",
+    "db_identity": "moovex-platform-v7",
+    "production_touched": false,
+    "pushed": false,
+    "deployed": false,
+    "phase6_at": "2026-08-12T10:31:44.770Z"
+  },
+  "implementation_record_count": 247,
+  "mapping_counts": {
+    "mapping_type": {
+      "EXACT_IMPLEMENTATION_MATCH": 103,
+      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 247,
+      "DUPLICATE_STITCH_VARIANT": 8,
+      "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 11,
+      "PRODUCT_DECISION_DIFFERENCE": 9,
+      "NO_IMPLEMENTATION_REQUIRED": 10
+    },
+    "confidence": {
+      "HIGH": 388
+    },
+    "stitch_screen_coverage": {
+      "full": 361,
+      "partial": 0,
+      "missing": 0,
+      "other": 27,
+      "total": 388
+    },
+    "unique_design_concept_coverage": {
+      "full": 361,
+      "partial": 0,
+      "missing": 0,
+      "other": 9,
+      "total": 370,
+      "denominator_note": "Excludes DUPLICATE_STITCH_VARIANT and NO_IMPLEMENTATION_REQUIRED"
+    },
+    "desktop": {
+      "full": 225,
+      "partial": 0,
+      "missing": 0,
+      "other": 12,
+      "total": 237
+    },
+    "mobile": {
+      "full": 136,
+      "partial": 0,
+      "missing": 0,
+      "other": 15,
+      "total": 151
+    }
+  },
+  "medium": {
+    "reviewed": 0,
+    "raised_to_high": 0,
+    "remaining": 0,
+    "kept": []
+  },
+  "ghost_issues": [],
+  "product_decisions": [
+    {
+      "id": "9c0219d791da43df8a7abf41cf0809df",
+      "title": "P07 – Insurance Payment Placeholder",
+      "decision": "Explicit placeholder / intentionally not built in V7"
+    },
+    {
+      "id": "0489fa5d1c37481ba159eeed1cd64155",
+      "title": "P07 – NHIMA Claim Placeholder",
+      "decision": "Explicit placeholder / intentionally not built in V7"
+    },
+    {
+      "id": "46a8b6c4f4b846e18ab586c3d6fae6ca",
+      "title": "P07 – Write-Off Request Placeholder",
+      "decision": "Explicit placeholder / intentionally not built in V7"
+    },
+    {
+      "id": "1db2777e1f444a0a90ca3174a4700ac2",
+      "title": "P13 – Phone Verification",
+      "decision": "Staff activation uses password set; patient verify-phone is separate portal flow"
+    },
+    {
+      "id": "6b9cfcd190e14155ac4390d66d0cff76",
+      "title": "P13 – Role Permission Matrix – Desktop",
+      "decision": "V7 uses fixed ActiveClinic role catalogue with capability-group summaries and role detail pages. Stitch role×permission matrix editor is intentionally not built — roles are system-defined, not custom-editable."
+    },
+    {
+      "id": "8c52142a20484c39928c8f3355174384",
+      "title": "P25 - Juflona Booking - Procedure Slot - Desktop",
+      "decision": "V7 uses preferred datetime field; Stitch shows live selectable slot grid. Live slots explicitly not published online."
+    },
+    {
+      "id": "3f05000a252b4732952b7dcbd70a9c06",
+      "title": "P25 - Juflona Booking - Procedure Slot - Mobile",
+      "decision": "V7 uses preferred datetime field; Stitch shows live selectable slot grid. Live slots explicitly not published online."
+    },
+    {
+      "id": "ef1d0961e88e43549af5361a5fb9320c",
+      "title": "P25 - Juflona Booking - Referral and Upload States - Mobile",
+      "decision": "Stitch shows referral upload UI states; V7 has no secure public upload storage — honesty banner only"
+    },
+    {
+      "id": "ca7cdd02f84f4a13abb5b324f3fb453f",
+      "title": "P26 - Juflona Booking - Booking Changed During Request - Mobile",
+      "decision": "V7 reloads current booking status on each request. Stitch mid-request conflict UX (booking changed while editing) is intentionally not built; cancel/reschedule operate on current server state."
+    }
+  ],
+  "visual_backlog_counts": {
+    "<80": 0,
+    "80-89": 149,
+    "90-94": 119,
+    ">=95": 0,
+    "unscored": 93
+  },
+  "top25_visual_gaps": [
+    {
+      "title": "P27 - Juflona Patient - Portal Offline State - Mobile",
+      "device": "MOBILE",
+      "score": 82,
+      "route": "/clinics/:clinicKey/patient/offline",
+      "diffs": [
+        "Pass2: offline state template"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P27 - Juflona Patient - Set New Password - Desktop",
+      "device": "DESKTOP",
+      "score": 82,
+      "route": "/clinics/:clinicKey/patient/reset-password",
+      "diffs": [
+        "Pass2: reset password form shell"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P02 – Edit Patient Details – Desktop",
+      "device": "DESKTOP",
+      "score": 84,
+      "route": "/app/patients/:patientNumber/edit",
+      "diffs": [
+        "Pass3: shared form tokens",
+        "TEST_INFRA_LIMITATION: no browser MATCHED"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P02 – Patient List – Mobile",
+      "device": "MOBILE",
+      "score": 84,
+      "route": "/app/patients",
+      "diffs": [
+        "Large visual/layout gap vs Stitch"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P02 – Patient Registration Success – Mobile",
+      "device": "MOBILE",
+      "score": 84,
+      "route": "/app/patients",
+      "diffs": [
+        "Large visual/layout gap vs Stitch"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P02 – Register Patient Contact – Desktop",
+      "device": "DESKTOP",
+      "score": 84,
+      "route": "/app/patients/new",
+      "diffs": [
+        "Pass3: form-section tokens",
+        "PhoneField preserved",
+        "TEST_INFRA_LIMITATION: no browser MATCHED"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P02 – Register Patient Emergency and Medical – Desktop",
+      "device": "DESKTOP",
+      "score": 84,
+      "route": "/app/patients/new",
+      "diffs": [
+        "Pass3: form-section tokens",
+        "PhoneField preserved",
+        "TEST_INFRA_LIMITATION: no browser MATCHED"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P02 – Register Patient Identity – Desktop",
+      "device": "DESKTOP",
+      "score": 84,
+      "route": "/app/patients/new",
+      "diffs": [
+        "Pass3: form-section tokens",
+        "PhoneField preserved",
+        "TEST_INFRA_LIMITATION: no browser MATCHED"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P02 – Register Patient Review – Desktop",
+      "device": "DESKTOP",
+      "score": 84,
+      "route": "/app/patients/new",
+      "diffs": [
+        "Pass3: form-section tokens",
+        "PhoneField preserved",
+        "TEST_INFRA_LIMITATION: no browser MATCHED"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P07 – Patient Invoice – Mobile",
+      "device": "MOBILE",
+      "score": 84,
+      "route": "/app/billing/invoices/:invoiceId",
+      "diffs": [
+        "Large visual/layout gap vs Stitch"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P07 – Service Catalogue – Mobile",
+      "device": "MOBILE",
+      "score": 84,
+      "route": "/app/billing/catalog",
+      "diffs": [
+        "Large visual/layout gap vs Stitch"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P25 - Juflona Booking - Choose Procedure - Desktop",
+      "device": "DESKTOP",
+      "score": 84,
+      "route": "/clinics/:clinicKey/book/procedures",
+      "diffs": [
+        "Pass2: reuses choice-card system"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P25 - Juflona Booking - Procedure Review - Desktop",
+      "device": "DESKTOP",
+      "score": 84,
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/review",
+      "diffs": [
+        "Pass2: review embedded in single-page procedure flow"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P26 - Juflona Booking - Privacy and Lookup Rules - Desktop",
+      "device": "DESKTOP",
+      "score": 84,
+      "route": "/clinics/:clinicKey/my-booking",
+      "diffs": [
+        "Pass2: lookup privacy copy retained"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P27 - Juflona Patient - Password Updated - Mobile",
+      "device": "MOBILE",
+      "score": 84,
+      "route": "/clinics/:clinicKey/patient/password-updated",
+      "diffs": [
+        "Pass2: success shell if present"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P27 - Juflona Patient - Recovery Verification - Mobile",
+      "device": "MOBILE",
+      "score": 84,
+      "route": "/clinics/:clinicKey/patient/recovery-verification",
+      "diffs": [
+        "Pass2: recovery honesty page shell"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P27 - Juflona Patient - Set New Password - Mobile",
+      "device": "MOBILE",
+      "score": 84,
+      "route": "/clinics/:clinicKey/patient/reset-password",
+      "diffs": [
+        "Pass2: reset password form shell"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P27 - Juflona Patient - Verification Success - Mobile",
+      "device": "MOBILE",
+      "score": 84,
+      "route": "/clinics/:clinicKey/patient/verification-success",
+      "diffs": [
+        "Pass2: success shell if present"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P24 - Juflona Booking - Availability States - Mobile",
+      "device": "MOBILE",
+      "score": 85,
+      "route": "/clinics/:clinicKey/book/slot",
+      "diffs": [
+        "Pass2: no_slots_published banner",
+        "live grids not implemented"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P25 - Juflona Booking - Procedure Unavailable - Mobile",
+      "device": "MOBILE",
+      "score": 85,
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey",
+      "diffs": [
+        "Pass2: unavailable state page exists"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P25 - Juflona Booking - Resource Availability States - Mobile",
+      "device": "MOBILE",
+      "score": 85,
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/time",
+      "diffs": [
+        "Large visual/layout gap vs Stitch"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P02 – Register Patient Contact – Mobile",
+      "device": "MOBILE",
+      "score": 86,
+      "route": "/app/patients/new",
+      "diffs": [
+        "Pass3: form-section tokens",
+        "PhoneField preserved",
+        "TEST_INFRA_LIMITATION: no browser MATCHED"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P02 – Register Patient Emergency and Medical – Mobile",
+      "device": "MOBILE",
+      "score": 86,
+      "route": "/app/patients/new",
+      "diffs": [
+        "Pass3: form-section tokens",
+        "PhoneField preserved",
+        "TEST_INFRA_LIMITATION: no browser MATCHED"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P07 – Cashier Closing – Desktop",
+      "device": "DESKTOP",
+      "score": 86,
+      "route": "/app/cashier/close/review",
+      "diffs": [
+        "Pass3: shared shell/components",
+        "TEST_INFRA_LIMITATION: no browser MATCHED"
+      ],
+      "priority": "P0 + 80–89"
+    },
+    {
+      "title": "P07 – Cashier Dashboard – Desktop",
+      "device": "DESKTOP",
+      "score": 86,
+      "route": "/app/cashier",
+      "diffs": [
+        "Pass3: shared shell/components",
+        "TEST_INFRA_LIMITATION: no browser MATCHED"
+      ],
+      "priority": "P0 + 80–89"
+    }
+  ],
+  "files": [
+    "docs/activeclinic/stitch/ACTIVECLINIC_STITCH_RAW_INVENTORY.json",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_IMPLEMENTATION_RAW_INVENTORY.json",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_IMPLEMENTATION_RAW_INVENTORY.csv",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_IMPLEMENTATION_RAW_INVENTORY.md",
+    "docs/activeclinic/stitch/ACTIVECLINIC_STITCH_TO_V7_MAPPING.json",
+    "docs/activeclinic/stitch/ACTIVECLINIC_STITCH_TO_V7_MAPPING.csv",
+    "docs/activeclinic/stitch/ACTIVECLINIC_STITCH_TO_V7_MAPPING.md",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_TO_STITCH_REVERSE_MAPPING.json",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_TO_STITCH_REVERSE_MAPPING.md",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.json",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_IMPLEMENTATION_COMPLETENESS.md",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_BACKLOG.json",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_BACKLOG.csv",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_BACKLOG.md",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX_HISTORICAL.md",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_PHASE6_VERIFICATION_REPORT.json"
+  ],
+  "verdict_note": "Mapping verification succeeded (PARTIAL=0, NOT_IMPLEMENTED=0, AMBIGUOUS=0, MEDIUM=0, ghosts=0). Broad ActiveClinic suites have pre-existing failures unrelated to Phase 6 doc/script changes.",
+  "test_results": {
+    "run_at": "2026-08-12T10:37:52.336Z",
+    "batches": [
+      {
+        "name": "patients+appointments+reception",
+        "files": 10,
+        "tests": 50,
+        "pass": 46,
+        "fail": 4,
+        "notes": "patient-foundation: identifier_management_required on 4 subtests"
+      },
+      {
+        "name": "clinical+pharmacy+diagnostics",
+        "files": 10,
+        "tests": 74,
+        "pass": 72,
+        "fail": 2,
+        "notes": "clinical-ui-parity GET /app/clinical 403; diagnostics-ui-parity MODULE_NOT_FOUND testUtilities/dbTestUtilities"
+      },
+      {
+        "name": "billing+public+booking+portal",
+        "files": 9,
+        "tests": 60,
+        "pass": 59,
+        "fail": 1,
+        "notes": "billing-ui-parity MODULE_NOT_FOUND (same helper path pattern)"
+      },
+      {
+        "name": "rbac+facility+staff+shell+auth+public+pass",
+        "files": 27,
+        "tests": 211,
+        "pass": 203,
+        "fail": 8,
+        "notes": "staff invitation/auth shell/facilities/org settings/staff directory/staff edit parity failures"
+      },
+      {
+        "name": "phase5d+phase5e closure",
+        "files": 2,
+        "tests": 10,
+        "pass": 10,
+        "fail": 0
+      }
+    ],
+    "totals": {
+      "tests": 405,
+      "pass": 390,
+      "fail": 15
+    },
+    "overnight_impl_suites_green": [
+      "phase5a",
+      "phase5b",
+      "phase5c",
+      "phase5d",
+      "phase5e",
+      "pharmacy",
+      "public-booking",
+      "portal"
+    ]
+  },
+  "mapping_targets": {
+    "NOT_IMPLEMENTED": 0,
+    "AMBIGUOUS": 0,
+    "PARTIAL": 0,
+    "MEDIUM_confidence_remaining": 0
+  }
+}

@@ -1,6 +1,16 @@
 {
-  "generated_at": "2026-08-12T00:11:06.243Z",
-  "purpose": "Reverse map: each V7 implementation_id → Stitch screens",
+  "generated_at": "2026-08-12T10:31:44.770Z",
+  "purpose": "Reverse map: each V7 implementation_id → Stitch screens (Phase 6 verified)",
+  "safety": {
+    "branch": "V7",
+    "head_sha": "4ab31c1bfe29a039de49c6535892c7d83acff66a",
+    "deployment_env": "testing",
+    "db_identity": "moovex-platform-v7",
+    "production_touched": false,
+    "pushed": false,
+    "deployed": false,
+    "phase6_at": "2026-08-12T10:31:44.770Z"
+  },
   "records": [
     {
       "implementation_id": "ACV7-IMPL-0001",
@@ -111,16 +121,14 @@
       "functional_area": "DIRECTORY",
       "surface": "PUBLIC",
       "mapped_stitch_screen_ids": [
-        "8a3f15c0be9c47efb192f206df104d5c",
         "3cf8b9cbce0a4866aace37f72c319e5f",
         "4889fc1798d2425f85ba19dd68c29734"
       ],
       "mapped_stitch_titles": [
-        "Shared Loading State",
         "P21 - ActiveClinic Public - Clinic Directory - Loading - Desktop",
         "P21 - ActiveClinic Public - Clinic Directory - Loading - Mobile"
       ],
-      "mapping_count": 3,
+      "mapping_count": 2,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -595,7 +603,6 @@
         "f18d2b7bea004db492c5f0cc45d0743e",
         "016440abad32484486a24c43d46a44f8",
         "bdc67d336bc64447bd0c02474b34c144",
-        "d548137f807b40daaaaeff7fe2bcd0fa",
         "a4096a26352040fd9d56be53a393fe4b",
         "82cc9c49d881406592c6d877240731fd",
         "4dc9024e5d6f4267bf6b5a8c6c80aa08",
@@ -608,7 +615,6 @@
         "P22 - Demo Clinic - Booking Entry - Mobile",
         "P22 - Juflona Clinic - Booking Entry - Desktop",
         "P22 - Juflona Clinic - Booking Entry - Mobile",
-        "P24 - Juflona Booking - Availability States - Mobile",
         "P24 - Juflona Booking - Consultation Type - Desktop",
         "P24 - Juflona Booking - Consultation Type - Mobile",
         "P24 - Juflona Booking - Form States - Mobile",
@@ -616,7 +622,7 @@
         "P24 - Juflona Booking - Progress Patterns - Desktop",
         "P24 - Juflona Booking - SMS Notification States - Mobile"
       ],
-      "mapping_count": 11,
+      "mapping_count": 10,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -627,23 +633,11 @@
       "state": "VALIDATION_ERROR",
       "functional_area": "CONSULTATION_BOOKING",
       "surface": "BOOKING",
-      "mapped_stitch_screen_ids": [
-        "d548137f807b40daaaaeff7fe2bcd0fa",
-        "4dc9024e5d6f4267bf6b5a8c6c80aa08",
-        "c8dc05d3e0744fcf9f0030ccbe63a172",
-        "14b98caed9cc4b4889d77763373a0e28",
-        "bb250d93ee27449793869522211fb17c"
-      ],
-      "mapped_stitch_titles": [
-        "P24 - Juflona Booking - Availability States - Mobile",
-        "P24 - Juflona Booking - Form States - Mobile",
-        "P24 - Juflona Booking - Mobile Navigation and Summary Pattern - Mobile",
-        "P24 - Juflona Booking - Progress Patterns - Desktop",
-        "P24 - Juflona Booking - SMS Notification States - Mobile"
-      ],
-      "mapping_count": 5,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0032",
@@ -675,7 +669,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "INFRASTRUCTURE_SCREEN"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0034",
@@ -689,20 +683,16 @@
         "32812bec1d384d2ab5c9821f6865e85a",
         "ece91cba8cff4381a9ef2e8ac97cb988",
         "4dc9024e5d6f4267bf6b5a8c6c80aa08",
-        "c8dc05d3e0744fcf9f0030ccbe63a172",
-        "14b98caed9cc4b4889d77763373a0e28",
-        "bb250d93ee27449793869522211fb17c"
+        "c8dc05d3e0744fcf9f0030ccbe63a172"
       ],
       "mapped_stitch_titles": [
         "P24 - Juflona Booking - Availability States - Mobile",
         "P24 - Juflona Booking - Choose Slot - Desktop",
         "P24 - Juflona Booking - Choose Slot - Mobile",
         "P24 - Juflona Booking - Form States - Mobile",
-        "P24 - Juflona Booking - Mobile Navigation and Summary Pattern - Mobile",
-        "P24 - Juflona Booking - Progress Patterns - Desktop",
-        "P24 - Juflona Booking - SMS Notification States - Mobile"
+        "P24 - Juflona Booking - Mobile Navigation and Summary Pattern - Mobile"
       ],
-      "mapping_count": 7,
+      "mapping_count": 5,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -713,23 +703,11 @@
       "state": "VALIDATION_ERROR",
       "functional_area": "CONSULTATION_BOOKING",
       "surface": "BOOKING",
-      "mapped_stitch_screen_ids": [
-        "d548137f807b40daaaaeff7fe2bcd0fa",
-        "4dc9024e5d6f4267bf6b5a8c6c80aa08",
-        "c8dc05d3e0744fcf9f0030ccbe63a172",
-        "14b98caed9cc4b4889d77763373a0e28",
-        "bb250d93ee27449793869522211fb17c"
-      ],
-      "mapped_stitch_titles": [
-        "P24 - Juflona Booking - Availability States - Mobile",
-        "P24 - Juflona Booking - Form States - Mobile",
-        "P24 - Juflona Booking - Mobile Navigation and Summary Pattern - Mobile",
-        "P24 - Juflona Booking - Progress Patterns - Desktop",
-        "P24 - Juflona Booking - SMS Notification States - Mobile"
-      ],
-      "mapping_count": 5,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0036",
@@ -761,7 +739,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "INFRASTRUCTURE_SCREEN"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0038",
@@ -793,7 +771,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "INFRASTRUCTURE_SCREEN"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0040",
@@ -855,53 +833,27 @@
     {
       "implementation_id": "ACV7-IMPL-0043",
       "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey",
-      "view_path": "views/activeclinic/booking/procedure-entry.ejs",
+      "view_path": "views/activeclinic/booking/procedure-info.ejs",
       "state": "DEFAULT",
       "functional_area": "PROCEDURE_BOOKING",
       "surface": "BOOKING",
       "mapped_stitch_screen_ids": [
         "bb4906f130374a72a21596d427c2af9d",
         "2f99501abec942138637abb0934ed767",
-        "2d5d9db651e046eabb65fdbc89b676e2",
         "ea6f77fad9444fa3b3f04cf5178f9c72",
         "d033da337b5740f29b4681042ab4a99c",
-        "ffc4c24bcadd4b919bdb573d7d06681c",
-        "2a64a22146ed4b2ca704d01d9cb18383",
-        "d2c8f78719484d7ca4d443f844f83929",
-        "82a454047e064592b763896f815aa721",
-        "e04f78111c6a43eb851a0db24cc2f001",
-        "6da5390fcac44722a37ae34f2ae82a11",
         "8c52142a20484c39928c8f3355174384",
-        "3f05000a252b4732952b7dcbd70a9c06",
-        "9a4b08f02d2b4cc990eab7b16b4202aa",
-        "ef1d0961e88e43549af5361a5fb9320c",
-        "72428671e0fa4317bad44d3ccf367ea8",
-        "7377b7ca51e049048c10e34af2950bac",
-        "28dd3dae170e43f88902aa3a1f26cdfe",
-        "95f3a0fc88f7490fbd7d46e649e6b61e"
+        "3f05000a252b4732952b7dcbd70a9c06"
       ],
       "mapped_stitch_titles": [
         "P25 - Juflona Booking - Preparation States - Mobile",
         "P25 - Juflona Booking - Procedure Confirmation Rules - Desktop",
-        "P25 - Juflona Booking - Procedure Form States - Mobile",
         "P25 - Juflona Booking - Procedure Information - Desktop",
         "P25 - Juflona Booking - Procedure Information - Mobile",
-        "P25 - Juflona Booking - Procedure Mobile Summary Pattern - Mobile",
-        "P25 - Juflona Booking - Procedure Patient Details - Desktop",
-        "P25 - Juflona Booking - Procedure Patient Details - Mobile",
-        "P25 - Juflona Booking - Procedure Progress Patterns - Desktop",
-        "P25 - Juflona Booking - Procedure Review - Desktop",
-        "P25 - Juflona Booking - Procedure Review - Mobile",
         "P25 - Juflona Booking - Procedure Slot - Desktop",
-        "P25 - Juflona Booking - Procedure Slot - Mobile",
-        "P25 - Juflona Booking - Procedure SMS States - Mobile",
-        "P25 - Juflona Booking - Referral and Upload States - Mobile",
-        "P25 - Juflona Booking - Referral Clarification - Mobile",
-        "P25 - Juflona Booking - Referral Requirements - Desktop",
-        "P25 - Juflona Booking - Referral Requirements - Mobile",
-        "P25 - Juflona Booking - Resource Availability States - Mobile"
+        "P25 - Juflona Booking - Procedure Slot - Mobile"
       ],
-      "mapping_count": 19,
+      "mapping_count": 6,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -924,36 +876,28 @@
     },
     {
       "implementation_id": "ACV7-IMPL-0045",
-      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey",
-      "view_path": "views/activeclinic/booking/procedure-entry.ejs",
+      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey/patient",
+      "view_path": "views/activeclinic/booking/procedure-patient.ejs",
       "state": "VALIDATION_ERROR",
       "functional_area": "PROCEDURE_BOOKING",
       "surface": "BOOKING",
       "mapped_stitch_screen_ids": [
-        "bb4906f130374a72a21596d427c2af9d",
         "2d5d9db651e046eabb65fdbc89b676e2",
-        "ffc4c24bcadd4b919bdb573d7d06681c",
-        "82a454047e064592b763896f815aa721",
-        "9a4b08f02d2b4cc990eab7b16b4202aa",
-        "ef1d0961e88e43549af5361a5fb9320c",
-        "95f3a0fc88f7490fbd7d46e649e6b61e"
+        "2a64a22146ed4b2ca704d01d9cb18383",
+        "d2c8f78719484d7ca4d443f844f83929"
       ],
       "mapped_stitch_titles": [
-        "P25 - Juflona Booking - Preparation States - Mobile",
         "P25 - Juflona Booking - Procedure Form States - Mobile",
-        "P25 - Juflona Booking - Procedure Mobile Summary Pattern - Mobile",
-        "P25 - Juflona Booking - Procedure Progress Patterns - Desktop",
-        "P25 - Juflona Booking - Procedure SMS States - Mobile",
-        "P25 - Juflona Booking - Referral and Upload States - Mobile",
-        "P25 - Juflona Booking - Resource Availability States - Mobile"
+        "P25 - Juflona Booking - Procedure Patient Details - Desktop",
+        "P25 - Juflona Booking - Procedure Patient Details - Mobile"
       ],
-      "mapping_count": 7,
+      "mapping_count": 3,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
     {
       "implementation_id": "ACV7-IMPL-0046",
-      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey",
+      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey/submit",
       "view_path": "views/activeclinic/booking/request-submitted.ejs",
       "state": "SUCCESS",
       "functional_area": "PROCEDURE_BOOKING",
@@ -978,30 +922,18 @@
       "functional_area": "MY_BOOKING",
       "surface": "MY_BOOKING",
       "mapped_stitch_screen_ids": [
-        "e1a9a3b347b74171848d5639eaf48694",
-        "ca7cdd02f84f4a13abb5b324f3fb453f",
-        "b18ffbdac9a644f8bea30734fc9368df",
-        "7b7546940db743839e4c4b11ae366dda",
         "ab96f1f72f444e9e943a1e6b2d539b46",
-        "8f9a5650ff3d4f7482de4f82bcee597b",
         "a8ad8c9b489149d592cd9ca53a525e14",
         "a2b5c7ddfddc4c80a1ddb035748da72f",
-        "4e84a1501ffa454b91221a4f32cfaabb",
         "e50e9dfeaf1a405bbf3f3c334ebbe039"
       ],
       "mapped_stitch_titles": [
-        "P26 - Juflona Booking - Booking Activity Pattern - Desktop",
-        "P26 - Juflona Booking - Booking Changed During Request - Mobile",
-        "P26 - Juflona Booking - Booking Status Patterns - Desktop",
-        "P26 - Juflona Booking - Change Request States - Mobile",
         "P26 - Juflona Booking - Lookup Progress - Mobile",
-        "P26 - Juflona Booking - Mobile Booking Summary Pattern - Mobile",
         "P26 - Juflona Booking - My Booking - Desktop",
         "P26 - Juflona Booking - My Booking - Mobile",
-        "P26 - Juflona Booking - Pending Preference Change - Mobile",
         "P26 - Juflona Booking - Privacy and Lookup Rules - Desktop"
       ],
-      "mapping_count": 10,
+      "mapping_count": 4,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -1047,8 +979,7 @@
         "b18ffbdac9a644f8bea30734fc9368df",
         "7b7546940db743839e4c4b11ae366dda",
         "8f9a5650ff3d4f7482de4f82bcee597b",
-        "4e84a1501ffa454b91221a4f32cfaabb",
-        "e50e9dfeaf1a405bbf3f3c334ebbe039"
+        "4e84a1501ffa454b91221a4f32cfaabb"
       ],
       "mapped_stitch_titles": [
         "P26 - Juflona Booking - Booking Activity Pattern - Desktop",
@@ -1068,10 +999,9 @@
         "P26 - Juflona Booking - Booking Status Patterns - Desktop",
         "P26 - Juflona Booking - Change Request States - Mobile",
         "P26 - Juflona Booking - Mobile Booking Summary Pattern - Mobile",
-        "P26 - Juflona Booking - Pending Preference Change - Mobile",
-        "P26 - Juflona Booking - Privacy and Lookup Rules - Desktop"
+        "P26 - Juflona Booking - Pending Preference Change - Mobile"
       ],
-      "mapping_count": 19,
+      "mapping_count": 18,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -1168,13 +1098,15 @@
       "surface": "PATIENT_PORTAL",
       "mapped_stitch_screen_ids": [
         "4bc683c012fc465681d21655ac3d1d01",
-        "7c24084776e64719be06423d42263e61"
+        "7c24084776e64719be06423d42263e61",
+        "795b6f3cce584467bdc369bd89f67419"
       ],
       "mapped_stitch_titles": [
         "P27 - Juflona Patient - Login - Desktop",
-        "P27 - Juflona Patient - Login - Mobile"
+        "P27 - Juflona Patient - Login - Mobile",
+        "P27 - Juflona Patient - Login States - Mobile"
       ],
-      "mapping_count": 2,
+      "mapping_count": 3,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -1187,13 +1119,15 @@
       "surface": "PATIENT_PORTAL",
       "mapped_stitch_screen_ids": [
         "cc7711d9ca2947bba30e8bdde0c473de",
-        "588d1139d7b548c5856e9e34ce736bf9"
+        "588d1139d7b548c5856e9e34ce736bf9",
+        "bc0fd174f14d4a3a8e78a57aad1564ee"
       ],
       "mapped_stitch_titles": [
         "P27 - Juflona Patient - Register - Desktop",
-        "P27 - Juflona Patient - Register - Mobile"
+        "P27 - Juflona Patient - Register - Mobile",
+        "P27 - Juflona Patient - Registration States - Mobile"
       ],
-      "mapping_count": 2,
+      "mapping_count": 3,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -1312,15 +1246,11 @@
       "state": "VALIDATION_ERROR",
       "functional_area": "PATIENT_AUTH",
       "surface": "PATIENT_PORTAL",
-      "mapped_stitch_screen_ids": [
-        "795b6f3cce584467bdc369bd89f67419"
-      ],
-      "mapped_stitch_titles": [
-        "P27 - Juflona Patient - Login States - Mobile"
-      ],
-      "mapping_count": 1,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0063",
@@ -1329,15 +1259,11 @@
       "state": "VALIDATION_ERROR",
       "functional_area": "PATIENT_AUTH",
       "surface": "PATIENT_PORTAL",
-      "mapped_stitch_screen_ids": [
-        "bc0fd174f14d4a3a8e78a57aad1564ee"
-      ],
-      "mapped_stitch_titles": [
-        "P27 - Juflona Patient - Registration States - Mobile"
-      ],
-      "mapping_count": 1,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0064",
@@ -1526,7 +1452,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0075",
@@ -1562,7 +1488,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "INFRASTRUCTURE_SCREEN"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0077",
@@ -1575,7 +1501,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "SETTINGS_EXTENSION"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0078",
@@ -1585,14 +1511,12 @@
       "functional_area": "SETTINGS",
       "surface": "AUTH",
       "mapped_stitch_screen_ids": [
-        "c50a51a04a084f0badd48da9827aa11f",
-        "e132749f634c4fff818acf3f8e21c361"
+        "c50a51a04a084f0badd48da9827aa11f"
       ],
       "mapped_stitch_titles": [
-        "P13 – Account Security – Desktop",
-        "P13 – Active Sessions – Desktop"
+        "P13 – Account Security – Desktop"
       ],
-      "mapping_count": 2,
+      "mapping_count": 1,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -1628,7 +1552,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0081",
@@ -1641,7 +1565,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0082",
@@ -1654,7 +1578,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0083",
@@ -1665,13 +1589,15 @@
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
         "9b881d25874c41f9986246c61de32f41",
+        "f98b2e6f2a4a4953a4d811af7b3737a2",
         "4d31c82537634b5f981c359662d224b3"
       ],
       "mapped_stitch_titles": [
         "P01 – Shared States – Desktop",
+        "P02 – Patient Shared States – Desktop",
         "Shared Offline State"
       ],
-      "mapping_count": 2,
+      "mapping_count": 3,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -1684,13 +1610,15 @@
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
         "8731b06bbfa747e98e05372c9aafb3e9",
-        "9b881d25874c41f9986246c61de32f41"
+        "9b881d25874c41f9986246c61de32f41",
+        "778eee4267984f32bcedcc38ca720fa0"
       ],
       "mapped_stitch_titles": [
         "Access Restricted",
-        "P01 – Shared States – Desktop"
+        "P01 – Shared States – Desktop",
+        "P07 – Financial Correction Access Restricted"
       ],
-      "mapping_count": 2,
+      "mapping_count": 3,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -1768,7 +1696,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0089",
@@ -1781,7 +1709,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "SETTINGS_EXTENSION"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0090",
@@ -1794,7 +1722,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "SETTINGS_EXTENSION"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0091",
@@ -1824,15 +1752,11 @@
       "state": "EMPTY",
       "functional_area": "PATIENTS",
       "surface": "AUTHENTICATED_APP",
-      "mapped_stitch_screen_ids": [
-        "f98b2e6f2a4a4953a4d811af7b3737a2"
-      ],
-      "mapped_stitch_titles": [
-        "P02 – Patient Shared States – Desktop"
-      ],
-      "mapping_count": 1,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0093",
@@ -1960,17 +1884,13 @@
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
         "284e9f8cd6804b0eb0f50574e2f571d6",
-        "480ecaba5258423e8711b1fdd2f39e1b",
-        "089aa8f266664446a8b38cb69d1fda48",
-        "7d37e069c7644e7cb4c9b72349a0ccf7"
+        "480ecaba5258423e8711b1fdd2f39e1b"
       ],
       "mapped_stitch_titles": [
         "P03 – Appointment List – Desktop",
-        "P03 – Appointment List – Mobile",
-        "P03 – Appointment Shared States – Desktop",
-        "P03 – Missed Appointments – Desktop"
+        "P03 – Appointment List – Mobile"
       ],
-      "mapping_count": 4,
+      "mapping_count": 2,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -1999,14 +1919,12 @@
       "functional_area": "APPOINTMENTS",
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
-        "0fca19f233af43c49966e7eb62bccb02",
-        "fd009ceba70f40b2ae1755b94220c64b"
+        "0fca19f233af43c49966e7eb62bccb02"
       ],
       "mapped_stitch_titles": [
-        "P03 – Appointment Calendar – Desktop",
-        "P03 – Doctor Schedule – Desktop"
+        "P03 – Appointment Calendar – Desktop"
       ],
-      "mapping_count": 2,
+      "mapping_count": 1,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -2034,21 +1952,11 @@
       "state": "DEFAULT",
       "functional_area": "APPOINTMENTS",
       "surface": "AUTHENTICATED_APP",
-      "mapped_stitch_screen_ids": [
-        "327422c1b36747039e4026a17c5a2f33",
-        "b27eafc25bad4006868f3932d08bfed5",
-        "da39a3945ace4fac85cb12bd86f0cdc2",
-        "9429b14e9ea243ad93aec4a486db93e9"
-      ],
-      "mapped_stitch_titles": [
-        "P03 – Appointment Confirmation – Desktop",
-        "P03 – Cancel Appointment – Desktop",
-        "P03 – Reschedule Appointment – Desktop",
-        "P03 – Reschedule Appointment – Mobile"
-      ],
-      "mapping_count": 4,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0103",
@@ -2057,17 +1965,11 @@
       "state": "DEFAULT",
       "functional_area": "APPOINTMENTS",
       "surface": "AUTHENTICATED_APP",
-      "mapped_stitch_screen_ids": [
-        "da39a3945ace4fac85cb12bd86f0cdc2",
-        "9429b14e9ea243ad93aec4a486db93e9"
-      ],
-      "mapped_stitch_titles": [
-        "P03 – Reschedule Appointment – Desktop",
-        "P03 – Reschedule Appointment – Mobile"
-      ],
-      "mapping_count": 2,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0104",
@@ -2095,23 +1997,11 @@
       "state": "DEFAULT",
       "functional_area": "RECEPTION",
       "surface": "AUTHENTICATED_APP",
-      "mapped_stitch_screen_ids": [
-        "8dca6dbd36b840928e73d6674bbcb3ea",
-        "f7841548662446cfa8d70d0772d3fa9f",
-        "1fa99f4a358c47ffb858addae7095fe8",
-        "bf9b846da6174bf995793b09e869cd30",
-        "e807a1354fdd418391496e69e5ac5f3e"
-      ],
-      "mapped_stitch_titles": [
-        "P03 – Patient Called – Desktop",
-        "P03 – Patient Did Not Respond — Desktop",
-        "P03 – Queue Assignment – Desktop",
-        "P03 – Queue Stale Data Warning – Desktop",
-        "P03 – Transfer Patient to Department – Desktop"
-      ],
-      "mapping_count": 5,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0106",
@@ -2155,20 +2045,12 @@
       "functional_area": "RECEPTION",
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
-        "8dca6dbd36b840928e73d6674bbcb3ea",
-        "f7841548662446cfa8d70d0772d3fa9f",
-        "1fa99f4a358c47ffb858addae7095fe8",
-        "bf9b846da6174bf995793b09e869cd30",
-        "e807a1354fdd418391496e69e5ac5f3e"
+        "bf9b846da6174bf995793b09e869cd30"
       ],
       "mapped_stitch_titles": [
-        "P03 – Patient Called – Desktop",
-        "P03 – Patient Did Not Respond — Desktop",
-        "P03 – Queue Assignment – Desktop",
-        "P03 – Queue Stale Data Warning – Desktop",
-        "P03 – Transfer Patient to Department – Desktop"
+        "P03 – Queue Stale Data Warning – Desktop"
       ],
-      "mapping_count": 5,
+      "mapping_count": 1,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -2183,7 +2065,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "NEW_V7_FEATURE"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0110",
@@ -2196,7 +2078,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "NEW_V7_FEATURE"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0111",
@@ -2228,7 +2110,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0113",
@@ -2558,24 +2440,16 @@
       "mapped_stitch_screen_ids": [
         "e4d4e37c175a458d9004e1240395ba63",
         "ace4f11562b24515866b40c5594a18e6",
-        "eeaf00f13f6f4e238da3aef30a556a57",
-        "00a95c467df2414fb8c6dea108170b04",
         "97138791742e4338a34811a6fd7e464d",
-        "6c0795f36aef4fe3b634dc350d230672",
-        "c7c3ea1931f74acb845208dd09d0d63d",
-        "a7649e64ba1e4eee8ca0bcb6a54594bd"
+        "c7c3ea1931f74acb845208dd09d0d63d"
       ],
       "mapped_stitch_titles": [
         "P05 – Dispense Prescription – Desktop",
         "P05 – Dispense Prescription – Mobile",
-        "P05 – Dispensing Completed – Desktop",
-        "P05 – Dispensing Confirmation",
         "P05 – Dispensing Review – Desktop",
-        "P05 – Medicine Batch Detail",
-        "P05 – Partial Dispensing – Desktop",
-        "P05 – Select Medicine Batch"
+        "P05 – Partial Dispensing – Desktop"
       ],
-      "mapping_count": 8,
+      "mapping_count": 4,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -2587,16 +2461,12 @@
       "functional_area": "PHARMACY",
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
-        "6c0795f36aef4fe3b634dc350d230672",
-        "a61dbccce82b43788dc347e25843ae07",
-        "a7649e64ba1e4eee8ca0bcb6a54594bd"
+        "a61dbccce82b43788dc347e25843ae07"
       ],
       "mapped_stitch_titles": [
-        "P05 – Medicine Batch Detail",
-        "P05 – Receive Pharmacy Stock – Desktop",
-        "P05 – Select Medicine Batch"
+        "P05 – Receive Pharmacy Stock – Desktop"
       ],
-      "mapping_count": 3,
+      "mapping_count": 1,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -2611,7 +2481,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0134",
@@ -2850,16 +2720,14 @@
       "mapped_stitch_screen_ids": [
         "46cc5311173d48adb99cafe18ea331c2",
         "4ca894f70d6646eca246847cd8c39d6a",
-        "1ab29b0691c04233a1c972ea99f24351",
-        "d5eb57a8319c4130be473f8dd23851d6"
+        "1ab29b0691c04233a1c972ea99f24351"
       ],
       "mapped_stitch_titles": [
         "P07 – Price Lists – Desktop",
         "P07 – Service Catalogue – Desktop",
-        "P07 – Service Catalogue – Mobile",
-        "P07 – Service Detail – Desktop"
+        "P07 – Service Catalogue – Mobile"
       ],
-      "mapping_count": 4,
+      "mapping_count": 3,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -2892,16 +2760,14 @@
       "mapped_stitch_screen_ids": [
         "a84263ac97b8484698dc36d00b498ffa",
         "c15d892b327848a6a2897ae3a08a5803",
-        "3f50a00be7624b36af773c181b2c562c",
-        "45929cd32480420aaa5788be86e183f9"
+        "3f50a00be7624b36af773c181b2c562c"
       ],
       "mapped_stitch_titles": [
         "P07 – Patient Billing Account – Desktop",
         "P07 – Patient Billing Account – Mobile",
-        "P07 – Patient Collections Account – Desktop",
-        "P07 – Payment History – Desktop"
+        "P07 – Patient Collections Account – Desktop"
       ],
-      "mapping_count": 4,
+      "mapping_count": 3,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -2938,14 +2804,12 @@
       "functional_area": "BILLING",
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
-        "be4481e8f31b459facf2294f73311181",
         "08ed6ee0d02447bca5e94698080bca4f"
       ],
       "mapped_stitch_titles": [
-        "P07 – Add Invoice Item",
         "P07 – Create Invoice – Desktop"
       ],
-      "mapping_count": 2,
+      "mapping_count": 1,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -2958,19 +2822,17 @@
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
         "319d7fca2acb45a38432aa40a2e7cf30",
-        "b1a8b1855b9b4e268cd42359707d292e",
         "713f3ebe920240c1a647af277278eb2f",
         "9f422c33e30c450e9502126ba4012585",
         "3735516f4ecb4624ac715c6f77e7810b"
       ],
       "mapped_stitch_titles": [
         "P07 – Finalise Invoice",
-        "P07 – Invoice Error State",
         "P07 – Invoice Review – Desktop",
         "P07 – Patient Invoice – Desktop",
         "P07 – Patient Invoice – Mobile"
       ],
-      "mapping_count": 5,
+      "mapping_count": 4,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -2985,7 +2847,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0154",
@@ -2998,7 +2860,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0155",
@@ -3067,30 +2929,14 @@
       "mapped_stitch_screen_ids": [
         "1c02fc47e49c4c9990646d94a9876986",
         "0d8cd08aba454a2f971d6cc4389d98d2",
-        "c2f068812d0b45809a214d6ba8399ae5",
-        "2665942082b4428dbcabf3ff3a40ec60",
-        "027b12b482934ef1a6f5dee02c888d26",
-        "d8f3108dfcda4ab9bf58472786d0484c",
-        "e52271b7be804e0ea95c825be9f977bd",
-        "b76f80fb0d164501b8108bea91813385",
-        "685fb829c50a45af995772909fb49fb7",
-        "8461f1792a7a41209ae2abfe44db7b6a",
-        "438b1bb01f534492850ee8cb1253fcfe"
+        "c2f068812d0b45809a214d6ba8399ae5"
       ],
       "mapped_stitch_titles": [
         "P07 – Cashier Shift – Desktop",
         "P07 – Cashier Shift – Mobile",
-        "P07 – Open Cashier Shift – Desktop",
-        "P07 – Payment Reversal Request",
-        "P07 – Payment Reversal Review – Desktop",
-        "P07 – Refund Approval – Desktop",
-        "P07 – Refund Completed – Desktop",
-        "P07 – Refund Rejected",
-        "P07 – Refund Request – Desktop",
-        "P07 – Refund Request – Mobile",
-        "P07 – Refund Review – Desktop"
+        "P07 – Open Cashier Shift – Desktop"
       ],
-      "mapping_count": 11,
+      "mapping_count": 3,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -3101,19 +2947,11 @@
       "state": "DEFAULT",
       "functional_area": "CASHIER",
       "surface": "AUTHENTICATED_APP",
-      "mapped_stitch_screen_ids": [
-        "02e8083e943d40deb9429b95a294ae30",
-        "d3e2ff001f694720b57371ef1a60d517",
-        "7dd49983c4a840b9980fb4a92d486b3c"
-      ],
-      "mapped_stitch_titles": [
-        "P07 – Cash Count – Desktop",
-        "P07 – Cashier Closing – Desktop",
-        "P07 – Cashier Variance – Desktop"
-      ],
-      "mapping_count": 3,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0160",
@@ -3160,14 +2998,12 @@
       "functional_area": "CASHIER",
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
-        "bda1fbd1f6f441dba26719f451ee53de",
         "914eee2a18f64fac81d2f0f69adc0cc8"
       ],
       "mapped_stitch_titles": [
-        "P07 – Payment Completed – Desktop",
         "P07 – Print Receipt"
       ],
-      "mapping_count": 2,
+      "mapping_count": 1,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -3179,14 +3015,12 @@
       "functional_area": "CASHIER",
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
-        "1cd25ed2bb7a4504a63095a015bd823b",
-        "45929cd32480420aaa5788be86e183f9"
+        "1cd25ed2bb7a4504a63095a015bd823b"
       ],
       "mapped_stitch_titles": [
-        "P07 – Cashier Shift History – Desktop",
-        "P07 – Payment History – Desktop"
+        "P07 – Cashier Shift History – Desktop"
       ],
-      "mapping_count": 2,
+      "mapping_count": 1,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -3201,7 +3035,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0164",
@@ -3233,7 +3067,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0166",
@@ -3262,14 +3096,12 @@
       "functional_area": "STAFF",
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
-        "7f168bfd3ac64a2ca412f43990176e41",
-        "3d43526745534570bbe9cd22948be3c1"
+        "7f168bfd3ac64a2ca412f43990176e41"
       ],
       "mapped_stitch_titles": [
-        "P13 – Staff Profile – Desktop",
-        "P13 – Suspend Staff Account"
+        "P13 – Staff Profile – Desktop"
       ],
-      "mapping_count": 2,
+      "mapping_count": 1,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -3284,7 +3116,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0169",
@@ -3293,15 +3125,11 @@
       "state": "SUCCESS",
       "functional_area": "STAFF",
       "surface": "AUTHENTICATED_APP",
-      "mapped_stitch_screen_ids": [
-        "f30963c89fad49ceabc2447dfd46f8f0"
-      ],
-      "mapped_stitch_titles": [
-        "P13 – Invite Staff Member – Desktop"
-      ],
-      "mapping_count": 1,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0170",
@@ -3314,7 +3142,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "SETTINGS_EXTENSION"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0171",
@@ -3327,7 +3155,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "SETTINGS_EXTENSION"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0172",
@@ -3340,7 +3168,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "SETTINGS_EXTENSION"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0173",
@@ -3353,7 +3181,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "SETTINGS_EXTENSION"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0174",
@@ -3363,16 +3191,18 @@
       "functional_area": "RBAC",
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
+        "6b9cfcd190e14155ac4390d66d0cff76",
         "5307efdd84a4432b9f50ffc11f74728f",
         "f0c821818ad04f5ca658defd08962564",
         "23bc626a58964db894619615120d3ef2"
       ],
       "mapped_stitch_titles": [
+        "P13 – Role Permission Matrix – Desktop",
         "P13 – Roles and Access – Desktop",
         "P13 – Staff Access Dashboard – Desktop",
         "P13 – Staff Access Dashboard – Mobile"
       ],
-      "mapping_count": 3,
+      "mapping_count": 4,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -3383,17 +3213,11 @@
       "state": "DEFAULT",
       "functional_area": "RBAC",
       "surface": "AUTHENTICATED_APP",
-      "mapped_stitch_screen_ids": [
-        "8525edd4c31f46d6a6b5c6a233917559",
-        "6b9cfcd190e14155ac4390d66d0cff76"
-      ],
-      "mapped_stitch_titles": [
-        "P13 – Role Detail – Desktop",
-        "P13 – Role Permission Matrix – Desktop"
-      ],
-      "mapping_count": 2,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0176",
@@ -3402,17 +3226,11 @@
       "state": "DEFAULT",
       "functional_area": "RBAC",
       "surface": "AUTHENTICATED_APP",
-      "mapped_stitch_screen_ids": [
-        "8525edd4c31f46d6a6b5c6a233917559",
-        "6b9cfcd190e14155ac4390d66d0cff76"
-      ],
-      "mapped_stitch_titles": [
-        "P13 – Role Detail – Desktop",
-        "P13 – Role Permission Matrix – Desktop"
-      ],
-      "mapping_count": 2,
-      "implemented_without_stitch": false,
-      "without_stitch_reason": null
+      "mapped_stitch_screen_ids": [],
+      "mapped_stitch_titles": [],
+      "mapping_count": 0,
+      "implemented_without_stitch": true,
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0177",
@@ -3425,7 +3243,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0178",
@@ -3438,7 +3256,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "OTHER"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0179",
@@ -3451,7 +3269,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "SETTINGS_EXTENSION"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0180",
@@ -3464,7 +3282,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "SETTINGS_EXTENSION"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0181",
@@ -3477,7 +3295,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "SETTINGS_EXTENSION"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0182",
@@ -3490,7 +3308,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "SETTINGS_EXTENSION"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0183",
@@ -3500,14 +3318,12 @@
       "functional_area": "SETTINGS",
       "surface": "AUTHENTICATED_APP",
       "mapped_stitch_screen_ids": [
-        "c50a51a04a084f0badd48da9827aa11f",
-        "e132749f634c4fff818acf3f8e21c361"
+        "c50a51a04a084f0badd48da9827aa11f"
       ],
       "mapped_stitch_titles": [
-        "P13 – Account Security – Desktop",
-        "P13 – Active Sessions – Desktop"
+        "P13 – Account Security – Desktop"
       ],
-      "mapping_count": 2,
+      "mapping_count": 1,
       "implemented_without_stitch": false,
       "without_stitch_reason": null
     },
@@ -3522,7 +3338,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "NEW_V7_FEATURE"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0185",
@@ -3535,7 +3351,7 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "NEW_V7_FEATURE"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
     },
     {
       "implementation_id": "ACV7-IMPL-0186",
@@ -3571,11 +3387,1054 @@
       "mapped_stitch_titles": [],
       "mapping_count": 0,
       "implemented_without_stitch": true,
-      "without_stitch_reason": "INFRASTRUCTURE_SCREEN"
+      "without_stitch_reason": "No Stitch screen currently maps to this implementation"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0188",
+      "route_path": "/app/patients/:patientNumber/print-card",
+      "view_path": "views/activeclinic/app/patient-print-card-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PATIENTS",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "3c113fe684604dfcaeb8f6b2c071a6ca"
+      ],
+      "mapped_stitch_titles": [
+        "P02 – Print Patient Card Preview"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0189",
+      "route_path": "/app/pharmacy/prescriptions/:id/substitute",
+      "view_path": "views/activeclinic/app/pharmacy-substitution-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "e237cd030fb241deb15ed8eb0f4f895e"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Medicine Substitution – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0190",
+      "route_path": "/app/pharmacy/prescriptions/:id/instructions",
+      "view_path": "views/activeclinic/app/pharmacy-medicine-instructions-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "7cffba8bdac84abda7a8d31951d1948f"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Patient Medicine Instructions – Mobile"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0191",
+      "route_path": "/app/pharmacy/purchase-orders",
+      "view_path": "views/activeclinic/app/pharmacy-purchase-orders-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "0f1976955fc14d8c97f1f8c728b4e1da"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Pharmacy Purchase Orders – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0192",
+      "route_path": "/app/pharmacy/purchase-orders/new",
+      "view_path": "views/activeclinic/app/pharmacy-purchase-order-form-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "0f1976955fc14d8c97f1f8c728b4e1da"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Pharmacy Purchase Orders – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0193",
+      "route_path": "/app/pharmacy/purchase-orders/:id",
+      "view_path": "views/activeclinic/app/pharmacy-purchase-order-detail-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "0f1976955fc14d8c97f1f8c728b4e1da"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Pharmacy Purchase Orders – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0194",
+      "route_path": "/app/pharmacy/inventory/adjust",
+      "view_path": "views/activeclinic/app/pharmacy-stock-adjust-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "2147643a82af4fb28a8368dcff867a75"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Pharmacy Stock Adjustment"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0195",
+      "route_path": "/app/pharmacy/inventory/transfer",
+      "view_path": "views/activeclinic/app/pharmacy-stock-transfer-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "ce22d1c5de5f43ad8a458f57aa217fd3"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Pharmacy Stock Transfer"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0196",
+      "route_path": "/app/pharmacy/prescriptions/:id/labels",
+      "view_path": "views/activeclinic/app/pharmacy-medicine-labels-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "b62126b07af7488094221932b9046193"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Print Medicine Labels"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0197",
+      "route_path": "/app/billing/ar",
+      "view_path": "views/activeclinic/app/billing-ar-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "1829edeb5d1741be9b6ae68a219ef7cc"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Accounts Receivable – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0198",
+      "route_path": "/app/billing/charges/review",
+      "view_path": "views/activeclinic/app/billing-charge-review-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "954a9269255245dd9c6e375f8cbdd93b"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Automatic Charge Review"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0199",
+      "route_path": "/app/billing/collections",
+      "view_path": "views/activeclinic/app/billing-collections-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "16318693e2874e79a8463d91c6ba63ad"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Collections Work Queue – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0200",
+      "route_path": "/app/billing/collections/contact",
+      "view_path": "views/activeclinic/app/billing-collections-contact-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "513301ae28e1423ab7431e299cf45eee"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Contact Patient for Payment – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0201",
+      "route_path": "/app/billing/credit-notes",
+      "view_path": "views/activeclinic/app/billing-credit-notes-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "92b97e715c6f4c308e61d3b39d66a1e9"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Credit Note – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0202",
+      "route_path": "/app/billing/credit-notes/new",
+      "view_path": "views/activeclinic/app/billing-credit-note-form-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "92b97e715c6f4c308e61d3b39d66a1e9"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Credit Note – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0203",
+      "route_path": "/app/billing/credit-notes/:id",
+      "view_path": "views/activeclinic/app/billing-credit-note-detail-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "92b97e715c6f4c308e61d3b39d66a1e9"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Credit Note – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0204",
+      "route_path": "/app/billing/corrections",
+      "view_path": "views/activeclinic/app/billing-corrections-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "54163d0beee74c29990bd83b77480af5",
+        "a21d364d62f04c78ac8477971377eca9"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Financial Correction History",
+        "P07 – Financial Correction History – Mobile"
+      ],
+      "mapping_count": 2,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0205",
+      "route_path": "/app/billing/arrangements",
+      "view_path": "views/activeclinic/app/billing-arrangements-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "02e1c1976d844c2cac63682e1853fa46"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Payment Arrangement"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0206",
+      "route_path": "/app/billing/arrangements/new",
+      "view_path": "views/activeclinic/app/billing-arrangement-form-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "02e1c1976d844c2cac63682e1853fa46"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Payment Arrangement"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0207",
+      "route_path": "/app/billing/arrangements/:id",
+      "view_path": "views/activeclinic/app/billing-arrangement-review-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "2a0ae995f3e140da863e5aede4b2e71f"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Payment Arrangement Review"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0208",
+      "route_path": "/app/billing/price-overrides",
+      "view_path": "views/activeclinic/app/billing-price-overrides-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "a953a043598945fdab38285c7dab7206"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Price Override Approval"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0209",
+      "route_path": "/app/billing/price-overrides/new",
+      "view_path": "views/activeclinic/app/billing-price-override-form-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "a953a043598945fdab38285c7dab7206"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Price Override Approval"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0210",
+      "route_path": "/app/billing/patients/:patientNumber/statement",
+      "view_path": "views/activeclinic/app/billing-statement-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "666806c4ea194d478e3baf2b7876950c"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Print Patient Account Statement"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0211",
+      "route_path": "/app/cashier/refunds/:refundId/receipt",
+      "view_path": "views/activeclinic/app/cashier-refund-receipt-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "CASHIER",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "244dc0c45a23434bb2747468a699167b"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Print Refund Receipt"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0212",
+      "route_path": "/app/billing/reports/revenue",
+      "view_path": "views/activeclinic/app/billing-revenue-report-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "08921cb100ab462d8ec08c007f1bd895"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Revenue Reports – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0213",
+      "route_path": "/app/billing/reports/revenue/detailed",
+      "view_path": "views/activeclinic/app/billing-revenue-report-detailed-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "550a52476c254e258d58737fc1184bb6"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Revenue Reports – Detailed"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0214",
+      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey/referral",
+      "view_path": "views/activeclinic/booking/procedure-referral.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PROCEDURE_BOOKING",
+      "surface": "BOOKING",
+      "mapped_stitch_screen_ids": [
+        "ef1d0961e88e43549af5361a5fb9320c",
+        "72428671e0fa4317bad44d3ccf367ea8",
+        "7377b7ca51e049048c10e34af2950bac",
+        "28dd3dae170e43f88902aa3a1f26cdfe"
+      ],
+      "mapped_stitch_titles": [
+        "P25 - Juflona Booking - Referral and Upload States - Mobile",
+        "P25 - Juflona Booking - Referral Clarification - Mobile",
+        "P25 - Juflona Booking - Referral Requirements - Desktop",
+        "P25 - Juflona Booking - Referral Requirements - Mobile"
+      ],
+      "mapping_count": 4,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0215",
+      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey/time",
+      "view_path": "views/activeclinic/booking/procedure-time.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PROCEDURE_BOOKING",
+      "surface": "BOOKING",
+      "mapped_stitch_screen_ids": [
+        "2d5d9db651e046eabb65fdbc89b676e2",
+        "95f3a0fc88f7490fbd7d46e649e6b61e"
+      ],
+      "mapped_stitch_titles": [
+        "P25 - Juflona Booking - Procedure Form States - Mobile",
+        "P25 - Juflona Booking - Resource Availability States - Mobile"
+      ],
+      "mapping_count": 2,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-0216",
+      "route_path": "/clinics/:clinicKey/book/procedures/:procedureKey/review",
+      "view_path": "views/activeclinic/booking/procedure-review.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PROCEDURE_BOOKING",
+      "surface": "BOOKING",
+      "mapped_stitch_screen_ids": [
+        "e04f78111c6a43eb851a0db24cc2f001",
+        "6da5390fcac44722a37ae34f2ae82a11"
+      ],
+      "mapped_stitch_titles": [
+        "P25 - Juflona Booking - Procedure Review - Desktop",
+        "P25 - Juflona Booking - Procedure Review - Mobile"
+      ],
+      "mapping_count": 2,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70217",
+      "route_path": "/app/appointments/:appointmentId/confirmed",
+      "view_path": "views/activeclinic/app/appointment-success-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "APPOINTMENTS",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "327422c1b36747039e4026a17c5a2f33"
+      ],
+      "mapped_stitch_titles": [
+        "P03 – Appointment Confirmation – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70218",
+      "route_path": "/app/appointments/:appointmentId/cancel",
+      "view_path": "views/activeclinic/app/appointment-cancel-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "APPOINTMENTS",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "b27eafc25bad4006868f3932d08bfed5"
+      ],
+      "mapped_stitch_titles": [
+        "P03 – Cancel Appointment – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70219",
+      "route_path": "/app/appointments/:appointmentId/reschedule",
+      "view_path": "views/activeclinic/app/appointment-form-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "APPOINTMENTS",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "da39a3945ace4fac85cb12bd86f0cdc2",
+        "9429b14e9ea243ad93aec4a486db93e9"
+      ],
+      "mapped_stitch_titles": [
+        "P03 – Reschedule Appointment – Desktop",
+        "P03 – Reschedule Appointment – Mobile"
+      ],
+      "mapping_count": 2,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70220",
+      "route_path": "/app/appointments/missed",
+      "view_path": "views/activeclinic/app/appointments-missed-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "APPOINTMENTS",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "7d37e069c7644e7cb4c9b72349a0ccf7"
+      ],
+      "mapped_stitch_titles": [
+        "P03 – Missed Appointments – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70221",
+      "route_path": "/app/appointments/schedule",
+      "view_path": "views/activeclinic/app/appointments-schedule-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "APPOINTMENTS",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "fd009ceba70f40b2ae1755b94220c64b"
+      ],
+      "mapped_stitch_titles": [
+        "P03 – Doctor Schedule – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70222",
+      "route_path": "/app/reception/queue/:entryId/called",
+      "view_path": "views/activeclinic/app/reception-queue-called-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "RECEPTION",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "8dca6dbd36b840928e73d6674bbcb3ea"
+      ],
+      "mapped_stitch_titles": [
+        "P03 – Patient Called – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70223",
+      "route_path": "/app/reception/queue/:entryId/did-not-respond",
+      "view_path": "views/activeclinic/app/reception-queue-did-not-respond-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "RECEPTION",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "f7841548662446cfa8d70d0772d3fa9f"
+      ],
+      "mapped_stitch_titles": [
+        "P03 – Patient Did Not Respond — Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70224",
+      "route_path": "/app/reception/queue/:entryId/assign",
+      "view_path": "views/activeclinic/app/reception-queue-assign-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "RECEPTION",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "1fa99f4a358c47ffb858addae7095fe8"
+      ],
+      "mapped_stitch_titles": [
+        "P03 – Queue Assignment – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-70225",
+      "route_path": "/app/reception/queue/:entryId/transfer",
+      "view_path": "views/activeclinic/app/reception-queue-transfer-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "RECEPTION",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "e807a1354fdd418391496e69e5ac5f3e"
+      ],
+      "mapped_stitch_titles": [
+        "P03 – Transfer Patient to Department – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-770226",
+      "route_path": "/app/pharmacy/prescriptions/:id/dispense/confirm",
+      "view_path": "views/activeclinic/app/pharmacy-dispense-confirm-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "00a95c467df2414fb8c6dea108170b04"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Dispensing Confirmation"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-770227",
+      "route_path": "/app/pharmacy/prescriptions/:id/dispense/completed",
+      "view_path": "views/activeclinic/app/pharmacy-dispense-completed-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "eeaf00f13f6f4e238da3aef30a556a57"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Dispensing Completed – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-770228",
+      "route_path": "/app/pharmacy/inventory/batches/:batchId",
+      "view_path": "views/activeclinic/app/pharmacy-batch-detail-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "6c0795f36aef4fe3b634dc350d230672"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Medicine Batch Detail"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-770229",
+      "route_path": "/app/pharmacy/prescriptions/:prescriptionId/items/:itemId/select-batch",
+      "view_path": "views/activeclinic/app/pharmacy-select-batch-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "PHARMACY",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "a7649e64ba1e4eee8ca0bcb6a54594bd"
+      ],
+      "mapped_stitch_titles": [
+        "P05 – Select Medicine Batch"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770230",
+      "route_path": "/app/billing/invoices/:invoiceId/items/new",
+      "view_path": "views/activeclinic/app/billing-invoice-add-item-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "be4481e8f31b459facf2294f73311181"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Add Invoice Item"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770231",
+      "route_path": "/app/billing/invoices/:invoiceId/error",
+      "view_path": "views/activeclinic/app/billing-invoice-error-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "b1a8b1855b9b4e268cd42359707d292e"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Invoice Error State"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770232",
+      "route_path": "/app/billing/catalog/:catalogItemId",
+      "view_path": "views/activeclinic/app/billing-catalog-detail-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "d5eb57a8319c4130be473f8dd23851d6"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Service Detail – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770233",
+      "route_path": "/app/billing/payments/history",
+      "view_path": "views/activeclinic/app/billing-payment-history-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "BILLING",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "45929cd32480420aaa5788be86e183f9"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Payment History – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770234",
+      "route_path": "/app/cashier/payment/completed",
+      "view_path": "views/activeclinic/app/cashier-payment-completed-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "CASHIER",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "bda1fbd1f6f441dba26719f451ee53de"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Payment Completed – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770235",
+      "route_path": "/app/cashier/refunds/request",
+      "view_path": "views/activeclinic/app/cashier-refund-request-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "CASHIER",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "685fb829c50a45af995772909fb49fb7",
+        "8461f1792a7a41209ae2abfe44db7b6a"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Refund Request – Desktop",
+        "P07 – Refund Request – Mobile"
+      ],
+      "mapping_count": 2,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770236",
+      "route_path": "/app/cashier/refunds/:refundId/review",
+      "view_path": "views/activeclinic/app/cashier-refund-review-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "CASHIER",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "d8f3108dfcda4ab9bf58472786d0484c",
+        "438b1bb01f534492850ee8cb1253fcfe"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Refund Approval – Desktop",
+        "P07 – Refund Review – Desktop"
+      ],
+      "mapping_count": 2,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770237",
+      "route_path": "/app/cashier/refunds/:refundId/completed",
+      "view_path": "views/activeclinic/app/cashier-refund-completed-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "CASHIER",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "e52271b7be804e0ea95c825be9f977bd"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Refund Completed – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770238",
+      "route_path": "/app/cashier/refunds/:refundId/rejected",
+      "view_path": "views/activeclinic/app/cashier-refund-rejected-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "CASHIER",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "b76f80fb0d164501b8108bea91813385"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Refund Rejected"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770239",
+      "route_path": "/app/cashier/reversals/request",
+      "view_path": "views/activeclinic/app/cashier-reversal-request-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "CASHIER",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "2665942082b4428dbcabf3ff3a40ec60"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Payment Reversal Request"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770240",
+      "route_path": "/app/cashier/reversals/:reversalId/review",
+      "view_path": "views/activeclinic/app/cashier-reversal-review-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "CASHIER",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "027b12b482934ef1a6f5dee02c888d26"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Payment Reversal Review – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770241",
+      "route_path": "/app/cashier/close/cash-count",
+      "view_path": "views/activeclinic/app/cashier-close-cash-count-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "CASHIER",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "02e8083e943d40deb9429b95a294ae30"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Cash Count – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770242",
+      "route_path": "/app/cashier/close/review",
+      "view_path": "views/activeclinic/app/cashier-close-review-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "CASHIER",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "d3e2ff001f694720b57371ef1a60d517"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Cashier Closing – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770243",
+      "route_path": "/app/cashier/close/variance",
+      "view_path": "views/activeclinic/app/cashier-close-variance-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "CASHIER",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "7dd49983c4a840b9980fb4a92d486b3c"
+      ],
+      "mapped_stitch_titles": [
+        "P07 – Cashier Variance – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-77770244",
+      "route_path": "/app/staff/invite",
+      "view_path": "views/activeclinic/app/staff-invite-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "STAFF",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "f30963c89fad49ceabc2447dfd46f8f0"
+      ],
+      "mapped_stitch_titles": [
+        "P13 – Invite Staff Member – Desktop"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-77770245",
+      "route_path": "/app/staff/:staffId/suspend",
+      "view_path": "views/activeclinic/app/staff-suspend-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "STAFF",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "3d43526745534570bbe9cd22948be3c1"
+      ],
+      "mapped_stitch_titles": [
+        "P13 – Suspend Staff Account"
+      ],
+      "mapping_count": 1,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-77770246",
+      "route_path": "/app/access/roles/:roleKey",
+      "view_path": "views/activeclinic/app/access-role-detail-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "RBAC",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "8525edd4c31f46d6a6b5c6a233917559",
+        "6b9cfcd190e14155ac4390d66d0cff76"
+      ],
+      "mapped_stitch_titles": [
+        "P13 – Role Detail – Desktop",
+        "P13 – Role Permission Matrix – Desktop"
+      ],
+      "mapping_count": 2,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
+    },
+    {
+      "implementation_id": "ACV7-IMPL-77770247",
+      "route_path": "/app/settings/account/sessions",
+      "view_path": "views/activeclinic/app/settings-account-sessions-content.ejs",
+      "state": "DEFAULT",
+      "functional_area": "SETTINGS",
+      "surface": "INTERNAL",
+      "mapped_stitch_screen_ids": [
+        "c50a51a04a084f0badd48da9827aa11f",
+        "e132749f634c4fff818acf3f8e21c361"
+      ],
+      "mapped_stitch_titles": [
+        "P13 – Account Security – Desktop",
+        "P13 – Active Sessions – Desktop"
+      ],
+      "mapping_count": 2,
+      "implemented_without_stitch": false,
+      "without_stitch_reason": null
     }
   ],
-  "summary": {
-    "with_stitch": 153,
-    "without_stitch": 34
+  "counts": {
+    "implementation_records": 247,
+    "with_stitch": 201,
+    "without_stitch": 46
   }
 }

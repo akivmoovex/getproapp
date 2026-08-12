@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-12T10:25:10.674Z",
+  "generated_at": "2026-08-12T10:31:44.770Z",
   "inventory_purpose": "RAW V7 ActiveClinic implementation inventory — no Stitch mapping",
   "safety": {
     "branch": "V7",
-    "head_sha": "2ee3c6652134411a30d2ea8dbc18ed1229936222",
+    "head_sha": "4ab31c1bfe29a039de49c6535892c7d83acff66a",
     "deployment_env": "testing",
     "db_identity": "moovex-platform-v7",
     "production_touched": false,
@@ -13,7 +13,8 @@
       "docs/activeclinic/stitch/ACTIVECLINIC_STITCH_RAW_INVENTORY.json",
       "docs/activeclinic/stitch/ACTIVECLINIC_STITCH_RAW_INVENTORY.csv",
       "docs/activeclinic/stitch/ACTIVECLINIC_STITCH_RAW_INVENTORY.md"
-    ]
+    ],
+    "phase6_at": "2026-08-12T10:31:44.770Z"
   },
   "boundary": {
     "directories": [
@@ -37,15 +38,18 @@
     ]
   },
   "integrity": {
-    "user_facing_routes_discovered": 175,
-    "screen_rendering_views_discovered": 157,
+    "user_facing_routes_discovered": 219,
+    "screen_rendering_views_discovered": 218,
     "implementation_screen_state_records": 247,
     "orphan_views": 1,
-    "api_only_routes_excluded": 22,
-    "redirect_only_routes_excluded": 12,
+    "api_only_routes_excluded": 138,
+    "redirect_only_routes_excluded": 2,
     "unknown_reachability": 0,
-    "total_route_registrations": 269,
-    "total_screen_views_on_disk": 158
+    "total_route_registrations": 357,
+    "total_screen_views_on_disk": 249,
+    "phase6_routes_discovered": 357,
+    "phase6_views_discovered": 249,
+    "phase6_added_records": 0
   },
   "navigation": {
     "staff_sidebar": [
@@ -8150,5 +8154,13 @@
   "phase5e_update": {
     "added_count": 4,
     "note": "Remaining partial closure"
+  },
+  "phase6_update": {
+    "added_count": 0,
+    "added_ids": [],
+    "orphan_views_sample": [
+      "views/activeclinic/booking/procedure-entry.ejs"
+    ],
+    "note": "Phase 6 verification refresh from current V7 code"
   }
 }
