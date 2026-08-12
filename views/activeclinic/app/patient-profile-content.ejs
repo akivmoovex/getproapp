@@ -13,6 +13,11 @@
       · age <%= patient.approximateAge || '—' %>
       · <span class="ac-status" data-status="<%= patient.status %>"><%= patient.statusLabel || patient.status %></span>
     </p>
+    <% if (actions.canPrintCard && actions.printCardHref) { %>
+    <p class="ac-form-actions ac-print-hide">
+      <a class="ac-btn ac-btn--secondary" href="<%= actions.printCardHref %>" data-ac-print-card-link="1">Print patient card</a>
+    </p>
+    <% } %>
   </header>
 
   <div class="ac-panel">

@@ -30,6 +30,7 @@ const {
   loadActiveClinicPatientListScreen,
   loadActiveClinicPatientFormScreen,
   loadActiveClinicPatientProfileScreen,
+  loadActiveClinicPatientPrintCardScreen,
 } = require("../services/loadActiveClinicPatientScreens");
 const {
   registerActiveClinicPatient,
@@ -685,21 +686,28 @@ function registerActiveClinicPatientRoutes(app, deps) {
                             "Unable to update patient status. Refresh and try again, or check your permissions.",
                         }
                       : null;
+        const headerActions = [];
+        if (loaded.profile.actions.canEdit) {
+          headerActions.push({
+            href: loaded.profile.actions.editHref,
+            label: "Edit details",
+            primary: true,
+          });
+        }
+        if (loaded.profile.actions.canPrintCard) {
+          headerActions.push({
+            href: loaded.profile.actions.printCardHref,
+            label: "Print card",
+            primary: !loaded.profile.actions.canEdit,
+          });
+        }
         return await renderShell(req, res, {
           activeNav: "patients",
           content: "app/patient-profile-content.ejs",
           pageHeader: {
             title: loaded.profile.patient.displayName,
             description: loaded.profile.patient.patientNumber,
-            actions: loaded.profile.actions.canEdit
-              ? [
-                  {
-                    href: loaded.profile.actions.editHref,
-                    label: "Edit details",
-                    primary: true,
-                  },
-                ]
-              : [],
+            actions: headerActions,
           },
           breadcrumbs: [
             { label: "Patients", href: "/app/patients" },
@@ -707,6 +715,52 @@ function registerActiveClinicPatientRoutes(app, deps) {
           ],
           flash,
           pageData: { profile: loaded.profile },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/patients/:patientNumber/print-card",
+    requireAuth,
+    requirePermission(PERM.VIEW),
+    async (req, res, next) => {
+      try {
+        const loaded = await loadActiveClinicPatientPrintCardScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          patientNumber: req.params.patientNumber,
+        });
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "That patient is not available.", {
+              status: 404,
+            })
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "patients",
+          content: "app/patient-print-card-content.ejs",
+          pageHeader: {
+            title: "Patient card",
+            description: loaded.card.patientNumber,
+            actions: [
+              {
+                href: `/app/patients/${encodeURIComponent(loaded.card.patientNumber)}`,
+                label: "Back to profile",
+              },
+            ],
+          },
+          breadcrumbs: [
+            { label: "Patients", href: "/app/patients" },
+            {
+              label: loaded.card.patientNumber,
+              href: `/app/patients/${encodeURIComponent(loaded.card.patientNumber)}`,
+            },
+            { label: "Print card" },
+          ],
+          pageData: { card: loaded.card },
         });
       } catch (err) {
         return next(err);

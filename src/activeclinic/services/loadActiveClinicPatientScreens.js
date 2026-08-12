@@ -548,7 +548,9 @@ async function loadActiveClinicPatientProfileScreen(db, input) {
           hasPerm(perms, PERM.ARCHIVE) && patient.status !== "deceased",
         canManageIdentifiers: canManageId,
         canManageEmergency: hasPerm(perms, PERM.UPDATE) && canSensitive,
+        canPrintCard: hasPerm(perms, PERM.VIEW),
         editHref: `/app/patients/${encodeURIComponent(patient.patientNumber)}/edit`,
+        printCardHref: `/app/patients/${encodeURIComponent(patient.patientNumber)}/print-card`,
       },
       stitch: {
         desktop: "1a15f0bf4e564c4993ca33aa2d578a58",
@@ -559,6 +561,65 @@ async function loadActiveClinicPatientProfileScreen(db, input) {
           (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
           "ZM",
       }),
+    },
+  };
+}
+
+/**
+ * Printable patient identity card (Stitch P02 Print Patient Card Preview).
+ * Uses only identity + non-clinical registration fields already on the profile.
+ */
+function formatPrintCardDate(value) {
+  if (value == null || value === "") return null;
+  if (value instanceof Date && !Number.isNaN(value.getTime())) {
+    const y = value.getUTCFullYear();
+    const m = String(value.getUTCMonth() + 1).padStart(2, "0");
+    const d = String(value.getUTCDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+  const text = String(value).trim();
+  if (/^\d{4}-\d{2}-\d{2}/.test(text)) return text.slice(0, 10);
+  const parsed = new Date(text);
+  if (!Number.isNaN(parsed.getTime())) {
+    return formatPrintCardDate(parsed);
+  }
+  return text;
+}
+
+async function loadActiveClinicPatientPrintCardScreen(db, input) {
+  const loaded = await loadActiveClinicPatientProfileScreen(db, input);
+  if (!loaded.ok) return loaded;
+  const patient = loaded.profile.patient;
+  const orgName =
+    (input.auth &&
+      input.auth.healthcareOrganization &&
+      (input.auth.healthcareOrganization.publicName ||
+        input.auth.healthcareOrganization.legalName)) ||
+    (input.auth && input.auth.organization && input.auth.organization.displayName) ||
+    "ActiveClinic";
+  const facilityName =
+    (input.auth &&
+      input.auth.selectedFacility &&
+      input.auth.selectedFacility.displayName) ||
+    null;
+  return {
+    ok: true,
+    card: {
+      organizationName: orgName,
+      facilityName,
+      patientNumber: patient.patientNumber,
+      displayName: patient.displayName,
+      dateOfBirth: formatPrintCardDate(patient.dateOfBirth),
+      estimatedDateOfBirth: patient.estimatedDateOfBirth === true,
+      approximateAge: patient.approximateAge || null,
+      sexLabel: patient.sexLabel || null,
+      status: patient.status,
+      statusLabel: patient.statusLabel || patient.status,
+      phoneDisplay: patient.phoneDisplay || null,
+      printedAt: new Date().toISOString(),
+      stitch: {
+        desktop: "3c113fe684604dfcaeb8f6b2c071a6ca",
+      },
     },
   };
 }
@@ -613,5 +674,6 @@ module.exports = {
   loadActiveClinicPatientListScreen,
   loadActiveClinicPatientFormScreen,
   loadActiveClinicPatientProfileScreen,
+  loadActiveClinicPatientPrintCardScreen,
   maskIdentifier,
 };

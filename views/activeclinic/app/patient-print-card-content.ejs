@@ -1,0 +1,112 @@
+<%
+  var card = (pageData && pageData.card) || {};
+  var stitch = card.stitch || {};
+  function esc(v) { return (v == null || v === '') ? '—' : String(v); }
+%>
+<section
+  class="ac-patient-print-card"
+  data-ac-page-section="patient-print-card"
+  data-ac-stitch-desktop="<%= stitch.desktop || '3c113fe684604dfcaeb8f6b2c071a6ca' %>"
+>
+  <div class="ac-panel ac-form-actions ac-print-hide">
+    <button type="button" class="ac-btn ac-btn--primary" onclick="window.print()">Print card</button>
+    <a
+      href="/app/patients/<%= encodeURIComponent(card.patientNumber || '') %>"
+      class="ac-btn ac-btn--secondary"
+    >Back to profile</a>
+  </div>
+
+  <article class="ac-patient-id-card" data-ac-patient-print-card="1">
+    <header class="ac-patient-id-card__header">
+      <div>
+        <p class="ac-patient-id-card__brand"><%= esc(card.organizationName) %></p>
+        <% if (card.facilityName) { %>
+        <p class="ac-muted ac-patient-id-card__facility"><%= esc(card.facilityName) %></p>
+        <% } %>
+      </div>
+      <span class="ac-status" data-status="<%= card.status || '' %>"><%= esc(card.statusLabel || card.status) %></span>
+    </header>
+
+    <h2 class="ac-patient-id-card__name" data-ac-print-patient-name="1"><%= esc(card.displayName) %></h2>
+    <p class="ac-patient-id-card__number" data-ac-patient-number="1"><%= esc(card.patientNumber) %></p>
+
+    <dl class="ac-dl ac-patient-id-card__meta">
+      <div>
+        <dt>Date of birth</dt>
+        <dd>
+          <%= esc(card.dateOfBirth) %><% if (card.estimatedDateOfBirth) { %> (estimated)<% } %>
+          · age <%= esc(card.approximateAge) %>
+        </dd>
+      </div>
+      <div>
+        <dt>Sex at registration</dt>
+        <dd><%= esc(card.sexLabel) %></dd>
+      </div>
+      <div>
+        <dt>Phone</dt>
+        <dd><%= esc(card.phoneDisplay) %></dd>
+      </div>
+    </dl>
+
+    <footer class="ac-patient-id-card__footer ac-muted">
+      Printed <%= esc(card.printedAt) %> · identity card only — not a clinical record
+    </footer>
+  </article>
+</section>
+<style>
+  .ac-patient-id-card {
+    max-width: 28rem;
+    border: 1px solid var(--ac-border, #d6d3d1);
+    border-radius: 0.75rem;
+    padding: 1.25rem 1.5rem;
+    background: #fff;
+  }
+  .ac-patient-id-card__header {
+    display: flex;
+    justify-content: space-between;
+    gap: 1rem;
+    align-items: flex-start;
+    margin-bottom: 1rem;
+  }
+  .ac-patient-id-card__brand {
+    margin: 0;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+  }
+  .ac-patient-id-card__facility { margin: 0.15rem 0 0; }
+  .ac-patient-id-card__name {
+    margin: 0 0 0.25rem;
+    font-size: 1.5rem;
+    line-height: 1.2;
+  }
+  .ac-patient-id-card__number {
+    margin: 0 0 1rem;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    font-size: 1.05rem;
+  }
+  .ac-patient-id-card__meta { margin: 0; }
+  .ac-patient-id-card__footer {
+    margin-top: 1.25rem;
+    font-size: 0.8rem;
+  }
+  @media (max-width: 480px) {
+    .ac-patient-id-card { max-width: 100%; }
+    .ac-patient-id-card__header { flex-direction: column; }
+  }
+  @media print {
+    .ac-print-hide,
+    .ac-app-shell__nav,
+    .ac-app-shell__sidebar,
+    .ac-page-header,
+    .ac-breadcrumbs,
+    header,
+    nav {
+      display: none !important;
+    }
+    .ac-patient-id-card {
+      border: 1px solid #222;
+      box-shadow: none;
+      max-width: 100%;
+    }
+  }
+</style>
