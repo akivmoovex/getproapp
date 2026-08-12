@@ -1,0 +1,71 @@
+<%
+  var page = (pageData && pageData) || {};
+  var values = page.values || {};
+  var medications = page.medications || [];
+  var facilities = page.facilities || [];
+  var error = page.error;
+  var stitch = page.stitch || {};
+%>
+<section class="ac-pharmacy-stock-transfer" data-ac-page-section="pharmacy-stock-transfer" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error">
+    <%= error %>
+  </div>
+  <% } %>
+
+  <form method="post" action="/app/pharmacy/inventory/transfer" class="ac-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+
+    <div class="ac-panel">
+      <div class="ac-form-field">
+        <label for="sourceFacilityId" class="ac-form-label">Source facility <span class="ac-required">*</span></label>
+        <select id="sourceFacilityId" name="sourceFacilityId" required class="ac-form-input">
+          <% facilities.forEach(function (fac) { %>
+          <option value="<%= fac.id %>" <%= values.sourceFacilityId === fac.id ? 'selected' : '' %>>
+            <%= fac.displayName %>
+          </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="ac-form-field">
+        <label for="destinationFacilityId" class="ac-form-label">Destination facility <span class="ac-required">*</span></label>
+        <select id="destinationFacilityId" name="destinationFacilityId" required class="ac-form-input">
+          <option value="">Select destination</option>
+          <% facilities.forEach(function (fac) { %>
+          <option value="<%= fac.id %>" <%= values.destinationFacilityId === fac.id ? 'selected' : '' %>>
+            <%= fac.displayName %>
+          </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="ac-form-field">
+        <label for="medicationCatalogueItemId" class="ac-form-label">Medication <span class="ac-required">*</span></label>
+        <select id="medicationCatalogueItemId" name="medicationCatalogueItemId" required class="ac-form-input">
+          <option value="">Select medication</option>
+          <% medications.forEach(function (med) { %>
+          <option value="<%= med.id %>" <%= values.medicationCatalogueItemId === med.id ? 'selected' : '' %>>
+            <%= med.genericName %> - <%= med.strength %> (<%= med.dosageForm %>)
+          </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="ac-form-field">
+        <label for="quantity" class="ac-form-label">Quantity <span class="ac-required">*</span></label>
+        <input type="number" id="quantity" name="quantity" value="<%= values.quantity || '' %>" required min="1" class="ac-form-input">
+      </div>
+
+      <div class="ac-form-field">
+        <label for="reason" class="ac-form-label">Reason <span class="ac-required">*</span></label>
+        <textarea id="reason" name="reason" required class="ac-form-input" rows="3" maxlength="500"><%= values.reason || '' %></textarea>
+      </div>
+    </div>
+
+    <div class="ac-panel ac-form-actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Transfer stock</button>
+      <a href="/app/pharmacy/inventory" class="ac-btn ac-btn--secondary">Cancel</a>
+    </div>
+  </form>
+</section>

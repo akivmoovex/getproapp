@@ -1,0 +1,66 @@
+<%
+  var page = (pageData && pageData) || {};
+  var purchaseOrder = page.purchaseOrder || {};
+  var items = page.items || [];
+  var canManage = page.canManage;
+  var stitch = page.stitch || {};
+%>
+<section class="ac-pharmacy-purchase-order-detail" data-ac-page-section="pharmacy-purchase-order-detail" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel">
+    <dl class="ac-detail-list">
+      <dt>PO number</dt>
+      <dd><strong><%= purchaseOrder.poNumber || '—' %></strong></dd>
+      <dt>Supplier</dt>
+      <dd><%= purchaseOrder.supplierName || '—' %></dd>
+      <dt>Status</dt>
+      <dd><span class="ac-status" data-ac-status="<%= purchaseOrder.status %>"><%= purchaseOrder.status %></span></dd>
+      <dt>Created by</dt>
+      <dd><%= purchaseOrder.createdByStaffDisplayName || '—' %></dd>
+      <dt>Submitted</dt>
+      <dd><%= purchaseOrder.submittedAt ? new Date(purchaseOrder.submittedAt).toLocaleString() : '—' %></dd>
+      <dt>Notes</dt>
+      <dd><%= purchaseOrder.notes || '—' %></dd>
+    </dl>
+  </div>
+
+  <div class="ac-panel ac-table-wrap">
+    <h3>Items</h3>
+    <% if (!items.length) { %>
+    <p class="ac-muted">No line items.</p>
+    <% } else { %>
+    <table class="ac-table">
+      <caption class="ac-sr-only">Purchase order items</caption>
+      <thead>
+        <tr>
+          <th scope="col">Medication</th>
+          <th scope="col">Strength</th>
+          <th scope="col">Qty ordered</th>
+          <th scope="col">Qty received</th>
+          <th scope="col">Unit cost</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(function (item) { %>
+        <tr>
+          <td><strong><%= item.medicationGenericName || '—' %></strong></td>
+          <td><%= item.medicationStrength || '—' %></td>
+          <td><%= item.quantityOrdered %></td>
+          <td><%= item.quantityReceived %></td>
+          <td><%= item.unitCost != null ? item.unitCost : '—' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% } %>
+  </div>
+
+  <div class="ac-panel ac-form-actions">
+    <% if (canManage && purchaseOrder.status === 'draft') { %>
+    <form method="post" action="/app/pharmacy/purchase-orders/<%= purchaseOrder.id %>/submit" style="display:inline">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+      <button type="submit" class="ac-btn ac-btn--primary">Submit purchase order</button>
+    </form>
+    <% } %>
+    <a href="/app/pharmacy/purchase-orders" class="ac-btn ac-btn--secondary">Back to list</a>
+  </div>
+</section>

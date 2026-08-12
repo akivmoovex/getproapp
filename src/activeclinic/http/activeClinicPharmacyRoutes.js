@@ -44,13 +44,39 @@ const {
   receiveStock,
   dispensePrescription,
   getPrescriptionById,
+  listMedications,
+  listInventoryItems,
   RESULT: PHARM_RESULT,
   PERM,
 } = require("../services/activeClinicPharmacyService");
 const {
+  adjustStock,
+  transferStock,
+  substitutePrescriptionItem,
+  createPurchaseOrder,
+  listPurchaseOrders,
+  getPurchaseOrder,
+  submitPurchaseOrder,
+  getMedicineLabel,
+  getPatientMedicineInstructions,
+  RESULT: OPS_RESULT,
+} = require("../services/activeClinicPharmacyOpsService");
+const {
+  listFacilitiesByOrganization,
+} = require("../services/facilityService");
+const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+
+const STITCH_OPS = Object.freeze({
+  adjust: "2147643a82af4fb28a8368dcff867a75",
+  transfer: "ce22d1c5de5f43ad8a458f57aa217fd3",
+  substitution: "e237cd030fb241deb15ed8eb0f4f895e",
+  purchaseOrder: "0f1976955fc14d8c97f1f8c728b4e1da",
+  labels: "b62126b07af7488094221932b9046193",
+  instructions: "7cffba8bdac84abda7a8d31951d1948f",
+});
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -84,8 +110,18 @@ function mapPharmacyError(code) {
     case PHARM_RESULT.DUPLICATE_BATCH:
       return "A batch with this number already exists for this medication.";
     case PHARM_RESULT.NEGATIVE_STOCK:
+    case OPS_RESULT.NEGATIVE_STOCK:
       return "Cannot process: would result in negative stock.";
+    case OPS_RESULT.SUBSTITUTION_NOT_ALLOWED:
+      return "Substitution is not allowed for this prescription item.";
+    case OPS_RESULT.PURCHASE_ORDER_NOT_FOUND:
+      return "Purchase order not found.";
+    case OPS_RESULT.INVALID_PO_STATUS:
+      return "This purchase order cannot be submitted in its current status.";
+    case OPS_RESULT.FACILITY_MISMATCH:
+      return "Facilities must belong to the same healthcare organization.";
     case PHARM_RESULT.INVALID_INPUT:
+    case OPS_RESULT.INVALID_INPUT:
       return "Check the submitted details and try again.";
     default:
       return "Unable to complete the pharmacy request.";
@@ -769,6 +805,800 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
         }
 
         return res.redirect(303, "/app/pharmacy/inventory");
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Stock Adjust (GET)
+  app.get(
+    "/app/pharmacy/inventory/adjust",
+    requireAuth,
+    requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const selectedFacility = auth.selectedFacility;
+        if (!selectedFacility || !selectedFacility.id) {
+          return res.redirect(303, "/app/select-facility?return=/app/pharmacy/inventory/adjust");
+        }
+        const inventory = await listInventoryItems(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          facilityId: selectedFacility.id,
+        });
+        return await renderShell(req, res, {
+          content: "app/pharmacy-stock-adjust-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: { title: "Adjust stock", description: "Correct inventory quantities with a reason.", actions: [] },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Inventory", href: "/app/pharmacy/inventory" },
+            { label: "Adjust stock" },
+          ],
+          pageData: {
+            facility: selectedFacility,
+            inventoryItems: (inventory.ok && inventory.inventoryItems) || [],
+            values: {},
+            error: null,
+            stitch: { desktop: STITCH_OPS.adjust },
+          },
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Stock Adjust (POST)
+  app.post(
+    "/app/pharmacy/inventory/adjust",
+    requireAuth,
+    requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
+        if (!csrfValid) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
+              status: 403,
+              linkHref: "/app/pharmacy/inventory/adjust",
+              linkLabel: "Try again",
+            })
+          );
+        }
+
+        const auth = req.activeClinicAuth;
+        const selectedFacility = auth.selectedFacility;
+        const result = await adjustStock(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: selectedFacility.id,
+          inventoryItemId: req.body.inventoryItemId || null,
+          quantityDelta: parseInt(req.body.quantityDelta, 10),
+          reason: req.body.reason,
+        });
+
+        if (!result.ok) {
+          const inventory = await listInventoryItems(getPool(), {
+            staffId: auth.staffMember.id,
+            organizationId: auth.organization.id,
+            facilityId: selectedFacility.id,
+          });
+          return await renderShell(req, res, {
+            content: "app/pharmacy-stock-adjust-content.ejs",
+            activeNav: "pharmacy",
+            pageHeader: { title: "Adjust stock", description: "Correct inventory quantities with a reason.", actions: [] },
+            breadcrumbs: [
+              { label: "Pharmacy", href: "/app/pharmacy" },
+              { label: "Inventory", href: "/app/pharmacy/inventory" },
+              { label: "Adjust stock" },
+            ],
+            pageData: {
+              facility: selectedFacility,
+              inventoryItems: (inventory.ok && inventory.inventoryItems) || [],
+              values: req.body,
+              error: mapPharmacyError(result.result),
+              stitch: { desktop: STITCH_OPS.adjust },
+            },
+            flash: { error: mapPharmacyError(result.result) },
+            status: 400,
+          });
+        }
+
+        return res.redirect(303, "/app/pharmacy/inventory");
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Stock Transfer (GET)
+  app.get(
+    "/app/pharmacy/inventory/transfer",
+    requireAuth,
+    requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const selectedFacility = auth.selectedFacility;
+        if (!selectedFacility || !selectedFacility.id) {
+          return res.redirect(303, "/app/select-facility?return=/app/pharmacy/inventory/transfer");
+        }
+        const [medications, facilities] = await Promise.all([
+          listMedications(getPool(), {
+            staffId: auth.staffMember.id,
+            organizationId: auth.organization.id,
+            healthcareOrganizationId: auth.healthcareOrganization.id,
+          }),
+          listFacilitiesByOrganization(getPool(), {
+            organizationId: auth.organization.id,
+          }),
+        ]);
+        const facilityOptions = ((facilities && facilities.facilities) || []).filter(
+          (f) =>
+            f.healthcareOrganizationId === auth.healthcareOrganization.id &&
+            ["active", "planned"].includes(f.status)
+        );
+        return await renderShell(req, res, {
+          content: "app/pharmacy-stock-transfer-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: { title: "Transfer stock", description: "Move stock between facilities in this organization.", actions: [] },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Inventory", href: "/app/pharmacy/inventory" },
+            { label: "Transfer stock" },
+          ],
+          pageData: {
+            facility: selectedFacility,
+            medications: (medications.ok && medications.medications) || [],
+            facilities: facilityOptions,
+            values: { sourceFacilityId: selectedFacility.id },
+            error: null,
+            stitch: { desktop: STITCH_OPS.transfer },
+          },
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Stock Transfer (POST)
+  app.post(
+    "/app/pharmacy/inventory/transfer",
+    requireAuth,
+    requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
+        if (!csrfValid) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
+              status: 403,
+              linkHref: "/app/pharmacy/inventory/transfer",
+              linkLabel: "Try again",
+            })
+          );
+        }
+
+        const auth = req.activeClinicAuth;
+        const selectedFacility = auth.selectedFacility;
+        const result = await transferStock(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          sourceFacilityId: req.body.sourceFacilityId || selectedFacility.id,
+          destinationFacilityId: req.body.destinationFacilityId,
+          medicationCatalogueItemId: req.body.medicationCatalogueItemId,
+          quantity: parseInt(req.body.quantity, 10),
+          reason: req.body.reason,
+        });
+
+        if (!result.ok) {
+          const [medications, facilities] = await Promise.all([
+            listMedications(getPool(), {
+              staffId: auth.staffMember.id,
+              organizationId: auth.organization.id,
+              healthcareOrganizationId: auth.healthcareOrganization.id,
+            }),
+            listFacilitiesByOrganization(getPool(), {
+              organizationId: auth.organization.id,
+            }),
+          ]);
+          const facilityOptions = ((facilities && facilities.facilities) || []).filter(
+            (f) =>
+              f.healthcareOrganizationId === auth.healthcareOrganization.id &&
+              ["active", "planned"].includes(f.status)
+          );
+          return await renderShell(req, res, {
+            content: "app/pharmacy-stock-transfer-content.ejs",
+            activeNav: "pharmacy",
+            pageHeader: { title: "Transfer stock", description: "Move stock between facilities in this organization.", actions: [] },
+            breadcrumbs: [
+              { label: "Pharmacy", href: "/app/pharmacy" },
+              { label: "Inventory", href: "/app/pharmacy/inventory" },
+              { label: "Transfer stock" },
+            ],
+            pageData: {
+              facility: selectedFacility,
+              medications: (medications.ok && medications.medications) || [],
+              facilities: facilityOptions,
+              values: req.body,
+              error: mapPharmacyError(result.result),
+              stitch: { desktop: STITCH_OPS.transfer },
+            },
+            flash: { error: mapPharmacyError(result.result) },
+            status: 400,
+          });
+        }
+
+        return res.redirect(303, "/app/pharmacy/inventory");
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Prescription substitution (GET)
+  app.get(
+    "/app/pharmacy/prescriptions/:id/substitute",
+    requireAuth,
+    requirePermission([PERM.PHARMACY_REVIEW, PERM.PHARMACY_DISPENSE]),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const prescriptionId = req.params.id;
+        if (!UUID_RE.test(prescriptionId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not Found", "Invalid prescription ID.", {
+              status: 404,
+              linkHref: "/app/pharmacy/queue",
+              linkLabel: "Back to queue",
+            })
+          );
+        }
+
+        const auth = req.activeClinicAuth;
+        const [loaded, medications] = await Promise.all([
+          getPrescriptionById(getPool(), {
+            staffId: auth.staffMember.id,
+            organizationId: auth.organization.id,
+            prescriptionId,
+          }),
+          listMedications(getPool(), {
+            staffId: auth.staffMember.id,
+            organizationId: auth.organization.id,
+            healthcareOrganizationId: auth.healthcareOrganization.id,
+          }),
+        ]);
+
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Prescription not found", mapPharmacyError(loaded.result), {
+              status: 404,
+              linkHref: "/app/pharmacy/queue",
+              linkLabel: "Back to queue",
+            })
+          );
+        }
+
+        return await renderShell(req, res, {
+          content: "app/pharmacy-substitution-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: {
+            title: `Substitute ${loaded.prescription.prescriptionNumber}`,
+            description: "Record an allowed medication substitution.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Queue", href: "/app/pharmacy/queue" },
+            { label: loaded.prescription.prescriptionNumber, href: `/app/pharmacy/prescriptions/${prescriptionId}` },
+            { label: "Substitute" },
+          ],
+          pageData: {
+            prescription: loaded.prescription,
+            items: loaded.items || [],
+            medications: (medications.ok && medications.medications) || [],
+            values: {},
+            error: null,
+            stitch: { desktop: STITCH_OPS.substitution },
+          },
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Prescription substitution (POST)
+  app.post(
+    "/app/pharmacy/prescriptions/:id/substitute",
+    requireAuth,
+    requirePermission([PERM.PHARMACY_REVIEW, PERM.PHARMACY_DISPENSE]),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
+        if (!csrfValid) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
+              status: 403,
+              linkHref: `/app/pharmacy/prescriptions/${req.params.id}/substitute`,
+              linkLabel: "Try again",
+            })
+          );
+        }
+
+        const prescriptionId = req.params.id;
+        const auth = req.activeClinicAuth;
+        const selectedFacility = auth.selectedFacility;
+
+        const result = await substitutePrescriptionItem(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: selectedFacility && selectedFacility.id,
+          prescriptionId,
+          prescriptionItemId: req.body.prescriptionItemId,
+          substitutedWithMedicationId: req.body.substitutedWithMedicationId,
+          substitutionReason: req.body.substitutionReason,
+        });
+
+        if (!result.ok) {
+          const [loaded, medications] = await Promise.all([
+            getPrescriptionById(getPool(), {
+              staffId: auth.staffMember.id,
+              organizationId: auth.organization.id,
+              prescriptionId,
+            }),
+            listMedications(getPool(), {
+              staffId: auth.staffMember.id,
+              organizationId: auth.organization.id,
+              healthcareOrganizationId: auth.healthcareOrganization.id,
+            }),
+          ]);
+          return await renderShell(req, res, {
+            content: "app/pharmacy-substitution-content.ejs",
+            activeNav: "pharmacy",
+            pageHeader: {
+              title: `Substitute ${(loaded.prescription && loaded.prescription.prescriptionNumber) || ""}`,
+              description: "Record an allowed medication substitution.",
+              actions: [],
+            },
+            breadcrumbs: [
+              { label: "Pharmacy", href: "/app/pharmacy" },
+              { label: "Queue", href: "/app/pharmacy/queue" },
+              {
+                label: (loaded.prescription && loaded.prescription.prescriptionNumber) || "Prescription",
+                href: `/app/pharmacy/prescriptions/${prescriptionId}`,
+              },
+              { label: "Substitute" },
+            ],
+            pageData: {
+              prescription: (loaded.ok && loaded.prescription) || {},
+              items: (loaded.ok && loaded.items) || [],
+              medications: (medications.ok && medications.medications) || [],
+              values: req.body,
+              error: mapPharmacyError(result.result),
+              stitch: { desktop: STITCH_OPS.substitution },
+            },
+            flash: { error: mapPharmacyError(result.result) },
+            status: 400,
+          });
+        }
+
+        return res.redirect(303, `/app/pharmacy/prescriptions/${prescriptionId}`);
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Purchase orders list
+  app.get(
+    "/app/pharmacy/purchase-orders",
+    requireAuth,
+    requirePermission(PERM.INVENTORY_VIEW),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const selectedFacility = auth.selectedFacility;
+        if (!selectedFacility || !selectedFacility.id) {
+          return res.redirect(303, "/app/select-facility?return=/app/pharmacy/purchase-orders");
+        }
+        const listed = await listPurchaseOrders(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: selectedFacility.id,
+          status: req.query.status || null,
+        });
+        if (!listed.ok) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Purchase orders unavailable", mapPharmacyError(listed.result), {
+              status: 403,
+              linkHref: "/app/pharmacy",
+              linkLabel: "Back to pharmacy",
+            })
+          );
+        }
+        return await renderShell(req, res, {
+          content: "app/pharmacy-purchase-orders-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: { title: "Purchase orders", description: "Draft and submitted pharmacy purchase orders.", actions: [] },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Purchase orders", href: "/app/pharmacy/purchase-orders" },
+          ],
+          pageData: {
+            facility: selectedFacility,
+            purchaseOrders: listed.purchaseOrders || [],
+            canManage: Array.isArray(auth.permissions) && auth.permissions.includes(PERM.INVENTORY_MANAGE),
+            stitch: { desktop: STITCH_OPS.purchaseOrder },
+          },
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // New purchase order (GET)
+  app.get(
+    "/app/pharmacy/purchase-orders/new",
+    requireAuth,
+    requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const selectedFacility = auth.selectedFacility;
+        if (!selectedFacility || !selectedFacility.id) {
+          return res.redirect(303, "/app/select-facility?return=/app/pharmacy/purchase-orders/new");
+        }
+        const medications = await listMedications(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+        });
+        return await renderShell(req, res, {
+          content: "app/pharmacy-purchase-order-form-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: { title: "New purchase order", description: "Create a draft purchase order.", actions: [] },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Purchase orders", href: "/app/pharmacy/purchase-orders" },
+            { label: "New" },
+          ],
+          pageData: {
+            facility: selectedFacility,
+            medications: (medications.ok && medications.medications) || [],
+            values: {},
+            error: null,
+            stitch: { desktop: STITCH_OPS.purchaseOrder },
+          },
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // New purchase order (POST)
+  app.post(
+    "/app/pharmacy/purchase-orders/new",
+    requireAuth,
+    requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
+        if (!csrfValid) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
+              status: 403,
+              linkHref: "/app/pharmacy/purchase-orders/new",
+              linkLabel: "Try again",
+            })
+          );
+        }
+
+        const auth = req.activeClinicAuth;
+        const selectedFacility = auth.selectedFacility;
+        const medIds = [].concat(req.body.medicationCatalogueItemId || []).filter(Boolean);
+        const qtys = [].concat(req.body.quantityOrdered || []);
+        const costs = [].concat(req.body.unitCost || []);
+        const items = medIds.map((id, idx) => ({
+          medicationCatalogueItemId: id,
+          quantityOrdered: parseInt(qtys[idx], 10),
+          unitCost: costs[idx] !== undefined && costs[idx] !== "" ? parseFloat(costs[idx]) : null,
+        }));
+
+        const result = await createPurchaseOrder(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: selectedFacility.id,
+          supplierName: req.body.supplierName,
+          notes: req.body.notes || null,
+          items,
+        });
+
+        if (!result.ok) {
+          const medications = await listMedications(getPool(), {
+            staffId: auth.staffMember.id,
+            organizationId: auth.organization.id,
+            healthcareOrganizationId: auth.healthcareOrganization.id,
+          });
+          return await renderShell(req, res, {
+            content: "app/pharmacy-purchase-order-form-content.ejs",
+            activeNav: "pharmacy",
+            pageHeader: { title: "New purchase order", description: "Create a draft purchase order.", actions: [] },
+            breadcrumbs: [
+              { label: "Pharmacy", href: "/app/pharmacy" },
+              { label: "Purchase orders", href: "/app/pharmacy/purchase-orders" },
+              { label: "New" },
+            ],
+            pageData: {
+              facility: selectedFacility,
+              medications: (medications.ok && medications.medications) || [],
+              values: req.body,
+              error: mapPharmacyError(result.result),
+              stitch: { desktop: STITCH_OPS.purchaseOrder },
+            },
+            flash: { error: mapPharmacyError(result.result) },
+            status: 400,
+          });
+        }
+
+        return res.redirect(303, `/app/pharmacy/purchase-orders/${result.purchaseOrder.id}`);
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Purchase order detail
+  app.get(
+    "/app/pharmacy/purchase-orders/:id",
+    requireAuth,
+    requirePermission(PERM.INVENTORY_VIEW),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const purchaseOrderId = req.params.id;
+        if (!UUID_RE.test(purchaseOrderId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not Found", "Invalid purchase order ID.", {
+              status: 404,
+              linkHref: "/app/pharmacy/purchase-orders",
+              linkLabel: "Back to purchase orders",
+            })
+          );
+        }
+
+        const auth = req.activeClinicAuth;
+        const loaded = await getPurchaseOrder(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          purchaseOrderId,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+        });
+
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Purchase order not found", mapPharmacyError(loaded.result), {
+              status: 404,
+              linkHref: "/app/pharmacy/purchase-orders",
+              linkLabel: "Back to purchase orders",
+            })
+          );
+        }
+
+        return await renderShell(req, res, {
+          content: "app/pharmacy-purchase-order-detail-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: {
+            title: loaded.purchaseOrder.poNumber,
+            description: "Purchase order detail.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Purchase orders", href: "/app/pharmacy/purchase-orders" },
+            { label: loaded.purchaseOrder.poNumber },
+          ],
+          pageData: {
+            purchaseOrder: loaded.purchaseOrder,
+            items: loaded.items || [],
+            canManage: Array.isArray(auth.permissions) && auth.permissions.includes(PERM.INVENTORY_MANAGE),
+            stitch: { desktop: STITCH_OPS.purchaseOrder },
+          },
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Submit purchase order
+  app.post(
+    "/app/pharmacy/purchase-orders/:id/submit",
+    requireAuth,
+    requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
+        if (!csrfValid) {
+          return res.status(403).type("html").send(
+            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
+              status: 403,
+              linkHref: `/app/pharmacy/purchase-orders/${req.params.id}`,
+              linkLabel: "Try again",
+            })
+          );
+        }
+
+        const purchaseOrderId = req.params.id;
+        const auth = req.activeClinicAuth;
+        const result = await submitPurchaseOrder(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          purchaseOrderId,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+        });
+
+        if (!result.ok) {
+          return res.status(400).type("html").send(
+            renderSimpleState("Unable to submit", mapPharmacyError(result.result), {
+              status: 400,
+              linkHref: `/app/pharmacy/purchase-orders/${purchaseOrderId}`,
+              linkLabel: "Back to purchase order",
+            })
+          );
+        }
+
+        return res.redirect(303, `/app/pharmacy/purchase-orders/${purchaseOrderId}`);
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Medicine labels
+  app.get(
+    "/app/pharmacy/prescriptions/:id/labels",
+    requireAuth,
+    requirePermission([PERM.PHARMACY_VIEW, PERM.PHARMACY_DISPENSE]),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const prescriptionId = req.params.id;
+        if (!UUID_RE.test(prescriptionId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not Found", "Invalid prescription ID.", {
+              status: 404,
+              linkHref: "/app/pharmacy/queue",
+              linkLabel: "Back to queue",
+            })
+          );
+        }
+
+        const auth = req.activeClinicAuth;
+        const loaded = await getMedicineLabel(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+          prescriptionId,
+        });
+
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Labels unavailable", mapPharmacyError(loaded.result), {
+              status: 404,
+              linkHref: "/app/pharmacy/queue",
+              linkLabel: "Back to queue",
+            })
+          );
+        }
+
+        return await renderShell(req, res, {
+          content: "app/pharmacy-medicine-labels-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: {
+            title: `Labels · ${loaded.prescription.prescriptionNumber}`,
+            description: "Print-friendly medicine labels.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Queue", href: "/app/pharmacy/queue" },
+            { label: loaded.prescription.prescriptionNumber, href: `/app/pharmacy/prescriptions/${prescriptionId}` },
+            { label: "Labels" },
+          ],
+          pageData: {
+            prescription: loaded.prescription,
+            labels: loaded.labels || [],
+            stitch: { desktop: STITCH_OPS.labels },
+          },
+        });
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
+  // Patient medicine instructions
+  app.get(
+    "/app/pharmacy/prescriptions/:id/instructions",
+    requireAuth,
+    requirePermission(PERM.PHARMACY_VIEW),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const prescriptionId = req.params.id;
+        if (!UUID_RE.test(prescriptionId)) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not Found", "Invalid prescription ID.", {
+              status: 404,
+              linkHref: "/app/pharmacy/queue",
+              linkLabel: "Back to queue",
+            })
+          );
+        }
+
+        const auth = req.activeClinicAuth;
+        const loaded = await getPatientMedicineInstructions(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+          prescriptionId,
+        });
+
+        if (!loaded.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Instructions unavailable", mapPharmacyError(loaded.result), {
+              status: 404,
+              linkHref: "/app/pharmacy/queue",
+              linkLabel: "Back to queue",
+            })
+          );
+        }
+
+        return await renderShell(req, res, {
+          content: "app/pharmacy-medicine-instructions-content.ejs",
+          activeNav: "pharmacy",
+          pageHeader: {
+            title: `Instructions · ${loaded.prescription.prescriptionNumber}`,
+            description: "Patient-facing medicine instructions.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Pharmacy", href: "/app/pharmacy" },
+            { label: "Queue", href: "/app/pharmacy/queue" },
+            { label: loaded.prescription.prescriptionNumber, href: `/app/pharmacy/prescriptions/${prescriptionId}` },
+            { label: "Instructions" },
+          ],
+          pageData: {
+            prescription: loaded.prescription,
+            instructions: loaded.instructions || [],
+            stitch: { mobile: STITCH_OPS.instructions },
+          },
+        });
       } catch (err) {
         next(err);
       }

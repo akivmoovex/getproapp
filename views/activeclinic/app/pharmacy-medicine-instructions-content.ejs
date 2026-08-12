@@ -1,0 +1,51 @@
+<%
+  var page = (pageData && pageData) || {};
+  var prescription = page.prescription || {};
+  var instructions = page.instructions || [];
+  var stitch = page.stitch || {};
+%>
+<section class="ac-pharmacy-medicine-instructions" data-ac-page-section="pharmacy-medicine-instructions" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <div class="ac-panel">
+    <header class="ac-section-header">
+      <h2 class="ac-dashboard__card-title">Your medicines</h2>
+    </header>
+    <p class="ac-muted">
+      Prescription <%= prescription.prescriptionNumber || '' %>
+      · <%= prescription.patientDisplayName || '' %>
+    </p>
+  </div>
+
+  <% if (!instructions.length) { %>
+  <div class="ac-panel">
+    <p class="ac-muted">No medicine instructions available.</p>
+  </div>
+  <% } else { %>
+  <div class="ac-instruction-list">
+    <% instructions.forEach(function (row) { %>
+    <article class="ac-panel ac-instruction-card" data-ac-instruction-item="<%= row.prescriptionItemId %>">
+      <h3>
+        <%= row.medicationGenericName || '—' %>
+        <% if (row.medicationStrength) { %> <span class="ac-muted"><%= row.medicationStrength %></span><% } %>
+      </h3>
+      <% if (row.medicationDosageForm) { %>
+      <p class="ac-muted"><%= row.medicationDosageForm %> · qty <%= row.quantityOrdered %></p>
+      <% } %>
+      <p class="ac-instruction-card__text">
+        <%= row.dosageInstructions || 'No dosage instructions on file. Ask your pharmacist if unsure.' %>
+      </p>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <div class="ac-panel ac-form-actions">
+    <a href="/app/pharmacy/prescriptions/<%= prescription.id %>" class="ac-btn ac-btn--secondary">Back to prescription</a>
+  </div>
+</section>
+<style>
+  .ac-instruction-list { display: grid; gap: 0.75rem; }
+  .ac-instruction-card__text { font-size: 1.05rem; line-height: 1.45; white-space: pre-wrap; }
+  @media (max-width: 640px) {
+    .ac-instruction-card h3 { font-size: 1.15rem; }
+  }
+</style>

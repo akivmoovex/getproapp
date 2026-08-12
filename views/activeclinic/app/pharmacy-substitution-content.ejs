@@ -1,0 +1,73 @@
+<%
+  var page = (pageData && pageData) || {};
+  var prescription = page.prescription || {};
+  var items = page.items || [];
+  var medications = page.medications || [];
+  var values = page.values || {};
+  var error = page.error;
+  var stitch = page.stitch || {};
+  var substitutable = items.filter(function (item) { return item.substitutionAllowed; });
+%>
+<section class="ac-pharmacy-substitution" data-ac-page-section="pharmacy-substitution" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error">
+    <%= error %>
+  </div>
+  <% } %>
+
+  <div class="ac-panel">
+    <dl class="ac-detail-list">
+      <dt>Prescription</dt>
+      <dd><strong><%= prescription.prescriptionNumber || '—' %></strong></dd>
+      <dt>Patient</dt>
+      <dd><%= prescription.patientDisplayName || '—' %></dd>
+    </dl>
+  </div>
+
+  <% if (!substitutable.length) { %>
+  <div class="ac-panel">
+    <p class="ac-muted">No items on this prescription allow substitution.</p>
+    <a href="/app/pharmacy/prescriptions/<%= prescription.id %>" class="ac-btn ac-btn--secondary">Back</a>
+  </div>
+  <% } else { %>
+  <form method="post" action="/app/pharmacy/prescriptions/<%= prescription.id %>/substitute" class="ac-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+
+    <div class="ac-panel">
+      <div class="ac-form-field">
+        <label for="prescriptionItemId" class="ac-form-label">Prescription item <span class="ac-required">*</span></label>
+        <select id="prescriptionItemId" name="prescriptionItemId" required class="ac-form-input">
+          <option value="">Select item</option>
+          <% substitutable.forEach(function (item) { %>
+          <option value="<%= item.id %>" <%= values.prescriptionItemId === item.id ? 'selected' : '' %>>
+            <%= item.medicationGenericName %> <%= item.medicationStrength %> (<%= item.status %>)
+          </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="ac-form-field">
+        <label for="substitutedWithMedicationId" class="ac-form-label">Substitute with <span class="ac-required">*</span></label>
+        <select id="substitutedWithMedicationId" name="substitutedWithMedicationId" required class="ac-form-input">
+          <option value="">Select medication</option>
+          <% medications.forEach(function (med) { %>
+          <option value="<%= med.id %>" <%= values.substitutedWithMedicationId === med.id ? 'selected' : '' %>>
+            <%= med.genericName %> - <%= med.strength %> (<%= med.dosageForm %>)
+          </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="ac-form-field">
+        <label for="substitutionReason" class="ac-form-label">Reason <span class="ac-required">*</span></label>
+        <textarea id="substitutionReason" name="substitutionReason" required class="ac-form-input" rows="3" maxlength="500"><%= values.substitutionReason || '' %></textarea>
+      </div>
+    </div>
+
+    <div class="ac-panel ac-form-actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Record substitution</button>
+      <a href="/app/pharmacy/prescriptions/<%= prescription.id %>" class="ac-btn ac-btn--secondary">Cancel</a>
+    </div>
+  </form>
+  <% } %>
+</section>

@@ -1,0 +1,47 @@
+<%
+  var page = (pageData && pageData) || {};
+  var purchaseOrders = page.purchaseOrders || [];
+  var canManage = page.canManage;
+  var stitch = page.stitch || {};
+%>
+<section class="ac-pharmacy-purchase-orders" data-ac-page-section="pharmacy-purchase-orders" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (canManage) { %>
+  <div class="ac-panel">
+    <a href="/app/pharmacy/purchase-orders/new" class="ac-btn ac-btn--primary">New purchase order</a>
+  </div>
+  <% } %>
+
+  <% if (!purchaseOrders.length) { %>
+  <div class="ac-panel">
+    <p class="ac-muted">No purchase orders for this facility yet.</p>
+  </div>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap">
+    <table class="ac-table">
+      <caption class="ac-sr-only">Purchase orders</caption>
+      <thead>
+        <tr>
+          <th scope="col">PO number</th>
+          <th scope="col">Supplier</th>
+          <th scope="col">Status</th>
+          <th scope="col">Items</th>
+          <th scope="col">Created</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% purchaseOrders.forEach(function (po) { %>
+        <tr>
+          <td><strong><%= po.poNumber %></strong></td>
+          <td><%= po.supplierName %></td>
+          <td><span class="ac-status" data-ac-status="<%= po.status %>"><%= po.status %></span></td>
+          <td><%= po.itemCount != null ? po.itemCount : '—' %></td>
+          <td><%= po.createdAt ? new Date(po.createdAt).toLocaleString() : '—' %></td>
+          <td><a href="/app/pharmacy/purchase-orders/<%= po.id %>" class="ac-stat-link">View</a></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>

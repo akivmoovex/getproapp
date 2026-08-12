@@ -1,0 +1,48 @@
+<%
+  var page = (pageData && pageData) || {};
+  var values = page.values || {};
+  var inventoryItems = page.inventoryItems || [];
+  var error = page.error;
+  var stitch = page.stitch || {};
+%>
+<section class="ac-pharmacy-stock-adjust" data-ac-page-section="pharmacy-stock-adjust" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error">
+    <%= error %>
+  </div>
+  <% } %>
+
+  <form method="post" action="/app/pharmacy/inventory/adjust" class="ac-form">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+
+    <div class="ac-panel">
+      <div class="ac-form-field">
+        <label for="inventoryItemId" class="ac-form-label">Inventory item <span class="ac-required">*</span></label>
+        <select id="inventoryItemId" name="inventoryItemId" required class="ac-form-input">
+          <option value="">Select item</option>
+          <% inventoryItems.forEach(function (item) { %>
+          <option value="<%= item.id %>" <%= values.inventoryItemId === item.id ? 'selected' : '' %>>
+            <%= item.medicationGenericName %> <%= item.medicationStrength %> — qty <%= item.currentQuantity %>
+          </option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="ac-form-field">
+        <label for="quantityDelta" class="ac-form-label">Quantity delta <span class="ac-required">*</span></label>
+        <input type="number" id="quantityDelta" name="quantityDelta" value="<%= values.quantityDelta || '' %>" required class="ac-form-input" step="1">
+        <p class="ac-muted">Use a negative number to decrease stock. Cannot go below zero.</p>
+      </div>
+
+      <div class="ac-form-field">
+        <label for="reason" class="ac-form-label">Reason <span class="ac-required">*</span></label>
+        <textarea id="reason" name="reason" required class="ac-form-input" rows="3" maxlength="500"><%= values.reason || '' %></textarea>
+      </div>
+    </div>
+
+    <div class="ac-panel ac-form-actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Adjust stock</button>
+      <a href="/app/pharmacy/inventory" class="ac-btn ac-btn--secondary">Cancel</a>
+    </div>
+  </form>
+</section>

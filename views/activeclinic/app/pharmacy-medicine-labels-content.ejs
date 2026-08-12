@@ -1,0 +1,47 @@
+<%
+  var page = (pageData && pageData) || {};
+  var prescription = page.prescription || {};
+  var labels = page.labels || [];
+  var stitch = page.stitch || {};
+%>
+<section class="ac-pharmacy-medicine-labels" data-ac-page-section="pharmacy-medicine-labels" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <div class="ac-panel ac-form-actions ac-print-hide">
+    <button type="button" class="ac-btn ac-btn--primary" onclick="window.print()">Print labels</button>
+    <a href="/app/pharmacy/prescriptions/<%= prescription.id %>" class="ac-btn ac-btn--secondary">Back</a>
+  </div>
+
+  <% if (!labels.length) { %>
+  <div class="ac-panel">
+    <p class="ac-muted">No label lines for this prescription.</p>
+  </div>
+  <% } else { %>
+  <div class="ac-label-sheet">
+    <% labels.forEach(function (label) { %>
+    <article class="ac-panel ac-medicine-label" data-ac-label-item="<%= label.prescriptionItemId %>">
+      <header class="ac-medicine-label__header">
+        <strong><%= label.patientDisplayName || 'Patient' %></strong>
+        <span class="ac-muted"><%= label.patientNumber || '' %></span>
+      </header>
+      <p class="ac-medicine-label__rx">Rx <%= label.prescriptionNumber %></p>
+      <h3 class="ac-medicine-label__med">
+        <%= label.medicationGenericName || '—' %>
+        <% if (label.medicationStrength) { %> <%= label.medicationStrength %><% } %>
+      </h3>
+      <p class="ac-medicine-label__qty">Qty: <%= label.quantityOrdered %> <%= label.medicationUnit || '' %></p>
+      <p class="ac-medicine-label__instructions">
+        <%= label.dosageInstructions || 'No dosage instructions on file.' %>
+      </p>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+</section>
+<style>
+  @media print {
+    .ac-print-hide { display: none !important; }
+    .ac-medicine-label { page-break-inside: avoid; border: 1px solid #222; margin-bottom: 0.75rem; }
+  }
+  .ac-label-sheet { display: grid; gap: 1rem; }
+  .ac-medicine-label__med { margin: 0.35rem 0; }
+  .ac-medicine-label__instructions { white-space: pre-wrap; }
+</style>

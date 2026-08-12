@@ -70,7 +70,10 @@
   <div class="ac-panel ac-form-actions">
     <% if (actions.canDispense && ['pending', 'in_preparation', 'partially_dispensed'].includes(prescription.status)) { %>
     <a href="/app/pharmacy/prescriptions/<%= prescription.id %>/dispense" class="ac-btn ac-btn--primary">Dispense</a>
+    <a href="/app/pharmacy/prescriptions/<%= prescription.id %>/substitute" class="ac-btn ac-btn--secondary">Substitute</a>
     <% } %>
+    <a href="/app/pharmacy/prescriptions/<%= prescription.id %>/labels" class="ac-btn ac-btn--secondary">Labels</a>
+    <a href="/app/pharmacy/prescriptions/<%= prescription.id %>/instructions" class="ac-btn ac-btn--secondary">Instructions</a>
     <a href="/app/pharmacy/queue" class="ac-btn ac-btn--secondary">Back to queue</a>
   </div>
 </section>
