@@ -37,25 +37,25 @@
       "total": 388
     },
     "unique_design_concept_coverage": {
-      "full": 304,
-      "partial": 61,
+      "full": 361,
+      "partial": 0,
       "missing": 0,
-      "other": 7,
-      "total": 372,
+      "other": 9,
+      "total": 370,
       "denominator_note": "Excludes DUPLICATE_STITCH_VARIANT and NO_IMPLEMENTATION_REQUIRED"
     },
     "desktop": {
-      "full": 181,
-      "partial": 46,
+      "full": 225,
+      "partial": 0,
       "missing": 0,
-      "other": 10,
+      "other": 12,
       "total": 237
     },
     "mobile": {
-      "full": 123,
-      "partial": 15,
+      "full": 136,
+      "partial": 0,
       "missing": 0,
-      "other": 13,
+      "other": 15,
       "total": 151
     }
   },
