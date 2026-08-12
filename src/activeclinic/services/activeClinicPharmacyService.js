@@ -416,6 +416,11 @@ async function receiveStock(pool, input) {
     return { ok: false, result: RESULT.INVALID_INPUT };
   }
 
+  const expiryText = String(expiryDate).slice(0, 10);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(expiryText) || expiryText < new Date().toISOString().slice(0, 10)) {
+    return { ok: false, result: RESULT.EXPIRED_BATCH };
+  }
+
   const authResult = await authorizeStaffPermission(pool, {
     organizationId,
     staffMemberId: staffId,
@@ -475,7 +480,11 @@ async function receiveStock(pool, input) {
       );
       inventoryItem = mapInventoryItem(insertInventoryItem.rows[0]);
     } else {
-      inventoryItem = mapInventoryItem(inventoryItemResult.rows[0]);
+      const locked = await client.query(
+        `SELECT * FROM activeclinic.inventory_items WHERE id = $1 FOR UPDATE`,
+        [inventoryItemResult.rows[0].id]
+      );
+      inventoryItem = mapInventoryItem(locked.rows[0]);
     }
 
     // Create batch.

@@ -1,0 +1,72 @@
+{
+  "generated_at": "2026-08-12T12:15:00.000Z",
+  "verdict": "PHASE13_COMPLETE",
+  "safety": {
+    "branch": "V7",
+    "head_sha": "082b5712944d91b23502cb7b61f2cad98969e2a7",
+    "pushed": false,
+    "deployed": false,
+    "migrations": []
+  },
+  "stitch_projects": {
+    "public_booking_portal": "17813606734422395399",
+    "internal_ops": "12272131183982732110"
+  },
+  "issues": {
+    "p1_fixed": [
+      "credit_note_exceeds_invoice_remaining",
+      "revenue_report_double_counts_refund_payments",
+      "payment_allocation_exceeds_invoice_remaining",
+      "purchase_order_receive_missing",
+      "expired_batch_could_be_received_as_available"
+    ],
+    "p2_fixed": [
+      "substitution_overwrite_already_substituted",
+      "document_number_race_advisory_lock",
+      "invoice_charge_select_without_for_update",
+      "public_booking_cancel_reschedule_last_write_win",
+      "cashier_payment_missing_idempotency_key"
+    ],
+    "verified_ok": [
+      "patient_number_uniqueness_and_immutability",
+      "print_card_tenant_scope",
+      "contact_normalization",
+      "appointment_status_map_and_version",
+      "stock_quantity_append_only_movements",
+      "ar_balance_derived_not_stored",
+      "refund_cannot_exceed_original_payment"
+    ]
+  },
+  "fixes": [
+    "createCreditNote FOR UPDATE + remaining cap",
+    "revenue SUM excludes refund_payment_id",
+    "recordPayment locks invoice remaining",
+    "receivePurchaseOrder movements + quantity_received + status",
+    "receiveStock/PO reject expired_batch",
+    "substitutePrescriptionItem invalid_transition",
+    "advisory locks on document/invoice/payment/receipt numbers",
+    "public booking UPDATE WHERE status IN RETURNING",
+    "cashier idempotency_key"
+  ],
+  "tests": {
+    "file": "tests/activeclinic-phase13-domain.test.js",
+    "pass": 6,
+    "fail": 0,
+    "related_pass": [
+      "tests/activeclinic-phase4-billing-ops.test.js",
+      "tests/activeclinic-phase4-pharmacy-ops.test.js",
+      "tests/activeclinic-appointment-foundation.test.js",
+      "tests/activeclinic-pharmacy-foundation.test.js",
+      "tests/activeclinic-public-booking.test.js",
+      "tests/activeclinic-patient-portal.test.js"
+    ]
+  },
+  "remaining_risk": [
+    "public_booking_confirm_does_not_create_internal_appointment",
+    "walk_in_receiveStock_independent_of_po",
+    "refund_positive_payment_row_still_exists",
+    "credit_cap_application_not_check_constraint",
+    "audit_after_commit_best_effort"
+  ],
+  "next": "PHASE 14 — RBAC matrix revalidation"
+}

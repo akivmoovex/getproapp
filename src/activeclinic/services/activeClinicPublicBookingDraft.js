@@ -180,8 +180,13 @@ function procedureWizardStepsFor(draftOrProcedure) {
     .map((item, index) => ({ ...item, step: index + 1 }));
 }
 
+const MUTABLE_PUBLIC_BOOKING_STATUSES = Object.freeze([
+  "submitted_pending_confirmation",
+  "confirmed",
+]);
+
 function canModifyBookingStatus(status) {
-  return status === "submitted_pending_confirmation" || status === "confirmed";
+  return MUTABLE_PUBLIC_BOOKING_STATUSES.includes(status);
 }
 
 module.exports = {
@@ -197,5 +202,6 @@ module.exports = {
   mergeDraft,
   procedureWizardStepsFor,
   resolvePublicSlotAvailabilityState,
+  MUTABLE_PUBLIC_BOOKING_STATUSES,
   canModifyBookingStatus,
 };

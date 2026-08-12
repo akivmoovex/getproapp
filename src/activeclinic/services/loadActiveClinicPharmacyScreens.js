@@ -69,14 +69,6 @@ function hasPerm(perms, key) {
   return Array.isArray(perms) ? perms.includes(key) : false;
 }
 
-function actorFromAuth(auth) {
-  return {
-    staffMemberId: auth.staffMember.id,
-    platformIdentityId: auth.platformIdentity && auth.platformIdentity.id,
-    organizationId: auth.organization.id,
-  };
-}
-
 async function loadFacilityOptions(db, auth) {
   const listed = await listFacilitiesByOrganization(db, {
     organizationId: auth.organization.id,
@@ -132,6 +124,7 @@ async function loadActiveClinicPharmacyDashboardScreen(db, input) {
       actions: {
         canViewPharmacy: hasPerm(perms, PERM.PHARMACY_VIEW),
         canDispense: hasPerm(perms, PERM.PHARMACY_DISPENSE),
+        canViewInventory: hasPerm(perms, PERM.INVENTORY_VIEW),
         canManageInventory: hasPerm(perms, PERM.INVENTORY_MANAGE),
       },
       stitch: {
@@ -393,6 +386,8 @@ async function loadActiveClinicPharmacyPrescriptionDetailScreen(db, input) {
       actions: {
         canDispense: hasPerm(perms, PERM.PHARMACY_DISPENSE),
         canReview: hasPerm(perms, PERM.PHARMACY_REVIEW),
+        canSubstitute:
+          hasPerm(perms, PERM.PHARMACY_DISPENSE) || hasPerm(perms, PERM.PHARMACY_REVIEW),
       },
       stitch: {
         desktop: STITCH.prescriptionDetailDesktop,
@@ -642,7 +637,6 @@ async function loadActiveClinicPharmacyReceiveStockScreen(db, input) {
 module.exports = {
   STITCH,
   PRESCRIPTION_STATUS_LABELS,
-  actorFromAuth,
   loadActiveClinicPharmacyDashboardScreen,
   loadActiveClinicPharmacyCatalogueScreen,
   loadActiveClinicPharmacyMedicineDetailScreen,

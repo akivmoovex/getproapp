@@ -12,7 +12,7 @@
       <li>A pending request is not a confirmed appointment until the clinic responds.</li>
     </ul>
     <% if (state === 'error' && typeof error === 'string' && error) { %>
-    <div class="ac-public-error" role="alert" data-ac-lookup-state="error"><%= error %></div>
+    <div class="ac-public-error" role="alert" data-ac-lookup-state="error" data-ac-state-key="request_error"><%= error %></div>
     <% } %>
     <% if (state === 'progress') { %>
     <p class="ac-public-note" data-ac-lookup-state="progress">Looking up your booking…</p>

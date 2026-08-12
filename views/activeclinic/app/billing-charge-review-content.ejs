@@ -1,7 +1,6 @@
 <%
   var items = (pageData && pageData.items) || [];
   var stitch = (pageData && pageData.stitch) || {};
-  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
 <section class="ac-billing-charge-review" data-ac-page-section="billing-charge-review" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
   <article class="ac-panel">
@@ -34,12 +33,12 @@
             <td><%= row.chargedAt %></td>
             <td class="ac-actions">
               <form method="POST" action="/app/billing/charges/<%= row.id %>/review" style="display:inline">
-                <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+                <%- include('../partials/ac-csrf-field') %>
                 <input type="hidden" name="decision" value="approve" />
                 <button type="submit" class="ac-btn">Approve</button>
               </form>
               <form method="POST" action="/app/billing/charges/<%= row.id %>/review" style="display:inline">
-                <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+                <%- include('../partials/ac-csrf-field') %>
                 <input type="hidden" name="decision" value="reject" />
                 <button type="submit" class="ac-btn ac-btn--ghost">Reject</button>
               </form>

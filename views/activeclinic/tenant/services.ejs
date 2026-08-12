@@ -6,7 +6,7 @@
   <% const serviceList = Array.isArray(services) ? services : []; %>
   <% const procedureList = Array.isArray(procedures) ? procedures : []; %>
   <% if (!serviceList.length && !procedureList.length) { %>
-  <div class="ac-public-empty" data-ac-empty="services">
+  <div class="ac-public-empty" data-ac-empty="services" data-ac-state-key="empty">
     <p>No public services are published yet.</p>
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
   </div>

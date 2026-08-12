@@ -18,7 +18,7 @@
       <div class="ac-public-error" role="alert" data-ac-form-state="validation_error"><%= validationErrors.preferredStartsAt %></div>
       <% } %>
 
-      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/time" class="ac-public-form acp-slot-form">
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/time" class="ac-public-form acp-slot-form" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <div class="acp-field-panel">
           <label for="preferredStartsAt">Preferred date and time</label>

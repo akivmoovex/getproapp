@@ -1,32 +1,53 @@
 <div data-ac-stitch="1fa6c921703145af96e47f7344b6cb62" data-ac-screen="radiology-queue">
   <% if (pageData.queue.requests.length === 0) { %>
-  <p class="ac-empty">No pending radiology requests.</p>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'radiology-queue-empty',
+      title: 'No pending radiology requests',
+      description: 'New imaging orders from clinical encounters will appear here.'
+    }
+  }) %>
   <% } else { %>
-  <table class="ac-table">
-    <thead>
-      <tr>
-        <th>Request #</th>
-        <th>Patient</th>
-        <th>Study type</th>
-        <th>Urgency</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% pageData.queue.requests.forEach(function (req) { %>
-      <tr>
-        <td><%= req.requestNumber %></td>
-        <td><%= req.patientDisplayName %></td>
-        <td><%= req.studyType %></td>
-        <td><%= req.urgency %></td>
-        <td><%= req.status %></td>
-        <td>
-          <a href="/app/diagnostics/radiology/request/<%= req.id %>/report">Report</a>
-        </td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
+  <div class="ac-panel ac-table-wrap ac-desktop-table">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th>Request #</th>
+          <th>Patient</th>
+          <th>Study type</th>
+          <th>Urgency</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% pageData.queue.requests.forEach(function (req) { %>
+        <tr>
+          <td><%= req.requestNumber %></td>
+          <td><%= req.patientDisplayName %></td>
+          <td><%= req.studyType %></td>
+          <td><%= req.urgency %></td>
+          <td><span class="ac-status" data-ac-status="<%= req.status %>"><%= req.status %></span></td>
+          <td>
+            <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/diagnostics/radiology/request/<%= req.id %>/report">Report</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="radiology-queue">
+    <% pageData.queue.requests.forEach(function (req) { %>
+    <li class="ac-card ac-mobile-record-card">
+      <a class="ac-card__link" href="/app/diagnostics/radiology/request/<%= req.id %>/report">
+        <p class="ac-card__title"><%= req.requestNumber %></p>
+        <p class="ac-muted"><%= req.patientDisplayName %></p>
+        <p class="ac-muted"><%= req.studyType %> · <%= req.urgency %></p>
+        <p><span class="ac-status" data-ac-status="<%= req.status %>"><%= req.status %></span></p>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
 </div>

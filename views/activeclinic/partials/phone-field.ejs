@@ -63,28 +63,37 @@
     }
   }
 %>
+<%
+  var describedIds = [];
+  if (showRelaxed) describedIds.push(fieldId + '-relaxed');
+  if (hintText) describedIds.push(fieldId + '-hint');
+  if (hasError) describedIds.push(fieldId + '-error');
+  var describedBy = describedIds.join(' ');
+%>
 <div class="ac-phone-field" data-ac-phone-field="1" data-default-country="<%= countryVal %>">
   <% if (labelText) { %>
-  <label class="ac-label<%= typeof labelClass === 'string' ? ' ' + labelClass : '' %>" for="<%= fieldId %>-national"><%= labelText %><% if (isRequired) { %> <span class="ac-required" aria-hidden="true">*</span><% } %></label>
+  <label class="ac-label<%= typeof labelClass === 'string' ? ' ' + labelClass : '' %>" for="<%= fieldId %>-national"><%= labelText %><% if (isRequired) { %> <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span><% } %></label>
   <% } %>
   <div class="ac-phone-field__row">
     <div class="ac-phone-field__country">
-      <label class="ac-sr-only" for="<%= fieldId %>-country">Country</label>
+      <label class="ac-sr-only" for="<%= fieldId %>-country">Country calling code</label>
       <input type="hidden" name="<%= countryName %>" id="<%= fieldId %>-country-value" value="<%= countryVal %>" data-ac-phone-country-value="1"/>
       <button
         type="button"
         class="ac-phone-field__country-btn"
         id="<%= fieldId %>-country"
         data-ac-phone-country-btn="1"
-        aria-haspopup="listbox"
+        aria-haspopup="dialog"
         aria-expanded="false"
         aria-controls="<%= fieldId %>-country-list"
+        aria-label="Country calling code, currently <%= callingHint || countryVal %>"
       >
         <span class="ac-phone-field__flag" data-ac-phone-flag="1" aria-hidden="true"><%= countryVal %></span>
         <span class="ac-phone-field__code" data-ac-phone-code="1"><%= callingHint || ('+' + countryVal) %></span>
         <span class="ac-phone-field__chevron" aria-hidden="true">▾</span>
       </button>
-      <div class="ac-phone-field__popover" id="<%= fieldId %>-country-list" hidden data-ac-phone-popover="1" role="listbox" aria-label="Select country">
+      <div class="ac-phone-field__backdrop" hidden data-ac-phone-backdrop="1"></div>
+      <div class="ac-phone-field__popover" id="<%= fieldId %>-country-list" hidden data-ac-phone-popover="1" role="dialog" aria-modal="true" aria-label="Select country">
         <label class="ac-sr-only" for="<%= fieldId %>-country-search">Search countries</label>
         <input
           type="search"
@@ -94,12 +103,12 @@
           placeholder="Search country, code, or +dial"
           autocomplete="off"
         />
-        <ul class="ac-phone-field__options" data-ac-phone-options="1">
+        <ul class="ac-phone-field__options" data-ac-phone-options="1" role="listbox" aria-label="Countries" id="<%= fieldId %>-country-options">
           <% countryList.forEach(function (c) {
             var iso = String(c.iso || '').toUpperCase();
             var selected = iso === countryVal;
           %>
-          <li>
+          <li role="presentation">
             <button
               type="button"
               class="ac-phone-field__option<%= selected ? ' is-selected' : '' %>"
@@ -130,7 +139,9 @@
         value="<%= nationalVal %>"
         placeholder="<%= placeholderText %>"
         <%= isRequired ? 'required' : '' %>
-        <% if (hasError) { %>aria-invalid="true" aria-describedby="<%= fieldId %>-error"<% } %>
+        <% if (isRequired) { %>aria-required="true"<% } %>
+        <% if (hasError) { %>aria-invalid="true"<% } %>
+        <% if (describedBy) { %>aria-describedby="<%= describedBy %>"<% } %>
         data-ac-phone-national="1"
       />
     </div>
@@ -139,12 +150,12 @@
   <input type="hidden" name="<%= legacyPhoneName %>" value="" data-ac-phone-legacy="1" autocomplete="off"/>
   <% } %>
   <% if (showRelaxed) { %>
-  <p class="ac-phone-field__mode-hint" data-ac-phone-relaxed="1">Testing environment — phone validity checks relaxed</p>
+  <p class="ac-phone-field__mode-hint" id="<%= fieldId %>-relaxed" data-ac-phone-relaxed="1">Testing environment — phone validity checks relaxed</p>
   <% } %>
   <% if (hintText) { %>
-  <p class="ac-hint ac-phone-field__hint"><%= hintText %></p>
+  <p class="ac-hint ac-phone-field__hint" id="<%= fieldId %>-hint"><%= hintText %></p>
   <% } %>
   <% if (hasError) { %>
-  <p class="ac-field-error" id="<%= fieldId %>-error" role="status"><%= errorText %></p>
+  <p class="ac-field-error" id="<%= fieldId %>-error" role="alert"><%= errorText %></p>
   <% } %>
 </div>

@@ -16,7 +16,7 @@ const {
   buildPhoneFieldLocals,
 } = require("../services/activeClinicPhoneFieldLocals");
 
-const ASSET_VERSION = "v7-parity-9";
+const ASSET_VERSION = "v7-parity-13";
 
 const DEFAULT_BRANDING = Object.freeze({
   productName: "ActiveClinic HMS",
@@ -151,6 +151,8 @@ function renderForgotPage(input) {
     csrfToken: input && input.csrfToken,
     message: (input && input.message) || null,
     error: (input && input.error) || null,
+    identifier: String((input && input.identifier) || ""),
+    phoneCountry: String((input && input.phoneCountry) || "ZM").toUpperCase(),
     composition: "single",
   });
   const bodyHtml = renderAuthContent("auth/forgot-password.ejs", locals);

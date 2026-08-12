@@ -1,9 +1,10 @@
 # ActiveClinic V7 — Implementation Completeness
 
-**Generated:** 2026-08-12T10:31:44.770Z
+**Generated:** 2026-08-12T12:27:59.412Z
 **Branch:** V7
-**SHA:** 4ab31c1bfe29a039de49c6535892c7d83acff66a
+**SHA:** 082b5712944d91b23502cb7b61f2cad98969e2a7
 **Environment:** testing / moovex-platform-v7
+**Phase 16:** Inventory integrity evidence pass
 
 This report separates **implementation completeness** from **visual fidelity**.
 Visual scores belong in `ACTIVECLINIC_V7_VISUAL_BACKLOG.*`, not here.
@@ -99,6 +100,10 @@ None. Target met.
 
 10 pattern/taxonomy/component boards.
 
+## Ambiguous
+
+None. Target met.
+
 ## Functional area coverage
 
 | Area | Full | Partial | Missing | Other | Total |
@@ -130,3 +135,8 @@ None. Target met.
 | SERVICES | 11 | 0 | 0 | 0 | 11 |
 | SETTINGS | 3 | 0 | 0 | 1 | 4 |
 | STAFF | 7 | 0 | 0 | 0 | 7 |
+
+## Unused views (not deleted)
+
+- `views/activeclinic/app/cashier-close-content.ejs`
+- `views/activeclinic/booking/procedure-entry.ejs`

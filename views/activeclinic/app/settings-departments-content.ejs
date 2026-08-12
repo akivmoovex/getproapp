@@ -64,7 +64,7 @@
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap">
+  <div class="ac-panel ac-table-wrap ac-desktop-table">
     <table class="ac-table" data-ac-departments-table="1">
       <caption class="ac-sr-only">Clinic departments</caption>
       <thead>
@@ -122,5 +122,43 @@
       </tbody>
     </table>
   </div>
+  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="departments">
+    <% departments.forEach(function (d) { %>
+    <li class="ac-card ac-mobile-record-card" data-ac-department-id="<%= d.id %>">
+      <p class="ac-card__title"><%= d.displayName %></p>
+      <p class="ac-muted"><%= d.typeLabel %> · <%= d.facilityDisplayName || '—' %></p>
+      <p>
+        <% if (d.status === 'active') { %>
+        <span class="ac-badge ac-badge--success">Active</span>
+        <% } else { %>
+        <span class="ac-badge">Inactive</span>
+        <% } %>
+        <span class="ac-muted"><%= d.moduleLabel || '—' %></span>
+      </p>
+      <% if (actions.canManage) { %>
+      <details class="ac-action-menu">
+        <summary>Actions</summary>
+        <form method="post" action="/app/settings/clinic-setup/departments/<%= d.id %>/edit" class="ac-form ac-form--compact">
+          <input type="hidden" name="<%= csrf.field || '_csrf' %>" value="<%= csrf.token || '' %>" />
+          <label class="ac-sr-only" for="name_m_<%= d.id %>">Display name</label>
+          <input id="name_m_<%= d.id %>" name="display_name" type="text" maxlength="100" value="<%= d.displayName %>" required />
+          <button type="submit" class="ac-btn ac-btn--secondary">Save name</button>
+        </form>
+        <% if (d.status === 'active') { %>
+        <form method="post" action="/app/settings/clinic-setup/departments/<%= d.id %>/deactivate" class="ac-form ac-form--compact" onsubmit="return confirm('Deactivate this department? Historical records are kept.');">
+          <input type="hidden" name="<%= csrf.field || '_csrf' %>" value="<%= csrf.token || '' %>" />
+          <button type="submit" class="ac-btn ac-btn--secondary">Deactivate</button>
+        </form>
+        <% } else { %>
+        <form method="post" action="/app/settings/clinic-setup/departments/<%= d.id %>/activate" class="ac-form ac-form--compact">
+          <input type="hidden" name="<%= csrf.field || '_csrf' %>" value="<%= csrf.token || '' %>" />
+          <button type="submit" class="ac-btn ac-btn--primary">Activate</button>
+        </form>
+        <% } %>
+      </details>
+      <% } %>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
 </section>

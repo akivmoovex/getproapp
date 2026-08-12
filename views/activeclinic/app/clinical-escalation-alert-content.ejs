@@ -1,9 +1,17 @@
 <div data-ac-stitch="99757cfd7d3747d490f00ac342faa519" data-ac-screen="clinical-escalation-alert">
-  <p class="ac-notice"><strong>Manual alerts only:</strong> No auto-escalation in P04. Clinician must explicitly raise alerts.</p>
-  
+  <p class="ac-alert ac-alert--info"><strong>Manual alerts only:</strong> No auto-escalation in P04. Clinician must explicitly raise alerts.</p>
+
   <% if (pageData.alerts.activeAlerts.length === 0) { %>
-  <p class="ac-empty">No active clinical alerts.</p>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'clinical-alerts-empty',
+      title: 'No active clinical alerts',
+      description: 'Alerts are raised manually. Nothing is waiting for review.'
+    }
+  }) %>
   <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-desktop-table">
   <table class="ac-table">
     <thead>
       <tr>
@@ -26,13 +34,24 @@
         <td><%= new Date(alert.createdAt).toLocaleString() %></td>
       </tr>
       <% }) %>
-    </tbody>
-  </table>
+      </tbody>
+    </table>
+  </div>
+  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="clinical-alerts">
+    <% pageData.alerts.activeAlerts.forEach(function (alert) { %>
+    <li class="ac-card ac-mobile-record-card" data-priority="<%= alert.priority %>">
+      <p class="ac-card__title"><%= alert.priority %> · <%= alert.alertType %></p>
+      <p><%= alert.alertMessage %></p>
+      <p class="ac-muted"><%= alert.patientDisplayName %></p>
+      <p class="ac-muted"><%= alert.raisedByStaffDisplayName %> · <%= new Date(alert.createdAt).toLocaleString() %></p>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
-  
-  <section style="margin-top:2rem;">
+
+  <section class="ac-panel ac-form-section">
     <h2>Raise new alert</h2>
-    <form method="post" action="/app/clinical/alerts/raise">
+    <form method="post" action="/app/clinical/alerts/raise" data-ac-loading="1">
       <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
       
       <div class="ac-field">

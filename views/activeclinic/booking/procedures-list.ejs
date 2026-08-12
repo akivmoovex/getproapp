@@ -32,7 +32,7 @@
   </header>
 
   <% if (!procs.length) { %>
-  <div class="acp-empty-state acp-info-card">
+  <div class="acp-empty-state acp-info-card" data-ac-state-key="empty" data-ac-empty="procedures">
     <p class="ac-public-empty">No procedures are published for online requests at this clinic.</p>
     <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book">Request a consultation instead</a></p>
   </div>

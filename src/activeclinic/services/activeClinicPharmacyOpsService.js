@@ -548,6 +548,10 @@ async function substitutePrescriptionItem(pool, input) {
       await client.query("ROLLBACK");
       return { ok: false, result: RESULT.SUBSTITUTION_NOT_ALLOWED };
     }
+    if (["substituted", "dispensed", "partially_dispensed", "cancelled"].includes(item.status)) {
+      await client.query("ROLLBACK");
+      return { ok: false, result: RESULT.INVALID_TRANSITION };
+    }
 
     const subMed = await client.query(
       `SELECT id FROM activeclinic.medication_catalogue_items
@@ -840,6 +844,10 @@ async function getPurchaseOrder(pool, input) {
     return { ok: false, result: RESULT.PURCHASE_ORDER_NOT_FOUND };
   }
 
+  if (facilityId && poResult.rows[0].facility_id !== facilityId) {
+    return { ok: false, result: RESULT.PURCHASE_ORDER_NOT_FOUND };
+  }
+
   const itemsResult = await pool.query(
     `SELECT poi.*,
        mci.generic_name AS medication_generic_name,
@@ -947,6 +955,284 @@ async function submitPurchaseOrder(pool, input) {
   } catch (err) {
     await client.query("ROLLBACK").catch(() => {});
     console.error("[submitPurchaseOrder] Error:", err);
+    return { ok: false, result: RESULT.INVALID_INPUT, error: err.message };
+  } finally {
+    client.release();
+  }
+}
+
+function isoDateOnly(value) {
+  return String(value || "").slice(0, 10);
+}
+
+function isExpiredIsoDate(expiryDate) {
+  const text = isoDateOnly(expiryDate);
+  if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) return true;
+  return text < new Date().toISOString().slice(0, 10);
+}
+
+async function getOrCreateInventoryItemLocked(client, input) {
+  const {
+    organizationId,
+    healthcareOrganizationId,
+    facilityId,
+    medicationCatalogueItemId,
+  } = input;
+  const existing = await client.query(
+    `SELECT * FROM activeclinic.inventory_items
+      WHERE facility_id = $1 AND medication_catalogue_item_id = $2
+      FOR UPDATE`,
+    [facilityId, medicationCatalogueItemId]
+  );
+  if (existing.rows.length) return existing.rows[0];
+  try {
+    const inserted = await client.query(
+      `INSERT INTO activeclinic.inventory_items (
+         organization_id, healthcare_organization_id, facility_id,
+         medication_catalogue_item_id, current_quantity
+       ) VALUES ($1, $2, $3, $4, 0)
+       RETURNING *`,
+      [organizationId, healthcareOrganizationId, facilityId, medicationCatalogueItemId]
+    );
+    return inserted.rows[0];
+  } catch (err) {
+    if (err && err.code === "23505") {
+      const retry = await client.query(
+        `SELECT * FROM activeclinic.inventory_items
+          WHERE facility_id = $1 AND medication_catalogue_item_id = $2
+          FOR UPDATE`,
+        [facilityId, medicationCatalogueItemId]
+      );
+      if (retry.rows.length) return retry.rows[0];
+    }
+    throw err;
+  }
+}
+
+/**
+ * Receive quantities against a submitted purchase order.
+ * Creates batches + append-only stock movements; never overwrites current_quantity.
+ * Permission: activeclinic.inventory.manage
+ */
+async function receivePurchaseOrder(pool, input) {
+  const {
+    staffId,
+    organizationId,
+    healthcareOrganizationId,
+    purchaseOrderId,
+    facilityId,
+    items,
+  } = input;
+
+  if (
+    !staffId ||
+    !organizationId ||
+    !healthcareOrganizationId ||
+    !purchaseOrderId ||
+    !Array.isArray(items) ||
+    items.length === 0
+  ) {
+    return { ok: false, result: RESULT.INVALID_INPUT };
+  }
+
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.INVENTORY_MANAGE,
+    facilityId: facilityId || null,
+  });
+  if (!authResult.ok) {
+    return { ok: false, result: RESULT.ACCESS_DENIED };
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+
+    const poResult = await client.query(
+      `SELECT * FROM activeclinic.pharmacy_purchase_orders
+       WHERE id = $1
+         AND organization_id = $2
+         AND healthcare_organization_id = $3
+       FOR UPDATE`,
+      [purchaseOrderId, organizationId, healthcareOrganizationId]
+    );
+    if (poResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return { ok: false, result: RESULT.PURCHASE_ORDER_NOT_FOUND };
+    }
+
+    const po = poResult.rows[0];
+    if (facilityId && po.facility_id !== facilityId) {
+      await client.query("ROLLBACK");
+      return { ok: false, result: RESULT.FACILITY_MISMATCH };
+    }
+    if (!["submitted", "partially_received"].includes(po.status)) {
+      await client.query("ROLLBACK");
+      return { ok: false, result: RESULT.INVALID_PO_STATUS };
+    }
+
+    const poItems = await client.query(
+      `SELECT * FROM activeclinic.pharmacy_purchase_order_items
+        WHERE purchase_order_id = $1
+        FOR UPDATE`,
+      [purchaseOrderId]
+    );
+    const poItemById = new Map(poItems.rows.map((row) => [row.id, row]));
+    const receivedLines = [];
+
+    for (const line of items) {
+      const poItemId = line.purchaseOrderItemId || line.id;
+      const qty = Number.parseInt(line.quantity, 10);
+      const batchNumber = String(line.batchNumber || "").trim();
+      const expiryDate = isoDateOnly(line.expiryDate);
+      if (!poItemId || !Number.isInteger(qty) || qty <= 0 || !batchNumber || !expiryDate) {
+        await client.query("ROLLBACK");
+        return { ok: false, result: RESULT.INVALID_INPUT };
+      }
+      if (isExpiredIsoDate(expiryDate)) {
+        await client.query("ROLLBACK");
+        return { ok: false, result: RESULT.EXPIRED_BATCH };
+      }
+      const poItem = poItemById.get(poItemId);
+      if (!poItem) {
+        await client.query("ROLLBACK");
+        return { ok: false, result: RESULT.INVALID_INPUT };
+      }
+      const already = Number(poItem.quantity_received) || 0;
+      if (already + qty > Number(poItem.quantity_ordered)) {
+        await client.query("ROLLBACK");
+        return { ok: false, result: RESULT.INVALID_INPUT, reason: "receive_exceeds_ordered" };
+      }
+
+      const inventoryItem = await getOrCreateInventoryItemLocked(client, {
+        organizationId,
+        healthcareOrganizationId,
+        facilityId: po.facility_id,
+        medicationCatalogueItemId: poItem.medication_catalogue_item_id,
+      });
+
+      let batch;
+      try {
+        const batchResult = await client.query(
+          `INSERT INTO activeclinic.inventory_batches (
+             organization_id, healthcare_organization_id, facility_id, inventory_item_id,
+             batch_number, quantity_in_batch, manufacture_date, expiry_date,
+             supplier_name, cost_per_unit, status
+           ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'available')
+           RETURNING *`,
+          [
+            organizationId,
+            healthcareOrganizationId,
+            po.facility_id,
+            inventoryItem.id,
+            batchNumber,
+            qty,
+            line.manufactureDate || null,
+            expiryDate,
+            line.supplierName || po.supplier_name || null,
+            line.costPerUnit != null ? line.costPerUnit : poItem.unit_cost,
+          ]
+        );
+        batch = batchResult.rows[0];
+      } catch (err) {
+        if (err && err.code === "23505") {
+          await client.query("ROLLBACK");
+          return { ok: false, result: RESULT.DUPLICATE_BATCH };
+        }
+        throw err;
+      }
+
+      await client.query(
+        `INSERT INTO activeclinic.stock_movements (
+           organization_id, healthcare_organization_id, facility_id, inventory_item_id,
+           inventory_batch_id, movement_type, quantity_delta, reference_type, reference_id,
+           performed_by_staff_id
+         ) VALUES ($1, $2, $3, $4, $5, 'receive', $6, 'purchase', $7, $8)`,
+        [
+          organizationId,
+          healthcareOrganizationId,
+          po.facility_id,
+          inventoryItem.id,
+          batch.id,
+          qty,
+          purchaseOrderId,
+          staffId,
+        ]
+      );
+
+      await client.query(
+        `UPDATE activeclinic.inventory_items
+            SET last_restocked_at = now()
+          WHERE id = $1`,
+        [inventoryItem.id]
+      );
+
+      const updatedItem = await client.query(
+        `UPDATE activeclinic.pharmacy_purchase_order_items
+            SET quantity_received = quantity_received + $1
+          WHERE id = $2
+          RETURNING *`,
+        [qty, poItemId]
+      );
+      poItemById.set(poItemId, updatedItem.rows[0]);
+      receivedLines.push({
+        purchaseOrderItemId: poItemId,
+        quantity: qty,
+        batchId: batch.id,
+        batchNumber,
+      });
+    }
+
+    const totals = await client.query(
+      `SELECT
+         BOOL_AND(quantity_received >= quantity_ordered) AS fully_received,
+         BOOL_OR(quantity_received > 0) AS any_received
+         FROM activeclinic.pharmacy_purchase_order_items
+        WHERE purchase_order_id = $1`,
+      [purchaseOrderId]
+    );
+    const fullyReceived = totals.rows[0] && totals.rows[0].fully_received === true;
+    const nextStatus = fullyReceived ? "received" : "partially_received";
+
+    const updatedPo = await client.query(
+      `UPDATE activeclinic.pharmacy_purchase_orders
+          SET status = $1,
+              received_at = CASE WHEN $1 = 'received' THEN now() ELSE received_at END,
+              updated_at = now()
+        WHERE id = $2
+        RETURNING *`,
+      [nextStatus, purchaseOrderId]
+    );
+
+    await client.query("COMMIT");
+
+    await recordAuditEventSafe(pool, {
+      organizationId,
+      eventType: "activeclinic.purchase_order_received",
+      actorType: "staff_member",
+      actorId: staffId,
+      resourceType: "pharmacy_purchase_order",
+      resourceId: purchaseOrderId,
+      eventMetadata: {
+        poNumber: updatedPo.rows[0].po_number,
+        status: nextStatus,
+        lines: receivedLines,
+      },
+    });
+
+    return {
+      ok: true,
+      result: RESULT.OK,
+      purchaseOrder: mapPurchaseOrder(updatedPo.rows[0]),
+      receivedLines,
+    };
+  } catch (err) {
+    await client.query("ROLLBACK").catch(() => {});
+    if (err && err.code === "23514") {
+      return { ok: false, result: RESULT.INVALID_INPUT, reason: "receive_exceeds_ordered" };
+    }
+    console.error("[receivePurchaseOrder] Error:", err);
     return { ok: false, result: RESULT.INVALID_INPUT, error: err.message };
   } finally {
     client.release();
@@ -1128,6 +1414,7 @@ module.exports = {
   listPurchaseOrders,
   getPurchaseOrder,
   submitPurchaseOrder,
+  receivePurchaseOrder,
   getMedicineLabel,
   getPatientMedicineInstructions,
 };

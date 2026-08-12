@@ -5,9 +5,8 @@
  * Cashier dashboard, sessions, payment collection, receipts
  */
 
+const { randomUUID } = require("crypto");
 const {
-  issueCsrfToken,
-  setCsrfCookie,
   validateCsrf,
   CSRF_FIELD,
 } = require("../../platform/http/v5Csrf");
@@ -20,10 +19,7 @@ const {
   renderSimpleState,
 } = require("./activeClinicPermissionMiddleware");
 const {
-  buildActiveClinicShellViewModel,
-} = require("../services/buildActiveClinicShellViewModel");
-const {
-  renderActiveClinicAppPage,
+  createActiveClinicAppRenderer,
 } = require("./renderActiveClinicShell");
 const {
   openCashierSession,
@@ -68,31 +64,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
     isProduction,
   });
   const requireDepartment = createRequireActiveClinicDepartment({ getPool, env });
-
-  function issuePageCsrf(res) {
-    const token = issueCsrfToken(env);
-    setCsrfCookie(res, token, { secure: isProduction, env });
-    return token;
-  }
-
-  async function renderShell(req, res, options) {
-    const csrfToken = issuePageCsrf(res);
-    const shell = await buildActiveClinicShellViewModel(getPool(), {
-      req,
-      auth: req.activeClinicAuth,
-      csrfToken,
-      activeNav: options.activeNav,
-      pageHeader: options.pageHeader,
-      breadcrumbs: options.breadcrumbs,
-      flash: options.flash || null,
-      pageData: options.pageData || {},
-    });
-    if (shell.selectedFacility) {
-      req.activeClinicAuth.selectedFacility = shell.selectedFacility;
-    }
-    const html = renderActiveClinicAppPage(options.content, shell);
-    return res.status(options.status || 200).type("html").send(html);
-  }
+  const { renderShell } = createActiveClinicAppRenderer({ getPool, env, isProduction });
 
   // ========================================================================
   // CASHIER DASHBOARD
@@ -587,10 +559,9 @@ function registerActiveClinicCashierRoutes(app, deps) {
         if (invoiceId) {
           const pool = getPool();
           const invoiceResult = await pool.query(
-            `SELECT i.*, p.first_name, p.last_name, pr.patient_number
+            `SELECT i.*, p.first_name, p.last_name, p.patient_number
              FROM activeclinic.invoices i
              JOIN activeclinic.patients p ON i.patient_id = p.id
-             JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
              WHERE i.id = $1 AND i.tenant_id = $2
              LIMIT 1`,
             [invoiceId, auth.tenantId]
@@ -598,14 +569,39 @@ function registerActiveClinicCashierRoutes(app, deps) {
 
           if (invoiceResult.rows.length > 0) {
             const inv = invoiceResult.rows[0];
+            const remainingResult = await pool.query(
+              `SELECT (i.total_amount_minor
+                        - COALESCE(alloc.paid_minor, 0)
+                        - COALESCE(cn.credit_minor, 0))::bigint AS remaining_minor
+                 FROM activeclinic.invoices i
+                 LEFT JOIN (
+                   SELECT invoice_id, SUM(allocated_amount_minor)::bigint AS paid_minor
+                     FROM activeclinic.payment_allocations
+                    GROUP BY invoice_id
+                 ) alloc ON alloc.invoice_id = i.id
+                 LEFT JOIN (
+                   SELECT invoice_id, SUM(amount_minor)::bigint AS credit_minor
+                     FROM activeclinic.credit_notes
+                    WHERE status = 'posted'
+                    GROUP BY invoice_id
+                 ) cn ON cn.invoice_id = i.id
+                WHERE i.id = $1`,
+              [inv.id]
+            );
+            const remainingMinor = parseInt(
+              (remainingResult.rows[0] && remainingResult.rows[0].remaining_minor) ||
+                inv.total_amount_minor,
+              10
+            );
             invoice = {
               id: inv.id,
               invoiceNumber: inv.invoice_number,
               patientNumber: inv.patient_number,
               patientName: `${inv.first_name} ${inv.last_name}`,
               totalAmountMinor: parseInt(inv.total_amount_minor, 10),
+              remainingMinor,
               totalAmountFormatted: formatMoney(
-                parseInt(inv.total_amount_minor, 10),
+                remainingMinor,
                 inv.currency_code
               ),
             };
@@ -627,6 +623,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
           pageData: {
             session: sessionResult.session,
             invoice,
+            idempotencyKey: randomUUID(),
             stitch: {
               desktop: "2d81fb326b6644bbb11cabd7a8156e6e",
               mobile: "3c8ce685b0d14b74a04e1127e341f004",
@@ -677,8 +674,7 @@ function registerActiveClinicCashierRoutes(app, deps) {
         const pool = getPool();
         const patientResult = await pool.query(
           `SELECT p.id FROM activeclinic.patients p
-           JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
-           WHERE p.tenant_id = $1 AND pr.patient_number = $2
+           WHERE p.organization_id = $1 AND p.patient_number = $2
            LIMIT 1`,
           [auth.tenantId, patientNumber]
         );
@@ -710,7 +706,15 @@ function registerActiveClinicCashierRoutes(app, deps) {
           notes: String(req.body.notes || "").trim() || null,
           cashierSessionId: sessionResult.session.id,
           invoiceAllocations,
+          idempotencyKey: String(req.body.idempotency_key || "").trim() || null,
         });
+
+        if (result.result === BILLING_RESULT.DUPLICATE_SUBMISSION && result.receiptNumber) {
+          return res.redirect(
+            303,
+            `/app/cashier/payment/completed?receipt=${encodeURIComponent(result.receiptNumber)}&amount=${result.payment.amountMinor}`
+          );
+        }
 
         if (result.result !== BILLING_RESULT.CREATED) {
           return res.redirect(303, `/app/cashier/payment?error=${result.result}`);
@@ -743,11 +747,10 @@ function registerActiveClinicCashierRoutes(app, deps) {
         const receiptResult = await pool.query(
           `SELECT r.*, py.payment_number, py.amount_minor as payment_amount_minor,
                   py.payment_method, py.payment_date, p.first_name, p.last_name,
-                  pr.patient_number
+                  p.patient_number
            FROM activeclinic.receipts r
            JOIN activeclinic.payments py ON r.payment_id = py.id
            JOIN activeclinic.patients p ON py.patient_id = p.id
-           JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
            WHERE r.receipt_number = $1 AND r.tenant_id = $2
            LIMIT 1`,
           [req.params.receiptNumber, auth.tenantId]

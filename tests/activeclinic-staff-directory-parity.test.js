@@ -271,7 +271,8 @@ describe("ActiveClinic staff directory parity (AC-V6-S04)", () => {
     assert.match(list.text, /Net Admin/);
     assert.match(list.text, /Nia Nurse/);
     assert.match(list.text, /data-ac-staff-avatar/);
-    assert.doesNotMatch(list.text, /password_hash|activationUrl|token|failed_sign_in/i);
+    // "token" is too broad: shell loads ac-tokens.css and CSRF field values.
+    assert.doesNotMatch(list.text, /password_hash|activationUrl|failed_sign_in/i);
     // Patients + Appointments nav are Stitch P02/P03; staff directory still omits HR secrets and BlessBoard chrome.
     assert.doesNotMatch(
       list.text,

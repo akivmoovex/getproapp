@@ -8,9 +8,7 @@
   var stitch = selectBatch.stitch || {};
 %>
 <section class="ac-pharmacy-select-batch" data-ac-page-section="pharmacy-select-batch" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
-  <% if (error) { %>
-  <div class="ac-panel ac-alert ac-alert--error" role="alert"><%= error %></div>
-  <% } %>
+  <%- include('../partials/ac-form-error', { error: error }) %>
 
   <div class="ac-panel">
     <h2>Select medicine batch</h2>

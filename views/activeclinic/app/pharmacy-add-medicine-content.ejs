@@ -5,14 +5,10 @@
   var stitch = addMedicine.stitch || {};
 %>
 <section class="ac-pharmacy-add-medicine" data-ac-page-section="pharmacy-add-medicine" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
-  <% if (error) { %>
-  <div class="ac-panel ac-alert ac-alert--error">
-    <%= error %>
-  </div>
-  <% } %>
+  <%- include('../partials/ac-form-error', { error: error }) %>
 
-  <form method="post" action="/app/pharmacy/catalogue/new" class="ac-form">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+  <form method="post" action="/app/pharmacy/catalogue/new" class="ac-form" data-ac-loading="1">
+    <%- include('../partials/ac-csrf-field') %>
 
     <div class="ac-panel">
       <div class="ac-form-field">

@@ -11,6 +11,27 @@
     if (live) live.textContent = msg;
   }
 
+  function trapTab(ev, root) {
+    if (window.acA11y && typeof window.acA11y.trapTab === "function") {
+      window.acA11y.trapTab(ev, root);
+      return;
+    }
+    if (ev.key !== "Tab" || !root) return;
+    var items = root.querySelectorAll(
+      'a[href], button:not([disabled]), input:not([type="hidden"]), [tabindex]:not([tabindex="-1"])'
+    );
+    if (!items.length) return;
+    var first = items[0];
+    var last = items[items.length - 1];
+    if (ev.shiftKey && document.activeElement === first) {
+      ev.preventDefault();
+      last.focus();
+    } else if (!ev.shiftKey && document.activeElement === last) {
+      ev.preventDefault();
+      first.focus();
+    }
+  }
+
   function openDrawer() {
     if (!drawer) return;
     lastFocus = document.activeElement;
@@ -90,6 +111,14 @@
     if (ev.key === "Escape") {
       if (drawer && !drawer.hidden) closeDrawer();
       if (filterDrawer && !filterDrawer.hidden) closeFilterDrawer();
+      return;
+    }
+    if (ev.key === "Tab") {
+      if (drawer && !drawer.hidden) {
+        trapTab(ev, drawer.querySelector(".ac-public-drawer__panel") || drawer);
+      } else if (filterDrawer && !filterDrawer.hidden) {
+        trapTab(ev, filterDrawer.querySelector(".ac-directory-filter-drawer__panel") || filterDrawer);
+      }
     }
   });
 

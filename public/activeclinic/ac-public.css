@@ -17,10 +17,8 @@ body.ac-public-body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--acp-font);
-  color: var(--acp-ink);
-  background:
-    radial-gradient(900px 420px at 10% -5%, var(--acp-primary-soft), transparent),
-    linear-gradient(180deg, #eff4ff, var(--acp-bg));
+  color: #0b1c30;
+  background: var(--acp-bg);
 }
 
 .ac-sr-only {
@@ -43,7 +41,8 @@ body.ac-public-body {
   text-decoration: none;
   font-weight: 600;
 }
-.ac-public-skip:focus { top: 1rem; }
+.ac-public-skip:focus,
+.ac-public-skip:focus-visible { top: 1rem; }
 
 .ac-public-header {
   background: rgba(255, 255, 255, 0.92);
@@ -94,7 +93,9 @@ body.ac-public-body {
 .ac-btn:focus-visible,
 .ac-public-nav-toggle:focus-visible,
 .ac-public-form input:focus-visible,
-.ac-public-form textarea:focus-visible {
+.ac-public-form select:focus-visible,
+.ac-public-form textarea:focus-visible,
+.acp-mobile-bottom-nav__item:focus-visible {
   outline: 3px solid #1d59c1;
   outline-offset: 2px;
 }
@@ -175,11 +176,13 @@ body.ac-public-body {
   align-items: center;
   justify-content: center;
   min-height: var(--acp-touch);
-  padding: 0.65rem 1.15rem;
-  border-radius: 999px;
+  padding: 1rem 1.5rem;
+  border-radius: 0.125rem;
   border: 1px solid transparent;
   text-decoration: none;
   font-weight: 600;
+  font-size: 1.125rem;
+  line-height: 1.5rem;
   font-family: inherit;
   cursor: pointer;
 }
@@ -331,6 +334,14 @@ body.ac-public-body {
   margin: 0;
   font-size: 1.05rem;
   color: var(--acp-navy);
+}
+.ac-directory-filters__legend {
+  margin: 0.35rem 0 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acp-muted);
 }
 .ac-directory-filters__close { display: inline-flex; }
 .ac-directory-filters__actions {
@@ -825,11 +836,14 @@ body.ac-public-body {
     display: block;
     background: #fff;
     border: 1px solid var(--acp-border);
-    border-radius: var(--acp-radius);
+    border-radius: var(--acp-radius-card);
     padding: 1.15rem;
   }
-  .ac-directory-filters-sidebar .ac-directory-filters__header { display: none; }
   .ac-directory-filters-sidebar .ac-directory-filters__close { display: none; }
+  .ac-directory-filters-sidebar .ac-directory-filters__title {
+    font-size: 1.125rem;
+    font-weight: 700;
+  }
   .ac-directory-search-layout {
     display: grid;
     grid-template-columns: minmax(14rem, 18rem) 1fr;
@@ -847,9 +861,7 @@ body.ac-public-body {
 
 /* ===== Tenant (Juflona / clinic mini-site) Stitch parity ===== */
 body.ac-public--tenant {
-  background:
-    radial-gradient(900px 420px at 12% -8%, var(--acp-primary-soft), transparent 55%),
-    linear-gradient(180deg, #f8fbff, var(--acp-surface-low));
+  background: var(--acp-bg);
 }
 body.ac-public--tenant .ac-public-main {
   max-width: none;
@@ -907,14 +919,36 @@ body.ac-public--tenant .ac-public-main {
 }
 
 .ac-tenant-hero {
+  position: relative;
   max-width: var(--acp-max);
   margin: 0 auto;
-  padding: var(--acp-space-6) 1.25rem var(--acp-space-5);
+  padding: 2.5rem 1.25rem 3rem;
+}
+.ac-tenant-hero::before {
+  content: "";
+  position: absolute;
+  right: 0;
+  top: 0;
+  width: 46%;
+  height: 100%;
+  background: #eff4ff;
+  border-bottom-left-radius: 120px;
+  z-index: 0;
+  pointer-events: none;
 }
 .ac-tenant-hero__grid {
+  position: relative;
+  z-index: 1;
   display: grid;
   gap: var(--acp-space-6);
   align-items: center;
+}
+.ac-tenant-hero h1 {
+  font-size: var(--acp-text-display);
+  line-height: var(--acp-leading-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: #0b1c30;
 }
 .ac-tenant-eyebrow {
   display: inline-flex;
@@ -1067,7 +1101,10 @@ body.ac-public--tenant .ac-public-main {
 .ac-tenant-page-header h1 {
   margin: 0 0 0.4rem;
   color: var(--acp-navy);
-  font-size: clamp(1.75rem, 3vw, 2.4rem);
+  font-size: var(--acp-text-display);
+  line-height: var(--acp-leading-display);
+  font-weight: 700;
+  letter-spacing: -0.02em;
 }
 
 .ac-doctor-cards,
@@ -1082,7 +1119,7 @@ body.ac-public--tenant .ac-public-main {
 .ac-service-card {
   background: var(--acp-surface);
   border: 1px solid var(--acp-border);
-  border-radius: var(--acp-radius-lg);
+  border-radius: var(--acp-radius-card);
   box-shadow: var(--acp-shadow-sm);
   overflow: hidden;
 }
@@ -1222,7 +1259,7 @@ body.ac-public--tenant .ac-public-main {
 
 @media (min-width: 768px) {
   .ac-tenant-hero__grid {
-    grid-template-columns: minmax(0, 1.05fr) minmax(0, 0.95fr);
+    grid-template-columns: minmax(0, 5fr) minmax(0, 7fr);
     gap: 2.5rem;
   }
   .ac-tenant-hero__badge {
@@ -1251,25 +1288,25 @@ body.ac-public--tenant .ac-public-main {
 
 /* ===== Pass 2 — platform / booking / status system (scoped .acp-*) ===== */
 body.ac-public-body .acp-hero--platform {
-  margin: -1.5rem -1.25rem 0;
+  margin: 0;
   padding: 2.5rem 1.25rem 2rem;
-  background:
-    radial-gradient(720px 320px at 85% 0%, rgba(213, 250, 255, 0.95), transparent 60%),
-    linear-gradient(180deg, #e8f4ff 0%, transparent 70%);
-  border-bottom: 1px solid var(--acp-outline);
+  background: var(--acp-bg);
+  border-bottom: none;
 }
 .acp-hero__inner {
   max-width: var(--acp-max);
   margin: 0 auto;
   display: grid;
-  gap: 1.75rem;
+  gap: 1.5rem;
+  align-items: center;
 }
 .acp-hero__copy h1 {
-  font-size: clamp(2.1rem, 5vw, 3.15rem);
-  line-height: 1.12;
-  margin: 0 0 0.85rem;
-  color: var(--acp-navy);
-  letter-spacing: -0.03em;
+  font-size: var(--acp-text-display);
+  line-height: var(--acp-leading-display);
+  font-weight: 700;
+  margin: 0 0 1rem;
+  color: var(--acp-primary);
+  letter-spacing: -0.02em;
 }
 .acp-hero__visual { display: none; }
 .acp-hero__panel {
@@ -1300,8 +1337,10 @@ body.ac-public-body .acp-hero--platform {
 .acp-page-hero--compact { margin-bottom: 1.25rem; }
 .acp-page-hero h1 {
   margin: 0 0 0.65rem;
-  font-size: clamp(1.85rem, 4vw, 2.6rem);
-  color: var(--acp-navy);
+  font-size: var(--acp-text-display);
+  line-height: var(--acp-leading-display);
+  font-weight: 700;
+  color: #0b1c30;
   letter-spacing: -0.02em;
 }
 
@@ -1424,9 +1463,10 @@ body.ac-public-body .acp-hero--platform {
   flex: 1 1 14rem;
   min-height: var(--acp-touch);
   border: 1px solid var(--acp-border);
-  border-radius: 999px;
-  padding: 0.65rem 1rem;
+  border-radius: var(--acp-radius-card);
+  padding: 0.65rem 1rem 0.65rem 1rem;
   font: inherit;
+  font-size: var(--acp-text-body-lg);
 }
 
 .acp-clinic-grid { gap: 1rem; }
@@ -1438,12 +1478,13 @@ body.ac-public-body .acp-hero--platform {
   min-height: 0;
   padding: 0;
   overflow: hidden;
-  border-radius: var(--acp-radius-lg);
-  transition: box-shadow 0.15s ease, transform 0.15s ease;
+  border-radius: var(--acp-radius-card);
+  border: 1px solid var(--acp-border);
+  background: #fff;
+  transition: box-shadow 0.15s ease;
 }
 .acp-clinic-card a:hover {
-  box-shadow: 0 12px 28px rgba(0, 31, 35, 0.12);
-  transform: translateY(-1px);
+  box-shadow: var(--acp-shadow-sm);
 }
 .acp-clinic-card__media {
   aspect-ratio: 16 / 10;
@@ -1471,7 +1512,13 @@ body.ac-public-body .acp-hero--platform {
   gap: 1.25rem;
   align-items: start;
 }
-.acp-booking-header h1 { margin: 0 0 0.45rem; color: var(--acp-navy); }
+.acp-booking-header h1 {
+  margin: 0 0 0.45rem;
+  font-size: var(--acp-text-display);
+  line-height: var(--acp-leading-display);
+  font-weight: 700;
+  color: #0b1c30;
+}
 .acp-booking-header p { margin: 0 0 1rem; color: var(--acp-muted); max-width: 38rem; }
 .acp-choice-grid { gap: 0.85rem; }
 .acp-choice-card {
@@ -1676,7 +1723,7 @@ body.ac-public-body .acp-hero--platform {
 }
 
 @media (min-width: 768px) {
-  .acp-hero__inner { grid-template-columns: 1.2fr 0.8fr; align-items: center; }
+  .acp-hero__inner { grid-template-columns: 1fr 1fr; align-items: center; }
   .acp-hero__visual { display: block; }
   .acp-feature-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
   .acp-capability-tiles { grid-template-columns: repeat(2, minmax(0, 1fr)); }
@@ -1691,8 +1738,10 @@ body.ac-public-body .acp-hero--platform {
 
 @media (min-width: 1024px) {
   .acp-capability-tiles { grid-template-columns: repeat(4, minmax(0, 1fr)); }
-  .acp-clinic-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
-  body.ac-public-body .acp-hero--platform { padding: 3.25rem 1.5rem 2.75rem; }
+  .acp-clinic-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  body.ac-public-body .acp-hero--platform { padding: 2.5rem 1.5rem 3rem; }
+  .ac-service-cards { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .acp-price-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
 }
 
 /* Pass 2 — booking / contact / confirmation refinements */
@@ -1956,14 +2005,17 @@ body.ac-public-body .acp-hero--platform {
 }
 .acp-hero__media {
   position: relative;
-  border-radius: var(--acp-radius-xl);
+  border-radius: var(--acp-radius-card);
   overflow: hidden;
   box-shadow: var(--acp-shadow-sm);
+  border: 1px solid var(--acp-border);
+  min-height: 16rem;
 }
 .acp-hero__image {
   display: block;
   width: 100%;
-  height: auto;
+  height: 100%;
+  min-height: 16rem;
   aspect-ratio: 16 / 10;
   object-fit: cover;
   object-position: center 35%;
@@ -2053,7 +2105,8 @@ body.ac-public-body .acp-hero--platform {
   .ac-tenant-page-header h1 {
     font-size: var(--acp-heading-mobile);
     line-height: 1.18;
-    max-width: 18ch;
+    max-width: none;
+    overflow-wrap: anywhere;
   }
 
   .ac-public-lede,
@@ -2153,9 +2206,9 @@ body.ac-public-body .acp-hero--platform {
     position: fixed;
     left: 0;
     right: 0;
-    bottom: 0;
+    bottom: var(--ac-keyboard-inset, 0px);
     margin: 0;
-    padding: 0.85rem var(--acp-gutter) calc(0.85rem + var(--acp-safe-bottom));
+    padding: 0.85rem max(var(--acp-gutter), env(safe-area-inset-left, 0px)) calc(0.85rem + var(--acp-safe-bottom)) max(var(--acp-gutter), env(safe-area-inset-right, 0px));
     display: flex;
     gap: 0.65rem;
     background: rgba(255, 255, 255, 0.96);
@@ -2447,6 +2500,132 @@ body.ac-public-body .acp-hero--platform {
     font-size: var(--acp-heading-mobile);
   }
   .acp-filter-chip { min-height: 2.5rem; }
+}
+
+/* ===== Phase 7B — Stitch pixel tokens (public 17813606734422395399) ===== */
+@media (max-width: 767px) {
+  .ac-tenant-hero::before { display: none; }
+}
+@media (min-width: 640px) {
+  .acp-clinic-card a {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .acp-clinic-card__media {
+    flex: 0 0 12rem;
+    width: 12rem;
+    aspect-ratio: auto;
+    min-height: 9rem;
+  }
+}
+.acp-hero__panel {
+  border-radius: var(--acp-radius-card);
+}
+@media (min-width: 768px) {
+  .acp-hero__media,
+  .acp-hero__image { min-height: 24rem; }
+}
+
+/* ===== Phase 7C — procedure detail chrome ===== */
+.acp-service-detail__meta {
+  display: grid;
+  gap: 0.85rem 1.25rem;
+  margin: 0 0 1.25rem;
+  padding: 1rem 1.15rem;
+  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: var(--acp-radius-card);
+}
+.acp-service-detail__meta dt {
+  margin: 0;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acp-muted);
+}
+.acp-service-detail__meta dd { margin: 0.2rem 0 0; }
+@media (min-width: 768px) {
+  .acp-service-detail__meta {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+.acp-service-detail__prep h2 {
+  margin: 0 0 0.4rem;
+  font-size: 1.125rem;
+}
+
+/* ===== Phase 8 — mobile composition + safe area ===== */
+@media (max-width: 767px) {
+  body.ac-public-body {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+
+  .acp-mobile-bottom-nav {
+    padding-left: max(0.35rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.35rem, env(safe-area-inset-right, 0px));
+    bottom: var(--ac-keyboard-inset, 0px);
+  }
+
+  .acp-mobile-bottom-nav__item {
+    min-height: 2.75rem;
+  }
+
+  .ac-public-actions,
+  .ac-tenant-hero__actions,
+  .acp-booking-actions {
+    gap: 0.65rem;
+  }
+
+  .ac-public-actions .ac-btn,
+  .ac-tenant-hero__actions .ac-btn,
+  .acp-booking-actions .ac-btn,
+  .acp-auth-card .ac-btn,
+  .acp-lookup-card .ac-btn {
+    min-height: 2.75rem;
+  }
+
+  .ac-directory-filter-drawer__panel .ac-btn,
+  .ac-directory-filter-drawer__panel input,
+  .ac-directory-filter-drawer__panel select {
+    min-height: 2.75rem;
+  }
+
+  .acp-filter-chips {
+    margin-inline: calc(-1 * var(--acp-gutter));
+    padding-inline: var(--acp-gutter);
+  }
+
+  img,
+  .ac-doctor-card__media img,
+  .ac-doctor-profile__photo img,
+  .acp-hero img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  .ac-doctor-card__media,
+  .ac-doctor-profile__photo {
+    overflow: hidden;
+  }
+}
+
+@media (max-width: 360px) {
+  :root {
+    --acp-gutter: 0.85rem;
+  }
+}
+
+/* ===== Phase 9 — accessibility ===== */
+.ac-directory-filters__location {
+  border: 0;
+  margin: 0;
+  padding: 0;
+  min-width: 0;
+}
+.ac-directory-filters legend {
+  padding: 0;
 }
 
 

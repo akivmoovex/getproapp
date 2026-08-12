@@ -14,7 +14,7 @@
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap">
+  <div class="ac-panel ac-table-wrap ac-desktop-table">
     <table class="ac-table" data-ac-table="missed-appointments">
       <thead><tr><th>When</th><th>Patient</th><th>Service</th><th>Staff</th><th>Status</th></tr></thead>
       <tbody>
@@ -30,5 +30,17 @@
       </tbody>
     </table>
   </div>
+  <ul class="ac-card-list ac-mobile-table-cards ac-appointments-mobile" data-ac-cards="missed-appointments">
+    <% appointments.forEach(function (a) { %>
+    <li class="ac-card ac-mobile-record-card">
+      <a class="ac-card__link" href="/app/appointments/<%= a.id %>">
+        <p class="ac-card__title"><%= (a.patient && a.patient.displayName) || '—' %></p>
+        <p class="ac-muted"><%= a.when.dateLabel %> · <%= a.when.timeLabel %></p>
+        <p class="ac-muted"><%= (a.service && a.service.displayName) || '—' %></p>
+        <p><span class="ac-status" data-ac-status="no_show">No-show</span></p>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
 </section>

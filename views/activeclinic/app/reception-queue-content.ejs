@@ -5,6 +5,14 @@
   var actions = queue.actions || {};
   var facility = queue.facility || {};
   var stitch = queue.stitch || {};
+  var waitingCount = 0;
+  var calledCount = 0;
+  var servingCount = 0;
+  entries.forEach(function (e) {
+    if (e.status === "waiting") waitingCount += 1;
+    else if (e.status === "called") calledCount += 1;
+    else if (e.status === "serving") servingCount += 1;
+  });
 %>
 <section class="ac-reception" data-ac-page-section="reception-queue" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>"<% if (pageData && pageData.stale) { %> data-ac-stitch-stale="bf9b846da6174bf995793b09e869cd30"<% } %>>
   <% if (pageData && pageData.stale) { %>
@@ -12,6 +20,12 @@
     <p>Queue data changed while you were working. Refresh the list before taking another action.</p>
   </div>
   <% } %>
+  <div class="ac-metric-grid ac-reception__metrics" data-ac-reception-metrics="1">
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Waiting</p><p class="ac-stat-card__value"><%= waitingCount %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Called</p><p class="ac-stat-card__value"><%= calledCount %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">In service</p><p class="ac-stat-card__value"><%= servingCount %></p></article>
+  </div>
+
   <div class="ac-panel ac-filter-bar" data-ac-reception-filters="1">
     <p class="ac-muted">Showing active queue entries (waiting, called, serving, paused) for <%= facility.displayName || 'selected facility' %>.</p>
     <div class="ac-form-actions">
@@ -63,7 +77,7 @@
           <td><%= (e.servicePoint && e.servicePoint.displayName) || '—' %></td>
           <td><span class="ac-status" data-ac-status="<%= e.status %>"><%= e.statusLabel %></span></td>
           <td><%= e.assignedRoom || '—' %></td>
-          <td><a href="/app/reception/queue/<%= e.id %>">View</a></td>
+          <td><a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/reception/queue/<%= e.id %>">View</a></td>
         </tr>
         <% }) %>
       </tbody>

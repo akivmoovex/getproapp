@@ -2,10 +2,11 @@
   <header class="acp-page-hero acp-page-hero--compact">
     <p class="ac-public-eyebrow">Pricing</p>
     <h1>Pricing</h1>
+    <p class="ac-public-lede">Fees listed here are only those <%= clinic.publicName %> has chosen to publish. Contact the clinic for anything not shown.</p>
   </header>
   <% const patterns = Array.isArray(pricePatterns) ? pricePatterns : []; %>
   <% if (!patterns.length) { %>
-  <div class="ac-public-empty acp-empty-state" data-ac-price-state="no-public-prices">
+  <div class="ac-public-empty acp-empty-state" data-ac-price-state="no-public-prices" data-ac-state-key="empty">
     <p><strong>Fees not listed online</strong></p>
     <p>Public price information has not been configured for <%= clinic.publicName %>. Contact the clinic for current fees — amounts shown here would only appear when verified by the clinic.</p>
     <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic for fees</a></p>

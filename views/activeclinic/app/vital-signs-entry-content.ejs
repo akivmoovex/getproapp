@@ -1,9 +1,10 @@
 <div data-ac-stitch="dede5e72277d413497e1f870f6b4a0e1" data-ac-screen="vital-signs-entry">
-  <section>
+  <section class="ac-panel ac-form-section">
     <h2>Recent observations</h2>
     <% if (pageData.vitals.observations.length === 0) { %>
     <p class="ac-empty">No vitals recorded yet.</p>
     <% } else { %>
+    <div class="ac-table-wrap">
     <table class="ac-table">
       <thead>
         <tr>
@@ -32,10 +33,11 @@
         <% }) %>
       </tbody>
     </table>
+    </div>
     <% } %>
   </section>
-  
-  <section style="margin-top:2rem;">
+
+  <section class="ac-panel ac-form-section">
     <h2>Record new observation</h2>
     <% if (pageData.vitals.error) { %>
     <p class="ac-error"><%= pageData.vitals.error %></p>

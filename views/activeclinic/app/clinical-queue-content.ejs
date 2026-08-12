@@ -1,10 +1,21 @@
 <div class="ac-clinical-queue" data-ac-stitch="b8d47f05a83c4959ac2d3d6ca83c7dfb" data-ac-screen="clinical-queue" data-ac-page-section="clinical-queue">
   <% const clinicalQueue = (pageData && pageData.queue) || {}; %>
   <% const encounters = Array.isArray(clinicalQueue.encounters) ? clinicalQueue.encounters : []; %>
-  <% if (encounters.length === 0) { %>
-  <div class="ac-empty-state ac-empty">
-    <p>No open encounters. Start a new encounter to begin clinical workflow.</p>
+  <div class="ac-metric-grid">
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Open encounters</p>
+      <p class="ac-stat-card__value"><%= encounters.length %></p>
+    </article>
   </div>
+  <% if (encounters.length === 0) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'clinical-queue-empty',
+      title: 'No open encounters',
+      description: 'Start a new encounter to begin clinical workflow for a patient.'
+    }
+  }) %>
   <% } else { %>
   <div class="ac-panel ac-table-wrap ac-clinical-desktop">
     <table class="ac-table">
@@ -25,7 +36,7 @@
           <td><%= new Date(enc.openedAt).toLocaleString() %></td>
           <td><%= enc.openedByStaffDisplayName %></td>
           <td>
-            <a href="/app/clinical/encounter/<%= enc.id %>">View</a>
+            <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/clinical/encounter/<%= enc.id %>">View</a>
           </td>
         </tr>
         <% }) %>

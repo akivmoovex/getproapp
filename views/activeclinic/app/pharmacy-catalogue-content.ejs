@@ -22,7 +22,7 @@
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap">
+  <div class="ac-panel ac-table-wrap ac-desktop-table">
     <table class="ac-table">
       <caption class="ac-sr-only">Medicine Catalogue</caption>
       <thead>
@@ -49,5 +49,16 @@
       </tbody>
     </table>
   </div>
+  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="pharmacy-catalogue">
+    <% medications.forEach(function (med) { %>
+    <li class="ac-card ac-mobile-record-card">
+      <a class="ac-card__link" href="/app/pharmacy/catalogue/<%= med.id %>">
+        <p class="ac-card__title"><%= med.genericName %></p>
+        <p class="ac-muted"><%= med.strength %> · <%= med.dosageForm %> · <%= med.unitOfMeasure %></p>
+        <p><span class="ac-status" data-ac-status="<%= med.status %>"><%= med.status %></span></p>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
 </section>

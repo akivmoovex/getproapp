@@ -16,7 +16,7 @@ const {
 } = require("../services/activeClinicPublicMediaService");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-parity-9";
+const ASSET_VERSION = "v7-parity-13";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -76,6 +76,7 @@ function renderPublicPage(input) {
     services: [],
     procedures: [],
     profiles: [],
+    pageId: input.pageId,
     ...phoneLocals,
     ...(input.locals || {}),
     escapeHtml,

@@ -2,11 +2,10 @@
   var mode = (pageData && pageData.mode) || 'create';
   var item = (pageData && pageData.item) || {};
   var stitch = (pageData && pageData.stitch) || {};
-  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
 <section class="ac-catalog-form" data-ac-page-section="catalog-form" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
   <form method="post" action="/app/billing/catalog" class="ac-panel" data-ac-loading="1">
-    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+    <%- include('../partials/ac-csrf-field') %>
 
     <div class="ac-field">
       <label class="ac-label" for="code">Item code *</label>

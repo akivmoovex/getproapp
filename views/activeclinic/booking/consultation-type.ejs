@@ -13,7 +13,7 @@
         <ul><% Object.values(validationErrors).forEach(function (msg) { %><li><%= msg %></li><% }); %></ul>
       </div>
       <% } %>
-      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book" class="ac-public-form">
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book" class="ac-public-form" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <input type="hidden" name="wizardAction" value="continue"/>
         <% if (services && services.length) { %>

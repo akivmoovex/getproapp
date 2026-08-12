@@ -2,6 +2,7 @@
   var dash = (pageData && pageData.dashboard) || {};
   var unpaid = dash.unpaidInvoices || {};
   var todayPayments = dash.todayPayments || {};
+  var caps = (pageData && pageData.capabilities) || {};
   var stitch = (pageData && pageData.stitch) || {};
 %>
 <section class="ac-billing-dashboard" data-ac-page-section="billing-dashboard" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
@@ -24,7 +25,11 @@
       <p class="ac-stat-card__label">Today's payments</p>
       <p class="ac-stat-card__value"><%= todayPayments.count || 0 %></p>
       <p class="ac-muted ac-money"><%= todayPayments.totalFormatted || 'ZMW 0.00' %> collected</p>
+      <% if (caps.canOpenCashier) { %>
       <a class="ac-stat-card__link" href="/app/cashier">Open cashier</a>
+      <% } else { %>
+      <a class="ac-stat-card__link" href="/app/billing/payments/history">Payment history</a>
+      <% } %>
     </article>
   </div>
 
@@ -49,18 +54,22 @@
         <span class="ac-action-title">Collections</span>
         <span class="ac-action-description">Follow up unpaid invoices</span>
       </a>
+      <% if (caps.canReviewCharges) { %>
       <a class="ac-action-card" href="/app/billing/charges/review">
         <span class="ac-action-title">Charge review</span>
         <span class="ac-action-description">Approve automatic charges</span>
       </a>
+      <% } %>
       <a class="ac-action-card" href="/app/billing/credit-notes">
         <span class="ac-action-title">Credit notes</span>
         <span class="ac-action-description">Issue and view credits</span>
       </a>
+      <% if (caps.canViewCorrections) { %>
       <a class="ac-action-card" href="/app/billing/corrections">
         <span class="ac-action-title">Corrections</span>
         <span class="ac-action-description">Refunds, voids, credit trail</span>
       </a>
+      <% } %>
       <a class="ac-action-card" href="/app/billing/arrangements">
         <span class="ac-action-title">Payment arrangements</span>
         <span class="ac-action-description">Installment plans</span>
@@ -69,14 +78,18 @@
         <span class="ac-action-title">Price overrides</span>
         <span class="ac-action-description">Approve price exceptions</span>
       </a>
+      <% if (caps.canViewReports) { %>
       <a class="ac-action-card" href="/app/billing/reports/revenue">
         <span class="ac-action-title">Revenue report</span>
         <span class="ac-action-description">Posted invoices and collections</span>
       </a>
+      <% } %>
+      <% if (caps.canOpenCashier) { %>
       <a class="ac-action-card" href="/app/cashier">
         <span class="ac-action-title">Cashier</span>
         <span class="ac-action-description">Collect payments</span>
       </a>
+      <% } %>
     </div>
   </article>
 </section>

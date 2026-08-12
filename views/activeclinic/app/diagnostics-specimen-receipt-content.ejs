@@ -3,7 +3,7 @@
     <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || "_csrf" %>" value="<%= (shell && shell.csrf && shell.csrf.token) || "" %>" />
     
     <div class="ac-form-group">
-      <label>Specimen: <%= pageData.receipt.specimen.specimenIdentifier %></label>
+      <p class="ac-label">Specimen <%= pageData.receipt.specimen.specimenIdentifier %></p>
       <p>Type: <%= pageData.receipt.specimen.specimenType %></p>
       <p>Patient: <%= pageData.receipt.specimen.patientDisplayName %></p>
       <p>Request: <%= pageData.receipt.specimen.requestNumber %></p>

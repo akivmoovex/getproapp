@@ -617,15 +617,17 @@ describe("ActiveClinic staff invitation and account lifecycle", () => {
     requireDb();
     const stamp = Date.now().toString(36);
     const ac = await seedAcTenant(stamp, "sus");
+    const keeperPhone = nextPhone();
+    await seedNetworkAdmin(ac, keeperPhone);
     const phone = nextPhone();
-    const admin = await seedNetworkAdmin(ac, phone);
+    const target = await seedNetworkAdmin(ac, phone);
 
     const suspended = await suspendStaffAccess(pool, {
       organizationId: ac.orgId,
-      staffMemberId: admin.staff.id,
+      staffMemberId: target.staff.id,
       deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
     });
-    assert.equal(suspended.ok, true);
+    assert.equal(suspended.ok, true, JSON.stringify(suspended));
     assert.equal(suspended.staffMember.status, "suspended");
 
     const auth = await authenticateActiveClinicIdentity(pool, {
@@ -642,12 +644,12 @@ describe("ActiveClinic staff invitation and account lifecycle", () => {
       `UPDATE activeclinic.staff_role_assignments
           SET expires_at = now() - interval '1 day'
         WHERE staff_member_id = $1`,
-      [admin.staff.id]
+      [target.staff.id]
     );
 
     const restored = await restoreStaffAccess(pool, {
       organizationId: ac.orgId,
-      staffMemberId: admin.staff.id,
+      staffMemberId: target.staff.id,
       deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
     });
     assert.equal(restored.ok, true);

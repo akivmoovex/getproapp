@@ -29,21 +29,21 @@
 
   <% const fd = formData || {}; %>
   <% const verr = validationErrors || {}; %>
-  <form method="post" action="/register-clinic" class="ac-public-form" novalidate>
+  <form method="post" action="/register-clinic" class="ac-public-form" data-ac-loading="1" novalidate>
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <div class="ac-form-field<%= verr.clinicName ? ' ac-form-field--error' : '' %>">
-      <label for="clinicName">Clinic name</label>
-      <input id="clinicName" name="clinicName" required maxlength="200" value="<%= fd.clinicName || '' %>" aria-invalid="<%= verr.clinicName ? 'true' : 'false' %>"/>
+      <label for="clinicName">Clinic name <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+      <input id="clinicName" name="clinicName" required aria-required="true" maxlength="200" value="<%= fd.clinicName || '' %>" aria-invalid="<%= verr.clinicName ? 'true' : 'false' %>"<% if (verr.clinicName) { %> aria-describedby="clinicName-error"<% } %>/>
       <% if (verr.clinicName) { %><p class="ac-form-field__error" id="clinicName-error"><%= verr.clinicName %></p><% } %>
     </div>
     <div class="ac-form-field<%= verr.contactName ? ' ac-form-field--error' : '' %>">
-      <label for="contactName">Contact name</label>
-      <input id="contactName" name="contactName" required maxlength="120" value="<%= fd.contactName || '' %>" aria-invalid="<%= verr.contactName ? 'true' : 'false' %>"/>
+      <label for="contactName">Contact name <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+      <input id="contactName" name="contactName" required aria-required="true" maxlength="120" value="<%= fd.contactName || '' %>" aria-invalid="<%= verr.contactName ? 'true' : 'false' %>"<% if (verr.contactName) { %> aria-describedby="contactName-error"<% } %>/>
       <% if (verr.contactName) { %><p class="ac-form-field__error" id="contactName-error"><%= verr.contactName %></p><% } %>
     </div>
     <div class="ac-form-field<%= verr.contactEmail ? ' ac-form-field--error' : '' %>">
-      <label for="contactEmail">Contact email</label>
-      <input id="contactEmail" name="contactEmail" type="email" required value="<%= fd.contactEmail || '' %>" aria-invalid="<%= verr.contactEmail ? 'true' : 'false' %>"/>
+      <label for="contactEmail">Contact email <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+      <input id="contactEmail" name="contactEmail" type="email" required aria-required="true" value="<%= fd.contactEmail || '' %>" aria-invalid="<%= verr.contactEmail ? 'true' : 'false' %>"<% if (verr.contactEmail) { %> aria-describedby="contactEmail-error"<% } %>/>
       <% if (verr.contactEmail) { %><p class="ac-form-field__error" id="contactEmail-error"><%= verr.contactEmail %></p><% } %>
     </div>
     <div class="ac-form-field<%= verr.contactPhone ? ' ac-form-field--error' : '' %>">

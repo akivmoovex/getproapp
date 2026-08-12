@@ -12,15 +12,15 @@
 
   <section class="ac-patient-section">
     <h2>Change password</h2>
-    <form method="POST" action="/clinics/<%= clinicKey %>/patient/security" data-ac-shell="patient">
+    <form method="POST" action="/clinics/<%= clinicKey %>/patient/security" data-ac-shell="patient" data-ac-loading="1">
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
       <div class="ac-patient-field">
         <label for="currentPassword">Current password</label>
-        <input type="password" id="currentPassword" name="currentPassword" autocomplete="current-password" required/>
+        <input type="password" id="currentPassword" name="currentPassword" autocomplete="current-password" required aria-required="true"/>
       </div>
       <div class="ac-patient-field">
         <label for="newPassword">New password (min 8 characters)</label>
-        <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" required minlength="8"/>
+        <input type="password" id="newPassword" name="newPassword" autocomplete="new-password" required aria-required="true" minlength="8"/>
       </div>
       <button type="submit" class="ac-patient-btn">Change password</button>
     </form>

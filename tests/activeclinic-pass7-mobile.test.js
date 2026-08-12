@@ -27,7 +27,7 @@ describe("ActiveClinic Pass 7 mobile patterns", () => {
       },
     });
     assert.match(home, /acp-mobile-bottom-nav/);
-    assert.match(home, /v7-parity-[789]/);
+    assert.match(home, /v7-parity-1[0123]/);
     assert.match(home, /ac-tokens\.css/);
 
     const book = renderPublicPage({

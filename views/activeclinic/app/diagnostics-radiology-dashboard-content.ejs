@@ -1,16 +1,16 @@
 <div data-ac-stitch="65286a85cc674df097dedf0890378a29" data-ac-screen="radiology-dashboard">
-  <div class="ac-stats">
-    <div class="ac-stat">
-      <div class="ac-stat-label">Pending</div>
-      <div class="ac-stat-value"><%= pageData.dashboard.stats.pending %></div>
-    </div>
-    <div class="ac-stat">
-      <div class="ac-stat-label">In progress</div>
-      <div class="ac-stat-value"><%= pageData.dashboard.stats.in_progress %></div>
-    </div>
-    <div class="ac-stat">
-      <div class="ac-stat-label">Verified</div>
-      <div class="ac-stat-value"><%= pageData.dashboard.stats.verified %></div>
-    </div>
+  <div class="ac-metric-grid ac-stats">
+    <article class="ac-stat-card ac-stat">
+      <p class="ac-stat-card__label ac-stat-label">Pending</p>
+      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.pending %></p>
+    </article>
+    <article class="ac-stat-card ac-stat">
+      <p class="ac-stat-card__label ac-stat-label">In progress</p>
+      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.in_progress %></p>
+    </article>
+    <article class="ac-stat-card ac-stat">
+      <p class="ac-stat-card__label ac-stat-label">Verified</p>
+      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.verified %></p>
+    </article>
   </div>
 </div>

@@ -1,36 +1,40 @@
 <div data-ac-stitch="51c3b93fec6e40aebc327a4998fb29ea" data-ac-screen="laboratory-request-detail">
-  <div class="ac-detail">
-    <p><strong>Request:</strong> <%= pageData.request.requestNumber %></p>
-    <p><strong>Patient:</strong> <%= pageData.request.patientDisplayName %></p>
-    <p><strong>Test panel:</strong> <%= pageData.request.testPanelName %></p>
-    <p><strong>Status:</strong> <%= pageData.request.status %></p>
-    <p><strong>Urgency:</strong> <%= pageData.request.urgency %></p>
-    <% if (pageData.request.clinicalNotes) { %>
-    <p><strong>Clinical notes:</strong> <%= pageData.request.clinicalNotes %></p>
-    <% } %>
+  <div class="ac-panel ac-form-section ac-detail">
+    <dl class="ac-dl">
+      <div><dt>Request</dt><dd><%= pageData.request.requestNumber %></dd></div>
+      <div><dt>Patient</dt><dd><%= pageData.request.patientDisplayName %></dd></div>
+      <div><dt>Test panel</dt><dd><%= pageData.request.testPanelName %></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-ac-status="<%= pageData.request.status %>"><%= pageData.request.status %></span></dd></div>
+      <div><dt>Urgency</dt><dd><%= pageData.request.urgency %></dd></div>
+      <% if (pageData.request.clinicalNotes) { %>
+      <div><dt>Clinical notes</dt><dd><%= pageData.request.clinicalNotes %></dd></div>
+      <% } %>
+    </dl>
   </div>
-  
+
   <% if (pageData.request.events.length > 0) { %>
-  <h3>Specimen events</h3>
-  <table class="ac-table">
-    <thead>
-      <tr>
-        <th>Event type</th>
-        <th>Specimen ID</th>
-        <th>Note</th>
-        <th>Time</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% pageData.request.events.forEach(function (evt) { %>
-      <tr>
-        <td><%= evt.event_type %></td>
-        <td><%= evt.specimen_identifier %></td>
-        <td><%= evt.event_note || evt.rejection_reason || '' %></td>
-        <td><%= new Date(evt.created_at).toLocaleString() %></td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
+  <div class="ac-panel ac-table-wrap">
+    <h3>Specimen events</h3>
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th>Event type</th>
+          <th>Specimen ID</th>
+          <th>Note</th>
+          <th>Time</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% pageData.request.events.forEach(function (evt) { %>
+        <tr>
+          <td><%= evt.event_type %></td>
+          <td><%= evt.specimen_identifier %></td>
+          <td><%= evt.event_note || evt.rejection_reason || '' %></td>
+          <td><%= new Date(evt.created_at).toLocaleString() %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
   <% } %>
 </div>

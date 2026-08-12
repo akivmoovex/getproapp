@@ -1,0 +1,74 @@
+{
+  "generated_at": "2026-08-12T11:26:00.000Z",
+  "verdict": "PHASE10_COMPLETE_PRIORITY_ZERO",
+  "safety": {
+    "branch": "V7",
+    "head_sha": "082b5712944d91b23502cb7b61f2cad98969e2a7",
+    "deployment_env": "testing",
+    "db_identity": "moovex-platform-v7",
+    "production_touched": false,
+    "pushed": false,
+    "deployed": false
+  },
+  "required": {
+    "unexplained_priority_browser_console_errors": 0,
+    "priority_broken_links": 0,
+    "priority_route_500s": 0
+  },
+  "counts": {
+    "console_or_500_before": 2,
+    "console_or_500_after": 0,
+    "broken_links_after": 0,
+    "network_asset_failures_after": 0,
+    "rbac_failures": 0,
+    "cross_product_leaks": 0
+  },
+  "issues_before": [
+    {
+      "id": "P10-H1",
+      "severity": "high",
+      "route": "/forgot-password",
+      "detail": "EJS 500: phoneCountry is not defined after PhoneField include"
+    },
+    {
+      "id": "P10-H2",
+      "severity": "high",
+      "route": "/app/billing/invoices",
+      "detail": "SQL 500: column pr.patient_number / p.tenant_id do not exist"
+    }
+  ],
+  "fixed": [
+    "renderForgotPage supplies phoneCountry and identifier",
+    "Billing and cashier patient/invoice SQL uses patients.patient_number and patients.organization_id"
+  ],
+  "expected_non_200": [
+    { "route": "/app/offline", "status": 503, "reason": "by design" },
+    { "route": "/clinics/no-such-clinic-xyz", "status": 404, "reason": "unknown clinic" },
+    { "route": "/app/cashier", "status": 403, "reason": "org admin lacks cashier.open_session" },
+    { "route": "/app", "status": "302/303", "actor": "anonymous", "reason": "auth gate" }
+  ],
+  "remaining": [
+    "No live Chromium/Safari/Firefox console in this pass (HTTP + vm.Script + HTML audit)",
+    "Google Fonts are third-party; blocked-network browsers would log font failures",
+    "activeclinic-billing-ui-parity.test.js still Mocha-style (Phase 11)"
+  ],
+  "files_changed": [
+    "src/activeclinic/http/renderActiveClinicAuth.js",
+    "src/activeclinic/http/activeClinicLifecycleRoutes.js",
+    "src/activeclinic/http/activeClinicBillingRoutes.js",
+    "src/activeclinic/http/activeClinicCashierRoutes.js",
+    "tests/activeclinic-phase10-browser.test.js",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_PHASE10_BROWSER_REPORT.md",
+    "docs/activeclinic/stitch/ACTIVECLINIC_V7_PHASE10_BROWSER_REPORT.json"
+  ],
+  "tests": {
+    "added": "tests/activeclinic-phase10-browser.test.js",
+    "cases": 7,
+    "passed": [
+      "tests/activeclinic-phase10-browser.test.js",
+      "tests/activeclinic-auth-stitch-parity.test.js",
+      "tests/activeclinic-phase4-billing-ops.test.js"
+    ]
+  },
+  "next": "PHASE 11 — test-suite hardening"
+}

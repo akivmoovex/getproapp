@@ -11,29 +11,34 @@
   function isActive(frag) {
     return pid.indexOf(frag) !== -1;
   }
+  const homeOn = isActive('tenant-home') || pid === 'tenant-home';
+  const findOn = isActive('doctor') || isActive('service');
+  const bookOn = isActive('book');
+  const contactOn = isActive('contact');
+  const accountOn = isActive('patient');
 %>
 <% if (!hide) { %>
 <nav class="acp-mobile-bottom-nav" data-ac-mobile-bottom-nav="tenant" aria-label="Clinic shortcuts">
-  <a class="acp-mobile-bottom-nav__item<%= isActive('tenant-home') || pid === 'tenant-home' ? ' is-active' : '' %>" href="/clinics/<%= key %>">
+  <a class="acp-mobile-bottom-nav__item<%= homeOn ? ' is-active' : '' %>" href="/clinics/<%= key %>"<% if (homeOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌂</span>
     <span class="acp-mobile-bottom-nav__label">Home</span>
   </a>
-  <a class="acp-mobile-bottom-nav__item<%= isActive('doctor') || isActive('service') ? ' is-active' : '' %>" href="/clinics/<%= key %>/doctors">
+  <a class="acp-mobile-bottom-nav__item<%= findOn ? ' is-active' : '' %>" href="/clinics/<%= key %>/doctors"<% if (findOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌕</span>
     <span class="acp-mobile-bottom-nav__label">Find</span>
   </a>
   <% if (clinic.publicBookingEnabled) { %>
-  <a class="acp-mobile-bottom-nav__item<%= isActive('book') ? ' is-active' : '' %>" href="/clinics/<%= key %>/book">
-    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">◷</span>
+  <a class="acp-mobile-bottom-nav__item<%= bookOn ? ' is-active' : '' %>" href="/clinics/<%= key %>/book"<% if (bookOn) { %> aria-current="page"<% } %>>
+    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">📅</span>
     <span class="acp-mobile-bottom-nav__label">Book</span>
   </a>
   <% } else { %>
-  <a class="acp-mobile-bottom-nav__item<%= isActive('contact') ? ' is-active' : '' %>" href="/clinics/<%= key %>/contact">
+  <a class="acp-mobile-bottom-nav__item<%= contactOn ? ' is-active' : '' %>" href="/clinics/<%= key %>/contact"<% if (contactOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">☎</span>
     <span class="acp-mobile-bottom-nav__label">Contact</span>
   </a>
   <% } %>
-  <a class="acp-mobile-bottom-nav__item<%= isActive('patient') ? ' is-active' : '' %>" href="/clinics/<%= key %>/patient/login">
+  <a class="acp-mobile-bottom-nav__item<%= accountOn ? ' is-active' : '' %>" href="/clinics/<%= key %>/patient/login"<% if (accountOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">☺</span>
     <span class="acp-mobile-bottom-nav__label">Account</span>
   </a>

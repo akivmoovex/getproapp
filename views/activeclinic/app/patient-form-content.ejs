@@ -17,10 +17,10 @@
 <section class="ac-patient-form" data-ac-page-section="patient-<%= mode %>" data-ac-patient-step="<%= step %>" data-ac-stitch-identity="<%= stitch.identity || '' %>" data-ac-stitch-contact="<%= stitch.contact || '' %>" data-ac-stitch-emergency="<%= stitch.emergency || '' %>" data-ac-stitch-review="<%= stitch.review || '' %>" data-ac-stitch-duplicate="<%= stitch.duplicate || '' %>">
   <nav class="ac-form-stepper" aria-label="Registration steps">
     <ol>
-      <li class="ac-form-stepper__item<%= isFind ? ' is-current' : (!isReview && mode === 'create' ? ' is-done' : '') %>">Find</li>
-      <li class="ac-form-stepper__item<%= (!isFind && !isReview) ? ' is-current' : (isReview ? ' is-done' : '') %>"><%= isQuick ? 'Identity' : 'Details' %></li>
+      <li class="ac-form-stepper__item<%= isFind ? ' is-current' : (!isReview && mode === 'create' ? ' is-done' : '') %>"<%= isFind ? ' aria-current="step"' : '' %>>Find</li>
+      <li class="ac-form-stepper__item<%= (!isFind && !isReview) ? ' is-current' : (isReview ? ' is-done' : '') %>"<%= (!isFind && !isReview) ? ' aria-current="step"' : '' %>><%= isQuick ? 'Identity' : 'Details' %></li>
       <% if (!isQuick && mode !== 'edit') { %>
-      <li class="ac-form-stepper__item<%= isReview ? ' is-current' : '' %>">Review</li>
+      <li class="ac-form-stepper__item<%= isReview ? ' is-current' : '' %>"<%= isReview ? ' aria-current="step"' : '' %>>Review</li>
       <% } %>
     </ol>
   </nav>

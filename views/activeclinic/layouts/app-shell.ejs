@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title><%= (pageHeader && pageHeader.title) || 'ActiveClinic' %> · ActiveClinic</title>
   <meta name="robots" content="noindex, nofollow" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -171,6 +171,7 @@
     <%- include('../partials/sidebar', { shell: typeof shell !== 'undefined' ? shell : null, mobile: true }) %>
   </div>
 
+  <script src="/activeclinic/ac-a11y.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's08-1' %>" defer></script>
   <script src="/activeclinic/ac-shell-nav.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's08-1' %>" defer></script>
   <script src="/activeclinic/ac-auth.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's08-1' %>" defer></script>
   <script src="/activeclinic/ac-phone-field.js?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'phone-1' %>" defer></script>

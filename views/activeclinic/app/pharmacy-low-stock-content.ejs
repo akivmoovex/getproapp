@@ -21,7 +21,7 @@
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap">
+  <div class="ac-panel ac-table-wrap ac-desktop-table">
     <table class="ac-table">
       <caption class="ac-sr-only">Low Stock Items</caption>
       <thead>
@@ -46,5 +46,14 @@
       </tbody>
     </table>
   </div>
+  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="pharmacy-low-stock">
+    <% items.forEach(function (item) { %>
+    <li class="ac-card ac-mobile-record-card">
+      <p class="ac-card__title"><%= item.medicationGenericName || '—' %></p>
+      <p class="ac-muted"><%= item.medicationStrength || '—' %></p>
+      <p class="ac-text-warning"><strong><%= item.currentQuantity %></strong> <%= item.medicationUnit || '' %> · reorder <%= item.reorderLevel || '—' %></p>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
 </section>

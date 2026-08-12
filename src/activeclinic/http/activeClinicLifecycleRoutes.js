@@ -191,6 +191,8 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
             csrfToken,
             message: null,
             error: "Your session expired. Please try again.",
+            identifier: req.body && req.body.identifier,
+            phoneCountry: req.body && req.body.phone_country,
           })
         );
       }

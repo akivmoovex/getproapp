@@ -1,4 +1,5 @@
 -- V7 unified multi-product deployment catalogue (idempotent).
+-- Includes moovex-platform-testing (Hostinger unified testing runtime; hostname product selection).
 -- Inserts only domains that do not collide with existing unique canonical_domain rows.
 -- Deferred (domain still held by legacy testing rows):
 --   activeclinic-org-production (activeclinic.org held by activeclinic-org-v6)
@@ -22,6 +23,17 @@ INSERT INTO platform.deployments (
   database_access_mode,
   session_cookie_name
 ) VALUES
+  (
+    'moovex-platform-testing',
+    'platform',
+    'v7',
+    'pronline.org',
+    'testing',
+    'active',
+    false,
+    'read_write',
+    'moovex_platform_testing_sid'
+  ),
   (
     'blessboard-pronline-testing',
     'blessboard',

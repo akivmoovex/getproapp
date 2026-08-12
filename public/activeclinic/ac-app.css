@@ -8,9 +8,9 @@
   --ac-surface: #ffffff;
   --ac-ink: #0f172a;
   --ac-text-ink: #0f172a;
-  --ac-muted: #64748b;
-  --ac-text-muted: #64748b;
-  --ac-text-subtle: #94a3b8;
+  --ac-muted: #475569;
+  --ac-text-muted: #475569;
+  --ac-text-subtle: #475569;
   --ac-border: #e2e8f0;
   --ac-border-subtle: #e2e8f0;
   --ac-border-strong: #cbd5e1;
@@ -111,7 +111,8 @@ body.ac-app-body h3 {
   text-decoration: none;
   font-weight: 600;
 }
-.ac-skip:focus { top: var(--ac-space-4); }
+.ac-skip:focus,
+.ac-skip:focus-visible { top: var(--ac-space-4); }
 
 .ac-app {
   display: grid;
@@ -176,6 +177,10 @@ body.ac-app-body h3 {
 .ac-btn:focus-visible,
 .ac-icon-btn:focus-visible,
 .ac-select:focus-visible,
+.ac-input:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
 a:focus-visible,
 button:focus-visible {
   outline: 3px solid var(--ac-focus);
@@ -1721,6 +1726,209 @@ body.ac-app-body .ac-billing-account-mobile { display: none; }
 }
 @media (max-width: 430px) {
   body.ac-app-body .ac-form-stepper__item { font-size: 0.75rem; padding: 0.35rem 0.7rem; }
+}
+
+/* ===== Phase 7C — P1 internal visual chrome (Stitch 12272131183982732110) ===== */
+body.ac-app-body .ac-panel,
+body.ac-app-body .ac-stat-card,
+body.ac-app-body .ac-metric-card,
+body.ac-app-body .ac-filter-bar,
+body.ac-app-body .ac-form-section,
+body.ac-app-body .ac-empty-state,
+body.ac-app-body .ac-card {
+  border-radius: var(--ac-radius-sm);
+}
+body.ac-app-body .ac-page-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+body.ac-app-body .ac-page-header h1 {
+  font-size: 1.75rem;
+  line-height: 1.2;
+}
+body.ac-app-body .ac-btn--table {
+  min-height: 2.25rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: var(--ac-radius-sm);
+  font-size: 0.85rem;
+}
+body.ac-app-body .ac-field input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+body.ac-app-body .ac-field select,
+body.ac-app-body .ac-field textarea,
+body.ac-app-body .ac-form-group input:not([type="hidden"]):not([type="checkbox"]):not([type="radio"]),
+body.ac-app-body .ac-form-group select,
+body.ac-app-body .ac-form-group textarea {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.8rem;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  font: inherit;
+  background: var(--ac-surface);
+  margin: 0;
+}
+body.ac-app-body .ac-field textarea,
+body.ac-app-body .ac-form-group textarea {
+  min-height: 5.5rem;
+}
+body.ac-app-body .ac-field,
+body.ac-app-body .ac-form-group {
+  margin: 0 0 1rem;
+}
+body.ac-app-body .ac-field > label,
+body.ac-app-body .ac-form-group > label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin: 0 0 0.35rem;
+}
+body.ac-app-body .ac-field label input[type="checkbox"],
+body.ac-app-body .ac-form-group label input[type="checkbox"] {
+  width: auto;
+  min-height: auto;
+  margin-right: 0.45rem;
+}
+body.ac-app-body .ac-soap-grid {
+  display: grid;
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+@media (min-width: 768px) {
+  body.ac-app-body .ac-soap-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+body.ac-app-body .ac-reception__metrics {
+  margin: 0 0 1rem;
+}
+body.ac-app-body .ac-table-wrap.ac-panel {
+  padding: 0;
+  overflow: hidden;
+}
+body.ac-app-body .ac-table-wrap.ac-panel .ac-table {
+  margin: 0;
+}
+body.ac-app-body .ac-detail-list,
+body.ac-app-body .ac-detail .ac-dl {
+  display: grid;
+  gap: 0.65rem 1.25rem;
+  margin: 0;
+}
+@media (min-width: 640px) {
+  body.ac-app-body .ac-detail-list,
+  body.ac-app-body .ac-detail .ac-dl {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+body.ac-app-body .ac-detail-list dt,
+body.ac-app-body .ac-detail .ac-dl dt {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ac-muted);
+}
+body.ac-app-body .ac-detail-list dd,
+body.ac-app-body .ac-detail .ac-dl dd { margin: 0.15rem 0 0; }
+body.ac-app-body .ac-order-list {
+  margin: 0;
+  padding-left: 1.1rem;
+}
+body.ac-app-body .ac-consultation-note {
+  padding: 0.75rem 0.85rem;
+  margin: 0 0 0.75rem;
+  border: 1px solid var(--ac-border);
+  border-radius: 0.5rem;
+  background: var(--ac-bg-subtle);
+}
+body.ac-app-body .ac-mobile-record-card,
+body.ac-app-body .ac-card-list .ac-card {
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--ac-border);
+  background: #fff;
+  box-shadow: var(--ac-shadow-sm);
+}
+@media (max-width: 767px) {
+  body.ac-app-body .ac-soap-grid { grid-template-columns: 1fr; }
+  body.ac-app-body .ac-metric-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+/* ===== Phase 8 — mobile tables, filters, safe area ===== */
+body.ac-app-body .ac-filter-tabs {
+  display: flex;
+  flex-wrap: nowrap;
+  gap: 0.4rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: 0.25rem;
+}
+body.ac-app-body .ac-filter-tab {
+  flex: 0 0 auto;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--ac-border);
+  background: #fff;
+  color: var(--ac-muted);
+  text-decoration: none;
+  font-size: 0.85rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+body.ac-app-body .ac-filter-tab--active,
+body.ac-app-body .ac-filter-tab[aria-current="page"] {
+  background: color-mix(in srgb, var(--ac-primary) 14%, #fff);
+  border-color: var(--ac-primary);
+  color: var(--ac-primary);
+}
+
+@media (max-width: 899px) {
+  body.ac-app-body {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  body.ac-app-body .ac-desktop-table {
+    display: none;
+  }
+  body.ac-app-body .ac-filter-bar__grid--patients,
+  body.ac-app-body .ac-filter-bar__grid--appointments {
+    grid-template-columns: 1fr;
+  }
+  body.ac-app-body input:not([type="checkbox"]):not([type="radio"]):not([type="hidden"]),
+  body.ac-app-body select,
+  body.ac-app-body textarea,
+  body.ac-app-body .ac-btn,
+  body.ac-app-body .ac-icon-btn {
+    min-height: 2.75rem;
+  }
+  body.ac-app-body textarea {
+    min-height: 5.5rem;
+  }
+  body.ac-app-body .ac-action-menu summary {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+}
+
+@media (min-width: 900px) {
+  body.ac-app-body .ac-mobile-table-cards {
+    display: none;
+  }
+}
+
+/* ===== Phase 9 — accessibility ===== */
+body.ac-app-body .ac-status,
+body.ac-app-body .ac-badge {
+  /* Status uses visible text plus colour — never colour alone. */
+  text-transform: capitalize;
 }
 
 

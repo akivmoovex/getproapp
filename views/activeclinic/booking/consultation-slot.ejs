@@ -11,7 +11,7 @@
       <% } %>
       <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
       <% if (validationErrors && validationErrors.preferredStartsAt) { %><div class="ac-public-error" role="alert"><%= validationErrors.preferredStartsAt %></div><% } %>
-      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/slot" class="ac-public-form acp-slot-form">
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/slot" class="ac-public-form acp-slot-form" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <div class="acp-field-panel">
           <label for="preferredStartsAt">Preferred date and time</label>

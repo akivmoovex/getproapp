@@ -1,12 +1,11 @@
 <%
   var invoice = (pageData && pageData.invoice) || {};
-  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
 <section class="ac-panel" data-ac-page-section="invoice-amend">
   <h2 class="ac-dashboard__card-title">Amend invoice <%= invoice.invoice_number %></h2>
   <p class="ac-muted">Elevated action. Adjust notes or adjustment amount on a posted invoice.</p>
-  <form method="POST" action="/app/billing/invoices/<%= invoice.id %>/amend">
-    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+  <form method="POST" action="/app/billing/invoices/<%= invoice.id %>/amend" data-ac-loading="1">
+    <%- include('../partials/ac-csrf-field') %>
     <div class="ac-form-group">
       <label for="notes">Notes</label>
       <textarea id="notes" name="notes" rows="3"><%= invoice.notes || '' %></textarea>

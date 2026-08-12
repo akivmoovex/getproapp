@@ -27,31 +27,33 @@
   <% if (labelText) { %>
   <label class="ac-label" for="<%= fieldId %>-btn"><%= labelText %><% if (isRequired) { %> <span class="ac-required" aria-hidden="true">*</span><% } %></label>
   <% } %>
-  <div class="ac-phone-field__country" style="width:100%;min-width:12rem">
+  <div class="ac-phone-field__country">
     <input type="hidden" name="<%= name %>" id="<%= fieldId %>-value" value="<%= countryVal %>" data-ac-phone-country-value="1"/>
     <button
       type="button"
       class="ac-phone-field__country-btn"
       id="<%= fieldId %>-btn"
       data-ac-phone-country-btn="1"
-      aria-haspopup="listbox"
-      aria-expanded="false"
-      aria-controls="<%= fieldId %>-list"
+        aria-haspopup="dialog"
+        aria-expanded="false"
+        aria-controls="<%= fieldId %>-list"
+        aria-label="Country, currently <%= countryName %> <%= callingHint %>"
       style="width:100%"
     >
       <span class="ac-phone-field__flag" data-ac-phone-flag="1" aria-hidden="true"><%= countryVal %></span>
       <span class="ac-phone-field__code" data-ac-phone-code="1"><%= countryName %> <%= callingHint %></span>
       <span class="ac-phone-field__chevron" aria-hidden="true">▾</span>
     </button>
-    <div class="ac-phone-field__popover" id="<%= fieldId %>-list" hidden data-ac-phone-popover="1" role="listbox" aria-label="Select country">
+    <div class="ac-phone-field__backdrop" hidden data-ac-phone-backdrop="1"></div>
+    <div class="ac-phone-field__popover" id="<%= fieldId %>-list" hidden data-ac-phone-popover="1" role="dialog" aria-modal="true" aria-label="Select country">
       <label class="ac-sr-only" for="<%= fieldId %>-search">Search countries</label>
       <input type="search" class="ac-input ac-phone-field__search" id="<%= fieldId %>-search" data-ac-phone-search="1" placeholder="Search Zambia, ZM, +260" autocomplete="off"/>
-      <ul class="ac-phone-field__options" data-ac-phone-options="1">
+      <ul class="ac-phone-field__options" data-ac-phone-options="1" role="listbox" aria-label="Countries">
         <% countryList.forEach(function (c) {
           var iso = String(c.iso || '').toUpperCase();
           var selected = iso === countryVal;
         %>
-        <li>
+        <li role="presentation">
           <button
             type="button"
             class="ac-phone-field__option<%= selected ? ' is-selected' : '' %>"

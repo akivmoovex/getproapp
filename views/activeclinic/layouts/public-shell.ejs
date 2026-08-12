@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8"/>
-  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
   <title><%= pageTitle %> · ActiveClinic</title>
   <% if (typeof metaDescription === 'string' && metaDescription) { %>
   <meta name="description" content="<%= metaDescription %>"/>
@@ -44,6 +44,7 @@
   <%- include('../partials/ac-mobile-bottom-nav-platform') %>
   <% } %>
   <div id="ac-public-live" class="ac-sr-only" aria-live="polite"></div>
+  <script src="/activeclinic/ac-a11y.js?v=<%= assetVersion %>" defer></script>
   <script src="/activeclinic/ac-public.js?v=<%= assetVersion %>" defer></script>
   <script src="/activeclinic/ac-phone-field.js?v=<%= assetVersion %>" defer></script>
 </body>

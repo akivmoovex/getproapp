@@ -812,6 +812,20 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
 
     const pastExpiry = new Date();
     pastExpiry.setFullYear(pastExpiry.getFullYear() - 1);
+    const pastExpiryDate = pastExpiry.toISOString().split("T")[0];
+
+    const expiredReceive = await receiveStock(pool, {
+      staffId: tenant.staff.staffMember.id,
+      organizationId: tenant.org.records.organization.id,
+      healthcareOrganizationId: tenant.hco.healthcareOrganization.id,
+      facilityId: tenant.facility.facility.id,
+      medicationCatalogueItemId: medicationResult.medication.id,
+      batchNumber: "BATCH010-EXPIRED",
+      quantity: 100,
+      expiryDate: pastExpiryDate,
+    });
+    assert.equal(expiredReceive.ok, false);
+    assert.equal(expiredReceive.result, RESULT.EXPIRED_BATCH);
 
     const receiveResult = await receiveStock(pool, {
       staffId: tenant.staff.staffMember.id,
@@ -821,8 +835,15 @@ describe("ActiveClinic P05 Pharmacy Foundation", () => {
       medicationCatalogueItemId: medicationResult.medication.id,
       batchNumber: "BATCH010",
       quantity: 100,
-      expiryDate: pastExpiry.toISOString().split("T")[0],
+      expiryDate: "2027-12-31",
     });
+    assert.equal(receiveResult.ok, true, JSON.stringify(receiveResult));
+    await pool.query(
+      `UPDATE activeclinic.inventory_batches
+          SET expiry_date = $1
+        WHERE id = $2`,
+      [pastExpiryDate, receiveResult.batch.id]
+    );
 
     const prescriptionResult = await createPharmacyPrescription(pool, {
       staffId: tenant.staff.staffMember.id,

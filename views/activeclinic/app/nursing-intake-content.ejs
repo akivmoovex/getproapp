@@ -1,7 +1,7 @@
 <div data-ac-stitch="7959616d1673403ba3bf6ff71d18a77b" data-ac-screen="nursing-intake">
-  <p class="ac-notice">Nursing intake documentation (separate from triage if workflow requires).</p>
-  
-  <form method="post" action="/app/clinical/encounter/<%= pageData.intake.encounter.id %>/nursing-intake">
+  <p class="ac-alert ac-alert--info">Nursing intake documentation (separate from triage if workflow requires).</p>
+
+  <form class="ac-panel ac-form-section" method="post" action="/app/clinical/encounter/<%= pageData.intake.encounter.id %>/nursing-intake">
     <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
     
     <div class="ac-field">

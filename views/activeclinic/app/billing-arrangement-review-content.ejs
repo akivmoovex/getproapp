@@ -2,7 +2,6 @@
   var arr = (pageData && pageData.arrangement) || {};
   var caps = (pageData && pageData.capabilities) || {};
   var stitch = (pageData && pageData.stitch) || {};
-  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
 <section class="ac-billing-arrangement-review" data-ac-page-section="billing-arrangement-review" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
   <article class="ac-panel">
@@ -17,8 +16,8 @@
     </dl>
 
     <% if (caps.canReview) { %>
-    <form method="POST" action="/app/billing/arrangements/<%= arr.id %>/review" class="ac-form">
-      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+    <form method="POST" action="/app/billing/arrangements/<%= arr.id %>/review" class="ac-form" data-ac-loading="1">
+      <%- include('../partials/ac-csrf-field') %>
       <div class="ac-form-group">
         <label for="reviewNotes">Review notes</label>
         <textarea id="reviewNotes" name="reviewNotes" rows="2"></textarea>

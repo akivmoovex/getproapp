@@ -8,7 +8,7 @@
     <h2 class="ac-panel__title">Cancel this appointment?</h2>
     <p><strong><%= (a.patient && a.patient.displayName) || 'Patient appointment' %></strong></p>
     <p class="ac-muted"><%= (a.when && a.when.dateLabel) || '' %> · <%= (a.when && a.when.timeLabel) || '' %></p>
-    <form method="post" action="/app/appointments/<%= a.id %>/cancel">
+    <form method="post" action="/app/appointments/<%= a.id %>/cancel" data-ac-loading="1">
       <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
       <label class="ac-label" for="cancel_reason">Cancellation reason</label>
       <textarea class="ac-input" id="cancel_reason" name="reason" required maxlength="200" rows="3"></textarea>

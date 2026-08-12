@@ -7,12 +7,9 @@
   var isPartial = dispense.isPartial === true;
   var error = dispense.error;
   var stitch = dispense.stitch || {};
-  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
 <section class="ac-pharmacy-dispense-confirm" data-ac-page-section="pharmacy-dispense-confirm" data-ac-dispense-step="confirm" data-ac-stitch-desktop="<%= stitch.confirmation || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
-  <% if (error) { %>
-  <div class="ac-panel ac-alert ac-alert--error" role="alert"><%= error %></div>
-  <% } %>
+  <%- include('../partials/ac-form-error', { error: error }) %>
 
   <nav class="ac-stepper ac-stepper--pharmacy" aria-label="Dispensing steps">
     <ol class="ac-stepper__list">
@@ -30,8 +27,8 @@
     <% } %>
   </div>
 
-  <form method="post" action="/app/pharmacy/prescriptions/<%= prescription.id %>/dispense" class="ac-form">
-    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>">
+  <form method="post" action="/app/pharmacy/prescriptions/<%= prescription.id %>/dispense" class="ac-form" data-ac-loading="1">
+    <%- include('../partials/ac-csrf-field') %>
     <input type="hidden" name="confirm" value="1">
     <input type="hidden" name="dispenseType" value="<%= reviewValues.dispenseType || 'full' %>">
     <input type="hidden" name="patientAcknowledged" value="<%= reviewValues.patientAcknowledged || '' %>">

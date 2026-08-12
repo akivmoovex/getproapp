@@ -1,0 +1,85 @@
+{
+  "generated_at": "2026-08-12T13:45:00.000Z",
+  "verdict": "PHASE15_COMPLETE",
+  "behavior_changes": "none",
+  "safety": {
+    "branch": "V7",
+    "head_sha": "082b5712944d91b23502cb7b61f2cad98969e2a7",
+    "pushed": false,
+    "deployed": false,
+    "migrations": []
+  },
+  "stitch_projects": {
+    "public_booking_portal": "17813606734422395399",
+    "internal_ops": "12272131183982732110"
+  },
+  "duplication_removed": [
+    "createActiveClinicAppRenderer for billing/pharmacy/cashier issuePageCsrf+renderShell",
+    "rejectPharmacyCsrf and pharmacyNotFound",
+    "financeIdsWithFacility replaces billingIds",
+    "createCreditNote reuses lockInvoiceRemaining",
+    "canModifyBookingStatus in public lookup and patient portal",
+    "ac-csrf-field and ac-form-error partials on pharmacy/billing/cashier forms",
+    "duplicate dashboard border-radius; Phase 7C uses --ac-radius-sm"
+  ],
+  "files": {
+    "product_files_deleted": 0,
+    "net_new_files": [
+      "views/activeclinic/partials/ac-csrf-field.ejs",
+      "views/activeclinic/partials/ac-form-error.ejs"
+    ],
+    "templates_using_new_partials": 31,
+    "shell_asset_version": "v7-parity-15"
+  },
+  "dead_code": {
+    "deleted": [
+      "pharmacy actorFromAuth unused export and route wrapper",
+      "pharmacy unused CODE_ACTIVECLINIC_ORG_V6 and getPlatformDeploymentCode imports",
+      "billing unused payment/refund/reversal/createPatientCharge/PAYMENT_METHOD imports"
+    ],
+    "found_not_deleted": [
+      {
+        "path": "views/activeclinic/app/cashier-close-content.ejs",
+        "reason": "GET /app/cashier/close redirects to cash-count; still in Stitch/inventory maps"
+      },
+      {
+        "item": "local issuePageCsrf in ~16 other route files",
+        "reason": "outside Phase 4–14 overnight focus; public/portal signatures differ"
+      },
+      {
+        "item": "ignored assetVersion in appointment/clinical/diagnostics/reception",
+        "reason": "harmless until those files use the shared renderer"
+      }
+    ]
+  },
+  "skipped_as_speculative": [
+    "global UUID_RE extract",
+    "global hasPerm extract",
+    "migrate all 15+ route files to shared renderer",
+    "unify billing text CSRF 403 with pharmacy HTML CSRF"
+  ],
+  "tests": {
+    "runner": "node --test --test-concurrency=1",
+    "files": 74,
+    "pass": 475,
+    "fail": 0,
+    "skip": 0,
+    "mocha_leftovers_not_run": [
+      "tests/activeclinic-billing-ui-parity.test.js",
+      "tests/activeclinic-diagnostics-ui-parity.test.js"
+    ],
+    "stale_assertions_updated": [
+      {
+        "id": "P15-T1",
+        "file": "tests/activeclinic-pharmacy-ui-parity.test.js",
+        "reason": "Phase 13 rejects expired receive; fixture date 2025-12-31 is past"
+      },
+      {
+        "id": "P15-T2",
+        "file": "tests/activeclinic-phase9-a11y.test.js",
+        "reason": "shell asset version bumped to v7-parity-15"
+      }
+    ]
+  },
+  "next": "PHASE 16 — final inventory/mapping integrity"
+}

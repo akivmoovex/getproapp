@@ -1,32 +1,53 @@
 <div data-ac-stitch="cd5ff44012dd4f0f88fc7ed60848fd37" data-ac-screen="laboratory-worklist">
   <% if (pageData.worklist.specimens.length === 0) { %>
-  <p class="ac-empty">No specimens in processing.</p>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'lab-worklist-empty',
+      title: 'No specimens in processing',
+      description: 'Collected specimens waiting for receipt or results will appear here.'
+    }
+  }) %>
   <% } else { %>
-  <table class="ac-table">
-    <thead>
-      <tr>
-        <th>Specimen ID</th>
-        <th>Patient</th>
-        <th>Type</th>
-        <th>Request #</th>
-        <th>Status</th>
-        <th>Actions</th>
-      </tr>
-    </thead>
-    <tbody>
-      <% pageData.worklist.specimens.forEach(function (spec) { %>
-      <tr>
-        <td><%= spec.specimenIdentifier %></td>
-        <td><%= spec.patientDisplayName %></td>
-        <td><%= spec.specimenType %></td>
-        <td><%= spec.requestNumber %></td>
-        <td><%= spec.status %></td>
-        <td>
-          <a href="/app/diagnostics/laboratory/specimen/<%= spec.id %>/receive">Receive</a>
-        </td>
-      </tr>
-      <% }) %>
-    </tbody>
-  </table>
+  <div class="ac-panel ac-table-wrap ac-desktop-table">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th>Specimen ID</th>
+          <th>Patient</th>
+          <th>Type</th>
+          <th>Request #</th>
+          <th>Status</th>
+          <th>Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% pageData.worklist.specimens.forEach(function (spec) { %>
+        <tr>
+          <td><%= spec.specimenIdentifier %></td>
+          <td><%= spec.patientDisplayName %></td>
+          <td><%= spec.specimenType %></td>
+          <td><%= spec.requestNumber %></td>
+          <td><span class="ac-status" data-ac-status="<%= spec.status %>"><%= spec.status %></span></td>
+          <td>
+            <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/diagnostics/laboratory/specimen/<%= spec.id %>/receive">Receive</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="lab-worklist">
+    <% pageData.worklist.specimens.forEach(function (spec) { %>
+    <li class="ac-card ac-mobile-record-card">
+      <a class="ac-card__link" href="/app/diagnostics/laboratory/specimen/<%= spec.id %>/receive">
+        <p class="ac-card__title"><%= spec.specimenIdentifier %></p>
+        <p class="ac-muted"><%= spec.patientDisplayName %> · <%= spec.specimenType %></p>
+        <p class="ac-muted">Request <%= spec.requestNumber %></p>
+        <p><span class="ac-status" data-ac-status="<%= spec.status %>"><%= spec.status %></span></p>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
 </div>

@@ -9,11 +9,7 @@
   var substitutable = items.filter(function (item) { return item.substitutionAllowed; });
 %>
 <section class="ac-pharmacy-substitution" data-ac-page-section="pharmacy-substitution" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
-  <% if (error) { %>
-  <div class="ac-panel ac-alert ac-alert--error">
-    <%= error %>
-  </div>
-  <% } %>
+  <%- include('../partials/ac-form-error', { error: error }) %>
 
   <div class="ac-panel">
     <dl class="ac-detail-list">
@@ -30,8 +26,8 @@
     <a href="/app/pharmacy/prescriptions/<%= prescription.id %>" class="ac-btn ac-btn--secondary">Back</a>
   </div>
   <% } else { %>
-  <form method="post" action="/app/pharmacy/prescriptions/<%= prescription.id %>/substitute" class="ac-form">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+  <form method="post" action="/app/pharmacy/prescriptions/<%= prescription.id %>/substitute" class="ac-form" data-ac-loading="1">
+    <%- include('../partials/ac-csrf-field') %>
 
     <div class="ac-panel">
       <div class="ac-form-field">

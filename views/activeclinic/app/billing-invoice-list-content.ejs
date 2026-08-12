@@ -18,7 +18,7 @@
         }
       }) %>
     <% } else { %>
-      <table class="ac-table">
+      <table class="ac-table ac-desktop-table">
         <thead>
           <tr>
             <th>Invoice number</th>
@@ -40,6 +40,18 @@
           <% }) %>
         </tbody>
       </table>
+      <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="invoices">
+        <% invoices.forEach(function (inv) { %>
+        <li class="ac-card ac-mobile-record-card">
+          <a class="ac-card__link" href="/app/billing/invoices/<%= inv.id %>">
+            <p class="ac-card__title"><%= inv.invoice_number %></p>
+            <p class="ac-muted"><%= inv.patientName %> · <%= inv.patient_number %></p>
+            <p><strong><%= inv.totalAmountFormatted %></strong> · <%= inv.invoice_date %></p>
+            <p><span class="ac-status" data-status="<%= inv.status %>"><%= inv.status %></span></p>
+          </a>
+        </li>
+        <% }) %>
+      </ul>
     <% } %>
   </div>
 </section>

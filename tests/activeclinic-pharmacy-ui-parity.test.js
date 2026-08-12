@@ -347,7 +347,7 @@ describe("ActiveClinic P05 Pharmacy UI Parity", () => {
         medicationCatalogueItemId: medicationId,
         batchNumber: "BATCH001",
         quantity: "100",
-        expiryDate: "2025-12-31",
+        expiryDate: "2027-12-31",
         supplierName: "MedSupply",
       })
       .expect(303);

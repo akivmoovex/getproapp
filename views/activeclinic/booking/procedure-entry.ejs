@@ -47,7 +47,7 @@
         <h3>Your details and preferred time</h3>
         <p class="ac-public-banner acp-slot-banner" data-ac-slot-state="no_slots_published">Enter your preferred date and time — the clinic confirms availability. Live slots are not published online.</p>
         <% const fd = formData || {}; %>
-        <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>" class="ac-public-form">
+        <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>" class="ac-public-form" data-ac-loading="1">
           <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
           <input type="hidden" name="idempotencyKey" value="<%= idempotencyKey || '' %>"/>
           <div class="acp-field-grid">

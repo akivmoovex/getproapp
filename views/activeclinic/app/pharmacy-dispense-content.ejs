@@ -8,12 +8,9 @@
   var stitch = dispense.stitch || {};
   var step = dispense.step || 'review';
   var isPartial = dispense.isPartial === true;
-  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
 <section class="ac-pharmacy-dispense" data-ac-page-section="pharmacy-dispense" data-ac-dispense-step="<%= step %>" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>" data-ac-stitch-review="<%= stitch.review || '' %>" data-ac-stitch-partial="<%= stitch.partial || '' %>">
-  <% if (error) { %>
-  <div class="ac-panel ac-alert ac-alert--error" role="alert"><%= error %></div>
-  <% } %>
+  <%- include('../partials/ac-form-error', { error: error }) %>
 
   <nav class="ac-stepper ac-stepper--pharmacy" aria-label="Dispensing steps">
     <ol class="ac-stepper__list">
@@ -36,8 +33,8 @@
   <div class="ac-alert ac-alert--warning" role="status">Partial dispensing — quantities below the remaining amount will leave items open.</div>
   <% } %>
 
-  <form method="post" action="/app/pharmacy/prescriptions/<%= prescription.id %>/dispense" class="ac-form">
-    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>">
+  <form method="post" action="/app/pharmacy/prescriptions/<%= prescription.id %>/dispense" class="ac-form" data-ac-loading="1">
+    <%- include('../partials/ac-csrf-field') %>
 
     <div class="ac-panel ac-dispense-items">
       <h3>Review items</h3>

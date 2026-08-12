@@ -5,7 +5,7 @@
   var text = typeof stateText === 'string' ? stateText : 'There is nothing to display right now.';
   var marker = typeof stateMarker === 'string' ? stateMarker : kind;
 %>
-<div class="acp-shared-state acp-shared-state--<%= kind %>" data-ac-shared-state="<%= kind %>" data-ac-empty="<%= marker %>" role="<%= kind === 'error' ? 'alert' : 'status' %>">
+<div class="acp-shared-state acp-shared-state--<%= kind %>" data-ac-shared-state="<%= kind %>" data-ac-empty="<%= marker %>" data-ac-state-key="<%= kind === 'error' ? 'request_error' : (kind === 'loading' ? 'loading' : (kind === 'success' ? 'success_terminal' : 'empty')) %>" role="<%= kind === 'error' ? 'alert' : 'status' %>">
   <% if (kind === 'loading') { %>
   <div class="acp-shared-state__spinner" aria-hidden="true"></div>
   <% } %>

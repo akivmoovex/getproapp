@@ -56,11 +56,60 @@
 
   <div class="ac-panel ac-form-actions">
     <% if (canManage && purchaseOrder.status === 'draft') { %>
-    <form method="post" action="/app/pharmacy/purchase-orders/<%= purchaseOrder.id %>/submit" style="display:inline">
-      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>">
+    <form method="post" action="/app/pharmacy/purchase-orders/<%= purchaseOrder.id %>/submit" style="display:inline" data-ac-loading="1">
+      <%- include('../partials/ac-csrf-field') %>
       <button type="submit" class="ac-btn ac-btn--primary">Submit purchase order</button>
     </form>
     <% } %>
     <a href="/app/pharmacy/purchase-orders" class="ac-btn ac-btn--secondary">Back to list</a>
   </div>
+
+  <% if (canManage && (purchaseOrder.status === 'submitted' || purchaseOrder.status === 'partially_received') && items.length) { %>
+  <form method="post" action="/app/pharmacy/purchase-orders/<%= purchaseOrder.id %>/receive" class="ac-panel ac-form" data-ac-loading="1">
+    <%- include('../partials/ac-csrf-field') %>
+    <h3>Receive stock against this order</h3>
+    <p class="ac-muted">Receiving creates a batch and an append-only stock movement. Quantity received cannot exceed quantity ordered.</p>
+    <table class="ac-table">
+      <caption class="ac-sr-only">Receive purchase order lines</caption>
+      <thead>
+        <tr>
+          <th scope="col">Medication</th>
+          <th scope="col">Remaining</th>
+          <th scope="col">Qty to receive</th>
+          <th scope="col">Batch</th>
+          <th scope="col">Expiry</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(function (item) { %>
+        <% var remaining = (item.quantityOrdered || 0) - (item.quantityReceived || 0); %>
+        <% if (remaining > 0) { %>
+        <tr>
+          <td>
+            <input type="hidden" name="itemId" value="<%= item.id %>">
+            <strong><%= item.medicationGenericName || '—' %></strong>
+          </td>
+          <td><%= remaining %></td>
+          <td>
+            <label class="ac-sr-only" for="qty-<%= item.id %>">Quantity to receive</label>
+            <input id="qty-<%= item.id %>" class="ac-form-input" type="number" name="quantity" min="0" max="<%= remaining %>" value="<%= remaining %>">
+          </td>
+          <td>
+            <label class="ac-sr-only" for="batch-<%= item.id %>">Batch number</label>
+            <input id="batch-<%= item.id %>" class="ac-form-input" type="text" name="batchNumber" maxlength="100" required>
+          </td>
+          <td>
+            <label class="ac-sr-only" for="expiry-<%= item.id %>">Expiry date</label>
+            <input id="expiry-<%= item.id %>" class="ac-form-input" type="date" name="expiryDate" required>
+          </td>
+        </tr>
+        <% } %>
+        <% }) %>
+      </tbody>
+    </table>
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Receive selected quantities</button>
+    </div>
+  </form>
+  <% } %>
 </section>

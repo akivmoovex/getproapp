@@ -24,14 +24,14 @@
       <div class="ac-stat-card">
         <div class="ac-stat-label">Low stock items</div>
         <div class="ac-stat-value"><%= stats.lowStockCount || 0 %></div>
-        <% if (actions.canManageInventory) { %>
+        <% if (actions.canViewInventory) { %>
         <a href="/app/pharmacy/alerts/low-stock" class="ac-stat-link">View alerts</a>
         <% } %>
       </div>
       <div class="ac-stat-card">
         <div class="ac-stat-label">Expiring batches (90 days)</div>
         <div class="ac-stat-value"><%= stats.expiringBatchesCount || 0 %></div>
-        <% if (actions.canManageInventory) { %>
+        <% if (actions.canViewInventory) { %>
         <a href="/app/pharmacy/alerts/expiry" class="ac-stat-link">View alerts</a>
         <% } %>
       </div>
@@ -48,7 +48,7 @@
         <div class="ac-action-description">View and process prescriptions</div>
       </a>
       <% } %>
-      <% if (actions.canManageInventory) { %>
+      <% if (actions.canViewInventory) { %>
       <a href="/app/pharmacy/inventory" class="ac-action-card">
         <div class="ac-action-title">Inventory</div>
         <div class="ac-action-description">View stock levels</div>
@@ -57,6 +57,12 @@
         <div class="ac-action-title">Medicine catalogue</div>
         <div class="ac-action-description">Browse medications</div>
       </a>
+      <a href="/app/pharmacy/purchase-orders" class="ac-action-card">
+        <div class="ac-action-title">Purchase orders</div>
+        <div class="ac-action-description">Create and submit pharmacy POs</div>
+      </a>
+      <% } %>
+      <% if (actions.canManageInventory) { %>
       <a href="/app/pharmacy/inventory/receive" class="ac-action-card">
         <div class="ac-action-title">Receive stock</div>
         <div class="ac-action-description">Record incoming stock</div>
@@ -68,10 +74,6 @@
       <a href="/app/pharmacy/inventory/transfer" class="ac-action-card">
         <div class="ac-action-title">Transfer stock</div>
         <div class="ac-action-description">Move stock between facilities</div>
-      </a>
-      <a href="/app/pharmacy/purchase-orders" class="ac-action-card">
-        <div class="ac-action-title">Purchase orders</div>
-        <div class="ac-action-description">Create and submit pharmacy POs</div>
       </a>
       <% } %>
     </div>

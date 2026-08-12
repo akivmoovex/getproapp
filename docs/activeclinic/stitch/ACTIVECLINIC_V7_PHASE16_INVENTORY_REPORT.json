@@ -1,0 +1,156 @@
+{
+  "generated_at": "2026-08-12T12:27:59.412Z",
+  "verdict": "PHASE16_INVENTORY_VERIFIED",
+  "safety": {
+    "branch": "V7",
+    "head_sha": "082b5712944d91b23502cb7b61f2cad98969e2a7",
+    "deployment_env": "testing",
+    "db_identity": "moovex-platform-v7",
+    "production_touched": false,
+    "pushed": false,
+    "deployed": false,
+    "phase16_at": "2026-08-12T12:27:59.412Z"
+  },
+  "stitch_screens": 388,
+  "implementation_records": 247,
+  "mapping_counts": {
+    "mapping_type": {
+      "EXACT_IMPLEMENTATION_MATCH": 103,
+      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 247,
+      "DUPLICATE_STITCH_VARIANT": 8,
+      "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 11,
+      "PRODUCT_DECISION_DIFFERENCE": 9,
+      "NO_IMPLEMENTATION_REQUIRED": 10
+    },
+    "confidence": {
+      "HIGH": 388
+    },
+    "stitch_screen_coverage": {
+      "full": 361,
+      "partial": 0,
+      "missing": 0,
+      "other": 27,
+      "total": 388
+    },
+    "unique_design_concept_coverage": {
+      "full": 361,
+      "partial": 0,
+      "missing": 0,
+      "other": 9,
+      "total": 370,
+      "denominator_note": "Excludes DUPLICATE_STITCH_VARIANT and NO_IMPLEMENTATION_REQUIRED"
+    },
+    "desktop": {
+      "full": 225,
+      "partial": 0,
+      "missing": 0,
+      "other": 12,
+      "total": 237
+    },
+    "mobile": {
+      "full": 136,
+      "partial": 0,
+      "missing": 0,
+      "other": 15,
+      "total": 151
+    }
+  },
+  "required": {
+    "missing": 0,
+    "ambiguous": 0,
+    "partial": 0,
+    "partial_explanation": "None. Overnight Phase 5A–5E remaps remain in force; live mappings have no PARTIAL_IMPLEMENTATION rows."
+  },
+  "classifications": {
+    "full": 361,
+    "partial": 0,
+    "missing": 0,
+    "product_decisions": 9,
+    "duplicates": 8,
+    "na": 10,
+    "ambiguous": 0
+  },
+  "reverse": {
+    "implementation_records": 247,
+    "with_stitch": 201,
+    "without_stitch": 46,
+    "invalid_implementation_ids": 0,
+    "orphan_full_mappings": 0
+  },
+  "orphans": {
+    "unused_screen_views": [
+      "views/activeclinic/app/cashier-close-content.ejs",
+      "views/activeclinic/booking/procedure-entry.ejs"
+    ],
+    "unused_views_deleted": false,
+    "inventory_missing_view": [],
+    "inventory_missing_route": [],
+    "infra_gets_excluded": 11,
+    "redirect_only": [
+      "ACV7-IMPL-0159"
+    ]
+  },
+  "inventory_fixes": [
+    "ACV7-IMPL-0159 cashier close marked REDIRECT_ONLY; unused view detached",
+    "ACV7-IMPL-0059 password-updated bound to POST reset-password",
+    "ACV7-IMPL-0118 order route aligned to :orderType (lab)",
+    "ACV7-IMPL-0119 order route aligned to :orderType (prescription)",
+    "ACV7-IMPL-0120 order route aligned to :orderType (radiology)"
+  ],
+  "mapping_view_path_fixes": [
+    "2f99501abec942138637abb0934ed767",
+    "8c52142a20484c39928c8f3355174384",
+    "3f05000a252b4732952b7dcbd70a9c06"
+  ],
+  "ghost_full_mappings": [],
+  "invalid_implementation_ids": [],
+  "mapping_issues": [],
+  "product_decisions": [
+    {
+      "id": "9c0219d791da43df8a7abf41cf0809df",
+      "title": "P07 – Insurance Payment Placeholder",
+      "decision": "Explicit placeholder / intentionally not built in V7"
+    },
+    {
+      "id": "0489fa5d1c37481ba159eeed1cd64155",
+      "title": "P07 – NHIMA Claim Placeholder",
+      "decision": "Explicit placeholder / intentionally not built in V7"
+    },
+    {
+      "id": "46a8b6c4f4b846e18ab586c3d6fae6ca",
+      "title": "P07 – Write-Off Request Placeholder",
+      "decision": "Explicit placeholder / intentionally not built in V7"
+    },
+    {
+      "id": "1db2777e1f444a0a90ca3174a4700ac2",
+      "title": "P13 – Phone Verification",
+      "decision": "Staff activation uses password set; patient verify-phone is separate portal flow"
+    },
+    {
+      "id": "6b9cfcd190e14155ac4390d66d0cff76",
+      "title": "P13 – Role Permission Matrix – Desktop",
+      "decision": "V7 uses fixed ActiveClinic role catalogue with capability-group summaries and role detail pages. Stitch role×permission matrix editor is intentionally not built — roles are system-defined, not custom-editable."
+    },
+    {
+      "id": "8c52142a20484c39928c8f3355174384",
+      "title": "P25 - Juflona Booking - Procedure Slot - Desktop",
+      "decision": "V7 uses preferred datetime field; Stitch shows live selectable slot grid. Live slots explicitly not published online."
+    },
+    {
+      "id": "3f05000a252b4732952b7dcbd70a9c06",
+      "title": "P25 - Juflona Booking - Procedure Slot - Mobile",
+      "decision": "V7 uses preferred datetime field; Stitch shows live selectable slot grid. Live slots explicitly not published online."
+    },
+    {
+      "id": "ef1d0961e88e43549af5361a5fb9320c",
+      "title": "P25 - Juflona Booking - Referral and Upload States - Mobile",
+      "decision": "Stitch shows referral upload UI states; V7 has no secure public upload storage — honesty banner only"
+    },
+    {
+      "id": "ca7cdd02f84f4a13abb5b324f3fb453f",
+      "title": "P26 - Juflona Booking - Booking Changed During Request - Mobile",
+      "decision": "V7 reloads current booking status on each request. Stitch mid-request conflict UX (booking changed while editing) is intentionally not built; cancel/reschedule operate on current server state."
+    }
+  ],
+  "next": "PHASE 17 — final readiness gate"
+}

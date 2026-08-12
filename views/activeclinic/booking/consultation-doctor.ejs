@@ -7,7 +7,7 @@
         <p>Select a doctor if you have a preference, or choose any available doctor. We do not show live availability.</p>
       </header>
       <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
-      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/doctor" class="ac-public-form">
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/doctor" class="ac-public-form" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <fieldset class="ac-booking-choice-list acp-choice-grid acp-choice-grid--doctors">
           <legend class="ac-sr-only">Doctor preference</legend>

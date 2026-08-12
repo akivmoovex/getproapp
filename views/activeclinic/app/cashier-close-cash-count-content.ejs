@@ -1,7 +1,6 @@
 <%
   var session = (pageData && pageData.session) || {};
   var stitch = (pageData && pageData.stitch) || {};
-  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
 <section class="ac-cashier-cash-count" data-ac-page-section="cashier-cash-count" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
   <nav class="ac-stepper" aria-label="Close session steps">
@@ -13,7 +12,7 @@
   </nav>
 
   <form method="post" action="/app/cashier/close/cash-count" class="ac-panel" data-ac-loading="1">
-    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+    <%- include('../partials/ac-csrf-field') %>
 
     <p class="ac-flash ac-flash--warning" role="alert">
       Count all cash in your drawer before continuing to closing review.

@@ -1,11 +1,11 @@
 <section class="ac-public-section ac-tenant-directory" data-ac-page-section="tenant-doctors">
   <header class="ac-tenant-page-header">
-    <h1>Doctors</h1>
+    <h1>Our Doctors</h1>
     <p class="ac-public-lede">Clinicians with profiles published by <%= clinic.publicName %>.</p>
   </header>
   <% const list = Array.isArray(profiles) ? profiles : []; %>
   <% if (!list.length) { %>
-  <div class="ac-public-empty" data-ac-empty="doctors">
+  <div class="ac-public-empty" data-ac-empty="doctors" data-ac-state-key="empty">
     <p>No public doctor profiles are published.</p>
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
   </div>

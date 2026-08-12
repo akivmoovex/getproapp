@@ -27,6 +27,7 @@ const {
   RECEPTIONIST,
   FACILITY_ADMIN,
   ORGANIZATION_ADMIN,
+  MEDICAL_RECORDS_OFFICER,
   STAFF_ROLE,
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
 const {
@@ -151,7 +152,8 @@ async function seedNetworkActor(tenant, phone) {
     facilityId: tenant.facilityId,
     isPrimary: true,
   });
-  // Org admin (archive/audit) + receptionist (patient registration writes).
+  // Org admin (archive/audit) + receptionist (demographics) + medical records
+  // (authoritative identifiers). Identifier writes are not granted to org admin.
   const orgRole = await assignStaffRole(pool, {
     organizationId: tenant.orgId,
     staffMemberId: staff.staffMember.id,
@@ -159,14 +161,16 @@ async function seedNetworkActor(tenant, phone) {
     scopeType: "organisation",
   });
   assert.equal(orgRole.ok, true, JSON.stringify(orgRole));
-  const role = await assignStaffRole(pool, {
-    organizationId: tenant.orgId,
-    staffMemberId: staff.staffMember.id,
-    roleKey: RECEPTIONIST,
-    scopeType: "facility",
-    facilityId: tenant.facilityId,
-  });
-  assert.equal(role.ok, true, JSON.stringify(role));
+  for (const roleKey of [RECEPTIONIST, MEDICAL_RECORDS_OFFICER]) {
+    const role = await assignStaffRole(pool, {
+      organizationId: tenant.orgId,
+      staffMemberId: staff.staffMember.id,
+      roleKey,
+      scopeType: "facility",
+      facilityId: tenant.facilityId,
+    });
+    assert.equal(role.ok, true, JSON.stringify(role));
+  }
   return {
     staffMemberId: staff.staffMember.id,
     organizationId: tenant.orgId,

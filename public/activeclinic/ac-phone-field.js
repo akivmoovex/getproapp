@@ -5,8 +5,23 @@
 (function () {
   "use strict";
 
+  var openCount = 0;
+
   function closestPhoneField(el) {
     return el && el.closest ? el.closest("[data-ac-phone-field]") : null;
+  }
+
+  function syncKeyboardInset() {
+    var vv = window.visualViewport;
+    var inset = 0;
+    if (vv) {
+      inset = Math.max(0, window.innerHeight - vv.height - vv.offsetTop);
+    }
+    document.documentElement.style.setProperty("--ac-keyboard-inset", inset + "px");
+  }
+
+  function lockBody(on) {
+    document.body.classList.toggle("ac-phone-sheet-open", on);
   }
 
   function setCountry(root, iso, callingCode, countryName) {
@@ -28,28 +43,27 @@
       opt.classList.toggle("is-selected", selected);
       opt.setAttribute("aria-selected", selected ? "true" : "false");
     });
-    if (btn) btn.setAttribute("aria-expanded", "false");
-    var pop = root.querySelector("[data-ac-phone-popover]");
-    if (pop) pop.hidden = true;
+    if (btn) {
+      var label = "Country calling code, currently " + (callingCode || iso);
+      if (root.classList.contains("ac-country-picker") && countryName) {
+        label = "Country, currently " + countryName + (callingCode ? " " + callingCode : "");
+      }
+      btn.setAttribute("aria-label", label);
+      btn.setAttribute("aria-expanded", "false");
+    }
+    closePopover(root);
     syncLegacy(root);
   }
 
   function syncLegacy(root) {
     var legacy = root.querySelector("[data-ac-phone-legacy]");
     if (!legacy) return;
-    var country = root.querySelector("[data-ac-phone-country-value]");
     var national = root.querySelector("[data-ac-phone-national]");
     var n = national ? String(national.value || "").trim() : "";
-    if (!n) {
+    if (!n || n.indexOf("@") !== -1) {
       legacy.value = "";
       return;
     }
-    // Leave empty when national looks like email (login) — server handles.
-    if (n.indexOf("@") !== -1) {
-      legacy.value = "";
-      return;
-    }
-    // Prefer sending structured fields; legacy left blank so server uses phone_national.
     legacy.value = "";
   }
 
@@ -68,12 +82,20 @@
   function openPopover(root) {
     var pop = root.querySelector("[data-ac-phone-popover]");
     var btn = root.querySelector("[data-ac-phone-country-btn]");
+    var backdrop = root.querySelector("[data-ac-phone-backdrop]");
     if (!pop) return;
-    document.querySelectorAll("[data-ac-phone-popover]").forEach(function (other) {
-      if (other !== pop) other.hidden = true;
+    document.querySelectorAll("[data-ac-phone-field]").forEach(function (other) {
+      if (other !== root) closePopover(other);
     });
+    var wasHidden = pop.hidden;
     pop.hidden = false;
+    if (backdrop) backdrop.hidden = false;
     if (btn) btn.setAttribute("aria-expanded", "true");
+    if (wasHidden) {
+      openCount += 1;
+      lockBody(true);
+    }
+    syncKeyboardInset();
     var search = root.querySelector("[data-ac-phone-search]");
     if (search) {
       search.value = "";
@@ -82,15 +104,37 @@
     }
   }
 
+  function trapOpenPopover(ev) {
+    if (ev.key !== "Tab") return;
+    var open = document.querySelector("[data-ac-phone-popover]:not([hidden])");
+    if (!open) return;
+    if (window.acA11y && typeof window.acA11y.trapTab === "function") {
+      window.acA11y.trapTab(ev, open);
+    }
+  }
+
   function closePopover(root) {
     var pop = root.querySelector("[data-ac-phone-popover]");
     var btn = root.querySelector("[data-ac-phone-country-btn]");
+    var backdrop = root.querySelector("[data-ac-phone-backdrop]");
+    var wasOpen = pop && !pop.hidden;
     if (pop) pop.hidden = true;
+    if (backdrop) backdrop.hidden = true;
     if (btn) btn.setAttribute("aria-expanded", "false");
+    if (wasOpen) {
+      openCount = Math.max(0, openCount - 1);
+      if (openCount === 0) lockBody(false);
+    }
   }
 
   function onDocClick(ev) {
-    var root = closestPhoneField(ev.target);
+    var target = ev.target;
+    if (target && target.closest && target.closest("[data-ac-phone-backdrop]")) {
+      var field = closestPhoneField(target);
+      if (field) closePopover(field);
+      return;
+    }
+    var root = closestPhoneField(target);
     document.querySelectorAll("[data-ac-phone-field]").forEach(function (field) {
       if (field !== root) closePopover(field);
     });
@@ -142,6 +186,7 @@
       national.addEventListener("input", function () {
         syncLegacy(root);
       });
+      national.addEventListener("focus", syncKeyboardInset);
     }
 
     syncLegacy(root);
@@ -149,9 +194,28 @@
 
   function boot() {
     document.querySelectorAll("[data-ac-phone-field]").forEach(initField);
+    syncKeyboardInset();
+    if (window.visualViewport) {
+      window.visualViewport.addEventListener("resize", syncKeyboardInset);
+      window.visualViewport.addEventListener("scroll", syncKeyboardInset);
+    }
+    window.addEventListener("resize", syncKeyboardInset);
   }
 
   document.addEventListener("click", onDocClick);
+  document.addEventListener("keydown", function (ev) {
+    if (ev.key === "Tab") trapOpenPopover(ev);
+    if (ev.key !== "Escape") return;
+    document.querySelectorAll("[data-ac-phone-field]").forEach(function (field) {
+      var pop = field.querySelector("[data-ac-phone-popover]");
+      var wasOpen = pop && !pop.hidden;
+      closePopover(field);
+      if (wasOpen) {
+        var btn = field.querySelector("[data-ac-phone-country-btn]");
+        if (btn) btn.focus();
+      }
+    });
+  });
   if (document.readyState === "loading") {
     document.addEventListener("DOMContentLoaded", boot);
   } else {

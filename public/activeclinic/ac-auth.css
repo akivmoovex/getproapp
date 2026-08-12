@@ -92,7 +92,8 @@ body.ac-auth-body {
   text-decoration: none;
   font-weight: 600;
 }
-.ac-auth-skip:focus {
+.ac-auth-skip:focus,
+.ac-auth-skip:focus-visible {
   top: var(--ac-auth-gutter);
 }
 
@@ -670,4 +671,19 @@ body.ac-auth-body {
   display: block;
   margin-bottom: 0.4rem;
   font-weight: 600;
+}
+
+/* ===== Phase 8 — auth mobile composition ===== */
+@media (max-width: 767px) {
+  body.ac-auth-body {
+    overflow-x: clip;
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  body.ac-auth-body .ac-btn,
+  body.ac-auth-body input,
+  body.ac-auth-body select {
+    min-height: 2.75rem;
+  }
 }

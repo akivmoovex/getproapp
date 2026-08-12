@@ -19,7 +19,7 @@
           <% if (draft.visitReason) { %><div><dt>Reason</dt><dd><%= draft.visitReason %></dd></div><% } %>
         </dl>
       </div>
-      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/submit" class="ac-public-form">
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/submit" class="ac-public-form" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <input type="hidden" name="idempotencyKey" value="<%= draft.idempotencyKey %>"/>
         <div class="ac-booking-wizard__actions acp-booking-actions">

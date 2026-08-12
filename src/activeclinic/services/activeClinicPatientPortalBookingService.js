@@ -6,6 +6,9 @@
  */
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const {
+  canModifyBookingStatus,
+} = require("./activeClinicPublicBookingDraft");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -224,16 +227,21 @@ async function requestPatientBookingCancellation(db, input) {
     return { ok: false, code: RESULT.ALREADY_REQUESTED };
   }
 
-  if (!["submitted_pending_confirmation", "confirmed"].includes(resolved.booking.status)) {
+  if (!canModifyBookingStatus(resolved.booking.status)) {
     return { ok: false, code: RESULT.NOT_ALLOWED };
   }
 
-  await db.query(
+  const updated = await db.query(
     `UPDATE activeclinic.public_booking_requests
      SET status = 'cancellation_requested', updated_at = now()
-     WHERE id = $1`,
+     WHERE id = $1
+       AND status IN ('submitted_pending_confirmation', 'confirmed')
+     RETURNING id, status`,
     [bookingId]
   );
+  if (!updated.rows.length) {
+    return { ok: false, code: RESULT.NOT_ALLOWED };
+  }
 
   void reason;
   return { ok: true, code: RESULT.OK, booking: resolved.booking };
@@ -257,7 +265,7 @@ async function requestPatientBookingReschedule(db, input) {
     return { ok: false, code: RESULT.ALREADY_REQUESTED };
   }
 
-  if (!["submitted_pending_confirmation", "confirmed"].includes(resolved.booking.status)) {
+  if (!canModifyBookingStatus(resolved.booking.status)) {
     return { ok: false, code: RESULT.NOT_ALLOWED };
   }
 
@@ -266,14 +274,19 @@ async function requestPatientBookingReschedule(db, input) {
       ? preferredStartsAt.toISOString()
       : null;
 
-  await db.query(
+  const updated = await db.query(
     `UPDATE activeclinic.public_booking_requests
      SET status = 'reschedule_requested',
          preferred_starts_at = COALESCE($2, preferred_starts_at),
          updated_at = now()
-     WHERE id = $1`,
+     WHERE id = $1
+       AND status IN ('submitted_pending_confirmation', 'confirmed')
+     RETURNING id, status`,
     [bookingId, nextStart]
   );
+  if (!updated.rows.length) {
+    return { ok: false, code: RESULT.NOT_ALLOWED };
+  }
 
   void reason;
   return { ok: true, code: RESULT.OK, booking: resolved.booking };

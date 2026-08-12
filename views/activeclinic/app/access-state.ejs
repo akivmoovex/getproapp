@@ -22,8 +22,9 @@
     <div class="ac-state-card__icon" aria-hidden="true">
       <% if (pageId === 'session-expired') { %>⏱
       <% } else if (pageId === 'not-found') { %>⌕
-      <% } else if (pageId === 'service-unavailable' || pageId === 'error') { %>⚠
-      <% } else if (pageId === 'context-unavailable') { %>⌂
+      <% } else if (pageId === 'service-unavailable' || pageId === 'error' || pageId === 'offline') { %>⚠
+      <% } else if (pageId === 'context-unavailable' || pageId === 'facility-unavailable') { %>⌂
+      <% } else if (pageId === 'department-unavailable') { %>☰
       <% } else { %>🔒<% } %>
     </div>
     <h1><%= heading %></h1>

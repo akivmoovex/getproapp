@@ -1,7 +1,7 @@
 <%
   var success = (pageData && pageData.success) || {};
 %>
-<section class="ac-appointment-success" data-ac-page-section="appointment-success" data-ac-stitch-confirm="<%= success.stitchConfirm || '' %>">
+<section class="ac-appointment-success" data-ac-page-section="appointment-success" data-ac-state-key="success_terminal" data-ac-stitch-confirm="<%= success.stitchConfirm || '' %>">
   <div class="ac-panel">
     <h2 class="ac-dashboard__card-title">Appointment confirmed</h2>
     <p>The administrative booking was created. No clinical encounter was opened.</p>

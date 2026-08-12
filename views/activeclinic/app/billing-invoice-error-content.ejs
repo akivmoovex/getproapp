@@ -3,7 +3,7 @@
   var error = (pageData && pageData.error) || 'An unexpected error occurred.';
   var stitch = (pageData && pageData.stitch) || {};
 %>
-<section class="ac-invoice-error" data-ac-page-section="invoice-error" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+<section class="ac-invoice-error" data-ac-page-section="invoice-error" data-ac-state-key="request_error" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
   <div class="ac-panel ac-alert ac-alert--error" role="alert">
     <h2 class="ac-dashboard__card-title">Invoice error</h2>
     <p><%= error %></p>

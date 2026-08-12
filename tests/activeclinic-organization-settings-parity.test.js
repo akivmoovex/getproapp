@@ -240,10 +240,11 @@ describe("ActiveClinic organization settings parity (AC-V6-S07)", () => {
     assert.match(overview.text, /Settings Clinic|Main Hospital/);
     assert.match(overview.text, /Profile complete|Setup incomplete/);
     assert.doesNotMatch(overview.text, /BlessBoard/i);
-    // Patients nav is Stitch P02; settings must still omit commercial/clinical modules.
+    // Shell nav may include Billing/Pharmacy for org admins (Stitch P02). Settings
+    // content must still omit commercial widgets and operational census copy.
     assert.doesNotMatch(
       overview.text,
-      /subscription|billing|pharmacy|patient census|appointments today/i
+      /subscription|patient census|appointments today/i
     );
     assert.doesNotMatch(overview.text, /data-environment|deployment_id|organization_id/i);
 

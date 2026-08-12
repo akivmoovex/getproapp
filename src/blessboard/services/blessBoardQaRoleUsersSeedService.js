@@ -294,12 +294,10 @@ async function ensureCatalogueAssignment(db, {
   return { ok: true, status: "assigned", assignmentId: inserted.id };
 }
 
-async function mockCreateSession() {
-  return { ok: true, session: { id: "qa-verify-no-persist" }, code: null };
-}
-
 async function verifyLogin(db, { email, phone, password, deploymentCode, organizationId }) {
-  // Lightweight credential + role eligibility check (no durable session rows).
+  // Real authenticateBlessBoardUser path (including deployment-scoped session create).
+  // Temporary verify sessions are revoked immediately so LOGIN_READY matches browser login.
+  const { revokeV5Session } = require("../../platform/session/revokeV5Session");
   const emailUser = await authRepo.findUserByEmail(db, email);
   if (!emailUser || String(emailUser.status) !== "active") {
     return {
@@ -331,23 +329,39 @@ async function verifyLogin(db, { email, phone, password, deploymentCode, organiz
     new Date(emailUser.sign_in_locked_until).getTime() > Date.now();
   const mustChange = emailUser.password_change_required === true;
 
-  // One authenticateBlessBoardUser call with mock session to prove the real path.
   let authOk = false;
   let authStatus = null;
+  let authMessage = null;
+  let phoneAuthOk = false;
   if (passwordOk && hasLoginRole && !locked && !mustChange) {
     const auth = await authenticateBlessBoardUser(db, {
       identifier: email,
       password,
       deploymentCode,
       requireOrganizationId: organizationId || null,
-      createSession: mockCreateSession,
     });
     authOk = auth && auth.ok === true;
     authStatus = auth && auth.status;
+    authMessage = auth && auth.message;
+    if (auth && auth.ok && auth.rawToken) {
+      await revokeV5Session(db, { rawToken: auth.rawToken, deploymentCode });
+    }
+    if (identityMatch) {
+      const phoneAuth = await authenticateBlessBoardUser(db, {
+        identifier: phone,
+        password,
+        deploymentCode,
+        requireOrganizationId: organizationId || null,
+      });
+      phoneAuthOk = phoneAuth && phoneAuth.ok === true;
+      if (phoneAuth && phoneAuth.ok && phoneAuth.rawToken) {
+        await revokeV5Session(db, { rawToken: phoneAuth.rawToken, deploymentCode });
+      }
+    }
   }
 
   const emailOk = passwordOk && hasLoginRole && !locked && !mustChange && authOk;
-  const phoneOk = identityMatch && emailOk;
+  const phoneOk = identityMatch && emailOk && phoneAuthOk;
   return {
     emailOk,
     phoneOk,
@@ -355,6 +369,7 @@ async function verifyLogin(db, { email, phone, password, deploymentCode, organiz
     wrongPasswordRejected: wrongRejected,
     emailStatus: authStatus || (emailOk ? "authenticated" : "not_ready"),
     phoneStatus: phoneOk ? "authenticated" : "not_ready",
+    authMessage: authMessage || null,
     LOGIN_READY: emailOk && phoneOk && identityMatch && wrongRejected,
   };
 }

@@ -6,7 +6,14 @@
 <section class="ac-panel" data-ac-page-section="booking-requests">
   <p class="ac-muted">Public bookings remain valid while clinic patient identity is unresolved. Phone matches are candidates only — never auto-linked.</p>
   <% if (!bookings.length) { %>
-  <p class="ac-muted" data-ac-empty="booking-requests">No unresolved booking identity links.</p>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'booking-requests',
+      title: 'No unresolved booking links',
+      description: 'Public bookings stay valid until clinic patient identity is resolved. Nothing is waiting.'
+    }
+  }) %>
   <% } else { %>
   <ul class="ac-list" data-ac-booking-request-list="1">
     <% bookings.forEach(function (b) { %>

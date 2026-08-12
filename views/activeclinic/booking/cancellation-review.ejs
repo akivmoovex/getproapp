@@ -8,7 +8,7 @@
   </header>
   <p class="ac-public-banner acp-status-banner acp-status-banner--pending">Submitting this form sends a cancellation <em>request</em> to the clinic. Your booking is not cancelled until the clinic confirms.</p>
   <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
-  <form method="post" action="/clinics/<%= clinic.clinicKey %>/my-booking/cancel" class="ac-public-form acp-field-panel">
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/my-booking/cancel" class="ac-public-form acp-field-panel" data-ac-loading="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <input type="hidden" name="token" value="<%= accessToken %>"/>
     <div class="acp-field">

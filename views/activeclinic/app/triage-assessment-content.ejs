@@ -1,9 +1,9 @@
 <div data-ac-stitch="3c8f7b43b7984718acf661e381c1e6f7" data-ac-screen="triage-assessment">
   <% if (pageData.triage.error) { %>
-  <p class="ac-error"><%= pageData.triage.error %></p>
+  <p class="ac-alert ac-alert--danger" role="alert"><%= pageData.triage.error %></p>
   <% } %>
-  
-  <form method="post" action="/app/clinical/encounter/<%= pageData.triage.encounter.id %>/triage">
+
+  <form class="ac-panel ac-form-section" method="post" action="/app/clinical/encounter/<%= pageData.triage.encounter.id %>/triage">
     <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
     
     <div class="ac-field">

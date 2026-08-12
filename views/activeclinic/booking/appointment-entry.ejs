@@ -3,7 +3,7 @@
   <p>Submit a preferred time. The clinic will confirm — this is not an automatic confirmation.</p>
   <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
   <% const fd = formData || {}; %>
-  <form method="post" action="/clinics/<%= clinic.clinicKey %>/book" class="ac-public-form" data-ac-booking="consultation">
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/book" class="ac-public-form" data-ac-booking="consultation" data-ac-loading="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <label for="patientFirstName">First name</label>
     <input id="patientFirstName" name="patientFirstName" required value="<%= fd.patientFirstName || '' %>"/>

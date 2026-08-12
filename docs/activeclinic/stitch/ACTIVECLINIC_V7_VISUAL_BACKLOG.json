@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T10:45:19.266Z",
+  "generated_at": "2026-08-12T11:04:33.892Z",
   "purpose": "Visual-only parity backlog derived from verified full implementation mappings",
   "safety": {
     "branch": "V7",
@@ -18,14 +18,14 @@
     "backlog_rows": 361,
     "score_buckets": {
       "<80": 0,
-      "80-89": 76,
-      "90-94": 192,
+      "80-89": 15,
+      "90-94": 253,
       ">=95": 0,
       "unscored": 93
     },
     "priority_bands": {
-      "P1 + score <90": 60,
-      "remaining": 301
+      "remaining": 360,
+      "P1 + score <90": 1
     }
   },
   "rows": [
@@ -41,16 +41,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0113"
       ],
-      "visual_score": 82,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared tokens only",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips",
+        "Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared tokens only; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips; Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -64,16 +65,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0114"
       ],
-      "visual_score": 82,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared tokens only",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips",
+        "Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared tokens only; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips; Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -87,16 +89,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0115"
       ],
-      "visual_score": 82,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared tokens only",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips",
+        "Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared tokens only; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips; Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -110,16 +113,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0107"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared form/shell",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared form/shell; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -133,16 +137,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0106"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared form/shell",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared form/shell; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -156,17 +161,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0121"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: queue mobile cards + empty state",
-        "clinical logic untouched",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips",
+        "Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: queue mobile cards + empty state; clinical logic untouched; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips; Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -180,17 +185,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0111"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: queue mobile cards + empty state",
-        "clinical logic untouched",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips",
+        "Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: queue mobile cards + empty state; clinical logic untouched; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips; Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -204,16 +209,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0141"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels",
+        "Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels; Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -227,16 +233,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0144"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels",
+        "Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels; Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -250,16 +257,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0134"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels",
+        "Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels; Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -273,16 +281,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0137"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels",
+        "Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels; Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -296,16 +305,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0135"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels",
+        "Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels; Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -319,16 +329,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0136"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels",
+        "Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels; Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -342,16 +353,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0142"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels",
+        "Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels; Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -365,16 +377,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0143"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels",
+        "Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels; Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -388,16 +401,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0166"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome",
+        "Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome; Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -412,16 +426,17 @@
         "ACV7-IMPL-77770244",
         "ACV7-IMPL-0166"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome",
+        "Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome; Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -435,16 +450,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0174"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome",
+        "Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome; Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -458,16 +474,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0079"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome",
+        "Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome; Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -481,16 +498,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0164"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome",
+        "Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome; Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -504,16 +522,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0167"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome",
+        "Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome; Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -527,16 +546,17 @@
       "implementation_ids": [
         "ACV7-IMPL-77770245"
       ],
-      "visual_score": 84,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome",
+        "Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome; Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -550,16 +570,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0113"
       ],
-      "visual_score": 85,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared tokens only",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips",
+        "Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared tokens only; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips; Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -573,15 +594,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0130"
       ],
-      "visual_score": 85,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Large visual/layout gap vs Stitch"
+        "Phase7C: shared 8px panels, detail lists, table actions, form field heights",
+        "Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Large visual/layout gap vs Stitch"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared 8px panels, detail lists, table actions, form field heights; Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -595,16 +618,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0100"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared table/filter/status system",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -618,16 +642,17 @@
       "implementation_ids": [
         "ACV7-IMPL-70217"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared table/filter/status system",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -641,16 +666,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0098"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared table/filter/status system",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -664,16 +690,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0098"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared table/filter/status system",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -687,16 +714,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0099"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared table/filter/status system",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -710,16 +738,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0101"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared table/filter/status system",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -733,16 +762,17 @@
       "implementation_ids": [
         "ACV7-IMPL-70218"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared table/filter/status system",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -756,16 +786,17 @@
       "implementation_ids": [
         "ACV7-IMPL-70220"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared table/filter/status system",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -779,15 +810,17 @@
       "implementation_ids": [
         "ACV7-IMPL-70222"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: call action state on queue detail / call-board (not separate URL)"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: call action state on queue detail / call-board (not separate URL)"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -801,15 +834,17 @@
       "implementation_ids": [
         "ACV7-IMPL-70223"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: left/requeue actions on queue detail"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: left/requeue actions on queue detail"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -823,16 +858,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0104"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: queue table/card + status badges",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: queue table/card + status badges; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -846,16 +882,17 @@
       "implementation_ids": [
         "ACV7-IMPL-70219"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared table/filter/status system",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -869,15 +906,17 @@
       "implementation_ids": [
         "ACV7-IMPL-70225"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: transfer form on queue detail"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: transfer form on queue detail"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -891,17 +930,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0111"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: queue mobile cards + empty state",
-        "clinical logic untouched",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips",
+        "Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: queue mobile cards + empty state; clinical logic untouched; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips; Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -915,15 +954,17 @@
       "implementation_ids": [
         "ACV7-IMPL-770227"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: completion is prescription status state after dispense"
+        "Phase7C: shared 8px panels, detail lists, table actions, form field heights",
+        "Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: completion is prescription status state after dispense"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared 8px panels, detail lists, table actions, form field heights; Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -937,15 +978,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0131"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: partial qty supported on dispense form"
+        "Phase7C: shared 8px panels, detail lists, table actions, form field heights",
+        "Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: partial qty supported on dispense form"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared 8px panels, detail lists, table actions, form field heights; Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -961,16 +1004,17 @@
         "ACV7-IMPL-0192",
         "ACV7-IMPL-0193"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shell + shared component tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared 8px panels, detail lists, table actions, form field heights",
+        "Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shell + shared component tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared 8px panels, detail lists, table actions, form field heights; Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -984,16 +1028,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0194"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shell + shared component tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared 8px panels, detail lists, table actions, form field heights",
+        "Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shell + shared component tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared 8px panels, detail lists, table actions, form field heights; Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1007,16 +1052,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0195"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shell + shared component tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared 8px panels, detail lists, table actions, form field heights",
+        "Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shell + shared component tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared 8px panels, detail lists, table actions, form field heights; Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1030,16 +1076,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0132"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shell + shared component tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared 8px panels, detail lists, table actions, form field heights",
+        "Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shell + shared component tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared 8px panels, detail lists, table actions, form field heights; Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1053,15 +1100,17 @@
       "implementation_ids": [
         "ACV7-IMPL-770229"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: batch selection embedded in dispense"
+        "Phase7C: shared 8px panels, detail lists, table actions, form field heights",
+        "Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: batch selection embedded in dispense"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared 8px panels, detail lists, table actions, form field heights; Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1075,16 +1124,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0134"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels",
+        "Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels; Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1098,16 +1148,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0142"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels",
+        "Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: diagnostic metric cards, queue/worklist table wrap, result/report form panels; Remaining: Stitch lab/radiology worklists include extra operational columns not in V7 request model; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1121,15 +1172,17 @@
       "implementation_ids": [
         "ACV7-IMPL-77770246"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: role assign/edit forms cover detail"
+        "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome",
+        "Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: role assign/edit forms cover detail"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome; Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1143,16 +1196,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0174"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome",
+        "Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome; Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1166,16 +1220,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0164"
       ],
-      "visual_score": 86,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared shell tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome",
+        "Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared staff/access 8px panels, filter bar, and form field chrome; Remaining: Stitch staff directory cards/avatars vs V7 table+filter layout; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1189,16 +1244,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0104"
       ],
-      "visual_score": 88,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: queue table/card + status badges",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: queue table/card + status badges; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1212,16 +1268,17 @@
       "implementation_ids": [
         "ACV7-IMPL-70219"
       ],
-      "visual_score": 88,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass3: shared table/filter/status system",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome",
+        "Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: queue metric strip from existing statuses, 8px panels, table action buttons, form/filter chrome; Remaining: Stitch wait-time, avatars, department tabs, and priority capsules are not in V7 data; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1235,15 +1292,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0117"
       ],
-      "visual_score": 88,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: GET form wired"
+        "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips",
+        "Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: GET form wired"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips; Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1257,15 +1316,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0116"
       ],
-      "visual_score": 88,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: GET form wired"
+        "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips",
+        "Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: GET form wired"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: workspace panels, SOAP grid, clinical form sections, queue metric, status chips; Remaining: Stitch triage-priority / wait-time columns and consult action variants not in V7 encounter list; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1279,15 +1340,17 @@
       "implementation_ids": [
         "ACV7-IMPL-770226"
       ],
-      "visual_score": 88,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: confirm dispense is same form action"
+        "Phase7C: shared 8px panels, detail lists, table actions, form field heights",
+        "Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: confirm dispense is same form action"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared 8px panels, detail lists, table actions, form field heights; Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1301,15 +1364,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0131"
       ],
-      "visual_score": 88,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: review+dispense combined screen"
+        "Phase7C: shared 8px panels, detail lists, table actions, form field heights",
+        "Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: review+dispense combined screen"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared 8px panels, detail lists, table actions, form field heights; Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1323,15 +1388,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0190"
       ],
-      "visual_score": 88,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: patient instructions panel added on dispense"
+        "Phase7C: shared 8px panels, detail lists, table actions, form field heights",
+        "Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: patient instructions panel added on dispense"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: shared 8px panels, detail lists, table actions, form field heights; Remaining: Stitch pharmacy workbench chrome (batch drawer, featured layout) still denser than V7 combined screens; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -1345,15 +1412,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0026"
       ],
-      "visual_score": 88,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "1) exact doctor photography unavailable 2) missing search/dept chips 3) hero imagery missing"
+        "Phase7B: Our Doctors heading, 8px cards, 3-col desktop, display type",
+        "Remaining: Stitch hero photo, department chips, Featured badge, doctor search not in V7 source",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "P1 + score <90",
       "priority_rank": 3,
-      "historical_matrix_note": "1) exact doctor photography unavailable 2) missing search/dept chips 3) hero imagery missing"
+      "historical_matrix_note": "Phase7B: Our Doctors heading, 8px cards, 3-col desktop, display type; Remaining: Stitch hero photo, department chips, Featured badge, doctor search not in V7 source; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -1367,15 +1436,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0018"
       ],
-      "visual_score": 88,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass5: price patterns + honesty note on pricing"
+        "Phase7C: procedure detail meta card / pricing lede aligned to public tokens",
+        "Remaining: Stitch sample fees, Bookable chips, and hero photography not copied",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass5: price patterns + honesty note on pricing"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: procedure detail meta card / pricing lede aligned to public tokens; Remaining: Stitch sample fees, Bookable chips, and hero photography not copied; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -1389,17 +1460,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0025"
       ],
-      "visual_score": 89,
+      "visual_score": 90,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass2: shared service card system",
-        "Pass6: media improved",
-        "Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+        "Phase7C: procedure detail meta card / pricing lede aligned to public tokens",
+        "Remaining: Stitch sample fees, Bookable chips, and hero photography not copied",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
-      "priority_band": "P1 + score <90",
-      "priority_rank": 3,
-      "historical_matrix_note": "Pass2: shared service card system; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Phase7C: procedure detail meta card / pricing lede aligned to public tokens; Remaining: Stitch sample fees, Bookable chips, and hero photography not copied; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -1747,17 +1818,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0023"
       ],
-      "visual_score": 89,
+      "visual_score": 91,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass2: service+procedure cards restored",
-        "Pass6: media improved",
-        "Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+        "Phase7B: 8px cards, 3-col desktop, display type",
+        "Remaining: Stitch Services Directory chips / Bookable badges / duration-price chrome vs V7 consultation+procedure lists",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: service+procedure cards restored; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+      "historical_matrix_note": "Phase7B: 8px cards, 3-col desktop, display type; Remaining: Stitch Services Directory chips / Bookable badges / duration-price chrome vs V7 consultation+procedure lists; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -1793,16 +1864,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0087"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass3: metric/action cards under shared shell",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
+        "Phase7B: dashboard stat/panel radius 8px",
+        "Remaining: Stitch operational metric layout vs V7 setup/welcome dashboard",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass3: metric/action cards under shared shell; TEST_INFRA_LIMITATION: no browser MATCHED"
+      "historical_matrix_note": "Phase7B: dashboard stat/panel radius 8px; Remaining: Stitch operational metric layout vs V7 setup/welcome dashboard; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -2920,15 +2992,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0001"
       ],
-      "visual_score": 90,
+      "visual_score": 93,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "1) PRODUCT_DECISION_DIFFERENCE: Zambia product narrative vs Stitch \"Healthcare Management, Simplified\" hero 2) mobile Stitch bottom-nav not used 3) hero illustration/asset mismatch"
+        "Phase7B: Stitch tokens (bg #f8f9ff, display 32/40, 48px/2px buttons, 50/50 hero, teal headline)",
+        "Remaining: Stitch illustration vs local photo; mid-page architecture (V7 product sections vs Stitch journey/capability cards)",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "1) PRODUCT_DECISION_DIFFERENCE: Zambia product narrative vs Stitch \"Healthcare Management, Simplified\" hero 2) mobile Stitch bottom-nav not used 3) hero illustration/asset mismatch"
+      "historical_matrix_note": "Phase7B: Stitch tokens (bg #f8f9ff, display 32/40, 48px/2px buttons, 50/50 hero, teal headline); Remaining: Stitch illustration vs local photo; mid-page architecture (V7 product sections vs Stitch journey/capability cards); TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -2942,15 +3016,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0026"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Card stack"
+        "Phase7B: Our Doctors heading, 8px cards, 3-col desktop, display type",
+        "Remaining: Stitch hero photo, department chips, Featured badge, doctor search not in V7 source",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Card stack"
+      "historical_matrix_note": "Phase7B: Our Doctors heading, 8px cards, 3-col desktop, display type; Remaining: Stitch hero photo, department chips, Featured badge, doctor search not in V7 source; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -2964,15 +3040,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0018"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: pricing empty/populated cards"
+        "Phase7B: display type, 8px cards, 3-col desktop when prices exist",
+        "PRODUCT_DECISION_DIFFERENCE: Stitch shows sample Kwacha fees; V7 only lists clinic-published prices",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: pricing empty/populated cards"
+      "historical_matrix_note": "Phase7B: display type, 8px cards, 3-col desktop when prices exist; PRODUCT_DECISION_DIFFERENCE: Stitch shows sample Kwacha fees; V7 only lists clinic-published prices; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -3008,15 +3086,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0018"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: pricing empty/populated cards"
+        "Phase7B: display type, 8px cards, 3-col desktop when prices exist",
+        "PRODUCT_DECISION_DIFFERENCE: Stitch shows sample Kwacha fees; V7 only lists clinic-published prices",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: pricing empty/populated cards"
+      "historical_matrix_note": "Phase7B: display type, 8px cards, 3-col desktop when prices exist; PRODUCT_DECISION_DIFFERENCE: Stitch shows sample Kwacha fees; V7 only lists clinic-published prices; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -3231,15 +3311,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0026"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "1) exact doctor photography unavailable 2) missing search/dept chips 3) hero imagery missing"
+        "Phase7B: Our Doctors heading, 8px cards, 3-col desktop, display type",
+        "Remaining: Stitch hero photo, department chips, Featured badge, doctor search not in V7 source",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "1) exact doctor photography unavailable 2) missing search/dept chips 3) hero imagery missing"
+      "historical_matrix_note": "Phase7B: Our Doctors heading, 8px cards, 3-col desktop, display type; Remaining: Stitch hero photo, department chips, Featured badge, doctor search not in V7 source; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -3253,15 +3335,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0026"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "1) exact doctor photography unavailable 2) missing search/dept chips 3) hero imagery missing"
+        "Phase7B: Our Doctors heading, 8px cards, 3-col desktop, display type",
+        "Remaining: Stitch hero photo, department chips, Featured badge, doctor search not in V7 source",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "1) exact doctor photography unavailable 2) missing search/dept chips 3) hero imagery missing"
+      "historical_matrix_note": "Phase7B: Our Doctors heading, 8px cards, 3-col desktop, display type; Remaining: Stitch hero photo, department chips, Featured badge, doctor search not in V7 source; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -3321,16 +3405,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0023"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Cards restyled",
-        "pricing still sparse"
+        "Phase7B: 8px cards, 3-col desktop, display type",
+        "Remaining: Stitch Services Directory chips / Bookable badges / duration-price chrome vs V7 consultation+procedure lists",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Cards restyled; pricing still sparse"
+      "historical_matrix_note": "Phase7B: 8px cards, 3-col desktop, display type; Remaining: Stitch Services Directory chips / Bookable badges / duration-price chrome vs V7 consultation+procedure lists; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -3344,17 +3429,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0034"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Shared compact stepper + sticky CTA + SMS honesty note",
-        "Pattern boards are not standalone routes",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: no_slots_published banner; live grids not implemented",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 85,
       "phase7a_evidence": "Existing wizard chrome + 7A SMS/confirmation CSS; public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3372,17 +3457,17 @@
         "ACV7-IMPL-0030",
         "ACV7-IMPL-0034"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Shared compact stepper + sticky CTA + SMS honesty note",
-        "Pattern boards are not standalone routes",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: validation error panels in booking forms",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 87,
       "phase7a_evidence": "Existing wizard chrome + 7A SMS/confirmation CSS; public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3400,17 +3485,17 @@
         "ACV7-IMPL-0030",
         "ACV7-IMPL-0034"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Shared compact stepper + sticky CTA + SMS honesty note",
-        "Pattern boards are not standalone routes",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: sticky CTA + summary order on mobile",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 88,
       "phase7a_evidence": "Existing wizard chrome + 7A SMS/confirmation CSS; public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3427,17 +3512,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0030"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Shared compact stepper + sticky CTA + SMS honesty note",
-        "Pattern boards are not standalone routes",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: shared wizard progress partial",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 86,
       "phase7a_evidence": "Existing wizard chrome + 7A SMS/confirmation CSS; public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3454,15 +3539,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0041"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: confirmation panel"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: confirmation panel"
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -3476,15 +3563,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0038"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: review panel + booking shell"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: review panel + booking shell"
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -3498,17 +3587,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0030"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Shared compact stepper + sticky CTA + SMS honesty note",
-        "Pattern boards are not standalone routes",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass5: SMS honesty note; real SMS delivery FUNCTIONAL_BACKEND_GAP",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 89,
       "phase7a_evidence": "Existing wizard chrome + 7A SMS/confirmation CSS; public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3525,17 +3614,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0043"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: preparation section + acknowledgement",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 87,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3553,17 +3642,17 @@
         "ACV7-IMPL-0045",
         "ACV7-IMPL-0215"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: validation summary",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 87,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3580,17 +3669,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0043"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: info cards in procedure entry",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 88,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3607,17 +3696,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0045"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: patient details in procedure form",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 88,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3634,17 +3723,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0216"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: review embedded in single-page procedure flow",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 84,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3661,17 +3750,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0216"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: review embedded in single-page procedure flow",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 87,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3688,17 +3777,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0046"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: shared confirmation panel",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 88,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3715,17 +3804,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0044"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: unavailable state page exists",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 85,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3742,17 +3831,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0214"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass5: referral clarification inline; no upload",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 89,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3769,17 +3858,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0214"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: referral banner; upload not available (documented)",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 86,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3796,17 +3885,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0214"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: referral banner; upload not available (documented)",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 89,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -3823,17 +3912,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0215"
       ],
-      "visual_score": 90,
+      "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
-        "Live slot grid / referral upload remain product honesty, not visual chrome",
-        "Pixel MATCHED not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Large visual/layout gap vs Stitch",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 85,
       "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -4709,15 +4798,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0026"
       ],
-      "visual_score": 91,
+      "visual_score": 92,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Card grid added"
+        "Phase7B: Our Doctors heading, 8px cards, 3-col desktop, display type",
+        "Remaining: Stitch hero photo, department chips, Featured badge, doctor search not in V7 source",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Card grid added"
+      "historical_matrix_note": "Phase7B: Our Doctors heading, 8px cards, 3-col desktop, display type; Remaining: Stitch hero photo, department chips, Featured badge, doctor search not in V7 source; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4734,14 +4825,14 @@
       "visual_score": 91,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: service+procedure cards restored",
-        "Pass6: media improved",
-        "Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+        "Phase7B: 8px cards, 3-col desktop, display type",
+        "Remaining: Stitch Services Directory chips / Bookable badges / duration-price chrome vs V7 consultation+procedure lists",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: service+procedure cards restored; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+      "historical_matrix_note": "Phase7B: 8px cards, 3-col desktop, display type; Remaining: Stitch Services Directory chips / Bookable badges / duration-price chrome vs V7 consultation+procedure lists; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4803,16 +4894,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0014"
       ],
-      "visual_score": 91,
+      "visual_score": 93,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Asymmetric hero + trust + preview",
-        "low-res hero asset"
+        "Phase7B: 5/7 hero, 120px curve, HPCZ badge, pill CTAs, display type",
+        "Remaining: Stitch 24-hour / insurance trust copy is Juflona-artboard specific; V7 uses published clinic fields + booking honesty",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Asymmetric hero + trust + preview; low-res hero asset"
+      "historical_matrix_note": "Phase7B: 5/7 hero, 120px curve, HPCZ badge, pill CTAs, display type; Remaining: Stitch 24-hour / insurance trust copy is Juflona-artboard specific; V7 uses published clinic fields + booking honesty; TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4826,16 +4918,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0014"
       ],
-      "visual_score": 91,
+      "visual_score": 93,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Same composition stacks",
-        "sticky CTA not yet"
+        "Phase7B: 5/7 hero, 120px curve, HPCZ badge, pill CTAs, display type",
+        "Remaining: Stitch 24-hour / insurance trust copy is Juflona-artboard specific; V7 uses published clinic fields + booking honesty",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Same composition stacks; sticky CTA not yet"
+      "historical_matrix_note": "Phase7B: 5/7 hero, 120px curve, HPCZ badge, pill CTAs, display type; Remaining: Stitch 24-hour / insurance trust copy is Juflona-artboard specific; V7 uses published clinic fields + booking honesty; TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4873,16 +4966,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0040"
       ],
-      "visual_score": 91,
+      "visual_score": 92,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass2: legacy entry path",
-        "wizard is primary"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: legacy entry path; wizard is primary"
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4896,16 +4990,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0034"
       ],
-      "visual_score": 91,
+      "visual_score": 92,
       "visual_status": "NEEDS_WORK",
       "top_visual_differences": [
-        "Pass2: slot form in booking shell",
-        "PRODUCT_DECISION_DIFFERENCE: datetime preference vs live slot grid"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: slot form in booking shell; PRODUCT_DECISION_DIFFERENCE: datetime preference vs live slot grid"
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4919,16 +5014,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0030"
       ],
-      "visual_score": 91,
+      "visual_score": 92,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "1) dedicated Stitch booking chrome (back/phone) vs tenant shell 2) icon cards vs radio list 3) sticky Continue chrome differs",
-        "PRODUCT_DECISION_DIFFERENCE on wizard steps"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "1) dedicated Stitch booking chrome (back/phone) vs tenant shell 2) icon cards vs radio list 3) sticky Continue chrome differs; PRODUCT_DECISION_DIFFERENCE on wizard steps"
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4942,15 +5038,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0036"
       ],
-      "visual_score": 91,
+      "visual_score": 92,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: patient panel + PhoneField + summary"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: patient panel + PhoneField + summary"
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4964,17 +5062,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0042"
       ],
-      "visual_score": 91,
+      "visual_score": 92,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Category chips/search/card grid/price CTA aligned to Stitch HTML",
-        "Material Symbols not loaded; SVG category icons used instead",
-        "Pixel MATCHED at 1440/430/390 not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: reuses choice-card system",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 84,
       "phase7a_evidence": "Stitch get_screen HTML+screenshot 6b916729 / 9526a27d; V7 procedures-list.ejs + acp-proc-* CSS; public booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -4991,17 +5089,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0042"
       ],
-      "visual_score": 91,
+      "visual_score": 92,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Category chips/search/card grid/price CTA aligned to Stitch HTML",
-        "Material Symbols not loaded; SVG category icons used instead",
-        "Pixel MATCHED at 1440/430/390 not completed in browser"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: reuses choice-card system",
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED",
       "visual_score_before_phase7a": 87,
       "phase7a_evidence": "Stitch get_screen HTML+screenshot 6b916729 / 9526a27d; V7 procedures-list.ejs + acp-proc-* CSS; public booking tests green",
       "phase7a_at": "2026-08-12T10:45:19.266Z"
@@ -5018,15 +5116,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0043"
       ],
-      "visual_score": 91,
+      "visual_score": 92,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: info cards in procedure entry"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: info cards in procedure entry"
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -5040,15 +5140,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0045"
       ],
-      "visual_score": 91,
+      "visual_score": 92,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: patient details in procedure form"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: patient details in procedure form"
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -5062,15 +5164,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0046"
       ],
-      "visual_score": 91,
+      "visual_score": 92,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: shared confirmation panel"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: shared confirmation panel"
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -5686,15 +5790,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0001"
       ],
-      "visual_score": 92,
+      "visual_score": 93,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "1) PRODUCT_DECISION_DIFFERENCE: Zambia product narrative vs Stitch \"Healthcare Management, Simplified\" hero 2) mobile Stitch bottom-nav not used 3) hero illustration/asset mismatch"
+        "Phase7B: Stitch tokens (bg #f8f9ff, display 32/40, 48px/2px buttons, 50/50 hero, teal headline)",
+        "Remaining: Stitch illustration vs local photo; mid-page architecture (V7 product sections vs Stitch journey/capability cards)",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "1) PRODUCT_DECISION_DIFFERENCE: Zambia product narrative vs Stitch \"Healthcare Management, Simplified\" hero 2) mobile Stitch bottom-nav not used 3) hero illustration/asset mismatch"
+      "historical_matrix_note": "Phase7B: Stitch tokens (bg #f8f9ff, display 32/40, 48px/2px buttons, 50/50 hero, teal headline); Remaining: Stitch illustration vs local photo; mid-page architecture (V7 product sections vs Stitch journey/capability cards); TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -5711,12 +5817,14 @@
       "visual_score": 92,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: pricing empty/populated cards"
+        "Phase7B: display type, 8px cards, 3-col desktop when prices exist",
+        "PRODUCT_DECISION_DIFFERENCE: Stitch shows sample Kwacha fees; V7 only lists clinic-published prices",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: pricing empty/populated cards"
+      "historical_matrix_note": "Phase7B: display type, 8px cards, 3-col desktop when prices exist; PRODUCT_DECISION_DIFFERENCE: Stitch shows sample Kwacha fees; V7 only lists clinic-published prices; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -5733,12 +5841,14 @@
       "visual_score": 92,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: pricing empty/populated cards"
+        "Phase7B: display type, 8px cards, 3-col desktop when prices exist",
+        "PRODUCT_DECISION_DIFFERENCE: Stitch shows sample Kwacha fees; V7 only lists clinic-published prices",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: pricing empty/populated cards"
+      "historical_matrix_note": "Phase7B: display type, 8px cards, 3-col desktop when prices exist; PRODUCT_DECISION_DIFFERENCE: Stitch shows sample Kwacha fees; V7 only lists clinic-published prices; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -5953,15 +6063,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0041"
       ],
-      "visual_score": 93,
+      "visual_score": 94,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: confirmation panel"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: confirmation panel"
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -5975,15 +6087,17 @@
       "implementation_ids": [
         "ACV7-IMPL-0038"
       ],
-      "visual_score": 93,
+      "visual_score": 94,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass2: review panel + booking shell"
+        "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons",
+        "Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED"
       ],
       "asset_gap": "none_detected",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass2: review panel + booking shell"
+      "historical_matrix_note": "Phase7B: inherited public type scale (display 32/40) and 48px / 2px buttons; Remaining: wizard chrome vs dedicated Stitch artboards; booking is request-not-confirm; TEST_INFRA_LIMITATION: no live browser MATCHED"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -6088,14 +6202,14 @@
       "visual_score": 94,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP)",
-        "missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch",
-        "Pass6: media improved"
+        "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search",
+        "Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP); missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+      "historical_matrix_note": "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search; Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link; TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -6112,14 +6226,14 @@
       "visual_score": 94,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP)",
-        "missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch",
-        "Pass6: media improved"
+        "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search",
+        "Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP); missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+      "historical_matrix_note": "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search; Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link; TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -6136,14 +6250,14 @@
       "visual_score": 94,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP)",
-        "missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch",
-        "Pass6: media improved"
+        "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search",
+        "Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP); missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+      "historical_matrix_note": "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search; Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link; TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -6160,14 +6274,14 @@
       "visual_score": 94,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP)",
-        "missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch",
-        "Pass6: media improved"
+        "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search",
+        "Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP); missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+      "historical_matrix_note": "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search; Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link; TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -6184,14 +6298,14 @@
       "visual_score": 94,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP)",
-        "missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch",
-        "Pass6: media improved"
+        "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search",
+        "Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP); missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+      "historical_matrix_note": "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search; Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link; TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -6208,14 +6322,14 @@
       "visual_score": 94,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP)",
-        "missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch",
-        "Pass6: media improved"
+        "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search",
+        "Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP); missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+      "historical_matrix_note": "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search; Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link; TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -6232,14 +6346,14 @@
       "visual_score": 94,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP)",
-        "missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch",
-        "Pass6: media improved"
+        "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search",
+        "Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP); missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+      "historical_matrix_note": "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search; Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link; TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -6256,14 +6370,14 @@
       "visual_score": 94,
       "visual_status": "MINOR_VARIANCE",
       "top_visual_differences": [
-        "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP)",
-        "missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch",
-        "Pass6: media improved"
+        "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search",
+        "Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link",
+        "TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
       ],
       "asset_gap": "possible_asset_gap",
       "priority_band": "remaining",
       "priority_rank": 4,
-      "historical_matrix_note": "Pass4 browser: card media present but shared default hero (ASSET_PARITY_GAP); missing Featured/Open Now/Key Services/Book Appt dual CTA vs Stitch; Pass6: media improved; Stitch CDN max ~1376px (LOW_RESOLUTION vs true retina)"
+      "historical_matrix_note": "Phase7B: Find a Clinic, 2-col horizontal cards, desktop filter sidebar, 8px radius, 48px search; Remaining: Stitch checkbox filters / Book Now / service tags / pagination vs V7 province-city filters and Details link; TEST_INFRA_LIMITATION: no live browser MATCHED at 1440"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -8486,5 +8600,7 @@
     "p0_lt90_after": 0,
     "screens_improved": 73,
     "note": "Scores raised only for P0 <90 rows after Stitch HTML/screenshot comparison and V7 source changes. Not pixel MATCHED."
-  }
+  },
+  "phase7b_at": "2026-08-12T10:57:35.069Z",
+  "phase7c_at": "2026-08-12T11:04:33.892Z"
 }

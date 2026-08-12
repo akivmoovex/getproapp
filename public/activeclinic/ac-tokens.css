@@ -73,21 +73,22 @@
   --acp-primary-soft: #d5faff;
   --acp-navy: #213145;
   --acp-ink: #181c1e;
-  --acp-muted: #6e797a;
+  --acp-muted: #3e494a;
   --acp-surface: #ffffff;
   --acp-surface-low: #f1f4f6;
-  --acp-bg: #eff4ff;
+  --acp-bg: #f8f9ff;
   --acp-border: #c4c7c9;
   --acp-outline: #bac6ec;
   --acp-error: #ba1a1a;
   --acp-error-bg: #ffdad6;
-  --acp-radius: var(--ac-radius-md);
-  --acp-radius-lg: var(--ac-radius-lg);
-  --acp-radius-xl: var(--ac-radius-xl);
+  --acp-radius: 0.5rem;
+  --acp-radius-lg: 0.5rem;
+  --acp-radius-xl: 0.5rem;
+  --acp-radius-card: 0.5rem;
   --acp-shadow-sm: var(--ac-shadow-sm);
   --acp-font: "Public Sans", Segoe UI, system-ui, sans-serif;
-  --acp-touch: var(--ac-touch);
-  --acp-max: 72rem;
+  --acp-touch: 3rem;
+  --acp-max: 75rem;
   --acp-space-1: var(--ac-space-1);
   --acp-space-2: var(--ac-space-2);
   --acp-space-3: var(--ac-space-3);
@@ -102,19 +103,21 @@
   --acp-body-mobile: 1rem;
   --acp-bottom-nav-h: 4.5rem;
   --acp-safe-bottom: env(safe-area-inset-bottom, 0px);
+  --ac-keyboard-inset: 0px;
 
   /* —— Public typography scale —— */
-  --acp-text-display: clamp(2.1rem, 5vw, 3.15rem);
-  --acp-text-h1: clamp(1.75rem, 4vw, 2.5rem);
-  --acp-text-h2: 1.35rem;
-  --acp-text-h3: 1.15rem;
-  --acp-text-body: 1rem;
-  --acp-text-body-lg: 1.1rem;
+  --acp-text-display: 2rem;
+  --acp-text-h1: 1.5rem;
+  --acp-text-h2: 1.5rem;
+  --acp-text-h3: 1.125rem;
+  --acp-text-body: 0.875rem;
+  --acp-text-body-lg: 1rem;
   --acp-text-small: 0.92rem;
   --acp-text-label: 0.875rem;
   --acp-text-caption: 0.8rem;
   --acp-text-badge: 0.75rem;
-  --acp-leading-tight: 1.18;
+  --acp-leading-tight: 1.25;
+  --acp-leading-display: 2.5rem;
   --acp-leading-body: 1.5;
 }
 

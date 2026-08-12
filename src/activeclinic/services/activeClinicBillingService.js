@@ -87,6 +87,44 @@ const PAYMENT_METHOD = {
   OTHER: "other",
 };
 
+async function advisoryXactLock(client, key) {
+  await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [key]);
+}
+
+async function lockInvoiceRemaining(client, { tenantId, facilityId, invoiceId }) {
+  const inv = await client.query(
+    `SELECT i.id, i.patient_id, i.status, i.total_amount_minor,
+            COALESCE(alloc.paid_minor, 0)::bigint AS paid_minor,
+            COALESCE(cn.credit_minor, 0)::bigint AS credit_minor
+       FROM activeclinic.invoices i
+       LEFT JOIN (
+         SELECT invoice_id, SUM(allocated_amount_minor)::bigint AS paid_minor
+           FROM activeclinic.payment_allocations
+          GROUP BY invoice_id
+       ) alloc ON alloc.invoice_id = i.id
+       LEFT JOIN (
+         SELECT invoice_id, SUM(amount_minor)::bigint AS credit_minor
+           FROM activeclinic.credit_notes
+          WHERE status = 'posted'
+          GROUP BY invoice_id
+       ) cn ON cn.invoice_id = i.id
+      WHERE i.id = $1 AND i.tenant_id = $2 AND i.facility_id = $3
+      FOR UPDATE OF i`,
+    [invoiceId, tenantId, facilityId]
+  );
+  if (!inv.rows.length) return { ok: false, result: RESULT.NOT_FOUND };
+  const row = inv.rows[0];
+  const remainingMinor =
+    parseInt(row.total_amount_minor, 10) -
+    parseInt(row.paid_minor, 10) -
+    parseInt(row.credit_minor, 10);
+  return {
+    ok: true,
+    invoice: row,
+    remainingMinor,
+  };
+}
+
 // ============================================================================
 // CHARGE CATALOG
 // ============================================================================
@@ -387,7 +425,8 @@ async function createInvoice({
 
     const chargesResult = await client.query(
       `SELECT * FROM activeclinic.patient_charges
-       WHERE tenant_id = $1 AND facility_id = $2 AND id = ANY($3) AND status = 'pending'`,
+       WHERE tenant_id = $1 AND facility_id = $2 AND id = ANY($3) AND status = 'pending'
+       FOR UPDATE`,
       [tenantId, facilityId, chargeIds]
     );
 
@@ -525,6 +564,7 @@ async function postInvoice({ pool, tenantId, facilityId, staffId, invoiceId }) {
 
 async function generateInvoiceNumber(client, tenantId, facilityId) {
   const year = new Date().getFullYear();
+  await advisoryXactLock(client, `ac-invoice-no:${tenantId}:${facilityId}:${year}`);
   const facilityResult = await client.query(
     `SELECT facility_key FROM activeclinic.facilities WHERE id = $1`,
     [facilityId]
@@ -617,13 +657,21 @@ async function recordPayment({
     }
 
     if (idempotencyKey) {
+      await advisoryXactLock(client, `ac-pay-idem:${idempotencyKey}`);
       const dupCheck = await client.query(
-        `SELECT id FROM activeclinic.payments WHERE idempotency_key = $1`,
+        `SELECT p.*, r.receipt_number
+           FROM activeclinic.payments p
+           LEFT JOIN activeclinic.receipts r ON r.payment_id = p.id
+          WHERE p.idempotency_key = $1`,
         [idempotencyKey]
       );
       if (dupCheck.rows.length > 0) {
         await client.query("ROLLBACK");
-        return { result: RESULT.DUPLICATE_SUBMISSION };
+        return {
+          result: RESULT.DUPLICATE_SUBMISSION,
+          payment: mapPayment(dupCheck.rows[0]),
+          receiptNumber: dupCheck.rows[0].receipt_number || null,
+        };
       }
     }
 
@@ -656,13 +704,43 @@ async function recordPayment({
 
     let allocatedTotal = 0;
     for (const alloc of invoiceAllocations) {
+      const allocAmount = parseInt(alloc.amountMinor, 10);
+      if (!alloc.invoiceId || !(allocAmount > 0)) {
+        await client.query("ROLLBACK");
+        return { result: RESULT.INVALID_INPUT, reason: "invalid_allocation" };
+      }
+      const locked = await lockInvoiceRemaining(client, {
+        tenantId,
+        facilityId,
+        invoiceId: alloc.invoiceId,
+      });
+      if (!locked.ok) {
+        await client.query("ROLLBACK");
+        return { result: RESULT.NOT_FOUND, reason: "invoice" };
+      }
+      if (locked.invoice.patient_id !== patientId) {
+        await client.query("ROLLBACK");
+        return { result: RESULT.INVALID_INPUT, reason: "invoice_patient_mismatch" };
+      }
+      if (locked.invoice.status !== "posted") {
+        await client.query("ROLLBACK");
+        return { result: RESULT.INVALID_STATUS, reason: "invoice_not_posted" };
+      }
+      if (allocAmount > locked.remainingMinor) {
+        await client.query("ROLLBACK");
+        return {
+          result: RESULT.INSUFFICIENT_BALANCE,
+          reason: "allocation_exceeds_remaining",
+          remainingMinor: locked.remainingMinor,
+        };
+      }
       await client.query(
         `INSERT INTO activeclinic.payment_allocations (
           payment_id, invoice_id, allocated_amount_minor, currency_code, created_by_staff_id
         ) VALUES ($1, $2, $3, $4, $5)`,
-        [paymentId, alloc.invoiceId, alloc.amountMinor, "ZMW", staffId]
+        [paymentId, alloc.invoiceId, allocAmount, "ZMW", staffId]
       );
-      allocatedTotal += alloc.amountMinor;
+      allocatedTotal += allocAmount;
     }
 
     if (allocatedTotal > amountMinor) {
@@ -716,6 +794,7 @@ async function recordPayment({
 
 async function generatePaymentNumber(client, tenantId, facilityId) {
   const year = new Date().getFullYear();
+  await advisoryXactLock(client, `ac-pay-no:${tenantId}:${facilityId}:${year}`);
   const countResult = await client.query(
     `SELECT COUNT(*) FROM activeclinic.payments
      WHERE tenant_id = $1 AND facility_id = $2 AND EXTRACT(YEAR FROM payment_date) = $3`,
@@ -727,6 +806,7 @@ async function generatePaymentNumber(client, tenantId, facilityId) {
 
 async function generateReceiptNumber(client, tenantId, facilityId) {
   const year = new Date().getFullYear();
+  await advisoryXactLock(client, `ac-receipt-no:${tenantId}:${facilityId}:${year}`);
   const facilityResult = await client.query(
     `SELECT facility_key FROM activeclinic.facilities WHERE id = $1`,
     [facilityId]
@@ -2069,4 +2149,5 @@ module.exports = {
   getPaymentReversalById,
   voidInvoice,
   amendPostedInvoice,
+  lockInvoiceRemaining,
 };

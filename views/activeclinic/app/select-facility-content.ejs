@@ -3,10 +3,15 @@
 <form method="post" action="/app/select-facility" data-ac-form="select-facility">
   <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
   <% if (!facilities.length) { %>
-  <div class="ac-panel ac-empty" data-ac-empty="facility-select">
-    <h2>No facilities available</h2>
-    <p>You do not have an active facility assignment. Ask a network administrator for access.</p>
-  </div>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'facility_unavailable',
+      marker: 'facility-select',
+      title: 'No facilities available',
+      description: 'You do not have an active facility assignment. Ask an administrator for access.',
+      primaryAction: { href: '/app', label: 'Back to home' }
+    }
+  }) %>
   <% } else { %>
   <div class="ac-panel">
     <label class="ac-label" for="facility_id">Facility</label>

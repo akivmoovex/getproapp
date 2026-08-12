@@ -1,16 +1,16 @@
 <div data-ac-stitch="5b7b36f6af3b4735a81cca8cea77ee99" data-ac-screen="laboratory-dashboard">
-  <div class="ac-stats">
-    <div class="ac-stat">
-      <div class="ac-stat-label">Pending collection</div>
-      <div class="ac-stat-value"><%= pageData.dashboard.stats.pending_collection %></div>
-    </div>
-    <div class="ac-stat">
-      <div class="ac-stat-label">Processing</div>
-      <div class="ac-stat-value"><%= pageData.dashboard.stats.processing %></div>
-    </div>
-    <div class="ac-stat">
-      <div class="ac-stat-label">Verified</div>
-      <div class="ac-stat-value"><%= pageData.dashboard.stats.verified %></div>
-    </div>
+  <div class="ac-metric-grid ac-stats">
+    <article class="ac-stat-card ac-stat">
+      <p class="ac-stat-card__label ac-stat-label">Pending collection</p>
+      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.pending_collection %></p>
+    </article>
+    <article class="ac-stat-card ac-stat">
+      <p class="ac-stat-card__label ac-stat-label">Processing</p>
+      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.processing %></p>
+    </article>
+    <article class="ac-stat-card ac-stat">
+      <p class="ac-stat-card__label ac-stat-label">Verified</p>
+      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.verified %></p>
+    </article>
   </div>
 </div>

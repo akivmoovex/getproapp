@@ -15,11 +15,11 @@
   <% } %>
 
   <% if (patientAuth && patientAuth.authenticated) { %>
-  <form method="POST" action="/clinics/<%= clinicKey %>/patient/link-guest-booking" data-ac-shell="patient">
+  <form method="POST" action="/clinics/<%= clinicKey %>/patient/link-guest-booking" data-ac-shell="patient" data-ac-loading="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <div class="ac-patient-field">
       <label for="guestToken">Guest booking token</label>
-      <input type="text" id="guestToken" name="guestToken" autocomplete="off" required/>
+      <input type="text" id="guestToken" name="guestToken" autocomplete="off" required aria-required="true"/>
     </div>
     <button type="submit" class="ac-patient-btn ac-btn ac-btn--primary">Link booking</button>
   </form>

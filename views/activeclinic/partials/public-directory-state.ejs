@@ -3,13 +3,13 @@
   var hasFilters = !!(typeof search === 'string' && search) || !!(typeof province === 'string' && province) || !!(typeof city === 'string' && city);
 %>
 <% if (state === 'loading') { %>
-<div class="ac-directory-state ac-directory-state--loading" data-ac-directory-state="loading" role="status" aria-live="polite">
+<div class="ac-directory-state ac-directory-state--loading" data-ac-directory-state="loading" data-ac-state-key="loading" role="status" aria-live="polite">
   <div class="ac-directory-state__spinner" aria-hidden="true"></div>
   <h2 class="ac-directory-state__title">Loading clinics</h2>
   <p class="ac-directory-state__text">Fetching published clinics from the directory…</p>
 </div>
 <% } else if (state === 'error') { %>
-<div class="ac-directory-state ac-directory-state--error" data-ac-directory-state="error" role="alert">
+<div class="ac-directory-state ac-directory-state--error" data-ac-directory-state="error" data-ac-state-key="request_error" role="alert">
   <h2 class="ac-directory-state__title">Directory temporarily unavailable</h2>
   <p class="ac-directory-state__text">We could not load the clinic directory right now. Please try again in a moment.</p>
   <% if (typeof requestId === 'string' && requestId) { %>
@@ -24,7 +24,7 @@
   </div>
 </div>
 <% } else if (typeof directoryEmpty !== 'undefined' && directoryEmpty) { %>
-<div class="ac-directory-state ac-directory-state--empty" data-ac-directory-state="empty" data-ac-empty="clinics" role="status">
+<div class="ac-directory-state ac-directory-state--empty" data-ac-directory-state="empty" data-ac-empty="clinics" data-ac-state-key="<%= hasFilters ? 'no_results' : 'empty' %>" role="status">
   <h2 class="ac-directory-state__title"><%= hasFilters ? 'No clinics match your search' : 'No clinics found' %></h2>
   <p class="ac-directory-state__text">
     <% if (hasFilters) { %>

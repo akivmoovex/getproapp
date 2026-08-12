@@ -63,9 +63,20 @@ function hasFinancePermission(permissions, permissionKey) {
   return Array.isArray(permissions) && permissions.includes(permissionKey);
 }
 
+function financeIdsWithFacility(auth, facility) {
+  const ids = financeIdsFromAuth(auth);
+  return {
+    tenantId: ids.tenantId,
+    facilityId: facility && facility.id,
+    staffId: ids.staffId,
+    platformIdentityId: ids.platformIdentityId,
+  };
+}
+
 module.exports = {
   requireFinancePermission,
   financeIdsFromAuth,
+  financeIdsWithFacility,
   hasFinancePermission,
   AUTHZ_RESULT,
 };

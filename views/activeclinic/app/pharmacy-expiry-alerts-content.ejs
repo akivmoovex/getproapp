@@ -21,7 +21,7 @@
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap">
+  <div class="ac-panel ac-table-wrap ac-desktop-table">
     <table class="ac-table">
       <caption class="ac-sr-only">Expiry Alerts</caption>
       <thead>
@@ -46,5 +46,16 @@
       </tbody>
     </table>
   </div>
+  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="pharmacy-expiry">
+    <% batches.forEach(function (batch) { %>
+    <li class="ac-card ac-mobile-record-card">
+      <a class="ac-card__link" href="/app/pharmacy/inventory/batches/<%= batch.id %>">
+        <p class="ac-card__title"><%= batch.medicationGenericName || '—' %></p>
+        <p class="ac-muted"><%= batch.medicationStrength || '—' %> · batch <%= batch.batchNumber %></p>
+        <p class="ac-text-warning">Qty <%= batch.quantityInBatch %> · expires <%= batch.expiryDate ? new Date(batch.expiryDate).toLocaleDateString() : '—' %></p>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
 </section>

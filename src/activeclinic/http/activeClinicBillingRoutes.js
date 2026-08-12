@@ -6,8 +6,6 @@
  */
 
 const {
-  issueCsrfToken,
-  setCsrfCookie,
   validateCsrf,
   CSRF_FIELD,
 } = require("../../platform/http/v5Csrf");
@@ -20,35 +18,19 @@ const {
   renderSimpleState,
 } = require("./activeClinicPermissionMiddleware");
 const {
-  buildActiveClinicShellViewModel,
-} = require("../services/buildActiveClinicShellViewModel");
-const {
-  renderActiveClinicAppPage,
+  createActiveClinicAppRenderer,
 } = require("./renderActiveClinicShell");
 const {
   listChargeCatalogItems,
   createChargeCatalogItem,
   getChargeCatalogItemById,
-  createPatientCharge,
   createInvoice,
   addCatalogItemToDraftInvoice,
   postInvoice,
-  recordPayment,
   listPaymentHistory,
-  refundPayment,
-  requestRefund,
-  approveRefund,
-  rejectRefund,
-  getRefundById,
-  reversePayment,
-  requestPaymentReversal,
-  approvePaymentReversal,
-  rejectPaymentReversal,
-  getPaymentReversalById,
   voidInvoice,
   amendPostedInvoice,
   RESULT: BILLING_RESULT,
-  PAYMENT_METHOD,
   PERM: BILLING_PERM,
   INVOICE_STATUS,
 } = require("../services/activeClinicBillingService");
@@ -56,6 +38,7 @@ const billingOps = require("../services/activeClinicBillingOpsService");
 const { formatMoney, parseMoneyInput } = require("../services/formatMoney");
 const {
   financeIdsFromAuth,
+  financeIdsWithFacility,
   hasFinancePermission,
 } = require("../services/activeClinicFinanceAuthz");
 
@@ -70,31 +53,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
     isProduction,
   });
   const requireDepartment = createRequireActiveClinicDepartment({ getPool, env });
-
-  function issuePageCsrf(res) {
-    const token = issueCsrfToken(env);
-    setCsrfCookie(res, token, { secure: isProduction, env });
-    return token;
-  }
-
-  async function renderShell(req, res, options) {
-    const csrfToken = issuePageCsrf(res);
-    const shell = await buildActiveClinicShellViewModel(getPool(), {
-      req,
-      auth: req.activeClinicAuth,
-      csrfToken,
-      activeNav: options.activeNav,
-      pageHeader: options.pageHeader,
-      breadcrumbs: options.breadcrumbs,
-      flash: options.flash || null,
-      pageData: options.pageData || {},
-    });
-    if (shell.selectedFacility) {
-      req.activeClinicAuth.selectedFacility = shell.selectedFacility;
-    }
-    const html = renderActiveClinicAppPage(options.content, shell);
-    return res.status(options.status || 200).type("html").send(html);
-  }
+  const { renderShell } = createActiveClinicAppRenderer({ getPool, env, isProduction });
 
   // ========================================================================
   // BILLING DASHBOARD
@@ -134,6 +93,27 @@ function registerActiveClinicBillingRoutes(app, deps) {
           [auth.tenantId, facility.id, today]
         );
 
+        const perms = auth.permissions || [];
+        const capabilities = {
+          canManageCatalog: hasFinancePermission(perms, BILLING_PERM.CATALOG_MANAGE),
+          canReviewCharges: hasFinancePermission(
+            perms,
+            "activeclinic.billing.charge.review"
+          ),
+          canViewCorrections: hasFinancePermission(
+            perms,
+            "activeclinic.billing.corrections.view"
+          ),
+          canViewReports: hasFinancePermission(
+            perms,
+            "activeclinic.billing.reports.view"
+          ),
+          canOpenCashier: hasFinancePermission(perms, "activeclinic.cashier.open_session"),
+          canCharge: hasFinancePermission(perms, BILLING_PERM.BILLING_CHARGE),
+          canAmend: hasFinancePermission(perms, BILLING_PERM.INVOICE_AMEND),
+          canOverride: hasFinancePermission(perms, BILLING_PERM.PRICE_OVERRIDE),
+        };
+
         const dashboard = {
           unpaidInvoices: {
             count: parseInt(unpaidInvoicesResult.rows[0].count, 10),
@@ -164,6 +144,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
           breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Billing" }],
           pageData: {
             dashboard,
+            capabilities,
             stitch: {
               desktop: "ece0b9d1d9384f5d8c1e3b944f122e47",
               mobile: "649bd7649ebf4c6eb787612f844a637e",
@@ -346,10 +327,9 @@ function registerActiveClinicBillingRoutes(app, deps) {
 
         const pool = getPool();
         const patientResult = await pool.query(
-          `SELECT p.*, pr.patient_number
+          `SELECT p.*
            FROM activeclinic.patients p
-           JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
-           WHERE p.tenant_id = $1 AND pr.patient_number = $2
+           WHERE p.organization_id = $1 AND p.patient_number = $2
            LIMIT 1`,
           [auth.tenantId, req.params.patientNumber]
         );
@@ -448,10 +428,9 @@ function registerActiveClinicBillingRoutes(app, deps) {
         if (patientNumber) {
           const pool = getPool();
           const patientResult = await pool.query(
-            `SELECT p.*, pr.patient_number
+            `SELECT p.*
              FROM activeclinic.patients p
-             JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
-             WHERE p.tenant_id = $1 AND pr.patient_number = $2
+             WHERE p.organization_id = $1 AND p.patient_number = $2
              LIMIT 1`,
             [auth.tenantId, patientNumber]
           );
@@ -536,8 +515,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const pool = getPool();
         const patientResult = await pool.query(
           `SELECT p.id FROM activeclinic.patients p
-           JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
-           WHERE p.tenant_id = $1 AND pr.patient_number = $2
+           WHERE p.organization_id = $1 AND p.patient_number = $2
            LIMIT 1`,
           [auth.tenantId, patientNumber]
         );
@@ -583,10 +561,9 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const pool = getPool();
 
         const invoiceResult = await pool.query(
-          `SELECT i.*, p.first_name, p.last_name, pr.patient_number
+          `SELECT i.*, p.first_name, p.last_name, p.patient_number
            FROM activeclinic.invoices i
            JOIN activeclinic.patients p ON i.patient_id = p.id
-           JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
            WHERE i.id = $1 AND i.tenant_id = $2
            LIMIT 1`,
           [req.params.invoiceId, auth.tenantId]
@@ -838,10 +815,9 @@ function registerActiveClinicBillingRoutes(app, deps) {
 
         const pool = getPool();
         const invoicesResult = await pool.query(
-          `SELECT i.*, p.first_name, p.last_name, pr.patient_number
+          `SELECT i.*, p.first_name, p.last_name, p.patient_number
            FROM activeclinic.invoices i
            JOIN activeclinic.patients p ON i.patient_id = p.id
-           JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
            WHERE i.tenant_id = $1 AND i.facility_id = $2
            ORDER BY i.invoice_date DESC, i.created_at DESC
            LIMIT 100`,
@@ -1045,16 +1021,6 @@ function registerActiveClinicBillingRoutes(app, deps) {
   // PHASE 4: AR / COLLECTIONS / CHARGE REVIEW / CREDIT NOTES / CORRECTIONS
   // ========================================================================
 
-  function billingIds(auth, facility) {
-    const ids = financeIdsFromAuth(auth);
-    return {
-      tenantId: ids.tenantId,
-      facilityId: facility.id,
-      staffId: ids.staffId,
-      platformIdentityId: ids.platformIdentityId,
-    };
-  }
-
   app.get(
     "/app/billing/ar",
     requireAuth,
@@ -1067,7 +1033,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         if (!facility) {
           return res.redirect(303, "/app/select-facility?return=/app/billing/ar");
         }
-        const result = await billingOps.listAccountsReceivable(getPool(), billingIds(auth, facility));
+        const result = await billingOps.listAccountsReceivable(getPool(), financeIdsWithFacility(auth, facility));
         if (result.result === billingOps.RESULT.ACCESS_DENIED) {
           return res.status(403).type("html").send(
             renderSimpleState("Access denied", "Billing view permission required.", { status: 403 })
@@ -1113,7 +1079,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
           return res.redirect(303, "/app/select-facility?return=/app/billing/collections");
         }
         const result = await billingOps.listCollectionsQueue(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           minDaysOutstanding: toIntQuery(req.query.minDays, 0),
         });
         if (result.result === billingOps.RESULT.ACCESS_DENIED) {
@@ -1197,7 +1163,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const facility = auth.selectedFacility;
         if (!facility) return res.redirect(303, "/app/select-facility");
         const result = await billingOps.recordCollectionsContact(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           patientId: String(req.body.patientId || "").trim(),
           invoiceId: String(req.body.invoiceId || "").trim() || null,
           contactMethod: String(req.body.contactMethod || "").trim(),
@@ -1229,7 +1195,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         if (!facility) {
           return res.redirect(303, "/app/select-facility?return=/app/billing/charges/review");
         }
-        const result = await billingOps.listPendingChargeReviews(getPool(), billingIds(auth, facility));
+        const result = await billingOps.listPendingChargeReviews(getPool(), financeIdsWithFacility(auth, facility));
         if (result.result === billingOps.RESULT.ACCESS_DENIED) {
           return res.status(403).type("html").send(
             renderSimpleState("Access denied", "Charge review permission required.", { status: 403 })
@@ -1275,7 +1241,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const facility = auth.selectedFacility;
         if (!facility) return res.redirect(303, "/app/select-facility");
         const result = await billingOps.reviewPatientCharge(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           chargeId: req.params.id,
           decision: String(req.body.decision || "").trim(),
         });
@@ -1304,7 +1270,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         if (!facility) {
           return res.redirect(303, "/app/select-facility?return=/app/billing/credit-notes");
         }
-        const result = await billingOps.listCreditNotes(getPool(), billingIds(auth, facility));
+        const result = await billingOps.listCreditNotes(getPool(), financeIdsWithFacility(auth, facility));
         const canCreate = hasFinancePermission(
           auth.permissions,
           "activeclinic.billing.invoice.amend"
@@ -1387,7 +1353,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         if (!facility) return res.redirect(303, "/app/select-facility");
         const amountMinor = parseMoneyInput(req.body.amount || "0");
         const result = await billingOps.createCreditNote(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           patientId: String(req.body.patientId || "").trim(),
           invoiceId: String(req.body.invoiceId || "").trim() || null,
           amountMinor,
@@ -1419,7 +1385,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
           return res.redirect(303, "/app/select-facility");
         }
         const result = await billingOps.getCreditNote(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           creditNoteId: req.params.id,
         });
         if (result.result === billingOps.RESULT.NOT_FOUND) {
@@ -1473,7 +1439,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         }
         const result = await billingOps.listFinancialCorrections(
           getPool(),
-          billingIds(auth, facility)
+          financeIdsWithFacility(auth, facility)
         );
         if (result.result === billingOps.RESULT.ACCESS_DENIED) {
           return res.status(403).type("html").send(
@@ -1528,7 +1494,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         }
         const result = await billingOps.listPaymentArrangements(
           getPool(),
-          billingIds(auth, facility)
+          financeIdsWithFacility(auth, facility)
         );
         const canCreate = hasFinancePermission(auth.permissions, BILLING_PERM.BILLING_VIEW);
         const canReview = hasFinancePermission(
@@ -1613,7 +1579,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const facility = auth.selectedFacility;
         if (!facility) return res.redirect(303, "/app/select-facility");
         const result = await billingOps.createPaymentArrangement(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           patientId: String(req.body.patientId || "").trim(),
           totalAmountMinor: parseMoneyInput(req.body.totalAmount || "0"),
           numberOfInstallments: toIntQuery(req.body.numberOfInstallments, 0),
@@ -1646,7 +1612,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const facility = auth.selectedFacility;
         if (!facility) return res.redirect(303, "/app/select-facility");
         const result = await billingOps.getPaymentArrangement(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           arrangementId: req.params.id,
         });
         if (result.result === billingOps.RESULT.NOT_FOUND) {
@@ -1708,7 +1674,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const facility = auth.selectedFacility;
         if (!facility) return res.redirect(303, "/app/select-facility");
         const result = await billingOps.reviewPaymentArrangement(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           arrangementId: req.params.id,
           action: String(req.body.action || "").trim(),
           reviewNotes: String(req.body.reviewNotes || "").trim() || null,
@@ -1739,7 +1705,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
           return res.redirect(303, "/app/select-facility?return=/app/billing/price-overrides");
         }
         const result = await billingOps.listPriceOverrideRequests(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           status: req.query.status || undefined,
         });
         const canApprove = hasFinancePermission(
@@ -1835,7 +1801,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const facility = auth.selectedFacility;
         if (!facility) return res.redirect(303, "/app/select-facility");
         const result = await billingOps.createPriceOverrideRequest(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           patientId: String(req.body.patientId || "").trim() || null,
           patientChargeId: String(req.body.patientChargeId || "").trim() || null,
           originalAmountMinor: parseMoneyInput(req.body.originalAmount || "0"),
@@ -1870,7 +1836,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const facility = auth.selectedFacility;
         if (!facility) return res.redirect(303, "/app/select-facility");
         const result = await billingOps.reviewPriceOverrideRequest(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           requestId: req.params.id,
           action: "approve",
           reviewNotes: String(req.body.reviewNotes || "").trim() || null,
@@ -1902,7 +1868,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const facility = auth.selectedFacility;
         if (!facility) return res.redirect(303, "/app/select-facility");
         const result = await billingOps.reviewPriceOverrideRequest(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           requestId: req.params.id,
           action: "reject",
           reviewNotes: String(req.body.reviewNotes || "").trim() || null,
@@ -1933,7 +1899,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
           return res.redirect(303, "/app/select-facility");
         }
         const result = await billingOps.getPatientAccountStatement(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           patientNumber: req.params.patientNumber,
         });
         if (result.result === billingOps.RESULT.NOT_FOUND) {
@@ -2008,7 +1974,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const dateFrom = String(req.query.from || today).slice(0, 10);
         const dateTo = String(req.query.to || today).slice(0, 10);
         const result = await billingOps.getRevenueReportSummary(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           dateFrom,
           dateTo,
         });
@@ -2076,7 +2042,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const dateFrom = String(req.query.from || today).slice(0, 10);
         const dateTo = String(req.query.to || today).slice(0, 10);
         const result = await billingOps.getRevenueReportDetailed(getPool(), {
-          ...billingIds(auth, facility),
+          ...financeIdsWithFacility(auth, facility),
           dateFrom,
           dateTo,
         });
@@ -2135,10 +2101,9 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const pool = getPool();
         const code = String(req.query.code || req.query.error || "unknown").trim();
         const invoiceResult = await pool.query(
-          `SELECT i.*, p.first_name, p.last_name, pr.patient_number
+          `SELECT i.*, p.first_name, p.last_name, p.patient_number
              FROM activeclinic.invoices i
              JOIN activeclinic.patients p ON i.patient_id = p.id
-             JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
             WHERE i.id = $1 AND i.tenant_id = $2
             LIMIT 1`,
           [req.params.invoiceId, auth.tenantId]
@@ -2197,10 +2162,9 @@ function registerActiveClinicBillingRoutes(app, deps) {
 
         const inv = await pool.query(
           `SELECT i.id, i.invoice_number, i.status, i.patient_id,
-                  p.first_name, p.last_name, pr.patient_number
+                  p.first_name, p.last_name, p.patient_number
              FROM activeclinic.invoices i
              JOIN activeclinic.patients p ON i.patient_id = p.id
-             JOIN activeclinic.patient_registrations pr ON p.id = pr.patient_id
             WHERE i.id = $1 AND i.tenant_id = $2 AND i.facility_id = $3
             LIMIT 1`,
           [req.params.invoiceId, ids.tenantId, facility.id]

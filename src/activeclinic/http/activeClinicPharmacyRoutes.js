@@ -6,8 +6,6 @@
  */
 
 const {
-  issueCsrfToken,
-  setCsrfCookie,
   validateCsrf,
   CSRF_FIELD,
 } = require("../../platform/http/v5Csrf");
@@ -20,10 +18,7 @@ const {
   renderSimpleState,
 } = require("./activeClinicPermissionMiddleware");
 const {
-  buildActiveClinicShellViewModel,
-} = require("../services/buildActiveClinicShellViewModel");
-const {
-  renderActiveClinicAppPage,
+  createActiveClinicAppRenderer,
 } = require("./renderActiveClinicShell");
 const {
   loadActiveClinicPharmacyDashboardScreen,
@@ -40,7 +35,6 @@ const {
   loadActiveClinicPharmacyBatchDetailScreen,
   loadActiveClinicPharmacySelectBatchScreen,
   loadActiveClinicPharmacyReceiveStockScreen,
-  actorFromAuth,
 } = require("../services/loadActiveClinicPharmacyScreens");
 const {
   addMedication,
@@ -60,6 +54,7 @@ const {
   listPurchaseOrders,
   getPurchaseOrder,
   submitPurchaseOrder,
+  receivePurchaseOrder,
   getMedicineLabel,
   getPatientMedicineInstructions,
   RESULT: OPS_RESULT,
@@ -67,10 +62,6 @@ const {
 const {
   listFacilitiesByOrganization,
 } = require("../services/facilityService");
-const {
-  CODE_ACTIVECLINIC_ORG_V6,
-} = require("../../platform/config/deploymentProfiles");
-const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const STITCH_OPS = Object.freeze({
   adjust: "2147643a82af4fb28a8368dcff867a75",
@@ -157,7 +148,7 @@ function mapPharmacyError(code) {
     case OPS_RESULT.PURCHASE_ORDER_NOT_FOUND:
       return "Purchase order not found.";
     case OPS_RESULT.INVALID_PO_STATUS:
-      return "This purchase order cannot be submitted in its current status.";
+      return "This purchase order cannot be updated in its current status.";
     case OPS_RESULT.FACILITY_MISMATCH:
       return "Facilities must belong to the same healthcare organization.";
     case PHARM_RESULT.INVALID_INPUT:
@@ -179,35 +170,26 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     isProduction,
   });
   const requireDepartment = createRequireActiveClinicDepartment({ getPool, env });
+  const { renderShell } = createActiveClinicAppRenderer({ getPool, env, isProduction });
 
-  function issuePageCsrf(res) {
-    const token = issueCsrfToken(env);
-    setCsrfCookie(res, token, { secure: isProduction, env });
-    return token;
+  function rejectPharmacyCsrf(res, linkHref) {
+    return res.status(403).type("html").send(
+      renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
+        status: 403,
+        linkHref,
+        linkLabel: "Try again",
+      })
+    );
   }
 
-  async function renderShell(req, res, options) {
-    const csrfToken = issuePageCsrf(res);
-    const shell = await buildActiveClinicShellViewModel(getPool(), {
-      req,
-      auth: req.activeClinicAuth,
-      csrfToken,
-      activeNav: options.activeNav,
-      pageHeader: options.pageHeader,
-      breadcrumbs: options.breadcrumbs,
-      flash: options.flash || null,
-      pageData: options.pageData || {},
-      assetVersion: "p05-1",
-    });
-    if (shell.selectedFacility) {
-      req.activeClinicAuth.selectedFacility = shell.selectedFacility;
-    }
-    const html = renderActiveClinicAppPage(options.content, shell);
-    return res.status(options.status || 200).type("html").send(html);
-  }
-
-  function actor(auth) {
-    return actorFromAuth(auth);
+  function pharmacyNotFound(res, message, linkHref, linkLabel) {
+    return res.status(404).type("html").send(
+      renderSimpleState("Not Found", message, {
+        status: 404,
+        linkHref,
+        linkLabel,
+      })
+    );
   }
 
   // Pharmacy Dashboard
@@ -292,13 +274,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const medicationId = req.params.id;
         if (!UUID_RE.test(medicationId)) {
-          return res.status(404).type("html").send(
-            renderSimpleState("Not Found", "Invalid medication ID.", {
-              status: 404,
-              linkHref: "/app/pharmacy/catalogue",
-              linkLabel: "Back to catalogue",
-            })
-          );
+          return pharmacyNotFound(res, "Invalid medication ID.", "/app/pharmacy/catalogue", "Back to catalogue");
         }
 
         const loaded = await loadActiveClinicPharmacyMedicineDetailScreen(getPool(), {
@@ -370,13 +346,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
         if (!csrfValid) {
-          return res.status(403).type("html").send(
-            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
-              status: 403,
-              linkHref: "/app/pharmacy/catalogue/new",
-              linkLabel: "Try again",
-            })
-          );
+          return rejectPharmacyCsrf(res, "/app/pharmacy/catalogue/new");
         }
 
         const auth = req.activeClinicAuth;
@@ -401,8 +371,8 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             values: req.body,
             error: mapPharmacyError(result.result),
           });
-        return await renderShell(req, res, {
-          content: "app/pharmacy-add-medicine-content.ejs",
+          return await renderShell(req, res, {
+            content: "app/pharmacy-add-medicine-content.ejs",
             activeNav: "pharmacy",
             pageHeader: { title: "Add medicine", description: "Add a medication to the catalogue.", actions: [] },
             breadcrumbs: [
@@ -581,13 +551,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const prescriptionId = req.params.id;
         if (!UUID_RE.test(prescriptionId)) {
-          return res.status(404).type("html").send(
-            renderSimpleState("Not Found", "Invalid prescription ID.", {
-              status: 404,
-              linkHref: "/app/pharmacy/queue",
-              linkLabel: "Back to queue",
-            })
-          );
+          return pharmacyNotFound(res, "Invalid prescription ID.", "/app/pharmacy/queue", "Back to queue");
         }
 
         const loaded = await loadActiveClinicPharmacyPrescriptionDetailScreen(getPool(), {
@@ -631,13 +595,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const prescriptionId = req.params.id;
         if (!UUID_RE.test(prescriptionId)) {
-          return res.status(404).type("html").send(
-            renderSimpleState("Not Found", "Invalid prescription ID.", {
-              status: 404,
-              linkHref: "/app/pharmacy/queue",
-              linkLabel: "Back to queue",
-            })
-          );
+          return pharmacyNotFound(res, "Invalid prescription ID.", "/app/pharmacy/queue", "Back to queue");
         }
 
         const loaded = await loadActiveClinicPharmacyDispenseScreen(getPool(), {
@@ -696,13 +654,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const prescriptionId = req.params.id;
         if (!UUID_RE.test(prescriptionId)) {
-          return res.status(404).type("html").send(
-            renderSimpleState("Not Found", "Invalid prescription ID.", {
-              status: 404,
-              linkHref: "/app/pharmacy/queue",
-              linkLabel: "Back to queue",
-            })
-          );
+          return pharmacyNotFound(res, "Invalid prescription ID.", "/app/pharmacy/queue", "Back to queue");
         }
 
         const { reviewValues, itemDispenses } = parseDispenseFormBody(req.query);
@@ -759,13 +711,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const prescriptionId = req.params.id;
         if (!UUID_RE.test(prescriptionId)) {
-          return res.status(404).type("html").send(
-            renderSimpleState("Not Found", "Invalid prescription ID.", {
-              status: 404,
-              linkHref: "/app/pharmacy/queue",
-              linkLabel: "Back to queue",
-            })
-          );
+          return pharmacyNotFound(res, "Invalid prescription ID.", "/app/pharmacy/queue", "Back to queue");
         }
 
         const loaded = await loadActiveClinicPharmacyDispenseCompletedScreen(getPool(), {
@@ -815,13 +761,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const { prescriptionId, itemId } = req.params;
         if (!UUID_RE.test(prescriptionId) || !UUID_RE.test(itemId)) {
-          return res.status(404).type("html").send(
-            renderSimpleState("Not Found", "Invalid prescription or item ID.", {
-              status: 404,
-              linkHref: "/app/pharmacy/queue",
-              linkLabel: "Back to queue",
-            })
-          );
+          return pharmacyNotFound(res, "Invalid prescription or item ID.", "/app/pharmacy/queue", "Back to queue");
         }
 
         const loaded = await loadActiveClinicPharmacySelectBatchScreen(getPool(), {
@@ -872,13 +812,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const batchId = req.params.batchId;
         if (!UUID_RE.test(batchId)) {
-          return res.status(404).type("html").send(
-            renderSimpleState("Not Found", "Invalid batch ID.", {
-              status: 404,
-              linkHref: "/app/pharmacy/inventory",
-              linkLabel: "Back to inventory",
-            })
-          );
+          return pharmacyNotFound(res, "Invalid batch ID.", "/app/pharmacy/inventory", "Back to inventory");
         }
 
         const loaded = await loadActiveClinicPharmacyBatchDetailScreen(getPool(), {
@@ -927,13 +861,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
         if (!csrfValid) {
-          return res.status(403).type("html").send(
-            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
-              status: 403,
-              linkHref: `/app/pharmacy/prescriptions/${req.params.id}/dispense`,
-              linkLabel: "Try again",
-            })
-          );
+          return rejectPharmacyCsrf(res, `/app/pharmacy/prescriptions/${req.params.id}/dispense`);
         }
 
         const prescriptionId = req.params.id;
@@ -1080,13 +1008,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
         if (!csrfValid) {
-          return res.status(403).type("html").send(
-            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
-              status: 403,
-              linkHref: "/app/pharmacy/inventory/receive",
-              linkLabel: "Try again",
-            })
-          );
+          return rejectPharmacyCsrf(res, "/app/pharmacy/inventory/receive");
         }
 
         const auth = req.activeClinicAuth;
@@ -1112,8 +1034,8 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
             values: req.body,
             error: mapPharmacyError(result.result),
           });
-        return await renderShell(req, res, {
-          content: "app/pharmacy-receive-stock-content.ejs",
+          return await renderShell(req, res, {
+            content: "app/pharmacy-receive-stock-content.ejs",
             activeNav: "pharmacy",
             pageHeader: { title: "Receive stock", description: "Record incoming inventory batches.", actions: [] },
             breadcrumbs: [
@@ -1185,13 +1107,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
         if (!csrfValid) {
-          return res.status(403).type("html").send(
-            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
-              status: 403,
-              linkHref: "/app/pharmacy/inventory/adjust",
-              linkLabel: "Try again",
-            })
-          );
+          return rejectPharmacyCsrf(res, "/app/pharmacy/inventory/adjust");
         }
 
         const auth = req.activeClinicAuth;
@@ -1302,13 +1218,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
         if (!csrfValid) {
-          return res.status(403).type("html").send(
-            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
-              status: 403,
-              linkHref: "/app/pharmacy/inventory/transfer",
-              linkLabel: "Try again",
-            })
-          );
+          return rejectPharmacyCsrf(res, "/app/pharmacy/inventory/transfer");
         }
 
         const auth = req.activeClinicAuth;
@@ -1379,13 +1289,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const prescriptionId = req.params.id;
         if (!UUID_RE.test(prescriptionId)) {
-          return res.status(404).type("html").send(
-            renderSimpleState("Not Found", "Invalid prescription ID.", {
-              status: 404,
-              linkHref: "/app/pharmacy/queue",
-              linkLabel: "Back to queue",
-            })
-          );
+          return pharmacyNotFound(res, "Invalid prescription ID.", "/app/pharmacy/queue", "Back to queue");
         }
 
         const auth = req.activeClinicAuth;
@@ -1451,13 +1355,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
         if (!csrfValid) {
-          return res.status(403).type("html").send(
-            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
-              status: 403,
-              linkHref: `/app/pharmacy/prescriptions/${req.params.id}/substitute`,
-              linkLabel: "Try again",
-            })
-          );
+          return rejectPharmacyCsrf(res, `/app/pharmacy/prescriptions/${req.params.id}/substitute`);
         }
 
         const prescriptionId = req.params.id;
@@ -1626,13 +1524,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
         if (!csrfValid) {
-          return res.status(403).type("html").send(
-            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
-              status: 403,
-              linkHref: "/app/pharmacy/purchase-orders/new",
-              linkLabel: "Try again",
-            })
-          );
+          return rejectPharmacyCsrf(res, "/app/pharmacy/purchase-orders/new");
         }
 
         const auth = req.activeClinicAuth;
@@ -1700,13 +1592,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const purchaseOrderId = req.params.id;
         if (!UUID_RE.test(purchaseOrderId)) {
-          return res.status(404).type("html").send(
-            renderSimpleState("Not Found", "Invalid purchase order ID.", {
-              status: 404,
-              linkHref: "/app/pharmacy/purchase-orders",
-              linkLabel: "Back to purchase orders",
-            })
-          );
+          return pharmacyNotFound(res, "Invalid purchase order ID.", "/app/pharmacy/purchase-orders", "Back to purchase orders");
         }
 
         const auth = req.activeClinicAuth;
@@ -1764,13 +1650,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
         if (!csrfValid) {
-          return res.status(403).type("html").send(
-            renderSimpleState("Security Check Failed", "Invalid CSRF token. Refresh and try again.", {
-              status: 403,
-              linkHref: `/app/pharmacy/purchase-orders/${req.params.id}`,
-              linkLabel: "Try again",
-            })
-          );
+          return rejectPharmacyCsrf(res, `/app/pharmacy/purchase-orders/${req.params.id}`);
         }
 
         const purchaseOrderId = req.params.id;
@@ -1800,6 +1680,67 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
     }
   );
 
+  app.post(
+    "/app/pharmacy/purchase-orders/:id/receive",
+    requireAuth,
+    requirePermission(PERM.INVENTORY_MANAGE),
+    requireDepartment("pharmacy"),
+    async (req, res, next) => {
+      try {
+        const csrfValid = validateCsrf(req, req.body && req.body[CSRF_FIELD], env);
+        if (!csrfValid) {
+          return rejectPharmacyCsrf(res, `/app/pharmacy/purchase-orders/${req.params.id}`);
+        }
+
+        const purchaseOrderId = req.params.id;
+        if (!UUID_RE.test(purchaseOrderId)) {
+          return pharmacyNotFound(res, "Invalid purchase order ID.", "/app/pharmacy/purchase-orders", "Back to purchase orders");
+        }
+
+        const auth = req.activeClinicAuth;
+        const body = req.body || {};
+        const itemIds = Array.isArray(body.itemId) ? body.itemId : body.itemId ? [body.itemId] : [];
+        const quantities = Array.isArray(body.quantity) ? body.quantity : body.quantity ? [body.quantity] : [];
+        const batchNumbers = Array.isArray(body.batchNumber) ? body.batchNumber : body.batchNumber ? [body.batchNumber] : [];
+        const expiryDates = Array.isArray(body.expiryDate) ? body.expiryDate : body.expiryDate ? [body.expiryDate] : [];
+        const items = [];
+        for (let i = 0; i < itemIds.length; i += 1) {
+          const qty = Number.parseInt(quantities[i], 10);
+          if (!Number.isInteger(qty) || qty <= 0) continue;
+          items.push({
+            purchaseOrderItemId: itemIds[i],
+            quantity: qty,
+            batchNumber: batchNumbers[i],
+            expiryDate: expiryDates[i],
+          });
+        }
+
+        const result = await receivePurchaseOrder(getPool(), {
+          staffId: auth.staffMember.id,
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          purchaseOrderId,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+          items,
+        });
+
+        if (!result.ok) {
+          return res.status(400).type("html").send(
+            renderSimpleState("Unable to receive", mapPharmacyError(result.result), {
+              status: 400,
+              linkHref: `/app/pharmacy/purchase-orders/${purchaseOrderId}`,
+              linkLabel: "Back to purchase order",
+            })
+          );
+        }
+
+        return res.redirect(303, `/app/pharmacy/purchase-orders/${purchaseOrderId}`);
+      } catch (err) {
+        next(err);
+      }
+    }
+  );
+
   // Medicine labels
   app.get(
     "/app/pharmacy/prescriptions/:id/labels",
@@ -1810,13 +1751,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const prescriptionId = req.params.id;
         if (!UUID_RE.test(prescriptionId)) {
-          return res.status(404).type("html").send(
-            renderSimpleState("Not Found", "Invalid prescription ID.", {
-              status: 404,
-              linkHref: "/app/pharmacy/queue",
-              linkLabel: "Back to queue",
-            })
-          );
+          return pharmacyNotFound(res, "Invalid prescription ID.", "/app/pharmacy/queue", "Back to queue");
         }
 
         const auth = req.activeClinicAuth;
@@ -1874,13 +1809,7 @@ function registerActiveClinicPharmacyRoutes(app, deps) {
       try {
         const prescriptionId = req.params.id;
         if (!UUID_RE.test(prescriptionId)) {
-          return res.status(404).type("html").send(
-            renderSimpleState("Not Found", "Invalid prescription ID.", {
-              status: 404,
-              linkHref: "/app/pharmacy/queue",
-              linkLabel: "Back to queue",
-            })
-          );
+          return pharmacyNotFound(res, "Invalid prescription ID.", "/app/pharmacy/queue", "Back to queue");
         }
 
         const auth = req.activeClinicAuth;

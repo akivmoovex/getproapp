@@ -15,6 +15,9 @@ const {
 const {
   requireFinancePermission,
 } = require("./activeClinicFinanceAuthz");
+const {
+  lockInvoiceRemaining,
+} = require("./activeClinicBillingService");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -24,6 +27,7 @@ const RESULT = Object.freeze({
   ACCESS_DENIED: "access_denied",
   INVALID_STATUS: "invalid_status",
   CONFLICT: "conflict",
+  CREDIT_EXCEEDS_BALANCE: "credit_exceeds_balance",
 });
 
 const PERM = Object.freeze({
@@ -114,6 +118,9 @@ async function nextDocumentNumber(client, opts) {
   const { tenantId, facilityId, table, column, prefix } = opts;
   const year = new Date().getUTCFullYear();
   const like = `${prefix}-${year}-%`;
+  await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [
+    `ac-doc:${table}:${tenantId}:${facilityId}:${year}`,
+  ]);
   const res = await client.query(
     `SELECT ${column} AS num
        FROM activeclinic.${table}
@@ -492,24 +499,30 @@ async function createCreditNote(pool, input) {
 
     let invoiceId = input.invoiceId || null;
     if (invoiceId) {
-      const inv = await client.query(
-        `SELECT id, patient_id, status, total_amount_minor
-           FROM activeclinic.invoices
-          WHERE id = $1 AND tenant_id = $2 AND facility_id = $3
-          FOR SHARE`,
-        [invoiceId, ids.tenantId, ids.facilityId]
-      );
-      if (!inv.rows.length) {
+      const locked = await lockInvoiceRemaining(client, {
+        tenantId: ids.tenantId,
+        facilityId: ids.facilityId,
+        invoiceId,
+      });
+      if (!locked.ok) {
         await client.query("ROLLBACK");
         return { result: RESULT.NOT_FOUND, reason: "invoice" };
       }
-      if (inv.rows[0].patient_id !== patientId) {
+      if (locked.invoice.patient_id !== patientId) {
         await client.query("ROLLBACK");
         return { result: RESULT.INVALID_INPUT, reason: "invoice_patient_mismatch" };
       }
-      if (inv.rows[0].status !== "posted") {
+      if (locked.invoice.status !== "posted") {
         await client.query("ROLLBACK");
         return { result: RESULT.INVALID_STATUS, reason: "invoice_not_posted" };
+      }
+      if (amountMinor > locked.remainingMinor) {
+        await client.query("ROLLBACK");
+        return {
+          result: RESULT.CREDIT_EXCEEDS_BALANCE,
+          reason: "credit_exceeds_remaining",
+          remainingMinor: locked.remainingMinor,
+        };
       }
     }
 
@@ -1504,9 +1517,13 @@ async function getRevenueReportSummary(pool, input) {
     pool.query(
       `SELECT COUNT(*)::int AS count,
               COALESCE(SUM(amount_minor), 0)::bigint AS total_minor
-         FROM activeclinic.payments
-        WHERE tenant_id = $1 AND facility_id = $2
-          AND payment_date BETWEEN $3 AND $4`,
+         FROM activeclinic.payments p
+        WHERE p.tenant_id = $1 AND p.facility_id = $2
+          AND p.payment_date BETWEEN $3 AND $4
+          AND NOT EXISTS (
+            SELECT 1 FROM activeclinic.refunds r
+             WHERE r.refund_payment_id = p.id
+          )`,
       [ids.tenantId, ids.facilityId, range.dateFrom, range.dateTo]
     ),
     pool.query(
@@ -1600,6 +1617,10 @@ async function getRevenueReportDetailed(pool, input) {
          JOIN activeclinic.patients p ON p.id = pay.patient_id
         WHERE pay.tenant_id = $1 AND pay.facility_id = $2
           AND pay.payment_date BETWEEN $3 AND $4
+          AND NOT EXISTS (
+            SELECT 1 FROM activeclinic.refunds r
+             WHERE r.refund_payment_id = pay.id
+          )
         ORDER BY pay.payment_date, pay.payment_number`,
       [ids.tenantId, ids.facilityId, range.dateFrom, range.dateTo]
     ),

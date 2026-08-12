@@ -184,7 +184,7 @@ describe("ActiveClinic public website (P20–P26)", () => {
     assert.equal(home.status, 200);
     assert.match(home.text, /data-ac-shell="public"/);
     assert.match(home.text, /data-ac-page-section="public-home"/);
-    assert.match(home.text, /Find a clinic/);
+    assert.match(home.text, /Find a Clinic/);
     assert.match(home.text, /data-ac-home-section="discovery"/);
     assert.match(home.text, /data-ac-home-section="patient-benefits"/);
     assert.match(home.text, /data-ac-home-section="clinic-benefits"/);
@@ -216,7 +216,7 @@ describe("ActiveClinic public website (P20–P26)", () => {
     assert.match(home.text, /href="\/register-clinic"/);
     assert.match(home.text, /href="\/solutions"/);
     assert.match(home.text, /href="\/about"/);
-    assert.match(home.text, /Find a clinic/);
+    assert.match(home.text, /Find a Clinic/);
   });
 
   it("directory empty state and search query aliases", async () => {

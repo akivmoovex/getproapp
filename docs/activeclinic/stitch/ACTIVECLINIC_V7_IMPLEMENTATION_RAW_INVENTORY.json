@@ -1,9 +1,9 @@
 {
-  "generated_at": "2026-08-12T10:31:44.770Z",
+  "generated_at": "2026-08-12T12:27:59.412Z",
   "inventory_purpose": "RAW V7 ActiveClinic implementation inventory — no Stitch mapping",
   "safety": {
     "branch": "V7",
-    "head_sha": "4ab31c1bfe29a039de49c6535892c7d83acff66a",
+    "head_sha": "082b5712944d91b23502cb7b61f2cad98969e2a7",
     "deployment_env": "testing",
     "db_identity": "moovex-platform-v7",
     "production_touched": false,
@@ -14,7 +14,8 @@
       "docs/activeclinic/stitch/ACTIVECLINIC_STITCH_RAW_INVENTORY.csv",
       "docs/activeclinic/stitch/ACTIVECLINIC_STITCH_RAW_INVENTORY.md"
     ],
-    "phase6_at": "2026-08-12T10:31:44.770Z"
+    "phase6_at": "2026-08-12T10:31:44.770Z",
+    "phase16_at": "2026-08-12T12:27:59.412Z"
   },
   "boundary": {
     "directories": [
@@ -38,18 +39,27 @@
     ]
   },
   "integrity": {
-    "user_facing_routes_discovered": 219,
+    "user_facing_routes_discovered": 208,
     "screen_rendering_views_discovered": 218,
     "implementation_screen_state_records": 247,
-    "orphan_views": 1,
-    "api_only_routes_excluded": 138,
+    "orphan_views": 2,
+    "api_only_routes_excluded": 139,
     "redirect_only_routes_excluded": 2,
     "unknown_reachability": 0,
-    "total_route_registrations": 357,
-    "total_screen_views_on_disk": 249,
+    "total_route_registrations": 358,
+    "total_screen_views_on_disk": 251,
     "phase6_routes_discovered": 357,
     "phase6_views_discovered": 249,
-    "phase6_added_records": 0
+    "phase6_added_records": 0,
+    "unused_screen_views": [
+      "views/activeclinic/app/cashier-close-content.ejs",
+      "views/activeclinic/booking/procedure-entry.ejs"
+    ],
+    "infra_get_routes_excluded": 11,
+    "redirect_only_routes": 1,
+    "phase16_routes_discovered": 358,
+    "phase16_views_discovered": 251,
+    "phase16_inventory_fixes": 5
   },
   "navigation": {
     "staff_sidebar": [
@@ -2005,8 +2015,8 @@
       "implementation_id": "ACV7-IMPL-0059",
       "surface": "PATIENT_PORTAL",
       "functional_area": "PATIENT_AUTH",
-      "route_method": "GET",
-      "route_path": "/clinics/:clinicKey/patient/password-updated",
+      "route_method": "POST",
+      "route_path": "/clinics/:clinicKey/patient/reset-password",
       "route_file": "src/activeclinic/http/activeClinicPatientPortalRoutes.js",
       "handler": null,
       "view_path": "views/activeclinic/patient/password-updated.ejs",
@@ -2022,7 +2032,7 @@
       "facility_scope": false,
       "department_scope": null,
       "reachable": "REACHABLE",
-      "reachability_evidence": "GET /patient/password-updated",
+      "reachability_evidence": "POST /clinics/:clinicKey/patient/reset-password success renders patient/password-updated.ejs (no dedicated GET)",
       "partials": [
         "partials/patient-header.ejs",
         "partials/phone-field.ejs"
@@ -2032,7 +2042,7 @@
         "public/activeclinic/ac-phone-field.js"
       ],
       "implementation_substance": "FUNCTIONAL",
-      "notes": ""
+      "notes": "Phase 16: password-updated is a success state, not a standalone GET"
     },
     {
       "implementation_id": "ACV7-IMPL-0060",
@@ -3890,7 +3900,7 @@
       "surface": "AUTHENTICATED_APP",
       "functional_area": "CLINICAL",
       "route_method": "GET",
-      "route_path": "/app/clinical/encounter/:encounterId/order/lab",
+      "route_path": "/app/clinical/encounter/:encounterId/order/:orderType",
       "route_file": "src/activeclinic/http/activeClinicClinicalRoutes.js",
       "handler": null,
       "view_path": "views/activeclinic/app/create-laboratory-request-content.ejs",
@@ -3908,7 +3918,7 @@
       "facility_scope": true,
       "department_scope": "clinical",
       "reachable": "CONDITIONALLY_REACHABLE",
-      "reachability_evidence": "Registered /app route + permission/department gates",
+      "reachability_evidence": "GET /app/clinical/encounter/:encounterId/order/:orderType (lab)",
       "partials": [
         "partials/sidebar.ejs",
         "partials/ac-inline-state.ejs"
@@ -3917,14 +3927,14 @@
         "public/activeclinic/ac-shell-nav.js"
       ],
       "implementation_substance": "FULLY_DATA_DRIVEN",
-      "notes": ""
+      "notes": "| Phase 16: registered parameterized orderType=lab"
     },
     {
       "implementation_id": "ACV7-IMPL-0119",
       "surface": "AUTHENTICATED_APP",
       "functional_area": "CLINICAL",
       "route_method": "GET",
-      "route_path": "/app/clinical/encounter/:encounterId/order/prescription",
+      "route_path": "/app/clinical/encounter/:encounterId/order/:orderType",
       "route_file": "src/activeclinic/http/activeClinicClinicalRoutes.js",
       "handler": null,
       "view_path": "views/activeclinic/app/create-prescription-content.ejs",
@@ -3942,7 +3952,7 @@
       "facility_scope": true,
       "department_scope": "clinical",
       "reachable": "CONDITIONALLY_REACHABLE",
-      "reachability_evidence": "Registered /app route + permission/department gates",
+      "reachability_evidence": "GET /app/clinical/encounter/:encounterId/order/:orderType (prescription)",
       "partials": [
         "partials/sidebar.ejs",
         "partials/ac-inline-state.ejs"
@@ -3951,14 +3961,14 @@
         "public/activeclinic/ac-shell-nav.js"
       ],
       "implementation_substance": "FULLY_DATA_DRIVEN",
-      "notes": ""
+      "notes": "| Phase 16: registered parameterized orderType=prescription"
     },
     {
       "implementation_id": "ACV7-IMPL-0120",
       "surface": "AUTHENTICATED_APP",
       "functional_area": "CLINICAL",
       "route_method": "GET",
-      "route_path": "/app/clinical/encounter/:encounterId/order/radiology",
+      "route_path": "/app/clinical/encounter/:encounterId/order/:orderType",
       "route_file": "src/activeclinic/http/activeClinicClinicalRoutes.js",
       "handler": null,
       "view_path": "views/activeclinic/app/create-radiology-request-content.ejs",
@@ -3976,7 +3986,7 @@
       "facility_scope": true,
       "department_scope": "clinical",
       "reachable": "CONDITIONALLY_REACHABLE",
-      "reachability_evidence": "Registered /app route + permission/department gates",
+      "reachability_evidence": "GET /app/clinical/encounter/:encounterId/order/:orderType (radiology)",
       "partials": [
         "partials/sidebar.ejs",
         "partials/ac-inline-state.ejs"
@@ -3985,7 +3995,7 @@
         "public/activeclinic/ac-shell-nav.js"
       ],
       "implementation_substance": "FULLY_DATA_DRIVEN",
-      "notes": ""
+      "notes": "| Phase 16: registered parameterized orderType=radiology"
     },
     {
       "implementation_id": "ACV7-IMPL-0121",
@@ -5290,22 +5300,22 @@
       "route_path": "/app/cashier/close",
       "route_file": "src/activeclinic/http/activeClinicCashierRoutes.js",
       "handler": null,
-      "view_path": "views/activeclinic/app/cashier-close-content.ejs",
+      "view_path": null,
       "layout": "layouts/app-shell.ejs",
       "device_support": [
         "DESKTOP",
         "MOBILE"
       ],
-      "screen_kind": "PRIMARY_SCREEN",
+      "screen_kind": "REDIRECT",
       "state": "DEFAULT",
       "auth_required": true,
       "rbac_permissions": [
-        "activeclinic.cashier.open_session"
+        "activeclinic.cashier.close_session"
       ],
       "facility_scope": true,
       "department_scope": "cashier",
-      "reachable": "CONDITIONALLY_REACHABLE",
-      "reachability_evidence": "Registered /app route + permission/department gates",
+      "reachable": "REDIRECT_ONLY",
+      "reachability_evidence": "GET /app/cashier/close → 303 /app/cashier/close/cash-count",
       "partials": [
         "partials/sidebar.ejs",
         "partials/ac-inline-state.ejs"
@@ -5313,8 +5323,8 @@
       "client_js": [
         "public/activeclinic/ac-shell-nav.js"
       ],
-      "implementation_substance": "FULLY_DATA_DRIVEN",
-      "notes": ""
+      "implementation_substance": "REDIRECT",
+      "notes": "Phase 16: redirect hop. views/activeclinic/app/cashier-close-content.ejs remains on disk unused (not deleted)."
     },
     {
       "implementation_id": "ACV7-IMPL-0160",
@@ -8162,5 +8172,37 @@
       "views/activeclinic/booking/procedure-entry.ejs"
     ],
     "note": "Phase 6 verification refresh from current V7 code"
+  },
+  "phase16_update": {
+    "inventory_fixes": [
+      "ACV7-IMPL-0159 cashier close marked REDIRECT_ONLY; unused view detached",
+      "ACV7-IMPL-0059 password-updated bound to POST reset-password",
+      "ACV7-IMPL-0118 order route aligned to :orderType (lab)",
+      "ACV7-IMPL-0119 order route aligned to :orderType (prescription)",
+      "ACV7-IMPL-0120 order route aligned to :orderType (radiology)"
+    ],
+    "unused_screen_views": [
+      "views/activeclinic/app/cashier-close-content.ejs",
+      "views/activeclinic/booking/procedure-entry.ejs"
+    ],
+    "unused_views_not_deleted": [
+      "views/activeclinic/app/cashier-close-content.ejs",
+      "views/activeclinic/booking/procedure-entry.ejs"
+    ],
+    "infra_gets_excluded": [
+      "/healthz",
+      "/__ac/public-schema-status",
+      "/__ac/organization-context",
+      "/__ac/organizations",
+      "/__ac/healthcare-organization-context",
+      "/__ac/facilities",
+      "/__ac/facilities/:facilityKey",
+      "/__ac/staff",
+      "/__ac/staff/:staffId",
+      "/__ac/staff/:staffId/facilities",
+      "/__ac/staff/:staffId/permissions"
+    ],
+    "gets_not_added_as_screens": [],
+    "note": "Phase 16 evidence refresh from current V7 source. Unused views kept on disk."
   }
 }

@@ -347,6 +347,7 @@ function registerActiveClinicFacilityRoutes(app, deps) {
           );
         }
 
+        const auth = req.activeClinicAuth;
         const values = parseFacilityFormBody(req.body);
         values.facilityKey = detail.facility.facilityKey;
         const patch = {

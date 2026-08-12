@@ -14,16 +14,18 @@
       </div>
       <% } %>
       <% const fd = (typeof formData !== 'undefined' && formData) || draft || {}; %>
-      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/patient" class="ac-public-form acp-patient-panel">
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/patient" class="ac-public-form acp-patient-panel" data-ac-loading="1" novalidate>
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <div class="acp-field-grid">
           <div class="acp-field">
             <label for="patientFirstName">First name</label>
-            <input id="patientFirstName" name="patientFirstName" required maxlength="80" value="<%= fd.patientFirstName || '' %>"/>
+            <input id="patientFirstName" name="patientFirstName" required aria-required="true" maxlength="80" value="<%= fd.patientFirstName || '' %>" aria-invalid="<%= validationErrors && validationErrors.patientFirstName ? 'true' : 'false' %>"<% if (validationErrors && validationErrors.patientFirstName) { %> aria-describedby="patientFirstName-error"<% } %>/>
+            <% if (validationErrors && validationErrors.patientFirstName) { %><p class="ac-form-field__error" id="patientFirstName-error"><%= validationErrors.patientFirstName %></p><% } %>
           </div>
           <div class="acp-field">
             <label for="patientLastName">Last name</label>
-            <input id="patientLastName" name="patientLastName" required maxlength="80" value="<%= fd.patientLastName || '' %>"/>
+            <input id="patientLastName" name="patientLastName" required aria-required="true" maxlength="80" value="<%= fd.patientLastName || '' %>" aria-invalid="<%= validationErrors && validationErrors.patientLastName ? 'true' : 'false' %>"<% if (validationErrors && validationErrors.patientLastName) { %> aria-describedby="patientLastName-error"<% } %>/>
+            <% if (validationErrors && validationErrors.patientLastName) { %><p class="ac-form-field__error" id="patientLastName-error"><%= validationErrors.patientLastName %></p><% } %>
           </div>
         </div>
         <%- include('../partials/phone-field', {
@@ -39,7 +41,8 @@
           countryFieldName: 'phone_country',
           nationalFieldName: 'phone_national',
           legacyFieldName: 'patientPhone',
-          showLegacyHidden: true
+          showLegacyHidden: true,
+          error: (validationErrors && (validationErrors.patientPhone || validationErrors.phone_national || validationErrors.phone)) || null
         }) %>
         <div class="acp-field">
           <label for="patientEmail">Email (optional)</label>

@@ -36,7 +36,8 @@
   z-index: 100;
 }
 
-.ac-patient-skip:focus {
+.ac-patient-skip:focus,
+.ac-patient-skip:focus-visible {
   left: 0.5rem;
   top: 0.5rem;
 }
@@ -846,6 +847,37 @@ form.ac-patient-form-inline {
 }
 @media (min-width: 768px) {
   .ac-patient-booking-cards { display: none; }
+}
+
+/* ===== Phase 8 — patient portal mobile composition ===== */
+@media (max-width: 767px) {
+  .ac-patient-body {
+    padding-left: env(safe-area-inset-left, 0px);
+    padding-right: env(safe-area-inset-right, 0px);
+  }
+  .ac-patient-body .ac-btn,
+  .ac-patient-body input,
+  .ac-patient-body select,
+  .ac-patient-body textarea {
+    min-height: 2.75rem;
+  }
+  .ac-patient-body textarea {
+    min-height: 5.5rem;
+  }
+  .ac-patient-nav a,
+  .ac-patient-tabs a,
+  .ac-patient-tabs button {
+    min-height: 2.75rem;
+  }
+}
+
+.ac-patient-body a:focus-visible,
+.ac-patient-body button:focus-visible,
+.ac-patient-body input:focus-visible,
+.ac-patient-body select:focus-visible,
+.ac-patient-body textarea:focus-visible {
+  outline: 3px solid #1d59c1;
+  outline-offset: 2px;
 }
 
 

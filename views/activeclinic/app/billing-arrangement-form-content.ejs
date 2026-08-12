@@ -1,12 +1,11 @@
 <%
   var prefill = (pageData && pageData.prefill) || {};
   var stitch = (pageData && pageData.stitch) || {};
-  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
 <section class="ac-billing-arrangement-form" data-ac-page-section="billing-arrangement-form" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
   <article class="ac-panel">
-    <form method="POST" action="/app/billing/arrangements">
-      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+    <form method="POST" action="/app/billing/arrangements" data-ac-loading="1">
+      <%- include('../partials/ac-csrf-field') %>
       <div class="ac-form-group">
         <label for="patientId">Patient ID *</label>
         <input id="patientId" name="patientId" type="text" required value="<%= prefill.patientId || '' %>" />

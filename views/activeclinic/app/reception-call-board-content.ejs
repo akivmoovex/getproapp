@@ -20,7 +20,7 @@
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap">
+  <div class="ac-panel ac-table-wrap ac-desktop-table">
     <table class="ac-table ac-table--large">
       <caption class="ac-sr-only">Call board</caption>
       <thead>
@@ -45,6 +45,15 @@
       </tbody>
     </table>
   </div>
+  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="call-board">
+    <% entries.forEach(function (e) { %>
+    <li class="ac-card ac-mobile-record-card" data-ac-queue-status="<%= e.status %>">
+      <p class="ac-card__title"><%= e.queueNumber %> · <%= e.patientInitials %></p>
+      <p class="ac-muted"><%= e.servicePointName %> · <%= e.assignedRoom || '—' %></p>
+      <p><span class="ac-status" data-ac-status="<%= e.status %>"><%= e.statusLabel %></span></p>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
 
   <p class="ac-sr-only">This call board does not show patient phone numbers, NRC, or any clinical information.</p>

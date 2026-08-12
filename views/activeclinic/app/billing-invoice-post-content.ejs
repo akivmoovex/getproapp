@@ -1,11 +1,10 @@
 <%
   var invoice = (pageData && pageData.invoice) || {};
   var stitch = (pageData && pageData.stitch) || {};
-  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
 <section class="ac-invoice-post" data-ac-page-section="invoice-post" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
   <form method="post" action="/app/billing/invoices/<%= invoice.id %>/post" class="ac-panel" data-ac-loading="1">
-    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+    <%- include('../partials/ac-csrf-field') %>
 
     <p class="ac-flash ac-flash--warning" role="alert">
       <strong>Posting this invoice will make it immutable.</strong>

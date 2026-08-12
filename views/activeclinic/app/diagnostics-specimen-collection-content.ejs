@@ -3,7 +3,7 @@
     <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || "_csrf" %>" value="<%= (shell && shell.csrf && shell.csrf.token) || "" %>" />
     
     <div class="ac-form-group">
-      <label>Request: <%= pageData.collection.request.requestNumber %></label>
+      <p class="ac-label">Request <%= pageData.collection.request.requestNumber %></p>
       <p>Patient: <%= pageData.collection.request.patientDisplayName %></p>
       <p>Test panel: <%= pageData.collection.request.testPanelName %></p>
     </div>
@@ -29,7 +29,7 @@
     </div>
     
     <% if (pageData.collection.error) { %>
-    <p class="ac-error"><%= pageData.collection.error %></p>
+    <p class="ac-error" role="alert"><%= pageData.collection.error %></p>
     <% } %>
     
     <button type="submit" class="ac-btn">Collect specimen</button>

@@ -1,7 +1,7 @@
 # ActiveClinic Stitch → V7 Implementation Mapping
 
-**Generated:** 2026-08-12T10:31:44.770Z
-**Phase 6:** Verified against current V7 code
+**Generated:** 2026-08-12T12:27:59.412Z
+**Phase 16:** Verified against current V7 code
 
 ## Counts
 
@@ -17,5 +17,6 @@
 | Full | 361 |
 | Partial | 0 |
 | Missing | 0 |
+| Ambiguous | 0 |
 
 MEDIUM confidence remaining: 0

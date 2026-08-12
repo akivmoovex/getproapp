@@ -7,8 +7,14 @@
   </header>
 
   <div class="ac-patient-empty-state">
-    <p>You have no bookings linked to your patient portal account yet.</p>
-    <p>Book an appointment on the clinic website, or link an existing guest booking with your access token.</p>
+    <%- include('../partials/acp-shared-state', {
+      stateKind: 'empty',
+      stateTitle: 'No bookings yet',
+      stateText: 'You have no bookings linked to your patient portal account yet. Book an appointment on the clinic website, or link an existing guest booking with your access token.',
+      stateMarker: 'patient-dashboard-empty',
+      primaryHref: (clinic && clinic.publicBookingEnabled !== false) ? ('/clinics/' + clinicKey + '/book') : ('/clinics/' + clinicKey + '/patient/link-guest-booking'),
+      primaryLabel: (clinic && clinic.publicBookingEnabled !== false) ? 'Book appointment' : 'Link a guest booking'
+    }) %>
   </div>
 
   <nav class="ac-patient-actions" aria-label="Quick links">

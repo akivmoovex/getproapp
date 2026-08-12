@@ -1,7 +1,7 @@
 <div data-ac-stitch="33a522e2f4eb45c9bdbede9ba34e0bee" data-ac-screen="diagnosis-entry">
-  <p class="ac-notice">Diagnosis entry. No auto-diagnose; clinician enters manually.</p>
-  
-  <form method="post" action="/app/clinical/encounter/<%= pageData.diagnosis.encounter.id %>/diagnosis">
+  <p class="ac-alert ac-alert--info">Diagnosis entry. No auto-diagnose; clinician enters manually.</p>
+
+  <form class="ac-panel ac-form-section" method="post" action="/app/clinical/encounter/<%= pageData.diagnosis.encounter.id %>/diagnosis">
     <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
     
     <div class="ac-field">

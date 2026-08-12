@@ -32,7 +32,7 @@
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap">
+  <div class="ac-panel ac-table-wrap ac-desktop-table">
     <table class="ac-table">
       <caption class="ac-sr-only">Prescription Queue</caption>
       <thead>
@@ -61,5 +61,17 @@
       </tbody>
     </table>
   </div>
+  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="prescription-queue">
+    <% prescriptions.forEach(function (rx) { %>
+    <li class="ac-card ac-mobile-record-card">
+      <a class="ac-card__link" href="/app/pharmacy/prescriptions/<%= rx.id %>">
+        <p class="ac-card__title"><%= rx.prescriptionNumber %></p>
+        <p class="ac-muted"><%= rx.patientDisplayName || '—' %></p>
+        <p class="ac-muted"><%= rx.prescriberStaffDisplayName || '—' %> · <%= rx.priority %></p>
+        <p><span class="ac-status" data-ac-status="<%= rx.status %>"><%= rx.statusLabel %></span></p>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
 </section>

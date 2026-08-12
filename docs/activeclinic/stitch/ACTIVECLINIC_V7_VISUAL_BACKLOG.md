@@ -1,21 +1,21 @@
 # ActiveClinic V7 — Visual Backlog
 
-**Generated:** 2026-08-12T10:45:19.266Z
+**Generated:** 2026-08-12T11:04:33.892Z
 **Rows:** 361 (full implementation mappings only)
 
-## Phase 7A
+## Phase 7C
 
-- P0 <90 before: 73
-- P0 <90 after: 0
-- Screens improved: 73
+- P1 <90 before: 59 → after: 0
+- Screens improved: 59
+- MATCHED (≥95) not claimed
 
 ## Score buckets
 
 | Band | Count |
 |---|---:|
 | <80 | 0 |
-| 80–89 | 76 |
-| 90–94 | 192 |
+| 80–89 | 15 |
+| 90–94 | 253 |
 | ≥95 | 0 |
 | Unscored | 93 |
 
@@ -28,28 +28,29 @@
 
 ## Top 25 visual gaps
 
-1. **P04 – Consultation Workspace – Desktop** (DESKTOP) — score 82 — `/app/clinical/encounter/:encounterId` — Pass3: shared tokens only; TEST_INFRA_LIMITATION: no browser MATCHED
-2. **P04 – Triage Assessment – Desktop** (DESKTOP) — score 82 — `/app/clinical/encounter/:encounterId/triage` — Pass3: shared tokens only; TEST_INFRA_LIMITATION: no browser MATCHED
-3. **P04 – Vital Signs Entry – Desktop** (DESKTOP) — score 82 — `/app/clinical/encounter/:encounterId/vitals` — Pass3: shared tokens only; TEST_INFRA_LIMITATION: no browser MATCHED
-4. **P03 – Create Walk-In Visit – Desktop** (DESKTOP) — score 84 — `/app/reception/walk-in` — Pass3: shared form/shell; TEST_INFRA_LIMITATION: no browser MATCHED
-5. **P03 – Patient Check-In – Desktop** (DESKTOP) — score 84 — `/app/reception/check-in` — Pass3: shared form/shell; TEST_INFRA_LIMITATION: no browser MATCHED
-6. **P04 – Clinical Escalation Alert** (DESKTOP) — score 84 — `/app/clinical/alerts` — Pass3: queue mobile cards + empty state; clinical logic untouched; TEST_INFRA_LIMITATION: no browser MATCHED
-7. **P04 – Clinical Queue – Desktop** (DESKTOP) — score 84 — `/app/clinical` — Pass3: queue mobile cards + empty state; clinical logic untouched; TEST_INFRA_LIMITATION: no browser MATCHED
-8. **P06 – Enter Laboratory Result – Desktop** (DESKTOP) — score 84 — `/app/diagnostics/laboratory/request/:requestId/result` — Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED
-9. **P06 – Enter Radiology Report – Desktop** (DESKTOP) — score 84 — `/app/diagnostics/radiology/request/:requestId/report` — Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED
-10. **P06 – Laboratory Dashboard – Desktop** (DESKTOP) — score 84 — `/app/diagnostics/laboratory` — Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED
-11. **P06 – Laboratory Request Detail – Desktop** (DESKTOP) — score 84 — `/app/diagnostics/laboratory/request/:requestId` — Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED
-12. **P06 – Laboratory Request Queue – Desktop** (DESKTOP) — score 84 — `/app/diagnostics/laboratory/queue` — Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED
-13. **P06 – Laboratory Worklist – Desktop** (DESKTOP) — score 84 — `/app/diagnostics/laboratory/worklist` — Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED
-14. **P06 – Radiology Dashboard – Desktop** (DESKTOP) — score 84 — `/app/diagnostics/radiology` — Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED
-15. **P06 – Radiology Request Queue – Desktop** (DESKTOP) — score 84 — `/app/diagnostics/radiology/queue` — Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED
-16. **P13 – Add Staff Member – Desktop** (DESKTOP) — score 84 — `/app/staff/new` — Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED
-17. **P13 – Invite Staff Member – Desktop** (DESKTOP) — score 84 — `/app/staff/invite` — Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED
-18. **P13 – Staff Access Dashboard – Desktop** (DESKTOP) — score 84 — `/app/access` — Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED
-19. **P13 – Staff Account Activation** (MOBILE) — score 84 — `/activate/:token` — Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED
-20. **P13 – Staff Directory – Desktop** (DESKTOP) — score 84 — `/app/staff` — Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED
-21. **P13 – Staff Profile – Desktop** (DESKTOP) — score 84 — `/app/staff/:staffId` — Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED
-22. **P13 – Suspend Staff Account** (DESKTOP) — score 84 — `/app/staff/:staffId/suspend` — Pass3: shared shell tokens; TEST_INFRA_LIMITATION: no browser MATCHED
-23. **P04 – Consultation Workspace – Mobile** (MOBILE) — score 85 — `/app/clinical/encounter/:encounterId` — Pass3: shared tokens only; TEST_INFRA_LIMITATION: no browser MATCHED
-24. **P05 – Prescription Clinical Review – Mobile** (MOBILE) — score 85 — `/app/pharmacy/prescriptions/:id` — Large visual/layout gap vs Stitch
-25. **P03 – Appointment Calendar – Desktop** (DESKTOP) — score 86 — `/app/appointments/calendar` — Pass3: shared table/filter/status system; TEST_INFRA_LIMITATION: no browser MATCHED
+1. **P21 - ActiveClinic Public - Clinic Onboarding Server Error - Desktop** (DESKTOP) — score 84 — `/register-clinic` — Pass2: state card treatment
+2. **P21 - ActiveClinic Public - Clinic Onboarding Server Error - Mobile** (MOBILE) — score 84 — `/register-clinic` — Pass2: state card treatment
+3. **P21 - ActiveClinic Public - Clinic Onboarding Validation Error - Desktop** (DESKTOP) — score 84 — `/register-clinic` — Pass2: validation summary retained
+4. **P21 - ActiveClinic Public - Clinic Onboarding Validation Error - Mobile** (MOBILE) — score 84 — `/register-clinic` — Pass2: validation summary retained
+5. **P21 - ActiveClinic Public - Clinic Onboarding - Desktop** (DESKTOP) — score 86 — `/register-clinic` — Pass2: onboarding progress + form shell; PhoneField preserved
+6. **P21 - ActiveClinic Public - Clinic Onboarding - Mobile** (MOBILE) — score 86 — `/register-clinic` — Pass2: onboarding progress + form shell; PhoneField preserved
+7. **P21 - ActiveClinic Public - Clinic Onboarding Review - Desktop** (DESKTOP) — score 86 — `/register-clinic` — Pass2: onboarding progress + form shell; PhoneField preserved
+8. **P22 - Juflona Clinic - Closed or Unavailable - Desktop** (DESKTOP) — score 86 — `/clinics/:clinicKey/*` — Pass2: state card
+9. **P22 - Juflona Clinic - Closed or Unavailable - Mobile** (MOBILE) — score 86 — `/clinics/:clinicKey/*` — Pass2: state card
+10. **P22 - Juflona Clinic - Not Found - Desktop** (DESKTOP) — score 86 — `/clinics/:clinicKey/*` — Pass2: state card
+11. **P22 - Juflona Clinic - Not Found - Mobile** (MOBILE) — score 86 — `/clinics/:clinicKey/*` — Pass2: state card
+12. **P21 - ActiveClinic Public - Clinic Onboarding Success - Desktop** (DESKTOP) — score 88 — `/register-clinic/success` — Pass2: confirmation panel language
+13. **P21 - ActiveClinic Public - Clinic Onboarding Success - Mobile** (MOBILE) — score 88 — `/register-clinic/success` — Pass2: confirmation panel language
+14. **P22 - Juflona Public - About - Desktop** (DESKTOP) — score 88 — `/clinics/:clinicKey/about` — Pass2: tenant about hero + prose
+15. **P21 - ActiveClinic Public - Clinic Onboarding Review - Mobile** (MOBILE) — score 89 — `/register-clinic` — Pass2: onboarding progress + form shell; PhoneField preserved
+16. **Access Restricted** (DESKTOP) — score 90 — `(access-state)` — Pass5: mapped to shared access-restricted taxonomy
+17. **P01 – Shared States – Desktop** (DESKTOP) — score 90 — `(access-state)` — State card now loads tokens.css; radius/padding tightened; Iconography still emoji, not Stitch illustration; Pixel MATCHED not completed in browser
+18. **P02 – Duplicate Patient Warning** (DESKTOP) — score 90 — `/app/patients/new` — Find/Details/Review stepper + section cards added; Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form; Pixel MATCHED not completed in browser
+19. **P02 – Edit Patient Details – Desktop** (DESKTOP) — score 90 — `/app/patients/:patientNumber/edit` — Find/Details/Review stepper + section cards added; Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form; Pixel MATCHED not completed in browser
+20. **P02 – Edit Patient Details – Mobile** (MOBILE) — score 90 — `/app/patients/:patientNumber/edit` — Find/Details/Review stepper + section cards added; Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form; Pixel MATCHED not completed in browser
+21. **P02 – Patient List – Mobile** (MOBILE) — score 90 — `/app/patients` — Mobile card list already present; card radius/shadow tightened; Filter bar still denser than Stitch mobile search-first; Pixel MATCHED not completed in browser
+22. **P02 – Patient Profile Overview – Desktop** (DESKTOP) — score 90 — `/app/patients/:patientNumber` — Shared 7A shell/card/typography tokens applied; Pixel MATCHED not completed in browser
+23. **P02 – Patient Profile Overview – Mobile** (MOBILE) — score 90 — `/app/patients/:patientNumber` — Pass3: patient banner + section panels; TEST_INFRA_LIMITATION: no browser MATCHED
+24. **P02 – Patient Registration Success – Mobile** (MOBILE) — score 90 — `/app/patients` — Success kicker + panel chrome added; No celebratory illustration (no approved Stitch asset downloaded); Pixel MATCHED not completed in browser
+25. **P02 – Patient Shared States – Desktop** (DESKTOP) — score 90 — `/app/patients` — Mobile card list already present; card radius/shadow tightened; Filter bar still denser than Stitch mobile search-first; Pixel MATCHED not completed in browser
+

@@ -511,6 +511,7 @@ async function appendAppointmentStatusEvent(db, input) {
   if (!authz.ok) return { ok: false, code: authz.code, appointment: null };
 
   const allowed = {
+    requested: [],
     scheduled: ["confirmed", "checked_in", "cancelled", "no_show", "rescheduled"],
     confirmed: ["checked_in", "cancelled", "no_show", "rescheduled"],
     checked_in: ["in_progress", "completed", "cancelled", "no_show"],

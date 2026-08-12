@@ -677,9 +677,10 @@ function registerActiveClinicStaffRoutes(app, deps) {
         if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
           return res.status(403).send("Forbidden");
         }
+        const auth = req.activeClinicAuth;
         // Avoid capturing lifecycle POSTs that share the same prefix via more specific routes.
         const form = await loadActiveClinicEditStaffScreen(getPool(), {
-          auth: req.activeClinicAuth,
+          auth,
           staffId: req.params.staffId,
         });
         if (!form.ok) {

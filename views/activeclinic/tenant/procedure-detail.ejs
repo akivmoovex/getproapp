@@ -1,29 +1,58 @@
-<article class="ac-public-section" data-ac-page-section="tenant-procedure-detail">
+<article class="acp-page acp-service-detail" data-ac-page-section="tenant-procedure-detail">
   <p class="ac-public-breadcrumb"><a href="/clinics/<%= clinic.clinicKey %>/services">Services</a> · Procedure</p>
-  <h1><%= procedure.displayName %></h1>
-  <% if (procedure.category) { %><p class="ac-public-muted"><%= procedure.category %></p><% } %>
-  <% if (procedure.summary) { %><p><%= procedure.summary %></p><% } %>
-  <% if (procedure.estimatedDurationMinutes) { %>
-  <p class="ac-public-muted">Estimated duration: about <%= procedure.estimatedDurationMinutes %> minutes (clinic-provided estimate).</p>
-  <% } %>
+  <header class="acp-page-hero acp-page-hero--compact">
+    <% if (procedure.category) { %>
+    <p class="ac-public-eyebrow"><%= procedure.category %></p>
+    <% } %>
+    <h1><%= procedure.displayName %></h1>
+    <% if (procedure.summary) { %>
+    <p class="ac-public-lede"><%= procedure.summary %></p>
+    <% } %>
+  </header>
+
+  <dl class="acp-service-detail__meta">
+    <% if (procedure.estimatedDurationMinutes) { %>
+    <div>
+      <dt>Duration</dt>
+      <dd>About <%= procedure.estimatedDurationMinutes %> minutes (clinic-provided estimate)</dd>
+    </div>
+    <% } %>
+    <div>
+      <dt>Referral</dt>
+      <dd>
+        <% if (procedure.referralRequired) { %>
+        <span class="ac-capability-badge ac-capability-badge--pilot">Referral required</span>
+        <% } else { %>
+        <span class="ac-capability-badge ac-capability-badge--available">No referral marked</span>
+        <% } %>
+      </dd>
+    </div>
+    <div>
+      <dt>Fee</dt>
+      <dd>Price to be confirmed by the clinic</dd>
+    </div>
+  </dl>
+
   <% if (procedure.referralRequired) { %>
   <p class="ac-public-banner" data-ac-referral="required">A referral is required for this procedure. Secure document upload is not available online — the clinic will follow up after you submit a request.</p>
   <% } else { %>
   <p class="ac-public-note" data-ac-referral="not-required">No referral is marked as required for this procedure. Contact the clinic if you are unsure.</p>
   <% } %>
-  <% if (procedure.preparationInstructions) { %>
-  <div class="ac-public-prep">
+
+  <div class="ac-public-prep acp-service-detail__prep">
     <h2>Preparation</h2>
+    <% if (procedure.preparationInstructions) { %>
     <p><%= procedure.preparationInstructions %></p>
+    <% } else { %>
+    <p class="ac-public-note">Preparation instructions are not configured. Contact the clinic for guidance. This site does not generate clinical advice.</p>
+    <% } %>
   </div>
-  <% } else { %>
-  <p class="ac-public-note">Preparation instructions are not configured. Contact the clinic for guidance. This site does not generate clinical advice.</p>
-  <% } %>
+
   <p class="ac-public-actions">
     <% if (clinic.publicBookingEnabled) { %>
-    <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>">Request this procedure</a>
+    <a class="ac-btn ac-btn--primary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>">Request this procedure</a>
     <% } %>
-    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic</a>
-    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/pricing">View pricing information</a>
+    <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic</a>
+    <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/pricing">View pricing information</a>
   </p>
 </article>

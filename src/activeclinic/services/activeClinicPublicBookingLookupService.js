@@ -6,6 +6,9 @@
  */
 
 const { hashToken } = require("./activeClinicPublicBookingService");
+const {
+  canModifyBookingStatus,
+} = require("./activeClinicPublicBookingDraft");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -146,17 +149,22 @@ async function requestBookingCancellation(db, input) {
     return { ok: false, code: RESULT.ALREADY_REQUESTED };
   }
 
-  if (!["submitted_pending_confirmation", "confirmed"].includes(booking.status)) {
+  if (!canModifyBookingStatus(booking.status)) {
     return { ok: false, code: "cancellation_not_allowed" };
   }
 
-  await db.query(
+  const updated = await db.query(
     `UPDATE activeclinic.public_booking_requests
      SET status = 'cancellation_requested',
          updated_at = now()
-     WHERE id = $1`,
+     WHERE id = $1
+       AND status IN ('submitted_pending_confirmation', 'confirmed')
+     RETURNING id, status`,
     [booking.id]
   );
+  if (!updated.rows.length) {
+    return { ok: false, code: "cancellation_not_allowed" };
+  }
 
   return { ok: true, code: RESULT.OK };
 }
@@ -184,18 +192,22 @@ async function requestBookingReschedule(db, input) {
     return { ok: false, code: RESULT.ALREADY_REQUESTED };
   }
 
-  if (!["submitted_pending_confirmation", "confirmed"].includes(booking.status)) {
+  if (!canModifyBookingStatus(booking.status)) {
     return { ok: false, code: "reschedule_not_allowed" };
   }
 
-  // Store preferred new time if provided (extend schema if needed in future)
-  await db.query(
+  const updated = await db.query(
     `UPDATE activeclinic.public_booking_requests
      SET status = 'reschedule_requested',
          updated_at = now()
-     WHERE id = $1`,
+     WHERE id = $1
+       AND status IN ('submitted_pending_confirmation', 'confirmed')
+     RETURNING id, status`,
     [booking.id]
   );
+  if (!updated.rows.length) {
+    return { ok: false, code: "reschedule_not_allowed" };
+  }
 
   return { ok: true, code: RESULT.OK };
 }

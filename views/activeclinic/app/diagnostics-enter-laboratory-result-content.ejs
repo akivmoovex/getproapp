@@ -1,34 +1,33 @@
 <div data-ac-stitch="59ee5d74ff1f47eca3c6fb09413b7c09" data-ac-screen="enter-laboratory-result">
-  <form method="POST">
+  <form class="ac-panel ac-form-section" method="POST">
     <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || "_csrf" %>" value="<%= (shell && shell.csrf && shell.csrf.token) || "" %>" />
-    
-    <div class="ac-form-group">
-      <label>Request: <%= pageData.resultEntry.request.requestNumber %></label>
-      <p>Patient: <%= pageData.resultEntry.request.patientDisplayName %></p>
-      <p>Test panel: <%= pageData.resultEntry.request.testPanelName %></p>
+
+    <div class="ac-clinical-banner">
+      <p class="ac-patient-banner__name">Request <%= pageData.resultEntry.request.requestNumber %></p>
+      <p class="ac-muted"><%= pageData.resultEntry.request.patientDisplayName %> · <%= pageData.resultEntry.request.testPanelName %></p>
     </div>
-    
-    <div class="ac-form-group">
+
+    <div class="ac-field ac-form-group">
       <label for="result_summary">Result summary</label>
       <textarea name="result_summary" id="result_summary" rows="4"></textarea>
     </div>
-    
-    <div class="ac-form-group">
-      <label>
+
+    <div class="ac-field ac-form-group">
+      <label class="ac-public-check">
         <input type="checkbox" name="is_critical" value="1" />
         Critical result (requires acknowledgment)
       </label>
     </div>
-    
-    <div class="ac-form-group">
-      <label>Components (JSON array)</label>
-      <textarea name="components" rows="6" placeholder='[{"test_name":"WBC","value_numeric":5.5,"unit":"10^9/L"}]'>[]</textarea>
+
+    <div class="ac-field ac-form-group">
+      <label for="components">Components (JSON array)</label>
+      <textarea name="components" id="components" rows="6" placeholder='[{"test_name":"WBC","value_numeric":5.5,"unit":"10^9/L"}]'>[]</textarea>
     </div>
-    
+
     <% if (pageData.resultEntry.error) { %>
-    <p class="ac-error"><%= pageData.resultEntry.error %></p>
+    <p class="ac-alert ac-alert--danger" role="alert"><%= pageData.resultEntry.error %></p>
     <% } %>
-    
+
     <button type="submit" class="ac-btn">Enter result</button>
   </form>
 </div>

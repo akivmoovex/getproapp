@@ -14,6 +14,7 @@
 .ac-phone-field {
   display: block;
   width: 100%;
+  min-width: 0;
 }
 
 .ac-phone-field__row {
@@ -21,12 +22,20 @@
   gap: 0.5rem;
   align-items: stretch;
   width: 100%;
+  min-width: 0;
 }
 
 .ac-phone-field__country {
   position: relative;
   flex: 0 0 auto;
-  min-width: 7.5rem;
+  min-width: 6.25rem;
+  max-width: 42%;
+}
+
+.ac-country-picker .ac-phone-field__country {
+  width: 100%;
+  max-width: none;
+  min-width: 0;
 }
 
 .ac-phone-field__country-btn {
@@ -44,9 +53,9 @@
   cursor: pointer;
 }
 
-.ac-phone-field__country-btn:focus {
-  outline: 2px solid var(--ac-focus, #1d59c1);
-  outline-offset: 1px;
+.ac-phone-field__country-btn:focus-visible {
+  outline: 3px solid var(--ac-focus, #1d59c1);
+  outline-offset: 2px;
 }
 
 .ac-phone-field__flag {
@@ -54,17 +63,28 @@
   font-weight: 700;
   letter-spacing: 0.02em;
   opacity: 0.85;
+  flex: 0 0 auto;
 }
 
 .ac-phone-field__code {
   font-weight: 600;
   white-space: nowrap;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ac-country-picker .ac-phone-field__code {
+  white-space: normal;
+  overflow: visible;
+  text-overflow: unset;
 }
 
 .ac-phone-field__chevron {
   margin-left: auto;
   opacity: 0.6;
   font-size: 0.75rem;
+  flex: 0 0 auto;
 }
 
 .ac-phone-field__national {
@@ -79,6 +99,10 @@
 
 .ac-phone-field__input.is-invalid {
   border-color: var(--ac-danger, #b42318);
+}
+
+.ac-phone-field__backdrop {
+  display: none;
 }
 
 .ac-phone-field__popover {
@@ -98,13 +122,14 @@
   box-shadow: var(--ac-shadow-sm, 0 12px 28px rgba(15, 40, 45, 0.12));
 }
 
-.ac-phone-field__popover[hidden] {
+.ac-phone-field__popover[hidden],
+.ac-phone-field__backdrop[hidden] {
   display: none !important;
 }
 
 .ac-phone-field__search {
   width: 100%;
-  min-height: 2.25rem;
+  min-height: 2.75rem;
 }
 
 .ac-phone-field__options {
@@ -117,10 +142,11 @@
 
 .ac-phone-field__option {
   display: grid;
-  grid-template-columns: 2.2rem 1fr auto;
+  grid-template-columns: 2.2rem minmax(0, 1fr) auto;
   gap: 0.5rem;
   align-items: center;
   width: 100%;
+  min-height: 2.75rem;
   padding: 0.45rem 0.5rem;
   border: 0;
   border-radius: 8px;
@@ -132,9 +158,10 @@
 }
 
 .ac-phone-field__option:hover,
-.ac-phone-field__option:focus {
+.ac-phone-field__option:focus-visible {
   background: rgba(0, 60, 144, 0.08);
-  outline: none;
+  outline: 3px solid var(--ac-focus, #1d59c1);
+  outline-offset: -2px;
 }
 
 .ac-phone-field__option.is-selected {
@@ -146,6 +173,11 @@
   font-size: 0.7rem;
   font-weight: 700;
   opacity: 0.8;
+}
+
+.ac-phone-field__option-name {
+  min-width: 0;
+  overflow-wrap: anywhere;
 }
 
 .ac-phone-field__option-code {
@@ -172,31 +204,47 @@
   font-size: 0.875rem;
 }
 
+body.ac-phone-sheet-open {
+  overflow: hidden;
+}
+
+/* Phase 8 — keep country + national on one row at 360–480 */
 @media (max-width: 480px) {
   .ac-phone-field__row {
-    flex-direction: column;
+    flex-direction: row;
   }
   .ac-phone-field__country {
-    width: 100%;
+    min-width: 5.5rem;
+    max-width: 38%;
   }
 }
 
-/* Pass 7 — narrow phone country picker */
+/* Phase 8 — full-bleed country bottom sheet */
 @media (max-width: 430px) {
+  .ac-phone-field__backdrop:not([hidden]) {
+    display: block;
+    position: fixed;
+    inset: 0;
+    z-index: 79;
+    background: rgba(11, 28, 48, 0.42);
+  }
+
   .ac-phone-field__popover {
     position: fixed;
-    left: 0.75rem;
-    right: 0.75rem;
+    left: 0;
+    right: 0;
     top: auto;
-    bottom: calc(0.75rem + env(safe-area-inset-bottom, 0px));
+    bottom: var(--ac-keyboard-inset, 0px);
     width: auto;
     max-width: none;
-    max-height: min(55vh, 22rem);
+    max-height: min(70vh, 28rem);
     z-index: 80;
+    border-radius: 1.25rem 1.25rem 0 0;
+    padding: 0.75rem 0.75rem calc(0.85rem + env(safe-area-inset-bottom, 0px));
   }
 
   .ac-phone-field__options {
-    max-height: min(40vh, 16rem);
+    max-height: min(48vh, 18rem);
     overflow-y: auto;
     -webkit-overflow-scrolling: touch;
   }
@@ -205,4 +253,3 @@
     min-height: 2.75rem;
   }
 }
-

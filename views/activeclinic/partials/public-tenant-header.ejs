@@ -1,3 +1,16 @@
+<%
+  const pid = typeof pageId === "string" ? pageId : "";
+  function tenantCurrent(kind) {
+    var on = false;
+    if (kind === "about") on = /tenant-about/.test(pid);
+    else if (kind === "doctors") on = /tenant-doctor/.test(pid);
+    else if (kind === "services") on = /tenant-service|tenant-procedure/.test(pid);
+    else if (kind === "pricing") on = /tenant-pricing/.test(pid);
+    else if (kind === "contact") on = /tenant-contact/.test(pid);
+    else if (kind === "book") on = /booking-|appointment-entry|procedures-list/.test(pid);
+    return on ? ' aria-current="page"' : "";
+  }
+%>
 <header class="ac-public-header ac-public-header--tenant" data-ac-public-header="tenant">
   <% if (clinic && clinic.isDemonstrationClinic) { %>
   <div class="ac-public-banner ac-public-banner--demo" data-ac-demo-banner="1" role="status">
@@ -14,14 +27,14 @@
       <span class="ac-public-brand__name"><%= clinic.publicName %></span>
     </a>
     <nav class="ac-public-nav ac-public-nav--desktop ac-public-nav--tenant" aria-label="Clinic">
-      <a href="/clinics/<%= clinic.clinicKey %>/about">About</a>
-      <a href="/clinics/<%= clinic.clinicKey %>/doctors">Doctors</a>
-      <a href="/clinics/<%= clinic.clinicKey %>/services">Services</a>
-      <a href="/clinics/<%= clinic.clinicKey %>/pricing">Pricing</a>
-      <a href="/clinics/<%= clinic.clinicKey %>/contact">Contact</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/about"<%- tenantCurrent("about") %>>About</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/doctors"<%- tenantCurrent("doctors") %>>Doctors</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/services"<%- tenantCurrent("services") %>>Services</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/pricing"<%- tenantCurrent("pricing") %>>Pricing</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/contact"<%- tenantCurrent("contact") %>>Contact</a>
       <a class="ac-public-nav__login" href="/clinics/<%= clinic.clinicKey %>/patient/login">Login</a>
       <% if (clinic.publicBookingEnabled) { %>
-      <a class="ac-public-nav__cta" href="/clinics/<%= clinic.clinicKey %>/book">Book appointment</a>
+      <a class="ac-public-nav__cta" href="/clinics/<%= clinic.clinicKey %>/book"<%- tenantCurrent("book") %>>Book appointment</a>
       <% } %>
     </nav>
     <button type="button" class="ac-public-nav-toggle" data-ac-nav-open aria-expanded="false" aria-controls="ac-public-drawer">
@@ -34,15 +47,15 @@
   <div class="ac-public-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu">
     <button type="button" class="ac-public-drawer__close" data-ac-nav-close>Close</button>
     <nav aria-label="Mobile clinic">
-      <a href="/clinics/<%= clinic.clinicKey %>/about">About</a>
-      <a href="/clinics/<%= clinic.clinicKey %>/doctors">Doctors</a>
-      <a href="/clinics/<%= clinic.clinicKey %>/services">Services</a>
-      <a href="/clinics/<%= clinic.clinicKey %>/pricing">Pricing</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/about"<%- tenantCurrent("about") %>>About</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/doctors"<%- tenantCurrent("doctors") %>>Doctors</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/services"<%- tenantCurrent("services") %>>Services</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/pricing"<%- tenantCurrent("pricing") %>>Pricing</a>
       <a href="/clinics/<%= clinic.clinicKey %>/location">Location</a>
-      <a href="/clinics/<%= clinic.clinicKey %>/contact">Contact</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/contact"<%- tenantCurrent("contact") %>>Contact</a>
       <a href="/clinics/<%= clinic.clinicKey %>/patient-information">Patient information</a>
       <% if (clinic.publicBookingEnabled) { %>
-      <a href="/clinics/<%= clinic.clinicKey %>/book">Book appointment</a>
+      <a href="/clinics/<%= clinic.clinicKey %>/book"<%- tenantCurrent("book") %>>Book appointment</a>
       <% } %>
       <a href="/clinics/<%= clinic.clinicKey %>/my-booking">My booking</a>
       <a href="/clinics/<%= clinic.clinicKey %>/patient/login">Patient portal</a>

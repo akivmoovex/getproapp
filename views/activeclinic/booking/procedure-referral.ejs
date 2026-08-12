@@ -25,7 +25,7 @@
       </div>
       <% } %>
 
-      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/referral" class="ac-public-form">
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>/referral" class="ac-public-form" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <% if (procedure.referralRequired) { %>
         <div class="acp-field">

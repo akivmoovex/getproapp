@@ -12,11 +12,19 @@
   <% } %>
 
   <% if (!purchaseOrders.length) { %>
-  <div class="ac-panel">
-    <p class="ac-muted">No purchase orders for this facility yet.</p>
-  </div>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'pharmacy-po-empty',
+      title: 'No purchase orders yet',
+      description: 'Create a purchase order when this facility needs to restock.',
+      primaryAction: canManage
+        ? { href: '/app/pharmacy/purchase-orders/new', label: 'New purchase order' }
+        : null
+    }
+  }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap">
+  <div class="ac-panel ac-table-wrap ac-desktop-table">
     <table class="ac-table">
       <caption class="ac-sr-only">Purchase orders</caption>
       <thead>
@@ -43,5 +51,16 @@
       </tbody>
     </table>
   </div>
+  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="pharmacy-po">
+    <% purchaseOrders.forEach(function (po) { %>
+    <li class="ac-card ac-mobile-record-card">
+      <a class="ac-card__link" href="/app/pharmacy/purchase-orders/<%= po.id %>">
+        <p class="ac-card__title"><%= po.poNumber %></p>
+        <p class="ac-muted"><%= po.supplierName %> · <%= po.itemCount != null ? po.itemCount : '—' %> items</p>
+        <p><span class="ac-status" data-ac-status="<%= po.status %>"><%= po.status %></span></p>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
   <% } %>
 </section>

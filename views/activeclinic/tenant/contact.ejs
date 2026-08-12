@@ -9,7 +9,7 @@
     <div class="acp-contact-layout__main">
       <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
       <% const fd = formData || {}; %>
-      <form method="post" action="/clinics/<%= clinic.clinicKey %>/contact" class="ac-public-form acp-contact-form">
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/contact" class="ac-public-form acp-contact-form" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <div class="acp-field">
           <label for="senderName">Your name</label>

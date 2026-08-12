@@ -1,0 +1,215 @@
+{
+  "generated_at": "2026-08-12T11:40:00.000Z",
+  "verdict": "PHASE11_COMPLETE_REQUIRED_ZEROS",
+  "safety": {
+    "branch": "V7",
+    "head_sha": "082b5712944d91b23502cb7b61f2cad98969e2a7",
+    "production_touched": false,
+    "pushed": false,
+    "deployed": false
+  },
+  "required": {
+    "NEW_REGRESSION": 0,
+    "P0_REAL_PRODUCT_BUG": 0
+  },
+  "counts": {
+    "files_enumerated": 66,
+    "node_test_files": 64,
+    "mocha_leftover_files": 2,
+    "node_test_pass": 453,
+    "node_test_fail": 0,
+    "node_test_skip": 0
+  },
+  "groups": [
+    {
+      "id": "A",
+      "module": "public / registration / directory",
+      "command": "node --test tests/activeclinic-public-website.test.js tests/activeclinic-clinic-directory.test.js tests/activeclinic-clinic-registration.test.js",
+      "pass": 25,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "id": "B",
+      "module": "booking / portal",
+      "command": "node --test tests/activeclinic-public-booking.test.js tests/activeclinic-phase5a-procedure-booking.test.js tests/activeclinic-patient-portal.test.js tests/activeclinic-booking-patient-linkage.test.js",
+      "pass": 25,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "id": "C",
+      "module": "phone / auth / session",
+      "command": "node --test tests/activeclinic-phone-standardization.test.js tests/activeclinic-authentication-foundation.test.js tests/activeclinic-auth-stitch-parity.test.js tests/activeclinic-account-lifecycle.test.js tests/activeclinic-session-principal.test.js",
+      "pass": 55,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "id": "D",
+      "module": "patient",
+      "command": "node --test tests/activeclinic-patient-foundation.test.js tests/activeclinic-patient-registration-rbac.test.js tests/activeclinic-patient-ui-parity.test.js tests/activeclinic-patient-merge-safety.test.js tests/activeclinic-phase4-patient-print-card.test.js",
+      "pass": 32,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "id": "E",
+      "module": "appointments / reception",
+      "command": "node --test tests/activeclinic-appointment-foundation.test.js tests/activeclinic-appointment-ui-parity.test.js tests/activeclinic-phase5b-appointments-reception.test.js tests/activeclinic-reception-foundation.test.js tests/activeclinic-reception-ui-parity.test.js",
+      "pass": 18,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "id": "F",
+      "module": "clinical / diagnostics",
+      "command": "node --test tests/activeclinic-clinical-foundation.test.js tests/activeclinic-clinical-ui-parity.test.js tests/activeclinic-diagnostics-foundation.test.js tests/activeclinic-diagnostics-rbac.test.js",
+      "pass": 28,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "id": "G",
+      "module": "pharmacy / departments",
+      "command": "node --test tests/activeclinic-pharmacy-foundation.test.js tests/activeclinic-pharmacy-ui-parity.test.js tests/activeclinic-phase4-pharmacy-ops.test.js tests/activeclinic-phase5c-pharmacy-partials.test.js tests/activeclinic-departments-pharmacy-regression.test.js",
+      "pass": 45,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "id": "H",
+      "module": "billing / cashier / finance",
+      "command": "node --test tests/activeclinic-phase4-billing-ops.test.js tests/activeclinic-phase5d-billing-cashier-partials.test.js tests/activeclinic-finance-rbac.test.js",
+      "pass": 23,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "id": "I",
+      "module": "mocha leftovers",
+      "command": "node --test tests/activeclinic-billing-ui-parity.test.js tests/activeclinic-diagnostics-ui-parity.test.js",
+      "pass": 0,
+      "fail": 2,
+      "skip": 0,
+      "classification": "TEST_STALE"
+    },
+    {
+      "id": "J",
+      "module": "settings / facility / staff / tenant",
+      "command": "node --test tests/activeclinic-organization-settings-parity.test.js tests/activeclinic-facility-foundation.test.js tests/activeclinic-facilities-parity.test.js tests/activeclinic-staff-management-parity.test.js tests/activeclinic-staff-directory-parity.test.js tests/activeclinic-staff-invitation.test.js tests/activeclinic-staff-rbac-foundation.test.js tests/activeclinic-roles-access-parity.test.js tests/activeclinic-roles-access-admin.test.js tests/activeclinic-admin-role-migration.test.js tests/activeclinic-product-isolation.test.js tests/activeclinic-deployment-foundation.test.js",
+      "pass": 82,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "id": "K",
+      "module": "RBAC / shell / visual / phase 8-10",
+      "command": "node --test tests/activeclinic-rbac-role-matrix.test.js tests/activeclinic-multi-role-rbac.test.js tests/activeclinic-navigation-rbac.test.js tests/activeclinic-application-shell.test.js tests/activeclinic-dashboard-capabilities.test.js tests/activeclinic-dashboard-shell-parity.test.js tests/activeclinic-foundation-states-parity.test.js tests/activeclinic-pass5-missing-states.test.js tests/activeclinic-pass6-media.test.js tests/activeclinic-pass7-mobile.test.js tests/activeclinic-pass8-design-system.test.js tests/activeclinic-phase8-mobile.test.js tests/activeclinic-phase9-a11y.test.js tests/activeclinic-phase10-browser.test.js tests/activeclinic-phase5e-partial-closure.test.js",
+      "pass": 109,
+      "fail": 0,
+      "skip": 0
+    },
+    {
+      "id": "L",
+      "module": "demo / QA",
+      "command": "node --test tests/activeclinic-demo-clinics-seed.test.js tests/activeclinic-demo-role-users.test.js tests/activeclinic-qa-role-users.test.js",
+      "pass": 11,
+      "fail": 0,
+      "skip": 0
+    }
+  ],
+  "failures_first_run": [
+    {
+      "id": "P11-H1",
+      "classification": "NEW_REGRESSION",
+      "severity": "P0",
+      "test": "tests/activeclinic-facilities-parity.test.js creates, edits, sets primary, and archives",
+      "detail": "POST /app/facilities/:key 500 auth is not defined",
+      "fixed": true
+    },
+    {
+      "id": "P11-H2",
+      "classification": "NEW_REGRESSION",
+      "severity": "P0",
+      "test": "tests/activeclinic-staff-management-parity.test.js edits staff profile",
+      "detail": "POST /app/staff/:id 500 auth is not defined",
+      "fixed": true
+    },
+    {
+      "id": "P11-T1",
+      "classification": "TEST_STALE",
+      "test": "tests/activeclinic-account-lifecycle.test.js suspend last org admin",
+      "detail": "LAST_ORG_ADMIN guard is intended",
+      "fixed": true
+    },
+    {
+      "id": "P11-T2",
+      "classification": "TEST_STALE",
+      "test": "tests/activeclinic-patient-foundation.test.js identifier fixtures",
+      "detail": "manage_identifiers is medical-records, not receptionist/org admin",
+      "fixed": true
+    },
+    {
+      "id": "P11-T3",
+      "classification": "TEST_STALE",
+      "test": "tests/activeclinic-clinical-ui-parity.test.js GET /app/clinical",
+      "detail": "clinical requires OPD or triage department",
+      "fixed": true
+    },
+    {
+      "id": "P11-T4",
+      "classification": "TEST_STALE",
+      "test": "tests/activeclinic-organization-settings-parity.test.js",
+      "detail": "shell nav includes Billing/Pharmacy for org admin",
+      "fixed": true
+    },
+    {
+      "id": "P11-T5",
+      "classification": "TEST_STALE",
+      "test": "tests/activeclinic-staff-directory-parity.test.js",
+      "detail": "ac-tokens.css matched /token/",
+      "fixed": true
+    },
+    {
+      "id": "P11-S1",
+      "classification": "TEST_STALE",
+      "test": "tests/activeclinic-billing-ui-parity.test.js",
+      "detail": "Mocha beforeAll; not on node --test path",
+      "fixed": false
+    },
+    {
+      "id": "P11-S2",
+      "classification": "TEST_STALE",
+      "test": "tests/activeclinic-diagnostics-ui-parity.test.js",
+      "detail": "missing testUtilities/dbTestUtilities",
+      "fixed": false
+    }
+  ],
+  "product_fixes": [
+    "activeClinicFacilityRoutes.js: declare auth on facility update POST",
+    "activeClinicStaffRoutes.js: declare auth on staff edit POST"
+  ],
+  "test_fixes": [
+    "account-lifecycle: suspend a non-last org admin",
+    "patient-foundation: seed MEDICAL_RECORDS_OFFICER for identifier writes",
+    "clinical-ui-parity: ensureDefaultDepartments",
+    "organization-settings-parity: stop treating Billing/Pharmacy nav as settings leakage",
+    "staff-directory-parity: stop matching generic token (ac-tokens.css)"
+  ],
+  "security": {
+    "tenant_isolation": "pass",
+    "facility_isolation": "pass",
+    "department_gating": "pass",
+    "rbac": "pass",
+    "csrf": "pass",
+    "finance_mutation_rules": "pass",
+    "pharmacy_mutations": "pass",
+    "phone_normalization": "pass"
+  },
+  "remaining": [
+    "Mocha UI-parity files not converted to node:test",
+    "createFacility does not auto-seed departments (Phase 12 candidate)"
+  ],
+  "next": "PHASE 12 — data/state completeness audit"
+}

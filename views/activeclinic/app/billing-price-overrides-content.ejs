@@ -2,7 +2,6 @@
   var items = (pageData && pageData.items) || [];
   var caps = (pageData && pageData.capabilities) || {};
   var stitch = (pageData && pageData.stitch) || {};
-  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
 <section class="ac-billing-price-overrides" data-ac-page-section="billing-price-overrides" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
   <article class="ac-panel">
@@ -39,11 +38,11 @@
             <td class="ac-actions">
               <% if (row.status === 'pending') { %>
               <form method="POST" action="/app/billing/price-overrides/<%= row.id %>/approve" style="display:inline">
-                <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+                <%- include('../partials/ac-csrf-field') %>
                 <button type="submit" class="ac-btn">Approve</button>
               </form>
               <form method="POST" action="/app/billing/price-overrides/<%= row.id %>/reject" style="display:inline">
-                <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+                <%- include('../partials/ac-csrf-field') %>
                 <button type="submit" class="ac-btn ac-btn--ghost">Reject</button>
               </form>
               <% } else { %>—<% } %>

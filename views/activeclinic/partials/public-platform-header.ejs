@@ -1,3 +1,14 @@
+<%
+  const pid = typeof pageId === "string" ? pageId : "";
+  function currentAttr(kind) {
+    var on = false;
+    if (kind === "clinics") on = /clinics-directory|clinics-search|clinic-directory|clinic-search/.test(pid);
+    else if (kind === "solutions") on = /solutions/.test(pid);
+    else if (kind === "about") on = /public-about/.test(pid);
+    else if (kind === "register") on = /register/.test(pid);
+    return on ? ' aria-current="page"' : "";
+  }
+%>
 <header class="ac-public-header" data-ac-public-header="platform">
   <div class="ac-public-header__inner">
     <a class="ac-public-brand" href="/" aria-label="ActiveClinic home">
@@ -5,10 +16,10 @@
       <span class="ac-public-brand__name">ActiveClinic</span>
     </a>
     <nav class="ac-public-nav ac-public-nav--desktop" aria-label="Primary">
-      <a href="/clinics">Find a clinic</a>
-      <a href="/solutions">Solutions</a>
-      <a href="/about">About</a>
-      <a href="/register-clinic">Register a clinic</a>
+      <a href="/clinics"<%- currentAttr("clinics") %>>Find a clinic</a>
+      <a href="/solutions"<%- currentAttr("solutions") %>>Solutions</a>
+      <a href="/about"<%- currentAttr("about") %>>About</a>
+      <a href="/register-clinic"<%- currentAttr("register") %>>Register a clinic</a>
       <a class="ac-public-nav__login" href="/login">Staff sign in</a>
     </nav>
     <button type="button" class="ac-public-nav-toggle" data-ac-nav-open aria-expanded="false" aria-controls="ac-public-drawer">
@@ -21,10 +32,10 @@
   <div class="ac-public-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu">
     <button type="button" class="ac-public-drawer__close" data-ac-nav-close>Close</button>
     <nav aria-label="Mobile">
-      <a href="/clinics">Find a clinic</a>
-      <a href="/solutions">Solutions</a>
-      <a href="/about">About</a>
-      <a href="/register-clinic">Register a clinic</a>
+      <a href="/clinics"<%- currentAttr("clinics") %>>Find a clinic</a>
+      <a href="/solutions"<%- currentAttr("solutions") %>>Solutions</a>
+      <a href="/about"<%- currentAttr("about") %>>About</a>
+      <a href="/register-clinic"<%- currentAttr("register") %>>Register a clinic</a>
       <a href="/login">Staff sign in</a>
     </nav>
   </div>
