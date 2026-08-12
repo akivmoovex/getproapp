@@ -30,6 +30,7 @@ const {
   loadActiveClinicAssignRoleScreen,
   loadActiveClinicEditRoleScreen,
   loadActiveClinicRevokeRoleScreen,
+  loadActiveClinicRoleDetailScreen,
 } = require("../services/loadActiveClinicAccessScreens");
 const {
   RESULT,
@@ -189,6 +190,55 @@ function registerActiveClinicAccessRoutes(app, deps) {
           flash: req.query.ok
             ? { type: "success", message: "Access updated." }
             : null,
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/access/roles/:roleKey",
+    requireAuth,
+    requirePermission("activeclinic.staff.assign_access"),
+    async (req, res, next) => {
+      try {
+        const loaded = await loadActiveClinicRoleDetailScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          roleKey: req.params.roleKey,
+        });
+        if (!loaded.ok) {
+          const notFound = loaded.code === "role_not_found";
+          return denyPage(
+            res,
+            notFound ? 404 : 403,
+            notFound ? "Role not found" : "Access restricted",
+            notFound
+              ? "That role is not in the ActiveClinic catalogue."
+              : "You do not have permission to view role details."
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "access",
+          content: "app/access-role-detail-content.ejs",
+          pageHeader: {
+            title: loaded.detail.role.label,
+            description: loaded.detail.role.description,
+            actions: [
+              {
+                label: "Back to catalogue",
+                href: "/app/access?tab=catalogue",
+                variant: "ghost",
+              },
+            ],
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Roles & access", href: "/app/access" },
+            { label: "Catalogue", href: "/app/access?tab=catalogue" },
+            { label: loaded.detail.role.label },
+          ],
+          pageData: { detail: loaded.detail },
         });
       } catch (err) {
         return next(err);

@@ -169,16 +169,7 @@
       </form>
       <% } %>
       <% if (actions.suspend) { %>
-      <details class="ac-destructive" data-ac-suspend-confirm="1">
-        <summary class="ac-btn ac-btn--danger" style="list-style:none;cursor:pointer">Suspend staff…</summary>
-        <div class="ac-panel" style="margin-top:.75rem;border-color:#fecdca">
-          <p>Suspending ends operational access. Assignment history is preserved.</p>
-          <form method="post" action="<%= actions.suspend %>" data-ac-loading="1">
-            <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
-            <button type="submit" class="ac-btn ac-btn--danger">Confirm suspend</button>
-          </form>
-        </div>
-      </details>
+      <a class="ac-btn ac-btn--danger" href="<%= actions.suspend %>" data-ac-suspend-link="1">Suspend staff…</a>
       <% } %>
       <% if (actions.restore) { %>
       <form method="post" action="<%= actions.restore %>" data-ac-loading="1">

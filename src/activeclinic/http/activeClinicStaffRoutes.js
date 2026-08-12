@@ -221,6 +221,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
     requirePermission("activeclinic.staff.create"),
     async (req, res, next) => {
       try {
+        const inviteMode = String(req.query.invite || "") === "1";
         const form = await loadActiveClinicCreateStaffScreen(getPool(), {
           auth: req.activeClinicAuth,
         });
@@ -241,17 +242,52 @@ function registerActiveClinicStaffRoutes(app, deps) {
           activeNav: "staff",
           content: "app/staff-form-content.ejs",
           pageHeader: {
-            title: "Add staff",
-            description:
-              "Create a staff profile, assign facilities and roles, and optionally issue an activation invitation.",
+            title: inviteMode ? "Invite staff member" : "Add staff",
+            description: inviteMode
+              ? "Create a staff profile and issue an activation invitation."
+              : "Create a staff profile, assign facilities and roles, and optionally issue an activation invitation.",
             actions: [],
           },
           breadcrumbs: [
             { label: "Home", href: "/app" },
             { label: "Staff", href: "/app/staff" },
-            { label: "Add" },
+            { label: inviteMode ? "Invite" : "Add" },
           ],
-          pageData: { form },
+          pageData: {
+            form,
+            stitch: inviteMode
+              ? { desktop: "f30963c89fad49ceabc2447dfd46f8f0" }
+              : {},
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/staff/invite",
+    requireAuth,
+    requirePermission("activeclinic.staff.invite"),
+    async (req, res, next) => {
+      try {
+        return await renderShell(req, res, {
+          activeNav: "staff",
+          content: "app/staff-invite-content.ejs",
+          pageHeader: {
+            title: "Invite staff member",
+            description: "Start the staff invitation workflow.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Staff", href: "/app/staff" },
+            { label: "Invite" },
+          ],
+          pageData: {
+            stitch: { desktop: "f30963c89fad49ceabc2447dfd46f8f0" },
+          },
         });
       } catch (err) {
         return next(err);
@@ -770,6 +806,56 @@ function registerActiveClinicStaffRoutes(app, deps) {
           303,
           `/app/staff/${encodeURIComponent(form.staff.id)}?ok=1`
         );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/staff/:staffId/suspend",
+    requireAuth,
+    requirePermission("activeclinic.staff.archive"),
+    async (req, res, next) => {
+      try {
+        const detail = await loadActiveClinicStaffDetailScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          staffId: req.params.staffId,
+        });
+        if (!detail.ok) {
+          return res.status(404).type("html").send(
+            renderSimpleState("Not found", "That staff profile is not available.", {
+              state: "not-found",
+              linkHref: "/app/staff",
+              linkLabel: "Back to staff",
+            })
+          );
+        }
+        if (!detail.actions || !detail.actions.suspend) {
+          return res.redirect(303, `/app/staff/${encodeURIComponent(detail.staff.id)}`);
+        }
+        return await renderShell(req, res, {
+          activeNav: "staff",
+          content: "app/staff-suspend-content.ejs",
+          pageHeader: {
+            title: "Suspend staff account",
+            description: `Confirm suspension for ${detail.staff.displayName}.`,
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Staff", href: "/app/staff" },
+            {
+              label: detail.staff.displayName,
+              href: `/app/staff/${encodeURIComponent(detail.staff.id)}`,
+            },
+            { label: "Suspend" },
+          ],
+          pageData: {
+            staff: detail.staff,
+            stitch: { desktop: "3d43526745534570bbe9cd22948be3c1" },
+          },
+        });
       } catch (err) {
         return next(err);
       }

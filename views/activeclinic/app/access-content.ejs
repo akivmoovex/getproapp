@@ -24,7 +24,9 @@
       <% roles.forEach(function (role) { %>
       <article class="ac-access-catalogue__role" data-ac-role-key="<%= role.key %>">
         <header>
-          <h3 style="margin:0;font-size:1rem"><%= role.label %></h3>
+          <h3 style="margin:0;font-size:1rem">
+            <a href="/app/access/roles/<%= encodeURIComponent(role.key) %>"><%= role.label %></a>
+          </h3>
           <p class="ac-muted" style="margin:.25rem 0 0">
             <%= role.scopeLabel %>
             · <%= role.staffCount %> staff

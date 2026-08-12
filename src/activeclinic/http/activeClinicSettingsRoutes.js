@@ -44,6 +44,8 @@ const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { readV5SessionCookie } = require("../../platform/session/v5SessionCookie");
+const { hashSessionToken } = require("../../platform/session/sessionToken");
 
 function departmentErrorMessage(code) {
   switch (code) {
@@ -417,8 +419,102 @@ function registerActiveClinicSettingsRoutes(app, deps) {
               changePasswordHref: "/account/change-password",
               logoutHref: "/logout",
             },
+            stitch: { desktop: "c50a51a04a084f0badd48da9827aa11f" },
           },
         });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/settings/account/sessions",
+    requireAuth,
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicAuth;
+        const identityId = auth.platformIdentity && auth.platformIdentity.id;
+        const deploymentCodeValue = deploymentCode();
+        const rawToken = readV5SessionCookie(req, env);
+        const currentHash = rawToken ? hashSessionToken(rawToken) : null;
+
+        let sessions = [];
+        if (identityId) {
+          const result = await getPool().query(
+            `SELECT id, created_at, last_seen_at, expires_at, session_token_hash
+               FROM platform.deployment_sessions
+              WHERE platform_identity_id = $1
+                AND deployment_code = $2
+                AND revoked_at IS NULL
+                AND expires_at > now()
+              ORDER BY last_seen_at DESC
+              LIMIT 25`,
+            [identityId, deploymentCodeValue]
+          );
+          sessions = result.rows.map((row) => {
+            const isCurrent = currentHash && row.session_token_hash === currentHash;
+            return {
+              id: row.id,
+              isCurrent: Boolean(isCurrent),
+              createdAtLabel: new Date(row.created_at).toLocaleString(),
+              lastSeenLabel: new Date(row.last_seen_at).toLocaleString(),
+              expiresAtLabel: new Date(row.expires_at).toLocaleString(),
+            };
+          });
+        }
+
+        const current = sessions.find((s) => s.isCurrent) || null;
+        return await renderShell(req, res, {
+          activeNav: "settings",
+          content: "app/settings-account-sessions-content.ejs",
+          pageHeader: {
+            title: "Active sessions",
+            description: "Review signed-in devices for your account.",
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Settings", href: "/app/settings" },
+            { label: "Account", href: "/app/settings/account" },
+            { label: "Sessions" },
+          ],
+          pageData: {
+            sessions,
+            currentSessionId: current ? current.id : null,
+            stitch: { desktop: "e132749f634c4fff818acf3f8e21c361" },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/account/sessions/revoke-others",
+    requireAuth,
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).send("Forbidden");
+        }
+        const auth = req.activeClinicAuth;
+        const identityId = auth.platformIdentity && auth.platformIdentity.id;
+        const deploymentCodeValue = deploymentCode();
+        const rawToken = readV5SessionCookie(req, env);
+        const currentHash = rawToken ? hashSessionToken(rawToken) : null;
+        if (identityId && currentHash) {
+          await getPool().query(
+            `UPDATE platform.deployment_sessions
+                SET revoked_at = now()
+              WHERE platform_identity_id = $1
+                AND deployment_code = $2
+                AND revoked_at IS NULL
+                AND session_token_hash <> $3`,
+            [identityId, deploymentCodeValue, currentHash]
+          );
+        }
+        return res.redirect(303, "/app/settings/account/sessions?ok=1");
       } catch (err) {
         return next(err);
       }

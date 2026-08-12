@@ -372,7 +372,7 @@ async function loadActiveClinicStaffListScreen(db, input) {
     actions: {
       canInvite,
       inviteHref: canInvite && hasPerm(perms, "activeclinic.staff.create")
-        ? "/app/staff/new"
+        ? "/app/staff/invite"
         : null,
     },
     emptyMode,

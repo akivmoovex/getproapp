@@ -860,12 +860,53 @@ async function loadActiveClinicRevokeRoleScreen(db, input) {
   };
 }
 
+async function loadActiveClinicRoleDetailScreen(db, input) {
+  const auth = input.auth;
+  if (!actorHasAssignAccess(auth)) {
+    return { ok: false, code: RESULT.DENIED, restricted: true };
+  }
+
+  const roleKey = String(input.roleKey || "").trim();
+  if (!roleKey || !ACTIVECLINIC_ROLE_CATALOGUE.includes(roleKey)) {
+    return { ok: false, code: "role_not_found" };
+  }
+
+  const scopedIds = await viewerScopedStaffIds(db, auth);
+  const catalogue = await buildRoleCatalogue(db, auth.organization.id, scopedIds);
+  const role = catalogue.find((r) => r.key === roleKey);
+  if (!role) {
+    return { ok: false, code: "role_not_found" };
+  }
+
+  const summary = await summarizePermissionsForRoleKeys(db, [roleKey]);
+  return {
+    ok: true,
+    code: RESULT.OK,
+    detail: {
+      role,
+      permissionGroups: (summary.groups || []).map((g) => ({
+        key: g.key,
+        label: g.label,
+        count: g.count,
+        permissions: (g.permissions || []).map((p) => ({
+          key: String(p),
+          label: String(p),
+        })),
+      })),
+      permissionCount: summary.permissionCount || 0,
+      backHref: "/app/access?tab=catalogue",
+      assignStaffHref: `/app/access?tab=staff&role=${encodeURIComponent(roleKey)}`,
+    },
+  };
+}
+
 module.exports = {
   loadActiveClinicAccessOverviewScreen,
   loadActiveClinicStaffAccessDetailScreen,
   loadActiveClinicAssignRoleScreen,
   loadActiveClinicEditRoleScreen,
   loadActiveClinicRevokeRoleScreen,
+  loadActiveClinicRoleDetailScreen,
   rolePlainLabel,
   summarizeStaffScopedAccess,
 };

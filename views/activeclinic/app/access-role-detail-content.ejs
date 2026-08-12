@@ -1,0 +1,38 @@
+<%
+  var detail = (pageData && pageData.detail) || {};
+  var role = detail.role || {};
+  var groups = detail.permissionGroups || [];
+%>
+<section class="ac-access-role-detail" data-ac-page-section="access-role-detail" data-ac-role-key="<%= role.key || '' %>">
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0"><%= role.label || 'Role' %></h2>
+    <dl class="ac-dl">
+      <div><dt>Role key</dt><dd><code><%= role.key %></code></dd></div>
+      <div><dt>Scope</dt><dd><%= role.scopeLabel || '—' %></dd></div>
+      <div><dt>Staff with role</dt><dd><%= role.staffCount != null ? role.staffCount : '—' %></dd></div>
+      <div><dt>Permissions</dt><dd><%= detail.permissionCount || 0 %></dd></div>
+    </dl>
+    <% if (role.description) { %>
+    <p><%= role.description %></p>
+    <% } %>
+    <% if (role.compatibility) { %>
+    <p class="ac-muted">Compatibility / legacy role.</p>
+    <% } %>
+  </article>
+
+  <% groups.forEach(function (group) { %>
+  <article class="ac-panel">
+    <h3 class="ac-dashboard__card-title" style="margin-top:0"><%= group.label %> (<%= group.count %>)</h3>
+    <ul class="ac-list">
+      <% (group.permissions || []).forEach(function (perm) { %>
+      <li><code><%= perm.key || perm.label %></code></li>
+      <% }) %>
+    </ul>
+  </article>
+  <% }) %>
+
+  <div class="ac-form-actions">
+    <a class="ac-btn" href="<%= detail.assignStaffHref || '/app/access?tab=staff' %>">View staff with this role</a>
+    <a class="ac-btn ac-btn--ghost" href="<%= detail.backHref || '/app/access?tab=catalogue' %>">Back to catalogue</a>
+  </div>
+</section>

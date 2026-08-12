@@ -18,6 +18,7 @@
     <h2 class="ac-dashboard__card-title" style="margin-top:0">Security actions</h2>
     <div class="ac-actions-row ac-actions--stack-mobile">
       <a class="ac-btn" href="<%= account.changePasswordHref || '/account/change-password' %>">Change password</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/settings/account/sessions">Active sessions</a>
       <form method="post" action="<%= account.logoutHref || '/logout' %>" style="margin:0">
         <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
         <button type="submit" class="ac-btn ac-btn--ghost">Sign out</button>
