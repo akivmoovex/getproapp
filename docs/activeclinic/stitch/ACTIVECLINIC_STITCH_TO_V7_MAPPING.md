@@ -1,14 +1,24 @@
 # ActiveClinic Stitch → V7 Implementation Mapping
 
-**Generated:** 2026-08-12T09:57:02.473Z
-**Phase 5C:** 6 Pharmacy PARTIAL rows closed
+**Generated:** 2026-08-12T10:13:15.211Z
+**Phase 5D:** 16 Billing/Cashier PARTIAL rows closed
 
-## PHARMACY
+## BILLING
 
 | Bucket | Before | After |
 |---|---:|---:|
-| full | 23 | 29 |
-| partial | 6 | 0 |
+| full | 47 | 60 |
+| partial | 13 | 0 |
+| missing | 0 | 0 |
+| other | 3 | 3 |
+| total | 63 | 63 |
+
+## CASHIER
+
+| Bucket | Before | After |
+|---|---:|---:|
+| full | 7 | 10 |
+| partial | 3 | 0 |
 | missing | 0 | 0 |
 | other | 0 | 0 |
-| total | 29 | 29 |
+| total | 10 | 10 |

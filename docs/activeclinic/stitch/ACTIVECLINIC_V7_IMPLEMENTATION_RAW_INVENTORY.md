@@ -1,9 +1,9 @@
 # ActiveClinic V7 Implementation Raw Inventory
 
-**Generated:** 2026-08-12T09:57:02.473Z
-**Phase 5C:** Pharmacy partial closure
+**Generated:** 2026-08-12T10:13:15.211Z
+**Phase 5D:** Billing/Cashier partial closure
 
 | Metric | Count |
 |---|---:|
-| Implementation records | 229 |
-| Phase 5C added | 4 |
+| Implementation records | 243 |
+| Phase 5D added | 14 |

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T09:57:02.473Z",
+  "generated_at": "2026-08-12T10:13:15.211Z",
   "inventory_purpose": "RAW V7 ActiveClinic implementation inventory — no Stitch mapping",
   "safety": {
     "branch": "V7",
@@ -39,7 +39,7 @@
   "integrity": {
     "user_facing_routes_discovered": 175,
     "screen_rendering_views_discovered": 157,
-    "implementation_screen_state_records": 229,
+    "implementation_screen_state_records": 243,
     "orphan_views": 1,
     "api_only_routes_excluded": 22,
     "redirect_only_routes_excluded": 12,
@@ -7567,6 +7567,440 @@
       ],
       "implementation_substance": "FUNCTIONAL",
       "notes": "ActiveClinic V7 Phase 5C"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770230",
+      "surface": "INTERNAL",
+      "functional_area": "BILLING",
+      "route_method": "GET",
+      "route_path": "/app/billing/invoices/:invoiceId/items/new",
+      "route_file": "src/activeclinic/http/activeClinicBillingRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/billing-invoice-add-item-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.billing.invoice.create"
+      ],
+      "facility_scope": true,
+      "department_scope": "billing",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770231",
+      "surface": "INTERNAL",
+      "functional_area": "BILLING",
+      "route_method": "GET",
+      "route_path": "/app/billing/invoices/:invoiceId/error",
+      "route_file": "src/activeclinic/http/activeClinicBillingRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/billing-invoice-error-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.billing.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "billing",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770232",
+      "surface": "INTERNAL",
+      "functional_area": "BILLING",
+      "route_method": "GET",
+      "route_path": "/app/billing/catalog/:catalogItemId",
+      "route_file": "src/activeclinic/http/activeClinicBillingRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/billing-catalog-detail-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.billing.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "billing",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770233",
+      "surface": "INTERNAL",
+      "functional_area": "BILLING",
+      "route_method": "GET",
+      "route_path": "/app/billing/payments/history",
+      "route_file": "src/activeclinic/http/activeClinicBillingRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/billing-payment-history-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.payment.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "billing",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770234",
+      "surface": "INTERNAL",
+      "functional_area": "CASHIER",
+      "route_method": "GET",
+      "route_path": "/app/cashier/payment/completed",
+      "route_file": "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/cashier-payment-completed-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.payment.collect"
+      ],
+      "facility_scope": true,
+      "department_scope": "cashier",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770235",
+      "surface": "INTERNAL",
+      "functional_area": "CASHIER",
+      "route_method": "GET",
+      "route_path": "/app/cashier/refunds/request",
+      "route_file": "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/cashier-refund-request-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.payment.collect"
+      ],
+      "facility_scope": true,
+      "department_scope": "cashier",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770236",
+      "surface": "INTERNAL",
+      "functional_area": "CASHIER",
+      "route_method": "GET",
+      "route_path": "/app/cashier/refunds/:refundId/review",
+      "route_file": "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/cashier-refund-review-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.payment.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "cashier",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770237",
+      "surface": "INTERNAL",
+      "functional_area": "CASHIER",
+      "route_method": "GET",
+      "route_path": "/app/cashier/refunds/:refundId/completed",
+      "route_file": "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/cashier-refund-completed-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.payment.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "cashier",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770238",
+      "surface": "INTERNAL",
+      "functional_area": "CASHIER",
+      "route_method": "GET",
+      "route_path": "/app/cashier/refunds/:refundId/rejected",
+      "route_file": "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/cashier-refund-rejected-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.payment.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "cashier",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770239",
+      "surface": "INTERNAL",
+      "functional_area": "CASHIER",
+      "route_method": "GET",
+      "route_path": "/app/cashier/reversals/request",
+      "route_file": "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/cashier-reversal-request-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.payment.collect"
+      ],
+      "facility_scope": true,
+      "department_scope": "cashier",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770240",
+      "surface": "INTERNAL",
+      "functional_area": "CASHIER",
+      "route_method": "GET",
+      "route_path": "/app/cashier/reversals/:reversalId/review",
+      "route_file": "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/cashier-reversal-review-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.payment.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "cashier",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770241",
+      "surface": "INTERNAL",
+      "functional_area": "CASHIER",
+      "route_method": "GET",
+      "route_path": "/app/cashier/close/cash-count",
+      "route_file": "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/cashier-close-cash-count-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.cashier.close_session"
+      ],
+      "facility_scope": true,
+      "department_scope": "cashier",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770242",
+      "surface": "INTERNAL",
+      "functional_area": "CASHIER",
+      "route_method": "GET",
+      "route_path": "/app/cashier/close/review",
+      "route_file": "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/cashier-close-review-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.cashier.close_session"
+      ],
+      "facility_scope": true,
+      "department_scope": "cashier",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-7770243",
+      "surface": "INTERNAL",
+      "functional_area": "CASHIER",
+      "route_method": "GET",
+      "route_path": "/app/cashier/close/variance",
+      "route_file": "src/activeclinic/http/activeClinicCashierRoutes.js",
+      "handler": "Phase5D billing/cashier partial closure",
+      "view_path": "views/activeclinic/app/cashier-close-variance-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.cashier.close_session"
+      ],
+      "facility_scope": true,
+      "department_scope": "cashier",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5D GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5D"
     }
   ],
   "phase4_update": {
@@ -7584,5 +8018,9 @@
   "phase5c_update": {
     "added_count": 4,
     "note": "Pharmacy partial closure"
+  },
+  "phase5d_update": {
+    "added_count": 14,
+    "note": "Billing/Cashier partial closure"
   }
 }

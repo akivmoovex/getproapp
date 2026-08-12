@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T09:57:02.473Z",
+  "generated_at": "2026-08-12T10:13:15.211Z",
   "purpose": "Phase 3 Stitch → V7 implementation mapping (independent of old parity matrix primary claims)",
   "safety": {
     "branch": "V7",
@@ -12,26 +12,26 @@
   },
   "inputs": {
     "stitch_screens": 388,
-    "implementation_records": 229,
+    "implementation_records": 243,
     "phase4_note": "Implementation inventory updated after Phase 4 code"
   },
   "counts": {
     "mapping_type": {
-      "EXACT_IMPLEMENTATION_MATCH": 86,
-      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 230,
+      "EXACT_IMPLEMENTATION_MATCH": 100,
+      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 232,
       "DUPLICATE_STITCH_VARIANT": 8,
       "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 6,
-      "PARTIAL_IMPLEMENTATION": 43,
+      "PARTIAL_IMPLEMENTATION": 27,
       "PRODUCT_DECISION_DIFFERENCE": 7,
       "NO_IMPLEMENTATION_REQUIRED": 8
     },
     "confidence": {
-      "HIGH": 340,
-      "MEDIUM": 48
+      "HIGH": 343,
+      "MEDIUM": 45
     },
     "stitch_screen_coverage": {
-      "full": 322,
-      "partial": 43,
+      "full": 338,
+      "partial": 27,
       "missing": 0,
       "other": 23,
       "total": 388
@@ -7982,16 +7982,16 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0151"
+        "ACV7-IMPL-7770230"
       ],
       "route_paths": [
-        "/app/billing/invoices/new"
+        "/app/billing/invoices/:invoiceId/items/new"
       ],
       "view_paths": [
-        "views/activeclinic/app/billing-invoice-create-content.ejs"
+        "views/activeclinic/app/billing-invoice-add-item-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -8002,9 +8002,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Add-item is part of create/amend flows, not standalone screen",
-      "evidence": "Mapped to ACV7-IMPL-0151 via /app/billing/invoices/new / views/activeclinic/app/billing-invoice-create-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/billing/invoices/:invoiceId/items/new / views/activeclinic/app/billing-invoice-add-item-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -8206,16 +8206,16 @@
       "stitch_functional_area": "CASHIER",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0159"
+        "ACV7-IMPL-7770241"
       ],
       "route_paths": [
-        "/app/cashier/close"
+        "/app/cashier/close/cash-count"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-close-content.ejs"
+        "views/activeclinic/app/cashier-close-cash-count-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -8226,9 +8226,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Close session exists; dedicated variance/cash-count Stitch screens not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0159 via /app/cashier/close / views/activeclinic/app/cashier-close-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/close/cash-count / views/activeclinic/app/cashier-close-cash-count-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -8302,16 +8302,16 @@
       "stitch_functional_area": "CASHIER",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0159"
+        "ACV7-IMPL-7770242"
       ],
       "route_paths": [
-        "/app/cashier/close"
+        "/app/cashier/close/review"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-close-content.ejs"
+        "views/activeclinic/app/cashier-close-review-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -8322,9 +8322,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Close session exists; dedicated variance/cash-count Stitch screens not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0159 via /app/cashier/close / views/activeclinic/app/cashier-close-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/close/review / views/activeclinic/app/cashier-close-review-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -8468,16 +8468,16 @@
       "stitch_functional_area": "CASHIER",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0159"
+        "ACV7-IMPL-7770243"
       ],
       "route_paths": [
-        "/app/cashier/close"
+        "/app/cashier/close/variance"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-close-content.ejs"
+        "views/activeclinic/app/cashier-close-variance-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -8488,9 +8488,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Close session exists; dedicated variance/cash-count Stitch screens not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0159 via /app/cashier/close / views/activeclinic/app/cashier-close-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/close/variance / views/activeclinic/app/cashier-close-variance-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -8911,19 +8911,19 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "ERROR",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0152"
+        "ACV7-IMPL-7770231"
       ],
       "route_paths": [
-        "/app/billing/invoices/:invoiceId"
+        "/app/billing/invoices/:invoiceId/error"
       ],
       "view_paths": [
-        "views/activeclinic/app/billing-invoice-detail-content.ejs"
+        "views/activeclinic/app/billing-invoice-error-content.ejs"
       ],
       "implementation_states": [
-        "DEFAULT"
+        "ERROR"
       ],
       "device_support": [
         "DESKTOP",
@@ -8931,9 +8931,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Error states inline on invoice screens; no dedicated error page",
-      "evidence": "Mapped to ACV7-IMPL-0152 via /app/billing/invoices/:invoiceId / views/activeclinic/app/billing-invoice-detail-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/billing/invoices/:invoiceId/error / views/activeclinic/app/billing-invoice-error-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -9418,19 +9418,19 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "SUCCESS",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0161"
+        "ACV7-IMPL-7770234"
       ],
       "route_paths": [
-        "/app/cashier/receipt/:receiptNumber"
+        "/app/cashier/payment/completed"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-receipt-content.ejs"
+        "views/activeclinic/app/cashier-payment-completed-content.ejs"
       ],
       "implementation_states": [
-        "DEFAULT"
+        "SUCCESS"
       ],
       "device_support": [
         "DESKTOP",
@@ -9438,9 +9438,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Success redirects to receipt; no dedicated payment-completed page",
-      "evidence": "Mapped to ACV7-IMPL-0161 via /app/cashier/receipt/:receiptNumber / views/activeclinic/app/cashier-receipt-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/payment/completed / views/activeclinic/app/cashier-payment-completed-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -9450,19 +9450,16 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0162",
-        "ACV7-IMPL-0149"
+        "ACV7-IMPL-7770233"
       ],
       "route_paths": [
-        "/app/cashier/history",
-        "/app/billing/patients/:patientNumber"
+        "/app/billing/payments/history"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-history-content.ejs",
-        "views/activeclinic/app/billing-patient-account-content.ejs"
+        "views/activeclinic/app/billing-payment-history-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -9473,9 +9470,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "No dedicated payment history screen; history/account approximate",
-      "evidence": "Mapped to ACV7-IMPL-0162, ACV7-IMPL-0149 via /app/cashier/history | /app/billing/patients/:patientNumber / views/activeclinic/app/cashier-history-content.ejs | views/activeclinic/app/billing-patient-account-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/billing/payments/history / views/activeclinic/app/billing-payment-history-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -9485,16 +9482,16 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0158"
+        "ACV7-IMPL-7770239"
       ],
       "route_paths": [
-        "/app/cashier/session"
+        "/app/cashier/reversals/request"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-session-content.ejs"
+        "views/activeclinic/app/cashier-reversal-request-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -9505,9 +9502,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Refund/reversal are POST actions on cashier session — no dedicated approval workflow screens",
-      "evidence": "Mapped to ACV7-IMPL-0158 via /app/cashier/session / views/activeclinic/app/cashier-session-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/reversals/request / views/activeclinic/app/cashier-reversal-request-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -9517,16 +9514,16 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0158"
+        "ACV7-IMPL-7770240"
       ],
       "route_paths": [
-        "/app/cashier/session"
+        "/app/cashier/reversals/:reversalId/review"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-session-content.ejs"
+        "views/activeclinic/app/cashier-reversal-review-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -9537,9 +9534,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Refund/reversal are POST actions on cashier session — no dedicated approval workflow screens",
-      "evidence": "Mapped to ACV7-IMPL-0158 via /app/cashier/session / views/activeclinic/app/cashier-session-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/reversals/:reversalId/review / views/activeclinic/app/cashier-reversal-review-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -9808,16 +9805,16 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0158"
+        "ACV7-IMPL-7770236"
       ],
       "route_paths": [
-        "/app/cashier/session"
+        "/app/cashier/refunds/:refundId/review"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-session-content.ejs"
+        "views/activeclinic/app/cashier-refund-review-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -9828,9 +9825,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Refund/reversal are POST actions on cashier session — no dedicated approval workflow screens",
-      "evidence": "Mapped to ACV7-IMPL-0158 via /app/cashier/session / views/activeclinic/app/cashier-session-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/refunds/:refundId/review / views/activeclinic/app/cashier-refund-review-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -9840,19 +9837,19 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "SUCCESS",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0158"
+        "ACV7-IMPL-7770237"
       ],
       "route_paths": [
-        "/app/cashier/session"
+        "/app/cashier/refunds/:refundId/completed"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-session-content.ejs"
+        "views/activeclinic/app/cashier-refund-completed-content.ejs"
       ],
       "implementation_states": [
-        "DEFAULT"
+        "SUCCESS"
       ],
       "device_support": [
         "DESKTOP",
@@ -9860,9 +9857,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Refund/reversal are POST actions on cashier session — no dedicated approval workflow screens",
-      "evidence": "Mapped to ACV7-IMPL-0158 via /app/cashier/session / views/activeclinic/app/cashier-session-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/refunds/:refundId/completed / views/activeclinic/app/cashier-refund-completed-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -9872,16 +9869,16 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0158"
+        "ACV7-IMPL-7770238"
       ],
       "route_paths": [
-        "/app/cashier/session"
+        "/app/cashier/refunds/:refundId/rejected"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-session-content.ejs"
+        "views/activeclinic/app/cashier-refund-rejected-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -9892,9 +9889,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Refund/reversal are POST actions on cashier session — no dedicated approval workflow screens",
-      "evidence": "Mapped to ACV7-IMPL-0158 via /app/cashier/session / views/activeclinic/app/cashier-session-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/refunds/:refundId/rejected / views/activeclinic/app/cashier-refund-rejected-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -9904,16 +9901,16 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0158"
+        "ACV7-IMPL-7770235"
       ],
       "route_paths": [
-        "/app/cashier/session"
+        "/app/cashier/refunds/request"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-session-content.ejs"
+        "views/activeclinic/app/cashier-refund-request-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -9924,9 +9921,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Refund/reversal are POST actions on cashier session — no dedicated approval workflow screens",
-      "evidence": "Mapped to ACV7-IMPL-0158 via /app/cashier/session / views/activeclinic/app/cashier-session-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/refunds/request / views/activeclinic/app/cashier-refund-request-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -9936,29 +9933,28 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "MOBILE",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0158"
+        "ACV7-IMPL-7770235"
       ],
       "route_paths": [
-        "/app/cashier/session"
+        "/app/cashier/refunds/request"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-session-content.ejs"
+        "views/activeclinic/app/cashier-refund-request-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
         "MOBILE"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Refund/reversal are POST actions on cashier session — no dedicated approval workflow screens",
-      "evidence": "Mapped to ACV7-IMPL-0158 via /app/cashier/session / views/activeclinic/app/cashier-session-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/refunds/request / views/activeclinic/app/cashier-refund-request-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -9968,16 +9964,16 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0158"
+        "ACV7-IMPL-7770236"
       ],
       "route_paths": [
-        "/app/cashier/session"
+        "/app/cashier/refunds/:refundId/review"
       ],
       "view_paths": [
-        "views/activeclinic/app/cashier-session-content.ejs"
+        "views/activeclinic/app/cashier-refund-review-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -9988,9 +9984,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Refund/reversal are POST actions on cashier session — no dedicated approval workflow screens",
-      "evidence": "Mapped to ACV7-IMPL-0158 via /app/cashier/session / views/activeclinic/app/cashier-session-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/cashier/refunds/:refundId/review / views/activeclinic/app/cashier-refund-review-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -10128,16 +10124,16 @@
       "stitch_functional_area": "BILLING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0147"
+        "ACV7-IMPL-7770232"
       ],
       "route_paths": [
-        "/app/billing/catalog"
+        "/app/billing/catalog/:catalogItemId"
       ],
       "view_paths": [
-        "views/activeclinic/app/billing-catalog-content.ejs"
+        "views/activeclinic/app/billing-catalog-detail-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -10148,9 +10144,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "No dedicated service-detail billing route; catalog list/form only",
-      "evidence": "Mapped to ACV7-IMPL-0147 via /app/billing/catalog / views/activeclinic/app/billing-catalog-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5D: /app/billing/catalog/:catalogItemId / views/activeclinic/app/billing-catalog-detail-content.ejs",
+      "notes": "Billing/Cashier partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -17005,6 +17001,41 @@
         "missing": 0,
         "other": 0,
         "total": 29
+      }
+    }
+  },
+  "phase5d_remap": {
+    "remapped_former_partials": 16,
+    "before": {
+      "BILLING": {
+        "full": 47,
+        "partial": 13,
+        "missing": 0,
+        "other": 3,
+        "total": 63
+      },
+      "CASHIER": {
+        "full": 7,
+        "partial": 3,
+        "missing": 0,
+        "other": 0,
+        "total": 10
+      }
+    },
+    "after": {
+      "BILLING": {
+        "full": 60,
+        "partial": 0,
+        "missing": 0,
+        "other": 3,
+        "total": 63
+      },
+      "CASHIER": {
+        "full": 10,
+        "partial": 0,
+        "missing": 0,
+        "other": 0,
+        "total": 10
       }
     }
   }
