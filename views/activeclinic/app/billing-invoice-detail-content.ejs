@@ -19,7 +19,7 @@
     <% if (lines.length === 0) { %>
       <p class="ac-muted">No line items.</p>
     <% } else { %>
-      <table class="ac-table">
+      <table class="ac-table ac-invoice-desktop">
         <thead>
           <tr>
             <th>#</th>
@@ -57,6 +57,19 @@
           </tr>
         </tfoot>
       </table>
+      <ul class="ac-card-list ac-invoice-mobile">
+        <% lines.forEach(function (line) { %>
+        <li class="ac-card">
+          <p class="ac-card__title"><%= line.description %></p>
+          <p class="ac-muted">Qty <%= line.quantity %> · <%= line.unitAmountFormatted %></p>
+          <p><strong><%= line.lineTotalFormatted %></strong></p>
+        </li>
+        <% }) %>
+        <li class="ac-card">
+          <p class="ac-card__title">Total</p>
+          <p><strong class="ac-money ac-money--lg"><%= invoice.totalAmountFormatted %></strong></p>
+        </li>
+      </ul>
     <% } %>
   </article>
 

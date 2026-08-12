@@ -18,7 +18,7 @@
         }
       }) %>
     <% } else { %>
-      <table class="ac-table">
+      <table class="ac-table ac-catalog-desktop">
         <thead>
           <tr>
             <th>Code</th>
@@ -48,6 +48,19 @@
           <% }) %>
         </tbody>
       </table>
+      <ul class="ac-card-list ac-catalog-mobile">
+        <% items.forEach(function (item) { %>
+        <li class="ac-card">
+          <a class="ac-card__link" href="/app/billing/catalog/<%= item.id %>">
+            <p class="ac-card__title"><%= item.name %></p>
+            <p class="ac-muted"><code><%= item.code %></code> · <%= item.category || '—' %></p>
+            <p><strong><%= item.amountFormatted %></strong>
+              <span class="ac-status" data-status="<%= item.isActive ? 'active' : 'inactive' %>"><%= item.isActive ? 'Active' : 'Inactive' %></span>
+            </p>
+          </a>
+        </li>
+        <% }) %>
+      </ul>
     <% } %>
   </div>
 </section>

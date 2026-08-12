@@ -1,20 +1,82 @@
-<section class="ac-public-section" data-ac-page-section="booking-procedures-list">
-  <h1>Book a procedure</h1>
-  <p>Select a procedure to request. The clinic will confirm availability and any referral requirements.</p>
-  <% if (!procedures || !procedures.length) { %>
-  <p class="ac-public-empty">No procedures are published for online requests at this clinic.</p>
-  <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book">Request a consultation instead</a></p>
+<%
+  var procs = procedures || [];
+  var categories = [];
+  procs.forEach(function (proc) {
+    var cat = (proc.category && String(proc.category).trim()) || "Other";
+    if (categories.indexOf(cat) === -1) categories.push(cat);
+  });
+  function procedureIcon(proc) {
+    var cat = String((proc && proc.category) || "").toLowerCase();
+    if (cat.indexOf("lab") !== -1) return "/activeclinic/assets/icons/lab.svg";
+    if (cat.indexOf("consult") !== -1) return "/activeclinic/assets/icons/consultation.svg";
+    return "/activeclinic/assets/icons/procedure.svg";
+  }
+  function durationLabel(proc) {
+    if (proc.estimatedDurationMinutes) return proc.estimatedDurationMinutes + " mins";
+    return "Duration confirmed by clinic";
+  }
+  function prepLabel(proc) {
+    if (proc.preparationInstructions) {
+      var text = String(proc.preparationInstructions).trim();
+      var cut = text.indexOf(".");
+      return cut > 12 && cut < 80 ? text.slice(0, cut + 1) : (text.length > 72 ? text.slice(0, 72) + "…" : text);
+    }
+    if (proc.referralRequired) return "Referral may be required";
+    return "Contact clinic for preparation";
+  }
+%>
+<section class="ac-public-section acp-booking-shell acp-proc-page" data-ac-page-section="booking-procedures-list">
+  <header class="acp-booking-header">
+    <h1>Choose a Procedure or Diagnostic Service</h1>
+    <p>Select the specific procedure or test you need. If you're unsure, please book a general consultation first.</p>
+  </header>
+
+  <% if (!procs.length) { %>
+  <div class="acp-empty-state acp-info-card">
+    <p class="ac-public-empty">No procedures are published for online requests at this clinic.</p>
+    <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book">Request a consultation instead</a></p>
+  </div>
   <% } else { %>
-  <ul class="ac-service-cards">
-    <% procedures.forEach(function (proc) { %>
-    <li>
-      <a href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= proc.procedureKey %>">
-        <h3><%= proc.displayName %></h3>
-        <% if (proc.summary) { %><p><%= proc.summary %></p><% } %>
-        <% if (proc.referralRequired) { %><p class="ac-booking-choice__meta">Referral required</p><% } %>
-      </a>
+  <div class="acp-proc-toolbar" data-ac-proc-filter="1">
+    <div class="acp-filter-chips" role="tablist" aria-label="Procedure categories">
+      <button type="button" class="acp-filter-chip is-active" data-ac-proc-cat="all" aria-pressed="true">All</button>
+      <% categories.forEach(function (cat) { %>
+      <button type="button" class="acp-filter-chip" data-ac-proc-cat="<%= cat %>" aria-pressed="false"><%= cat %></button>
+      <% }); %>
+    </div>
+    <label class="acp-search">
+      <span class="ac-sr-only">Search procedures</span>
+      <input type="search" data-ac-proc-search="1" placeholder="Search procedures..." autocomplete="off"/>
+    </label>
+  </div>
+
+  <ul class="acp-proc-grid ac-service-cards">
+    <% procs.forEach(function (proc) { %>
+    <li class="acp-proc-card" data-ac-proc-item="1" data-ac-proc-category="<%= proc.category || 'Other' %>" data-ac-proc-name="<%= proc.displayName %>">
+      <article>
+        <div class="acp-proc-card__top">
+          <div>
+            <span class="acp-proc-card__cat"><%= proc.category || "Procedure" %></span>
+            <h2><%= proc.displayName %></h2>
+          </div>
+          <img class="acp-proc-card__icon" src="<%= procedureIcon(proc) %>" alt="" width="36" height="36"/>
+        </div>
+        <% if (proc.summary) { %><p class="acp-proc-card__summary"><%= proc.summary %></p><% } %>
+        <ul class="acp-proc-card__meta">
+          <li><span class="acp-proc-card__meta-label">Duration</span> <%= durationLabel(proc) %></li>
+          <li><span class="acp-proc-card__meta-label">Prep</span> <%= prepLabel(proc) %></li>
+        </ul>
+        <p class="acp-proc-card__price">Price to be confirmed</p>
+        <a class="ac-btn ac-btn--secondary acp-proc-card__cta" href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= proc.procedureKey %>">
+          Select Procedure
+        </a>
+      </article>
     </li>
     <% }); %>
   </ul>
+  <p class="acp-proc-empty" data-ac-proc-empty hidden>No procedures match this filter.</p>
+  <p class="acp-proc-consult">
+    <a class="ac-btn ac-btn--ghost" href="/clinics/<%= clinic.clinicKey %>/book">Book a general consultation instead</a>
+  </p>
   <% } %>
 </section>

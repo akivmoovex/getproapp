@@ -1,6 +1,11 @@
-<section class="ac-public-section" data-ac-page-section="procedure-unavailable">
-  <h1>Procedure not available</h1>
-  <p>This procedure is not published for online booking, or could not be found.</p>
-  <p><a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book/procedures">View available procedures</a></p>
-  <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact the clinic</a></p>
+<section class="ac-public-section acp-booking-shell" data-ac-page-section="procedure-unavailable">
+  <div class="acp-confirmation-panel__card acp-empty-state">
+    <p class="ac-public-eyebrow">Procedure request</p>
+    <h1>Procedure not available</h1>
+    <p>This procedure is not published for online booking, or could not be found.</p>
+    <div class="ac-public-actions acp-booking-actions">
+      <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book/procedures">View available procedures</a>
+      <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact the clinic</a>
+    </div>
+  </div>
 </section>

@@ -18,7 +18,7 @@
     <% if (invoices.length === 0) { %>
       <p class="ac-muted">No invoices on file.</p>
     <% } else { %>
-      <table class="ac-table">
+      <table class="ac-table ac-billing-account-desktop">
         <thead>
           <tr>
             <th>Invoice number</th>
@@ -38,6 +38,19 @@
           <% }) %>
         </tbody>
       </table>
+      <ul class="ac-card-list ac-billing-account-mobile">
+        <% invoices.forEach(function (inv) { %>
+        <li class="ac-card">
+          <a class="ac-card__link" href="/app/billing/invoices/<%= inv.id %>">
+            <p class="ac-card__title"><%= inv.invoice_number %></p>
+            <p class="ac-muted"><%= inv.invoice_date %></p>
+            <p><strong><%= inv.totalAmountFormatted %></strong>
+              <span class="ac-status" data-status="<%= inv.status %>"><%= inv.status %></span>
+            </p>
+          </a>
+        </li>
+        <% }) %>
+      </ul>
     <% } %>
   </article>
 

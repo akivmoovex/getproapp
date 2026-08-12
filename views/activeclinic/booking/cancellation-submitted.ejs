@@ -1,7 +1,12 @@
-<section class="ac-public-section" data-ac-page-section="cancellation-submitted">
-  <h1>Cancellation request submitted</h1>
-  <p>Your cancellation request for booking <strong><%= booking.requestNumber %></strong> has been received.</p>
-  <p class="ac-public-banner" data-ac-cancellation-state="request-not-completed">This is a request — your booking is <strong>not yet cancelled</strong>. The clinic will review and confirm.</p>
-  <p><a href="/clinics/<%= clinic.clinicKey %>/my-booking?token=<%= encodeURIComponent(accessToken) %>">Return to my booking</a></p>
-  <%- include('../partials/sms-honesty-note') %>
+<section class="ac-public-section acp-confirmation-panel" data-ac-page-section="cancellation-submitted">
+  <div class="acp-confirmation-panel__card">
+    <p class="ac-public-eyebrow">My booking</p>
+    <h1>Cancellation request submitted</h1>
+    <p>Your cancellation request for booking <strong><%= booking.requestNumber %></strong> has been received.</p>
+    <p class="ac-public-banner acp-status-banner acp-status-banner--pending" data-ac-cancellation-state="request-not-completed">This is a request — your booking is <strong>not yet cancelled</strong>. The clinic will review and confirm.</p>
+    <p class="ac-public-actions">
+      <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/my-booking?token=<%= encodeURIComponent(accessToken) %>">Return to my booking</a>
+    </p>
+    <%- include('../partials/sms-honesty-note') %>
+  </div>
 </section>

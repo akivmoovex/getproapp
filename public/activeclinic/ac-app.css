@@ -1641,3 +1641,86 @@ body.ac-app-body .ac-money--lg { font-size: 1.5rem; }
   }
 }
 
+/* ===== Phase 7A — staff form stepper, mobile billing cards ===== */
+body.ac-app-body .ac-form-stepper {
+  margin: 0 0 1.15rem;
+}
+body.ac-app-body .ac-form-stepper ol {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+body.ac-app-body .ac-form-stepper__item {
+  padding: 0.4rem 0.85rem;
+  border-radius: 999px;
+  border: 1px solid var(--ac-border);
+  background: #fff;
+  color: var(--ac-muted);
+  font-size: 0.8rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+body.ac-app-body .ac-form-stepper__item.is-current {
+  background: color-mix(in srgb, var(--ac-primary) 14%, #fff);
+  border-color: var(--ac-primary);
+  color: var(--ac-primary);
+}
+body.ac-app-body .ac-form-stepper__item.is-done {
+  background: var(--ac-status-success-bg);
+  border-color: #b7e4c7;
+  color: var(--ac-status-success);
+}
+body.ac-app-body .ac-form-section {
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg);
+  padding: 1rem 1.05rem 0.35rem;
+  margin: 0 0 1rem;
+  background: #fff;
+}
+body.ac-app-body .ac-form-section .ac-dashboard__card-title {
+  margin-top: 0;
+}
+body.ac-app-body .ac-success-panel__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--ac-status-success);
+}
+body.ac-app-body .ac-cashier-dashboard {
+  display: grid;
+  gap: 1rem;
+}
+body.ac-app-body .ac-state-card {
+  border-radius: var(--ac-radius-lg);
+  padding: 1.75rem 1.35rem;
+}
+body.ac-app-body .ac-catalog-mobile,
+body.ac-app-body .ac-invoice-mobile,
+body.ac-app-body .ac-billing-account-mobile { display: none; }
+
+@media (max-width: 899px) {
+  body.ac-app-body .ac-catalog-desktop,
+  body.ac-app-body .ac-invoice-desktop,
+  body.ac-app-body .ac-billing-account-desktop { display: none; }
+  body.ac-app-body .ac-catalog-mobile,
+  body.ac-app-body .ac-invoice-mobile,
+  body.ac-app-body .ac-billing-account-mobile { display: grid; }
+}
+@media (min-width: 900px) {
+  body.ac-app-body .ac-catalog-mobile,
+  body.ac-app-body .ac-invoice-mobile,
+  body.ac-app-body .ac-billing-account-mobile { display: none; }
+  body.ac-app-body .ac-catalog-desktop,
+  body.ac-app-body .ac-invoice-desktop,
+  body.ac-app-body .ac-billing-account-desktop { display: table; }
+}
+@media (max-width: 430px) {
+  body.ac-app-body .ac-form-stepper__item { font-size: 0.75rem; padding: 0.35rem 0.7rem; }
+}
+
+

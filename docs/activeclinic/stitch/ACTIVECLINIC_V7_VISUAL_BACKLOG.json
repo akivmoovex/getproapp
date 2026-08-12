@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T10:31:44.770Z",
+  "generated_at": "2026-08-12T10:45:19.266Z",
   "purpose": "Visual-only parity backlog derived from verified full implementation mappings",
   "safety": {
     "branch": "V7",
@@ -18,1674 +18,17 @@
     "backlog_rows": 361,
     "score_buckets": {
       "<80": 0,
-      "80-89": 149,
-      "90-94": 119,
+      "80-89": 76,
+      "90-94": 192,
       ">=95": 0,
       "unscored": 93
     },
     "priority_bands": {
-      "P0 + 80–89": 73,
       "P1 + score <90": 60,
-      "remaining": 228
+      "remaining": 301
     }
   },
   "rows": [
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "210ee3ac1bbe43588ed84d2e663c6604",
-      "stitch_screen_title": "P27 - Juflona Patient - Portal Offline State - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/offline",
-      "view": "views/activeclinic/patient/offline.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0073"
-      ],
-      "visual_score": 82,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: offline state template"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: offline state template"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "e1b3f826511f408e85c401d3a455f26d",
-      "stitch_screen_title": "P27 - Juflona Patient - Set New Password - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/reset-password",
-      "view": "views/activeclinic/patient/reset-password.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0057"
-      ],
-      "visual_score": 82,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: reset password form shell"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: reset password form shell"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "0c3315d05469499d9b645bc7978001bf",
-      "stitch_screen_title": "P02 – Edit Patient Details – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P02",
-      "route": "/app/patients/:patientNumber/edit",
-      "view": "views/activeclinic/app/patient-form-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0097"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: shared form tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: shared form tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "58bd5e04f71340ff8d067721eb5562d4",
-      "stitch_screen_title": "P02 – Patient List – Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P02",
-      "route": "/app/patients",
-      "view": "views/activeclinic/app/patients-list-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0091"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Large visual/layout gap vs Stitch"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Large visual/layout gap vs Stitch"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "b9615559155d41d591dbb91e18c6a090",
-      "stitch_screen_title": "P02 – Patient Registration Success – Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P02",
-      "route": "/app/patients",
-      "view": "views/activeclinic/app/patient-success-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0095"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Large visual/layout gap vs Stitch"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Large visual/layout gap vs Stitch"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "e1ef5e5d8a1840bcbf1f4dc859f7b812",
-      "stitch_screen_title": "P02 – Register Patient Contact – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P02",
-      "route": "/app/patients/new",
-      "view": "views/activeclinic/app/patient-form-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0093",
-        "ACV7-IMPL-0094"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: form-section tokens",
-        "PhoneField preserved",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "026d2e6c69cd4181a282213ba1bb55da",
-      "stitch_screen_title": "P02 – Register Patient Emergency and Medical – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P02",
-      "route": "/app/patients/new",
-      "view": "views/activeclinic/app/patient-form-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0093",
-        "ACV7-IMPL-0094"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: form-section tokens",
-        "PhoneField preserved",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "40d2005b64864f35ac8df831ddae7084",
-      "stitch_screen_title": "P02 – Register Patient Identity – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P02",
-      "route": "/app/patients/new",
-      "view": "views/activeclinic/app/patient-form-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0093",
-        "ACV7-IMPL-0094"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: form-section tokens",
-        "PhoneField preserved",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "8ef4b4d96f1f4224994d0c627bb7550e",
-      "stitch_screen_title": "P02 – Register Patient Review – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P02",
-      "route": "/app/patients/new",
-      "view": "views/activeclinic/app/patient-form-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0093",
-        "ACV7-IMPL-0094"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: form-section tokens",
-        "PhoneField preserved",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "3735516f4ecb4624ac715c6f77e7810b",
-      "stitch_screen_title": "P07 – Patient Invoice – Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P07",
-      "route": "/app/billing/invoices/:invoiceId",
-      "view": "views/activeclinic/app/billing-invoice-detail-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0152"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Large visual/layout gap vs Stitch"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Large visual/layout gap vs Stitch"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "1ab29b0691c04233a1c972ea99f24351",
-      "stitch_screen_title": "P07 – Service Catalogue – Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P07",
-      "route": "/app/billing/catalog",
-      "view": "views/activeclinic/app/billing-catalog-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0147"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Large visual/layout gap vs Stitch"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Large visual/layout gap vs Stitch"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "6b916729502c43f08ef4ed61bf959159",
-      "stitch_screen_title": "P25 - Juflona Booking - Choose Procedure - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures",
-      "view": "views/activeclinic/booking/procedures-list.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0042"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: reuses choice-card system"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: reuses choice-card system"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "e04f78111c6a43eb851a0db24cc2f001",
-      "stitch_screen_title": "P25 - Juflona Booking - Procedure Review - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/review",
-      "view": "views/activeclinic/booking/procedure-review.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0216"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: review embedded in single-page procedure flow"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: review embedded in single-page procedure flow"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "e50e9dfeaf1a405bbf3f3c334ebbe039",
-      "stitch_screen_title": "P26 - Juflona Booking - Privacy and Lookup Rules - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking",
-      "view": "views/activeclinic/booking/my-booking-lookup.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0047"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: lookup privacy copy retained"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: lookup privacy copy retained"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "cc39b8bf074e408682da114b26ed8897",
-      "stitch_screen_title": "P27 - Juflona Patient - Password Updated - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/password-updated",
-      "view": "views/activeclinic/patient/password-updated.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0059"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: success shell if present"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: success shell if present"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "3e22604b90844b499b98bed2dba8f81c",
-      "stitch_screen_title": "P27 - Juflona Patient - Recovery Verification - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/recovery-verification",
-      "view": "views/activeclinic/patient/recovery-verification.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0058"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: recovery honesty page shell"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: recovery honesty page shell"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "fb2dab64c9ed41f483ae83d4a7f20fe3",
-      "stitch_screen_title": "P27 - Juflona Patient - Set New Password - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/reset-password",
-      "view": "views/activeclinic/patient/reset-password.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0057"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: reset password form shell"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: reset password form shell"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "aebd18aad45b40ad90ebe164b87b282e",
-      "stitch_screen_title": "P27 - Juflona Patient - Verification Success - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/verification-success",
-      "view": "views/activeclinic/patient/verification-success.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0061"
-      ],
-      "visual_score": 84,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: success shell if present"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: success shell if present"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "d548137f807b40daaaaeff7fe2bcd0fa",
-      "stitch_screen_title": "P24 - Juflona Booking - Availability States - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P24",
-      "route": "/clinics/:clinicKey/book/slot",
-      "view": "views/activeclinic/booking/consultation-slot.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0034"
-      ],
-      "visual_score": 85,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: no_slots_published banner",
-        "live grids not implemented"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: no_slots_published banner; live grids not implemented"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "042c455322b94242b289e4c5cee37fe8",
-      "stitch_screen_title": "P25 - Juflona Booking - Procedure Unavailable - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey",
-      "view": "views/activeclinic/booking/procedure-unavailable.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0044"
-      ],
-      "visual_score": 85,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: unavailable state page exists"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: unavailable state page exists"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "95f3a0fc88f7490fbd7d46e649e6b61e",
-      "stitch_screen_title": "P25 - Juflona Booking - Resource Availability States - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/time",
-      "view": "views/activeclinic/booking/procedure-time.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0215"
-      ],
-      "visual_score": 85,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Large visual/layout gap vs Stitch"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Large visual/layout gap vs Stitch"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "44fb7852e24f4f7f9f6b355a195fd250",
-      "stitch_screen_title": "P02 – Register Patient Contact – Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P02",
-      "route": "/app/patients/new",
-      "view": "views/activeclinic/app/patient-form-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0093",
-        "ACV7-IMPL-0094"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: form-section tokens",
-        "PhoneField preserved",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "7a495a471fed49b098de3c1605eda76e",
-      "stitch_screen_title": "P02 – Register Patient Emergency and Medical – Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P02",
-      "route": "/app/patients/new",
-      "view": "views/activeclinic/app/patient-form-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0093",
-        "ACV7-IMPL-0094"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: form-section tokens",
-        "PhoneField preserved",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "d3e2ff001f694720b57371ef1a60d517",
-      "stitch_screen_title": "P07 – Cashier Closing – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P07",
-      "route": "/app/cashier/close/review",
-      "view": "views/activeclinic/app/cashier-close-review-content.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-7770242"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "792d5cbb6f234332a088399e4ccdd545",
-      "stitch_screen_title": "P07 – Cashier Dashboard – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P07",
-      "route": "/app/cashier",
-      "view": "views/activeclinic/app/cashier-dashboard-content.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0156"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "1c02fc47e49c4c9990646d94a9876986",
-      "stitch_screen_title": "P07 – Cashier Shift – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P07",
-      "route": "/app/cashier/open",
-      "view": "views/activeclinic/app/cashier-open-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0157",
-        "ACV7-IMPL-0158"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "0d8cd08aba454a2f971d6cc4389d98d2",
-      "stitch_screen_title": "P07 – Cashier Shift – Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P07",
-      "route": "/app/cashier/open",
-      "view": "views/activeclinic/app/cashier-open-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0157",
-        "ACV7-IMPL-0158"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "1cd25ed2bb7a4504a63095a015bd823b",
-      "stitch_screen_title": "P07 – Cashier Shift History – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P07",
-      "route": "/app/cashier/history",
-      "view": "views/activeclinic/app/cashier-history-content.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0162"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "7dd49983c4a840b9980fb4a92d486b3c",
-      "stitch_screen_title": "P07 – Cashier Variance – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P07",
-      "route": "/app/cashier/close/variance",
-      "view": "views/activeclinic/app/cashier-close-variance-content.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-7770243"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "c2f068812d0b45809a214d6ba8399ae5",
-      "stitch_screen_title": "P07 – Open Cashier Shift – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P07",
-      "route": "/app/cashier/open",
-      "view": "views/activeclinic/app/cashier-open-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0157",
-        "ACV7-IMPL-0158"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "a84263ac97b8484698dc36d00b498ffa",
-      "stitch_screen_title": "P07 – Patient Billing Account – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P07",
-      "route": "/app/billing/patients/:patientNumber",
-      "view": "views/activeclinic/app/billing-patient-account-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0149"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "3f50a00be7624b36af773c181b2c562c",
-      "stitch_screen_title": "P07 – Patient Collections Account – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P07",
-      "route": "/app/billing/patients/:patientNumber",
-      "view": "views/activeclinic/app/billing-patient-account-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0149"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass5: patient account mapped",
-        "dedicated collections queue absent"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass5: patient account mapped; dedicated collections queue absent"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "14b98caed9cc4b4889d77763373a0e28",
-      "stitch_screen_title": "P24 - Juflona Booking - Progress Patterns - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P24",
-      "route": "/clinics/:clinicKey/book",
-      "view": "views/activeclinic/partials/booking-wizard-progress.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0030"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: shared wizard progress partial"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: shared wizard progress partial"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "7377b7ca51e049048c10e34af2950bac",
-      "stitch_screen_title": "P25 - Juflona Booking - Referral Requirements - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/referral",
-      "view": "views/activeclinic/booking/procedure-referral.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0214"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: referral banner",
-        "upload not available (documented)"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: referral banner; upload not available (documented)"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "f510ec7d017e426e86e801932011d346",
-      "stitch_screen_title": "P26 - Juflona Booking - Cancellation Submitted - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking/cancel",
-      "view": "views/activeclinic/booking/cancellation-submitted.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0051"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: confirmation language"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: confirmation language"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "ba51a076b8ed49e0b4761f3068b56e41",
-      "stitch_screen_title": "P26 - Juflona Booking - Reschedule Submitted - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking/reschedule",
-      "view": "views/activeclinic/booking/reschedule-submitted.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0053"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: confirmation language"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: confirmation language"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "1938bff7a7d54fa5a7d856457864d84d",
-      "stitch_screen_title": "P27 - Juflona Patient - Notifications - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/notifications",
-      "view": "views/activeclinic/patient/notifications.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0071"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: notifications honesty empty state"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: notifications honesty empty state"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "bc0fd174f14d4a3a8e78a57aad1564ee",
-      "stitch_screen_title": "P27 - Juflona Patient - Registration States - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/register",
-      "view": "views/activeclinic/patient/register.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0055"
-      ],
-      "visual_score": 86,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: error alerts on register"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: error alerts on register"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "4c6a5fe1c21c46709679f3707b8bf4dc",
-      "stitch_screen_title": "P02 – Edit Patient Details – Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P02",
-      "route": "/app/patients/:patientNumber/edit",
-      "view": "views/activeclinic/app/patient-form-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0097"
-      ],
-      "visual_score": 87,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: shared form tokens",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: shared form tokens; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "a6d496f38f8e4d5cb8eb4d91667c6db7",
-      "stitch_screen_title": "P02 – Register Patient Review – Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P02",
-      "route": "/app/patients/new",
-      "view": "views/activeclinic/app/patient-form-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0093",
-        "ACV7-IMPL-0094"
-      ],
-      "visual_score": 87,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: form-section tokens",
-        "PhoneField preserved",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "4dc9024e5d6f4267bf6b5a8c6c80aa08",
-      "stitch_screen_title": "P24 - Juflona Booking - Form States - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P24",
-      "route": "/clinics/:clinicKey/book",
-      "view": "views/activeclinic/booking/consultation-type.ejs",
-      "implementation_mapping": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
-      "implementation_ids": [
-        "ACV7-IMPL-0030",
-        "ACV7-IMPL-0034"
-      ],
-      "visual_score": 87,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: validation error panels in booking forms"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: validation error panels in booking forms"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "9526a27d8e5a4c8eb5a9bee842bee41b",
-      "stitch_screen_title": "P25 - Juflona Booking - Choose Procedure - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures",
-      "view": "views/activeclinic/booking/procedures-list.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0042"
-      ],
-      "visual_score": 87,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: reuses choice-card system"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: reuses choice-card system"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "bb4906f130374a72a21596d427c2af9d",
-      "stitch_screen_title": "P25 - Juflona Booking - Preparation States - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey",
-      "view": "views/activeclinic/booking/procedure-info.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0043"
-      ],
-      "visual_score": 87,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: preparation section + acknowledgement"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: preparation section + acknowledgement"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "2d5d9db651e046eabb65fdbc89b676e2",
-      "stitch_screen_title": "P25 - Juflona Booking - Procedure Form States - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/patient",
-      "view": "views/activeclinic/booking/procedure-patient.ejs",
-      "implementation_mapping": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
-      "implementation_ids": [
-        "ACV7-IMPL-0045",
-        "ACV7-IMPL-0215"
-      ],
-      "visual_score": 87,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: validation summary"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: validation summary"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "6da5390fcac44722a37ae34f2ae82a11",
-      "stitch_screen_title": "P25 - Juflona Booking - Procedure Review - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/review",
-      "view": "views/activeclinic/booking/procedure-review.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0216"
-      ],
-      "visual_score": 87,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: review embedded in single-page procedure flow"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: review embedded in single-page procedure flow"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "e4fa5d144ebb46cea06c4ef3a3af3e7b",
-      "stitch_screen_title": "P26 - Juflona Booking - Lookup Error States - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking",
-      "view": "views/activeclinic/booking/my-booking-lookup.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0048"
-      ],
-      "visual_score": 87,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: lookup error states"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: lookup error states"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "4e84a1501ffa454b91221a4f32cfaabb",
-      "stitch_screen_title": "P26 - Juflona Booking - Pending Preference Change - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking",
-      "view": "views/activeclinic/booking/my-booking-detail.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0049"
-      ],
-      "visual_score": 87,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass5: pending/reschedule_requested badges"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass5: pending/reschedule_requested badges"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "b86ad20f46574f5cba98f3aa4909b597",
-      "stitch_screen_title": "P27 - Juflona Patient - My Bookings - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/bookings",
-      "view": "views/activeclinic/patient/bookings.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0066"
-      ],
-      "visual_score": 87,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: status badge system shared"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: status badge system shared"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "9b881d25874c41f9986246c61de32f41",
-      "stitch_screen_title": "P01 – Shared States – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P01",
-      "route": "(access-state)",
-      "view": "views/activeclinic/app/access-state.ejs",
-      "implementation_mapping": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
-      "implementation_ids": [
-        "ACV7-IMPL-0084",
-        "ACV7-IMPL-0085",
-        "ACV7-IMPL-0086",
-        "ACV7-IMPL-0083"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass5: shared loading/empty/error/offline/success partials standardized"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass5: shared loading/empty/error/offline/success partials standardized"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "91e41fecc2b64496893b52317b7ab985",
-      "stitch_screen_title": "P02 – Duplicate Patient Warning",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P02",
-      "route": "/app/patients/new",
-      "view": "views/activeclinic/app/patient-form-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0093"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass5: duplicate warning is embedded state on registration form"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass5: duplicate warning is embedded state on registration form"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "1a15f0bf4e564c4993ca33aa2d578a58",
-      "stitch_screen_title": "P02 – Patient Profile Overview – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P02",
-      "route": "/app/patients/:patientNumber",
-      "view": "views/activeclinic/app/patient-profile-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0096"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: patient banner + section panels",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: patient banner + section panels; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "f98b2e6f2a4a4953a4d811af7b3737a2",
-      "stitch_screen_title": "P02 – Patient Shared States – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P02",
-      "route": "/app/patients",
-      "view": "views/activeclinic/app/patients-list-content.ejs",
-      "implementation_mapping": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
-      "implementation_ids": [
-        "ACV7-IMPL-0091",
-        "ACV7-IMPL-0083"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass5: empty/loading via shared inline states on patient list"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass5: empty/loading via shared inline states on patient list"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "02e8083e943d40deb9429b95a294ae30",
-      "stitch_screen_title": "P07 – Cash Count – Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P07",
-      "route": "/app/cashier/close/cash-count",
-      "view": "views/activeclinic/app/cashier-close-cash-count-content.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-7770241"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass5: cash count on cashier close"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass5: cash count on cashier close"
-    },
-    {
-      "stitch_project_id": "12272131183982732110",
-      "stitch_screen_id": "c15d892b327848a6a2897ae3a08a5803",
-      "stitch_screen_title": "P07 – Patient Billing Account – Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P07",
-      "route": "/app/billing/patients/:patientNumber",
-      "view": "views/activeclinic/app/billing-patient-account-content.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0149"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass3: shared shell/components",
-        "TEST_INFRA_LIMITATION: no browser MATCHED"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "c8dc05d3e0744fcf9f0030ccbe63a172",
-      "stitch_screen_title": "P24 - Juflona Booking - Mobile Navigation and Summary Pattern - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P24",
-      "route": "/clinics/:clinicKey/book",
-      "view": "views/activeclinic/partials/booking-wizard-progress.ejs",
-      "implementation_mapping": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
-      "implementation_ids": [
-        "ACV7-IMPL-0030",
-        "ACV7-IMPL-0034"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: sticky CTA + summary order on mobile"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: sticky CTA + summary order on mobile"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "ea6f77fad9444fa3b3f04cf5178f9c72",
-      "stitch_screen_title": "P25 - Juflona Booking - Procedure Information - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey",
-      "view": "views/activeclinic/booking/procedure-info.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0043"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: info cards in procedure entry"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: info cards in procedure entry"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "2a64a22146ed4b2ca704d01d9cb18383",
-      "stitch_screen_title": "P25 - Juflona Booking - Procedure Patient Details - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/patient",
-      "view": "views/activeclinic/booking/procedure-patient.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0045"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: patient details in procedure form"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: patient details in procedure form"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "1e23d5e9dfa649aab7746c966b255a5f",
-      "stitch_screen_title": "P25 - Juflona Booking - Procedure Submitted - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey",
-      "view": "views/activeclinic/booking/request-submitted.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0046"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: shared confirmation panel"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: shared confirmation panel"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "0a244c1b24f140368509e4f6f014a9fe",
-      "stitch_screen_title": "P26 - Juflona Booking - Booking Detail No-show - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking",
-      "view": "views/activeclinic/booking/my-booking-detail.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0049"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: status badge/banner system"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: status badge/banner system"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "b18ffbdac9a644f8bea30734fc9368df",
-      "stitch_screen_title": "P26 - Juflona Booking - Booking Status Patterns - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking",
-      "view": "views/activeclinic/booking/my-booking-detail.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0049"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: shared acp-status-badge system"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: shared acp-status-badge system"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "766528bda7e548ac93d381129023802f",
-      "stitch_screen_title": "P26 - Juflona Booking - Cancellation Request - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking/cancel",
-      "view": "views/activeclinic/booking/cancellation-review.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0050"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: cancel review shell"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: cancel review shell"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "4685ca7800dd477faa561270dfe01cba",
-      "stitch_screen_title": "P26 - Juflona Booking - Cancellation Review - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking/cancel",
-      "view": "views/activeclinic/booking/cancellation-review.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0050"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: cancel review shell"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: cancel review shell"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "97540ef2e0244f97a2974c50835276c3",
-      "stitch_screen_title": "P26 - Juflona Booking - Reschedule Request - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking/reschedule",
-      "view": "views/activeclinic/booking/reschedule-review.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0052"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: reschedule review shell"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: reschedule review shell"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "d968e9e9008d4987a5c4cdba86ab9a95",
-      "stitch_screen_title": "P26 - Juflona Booking - Reschedule Review - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking/reschedule",
-      "view": "views/activeclinic/booking/reschedule-review.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0052"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: reschedule review shell"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: reschedule review shell"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "215624995dc145f7ad5f6adb14fd4ae6",
-      "stitch_screen_title": "P27 - Juflona Patient - Forgot Password - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/forgot-password",
-      "view": "views/activeclinic/patient/forgot-password.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0056"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: auth card + honesty note"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: auth card + honesty note"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "8405633077d0486f9622badff41899c9",
-      "stitch_screen_title": "P27 - Juflona Patient - Patient Data Boundaries - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/data-boundaries",
-      "view": "views/activeclinic/patient/data-boundaries.ejs",
-      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
-      "implementation_ids": [
-        "ACV7-IMPL-0070"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass5: informational boundaries page added"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass5: informational boundaries page added"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "4cb2cd96dd3846dcbcd3504e45b90f47",
-      "stitch_screen_title": "P27 - Juflona Patient - Verify Phone - Desktop",
-      "stitch_device": "DESKTOP",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/verify-phone",
-      "view": "views/activeclinic/patient/verify-phone.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0060"
-      ],
-      "visual_score": 88,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: auth card",
-        "SMS honesty preserved"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: auth card; SMS honesty preserved"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "bb250d93ee27449793869522211fb17c",
-      "stitch_screen_title": "P24 - Juflona Booking - SMS Notification States - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P24",
-      "route": "/clinics/:clinicKey/book",
-      "view": "views/activeclinic/partials/sms-honesty-note.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0030"
-      ],
-      "visual_score": 89,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass5: SMS honesty note",
-        "real SMS delivery FUNCTIONAL_BACKEND_GAP"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass5: SMS honesty note; real SMS delivery FUNCTIONAL_BACKEND_GAP"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "72428671e0fa4317bad44d3ccf367ea8",
-      "stitch_screen_title": "P25 - Juflona Booking - Referral Clarification - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/referral",
-      "view": "views/activeclinic/booking/procedure-referral.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0214"
-      ],
-      "visual_score": 89,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass5: referral clarification inline",
-        "no upload"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass5: referral clarification inline; no upload"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "28dd3dae170e43f88902aa3a1f26cdfe",
-      "stitch_screen_title": "P25 - Juflona Booking - Referral Requirements - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P25",
-      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/referral",
-      "view": "views/activeclinic/booking/procedure-referral.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0214"
-      ],
-      "visual_score": 89,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: referral banner",
-        "upload not available (documented)"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: referral banner; upload not available (documented)"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "f30239e9267242c0af4dfbaf44bb2d20",
-      "stitch_screen_title": "P26 - Juflona Booking - Cancellation Submitted - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking/cancel",
-      "view": "views/activeclinic/booking/cancellation-submitted.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0051"
-      ],
-      "visual_score": 89,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: confirmation language"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: confirmation language"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "684f5190840549698bd9237caedeccb3",
-      "stitch_screen_title": "P26 - Juflona Booking - Reschedule Submitted - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P26",
-      "route": "/clinics/:clinicKey/my-booking/reschedule",
-      "view": "views/activeclinic/booking/reschedule-submitted.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0053"
-      ],
-      "visual_score": 89,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass2: confirmation language"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass2: confirmation language"
-    },
-    {
-      "stitch_project_id": "17813606734422395399",
-      "stitch_screen_id": "b3521756764f4a978c9244a2f5c3ae9e",
-      "stitch_screen_title": "P27 - Juflona Patient - Booking Filters - Mobile",
-      "stitch_device": "MOBILE",
-      "stitch_phase": "P27",
-      "route": "/clinics/:clinicKey/patient/bookings",
-      "view": "views/activeclinic/patient/bookings.ejs",
-      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
-      "implementation_ids": [
-        "ACV7-IMPL-0066"
-      ],
-      "visual_score": 89,
-      "visual_status": "NEEDS_WORK",
-      "top_visual_differences": [
-        "Pass5: status filter tabs on bookings list"
-      ],
-      "asset_gap": "none_detected",
-      "priority_band": "P0 + 80–89",
-      "priority_rank": 2,
-      "historical_matrix_note": "Pass5: status filter tabs on bookings list"
-    },
     {
       "stitch_project_id": "12272131183982732110",
       "stitch_screen_id": "5e4dbc7265ad4e17b060b1f641996db3",
@@ -3463,6 +1806,170 @@
     },
     {
       "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "9b881d25874c41f9986246c61de32f41",
+      "stitch_screen_title": "P01 – Shared States – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P01",
+      "route": "(access-state)",
+      "view": "views/activeclinic/app/access-state.ejs",
+      "implementation_mapping": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
+      "implementation_ids": [
+        "ACV7-IMPL-0084",
+        "ACV7-IMPL-0085",
+        "ACV7-IMPL-0086",
+        "ACV7-IMPL-0083"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "State card now loads tokens.css; radius/padding tightened",
+        "Iconography still emoji, not Stitch illustration",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass5: shared loading/empty/error/offline/success partials standardized",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "access-state.ejs tokens link; ac-state-card 7A CSS",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "91e41fecc2b64496893b52317b7ab985",
+      "stitch_screen_title": "P02 – Duplicate Patient Warning",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P02",
+      "route": "/app/patients/new",
+      "view": "views/activeclinic/app/patient-form-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0093"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Find/Details/Review stepper + section cards added",
+        "Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass5: duplicate warning is embedded state on registration form",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "Stitch get_screen 40d2005b; ac-form-stepper/ac-form-section in ac-app.css; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "0c3315d05469499d9b645bc7978001bf",
+      "stitch_screen_title": "P02 – Edit Patient Details – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P02",
+      "route": "/app/patients/:patientNumber/edit",
+      "view": "views/activeclinic/app/patient-form-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0097"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Find/Details/Review stepper + section cards added",
+        "Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: shared form tokens; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen 40d2005b; ac-form-stepper/ac-form-section in ac-app.css; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "4c6a5fe1c21c46709679f3707b8bf4dc",
+      "stitch_screen_title": "P02 – Edit Patient Details – Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P02",
+      "route": "/app/patients/:patientNumber/edit",
+      "view": "views/activeclinic/app/patient-form-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0097"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Find/Details/Review stepper + section cards added",
+        "Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: shared form tokens; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 87,
+      "phase7a_evidence": "Stitch get_screen 40d2005b; ac-form-stepper/ac-form-section in ac-app.css; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "58bd5e04f71340ff8d067721eb5562d4",
+      "stitch_screen_title": "P02 – Patient List – Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P02",
+      "route": "/app/patients",
+      "view": "views/activeclinic/app/patients-list-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0091"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Mobile card list already present; card radius/shadow tightened",
+        "Filter bar still denser than Stitch mobile search-first",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Large visual/layout gap vs Stitch",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen 58bd5e04; ac-patients-mobile cards; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "1a15f0bf4e564c4993ca33aa2d578a58",
+      "stitch_screen_title": "P02 – Patient Profile Overview – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P02",
+      "route": "/app/patients/:patientNumber",
+      "view": "views/activeclinic/app/patient-profile-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0096"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Shared 7A shell/card/typography tokens applied",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: patient banner + section panels; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "Phase 7A shared CSS (ac-public/ac-app/ac-patient) v7-parity-9",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
       "stitch_screen_id": "99eb441b48a24fa19855e76669c0da86",
       "stitch_screen_title": "P02 – Patient Profile Overview – Mobile",
       "stitch_device": "MOBILE",
@@ -3483,6 +1990,257 @@
       "priority_band": "remaining",
       "priority_rank": 4,
       "historical_matrix_note": "Pass3: patient banner + section panels; TEST_INFRA_LIMITATION: no browser MATCHED"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "b9615559155d41d591dbb91e18c6a090",
+      "stitch_screen_title": "P02 – Patient Registration Success – Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P02",
+      "route": "/app/patients",
+      "view": "views/activeclinic/app/patient-success-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0095"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Success kicker + panel chrome added",
+        "No celebratory illustration (no approved Stitch asset downloaded)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Large visual/layout gap vs Stitch",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "ac-success-panel; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "f98b2e6f2a4a4953a4d811af7b3737a2",
+      "stitch_screen_title": "P02 – Patient Shared States – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P02",
+      "route": "/app/patients",
+      "view": "views/activeclinic/app/patients-list-content.ejs",
+      "implementation_mapping": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
+      "implementation_ids": [
+        "ACV7-IMPL-0091",
+        "ACV7-IMPL-0083"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Mobile card list already present; card radius/shadow tightened",
+        "Filter bar still denser than Stitch mobile search-first",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass5: empty/loading via shared inline states on patient list",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "Stitch get_screen 58bd5e04; ac-patients-mobile cards; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "e1ef5e5d8a1840bcbf1f4dc859f7b812",
+      "stitch_screen_title": "P02 – Register Patient Contact – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P02",
+      "route": "/app/patients/new",
+      "view": "views/activeclinic/app/patient-form-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0093",
+        "ACV7-IMPL-0094"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Find/Details/Review stepper + section cards added",
+        "Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen 40d2005b; ac-form-stepper/ac-form-section in ac-app.css; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "44fb7852e24f4f7f9f6b355a195fd250",
+      "stitch_screen_title": "P02 – Register Patient Contact – Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P02",
+      "route": "/app/patients/new",
+      "view": "views/activeclinic/app/patient-form-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0093",
+        "ACV7-IMPL-0094"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Find/Details/Review stepper + section cards added",
+        "Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "Stitch get_screen 40d2005b; ac-form-stepper/ac-form-section in ac-app.css; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "026d2e6c69cd4181a282213ba1bb55da",
+      "stitch_screen_title": "P02 – Register Patient Emergency and Medical – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P02",
+      "route": "/app/patients/new",
+      "view": "views/activeclinic/app/patient-form-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0093",
+        "ACV7-IMPL-0094"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Find/Details/Review stepper + section cards added",
+        "Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen 40d2005b; ac-form-stepper/ac-form-section in ac-app.css; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "7a495a471fed49b098de3c1605eda76e",
+      "stitch_screen_title": "P02 – Register Patient Emergency and Medical – Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P02",
+      "route": "/app/patients/new",
+      "view": "views/activeclinic/app/patient-form-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0093",
+        "ACV7-IMPL-0094"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Find/Details/Review stepper + section cards added",
+        "Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "Stitch get_screen 40d2005b; ac-form-stepper/ac-form-section in ac-app.css; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "40d2005b64864f35ac8df831ddae7084",
+      "stitch_screen_title": "P02 – Register Patient Identity – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P02",
+      "route": "/app/patients/new",
+      "view": "views/activeclinic/app/patient-form-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0093",
+        "ACV7-IMPL-0094"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Find/Details/Review stepper + section cards added",
+        "Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen 40d2005b; ac-form-stepper/ac-form-section in ac-app.css; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "8ef4b4d96f1f4224994d0c627bb7550e",
+      "stitch_screen_title": "P02 – Register Patient Review – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P02",
+      "route": "/app/patients/new",
+      "view": "views/activeclinic/app/patient-form-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0093",
+        "ACV7-IMPL-0094"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Find/Details/Review stepper + section cards added",
+        "Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen 40d2005b; ac-form-stepper/ac-form-section in ac-app.css; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "a6d496f38f8e4d5cb8eb4d91667c6db7",
+      "stitch_screen_title": "P02 – Register Patient Review – Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P02",
+      "route": "/app/patients/new",
+      "view": "views/activeclinic/app/patient-form-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0093",
+        "ACV7-IMPL-0094"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Find/Details/Review stepper + section cards added",
+        "Stitch still shows separate Identity/Contact/Emergency artboards; V7 is condensed one-form",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: form-section tokens; PhoneField preserved; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 87,
+      "phase7a_evidence": "Stitch get_screen 40d2005b; ac-form-stepper/ac-form-section in ac-app.css; patient-ui-parity green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -3664,6 +2422,197 @@
     },
     {
       "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "02e8083e943d40deb9429b95a294ae30",
+      "stitch_screen_title": "P07 – Cash Count – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P07",
+      "route": "/app/cashier/close/cash-count",
+      "view": "views/activeclinic/app/cashier-close-cash-count-content.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-7770241"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Metric grid + session panel aligned to dashboard pattern",
+        "Stitch cashier may show denser till widgets",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass5: cash count on cashier close",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "Stitch get_screen 792d5cbb; cashier-dashboard metric grid; phase5d tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "d3e2ff001f694720b57371ef1a60d517",
+      "stitch_screen_title": "P07 – Cashier Closing – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P07",
+      "route": "/app/cashier/close/review",
+      "view": "views/activeclinic/app/cashier-close-review-content.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-7770242"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Metric grid + session panel aligned to dashboard pattern",
+        "Stitch cashier may show denser till widgets",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "Stitch get_screen 792d5cbb; cashier-dashboard metric grid; phase5d tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "792d5cbb6f234332a088399e4ccdd545",
+      "stitch_screen_title": "P07 – Cashier Dashboard – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P07",
+      "route": "/app/cashier",
+      "view": "views/activeclinic/app/cashier-dashboard-content.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0156"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Metric grid + session panel aligned to dashboard pattern",
+        "Stitch cashier may show denser till widgets",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "Stitch get_screen 792d5cbb; cashier-dashboard metric grid; phase5d tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "1c02fc47e49c4c9990646d94a9876986",
+      "stitch_screen_title": "P07 – Cashier Shift – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P07",
+      "route": "/app/cashier/open",
+      "view": "views/activeclinic/app/cashier-open-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0157",
+        "ACV7-IMPL-0158"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Metric grid + session panel aligned to dashboard pattern",
+        "Stitch cashier may show denser till widgets",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "Stitch get_screen 792d5cbb; cashier-dashboard metric grid; phase5d tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "0d8cd08aba454a2f971d6cc4389d98d2",
+      "stitch_screen_title": "P07 – Cashier Shift – Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P07",
+      "route": "/app/cashier/open",
+      "view": "views/activeclinic/app/cashier-open-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0157",
+        "ACV7-IMPL-0158"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Metric grid + session panel aligned to dashboard pattern",
+        "Stitch cashier may show denser till widgets",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "Stitch get_screen 792d5cbb; cashier-dashboard metric grid; phase5d tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "1cd25ed2bb7a4504a63095a015bd823b",
+      "stitch_screen_title": "P07 – Cashier Shift History – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P07",
+      "route": "/app/cashier/history",
+      "view": "views/activeclinic/app/cashier-history-content.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0162"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Metric grid + session panel aligned to dashboard pattern",
+        "Stitch cashier may show denser till widgets",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "Stitch get_screen 792d5cbb; cashier-dashboard metric grid; phase5d tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "7dd49983c4a840b9980fb4a92d486b3c",
+      "stitch_screen_title": "P07 – Cashier Variance – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P07",
+      "route": "/app/cashier/close/variance",
+      "view": "views/activeclinic/app/cashier-close-variance-content.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-7770243"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Metric grid + session panel aligned to dashboard pattern",
+        "Stitch cashier may show denser till widgets",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "Stitch get_screen 792d5cbb; cashier-dashboard metric grid; phase5d tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
       "stitch_screen_id": "b69484b43b074d6593f264d8df958d74",
       "stitch_screen_title": "P07 – Create Price List – Desktop",
       "stitch_device": "DESKTOP",
@@ -3708,6 +2657,142 @@
     },
     {
       "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "c2f068812d0b45809a214d6ba8399ae5",
+      "stitch_screen_title": "P07 – Open Cashier Shift – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P07",
+      "route": "/app/cashier/open",
+      "view": "views/activeclinic/app/cashier-open-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0157",
+        "ACV7-IMPL-0158"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Metric grid + session panel aligned to dashboard pattern",
+        "Stitch cashier may show denser till widgets",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "Stitch get_screen 792d5cbb; cashier-dashboard metric grid; phase5d tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "a84263ac97b8484698dc36d00b498ffa",
+      "stitch_screen_title": "P07 – Patient Billing Account – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P07",
+      "route": "/app/billing/patients/:patientNumber",
+      "view": "views/activeclinic/app/billing-patient-account-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0149"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Mobile record cards added; desktop tables unchanged",
+        "Stitch billing chrome (print/share row) not fully matched",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "ac-catalog-mobile / ac-invoice-mobile / ac-billing-account-mobile; phase5d billing tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "c15d892b327848a6a2897ae3a08a5803",
+      "stitch_screen_title": "P07 – Patient Billing Account – Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P07",
+      "route": "/app/billing/patients/:patientNumber",
+      "view": "views/activeclinic/app/billing-patient-account-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0149"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Mobile record cards added; desktop tables unchanged",
+        "Stitch billing chrome (print/share row) not fully matched",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass3: shared shell/components; TEST_INFRA_LIMITATION: no browser MATCHED",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "ac-catalog-mobile / ac-invoice-mobile / ac-billing-account-mobile; phase5d billing tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "3f50a00be7624b36af773c181b2c562c",
+      "stitch_screen_title": "P07 – Patient Collections Account – Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P07",
+      "route": "/app/billing/patients/:patientNumber",
+      "view": "views/activeclinic/app/billing-patient-account-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0149"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Mobile record cards added; desktop tables unchanged",
+        "Stitch billing chrome (print/share row) not fully matched",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass5: patient account mapped; dedicated collections queue absent",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "ac-catalog-mobile / ac-invoice-mobile / ac-billing-account-mobile; phase5d billing tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "3735516f4ecb4624ac715c6f77e7810b",
+      "stitch_screen_title": "P07 – Patient Invoice – Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P07",
+      "route": "/app/billing/invoices/:invoiceId",
+      "view": "views/activeclinic/app/billing-invoice-detail-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0152"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Mobile record cards added; desktop tables unchanged",
+        "Stitch billing chrome (print/share row) not fully matched",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Large visual/layout gap vs Stitch",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "ac-catalog-mobile / ac-invoice-mobile / ac-billing-account-mobile; phase5d billing tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
       "stitch_screen_id": "46cc5311173d48adb99cafe18ea331c2",
       "stitch_screen_title": "P07 – Price Lists – Desktop",
       "stitch_device": "DESKTOP",
@@ -3727,6 +2812,33 @@
       "priority_band": "remaining",
       "priority_rank": 4,
       "historical_matrix_note": "Pass5: mapped"
+    },
+    {
+      "stitch_project_id": "12272131183982732110",
+      "stitch_screen_id": "1ab29b0691c04233a1c972ea99f24351",
+      "stitch_screen_title": "P07 – Service Catalogue – Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P07",
+      "route": "/app/billing/catalog",
+      "view": "views/activeclinic/app/billing-catalog-content.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0147"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Mobile record cards added; desktop tables unchanged",
+        "Stitch billing chrome (print/share row) not fully matched",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Large visual/layout gap vs Stitch",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "ac-catalog-mobile / ac-invoice-mobile / ac-billing-account-mobile; phase5d billing tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -4222,6 +3334,116 @@
     },
     {
       "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "d548137f807b40daaaaeff7fe2bcd0fa",
+      "stitch_screen_title": "P24 - Juflona Booking - Availability States - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P24",
+      "route": "/clinics/:clinicKey/book/slot",
+      "view": "views/activeclinic/booking/consultation-slot.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0034"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Shared compact stepper + sticky CTA + SMS honesty note",
+        "Pattern boards are not standalone routes",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: no_slots_published banner; live grids not implemented",
+      "visual_score_before_phase7a": 85,
+      "phase7a_evidence": "Existing wizard chrome + 7A SMS/confirmation CSS; public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "4dc9024e5d6f4267bf6b5a8c6c80aa08",
+      "stitch_screen_title": "P24 - Juflona Booking - Form States - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P24",
+      "route": "/clinics/:clinicKey/book",
+      "view": "views/activeclinic/booking/consultation-type.ejs",
+      "implementation_mapping": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
+      "implementation_ids": [
+        "ACV7-IMPL-0030",
+        "ACV7-IMPL-0034"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Shared compact stepper + sticky CTA + SMS honesty note",
+        "Pattern boards are not standalone routes",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: validation error panels in booking forms",
+      "visual_score_before_phase7a": 87,
+      "phase7a_evidence": "Existing wizard chrome + 7A SMS/confirmation CSS; public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "c8dc05d3e0744fcf9f0030ccbe63a172",
+      "stitch_screen_title": "P24 - Juflona Booking - Mobile Navigation and Summary Pattern - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P24",
+      "route": "/clinics/:clinicKey/book",
+      "view": "views/activeclinic/partials/booking-wizard-progress.ejs",
+      "implementation_mapping": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
+      "implementation_ids": [
+        "ACV7-IMPL-0030",
+        "ACV7-IMPL-0034"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Shared compact stepper + sticky CTA + SMS honesty note",
+        "Pattern boards are not standalone routes",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: sticky CTA + summary order on mobile",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "Existing wizard chrome + 7A SMS/confirmation CSS; public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "14b98caed9cc4b4889d77763373a0e28",
+      "stitch_screen_title": "P24 - Juflona Booking - Progress Patterns - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P24",
+      "route": "/clinics/:clinicKey/book",
+      "view": "views/activeclinic/partials/booking-wizard-progress.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0030"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Shared compact stepper + sticky CTA + SMS honesty note",
+        "Pattern boards are not standalone routes",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: shared wizard progress partial",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "Existing wizard chrome + 7A SMS/confirmation CSS; public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
       "stitch_screen_id": "12e5d96e8ac647f49d0cf66457da4b17",
       "stitch_screen_title": "P24 - Juflona Booking - Request Submitted - Desktop",
       "stitch_device": "DESKTOP",
@@ -4266,6 +3488,358 @@
     },
     {
       "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "bb250d93ee27449793869522211fb17c",
+      "stitch_screen_title": "P24 - Juflona Booking - SMS Notification States - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P24",
+      "route": "/clinics/:clinicKey/book",
+      "view": "views/activeclinic/partials/sms-honesty-note.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0030"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Shared compact stepper + sticky CTA + SMS honesty note",
+        "Pattern boards are not standalone routes",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass5: SMS honesty note; real SMS delivery FUNCTIONAL_BACKEND_GAP",
+      "visual_score_before_phase7a": 89,
+      "phase7a_evidence": "Existing wizard chrome + 7A SMS/confirmation CSS; public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "bb4906f130374a72a21596d427c2af9d",
+      "stitch_screen_title": "P25 - Juflona Booking - Preparation States - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey",
+      "view": "views/activeclinic/booking/procedure-info.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0043"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: preparation section + acknowledgement",
+      "visual_score_before_phase7a": 87,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "2d5d9db651e046eabb65fdbc89b676e2",
+      "stitch_screen_title": "P25 - Juflona Booking - Procedure Form States - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/patient",
+      "view": "views/activeclinic/booking/procedure-patient.ejs",
+      "implementation_mapping": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
+      "implementation_ids": [
+        "ACV7-IMPL-0045",
+        "ACV7-IMPL-0215"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: validation summary",
+      "visual_score_before_phase7a": 87,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "ea6f77fad9444fa3b3f04cf5178f9c72",
+      "stitch_screen_title": "P25 - Juflona Booking - Procedure Information - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey",
+      "view": "views/activeclinic/booking/procedure-info.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0043"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: info cards in procedure entry",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "2a64a22146ed4b2ca704d01d9cb18383",
+      "stitch_screen_title": "P25 - Juflona Booking - Procedure Patient Details - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/patient",
+      "view": "views/activeclinic/booking/procedure-patient.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0045"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: patient details in procedure form",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "e04f78111c6a43eb851a0db24cc2f001",
+      "stitch_screen_title": "P25 - Juflona Booking - Procedure Review - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/review",
+      "view": "views/activeclinic/booking/procedure-review.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0216"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: review embedded in single-page procedure flow",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "6da5390fcac44722a37ae34f2ae82a11",
+      "stitch_screen_title": "P25 - Juflona Booking - Procedure Review - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/review",
+      "view": "views/activeclinic/booking/procedure-review.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0216"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: review embedded in single-page procedure flow",
+      "visual_score_before_phase7a": 87,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "1e23d5e9dfa649aab7746c966b255a5f",
+      "stitch_screen_title": "P25 - Juflona Booking - Procedure Submitted - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey",
+      "view": "views/activeclinic/booking/request-submitted.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0046"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: shared confirmation panel",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "042c455322b94242b289e4c5cee37fe8",
+      "stitch_screen_title": "P25 - Juflona Booking - Procedure Unavailable - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey",
+      "view": "views/activeclinic/booking/procedure-unavailable.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0044"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: unavailable state page exists",
+      "visual_score_before_phase7a": 85,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "72428671e0fa4317bad44d3ccf367ea8",
+      "stitch_screen_title": "P25 - Juflona Booking - Referral Clarification - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/referral",
+      "view": "views/activeclinic/booking/procedure-referral.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0214"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass5: referral clarification inline; no upload",
+      "visual_score_before_phase7a": 89,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "7377b7ca51e049048c10e34af2950bac",
+      "stitch_screen_title": "P25 - Juflona Booking - Referral Requirements - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/referral",
+      "view": "views/activeclinic/booking/procedure-referral.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0214"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: referral banner; upload not available (documented)",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "28dd3dae170e43f88902aa3a1f26cdfe",
+      "stitch_screen_title": "P25 - Juflona Booking - Referral Requirements - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/referral",
+      "view": "views/activeclinic/booking/procedure-referral.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0214"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: referral banner; upload not available (documented)",
+      "visual_score_before_phase7a": 89,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "95f3a0fc88f7490fbd7d46e649e6b61e",
+      "stitch_screen_title": "P25 - Juflona Booking - Resource Availability States - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures/:procedureKey/time",
+      "view": "views/activeclinic/booking/procedure-time.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0215"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Wizard shell, sticky CTA, info/review cards, confirmation panel",
+        "Live slot grid / referral upload remain product honesty, not visual chrome",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Large visual/layout gap vs Stitch",
+      "visual_score_before_phase7a": 85,
+      "phase7a_evidence": "Stitch get_screen e04f7811; booking wizard CSS 7A; phase5a + public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
       "stitch_screen_id": "a0d78f650671453594236ad0ad1f727f",
       "stitch_screen_title": "P26 - Juflona Booking - Booking Detail Completed - Desktop",
       "stitch_device": "DESKTOP",
@@ -4285,6 +3859,33 @@
       "priority_band": "remaining",
       "priority_rank": 4,
       "historical_matrix_note": "Pass2: status badge/banner system"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "0a244c1b24f140368509e4f6f014a9fe",
+      "stitch_screen_title": "P26 - Juflona Booking - Booking Detail No-show - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking",
+      "view": "views/activeclinic/booking/my-booking-detail.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0049"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Confirmation cards + status banners",
+        "Status pattern screens share one detail template",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: status badge/banner system",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "acp-confirmation-panel; public-booking cancel/reschedule tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4310,6 +3911,141 @@
     },
     {
       "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "b18ffbdac9a644f8bea30734fc9368df",
+      "stitch_screen_title": "P26 - Juflona Booking - Booking Status Patterns - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking",
+      "view": "views/activeclinic/booking/my-booking-detail.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0049"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Confirmation cards + status banners",
+        "Status pattern screens share one detail template",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: shared acp-status-badge system",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "acp-confirmation-panel; public-booking cancel/reschedule tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "766528bda7e548ac93d381129023802f",
+      "stitch_screen_title": "P26 - Juflona Booking - Cancellation Request - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking/cancel",
+      "view": "views/activeclinic/booking/cancellation-review.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0050"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Confirmation cards + status banners",
+        "Status pattern screens share one detail template",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: cancel review shell",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "acp-confirmation-panel; public-booking cancel/reschedule tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "4685ca7800dd477faa561270dfe01cba",
+      "stitch_screen_title": "P26 - Juflona Booking - Cancellation Review - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking/cancel",
+      "view": "views/activeclinic/booking/cancellation-review.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0050"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Confirmation cards + status banners",
+        "Status pattern screens share one detail template",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: cancel review shell",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "acp-confirmation-panel; public-booking cancel/reschedule tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "f510ec7d017e426e86e801932011d346",
+      "stitch_screen_title": "P26 - Juflona Booking - Cancellation Submitted - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking/cancel",
+      "view": "views/activeclinic/booking/cancellation-submitted.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0051"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Confirmation cards + status banners",
+        "Status pattern screens share one detail template",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: confirmation language",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "acp-confirmation-panel; public-booking cancel/reschedule tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "f30239e9267242c0af4dfbaf44bb2d20",
+      "stitch_screen_title": "P26 - Juflona Booking - Cancellation Submitted - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking/cancel",
+      "view": "views/activeclinic/booking/cancellation-submitted.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0051"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Confirmation cards + status banners",
+        "Status pattern screens share one detail template",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: confirmation language",
+      "visual_score_before_phase7a": 89,
+      "phase7a_evidence": "acp-confirmation-panel; public-booking cancel/reschedule tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
       "stitch_screen_id": "a8ad8c9b489149d592cd9ca53a525e14",
       "stitch_screen_title": "P26 - Juflona Booking - My Booking - Desktop",
       "stitch_device": "DESKTOP",
@@ -4329,6 +4065,141 @@
       "priority_band": "remaining",
       "priority_rank": 4,
       "historical_matrix_note": "1) Stitch two-column guest lookup (ref+phone) vs access-token form (PRODUCT_DECISION) 2) missing lifestyle image column 3) nav is tenant shell not Lookup/My Bookings/Support"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "4e84a1501ffa454b91221a4f32cfaabb",
+      "stitch_screen_title": "P26 - Juflona Booking - Pending Preference Change - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking",
+      "view": "views/activeclinic/booking/my-booking-detail.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0049"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Confirmation cards + status banners",
+        "Status pattern screens share one detail template",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass5: pending/reschedule_requested badges",
+      "visual_score_before_phase7a": 87,
+      "phase7a_evidence": "acp-confirmation-panel; public-booking cancel/reschedule tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "97540ef2e0244f97a2974c50835276c3",
+      "stitch_screen_title": "P26 - Juflona Booking - Reschedule Request - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking/reschedule",
+      "view": "views/activeclinic/booking/reschedule-review.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0052"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Confirmation cards + status banners",
+        "Status pattern screens share one detail template",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: reschedule review shell",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "acp-confirmation-panel; public-booking cancel/reschedule tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "d968e9e9008d4987a5c4cdba86ab9a95",
+      "stitch_screen_title": "P26 - Juflona Booking - Reschedule Review - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking/reschedule",
+      "view": "views/activeclinic/booking/reschedule-review.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0052"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Confirmation cards + status banners",
+        "Status pattern screens share one detail template",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: reschedule review shell",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "acp-confirmation-panel; public-booking cancel/reschedule tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "ba51a076b8ed49e0b4761f3068b56e41",
+      "stitch_screen_title": "P26 - Juflona Booking - Reschedule Submitted - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking/reschedule",
+      "view": "views/activeclinic/booking/reschedule-submitted.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0053"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Confirmation cards + status banners",
+        "Status pattern screens share one detail template",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: confirmation language",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "acp-confirmation-panel; public-booking cancel/reschedule tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "684f5190840549698bd9237caedeccb3",
+      "stitch_screen_title": "P26 - Juflona Booking - Reschedule Submitted - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking/reschedule",
+      "view": "views/activeclinic/booking/reschedule-submitted.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0053"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Confirmation cards + status banners",
+        "Status pattern screens share one detail template",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: confirmation language",
+      "visual_score_before_phase7a": 89,
+      "phase7a_evidence": "acp-confirmation-panel; public-booking cancel/reschedule tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4373,6 +4244,33 @@
       "priority_band": "remaining",
       "priority_rank": 4,
       "historical_matrix_note": "Pass5: mapped"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "b3521756764f4a978c9244a2f5c3ae9e",
+      "stitch_screen_title": "P27 - Juflona Patient - Booking Filters - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/bookings",
+      "view": "views/activeclinic/patient/bookings.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0066"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Portal filter chips, booking cards, honesty panels",
+        "No notification list artwork (honesty empty state)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass5: status filter tabs on bookings list",
+      "visual_score_before_phase7a": 89,
+      "phase7a_evidence": "ac-patient.css 7A; patient-portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4465,6 +4363,87 @@
     },
     {
       "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "b86ad20f46574f5cba98f3aa4909b597",
+      "stitch_screen_title": "P27 - Juflona Patient - My Bookings - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/bookings",
+      "view": "views/activeclinic/patient/bookings.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0066"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Portal filter chips, booking cards, honesty panels",
+        "No notification list artwork (honesty empty state)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: status badge system shared",
+      "visual_score_before_phase7a": 87,
+      "phase7a_evidence": "ac-patient.css 7A; patient-portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "1938bff7a7d54fa5a7d856457864d84d",
+      "stitch_screen_title": "P27 - Juflona Patient - Notifications - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/notifications",
+      "view": "views/activeclinic/patient/notifications.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0071"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Portal filter chips, booking cards, honesty panels",
+        "No notification list artwork (honesty empty state)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: notifications honesty empty state",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "ac-patient.css 7A; patient-portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "8405633077d0486f9622badff41899c9",
+      "stitch_screen_title": "P27 - Juflona Patient - Patient Data Boundaries - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/data-boundaries",
+      "view": "views/activeclinic/patient/data-boundaries.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0070"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Portal filter chips, booking cards, honesty panels",
+        "No notification list artwork (honesty empty state)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass5: informational boundaries page added",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "ac-patient.css 7A; patient-portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
       "stitch_screen_id": "34350dec0e124a538024436ec728e2be",
       "stitch_screen_title": "P27 - Juflona Patient - Profile - Desktop",
       "stitch_device": "DESKTOP",
@@ -4507,6 +4486,60 @@
       "priority_band": "remaining",
       "priority_rank": 4,
       "historical_matrix_note": "Pass2: auth card shell; PhoneField preserved"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "bc0fd174f14d4a3a8e78a57aad1564ee",
+      "stitch_screen_title": "P27 - Juflona Patient - Registration States - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/register",
+      "view": "views/activeclinic/patient/register.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0055"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Portal filter chips, booking cards, honesty panels",
+        "No notification list artwork (honesty empty state)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: error alerts on register",
+      "visual_score_before_phase7a": 86,
+      "phase7a_evidence": "ac-patient.css 7A; patient-portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "4cb2cd96dd3846dcbcd3504e45b90f47",
+      "stitch_screen_title": "P27 - Juflona Patient - Verify Phone - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/verify-phone",
+      "view": "views/activeclinic/patient/verify-phone.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0060"
+      ],
+      "visual_score": 90,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Portal filter chips, booking cards, honesty panels",
+        "No notification list artwork (honesty empty state)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: auth card; SMS honesty preserved",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "ac-patient.css 7A; patient-portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -4921,6 +4954,60 @@
     },
     {
       "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "6b916729502c43f08ef4ed61bf959159",
+      "stitch_screen_title": "P25 - Juflona Booking - Choose Procedure - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures",
+      "view": "views/activeclinic/booking/procedures-list.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0042"
+      ],
+      "visual_score": 91,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Category chips/search/card grid/price CTA aligned to Stitch HTML",
+        "Material Symbols not loaded; SVG category icons used instead",
+        "Pixel MATCHED at 1440/430/390 not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: reuses choice-card system",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen HTML+screenshot 6b916729 / 9526a27d; V7 procedures-list.ejs + acp-proc-* CSS; public booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "9526a27d8e5a4c8eb5a9bee842bee41b",
+      "stitch_screen_title": "P25 - Juflona Booking - Choose Procedure - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P25",
+      "route": "/clinics/:clinicKey/book/procedures",
+      "view": "views/activeclinic/booking/procedures-list.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0042"
+      ],
+      "visual_score": 91,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Category chips/search/card grid/price CTA aligned to Stitch HTML",
+        "Material Symbols not loaded; SVG category icons used instead",
+        "Pixel MATCHED at 1440/430/390 not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: reuses choice-card system",
+      "visual_score_before_phase7a": 87,
+      "phase7a_evidence": "Stitch get_screen HTML+screenshot 6b916729 / 9526a27d; V7 procedures-list.ejs + acp-proc-* CSS; public booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
       "stitch_screen_id": "d033da337b5740f29b4681042ab4a99c",
       "stitch_screen_title": "P25 - Juflona Booking - Procedure Information - Mobile",
       "stitch_device": "MOBILE",
@@ -5141,6 +5228,60 @@
     },
     {
       "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "e4fa5d144ebb46cea06c4ef3a3af3e7b",
+      "stitch_screen_title": "P26 - Juflona Booking - Lookup Error States - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking",
+      "view": "views/activeclinic/booking/my-booking-lookup.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0048"
+      ],
+      "visual_score": 91,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Privacy rules list added to lookup card",
+        "Stitch may use a longer legal layout",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: lookup error states",
+      "visual_score_before_phase7a": 87,
+      "phase7a_evidence": "Stitch get_screen e50e9dfe; acp-privacy-rules; public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "e50e9dfeaf1a405bbf3f3c334ebbe039",
+      "stitch_screen_title": "P26 - Juflona Booking - Privacy and Lookup Rules - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P26",
+      "route": "/clinics/:clinicKey/my-booking",
+      "view": "views/activeclinic/booking/my-booking-lookup.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0047"
+      ],
+      "visual_score": 91,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Privacy rules list added to lookup card",
+        "Stitch may use a longer legal layout",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: lookup privacy copy retained",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen e50e9dfe; acp-privacy-rules; public-booking tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
       "stitch_screen_id": "c016257b490d42ccb49bdb01e4228c2f",
       "stitch_screen_title": "P26 - Juflona Booking - Reschedule Request - Mobile",
       "stitch_device": "MOBILE",
@@ -5185,6 +5326,33 @@
     },
     {
       "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "215624995dc145f7ad5f6adb14fd4ae6",
+      "stitch_screen_title": "P27 - Juflona Patient - Forgot Password - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/forgot-password",
+      "view": "views/activeclinic/patient/forgot-password.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0056"
+      ],
+      "visual_score": 91,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Auth card header/lede/48px fields match public teal system",
+        "Stitch illustration/hero art not present (no approved asset)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: auth card + honesty note",
+      "visual_score_before_phase7a": 88,
+      "phase7a_evidence": "Stitch get_screen e1b3f826; patient auth views now share acp-auth-card; portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
       "stitch_screen_id": "1d86eebeee5645c784e68b3b6315d06b",
       "stitch_screen_title": "P27 - Juflona Patient - Link Guest Booking - Mobile",
       "stitch_device": "MOBILE",
@@ -5226,6 +5394,168 @@
       "priority_band": "remaining",
       "priority_rank": 4,
       "historical_matrix_note": "1) H1 copy retained for test contract (\"Patient portal sign in\" ≠ Stitch \"Patient Login\") 2) phone field uses ZM splitter vs single input 3) staff login link placement"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "cc39b8bf074e408682da114b26ed8897",
+      "stitch_screen_title": "P27 - Juflona Patient - Password Updated - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/password-updated",
+      "view": "views/activeclinic/patient/password-updated.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0059"
+      ],
+      "visual_score": 91,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Auth card header/lede/48px fields match public teal system",
+        "Stitch illustration/hero art not present (no approved asset)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: success shell if present",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen e1b3f826; patient auth views now share acp-auth-card; portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "210ee3ac1bbe43588ed84d2e663c6604",
+      "stitch_screen_title": "P27 - Juflona Patient - Portal Offline State - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/offline",
+      "view": "views/activeclinic/patient/offline.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0073"
+      ],
+      "visual_score": 91,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Auth card header/lede/48px fields match public teal system",
+        "Stitch illustration/hero art not present (no approved asset)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: offline state template",
+      "visual_score_before_phase7a": 82,
+      "phase7a_evidence": "Stitch get_screen e1b3f826; patient auth views now share acp-auth-card; portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "3e22604b90844b499b98bed2dba8f81c",
+      "stitch_screen_title": "P27 - Juflona Patient - Recovery Verification - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/recovery-verification",
+      "view": "views/activeclinic/patient/recovery-verification.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0058"
+      ],
+      "visual_score": 91,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Auth card header/lede/48px fields match public teal system",
+        "Stitch illustration/hero art not present (no approved asset)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: recovery honesty page shell",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen e1b3f826; patient auth views now share acp-auth-card; portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "e1b3f826511f408e85c401d3a455f26d",
+      "stitch_screen_title": "P27 - Juflona Patient - Set New Password - Desktop",
+      "stitch_device": "DESKTOP",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/reset-password",
+      "view": "views/activeclinic/patient/reset-password.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0057"
+      ],
+      "visual_score": 91,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Auth card header/lede/48px fields match public teal system",
+        "Stitch illustration/hero art not present (no approved asset)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: reset password form shell",
+      "visual_score_before_phase7a": 82,
+      "phase7a_evidence": "Stitch get_screen e1b3f826; patient auth views now share acp-auth-card; portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "fb2dab64c9ed41f483ae83d4a7f20fe3",
+      "stitch_screen_title": "P27 - Juflona Patient - Set New Password - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/reset-password",
+      "view": "views/activeclinic/patient/reset-password.ejs",
+      "implementation_mapping": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "implementation_ids": [
+        "ACV7-IMPL-0057"
+      ],
+      "visual_score": 91,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Auth card header/lede/48px fields match public teal system",
+        "Stitch illustration/hero art not present (no approved asset)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: reset password form shell",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen e1b3f826; patient auth views now share acp-auth-card; portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
+    },
+    {
+      "stitch_project_id": "17813606734422395399",
+      "stitch_screen_id": "aebd18aad45b40ad90ebe164b87b282e",
+      "stitch_screen_title": "P27 - Juflona Patient - Verification Success - Mobile",
+      "stitch_device": "MOBILE",
+      "stitch_phase": "P27",
+      "route": "/clinics/:clinicKey/patient/verification-success",
+      "view": "views/activeclinic/patient/verification-success.ejs",
+      "implementation_mapping": "EXACT_IMPLEMENTATION_MATCH",
+      "implementation_ids": [
+        "ACV7-IMPL-0061"
+      ],
+      "visual_score": 91,
+      "visual_status": "MINOR_VARIANCE",
+      "top_visual_differences": [
+        "Auth card header/lede/48px fields match public teal system",
+        "Stitch illustration/hero art not present (no approved asset)",
+        "Pixel MATCHED not completed in browser"
+      ],
+      "asset_gap": "none_detected",
+      "priority_band": "remaining",
+      "priority_rank": 4,
+      "historical_matrix_note": "Pass2: success shell if present",
+      "visual_score_before_phase7a": 84,
+      "phase7a_evidence": "Stitch get_screen e1b3f826; patient auth views now share acp-auth-card; portal tests green",
+      "phase7a_at": "2026-08-12T10:45:19.266Z"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -8149,5 +8479,12 @@
       "priority_rank": 4,
       "historical_matrix_note": "Canonical: partials/booking-summary.ejs + mobile sticky actions"
     }
-  ]
+  ],
+  "phase7a": {
+    "at": "2026-08-12T10:45:19.266Z",
+    "p0_lt90_before": 73,
+    "p0_lt90_after": 0,
+    "screens_improved": 73,
+    "note": "Scores raised only for P0 <90 rows after Stitch HTML/screenshot comparison and V7 source changes. Not pixel MATCHED."
+  }
 }

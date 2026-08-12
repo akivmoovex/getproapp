@@ -734,3 +734,118 @@ form.ac-patient-form-inline {
   }
 }
 
+/* ===== Phase 7A — patient portal auth + bookings ===== */
+.ac-patient-main .acp-auth-card,
+.ac-patient-main .ac-patient-card--auth {
+  max-width: 28rem;
+  margin: 1.5rem auto;
+  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: var(--acp-radius-xl);
+  padding: 1.5rem 1.35rem;
+  box-shadow: var(--acp-shadow-sm);
+}
+.ac-patient-main .acp-auth-card h1,
+.ac-patient-main .ac-patient-card--auth h1 {
+  margin: 0 0 0.5rem;
+  font-size: 1.65rem;
+  color: var(--acp-navy);
+}
+.ac-patient-field label {
+  display: block;
+  font-size: 0.875rem;
+  font-weight: 600;
+  margin-bottom: 0.35rem;
+  color: var(--acp-navy);
+}
+.ac-patient-field input,
+.ac-patient-field select {
+  width: 100%;
+  min-height: var(--acp-touch);
+  box-sizing: border-box;
+}
+.ac-patient-btn.ac-btn--primary,
+.ac-patient-card--auth .ac-btn--primary {
+  width: 100%;
+  min-height: var(--acp-touch);
+}
+.ac-patient-filters {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  margin: 0 0 1rem;
+}
+.ac-patient-filters a {
+  flex: 0 0 auto;
+  min-height: 2.5rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  border: 1px solid var(--acp-border);
+  text-decoration: none;
+  color: var(--acp-navy);
+  background: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+}
+.ac-patient-filters a[aria-current="true"] {
+  background: var(--acp-primary);
+  border-color: var(--acp-primary);
+  color: #fff;
+}
+.ac-patient-honesty {
+  background: var(--acp-surface-low);
+  border: 1px solid var(--acp-border);
+  border-radius: var(--ac-radius-md);
+  padding: 0.85rem 1rem;
+  margin: 0 0 1rem;
+}
+.ac-patient-honesty--success {
+  background: var(--ac-status-success-bg);
+  border-color: #b7e4c7;
+}
+.ac-patient-empty-state {
+  background: #fff;
+  border: 1px dashed var(--acp-border);
+  border-radius: var(--ac-radius-lg);
+  padding: 1.25rem 1rem;
+  text-align: center;
+  color: var(--acp-muted);
+}
+.ac-patient-booking-cards { display: none; list-style: none; margin: 0; padding: 0; gap: 0.75rem; }
+.acp-status-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.5rem;
+  padding: 0.15rem 0.55rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: capitalize;
+  background: var(--ac-status-neutral-bg);
+  color: var(--ac-status-neutral);
+}
+
+@media (max-width: 767px) {
+  .ac-patient-table-wrap.ac-patients-desktop { display: none; }
+  .ac-patient-booking-cards {
+    display: grid;
+  }
+  .ac-patient-booking-cards .ac-card {
+    background: #fff;
+    border: 1px solid var(--acp-border);
+    border-radius: var(--ac-radius-lg);
+    padding: 1rem;
+  }
+  .ac-patient-booking-cards .ac-card__link {
+    text-decoration: none;
+    color: inherit;
+    display: grid;
+    gap: 0.3rem;
+  }
+}
+@media (min-width: 768px) {
+  .ac-patient-booking-cards { display: none; }
+}
+
+

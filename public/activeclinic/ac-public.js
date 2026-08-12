@@ -92,4 +92,41 @@
       if (filterDrawer && !filterDrawer.hidden) closeFilterDrawer();
     }
   });
+
+  var procRoot = document.querySelector("[data-ac-proc-filter]");
+  if (procRoot) {
+    var chips = procRoot.querySelectorAll("[data-ac-proc-cat]");
+    var search = procRoot.querySelector("[data-ac-proc-search]");
+    var items = document.querySelectorAll("[data-ac-proc-item]");
+    var empty = document.querySelector("[data-ac-proc-empty]");
+    var activeCat = "all";
+
+    function applyProcFilter() {
+      var q = search && search.value ? search.value.trim().toLowerCase() : "";
+      var shown = 0;
+      items.forEach(function (item) {
+        var cat = (item.getAttribute("data-ac-proc-category") || "").toLowerCase();
+        var name = (item.getAttribute("data-ac-proc-name") || "").toLowerCase();
+        var catOk = activeCat === "all" || cat === activeCat.toLowerCase();
+        var qOk = !q || name.indexOf(q) !== -1 || cat.indexOf(q) !== -1;
+        var match = catOk && qOk;
+        item.hidden = !match;
+        if (match) shown += 1;
+      });
+      if (empty) empty.hidden = shown !== 0;
+    }
+
+    chips.forEach(function (chip) {
+      chip.addEventListener("click", function () {
+        activeCat = chip.getAttribute("data-ac-proc-cat") || "all";
+        chips.forEach(function (c) {
+          var on = c === chip;
+          c.classList.toggle("is-active", on);
+          c.setAttribute("aria-pressed", on ? "true" : "false");
+        });
+        applyProcFilter();
+      });
+    });
+    if (search) search.addEventListener("input", applyProcFilter);
+  }
 })();

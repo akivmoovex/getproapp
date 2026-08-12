@@ -5,7 +5,8 @@
   var nextActions = success.nextActions || [];
 %>
 <section class="ac-patient-success" data-ac-page-section="patient-success" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
-  <div class="ac-panel">
+  <div class="ac-panel ac-success-panel">
+    <p class="ac-success-panel__kicker">Registration complete</p>
     <h2 class="ac-dashboard__card-title">Patient created</h2>
     <p>Patient <strong><%= patient.displayName || (patient.firstName + ' ' + patient.lastName) %></strong> was registered.</p>
     <p class="ac-muted">Patient number: <strong data-ac-patient-number="1"><%= patient.patientNumber %></strong></p>

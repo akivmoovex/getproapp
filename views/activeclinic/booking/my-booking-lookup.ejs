@@ -6,7 +6,11 @@
   </header>
   <% const state = typeof lookupState === 'string' ? lookupState : 'form'; %>
   <div class="acp-auth-card acp-lookup-card">
-    <p class="ac-public-note ac-booking-privacy">Do not share your access token — it provides access to your request details only.</p>
+    <ul class="acp-privacy-rules ac-booking-privacy">
+      <li>Do not share your access token — it opens this booking request only.</li>
+      <li>Lookup never shows another patient’s request or clinical record.</li>
+      <li>A pending request is not a confirmed appointment until the clinic responds.</li>
+    </ul>
     <% if (state === 'error' && typeof error === 'string' && error) { %>
     <div class="ac-public-error" role="alert" data-ac-lookup-state="error"><%= error %></div>
     <% } %>

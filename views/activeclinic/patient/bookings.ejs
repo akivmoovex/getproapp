@@ -14,15 +14,17 @@
   </div>
 
   <% if (!bookings || !bookings.length) { %>
-  <p class="ac-patient-empty">
-    <% if (statusFilter) { %>
-    No bookings with status “<%= escapeHtml(bookingStatusLabels[statusFilter] || statusFilter) %>”.
-    <% } else { %>
-    No bookings found.
-    <% } %>
-  </p>
+  <div class="ac-patient-empty-state acp-empty-state">
+    <p class="ac-patient-empty">
+      <% if (statusFilter) { %>
+      No bookings with status “<%= escapeHtml(bookingStatusLabels[statusFilter] || statusFilter) %>”.
+      <% } else { %>
+      No bookings found.
+      <% } %>
+    </p>
+  </div>
   <% } else { %>
-  <div class="ac-patient-table-wrap">
+  <div class="ac-patient-table-wrap ac-patients-desktop">
     <table class="ac-patient-table">
       <thead>
         <tr>
@@ -40,12 +42,31 @@
             </a>
           </td>
           <td><%= escapeHtml(b.bookingKind || "") %></td>
-          <td><%= escapeHtml(bookingStatusLabels[b.status] || b.status || "") %></td>
+          <td>
+            <span class="acp-status-badge acp-status-badge--<%= String(b.status || '').replace(/_/g, '-') %>">
+              <%= escapeHtml(bookingStatusLabels[b.status] || b.status || "") %>
+            </span>
+          </td>
         </tr>
         <% }); %>
       </tbody>
     </table>
   </div>
+  <ul class="ac-card-list ac-patients-mobile ac-patient-booking-cards">
+    <% bookings.forEach(function(b) { %>
+    <li class="ac-card">
+      <a class="ac-card__link" href="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(b.requestNumber || b.id) %>">
+        <p class="ac-card__title"><%= escapeHtml(b.requestNumber || b.id) %></p>
+        <p class="ac-muted"><%= escapeHtml(b.bookingKind || "") %></p>
+        <p>
+          <span class="acp-status-badge acp-status-badge--<%= String(b.status || '').replace(/_/g, '-') %>">
+            <%= escapeHtml(bookingStatusLabels[b.status] || b.status || "") %>
+          </span>
+        </p>
+      </a>
+    </li>
+    <% }); %>
+  </ul>
   <% } %>
 
   <p class="ac-patient-links">
