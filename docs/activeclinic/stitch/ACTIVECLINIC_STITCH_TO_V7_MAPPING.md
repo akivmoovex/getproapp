@@ -1,24 +1,14 @@
 # ActiveClinic Stitch → V7 Implementation Mapping
 
-**Generated:** 2026-08-12T09:44:16.963Z
-**Phase 5B:** 12 Appointments + Reception PARTIAL rows closed
+**Generated:** 2026-08-12T09:57:02.473Z
+**Phase 5C:** 6 Pharmacy PARTIAL rows closed
 
-## APPOINTMENTS
-
-| Bucket | Before | After |
-|---|---:|---:|
-| full | 5 | 12 |
-| partial | 7 | 0 |
-| missing | 0 | 0 |
-| other | 0 | 0 |
-| total | 12 | 12 |
-
-## RECEPTION
+## PHARMACY
 
 | Bucket | Before | After |
 |---|---:|---:|
-| full | 3 | 8 |
-| partial | 5 | 0 |
+| full | 23 | 29 |
+| partial | 6 | 0 |
 | missing | 0 | 0 |
 | other | 0 | 0 |
-| total | 8 | 8 |
+| total | 29 | 29 |

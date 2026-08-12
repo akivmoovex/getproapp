@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T09:44:16.963Z",
+  "generated_at": "2026-08-12T09:57:02.473Z",
   "inventory_purpose": "RAW V7 ActiveClinic implementation inventory — no Stitch mapping",
   "safety": {
     "branch": "V7",
@@ -39,7 +39,7 @@
   "integrity": {
     "user_facing_routes_discovered": 175,
     "screen_rendering_views_discovered": 157,
-    "implementation_screen_state_records": 225,
+    "implementation_screen_state_records": 229,
     "orphan_views": 1,
     "api_only_routes_excluded": 22,
     "redirect_only_routes_excluded": 12,
@@ -7443,6 +7443,130 @@
       ],
       "implementation_substance": "FUNCTIONAL",
       "notes": "ActiveClinic V7 Phase 5B"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-770226",
+      "surface": "INTERNAL",
+      "functional_area": "PHARMACY",
+      "route_method": "GET",
+      "route_path": "/app/pharmacy/prescriptions/:id/dispense/confirm",
+      "route_file": "src/activeclinic/http/activeClinicPharmacyRoutes.js",
+      "handler": "Phase5C pharmacy partial closure",
+      "view_path": "views/activeclinic/app/pharmacy-dispense-confirm-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.pharmacy.dispense"
+      ],
+      "facility_scope": true,
+      "department_scope": "pharmacy",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5C GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5C"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-770227",
+      "surface": "INTERNAL",
+      "functional_area": "PHARMACY",
+      "route_method": "GET",
+      "route_path": "/app/pharmacy/prescriptions/:id/dispense/completed",
+      "route_file": "src/activeclinic/http/activeClinicPharmacyRoutes.js",
+      "handler": "Phase5C pharmacy partial closure",
+      "view_path": "views/activeclinic/app/pharmacy-dispense-completed-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.pharmacy.dispense"
+      ],
+      "facility_scope": true,
+      "department_scope": "pharmacy",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5C GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5C"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-770228",
+      "surface": "INTERNAL",
+      "functional_area": "PHARMACY",
+      "route_method": "GET",
+      "route_path": "/app/pharmacy/inventory/batches/:batchId",
+      "route_file": "src/activeclinic/http/activeClinicPharmacyRoutes.js",
+      "handler": "Phase5C pharmacy partial closure",
+      "view_path": "views/activeclinic/app/pharmacy-batch-detail-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.inventory.view"
+      ],
+      "facility_scope": true,
+      "department_scope": "pharmacy",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5C GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5C"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-770229",
+      "surface": "INTERNAL",
+      "functional_area": "PHARMACY",
+      "route_method": "GET",
+      "route_path": "/app/pharmacy/prescriptions/:prescriptionId/items/:itemId/select-batch",
+      "route_file": "src/activeclinic/http/activeClinicPharmacyRoutes.js",
+      "handler": "Phase5C pharmacy partial closure",
+      "view_path": "views/activeclinic/app/pharmacy-select-batch-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.pharmacy.dispense"
+      ],
+      "facility_scope": true,
+      "department_scope": "pharmacy",
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5C GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5C"
     }
   ],
   "phase4_update": {
@@ -7456,5 +7580,9 @@
   "phase5b_update": {
     "added_count": 9,
     "note": "Appointments + Reception partial closure"
+  },
+  "phase5c_update": {
+    "added_count": 4,
+    "note": "Pharmacy partial closure"
   }
 }

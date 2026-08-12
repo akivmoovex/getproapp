@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T09:44:16.963Z",
+  "generated_at": "2026-08-12T09:57:02.473Z",
   "purpose": "Phase 3 Stitch → V7 implementation mapping (independent of old parity matrix primary claims)",
   "safety": {
     "branch": "V7",
@@ -12,16 +12,16 @@
   },
   "inputs": {
     "stitch_screens": 388,
-    "implementation_records": 225,
+    "implementation_records": 229,
     "phase4_note": "Implementation inventory updated after Phase 4 code"
   },
   "counts": {
     "mapping_type": {
-      "EXACT_IMPLEMENTATION_MATCH": 81,
-      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 229,
+      "EXACT_IMPLEMENTATION_MATCH": 86,
+      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 230,
       "DUPLICATE_STITCH_VARIANT": 8,
       "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 6,
-      "PARTIAL_IMPLEMENTATION": 49,
+      "PARTIAL_IMPLEMENTATION": 43,
       "PRODUCT_DECISION_DIFFERENCE": 7,
       "NO_IMPLEMENTATION_REQUIRED": 8
     },
@@ -30,8 +30,8 @@
       "MEDIUM": 48
     },
     "stitch_screen_coverage": {
-      "full": 316,
-      "partial": 49,
+      "full": 322,
+      "partial": 43,
       "missing": 0,
       "other": 23,
       "total": 388
@@ -6664,19 +6664,19 @@
       "stitch_functional_area": "PHARMACY",
       "stitch_device": "DESKTOP",
       "stitch_state": "SUCCESS",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0131"
+        "ACV7-IMPL-770227"
       ],
       "route_paths": [
-        "/app/pharmacy/prescriptions/:id/dispense"
+        "/app/pharmacy/prescriptions/:id/dispense/completed"
       ],
       "view_paths": [
-        "views/activeclinic/app/pharmacy-dispense-content.ejs"
+        "views/activeclinic/app/pharmacy-dispense-completed-content.ejs"
       ],
       "implementation_states": [
-        "DEFAULT"
+        "SUCCESS"
       ],
       "device_support": [
         "DESKTOP",
@@ -6684,9 +6684,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Dispense is a single form/flow; Stitch confirmation/partial/completed boards not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0131 via /app/pharmacy/prescriptions/:id/dispense / views/activeclinic/app/pharmacy-dispense-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5C: /app/pharmacy/prescriptions/:id/dispense/completed / views/activeclinic/app/pharmacy-dispense-completed-content.ejs",
+      "notes": "Pharmacy partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -6696,19 +6696,19 @@
       "stitch_functional_area": "PHARMACY",
       "stitch_device": "DESKTOP",
       "stitch_state": "CONFIRMED",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0131"
+        "ACV7-IMPL-770226"
       ],
       "route_paths": [
-        "/app/pharmacy/prescriptions/:id/dispense"
+        "/app/pharmacy/prescriptions/:id/dispense/confirm"
       ],
       "view_paths": [
-        "views/activeclinic/app/pharmacy-dispense-content.ejs"
+        "views/activeclinic/app/pharmacy-dispense-confirm-content.ejs"
       ],
       "implementation_states": [
-        "DEFAULT"
+        "CONFIRMED"
       ],
       "device_support": [
         "DESKTOP",
@@ -6716,9 +6716,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Dispense is a single form/flow; Stitch confirmation/partial/completed boards not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0131 via /app/pharmacy/prescriptions/:id/dispense / views/activeclinic/app/pharmacy-dispense-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5C: /app/pharmacy/prescriptions/:id/dispense/confirm / views/activeclinic/app/pharmacy-dispense-confirm-content.ejs",
+      "notes": "Pharmacy partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -6728,7 +6728,7 @@
       "stitch_functional_area": "PHARMACY",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0131"
@@ -6748,9 +6748,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Dispense is a single form/flow; Stitch confirmation/partial/completed boards not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0131 via /app/pharmacy/prescriptions/:id/dispense / views/activeclinic/app/pharmacy-dispense-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5C: /app/pharmacy/prescriptions/:id/dispense / views/activeclinic/app/pharmacy-dispense-content.ejs",
+      "notes": "Pharmacy partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -6824,19 +6824,16 @@
       "stitch_functional_area": "PHARMACY",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0132",
-        "ACV7-IMPL-0131"
+        "ACV7-IMPL-770228"
       ],
       "route_paths": [
-        "/app/pharmacy/inventory/receive",
-        "/app/pharmacy/prescriptions/:id/dispense"
+        "/app/pharmacy/inventory/batches/:batchId"
       ],
       "view_paths": [
-        "views/activeclinic/app/pharmacy-receive-stock-content.ejs",
-        "views/activeclinic/app/pharmacy-dispense-content.ejs"
+        "views/activeclinic/app/pharmacy-batch-detail-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -6847,9 +6844,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "NEW_ROUTE — dedicated medicine batch detail; batch selection only within receive/dispense",
-      "evidence": "Mapped to ACV7-IMPL-0132, ACV7-IMPL-0131 via /app/pharmacy/inventory/receive | /app/pharmacy/prescriptions/:id/dispense / views/activeclinic/app/pharmacy-receive-stock-content.ejs | views/activeclinic/app/pharmacy-dispense-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5C: /app/pharmacy/inventory/batches/:batchId / views/activeclinic/app/pharmacy-batch-detail-content.ejs",
+      "notes": "Pharmacy partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -7019,7 +7016,7 @@
       "stitch_functional_area": "PHARMACY",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0131"
@@ -7039,9 +7036,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Dispense is a single form/flow; Stitch confirmation/partial/completed boards not separate routes",
-      "evidence": "Mapped to ACV7-IMPL-0131 via /app/pharmacy/prescriptions/:id/dispense / views/activeclinic/app/pharmacy-dispense-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5C: /app/pharmacy/prescriptions/:id/dispense / views/activeclinic/app/pharmacy-dispense-content.ejs",
+      "notes": "Pharmacy partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -7473,19 +7470,16 @@
       "stitch_functional_area": "PHARMACY",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0132",
-        "ACV7-IMPL-0131"
+        "ACV7-IMPL-770229"
       ],
       "route_paths": [
-        "/app/pharmacy/inventory/receive",
-        "/app/pharmacy/prescriptions/:id/dispense"
+        "/app/pharmacy/prescriptions/:prescriptionId/items/:itemId/select-batch"
       ],
       "view_paths": [
-        "views/activeclinic/app/pharmacy-receive-stock-content.ejs",
-        "views/activeclinic/app/pharmacy-dispense-content.ejs"
+        "views/activeclinic/app/pharmacy-select-batch-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -7496,9 +7490,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "NEW_ROUTE — dedicated medicine batch detail; batch selection only within receive/dispense",
-      "evidence": "Mapped to ACV7-IMPL-0132, ACV7-IMPL-0131 via /app/pharmacy/inventory/receive | /app/pharmacy/prescriptions/:id/dispense / views/activeclinic/app/pharmacy-receive-stock-content.ejs | views/activeclinic/app/pharmacy-dispense-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5C: /app/pharmacy/prescriptions/:prescriptionId/items/:itemId/select-batch / views/activeclinic/app/pharmacy-select-batch-content.ejs",
+      "notes": "Pharmacy partial closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -16990,6 +16984,27 @@
         "missing": 0,
         "other": 0,
         "total": 8
+      }
+    }
+  },
+  "phase5c_remap": {
+    "remapped_former_partials": 6,
+    "before": {
+      "PHARMACY": {
+        "full": 23,
+        "partial": 6,
+        "missing": 0,
+        "other": 0,
+        "total": 29
+      }
+    },
+    "after": {
+      "PHARMACY": {
+        "full": 29,
+        "partial": 0,
+        "missing": 0,
+        "other": 0,
+        "total": 29
       }
     }
   }
