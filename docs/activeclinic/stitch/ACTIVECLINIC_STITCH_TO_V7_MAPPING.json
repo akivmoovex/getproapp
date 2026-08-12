@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T10:13:15.211Z",
+  "generated_at": "2026-08-12T10:25:10.674Z",
   "purpose": "Phase 3 Stitch → V7 implementation mapping (independent of old parity matrix primary claims)",
   "safety": {
     "branch": "V7",
@@ -8,32 +8,32 @@
     "db_identity": "moovex-platform-v7",
     "production_touched": false,
     "pushed": false,
-    "deployed": false
+    "deployed": false,
+    "phase5e_at": "2026-08-12T10:25:10.674Z"
   },
   "inputs": {
     "stitch_screens": 388,
-    "implementation_records": 243,
+    "implementation_records": 247,
     "phase4_note": "Implementation inventory updated after Phase 4 code"
   },
   "counts": {
     "mapping_type": {
-      "EXACT_IMPLEMENTATION_MATCH": 100,
-      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 232,
+      "EXACT_IMPLEMENTATION_MATCH": 103,
+      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 247,
       "DUPLICATE_STITCH_VARIANT": 8,
-      "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 6,
-      "PARTIAL_IMPLEMENTATION": 27,
-      "PRODUCT_DECISION_DIFFERENCE": 7,
-      "NO_IMPLEMENTATION_REQUIRED": 8
+      "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 11,
+      "PRODUCT_DECISION_DIFFERENCE": 9,
+      "NO_IMPLEMENTATION_REQUIRED": 10
     },
     "confidence": {
-      "HIGH": 343,
-      "MEDIUM": 45
+      "HIGH": 364,
+      "MEDIUM": 24
     },
     "stitch_screen_coverage": {
-      "full": 338,
-      "partial": 27,
+      "full": 361,
+      "partial": 0,
       "missing": 0,
-      "other": 23,
+      "other": 27,
       "total": 388
     },
     "unique_design_concept_coverage": {
@@ -4952,7 +4952,7 @@
       "stitch_functional_area": "PATIENTS",
       "stitch_device": "DESKTOP",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0093"
@@ -4972,9 +4972,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Duplicate warning exists in registration service flow but no dedicated Stitch-parity modal screen row",
-      "evidence": "Mapped to ACV7-IMPL-0093 via /app/patients/new / views/activeclinic/app/patient-form-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /app/patients/new",
+      "notes": "Duplicate warning panel inline on create form; Phase 5E functional closure"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -5240,21 +5240,22 @@
       "stitch_functional_area": "PATIENTS",
       "stitch_device": "DESKTOP",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0091",
-        "ACV7-IMPL-0092"
+        "ACV7-IMPL-0083"
       ],
       "route_paths": [
-        "/app/patients"
+        "/app/patients",
+        "(access-state)"
       ],
       "view_paths": [
-        "views/activeclinic/app/patients-list-content.ejs"
+        "views/activeclinic/app/patients-list-content.ejs",
+        "views/activeclinic/app/access-state.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "EMPTY"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -5262,9 +5263,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Composite patient shared-states board not a single route; empty/list states covered",
-      "evidence": "Mapped to ACV7-IMPL-0091, ACV7-IMPL-0092 via /app/patients / views/activeclinic/app/patients-list-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS → /app/patients | (access-state)",
+      "notes": "Shared patient empty/list/access states covered by list + access-state taxonomy"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -10273,18 +10274,21 @@
       "stitch_functional_area": "SETTINGS",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0183",
+        "ACV7-IMPL-77770247",
         "ACV7-IMPL-0078"
       ],
       "route_paths": [
         "/app/settings/account",
+        "/app/settings/account/sessions",
         "/account/change-password"
       ],
       "view_paths": [
         "views/activeclinic/app/settings-account-content.ejs",
+        "views/activeclinic/app/settings-account-sessions-content.ejs",
         "views/activeclinic/auth/change-password.ejs"
       ],
       "implementation_states": [
@@ -10296,9 +10300,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Staff account security/sessions not a full P13 security console; settings account + change-password exist",
-      "evidence": "Mapped to ACV7-IMPL-0183, ACV7-IMPL-0078 via /app/settings/account | /account/change-password / views/activeclinic/app/settings-account-content.ejs | views/activeclinic/auth/change-password.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS → /app/settings/account | /app/settings/account/sessions | /account/change-password",
+      "notes": "Account security hub: password + sessions + logout"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -10308,19 +10312,16 @@
       "stitch_functional_area": "SETTINGS",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0183",
-        "ACV7-IMPL-0078"
+        "ACV7-IMPL-77770247"
       ],
       "route_paths": [
-        "/app/settings/account",
-        "/account/change-password"
+        "/app/settings/account/sessions"
       ],
       "view_paths": [
-        "views/activeclinic/app/settings-account-content.ejs",
-        "views/activeclinic/auth/change-password.ejs"
+        "views/activeclinic/app/settings-account-sessions-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -10331,9 +10332,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Staff account security/sessions not a full P13 security console; settings account + change-password exist",
-      "evidence": "Mapped to ACV7-IMPL-0183, ACV7-IMPL-0078 via /app/settings/account | /account/change-password / views/activeclinic/app/settings-account-content.ejs | views/activeclinic/auth/change-password.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: EXACT_IMPLEMENTATION_MATCH → /app/settings/account/sessions",
+      "notes": "Self-service active session list + revoke others"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -10375,23 +10376,23 @@
       "stitch_functional_area": "STAFF",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0166",
-        "ACV7-IMPL-0169"
+        "ACV7-IMPL-77770244",
+        "ACV7-IMPL-0166"
       ],
       "route_paths": [
-        "/app/staff/new",
-        "/app/staff"
+        "/app/staff/invite",
+        "/app/staff/new"
       ],
       "view_paths": [
+        "views/activeclinic/app/staff-invite-content.ejs",
         "views/activeclinic/app/staff-form-content.ejs",
         "views/activeclinic/app/staff-invite-result-content.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "SUCCESS"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -10399,9 +10400,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Invite is embedded in staff create/admin POSTs; no dedicated invite-only Stitch-parity screen",
-      "evidence": "Mapped to ACV7-IMPL-0166, ACV7-IMPL-0169 via /app/staff/new | /app/staff / views/activeclinic/app/staff-form-content.ejs | views/activeclinic/app/staff-invite-result-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS → /app/staff/invite | /app/staff/new",
+      "notes": "Dedicated invite entry + create/invite form + result"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -10443,19 +10444,16 @@
       "stitch_functional_area": "RBAC",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0175",
-        "ACV7-IMPL-0176"
+        "ACV7-IMPL-77770246"
       ],
       "route_paths": [
-        "/app/access/staff/:staffId",
-        "/app/access/staff/:staffId/assign"
+        "/app/access/roles/:roleKey"
       ],
       "view_paths": [
-        "views/activeclinic/app/access-staff-content.ejs",
-        "views/activeclinic/app/access-role-form-content.ejs"
+        "views/activeclinic/app/access-role-detail-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -10466,9 +10464,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Role catalogue/matrix screens condensed into access staff + assign forms",
-      "evidence": "Mapped to ACV7-IMPL-0175, ACV7-IMPL-0176 via /app/access/staff/:staffId | /app/access/staff/:staffId/assign / views/activeclinic/app/access-staff-content.ejs | views/activeclinic/app/access-role-form-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: EXACT_IMPLEMENTATION_MATCH → /app/access/roles/:roleKey",
+      "notes": "Role catalogue detail with permission groups"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -10478,19 +10476,19 @@
       "stitch_functional_area": "RBAC",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "PRODUCT_DECISION_DIFFERENCE",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0175",
-        "ACV7-IMPL-0176"
+        "ACV7-IMPL-0174",
+        "ACV7-IMPL-77770246"
       ],
       "route_paths": [
-        "/app/access/staff/:staffId",
-        "/app/access/staff/:staffId/assign"
+        "/app/access?tab=catalogue",
+        "/app/access/roles/:roleKey"
       ],
       "view_paths": [
-        "views/activeclinic/app/access-staff-content.ejs",
-        "views/activeclinic/app/access-role-form-content.ejs"
+        "views/activeclinic/app/access-content.ejs",
+        "views/activeclinic/app/access-role-detail-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -10500,10 +10498,10 @@
         "MOBILE"
       ],
       "canonical_stitch_screen_id": null,
-      "product_difference": null,
-      "missing_requirement": "Role catalogue/matrix screens condensed into access staff + assign forms",
-      "evidence": "Mapped to ACV7-IMPL-0175, ACV7-IMPL-0176 via /app/access/staff/:staffId | /app/access/staff/:staffId/assign / views/activeclinic/app/access-staff-content.ejs | views/activeclinic/app/access-role-form-content.ejs",
-      "notes": ""
+      "product_difference": "V7 uses fixed ActiveClinic role catalogue with capability-group summaries and role detail pages. Stitch role×permission matrix editor is intentionally not built — roles are system-defined, not custom-editable.",
+      "missing_requirement": null,
+      "evidence": "Phase 5E: PRODUCT_DECISION_DIFFERENCE → /app/access?tab=catalogue | /app/access/roles/:roleKey",
+      "notes": "Product decision: no editable permission matrix"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -10769,16 +10767,16 @@
       "stitch_functional_area": "STAFF",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "EXACT_IMPLEMENTATION_MATCH",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0167"
+        "ACV7-IMPL-77770245"
       ],
       "route_paths": [
-        "/app/staff/:staffId"
+        "/app/staff/:staffId/suspend"
       ],
       "view_paths": [
-        "views/activeclinic/app/staff-detail-content.ejs"
+        "views/activeclinic/app/staff-suspend-content.ejs"
       ],
       "implementation_states": [
         "DEFAULT"
@@ -10789,9 +10787,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Suspend is staff-admin POST action, not a dedicated confirmation screen",
-      "evidence": "Mapped to ACV7-IMPL-0167 via /app/staff/:staffId / views/activeclinic/app/staff-detail-content.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: EXACT_IMPLEMENTATION_MATCH → /app/staff/:staffId/suspend",
+      "notes": "Dedicated suspend confirmation screen"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -10833,16 +10831,12 @@
       "stitch_functional_area": "APP_SHELL",
       "stitch_device": "DESKTOP",
       "stitch_state": "LOADING",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
-      "implementation_ids": [
-        "ACV7-IMPL-0006"
-      ],
-      "route_paths": [
-        "/clinics"
-      ],
+      "mapping_type": "NO_IMPLEMENTATION_REQUIRED",
+      "mapping_confidence": "HIGH",
+      "implementation_ids": [],
+      "route_paths": [],
       "view_paths": [
-        "views/activeclinic/public/clinics-directory.ejs"
+        "views/activeclinic/partials/ac-loading-state.ejs"
       ],
       "implementation_states": [
         "LOADING"
@@ -10853,9 +10847,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Shared loading is taxonomy/partial; directory loading is the only dedicated loading state row",
-      "evidence": "Mapped to ACV7-IMPL-0006 via /clinics / views/activeclinic/public/clinics-directory.ejs",
-      "notes": "No global shared loading page for internal app beyond inline states"
+      "missing_requirement": null,
+      "evidence": "Phase 5E: NO_IMPLEMENTATION_REQUIRED",
+      "notes": "Shared loading is an inline taxonomy/partial; V7 does not ship a global artificial loading page (S08)"
     },
     {
       "stitch_project_id": "12272131183982732110",
@@ -13201,8 +13195,8 @@
       "stitch_functional_area": "PRICING",
       "stitch_device": "DESKTOP",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0018"
       ],
@@ -13221,9 +13215,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Price patterns board condensed into tenant pricing page",
-      "evidence": "Mapped to ACV7-IMPL-0018 via /clinics/:clinicKey/pricing / views/activeclinic/tenant/pricing.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/pricing",
+      "notes": "Price patterns board condensed into tenant pricing page"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -13233,8 +13227,8 @@
       "stitch_functional_area": "SERVICES",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0023"
       ],
@@ -13248,14 +13242,14 @@
         "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Service empty/unavailable states may be inline; not dedicated inventory rows",
-      "evidence": "Mapped to ACV7-IMPL-0023 via /clinics/:clinicKey/services / views/activeclinic/tenant/services.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/services",
+      "notes": "Service empty/unavailable states inline on services page"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -13393,35 +13387,29 @@
       "stitch_functional_area": "CONSULTATION_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0030",
-        "ACV7-IMPL-0031",
-        "ACV7-IMPL-0034",
-        "ACV7-IMPL-0035"
+        "ACV7-IMPL-0034"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book",
         "/clinics/:clinicKey/book/slot"
       ],
       "view_paths": [
-        "views/activeclinic/booking/consultation-type.ejs",
         "views/activeclinic/booking/consultation-slot.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Pattern/state boards partially covered by validation + slot availability helpers; not dedicated screens",
-      "evidence": "Mapped to ACV7-IMPL-0030, ACV7-IMPL-0031, ACV7-IMPL-0034, ACV7-IMPL-0035 via /clinics/:clinicKey/book | /clinics/:clinicKey/book/slot / views/activeclinic/booking/consultation-type.ejs | views/activeclinic/booking/consultation-slot.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/book/slot",
+      "notes": "Availability states covered by slot no_slots_published banners"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -13623,13 +13611,11 @@
       "stitch_functional_area": "CONSULTATION_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0030",
-        "ACV7-IMPL-0031",
-        "ACV7-IMPL-0034",
-        "ACV7-IMPL-0035"
+        "ACV7-IMPL-0034"
       ],
       "route_paths": [
         "/clinics/:clinicKey/book",
@@ -13640,18 +13626,17 @@
         "views/activeclinic/booking/consultation-slot.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Pattern/state boards partially covered by validation + slot availability helpers; not dedicated screens",
-      "evidence": "Mapped to ACV7-IMPL-0030, ACV7-IMPL-0031, ACV7-IMPL-0034, ACV7-IMPL-0035 via /clinics/:clinicKey/book | /clinics/:clinicKey/book/slot / views/activeclinic/booking/consultation-type.ejs | views/activeclinic/booking/consultation-slot.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS → /clinics/:clinicKey/book | /clinics/:clinicKey/book/slot",
+      "notes": "Form validation state boards covered by wizard re-renders"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -13661,35 +13646,32 @@
       "stitch_functional_area": "PUBLIC_PLATFORM",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0030",
-        "ACV7-IMPL-0031",
-        "ACV7-IMPL-0034",
-        "ACV7-IMPL-0035"
+        "ACV7-IMPL-0034"
       ],
       "route_paths": [
         "/clinics/:clinicKey/book",
         "/clinics/:clinicKey/book/slot"
       ],
       "view_paths": [
-        "views/activeclinic/booking/consultation-type.ejs",
-        "views/activeclinic/booking/consultation-slot.ejs"
+        "views/activeclinic/partials/booking-wizard-progress.ejs",
+        "views/activeclinic/partials/booking-summary.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Pattern/state boards partially covered by validation + slot availability helpers; not dedicated screens",
-      "evidence": "Mapped to ACV7-IMPL-0030, ACV7-IMPL-0031, ACV7-IMPL-0034, ACV7-IMPL-0035 via /clinics/:clinicKey/book | /clinics/:clinicKey/book/slot / views/activeclinic/booking/consultation-type.ejs | views/activeclinic/booking/consultation-slot.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS → /clinics/:clinicKey/book | /clinics/:clinicKey/book/slot",
+      "notes": "Mobile nav/summary pattern = shell + booking progress/summary partials"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -13763,25 +13745,19 @@
       "stitch_functional_area": "CONSULTATION_BOOKING",
       "stitch_device": "DESKTOP",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0030",
-        "ACV7-IMPL-0031",
-        "ACV7-IMPL-0034",
-        "ACV7-IMPL-0035"
+        "ACV7-IMPL-0030"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book",
-        "/clinics/:clinicKey/book/slot"
+        "/clinics/:clinicKey/book"
       ],
       "view_paths": [
-        "views/activeclinic/booking/consultation-type.ejs",
-        "views/activeclinic/booking/consultation-slot.ejs"
+        "views/activeclinic/partials/booking-wizard-progress.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -13789,9 +13765,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Pattern/state boards partially covered by validation + slot availability helpers; not dedicated screens",
-      "evidence": "Mapped to ACV7-IMPL-0030, ACV7-IMPL-0031, ACV7-IMPL-0034, ACV7-IMPL-0035 via /clinics/:clinicKey/book | /clinics/:clinicKey/book/slot / views/activeclinic/booking/consultation-type.ejs | views/activeclinic/booking/consultation-slot.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/book",
+      "notes": "Progress patterns board → booking-wizard-progress partial"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -13929,35 +13905,29 @@
       "stitch_functional_area": "CONSULTATION_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0030",
-        "ACV7-IMPL-0031",
-        "ACV7-IMPL-0034",
-        "ACV7-IMPL-0035"
+        "ACV7-IMPL-0030"
       ],
       "route_paths": [
-        "/clinics/:clinicKey/book",
-        "/clinics/:clinicKey/book/slot"
+        "/clinics/:clinicKey/book"
       ],
       "view_paths": [
-        "views/activeclinic/booking/consultation-type.ejs",
-        "views/activeclinic/booking/consultation-slot.ejs"
+        "views/activeclinic/partials/sms-honesty-note.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Pattern/state boards partially covered by validation + slot availability helpers; not dedicated screens",
-      "evidence": "Mapped to ACV7-IMPL-0030, ACV7-IMPL-0031, ACV7-IMPL-0034, ACV7-IMPL-0035 via /clinics/:clinicKey/book | /clinics/:clinicKey/book/slot / views/activeclinic/booking/consultation-type.ejs | views/activeclinic/booking/consultation-slot.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/book",
+      "notes": "SMS notification states → honesty note (no real SMS send in V7)"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14732,22 +14702,19 @@
       "stitch_functional_area": "MY_BOOKING",
       "stitch_device": "DESKTOP",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0047",
         "ACV7-IMPL-0049"
       ],
       "route_paths": [
         "/clinics/:clinicKey/my-booking"
       ],
       "view_paths": [
-        "views/activeclinic/booking/my-booking-lookup.ejs",
         "views/activeclinic/booking/my-booking-detail.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "POPULATED"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -14755,9 +14722,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Pattern/policy boards not dedicated routes; behavior partially in lookup/detail",
-      "evidence": "Mapped to ACV7-IMPL-0047, ACV7-IMPL-0049 via /clinics/:clinicKey/my-booking / views/activeclinic/booking/my-booking-lookup.ejs | views/activeclinic/booking/my-booking-detail.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/my-booking",
+      "notes": "Booking activity pattern covered by detail status banners (no separate event timeline)"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -14767,32 +14734,29 @@
       "stitch_functional_area": "MY_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "PRODUCT_DECISION_DIFFERENCE",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0047",
         "ACV7-IMPL-0049"
       ],
       "route_paths": [
         "/clinics/:clinicKey/my-booking"
       ],
       "view_paths": [
-        "views/activeclinic/booking/my-booking-lookup.ejs",
         "views/activeclinic/booking/my-booking-detail.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "POPULATED"
+        "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
-      "product_difference": null,
-      "missing_requirement": "Pattern/policy boards not dedicated routes; behavior partially in lookup/detail",
-      "evidence": "Mapped to ACV7-IMPL-0047, ACV7-IMPL-0049 via /clinics/:clinicKey/my-booking / views/activeclinic/booking/my-booking-lookup.ejs | views/activeclinic/booking/my-booking-detail.ejs",
-      "notes": ""
+      "product_difference": "V7 reloads current booking status on each request. Stitch mid-request conflict UX (booking changed while editing) is intentionally not built; cancel/reschedule operate on current server state.",
+      "missing_requirement": null,
+      "evidence": "Phase 5E: PRODUCT_DECISION_DIFFERENCE → /clinics/:clinicKey/my-booking",
+      "notes": "Product decision: no optimistic-lock conflict screen"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -15186,22 +15150,19 @@
       "stitch_functional_area": "MY_BOOKING",
       "stitch_device": "DESKTOP",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0047",
         "ACV7-IMPL-0049"
       ],
       "route_paths": [
         "/clinics/:clinicKey/my-booking"
       ],
       "view_paths": [
-        "views/activeclinic/booking/my-booking-lookup.ejs",
         "views/activeclinic/booking/my-booking-detail.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "POPULATED"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -15209,9 +15170,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Pattern/policy boards not dedicated routes; behavior partially in lookup/detail",
-      "evidence": "Mapped to ACV7-IMPL-0047, ACV7-IMPL-0049 via /clinics/:clinicKey/my-booking / views/activeclinic/booking/my-booking-lookup.ejs | views/activeclinic/booking/my-booking-detail.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/my-booking",
+      "notes": "Status pattern board covered by detail status badges/banners"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -15413,32 +15374,29 @@
       "stitch_functional_area": "MY_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0047",
         "ACV7-IMPL-0049"
       ],
       "route_paths": [
         "/clinics/:clinicKey/my-booking"
       ],
       "view_paths": [
-        "views/activeclinic/booking/my-booking-lookup.ejs",
         "views/activeclinic/booking/my-booking-detail.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "POPULATED"
+        "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Pattern/policy boards not dedicated routes; behavior partially in lookup/detail",
-      "evidence": "Mapped to ACV7-IMPL-0047, ACV7-IMPL-0049 via /clinics/:clinicKey/my-booking / views/activeclinic/booking/my-booking-lookup.ejs | views/activeclinic/booking/my-booking-detail.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/my-booking",
+      "notes": "Change-request states covered on my-booking detail cancel/reschedule actions"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -15480,8 +15438,8 @@
       "stitch_functional_area": "MY_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "NO_IMPLEMENTATION_REQUIRED",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0047"
       ],
@@ -15495,14 +15453,14 @@
         "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "No dedicated lookup-progress screen; synchronous lookup",
-      "evidence": "Mapped to ACV7-IMPL-0047 via /clinics/:clinicKey/my-booking / views/activeclinic/booking/my-booking-lookup.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: NO_IMPLEMENTATION_REQUIRED → /clinics/:clinicKey/my-booking",
+      "notes": "Lookup is synchronous; artificial progress screen not required (same philosophy as Shared Loading)"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -15512,32 +15470,29 @@
       "stitch_functional_area": "MY_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0047",
         "ACV7-IMPL-0049"
       ],
       "route_paths": [
         "/clinics/:clinicKey/my-booking"
       ],
       "view_paths": [
-        "views/activeclinic/booking/my-booking-lookup.ejs",
         "views/activeclinic/booking/my-booking-detail.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "POPULATED"
+        "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Pattern/policy boards not dedicated routes; behavior partially in lookup/detail",
-      "evidence": "Mapped to ACV7-IMPL-0047, ACV7-IMPL-0049 via /clinics/:clinicKey/my-booking / views/activeclinic/booking/my-booking-lookup.ejs | views/activeclinic/booking/my-booking-detail.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/my-booking",
+      "notes": "Mobile booking summary pattern on detail"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -15611,32 +15566,29 @@
       "stitch_functional_area": "MY_BOOKING",
       "stitch_device": "MOBILE",
       "stitch_state": "PENDING",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0047",
         "ACV7-IMPL-0049"
       ],
       "route_paths": [
         "/clinics/:clinicKey/my-booking"
       ],
       "view_paths": [
-        "views/activeclinic/booking/my-booking-lookup.ejs",
         "views/activeclinic/booking/my-booking-detail.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "POPULATED"
+        "PENDING"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Pattern/policy boards not dedicated routes; behavior partially in lookup/detail",
-      "evidence": "Mapped to ACV7-IMPL-0047, ACV7-IMPL-0049 via /clinics/:clinicKey/my-booking / views/activeclinic/booking/my-booking-lookup.ejs | views/activeclinic/booking/my-booking-detail.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/my-booking",
+      "notes": "Pending preference/reschedule_requested banner on detail"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -15646,22 +15598,19 @@
       "stitch_functional_area": "MY_BOOKING",
       "stitch_device": "DESKTOP",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
-      "mapping_confidence": "MEDIUM",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
+      "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0047",
-        "ACV7-IMPL-0049"
+        "ACV7-IMPL-0047"
       ],
       "route_paths": [
         "/clinics/:clinicKey/my-booking"
       ],
       "view_paths": [
-        "views/activeclinic/booking/my-booking-lookup.ejs",
-        "views/activeclinic/booking/my-booking-detail.ejs"
+        "views/activeclinic/booking/my-booking-lookup.ejs"
       ],
       "implementation_states": [
-        "DEFAULT",
-        "POPULATED"
+        "DEFAULT"
       ],
       "device_support": [
         "DESKTOP",
@@ -15669,9 +15618,9 @@
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Pattern/policy boards not dedicated routes; behavior partially in lookup/detail",
-      "evidence": "Mapped to ACV7-IMPL-0047, ACV7-IMPL-0049 via /clinics/:clinicKey/my-booking / views/activeclinic/booking/my-booking-lookup.ejs | views/activeclinic/booking/my-booking-detail.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/my-booking",
+      "notes": "Privacy/lookup rules copy + token-safe lookup service"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -15937,7 +15886,7 @@
       "stitch_functional_area": "PATIENT_PORTAL",
       "stitch_device": "MOBILE",
       "stitch_state": "DEFAULT",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
         "ACV7-IMPL-0066"
@@ -15952,14 +15901,14 @@
         "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Filters may be limited vs Stitch filter board",
-      "evidence": "Mapped to ACV7-IMPL-0066 via /clinics/:clinicKey/patient/bookings / views/activeclinic/patient/bookings.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/patient/bookings",
+      "notes": "Status filter nav covers Stitch booking filters on mobile"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -16257,10 +16206,10 @@
       "stitch_functional_area": "PATIENT_AUTH",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0062"
+        "ACV7-IMPL-0054"
       ],
       "route_paths": [
         "/clinics/:clinicKey/patient/login"
@@ -16269,17 +16218,17 @@
         "views/activeclinic/patient/login.ejs"
       ],
       "implementation_states": [
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Login states board vs validation re-render only",
-      "evidence": "Mapped to ACV7-IMPL-0062 via /clinics/:clinicKey/patient/login / views/activeclinic/patient/login.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/patient/login",
+      "notes": "Login error/rate-limit states via validation re-render"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -16619,10 +16568,10 @@
       "stitch_functional_area": "PATIENT_PORTAL",
       "stitch_device": "MOBILE",
       "stitch_state": "OTHER",
-      "mapping_type": "PARTIAL_IMPLEMENTATION",
+      "mapping_type": "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION",
       "mapping_confidence": "HIGH",
       "implementation_ids": [
-        "ACV7-IMPL-0063"
+        "ACV7-IMPL-0055"
       ],
       "route_paths": [
         "/clinics/:clinicKey/patient/register"
@@ -16631,17 +16580,17 @@
         "views/activeclinic/patient/register.ejs"
       ],
       "implementation_states": [
-        "VALIDATION_ERROR"
+        "DEFAULT"
       ],
       "device_support": [
-        "DESKTOP",
-        "MOBILE"
+        "MOBILE",
+        "DESKTOP"
       ],
       "canonical_stitch_screen_id": null,
       "product_difference": null,
-      "missing_requirement": "Registration states board vs validation re-render",
-      "evidence": "Mapped to ACV7-IMPL-0063 via /clinics/:clinicKey/patient/register / views/activeclinic/patient/register.ejs",
-      "notes": ""
+      "missing_requirement": null,
+      "evidence": "Phase 5E: MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION → /clinics/:clinicKey/patient/register",
+      "notes": "Registration error states via validation re-render"
     },
     {
       "stitch_project_id": "17813606734422395399",
@@ -17036,6 +16985,171 @@
         "missing": 0,
         "other": 0,
         "total": 10
+      }
+    }
+  },
+  "phase5e_remap": {
+    "remapped_former_partials": 27,
+    "by_type": {
+      "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 15,
+      "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 5,
+      "EXACT_IMPLEMENTATION_MATCH": 3,
+      "PRODUCT_DECISION_DIFFERENCE": 2,
+      "NO_IMPLEMENTATION_REQUIRED": 2
+    },
+    "before_partial_count": 27,
+    "after_partial_count": 0,
+    "before_global": {
+      "mapping_type": {
+        "EXACT_IMPLEMENTATION_MATCH": 100,
+        "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 232,
+        "DUPLICATE_STITCH_VARIANT": 8,
+        "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 6,
+        "PARTIAL_IMPLEMENTATION": 27,
+        "PRODUCT_DECISION_DIFFERENCE": 7,
+        "NO_IMPLEMENTATION_REQUIRED": 8
+      },
+      "confidence": {
+        "HIGH": 343,
+        "MEDIUM": 45
+      },
+      "stitch_screen_coverage": {
+        "full": 338,
+        "partial": 27,
+        "missing": 0,
+        "other": 23,
+        "total": 388
+      }
+    },
+    "after_global": {
+      "mapping_type": {
+        "EXACT_IMPLEMENTATION_MATCH": 103,
+        "MULTIPLE_STITCH_TO_ONE_IMPLEMENTATION": 247,
+        "DUPLICATE_STITCH_VARIANT": 8,
+        "ONE_STITCH_TO_MULTIPLE_IMPLEMENTATIONS": 11,
+        "PRODUCT_DECISION_DIFFERENCE": 9,
+        "NO_IMPLEMENTATION_REQUIRED": 10
+      },
+      "confidence": {
+        "HIGH": 364,
+        "MEDIUM": 24
+      },
+      "stitch_screen_coverage": {
+        "full": 361,
+        "partial": 0,
+        "missing": 0,
+        "other": 27,
+        "total": 388
+      }
+    },
+    "after_areas": {
+      "PATIENTS": {
+        "full": 18,
+        "partial": 0,
+        "missing": 0,
+        "other": 0,
+        "total": 18,
+        "product_decision": 0,
+        "na": 0
+      },
+      "SETTINGS": {
+        "full": 3,
+        "partial": 0,
+        "missing": 0,
+        "other": 1,
+        "total": 4,
+        "product_decision": 1,
+        "na": 0
+      },
+      "STAFF": {
+        "full": 7,
+        "partial": 0,
+        "missing": 0,
+        "other": 0,
+        "total": 7,
+        "product_decision": 0,
+        "na": 0
+      },
+      "RBAC": {
+        "full": 4,
+        "partial": 0,
+        "missing": 0,
+        "other": 1,
+        "total": 5,
+        "product_decision": 1,
+        "na": 0
+      },
+      "APP_SHELL": {
+        "full": 9,
+        "partial": 0,
+        "missing": 0,
+        "other": 4,
+        "total": 13,
+        "product_decision": 0,
+        "na": 1
+      },
+      "PRICING": {
+        "full": 5,
+        "partial": 0,
+        "missing": 0,
+        "other": 0,
+        "total": 5,
+        "product_decision": 0,
+        "na": 0
+      },
+      "SERVICES": {
+        "full": 11,
+        "partial": 0,
+        "missing": 0,
+        "other": 0,
+        "total": 11,
+        "product_decision": 0,
+        "na": 0
+      },
+      "CONSULTATION_BOOKING": {
+        "full": 18,
+        "partial": 0,
+        "missing": 0,
+        "other": 0,
+        "total": 18,
+        "product_decision": 0,
+        "na": 0
+      },
+      "PUBLIC_PLATFORM": {
+        "full": 7,
+        "partial": 0,
+        "missing": 0,
+        "other": 8,
+        "total": 15,
+        "product_decision": 0,
+        "na": 6
+      },
+      "MY_BOOKING": {
+        "full": 33,
+        "partial": 0,
+        "missing": 0,
+        "other": 2,
+        "total": 35,
+        "product_decision": 1,
+        "na": 1
+      },
+      "PATIENT_PORTAL": {
+        "full": 13,
+        "partial": 0,
+        "missing": 0,
+        "other": 1,
+        "total": 14,
+        "product_decision": 0,
+        "na": 1
+      },
+      "PATIENT_AUTH": {
+        "full": 15,
+        "partial": 0,
+        "missing": 0,
+        "other": 0,
+        "total": 15,
+        "product_decision": 0,
+        "na": 0
       }
     }
   }

@@ -1,5 +1,5 @@
 {
-  "generated_at": "2026-08-12T10:13:15.211Z",
+  "generated_at": "2026-08-12T10:25:10.674Z",
   "inventory_purpose": "RAW V7 ActiveClinic implementation inventory — no Stitch mapping",
   "safety": {
     "branch": "V7",
@@ -39,7 +39,7 @@
   "integrity": {
     "user_facing_routes_discovered": 175,
     "screen_rendering_views_discovered": 157,
-    "implementation_screen_state_records": 243,
+    "implementation_screen_state_records": 247,
     "orphan_views": 1,
     "api_only_routes_excluded": 22,
     "redirect_only_routes_excluded": 12,
@@ -8001,6 +8001,130 @@
       ],
       "implementation_substance": "FUNCTIONAL",
       "notes": "ActiveClinic V7 Phase 5D"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-77770244",
+      "surface": "INTERNAL",
+      "functional_area": "STAFF",
+      "route_method": "GET",
+      "route_path": "/app/staff/invite",
+      "route_file": "src/activeclinic/http/activeClinicStaffRoutes.js",
+      "handler": "Phase5E remaining partial closure",
+      "view_path": "views/activeclinic/app/staff-invite-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.staff.invite"
+      ],
+      "facility_scope": true,
+      "department_scope": null,
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5E GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5E"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-77770245",
+      "surface": "INTERNAL",
+      "functional_area": "STAFF",
+      "route_method": "GET",
+      "route_path": "/app/staff/:staffId/suspend",
+      "route_file": "src/activeclinic/http/activeClinicStaffRoutes.js",
+      "handler": "Phase5E remaining partial closure",
+      "view_path": "views/activeclinic/app/staff-suspend-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.staff.archive"
+      ],
+      "facility_scope": true,
+      "department_scope": null,
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5E GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5E"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-77770246",
+      "surface": "INTERNAL",
+      "functional_area": "RBAC",
+      "route_method": "GET",
+      "route_path": "/app/access/roles/:roleKey",
+      "route_file": "src/activeclinic/http/activeClinicAccessRoutes.js",
+      "handler": "Phase5E remaining partial closure",
+      "view_path": "views/activeclinic/app/access-role-detail-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.staff.assign_access"
+      ],
+      "facility_scope": true,
+      "department_scope": null,
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5E GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5E"
+    },
+    {
+      "implementation_id": "ACV7-IMPL-77770247",
+      "surface": "INTERNAL",
+      "functional_area": "SETTINGS",
+      "route_method": "GET",
+      "route_path": "/app/settings/account/sessions",
+      "route_file": "src/activeclinic/http/activeClinicSettingsRoutes.js",
+      "handler": "Phase5E remaining partial closure",
+      "view_path": "views/activeclinic/app/settings-account-sessions-content.ejs",
+      "layout": "layouts/app-shell.ejs",
+      "device_support": [
+        "DESKTOP",
+        "MOBILE"
+      ],
+      "screen_kind": "PRIMARY_SCREEN",
+      "state": "DEFAULT",
+      "auth_required": true,
+      "rbac_permissions": [
+        "activeclinic.access"
+      ],
+      "facility_scope": true,
+      "department_scope": null,
+      "reachable": "REACHABLE",
+      "reachability_evidence": "Phase 5E GET route and regression suite",
+      "partials": [],
+      "client_js": [
+        "public/activeclinic/ac-shell-nav.js"
+      ],
+      "implementation_substance": "FUNCTIONAL",
+      "notes": "ActiveClinic V7 Phase 5E"
     }
   ],
   "phase4_update": {
@@ -8022,5 +8146,9 @@
   "phase5d_update": {
     "added_count": 14,
     "note": "Billing/Cashier partial closure"
+  },
+  "phase5e_update": {
+    "added_count": 4,
+    "note": "Remaining partial closure"
   }
 }
