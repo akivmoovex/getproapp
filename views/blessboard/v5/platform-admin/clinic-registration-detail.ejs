@@ -2,26 +2,56 @@
 <%
   var app = application || {};
   var loc = [app.address, app.city, app.province, app.country_code].filter(Boolean).join(', ');
+  var events = typeof reviewHistory !== 'undefined' && reviewHistory ? reviewHistory : [];
+  var notes = typeof reviewNotes !== 'undefined' && reviewNotes ? reviewNotes : [];
+  var flashNotice = typeof notice !== 'undefined' ? String(notice || '') : '';
+  var flashError = typeof error !== 'undefined' ? String(error || '') : '';
+  function noticeText(code) {
+    if (code === 'approved') return 'Application approved.';
+    if (code === 'rejected') return 'Application rejected. The reason was recorded. Email was not sent.';
+    if (code === 'information_requested') return 'Information request recorded. Email was not sent.';
+    if (code === 'information_returned') return 'Information marked as returned. Application is back in review.';
+    if (code === 'note_saved') return 'Internal note saved.';
+    return code || '';
+  }
+  function errorText(code) {
+    if (code === 'csrf') return 'Invalid or missing security token. Reload and try again.';
+    if (code === 'rejection_reason_required') return 'Enter a rejection reason of at least 3 characters.';
+    if (code === 'request_text_required') return 'Enter the information you need from the applicant.';
+    if (code === 'note_required') return 'Enter an internal note.';
+    if (code === 'not_awaiting_customer') return 'This application is not awaiting customer information.';
+    if (code === 'application_not_eligible') return 'This action is not available for the current application status.';
+    if (code === 'application_not_found') return 'This clinic registration could not be found.';
+    return code ? 'Something went wrong.' : '';
+  }
+  var noticeMsg = noticeText(flashNotice);
+  var errorMsg = errorText(flashError);
+  var pending = app.status === 'pending_review';
+  var awaiting = pending && app.follow_up_status === 'awaiting_customer';
 %>
-<section class="bb-pa-page">
+<section class="bb-pa-page" data-ac-clinic-reg-detail="1">
   <p><a href="/admin/clinic-registrations">← Clinic registrations</a></p>
   <h1><%= app.clinic_name || 'Clinic registration' %></h1>
   <p class="bb-pa-hint">Reference <%= app.application_number %></p>
-  <% if (typeof notice !== 'undefined' && notice) { %>
-  <p class="bb-pa-notice" role="status"><%= notice %></p>
+  <% if (noticeMsg) { %>
+  <p class="bb-pa-notice" role="status" data-ac-clinic-reg-notice="<%= flashNotice %>"><%= noticeMsg %></p>
   <% } %>
-  <% if (typeof error !== 'undefined' && error) { %>
-  <p class="bb-pa-error" role="alert"><%= error %></p>
+  <% if (errorMsg) { %>
+  <p class="bb-pa-error" role="alert" data-ac-clinic-reg-error="<%= flashError %>"><%= errorMsg %></p>
   <% } %>
   <dl class="bb-pa-dl">
-    <div><dt>Status</dt><dd><%= app.status %></dd></div>
-    <div><dt>Provisioning</dt><dd><%= app.provisioning_status || 'not_started' %></dd></div>
+    <div><dt>Status</dt><dd data-ac-application-status="<%= app.status %>"><%= app.status %></dd></div>
+    <div><dt>Follow-up</dt><dd data-ac-follow-up-status="<%= app.follow_up_status || 'none' %>"><%= app.follow_up_status || 'none' %></dd></div>
+    <div><dt>Provisioning</dt><dd data-ac-provisioning-status="<%= app.provisioning_status || 'not_started' %>"><%= app.provisioning_status || 'not_started' %></dd></div>
     <div><dt>Submitted</dt><dd><%= app.created_at ? new Date(app.created_at).toISOString() : '—' %></dd></div>
     <div><dt>Administrator</dt><dd><%= app.contact_name %></dd></div>
     <div><dt>Email</dt><dd><%= app.contact_email_display %></dd></div>
     <div><dt>Phone</dt><dd><%= app.contact_phone_display %></dd></div>
     <div><dt>Location</dt><dd><%= loc || '—' %></dd></div>
-    <div><dt>Notes</dt><dd><%= app.notes || '—' %></dd></div>
+    <div><dt>Applicant notes</dt><dd><%= app.notes || '—' %></dd></div>
+    <% if (app.rejection_reason) { %>
+    <div><dt>Rejection reason</dt><dd data-ac-rejection-reason="1"><%= app.rejection_reason %></dd></div>
+    <% } %>
     <% if (app.organization_id) { %>
     <div><dt>Organization</dt><dd><code><%= app.organization_id %></code></dd></div>
     <% } %>
@@ -29,17 +59,89 @@
     <div><dt>Last provision error</dt><dd><%= app.last_provision_error %></dd></div>
     <% } %>
   </dl>
-  <% if (app.status === 'pending_review' || (app.status === 'approved' && app.provisioning_status !== 'provisioned')) { %>
+
+  <% if (pending || (app.status === 'approved' && app.provisioning_status !== 'provisioned')) { %>
   <form method="post" action="/admin/clinic-registrations/<%= app.id %>/approve">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <button type="submit" class="bb-pa-btn"><%= app.status === 'approved' ? 'Retry provision' : 'Approve and provision' %></button>
   </form>
   <% } %>
-  <% if (app.status === 'pending_review') { %>
-  <form method="post" action="/admin/clinic-registrations/<%= app.id %>/reject">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Reject</button>
-  </form>
+
+  <% if (pending) { %>
+  <section class="bb-pa-panel" data-ac-clinic-reg-request-info="1">
+    <h2 class="bb-pa-section-title">Request information</h2>
+    <p class="bb-pa-hint">The application stays pending review. This records the request in history. Email is not sent from this screen.</p>
+    <form class="bb-pa-form" method="post" action="/admin/clinic-registrations/<%= app.id %>/request-information">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label class="bb-pa-field">
+        <span class="bb-pa-field__label">Request text</span>
+        <textarea name="request_text" rows="4" maxlength="8000" required data-ac-request-text="1"></textarea>
+      </label>
+      <button type="submit" class="bb-pa-btn">Record information request</button>
+    </form>
+    <% if (awaiting) { %>
+    <form class="bb-pa-form" method="post" action="/admin/clinic-registrations/<%= app.id %>/information-returned">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <p class="bb-pa-hint">Applicant resubmission portal is not available. Mark returned when the applicant has provided the information.</p>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--ghost" data-ac-mark-returned="1">Mark information returned</button>
+    </form>
+    <% } %>
+  </section>
+
+  <section class="bb-pa-panel" data-ac-clinic-reg-reject="1">
+    <h2 class="bb-pa-section-title">Reject application</h2>
+    <p class="bb-pa-hint">Rejected applications remain visible historically. Email is not sent from this screen.</p>
+    <form class="bb-pa-form" method="post" action="/admin/clinic-registrations/<%= app.id %>/reject">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label class="bb-pa-field">
+        <span class="bb-pa-field__label">Rejection reason</span>
+        <textarea name="rejection_reason" rows="3" maxlength="2000" required data-ac-rejection-reason-input="1"></textarea>
+      </label>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Reject</button>
+    </form>
+  </section>
   <% } %>
+
+  <section class="bb-pa-panel" data-ac-clinic-reg-notes="1">
+    <h2 class="bb-pa-section-title">Internal review notes</h2>
+    <p class="bb-pa-hint">Notes are Platform Admin only. They are never shown on public clinic pages.</p>
+    <% if (!notes.length) { %>
+    <p class="bb-pa-hint">No internal notes yet.</p>
+    <% } %>
+    <% notes.forEach(function (note) { %>
+    <article class="bb-pa-note" data-ac-review-note="1">
+      <p><%= note.body %></p>
+      <p class="bb-pa-hint"><%= note.actorLabel || 'Platform admin' %> · <%= note.createdAt ? new Date(note.createdAt).toISOString() : '' %></p>
+    </article>
+    <% }) %>
+    <form class="bb-pa-form" method="post" action="/admin/clinic-registrations/<%= app.id %>/notes">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label class="bb-pa-field">
+        <span class="bb-pa-field__label">Add note</span>
+        <textarea name="note_body" rows="3" maxlength="8000" required data-ac-note-body="1"></textarea>
+      </label>
+      <button type="submit" class="bb-pa-btn">Save note</button>
+    </form>
+  </section>
+
+  <section class="bb-pa-panel" data-ac-clinic-reg-history="1">
+    <h2 class="bb-pa-section-title">Review history</h2>
+    <% if (!events.length) { %>
+    <p class="bb-pa-hint">No history recorded yet.</p>
+    <% } %>
+    <ol class="bb-pa-list">
+      <% events.forEach(function (ev) { %>
+      <li data-ac-history-event="<%= ev.eventType %>">
+        <strong><%= ev.label %></strong>
+        <span class="bb-pa-hint"><%= ev.createdAt ? new Date(ev.createdAt).toISOString() : '' %></span>
+        <% if (ev.actorLabel) { %><span class="bb-pa-hint"> · <%= ev.actorLabel %></span><% } %>
+        <% if (ev.body) { %><p><%= ev.body %></p><% } %>
+        <% if (ev.eventType === 'information_requested' || ev.eventType === 'rejection') { %>
+        <p class="bb-pa-hint"><%= ev.deliveryClaimedSent ? 'Outbound message sent.' : 'Recorded only. Email was not sent.' %></p>
+        <% } %>
+      </li>
+      <% }) %>
+    </ol>
+  </section>
 </section>
 <%- include('../partials/platform-admin-shell-end') %>

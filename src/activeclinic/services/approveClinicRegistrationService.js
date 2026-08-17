@@ -29,6 +29,7 @@ const {
 const { ensureDefaultDepartments } = require("./activeClinicDepartmentService");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const { recordWebsiteAudit } = require("../../platform/website/auditService");
+const { appendReviewEvent } = require("./clinicRegistrationReviewService");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -37,6 +38,7 @@ const RESULT = Object.freeze({
   NOT_ELIGIBLE: "application_not_eligible",
   ALREADY_PROVISIONED: "already_provisioned",
   ALREADY_REJECTED: "already_rejected",
+  REJECTION_REASON_REQUIRED: "rejection_reason_required",
   TENANT_FAILED: "tenant_provision_failed",
   CLINIC_FAILED: "clinic_provision_failed",
   ADMIN_FAILED: "clinic_admin_failed",
@@ -194,6 +196,13 @@ async function approveAndProvisionClinicRegistration(db, input) {
     }
 
     await updateApplication(client, app.id, { provisioning_status: "in_progress" });
+    await appendReviewEvent(client, {
+      applicationId: app.id,
+      eventType: "provisioning_started",
+      actorId: input.actorIdentityId,
+      visibility: "history",
+      deliveryStatus: "not_applicable",
+    });
 
     let organizationId = app.organization_id;
     let slug = null;
@@ -212,6 +221,14 @@ async function approveAndProvisionClinicRegistration(db, input) {
         await updateApplication(client, app.id, {
           provisioning_status: "failed",
           last_provision_error: tenant.message || tenant.status || "tenant_failed",
+        });
+        await appendReviewEvent(client, {
+          applicationId: app.id,
+          eventType: "provisioning_failed",
+          body: String(tenant.message || tenant.status || "tenant_failed").slice(0, 200),
+          actorId: input.actorIdentityId,
+          visibility: "history",
+          deliveryStatus: "not_applicable",
         });
         return { ok: false, code: RESULT.TENANT_FAILED, reason: tenant.status };
       }
@@ -244,6 +261,14 @@ async function approveAndProvisionClinicRegistration(db, input) {
         organization_id: organizationId,
         provisioning_status: "failed",
         last_provision_error: clinic.code || "clinic_failed",
+      });
+      await appendReviewEvent(client, {
+        applicationId: app.id,
+        eventType: "provisioning_failed",
+        body: String(clinic.code || "clinic_failed").slice(0, 200),
+        actorId: input.actorIdentityId,
+        visibility: "history",
+        deliveryStatus: "not_applicable",
       });
       return { ok: false, code: RESULT.CLINIC_FAILED, reason: clinic.code, organizationId };
     }
@@ -279,6 +304,14 @@ async function approveAndProvisionClinicRegistration(db, input) {
           provisioning_status: "failed",
           last_provision_error: admin.code || "clinic_admin_failed",
         });
+        await appendReviewEvent(client, {
+          applicationId: app.id,
+          eventType: "provisioning_failed",
+          body: String(admin.code || "clinic_admin_failed").slice(0, 200),
+          actorId: input.actorIdentityId,
+          visibility: "history",
+          deliveryStatus: "not_applicable",
+        });
         return { ok: false, code: RESULT.ADMIN_FAILED, reason: admin.code, organizationId };
       }
       if (facility && facility.id) {
@@ -305,6 +338,22 @@ async function approveAndProvisionClinicRegistration(db, input) {
       reviewed_by_platform_identity_id: input.actorIdentityId || null,
       last_provision_error: websiteOk ? null : clinic.code || "website_provision_failed",
       administrator_password_hash: null,
+    });
+
+    await appendReviewEvent(client, {
+      applicationId: app.id,
+      eventType: "approval",
+      actorId: input.actorIdentityId,
+      visibility: "history",
+      deliveryStatus: "not_applicable",
+    });
+    await appendReviewEvent(client, {
+      applicationId: app.id,
+      eventType: websiteOk ? "provisioning_succeeded" : "provisioning_failed",
+      body: websiteOk ? null : String(clinic.code || "website_provision_failed").slice(0, 200),
+      actorId: input.actorIdentityId,
+      visibility: "history",
+      deliveryStatus: "not_applicable",
     });
 
     await recordAuditEventSafe(client, {
@@ -355,6 +404,9 @@ async function rejectClinicRegistration(db, input) {
   if (!UUID_RE.test(applicationId)) {
     return { ok: false, code: RESULT.INVALID_INPUT };
   }
+  const rejectionReason = String(
+    (input && (input.rejectionReason != null ? input.rejectionReason : input.reason)) || ""
+  ).trim();
   const run = async (client) => {
     const app = await loadApplication(client, applicationId);
     if (!app) return { ok: false, code: RESULT.NOT_FOUND };
@@ -364,14 +416,32 @@ async function rejectClinicRegistration(db, input) {
     if (app.status !== "pending_review") {
       return { ok: false, code: RESULT.NOT_ELIGIBLE, application: app };
     }
+    if (rejectionReason.length < 3 || rejectionReason.length > 2000) {
+      return { ok: false, code: RESULT.REJECTION_REASON_REQUIRED };
+    }
     await updateApplication(client, app.id, {
       status: "rejected",
+      rejection_reason: rejectionReason,
       reviewed_at: new Date().toISOString(),
       reviewed_by_platform_identity_id: input.actorIdentityId || null,
       administrator_password_hash: null,
       last_provision_error: null,
     });
-    return { ok: true, code: RESULT.OK, applicationId: app.id };
+    await appendReviewEvent(client, {
+      applicationId: app.id,
+      eventType: "rejection",
+      body: rejectionReason,
+      actorId: input.actorIdentityId,
+      visibility: "history",
+      deliveryStatus: "sending_unavailable",
+    });
+    return {
+      ok: true,
+      code: RESULT.OK,
+      applicationId: app.id,
+      rejectionReason,
+      emailSent: false,
+    };
   };
   if (db && typeof db.connect === "function" && typeof db.release !== "function") {
     return withProvisioningTransaction(db, run);

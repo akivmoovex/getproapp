@@ -2,16 +2,43 @@
 <%
   var rows = applications || [];
   var f = filters || {};
+  var q = f.q || '';
+  var follow = f.followUpStatus || 'all';
+  var prov = f.provisioningStatus || 'all';
 %>
-<section class="bb-pa-page">
+<section class="bb-pa-page" data-ac-clinic-reg-queue="1">
   <h1>Clinic Registrations</h1>
-  <form method="get" action="/admin/clinic-registrations" class="bb-pa-filters">
-    <label>Status
-      <select name="status">
+  <form method="get" action="/admin/clinic-registrations" class="bb-pa-filters bb-pa-form">
+    <label class="bb-pa-field">Search
+      <input type="search" name="q" value="<%= q %>" placeholder="Application number, clinic, admin, email, phone" data-ac-clinic-reg-search="1" />
+    </label>
+    <label class="bb-pa-field">Status
+      <select name="status" data-ac-clinic-reg-status-filter="1">
         <option value="pending_review" <%= f.status === 'pending_review' ? 'selected' : '' %>>Pending review</option>
         <option value="approved" <%= f.status === 'approved' ? 'selected' : '' %>>Approved</option>
         <option value="rejected" <%= f.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
+        <option value="withdrawn" <%= f.status === 'withdrawn' ? 'selected' : '' %>>Withdrawn</option>
+        <option value="duplicate" <%= f.status === 'duplicate' ? 'selected' : '' %>>Duplicate</option>
         <option value="all" <%= f.status === 'all' ? 'selected' : '' %>>All</option>
+      </select>
+    </label>
+    <label class="bb-pa-field">Follow-up
+      <select name="follow_up_status" data-ac-clinic-reg-follow-up-filter="1">
+        <option value="all" <%= follow === 'all' ? 'selected' : '' %>>All</option>
+        <option value="none" <%= follow === 'none' ? 'selected' : '' %>>None</option>
+        <option value="under_review" <%= follow === 'under_review' ? 'selected' : '' %>>Under review</option>
+        <option value="awaiting_customer" <%= follow === 'awaiting_customer' ? 'selected' : '' %>>Awaiting customer</option>
+        <option value="returned_for_review" <%= follow === 'returned_for_review' ? 'selected' : '' %>>Returned for review</option>
+      </select>
+    </label>
+    <label class="bb-pa-field">Provisioning
+      <select name="provisioning_status" data-ac-clinic-reg-provisioning-filter="1">
+        <option value="all" <%= prov === 'all' ? 'selected' : '' %>>All</option>
+        <option value="not_started" <%= prov === 'not_started' ? 'selected' : '' %>>Not started</option>
+        <option value="in_progress" <%= prov === 'in_progress' ? 'selected' : '' %>>In progress</option>
+        <option value="website_pending" <%= prov === 'website_pending' ? 'selected' : '' %>>Website pending</option>
+        <option value="provisioned" <%= prov === 'provisioned' ? 'selected' : '' %>>Provisioned</option>
+        <option value="failed" <%= prov === 'failed' ? 'selected' : '' %>>Failed</option>
       </select>
     </label>
     <button type="submit" class="bb-pa-btn">Filter</button>
@@ -25,22 +52,24 @@
         <th>Location</th>
         <th>Submitted</th>
         <th>Status</th>
+        <th>Follow-up</th>
         <th>Provisioning</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       <% if (!rows.length) { %>
-      <tr><td colspan="8">No clinic registration applications.</td></tr>
+      <tr><td colspan="9">No clinic registration applications.</td></tr>
       <% } %>
       <% rows.forEach(function (app) { %>
-      <tr>
+      <tr data-ac-clinic-reg-row="<%= app.id %>">
         <td><a href="/admin/clinic-registrations/<%= app.id %>"><%= app.application_number %></a></td>
         <td><%= app.clinic_name %></td>
         <td><%= app.contact_name %><br/><span class="bb-pa-hint"><%= app.contact_email_display %></span><br/><span class="bb-pa-hint"><%= app.contact_phone_display %></span></td>
         <td><%= [app.city, app.province, app.country_code].filter(Boolean).join(', ') || '—' %></td>
         <td><%= app.created_at ? new Date(app.created_at).toISOString().slice(0, 10) : '—' %></td>
-        <td><span class="bb-pa-chip"><%= app.status %></span></td>
+        <td><span class="bb-pa-chip" data-ac-application-status="<%= app.status %>"><%= app.status %></span></td>
+        <td><span class="bb-pa-hint" data-ac-follow-up-status="<%= app.follow_up_status || 'none' %>"><%= app.follow_up_status || 'none' %></span></td>
         <td><%= app.provisioning_status || 'not_started' %></td>
         <td>
           <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/clinic-registrations/<%= app.id %>">Review</a>

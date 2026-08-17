@@ -21,6 +21,13 @@ const {
   setClinicWebsiteAvailability,
   loadClinicWebsiteOperational,
 } = require("../../activeclinic/services/clinicWebsiteAvailabilityService");
+const {
+  listClinicRegistrationApplications,
+  getClinicRegistrationDetail,
+  requestClinicRegistrationInformation,
+  markClinicRegistrationInformationReturned,
+  addClinicRegistrationReviewNote,
+} = require("../../activeclinic/services/clinicRegistrationReviewService");
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 const { getDeploymentEnvMode } = require("../../church/blessBoardEnv");
 
@@ -377,20 +384,19 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
     }
   });
 
+  function clinicRegDetailPath(applicationId) {
+    return `/admin/clinic-registrations/${encodeURIComponent(applicationId)}`;
+  }
+
   router.get("/admin/clinic-registrations", requireApex, requirePlatformAdmin, async (req, res, next) => {
     try {
       setAdminNoStore(res);
-      const status = String(req.query.status || "pending_review").trim();
-      const listed = await getPool().query(
-        `SELECT id, application_number, clinic_name, contact_name, contact_email_display,
-                contact_phone_display, province, city, address, country_code,
-                status, provisioning_status, created_at, organization_id
-           FROM activeclinic.clinic_registration_applications
-          WHERE ($1 = 'all' OR status = $1)
-          ORDER BY created_at DESC
-          LIMIT 100`,
-        [status]
-      );
+      const listed = await listClinicRegistrationApplications(getPool(), {
+        status: req.query.status,
+        followUpStatus: req.query.follow_up_status,
+        provisioningStatus: req.query.provisioning_status,
+        q: req.query.q,
+      });
       const html = renderPlatformAdminView("platform-admin/clinic-registrations.ejs", {
         ...buildPlatformAdminShellLocals(req, res, {
           env,
@@ -398,8 +404,8 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           activeNav: "clinic-registrations",
           pageTitle: "Clinic Registrations",
         }),
-        applications: listed.rows,
-        filters: { status },
+        applications: listed.applications,
+        filters: listed.filters,
       });
       return res.status(200).type("html").send(html);
     } catch (err) {
@@ -410,17 +416,8 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
   router.get("/admin/clinic-registrations/:applicationId", requireApex, requirePlatformAdmin, async (req, res, next) => {
     try {
       setAdminNoStore(res);
-      const listed = await getPool().query(
-        `SELECT id, application_number, clinic_name, contact_name, contact_email_display,
-                contact_phone_display, province, city, address, country_code, notes,
-                status, provisioning_status, created_at, reviewed_at, organization_id,
-                last_provision_error
-           FROM activeclinic.clinic_registration_applications
-          WHERE id = $1
-          LIMIT 1`,
-        [req.params.applicationId]
-      );
-      if (!listed.rows[0]) {
+      const detail = await getClinicRegistrationDetail(getPool(), req.params.applicationId);
+      if (!detail.ok) {
         return res.redirect(303, "/admin/clinic-registrations?error=not_found");
       }
       const html = renderPlatformAdminView("platform-admin/clinic-registration-detail.ejs", {
@@ -430,7 +427,9 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           activeNav: "clinic-registrations",
           pageTitle: "Clinic registration",
         }),
-        application: listed.rows[0],
+        application: detail.application,
+        reviewHistory: detail.history,
+        reviewNotes: detail.notes,
         notice: String(req.query.notice || ""),
         error: String(req.query.error || ""),
       });
@@ -453,9 +452,68 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         deploymentCode: getPlatformDeploymentCode(env),
       });
       if (!result.ok) {
-        return res.redirect(303, `/admin/clinic-registrations/${encodeURIComponent(req.params.applicationId)}?error=${encodeURIComponent(result.code)}`);
+        return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?error=${encodeURIComponent(result.code)}`);
       }
-      return res.redirect(303, `/admin/clinic-registrations/${encodeURIComponent(req.params.applicationId)}?notice=approved`);
+      return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?notice=approved`);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.post("/admin/clinic-registrations/:applicationId/request-information", requireApex, requirePlatformAdmin, async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?error=csrf`);
+      }
+      const result = await requestClinicRegistrationInformation(getPool(), {
+        applicationId: req.params.applicationId,
+        actorId: actorId(req),
+        requestText: req.body && req.body.request_text,
+        deploymentCode: getPlatformDeploymentCode(env),
+      });
+      if (!result.ok) {
+        return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?error=${encodeURIComponent(result.code)}`);
+      }
+      return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?notice=information_requested`);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.post("/admin/clinic-registrations/:applicationId/information-returned", requireApex, requirePlatformAdmin, async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?error=csrf`);
+      }
+      const result = await markClinicRegistrationInformationReturned(getPool(), {
+        applicationId: req.params.applicationId,
+        actorId: actorId(req),
+        note: req.body && req.body.return_note,
+        deploymentCode: getPlatformDeploymentCode(env),
+      });
+      if (!result.ok) {
+        return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?error=${encodeURIComponent(result.code)}`);
+      }
+      return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?notice=information_returned`);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.post("/admin/clinic-registrations/:applicationId/notes", requireApex, requirePlatformAdmin, async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?error=csrf`);
+      }
+      const result = await addClinicRegistrationReviewNote(getPool(), {
+        applicationId: req.params.applicationId,
+        actorId: actorId(req),
+        body: req.body && req.body.note_body,
+      });
+      if (!result.ok) {
+        return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?error=${encodeURIComponent(result.code)}`);
+      }
+      return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?notice=note_saved`);
     } catch (err) {
       return next(err);
     }
@@ -469,11 +527,12 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
       const result = await rejectClinicRegistration(getPool(), {
         applicationId: req.params.applicationId,
         actorIdentityId: actorId(req),
+        rejectionReason: req.body && req.body.rejection_reason,
       });
       if (!result.ok) {
-        return res.redirect(303, `/admin/clinic-registrations/${encodeURIComponent(req.params.applicationId)}?error=${encodeURIComponent(result.code)}`);
+        return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?error=${encodeURIComponent(result.code)}`);
       }
-      return res.redirect(303, `/admin/clinic-registrations/${encodeURIComponent(req.params.applicationId)}?notice=rejected`);
+      return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?notice=rejected`);
     } catch (err) {
       return next(err);
     }

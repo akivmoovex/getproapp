@@ -398,7 +398,10 @@ describe("ActiveClinic public clinic onboarding", () => {
       `SELECT id FROM activeclinic.clinic_registration_applications WHERE contact_email_normalized = $1`,
       [email]
     );
-    const rejected = await rejectClinicRegistration(pool, { applicationId: row.rows[0].id });
+    const rejected = await rejectClinicRegistration(pool, {
+      applicationId: row.rows[0].id,
+      rejectionReason: "Unable to verify clinic details",
+    });
     assert.equal(rejected.ok, true);
     const after = await pool.query(
       `SELECT status, administrator_password_hash FROM activeclinic.clinic_registration_applications WHERE id = $1`,
