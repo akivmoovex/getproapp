@@ -179,6 +179,7 @@ function createActiveClinicFoundationApp(options) {
   }
 
   app.use(express.urlencoded({ extended: false }));
+  app.use(express.json({ limit: "1mb" }));
   app.use((req, res, next) => {
     parseCookies(req);
     next();
@@ -212,6 +213,10 @@ function createActiveClinicFoundationApp(options) {
 
   // Register public routes BEFORE auth routes (public takes precedence over auth landing)
   registerActiveClinicPublicRoutes(app, { getPool, env, isProduction });
+  const { registerActiveClinicWebsiteRoutes } = require("./activeClinicWebsiteRoutes");
+  const { registerActiveClinicWebsiteTemplate } = require("../website/activeClinicWebsiteTemplate");
+  registerActiveClinicWebsiteTemplate();
+  registerActiveClinicWebsiteRoutes(app, { getPool, env, isProduction });
 
   // Register patient portal routes (public, tenant-scoped)
   const {

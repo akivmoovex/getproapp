@@ -225,6 +225,9 @@ const {
 const { formatRoleLabel } = require("../../blessboard/http/renderTenantLandingPage");
 const { buildPlatformAdminShellLocals } = require("./platformAdminShellLocals");
 const {
+  registerPlatformWebsiteAdminRoutes,
+} = require("./platformWebsiteAdminRoutes");
+const {
   CSRF_FIELD,
   validateCsrf,
 } = require("./v5Csrf");
@@ -5088,6 +5091,16 @@ function createPlatformAdminRouter(deps) {
       return res.redirect(303, `${detailPath}?notice=Assignment%20revoked.`);
     }
   );
+
+  registerPlatformWebsiteAdminRoutes(router, {
+    getPool,
+    env,
+    requireApex,
+    requirePlatformAdmin,
+    renderPlatformAdminView,
+    buildPlatformAdminShellLocals,
+    setAdminNoStore,
+  });
 
   return router;
 }

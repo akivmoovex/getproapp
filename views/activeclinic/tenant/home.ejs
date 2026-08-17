@@ -28,14 +28,9 @@
         Caring for our community
       </p>
       <% } %>
-      <h1 id="ac-tenant-hero-title">Welcome to <%= clinic.publicName %></h1>
+      <h1 id="ac-tenant-hero-title"><%- include('../partials/website-editable-field', { contentKey: 'home.hero.title', fieldValue: clinic.heroTitle || ('Welcome to ' + clinic.publicName), fieldType: 'short_text' }) %></h1>
       <p class="ac-tenant-hero__lede">
-        <% if (locationLine) { %><%= locationLine %>. <% } %>
-        <% if (clinic.websiteAbout) { %>
-          <%= clinic.websiteAbout.length > 160 ? clinic.websiteAbout.slice(0, 160) + "…" : clinic.websiteAbout %>
-        <% } else { %>
-          Providing compassionate, professional healthcare for our community.
-        <% } %>
+        <%- include('../partials/website-editable-field', { contentKey: 'home.hero.subtitle', fieldValue: clinic.heroSubtitle || clinic.websiteAbout || 'Providing compassionate, professional healthcare for our community.', fieldType: 'long_text' }) %>
       </p>
       <div class="ac-tenant-hero__actions">
         <% if (clinic.publicBookingEnabled) { %>

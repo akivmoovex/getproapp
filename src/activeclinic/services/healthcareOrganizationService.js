@@ -69,6 +69,46 @@ function trimName(value, max) {
   return text;
 }
 
+async function provisionActiveClinicWebsiteSafely(db, input) {
+  const run = async () => {
+    const orgRow = await db.query(
+      `SELECT organization_key FROM platform.organizations WHERE id = $1 LIMIT 1`,
+      [input.organizationId]
+    );
+    const slug = orgRow.rows[0] && orgRow.rows[0].organization_key;
+    if (!slug) return;
+    const { provisionActiveClinicWebsite } = require("../website/provisionActiveClinicWebsite");
+    await provisionActiveClinicWebsite(db, {
+      organizationId: input.organizationId,
+      slug,
+      publicName: input.publicName,
+      healthcareOrganizationId: input.healthcareOrganizationId,
+      actorIdentityId: input.actorIdentityId || null,
+      status: "coming_soon",
+    });
+  };
+  const { isConnectedClient } = require("../../platform/db/provisioningTransaction");
+  if (isConnectedClient(db)) {
+    await db.query("SAVEPOINT ac_website_provision");
+    try {
+      await run();
+      await db.query("RELEASE SAVEPOINT ac_website_provision");
+    } catch {
+      try {
+        await db.query("ROLLBACK TO SAVEPOINT ac_website_provision");
+      } catch {
+        /* outer caller handles aborted TX */
+      }
+    }
+    return;
+  }
+  try {
+    await run();
+  } catch {
+    /* website provision is retry-safe and must not fail clinic creation */
+  }
+}
+
 /**
  * @param {{ query: Function }} db
  * @param {{
@@ -164,6 +204,15 @@ async function createHealthcareOrganization(db, input) {
         actor_platform_identity_id: input.actorPlatformIdentityId || null,
       },
     });
+
+    if (input.skipWebsiteProvision !== true) {
+      await provisionActiveClinicWebsiteSafely(db, {
+        organizationId,
+        publicName,
+        healthcareOrganizationId: row.id,
+        actorIdentityId: input.actorPlatformIdentityId || null,
+      });
+    }
 
     return {
       ok: true,

@@ -1,0 +1,50 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = submissions || [];
+  var f = filters || {};
+%>
+<section class="bb-pa-page">
+  <h1>Website Changes</h1>
+  <form method="get" action="/admin/website-changes" class="bb-pa-filters">
+    <label>Status
+      <select name="status">
+        <option value="submitted" <%= f.status === 'submitted' ? 'selected' : '' %>>Submitted</option>
+        <option value="approved" <%= f.status === 'approved' ? 'selected' : '' %>>Approved</option>
+        <option value="rejected" <%= f.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
+        <option value="all" <%= f.status === 'all' ? 'selected' : '' %>>All</option>
+      </select>
+    </label>
+    <label>Clinic
+      <input name="clinic" value="<%= f.clinic || '' %>" maxlength="80"/>
+    </label>
+    <button type="submit" class="bb-pa-btn">Filter</button>
+  </form>
+  <table class="bb-pa-table">
+    <thead>
+      <tr>
+        <th>Clinic</th>
+        <th>Slug</th>
+        <th>Status</th>
+        <th>Changes</th>
+        <th>Submitted</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!rows.length) { %>
+      <tr><td colspan="6">No website submissions.</td></tr>
+      <% } %>
+      <% rows.forEach(function (s) { %>
+      <tr>
+        <td><%= s.organizationName || s.organizationKey %></td>
+        <td><%= s.slug %></td>
+        <td><span class="bb-pa-chip"><%= s.status %></span></td>
+        <td><%= s.changeCount || 0 %></td>
+        <td><%= s.submittedAt ? String(s.submittedAt).slice(0, 10) : '—' %></td>
+        <td><a class="bb-pa-link" href="/admin/website-changes/<%= s.id %>">Review</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

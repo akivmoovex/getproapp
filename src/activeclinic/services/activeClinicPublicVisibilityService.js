@@ -71,7 +71,8 @@ async function resolvePublishableClinicByKey(db, input) {
   }
 
   const hco = hcoRows.rows[0];
-  if (hco.status !== "active" || hco.website_published !== true) {
+  const allowUnpublished = input && input.allowUnpublished === true;
+  if (hco.status !== "active" || (hco.website_published !== true && !allowUnpublished)) {
     return { ok: false, code: RESULT.NOT_PUBLISHED, clinic: null };
   }
 
@@ -126,6 +127,7 @@ async function resolvePublishableClinicByKey(db, input) {
     publicPhoneDisplay: hco.public_phone_display || null,
     publicEmailDisplay: hco.public_email_display || null,
     publicBookingEnabled: hco.public_booking_enabled === true,
+    websitePublished: hco.website_published === true,
     countryCode: hco.country_code,
     timezone: hco.timezone,
     dataEnvironment: dataEnvironment || null,

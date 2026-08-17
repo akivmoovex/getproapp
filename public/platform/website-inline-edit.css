@@ -1,0 +1,18 @@
+.ac-website-chrome {
+  background: #f4f1ff;
+  border-bottom: 1px solid #d8d0f5;
+  padding: 0.5rem 1rem;
+  display: flex;
+  gap: 1rem;
+  align-items: center;
+  font-size: 0.9rem;
+}
+.ac-website-editable[data-website-editing="1"] {
+  outline: 2px solid #6c5ce7;
+  display: inline-block;
+  min-width: 8rem;
+}
+.ac-website-editable__save,
+.ac-website-editable__cancel {
+  margin-left: 0.35rem;
+}

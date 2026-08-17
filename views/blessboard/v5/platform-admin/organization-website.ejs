@@ -1,0 +1,39 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var org = organization || {};
+  var inst = instance || null;
+  var versions = versions || [];
+  var pending = pendingSubmissions || [];
+  var cl = checklist || null;
+%>
+<section class="bb-pa-page">
+  <h1>Clinic website</h1>
+  <p><%= org.display_name %> · <%= org.organization_key %></p>
+  <% if (!inst) { %>
+  <p>No website instance for this organisation.</p>
+  <% } else { %>
+  <p>Template <%= inst.templateId %> v<%= inst.templateVersion %> · status <%= inst.status %> · unpublished <%= unpublishedCount || 0 %></p>
+  <% if (cl) { %>
+  <p>Checklist <%= cl.percent || 0 %>% complete</p>
+  <% } %>
+  <h2>Pending submissions</h2>
+  <ul>
+    <% pending.forEach(function (s) { %>
+    <li><a href="/admin/website-changes/<%= s.id %>"><%= s.status %> · <%= s.changeCount || 0 %> keys</a></li>
+    <% }) %>
+  </ul>
+  <h2>Versions</h2>
+  <ul>
+    <% versions.forEach(function (v) { %>
+    <li>
+      v<%= v.versionNumber %> · <%= v.status %>
+      <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/versions/<%= v.id %>/restore" style="display:inline">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Restore to draft</button>
+      </form>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

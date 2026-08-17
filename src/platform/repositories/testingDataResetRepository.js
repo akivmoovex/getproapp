@@ -597,6 +597,73 @@ async function purgeOrganizationTree(client, opts) {
   // Website records before churches (publication versions RESTRICT church_id).
   await deleteOrganizationWebsiteRecords(client, organizationId);
 
+  try {
+    await client.query(
+      `UPDATE activeclinic.clinic_registration_applications
+          SET website_instance_id = NULL
+        WHERE organization_id = $1`,
+      [organizationId]
+    );
+  } catch {
+    /* table/column may be absent on older resets */
+  }
+
+  await client.query(
+    `ALTER TABLE platform.website_audit_events DISABLE TRIGGER website_audit_events_no_delete`
+  );
+  try {
+    await client.query(
+      `UPDATE platform.website_submissions SET version_id = NULL WHERE organization_id = $1`,
+      [organizationId]
+    );
+    await client.query(
+      `UPDATE platform.website_versions SET submission_id = NULL WHERE organization_id = $1`,
+      [organizationId]
+    );
+    await client.query(
+      `DELETE FROM platform.website_media_usages WHERE organization_id = $1`,
+      [organizationId]
+    );
+    await client.query(
+      `DELETE FROM platform.website_checklist_state WHERE organization_id = $1`,
+      [organizationId]
+    );
+    await client.query(
+      `DELETE FROM platform.website_content WHERE organization_id = $1`,
+      [organizationId]
+    );
+    await client.query(
+      `DELETE FROM platform.website_submissions WHERE organization_id = $1`,
+      [organizationId]
+    );
+    await client.query(
+      `DELETE FROM platform.website_versions WHERE organization_id = $1`,
+      [organizationId]
+    );
+    await client.query(
+      `DELETE FROM platform.website_media WHERE organization_id = $1`,
+      [organizationId]
+    );
+    await client.query(
+      `DELETE FROM platform.website_audit_events WHERE organization_id = $1`,
+      [organizationId]
+    );
+    await client.query(
+      `DELETE FROM platform.website_instances WHERE organization_id = $1`,
+      [organizationId]
+    );
+  } catch (err) {
+    if (!(err && err.code === "42P01")) throw err;
+  } finally {
+    try {
+      await client.query(
+        `ALTER TABLE platform.website_audit_events ENABLE TRIGGER website_audit_events_no_delete`
+      );
+    } catch {
+      /* table may be absent */
+    }
+  }
+
   const churchResult = await deleteChurchScopedContent(client, churchIds);
 
   await client.query(

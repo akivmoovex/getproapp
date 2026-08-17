@@ -1238,6 +1238,42 @@ async function seedOneClinic(db, clinicKey, options = {}) {
   );
   if (!facility.ok) return { ...facility, clinicKey, counts };
 
+  if (!dryRun && hco.hco) {
+    try {
+      const { migrateJuflonaWebsite } = require("../website/juflonaWebsiteMigration");
+      const { provisionActiveClinicWebsite } = require("../website/provisionActiveClinicWebsite");
+      if (clinicKey === "julflona-clinic") {
+        await migrateJuflonaWebsite(db, {
+          organizationId: org.organizationId,
+          clinicKey,
+          healthcareOrganization: {
+            id: hco.hco.id,
+            publicName: spec.healthcarePublicName,
+            websiteAbout: spec.websiteAbout,
+            websiteTagline: spec.websiteTagline,
+            publicPhoneDisplay: spec.publicPhoneDisplay,
+            publicEmailDisplay: spec.publicEmailDisplay,
+          },
+        });
+      } else {
+        await provisionActiveClinicWebsite(db, {
+          organizationId: org.organizationId,
+          slug: clinicKey,
+          publicName: spec.healthcarePublicName,
+          healthcareOrganizationId: hco.hco.id,
+          status: "published",
+          contentOverrides: {
+            "home.hero.subtitle": spec.websiteAbout,
+            "home.hero.eyebrow": spec.websiteTagline,
+            "about.story.body": spec.websiteAbout,
+          },
+        });
+      }
+    } catch {
+      /* website mapping is retry-safe */
+    }
+  }
+
   if (!dryRun || (hco.hco && facility.facility)) {
     const orgId = org.organizationId;
     const hcoId = hco.hco.id;

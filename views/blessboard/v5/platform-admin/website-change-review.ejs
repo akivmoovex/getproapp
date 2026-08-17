@@ -1,0 +1,41 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var s = sub || {};
+  var r = readiness || {};
+  var missing = (r.mandatory || []);
+%>
+<section class="bb-pa-page">
+  <h1>Review website changes</h1>
+  <p><strong><%= s.organizationName || s.organizationKey %></strong> · <%= s.slug %> · <%= s.status %></p>
+  <p><%= (s.changedKeys || []).length %> changed keys</p>
+  <% if (missing.length) { %>
+  <div class="bb-pa-alert" data-website-readiness="missing">
+    <p>Mandatory publication requirements missing:</p>
+    <ul>
+      <% missing.forEach(function (m) { %>
+      <li data-readiness-code="<%= m.code %>"><%= m.label %></li>
+      <% }) %>
+    </ul>
+  </div>
+  <% } %>
+  <% if (s.status === 'submitted' && canReview) { %>
+  <form method="post" action="/admin/website-changes/<%= s.id %>/approve">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <input type="hidden" name="rowVersion" value="<%= s.rowVersion %>"/>
+    <label>Review note <input name="review_note" maxlength="500"/></label>
+    <% if (missing.length && r.blocksFirstPublication) { %>
+    <label>
+      <input type="checkbox" name="override_readiness" value="1"/>
+      Explicitly override first-publication readiness (audited)
+    </label>
+    <% } %>
+    <button type="submit" class="bb-pa-btn">Approve</button>
+  </form>
+  <form method="post" action="/admin/website-changes/<%= s.id %>/reject">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <input type="hidden" name="rowVersion" value="<%= s.rowVersion %>"/>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Reject</button>
+  </form>
+  <% } %>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

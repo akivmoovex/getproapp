@@ -1,0 +1,53 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = applications || [];
+  var f = filters || {};
+%>
+<section class="bb-pa-page">
+  <h1>Clinic Registrations</h1>
+  <form method="get" action="/admin/clinic-registrations" class="bb-pa-filters">
+    <label>Status
+      <select name="status">
+        <option value="pending_review" <%= f.status === 'pending_review' ? 'selected' : '' %>>Pending review</option>
+        <option value="approved" <%= f.status === 'approved' ? 'selected' : '' %>>Approved</option>
+        <option value="all" <%= f.status === 'all' ? 'selected' : '' %>>All</option>
+      </select>
+    </label>
+    <button type="submit" class="bb-pa-btn">Filter</button>
+  </form>
+  <table class="bb-pa-table">
+    <thead>
+      <tr>
+        <th>Number</th>
+        <th>Clinic</th>
+        <th>Contact</th>
+        <th>Status</th>
+        <th>Provisioning</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!rows.length) { %>
+      <tr><td colspan="6">No clinic registration applications.</td></tr>
+      <% } %>
+      <% rows.forEach(function (app) { %>
+      <tr>
+        <td><%= app.application_number %></td>
+        <td><%= app.clinic_name %></td>
+        <td><%= app.contact_name %><br/><span class="bb-pa-hint"><%= app.contact_email_display %></span></td>
+        <td><span class="bb-pa-chip"><%= app.status %></span></td>
+        <td><%= app.provisioning_status || 'not_started' %></td>
+        <td>
+          <% if (app.status === 'pending_review' || (app.status === 'approved' && app.provisioning_status !== 'provisioned')) { %>
+          <form method="post" action="/admin/clinic-registrations/<%= app.id %>/approve">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <button type="submit" class="bb-pa-btn"><%= app.status === 'approved' ? 'Retry provision' : 'Approve' %></button>
+          </form>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

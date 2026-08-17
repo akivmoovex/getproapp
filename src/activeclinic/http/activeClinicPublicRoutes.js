@@ -45,6 +45,7 @@ const {
   sendClinicResolveFailure,
   resolveClinicOrRespond,
 } = require("./activeClinicPublicRespond");
+const { attachActiveClinicWebsiteLocals } = require("./attachActiveClinicWebsiteChrome");
 
 function clientIp(req) {
   return String((req.headers && req.headers["x-forwarded-for"]) || req.ip || (req.socket && req.socket.remoteAddress) || "").split(",")[0].trim();
@@ -98,6 +99,17 @@ function registerActiveClinicPublicRoutes(app, deps) {
   const env = deps.env;
   const isProduction = deps.isProduction;
   const respondDeps = { env, isProduction, issuePageCsrf };
+
+  async function renderTenantView(req, res, clinic, template, extra) {
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+    return res.status(200).type("html").send(renderPublicView(template, {
+      csrfToken,
+      ...website,
+      clinic: website.clinic,
+      ...(extra || {}),
+    }));
+  }
 
   // Rate limiters
   const registerLimiter = rateLimit({
@@ -452,12 +464,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
     try {
       const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
       if (!clinic) return undefined;
-
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/home", {
-        csrfToken,
-        clinic,
-      }));
+      return renderTenantView(req, res, clinic, "tenant/home");
     } catch (err) {
       return next(err);
     }
@@ -467,12 +474,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
     try {
       const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
       if (!clinic) return undefined;
-
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/about", {
-        csrfToken,
-        clinic,
-      }));
+      return renderTenantView(req, res, clinic, "tenant/about");
     } catch (err) {
       return next(err);
     }
@@ -483,20 +485,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
       if (!clinic) return undefined;
 
-      const csrfToken = issuePageCsrf(res, env, isProduction);
       if (req.query.submitted === "1") {
-        return res.status(200).type("html").send(renderPublicView("tenant/contact-success", {
-          csrfToken,
-          clinic,
-        }));
+        return renderTenantView(req, res, clinic, "tenant/contact-success");
       }
 
-      return res.status(200).type("html").send(renderPublicView("tenant/contact", {
-        csrfToken,
-        clinic,
+      return renderTenantView(req, res, clinic, "tenant/contact", {
         error: null,
         formData: {},
-      }));
+      });
     } catch (err) {
       return next(err);
     }
@@ -507,11 +503,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
       if (!clinic) return undefined;
 
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/contact-success", {
-        csrfToken,
-        clinic,
-      }));
+      return renderTenantView(req, res, clinic, "tenant/contact-success");
     } catch (err) {
       return next(err);
     }
@@ -575,12 +567,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
         healthcareOrganizationId: clinic.healthcareOrganizationId,
       });
 
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/pricing", {
-        csrfToken,
-        clinic,
+      return renderTenantView(req, res, clinic, "tenant/pricing", {
         pricePatterns: priceResult.patterns || [],
-      }));
+      });
     } catch (err) {
       return next(err);
     }
@@ -591,11 +580,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
       if (!clinic) return undefined;
 
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/location", {
-        csrfToken,
-        clinic,
-      }));
+      return renderTenantView(req, res, clinic, "tenant/location");
     } catch (err) {
       return next(err);
     }
@@ -606,11 +591,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
       if (!clinic) return undefined;
 
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/patient-information", {
-        csrfToken,
-        clinic,
-      }));
+      return renderTenantView(req, res, clinic, "tenant/patient-information");
     } catch (err) {
       return next(err);
     }
@@ -621,11 +602,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
       if (!clinic) return undefined;
 
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/privacy", {
-        csrfToken,
-        clinic,
-      }));
+      return renderTenantView(req, res, clinic, "tenant/privacy");
     } catch (err) {
       return next(err);
     }
@@ -636,11 +613,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
       if (!clinic) return undefined;
 
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/terms", {
-        csrfToken,
-        clinic,
-      }));
+      return renderTenantView(req, res, clinic, "tenant/terms");
     } catch (err) {
       return next(err);
     }
@@ -662,13 +635,10 @@ function registerActiveClinicPublicRoutes(app, deps) {
         healthcareOrganizationId: clinic.healthcareOrganizationId,
       });
 
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/services", {
-        csrfToken,
-        clinic,
+      return renderTenantView(req, res, clinic, "tenant/services", {
         services: servicesResult.services || [],
         procedures: proceduresResult.procedures || [],
-      }));
+      });
     } catch (err) {
       return next(err);
     }
@@ -695,13 +665,10 @@ function registerActiveClinicPublicRoutes(app, deps) {
       }
 
       const serviceKind = clinic.publicBookingEnabled ? "consultation" : "informational";
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/service-detail", {
-        csrfToken,
-        clinic,
+      return renderTenantView(req, res, clinic, "tenant/service-detail", {
         service: serviceResult.service,
         serviceKind,
-      }));
+      });
     } catch (err) {
       return next(err);
     }
@@ -727,12 +694,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
         }));
       }
 
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/procedure-detail", {
-        csrfToken,
-        clinic,
+      return renderTenantView(req, res, clinic, "tenant/procedure-detail", {
         procedure: procedureResult.procedure,
-      }));
+      });
     } catch (err) {
       return next(err);
     }
@@ -748,12 +712,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
         healthcareOrganizationId: clinic.healthcareOrganizationId,
       });
 
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/doctors", {
-        csrfToken,
-        clinic,
+      return renderTenantView(req, res, clinic, "tenant/doctors", {
         profiles: profilesResult.profiles || [],
-      }));
+      });
     } catch (err) {
       return next(err);
     }
@@ -779,12 +740,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
         }));
       }
 
-      const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("tenant/doctor-profile", {
-        csrfToken,
-        clinic,
+      return renderTenantView(req, res, clinic, "tenant/doctor-profile", {
         profile: profileResult.profile,
-      }));
+      });
     } catch (err) {
       return next(err);
     }

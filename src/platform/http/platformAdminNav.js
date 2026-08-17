@@ -47,6 +47,22 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
     enabled: true,
   },
   {
+    key: "clinic-registrations",
+    label: "Clinic Registrations",
+    href: "/admin/clinic-registrations",
+    icon: "local_hospital",
+    nav: true,
+    enabled: true,
+  },
+  {
+    key: "website-changes",
+    label: "Website Changes",
+    href: "/admin/website-changes",
+    icon: "web",
+    nav: true,
+    enabled: true,
+  },
+  {
     key: "subscriptions",
     label: "Subscriptions",
     href: "/admin/subscriptions",

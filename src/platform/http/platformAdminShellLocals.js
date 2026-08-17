@@ -79,6 +79,8 @@ function buildPlatformAdminShellLocals(req, res, opts) {
     home: "Platform admin",
     organizations: "Organisations",
     "registration-applications": "Church Registrations",
+    "clinic-registrations": "Clinic Registrations",
+    "website-changes": "Website Changes",
     plans: "Plans",
     subscriptions: "Subscriptions",
     domains: "Domains and links",

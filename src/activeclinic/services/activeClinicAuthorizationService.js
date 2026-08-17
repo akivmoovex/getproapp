@@ -52,6 +52,7 @@ const CASHIER = "activeclinic_cashier";
 const FINANCE_SUPERVISOR = "activeclinic_finance_supervisor";
 const AUDITOR = "activeclinic_auditor";
 const STAFF_ROLE = "activeclinic_staff";
+const WEBSITE_EDITOR = "activeclinic_website_editor";
 
 /** Organization-wide admin roles (canonical + compat). */
 const ORG_WIDE_ADMIN_ROLES = Object.freeze([ORGANIZATION_ADMIN, NETWORK_ADMIN]);
@@ -96,6 +97,7 @@ const ACTIVECLINIC_ROLE_CATALOGUE = Object.freeze([
   FINANCE_SUPERVISOR,
   AUDITOR,
   STAFF_ROLE,
+  WEBSITE_EDITOR,
 ]);
 
 function isOrgWideAdminRole(roleKey) {
@@ -359,6 +361,7 @@ module.exports = {
   FINANCE_SUPERVISOR,
   AUDITOR,
   STAFF_ROLE,
+  WEBSITE_EDITOR,
   ORG_WIDE_ADMIN_ROLES,
   ORGANISATION_SCOPE_ONLY_ROLES,
   FACILITY_SCOPE_ONLY_ROLES,

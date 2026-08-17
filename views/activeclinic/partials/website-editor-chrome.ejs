@@ -1,0 +1,16 @@
+<% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
+<div class="ac-website-chrome" data-website-chrome="1" data-clinic-key="<%= clinic && clinic.clinicKey %>">
+  <% if (websiteEdit) { %>
+  <p>Editing draft. Changes are not public until approved.</p>
+  <a href="?website_mode=live">View live</a>
+  <% if (websiteCanSubmit) { %>
+  <form method="post" action="/clinics/<%= clinic.clinicKey %>/website/submit" class="ac-website-chrome__submit">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit">Submit for review</button>
+  </form>
+  <% } %>
+  <% } else { %>
+  <a href="?website_edit=1&amp;website_mode=draft">Edit website</a>
+  <% } %>
+</div>
+<% } %>

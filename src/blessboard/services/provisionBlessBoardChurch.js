@@ -467,6 +467,16 @@ async function provisionBlessBoardChurch(db, input, options) {
 
     await session.commitIfManaged();
 
+    try {
+      const { ensureBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
+      await ensureBlessBoardWebsiteInstance(db, {
+        organizationId: organization.id,
+        slug: (church && church.church_key) || organization.organization_key,
+      });
+    } catch {
+      /* BlessBoard public_pages remain authoritative; adapter is recoverable. */
+    }
+
     const anyCreated = created.church || created.hqBranch;
     return success(
       anyCreated ? STATUS.PROVISIONED : STATUS.ALREADY_PROVISIONED,

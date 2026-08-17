@@ -1,0 +1,18 @@
+<%
+  var canEdit = typeof websiteEdit !== 'undefined' && websiteEdit;
+  var key = contentKey;
+  var value = typeof fieldValue !== 'undefined' ? fieldValue : '';
+%>
+<% if (canEdit) { %>
+<span
+  class="ac-website-editable"
+  data-website-key="<%= key %>"
+  data-website-type="<%= typeof fieldType !== 'undefined' ? fieldType : 'text' %>"
+>
+  <span class="ac-website-editable__value" data-website-value="1"><%= value %></span>
+  <button type="button" class="ac-website-editable__save" data-website-save="1" hidden>Save</button>
+  <button type="button" class="ac-website-editable__cancel" data-website-cancel="1" hidden>Cancel</button>
+</span>
+<% } else { %>
+<%= value %>
+<% } %>

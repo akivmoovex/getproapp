@@ -57,9 +57,22 @@ function sendClinicResolveFailure(res, result, deps) {
  * @returns {Promise<object|null>} clinic DTO or null when response already sent
  */
 async function resolveClinicOrRespond(getPool, req, res, deps) {
-  const result = await resolvePublishableClinicByKey(getPool(), {
+  const pool = getPool();
+  let result = await resolvePublishableClinicByKey(pool, {
     clinicKey: req.params.clinicKey,
   });
+  if (!result.ok && result.code === RESULT.NOT_PUBLISHED) {
+    const unpublished = await resolvePublishableClinicByKey(pool, {
+      clinicKey: req.params.clinicKey,
+      allowUnpublished: true,
+    });
+    if (unpublished.ok) {
+      const { canEditClinicWebsite } = require("./attachActiveClinicWebsiteChrome");
+      if (canEditClinicWebsite(req, unpublished.clinic)) {
+        result = unpublished;
+      }
+    }
+  }
   if (!result.ok) {
     sendClinicResolveFailure(res, result, deps);
     return null;
