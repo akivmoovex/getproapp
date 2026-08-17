@@ -12,6 +12,9 @@ const {
 const {
   resolvePatientForIdentity,
 } = require("../services/activeClinicPatientPortalAuthService");
+const {
+  deploymentAllowsPlatformIdentityPrincipal,
+} = require("../../platform/session/deploymentApplicationCompatibility");
 
 /**
  * @param {{
@@ -47,7 +50,7 @@ function createLoadActiveClinicPatientAuth(deps) {
         return next();
       }
 
-      if (String(session.applicationCode || "").toLowerCase() !== "activeclinic") {
+      if (!deploymentAllowsPlatformIdentityPrincipal(session.applicationCode)) {
         req.activeClinicPatientAuth.reason = "product_mismatch";
         return next();
       }

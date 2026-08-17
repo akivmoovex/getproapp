@@ -12,6 +12,10 @@ const {
 } = require("./sessionToken");
 const identityRepo = require("../repositories/platformIdentityRepository");
 const { isIdentityUsable } = require("../services/platformIdentityService");
+const {
+  deploymentAllowsPlatformIdentityPrincipal,
+  deploymentAllowsBlessBoardPrincipal,
+} = require("./deploymentApplicationCompatibility");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -93,7 +97,7 @@ async function createDeploymentSession(client, fields) {
     if (!platformIdentityId || blessboardUserId) {
       return { ok: false, code: RESULT.CONFLICTING_PRINCIPAL };
     }
-    if (applicationCode !== "activeclinic") {
+    if (!deploymentAllowsPlatformIdentityPrincipal(applicationCode)) {
       return { ok: false, code: RESULT.PRODUCT_MISMATCH };
     }
     const identity = await identityRepo.findIdentityById(client, platformIdentityId);
@@ -104,14 +108,14 @@ async function createDeploymentSession(client, fields) {
     if (!blessboardUserId || platformIdentityId) {
       return { ok: false, code: RESULT.CONFLICTING_PRINCIPAL };
     }
-    if (applicationCode === "activeclinic") {
+    if (!deploymentAllowsBlessBoardPrincipal(applicationCode)) {
       return { ok: false, code: RESULT.INVALID_BLESSBOARD_ONLY };
     }
   } else if (principalType === "linked") {
     if (!blessboardUserId || !platformIdentityId) {
       return { ok: false, code: RESULT.MISSING_PRINCIPAL };
     }
-    if (applicationCode === "activeclinic") {
+    if (!deploymentAllowsBlessBoardPrincipal(applicationCode)) {
       return { ok: false, code: RESULT.PRODUCT_MISMATCH };
     }
     const bbUser = await identityRepo.findBlessBoardUserById(client, blessboardUserId);

@@ -18,6 +18,9 @@ const {
 const {
   resolveEffectivePermissions,
 } = require("../services/activeClinicAuthorizationService");
+const {
+  deploymentAllowsPlatformIdentityPrincipal,
+} = require("../../platform/session/deploymentApplicationCompatibility");
 
 /**
  * @param {{
@@ -56,7 +59,15 @@ function createLoadActiveClinicAuth(deps) {
         req.activeClinicAuth.reason = "wrong_principal";
         return next();
       }
-      if (String(session.applicationCode || "").toLowerCase() !== "activeclinic") {
+      if (!deploymentAllowsPlatformIdentityPrincipal(session.applicationCode)) {
+        req.activeClinicAuth.reason = "product_mismatch";
+        return next();
+      }
+      if (
+        req.platform &&
+        req.platform.productKey &&
+        String(req.platform.productKey).toLowerCase() !== "activeclinic"
+      ) {
         req.activeClinicAuth.reason = "product_mismatch";
         return next();
       }

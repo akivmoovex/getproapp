@@ -11,6 +11,9 @@ const { readV5Session } = require("../session/readV5Session");
 const { readV5SessionCookie } = require("../session/v5SessionCookie");
 const { hashSessionToken } = require("../session/sessionToken");
 const { createV5AuthLogger } = require("./v5AuthObservability");
+const {
+  resolveSessionExpectedProductCode,
+} = require("../session/deploymentApplicationCompatibility");
 
 /**
  * @param {string | null | undefined} rawToken
@@ -132,6 +135,7 @@ function createLoadV5Session(deps) {
             rawToken,
             deploymentCode: identity.code,
             touch: true,
+            expectedProductCode: resolveSessionExpectedProductCode(req, env),
           });
           lastError = null;
           break;

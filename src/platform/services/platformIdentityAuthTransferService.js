@@ -17,6 +17,9 @@ const {
 const identityRepo = require("../repositories/platformIdentityRepository");
 const { isIdentityUsable } = require("./platformIdentityService");
 const {
+  deploymentAllowsPlatformIdentityPrincipal,
+} = require("../session/deploymentApplicationCompatibility");
+const {
   STATUS,
   TRANSFER_TTL_MS,
   transferExpiresAt,
@@ -83,7 +86,7 @@ async function createActiveClinicLoginTransferRequest(db, input) {
     if (!dep || dep.status !== "active") {
       return { ok: false, status: STATUS.INVALID_INPUT, rawToken: null, transfer: null };
     }
-    if (String(dep.application_code || "").toLowerCase() !== "activeclinic") {
+    if (!deploymentAllowsPlatformIdentityPrincipal(dep.application_code)) {
       return { ok: false, status: STATUS.DEPLOYMENT_MISMATCH, rawToken: null, transfer: null };
     }
 

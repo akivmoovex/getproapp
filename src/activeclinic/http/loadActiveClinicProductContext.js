@@ -11,6 +11,9 @@ const {
 } = require("../../platform/config/deploymentProfiles");
 const { getProduct } = require("../../platform/config/productRegistry");
 const {
+  isUnifiedPlatformApplication,
+} = require("../../platform/session/deploymentApplicationCompatibility");
+const {
   resolveOrganizationForProduct,
   RESULT,
 } = require("../../platform/services/organizationProductService");
@@ -58,7 +61,16 @@ function createLoadActiveClinicProductContext(options) {
         resolution: "deployment_only",
       };
 
-      if (deployment.productCode !== "activeclinic") {
+      const hostProduct =
+        req.platform && req.platform.productKey
+          ? String(req.platform.productKey).toLowerCase()
+          : "";
+      const deploymentProduct = String(deployment.productCode || "").toLowerCase();
+      const activeClinicRuntime =
+        deploymentProduct === "activeclinic" ||
+        isUnifiedPlatformApplication(deploymentProduct) ||
+        hostProduct === "activeclinic";
+      if (!activeClinicRuntime || (hostProduct && hostProduct !== "activeclinic")) {
         req.activeClinicContext.resolution = "product_mismatch";
         return next();
       }

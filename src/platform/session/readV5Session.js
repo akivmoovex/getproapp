@@ -11,6 +11,9 @@ const {
   RESULT: PRINCIPAL_RESULT,
   PRINCIPAL_TYPES,
 } = require("./resolveDeploymentSessionPrincipal");
+const {
+  deploymentMatchesExpectedProduct,
+} = require("./deploymentApplicationCompatibility");
 
 /**
  * Fast path for BlessBoard legacy sessions when the user row is already joined.
@@ -27,7 +30,7 @@ function resolveLegacyPrincipalFromJoinedRow(row, opts) {
     ? String(row.application_code).trim().toLowerCase()
     : null;
 
-  if (expectedProduct && deploymentProduct && expectedProduct !== deploymentProduct) {
+  if (!deploymentMatchesExpectedProduct(deploymentProduct, expectedProduct)) {
     return { ok: false, code: PRINCIPAL_RESULT.PRODUCT_MISMATCH, principal: null };
   }
   if (deploymentProduct === "activeclinic" || expectedProduct === "activeclinic") {

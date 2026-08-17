@@ -50,6 +50,7 @@ const { provisionPlatformTenant } = require("../src/platform/services/provisionP
 const {
   CODE_ACTIVECLINIC_ORG_V6,
   CODE_ORG_STAGING,
+  CODE_MOOVEX_PLATFORM_TESTING,
   COOKIE_ACTIVECLINIC_ORG,
   COOKIE_ORG,
   getDeploymentProfile,
@@ -232,6 +233,76 @@ describe("ActiveClinic session principal migration (AC-V6-07)", () => {
     });
     assert.equal(acOnBb.ok, false);
     assert.equal(acOnBb.code, SESSION_WRITE_RESULT.PRODUCT_MISMATCH);
+  });
+
+  it("unified application_code=platform accepts ActiveClinic identity sessions", async () => {
+    requireDb();
+    const stamp = Date.now().toString(36);
+    const identity = await createPlatformIdentity(pool, {
+      primaryEmail: `plat_${stamp}@example.test`,
+    });
+    const org = await provisionPlatformTenant(pool, {
+      skipDomain: true,
+      dataEnvironment: "testing",
+      organizationKey: `ac_plat_${stamp}`,
+      displayName: "AC Unified Org",
+      productKey: "activeclinic",
+      productTenantKey: `ac-plat-${stamp}`,
+      deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
+    });
+    assert.equal(org.ok, true, JSON.stringify(org));
+
+    const created = await createPlatformIdentitySession(pool, {
+      deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
+      platformIdentityId: identity.identity.id,
+      organizationId: org.records.organization.id,
+    });
+    assert.equal(created.ok, true, JSON.stringify(created));
+
+    const resolved = await resolveDeploymentSessionPrincipal(
+      pool,
+      {
+        user_id: null,
+        platform_identity_id: identity.identity.id,
+      },
+      {
+        deploymentApplicationCode: "platform",
+        expectedProductCode: "activeclinic",
+      }
+    );
+    assert.equal(resolved.ok, true, JSON.stringify(resolved));
+    assert.equal(resolved.principal.principalType, "platform_identity");
+
+    const blessboardExpected = await resolveDeploymentSessionPrincipal(
+      pool,
+      {
+        user_id: null,
+        platform_identity_id: identity.identity.id,
+      },
+      {
+        deploymentApplicationCode: "platform",
+        expectedProductCode: "blessboard",
+      }
+    );
+    assert.equal(blessboardExpected.ok, false);
+    assert.equal(blessboardExpected.code, PRINCIPAL_RESULT.PRODUCT_MISMATCH);
+
+    const read = await readV5Session(pool, {
+      rawToken: created.rawToken,
+      deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
+      expectedProductCode: "activeclinic",
+    });
+    assert.equal(read.ok, true, JSON.stringify(read));
+    assert.equal(read.session.applicationCode, "platform");
+    assert.equal(read.session.principalType, "platform_identity");
+
+    const leaked = await readV5Session(pool, {
+      rawToken: created.rawToken,
+      deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
+      expectedProductCode: "blessboard",
+    });
+    assert.equal(leaked.ok, false);
+    assert.equal(leaked.code, "product_mismatch");
   });
 
   it("resolver: legacy, linked, identity-only, denials", async () => {

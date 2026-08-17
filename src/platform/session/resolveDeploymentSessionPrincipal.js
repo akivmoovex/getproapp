@@ -9,6 +9,11 @@ const {
   mapIdentity,
   isIdentityUsable,
 } = require("../services/platformIdentityService");
+const {
+  deploymentAllowsPlatformIdentityPrincipal,
+  deploymentAllowsBlessBoardPrincipal,
+  deploymentMatchesExpectedProduct,
+} = require("./deploymentApplicationCompatibility");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -64,12 +69,15 @@ async function resolveDeploymentSessionPrincipal(db, sessionRow, options) {
     ? String(opts.deploymentApplicationCode).trim().toLowerCase()
     : null;
 
-  if (expectedProduct && deploymentProduct && expectedProduct !== deploymentProduct) {
+  if (!deploymentMatchesExpectedProduct(deploymentProduct, expectedProduct)) {
     return { ok: false, code: RESULT.PRODUCT_MISMATCH, principal: null };
   }
 
   if (userId && identityId) {
-    if (deploymentProduct === "activeclinic" || expectedProduct === "activeclinic") {
+    if (
+      !deploymentAllowsBlessBoardPrincipal(deploymentProduct) ||
+      expectedProduct === "activeclinic"
+    ) {
       return { ok: false, code: RESULT.PRODUCT_MISMATCH, principal: null };
     }
     const bbUser = await identityRepo.findBlessBoardUserById(db, userId);
@@ -111,7 +119,10 @@ async function resolveDeploymentSessionPrincipal(db, sessionRow, options) {
   }
 
   if (userId) {
-    if (deploymentProduct === "activeclinic" || expectedProduct === "activeclinic") {
+    if (
+      !deploymentAllowsBlessBoardPrincipal(deploymentProduct) ||
+      expectedProduct === "activeclinic"
+    ) {
       return { ok: false, code: RESULT.PRODUCT_MISMATCH, principal: null };
     }
     const bbUser = await identityRepo.findBlessBoardUserById(db, userId);
@@ -145,12 +156,13 @@ async function resolveDeploymentSessionPrincipal(db, sessionRow, options) {
     };
   }
 
-  // platform identity only (ActiveClinic path)
+  // platform identity only (ActiveClinic principal). Allowed on ActiveClinic
+  // product deployments and on unified application_code=platform runtimes.
   if (
     expectedProduct === "blessboard" ||
-    deploymentProduct === "blessboard" ||
-    (deploymentProduct && deploymentProduct !== "activeclinic") ||
-    (expectedProduct && expectedProduct !== "activeclinic")
+    expectedProduct === "getpro" ||
+    expectedProduct === "ngo" ||
+    (deploymentProduct && !deploymentAllowsPlatformIdentityPrincipal(deploymentProduct))
   ) {
     return { ok: false, code: RESULT.PRODUCT_MISMATCH, principal: null };
   }
