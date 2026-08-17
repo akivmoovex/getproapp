@@ -505,9 +505,11 @@ async function attachWebsiteAdminChrome(opts) {
     accessRestricted: false,
   });
 
-  const csrfToken = issueCsrfToken(env || process.env);
+  const csrfToken = issueCsrfToken(env);
   setCsrfCookie(res, csrfToken, {
-    secure: String((env || process.env).NODE_ENV || "") === "production",
+    secure: String((env && env.NODE_ENV) || "") === "production",
+    env,
+    req,
   });
 
   const currentPath = String(model.path || "/");

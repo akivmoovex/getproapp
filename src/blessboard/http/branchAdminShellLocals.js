@@ -86,7 +86,7 @@ async function buildBranchAdminShellLocals(req, res, opts) {
   const activeNav = String(opts.activeNav || "home");
   const tenant = resolveTenantForAuthorization(req);
   const csrfToken = issueCsrfToken(env);
-  setCsrfCookie(res, csrfToken, { secure: isProduction });
+  setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
   const session = req.v5Session && req.v5Session.session ? req.v5Session.session : null;
 
   const churchId = tenant && tenant.church ? tenant.church.id : null;

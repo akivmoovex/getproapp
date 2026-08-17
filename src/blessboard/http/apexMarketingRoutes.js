@@ -277,9 +277,9 @@ function createApexMarketingRouter(deps) {
     .trim()
     .toLowerCase();
 
-  function issueAndSetCsrf(res) {
+  function issueAndSetCsrf(req, res) {
     const csrfToken = issueToken(env);
-    setCookie(res, csrfToken, { secure: isProduction });
+    setCookie(res, csrfToken, { secure: isProduction, env, req });
     return csrfToken;
   }
 
@@ -296,7 +296,7 @@ function createApexMarketingRouter(deps) {
     keyGenerator: rateLimitKey,
     handler: (req, res) => {
       setRegisterNoStoreHeaders(res);
-      const csrfToken = issueAndSetCsrf(res);
+      const csrfToken = issueAndSetCsrf(req, res);
       return res.status(429).type("html").send(
         renderRegisterChurchPage({
           authenticated: Boolean(req.v5Session && req.v5Session.authenticated),
@@ -326,7 +326,7 @@ function createApexMarketingRouter(deps) {
   function renderEmailVerifyRateLimited(req, res) {
     setRegisterNoStoreHeaders(res);
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
-    const csrfToken = issueAndSetCsrf(res);
+    const csrfToken = issueAndSetCsrf(req, res);
     return res.status(429).type("html").send(
       renderEmailVerificationResultPage({
         authenticated,
@@ -366,7 +366,7 @@ function createApexMarketingRouter(deps) {
     }
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
     const alwaysPassCsrf = Boolean(extra.alwaysPassCsrf);
-    const csrfToken = issueAndSetCsrf(res);
+    const csrfToken = issueAndSetCsrf(req, res);
     const passCsrf = authenticated || alwaysPassCsrf;
     if (extra.noStore) {
       setRegisterNoStoreHeaders(res);
@@ -443,7 +443,7 @@ function createApexMarketingRouter(deps) {
 
       function renderForm(status, extras) {
         // Always issue a fresh cookie+field pair after failed attempts so Back/retry works.
-        const csrfToken = issueAndSetCsrf(res);
+        const csrfToken = issueAndSetCsrf(req, res);
         return res.status(status).type("html").send(
           renderRegisterChurchPage({
             authenticated,
@@ -516,7 +516,7 @@ function createApexMarketingRouter(deps) {
       if (!wantsInstant) {
         const result = await submitPlatformChurchRegistration(getPool(), req, validation);
         if (result.honeypot) {
-          issueAndSetCsrf(res);
+          issueAndSetCsrf(req, res);
           logRegistrationTrace(req, {
             event: "church_registration_redirect",
             operation: "register_church_redirect",
@@ -529,7 +529,7 @@ function createApexMarketingRouter(deps) {
         }
         if (!result.ok) {
           if (result.review) {
-            issueAndSetCsrf(res);
+            issueAndSetCsrf(req, res);
             logRegistrationTrace(req, {
               event: "church_registration_redirect",
               operation: "register_church_redirect",
@@ -545,7 +545,7 @@ function createApexMarketingRouter(deps) {
             fieldError: result.field || null,
           });
         }
-        issueAndSetCsrf(res);
+        issueAndSetCsrf(req, res);
         const planQ =
           result.networkSupportContact ||
           (validation.data && validation.data.selected_plan === NETWORK_PLAN_CODE)
@@ -570,13 +570,13 @@ function createApexMarketingRouter(deps) {
       });
 
       if (result.honeypot) {
-        issueAndSetCsrf(res);
+        issueAndSetCsrf(req, res);
         return res.redirect(303, `${REGISTER_PATH}?submitted=1`);
       }
 
       if (!result.ok) {
         if (result.review) {
-          issueAndSetCsrf(res);
+          issueAndSetCsrf(req, res);
           return res.redirect(303, `${REGISTER_PATH}?review=1`);
         }
         if (result.inProgress) {
@@ -641,7 +641,7 @@ function createApexMarketingRouter(deps) {
         );
       }
 
-      issueAndSetCsrf(res);
+      issueAndSetCsrf(req, res);
 
       if (sessionOk) {
         // Session-scoped HQ on apex (path public /c/:key; no wildcard tenant host required).
@@ -683,7 +683,7 @@ function createApexMarketingRouter(deps) {
       return res.status(404).type("text").send("Not found");
     }
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
-    const csrfToken = issueAndSetCsrf(res);
+    const csrfToken = issueAndSetCsrf(req, res);
 
     const q = directoryRepo.normalizeSearchQuery(req.query && req.query.q);
     const page = Number(req.query && req.query.page) || 1;
@@ -729,7 +729,7 @@ function createApexMarketingRouter(deps) {
     }
     setRegisterNoStoreHeaders(res);
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
-    const csrfToken = issueAndSetCsrf(res);
+    const csrfToken = issueAndSetCsrf(req, res);
     const outcome = resolveEmailVerifyResultOutcome(req, res, env);
     return res.status(200).type("html").send(
       renderEmailVerificationResultPage({

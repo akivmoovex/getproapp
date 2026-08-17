@@ -43,7 +43,7 @@ function createPasswordResetRouter(opts) {
 
   function issueCsrf(req, res) {
     const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
     return csrfToken;
   }
 

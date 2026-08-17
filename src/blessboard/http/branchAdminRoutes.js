@@ -414,10 +414,10 @@ function createBranchAdminRouter(deps) {
     } catch {
       /* fail-open clear cookie */
     }
-    clearV5SessionCookie(res, { secure: isProduction, env });
+    clearV5SessionCookie(res, { secure: isProduction, env, req });
     clearSupportContextCookie(res, { secure: isProduction, env });
     const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
     return res.redirect(303, "/login");
   });
 

@@ -527,7 +527,7 @@ function createHqAdminRouter(deps) {
     } catch {
       /* fail-open clear cookie */
     }
-    clearV5SessionCookie(res, { secure: isProduction, env });
+    clearV5SessionCookie(res, { secure: isProduction, env, req });
     clearSupportContextCookie(res, { secure: isProduction, env });
     return res.redirect(303, "/");
   });

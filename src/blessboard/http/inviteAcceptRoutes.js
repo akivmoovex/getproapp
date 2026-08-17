@@ -38,9 +38,9 @@ function createInviteAcceptRouter(deps) {
   const isProduction = String(env.NODE_ENV || "") === "production";
   const router = express.Router();
 
-  function ensureCsrf(res) {
+  function ensureCsrf(req, res) {
     const token = issueCsrfToken(env);
-    setCsrfCookie(res, token, { secure: isProduction, env });
+    setCsrfCookie(res, token, { secure: isProduction, env, req });
     return token;
   }
 
@@ -48,7 +48,7 @@ function createInviteAcceptRouter(deps) {
   // when the organization has no custom domain yet.
   router.get("/invite/accept", async (req, res) => {
     const token = String((req.query && req.query.token) || "");
-    const csrfToken = ensureCsrf(res);
+    const csrfToken = ensureCsrf(req, res);
     const peeked = await getInvitationForAccept(getPool(), token);
     const html = renderView("invite/accept.ejs", {
       csrfToken,
@@ -68,7 +68,7 @@ function createInviteAcceptRouter(deps) {
     }
     const token = String((req.body && req.body.token) || "");
     const password = req.body && req.body.password;
-    const csrfToken = ensureCsrf(res);
+    const csrfToken = ensureCsrf(req, res);
 
     const result = await acceptInvitation(getPool(), { token, password });
     if (!result.ok) {

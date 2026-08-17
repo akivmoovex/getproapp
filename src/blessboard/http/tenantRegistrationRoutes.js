@@ -246,7 +246,7 @@ function createTenantRegistrationRouter(deps) {
 
   function formLocals(req, res, scope, extra) {
     const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
     return {
       publicName: scope.publicName,
       branchName: scope.branchName,
