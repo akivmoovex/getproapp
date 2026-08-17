@@ -18,10 +18,8 @@ const {
 const {
   setV5SessionCookie,
   clearV5SessionCookie,
-  getV5SessionCookieName,
-  readV5SessionCookie,
 } = require("../../platform/session/v5SessionCookie");
-const { revokeV5Session } = require("../../platform/session/revokeV5Session");
+const { terminateV5BrowserSession } = require("../../platform/session/terminateV5BrowserSession");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const { resolveHostname } = require("../../platform/host");
 const {
@@ -100,7 +98,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
     },
     handler: (req, res) => {
       const csrfToken = issueCsrfToken(env);
-      setCsrfCookie(res, csrfToken, { secure: isProduction, env });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       return res.status(429).type("html").send(
         renderLoginPage({
           csrfToken,
@@ -111,9 +109,9 @@ function registerActiveClinicAuthRoutes(app, deps) {
     },
   });
 
-  function issuePageCsrf(res) {
+  function issuePageCsrf(res, req) {
     const token = issueCsrfToken(env);
-    setCsrfCookie(res, token, { secure: isProduction, env });
+    setCsrfCookie(res, token, { secure: isProduction, env, req });
     return token;
   }
 
@@ -124,7 +122,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
       }
       return res.redirect(303, "/app");
     }
-    const csrfToken = issuePageCsrf(res);
+    const csrfToken = issuePageCsrf(res, req);
     let notice = null;
     if (req.query && req.query.activated === "1") {
       notice = "Your account is activated. Sign in with your new password.";
@@ -142,7 +140,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
   app.post("/login", loginLimiter, async (req, res, next) => {
     try {
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        const csrfToken = issuePageCsrf(res);
+        const csrfToken = issuePageCsrf(res, req);
         return res.status(403).type("html").send(
           renderLoginPage({
             csrfToken,
@@ -175,7 +173,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
           path: "/",
           maxAge: 5 * 60 * 1000,
         });
-        const csrfToken = issuePageCsrf(res);
+        const csrfToken = issuePageCsrf(res, req);
         return res.status(200).type("html").send(
           renderOrgSelectPage({
             csrfToken,
@@ -186,7 +184,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
       }
 
       if (!result.ok) {
-        const csrfToken = issuePageCsrf(res);
+        const csrfToken = issuePageCsrf(res, req);
         return res.status(401).type("html").send(
           renderLoginPage({
             csrfToken,
@@ -197,7 +195,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
         );
       }
 
-      setV5SessionCookie(res, result.rawToken, { secure: isProduction, env });
+      setV5SessionCookie(res, result.rawToken, { secure: isProduction, env, req });
       res.clearCookie(SELECTION_COOKIE, { path: "/" });
       if (result.mustChangePassword || result.status === AUTH_STATUS.MUST_CHANGE_PASSWORD) {
         return res.redirect(303, "/account/change-password");
@@ -211,7 +209,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
   app.get("/login/select-organization", (req, res) => {
     const token = req.cookies && req.cookies[SELECTION_COOKIE];
     if (!token) return res.redirect(303, "/login");
-    const csrfToken = issuePageCsrf(res);
+    const csrfToken = issuePageCsrf(res, req);
     return res.status(200).type("html").send(
       renderOrgSelectPage({
         csrfToken,
@@ -240,7 +238,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
         userAgent: req.headers["user-agent"] || null,
       });
       if (!completed.ok) {
-        const csrfToken = issuePageCsrf(res);
+        const csrfToken = issuePageCsrf(res, req);
         return res.status(401).type("html").send(
           renderLoginPage({
             csrfToken,
@@ -248,7 +246,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
           })
         );
       }
-      setV5SessionCookie(res, completed.rawSessionToken, { secure: isProduction, env });
+      setV5SessionCookie(res, completed.rawSessionToken, { secure: isProduction, env, req });
       res.clearCookie(SELECTION_COOKIE, { path: "/" });
       if (completed.mustChangePassword) {
         return res.redirect(303, "/account/change-password");
@@ -259,27 +257,31 @@ function registerActiveClinicAuthRoutes(app, deps) {
     }
   });
 
-  app.post("/logout", async (req, res, next) => {
+  async function handleLogout(req, res) {
     try {
-      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        return res.status(403).send("Forbidden");
+      await terminateV5BrowserSession(req, res, {
+        env,
+        isProduction,
+        getPool,
+        csrfCookieName: getCsrfCookieName(env, req),
+        extraCookieNames: [SELECTION_COOKIE],
+      });
+    } catch {
+      try {
+        clearV5SessionCookie(res, { secure: isProduction, env, req });
+        res.clearCookie(getCsrfCookieName(env, req), { path: "/" });
+        res.clearCookie(SELECTION_COOKIE, { path: "/" });
+      } catch {
+        /* ignore secondary clear failures */
       }
-      const deployment = getPlatformDeploymentCode(env);
-      const rawToken = readV5SessionCookie(req, env);
-      if (rawToken && deployment.ok) {
-        await revokeV5Session(getPool(), {
-          rawToken,
-          deploymentCode: deployment.code,
-        });
-      }
-      clearV5SessionCookie(res, { secure: isProduction, env });
-      res.clearCookie(getCsrfCookieName(env), { path: "/" });
-      res.clearCookie(SELECTION_COOKIE, { path: "/" });
-      return res.redirect(303, "/login");
-    } catch (err) {
-      return next(err);
     }
-  });
+    return res.redirect(303, "/login");
+  }
+
+  // GET is the recovery path for stale CSRF / bookmarks / https://host/logout.
+  // POST remains the UI action. Neither depends on tenant/org/facility context.
+  app.get("/logout", handleLogout);
+  app.post("/logout", handleLogout);
 
   const requireAuthPw = createRequireActiveClinicAuth({
     allowPasswordChangeOnly: true,
@@ -288,14 +290,14 @@ function registerActiveClinicAuthRoutes(app, deps) {
   });
 
   app.get("/account/change-password", requireAuthPw, (req, res) => {
-    const csrfToken = issuePageCsrf(res);
+    const csrfToken = issuePageCsrf(res, req);
     return res.status(200).type("html").send(renderChangePasswordPage({ csrfToken, error: null }));
   });
 
   app.post("/account/change-password", requireAuthPw, async (req, res, next) => {
     try {
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        const csrfToken = issuePageCsrf(res);
+        const csrfToken = issuePageCsrf(res, req);
         return res.status(403).type("html").send(
           renderChangePasswordPage({
             csrfToken,
@@ -314,7 +316,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
         organizationId: auth.organization && auth.organization.id,
       });
       if (!changed.ok) {
-        const csrfToken = issuePageCsrf(res);
+        const csrfToken = issuePageCsrf(res, req);
         const error =
           changed.code === PW_RESULT.WEAK_PASSWORD
             ? "Password must be at least 10 characters."
@@ -332,15 +334,13 @@ function registerActiveClinicAuthRoutes(app, deps) {
         userAgent: req.headers["user-agent"] || null,
       });
       if (fresh.ok) {
-        setV5SessionCookie(res, fresh.rawToken, { secure: isProduction, env });
+        setV5SessionCookie(res, fresh.rawToken, { secure: isProduction, env, req });
       }
       return res.redirect(303, "/app");
     } catch (err) {
       return next(err);
     }
   });
-
-  void getV5SessionCookieName;
 }
 
 module.exports = {

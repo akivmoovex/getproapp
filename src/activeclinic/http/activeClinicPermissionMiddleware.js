@@ -11,7 +11,7 @@ const {
 const {
   clearV5SessionCookie,
 } = require("../../platform/session/v5SessionCookie");
-const { getCsrfCookieName, CSRF_FIELD, issueCsrfToken } = require("../../platform/http/v5Csrf");
+const { getCsrfCookieName, CSRF_FIELD, issueCsrfToken, setCsrfCookie } = require("../../platform/http/v5Csrf");
 const {
   renderAccessStatePage,
 } = require("./renderActiveClinicAccessState");
@@ -26,6 +26,12 @@ const {
 const {
   PERM: DEPT_PERM,
 } = require("../services/activeClinicDepartmentService");
+
+function issueAccessStateCsrf(res, env, isProduction, req) {
+  const csrfToken = issueCsrfToken(env);
+  setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+  return csrfToken;
+}
 
 function renderSimpleState(title, message, extras) {
   const pageId = (extras && extras.state) || "error";
@@ -85,8 +91,9 @@ function createRequireActiveClinicPermission(deps) {
             reason === "product_mismatch" ||
             reason === "wrong_principal"
           ) {
-            clearV5SessionCookie(res, { secure: isProduction, env });
-            res.clearCookie(getCsrfCookieName(env), { path: "/" });
+            clearV5SessionCookie(res, { secure: isProduction, env, req });
+            res.clearCookie(getCsrfCookieName(env, req), { path: "/" });
+            const csrfToken = issueAccessStateCsrf(res, env, isProduction, req);
             return res.status(403).type("html").send(
               renderSimpleState(
                 "Workspace unavailable",
@@ -97,6 +104,8 @@ function createRequireActiveClinicPermission(deps) {
                   heading: "This ActiveClinic workspace is currently unavailable",
                   linkHref: "/login",
                   linkLabel: "Sign in",
+                  showLogout: true,
+                  csrfToken,
                 }
               )
             );
@@ -132,7 +141,7 @@ function createRequireActiveClinicPermission(deps) {
           }
         }
         if (!allowed) {
-          const csrfToken = issueCsrfToken(env);
+          const csrfToken = issueAccessStateCsrf(res, env, isProduction, req);
           return res.status(403).type("html").send(
             renderSimpleState(
               "Access restricted",
@@ -196,6 +205,10 @@ function requireActiveClinicFacilityScope(options) {
 function createRequireActiveClinicDepartment(deps) {
   const getPool = deps.getPool;
   const env = deps.env || process.env;
+  const isProduction =
+    deps && Object.prototype.hasOwnProperty.call(deps, "isProduction")
+      ? deps.isProduction === true
+      : String(env.NODE_ENV || "") === "production";
 
   return function requireActiveClinicDepartment(moduleKey) {
     return async function departmentMiddleware(req, res, next) {
@@ -223,7 +236,7 @@ function createRequireActiveClinicDepartment(deps) {
         const canManage =
           Array.isArray(auth.permissions) &&
           auth.permissions.includes(DEPT_PERM.MANAGE);
-        const csrfToken = issueCsrfToken(env);
+        const csrfToken = issueAccessStateCsrf(res, env, isProduction, req);
         return res.status(403).type("html").send(
           renderSimpleState(
             "Department unavailable",

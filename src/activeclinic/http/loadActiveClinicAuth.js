@@ -212,7 +212,7 @@ function createRequireActiveClinicAuth(options) {
         const {
           clearV5SessionCookie,
         } = require("../../platform/session/v5SessionCookie");
-        const { getCsrfCookieName, CSRF_FIELD, issueCsrfToken } = require(
+        const { getCsrfCookieName, CSRF_FIELD, issueCsrfToken, setCsrfCookie } = require(
           "../../platform/http/v5Csrf"
         );
         const {
@@ -222,9 +222,10 @@ function createRequireActiveClinicAuth(options) {
           STATE,
         } = require("../services/activeClinicStateTaxonomy");
 
-        clearV5SessionCookie(res, { secure: isProduction, env });
-        res.clearCookie(getCsrfCookieName(env), { path: "/" });
+        clearV5SessionCookie(res, { secure: isProduction, env, req });
+        res.clearCookie(getCsrfCookieName(env, req), { path: "/" });
         const csrfToken = issueCsrfToken(env);
+        setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
         return res.status(403).type("html").send(
           renderAccessStatePage({
             stateKey: STATE.CONTEXT_UNAVAILABLE,
@@ -235,7 +236,7 @@ function createRequireActiveClinicAuth(options) {
               "Your account cannot access this workspace right now. Sign in again, or contact your administrator.",
             primaryHref: "/login",
             primaryLabel: "Sign in",
-            showLogout: false,
+            showLogout: true,
             csrfField: CSRF_FIELD,
             csrfToken,
           })

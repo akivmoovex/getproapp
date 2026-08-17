@@ -16,10 +16,16 @@ const CSRF_PREFIX = "v5c1";
 const CSRF_FIELD = "_csrf";
 
 /**
+ * Same resolver as session cookies: req.platform (unified hostname runtime)
+ * then the authoritative deployment profile.
  * @param {NodeJS.ProcessEnv} [env]
+ * @param {import('express').Request} [req]
  * @returns {string}
  */
-function getCsrfCookieName(env) {
+function getCsrfCookieName(env, req) {
+  if (req && req.platform && req.platform.csrfCookieName) {
+    return String(req.platform.csrfCookieName);
+  }
   const source = env || process.env;
   const {
     hasAuthoritativeDeploymentProfile,
@@ -91,7 +97,7 @@ function issueCsrfToken(env) {
  */
 function validateCsrf(req, submitted, env) {
   const secret = getCsrfSecret(env);
-  const cookieName = getCsrfCookieName(env);
+  const cookieName = getCsrfCookieName(env, req);
   const cookieToken =
     (req.cookies && req.cookies[cookieName]) ||
     (req.signedCookies && req.signedCookies[cookieName]) ||
@@ -109,13 +115,14 @@ function validateCsrf(req, submitted, env) {
 /**
  * @param {import('express').Response} res
  * @param {string} token
- * @param {{ secure?: boolean, env?: NodeJS.ProcessEnv }} [opts]
+ * @param {{ secure?: boolean, env?: NodeJS.ProcessEnv, req?: import('express').Request }} [opts]
  */
 function setCsrfCookie(res, token, opts) {
   const env = (opts && opts.env) || process.env;
+  const req = opts && opts.req;
   const secure =
     opts && opts.secure !== undefined ? opts.secure : String(env.NODE_ENV || "") === "production";
-  const cookieName = getCsrfCookieName(env);
+  const cookieName = getCsrfCookieName(env, req);
   res.cookie(cookieName, token, {
     httpOnly: false, // double-submit must be readable by form issuance from server; value is HMAC-signed
     secure,

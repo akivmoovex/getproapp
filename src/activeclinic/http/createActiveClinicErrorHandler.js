@@ -15,6 +15,7 @@ const {
 const {
   STATE,
 } = require("../services/activeClinicStateTaxonomy");
+const { issueCsrfToken, setCsrfCookie, CSRF_FIELD } = require("../../platform/http/v5Csrf");
 
 function wantsHtml(req) {
   const accept = String((req.headers && req.headers.accept) || "");
@@ -29,6 +30,7 @@ function wantsHtml(req) {
 function isAuthPublicPath(path) {
   return (
     path === "/login" ||
+    path === "/logout" ||
     path.startsWith("/login/") ||
     path.startsWith("/activate") ||
     path.startsWith("/forgot-password") ||
@@ -38,10 +40,11 @@ function isAuthPublicPath(path) {
 }
 
 /**
- * @param {{ isProduction?: boolean, log?: Function }} deps
+ * @param {{ isProduction?: boolean, log?: Function, env?: NodeJS.ProcessEnv }} deps
  */
 function createActiveClinicErrorHandler(deps) {
   const isProduction = deps && deps.isProduction === true;
+  const env = (deps && deps.env) || process.env;
   const log = (deps && deps.log) || console.error;
   const fallback = createV5ErrorHandler({ isProduction, log });
 
@@ -88,12 +91,20 @@ function createActiveClinicErrorHandler(deps) {
     }
 
     if (status === 403) {
+      const showLogout = !isAuthPublicPath(path);
+      let csrfToken = "";
+      if (showLogout) {
+        csrfToken = issueCsrfToken(env);
+        setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+      }
       const html = renderAccessStatePage({
         stateKey: STATE.ACCESS_RESTRICTED,
         pageId: "access-denied",
         primaryHref: isAuthPublicPath(path) ? "/login" : "/app",
         primaryLabel: isAuthPublicPath(path) ? "Sign in" : "Back to home",
-        showLogout: !isAuthPublicPath(path),
+        showLogout,
+        csrfField: CSRF_FIELD,
+        csrfToken,
       });
       return res.status(403).type("html").send(html);
     }

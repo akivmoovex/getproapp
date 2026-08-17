@@ -69,14 +69,14 @@ function createActiveClinicAppRenderer(deps) {
   const env = deps.env;
   const isProduction = deps.isProduction === true;
 
-  function issuePageCsrf(res) {
+  function issuePageCsrf(res, req) {
     const token = issueCsrfToken(env);
-    setCsrfCookie(res, token, { secure: isProduction, env });
+    setCsrfCookie(res, token, { secure: isProduction, env, req });
     return token;
   }
 
   async function renderShell(req, res, options) {
-    const csrfToken = issuePageCsrf(res);
+    const csrfToken = issuePageCsrf(res, req);
     const shell = await buildActiveClinicShellViewModel(getPool(), {
       req,
       auth: req.activeClinicAuth,

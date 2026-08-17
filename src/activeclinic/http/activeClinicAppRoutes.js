@@ -62,15 +62,15 @@ function registerActiveClinicAppRoutes(app, deps) {
     isProduction,
   });
 
-  function issuePageCsrf(res) {
+  function issuePageCsrf(res, req) {
     const token = issueCsrfToken(env);
-    setCsrfCookie(res, token, { secure: isProduction, env });
+    setCsrfCookie(res, token, { secure: isProduction, env, req });
     return token;
   }
 
   // Shared offline presentation (testable; not a fake outage injector)
   app.get("/app/offline", (req, res) => {
-    const csrfToken = issuePageCsrf(res);
+    const csrfToken = issuePageCsrf(res, req);
     return res
       .status(503)
       .type("html")
@@ -87,7 +87,7 @@ function registerActiveClinicAppRoutes(app, deps) {
   });
 
   async function renderShell(req, res, options) {
-    const csrfToken = issuePageCsrf(res);
+    const csrfToken = issuePageCsrf(res, req);
     const shell = await buildActiveClinicShellViewModel(getPool(), {
       req,
       auth: req.activeClinicAuth,
@@ -108,7 +108,7 @@ function registerActiveClinicAppRoutes(app, deps) {
 
   app.get("/app", requireAuth, requirePermission("activeclinic.access"), async (req, res, next) => {
     try {
-      const csrfToken = issuePageCsrf(res);
+      const csrfToken = issuePageCsrf(res, req);
       const shellBase = await buildActiveClinicShellViewModel(getPool(), {
         req,
         auth: req.activeClinicAuth,
@@ -180,6 +180,7 @@ function registerActiveClinicAppRoutes(app, deps) {
       if (!selected.ok) {
         return res.redirect(303, "/app/select-facility");
       }
+      issuePageCsrf(res, req);
       return res.redirect(303, "/app");
     } catch (err) {
       return next(err);
@@ -236,16 +237,10 @@ function registerActiveClinicAppRoutes(app, deps) {
       }
 
       const rawToken = readV5SessionCookie(req, env);
-      if (rawToken) {
-        await revokeV5Session(getPool(), {
-          rawToken,
-          deploymentCode: deployment.code,
-        });
-      }
-
+      const identityId = req.activeClinicAuth.platformIdentity.id;
       const fresh = await createPlatformIdentitySession(getPool(), {
         deploymentCode: deployment.code,
-        platformIdentityId: req.activeClinicAuth.platformIdentity.id,
+        platformIdentityId: identityId,
         organizationId,
         ip: String(
           (req.headers && req.headers["x-forwarded-for"]) ||
@@ -255,11 +250,23 @@ function registerActiveClinicAppRoutes(app, deps) {
           .split(",")[0]
           .trim(),
         userAgent: req.headers["user-agent"] || null,
+        contextJson: {},
       });
       if (!fresh.ok) {
-        return res.redirect(303, "/login");
+        return res.redirect(303, "/app/select-organization");
       }
-      setV5SessionCookie(res, fresh.rawToken, { secure: isProduction, env });
+      if (rawToken) {
+        try {
+          await revokeV5Session(getPool(), {
+            rawToken,
+            deploymentCode: deployment.code,
+          });
+        } catch {
+          /* new session already issued */
+        }
+      }
+      setV5SessionCookie(res, fresh.rawToken, { secure: isProduction, env, req });
+      issuePageCsrf(res, req);
       return res.redirect(303, "/app");
     } catch (err) {
       return next(err);

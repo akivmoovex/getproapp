@@ -590,7 +590,7 @@ function createActiveClinicFoundationApp(options) {
     return next(err);
   });
 
-  app.use(createActiveClinicErrorHandler({ isProduction }));
+  app.use(createActiveClinicErrorHandler({ isProduction, env }));
   return app;
 }
 
