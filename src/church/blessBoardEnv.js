@@ -8,8 +8,8 @@
  * domains / deployment env / cookie / jobs come from deploymentProfiles.js.
  * Unprofiled hosts keep V4 env fallbacks (including legacy dual-TLD apex defaults).
  *
- * Values are read from process.env on each call (never captured at require-time).
- * Bootstrap / Hostinger env must be loaded before church domain middleware runs.
+ * Values are read from an explicit env object when callers pass one; otherwise
+ * from process.env (bootstrap). Runtime request helpers must pass app env.
  */
 
 const path = require("path");
@@ -43,8 +43,9 @@ function normalizeHost(host) {
  * Trim env values and strip a single layer of wrapping quotes (Hostinger / dotenv quirks).
  * Does not strip quotes around comma-separated lists — those are handled per-segment.
  */
-function envTrim(name) {
-  const v = process.env[name];
+function envTrim(name, env) {
+  const source = env || process.env;
+  const v = source[name];
   if (v == null) return "";
   let s = String(v).trim();
   if (s.includes(",")) return s;
@@ -107,8 +108,8 @@ function canonicalFromApexList(apexList) {
  *   churchHostDomain: string,
  * }|null}
  */
-function getBlessBoardDomainConfig() {
-  return getAuthoritativeDomainConfig();
+function getBlessBoardDomainConfig(env) {
+  return getAuthoritativeDomainConfig(env);
 }
 
 /**
@@ -124,12 +125,12 @@ function getBlessBoardDomainConfig() {
  * When apex is org-only, a leftover CANONICAL_DOMAIN=blessboard.com is ignored so
  * .org is not treated as an alias of .com.
  */
-function getBlessBoardCanonicalDomain() {
-  const fromProfile = getAuthoritativeDomainConfig();
+function getBlessBoardCanonicalDomain(env) {
+  const fromProfile = getAuthoritativeDomainConfig(env);
   if (fromProfile) return fromProfile.canonicalDomain;
 
-  const explicit = normalizeHost(envTrim("BLESSBOARD_CANONICAL_DOMAIN"));
-  const apexFromEnv = parseApexDomainsFromEnv();
+  const explicit = normalizeHost(envTrim("BLESSBOARD_CANONICAL_DOMAIN", env));
+  const apexFromEnv = parseApexDomainsFromEnv(env);
 
   if (apexFromEnv && apexFromEnv.length) {
     if (explicit && apexFromEnv.includes(explicit)) return explicit;
@@ -139,10 +140,10 @@ function getBlessBoardCanonicalDomain() {
 
   if (explicit) return explicit;
 
-  const fromPublic = hostFromAbsoluteUrl(envTrim("BLESSBOARD_PUBLIC_URL"));
+  const fromPublic = hostFromAbsoluteUrl(envTrim("BLESSBOARD_PUBLIC_URL", env));
   if (fromPublic) return fromPublic.replace(/^www\./, "");
 
-  const church = normalizeHost(envTrim("CHURCH_HOST_DOMAIN"));
+  const church = normalizeHost(envTrim("CHURCH_HOST_DOMAIN", env));
   return church || DEFAULT_CANONICAL_DOMAIN;
 }
 
@@ -199,11 +200,11 @@ function getBlessBoardAdminUrl() {
 /**
  * @returns {string[]|null}
  */
-function parseApexDomainsFromEnv() {
-  const fromProfile = getAuthoritativeDomainConfig();
+function parseApexDomainsFromEnv(env) {
+  const fromProfile = getAuthoritativeDomainConfig(env);
   if (fromProfile) return fromProfile.apexDomains.slice();
 
-  const raw = envTrim("BLESSBOARD_APEX_DOMAINS");
+  const raw = envTrim("BLESSBOARD_APEX_DOMAINS", env);
   if (!raw) return null;
   const list = raw
     .split(",")
@@ -229,16 +230,17 @@ function defaultApexDomainsForCanonical(canonical) {
  * Authoritative profile apex list wins (never adds foreign TLDs).
  * When BLESSBOARD_APEX_DOMAINS is set, that list is authoritative (plus www.{canonical}
  * only when canonical is already in the list). Never force-adds a foreign TLD.
+ * @param {NodeJS.ProcessEnv} [env]
  * @returns {Set<string>}
  */
-function getBlessBoardApexDomainSet() {
-  const fromProfile = getAuthoritativeDomainConfig();
+function getBlessBoardApexDomainSet(env) {
+  const fromProfile = getAuthoritativeDomainConfig(env);
   if (fromProfile) {
     return new Set(fromProfile.apexDomains.map(normalizeHost).filter(Boolean));
   }
 
-  const fromEnv = parseApexDomainsFromEnv();
-  const canonical = getBlessBoardCanonicalDomain();
+  const fromEnv = parseApexDomainsFromEnv(env);
+  const canonical = getBlessBoardCanonicalDomain(env);
 
   let list;
   if (fromEnv && fromEnv.length) {
@@ -258,10 +260,10 @@ function getBlessBoardApexDomainSet() {
   return new Set(list.map(normalizeHost).filter(Boolean));
 }
 
-function isBlessBoardApexDomain(host) {
+function isBlessBoardApexDomain(host, env) {
   const clean = normalizeHost(host);
   if (!clean) return false;
-  return getBlessBoardApexDomainSet().has(clean);
+  return getBlessBoardApexDomainSet(env).has(clean);
 }
 
 /**

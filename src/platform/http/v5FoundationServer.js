@@ -185,12 +185,11 @@ const APEX_HOSTS = new Set(["blessboard.org", "www.blessboard.org"]);
 function resolveApexHosts(env) {
   try {
     const { getBlessBoardApexDomainSet } = require("../../church/blessBoardEnv");
-    const fromProfile = getBlessBoardApexDomainSet();
+    const fromProfile = getBlessBoardApexDomainSet(env);
     if (fromProfile && fromProfile.size) return fromProfile;
   } catch {
     /* fall through */
   }
-  void env;
   return new Set(APEX_HOSTS);
 }
 
@@ -204,7 +203,7 @@ function resolveCanonicalApexHost(env) {
     const fromProfile = getAuthoritativeDomainConfig(env);
     if (fromProfile && fromProfile.canonicalDomain) return fromProfile.canonicalDomain;
     const { getBlessBoardCanonicalDomain } = require("../../church/blessBoardEnv");
-    return getBlessBoardCanonicalDomain();
+    return getBlessBoardCanonicalDomain(env);
   } catch {
     return "blessboard.org";
   }
@@ -283,10 +282,6 @@ function parseCookies(req) {
 
 /**
  * @param {import('express').Request} req
- * @param {{ apexHosts?: Set<string> }} [opts]
- */
-/**
- * @param {import('express').Request} req
  * @param {{ apexHosts?: Set<string>, env?: NodeJS.ProcessEnv }} [opts]
  */
 function isApexHost(req, opts) {
@@ -308,13 +303,14 @@ function isApexHost(req, opts) {
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {import('express').NextFunction} next
+ * @param {NodeJS.ProcessEnv} [env]
  */
-function foundationWwwToApexRedirect(req, res, next) {
+function foundationWwwToApexRedirect(req, res, next, env) {
   const host = String(resolveHostname(req) || "")
     .trim()
     .toLowerCase()
     .split(":")[0];
-  const canonical = resolveCanonicalApexHost(process.env);
+  const canonical = resolveCanonicalApexHost(env || process.env);
   const wwwCanonical = `www.${canonical}`;
   if (host !== wwwCanonical) {
     return next();
@@ -381,7 +377,7 @@ function createV5FoundationApp(options) {
   app.use(createV5PrivateNoStoreMiddleware());
 
   // www → apex before any Set-Cookie (host-only CSRF / session cookies).
-  app.use(foundationWwwToApexRedirect);
+  app.use((req, res, next) => foundationWwwToApexRedirect(req, res, next, env));
 
   // Global write freeze (migrate/cutover). Host-agnostic; GET/HEAD/OPTIONS + logout POSTs pass.
   app.use(
@@ -508,7 +504,7 @@ function createV5FoundationApp(options) {
     },
     handler: (req, res) => {
       const csrfToken = issueCsrfToken(env);
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       return res
         .status(429)
         .type("html")
@@ -1043,7 +1039,7 @@ function createV5FoundationApp(options) {
         }
       }
       const csrfToken = issueCsrfToken(env);
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       authLog.logAuthEvent(req, "apex_login_rendered", {
         outcome: "ok",
         cookieHeaderPresent: Boolean(req.headers && req.headers.cookie),
@@ -1119,7 +1115,7 @@ function createV5FoundationApp(options) {
         failureCategory: "csrf",
         cookieHeaderPresent: Boolean(req.headers && req.headers.cookie),
       });
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       return res
         .status(403)
         .type("html")
@@ -1133,7 +1129,7 @@ function createV5FoundationApp(options) {
 
     const deployment = getPlatformDeploymentCode(env);
     if (!deployment.ok || !deployment.code) {
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       return res
         .status(503)
         .type("html")
@@ -1149,7 +1145,7 @@ function createV5FoundationApp(options) {
           deploymentCode: deployment.code,
         });
         if (!loaded.ok || !loaded.transfer || loaded.transfer.userId) {
-          setCsrfCookie(res, csrfToken, { secure: isProduction });
+          setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
           const consumed =
             loaded &&
             (loaded.status === TRANSFER_STATUS.CONSUMED ||
@@ -1166,7 +1162,7 @@ function createV5FoundationApp(options) {
         pendingTransfer = loaded.transfer;
         loginPageOpts.transferHostname = pendingTransfer.requestedHostname;
       } catch {
-        setCsrfCookie(res, csrfToken, { secure: isProduction });
+        setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
         return res
           .status(503)
           .type("html")
@@ -1185,7 +1181,7 @@ function createV5FoundationApp(options) {
       });
 
       if (!result.ok) {
-        setCsrfCookie(res, csrfToken, { secure: isProduction });
+        setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
         const failureCategory =
           result.status === "no_active_role"
             ? "no_active_role"
@@ -1222,7 +1218,7 @@ function createV5FoundationApp(options) {
         env,
         req,
       });
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       authLog.logAuthEvent(req, "apex_login_session_created", {
         outcome: "ok",
         setCookieIssued: true,
@@ -1281,7 +1277,7 @@ function createV5FoundationApp(options) {
       });
       return res.redirect(303, callbackUrl);
     } catch {
-      setCsrfCookie(res, csrfToken, { secure: isProduction });
+      setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       return res
         .status(503)
         .type("html")
@@ -1399,7 +1395,7 @@ function createV5FoundationApp(options) {
     }
     clearV5SessionCookie(res, { secure: isProduction, env, req });
     const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
     return res.redirect(303, "/login");
   });
 
@@ -1439,7 +1435,7 @@ function createV5FoundationApp(options) {
       portalOptions = [];
     }
     const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
     return res.status(200).type("html").send(
       renderAccountPage({
         displayName: session.user.displayName,
@@ -1462,7 +1458,7 @@ function createV5FoundationApp(options) {
   app.get("/", (req, res) => {
     const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
     const csrfToken = issueCsrfToken(env);
-    setCsrfCookie(res, csrfToken, { secure: isProduction });
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
 
     if (isApexHost(req, opts)) {
       return res.status(200).type("html").send(

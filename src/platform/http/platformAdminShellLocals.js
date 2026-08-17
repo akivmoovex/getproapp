@@ -54,7 +54,7 @@ function buildPlatformAdminShellLocals(req, res, opts) {
   const isProduction = Boolean(opts.isProduction);
   const activeNav = String(opts.activeNav || "home");
   const csrfToken = issueCsrfToken(env);
-  setCsrfCookie(res, csrfToken, { secure: isProduction });
+  setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
 
   const ctx = req.platformAdminContext || {};
   const testingMaintenance = isTestingDataMaintenanceAllowed(env);
