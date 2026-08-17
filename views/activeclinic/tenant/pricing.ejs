@@ -4,9 +4,19 @@
     <h1>Pricing</h1>
     <p class="ac-public-lede">Fees listed here are only those <%= clinic.publicName %> has chosen to publish. Contact the clinic for anything not shown.</p>
   </header>
-  <% const patterns = Array.isArray(pricePatterns) ? pricePatterns : []; %>
+  <% const pricing = typeof pricingDisplay !== 'undefined' && pricingDisplay ? pricingDisplay : null; %>
+  <% const patterns = pricing && Array.isArray(pricing.operationalCatalogue) ? pricing.operationalCatalogue : (Array.isArray(pricePatterns) ? pricePatterns : []); %>
+  <% if (pricing && pricing.insuranceIntro) { %>
+  <div class="ac-public-prose acp-prose-card" data-ac-pricing-insurance="1">
+    <%- include('../partials/website-editable-field', { contentKey: 'insurance.intro', fieldValue: pricing.insuranceIntro, fieldType: 'long_text' }) %>
+  </div>
+  <% } else if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>
+  <div class="ac-public-prose acp-prose-card" data-ac-pricing-insurance="1">
+    <%- include('../partials/website-editable-field', { contentKey: 'insurance.intro', fieldValue: '', fieldType: 'long_text' }) %>
+  </div>
+  <% } %>
   <% if (!patterns.length) { %>
-  <div class="ac-public-empty acp-empty-state" data-ac-price-state="no-public-prices" data-ac-state-key="empty">
+  <div class="ac-public-empty acp-empty-state" data-ac-price-state="no-public-prices" data-ac-state-key="empty" data-ac-pricing-source="hybrid">
     <p><strong>Fees not listed online</strong></p>
     <p>Public price information has not been configured for <%= clinic.publicName %>. Contact the clinic for current fees — amounts shown here would only appear when verified by the clinic.</p>
     <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic for fees</a></p>

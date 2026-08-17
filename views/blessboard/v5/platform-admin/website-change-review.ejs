@@ -3,11 +3,26 @@
   var s = sub || {};
   var r = readiness || {};
   var missing = (r.mandatory || []);
+  var diff = typeof reviewDiff !== 'undefined' && reviewDiff ? reviewDiff : { items: [], count: 0 };
+  var items = Array.isArray(diff.items) ? diff.items : [];
+  var noteRequired = typeof requestChangesNoteRequired !== 'undefined' && requestChangesNoteRequired;
+  function changeLabel(t) {
+    if (t === 'added') return 'Added';
+    if (t === 'removed') return 'Removed';
+    if (t === 'visibility') return 'Visibility';
+    if (t === 'reorder') return 'Reorder';
+    return 'Changed';
+  }
 %>
-<section class="bb-pa-page">
+<section class="bb-pa-page bb-pa-website-review" data-website-review="1">
   <h1>Review website changes</h1>
-  <p><strong><%= s.organizationName || s.organizationKey %></strong> · <%= s.slug %> · <%= s.status %></p>
-  <p><%= (s.changedKeys || []).length %> changed keys</p>
+  <p>
+    <strong><%= s.organizationName || s.organizationKey %></strong>
+    · <%= s.slug %>
+    · <span data-website-review-status="<%= s.status %>"><%= s.status %></span>
+  </p>
+  <p data-website-review-count="<%= items.length %>"><%= items.length %> changed field<%= items.length === 1 ? '' : 's' %></p>
+
   <% if (missing.length) { %>
   <div class="bb-pa-alert" data-website-readiness="missing">
     <p>Mandatory publication requirements missing:</p>
@@ -18,24 +33,103 @@
     </ul>
   </div>
   <% } %>
-  <% if (s.status === 'submitted' && canReview) { %>
-  <form method="post" action="/admin/website-changes/<%= s.id %>/approve">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <input type="hidden" name="rowVersion" value="<%= s.rowVersion %>"/>
-    <label>Review note <input name="review_note" maxlength="500"/></label>
-    <% if (missing.length && r.blocksFirstPublication) { %>
-    <label>
-      <input type="checkbox" name="override_readiness" value="1"/>
-      Explicitly override first-publication readiness (audited)
-    </label>
+
+  <div class="bb-pa-website-diff" data-website-review-diff="1" data-website-review-source="submission_snapshot">
+    <% if (!items.length) { %>
+    <p class="bb-pa-website-diff__empty">No field-level changes were recorded on this submission snapshot.</p>
     <% } %>
-    <button type="submit" class="bb-pa-btn">Approve</button>
-  </form>
-  <form method="post" action="/admin/website-changes/<%= s.id %>/reject">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <input type="hidden" name="rowVersion" value="<%= s.rowVersion %>"/>
-    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Reject</button>
-  </form>
+    <% items.forEach(function (item) { %>
+    <article
+      class="bb-pa-website-diff__item"
+      data-website-diff-key="<%= item.contentKey %>"
+      data-website-diff-type="<%= item.changeType %>"
+      data-website-diff-content="<%= item.contentType %>"
+    >
+      <header class="bb-pa-website-diff__meta">
+        <p class="bb-pa-website-diff__crumb">
+          <span data-website-diff-page="1"><%= item.pageLabel %></span>
+          <span aria-hidden="true">·</span>
+          <span data-website-diff-section="1"><%= item.sectionKey %></span>
+          <span aria-hidden="true">·</span>
+          <span data-website-diff-field="1"><%= item.fieldLabel %></span>
+        </p>
+        <p class="bb-pa-website-diff__key"><code><%= item.contentKey %></code></p>
+        <p>
+          <span class="bb-pa-website-diff__badge bb-pa-website-diff__badge--<%= item.changeType %>" data-website-diff-change="<%= item.changeType %>">
+            <%= changeLabel(item.changeType) %>
+          </span>
+        </p>
+      </header>
+      <div class="bb-pa-website-diff__compare">
+        <div class="bb-pa-website-diff__col" data-website-diff-side="old">
+          <h2>Current published</h2>
+          <% if (item.contentType === 'image') { %>
+            <% if (item.old && item.old.src) { %>
+            <img class="bb-pa-website-diff__thumb" src="<%= item.old.src %>" alt="<%= item.old.alt || 'Current published image' %>" width="240" height="160"/>
+            <% } else { %>
+            <p class="bb-pa-website-diff__empty-value">No published image</p>
+            <% } %>
+            <% if (item.old && item.old.alt) { %><p>Alt text: <%= item.old.alt %></p><% } %>
+          <% } else if (item.contentType === 'video_url' || item.contentType === 'url') { %>
+            <p class="bb-pa-website-diff__url"><%= (item.old && (item.old.url || item.old.text)) || '—' %></p>
+          <% } else if (item.old && item.old.long) { %>
+            <pre class="bb-pa-website-diff__block bb-pa-website-diff__block--old"><%= item.old.text %></pre>
+          <% } else { %>
+            <p class="bb-pa-website-diff__text"><%= (item.old && item.old.text) || '—' %></p>
+          <% } %>
+        </div>
+        <div class="bb-pa-website-diff__col" data-website-diff-side="new">
+          <h2>Proposed</h2>
+          <% if (item.contentType === 'image') { %>
+            <% if (item.proposed && item.proposed.src) { %>
+            <img class="bb-pa-website-diff__thumb" src="<%= item.proposed.src %>" alt="<%= item.proposed.alt || 'Proposed image' %>" width="240" height="160"/>
+            <% } else { %>
+            <p class="bb-pa-website-diff__empty-value"><%= item.changeType === 'removed' ? 'Image will be removed' : 'No proposed image' %></p>
+            <% } %>
+            <% if (item.proposed && item.proposed.alt) { %><p>Alt text: <%= item.proposed.alt %></p><% } %>
+          <% } else if (item.contentType === 'video_url' || item.contentType === 'url') { %>
+            <p class="bb-pa-website-diff__url"><%= (item.proposed && (item.proposed.url || item.proposed.text)) || '—' %></p>
+          <% } else if (item.proposed && item.proposed.long) { %>
+            <pre class="bb-pa-website-diff__block bb-pa-website-diff__block--new"><%= item.proposed.text %></pre>
+          <% } else { %>
+            <p class="bb-pa-website-diff__text"><%= (item.proposed && item.proposed.text) || '—' %></p>
+          <% } %>
+        </div>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+
+  <% if (s.status === 'submitted' && canReview) { %>
+  <div class="bb-pa-website-review__actions" data-website-review-actions="1">
+    <form method="post" action="/admin/website-changes/<%= s.id %>/approve" class="bb-pa-website-review__form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <input type="hidden" name="rowVersion" value="<%= s.rowVersion %>"/>
+      <label>Review note
+        <textarea name="review_note" maxlength="500" rows="3"></textarea>
+      </label>
+      <% if (missing.length && r.blocksFirstPublication) { %>
+      <label>
+        <input type="checkbox" name="override_readiness" value="1"/>
+        Explicitly override first-publication readiness (audited)
+      </label>
+      <% } %>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--primary" data-website-review-approve="1">Approve &amp; Publish</button>
+    </form>
+    <form method="post" action="/admin/website-changes/<%= s.id %>/request_changes" class="bb-pa-website-review__form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <input type="hidden" name="rowVersion" value="<%= s.rowVersion %>"/>
+      <label>Request-changes note<%= noteRequired ? ' (required)' : ' (optional)' %>
+        <textarea name="review_note" maxlength="500" rows="3"<%= noteRequired ? ' required' : '' %>></textarea>
+      </label>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--ghost" data-website-review-request-changes="1">Request Changes</button>
+    </form>
+    <form method="post" action="/admin/website-changes/<%= s.id %>/reject" class="bb-pa-website-review__form">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <input type="hidden" name="rowVersion" value="<%= s.rowVersion %>"/>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--danger" data-website-review-reject="1">Reject</button>
+    </form>
+  </div>
   <% } %>
 </section>
 <%- include('../partials/platform-admin-shell-end') %>

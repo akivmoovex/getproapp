@@ -197,6 +197,8 @@ describe("ActiveClinic website hardening", () => {
       province: "Lusaka Province",
       city: "Lusaka",
       countryCode: "ZM",
+      password: PASSWORD,
+      passwordConfirm: PASSWORD,
     });
     assert.equal(created.ok, true, JSON.stringify(created));
 
@@ -248,6 +250,8 @@ describe("ActiveClinic website hardening", () => {
       province: "Lusaka Province",
       city: "Lusaka",
       countryCode: "ZM",
+      password: PASSWORD,
+      passwordConfirm: PASSWORD,
     });
     assert.equal(created.ok, true, JSON.stringify(created));
     const approved = await approveAndProvisionClinicRegistration(pool, {
@@ -330,6 +334,8 @@ describe("ActiveClinic website hardening", () => {
       province: "Lusaka Province",
       city: "Lusaka",
       countryCode: "ZM",
+      password: PASSWORD,
+      passwordConfirm: PASSWORD,
     });
     const approved = await approveAndProvisionClinicRegistration(pool, {
       applicationId: created.application.id,
@@ -430,7 +436,30 @@ describe("ActiveClinic website hardening", () => {
       .set("Cookie", adminCookie);
     assert.equal(editorGet.status, 200);
     assert.match(editorGet.text, /data-website-chrome/);
+    assert.match(editorGet.text, /aria-label="Save field to draft"/);
+    assert.match(editorGet.text, /data-website-type="image"/);
+    assert.match(editorGet.text, /data-website-chrome-status/);
     const editorCsrf = extractCsrf(editorGet);
+    const jpegBuf = Buffer.alloc(32, 0);
+    jpegBuf[0] = 0xff;
+    jpegBuf[1] = 0xd8;
+    jpegBuf[2] = 0xff;
+    const uploaded = await request(app)
+      .post(`/clinics/${slug}/website/media`)
+      .set("Cookie", cookieJar(adminCookie, editorGet))
+      .field(CSRF_FIELD, editorCsrf)
+      .attach("file", jpegBuf, { filename: "hero.jpg", contentType: "image/jpeg" });
+    assert.equal(uploaded.status, 200, uploaded.text);
+    const uploadedJson = JSON.parse(uploaded.text);
+    assert.equal(uploadedJson.ok, true);
+    const mediaId = uploadedJson.media && uploadedJson.media.id;
+    assert.ok(mediaId);
+    const editorMedia = await request(app)
+      .get(`/clinics/${slug}/website/media/${mediaId}`)
+      .set("Cookie", cookieJar(adminCookie, editorGet));
+    assert.equal(editorMedia.status, 200);
+    const anonMedia = await request(app).get(`/clinics/${slug}/website/media/${mediaId}`);
+    assert.equal(anonMedia.status, 404);
     const save = await request(app)
       .post(`/clinics/${slug}/website/drafts`)
       .set("Cookie", cookieJar(adminCookie, editorGet))

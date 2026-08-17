@@ -251,18 +251,43 @@ function valuesEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
 
+function classifyDiffChange(published, draft, extra) {
+  const visChanged =
+    extra && extra.oldVisibility && extra.visibility && extra.oldVisibility !== extra.visibility;
+  const sortChanged =
+    extra &&
+    Number.isFinite(Number(extra.oldSortOrder)) &&
+    Number.isFinite(Number(extra.sortOrder)) &&
+    Number(extra.oldSortOrder) !== Number(extra.sortOrder);
+  const valueChanged = !valuesEqual(published, draft);
+  if (visChanged && !valueChanged) return "visibility";
+  if (sortChanged && !valueChanged) return "reorder";
+  if ((published == null || published === "") && draft != null && draft !== "") return "added";
+  if (published != null && published !== "" && (draft == null || draft === "")) return "removed";
+  return "changed";
+}
+
 function diffContentRows(rows) {
   const changes = [];
   for (const row of rows || []) {
     const draft = row.draftValue;
     const published = row.publishedValue;
     if (!valuesEqual(draft, published)) {
+      const extra = {
+        visibility: row.visibility,
+        oldVisibility: row.publishedVisibility || row.visibility,
+        sortOrder: row.sortOrder,
+        oldSortOrder: row.publishedSortOrder,
+      };
       changes.push({
         contentKey: row.contentKey,
         contentType: row.contentType,
         oldValue: published,
         proposedValue: draft,
         visibility: row.visibility,
+        oldVisibility: extra.oldVisibility,
+        sortOrder: row.sortOrder,
+        changeType: classifyDiffChange(published, draft, extra),
       });
     }
   }

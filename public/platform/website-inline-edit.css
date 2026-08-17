@@ -1,18 +1,207 @@
 .ac-website-chrome {
   background: #f4f1ff;
   border-bottom: 1px solid #d8d0f5;
-  padding: 0.5rem 1rem;
+  padding: 0.65rem 1rem;
   display: flex;
-  gap: 1rem;
-  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
   font-size: 0.9rem;
+  position: sticky;
+  top: 0;
+  z-index: 30;
+}
+.ac-website-chrome__status {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+.ac-website-chrome__status p {
+  margin: 0 0 0.35rem;
+}
+.ac-website-chrome__pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0 0 0.4rem;
+  padding: 0;
+}
+.ac-website-chrome__pills li {
+  border: 1px solid #d8d0f5;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+}
+.ac-website-chrome__pills li.is-current {
+  background: #6c5ce7;
+  color: #fff;
+  border-color: #6c5ce7;
+}
+.ac-website-chrome__note {
+  background: #fff7ed;
+  border: 1px solid #fed7aa;
+  border-radius: 0.5rem;
+  padding: 0.45rem 0.6rem;
+  overflow-wrap: anywhere;
+}
+.ac-website-chrome__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.ac-website-chrome__link,
+.ac-website-chrome__submit button {
+  min-height: 2.75rem;
+  min-width: 2.75rem;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.4rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid #6c5ce7;
+  background: #fff;
+  color: #4c3fd4;
+  text-decoration: none;
+  font: inherit;
+  cursor: pointer;
+}
+.ac-website-chrome__submit {
+  margin: 0;
+}
+.ac-website-editable {
+  position: relative;
+  display: inline-block;
+  max-width: 100%;
 }
 .ac-website-editable[data-website-editing="1"] {
   outline: 2px solid #6c5ce7;
+  outline-offset: 2px;
+}
+.ac-website-editable__value[contenteditable="true"] {
   display: inline-block;
   min-width: 8rem;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+}
+.ac-website-editable__controls {
+  display: inline-flex;
+  gap: 0.25rem;
+  vertical-align: middle;
+  margin-left: 0.25rem;
 }
 .ac-website-editable__save,
 .ac-website-editable__cancel {
-  margin-left: 0.35rem;
+  min-width: 2.75rem;
+  min-height: 2.75rem;
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border-radius: 0.45rem;
+  border: 1px solid transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+.ac-website-editable__save {
+  background: #ecfdf5;
+  color: #047857;
+  border-color: #a7f3d0;
+}
+.ac-website-editable__cancel {
+  background: #fef2f2;
+  color: #b91c1c;
+  border-color: #fecaca;
+}
+.ac-website-editable__save:disabled,
+.ac-website-editable__cancel:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.ac-website-editable__icon {
+  display: flex;
+}
+.ac-website-editable__status {
+  display: block;
+  font-size: 0.8rem;
+  color: #047857;
+  margin-top: 0.25rem;
+}
+.ac-website-editable__status.is-error {
+  color: #b91c1c;
+}
+.ac-website-editable--image {
+  display: grid;
+  gap: 0.5rem;
+  width: 100%;
+}
+.ac-website-editable--image img {
+  width: 100%;
+  height: auto;
+  max-height: 22rem;
+  object-fit: cover;
+  border-radius: 0.75rem;
+}
+.ac-website-editable__image-tools {
+  display: grid;
+  gap: 0.45rem;
+}
+.ac-website-editable__file,
+.ac-website-editable__alt {
+  display: grid;
+  gap: 0.25rem;
+  font-size: 0.85rem;
+}
+.ac-website-editable__file input,
+.ac-website-editable__alt input {
+  min-height: 2.75rem;
+  max-width: 100%;
+}
+.ac-website-editable__progress {
+  width: 100%;
+}
+.ac-sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 430px) {
+  .ac-website-chrome {
+    padding: 0.55rem 0.75rem;
+    padding-left: max(0.75rem, env(safe-area-inset-left, 0px));
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+  }
+  .ac-website-chrome__actions,
+  .ac-website-chrome__link,
+  .ac-website-chrome__submit button {
+    width: 100%;
+  }
+  .ac-public-body {
+    overflow-x: clip;
+  }
+  .ac-website-editable__value[contenteditable="true"] {
+    min-width: 0;
+    width: 100%;
+  }
+}
+
+@media (max-width: 360px) {
+  .ac-website-chrome {
+    font-size: 0.85rem;
+  }
+}
+
+@media (min-width: 900px) {
+  .ac-website-chrome {
+    position: sticky;
+  }
 }

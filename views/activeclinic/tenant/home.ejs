@@ -47,17 +47,14 @@
       </div>
     </div>
     <div class="ac-tenant-hero__media">
-      <%- include('../partials/ac-media', {
-        src: heroSrc,
-        alt: heroAlt,
-        className: 'ac-tenant-hero__image',
-        objectFit: 'cover',
-        objectPosition: heroPos,
-        aspect: '16 / 10',
-        width: 960,
-        height: 600,
-        loading: 'eager',
-        fallbackSrc: typeof clinicHeroDefaultUrl === 'string' ? clinicHeroDefaultUrl : '/activeclinic/assets/clinic-hero-default.jpg',
+      <%- include('../partials/website-editable-image', {
+        contentKey: 'home.hero.image',
+        imageSrc: heroSrc,
+        imageAlt: (clinic.websiteContent && clinic.websiteContent['home.hero.image'] && clinic.websiteContent['home.hero.image'].alt) || heroAlt,
+        imageMediaId: (clinic.websiteContent && clinic.websiteContent['home.hero.image'] && clinic.websiteContent['home.hero.image'].mediaId) || '',
+        imageClassName: 'ac-tenant-hero__image',
+        imagePosition: heroPos,
+        imageLoading: 'eager',
       }) %>
       <aside class="ac-tenant-hero__badge" aria-label="Facility status">
         <span class="ac-tenant-hero__badge-icon" aria-hidden="true">✓</span>

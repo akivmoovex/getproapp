@@ -4,6 +4,7 @@ const { CSRF_FIELD } = require("../../platform/http/v5Csrf");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const { resolveActiveClinicWebsite, MODE } = require("../website/activeClinicWebsiteResolver");
 const instanceRepo = require("../../platform/website/instanceRepository");
+const submissionService = require("../../platform/website/submissionService");
 
 function grantedPermissions(req) {
   const auth = req.activeClinicAuth;
@@ -42,6 +43,35 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic) {
   const outClinic = resolved.ok ? resolved.clinic : clinic;
   const instance = resolved.instance || null;
   const unpublishedCount = (resolved.resolved && resolved.resolved.unpublishedCount) || 0;
+  let websiteWorkflowStatus = unpublishedCount > 0 ? "draft" : "live";
+  let websiteReviewNote = "";
+  let websiteSubmittedAtLabel = "";
+  if (instance) {
+    const listed = await submissionService.listWebsiteSubmissions(db, {
+      organizationId: clinic.organizationId,
+      instanceId: instance.id,
+      limit: 1,
+    });
+    const latest = listed.submissions && listed.submissions[0];
+    if (latest) {
+      if (latest.status === "submitted") websiteWorkflowStatus = "submitted";
+      else if (latest.status === "changes_requested") websiteWorkflowStatus = "changes_requested";
+      else if (latest.status === "approved" && unpublishedCount === 0) websiteWorkflowStatus = "published";
+      else if (unpublishedCount > 0) websiteWorkflowStatus = "draft";
+      if (latest.status === "changes_requested" && latest.reviewNote) {
+        websiteReviewNote = String(latest.reviewNote);
+      }
+      if (
+        latest.submittedAt &&
+        (latest.status === "submitted" || latest.status === "changes_requested")
+      ) {
+        const when = new Date(latest.submittedAt);
+        if (!Number.isNaN(when.getTime())) {
+          websiteSubmittedAtLabel = `${when.toISOString().slice(0, 16).replace("T", " ")} UTC`;
+        }
+      }
+    }
+  }
   return {
     clinic: outClinic,
     instance,
@@ -50,6 +80,9 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic) {
     websiteCanSubmit: canSubmit,
     websiteMode: mode,
     websiteUnpublishedCount: unpublishedCount,
+    websiteWorkflowStatus,
+    websiteReviewNote,
+    websiteSubmittedAtLabel,
     websiteEditQuery: "website_edit",
     websiteActorId:
       req.activeClinicAuth && req.activeClinicAuth.platformIdentity

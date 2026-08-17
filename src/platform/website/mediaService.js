@@ -143,27 +143,42 @@ async function registerWebsiteMedia(db, input) {
     input.storageKey ||
     `website/${organizationId}/${instance.id}/${crypto.randomUUID()}-${filename}`;
   const sha256 = buffer ? crypto.createHash("sha256").update(buffer).digest("hex") : null;
-
-  const rows = await db.query(
-    `INSERT INTO platform.website_media (
-       organization_id, instance_id, uploader_identity_id, media_kind,
-       original_filename, storage_key, mime_type, size_bytes, alt_text, external_url, status, sha256
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'active',$11)
-     RETURNING *`,
-    [
-      organizationId,
-      instance.id,
-      input.actorIdentityId || null,
-      kind,
-      filename,
-      storageKey,
-      mime || "application/octet-stream",
-      sizeBytes,
-      input.altText || null,
-      input.externalUrl || null,
-      sha256,
-    ]
-  );
+  const params = [
+    organizationId,
+    instance.id,
+    input.actorIdentityId || null,
+    kind,
+    filename,
+    storageKey,
+    mime || "application/octet-stream",
+    sizeBytes,
+    input.altText || null,
+    input.externalUrl || null,
+    sha256,
+    buffer || null,
+  ];
+  let rows;
+  try {
+    rows = await db.query(
+      `INSERT INTO platform.website_media (
+         organization_id, instance_id, uploader_identity_id, media_kind,
+         original_filename, storage_key, mime_type, size_bytes, alt_text, external_url, status, sha256,
+         payload_bytes
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'active',$11,$12)
+       RETURNING *`,
+      params
+    );
+  } catch (err) {
+    if (!err || err.code !== "42703") throw err;
+    rows = await db.query(
+      `INSERT INTO platform.website_media (
+         organization_id, instance_id, uploader_identity_id, media_kind,
+         original_filename, storage_key, mime_type, size_bytes, alt_text, external_url, status, sha256
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'active',$11)
+       RETURNING *`,
+      params.slice(0, 11)
+    );
+  }
   const media = mapMedia(rows.rows[0]);
   await recordWebsiteAudit(db, {
     organizationId,
@@ -177,7 +192,10 @@ async function registerWebsiteMedia(db, input) {
 
 async function getWebsiteMedia(db, input) {
   const rows = await db.query(
-    `SELECT * FROM platform.website_media
+    `SELECT id, organization_id, instance_id, uploader_identity_id, media_kind,
+            original_filename, storage_key, mime_type, size_bytes, width_px, height_px,
+            alt_text, external_url, status, sha256, created_at
+       FROM platform.website_media
       WHERE id = $1 AND organization_id = $2
       LIMIT 1`,
     [input.mediaId, input.organizationId]
@@ -185,6 +203,48 @@ async function getWebsiteMedia(db, input) {
   const media = mapMedia(rows.rows[0] || null);
   if (!media) return { ok: false, code: RESULT.NOT_FOUND, media: null };
   return { ok: true, media };
+}
+
+async function getWebsiteMediaById(db, mediaId) {
+  const rows = await db.query(
+    `SELECT id, organization_id, instance_id, uploader_identity_id, media_kind,
+            original_filename, storage_key, mime_type, size_bytes, width_px, height_px,
+            alt_text, external_url, status, sha256, created_at
+       FROM platform.website_media
+      WHERE id = $1
+      LIMIT 1`,
+    [mediaId]
+  );
+  const media = mapMedia(rows.rows[0] || null);
+  if (!media) return { ok: false, code: RESULT.NOT_FOUND, media: null };
+  return { ok: true, media };
+}
+
+async function getWebsiteMediaPayload(db, input) {
+  try {
+    const rows = await db.query(
+      `SELECT payload_bytes, mime_type, original_filename, status, organization_id
+         FROM platform.website_media
+        WHERE id = $1 AND organization_id = $2
+        LIMIT 1`,
+      [input.mediaId, input.organizationId]
+    );
+    const row = rows.rows[0];
+    if (!row || row.status !== "active" || !row.payload_bytes) {
+      return { ok: false, code: RESULT.NOT_FOUND, buffer: null, mimeType: null };
+    }
+    return {
+      ok: true,
+      buffer: row.payload_bytes,
+      mimeType: row.mime_type,
+      filename: row.original_filename,
+    };
+  } catch (err) {
+    if (err && err.code === "42703") {
+      return { ok: false, code: RESULT.NOT_FOUND, buffer: null, mimeType: null };
+    }
+    throw err;
+  }
 }
 
 async function listWebsiteMedia(db, input) {
@@ -261,6 +321,8 @@ module.exports = {
   sanitizeFilename,
   registerWebsiteMedia,
   getWebsiteMedia,
+  getWebsiteMediaById,
+  getWebsiteMediaPayload,
   listWebsiteMedia,
   recordMediaUsage,
   archiveWebsiteMedia,

@@ -4,8 +4,11 @@
     <h1>About <%= clinic.publicName %></h1>
     <% if (clinic.websiteTagline) { %><p class="ac-public-lede"><%= clinic.websiteTagline %></p><% } %>
   </header>
-  <% if (clinic.websiteAbout) { %>
-  <div class="ac-public-prose acp-prose-card"><%= clinic.websiteAbout %></div>
+  <% const aboutBody = clinic.aboutBody || clinic.websiteAbout; %>
+  <% if (aboutBody || (typeof websiteEdit !== 'undefined' && websiteEdit)) { %>
+  <div class="ac-public-prose acp-prose-card">
+    <%- include('../partials/website-editable-field', { contentKey: 'about.story.body', fieldValue: aboutBody || '', fieldType: 'long_text' }) %>
+  </div>
   <% } else { %>
   <div class="acp-empty-state ac-public-empty">
     <p>Public about content has not been configured for this clinic yet.</p>

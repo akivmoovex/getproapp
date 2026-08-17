@@ -369,6 +369,8 @@ describe("ActiveClinic public website (P20–P26)", () => {
         province: "Lusaka",
         city: "Lusaka",
         countryCode: "ZM",
+        password: "clinic-admin-pass-12",
+        passwordConfirm: "clinic-admin-pass-12",
       });
     assert.equal(review.status, 200);
     assert.match(review.text, /data-ac-page-section="register-clinic-review"/);
@@ -390,6 +392,8 @@ describe("ActiveClinic public website (P20–P26)", () => {
         province: "Lusaka",
         city: "Lusaka",
         countryCode: "ZM",
+        password: "clinic-admin-pass-12",
+        passwordConfirm: "clinic-admin-pass-12",
       });
     assert.equal(ok.status, 303);
     assert.match(ok.headers.location, /^\/register-clinic\/success\?ref=AC-/);

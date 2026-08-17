@@ -454,7 +454,9 @@ async function listPublicPricePatterns(db, input) {
   }
 
   // No public price fields on appointment_service_types or public_procedures yet.
-  // Future: query verified public price columns when added to schema.
+  // Hybrid public pricing: this operational catalogue is the only source of
+  // numeric fees. Clinic website CMS may add insurance/informational copy.
+  // Never invent or estimate medical fees here.
   void db;
   return { ok: true, code: RESULT.OK, patterns: [] };
 }

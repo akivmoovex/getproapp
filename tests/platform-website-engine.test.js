@@ -254,6 +254,17 @@ describe("platform website engine", () => {
     });
     assert.equal(submitted.ok, true, JSON.stringify(submitted));
     const snapshotTitle = submitted.submission.snapshot.values["home.hero.title"];
+    assert.ok(Array.isArray(submitted.submission.snapshot.changes));
+    assert.ok(
+      submitted.submission.snapshot.changes.some((c) => c.changeType === "added" || c.changeType === "changed")
+    );
+    const reviewDiff = require("../src/platform/website/reviewDiff").buildWebsiteReviewDiff({
+      snapshot: submitted.submission.snapshot,
+      template: getWebsiteTemplate(ACTIVECLINIC_TEMPLATE_ID, ACTIVECLINIC_TEMPLATE_VERSION),
+      changedKeys: submitted.submission.changedKeys,
+    });
+    assert.equal(reviewDiff.source, "submission_snapshot");
+    assert.ok(reviewDiff.items.some((item) => item.contentKey === "home.hero.title"));
 
     await save(ctx, "home.hero.title", "Edited after submit");
     const secondSubmit = await submissionService.submitWebsiteChanges(pool, {
@@ -434,6 +445,14 @@ describe("platform website engine", () => {
       mediaId: jpeg.media.id,
     });
     assert.equal(cross.ok, false);
+
+    const payload = await mediaService.getWebsiteMediaPayload(pool, {
+      mediaId: jpeg.media.id,
+      organizationId: ctx.organizationId,
+    });
+    assert.equal(payload.ok, true);
+    assert.ok(Buffer.isBuffer(payload.buffer));
+    assert.equal(payload.mimeType, "image/jpeg");
 
     const orphans = mediaService.listOrphanCandidates();
     assert.equal(orphans.autoDelete, false);

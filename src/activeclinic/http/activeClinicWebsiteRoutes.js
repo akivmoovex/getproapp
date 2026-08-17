@@ -1,5 +1,6 @@
 "use strict";
 
+const multer = require("multer");
 const { validateCsrf, CSRF_FIELD } = require("../../platform/http/v5Csrf");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const contentService = require("../../platform/website/contentService");
@@ -29,6 +30,11 @@ function actorId(req) {
     null
   );
 }
+
+const mediaUpload = multer({
+  storage: multer.memoryStorage(),
+  limits: { fileSize: mediaService.MAX_BYTES, files: 1 },
+});
 
 function registerActiveClinicWebsiteRoutes(app, deps) {
   const getPool = deps.getPool;
@@ -148,11 +154,59 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
     }
   });
 
-  app.post("/clinics/:clinicKey/website/media", async (req, res, next) => {
+  app.get("/clinics/:clinicKey/website/media/:mediaId", async (req, res, next) => {
     try {
       const clinic = await loadClinic(req, res);
       if (!clinic) return undefined;
-      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+      const mediaId = String(req.params.mediaId || "");
+      const loaded = await mediaService.getWebsiteMedia(getPool(), {
+        mediaId,
+        organizationId: clinic.organizationId,
+      });
+      if (!loaded.ok || loaded.media.status !== "active") {
+        return res.status(404).type("text").send("Not found");
+      }
+      const published = await mediaService.isPublishedInUse(getPool(), mediaId, clinic.organizationId);
+      if (!published && !canEditClinicWebsite(req, clinic)) {
+        return res.status(404).type("text").send("Not found");
+      }
+      const payload = await mediaService.getWebsiteMediaPayload(getPool(), {
+        mediaId,
+        organizationId: clinic.organizationId,
+      });
+      if (!payload.ok) return res.status(404).type("text").send("Not found");
+      const mime = String(payload.mimeType || "").toLowerCase();
+      if (!mediaService.ALLOWED_IMAGE_MIME.has(mime)) {
+        return res.status(404).type("text").send("Not found");
+      }
+      res.setHeader("Content-Type", mime);
+      res.setHeader("X-Content-Type-Options", "nosniff");
+      res.setHeader("Cache-Control", published ? "public, max-age=300" : "private, no-store");
+      return res.status(200).send(payload.buffer);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/website/media", (req, res, next) => {
+    mediaUpload.single("file")(req, res, (err) => {
+      if (err) {
+        const code =
+          err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE"
+            ? mediaService.RESULT.TOO_LARGE
+            : "invalid_upload";
+        return json(res, 400, { ok: false, code });
+      }
+      return registerMedia(req, res, next);
+    });
+  });
+
+  async function registerMedia(req, res, next) {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      const csrfValue = (req.body && req.body[CSRF_FIELD]) || req.query[CSRF_FIELD];
+      if (!validateCsrf(req, csrfValue, env)) {
         return json(res, 403, { ok: false, code: "csrf" });
       }
       if (!hasWebsitePermission(grantedPermissions(req), PERMISSIONS.MEDIA_UPLOAD)) {
@@ -165,23 +219,35 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!attached.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found" });
       }
+      if (req.body && req.body.reuseMediaId) {
+        const existing = await mediaService.getWebsiteMedia(getPool(), {
+          mediaId: req.body.reuseMediaId,
+          organizationId: clinic.organizationId,
+        });
+        if (!existing.ok || existing.media.instanceId !== attached.instance.id) {
+          return json(res, 404, { ok: false, code: "media_not_found" });
+        }
+        return json(res, 200, { ok: true, media: existing.media, reused: true });
+      }
+      const file = req.file || null;
       const registered = await mediaService.registerWebsiteMedia(getPool(), {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,
         actorIdentityId: actorId(req),
-        mediaKind: req.body && req.body.mediaKind,
+        mediaKind: (req.body && req.body.mediaKind) || (file ? "image" : undefined),
         externalUrl: req.body && req.body.externalUrl,
-        originalFilename: req.body && req.body.originalFilename,
-        mimeType: req.body && req.body.mimeType,
-        sizeBytes: req.body && req.body.sizeBytes,
+        originalFilename: (file && file.originalname) || (req.body && req.body.originalFilename),
+        mimeType: (file && file.mimetype) || (req.body && req.body.mimeType),
+        sizeBytes: file ? file.size : req.body && req.body.sizeBytes,
         altText: req.body && req.body.altText,
         storageKey: req.body && req.body.storageKey,
+        buffer: file ? file.buffer : null,
       });
       return json(res, registered.ok ? 200 : 400, registered);
     } catch (err) {
       return next(err);
     }
-  });
+  }
 }
 
 module.exports = {

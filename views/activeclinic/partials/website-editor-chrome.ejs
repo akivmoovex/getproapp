@@ -1,16 +1,58 @@
 <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
-<div class="ac-website-chrome" data-website-chrome="1" data-clinic-key="<%= clinic && clinic.clinicKey %>">
-  <% if (websiteEdit) { %>
-  <p>Editing draft. Changes are not public until approved.</p>
-  <a href="?website_mode=live">View live</a>
-  <% if (websiteCanSubmit) { %>
-  <form method="post" action="/clinics/<%= clinic.clinicKey %>/website/submit" class="ac-website-chrome__submit">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <button type="submit">Submit for review</button>
-  </form>
-  <% } %>
-  <% } else { %>
-  <a href="?website_edit=1&amp;website_mode=draft">Edit website</a>
-  <% } %>
+<%
+  var statusKey = typeof websiteWorkflowStatus !== 'undefined' && websiteWorkflowStatus
+    ? websiteWorkflowStatus
+    : 'live';
+  var unpublished = Number(typeof websiteUnpublishedCount !== 'undefined' ? websiteUnpublishedCount : 0) || 0;
+  var reviewNote = typeof websiteReviewNote !== 'undefined' && websiteReviewNote ? websiteReviewNote : '';
+  var submittedAt = typeof websiteSubmittedAtLabel !== 'undefined' && websiteSubmittedAtLabel ? websiteSubmittedAtLabel : '';
+  var canResubmit = statusKey === 'changes_requested' && unpublished > 0;
+  var waitingReview = statusKey === 'submitted';
+%>
+<div
+  class="ac-website-chrome"
+  data-website-chrome="1"
+  data-clinic-key="<%= clinic && clinic.clinicKey %>"
+  data-website-status="<%= statusKey %>"
+>
+  <div class="ac-website-chrome__status" data-website-chrome-status="1">
+    <% if (websiteEdit) { %>
+    <p><strong>Editing draft.</strong> Changes are not public until approved.</p>
+    <% } else { %>
+    <p><strong>Live view.</strong> Public visitors see published content only.</p>
+    <% } %>
+    <ul class="ac-website-chrome__pills">
+      <li data-website-pill="live"<%= statusKey === 'live' || statusKey === 'published' ? ' class="is-current"' : '' %>>Live</li>
+      <li data-website-pill="draft"<%= unpublished > 0 && statusKey !== 'submitted' ? ' class="is-current"' : '' %>>
+        Draft changes<% if (unpublished > 0) { %> (<%= unpublished %>)<% } %>
+      </li>
+      <li data-website-pill="submitted"<%= waitingReview ? ' class="is-current"' : '' %>>Submitted for approval</li>
+      <li data-website-pill="changes_requested"<%= statusKey === 'changes_requested' ? ' class="is-current"' : '' %>>Changes requested</li>
+      <li data-website-pill="published"<%= statusKey === 'published' ? ' class="is-current"' : '' %>>Approved / published</li>
+    </ul>
+    <% if (submittedAt) { %>
+    <p data-website-submitted-at="1">Submitted <%= submittedAt %></p>
+    <% } %>
+    <% if (reviewNote) { %>
+    <p class="ac-website-chrome__note" data-website-review-note="1"><%= reviewNote %></p>
+    <% } %>
+    <% if (waitingReview) { %>
+    <p>This draft is waiting for Platform Admin review. The submitted snapshot cannot be edited.</p>
+    <% } %>
+  </div>
+  <div class="ac-website-chrome__actions">
+    <% if (websiteEdit) { %>
+    <a class="ac-website-chrome__link" href="?website_mode=live">View live</a>
+    <a class="ac-website-chrome__link" href="/clinics/<%= clinic.clinicKey %>/website/preview">Preview draft</a>
+    <% if (websiteCanSubmit && !waitingReview) { %>
+    <form method="post" action="/clinics/<%= clinic.clinicKey %>/website/submit" class="ac-website-chrome__submit">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit"><%= canResubmit ? 'Resubmit for approval' : 'Submit for approval' %></button>
+    </form>
+    <% } %>
+    <% } else { %>
+    <a class="ac-website-chrome__link" href="?website_edit=1&amp;website_mode=draft">Edit website</a>
+    <% } %>
+  </div>
 </div>
 <% } %>

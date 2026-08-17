@@ -46,6 +46,7 @@ const {
   resolveClinicOrRespond,
 } = require("./activeClinicPublicRespond");
 const { attachActiveClinicWebsiteLocals } = require("./attachActiveClinicWebsiteChrome");
+const { resolvePublicPricingDisplay } = require("../website/publicPricingDisplay");
 
 function clientIp(req) {
   return String((req.headers && req.headers["x-forwarded-for"]) || req.ip || (req.socket && req.socket.remoteAddress) || "").split(",")[0].trim();
@@ -106,11 +107,22 @@ function registerActiveClinicPublicRoutes(app, deps) {
   async function renderTenantView(req, res, clinic, template, extra) {
     const csrfToken = issuePageCsrf(res, env, isProduction);
     const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+    const extras = extra || {};
+    if (template === "tenant/pricing") {
+      extras.pricingDisplay = resolvePublicPricingDisplay({
+        patterns: extras.pricePatterns || [],
+        insuranceIntro:
+          website.clinic && website.clinic.websiteContent
+            ? website.clinic.websiteContent["insurance.intro"]
+            : null,
+        pageVisible: website.clinic ? website.clinic.showPricing !== false : true,
+      });
+    }
     return res.status(200).type("html").send(renderPublicView(template, {
       csrfToken,
       ...website,
       clinic: website.clinic,
-      ...(extra || {}),
+      ...extras,
     }));
   }
 

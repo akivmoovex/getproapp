@@ -30,7 +30,9 @@
       <a href="/clinics/<%= clinic.clinicKey %>/about"<%- tenantCurrent("about") %>>About</a>
       <a href="/clinics/<%= clinic.clinicKey %>/doctors"<%- tenantCurrent("doctors") %>>Doctors</a>
       <a href="/clinics/<%= clinic.clinicKey %>/services"<%- tenantCurrent("services") %>>Services</a>
+      <% if (clinic.showPricing !== false) { %>
       <a href="/clinics/<%= clinic.clinicKey %>/pricing"<%- tenantCurrent("pricing") %>>Pricing</a>
+      <% } %>
       <a href="/clinics/<%= clinic.clinicKey %>/contact"<%- tenantCurrent("contact") %>>Contact</a>
       <a class="ac-public-nav__login" href="/clinics/<%= clinic.clinicKey %>/patient/login">Login</a>
       <% if (clinic.publicBookingEnabled) { %>
@@ -50,7 +52,9 @@
       <a href="/clinics/<%= clinic.clinicKey %>/about"<%- tenantCurrent("about") %>>About</a>
       <a href="/clinics/<%= clinic.clinicKey %>/doctors"<%- tenantCurrent("doctors") %>>Doctors</a>
       <a href="/clinics/<%= clinic.clinicKey %>/services"<%- tenantCurrent("services") %>>Services</a>
+      <% if (clinic.showPricing !== false) { %>
       <a href="/clinics/<%= clinic.clinicKey %>/pricing"<%- tenantCurrent("pricing") %>>Pricing</a>
+      <% } %>
       <a href="/clinics/<%= clinic.clinicKey %>/location">Location</a>
       <a href="/clinics/<%= clinic.clinicKey %>/contact"<%- tenantCurrent("contact") %>>Contact</a>
       <a href="/clinics/<%= clinic.clinicKey %>/patient-information">Patient information</a>

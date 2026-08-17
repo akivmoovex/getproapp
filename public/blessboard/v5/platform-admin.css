@@ -5040,3 +5040,119 @@ a.bb-pa-btn--disabled {
     height: 2.85rem;
   }
 }
+
+/* Website submission review diff — platform-admin.css?v=60 */
+.bb-pa-website-review {
+  max-width: 58rem;
+  overflow-x: clip;
+}
+.bb-pa-website-diff {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0 1.75rem;
+}
+.bb-pa-website-diff__item {
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.75rem;
+  background: #fff;
+  padding: 0.9rem 1rem;
+}
+.bb-pa-website-diff__crumb,
+.bb-pa-website-diff__key {
+  margin: 0 0 0.25rem;
+  font-size: 0.85rem;
+}
+.bb-pa-website-diff__key code {
+  font-size: 0.78rem;
+  word-break: break-word;
+}
+.bb-pa-website-diff__badge {
+  display: inline-block;
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  background: #eef2ff;
+  color: #3730a3;
+}
+.bb-pa-website-diff__badge--added { background: #ecfdf5; color: #047857; }
+.bb-pa-website-diff__badge--removed { background: #fef2f2; color: #b91c1c; }
+.bb-pa-website-diff__badge--visibility,
+.bb-pa-website-diff__badge--reorder { background: #fff7ed; color: #c2410c; }
+.bb-pa-website-diff__compare {
+  display: grid;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
+.bb-pa-website-diff__col h2 {
+  margin: 0 0 0.4rem;
+  font-size: 0.8rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #526066;
+}
+.bb-pa-website-diff__block {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: inherit;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  max-height: 16rem;
+  overflow: auto;
+}
+.bb-pa-website-diff__block--old { background: #fef2f2; }
+.bb-pa-website-diff__block--new { background: #ecfdf5; }
+.bb-pa-website-diff__text,
+.bb-pa-website-diff__url,
+.bb-pa-website-diff__empty-value {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+.bb-pa-website-diff__thumb {
+  display: block;
+  width: 100%;
+  max-width: 16rem;
+  height: auto;
+  border-radius: 0.5rem;
+  background: #f1f5f9;
+}
+.bb-pa-website-review__actions {
+  display: grid;
+  gap: 1rem;
+}
+.bb-pa-website-review__form {
+  display: grid;
+  gap: 0.55rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  border-radius: 0.75rem;
+  background: #fff;
+}
+.bb-pa-website-review__form textarea {
+  display: block;
+  width: 100%;
+  min-height: 4.5rem;
+  margin-top: 0.3rem;
+  padding: 0.5rem 0.65rem;
+  border-radius: 0.45rem;
+  border: 1px solid var(--bb-line, #d9e4e9);
+  font: inherit;
+}
+.bb-pa-website-review__form .bb-pa-btn--danger {
+  justify-self: start;
+}
+@media (min-width: 720px) {
+  .bb-pa-website-diff__compare {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 430px) {
+  .bb-pa-website-review__form .bb-pa-btn {
+    width: 100%;
+    min-height: 2.75rem;
+  }
+  .bb-pa-website-diff__item {
+    padding: 0.75rem;
+  }
+}

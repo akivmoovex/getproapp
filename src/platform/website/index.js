@@ -14,6 +14,7 @@ const templateUpgradeService = require("./templateUpgradeService");
 const provisionService = require("./provisionService");
 const auditService = require("./auditService");
 const authorizeWebsite = require("./authorizeWebsite");
+const reviewDiff = require("./reviewDiff");
 
 module.exports = {
   ...contentTypes,
@@ -30,4 +31,5 @@ module.exports = {
   provisionService,
   auditService,
   authorizeWebsite,
+  reviewDiff,
 };
