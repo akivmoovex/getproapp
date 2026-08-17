@@ -375,9 +375,10 @@ describe("V5 env reference + startup source safety", () => {
 
   it("worker env trace never interpolates DATABASE_URL value", () => {
     const src = fs.readFileSync(path.join(ROOT, "src/startup/workerEnvTrace.js"), "utf8");
-    assert.match(src, /DATABASE_URL=\$\{s\.DATABASE_URL\}/);
+    assert.match(src, /formatPresencePairs\(s\)/);
     assert.match(src, /envKeyPresent/);
-    assert.doesNotMatch(src, /process\.env\.DATABASE_URL\}/);
+    assert.match(src, /presence\[k\] \|\| "no"/);
+    assert.doesNotMatch(src, /process\.env\.DATABASE_URL/);
   });
 
   it("V5 session cookie Secure tied to NODE_ENV=production", () => {

@@ -5,10 +5,74 @@
   var versions = versions || [];
   var pending = pendingSubmissions || [];
   var cl = checklist || null;
+  var avail = availability || null;
+  var hco = avail && avail.healthcareOrganization;
+  var approved = avail && avail.latestApprovedVersion;
+  var ready = avail && avail.readiness;
+  var last = avail && avail.lastToggle;
+  var canToggle = canToggleAvailability === true;
+  var notice = String(notice || '');
+  var error = String(error || '');
+  var isPublic = Boolean(hco && hco.websitePublished);
 %>
 <section class="bb-pa-page">
   <h1>Clinic website</h1>
   <p><%= org.display_name %> · <%= org.organization_key %></p>
+  <% if (notice === 'published') { %>
+  <p class="bb-pa-notice" data-website-availability-notice="published">Website is public.<% if (avail && avail.publicUrl) { %> <a href="<%= avail.publicUrl %>"><%= avail.publicUrl %></a><% } %></p>
+  <% } else if (notice === 'unpublished') { %>
+  <p class="bb-pa-notice" data-website-availability-notice="unpublished">Website is not public. Content and versions were kept.</p>
+  <% } else if (notice === 'restored') { %>
+  <p class="bb-pa-notice">Version restored to draft.</p>
+  <% } %>
+  <% if (error) { %>
+  <p class="bb-pa-error" data-website-availability-error="<%= error %>">Could not update website availability (<%= error %>).</p>
+  <% } %>
+
+  <h2>Website availability</h2>
+  <% if (!inst || !hco) { %>
+  <p>No clinic website instance for this organisation. Availability cannot be toggled yet.</p>
+  <% } else { %>
+  <dl class="bb-pa-dl" data-website-availability="<%= isPublic ? 'public' : 'not-public' %>">
+    <dt>Website status</dt>
+    <dd><%= inst.status %></dd>
+    <dt>Public availability</dt>
+    <dd><%= isPublic ? 'Public' : 'Not public' %></dd>
+    <dt>Public URL</dt>
+    <dd><% if (avail && avail.publicUrl) { %><a href="<%= avail.publicUrl %>"><%= avail.publicUrl %></a><% } else if (avail && avail.publicPath) { %><%= avail.publicPath %><% } else { %>Not assigned<% } %></dd>
+    <dt>Latest approved version</dt>
+    <dd><% if (approved) { %>v<%= approved.versionNumber %> · <%= approved.status %><% } else { %>None<% } %></dd>
+    <dt>Readiness</dt>
+    <dd>
+      <% if (ready && ready.readyToPublish) { %>Ready for public launch
+      <% } else if (ready && ready.userMessages && ready.userMessages.length) { %>
+        Not ready: <%= ready.userMessages.join(', ') %>
+      <% } else { %>Unknown<% } %>
+    </dd>
+    <dt>Last publication toggle</dt>
+    <dd>
+      <% if (last) { %>
+        <%= last.actionKey === 'website.availability.publish' ? 'Published' : 'Unpublished' %>
+        · <%= last.at %>
+        <% if (last.actorIdentityId) { %> · actor <%= last.actorIdentityId %><% } %>
+      <% } else { %>Never toggled<% } %>
+    </dd>
+  </dl>
+  <% if (canToggle) { %>
+    <% if (!isPublic) { %>
+    <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/publish" data-website-availability-form="publish">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit" class="bb-pa-btn" <%= approved ? '' : 'disabled' %>>Publish Website</button>
+    </form>
+    <% } else { %>
+    <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/unpublish" data-website-availability-form="unpublish">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Unpublish Website</button>
+    </form>
+    <% } %>
+  <% } %>
+  <% } %>
+
   <% if (!inst) { %>
   <p>No website instance for this organisation.</p>
   <% } else { %>

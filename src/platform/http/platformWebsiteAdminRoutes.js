@@ -16,6 +16,11 @@ const {
   approveAndProvisionClinicRegistration,
   rejectClinicRegistration,
 } = require("../../activeclinic/services/approveClinicRegistrationService");
+const {
+  getClinicWebsiteAvailability,
+  setClinicWebsiteAvailability,
+  loadClinicWebsiteOperational,
+} = require("../../activeclinic/services/clinicWebsiteAvailabilityService");
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 const { getDeploymentEnvMode } = require("../../church/blessBoardEnv");
 
@@ -50,6 +55,12 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
       hasWebsitePermission(keys, PERMISSIONS.REVIEW) ||
       hasWebsitePermission(keys, PERMISSIONS.PUBLISH)
     );
+  }
+
+  function canToggleAvailability(req) {
+    const keys = granted(req);
+    if (!keys.length) return true;
+    return hasWebsitePermission(keys, PERMISSIONS.PUBLISH);
   }
 
   router.get("/admin/website-changes", requireApex, requirePlatformAdmin, async (req, res, next) => {
@@ -209,8 +220,16 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         [String(req.params.organizationKey || "").toLowerCase()]
       );
       if (!org.rows[0]) return res.status(404).type("html").send("Organization not found.");
-      const instances = await instanceRepo.listWebsiteInstancesForOrganization(getPool(), org.rows[0].id);
-      const instance = instances[0] || null;
+      const availability = await getClinicWebsiteAvailability(getPool(), {
+        organizationKey: org.rows[0].organization_key,
+        env,
+      });
+      const instances = await instanceRepo.listWebsiteInstancesForOrganization(
+        getPool(),
+        org.rows[0].id,
+        "activeclinic"
+      );
+      const instance = (availability.ok && availability.instance) || instances[0] || null;
       let unpublishedCount = 0;
       let versions = [];
       let media = [];
@@ -236,6 +255,9 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         const cl = await checklistService.getWebsiteChecklist(getPool(), {
           organizationId: instance.organizationId,
           instance,
+          operational: availability.ok
+            ? await loadClinicWebsiteOperational(getPool(), org.rows[0].id)
+            : {},
         });
         checklist = cl.ok ? cl.checklist : null;
         pending = (await submissionService.listWebsiteSubmissions(getPool(), {
@@ -259,12 +281,68 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         auditEvents: audit.events || [],
         checklist,
         pendingSubmissions: pending,
+        availability: availability.ok ? availability : null,
+        canToggleAvailability: canToggleAvailability(req),
+        notice: String(req.query.notice || ""),
+        error: String(req.query.error || ""),
       });
       return res.status(200).type("html").send(html);
     } catch (err) {
       return next(err);
     }
   });
+
+  function websiteManagePath(organizationKey, query) {
+    const base = `/admin/organizations/${encodeURIComponent(organizationKey)}/website`;
+    if (!query) return base;
+    return `${base}?${query}`;
+  }
+
+  async function handleAvailabilityToggle(req, res, next, wantPublic) {
+    try {
+      const organizationKey = String(req.params.organizationKey || "").toLowerCase();
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.redirect(303, websiteManagePath(organizationKey, "error=csrf"));
+      }
+      if (!canToggleAvailability(req)) {
+        return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
+      }
+      const result = await setClinicWebsiteAvailability(getPool(), {
+        organizationKey,
+        public: wantPublic,
+        actorIdentityId: actorId(req),
+        overrideReadiness: req.body && req.body.override_readiness === "1",
+        reason: req.body && req.body.reason,
+        env,
+      });
+      if (!result.ok) {
+        return res.redirect(
+          303,
+          websiteManagePath(organizationKey, `error=${encodeURIComponent(result.code)}`)
+        );
+      }
+      return res.redirect(
+        303,
+        websiteManagePath(organizationKey, wantPublic ? "notice=published" : "notice=unpublished")
+      );
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+  router.post(
+    "/admin/organizations/:organizationKey/website/publish",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res, next) => handleAvailabilityToggle(req, res, next, true)
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/website/unpublish",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res, next) => handleAvailabilityToggle(req, res, next, false)
+  );
 
   router.post("/admin/organizations/:organizationKey/website/versions/:versionId/restore", requireApex, requirePlatformAdmin, async (req, res, next) => {
     try {

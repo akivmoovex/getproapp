@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # Load a BlessBoard local env file and run a command in the same process.
 # Usage:
-#   scripts/local/run-with-blessboard-env.sh testing|production <command> [args...]
+#   scripts/local/run-with-blessboard-env.sh testing|production|rehearsal <command> [args...]
 #
 # Never prints DATABASE_URL or other secret values.
 # Does not load repo-root .env — only the selected *.local file.
@@ -10,7 +10,7 @@
 set -euo pipefail
 
 usage() {
-  echo "Usage: scripts/local/run-with-blessboard-env.sh <testing|production> <command> [args...]" >&2
+  echo "Usage: scripts/local/run-with-blessboard-env.sh <testing|production|rehearsal> <command> [args...]" >&2
   echo "Loads .env.<name>.local from the repository root, then execs the command." >&2
 }
 
@@ -23,9 +23,9 @@ ENV_NAME="$1"
 shift
 
 case "$ENV_NAME" in
-  testing|production) ;;
+  testing|production|rehearsal) ;;
   *)
-    echo "error: environment must be 'testing' or 'production' (got: ${ENV_NAME})" >&2
+    echo "error: environment must be 'testing', 'production', or 'rehearsal' (got: ${ENV_NAME})" >&2
     usage
     exit 2
     ;;
@@ -87,6 +87,17 @@ set +a
 if [[ -z "${DATABASE_URL:-}" ]]; then
   echo "error: DATABASE_URL is empty after loading ${ENV_BASENAME}" >&2
   exit 2
+fi
+
+if [[ "$ENV_NAME" == "rehearsal" ]]; then
+  HOST="$(node -e "const {parseDatabaseHost}=require('${REPO_ROOT}/db/scripts/lib/databaseUrl'); process.stdout.write(parseDatabaseHost(process.env.DATABASE_URL||''))")"
+  case "$HOST" in
+    127.0.0.1|localhost|::1) ;;
+    *)
+      echo "error: rehearsal DATABASE_URL host must be local (got ${HOST})" >&2
+      exit 2
+      ;;
+  esac
 fi
 
 # Safe progress line — never print secret values.
