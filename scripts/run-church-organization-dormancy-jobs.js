@@ -12,7 +12,7 @@
  * Requires DATABASE_URL (or GETPRO_DATABASE_URL).
  */
 
-require("dotenv").config({ quiet: true });
+require("../src/startup/localEnvSafety").loadRepoDotenvForCliOrExit();
 
 const {
   prepareBlessBoardJobPool,

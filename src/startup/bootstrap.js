@@ -8,6 +8,8 @@
  *   from path hints, then legacy suffixed files, then generic `.env.production` (`override: false`).
  *   A later conditional merge from the **same resolved path** remains for filled-key diagnostics (idempotent).
  * - **Non-production:** loads `.env` from app root (path from this file, not `cwd`) unless `GETPRO_SKIP_DOTENV=1`.
+ *   Repo-root `.env` that declares production identity is **not** merged (leftover production files cannot
+ *   silently become `npm start` / `npm run dev` defaults).
  * - Snapshots DB-related env before any file merge for provenance logging.
  * - `dotenv` does not override existing process.env keys (`override: false`).
  *
@@ -34,6 +36,7 @@ const {
   buildStartupProcessMarker,
   formatStartupProcessMarkerLog,
 } = require("./startupProcessMarker");
+const { loadRepoDotenvIfSafe } = require("./localEnvSafety");
 
 /** Generic deterministic fallback (last resort in built-in list). */
 const DEFAULT_PRODUCTION_ENV_FILE_FALLBACK = "/home/u549637099/.env.production";
@@ -311,12 +314,27 @@ function runBootstrap() {
   let dotenvErrorMessage = null;
   /** @type {string[]} */
   let parsedDotenvKeys = [];
+  /** @type {{ ok: boolean, action: string, code: string, reasons?: string[], message?: string }} */
+  let repoDotenvSafety = isProduction
+    ? { ok: true, action: "skip_repo_dotenv_production_process", code: "production_process" }
+    : skipDotenvExplicit
+      ? { ok: true, action: "skip_explicit", code: "GETPRO_SKIP_DOTENV" }
+      : { ok: true, action: "merge", code: "pending" };
 
   if (!skipDotenv) {
-    const dotenvResult = require("dotenv").config({ path: envPath, quiet: true });
-    dotenvKeyCount = Object.keys(dotenvResult.parsed || {}).length;
-    parsedDotenvKeys = Object.keys(dotenvResult.parsed || {});
-    dotenvErrorMessage = dotenvResult.error ? String(dotenvResult.error.message || dotenvResult.error) : null;
+    const loaded = loadRepoDotenvIfSafe(envPath, process.env);
+    repoDotenvSafety = loaded.assessment;
+    if (loaded.assessment && loaded.assessment.action === "refuse_merge") {
+      dotenvKeyCount = 0;
+      parsedDotenvKeys = [];
+      dotenvErrorMessage = null;
+      // eslint-disable-next-line no-console
+      console.error(loaded.assessment.message);
+    } else {
+      dotenvKeyCount = loaded.parsedKeys.length;
+      parsedDotenvKeys = loaded.parsedKeys;
+      dotenvErrorMessage = loaded.dotenvErrorMessage;
+    }
   }
 
   /** @type {string|null} */
@@ -409,6 +427,7 @@ function runBootstrap() {
     dotenvKeyCount,
     dotenvErrorMessage,
     parsedDotenvKeys,
+    repoDotenvSafety,
     envFileExists,
     effectiveVarName,
     dbProvenance,
@@ -445,9 +464,11 @@ function logBootstrapMarker(boot) {
   const ls = boot.liteSpeedLsnode ? "yes (HTTP app still loaded from project; see serverJs path)" : "no";
   const dotenvWhy = boot.dotenvSkippedForProduction
     ? "skipped repo .env (NODE_ENV=production)"
-    : boot.skipDotenv
-      ? "skipped (GETPRO_SKIP_DOTENV)"
-      : `merged (${boot.dotenvKeyCount} keys from .env)`;
+    : boot.repoDotenvSafety && boot.repoDotenvSafety.action === "refuse_merge"
+      ? "refused repo .env (production identity in file)"
+      : boot.skipDotenv
+        ? "skipped (GETPRO_SKIP_DOTENV)"
+        : `merged (${boot.dotenvKeyCount} keys from .env)`;
   const prodFileWhy =
     boot.productionEnvFilePath != null
       ? ` | productionEnvFile path=${boot.productionEnvFilePath} exists=${boot.productionFileExists ? "yes" : "no"} loaded=${boot.productionFileLoaded ? "yes" : "no"} mergeSkipped=${boot.productionFileMergeSkipped ? "yes" : "no"} filled=${boot.productionFileFilledKeys && boot.productionFileFilledKeys.length ? boot.productionFileFilledKeys.join(",") : "none"}`

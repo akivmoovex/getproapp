@@ -10,7 +10,7 @@
  * Exit 1 when any check fails; warnings alone exit 0.
  */
 
-require("dotenv").config({ quiet: true });
+require("../src/startup/localEnvSafety").loadRepoDotenvForCliOrExit();
 
 const { closePgPool } = require("../src/db/pg/pool");
 const {

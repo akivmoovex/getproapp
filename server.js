@@ -1,6 +1,10 @@
 const { runBootstrap, logBootstrapMarker } = require("./src/startup/bootstrap");
+const { shouldFailClosedHttpStart } = require("./src/startup/localEnvSafety");
 const boot = runBootstrap();
 logBootstrapMarker(boot);
+if (shouldFailClosedHttpStart(boot, process.env)) {
+  process.exit(1);
+}
 
 // Refuse unknown PLATFORM_DEPLOYMENT_CODE before domain diagnostics so a Hostinger typo
 // cannot log BlessBoard production defaults and then abort (misleading 503 evidence).

@@ -7,7 +7,7 @@
  *   node scripts/run-church-pilot-feature-flag-jobs.js
  */
 
-require("dotenv").config();
+require("../src/startup/localEnvSafety").loadRepoDotenvForCliOrExit();
 
 const {
   prepareBlessBoardJobPool,

@@ -13,7 +13,7 @@
  *     npm run church:pilot:cleanup -- --pilot-id=v5r1 --confirm
  */
 
-require("dotenv").config({ quiet: true });
+require("../src/startup/localEnvSafety").loadRepoDotenvForCliOrExit();
 
 const { getPgPool, isPgConfigured, closePgPool } = require("../src/db/pg/pool");
 const { ensureChurchSchema } = require("../src/db/pg/ensureChurchSchema");

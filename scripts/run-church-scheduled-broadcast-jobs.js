@@ -9,7 +9,7 @@
  *   node scripts/run-church-scheduled-broadcast-jobs.js
  */
 
-require("dotenv").config({ quiet: true });
+require("../src/startup/localEnvSafety").loadRepoDotenvForCliOrExit();
 
 const {
   prepareBlessBoardJobPool,

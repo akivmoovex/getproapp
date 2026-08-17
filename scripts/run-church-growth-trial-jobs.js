@@ -11,7 +11,7 @@
  * Requires DATABASE_URL (or GETPRO_DATABASE_URL). Does not use payment providers.
  */
 
-require("dotenv").config({ quiet: true });
+require("../src/startup/localEnvSafety").loadRepoDotenvForCliOrExit();
 
 const {
   prepareBlessBoardJobPool,
