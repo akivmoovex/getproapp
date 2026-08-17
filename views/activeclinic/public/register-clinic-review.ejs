@@ -26,12 +26,16 @@
       <dt>Contact phone</dt>
       <dd><%= fd.contactPhone || '—' %></dd>
     </div>
-    <% if (fd.province || fd.city) { %>
+    <% if (fd.province || fd.city || fd.address) { %>
     <div class="ac-review-summary__row">
       <dt>Location</dt>
-      <dd><%= [fd.city, fd.province].filter(Boolean).join(', ') %></dd>
+      <dd><%= [fd.address, fd.city, fd.province].filter(Boolean).join(', ') %></dd>
     </div>
     <% } %>
+    <div class="ac-review-summary__row">
+      <dt>Administrator password</dt>
+      <dd>Set — activated after approval</dd>
+    </div>
     <% if (fd.notes) { %>
     <div class="ac-review-summary__row">
       <dt>Notes</dt>
@@ -40,7 +44,7 @@
     <% } %>
   </dl>
 
-  <p class="ac-public-note">Submitting creates a pending application for review. Your clinic will <strong>not</strong> be published automatically and no confirmation SMS or email is sent from this form.</p>
+  <p class="ac-public-note">Submitting creates a pending application for review. Sign-in is activated only after Platform Admin approval. Your clinic website is not published automatically.</p>
 
   <div class="ac-review-actions">
     <form method="post" action="/register-clinic" class="ac-review-actions__confirm">
@@ -54,8 +58,11 @@
       <input type="hidden" name="phone_national" value="<%= fd.phoneNational || '' %>"/>
       <input type="hidden" name="province" value="<%= fd.province || '' %>"/>
       <input type="hidden" name="city" value="<%= fd.city || '' %>"/>
+      <input type="hidden" name="address" value="<%= fd.address || '' %>"/>
       <input type="hidden" name="countryCode" value="<%= fd.countryCode || 'ZM' %>"/>
       <input type="hidden" name="notes" value="<%= fd.notes || '' %>"/>
+      <input type="hidden" name="password" value="<%= fd.password || '' %>"/>
+      <input type="hidden" name="passwordConfirm" value="<%= fd.passwordConfirm || fd.password || '' %>"/>
       <button type="submit" class="ac-btn ac-btn--primary">Submit application</button>
     </form>
     <a class="ac-btn ac-btn--secondary" href="/register-clinic">Edit details</a>

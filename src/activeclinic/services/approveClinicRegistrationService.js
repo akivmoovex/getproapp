@@ -10,6 +10,9 @@ const { provisionPlatformTenant } = require("../../platform/services/provisionPl
 const {
   createPlatformIdentity,
 } = require("../../platform/services/platformIdentityService");
+const {
+  updateIdentityPasswordHash,
+} = require("../../platform/repositories/platformIdentityRepository");
 const { recordAuditEventSafe } = require("../../platform/services/auditEventService");
 const {
   CODE_ACTIVECLINIC_ORG_V6,
@@ -23,6 +26,7 @@ const {
 const {
   provisionActiveClinicClinic,
 } = require("../website/provisionActiveClinicWebsite");
+const { ensureDefaultDepartments } = require("./activeClinicDepartmentService");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const { recordWebsiteAudit } = require("../../platform/website/auditService");
 
@@ -32,6 +36,7 @@ const RESULT = Object.freeze({
   NOT_FOUND: "application_not_found",
   NOT_ELIGIBLE: "application_not_eligible",
   ALREADY_PROVISIONED: "already_provisioned",
+  ALREADY_REJECTED: "already_rejected",
   TENANT_FAILED: "tenant_provision_failed",
   CLINIC_FAILED: "clinic_provision_failed",
   ADMIN_FAILED: "clinic_admin_failed",
@@ -93,19 +98,32 @@ async function ensureClinicAdmin(client, input) {
   }
   let identityId = null;
   const existing = await client.query(
-    `SELECT id FROM platform.identities WHERE email_normalized = $1 LIMIT 1`,
-    [input.email]
+    `SELECT id, password_hash FROM platform.identities
+      WHERE email_normalized = $1
+         OR ($2::text IS NOT NULL AND phone_normalized = $2)
+      ORDER BY CASE WHEN email_normalized = $1 THEN 0 ELSE 1 END
+      LIMIT 1`,
+    [input.email, input.phone || null]
   );
   if (existing.rows[0]) {
     identityId = existing.rows[0].id;
+    if (input.passwordHash && !existing.rows[0].password_hash) {
+      await updateIdentityPasswordHash(client, {
+        identityId,
+        passwordHash: input.passwordHash,
+        mustChangePassword: false,
+      });
+    }
   } else {
     const created = await createPlatformIdentity(client, {
       status: "active",
       primaryEmail: input.email,
       emailNormalized: input.email,
+      emailVerifiedAt: new Date().toISOString(),
       primaryPhone: input.phone,
       phoneNormalized: input.phone,
       phoneVerifiedAt: new Date().toISOString(),
+      passwordHash: input.passwordHash || null,
     });
     if (!created.ok) return { ok: false, code: created.code };
     identityId = created.identity.id;
@@ -251,7 +269,25 @@ async function approveAndProvisionClinicRegistration(db, input) {
         contactName: app.contact_name,
         actorIdentityId: input.actorIdentityId || null,
         existingStaffId: app.clinic_admin_staff_id,
+        passwordHash: app.administrator_password_hash || null,
       });
+      if (!admin.ok) {
+        await updateApplication(client, app.id, {
+          organization_id: organizationId,
+          healthcare_organization_id: hco.id,
+          facility_id: facility ? facility.id : app.facility_id,
+          provisioning_status: "failed",
+          last_provision_error: admin.code || "clinic_admin_failed",
+        });
+        return { ok: false, code: RESULT.ADMIN_FAILED, reason: admin.code, organizationId };
+      }
+      if (facility && facility.id) {
+        await ensureDefaultDepartments(client, {
+          organizationId,
+          healthcareOrganizationId: hco.id,
+          facilityId: facility.id,
+        });
+      }
     }
 
     const websiteOk = Boolean(instance);
@@ -268,6 +304,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
       reviewed_at: new Date().toISOString(),
       reviewed_by_platform_identity_id: input.actorIdentityId || null,
       last_provision_error: websiteOk ? null : clinic.code || "website_provision_failed",
+      administrator_password_hash: null,
     });
 
     await recordAuditEventSafe(client, {
@@ -313,8 +350,38 @@ async function approveAndProvisionClinicRegistration(db, input) {
   return run(db);
 }
 
+async function rejectClinicRegistration(db, input) {
+  const applicationId = String((input && input.applicationId) || "").trim();
+  if (!UUID_RE.test(applicationId)) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  const run = async (client) => {
+    const app = await loadApplication(client, applicationId);
+    if (!app) return { ok: false, code: RESULT.NOT_FOUND };
+    if (app.status === "rejected") {
+      return { ok: true, code: RESULT.ALREADY_REJECTED, application: app };
+    }
+    if (app.status !== "pending_review") {
+      return { ok: false, code: RESULT.NOT_ELIGIBLE, application: app };
+    }
+    await updateApplication(client, app.id, {
+      status: "rejected",
+      reviewed_at: new Date().toISOString(),
+      reviewed_by_platform_identity_id: input.actorIdentityId || null,
+      administrator_password_hash: null,
+      last_provision_error: null,
+    });
+    return { ok: true, code: RESULT.OK, applicationId: app.id };
+  };
+  if (db && typeof db.connect === "function" && typeof db.release !== "function") {
+    return withProvisioningTransaction(db, run);
+  }
+  return run(db);
+}
+
 module.exports = {
   RESULT,
   slugFromClinicName,
   approveAndProvisionClinicRegistration,
+  rejectClinicRegistration,
 };

@@ -91,8 +91,11 @@ describe("ActiveClinic clinic registration repair", () => {
     contactPhone: "+260970000000",
     province: "Lusaka Province",
     city: "Lusaka",
+    address: "123 Independence Avenue",
     countryCode: "ZM",
     notes: "Automated registration repair verification",
+    password: "clinic-admin-pass-12",
+    passwordConfirm: "clinic-admin-pass-12",
   };
 
   it("form field contract maps HTML names to service/SQL columns", () => {
@@ -104,6 +107,7 @@ describe("ActiveClinic clinic registration repair", () => {
     assert.equal(v.normalized.contactPhone, "+260970000000");
     assert.equal(v.normalized.province, "Lusaka Province");
     assert.equal(v.normalized.city, "Lusaka");
+    assert.equal(v.normalized.address, valid.address);
     assert.equal(v.normalized.countryCode, "ZM");
     assert.equal(v.normalized.notes, valid.notes);
   });
@@ -116,6 +120,10 @@ describe("ActiveClinic clinic registration repair", () => {
     const notes = validateClinicRegistrationInput({ ...valid, notes: "   " });
     assert.equal(notes.ok, true);
     assert.equal(notes.normalized.notes, null);
+
+    const weak = validateClinicRegistrationInput({ ...valid, password: "short", passwordConfirm: "short" });
+    assert.equal(weak.ok, false);
+    assert.ok(weak.errors.password);
   });
 
   it("schema status reports registration table after migrate", async () => {
@@ -162,6 +170,14 @@ describe("ActiveClinic clinic registration repair", () => {
     assert.equal(rows.rows.length, 1);
     assert.equal(rows.rows[0].status, "pending_review");
     assert.equal(rows.rows[0].clinic_name, valid.clinicName);
+    const hashRow = await pool.query(
+      `SELECT administrator_password_hash IS NOT NULL AS has_hash, address
+         FROM activeclinic.clinic_registration_applications
+        WHERE contact_email_normalized = $1`,
+      ["registration-test@example.invalid"]
+    );
+    assert.equal(hashRow.rows[0].has_hash, true);
+    assert.equal(hashRow.rows[0].address, valid.address);
 
     const orgs = await pool.query(
       `SELECT count(*)::int AS n FROM platform.organizations WHERE display_name = $1`,
@@ -179,7 +195,7 @@ describe("ActiveClinic clinic registration repair", () => {
     if (!requireDb()) return;
     const app = appWithEnv();
     const email = `dup-${Date.now()}@example.invalid`;
-    const payload = { ...valid, contactEmail: email };
+    const payload = { ...valid, contactEmail: email, contactPhone: "+260971111111" };
     const getForm = await request(app).get("/register-clinic");
     const csrf = extractCsrf(getForm);
 

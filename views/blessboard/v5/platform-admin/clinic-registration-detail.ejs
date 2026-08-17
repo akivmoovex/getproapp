@@ -1,0 +1,45 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var app = application || {};
+  var loc = [app.address, app.city, app.province, app.country_code].filter(Boolean).join(', ');
+%>
+<section class="bb-pa-page">
+  <p><a href="/admin/clinic-registrations">← Clinic registrations</a></p>
+  <h1><%= app.clinic_name || 'Clinic registration' %></h1>
+  <p class="bb-pa-hint">Reference <%= app.application_number %></p>
+  <% if (typeof notice !== 'undefined' && notice) { %>
+  <p class="bb-pa-notice" role="status"><%= notice %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+  <p class="bb-pa-error" role="alert"><%= error %></p>
+  <% } %>
+  <dl class="bb-pa-dl">
+    <div><dt>Status</dt><dd><%= app.status %></dd></div>
+    <div><dt>Provisioning</dt><dd><%= app.provisioning_status || 'not_started' %></dd></div>
+    <div><dt>Submitted</dt><dd><%= app.created_at ? new Date(app.created_at).toISOString() : '—' %></dd></div>
+    <div><dt>Administrator</dt><dd><%= app.contact_name %></dd></div>
+    <div><dt>Email</dt><dd><%= app.contact_email_display %></dd></div>
+    <div><dt>Phone</dt><dd><%= app.contact_phone_display %></dd></div>
+    <div><dt>Location</dt><dd><%= loc || '—' %></dd></div>
+    <div><dt>Notes</dt><dd><%= app.notes || '—' %></dd></div>
+    <% if (app.organization_id) { %>
+    <div><dt>Organization</dt><dd><code><%= app.organization_id %></code></dd></div>
+    <% } %>
+    <% if (app.last_provision_error) { %>
+    <div><dt>Last provision error</dt><dd><%= app.last_provision_error %></dd></div>
+    <% } %>
+  </dl>
+  <% if (app.status === 'pending_review' || (app.status === 'approved' && app.provisioning_status !== 'provisioned')) { %>
+  <form method="post" action="/admin/clinic-registrations/<%= app.id %>/approve">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit" class="bb-pa-btn"><%= app.status === 'approved' ? 'Retry provision' : 'Approve and provision' %></button>
+  </form>
+  <% } %>
+  <% if (app.status === 'pending_review') { %>
+  <form method="post" action="/admin/clinic-registrations/<%= app.id %>/reject">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Reject</button>
+  </form>
+  <% } %>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

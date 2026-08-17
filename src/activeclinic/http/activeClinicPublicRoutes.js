@@ -55,9 +55,9 @@ function sha256Hex(value) {
   return crypto.createHash("sha256").update(String(value)).digest("hex");
 }
 
-function issuePageCsrf(res, env, isProduction) {
+function issuePageCsrf(res, env, isProduction, req) {
   const token = issueCsrfToken(env);
-  setCsrfCookie(res, token, { secure: isProduction, env });
+  setCsrfCookie(res, token, { secure: isProduction, env, req });
   return token;
 }
 
@@ -78,8 +78,11 @@ function registerFormDataFromBody(body) {
     phoneNational: fd.phone_national || fd.phoneNational || "",
     province: fd.province || "",
     city: fd.city || "",
+    address: fd.address || "",
     countryCode: fd.countryCode || fd.phone_country || "ZM",
     notes: fd.notes || "",
+    password: fd.password || "",
+    passwordConfirm: fd.passwordConfirm || fd.password_confirm || "",
   };
 }
 
@@ -303,7 +306,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
   });
 
   app.get("/register-clinic", (req, res) => {
-    const csrfToken = issuePageCsrf(res, env, isProduction);
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
     return res.status(200).type("html").send(renderPublicView("public/register-clinic", {
       csrfToken,
       error: null,
@@ -318,7 +321,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
     const action = String((req.body && req.body.action) || "").trim().toLowerCase();
 
     if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-      const csrfToken = issuePageCsrf(res, env, isProduction);
+      const csrfToken = issuePageCsrf(res, env, isProduction, req);
       return res.status(403).type("html").send(renderPublicView("public/register-clinic", {
         csrfToken,
         error: "Your session expired. Please try again.",
@@ -335,7 +338,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
         const result = await createClinicRegistrationApplication(getPool(), formData);
 
         if (!result.ok) {
-          const csrfToken = issuePageCsrf(res, env, isProduction);
+          const csrfToken = issuePageCsrf(res, env, isProduction, req);
           if (result.code === "duplicate_application") {
             logClinicApplicationFailed({
               requestId,
@@ -348,7 +351,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
             });
             return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
               csrfToken,
-              error: "An application with this email was recently submitted. It remains pending review — a second copy was not created.",
+              error: "An application with this email or phone was recently submitted. It remains pending review — a second copy was not created.",
               formState: "form",
               validationErrors: {},
               formData,
@@ -411,7 +414,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
           includeStack: true,
           err,
         });
-        const csrfToken = issuePageCsrf(res, env, isProduction);
+        const csrfToken = issuePageCsrf(res, env, isProduction, req);
         return res.status(500).type("html").send(renderPublicView("public/register-clinic-server-error", {
           csrfToken,
           formData,
@@ -422,7 +425,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
     }
 
     const validated = validateClinicRegistrationInput(formData);
-    const csrfToken = issuePageCsrf(res, env, isProduction);
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
 
     if (!validated.ok) {
       return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
@@ -443,14 +446,19 @@ function registerActiveClinicPublicRoutes(app, deps) {
         contactPhone: validated.normalized.contactPhoneDisplay || formData.contactPhone,
         province: validated.normalized.province || "",
         city: validated.normalized.city || "",
+        address: validated.normalized.address || "",
         countryCode: validated.normalized.countryCode,
         notes: validated.normalized.notes || "",
+        phoneCountry: formData.phoneCountry || "",
+        phoneNational: formData.phoneNational || "",
+        password: formData.password || "",
+        passwordConfirm: formData.passwordConfirm || "",
       },
     }));
   });
 
   app.get("/register-clinic/success", (req, res) => {
-    const csrfToken = issuePageCsrf(res, env, isProduction);
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
     const applicationReference = String(req.query.ref || "").trim().slice(0, 64);
     return res.status(200).type("html").send(renderPublicView("public/register-clinic-success", {
       csrfToken,

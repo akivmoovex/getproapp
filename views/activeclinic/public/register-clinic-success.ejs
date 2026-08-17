@@ -7,7 +7,7 @@
 
   <div class="ac-success-panel">
     <h1>Application received</h1>
-    <p>Thank you. Your clinic registration application has been recorded and is <strong>pending review</strong> by the ActiveClinic team.</p>
+    <p>Thank you. Your clinic registration has been recorded and is <strong>pending review</strong>. Your administrator password is saved and will be activated if the application is approved.</p>
     <% if (typeof applicationReference === 'string' && applicationReference) { %>
     <p>Reference: <code data-ac-application-ref="<%= applicationReference %>"><%= applicationReference %></code></p>
     <% } %>
@@ -17,14 +17,14 @@
     <h2 class="ac-success-panel__subtitle">What happens next</h2>
     <ul class="ac-public-list">
       <li>Our team will review your application. This may take several business days.</li>
-      <li>We have <strong>not</strong> published your clinic or created a live staff account.</li>
+      <li>We have <strong>not</strong> published your clinic website yet.</li>
+      <li>After approval you can sign in at <a href="/login">Email or phone number</a> with the password you set.</li>
       <li>We have <strong>not</strong> sent SMS, WhatsApp, or email confirmation from this form.</li>
-      <li>If approved, you will receive separate onboarding instructions from ActiveClinic.</li>
     </ul>
   </div>
 
   <p class="ac-public-actions">
-    <a class="ac-btn ac-btn--primary" href="/">Return home</a>
-    <a class="ac-btn ac-btn--secondary" href="/about">Learn more</a>
+    <a class="ac-btn ac-btn--primary" href="/login">Go to sign in</a>
+    <a class="ac-btn ac-btn--secondary" href="/">Return home</a>
   </p>
 </section>
