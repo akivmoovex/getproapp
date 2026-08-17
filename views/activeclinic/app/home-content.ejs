@@ -3,11 +3,26 @@
   var welcome = dash.welcome || {};
   var summaries = dash.summaries || {};
   var metrics = Array.isArray(dash.metrics) ? dash.metrics : [];
+  var clinicSetup = dash.clinicSetup || null;
+  var sessionTasks = Array.isArray(dash.sessionTasks) ? dash.sessionTasks : [];
   var tasks = dash.setupTasks || [];
   var actions = dash.quickActions || [];
   var sections = Array.isArray(dash.sections) ? dash.sections : [];
   var notices = dash.notices || [];
   var mode = dash.mode || 'ready';
+  var setupPresentation = clinicSetup && clinicSetup.presentation
+    ? clinicSetup.presentation
+    : (tasks.length ? 'incomplete' : 'hidden');
+  var setupIncomplete = clinicSetup && Array.isArray(clinicSetup.incomplete)
+    ? clinicSetup.incomplete
+    : tasks.filter(function (t) { return !t.done; }).map(function (t) {
+        return { key: t.key, label: t.label, destinationUrl: t.href, complete: false };
+      });
+  var setupRecommended = clinicSetup && Array.isArray(clinicSetup.recommendedIncomplete)
+    ? clinicSetup.recommendedIncomplete
+    : [];
+  var requiredComplete = clinicSetup ? clinicSetup.requiredComplete : 0;
+  var requiredTotal = clinicSetup ? clinicSetup.requiredTotal : 0;
 
   var primarySections = sections.filter(function (s) {
     return s.key !== 'administration';
@@ -93,24 +108,58 @@
   </div>
   <% } %>
 
-  <% if (tasks.length) { %>
-  <article class="ac-panel" data-ac-dashboard-card="setup">
-    <h2 class="ac-dashboard__card-title">Setup checklist</h2>
+  <% if (sessionTasks.length) { %>
+  <p class="ac-flash ac-flash--warning" role="status" data-ac-dashboard-notice="select-facility">
+    Select a facility context to continue operational work.
+    <% sessionTasks.forEach(function (task) { %>
+      <% if (task.href) { %><a href="<%= task.href %>"><%= task.label %></a><% } %>
+    <% }) %>
+  </p>
+  <% } %>
+
+  <% if (setupPresentation === 'incomplete') { %>
+  <article class="ac-panel ac-clinic-setup" data-ac-dashboard-card="clinic-setup" data-ac-clinic-setup="incomplete">
+    <h2 class="ac-dashboard__card-title">Clinic setup</h2>
+    <% if (requiredTotal > 0) { %>
+    <p class="ac-clinic-setup__progress"><%= requiredComplete %> of <%= requiredTotal %> required items complete</p>
+    <% } %>
     <ul class="ac-checklist">
-      <% tasks.forEach(function (task) { %>
-      <li class="<%= task.done ? 'is-done' : '' %>">
-        <span class="ac-checklist__mark" aria-hidden="true"><%= task.done ? '✓' : '○' %></span>
-        <% if (task.href && !task.done) { %>
-          <a href="<%= task.href %>"><%= task.label %></a>
-        <% } else if (task.href) { %>
-          <a href="<%= task.href %>" class="ac-muted"><%= task.label %></a>
+      <% setupIncomplete.forEach(function (item) { %>
+      <li data-ac-setup-item="<%= item.key %>" data-ac-setup-class="<%= item.classification || '' %>">
+        <span class="ac-checklist__mark" aria-hidden="true">○</span>
+        <% if (item.destinationUrl) { %>
+          <a href="<%= item.destinationUrl %>"><%= item.label %></a>
         <% } else { %>
-          <span><%= task.label %></span>
+          <span><%= item.label %></span>
         <% } %>
       </li>
       <% }) %>
     </ul>
   </article>
+  <% } else if (setupPresentation === 'recommended') { %>
+  <article class="ac-panel ac-clinic-setup ac-clinic-setup--compact" data-ac-dashboard-card="clinic-setup" data-ac-clinic-setup="recommended">
+    <h2 class="ac-dashboard__card-title">Clinic setup</h2>
+    <p class="ac-clinic-setup__progress">Required setup is complete. Recommended next steps:</p>
+    <ul class="ac-checklist">
+      <% setupRecommended.forEach(function (item) { %>
+      <li data-ac-setup-item="<%= item.key %>" data-ac-setup-class="<%= item.classification || '' %>">
+        <span class="ac-checklist__mark" aria-hidden="true">○</span>
+        <% if (item.destinationUrl) { %>
+          <a href="<%= item.destinationUrl %>"><%= item.label %></a>
+        <% } else { %>
+          <span><%= item.label %></span>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+  </article>
+  <% } else if (setupPresentation === 'complete') { %>
+  <p class="ac-clinic-setup ac-clinic-setup--done" data-ac-dashboard-card="clinic-setup" data-ac-clinic-setup="complete">
+    Clinic setup complete.
+    <% if (clinicSetup && clinicSetup.settingsHref) { %>
+      <a href="<%= clinicSetup.settingsHref %>">Settings</a>
+    <% } %>
+  </p>
   <% } %>
 
   <% if (primarySections.length) { %>

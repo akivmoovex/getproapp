@@ -115,6 +115,20 @@ describe("activeclinic-dashboard-shell-parity (AC-V6-S02)", () => {
             staff: { label: "Active staff", value: 3, href: "/app/staff" },
             invitations: { label: "Pending invitations", value: 1, href: "/app/staff" },
           },
+          clinicSetup: {
+            presentation: "incomplete",
+            requiredComplete: 1,
+            requiredTotal: 3,
+            incomplete: [
+              {
+                key: "primary_facility",
+                label: "Configure primary facility",
+                destinationUrl: "/app/facilities",
+                classification: "REQUIRED_FOR_OPERATIONS",
+              },
+            ],
+            recommendedIncomplete: [],
+          },
           setupTasks: [
             { key: "primary_facility", label: "Primary facility configured", done: true, href: "/app/facilities" },
           ],
@@ -139,7 +153,8 @@ describe("activeclinic-dashboard-shell-parity (AC-V6-S02)", () => {
     assert.match(html, /data-ac-dashboard="ready"/);
     assert.match(html, /data-ac-dashboard-card="welcome"/);
     assert.match(html, /Active facilities/);
-    assert.match(html, /Setup checklist/);
+    assert.match(html, /Clinic setup/);
+    assert.match(html, /1 of 3 required items complete/);
     assert.match(html, /action="\/logout"/);
     assert.match(html, /data-ac-nav-source="registry"/);
     assert.doesNotMatch(html, /BlessBoard|Sacred Modernity/i);

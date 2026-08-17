@@ -210,7 +210,10 @@ async function listRoleAssignmentsForOrganization(db, input) {
     );
   }
 
-  if (input.roleKey) {
+  if (Array.isArray(input.roleKeys) && input.roleKeys.length) {
+    params.push(input.roleKeys.map(String));
+    clauses.push(`r.role_key = ANY($${params.length}::text[])`);
+  } else if (input.roleKey) {
     params.push(String(input.roleKey));
     clauses.push(`r.role_key = $${params.length}`);
   }

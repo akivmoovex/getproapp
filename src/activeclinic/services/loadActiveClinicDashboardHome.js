@@ -17,6 +17,11 @@ const {
   groupDashboardSections,
   toQuickActions,
 } = require("./activeClinicDashboardCapabilities");
+const {
+  canSeeClinicSetupPanel,
+  loadOrganizationClinicSetup,
+  presentClinicSetupForViewer,
+} = require("./loadActiveClinicSettingsScreens");
 
 function hasPerm(set, key) {
   return set.has(key);
@@ -80,73 +85,8 @@ async function loadActiveClinicDashboardHome(db, input) {
   }
 
   const activeFacilities = facilities.filter((f) => f.status === "active");
-  const primaryFacility = activeFacilities.find((f) => f.isPrimary) || null;
   const activeStaff = staffMembers.filter((s) => s.status === "active");
   const invitedStaff = staffMembers.filter((s) => s.status === "invited");
-
-  const setupTasks = [];
-  if (hasPerm(perms, "activeclinic.facility.view") || hasPerm(perms, "activeclinic.facility.create")) {
-    if (activeFacilities.length === 0) {
-      setupTasks.push({
-        key: "add_facility",
-        label: "Add the first facility",
-        done: false,
-        href: hasPerm(perms, "activeclinic.facility.create")
-          ? "/app/facilities"
-          : null,
-      });
-    } else if (!primaryFacility) {
-      setupTasks.push({
-        key: "primary_facility",
-        label: "Designate a primary facility",
-        done: false,
-        href: "/app/facilities",
-      });
-    } else {
-      setupTasks.push({
-        key: "primary_facility",
-        label: "Primary facility configured",
-        done: true,
-        href: "/app/facilities",
-      });
-    }
-  }
-
-  if (hasPerm(perms, "activeclinic.staff.view") || hasPerm(perms, "activeclinic.staff.invite")) {
-    if (activeStaff.length + invitedStaff.length <= 1) {
-      setupTasks.push({
-        key: "invite_staff",
-        label: "Invite additional staff",
-        done: false,
-        href: hasPerm(perms, "activeclinic.staff.view") ? "/app/staff" : null,
-      });
-    } else {
-      setupTasks.push({
-        key: "invite_staff",
-        label: "Staff profiles present",
-        done: true,
-        href: hasPerm(perms, "activeclinic.staff.view") ? "/app/staff" : null,
-      });
-    }
-  }
-
-  if (hasPerm(perms, "activeclinic.staff.assign_access")) {
-    setupTasks.push({
-      key: "review_access",
-      label: "Review roles and access",
-      done: false,
-      href: "/app/access",
-    });
-  }
-
-  if (hasPerm(perms, "activeclinic.departments.manage") && shell.selectedFacility) {
-    setupTasks.push({
-      key: "review_departments",
-      label: "Review clinic departments",
-      done: false,
-      href: "/app/settings/clinic-setup/departments",
-    });
-  }
 
   const needsFacilitySelect =
     !shell.selectedFacility &&
@@ -154,13 +94,40 @@ async function loadActiveClinicDashboardHome(db, input) {
     Array.isArray(shell.availableFacilities) &&
     shell.availableFacilities.length > 0;
 
+  let clinicSetup = null;
+  if (orgId && canSeeClinicSetupPanel(perms)) {
+    const setupState = await loadOrganizationClinicSetup(db, {
+      organizationId: orgId,
+      healthcareOrganization: auth.healthcareOrganization || null,
+      clinicKey: auth.organization && auth.organization.key,
+      staffMembers,
+      staffCounts: hasPerm(perms, "activeclinic.staff.view")
+        ? { active: activeStaff.length, invited: invitedStaff.length }
+        : undefined,
+    });
+    clinicSetup = presentClinicSetupForViewer(setupState, perms);
+    clinicSetup.state = setupState;
+  }
+
+  const sessionTasks = [];
   if (needsFacilitySelect) {
-    setupTasks.unshift({
+    sessionTasks.push({
       key: "select_facility",
       label: "Select a facility context",
-      done: false,
       href: "/app/select-facility",
     });
+  }
+
+  const setupTasks = [];
+  if (clinicSetup && clinicSetup.presentation === "incomplete") {
+    for (const item of clinicSetup.incomplete) {
+      setupTasks.push({
+        key: item.key,
+        label: item.label,
+        done: false,
+        href: item.destinationUrl,
+      });
+    }
   }
 
   const activeDepartmentTypes = resolveActiveDepartmentTypes(shell);
@@ -180,8 +147,7 @@ async function loadActiveClinicDashboardHome(db, input) {
   const empty =
     activeFacilities.length === 0 &&
     (hasPerm(perms, "activeclinic.facility.create") ||
-      hasPerm(perms, "activeclinic.facility.update")) &&
-    setupTasks.some((t) => t.key === "add_facility" && !t.done);
+      hasPerm(perms, "activeclinic.facility.update"));
 
   const mode = empty ? "empty" : "ready";
 
@@ -247,6 +213,8 @@ async function loadActiveClinicDashboardHome(db, input) {
     sections,
     modules: buckets,
     authorizedTiles,
+    clinicSetup,
+    sessionTasks,
     setupTasks,
     quickActions,
     notices: [],

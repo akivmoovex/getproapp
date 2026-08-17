@@ -727,6 +727,24 @@ body.ac-drawer-open .ac-drawer {
 .ac-checklist a { color: var(--ac-primary); text-decoration: none; }
 .ac-checklist .is-done { color: var(--ac-muted); font-weight: 500; }
 .ac-checklist__mark { color: var(--ac-primary); }
+.ac-clinic-setup__progress {
+  margin: -0.35rem 0 var(--ac-space-3);
+  color: var(--ac-muted);
+  font-size: 0.9rem;
+}
+.ac-clinic-setup--compact {
+  box-shadow: none;
+}
+.ac-clinic-setup--done {
+  margin: 0;
+  color: var(--ac-muted);
+  font-size: 0.9rem;
+}
+.ac-clinic-setup--done a {
+  color: var(--ac-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
 
 .ac-state-body {
   display: flex;

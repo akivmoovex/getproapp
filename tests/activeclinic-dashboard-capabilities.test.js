@@ -389,6 +389,7 @@ describe("activeclinic-dashboard-capabilities", () => {
     assert.equal(dash.summaries.facilities, null);
     assert.equal(dash.summaries.staff, null);
     assert.equal(dash.metrics.length, 0);
+    assert.equal(dash.clinicSetup, null);
     assert.ok(dash.quickActions.some((a) => a.key === "reception"));
     assert.ok(!dash.quickActions.some((a) => a.key === "pharmacy"));
     assert.ok(!dash.quickActions.some((a) => a.key === "billing"));
@@ -454,5 +455,7 @@ describe("activeclinic-dashboard-capabilities", () => {
     assert.doesNotMatch(html, /data-ac-dashboard-tile="clinical"/);
     assert.doesNotMatch(html, /BlessBoard|Sacred Modernity/i);
     assert.doesNotMatch(html, /platform administrator|Platform admin/i);
+    assert.doesNotMatch(html, /data-ac-dashboard-card="clinic-setup"/);
+    assert.doesNotMatch(html, /Clinic setup/);
   });
 });

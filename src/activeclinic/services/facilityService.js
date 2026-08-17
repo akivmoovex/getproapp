@@ -87,6 +87,7 @@ function mapFacility(row) {
     emailNormalized: row.email_normalized || null,
     emailDisplay: row.email_display || null,
     timezone: row.timezone,
+    publicHoursJson: row.public_hours_json || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
