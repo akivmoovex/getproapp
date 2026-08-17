@@ -75,7 +75,7 @@ function clampLimit(limit) {
 /**
  * Search active published churches allowed in the public directory.
  * @param {import("pg").Pool} pool
- * @param {{ q?: string, page?: number, limit?: number }} opts
+ * @param {{ q?: string, page?: number, limit?: number, env?: NodeJS.ProcessEnv }} opts
  */
 async function searchPublicOrganizations(pool, opts = {}) {
   const q = normalizeSearchQuery(opts.q);
@@ -88,7 +88,7 @@ async function searchPublicOrganizations(pool, opts = {}) {
   const clauses = [
     `o.status = 'active'`,
     `c.status = 'active'`,
-    sqlPublicDirectoryEnvironmentFilter("o"),
+    sqlPublicDirectoryEnvironmentFilter("o", opts.env),
     // Missing church_settings is not an explicit unpublish (provisioning may omit the row).
     // Explicit draft/suspended remain hidden.
     `(cs.website_status IS NULL OR cs.website_status = 'published')`,

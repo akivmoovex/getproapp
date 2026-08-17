@@ -75,20 +75,23 @@ function isReportAggregateEnvironment(orgOrEnv) {
 /**
  * Whether an org may appear in the public church directory / selector.
  * Depends on DEPLOYMENT_ENV (via isTestingDeployment) — not NODE_ENV alone.
+ * Pass the explicit app env at request time; process.env is bootstrap-only.
+ * @param {string|object} orgOrEnv
+ * @param {NodeJS.ProcessEnv} [appEnv]
  */
-function isPublicDirectoryEnvironment(orgOrEnv) {
+function isPublicDirectoryEnvironment(orgOrEnv, appEnv) {
   const env = getDataEnvironment(orgOrEnv);
   const { isTestingDeployment } = require("./blessBoardEnv");
-  if (isTestingDeployment()) {
+  if (isTestingDeployment(appEnv)) {
     return PUBLIC_DIRECTORY_ENVIRONMENTS_TESTING.includes(env);
   }
   return PUBLIC_DIRECTORY_ENVIRONMENTS.includes(env);
 }
 
 /** Environments allowed in the public directory for the current deployment mode. */
-function publicDirectoryEnvironmentsForDeployment() {
+function publicDirectoryEnvironmentsForDeployment(appEnv) {
   const { isTestingDeployment } = require("./blessBoardEnv");
-  return isTestingDeployment()
+  return isTestingDeployment(appEnv)
     ? PUBLIC_DIRECTORY_ENVIRONMENTS_TESTING
     : PUBLIC_DIRECTORY_ENVIRONMENTS;
 }
@@ -114,8 +117,8 @@ function isNonProductionEnvironment(orgOrEnv) {
  * Production deployments: production + pilot only (never testing/demo).
  * Testing deployments: production + pilot + demo + testing (+ legacy `test`).
  */
-function sqlPublicDirectoryEnvironmentFilter(alias = "o") {
-  const envs = [...publicDirectoryEnvironmentsForDeployment()];
+function sqlPublicDirectoryEnvironmentFilter(alias = "o", appEnv) {
+  const envs = [...publicDirectoryEnvironmentsForDeployment(appEnv)];
   // Accept legacy V4 SQL value `test` wherever `testing` is allowed.
   if (envs.includes("testing") && !envs.includes("test")) {
     envs.push("test");

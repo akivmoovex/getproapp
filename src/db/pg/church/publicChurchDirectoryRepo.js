@@ -98,7 +98,7 @@ async function searchPublicOrganizations(pool, opts = {}) {
   const params = [];
   const clauses = [`o.status = 'active'`];
   const { sqlPublicDirectoryEnvironmentFilter } = require("../../../church/orgDataEnvironment");
-  clauses.push(sqlPublicDirectoryEnvironmentFilter("o"));
+  clauses.push(sqlPublicDirectoryEnvironmentFilter("o", opts.env));
 
   clauses.push(`EXISTS (
     SELECT 1 FROM public.church_branches b_active
@@ -184,7 +184,7 @@ async function searchPublicOrganizations(pool, opts = {}) {
  * @param {import("pg").Pool} pool
  * @param {string} orgSlug
  */
-async function findActivePublicOrganizationBySlug(pool, orgSlug) {
+async function findActivePublicOrganizationBySlug(pool, orgSlug, env) {
   const slug = String(orgSlug || "")
     .toLowerCase()
     .trim();
@@ -198,7 +198,7 @@ async function findActivePublicOrganizationBySlug(pool, orgSlug) {
             ) AS active_branch_count
      FROM public.church_organizations o
      WHERE o.slug = $1 AND o.status = 'active'
-       AND ${sqlPublicDirectoryEnvironmentFilter("o")}
+       AND ${sqlPublicDirectoryEnvironmentFilter("o", env)}
      LIMIT 1`,
     [slug]
   );
@@ -260,7 +260,7 @@ async function listActivePublicBranchesForOrganization(pool, organizationId, opt
  * @param {string} orgSlug
  * @param {string} branchSlug
  */
-async function findActivePublicBranchForOrganization(pool, orgSlug, branchSlug) {
+async function findActivePublicBranchForOrganization(pool, orgSlug, branchSlug, env) {
   const oSlug = String(orgSlug || "")
     .toLowerCase()
     .trim();
@@ -285,7 +285,7 @@ async function findActivePublicBranchForOrganization(pool, orgSlug, branchSlug) 
        ON wc.branch_id = b.id AND wc.status = 'published'
      WHERE o.slug = $1
        AND o.status = 'active'
-       AND ${sqlPublicDirectoryEnvironmentFilter("o")}
+       AND ${sqlPublicDirectoryEnvironmentFilter("o", env)}
        AND b.status = 'active'
        AND (b.slug = $2 OR lower(trim(COALESCE(b.host_slug, ''))) = $2)
      LIMIT 1`,

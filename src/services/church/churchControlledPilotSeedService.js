@@ -69,10 +69,10 @@ function branchHost(pilotId, kind) {
 }
 
 async function assertControlledPilotSafety(pool, opts = {}) {
-  if (!isTestingDeployment()) {
+  if (!isTestingDeployment(opts.env)) {
     throw refuse(
       "PRODUCTION_REFUSED",
-      `Refusing: DEPLOYMENT_ENV mode is "${getDeploymentEnvMode()}" (need testing). Never runs against production.`
+      `Refusing: DEPLOYMENT_ENV mode is "${getDeploymentEnvMode(opts.env)}" (need testing). Never runs against production.`
     );
   }
 
@@ -126,7 +126,7 @@ async function assertControlledPilotSafety(pool, opts = {}) {
     throw refuse("CONFIRM_REQUIRED", "Refusing: pass --confirm to proceed.");
   }
 
-  return { ok: true, mode: getDeploymentEnvMode(), identity: row };
+  return { ok: true, mode: getDeploymentEnvMode(opts.env), identity: row };
 }
 
 async function findPilotOrganizations(pool, pilotId) {
@@ -331,6 +331,7 @@ async function seedControlledPilot(pool, opts) {
     requireConfirm: true,
     confirmed: opts.confirm === true,
     allowTestDatabaseUrl: opts.allowTestDatabaseUrl,
+    env: opts.env,
   });
 
   const existing = await findPilotOrganizations(pool, pilotId);
@@ -556,6 +557,7 @@ async function cleanupControlledPilot(pool, opts) {
     requireConfirm: true,
     confirmed: opts.confirm === true,
     allowTestDatabaseUrl: opts.allowTestDatabaseUrl,
+    env: opts.env,
   });
 
   const preview = await previewPilotCleanup(pool, pilotId);

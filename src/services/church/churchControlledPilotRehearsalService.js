@@ -71,12 +71,14 @@ async function runControlledPilotRehearsal(pool, opts) {
     requireConfirm: opts.requireConfirm !== false,
     confirmed: opts.confirm === true,
     allowTestDatabaseUrl: opts.allowTestDatabaseUrl,
+    env: opts.env,
   });
 
   const seeded = await seedControlledPilot(pool, {
     pilotId,
     confirm: true,
     allowTestDatabaseUrl: opts.allowTestDatabaseUrl,
+    env: opts.env,
   });
 
   const flows = [];

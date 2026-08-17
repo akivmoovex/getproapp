@@ -693,7 +693,7 @@ function createApexMarketingRouter(deps) {
     try {
       const pool = getPool();
       if (pool) {
-        results = await directoryRepo.searchPublicOrganizations(pool, { q, page });
+        results = await directoryRepo.searchPublicOrganizations(pool, { q, page, env });
       } else {
         directoryUnavailable = true;
       }

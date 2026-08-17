@@ -136,11 +136,12 @@ async function checkRequiredIndexes(pool) {
  */
 async function runPilotOperationalReadiness(opts = {}) {
   const checks = [];
+  const env = opts.env || process.env;
   const pool = opts.pool !== undefined ? opts.pool : isPgConfigured() ? getPgPool() : null;
   const expectEnv =
     opts.expectEnv != null
       ? String(opts.expectEnv).trim().toLowerCase()
-      : String(process.env.EXPECTED_DATABASE_ENV || process.env.DEPLOYMENT_ENV || "")
+      : String(env.EXPECTED_DATABASE_ENV || env.DEPLOYMENT_ENV || "")
           .trim()
           .toLowerCase();
 
@@ -176,7 +177,7 @@ async function runPilotOperationalReadiness(opts = {}) {
     );
   }
 
-  if (!String(process.env.DEPLOYMENT_ENV || "").trim()) {
+  if (!String(env.DEPLOYMENT_ENV || "").trim()) {
     checks.push(
       checkResult(
         "env.deployment_env",
@@ -189,7 +190,7 @@ async function runPilotOperationalReadiness(opts = {}) {
       checkResult(
         "env.deployment_env",
         "pass",
-        `DEPLOYMENT_ENV=${getDeploymentEnv()} (mode=${getDeploymentEnvMode()})`
+        `DEPLOYMENT_ENV=${getDeploymentEnv(env)} (mode=${getDeploymentEnvMode(env)})`
       )
     );
   }
@@ -205,7 +206,7 @@ async function runPilotOperationalReadiness(opts = {}) {
   }
 
   // --- Expected environment ---
-  const expectedMatch = validateExpectedDatabaseEnv();
+  const expectedMatch = validateExpectedDatabaseEnv(env);
   if (!expectedMatch.ok) {
     checks.push(
       checkResult(
@@ -214,12 +215,12 @@ async function runPilotOperationalReadiness(opts = {}) {
         `EXPECTED_DATABASE_ENV=${expectedMatch.expected} does not match DEPLOYMENT_ENV=${expectedMatch.actual}`
       )
     );
-  } else if (String(process.env.EXPECTED_DATABASE_ENV || "").trim()) {
+  } else if (String(env.EXPECTED_DATABASE_ENV || "").trim()) {
     checks.push(
       checkResult(
         "env.expected_database_env",
         "pass",
-        `EXPECTED_DATABASE_ENV matches DEPLOYMENT_ENV=${getDeploymentEnv()}`
+        `EXPECTED_DATABASE_ENV matches DEPLOYMENT_ENV=${getDeploymentEnv(env)}`
       )
     );
   } else {
@@ -270,7 +271,7 @@ async function runPilotOperationalReadiness(opts = {}) {
     checkResult(
       "demo.visibility_policy",
       "pass",
-      isTestingDeployment()
+      isTestingDeployment(env)
         ? "DEPLOYMENT_ENV=testing — demo tenants may appear in directory/selector"
         : "Production-safe demo policy — demo tenants hidden from directory/selector"
     )
@@ -304,7 +305,7 @@ async function runPilotOperationalReadiness(opts = {}) {
         const want =
           expectEnv === "testing" || expectEnv === "production"
             ? expectEnv
-            : getDeploymentEnvMode();
+            : getDeploymentEnvMode(env);
         if (code !== want && (want === "testing" || want === "production")) {
           checks.push(
             checkResult(
@@ -468,8 +469,8 @@ async function runPilotOperationalReadiness(opts = {}) {
     warn: checks.filter((c) => c.status === "warn").length,
     total: checks.length,
     checkedAt: new Date().toISOString(),
-    deploymentEnv: getDeploymentEnv(),
-    deploymentMode: getDeploymentEnvMode(),
+    deploymentEnv: getDeploymentEnv(env),
+    deploymentMode: getDeploymentEnvMode(env),
     latestMigration: latestChurchSchemaMigration() || LATEST_CHURCH_MIGRATION,
     readOnly: true,
   };

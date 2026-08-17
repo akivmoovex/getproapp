@@ -342,16 +342,18 @@ let deploymentEnvFallbackWarned = false;
  * Prefer {@link getDeploymentEnvMode} / {@link isTestingDeployment} for policy gates.
  * Authoritative profiles derive deploymentEnvironment from PLATFORM_DEPLOYMENT_CODE.
  * Does not invent a production/testing mode from NODE_ENV alone for those gates.
+ * Runtime callers must pass the explicit app `env`; process.env is bootstrap-only.
+ * @param {NodeJS.ProcessEnv} [env]
  */
-function getDeploymentEnv() {
-  if (hasAuthoritativeDeploymentProfile()) {
-    const profile = getDeploymentProfile();
-    const explicit = envTrim("DEPLOYMENT_ENV");
+function getDeploymentEnv(env) {
+  if (hasAuthoritativeDeploymentProfile(env)) {
+    const profile = getDeploymentProfile(env);
+    const explicit = envTrim("DEPLOYMENT_ENV", env);
     return explicit || (profile && profile.deploymentEnvironment) || "testing";
   }
-  const fromEnv = envTrim("DEPLOYMENT_ENV");
+  const fromEnv = envTrim("DEPLOYMENT_ENV", env);
   if (fromEnv) return fromEnv;
-  const nodeEnv = envTrim("NODE_ENV");
+  const nodeEnv = envTrim("NODE_ENV", env);
   return nodeEnv || "development";
 }
 
@@ -360,16 +362,18 @@ function getDeploymentEnv() {
  * Authoritative profile → profile.deploymentEnvironment.
  * Otherwise reads DEPLOYMENT_ENV only (case-insensitive, trimmed). Does not use NODE_ENV.
  * Accepted: "testing" | "production". Missing or unknown → "production" (safe: hide demos).
+ * Runtime callers must pass the explicit app `env`; process.env is bootstrap-only.
+ * @param {NodeJS.ProcessEnv} [env]
  * @returns {"testing"|"production"}
  */
-function getDeploymentEnvMode() {
-  if (hasAuthoritativeDeploymentProfile()) {
-    const profile = getDeploymentProfile();
+function getDeploymentEnvMode(env) {
+  if (hasAuthoritativeDeploymentProfile(env)) {
+    const profile = getDeploymentProfile(env);
     return profile && profile.deploymentEnvironment === DEPLOYMENT_ENV_TESTING
       ? DEPLOYMENT_ENV_TESTING
       : DEPLOYMENT_ENV_PRODUCTION;
   }
-  const raw = envTrim("DEPLOYMENT_ENV").toLowerCase();
+  const raw = envTrim("DEPLOYMENT_ENV", env).toLowerCase();
   if (raw === DEPLOYMENT_ENV_TESTING) return DEPLOYMENT_ENV_TESTING;
   if (raw === DEPLOYMENT_ENV_PRODUCTION) return DEPLOYMENT_ENV_PRODUCTION;
   if (!deploymentEnvFallbackWarned) {
@@ -386,16 +390,17 @@ function getDeploymentEnvMode() {
 }
 
 /** True when DEPLOYMENT_ENV is testing (demo tenants may appear in directory/selector). */
-function isTestingDeployment() {
-  return getDeploymentEnvMode() === DEPLOYMENT_ENV_TESTING;
+function isTestingDeployment(env) {
+  return getDeploymentEnvMode(env) === DEPLOYMENT_ENV_TESTING;
 }
 
 /**
  * True when DEPLOYMENT_ENV is production, or when missing/invalid (safe fallback).
  * Demo tenants stay hidden from public directory/selector.
+ * @param {NodeJS.ProcessEnv} [env]
  */
-function isProductionDeployment() {
-  return getDeploymentEnvMode() === DEPLOYMENT_ENV_PRODUCTION;
+function isProductionDeployment(env) {
+  return getDeploymentEnvMode(env) === DEPLOYMENT_ENV_PRODUCTION;
 }
 
 /**
@@ -403,26 +408,26 @@ function isProductionDeployment() {
  * (no silent GETPRO_DATABASE_URL fallback).
  * Trigger: authoritative staging/org profile, or DEPLOYMENT_ENV=testing AND canonical blessboard.org
  */
-function isBlessBoardOrgTestingDeployment() {
-  if (hasAuthoritativeDeploymentProfile()) {
-    const profile = getDeploymentProfile();
+function isBlessBoardOrgTestingDeployment(env) {
+  if (hasAuthoritativeDeploymentProfile(env)) {
+    const profile = getDeploymentProfile(env);
     return Boolean(
       profile &&
         profile.deploymentEnvironment === DEPLOYMENT_ENV_TESTING &&
         profile.canonicalDomain === "blessboard.org"
     );
   }
-  if (!isTestingDeployment()) return false;
-  return getBlessBoardCanonicalDomain() === "blessboard.org";
+  if (!isTestingDeployment(env)) return false;
+  return getBlessBoardCanonicalDomain(env) === "blessboard.org";
 }
 
 /**
  * True for any official BlessBoard V5-foundation profile (.com production or .org staging).
  * These deployments require explicit DATABASE_URL and never use GETPRO_DATABASE_URL.
  */
-function isBlessBoardV5PlatformDeployment() {
-  if (!hasAuthoritativeDeploymentProfile()) return false;
-  const profile = getDeploymentProfile();
+function isBlessBoardV5PlatformDeployment(env) {
+  if (!hasAuthoritativeDeploymentProfile(env)) return false;
+  const profile = getDeploymentProfile(env);
   return Boolean(profile && profile.runtimeMode === "v5-foundation");
 }
 
@@ -432,12 +437,12 @@ function isBlessBoardV5PlatformDeployment() {
  * Hostinger value is allowed (deprecated). Conflicts fail closed.
  * @returns {{ ok: true } | { ok: false, expected: string, actual: string }}
  */
-function validateExpectedDatabaseEnv() {
-  const expected = envTrim("EXPECTED_DATABASE_ENV");
-  if (hasAuthoritativeDeploymentProfile()) {
-    const profile = getDeploymentProfile();
+function validateExpectedDatabaseEnv(env) {
+  const expected = envTrim("EXPECTED_DATABASE_ENV", env);
+  if (hasAuthoritativeDeploymentProfile(env)) {
+    const profile = getDeploymentProfile(env);
     const want = profile.expectedDatabaseEnvironment;
-    const actual = getDeploymentEnv();
+    const actual = getDeploymentEnv(env);
     if (expected && expected.toLowerCase() !== want.toLowerCase()) {
       return { ok: false, expected, actual: want };
     }
@@ -447,7 +452,7 @@ function validateExpectedDatabaseEnv() {
     return { ok: true };
   }
   if (!expected) return { ok: true };
-  const actual = getDeploymentEnv();
+  const actual = getDeploymentEnv(env);
   if (expected.toLowerCase() === actual.toLowerCase()) return { ok: true };
   return { ok: false, expected, actual };
 }
@@ -463,11 +468,11 @@ function validateExpectedDatabaseEnv() {
  *   canonicalRedirectEnabled: boolean
  * }}
  */
-function getBlessBoardDomainDiagnostics() {
-  const apex = [...getBlessBoardApexDomainSet()].sort();
+function getBlessBoardDomainDiagnostics(env) {
+  const apex = [...getBlessBoardApexDomainSet(env)].sort();
   return {
-    deploymentEnv: getDeploymentEnv(),
-    canonicalDomain: getBlessBoardCanonicalDomain(),
+    deploymentEnv: getDeploymentEnv(env),
+    canonicalDomain: getBlessBoardCanonicalDomain(env),
     apexDomains: apex.join(",") || "(none)",
     churchHostDomain: getChurchHostDomain(),
     publicUrl: getBlessBoardPublicUrl(),
