@@ -17,6 +17,10 @@ const {
 const {
   suggestFacilityKeyFromDisplayName,
 } = require("./normalizeFacilityKey");
+const {
+  editorDaysFromStored,
+  parsePublicHoursFromForm,
+} = require("./facilityPublicHours");
 
 const TYPE_LABELS = Object.freeze({
   hospital: "Hospital",
@@ -93,6 +97,7 @@ function mapFacilityDetail(f) {
     phoneDisplay: f.phoneDisplay,
     emailDisplay: f.emailDisplay,
     timezone: f.timezone,
+    publicHoursJson: f.publicHoursJson || null,
     createdAt: f.createdAt,
     updatedAt: f.updatedAt,
   };
@@ -298,6 +303,9 @@ function blankFacilityForm(defaults) {
     phoneNational: d.phoneNational || "",
     email: d.email || d.emailDisplay || "",
     timezone: d.timezone || "Africa/Lusaka",
+    publicHoursDays: Array.isArray(d.publicHoursDays)
+      ? d.publicHoursDays
+      : editorDaysFromStored(d.publicHoursJson || null),
   };
 }
 
@@ -365,6 +373,8 @@ async function loadActiveClinicEditFacilityScreen(db, input) {
     phoneNational: phoneParts.national,
     email: f.emailDisplay,
     timezone: f.timezone,
+    publicHoursJson: f.publicHoursJson,
+    publicHoursDays: editorDaysFromStored(f.publicHoursJson),
     ...(input.values || {}),
   });
   return {
@@ -413,6 +423,7 @@ function parseFacilityFormBody(body) {
     phoneNational: String(b.phone_national || "").trim(),
     email: String(b.email || "").trim(),
     timezone: String(b.timezone || "").trim(),
+    publicHoursForm: parsePublicHoursFromForm(b),
   };
 }
 

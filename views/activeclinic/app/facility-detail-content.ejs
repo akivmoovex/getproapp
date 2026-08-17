@@ -50,6 +50,22 @@
         <dt>Timezone</dt>
         <dd><%= f.timezone || '—' %></dd>
       </div>
+      <div data-ac-facility-public-hours="1">
+        <dt>Public hours</dt>
+        <dd>
+          <% var hours = f.publicHoursJson && typeof f.publicHoursJson === 'object' ? f.publicHoursJson : null; %>
+          <% if (hours && Object.keys(hours).length) { %>
+          <dl class="ac-hours-list">
+            <% Object.keys(hours).forEach(function (day) { %>
+            <dt><%= day %></dt>
+            <dd><%= hours[day] %></dd>
+            <% }) %>
+          </dl>
+          <% } else { %>
+          —
+          <% } %>
+        </dd>
+      </div>
     </dl>
   </div>
 

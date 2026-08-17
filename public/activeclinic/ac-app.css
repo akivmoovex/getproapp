@@ -1949,4 +1949,36 @@ body.ac-app-body .ac-badge {
   text-transform: capitalize;
 }
 
+/* Public facility hours editor */
+body.ac-app-body .ac-hours-editor {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.75rem 0 0;
+}
+body.ac-app-body .ac-hours-editor__row {
+  display: grid;
+  grid-template-columns: 7.5rem auto minmax(7rem, 1fr) minmax(7rem, 1fr);
+  gap: 0.65rem;
+  align-items: end;
+  padding: 0.5rem 0;
+  border-bottom: 1px solid #e5e7eb;
+}
+body.ac-app-body .ac-hours-editor__day {
+  font-weight: 600;
+}
+body.ac-app-body .ac-hours-list {
+  display: grid;
+  grid-template-columns: 4rem 1fr;
+  gap: 0.2rem 0.75rem;
+  margin: 0;
+}
+@media (max-width: 720px) {
+  body.ac-app-body .ac-hours-editor__row {
+    grid-template-columns: 1fr 1fr;
+  }
+  body.ac-app-body .ac-hours-editor__day {
+    grid-column: 1 / -1;
+  }
+}
+
 

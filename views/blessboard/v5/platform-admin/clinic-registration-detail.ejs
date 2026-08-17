@@ -4,6 +4,8 @@
   var loc = [app.address, app.city, app.province, app.country_code].filter(Boolean).join(', ');
   var events = typeof reviewHistory !== 'undefined' && reviewHistory ? reviewHistory : [];
   var notes = typeof reviewNotes !== 'undefined' && reviewNotes ? reviewNotes : [];
+  var collision = typeof identityCollision !== 'undefined' && identityCollision ? identityCollision : null;
+  var website = typeof websiteState !== 'undefined' && websiteState ? websiteState : 'not_provisioned';
   var flashNotice = typeof notice !== 'undefined' ? String(notice || '') : '';
   var flashError = typeof error !== 'undefined' ? String(error || '') : '';
   function noticeText(code) {
@@ -22,47 +24,160 @@
     if (code === 'not_awaiting_customer') return 'This application is not awaiting customer information.';
     if (code === 'application_not_eligible') return 'This action is not available for the current application status.';
     if (code === 'application_not_found') return 'This clinic registration could not be found.';
+    if (code === 'existing_identity_acknowledgement_required') {
+      return 'This contact already administers another ActiveClinic organization. Confirm second-clinic attachment before approving.';
+    }
     return code ? 'Something went wrong.' : '';
+  }
+  function axisChip(kind, value) {
+    var v = String(value || '');
+    if (kind === 'application') {
+      if (v === 'approved') return 'bb-pa-chip--ok';
+      if (v === 'rejected' || v === 'duplicate') return 'bb-pa-chip--danger';
+      if (v === 'pending_review') return 'bb-pa-chip--warn';
+      return 'bb-pa-chip--muted';
+    }
+    if (kind === 'follow_up') {
+      if (v === 'awaiting_customer') return 'bb-pa-chip--warn';
+      if (v === 'returned_for_review' || v === 'under_review') return 'bb-pa-chip--ok';
+      return 'bb-pa-chip--muted';
+    }
+    if (v === 'provisioned') return 'bb-pa-chip--ok';
+    if (v === 'failed') return 'bb-pa-chip--danger';
+    if (v === 'in_progress' || v === 'website_pending') return 'bb-pa-chip--warn';
+    return 'bb-pa-chip--muted';
   }
   var noticeMsg = noticeText(flashNotice);
   var errorMsg = errorText(flashError);
   var pending = app.status === 'pending_review';
   var awaiting = pending && app.follow_up_status === 'awaiting_customer';
+  var followUp = app.follow_up_status || 'none';
+  var provisioning = app.provisioning_status || 'not_started';
+  var needsSecondClinicAck = collision && collision.requiresSecondClinicAcknowledgement;
 %>
 <section class="bb-pa-page" data-ac-clinic-reg-detail="1">
   <p><a href="/admin/clinic-registrations">← Clinic registrations</a></p>
   <h1><%= app.clinic_name || 'Clinic registration' %></h1>
-  <p class="bb-pa-hint">Reference <%= app.application_number %></p>
+  <p class="bb-pa-hint">Application <%= app.application_number %></p>
   <% if (noticeMsg) { %>
   <p class="bb-pa-notice" role="status" data-ac-clinic-reg-notice="<%= flashNotice %>"><%= noticeMsg %></p>
   <% } %>
   <% if (errorMsg) { %>
   <p class="bb-pa-error" role="alert" data-ac-clinic-reg-error="<%= flashError %>"><%= errorMsg %></p>
   <% } %>
-  <dl class="bb-pa-dl">
-    <div><dt>Status</dt><dd data-ac-application-status="<%= app.status %>"><%= app.status %></dd></div>
-    <div><dt>Follow-up</dt><dd data-ac-follow-up-status="<%= app.follow_up_status || 'none' %>"><%= app.follow_up_status || 'none' %></dd></div>
-    <div><dt>Provisioning</dt><dd data-ac-provisioning-status="<%= app.provisioning_status || 'not_started' %>"><%= app.provisioning_status || 'not_started' %></dd></div>
-    <div><dt>Submitted</dt><dd><%= app.created_at ? new Date(app.created_at).toISOString() : '—' %></dd></div>
-    <div><dt>Administrator</dt><dd><%= app.contact_name %></dd></div>
-    <div><dt>Email</dt><dd><%= app.contact_email_display %></dd></div>
-    <div><dt>Phone</dt><dd><%= app.contact_phone_display %></dd></div>
-    <div><dt>Location</dt><dd><%= loc || '—' %></dd></div>
-    <div><dt>Applicant notes</dt><dd><%= app.notes || '—' %></dd></div>
-    <% if (app.rejection_reason) { %>
-    <div><dt>Rejection reason</dt><dd data-ac-rejection-reason="1"><%= app.rejection_reason %></dd></div>
+
+  <section class="bb-pa-panel" data-ac-clinic-reg-axes="1" aria-label="Independent review states">
+    <h2 class="bb-pa-section-title">Review state</h2>
+    <p class="bb-pa-hint">Application, follow-up, and provisioning are separate. They are not combined into one status.</p>
+    <dl class="bb-pa-dl bb-pa-clinic-axes">
+      <div>
+        <dt>Application status</dt>
+        <dd>
+          <span class="bb-pa-chip <%= axisChip('application', app.status) %>" data-ac-application-status="<%= app.status %>"><%= app.status %></span>
+        </dd>
+      </div>
+      <div>
+        <dt>Follow-up status</dt>
+        <dd>
+          <span class="bb-pa-chip <%= axisChip('follow_up', followUp) %>" data-ac-follow-up-status="<%= followUp %>"><%= followUp %></span>
+        </dd>
+      </div>
+      <div>
+        <dt>Provisioning status</dt>
+        <dd>
+          <span class="bb-pa-chip <%= axisChip('provisioning', provisioning) %>" data-ac-provisioning-status="<%= provisioning %>"><%= provisioning %></span>
+        </dd>
+      </div>
+    </dl>
+  </section>
+
+  <section class="bb-pa-panel" data-ac-clinic-reg-identity="1">
+    <h2 class="bb-pa-section-title">Application identity</h2>
+    <dl class="bb-pa-dl">
+      <div><dt>Application number</dt><dd><code><%= app.application_number %></code></dd></div>
+      <div><dt>Submitted</dt><dd><%= app.created_at ? new Date(app.created_at).toISOString() : '—' %></dd></div>
+      <% if (app.organization_id) { %>
+      <div><dt>Organization</dt><dd><code><%= app.organization_id %></code></dd></div>
+      <% } %>
+      <% if (app.duplicate_of_application_id) { %>
+      <div>
+        <dt>Duplicate of</dt>
+        <dd data-ac-duplicate-of="1"><code><%= app.duplicate_of_application_id %></code></dd>
+      </div>
+      <% } %>
+    </dl>
+  </section>
+
+  <section class="bb-pa-panel" data-ac-clinic-reg-clinic="1">
+    <h2 class="bb-pa-section-title">Clinic details</h2>
+    <dl class="bb-pa-dl">
+      <div><dt>Clinic name</dt><dd><%= app.clinic_name %></dd></div>
+      <div><dt>Location</dt><dd><%= loc || '—' %></dd></div>
+      <div><dt>Applicant notes</dt><dd><%= app.notes || '—' %></dd></div>
+    </dl>
+  </section>
+
+  <section class="bb-pa-panel" data-ac-clinic-reg-admin="1">
+    <h2 class="bb-pa-section-title">Administrator / contact</h2>
+    <dl class="bb-pa-dl">
+      <div><dt>Name</dt><dd><%= app.contact_name %></dd></div>
+      <div><dt>Email</dt><dd><%= app.contact_email_display %></dd></div>
+      <div><dt>Phone</dt><dd><%= app.contact_phone_display %></dd></div>
+    </dl>
+  </section>
+
+  <% if (collision && collision.existingIdentity) { %>
+  <section class="bb-pa-panel <%= needsSecondClinicAck ? 'bb-pa-panel--danger' : '' %>" data-ac-existing-identity="1" data-ac-existing-identity-match="<%= collision.matchOn || '' %>">
+    <h2 class="bb-pa-section-title">Existing identity</h2>
+    <% if (collision.existingActiveClinicIdentity) { %>
+    <p class="bb-pa-hint" data-ac-existing-ac-identity="1">
+      Existing ActiveClinic identity. Approving will attach this person as administrator of another clinic.
+      The current password will not be changed.
+    </p>
+    <ul class="bb-pa-list" data-ac-existing-orgs="1">
+      <% (collision.existingOrganizations || []).forEach(function (org) { %>
+      <li data-ac-existing-org="<%= org.organizationKey %>"><%= org.displayName || org.organizationKey %> · <%= org.staffStatus %></li>
+      <% }) %>
+    </ul>
+    <% } else { %>
+    <p class="bb-pa-hint">
+      This contact matches an existing platform identity (<%= collision.matchOn %>).
+      Approval will reuse that identity as clinic administrator. The current password will not be changed.
+    </p>
     <% } %>
-    <% if (app.organization_id) { %>
-    <div><dt>Organization</dt><dd><code><%= app.organization_id %></code></dd></div>
-    <% } %>
-    <% if (app.last_provision_error) { %>
-    <div><dt>Last provision error</dt><dd><%= app.last_provision_error %></dd></div>
-    <% } %>
-  </dl>
+  </section>
+  <% } %>
+
+  <section class="bb-pa-panel" data-ac-clinic-reg-website="1">
+    <h2 class="bb-pa-section-title">Website state</h2>
+    <dl class="bb-pa-dl">
+      <div>
+        <dt>Website</dt>
+        <dd data-ac-website-state="<%= website %>"><%= website %></dd>
+      </div>
+      <% if (app.last_provision_error) { %>
+      <div><dt>Last provision error</dt><dd><%= app.last_provision_error %></dd></div>
+      <% } %>
+    </dl>
+  </section>
+
+  <% if (app.rejection_reason) { %>
+  <section class="bb-pa-panel" data-ac-clinic-reg-rejection="1">
+    <h2 class="bb-pa-section-title">Rejection reason</h2>
+    <p data-ac-rejection-reason="1"><%= app.rejection_reason %></p>
+    <p class="bb-pa-hint">Recorded for Platform Admin. Email was not sent.</p>
+  </section>
+  <% } %>
 
   <% if (pending || (app.status === 'approved' && app.provisioning_status !== 'provisioned')) { %>
-  <form method="post" action="/admin/clinic-registrations/<%= app.id %>/approve">
+  <form method="post" action="/admin/clinic-registrations/<%= app.id %>/approve" data-ac-clinic-reg-approve="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <% if (needsSecondClinicAck) { %>
+    <label class="bb-pa-check" data-ac-second-clinic-ack="1">
+      <input type="checkbox" name="acknowledge_existing_identity" value="1" required/>
+      I confirm this existing ActiveClinic identity should also administer this additional clinic. Do not change the password.
+    </label>
+    <% } %>
     <button type="submit" class="bb-pa-btn"><%= app.status === 'approved' ? 'Retry provision' : 'Approve and provision' %></button>
   </form>
   <% } %>
@@ -129,15 +244,15 @@
     <% if (!events.length) { %>
     <p class="bb-pa-hint">No history recorded yet.</p>
     <% } %>
-    <ol class="bb-pa-list">
+    <ol class="bb-pa-clinic-history">
       <% events.forEach(function (ev) { %>
-      <li data-ac-history-event="<%= ev.eventType %>">
+      <li class="bb-pa-clinic-history__item bb-pa-clinic-history__item--<%= ev.eventType %><%= ev.isInternalNote ? ' bb-pa-clinic-history__item--note' : '' %>" data-ac-history-event="<%= ev.eventType %>" data-ac-history-visibility="<%= ev.visibility || 'history' %>">
         <strong><%= ev.label %></strong>
         <span class="bb-pa-hint"><%= ev.createdAt ? new Date(ev.createdAt).toISOString() : '' %></span>
         <% if (ev.actorLabel) { %><span class="bb-pa-hint"> · <%= ev.actorLabel %></span><% } %>
         <% if (ev.body) { %><p><%= ev.body %></p><% } %>
         <% if (ev.eventType === 'information_requested' || ev.eventType === 'rejection') { %>
-        <p class="bb-pa-hint"><%= ev.deliveryClaimedSent ? 'Outbound message sent.' : 'Recorded only. Email was not sent.' %></p>
+        <p class="bb-pa-hint" data-ac-delivery-status="<%= ev.deliveryStatus || 'sending_unavailable' %>"><%= ev.deliveryClaimedSent ? 'Outbound message sent.' : 'Recorded only. Email was not sent.' %></p>
         <% } %>
       </li>
       <% }) %>

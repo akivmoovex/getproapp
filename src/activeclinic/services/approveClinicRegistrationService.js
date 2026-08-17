@@ -30,6 +30,9 @@ const { ensureDefaultDepartments } = require("./activeClinicDepartmentService");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const { recordWebsiteAudit } = require("../../platform/website/auditService");
 const { appendReviewEvent } = require("./clinicRegistrationReviewService");
+const {
+  resolveClinicRegistrationIdentityCollision,
+} = require("./clinicRegistrationIdentityCollisionService");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -43,6 +46,7 @@ const RESULT = Object.freeze({
   CLINIC_FAILED: "clinic_provision_failed",
   ADMIN_FAILED: "clinic_admin_failed",
   WEBSITE_PENDING: "website_pending",
+  EXISTING_IDENTITY_ACK_REQUIRED: "existing_identity_acknowledgement_required",
 });
 
 const UUID_RE =
@@ -96,9 +100,10 @@ async function updateApplication(client, id, patch) {
 
 async function ensureClinicAdmin(client, input) {
   if (input.existingStaffId) {
-    return { ok: true, staffMemberId: input.existingStaffId, created: false };
+    return { ok: true, staffMemberId: input.existingStaffId, created: false, reusedIdentity: false };
   }
   let identityId = null;
+  let reusedIdentity = false;
   const existing = await client.query(
     `SELECT id, password_hash FROM platform.identities
       WHERE email_normalized = $1
@@ -109,6 +114,7 @@ async function ensureClinicAdmin(client, input) {
   );
   if (existing.rows[0]) {
     identityId = existing.rows[0].id;
+    reusedIdentity = true;
     if (input.passwordHash && !existing.rows[0].password_hash) {
       await updateIdentityPasswordHash(client, {
         identityId,
@@ -161,7 +167,7 @@ async function ensureClinicAdmin(client, input) {
   if (!role.ok && role.code !== "role_assignment_exists") {
     return { ok: false, code: role.code };
   }
-  return { ok: true, staffMemberId: staff.staffMember.id, identityId, created: true };
+  return { ok: true, staffMemberId: staff.staffMember.id, identityId, created: true, reusedIdentity };
 }
 
 async function approveAndProvisionClinicRegistration(db, input) {
@@ -193,6 +199,20 @@ async function approveAndProvisionClinicRegistration(db, input) {
 
     if (app.status === "rejected" || app.status === "withdrawn") {
       return { ok: false, code: RESULT.NOT_ELIGIBLE, application: app };
+    }
+
+    const identityCollision = await resolveClinicRegistrationIdentityCollision(client, app);
+    const acknowledged =
+      input.acknowledgeExistingIdentity === true ||
+      input.acknowledgeExistingIdentity === "1" ||
+      input.acknowledgeExistingIdentity === "on";
+    if (identityCollision.requiresSecondClinicAcknowledgement && !acknowledged) {
+      return {
+        ok: false,
+        code: RESULT.EXISTING_IDENTITY_ACK_REQUIRED,
+        application: app,
+        identityCollision,
+      };
     }
 
     await updateApplication(client, app.id, { provisioning_status: "in_progress" });
@@ -283,7 +303,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
       });
     }
 
-    let admin = { ok: true, staffMemberId: app.clinic_admin_staff_id, created: false };
+    let admin = { ok: true, staffMemberId: app.clinic_admin_staff_id, created: false, reusedIdentity: false };
     if (hco) {
       admin = await ensureClinicAdmin(client, {
         organizationId,
@@ -340,9 +360,20 @@ async function approveAndProvisionClinicRegistration(db, input) {
       administrator_password_hash: null,
     });
 
+    const approvalBody =
+      admin.reusedIdentity && identityCollision.existingActiveClinicIdentity
+        ? `Existing ActiveClinic identity linked as administrator of this additional clinic. Current memberships: ${
+            identityCollision.existingOrganizations
+              .map((org) => org.displayName || org.organizationKey)
+              .join(", ") || "recorded"
+          }. Password was not changed.`
+        : admin.reusedIdentity
+          ? "Existing platform identity reused as clinic administrator. Password was not changed."
+          : null;
     await appendReviewEvent(client, {
       applicationId: app.id,
       eventType: "approval",
+      body: approvalBody,
       actorId: input.actorIdentityId,
       visibility: "history",
       deliveryStatus: "not_applicable",
@@ -368,6 +399,11 @@ async function approveAndProvisionClinicRegistration(db, input) {
         actor_kind: "platform_admin",
         actor_platform_identity_id: input.actorIdentityId || null,
         provisioning_status: provisioningStatus,
+        existing_identity_linked: admin.reusedIdentity === true,
+        second_clinic_attachment: Boolean(
+          admin.reusedIdentity && identityCollision.existingActiveClinicIdentity
+        ),
+        acknowledged_existing_identity: acknowledged,
       },
     });
     if (instance) {
@@ -388,6 +424,8 @@ async function approveAndProvisionClinicRegistration(db, input) {
       facility,
       instance,
       staffMemberId: admin.ok ? admin.staffMemberId : null,
+      identityId: admin.identityId || null,
+      reusedIdentity: admin.reusedIdentity === true,
       slug,
       alreadyProvisioned: false,
     };

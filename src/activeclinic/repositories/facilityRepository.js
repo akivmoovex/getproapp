@@ -15,9 +15,10 @@ async function insertFacility(db, row) {
        display_name, legal_name, facility_type, status, is_primary,
        country_code, province, district, city,
        address_line_1, address_line_2, postal_code,
-       phone_normalized, phone_display, email_normalized, email_display, timezone
+       phone_normalized, phone_display, email_normalized, email_display, timezone,
+       public_hours_json
      ) VALUES (
-       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20
+       $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,$21
      )
      RETURNING *`,
     [
@@ -41,6 +42,7 @@ async function insertFacility(db, row) {
       row.emailNormalized,
       row.emailDisplay,
       row.timezone,
+      row.publicHoursJson != null ? JSON.stringify(row.publicHoursJson) : null,
     ]
   );
   return result.rows[0];
@@ -164,6 +166,7 @@ async function updateFacility(db, input) {
             email_normalized = COALESCE($17, email_normalized),
             email_display = COALESCE($18, email_display),
             timezone = COALESCE($19, timezone),
+            public_hours_json = COALESCE($20::jsonb, public_hours_json),
             updated_at = now()
       WHERE id = $1 AND organization_id = $2
       RETURNING *`,
@@ -187,6 +190,9 @@ async function updateFacility(db, input) {
       p.emailNormalized !== undefined ? p.emailNormalized : null,
       p.emailDisplay !== undefined ? p.emailDisplay : null,
       p.timezone != null ? p.timezone : null,
+      p.publicHoursJson !== undefined && p.publicHoursJson != null
+        ? JSON.stringify(p.publicHoursJson)
+        : null,
     ]
   );
   return result.rows[0] || null;

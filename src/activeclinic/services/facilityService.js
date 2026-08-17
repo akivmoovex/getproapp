@@ -21,6 +21,7 @@ const {
   normalizeCountryCode,
   normalizeTimezone,
 } = require("./normalizeActiveClinicContact");
+const { normalizeStoredPublicHours } = require("./facilityPublicHours");
 const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
@@ -58,6 +59,7 @@ const RESULT = Object.freeze({
   DUPLICATE_KEY: "facility_key_exists",
   PRIMARY_CONFLICT: "primary_facility_conflict",
   OWNERSHIP_MISMATCH: "ownership_mismatch",
+  INVALID_HOURS: "invalid_public_hours",
 });
 
 const UUID_RE =
@@ -190,6 +192,13 @@ async function createFacility(db, input) {
     return { ok: false, code: RESULT.INVALID_INPUT, facility: null };
   }
 
+  let normalizedHours = null;
+  if (input.publicHoursJson !== undefined && input.publicHoursJson != null) {
+    const hours = normalizeStoredPublicHours(input.publicHoursJson);
+    if (!hours.ok) return { ok: false, code: RESULT.INVALID_HOURS, facility: null };
+    normalizedHours = hours.json;
+  }
+
   const isPrimary = input.isPrimary === true;
   if (isPrimary && status !== "active") {
     return { ok: false, code: RESULT.INVALID_INPUT, facility: null };
@@ -217,6 +226,7 @@ async function createFacility(db, input) {
       emailNormalized: email.normalized,
       emailDisplay: email.display,
       timezone: timezone.value,
+      publicHoursJson: normalizedHours,
     });
 
     await recordAuditEventSafe(db, {
@@ -417,6 +427,15 @@ async function updateFacility(db, input) {
     const timezone = normalizeTimezone(patch.timezone);
     if (!timezone.ok) return { ok: false, code: RESULT.INVALID_INPUT, facility: null };
     patch.timezone = timezone.value;
+  }
+  if (patch.publicHoursJson !== undefined) {
+    if (patch.publicHoursJson == null) {
+      patch.publicHoursJson = undefined;
+    } else {
+      const hours = normalizeStoredPublicHours(patch.publicHoursJson);
+      if (!hours.ok) return { ok: false, code: RESULT.INVALID_HOURS, facility: null };
+      patch.publicHoursJson = hours.json;
+    }
   }
   try {
     const row = await repo.updateFacility(db, {

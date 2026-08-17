@@ -59,6 +59,8 @@ function errorMessageForCode(code) {
       return "Another active primary facility already exists. Clear it first or leave primary unchecked.";
     case FACILITY_RESULT.INVALID_INPUT:
       return "Check required fields, phone, email, and timezone.";
+    case FACILITY_RESULT.INVALID_HOURS:
+      return "Check public hours. Use valid start and end times, or mark the day closed.";
     case FACILITY_RESULT.PRODUCT_NOT_ENABLED:
       return "ActiveClinic is not enabled for this organization.";
     case FACILITY_RESULT.HCO_NOT_ACTIVE:
@@ -209,6 +211,31 @@ function registerActiveClinicFacilityRoutes(app, deps) {
           });
         }
 
+        const hoursForm = values.publicHoursForm || { omitted: true };
+        if (!hoursForm.ok) {
+          values.publicHoursDays = hoursForm.days;
+          const form = await loadActiveClinicCreateFacilityScreen(getPool(), {
+            auth,
+            values,
+            errors: [hoursForm.message || errorMessageForCode(FACILITY_RESULT.INVALID_HOURS)],
+            fieldErrors: {
+              public_hours: hoursForm.message || errorMessageForCode(FACILITY_RESULT.INVALID_HOURS),
+            },
+          });
+          return await renderShell(req, res, {
+            status: 400,
+            activeNav: "facilities",
+            content: "app/facility-form-content.ejs",
+            pageHeader: { title: "Add facility", description: null, actions: [] },
+            breadcrumbs: [
+              { label: "Home", href: "/app" },
+              { label: "Facilities", href: "/app/facilities" },
+              { label: "Add" },
+            ],
+            pageData: { form },
+          });
+        }
+
         const created = await createFacility(getPool(), {
           organizationId: auth.organization.id,
           healthcareOrganizationId: hco.id,
@@ -233,6 +260,7 @@ function registerActiveClinicFacilityRoutes(app, deps) {
             null,
           email: values.email || null,
           timezone: values.timezone,
+          publicHoursJson: hoursForm.omitted ? undefined : hoursForm.json,
           deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
         });
 
@@ -350,6 +378,35 @@ function registerActiveClinicFacilityRoutes(app, deps) {
         const auth = req.activeClinicAuth;
         const values = parseFacilityFormBody(req.body);
         values.facilityKey = detail.facility.facilityKey;
+        const hoursForm = values.publicHoursForm || { omitted: true };
+        if (!hoursForm.ok) {
+          values.publicHoursDays = hoursForm.days;
+          const form = await loadActiveClinicEditFacilityScreen(getPool(), {
+            auth,
+            facilityKey: req.params.facilityKey,
+            values,
+            errors: [hoursForm.message || errorMessageForCode(FACILITY_RESULT.INVALID_HOURS)],
+            fieldErrors: {
+              public_hours: hoursForm.message || errorMessageForCode(FACILITY_RESULT.INVALID_HOURS),
+            },
+          });
+          return await renderShell(req, res, {
+            status: 400,
+            activeNav: "facilities",
+            content: "app/facility-form-content.ejs",
+            pageHeader: {
+              title: `Edit ${detail.facility.displayName}`,
+              description: null,
+              actions: [],
+            },
+            breadcrumbs: [
+              { label: "Home", href: "/app" },
+              { label: "Facilities", href: "/app/facilities" },
+              { label: "Edit" },
+            ],
+            pageData: { form },
+          });
+        }
         const patch = {
           displayName: values.displayName,
           legalName: values.legalName || null,
@@ -371,6 +428,9 @@ function registerActiveClinicFacilityRoutes(app, deps) {
           email: values.email || null,
           timezone: values.timezone,
         };
+        if (!hoursForm.omitted) {
+          patch.publicHoursJson = hoursForm.json;
+        }
 
         const updated = await updateFacility(getPool(), {
           id: detail.facility.id,
@@ -380,11 +440,16 @@ function registerActiveClinicFacilityRoutes(app, deps) {
         });
 
         if (!updated.ok) {
+          const fieldErrors = {};
+          if (updated.code === FACILITY_RESULT.INVALID_HOURS) {
+            fieldErrors.public_hours = errorMessageForCode(updated.code);
+          }
           const form = await loadActiveClinicEditFacilityScreen(getPool(), {
             auth: req.activeClinicAuth,
             facilityKey: req.params.facilityKey,
             values,
             errors: [errorMessageForCode(updated.code)],
+            fieldErrors,
           });
           return await renderShell(req, res, {
             status: 400,

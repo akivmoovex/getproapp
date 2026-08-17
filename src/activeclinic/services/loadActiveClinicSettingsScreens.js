@@ -357,7 +357,10 @@ function calculateOrganizationSetupState(input) {
         label: "Add public hours",
         complete: hasPublicHoursConfigured(primary.publicHoursJson),
         classification: SETUP_CLASSIFICATION.RECOMMENDED,
-        destinationUrl: primaryHref,
+        destinationUrl:
+          primary && primary.facilityKey
+            ? `/app/facilities/${encodeURIComponent(primary.facilityKey)}/edit`
+            : "/app/facilities",
         description: "Public opening hours for the primary facility (website / location page).",
         facilityContext,
         actionPermissions: ["activeclinic.facility.update"],

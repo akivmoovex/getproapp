@@ -228,6 +228,9 @@ const {
   registerPlatformWebsiteAdminRoutes,
 } = require("./platformWebsiteAdminRoutes");
 const {
+  registerActiveClinicPlatformAdminClinicRegistrationRoutes,
+} = require("../../activeclinic/http/activeClinicPlatformAdminClinicRegistrationRoutes");
+const {
   CSRF_FIELD,
   validateCsrf,
 } = require("./v5Csrf");
@@ -5093,6 +5096,16 @@ function createPlatformAdminRouter(deps) {
   );
 
   registerPlatformWebsiteAdminRoutes(router, {
+    getPool,
+    env,
+    requireApex,
+    requirePlatformAdmin,
+    renderPlatformAdminView,
+    buildPlatformAdminShellLocals,
+    setAdminNoStore,
+  });
+
+  registerActiveClinicPlatformAdminClinicRegistrationRoutes(router, {
     getPool,
     env,
     requireApex,

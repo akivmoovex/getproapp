@@ -12,6 +12,9 @@ const { recordAuditEventSafe } = require("../../platform/services/auditEventServ
 const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
+const {
+  resolveClinicRegistrationIdentityCollision,
+} = require("./clinicRegistrationIdentityCollisionService");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -83,7 +86,8 @@ const LIST_COLUMNS = `id, application_number, clinic_name, contact_name, contact
                 province, city, address, country_code, notes,
                 status, follow_up_status, provisioning_status, created_at, reviewed_at,
                 organization_id, last_provision_error, rejection_reason,
-                information_requested_at, information_returned_at`;
+                information_requested_at, information_returned_at,
+                website_instance_id, clinic_admin_staff_id, duplicate_of_application_id`;
 
 function isPool(db) {
   return Boolean(db && typeof db.connect === "function" && typeof db.release !== "function");
@@ -116,6 +120,7 @@ function presentEvent(row) {
     deliveryStatus,
     deliveryClaimedSent: deliveryStatus === "sent",
     createdAt: row.created_at,
+    isInternalNote: eventType === "note",
   };
 }
 
@@ -388,6 +393,7 @@ function synthesizeSubmitted(application) {
     deliveryStatus: "not_applicable",
     deliveryClaimedSent: false,
     createdAt: application.created_at,
+    isInternalNote: false,
   };
 }
 
@@ -458,6 +464,18 @@ async function listClinicRegistrationApplications(db, filters) {
   };
 }
 
+function websiteStateFromApplication(application) {
+  if (application && application.website_instance_id) {
+    return String(application.provisioning_status) === "website_pending"
+      ? "pending"
+      : "provisioned";
+  }
+  if (String((application && application.provisioning_status) || "") === "website_pending") {
+    return "pending";
+  }
+  return "not_provisioned";
+}
+
 async function getClinicRegistrationDetail(db, applicationId) {
   const id = String(applicationId || "").trim();
   if (!UUID_RE.test(id)) {
@@ -475,12 +493,15 @@ async function getClinicRegistrationDetail(db, applicationId) {
     return { ok: false, code: RESULT.NOT_FOUND, application: null };
   }
   const history = await listClinicRegistrationHistory(db, application);
+  const identityCollision = await resolveClinicRegistrationIdentityCollision(db, application);
   return {
     ok: true,
     code: RESULT.OK,
     application,
     history,
     notes: listClinicRegistrationNotes(history),
+    identityCollision,
+    websiteState: websiteStateFromApplication(application),
   };
 }
 

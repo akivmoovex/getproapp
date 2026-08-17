@@ -8,6 +8,7 @@
 %>
 <section class="bb-pa-page" data-ac-clinic-reg-queue="1">
   <h1>Clinic Registrations</h1>
+  <p class="bb-pa-hint">Application status, follow-up, and provisioning are filtered separately.</p>
   <form method="get" action="/admin/clinic-registrations" class="bb-pa-filters bb-pa-form">
     <label class="bb-pa-field">Search
       <input type="search" name="q" value="<%= q %>" placeholder="Application number, clinic, admin, email, phone" data-ac-clinic-reg-search="1" />
@@ -69,8 +70,8 @@
         <td><%= [app.city, app.province, app.country_code].filter(Boolean).join(', ') || '—' %></td>
         <td><%= app.created_at ? new Date(app.created_at).toISOString().slice(0, 10) : '—' %></td>
         <td><span class="bb-pa-chip" data-ac-application-status="<%= app.status %>"><%= app.status %></span></td>
-        <td><span class="bb-pa-hint" data-ac-follow-up-status="<%= app.follow_up_status || 'none' %>"><%= app.follow_up_status || 'none' %></span></td>
-        <td><%= app.provisioning_status || 'not_started' %></td>
+        <td><span class="bb-pa-chip bb-pa-chip--muted" data-ac-follow-up-status="<%= app.follow_up_status || 'none' %>"><%= app.follow_up_status || 'none' %></span></td>
+        <td><span class="bb-pa-chip bb-pa-chip--muted" data-ac-provisioning-status="<%= app.provisioning_status || 'not_started' %>"><%= app.provisioning_status || 'not_started' %></span></td>
         <td>
           <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/clinic-registrations/<%= app.id %>">Review</a>
           <% if (app.status === 'pending_review' || (app.status === 'approved' && app.provisioning_status !== 'provisioned')) { %>

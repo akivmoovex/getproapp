@@ -29,6 +29,22 @@ const {
   createPlatformIdentity,
 } = require("../src/platform/services/platformIdentityService");
 const {
+  setPlatformIdentityPassword,
+  verifyPlatformIdentityPassword,
+} = require("../src/platform/services/platformIdentityCredentialService");
+const {
+  createHealthcareOrganization,
+} = require("../src/activeclinic/services/healthcareOrganizationService");
+const { createFacility } = require("../src/activeclinic/services/facilityService");
+const { createStaffMember } = require("../src/activeclinic/services/activeClinicStaffService");
+const {
+  assignStaffRole,
+  ORGANIZATION_ADMIN,
+} = require("../src/activeclinic/services/activeClinicAuthorizationService");
+const {
+  listEligibleActiveClinicOrganizations,
+} = require("../src/activeclinic/services/activeClinicLoginEligibility");
+const {
   requestClinicRegistrationInformation,
   markClinicRegistrationInformationReturned,
   addClinicRegistrationReviewNote,
@@ -550,5 +566,336 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       .set("Cookie", authed);
     assert.match(restored.text, /data-ac-follow-up-status="returned_for_review"/);
     assert.match(restored.text, /data-ac-history-event="information_returned"/);
+  });
+
+  it("Platform Admin queue and detail keep the three status axes distinct", async () => {
+    requireDb();
+    const { created } = await createPending();
+    await requestClinicRegistrationInformation(pool, {
+      applicationId: created.id,
+      requestText: "Need the trading licence number.",
+    });
+    const pa = await loginPa();
+    const cookie = cookieHeader({ [UNIFIED_SID]: pa.sid });
+    const queue = await request(app)
+      .get(`/admin/clinic-registrations?status=pending_review&follow_up_status=awaiting_customer`)
+      .set("Host", BB_HOST)
+      .set("Cookie", cookie);
+    assert.equal(queue.status, 200);
+    assert.match(queue.text, /data-ac-clinic-reg-queue="1"/);
+    assert.match(queue.text, /data-ac-application-status="pending_review"/);
+    assert.match(queue.text, /data-ac-follow-up-status="awaiting_customer"/);
+    assert.match(queue.text, /data-ac-provisioning-status="not_started"/);
+
+    const detail = await request(app)
+      .get(`/admin/clinic-registrations/${created.id}`)
+      .set("Host", BB_HOST)
+      .set("Cookie", cookie);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, /data-ac-clinic-reg-axes="1"/);
+    assert.match(detail.text, /Application status/);
+    assert.match(detail.text, /Follow-up status/);
+    assert.match(detail.text, /Provisioning status/);
+    assert.doesNotMatch(detail.text, /Network validation/);
+    assert.doesNotMatch(detail.text, /duplicate score/i);
+    assert.doesNotMatch(detail.text, /Foundation plan/);
+    assert.doesNotMatch(detail.text, /church verification/i);
+  });
+
+  it("Platform Admin notes, reject, and approve keep honest delivery and PA-only notes", async () => {
+    requireDb();
+    const { created } = await createPending();
+    const pa = await loginPa();
+    const cookie = cookieHeader({ [UNIFIED_SID]: pa.sid });
+    const detail = await request(app)
+      .get(`/admin/clinic-registrations/${created.id}`)
+      .set("Host", BB_HOST)
+      .set("Cookie", cookie);
+    const csrf = csrfFrom(detail.text);
+    const csrfCookie = extractCookie(detail, UNIFIED_CSRF);
+    const authed = cookieHeader({ [UNIFIED_SID]: pa.sid, [UNIFIED_CSRF]: csrfCookie || csrf });
+
+    const noted = await request(app)
+      .post(`/admin/clinic-registrations/${created.id}/notes`)
+      .set("Host", BB_HOST)
+      .set("Cookie", authed)
+      .redirects(0)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf, note_body: INTERNAL_NOTE });
+    assert.equal(noted.status, 303);
+
+    const afterNote = await request(app)
+      .get(`/admin/clinic-registrations/${created.id}`)
+      .set("Host", BB_HOST)
+      .set("Cookie", authed);
+    assert.match(afterNote.text, new RegExp(INTERNAL_NOTE));
+    assert.match(afterNote.text, /data-ac-review-note="1"/);
+    assert.match(afterNote.text, /bb-pa-clinic-history__item--note/);
+
+    const publicPage = await request(app)
+      .get("/register-clinic")
+      .set("Host", AC_HOST);
+    assert.doesNotMatch(publicPage.text, new RegExp(INTERNAL_NOTE));
+
+    const { created: rejectApp } = await createPending();
+    const rejectDetail = await request(app)
+      .get(`/admin/clinic-registrations/${rejectApp.id}`)
+      .set("Host", BB_HOST)
+      .set("Cookie", authed);
+    const rejectCsrf = csrfFrom(rejectDetail.text);
+    const rejectCsrfCookie = extractCookie(rejectDetail, UNIFIED_CSRF) || csrfCookie;
+    const rejectAuthed = cookieHeader({
+      [UNIFIED_SID]: pa.sid,
+      [UNIFIED_CSRF]: rejectCsrfCookie || rejectCsrf,
+    });
+    const rejected = await request(app)
+      .post(`/admin/clinic-registrations/${rejectApp.id}/reject`)
+      .set("Host", BB_HOST)
+      .set("Cookie", rejectAuthed)
+      .redirects(0)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: rejectCsrf,
+        rejection_reason: "Clinic documentation was incomplete.",
+      });
+    assert.equal(rejected.status, 303);
+    assert.match(rejected.headers.location, /notice=rejected/);
+    const rejectedHtml = await request(app)
+      .get(`/admin/clinic-registrations/${rejectApp.id}`)
+      .set("Host", BB_HOST)
+      .set("Cookie", rejectAuthed);
+    assert.match(rejectedHtml.text, /data-ac-rejection-reason="1"/);
+    assert.match(rejectedHtml.text, /Clinic documentation was incomplete/);
+    assert.match(rejectedHtml.text, /Email was not sent/);
+  });
+
+  it("website Platform Admin routes still resolve after clinic PA relocation", async () => {
+    requireDb();
+    const pa = await loginPa();
+    const cookie = cookieHeader({ [UNIFIED_SID]: pa.sid });
+    const html = await request(app)
+      .get("/admin/website-changes")
+      .set("Host", BB_HOST)
+      .set("Cookie", cookie);
+    assert.equal(html.status, 200);
+  });
+
+  it("POLICY A: existing ActiveClinic identity cannot be attached to a second clinic without acknowledgement", async () => {
+    requireDb();
+    const stamp = Date.now().toString(36);
+    const email = `second-clinic-${stamp}@clinic.example`;
+    const phone = nextPhone();
+    const originalPassword = "original-identity-pass-12";
+    const identity = await createPlatformIdentity(pool, {
+      status: "active",
+      primaryEmail: email,
+      emailNormalized: email,
+      emailVerifiedAt: new Date().toISOString(),
+      primaryPhone: phone,
+      phoneNormalized: phone,
+      phoneVerifiedAt: new Date().toISOString(),
+    });
+    assert.equal(identity.ok, true, JSON.stringify(identity));
+    const setPass = await setPlatformIdentityPassword(pool, {
+      identityId: identity.identity.id,
+      password: originalPassword,
+    });
+    assert.equal(setPass.ok, true, JSON.stringify(setPass));
+
+    const tenant = await provisionPlatformTenant(pool, {
+      skipDomain: true,
+      dataEnvironment: "testing",
+      organizationKey: `ac-first-${stamp}`,
+      displayName: `First Clinic ${stamp}`,
+      productKey: "activeclinic",
+      productTenantKey: `ac-first-${stamp}`,
+      deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
+    });
+    assert.equal(tenant.ok, true, JSON.stringify(tenant));
+    const orgId = tenant.records.organization.id;
+    const hco = await createHealthcareOrganization(pool, {
+      organizationId: orgId,
+      legalName: `First Legal ${stamp}`,
+      publicName: `First Clinic ${stamp}`,
+      organizationType: "private_healthcare",
+      countryCode: "ZM",
+      timezone: "Africa/Lusaka",
+    });
+    assert.equal(hco.ok, true, JSON.stringify(hco));
+    const facility = await createFacility(pool, {
+      organizationId: orgId,
+      healthcareOrganizationId: hco.healthcareOrganization.id,
+      facilityKey: "hq",
+      displayName: "HQ",
+      facilityType: "clinic",
+      status: "active",
+      isPrimary: true,
+      countryCode: "ZM",
+      timezone: "Africa/Lusaka",
+      phone,
+    });
+    assert.equal(facility.ok, true, JSON.stringify(facility));
+    const staff = await createStaffMember(pool, {
+      organizationId: orgId,
+      healthcareOrganizationId: hco.healthcareOrganization.id,
+      firstName: "Existing",
+      lastName: "Admin",
+      employmentType: "permanent",
+      status: "active",
+      phone,
+      platformIdentityId: identity.identity.id,
+    });
+    assert.equal(staff.ok, true, JSON.stringify(staff));
+    const role = await assignStaffRole(pool, {
+      organizationId: orgId,
+      staffMemberId: staff.staffMember.id,
+      roleKey: ORGANIZATION_ADMIN,
+      scopeType: "organisation",
+      assignmentOrigin: "system",
+    });
+    assert.equal(role.ok, true, JSON.stringify(role));
+
+    const staffBefore = await pool.query(
+      `SELECT count(*)::int AS n FROM activeclinic.staff_members WHERE organization_id = $1`,
+      [orgId]
+    );
+
+    const { created } = await createPending({
+      contactEmail: email,
+      contactPhone: nextPhone(),
+      password: "replacement-password-99",
+      passwordConfirm: "replacement-password-99",
+    });
+    const memberships = await pool.query(
+      `SELECT count(*)::int AS n FROM activeclinic.staff_members WHERE platform_identity_id = $1`,
+      [identity.identity.id]
+    );
+    assert.equal(memberships.rows[0].n, 1);
+
+    const publicForm = await request(app).get("/register-clinic").set("Host", AC_HOST);
+    assert.equal(publicForm.status, 200);
+    assert.doesNotMatch(publicForm.text, /data-ac-existing-identity=/);
+    assert.doesNotMatch(publicForm.text, /data-ac-second-clinic-ack=/);
+    const publicSuccess = await request(app)
+      .get(`/register-clinic/success?ref=${encodeURIComponent(created.applicationNumber)}`)
+      .set("Host", AC_HOST);
+    assert.equal(publicSuccess.status, 200);
+    assert.doesNotMatch(publicSuccess.text, /data-ac-existing-identity=/);
+    assert.doesNotMatch(publicSuccess.text, /data-ac-existing-ac-identity=/);
+
+    const pa = await loginPa();
+    const cookie = cookieHeader({ [UNIFIED_SID]: pa.sid });
+    const detail = await request(app)
+      .get(`/admin/clinic-registrations/${created.id}`)
+      .set("Host", BB_HOST)
+      .set("Cookie", cookie);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, /data-ac-existing-identity="1"/);
+    assert.match(detail.text, /data-ac-existing-ac-identity="1"/);
+    assert.match(detail.text, /data-ac-second-clinic-ack="1"/);
+    assert.match(detail.text, /First Clinic/);
+    assert.doesNotMatch(detail.text, new RegExp(identity.identity.id, "i"));
+    assert.doesNotMatch(detail.text, /password_hash/i);
+
+    const csrf = csrfFrom(detail.text);
+    const csrfCookie = extractCookie(detail, UNIFIED_CSRF);
+    const authed = cookieHeader({ [UNIFIED_SID]: pa.sid, [UNIFIED_CSRF]: csrfCookie || csrf });
+    const silent = await request(app)
+      .post(`/admin/clinic-registrations/${created.id}/approve`)
+      .set("Host", BB_HOST)
+      .set("Cookie", authed)
+      .redirects(0)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf });
+    assert.equal(silent.status, 303);
+    assert.match(silent.headers.location, /existing_identity_acknowledgement_required/);
+
+    const blocked = await approveAndProvisionClinicRegistration(pool, {
+      applicationId: created.id,
+      dataEnvironment: "testing",
+      deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
+    });
+    assert.equal(blocked.ok, false);
+    assert.equal(blocked.code, "existing_identity_acknowledgement_required");
+
+    const staffAfterBlock = await pool.query(
+      `SELECT count(*)::int AS n FROM activeclinic.staff_members WHERE organization_id = $1`,
+      [orgId]
+    );
+    assert.equal(staffAfterBlock.rows[0].n, staffBefore.rows[0].n);
+    const stillPending = await pool.query(
+      `SELECT status FROM activeclinic.clinic_registration_applications WHERE id = $1`,
+      [created.id]
+    );
+    assert.equal(stillPending.rows[0].status, "pending_review");
+
+    const attached = await approveAndProvisionClinicRegistration(pool, {
+      applicationId: created.id,
+      dataEnvironment: "testing",
+      deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
+      acknowledgeExistingIdentity: true,
+    });
+    assert.equal(attached.ok, true, JSON.stringify(attached));
+    assert.equal(attached.reusedIdentity, true);
+    assert.notEqual(attached.organizationId, orgId);
+
+    const originalStillWorks = await verifyPlatformIdentityPassword(pool, {
+      identityId: identity.identity.id,
+      password: originalPassword,
+      recordFailure: false,
+    });
+    assert.equal(originalStillWorks.ok, true);
+    const replacementRejected = await verifyPlatformIdentityPassword(pool, {
+      identityId: identity.identity.id,
+      password: "replacement-password-99",
+      recordFailure: false,
+    });
+    assert.equal(replacementRejected.ok, false);
+
+    const firstOrgStaff = await pool.query(
+      `SELECT count(*)::int AS n FROM activeclinic.staff_members
+        WHERE organization_id = $1 AND platform_identity_id = $2 AND status <> 'archived'`,
+      [orgId, identity.identity.id]
+    );
+    assert.equal(firstOrgStaff.rows[0].n, 1);
+
+    const newOrgStaff = await pool.query(
+      `SELECT count(*)::int AS n FROM activeclinic.staff_members
+        WHERE organization_id = $1 AND platform_identity_id = $2 AND status <> 'archived'`,
+      [attached.organizationId, identity.identity.id]
+    );
+    assert.equal(newOrgStaff.rows[0].n, 1);
+
+    const retry = await approveAndProvisionClinicRegistration(pool, {
+      applicationId: created.id,
+      dataEnvironment: "testing",
+      deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
+      acknowledgeExistingIdentity: true,
+    });
+    assert.equal(retry.ok, true, JSON.stringify(retry));
+    assert.equal(retry.alreadyProvisioned || retry.code === "already_provisioned", true);
+
+    const newOrgStaffAfterRetry = await pool.query(
+      `SELECT count(*)::int AS n FROM activeclinic.staff_members
+        WHERE organization_id = $1 AND platform_identity_id = $2 AND status <> 'archived'`,
+      [attached.organizationId, identity.identity.id]
+    );
+    assert.equal(newOrgStaffAfterRetry.rows[0].n, 1);
+    const firstOrgStaffAfterRetry = await pool.query(
+      `SELECT count(*)::int AS n FROM activeclinic.staff_members
+        WHERE organization_id = $1 AND platform_identity_id = $2 AND status <> 'archived'`,
+      [orgId, identity.identity.id]
+    );
+    assert.equal(firstOrgStaffAfterRetry.rows[0].n, 1);
+
+    const eligible = await listEligibleActiveClinicOrganizations(pool, {
+      platformIdentityId: identity.identity.id,
+    });
+    assert.equal(eligible.ok, true);
+    assert.equal(eligible.organizations.length, 2);
+
+    const history = await getClinicRegistrationDetail(pool, created.id);
+    const approval = history.history.find((e) => e.eventType === "approval");
+    assert.ok(approval && /Existing ActiveClinic identity linked/i.test(String(approval.body || "")));
   });
 });

@@ -94,6 +94,59 @@
       <% if (fieldErrors.timezone) { %><p class="ac-field-error"><%= fieldErrors.timezone %></p><% } %>
     </div>
 
+    <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Public hours</h2>
+    <p class="ac-muted" data-ac-public-hours-hint="1">
+      Shown on the clinic location page and website. Times use this facility timezone
+      (<%= values.timezone || 'Africa/Lusaka' %>). No conversion is applied.
+    </p>
+    <% if (fieldErrors.public_hours) { %><p class="ac-field-error" data-ac-public-hours-error="1"><%= fieldErrors.public_hours %></p><% } %>
+    <div class="ac-hours-editor" data-ac-public-hours-editor="1">
+      <% (values.publicHoursDays && values.publicHoursDays.length ? values.publicHoursDays : []).forEach(function (day) { %>
+      <div class="ac-hours-editor__row" data-ac-hours-day="<%= day.key %>">
+        <span class="ac-hours-editor__day"><%= day.label %></span>
+        <label class="ac-check ac-hours-editor__closed">
+          <input type="checkbox" name="hours_<%= day.key %>_closed" value="1" <%= day.closed ? 'checked' : '' %> data-hours-closed="<%= day.key %>"/>
+          Closed
+        </label>
+        <label class="ac-label ac-hours-editor__time">
+          <span class="ac-muted">Opens</span>
+          <input class="ac-input" type="time" name="hours_<%= day.key %>_start" value="<%= day.start || '' %>" data-hours-start="<%= day.key %>" <%= day.closed ? 'disabled' : '' %>/>
+        </label>
+        <label class="ac-label ac-hours-editor__time">
+          <span class="ac-muted">Closes</span>
+          <input class="ac-input" type="time" name="hours_<%= day.key %>_end" value="<%= day.end || '' %>" data-hours-end="<%= day.key %>" <%= day.closed ? 'disabled' : '' %>/>
+        </label>
+      </div>
+      <% }) %>
+    </div>
+    <script>
+    (function () {
+      function syncHoursRow(checkbox) {
+        var key = checkbox.getAttribute("data-hours-closed");
+        if (!key) return;
+        var start = document.querySelector('[data-hours-start="' + key + '"]');
+        var end = document.querySelector('[data-hours-end="' + key + '"]');
+        if (start) start.disabled = checkbox.checked;
+        if (end) end.disabled = checkbox.checked;
+      }
+      document.querySelectorAll("[data-hours-closed]").forEach(function (box) {
+        box.addEventListener("change", function () { syncHoursRow(box); });
+        syncHoursRow(box);
+      });
+      var form = document.querySelector(".ac-facility-form form");
+      if (form) {
+        form.addEventListener("submit", function () {
+          document.querySelectorAll("[data-hours-closed]").forEach(function (box) {
+            var start = document.querySelector('[data-hours-start="' + box.getAttribute("data-hours-closed") + '"]');
+            var end = document.querySelector('[data-hours-end="' + box.getAttribute("data-hours-closed") + '"]');
+            if (start) start.disabled = false;
+            if (end) end.disabled = false;
+          });
+        });
+      }
+    })();
+    </script>
+
     <h2 class="ac-dashboard__card-title" style="margin-top:1.5rem">Location</h2>
     <div class="ac-field">
       <label class="ac-label" for="country_code">Country code</label>
