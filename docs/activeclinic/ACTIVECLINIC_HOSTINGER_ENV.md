@@ -79,3 +79,19 @@ Conflicts with the profile fail closed.
 3. Confirm `/healthz` returns 200 with ActiveClinic product markers.
 4. Confirm `https://activeclinic.org` loads.
 5. Confirm startup logs show `canonical domain: activeclinic.org` and do **not** mention `blessboard.com` as the selected domain.
+
+## Transactional email (do not activate on testing)
+
+Hosted testing must **not** send real email. Leave all of the following **unset** on `activeclinic-org-v6`:
+
+```env
+# ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER=resend
+# RESEND_API_KEY=<production secret>
+# ACTIVECLINIC_EMAIL_FROM=<verified sender>
+# ACTIVECLINIC_EMAIL_FROM_NAME=ActiveClinic
+# ACTIVECLINIC_EMAIL_REPLY_TO=<optional>
+```
+
+`RESEND_API_KEY` presence alone does not enable sending. Live Resend transport requires `NODE_ENV=production`, `DEPLOYMENT_ENV=production`, a production deployment profile, explicit `ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER=resend`, the API key, and a valid `ACTIVECLINIC_EMAIL_FROM`.
+
+Production activation (later, after sender-domain verification in Resend) uses those same **names** with production secrets in Hostinger. Do not copy production credentials into testing.

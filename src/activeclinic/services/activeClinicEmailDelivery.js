@@ -1,13 +1,15 @@
 "use strict";
 
 /**
- * ActiveClinic-local transactional email delivery (Phase G).
- * Unavailable by default. No platform notification bus. No live provider in this phase.
- * Never logs mail bodies, activation tokens, or passwords.
+ * ActiveClinic-local transactional email delivery (Phase G + H2).
+ * Unavailable by default. Resend HTTPS transport is selected only under full
+ * production gates. Never logs mail bodies, activation tokens, or passwords.
  */
 
 const { buildActiveClinicEmailMessage, TEMPLATE } = require("./activeClinicEmailMessages");
 const { resolvePublicOrigin } = require("./activeClinicShareLinks");
+const { getDeploymentProfile } = require("../../platform/config/deploymentProfiles");
+const { createResendAdapter } = require("./activeClinicEmailResendAdapter");
 
 const PROVIDER = Object.freeze({
   UNAVAILABLE: "email_sending_unavailable",
@@ -20,6 +22,13 @@ const PROVIDER = Object.freeze({
   ADAPTER_NOT_SELECTED: "adapter_not_selected",
   ADAPTER_NOT_ENABLED: "adapter_not_enabled",
   NOT_PRODUCTION: "not_production",
+  CONFIGURATION_ERROR: "configuration_error",
+  AUTHENTICATION_FAILED: "authentication_failed",
+  PROVIDER_UNAVAILABLE: "provider_unavailable",
+  RATE_LIMITED: "rate_limited",
+  REQUEST_REJECTED: "request_rejected",
+  UNKNOWN: "unknown_provider_error",
+  RESEND: "resend",
 });
 
 const REVIEW_DELIVERY = Object.freeze({
@@ -44,45 +53,134 @@ function envLower(env, key) {
   return String((source && source[key]) || "").trim().toLowerCase();
 }
 
-/**
- * Live transport is allowed only in real production with an explicit adapter.
- * Credential env vars alone never enable sending. No live adapter is implemented.
- */
-function liveEmailTransportDecision(env) {
-  const source = env && typeof env === "object" ? env : process.env;
-  const nodeEnv = envLower(source, "NODE_ENV");
-  const deploymentEnv = envLower(source, "DEPLOYMENT_ENV");
-  const identityEnv = envLower(source, "DATABASE_IDENTITY_ENV");
-  const adapterName = String(
+function adapterNameFromEnv(source) {
+  return String(
     (source && (source.ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER || source.EMAIL_DELIVERY_ADAPTER)) || ""
   )
     .trim()
     .toLowerCase();
+}
 
-  if (nodeEnv === "test") {
-    return { allowed: false, reason: PROVIDER.NOT_PRODUCTION, adapterName: adapterName || null };
+function databaseUrlLooksLocal(source) {
+  const raw = String(
+    (source && (source.DATABASE_URL || source.GETPRO_DATABASE_URL)) || ""
+  ).trim();
+  if (!raw) return false;
+  try {
+    const host = String(new URL(raw).hostname || "").toLowerCase();
+    return host === "127.0.0.1" || host === "localhost" || host === "::1";
+  } catch {
+    return /@127\.0\.0\.1(?:[:/[]|$)|@localhost(?:[:/[]|$)|@\[::1\]/i.test(raw);
+  }
+}
+
+function productionIdentityConfirmed(source) {
+  const nodeEnv = envLower(source, "NODE_ENV");
+  const deploymentEnv = envLower(source, "DEPLOYMENT_ENV");
+  const identityEnv = envLower(source, "DATABASE_IDENTITY_ENV");
+  if (
+    nodeEnv === "test" ||
+    nodeEnv === "development" ||
+    nodeEnv === "testing"
+  ) {
+    return false;
   }
   if (nodeEnv !== "production" || deploymentEnv !== "production") {
-    return { allowed: false, reason: PROVIDER.NOT_PRODUCTION, adapterName: adapterName || null };
+    return false;
   }
   if (identityEnv && identityEnv !== "production") {
+    return false;
+  }
+  if (databaseUrlLooksLocal(source)) {
+    return false;
+  }
+  const profile = getDeploymentProfile(source);
+  if (profile && profile.deploymentEnvironment !== "production") {
+    return false;
+  }
+  const code = String((source && source.PLATFORM_DEPLOYMENT_CODE) || "")
+    .trim()
+    .toLowerCase();
+  if (
+    code &&
+    (code.includes("testing") ||
+      code.includes("staging") ||
+      code.includes("rehearsal"))
+  ) {
+    return false;
+  }
+  return true;
+}
+
+function readResendSenderConfig(env) {
+  const source = env && typeof env === "object" ? env : process.env;
+  const apiKey = String((source && source.RESEND_API_KEY) || "").trim();
+  const fromEmail = String((source && source.ACTIVECLINIC_EMAIL_FROM) || "")
+    .trim()
+    .toLowerCase();
+  const fromName = String((source && source.ACTIVECLINIC_EMAIL_FROM_NAME) || "")
+    .trim()
+    .replace(/[\r\n<>]/g, "")
+    .slice(0, 80);
+  const replyToRaw = String((source && source.ACTIVECLINIC_EMAIL_REPLY_TO) || "").trim();
+  const replyTo = replyToRaw ? replyToRaw.toLowerCase() : "";
+  if (!apiKey || !fromEmail || !EMAIL_RE.test(fromEmail)) {
+    return { ok: false, reason: PROVIDER.CONFIGURATION_ERROR };
+  }
+  if (replyTo && !EMAIL_RE.test(replyTo)) {
+    return { ok: false, reason: PROVIDER.CONFIGURATION_ERROR };
+  }
+  const fromHeader = fromName ? `${fromName} <${fromEmail}>` : fromEmail;
+  return {
+    ok: true,
+    apiKey,
+    fromEmail,
+    fromName: fromName || "",
+    fromHeader,
+    replyTo: replyTo || "",
+  };
+}
+
+/**
+ * Live transport is allowed only in real hosted production with explicit Resend
+ * selection and complete sender config. Credential env vars alone never enable sending.
+ */
+function liveEmailTransportDecision(env) {
+  const source = env && typeof env === "object" ? env : process.env;
+  const adapterName = adapterNameFromEnv(source);
+
+  if (!productionIdentityConfirmed(source)) {
     return { allowed: false, reason: PROVIDER.NOT_PRODUCTION, adapterName: adapterName || null };
   }
   if (!adapterName || adapterName === "none" || adapterName === "unavailable") {
     return { allowed: false, reason: PROVIDER.ADAPTER_NOT_SELECTED, adapterName: adapterName || null };
   }
-  return { allowed: false, reason: PROVIDER.ADAPTER_NOT_ENABLED, adapterName };
+  if (adapterName !== "resend") {
+    return { allowed: false, reason: PROVIDER.ADAPTER_NOT_ENABLED, adapterName };
+  }
+  const config = readResendSenderConfig(source);
+  if (!config.ok) {
+    return { allowed: false, reason: PROVIDER.CONFIGURATION_ERROR, adapterName };
+  }
+  return { allowed: true, reason: null, adapterName: "resend" };
 }
 
 function resolveOutboundEmailStatus(env) {
-  const decision = liveEmailTransportDecision(env);
+  const source = env && typeof env === "object" ? env : process.env;
+  const decision = liveEmailTransportDecision(source);
+  if (decision.allowed && decision.adapterName === "resend") {
+    return { state: "available", label: "Resend available for production" };
+  }
+  if (decision.reason === PROVIDER.CONFIGURATION_ERROR) {
+    return { state: "incomplete", label: "Resend selected but incomplete" };
+  }
   if (decision.reason === PROVIDER.ADAPTER_NOT_ENABLED) {
     return { state: "unavailable", label: "Unavailable (adapter_not_enabled)" };
   }
   if (decision.reason === PROVIDER.ADAPTER_NOT_SELECTED) {
-    return { state: "unavailable", label: "Unavailable (adapter_not_selected)" };
+    return { state: "not_configured", label: "Email not configured" };
   }
-  return { state: "unavailable", label: "Unavailable (email_sending_unavailable)" };
+  return { state: "disabled", label: "Email disabled in this environment" };
 }
 
 function createUnavailableAdapter() {
@@ -171,7 +269,22 @@ function resolveActiveClinicEmailAdapter(env, deps) {
   if (deps && deps.adapter && typeof deps.adapter.send === "function") {
     return deps.adapter;
   }
-  return createUnavailableAdapter();
+  const source = env && typeof env === "object" ? env : process.env;
+  const decision = liveEmailTransportDecision(source);
+  if (!decision.allowed || decision.adapterName !== "resend") {
+    return createUnavailableAdapter();
+  }
+  const config = readResendSenderConfig(source);
+  if (!config.ok) {
+    return createUnavailableAdapter();
+  }
+  return createResendAdapter({
+    apiKey: config.apiKey,
+    from: config.fromHeader,
+    replyTo: config.replyTo || null,
+    fetchImpl: deps && deps.fetchImpl,
+    log: deps && deps.log,
+  });
 }
 
 function mapAdapterResult(result, sendingAvailableFlag) {
@@ -200,6 +313,7 @@ function mapAdapterResult(result, sendingAvailableFlag) {
     status,
     providerCode: result.providerCode || result.code || PROVIDER.UNAVAILABLE,
     duplicate: result.duplicate === true,
+    providerMessageId: result.providerMessageId || null,
   };
 }
 
@@ -218,7 +332,11 @@ async function sendActiveClinicEmail(input) {
   const src = input && typeof input === "object" ? input : {};
   const recipient = String(src.recipient || "").trim().toLowerCase();
   const templateKey = String(src.templateKey || "").trim();
-  const adapter = resolveActiveClinicEmailAdapter(src.env, { adapter: src.adapter });
+  const adapter = resolveActiveClinicEmailAdapter(src.env, {
+    adapter: src.adapter,
+    fetchImpl: src.fetchImpl,
+    log: src.log,
+  });
   const publicOrigin =
     src.publicOrigin ||
     resolvePublicOrigin(src.env, src.deploymentCode);
@@ -274,6 +392,7 @@ async function sendActiveClinicEmail(input) {
   };
   if (adapter.sendingAvailable === true) {
     envelope.text = message.text;
+    envelope.html = message.html;
   }
 
   let raw;
@@ -337,6 +456,8 @@ module.exports = {
   createRejectingAdapter,
   createThrowingAdapter,
   resolveActiveClinicEmailAdapter,
+  readResendSenderConfig,
+  createResendAdapter,
   sendActiveClinicEmail,
   toInviteDeliveryStatus,
   emailClaimedSent,

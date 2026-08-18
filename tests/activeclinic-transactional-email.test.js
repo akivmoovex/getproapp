@@ -41,8 +41,13 @@ const {
   createRejectingAdapter,
   createThrowingAdapter,
   resolveActiveClinicEmailAdapter,
+  readResendSenderConfig,
+  createResendAdapter,
   sendActiveClinicEmail,
 } = require("../src/activeclinic/services/activeClinicEmailDelivery");
+const {
+  RESEND_EMAILS_URL,
+} = require("../src/activeclinic/services/activeClinicEmailResendAdapter");
 const {
   buildInformationRequestedMessage,
   buildReadyToSignInMessage,
@@ -51,12 +56,15 @@ const {
 const {
   CODE_MOOVEX_PLATFORM_TESTING,
   CODE_ACTIVECLINIC_ORG_V6,
+  CODE_ACTIVECLINIC_ORG_PRODUCTION,
   resetDeploymentProfileWarningsForTests,
 } = require("../src/platform/config/deploymentProfiles");
 
 const IDENTITY_KEY = "moovex-platform-v7";
 const ADMIN_PASSWORD = "clinic-admin-pass-12";
 const TEST_ORIGIN = "https://ac.test.local";
+const RESEND_TEST_KEY = "re_test_activeclinic_mock_key";
+const RESEND_FROM = "noreply@activeclinic.example";
 
 let pool;
 let skipReason = null;
@@ -69,6 +77,61 @@ function nextPhone() {
 
 function requireDb() {
   if (skipReason) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
+}
+
+function productionMailEnv(overrides) {
+  return {
+    NODE_ENV: "production",
+    DEPLOYMENT_ENV: "production",
+    DATABASE_IDENTITY_ENV: "production",
+    PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_PRODUCTION,
+    ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER: "resend",
+    RESEND_API_KEY: RESEND_TEST_KEY,
+    ACTIVECLINIC_EMAIL_FROM: RESEND_FROM,
+    ACTIVECLINIC_EMAIL_FROM_NAME: "ActiveClinic",
+    ACTIVECLINIC_EMAIL_REPLY_TO: "support@activeclinic.example",
+    ...overrides,
+  };
+}
+
+function jsonResponse(status, payload) {
+  return {
+    ok: status >= 200 && status < 300,
+    status,
+    async text() {
+      return payload == null ? "" : JSON.stringify(payload);
+    },
+  };
+}
+
+function mockResendFetch(handler) {
+  const calls = [];
+  const fetchImpl = async (url, init) => {
+    const headers = (init && init.headers) || {};
+    let parsedBody = null;
+    if (init && init.body) {
+      parsedBody = JSON.parse(String(init.body));
+    }
+    const snapshot = {
+      url,
+      method: init && init.method,
+      hasAuthorization: Boolean(headers.Authorization),
+      authorizationIsBearer: String(headers.Authorization || "").startsWith("Bearer "),
+      contentType: headers["Content-Type"] || headers["content-type"] || null,
+      idempotencyKey: headers["Idempotency-Key"] || null,
+      headerNames: Object.keys(headers).sort(),
+      body: parsedBody,
+    };
+    calls.push(snapshot);
+    return handler({ url, init, headers, body: parsedBody, calls: snapshot });
+  };
+  return { fetchImpl, calls };
+}
+
+function unexpectedNetworkFetch() {
+  return async () => {
+    throw new Error("unexpected_network_call");
+  };
 }
 
 describe("ActiveClinic email adapter guards", () => {
@@ -84,6 +147,9 @@ describe("ActiveClinic email adapter guards", () => {
       SENDGRID_API_KEY: "sg-test",
       POSTMARK_SERVER_TOKEN: "pm-test",
       EMAIL_DELIVERY_ADAPTER: "sendgrid",
+      RESEND_API_KEY: RESEND_TEST_KEY,
+      ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER: "resend",
+      ACTIVECLINIC_EMAIL_FROM: RESEND_FROM,
     });
     assert.equal(local.allowed, false);
     assert.equal(local.reason, PROVIDER.NOT_PRODUCTION);
@@ -91,28 +157,41 @@ describe("ActiveClinic email adapter guards", () => {
     const testEnv = liveEmailTransportDecision({
       NODE_ENV: "test",
       DEPLOYMENT_ENV: "production",
-      ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER: "sendgrid",
-      SENDGRID_API_KEY: "sg-test",
+      ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER: "resend",
+      RESEND_API_KEY: RESEND_TEST_KEY,
+      ACTIVECLINIC_EMAIL_FROM: RESEND_FROM,
     });
     assert.equal(testEnv.allowed, false);
+    const testAdapter = resolveActiveClinicEmailAdapter(
+      {
+        NODE_ENV: "test",
+        DEPLOYMENT_ENV: "production",
+        ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER: "resend",
+        RESEND_API_KEY: RESEND_TEST_KEY,
+        ACTIVECLINIC_EMAIL_FROM: RESEND_FROM,
+      },
+      { fetchImpl: unexpectedNetworkFetch() }
+    );
+    assert.equal(testAdapter.id, "activeclinic_email_unavailable");
 
-    const productionUnimplemented = liveEmailTransportDecision({
+    const productionUnknown = liveEmailTransportDecision({
       NODE_ENV: "production",
       DEPLOYMENT_ENV: "production",
       DATABASE_IDENTITY_ENV: "production",
       ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER: "sendgrid",
       SENDGRID_API_KEY: "sg-test",
     });
-    assert.equal(productionUnimplemented.allowed, false);
-    assert.equal(productionUnimplemented.reason, PROVIDER.ADAPTER_NOT_ENABLED);
+    assert.equal(productionUnknown.allowed, false);
+    assert.equal(productionUnknown.reason, PROVIDER.ADAPTER_NOT_ENABLED);
 
     const keysOnly = resolveOutboundEmailStatus({
       NODE_ENV: "production",
       DEPLOYMENT_ENV: "production",
       SMTP_URL: "smtp://example.invalid",
+      RESEND_API_KEY: RESEND_TEST_KEY,
     });
-    assert.equal(keysOnly.state, "unavailable");
-    assert.match(keysOnly.label, /adapter_not_selected|email_sending_unavailable/);
+    assert.equal(keysOnly.state, "not_configured");
+    assert.match(keysOnly.label, /Email not configured/i);
   });
 
   it("unavailable adapter does not accept mail", async () => {
@@ -131,13 +210,16 @@ describe("ActiveClinic email adapter guards", () => {
     const info = buildInformationRequestedMessage({
       clinicName: "Sunrise Clinic",
       applicationNumber: "AC-SAFE-1",
-      requestText: "Please send your facility licence.",
+      requestText: "Please send your <script>alert(1)</script> licence.",
       publicOrigin: TEST_ORIGIN,
     });
-    const blob = `${info.subject}\n${info.text}`;
+    const blob = `${info.subject}\n${info.text}\n${info.html}`;
     assert.match(blob, /Sunrise Clinic/);
     assert.match(blob, /AC-SAFE-1/);
     assert.match(info.ctaUrl, /\/register-clinic\/status$/);
+    assert.match(info.html, /&lt;script&gt;/);
+    assert.doesNotMatch(info.html, /<script>/i);
+    assert.doesNotMatch(info.html, /pixel|utm_|analytics/i);
     assert.doesNotMatch(blob, /password_hash|rejection_reason|last_provision_error|organization_id/i);
 
     const ready = buildReadyToSignInMessage({
@@ -146,8 +228,9 @@ describe("ActiveClinic email adapter guards", () => {
       publicOrigin: TEST_ORIGIN,
     });
     assert.match(ready.ctaUrl, /\/login$/);
+    assert.match(ready.html, /href="https:\/\/ac\.test\.local\/login"/);
     assert.doesNotMatch(
-      `${ready.subject}\n${ready.text}`,
+      `${ready.subject}\n${ready.text}\n${ready.html}`,
       /password_hash|administrator_password|staff_id|organization_id|website_instance/i
     );
 
@@ -158,7 +241,226 @@ describe("ActiveClinic email adapter guards", () => {
     });
     assert.match(invite.text, /Sunrise Clinic/);
     assert.match(invite.ctaUrl, /\/activate\/test-token/);
+    assert.match(invite.html, /activate\/test-token/);
     assert.doesNotMatch(invite.text, /password|roleKey|staff_member_id/i);
+    assert.doesNotMatch(invite.html, /password|roleKey|staff_member_id/i);
+  });
+});
+
+describe("ActiveClinic Resend production transport", () => {
+  it("never constructs the live adapter outside hosted production", () => {
+    const fullResend = {
+      ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER: "resend",
+      RESEND_API_KEY: RESEND_TEST_KEY,
+      ACTIVECLINIC_EMAIL_FROM: RESEND_FROM,
+      ACTIVECLINIC_EMAIL_FROM_NAME: "ActiveClinic",
+    };
+    const cases = [
+      { NODE_ENV: "test", DEPLOYMENT_ENV: "production", ...fullResend },
+      { NODE_ENV: "development", DEPLOYMENT_ENV: "production", ...fullResend },
+      {
+        NODE_ENV: "production",
+        DEPLOYMENT_ENV: "testing",
+        PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6,
+        ...fullResend,
+      },
+      {
+        NODE_ENV: "testing",
+        DEPLOYMENT_ENV: "testing",
+        PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6,
+        ...fullResend,
+      },
+      {
+        ...productionMailEnv({
+          DATABASE_URL: "postgresql://user:secret@127.0.0.1:5432/getpro_v7_prod_rehearsal",
+        }),
+      },
+    ];
+    for (const env of cases) {
+      const decision = liveEmailTransportDecision(env);
+      assert.equal(decision.allowed, false, JSON.stringify({ envKeys: Object.keys(env), decision }));
+      const adapter = resolveActiveClinicEmailAdapter(env, {
+        fetchImpl: unexpectedNetworkFetch(),
+      });
+      assert.equal(adapter.id, "activeclinic_email_unavailable");
+      assert.equal(resolveOutboundEmailStatus(env).state, "disabled");
+    }
+  });
+
+  it("fails closed on incomplete production Resend config", () => {
+    const missingAdapter = liveEmailTransportDecision(
+      productionMailEnv({ ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER: "" })
+    );
+    assert.equal(missingAdapter.allowed, false);
+    assert.equal(missingAdapter.reason, PROVIDER.ADAPTER_NOT_SELECTED);
+    assert.equal(
+      resolveOutboundEmailStatus(productionMailEnv({ ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER: "" })).label,
+      "Email not configured"
+    );
+
+    const missingKey = liveEmailTransportDecision(productionMailEnv({ RESEND_API_KEY: "" }));
+    assert.equal(missingKey.allowed, false);
+    assert.equal(missingKey.reason, PROVIDER.CONFIGURATION_ERROR);
+    assert.equal(
+      resolveOutboundEmailStatus(productionMailEnv({ RESEND_API_KEY: "" })).label,
+      "Resend selected but incomplete"
+    );
+
+    const missingFrom = liveEmailTransportDecision(productionMailEnv({ ACTIVECLINIC_EMAIL_FROM: "" }));
+    assert.equal(missingFrom.allowed, false);
+    assert.equal(missingFrom.reason, PROVIDER.CONFIGURATION_ERROR);
+
+    const badFrom = liveEmailTransportDecision(
+      productionMailEnv({ ACTIVECLINIC_EMAIL_FROM: "not-an-email" })
+    );
+    assert.equal(badFrom.allowed, false);
+    assert.equal(readResendSenderConfig(productionMailEnv({ ACTIVECLINIC_EMAIL_FROM: "not-an-email" })).ok, false);
+
+    const badReply = liveEmailTransportDecision(
+      productionMailEnv({ ACTIVECLINIC_EMAIL_REPLY_TO: "not-an-email" })
+    );
+    assert.equal(badReply.allowed, false);
+
+    assert.equal(
+      resolveActiveClinicEmailAdapter(productionMailEnv({ RESEND_API_KEY: "" }), {
+        fetchImpl: unexpectedNetworkFetch(),
+      }).id,
+      "activeclinic_email_unavailable"
+    );
+  });
+
+  it("constructs Resend only when production config is complete", () => {
+    const env = productionMailEnv();
+    const decision = liveEmailTransportDecision(env);
+    assert.equal(decision.allowed, true);
+    assert.equal(decision.adapterName, "resend");
+    const adapter = resolveActiveClinicEmailAdapter(env, {
+      fetchImpl: unexpectedNetworkFetch(),
+    });
+    assert.equal(adapter.id, "activeclinic_email_resend");
+    assert.equal(adapter.sendingAvailable, true);
+    assert.equal(resolveOutboundEmailStatus(env).label, "Resend available for production");
+    const cfg = readResendSenderConfig(env);
+    assert.equal(cfg.fromHeader, "ActiveClinic <noreply@activeclinic.example>");
+    assert.equal(cfg.replyTo, "support@activeclinic.example");
+  });
+
+  it("maps mocked Resend outcomes to honest Phase G statuses", async () => {
+    const scenarios = [
+      {
+        name: "accepted",
+        handler: async () => jsonResponse(200, { id: "email_accepted_1" }),
+        status: "queued",
+        providerCode: PROVIDER.RESEND,
+        accepted: true,
+      },
+      {
+        name: "invalid request",
+        handler: async () => jsonResponse(422, { name: "validation_error", message: "raw provider body" }),
+        status: "failed",
+        providerCode: PROVIDER.REQUEST_REJECTED,
+        accepted: false,
+      },
+      {
+        name: "unauthorized",
+        handler: async () => jsonResponse(401, { name: "invalid_api_key", message: "secret leak" }),
+        status: "failed",
+        providerCode: PROVIDER.AUTHENTICATION_FAILED,
+        accepted: false,
+      },
+      {
+        name: "rate limited",
+        handler: async () => jsonResponse(429, { name: "rate_limit_exceeded", message: "slow down raw" }),
+        status: "failed",
+        providerCode: PROVIDER.RATE_LIMITED,
+        accepted: false,
+      },
+      {
+        name: "provider 5xx",
+        handler: async () => jsonResponse(503, { name: "application_error", message: "upstream raw" }),
+        status: "failed",
+        providerCode: PROVIDER.PROVIDER_UNAVAILABLE,
+        accepted: false,
+      },
+      {
+        name: "malformed",
+        handler: async () => jsonResponse(200, { not: "an-id" }),
+        status: "failed",
+        providerCode: PROVIDER.UNKNOWN,
+        accepted: false,
+      },
+      {
+        name: "network",
+        handler: async () => {
+          throw new Error("ECONNRESET");
+        },
+        status: "failed",
+        providerCode: PROVIDER.PROVIDER_UNAVAILABLE,
+        accepted: false,
+      },
+    ];
+
+    for (const scenario of scenarios) {
+      const { fetchImpl, calls } = mockResendFetch(scenario.handler);
+      const logs = [];
+      const result = await sendActiveClinicEmail({
+        env: productionMailEnv(),
+        fetchImpl,
+        log: (entry) => logs.push(entry),
+        templateKey: TEMPLATE.INFORMATION_REQUESTED,
+        recipient: "applicant@clinic.example",
+        publicOrigin: TEST_ORIGIN,
+        idempotencyKey: "information_requested:evt-resend-1",
+        fields: {
+          clinicName: "Demo",
+          applicationNumber: "AC-1",
+          requestText: "Licence please",
+        },
+      });
+      assert.equal(result.reviewDeliveryStatus, scenario.status, scenario.name);
+      assert.equal(result.accepted, scenario.accepted, scenario.name);
+      assert.equal(result.delivered, false, scenario.name);
+      assert.notEqual(result.reviewDeliveryStatus, "sent", scenario.name);
+      assert.equal(result.providerCode, scenario.providerCode, scenario.name);
+      const dumped = JSON.stringify({ result, logs, calls });
+      assert.doesNotMatch(dumped, /raw provider body|secret leak|slow down raw|upstream raw/i);
+      if (scenario.name !== "network") {
+        assert.equal(calls[0].url, RESEND_EMAILS_URL);
+        assert.equal(calls[0].authorizationIsBearer, true);
+        assert.equal(calls[0].idempotencyKey, "information_requested:evt-resend-1");
+        assert.equal(calls[0].body.from, "ActiveClinic <noreply@activeclinic.example>");
+        assert.deepEqual(calls[0].body.to, ["applicant@clinic.example"]);
+        assert.equal(calls[0].body.reply_to, "support@activeclinic.example");
+        assert.ok(calls[0].body.html);
+        assert.ok(calls[0].body.text);
+        assert.doesNotMatch(JSON.stringify(calls[0].body), /password_hash|RESEND_API_KEY/i);
+      }
+    }
+  });
+
+  it("does not expose provider bodies or activation tokens in logs", async () => {
+    const { fetchImpl } = mockResendFetch(async () =>
+      jsonResponse(401, { name: "invalid_api_key", message: "credential dump" })
+    );
+    const logs = [];
+    const result = await sendActiveClinicEmail({
+      env: productionMailEnv(),
+      fetchImpl,
+      log: (entry) => logs.push(entry),
+      templateKey: TEMPLATE.STAFF_INVITATION,
+      recipient: "nurse@clinic.example",
+      publicOrigin: TEST_ORIGIN,
+      idempotencyKey: "staff.invitation:token-1",
+      fields: {
+        organizationName: "Sunrise Clinic",
+        activationUrl: `${TEST_ORIGIN}/activate/super-secret-token`,
+      },
+    });
+    assert.equal(result.providerCode, PROVIDER.AUTHENTICATION_FAILED);
+    const dumped = JSON.stringify({ result, logs });
+    assert.doesNotMatch(dumped, /credential dump|super-secret-token|Bearer re_/i);
+    assert.equal(logs[0].recipientMasked, "n***@clinic.example");
+    assert.equal(logs[0].idempotencyKey, "staff.invitation:token-1");
   });
 });
 
@@ -445,15 +747,115 @@ describe("ActiveClinic transactional email workflows", () => {
     assert.ok(failedInvite.activationUrl);
   });
 
+  it("records mocked Resend acceptance as queued for the three Phase G messages", async () => {
+    requireDb();
+    const { payload, created } = await createPending();
+    const { fetchImpl, calls } = mockResendFetch(async () => jsonResponse(200, { id: "email_info_1" }));
+    const adapter = createResendAdapter({
+      apiKey: RESEND_TEST_KEY,
+      from: "ActiveClinic <noreply@activeclinic.example>",
+      fetchImpl,
+    });
+    const requested = await requestClinicRegistrationInformation(pool, {
+      applicationId: created.id,
+      requestText: "Please send your facility licence number.",
+      publicOrigin: TEST_ORIGIN,
+      emailAdapter: adapter,
+    });
+    assert.equal(requested.ok, true, JSON.stringify(requested));
+    assert.equal(requested.deliveryStatus, "queued");
+    assert.equal(calls.length, 1);
+    assert.equal(calls[0].idempotencyKey, `information_requested:${requested.event.id}`);
+
+    const failedFetch = mockResendFetch(async () =>
+      jsonResponse(422, { name: "validation_error", message: "provider dump" })
+    );
+    const failed = await requestClinicRegistrationInformation(pool, {
+      applicationId: created.id,
+      requestText: "Second request after mock rejection.",
+      publicOrigin: TEST_ORIGIN,
+      emailAdapter: createResendAdapter({
+        apiKey: RESEND_TEST_KEY,
+        from: RESEND_FROM,
+        fetchImpl: failedFetch.fetchImpl,
+      }),
+    });
+    assert.equal(failed.ok, true);
+    assert.equal(failed.deliveryStatus, "failed");
+    assert.doesNotMatch(JSON.stringify(failed), /provider dump/i);
+
+    const readyFetch = mockResendFetch(async () => jsonResponse(200, { id: "email_ready_1" }));
+    const pending = await createPending();
+    const approved = await approveAndProvisionClinicRegistration(pool, {
+      applicationId: pending.created.id,
+      dataEnvironment: "testing",
+      deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
+      publicOrigin: TEST_ORIGIN,
+      emailAdapter: createResendAdapter({
+        apiKey: RESEND_TEST_KEY,
+        from: RESEND_FROM,
+        fetchImpl: readyFetch.fetchImpl,
+      }),
+    });
+    assert.equal(approved.ok, true, JSON.stringify(approved));
+    assert.equal(readyFetch.calls.length, 1);
+    assert.match(readyFetch.calls[0].idempotencyKey, /^ready_to_sign_in:/);
+    const retryReady = await approveAndProvisionClinicRegistration(pool, {
+      applicationId: pending.created.id,
+      dataEnvironment: "testing",
+      deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
+      publicOrigin: TEST_ORIGIN,
+      emailAdapter: createResendAdapter({
+        apiKey: RESEND_TEST_KEY,
+        from: RESEND_FROM,
+        fetchImpl: readyFetch.fetchImpl,
+      }),
+    });
+    assert.equal(retryReady.ok, true);
+    assert.equal(readyFetch.calls.length, 1);
+
+    const inviteFetch = mockResendFetch(async () => jsonResponse(200, { id: "email_invite_1" }));
+    const invited = await inviteActiveClinicStaff(pool, {
+      organizationId: approved.organizationId,
+      healthcareOrganizationId: approved.healthcareOrganization.id,
+      facilityIds: approved.facility ? [approved.facility.id] : [],
+      firstName: "Resend",
+      lastName: "Invite",
+      phone: nextPhone(),
+      email: `resend-${Date.now()}@clinic.example`,
+      employmentType: "permanent",
+      roleAssignments: [],
+      deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+      publicOrigin: TEST_ORIGIN,
+      emailAdapter: createResendAdapter({
+        apiKey: RESEND_TEST_KEY,
+        from: RESEND_FROM,
+        fetchImpl: inviteFetch.fetchImpl,
+      }),
+    });
+    assert.equal(invited.ok, true, JSON.stringify({ code: invited.code }));
+    assert.equal(invited.deliveryStatus, "queued");
+    assert.equal(inviteFetch.calls.length, 1);
+    assert.equal(inviteFetch.calls[0].idempotencyKey, `staff.invitation:${invited.tokenId}`);
+  });
+
   it("does not claim a live provider from env-key presence in source", () => {
     const settings = fs.readFileSync(
       path.join(__dirname, "..", "src/platform/services/getPlatformAdminSettingsView.js"),
       "utf8"
     );
-    assert.match(settings, /adapter_not_enabled/);
+    const delivery = fs.readFileSync(
+      path.join(__dirname, "..", "src/activeclinic/services/activeClinicEmailDelivery.js"),
+      "utf8"
+    );
+    assert.match(delivery, /adapter_not_enabled/);
+    assert.match(delivery, /Resend available for production/);
+    assert.match(settings, /resolveOutboundEmailStatus/);
     assert.doesNotMatch(
       settings,
       /if \(e\.SMTP_URL \|\| e\.SENDGRID_API_KEY \|\| e\.POSTMARK_SERVER_TOKEN/
     );
+    assert.doesNotMatch(settings, /RESEND_API_KEY[\s\S]{0,80}configured/);
+    assert.doesNotMatch(settings, /Send test email/i);
   });
 });

@@ -17,6 +17,35 @@ function trimText(value, max) {
   return text.slice(0, max);
 }
 
+function escapeHtml(value) {
+  return String(value == null ? "" : value)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+function htmlParagraph(value) {
+  const text = String(value == null ? "" : value);
+  if (!text) return "";
+  return `<p>${escapeHtml(text).replace(/\n/g, "<br>")}</p>`;
+}
+
+function htmlCta(href, label) {
+  const url = String(href || "").trim();
+  if (!url) return "";
+  return `<p><a href="${escapeHtml(url)}">${escapeHtml(label)}</a></p>`;
+}
+
+function buildTransactionalHtml(paragraphs, ctaUrl, ctaLabel) {
+  const body = (Array.isArray(paragraphs) ? paragraphs : [])
+    .filter(Boolean)
+    .map((p) => htmlParagraph(p))
+    .join("");
+  return `${body}${htmlCta(ctaUrl, ctaLabel)}`;
+}
+
 function normalizeOrigin(raw) {
   return String(raw || "").trim().replace(/\/+$/, "");
 }
@@ -48,10 +77,22 @@ function buildInformationRequestedMessage(input) {
     .filter((line, i, arr) => line !== "" || (arr[i - 1] !== "" && i !== 0))
     .join("\n")
     .trim();
+  const html = buildTransactionalHtml(
+    [
+      `ActiveClinic needs more information for ${clinicName}.`,
+      applicationNumber ? `Application number: ${applicationNumber}` : "",
+      requestedAt ? `Requested: ${requestedAt}` : "",
+      requestText || "Please check your application status for the information requested.",
+      "No SMS was sent from ActiveClinic.",
+    ],
+    ctaUrl,
+    "Check status"
+  );
   return {
     templateKey: TEMPLATE.INFORMATION_REQUESTED,
     subject,
     text,
+    html,
     ctaPath,
     ctaUrl,
   };
@@ -74,10 +115,21 @@ function buildReadyToSignInMessage(input) {
     .filter((line, i, arr) => line !== "" || (arr[i - 1] !== "" && i !== 0))
     .join("\n")
     .trim();
+  const html = buildTransactionalHtml(
+    [
+      `${clinicName} has been approved on ActiveClinic.`,
+      applicationNumber ? `Application number: ${applicationNumber}` : "",
+      "The clinic administrator can sign in with the email or phone and password from the application.",
+      "No password is included in this email. No SMS was sent from ActiveClinic.",
+    ],
+    ctaUrl,
+    "Sign in"
+  );
   return {
     templateKey: TEMPLATE.READY_TO_SIGN_IN,
     subject,
     text,
+    html,
     ctaPath,
     ctaUrl,
   };
@@ -100,10 +152,20 @@ function buildStaffInvitationMessage(input) {
     `Activate your account: ${activationUrl}`,
     "If you did not expect this invitation, ignore this email.",
   ].join("\n");
+  const html = buildTransactionalHtml(
+    [
+      `You have been invited to join ${organizationName} on ActiveClinic.`,
+      expiry,
+      "If you did not expect this invitation, ignore this email.",
+    ],
+    activationUrl,
+    "Activate your account"
+  );
   return {
     templateKey: TEMPLATE.STAFF_INVITATION,
     subject,
     text,
+    html,
     ctaPath,
     ctaUrl: activationUrl,
   };
@@ -124,6 +186,7 @@ function buildActiveClinicEmailMessage(templateKey, input) {
 
 module.exports = {
   TEMPLATE,
+  escapeHtml,
   buildInformationRequestedMessage,
   buildReadyToSignInMessage,
   buildStaffInvitationMessage,

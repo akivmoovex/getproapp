@@ -28,6 +28,7 @@ const {
   identityTableExists,
   readIdentityRow,
 } = require("../../../db/scripts/lib/databaseIdentity");
+const { resolveOutboundEmailStatus } = require("../../activeclinic/services/activeClinicEmailDelivery");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -101,21 +102,7 @@ function resolveSmsStatus(env) {
 }
 
 function resolveEmailStatus(env) {
-  const e = env || process.env;
-  const nodeEnv = String(e.NODE_ENV || "").trim().toLowerCase();
-  const deploymentEnv = String(e.DEPLOYMENT_ENV || "").trim().toLowerCase();
-  const adapterName = String(
-    e.ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER || e.EMAIL_DELIVERY_ADAPTER || ""
-  )
-    .trim()
-    .toLowerCase();
-  if (nodeEnv !== "production" || deploymentEnv !== "production") {
-    return providerStatusLabel(false, "email_sending_unavailable");
-  }
-  if (!adapterName || adapterName === "none" || adapterName === "unavailable") {
-    return providerStatusLabel(false, "adapter_not_selected");
-  }
-  return providerStatusLabel(false, "adapter_not_enabled");
+  return resolveOutboundEmailStatus(env);
 }
 
 function resolveWhatsAppStatus() {
