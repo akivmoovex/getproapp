@@ -12,6 +12,10 @@ const editSessionService = require("../../platform/website/editSessionService");
 const {
   grantedPermissions,
   canEditClinicWebsite,
+  canPublishClinicWebsite,
+  canRestoreClinicWebsite,
+  canViewClinicWebsite,
+  canAccessClinicWebsiteAdmin,
   attachActiveClinicWebsiteLocals,
 } = require("./attachActiveClinicWebsiteChrome");
 const versionService = require("../../platform/website/versionService");
@@ -26,6 +30,13 @@ const {
   sendClinicResolveFailureJson,
   isWebsiteApiRequest,
 } = require("./activeClinicPublicRespond");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+  buildPublicWebsiteEditPath,
+  buildPublicWebsiteHistoryPath,
+  appendQuery,
+} = require("../../platform/website/publicWebsiteUrl");
 
 function json(res, status, body) {
   return res.status(status).json(body);
@@ -37,22 +48,12 @@ function wantsHtml(req) {
   );
 }
 
-function canPublishClinicWebsite(req, clinic) {
-  const auth = req.activeClinicAuth;
-  if (!auth || !auth.authenticated || !clinic) return false;
-  if (!auth.organization || auth.organization.id !== clinic.organizationId) return false;
-  return hasWebsitePermission(grantedPermissions(req), PERMISSIONS.PUBLISH);
+function settingsPublishReturnTo(raw) {
+  const value = String(raw || "").trim();
+  if (value === "/app/settings" || value === "/app/settings/website") return value;
+  return null;
 }
 
-function canRestoreClinicWebsite(req, clinic) {
-  const auth = req.activeClinicAuth;
-  if (!auth || !auth.authenticated || !clinic) return false;
-  if (!auth.organization || auth.organization.id !== clinic.organizationId) return false;
-  return (
-    hasWebsitePermission(grantedPermissions(req), PERMISSIONS.ROLLBACK) ||
-    hasWebsitePermission(grantedPermissions(req), PERMISSIONS.RESTORE)
-  );
-}
 function actorId(req) {
   return (
     (req.activeClinicAuth &&
@@ -87,7 +88,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       sendResolveFailure(req, res, result);
       return null;
     }
-    if (result.clinic.websitePublished !== true && !canEditClinicWebsite(req, result.clinic)) {
+    if (result.clinic.websitePublished !== true && !canAccessClinicWebsiteAdmin(req, result.clinic)) {
       sendResolveFailure(req, res, { ok: false, code: "clinic_not_published" });
       return null;
     }
@@ -101,7 +102,13 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!canEditClinicWebsite(req, clinic)) {
         return json(res, 403, { ok: false, code: "forbidden" });
       }
-      return res.redirect(303, `/clinics/${encodeURIComponent(clinic.clinicKey)}?website_edit=1&website_mode=draft`);
+      return res.redirect(
+        303,
+        buildPublicWebsiteEditPath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: clinic.clinicKey,
+        })
+      );
     } catch (err) {
       return next(err);
     }
@@ -121,22 +128,24 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!attached.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found" });
       }
-      const saved = await publicationService.saveDraftAndMaybePublish(getPool(), {
+      const saved = await contentService.saveWebsiteDraft(getPool(), {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,
         contentKey: req.body && req.body.contentKey,
         value: req.body && req.body.value,
         visibility: req.body && req.body.visibility,
         actorIdentityId: actorId(req),
+        grantedPermissions: grantedPermissions(req),
       });
       if (!saved.ok) {
         return json(res, 400, { ok: false, code: saved.code, reason: saved.reason || null });
       }
       return json(res, 200, {
         ok: true,
-        code: saved.published ? "saved_and_published" : "saved_to_draft",
+        published: false,
+        code: "saved_to_draft",
         content: saved.content,
-        version: saved.version || null,
+        version: null,
       });
     } catch (err) {
       return next(err);
@@ -190,7 +199,16 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         reason: editSessionService.CLOSE_REASON.FINISH,
       });
       if (req.accepts("html") && !req.xhr && !(req.headers.accept || "").includes("application/json")) {
-        return res.redirect(303, `/clinics/${encodeURIComponent(clinic.clinicKey)}?website_mode=live`);
+        return res.redirect(
+          303,
+          appendQuery(
+            buildPublicOrganizationWebsitePath({
+              product: PRODUCT_CODE.ACTIVECLINIC,
+              organizationKey: clinic.clinicKey,
+            }),
+            { website_mode: "live" }
+          )
+        );
       }
       return json(res, 200, { ok: true, sessions: closed.sessions || [] });
     } catch (err) {
@@ -264,9 +282,19 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         });
       }
       if (wantsHtml(req)) {
+        const returnTo = settingsPublishReturnTo(req.body && req.body.returnTo);
+        if (returnTo) {
+          return res.redirect(303, `${returnTo}?website=published`);
+        }
         return res.redirect(
           303,
-          `/clinics/${encodeURIComponent(clinic.clinicKey)}/website/history?notice=published`
+          appendQuery(
+            buildPublicWebsiteHistoryPath({
+              product: PRODUCT_CODE.ACTIVECLINIC,
+              organizationKey: clinic.clinicKey,
+            }),
+            { notice: "published" }
+          )
         );
       }
       return json(res, 200, {
@@ -285,7 +313,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
     try {
       const clinic = await loadClinic(req, res);
       if (!clinic) return undefined;
-      if (!canEditClinicWebsite(req, clinic) && !canPublishClinicWebsite(req, clinic)) {
+      if (!canViewClinicWebsite(req, clinic) && !canEditClinicWebsite(req, clinic) && !canPublishClinicWebsite(req, clinic)) {
         return json(res, 403, { ok: false, code: "forbidden" });
       }
       const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
@@ -317,7 +345,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
     try {
       const clinic = await loadClinic(req, res);
       if (!clinic) return undefined;
-      if (!canEditClinicWebsite(req, clinic) && !canPublishClinicWebsite(req, clinic)) {
+      if (!canViewClinicWebsite(req, clinic) && !canEditClinicWebsite(req, clinic) && !canPublishClinicWebsite(req, clinic)) {
         return json(res, 403, { ok: false, code: "forbidden" });
       }
       const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
@@ -359,7 +387,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
     try {
       const clinic = await loadClinic(req, res);
       if (!clinic) return undefined;
-      if (!canEditClinicWebsite(req, clinic) && !canPublishClinicWebsite(req, clinic)) {
+      if (!canViewClinicWebsite(req, clinic) && !canEditClinicWebsite(req, clinic) && !canPublishClinicWebsite(req, clinic)) {
         return json(res, 403, { ok: false, code: "forbidden" });
       }
       const loaded = await versionService.getWebsiteVersion(getPool(), {
@@ -399,7 +427,13 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         if (wantsHtml(req)) {
           return res.redirect(
             303,
-            `/clinics/${encodeURIComponent(clinic.clinicKey)}/website/history?error=${encodeURIComponent(restored.code || "restore_failed")}`
+            appendQuery(
+              buildPublicWebsiteHistoryPath({
+                product: PRODUCT_CODE.ACTIVECLINIC,
+                organizationKey: clinic.clinicKey,
+              }),
+              { error: restored.code || "restore_failed" }
+            )
           );
         }
         return json(res, 400, { ok: false, code: restored.code });
@@ -407,7 +441,13 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (wantsHtml(req)) {
         return res.redirect(
           303,
-          `/clinics/${encodeURIComponent(clinic.clinicKey)}/website/history?notice=restored`
+          appendQuery(
+            buildPublicWebsiteHistoryPath({
+              product: PRODUCT_CODE.ACTIVECLINIC,
+              organizationKey: clinic.clinicKey,
+            }),
+            { notice: "restored" }
+          )
         );
       }
       return json(res, 200, {

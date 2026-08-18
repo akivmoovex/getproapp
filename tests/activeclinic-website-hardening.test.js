@@ -268,7 +268,7 @@ describe("ActiveClinic website hardening", () => {
       `SELECT status, provisioning_status, organization_id FROM activeclinic.clinic_registration_applications WHERE id = $1`,
       [created.application.id]
     );
-    assert.equal(app.rows[0].status, "approved");
+    assert.equal(app.rows[0].status, "active");
     assert.equal(app.rows[0].provisioning_status, "website_pending");
 
     const retry = await approveAndProvisionClinicRegistration(pool, {

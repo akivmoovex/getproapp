@@ -1,7 +1,7 @@
 <article class="acp-page" data-ac-page-section="tenant-about">
   <header class="acp-page-hero acp-page-hero--compact">
     <p class="ac-public-eyebrow">About</p>
-    <h1>About <%= clinic.publicName %></h1>
+    <h1><%- include('../partials/website-editable-field', { contentKey: 'about.story.heading', fieldValue: clinic.aboutHeading || ('About ' + clinic.publicName), fieldType: 'short_text' }) %></h1>
     <% if (clinic.websiteTagline) { %><p class="ac-public-lede"><%= clinic.websiteTagline %></p><% } %>
   </header>
   <% const aboutBody = clinic.aboutBody || clinic.websiteAbout; %>
@@ -14,12 +14,14 @@
     <p>Public about content has not been configured for this clinic yet.</p>
   </div>
   <% } %>
-  <% if (clinic.publicPhoneDisplay || clinic.publicEmailDisplay) { %>
+  <% const aboutPhone = clinic.publicPhoneDisplay || (clinic.websiteContent && clinic.websiteContent['contact.phone']); %>
+  <% const aboutEmail = clinic.publicEmailDisplay || (clinic.websiteContent && clinic.websiteContent['contact.email']); %>
+  <% if (aboutPhone || aboutEmail) { %>
   <section class="acp-section">
     <h2>Contact details</h2>
     <ul class="ac-public-list">
-      <% if (clinic.publicPhoneDisplay) { %><li>Phone: <%= clinic.publicPhoneDisplay %></li><% } %>
-      <% if (clinic.publicEmailDisplay) { %><li>Email: <%= clinic.publicEmailDisplay %></li><% } %>
+      <% if (aboutPhone) { %><li>Phone: <%= aboutPhone %></li><% } %>
+      <% if (aboutEmail) { %><li>Email: <%= aboutEmail %></li><% } %>
     </ul>
   </section>
   <% } %>

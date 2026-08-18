@@ -32,6 +32,7 @@ const {
   updateHealthcareOrganizationSettings,
   loadRegionalSettingsScreen,
   updateRegionalSettings,
+  loadActiveClinicWebsiteSettingsScreen,
 } = require("../services/loadActiveClinicSettingsScreens");
 const {
   loadDepartmentsSettingsScreen,
@@ -173,7 +174,53 @@ function registerActiveClinicSettingsRoutes(app, deps) {
           pageData: { overview: loaded.overview },
           flash: req.query.ok
             ? { type: "success", message: "Organization profile saved." }
+            : req.query.website === "published"
+              ? { type: "success", message: "Website published." }
             : null,
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/settings/website",
+    requireAuth,
+    requirePermission(["website.view", "website.edit"]),
+    async (req, res, next) => {
+      try {
+        const loaded = await loadActiveClinicWebsiteSettingsScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          env,
+          origin: `${req.protocol}://${req.get("host")}`,
+        });
+        if (!loaded.ok) {
+          return denyPage(
+            res,
+            403,
+            "Access restricted",
+            "You do not have permission to manage the clinic website."
+          );
+        }
+        return await renderShell(req, res, {
+          activeNav: "settings",
+          content: "app/settings-website-content.ejs",
+          pageHeader: {
+            title: "Website",
+            description: "Public clinic website status, editing, preview, and publishing.",
+            actions: [],
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Settings", href: "/app/settings" },
+            { label: "Website" },
+          ],
+          pageData: { website: loaded.website },
+          flash:
+            req.query.website === "published"
+              ? { type: "success", message: "Website published." }
+              : null,
         });
       } catch (err) {
         return next(err);

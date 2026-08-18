@@ -4,6 +4,7 @@ const { ENGINE, RESULT, LIFECYCLE, REVIEW_REASON } = require("./constants");
 const { toCanonicalLifecycle } = require("./lifecycle");
 const { decideReview } = require("./reviewPolicy");
 const { isSelfRegistrationProvisioningEnabled } = require("./killSwitch");
+const { initializeOrganizationWebsite } = require("./initializeOrganizationWebsite");
 const { recordAuditEventSafe } = require("../services/auditEventService");
 
 function fail(code, extra) {
@@ -39,6 +40,15 @@ async function maybeAudit(db, input, application, organizationId) {
       result: String(input.resultCode || ""),
       reason: input.reason || null,
     },
+  });
+}
+
+async function markAdapterLifecycle(adapter, db, application, status, extra) {
+  if (!adapter || typeof adapter.markLifecycle !== "function") return null;
+  return adapter.markLifecycle(db, {
+    application,
+    status,
+    ...(extra || {}),
   });
 }
 
@@ -197,6 +207,8 @@ async function submitPlatformRegistration(db, input) {
     });
   }
 
+  await markAdapterLifecycle(adapter, db, application, LIFECYCLE.PROVISIONING);
+
   const provisioned = await adapter.provision(db, {
     application,
     normalized: validated.normalized || validated.data,
@@ -212,37 +224,79 @@ async function submitPlatformRegistration(db, input) {
       provisioned && provisioned.reviewRequired
         ? provisioned.reason || REVIEW_REASON.IDENTITY_COLLISION
         : REVIEW_REASON.PROVISION_FAILURE;
-    if (typeof adapter.markReviewRequired === "function") {
-      await adapter.markReviewRequired(db, {
-        application,
-        reason: provisioned && provisioned.reason ? provisioned.reason : reason,
-        reasons: [reason],
+    if (provisioned && provisioned.reviewRequired) {
+      if (typeof adapter.markReviewRequired === "function") {
+        await adapter.markReviewRequired(db, {
+          application,
+          reason: provisioned.reason || reason,
+          reasons: [reason],
+        });
+      }
+      return ok(RESULT.REVIEW_REQUIRED, {
+        reviewRequired: true,
+        reason: provisioned.reason || reason,
+        application: {
+          ...application,
+          status: LIFECYCLE.REVIEW_REQUIRED,
+        },
+        canonicalLifecycle: LIFECYCLE.REVIEW_REQUIRED,
+        productCode,
+        provision: provisioned,
+        organizationId: provisioned.organizationId || null,
       });
     }
-    const code =
-      provisioned && provisioned.reviewRequired ? RESULT.REVIEW_REQUIRED : RESULT.PROVISION_FAILED;
-    return ok(code, {
-      reviewRequired: code === RESULT.REVIEW_REQUIRED,
-      reason: provisioned && provisioned.reason ? provisioned.reason : reason,
+    await markAdapterLifecycle(adapter, db, application, LIFECYCLE.PROVISION_FAILED, {
+      reason,
+      organizationId: provisioned && provisioned.organizationId,
+    });
+    return fail(RESULT.PROVISION_FAILED, {
+      reviewRequired: false,
+      reason,
       application: {
         ...application,
-        status: code === RESULT.REVIEW_REQUIRED ? LIFECYCLE.REVIEW_REQUIRED : LIFECYCLE.PROVISION_FAILED,
+        status: LIFECYCLE.PROVISION_FAILED,
       },
-      canonicalLifecycle:
-        code === RESULT.REVIEW_REQUIRED ? LIFECYCLE.REVIEW_REQUIRED : LIFECYCLE.PROVISION_FAILED,
+      canonicalLifecycle: LIFECYCLE.PROVISION_FAILED,
       productCode,
       provision: provisioned,
+      organizationId: (provisioned && provisioned.organizationId) || null,
+      identityId: (provisioned && provisioned.identityId) || null,
     });
   }
 
-  if (typeof adapter.ensureWebsite === "function") {
-    await adapter.ensureWebsite(db, {
+  const website = await initializeOrganizationWebsite(db, {
+    adapter,
+    productCode,
+    organizationId: provisioned.organizationId,
+    application,
+    provision: provisioned,
+    env,
+  });
+  if (!website || website.ok === false) {
+    await markAdapterLifecycle(adapter, db, application, LIFECYCLE.PROVISION_FAILED, {
+      reason: REVIEW_REASON.PROVISION_FAILURE,
       organizationId: provisioned.organizationId,
-      application,
+      website,
+    });
+    return fail(RESULT.PROVISION_FAILED, {
+      reason: "website_initialization_failed",
+      application: {
+        ...application,
+        status: LIFECYCLE.PROVISION_FAILED,
+      },
+      canonicalLifecycle: LIFECYCLE.PROVISION_FAILED,
+      productCode,
       provision: provisioned,
-      env,
+      website,
+      organizationId: provisioned.organizationId || null,
+      identityId: provisioned.identityId || null,
     });
   }
+
+  await markAdapterLifecycle(adapter, db, application, LIFECYCLE.ACTIVE, {
+    organizationId: provisioned.organizationId,
+    website,
+  });
 
   await maybeAudit(
     db,
@@ -262,6 +316,7 @@ async function submitPlatformRegistration(db, input) {
     productCode,
     organizationId: provisioned.organizationId || null,
     identityId: provisioned.identityId || null,
+    website,
     onboarding: {
       state: LIFECYCLE.ONBOARDING,
       productCode,
@@ -289,10 +344,23 @@ async function resolvePlatformRegistrationReview(db, input) {
     if (!approved || approved.ok === false) {
       return fail(RESULT.PROVISION_FAILED, { provision: approved });
     }
+    const website = await initializeOrganizationWebsite(db, {
+      adapter,
+      productCode: adapter.productCode,
+      organizationId: approved.organizationId,
+      application: approved.application || { id: input.applicationId },
+      provision: approved,
+      env: input.env,
+    });
+    await markAdapterLifecycle(adapter, db, approved.application || { id: input.applicationId }, LIFECYCLE.ACTIVE, {
+      organizationId: approved.organizationId,
+      website,
+    });
     return ok(RESULT.ACTIVE, {
       canonicalLifecycle: LIFECYCLE.ACTIVE,
       organizationId: approved.organizationId,
       provision: approved,
+      website,
     });
   }
   return fail(RESULT.INVALID, { error: "unsupported_review_action" });

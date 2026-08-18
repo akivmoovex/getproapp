@@ -235,7 +235,9 @@ async function loadSubmissionsList(db, opts) {
         organizationId,
         q: opts.q,
         status: statusFilter,
-        branchId,
+        // Omit branchId when unset so "All Branches" does not collapse to HQ-only
+        // (repository treats an explicit null as branch_id IS NULL).
+        ...(branchId ? { branchId } : {}),
         pageKey: opts.pageKey,
         submittedBy,
         submittedFrom,

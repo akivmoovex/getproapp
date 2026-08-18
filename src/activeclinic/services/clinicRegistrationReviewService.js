@@ -34,15 +34,24 @@ const RESULT = Object.freeze({
 });
 
 const APPLICATION_STATUSES = Object.freeze([
-  "pending_review",
+  "submitted",
+  "provisioning",
   "review_required",
-  "approved",
+  "active",
   "rejected",
+  "suspended",
+  "provision_failed",
+  "pending_review",
+  "approved",
   "withdrawn",
   "duplicate",
 ]);
 
-const REVIEW_HOLD_STATUSES = Object.freeze(["pending_review", "review_required"]);
+const REVIEW_HOLD_STATUSES = Object.freeze([
+  "submitted",
+  "pending_review",
+  "review_required",
+]);
 
 const FOLLOW_UP_STATUSES = Object.freeze([
   "none",
@@ -368,7 +377,7 @@ async function requestClinicRegistrationInformation(db, input) {
     return {
       ok: true,
       code: RESULT.OK,
-      applicationStatus: "pending_review",
+      applicationStatus: app.status,
       followUpStatus: "awaiting_customer",
       deliveryStatus: delivered.deliveryStatus,
       emailSent: delivered.emailSent,
@@ -417,7 +426,7 @@ async function markClinicRegistrationInformationReturned(db, input) {
     return {
       ok: true,
       code: RESULT.OK,
-      applicationStatus: "pending_review",
+      applicationStatus: app.status,
       followUpStatus: "returned_for_review",
     };
   });
@@ -527,7 +536,10 @@ async function listClinicRegistrationApplications(db, filters) {
       WHERE (
             $1 = 'all'
             OR status = $1
-            OR ($1 = 'pending_review' AND status = 'review_required')
+            OR ($1 = 'pending_review' AND status IN ('review_required', 'pending_review', 'submitted'))
+            OR ($1 = 'review_required' AND status IN ('review_required', 'pending_review'))
+            OR ($1 = 'approved' AND status IN ('approved', 'active'))
+            OR ($1 = 'active' AND status IN ('approved', 'active'))
           )
         AND ($2 = 'all' OR follow_up_status = $2)
         AND ($3 = 'all' OR provisioning_status = $3)

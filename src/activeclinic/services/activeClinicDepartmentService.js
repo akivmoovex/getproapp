@@ -65,6 +65,17 @@ const MODULE_BY_TYPE = Object.freeze({
   procedure: "Procedures",
 });
 
+const DEFAULT_DEPARTMENT_SPECS = Object.freeze([
+  { key: "reception", type: "reception", name: "Reception" },
+  { key: "opd", type: "opd", name: "OPD" },
+  { key: "triage", type: "triage", name: "Triage / Nursing" },
+  { key: "pharmacy", type: "pharmacy", name: "Pharmacy" },
+  { key: "laboratory", type: "laboratory", name: "Laboratory" },
+  { key: "radiology", type: "radiology", name: "Radiology" },
+  { key: "billing", type: "billing", name: "Billing / Cashier" },
+  { key: "administration", type: "administration", name: "Administration" },
+]);
+
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -282,18 +293,7 @@ async function ensureDefaultDepartments(pool, input) {
   if (!organizationId || !healthcareOrganizationId || !facilityId) {
     return { ok: false, result: RESULT.INVALID_INPUT, created: 0, updated: 0, unchanged: 0 };
   }
-  const defaults = Array.isArray(specs) && specs.length
-    ? specs
-    : [
-        { key: "reception", type: "reception", name: "Reception" },
-        { key: "opd", type: "opd", name: "OPD" },
-        { key: "triage", type: "triage", name: "Triage / Nursing" },
-        { key: "pharmacy", type: "pharmacy", name: "Pharmacy" },
-        { key: "laboratory", type: "laboratory", name: "Laboratory" },
-        { key: "radiology", type: "radiology", name: "Radiology" },
-        { key: "billing", type: "billing", name: "Billing / Cashier" },
-        { key: "administration", type: "administration", name: "Administration" },
-      ];
+  const defaults = Array.isArray(specs) && specs.length ? specs : DEFAULT_DEPARTMENT_SPECS;
 
   let created = 0;
   let updated = 0;
@@ -337,4 +337,5 @@ module.exports = {
   createDepartment,
   updateDepartment,
   ensureDefaultDepartments,
+  DEFAULT_DEPARTMENT_SPECS,
 };

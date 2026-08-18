@@ -79,7 +79,7 @@ async function resolveClinicRegistrationIdentityCollision(db, application) {
   const otherClinics = existingOrganizations.filter((row) => !row.isCurrentApplicationOrg);
   const existingActiveClinicIdentity = otherClinics.length > 0;
   const alreadyAttached = Boolean(application.clinic_admin_staff_id);
-  const pending = ["pending_review", "review_required"].includes(
+  const pending = ["pending_review", "review_required", "submitted"].includes(
     String(application.status || "pending_review")
   );
 

@@ -25,6 +25,8 @@ const {
   renderSystemStatePage,
   retryHrefFromRequest,
 } = require("./websiteSystemStateHttp");
+const { createRequireAnyBlessBoardPermission } = require("./requireBlessBoardShellAccess");
+const { buildPermissionNavFlags } = require("./permissionNavLocals");
 
 function renderHqView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
@@ -121,6 +123,47 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     sendControlled,
     loginNext: "/hq/website/version-history",
   });
+  const requireWebsiteRestore = createRequireAnyBlessBoardPermission(
+    ["website.rollback", "website.restore"],
+    {
+      getPool,
+      resolveResourceContext: (_req, tenant) => ({
+        organizationId: tenant.organization.id,
+        churchId: tenant.church.id,
+        branchId: null,
+      }),
+      denyMessage: "You do not have permission to restore website versions.",
+    }
+  );
+
+  async function actorCanRestoreWebsite(req) {
+    const tenant = resolveTenantForAuthorization(req);
+    const session = req.v5Session && req.v5Session.session;
+    if (!tenant || !session || !session.userId) return false;
+    const flags = await buildPermissionNavFlags(getPool(), {
+      actorUserId: session.userId,
+      tenant,
+      branchId: null,
+    });
+    return flags.canRestoreWebsite === true;
+  }
+
+  function stripRestoreActions(recent) {
+    if (!recent || typeof recent !== "object") return recent;
+    recent.canRestore = false;
+    const strip = (item) => {
+      if (!item || typeof item !== "object") return item;
+      return { ...item, canRestore: false, restoreHref: null };
+    };
+    if (recent.currentWebsite) recent.currentWebsite = strip(recent.currentWebsite);
+    if (Array.isArray(recent.previousWebsites)) {
+      recent.previousWebsites = recent.previousWebsites.map(strip);
+    }
+    if (recent.preview && typeof recent.preview === "object") {
+      recent.preview = strip(recent.preview);
+    }
+    return recent;
+  }
 
   function requireTenant(req, res) {
     const tenant = resolveTenantForAuthorization(req);
@@ -379,6 +422,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     "/hq/website/version-history/:versionId/restore",
     rejectApex,
     gateHq,
+    requireWebsiteRestore,
     async (req, res) => {
       const tenant = requireTenant(req, res);
       if (!tenant) return;
@@ -419,6 +463,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     "/hq/website/version-history/:versionId/restore",
     rejectApex,
     gateHq,
+    requireWebsiteRestore,
     async (req, res) => {
       const tenant = requireTenant(req, res);
       if (!tenant) return;
@@ -567,6 +612,9 @@ function createWebsitePublicationVersionAdminRouter(deps) {
       organizationKey: (tenant.organization && tenant.organization.key) || null,
       env,
     });
+    if (result.ok && !(await actorCanRestoreWebsite(req))) {
+      stripRestoreActions(result);
+    }
     if (!result.ok) {
       if (result.reason === "plan_not_growth") {
         const entitled = {
@@ -647,6 +695,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     "/hq/website/recent-changes/:publicationId/restore",
     rejectApex,
     gateHq,
+    requireWebsiteRestore,
     async (req, res) => {
       const tenant = requireTenant(req, res);
       if (!tenant) return;
@@ -693,6 +742,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     "/hq/website/recent-changes/:publicationId/restore",
     rejectApex,
     gateHq,
+    requireWebsiteRestore,
     async (req, res) => {
       const tenant = requireTenant(req, res);
       if (!tenant) return;

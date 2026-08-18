@@ -13,6 +13,11 @@ const {
   hqContentPagePath,
   hqWebsitePath,
 } = require("./churchUrlHelper");
+const {
+  PRODUCT_CODE,
+  buildPublicWebsiteEditPath,
+  buildPublicWebsiteAdminPath,
+} = require("../../platform/website/publicWebsiteUrl");
 
 /**
  * @param {string|null|undefined} organizationKey
@@ -21,7 +26,10 @@ const {
 function platformAdminOrgPath(organizationKey) {
   const norm = normalizeOrganizationKey(organizationKey);
   if (!norm.ok) return null;
-  return `/admin/organizations/${encodeURIComponent(norm.key)}`;
+  return buildPublicWebsiteAdminPath({
+    product: PRODUCT_CODE.BLESSBOARD,
+    organizationKey: norm.key,
+  });
 }
 
 /**
@@ -29,8 +37,13 @@ function platformAdminOrgPath(organizationKey) {
  * @returns {string|null}
  */
 function platformAdminWebsitePreviewPath(organizationKey) {
-  const base = platformAdminOrgPath(organizationKey);
-  return base ? `${base}/website-preview` : null;
+  const norm = normalizeOrganizationKey(organizationKey);
+  if (!norm.ok) return null;
+  return buildPublicWebsiteAdminPath({
+    product: PRODUCT_CODE.BLESSBOARD,
+    organizationKey: norm.key,
+    surface: "website-preview",
+  });
 }
 
 /**
@@ -91,9 +104,10 @@ function resolveWebsiteActionUrls(input) {
 
   if (actor === "branch_admin") {
     const visualEdit =
-      publicPath && publicPath !== "/"
-        ? `${publicPath}?website_edit=1`
-        : "/branch-admin/website";
+      buildPublicWebsiteEditPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: key,
+      }) || "/branch-admin/website";
     return {
       serviceTimesUrl: "/branch-admin/website/service-times",
       serviceTimesLabel: "Edit service times",

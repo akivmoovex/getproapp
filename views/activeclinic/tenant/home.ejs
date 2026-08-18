@@ -9,7 +9,8 @@
     if (primaryFacility.province) locationBits.push(primaryFacility.province);
     if (primaryFacility.countryCode) locationBits.push(primaryFacility.countryCode);
   }
-  const locationLine = locationBits.join(", ");
+  const locationLine = locationBits.join(", ") || clinic.locationAddressOverlay || "";
+  const heroPhone = clinic.publicPhoneDisplay || (clinic.websiteContent && clinic.websiteContent["contact.phone"]) || "";
   const heroSrc = clinic.websiteHeroUrl || "/activeclinic/assets/clinic-hero-default.jpg";
   const heroPos = clinic.heroObjectPosition || "center 42%";
   const heroAlt = "Exterior of " + clinic.publicName;
@@ -17,17 +18,10 @@
 <section class="ac-tenant-hero" data-ac-page-section="tenant-home" aria-labelledby="ac-tenant-hero-title">
   <div class="ac-tenant-hero__grid">
     <div class="ac-tenant-hero__copy">
-      <% if (clinic.websiteTagline) { %>
       <p class="ac-tenant-eyebrow" data-ac-hero-eyebrow="1">
         <span class="ac-tenant-eyebrow__icon ac-icon ac-icon--schedule" aria-hidden="true"></span>
-        <%= clinic.websiteTagline %>
+        <%- include('../partials/website-editable-field', { contentKey: 'home.hero.eyebrow', fieldValue: clinic.heroEyebrow || clinic.websiteTagline || 'Caring for our community', fieldType: 'short_text' }) %>
       </p>
-      <% } else { %>
-      <p class="ac-tenant-eyebrow" data-ac-hero-eyebrow="1">
-        <span class="ac-tenant-eyebrow__icon ac-icon ac-icon--schedule" aria-hidden="true"></span>
-        Caring for our community
-      </p>
-      <% } %>
       <h1 id="ac-tenant-hero-title"><%- include('../partials/website-editable-field', { contentKey: 'home.hero.title', fieldValue: clinic.heroTitle || ('Welcome to ' + clinic.publicName), fieldType: 'short_text' }) %></h1>
       <p class="ac-tenant-hero__lede">
         <%- include('../partials/website-editable-field', { contentKey: 'home.hero.subtitle', fieldValue: clinic.heroSubtitle || clinic.websiteAbout || 'Providing compassionate, professional healthcare for our community.', fieldType: 'long_text' }) %>
@@ -36,10 +30,10 @@
         <% if (clinic.publicBookingEnabled) { %>
         <a class="ac-btn ac-btn--primary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/book">Book an appointment</a>
         <% } %>
-        <% if (clinic.publicPhoneDisplay) { %>
-        <a class="ac-btn ac-btn--ghost ac-btn--pill ac-btn--phone" href="tel:<%= String(clinic.publicPhoneDisplay).replace(/[^\d+]/g, '') %>">
+        <% if (heroPhone) { %>
+        <a class="ac-btn ac-btn--ghost ac-btn--pill ac-btn--phone" href="tel:<%= String(heroPhone).replace(/[^\d+]/g, '') %>">
           <span class="ac-icon ac-icon--call" aria-hidden="true"></span>
-          <%= clinic.publicPhoneDisplay %>
+          <%= heroPhone %>
         </a>
         <% } else { %>
         <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/contact">Contact the clinic</a>
@@ -59,8 +53,8 @@
       <aside class="ac-tenant-hero__badge" aria-label="Facility status">
         <span class="ac-tenant-hero__badge-icon" aria-hidden="true">✓</span>
         <span>
-          <strong>Registered Facility</strong>
-          <span class="ac-tenant-hero__badge-sub">HPCZ Approved</span>
+          <strong>Listed on ActiveClinic</strong>
+          <span class="ac-tenant-hero__badge-sub">Public clinic website</span>
         </span>
       </aside>
     </div>
@@ -93,12 +87,12 @@
   <div class="ac-tenant-preview__grid">
     <article class="ac-tenant-preview__card">
       <h2>Services</h2>
-      <p>Browse consultations, procedures, and care offerings published by this clinic.</p>
+      <p><%- include('../partials/website-editable-field', { contentKey: 'services.intro', fieldValue: clinic.servicesIntro || 'Browse consultations, procedures, and care offerings published by this clinic.', fieldType: 'long_text' }) %></p>
       <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/services">View services</a>
     </article>
     <article class="ac-tenant-preview__card">
       <h2>Doctors</h2>
-      <p>Meet clinicians with public profiles and specialties where the clinic has published them.</p>
+      <p><%- include('../partials/website-editable-field', { contentKey: 'doctors.intro', fieldValue: clinic.doctorsIntro || 'Meet clinicians with public profiles where the clinic has published them.', fieldType: 'long_text' }) %></p>
       <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/doctors">View doctors</a>
     </article>
     <article class="ac-tenant-preview__card">
@@ -107,7 +101,34 @@
       <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/location">Location &amp; hours</a>
     </article>
   </div>
-  <% if (clinic.websiteAbout && clinic.websiteAbout.length > 160) { %>
+  <% if ((clinic.websiteAbout && clinic.websiteAbout.length > 160) || clinic.aboutBody) { %>
   <p class="ac-tenant-preview__more"><a href="/clinics/<%= clinic.clinicKey %>/about">Read more about <%= clinic.publicName %></a></p>
   <% } %>
 </section>
+
+<% if (clinic.showPromo && (clinic.promoHeading || clinic.promoBody || (typeof websiteEdit !== 'undefined' && websiteEdit))) { %>
+<section class="ac-public-section ac-tenant-promo" data-ac-page-section="tenant-promo">
+  <h2><%- include('../partials/website-editable-field', { contentKey: 'home.promo.heading', fieldValue: clinic.promoHeading || 'Plan your visit', fieldType: 'short_text' }) %></h2>
+  <p><%- include('../partials/website-editable-field', { contentKey: 'home.promo.body', fieldValue: clinic.promoBody || '', fieldType: 'long_text' }) %></p>
+  <% if (clinic.publicBookingEnabled) { %>
+  <a class="ac-btn ac-btn--primary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/book">Book an appointment</a>
+  <% } else { %>
+  <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/contact">Contact the clinic</a>
+  <% } %>
+</section>
+<% } %>
+
+<% const faqList = Array.isArray(clinic.faq) ? clinic.faq : []; %>
+<% if (clinic.showFaq && faqList.length) { %>
+<section class="ac-public-section ac-tenant-faq" data-ac-page-section="tenant-faq" aria-label="Frequently asked questions">
+  <h2>Questions</h2>
+  <dl class="ac-tenant-faq__list">
+    <% faqList.forEach(function (item) { %>
+    <div class="ac-tenant-faq__item">
+      <dt><%= item.question %></dt>
+      <dd><%= item.answer %></dd>
+    </div>
+    <% }) %>
+  </dl>
+</section>
+<% } %>

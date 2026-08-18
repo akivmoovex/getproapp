@@ -32,6 +32,29 @@ const STATUS = Object.freeze({
   NOT_FOUND: "not_found",
 });
 
+function synthesizeTenantContext(organizationId, churchId, tenant) {
+  if (tenant && tenant.resolved === true) return tenant;
+  return {
+    resolved: true,
+    organization: { id: organizationId },
+    church: { id: churchId },
+  };
+}
+
+async function authorizeWebsitePublish(db, opts) {
+  const authz = await authorize(db, {
+    actor: { userId: opts.actorUserId },
+    permission: "website.publish",
+    tenantContext: synthesizeTenantContext(opts.organizationId, opts.churchId, opts.tenant),
+    resourceContext: {
+      organizationId: opts.organizationId,
+      churchId: opts.churchId,
+      branchId: opts.branchId != null ? opts.branchId : null,
+    },
+  });
+  return Boolean(authz && authz.allowed);
+}
+
 async function withTransaction(db, fn) {
   if (db && typeof db.query === "function" && typeof db.release === "function") {
     // Already a client — caller owns TX.
@@ -165,18 +188,16 @@ async function publishWebsiteDrafts(db, opts) {
 
   // Check website.publish permission
   let canPublish = false;
-  if (tenant) {
-    try {
-      const authz = await authorize(db, {
-        userId: actorUserId,
-        tenant,
-        permission: "website.publish",
-        branchId,
-      });
-      canPublish = authz.allowed;
-    } catch {
-      return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "authz_check" };
-    }
+  try {
+    canPublish = await authorizeWebsitePublish(db, {
+      actorUserId,
+      organizationId,
+      churchId,
+      branchId,
+      tenant,
+    });
+  } catch {
+    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "authz_check" };
   }
 
   const settingsLoad = await approvalSettingsSvc.loadEffectiveSettings(db, organizationId);
@@ -321,18 +342,16 @@ async function submitWebsiteDraftsForApproval(db, opts) {
 
   // Check website.publish permission
   let canPublish = false;
-  if (tenant) {
-    try {
-      const authz = await authorize(db, {
-        userId: actorUserId,
-        tenant,
-        permission: "website.publish",
-        branchId,
-      });
-      canPublish = authz.allowed;
-    } catch {
-      // fail closed
-    }
+  try {
+    canPublish = await authorizeWebsitePublish(db, {
+      actorUserId,
+      organizationId,
+      churchId,
+      branchId,
+      tenant,
+    });
+  } catch {
+    // fail closed
   }
 
   const settingsLoad = await approvalSettingsSvc.loadEffectiveSettings(db, organizationId);

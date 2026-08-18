@@ -129,7 +129,7 @@ function projectApplicantStatus(application, informationRequest) {
     explanation =
       "This application is recorded against an existing submission. The original remains in review.";
     nextAction = "Use this same application number to check the original submission, or wait for review.";
-  } else if (applicationStatus === "approved") {
+  } else if (applicationStatus === "approved" || applicationStatus === "active") {
     if (provisioning === "failed") {
       publicState = PUBLIC_STATE.APPROVED_SETUP_ATTENTION;
       label = "Approved — setup needs attention";

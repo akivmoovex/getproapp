@@ -48,6 +48,10 @@ const {
 const {
   ensureDefaultDepartments,
 } = require("./activeClinicDepartmentService");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+} = require("../../platform/website/publicWebsiteUrl");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -1346,7 +1350,10 @@ async function seedOneClinic(db, clinicKey, options = {}) {
     organizationId: org.organizationId,
     healthcareOrganizationId: hco.hco && hco.hco.id,
     facilityId: facility.facility && facility.facility.id,
-    publicClinicUrl: `/clinics/${clinicKey}`,
+    publicClinicUrl: buildPublicOrganizationWebsitePath({
+      product: PRODUCT_CODE.ACTIVECLINIC,
+      organizationKey: clinicKey,
+    }),
     demoBanner: DEMO_BANNER,
     admin: adminResult.skipped
       ? null
@@ -1529,7 +1536,10 @@ async function auditDemoClinics(db) {
       facilities,
       servicesCount: services,
       doctorsCount: doctors,
-      publicClinicUrl: `/clinics/${key}`,
+      publicClinicUrl: buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: key,
+      }),
       admin,
     });
   }

@@ -417,7 +417,7 @@ describe("platform-admin registration applications (Phase 5)", () => {
 
     const appRow = await appRepo.findApplicationById(pool, fixtures.provisionedAppId);
     assert.equal(appRow.provisioning_status, "provisioned");
-    assert.equal(appRow.application_status, "closed");
+    assert.equal(appRow.application_status, "active");
 
     const onboarding = await pool.query(
       `SELECT follow_up_status, organization_id FROM blessboard.organization_onboarding

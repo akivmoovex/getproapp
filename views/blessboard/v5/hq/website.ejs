@@ -78,9 +78,10 @@
     <p>Public path: <code><%= publicPath %></code></p>
     <% } %>
     <p>
-      <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= previewPath %>">Open authenticated preview</a>
+      <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= previewPath %>">Preview</a>
       <% if (publicPath) { %>
-      <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= publicPath %>" rel="noopener">View public path</a>
+      <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= publicPath %>" rel="noopener">View live</a>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= publicPath %>?website_edit=1" data-bb-edit-website="1">Edit website</a>
       <% } %>
     </p>
   </div>

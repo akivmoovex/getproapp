@@ -25,6 +25,7 @@ const {
   decideReview,
   toCanonicalLifecycle,
   submitProductRegistration,
+  submitPlatformRegistration,
   listUnifiedRegistrations,
   isSelfRegistrationProvisioningEnabled,
 } = require("../src/platform/registration");
@@ -46,6 +47,7 @@ const {
   createPlatformIdentity,
 } = require("../src/platform/services/platformIdentityService");
 const { ORGANIZATION_ADMIN } = require("../src/activeclinic/services/activeClinicAuthorizationService");
+const { DEFAULT_DEPARTMENT_SPECS } = require("../src/activeclinic/services/activeClinicDepartmentService");
 const { CODE_ACTIVECLINIC_ORG_V6 } = require("../src/platform/config/deploymentProfiles");
 const {
   ENV_KEY: LEGACY_FLAG,
@@ -649,5 +651,318 @@ describe("V7 unified registration engine", () => {
     assert.equal(churchRow.productCode, PRODUCT.BLESSBOARD);
     assert.equal(clinicRow.canonicalLifecycle, LIFECYCLE.ACTIVE);
     assert.equal(churchRow.canonicalLifecycle, LIFECYCLE.ACTIVE);
+  });
+
+  it("hardening 1: new ActiveClinic registration does not store pending_review", async () => {
+    if (!requireDb()) return;
+    const result = await submitAndProvisionClinicRegistration(pool, clinicPayload());
+    assert.equal(result.ok, true, JSON.stringify(result));
+    const row = await pool.query(
+      `SELECT status FROM activeclinic.clinic_registration_applications WHERE id = $1`,
+      [result.application.id]
+    );
+    assert.equal(row.rows[0].status, "active");
+    assert.notEqual(row.rows[0].status, "pending_review");
+    assert.notEqual(row.rows[0].status, "approved");
+  });
+
+  it("hardening 2: new BlessBoard review hold does not store duplicate_review", async () => {
+    if (!requireDb()) return;
+    const held = await submitChurch(churchBody({ selected_plan: "network" }));
+    const row = await pool.query(
+      `SELECT application_status FROM blessboard.platform_church_registration_applications WHERE id = $1`,
+      [held.application.id]
+    );
+    assert.equal(row.rows[0].application_status, "review_required");
+    assert.notEqual(row.rows[0].application_status, "duplicate_review");
+  });
+
+  it("hardening 3: both products expose the same canonical state vocabulary", () => {
+    assert.deepEqual(
+      [LIFECYCLE.SUBMITTED, LIFECYCLE.PROVISIONING, LIFECYCLE.REVIEW_REQUIRED, LIFECYCLE.ACTIVE, LIFECYCLE.REJECTED, LIFECYCLE.SUSPENDED, LIFECYCLE.PROVISION_FAILED],
+      ["submitted", "provisioning", "review_required", "active", "rejected", "suspended", "provision_failed"]
+    );
+  });
+
+  it("hardening 4-5: legacy pending_review and duplicate_review still read as review_required", () => {
+    assert.equal(
+      toCanonicalLifecycle(PRODUCT.ACTIVECLINIC, { status: "pending_review" }),
+      LIFECYCLE.REVIEW_REQUIRED
+    );
+    assert.equal(
+      toCanonicalLifecycle(PRODUCT.BLESSBOARD, { application_status: "duplicate_review" }),
+      LIFECYCLE.REVIEW_REQUIRED
+    );
+  });
+
+  it("hardening 6-10: shared provisioning lifecycle, failure, and retry idempotency", async () => {
+    const calls = [];
+    const adapter = {
+      productCode: "activeclinic",
+      validate: async () => ({ ok: true, normalized: { name: "spy" } }),
+      persistSubmitted: async () => ({
+        ok: true,
+        application: { id: "00000000-0000-4000-8000-000000000099" },
+      }),
+      collectReviewSignals: async () => ({}),
+      provision: async () => {
+        calls.push("provision");
+        return { ok: false, reviewRequired: false, reason: "forced_failure" };
+      },
+      websiteDefaults: async () => {
+        calls.push("websiteDefaults");
+        return { skip: true };
+      },
+      markLifecycle: async (_db, input) => {
+        calls.push(`lifecycle:${input.status}`);
+      },
+    };
+    const failed = await submitPlatformRegistration(
+      { query: async () => ({ rows: [] }) },
+      { adapter, productCode: PRODUCT.ACTIVECLINIC, payload: {}, env: {} }
+    );
+    assert.equal(failed.engine, ENGINE);
+    assert.equal(failed.code, RESULT.PROVISION_FAILED);
+    assert.ok(calls.includes("lifecycle:provisioning"));
+    assert.ok(calls.includes("provision"));
+    assert.ok(calls.includes("lifecycle:provision_failed"));
+    assert.ok(!calls.includes("lifecycle:active"));
+    assert.ok(!calls.includes("websiteDefaults"));
+
+    const successCalls = [];
+    const successAdapter = {
+      productCode: "blessboard",
+      validate: async () => ({ ok: true, normalized: {} }),
+      persistSubmitted: async () => ({
+        ok: true,
+        application: { id: "00000000-0000-4000-8000-000000000098" },
+      }),
+      collectReviewSignals: async () => ({}),
+      provision: async () => {
+        successCalls.push("provision");
+        return {
+          ok: true,
+          organizationId: "00000000-0000-4000-8000-000000000097",
+          identityId: "00000000-0000-4000-8000-000000000096",
+        };
+      },
+      websiteDefaults: async () => {
+        successCalls.push("websiteDefaults");
+        return { skip: true, reason: "test_skip" };
+      },
+      markLifecycle: async (_db, input) => {
+        successCalls.push(`lifecycle:${input.status}`);
+      },
+    };
+    const succeeded = await submitPlatformRegistration(
+      { query: async () => ({ rows: [] }) },
+      { adapter: successAdapter, productCode: PRODUCT.BLESSBOARD, payload: {}, env: {} }
+    );
+    assert.equal(succeeded.engine, ENGINE);
+    assert.equal(succeeded.code, RESULT.ACTIVE);
+    assert.deepEqual(successCalls, [
+      "lifecycle:provisioning",
+      "provision",
+      "websiteDefaults",
+      "lifecycle:active",
+    ]);
+  });
+
+  it("hardening 8-10: retry does not duplicate organisation, admin, or already-provisioned rows", async () => {
+    if (!requireDb()) return;
+    const payload = clinicPayload();
+    const first = await submitAndProvisionClinicRegistration(pool, payload);
+    assert.equal(first.ok, true, JSON.stringify(first));
+    const orgId = first.organizationId;
+    const identityId = first.identityId;
+    const second = await submitAndProvisionClinicRegistration(pool, payload);
+    assert.equal(second.ok, false);
+    const orgs = await pool.query(
+      `SELECT count(*)::int AS n FROM platform.organizations WHERE id = $1`,
+      [orgId]
+    );
+    assert.equal(orgs.rows[0].n, 1);
+    if (identityId) {
+      const identities = await pool.query(
+        `SELECT count(*)::int AS n FROM platform.identities WHERE id = $1`,
+        [identityId]
+      );
+      assert.equal(identities.rows[0].n, 1);
+    }
+    const again = await require("../src/activeclinic/services/approveClinicRegistrationService").approveAndProvisionClinicRegistration(
+      pool,
+      {
+        applicationId: first.application.id,
+        dataEnvironment: "testing",
+        deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+      }
+    );
+    assert.equal(again.ok, true, JSON.stringify(again));
+    assert.equal(again.alreadyProvisioned || again.organizationId === orgId, true);
+    const orgCount = await pool.query(
+      `SELECT count(*)::int AS n FROM platform.organizations WHERE id = $1`,
+      [orgId]
+    );
+    assert.equal(orgCount.rows[0].n, 1);
+  });
+
+  it("hardening 11-13: new clinic receives default departments and bootstrap is idempotent", async () => {
+    if (!requireDb()) return;
+    const result = await submitAndProvisionClinicRegistration(pool, clinicPayload());
+    assert.equal(result.ok, true, JSON.stringify(result));
+    const depts = await pool.query(
+      `SELECT department_key FROM activeclinic.departments WHERE organization_id = $1 ORDER BY department_key`,
+      [result.organizationId]
+    );
+    const keys = depts.rows.map((row) => row.department_key);
+    const expected = DEFAULT_DEPARTMENT_SPECS.map((spec) => spec.key).sort();
+    assert.deepEqual(keys, expected);
+    const { ensureDefaultDepartments } = require("../src/activeclinic/services/activeClinicDepartmentService");
+    const again = await ensureDefaultDepartments(pool, {
+      organizationId: result.organizationId,
+      healthcareOrganizationId: result.healthcareOrganization.id,
+      facilityId: result.facility.id,
+    });
+    assert.equal(again.ok, true);
+    assert.equal(again.created, 0);
+    const after = await pool.query(
+      `SELECT count(*)::int AS n FROM activeclinic.departments WHERE organization_id = $1`,
+      [result.organizationId]
+    );
+    assert.equal(after.rows[0].n, expected.length);
+  });
+
+  it("hardening 14-18: both products get one website draft from the shared lifecycle", async () => {
+    if (!requireDb()) return;
+    const clinic = await submitAndProvisionClinicRegistration(pool, clinicPayload());
+    const church = await submitChurch(churchBody());
+    assert.equal(clinic.ok, true, JSON.stringify(clinic));
+    assert.equal(church.ok, true, JSON.stringify(church));
+    const clinicSites = await pool.query(
+      `SELECT count(*)::int AS n FROM platform.website_instances WHERE organization_id = $1 AND product_code = 'activeclinic' AND status <> 'archived'`,
+      [clinic.organizationId]
+    );
+    const churchSites = await pool.query(
+      `SELECT count(*)::int AS n FROM platform.website_instances WHERE organization_id = $1 AND product_code = 'blessboard' AND status <> 'archived'`,
+      [church.records.organizationId]
+    );
+    assert.equal(clinicSites.rows[0].n, 1);
+    assert.equal(churchSites.rows[0].n, 1);
+    const { initializeOrganizationWebsite } = require("../src/platform/registration");
+    const acAdapter = require("../src/activeclinic/registration/activeClinicRegistrationAdapter");
+    const bbAdapter = require("../src/blessboard/registration/blessboardChurchRegistrationAdapter");
+    const clinicAgain = await initializeOrganizationWebsite(pool, {
+      adapter: acAdapter,
+      productCode: PRODUCT.ACTIVECLINIC,
+      organizationId: clinic.organizationId,
+      application: clinic.application,
+      provision: clinic,
+    });
+    const churchAgain = await initializeOrganizationWebsite(pool, {
+      adapter: bbAdapter,
+      productCode: PRODUCT.BLESSBOARD,
+      organizationId: church.records.organizationId,
+      application: church.application,
+      provision: church,
+    });
+    assert.equal(clinicAgain.existed, true);
+    assert.equal(clinicAgain.created, false);
+    assert.equal(churchAgain.existed, true);
+    assert.equal(churchAgain.created, false);
+    const clinicSites2 = await pool.query(
+      `SELECT count(*)::int AS n FROM platform.website_instances WHERE organization_id = $1 AND product_code = 'activeclinic' AND status <> 'archived'`,
+      [clinic.organizationId]
+    );
+    const churchSites2 = await pool.query(
+      `SELECT count(*)::int AS n FROM platform.website_instances WHERE organization_id = $1 AND product_code = 'blessboard' AND status <> 'archived'`,
+      [church.records.organizationId]
+    );
+    assert.equal(clinicSites2.rows[0].n, 1);
+    assert.equal(churchSites2.rows[0].n, 1);
+  });
+
+  it("hardening 19-20: both products use the shared kill switch; BlessBoard alias is not another engine", async () => {
+    if (!requireDb()) return;
+    const clinic = await submitProductRegistration(pool, {
+      productCode: PRODUCT.ACTIVECLINIC,
+      payload: clinicPayload(),
+      env: { [SHARED_FLAG]: "0" },
+      dataEnvironment: "testing",
+      deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+    });
+    assert.equal(clinic.engine, ENGINE);
+    assert.equal(clinic.code, RESULT.REVIEW_REQUIRED);
+    const clinicRow = await pool.query(
+      `SELECT status FROM activeclinic.clinic_registration_applications WHERE id = $1`,
+      [clinic.application.id]
+    );
+    assert.equal(clinicRow.rows[0].status, "review_required");
+
+    const church = await submitChurch(churchBody(), { [LEGACY_FLAG]: "0", PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging" });
+    assert.equal(church.engine, ENGINE);
+    const churchRow = await pool.query(
+      `SELECT application_status FROM blessboard.platform_church_registration_applications WHERE id = $1`,
+      [church.application.id]
+    );
+    assert.equal(churchRow.rows[0].application_status, "review_required");
+  });
+
+  it("hardening 21-23: unified queue shows canonical state for new and legacy rows", async () => {
+    if (!requireDb()) return;
+    const clinic = await submitAndProvisionClinicRegistration(pool, clinicPayload());
+    const church = await submitChurch(churchBody({ selected_plan: "network" }));
+    await pool.query(
+      `UPDATE activeclinic.clinic_registration_applications SET status = 'pending_review' WHERE id = $1`,
+      [clinic.application.id]
+    );
+    await pool.query(
+      `UPDATE blessboard.platform_church_registration_applications SET application_status = 'duplicate_review' WHERE id = $1`,
+      [church.application.id]
+    );
+    const held = await listUnifiedRegistrations(pool, { lifecycle: "review_required", limit: 200 });
+    const clinicHeld = held.find((row) => row.id === clinic.application.id);
+    const churchHeld = held.find((row) => row.id === church.application.id);
+    assert.ok(clinicHeld);
+    assert.ok(churchHeld);
+    assert.equal(clinicHeld.canonicalLifecycle, LIFECYCLE.REVIEW_REQUIRED);
+    assert.equal(churchHeld.canonicalLifecycle, LIFECYCLE.REVIEW_REQUIRED);
+    assert.equal(clinicHeld.storedStatus, "pending_review");
+    assert.equal(churchHeld.storedStatus, "duplicate_review");
+  });
+
+  it("architecture: HTTP wrappers invoke the shared orchestrator, not an independent provisioner", async () => {
+    const clinicSrc = require("node:fs").readFileSync(
+      require("node:path").join(__dirname, "../src/activeclinic/http/activeClinicPublicRoutes.js"),
+      "utf8"
+    );
+    const churchSrc = require("node:fs").readFileSync(
+      require("node:path").join(__dirname, "../src/blessboard/http/apexMarketingRoutes.js"),
+      "utf8"
+    );
+    assert.match(clinicSrc, /submitAndProvisionClinicRegistration/);
+    assert.doesNotMatch(clinicSrc, /approveAndProvisionClinicRegistration\(/);
+    assert.match(churchSrc, /submitChurchRegistration/);
+    assert.doesNotMatch(churchSrc, /provisionRegisteredBlessBoardChurch\(/);
+    const calls = [];
+    const adapter = {
+      validate: async () => {
+        calls.push("validate");
+        return { ok: false, error: "spy-stop" };
+      },
+      persistSubmitted: async () => {
+        calls.push("persist");
+        return { ok: true };
+      },
+      provision: async () => {
+        calls.push("provision");
+        return { ok: true };
+      },
+    };
+    const result = await submitPlatformRegistration(
+      { query: async () => ({ rows: [] }) },
+      { adapter, payload: {}, env: {} }
+    );
+    assert.equal(result.engine, ENGINE);
+    assert.deepEqual(calls, ["validate"]);
   });
 });

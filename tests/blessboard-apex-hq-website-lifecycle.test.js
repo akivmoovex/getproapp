@@ -110,7 +110,12 @@ describe("blessboard apex HQ website lifecycle (Prompt 54)", () => {
           applicationId: row.id,
           administratorPassword: PASSWORD,
           requestId: `req-${key}`,
-          actorContext: { type: "test", source: "unit", dataEnvironment: "testing" },
+          actorContext: {
+            type: "test",
+            source: "unit",
+            dataEnvironment: "testing",
+            deploymentCode: "blessboard-org-staging",
+          },
         });
         assert.equal(result.ok, true, result.message || result.status);
         return result.records;

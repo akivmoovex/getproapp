@@ -2,12 +2,20 @@
   <header class="acp-page-hero acp-page-hero--compact">
     <p class="ac-public-eyebrow">Visit us</p>
     <h1>Location &amp; hours</h1>
-    <p class="ac-public-lede">Published facility addresses and hours for <%= clinic.publicName %>.</p>
+    <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'location.intro', fieldValue: clinic.locationIntro || ('Published facility addresses and hours for ' + clinic.publicName + '.'), fieldType: 'long_text' }) %></p>
   </header>
   <% const facilityList = Array.isArray(clinic.facilities) ? clinic.facilities : []; %>
   <% if (!facilityList.length) { %>
   <div class="ac-public-empty acp-empty-state" data-ac-location-state="empty">
+    <% if (clinic.locationAddressOverlay || clinic.locationHoursOverlay) { %>
+    <div class="ac-location-card acp-location-card" data-ac-template-placeholder="1">
+      <p class="ac-template-placeholder">Template location copy — replace with published facility details.</p>
+      <% if (clinic.locationAddressOverlay) { %><p class="ac-location-address"><%- include('../partials/website-editable-field', { contentKey: 'location.address', fieldValue: clinic.locationAddressOverlay, fieldType: 'long_text' }) %></p><% } %>
+      <% if (clinic.locationHoursOverlay) { %><pre class="ac-location-hours-overlay"><%- include('../partials/website-editable-field', { contentKey: 'location.hours', fieldValue: clinic.locationHoursOverlay, fieldType: 'long_text' }) %></pre><% } %>
+    </div>
+    <% } else { %>
     <p>Location details have not been published for this clinic yet.</p>
+    <% } %>
     <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic</a></p>
   </div>
   <% } else { %>
@@ -16,14 +24,18 @@
     <li class="ac-location-card acp-location-card" data-ac-facility="<%= f.facilityKey %>">
       <h2><%= f.displayName %><% if (f.isPrimary) { %> <span class="ac-location-badge">Primary</span><% } %></h2>
       <% const addressParts = [f.addressLine1, f.addressLine2, f.city, f.district, f.province, f.postalCode].filter(Boolean); %>
+      <% if (!f.addressLine1 && clinic.locationAddressOverlay) { %>
+      <p class="ac-location-address"><%- include('../partials/website-editable-field', { contentKey: 'location.address', fieldValue: clinic.locationAddressOverlay, fieldType: 'long_text' }) %></p>
+      <% } %>
       <% if (addressParts.length) { %>
       <p class="ac-location-address"><%= addressParts.join(', ') %></p>
-      <% } else { %>
+      <% } else if (!clinic.locationAddressOverlay) { %>
       <p class="ac-public-muted">Address not configured.</p>
       <% } %>
       <% if (f.phoneDisplay) { %><p>Phone: <%= f.phoneDisplay %></p><% } %>
       <% if (f.emailDisplay) { %><p>Email: <%= f.emailDisplay %></p><% } %>
-      <% if (f.publicHours && typeof f.publicHours === 'object' && Object.keys(f.publicHours).length) { %>
+      <% const hasFacilityHours = f.publicHours && typeof f.publicHours === 'object' && Object.keys(f.publicHours).length; %>
+      <% if (hasFacilityHours) { %>
       <div class="ac-location-hours">
         <h3>Hours</h3>
         <dl class="ac-hours-list">
@@ -32,6 +44,12 @@
           <dd><%= f.publicHours[day] %></dd>
           <% }) %>
         </dl>
+      </div>
+      <% } else if (clinic.locationHoursOverlay) { %>
+      <div class="ac-location-hours ac-location-hours--template" data-ac-template-placeholder="1">
+        <p class="ac-template-placeholder">Example hours — not published operating times for this facility.</p>
+        <h3>Hours</h3>
+        <div class="ac-location-hours-overlay"><%- include('../partials/website-editable-field', { contentKey: 'location.hours', fieldValue: clinic.locationHoursOverlay, fieldType: 'long_text' }) %></div>
       </div>
       <% } %>
     </li>

@@ -7,6 +7,7 @@ const {
   unwrapValue,
 } = require("./contentTypes");
 const { getWebsiteTemplate, getContentKeyDef, isKnownContentKey } = require("./templateRegistry");
+const { assertEditableMutation, ensureProductFieldsRegistered } = require("./editableFieldSchema");
 const instanceRepo = require("./instanceRepository");
 const { recordWebsiteAudit } = require("./auditService");
 const mediaService = require("./mediaService");
@@ -83,15 +84,32 @@ async function saveWebsiteDraft(db, input) {
     return { ok: false, code: "website_edit_locked", content: null };
   }
 
+  ensureProductFieldsRegistered(instance.productCode);
   const template = await loadTemplateForInstance(instance);
-  if (!template || !isKnownContentKey(template, keyNorm.key)) {
+  const asserted = assertEditableMutation({
+    productCode: instance.productCode,
+    key: keyNorm.key,
+    value: input.value,
+    grantedPermissions: input.grantedPermissions,
+  });
+  if (!asserted.ok) {
+    if (asserted.code === "forbidden") {
+      return { ok: false, code: "forbidden", content: null };
+    }
+    if (asserted.code === "validation_failed") {
+      return { ok: false, code: RESULT.VALIDATION_FAILED, reason: asserted.reason, content: null };
+    }
+    if (asserted.code === "invalid_content_key") {
+      return { ok: false, code: RESULT.INVALID_INPUT, content: null };
+    }
     return { ok: false, code: RESULT.UNKNOWN_KEY, content: null };
   }
-  const def = getContentKeyDef(template, keyNorm.key);
-  const validated = validateContentValue(def, input.value);
-  if (!validated.ok) {
-    return { ok: false, code: RESULT.VALIDATION_FAILED, reason: validated.code, content: null };
-  }
+  const def = getContentKeyDef(template, keyNorm.key) || {
+    type: asserted.field.type,
+    maxLen: asserted.field.maxLen,
+    sortOrder: 0,
+  };
+  const validated = { ok: true, value: asserted.value };
   const wrapped = validated.value == null ? null : JSON.stringify(wrapValue(validated.value));
   const visibility = input.visibility === "hidden" ? "hidden" : input.visibility === "visible" ? "visible" : null;
 

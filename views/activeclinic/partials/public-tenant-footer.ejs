@@ -13,8 +13,9 @@
   <div class="ac-public-footer__inner ac-public-footer__inner--tenant">
     <div class="ac-public-footer__col">
       <p class="ac-public-footer__brand"><strong><%= clinic.publicName %></strong></p>
-      <% if (footerLoc.length) { %><p><%= footerLoc.join(", ") %></p><% } %>
-      <p class="ac-public-footer__note">Powered by ActiveClinic</p>
+      <% if (footerLoc.length) { %><p><%= footerLoc.join(", ") %></p>
+      <% } else if (clinic.locationAddressOverlay) { %><p><%= clinic.locationAddressOverlay %></p><% } %>
+      <p class="ac-public-footer__note"><%= clinic.footerTagline || 'Powered by ActiveClinic' %></p>
     </div>
     <div class="ac-public-footer__col">
       <h2 class="ac-public-footer__heading">Quick links</h2>
@@ -29,8 +30,10 @@
     <div class="ac-public-footer__col">
       <h2 class="ac-public-footer__heading">Contact</h2>
       <ul class="ac-public-footer__list">
-        <% if (clinic.publicPhoneDisplay) { %><li><%= clinic.publicPhoneDisplay %></li><% } %>
-        <% if (clinic.publicEmailDisplay) { %><li><%= clinic.publicEmailDisplay %></li><% } %>
+        <% if (clinic.publicPhoneDisplay) { %><li><%= clinic.publicPhoneDisplay %></li>
+        <% } else if (clinic.websiteContent && clinic.websiteContent['contact.phone']) { %><li><%= clinic.websiteContent['contact.phone'] %></li><% } %>
+        <% if (clinic.publicEmailDisplay) { %><li><%= clinic.publicEmailDisplay %></li>
+        <% } else if (clinic.websiteContent && clinic.websiteContent['contact.email']) { %><li><%= clinic.websiteContent['contact.email'] %></li><% } %>
         <li><a href="/clinics/<%= clinic.clinicKey %>/contact">Contact form</a></li>
       </ul>
     </div>
@@ -45,5 +48,6 @@
   </div>
   <div class="ac-public-footer__legal">
     © <%= new Date().getFullYear() %> <%= clinic.publicName %>. All rights reserved.
+    <% if (clinic.footerLegal) { %><p class="ac-public-footer__disclaimer"><%= clinic.footerLegal %></p><% } %>
   </div>
 </footer>

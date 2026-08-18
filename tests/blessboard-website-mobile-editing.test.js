@@ -196,6 +196,11 @@ describe("blessboard website mobile editing stage 7", () => {
       .expect(200);
 
     assert.match(res.text, /data-bb-edit-toolbar="1"/);
+    assert.match(res.text, /data-website-chrome-stack="1"/);
+    assert.match(res.text, /website-inline-edit\.css/);
+    assert.match(res.text, /website-editor-mobile\.js/);
+    assert.match(res.text, /bb-tp-menu-btn/);
+    assert.match(res.text, /data-bb-nav="mobile-drawer"/);
     assert.match(res.text, /data-bb-stitch-screen-mobile="Phase 7 - Church Website Editing Mode - Mobile"/);
     assert.match(res.text, /bb-tp-btn__label-short/);
     assert.match(res.text, /data-bb-exit-editing="1"/);

@@ -1058,7 +1058,7 @@ function needsAttention(row) {
   const prov = String(row.provisioning_status || "");
   const follow = String(row.follow_up_status || "");
   if (Boolean(row.support_requested)) return true;
-  if (app === "submitted" || app === "duplicate_review" || app === "review_required") return true;
+  if (app === "submitted" || app === "duplicate_review" || app === "review_required" || app === "provisioning") return true;
   if (prov === "provisioning_failed") return true;
   if (
     follow === "new" ||
@@ -1566,7 +1566,7 @@ async function getRegistrationApplicationDetail(db, applicationId, env, options 
         !organizationId &&
         String(row.provisioning_status || "") !== "provisioned" &&
         String(row.provisioning_status || "") !== "provisioning_failed" &&
-        ["submitted", "duplicate_review", "review_required"].includes(String(row.application_status || "")) &&
+        ["submitted", "duplicate_review", "review_required", "provisioning"].includes(String(row.application_status || "")) &&
         !isNetworkPlanSelection(row.selected_plan),
       networkApproveAvailable:
         !organizationId &&
@@ -1588,7 +1588,7 @@ async function getRegistrationApplicationDetail(db, applicationId, env, options 
       rejectActionsAvailable:
         !organizationId &&
         String(row.provisioning_status || "") !== "provisioned" &&
-        ["submitted", "duplicate_review", "review_required"].includes(String(row.application_status || "")),
+        ["submitted", "duplicate_review", "review_required", "provisioning"].includes(String(row.application_status || "")),
       reviewEvents,
       operatorView: presentRegistrationOperatorView({
         ...row,
@@ -2242,7 +2242,7 @@ async function rejectRegistrationApplication(db, input, options = {}) {
           await client.query("COMMIT");
           return { ok: true, status: STATUS.OK, alreadyRejected: true };
         }
-        if (!["submitted", "duplicate_review", "review_required"].includes(appStatus)) {
+        if (!["submitted", "duplicate_review", "review_required", "provisioning"].includes(appStatus)) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
         }
@@ -2536,7 +2536,7 @@ async function approveAndProvisionRegistrationApplication(db, input) {
             await client.query("ROLLBACK");
             return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
           }
-          if (!["submitted", "duplicate_review", "review_required"].includes(appStatus)) {
+          if (!["submitted", "duplicate_review", "review_required", "provisioning"].includes(appStatus)) {
             await client.query("ROLLBACK");
             return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
           }

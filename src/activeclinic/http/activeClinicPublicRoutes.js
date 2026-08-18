@@ -61,6 +61,11 @@ const {
 } = require("./activeClinicPublicRespond");
 const { attachActiveClinicWebsiteLocals } = require("./attachActiveClinicWebsiteChrome");
 const { resolvePublicPricingDisplay } = require("../website/publicPricingDisplay");
+const {
+  PRODUCT_CODE,
+  canonicalRedirectFromAlias,
+  buildPublicOrganizationWebsitePath,
+} = require("../../platform/website/publicWebsiteUrl");
 
 function clientIp(req) {
   return String((req.headers && req.headers["x-forwarded-for"]) || req.ip || (req.socket && req.socket.remoteAddress) || "").split(",")[0].trim();
@@ -632,6 +637,16 @@ function registerActiveClinicPublicRoutes(app, deps) {
   });
 
   // ========== Tenant Public Routes ==========
+  // Canonical ActiveClinic public path is /clinics/:clinicKey.
+  // /c/:clinicKey is a compatibility alias using the shared URL template.
+
+  app.use("/c/:clinicKey", (req, res, next) => {
+    const key = String(req.params.clinicKey || "").trim();
+    if (!key) return next();
+    const dest = canonicalRedirectFromAlias(PRODUCT_CODE.ACTIVECLINIC, req.originalUrl || req.url);
+    if (!dest) return next();
+    return res.redirect(301, dest);
+  });
 
   app.get("/clinics/:clinicKey", async (req, res, next) => {
     try {
@@ -724,7 +739,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
         }));
       }
 
-      return res.redirect(303, `/clinics/${req.params.clinicKey}/contact/success`);
+      return res.redirect(
+        303,
+        buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: req.params.clinicKey,
+          suffix: "contact/success",
+        })
+      );
     } catch (err) {
       return next(err);
     }

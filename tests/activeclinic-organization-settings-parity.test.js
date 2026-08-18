@@ -236,6 +236,7 @@ describe("ActiveClinic organization settings parity (AC-V6-S07)", () => {
     assert.match(overview.text, /data-ac-visual="stitch-gap"/);
     assert.match(overview.text, /data-ac-settings-card="organization"/);
     assert.match(overview.text, /data-ac-settings-card="facilities"/);
+    assert.match(overview.text, /data-ac-settings-card="website"/);
     assert.match(overview.text, /data-ac-settings-card="account"/);
     assert.match(overview.text, /Settings Clinic|Main Hospital/);
     assert.match(overview.text, /Profile complete|Setup incomplete/);
@@ -254,6 +255,23 @@ describe("ActiveClinic organization settings parity (AC-V6-S07)", () => {
     assert.match(staffOverview.text, /data-ac-settings-card="account"/);
     assert.match(staffOverview.text, /data-ac-settings-card="organization"/);
     assert.doesNotMatch(staffOverview.text, /data-ac-settings-card="access"/);
+    assert.doesNotMatch(staffOverview.text, /data-ac-settings-card="website"/);
+
+    const staffWebsite = await request(app)
+      .get("/app/settings/website")
+      .set("Cookie", staffCookie);
+    assert.equal(staffWebsite.status, 403);
+
+    const websiteDetail = await request(app)
+      .get("/app/settings/website")
+      .set("Cookie", adminCookie);
+    assert.equal(websiteDetail.status, 200);
+    assert.match(websiteDetail.text, /data-ac-website-management="1"/);
+    assert.match(websiteDetail.text, /data-ac-website-action="edit"/);
+    assert.match(websiteDetail.text, /data-ac-website-action="view-live"/);
+    assert.match(websiteDetail.text, /data-ac-website-action="preview"/);
+    assert.match(websiteDetail.text, /data-ac-website-action="history"/);
+    assert.doesNotMatch(websiteDetail.text, /data-ac-website-action="publish"/);
 
     const staffOrg = await request(app)
       .get("/app/settings/organization")

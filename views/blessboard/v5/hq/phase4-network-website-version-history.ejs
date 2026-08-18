@@ -6,6 +6,7 @@
   var sources = sourceLabels || {};
   var live = current || null;
   var detailId = typeof detailId !== 'undefined' ? detailId : null;
+  var canRestoreWebsite = permissionNavFlags && permissionNavFlags.canRestoreWebsite;
   var historyPath = typeof historyListPath !== 'undefined' && historyListPath
     ? historyListPath
     : '/hq/website/network-version-history';
@@ -175,7 +176,9 @@
             </a>
             <% if (live && live.id !== row.id) { %>
             <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--ghost" href="/hq/website/version-history/compare?baseVersionId=<%= row.id %>&amp;compareVersionId=<%= live.id %>">Compare</a>
+            <% if (canRestoreWebsite) { %>
             <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--secondary" href="/hq/website/version-history/<%= row.id %>/restore">Restore</a>
+            <% } %>
             <% } %>
           </td>
         </tr>
@@ -187,7 +190,7 @@
               <p><strong>Change summary:</strong> <%= (row.changeSummary && row.changeSummary.sectionCount != null) ? (row.changeSummary.sectionCount + ' sections across ' + (row.changeSummary.pageCount || 0) + ' pages') : '—' %></p>
               <p class="bb-hq-phase3-wvh__detail-actions">
                 <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--primary" href="/hq/website/version-history/<%= row.id %>/preview">Preview</a>
-                <% if (live && live.id !== row.id) { %>
+                <% if (live && live.id !== row.id && canRestoreWebsite) { %>
                 <a class="bb-hq-btn bb-hq-btn--sm bb-hq-btn--secondary" href="/hq/website/version-history/<%= row.id %>/restore">Restore as draft</a>
                 <% } %>
               </p>
@@ -212,7 +215,7 @@
       <p>Source: <%= sourceLabel(row.sourceType) %></p>
       <p class="bb-hq-phase4-nwvh__card-actions">
         <a class="bb-hq-btn bb-hq-btn--primary" href="/hq/website/version-history/<%= row.id %>/preview">Preview</a>
-        <% if (live && live.id !== row.id) { %>
+        <% if (live && live.id !== row.id && canRestoreWebsite) { %>
         <a class="bb-hq-btn bb-hq-btn--secondary" href="/hq/website/version-history/<%= row.id %>/restore">Restore</a>
         <% } %>
       </p>

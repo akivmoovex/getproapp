@@ -8,7 +8,7 @@
 <html lang="en">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title><%= seo.title %></title>
   <meta name="description" content="<%= seo.description %>" />
   <meta name="robots" content="<%= seo.robots %>" />
@@ -22,6 +22,9 @@
   <% } %>
   <%- include('./head-design-system') %>
   <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=53' %>" />
+  <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) { %>
+  <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v7-website-4" />
+  <% } %>
 </head>
 <%
   var _isBranchMini =
@@ -33,6 +36,7 @@
   if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) _bodyClass += ' bb-tp-body--admin';
   if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) _bodyClass += ' bb-tp-body--editing';
   if (_isBranchMini) _bodyClass += ' bb-tp-body--branch';
+  var _stackChrome = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit;
 %>
 <body
   class="<%= _bodyClass %>"
@@ -45,25 +49,10 @@
 >
   <a class="bb-tp-skip" href="#bb-tp-main">Skip to content</a>
 
-  <%- include('./website-admin-chrome') %>
-
-  <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta) { %>
-  <div class="bb-tp-preview-banner" role="status" data-bb-preview-banner="1">
-    <div class="bb-tp-preview-banner__inner">
-      <strong><%= previewMeta.bannerLabel || 'Preview' %></strong>
-      <span>— <%= previewMeta.bannerDetail || 'Admin preview (includes drafts). Not visible to the public unless published.' %></span>
-      <span class="bb-tp-preview-banner__links">
-        <% if (previewMeta.backHref) { %>
-        <a href="<%= previewMeta.backHref %>">Back</a>
-        <% } %>
-        <% if (previewMeta.editHref) { %>
-        <% if (previewMeta.backHref) { %> · <% } %>
-        <a href="<%= previewMeta.editHref %>">Edit page</a>
-        <% } %>
-      </span>
-    </div>
-  </div>
+  <% if (_stackChrome) { %>
+  <div class="gp-website-chrome-stack" data-website-chrome-stack="1">
   <% } %>
+  <%- include('./website-admin-chrome') %>
 
   <header class="bb-tp-header" data-bb-header="1" id="bb-tp-header">
     <div class="bb-tp-header__inner">
@@ -150,6 +139,27 @@
       </div>
     </div>
   </header>
+  <% if (_stackChrome) { %>
+  </div>
+  <% } %>
+
+  <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta) { %>
+  <div class="bb-tp-preview-banner" role="status" data-bb-preview-banner="1">
+    <div class="bb-tp-preview-banner__inner">
+      <strong><%= previewMeta.bannerLabel || 'Preview' %></strong>
+      <span>— <%= previewMeta.bannerDetail || 'Admin preview (includes drafts). Not visible to the public unless published.' %></span>
+      <span class="bb-tp-preview-banner__links">
+        <% if (previewMeta.backHref) { %>
+        <a href="<%= previewMeta.backHref %>">Back</a>
+        <% } %>
+        <% if (previewMeta.editHref) { %>
+        <% if (previewMeta.backHref) { %> · <% } %>
+        <a href="<%= previewMeta.editHref %>">Edit page</a>
+        <% } %>
+      </span>
+    </div>
+  </div>
+  <% } %>
 
   <div class="bb-tp-drawer-overlay" id="bb-tp-drawer-overlay" hidden></div>
   <aside

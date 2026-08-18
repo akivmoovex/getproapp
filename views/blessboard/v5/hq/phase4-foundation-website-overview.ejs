@@ -16,6 +16,7 @@
 
 <section
   class="bb-phase4-website"
+  data-bb-hq-website="1"
   data-bb-phase4-foundation-website-overview="1"
   data-bb-stitch-screen="Phase4 - Foundation Website Overview"
   data-bb-viewport="responsive"
@@ -32,9 +33,9 @@
       <p class="bb-hq-lede"><%= o.subtitle || 'Edit and publish your church website' %></p>
     </div>
     <p class="bb-hq-page-head__actions bb-phase4-website__actions">
-      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.editPath || '/hq/content' %>">
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.inlineEditPath || o.editPath || '/hq/content' %>" data-bb-edit-website="1">
         <span class="material-symbols-outlined" aria-hidden="true">edit</span>
-        Edit Website
+        Edit website
       </a>
       <% if (o.liveAvailable && o.publicPath) { %>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.publicPath %>" rel="noopener">View Live Website</a>
@@ -73,9 +74,11 @@
       <p class="bb-hq-muted">These will not be visible to visitors until you publish them.</p>
     </div>
     <p class="bb-phase4-website__draft-notice-actions">
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Changes</a>
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.editPath %>">Continue Editing</a>
-      <% if (o.canPublish) { %>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Changes</a>
+        <% if (o.canEdit) { %>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.editPath %>">Continue Editing</a>
+        <% } %>
+        <% if (o.canPublish) { %>
       <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.publishReviewPath || '/hq/website/publish/review' %>">Publish Changes</a>
       <% } else if (o.showFixDetails) { %>
       <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.fixDetailsPath || o.publishReviewPath || '/hq/website/publish/review' %>" data-bb-fix-website-details="1">Fix Website Details</a>
@@ -110,7 +113,9 @@
         <span>Website preview</span>
       </div>
       <p class="bb-phase4-website__status-actions">
+        <% if (o.canEdit) { %>
         <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.editPath %>">Edit Website</a>
+        <% } %>
         <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Changes</a>
         <% if (o.canPublish) { %>
         <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.publishReviewPath || '/hq/website/publish/review' %>">Publish Changes</a>

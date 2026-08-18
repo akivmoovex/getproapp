@@ -88,7 +88,7 @@ function presentPhase5QueueStatus(row) {
 
   if (app === "rejected" || app === "cancelled") {
     key = PHASE5_VISIBLE.REJECTED;
-  } else if (prov === "provisioned" || (app === "closed" && (orgKey || orgId))) {
+  } else if (prov === "provisioned" || app === "active" || (app === "closed" && (orgKey || orgId))) {
     key = PHASE5_VISIBLE.APPROVED;
   } else if (
     follow === "awaiting_customer" ||
@@ -556,16 +556,27 @@ function presentSuggestedOrganizationKeyPreview(churchName) {
       slugifyOrganizationKey,
       normalizeOrganizationKey,
     } = require("./organizationKey");
+    const {
+      PRODUCT_CODE,
+      buildPublicOrganizationWebsitePath,
+      buildPublicOrganizationWebsiteUrl,
+    } = require("../../platform/website/publicWebsiteUrl");
     const slug = slugifyOrganizationKey(churchName);
     const norm = normalizeOrganizationKey(slug);
     if (!norm.ok) {
       return { key: null, publicPath: null, publicUrlPreview: null };
     }
-    const publicPath = `/c/${norm.key}`;
+    const publicPath = buildPublicOrganizationWebsitePath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: norm.key,
+    });
     return {
       key: norm.key,
       publicPath,
-      publicUrlPreview: `https://blessboard.org${publicPath}`,
+      publicUrlPreview: buildPublicOrganizationWebsiteUrl({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: norm.key,
+      }),
     };
   } catch {
     return { key: null, publicPath: null, publicUrlPreview: null };

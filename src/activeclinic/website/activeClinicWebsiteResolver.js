@@ -56,6 +56,7 @@ function mergeClinicPresentation(clinic, resolved, operational) {
     aboutHeading: values["about.story.heading"] || "About our clinic",
     aboutBody: values["about.story.body"] || clinic.websiteAbout || null,
     contactIntro: values["contact.intro"] || null,
+    bookIntro: values["book.intro"] || null,
     footerLegal: values["footer.legal"] || null,
     footerTagline: values["footer.tagline"] || null,
     promoHeading: values["home.promo.heading"] || null,
@@ -68,6 +69,13 @@ function mergeClinicPresentation(clinic, resolved, operational) {
     showTestimonials: values["section.testimonials.visible"] === true,
     showFaq: values["section.faq.visible"] === true,
     showPromo: values["section.promo.visible"] === true,
+    servicesIntro: values["services.intro"] || null,
+    serviceExamples: Array.isArray(values["services.examples"]) ? values["services.examples"] : [],
+    doctorsIntro: values["doctors.intro"] || null,
+    doctorExamples: Array.isArray(values["doctors.examples"]) ? values["doctors.examples"] : [],
+    locationIntro: values["location.intro"] || null,
+    locationAddressOverlay: values["location.address"] || null,
+    locationHoursOverlay: values["location.hours"] || null,
     operational,
   };
 }

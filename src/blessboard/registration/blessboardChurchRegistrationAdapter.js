@@ -1,6 +1,6 @@
 "use strict";
 
-const { PRODUCT, REVIEW_REASON } = require("../../platform/registration/constants");
+const { PRODUCT, REVIEW_REASON, LIFECYCLE } = require("../../platform/registration/constants");
 const repo = require("../repositories/platformChurchRegistrationRepository");
 const {
   provisionRegisteredBlessBoardChurch,
@@ -16,7 +16,14 @@ const {
   NETWORK_PLAN_CODE,
 } = require("../services/platformChurchRegistrationValidation");
 const { DUPLICATE_PHONE_MESSAGE } = require("../services/normalizeRegistrationPhone");
-const instanceRepo = require("../../platform/website/instanceRepository");
+const {
+  registerBlessBoardWebsiteTemplate,
+  BLESSBOARD_TEMPLATE_ID,
+  BLESSBOARD_TEMPLATE_VERSION,
+} = require("../website/blessboardChurchTemplate");
+const {
+  seedTenantOwnedWebsiteTemplateContent,
+} = require("../services/seedTenantWebsiteTemplateContent");
 
 const productCode = PRODUCT.BLESSBOARD;
 
@@ -58,9 +65,8 @@ function mapPersistError(err) {
 }
 
 function riskPersistFields(risk) {
-  const reviewRequired = risk && risk.decision === RISK_DECISIONS.REVIEW_REQUIRED;
   return {
-    application_status: reviewRequired ? "duplicate_review" : "submitted",
+    application_status: "submitted",
     risk_decision: risk && risk.decision,
     risk_reason_codes: (risk && risk.reasonCodes) || [],
     risk_decided_at: (risk && risk.decidedAt) || new Date().toISOString(),
@@ -197,22 +203,10 @@ async function markReviewRequired(db, input) {
   const application = input.application;
   if (!application || !application.id) return { ok: false };
   const reason = String(input.reason || "");
-  const legacyDuplicate =
-    reason === REVIEW_REASON.DUPLICATE_CANDIDATE ||
-    reason === REVIEW_REASON.RISK_HOLD ||
-    reason === "duplicate_email";
-  const applicationStatus = legacyDuplicate ? "duplicate_review" : "review_required";
-  try {
-    await repo.updateApplicationRiskReviewState(db, application.id, {
-      applicationStatus,
-      reviewNotes: reason.slice(0, 500),
-    });
-  } catch {
-    await repo.updateApplicationRiskReviewState(db, application.id, {
-      applicationStatus: "duplicate_review",
-      reviewNotes: reason.slice(0, 500),
-    });
-  }
+  await repo.updateApplicationRiskReviewState(db, application.id, {
+    applicationStatus: LIFECYCLE.REVIEW_REQUIRED,
+    reviewNotes: reason.slice(0, 500),
+  });
   return { ok: true };
 }
 
@@ -277,14 +271,100 @@ async function provision(db, input) {
   };
 }
 
-async function ensureWebsite(db, input) {
-  const organizationId = input.organizationId;
-  if (!organizationId) return { ok: true, skipped: true };
-  const existing = await instanceRepo.findWebsiteInstanceByOrgProduct(db, {
-    organizationId,
-    productCode,
+async function markLifecycle(db, input) {
+  const application = input.application;
+  if (!application || !application.id) return { ok: false };
+  const status = String(input.status || "");
+  if (status === LIFECYCLE.PROVISIONING) {
+    await repo.updateApplicationRiskReviewState(db, application.id, {
+      applicationStatus: LIFECYCLE.PROVISIONING,
+      reviewNotes: "provisioning",
+    });
+    return { ok: true };
+  }
+  if (status === LIFECYCLE.ACTIVE) {
+    await repo.updateApplicationProvisioningState(db, application.id, {
+      applicationStatus: LIFECYCLE.ACTIVE,
+      provisioningStatus: "provisioned",
+      organizationId: input.organizationId || undefined,
+      provisionedAt: new Date().toISOString(),
+      clearFailureMetadata: true,
+      // Legacy column CHECK allows only pending/contacted/closed.
+      legacyStatus: "closed",
+    });
+    return { ok: true };
+  }
+  if (status === LIFECYCLE.PROVISION_FAILED) {
+    await repo.updateApplicationProvisioningState(db, application.id, {
+      applicationStatus: LIFECYCLE.PROVISION_FAILED,
+      provisioningStatus: "provisioning_failed",
+      organizationId: input.organizationId || undefined,
+      provisioningFailedAt: new Date().toISOString(),
+      provisioningErrorCode: String(input.reason || "provision_failed").slice(0, 80),
+    });
+    return { ok: true };
+  }
+  return { ok: false };
+}
+
+async function websiteDefaults(input) {
+  registerBlessBoardWebsiteTemplate();
+  const records =
+    (input.provision && (input.provision.records || (input.provision.provisioned && input.provision.provisioned.records))) ||
+    {};
+  const slug =
+    records.organizationKey ||
+    (input.application && input.application.organization_key) ||
+    String(input.organizationId || "").slice(0, 8);
+  if (!slug) return { skip: true, reason: "slug_unavailable" };
+  return {
+    templateId: BLESSBOARD_TEMPLATE_ID,
+    templateVersion: BLESSBOARD_TEMPLATE_VERSION,
+    slug,
+    status: "published",
+    scopeKind: records.branchId ? "branch" : "church_wide",
+    scopeRef: records.branchId || null,
+    contentOverrides: {},
+    seedDefaults: false,
+    adapterMode: "legacy_cms",
+    publishPolicy: "REVIEW_BEFORE_PUBLISH",
+    lifecycleStatus: "public",
+  };
+}
+
+async function seedTemplateContent(db, input) {
+  const records =
+    (input.provision &&
+      (input.provision.records ||
+        (input.provision.provisioned && input.provision.provisioned.records))) ||
+    {};
+  const application = input.application || {};
+  let churchId =
+    records.churchId ||
+    (records.church && records.church.id) ||
+    null;
+  if (!churchId && input.organizationId) {
+    const row = await db.query(
+      `SELECT id FROM blessboard.churches WHERE organization_id = $1 LIMIT 1`,
+      [input.organizationId]
+    );
+    churchId = row.rows[0] ? row.rows[0].id : null;
+  }
+  if (!churchId) return { ok: false, skipped: true, reason: "church_unavailable" };
+  const publicName =
+    application.church_name ||
+    application.churchName ||
+    (records.church && records.church.displayName) ||
+    "Church";
+  const city = application.city || "";
+  return seedTenantOwnedWebsiteTemplateContent(db, {
+    churchId,
+    publicName,
+    primaryEmail: application.contact_email || application.email || null,
+    primaryPhone: application.contact_phone || application.phone || null,
+    address: application.address || city || null,
+    city,
   });
-  return { ok: true, existed: Boolean(existing), instance: existing || null };
 }
 
 async function approve(db, input) {
@@ -305,7 +385,9 @@ module.exports = {
   collectReviewSignals,
   markReviewRequired,
   provision,
-  ensureWebsite,
+  websiteDefaults,
+  seedTemplateContent,
+  markLifecycle,
   approve,
   reject,
 };

@@ -18,6 +18,7 @@ const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
 const { createStaffMember } = require("./activeClinicStaffService");
+const staffMemberRepo = require("../repositories/staffMemberRepository");
 const { assignStaffToFacility } = require("./activeClinicStaffFacilityService");
 const {
   assignStaffRole,
@@ -143,7 +144,7 @@ async function markLatestApprovalDelivery(client, applicationId, deliveryStatus)
 
 async function maybeSendReadyToSignInEmail(client, input) {
   const app = input.application;
-  if (!app || String(app.status) !== "approved") {
+  if (!app || (String(app.status) !== "approved" && String(app.status) !== "active")) {
     return { skipped: true };
   }
   const provisioning = String(app.provisioning_status || "");
@@ -210,28 +211,66 @@ async function ensureClinicAdmin(client, input) {
     identityId = created.identity.id;
   }
   const names = splitName(input.contactName);
-  const staff = await createStaffMember(client, {
-    organizationId: input.organizationId,
-    healthcareOrganizationId: input.healthcareOrganizationId,
-    firstName: names.firstName,
-    lastName: names.lastName,
-    employmentType: "permanent",
-    status: "active",
-    phone: input.phone,
-    platformIdentityId: identityId,
-  });
-  if (!staff.ok) return { ok: false, code: staff.code };
-  if (input.facilityId) {
-    await assignStaffToFacility(client, {
+  let staffMemberId = null;
+  let createdStaff = false;
+  const existingStaffId = String(input.existingStaffId || "").trim();
+  if (UUID_RE.test(existingStaffId)) {
+    const byId = await staffMemberRepo.findByIdAndOrganization(client, {
+      id: existingStaffId,
       organizationId: input.organizationId,
-      staffMemberId: staff.staffMember.id,
+    });
+    if (byId) staffMemberId = byId.id;
+  }
+  if (!staffMemberId && identityId) {
+    const byIdentity = await staffMemberRepo.findByIdentityAndOrganization(client, {
+      platformIdentityId: identityId,
+      organizationId: input.organizationId,
+    });
+    if (byIdentity) staffMemberId = byIdentity.id;
+  }
+  if (!staffMemberId) {
+    const staff = await createStaffMember(client, {
+      organizationId: input.organizationId,
+      healthcareOrganizationId: input.healthcareOrganizationId,
+      firstName: names.firstName,
+      lastName: names.lastName,
+      employmentType: "permanent",
+      status: "active",
+      phone: input.phone,
+      platformIdentityId: identityId,
+    });
+    if (!staff.ok && staff.code === "duplicate_staff_identity" && identityId) {
+      const again = await staffMemberRepo.findByIdentityAndOrganization(client, {
+        platformIdentityId: identityId,
+        organizationId: input.organizationId,
+      });
+      if (again) staffMemberId = again.id;
+    } else if (!staff.ok) {
+      return { ok: false, code: staff.code };
+    } else {
+      staffMemberId = staff.staffMember.id;
+      createdStaff = true;
+    }
+  }
+  if (!staffMemberId) return { ok: false, code: "clinic_admin_failed" };
+  if (input.facilityId) {
+    const assigned = await assignStaffToFacility(client, {
+      organizationId: input.organizationId,
+      staffMemberId,
       facilityId: input.facilityId,
       isPrimary: true,
     });
+    if (
+      !assigned.ok &&
+      assigned.code !== "facility_assignment_exists" &&
+      assigned.code !== "primary_facility_conflict"
+    ) {
+      return { ok: false, code: assigned.code };
+    }
   }
   const role = await assignStaffRole(client, {
     organizationId: input.organizationId,
-    staffMemberId: staff.staffMember.id,
+    staffMemberId,
     roleKey: ORGANIZATION_ADMIN,
     scopeType: "organisation",
     assignmentOrigin: "system",
@@ -243,7 +282,7 @@ async function ensureClinicAdmin(client, input) {
   if (!role.ok && role.code !== "role_assignment_exists") {
     return { ok: false, code: role.code };
   }
-  return { ok: true, staffMemberId: staff.staffMember.id, identityId, created: true, reusedIdentity };
+  return { ok: true, staffMemberId, identityId, created: createdStaff, reusedIdentity };
 }
 
 async function approveAndProvisionClinicRegistration(db, input) {
@@ -256,7 +295,11 @@ async function approveAndProvisionClinicRegistration(db, input) {
     const app = await loadApplication(client, applicationId);
     if (!app) return { ok: false, code: RESULT.NOT_FOUND };
 
-    if (app.status === "approved" && app.provisioning_status === "provisioned" && app.organization_id) {
+    if (
+      (app.status === "approved" || app.status === "active") &&
+      app.provisioning_status === "provisioned" &&
+      app.organization_id
+    ) {
       const instance = await instanceRepo.findWebsiteInstanceByOrgProduct(client, {
         organizationId: app.organization_id,
         productCode: "activeclinic",
@@ -353,6 +396,8 @@ async function approveAndProvisionClinicRegistration(db, input) {
       countryCode: app.country_code || "ZM",
       timezone: "Africa/Lusaka",
       phone: app.contact_phone_normalized,
+      email: app.contact_email_normalized,
+      address: app.address,
       city: app.city,
       province: app.province,
       actorIdentityId: input.actorIdentityId || null,
@@ -430,7 +475,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
     const websiteOk = Boolean(instance);
     const provisioningStatus = websiteOk ? "provisioned" : "website_pending";
     await updateApplication(client, app.id, {
-      status: "approved",
+      status: "active",
       organization_id: organizationId,
       healthcare_organization_id: hco ? hco.id : app.healthcare_organization_id,
       facility_id: facility ? facility.id : app.facility_id,
@@ -501,7 +546,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
     }
 
     const loginEligible = Boolean(admin.ok && admin.staffMemberId);
-    app.status = "approved";
+    app.status = "active";
     app.provisioning_status = provisioningStatus;
     const emailDelivery = await maybeSendReadyToSignInEmail(client, {
       application: app,
@@ -548,7 +593,12 @@ async function rejectClinicRegistration(db, input) {
     if (app.status === "rejected") {
       return { ok: true, code: RESULT.ALREADY_REJECTED, application: app };
     }
-    if (app.status !== "pending_review" && app.status !== "review_required") {
+    if (
+      app.status !== "pending_review" &&
+      app.status !== "review_required" &&
+      app.status !== "submitted" &&
+      app.status !== "provisioning"
+    ) {
       return { ok: false, code: RESULT.NOT_ELIGIBLE, application: app };
     }
     if (rejectionReason.length < 3 || rejectionReason.length > 2000) {

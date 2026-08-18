@@ -1,0 +1,95 @@
+<%
+  var website = (pageData && pageData.website) || {};
+  var actions = website.actions || {};
+%>
+<section class="ac-settings-website" data-ac-page-section="settings-website" data-ac-website-management="1">
+  <div class="ac-panel" data-ac-website-status="1">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Website</h2>
+    <dl class="ac-dl">
+      <div>
+        <dt>Status</dt>
+        <dd data-ac-website-status-label="1"><%= website.statusLabel || 'Not provisioned' %></dd>
+      </div>
+      <div>
+        <dt>Draft / published</dt>
+        <dd data-ac-website-draft-state="1">
+          <% if (website.draftState === 'unpublished_changes') { %>
+          Draft has unpublished changes
+          <% } else if (website.publishedVersionNumber) { %>
+          Published
+          <% } else if (website.exists) { %>
+          Draft
+          <% } else { %>
+          Not provisioned
+          <% } %>
+        </dd>
+      </div>
+      <div>
+        <dt>Website exists</dt>
+        <dd data-ac-website-exists="<%= website.exists ? '1' : '0' %>"><%= website.exists ? 'Yes' : 'No' %></dd>
+      </div>
+      <div>
+        <dt>Public URL</dt>
+        <dd data-ac-website-public-url="1">
+          <% if (website.publicUrl || website.publicPath) { %>
+          <code><%= website.publicUrl || website.publicPath %></code>
+          <% } else { %>
+          —
+          <% } %>
+        </dd>
+      </div>
+      <div>
+        <dt>Published version</dt>
+        <dd data-ac-website-published-version="1">
+          <%= website.publishedVersionNumber ? ('Version ' + website.publishedVersionNumber) : 'None yet' %>
+        </dd>
+      </div>
+      <div>
+        <dt>Unpublished changes</dt>
+        <dd data-ac-website-unpublished="<%= website.unpublishedChanges ? '1' : '0' %>">
+          <%= website.unpublishedChanges ? ('Yes (' + (website.unpublishedCount || 0) + ')') : 'No' %>
+        </dd>
+      </div>
+      <% if (website.publishPolicyLabel) { %>
+      <div>
+        <dt>Publish policy</dt>
+        <dd><%= website.publishPolicyLabel %></dd>
+      </div>
+      <% } %>
+    </dl>
+  </div>
+
+  <div class="ac-panel" data-ac-website-actions="1">
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Actions</h2>
+    <p class="ac-settings-website__actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">
+      <% if (actions.viewLive) { %>
+      <a class="ac-btn" href="<%= actions.viewLive %>" data-ac-website-action="view-live">View live</a>
+      <% } %>
+      <% if (website.canEdit && actions.editWebsite) { %>
+      <a class="ac-btn" href="<%= actions.editWebsite %>" data-ac-website-action="edit">Edit website</a>
+      <% } %>
+      <% if (actions.preview) { %>
+      <a class="ac-btn" href="<%= actions.preview %>" data-ac-website-action="preview">Preview</a>
+      <% } %>
+      <% if (website.canPublish && actions.publishPath) { %>
+      <form
+        method="post"
+        action="<%= actions.publishPath %>"
+        style="margin:0"
+        onsubmit="return confirm('Publish this website? Public visitors will see the current draft.');"
+      >
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <input type="hidden" name="makePublic" value="1"/>
+        <input type="hidden" name="returnTo" value="/app/settings/website"/>
+        <button type="submit" class="ac-btn" data-ac-website-action="publish">Publish</button>
+      </form>
+      <% } %>
+      <% if (actions.history) { %>
+      <a class="ac-btn" href="<%= actions.history %>" data-ac-website-action="history">Version history</a>
+      <% } %>
+    </p>
+    <% if (!website.canEdit && !website.canPublish) { %>
+    <p class="ac-muted" data-ac-website-readonly="1">You can view website status. Editing and publishing require additional permission.</p>
+    <% } %>
+  </div>
+</section>

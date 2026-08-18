@@ -320,7 +320,7 @@ async function countOrganizationDirectoryStats(client) {
           SELECT COUNT(*)::int
             FROM blessboard.platform_church_registration_applications a
            WHERE a.selected_plan = 'foundation'
-             AND a.application_status = 'closed'
+             AND a.application_status IN ('closed', 'active')
              AND a.provisioning_status = 'provisioned'
              AND COALESCE(a.provisioned_at, a.updated_at) >= now() - interval '7 days'
         ) AS recent_foundation_registrations,
@@ -361,7 +361,7 @@ async function countOrganizationDirectoryStats(client) {
             FROM blessboard.platform_church_registration_applications a
             LEFT JOIN blessboard.organization_onboarding oo
               ON oo.organization_id = a.organization_id
-           WHERE a.application_status IN ('submitted', 'duplicate_review', 'review_required')
+           WHERE a.application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning')
               OR a.provisioning_status = 'provisioning_failed'
               OR COALESCE(oo.support_requested, a.support_requested, false) = TRUE
               OR COALESCE(oo.follow_up_status, a.follow_up_status) IN (
@@ -374,12 +374,12 @@ async function countOrganizationDirectoryStats(client) {
            WHERE a.selected_plan = 'network'
              AND COALESCE(a.support_requested, false) = TRUE
              AND a.organization_id IS NULL
-             AND a.application_status IN ('submitted', 'duplicate_review', 'review_required')
+             AND a.application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning')
         ) AS pending_network_support_requests,
         (
           SELECT COUNT(*)::int
             FROM blessboard.platform_church_registration_applications a
-           WHERE a.application_status IN ('submitted', 'duplicate_review', 'review_required')
+           WHERE a.application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning')
              AND a.created_at >= now() - interval '7 days'
         ) AS new_registrations_7d,
         (
@@ -505,7 +505,7 @@ async function countRegistrationOnboardingAnalytics(client, opts) {
               AND a.provisioning_status = 'provisioning_failed'
           )::int AS auto_provision_failed,
           COUNT(*) FILTER (
-            WHERE a.application_status = 'duplicate_review'
+            WHERE a.application_status IN ('duplicate_review', 'review_required')
                OR a.risk_decision = 'review_required'
           )::int AS review_required,
           COUNT(*) FILTER (

@@ -273,7 +273,7 @@ function createPathPublicRouter(deps) {
     return renderPublicModel(req, res, {
       tenant: resolved.tenant,
       pageKey,
-      pathPrefix: `/c/${resolved.organizationKey}`,
+      pathPrefix: publicChurchHomePath(resolved.organizationKey),
       selectedBranch: null,
       routingMode: "path",
     });

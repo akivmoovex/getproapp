@@ -109,9 +109,10 @@ async function resolveWebsiteEditCapability(pool, opts) {
     resourceContext,
   });
 
-  const hasOrgSettingsManage = (perms.permissions || []).some(
-    (p) => p.permissionKey === "organisation.settings.manage"
+  const permissionKeys = (perms.permissions || []).map((p) =>
+    typeof p === "string" ? p : String((p && (p.permissionKey || p.permission_key)) || "")
   );
+  const hasOrgSettingsManage = permissionKeys.includes("organisation.settings.manage");
 
   const isHqEditor = hasOrgSettingsManage;
   const isBranchEditor = !isHqEditor;
@@ -264,7 +265,7 @@ async function attachWebsiteAdminChrome(opts) {
     isHqEditor = true;
     draftBranchId = null;
     actorRole = capability.actorRole;
-  } else if (capability.isBranchEditor && draftBranchId == null) {
+  } else if (!isHqEditor && capability.isBranchEditor && draftBranchId == null) {
     // Resolver failed soft — do not fall back to primaryBranch.
     model.websiteAdmin = null;
     return model;
@@ -288,6 +289,10 @@ async function attachWebsiteAdminChrome(opts) {
     tenant && tenant.organization ? tenant.organization.id : authz.organizationId;
 
   const editingMode = String(req.query[EDIT_QUERY] || "") === "1";
+  const previewDraftMode =
+    String((req.query && (req.query.website_mode || req.query.websiteMode)) || "").toLowerCase() ===
+    "draft";
+  const showDraftContent = editingMode || previewDraftMode;
 
   let draftCount = 0;
   let overlayMap = new Map();
@@ -299,7 +304,7 @@ async function attachWebsiteAdminChrome(opts) {
       churchId,
       branchId: draftBranchId,
     });
-    if (editingMode) {
+    if (showDraftContent) {
       // Capture visitor-visible text before draft overlays mutate the model.
       publishedBaselines = buildDisplayBaselineMap(model.sections, model.publicContact);
       try {

@@ -1,13 +1,26 @@
 <section class="ac-public-section ac-tenant-directory" data-ac-page-section="tenant-services">
   <header class="ac-tenant-page-header">
     <h1>Services</h1>
-    <p class="ac-public-lede">Care offerings published by <%= clinic.publicName %>.</p>
+    <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'services.intro', fieldValue: clinic.servicesIntro || ('Care offerings published by ' + clinic.publicName + '.'), fieldType: 'long_text' }) %></p>
   </header>
   <% const serviceList = Array.isArray(services) ? services : []; %>
   <% const procedureList = Array.isArray(procedures) ? procedures : []; %>
+  <% const serviceExamples = Array.isArray(clinic.serviceExamples) ? clinic.serviceExamples : []; %>
   <% if (!serviceList.length && !procedureList.length) { %>
   <div class="ac-public-empty" data-ac-empty="services" data-ac-state-key="empty">
+    <% if (serviceExamples.length) { %>
+    <p class="ac-template-placeholder" data-ac-template-placeholder="1">Template examples only — not this clinic’s published catalogue.</p>
+    <ul class="ac-service-cards" data-ac-template-examples="services">
+      <% serviceExamples.forEach(function(s) { %>
+      <li class="ac-service-card ac-service-card--placeholder">
+        <h3 class="ac-service-card__name"><%= s.name %></h3>
+        <% if (s.summary) { %><p class="ac-service-card__summary"><%= s.summary %></p><% } %>
+      </li>
+      <% }) %>
+    </ul>
+    <% } else { %>
     <p>No public services are published yet.</p>
+    <% } %>
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
   </div>
   <% } %>

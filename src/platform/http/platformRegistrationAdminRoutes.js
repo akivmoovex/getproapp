@@ -18,7 +18,8 @@ function registerPlatformRegistrationAdminRoutes(router, deps) {
       setAdminNoStore(res);
       const product = String(req.query.product || "all").trim().toLowerCase();
       const q = String(req.query.q || "").trim();
-      const rows = await listUnifiedRegistrations(getPool(), { product, q, limit: 100 });
+      const lifecycle = String(req.query.lifecycle || req.query.status || "").trim().toLowerCase();
+      const rows = await listUnifiedRegistrations(getPool(), { product, q, lifecycle, limit: 100 });
       const html = renderPlatformAdminView("platform-admin/registrations.ejs", {
         ...buildPlatformAdminShellLocals(req, res, {
           env,
@@ -27,7 +28,7 @@ function registerPlatformRegistrationAdminRoutes(router, deps) {
           pageTitle: "Registrations",
         }),
         registrations: rows,
-        filters: { product, q },
+        filters: { product, q, lifecycle },
       });
       return res.status(200).type("html").send(html);
     } catch (err) {

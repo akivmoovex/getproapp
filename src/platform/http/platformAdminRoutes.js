@@ -3290,8 +3290,18 @@ function createPlatformAdminRouter(deps) {
     }
   );
 
+  const {
+    PRODUCT_CODE,
+    buildPublicWebsiteAdminPath,
+  } = require("../website/publicWebsiteUrl");
+
   function orgDetailPath(organizationKey) {
-    return `/admin/organizations/${encodeURIComponent(String(organizationKey || "").trim().toLowerCase())}`;
+    return (
+      buildPublicWebsiteAdminPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey,
+      }) || `/admin/organizations/${encodeURIComponent(String(organizationKey || "").trim().toLowerCase())}`
+    );
   }
 
   /**
@@ -3328,6 +3338,8 @@ function createPlatformAdminRouter(deps) {
           renderTenantPublicPage,
         } = require("../../blessboard/http/renderTenantPublicPage");
         const { findOrganizationByKey } = require("../../blessboard/repositories/blessBoardCatalogueRepository");
+        const { publicChurchHomePath } = require("../../blessboard/urls/churchUrlHelper");
+        const publicPathPrefix = publicChurchHomePath(keyNorm.key);
 
         const org = await findOrganizationByKey(getPool(), keyNorm.key);
         if (!org || String(org.status || "") === "retired" || String(org.status || "") === "inactive") {
@@ -3388,7 +3400,7 @@ function createPlatformAdminRouter(deps) {
           pageKey: "home",
           hostname: String(req.hostname || ""),
           preview: !usePublicRender,
-          pathPrefix: `/c/${keyNorm.key}`,
+          pathPrefix: publicPathPrefix,
           previewMeta: usePublicRender
             ? null
             : {
@@ -3406,7 +3418,7 @@ function createPlatformAdminRouter(deps) {
             pageKey: "home",
             hostname: String(req.hostname || ""),
             preview: true,
-            pathPrefix: `/c/${keyNorm.key}`,
+            pathPrefix: publicPathPrefix,
             previewMeta: {
               backHref: orgDetailPath(keyNorm.key),
               editHref: null,

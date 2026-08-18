@@ -1,6 +1,6 @@
 <section class="ac-public-section" data-ac-page-section="booking-entry">
   <h1>Request an appointment</h1>
-  <p>Submit a preferred time. The clinic will confirm — this is not an automatic confirmation.</p>
+  <p><%- include('../partials/website-editable-field', { contentKey: 'book.intro', fieldValue: (typeof clinic !== 'undefined' && clinic && clinic.bookIntro) || 'Submit a preferred time. The clinic will confirm — this is not an automatic confirmation.', fieldType: 'long_text' }) %></p>
   <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
   <% const fd = formData || {}; %>
   <form method="post" action="/clinics/<%= clinic.clinicKey %>/book" class="ac-public-form" data-ac-booking="consultation" data-ac-loading="1">

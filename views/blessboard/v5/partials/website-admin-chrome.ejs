@@ -28,7 +28,7 @@
         <% } %>
       </div>
       <div class="bb-tp-admin-bar__right">
-        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm" href="<%= wa.editHref %>" data-bb-edit-website="1">Edit Website</a>
+        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-btn--touch" href="<%= wa.editHref %>" data-bb-edit-website="1">Edit Website</a>
       </div>
     </div>
   </div>
@@ -62,7 +62,7 @@
       <div class="bb-tp-edit-toolbar__right">
         <button
           type="button"
-          class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm"
+          class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--touch"
           data-bb-features-toggle="1"
           aria-expanded="false"
           aria-controls="bb-tp-features-panel"
@@ -71,7 +71,7 @@
           <span class="bb-tp-btn__label-short">Features</span>
         </button>
         <% if (seoLink && seoLink.available && seoLink.href) { %>
-        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= seoLink.href %>" data-bb-edit-seo="1">
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--touch" href="<%= seoLink.href %>" data-bb-edit-seo="1">
           <span class="bb-tp-btn__label-full">Edit SEO</span>
           <span class="bb-tp-btn__label-short">SEO</span>
         </a>
@@ -87,12 +87,12 @@
         </span>
         <% } %>
         <% if (wa.hasDraftChanges) { %>
-        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm" href="<%= wa.reviewHref %>" data-bb-review-publish="1">
+        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-btn--touch" href="<%= wa.reviewHref %>" data-bb-review-publish="1">
           <span class="bb-tp-btn__label-full">Review and Publish</span>
           <span class="bb-tp-btn__label-short">Review</span>
         </a>
         <% } %>
-        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= wa.exitHref %>" data-bb-exit-editing="1">
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--touch" href="<%= wa.exitHref %>" data-bb-exit-editing="1">
           <span class="bb-tp-btn__label-full">Exit Editing</span>
           <span class="bb-tp-btn__label-short">Exit</span>
         </a>

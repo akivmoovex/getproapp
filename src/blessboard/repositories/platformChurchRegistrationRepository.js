@@ -329,7 +329,7 @@ async function findRecentRegistrationDuplicate(client, opts) {
         AND lower(church_name) = lower($2)
         AND created_at >= now() - ($3::int * interval '1 minute')
         AND (
-          application_status IN ('submitted', 'duplicate_review', 'review_required', 'closed')
+          application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning')
           OR status = 'pending'
         )
       ORDER BY created_at DESC
@@ -520,7 +520,7 @@ async function countPending(pool) {
   const r = await pool.query(
     `SELECT COUNT(*)::int AS count
        FROM ${TARGET_RELATION}
-      WHERE application_status IN ('submitted', 'duplicate_review', 'review_required')
+      WHERE application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning')
          OR (status = 'pending' AND application_status NOT IN ('closed', 'rejected', 'cancelled'))`
   );
   return r.rows[0]?.count || 0;
@@ -651,10 +651,14 @@ async function updateApplicationProvisioningState(client, applicationId, patch) 
 
 const APPLICATION_STATUSES = Object.freeze([
   "submitted",
-  "duplicate_review",
+  "provisioning",
   "review_required",
+  "active",
   "rejected",
   "cancelled",
+  "suspended",
+  "provision_failed",
+  "duplicate_review",
   "closed",
 ]);
 const PROVISIONING_STATUSES = Object.freeze([
@@ -1048,7 +1052,7 @@ function buildRegistrationListWhere(filters) {
   }
   if (filters.requiresReview === true) {
     clauses.push(`(
-      a.application_status IN ('submitted', 'duplicate_review', 'review_required')
+      a.application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning')
       OR a.provisioning_status = 'provisioning_failed'
       OR ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE
       OR ${EFFECTIVE_FOLLOW_UP_SQL} IN (
@@ -1070,7 +1074,7 @@ function buildRegistrationListWhere(filters) {
     clauses.push(`(
       a.application_status NOT IN ('rejected', 'cancelled')
       AND a.provisioning_status IS DISTINCT FROM 'provisioned'
-      AND NOT (a.application_status = 'closed' AND a.organization_id IS NOT NULL)
+      AND NOT (a.application_status IN ('closed', 'active') AND a.organization_id IS NOT NULL)
       AND ${EFFECTIVE_FOLLOW_UP_SQL} NOT IN ('awaiting_customer', 'needs_help', 'self_onboarding')
     )`);
   } else if (filters.queue === "provisioning_failed") {
@@ -1101,7 +1105,7 @@ function buildRegistrationListWhere(filters) {
   } else if (filters.queue === "provisioned") {
     clauses.push(`(
       a.provisioning_status = 'provisioned'
-      OR (a.application_status = 'closed' AND a.organization_id IS NOT NULL)
+      OR (a.application_status IN ('closed', 'active') AND a.organization_id IS NOT NULL)
     )`);
   } else if (filters.queue === "rejected") {
     clauses.push(`a.application_status IN ('rejected', 'cancelled')`);
@@ -1110,7 +1114,7 @@ function buildRegistrationListWhere(filters) {
     clauses.push(`(
       ${EFFECTIVE_NEXT_FOLLOW_UP_SQL} IS NOT NULL
       AND ${EFFECTIVE_NEXT_FOLLOW_UP_SQL} < now()
-      AND a.application_status NOT IN ('rejected', 'cancelled', 'closed')
+      AND a.application_status NOT IN ('rejected', 'cancelled', 'closed', 'active')
       AND (${ACTIVE_FOLLOW_UP_SQL})
     )`);
   }
@@ -2360,7 +2364,7 @@ async function linkApplicationToOrganization(client, applicationId, organization
   const r = await client.query(
     `UPDATE ${TARGET_RELATION}
         SET organization_id = $2,
-            application_status = 'closed',
+            application_status = 'active',
             updated_at = now()
       WHERE id = $1
         AND organization_id IS NULL

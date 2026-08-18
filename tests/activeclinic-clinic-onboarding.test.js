@@ -275,7 +275,7 @@ describe("ActiveClinic public clinic onboarding", () => {
       [email]
     );
     assert.equal(row.rows.length, 1);
-    assert.equal(row.rows[0].status, "approved");
+    assert.equal(row.rows[0].status, "active");
     assert.equal(row.rows[0].administrator_password_hash, null);
     assert.equal(row.rows[0].address, payload.address);
     assert.ok(row.rows[0].organization_id);
@@ -284,7 +284,7 @@ describe("ActiveClinic public clinic onboarding", () => {
     const pa = await loginPa();
     assert.equal(pa.post.status, 303);
     const queue = await request(app)
-      .get("/admin/clinic-registrations?status=approved")
+      .get("/admin/clinic-registrations?status=active")
       .set("Host", BB_HOST)
       .set("Cookie", cookieHeader({ [UNIFIED_SID]: pa.sid }));
     assert.equal(queue.status, 200);
@@ -335,7 +335,7 @@ describe("ActiveClinic public clinic onboarding", () => {
       [applicationId]
     );
     assert.equal(cleared.rows[0].administrator_password_hash, null);
-    assert.equal(cleared.rows[0].status, "approved");
+    assert.equal(cleared.rows[0].status, "active");
 
     const depts = await pool.query(
       `SELECT count(*)::int AS n FROM activeclinic.departments WHERE facility_id = $1`,
@@ -418,7 +418,7 @@ describe("ActiveClinic public clinic onboarding", () => {
       `SELECT status, administrator_password_hash FROM activeclinic.clinic_registration_applications WHERE id = $1`,
       [row.rows[0].id]
     );
-    assert.equal(after.rows[0].status, "approved");
+    assert.equal(after.rows[0].status, "active");
     assert.equal(after.rows[0].administrator_password_hash, null);
   });
 

@@ -269,7 +269,7 @@ describe("automatic Foundation registration", () => {
       [body.email]
     );
     assert.equal(apps.rows.length, 1);
-    assert.equal(apps.rows[0].application_status, "closed");
+    assert.equal(apps.rows[0].application_status, "active");
     assert.equal(apps.rows[0].provisioning_status, "provisioned");
     assert.equal(apps.rows[0].status, "closed");
     assert.ok(apps.rows[0].organization_id);
@@ -713,7 +713,7 @@ describe("automatic Foundation registration", () => {
         [body.email]
       )
     ).rows[0];
-    assert.equal(row.application_status, "closed");
+    assert.equal(row.application_status, "active");
     assert.equal(row.provisioning_status, "provisioned");
     assert.equal(row.status, "closed");
   });

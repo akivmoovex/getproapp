@@ -4,7 +4,7 @@
  * Single-site public routing: collapse /branches/:key… onto the church-wide URL.
  * Uses 301 to match Growth branch-path canonical collapse and BlessBoard host redirects.
  *
- * Does not preserve query strings (same as requirePublicBranchPath collapse).
+ * Preserves query strings so editor/preview flags survive the collapse.
  * Callers must only invoke this after server-side confirmation that:
  *   - the branch is active and owned by the church, and
  *   - website mode is single_site.
@@ -12,6 +12,7 @@
 
 const { publicChurchPagePath } = require("../urls/churchUrlHelper");
 const { PAGE_KEY_TO_PATH, normalizePathOnly } = require("./tenantPublicPaths");
+const { appendQuery, searchFromRequest } = require("../../platform/website/publicWebsiteUrl");
 
 const PERMANENT_REDIRECT_STATUS = 301;
 
@@ -55,6 +56,7 @@ function isUnsafeSingleSiteRedirectTarget(currentPathOnly, targetPathOnly) {
 
 /**
  * Permanent redirect to the unified church-wide URL. Returns true if sent.
+ * Preserves the original query string (website_edit and similar).
  * @param {import('express').Request} req
  * @param {import('express').Response} res
  * @param {{
@@ -69,7 +71,7 @@ function redirectSingleSiteBranchToChurchWide(req, res, input) {
   if (!target || isUnsafeSingleSiteRedirectTarget(current, target)) {
     return false;
   }
-  res.redirect(PERMANENT_REDIRECT_STATUS, target);
+  res.redirect(PERMANENT_REDIRECT_STATUS, appendQuery(target, searchFromRequest(req)));
   return true;
 }
 

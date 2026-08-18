@@ -29,6 +29,9 @@ const accessRepo = require("../repositories/staffAccessRepository");
 const departmentRepo = require("../repositories/departmentRepository");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const submissionService = require("../../platform/website/submissionService");
+const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
+const { loadWebsiteManagementSummary } = require("../../platform/website/websiteManagementPresentation");
+const { PRODUCT_CODE, buildPublicWebsiteEditPath } = require("../../platform/website/publicWebsiteUrl");
 const {
   NETWORK_ADMIN,
   ORGANIZATION_ADMIN,
@@ -279,7 +282,10 @@ function calculateOrganizationSetupState(input) {
     (input.clinicKey || (input.website && input.website.clinicKey) || "")
   ).trim();
   const websiteEditUrl = clinicKey
-    ? `/clinics/${encodeURIComponent(clinicKey)}?website_edit=1&website_mode=draft`
+    ? buildPublicWebsiteEditPath({
+        product: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: clinicKey,
+      })
     : "/app/settings";
   const primaryHref =
     (primary && primary.href) ||
@@ -743,6 +749,32 @@ async function loadActiveClinicSettingsOverviewScreen(db, input) {
       summary: (hco && hco.countryCode) || "ZM",
     });
   }
+  if (
+    hasWebsitePermission(perms, PERMISSIONS.VIEW) ||
+    hasWebsitePermission(perms, PERMISSIONS.EDIT)
+  ) {
+    const websiteLoaded = await loadWebsiteManagementSummary(db, {
+      productCode: PRODUCT_CODE.ACTIVECLINIC,
+      organizationId: auth.organization.id,
+      organizationKey:
+        (auth.organization && (auth.organization.organizationKey || auth.organization.key)) ||
+        "",
+      grantedPermissions: perms,
+    });
+    const website = websiteLoaded.ok ? websiteLoaded.summary : null;
+    categories.push({
+      key: "website",
+      title: "Website",
+      description: "Public clinic website, draft, publish, and version history.",
+      href: "/app/settings/website",
+      statusLabel: website ? website.statusLabel : "Set up",
+      summary: website && website.publicPath
+        ? website.unpublishedChanges
+          ? `${website.publicPath} · unpublished changes`
+          : website.publicPath
+        : "Website not provisioned yet",
+    });
+  }
   categories.push({
     key: "account",
     title: "Account security",
@@ -1022,6 +1054,31 @@ async function updateRegionalSettings(db, input) {
   });
 }
 
+async function loadActiveClinicWebsiteSettingsScreen(db, input) {
+  const auth = input.auth;
+  const perms = auth.permissions || [];
+  if (
+    !hasWebsitePermission(perms, PERMISSIONS.VIEW) &&
+    !hasWebsitePermission(perms, PERMISSIONS.EDIT)
+  ) {
+    return { ok: false, code: RESULT.DENIED, restricted: true };
+  }
+  const loaded = await loadWebsiteManagementSummary(db, {
+    productCode: PRODUCT_CODE.ACTIVECLINIC,
+    organizationId: auth.organization.id,
+    organizationKey:
+      (auth.organization && (auth.organization.organizationKey || auth.organization.key)) ||
+      "",
+    grantedPermissions: perms,
+    env: input.env,
+    origin: input.origin || "",
+  });
+  if (!loaded.ok) {
+    return { ok: false, code: RESULT.DENIED, restricted: true };
+  }
+  return { ok: true, code: RESULT.OK, website: loaded.summary };
+}
+
 module.exports = {
   RESULT,
   ORGANIZATION_TYPE_LABELS,
@@ -1046,4 +1103,5 @@ module.exports = {
   updateHealthcareOrganizationSettings,
   loadRegionalSettingsScreen,
   updateRegionalSettings,
+  loadActiveClinicWebsiteSettingsScreen,
 };

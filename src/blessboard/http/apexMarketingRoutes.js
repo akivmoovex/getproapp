@@ -3,7 +3,9 @@
 /**
  * Apex marketing routes (Batch 2b + BB-MT-001 register-church POST).
  * Automatic Foundation + Growth trial provisioning (default on; emergency env switch)
- * via provisionRegisteredBlessBoardChurch. Network is support-contact only (no auto tenant).
+ * via submitChurchRegistration (shared platform.registration engine).
+ * Network is support-contact only (no auto tenant). Form credential fields
+ * still follow SELF_REGISTRATION_PROVISIONING_ENABLED / legacy alias.
  */
 
 const express = require("express");

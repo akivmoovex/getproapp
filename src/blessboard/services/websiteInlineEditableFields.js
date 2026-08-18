@@ -3,7 +3,20 @@
 /**
  * Allowlisted editable website fields for Phase 7 Stage 4 inline text editing.
  * Keys are stable product identifiers — never expose raw DB column paths to clients.
+ * The shared schema in src/platform/website/editableFieldSchema.js is the mutation gate.
  */
+
+const { CONTENT_TYPES } = require("../../platform/website/contentTypes");
+const { PERMISSIONS } = require("../../platform/website/permissions");
+const {
+  PRODUCT_CODE,
+  STORAGE_KIND,
+  VALIDATION_MODE,
+  registerProductEditableFields,
+  resolveEditableField: resolveSchemaField,
+  assertEditableMutation,
+  stableKeyFromLocator,
+} = require("../../platform/website/editableFieldSchema");
 
 const FIELD_TYPES = Object.freeze({
   heading: "heading",
@@ -266,6 +279,43 @@ const FIELD_INDEX = new Map(
   EDITABLE_FIELDS.map((f) => [`${f.pageKey}::${f.sectionKey}::${f.fieldKey}`, f])
 );
 
+function mapBlessboardType(field) {
+  if (field.type === FIELD_TYPES.buttonUrl) return CONTENT_TYPES.URL;
+  if (field.type === FIELD_TYPES.paragraph) return CONTENT_TYPES.LONG_TEXT;
+  if (field.type === FIELD_TYPES.contactText && field.fieldKey === "email") return CONTENT_TYPES.EMAIL;
+  if (field.type === FIELD_TYPES.contactText && field.fieldKey === "phone") return CONTENT_TYPES.PHONE;
+  return CONTENT_TYPES.SHORT_TEXT;
+}
+
+function registerBlessBoardEditableFields() {
+  const defs = EDITABLE_FIELDS.map((field) => ({
+    key: stableKeyFromLocator(field.pageKey, field.sectionKey, field.fieldKey),
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    templateId: "blessboard_church",
+    templateVersion: 1,
+    type: mapBlessboardType(field),
+    productType: field.type,
+    maxLen: field.maxLength,
+    minLength: field.minLength,
+    required: field.required === true,
+    permission: PERMISSIONS.EDIT,
+    validationMode: VALIDATION_MODE.BLESSBOARD_INLINE,
+    allowRelativeUrl: field.type === FIELD_TYPES.buttonUrl,
+    inline: true,
+    group: field.pageKey,
+    description: field.guidance || `${field.pageKey}.${field.sectionKey}.${field.fieldKey}`,
+    storage: {
+      kind: STORAGE_KIND.BLESSBOARD_INLINE,
+      pageKey: field.pageKey,
+      sectionKey: field.sectionKey,
+      fieldKey: field.fieldKey,
+    },
+  }));
+  registerProductEditableFields(PRODUCT_CODE.BLESSBOARD, defs);
+}
+
+registerBlessBoardEditableFields();
+
 /**
  * @param {string} pageKey
  * @param {string} sectionKey
@@ -273,6 +323,13 @@ const FIELD_INDEX = new Map(
  * @returns {EditableFieldDef|null}
  */
 function resolveEditableField(pageKey, sectionKey, fieldKey) {
+  const resolved = resolveSchemaField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    pageKey,
+    sectionKey,
+    fieldKey,
+  });
+  if (!resolved.ok) return null;
   return FIELD_INDEX.get(`${pageKey}::${sectionKey}::${fieldKey}`) || null;
 }
 
@@ -318,24 +375,18 @@ function validateSafeUrl(raw) {
  * @returns {{ ok: true, value: string }|{ ok: false, error: string }}
  */
 function validateFieldValue(field, raw) {
-  const value = String(raw ?? "");
-  if (field.type === FIELD_TYPES.buttonUrl) {
-    return validateSafeUrl(value);
+  if (!field) return { ok: false, error: "That field cannot be edited." };
+  const asserted = assertEditableMutation({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    pageKey: field.pageKey,
+    sectionKey: field.sectionKey,
+    fieldKey: field.fieldKey,
+    value: raw,
+  });
+  if (!asserted.ok) {
+    return { ok: false, error: asserted.message || "That field cannot be edited." };
   }
-  const trimmed = value.trim();
-  if (field.required && !trimmed) {
-    return { ok: false, error: "This field is required." };
-  }
-  if (field.minLength != null && trimmed.length < field.minLength) {
-    return { ok: false, error: `Enter at least ${field.minLength} characters.` };
-  }
-  if (trimmed.length > field.maxLength) {
-    return { ok: false, error: `Keep this under ${field.maxLength} characters.` };
-  }
-  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(value)) {
-    return { ok: false, error: "Text contains invalid characters." };
-  }
-  return { ok: true, value: trimmed };
+  return { ok: true, value: asserted.value };
 }
 
 module.exports = {
@@ -345,4 +396,5 @@ module.exports = {
   listEditableFieldsForPage,
   validateFieldValue,
   validateSafeUrl,
+  registerBlessBoardEditableFields,
 };

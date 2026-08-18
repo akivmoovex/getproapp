@@ -2,6 +2,14 @@
 
 const { registerWebsiteTemplate } = require("../../platform/website/templateRegistry");
 const { CONTENT_TYPES } = require("../../platform/website/contentTypes");
+const { PERMISSIONS } = require("../../platform/website/permissions");
+const {
+  registerProductEditableFields,
+  STORAGE_KIND,
+  VALIDATION_MODE,
+  PRODUCT_CODE,
+} = require("../../platform/website/editableFieldSchema");
+const { buildActiveClinicWebsiteTemplateContent } = require("./activeClinicWebsiteTemplateContent");
 
 const T = CONTENT_TYPES;
 
@@ -49,35 +57,60 @@ const KEYS = {
   "section.faq.visible": { type: T.BOOLEAN, group: "home" },
   "section.promo.visible": { type: T.BOOLEAN, group: "home" },
   "insurance.intro": { type: T.LONG_TEXT, maxLen: 2000, group: "insurance", hideable: true },
+  "services.intro": { type: T.LONG_TEXT, maxLen: 2000, group: "services", description: "Services page intro" },
+  "services.examples": {
+    type: T.STRUCTURED,
+    group: "services",
+    hideable: true,
+    itemSchema: {
+      name: { type: T.SHORT_TEXT, maxLen: 120 },
+      summary: { type: T.LONG_TEXT, maxLen: 400 },
+    },
+  },
+  "doctors.intro": { type: T.LONG_TEXT, maxLen: 2000, group: "doctors", description: "Doctors page intro" },
+  "doctors.examples": {
+    type: T.STRUCTURED,
+    group: "doctors",
+    hideable: true,
+    itemSchema: {
+      name: { type: T.SHORT_TEXT, maxLen: 120 },
+      title: { type: T.SHORT_TEXT, maxLen: 160 },
+      bio: { type: T.LONG_TEXT, maxLen: 800 },
+    },
+  },
+  "location.intro": { type: T.LONG_TEXT, maxLen: 1000, group: "location", description: "Location page intro" },
 };
 
-const DEFAULTS = {
-  "home.hero.title": null,
-  "home.hero.subtitle": "Website being set up",
-  "home.hero.eyebrow": "Caring for our community",
-  "about.story.heading": "About our clinic",
-  "about.story.body": "Add your clinic description",
-  "contact.intro": "Contact the clinic for appointments and enquiries.",
-  "book.intro": "Book an appointment with our team.",
-  "footer.legal": "This website does not provide emergency medical care. In an emergency call local emergency services.",
-  "footer.tagline": "",
-  "home.promo.heading": "",
-  "home.promo.body": "",
-  "home.testimonials": [],
-  "home.faq": [],
-  "page.pricing.visible": false,
-  "page.doctors.visible": false,
-  "page.insurance.visible": false,
-  "section.testimonials.visible": false,
-  "section.faq.visible": false,
-  "section.promo.visible": false,
-  "insurance.intro": "Add insurance information",
-};
+const DEFAULTS = Object.freeze(buildActiveClinicWebsiteTemplateContent());
 
 let registeredV1 = null;
 let registeredV2 = null;
 
+function editableFieldsFromKeys(templateId, version) {
+  return Object.entries(KEYS).map(([key, def]) => ({
+    key,
+    productCode: PRODUCT_CODE.ACTIVECLINIC,
+    templateId,
+    templateVersion: version,
+    type: def.type,
+    maxLen: def.maxLen,
+    hideable: def.hideable === true,
+    group: def.group || null,
+    description: def.description || key,
+    permission: PERMISSIONS.EDIT,
+    validationMode: VALIDATION_MODE.CONTENT_TYPES,
+    itemSchema: def.itemSchema || null,
+    inline: def.type !== CONTENT_TYPES.BOOLEAN && def.type !== CONTENT_TYPES.STRUCTURED,
+    storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: key },
+  }));
+}
+
+function registerActiveClinicEditableFields() {
+  registerProductEditableFields(PRODUCT_CODE.ACTIVECLINIC, editableFieldsFromKeys("activeclinic_clinic", 1));
+}
+
 function registerActiveClinicWebsiteTemplate() {
+  registerActiveClinicEditableFields();
   if (registeredV1) return registeredV1;
   registeredV1 = registerWebsiteTemplate({
     templateId: "activeclinic_clinic",
@@ -145,4 +178,5 @@ module.exports = {
   ACTIVECLINIC_TEMPLATE_V2: 2,
   ACTIVECLINIC_WEBSITE_KEYS: KEYS,
   ACTIVECLINIC_WEBSITE_DEFAULTS: DEFAULTS,
+  registerActiveClinicEditableFields,
 };

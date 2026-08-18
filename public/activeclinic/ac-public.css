@@ -1090,6 +1090,70 @@ body.ac-public--tenant .ac-public-main {
   font-weight: 600;
 }
 
+.ac-tenant-promo,
+.ac-tenant-faq {
+  max-width: var(--acp-max);
+  margin: 0 auto;
+  padding: 0 1.25rem var(--acp-space-6);
+}
+.ac-tenant-promo {
+  background: var(--acp-surface);
+  border: 1px solid var(--acp-border);
+  border-radius: var(--acp-radius-lg);
+  padding: 1.5rem 1.4rem 1.6rem;
+  box-shadow: var(--acp-shadow-sm);
+  margin-bottom: var(--acp-space-6);
+}
+.ac-tenant-promo h2 {
+  margin: 0 0 0.5rem;
+  color: var(--acp-navy);
+}
+.ac-tenant-faq__list {
+  margin: 0;
+  padding: 0;
+}
+.ac-tenant-faq__item {
+  border-bottom: 1px solid var(--acp-border);
+  padding: 0.85rem 0;
+}
+.ac-tenant-faq__item dt {
+  font-weight: 650;
+  color: var(--acp-navy);
+  margin: 0 0 0.3rem;
+}
+.ac-tenant-faq__item dd {
+  margin: 0;
+  color: var(--acp-muted);
+}
+
+.ac-template-placeholder {
+  margin: 0 0 0.85rem;
+  padding: 0.55rem 0.75rem;
+  border-radius: var(--acp-radius);
+  background: var(--acp-primary-soft);
+  color: var(--acp-primary-strong);
+  font-size: 0.88rem;
+  font-weight: 600;
+}
+.ac-service-card--placeholder,
+.ac-doctor-card--placeholder {
+  padding: 1.15rem 1.2rem;
+  border-style: dashed;
+}
+.ac-location-hours--template {
+  margin-top: 0.85rem;
+}
+.ac-location-hours-overlay {
+  margin: 0;
+  white-space: pre-line;
+  font-family: inherit;
+  color: var(--acp-muted);
+}
+.ac-public-footer__disclaimer {
+  margin: 0.45rem 0 0;
+  max-width: 52rem;
+}
+
 .ac-tenant-directory {
   max-width: var(--acp-max);
   margin: 0 auto;

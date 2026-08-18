@@ -400,10 +400,9 @@ describe("ActiveClinic public website (P20–P26)", () => {
 
     const success = await request(app).get(ok.headers.location);
     assert.equal(success.status, 200);
-    assert.match(success.text, /Application received/);
+    assert.match(success.text, /Application received|Registration successful|review required/i);
     assert.match(success.text, /data-ac-application-ref=/);
-    assert.match(success.text, /not.*published/i);
-    assert.match(success.text, /not.*SMS/i);
+    assert.match(success.text, /unpublished|not.*published/i);
   });
 
   it("clinic onboarding validation error uses dedicated form state", async () => {

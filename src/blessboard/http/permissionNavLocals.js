@@ -21,6 +21,7 @@ async function buildPermissionNavFlags(pool, opts) {
     canViewStaffAccess: false,
     canPublishWebsite: false,
     canEditWebsite: false,
+    canRestoreWebsite: false,
     canViewWebsite: false,
     canViewFinance: false,
     canExportData: false,
@@ -64,6 +65,8 @@ async function buildPermissionNavFlags(pool, opts) {
     flags.canViewStaffAccess = permissions.has("roles.view");
     flags.canPublishWebsite = permissions.has("website.publish");
     flags.canEditWebsite = permissions.has("website.edit");
+    flags.canRestoreWebsite =
+      permissions.has("website.rollback") || permissions.has("website.restore");
     flags.canViewWebsite =
       permissions.has("website.view") || flags.canEditWebsite || flags.canPublishWebsite;
     flags.canViewFinance = permissions.has("finance.transactions.view");

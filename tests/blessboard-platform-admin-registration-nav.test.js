@@ -15,6 +15,7 @@ const request = require("supertest");
 const {
   PLATFORM_ADMIN_NAV,
   PLATFORM_ADMIN_MOBILE_TABS,
+  flattenPlatformAdminNav,
 } = require("../src/platform/http/platformAdminNav");
 const { buildPlatformAdminShellLocals } = require("../src/platform/http/platformAdminShellLocals");
 
@@ -126,19 +127,22 @@ describe("platform-admin registration nav config", () => {
     assert.equal(locals.activeNav, "registration-applications");
   });
 
-  it("shell fallback markup includes Church Registrations once", () => {
+  it("shell fallback remains a degraded nav when locals are missing", () => {
     const start = fs.readFileSync(
       path.join(__dirname, "../views/blessboard/v5/partials/platform-admin-shell-start.ejs"),
       "utf8"
     );
-    const fallbackHits = start.match(/key:\s*'registration-applications'/g);
-    assert.equal((fallbackHits || []).length, 1);
-    assert.match(start, /href: '\/admin\/registration-applications'/);
+    assert.match(start, /key:\s*'system'/);
+    assert.match(start, /key:\s*'deployments'/);
+    assert.match(start, /href: '\/admin\/system\/deployments'/);
     assert.match(start, /activeNav === item\.key/);
   });
 
   it("preserves core Platform Admin nav keys", () => {
     const keys = PLATFORM_ADMIN_NAV.map((i) => i.key);
+    const flatKeys = flattenPlatformAdminNav(PLATFORM_ADMIN_NAV, {
+      includeTestingOnly: true,
+    }).map((i) => i.key);
     for (const required of [
       "home",
       "organizations",
@@ -148,12 +152,13 @@ describe("platform-admin registration nav config", () => {
       "plans",
       "subscriptions",
       "domains",
-      "deployments",
       "settings",
       "account",
     ]) {
       assert.ok(keys.includes(required), `missing ${required}`);
     }
+    assert.ok(keys.includes("system"), "missing system");
+    assert.ok(flatKeys.includes("deployments"), "missing deployments");
   });
 
   it("list and detail routes set activeNav registration-applications", () => {

@@ -131,7 +131,12 @@ describe("blessboard church website preview and publish", () => {
       applicationId: row.id,
       administratorPassword: PASSWORD,
       requestId: `req-${key}`,
-      actorContext: { type: "test", source: "unit", dataEnvironment: "testing" },
+      actorContext: {
+        type: "test",
+        source: "unit",
+        dataEnvironment: "testing",
+        deploymentCode: "blessboard-org-staging",
+      },
     });
     assert.equal(result.ok, true, result.message || result.status);
     return result.records;
@@ -251,11 +256,24 @@ describe("blessboard church website preview and publish", () => {
     requireDb();
     const rec = await provisionPlan("foundation");
 
-    // Remove contact to force a readiness gap.
+    // Remove contact and service-times copy to force readiness gaps.
+    // New-tenant templates may already seed service times.
     await pool.query(
       `UPDATE blessboard.church_settings
           SET primary_email = NULL, primary_phone = NULL
         WHERE church_id = $1`,
+      [rec.churchId]
+    );
+    await pool.query(
+      `UPDATE blessboard.page_sections ps
+          SET body_text = NULL
+         FROM blessboard.public_pages pp
+        WHERE pp.id = ps.page_id
+          AND pp.church_id = $1
+          AND (
+            ps.section_key IN ('service_times', 'services', 'worship_times')
+            OR ps.section_type IN ('service_times', 'services', 'worship_times')
+          )`,
       [rec.churchId]
     );
     const blocked = await evaluatePublishReadiness(pool, { churchId: rec.churchId });

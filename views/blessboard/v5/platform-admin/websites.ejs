@@ -28,38 +28,61 @@
   <table class="bb-pa-table" data-bb-pa-websites-table="1">
     <thead>
       <tr>
-        <th>Organisation</th>
         <th>Product</th>
-        <th>Active</th>
-        <th>Website</th>
-        <th>Published</th>
-        <th>Unpublished draft</th>
-        <th>Last publication</th>
-        <th>Who published</th>
+        <th>Organisation</th>
+        <th>Public URL</th>
+        <th>Website status</th>
+        <th>Published version</th>
+        <th>Current draft</th>
+        <th>Unpublished changes</th>
+        <th>Last editor</th>
+        <th>Last publisher</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       <% if (!rows.length) { %>
-      <tr><td colspan="9">No websites match this view.</td></tr>
+      <tr><td colspan="10">No websites match this view.</td></tr>
       <% } %>
       <% rows.forEach(function (site) { %>
-      <tr data-bb-pa-website-row="<%= site.organizationKey %>" data-product="<%= site.productCode %>">
+      <tr
+        data-bb-pa-website-row="<%= site.organizationKey %>"
+        data-product="<%= site.productCode %>"
+        data-website-status="<%= site.websiteStatus %>"
+        data-published-version="<%= site.currentVersionNumber || '' %>"
+        data-draft-state="<%= site.currentDraft %>"
+        data-unpublished-count="<%= site.unpublishedCount || 0 %>"
+        data-last-editor="<%= site.lastEditor || '' %>"
+        data-last-publisher="<%= site.lastPublisher || '' %>"
+      >
+        <td><%= site.productLabel || (site.productCode === 'activeclinic' ? 'ActiveClinic' : 'BlessBoard') %></td>
         <td>
           <strong><%= site.displayName %></strong><br/>
           <span class="bb-pa-hint"><%= site.organizationKey %></span>
         </td>
-        <td><%= site.productCode === 'activeclinic' ? 'ActiveClinic' : 'BlessBoard' %></td>
-        <td><%= site.organizationStatus === 'active' ? 'Yes' : site.organizationStatus %></td>
-        <td><%= site.hasWebsite ? 'Yes' : 'No' %></td>
-        <td><%= site.published ? 'Yes' : 'No' %></td>
-        <td><%= site.unpublishedCount > 0 ? (site.unpublishedCount + ' changes') : (site.published ? 'None' : 'Draft only') %></td>
+        <td>
+          <% if (site.publicPath) { %>
+          <a class="bb-pa-link" href="<%= site.publicPath %>" data-action-view-live="1"><%= site.publicPath %></a>
+          <% } else { %>—<% } %>
+        </td>
+        <td><%= site.websiteStatus || '—' %></td>
         <td>
           <% if (site.currentVersionNumber) { %>v<%= site.currentVersionNumber %><% } else { %>—<% } %>
           <% if (site.lastPublishedLabel) { %><br/><span class="bb-pa-hint"><%= site.lastPublishedLabel %></span><% } %>
         </td>
+        <td><%= site.currentDraft || '—' %></td>
+        <td><%= site.unpublishedCount > 0 ? (site.unpublishedCount + ' changes') : 'None' %></td>
+        <td><%= site.lastEditor || '—' %></td>
         <td><%= site.lastPublisher || '—' %></td>
-        <td><a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/organizations/<%= site.organizationKey %>/website">Open</a></td>
+        <td>
+          <% if (site.actions && site.actions.previewDraft) { %>
+          <a class="bb-pa-link" href="<%= site.actions.previewDraft %>" data-action-preview-draft="1">Preview draft</a><br/>
+          <% } %>
+          <% if (site.actions && site.actions.history) { %>
+          <a class="bb-pa-link" href="<%= site.actions.history %>" data-action-history="1">History</a><br/>
+          <% } %>
+          <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= (site.actions && site.actions.open) || ('/admin/organizations/' + site.organizationKey + '/website') %>">Open</a>
+        </td>
       </tr>
       <% }) %>
     </tbody>

@@ -25,6 +25,10 @@ const {
   hqPreviewPagePath,
   hqWebsitePublishReviewPath,
 } = require("../urls/churchUrlHelper");
+const {
+  PRODUCT_CODE,
+  buildPublicWebsiteEditPath,
+} = require("../../platform/website/publicWebsiteUrl");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -33,6 +37,15 @@ const STATUS = Object.freeze({
   NOT_FOUND: "not_found",
   FORBIDDEN: "forbidden",
 });
+
+function blessboardPublicEditPath(organizationKey, fallback) {
+  return (
+    buildPublicWebsiteEditPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey,
+    }) || fallback
+  );
+}
 
 const FRIENDLY_SUBMISSION_LABELS = Object.freeze({
   draft: "Draft",
@@ -248,6 +261,7 @@ async function loadFoundationWebsiteOverview(db, opts) {
       editPath: "/hq/content",
       previewPath: hqPreviewPagePath("home"),
       publicPath,
+      inlineEditPath: blessboardPublicEditPath(orgKey, "/hq/content"),
       organizationKey: orgKey,
       liveAvailable: hasPublished,
       websiteStatusLabel: friendlyStatus,
@@ -263,9 +277,7 @@ async function loadFoundationWebsiteOverview(db, opts) {
       canPublish: publishReady && hasDraft,
       showFixDetails: !publishReady,
       publishReviewPath: hqWebsitePublishReviewPath(null),
-      fixDetailsPath: !publishReady
-        ? hqWebsitePublishReviewPath(null)
-        : hqWebsitePublishReviewPath(null),
+      fixDetailsPath: hqWebsitePublishReviewPath(null),
       checklist: mapFoundationChecklist(onboarding && onboarding.summary),
       undoLastPublish: {
         eligible: undoEligible,
@@ -447,6 +459,7 @@ async function loadGrowthWebsiteOverview(db, opts) {
       editPath: "/hq/content",
       previewPath: hqPreviewPagePath("home"),
       publicPath,
+      inlineEditPath: blessboardPublicEditPath(orgKey, "/hq/content"),
       liveAvailable: hasPublished,
       recentChangesPath: "/hq/website/recent-changes",
       restoredDraft: restoredDraft
@@ -584,10 +597,7 @@ async function loadBranchWebsiteOverview(db, opts) {
 
     const orgKey = opts.organizationKey || null;
     const publicPath = orgKey ? publicChurchHomePath(orgKey) : "/";
-    const visualEditPath =
-      publicPath && publicPath !== "/"
-        ? `${publicPath}?website_edit=1`
-        : "/branch-admin/content";
+    const visualEditPath = blessboardPublicEditPath(orgKey, "/branch-admin/content");
 
     let primaryState = "none";
     if (activeDraft && activeDraft.status === "changes_requested") primaryState = "changes_requested";

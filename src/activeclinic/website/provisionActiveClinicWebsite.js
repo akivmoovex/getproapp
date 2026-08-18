@@ -3,6 +3,7 @@
 const { withProvisioningTransaction } = require("../../platform/db/provisioningTransaction");
 const { provisionWebsiteInstance } = require("../../platform/website/provisionService");
 const instanceRepo = require("../../platform/website/instanceRepository");
+const { recordWebsiteAudit } = require("../../platform/website/auditService");
 const {
   registerActiveClinicWebsiteTemplate,
   ACTIVECLINIC_TEMPLATE_ID,
@@ -10,7 +11,7 @@ const {
 } = require("./activeClinicWebsiteTemplate");
 const { createHealthcareOrganization, getHealthcareOrganizationByOrganizationId } = require("../services/healthcareOrganizationService");
 const { createFacility } = require("../services/facilityService");
-const { recordWebsiteAudit } = require("../../platform/website/auditService");
+const { buildActiveClinicWebsiteTemplateContent } = require("./activeClinicWebsiteTemplateContent");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -21,27 +22,15 @@ const RESULT = Object.freeze({
   SLUG_COLLISION: "slug_collision",
 });
 
-function starterOverrides(publicName) {
-  const name = String(publicName || "Clinic").trim() || "Clinic";
-  return {
-    "home.hero.title": name,
-    "home.hero.subtitle": "Website being set up",
-    "home.hero.eyebrow": "",
-    "about.story.body":
-      "This clinic website is being set up. Contact and location details will appear here once the clinic adds them.",
-    "about.story.heading": `About ${name}`,
-    "contact.intro": "Contact the clinic for appointments and enquiries.",
-    "book.intro": "Booking will be available once the clinic publishes hours and services.",
-    "footer.tagline": "Powered by ActiveClinic",
-    "page.pricing.visible": false,
-    "page.doctors.visible": false,
-    "page.insurance.visible": false,
-    "section.testimonials.visible": false,
-    "section.faq.visible": false,
-    "section.promo.visible": false,
-    "home.testimonials": [],
-    "home.faq": [],
-  };
+function starterOverrides(publicName, extras) {
+  const extra = extras && typeof extras === "object" ? extras : {};
+  return buildActiveClinicWebsiteTemplateContent({
+    publicName,
+    phone: extra.phone || extra.contactPhone || "",
+    email: extra.email || extra.contactEmail || "",
+    address: extra.address || "",
+    hours: extra.hours || "",
+  });
 }
 
 async function provisionActiveClinicWebsite(db, input) {
@@ -70,7 +59,12 @@ async function provisionActiveClinicWebsite(db, input) {
     scopeRef: null,
     actorIdentityId: input.actorIdentityId || null,
     contentOverrides: {
-      ...starterOverrides(input.publicName),
+      ...starterOverrides(input.publicName, {
+        phone: input.phone || input.contactPhone || "",
+        email: input.email || input.contactEmail || "",
+        address: input.address || "",
+        hours: input.hours || "",
+      }),
       ...(input.contentOverrides || {}),
     },
     lifecycleStatus: input.lifecycleStatus,
@@ -175,6 +169,8 @@ async function provisionActiveClinicClinic(db, input) {
     await client.query("SAVEPOINT ac_clinic_website");
     let website;
     try {
+      // LEGACY_COMPATIBILITY: product provisioner may create the website first.
+      // Shared registration lifecycle also calls initializeOrganizationWebsite (idempotent).
       website = await provisionActiveClinicWebsite(client, {
         organizationId,
         slug,
@@ -182,6 +178,9 @@ async function provisionActiveClinicClinic(db, input) {
         healthcareOrganizationId: hco.id,
         actorIdentityId: input.actorIdentityId || null,
         status: input.websiteStatus || "coming_soon",
+        phone: input.phone || "",
+        email: input.email || input.contactEmail || "",
+        address: input.address || "",
         contentOverrides: input.contentOverrides || null,
         templateVersion: input.templateVersion,
       });

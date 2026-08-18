@@ -153,7 +153,7 @@ describe("BUG FIXES 04 registration and website versions", () => {
     assert.equal(result.ok, true, JSON.stringify(result));
     assert.equal(result.reviewRequired, false);
     assert.ok(result.organizationId);
-    assert.equal(result.application.status, "approved");
+    assert.equal(result.application.status, "active");
     const org = await pool.query(`SELECT status FROM platform.organizations WHERE id = $1`, [
       result.organizationId,
     ]);
@@ -260,7 +260,7 @@ describe("BUG FIXES 04 registration and website versions", () => {
     const payload = clinicPayload();
     const created = await createClinicRegistrationApplication(pool, payload);
     assert.equal(created.ok, true, JSON.stringify(created));
-    assert.equal(created.application.status, "pending_review");
+    assert.equal(created.application.status, "submitted");
     const { markReviewRequired } = require("../src/activeclinic/services/submitClinicRegistrationService");
     await markReviewRequired(pool, created.application.id, "manual_hold", null);
     const rejected = await rejectClinicRegistration(pool, {

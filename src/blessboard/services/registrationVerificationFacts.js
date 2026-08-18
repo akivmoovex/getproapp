@@ -292,11 +292,11 @@ function computeApprovalEligible(app) {
       app.followUpStatus === "qualified"
     );
   }
-  if (["rejected", "cancelled", "closed"].includes(app.applicationStatus)) return false;
+  if (["rejected", "cancelled", "closed", "active"].includes(app.applicationStatus)) return false;
   if (app.provisioningStatus === "provisioning_failed") {
     return false;
   }
-  return ["submitted", "duplicate_review", "review_required"].includes(app.applicationStatus);
+  return ["submitted", "duplicate_review", "review_required", "provisioning"].includes(app.applicationStatus);
 }
 
 /**

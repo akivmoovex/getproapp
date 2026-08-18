@@ -49,6 +49,7 @@ const {
   STATUS: WEBSITE_SCOPE_STATUS,
   SCOPE_TYPE,
 } = require("../services/resolveWebsiteScope");
+const { buildPermissionNavFlags } = require("./permissionNavLocals");
 
 /**
  * @param {string} relativePath
@@ -129,6 +130,44 @@ function createChurchWebsiteAdminRouter(deps) {
   const requireHq = createRequireBlessBoardPermission("website.view", null, { getPool, scopeMode: "church" });
   const requireWebsitePublish = createRequireBlessBoardPermission("website.publish", null, { getPool, scopeMode: "church" });
 
+  async function websiteCapabilityFlags(req) {
+    const tenant = resolveTenantForAuthorization(req);
+    const session = req.v5Session && req.v5Session.session;
+    if (!tenant || !session || !session.userId) {
+      return {
+        canPublishWebsite: false,
+        canEditWebsite: false,
+        canRestoreWebsite: false,
+        canViewWebsite: false,
+      };
+    }
+    return buildPermissionNavFlags(getPool(), {
+      actorUserId: session.userId,
+      tenant,
+      branchId: null,
+    });
+  }
+
+  function applyOverviewCapabilities(overview, flags) {
+    if (!overview || typeof overview !== "object") return overview;
+    overview.canEdit = flags.canEditWebsite === true;
+    if (Object.prototype.hasOwnProperty.call(overview, "canPublish")) {
+      overview.canPublish = Boolean(overview.canPublish) && flags.canPublishWebsite === true;
+    }
+    if (overview.undoLastPublish && typeof overview.undoLastPublish === "object") {
+      const allowed = flags.canRestoreWebsite === true;
+      overview.undoLastPublish.enabled = Boolean(overview.undoLastPublish.enabled) && allowed;
+      if (!allowed) {
+        overview.undoLastPublish.href = null;
+        if (!overview.undoLastPublish.explanation) {
+          overview.undoLastPublish.explanation =
+            "Restoring a previous website requires restore permission.";
+        }
+      }
+    }
+    return overview;
+  }
+
   const rejectApex = createRejectApex({
     isApexHost,
     mode: "unlessTenant",
@@ -200,6 +239,8 @@ function createChurchWebsiteAdminRouter(deps) {
           env,
         });
         if (overview && overview.ok && !overview.useLegacyWebsiteScreen) {
+          const flags = await websiteCapabilityFlags(req);
+          applyOverviewCapabilities(overview, flags);
           const noticeRaw = String((req.query && req.query.notice) || "") || null;
           const noticeMap = {
             published: "Website published.",
@@ -463,7 +504,7 @@ function createChurchWebsiteAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   }
 
-  router.get("/hq/website/publish/review", rejectApex, gateHq, async (req, res) => {
+  router.get("/hq/website/publish/review", rejectApex, gateHq, requireWebsitePublish, async (req, res) => {
     // Backward-compatible branch hint: redirect to canonical branch review when reliable.
     const branchHint = String((req.query && (req.query.branch || req.query.branchKey)) || "")
       .trim();
@@ -495,6 +536,7 @@ function createChurchWebsiteAdminRouter(deps) {
     "/hq/website/branches/:branchKey/publish/review",
     rejectApex,
     gateHq,
+    requireWebsitePublish,
     async (req, res) => {
       const scope = await resolveBranchPublishScope(req, res);
       if (!scope) return;

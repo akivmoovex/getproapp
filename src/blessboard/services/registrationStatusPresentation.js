@@ -14,11 +14,15 @@ const TONE_TO_CHIP = Object.freeze({
 
 const APPLICATION_STATUS = Object.freeze({
   submitted: { label: "Submitted", tone: "warn" },
+  provisioning: { label: "Provisioning", tone: "warn" },
   duplicate_review: { label: "Duplicate review", tone: "warn" },
   review_required: { label: "Review required", tone: "warn" },
+  active: { label: "Active", tone: "success" },
   rejected: { label: "Rejected", tone: "muted" },
   cancelled: { label: "Cancelled", tone: "muted" },
   closed: { label: "Closed", tone: "muted" },
+  provision_failed: { label: "Provision failed", tone: "danger" },
+  suspended: { label: "Suspended", tone: "warn" },
 });
 
 const PROVISIONING_STATUS = Object.freeze({

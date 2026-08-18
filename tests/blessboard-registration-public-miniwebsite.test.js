@@ -148,7 +148,7 @@ describe("registration public miniwebsite provision", () => {
     const phoneTail = String(Date.now() + Math.floor(Math.random() * 9000)).slice(-7);
     return appRepo.createApplication(pool, {
       church_name: overrides.church_name || `Grace Community ${key}`,
-      country: "Kenya",
+      country: overrides.country || "Kenya",
       city: "Nairobi",
       contact_name: overrides.contact_name || "Applicant",
       contact_email: overrides.contact_email || `${key}@example.org`,
@@ -250,7 +250,10 @@ describe("registration public miniwebsite provision", () => {
     assert.equal(a1.ok, true, a1.message || a1.status);
     assert.equal(a1.records.organizationKey, firstKey);
 
-    const second = await insertFoundationApp({ church_name: `Collide ${base}` });
+    const second = await insertFoundationApp({
+      church_name: `Collide ${base}`,
+      country: "Zambia",
+    });
     const a2 = await provisionRegisteredBlessBoardChurch(pool, {
       applicationId: second.id,
       administratorPassword: PASSWORD,

@@ -214,9 +214,8 @@ function logRiskDecision(req, risk, mode) {
  * @returns {{ application_status: string, risk_decision: string, risk_reason_codes: string[], risk_decided_at: string }}
  */
 function riskPersistFields(risk) {
-  const reviewRequired = risk.decision === RISK_DECISIONS.REVIEW_REQUIRED;
   return {
-    application_status: reviewRequired ? "duplicate_review" : "submitted",
+    application_status: "submitted",
     risk_decision: risk.decision,
     risk_reason_codes: risk.reasonCodes || [],
     risk_decided_at: risk.decidedAt || new Date().toISOString(),

@@ -6,6 +6,7 @@ const { recordModerationEvent, ACTION } = require("./moderationEventService");
 const { isLifecycleStatus, LIFECYCLE_STATUS } = require("./lifecycleStatus");
 const { isPublishPolicy } = require("./publishPolicy");
 const editSessionService = require("./editSessionService");
+const settingsRepo = require("../../blessboard/repositories/blessBoardSettingsRepository");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -14,6 +15,12 @@ const RESULT = Object.freeze({
   TENANT_MISMATCH: "tenant_mismatch",
   NOOP: "already_in_state",
 });
+
+function blessBoardWebsiteStatusForLifecycle(lifecycleStatus) {
+  if (lifecycleStatus === LIFECYCLE_STATUS.PUBLIC) return "published";
+  if (lifecycleStatus === LIFECYCLE_STATUS.SUSPENDED) return "suspended";
+  return "draft";
+}
 
 async function syncActiveClinicAvailabilityFlag(db, instance, lifecycleStatus) {
   if (!instance || instance.productCode !== "activeclinic") return;
@@ -24,6 +31,33 @@ async function syncActiveClinicAvailabilityFlag(db, instance, lifecycleStatus) {
       WHERE organization_id = $1`,
     [instance.organizationId, wantPublic]
   );
+}
+
+async function syncBlessBoardWebsiteStatus(db, instance, lifecycleStatus) {
+  if (!instance || instance.productCode !== "blessboard") return;
+  const church = await db.query(
+    `SELECT id FROM blessboard.churches WHERE organization_id = $1 LIMIT 1`,
+    [instance.organizationId]
+  );
+  if (!church.rows[0]) return;
+  const existing = await settingsRepo.findChurchSettings(db, church.rows[0].id);
+  if (!existing) return;
+  const next = blessBoardWebsiteStatusForLifecycle(lifecycleStatus);
+  if (String(existing.websiteStatus || "") === next) return;
+  await settingsRepo.upsertChurchSettings(db, church.rows[0].id, {
+    publicName: existing.publicName,
+    denomination: existing.denomination,
+    primaryEmail: existing.primaryEmail,
+    primaryPhone: existing.primaryPhone,
+    defaultTimezone: existing.defaultTimezone,
+    defaultCountryCode: existing.defaultCountryCode,
+    websiteStatus: next,
+  });
+}
+
+async function syncProductWebsiteAvailability(db, instance, lifecycleStatus) {
+  await syncActiveClinicAvailabilityFlag(db, instance, lifecycleStatus);
+  await syncBlessBoardWebsiteStatus(db, instance, lifecycleStatus);
 }
 
 async function applyLifecycle(db, input) {
@@ -86,7 +120,7 @@ async function applyLifecycle(db, input) {
   );
   const updated = instanceRepo.mapInstance(rows.rows[0]);
   if (input.syncProductAvailability !== false) {
-    await syncActiveClinicAvailabilityFlag(db, updated, nextStatus);
+    await syncProductWebsiteAvailability(db, updated, nextStatus);
   }
   await recordWebsiteAudit(db, {
     organizationId,
@@ -237,4 +271,6 @@ module.exports = {
   requestLiveWebsiteChanges,
   flagWebsiteContent,
   syncActiveClinicAvailabilityFlag,
+  syncBlessBoardWebsiteStatus,
+  syncProductWebsiteAvailability,
 };

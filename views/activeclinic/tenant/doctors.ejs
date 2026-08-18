@@ -1,12 +1,28 @@
 <section class="ac-public-section ac-tenant-directory" data-ac-page-section="tenant-doctors">
   <header class="ac-tenant-page-header">
     <h1>Our Doctors</h1>
-    <p class="ac-public-lede">Clinicians with profiles published by <%= clinic.publicName %>.</p>
+    <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'doctors.intro', fieldValue: clinic.doctorsIntro || ('Clinicians with profiles published by ' + clinic.publicName + '.'), fieldType: 'long_text' }) %></p>
   </header>
   <% const list = Array.isArray(profiles) ? profiles : []; %>
+  <% const doctorExamples = Array.isArray(clinic.doctorExamples) ? clinic.doctorExamples : []; %>
   <% if (!list.length) { %>
   <div class="ac-public-empty" data-ac-empty="doctors" data-ac-state-key="empty">
+    <% if (doctorExamples.length) { %>
+    <p class="ac-template-placeholder" data-ac-template-placeholder="1">Template profiles only — these people do not work at this clinic.</p>
+    <ul class="ac-doctor-cards acp-doctor-grid" data-ac-template-examples="doctors">
+      <% doctorExamples.forEach(function(d) { %>
+      <li class="ac-doctor-card acp-doctor-card ac-doctor-card--placeholder">
+        <div class="ac-doctor-card__body">
+          <h2 class="ac-doctor-card__name"><%= d.name %></h2>
+          <% if (d.title) { %><p class="ac-doctor-card__title"><%= d.title %></p><% } %>
+          <% if (d.bio) { %><p class="ac-doctor-card__bio"><%= d.bio %></p><% } %>
+        </div>
+      </li>
+      <% }) %>
+    </ul>
+    <% } else { %>
     <p>No public doctor profiles are published.</p>
+    <% } %>
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
   </div>
   <% } else { %>

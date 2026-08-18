@@ -232,6 +232,54 @@ function verifyEntityScope(item, scope) {
 }
 
 /**
+ * Overlay current unpublished field + structured drafts onto a public page model.
+ * Used by authenticated preview surfaces so preview reads the current draft.
+ */
+async function applyCurrentDraftOverlaysToModel(db, model, scope) {
+  if (!model) return model;
+  const {
+    loadDraftOverlayMap,
+    applyDraftsToSections,
+  } = require("../services/websiteInlineDraftService");
+  const {
+    listStructuredDrafts,
+    applyStructuredDraftsToModel,
+  } = require("../services/websiteStructuredDraftService");
+  try {
+    const overlayMap = await loadDraftOverlayMap(db, {
+      churchId: scope.churchId,
+      branchId: scope.branchId,
+      pageKey: model.pageKey,
+    });
+    model.sections = applyDraftsToSections(model.sections, overlayMap);
+    if (model.pageKey === "contact" && model.publicContact) {
+      const email = overlayMap.get("details::email");
+      const phone = overlayMap.get("details::phone");
+      const address = overlayMap.get("details::address");
+      if (email !== undefined || phone !== undefined || address !== undefined) {
+        model.publicContact = {
+          ...model.publicContact,
+          email: email !== undefined ? email : model.publicContact.email,
+          phone: phone !== undefined ? phone : model.publicContact.phone,
+          addressText:
+            address !== undefined ? address : model.publicContact.addressText,
+          hasAny: true,
+        };
+      }
+    }
+    const structuredDrafts = await listStructuredDrafts(db, {
+      churchId: scope.churchId,
+      branchId: scope.branchId,
+      status: "draft",
+    });
+    applyStructuredDraftsToModel(model, structuredDrafts);
+  } catch {
+    /* show CMS preview without overlays if draft load fails */
+  }
+  return model;
+}
+
+/**
  * @param {object} body
  */
 function publishPatch(body) {
@@ -1782,6 +1830,7 @@ function createContentAdminRouter(deps) {
           sectionKey,
           fieldKey,
           newValue,
+          grantedPermissions: ["website.edit"],
         });
         return res.status(200).json({
           ok: true,
@@ -1931,6 +1980,7 @@ function createContentAdminRouter(deps) {
             sectionKey,
             fieldKey,
             newValue,
+            grantedPermissions: ["website.edit"],
           });
         } catch (err) {
           const status = err && err.status ? Number(err.status) : 500;
@@ -2159,6 +2209,10 @@ function createContentAdminRouter(deps) {
       const session = req.v5Session && req.v5Session.session;
       const orgKey = tenant && tenant.organization ? tenant.organization.key : null;
       const { publicChurchHomePath } = require("../urls/churchUrlHelper");
+      const {
+        PRODUCT_CODE,
+        buildPublicWebsiteEditPath,
+      } = require("../../platform/website/publicWebsiteUrl");
       const publicHome = publicChurchHomePath(orgKey) || "/";
       let canPublish = false;
       if (tenant && session && session.userId) {
@@ -2185,10 +2239,11 @@ function createContentAdminRouter(deps) {
         scopeLabel: scope.scopeLabel || (scope.branchId ? "Branch website" : "Organization website"),
         basePath: scope.basePath,
         publicHomePath: publicHome,
-        editHomePath: `${publicHome}${publicHome.includes("?") ? "&" : "?"}website_edit=1`.replace(
-          "?&",
-          "?"
-        ),
+        editHomePath:
+          buildPublicWebsiteEditPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+          }) || publicHome,
       };
     }
 
@@ -2417,14 +2472,6 @@ function createContentAdminRouter(deps) {
 
       const { loadTenantPublicPageModel, KIND } = require("./loadTenantPublicPageModel");
       const { renderTenantPublicPage } = require("./renderTenantPublicPage");
-      const {
-        loadDraftOverlayMap,
-        applyDraftsToSections,
-      } = require("../services/websiteInlineDraftService");
-      const {
-        listStructuredDrafts,
-        applyStructuredDraftsToModel,
-      } = require("../services/websiteStructuredDraftService");
 
       let previewBranchId = scope.branchId;
       let selectedBranch = scope.branch || null;
@@ -2474,33 +2521,7 @@ function createContentAdminRouter(deps) {
       }
 
       try {
-        const overlayMap = await loadDraftOverlayMap(getPool(), {
-          churchId: scope.churchId,
-          branchId: scope.branchId,
-          pageKey: model.pageKey,
-        });
-        model.sections = applyDraftsToSections(model.sections, overlayMap);
-        if (model.pageKey === "contact" && model.publicContact) {
-          const email = overlayMap.get("details::email");
-          const phone = overlayMap.get("details::phone");
-          const address = overlayMap.get("details::address");
-          if (email !== undefined || phone !== undefined || address !== undefined) {
-            model.publicContact = {
-              ...model.publicContact,
-              email: email !== undefined ? email : model.publicContact.email,
-              phone: phone !== undefined ? phone : model.publicContact.phone,
-              addressText:
-                address !== undefined ? address : model.publicContact.addressText,
-              hasAny: true,
-            };
-          }
-        }
-        const structuredDrafts = await listStructuredDrafts(getPool(), {
-          churchId: scope.churchId,
-          branchId: scope.branchId,
-          status: "draft",
-        });
-        applyStructuredDraftsToModel(model, structuredDrafts);
+        await applyCurrentDraftOverlaysToModel(getPool(), model, scope);
       } catch {
         /* show CMS preview without overlays if draft load fails */
       }
@@ -2585,6 +2606,7 @@ function createContentAdminRouter(deps) {
           shellKind
         );
       }
+      await applyCurrentDraftOverlaysToModel(getPool(), model, pageScope);
       const html = renderTenantPublicPage(model);
       return res.status(200).type("html").send(html);
     });

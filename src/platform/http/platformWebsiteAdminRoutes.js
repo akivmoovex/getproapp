@@ -2,14 +2,13 @@
 
 const submissionService = require("../website/submissionService");
 const instanceRepo = require("../website/instanceRepository");
-const contentService = require("../website/contentService");
 const resolver = require("../website/resolver");
 const versionService = require("../website/versionService");
 const mediaService = require("../website/mediaService");
 const checklistService = require("../website/checklistService");
 const auditService = require("../website/auditService");
 const { buildWebsiteReviewDiff, buildVersionDiff } = require("../website/reviewDiff");
-const { PERMISSIONS, hasWebsitePermission } = require("../website/permissions");
+const { PERMISSIONS, hasWebsitePermission, PLATFORM_ADMIN_PERMISSIONS } = require("../website/permissions");
 const { ALLOWED_IMAGE_MIME } = require("../website/mediaService");
 const { CSRF_FIELD, validateCsrf } = require("./v5Csrf");
 const { listRecentWebsiteChanges } = require("../website/recentChangesService");
@@ -21,23 +20,16 @@ const {
   setWebsitePublishPolicy,
   requestLiveWebsiteChanges,
 } = require("../website/lifecycleService");
-const { restoreWebsiteVersionLive } = require("../website/publicationService");
 const { LIFECYCLE_STATUS } = require("../website/lifecycleStatus");
 const {
-  getClinicWebsiteAvailability,
-  setClinicWebsiteAvailability,
   loadClinicWebsiteOperational,
 } = require("../../activeclinic/services/clinicWebsiteAvailabilityService");
 const {
   listPlatformAdminWebsites,
   loadPlatformAdminWebsiteDetail,
+  applyPlatformAdminWebsiteAction,
+  loadActorLabels,
 } = require("../website/platformAdminWebsitesService");
-const {
-  restoreAndPublishCurrentVersion,
-} = require("../../blessboard/services/websitePublicationVersionService");
-const {
-  unpublishChurchWebsite,
-} = require("../../blessboard/services/churchWebsitePublishService");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -70,27 +62,12 @@ function decorateVersion(version) {
 }
 
 async function loadEditorLabel(db, identityId) {
-  const map = await loadEditorLabels(db, [identityId]);
+  const map = await loadActorLabels(db, [identityId]);
   return map.get(String(identityId || "")) || "Editor";
 }
 
 async function loadEditorLabels(db, identityIds) {
-  const labels = new Map();
-  const ids = [...new Set((identityIds || []).map((id) => String(id || "")).filter((id) => UUID_RE.test(id)))];
-  if (!ids.length) return labels;
-  try {
-    const rows = await db.query(
-      `SELECT id, primary_email, email_normalized
-         FROM platform.identities WHERE id = ANY($1::uuid[])`,
-      [ids]
-    );
-    for (const row of rows.rows) {
-      labels.set(String(row.id), String(row.primary_email || row.email_normalized || "Editor"));
-    }
-  } catch {
-    /* identities table shape may differ in older fixtures */
-  }
-  return labels;
+  return loadActorLabels(db, identityIds);
 }
 
 function actorId(req) {
@@ -100,7 +77,12 @@ function actorId(req) {
 
 function granted(req) {
   const ctx = req.platformAdminContext || {};
-  return Array.isArray(ctx.permissions) ? ctx.permissions : [];
+  if (Array.isArray(ctx.permissions) && ctx.permissions.length) {
+    return ctx.permissions;
+  }
+  // Apex platform_admin is already required on these routes. Empty context
+  // must not silently allow-all; use the explicit Platform Admin website set.
+  return PLATFORM_ADMIN_PERMISSIONS;
 }
 
 function registerPlatformWebsiteAdminRoutes(router, deps) {
@@ -118,54 +100,40 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
   require("../../blessboard/website/blessboardChurchTemplate").registerBlessBoardWebsiteTemplate();
 
   function canReview(req) {
-    const keys = granted(req);
-    if (!keys.length) return true;
     return (
-      hasWebsitePermission(keys, PERMISSIONS.REVIEW) ||
-      hasWebsitePermission(keys, PERMISSIONS.PUBLISH)
+      hasWebsitePermission(granted(req), PERMISSIONS.REVIEW) ||
+      hasWebsitePermission(granted(req), PERMISSIONS.PUBLISH)
     );
   }
 
   function canToggleAvailability(req) {
-    const keys = granted(req);
-    if (!keys.length) return true;
-    return hasWebsitePermission(keys, PERMISSIONS.PUBLISH);
+    return hasWebsitePermission(granted(req), PERMISSIONS.PUBLISH);
   }
 
   function canModerate(req) {
-    const keys = granted(req);
-    if (!keys.length) return true;
     return (
-      hasWebsitePermission(keys, PERMISSIONS.MODERATE) ||
-      hasWebsitePermission(keys, PERMISSIONS.REVIEW)
+      hasWebsitePermission(granted(req), PERMISSIONS.MODERATE) ||
+      hasWebsitePermission(granted(req), PERMISSIONS.REVIEW)
     );
   }
 
   function canTakeOffline(req) {
-    const keys = granted(req);
-    if (!keys.length) return true;
-    return hasWebsitePermission(keys, PERMISSIONS.TAKE_OFFLINE);
+    return hasWebsitePermission(granted(req), PERMISSIONS.TAKE_OFFLINE);
   }
 
   function canSuspend(req) {
-    const keys = granted(req);
-    if (!keys.length) return true;
-    return hasWebsitePermission(keys, PERMISSIONS.SUSPEND);
+    return hasWebsitePermission(granted(req), PERMISSIONS.SUSPEND);
   }
 
   function canRestore(req) {
-    const keys = granted(req);
-    if (!keys.length) return true;
     return (
-      hasWebsitePermission(keys, PERMISSIONS.RESTORE) ||
-      hasWebsitePermission(keys, PERMISSIONS.ROLLBACK)
+      hasWebsitePermission(granted(req), PERMISSIONS.RESTORE) ||
+      hasWebsitePermission(granted(req), PERMISSIONS.ROLLBACK)
     );
   }
 
   function canManagePolicy(req) {
-    const keys = granted(req);
-    if (!keys.length) return true;
-    return hasWebsitePermission(keys, PERMISSIONS.MANAGE_POLICY);
+    return hasWebsitePermission(granted(req), PERMISSIONS.MANAGE_POLICY);
   }
 
   router.get("/admin/websites", requireApex, requirePlatformAdmin, async (req, res, next) => {
@@ -344,55 +312,20 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
   router.get("/admin/organizations/:organizationKey/website", requireApex, requirePlatformAdmin, async (req, res, next) => {
     try {
       setAdminNoStore(res);
-      const org = await getPool().query(
-        `SELECT id, organization_key, display_name FROM platform.organizations
-          WHERE organization_key = $1 LIMIT 1`,
-        [String(req.params.organizationKey || "").toLowerCase()]
-      );
-      if (!org.rows[0]) return res.status(404).type("html").send("Organization not found.");
-      const availability = await getClinicWebsiteAvailability(getPool(), {
-        organizationKey: org.rows[0].organization_key,
-        env,
-      });
-      const instances = await instanceRepo.listWebsiteInstancesForOrganization(
-        getPool(),
-        org.rows[0].id,
-        "activeclinic"
-      );
-      const instance = (availability.ok && availability.instance) || instances[0] || null;
-      let unpublishedCount = 0;
-      let versions = [];
+      const organizationKey = String(req.params.organizationKey || "").toLowerCase();
+      const detail = await loadPlatformAdminWebsiteDetail(getPool(), organizationKey, { env });
+      if (!detail.ok) return res.status(404).type("html").send("Organization not found.");
+      const availability = detail.clinicAvailability;
+      const instance = detail.instance;
+      let unpublishedCount = detail.unpublishedCount || 0;
+      let versions = detail.versions || [];
       let media = [];
       let audit = { events: [] };
       let checklist = null;
       let pending = [];
-      let changeSummary = [];
-      let productCode = "activeclinic";
-      if (instance) {
-        const changes = await contentService.listUnpublishedChanges(getPool(), instance, instance.organizationId);
-        unpublishedCount = changes.length;
-        const { summarizeAcChanges } = require("../website/platformAdminWebsitesService");
-        const template = instance
-          ? require("../website/templateRegistry").getWebsiteTemplate(
-              instance.templateId,
-              instance.templateVersion
-            )
-          : null;
-        changeSummary = summarizeAcChanges(changes, template);
-        const listedVersions = (
-          await versionService.listWebsiteVersions(getPool(), {
-            instanceId: instance.id,
-            organizationId: instance.organizationId,
-          })
-        ).versions;
-        const editorLabels = await loadEditorLabels(
-          getPool(),
-          listedVersions.map((v) => v.editorIdentityId)
-        );
-        versions = listedVersions.map((v) => ({
-          ...decorateVersion(v),
-          editorLabel: editorLabels.get(String(v.editorIdentityId || "")) || "Editor",
-        }));
+      let changeSummary = detail.changeSummary || [];
+      const productCode = detail.productCode;
+      if (instance && productCode === "activeclinic") {
         media = (await mediaService.listWebsiteMedia(getPool(), {
           organizationId: instance.organizationId,
           instanceId: instance.id,
@@ -405,8 +338,8 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         const cl = await checklistService.getWebsiteChecklist(getPool(), {
           organizationId: instance.organizationId,
           instance,
-          operational: availability.ok
-            ? await loadClinicWebsiteOperational(getPool(), org.rows[0].id)
+          operational: availability
+            ? await loadClinicWebsiteOperational(getPool(), detail.organization.id)
             : {},
         });
         checklist = cl.ok ? cl.checklist : null;
@@ -415,17 +348,26 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           instanceId: instance.id,
           status: "submitted",
         })).submissions;
-      } else {
-        const detail = await loadPlatformAdminWebsiteDetail(getPool(), org.rows[0].organization_key);
-        if (detail.ok) {
-          productCode = detail.productCode;
-          versions = (detail.versions || []).map((v) => ({
-            ...v,
-            publishedLabel: formatTs(v.publishedAt),
-            editorLabel: v.publishedByName || v.editorLabel || "Publisher",
+        if (!versions.length) {
+          const listedVersions = (
+            await versionService.listWebsiteVersions(getPool(), {
+              instanceId: instance.id,
+              organizationId: instance.organizationId,
+            })
+          ).versions;
+          const editorLabels = await loadEditorLabels(
+            getPool(),
+            listedVersions.map((v) => v.editorIdentityId)
+          );
+          versions = listedVersions.map((v) => ({
+            ...decorateVersion(v),
+            editorLabel: editorLabels.get(String(v.editorIdentityId || "")) || "Editor",
           }));
-          changeSummary = detail.changeSummary || [];
-          unpublishedCount = detail.unpublishedCount || 0;
+        } else {
+          versions = versions.map((v) => ({
+            ...decorateVersion(v),
+            editorLabel: v.editorLabel || "Editor",
+          }));
         }
       }
       const html = renderPlatformAdminView("platform-admin/organization-website.ejs", {
@@ -433,9 +375,9 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           env,
           isProduction: String(env.NODE_ENV || "") === "production",
           activeNav: "organizations",
-          pageTitle: "Clinic website",
+          pageTitle: productCode === "blessboard" ? "Church website" : "Clinic website",
         }),
-        organization: org.rows[0],
+        organization: detail.organization,
         instance,
         unpublishedCount,
         versions,
@@ -445,7 +387,28 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         pendingSubmissions: pending,
         changeSummary,
         productCode,
-        availability: availability.ok ? availability : null,
+        productLabel: detail.productLabel,
+        websiteStatus: detail.websiteStatus,
+        currentDraft: detail.currentDraft,
+        lastEditor: detail.lastEditor,
+        lastPublisher: detail.lastPublisher,
+        publicPath: detail.publicPath,
+        publicUrl: detail.publicUrl,
+        websitePublished: detail.websitePublished,
+        liveVersion: detail.liveVersion,
+        actions: detail.actions,
+        canResume: detail.canResume === true,
+        availability: availability || {
+          ok: true,
+          publicPath: detail.publicPath,
+          publicUrl: detail.publicUrl,
+          healthcareOrganization: productCode === "activeclinic"
+            ? { websitePublished: detail.websitePublished }
+            : { websitePublished: detail.websitePublished },
+          latestApprovedVersion: detail.liveVersion,
+          readiness: null,
+          lastToggle: null,
+        },
         canToggleAvailability: canToggleAvailability(req),
         canModerate: canModerate(req),
         canTakeOffline: canTakeOffline(req),
@@ -476,40 +439,18 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
       if (!canToggleAvailability(req)) {
         return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
       }
-      const result = await setClinicWebsiteAvailability(getPool(), {
+      const result = await applyPlatformAdminWebsiteAction(getPool(), {
         organizationKey,
-        public: wantPublic,
+        action: wantPublic ? "publish" : "unpublish",
         actorIdentityId: actorId(req),
         overrideReadiness: req.body && req.body.override_readiness === "1",
         reason: req.body && req.body.reason,
         env,
       });
-      if (!result.ok && (result.code === "clinic_not_found" || result.code === "website_instance_not_found")) {
-        const org = await getPool().query(
-          `SELECT id FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
-          [organizationKey]
-        );
-        if (org.rows[0] && wantPublic === false) {
-          const church = await getPool().query(
-            `SELECT id FROM blessboard.churches WHERE organization_id = $1 LIMIT 1`,
-            [org.rows[0].id]
-          );
-          if (church.rows[0]) {
-            const unpublished = await unpublishChurchWebsite(getPool(), {
-              churchId: church.rows[0].id,
-              organizationId: org.rows[0].id,
-              actorUserId: actorId(req),
-            });
-            if (unpublished.ok) {
-              return res.redirect(303, websiteManagePath(organizationKey, "notice=unpublished"));
-            }
-          }
-        }
-      }
       if (!result.ok) {
         return res.redirect(
           303,
-          websiteManagePath(organizationKey, `error=${encodeURIComponent(result.code)}`)
+          websiteManagePath(organizationKey, `error=${encodeURIComponent(result.code || result.reason || "failed")}`)
         );
       }
       return res.redirect(
@@ -537,80 +478,30 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
 
   router.post("/admin/organizations/:organizationKey/website/versions/:versionId/restore", requireApex, requirePlatformAdmin, async (req, res, next) => {
     try {
+      const organizationKey = String(req.params.organizationKey || "").toLowerCase();
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?error=csrf`);
+        return res.redirect(303, websiteManagePath(organizationKey, "error=csrf"));
       }
       if (!canRestore(req)) {
-        return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?error=forbidden`);
+        return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
       }
-      const org = await getPool().query(
-        `SELECT id, organization_key FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
-        [String(req.params.organizationKey || "").toLowerCase()]
-      );
-      if (!org.rows[0]) return res.redirect(303, "/admin/organizations?error=not_found");
-      const instances = await instanceRepo.listWebsiteInstancesForOrganization(getPool(), org.rows[0].id);
-      const instance = instances[0];
-      if (instance && instance.adapterMode === "legacy_cms") {
-        const church = await getPool().query(
-          `SELECT id FROM blessboard.churches WHERE organization_id = $1 LIMIT 1`,
-          [org.rows[0].id]
-        );
-        if (!church.rows[0]) {
-          return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?error=not_found`);
-        }
-        const restored = await restoreAndPublishCurrentVersion(getPool(), {
-          organizationId: org.rows[0].id,
-          churchId: church.rows[0].id,
-          versionId: req.params.versionId,
-          actorUserId: actorId(req),
-          restorationReason: "Platform Admin restored a previous published version.",
-          env,
-        });
-        if (!restored.ok) {
-          return res.redirect(
-            303,
-            `/admin/organizations/${req.params.organizationKey}/website?error=${encodeURIComponent(restored.reason || restored.status || "restore_failed")}`
-          );
-        }
-        return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?notice=restored`);
-      }
-      if (!instance) {
-        const church = await getPool().query(
-          `SELECT id FROM blessboard.churches WHERE organization_id = $1 LIMIT 1`,
-          [org.rows[0].id]
-        );
-        if (church.rows[0]) {
-          const restored = await restoreAndPublishCurrentVersion(getPool(), {
-            organizationId: org.rows[0].id,
-            churchId: church.rows[0].id,
-            versionId: req.params.versionId,
-            actorUserId: actorId(req),
-            restorationReason: "Platform Admin restored a previous published version.",
-            env,
-          });
-          if (!restored.ok) {
-            return res.redirect(
-              303,
-              `/admin/organizations/${req.params.organizationKey}/website?error=${encodeURIComponent(restored.reason || restored.status || "restore_failed")}`
-            );
-          }
-          return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?notice=restored`);
-        }
-        return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?error=not_found`);
-      }
-      const restored = await restoreWebsiteVersionLive(getPool(), {
-        organizationId: org.rows[0].id,
-        instanceId: instance.id,
+      const restored = await applyPlatformAdminWebsiteAction(getPool(), {
+        organizationKey,
+        action: "restore-version",
         versionId: req.params.versionId,
         actorIdentityId: actorId(req),
+        env,
       });
       if (!restored.ok) {
         return res.redirect(
           303,
-          `/admin/organizations/${req.params.organizationKey}/website?error=${encodeURIComponent(restored.code)}`
+          websiteManagePath(
+            organizationKey,
+            `error=${encodeURIComponent(restored.code || restored.reason || restored.status || "restore_failed")}`
+          )
         );
       }
-      return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?notice=restored`);
+      return res.redirect(303, websiteManagePath(organizationKey, "notice=restored"));
     } catch (err) {
       return next(err);
     }

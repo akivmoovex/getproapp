@@ -11,6 +11,14 @@
  * Requires DATABASE_URL (or GETPRO_DATABASE_URL / TEST_DATABASE_URL in test).
  */
 
+const { shouldRunBlessBoardScheduledJob } = require("../src/startup/blessBoardJobsGate");
+
+// Jobs-disabled must exit before dotenv/DB so leftover production `.env` cannot
+// fail the skip path.
+if (!shouldRunBlessBoardScheduledJob("scheduled-report-jobs")) {
+  process.exit(0);
+}
+
 require("../src/startup/localEnvSafety").loadRepoDotenvForCliOrExit();
 
 const {

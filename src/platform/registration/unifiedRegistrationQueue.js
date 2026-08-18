@@ -26,6 +26,9 @@ function detailHref(productCode, id) {
 async function listUnifiedRegistrations(db, filters) {
   const product = String((filters && filters.product) || "all").toLowerCase();
   const q = String((filters && filters.q) || "").trim();
+  const lifecycleFilter = String((filters && (filters.lifecycle || filters.status)) || "")
+    .trim()
+    .toLowerCase();
   const limit = Math.min(Math.max(Number((filters && filters.limit) || 100) || 100, 1), 200);
 
   const churchRows =
@@ -115,12 +118,15 @@ async function listUnifiedRegistrations(db, filters) {
 
   mapped.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
   const needle = q.toLowerCase();
-  const filtered = needle
+  let filtered = needle
     ? mapped.filter((row) => {
         const hay = `${row.organizationName || ""} ${row.applicantName || ""} ${row.applicantEmail || ""} ${row.productCode} ${row.canonicalLifecycle}`.toLowerCase();
         return hay.includes(needle);
       })
     : mapped;
+  if (lifecycleFilter) {
+    filtered = filtered.filter((row) => row.canonicalLifecycle === lifecycleFilter);
+  }
   return filtered.slice(0, limit);
 }
 

@@ -3,8 +3,9 @@
 /** Open (non-terminal) church registration application statuses, including canonical hold. */
 const OPEN_CHURCH_APPLICATION_STATUSES = Object.freeze([
   "submitted",
-  "duplicate_review",
+  "provisioning",
   "review_required",
+  "duplicate_review",
 ]);
 
 function isOpenChurchApplicationStatus(status) {

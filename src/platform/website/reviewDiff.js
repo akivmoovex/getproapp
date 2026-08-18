@@ -7,6 +7,10 @@
 
 const { safeExternalUrl, escapeHtml } = require("./safeValues");
 const { CONTENT_TYPES } = require("./contentTypes");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+} = require("./publicWebsiteUrl");
 
 const CHANGE_TYPES = Object.freeze(["added", "changed", "removed", "visibility", "reorder"]);
 
@@ -84,7 +88,11 @@ function safePublicSrc(raw) {
     /^\/clinics\/([a-z0-9][a-z0-9_-]{0,63})\/website\/media\/([0-9a-f-]{36})$/i
   );
   if (clinicMedia) {
-    return `/clinics/${clinicMedia[1]}/website/media/${clinicMedia[2]}`;
+    return buildPublicOrganizationWebsitePath({
+      product: PRODUCT_CODE.ACTIVECLINIC,
+      organizationKey: clinicMedia[1],
+      suffix: `website/media/${clinicMedia[2]}`,
+    });
   }
   const adminMedia = text.match(/^\/admin\/website-media\/([0-9a-f-]{36})$/i);
   if (adminMedia) return `/admin/website-media/${adminMedia[1]}`;

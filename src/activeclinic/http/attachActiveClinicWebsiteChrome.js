@@ -1,9 +1,21 @@
 "use strict";
 
 const { CSRF_FIELD } = require("../../platform/http/v5Csrf");
-const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
+const {
+  PERMISSIONS,
+  hasWebsitePermission,
+  canViewWebsiteAdmin,
+  canRestoreWebsite,
+} = require("../../platform/website/permissions");
 const { resolveActiveClinicWebsite, MODE } = require("../website/activeClinicWebsiteResolver");
 const instanceRepo = require("../../platform/website/instanceRepository");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+  buildPublicWebsitePreviewPath,
+  buildPublicWebsiteHistoryPath,
+  buildPublicWebsitePublishPath,
+} = require("../../platform/website/publicWebsiteUrl");
 const submissionService = require("../../platform/website/submissionService");
 const { latestTenantVisibleNote } = require("../../platform/website/moderationEventService");
 const { LIFECYCLE_LABELS } = require("../../platform/website/lifecycleStatus");
@@ -14,35 +26,63 @@ function grantedPermissions(req) {
   return (auth && Array.isArray(auth.permissions) ? auth.permissions : []).map(String);
 }
 
-function canEditClinicWebsite(req, clinic) {
+function sameClinicOrganization(req, clinic) {
   const auth = req.activeClinicAuth;
   if (!auth || !auth.authenticated || !clinic) return false;
-  if (!auth.organization || auth.organization.id !== clinic.organizationId) return false;
+  return Boolean(auth.organization && auth.organization.id === clinic.organizationId);
+}
+
+function canViewClinicWebsite(req, clinic) {
+  if (!sameClinicOrganization(req, clinic)) return false;
+  return canViewWebsiteAdmin(grantedPermissions(req));
+}
+
+function canEditClinicWebsite(req, clinic) {
+  if (!sameClinicOrganization(req, clinic)) return false;
   return hasWebsitePermission(grantedPermissions(req), PERMISSIONS.EDIT);
 }
 
 function canSubmitClinicWebsite(req, clinic) {
-  const auth = req.activeClinicAuth;
-  if (!auth || !auth.authenticated || !clinic) return false;
-  if (!auth.organization || auth.organization.id !== clinic.organizationId) return false;
+  if (!sameClinicOrganization(req, clinic)) return false;
   return hasWebsitePermission(grantedPermissions(req), PERMISSIONS.SUBMIT);
 }
 
 function canPublishClinicWebsite(req, clinic) {
-  const auth = req.activeClinicAuth;
-  if (!auth || !auth.authenticated || !clinic) return false;
-  if (!auth.organization || auth.organization.id !== clinic.organizationId) return false;
+  if (!sameClinicOrganization(req, clinic)) return false;
   return hasWebsitePermission(grantedPermissions(req), PERMISSIONS.PUBLISH);
 }
 
 function canRestoreClinicWebsite(req, clinic) {
-  const auth = req.activeClinicAuth;
-  if (!auth || !auth.authenticated || !clinic) return false;
-  if (!auth.organization || auth.organization.id !== clinic.organizationId) return false;
+  if (!sameClinicOrganization(req, clinic)) return false;
+  return canRestoreWebsite(grantedPermissions(req));
+}
+
+function canAccessClinicWebsiteAdmin(req, clinic) {
   return (
-    hasWebsitePermission(grantedPermissions(req), PERMISSIONS.ROLLBACK) ||
-    hasWebsitePermission(grantedPermissions(req), PERMISSIONS.RESTORE)
+    canViewClinicWebsite(req, clinic) ||
+    canEditClinicWebsite(req, clinic) ||
+    canPublishClinicWebsite(req, clinic) ||
+    canRestoreClinicWebsite(req, clinic)
   );
+}
+
+function clinicWebsiteActionUrls(clinicKey) {
+  const base = {
+    product: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey: clinicKey,
+  };
+  return {
+    websiteSaveUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/drafts" }),
+    websiteMediaUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/media" }),
+    websitePreviewUrl: buildPublicWebsitePreviewPath(base),
+    websiteHistoryUrl: buildPublicWebsiteHistoryPath(base),
+    websitePublishUrl: buildPublicWebsitePublishPath(base),
+    websiteSubmitUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/submit" }),
+    websiteFinishEditUrl: buildPublicOrganizationWebsitePath({
+      ...base,
+      suffix: "website/edit-session/finish",
+    }),
+  };
 }
 
 function requestedMode(req, canEdit) {
@@ -130,6 +170,7 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic) {
         ? req.activeClinicAuth.platformIdentity.id
         : null,
     csrfField: CSRF_FIELD,
+    ...clinicWebsiteActionUrls(outClinic && outClinic.clinicKey),
   };
 }
 
@@ -143,10 +184,12 @@ async function requireClinicWebsiteInstance(db, clinic) {
 
 module.exports = {
   grantedPermissions,
+  canViewClinicWebsite,
   canEditClinicWebsite,
   canSubmitClinicWebsite,
   canPublishClinicWebsite,
   canRestoreClinicWebsite,
+  canAccessClinicWebsiteAdmin,
   attachActiveClinicWebsiteLocals,
   requireClinicWebsiteInstance,
 };

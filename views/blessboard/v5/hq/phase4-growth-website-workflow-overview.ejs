@@ -20,6 +20,7 @@
 
 <section
   class="bb-phase4-website bb-phase4-website--growth"
+  data-bb-hq-website="1"
   data-bb-phase4-growth-website-workflow-overview="1"
   data-bb-stitch-screen="Phase4 - Growth Website Workflow Overview"
   data-bb-viewport="responsive"
@@ -36,7 +37,9 @@
       <p class="bb-hq-lede"><%= o.subtitle || 'Manage website updates from your church and branches' %></p>
     </div>
     <p class="bb-hq-page-head__actions bb-phase4-website__actions">
-      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.editPath || '/hq/content' %>">Edit Website</a>
+      <% if (o.canEdit) { %>
+      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.inlineEditPath || o.editPath || '/hq/content' %>" data-bb-edit-website="1">Edit website</a>
+      <% } %>
       <% if (o.liveAvailable && o.publicPath) { %>
       <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.publicPath %>" rel="noopener">View Live Website</a>
       <% } else { %>
@@ -99,7 +102,9 @@
         <p class="bb-hq-muted">Last edited <%= formatWhen(draft.lastEditedAt) %><% if (draft.themeKey) { %> · Theme <%= draft.themeKey %><% } %></p>
         <p class="bb-phase4-website__inline-actions">
           <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Changes</a>
+          <% if (o.canEdit) { %>
           <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.editPath %>">Continue Editing</a>
+          <% } %>
         </p>
         <% } else { %>
         <p class="bb-hq-empty" data-bb-phase4-empty="draft">There are no unpublished website changes.</p>
@@ -183,9 +188,11 @@
     </aside>
   </div>
 
+  <% if (o.canEdit) { %>
   <p class="bb-phase4-website__sticky-edit">
-    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.editPath || '/hq/content' %>">Edit Website</a>
+    <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.inlineEditPath || o.editPath || '/hq/content' %>" data-bb-edit-website="1">Edit website</a>
   </p>
+  <% } %>
 </section>
 
 <%- include('../partials/hq-shell-end') %>

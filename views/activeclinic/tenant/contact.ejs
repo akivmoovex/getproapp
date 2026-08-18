@@ -2,7 +2,7 @@
   <header class="acp-page-hero acp-page-hero--compact">
     <p class="ac-public-eyebrow">Contact</p>
     <h1>Contact <%= clinic.publicName %></h1>
-    <p class="ac-public-lede">Send a message to the clinic. Staff review inquiries during business hours — this form does not send SMS or email confirmation.</p>
+    <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'contact.intro', fieldValue: clinic.contactIntro || 'Send a message to the clinic. Staff review inquiries during business hours — this form does not send SMS or email confirmation.', fieldType: 'long_text' }) %></p>
   </header>
 
   <div class="acp-contact-layout">
@@ -44,10 +44,12 @@
     </div>
     <aside class="acp-contact-aside">
       <h2>Clinic contact</h2>
-      <% if (clinic.publicPhoneDisplay || clinic.publicEmailDisplay) { %>
+      <% const contactPhone = clinic.publicPhoneDisplay || (clinic.websiteContent && clinic.websiteContent['contact.phone']); %>
+      <% const contactEmail = clinic.publicEmailDisplay || (clinic.websiteContent && clinic.websiteContent['contact.email']); %>
+      <% if (contactPhone || contactEmail) { %>
       <ul class="ac-public-list">
-        <% if (clinic.publicPhoneDisplay) { %><li>Phone: <%= clinic.publicPhoneDisplay %></li><% } %>
-        <% if (clinic.publicEmailDisplay) { %><li>Email: <%= clinic.publicEmailDisplay %></li><% } %>
+        <% if (contactPhone) { %><li>Phone: <%= contactPhone %></li><% } %>
+        <% if (contactEmail) { %><li>Email: <%= contactEmail %></li><% } %>
       </ul>
       <% } else { %>
       <p class="ac-public-muted">Public phone and email are not published. Use this form to reach the clinic.</p>

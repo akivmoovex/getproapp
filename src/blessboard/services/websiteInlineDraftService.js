@@ -4,7 +4,6 @@ const contentRepo = require("../repositories/publicContentRepository");
 const draftRepo = require("../repositories/websiteInlineFieldDraftRepository");
 const {
   resolveEditableField,
-  validateFieldValue,
   listEditableFieldsForPage,
 } = require("./websiteInlineEditableFields");
 const auditSvc = require("./websiteAuditService");
@@ -112,15 +111,30 @@ async function saveInlineFieldDraft(db, input) {
   if (sectionKey === "footer" && fieldKey === "tagline") {
     pageKey = "home";
   }
-  const field = resolveEditableField(pageKey, sectionKey, fieldKey);
-  if (!field) {
+  const {
+    assertEditableMutation,
+    PRODUCT_CODE,
+    ensureProductFieldsRegistered,
+  } = require("../../platform/website/editableFieldSchema");
+  ensureProductFieldsRegistered(PRODUCT_CODE.BLESSBOARD);
+  const asserted = assertEditableMutation({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    pageKey,
+    sectionKey,
+    fieldKey,
+    value: input.newValue,
+    grantedPermissions: input.grantedPermissions,
+  });
+  if (!asserted.ok) {
+    if (asserted.code === "forbidden") {
+      throw mapError("FORBIDDEN", "That field cannot be edited.", 403);
+    }
+    if (asserted.code === "validation_failed") {
+      throw mapError("VALIDATION", asserted.message || "Invalid value.", 400);
+    }
     throw mapError("INVALID_FIELD", "That field cannot be edited.", 400);
   }
-
-  const validated = validateFieldValue(field, input.newValue);
-  if (!validated.ok) {
-    throw mapError("VALIDATION", validated.error, 400);
-  }
+  const validated = { ok: true, value: asserted.value };
 
   try {
     const page = await resolveContentPage(db, {

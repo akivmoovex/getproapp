@@ -1,7 +1,7 @@
 /**
- * Phase 7 Stage 4 — inline text field editor (no framework).
- * Requires editing toolbar with data-bb-save-url + data-bb-csrf.
- * Optional data-bb-publish-url enables Save and Publish.
+ * BlessBoard inline text field editor.
+ * Shared contract with ActiveClinic: pencil → input/textarea → ✓ draft / ✕ cancel.
+ * ✓ never publishes. Field keys are allowlisted server-side (pageKey::sectionKey::fieldKey).
  */
 (function () {
   "use strict";
@@ -157,8 +157,7 @@
     }
   }
 
-  function applySaved(root, value, opts) {
-    var options = opts || {};
+  function applySaved(root, value) {
     var display = qs(root, "[data-bb-inline-display='1']");
     var input = qs(root, "[data-bb-inline-input='1']");
     if (input) input.value = value;
@@ -167,23 +166,8 @@
       if (textHost) textHost.textContent = value;
     }
     root.setAttribute("data-bb-value", value);
-    if (options.published) {
-      root.setAttribute("data-bb-published-value", value);
-      var publishedText = qs(root, "[data-bb-inline-published-text='1']");
-      if (publishedText) {
-        if (String(value || "").trim()) {
-          publishedText.classList.remove("bb-tp-inline-edit__compare-body--empty");
-          publishedText.innerHTML = nl2brEscaped(value);
-        } else {
-          publishedText.classList.add("bb-tp-inline-edit__compare-body--empty");
-          publishedText.textContent = "No published text";
-        }
-      }
-    }
     exitEdit(root, null);
-    var okMessage = options.published
-      ? "Changes published successfully."
-      : "Changes saved as a draft";
+    var okMessage = "Changes saved as a draft";
     setStatus(root, okMessage, "ok");
     var status = qs(root, "[data-bb-inline-status='1']");
     if (status) {
@@ -200,10 +184,8 @@
 
   function setButtonsDisabled(root, disabled) {
     var checkBtn = qs(root, "[data-bb-inline-save='1']");
-    var publishBtn = qs(root, "[data-bb-inline-save-publish='1']");
     var cancelBtn = qs(root, "[data-bb-inline-cancel='1']");
     if (checkBtn) checkBtn.disabled = disabled;
-    if (publishBtn) publishBtn.disabled = disabled;
     if (cancelBtn) cancelBtn.disabled = disabled;
   }
 
@@ -275,70 +257,12 @@
     return options.fromGuard ? request : undefined;
   }
 
-  function saveAndPublishField(root) {
-    var bar = toolbar();
-    if (!bar) return;
-    var publishUrl = bar.getAttribute("data-bb-publish-url") || "";
-    var csrf = bar.getAttribute("data-bb-csrf") || "";
-    var input = qs(root, "[data-bb-inline-input='1']");
-    if (!publishUrl || !input) {
-      setStatus(
-        root,
-        "We could not publish these changes. Please try again.",
-        "error"
-      );
-      return;
-    }
-    if (saveInFlight === root) return;
-
-    var value = input.value;
-    setStatus(root, "Saving and publishing…", "pending");
-    setButtonsDisabled(root, true);
-    saveInFlight = root;
-
-    postField(publishUrl, root, csrf, value)
-      .then(function (result) {
-        saveInFlight = null;
-        setButtonsDisabled(root, false);
-        if (!result.okHttp || !result.data.ok) {
-          setStatus(
-            root,
-            errorMessageFromResult(result) ||
-              "We could not publish these changes. Please try again.",
-            "error"
-          );
-          input.focus();
-          return;
-        }
-        applySaved(root, result.data.value != null ? String(result.data.value) : value, {
-          published: true,
-        });
-      })
-      .catch(function () {
-        saveInFlight = null;
-        setButtonsDisabled(root, false);
-        setStatus(
-          root,
-          "We could not publish these changes. Please try again.",
-          "error"
-        );
-        input.focus();
-      });
-  }
-
   function onClick(event) {
     var start = event.target.closest("[data-bb-inline-start='1']");
     if (start) {
       event.preventDefault();
       var root = start.closest("[data-bb-inline-edit='1']");
       if (root) enterEdit(root);
-      return;
-    }
-    var savePublish = event.target.closest("[data-bb-inline-save-publish='1']");
-    if (savePublish) {
-      event.preventDefault();
-      var publishRoot = savePublish.closest("[data-bb-inline-edit='1']");
-      if (publishRoot) saveAndPublishField(publishRoot);
       return;
     }
     var save = event.target.closest("[data-bb-inline-save='1']");

@@ -168,7 +168,7 @@ describe("ActiveClinic clinic registration repair", () => {
       ["registration-test@example.invalid"]
     );
     assert.equal(rows.rows.length, 1);
-    assert.equal(rows.rows[0].status, "approved");
+    assert.equal(rows.rows[0].status, "active");
     assert.equal(rows.rows[0].clinic_name, valid.clinicName);
     const hashRow = await pool.query(
       `SELECT administrator_password_hash IS NOT NULL AS has_hash, address, organization_id, provisioning_status

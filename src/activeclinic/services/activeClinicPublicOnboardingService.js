@@ -222,7 +222,7 @@ async function createClinicRegistrationApplication(db, input) {
       contact_phone_normalized, contact_phone_display,
       province, city, address, country_code, notes, status,
       administrator_password_hash
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'pending_review', $13)
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'submitted', $13)
     RETURNING id, application_number, status, created_at`,
     [
       applicationNumber,

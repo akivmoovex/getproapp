@@ -22,6 +22,11 @@ const {
   CODE_ACTIVECLINIC_PRONLINE_TESTING,
 } = require("../../platform/config/deploymentProfiles");
 const { registerActiveClinicWebsiteTemplate } = require("../website/activeClinicWebsiteTemplate");
+const {
+  buildPublicOrganizationWebsitePath,
+  publicOriginForProduct,
+  PRODUCT_CODE,
+} = require("../../platform/website/publicWebsiteUrl");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -74,6 +79,8 @@ async function loadClinicWebsiteOperational(db, organizationId) {
 }
 
 function publicOriginForEnv(env) {
+  const fromMatrix = publicOriginForProduct(PRODUCT_CODE.ACTIVECLINIC, env);
+  if (fromMatrix) return fromMatrix;
   const source = env || process.env;
   const mode = String(source.DEPLOYMENT_ENV || source.DATABASE_IDENTITY_ENV || "").toLowerCase();
   const code =
@@ -90,9 +97,12 @@ function publicOriginForEnv(env) {
   }
 }
 
-function publicClinicPath(slug) {
-  const key = String(slug || "").trim();
-  return key ? `/clinics/${encodeURIComponent(key)}` : null;
+function publicClinicPath(slug, extras) {
+  return buildPublicOrganizationWebsitePath({
+    product: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey: slug,
+    ...(extras && typeof extras === "object" ? extras : {}),
+  });
 }
 
 async function loadOrganizationByKey(db, organizationKey) {

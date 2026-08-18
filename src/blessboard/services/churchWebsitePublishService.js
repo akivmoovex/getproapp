@@ -18,6 +18,10 @@ const { recordAuditEventSafe } = require("../../platform/services/auditEventServ
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const { PUBLIC_PAGE_KEYS, PAGE_KEY_TITLES } = require("./publicContentConstants");
 const { normalizeOrganizationKey } = require("./organizationKey");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+} = require("../../platform/website/publicWebsiteUrl");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -220,7 +224,12 @@ function evaluateHostnameReadiness(ctx, domains, entitlements) {
 
   return {
     pathPublicOk,
-    publicPath: pathPublicOk ? `/c/${keyNorm.key}` : null,
+    publicPath: pathPublicOk
+      ? buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: keyNorm.key,
+        })
+      : null,
     organizationKey: pathPublicOk ? keyNorm.key : null,
     domains: domains || [],
     customDomainBlocked: hasCustomWithoutEntitlement,
@@ -572,6 +581,27 @@ async function publishChurchWebsite(db, input) {
         }
       }
 
+      // Apply pending pencil drafts before snapshotting so HQ Publish matches
+      // ActiveClinic: ✓ saves draft, Publish makes that copy live and versions it.
+      let pendingOverlayDrafts = 0;
+      if (inner.organizationId) {
+        const fieldDraftRepo = require("../repositories/websiteInlineFieldDraftRepository");
+        const structuredDraftRepo = require("../repositories/websiteStructuredDraftRepository");
+        const [pendingField, pendingStructured] = await Promise.all([
+          fieldDraftRepo.countDrafts(client, { churchId, branchId }),
+          structuredDraftRepo.countStructuredDrafts(client, { churchId, branchId }),
+        ]);
+        pendingOverlayDrafts = Number(pendingField || 0) + Number(pendingStructured || 0);
+        if (pendingOverlayDrafts > 0) {
+          const { applyWebsiteDraftsInTransaction } = require("./websiteDraftApplyService");
+          await applyWebsiteDraftsInTransaction(client, {
+            organizationId: inner.organizationId,
+            churchId,
+            branchId,
+          });
+        }
+      }
+
       // Narrow idempotency: rapid duplicate POSTs only when nothing new is waiting.
       // Phase 7 draft apply always forces a version even when CMS page rows stay published.
       const forcePublishVersion = Boolean(input && input.forcePublishVersion === true);
@@ -613,7 +643,7 @@ async function publishChurchWebsite(db, input) {
               [inner.organizationId]
             );
         const approvedN = approvedRes.rows[0] ? Number(approvedRes.rows[0].n) : 0;
-        if (draftN === 0 && approvedN === 0) {
+        if (draftN === 0 && approvedN === 0 && pendingOverlayDrafts === 0) {
           const recentRes = branchId
             ? await client.query(
                 `SELECT id, version_number, published_at, published_by
@@ -993,7 +1023,10 @@ async function publishInitialFoundationWebsite(client, input) {
         ok: true,
         status: STATUS.OK,
         alreadyPublished: true,
-        publicPath: `/c/${keyNorm.key}`,
+        publicPath: buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: keyNorm.key,
+        }),
         organizationKey: keyNorm.key,
         pageCount: n,
       };
@@ -1006,6 +1039,17 @@ async function publishInitialFoundationWebsite(client, input) {
     "Church";
 
   await ensureRequiredDraftPages(client, churchId);
+  const {
+    seedTenantOwnedWebsiteTemplateContent,
+  } = require("./seedTenantWebsiteTemplateContent");
+  await seedTenantOwnedWebsiteTemplateContent(client, {
+    churchId,
+    publicName,
+    primaryEmail: (input && input.primaryEmail) || null,
+    primaryPhone: (input && input.primaryPhone) || null,
+    address: (input && input.address) || (input && input.city) || null,
+    city: (input && input.city) || null,
+  });
   await ensureInitialHomeWelcomeSection(client, { churchId, publicName });
 
   const publishedAt = new Date();
@@ -1121,7 +1165,10 @@ async function publishInitialFoundationWebsite(client, input) {
     alreadyPublished: false,
     publishedAt: publishedAt.toISOString(),
     pageCount: pageUpdate.rowCount,
-    publicPath: `/c/${keyNorm.key}`,
+    publicPath: buildPublicOrganizationWebsitePath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: keyNorm.key,
+    }),
     organizationKey: keyNorm.key,
     publicationVersionId,
     publicationVersionNumber,

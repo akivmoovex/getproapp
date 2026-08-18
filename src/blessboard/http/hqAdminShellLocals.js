@@ -162,6 +162,9 @@ async function buildHqAdminShellLocals(req, res, opts) {
     canViewGiving: false,
     canViewStaffAccess: false,
     canPublishWebsite: false,
+    canEditWebsite: false,
+    canRestoreWebsite: false,
+    canViewWebsite: false,
     canViewFinance: false,
     canExportData: false,
   };

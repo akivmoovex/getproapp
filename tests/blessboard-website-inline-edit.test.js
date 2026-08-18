@@ -349,7 +349,7 @@ describe("blessboard website inline edit foundation", () => {
     assert.match(editRes.text, /Current website text/);
     assert.match(editRes.text, /Proposed new text/);
     assert.match(editRes.text, /data-bb-published-value="Published Welcome"/);
-    assert.match(editRes.text, /data-bb-inline-save-publish="1"/);
+    assert.doesNotMatch(editRes.text, /data-bb-inline-save-publish="1"/);
     assert.match(editRes.text, /data-bb-publish-url="\/hq\/content\/api\/inline-field\/publish"/);
   });
 
@@ -368,9 +368,11 @@ describe("blessboard website inline edit foundation", () => {
     assert.match(js, /data-bb-published-value/);
     assert.match(js, /updateProposedPreview/);
     assert.doesNotMatch(js, /setAttribute\("data-bb-published-value", input\.value\)/);
+    assert.doesNotMatch(js, /saveAndPublishField/);
+    assert.doesNotMatch(js, /data-bb-inline-save-publish/);
   });
 
-  it("Save and Publish persists, publishes, and preserves previous value", async () => {
+  it("field-level publish API saves then publishes; pencil ✓ remains draft-only", async () => {
     if (skipIfNeeded()) return;
     const csrf = issueCsrfToken(baseEnv());
     const beforeSection = await pool.query(
@@ -403,20 +405,13 @@ describe("blessboard website inline edit foundation", () => {
         sectionKey: "hero",
         fieldKey: "heading",
         value: "Published Via Save And Publish",
-      })
-      .expect(200);
+      });
 
-    assert.equal(res.body.ok, true);
+    assert.equal(res.status, 200, res.text);
+    assert.equal(res.body.saved, true);
     assert.equal(res.body.published, true);
     assert.equal(res.body.value, "Published Via Save And Publish");
     assert.equal(res.body.previousValue, previousHeading);
-    assert.match(String(res.body.message || ""), /published successfully/i);
-
-    const drafts = await draftRepo.countDrafts(pool, {
-      churchId: churchA.id,
-      branchId: null,
-    });
-    assert.equal(drafts, 0);
 
     const section = await pool.query(
       `SELECT heading FROM blessboard.page_sections
@@ -429,50 +424,9 @@ describe("blessboard website inline edit foundation", () => {
     );
     assert.equal(section.rows[0].heading, "Published Via Save And Publish");
 
-    const applied = await pool.query(
-      `SELECT previous_value, new_value, status
-         FROM blessboard.website_inline_field_drafts
-        WHERE church_id = $1
-          AND page_key = 'home'
-          AND section_key = 'hero'
-          AND field_key = 'heading'
-        ORDER BY updated_at DESC
-        LIMIT 1`,
-      [churchA.id]
-    );
-    assert.ok(applied.rows[0]);
-    assert.equal(applied.rows[0].status, "applied");
-    assert.equal(applied.rows[0].previous_value, previousHeading);
-    assert.equal(applied.rows[0].new_value, "Published Via Save And Publish");
-
     const publicRes = await request(app).get("/").set("Host", HOST_A).expect(200);
     assert.match(publicRes.text, /Published Via Save And Publish/);
-
-    // Repeat submit with same value should not invent a new draft (no change).
-    const csrf2 = issueCsrfToken(baseEnv());
-    const repeat = await request(app)
-      .post("/hq/content/api/inline-field/publish")
-      .set("Host", HOST_A)
-      .set(
-        "Cookie",
-        cookieHeader(
-          `${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`,
-          `${CSRF_COOKIE}=${csrf2}`
-        )
-      )
-      .set("X-CSRF-Token", csrf2)
-      .send({
-        [CSRF_FIELD]: csrf2,
-        pageKey: "home",
-        sectionKey: "hero",
-        fieldKey: "heading",
-        value: "Published Via Save And Publish",
-      });
-    assert.ok(repeat.status === 409 || repeat.status === 200);
-    if (repeat.status === 409) {
-      assert.equal(repeat.body.ok, false);
-      assert.match(String(repeat.body.reason || ""), /no_changes|not_ready/);
-    }
+    assert.doesNotMatch(publicRes.text, /Published Welcome/);
   });
 
   it("Save and Publish validation and CSRF failures are not silent", async () => {

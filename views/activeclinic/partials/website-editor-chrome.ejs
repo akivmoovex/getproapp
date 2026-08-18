@@ -22,9 +22,11 @@
   data-website-chrome="1"
   data-clinic-key="<%= clinic && clinic.clinicKey %>"
   data-website-status="<%= statusKey %>"
+  data-website-save-url="<%= websiteSaveUrl || '' %>"
+  data-website-media-url="<%= websiteMediaUrl || '' %>"
 >
   <div class="ac-website-chrome__status" data-website-chrome-status="1">
-    <p><strong><%= lifecycleLabel || (websiteEdit ? 'Editing draft.' : 'Live view.') %></strong>
+    <p><strong><%= lifecycleLabel || (websiteEdit ? 'Editing draft' : 'Live view.') %></strong>
       <% if (policyLabel) { %> Policy: <%= policyLabel %>.<% } %>
       <% if (lifecycle === 'offline') { %> The public website is offline. You can still use clinic operations.<% } %>
       <% if (lifecycle === 'suspended') { %> The public website is suspended. Contact Platform Admin to restore it.<% } %>
@@ -55,32 +57,65 @@
     <p>Unpublished draft changes are not visible to the public until you publish.</p>
     <% } %>
   </div>
-  <div class="ac-website-chrome__actions">
+  <div class="ac-website-chrome__actions" data-website-chrome-actions="1">
     <% if (websiteEdit) { %>
-    <a class="ac-website-chrome__link" href="?website_mode=live">View live</a>
-    <a class="ac-website-chrome__link" href="/clinics/<%= clinic.clinicKey %>/website/preview">Preview draft</a>
-    <a class="ac-website-chrome__link" href="/clinics/<%= clinic.clinicKey %>/website/history">Version history</a>
-    <form method="post" action="/clinics/<%= clinic.clinicKey %>/website/edit-session/finish" class="ac-website-chrome__submit">
+    <a class="ac-website-chrome__link" href="?website_mode=live">
+      <span class="gp-website-chrome__label-full">View live</span>
+      <span class="gp-website-chrome__label-short">Live</span>
+    </a>
+    <a class="ac-website-chrome__link" href="<%= websitePreviewUrl %>" data-website-preview="1">
+      <span class="gp-website-chrome__label-full">Preview draft</span>
+      <span class="gp-website-chrome__label-short">Preview</span>
+    </a>
+    <a class="ac-website-chrome__link" href="<%= websiteHistoryUrl %>">
+      <span class="gp-website-chrome__label-full">Version history</span>
+      <span class="gp-website-chrome__label-short">History</span>
+    </a>
+    <form method="post" action="<%= websiteFinishEditUrl %>" class="ac-website-chrome__submit">
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-      <button type="submit">Finish editing</button>
+      <button type="submit">
+        <span class="gp-website-chrome__label-full">Exit edit mode</span>
+        <span class="gp-website-chrome__label-short">Exit</span>
+      </button>
     </form>
     <% if (canPublish && !publishLocked && !waitingReview) { %>
-    <form method="post" action="/clinics/<%= clinic.clinicKey %>/website/publish" class="ac-website-chrome__submit">
+    <form
+      method="post"
+      action="<%= websitePublishUrl %>"
+      class="ac-website-chrome__submit"
+      data-website-publish-confirm="1"
+      data-website-publish-message="Publish this website? Public visitors will see the current draft."
+    >
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
       <input type="hidden" name="makePublic" value="1"/>
-      <button type="submit">Publish website</button>
+      <button type="submit">
+        <span class="gp-website-chrome__label-full">Publish website</span>
+        <span class="gp-website-chrome__label-short">Publish</span>
+      </button>
     </form>
     <% } %>
     <% if (websiteCanSubmit && !waitingReview && !tenantPublishes) { %>
-    <form method="post" action="/clinics/<%= clinic.clinicKey %>/website/submit" class="ac-website-chrome__submit">
+    <form method="post" action="<%= websiteSubmitUrl %>" class="ac-website-chrome__submit">
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-      <button type="submit"><%= canResubmit ? 'Resubmit for approval' : 'Submit for approval' %></button>
+      <button type="submit">
+        <span class="gp-website-chrome__label-full"><%= canResubmit ? 'Resubmit for approval' : 'Submit for approval' %></span>
+        <span class="gp-website-chrome__label-short"><%= canResubmit ? 'Resubmit' : 'Submit' %></span>
+      </button>
     </form>
     <% } %>
     <% } else if (!editLocked) { %>
-    <a class="ac-website-chrome__link" href="?website_edit=1&amp;website_mode=draft">Edit website</a>
-    <a class="ac-website-chrome__link" href="/clinics/<%= clinic.clinicKey %>/website/preview">Preview draft</a>
-    <a class="ac-website-chrome__link" href="/clinics/<%= clinic.clinicKey %>/website/history">Version history</a>
+    <a class="ac-website-chrome__link" href="?website_edit=1&amp;website_mode=draft" data-website-edit-control="1">
+      <span class="gp-website-chrome__label-full">Edit website</span>
+      <span class="gp-website-chrome__label-short">Edit</span>
+    </a>
+    <a class="ac-website-chrome__link" href="<%= websitePreviewUrl %>" data-website-preview="1">
+      <span class="gp-website-chrome__label-full">Preview draft</span>
+      <span class="gp-website-chrome__label-short">Preview</span>
+    </a>
+    <a class="ac-website-chrome__link" href="<%= websiteHistoryUrl %>">
+      <span class="gp-website-chrome__label-full">Version history</span>
+      <span class="gp-website-chrome__label-short">History</span>
+    </a>
     <% } %>
   </div>
 </div>

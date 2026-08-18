@@ -572,6 +572,7 @@ describe("blessboard website draft review publish", () => {
         newValue: "Trusted branch body",
       });
       const cap = resolvePublishCapability({
+        canPublish: true,
         actorRole: "branch_admin",
         settings: { branchEditMode: "trusted_branch_publish" },
       });
@@ -608,6 +609,7 @@ describe("blessboard website draft review publish", () => {
     });
 
     const cap = resolvePublishCapability({
+      canPublish: true,
       actorRole: "branch_admin",
       settings: { branchEditMode: "approval_required" },
     });

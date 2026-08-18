@@ -23,6 +23,10 @@ const lifecycleService = require("./lifecycleService");
 const publicationService = require("./publicationService");
 const recentChangesService = require("./recentChangesService");
 const editSessionService = require("./editSessionService");
+const publicWebsiteUrl = require("./publicWebsiteUrl");
+const websiteManagementPresentation = require("./websiteManagementPresentation");
+const inlineEditorContract = require("./inlineEditorContract");
+const editableFieldSchema = require("./editableFieldSchema");
 
 module.exports = {
   ...contentTypes,
@@ -48,4 +52,9 @@ module.exports = {
   publicationService,
   recentChangesService,
   editSessionService,
+  publicWebsiteUrl,
+  websiteManagementPresentation,
+  platformAdminWebsitesService: require("./platformAdminWebsitesService"),
+  inlineEditorContract,
+  editableFieldSchema,
 };

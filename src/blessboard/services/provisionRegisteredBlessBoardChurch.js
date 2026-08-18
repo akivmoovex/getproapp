@@ -31,6 +31,10 @@ const {
   resolveBaseOrganizationKey,
   withOrganizationKeySuffix,
 } = require("./organizationKey");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+} = require("../../platform/website/publicWebsiteUrl");
 const settingsRepo = require("../repositories/blessBoardSettingsRepository");
 const { generateInviteToken, INVITE_TTL_MS } = require("./inviteBlessBoardStaff");
 const { BCRYPT_ROUNDS, normalizeEmail } = userCreate;
@@ -714,7 +718,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       }
 
       if (
-        application.application_status === "closed" &&
+        (application.application_status === "closed" || application.application_status === "active") &&
         application.provisioning_status !== "provisioned"
       ) {
         throw new OrchestratorError(STATUS.APPLICATION_NOT_ELIGIBLE, "application_not_eligible");
@@ -725,8 +729,8 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       }
 
       const eligibleStatuses = administratorViaInvitation
-        ? ["submitted", "duplicate_review", "review_required"]
-        : ["submitted"];
+        ? ["submitted", "duplicate_review", "review_required", "provisioning"]
+        : ["submitted", "provisioning"];
       if (
         !eligibleStatuses.includes(String(application.application_status || "")) &&
         !(application.provisioning_status === "provisioning_failed" && allowRetry)
@@ -1074,6 +1078,10 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         organizationId,
         organizationKey,
         publicName: displayName,
+        primaryEmail: application.contact_email || null,
+        primaryPhone: application.contact_phone || null,
+        city: application.city || null,
+        address: application.city || null,
         actorUserId: administratorViaInvitation ? invitingActorUserId : administratorUserId,
         env: actorContext.env || process.env,
         source: "registration_provision",
@@ -1085,18 +1093,22 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         );
       }
       provisioningStage = "public_route_verified";
-      if (!initialPublish.publicPath || initialPublish.publicPath !== `/c/${organizationKey}`) {
+      const expectedPublicPath = buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey,
+      });
+      if (!initialPublish.publicPath || initialPublish.publicPath !== expectedPublicPath) {
         throw new OrchestratorError(STATUS.DATABASE_CONFLICT, "public_route_unverified");
       }
 
       provisioningStage = "close_application";
       const closed = await appRepo.updateApplicationProvisioningState(client, applicationId, {
-        applicationStatus: "closed",
+        applicationStatus: "active",
         provisioningStatus: "provisioned",
         organizationId,
         provisionedAt: provisionedAt.toISOString(),
         clearFailureMetadata: true,
-        // Compatibility: keep dormant list/count helpers coherent until legacy status is dropped.
+        // Legacy status column CHECK: pending | contacted | closed.
         legacyStatus: "closed",
       });
 
@@ -1196,7 +1208,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       );
       try {
         await persistApplicationOutcome(db, applicationId, {
-          applicationStatus: "duplicate_review",
+          applicationStatus: "review_required",
           provisioningStatus: "not_started",
           clearFailureMetadata: true,
         });

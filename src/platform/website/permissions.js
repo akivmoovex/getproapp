@@ -44,6 +44,21 @@ function hasWebsitePermission(grantedKeys, needed) {
   return need.every((key) => set.has(key));
 }
 
+function canViewWebsiteAdmin(grantedKeys) {
+  return (
+    hasWebsitePermission(grantedKeys, PERMISSIONS.VIEW) ||
+    hasWebsitePermission(grantedKeys, PERMISSIONS.EDIT) ||
+    hasWebsitePermission(grantedKeys, PERMISSIONS.PUBLISH)
+  );
+}
+
+function canRestoreWebsite(grantedKeys) {
+  return (
+    hasWebsitePermission(grantedKeys, PERMISSIONS.ROLLBACK) ||
+    hasWebsitePermission(grantedKeys, PERMISSIONS.RESTORE)
+  );
+}
+
 module.exports = {
   PERMISSIONS,
   ALL,
@@ -52,4 +67,6 @@ module.exports = {
   MODERATOR_PERMISSIONS,
   PLATFORM_ADMIN_PERMISSIONS: ALL,
   hasWebsitePermission,
+  canViewWebsiteAdmin,
+  canRestoreWebsite,
 };

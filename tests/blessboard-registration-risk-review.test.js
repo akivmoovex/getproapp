@@ -221,7 +221,7 @@ describe("registration risk review (Prompt 18)", () => {
     const row = await appRepo.findApplicationById(pool, result.application.id);
     assert.equal(row.risk_decision, "allow");
     assert.equal(row.provisioning_status, "provisioned");
-    assert.ok(["submitted", "closed"].includes(String(row.application_status)));
+    assert.ok(["submitted", "closed", "active"].includes(String(row.application_status)));
     assert.ok(row.organization_id);
   });
 
@@ -306,7 +306,7 @@ describe("registration risk review (Prompt 18)", () => {
     assert.ok(thirdResult.riskReasonCodes.includes(RISK_REASON_CODES.SIMILAR_ORGANIZATION));
     assert.equal(thirdResult.error, PUBLIC_REVIEW_MESSAGE);
     const row = await appRepo.findApplicationById(pool, thirdResult.application.id);
-    assert.equal(row.application_status, "duplicate_review");
+    assert.equal(row.application_status, "review_required");
     assert.equal(row.provisioning_status, "not_started");
     assert.equal(row.organization_id, null);
   });
@@ -334,7 +334,7 @@ describe("registration risk review (Prompt 18)", () => {
     const row = await appRepo.findApplicationById(pool, result.application.id);
     assert.equal(row.provisioning_status, "not_started");
     assert.equal(row.organization_id, null);
-    assert.equal(row.application_status, "duplicate_review");
+    assert.equal(row.application_status, "review_required");
   });
 
   it("5. admin approval provisions once (idempotent)", async () => {

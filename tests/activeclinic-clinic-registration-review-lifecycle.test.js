@@ -241,7 +241,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       requestText: "Please send a copy of the clinic licence.",
     });
     assert.equal(requested.ok, true, JSON.stringify(requested));
-    assert.equal(requested.applicationStatus, "pending_review");
+    assert.equal(requested.applicationStatus, "submitted");
     assert.equal(requested.followUpStatus, "awaiting_customer");
     assert.equal(requested.emailSent, false);
     assert.equal(requested.deliveryStatus, "sending_unavailable");
@@ -250,7 +250,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       `SELECT status, follow_up_status FROM activeclinic.clinic_registration_applications WHERE id = $1`,
       [created.id]
     );
-    assert.equal(afterRequest.rows[0].status, "pending_review");
+    assert.equal(afterRequest.rows[0].status, "submitted");
     assert.equal(afterRequest.rows[0].follow_up_status, "awaiting_customer");
     assert.notEqual(afterRequest.rows[0].status, "information_requested");
 
@@ -258,7 +258,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       applicationId: created.id,
     });
     assert.equal(returned.ok, true, JSON.stringify(returned));
-    assert.equal(returned.applicationStatus, "pending_review");
+    assert.equal(returned.applicationStatus, "submitted");
     assert.equal(returned.followUpStatus, "returned_for_review");
 
     const approved = await approveAndProvisionClinicRegistration(pool, {
@@ -271,7 +271,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       `SELECT status, provisioning_status FROM activeclinic.clinic_registration_applications WHERE id = $1`,
       [created.id]
     );
-    assert.equal(afterApprove.rows[0].status, "approved");
+    assert.equal(afterApprove.rows[0].status, "active");
 
     const detail = await getClinicRegistrationDetail(pool, created.id);
     const types = detail.history.map((e) => e.eventType);
@@ -480,7 +480,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       passwordConfirm: ADMIN_PASSWORD,
     });
     assert.equal(reapply.ok, true, JSON.stringify(reapply));
-    assert.equal(reapply.application.status, "pending_review");
+    assert.equal(reapply.application.status, "submitted");
     assert.notEqual(reapply.application.id, first.created.id);
   });
 
@@ -543,7 +543,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       .set("Host", BB_HOST)
       .set("Cookie", authed);
     assert.equal(after.status, 200);
-    assert.match(after.text, /data-ac-application-status="pending_review"/);
+    assert.match(after.text, /data-ac-application-status="submitted"/);
     assert.match(after.text, /data-ac-follow-up-status="awaiting_customer"/);
     assert.match(after.text, /Please confirm the physical address/);
     assert.match(after.text, /Email was not sent/);
@@ -583,7 +583,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       .set("Cookie", cookie);
     assert.equal(queue.status, 200);
     assert.match(queue.text, /data-ac-clinic-reg-queue="1"/);
-    assert.match(queue.text, /data-ac-application-status="pending_review"/);
+    assert.match(queue.text, /data-ac-application-status="submitted"/);
     assert.match(queue.text, /data-ac-follow-up-status="awaiting_customer"/);
     assert.match(queue.text, /data-ac-provisioning-status="not_started"/);
 
@@ -827,7 +827,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       `SELECT status FROM activeclinic.clinic_registration_applications WHERE id = $1`,
       [created.id]
     );
-    assert.equal(stillPending.rows[0].status, "pending_review");
+    assert.equal(stillPending.rows[0].status, "submitted");
 
     const attached = await approveAndProvisionClinicRegistration(pool, {
       applicationId: created.id,
@@ -930,7 +930,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
         WHERE a.id = $1`,
       [created.id]
     );
-    assert.equal(row.rows[0].status, "approved");
+    assert.equal(row.rows[0].status, "active");
     assert.equal(row.rows[0].provisioning_status, "provisioned");
     assert.ok(row.rows[0].organization_id);
     assert.equal(row.rows[0].last_provision_error, null);

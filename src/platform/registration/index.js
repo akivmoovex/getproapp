@@ -5,7 +5,9 @@ const lifecycle = require("./lifecycle");
 const { decideReview } = require("./reviewPolicy");
 const killSwitch = require("./killSwitch");
 const { submitPlatformRegistration, resolvePlatformRegistrationReview } = require("./orchestrator");
+const { initializeOrganizationWebsite } = require("./initializeOrganizationWebsite");
 const { listUnifiedRegistrations } = require("./unifiedRegistrationQueue");
+const statusCompatibility = require("./statusCompatibility");
 
 function getAdapter(productCode) {
   const product = String(productCode || "");
@@ -33,4 +35,6 @@ module.exports = {
   submitProductRegistration,
   getAdapter,
   listUnifiedRegistrations,
+  initializeOrganizationWebsite,
+  ...statusCompatibility,
 };
