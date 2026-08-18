@@ -34,5 +34,7 @@ describe("ActiveClinic clinic PA route hygiene", () => {
     assert.match(admin, /registerPlatformWebsiteAdminRoutes/);
     const clinicRegistrations = admin.split("registerActiveClinicPlatformAdminClinicRegistrationRoutes");
     assert.equal(clinicRegistrations.length, 3);
+    assert.doesNotMatch(clinic, /deploymentCode:\s*getPlatformDeploymentCode\(env\)/);
+    assert.match(clinic, /resolveClinicRegistrationDeploymentCode/);
   });
 });

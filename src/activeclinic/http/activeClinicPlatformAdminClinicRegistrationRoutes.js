@@ -35,6 +35,24 @@ function isAcknowledged(body) {
   return raw === "1" || raw === "on" || raw === true || raw === "true";
 }
 
+/**
+ * Provisioning and review audit require a deployment-code string.
+ * getPlatformDeploymentCode() returns { ok, status, code } — never pass that object through.
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {{ ok: true, code: string } | { ok: false, error: string }}
+ */
+function resolveClinicRegistrationDeploymentCode(env) {
+  const deployment = getPlatformDeploymentCode(env);
+  if (!deployment || deployment.ok !== true) {
+    return { ok: false, error: "deployment_unavailable" };
+  }
+  const code = typeof deployment.code === "string" ? deployment.code.trim() : "";
+  if (!code) {
+    return { ok: false, error: "deployment_unavailable" };
+  }
+  return { ok: true, code };
+}
+
 function registerActiveClinicPlatformAdminClinicRegistrationRoutes(router, deps) {
   const {
     getPool,
@@ -104,12 +122,19 @@ function registerActiveClinicPlatformAdminClinicRegistrationRoutes(router, deps)
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return res.redirect(303, "/admin/clinic-registrations?error=csrf");
       }
+      const deployment = resolveClinicRegistrationDeploymentCode(env);
+      if (!deployment.ok) {
+        return res.redirect(
+          303,
+          `${clinicRegDetailPath(req.params.applicationId)}?error=${encodeURIComponent(deployment.error)}`
+        );
+      }
       const mode = getDeploymentEnvMode(env);
       const result = await approveAndProvisionClinicRegistration(getPool(), {
         applicationId: req.params.applicationId,
         actorIdentityId: actorId(req),
         dataEnvironment: mode === "production" ? "production" : "testing",
-        deploymentCode: getPlatformDeploymentCode(env),
+        deploymentCode: deployment.code,
         acknowledgeExistingIdentity: isAcknowledged(req.body),
         env,
       });
@@ -130,11 +155,18 @@ function registerActiveClinicPlatformAdminClinicRegistrationRoutes(router, deps)
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?error=csrf`);
       }
+      const deployment = resolveClinicRegistrationDeploymentCode(env);
+      if (!deployment.ok) {
+        return res.redirect(
+          303,
+          `${clinicRegDetailPath(req.params.applicationId)}?error=${encodeURIComponent(deployment.error)}`
+        );
+      }
       const result = await requestClinicRegistrationInformation(getPool(), {
         applicationId: req.params.applicationId,
         actorId: actorId(req),
         requestText: req.body && req.body.request_text,
-        deploymentCode: getPlatformDeploymentCode(env),
+        deploymentCode: deployment.code,
         env,
       });
       if (!result.ok) {
@@ -157,11 +189,18 @@ function registerActiveClinicPlatformAdminClinicRegistrationRoutes(router, deps)
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return res.redirect(303, `${clinicRegDetailPath(req.params.applicationId)}?error=csrf`);
       }
+      const deployment = resolveClinicRegistrationDeploymentCode(env);
+      if (!deployment.ok) {
+        return res.redirect(
+          303,
+          `${clinicRegDetailPath(req.params.applicationId)}?error=${encodeURIComponent(deployment.error)}`
+        );
+      }
       const result = await markClinicRegistrationInformationReturned(getPool(), {
         applicationId: req.params.applicationId,
         actorId: actorId(req),
         note: req.body && req.body.return_note,
-        deploymentCode: getPlatformDeploymentCode(env),
+        deploymentCode: deployment.code,
       });
       if (!result.ok) {
         return res.redirect(
@@ -225,4 +264,5 @@ function registerActiveClinicPlatformAdminClinicRegistrationRoutes(router, deps)
 
 module.exports = {
   registerActiveClinicPlatformAdminClinicRegistrationRoutes,
+  resolveClinicRegistrationDeploymentCode,
 };

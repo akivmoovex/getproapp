@@ -78,6 +78,21 @@ function splitName(contactName) {
   return { firstName, lastName };
 }
 
+/**
+ * staff_role_assignments.assigned_by_platform_identity_id FKs to platform.identities.
+ * Platform Admin is typically a BlessBoard user, so actorIdentityId must not be
+ * written there unless it is actually a platform identity.
+ */
+async function platformIdentityIdOrNull(client, candidateId) {
+  const id = String(candidateId || "").trim();
+  if (!UUID_RE.test(id)) return null;
+  const found = await client.query(
+    `SELECT id FROM platform.identities WHERE id = $1 LIMIT 1`,
+    [id]
+  );
+  return found.rows[0] ? found.rows[0].id : null;
+}
+
 async function loadApplication(client, applicationId) {
   const rows = await client.query(
     `SELECT * FROM activeclinic.clinic_registration_applications WHERE id = $1 FOR UPDATE`,
@@ -220,7 +235,10 @@ async function ensureClinicAdmin(client, input) {
     roleKey: ORGANIZATION_ADMIN,
     scopeType: "organisation",
     assignmentOrigin: "system",
-    assignedByPlatformIdentityId: input.actorIdentityId || null,
+    assignedByPlatformIdentityId: await platformIdentityIdOrNull(
+      client,
+      input.actorIdentityId
+    ),
   });
   if (!role.ok && role.code !== "role_assignment_exists") {
     return { ok: false, code: role.code };

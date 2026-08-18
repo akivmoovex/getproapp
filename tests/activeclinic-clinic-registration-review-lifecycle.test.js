@@ -898,4 +898,61 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
     const approval = history.history.find((e) => e.eventType === "approval");
     assert.ok(approval && /Existing ActiveClinic identity linked/i.test(String(approval.body || "")));
   });
+
+  it("HTTP approve unwraps deployment code and provisions the clinic", async () => {
+    requireDb();
+    const { created } = await createPending();
+    const pa = await loginPa();
+    const detail = await request(app)
+      .get(`/admin/clinic-registrations/${created.id}`)
+      .set("Host", BB_HOST)
+      .set("Cookie", cookieHeader({ [UNIFIED_SID]: pa.sid }));
+    assert.equal(detail.status, 200);
+    const csrf = csrfFrom(detail.text);
+    const csrfCookie = extractCookie(detail, UNIFIED_CSRF);
+    const approved = await request(app)
+      .post(`/admin/clinic-registrations/${created.id}/approve`)
+      .set("Host", BB_HOST)
+      .set("Cookie", cookieHeader({ [UNIFIED_SID]: pa.sid, [UNIFIED_CSRF]: csrfCookie || csrf }))
+      .redirects(0)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf });
+    assert.equal(approved.status, 303);
+    assert.match(String(approved.headers.location || ""), /notice=approved/);
+    assert.doesNotMatch(String(approved.headers.location || ""), /tenant_provision_failed|deployment_unavailable/);
+
+    const row = await pool.query(
+      `SELECT a.status, a.provisioning_status, a.organization_id, a.last_provision_error,
+              o.organization_key, wi.publish_policy, wi.lifecycle_status
+         FROM activeclinic.clinic_registration_applications a
+         JOIN platform.organizations o ON o.id = a.organization_id
+         LEFT JOIN platform.website_instances wi ON wi.organization_id = o.id
+        WHERE a.id = $1`,
+      [created.id]
+    );
+    assert.equal(row.rows[0].status, "approved");
+    assert.equal(row.rows[0].provisioning_status, "provisioned");
+    assert.ok(row.rows[0].organization_id);
+    assert.equal(row.rows[0].last_provision_error, null);
+    assert.equal(row.rows[0].publish_policy, "AUTO_PUBLISH_WITH_MODERATION");
+    assert.equal(row.rows[0].lifecycle_status, "provisional");
+
+    const assignedBy = await pool.query(
+      `SELECT sra.assigned_by_platform_identity_id
+         FROM activeclinic.staff_role_assignments sra
+         JOIN activeclinic.staff_members sm ON sm.id = sra.staff_member_id
+        WHERE sm.organization_id = $1`,
+      [row.rows[0].organization_id]
+    );
+    assert.ok(assignedBy.rows.length >= 1);
+    for (const assignment of assignedBy.rows) {
+      if (assignment.assigned_by_platform_identity_id) {
+        const identity = await pool.query(
+          `SELECT 1 FROM platform.identities WHERE id = $1`,
+          [assignment.assigned_by_platform_identity_id]
+        );
+        assert.equal(identity.rowCount, 1);
+      }
+    }
+  });
 });
