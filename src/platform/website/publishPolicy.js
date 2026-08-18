@@ -4,6 +4,7 @@ const PUBLISH_POLICY = Object.freeze({
   AUTO_PUBLISH_WITH_MODERATION: "AUTO_PUBLISH_WITH_MODERATION",
   REVIEW_BEFORE_PUBLISH: "REVIEW_BEFORE_PUBLISH",
   PLATFORM_LOCKED: "PLATFORM_LOCKED",
+  TENANT_PUBLISH: "TENANT_PUBLISH",
 });
 
 const ALL_PUBLISH_POLICIES = Object.freeze(Object.values(PUBLISH_POLICY));
@@ -12,6 +13,7 @@ const POLICY_LABELS = Object.freeze({
   [PUBLISH_POLICY.AUTO_PUBLISH_WITH_MODERATION]: "Auto-publish with moderation",
   [PUBLISH_POLICY.REVIEW_BEFORE_PUBLISH]: "Review before publish",
   [PUBLISH_POLICY.PLATFORM_LOCKED]: "Publishing restricted",
+  [PUBLISH_POLICY.TENANT_PUBLISH]: "Organisation publishes",
 });
 
 function isPublishPolicy(value) {

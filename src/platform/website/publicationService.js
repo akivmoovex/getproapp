@@ -157,6 +157,68 @@ async function saveDraftAndMaybePublish(db, input) {
   };
 }
 
+async function publishWebsiteDraft(db, input) {
+  const organizationId = String((input && input.organizationId) || "");
+  const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
+  if (!instance) return { ok: false, code: RESULT.NOT_FOUND, version: null };
+  if (instance.publishLocked === true || instance.publishPolicy === PUBLISH_POLICY.PLATFORM_LOCKED) {
+    return { ok: false, code: RESULT.PUBLISH_LOCKED, version: null };
+  }
+  if (instance.publishPolicy === PUBLISH_POLICY.REVIEW_BEFORE_PUBLISH && input.forceTenantPublish !== true) {
+    return { ok: false, code: RESULT.POLICY_LOCKED, version: null };
+  }
+
+  const rows = await contentService.listWebsiteContent(db, instance, organizationId);
+  const changedKeys = [];
+  for (const row of rows) {
+    if (!contentService.valuesEqual(row.draftValue, row.publishedValue)) {
+      await publishDraftKey(db, instance, row.contentKey);
+      changedKeys.push(row.contentKey);
+    }
+  }
+
+  const listed = await versionService.listWebsiteVersions(db, {
+    instanceId: instance.id,
+    organizationId,
+  });
+  const current = (listed.versions || []).find((v) => v.status === "published") || null;
+  if (!changedKeys.length && current && input.allowEmpty !== true) {
+    return {
+      ok: true,
+      code: "already_current",
+      published: false,
+      version: current,
+      changedKeys: [],
+    };
+  }
+
+  await editSessionService.closeOpenSessionsForInstance(db, {
+    organizationId,
+    instanceId: instance.id,
+    editorIdentityId: input.actorIdentityId || null,
+    reason: editSessionService.CLOSE_REASON.FINISH,
+  });
+
+  const created = await createPublicationVersion(db, {
+    instance,
+    actorIdentityId: input.actorIdentityId || null,
+    reviewerIdentityId: input.actorIdentityId || null,
+    changedKeys,
+    sourcePolicy: instance.publishPolicy,
+    moderationStatus: "published",
+    auditActionKey: "website.publish",
+    moderationActionKey: ACTION.TENANT_PUBLISH,
+    recordModeration: true,
+  });
+  return {
+    ok: created.ok,
+    code: created.ok ? RESULT.OK : created.code,
+    published: Boolean(created.ok),
+    version: created.version || null,
+    changedKeys,
+  };
+}
+
 async function restoreWebsiteVersionLive(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
@@ -200,6 +262,7 @@ module.exports = {
   RESULT,
   createPublicationVersion,
   saveDraftAndMaybePublish,
+  publishWebsiteDraft,
   restoreWebsiteVersionLive,
   snapshotLiveContent,
 };

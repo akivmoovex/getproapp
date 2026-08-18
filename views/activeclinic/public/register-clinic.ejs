@@ -8,7 +8,7 @@
   <header class="acp-page-hero acp-page-hero--compact">
     <p class="ac-public-eyebrow">Clinic onboarding</p>
     <h1>Register your clinic</h1>
-    <p class="ac-public-lede">Submit your clinic for review. After approval, you can sign in with this email or phone number and the password you set here.</p>
+    <p class="ac-public-lede">Create your clinic workspace and administrator account. You can sign in immediately after registration. Publishing a website is a separate step.</p>
   </header>
 
   <% if (typeof error === 'string' && error) { %>
@@ -81,7 +81,7 @@
     <input type="hidden" name="countryCode" value="<%= fd.countryCode || 'ZM' %>"/>
     <fieldset class="ac-form-fieldset">
       <legend>Administrator sign-in</legend>
-      <p class="ac-form-hint">Use this email or phone number after your clinic is approved.</p>
+      <p class="ac-form-hint">You will use this email or phone number to sign in after registration.</p>
       <div class="ac-form-field<%= verr.password ? ' ac-form-field--error' : '' %>">
         <label for="password">Password <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
         <input id="password" name="password" type="password" required aria-required="true" autocomplete="new-password" minlength="10" maxlength="200" aria-invalid="<%= verr.password ? 'true' : 'false' %>"<% if (verr.password) { %> aria-describedby="password-error"<% } %>/>

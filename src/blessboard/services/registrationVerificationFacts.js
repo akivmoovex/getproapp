@@ -296,7 +296,7 @@ function computeApprovalEligible(app) {
   if (app.provisioningStatus === "provisioning_failed") {
     return false;
   }
-  return ["submitted", "duplicate_review"].includes(app.applicationStatus);
+  return ["submitted", "duplicate_review", "review_required"].includes(app.applicationStatus);
 }
 
 /**
@@ -322,7 +322,7 @@ function computeProvisioningPrerequisites(app) {
   if (["rejected", "cancelled", "closed"].includes(app.applicationStatus)) {
     return { ok: false, reason: "not_eligible" };
   }
-  if (!["submitted", "duplicate_review"].includes(app.applicationStatus)) {
+  if (!["submitted", "duplicate_review", "review_required"].includes(app.applicationStatus)) {
     if (app.provisioningStatus === "provisioning_failed") {
       return { ok: false, reason: "retry_review_required" };
     }

@@ -1,7 +1,8 @@
 "use strict";
 
 const multer = require("multer");
-const { validateCsrf, CSRF_FIELD } = require("../../platform/http/v5Csrf");
+const { validateCsrf, CSRF_FIELD, issueCsrfToken, setCsrfCookie } = require("../../platform/http/v5Csrf");
+const { renderPublicPage } = require("./renderActiveClinicPublic");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const contentService = require("../../platform/website/contentService");
 const publicationService = require("../../platform/website/publicationService");
@@ -13,6 +14,10 @@ const {
   canEditClinicWebsite,
   attachActiveClinicWebsiteLocals,
 } = require("./attachActiveClinicWebsiteChrome");
+const versionService = require("../../platform/website/versionService");
+const {
+  setClinicWebsiteAvailability,
+} = require("../services/clinicWebsiteAvailabilityService");
 const {
   resolvePublishableClinicByKey,
 } = require("../services/activeClinicPublicVisibilityService");
@@ -26,6 +31,28 @@ function json(res, status, body) {
   return res.status(status).json(body);
 }
 
+function wantsHtml(req) {
+  return Boolean(
+    req.accepts("html") && !req.xhr && !(String(req.headers.accept || "").includes("application/json"))
+  );
+}
+
+function canPublishClinicWebsite(req, clinic) {
+  const auth = req.activeClinicAuth;
+  if (!auth || !auth.authenticated || !clinic) return false;
+  if (!auth.organization || auth.organization.id !== clinic.organizationId) return false;
+  return hasWebsitePermission(grantedPermissions(req), PERMISSIONS.PUBLISH);
+}
+
+function canRestoreClinicWebsite(req, clinic) {
+  const auth = req.activeClinicAuth;
+  if (!auth || !auth.authenticated || !clinic) return false;
+  if (!auth.organization || auth.organization.id !== clinic.organizationId) return false;
+  return (
+    hasWebsitePermission(grantedPermissions(req), PERMISSIONS.ROLLBACK) ||
+    hasWebsitePermission(grantedPermissions(req), PERMISSIONS.RESTORE)
+  );
+}
 function actorId(req) {
   return (
     (req.activeClinicAuth &&
@@ -194,6 +221,201 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         actorIdentityId: actorId(req),
       });
       return json(res, submitted.ok ? 200 : 400, submitted);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/website/publish", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return json(res, 403, { ok: false, code: "csrf" });
+      }
+      if (!canPublishClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      if (attached.instance.publishLocked) {
+        return json(res, 403, { ok: false, code: "website_publish_locked" });
+      }
+      const published = await publicationService.publishWebsiteDraft(getPool(), {
+        organizationId: clinic.organizationId,
+        instanceId: attached.instance.id,
+        actorIdentityId: actorId(req),
+        allowEmpty: true,
+      });
+      if (!published.ok) {
+        return json(res, 400, { ok: false, code: published.code });
+      }
+      let availability = null;
+      if (req.body && (req.body.makePublic === "1" || req.body.makePublic === true || req.body.make_public === "1")) {
+        availability = await setClinicWebsiteAvailability(getPool(), {
+          organizationKey: clinic.clinicKey,
+          public: true,
+          actorIdentityId: actorId(req),
+          overrideReadiness: true,
+          reason: "organisation_admin_publish",
+          env,
+        });
+      }
+      if (wantsHtml(req)) {
+        return res.redirect(
+          303,
+          `/clinics/${encodeURIComponent(clinic.clinicKey)}/website/history?notice=published`
+        );
+      }
+      return json(res, 200, {
+        ok: true,
+        code: "published",
+        version: published.version || null,
+        changedKeys: published.changedKeys || [],
+        availability,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/website/versions", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!canEditClinicWebsite(req, clinic) && !canPublishClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const listed = await versionService.listWebsiteVersions(getPool(), {
+        instanceId: attached.instance.id,
+        organizationId: clinic.organizationId,
+      });
+      const changes = await contentService.listUnpublishedChanges(
+        getPool(),
+        attached.instance,
+        clinic.organizationId
+      );
+      return json(res, 200, {
+        ok: true,
+        versions: listed.versions || [],
+        unpublishedCount: changes.length,
+        canPublish: canPublishClinicWebsite(req, clinic),
+        canRestore: canRestoreClinicWebsite(req, clinic),
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/website/history", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!canEditClinicWebsite(req, clinic) && !canPublishClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const listed = await versionService.listWebsiteVersions(getPool(), {
+        instanceId: attached.instance.id,
+        organizationId: clinic.organizationId,
+      });
+      const csrfToken = issueCsrfToken(env);
+      setCsrfCookie(res, csrfToken, {
+        secure: String(env.NODE_ENV || "") === "production",
+        env,
+        req,
+      });
+      return res.status(200).type("html").send(
+        renderPublicPage({
+          pageId: "tenant-website-history",
+          pageTitle: "Website version history",
+          contentTemplate: "tenant/website-history",
+          shellVariant: "tenant",
+          robots: "noindex, nofollow",
+          locals: {
+            ...attached,
+            csrfToken,
+            versions: listed.versions || [],
+            notice: String(req.query.notice || ""),
+            error: String(req.query.error || ""),
+          },
+        })
+      );
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/website/versions/:versionId", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!canEditClinicWebsite(req, clinic) && !canPublishClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const loaded = await versionService.getWebsiteVersion(getPool(), {
+        versionId: req.params.versionId,
+        organizationId: clinic.organizationId,
+      });
+      if (!loaded.ok) {
+        return json(res, 404, { ok: false, code: loaded.code });
+      }
+      return json(res, 200, { ok: true, version: loaded.version, preview: loaded.version.snapshot || {} });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/website/versions/:versionId/restore", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return json(res, 403, { ok: false, code: "csrf" });
+      }
+      if (!canRestoreClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const restored = await publicationService.restoreWebsiteVersionLive(getPool(), {
+        organizationId: clinic.organizationId,
+        instanceId: attached.instance.id,
+        versionId: req.params.versionId,
+        actorIdentityId: actorId(req),
+      });
+      if (!restored.ok) {
+        if (wantsHtml(req)) {
+          return res.redirect(
+            303,
+            `/clinics/${encodeURIComponent(clinic.clinicKey)}/website/history?error=${encodeURIComponent(restored.code || "restore_failed")}`
+          );
+        }
+        return json(res, 400, { ok: false, code: restored.code });
+      }
+      if (wantsHtml(req)) {
+        return res.redirect(
+          303,
+          `/clinics/${encodeURIComponent(clinic.clinicKey)}/website/history?notice=restored`
+        );
+      }
+      return json(res, 200, {
+        ok: true,
+        code: "restored",
+        version: restored.version || null,
+        restoredFrom: restored.restoredFrom || null,
+      });
     } catch (err) {
       return next(err);
     }

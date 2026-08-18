@@ -1,0 +1,68 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = websites || [];
+  var tab = String(tab || 'overview');
+  var q = q || '';
+  function tabHref(name) {
+    var qs = '?tab=' + encodeURIComponent(name);
+    if (q) qs += '&q=' + encodeURIComponent(q);
+    return '/admin/websites' + qs;
+  }
+%>
+<section class="bb-pa-page" data-bb-pa-websites="1">
+  <h1>Websites</h1>
+  <p class="bb-pa-hint">Inspect clinic and church websites. Organisation admins publish; Platform Admin governs, audits, and recovers.</p>
+  <nav class="bb-pa-tabs" aria-label="Website views">
+    <a href="<%= tabHref('overview') %>" class="<%= tab === 'overview' ? 'is-active' : '' %>">Overview</a>
+    <a href="<%= tabHref('drafts') %>" class="<%= tab === 'drafts' ? 'is-active' : '' %>">Drafts</a>
+    <a href="<%= tabHref('published') %>" class="<%= tab === 'published' ? 'is-active' : '' %>">Published</a>
+    <a href="<%= tabHref('history') %>" class="<%= tab === 'history' ? 'is-active' : '' %>">History</a>
+  </nav>
+  <form method="get" action="/admin/websites" class="bb-pa-filters bb-pa-form">
+    <input type="hidden" name="tab" value="<%= tab %>"/>
+    <label class="bb-pa-field">Search
+      <input type="search" name="q" value="<%= q %>" placeholder="Organisation, key, product"/>
+    </label>
+    <button type="submit" class="bb-pa-btn">Filter</button>
+  </form>
+  <table class="bb-pa-table" data-bb-pa-websites-table="1">
+    <thead>
+      <tr>
+        <th>Organisation</th>
+        <th>Product</th>
+        <th>Active</th>
+        <th>Website</th>
+        <th>Published</th>
+        <th>Unpublished draft</th>
+        <th>Last publication</th>
+        <th>Who published</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!rows.length) { %>
+      <tr><td colspan="9">No websites match this view.</td></tr>
+      <% } %>
+      <% rows.forEach(function (site) { %>
+      <tr data-bb-pa-website-row="<%= site.organizationKey %>" data-product="<%= site.productCode %>">
+        <td>
+          <strong><%= site.displayName %></strong><br/>
+          <span class="bb-pa-hint"><%= site.organizationKey %></span>
+        </td>
+        <td><%= site.productCode === 'activeclinic' ? 'ActiveClinic' : 'BlessBoard' %></td>
+        <td><%= site.organizationStatus === 'active' ? 'Yes' : site.organizationStatus %></td>
+        <td><%= site.hasWebsite ? 'Yes' : 'No' %></td>
+        <td><%= site.published ? 'Yes' : 'No' %></td>
+        <td><%= site.unpublishedCount > 0 ? (site.unpublishedCount + ' changes') : (site.published ? 'None' : 'Draft only') %></td>
+        <td>
+          <% if (site.currentVersionNumber) { %>v<%= site.currentVersionNumber %><% } else { %>—<% } %>
+          <% if (site.lastPublishedLabel) { %><br/><span class="bb-pa-hint"><%= site.lastPublishedLabel %></span><% } %>
+        </td>
+        <td><%= site.lastPublisher || '—' %></td>
+        <td><a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/organizations/<%= site.organizationKey %>/website">Open</a></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

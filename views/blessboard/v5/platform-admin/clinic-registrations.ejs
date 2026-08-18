@@ -15,7 +15,8 @@
     </label>
     <label class="bb-pa-field">Status
       <select name="status" data-ac-clinic-reg-status-filter="1">
-        <option value="pending_review" <%= f.status === 'pending_review' ? 'selected' : '' %>>Pending review</option>
+        <option value="pending_review" <%= f.status === 'pending_review' ? 'selected' : '' %>>Needs review</option>
+        <option value="review_required" <%= f.status === 'review_required' ? 'selected' : '' %>>Review required</option>
         <option value="approved" <%= f.status === 'approved' ? 'selected' : '' %>>Approved</option>
         <option value="rejected" <%= f.status === 'rejected' ? 'selected' : '' %>>Rejected</option>
         <option value="withdrawn" <%= f.status === 'withdrawn' ? 'selected' : '' %>>Withdrawn</option>
@@ -74,7 +75,7 @@
         <td><span class="bb-pa-chip bb-pa-chip--muted" data-ac-provisioning-status="<%= app.provisioning_status || 'not_started' %>"><%= app.provisioning_status || 'not_started' %></span></td>
         <td>
           <a class="bb-pa-btn bb-pa-btn--ghost" href="/admin/clinic-registrations/<%= app.id %>">Review</a>
-          <% if (app.status === 'pending_review' || (app.status === 'approved' && app.provisioning_status !== 'provisioned')) { %>
+          <% if (app.status === 'pending_review' || app.status === 'review_required' || (app.status === 'approved' && app.provisioning_status !== 'provisioned')) { %>
           <form method="post" action="/admin/clinic-registrations/<%= app.id %>/approve">
             <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
             <button type="submit" class="bb-pa-btn"><%= app.status === 'approved' ? 'Retry provision' : 'Approve' %></button>

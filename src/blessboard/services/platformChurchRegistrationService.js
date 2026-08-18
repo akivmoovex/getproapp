@@ -271,176 +271,123 @@ async function rejectIfChurchNameTaken(pool, data) {
   }
 }
 
-/**
- * Persist a pending church-registration application (no provisioning).
- * DB failures return a friendly result — they must not throw to the browser.
- * @param {import('pg').Pool | null} pool
- * @param {import('express').Request} req
- * @param {object} validationResult
- */
-async function submitPlatformChurchRegistration(pool, req, validationResult) {
-  if (validationResult.honeypot) {
-    return { ok: true, honeypot: true };
-  }
-  if (!validationResult.ok || !validationResult.data) {
-    return validationResult;
-  }
-  if (!pool) {
+const {
+  PRODUCT,
+  RESULT: ENGINE_RESULT,
+  REVIEW_REASON,
+  submitProductRegistration,
+} = require("../../platform/registration");
+
+function riskFields(result, application) {
+  return {
+    riskDecision:
+      (result && result.riskDecision) ||
+      (application && (application.risk_decision || application.riskDecision)) ||
+      null,
+    riskReasonCodes:
+      (result && result.riskReasonCodes) ||
+      (application && (application.risk_reason_codes || application.riskReasonCodes)) ||
+      [],
+  };
+}
+
+function mapEngineResultToChurchHttp(result, validationResult) {
+  const data = (validationResult && validationResult.data) || {};
+  const networkSupport = isNetworkPlanSelection(data.selected_plan);
+  const application = (result && result.application) || null;
+  const code = result && result.code;
+  const risk = riskFields(result, application);
+
+  if (code === ENGINE_RESULT.INVALID) {
     return {
       ok: false,
-      error: GENERIC_SAVE_ERROR,
-      code: "pool_unavailable",
+      error: result.error || GENERIC_SAVE_ERROR,
+      field: result.field || null,
+      code: result.persistCode || result.code,
+      pgCode: result.pgCode || null,
+      httpStatus: result.httpStatus || (result.field ? 400 : 503),
+      application,
+      engine: result.engine,
+      ...risk,
     };
   }
-
-  const data = validationResult.data;
-  const nameTaken = await rejectIfChurchNameTaken(pool, data);
-  if (nameTaken) {
-    return nameTaken;
-  }
-  const clientMeta = clientMetaFromRequest(req);
-
-  let risk;
-  try {
-    risk = await evaluateRegistrationRisk(pool, {
-      data,
-      sourceIp: clientMeta.source_ip,
-      honeypot: false,
-      organizationKey: data.organization_key || null,
-    });
-  } catch (err) {
-    logRegistrationDbError(req, err);
+  if (code === ENGINE_RESULT.DUPLICATE) {
     return {
       ok: false,
-      error: GENERIC_SAVE_ERROR,
-      code: "risk_evaluation_failed",
-      pgCode: err && err.code ? String(err.code) : null,
-      httpStatus: 503,
+      review: true,
+      application,
+      duplicate: true,
+      error: DUPLICATE_REVIEW_MESSAGE,
+      code: "review_required",
+      httpStatus: 200,
+      engine: result.engine,
+      ...risk,
     };
   }
-  logRiskDecision(req, risk, "enquiry");
-
-  if (risk.decision === RISK_DECISIONS.REJECT) {
-    if (risk.reasonCodes.includes(RISK_REASON_CODES.DUPLICATE_PHONE)) {
-      return {
-        ok: false,
-        error: risk.publicMessage || DUPLICATE_PHONE_MESSAGE,
-        field: "phone",
-        code: "duplicate_registration_phone",
-        httpStatus: 400,
-        riskDecision: risk.decision,
-        riskReasonCodes: risk.reasonCodes,
-      };
-    }
+  if (code === ENGINE_RESULT.REVIEW_REQUIRED) {
+    const enquiryHold =
+      result.reason === REVIEW_REASON.SELF_REGISTRATION_PROVISIONING_DISABLED ||
+      result.reason === REVIEW_REASON.NETWORK_PLAN_MANUAL_REVIEW ||
+      result.reason === REVIEW_REASON.MANUAL_PLATFORM_HOLD ||
+      networkSupport;
     return {
-      ok: false,
-      error: PUBLIC_REJECT_MESSAGE,
-      code: "registration_rejected",
-      httpStatus: 400,
-      riskDecision: risk.decision,
-      riskReasonCodes: risk.reasonCodes,
-      field: risk.field || null,
+      ok: Boolean(enquiryHold),
+      review: !enquiryHold,
+      application,
+      networkSupportContact: networkSupport,
+      error: enquiryHold ? undefined : DUPLICATE_REVIEW_MESSAGE,
+      code: "review_required",
+      httpStatus: 200,
+      reason: result.reason,
+      engine: result.engine,
+      ...risk,
     };
   }
-
-  // Never persist administrator_password on the application row.
-  const {
-    administrator_password: _dropPw,
-    organization_key: _dropKey,
-    wants_instant_free: _dropW,
-    ...persistable
-  } = data;
-
-  const networkSupport = isNetworkPlanSelection(persistable.selected_plan);
-  const supportFields = networkSupport
-    ? {
-        support_requested: true,
-        follow_up_status: "validation_pending",
-        selected_plan: NETWORK_PLAN_CODE,
-      }
-    : {};
-
-  try {
-    const { application, duplicate } = await repo.createApplicationIdempotent(pool, {
-      ...persistable,
-      ...supportFields,
-      ...clientMeta,
-      ...riskPersistFields(risk),
-    });
-    try {
-      logReceived(req, application, {
-        duplicate,
-        mode: networkSupport ? "network_support_contact" : "enquiry",
-      });
-    } catch {
-      /* logging must not block */
-    }
-    try {
-      maybeSendRegistrationAcknowledgementEmail(application);
-    } catch {
-      /* email must never fail submission */
-    }
-    if (duplicate && application && String(application.application_status) === "duplicate_review") {
-      return {
-        ok: false,
-        review: true,
-        application,
-        duplicate,
-        networkSupportContact: networkSupport,
-        error: DUPLICATE_REVIEW_MESSAGE,
-        code: "review_required",
-        httpStatus: 200,
-        riskDecision: application.risk_decision || risk.decision,
-        riskReasonCodes: risk.reasonCodes,
-      };
-    }
-    if (!duplicate && risk.decision === RISK_DECISIONS.REVIEW_REQUIRED) {
-      return {
-        ok: false,
-        review: true,
-        application,
-        duplicate,
-        networkSupportContact: networkSupport,
-        error: DUPLICATE_REVIEW_MESSAGE,
-        code: "review_required",
-        httpStatus: 200,
-        riskDecision: risk.decision,
-        riskReasonCodes: risk.reasonCodes,
-      };
-    }
+  if (code === ENGINE_RESULT.PROVISION_FAILED) {
+    const raw = result.provision || {};
+    const inner = raw.provisioned || raw;
+    return {
+      ...mapProvisionFailure(
+        { ...inner, status: inner.status || raw.code || result.reason },
+        application
+      ),
+      ...risk,
+    };
+  }
+  if (code === ENGINE_RESULT.ACTIVE) {
+    const provisionWrapper = result.provision || {};
+    const provision = provisionWrapper.provisioned || provisionWrapper;
+    const records = provision.records || provisionWrapper.records || {};
     return {
       ok: true,
+      mode: "instant_free",
       application,
-      duplicate,
-      networkSupportContact: networkSupport,
-      riskDecision: application.risk_decision || risk.decision,
-      riskReasonCodes: risk.reasonCodes,
+      provision,
+      records,
+      alreadyProvisioned: Boolean(result.alreadyProvisioned || provision.alreadyProvisioned),
+      engine: result.engine,
+      canonicalLifecycle: result.canonicalLifecycle,
+      ...risk,
     };
-  } catch (err) {
-    return mapRegistrationPersistError(req, err);
   }
+  return {
+    ok: false,
+    error: GENERIC_SAVE_ERROR,
+    code: (result && result.code) || "unknown",
+    application,
+    ...risk,
+  };
 }
 
 /**
- * Insert application then call shared orchestrator for Free instant provisioning.
- * @param {import('pg').Pool | null} pool
- * @param {import('express').Request} req
- * @param {object} validationResult
- * @param {{
- *   dataEnvironment?: string,
- *   deploymentCode?: string,
- *   provisionFn?: typeof provisionRegisteredBlessBoardChurch,
- * }} [opts]
+ * Shared church registration entry. Lifecycle lives in the platform engine.
  */
-async function submitInstantFreeChurchRegistration(pool, req, validationResult, opts = {}) {
-  if (validationResult.honeypot) {
+async function submitChurchRegistration(pool, req, validationResult, opts = {}) {
+  if (validationResult && validationResult.honeypot) {
     return { ok: true, honeypot: true };
   }
-  if (!validationResult.ok || !validationResult.data) {
+  if (!validationResult || !validationResult.ok || !validationResult.data) {
     return validationResult;
-  }
-  if (!validationResult.data.wants_instant_free) {
-    return submitPlatformChurchRegistration(pool, req, validationResult);
   }
   if (!pool) {
     return {
@@ -450,189 +397,56 @@ async function submitInstantFreeChurchRegistration(pool, req, validationResult, 
     };
   }
 
-  const data = validationResult.data;
-  const password = data.administrator_password;
-  const organizationKey = data.organization_key;
-  if (!password || !organizationKey) {
-    return {
-      ok: false,
-      error: "Please complete the administrator password and organization key fields.",
-      code: "invalid_input",
-    };
-  }
-
-  const nameTaken = await rejectIfChurchNameTaken(pool, data);
-  if (nameTaken) {
-    return nameTaken;
-  }
-
-  const clientMeta = clientMetaFromRequest(req);
-  let risk;
+  let engineResult;
   try {
-    risk = await evaluateRegistrationRisk(pool, {
-      data,
-      sourceIp: clientMeta.source_ip,
-      honeypot: false,
-      organizationKey,
+    engineResult = await submitProductRegistration(pool, {
+      productCode: PRODUCT.BLESSBOARD,
+      payload: {
+        ...validationResult.data,
+        data: validationResult.data,
+        req,
+        provisionFn: opts.provisionFn,
+      },
+      env: opts.env || {},
+      deploymentCode: opts.deploymentCode || "blessboard-org-staging",
+      dataEnvironment: opts.dataEnvironment || "testing",
     });
-  } catch (err) {
-    logRegistrationDbError(req, err);
-    return {
-      ok: false,
-      error: GENERIC_SAVE_ERROR,
-      code: "risk_evaluation_failed",
-      pgCode: err && err.code ? String(err.code) : null,
-      httpStatus: 503,
-    };
-  }
-  logRiskDecision(req, risk, "instant_free");
-
-  if (risk.decision === RISK_DECISIONS.REJECT) {
-    if (risk.reasonCodes.includes(RISK_REASON_CODES.DUPLICATE_PHONE)) {
-      return {
-        ok: false,
-        mode: "instant_free",
-        error: risk.publicMessage || DUPLICATE_PHONE_MESSAGE,
-        field: "phone",
-        code: "duplicate_registration_phone",
-        httpStatus: 400,
-        riskDecision: risk.decision,
-        riskReasonCodes: risk.reasonCodes,
-      };
-    }
-    return {
-      ok: false,
-      mode: "instant_free",
-      error: PUBLIC_REJECT_MESSAGE,
-      code: "registration_rejected",
-      httpStatus: 400,
-      riskDecision: risk.decision,
-      riskReasonCodes: risk.reasonCodes,
-      field: risk.field || null,
-    };
-  }
-
-  const {
-    administrator_password: _pw,
-    organization_key: _ok,
-    wants_instant_free: _w,
-    ...persistable
-  } = data;
-
-  let application;
-  let duplicate = false;
-  try {
-    const created = await repo.createApplicationIdempotent(pool, {
-      ...persistable,
-      ...clientMeta,
-      ...riskPersistFields(risk),
-    });
-    application = created.application;
-    duplicate = created.duplicate;
-    try {
-      logReceived(req, application, { duplicate, mode: "instant_free" });
-    } catch {
-      /* ignore */
-    }
   } catch (err) {
     return mapRegistrationPersistError(req, err);
   }
 
-  // Soft idempotent twin: honor the existing row's state over a freshly computed hold.
-  if (duplicate && application) {
-    if (String(application.application_status) === "duplicate_review") {
-      return {
-        ok: false,
-        mode: "instant_free",
-        review: true,
-        application,
-        duplicate,
-        error: DUPLICATE_REVIEW_MESSAGE,
-        code: "review_required",
-        httpStatus: 200,
-      };
+  try {
+    if (engineResult && engineResult.application) {
+      logReceived(req, engineResult.application, {
+        duplicate: Boolean(engineResult.duplicate),
+        mode: engineResult.code === ENGINE_RESULT.ACTIVE ? "instant_free" : "shared_engine",
+      });
     }
-  } else if (risk.decision === RISK_DECISIONS.REVIEW_REQUIRED) {
-    return {
-      ok: false,
-      mode: "instant_free",
-      review: true,
-      application,
-      duplicate,
-      error: DUPLICATE_REVIEW_MESSAGE,
-      code: "review_required",
-      httpStatus: 200,
-      riskDecision: risk.decision,
-      riskReasonCodes: risk.reasonCodes,
-    };
+  } catch {
+    /* logging must not block */
   }
-
-  // Soft idempotent twin: if prior row is already held for review, do not provision.
-  if (application && String(application.application_status) === "duplicate_review") {
-    return {
-      ok: false,
-      mode: "instant_free",
-      review: true,
-      application,
-      duplicate,
-      error: DUPLICATE_REVIEW_MESSAGE,
-      code: "review_required",
-      httpStatus: 200,
-    };
-  }
-
-  const provisionFn = opts.provisionFn || provisionRegisteredBlessBoardChurch;
-  let provision;
   try {
-    provision = await provisionFn(
-      pool,
-      {
-        applicationId: application.id,
-        administratorPassword: password,
-        requestedOrganizationKey: organizationKey,
-        requestId: (req && req.requestId) || null,
-        actorContext: {
-          type: "public_self_registration",
-          source: "register_church",
-          dataEnvironment: opts.dataEnvironment || "testing",
-          deploymentCode: opts.deploymentCode || "blessboard-org-v5",
-        },
-      },
-      { allowRetry: true }
-    );
-  } catch (err) {
-    logRegistrationDbError(req, err);
-    return {
-      ok: false,
-      mode: "instant_free",
-      application,
-      error: GENERIC_PROVISION_ERROR,
-      code: "provision_exception",
-      httpStatus: 503,
-    };
+    maybeSendRegistrationAcknowledgementEmail(engineResult && engineResult.application);
+  } catch {
+    /* email must never fail submission */
   }
-
   try {
-    logProvisionOutcome(req, provision);
+    if (engineResult && engineResult.provision) {
+      logProvisionOutcome(req, engineResult.provision.provisioned || engineResult.provision);
+    }
   } catch {
     /* ignore */
   }
 
-  if (provision.ok) {
-    return {
-      ok: true,
-      mode: "instant_free",
-      application,
-      duplicate,
-      provision,
-      records: provision.records,
-      alreadyProvisioned: Boolean(provision.alreadyProvisioned),
-      riskDecision: risk.decision,
-      riskReasonCodes: risk.reasonCodes,
-    };
-  }
+  return mapEngineResultToChurchHttp(engineResult, validationResult);
+}
 
-  return mapProvisionFailure(provision, application);
+async function submitPlatformChurchRegistration(pool, req, validationResult) {
+  return submitChurchRegistration(pool, req, validationResult, {});
+}
+
+async function submitInstantFreeChurchRegistration(pool, req, validationResult, opts = {}) {
+  return submitChurchRegistration(pool, req, validationResult, opts);
 }
 
 /**
@@ -714,6 +528,8 @@ module.exports = {
   PUBLIC_REJECT_MESSAGE,
   submitPlatformChurchRegistration,
   submitInstantFreeChurchRegistration,
+  submitChurchRegistration,
   logRegistrationDbError,
   mapProvisionFailure,
+  mapRegistrationPersistError,
 };

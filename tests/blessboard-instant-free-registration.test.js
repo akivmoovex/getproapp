@@ -187,7 +187,7 @@ describe("automatic Foundation registration", () => {
       [body.email]
     );
     assert.equal(apps.rows.length, 1);
-    assert.equal(apps.rows[0].application_status, "submitted");
+    assert.equal(apps.rows[0].application_status, "review_required");
     assert.equal(apps.rows[0].provisioning_status, "not_started");
     assert.equal(apps.rows[0].status, "pending");
   });

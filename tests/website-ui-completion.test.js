@@ -147,7 +147,7 @@ describe("website UI completion", () => {
     assert.match(css, /\.bb-pa-website-diff__compare/);
     assert.match(css, /@media \(max-width:\s*430px\)/);
     const shell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(shell, /platform-admin.css\?v=60/);
+    assert.match(shell, /platform-admin.css\?v=61/);
   });
 
   it("inline editor uses accessible check/cross controls and wires image upload", () => {

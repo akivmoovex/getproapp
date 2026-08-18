@@ -698,7 +698,11 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
 
       // Admin invitation approval may proceed from duplicate_review after explicit approve.
       // Self-service password provisioning still holds duplicate_review for operator review.
-      if (application.application_status === "duplicate_review" && !administratorViaInvitation) {
+      if (
+        (application.application_status === "duplicate_review" ||
+          application.application_status === "review_required") &&
+        !administratorViaInvitation
+      ) {
         throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review");
       }
 
@@ -721,7 +725,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       }
 
       const eligibleStatuses = administratorViaInvitation
-        ? ["submitted", "duplicate_review"]
+        ? ["submitted", "duplicate_review", "review_required"]
         : ["submitted"];
       if (
         !eligibleStatuses.includes(String(application.application_status || "")) &&

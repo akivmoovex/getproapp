@@ -7,6 +7,11 @@
 
 const repo = require("../repositories/publicContentRepository");
 const { KEY_RE } = require("./publicContentConstants");
+const {
+  loadCurrentPublishedSnapshot,
+  overlayPublishedPage,
+  overlayPublishedEntities,
+} = require("./websitePublishedSnapshotRead");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -73,9 +78,23 @@ async function getPublishedPage(db, input) {
       }
       const page = await repo.findPageByScope(client, scope);
       if (!page || page.status !== "published") {
+        const snap = await loadCurrentPublishedSnapshot(client, scope.churchId, scope.branchId);
+        if (snap && snap.snapshot) {
+          const overlaid = overlayPublishedPage(null, [], snap.snapshot, scope.pageKey);
+          if (overlaid.fromSnapshot && overlaid.page) {
+            return { ok: true, status: STATUS.OK, page: overlaid.page, sections: overlaid.sections };
+          }
+        }
         return { ok: false, status: STATUS.NOT_FOUND, page: null, sections: [] };
       }
       const sections = await repo.listSectionsForPage(client, page.id, { status: "published" });
+      const snap = await loadCurrentPublishedSnapshot(client, scope.churchId, scope.branchId);
+      if (snap && snap.snapshot) {
+        const overlaid = overlayPublishedPage(page, sections, snap.snapshot, scope.pageKey);
+        if (overlaid.fromSnapshot) {
+          return { ok: true, status: STATUS.OK, page: overlaid.page, sections: overlaid.sections };
+        }
+      }
       return { ok: true, status: STATUS.OK, page, sections };
     });
   } catch {
@@ -126,6 +145,17 @@ async function listPublishedContent(db, input, kind) {
         branchId: branchId === undefined ? undefined : branchId,
         status: "published",
       });
+      const snap = await loadCurrentPublishedSnapshot(
+        client,
+        churchId,
+        branchId === undefined ? null : branchId
+      );
+      if (snap && snap.snapshot) {
+        const overlaid = overlayPublishedEntities(kind, items, snap.snapshot);
+        if (overlaid.fromSnapshot) {
+          return { ok: true, status: STATUS.OK, items: overlaid.items };
+        }
+      }
       return { ok: true, status: STATUS.OK, items };
     });
   } catch {

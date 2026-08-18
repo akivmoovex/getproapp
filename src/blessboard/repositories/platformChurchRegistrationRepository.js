@@ -329,7 +329,7 @@ async function findRecentRegistrationDuplicate(client, opts) {
         AND lower(church_name) = lower($2)
         AND created_at >= now() - ($3::int * interval '1 minute')
         AND (
-          application_status IN ('submitted', 'duplicate_review', 'closed')
+          application_status IN ('submitted', 'duplicate_review', 'review_required', 'closed')
           OR status = 'pending'
         )
       ORDER BY created_at DESC
@@ -520,7 +520,7 @@ async function countPending(pool) {
   const r = await pool.query(
     `SELECT COUNT(*)::int AS count
        FROM ${TARGET_RELATION}
-      WHERE application_status IN ('submitted', 'duplicate_review')
+      WHERE application_status IN ('submitted', 'duplicate_review', 'review_required')
          OR (status = 'pending' AND application_status NOT IN ('closed', 'rejected', 'cancelled'))`
   );
   return r.rows[0]?.count || 0;
@@ -652,6 +652,7 @@ async function updateApplicationProvisioningState(client, applicationId, patch) 
 const APPLICATION_STATUSES = Object.freeze([
   "submitted",
   "duplicate_review",
+  "review_required",
   "rejected",
   "cancelled",
   "closed",
@@ -1047,7 +1048,7 @@ function buildRegistrationListWhere(filters) {
   }
   if (filters.requiresReview === true) {
     clauses.push(`(
-      a.application_status IN ('submitted', 'duplicate_review')
+      a.application_status IN ('submitted', 'duplicate_review', 'review_required')
       OR a.provisioning_status = 'provisioning_failed'
       OR ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE
       OR ${EFFECTIVE_FOLLOW_UP_SQL} IN (
@@ -1060,7 +1061,7 @@ function buildRegistrationListWhere(filters) {
       a.organization_id IS NULL
       AND a.provisioning_status IS DISTINCT FROM 'provisioned'
       AND a.provisioning_status IS DISTINCT FROM 'provisioning_failed'
-      AND a.application_status IN ('submitted', 'duplicate_review')
+      AND a.application_status IN ('submitted', 'duplicate_review', 'review_required')
       AND COALESCE(a.selected_plan, '') IS DISTINCT FROM 'network'
       AND ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = FALSE
     )`);

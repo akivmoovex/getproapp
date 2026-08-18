@@ -1,0 +1,46 @@
+<section class="ac-public-section" data-ac-website-history="1">
+  <h1>Website version history</h1>
+  <p>Public visitors see the current published version only. Restore creates a new current version and leaves history unchanged.</p>
+  <% if (typeof notice === 'string' && notice === 'published') { %>
+  <p class="ac-public-note" data-ac-website-notice="published">Website published.</p>
+  <% } else if (typeof notice === 'string' && notice === 'restored') { %>
+  <p class="ac-public-note" data-ac-website-notice="restored">Previous version restored as a new current version.</p>
+  <% } %>
+  <% if (typeof error === 'string' && error) { %>
+  <p class="ac-public-error" role="alert"><%= error %></p>
+  <% } %>
+  <% var rows = versions || []; %>
+  <% var canRestoreHistory = typeof websiteCanRestore !== 'undefined' && websiteCanRestore; %>
+  <table class="ac-public-table">
+    <thead>
+      <tr>
+        <th>Version</th>
+        <th>Published</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!rows.length) { %>
+      <tr><td colspan="4">No published versions yet. Publish the website to create version 1.</td></tr>
+      <% } %>
+      <% rows.forEach(function (v, idx) { %>
+      <tr data-ac-website-version="<%= v.versionNumber %>" data-ac-version-status="<%= v.status %>">
+        <td>v<%= v.versionNumber %><% if (v.status === 'published') { %> — CURRENT<% } %></td>
+        <td><%= v.publishedAt ? String(v.publishedAt).slice(0, 16).replace('T', ' ') : '—' %></td>
+        <td><%= v.moderationStatus || v.status %></td>
+        <td>
+          <a href="/clinics/<%= clinic.clinicKey %>/website/versions/<%= v.id %>">Preview</a>
+          <% if (canRestoreHistory && v.status !== 'published') { %>
+          <form method="post" action="/clinics/<%= clinic.clinicKey %>/website/versions/<%= v.id %>/restore" style="display:inline">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <button type="submit">Restore</button>
+          </form>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+  <p><a href="/clinics/<%= clinic && clinic.clinicKey %>?website_edit=1&amp;website_mode=draft">Back to editor</a></p>
+</section>

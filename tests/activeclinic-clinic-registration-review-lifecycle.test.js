@@ -346,7 +346,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       .set("Host", AC_HOST);
     assert.equal(success.status, 200);
     assert.doesNotMatch(success.text, new RegExp(INTERNAL_NOTE));
-    assert.match(success.text, /pending review/i);
+    assert.match(success.text, /Application received|Registration successful|review required/i);
 
     const queue = await listClinicRegistrationApplications(pool, {
       status: "pending_review",
@@ -934,7 +934,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
     assert.equal(row.rows[0].provisioning_status, "provisioned");
     assert.ok(row.rows[0].organization_id);
     assert.equal(row.rows[0].last_provision_error, null);
-    assert.equal(row.rows[0].publish_policy, "AUTO_PUBLISH_WITH_MODERATION");
+    assert.equal(row.rows[0].publish_policy, "TENANT_PUBLISH");
     assert.equal(row.rows[0].lifecycle_status, "provisional");
 
     const assignedBy = await pool.query(

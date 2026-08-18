@@ -35,11 +35,14 @@ const RESULT = Object.freeze({
 
 const APPLICATION_STATUSES = Object.freeze([
   "pending_review",
+  "review_required",
   "approved",
   "rejected",
   "withdrawn",
   "duplicate",
 ]);
+
+const REVIEW_HOLD_STATUSES = Object.freeze(["pending_review", "review_required"]);
 
 const FOLLOW_UP_STATUSES = Object.freeze([
   "none",
@@ -316,7 +319,7 @@ async function requestClinicRegistrationInformation(db, input) {
   return withTx(db, async (client) => {
     const app = await loadApplication(client, applicationId);
     if (!app) return { ok: false, code: RESULT.NOT_FOUND };
-    if (String(app.status) !== "pending_review") {
+    if (!REVIEW_HOLD_STATUSES.includes(String(app.status))) {
       return { ok: false, code: RESULT.NOT_ELIGIBLE, application: app };
     }
     await ensureReviewStarted(client, app, input.actorId);
@@ -386,7 +389,7 @@ async function markClinicRegistrationInformationReturned(db, input) {
   return withTx(db, async (client) => {
     const app = await loadApplication(client, applicationId);
     if (!app) return { ok: false, code: RESULT.NOT_FOUND };
-    if (String(app.status) !== "pending_review") {
+    if (!REVIEW_HOLD_STATUSES.includes(String(app.status))) {
       return { ok: false, code: RESULT.NOT_ELIGIBLE, application: app };
     }
     if (String(app.follow_up_status) !== "awaiting_customer") {
@@ -521,7 +524,11 @@ async function listClinicRegistrationApplications(db, filters) {
   const rows = await db.query(
     `SELECT ${LIST_COLUMNS}
        FROM activeclinic.clinic_registration_applications
-      WHERE ($1 = 'all' OR status = $1)
+      WHERE (
+            $1 = 'all'
+            OR status = $1
+            OR ($1 = 'pending_review' AND status = 'review_required')
+          )
         AND ($2 = 'all' OR follow_up_status = $2)
         AND ($3 = 'all' OR provisioning_status = $3)
         AND (
@@ -594,6 +601,7 @@ async function getClinicRegistrationDetail(db, applicationId) {
 module.exports = {
   RESULT,
   APPLICATION_STATUSES,
+  REVIEW_HOLD_STATUSES,
   FOLLOW_UP_STATUSES,
   PROVISIONING_STATUSES,
   EVENT_TYPES,

@@ -10,7 +10,7 @@ const ADAPTER_MODE = Object.freeze({
 
 const PRODUCT_WEBSITE_DEFAULTS = Object.freeze({
   activeclinic: Object.freeze({
-    publishPolicy: PUBLISH_POLICY.AUTO_PUBLISH_WITH_MODERATION,
+    publishPolicy: PUBLISH_POLICY.TENANT_PUBLISH,
     lifecycleStatus: LIFECYCLE_STATUS.PROVISIONAL,
     adapterMode: ADAPTER_MODE.SHARED_ENGINE,
   }),

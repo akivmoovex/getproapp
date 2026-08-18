@@ -15,6 +15,7 @@ const TONE_TO_CHIP = Object.freeze({
 const APPLICATION_STATUS = Object.freeze({
   submitted: { label: "Submitted", tone: "warn" },
   duplicate_review: { label: "Duplicate review", tone: "warn" },
+  review_required: { label: "Review required", tone: "warn" },
   rejected: { label: "Rejected", tone: "muted" },
   cancelled: { label: "Cancelled", tone: "muted" },
   closed: { label: "Closed", tone: "muted" },

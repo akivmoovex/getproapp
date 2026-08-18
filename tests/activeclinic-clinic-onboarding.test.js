@@ -247,7 +247,7 @@ describe("ActiveClinic public clinic onboarding", () => {
     assert.equal(after.rows[0].n, before.rows[0].n);
   });
 
-  it("submits pending application, shows in PA queue, approves, and logs in by email and phone", async () => {
+    it("submits auto-provisioned application, shows in PA approved queue, and logs in by email and phone", async () => {
     requireDb();
     const stamp = Date.now().toString(36);
     const email = `admin-${stamp}@clinic.example`;
@@ -275,15 +275,16 @@ describe("ActiveClinic public clinic onboarding", () => {
       [email]
     );
     assert.equal(row.rows.length, 1);
-    assert.equal(row.rows[0].status, "pending_review");
-    assert.ok(row.rows[0].administrator_password_hash);
+    assert.equal(row.rows[0].status, "approved");
+    assert.equal(row.rows[0].administrator_password_hash, null);
     assert.equal(row.rows[0].address, payload.address);
+    assert.ok(row.rows[0].organization_id);
     const applicationId = row.rows[0].id;
 
     const pa = await loginPa();
     assert.equal(pa.post.status, 303);
     const queue = await request(app)
-      .get("/admin/clinic-registrations")
+      .get("/admin/clinic-registrations?status=approved")
       .set("Host", BB_HOST)
       .set("Cookie", cookieHeader({ [UNIFIED_SID]: pa.sid }));
     assert.equal(queue.status, 200);
@@ -306,9 +307,19 @@ describe("ActiveClinic public clinic onboarding", () => {
     });
     assert.equal(approved.ok, true, JSON.stringify(approved));
     assert.ok(approved.organizationId);
-    assert.ok(approved.healthcareOrganization);
-    assert.ok(approved.facility);
-    assert.ok(approved.staffMemberId);
+    assert.equal(approved.alreadyProvisioned, true);
+    const orgRow = await pool.query(
+      `SELECT hco.id AS hco_id, f.id AS facility_id, a.clinic_admin_staff_id
+         FROM activeclinic.clinic_registration_applications a
+         JOIN activeclinic.healthcare_organizations hco ON hco.organization_id = a.organization_id
+         JOIN activeclinic.facilities f ON f.organization_id = a.organization_id AND f.is_primary = true
+        WHERE a.id = $1`,
+      [applicationId]
+    );
+    assert.equal(orgRow.rows.length, 1);
+    assert.ok(orgRow.rows[0].hco_id);
+    assert.ok(orgRow.rows[0].facility_id);
+    assert.ok(orgRow.rows[0].clinic_admin_staff_id);
 
     const again = await approveAndProvisionClinicRegistration(pool, {
       applicationId,
@@ -328,7 +339,7 @@ describe("ActiveClinic public clinic onboarding", () => {
 
     const depts = await pool.query(
       `SELECT count(*)::int AS n FROM activeclinic.departments WHERE facility_id = $1`,
-      [approved.facility.id]
+      [orgRow.rows[0].facility_id]
     );
     assert.ok(depts.rows[0].n >= 1);
 
@@ -371,7 +382,7 @@ describe("ActiveClinic public clinic onboarding", () => {
     assert.equal(bad.post.status, 401);
   });
 
-  it("duplicate email or phone is rejected and reject clears credentials", async () => {
+  it("duplicate email or phone is blocked and credentials are already cleared after auto-provision", async () => {
     requireDb();
     const stamp = Date.now().toString(36);
     const email = `dup-${stamp}@clinic.example`;
@@ -402,12 +413,12 @@ describe("ActiveClinic public clinic onboarding", () => {
       applicationId: row.rows[0].id,
       rejectionReason: "Unable to verify clinic details",
     });
-    assert.equal(rejected.ok, true);
+    assert.equal(rejected.ok, false);
     const after = await pool.query(
       `SELECT status, administrator_password_hash FROM activeclinic.clinic_registration_applications WHERE id = $1`,
       [row.rows[0].id]
     );
-    assert.equal(after.rows[0].status, "rejected");
+    assert.equal(after.rows[0].status, "approved");
     assert.equal(after.rows[0].administrator_password_hash, null);
   });
 

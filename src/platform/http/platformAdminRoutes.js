@@ -228,6 +228,9 @@ const {
   registerPlatformWebsiteAdminRoutes,
 } = require("./platformWebsiteAdminRoutes");
 const {
+  registerPlatformRegistrationAdminRoutes,
+} = require("./platformRegistrationAdminRoutes");
+const {
   registerActiveClinicPlatformAdminClinicRegistrationRoutes,
 } = require("../../activeclinic/http/activeClinicPlatformAdminClinicRegistrationRoutes");
 const {
@@ -5096,6 +5099,16 @@ function createPlatformAdminRouter(deps) {
   );
 
   registerPlatformWebsiteAdminRoutes(router, {
+    getPool,
+    env,
+    requireApex,
+    requirePlatformAdmin,
+    renderPlatformAdminView,
+    buildPlatformAdminShellLocals,
+    setAdminNoStore,
+  });
+
+  registerPlatformRegistrationAdminRoutes(router, {
     getPool,
     env,
     requireApex,

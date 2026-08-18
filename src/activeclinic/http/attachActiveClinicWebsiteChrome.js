@@ -28,6 +28,23 @@ function canSubmitClinicWebsite(req, clinic) {
   return hasWebsitePermission(grantedPermissions(req), PERMISSIONS.SUBMIT);
 }
 
+function canPublishClinicWebsite(req, clinic) {
+  const auth = req.activeClinicAuth;
+  if (!auth || !auth.authenticated || !clinic) return false;
+  if (!auth.organization || auth.organization.id !== clinic.organizationId) return false;
+  return hasWebsitePermission(grantedPermissions(req), PERMISSIONS.PUBLISH);
+}
+
+function canRestoreClinicWebsite(req, clinic) {
+  const auth = req.activeClinicAuth;
+  if (!auth || !auth.authenticated || !clinic) return false;
+  if (!auth.organization || auth.organization.id !== clinic.organizationId) return false;
+  return (
+    hasWebsitePermission(grantedPermissions(req), PERMISSIONS.ROLLBACK) ||
+    hasWebsitePermission(grantedPermissions(req), PERMISSIONS.RESTORE)
+  );
+}
+
 function requestedMode(req, canEdit) {
   const q = String((req.query && (req.query.website_mode || req.query.websiteMode)) || "").toLowerCase();
   const edit = String((req.query && (req.query.website_edit || req.query.websiteEdit)) || "") === "1";
@@ -40,6 +57,8 @@ function requestedMode(req, canEdit) {
 async function attachActiveClinicWebsiteLocals(db, req, clinic) {
   const canEdit = canEditClinicWebsite(req, clinic);
   const canSubmit = canSubmitClinicWebsite(req, clinic);
+  const canPublish = canPublishClinicWebsite(req, clinic);
+  const canRestore = canRestoreClinicWebsite(req, clinic);
   const editRequested = String((req.query && (req.query.website_edit || req.query.websiteEdit)) || "") === "1";
   const mode = requestedMode(req, canEdit);
   const resolved = await resolveActiveClinicWebsite(db, { clinic, mode });
@@ -91,6 +110,8 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic) {
     websiteEdit: canEdit && editRequested && !websiteEditLocked,
     websiteCanEdit: canEdit,
     websiteCanSubmit: canSubmit && !websitePublishLocked,
+    websiteCanPublish: canPublish && !websitePublishLocked,
+    websiteCanRestore: canRestore && !websitePublishLocked,
     websiteMode: mode,
     websiteUnpublishedCount: unpublishedCount,
     websiteWorkflowStatus,
@@ -124,6 +145,8 @@ module.exports = {
   grantedPermissions,
   canEditClinicWebsite,
   canSubmitClinicWebsite,
+  canPublishClinicWebsite,
+  canRestoreClinicWebsite,
   attachActiveClinicWebsiteLocals,
   requireClinicWebsiteInstance,
 };

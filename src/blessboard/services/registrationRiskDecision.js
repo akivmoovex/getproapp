@@ -200,7 +200,7 @@ async function findSimilarOrganizationMatch(db, opts) {
         AND lower(city) = $2
         AND lower(country) = $3
         AND (
-          application_status IN ('submitted', 'duplicate_review')
+          application_status IN ('submitted', 'duplicate_review', 'review_required')
           OR provisioning_status IN ('provisioning', 'provisioned', 'provisioning_failed')
         )
         ${excludeSql}
@@ -268,7 +268,7 @@ async function findOccupyingPhoneMatch(db, contactPhoneNormalized) {
        FROM ${TARGET_RELATION}
       WHERE contact_phone_normalized = $1
         AND (
-          application_status IN ('submitted', 'duplicate_review')
+          application_status IN ('submitted', 'duplicate_review', 'review_required')
           OR provisioning_status IN ('provisioning', 'provisioned', 'provisioning_failed')
         )
       ORDER BY created_at DESC

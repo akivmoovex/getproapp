@@ -13,6 +13,9 @@
   var policyLabel = typeof websitePublishPolicyLabel !== 'undefined' ? websitePublishPolicyLabel : '';
   var editLocked = typeof websiteEditLocked !== 'undefined' && websiteEditLocked;
   var moderationNote = typeof websiteModerationNote !== 'undefined' && websiteModerationNote ? websiteModerationNote : '';
+  var tenantPublishes = typeof websitePublishPolicy !== 'undefined' && websitePublishPolicy === 'TENANT_PUBLISH';
+  var canPublish = typeof websiteCanPublish !== 'undefined' && websiteCanPublish;
+  var publishLocked = typeof websitePublishLocked !== 'undefined' && websitePublishLocked;
 %>
 <div
   class="ac-website-chrome"
@@ -46,19 +49,29 @@
     <% if (reviewNote) { %>
     <p class="ac-website-chrome__note" data-website-review-note="1"><%= reviewNote %></p>
     <% } %>
-    <% if (waitingReview) { %>
+    <% if (waitingReview && !tenantPublishes) { %>
     <p>This draft is waiting for Platform Admin review. The submitted snapshot cannot be edited.</p>
+    <% } else if (tenantPublishes && unpublished > 0) { %>
+    <p>Unpublished draft changes are not visible to the public until you publish.</p>
     <% } %>
   </div>
   <div class="ac-website-chrome__actions">
     <% if (websiteEdit) { %>
     <a class="ac-website-chrome__link" href="?website_mode=live">View live</a>
     <a class="ac-website-chrome__link" href="/clinics/<%= clinic.clinicKey %>/website/preview">Preview draft</a>
+    <a class="ac-website-chrome__link" href="/clinics/<%= clinic.clinicKey %>/website/history">Version history</a>
     <form method="post" action="/clinics/<%= clinic.clinicKey %>/website/edit-session/finish" class="ac-website-chrome__submit">
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
       <button type="submit">Finish editing</button>
     </form>
-    <% if (websiteCanSubmit && !waitingReview) { %>
+    <% if (canPublish && !publishLocked && !waitingReview) { %>
+    <form method="post" action="/clinics/<%= clinic.clinicKey %>/website/publish" class="ac-website-chrome__submit">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <input type="hidden" name="makePublic" value="1"/>
+      <button type="submit">Publish website</button>
+    </form>
+    <% } %>
+    <% if (websiteCanSubmit && !waitingReview && !tenantPublishes) { %>
     <form method="post" action="/clinics/<%= clinic.clinicKey %>/website/submit" class="ac-website-chrome__submit">
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
       <button type="submit"><%= canResubmit ? 'Resubmit for approval' : 'Submit for approval' %></button>
@@ -66,6 +79,8 @@
     <% } %>
     <% } else if (!editLocked) { %>
     <a class="ac-website-chrome__link" href="?website_edit=1&amp;website_mode=draft">Edit website</a>
+    <a class="ac-website-chrome__link" href="/clinics/<%= clinic.clinicKey %>/website/preview">Preview draft</a>
+    <a class="ac-website-chrome__link" href="/clinics/<%= clinic.clinicKey %>/website/history">Version history</a>
     <% } %>
   </div>
 </div>

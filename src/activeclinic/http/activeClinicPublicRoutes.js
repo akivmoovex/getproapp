@@ -21,8 +21,18 @@ const {
 } = require("../services/activeClinicPublicVisibilityService");
 const {
   validateClinicRegistrationInput,
-  createClinicRegistrationApplication,
 } = require("../services/activeClinicPublicOnboardingService");
+const {
+  submitAndProvisionClinicRegistration,
+  RESULT: SUBMIT_RESULT,
+} = require("../services/submitClinicRegistrationService");
+const {
+  authenticateActiveClinicIdentity,
+} = require("../services/authenticateActiveClinicIdentity");
+const { setV5SessionCookie } = require("../../platform/session/v5SessionCookie");
+const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { getDeploymentEnvMode } = require("../../church/blessBoardEnv");
+const { resolveHostname } = require("../../platform/host");
 const {
   lookupClinicRegistrationApplicantStatus,
   GENERIC_NOT_FOUND,
@@ -384,7 +394,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const requestId = newRegistrationRequestId();
       const deployment = resolveDeploymentConfiguration(env);
       try {
-        const result = await createClinicRegistrationApplication(getPool(), formData);
+        const deploymentCode = requirePlatformDeploymentCode(env);
+        const mode = getDeploymentEnvMode(env);
+        const result = await submitAndProvisionClinicRegistration(getPool(), {
+          ...formData,
+          deploymentCode: deploymentCode.ok ? deploymentCode.code : deployment.code,
+          dataEnvironment: mode === "production" ? "production" : "testing",
+          env,
+        });
 
         if (!result.ok) {
           const csrfToken = issuePageCsrf(res, env, isProduction, req);
@@ -398,9 +415,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
               failingOperation: "create_clinic_registration_application",
               transactionStage: "duplicate_check",
             });
+            const existingStatus = result.application && result.application.status;
+            const dupMessage =
+              existingStatus === "approved"
+                ? "A clinic is already registered with this email or phone."
+                : "An application with this email or phone was recently submitted. A second copy was not created.";
             return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
               csrfToken,
-              error: "An application with this email or phone was recently submitted. It remains pending review — a second copy was not created.",
+              error: dupMessage,
               formState: "form",
               validationErrors: {},
               formData,
@@ -448,7 +470,31 @@ function registerActiveClinicPublicRoutes(app, deps) {
           environmentCode: deployment.environment || null,
           applicationReference: result.application && result.application.applicationNumber,
         });
-        return res.redirect(303, `/register-clinic/success?ref=${encodeURIComponent(result.application.applicationNumber)}`);
+        const ref = result.application && result.application.applicationNumber
+          ? encodeURIComponent(result.application.applicationNumber)
+          : "";
+        if (result.reviewRequired || result.code === SUBMIT_RESULT.REVIEW_REQUIRED) {
+          return res.redirect(303, `/register-clinic/success?ref=${ref}&review=1`);
+        }
+        if (result.ok && result.code === SUBMIT_RESULT.OK && formData.password) {
+          try {
+            const auth = await authenticateActiveClinicIdentity(getPool(), {
+              identifier: formData.contactEmail,
+              password: formData.password,
+              deploymentCode: deploymentCode.ok ? deploymentCode.code : String(deployment.code || ""),
+              hostname: resolveHostname(req) || "activeclinic.org",
+              country: formData.countryCode || "ZM",
+              ip: clientIp(req),
+              userAgent: req.headers["user-agent"] || null,
+            });
+            if (auth && auth.ok && auth.rawToken) {
+              setV5SessionCookie(res, auth.rawToken, { secure: isProduction, env, req });
+            }
+          } catch {
+            /* session is optional; administrator can still sign in */
+          }
+        }
+        return res.redirect(303, `/register-clinic/success?ref=${ref}&ready=1`);
       } catch (err) {
         const classified = classifyRegistrationError(err);
         logClinicApplicationFailed({
@@ -509,9 +555,13 @@ function registerActiveClinicPublicRoutes(app, deps) {
   app.get("/register-clinic/success", (req, res) => {
     const csrfToken = issuePageCsrf(res, env, isProduction, req);
     const applicationReference = String(req.query.ref || "").trim().slice(0, 64);
+    const reviewRequired = String(req.query.review || "") === "1";
+    const ready = String(req.query.ready || "") === "1";
     return res.status(200).type("html").send(renderPublicView("public/register-clinic-success", {
       csrfToken,
       applicationReference: applicationReference || null,
+      reviewRequired,
+      ready: ready && !reviewRequired,
     }));
   });
 

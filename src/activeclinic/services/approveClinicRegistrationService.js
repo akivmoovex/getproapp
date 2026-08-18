@@ -480,7 +480,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
       entityId: app.id,
       outcome: websiteOk ? "success" : "partial",
       metadataJson: {
-        actor_kind: "platform_admin",
+        actor_kind: input.actorKind || "platform_admin",
         actor_platform_identity_id: input.actorIdentityId || null,
         provisioning_status: provisioningStatus,
         existing_identity_linked: admin.reusedIdentity === true,
@@ -548,7 +548,7 @@ async function rejectClinicRegistration(db, input) {
     if (app.status === "rejected") {
       return { ok: true, code: RESULT.ALREADY_REJECTED, application: app };
     }
-    if (app.status !== "pending_review") {
+    if (app.status !== "pending_review" && app.status !== "review_required") {
       return { ok: false, code: RESULT.NOT_ELIGIBLE, application: app };
     }
     if (rejectionReason.length < 3 || rejectionReason.length > 2000) {

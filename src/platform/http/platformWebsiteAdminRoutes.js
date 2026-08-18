@@ -28,6 +28,16 @@ const {
   setClinicWebsiteAvailability,
   loadClinicWebsiteOperational,
 } = require("../../activeclinic/services/clinicWebsiteAvailabilityService");
+const {
+  listPlatformAdminWebsites,
+  loadPlatformAdminWebsiteDetail,
+} = require("../website/platformAdminWebsitesService");
+const {
+  restoreAndPublishCurrentVersion,
+} = require("../../blessboard/services/websitePublicationVersionService");
+const {
+  unpublishChurchWebsite,
+} = require("../../blessboard/services/churchWebsitePublishService");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -157,6 +167,31 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
     if (!keys.length) return true;
     return hasWebsitePermission(keys, PERMISSIONS.MANAGE_POLICY);
   }
+
+  router.get("/admin/websites", requireApex, requirePlatformAdmin, async (req, res, next) => {
+    try {
+      setAdminNoStore(res);
+      const tab = String(req.query.tab || "overview").trim();
+      const listed = await listPlatformAdminWebsites(getPool(), {
+        tab,
+        q: req.query.q,
+      });
+      const html = renderPlatformAdminView("platform-admin/websites.ejs", {
+        ...buildPlatformAdminShellLocals(req, res, {
+          env,
+          isProduction: String(env.NODE_ENV || "") === "production",
+          activeNav: "websites",
+          pageTitle: "Websites",
+        }),
+        websites: listed.websites || [],
+        tab: listed.tab,
+        q: listed.q,
+      });
+      return res.status(200).type("html").send(html);
+    } catch (err) {
+      return next(err);
+    }
+  });
 
   router.get("/admin/website-changes", requireApex, requirePlatformAdmin, async (req, res, next) => {
     try {
@@ -331,9 +366,19 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
       let audit = { events: [] };
       let checklist = null;
       let pending = [];
+      let changeSummary = [];
+      let productCode = "activeclinic";
       if (instance) {
         const changes = await contentService.listUnpublishedChanges(getPool(), instance, instance.organizationId);
         unpublishedCount = changes.length;
+        const { summarizeAcChanges } = require("../website/platformAdminWebsitesService");
+        const template = instance
+          ? require("../website/templateRegistry").getWebsiteTemplate(
+              instance.templateId,
+              instance.templateVersion
+            )
+          : null;
+        changeSummary = summarizeAcChanges(changes, template);
         const listedVersions = (
           await versionService.listWebsiteVersions(getPool(), {
             instanceId: instance.id,
@@ -370,6 +415,18 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           instanceId: instance.id,
           status: "submitted",
         })).submissions;
+      } else {
+        const detail = await loadPlatformAdminWebsiteDetail(getPool(), org.rows[0].organization_key);
+        if (detail.ok) {
+          productCode = detail.productCode;
+          versions = (detail.versions || []).map((v) => ({
+            ...v,
+            publishedLabel: formatTs(v.publishedAt),
+            editorLabel: v.publishedByName || v.editorLabel || "Publisher",
+          }));
+          changeSummary = detail.changeSummary || [];
+          unpublishedCount = detail.unpublishedCount || 0;
+        }
       }
       const html = renderPlatformAdminView("platform-admin/organization-website.ejs", {
         ...buildPlatformAdminShellLocals(req, res, {
@@ -386,6 +443,8 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         auditEvents: audit.events || [],
         checklist,
         pendingSubmissions: pending,
+        changeSummary,
+        productCode,
         availability: availability.ok ? availability : null,
         canToggleAvailability: canToggleAvailability(req),
         canModerate: canModerate(req),
@@ -425,6 +484,28 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         reason: req.body && req.body.reason,
         env,
       });
+      if (!result.ok && (result.code === "clinic_not_found" || result.code === "website_instance_not_found")) {
+        const org = await getPool().query(
+          `SELECT id FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
+          [organizationKey]
+        );
+        if (org.rows[0] && wantPublic === false) {
+          const church = await getPool().query(
+            `SELECT id FROM blessboard.churches WHERE organization_id = $1 LIMIT 1`,
+            [org.rows[0].id]
+          );
+          if (church.rows[0]) {
+            const unpublished = await unpublishChurchWebsite(getPool(), {
+              churchId: church.rows[0].id,
+              organizationId: org.rows[0].id,
+              actorUserId: actorId(req),
+            });
+            if (unpublished.ok) {
+              return res.redirect(303, websiteManagePath(organizationKey, "notice=unpublished"));
+            }
+          }
+        }
+      }
       if (!result.ok) {
         return res.redirect(
           303,
@@ -469,7 +550,52 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
       if (!org.rows[0]) return res.redirect(303, "/admin/organizations?error=not_found");
       const instances = await instanceRepo.listWebsiteInstancesForOrganization(getPool(), org.rows[0].id);
       const instance = instances[0];
+      if (instance && instance.adapterMode === "legacy_cms") {
+        const church = await getPool().query(
+          `SELECT id FROM blessboard.churches WHERE organization_id = $1 LIMIT 1`,
+          [org.rows[0].id]
+        );
+        if (!church.rows[0]) {
+          return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?error=not_found`);
+        }
+        const restored = await restoreAndPublishCurrentVersion(getPool(), {
+          organizationId: org.rows[0].id,
+          churchId: church.rows[0].id,
+          versionId: req.params.versionId,
+          actorUserId: actorId(req),
+          restorationReason: "Platform Admin restored a previous published version.",
+          env,
+        });
+        if (!restored.ok) {
+          return res.redirect(
+            303,
+            `/admin/organizations/${req.params.organizationKey}/website?error=${encodeURIComponent(restored.reason || restored.status || "restore_failed")}`
+          );
+        }
+        return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?notice=restored`);
+      }
       if (!instance) {
+        const church = await getPool().query(
+          `SELECT id FROM blessboard.churches WHERE organization_id = $1 LIMIT 1`,
+          [org.rows[0].id]
+        );
+        if (church.rows[0]) {
+          const restored = await restoreAndPublishCurrentVersion(getPool(), {
+            organizationId: org.rows[0].id,
+            churchId: church.rows[0].id,
+            versionId: req.params.versionId,
+            actorUserId: actorId(req),
+            restorationReason: "Platform Admin restored a previous published version.",
+            env,
+          });
+          if (!restored.ok) {
+            return res.redirect(
+              303,
+              `/admin/organizations/${req.params.organizationKey}/website?error=${encodeURIComponent(restored.reason || restored.status || "restore_failed")}`
+            );
+          }
+          return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?notice=restored`);
+        }
         return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?error=not_found`);
       }
       const restored = await restoreWebsiteVersionLive(getPool(), {

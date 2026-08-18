@@ -31,12 +31,10 @@ const {
   normalizeSelectedPlan,
   validatePlatformChurchRegistration,
   formFromBody,
-  isInstantProvisionPlan,
   NETWORK_PLAN_CODE,
 } = require("../services/platformChurchRegistrationValidation");
 const {
-  submitPlatformChurchRegistration,
-  submitInstantFreeChurchRegistration,
+  submitChurchRegistration,
   GENERIC_SAVE_ERROR,
   DUPLICATE_REVIEW_MESSAGE,
 } = require("../services/platformChurchRegistrationService");
@@ -507,44 +505,59 @@ function createApexMarketingRouter(deps) {
         canonicalPlanKey: mapPublicPlanToDbPlanKey(publicPlanCode) || null,
       });
 
-      const wantsInstant =
-        flagOn &&
-        validation.data &&
-        validation.data.wants_instant_free &&
-        isInstantProvisionPlan(validation.data.selected_plan);
+      const result = await submitChurchRegistration(getPool(), req, validation, {
+        dataEnvironment,
+        deploymentCode,
+        provisionFn: provisionFn || undefined,
+        env,
+      });
 
-      if (!wantsInstant) {
-        const result = await submitPlatformChurchRegistration(getPool(), req, validation);
-        if (result.honeypot) {
+      if (result.honeypot) {
+        issueAndSetCsrf(req, res);
+        logRegistrationTrace(req, {
+          event: "church_registration_redirect",
+          operation: "register_church_redirect",
+          outcome: "ok",
+          redirectPath: `${REGISTER_PATH}?submitted=1`,
+          failureCategory: "honeypot",
+          durationMs: Date.now() - startedAt,
+        });
+        return res.redirect(303, `${REGISTER_PATH}?submitted=1`);
+      }
+
+      if (!result.ok) {
+        if (result.review) {
           issueAndSetCsrf(req, res);
           logRegistrationTrace(req, {
             event: "church_registration_redirect",
             operation: "register_church_redirect",
             outcome: "ok",
-            redirectPath: `${REGISTER_PATH}?submitted=1`,
-            failureCategory: "honeypot",
+            redirectPath: `${REGISTER_PATH}?review=1`,
+            failureCategory: "review_required",
             durationMs: Date.now() - startedAt,
           });
-          return res.redirect(303, `${REGISTER_PATH}?submitted=1`);
+          return res.redirect(303, `${REGISTER_PATH}?review=1`);
         }
-        if (!result.ok) {
-          if (result.review) {
-            issueAndSetCsrf(req, res);
-            logRegistrationTrace(req, {
-              event: "church_registration_redirect",
-              operation: "register_church_redirect",
-              outcome: "ok",
-              redirectPath: `${REGISTER_PATH}?review=1`,
-              failureCategory: "review_required",
-              durationMs: Date.now() - startedAt,
-            });
-            return res.redirect(303, `${REGISTER_PATH}?review=1`);
-          }
-          return renderForm(result.httpStatus || 503, {
-            formError: result.error || GENERIC_SAVE_ERROR,
-            fieldError: result.field || null,
+        if (result.inProgress) {
+          return renderForm(200, {
+            formError: result.error || IN_PROGRESS_SAFE,
+            fieldError: null,
           });
         }
+        if (result.field) {
+          return renderForm(result.httpStatus || 400, {
+            formError: result.error,
+            fieldError: result.field,
+          });
+        }
+        return renderForm(result.httpStatus || 503, {
+          formError: result.error || GENERIC_SAVE_ERROR,
+          fieldError: result.field || null,
+        });
+      }
+
+      const records = result.records || {};
+      if (!records.organizationId && !records.administratorUserId) {
         issueAndSetCsrf(req, res);
         const planQ =
           result.networkSupportContact ||
@@ -563,43 +576,8 @@ function createApexMarketingRouter(deps) {
         return res.redirect(303, redirectPath);
       }
 
-      const result = await submitInstantFreeChurchRegistration(getPool(), req, validation, {
-        dataEnvironment,
-        deploymentCode,
-        provisionFn: provisionFn || undefined,
-      });
-
-      if (result.honeypot) {
-        issueAndSetCsrf(req, res);
-        return res.redirect(303, `${REGISTER_PATH}?submitted=1`);
-      }
-
-      if (!result.ok) {
-        if (result.review) {
-          issueAndSetCsrf(req, res);
-          return res.redirect(303, `${REGISTER_PATH}?review=1`);
-        }
-        if (result.inProgress) {
-          return renderForm(200, {
-            formError: result.error || IN_PROGRESS_SAFE,
-            fieldError: null,
-          });
-        }
-        if (result.field) {
-          return renderForm(result.httpStatus || 400, {
-            formError: result.error,
-            fieldError: result.field,
-          });
-        }
-        return renderForm(result.httpStatus || 503, {
-          formError: result.error || GENERIC_SAVE_ERROR,
-          fieldError: null,
-        });
-      }
-
       // Provisioning committed — establish session (never roll back the tenant).
       // Issue a new opaque V5 session token (replaces any prior cookie value).
-      const records = result.records || {};
       const orgKey = records.organizationKey || validation.data.organization_key || "";
       let sessionOk = false;
       try {

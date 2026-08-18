@@ -26,6 +26,7 @@ const GENERIC_REJECTION =
 
 const PUBLIC_STATE = Object.freeze({
   UNDER_REVIEW: "under_review",
+  REVIEW_REQUIRED: "review_required",
   MORE_INFORMATION_NEEDED: "more_information_needed",
   BACK_UNDER_REVIEW: "back_under_review",
   APPROVED_PREPARING: "approved_preparing",
@@ -142,18 +143,24 @@ function projectApplicantStatus(application, informationRequest) {
       nextAction = "Check back shortly. You will be able to sign in when setup is ready.";
     } else if (provisioning === "website_pending") {
       publicState = PUBLIC_STATE.APPROVED;
-      label = "Approved";
+      label = "Ready";
       explanation =
-        "Your clinic was approved. You can sign in and operate the clinic. Publishing a clinic website is separate and does not block clinic operations.";
+        "Your clinic is active. You can sign in and continue setup. Publishing a clinic website is separate and does not block clinic operations.";
       nextAction = "Sign in with the email or phone and password from your application.";
       showLogin = true;
     } else {
       publicState = PUBLIC_STATE.APPROVED;
-      label = "Approved";
-      explanation = "Your clinic was approved. The clinic administrator can sign in now.";
+      label = "Ready";
+      explanation = "Your clinic is active. The clinic administrator can sign in now.";
       nextAction = "Sign in with the email or phone and password from your application.";
       showLogin = true;
     }
+  } else if (applicationStatus === "review_required") {
+    publicState = PUBLIC_STATE.REVIEW_REQUIRED;
+    label = "Review required";
+    explanation =
+      "Your registration needs a short review before your clinic can be activated. This is uncommon and does not mean your details were rejected.";
+    nextAction = "Keep your application number. Check back here for updates.";
   } else if (followUp === "awaiting_customer") {
     publicState = PUBLIC_STATE.MORE_INFORMATION_NEEDED;
     label = "More information needed";

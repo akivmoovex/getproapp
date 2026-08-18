@@ -134,7 +134,7 @@ describe("ActiveClinic clinic registration repair", () => {
     assert.equal(status.websitePublishedColumn, true);
   });
 
-  it("valid review→confirm creates pending application and redirects", async () => {
+  it("valid review→confirm auto-provisions organization and redirects", async () => {
     if (!requireDb()) return;
     const app = appWithEnv();
     const getForm = await request(app).get("/register-clinic");
@@ -168,26 +168,28 @@ describe("ActiveClinic clinic registration repair", () => {
       ["registration-test@example.invalid"]
     );
     assert.equal(rows.rows.length, 1);
-    assert.equal(rows.rows[0].status, "pending_review");
+    assert.equal(rows.rows[0].status, "approved");
     assert.equal(rows.rows[0].clinic_name, valid.clinicName);
     const hashRow = await pool.query(
-      `SELECT administrator_password_hash IS NOT NULL AS has_hash, address
+      `SELECT administrator_password_hash IS NOT NULL AS has_hash, address, organization_id, provisioning_status
          FROM activeclinic.clinic_registration_applications
         WHERE contact_email_normalized = $1`,
       ["registration-test@example.invalid"]
     );
-    assert.equal(hashRow.rows[0].has_hash, true);
+    assert.equal(hashRow.rows[0].has_hash, false);
     assert.equal(hashRow.rows[0].address, valid.address);
+    assert.ok(hashRow.rows[0].organization_id);
+    assert.ok(["provisioned", "website_pending"].includes(hashRow.rows[0].provisioning_status));
 
     const orgs = await pool.query(
       `SELECT count(*)::int AS n FROM platform.organizations WHERE display_name = $1`,
       [valid.clinicName]
     );
-    assert.equal(orgs.rows[0].n, 0);
+    assert.equal(orgs.rows[0].n, 1);
 
     const success = await request(app).get(confirm.headers.location);
     assert.equal(success.status, 200);
-    assert.match(success.text, /pending review/i);
+    assert.match(success.text, /Registration successful/i);
     assert.match(success.text, /data-ac-application-ref=/);
   });
 
@@ -211,7 +213,7 @@ describe("ActiveClinic clinic registration repair", () => {
       .type("form")
       .send({ [CSRF_FIELD]: csrf, action: "confirm", ...payload });
     assert.equal(second.status, 400);
-    assert.match(second.text, /recently submitted/i);
+    assert.match(second.text, /already registered|recently submitted/i);
 
     const rows = await pool.query(
       `SELECT count(*)::int AS n FROM activeclinic.clinic_registration_applications WHERE contact_email_normalized = $1`,

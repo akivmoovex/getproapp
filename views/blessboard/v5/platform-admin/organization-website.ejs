@@ -16,7 +16,7 @@
   var isPublic = Boolean(hco && hco.websitePublished);
 %>
 <section class="bb-pa-page">
-  <h1>Clinic website</h1>
+  <h1><%= typeof productCode !== 'undefined' && productCode === 'blessboard' ? 'Church website' : 'Clinic website' %></h1>
   <p><%= org.display_name %> · <%= org.organization_key %></p>
   <% if (notice === 'published') { %>
   <p class="bb-pa-notice" data-website-availability-notice="published">Website is public.<% if (avail && avail.publicUrl) { %> <a href="<%= avail.publicUrl %>"><%= avail.publicUrl %></a><% } %></p>
@@ -122,6 +122,7 @@
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <label>Policy
       <select name="publish_policy">
+        <option value="TENANT_PUBLISH" <%= inst.publishPolicy === 'TENANT_PUBLISH' ? 'selected' : '' %>>Organisation publishes</option>
         <option value="AUTO_PUBLISH_WITH_MODERATION" <%= inst.publishPolicy === 'AUTO_PUBLISH_WITH_MODERATION' ? 'selected' : '' %>>Auto-publish with moderation</option>
         <option value="REVIEW_BEFORE_PUBLISH" <%= inst.publishPolicy === 'REVIEW_BEFORE_PUBLISH' ? 'selected' : '' %>>Review before publish</option>
         <option value="PLATFORM_LOCKED" <%= inst.publishPolicy === 'PLATFORM_LOCKED' ? 'selected' : '' %>>Platform locked</option>
@@ -144,8 +145,26 @@
     <li><a href="/admin/website-changes/<%= s.id %>"><%= s.status %> · <%= s.changeCount || 0 %> keys</a></li>
     <% }) %>
   </ul>
+  <h2>Changes since publication</h2>
+  <% var summary = typeof changeSummary !== 'undefined' && changeSummary ? changeSummary : []; %>
+  <% if (!summary.length) { %>
+  <p class="bb-pa-hint">No unpublished draft changes.</p>
+  <% } else { %>
+  <ul data-website-change-summary="1">
+    <% summary.forEach(function (group) { %>
+    <li>
+      <strong><%= group.page %></strong>
+      <ul>
+        <% (group.items || []).forEach(function (item) { %>
+        <li><%= item %></li>
+        <% }) %>
+      </ul>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
   <h2>Version history</h2>
-  <p>Each editing session publishes one version. Field saves still go live immediately.</p>
+  <p>Editing a published website updates the draft only. Publish creates the next immutable version. Restore creates a new current version from history.</p>
   <table class="bb-pa-table" data-website-version-history="1">
     <thead>
       <tr>
