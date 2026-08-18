@@ -23,7 +23,17 @@
   <% } else if (notice === 'unpublished') { %>
   <p class="bb-pa-notice" data-website-availability-notice="unpublished">Website is not public. Content and versions were kept.</p>
   <% } else if (notice === 'restored') { %>
-  <p class="bb-pa-notice">Version restored to draft.</p>
+  <p class="bb-pa-notice">Previous version restored as a new live version. History was kept.</p>
+  <% } else if (notice === 'offline') { %>
+  <p class="bb-pa-notice">Website taken offline. Tenant account remains active.</p>
+  <% } else if (notice === 'suspend') { %>
+  <p class="bb-pa-notice">Website suspended. Tenant account remains active.</p>
+  <% } else if (notice === 'restore-site') { %>
+  <p class="bb-pa-notice">Website restored.</p>
+  <% } else if (notice === 'request-changes') { %>
+  <p class="bb-pa-notice">Changes requested. Current public version was left in place unless taken offline.</p>
+  <% } else if (notice === 'policy') { %>
+  <p class="bb-pa-notice">Publishing policy updated.</p>
   <% } %>
   <% if (error) { %>
   <p class="bb-pa-error" data-website-availability-error="<%= error %>">Could not update website availability (<%= error %>).</p>
@@ -34,8 +44,12 @@
   <p>No clinic website instance for this organisation. Availability cannot be toggled yet.</p>
   <% } else { %>
   <dl class="bb-pa-dl" data-website-availability="<%= isPublic ? 'public' : 'not-public' %>">
-    <dt>Website status</dt>
-    <dd><%= inst.status %></dd>
+    <dt>Lifecycle</dt>
+    <dd><%= inst.lifecycleStatus || '—' %></dd>
+    <dt>Publishing policy</dt>
+    <dd><%= inst.publishPolicy || '—' %></dd>
+    <dt>Adapter</dt>
+    <dd><%= inst.adapterMode || 'shared_engine' %></dd>
     <dt>Public availability</dt>
     <dd><%= isPublic ? 'Public' : 'Not public' %></dd>
     <dt>Public URL</dt>
@@ -72,7 +86,52 @@
     <% } %>
   <% } %>
   <% } %>
-
+  <% if (inst && (canTakeOffline || canSuspend || canRestore || canModerate || canManagePolicy)) { %>
+  <h2>Moderation</h2>
+  <p>These actions affect the public website only. They do not disable the tenant account.</p>
+  <% if (canTakeOffline) { %>
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/offline" data-website-moderation="offline">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>Reason <input name="reason" maxlength="500"/></label>
+    <label>Tenant-visible note <input name="note_public" maxlength="500"/></label>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Take Website Offline</button>
+  </form>
+  <% } %>
+  <% if (canSuspend) { %>
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/suspend" data-website-moderation="suspend">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>Reason <input name="reason" maxlength="500" required/></label>
+    <label>Tenant-visible note <input name="note_public" maxlength="500"/></label>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Suspend Website</button>
+  </form>
+  <% } %>
+  <% if (canRestore) { %>
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/restore-site" data-website-moderation="restore">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit" class="bb-pa-btn">Restore Website</button>
+  </form>
+  <% } %>
+  <% if (canModerate) { %>
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/request-changes" data-website-moderation="request-changes">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>Request <input name="note_public" maxlength="500" required/></label>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Request Changes</button>
+  </form>
+  <% } %>
+  <% if (canManagePolicy) { %>
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/policy" data-website-moderation="policy">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>Policy
+      <select name="publish_policy">
+        <option value="AUTO_PUBLISH_WITH_MODERATION" <%= inst.publishPolicy === 'AUTO_PUBLISH_WITH_MODERATION' ? 'selected' : '' %>>Auto-publish with moderation</option>
+        <option value="REVIEW_BEFORE_PUBLISH" <%= inst.publishPolicy === 'REVIEW_BEFORE_PUBLISH' ? 'selected' : '' %>>Review before publish</option>
+        <option value="PLATFORM_LOCKED" <%= inst.publishPolicy === 'PLATFORM_LOCKED' ? 'selected' : '' %>>Platform locked</option>
+      </select>
+    </label>
+    <button type="submit" class="bb-pa-btn">Update policy</button>
+  </form>
+  <% } %>
+  <% } %>
   <% if (!inst) { %>
   <p>No website instance for this organisation.</p>
   <% } else { %>
@@ -93,7 +152,7 @@
       v<%= v.versionNumber %> · <%= v.status %>
       <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/versions/<%= v.id %>/restore" style="display:inline">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-        <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Restore to draft</button>
+        <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Restore Version</button>
       </form>
     </li>
     <% }) %>

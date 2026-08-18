@@ -45,7 +45,25 @@ function sendClinicUnavailable(res, deps) {
  * @param {{ ok: boolean, code: string }} result
  * @param {{ env: NodeJS.ProcessEnv, isProduction: boolean, issuePageCsrf: Function }} deps
  */
+function sendClinicWebsiteOffline(res, deps, kind) {
+  const csrfToken = deps.issuePageCsrf(res, deps.env, deps.isProduction);
+  const suspended = kind === "suspended";
+  return res.status(403).type("html").send(renderPublicPage({
+    pageId: suspended ? "tenant-clinic-website-suspended" : "tenant-clinic-website-offline",
+    pageTitle: suspended ? "Website suspended" : "Website offline",
+    contentTemplate: suspended ? "tenant/clinic-website-suspended" : "tenant/clinic-website-offline",
+    shellVariant: "platform",
+    locals: { csrfToken },
+  }));
+}
+
 function sendClinicResolveFailure(res, result, deps) {
+  if (result.code === RESULT.WEBSITE_OFFLINE) {
+    return sendClinicWebsiteOffline(res, deps, "offline");
+  }
+  if (result.code === RESULT.WEBSITE_SUSPENDED) {
+    return sendClinicWebsiteOffline(res, deps, "suspended");
+  }
   if (result.code === RESULT.NOT_PUBLISHED) {
     return sendClinicUnavailable(res, deps);
   }
@@ -61,7 +79,12 @@ async function resolveClinicOrRespond(getPool, req, res, deps) {
   let result = await resolvePublishableClinicByKey(pool, {
     clinicKey: req.params.clinicKey,
   });
-  if (!result.ok && result.code === RESULT.NOT_PUBLISHED) {
+  if (
+    !result.ok &&
+    (result.code === RESULT.NOT_PUBLISHED ||
+      result.code === RESULT.WEBSITE_OFFLINE ||
+      result.code === RESULT.WEBSITE_SUSPENDED)
+  ) {
     const unpublished = await resolvePublishableClinicByKey(pool, {
       clinicKey: req.params.clinicKey,
       allowUnpublished: true,

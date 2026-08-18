@@ -8,6 +8,11 @@
   var submittedAt = typeof websiteSubmittedAtLabel !== 'undefined' && websiteSubmittedAtLabel ? websiteSubmittedAtLabel : '';
   var canResubmit = statusKey === 'changes_requested' && unpublished > 0;
   var waitingReview = statusKey === 'submitted';
+  var lifecycle = typeof websiteLifecycleStatus !== 'undefined' ? websiteLifecycleStatus : '';
+  var lifecycleLabel = typeof websiteLifecycleLabel !== 'undefined' ? websiteLifecycleLabel : '';
+  var policyLabel = typeof websitePublishPolicyLabel !== 'undefined' ? websitePublishPolicyLabel : '';
+  var editLocked = typeof websiteEditLocked !== 'undefined' && websiteEditLocked;
+  var moderationNote = typeof websiteModerationNote !== 'undefined' && websiteModerationNote ? websiteModerationNote : '';
 %>
 <div
   class="ac-website-chrome"
@@ -16,10 +21,15 @@
   data-website-status="<%= statusKey %>"
 >
   <div class="ac-website-chrome__status" data-website-chrome-status="1">
-    <% if (websiteEdit) { %>
-    <p><strong>Editing draft.</strong> Changes are not public until approved.</p>
-    <% } else { %>
-    <p><strong>Live view.</strong> Public visitors see published content only.</p>
+    <p><strong><%= lifecycleLabel || (websiteEdit ? 'Editing draft.' : 'Live view.') %></strong>
+      <% if (policyLabel) { %> Policy: <%= policyLabel %>.<% } %>
+      <% if (lifecycle === 'offline') { %> The public website is offline. You can still use clinic operations.<% } %>
+      <% if (lifecycle === 'suspended') { %> The public website is suspended. Contact Platform Admin to restore it.<% } %>
+      <% if (lifecycle === 'provisional') { %> This is a temporary website.<% } %>
+      <% if (editLocked) { %> Editing is locked.<% } %>
+    </p>
+    <% if (moderationNote) { %>
+    <p class="ac-website-chrome__note" data-website-moderation-note="1"><%= moderationNote %></p>
     <% } %>
     <ul class="ac-website-chrome__pills">
       <li data-website-pill="live"<%= statusKey === 'live' || statusKey === 'published' ? ' class="is-current"' : '' %>>Live</li>

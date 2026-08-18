@@ -29,6 +29,17 @@ function mapInstance(row) {
     lastPublishedAt: row.last_published_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    lifecycleStatus: row.lifecycle_status || "provisional",
+    publishPolicy: row.publish_policy || "REVIEW_BEFORE_PUBLISH",
+    adapterMode: row.adapter_mode || "shared_engine",
+    lifecycleReason: row.lifecycle_reason || null,
+    lifecycleNotePublic: row.lifecycle_note_public || null,
+    lifecycleNoteInternal: row.lifecycle_note_internal || null,
+    lifecycleChangedAt: row.lifecycle_changed_at || null,
+    lifecycleChangedBy: row.lifecycle_changed_by || null,
+    previousLifecycleStatus: row.previous_lifecycle_status || null,
+    editLocked: row.edit_locked === true,
+    publishLocked: row.publish_locked === true,
   };
 }
 
@@ -138,10 +149,23 @@ async function createWebsiteInstance(db, input) {
     const rows = await db.query(
       `INSERT INTO platform.website_instances (
          organization_id, product_code, template_id, template_version,
-         slug, status, scope_kind, scope_ref
-       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+         slug, status, scope_kind, scope_ref,
+         lifecycle_status, publish_policy, adapter_mode
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
        RETURNING *`,
-      [organizationId, productCode, templateId, templateVersion, slugResult.slug, status, scopeKind, scopeRef]
+      [
+        organizationId,
+        productCode,
+        templateId,
+        templateVersion,
+        slugResult.slug,
+        status,
+        scopeKind,
+        scopeRef,
+        input.lifecycleStatus || "provisional",
+        input.publishPolicy || "REVIEW_BEFORE_PUBLISH",
+        input.adapterMode || "shared_engine",
+      ]
     );
     return { ok: true, code: RESULT.OK, instance: mapInstance(rows.rows[0]), created: true };
   } catch (err) {

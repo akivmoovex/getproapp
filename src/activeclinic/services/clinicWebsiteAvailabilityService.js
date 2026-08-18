@@ -12,6 +12,8 @@ const resolver = require("../../platform/website/resolver");
 const { getWebsiteTemplate } = require("../../platform/website/templateRegistry");
 const { evaluatePublicationReadiness } = require("../../platform/website/checklistService");
 const { recordWebsiteAudit, listWebsiteAudit } = require("../../platform/website/auditService");
+const { applyLifecycle } = require("../../platform/website/lifecycleService");
+const { LIFECYCLE_STATUS } = require("../../platform/website/lifecycleStatus");
 const { organizationHasActiveProduct } = require("../../platform/services/organizationProductService");
 const {
   getDeploymentProfile,
@@ -254,6 +256,21 @@ async function setClinicWebsiteAvailability(db, input) {
       WHERE id = $1 AND organization_id = $3`,
     [hco.id, wantPublic, org.id]
   );
+  await applyLifecycle(db, {
+    organizationId: org.id,
+    instanceId: instance.id,
+    lifecycleStatus: wantPublic ? LIFECYCLE_STATUS.PUBLIC : LIFECYCLE_STATUS.PROVISIONAL,
+    actorIdentityId: input.actorIdentityId || null,
+    reason: wantPublic ? "Platform Admin published website" : "Platform Admin unpublished website",
+    notePublic: wantPublic ? null : "Website is not public.",
+    notesTenantVisible: !wantPublic,
+    syncProductAvailability: false,
+    auditActionKey: wantPublic ? "website.lifecycle.public" : "website.lifecycle.provisional",
+    moderationActionKey: wantPublic
+      ? "website.lifecycle.public"
+      : "website.lifecycle.provisional",
+    force: true,
+  });
 
   if (wantPublic && input.overrideReadiness === true && readiness.readyToPublish !== true) {
     await recordWebsiteAudit(db, {

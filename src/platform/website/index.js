@@ -15,11 +15,21 @@ const provisionService = require("./provisionService");
 const auditService = require("./auditService");
 const authorizeWebsite = require("./authorizeWebsite");
 const reviewDiff = require("./reviewDiff");
+const lifecycleStatus = require("./lifecycleStatus");
+const publishPolicy = require("./publishPolicy");
+const productWebsiteDefaults = require("./productWebsiteDefaults");
+const moderationEventService = require("./moderationEventService");
+const lifecycleService = require("./lifecycleService");
+const publicationService = require("./publicationService");
+const recentChangesService = require("./recentChangesService");
 
 module.exports = {
   ...contentTypes,
   ...templateRegistry,
   ...permissions,
+  ...lifecycleStatus,
+  ...publishPolicy,
+  ...productWebsiteDefaults,
   instanceRepository,
   contentService,
   resolver,
@@ -32,4 +42,8 @@ module.exports = {
   auditService,
   authorizeWebsite,
   reviewDiff,
+  moderationEventService,
+  lifecycleService,
+  publicationService,
+  recentChangesService,
 };

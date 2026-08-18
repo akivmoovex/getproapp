@@ -79,6 +79,9 @@ async function saveWebsiteDraft(db, input) {
   if (instance.organizationId !== organizationId) {
     return { ok: false, code: RESULT.TENANT_MISMATCH, content: null };
   }
+  if (instance.editLocked === true) {
+    return { ok: false, code: "website_edit_locked", content: null };
+  }
 
   const template = await loadTemplateForInstance(instance);
   if (!template || !isKnownContentKey(template, keyNorm.key)) {

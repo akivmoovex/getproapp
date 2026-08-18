@@ -53,6 +53,9 @@ async function submitWebsiteChanges(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
   if (!instance) return { ok: false, code: "website_instance_not_found", submission: null };
+  if (instance.publishLocked === true || instance.publishPolicy === "PLATFORM_LOCKED") {
+    return { ok: false, code: "website_publish_locked", submission: null };
+  }
 
   const resolved = await resolver.resolveWebsiteContent(db, {
     organizationId,

@@ -24,6 +24,11 @@ function mapVersion(row) {
     changeCount: Number(row.change_count) || 0,
     status: row.status,
     publishedAt: row.published_at,
+    sourcePolicy: row.source_policy || null,
+    previousVersionId: row.previous_version_id || null,
+    changedKeys: row.changed_keys || [],
+    moderationStatus: row.moderation_status || row.status,
+    editorIdentityId: row.editor_identity_id || row.submitter_identity_id || null,
   };
 }
 
@@ -36,6 +41,14 @@ async function createWebsiteVersion(db, input) {
     [instance.id]
   );
   const versionNumber = Number(next.rows[0].n);
+  const previousPublished = await db.query(
+    `SELECT id FROM platform.website_versions
+      WHERE instance_id = $1 AND status = 'published'
+      ORDER BY version_number DESC LIMIT 1`,
+    [instance.id]
+  );
+  const previousVersionId =
+    input.previousVersionId || (previousPublished.rows[0] && previousPublished.rows[0].id) || null;
   await db.query(
     `UPDATE platform.website_versions
         SET status = 'superseded'
@@ -45,8 +58,9 @@ async function createWebsiteVersion(db, input) {
   const rows = await db.query(
     `INSERT INTO platform.website_versions (
        organization_id, instance_id, submission_id, version_number,
-       snapshot_json, submitter_identity_id, reviewer_identity_id, change_count, status
-     ) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,'published')
+       snapshot_json, submitter_identity_id, reviewer_identity_id, change_count, status,
+       source_policy, previous_version_id, changed_keys, moderation_status, editor_identity_id
+     ) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,'published',$9,$10,$11::text[],$12,$13)
      RETURNING *`,
     [
       instance.organizationId,
@@ -57,6 +71,11 @@ async function createWebsiteVersion(db, input) {
       input.submitterIdentityId || null,
       input.reviewerIdentityId || null,
       Number(input.changeCount) || 0,
+      input.sourcePolicy || null,
+      previousVersionId,
+      input.changedKeys || [],
+      input.moderationStatus || "published",
+      input.editorIdentityId || input.submitterIdentityId || null,
     ]
   );
   const version = mapVersion(rows.rows[0]);
@@ -64,10 +83,16 @@ async function createWebsiteVersion(db, input) {
     organizationId: instance.organizationId,
     instanceId: instance.id,
     actorIdentityId: input.reviewerIdentityId || null,
-    actionKey: "website.publish",
+    actionKey: input.auditActionKey || "website.publish",
     submissionId: input.submissionId || null,
     versionId: version.id,
-    metadata: { version_number: versionNumber, count: input.changeCount || 0 },
+    metadata: {
+      version_number: versionNumber,
+      count: input.changeCount || 0,
+      source_policy: input.sourcePolicy || null,
+      previous_version_id: previousVersionId,
+      changed_keys: input.changedKeys || [],
+    },
   });
   return { ok: true, version };
 }

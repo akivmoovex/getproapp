@@ -63,6 +63,14 @@ const PLATFORM_ADMIN_NAV = Object.freeze([
     enabled: true,
   },
   {
+    key: "recent-website-changes",
+    label: "Recent Website Changes",
+    href: "/admin/recent-website-changes",
+    icon: "history",
+    nav: true,
+    enabled: true,
+  },
+  {
     key: "subscriptions",
     label: "Subscriptions",
     href: "/admin/subscriptions",

@@ -53,7 +53,7 @@ const KEYS = {
 
 const DEFAULTS = {
   "home.hero.title": null,
-  "home.hero.subtitle": "Add your clinic description",
+  "home.hero.subtitle": "Website being set up",
   "home.hero.eyebrow": "Caring for our community",
   "about.story.heading": "About our clinic",
   "about.story.body": "Add your clinic description",
@@ -65,8 +65,8 @@ const DEFAULTS = {
   "home.promo.body": "",
   "home.testimonials": [],
   "home.faq": [],
-  "page.pricing.visible": true,
-  "page.doctors.visible": true,
+  "page.pricing.visible": false,
+  "page.doctors.visible": false,
   "page.insurance.visible": false,
   "section.testimonials.visible": false,
   "section.faq.visible": false,

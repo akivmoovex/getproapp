@@ -6,6 +6,8 @@
  */
 
 const { organizationHasActiveProduct } = require("../../platform/services/organizationProductService");
+const instanceRepo = require("../../platform/website/instanceRepository");
+const { blocksAnonymousPublic, LIFECYCLE_STATUS } = require("../../platform/website/lifecycleStatus");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -15,6 +17,8 @@ const RESULT = Object.freeze({
   NOT_FOUND: "clinic_not_found",
   NOT_PUBLISHED: "clinic_not_published",
   PRODUCT_NOT_ACTIVE: "product_not_active",
+  WEBSITE_OFFLINE: "website_offline",
+  WEBSITE_SUSPENDED: "website_suspended",
 });
 
 async function findOrganizationByKey(db, clinicKey) {
@@ -71,7 +75,21 @@ async function resolvePublishableClinicByKey(db, input) {
   }
 
   const hco = hcoRows.rows[0];
+  const instance = await instanceRepo.findWebsiteInstanceByOrgProduct(db, {
+    organizationId: organization.id,
+    productCode: "activeclinic",
+  });
   const allowUnpublished = input && input.allowUnpublished === true;
+  if (instance && blocksAnonymousPublic(instance.lifecycleStatus) && !allowUnpublished) {
+    return {
+      ok: false,
+      code:
+        instance.lifecycleStatus === LIFECYCLE_STATUS.SUSPENDED
+          ? RESULT.WEBSITE_SUSPENDED
+          : RESULT.WEBSITE_OFFLINE,
+      clinic: null,
+    };
+  }
   if (hco.status !== "active" || (hco.website_published !== true && !allowUnpublished)) {
     return { ok: false, code: RESULT.NOT_PUBLISHED, clinic: null };
   }
@@ -128,6 +146,9 @@ async function resolvePublishableClinicByKey(db, input) {
     publicEmailDisplay: hco.public_email_display || null,
     publicBookingEnabled: hco.public_booking_enabled === true,
     websitePublished: hco.website_published === true,
+    websiteLifecycleStatus: instance ? instance.lifecycleStatus : null,
+    websitePublishPolicy: instance ? instance.publishPolicy : null,
+    websiteEditLocked: instance ? instance.editLocked === true : false,
     countryCode: hco.country_code,
     timezone: hco.timezone,
     dataEnvironment: dataEnvironment || null,

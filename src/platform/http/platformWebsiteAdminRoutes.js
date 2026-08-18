@@ -12,6 +12,16 @@ const { buildWebsiteReviewDiff } = require("../website/reviewDiff");
 const { PERMISSIONS, hasWebsitePermission } = require("../website/permissions");
 const { ALLOWED_IMAGE_MIME } = require("../website/mediaService");
 const { CSRF_FIELD, validateCsrf } = require("./v5Csrf");
+const { listRecentWebsiteChanges } = require("../website/recentChangesService");
+const {
+  takeWebsiteOffline,
+  suspendWebsite,
+  restoreWebsiteAvailability,
+  setWebsitePublishPolicy,
+  requestLiveWebsiteChanges,
+} = require("../website/lifecycleService");
+const { restoreWebsiteVersionLive } = require("../website/publicationService");
+const { LIFECYCLE_STATUS } = require("../website/lifecycleStatus");
 const {
   getClinicWebsiteAvailability,
   setClinicWebsiteAvailability,
@@ -55,6 +65,42 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
     const keys = granted(req);
     if (!keys.length) return true;
     return hasWebsitePermission(keys, PERMISSIONS.PUBLISH);
+  }
+
+  function canModerate(req) {
+    const keys = granted(req);
+    if (!keys.length) return true;
+    return (
+      hasWebsitePermission(keys, PERMISSIONS.MODERATE) ||
+      hasWebsitePermission(keys, PERMISSIONS.REVIEW)
+    );
+  }
+
+  function canTakeOffline(req) {
+    const keys = granted(req);
+    if (!keys.length) return true;
+    return hasWebsitePermission(keys, PERMISSIONS.TAKE_OFFLINE);
+  }
+
+  function canSuspend(req) {
+    const keys = granted(req);
+    if (!keys.length) return true;
+    return hasWebsitePermission(keys, PERMISSIONS.SUSPEND);
+  }
+
+  function canRestore(req) {
+    const keys = granted(req);
+    if (!keys.length) return true;
+    return (
+      hasWebsitePermission(keys, PERMISSIONS.RESTORE) ||
+      hasWebsitePermission(keys, PERMISSIONS.ROLLBACK)
+    );
+  }
+
+  function canManagePolicy(req) {
+    const keys = granted(req);
+    if (!keys.length) return true;
+    return hasWebsitePermission(keys, PERMISSIONS.MANAGE_POLICY);
   }
 
   router.get("/admin/website-changes", requireApex, requirePlatformAdmin, async (req, res, next) => {
@@ -277,6 +323,11 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         pendingSubmissions: pending,
         availability: availability.ok ? availability : null,
         canToggleAvailability: canToggleAvailability(req),
+        canModerate: canModerate(req),
+        canTakeOffline: canTakeOffline(req),
+        canSuspend: canSuspend(req),
+        canRestore: canRestore(req),
+        canManagePolicy: canManagePolicy(req),
         notice: String(req.query.notice || ""),
         error: String(req.query.error || ""),
       });
@@ -343,6 +394,9 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?error=csrf`);
       }
+      if (!canRestore(req)) {
+        return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?error=forbidden`);
+      }
       const org = await getPool().query(
         `SELECT id, organization_key FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
         [String(req.params.organizationKey || "").toLowerCase()]
@@ -353,7 +407,7 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
       if (!instance) {
         return res.redirect(303, `/admin/organizations/${req.params.organizationKey}/website?error=not_found`);
       }
-      const restored = await versionService.restoreWebsiteVersionToDraft(getPool(), {
+      const restored = await restoreWebsiteVersionLive(getPool(), {
         organizationId: org.rows[0].id,
         instanceId: instance.id,
         versionId: req.params.versionId,
@@ -371,7 +425,160 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
     }
   });
 
+  router.get("/admin/recent-website-changes", requireApex, requirePlatformAdmin, async (req, res, next) => {
+    try {
+      setAdminNoStore(res);
+      const listed = await listRecentWebsiteChanges(getPool(), {
+        productCode: String(req.query.product || "").trim() || null,
+        lifecycleStatus: String(req.query.lifecycle || "").trim() || null,
+        tenant: String(req.query.tenant || "").trim() || null,
+        flagged: String(req.query.flagged || "") === "1",
+        limit: 80,
+      });
+      let rows = listed.changes || [];
+      const filter = String(req.query.filter || "").trim();
+      if (filter === "provisional") rows = rows.filter((r) => r.lifecycleStatus === "provisional");
+      if (filter === "public") rows = rows.filter((r) => r.lifecycleStatus === "public");
+      if (filter === "suspended") rows = rows.filter((r) => r.lifecycleStatus === "suspended");
+      if (filter === "under_review") {
+        rows = rows.filter(
+          (r) => r.lifecycleStatus === "under_review" || r.moderationState === "submitted"
+        );
+      }
+      const html = renderPlatformAdminView("platform-admin/recent-website-changes.ejs", {
+        ...buildPlatformAdminShellLocals(req, res, {
+          env,
+          isProduction: String(env.NODE_ENV || "") === "production",
+          activeNav: "recent-website-changes",
+          pageTitle: "Recent Website Changes",
+        }),
+        changes: rows,
+        filters: {
+          product: String(req.query.product || ""),
+          tenant: String(req.query.tenant || ""),
+          lifecycle: String(req.query.lifecycle || ""),
+          filter,
+          flagged: String(req.query.flagged || "") === "1",
+        },
+        canModerate: canModerate(req),
+        canTakeOffline: canTakeOffline(req),
+        canSuspend: canSuspend(req),
+        canRestore: canRestore(req),
+      });
+      return res.status(200).type("html").send(html);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  async function loadOrgInstance(organizationKey) {
+    const org = await getPool().query(
+      `SELECT id, organization_key, display_name FROM platform.organizations
+        WHERE organization_key = $1 LIMIT 1`,
+      [String(organizationKey || "").toLowerCase()]
+    );
+    if (!org.rows[0]) return { org: null, instance: null };
+    const instances = await instanceRepo.listWebsiteInstancesForOrganization(
+      getPool(),
+      org.rows[0].id
+    );
+    return { org: org.rows[0], instance: instances[0] || null };
+  }
+
+  async function handleModerationAction(req, res, next, action) {
+    try {
+      const organizationKey = String(req.params.organizationKey || "").toLowerCase();
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.redirect(303, websiteManagePath(organizationKey, "error=csrf"));
+      }
+      const loaded = await loadOrgInstance(organizationKey);
+      if (!loaded.org || !loaded.instance) {
+        return res.redirect(303, websiteManagePath(organizationKey, "error=not_found"));
+      }
+      const body = {
+        organizationId: loaded.org.id,
+        instanceId: loaded.instance.id,
+        actorIdentityId: actorId(req),
+        reason: req.body && req.body.reason,
+        notes: req.body && req.body.notes,
+        notePublic: req.body && req.body.note_public,
+        notesTenantVisible: true,
+      };
+      let result;
+      if (action === "offline") {
+        if (!canTakeOffline(req)) return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
+        result = await takeWebsiteOffline(getPool(), body);
+      } else if (action === "suspend") {
+        if (!canSuspend(req)) return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
+        result = await suspendWebsite(getPool(), {
+          ...body,
+          editLocked: req.body && req.body.edit_lock !== "0",
+          publishLocked: req.body && req.body.publish_lock !== "0",
+        });
+      } else if (action === "restore-site") {
+        if (!canRestore(req)) return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
+        result = await restoreWebsiteAvailability(getPool(), {
+          ...body,
+          lifecycleStatus: req.body && req.body.lifecycle_status,
+        });
+      } else if (action === "request-changes") {
+        if (!canModerate(req)) return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
+        result = await requestLiveWebsiteChanges(getPool(), {
+          ...body,
+          takeOffline: req.body && req.body.take_offline === "1",
+          targetVersionId: req.body && req.body.version_id,
+        });
+      } else if (action === "policy") {
+        if (!canManagePolicy(req)) return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
+        result = await setWebsitePublishPolicy(getPool(), {
+          ...body,
+          publishPolicy: req.body && req.body.publish_policy,
+        });
+      } else {
+        result = { ok: false, code: "invalid_input" };
+      }
+      if (!result.ok) {
+        return res.redirect(303, websiteManagePath(organizationKey, `error=${encodeURIComponent(result.code)}`));
+      }
+      return res.redirect(303, websiteManagePath(organizationKey, `notice=${encodeURIComponent(action)}`));
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+  router.post(
+    "/admin/organizations/:organizationKey/website/offline",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res, next) => handleModerationAction(req, res, next, "offline")
+  );
+  router.post(
+    "/admin/organizations/:organizationKey/website/suspend",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res, next) => handleModerationAction(req, res, next, "suspend")
+  );
+  router.post(
+    "/admin/organizations/:organizationKey/website/restore-site",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res, next) => handleModerationAction(req, res, next, "restore-site")
+  );
+  router.post(
+    "/admin/organizations/:organizationKey/website/request-changes",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res, next) => handleModerationAction(req, res, next, "request-changes")
+  );
+  router.post(
+    "/admin/organizations/:organizationKey/website/policy",
+    requireApex,
+    requirePlatformAdmin,
+    (req, res, next) => handleModerationAction(req, res, next, "policy")
+  );
+
   void resolver;
+  void LIFECYCLE_STATUS;
 }
 
 module.exports = {

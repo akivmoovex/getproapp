@@ -5,6 +5,9 @@ const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/pe
 const { resolveActiveClinicWebsite, MODE } = require("../website/activeClinicWebsiteResolver");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const submissionService = require("../../platform/website/submissionService");
+const { latestTenantVisibleNote } = require("../../platform/website/moderationEventService");
+const { LIFECYCLE_LABELS } = require("../../platform/website/lifecycleStatus");
+const { POLICY_LABELS } = require("../../platform/website/publishPolicy");
 
 function grantedPermissions(req) {
   const auth = req.activeClinicAuth;
@@ -72,17 +75,34 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic) {
       }
     }
   }
+  let websiteLifecycleStatus = instance && instance.lifecycleStatus ? instance.lifecycleStatus : "";
+  let websitePublishPolicy = instance && instance.publishPolicy ? instance.publishPolicy : "";
+  let websiteEditLocked = Boolean(instance && instance.editLocked);
+  let websitePublishLocked = Boolean(instance && instance.publishLocked);
+  let websiteModerationNote = "";
+  if (instance) {
+    const note = await latestTenantVisibleNote(db, instance.id, clinic.organizationId);
+    if (note && note.notes) websiteModerationNote = String(note.notes);
+  }
+  if (!websiteReviewNote && websiteModerationNote) websiteReviewNote = websiteModerationNote;
   return {
     clinic: outClinic,
     instance,
-    websiteEdit: canEdit && editRequested,
-    websiteCanEdit: canEdit,
-    websiteCanSubmit: canSubmit,
+    websiteEdit: canEdit && editRequested && !websiteEditLocked,
+    websiteCanEdit: canEdit && !websiteEditLocked,
+    websiteCanSubmit: canSubmit && !websitePublishLocked,
     websiteMode: mode,
     websiteUnpublishedCount: unpublishedCount,
     websiteWorkflowStatus,
     websiteReviewNote,
     websiteSubmittedAtLabel,
+    websiteLifecycleStatus,
+    websiteLifecycleLabel: LIFECYCLE_LABELS[websiteLifecycleStatus] || "",
+    websitePublishPolicy,
+    websitePublishPolicyLabel: POLICY_LABELS[websitePublishPolicy] || "",
+    websiteEditLocked,
+    websitePublishLocked,
+    websiteModerationNote,
     websiteEditQuery: "website_edit",
     websiteActorId:
       req.activeClinicAuth && req.activeClinicAuth.platformIdentity

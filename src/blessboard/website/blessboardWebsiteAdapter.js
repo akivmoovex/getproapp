@@ -23,6 +23,9 @@ async function ensureBlessBoardWebsiteInstance(db, input) {
     actorIdentityId: input.actorIdentityId || null,
     contentOverrides: input.contentOverrides || {},
     seedDefaults: false,
+    adapterMode: "legacy_cms",
+    publishPolicy: "REVIEW_BEFORE_PUBLISH",
+    lifecycleStatus: input.lifecycleStatus || "public",
   });
 }
 

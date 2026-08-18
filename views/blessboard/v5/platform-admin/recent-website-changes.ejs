@@ -1,0 +1,73 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = changes || [];
+  var f = filters || {};
+%>
+<section class="bb-pa-page" data-recent-website-changes="1">
+  <h1>Recent Website Changes</h1>
+  <p>Shared-engine changes across products. BlessBoard <code>public_pages</code> churches stay on the legacy CMS until cutover.</p>
+  <form method="get" action="/admin/recent-website-changes" class="bb-pa-filters">
+    <label>Product
+      <select name="product">
+        <option value="" <%= !f.product ? 'selected' : '' %>>All</option>
+        <option value="activeclinic" <%= f.product === 'activeclinic' ? 'selected' : '' %>>ActiveClinic</option>
+        <option value="blessboard" <%= f.product === 'blessboard' ? 'selected' : '' %>>BlessBoard</option>
+      </select>
+    </label>
+    <label>Tenant
+      <input name="tenant" value="<%= f.tenant || '' %>" maxlength="80"/>
+    </label>
+    <label>Filter
+      <select name="filter">
+        <option value="" <%= !f.filter ? 'selected' : '' %>>Recent</option>
+        <option value="provisional" <%= f.filter === 'provisional' ? 'selected' : '' %>>Provisional</option>
+        <option value="public" <%= f.filter === 'public' ? 'selected' : '' %>>Public</option>
+        <option value="suspended" <%= f.filter === 'suspended' ? 'selected' : '' %>>Suspended</option>
+        <option value="under_review" <%= f.filter === 'under_review' ? 'selected' : '' %>>Under review</option>
+      </select>
+    </label>
+    <label>
+      <input type="checkbox" name="flagged" value="1" <%= f.flagged ? 'checked' : '' %>/> Flagged
+    </label>
+    <button type="submit" class="bb-pa-btn">Filter</button>
+  </form>
+  <table class="bb-pa-table">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Tenant</th>
+        <th>When</th>
+        <th>Page</th>
+        <th>Changes</th>
+        <th>Old / new</th>
+        <th>Status</th>
+        <th>Policy</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!rows.length) { %>
+      <tr><td colspan="9">No recent website changes.</td></tr>
+      <% } %>
+      <% rows.forEach(function (row) { %>
+      <tr data-website-change-product="<%= row.productCode %>">
+        <td><%= row.productCode %></td>
+        <td><%= row.organizationName || row.organizationKey %></td>
+        <td><%= row.timestamp ? String(row.timestamp).slice(0, 19).replace('T', ' ') : '—' %></td>
+        <td><%= row.pageSection || row.kind %></td>
+        <td><%= row.changeCount || 0 %><% if (row.mediaChanged) { %> · media<% } %></td>
+        <td><%= (row.oldSummary || '—').slice(0, 40) %> → <%= (row.newSummary || '—').slice(0, 40) %></td>
+        <td><%= row.lifecycleStatus %> / <%= row.moderationState %></td>
+        <td><%= row.publishPolicy %></td>
+        <td>
+          <a class="bb-pa-link" href="/admin/organizations/<%= row.organizationKey %>/website">View</a>
+          <% if (row.slug && row.productCode === 'activeclinic') { %>
+          · <a class="bb-pa-link" href="/clinics/<%= row.slug %>">Live</a>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

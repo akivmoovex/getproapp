@@ -24,12 +24,23 @@ const RESULT = Object.freeze({
 function starterOverrides(publicName) {
   const name = String(publicName || "Clinic").trim() || "Clinic";
   return {
-    "home.hero.title": `Welcome to ${name}`,
-    "home.hero.subtitle": "Add your clinic description",
-    "about.story.body": "Add your clinic description",
-    "about.story.heading": "About our clinic",
-    "home.hero.eyebrow": "Add services",
-    "contact.intro": "Add opening hours",
+    "home.hero.title": name,
+    "home.hero.subtitle": "Website being set up",
+    "home.hero.eyebrow": "",
+    "about.story.body":
+      "This clinic website is being set up. Contact and location details will appear here once the clinic adds them.",
+    "about.story.heading": `About ${name}`,
+    "contact.intro": "Contact the clinic for appointments and enquiries.",
+    "book.intro": "Booking will be available once the clinic publishes hours and services.",
+    "footer.tagline": "Powered by ActiveClinic",
+    "page.pricing.visible": false,
+    "page.doctors.visible": false,
+    "page.insurance.visible": false,
+    "section.testimonials.visible": false,
+    "section.faq.visible": false,
+    "section.promo.visible": false,
+    "home.testimonials": [],
+    "home.faq": [],
   };
 }
 
@@ -62,6 +73,9 @@ async function provisionActiveClinicWebsite(db, input) {
       ...starterOverrides(input.publicName),
       ...(input.contentOverrides || {}),
     },
+    lifecycleStatus: input.lifecycleStatus,
+    publishPolicy: input.publishPolicy,
+    adapterMode: input.adapterMode,
   });
   if (!provisioned.ok) {
     return {

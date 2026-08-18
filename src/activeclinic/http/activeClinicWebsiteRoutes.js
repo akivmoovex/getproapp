@@ -4,6 +4,7 @@ const multer = require("multer");
 const { validateCsrf, CSRF_FIELD } = require("../../platform/http/v5Csrf");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const contentService = require("../../platform/website/contentService");
+const publicationService = require("../../platform/website/publicationService");
 const submissionService = require("../../platform/website/submissionService");
 const mediaService = require("../../platform/website/mediaService");
 const {
@@ -83,7 +84,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!attached.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found" });
       }
-      const saved = await contentService.saveWebsiteDraft(getPool(), {
+      const saved = await publicationService.saveDraftAndMaybePublish(getPool(), {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,
         contentKey: req.body && req.body.contentKey,
@@ -94,7 +95,12 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!saved.ok) {
         return json(res, 400, { ok: false, code: saved.code, reason: saved.reason || null });
       }
-      return json(res, 200, { ok: true, code: "saved_to_draft", content: saved.content });
+      return json(res, 200, {
+        ok: true,
+        code: saved.published ? "saved_and_published" : "saved_to_draft",
+        content: saved.content,
+        version: saved.version || null,
+      });
     } catch (err) {
       return next(err);
     }

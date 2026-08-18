@@ -9,6 +9,11 @@ const PERMISSIONS = Object.freeze({
   PUBLISH: "website.publish",
   ROLLBACK: "website.rollback",
   MANAGE_TEMPLATE: "website.manage_template",
+  MODERATE: "website.moderate",
+  TAKE_OFFLINE: "website.take_offline",
+  SUSPEND: "website.suspend",
+  RESTORE: "website.restore",
+  MANAGE_POLICY: "website.manage_policy",
 });
 
 const ALL = Object.freeze(Object.values(PERMISSIONS));
@@ -26,6 +31,13 @@ const REVIEWER_PERMISSIONS = Object.freeze([
   PERMISSIONS.PUBLISH,
 ]);
 
+const MODERATOR_PERMISSIONS = Object.freeze([
+  PERMISSIONS.VIEW,
+  PERMISSIONS.REVIEW,
+  PERMISSIONS.PUBLISH,
+  PERMISSIONS.MODERATE,
+]);
+
 function hasWebsitePermission(grantedKeys, needed) {
   const set = new Set((grantedKeys || []).map((k) => String(k)));
   const need = Array.isArray(needed) ? needed : [needed];
@@ -37,6 +49,7 @@ module.exports = {
   ALL,
   EDITOR_PERMISSIONS,
   REVIEWER_PERMISSIONS,
+  MODERATOR_PERMISSIONS,
   PLATFORM_ADMIN_PERMISSIONS: ALL,
   hasWebsitePermission,
 };

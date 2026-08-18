@@ -4,7 +4,9 @@ const instanceRepo = require("./instanceRepository");
 const contentService = require("./contentService");
 const { getWebsiteTemplate, listTemplateKeys } = require("./templateRegistry");
 const { recordWebsiteAudit } = require("./auditService");
+const { recordModerationEvent, ACTION } = require("./moderationEventService");
 const { withProvisioningTransaction } = require("../db/provisioningTransaction");
+const { productWebsiteDefaults } = require("./productWebsiteDefaults");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -33,6 +35,7 @@ async function provisionWebsiteInstance(db, input) {
     const template = getWebsiteTemplate(templateId, templateVersion);
     if (!template) return { ok: false, code: RESULT.TEMPLATE_NOT_FOUND, instance: null };
 
+    const defaults = productWebsiteDefaults(template.productCode);
     const created = await instanceRepo.createWebsiteInstance(client, {
       organizationId: input.organizationId,
       productCode: template.productCode,
@@ -42,6 +45,9 @@ async function provisionWebsiteInstance(db, input) {
       status: input.status || "coming_soon",
       scopeKind: input.scopeKind || "tenant",
       scopeRef: input.scopeRef || null,
+      lifecycleStatus: input.lifecycleStatus || defaults.lifecycleStatus,
+      publishPolicy: input.publishPolicy || defaults.publishPolicy,
+      adapterMode: input.adapterMode || defaults.adapterMode,
     });
     if (!created.ok) return created;
 
@@ -60,6 +66,19 @@ async function provisionWebsiteInstance(db, input) {
         actorIdentityId: input.actorIdentityId || null,
         actionKey: "website.provision",
         metadata: { entity_key: created.instance.slug },
+      });
+      await recordModerationEvent(client, {
+        organizationId: created.instance.organizationId,
+        instanceId: created.instance.id,
+        productCode: created.instance.productCode,
+        actorIdentityId: input.actorIdentityId || null,
+        actionKey: ACTION.PROVISION,
+        newState: created.instance.lifecycleStatus,
+        notesTenantVisible: false,
+        metadata: {
+          policy: created.instance.publishPolicy,
+          adapter: created.instance.adapterMode,
+        },
       });
     }
 
