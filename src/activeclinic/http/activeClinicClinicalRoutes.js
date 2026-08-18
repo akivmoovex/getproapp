@@ -47,10 +47,7 @@ const {
   RESULT: CLINICAL_RESULT,
   PERM,
 } = require("../services/activeClinicClinicalService");
-const {
-  CODE_ACTIVECLINIC_ORG_V6,
-} = require("../../platform/config/deploymentProfiles");
-const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -230,7 +227,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           encounterType,
           arrivalId: req.body.arrival_id || null,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -392,7 +389,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           painLevel: req.body.pain_level ? parseInt(req.body.pain_level, 10) : null,
           status: req.body.status || "draft",
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -485,7 +482,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           systolic: req.body.systolic ? parseInt(req.body.systolic, 10) : null,
           diastolic: req.body.diastolic ? parseInt(req.body.diastolic, 10) : null,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -584,7 +581,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           encounterId,
           intakeNoteText: String(req.body.intake_note_text || "").trim(),
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -675,7 +672,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           certainty: String(req.body.certainty || "").trim() || null,
           correctsDiagnosisId: req.body.corrects_diagnosis_id || null,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -717,7 +714,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           planText: String(req.body.plan_text || "").trim() || null,
           additionalNotes: String(req.body.additional_notes || "").trim() || null,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -754,7 +751,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           facilityId: auth.selectedFacility.id,
           consultationNoteId: consultationId,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -847,7 +844,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           orderDetails: req.body.order_details ? JSON.parse(req.body.order_details) : req.body,
           instructions: String(req.body.instructions || "").trim() || null,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -926,7 +923,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           alertMessage: String(req.body.alert_message || "").trim(),
           priority: String(req.body.priority || "medium").trim(),
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -964,7 +961,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           closureNote: String(req.body.closure_note || "").trim() || null,
           version: parseInt(req.body.version, 10),
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {

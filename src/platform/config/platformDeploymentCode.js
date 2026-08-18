@@ -35,6 +35,30 @@ function getPlatformDeploymentCode(env) {
 }
 
 /**
+ * String-only deployment code for audit/provisioning callers.
+ * Never returns the resolver object. Never silently falls back.
+ * Full-result consumers should keep using getPlatformDeploymentCode().
+ *
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {{ ok: true, status: 'ok', code: string } | { ok: false, status: 'unavailable'|'invalid', code: null }}
+ */
+function requirePlatformDeploymentCode(env) {
+  const deployment = getPlatformDeploymentCode(env);
+  if (!deployment || deployment.ok !== true) {
+    return {
+      ok: false,
+      status: deployment && deployment.status ? deployment.status : STATUS_UNAVAILABLE,
+      code: null,
+    };
+  }
+  const code = typeof deployment.code === "string" ? deployment.code.trim() : "";
+  if (!code || !DEPLOYMENT_CODE_PATTERN.test(code)) {
+    return { ok: false, status: STATUS_INVALID, code: null };
+  }
+  return { ok: true, status: STATUS_OK, code };
+}
+
+/**
  * One compact warning when diagnostic mode is on but deployment identity is missing/invalid.
  * @param {'off'|'diagnostic'} mode
  * @param {{ ok: boolean, status: string }} identity
@@ -64,6 +88,7 @@ module.exports = {
   STATUS_UNAVAILABLE,
   STATUS_INVALID,
   getPlatformDeploymentCode,
+  requirePlatformDeploymentCode,
   warnOnceIfDiagnosticDeploymentUnavailable,
   resetPlatformDeploymentCodeWarningForTests,
 };

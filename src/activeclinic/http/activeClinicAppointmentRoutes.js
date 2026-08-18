@@ -54,10 +54,7 @@ const {
   getPatientByOrgAndNumber,
   getPatientByOrgAndId,
 } = require("../services/activeClinicPatientService");
-const {
-  CODE_ACTIVECLINIC_ORG_V6,
-} = require("../../platform/config/deploymentProfiles");
-const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -443,7 +440,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
           schedulingNote: values.schedulingNote || null,
           reminderChannel: values.reminderChannel,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!created.ok) {
           const loaded = await loadActiveClinicAppointmentFormScreen(pool, {
@@ -716,7 +713,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
           assignedStaffId: values.assignedStaffId || null,
           schedulingNote: values.schedulingNote || null,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!updated.ok) {
           return res.status(400).type("html").send(
@@ -782,7 +779,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
           timezone: values.timezone,
           schedulingNote: values.schedulingNote || undefined,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!result.ok) {
           return res.status(400).type("html").send(
@@ -813,7 +810,7 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
         appointmentId,
         actor: actor(auth),
         reason: String(req.body.reason || "").trim() || undefined,
-        deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+        deploymentCode: requirePlatformDeploymentCode(env).code,
       });
       if (!result.ok) {
         return res.status(400).type("html").send(

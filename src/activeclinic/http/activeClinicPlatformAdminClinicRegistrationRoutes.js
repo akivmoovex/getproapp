@@ -18,7 +18,7 @@ const {
   markClinicRegistrationInformationReturned,
   addClinicRegistrationReviewNote,
 } = require("../services/clinicRegistrationReviewService");
-const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const { getDeploymentEnvMode } = require("../../church/blessBoardEnv");
 
 function actorId(req) {
@@ -38,19 +38,16 @@ function isAcknowledged(body) {
 /**
  * Provisioning and review audit require a deployment-code string.
  * getPlatformDeploymentCode() returns { ok, status, code } — never pass that object through.
+ * requirePlatformDeploymentCode() returns a string on success and fails closed otherwise.
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {{ ok: true, code: string } | { ok: false, error: string }}
  */
 function resolveClinicRegistrationDeploymentCode(env) {
-  const deployment = getPlatformDeploymentCode(env);
-  if (!deployment || deployment.ok !== true) {
+  const required = requirePlatformDeploymentCode(env);
+  if (!required.ok) {
     return { ok: false, error: "deployment_unavailable" };
   }
-  const code = typeof deployment.code === "string" ? deployment.code.trim() : "";
-  if (!code) {
-    return { ok: false, error: "deployment_unavailable" };
-  }
-  return { ok: true, code };
+  return { ok: true, code: required.code };
 }
 
 function registerActiveClinicPlatformAdminClinicRegistrationRoutes(router, deps) {

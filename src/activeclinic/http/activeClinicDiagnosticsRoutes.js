@@ -59,10 +59,7 @@ const {
   canViewRadiology,
   canEnterDiagnosticsHub,
 } = require("../services/activeClinicDiagnosticsService");
-const {
-  CODE_ACTIVECLINIC_ORG_V6,
-} = require("../../platform/config/deploymentProfiles");
-const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -430,7 +427,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
           collectionMethod: String(req.body.collection_method || "").trim() || null,
           collectionSite: String(req.body.collection_site || "").trim() || null,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -518,7 +515,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
           specimenId,
           eventNote: String(req.body.event_note || "").trim() || null,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -596,7 +593,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
           specimenId,
           rejectionReason: String(req.body.rejection_reason || "").trim(),
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -689,7 +686,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
           isCritical: req.body.is_critical === "1" || req.body.is_critical === "true",
           components,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -869,7 +866,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
           technique: String(req.body.technique || "").trim() || null,
           isCritical: req.body.is_critical === "1" || req.body.is_critical === "true",
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {
@@ -961,7 +958,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
           recipientName: String(req.body.recipient_name || "").trim(),
           notificationMethod: String(req.body.notification_method || "").trim(),
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
 
         if (!result.ok) {

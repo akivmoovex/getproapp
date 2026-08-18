@@ -14,8 +14,29 @@ const { renderPublicPage } = require("./renderActiveClinicPublic");
  * @param {import('express').Response} res
  * @param {{ env: NodeJS.ProcessEnv, isProduction: boolean, issuePageCsrf: Function }} deps
  */
+function pageCsrfToken(res, deps) {
+  if (deps && typeof deps.issuePageCsrf === "function") {
+    return deps.issuePageCsrf(res, deps.env, deps.isProduction);
+  }
+  return "";
+}
+
+function clinicResolveFailurePayload(result) {
+  const code = result && result.code ? String(result.code) : RESULT.NOT_FOUND;
+  if (code === RESULT.WEBSITE_OFFLINE) {
+    return { status: 403, code: RESULT.WEBSITE_OFFLINE };
+  }
+  if (code === RESULT.WEBSITE_SUSPENDED) {
+    return { status: 403, code: RESULT.WEBSITE_SUSPENDED };
+  }
+  if (code === RESULT.NOT_PUBLISHED) {
+    return { status: 403, code: RESULT.NOT_PUBLISHED };
+  }
+  return { status: 404, code: RESULT.NOT_FOUND };
+}
+
 function sendClinicNotFound(res, deps) {
-  const csrfToken = deps.issuePageCsrf(res, deps.env, deps.isProduction);
+  const csrfToken = pageCsrfToken(res, deps);
   return res.status(404).type("html").send(renderPublicPage({
     pageId: "tenant-clinic-not-found",
     pageTitle: "Clinic not found",
@@ -30,7 +51,7 @@ function sendClinicNotFound(res, deps) {
  * @param {{ env: NodeJS.ProcessEnv, isProduction: boolean, issuePageCsrf: Function }} deps
  */
 function sendClinicUnavailable(res, deps) {
-  const csrfToken = deps.issuePageCsrf(res, deps.env, deps.isProduction);
+  const csrfToken = pageCsrfToken(res, deps);
   return res.status(403).type("html").send(renderPublicPage({
     pageId: "tenant-clinic-unavailable",
     pageTitle: "Clinic unavailable",
@@ -46,7 +67,7 @@ function sendClinicUnavailable(res, deps) {
  * @param {{ env: NodeJS.ProcessEnv, isProduction: boolean, issuePageCsrf: Function }} deps
  */
 function sendClinicWebsiteOffline(res, deps, kind) {
-  const csrfToken = deps.issuePageCsrf(res, deps.env, deps.isProduction);
+  const csrfToken = pageCsrfToken(res, deps);
   const suspended = kind === "suspended";
   return res.status(403).type("html").send(renderPublicPage({
     pageId: suspended ? "tenant-clinic-website-suspended" : "tenant-clinic-website-offline",
@@ -68,6 +89,23 @@ function sendClinicResolveFailure(res, result, deps) {
     return sendClinicUnavailable(res, deps);
   }
   return sendClinicNotFound(res, deps);
+}
+
+/**
+ * JSON/API clinic resolve failure. Does not require page CSRF helpers.
+ * Maps to the same status/code policy as the HTML public pages.
+ */
+function sendClinicResolveFailureJson(res, result) {
+  const mapped = clinicResolveFailurePayload(result);
+  return res.status(mapped.status).json({ ok: false, code: mapped.code });
+}
+
+function isWebsiteApiRequest(req) {
+  const path = String((req && (req.path || req.originalUrl)) || "");
+  if (req && req.method === "GET" && /\/website\/preview\/?$/.test(path.split("?")[0])) {
+    return false;
+  }
+  return /\/website\//.test(path);
 }
 
 /**
@@ -108,5 +146,8 @@ module.exports = {
   sendClinicNotFound,
   sendClinicUnavailable,
   sendClinicResolveFailure,
+  sendClinicResolveFailureJson,
+  clinicResolveFailurePayload,
+  isWebsiteApiRequest,
   resolveClinicOrRespond,
 };

@@ -33,10 +33,7 @@ const {
   RESULT: LINK_RESULT,
 } = require("../services/activeClinicBookingPatientLinkageService");
 const { PERM } = require("../services/activeClinicPatientService");
-const {
-  CODE_ACTIVECLINIC_ORG_V6,
-} = require("../../platform/config/deploymentProfiles");
-const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -231,7 +228,7 @@ function registerActiveClinicBookingLinkageRoutes(app, deps) {
           patientId: resolvedPatientId,
           actor: actorFromAuth(auth),
           source: "staff_review",
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!linked.ok) {
           const loaded = await loadBookingRequestDetailScreen(getPool(), {
@@ -281,7 +278,7 @@ function registerActiveClinicBookingLinkageRoutes(app, deps) {
           sexAtRegistration: req.body.sex_at_registration || null,
           duplicateOverride: req.body.duplicate_override === "1",
           duplicateOverrideReason: String(req.body.duplicate_override_reason || "").trim(),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!created.ok) {
           const loaded = await loadBookingRequestDetailScreen(getPool(), {

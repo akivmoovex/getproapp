@@ -18,6 +18,8 @@ const {
 } = require("../services/activeClinicPublicVisibilityService");
 const {
   sendClinicResolveFailure,
+  sendClinicResolveFailureJson,
+  isWebsiteApiRequest,
 } = require("./activeClinicPublicRespond");
 
 function json(res, status, body) {
@@ -42,17 +44,24 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
   const getPool = deps.getPool;
   const env = deps.env;
 
+  function sendResolveFailure(req, res, result) {
+    if (isWebsiteApiRequest(req)) {
+      return sendClinicResolveFailureJson(res, result);
+    }
+    return sendClinicResolveFailure(res, result, deps.respondDeps || deps);
+  }
+
   async function loadClinic(req, res) {
     const result = await resolvePublishableClinicByKey(getPool(), {
       clinicKey: req.params.clinicKey,
       allowUnpublished: true,
     });
     if (!result.ok) {
-      sendClinicResolveFailure(res, result, deps.respondDeps || deps);
+      sendResolveFailure(req, res, result);
       return null;
     }
     if (result.clinic.websitePublished !== true && !canEditClinicWebsite(req, result.clinic)) {
-      sendClinicResolveFailure(res, { ok: false, code: "clinic_not_published" }, deps.respondDeps || deps);
+      sendResolveFailure(req, res, { ok: false, code: "clinic_not_published" });
       return null;
     }
     return result.clinic;

@@ -12,6 +12,9 @@ const path = require("node:path");
 const {
   resolveClinicRegistrationDeploymentCode,
 } = require("../src/activeclinic/http/activeClinicPlatformAdminClinicRegistrationRoutes");
+const {
+  requirePlatformDeploymentCode,
+} = require("../src/platform/config/platformDeploymentCode");
 const { CODE_MOOVEX_PLATFORM_TESTING } = require("../src/platform/config/deploymentProfiles");
 
 describe("clinic registration deployment-code unwrap", () => {
@@ -55,5 +58,19 @@ describe("clinic registration deployment-code unwrap", () => {
     );
     assert.doesNotMatch(src, /deploymentCode:\s*getPlatformDeploymentCode\(env\)/);
     assert.match(src, /deploymentCode:\s*deployment\.code/);
+    assert.match(src, /requirePlatformDeploymentCode/);
+  });
+
+  it("shares requirePlatformDeploymentCode for the testing profile", () => {
+    const required = requirePlatformDeploymentCode({
+      PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING,
+    });
+    const resolved = resolveClinicRegistrationDeploymentCode({
+      PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING,
+    });
+    assert.equal(required.ok, true);
+    assert.equal(resolved.ok, true);
+    assert.equal(required.code, resolved.code);
+    assert.equal(required.code, "moovex-platform-testing");
   });
 });

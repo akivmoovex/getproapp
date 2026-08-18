@@ -56,10 +56,7 @@ const {
 const {
   getPatientByOrgAndNumber,
 } = require("../services/activeClinicPatientService");
-const {
-  CODE_ACTIVECLINIC_ORG_V6,
-} = require("../../platform/config/deploymentProfiles");
-const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -310,7 +307,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
           appointmentId,
           checkInNote: checkInNote || null,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!arrival.ok) {
           const loaded = await loadActiveClinicReceptionCheckInScreen(pool, {
@@ -334,7 +331,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
           servicePointId,
           arrivalId: arrival.arrival.id,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!queue.ok) {
           return res.status(400).type("html").send(
@@ -456,7 +453,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
           patientId: patient.patient.id,
           checkInNote: checkInNote || null,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!arrival.ok) {
           const loaded = await loadActiveClinicReceptionWalkInScreen(pool, {
@@ -480,7 +477,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
           servicePointId,
           arrivalId: arrival.arrival.id,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!queue.ok) {
           return res.status(400).type("html").send(
@@ -573,7 +570,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
         actor: actor(auth),
         reason: String(req.body.reason || "").trim() || undefined,
         assignedRoom: String(req.body.assigned_room || "").trim() || undefined,
-        deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+        deploymentCode: requirePlatformDeploymentCode(env).code,
       });
       if (result && result.responseSent) return;
       if (!result.ok) {
@@ -736,7 +733,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
           toStatus: "waiting",
           reason: String(req.body.reason || "").trim() || "requeued",
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!result.ok) {
           if (result.code === QUEUE_RESULT.STALE_VERSION) {
@@ -832,7 +829,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
           queueEntryId: entryId,
           actor: actor(auth),
           reason: `Transfer to ${destination.displayName}${note ? `: ${note}` : ""}`.slice(0, 200),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!result.ok) {
           return res.status(400).type("html").send(
@@ -868,7 +865,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
           queueEntryId: entryId,
           assignedRoom: String(req.body.assigned_room || "").trim() || null,
           actor: actor(auth),
-          deploymentCode: getPlatformDeploymentCode(env) || CODE_ACTIVECLINIC_ORG_V6,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
         });
         if (!result.ok) {
           if (result.code === QUEUE_RESULT.STALE_VERSION) {
