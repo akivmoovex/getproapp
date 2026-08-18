@@ -24,7 +24,8 @@
   </div>
 
   <p class="ac-public-actions">
-    <a class="ac-btn ac-btn--primary" href="/login">Go to sign in</a>
+    <a class="ac-btn ac-btn--primary" href="/register-clinic/status<%= typeof applicationReference === 'string' && applicationReference ? ('?ref=' + encodeURIComponent(applicationReference)) : '' %>" data-ac-status-lookup-link="1">Check application status</a>
+    <a class="ac-btn ac-btn--secondary" href="/login">Go to sign in</a>
     <a class="ac-btn ac-btn--secondary" href="/">Return home</a>
   </p>
 </section>

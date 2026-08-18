@@ -16,7 +16,7 @@ const {
 } = require("../services/activeClinicPublicMediaService");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-parity-15";
+const ASSET_VERSION = "v7-parity-16";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -121,6 +121,7 @@ function renderPublicView(relativePath, data) {
     locals: data || {},
     shellVariant: (data && data.shellVariant) || (data && data.clinic ? "tenant" : "platform"),
     metaDescription: data && data.metaDescription,
+    robots: data && data.robots,
   });
 }
 

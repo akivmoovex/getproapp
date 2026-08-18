@@ -24,6 +24,10 @@ const {
   createClinicRegistrationApplication,
 } = require("../services/activeClinicPublicOnboardingService");
 const {
+  lookupClinicRegistrationApplicantStatus,
+  GENERIC_NOT_FOUND,
+} = require("../services/clinicRegistrationApplicantStatusService");
+const {
   createPublicContactInquiry,
 } = require("../services/activeClinicPublicContactService");
 const {
@@ -66,6 +70,18 @@ function resolveDirectorySearchQuery(req) {
   const q = req.query.q != null ? String(req.query.q) : "";
   const search = req.query.search != null ? String(req.query.search) : "";
   return (q || search || "").trim();
+}
+
+function statusFormDataFrom(body, query) {
+  const fd = body || {};
+  const q = query || {};
+  return {
+    applicationNumber: String(fd.applicationNumber || q.ref || q.applicationNumber || "").trim(),
+    contactEmail: String(fd.contactEmail || "").trim(),
+    contactPhone: String(fd.contactPhone || "").trim(),
+    phoneCountry: String(fd.phone_country || fd.phoneCountry || "").trim(),
+    phoneNational: String(fd.phone_national || fd.phoneNational || "").trim(),
+  };
 }
 
 function registerFormDataFromBody(body) {
@@ -164,6 +180,27 @@ function registerActiveClinicPublicRoutes(app, deps) {
     keyGenerator: (req) => sha256Hex(`lookup|${req.query.token || ""}|${clientIp(req)}`),
     handler: (req, res) => {
       return res.status(429).json({ ok: false, code: "rate_limit_exceeded" });
+    },
+  });
+
+  const statusLimiter = rateLimit({
+    windowMs: 15 * 60 * 1000,
+    limit: String(env.NODE_ENV || "") === "test" ? 1000 : 20,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: (req) => sha256Hex(`clinic-status|${clientIp(req)}`),
+    handler: (req, res) => {
+      const csrfToken = issuePageCsrf(res, env, isProduction, req);
+      return res.status(429).type("html").send(renderPublicView("public/register-clinic-status", {
+        csrfToken,
+        pageTitle: "Check application status",
+        robots: "noindex, nofollow",
+        lookupState: "form",
+        error: "Too many requests. Please try again later.",
+        validationErrors: {},
+        formData: statusFormDataFrom(req.body, req.query),
+        projection: null,
+      }));
     },
   });
 
@@ -476,6 +513,72 @@ function registerActiveClinicPublicRoutes(app, deps) {
       csrfToken,
       applicationReference: applicationReference || null,
     }));
+  });
+
+  app.get("/register-clinic/status", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
+    return res.status(200).type("html").send(renderPublicView("public/register-clinic-status", {
+      csrfToken,
+      pageTitle: "Check application status",
+      robots: "noindex, nofollow",
+      lookupState: "form",
+      error: null,
+      validationErrors: {},
+      formData: statusFormDataFrom({}, req.query),
+      projection: null,
+    }));
+  });
+
+  app.post("/register-clinic/status", statusLimiter, async (req, res, next) => {
+    const formData = statusFormDataFrom(req.body, req.query);
+    if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+      const csrfToken = issuePageCsrf(res, env, isProduction, req);
+      return res.status(403).type("html").send(renderPublicView("public/register-clinic-status", {
+        csrfToken,
+        pageTitle: "Check application status",
+        robots: "noindex, nofollow",
+        lookupState: "form",
+        error: "Your session expired. Please try again.",
+        validationErrors: {},
+        formData,
+        projection: null,
+      }));
+    }
+    try {
+      const result = await lookupClinicRegistrationApplicantStatus(getPool(), {
+        applicationNumber: formData.applicationNumber,
+        contactEmail: formData.contactEmail,
+        contactPhone: formData.contactPhone,
+        phoneCountry: formData.phoneCountry,
+        phoneNational: formData.phoneNational,
+      });
+      const csrfToken = issuePageCsrf(res, env, isProduction, req);
+      if (!result.ok) {
+        const invalid = result.code === "invalid_input";
+        return res.status(200).type("html").send(renderPublicView("public/register-clinic-status", {
+          csrfToken,
+          pageTitle: "Check application status",
+          robots: "noindex, nofollow",
+          lookupState: "form",
+          error: invalid ? result.message : GENERIC_NOT_FOUND,
+          validationErrors: result.errors || {},
+          formData,
+          projection: null,
+        }));
+      }
+      return res.status(200).type("html").send(renderPublicView("public/register-clinic-status", {
+        csrfToken,
+        pageTitle: "Check application status",
+        robots: "noindex, nofollow",
+        lookupState: "result",
+        error: null,
+        validationErrors: {},
+        formData,
+        projection: result.projection,
+      }));
+    } catch (err) {
+      return next(err);
+    }
   });
 
   // ========== Tenant Public Routes ==========
