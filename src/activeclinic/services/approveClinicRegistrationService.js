@@ -29,10 +29,14 @@ const {
 const { ensureDefaultDepartments } = require("./activeClinicDepartmentService");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const { recordWebsiteAudit } = require("../../platform/website/auditService");
-const { appendReviewEvent } = require("./clinicRegistrationReviewService");
+const { appendReviewEvent, updateReviewEventDelivery } = require("./clinicRegistrationReviewService");
 const {
   resolveClinicRegistrationIdentityCollision,
 } = require("./clinicRegistrationIdentityCollisionService");
+const {
+  TEMPLATE,
+  sendActiveClinicEmail,
+} = require("./activeClinicEmailDelivery");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -96,6 +100,60 @@ async function updateApplication(client, id, patch) {
       WHERE id = $${values.length}`,
     values
   );
+}
+
+async function readyEmailAlreadyAccepted(client, applicationId) {
+  const result = await client.query(
+    `SELECT 1 FROM activeclinic.clinic_registration_review_events
+      WHERE application_id = $1
+        AND event_type = 'approval'
+        AND delivery_status IN ('queued', 'sent')
+      LIMIT 1`,
+    [applicationId]
+  );
+  return Boolean(result.rows[0]);
+}
+
+async function markLatestApprovalDelivery(client, applicationId, deliveryStatus) {
+  const latest = await client.query(
+    `SELECT id FROM activeclinic.clinic_registration_review_events
+      WHERE application_id = $1 AND event_type = 'approval'
+      ORDER BY created_at DESC, id DESC
+      LIMIT 1`,
+    [applicationId]
+  );
+  if (!latest.rows[0]) return;
+  await updateReviewEventDelivery(client, latest.rows[0].id, deliveryStatus);
+}
+
+async function maybeSendReadyToSignInEmail(client, input) {
+  const app = input.application;
+  if (!app || String(app.status) !== "approved") {
+    return { skipped: true };
+  }
+  const provisioning = String(app.provisioning_status || "");
+  if (provisioning !== "provisioned" && provisioning !== "website_pending") {
+    return { skipped: true };
+  }
+  if (!input.loginEligible) return { skipped: true };
+  if (await readyEmailAlreadyAccepted(client, app.id)) {
+    return { skipped: true, duplicate: true };
+  }
+  const result = await sendActiveClinicEmail({
+    env: input.env,
+    adapter: input.emailAdapter,
+    publicOrigin: input.publicOrigin,
+    deploymentCode: input.deploymentCode,
+    templateKey: TEMPLATE.READY_TO_SIGN_IN,
+    recipient: app.contact_email_normalized,
+    idempotencyKey: `ready_to_sign_in:${app.id}`,
+    fields: {
+      clinicName: app.clinic_name,
+      applicationNumber: app.application_number,
+    },
+  });
+  await markLatestApprovalDelivery(client, app.id, result.reviewDeliveryStatus);
+  return result;
 }
 
 async function ensureClinicAdmin(client, input) {
@@ -194,6 +252,14 @@ async function approveAndProvisionClinicRegistration(db, input) {
         healthcareOrganizationId: app.healthcare_organization_id,
         facilityId: app.facility_id,
         instance,
+        emailDelivery: await maybeSendReadyToSignInEmail(client, {
+          application: app,
+          loginEligible: Boolean(app.clinic_admin_staff_id),
+          env: input.env,
+          emailAdapter: input.emailAdapter,
+          publicOrigin: input.publicOrigin,
+          deploymentCode: input.deploymentCode,
+        }),
       };
     }
 
@@ -416,6 +482,18 @@ async function approveAndProvisionClinicRegistration(db, input) {
       });
     }
 
+    const loginEligible = Boolean(admin.ok && admin.staffMemberId);
+    app.status = "approved";
+    app.provisioning_status = provisioningStatus;
+    const emailDelivery = await maybeSendReadyToSignInEmail(client, {
+      application: app,
+      loginEligible,
+      env: input.env,
+      emailAdapter: input.emailAdapter,
+      publicOrigin: input.publicOrigin,
+      deploymentCode: input.deploymentCode,
+    });
+
     return {
       ok: true,
       code: websiteOk ? RESULT.OK : RESULT.WEBSITE_PENDING,
@@ -428,6 +506,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
       reusedIdentity: admin.reusedIdentity === true,
       slug,
       alreadyProvisioned: false,
+      emailDelivery,
     };
   };
 

@@ -183,7 +183,9 @@ function projectApplicantStatus(application, informationRequest) {
           requestedAt: informationRequest.createdAt
             ? new Date(informationRequest.createdAt).toISOString()
             : null,
-          emailSent: false,
+          emailSent: String(informationRequest.deliveryStatus || "") === "sent",
+          emailDelivery:
+            String(informationRequest.deliveryStatus || "sending_unavailable"),
         }
       : null;
 
@@ -227,7 +229,7 @@ function invalidInputResult(errors) {
 
 async function loadLatestInformationRequest(db, applicationId) {
   const result = await db.query(
-    `SELECT body, created_at
+    `SELECT body, created_at, delivery_status
        FROM activeclinic.clinic_registration_review_events
       WHERE application_id = $1
         AND event_type = 'information_requested'
@@ -238,7 +240,7 @@ async function loadLatestInformationRequest(db, applicationId) {
   );
   const row = result.rows[0];
   if (!row) return null;
-  return { body: row.body, createdAt: row.created_at };
+  return { body: row.body, createdAt: row.created_at, deliveryStatus: row.delivery_status };
 }
 
 /**

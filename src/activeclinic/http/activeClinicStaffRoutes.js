@@ -67,10 +67,10 @@ const { getPlatformDeploymentCode } = require("../../platform/config/platformDep
 
 const DELIVERY_LABELS = Object.freeze({
   link_generated: "Link generated — automated email/SMS is not configured.",
-  sent: "Invitation sent.",
-  queued: "Invitation queued for delivery.",
-  failed: "Delivery failed — use the link below.",
-  unavailable: "Delivery unavailable — use the link below.",
+  sent: "Invitation email recorded as sent. Keep the copyable link below.",
+  queued: "Invitation email accepted for processing. Keep the copyable link below.",
+  failed: "Invitation email failed — use the link below.",
+  unavailable: "Email delivery is unavailable — use the link below.",
   not_requested: "Invitation not requested.",
 });
 

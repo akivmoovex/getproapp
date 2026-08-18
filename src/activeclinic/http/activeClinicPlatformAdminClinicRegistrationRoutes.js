@@ -111,6 +111,7 @@ function registerActiveClinicPlatformAdminClinicRegistrationRoutes(router, deps)
         dataEnvironment: mode === "production" ? "production" : "testing",
         deploymentCode: getPlatformDeploymentCode(env),
         acknowledgeExistingIdentity: isAcknowledged(req.body),
+        env,
       });
       if (!result.ok) {
         return res.redirect(
@@ -134,6 +135,7 @@ function registerActiveClinicPlatformAdminClinicRegistrationRoutes(router, deps)
         actorId: actorId(req),
         requestText: req.body && req.body.request_text,
         deploymentCode: getPlatformDeploymentCode(env),
+        env,
       });
       if (!result.ok) {
         return res.redirect(

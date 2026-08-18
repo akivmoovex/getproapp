@@ -15,6 +15,12 @@ const {
 const {
   resolveClinicRegistrationIdentityCollision,
 } = require("./clinicRegistrationIdentityCollisionService");
+const {
+  TEMPLATE,
+  sendActiveClinicEmail,
+  formatReviewDeliveryHint,
+  emailClaimedSent,
+} = require("./activeClinicEmailDelivery");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -118,10 +124,32 @@ function presentEvent(row) {
     actorId: row.actor_id || null,
     actorLabel: row.actor_label != null ? String(row.actor_label) : null,
     deliveryStatus,
-    deliveryClaimedSent: deliveryStatus === "sent",
+    deliveryClaimedSent: emailClaimedSent(deliveryStatus),
+    deliveryHint: formatReviewDeliveryHint(eventType, deliveryStatus),
     createdAt: row.created_at,
     isInternalNote: eventType === "note",
   };
+}
+
+async function updateReviewEventDelivery(client, eventId, deliveryStatus) {
+  const id = String(eventId || "").trim();
+  if (!UUID_RE.test(id)) return null;
+  let status = String(deliveryStatus || "");
+  if (
+    !["not_applicable", "recorded", "sending_unavailable", "queued", "sent", "failed"].includes(
+      status
+    )
+  ) {
+    status = "recorded";
+  }
+  const updated = await client.query(
+    `UPDATE activeclinic.clinic_registration_review_events
+        SET delivery_status = $2
+      WHERE id = $1
+      RETURNING id, delivery_status`,
+    [id, status]
+  );
+  return updated.rows[0] || null;
 }
 
 async function loadApplication(client, applicationId) {
@@ -235,9 +263,46 @@ async function maybePlatformAudit(client, app, input) {
   });
 }
 
+async function deliverInformationRequestedEmail(client, input) {
+  const eventId = input && input.eventId;
+  if (!eventId) {
+    return { deliveryStatus: "sending_unavailable", emailSent: false };
+  }
+  const existing = await client.query(
+    `SELECT delivery_status FROM activeclinic.clinic_registration_review_events WHERE id = $1`,
+    [eventId]
+  );
+  const current = existing.rows[0] && existing.rows[0].delivery_status;
+  if (current === "queued" || current === "sent") {
+    return { deliveryStatus: current, emailSent: current === "sent", skipped: true };
+  }
+  const result = await sendActiveClinicEmail({
+    env: input.env,
+    adapter: input.emailAdapter,
+    publicOrigin: input.publicOrigin,
+    deploymentCode: input.deploymentCode,
+    templateKey: TEMPLATE.INFORMATION_REQUESTED,
+    recipient: input.recipient,
+    idempotencyKey: `information_requested:${eventId}`,
+    fields: {
+      clinicName: input.clinicName,
+      applicationNumber: input.applicationNumber,
+      requestText: input.requestText,
+      requestedAt: input.requestedAt,
+    },
+  });
+  const deliveryStatus = result.reviewDeliveryStatus || "sending_unavailable";
+  await updateReviewEventDelivery(client, eventId, deliveryStatus);
+  return {
+    deliveryStatus,
+    emailSent: deliveryStatus === "sent",
+    skipped: false,
+  };
+}
+
 /**
  * Record an information request. Application status stays pending_review.
- * Follow-up becomes awaiting_customer. Does not send email/SMS.
+ * Follow-up becomes awaiting_customer. Email is attempted after the request is recorded.
  */
 async function requestClinicRegistrationInformation(db, input) {
   const applicationId = String((input && input.applicationId) || "").trim();
@@ -255,9 +320,10 @@ async function requestClinicRegistrationInformation(db, input) {
       return { ok: false, code: RESULT.NOT_ELIGIBLE, application: app };
     }
     await ensureReviewStarted(client, app, input.actorId);
+    const requestedAt = new Date().toISOString();
     await updateApplication(client, app.id, {
       follow_up_status: "awaiting_customer",
-      information_requested_at: new Date().toISOString(),
+      information_requested_at: requestedAt,
       information_requested_by_id: UUID_RE.test(String(input.actorId || ""))
         ? String(input.actorId)
         : null,
@@ -270,6 +336,26 @@ async function requestClinicRegistrationInformation(db, input) {
       visibility: "history",
       deliveryStatus: "sending_unavailable",
     });
+    const delivered = await deliverInformationRequestedEmail(client, {
+      eventId: event.event && event.event.id,
+      env: input.env,
+      emailAdapter: input.emailAdapter,
+      publicOrigin: input.publicOrigin,
+      deploymentCode: input.deploymentCode,
+      recipient: app.contact_email_normalized,
+      clinicName: app.clinic_name,
+      applicationNumber: app.application_number,
+      requestText,
+      requestedAt,
+    });
+    if (event.event) {
+      event.event.deliveryStatus = delivered.deliveryStatus;
+      event.event.deliveryClaimedSent = delivered.emailSent;
+      event.event.deliveryHint = formatReviewDeliveryHint(
+        "information_requested",
+        delivered.deliveryStatus
+      );
+    }
     await maybePlatformAudit(client, app, {
       deploymentCode: input.deploymentCode,
       actionKey: "activeclinic.clinic_registration.information_requested",
@@ -281,8 +367,8 @@ async function requestClinicRegistrationInformation(db, input) {
       code: RESULT.OK,
       applicationStatus: "pending_review",
       followUpStatus: "awaiting_customer",
-      deliveryStatus: "sending_unavailable",
-      emailSent: false,
+      deliveryStatus: delivered.deliveryStatus,
+      emailSent: delivered.emailSent,
       event: event.event,
     };
   });
@@ -513,6 +599,8 @@ module.exports = {
   EVENT_TYPES,
   EVENT_LABELS,
   appendReviewEvent,
+  updateReviewEventDelivery,
+  deliverInformationRequestedEmail,
   requestClinicRegistrationInformation,
   markClinicRegistrationInformationReturned,
   addClinicRegistrationReviewNote,

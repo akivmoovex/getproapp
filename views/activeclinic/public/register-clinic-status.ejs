@@ -78,7 +78,16 @@
       <p class="ac-form-hint">Requested <%= status.informationRequest.requestedAt.slice(0, 10) %></p>
       <% } %>
       <p data-ac-info-request-body="1"><%= status.informationRequest.body %></p>
+      <% const mailState = status.informationRequest.emailDelivery || (status.informationRequest.emailSent ? 'sent' : 'sending_unavailable'); %>
+      <% if (mailState === 'sent') { %>
+      <p class="ac-form-hint">An email was recorded as sent to the address on the application. No SMS was sent from ActiveClinic.</p>
+      <% } else if (mailState === 'queued') { %>
+      <p class="ac-form-hint">An email was accepted for processing to the address on the application. Delivery is not confirmed. No SMS was sent from ActiveClinic.</p>
+      <% } else if (mailState === 'failed') { %>
+      <p class="ac-form-hint">Email delivery failed. Please contact the review team using your existing support channel and quote your application number. No SMS was sent from ActiveClinic.</p>
+      <% } else { %>
       <p class="ac-form-hint">No email or SMS was sent from ActiveClinic. Please contact the review team using your existing support channel and quote your application number.</p>
+      <% } %>
     </div>
     <% } %>
 

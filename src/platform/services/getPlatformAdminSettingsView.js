@@ -102,10 +102,20 @@ function resolveSmsStatus(env) {
 
 function resolveEmailStatus(env) {
   const e = env || process.env;
-  if (e.SMTP_URL || e.SENDGRID_API_KEY || e.POSTMARK_SERVER_TOKEN || e.EMAIL_DELIVERY_ADAPTER) {
-    return providerStatusLabel(true, null);
+  const nodeEnv = String(e.NODE_ENV || "").trim().toLowerCase();
+  const deploymentEnv = String(e.DEPLOYMENT_ENV || "").trim().toLowerCase();
+  const adapterName = String(
+    e.ACTIVECLINIC_EMAIL_DELIVERY_ADAPTER || e.EMAIL_DELIVERY_ADAPTER || ""
+  )
+    .trim()
+    .toLowerCase();
+  if (nodeEnv !== "production" || deploymentEnv !== "production") {
+    return providerStatusLabel(false, "email_sending_unavailable");
   }
-  return providerStatusLabel(false, "email_sending_unavailable");
+  if (!adapterName || adapterName === "none" || adapterName === "unavailable") {
+    return providerStatusLabel(false, "adapter_not_selected");
+  }
+  return providerStatusLabel(false, "adapter_not_enabled");
 }
 
 function resolveWhatsAppStatus() {

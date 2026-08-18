@@ -251,8 +251,10 @@
         <span class="bb-pa-hint"><%= ev.createdAt ? new Date(ev.createdAt).toISOString() : '' %></span>
         <% if (ev.actorLabel) { %><span class="bb-pa-hint"> · <%= ev.actorLabel %></span><% } %>
         <% if (ev.body) { %><p><%= ev.body %></p><% } %>
-        <% if (ev.eventType === 'information_requested' || ev.eventType === 'rejection') { %>
-        <p class="bb-pa-hint" data-ac-delivery-status="<%= ev.deliveryStatus || 'sending_unavailable' %>"><%= ev.deliveryClaimedSent ? 'Outbound message sent.' : 'Recorded only. Email was not sent.' %></p>
+        <% if (ev.eventType === 'information_requested' || ev.eventType === 'rejection' || ev.eventType === 'approval') { %>
+        <% if (ev.deliveryHint) { %>
+        <p class="bb-pa-hint" data-ac-delivery-status="<%= ev.deliveryStatus || 'sending_unavailable' %>"><%= ev.deliveryHint %></p>
+        <% } %>
         <% } %>
       </li>
       <% }) %>

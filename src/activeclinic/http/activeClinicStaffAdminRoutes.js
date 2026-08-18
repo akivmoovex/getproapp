@@ -112,6 +112,17 @@ function registerActiveClinicStaffAdminRoutes(app, deps) {
 
   function renderInvitePanel(payload, csrfToken) {
     const share = payload.share || {};
+    const delivery = payload.deliveryStatus || "link_generated";
+    let deliveryNote = "Link generated — automated email/SMS is not configured.";
+    if (delivery === "queued") {
+      deliveryNote = "Invitation email accepted for processing. Keep the copyable link below.";
+    } else if (delivery === "sent") {
+      deliveryNote = "Invitation email recorded as sent. Keep the copyable link below.";
+    } else if (delivery === "failed") {
+      deliveryNote = "Invitation email failed — use the link below.";
+    } else if (delivery === "unavailable") {
+      deliveryNote = "Email delivery is unavailable — use the link below.";
+    }
     const wa = share.whatsappUrl
       ? `<p><a data-ac-invite-whatsapp="1" href="${escapeHtml(share.whatsappUrl)}" target="_blank" rel="noopener">Share on WhatsApp</a></p>`
       : "";
@@ -134,7 +145,7 @@ a{color:#0f766e}
   <h1>Invitation ready</h1>
   <div class="ac-card">
     <p><strong>${escapeHtml(payload.staffMember && payload.staffMember.displayName)}</strong></p>
-    <p class="ac-muted">Delivery: ${escapeHtml(payload.deliveryStatus || "link_generated")} — automated email/SMS is not configured.</p>
+    <p class="ac-muted" data-ac-delivery="${escapeHtml(delivery)}">${escapeHtml(deliveryNote)}</p>
     <label for="invite_url">Activation link</label>
     <input id="invite_url" readonly value="${escapeHtml(payload.activationUrl || "")}"/>
     <button type="button" data-ac-copy-invite="1">Copy link</button>

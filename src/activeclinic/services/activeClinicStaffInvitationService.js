@@ -40,6 +40,10 @@ const {
   DELIVERY,
 } = require("./activeClinicShareLinks");
 const {
+  TEMPLATE,
+  sendActiveClinicEmail,
+} = require("./activeClinicEmailDelivery");
+const {
   getHealthcareOrganizationByOrganizationId,
 } = require("./healthcareOrganizationService");
 
@@ -142,6 +146,46 @@ function buildShareBundle(input) {
       activationUrl,
     }),
   };
+}
+
+async function deliverStaffInvitationEmail(client, input) {
+  const email = input.emailNormalized ? String(input.emailNormalized).trim().toLowerCase() : "";
+  if (!email) {
+    return { deliveryStatus: DELIVERY.LINK_GENERATED, skipped: true };
+  }
+  const prior = input.invitation && input.invitation.deliveryStatus;
+  if (prior === "queued" || prior === "sent") {
+    return { deliveryStatus: prior, skipped: true };
+  }
+  const result = await sendActiveClinicEmail({
+    env: input.env,
+    adapter: input.emailAdapter,
+    publicOrigin: input.publicOrigin,
+    deploymentCode: input.deploymentCode,
+    templateKey: TEMPLATE.STAFF_INVITATION,
+    recipient: email,
+    idempotencyKey: input.tokenId ? `staff.invitation:${input.tokenId}` : null,
+    fields: {
+      organizationName: input.organizationName,
+      activationUrl: input.activationUrl,
+      expiresAt: input.expiresAt,
+    },
+  });
+  const deliveryStatus = result.inviteDeliveryStatus || DELIVERY.UNAVAILABLE;
+  if (input.invitation && input.invitation.id) {
+    await invitationRepo.updateInvitation(client, {
+      id: input.invitation.id,
+      patch: {
+        deliveryStatus,
+        deliveryAttemptedAt: new Date().toISOString(),
+        deliveryErrorCode:
+          deliveryStatus === "queued" || deliveryStatus === "sent"
+            ? null
+            : String(result.providerCode || "email_sending_unavailable").slice(0, 80),
+      },
+    });
+  }
+  return { deliveryStatus, skipped: false };
 }
 
 /**
@@ -379,6 +423,18 @@ async function inviteActiveClinicStaff(db, input) {
         organizationName,
         staffDisplayName: linked.staffMember.displayName,
       });
+      const emailed = await deliverStaffInvitationEmail(client, {
+        invitation,
+        tokenId: token.id,
+        emailNormalized: linked.staffMember.emailNormalized,
+        organizationName,
+        activationUrl: shareBundle.activationUrl,
+        expiresAt,
+        env: src.env,
+        emailAdapter: src.emailAdapter,
+        publicOrigin: src.publicOrigin,
+        deploymentCode,
+      });
 
       return {
         ok: true,
@@ -393,7 +449,7 @@ async function inviteActiveClinicStaff(db, input) {
         activationUrl: shareBundle.activationUrl,
         expiresAt,
         share: shareBundle.share,
-        deliveryStatus: DELIVERY.LINK_GENERATED,
+        deliveryStatus: emailed.deliveryStatus,
       };
     } catch (err) {
       try {
@@ -536,6 +592,18 @@ async function reissueStaffInvitation(db, input) {
         organizationName,
         staffDisplayName: staff.staffMember.displayName,
       });
+      const emailed = await deliverStaffInvitationEmail(client, {
+        invitation,
+        tokenId: token.id,
+        emailNormalized: staff.staffMember.emailNormalized,
+        organizationName,
+        activationUrl: shareBundle.activationUrl,
+        expiresAt,
+        env: src.env,
+        emailAdapter: src.emailAdapter,
+        publicOrigin: src.publicOrigin,
+        deploymentCode,
+      });
 
       return {
         ok: true,
@@ -547,7 +615,7 @@ async function reissueStaffInvitation(db, input) {
         activationUrl: shareBundle.activationUrl,
         expiresAt,
         share: shareBundle.share,
-        deliveryStatus: DELIVERY.LINK_GENERATED,
+        deliveryStatus: emailed.deliveryStatus,
       };
     } catch (err) {
       try {
