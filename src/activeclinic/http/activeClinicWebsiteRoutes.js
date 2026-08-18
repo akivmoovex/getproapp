@@ -7,6 +7,7 @@ const contentService = require("../../platform/website/contentService");
 const publicationService = require("../../platform/website/publicationService");
 const submissionService = require("../../platform/website/submissionService");
 const mediaService = require("../../platform/website/mediaService");
+const editSessionService = require("../../platform/website/editSessionService");
 const {
   grantedPermissions,
   canEditClinicWebsite,
@@ -127,6 +128,35 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         actorIdentityId: actorId(req),
       });
       return json(res, discarded.ok ? 200 : 400, discarded);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/website/edit-session/finish", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return json(res, 403, { ok: false, code: "csrf" });
+      }
+      if (!canEditClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const closed = await editSessionService.closeOpenSessionsForInstance(getPool(), {
+        organizationId: clinic.organizationId,
+        instanceId: attached.instance.id,
+        editorIdentityId: actorId(req),
+        reason: editSessionService.CLOSE_REASON.FINISH,
+      });
+      if (req.accepts("html") && !req.xhr && !(req.headers.accept || "").includes("application/json")) {
+        return res.redirect(303, `/clinics/${encodeURIComponent(clinic.clinicKey)}?website_mode=live`);
+      }
+      return json(res, 200, { ok: true, sessions: closed.sessions || [] });
     } catch (err) {
       return next(err);
     }

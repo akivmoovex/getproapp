@@ -220,10 +220,38 @@ function buildWebsiteReviewDiff(input) {
   };
 }
 
+function buildVersionDiff(input) {
+  const current = (input && input.snapshot) || {};
+  const previous = (input && input.previousSnapshot) || {};
+  const currentValues = current.values || {};
+  const previousValues = previous.values || {};
+  const currentVis = current.visibility || {};
+  const previousVis = previous.visibility || {};
+  const listedKeys = Array.isArray(input && input.changedKeys) ? input.changedKeys.filter(Boolean) : [];
+  const keys =
+    listedKeys.length > 0
+      ? listedKeys
+      : [...new Set([...Object.keys(previousValues), ...Object.keys(currentValues)])];
+  const changes = keys.map((contentKey) => ({
+    contentKey,
+    oldValue: previousValues[contentKey],
+    proposedValue: currentValues[contentKey],
+    oldVisibility: previousVis[contentKey] || null,
+    visibility: currentVis[contentKey] || "visible",
+  }));
+  const diff = buildWebsiteReviewDiff({
+    snapshot: { ...current, changes, changedKeys: keys },
+    template: input && input.template,
+    changedKeys: keys,
+  });
+  return { ...diff, source: "version_snapshot" };
+}
+
 module.exports = {
   CHANGE_TYPES,
   classifyChange,
   buildWebsiteReviewDiff,
+  buildVersionDiff,
   presentValue,
   safePublicSrc,
   escapeHtml,

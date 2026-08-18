@@ -8,11 +8,12 @@ const versionService = require("../website/versionService");
 const mediaService = require("../website/mediaService");
 const checklistService = require("../website/checklistService");
 const auditService = require("../website/auditService");
-const { buildWebsiteReviewDiff } = require("../website/reviewDiff");
+const { buildWebsiteReviewDiff, buildVersionDiff } = require("../website/reviewDiff");
 const { PERMISSIONS, hasWebsitePermission } = require("../website/permissions");
 const { ALLOWED_IMAGE_MIME } = require("../website/mediaService");
 const { CSRF_FIELD, validateCsrf } = require("./v5Csrf");
 const { listRecentWebsiteChanges } = require("../website/recentChangesService");
+const { listModerationEvents } = require("../website/moderationEventService");
 const {
   takeWebsiteOffline,
   suspendWebsite,
@@ -27,6 +28,60 @@ const {
   setClinicWebsiteAvailability,
   loadClinicWebsiteOperational,
 } = require("../../activeclinic/services/clinicWebsiteAvailabilityService");
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function formatTs(value) {
+  if (!value) return "";
+  try {
+    return new Date(value).toISOString().replace("T", " ").slice(0, 16) + " UTC";
+  } catch {
+    return String(value).slice(0, 19);
+  }
+}
+
+function decorateVersion(version) {
+  const keys = Array.isArray(version.changedKeys) ? version.changedKeys : [];
+  const pages = [...new Set(keys.map((k) => String(k).split(".")[0]).filter(Boolean))];
+  const sections = [
+    ...new Set(keys.map((k) => String(k).split(".").slice(0, 2).join(".")).filter(Boolean)),
+  ];
+  return {
+    ...version,
+    fieldCount: keys.length,
+    pagesAffected: pages,
+    sectionsAffected: sections,
+    publishedLabel: formatTs(version.publishedAt),
+    sessionStartLabel: formatTs(version.sessionStartedAt),
+    sessionEndLabel: formatTs(version.sessionClosedAt),
+    sessionOpen: version.sessionStatus === "open",
+  };
+}
+
+async function loadEditorLabel(db, identityId) {
+  const map = await loadEditorLabels(db, [identityId]);
+  return map.get(String(identityId || "")) || "Editor";
+}
+
+async function loadEditorLabels(db, identityIds) {
+  const labels = new Map();
+  const ids = [...new Set((identityIds || []).map((id) => String(id || "")).filter((id) => UUID_RE.test(id)))];
+  if (!ids.length) return labels;
+  try {
+    const rows = await db.query(
+      `SELECT id, primary_email, email_normalized
+         FROM platform.identities WHERE id = ANY($1::uuid[])`,
+      [ids]
+    );
+    for (const row of rows.rows) {
+      labels.set(String(row.id), String(row.primary_email || row.email_normalized || "Editor"));
+    }
+  } catch {
+    /* identities table shape may differ in older fixtures */
+  }
+  return labels;
+}
 
 function actorId(req) {
   const ctx = req.platformAdminContext || {};
@@ -279,10 +334,20 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
       if (instance) {
         const changes = await contentService.listUnpublishedChanges(getPool(), instance, instance.organizationId);
         unpublishedCount = changes.length;
-        versions = (await versionService.listWebsiteVersions(getPool(), {
-          instanceId: instance.id,
-          organizationId: instance.organizationId,
-        })).versions;
+        const listedVersions = (
+          await versionService.listWebsiteVersions(getPool(), {
+            instanceId: instance.id,
+            organizationId: instance.organizationId,
+          })
+        ).versions;
+        const editorLabels = await loadEditorLabels(
+          getPool(),
+          listedVersions.map((v) => v.editorIdentityId)
+        );
+        versions = listedVersions.map((v) => ({
+          ...decorateVersion(v),
+          editorLabel: editorLabels.get(String(v.editorIdentityId || "")) || "Editor",
+        }));
         media = (await mediaService.listWebsiteMedia(getPool(), {
           organizationId: instance.organizationId,
           instanceId: instance.id,
@@ -464,6 +529,165 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         canTakeOffline: canTakeOffline(req),
         canSuspend: canSuspend(req),
         canRestore: canRestore(req),
+      });
+      return res.status(200).type("html").send(html);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.get("/admin/recent-website-changes/:kind/:changeId", requireApex, requirePlatformAdmin, async (req, res, next) => {
+    try {
+      setAdminNoStore(res);
+      const kind = String(req.params.kind || "").trim();
+      const changeId = String(req.params.changeId || "").trim();
+      if (!UUID_RE.test(changeId) || !["version", "submission", "event"].includes(kind)) {
+        return res.status(404).type("html").send("Change not found.");
+      }
+      const pool = getPool();
+      let organizationKey = "";
+      let organizationName = "";
+      let instance = null;
+      let version = null;
+      let previous = null;
+      let reviewDiff = { items: [], count: 0, source: "version_snapshot" };
+      let events = [];
+      let productCode = "";
+      let slug = "";
+      let editorLabel = "Editor";
+      let timestamp = "";
+      let actionKey = "";
+
+      if (kind === "version") {
+        const row = await pool.query(
+          `SELECT v.organization_id
+             FROM platform.website_versions v WHERE v.id = $1 LIMIT 1`,
+          [changeId]
+        );
+        if (!row.rows[0]) return res.status(404).type("html").send("Change not found.");
+        const loaded = await versionService.getWebsiteVersion(pool, {
+          versionId: changeId,
+          organizationId: row.rows[0].organization_id,
+        });
+        if (!loaded.ok) return res.status(404).type("html").send("Change not found.");
+        version = decorateVersion(loaded.version);
+        instance = await instanceRepo.findWebsiteInstanceById(
+          pool,
+          version.instanceId,
+          version.organizationId
+        );
+        if (version.previousVersionId) {
+          const prev = await versionService.getWebsiteVersion(pool, {
+            versionId: version.previousVersionId,
+            organizationId: version.organizationId,
+          });
+          previous = prev.ok ? prev.version : null;
+        }
+        const template = instance
+          ? require("../website/templateRegistry").getWebsiteTemplate(
+              instance.templateId,
+              instance.templateVersion
+            )
+          : null;
+        reviewDiff = buildVersionDiff({
+          snapshot: version.snapshot || {},
+          previousSnapshot: previous && previous.snapshot ? previous.snapshot : {},
+          changedKeys: version.changedKeys,
+          template,
+        });
+        timestamp = version.publishedLabel;
+        editorLabel = await loadEditorLabel(pool, version.editorIdentityId);
+      } else if (kind === "submission") {
+        const row = await pool.query(
+          `SELECT s.*, i.slug, o.organization_key, o.display_name
+             FROM platform.website_submissions s
+             JOIN platform.website_instances i ON i.id = s.instance_id
+             JOIN platform.organizations o ON o.id = s.organization_id
+            WHERE s.id = $1 LIMIT 1`,
+          [changeId]
+        );
+        if (!row.rows[0]) return res.status(404).type("html").send("Change not found.");
+        const sub = submissionService.mapSubmission(row.rows[0]);
+        instance = await instanceRepo.findWebsiteInstanceById(pool, sub.instanceId, sub.organizationId);
+        const template = instance
+          ? require("../website/templateRegistry").getWebsiteTemplate(
+              instance.templateId,
+              instance.templateVersion
+            )
+          : null;
+        reviewDiff = buildWebsiteReviewDiff({
+          snapshot: sub.snapshot || {},
+          template,
+          changedKeys: sub.changedKeys,
+        });
+        organizationKey = row.rows[0].organization_key;
+        organizationName = row.rows[0].display_name;
+        slug = row.rows[0].slug;
+        timestamp = formatTs(sub.submittedAt);
+        editorLabel = await loadEditorLabel(pool, sub.submitterIdentityId);
+      } else {
+        const row = await pool.query(
+          `SELECT * FROM platform.website_moderation_events WHERE id = $1 LIMIT 1`,
+          [changeId]
+        );
+        if (!row.rows[0]) return res.status(404).type("html").send("Change not found.");
+        instance = row.rows[0].instance_id
+          ? await instanceRepo.findWebsiteInstanceById(
+              pool,
+              row.rows[0].instance_id,
+              row.rows[0].organization_id
+            )
+          : null;
+        actionKey = row.rows[0].action_key;
+        timestamp = formatTs(row.rows[0].created_at);
+        editorLabel = await loadEditorLabel(pool, row.rows[0].actor_identity_id);
+      }
+
+      if (instance) {
+        const org = await pool.query(
+          `SELECT organization_key, display_name FROM platform.organizations WHERE id = $1`,
+          [instance.organizationId]
+        );
+        organizationKey = organizationKey || (org.rows[0] && org.rows[0].organization_key) || "";
+        organizationName = organizationName || (org.rows[0] && org.rows[0].display_name) || "";
+        productCode = instance.productCode;
+        slug = slug || instance.slug;
+        const listedEvents = await listModerationEvents(pool, {
+          organizationId: instance.organizationId,
+          instanceId: instance.id,
+          limit: 40,
+        });
+        events = listedEvents.events || [];
+      }
+
+      const html = renderPlatformAdminView("platform-admin/recent-website-change-detail.ejs", {
+        ...buildPlatformAdminShellLocals(req, res, {
+          env,
+          isProduction: String(env.NODE_ENV || "") === "production",
+          activeNav: "recent-website-changes",
+          pageTitle: "Website change details",
+        }),
+        kind,
+        changeId,
+        organizationKey,
+        organizationName,
+        productCode,
+        slug,
+        instance,
+        version,
+        reviewDiff,
+        events,
+        editorLabel,
+        timestamp,
+        actionKey,
+        canModerate: canModerate(req),
+        canTakeOffline: canTakeOffline(req),
+        canSuspend: canSuspend(req),
+        canRestoreVersion: canRestore(req) && kind === "version",
+        canRestoreSite:
+          canRestore(req) &&
+          instance &&
+          (instance.lifecycleStatus === "offline" || instance.lifecycleStatus === "suspended"),
       });
       return res.status(200).type("html").send(html);
     } catch (err) {

@@ -5,6 +5,7 @@ const { recordWebsiteAudit } = require("./auditService");
 const { recordModerationEvent, ACTION } = require("./moderationEventService");
 const { isLifecycleStatus, LIFECYCLE_STATUS } = require("./lifecycleStatus");
 const { isPublishPolicy } = require("./publishPolicy");
+const editSessionService = require("./editSessionService");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -114,6 +115,16 @@ async function applyLifecycle(db, input) {
     targetVersionId: input.targetVersionId || null,
     metadata: { policy: nextPolicy, edit_locked: editLocked, publish_locked: publishLocked },
   });
+  if (
+    nextStatus === LIFECYCLE_STATUS.OFFLINE ||
+    nextStatus === LIFECYCLE_STATUS.SUSPENDED
+  ) {
+    await editSessionService.closeOpenSessionsForInstance(db, {
+      organizationId,
+      instanceId: instance.id,
+      reason: editSessionService.CLOSE_REASON.LIFECYCLE,
+    });
+  }
   return { ok: true, code: RESULT.OK, instance: updated, previous: instance };
 }
 

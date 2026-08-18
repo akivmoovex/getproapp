@@ -22,6 +22,7 @@ const moderationEventService = require("./moderationEventService");
 const lifecycleService = require("./lifecycleService");
 const publicationService = require("./publicationService");
 const recentChangesService = require("./recentChangesService");
+const editSessionService = require("./editSessionService");
 
 module.exports = {
   ...contentTypes,
@@ -46,4 +47,5 @@ module.exports = {
   lifecycleService,
   publicationService,
   recentChangesService,
+  editSessionService,
 };

@@ -1,0 +1,141 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var diff = typeof reviewDiff !== 'undefined' && reviewDiff ? reviewDiff : { items: [], count: 0 };
+  var items = Array.isArray(diff.items) ? diff.items : [];
+  var eventRows = events || [];
+  var inst = instance || null;
+  var ver = version || null;
+  function changeLabel(t) {
+    if (t === 'added') return 'Added';
+    if (t === 'removed') return 'Removed';
+    if (t === 'visibility') return 'Visibility';
+    if (t === 'reorder') return 'Reorder';
+    return 'Changed';
+  }
+%>
+<section class="bb-pa-page bb-pa-website-review" data-recent-website-change-detail="1">
+  <p><a href="/admin/recent-website-changes">Back to Recent Website Changes</a></p>
+  <h1>View changes</h1>
+  <dl class="bb-pa-dl">
+    <dt>Product</dt><dd><%= productCode || '—' %></dd>
+    <dt>Tenant</dt><dd><%= organizationName || organizationKey || '—' %></dd>
+    <dt>Editor</dt><dd><%= editorLabel || 'Editor' %></dd>
+    <dt>When</dt><dd><%= timestamp || '—' %></dd>
+    <dt>Lifecycle</dt><dd><%= inst && inst.lifecycleStatus ? inst.lifecycleStatus : '—' %></dd>
+    <dt>Policy</dt><dd><%= inst && inst.publishPolicy ? inst.publishPolicy : '—' %></dd>
+    <% if (ver) { %>
+    <dt>Version</dt><dd>v<%= ver.versionNumber %> · <%= ver.moderationStatus || ver.status %></dd>
+    <dt>Fields changed</dt><dd><%= ver.fieldCount || 0 %></dd>
+    <dt>Pages / sections</dt>
+    <dd><%= (ver.pagesAffected || []).join(', ') || '—' %> · <%= (ver.sectionsAffected || []).join(', ') || '—' %></dd>
+    <dt>Edit session</dt>
+    <dd>
+      <% if (ver.sessionStartLabel) { %><%= ver.sessionStartLabel %><% if (ver.sessionEndLabel) { %> – <%= ver.sessionEndLabel %><% } %><% } else { %>Not recorded<% } %>
+      <% if (ver.sessionOpen) { %> (open)<% } %>
+    </dd>
+    <% } %>
+    <% if (actionKey) { %>
+    <dt>Event</dt><dd><%= actionKey %></dd>
+    <% } %>
+  </dl>
+
+  <h2>Field changes</h2>
+  <div class="bb-pa-website-diff" data-website-review-diff="1">
+    <% if (!items.length) { %>
+    <p>No field-level diff is stored for this row. Moderation events below may still describe the action.</p>
+    <% } %>
+    <% items.forEach(function (item) { %>
+    <article class="bb-pa-website-diff__item" data-website-diff-key="<%= item.contentKey %>">
+      <header class="bb-pa-website-diff__meta">
+        <p class="bb-pa-website-diff__crumb">
+          <span><%= item.pageLabel %></span> · <span><%= item.sectionKey %></span> · <span><%= item.fieldLabel %></span>
+        </p>
+        <p>
+          <span class="bb-pa-website-diff__badge bb-pa-website-diff__badge--<%= item.changeType %>">
+            <%= changeLabel(item.changeType) %>
+          </span>
+        </p>
+      </header>
+      <div class="bb-pa-website-diff__compare">
+        <div class="bb-pa-website-diff__col" data-website-diff-side="old">
+          <h3>Previous</h3>
+          <% if (item.contentType === 'image') { %>
+            <% if (item.old && item.old.src) { %>
+            <img class="bb-pa-website-diff__thumb" src="<%= item.old.src %>" alt="<%= item.old.alt || 'Previous image' %>" width="240" height="160"/>
+            <% } else { %><p>No image</p><% } %>
+          <% } else if (item.contentType === 'video_url' || item.contentType === 'url') { %>
+            <p><%= (item.old && (item.old.url || item.old.text)) || '—' %></p>
+          <% } else { %>
+            <p><%= (item.old && item.old.text) || '—' %></p>
+          <% } %>
+        </div>
+        <div class="bb-pa-website-diff__col" data-website-diff-side="new">
+          <h3>New</h3>
+          <% if (item.contentType === 'image') { %>
+            <% if (item.proposed && item.proposed.src) { %>
+            <img class="bb-pa-website-diff__thumb" src="<%= item.proposed.src %>" alt="<%= item.proposed.alt || 'New image' %>" width="240" height="160"/>
+            <% } else { %><p>No image</p><% } %>
+          <% } else if (item.contentType === 'video_url' || item.contentType === 'url') { %>
+            <p><%= (item.proposed && (item.proposed.url || item.proposed.text)) || '—' %></p>
+          <% } else { %>
+            <p><%= (item.proposed && item.proposed.text) || '—' %></p>
+          <% } %>
+        </div>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+
+  <h2>Moderation history</h2>
+  <ul>
+    <% if (!eventRows.length) { %>
+    <li>No moderation events for this website.</li>
+    <% } %>
+    <% eventRows.forEach(function (ev) { %>
+    <li><%= ev.createdAt ? String(ev.createdAt).slice(0, 19).replace('T', ' ') : '' %> · <%= ev.actionKey %><% if (ev.notes) { %> · <%= ev.notes %><% } %></li>
+    <% }) %>
+  </ul>
+
+  <% if (organizationKey) { %>
+  <h2>Actions</h2>
+  <p>These affect the public website only. They do not disable the tenant account.</p>
+  <% if (canModerate) { %>
+  <form method="post" action="/admin/organizations/<%= organizationKey %>/website/request-changes">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>Request <input name="note_public" maxlength="500" required/></label>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Request Changes</button>
+  </form>
+  <% } %>
+  <% if (canTakeOffline) { %>
+  <form method="post" action="/admin/organizations/<%= organizationKey %>/website/offline">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>Reason <input name="reason" maxlength="500"/></label>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Take Offline</button>
+  </form>
+  <% } %>
+  <% if (canSuspend) { %>
+  <form method="post" action="/admin/organizations/<%= organizationKey %>/website/suspend">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>Reason <input name="reason" maxlength="500" required/></label>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Suspend</button>
+  </form>
+  <% } %>
+  <% if (canRestoreSite) { %>
+  <form method="post" action="/admin/organizations/<%= organizationKey %>/website/restore-site">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit" class="bb-pa-btn">Restore public website</button>
+  </form>
+  <% } %>
+  <% if (canRestoreVersion && ver) { %>
+  <form method="post" action="/admin/organizations/<%= organizationKey %>/website/versions/<%= ver.id %>/restore">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit" class="bb-pa-btn">Restore this version</button>
+  </form>
+  <% } %>
+  <% if (productCode === 'activeclinic' && slug) { %>
+  <p><a class="bb-pa-link" href="/clinics/<%= slug %>">View live site</a>
+     · <a class="bb-pa-link" href="/admin/organizations/<%= organizationKey %>/website">Website management</a></p>
+  <% } %>
+  <% } %>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

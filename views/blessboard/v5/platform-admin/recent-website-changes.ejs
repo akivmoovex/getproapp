@@ -60,7 +60,8 @@
         <td><%= row.lifecycleStatus %> / <%= row.moderationState %></td>
         <td><%= row.publishPolicy %></td>
         <td>
-          <a class="bb-pa-link" href="/admin/organizations/<%= row.organizationKey %>/website">View</a>
+          <a class="bb-pa-link" href="/admin/recent-website-changes/<%= row.kind === 'moderation' ? 'event' : row.kind %>/<%= row.id %>">View changes</a>
+          · <a class="bb-pa-link" href="/admin/organizations/<%= row.organizationKey %>/website">Manage</a>
           <% if (row.slug && row.productCode === 'activeclinic') { %>
           · <a class="bb-pa-link" href="/clinics/<%= row.slug %>">Live</a>
           <% } %>

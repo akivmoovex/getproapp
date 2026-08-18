@@ -68,7 +68,6 @@
       <% if (last) { %>
         <%= last.actionKey === 'website.availability.publish' ? 'Published' : 'Unpublished' %>
         · <%= last.at %>
-        <% if (last.actorIdentityId) { %> · actor <%= last.actorIdentityId %><% } %>
       <% } else { %>Never toggled<% } %>
     </dd>
   </dl>
@@ -145,18 +144,57 @@
     <li><a href="/admin/website-changes/<%= s.id %>"><%= s.status %> · <%= s.changeCount || 0 %> keys</a></li>
     <% }) %>
   </ul>
-  <h2>Versions</h2>
-  <ul>
-    <% versions.forEach(function (v) { %>
-    <li>
-      v<%= v.versionNumber %> · <%= v.status %>
-      <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/versions/<%= v.id %>/restore" style="display:inline">
-        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-        <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Restore Version</button>
-      </form>
-    </li>
-    <% }) %>
-  </ul>
+  <h2>Version history</h2>
+  <p>Each editing session publishes one version. Field saves still go live immediately.</p>
+  <table class="bb-pa-table" data-website-version-history="1">
+    <thead>
+      <tr>
+        <th>Version</th>
+        <th>Editor</th>
+        <th>When</th>
+        <th>Session</th>
+        <th>Fields</th>
+        <th>Pages / sections</th>
+        <th>Policy</th>
+        <th>Status</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!versions.length) { %>
+      <tr><td colspan="9">No website versions yet.</td></tr>
+      <% } %>
+      <% versions.forEach(function (v) { %>
+      <tr>
+        <td>v<%= v.versionNumber %></td>
+        <td><%= v.editorLabel || 'Editor' %></td>
+        <td><%= v.publishedLabel || '—' %></td>
+        <td>
+          <% if (v.sessionStartLabel) { %>
+            <%= v.sessionStartLabel %><% if (v.sessionEndLabel) { %> – <%= v.sessionEndLabel %><% } %>
+            <% if (v.sessionOpen) { %> (open)<% } %>
+          <% } else { %>Single publish<% } %>
+        </td>
+        <td><%= v.fieldCount || (v.changedKeys && v.changedKeys.length) || v.changeCount || 0 %></td>
+        <td>
+          <%= (v.pagesAffected || []).join(', ') || '—' %>
+          <% if (v.sectionsAffected && v.sectionsAffected.length) { %>
+            <br/><span class="bb-pa-muted"><%= v.sectionsAffected.join(', ') %></span>
+          <% } %>
+        </td>
+        <td><%= v.sourcePolicy || inst.publishPolicy || '—' %></td>
+        <td><%= v.moderationStatus || v.status %></td>
+        <td>
+          <a class="bb-pa-link" href="/admin/recent-website-changes/version/<%= v.id %>">View changes</a>
+          <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/versions/<%= v.id %>/restore" style="display:inline">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Restore version</button>
+          </form>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
   <% } %>
 </section>
 <%- include('../partials/platform-admin-shell-end') %>

@@ -7,6 +7,7 @@ const versionService = require("./versionService");
 const { recordModerationEvent, ACTION } = require("./moderationEventService");
 const { autoPublishes, PUBLISH_POLICY } = require("./publishPolicy");
 const { LIFECYCLE_STATUS } = require("./lifecycleStatus");
+const editSessionService = require("./editSessionService");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -53,7 +54,7 @@ async function createPublicationVersion(db, input) {
     moderationStatus: input.moderationStatus || "published",
     auditActionKey: input.auditActionKey || "website.publish",
   });
-  if (created.ok && input.recordModeration !== false) {
+  if (created.ok && input.recordModeration === true) {
     await recordModerationEvent(db, {
       organizationId: instance.organizationId,
       instanceId: instance.id,
@@ -110,18 +111,49 @@ async function saveDraftAndMaybePublish(db, input) {
     return { ...saved, published: false, version: null };
   }
 
+  const oldPublished =
+    saved.content && Object.prototype.hasOwnProperty.call(saved.content, "publishedValue")
+      ? saved.content.publishedValue
+      : null;
   await publishDraftKey(db, instance, saved.content.contentKey);
-  const version = await createPublicationVersion(db, {
+  await recordModerationEvent(db, {
+    organizationId: instance.organizationId,
+    instanceId: instance.id,
+    productCode: instance.productCode,
+    actorIdentityId: input.actorIdentityId || null,
+    actionKey: ACTION.AUTO_PUBLISH,
+    notesTenantVisible: false,
+    metadata: {
+      content_key: saved.content.contentKey,
+      old_summary: String(oldPublished == null ? "" : JSON.stringify(oldPublished)).slice(0, 180),
+      new_summary: String(
+        saved.content.draftValue == null ? "" : JSON.stringify(saved.content.draftValue)
+      ).slice(0, 180),
+    },
+  });
+  const batched = await editSessionService.recordAutoPublishSave(db, {
     instance,
     actorIdentityId: input.actorIdentityId || null,
-    changedKeys: [saved.content.contentKey],
+    contentKey: saved.content.contentKey,
     sourcePolicy: PUBLISH_POLICY.AUTO_PUBLISH_WITH_MODERATION,
-    moderationActionKey: ACTION.AUTO_PUBLISH,
+    inactivityMs: input.inactivityMs,
   });
+  if (
+    batched.ok &&
+    instance.lifecycleStatus === LIFECYCLE_STATUS.PROVISIONAL &&
+    instance.adapterMode === "shared_engine"
+  ) {
+    await instanceRepo.updateWebsiteInstance(db, {
+      instanceId: instance.id,
+      organizationId: instance.organizationId,
+      status: instance.status === "draft" ? "coming_soon" : instance.status,
+    });
+  }
   return {
     ...saved,
     published: true,
-    version: version.ok ? version.version : null,
+    version: batched.version || null,
+    session: batched.session || null,
   };
 }
 
@@ -129,6 +161,11 @@ async function restoreWebsiteVersionLive(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
   if (!instance) return { ok: false, code: RESULT.NOT_FOUND };
+  await editSessionService.closeOpenSessionsForInstance(db, {
+    organizationId,
+    instanceId: instance.id,
+    reason: editSessionService.CLOSE_REASON.RESTORE,
+  });
   const loaded = await versionService.getWebsiteVersion(db, {
     versionId: input.versionId,
     organizationId,
@@ -154,6 +191,7 @@ async function restoreWebsiteVersionLive(db, input) {
     moderationStatus: "restored",
     auditActionKey: "website.rollback",
     moderationActionKey: ACTION.RESTORE_VERSION,
+    recordModeration: true,
   });
   return { ok: created.ok, version: created.version, restoredFrom: loaded.version };
 }

@@ -29,6 +29,11 @@ function mapVersion(row) {
     changedKeys: row.changed_keys || [],
     moderationStatus: row.moderation_status || row.status,
     editorIdentityId: row.editor_identity_id || row.submitter_identity_id || null,
+    editSessionId: row.edit_session_id || null,
+    sessionStartedAt: row.session_started_at || null,
+    sessionClosedAt: row.session_closed_at || null,
+    sessionStatus: row.session_status || null,
+    sessionCloseReason: row.session_close_reason || null,
   };
 }
 
@@ -59,8 +64,9 @@ async function createWebsiteVersion(db, input) {
     `INSERT INTO platform.website_versions (
        organization_id, instance_id, submission_id, version_number,
        snapshot_json, submitter_identity_id, reviewer_identity_id, change_count, status,
-       source_policy, previous_version_id, changed_keys, moderation_status, editor_identity_id
-     ) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,'published',$9,$10,$11::text[],$12,$13)
+       source_policy, previous_version_id, changed_keys, moderation_status, editor_identity_id,
+       edit_session_id
+     ) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,$8,'published',$9,$10,$11::text[],$12,$13,$14)
      RETURNING *`,
     [
       instance.organizationId,
@@ -76,6 +82,7 @@ async function createWebsiteVersion(db, input) {
       input.changedKeys || [],
       input.moderationStatus || "published",
       input.editorIdentityId || input.submitterIdentityId || null,
+      input.editSessionId || null,
     ]
   );
   const version = mapVersion(rows.rows[0]);
@@ -97,11 +104,52 @@ async function createWebsiteVersion(db, input) {
   return { ok: true, version };
 }
 
+async function amendOpenSessionVersion(db, input) {
+  const versionId = String((input && input.versionId) || "");
+  const organizationId = String((input && input.organizationId) || "");
+  const editSessionId = String((input && input.editSessionId) || "");
+  if (!versionId || !organizationId || !editSessionId) {
+    return { ok: false, code: RESULT.NOT_FOUND, version: null };
+  }
+  const changedKeys = Array.isArray(input.changedKeys) ? input.changedKeys : [];
+  const rows = await db.query(
+    `UPDATE platform.website_versions v
+        SET snapshot_json = $4::jsonb,
+            changed_keys = $5::text[],
+            change_count = $6
+      FROM platform.website_edit_sessions s
+     WHERE v.id = $1
+       AND v.organization_id = $2
+       AND v.edit_session_id = $3
+       AND v.status = 'published'
+       AND s.id = v.edit_session_id
+       AND s.status = 'open'
+     RETURNING v.*`,
+    [
+      versionId,
+      organizationId,
+      editSessionId,
+      JSON.stringify(input.snapshot || {}),
+      changedKeys,
+      changedKeys.length,
+    ]
+  );
+  const version = mapVersion(rows.rows[0] || null);
+  if (!version) return { ok: false, code: RESULT.NOT_FOUND, version: null };
+  return { ok: true, version };
+}
+
 async function listWebsiteVersions(db, input) {
   const rows = await db.query(
-    `SELECT * FROM platform.website_versions
-      WHERE instance_id = $1 AND organization_id = $2
-      ORDER BY version_number DESC`,
+    `SELECT v.*,
+            s.started_at AS session_started_at,
+            s.closed_at AS session_closed_at,
+            s.status AS session_status,
+            s.close_reason AS session_close_reason
+       FROM platform.website_versions v
+       LEFT JOIN platform.website_edit_sessions s ON s.id = v.edit_session_id
+      WHERE v.instance_id = $1 AND v.organization_id = $2
+      ORDER BY v.version_number DESC`,
     [input.instanceId, input.organizationId]
   );
   return { ok: true, versions: rows.rows.map(mapVersion) };
@@ -109,8 +157,14 @@ async function listWebsiteVersions(db, input) {
 
 async function getWebsiteVersion(db, input) {
   const rows = await db.query(
-    `SELECT * FROM platform.website_versions
-      WHERE id = $1 AND organization_id = $2
+    `SELECT v.*,
+            s.started_at AS session_started_at,
+            s.closed_at AS session_closed_at,
+            s.status AS session_status,
+            s.close_reason AS session_close_reason
+       FROM platform.website_versions v
+       LEFT JOIN platform.website_edit_sessions s ON s.id = v.edit_session_id
+      WHERE v.id = $1 AND v.organization_id = $2
       LIMIT 1`,
     [input.versionId, input.organizationId]
   );
@@ -157,6 +211,7 @@ module.exports = {
   RESULT,
   mapVersion,
   createWebsiteVersion,
+  amendOpenSessionVersion,
   listWebsiteVersions,
   getWebsiteVersion,
   restoreWebsiteVersionToDraft,

@@ -7,6 +7,7 @@ const { recordWebsiteAudit } = require("./auditService");
 const versionService = require("./versionService");
 const { evaluatePublicationReadiness } = require("./checklistService");
 const { withProvisioningTransaction, isPool } = require("../db/provisioningTransaction");
+const editSessionService = require("./editSessionService");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -56,6 +57,12 @@ async function submitWebsiteChanges(db, input) {
   if (instance.publishLocked === true || instance.publishPolicy === "PLATFORM_LOCKED") {
     return { ok: false, code: "website_publish_locked", submission: null };
   }
+  await editSessionService.closeOpenSessionsForInstance(db, {
+    organizationId,
+    instanceId: instance.id,
+    editorIdentityId: input.actorIdentityId || null,
+    reason: editSessionService.CLOSE_REASON.SUBMIT,
+  });
 
   const resolved = await resolver.resolveWebsiteContent(db, {
     organizationId,

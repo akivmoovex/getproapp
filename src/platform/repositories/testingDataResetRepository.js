@@ -636,6 +636,37 @@ async function purgeOrganizationTree(client, opts) {
       `DELETE FROM platform.website_submissions WHERE organization_id = $1`,
       [organizationId]
     );
+    try {
+      await client.query(
+        `ALTER TABLE platform.website_moderation_events DISABLE TRIGGER website_moderation_events_no_delete`
+      );
+      await client.query(
+        `DELETE FROM platform.website_moderation_events WHERE organization_id = $1`,
+        [organizationId]
+      );
+    } catch (err) {
+      if (!(err && (err.code === "42P01" || err.code === "42704"))) throw err;
+    } finally {
+      try {
+        await client.query(
+          `ALTER TABLE platform.website_moderation_events ENABLE TRIGGER website_moderation_events_no_delete`
+        );
+      } catch {
+        /* table/trigger may be absent */
+      }
+    }
+    try {
+      await client.query(
+        `UPDATE platform.website_versions SET edit_session_id = NULL, previous_version_id = NULL WHERE organization_id = $1`,
+        [organizationId]
+      );
+      await client.query(
+        `DELETE FROM platform.website_edit_sessions WHERE organization_id = $1`,
+        [organizationId]
+      );
+    } catch (err) {
+      if (!(err && err.code === "42P01")) throw err;
+    }
     await client.query(
       `DELETE FROM platform.website_versions WHERE organization_id = $1`,
       [organizationId]

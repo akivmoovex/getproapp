@@ -259,6 +259,18 @@ function registerActiveClinicAuthRoutes(app, deps) {
 
   async function handleLogout(req, res) {
     try {
+      const identityId =
+        req.activeClinicAuth &&
+        req.activeClinicAuth.platformIdentity &&
+        req.activeClinicAuth.platformIdentity.id;
+      if (identityId) {
+        const editSessionService = require("../../platform/website/editSessionService");
+        await editSessionService.closeOpenSessionsForEditor(
+          getPool(),
+          identityId,
+          editSessionService.CLOSE_REASON.LOGOUT
+        ).catch(() => {});
+      }
       await terminateV5BrowserSession(req, res, {
         env,
         isProduction,

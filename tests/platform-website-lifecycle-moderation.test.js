@@ -25,6 +25,7 @@ const resolver = require("../src/platform/website/resolver");
 const submissionService = require("../src/platform/website/submissionService");
 const versionService = require("../src/platform/website/versionService");
 const publicationService = require("../src/platform/website/publicationService");
+const editSessionService = require("../src/platform/website/editSessionService");
 const lifecycleService = require("../src/platform/website/lifecycleService");
 const { listRecentWebsiteChanges } = require("../src/platform/website/recentChangesService");
 const { listModerationEvents } = require("../src/platform/website/moderationEventService");
@@ -184,6 +185,11 @@ describe("shared website lifecycle moderation", () => {
     await pub("section.faq.visible", false);
     const v1saved = await pub("home.faq", [{ question: "Old Q", answer: "Old A" }]);
     const v1 = v1saved.version;
+    await editSessionService.closeOpenSessionsForInstance(pool, {
+      organizationId: ctx.organizationId,
+      instanceId: ctx.instance.id,
+      reason: editSessionService.CLOSE_REASON.FINISH,
+    });
     await pub("home.hero.title", "Version Two Bad");
     await pub("home.hero.image", { src: "https://cdn.example.com/two.jpg", alt: "Two" });
     await pub("section.faq.visible", true);
@@ -361,5 +367,96 @@ describe("shared website lifecycle moderation", () => {
       permission: PERMISSIONS.SUSPEND,
     });
     assert.equal(allowed.ok, true);
+  });
+
+  it("batches one auto-publish version per editing session", async () => {
+    if (!requireDb()) return;
+    const ctx = await seedClinic("batch", PUBLISH_POLICY.AUTO_PUBLISH_WITH_MODERATION);
+    const editor = "11111111-1111-4111-8111-111111111111";
+    const keys = [
+      ["home.hero.title", "Batch Title"],
+      ["home.hero.subtitle", "Batch subtitle"],
+      ["home.hero.image", { src: "https://cdn.example.com/batch.jpg", alt: "Batch" }],
+      ["about.story.body", "Batch about copy"],
+      ["contact.intro", "Batch contact line"],
+    ];
+    for (const [key, value] of keys) {
+      const saved = await publicationService.saveDraftAndMaybePublish(pool, {
+        organizationId: ctx.organizationId,
+        instanceId: ctx.instance.id,
+        contentKey: key,
+        value,
+        actorIdentityId: editor,
+      });
+      assert.equal(saved.ok, true, JSON.stringify(saved));
+      assert.equal(saved.published, true);
+    }
+    const live = await resolver.resolveWebsiteContent(pool, {
+      organizationId: ctx.organizationId,
+      instance: ctx.instance,
+      mode: resolver.MODE.LIVE,
+    });
+    assert.equal(live.values["home.hero.title"], "Batch Title");
+    assert.equal(live.values["contact.intro"], "Batch contact line");
+    const listed = await versionService.listWebsiteVersions(pool, {
+      instanceId: ctx.instance.id,
+      organizationId: ctx.organizationId,
+    });
+    assert.equal(listed.versions.length, 1);
+    assert.equal(listed.versions[0].changedKeys.length, 5);
+    const events = await listModerationEvents(pool, {
+      organizationId: ctx.organizationId,
+      instanceId: ctx.instance.id,
+    });
+    assert.equal(events.events.filter((e) => e.actionKey === "website.moderation.auto_publish").length, 5);
+    const other = "22222222-2222-4222-8222-222222222222";
+    const second = await publicationService.saveDraftAndMaybePublish(pool, {
+      organizationId: ctx.organizationId,
+      instanceId: ctx.instance.id,
+      contentKey: "footer.tagline",
+      value: "Other editor",
+      actorIdentityId: other,
+    });
+    assert.equal(second.ok, true);
+    const afterOther = await versionService.listWebsiteVersions(pool, {
+      instanceId: ctx.instance.id,
+      organizationId: ctx.organizationId,
+    });
+    assert.equal(afterOther.versions.length, 2);
+  });
+
+  it("builds a version diff for Platform Admin view-changes", async () => {
+    if (!requireDb()) return;
+    const ctx = await seedClinic("diff", PUBLISH_POLICY.AUTO_PUBLISH_WITH_MODERATION);
+    await publicationService.saveDraftAndMaybePublish(pool, {
+      organizationId: ctx.organizationId,
+      instanceId: ctx.instance.id,
+      contentKey: "home.hero.title",
+      value: "Before Title",
+    });
+    await editSessionService.closeOpenSessionsForInstance(pool, {
+      organizationId: ctx.organizationId,
+      instanceId: ctx.instance.id,
+      reason: editSessionService.CLOSE_REASON.FINISH,
+    });
+    await publicationService.saveDraftAndMaybePublish(pool, {
+      organizationId: ctx.organizationId,
+      instanceId: ctx.instance.id,
+      contentKey: "home.hero.title",
+      value: "After Title",
+    });
+    const listed = await versionService.listWebsiteVersions(pool, {
+      instanceId: ctx.instance.id,
+      organizationId: ctx.organizationId,
+    });
+    const current = listed.versions[0];
+    const previous = listed.versions[1];
+    const { buildVersionDiff } = require("../src/platform/website/reviewDiff");
+    const diff = buildVersionDiff({
+      snapshot: current.snapshot,
+      previousSnapshot: previous.snapshot,
+      changedKeys: current.changedKeys,
+    });
+    assert.ok(diff.items.some((item) => item.proposed && String(item.proposed.text).includes("After Title")));
   });
 });

@@ -89,7 +89,7 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic) {
     clinic: outClinic,
     instance,
     websiteEdit: canEdit && editRequested && !websiteEditLocked,
-    websiteCanEdit: canEdit && !websiteEditLocked,
+    websiteCanEdit: canEdit,
     websiteCanSubmit: canSubmit && !websitePublishLocked,
     websiteMode: mode,
     websiteUnpublishedCount: unpublishedCount,
