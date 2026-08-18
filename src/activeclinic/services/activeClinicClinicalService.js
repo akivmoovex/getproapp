@@ -5,6 +5,7 @@
  * Append-only clinical foundation. Draft vs signed separation. Manual alert raise only.
  */
 
+const crypto = require("crypto");
 const { recordAuditEventSafe } = require("../../platform/services/auditEventService");
 const {
   authorizeStaffPermission,
@@ -172,6 +173,149 @@ function mapClinicalOrder(row) {
     updatedAt: row.updated_at,
     orderedByStaffDisplayName: row.ordered_by_staff_display_name || null,
   };
+}
+
+const RADIOLOGY_STUDY_TYPES = new Set([
+  "x_ray",
+  "ct",
+  "mri",
+  "ultrasound",
+  "mammography",
+  "fluoroscopy",
+  "nuclear_medicine",
+  "other",
+]);
+
+function parseOrderDetails(raw) {
+  if (!raw) return {};
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed) ? parsed : {};
+    } catch (_err) {
+      return {};
+    }
+  }
+  if (typeof raw === "object" && !Array.isArray(raw)) return raw;
+  return {};
+}
+
+function clipText(value, max) {
+  const text = String(value == null ? "" : value).trim();
+  if (!text) return null;
+  return text.slice(0, max);
+}
+
+function laboratoryPanelName(details) {
+  return (
+    clipText(
+      details.test_panel_name || details.test_code || details.testCode || details.panel_name,
+      500
+    ) || "Laboratory request"
+  );
+}
+
+function laboratoryPanelCode(details) {
+  return clipText(details.test_panel_code || details.test_code || details.testCode, 64);
+}
+
+function radiologyStudyType(details) {
+  const raw = String(details.imaging_type || details.study_type || details.studyType || "")
+    .trim()
+    .toLowerCase();
+  if (raw === "ct_scan") return "ct";
+  if (RADIOLOGY_STUDY_TYPES.has(raw)) return raw;
+  return "other";
+}
+
+function nextDiagnosticRequestNumber(prefix) {
+  return `${prefix}-${Date.now().toString(36)}-${crypto.randomBytes(3).toString("hex")}`.slice(
+    0,
+    64
+  );
+}
+
+/**
+ * Clinical lab/radiology orders are the clinician-facing request. Diagnostics
+ * worklists read laboratory_requests / radiology_requests, so those rows must
+ * be created here (already-intended V7 fulfillment path).
+ */
+async function createDiagnosticFulfillmentFromClinicalOrder(db, input) {
+  const orderType = String(input.orderType || "");
+  const orderRow = input.orderRow;
+  const details = parseOrderDetails(input.orderDetails);
+  const instructions = clipText(input.instructions, 2000);
+  const requestedByStaffId = input.actor && input.actor.staffMemberId;
+
+  if (orderType === "laboratory") {
+    const existing = await db.query(
+      `SELECT id FROM activeclinic.laboratory_requests
+        WHERE clinical_order_id = $1
+        LIMIT 1`,
+      [orderRow.id]
+    );
+    if (existing.rows[0]) return { kind: "laboratory", id: existing.rows[0].id, created: false };
+    const inserted = await db.query(
+      `INSERT INTO activeclinic.laboratory_requests (
+         organization_id, healthcare_organization_id, facility_id,
+         clinical_order_id, encounter_id, patient_id,
+         request_number, test_panel_code, test_panel_name, clinical_notes,
+         status, requested_by_staff_id
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending_collection', $11)
+       RETURNING id`,
+      [
+        orderRow.organization_id,
+        orderRow.healthcare_organization_id,
+        orderRow.facility_id,
+        orderRow.id,
+        orderRow.encounter_id,
+        orderRow.patient_id,
+        nextDiagnosticRequestNumber("LAB"),
+        laboratoryPanelCode(details),
+        laboratoryPanelName(details),
+        instructions,
+        requestedByStaffId,
+      ]
+    );
+    return { kind: "laboratory", id: inserted.rows[0].id, created: true };
+  }
+
+  if (orderType === "radiology") {
+    const existing = await db.query(
+      `SELECT id FROM activeclinic.radiology_requests
+        WHERE clinical_order_id = $1
+        LIMIT 1`,
+      [orderRow.id]
+    );
+    if (existing.rows[0]) return { kind: "radiology", id: existing.rows[0].id, created: false };
+    const studyDescription =
+      clipText(details.body_part || details.study_description || details.studyDescription, 500);
+    const inserted = await db.query(
+      `INSERT INTO activeclinic.radiology_requests (
+         organization_id, healthcare_organization_id, facility_id,
+         clinical_order_id, encounter_id, patient_id,
+         request_number, study_type, study_description, clinical_indication,
+         status, requested_by_staff_id
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, 'pending', $11)
+       RETURNING id`,
+      [
+        orderRow.organization_id,
+        orderRow.healthcare_organization_id,
+        orderRow.facility_id,
+        orderRow.id,
+        orderRow.encounter_id,
+        orderRow.patient_id,
+        nextDiagnosticRequestNumber("RAD"),
+        radiologyStudyType(details),
+        studyDescription,
+        instructions,
+        requestedByStaffId,
+      ]
+    );
+    return { kind: "radiology", id: inserted.rows[0].id, created: true };
+  }
+
+  return null;
 }
 
 function mapClinicalAlert(row) {
@@ -914,6 +1058,14 @@ async function createClinicalOrder(db, input) {
     ]
   );
 
+  const diagnosticRequest = await createDiagnosticFulfillmentFromClinicalOrder(db, {
+    orderType: input.orderType,
+    orderRow: row.rows[0],
+    orderDetails: input.orderDetails,
+    instructions: input.instructions || null,
+    actor: input.actor,
+  });
+
   await recordAuditEventSafe(db, {
     deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
     organizationId: input.organizationId,
@@ -925,10 +1077,16 @@ async function createClinicalOrder(db, input) {
     metadataJson: {
       encounter_id: input.encounterId,
       order_type: input.orderType,
+      diagnostic_request_id: diagnosticRequest && diagnosticRequest.id ? diagnosticRequest.id : null,
     },
   });
 
-  return { ok: true, code: RESULT.OK, order: mapClinicalOrder(row.rows[0]) };
+  return {
+    ok: true,
+    code: RESULT.OK,
+    order: mapClinicalOrder(row.rows[0]),
+    diagnosticRequest,
+  };
 }
 
 /**

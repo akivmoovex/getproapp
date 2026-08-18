@@ -340,6 +340,15 @@ describe("ActiveClinic P04 clinical foundation", () => {
       deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
     });
     assert.equal(orderRes.ok, true);
+    const labReq = await pool.query(
+      `SELECT test_panel_name, status, request_number
+         FROM activeclinic.laboratory_requests
+        WHERE clinical_order_id = $1 AND organization_id = $2`,
+      [orderRes.order.id, tenant.orgId]
+    );
+    assert.equal(labReq.rows.length, 1);
+    assert.equal(labReq.rows[0].test_panel_name, "CBC");
+    assert.equal(labReq.rows[0].status, "pending_collection");
 
     // Raise alert (manual)
     const alertRes = await raiseClinicalAlert(pool, {
@@ -414,6 +423,50 @@ describe("ActiveClinic P04 clinical foundation", () => {
 
     assert.equal(result.ok, false);
     assert.equal(result.code, RESULT.ACCESS_DENIED);
+  });
+
+  it("bridges radiology clinical orders into the radiology worklist", async () => {
+    requireDb();
+    const tenant = await seedTenant(Date.now().toString(36), "radord");
+    const clinician = await seedNetwork(tenant, nextPhone());
+    const actor = {
+      staffMemberId: clinician.staffMemberId,
+      platformIdentityId: null,
+    };
+    const patientId = await seedPatient(tenant, actor);
+    const started = await startEncounter(pool, {
+      organizationId: tenant.orgId,
+      healthcareOrganizationId: tenant.hcoId,
+      facilityId: tenant.facilityId,
+      patientId,
+      encounterType: "outpatient",
+      actor,
+      deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+    });
+    assert.equal(started.ok, true, JSON.stringify(started));
+    const orderRes = await createClinicalOrder(pool, {
+      organizationId: tenant.orgId,
+      healthcareOrganizationId: tenant.hcoId,
+      facilityId: tenant.facilityId,
+      encounterId: started.encounter.id,
+      orderType: "radiology",
+      orderDetails: { imaging_type: "ct_scan", body_part: "Chest" },
+      instructions: "Rule out pneumonia",
+      actor,
+      deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+    });
+    assert.equal(orderRes.ok, true, JSON.stringify(orderRes));
+    const radReq = await pool.query(
+      `SELECT study_type, study_description, status, clinical_indication
+         FROM activeclinic.radiology_requests
+        WHERE clinical_order_id = $1 AND organization_id = $2`,
+      [orderRes.order.id, tenant.orgId]
+    );
+    assert.equal(radReq.rows.length, 1);
+    assert.equal(radReq.rows[0].study_type, "ct");
+    assert.equal(radReq.rows[0].study_description, "Chest");
+    assert.equal(radReq.rows[0].status, "pending");
+    assert.equal(radReq.rows[0].clinical_indication, "Rule out pneumonia");
   });
 
   it("cross-tenant encounter denial", async () => {
