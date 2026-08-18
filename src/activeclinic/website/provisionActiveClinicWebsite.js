@@ -75,6 +75,7 @@ async function provisionActiveClinicWebsite(db, input) {
     return {
       ok: false,
       code: provisioned.code === instanceRepo.RESULT.SLUG_COLLISION ? RESULT.SLUG_COLLISION : RESULT.WEBSITE_FAILED,
+      reason: provisioned.reason || provisioned.code,
       instance: null,
     };
   }
@@ -189,7 +190,7 @@ async function provisionActiveClinicClinic(db, input) {
         return {
           ok: false,
           code: RESULT.WEBSITE_FAILED,
-          reason: website.code,
+          reason: website.reason || website.code,
           healthcareOrganization: hco,
           facility,
           instance: null,

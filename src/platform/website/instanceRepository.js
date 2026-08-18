@@ -178,6 +178,14 @@ async function createWebsiteInstance(db, input) {
       if (raced) return { ok: true, code: RESULT.DUPLICATE, instance: raced, created: false };
       return { ok: false, code: RESULT.SLUG_COLLISION, instance: null };
     }
+    if (err && err.code === "23514") {
+      return {
+        ok: false,
+        code: RESULT.INVALID_INPUT,
+        instance: null,
+        reason: String(err.message || "website_instances_check_constraint").slice(0, 180),
+      };
+    }
     throw err;
   }
 }

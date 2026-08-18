@@ -485,7 +485,9 @@ async function approveAndProvisionClinicRegistration(db, input) {
       provisioned_at: websiteOk ? new Date().toISOString() : null,
       reviewed_at: new Date().toISOString(),
       reviewed_by_platform_identity_id: input.actorIdentityId || null,
-      last_provision_error: websiteOk ? null : clinic.code || "website_provision_failed",
+      last_provision_error: websiteOk
+        ? null
+        : String(clinic.reason || clinic.code || "website_provision_failed").slice(0, 500),
       administrator_password_hash: null,
     });
 
@@ -510,7 +512,9 @@ async function approveAndProvisionClinicRegistration(db, input) {
     await appendReviewEvent(client, {
       applicationId: app.id,
       eventType: websiteOk ? "provisioning_succeeded" : "provisioning_failed",
-      body: websiteOk ? null : String(clinic.code || "website_provision_failed").slice(0, 200),
+      body: websiteOk
+        ? null
+        : String(clinic.reason || clinic.code || "website_provision_failed").slice(0, 200),
       actorId: input.actorIdentityId,
       visibility: "history",
       deliveryStatus: "not_applicable",
