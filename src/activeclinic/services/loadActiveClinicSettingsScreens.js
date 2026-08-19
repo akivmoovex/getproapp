@@ -1072,6 +1072,11 @@ async function loadActiveClinicWebsiteSettingsScreen(db, input) {
     grantedPermissions: perms,
     env: input.env,
     origin: input.origin || "",
+    setupIncomplete: auth.provisioningIncomplete === true,
+    provisioningFailed:
+      String(auth.failedStage || "") === "website_instance" ||
+      String(auth.failedStage || "") === "template_content",
+    failedStage: auth.failedStage || null,
   });
   if (!loaded.ok) {
     return { ok: false, code: RESULT.DENIED, restricted: true };

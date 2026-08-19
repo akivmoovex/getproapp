@@ -2,7 +2,7 @@
 
 const { listUnifiedRegistrations } = require("../registration/unifiedRegistrationQueue");
 const { PRODUCT } = require("../registration/constants");
-const { resumeOrganizationProvisioning } = require("../registration/provisioningRecovery");
+const { retryTenantProvisioningIfUnhealthy } = require("../registration/tenantHealthSummary");
 const { CSRF_FIELD, validateCsrf } = require("./v5Csrf");
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 
@@ -62,7 +62,7 @@ function registerPlatformRegistrationAdminRoutes(router, deps) {
           req.platformAdminContext && req.platformAdminContext.userId
             ? req.platformAdminContext.userId
             : null;
-        const result = await resumeOrganizationProvisioning(getPool(), {
+        const result = await retryTenantProvisioningIfUnhealthy(getPool(), {
           productCode,
           applicationId: id,
           actorUserId,
@@ -75,8 +75,12 @@ function registerPlatformRegistrationAdminRoutes(router, deps) {
           productCode === PRODUCT.ACTIVECLINIC
             ? `/admin/clinic-registrations/${encodeURIComponent(id)}`
             : `/admin/registration-applications/${encodeURIComponent(id)}`;
+        if (result && result.code === "already_healthy") {
+          return res.redirect(303, `${detailHref}?notice=already_healthy`);
+        }
         if (!result || result.ok === false) {
-          return res.redirect(303, `${detailHref}?error=retry_failed`);
+          const error = result && result.code === "not_retryable" ? "not_retryable" : "retry_failed";
+          return res.redirect(303, `${detailHref}?error=${error}`);
         }
         return res.redirect(303, `${detailHref}?notice=provision_retried`);
       } catch (err) {

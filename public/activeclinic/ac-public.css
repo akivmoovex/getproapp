@@ -878,6 +878,16 @@ body.ac-public--tenant .ac-public-main {
 .ac-public-brand--tenant {
   gap: 0.75rem;
 }
+.ac-public-brand--editing {
+  text-decoration: none;
+}
+.ac-public-brand--editing .ac-public-brand__name {
+  color: inherit;
+}
+.ac-tenant-about-image {
+  margin: 0 0 1.25rem;
+  max-width: 42rem;
+}
 .ac-public-brand__mark {
   width: 2.25rem;
   height: 2.25rem;

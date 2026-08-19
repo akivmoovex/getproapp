@@ -115,6 +115,14 @@ describe("blessboard hq shell", () => {
       assert.equal(chA.ok, true, chA.message);
       churchA = chA.records.church;
       hqA = chA.records.hqBranch;
+      await pool.query(
+        `INSERT INTO blessboard.church_settings (church_id, public_name, primary_email)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (church_id) DO UPDATE
+           SET public_name = EXCLUDED.public_name,
+               primary_email = EXCLUDED.primary_email`,
+        [churchA.id, CHURCH_A, "hq-a@example.org"]
+      );
 
       const chB = await provisionBlessBoardChurch(pool, {
         organizationKey: "hq-b",
@@ -274,11 +282,17 @@ describe("blessboard hq shell", () => {
     assert.match(res.text, /href="\/hq\/registrations"/);
     assert.match(res.text, /href="\/hq\/reports"/);
     assert.match(res.text, /href="\/hq\/roles"/);
+    assert.match(res.text, /href="\/hq\/settings\/staff-access"/);
+    assert.match(res.text, /href="\/hq\/website"/);
     assert.match(res.text, /href="\/hq\/members"/);
     assert.match(res.text, /href="\/hq\/announcements"/);
     assert.match(res.text, /href="\/hq\/giving"/);
     assert.match(res.text, /href="\/hq\/attendance"/);
-    assert.match(res.text, /data-bb-quick-action="roles"/);
+    assert.match(res.text, /data-bb-quick-action="staff-access"/);
+    assert.doesNotMatch(res.text, /data-bb-quick-action="roles"/);
+    assert.match(res.text, /data-bb-organization-console="1"/);
+    assert.match(res.text, /data-bb-console-public-url="1"/);
+    assert.match(res.text, /\/c\/hq-a/);
     assert.match(res.text, /action="\/hq\/logout"/);
     assert.match(res.text, /name="_csrf"/);
     assert.doesNotMatch(res.text, /Campus Old/);
@@ -517,7 +531,11 @@ describe("blessboard hq shell", () => {
         (/^\s*(INSERT|DELETE)\b/i.test(w) && !/deployment_sessions/i.test(w))
     );
     // Allow session last_seen UPDATE only.
-    const unexpected = bad.filter((w) => !/deployment_sessions/i.test(w));
+    const unexpected = bad.filter(
+      (w) =>
+        !/deployment_sessions/i.test(w) &&
+        !/organization_onboarding_progress/i.test(w)
+    );
     assert.deepEqual(unexpected, []);
   });
 });

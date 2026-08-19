@@ -37,6 +37,7 @@ const {
 } = require("../services/activeClinicPublicBookingDraft");
 const { renderPublicView } = require("./renderActiveClinicPublic");
 const { resolveClinicOrRespond, sendClinicResolveFailure } = require("./activeClinicPublicRespond");
+const { attachActiveClinicWebsiteLocals } = require("./attachActiveClinicWebsiteChrome");
 
 function wizardLocals(extra) {
   return {
@@ -67,6 +68,7 @@ async function resolveBookableClinic(getPool, req, res, respondDeps) {
     res.status(403).type("html").send(renderPublicView("tenant/clinic-unavailable", {
       csrfToken,
       pageTitle: "Booking not available",
+      pageLead: "Online booking is not enabled for this clinic yet. Use the contact page to request an appointment — this page does not take live bookings.",
       shellVariant: "tenant",
       clinic,
     }));
@@ -105,12 +107,37 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
   app.get("/clinics/:clinicKey/book", async (req, res, next) => {
     try {
       const clinicKey = req.params.clinicKey;
-      const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
-      if (!resolved.ok) {
-        if (resolved.sent) return undefined;
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      const mergedClinic = website.clinic || clinic;
+      if (!clinic.publicBookingEnabled && !website.websiteEdit) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        res.status(403).type("html").send(renderPublicView("tenant/clinic-unavailable", {
+          csrfToken,
+          pageTitle: "Booking not available",
+          pageLead: "Online booking is not enabled for this clinic yet. Use the contact page to request an appointment — this page does not take live bookings.",
+          shellVariant: "tenant",
+          ...website,
+          clinic: mergedClinic,
+        }));
+        return undefined;
+      }
+      if (!clinic.publicBookingEnabled && website.websiteEdit) {
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+        return res.status(200).type("html").send(renderPublicView("booking/consultation-type", wizardLocals({
+          csrfToken,
+          ...website,
+          clinic: mergedClinic,
+          draft: emptyConsultationDraft(clinicKey),
+          services: [],
+          wizardStep: 1,
+          bookingIntroOnly: true,
+        })));
+      }
+      if (!clinic.primaryFacilityId) {
         return res.status(400).type("html").send("<h1>Booking Not Available</h1><p>No bookable facility is configured.</p>");
       }
-      const clinic = resolved.clinic;
       let draft = readBookingDraft(req, env, clinicKey) || emptyConsultationDraft(clinicKey);
 
       const serviceParam = String(req.query.service || "").trim();
@@ -155,7 +182,8 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res.status(200).type("html").send(renderPublicView("booking/consultation-type", wizardLocals({
         csrfToken,
-        clinic,
+        ...website,
+        clinic: mergedClinic,
         draft,
         services: servicesResult.services || [],
         wizardStep: 1,

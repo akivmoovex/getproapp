@@ -8,6 +8,7 @@
 const { organizationHasActiveProduct } = require("../../platform/services/organizationProductService");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const { blocksAnonymousPublic, LIFECYCLE_STATUS } = require("../../platform/website/lifecycleStatus");
+const { attachClinicPublicWebsitePaths } = require("../../platform/website/publicWebsiteUrl");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -134,7 +135,7 @@ async function resolvePublishableClinicByKey(db, input) {
     clinicKey === "activeclinic-demo" ||
     clinicKey === "julflona-clinic";
 
-  const clinic = {
+  const clinic = attachClinicPublicWebsitePaths({
     clinicKey,
     organizationId: organization.id,
     healthcareOrganizationId: hco.id,
@@ -155,7 +156,7 @@ async function resolvePublishableClinicByKey(db, input) {
     isDemonstrationClinic,
     facilities,
     primaryFacilityId: (facilities.find((f) => f.isPrimary) || facilities[0] || {}).id || null,
-  };
+  });
 
   return { ok: true, code: RESULT.OK, clinic };
 }
@@ -222,16 +223,18 @@ async function listPublishableClinics(db, input) {
   `;
 
   const result = await db.query(sql, params);
-  const clinics = result.rows.map((row) => ({
-    clinicKey: row.clinic_key,
-    publicName: row.public_name,
-    websiteTagline: row.website_tagline || null,
-    websiteLogoUrl: row.website_logo_url || null,
-    publicPhoneDisplay: row.public_phone_display || null,
-    publicEmailDisplay: row.public_email_display || null,
-    publicBookingEnabled: row.public_booking_enabled === true,
-    facilityCount: parseInt(row.facility_count, 10) || 0,
-  }));
+  const clinics = result.rows.map((row) =>
+    attachClinicPublicWebsitePaths({
+      clinicKey: row.clinic_key,
+      publicName: row.public_name,
+      websiteTagline: row.website_tagline || null,
+      websiteLogoUrl: row.website_logo_url || null,
+      publicPhoneDisplay: row.public_phone_display || null,
+      publicEmailDisplay: row.public_email_display || null,
+      publicBookingEnabled: row.public_booking_enabled === true,
+      facilityCount: parseInt(row.facility_count, 10) || 0,
+    })
+  );
 
   return { ok: true, code: RESULT.OK, clinics };
 }

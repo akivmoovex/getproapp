@@ -84,6 +84,7 @@ describe("v7 unified website editor mobile QA", () => {
     assert.match(acField, /enterkeyhint="enter"/);
     assert.match(acImage, /data-website-type="image"/);
     assert.match(acImage, /data-website-file="1"/);
+    assert.match(acImage, /capture="environment"/);
     assert.match(acImage, /enterkeyhint="done"/);
     assert.match(bbField, /data-bb-inline-start="1"/);
     assert.match(bbField, /data-bb-inline-save="1"/);

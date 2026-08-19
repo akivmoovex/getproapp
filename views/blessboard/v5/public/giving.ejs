@@ -300,7 +300,12 @@
             editMultiline: false
           }) %>
           <p class="bb-tp-giving-methods__count" data-bb-giving-method-count="<%= methods.length %>">
+            <% var _templateGiving = methods.length && methods.every(function (m) { return m && m.templateExample; }); %>
+            <% if (_templateGiving) { %>
+            Template examples — not published giving instructions
+            <% } else { %>
             <%= methods.length %> option<%= methods.length === 1 ? '' : 's' %> available
+            <% } %>
           </p>
         </div>
         <%- include('../partials/editable-text', {
@@ -518,6 +523,41 @@
     <p class="bb-tp-giving-disclaimer" role="note" data-bb-giving-disclaimer="1">
       BlessBoard does not process payments or collect financial account details on this page. Use only the published methods above, or contact the church office for help.
     </p>
+
+    <%
+      var givingCtaHeading = (typeof websiteAdmin !== 'undefined' && websiteAdmin && typeof websiteAdmin.displayValue === 'function')
+        ? websiteAdmin.displayValue('cta', 'heading', '')
+        : '';
+      var givingCtaBody = (typeof websiteAdmin !== 'undefined' && websiteAdmin && typeof websiteAdmin.displayValue === 'function')
+        ? websiteAdmin.displayValue('cta', 'bodyText', '')
+        : '';
+    %>
+    <% if (editing || givingCtaHeading || givingCtaBody) { %>
+    <section class="bb-tp-giving-cta-copy" data-bb-giving-cta="1">
+      <%- include('../partials/editable-text', {
+        editPageKey: 'giving',
+        editSectionKey: 'cta',
+        editFieldKey: 'heading',
+        editValue: givingCtaHeading,
+        editTag: 'h2',
+        editClass: 'bb-tp-section-title',
+        editType: 'heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'giving',
+        editSectionKey: 'cta',
+        editFieldKey: 'bodyText',
+        editValue: givingCtaBody,
+        editTag: 'p',
+        editClass: 'bb-tp-body',
+        editType: 'paragraph',
+        editMaxLength: 800,
+        editMultiline: true
+      }) %>
+    </section>
+    <% } %>
 
     <div data-bb-giving-support="1">
     <%- include('./partials/cta-band', {

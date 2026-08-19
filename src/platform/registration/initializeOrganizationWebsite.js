@@ -10,6 +10,7 @@ const instanceRepo = require("../website/instanceRepository");
 const { provisionWebsiteInstance, starterEntries } = require("../website/provisionService");
 const contentService = require("../website/contentService");
 const { getWebsiteTemplate } = require("../website/templateRegistry");
+const { ACTION, recordLifecycleAudit } = require("./lifecycleAudit");
 
 async function maybeSeedTemplateContent(adapter, db, input) {
   if (!adapter || typeof adapter.seedTemplateContent !== "function") {
@@ -129,6 +130,20 @@ async function initializeOrganizationWebsite(db, input) {
     instance: provisioned && provisioned.instance,
     created: Boolean(provisioned && provisioned.created),
   });
+  if (provisioned && provisioned.ok && provisioned.created && provisioned.instance) {
+    await recordLifecycleAudit(db, {
+      deploymentCode: input.deploymentCode,
+      organizationId: input.organizationId,
+      actionKey: ACTION.WEBSITE_INITIALIZED,
+      entityType: "website_instance",
+      entityId: provisioned.instance.id,
+      applicationId: input.application && input.application.id,
+      instanceId: provisioned.instance.id,
+      productCode,
+      source: "registration_website_init",
+      entityKey: provisioned.instance.slug,
+    });
+  }
   return {
     ok: Boolean(provisioned && provisioned.ok),
     created: Boolean(provisioned && provisioned.created),

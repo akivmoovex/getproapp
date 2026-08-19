@@ -195,10 +195,10 @@ async function assignStaffRole(db, input) {
       entityType: "staff_role_assignment",
       entityId: row.id,
       outcome: "success",
-      metadataJson: {
-        role_key: role.role_key,
-        scope_type: scopeType,
-        actor_kind: "system",
+      metadata: {
+        actor_type: "system",
+        entity_key: role.role_key,
+        source: input.assignmentOrigin || "manual",
       },
     });
     return {

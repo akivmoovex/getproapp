@@ -82,6 +82,30 @@
       </div>
       <% } %>
     </dl>
+    <% if (organizationConsole) { %>
+    <nav class="ac-dashboard__console" data-ac-organization-console="1" aria-label="Organization administration">
+      <ul class="ac-dashboard__console-list">
+        <% if (organizationConsole.organizationHref) { %>
+        <li><a href="<%= organizationConsole.organizationHref %>" data-ac-console-link="organization">Organization profile</a></li>
+        <% } %>
+        <% if (organizationConsole.websiteHref) { %>
+        <li><a href="<%= organizationConsole.websiteHref %>" data-ac-console-link="website">Website</a></li>
+        <% } %>
+        <% if (organizationConsole.staffHref) { %>
+        <li><a href="<%= organizationConsole.staffHref %>" data-ac-console-link="staff">Staff</a></li>
+        <% } %>
+        <% if (organizationConsole.accessHref) { %>
+        <li><a href="<%= organizationConsole.accessHref %>" data-ac-console-link="access">Roles &amp; access</a></li>
+        <% } %>
+        <% if (organizationConsole.facilitiesHref) { %>
+        <li><a href="<%= organizationConsole.facilitiesHref %>" data-ac-console-link="facilities">Facilities</a></li>
+        <% } %>
+        <% if (organizationConsole.settingsHref) { %>
+        <li><a href="<%= organizationConsole.settingsHref %>" data-ac-console-link="settings">Settings</a></li>
+        <% } %>
+      </ul>
+    </nav>
+    <% } %>
   </article>
 
   <% if (mode === 'empty') { %>

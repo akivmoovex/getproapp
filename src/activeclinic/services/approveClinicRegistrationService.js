@@ -14,6 +14,7 @@ const {
   updateIdentityPasswordHash,
 } = require("../../platform/repositories/platformIdentityRepository");
 const { recordAuditEventSafe } = require("../../platform/services/auditEventService");
+const { ACTION: LIFECYCLE_ACTION, recordLifecycleAudit } = require("../../platform/registration/lifecycleAudit");
 const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
@@ -179,6 +180,29 @@ function provisioningStatusForStage(stage) {
 
 async function persistProvisionFailure(client, appId, patch) {
   await updateApplication(client, appId, patch);
+}
+
+function clinicLifecycleBase(app, input, organizationId) {
+  return {
+    deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
+    organizationId,
+    applicationId: app.id,
+    entityId: app.id,
+    entityType: "clinic_registration_application",
+    actorIdentityId: input.actorIdentityId || null,
+    actorType: input.actorKind || "platform_admin",
+    productCode: "activeclinic",
+    source: "clinic_registration_provision",
+  };
+}
+
+async function recordClinicLifecycle(client, app, input, organizationId, actionKey, extra) {
+  if (!organizationId) return;
+  await recordLifecycleAudit(client, {
+    ...clinicLifecycleBase(app, input, organizationId),
+    actionKey,
+    ...(extra || {}),
+  });
 }
 
 async function maybeSendReadyToSignInEmail(client, input) {
@@ -389,17 +413,31 @@ async function approveAndProvisionClinicRegistration(db, input) {
     }
 
     const failAfter = requestedFailAfter(input);
+    const isRetry =
+      Boolean(app.organization_id) ||
+      String(app.provisioning_status || "") === "failed" ||
+      String(app.status || "") === "provision_failed";
     await updateApplication(client, app.id, {
       provisioning_status: "in_progress",
       last_provision_stage: STAGE.ORGANIZATION,
     });
     await appendReviewEvent(client, {
       applicationId: app.id,
-      eventType: "provisioning_started",
+      eventType: isRetry ? "provisioning_retry" : "provisioning_started",
       actorId: input.actorIdentityId,
       visibility: "history",
       deliveryStatus: "not_applicable",
     });
+    if (isRetry && app.organization_id) {
+      await recordClinicLifecycle(
+        client,
+        app,
+        input,
+        app.organization_id,
+        LIFECYCLE_ACTION.PROVISIONING_RETRY,
+        { retry: true, provisioningStatus: "in_progress" }
+      );
+    }
 
     let organizationId = app.organization_id;
     let slug = null;
@@ -445,6 +483,12 @@ async function approveAndProvisionClinicRegistration(db, input) {
           visibility: "history",
           deliveryStatus: "not_applicable",
         });
+        await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
+          outcome: "failure",
+          failedStage: STAGE.ORGANIZATION,
+          reasonCode: String(tenant.status || "tenant_failed").slice(0, 120),
+          provisioningStatus: "failed",
+        });
         return {
           ok: false,
           code: RESULT.TENANT_FAILED,
@@ -458,6 +502,14 @@ async function approveAndProvisionClinicRegistration(db, input) {
       await updateApplication(client, app.id, {
         organization_id: organizationId,
         last_provision_stage: STAGE.ORGANIZATION,
+      });
+      await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.ORGANIZATION_CREATED, {
+        entityKey: slug,
+        entityType: "organization",
+        entityId: organizationId,
+      });
+      await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_STARTED, {
+        provisioningStatus: "in_progress",
       });
     } else {
       const org = await client.query(
@@ -474,6 +526,20 @@ async function approveAndProvisionClinicRegistration(db, input) {
         provisioning_status: "failed",
         last_provision_stage: STAGE.ORGANIZATION,
         last_provision_error: "injected_failure:organization",
+      });
+      await appendReviewEvent(client, {
+        applicationId: app.id,
+        eventType: "provisioning_failed",
+        body: "injected_failure:organization",
+        actorId: input.actorIdentityId,
+        visibility: "history",
+        deliveryStatus: "not_applicable",
+      });
+      await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
+        outcome: "failure",
+        failedStage: STAGE.ORGANIZATION,
+        reasonCode: "injected_failure",
+        provisioningStatus: "failed",
       });
       return {
         ok: false,
@@ -522,6 +588,12 @@ async function approveAndProvisionClinicRegistration(db, input) {
         visibility: "history",
         deliveryStatus: "not_applicable",
       });
+      await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
+        outcome: "failure",
+        failedStage,
+        reasonCode: String(clinic.code || "clinic_failed").slice(0, 120),
+        provisioningStatus: "failed",
+      });
       return {
         ok: false,
         code: RESULT.CLINIC_FAILED,
@@ -550,6 +622,12 @@ async function approveAndProvisionClinicRegistration(db, input) {
         provisioning_status: "failed",
         last_provision_stage: STAGE.FACILITY_HQ,
         last_provision_error: "injected_failure:facility_hq",
+      });
+      await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
+        outcome: "failure",
+        failedStage: STAGE.FACILITY_HQ,
+        reasonCode: "injected_failure",
+        provisioningStatus: "failed",
       });
       return {
         ok: false,
@@ -590,6 +668,12 @@ async function approveAndProvisionClinicRegistration(db, input) {
           visibility: "history",
           deliveryStatus: "not_applicable",
         });
+        await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
+          outcome: "failure",
+          failedStage: STAGE.ADMINISTRATOR,
+          reasonCode: String(admin.code || "clinic_admin_failed").slice(0, 120),
+          provisioningStatus: "failed",
+        });
         return {
           ok: false,
           code: RESULT.ADMIN_FAILED,
@@ -608,6 +692,12 @@ async function approveAndProvisionClinicRegistration(db, input) {
           provisioning_status: "failed",
           last_provision_stage: failAfter,
           last_provision_error: `injected_failure:${failAfter}`,
+        });
+        await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
+          outcome: "failure",
+          failedStage: failAfter,
+          reasonCode: "injected_failure",
+          provisioningStatus: "failed",
         });
         return {
           ok: false,
@@ -635,6 +725,12 @@ async function approveAndProvisionClinicRegistration(db, input) {
             last_provision_stage: STAGE.DEFAULT_DEPARTMENTS,
             last_provision_error: departments.result || "departments_failed",
           });
+          await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
+            outcome: "failure",
+            failedStage: STAGE.DEFAULT_DEPARTMENTS,
+            reasonCode: "departments_failed",
+            provisioningStatus: "failed",
+          });
           return {
             ok: false,
             code: RESULT.CLINIC_FAILED,
@@ -654,6 +750,12 @@ async function approveAndProvisionClinicRegistration(db, input) {
           provisioning_status: "failed",
           last_provision_stage: STAGE.DEFAULT_DEPARTMENTS,
           last_provision_error: "injected_failure:default_departments",
+        });
+        await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
+          outcome: "failure",
+          failedStage: STAGE.DEFAULT_DEPARTMENTS,
+          reasonCode: "injected_failure",
+          provisioningStatus: "failed",
         });
         return {
           ok: false,
@@ -676,6 +778,12 @@ async function approveAndProvisionClinicRegistration(db, input) {
         last_provision_stage: STAGE.WEBSITE_INSTANCE,
         last_provision_error: "injected_failure:website_instance",
         administrator_password_hash: null,
+      });
+      await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
+        outcome: "failure",
+        failedStage: STAGE.WEBSITE_INSTANCE,
+        reasonCode: "injected_failure",
+        provisioningStatus: "website_pending",
       });
       return {
         ok: true,
@@ -706,6 +814,12 @@ async function approveAndProvisionClinicRegistration(db, input) {
         last_provision_stage: STAGE.TEMPLATE_CONTENT,
         last_provision_error: "injected_failure:template_content",
         administrator_password_hash: null,
+      });
+      await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
+        outcome: "failure",
+        failedStage: STAGE.TEMPLATE_CONTENT,
+        reasonCode: "injected_failure",
+        provisioningStatus: "website_pending",
       });
       return {
         ok: true,
@@ -763,6 +877,12 @@ async function approveAndProvisionClinicRegistration(db, input) {
         last_provision_stage: STAGE.AUDIT_COMPLETION,
         last_provision_error: "injected_failure:audit_completion",
         administrator_password_hash: null,
+      });
+      await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
+        outcome: "failure",
+        failedStage: STAGE.AUDIT_COMPLETION,
+        reasonCode: "injected_failure",
+        provisioningStatus: "failed",
       });
       return {
         ok: false,
@@ -833,19 +953,52 @@ async function approveAndProvisionClinicRegistration(db, input) {
       actionKey: "activeclinic.clinic_registration.approve",
       entityType: "clinic_registration_application",
       entityId: app.id,
-      outcome: fullyComplete ? "success" : "partial",
-      metadataJson: {
-        actor_kind: input.actorKind || "platform_admin",
-        actor_platform_identity_id: input.actorIdentityId || null,
+      outcome: fullyComplete ? "success" : "failure",
+      metadata: {
+        actor_type: input.actorKind || "platform_admin",
+        actor_identity_id: input.actorIdentityId || null,
+        product_code: "activeclinic",
         provisioning_status: provisioningStatus,
-        existing_identity_linked: admin.reusedIdentity === true,
-        second_clinic_attachment: Boolean(
-          admin.reusedIdentity && identityCollision.existingActiveClinicIdentity
-        ),
-        acknowledged_existing_identity: acknowledged,
         failed_stage: fullyComplete ? null : failedStage,
+        application_id: app.id,
+        instance_id: instance ? instance.id : null,
+        source: "clinic_registration_provision",
       },
     });
+    await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.APPROVED, {
+      status: "active",
+      provisioningStatus,
+      instanceId: instance ? instance.id : null,
+    });
+    if (admin.ok && admin.staffMemberId) {
+      await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.ADMIN_ROLE_ASSIGNED, {
+        entityType: "staff_role_assignment",
+        entityKey: ORGANIZATION_ADMIN,
+        instanceId: instance ? instance.id : null,
+      });
+    }
+    if (instance) {
+      await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.WEBSITE_INITIALIZED, {
+        entityType: "website_instance",
+        entityId: instance.id,
+        instanceId: instance.id,
+        entityKey: slug,
+      });
+    }
+    await recordClinicLifecycle(
+      client,
+      app,
+      input,
+      organizationId,
+      fullyComplete ? LIFECYCLE_ACTION.PROVISIONING_COMPLETED : LIFECYCLE_ACTION.PROVISIONING_FAILED,
+      {
+        outcome: fullyComplete ? "success" : "failure",
+        provisioningStatus,
+        failedStage: fullyComplete ? null : failedStage,
+        reasonCode: fullyComplete ? undefined : String(failedStage || "provision_incomplete"),
+        instanceId: instance ? instance.id : null,
+      }
+    );
     if (instance) {
       await recordWebsiteAudit(client, {
         organizationId,
@@ -932,6 +1085,12 @@ async function rejectClinicRegistration(db, input) {
       actorId: input.actorIdentityId,
       visibility: "history",
       deliveryStatus: "sending_unavailable",
+    });
+    await recordClinicLifecycle(client, app, input, app.organization_id, LIFECYCLE_ACTION.REJECTED, {
+      outcome: "success",
+      status: "rejected",
+      reasonCode: "rejected",
+      actorType: input.actorKind || "platform_admin",
     });
     return {
       ok: true,

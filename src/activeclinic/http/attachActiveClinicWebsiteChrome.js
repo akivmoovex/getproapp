@@ -12,6 +12,7 @@ const instanceRepo = require("../../platform/website/instanceRepository");
 const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
+  buildPublicWebsiteEditPath,
   buildPublicWebsitePreviewPath,
   buildPublicWebsiteHistoryPath,
   buildPublicWebsitePublishPath,
@@ -75,6 +76,7 @@ function clinicWebsiteActionUrls(clinicKey) {
     websiteSaveUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/drafts" }),
     websiteMediaUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/media" }),
     websitePreviewUrl: buildPublicWebsitePreviewPath(base),
+    websiteEditUrl: buildPublicWebsiteEditPath(base),
     websiteHistoryUrl: buildPublicWebsiteHistoryPath(base),
     websitePublishUrl: buildPublicWebsitePublishPath(base),
     websiteSubmitUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/submit" }),

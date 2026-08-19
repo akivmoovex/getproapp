@@ -25,6 +25,7 @@ const churchProvision = require("./provisionBlessBoardChurch");
 const userCreate = require("./createBlessBoardUser");
 const roleAssign = require("./assignBlessBoardRole");
 const { recordAuditEventSafe } = require("../../platform/services/auditEventService");
+const { ACTION: LIFECYCLE_ACTION, recordLifecycleAudit } = require("../../platform/registration/lifecycleAudit");
 const { logRegistrationTrace } = require("./registrationTraceLog");
 const {
   normalizeOrganizationKey,
@@ -416,10 +417,20 @@ async function ensureDraftChurchSettings(client, fields) {
     (existing.primaryPhone && String(existing.primaryPhone).trim()) ||
     (fields.primaryPhone ? String(fields.primaryPhone).trim() : "") ||
     null;
+  const timezone =
+    (existing.defaultTimezone && String(existing.defaultTimezone).trim()) ||
+    (fields.defaultTimezone ? String(fields.defaultTimezone).trim() : "") ||
+    "Africa/Lusaka";
+  const country =
+    (existing.defaultCountryCode && String(existing.defaultCountryCode).trim()) ||
+    (fields.defaultCountryCode ? String(fields.defaultCountryCode).trim() : "") ||
+    null;
   if (
     email === existing.primaryEmail &&
     phone === existing.primaryPhone &&
-    existing.publicName
+    existing.publicName &&
+    timezone === existing.defaultTimezone &&
+    country === existing.defaultCountryCode
   ) {
     return;
   }
@@ -428,8 +439,8 @@ async function ensureDraftChurchSettings(client, fields) {
     denomination: existing.denomination,
     primaryEmail: email,
     primaryPhone: phone,
-    defaultTimezone: existing.defaultTimezone,
-    defaultCountryCode: existing.defaultCountryCode,
+    defaultTimezone: timezone,
+    defaultCountryCode: country,
     websiteStatus: existing.websiteStatus || "draft",
   });
 }
@@ -554,16 +565,37 @@ async function writeSuccessAudits(client, opts) {
       category: "registration",
       entity_key: opts.organizationKey,
       product_key: PRODUCT_KEY,
+      product_code: PRODUCT_KEY,
       plan_key: opts.planKey || PLAN_KEY_FREE,
       request_id: opts.requestId ? String(opts.requestId).slice(0, 120) : undefined,
       actor_type: opts.actorType ? String(opts.actorType).slice(0, 64) : "system",
       source: opts.source ? String(opts.source).slice(0, 64) : "orchestrator",
       status: "ok",
+      application_id: opts.applicationId || undefined,
     },
   };
   await recordAuditEventSafe(client, {
     ...base,
-    actionKey: "registration.provisioning_completed",
+    actionKey: LIFECYCLE_ACTION.APPROVED,
+    entityType: "registration_application",
+    entityId: opts.applicationId || opts.organizationId,
+  });
+  await recordAuditEventSafe(client, {
+    ...base,
+    actionKey: LIFECYCLE_ACTION.ADMIN_ROLE_ASSIGNED,
+    entityType: "user_role_assignment",
+    entityId: opts.administratorUserId || opts.invitationId || opts.organizationId,
+    metadata: { ...base.metadata, entity_key: "church_hq_admin" },
+  });
+  await recordAuditEventSafe(client, {
+    ...base,
+    actionKey: LIFECYCLE_ACTION.WEBSITE_INITIALIZED,
+    entityType: "website_instance",
+    entityId: opts.organizationId,
+  });
+  await recordAuditEventSafe(client, {
+    ...base,
+    actionKey: LIFECYCLE_ACTION.PROVISIONING_COMPLETED,
     entityType: "organization",
     entityId: opts.organizationId,
   });
@@ -872,6 +904,42 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         );
       }
       provisioningStage = "organization_created";
+      {
+        const createdOrgId = tenant.records && tenant.records.organization && tenant.records.organization.id;
+        if (createdOrgId) {
+          const lifecycleBase = {
+            deploymentCode,
+            organizationId: createdOrgId,
+            applicationId,
+            entityId: applicationId,
+            productCode: PRODUCT_KEY,
+            actorType: actorContext.type || "system",
+            source: actorContext.source || "orchestrator",
+            actorUserId: administratorViaInvitation ? invitingActorUserId : null,
+            entityKey: organizationKey,
+          };
+          if (resumeExistingOrg) {
+            await recordLifecycleAudit(client, {
+              ...lifecycleBase,
+              actionKey: LIFECYCLE_ACTION.PROVISIONING_RETRY,
+              retry: true,
+              provisioningStatus: "provisioning",
+            });
+          } else {
+            await recordLifecycleAudit(client, {
+              ...lifecycleBase,
+              actionKey: LIFECYCLE_ACTION.ORGANIZATION_CREATED,
+              entityType: "organization",
+              entityId: createdOrgId,
+            });
+            await recordLifecycleAudit(client, {
+              ...lifecycleBase,
+              actionKey: LIFECYCLE_ACTION.PROVISIONING_STARTED,
+              provisioningStatus: "provisioning",
+            });
+          }
+        }
+      }
       provisioningStage = "organization_key_created";
 
       const hqNamePrepared = prepareBranchDisplayName(
@@ -893,7 +961,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           dataEnvironment,
           hqBranchKey: HQ_BRANCH_KEY,
           hqBranchDisplayName,
-          timezone: null,
+          timezone: "Africa/Lusaka",
           countryCode,
           nameUniquenessKey,
         },
@@ -1119,6 +1187,8 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         publicName: displayName,
         primaryEmail: application.contact_email,
         primaryPhone: application.contact_phone,
+        defaultTimezone: "Africa/Lusaka",
+        defaultCountryCode: countryCode,
       });
       provisioningStage = "default_pages_seeded";
 
@@ -1183,6 +1253,9 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         actorType: actorContext.type || "system",
         source: actorContext.source || "orchestrator",
         planKey,
+        applicationId,
+        administratorUserId,
+        invitationId,
       });
 
       provisioningStage = "committed";
@@ -1340,6 +1413,35 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           provisioningErrorDetail: failureDetail.slice(0, 2000),
           lastProvisionStage: mapBlessBoardInternalStage(provisioningStage),
         });
+        try {
+          const failedApp = await appRepo.findApplicationById(db, applicationId);
+          if (failedApp && failedApp.organization_id) {
+            await recordLifecycleAudit(db, {
+              deploymentCode,
+              organizationId: failedApp.organization_id,
+              actionKey: LIFECYCLE_ACTION.PROVISIONING_FAILED,
+              outcome: "failure",
+              applicationId,
+              entityId: applicationId,
+              productCode: PRODUCT_KEY,
+              actorType: (actorContext && actorContext.type) || "system",
+              source: (actorContext && actorContext.source) || "orchestrator",
+              actorUserId: administratorViaInvitation ? invitingActorUserId : null,
+              failedStage: mapBlessBoardInternalStage(provisioningStage),
+              reasonCode: String(failureCode).slice(0, 120),
+              provisioningStatus: "provisioning_failed",
+            });
+          }
+          await appRepo.updateApplicationRiskReviewState(db, applicationId, {
+            reviewEvent: {
+              at: new Date().toISOString(),
+              action: "provisioning_failed",
+              reason_codes: [String(failureCode).slice(0, 40)],
+            },
+          });
+        } catch {
+          /* best-effort failure trail */
+        }
       } catch (persistErr) {
         logRegistrationTrace(
           null,

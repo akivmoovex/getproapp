@@ -40,16 +40,39 @@
       <% if (o.canEdit) { %>
       <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.inlineEditPath || o.editPath || '/hq/content' %>" data-bb-edit-website="1">Edit website</a>
       <% } %>
-      <% if (o.liveAvailable && o.publicPath) { %>
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.publicPath %>" rel="noopener">View Live Website</a>
+      <% if (o.websiteUx && o.websiteUx.actions && o.websiteUx.actions.viewLive) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.websiteUx.actions.viewLive %>" rel="noopener" data-bb-website-action="view-live">View Live Website</a>
       <% } else { %>
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Website</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>" data-bb-website-action="preview">Preview Website</a>
       <% } %>
     </p>
   </header>
 
   <% if (typeof notice !== 'undefined' && notice) { %>
   <div class="bb-hq-alert bb-hq-alert--ok" role="status"><%= notice %></div>
+  <% } %>
+
+  <%- include('../partials/website-settings-status') %>
+
+  <% if (typeof needsFoundationRepair !== 'undefined' && needsFoundationRepair) { %>
+  <div class="bb-hq-panel" data-bb-hq-website-repair="1" id="website-setup-retry">
+    <h2 class="bb-hq-panel__title">Repair website foundation</h2>
+    <p>
+      Required page shells or settings are missing. Repair inserts only missing structures
+      and does not publish or overwrite existing content.
+    </p>
+    <form method="post" action="/hq/website/repair-foundation" class="bb-hq-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="audit_reason" value="hq_repair_website_foundation" />
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="confirm_repair" value="1" required />
+          I confirm repairing missing website foundation records only
+        </label>
+      </div>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Retry</button>
+    </form>
+  </div>
   <% } %>
 
   <% if (o.restoredDraft) { %>

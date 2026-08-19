@@ -244,8 +244,14 @@ function createActiveClinicFoundationApp(options) {
 
   app.get("/healthz", (req, res) => {
     const deployment = resolveDeploymentConfiguration(env);
+    const {
+      schemaCompatibilityHealthz,
+    } = require("../../platform/schema/v7RuntimeSchemaCompatibility");
+    const schemaHealth = schemaCompatibilityHealthz(
+      opts.schemaCompatibility || (opts.boot && opts.boot.schemaCompatibility) || null
+    );
     const body = {
-      ok: true,
+      ok: schemaHealth.status === 200,
       mode: "v5-foundation",
       product: "activeclinic",
       environment: deployment.environment || null,
@@ -253,7 +259,12 @@ function createActiveClinicFoundationApp(options) {
       csrfCookie: getCsrfCookieName(env),
       sessionCookie: deployment.sessionCookieName || null,
       requiresProductEnablement: true,
+      schemaCompatible: schemaHealth.schemaCompatible,
+      schemaCompatibility: schemaHealth.schemaCompatibility,
     };
+    if (schemaHealth.status !== 200) {
+      return res.status(schemaHealth.status).json(body);
+    }
     if (env.DEBUG_HOST === "1") {
       return res.json({
         ...body,
@@ -629,12 +640,12 @@ async function startActiveClinicFoundationServer(opts) {
     } = require("../../startup/blessBoardOrgDbGate");
     await assertPlatformDatabaseIdentityOrExit(pool);
   }
-  {
-    const {
-      assertV7RuntimeSchemaCompatibilityOrExit,
-    } = require("../../platform/schema/v7RuntimeSchemaCompatibility");
-    await assertV7RuntimeSchemaCompatibilityOrExit(pool, { env: process.env });
-  }
+  const {
+    assertV7RuntimeSchemaCompatibilityOrExit,
+  } = require("../../platform/schema/v7RuntimeSchemaCompatibility");
+  const schemaCompatibility = await assertV7RuntimeSchemaCompatibilityOrExit(pool, {
+    env: process.env,
+  });
 
   try {
     const schemaStatus = await inspectActiveClinicPublicSchema(pool);
@@ -672,6 +683,7 @@ async function startActiveClinicFoundationServer(opts) {
   const app = createActiveClinicFoundationApp({
     getPool: () => pool,
     env: process.env,
+    schemaCompatibility,
   });
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;
   const host = resolveListenHost(process.env);

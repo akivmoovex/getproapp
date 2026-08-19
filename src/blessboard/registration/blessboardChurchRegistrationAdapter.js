@@ -152,6 +152,16 @@ async function persistSubmitted(db, input) {
           }
         : {}),
     });
+    if (!created.duplicate && created.application && created.application.id) {
+      await repo.updateApplicationRiskReviewState(db, created.application.id, {
+        reviewEvent: {
+          at: new Date().toISOString(),
+          action: "submitted",
+          actor_type: "applicant",
+          product_key: productCode,
+        },
+      });
+    }
     return {
       ok: true,
       application: created.application,
@@ -206,6 +216,11 @@ async function markReviewRequired(db, input) {
   await repo.updateApplicationRiskReviewState(db, application.id, {
     applicationStatus: LIFECYCLE.REVIEW_REQUIRED,
     reviewNotes: reason.slice(0, 500),
+    reviewEvent: {
+      at: new Date().toISOString(),
+      action: "review_required",
+      reason_codes: Array.isArray(input.reasons) ? input.reasons.slice(0, 20) : [reason].filter(Boolean),
+    },
   });
   return { ok: true };
 }

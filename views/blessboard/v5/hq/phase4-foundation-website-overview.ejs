@@ -37,16 +37,39 @@
         <span class="material-symbols-outlined" aria-hidden="true">edit</span>
         Edit website
       </a>
-      <% if (o.liveAvailable && o.publicPath) { %>
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.publicPath %>" rel="noopener">View Live Website</a>
+      <% if (o.websiteUx && o.websiteUx.actions && o.websiteUx.actions.viewLive) { %>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.websiteUx.actions.viewLive %>" rel="noopener" data-bb-website-action="view-live">View Live Website</a>
       <% } else { %>
-      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath || '/hq/content/preview/home' %>">Preview Website</a>
+      <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath || '/hq/content/preview/home' %>" data-bb-website-action="preview">Preview Website</a>
       <% } %>
     </p>
   </header>
 
   <% if (typeof notice !== 'undefined' && notice) { %>
   <div class="bb-hq-alert bb-hq-alert--ok" role="status"><%= notice %></div>
+  <% } %>
+
+  <%- include('../partials/website-settings-status') %>
+
+  <% if (typeof needsFoundationRepair !== 'undefined' && needsFoundationRepair) { %>
+  <div class="bb-hq-panel" data-bb-hq-website-repair="1" id="website-setup-retry">
+    <h2 class="bb-hq-panel__title">Repair website foundation</h2>
+    <p>
+      Required page shells or settings are missing. Repair inserts only missing structures
+      and does not publish or overwrite existing content.
+    </p>
+    <form method="post" action="/hq/website/repair-foundation" class="bb-hq-form">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <input type="hidden" name="audit_reason" value="hq_repair_website_foundation" />
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="confirm_repair" value="1" required />
+          I confirm repairing missing website foundation records only
+        </label>
+      </div>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Retry</button>
+    </form>
+  </div>
   <% } %>
 
   <% if (o.unpublishedNotice) { %>
@@ -94,9 +117,9 @@
       <% if (o.organizationKey) { %>
       <p class="bb-hq-muted">Organization key: <code><%= o.organizationKey %></code></p>
       <% } %>
-      <% if (o.liveAvailable && o.publicPath) { %>
+      <% if (o.websiteUx && o.websiteUx.actions && o.websiteUx.actions.viewLive) { %>
       <p class="bb-phase4-website__url">
-        <a href="<%= o.publicPath %>" rel="noopener"><%= o.publicPath %></a>
+        <a href="<%= o.websiteUx.actions.viewLive %>" rel="noopener"><%= o.publicPath %></a>
       </p>
       <% } else if (o.publicPath) { %>
       <p class="bb-phase4-website__url bb-hq-muted">
@@ -117,6 +140,8 @@
         <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.editPath %>">Edit Website</a>
         <% } %>
         <a class="bb-hq-btn bb-hq-btn--ghost" href="<%= o.previewPath %>">Preview Changes</a>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/version-history" data-bb-website-action="history">Version history</a>
+        <a class="bb-hq-btn bb-hq-btn--ghost" href="/hq/website/publishing-history" data-bb-website-action="publishing-history">Publishing history</a>
         <% if (o.canPublish) { %>
         <a class="bb-hq-btn bb-hq-btn--primary" href="<%= o.publishReviewPath || '/hq/website/publish/review' %>">Publish Changes</a>
         <% } else if (o.showFixDetails) { %>

@@ -60,9 +60,23 @@ const MODULE_BY_TYPE = Object.freeze({
   laboratory: "Laboratory",
   radiology: "Radiology",
   billing: "Billing / Cashier",
-  administration: "Administration",
-  records: "Records",
-  procedure: "Procedures",
+  administration: "Settings / access / facilities",
+  records: "Records (no operational module yet)",
+  procedure: "Procedures (no operational module yet)",
+});
+
+/** Working app destinations unlocked by each department type. null = no module yet. */
+const MODULE_HREF_BY_TYPE = Object.freeze({
+  reception: "/app/reception",
+  opd: "/app/clinical",
+  triage: "/app/clinical",
+  pharmacy: "/app/pharmacy",
+  laboratory: "/app/diagnostics/laboratory",
+  radiology: "/app/diagnostics/radiology",
+  billing: "/app/billing",
+  administration: "/app/settings",
+  records: null,
+  procedure: null,
 });
 
 const DEFAULT_DEPARTMENT_SPECS = Object.freeze([
@@ -98,6 +112,7 @@ function mapDepartment(row) {
     facilityKey: row.facility_key || null,
     typeLabel: DEPARTMENT_TYPE_LABELS[row.department_type] || row.department_type,
     moduleLabel: MODULE_BY_TYPE[row.department_type] || null,
+    moduleHref: MODULE_HREF_BY_TYPE[row.department_type] || null,
   };
 }
 
@@ -332,6 +347,7 @@ module.exports = {
   DEPARTMENT_TYPES,
   DEPARTMENT_TYPE_LABELS,
   MODULE_BY_TYPE,
+  MODULE_HREF_BY_TYPE,
   mapDepartment,
   listDepartments,
   createDepartment,

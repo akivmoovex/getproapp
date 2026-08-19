@@ -63,6 +63,14 @@ const DASHBOARD_MODULE_TILES = Object.freeze([
     description: "Reception queue and check-in",
   },
   {
+    key: "booking_requests",
+    label: "Booking requests",
+    href: "/app/booking-requests",
+    section: "operational",
+    permission: "activeclinic.patient.search",
+    description: "Review public booking requests",
+  },
+  {
     key: "clinical",
     label: "Clinical",
     href: "/app/clinical",
@@ -139,7 +147,7 @@ const DASHBOARD_MODULE_TILES = Object.freeze([
     label: "Organization profile",
     href: "/app/settings/organization",
     section: "administration",
-    anyOf: ["activeclinic.organization.view", "activeclinic.organization.manage"],
+    anyOf: ["activeclinic.organization.manage"],
     description: "Clinic identity, legal name, and regional defaults",
   },
   {

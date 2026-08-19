@@ -12,12 +12,12 @@
   }
   var _img = leader && leader.imageUrl ? leader.imageUrl : null;
 %>
-<article class="bb-tp-leader-card<%= _featured ? ' bb-tp-leader-card--featured' : '' %>">
+<article class="bb-tp-leader-card<%= _featured ? ' bb-tp-leader-card--featured' : '' %><%= leader && leader.templateExample ? ' bb-tp-leader-card--template' : '' %>"<% if (leader && leader.templateExample) { %> data-bb-template-example="leader"<% } %>>
   <div class="bb-tp-leader-card__media<%= _img ? ' has-media' : ' is-fallback' %>">
     <% if (_img) { %>
     <img
       src="<%= _img %>"
-      alt="<%= leader.displayName %>"
+      alt="<%= leader.templateExample ? 'Template portrait' : leader.displayName %>"
       width="<%= _featured ? 480 : 400 %>"
       height="<%= _featured ? 600 : 400 %>"
       loading="<%= _featured ? 'eager' : 'lazy' %>"

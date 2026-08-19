@@ -5573,6 +5573,24 @@ a.bb-tp-content-card:hover {
   margin-top: 0.1rem;
 }
 
+.bb-tp-template-banner {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0.65rem 1.25rem;
+  background: #f7f4ee;
+  color: #4a4338;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  border-bottom: 1px solid rgba(74, 67, 56, 0.12);
+}
+
+@media (max-width: 720px) {
+  .bb-tp-template-banner {
+    padding: 0.7rem 1rem;
+    font-size: 0.82rem;
+  }
+}
+
 .bb-tp-admin-bar,
 .bb-tp-edit-toolbar {
   position: sticky;

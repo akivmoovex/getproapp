@@ -510,6 +510,7 @@ describe("v7 unified organization onboarding", () => {
     assert.equal(step(needed, "logo").skippable, true);
     assert.ok(step(needed, "logo").destinationUrl);
     assert.equal(step(needed, "invite_staff").kind, STEP_KIND.RECOMMENDED);
+    assert.equal(step(needed, "invite_staff").destinationUrl, "/hq/settings/staff-access");
     assert.equal(needed.onboardingRequired, true);
     assert.equal(needed.status, STATUS.IN_PROGRESS);
     assert.equal(needed.currentStepKey, "contact_details");

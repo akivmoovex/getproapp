@@ -190,6 +190,12 @@
             <% } %>
           </div>
           <% if (footerServices.length) { %>
+          <% var _templateTimes = footerServices.some(function (entry) {
+            return entry && (entry.templateExample || (entry.note && /template example/i.test(String(entry.note))));
+          }); %>
+          <% if (_templateTimes) { %>
+          <p class="bb-tp-footer__muted" data-bb-template-example="service-times">Example gathering times — not this church’s published schedule.</p>
+          <% } %>
           <ul class="bb-tp-footer__list bb-tp-footer__list--services">
             <% footerServices.forEach(function (entry) { %>
             <li>
@@ -231,7 +237,7 @@
   <%- include('./unsaved-changes-dialog') %>
   <script src="/blessboard/v5/website-unsaved-guard.js?v=2" defer></script>
   <script src="/blessboard/v5/website-inline-edit.js?v=6" defer></script>
-  <script src="/blessboard/v5/website-structured-edit.js?v=5" defer></script>
+  <script src="/blessboard/v5/website-structured-edit.js?v=6" defer></script>
   <script src="/blessboard/v5/website-features-panel.js?v=1" defer></script>
   <% } %>
 </body>

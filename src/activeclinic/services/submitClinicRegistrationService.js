@@ -69,6 +69,18 @@ async function submitAndProvisionClinicRegistration(db, input) {
     };
   }
   if (result.code === ENGINE_RESULT.INVALID) {
+    if (result.error === "schema_mismatch" || result.persistCode === "schema_mismatch") {
+      return {
+        ok: false,
+        code: "schema_mismatch",
+        engine: result.engine,
+        errors: {},
+        error: "schema_mismatch",
+        capability: result.capability || null,
+        missing: result.missing || [],
+        application: null,
+      };
+    }
     return {
       ok: false,
       code: RESULT.INVALID_INPUT,

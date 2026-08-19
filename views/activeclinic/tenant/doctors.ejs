@@ -53,7 +53,7 @@
         </p>
         <% } %>
         <div class="ac-doctor-card__actions">
-          <a class="ac-btn ac-btn--primary ac-btn--block" href="/clinics/<%= clinic.clinicKey %>/book">Book appointment</a>
+          <a class="ac-btn ac-btn--primary ac-btn--block" href="/clinics/<%= clinic.clinicKey %>/book"><%= clinic.publicBookingEnabled ? "Book appointment" : "Request appointment" %></a>
           <a class="ac-btn ac-btn--secondary ac-btn--block" href="/clinics/<%= clinic.clinicKey %>/doctors/<%= d.staffKey %>">View profile</a>
         </div>
       </div>

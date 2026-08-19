@@ -8,6 +8,10 @@
 const {
   authorize,
 } = require("../../blessboard/services/blessBoardRbacAuthorizationService");
+const {
+  inspectV7RuntimeSchemaCompatibility,
+  presentV7SchemaCompatibilityPublic,
+} = require("../schema/v7RuntimeSchemaCompatibility");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -281,10 +285,26 @@ async function getPlatformAccessHealth(db, input) {
       href: "/admin/roles",
     });
 
+    let schemaCompatibility = null;
+    try {
+      schemaCompatibility = presentV7SchemaCompatibilityPublic(
+        await inspectV7RuntimeSchemaCompatibility(db)
+      );
+    } catch {
+      schemaCompatibility = {
+        compatible: false,
+        code: "schema_lookup_failed",
+        capability: null,
+        missing: [],
+        checks: [],
+      };
+    }
+
     return {
       ok: true,
       status: STATUS.OK,
       checks,
+      schemaCompatibility,
     };
   } catch (err) {
     return {

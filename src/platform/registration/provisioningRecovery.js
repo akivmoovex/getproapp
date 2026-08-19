@@ -30,10 +30,21 @@ async function queryOne(db, sql, params) {
   return (result && result.rows && result.rows[0]) || null;
 }
 
+function finishInspect(stages, details) {
+  const failedStage = ORDER.find((key) => stages[key] !== true) || null;
+  return {
+    complete: !failedStage,
+    failedStage,
+    stages,
+    details,
+  };
+}
+
 async function inspectActiveClinic(db, organizationId, application, staffMemberId) {
   const details = {};
   const stages = {};
   for (const key of ORDER) stages[key] = false;
+  details.departmentsApplicable = true;
 
   const org = await queryOne(
     db,
@@ -45,19 +56,19 @@ async function inspectActiveClinic(db, organizationId, application, staffMemberI
   );
   stages[STAGE.ORGANIZATION] = Boolean(org && org.status === "active");
   details.organizationKey = org ? org.organization_key : null;
-  if (!stages[STAGE.ORGANIZATION]) {
-    return { complete: false, failedStage: STAGE.ORGANIZATION, stages, details };
-  }
+  details.organizationStatus = org ? String(org.status || "") : "missing";
 
   const hco = await queryOne(
     db,
-    `SELECT id, status
+    `SELECT id, status, website_published
        FROM activeclinic.healthcare_organizations
       WHERE organization_id = $1
       LIMIT 1`,
     [organizationId]
   );
   details.healthcareOrganizationId = hco ? hco.id : null;
+  details.websitePublication =
+    hco && hco.website_published === true ? "public" : hco ? "unpublished" : "missing";
 
   const hintedStaffId =
     (application && application.clinic_admin_staff_id) || staffMemberId || null;
@@ -104,25 +115,21 @@ async function inspectActiveClinic(db, organizationId, application, staffMemberI
     adminStaff && adminStaff.status === "active" && adminStaff.platform_identity_id
   );
   details.staffMemberId = adminStaff ? adminStaff.id : null;
-  if (!stages[STAGE.ADMINISTRATOR]) {
-    return { complete: false, failedStage: STAGE.ADMINISTRATOR, stages, details };
-  }
 
-  const role = await queryOne(
-    db,
-    `SELECT a.id
-       FROM activeclinic.staff_role_assignments a
-       JOIN blessboard.roles r ON r.id = a.role_id
-      WHERE a.organization_id = $1
-        AND a.staff_member_id = $2
-        AND r.role_key = $3
-        AND a.status = 'active'
-      LIMIT 1`,
-    [organizationId, adminStaff.id, ORGANIZATION_ADMIN]
-  );
-  stages[STAGE.ROLE_ASSIGNMENT] = Boolean(role);
-  if (!stages[STAGE.ROLE_ASSIGNMENT]) {
-    return { complete: false, failedStage: STAGE.ROLE_ASSIGNMENT, stages, details };
+  if (adminStaff) {
+    const role = await queryOne(
+      db,
+      `SELECT a.id
+         FROM activeclinic.staff_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.organization_id = $1
+          AND a.staff_member_id = $2
+          AND r.role_key = $3
+          AND a.status = 'active'
+        LIMIT 1`,
+      [organizationId, adminStaff.id, ORGANIZATION_ADMIN]
+    );
+    stages[STAGE.ROLE_ASSIGNMENT] = Boolean(role);
   }
 
   const facility = await queryOne(
@@ -136,41 +143,36 @@ async function inspectActiveClinic(db, organizationId, application, staffMemberI
   );
   stages[STAGE.FACILITY_HQ] = Boolean(facility && facility.status === "active");
   details.facilityId = facility ? facility.id : null;
-  if (!stages[STAGE.FACILITY_HQ]) {
-    return { complete: false, failedStage: STAGE.FACILITY_HQ, stages, details };
+
+  if (adminStaff && facility) {
+    const membership = await queryOne(
+      db,
+      `SELECT id
+         FROM activeclinic.staff_facility_assignments
+        WHERE organization_id = $1
+          AND staff_member_id = $2
+          AND facility_id = $3
+          AND status = 'active'
+        LIMIT 1`,
+      [organizationId, adminStaff.id, facility.id]
+    );
+    stages[STAGE.MEMBERSHIPS] = Boolean(membership);
   }
 
-  const membership = await queryOne(
-    db,
-    `SELECT id
-       FROM activeclinic.staff_facility_assignments
-      WHERE organization_id = $1
-        AND staff_member_id = $2
-        AND facility_id = $3
-        AND status = 'active'
-      LIMIT 1`,
-    [organizationId, adminStaff.id, facility.id]
-  );
-  stages[STAGE.MEMBERSHIPS] = Boolean(membership);
-  if (!stages[STAGE.MEMBERSHIPS]) {
-    return { complete: false, failedStage: STAGE.MEMBERSHIPS, stages, details };
-  }
-
-  const departments = await queryOne(
-    db,
-    `SELECT COUNT(*)::int AS n
-       FROM activeclinic.departments
-      WHERE organization_id = $1
-        AND facility_id = $2
-        AND department_key = ANY($3::text[])
-        AND status = 'active'`,
-    [organizationId, facility.id, DEFAULT_DEPARTMENT_KEYS.slice()]
-  );
-  const departmentCount = departments && departments.n != null ? Number(departments.n) : 0;
-  details.defaultDepartmentCount = departmentCount;
-  stages[STAGE.DEFAULT_DEPARTMENTS] = departmentCount >= DEFAULT_DEPARTMENT_KEYS.length;
-  if (!stages[STAGE.DEFAULT_DEPARTMENTS]) {
-    return { complete: false, failedStage: STAGE.DEFAULT_DEPARTMENTS, stages, details };
+  if (facility) {
+    const departments = await queryOne(
+      db,
+      `SELECT COUNT(*)::int AS n
+         FROM activeclinic.departments
+        WHERE organization_id = $1
+          AND facility_id = $2
+          AND department_key = ANY($3::text[])
+          AND status = 'active'`,
+      [organizationId, facility.id, DEFAULT_DEPARTMENT_KEYS.slice()]
+    );
+    const departmentCount = departments && departments.n != null ? Number(departments.n) : 0;
+    details.defaultDepartmentCount = departmentCount;
+    stages[STAGE.DEFAULT_DEPARTMENTS] = departmentCount >= DEFAULT_DEPARTMENT_KEYS.length;
   }
 
   const instance = await queryOne(
@@ -186,31 +188,24 @@ async function inspectActiveClinic(db, organizationId, application, staffMemberI
   );
   stages[STAGE.WEBSITE_INSTANCE] = Boolean(instance);
   details.websiteInstanceId = instance ? instance.id : null;
-  if (!stages[STAGE.WEBSITE_INSTANCE]) {
-    return { complete: false, failedStage: STAGE.WEBSITE_INSTANCE, stages, details };
-  }
+  details.websiteInstanceStatus = instance ? instance.status : null;
 
-  const content = await queryOne(
-    db,
-    `SELECT COUNT(*)::int AS n
-       FROM platform.website_content
-      WHERE instance_id = $1`,
-    [instance.id]
-  );
-  const contentCount = content && content.n != null ? Number(content.n) : 0;
-  details.websiteContentCount = contentCount;
-  stages[STAGE.TEMPLATE_CONTENT] = contentCount > 0;
-  if (!stages[STAGE.TEMPLATE_CONTENT]) {
-    return { complete: false, failedStage: STAGE.TEMPLATE_CONTENT, stages, details };
+  if (instance) {
+    const content = await queryOne(
+      db,
+      `SELECT COUNT(*)::int AS n
+         FROM platform.website_content
+        WHERE instance_id = $1`,
+      [instance.id]
+    );
+    const contentCount = content && content.n != null ? Number(content.n) : 0;
+    details.websiteContentCount = contentCount;
+    stages[STAGE.TEMPLATE_CONTENT] = contentCount > 0;
   }
 
   const provisioning = String((application && application.provisioning_status) || "");
   stages[STAGE.AUDIT_COMPLETION] = provisioning === "provisioned";
-  if (!stages[STAGE.AUDIT_COMPLETION]) {
-    return { complete: false, failedStage: STAGE.AUDIT_COMPLETION, stages, details };
-  }
-
-  return { complete: true, failedStage: null, stages, details };
+  return finishInspect(stages, details);
 }
 
 async function inspectBlessBoard(db, organizationId, application) {
@@ -228,9 +223,7 @@ async function inspectBlessBoard(db, organizationId, application) {
   );
   stages[STAGE.ORGANIZATION] = Boolean(org && org.status === "active");
   details.organizationKey = org ? org.organization_key : null;
-  if (!stages[STAGE.ORGANIZATION]) {
-    return { complete: false, failedStage: STAGE.ORGANIZATION, stages, details };
-  }
+  details.organizationStatus = org ? String(org.status || "") : "missing";
 
   const email =
     (application &&
@@ -248,25 +241,22 @@ async function inspectBlessBoard(db, organizationId, application) {
     : null;
   stages[STAGE.ADMINISTRATOR] = Boolean(admin && admin.status && admin.status !== "disabled");
   details.administratorUserId = admin ? admin.id : null;
-  if (!stages[STAGE.ADMINISTRATOR]) {
-    return { complete: false, failedStage: STAGE.ADMINISTRATOR, stages, details };
-  }
 
-  const role = await queryOne(
-    db,
-    `SELECT id
-       FROM blessboard.user_roles
-      WHERE user_id = $1
-        AND organization_id = $2
-        AND role_key IN ('church_hq_admin', 'branch_admin')
-        AND status = 'active'
-      LIMIT 1`,
-    [admin.id, organizationId]
-  );
-  stages[STAGE.ROLE_ASSIGNMENT] = Boolean(role);
-  if (!stages[STAGE.ROLE_ASSIGNMENT]) {
-    return { complete: false, failedStage: STAGE.ROLE_ASSIGNMENT, stages, details };
+  let role = null;
+  if (admin) {
+    role = await queryOne(
+      db,
+      `SELECT id
+         FROM blessboard.user_roles
+        WHERE user_id = $1
+          AND organization_id = $2
+          AND role_key IN ('church_hq_admin', 'branch_admin')
+          AND status = 'active'
+        LIMIT 1`,
+      [admin.id, organizationId]
+    );
   }
+  stages[STAGE.ROLE_ASSIGNMENT] = Boolean(role);
 
   const church = await queryOne(
     db,
@@ -292,12 +282,31 @@ async function inspectBlessBoard(db, organizationId, application) {
   );
   details.churchId = church ? church.id : null;
   details.branchId = branch ? branch.id : null;
-  if (!stages[STAGE.FACILITY_HQ]) {
-    return { complete: false, failedStage: STAGE.FACILITY_HQ, stages, details };
-  }
 
   stages[STAGE.MEMBERSHIPS] = Boolean(role);
   stages[STAGE.DEFAULT_DEPARTMENTS] = true;
+  details.departmentsApplicable = false;
+
+  if (church) {
+    let settings = null;
+    try {
+      settings = await queryOne(
+        db,
+        `SELECT website_status
+           FROM blessboard.church_settings
+          WHERE church_id = $1
+          LIMIT 1`,
+        [church.id]
+      );
+    } catch {
+      settings = null;
+    }
+    const websiteStatus = settings ? String(settings.website_status || "") : "";
+    details.websitePublication =
+      websiteStatus === "published" ? "public" : settings ? "unpublished" : "missing";
+  } else {
+    details.websitePublication = "missing";
+  }
 
   const instance = await queryOne(
     db,
@@ -324,9 +333,6 @@ async function inspectBlessBoard(db, organizationId, application) {
   stages[STAGE.WEBSITE_INSTANCE] = Boolean(instance) || pageCount > 0;
   details.websiteInstanceId = instance ? instance.id : null;
   details.legacyPageCount = pageCount;
-  if (!stages[STAGE.WEBSITE_INSTANCE]) {
-    return { complete: false, failedStage: STAGE.WEBSITE_INSTANCE, stages, details };
-  }
 
   let contentCount = 0;
   if (instance) {
@@ -341,17 +347,10 @@ async function inspectBlessBoard(db, organizationId, application) {
   }
   details.websiteContentCount = contentCount;
   stages[STAGE.TEMPLATE_CONTENT] = contentCount > 0 || pageCount > 0;
-  if (!stages[STAGE.TEMPLATE_CONTENT]) {
-    return { complete: false, failedStage: STAGE.TEMPLATE_CONTENT, stages, details };
-  }
 
   const provisioning = String((application && application.provisioning_status) || "");
   stages[STAGE.AUDIT_COMPLETION] = provisioning === "provisioned";
-  if (!stages[STAGE.AUDIT_COMPLETION]) {
-    return { complete: false, failedStage: STAGE.AUDIT_COMPLETION, stages, details };
-  }
-
-  return { complete: true, failedStage: null, stages, details };
+  return finishInspect(stages, details);
 }
 
 async function inspectOrganizationProvisioningCompleteness(db, input) {

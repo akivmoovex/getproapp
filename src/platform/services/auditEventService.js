@@ -92,6 +92,16 @@ const ALLOWED_METADATA_KEYS = Object.freeze([
   "registration_method",
   "override",
   "search_kind",
+  "product_code",
+  "actor_identity_id",
+  "application_id",
+  "instance_id",
+  "version_id",
+  "media_id",
+  "content_key",
+  "failed_stage",
+  "provisioning_status",
+  "retry",
 ]);
 
 const ACTION_KEY_RE = /^[a-z][a-z0-9_.]{1,95}$/;
@@ -123,6 +133,25 @@ async function withClient(db, fn) {
 }
 
 /**
+ * Map known caller aliases onto allowlisted keys without storing extra PII.
+ * @param {object} raw
+ * @returns {object}
+ */
+function normalizeAuditMetadataAliases(raw) {
+  const out = { ...raw };
+  if (out.actor_kind != null && out.actor_type == null) {
+    out.actor_type = out.actor_kind;
+  }
+  if (out.product_code != null && out.product_key == null) {
+    out.product_key = out.product_code;
+  }
+  if (out.actor_platform_identity_id != null && out.actor_identity_id == null) {
+    out.actor_identity_id = out.actor_platform_identity_id;
+  }
+  return out;
+}
+
+/**
  * Strip secrets / PII; keep only allowlisted scalar metadata.
  * @param {unknown} raw
  * @returns {{ ok: true, metadata: object, redactedKeys: string[] } | { ok: false, reason: string }}
@@ -134,9 +163,10 @@ function sanitizeAuditMetadata(raw) {
   if (typeof raw !== "object" || Array.isArray(raw)) {
     return { ok: false, reason: "metadata_not_object" };
   }
+  const source = normalizeAuditMetadataAliases(raw);
   const metadata = {};
   const redactedKeys = [];
-  for (const [key, value] of Object.entries(raw)) {
+  for (const [key, value] of Object.entries(source)) {
     const k = String(key).trim().toLowerCase();
     if (!k || k.length > 64) {
       redactedKeys.push(key);
@@ -221,7 +251,8 @@ async function recordAuditEvent(db, input) {
     return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: "entity_id" };
   }
 
-  const sanitized = sanitizeAuditMetadata(input.metadata);
+  const rawMetadata = input.metadata != null ? input.metadata : input.metadataJson;
+  const sanitized = sanitizeAuditMetadata(rawMetadata);
   if (!sanitized.ok) {
     return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: sanitized.reason };
   }

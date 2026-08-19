@@ -16,6 +16,7 @@ const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
   buildPublicWebsitePreviewPath,
+  buildPublicWebsiteAdminPath,
 } = require("./publicWebsiteUrl");
 const { LIFECYCLE_LABELS, LIFECYCLE_STATUS } = require("./lifecycleStatus");
 const {
@@ -83,7 +84,11 @@ function draftLabel(input) {
 function buildActionUrls(organizationKey, productCode) {
   const key = String(organizationKey || "");
   const product = String(productCode || "");
-  const open = `/admin/organizations/${encodeURIComponent(key)}/website`;
+  const open =
+    buildPublicWebsiteAdminPath({
+      organizationKey: key,
+      surface: "website",
+    }) || `/admin/organizations/${encodeURIComponent(key)}/website`;
   return {
     viewLive: buildPublicOrganizationWebsitePath({
       product,

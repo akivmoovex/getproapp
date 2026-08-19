@@ -16,12 +16,14 @@
   }
   var desktopQuickActions = [
     { key: 'branches', label: 'Branch registry', href: '/hq/branches', icon: 'apartment' },
+    { key: 'members', label: 'Members', href: '/hq/members', icon: 'badge' },
     { key: 'registrations', label: 'Registrations', href: '/hq/registrations', icon: 'how_to_reg' },
     { key: 'staff-access', label: 'Staff access', href: '/hq/settings/staff-access', icon: 'admin_panel_settings' },
     { key: 'website', label: 'Website', href: '/hq/website', icon: 'language' },
     { key: 'settings', label: 'Settings', href: '/hq/settings', icon: 'settings' },
     { key: 'reports', label: 'Reports', href: '/hq/reports', icon: 'analytics' }
   ].filter(function (action) {
+    if (action.key === 'members') return allowFlag('canViewMembers');
     if (action.key === 'staff-access') return allowFlag('canViewStaffAccess');
     if (action.key === 'website') return allowFlag('canViewWebsite');
     if (action.key === 'reports') return allowFlag('canViewReports');
@@ -110,6 +112,65 @@
       </a>
     </div>
   </header>
+
+  <% if (consoleLinks && (consoleLinks.publicPath || consoleLinks.websiteHref || consoleLinks.settingsHref)) { %>
+  <section
+    class="bb-hq-dash-panel"
+    data-bb-organization-console="1"
+    aria-labelledby="bb-hq-org-console-heading"
+  >
+    <h2 id="bb-hq-org-console-heading" class="bb-hq-dash-panel__title">Organization administration</h2>
+    <dl class="bb-hq-dl">
+      <% if (consoleLinks.publicPath) { %>
+      <div data-bb-console-public-url="1">
+        <dt>Public URL</dt>
+        <dd>
+          <% if (allowFlag('canViewWebsite') && consoleLinks.websiteHref) { %>
+          <a href="<%= consoleLinks.websiteHref %>"><%= consoleLinks.publicPath %></a>
+          <% } else { %>
+          <%= consoleLinks.publicPath %>
+          <% } %>
+        </dd>
+      </div>
+      <% } %>
+      <% if (consoleLinks.onboardingStatus) { %>
+      <div data-bb-console-onboarding="<%= consoleLinks.onboardingStatus %>">
+        <dt>Setup</dt>
+        <dd>
+          <% if (consoleLinks.onboardingStatus === 'onboarding_required' || consoleLinks.onboardingStatus === 'not_started' || consoleLinks.onboardingStatus === 'in_progress') { %>
+            Organization setup is incomplete
+            <% if (consoleLinks.onboardingHref) { %>
+            · <a href="<%= consoleLinks.onboardingHref %>">Continue setup</a>
+            <% } %>
+          <% } else { %>
+            Organization setup complete
+          <% } %>
+        </dd>
+      </div>
+      <% } %>
+    </dl>
+    <ul class="bb-hq-dash-actions__list">
+      <% if (allowFlag('canViewWebsite') && consoleLinks.websiteHref) { %>
+      <li><a href="<%= consoleLinks.websiteHref %>" data-bb-console-link="website">Website</a></li>
+      <% } %>
+      <% if (consoleLinks.organizationHref) { %>
+      <li><a href="<%= consoleLinks.organizationHref %>" data-bb-console-link="organization">Organization profile</a></li>
+      <% } %>
+      <% if (allowFlag('canViewStaffAccess') && consoleLinks.staffHref) { %>
+      <li><a href="<%= consoleLinks.staffHref %>" data-bb-console-link="staff-access">Staff access</a></li>
+      <% } %>
+      <% if (consoleLinks.branchesHref) { %>
+      <li><a href="<%= consoleLinks.branchesHref %>" data-bb-console-link="branches">Branches</a></li>
+      <% } %>
+      <% if (consoleLinks.settingsHref) { %>
+      <li><a href="<%= consoleLinks.settingsHref %>" data-bb-console-link="settings">Settings</a></li>
+      <% } %>
+      <% if (consoleLinks.planHref) { %>
+      <li><a href="<%= consoleLinks.planHref %>" data-bb-console-link="plan">Plan</a></li>
+      <% } %>
+    </ul>
+  </section>
+  <% } %>
 
   <section
     class="bb-hq-dash__notices"

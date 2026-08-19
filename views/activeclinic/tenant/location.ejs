@@ -5,15 +5,16 @@
     <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'location.intro', fieldValue: clinic.locationIntro || ('Published facility addresses and hours for ' + clinic.publicName + '.'), fieldType: 'long_text' }) %></p>
   </header>
   <% const facilityList = Array.isArray(clinic.facilities) ? clinic.facilities : []; %>
+  <% const locationEditing = typeof websiteEdit !== 'undefined' && websiteEdit; %>
   <% if (!facilityList.length) { %>
   <div class="ac-public-empty acp-empty-state" data-ac-location-state="empty">
-    <% if (clinic.locationAddressOverlay || clinic.locationHoursOverlay) { %>
+    <% if (!locationEditing && (clinic.locationAddressOverlay || clinic.locationHoursOverlay)) { %>
     <div class="ac-location-card acp-location-card" data-ac-template-placeholder="1">
       <p class="ac-template-placeholder">Template location copy — replace with published facility details.</p>
-      <% if (clinic.locationAddressOverlay) { %><p class="ac-location-address"><%- include('../partials/website-editable-field', { contentKey: 'location.address', fieldValue: clinic.locationAddressOverlay, fieldType: 'long_text' }) %></p><% } %>
-      <% if (clinic.locationHoursOverlay) { %><pre class="ac-location-hours-overlay"><%- include('../partials/website-editable-field', { contentKey: 'location.hours', fieldValue: clinic.locationHoursOverlay, fieldType: 'long_text' }) %></pre><% } %>
+      <% if (clinic.locationAddressOverlay) { %><p class="ac-location-address"><%= clinic.locationAddressOverlay %></p><% } %>
+      <% if (clinic.locationHoursOverlay) { %><pre class="ac-location-hours-overlay"><%= clinic.locationHoursOverlay %></pre><% } %>
     </div>
-    <% } else { %>
+    <% } else if (!locationEditing) { %>
     <p>Location details have not been published for this clinic yet.</p>
     <% } %>
     <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic</a></p>
@@ -24,8 +25,8 @@
     <li class="ac-location-card acp-location-card" data-ac-facility="<%= f.facilityKey %>">
       <h2><%= f.displayName %><% if (f.isPrimary) { %> <span class="ac-location-badge">Primary</span><% } %></h2>
       <% const addressParts = [f.addressLine1, f.addressLine2, f.city, f.district, f.province, f.postalCode].filter(Boolean); %>
-      <% if (!f.addressLine1 && clinic.locationAddressOverlay) { %>
-      <p class="ac-location-address"><%- include('../partials/website-editable-field', { contentKey: 'location.address', fieldValue: clinic.locationAddressOverlay, fieldType: 'long_text' }) %></p>
+      <% if (!f.addressLine1 && clinic.locationAddressOverlay && !locationEditing) { %>
+      <p class="ac-location-address"><%= clinic.locationAddressOverlay %></p>
       <% } %>
       <% if (addressParts.length) { %>
       <p class="ac-location-address"><%= addressParts.join(', ') %></p>
@@ -45,15 +46,23 @@
           <% }) %>
         </dl>
       </div>
-      <% } else if (clinic.locationHoursOverlay) { %>
+      <% } else if (clinic.locationHoursOverlay && !locationEditing) { %>
       <div class="ac-location-hours ac-location-hours--template" data-ac-template-placeholder="1">
         <p class="ac-template-placeholder">Example hours — not published operating times for this facility.</p>
         <h3>Hours</h3>
-        <div class="ac-location-hours-overlay"><%- include('../partials/website-editable-field', { contentKey: 'location.hours', fieldValue: clinic.locationHoursOverlay, fieldType: 'long_text' }) %></div>
+        <div class="ac-location-hours-overlay"><%= clinic.locationHoursOverlay %></div>
       </div>
       <% } %>
     </li>
     <% }) %>
   </ul>
+  <% } %>
+  <% if (locationEditing) { %>
+  <div class="ac-website-overlay-edit" data-ac-website-overlay="location">
+    <h2>Website location overlay</h2>
+    <p class="ac-website-overlay-note">Shown on the public site only when a published facility address or hours is not available. Saving here does not change operations records, and does not publish.</p>
+    <p class="ac-location-address"><%- include('../partials/website-editable-field', { contentKey: 'location.address', fieldValue: clinic.locationAddressOverlay || '', fieldType: 'long_text' }) %></p>
+    <div class="ac-location-hours-overlay"><%- include('../partials/website-editable-field', { contentKey: 'location.hours', fieldValue: clinic.locationHoursOverlay || '', fieldType: 'long_text' }) %></div>
+  </div>
   <% } %>
 </section>

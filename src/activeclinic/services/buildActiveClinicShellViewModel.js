@@ -66,7 +66,7 @@ async function buildActiveClinicShellViewModel(db, input) {
   if (storedFacilityId) {
     const resolved = await resolveSelectableFacility(db, auth, storedFacilityId);
     selectedFacility = resolved.ok ? resolved.facility : null;
-  } else if (!selectedFacility && availableFacilities.length === 1 && !auth.isNetworkAdmin) {
+  } else if (!selectedFacility && availableFacilities.length === 1) {
     selectedFacility = availableFacilities[0];
   }
 

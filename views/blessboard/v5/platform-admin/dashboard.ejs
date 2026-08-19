@@ -358,6 +358,23 @@
         data-bb-pa-directory-warning="1"
       ><%= directoryWarningText %></p>
       <% } %>
+<%
+  var schemaCompat = typeof schemaCompatibility !== 'undefined' ? schemaCompatibility : null;
+%>
+      <% if (schemaCompat && schemaCompat.compatible === false) { %>
+      <p
+        class="bb-pa-flash bb-pa-flash--error"
+        role="alert"
+        data-bb-pa-schema-compatibility="1"
+        data-bb-pa-schema-compatible="0"
+        data-bb-pa-schema-capability="<%= schemaCompat.capability || '' %>"
+      >
+        Deployment schema is incompatible.
+        Missing capability: <%= schemaCompat.capability || 'unknown' %>.
+        Registration can leave organizations partially provisioned until pending migrations are applied.
+        See <a class="bb-pa-link" href="/admin/access-health">Access health</a>.
+      </p>
+      <% } %>
       <p class="bb-pa-dash__lede">
         Welcome<% if (greetingName) { %>, <%= greetingName %><% } %>.
         Apex command center for BlessBoard V5.

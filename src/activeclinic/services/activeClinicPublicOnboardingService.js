@@ -12,6 +12,7 @@ const {
   validatePasswordPolicy,
 } = require("../../platform/services/platformIdentityCredentialService");
 const crypto = require("crypto");
+const { appendReviewEvent } = require("./clinicRegistrationReviewService");
 
 const BCRYPT_ROUNDS = 12;
 
@@ -240,6 +241,14 @@ async function createClinicRegistrationApplication(db, input) {
       administratorPasswordHash,
     ]
   );
+
+  await appendReviewEvent(db, {
+    applicationId: row.rows[0].id,
+    eventType: "submitted",
+    actorId: null,
+    visibility: "history",
+    deliveryStatus: "not_applicable",
+  });
 
   return {
     ok: true,

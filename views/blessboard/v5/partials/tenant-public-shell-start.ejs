@@ -21,7 +21,7 @@
   <meta property="og:image" content="<%= seo.ogImageUrl %>" />
   <% } %>
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=53' %>" />
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=54' %>" />
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) { %>
   <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v7-website-4" />
   <% } %>
@@ -240,5 +240,11 @@
       <p class="bb-tp-drawer__powered">Powered by BlessBoard</p>
     </div>
   </aside>
+
+  <% if (typeof usedPublicDemoFill !== 'undefined' && usedPublicDemoFill) { %>
+  <div class="bb-tp-template-banner" role="status" data-bb-template-example="1">
+    Template examples — these names, events, and ministries are not this church’s published facts. Replace them in Website management.
+  </div>
+  <% } %>
 
   <main id="bb-tp-main" class="bb-tp-main" tabindex="-1" data-bb-main="1">

@@ -115,7 +115,7 @@
       <img
         class="bb-tp-hero__img"
         src="<%= heroMedia %>"
-        alt="<%= publicName %> gathering"
+        alt="<%= (hero && hero.layoutMetadata && hero.layoutMetadata.templateExample) || (typeof usedPublicDemoFill !== 'undefined' && usedPublicDemoFill) ? 'Template photo, not a photo of this congregation' : (publicName + ' gathering') %>"
         width="1600"
         height="900"
         loading="eager"

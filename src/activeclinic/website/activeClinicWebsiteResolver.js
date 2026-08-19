@@ -40,6 +40,18 @@ function mergeClinicPresentation(clinic, resolved, operational) {
   const heroImage = values["home.hero.image"];
   const heroSrc =
     heroImage && typeof heroImage === "object" ? heroImage.src : heroImage || clinic.websiteHeroUrl || null;
+  const heroAltFromContent =
+    heroImage && typeof heroImage === "object" && heroImage.alt ? String(heroImage.alt) : "";
+  const usesDefaultHero =
+    Boolean(heroSrc) && String(heroSrc).indexOf("clinic-hero-default") !== -1;
+  const aboutImage = values["about.story.image"];
+  const aboutImageSrc =
+    aboutImage && typeof aboutImage === "object" ? aboutImage.src : aboutImage || null;
+  const aboutImageAlt =
+    aboutImage && typeof aboutImage === "object" && aboutImage.alt ? String(aboutImage.alt) : "";
+  const aboutImageMediaId =
+    aboutImage && typeof aboutImage === "object" && aboutImage.mediaId ? aboutImage.mediaId : "";
+  const logoImage = values["home.logo"];
   return {
     ...clinic,
     websiteContent: values,
@@ -52,9 +64,23 @@ function mergeClinicPresentation(clinic, resolved, operational) {
     heroSubtitle: values["home.hero.subtitle"] || clinic.websiteAbout || null,
     heroEyebrow: values["home.hero.eyebrow"] || clinic.websiteTagline || null,
     websiteHeroUrl: heroSrc || clinic.websiteHeroUrl || null,
-    websiteLogoUrl: (values["home.logo"] && values["home.logo"].src) || clinic.websiteLogoUrl || null,
+    websiteHeroAlt:
+      heroAltFromContent ||
+      (usesDefaultHero ? `Template photo for ${clinic.publicName}` : ""),
+    websiteLogoUrl:
+      (logoImage && typeof logoImage === "object" && logoImage.src) ||
+      clinic.websiteLogoUrl ||
+      null,
+    websiteLogoAlt:
+      (logoImage && typeof logoImage === "object" && logoImage.alt ? String(logoImage.alt) : "") ||
+      "",
+    websiteLogoMediaId:
+      (logoImage && typeof logoImage === "object" && logoImage.mediaId) || "",
     aboutHeading: values["about.story.heading"] || "About our clinic",
     aboutBody: values["about.story.body"] || clinic.websiteAbout || null,
+    aboutStoryImageSrc: aboutImageSrc || null,
+    aboutStoryImageAlt: aboutImageAlt,
+    aboutStoryImageMediaId: aboutImageMediaId,
     contactIntro: values["contact.intro"] || null,
     bookIntro: values["book.intro"] || null,
     footerLegal: values["footer.legal"] || null,

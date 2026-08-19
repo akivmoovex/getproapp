@@ -533,6 +533,23 @@ function combineDateTime(date, time) {
   return parsed.toISOString();
 }
 
+function parseStructuredMediaAssetId(raw) {
+  const value = String(raw == null ? "" : raw).trim();
+  if (!MEDIA_ASSET_PATH_RE.test(value)) return null;
+  return value.slice(PUBLIC_MEDIA_PATH_PREFIX.length);
+}
+
+function collectStructuredImageUrls(payload) {
+  if (!payload || typeof payload !== "object") return [];
+  const keys = ["imageUrl", "thumbnailUrl", "qrImageUrl", "mediaUrl", "coverImage"];
+  const out = [];
+  for (const key of keys) {
+    const value = payload[key];
+    if (typeof value === "string" && value.trim()) out.push(value.trim());
+  }
+  return out;
+}
+
 function isDemoImagePath(path) {
   return DEMO_IMAGE_PATHS.has(String(path || ""));
 }
@@ -557,4 +574,6 @@ module.exports = {
   isDemoImagePath,
   listDemoImages,
   mapError,
+  parseStructuredMediaAssetId,
+  collectStructuredImageUrls,
 };

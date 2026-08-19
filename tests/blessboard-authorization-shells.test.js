@@ -89,6 +89,14 @@ describe("blessboard authorization shells (prompt 7b)", () => {
       church = ch.records.church;
       hqBranch = ch.records.hqBranch;
       await pool.query(
+        `INSERT INTO blessboard.church_settings (church_id, public_name, primary_email)
+         VALUES ($1, $2, $3)
+         ON CONFLICT (church_id) DO UPDATE
+           SET public_name = EXCLUDED.public_name,
+               primary_email = EXCLUDED.primary_email`,
+        [church.id, "Shell Church", "shell7b@example.org"]
+      );
+      await pool.query(
         `INSERT INTO blessboard.branches
            (church_id, branch_key, display_name, branch_type, status, is_primary, timezone, country_code)
          VALUES ($1, 'campus', 'Campus', 'branch', 'active', false, 'UTC', 'US')`,

@@ -4,6 +4,11 @@
 %>
 <%
   const key = clinic && clinic.clinicKey ? clinic.clinicKey : '';
+  const pages = (clinic && clinic.publicPagePaths) || {};
+  const pubHome = pages.home || (clinic && clinic.publicBasePath) || ("/clinics/" + key);
+  const doctorsHref = pages.doctors || (pubHome + "/doctors");
+  const bookHref = pages.book || (pubHome + "/book");
+  const loginHref = pages.patientLogin || (pubHome + "/patient/login");
   const pid = typeof pageId === 'string' ? pageId : '';
   const hide =
     !key ||
@@ -14,31 +19,23 @@
   const homeOn = isActive('tenant-home') || pid === 'tenant-home';
   const findOn = isActive('doctor') || isActive('service');
   const bookOn = isActive('book');
-  const contactOn = isActive('contact');
   const accountOn = isActive('patient');
 %>
 <% if (!hide) { %>
 <nav class="acp-mobile-bottom-nav" data-ac-mobile-bottom-nav="tenant" aria-label="Clinic shortcuts">
-  <a class="acp-mobile-bottom-nav__item<%= homeOn ? ' is-active' : '' %>" href="/clinics/<%= key %>"<% if (homeOn) { %> aria-current="page"<% } %>>
+  <a class="acp-mobile-bottom-nav__item<%= homeOn ? ' is-active' : '' %>" href="<%= pubHome %>"<% if (homeOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌂</span>
     <span class="acp-mobile-bottom-nav__label">Home</span>
   </a>
-  <a class="acp-mobile-bottom-nav__item<%= findOn ? ' is-active' : '' %>" href="/clinics/<%= key %>/doctors"<% if (findOn) { %> aria-current="page"<% } %>>
+  <a class="acp-mobile-bottom-nav__item<%= findOn ? ' is-active' : '' %>" href="<%= doctorsHref %>"<% if (findOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌕</span>
     <span class="acp-mobile-bottom-nav__label">Find</span>
   </a>
-  <% if (clinic.publicBookingEnabled) { %>
-  <a class="acp-mobile-bottom-nav__item<%= bookOn ? ' is-active' : '' %>" href="/clinics/<%= key %>/book"<% if (bookOn) { %> aria-current="page"<% } %>>
+  <a class="acp-mobile-bottom-nav__item<%= bookOn ? ' is-active' : '' %>" href="<%= bookHref %>"<% if (bookOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">📅</span>
-    <span class="acp-mobile-bottom-nav__label">Book</span>
+    <span class="acp-mobile-bottom-nav__label"><%= clinic.publicBookingEnabled ? "Book" : "Request" %></span>
   </a>
-  <% } else { %>
-  <a class="acp-mobile-bottom-nav__item<%= contactOn ? ' is-active' : '' %>" href="/clinics/<%= key %>/contact"<% if (contactOn) { %> aria-current="page"<% } %>>
-    <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">☎</span>
-    <span class="acp-mobile-bottom-nav__label">Contact</span>
-  </a>
-  <% } %>
-  <a class="acp-mobile-bottom-nav__item<%= accountOn ? ' is-active' : '' %>" href="/clinics/<%= key %>/patient/login"<% if (accountOn) { %> aria-current="page"<% } %>>
+  <a class="acp-mobile-bottom-nav__item<%= accountOn ? ' is-active' : '' %>" href="<%= loginHref %>"<% if (accountOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">☺</span>
     <span class="acp-mobile-bottom-nav__label">Account</span>
   </a>

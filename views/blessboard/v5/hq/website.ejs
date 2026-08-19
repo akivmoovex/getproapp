@@ -48,7 +48,7 @@
   <% } %>
 
   <% if (typeof needsFoundationRepair !== 'undefined' && needsFoundationRepair) { %>
-  <div class="bb-hq-panel" data-bb-hq-website-repair="1">
+  <div class="bb-hq-panel" data-bb-hq-website-repair="1" id="website-setup-retry">
     <h2 class="bb-hq-panel__title">Repair website foundation</h2>
     <p>
       Required page shells or settings are missing. Repair inserts only missing structures
@@ -63,28 +63,12 @@
           I confirm repairing missing website foundation records only
         </label>
       </div>
-      <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Repair website foundation</button>
+      <button type="submit" class="bb-hq-btn bb-hq-btn--secondary">Retry</button>
     </form>
   </div>
   <% } %>
 
-  <div class="bb-hq-panel">
-    <h2 class="bb-hq-panel__title">Status</h2>
-    <p>Website status: <strong><%= readiness.websiteStatus || 'draft' %></strong></p>
-    <% if (readiness.planKey) { %>
-    <p>Plan: <strong><%= readiness.planKey %></strong></p>
-    <% } %>
-    <% if (publicPath) { %>
-    <p>Public path: <code><%= publicPath %></code></p>
-    <% } %>
-    <p>
-      <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= previewPath %>">Preview</a>
-      <% if (publicPath) { %>
-      <a class="bb-hq-btn bb-hq-btn--secondary" href="<%= publicPath %>" rel="noopener">View live</a>
-      <a class="bb-hq-btn bb-hq-btn--primary" href="<%= publicPath %>?website_edit=1" data-bb-edit-website="1">Edit website</a>
-      <% } %>
-    </p>
-  </div>
+  <%- include('../partials/website-settings-status') %>
 
   <div class="bb-hq-panel">
     <h2 class="bb-hq-panel__title">Publish readiness</h2>

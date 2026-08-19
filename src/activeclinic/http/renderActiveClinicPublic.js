@@ -16,7 +16,7 @@ const {
 } = require("../services/activeClinicPublicMediaService");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-website-5";
+const ASSET_VERSION = "v7-website-6";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)

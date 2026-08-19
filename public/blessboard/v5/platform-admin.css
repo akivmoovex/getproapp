@@ -5205,3 +5205,30 @@ a.bb-pa-btn--disabled {
   border-left-color: #2563eb;
   background: #eff6ff;
 }
+
+/* Tenant health compact summary — platform-admin.css?v=62 */
+.bb-pa-tenant-health__dl {
+  display: grid;
+  grid-template-columns: minmax(10rem, 14rem) 1fr;
+  gap: 0.35rem 1rem;
+  margin: 0.75rem 0 1rem;
+}
+.bb-pa-tenant-health__dl > div {
+  display: contents;
+}
+.bb-pa-tenant-health__dl dt {
+  margin: 0;
+  font-weight: 600;
+  color: #334155;
+}
+.bb-pa-tenant-health__dl dd {
+  margin: 0;
+}
+@media (max-width: 720px) {
+  .bb-pa-tenant-health__dl {
+    grid-template-columns: 1fr;
+  }
+  .bb-pa-tenant-health__dl > div {
+    display: block;
+  }
+}

@@ -454,7 +454,7 @@ describe("platform website engine", () => {
     assert.ok(Buffer.isBuffer(payload.buffer));
     assert.equal(payload.mimeType, "image/jpeg");
 
-    const orphans = mediaService.listOrphanCandidates();
+    const orphans = await mediaService.listOrphanCandidates();
     assert.equal(orphans.autoDelete, false);
     assert.equal(orphans.strategy, "manual_review");
   });

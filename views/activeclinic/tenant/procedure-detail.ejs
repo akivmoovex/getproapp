@@ -51,6 +51,8 @@
   <p class="ac-public-actions">
     <% if (clinic.publicBookingEnabled) { %>
     <a class="ac-btn ac-btn--primary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/book/procedures/<%= procedure.procedureKey %>">Request this procedure</a>
+    <% } else { %>
+    <a class="ac-btn ac-btn--primary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/book">Request an appointment</a>
     <% } %>
     <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic</a>
     <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>/pricing">View pricing information</a>

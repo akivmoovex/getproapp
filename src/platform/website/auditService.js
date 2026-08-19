@@ -3,10 +3,61 @@
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+const FORBIDDEN_METADATA_KEY_RE = /password|token|secret|cookie|csrf|email|phone|name|address|body|notes|message/i;
+
+const ALLOWED_METADATA_KEYS = new Set([
+  "entity_key",
+  "facility_key",
+  "application_id",
+  "from_status",
+  "to_status",
+  "reason_code",
+  "status",
+  "count",
+  "field_keys",
+  "product_code",
+  "product_key",
+  "version_number",
+  "policy",
+  "source",
+  "actor_type",
+  "retry",
+  "ready",
+  "previous",
+  "next",
+]);
+
+function sanitizeWebsiteAuditMetadata(raw) {
+  if (raw == null) return {};
+  if (typeof raw !== "object" || Array.isArray(raw)) return {};
+  const metadata = {};
+  for (const [key, value] of Object.entries(raw)) {
+    const k = String(key).trim().toLowerCase();
+    if (!k || k.length > 64) continue;
+    if (FORBIDDEN_METADATA_KEY_RE.test(k)) continue;
+    if (!ALLOWED_METADATA_KEYS.has(k)) continue;
+    if (value == null) continue;
+    if (typeof value === "string") {
+      const s = value.trim();
+      if (s.length && s.length <= 120) metadata[k] = s;
+    } else if (typeof value === "number" && Number.isFinite(value)) {
+      metadata[k] = value;
+    } else if (typeof value === "boolean") {
+      metadata[k] = value;
+    } else if (Array.isArray(value) && k === "field_keys") {
+      metadata[k] = value
+        .filter((x) => typeof x === "string")
+        .map((x) => String(x).slice(0, 80))
+        .slice(0, 40);
+    }
+  }
+  return metadata;
+}
+
 async function recordWebsiteAudit(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   if (!UUID_RE.test(organizationId)) return { ok: false };
-  const metadata = input.metadata && typeof input.metadata === "object" ? input.metadata : {};
+  const metadata = sanitizeWebsiteAuditMetadata(input && input.metadata);
   await db.query(
     `INSERT INTO platform.website_audit_events (
        organization_id, instance_id, actor_identity_id, action_key,
@@ -61,4 +112,5 @@ async function listWebsiteAudit(db, input) {
 module.exports = {
   recordWebsiteAudit,
   listWebsiteAudit,
+  sanitizeWebsiteAuditMetadata,
 };

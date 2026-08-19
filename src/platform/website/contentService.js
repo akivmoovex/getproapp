@@ -1,6 +1,7 @@
 "use strict";
 
 const {
+  CONTENT_TYPES,
   normalizeContentKey,
   validateContentValue,
   wrapValue,
@@ -11,6 +12,7 @@ const { assertEditableMutation, ensureProductFieldsRegistered } = require("./edi
 const instanceRepo = require("./instanceRepository");
 const { recordWebsiteAudit } = require("./auditService");
 const mediaService = require("./mediaService");
+const { assertWebsiteInstanceScope } = require("./authorizeWebsite");
 
 function mediaIdFromValue(value) {
   if (!value || typeof value !== "object" || Array.isArray(value)) return null;
@@ -76,9 +78,13 @@ async function saveWebsiteDraft(db, input) {
   if (!keyNorm.ok) return { ok: false, code: RESULT.INVALID_INPUT, content: null };
 
   const instance = await instanceRepo.findWebsiteInstanceById(db, instanceId, organizationId);
-  if (!instance) return { ok: false, code: RESULT.NOT_FOUND, content: null };
-  if (instance.organizationId !== organizationId) {
-    return { ok: false, code: RESULT.TENANT_MISMATCH, content: null };
+  const scoped = assertWebsiteInstanceScope(instance, input);
+  if (!scoped.ok) {
+    return {
+      ok: false,
+      code: scoped.code === "website_instance_not_found" ? RESULT.NOT_FOUND : RESULT.TENANT_MISMATCH,
+      content: null,
+    };
   }
   if (instance.editLocked === true) {
     return { ok: false, code: "website_edit_locked", content: null };
@@ -103,6 +109,17 @@ async function saveWebsiteDraft(db, input) {
       return { ok: false, code: RESULT.INVALID_INPUT, content: null };
     }
     return { ok: false, code: RESULT.UNKNOWN_KEY, content: null };
+  }
+  if (asserted.field && asserted.field.type === CONTENT_TYPES.IMAGE) {
+    const owned = await mediaService.assertOwnedWebsiteImageValue(db, {
+      organizationId,
+      instance,
+      value: asserted.value,
+    });
+    if (!owned.ok) {
+      return { ok: false, code: owned.code, content: null };
+    }
+    asserted.value = owned.value;
   }
   const def = getContentKeyDef(template, keyNorm.key) || {
     type: asserted.field.type,
@@ -166,7 +183,13 @@ async function saveWebsiteDraft(db, input) {
 async function discardWebsiteDraft(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
-  if (!instance) return { ok: false, code: RESULT.NOT_FOUND };
+  const scoped = assertWebsiteInstanceScope(instance, input);
+  if (!scoped.ok) {
+    return {
+      ok: false,
+      code: scoped.code === "website_instance_not_found" ? RESULT.NOT_FOUND : RESULT.TENANT_MISMATCH,
+    };
+  }
   const keyNorm = normalizeContentKey(input.contentKey);
   if (!keyNorm.ok) return { ok: false, code: RESULT.INVALID_INPUT };
   await db.query(

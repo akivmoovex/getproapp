@@ -53,7 +53,7 @@
       <ul class="ac-clinic-cards acp-clinic-grid">
         <% list.forEach(function(c) { %>
         <li class="ac-clinic-card acp-clinic-card">
-          <a href="/clinics/<%= c.clinicKey %>">
+          <a href="<%= c.publicBasePath || (c.publicPagePaths && c.publicPagePaths.home) || ('/clinics/' + c.clinicKey) %>">
             <div class="acp-clinic-card__media">
               <%- include('../partials/ac-media', {
                 src: c.cardImageUrl || c.websiteHeroUrl || (typeof clinicHeroDefaultUrl === 'string' ? clinicHeroDefaultUrl : '/activeclinic/assets/clinic-hero-default.jpg'),

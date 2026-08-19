@@ -49,12 +49,13 @@
         <th>Review reason</th>
         <th>Provisioning</th>
         <th>Failed stage</th>
+        <th>Health</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       <% if (!rows.length) { %>
-      <tr><td colspan="9">No registrations match this view.</td></tr>
+      <tr><td colspan="10">No registrations match this view.</td></tr>
       <% } %>
       <% rows.forEach(function (row) { %>
       <tr data-bb-pa-registration-row="<%= row.id %>" data-product="<%= row.productCode %>" data-lifecycle="<%= row.canonicalLifecycle %>" data-partial-provision="<%= row.partialProvision ? '1' : '0' %>" data-failed-stage="<%= row.failedStage || '' %>">
@@ -74,6 +75,7 @@
         <td><%= row.reviewReason || '—' %></td>
         <td><%= row.provisioningStatus || '—' %></td>
         <td><%= row.failedStage || '—' %></td>
+        <td data-bb-pa-health-status="<%= row.healthStatus || '' %>"><%= row.healthStatus || '—' %></td>
         <td>
           <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= row.detailHref %>">Inspect</a>
           <% if (row.retryable && row.retryHref) { %>

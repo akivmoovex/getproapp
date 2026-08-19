@@ -10,6 +10,7 @@ const {
   recordAuditEventSafe,
   listOrganizationAuditEvents,
 } = require("../../platform/services/auditEventService");
+const { ACTION: LIFECYCLE_ACTION, recordLifecycleAudit } = require("../../platform/registration/lifecycleAudit");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const {
   NETWORK_PLAN_CODE,
@@ -2308,6 +2309,21 @@ async function rejectRegistrationApplication(db, input, options = {}) {
           rejectionReason,
           reviewEvent,
         });
+        if (app.organization_id) {
+          await recordLifecycleAudit(client, {
+            deploymentCode: input.deploymentCode || "blessboard-org-v5",
+            organizationId: app.organization_id,
+            actorUserId: platformAdminUserId,
+            actionKey: LIFECYCLE_ACTION.REJECTED,
+            entityId: applicationId,
+            applicationId,
+            productCode: "blessboard",
+            actorType: "platform_admin",
+            source: "admin_registration_applications",
+            status: "rejected",
+            reasonCode: (reasonCodes && reasonCodes[0]) || "rejected",
+          });
+        }
 
         if (rejectionCategory != null || setReapplication || notificationStatus != null) {
           const metaPatch = {};

@@ -297,6 +297,19 @@ describe("ActiveClinic permission-aware navigation (Prompt 8)", () => {
     assert.equal(nav.desktop.length, nav.mobile.length);
   });
 
+  it("matches Website independently of Settings and requires website permission", () => {
+    assert.equal(matchActiveNavKey("/app/settings/website"), "website");
+    assert.equal(matchActiveNavKey("/app/settings/organization"), "settings");
+    assert.equal(matchActiveNavKey("/app/onboarding"), "home");
+    const withWebsite = buildActiveClinicNavigation([
+      "activeclinic.access",
+      "website.view",
+    ]);
+    assert.ok(withWebsite.items.find((i) => i.key === "website"));
+    const withoutWebsite = buildActiveClinicNavigation(["activeclinic.access"]);
+    assert.ok(!withoutWebsite.items.find((i) => i.key === "website"));
+  });
+
   it("role navigation matrix matches catalogue permissions", async () => {
     requireDb();
     const stamp = Date.now().toString(36);
@@ -308,14 +321,14 @@ describe("ActiveClinic permission-aware navigation (Prompt 8)", () => {
         scopeType: "facility",
         facilityId: ac.facilityAId,
         required: ["home", "patients", "appointments", "reception", "settings"],
-        forbidden: ["clinical", "pharmacy", "diagnostics", "cashier", "access", "facilities"],
+        forbidden: ["clinical", "pharmacy", "diagnostics", "cashier", "access", "facilities", "website"],
       },
       {
         roleKey: NURSE,
         scopeType: "facility",
         facilityId: ac.facilityAId,
         required: ["home", "patients", "appointments", "reception", "clinical", "settings"],
-        forbidden: ["pharmacy", "billing", "cashier", "access", "diagnostics"],
+        forbidden: ["pharmacy", "billing", "cashier", "access", "diagnostics", "website"],
       },
       {
         roleKey: CLINICIAN,
@@ -396,14 +409,14 @@ describe("ActiveClinic permission-aware navigation (Prompt 8)", () => {
         roleKey: FACILITY_ADMIN,
         scopeType: "facility",
         facilityId: ac.facilityAId,
-        required: ["home", "staff", "access", "facilities", "clinical", "diagnostics", "settings"],
+        required: ["home", "staff", "access", "facilities", "clinical", "diagnostics", "settings", "website"],
         forbidden: ["cashier"],
       },
       {
         roleKey: ORGANIZATION_ADMIN,
         scopeType: "organisation",
         facilityId: null,
-        required: ["home", "staff", "access", "facilities", "patients", "clinical", "settings"],
+        required: ["home", "staff", "access", "facilities", "patients", "clinical", "settings", "website"],
         forbidden: ["cashier"],
       },
       {

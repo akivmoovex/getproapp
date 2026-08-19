@@ -55,15 +55,13 @@ function normalizeSlug(raw) {
 }
 
 async function findWebsiteInstanceById(db, instanceId, organizationId) {
+  // Organization id is required. Lookup by instance id alone is an IDOR vector.
   if (!UUID_RE.test(String(instanceId || ""))) return null;
-  const params = [instanceId];
-  let sql = `SELECT * FROM platform.website_instances WHERE id = $1`;
-  if (organizationId) {
-    if (!UUID_RE.test(String(organizationId))) return null;
-    sql += ` AND organization_id = $2`;
-    params.push(organizationId);
-  }
-  const rows = await db.query(sql, params);
+  if (!UUID_RE.test(String(organizationId || ""))) return null;
+  const rows = await db.query(
+    `SELECT * FROM platform.website_instances WHERE id = $1 AND organization_id = $2`,
+    [instanceId, organizationId]
+  );
   return mapInstance(rows.rows[0] || null);
 }
 

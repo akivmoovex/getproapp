@@ -8,6 +8,7 @@ const { recordModerationEvent, ACTION } = require("./moderationEventService");
 const { autoPublishes, PUBLISH_POLICY } = require("./publishPolicy");
 const { LIFECYCLE_STATUS } = require("./lifecycleStatus");
 const editSessionService = require("./editSessionService");
+const { assertWebsiteInstanceScope } = require("./authorizeWebsite");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -97,7 +98,10 @@ async function publishDraftKey(db, instance, contentKey) {
 async function saveDraftAndMaybePublish(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
-  if (!instance) return { ok: false, code: RESULT.NOT_FOUND, content: null };
+  const scoped = assertWebsiteInstanceScope(instance, input);
+  if (!scoped.ok) {
+    return { ok: false, code: scoped.code === "tenant_mismatch" ? scoped.code : RESULT.NOT_FOUND, content: null };
+  }
   if (instance.editLocked === true) {
     return { ok: false, code: RESULT.EDIT_LOCKED, content: null };
   }
@@ -160,7 +164,8 @@ async function saveDraftAndMaybePublish(db, input) {
 async function publishWebsiteDraft(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
-  if (!instance) return { ok: false, code: RESULT.NOT_FOUND, version: null };
+  const scoped = assertWebsiteInstanceScope(instance, input);
+  if (!scoped.ok) return { ok: false, code: scoped.code === "tenant_mismatch" ? scoped.code : RESULT.NOT_FOUND, version: null };
   if (instance.publishLocked === true || instance.publishPolicy === PUBLISH_POLICY.PLATFORM_LOCKED) {
     return { ok: false, code: RESULT.PUBLISH_LOCKED, version: null };
   }
@@ -222,7 +227,8 @@ async function publishWebsiteDraft(db, input) {
 async function restoreWebsiteVersionLive(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
-  if (!instance) return { ok: false, code: RESULT.NOT_FOUND };
+  const scoped = assertWebsiteInstanceScope(instance, input);
+  if (!scoped.ok) return { ok: false, code: scoped.code === "tenant_mismatch" ? scoped.code : RESULT.NOT_FOUND };
   await editSessionService.closeOpenSessionsForInstance(db, {
     organizationId,
     instanceId: instance.id,
@@ -231,6 +237,7 @@ async function restoreWebsiteVersionLive(db, input) {
   const loaded = await versionService.getWebsiteVersion(db, {
     versionId: input.versionId,
     organizationId,
+    instanceId: instance.id,
   });
   if (!loaded.ok) return loaded;
   if (loaded.version.instanceId !== instance.id) {

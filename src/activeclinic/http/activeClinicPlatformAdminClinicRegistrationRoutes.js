@@ -20,6 +20,8 @@ const {
 } = require("../services/clinicRegistrationReviewService");
 const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const { getDeploymentEnvMode } = require("../../church/blessBoardEnv");
+const { PRODUCT } = require("../../platform/registration/constants");
+const { loadTenantHealthSummary } = require("../../platform/registration/tenantHealthSummary");
 
 function actorId(req) {
   const ctx = req.platformAdminContext || {};
@@ -93,6 +95,17 @@ function registerActiveClinicPlatformAdminClinicRegistrationRoutes(router, deps)
       if (!detail.ok) {
         return res.redirect(303, "/admin/clinic-registrations?error=not_found");
       }
+      let tenantHealth = null;
+      try {
+        tenantHealth = await loadTenantHealthSummary(getPool(), {
+          productCode: PRODUCT.ACTIVECLINIC,
+          applicationId: detail.application && detail.application.id,
+          organizationId: detail.application && detail.application.organization_id,
+          application: detail.application,
+        });
+      } catch {
+        tenantHealth = null;
+      }
       const html = renderPlatformAdminView("platform-admin/clinic-registration-detail.ejs", {
         ...buildPlatformAdminShellLocals(req, res, {
           env,
@@ -105,6 +118,7 @@ function registerActiveClinicPlatformAdminClinicRegistrationRoutes(router, deps)
         reviewNotes: detail.notes,
         identityCollision: detail.identityCollision || null,
         websiteState: detail.websiteState || "not_provisioned",
+        tenantHealth,
         notice: String(req.query.notice || ""),
         error: String(req.query.error || ""),
       });

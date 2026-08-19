@@ -45,6 +45,10 @@
       _accentPhrase = _words.slice(-2).join(' ');
     }
   }
+  var _mediaAlt = typeof heroMediaAlt !== 'undefined' && heroMediaAlt ? heroMediaAlt : '';
+  if (_meta.templateExample) {
+    _mediaAlt = 'Template photo, not a photo of this congregation';
+  }
   var _showPrimary = Boolean(_primaryLabel || (_canInline && typeof heroCtaPrimary !== 'undefined' && heroCtaPrimary));
   var _showSecondary = Boolean(_secondaryLabel || (_canInline && typeof heroCtaSecondary !== 'undefined' && heroCtaSecondary));
 %>
@@ -182,7 +186,7 @@
       <img
         class="bb-tp-page-hero__img"
         src="<%= _media %>"
-        alt="<%= typeof heroMediaAlt !== 'undefined' && heroMediaAlt ? heroMediaAlt : '' %>"
+        alt="<%= _mediaAlt %>"
         width="960"
         height="720"
         loading="eager"

@@ -13,6 +13,12 @@ function formatTs(value) {
   }
 }
 
+function healthStatusFromPartial(row, partial) {
+  if (partial.retryable || partial.failedStage) return "FAILED";
+  if (String(row.provisioning_status || "") === "provisioned") return "OK";
+  return "—";
+}
+
 function detailHref(productCode, id) {
   if (productCode === PRODUCT.ACTIVECLINIC) {
     return `/admin/clinic-registrations/${encodeURIComponent(id)}`;
@@ -99,6 +105,7 @@ async function listUnifiedRegistrations(db, filters) {
       partialProvision: partial.partialProvision,
       retryable: partial.retryable,
       retryHref: partial.retryHref,
+      healthStatus: healthStatusFromPartial(row, partial),
     });
   }
   for (const row of churchRows.rows || []) {
@@ -127,6 +134,7 @@ async function listUnifiedRegistrations(db, filters) {
       partialProvision: partial.partialProvision,
       retryable: partial.retryable,
       retryHref: partial.retryHref,
+      healthStatus: healthStatusFromPartial(churchRow, partial),
     });
   }
 

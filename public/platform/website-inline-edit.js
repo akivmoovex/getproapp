@@ -8,6 +8,13 @@
   if (!chrome) return;
   var saveUrl = chrome.getAttribute("data-website-save-url") || "";
   var mediaUrl = chrome.getAttribute("data-website-media-url") || "";
+  var maxImageBytes = Number(chrome.getAttribute("data-website-max-bytes")) || 5 * 1024 * 1024;
+  var allowedImageTypes = {
+    "image/jpeg": true,
+    "image/png": true,
+    "image/webp": true,
+    "image/gif": true,
+  };
   if (!saveUrl) return;
   function mediaItemUrl(mediaId) {
     if (!mediaUrl || !mediaId) return "";
@@ -78,6 +85,18 @@
       fd.append("mediaKind", "image");
       xhr.send(fd);
     });
+  }
+
+  function validateImageFile(file) {
+    if (!file) return { ok: false, reason: "Choose an image" };
+    var type = String(file.type || "").toLowerCase();
+    if (!allowedImageTypes[type]) {
+      return { ok: false, reason: "Use JPEG, PNG, WebP, or GIF" };
+    }
+    if (file.size > maxImageBytes) {
+      return { ok: false, reason: "Image must be 5 MB or smaller" };
+    }
+    return { ok: true };
   }
 
   function bindTextField(el) {
@@ -227,12 +246,27 @@
       fileInput.addEventListener("change", function () {
         var file = fileInput.files && fileInput.files[0];
         if (!file) return;
+        var check = validateImageFile(file);
+        if (!check.ok) {
+          fileInput.value = "";
+          pendingFile = null;
+          setStatus(el, check.reason, true);
+          return;
+        }
         pendingFile = file;
         if (pendingObjectUrl) URL.revokeObjectURL(pendingObjectUrl);
         pendingObjectUrl = URL.createObjectURL(file);
         img.setAttribute("src", pendingObjectUrl);
         setStatus(el, "Preview only — not public until you save to draft and publish", false);
       });
+    }
+
+    function safeDraftSrc() {
+      if (originalSrc && originalSrc.indexOf("blob:") !== 0 && originalSrc.indexOf("data:") !== 0) {
+        return originalSrc;
+      }
+      if (originalMediaId) return mediaItemUrl(originalMediaId);
+      return "";
     }
 
     function save() {
@@ -255,7 +289,7 @@
             src:
               uploaded && uploaded.media && uploaded.media.id
                 ? mediaItemUrl(uploaded.media.id)
-                : img.getAttribute("src"),
+                : safeDraftSrc(),
           };
           return postJson(saveUrl, {
             contentKey: el.getAttribute("data-website-key"),
@@ -269,6 +303,7 @@
           setBusy(el, false);
           if (progress) progress.hidden = true;
           if (out && out.ok && out.published === true) {
+            restore();
             setStatus(el, "Save must not publish. Draft was not applied as live.", true);
             return;
           }
@@ -288,12 +323,14 @@
             exitEdit();
             setStatus(el, "Saved to draft", false);
           } else {
+            restore();
             setStatus(el, (out && (out.reason || out.code)) || "Could not save", true);
           }
         })
         .catch(function (err) {
           setBusy(el, false);
           if (progress) progress.hidden = true;
+          restore();
           setStatus(el, (err && (err.reason || err.code)) || "Could not upload image", true);
         });
     }
@@ -307,6 +344,13 @@
     if (startBtn) startBtn.addEventListener("click", enterEdit);
     if (saveBtn) saveBtn.addEventListener("click", save);
     if (cancelBtn) cancelBtn.addEventListener("click", cancel);
+    el.addEventListener("keydown", function (ev) {
+      if (el.getAttribute("data-website-editing") !== "1") return;
+      if (ev.key === "Escape") {
+        ev.preventDefault();
+        cancel();
+      }
+    });
   }
 
   document.querySelectorAll("[data-website-key]").forEach(function (el) {

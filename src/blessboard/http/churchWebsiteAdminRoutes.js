@@ -39,6 +39,11 @@ const {
   hqWebsitePublishPath,
 } = require("../urls/churchUrlHelper");
 const {
+  PRODUCT_CODE,
+  buildPublicWebsiteEditPath,
+  buildPublicWebsitePublishPath,
+} = require("../../platform/website/publicWebsiteUrl");
+const {
   prepareWebsitePublishReview,
   prepareWebsitePublishSuccess,
   prepareWebsitePublishError,
@@ -50,6 +55,9 @@ const {
   SCOPE_TYPE,
 } = require("../services/resolveWebsiteScope");
 const { buildPermissionNavFlags } = require("./permissionNavLocals");
+const {
+  presentBlessBoardHqWebsiteSettingsUx,
+} = require("../../platform/website/websiteManagementPresentation");
 
 /**
  * @param {string} relativePath
@@ -168,6 +176,19 @@ function createChurchWebsiteAdminRouter(deps) {
     return overview;
   }
 
+  function attachHqWebsiteUx(overview, flags, extras) {
+    const websiteUx = presentBlessBoardHqWebsiteSettingsUx({
+      overview: overview || {},
+      flags: flags || {},
+      ...(extras || {}),
+    });
+    if (overview && typeof overview === "object") {
+      overview.websiteUx = websiteUx;
+      overview.liveAvailable = websiteUx.liveAvailable;
+    }
+    return websiteUx;
+  }
+
   const rejectApex = createRejectApex({
     isApexHost,
     mode: "unlessTenant",
@@ -212,7 +233,42 @@ function createChurchWebsiteAdminRouter(deps) {
   }
 
   async function renderLegacyWebsite(req, res, locals) {
-    const html = renderHqView("hq/website.ejs", await shellLocals(req, res, locals));
+    const flags = await websiteCapabilityFlags(req);
+    const publicPath = (locals && locals.publicPath) || "";
+    const previewPath = (locals && locals.previewPath) || hqPreviewPagePath("home");
+    const orgKey = (locals && locals.organizationKey) || "";
+    const editPath = orgKey
+      ? buildPublicWebsiteEditPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: orgKey,
+        })
+      : "/hq/content";
+    const websiteUx = presentBlessBoardHqWebsiteSettingsUx({
+      overview: {
+        publicPath,
+        previewPath,
+        editPath,
+        inlineEditPath: editPath,
+        publishReviewPath: buildPublicWebsitePublishPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: orgKey,
+          query: locals && locals.deferServiceTimes ? { defer_service_times: "1" } : undefined,
+        }),
+        hasUnpublishedChanges:
+          String((locals && locals.readiness && locals.readiness.websiteStatus) || "") !==
+          "published",
+        readiness: locals && locals.readiness,
+      },
+      readiness: locals && locals.readiness,
+      flags,
+      needsFoundationRepair: Boolean(locals && locals.needsFoundationRepair),
+      publicPath,
+      previewPath,
+    });
+    const html = renderHqView(
+      "hq/website.ejs",
+      await shellLocals(req, res, { ...(locals || {}), websiteUx })
+    );
     return res.status(200).type("html").send(html);
   }
 
@@ -241,6 +297,15 @@ function createChurchWebsiteAdminRouter(deps) {
         if (overview && overview.ok && !overview.useLegacyWebsiteScreen) {
           const flags = await websiteCapabilityFlags(req);
           applyOverviewCapabilities(overview, flags);
+          const foundation = await inspectWebsiteFoundationGaps(getPool(), {
+            churchId: tenant.church.id,
+          });
+          const needsFoundationRepair = Boolean(foundation && foundation.needsRepair);
+          const websiteUx = attachHqWebsiteUx(overview, flags, {
+            needsFoundationRepair,
+            publicPath: overview.publicPath,
+            previewPath: overview.previewPath,
+          });
           const noticeRaw = String((req.query && req.query.notice) || "") || null;
           const noticeMap = {
             published: "Website published.",
@@ -256,6 +321,9 @@ function createChurchWebsiteAdminRouter(deps) {
             viewName,
             await shellLocals(req, res, {
               overview,
+              websiteUx,
+              needsFoundationRepair,
+              foundationGaps: (foundation && foundation.gaps) || [],
               notice: noticeMap[noticeRaw] || noticeRaw,
               error: null,
             })

@@ -8,6 +8,7 @@ const contentService = require("../../platform/website/contentService");
 const publicationService = require("../../platform/website/publicationService");
 const submissionService = require("../../platform/website/submissionService");
 const mediaService = require("../../platform/website/mediaService");
+const instanceRepo = require("../../platform/website/instanceRepository");
 const editSessionService = require("../../platform/website/editSessionService");
 const {
   grantedPermissions,
@@ -63,9 +64,30 @@ function actorId(req) {
   );
 }
 
+function clientTenantOverride(body) {
+  if (!body || typeof body !== "object") return false;
+  return Boolean(
+    body.organizationId ||
+      body.organization_id ||
+      body.instanceId ||
+      body.instance_id ||
+      body.product ||
+      body.productCode
+  );
+}
+
 const mediaUpload = multer({
   storage: multer.memoryStorage(),
   limits: { fileSize: mediaService.MAX_BYTES, files: 1 },
+  fileFilter(_req, file, cb) {
+    const mime = String((file && file.mimetype) || "").toLowerCase();
+    if (mime && mime !== "application/octet-stream" && !mediaService.ALLOWED_IMAGE_MIME.has(mime)) {
+      const err = new Error("unsafe_media_type");
+      err.code = mediaService.RESULT.UNSAFE_TYPE;
+      return cb(err);
+    }
+    cb(null, true);
+  },
 });
 
 function registerActiveClinicWebsiteRoutes(app, deps) {
@@ -121,6 +143,9 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return json(res, 403, { ok: false, code: "csrf" });
       }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
       if (!canEditClinicWebsite(req, clinic)) {
         return json(res, 403, { ok: false, code: "forbidden" });
       }
@@ -131,6 +156,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       const saved = await contentService.saveWebsiteDraft(getPool(), {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,
+        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
         contentKey: req.body && req.body.contentKey,
         value: req.body && req.body.value,
         visibility: req.body && req.body.visibility,
@@ -138,7 +164,12 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         grantedPermissions: grantedPermissions(req),
       });
       if (!saved.ok) {
-        return json(res, 400, { ok: false, code: saved.code, reason: saved.reason || null });
+        const notFound = saved.code === "tenant_mismatch" || saved.code === "media_not_found";
+        return json(res, notFound ? 404 : 400, {
+          ok: false,
+          code: saved.code,
+          reason: saved.reason || null,
+        });
       }
       return json(res, 200, {
         ok: true,
@@ -159,6 +190,9 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return json(res, 403, { ok: false, code: "csrf" });
       }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
       if (!canEditClinicWebsite(req, clinic)) {
         return json(res, 403, { ok: false, code: "forbidden" });
       }
@@ -169,6 +203,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       const discarded = await contentService.discardWebsiteDraft(getPool(), {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,
+        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
         contentKey: req.body && req.body.contentKey,
         actorIdentityId: actorId(req),
       });
@@ -223,6 +258,9 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return json(res, 403, { ok: false, code: "csrf" });
       }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
       if (!hasWebsitePermission(grantedPermissions(req), PERMISSIONS.SUBMIT)) {
         return json(res, 403, { ok: false, code: "forbidden" });
       }
@@ -251,6 +289,9 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return json(res, 403, { ok: false, code: "csrf" });
       }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
       if (!canPublishClinicWebsite(req, clinic)) {
         return json(res, 403, { ok: false, code: "forbidden" });
       }
@@ -264,6 +305,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       const published = await publicationService.publishWebsiteDraft(getPool(), {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,
+        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
         actorIdentityId: actorId(req),
         allowEmpty: true,
       });
@@ -390,9 +432,14 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!canViewClinicWebsite(req, clinic) && !canEditClinicWebsite(req, clinic) && !canPublishClinicWebsite(req, clinic)) {
         return json(res, 403, { ok: false, code: "forbidden" });
       }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
       const loaded = await versionService.getWebsiteVersion(getPool(), {
         versionId: req.params.versionId,
         organizationId: clinic.organizationId,
+        instanceId: attached.instance.id,
       });
       if (!loaded.ok) {
         return json(res, 404, { ok: false, code: loaded.code });
@@ -410,6 +457,9 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return json(res, 403, { ok: false, code: "csrf" });
       }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
       if (!canRestoreClinicWebsite(req, clinic)) {
         return json(res, 403, { ok: false, code: "forbidden" });
       }
@@ -420,6 +470,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       const restored = await publicationService.restoreWebsiteVersionLive(getPool(), {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,
+        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
         versionId: req.params.versionId,
         actorIdentityId: actorId(req),
       });
@@ -473,6 +524,13 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!loaded.ok || loaded.media.status !== "active") {
         return res.status(404).type("text").send("Not found");
       }
+      const instance = await instanceRepo.findWebsiteInstanceByOrgProduct(getPool(), {
+        organizationId: clinic.organizationId,
+        productCode: PRODUCT_CODE.ACTIVECLINIC,
+      });
+      if (!instance || loaded.media.instanceId !== instance.id) {
+        return res.status(404).type("text").send("Not found");
+      }
       const published = await mediaService.isPublishedInUse(getPool(), mediaId, clinic.organizationId);
       if (!published && !canEditClinicWebsite(req, clinic)) {
         return res.status(404).type("text").send("Not found");
@@ -501,7 +559,9 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         const code =
           err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE"
             ? mediaService.RESULT.TOO_LARGE
-            : "invalid_upload";
+            : err && err.code === mediaService.RESULT.UNSAFE_TYPE
+              ? mediaService.RESULT.UNSAFE_TYPE
+              : "invalid_upload";
         return json(res, 400, { ok: false, code });
       }
       return registerMedia(req, res, next);
@@ -515,6 +575,9 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       const csrfValue = (req.body && req.body[CSRF_FIELD]) || req.query[CSRF_FIELD];
       if (!validateCsrf(req, csrfValue, env)) {
         return json(res, 403, { ok: false, code: "csrf" });
+      }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
       }
       if (!hasWebsitePermission(grantedPermissions(req), PERMISSIONS.MEDIA_UPLOAD)) {
         return json(res, 403, { ok: false, code: "forbidden" });
@@ -534,12 +597,13 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         if (!existing.ok || existing.media.instanceId !== attached.instance.id) {
           return json(res, 404, { ok: false, code: "media_not_found" });
         }
-        return json(res, 200, { ok: true, media: existing.media, reused: true });
+        return json(res, 200, { ok: true, published: false, media: existing.media, reused: true });
       }
       const file = req.file || null;
       const registered = await mediaService.registerWebsiteMedia(getPool(), {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,
+        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
         actorIdentityId: actorId(req),
         mediaKind: (req.body && req.body.mediaKind) || (file ? "image" : undefined),
         externalUrl: req.body && req.body.externalUrl,
@@ -550,7 +614,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         storageKey: req.body && req.body.storageKey,
         buffer: file ? file.buffer : null,
       });
-      return json(res, registered.ok ? 200 : 400, registered);
+      return json(res, registered.ok ? 200 : 400, registered.ok ? { ...registered, published: false } : registered);
     } catch (err) {
       return next(err);
     }

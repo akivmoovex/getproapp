@@ -2021,6 +2021,9 @@ async function restoreAndPublishCurrentVersion(db, opts) {
   if (!historical) {
     return { ok: false, status: STATUS.NOT_FOUND, reason: "version" };
   }
+  if (String(historical.churchId) !== String(churchId)) {
+    return { ok: false, status: STATUS.NOT_FOUND, reason: "version" };
+  }
   const snap = historical.snapshot || {};
   const selectedPageKeys = (Array.isArray(snap.pages) ? snap.pages : [])
     .map((p) => p.pageKey)

@@ -1,47 +1,43 @@
 <%
   var website = (pageData && pageData.website) || {};
-  var actions = website.actions || {};
+  var ux = website.ux || website;
+  var actions = (ux.actions || website.actions) || {};
+  var statusKey = website.statusKey || (ux && ux.state) || '';
 %>
-<section class="ac-settings-website" data-ac-page-section="settings-website" data-ac-website-management="1">
+<section
+  class="ac-settings-website"
+  data-ac-page-section="settings-website"
+  data-ac-website-management="1"
+  data-ac-website-state="<%= statusKey %>"
+  data-ac-website-exists="<%= website.exists ? '1' : '0' %>"
+  data-ac-website-draft-state="1"
+>
   <div class="ac-panel" data-ac-website-status="1">
     <h2 class="ac-dashboard__card-title" style="margin-top:0">Website</h2>
+    <p data-ac-website-status-label="1"><strong><%= ux.statusLabel || website.statusLabel || 'Website not published yet' %></strong></p>
+    <% if (ux.statusHint || website.statusHint) { %>
+    <p class="ac-muted" data-ac-website-status-hint="1"><%= ux.statusHint || website.statusHint %></p>
+    <% } %>
     <dl class="ac-dl">
-      <div>
-        <dt>Status</dt>
-        <dd data-ac-website-status-label="1"><%= website.statusLabel || 'Not provisioned' %></dd>
-      </div>
-      <div>
-        <dt>Draft / published</dt>
-        <dd data-ac-website-draft-state="1">
-          <% if (website.draftState === 'unpublished_changes') { %>
-          Draft has unpublished changes
-          <% } else if (website.publishedVersionNumber) { %>
-          Published
-          <% } else if (website.exists) { %>
-          Draft
-          <% } else { %>
-          Not provisioned
-          <% } %>
-        </dd>
-      </div>
-      <div>
-        <dt>Website exists</dt>
-        <dd data-ac-website-exists="<%= website.exists ? '1' : '0' %>"><%= website.exists ? 'Yes' : 'No' %></dd>
-      </div>
       <div>
         <dt>Public URL</dt>
         <dd data-ac-website-public-url="1">
           <% if (website.publicUrl || website.publicPath) { %>
-          <code><%= website.publicUrl || website.publicPath %></code>
+            <% if (actions.viewLive) { %>
+            <a href="<%= actions.viewLive %>"><code><%= website.publicUrl || website.publicPath %></code></a>
+            <% } else { %>
+            <code><%= website.publicUrl || website.publicPath %></code>
+            <span class="ac-muted"> (not live yet)</span>
+            <% } %>
           <% } else { %>
           —
           <% } %>
         </dd>
       </div>
       <div>
-        <dt>Published version</dt>
+        <dt>Current published version</dt>
         <dd data-ac-website-published-version="1">
-          <%= website.publishedVersionNumber ? ('Version ' + website.publishedVersionNumber) : 'None yet' %>
+          <%= website.publishedVersionLabel || (website.publishedVersionNumber ? ('Version ' + website.publishedVersionNumber) : 'None yet') %>
         </dd>
       </div>
       <div>
@@ -49,6 +45,14 @@
         <dd data-ac-website-unpublished="<%= website.unpublishedChanges ? '1' : '0' %>">
           <%= website.unpublishedChanges ? ('Yes (' + (website.unpublishedCount || 0) + ')') : 'No' %>
         </dd>
+      </div>
+      <div>
+        <dt>Last editor</dt>
+        <dd data-ac-website-last-editor="1"><%= website.lastEditor || '—' %></dd>
+      </div>
+      <div>
+        <dt>Last publication date</dt>
+        <dd data-ac-website-last-published="1"><%= website.lastPublishedLabel || 'Not published yet' %></dd>
       </div>
       <% if (website.publishPolicyLabel) { %>
       <div>
@@ -65,11 +69,11 @@
       <% if (actions.viewLive) { %>
       <a class="ac-btn" href="<%= actions.viewLive %>" data-ac-website-action="view-live">View live</a>
       <% } %>
-      <% if (website.canEdit && actions.editWebsite) { %>
-      <a class="ac-btn" href="<%= actions.editWebsite %>" data-ac-website-action="edit">Edit website</a>
-      <% } %>
       <% if (actions.preview) { %>
       <a class="ac-btn" href="<%= actions.preview %>" data-ac-website-action="preview">Preview</a>
+      <% } %>
+      <% if (website.canEdit && actions.editWebsite) { %>
+      <a class="ac-btn" href="<%= actions.editWebsite %>" data-ac-website-action="edit">Edit website</a>
       <% } %>
       <% if (website.canPublish && actions.publishPath) { %>
       <form
@@ -86,6 +90,12 @@
       <% } %>
       <% if (actions.history) { %>
       <a class="ac-btn" href="<%= actions.history %>" data-ac-website-action="history">Version history</a>
+      <% } %>
+      <% if (actions.retry) { %>
+      <a class="ac-btn" href="<%= actions.retry %>" data-ac-website-action="retry">Retry</a>
+      <% } %>
+      <% if (actions.contactPlatformAdmin) { %>
+      <span class="ac-muted" data-ac-website-action="contact-platform-admin">Contact Platform Admin</span>
       <% } %>
     </p>
     <% if (!website.canEdit && !website.canPublish) { %>

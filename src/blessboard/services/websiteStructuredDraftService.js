@@ -7,11 +7,14 @@
 const draftRepo = require("../repositories/websiteStructuredDraftRepository");
 const fieldDraftRepo = require("../repositories/websiteInlineFieldDraftRepository");
 const contentRepo = require("../repositories/publicContentRepository");
+const mediaAssetsRepo = require("../media/mediaAssetsRepository");
 const {
   DRAFT_KINDS,
   validateStructuredPayload,
   mapError,
   listDemoImages,
+  collectStructuredImageUrls,
+  parseStructuredMediaAssetId,
 } = require("./websiteStructuredDraftValidation");
 const auditSvc = require("./websiteAuditService");
 
@@ -48,6 +51,18 @@ async function assertEntityKeysInChurch(db, input) {
     if (!existing) continue;
     if (String(existing.churchId) !== String(input.churchId)) {
       throw mapError("NOT_FOUND", "Item not found.", 404);
+    }
+  }
+}
+
+async function assertMediaAssetsInChurch(db, input) {
+  const urls = collectStructuredImageUrls(input.payload);
+  for (const url of urls) {
+    const id = parseStructuredMediaAssetId(url);
+    if (!id) continue;
+    const asset = await mediaAssetsRepo.findMediaAssetById(db, id);
+    if (!asset || asset.status !== "active" || String(asset.churchId) !== String(input.churchId)) {
+      throw mapError("NOT_FOUND", "Image not found.", 404);
     }
   }
 }
@@ -95,6 +110,10 @@ async function saveStructuredDraft(db, input) {
     churchId: input.churchId,
     payload: validated.payload,
     op,
+  });
+  await assertMediaAssetsInChurch(db, {
+    churchId: input.churchId,
+    payload: validated.payload,
   });
 
   const draft = await draftRepo.upsertStructuredDraft(db, {

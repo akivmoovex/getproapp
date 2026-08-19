@@ -1,10 +1,15 @@
 <section class="ac-public-section ac-booking-wizard acp-booking-shell" data-ac-page-section="booking-consultation-type">
+  <% if (!(typeof bookingIntroOnly !== 'undefined' && bookingIntroOnly)) { %>
   <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
+  <% } %>
   <div class="acp-booking-layout">
     <div class="acp-booking-layout__main">
       <header class="acp-booking-header">
         <h1>Select consultation type</h1>
-        <p>Choose the type of care you need. The clinic will confirm your appointment — this is not an automatic booking.</p>
+        <p><%- include('../partials/website-editable-field', { contentKey: 'book.intro', fieldValue: (typeof clinic !== 'undefined' && clinic && clinic.bookIntro) || 'Choose the type of care you need. The clinic will confirm your appointment — this is not an automatic booking.', fieldType: 'long_text' }) %></p>
+        <% if (typeof bookingIntroOnly !== 'undefined' && bookingIntroOnly) { %>
+        <p class="ac-public-note">Online booking is off for visitors. This intro is website copy only — saving it does not enable bookings or publish the site.</p>
+        <% } %>
       </header>
       <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
       <% if (validationErrors && Object.keys(validationErrors).length) { %>
@@ -13,6 +18,7 @@
         <ul><% Object.values(validationErrors).forEach(function (msg) { %><li><%= msg %></li><% }); %></ul>
       </div>
       <% } %>
+      <% if (!(typeof bookingIntroOnly !== 'undefined' && bookingIntroOnly)) { %>
       <form method="post" action="/clinics/<%= clinic.clinicKey %>/book" class="ac-public-form" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <input type="hidden" name="wizardAction" value="continue"/>
@@ -47,6 +53,11 @@
         </div>
       </form>
       <%- include('../partials/sms-honesty-note') %>
+      <% } else { %>
+      <p class="ac-public-actions">
+        <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact page</a>
+      </p>
+      <% } %>
     </div>
     <%- include('../partials/booking-summary', { draft: typeof draft !== 'undefined' ? draft : null }) %>
   </div>

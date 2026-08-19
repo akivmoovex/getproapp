@@ -3,7 +3,9 @@
 /**
  * Centralized public website demo fixtures for BlessBoard V5 tenant sites.
  * Used when a church has published pages but little/no customized content.
- * No lorem ipsum, no fabricated statistics, no public “demo” notices.
+ * No lorem ipsum, no fabricated statistics.
+ * Public soft-fill of named people, events, and ministries must be labeled
+ * as template examples — never presented as this congregation’s published facts.
  *
  * Demo copy uses the safe token {{churchName}} (and aliases). Resolve with
  * interpolateDemoText / buildPublicDemoPack — never evaluate arbitrary expressions.
@@ -617,15 +619,52 @@ function mediaOrFallback(url, fallback) {
   return raw;
 }
 
+const PUBLIC_TEMPLATE_EXAMPLE_NOTICE =
+  "Template examples — replace with your church’s published information. These names, events, and ministries are not this congregation’s facts.";
+
+function alreadyTemplateLabeled(value) {
+  return /\(template example\)/i.test(String(value || ""));
+}
+
+function withPublicTemplateNotice(text) {
+  const body = String(text || "").trim();
+  if (!body) return PUBLIC_TEMPLATE_EXAMPLE_NOTICE;
+  if (/template example/i.test(body)) return body;
+  return `${body}\n\n${PUBLIC_TEMPLATE_EXAMPLE_NOTICE}`;
+}
+
+/**
+ * Mark render-time demo-pack entities as template examples (does not mutate the pack).
+ * @param {object[]} items
+ * @param {string|string[]} nameKeys
+ */
+function markPublicTemplateExamples(items, nameKeys) {
+  const keys = Array.isArray(nameKeys) ? nameKeys : nameKeys ? [nameKeys] : [];
+  return (Array.isArray(items) ? items : []).map((item) => {
+    if (!item || typeof item !== "object") return item;
+    const next = { ...item, templateExample: true };
+    for (const key of keys) {
+      const value = next[key];
+      if (typeof value === "string" && value.trim() && !alreadyTemplateLabeled(value)) {
+        next[key] = `${value.trim()} (template example)`;
+      }
+    }
+    return next;
+  });
+}
+
 module.exports = {
   MEDIA,
   SERVICE_TIMES,
   SOCIAL_LINKS,
   CHURCH_NAME_TOKEN,
   CHURCH_NAME_ALIASES,
+  PUBLIC_TEMPLATE_EXAMPLE_NOTICE,
   resolveCanonicalChurchName,
   interpolateDemoText,
   interpolateDemoValue,
   buildPublicDemoPack,
   mediaOrFallback,
+  withPublicTemplateNotice,
+  markPublicTemplateExamples,
 };

@@ -22,9 +22,7 @@
       <% } %>
       <% if (profile.title) { %><p class="ac-doctor-profile__title"><%= profile.title %></p><% } %>
       <% if (profile.bio) { %><p class="ac-doctor-profile__bio"><%= profile.bio %></p><% } %>
-      <% if (clinic.publicBookingEnabled) { %>
-      <p><a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book?doctor=<%= profile.staffKey %>">Request appointment</a></p>
-      <% } %>
+      <p><a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book?doctor=<%= profile.staffKey %>"><%= clinic.publicBookingEnabled ? "Request appointment" : "Request a visit" %></a></p>
     </div>
   </div>
 </article>

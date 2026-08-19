@@ -279,6 +279,9 @@ function buildPublicWebsiteAdminPath(input) {
   if (surface === "website-preview" || (input && input.preview === true)) {
     return `${base}/website-preview`;
   }
+  if (surface === "website") {
+    return `${base}/website`;
+  }
   return base;
 }
 
@@ -291,15 +294,193 @@ function buildPublicWebsiteAdminPath(input) {
  * @returns {string|null}
  */
 function canonicalRedirectFromAlias(product, reqPath) {
-  const alias = publicWebsiteAliasPathPrefix(product);
-  const canonical = publicWebsitePathPrefix(product);
-  if (!alias || !canonical) return null;
+  return canonicalPublicWebsiteRedirect(product, reqPath);
+}
+
+/**
+ * 301 target when a public website request is not canonical.
+ * Handles product alias prefixes, trailing slashes, organization-key case,
+ * optional slug remaps, and query preservation. Returns null when already
+ * canonical so callers never loop.
+ *
+ * @param {string} product
+ * @param {string} reqPath
+ * @param {{
+ *   canonicalOrganizationKey?: string,
+ *   canonicalBranchKey?: string,
+ *   remapOrganizationKey?: (key: string) => string|null|undefined,
+ *   remapBranchKey?: (organizationKey: string, branchKey: string) => string|null|undefined,
+ *   query?: string|URLSearchParams|Record<string, unknown>,
+ * } | null} [options]
+ * @returns {string|null}
+ */
+function canonicalPublicWebsiteRedirect(product, reqPath, options) {
+  const productCode = normalizeProduct(product);
+  const prefix = publicWebsitePathPrefix(productCode);
+  const alias = publicWebsiteAliasPathPrefix(productCode);
+  if (!prefix) return null;
+
   const { pathname, search } = splitPathAndSearch(reqPath);
-  if (!pathname) return null;
-  if (pathHasPrefix(pathname, canonical)) return null;
-  if (!pathHasPrefix(pathname, alias)) return null;
-  const rest = pathname.slice(alias.length);
-  return `${canonical}${rest}${search}`;
+  if (!pathname || pathname === "/") return null;
+
+  let path = String(pathname).replace(/\/{2,}/g, "/");
+  if (path.length > 1) path = path.replace(/\/+$/, "");
+
+  if (alias && pathHasPrefix(path, alias) && !pathHasPrefix(path, prefix)) {
+    path = `${prefix}${path.slice(alias.length)}`;
+  }
+  if (!pathHasPrefix(path, prefix)) return null;
+
+  const rest = path.slice(prefix.length);
+  const segments = rest.split("/").filter((part) => part !== "");
+  if (!segments.length) return null;
+
+  let organizationKey = normalizeOrganizationKey(decodeURIComponent(segments[0] || ""));
+  if (options && options.canonicalOrganizationKey) {
+    organizationKey = normalizeOrganizationKey(options.canonicalOrganizationKey) || organizationKey;
+  }
+  if (options && typeof options.remapOrganizationKey === "function") {
+    const mapped = options.remapOrganizationKey(organizationKey);
+    if (mapped) organizationKey = normalizeOrganizationKey(mapped) || organizationKey;
+  }
+  if (!organizationKey) return null;
+  segments[0] = encodeURIComponent(organizationKey);
+
+  if (productCode === PRODUCT_CODE.BLESSBOARD && segments[1] === "branches" && segments[2]) {
+    let branchKey = String(decodeURIComponent(segments[2]) || "")
+      .trim()
+      .toLowerCase();
+    if (options && options.canonicalBranchKey) {
+      branchKey = String(options.canonicalBranchKey).trim().toLowerCase() || branchKey;
+    }
+    if (options && typeof options.remapBranchKey === "function") {
+      const mappedBranch = options.remapBranchKey(organizationKey, branchKey);
+      if (mappedBranch) branchKey = String(mappedBranch).trim().toLowerCase() || branchKey;
+    }
+    if (branchKey) segments[2] = encodeURIComponent(branchKey);
+  }
+
+  const rebuilt = `${prefix}/${segments.join("/")}`;
+  const dest = options && options.query != null
+    ? appendQuery(`${rebuilt}${search}`, options.query)
+    : `${rebuilt}${search}`;
+  const original = `${pathname}${search}`;
+  if (dest === original || dest === String(reqPath || "")) return null;
+  return dest;
+}
+
+/**
+ * GET/HEAD-only 301. Returns true when a redirect was sent.
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {string} product
+ * @param {object} [options]
+ */
+function sendCanonicalPublicWebsiteRedirect(req, res, product, options) {
+  const method = String((req && req.method) || "GET").toUpperCase();
+  if (method !== "GET" && method !== "HEAD") return false;
+  const dest = canonicalPublicWebsiteRedirect(
+    product,
+    (req && (req.originalUrl || req.url)) || "",
+    options
+  );
+  if (!dest) return false;
+  res.redirect(301, dest);
+  return true;
+}
+
+const ACTIVECLINIC_PUBLIC_PAGE_KEYS = Object.freeze([
+  "about",
+  "doctors",
+  "services",
+  "pricing",
+  "contact",
+  "location",
+  "book",
+]);
+
+/**
+ * Nav paths for a tenant public website, always via the shared builder.
+ * @param {{ product?: string, productCode?: string, organizationKey?: string, scope?: object }} input
+ * @returns {Record<string, string>|null}
+ */
+function buildPublicWebsitePagePaths(input) {
+  const home = buildPublicOrganizationWebsitePath({
+    ...(input || {}),
+    pageKey: undefined,
+    suffix: undefined,
+    query: undefined,
+  });
+  if (!home) return null;
+  const product = normalizeProduct((input && (input.product || input.productCode)) || "");
+  const keys =
+    product === PRODUCT_CODE.ACTIVECLINIC ? ACTIVECLINIC_PUBLIC_PAGE_KEYS : [];
+  /** @type {Record<string, string>} */
+  const paths = { home };
+  for (const pageKey of keys) {
+    const path = buildPublicOrganizationWebsitePath({
+      ...(input || {}),
+      pageKey,
+      suffix: undefined,
+      query: undefined,
+    });
+    if (path) paths[pageKey] = path;
+  }
+  if (product !== PRODUCT_CODE.ACTIVECLINIC) return paths;
+  paths.privacy = buildPublicOrganizationWebsitePath({
+    ...(input || {}),
+    suffix: "privacy",
+    pageKey: undefined,
+    query: undefined,
+  }) || `${home}/privacy`;
+  paths.terms = buildPublicOrganizationWebsitePath({
+    ...(input || {}),
+    suffix: "terms",
+    pageKey: undefined,
+    query: undefined,
+  }) || `${home}/terms`;
+  paths.patientLogin = buildPublicOrganizationWebsitePath({
+    ...(input || {}),
+    suffix: "patient/login",
+    pageKey: undefined,
+    query: undefined,
+  }) || `${home}/patient/login`;
+  paths.myBooking = buildPublicOrganizationWebsitePath({
+    ...(input || {}),
+    suffix: "my-booking",
+    pageKey: undefined,
+    query: undefined,
+  }) || `${home}/my-booking`;
+  paths.patientInformation = buildPublicOrganizationWebsitePath({
+    ...(input || {}),
+    suffix: "patient-information",
+    pageKey: undefined,
+    query: undefined,
+  }) || `${home}/patient-information`;
+  return paths;
+}
+
+/**
+ * Attach canonical nav paths onto an ActiveClinic clinic DTO.
+ * @param {object|null|undefined} clinic
+ * @returns {object|null|undefined}
+ */
+function attachClinicPublicWebsitePaths(clinic) {
+  if (!clinic || typeof clinic !== "object") return clinic;
+  const organizationKey = String(clinic.clinicKey || clinic.organizationKey || "").trim();
+  if (!organizationKey) return clinic;
+  const publicPagePaths =
+    clinic.publicPagePaths ||
+    buildPublicWebsitePagePaths({
+      product: PRODUCT_CODE.ACTIVECLINIC,
+      organizationKey,
+    });
+  if (!publicPagePaths) return clinic;
+  return {
+    ...clinic,
+    publicBasePath: clinic.publicBasePath || publicPagePaths.home,
+    publicPagePaths,
+  };
 }
 
 module.exports = {
@@ -322,5 +503,9 @@ module.exports = {
   buildPublicWebsiteSettingsPath,
   buildPublicWebsitePublishPath,
   buildPublicWebsiteAdminPath,
+  buildPublicWebsitePagePaths,
+  attachClinicPublicWebsitePaths,
   canonicalRedirectFromAlias,
+  canonicalPublicWebsiteRedirect,
+  sendCanonicalPublicWebsiteRedirect,
 };

@@ -80,6 +80,7 @@
     }
     if (code === 'already_provisioned') return 'This registration was already provisioned.';
     if (code === 'retry_succeeded') return 'Provisioning retry succeeded. Invitation delivery follows the invitation section below.';
+    if (code === 'already_healthy') return 'Provisioning is already complete. Healthy resources were not rebuilt.';
     if (code === 'invitation_resent') {
       return 'Previous invite link was invalidated. A replacement invitation was created and delivery was attempted.';
     }
@@ -107,6 +108,8 @@
       return 'Password reset is unavailable for this account. Use invitation resend if setup is incomplete.';
     }
     if (code === 'reset_failed') return 'The password reset could not be started. Try again.';
+    if (code === 'not_retryable') return 'Provisioning retry is not available for this organisation.';
+    if (code === 'retry_failed') return 'Provisioning retry could not complete. Review tenant health and try again.';
     if (code === 'sessions_revoked') return 'Active sessions were revoked for that user.';
     if (code === 'sessions_revoke_failed') return 'Sessions could not be revoked. Try again.';
     if (code === 'branch_limit') {
@@ -225,6 +228,10 @@
   <p class="bb-pa-flash bb-pa-flash--error" role="alert" data-bb-pa-error="1"><%= errorMsg %></p>
   <% } %>
 
+  <div id="pa-org-tenant-health">
+    <%- include('../partials/tenant-health-summary', { tenantHealthSummaries: typeof tenantHealthSummaries !== 'undefined' ? tenantHealthSummaries : [] }) %>
+  </div>
+
   <p class="bb-pa-org-detail__notice" role="note" data-bb-pa-org-detail-notice="1">
     Design-comp KPIs (member totals, system health, cloud usage charts) and unsupported create/export actions are omitted.
     Only live catalogue fields and entitlement actions already supported in V5 are shown.
@@ -252,6 +259,7 @@
 
   <nav class="bb-pa-panel bb-pa-org-detail-panel" aria-label="Organisation sections" data-bb-pa-org-section-nav="1">
     <ul class="bb-pa-list bb-pa-list--inline">
+      <li><a class="bb-pa-link" href="#pa-org-tenant-health">Tenant health</a></li>
       <li><a class="bb-pa-link" href="#pa-org-overview">Overview</a></li>
       <li><a class="bb-pa-link" href="#pa-org-branches-heading">Churches and branches</a></li>
       <li><a class="bb-pa-link" href="#pa-org-team-heading">Team members</a></li>

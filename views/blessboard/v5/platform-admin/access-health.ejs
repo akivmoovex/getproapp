@@ -38,6 +38,51 @@
     <strong>Read-only diagnostics:</strong> This page displays safe aggregated counts.
     No user-identifiable data, pastoral case details, or finance transaction bodies are shown.
   </p>
+<%
+  var schemaCompat = typeof schemaCompatibility !== 'undefined' ? schemaCompatibility : null;
+%>
+  <% if (schemaCompat) { %>
+  <section
+    class="bb-pa-panel"
+    data-bb-pa-schema-compatibility="1"
+    data-bb-pa-schema-compatible="<%= schemaCompat.compatible ? '1' : '0' %>"
+    data-bb-pa-schema-capability="<%= schemaCompat.capability || '' %>"
+    aria-labelledby="pa-schema-compat-heading"
+  >
+    <div class="bb-pa-panel__head">
+      <h2 id="pa-schema-compat-heading" class="bb-pa-section-title">V7 schema compatibility</h2>
+      <% if (schemaCompat.compatible) { %>
+      <span class="bb-pa-chip bb-pa-chip--ok">Compatible</span>
+      <% } else { %>
+      <span class="bb-pa-chip bb-pa-chip--danger">Incompatible</span>
+      <% } %>
+    </div>
+    <p class="bb-pa-hint">
+      Read-only check of hosted schema vs this application. Missing capabilities can leave new organizations partially provisioned.
+      Do not run migrations from the application process.
+    </p>
+    <% if (!schemaCompat.compatible && schemaCompat.capability) { %>
+    <p class="bb-pa-flash bb-pa-flash--error" role="alert">
+      Missing capability: <code><%= schemaCompat.capability %></code>
+    </p>
+    <% } %>
+    <% if (schemaCompat.checks && schemaCompat.checks.length) { %>
+    <dl class="bb-pa-dl">
+      <% schemaCompat.checks.forEach(function (row) { %>
+      <div data-bb-pa-schema-check="<%= row.key %>">
+        <dt><%= row.label %></dt>
+        <dd>
+          <span class="bb-pa-chip <%= row.ok ? 'bb-pa-chip--ok' : 'bb-pa-chip--danger' %>"><%= row.ok ? 'OK' : 'MISSING' %></span>
+          <% if (!row.ok && row.remediation) { %>
+          <span class="bb-pa-hint"><%= row.remediation %></span>
+          <% } %>
+        </dd>
+      </div>
+      <% }) %>
+    </dl>
+    <% } %>
+  </section>
+  <% } %>
 
   <% if (!checks.length) { %>
   <p class="bb-pa-empty" role="status">No health checks available.</p>

@@ -267,10 +267,11 @@ describe("ActiveClinic organization settings parity (AC-V6-S07)", () => {
       .set("Cookie", adminCookie);
     assert.equal(websiteDetail.status, 200);
     assert.match(websiteDetail.text, /data-ac-website-management="1"/);
+    assert.match(websiteDetail.text, /Website not published yet/);
     assert.match(websiteDetail.text, /data-ac-website-action="edit"/);
-    assert.match(websiteDetail.text, /data-ac-website-action="view-live"/);
     assert.match(websiteDetail.text, /data-ac-website-action="preview"/);
     assert.match(websiteDetail.text, /data-ac-website-action="history"/);
+    assert.doesNotMatch(websiteDetail.text, /data-ac-website-action="view-live"/);
     assert.doesNotMatch(websiteDetail.text, /data-ac-website-action="publish"/);
 
     const staffOrg = await request(app)

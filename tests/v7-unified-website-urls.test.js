@@ -22,6 +22,9 @@ const {
   buildPublicWebsitePublishPath,
   buildPublicWebsiteAdminPath,
   canonicalRedirectFromAlias,
+  canonicalPublicWebsiteRedirect,
+  buildPublicWebsitePagePaths,
+  attachClinicPublicWebsitePaths,
 } = require("../src/platform/website/publicWebsiteUrl");
 const { publicClinicPath } = require("../src/activeclinic/services/clinicWebsiteAvailabilityService");
 const {
@@ -255,5 +258,86 @@ describe("v7 unified website URLs", () => {
       publicClinicPath("sunrise", { suffix: "contact/success" }),
       "/clinics/sunrise/contact/success"
     );
+  });
+
+  it("canonicalizes trailing slashes, organization-key case, aliases, and remaps without loops", () => {
+    assert.equal(
+      canonicalPublicWebsiteRedirect(
+        PRODUCT_CODE.ACTIVECLINIC,
+        "/clinics/Sunrise-Clinic/about/?keep=1"
+      ),
+      "/clinics/sunrise-clinic/about?keep=1"
+    );
+    assert.equal(
+      canonicalPublicWebsiteRedirect(
+        PRODUCT_CODE.ACTIVECLINIC,
+        "/c/SUNRISE-CLINIC/about/?keep=1"
+      ),
+      "/clinics/sunrise-clinic/about?keep=1"
+    );
+    assert.equal(
+      canonicalPublicWebsiteRedirect(PRODUCT_CODE.ACTIVECLINIC, "/clinics/sunrise-clinic"),
+      null
+    );
+    assert.equal(
+      canonicalPublicWebsiteRedirect(PRODUCT_CODE.ACTIVECLINIC, "/clinics/sunrise-clinic/about?keep=1"),
+      null
+    );
+    assert.equal(
+      canonicalPublicWebsiteRedirect(PRODUCT_CODE.BLESSBOARD, "/c/Sunrise-Church/about/"),
+      "/c/sunrise-church/about"
+    );
+    assert.equal(
+      canonicalPublicWebsiteRedirect(PRODUCT_CODE.BLESSBOARD, "/c/demo/about?keep=1", {
+        remapOrganizationKey: (key) => (key === "demo" ? "demo-church" : key),
+      }),
+      "/c/demo-church/about?keep=1"
+    );
+    assert.equal(
+      canonicalPublicWebsiteRedirect(
+        PRODUCT_CODE.BLESSBOARD,
+        "/c/demo-church/branches/lusaka/about?keep=1",
+        {
+          remapBranchKey: (org, branch) =>
+            org === "demo-church" && branch === "lusaka" ? "demo-church-lusaka" : branch,
+        }
+      ),
+      "/c/demo-church/branches/demo-church-lusaka/about?keep=1"
+    );
+    assert.equal(
+      canonicalPublicWebsiteRedirect(PRODUCT_CODE.BLESSBOARD, "/c/demo-church/about?keep=1", {
+        remapOrganizationKey: (key) => (key === "demo" ? "demo-church" : key),
+      }),
+      null
+    );
+    assert.equal(
+      canonicalPublicWebsiteRedirect(PRODUCT_CODE.ACTIVECLINIC, "/clinics//sunrise-clinic//about"),
+      "/clinics/sunrise-clinic/about"
+    );
+  });
+
+  it("builds tenant nav paths that match mounted public routes", () => {
+    const pages = buildPublicWebsitePagePaths({
+      product: PRODUCT_CODE.ACTIVECLINIC,
+      organizationKey: "sunrise-clinic",
+    });
+    assert.equal(pages.home, "/clinics/sunrise-clinic");
+    assert.equal(pages.about, "/clinics/sunrise-clinic/about");
+    assert.equal(pages.book, "/clinics/sunrise-clinic/book");
+    assert.equal(pages.patientLogin, "/clinics/sunrise-clinic/patient/login");
+    assert.equal(pages.myBooking, "/clinics/sunrise-clinic/my-booking");
+    const attached = attachClinicPublicWebsitePaths({ clinicKey: "Sunrise-Clinic", publicName: "Sunrise" });
+    assert.equal(attached.publicBasePath, "/clinics/sunrise-clinic");
+    assert.equal(attached.publicPagePaths.contact, "/clinics/sunrise-clinic/contact");
+    assert.equal(
+      buildPublicWebsiteAdminPath({ organizationKey: "Sunrise-Clinic", surface: "website" }),
+      "/admin/organizations/sunrise-clinic/website"
+    );
+    const bbPages = buildPublicWebsitePagePaths({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: "sunrise-church",
+    });
+    assert.equal(bbPages.home, "/c/sunrise-church");
+    assert.equal(bbPages.about, undefined);
   });
 });

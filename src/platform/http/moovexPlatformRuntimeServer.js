@@ -79,8 +79,12 @@ function createMoovexPlatformRuntimeApp(options) {
     const {
       readGitShaShort,
     } = require("../../startup/startupProcessMarker");
-    res.status(200).json({
-      ok: schema ? schema.compatible !== false : true,
+    const {
+      schemaCompatibilityHealthz,
+    } = require("../schema/v7RuntimeSchemaCompatibility");
+    const schemaHealth = schemaCompatibilityHealthz(schema);
+    res.status(schemaHealth.status).json({
+      ok: schemaHealth.status === 200,
       mode: "moovex-platform-runtime",
       deploymentCode: deployment.code,
       environment: deployment.environment,
@@ -88,7 +92,8 @@ function createMoovexPlatformRuntimeApp(options) {
       expectedIdentityKey: deployment.expectedIdentityKey || null,
       expectedDatabaseEnvironment: deployment.expectedDatabaseEnvironment,
       gitSha: (boot && boot.gitSha) || readGitShaShort(),
-      schemaCompatible: schema ? schema.compatible === true : null,
+      schemaCompatible: schemaHealth.schemaCompatible,
+      schemaCompatibility: schemaHealth.schemaCompatibility,
     });
   });
 

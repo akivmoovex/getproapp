@@ -402,6 +402,19 @@
             editPayload: { imageUrl: url || '', altText: 'Community moment ' + (idx + 1) + ' at ' + publicName, focal: 'center' }
           }) %>
         </div>
+        <% if (idx < 3) { %>
+        <%- include('../partials/editable-text', {
+          editPageKey: 'about',
+          editSectionKey: galleryKey,
+          editFieldKey: 'heading',
+          editValue: '',
+          editTag: 'p',
+          editClass: 'bb-tp-about-gallery__caption',
+          editType: 'label',
+          editMaxLength: 120,
+          editMultiline: false
+        }) %>
+        <% } %>
         <% } %>
       </li>
       <% }) %>

@@ -263,7 +263,7 @@ describe("V7 ActiveClinic website template", () => {
     assert.match(pages.home.text, /Public clinic website/);
     assert.match(pages.home.text, /Plan your visit/);
     assert.match(pages.home.text, /How do I book/);
-    assert.match(pages.home.text, /Book an appointment|Contact the clinic/);
+    assert.match(pages.home.text, /Book an appointment|Contact the clinic|Request an appointment/);
     const emailRe = new RegExp(payload.contactEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     const addressRe = new RegExp(payload.address.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     assert.match(pages.about.text, /About /);

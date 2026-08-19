@@ -167,6 +167,16 @@ async function buildHqAdminShellLocals(req, res, opts) {
     canViewWebsite: false,
     canViewFinance: false,
     canExportData: false,
+    canViewMembers: false,
+    canViewAttendance: false,
+    canViewAnnouncements: false,
+    canViewReports: false,
+    canViewPastoral: false,
+    canViewWelfare: false,
+    canViewJourney: false,
+    canViewClasses: false,
+    canViewCells: false,
+    canViewDepartments: false,
   };
   if (opts.getPool && session && session.userId) {
     try {

@@ -19,6 +19,12 @@ function mapChangeRow(row) {
   const changes = Array.isArray(snapshot.changes) ? snapshot.changes : [];
   const first = changes[0] || {};
   const summary = summarizeValues(first.oldValue, first.proposedValue || first.newValue);
+  const actionKey = row.action_key || null;
+  const contentKey = changedKeys[0] ? String(changedKeys[0]) : "";
+  const mediaChanged =
+    summary.mediaChanged ||
+    Boolean(snapshot.media_id) ||
+    (actionKey && String(actionKey).includes("media"));
   return {
     id: row.id,
     kind: row.kind,
@@ -30,19 +36,19 @@ function mapChangeRow(row) {
     slug: row.slug,
     editorIdentityId: row.editor_identity_id,
     timestamp: row.occurred_at,
-    pageSection: changedKeys[0] ? String(changedKeys[0]).split(".")[0] : "",
+    pageSection: contentKey ? contentKey.split(".")[0] : actionKey || row.kind,
     changeCount: changedKeys.length || Number(row.change_count) || 0,
     changedKeys,
     oldSummary: summary.oldSummary,
     newSummary: summary.newSummary,
-    mediaChanged: summary.mediaChanged,
+    mediaChanged,
     lifecycleStatus: row.lifecycle_status,
     publishPolicy: row.publish_policy,
-    moderationState: row.moderation_status || row.action_key || row.status,
+    moderationState: row.moderation_status || actionKey || row.status,
     adapterMode: row.adapter_mode,
     versionNumber: row.version_number != null ? Number(row.version_number) : null,
-    actionKey: row.action_key || null,
-    flagged: String(row.moderation_status || "") === "flagged" || String(row.action_key || "").includes("flag"),
+    actionKey,
+    flagged: String(row.moderation_status || "") === "flagged" || String(actionKey || "").includes("flag"),
   };
 }
 
@@ -134,13 +140,50 @@ async function listRecentWebsiteChanges(db, input) {
              e.created_at,
              ARRAY[]::text[],
              0,
-             jsonb_build_object('notes', e.notes, 'reason', e.reason),
+             jsonb_strip_nulls(jsonb_build_object(
+               'reason_code', e.reason,
+               'action_key', e.action_key
+             )),
              NULL::text,
              NULL::integer,
              e.action_key,
              NULL::text
         FROM platform.website_moderation_events e
         JOIN platform.website_instances i ON i.id = e.instance_id AND i.status <> 'archived'
+        JOIN platform.organizations o ON o.id = i.organization_id
+      UNION ALL
+      SELECT a.id,
+             'audit'::text,
+             i.product_code,
+             i.organization_id,
+             o.organization_key,
+             o.display_name,
+             i.id,
+             i.slug,
+             i.lifecycle_status,
+             i.publish_policy,
+             i.adapter_mode,
+             a.actor_identity_id,
+             a.created_at,
+             CASE
+               WHEN a.content_key IS NOT NULL AND a.content_key <> '' THEN ARRAY[a.content_key]
+               ELSE ARRAY[]::text[]
+             END,
+             CASE WHEN a.content_key IS NOT NULL AND a.content_key <> '' THEN 1 ELSE 0 END,
+             jsonb_strip_nulls(jsonb_build_object(
+               'content_key', a.content_key,
+               'version_id', a.version_id,
+               'media_id', a.media_id,
+               'reason_code', a.metadata_json->>'reason_code',
+               'from_status', a.metadata_json->>'from_status',
+               'to_status', a.metadata_json->>'to_status'
+             )),
+             NULL::text,
+             NULL::integer,
+             a.action_key,
+             NULL::text
+        FROM platform.website_audit_events a
+        JOIN platform.website_instances i ON i.id = a.instance_id AND i.status <> 'archived'
         JOIN platform.organizations o ON o.id = i.organization_id
     )
     SELECT * FROM src

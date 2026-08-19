@@ -15,6 +15,7 @@ const {
   legacyBranchKeyRedirectTarget,
 } = require("../services/organizationKeyCompat");
 const { resolveHostname } = require("../../platform/host");
+const { publicBranchHomePath, publicChurchHomePath } = require("../urls/churchUrlHelper");
 const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
 const {
   resolveWebsiteMode,
@@ -22,7 +23,11 @@ const {
   STATUS: WEBSITE_MODE_STATUS,
 } = require("../services/resolveWebsiteMode");
 const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
-const { publicBranchHomePath, publicChurchHomePath } = require("../urls/churchUrlHelper");
+const {
+  PRODUCT_CODE,
+  sendCanonicalPublicWebsiteRedirect,
+  canonicalPublicWebsiteRedirect,
+} = require("../../platform/website/publicWebsiteUrl");
 const {
   redirectSingleSiteBranchToChurchWide,
 } = require("./singleSiteBranchPublicRedirect");
@@ -51,13 +56,13 @@ function createPathPublicRouter(deps) {
 
     const legacyTarget = legacyOrganizationKeyRedirectTarget(rawKey);
     if (legacyTarget) {
-      const rest = String(req.originalUrl || req.url || "")
-        .split("?")[0]
-        .replace(/^\/c\/[^/]+/i, "");
-      const queryIdx = String(req.originalUrl || "").indexOf("?");
-      const query = queryIdx >= 0 ? String(req.originalUrl).slice(queryIdx) : "";
-      const destination = `${publicChurchHomePath(legacyTarget)}${rest || ""}${query}`;
-      res.redirect(301, destination);
+      const dest =
+        canonicalPublicWebsiteRedirect(
+          PRODUCT_CODE.BLESSBOARD,
+          req.originalUrl || req.url || "",
+          { remapOrganizationKey: () => legacyTarget }
+        ) || publicChurchHomePath(legacyTarget);
+      res.redirect(301, dest);
       return null;
     }
 
@@ -254,6 +259,13 @@ function createPathPublicRouter(deps) {
   }
 
   async function handlePathPublic(req, res) {
+    if (
+      sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.BLESSBOARD, {
+        remapOrganizationKey: (key) => legacyOrganizationKeyRedirectTarget(key) || key,
+      })
+    ) {
+      return;
+    }
     const suffix = String(req.params[0] || "");
     const pathOnly = suffix ? `/${suffix.replace(/^\//, "")}` : "/";
     const normalizedPath =
@@ -280,6 +292,15 @@ function createPathPublicRouter(deps) {
   }
 
   async function handlePathBranchPublic(req, res) {
+    if (
+      sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.BLESSBOARD, {
+        remapOrganizationKey: (key) => legacyOrganizationKeyRedirectTarget(key) || key,
+        remapBranchKey: (organizationKey, branchKey) =>
+          legacyBranchKeyRedirectTarget(organizationKey, branchKey) || branchKey,
+      })
+    ) {
+      return;
+    }
     const suffix = String(req.params[0] || "");
     const pathOnly = suffix ? `/${suffix.replace(/^\//, "")}` : "/";
     const normalizedPath =
@@ -304,14 +325,16 @@ function createPathPublicRouter(deps) {
       branchKeyRaw
     );
     if (legacyBranchTarget) {
-      const rest = normalizedPath === "/" ? "" : normalizedPath;
-      const queryIdx = String(req.originalUrl || "").indexOf("?");
-      const query = queryIdx >= 0 ? String(req.originalUrl).slice(queryIdx) : "";
-      const destination = `${publicBranchHomePath(
-        resolved.organizationKey,
-        legacyBranchTarget
-      )}${rest}${query}`;
-      return res.redirect(301, destination);
+      const dest =
+        canonicalPublicWebsiteRedirect(
+          PRODUCT_CODE.BLESSBOARD,
+          req.originalUrl || req.url || "",
+          {
+            remapOrganizationKey: () => resolved.organizationKey,
+            remapBranchKey: () => legacyBranchTarget,
+          }
+        ) || publicBranchHomePath(resolved.organizationKey, legacyBranchTarget);
+      return res.redirect(301, dest);
     }
 
     const branchKey = normalizeBranchKey(req.params.branchKey);
@@ -416,6 +439,13 @@ function createPathPublicRouter(deps) {
   router.get("/c/:organizationKey/sitemap.xml", (req, res, next) => {
     Promise.resolve(
       (async () => {
+        if (
+          sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.BLESSBOARD, {
+            remapOrganizationKey: (key) => legacyOrganizationKeyRedirectTarget(key) || key,
+          })
+        ) {
+          return;
+        }
         const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
         if (!resolved) return;
 

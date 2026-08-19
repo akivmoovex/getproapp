@@ -5,6 +5,20 @@
     <% if (clinic.websiteTagline) { %><p class="ac-public-lede"><%= clinic.websiteTagline %></p><% } %>
   </header>
   <% const aboutBody = clinic.aboutBody || clinic.websiteAbout; %>
+  <% const aboutImageSrc = clinic.aboutStoryImageSrc || ''; %>
+  <% if (aboutImageSrc || (typeof websiteEdit !== 'undefined' && websiteEdit)) { %>
+  <div class="ac-tenant-about-image">
+    <%- include('../partials/website-editable-image', {
+      contentKey: 'about.story.image',
+      imageSrc: aboutImageSrc,
+      imageAlt: clinic.aboutStoryImageAlt || (aboutImageSrc ? ('Photo for ' + clinic.publicName) : ''),
+      imageMediaId: clinic.aboutStoryImageMediaId || '',
+      imageClassName: 'ac-tenant-about-image__img',
+      imageLoading: 'lazy',
+      imagePlaceholderSrc: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
+    }) %>
+  </div>
+  <% } %>
   <% if (aboutBody || (typeof websiteEdit !== 'undefined' && websiteEdit)) { %>
   <div class="ac-public-prose acp-prose-card">
     <%- include('../partials/website-editable-field', { contentKey: 'about.story.body', fieldValue: aboutBody || '', fieldType: 'long_text' }) %>

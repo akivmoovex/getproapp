@@ -558,7 +558,7 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
       setAdminNoStore(res);
       const kind = String(req.params.kind || "").trim();
       const changeId = String(req.params.changeId || "").trim();
-      if (!UUID_RE.test(changeId) || !["version", "submission", "event"].includes(kind)) {
+      if (!UUID_RE.test(changeId) || !["version", "submission", "event", "audit"].includes(kind)) {
         return res.status(404).type("html").send("Change not found.");
       }
       const pool = getPool();
@@ -642,6 +642,27 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         slug = row.rows[0].slug;
         timestamp = formatTs(sub.submittedAt);
         editorLabel = await loadEditorLabel(pool, sub.submitterIdentityId);
+      } else if (kind === "audit") {
+        const row = await pool.query(
+          `SELECT a.*, i.slug, o.organization_key, o.display_name
+             FROM platform.website_audit_events a
+             JOIN platform.website_instances i ON i.id = a.instance_id
+             JOIN platform.organizations o ON o.id = a.organization_id
+            WHERE a.id = $1 LIMIT 1`,
+          [changeId]
+        );
+        if (!row.rows[0]) return res.status(404).type("html").send("Change not found.");
+        instance = await instanceRepo.findWebsiteInstanceById(
+          pool,
+          row.rows[0].instance_id,
+          row.rows[0].organization_id
+        );
+        actionKey = row.rows[0].action_key;
+        timestamp = formatTs(row.rows[0].created_at);
+        editorLabel = await loadEditorLabel(pool, row.rows[0].actor_identity_id);
+        organizationKey = row.rows[0].organization_key;
+        organizationName = row.rows[0].display_name;
+        slug = row.rows[0].slug;
       } else {
         const row = await pool.query(
           `SELECT * FROM platform.website_moderation_events WHERE id = $1 LIMIT 1`,

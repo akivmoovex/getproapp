@@ -558,7 +558,8 @@ function createV5FoundationApp(options) {
     },
   });
 
-  // Health is independent of tenant DB state and of write maintenance (GET only).
+  // Health is independent of tenant DB state and of write maintenance (GET only),
+  // except hosted V7 schema incompatibility which must fail readiness.
   app.get("/healthz", (req, res) => {
     const writeMaintenance = isWriteMaintenanceEnabled(env);
     let environment = null;
@@ -569,12 +570,23 @@ function createV5FoundationApp(options) {
     } catch {
       environment = null;
     }
+    const {
+      schemaCompatibilityHealthz,
+    } = require("../schema/v7RuntimeSchemaCompatibility");
+    const schemaHealth = schemaCompatibilityHealthz(
+      opts.schemaCompatibility || (opts.boot && opts.boot.schemaCompatibility) || null
+    );
     const body = {
-      ok: true,
+      ok: schemaHealth.status === 200,
       mode: "v5-foundation",
       environment,
       writeMaintenance,
+      schemaCompatible: schemaHealth.schemaCompatible,
+      schemaCompatibility: schemaHealth.schemaCompatibility,
     };
+    if (schemaHealth.status !== 200) {
+      return res.status(schemaHealth.status).json(body);
+    }
     if (env.DEBUG_HOST === "1") {
       return res.json({
         ...body,
@@ -1741,17 +1753,21 @@ async function startV5FoundationServer(opts) {
     assertPlatformDatabaseIdentityOrExit,
   } = require("../../startup/blessBoardOrgDbGate");
   await assertPlatformDatabaseIdentityOrExit(pool);
-  {
-    const {
-      assertV7RuntimeSchemaCompatibilityOrExit,
-    } = require("../schema/v7RuntimeSchemaCompatibility");
-    await assertV7RuntimeSchemaCompatibilityOrExit(pool, { env: process.env });
-  }
+  const {
+    assertV7RuntimeSchemaCompatibilityOrExit,
+  } = require("../schema/v7RuntimeSchemaCompatibility");
+  const schemaCompatibility = await assertV7RuntimeSchemaCompatibilityOrExit(pool, {
+    env: process.env,
+  });
 
   // BlessBoard product routes remain registered inside createV5FoundationApp
   // (registerBlessBoardRoutes is the documented boundary; extraction deferred).
 
-  const app = createV5FoundationApp({ getPool: () => pool, env: process.env });
+  const app = createV5FoundationApp({
+    getPool: () => pool,
+    env: process.env,
+    schemaCompatibility,
+  });
   const port = process.env.PORT ? Number(process.env.PORT) : 3000;
   const { resolveListenHost } = require("../config/deploymentProfiles");
   const host = resolveListenHost(process.env);

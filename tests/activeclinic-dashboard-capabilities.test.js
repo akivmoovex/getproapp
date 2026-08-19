@@ -147,6 +147,7 @@ describe("activeclinic-dashboard-capabilities", () => {
     assert.ok(keys.has("patients"));
     assert.ok(keys.has("appointments"));
     assert.ok(keys.has("reception"));
+    assert.ok(keys.has("booking_requests"));
     assert.ok(keys.has("clinical"));
     assert.ok(keys.has("pharmacy"));
     assert.ok(keys.has("diagnostics"));
@@ -157,6 +158,32 @@ describe("activeclinic-dashboard-capabilities", () => {
     assert.ok(!keys.has("facilities"));
     assert.ok(!keys.has("access"));
     assert.ok(!keys.has("cashier"));
+  });
+
+  it("organization admin administration tiles include website and organization profile", () => {
+    const keys = new Set(
+      tileKeys(
+        buildAuthorizedDashboardTiles(
+          [
+            "activeclinic.access",
+            "activeclinic.organization.view",
+            "activeclinic.organization.manage",
+            "activeclinic.staff.view",
+            "activeclinic.staff.assign_access",
+            "activeclinic.facility.create",
+            "website.view",
+            "website.edit",
+          ],
+          { activeDepartmentTypes: ALL_DEPARTMENTS }
+        )
+      )
+    );
+    assert.ok(keys.has("organization"));
+    assert.ok(keys.has("website"));
+    assert.ok(keys.has("staff"));
+    assert.ok(keys.has("access"));
+    assert.ok(keys.has("facilities"));
+    assert.ok(keys.has("settings"));
   });
 
   it("receptionist sees reception workflows only — no pharmacy/diagnostics/finance", () => {
@@ -176,6 +203,8 @@ describe("activeclinic-dashboard-capabilities", () => {
     assert.ok(!keys.has("cashier"));
     assert.ok(!keys.has("clinical"));
     assert.ok(!keys.has("staff"));
+    assert.ok(!keys.has("website"));
+    assert.ok(!keys.has("organization"));
   });
 
   it("clinician sees clinical/patients — not admin or finance", () => {
@@ -390,6 +419,7 @@ describe("activeclinic-dashboard-capabilities", () => {
     assert.equal(dash.summaries.staff, null);
     assert.equal(dash.metrics.length, 0);
     assert.equal(dash.clinicSetup, null);
+    assert.equal(dash.organizationConsole, null);
     assert.ok(dash.quickActions.some((a) => a.key === "reception"));
     assert.ok(!dash.quickActions.some((a) => a.key === "pharmacy"));
     assert.ok(!dash.quickActions.some((a) => a.key === "billing"));

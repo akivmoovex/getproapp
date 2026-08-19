@@ -1350,6 +1350,7 @@ async function loadTenantPublicPageModel(db, input) {
 
   // Stage 2: published sites with sparse CMS get a complete sample presentation.
   // Draft CMS rows are never read here; soft-fill never invents live statistics.
+  // Named people/events/ministries from the demo pack are labeled template examples.
   let homeDemoFallback = null;
   let aboutDemoFallback = null;
   let leadershipDemoFallback = null;
@@ -1363,19 +1364,31 @@ async function loadTenantPublicPageModel(db, input) {
   if (pageKey === "home") {
     homeDemoFallback = demoPack.home;
     if (!homeTeasers.ministries.length) {
-      homeTeasers.ministries = demoPack.ministries.slice(0, 3);
+      homeTeasers.ministries = publicDemo.markPublicTemplateExamples(
+        demoPack.ministries.slice(0, 3),
+        ["name", "leaderName"]
+      );
       usedPublicDemoFill = true;
     }
     if (!homeTeasers.leaders.length) {
-      homeTeasers.leaders = demoPack.leaders.slice(0, 3);
+      homeTeasers.leaders = publicDemo.markPublicTemplateExamples(
+        demoPack.leaders.slice(0, 3),
+        ["displayName", "roleTitle"]
+      );
       usedPublicDemoFill = true;
     }
     if (!homeTeasers.events.length) {
-      homeTeasers.events = demoPack.events.slice(0, 2);
+      homeTeasers.events = publicDemo.markPublicTemplateExamples(
+        demoPack.events.slice(0, 2),
+        "title"
+      );
       usedPublicDemoFill = true;
     }
     if (!homeTeasers.sermons.length) {
-      homeTeasers.sermons = demoPack.sermons.slice(0, 1);
+      homeTeasers.sermons = publicDemo.markPublicTemplateExamples(
+        demoPack.sermons.slice(0, 1),
+        ["title", "speakerName"]
+      );
       usedPublicDemoFill = true;
     }
     homeTeasers = {
@@ -1414,15 +1427,30 @@ async function loadTenantPublicPageModel(db, input) {
   if (pageKey === "about") {
     aboutDemoFallback = Object.freeze({
       heroHeading: demoPack.about.heroHeading,
-      heroBody: demoPack.about.heroBody,
+      heroBody: publicDemo.withPublicTemplateNotice(demoPack.about.heroBody),
       heroMediaUrl: demoPack.about.heroMediaUrl,
-      story: demoPack.about.story,
+      story: Object.freeze({
+        ...demoPack.about.story,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.story.bodyText),
+      }),
       storyMediaUrl: demoPack.about.story.mediaUrl,
-      mission: demoPack.about.mission,
-      vision: demoPack.about.vision,
+      mission: Object.freeze({
+        ...demoPack.about.mission,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.mission.bodyText),
+      }),
+      vision: Object.freeze({
+        ...demoPack.about.vision,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.vision.bodyText),
+      }),
       values: demoPack.about.values,
-      beliefs: demoPack.about.beliefs,
-      community: demoPack.about.community,
+      beliefs: Object.freeze({
+        ...demoPack.about.beliefs,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.beliefs.bodyText),
+      }),
+      community: Object.freeze({
+        ...demoPack.about.community,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.community.bodyText),
+      }),
       gallery: demoPack.about.gallery,
     });
     showEmptyState = false;
@@ -1435,7 +1463,10 @@ async function loadTenantPublicPageModel(db, input) {
       introMediaUrl: demoPack.leadership.introMediaUrl,
     });
     if (!entities.length) {
-      entities = demoPack.leaders.slice();
+      entities = publicDemo.markPublicTemplateExamples(demoPack.leaders.slice(), [
+        "displayName",
+        "roleTitle",
+      ]);
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((l, i) => ({
@@ -1456,7 +1487,10 @@ async function loadTenantPublicPageModel(db, input) {
       introMediaUrl: demoPack.ministriesPage.introMediaUrl,
     });
     if (!entities.length) {
-      entities = demoPack.ministries.slice();
+      entities = publicDemo.markPublicTemplateExamples(demoPack.ministries.slice(), [
+        "name",
+        "leaderName",
+      ]);
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((m, i) => ({
@@ -1477,7 +1511,10 @@ async function loadTenantPublicPageModel(db, input) {
       introMediaUrl: demoPack.eventsPage.introMediaUrl,
     });
     if (!entities.length) {
-      entities = preparePublicEvents(demoPack.events.slice());
+      entities = publicDemo.markPublicTemplateExamples(
+        preparePublicEvents(demoPack.events.slice()),
+        "title"
+      );
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((e, i) => ({
@@ -1501,7 +1538,10 @@ async function loadTenantPublicPageModel(db, input) {
       introMediaUrl: demoPack.sermonsPage.introMediaUrl,
     });
     if (!entities.length) {
-      entities = demoPack.sermons.slice();
+      entities = publicDemo.markPublicTemplateExamples(demoPack.sermons.slice(), [
+        "title",
+        "speakerName",
+      ]);
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((s, i) => ({
@@ -1524,7 +1564,7 @@ async function loadTenantPublicPageModel(db, input) {
       introBody: demoPack.contactPage.introBody,
       visitorGuidance: demoPack.contactPage.visitorGuidance,
       officeHoursHeading: demoPack.contactPage.officeHoursHeading,
-      officeHoursBody: demoPack.contactPage.officeHoursBody,
+      officeHoursBody: publicDemo.withPublicTemplateNotice(demoPack.contactPage.officeHoursBody),
       directionsHeading: demoPack.contactPage.directionsHeading,
       directionsBody: demoPack.contactPage.directionsBody,
       serviceReminderHeading: demoPack.contactPage.serviceReminderHeading,
@@ -1545,25 +1585,21 @@ async function loadTenantPublicPageModel(db, input) {
       assistanceContact: demoPack.givingPage.assistanceContact,
     });
     if (!entities.length) {
-      entities = demoPack.givingMethods.map((m) => ({
-        ...m,
-        scope: "church",
-        branchId: null,
-      }));
+      entities = publicDemo.markPublicTemplateExamples(
+        demoPack.givingMethods.map((m) => ({
+          ...m,
+          scope: "church",
+          branchId: null,
+        })),
+        "label"
+      );
       usedPublicDemoFill = true;
     }
     showEmptyState = false;
   }
 
   let resolvedPublicContact = publicContact;
-  if (!publicContact.hasAny) {
-    resolvedPublicContact = {
-      ...demoPack.contact,
-      latitude: publicContact.latitude,
-      longitude: publicContact.longitude,
-    };
-    usedPublicDemoFill = true;
-  }
+  // Never present Demo Centre address/phone as this church's published contact.
 
   // Soft-fill social placeholders without href must not render (no empty icon chips).
   if (!socialLinks.length) {
@@ -1770,7 +1806,7 @@ async function loadTenantPublicPageModel(db, input) {
     apexHref: "https://blessboard.org/",
     visitHref,
     giveHref,
-    cssHref: "/blessboard/v5/tenant-public.css?v=53",
+    cssHref: "/blessboard/v5/tenant-public.css?v=54",
     pathPrefix: navPathPrefix,
     homeHref: navPathPrefix || "/",
     churchHomeHref,

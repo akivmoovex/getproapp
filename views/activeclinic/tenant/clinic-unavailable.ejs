@@ -1,10 +1,17 @@
 <section class="ac-public-section ac-public-state acp-empty-state acp-state-card" data-ac-page-section="tenant-clinic-unavailable" data-ac-state-key="context_unavailable">
   <div class="ac-public-state__icon" aria-hidden="true">—</div>
-  <h1>Clinic unavailable</h1>
+  <h1><%= typeof pageTitle === "string" && pageTitle ? pageTitle : "Clinic unavailable" %></h1>
+  <% if (typeof pageLead === "string" && pageLead) { %>
+  <p><%= pageLead %></p>
+  <% } else { %>
   <p>This clinic website is not published or is temporarily unavailable. Only clinics that opt in appear on ActiveClinic.</p>
+  <% } %>
   <p class="ac-public-note">If you expected to reach a clinic here, contact them directly or try again later.</p>
   <p class="ac-public-actions">
-    <a class="ac-btn ac-btn--primary" href="/clinics">Find another clinic</a>
+    <% if (typeof clinic !== "undefined" && clinic && clinic.clinicKey) { %>
+    <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact the clinic</a>
+    <% } %>
+    <a class="ac-btn ac-btn--secondary" href="/clinics">Find another clinic</a>
     <a class="ac-btn ac-btn--secondary" href="/">Back to ActiveClinic</a>
   </p>
 </section>

@@ -14,6 +14,8 @@
     if (code === 'information_requested') return 'Information request recorded. Email was not sent.';
     if (code === 'information_returned') return 'Information marked as returned. Application is back in review.';
     if (code === 'note_saved') return 'Internal note saved.';
+    if (code === 'provision_retried' || code === 'retry_succeeded') return 'Provisioning retry completed.';
+    if (code === 'already_healthy') return 'Provisioning is already complete. Healthy resources were not rebuilt.';
     return code || '';
   }
   function errorText(code) {
@@ -27,6 +29,8 @@
     if (code === 'existing_identity_acknowledgement_required') {
       return 'This contact already administers another ActiveClinic organization. Confirm second-clinic attachment before approving.';
     }
+    if (code === 'not_retryable') return 'Provisioning retry is not available. Healthy resources were not rebuilt.';
+    if (code === 'retry_failed') return 'Provisioning retry could not complete. Review tenant health and try again.';
     return code ? 'Something went wrong.' : '';
   }
   function axisChip(kind, value) {
@@ -90,6 +94,8 @@
       </div>
     </dl>
   </section>
+
+  <%- include('../partials/tenant-health-summary', { tenantHealth: typeof tenantHealth !== 'undefined' ? tenantHealth : null }) %>
 
   <section class="bb-pa-panel" data-ac-clinic-reg-identity="1">
     <h2 class="bb-pa-section-title">Application identity</h2>

@@ -44,12 +44,26 @@
     </div>
     <aside class="acp-contact-aside">
       <h2>Clinic contact</h2>
-      <% const contactPhone = clinic.publicPhoneDisplay || (clinic.websiteContent && clinic.websiteContent['contact.phone']); %>
-      <% const contactEmail = clinic.publicEmailDisplay || (clinic.websiteContent && clinic.websiteContent['contact.email']); %>
-      <% if (contactPhone || contactEmail) { %>
+      <% const overlayPhone = clinic.websiteContent && clinic.websiteContent['contact.phone'] ? clinic.websiteContent['contact.phone'] : ''; %>
+      <% const overlayEmail = clinic.websiteContent && clinic.websiteContent['contact.email'] ? clinic.websiteContent['contact.email'] : ''; %>
+      <% const livePhone = clinic.publicPhoneDisplay || overlayPhone; %>
+      <% const liveEmail = clinic.publicEmailDisplay || overlayEmail; %>
+      <% if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>
+      <div class="ac-website-overlay-edit" data-ac-website-overlay="contact">
+        <h3>Website contact overlay</h3>
+        <p class="ac-website-overlay-note">Used on the public site when operations phone or email is not published. Saving here does not change clinic operations records, and does not publish.</p>
+        <ul class="ac-public-list">
+          <li>Phone: <%- include('../partials/website-editable-field', { contentKey: 'contact.phone', fieldValue: overlayPhone, fieldType: 'phone' }) %></li>
+          <li>Email: <%- include('../partials/website-editable-field', { contentKey: 'contact.email', fieldValue: overlayEmail, fieldType: 'email' }) %></li>
+        </ul>
+        <% if (clinic.publicPhoneDisplay || clinic.publicEmailDisplay) { %>
+        <p class="ac-public-muted">Public listing currently uses operations contact details.</p>
+        <% } %>
+      </div>
+      <% } else if (livePhone || liveEmail) { %>
       <ul class="ac-public-list">
-        <% if (contactPhone) { %><li>Phone: <%= contactPhone %></li><% } %>
-        <% if (contactEmail) { %><li>Email: <%= contactEmail %></li><% } %>
+        <% if (livePhone) { %><li>Phone: <%= livePhone %></li><% } %>
+        <% if (liveEmail) { %><li>Email: <%= liveEmail %></li><% } %>
       </ul>
       <% } else { %>
       <p class="ac-public-muted">Public phone and email are not published. Use this form to reach the clinic.</p>

@@ -188,6 +188,8 @@ describe("V7 BlessBoard website template parity", () => {
     assert.match(String(contact.body_text || ""), /Lusaka/);
     const about = rows.find((row) => row.page_key === "about" && row.section_key === "story");
     assert.ok(about && String(about.body_text || "").length > 80);
+    assert.match(String(about.body_text || ""), new RegExp(escapeRe(PLACEHOLDER_LABEL)));
+    assert.match(String(about.body_text || ""), /template copy, not this congregation/i);
     const times = rows.find((row) => row.page_key === "home" && row.section_key === "service_times");
     assert.ok(times);
     const timeEntries =

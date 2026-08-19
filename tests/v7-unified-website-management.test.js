@@ -380,7 +380,8 @@ describe("V7 unified website management", () => {
     assert.match(detail.text, /data-ac-website-public-url="1"/);
     assert.match(detail.text, /data-ac-website-published-version="1"/);
     assert.match(detail.text, /data-ac-website-unpublished=/);
-    assert.match(detail.text, /data-ac-website-action="view-live"/);
+    assert.match(detail.text, /Website not published yet/);
+    assert.doesNotMatch(detail.text, /data-ac-website-action="view-live"/);
     assert.match(detail.text, /data-ac-website-action="edit"/);
     assert.match(detail.text, /data-ac-website-action="preview"/);
     assert.match(detail.text, /data-ac-website-action="publish"/);

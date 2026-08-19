@@ -94,11 +94,9 @@ async function createWebsiteVersion(db, input) {
     submissionId: input.submissionId || null,
     versionId: version.id,
     metadata: {
-      version_number: versionNumber,
       count: input.changeCount || 0,
-      source_policy: input.sourcePolicy || null,
-      previous_version_id: previousVersionId,
-      changed_keys: input.changedKeys || [],
+      policy: input.sourcePolicy || null,
+      field_keys: input.changedKeys || [],
     },
   });
   return { ok: true, version };
@@ -170,6 +168,9 @@ async function getWebsiteVersion(db, input) {
   );
   const version = mapVersion(rows.rows[0] || null);
   if (!version) return { ok: false, code: RESULT.NOT_FOUND, version: null };
+  if (input.instanceId && version.instanceId !== String(input.instanceId)) {
+    return { ok: false, code: RESULT.NOT_FOUND, version: null };
+  }
   return { ok: true, version };
 }
 
@@ -180,7 +181,11 @@ async function restoreWebsiteVersionToDraft(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
   if (!instance) return { ok: false, code: "website_instance_not_found" };
-  const loaded = await getWebsiteVersion(db, { versionId: input.versionId, organizationId });
+  const loaded = await getWebsiteVersion(db, {
+    versionId: input.versionId,
+    organizationId,
+    instanceId: instance.id,
+  });
   if (!loaded.ok) return loaded;
   if (loaded.version.instanceId !== instance.id) {
     return { ok: false, code: RESULT.TENANT_MISMATCH };

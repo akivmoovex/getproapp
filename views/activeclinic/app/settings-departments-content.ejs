@@ -90,7 +90,13 @@
             <span class="ac-badge">Inactive</span>
             <% } %>
           </td>
-          <td class="ac-muted"><%= d.moduleLabel || '—' %></td>
+          <td class="ac-muted">
+            <% if (d.moduleHref) { %>
+            <a href="<%= d.moduleHref %>" data-ac-department-module="<%= d.departmentType %>"><%= d.moduleLabel || 'Open module' %></a>
+            <% } else { %>
+            <%= d.moduleLabel || '—' %>
+            <% } %>
+          </td>
           <td>
             <% if (actions.canManage) { %>
             <details class="ac-action-menu">
@@ -133,7 +139,13 @@
         <% } else { %>
         <span class="ac-badge">Inactive</span>
         <% } %>
-        <span class="ac-muted"><%= d.moduleLabel || '—' %></span>
+        <span class="ac-muted">
+          <% if (d.moduleHref) { %>
+          <a href="<%= d.moduleHref %>" data-ac-department-module="<%= d.departmentType %>"><%= d.moduleLabel || 'Open module' %></a>
+          <% } else { %>
+          <%= d.moduleLabel || '—' %>
+          <% } %>
+        </span>
       </p>
       <% if (actions.canManage) { %>
       <details class="ac-action-menu">

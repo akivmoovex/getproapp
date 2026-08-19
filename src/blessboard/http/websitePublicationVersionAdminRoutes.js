@@ -202,7 +202,7 @@ function createWebsitePublicationVersionAdminRouter(deps) {
   }
 
   router.get("/hq/website/version-history", rejectApex, gateHq, async (req, res) => {
-    const tenant = await requireNetworkHistory(req, res);
+    const tenant = requireTenant(req, res);
     if (!tenant) return;
 
     const result = await versionSvc.loadVersionHistory(getPool(), {
@@ -237,9 +237,9 @@ function createWebsitePublicationVersionAdminRouter(deps) {
       null;
     const notice = String((req.query && req.query.notice) || "") || null;
     const html = await renderHqView(
-      "hq/phase4-network-website-version-history.ejs",
+      "hq/phase3-website-version-history.ejs",
       await shellLocals(req, res, {
-        pageTitle: "Network Website Version History",
+        pageTitle: "Website Version History",
         items: result.items,
         total: result.total,
         current: result.current,

@@ -138,8 +138,11 @@ async function evaluateStaffEligibility(db, staffRow, identityRow) {
     return { ok: false, code: "no_valid_facility_scope" };
   }
 
+  // Single assigned facility is the session default, including org-wide
+  // administrators. New clinics otherwise have no facility context and hide
+  // every department-gated module until an explicit select-facility click.
   let defaultFacilityId = null;
-  if (!isOrgWideAdmin && !hasOrgWide && activeFacilities.length === 1) {
+  if (activeFacilities.length === 1) {
     defaultFacilityId = activeFacilities[0].facilityId;
   }
 

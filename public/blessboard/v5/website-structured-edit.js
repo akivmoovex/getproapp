@@ -183,7 +183,7 @@
         ],
       }) +
       '<div class="bb-tp-se-actions-row">' +
-      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">Change photo<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" hidden /></label>' +
+      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">Change photo<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" hidden /></label>' +
       '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1">Media library</button>' +
       '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-remove-media="1">Remove image</button>' +
       "</div>" +
@@ -408,7 +408,7 @@
       field("Button label", "buttonLabel", p.buttonLabel || "Open published link") +
       field("QR image URL (optional)", "qrImageUrl", p.qrImageUrl || "") +
       '<div class="bb-tp-se-actions-row">' +
-      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">Upload QR image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-bb-se-upload="1" data-bb-se-upload-target="qrImageUrl" hidden /></label>' +
+      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">Upload QR image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" data-bb-se-upload-target="qrImageUrl" hidden /></label>' +
       '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="qrImageUrl">Media library</button>' +
       "</div>" +
       '<p class="bb-tp-se-hint">Use an uploaded media path, demo image path, or https image URL for QR.</p>' +
@@ -734,9 +734,36 @@
   }
 
   var pendingUploadTarget = "imageUrl";
+  var allowedImageTypes = {
+    "image/jpeg": true,
+    "image/png": true,
+    "image/webp": true,
+    "image/gif": true,
+  };
+
+  function maxImageBytes() {
+    return Number(host && host.getAttribute("data-bb-max-image-bytes")) || 5 * 1024 * 1024;
+  }
+
+  function validateImageFile(file) {
+    if (!file) return { ok: false, reason: "Choose an image" };
+    var type = String(file.type || "").toLowerCase();
+    if (!allowedImageTypes[type]) {
+      return { ok: false, reason: "Use JPEG, PNG, WebP, or GIF" };
+    }
+    if (file.size > maxImageBytes()) {
+      return { ok: false, reason: "Image must be 5 MB or smaller" };
+    }
+    return { ok: true };
+  }
 
   function uploadFile(file, fieldName) {
     if (!host || !file) return;
+    var check = validateImageFile(file);
+    if (!check.ok) {
+      setStatus(check.reason + " Previous image kept.", "error");
+      return;
+    }
     pendingUploadTarget = fieldName || "imageUrl";
     var uploadUrl = host.getAttribute("data-bb-media-upload");
     var csrf = host.getAttribute("data-bb-csrf");

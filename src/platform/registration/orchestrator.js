@@ -5,7 +5,7 @@ const { toCanonicalLifecycle } = require("./lifecycle");
 const { decideReview } = require("./reviewPolicy");
 const { isSelfRegistrationProvisioningEnabled } = require("./killSwitch");
 const { initializeOrganizationWebsite } = require("./initializeOrganizationWebsite");
-const { recordAuditEventSafe } = require("../services/auditEventService");
+const { ACTION, recordLifecycleAudit } = require("./lifecycleAudit");
 
 function fail(code, extra) {
   return {
@@ -26,20 +26,31 @@ function ok(code, extra) {
   };
 }
 
-async function maybeAudit(db, input, application, organizationId) {
-  if (!organizationId) return { recorded: false, reason: "no_organization" };
-  return recordAuditEventSafe(db, {
-    deploymentCode: input.deploymentCode || "moovex-platform-testing",
-    organizationId,
-    actionKey: "registration.lifecycle",
+async function maybeAudit(db, input, application, organizationId, extra) {
+  const organization =
+    organizationId ||
+    (application && (application.organization_id || application.organizationId)) ||
+    null;
+  if (!organization) return { recorded: false, reason: "no_organization" };
+  const actor = (input && input.actor) || {};
+  return recordLifecycleAudit(db, {
+    deploymentCode: (input && input.deploymentCode) || "moovex-platform-testing",
+    organizationId: organization,
+    actionKey: (extra && extra.actionKey) || ACTION.PROVISIONING_COMPLETED,
     entityType: "registration_application",
     entityId: application && application.id ? application.id : null,
-    outcome: "success",
-    metadata: {
-      product_code: String(input.productCode || ""),
-      result: String(input.resultCode || ""),
-      reason: input.reason || null,
-    },
+    applicationId: application && application.id ? application.id : null,
+    outcome: (extra && extra.outcome) || "success",
+    productCode: (input && input.productCode) || (extra && extra.productCode),
+    actorType: actor.kind || actor.type || (extra && extra.actorType) || "system",
+    actorUserId: actor.userId || actor.actorUserId || null,
+    actorIdentityId: actor.identityId || actor.actorIdentityId || null,
+    source: extra && extra.source ? extra.source : "registration_orchestrator",
+    status: extra && extra.status ? extra.status : input && input.resultCode,
+    reasonCode: extra && extra.reasonCode ? extra.reasonCode : input && input.reason,
+    failedStage: extra && extra.failedStage,
+    retry: extra && extra.retry === true,
+    instanceId: extra && extra.instanceId,
   });
 }
 
@@ -86,6 +97,21 @@ async function submitPlatformRegistration(db, input) {
       persistCode: validated && validated.code,
       canonicalLifecycle: null,
     });
+  }
+
+  {
+    const { rejectIfV7SchemaIncompatible } = require("../schema/v7RuntimeSchemaCompatibility");
+    const blocked = await rejectIfV7SchemaIncompatible(db, env);
+    if (blocked) {
+      return fail(RESULT.INVALID, {
+        error: "schema_mismatch",
+        persistCode: "schema_mismatch",
+        capability: blocked.capability,
+        missing: blocked.missing,
+        httpStatus: 503,
+        canonicalLifecycle: null,
+      });
+    }
   }
 
   if (typeof adapter.findDuplicate === "function") {
@@ -250,6 +276,19 @@ async function submitPlatformRegistration(db, input) {
       organizationId: provisioned && provisioned.organizationId,
       failedStage: provisioned && provisioned.failedStage,
     });
+    await maybeAudit(
+      db,
+      { ...input, productCode },
+      application,
+      provisioned && provisioned.organizationId,
+      {
+        actionKey: ACTION.PROVISIONING_FAILED,
+        outcome: "failure",
+        status: RESULT.PROVISION_FAILED,
+        reasonCode: reason,
+        failedStage: provisioned && provisioned.failedStage,
+      }
+    );
     return fail(RESULT.PROVISION_FAILED, {
       reviewRequired: false,
       reason,
@@ -280,6 +319,20 @@ async function submitPlatformRegistration(db, input) {
       website,
       failedStage: "website_instance",
     });
+    await maybeAudit(
+      db,
+      { ...input, productCode },
+      application,
+      provisioned.organizationId,
+      {
+        actionKey: ACTION.PROVISIONING_FAILED,
+        outcome: "failure",
+        status: RESULT.PROVISION_FAILED,
+        reasonCode: "website_initialization_failed",
+        failedStage: "website_instance",
+        instanceId: website && website.instance && website.instance.id,
+      }
+    );
     return fail(RESULT.PROVISION_FAILED, {
       reason: "website_initialization_failed",
       application: {
@@ -308,7 +361,12 @@ async function submitPlatformRegistration(db, input) {
       resultCode: RESULT.ACTIVE,
     },
     application,
-    provisioned.organizationId
+    provisioned.organizationId,
+    {
+      actionKey: ACTION.PROVISIONING_COMPLETED,
+      status: RESULT.ACTIVE,
+      instanceId: website && website.instance && website.instance.id,
+    }
   );
 
   return ok(RESULT.ACTIVE, {
@@ -367,6 +425,20 @@ async function resolvePlatformRegistrationReview(db, input) {
           failedStage: "website_instance",
         }
       );
+      await maybeAudit(
+        db,
+        { ...input, productCode: adapter.productCode },
+        approved.application || { id: input.applicationId },
+        approved.organizationId,
+        {
+          actionKey: ACTION.PROVISIONING_FAILED,
+          outcome: "failure",
+          status: RESULT.PROVISION_FAILED,
+          reasonCode: "website_initialization_failed",
+          failedStage: "website_instance",
+          instanceId: website && website.instance && website.instance.id,
+        }
+      );
       return fail(RESULT.PROVISION_FAILED, {
         reason: "website_initialization_failed",
         organizationId: approved.organizationId,
@@ -378,6 +450,17 @@ async function resolvePlatformRegistrationReview(db, input) {
       organizationId: approved.organizationId,
       website,
     });
+    await maybeAudit(
+      db,
+      { ...input, productCode: adapter.productCode, resultCode: RESULT.ACTIVE },
+      approved.application || { id: input.applicationId },
+      approved.organizationId,
+      {
+        actionKey: ACTION.PROVISIONING_COMPLETED,
+        status: RESULT.ACTIVE,
+        instanceId: website && website.instance && website.instance.id,
+      }
+    );
     return ok(RESULT.ACTIVE, {
       canonicalLifecycle: LIFECYCLE.ACTIVE,
       organizationId: approved.organizationId,

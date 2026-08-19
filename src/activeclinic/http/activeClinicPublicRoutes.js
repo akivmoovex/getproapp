@@ -63,7 +63,7 @@ const { attachActiveClinicWebsiteLocals } = require("./attachActiveClinicWebsite
 const { resolvePublicPricingDisplay } = require("../website/publicPricingDisplay");
 const {
   PRODUCT_CODE,
-  canonicalRedirectFromAlias,
+  sendCanonicalPublicWebsiteRedirect,
   buildPublicOrganizationWebsitePath,
 } = require("../../platform/website/publicWebsiteUrl");
 
@@ -451,6 +451,25 @@ function registerActiveClinicPublicRoutes(app, deps) {
               formData,
             }));
           }
+          if (result.code === "schema_mismatch") {
+            logClinicApplicationFailed({
+              requestId,
+              deploymentCode: deployment.code || null,
+              environmentCode: deployment.environment || null,
+              validationCategory: "schema_mismatch",
+              category: "schema_mismatch",
+              failingOperation: "schema_compatibility_guard",
+              transactionStage: "pre_persist",
+            });
+            return res.status(503).type("html").send(renderPublicView("public/register-clinic", {
+              csrfToken,
+              error:
+                "Clinic registration is temporarily unavailable because this deployment’s database schema is incomplete. No application was created.",
+              formState: "form",
+              validationErrors: {},
+              formData,
+            }));
+          }
           logClinicApplicationFailed({
             requestId,
             deploymentCode: deployment.code || null,
@@ -639,14 +658,23 @@ function registerActiveClinicPublicRoutes(app, deps) {
   // ========== Tenant Public Routes ==========
   // Canonical ActiveClinic public path is /clinics/:clinicKey.
   // /c/:clinicKey is a compatibility alias using the shared URL template.
+  // GET/HEAD only — never redirect POST website/booking writes.
 
-  app.use("/c/:clinicKey", (req, res, next) => {
+  function redirectIfNotCanonical(req, res, next) {
     const key = String(req.params.clinicKey || "").trim();
     if (!key) return next();
-    const dest = canonicalRedirectFromAlias(PRODUCT_CODE.ACTIVECLINIC, req.originalUrl || req.url);
-    if (!dest) return next();
-    return res.redirect(301, dest);
-  });
+    if (
+      sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.ACTIVECLINIC, {
+        canonicalOrganizationKey: key,
+      })
+    ) {
+      return undefined;
+    }
+    return next();
+  }
+
+  app.use("/c/:clinicKey", redirectIfNotCanonical);
+  app.use("/clinics/:clinicKey", redirectIfNotCanonical);
 
   app.get("/clinics/:clinicKey", async (req, res, next) => {
     try {

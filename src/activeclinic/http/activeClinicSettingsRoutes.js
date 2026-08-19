@@ -204,7 +204,7 @@ function registerActiveClinicSettingsRoutes(app, deps) {
           );
         }
         return await renderShell(req, res, {
-          activeNav: "settings",
+          activeNav: "website",
           content: "app/settings-website-content.ejs",
           pageHeader: {
             title: "Website",
@@ -338,10 +338,6 @@ function registerActiveClinicSettingsRoutes(app, deps) {
 
         const result = await updateHealthcareOrganizationSettings(getPool(), {
           auth: req.activeClinicAuth,
-          organizationId: body.organization_id,
-          status: body.status,
-          productStatus: body.product_status,
-          enrolmentStatus: body.enrolment_status,
           deploymentCode: deploymentCode(),
           ...values,
         });

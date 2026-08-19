@@ -4,20 +4,31 @@
   var src = typeof imageSrc !== 'undefined' && imageSrc ? imageSrc : '';
   var alt = typeof imageAlt !== 'undefined' && imageAlt ? imageAlt : '';
   var mediaId = typeof imageMediaId !== 'undefined' && imageMediaId ? imageMediaId : '';
+  var variant = typeof imageVariant !== 'undefined' && imageVariant ? String(imageVariant) : '';
+  var imgClass = typeof imageClassName !== 'undefined' && imageClassName ? String(imageClassName) : '';
+  var placeholderSrc = typeof imagePlaceholderSrc !== 'undefined' && imagePlaceholderSrc
+    ? String(imagePlaceholderSrc)
+    : '/activeclinic/assets/clinic-hero-default.jpg';
+  var imgWidth = typeof imageWidth !== 'undefined' && imageWidth ? Number(imageWidth) : 960;
+  var imgHeight = typeof imageHeight !== 'undefined' && imageHeight ? Number(imageHeight) : 600;
+  var displaySrc = src || placeholderSrc;
 %>
 <% if (canEdit) { %>
 <div
-  class="ac-website-editable ac-website-editable--image"
+  class="ac-website-editable ac-website-editable--image<%= variant ? ' ac-website-editable--' + variant : '' %>"
   data-website-key="<%= key %>"
   data-website-type="image"
   data-website-media-id="<%= mediaId %>"
 >
   <div class="ac-website-editable__preview">
-    <% if (src) { %>
-    <img data-website-image="1" src="<%= src %>" alt="<%= alt %>" width="960" height="600"/>
-    <% } else { %>
-    <img data-website-image="1" src="/activeclinic/assets/clinic-hero-default.jpg" alt="<%= alt %>" width="960" height="600"/>
-    <% } %>
+    <img
+      data-website-image="1"
+      class="<%= imgClass %>"
+      src="<%= displaySrc %>"
+      alt="<%= alt %>"
+      width="<%= imgWidth %>"
+      height="<%= imgHeight %>"
+    />
     <button
       type="button"
       class="ac-website-editable__pencil"
@@ -34,7 +45,7 @@
   <div class="ac-website-editable__image-tools" data-website-image-tools="1" hidden>
     <label class="ac-website-editable__file">
       <span>Choose or replace image</span>
-      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-website-file="1"/>
+      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-website-file="1"/>
     </label>
     <label class="ac-website-editable__alt">
       Alt text

@@ -243,6 +243,38 @@ textarea.ac-website-editable__input {
   gap: 0.5rem;
   width: 100%;
 }
+.ac-website-editable--logo {
+  width: auto;
+  max-width: 3.25rem;
+}
+.ac-website-editable--logo img {
+  width: 2.25rem;
+  height: 2.25rem;
+  max-height: 2.25rem;
+  object-fit: cover;
+  border-radius: 0.65rem;
+}
+.ac-website-editable--logo .ac-website-editable__pencil {
+  top: -0.35rem;
+  right: -0.35rem;
+}
+.ac-website-overlay-edit {
+  margin-top: 1.25rem;
+  padding: 1rem 1.1rem;
+  border: 1px dashed color-mix(in srgb, var(--acp-primary, #1d59c1) 28%, #d7dee8);
+  border-radius: 0.85rem;
+  background: color-mix(in srgb, var(--acp-primary, #1d59c1) 5%, #fff);
+}
+.ac-website-overlay-edit h2,
+.ac-website-overlay-edit h3 {
+  margin: 0 0 0.35rem;
+  font-size: 1rem;
+}
+.ac-website-overlay-note {
+  margin: 0 0 0.75rem;
+  color: var(--acp-muted, #5b6b7c);
+  font-size: 0.9rem;
+}
 .ac-website-editable__preview {
   position: relative;
   overflow: visible;
@@ -261,6 +293,12 @@ textarea.ac-website-editable__input {
   max-height: 22rem;
   object-fit: cover;
   border-radius: 0.75rem;
+}
+.ac-website-editable--image.ac-website-editable--logo img {
+  width: 2.25rem;
+  height: 2.25rem;
+  max-height: 2.25rem;
+  border-radius: 0.65rem;
 }
 .ac-website-editable__image-tools {
   display: grid;

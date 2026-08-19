@@ -16,6 +16,14 @@ const {
 
 const PLACEHOLDER_LABEL = "Template example — replace with your church’s information.";
 
+function labeledBody(text, extra) {
+  const body = String(text || "").trim();
+  const note = extra ? `${PLACEHOLDER_LABEL} ${extra}` : PLACEHOLDER_LABEL;
+  if (!body) return note;
+  if (/template example/i.test(body)) return body;
+  return `${body}\n\n${note}`;
+}
+
 function churchName(raw) {
   const name = String(raw || "").trim();
   return name || "Church";
@@ -104,7 +112,7 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
         sectionKey: "welcome",
         sectionType: "text",
         heading: pack.home.welcomeHeading,
-        bodyText: pack.home.welcomeBody,
+        bodyText: labeledBody(pack.home.welcomeBody),
         mediaUrl: pack.home.heroMediaUrl || null,
         sortOrder: 1,
       },
@@ -206,7 +214,10 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
         sectionKey: "story",
         sectionType: "story",
         heading: pack.about.story.heading,
-        bodyText: pack.about.story.bodyText,
+        bodyText: labeledBody(
+          pack.about.story.bodyText,
+          "This origin story is template copy, not this congregation’s history."
+        ),
         mediaUrl: pack.about.story.mediaUrl || null,
         sortOrder: 1,
       },
@@ -217,7 +228,7 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
         sectionKey: "mission",
         sectionType: "mission",
         heading: pack.about.mission.heading,
-        bodyText: pack.about.mission.bodyText,
+        bodyText: labeledBody(pack.about.mission.bodyText),
         sortOrder: 2,
       },
     },
@@ -227,7 +238,7 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
         sectionKey: "vision",
         sectionType: "vision",
         heading: pack.about.vision.heading,
-        bodyText: pack.about.vision.bodyText,
+        bodyText: labeledBody(pack.about.vision.bodyText),
         sortOrder: 3,
       },
     },
@@ -257,7 +268,7 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
         sectionKey: "beliefs",
         sectionType: "beliefs",
         heading: pack.about.beliefs.heading,
-        bodyText: pack.about.beliefs.bodyText,
+        bodyText: labeledBody(pack.about.beliefs.bodyText),
         sortOrder: 10,
       },
     },
@@ -267,7 +278,7 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
         sectionKey: "community",
         sectionType: "community",
         heading: pack.about.community.heading,
-        bodyText: pack.about.community.bodyText,
+        bodyText: labeledBody(pack.about.community.bodyText),
         sortOrder: 11,
       },
     },
@@ -398,7 +409,10 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
         sectionKey: "visitor_guidance",
         sectionType: "text",
         heading: "First-time visitors",
-        bodyText: pack.contactPage.visitorGuidance,
+        bodyText: labeledBody(
+          pack.contactPage.visitorGuidance,
+          "Visitor notes below are template examples until this church publishes its own."
+        ),
         sortOrder: 3,
       },
     },
@@ -431,7 +445,7 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
         sectionKey: "service_reminder",
         sectionType: "text",
         heading: pack.contactPage.serviceReminderHeading,
-        bodyText: pack.contactPage.serviceReminderBody,
+        bodyText: labeledBody(pack.contactPage.serviceReminderBody),
         sortOrder: 6,
       },
     },
@@ -441,7 +455,7 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
         sectionKey: "hero",
         sectionType: "hero",
         heading: pack.givingPage.introHeading,
-        bodyText: pack.givingPage.introBody,
+        bodyText: labeledBody(pack.givingPage.introBody),
         sortOrder: 0,
         layoutMetadata: heroMeta(null, "Contact the office", "/contact"),
       },
@@ -534,6 +548,7 @@ async function seedServiceTimesIfEmpty(client, homePage, pack) {
     note: `${PLACEHOLDER_LABEL} Example gathering time from the BlessBoard church website template.`,
     enabled: entry.enabled !== false,
     sortOrder: entry.sortOrder != null ? entry.sortOrder : index,
+    templateExample: true,
   }));
   const bodyText = entries
     .map((entry) => `${entry.name} · ${entry.day} ${entry.startTime}${entry.endTime ? `–${entry.endTime}` : ""}`)

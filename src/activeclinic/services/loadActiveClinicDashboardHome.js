@@ -25,6 +25,7 @@ const {
 const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
+  buildPublicWebsiteSettingsPath,
 } = require("../../platform/website/publicWebsiteUrl");
 
 function hasPerm(set, key) {
@@ -94,7 +95,6 @@ async function loadActiveClinicDashboardHome(db, input) {
 
   const needsFacilitySelect =
     !shell.selectedFacility &&
-    !auth.isNetworkAdmin &&
     Array.isArray(shell.availableFacilities) &&
     shell.availableFacilities.length > 0;
 
@@ -140,7 +140,6 @@ async function loadActiveClinicDashboardHome(db, input) {
     includeSelectFacility: Boolean(
       needsFacilitySelect ||
         (!shell.selectedFacility &&
-          !auth.isNetworkAdmin &&
           (shell.canSwitchFacility ||
             (shell.availableFacilities && shell.availableFacilities.length)))
     ),
@@ -160,11 +159,9 @@ async function loadActiveClinicDashboardHome(db, input) {
     (shell.organization && (shell.organization.key || shell.organization.organizationKey)) ||
     "";
   const canWebsite = hasPerm(perms, "website.view") || hasPerm(perms, "website.edit");
-  const canOrgProfile =
-    hasPerm(perms, "activeclinic.organization.view") ||
-    hasPerm(perms, "activeclinic.organization.manage");
+  const canOrgManage = hasPerm(perms, "activeclinic.organization.manage");
   const showOrganizationConsole =
-    canSeeClinicSetupPanel(perms) || canWebsite || canOrgProfile;
+    canSeeClinicSetupPanel(perms) || canWebsite || canOrgManage;
   let onboardingStatus = null;
   if (clinicSetup && clinicSetup.presentation === "incomplete") onboardingStatus = "onboarding_required";
   else if (clinicSetup && clinicSetup.presentation === "recommended") onboardingStatus = "recommended";
@@ -177,8 +174,10 @@ async function loadActiveClinicDashboardHome(db, input) {
               organizationKey: orgKey,
             })
           : null,
-        websiteHref: canWebsite ? "/app/settings/website" : null,
-        organizationHref: canOrgProfile ? "/app/settings/organization" : null,
+        websiteHref: canWebsite
+          ? buildPublicWebsiteSettingsPath({ product: PRODUCT_CODE.ACTIVECLINIC })
+          : null,
+        organizationHref: canOrgManage ? "/app/settings/organization" : null,
         staffHref: hasPerm(perms, "activeclinic.staff.view") ? "/app/staff" : null,
         accessHref: hasPerm(perms, "activeclinic.staff.assign_access") ? "/app/access" : null,
         facilitiesHref:

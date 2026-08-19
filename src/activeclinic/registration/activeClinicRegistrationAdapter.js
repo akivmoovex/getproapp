@@ -121,6 +121,14 @@ async function markReviewRequiredAdapter(db, input) {
     visibility: "history",
     deliveryStatus: "not_applicable",
   });
+  await appendReviewEvent(db, {
+    applicationId: input.application.id,
+    eventType: "review_required",
+    body: String(input.reason || "review_required").slice(0, 200),
+    actorId: null,
+    visibility: "history",
+    deliveryStatus: "not_applicable",
+  });
   return { ok: true };
 }
 

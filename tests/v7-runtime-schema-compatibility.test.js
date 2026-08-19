@@ -8,6 +8,8 @@
 const { describe, it, before, after } = require("node:test");
 const assert = require("node:assert/strict");
 const request = require("supertest");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const {
   resetFoundationDatabase,
@@ -23,6 +25,9 @@ const {
   shouldEnforceV7RuntimeSchemaCompatibility,
   assertV7RuntimeSchemaCompatibilityOrExit,
   parseCheckValues,
+  presentV7SchemaCompatibilityPublic,
+  rejectIfV7SchemaIncompatible,
+  schemaCompatibilityHealthz,
 } = require("../src/platform/schema/v7RuntimeSchemaCompatibility");
 const instanceRepo = require("../src/platform/website/instanceRepository");
 const {
@@ -97,6 +102,25 @@ function clinicPayload() {
 }
 
 describe("V7 runtime schema compatibility and website provision", () => {
+  it("extends existing PA diagnostics with schema compatibility", () => {
+    const access = fs.readFileSync(
+      path.join(__dirname, "../views/blessboard/v5/platform-admin/access-health.ejs"),
+      "utf8"
+    );
+    assert.match(access, /data-bb-pa-schema-compatibility="1"/);
+    assert.match(access, /V7 schema compatibility/);
+    const dash = fs.readFileSync(
+      path.join(__dirname, "../views/blessboard/v5/platform-admin/dashboard.ejs"),
+      "utf8"
+    );
+    assert.match(dash, /data-bb-pa-schema-compatibility="1"/);
+    const startup = fs.readFileSync(
+      path.join(__dirname, "../src/platform/schema/v7RuntimeSchemaCompatibility.js"),
+      "utf8"
+    );
+    assert.doesNotMatch(startup, /migrate\(/);
+    assert.match(startup, /Do not run migrations from application startup/);
+  });
   before(async () => {
     try {
       const url = await resetFoundationDatabase();
@@ -286,11 +310,159 @@ describe("V7 runtime schema compatibility and website provision", () => {
     assert.equal(JSON.stringify(res.body).includes("super-secret"), false);
   });
 
+  it("healthz is unhealthy when schema is incompatible and names the missing capability", async () => {
+    const app = createMoovexPlatformRuntimeApp({
+      env: {
+        NODE_ENV: "test",
+        DEPLOYMENT_ENV: "testing",
+        PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING,
+        DATABASE_IDENTITY_EXPECTED: "moovex-platform-v7",
+        DATABASE_IDENTITY_ENV: "testing",
+        DATABASE_URL: "postgres://u:s3cret@host.example:5432/db",
+        SESSION_SECRET: "super-secret-session",
+      },
+      productApps: {},
+      boot: {
+        gitSha: "deadbeef",
+        schemaCompatibility: {
+          compatible: false,
+          code: RESULT.INCOMPATIBLE,
+          capability: CAPABILITY.TENANT_PUBLISH_POLICY,
+          missing: [CAPABILITY.TENANT_PUBLISH_POLICY],
+          checks: [
+            {
+              key: CAPABILITY.TENANT_PUBLISH_POLICY,
+              label: "TENANT_PUBLISH policy",
+              ok: false,
+              remediation: "Apply db/migrations/platform/031_website_tenant_publish_policy.sql",
+            },
+          ],
+        },
+      },
+    });
+    const res = await request(app).get("/healthz");
+    assert.equal(res.status, 503);
+    assert.equal(res.body.ok, false);
+    assert.equal(res.body.schemaCompatible, false);
+    assert.equal(res.body.schemaCompatibility.capability, CAPABILITY.TENANT_PUBLISH_POLICY);
+    assert.ok(res.body.schemaCompatibility.missing.includes(CAPABILITY.TENANT_PUBLISH_POLICY));
+    assert.equal(JSON.stringify(res.body).includes("s3cret"), false);
+    assert.equal(JSON.stringify(res.body).includes("super-secret"), false);
+  });
+
+  it("public presenter omits SQL details and secrets", () => {
+    const presented = presentV7SchemaCompatibilityPublic({
+      compatible: false,
+      code: RESULT.INCOMPATIBLE,
+      capability: CAPABILITY.TENANT_PUBLISH_POLICY,
+      missing: [CAPABILITY.TENANT_PUBLISH_POLICY],
+      checks: [
+        {
+          key: CAPABILITY.TENANT_PUBLISH_POLICY,
+          label: "TENANT_PUBLISH policy",
+          ok: false,
+          remediation: "Apply db/migrations/platform/031_website_tenant_publish_policy.sql",
+          detail: "postgres://user:s3cret@db/host",
+        },
+      ],
+      details: { publishPolicies: ["REVIEW_BEFORE_PUBLISH"] },
+      reason: "missing:website_instances.publish_policy.TENANT_PUBLISH",
+    });
+    const json = JSON.stringify(presented);
+    assert.equal(presented.compatible, false);
+    assert.equal(presented.capability, CAPABILITY.TENANT_PUBLISH_POLICY);
+    assert.equal(json.includes("s3cret"), false);
+    assert.equal(json.includes("postgres://"), false);
+    assert.equal(json.includes("publishPolicies"), false);
+  });
+
+  it("inspect reports every missing capability instead of stopping at the first", async () => {
+    const fake = {
+      async query() {
+        return { rows: [] };
+      },
+    };
+    const report = await inspectV7RuntimeSchemaCompatibility(fake);
+    assert.equal(report.compatible, false);
+    assert.ok(report.missing.includes(CAPABILITY.TENANT_PUBLISH_POLICY));
+    assert.ok(report.missing.includes(CAPABILITY.WEBSITE_VERSIONING));
+    assert.ok(report.missing.includes(CAPABILITY.AC_CANONICAL_REGISTRATION_STATUSES));
+    assert.ok(report.missing.includes(CAPABILITY.ORG_ADMIN_WEBSITE_GRANTS));
+    assert.ok(report.missing.includes(CAPABILITY.REQUIRED_MIGRATIONS));
+    assert.ok(report.checks.length >= 8);
+  });
+
+  it("inspect never issues mutating SQL", async () => {
+    const seen = [];
+    const fake = {
+      async query(sql) {
+        seen.push(String(sql));
+        return { rows: [] };
+      },
+    };
+    await inspectV7RuntimeSchemaCompatibility(fake);
+    assert.ok(seen.length > 0);
+    for (const sql of seen) {
+      assert.equal(/^\s*(INSERT|UPDATE|DELETE|ALTER|CREATE|DROP|TRUNCATE|MIGRATE)\b/i.test(sql), false, sql);
+    }
+  });
+
+  it("old website_versions schema is reported as missing versioning", async () => {
+    const fake = {
+      async query(sql) {
+        const text = String(sql);
+        if (text.includes("information_schema.tables") && text.includes("$2")) {
+          return { rows: [] };
+        }
+        if (text.includes("website_instances_publish_policy_check")) {
+          return {
+            rows: [
+              {
+                def: "CHECK ((publish_policy = ANY (ARRAY['TENANT_PUBLISH'::text])))",
+              },
+            ],
+          };
+        }
+        return { rows: [] };
+      },
+    };
+    const report = await inspectV7RuntimeSchemaCompatibility(fake);
+    assert.ok(report.missing.includes(CAPABILITY.WEBSITE_VERSIONING));
+  });
+
+  it("rejectIfV7SchemaIncompatible blocks hosted registration and skips local test env", async () => {
+    const fake = {
+      async query() {
+        return { rows: [] };
+      },
+    };
+    const blocked = await rejectIfV7SchemaIncompatible(fake, { DEPLOYMENT_ENV: "testing" });
+    assert.ok(blocked);
+    assert.equal(blocked.code, "schema_mismatch");
+    assert.ok(blocked.capability);
+    const skipped = await rejectIfV7SchemaIncompatible(fake, { NODE_ENV: "test" });
+    assert.equal(skipped, null);
+  });
+
+  it("schemaCompatibilityHealthz keeps readiness healthy when inspection was skipped", () => {
+    const health = schemaCompatibilityHealthz({
+      compatible: true,
+      code: "skipped",
+      missing: [],
+    });
+    assert.equal(health.status, 200);
+    assert.equal(health.schemaCompatible, true);
+  });
+
   it("TENANT_PUBLISH insert succeeds when schema is current", async () => {
     if (!requireDb()) return;
     const report = await inspectV7RuntimeSchemaCompatibility(pool);
     assert.equal(report.compatible, true, JSON.stringify(report));
     assert.ok(report.capabilities.includes(CAPABILITY.TENANT_PUBLISH_POLICY));
+    assert.ok(report.capabilities.includes(CAPABILITY.WEBSITE_VERSIONING));
+    assert.ok(report.capabilities.includes(CAPABILITY.AC_CANONICAL_REGISTRATION_STATUSES));
+    assert.ok(report.capabilities.includes(CAPABILITY.ORG_ADMIN_WEBSITE_GRANTS));
+    assert.ok(report.capabilities.includes(CAPABILITY.REQUIRED_MIGRATIONS));
     const org = await pool.query(
       `INSERT INTO platform.organizations (organization_key, display_name, status, data_environment)
        VALUES ($1, $2, 'active', 'testing')
@@ -305,6 +477,68 @@ describe("V7 runtime schema compatibility and website provision", () => {
     });
     assert.equal(website.ok, true, JSON.stringify(website));
     assert.equal(website.instance.publishPolicy, PUBLISH_POLICY.TENANT_PUBLISH);
+  });
+
+  it("simulates the hosted old publish_policy schema", async () => {
+    if (!requireDb()) return;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `ALTER TABLE platform.website_instances
+           DROP CONSTRAINT IF EXISTS website_instances_publish_policy_check`
+      );
+      const report = await inspectV7RuntimeSchemaCompatibility(client);
+      assert.equal(report.compatible, false);
+      assert.ok(report.missing.includes(CAPABILITY.TENANT_PUBLISH_POLICY));
+      const check = report.checks.find((row) => row.key === CAPABILITY.TENANT_PUBLISH_POLICY);
+      assert.equal(check.ok, false);
+      assert.match(String(check.remediation || ""), /031_website_tenant_publish_policy/);
+    } finally {
+      await client.query("ROLLBACK").catch(() => {});
+      client.release();
+    }
+  });
+
+  it("simulates a schema missing last_provision_stage", async () => {
+    if (!requireDb()) return;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `ALTER TABLE activeclinic.clinic_registration_applications
+           DROP COLUMN last_provision_stage`
+      );
+      const report = await inspectV7RuntimeSchemaCompatibility(client);
+      assert.equal(report.compatible, false);
+      assert.ok(report.missing.includes(CAPABILITY.AC_PROVISION_STAGE_COLUMNS));
+    } finally {
+      await client.query("ROLLBACK").catch(() => {});
+      client.release();
+    }
+  });
+
+  it("simulates missing organization-admin website grants", async () => {
+    if (!requireDb()) return;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `DELETE FROM blessboard.role_permissions rp
+          USING blessboard.roles r, blessboard.permissions p
+          WHERE rp.role_id = r.id
+            AND rp.permission_id = p.id
+            AND r.role_key = 'activeclinic_organization_admin'
+            AND p.permission_key = ANY($1::text[])`,
+        [REQUIRED_WEBSITE_PERMISSIONS.slice()]
+      );
+      const report = await inspectV7RuntimeSchemaCompatibility(client);
+      assert.equal(report.compatible, false);
+      assert.ok(report.missing.includes(CAPABILITY.ORG_ADMIN_WEBSITE_GRANTS));
+    } finally {
+      await client.query("ROLLBACK").catch(() => {});
+      client.release();
+    }
   });
 
   it("current schema provisions one website, org-admin website perms, settings card, versions", async () => {

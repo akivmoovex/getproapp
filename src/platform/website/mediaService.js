@@ -4,6 +4,7 @@ const crypto = require("crypto");
 const instanceRepo = require("./instanceRepository");
 const { recordWebsiteAudit } = require("./auditService");
 const { safeExternalUrl } = require("./safeValues");
+const { assertWebsiteInstanceScope } = require("./authorizeWebsite");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -19,6 +20,11 @@ const RESULT = Object.freeze({
 const ALLOWED_IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
 const REJECTED_MIME = /^(application\/x-msdownload|application\/x-executable|application\/x-sh|text\/html|image\/svg\+xml)/i;
 const MAX_BYTES = 5 * 1024 * 1024;
+const MEDIA_UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const CLINIC_MEDIA_PATH_RE =
+  /^\/clinics\/([^/]+)\/website\/media\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+const TEMPLATE_ASSET_PREFIX = "/activeclinic/assets/";
 
 function detectMimeFromSignature(buffer) {
   if (!Buffer.isBuffer(buffer) || buffer.length < 4) return null;
@@ -88,7 +94,14 @@ function mapMedia(row) {
 async function registerWebsiteMedia(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
-  if (!instance) return { ok: false, code: "website_instance_not_found", media: null };
+  const scoped = assertWebsiteInstanceScope(instance, input);
+  if (!scoped.ok) {
+    return {
+      ok: false,
+      code: scoped.code === "tenant_mismatch" ? RESULT.TENANT_MISMATCH : "website_instance_not_found",
+      media: null,
+    };
+  }
 
   const kind = String((input && input.mediaKind) || "image").trim();
   if (kind === "video_url") {
@@ -309,8 +322,136 @@ async function archiveWebsiteMedia(db, input) {
   return { ok: true, media: { ...loaded.media, status: "archived" } };
 }
 
-function listOrphanCandidates() {
-  return { ok: true, strategy: "manual_review", autoDelete: false };
+function ownedClinicMediaSrc(instance, mediaId) {
+  return `/clinics/${instance.slug}/website/media/${mediaId}`;
+}
+
+function isUnsafeImageSrc(src) {
+  const raw = String(src || "").trim().toLowerCase();
+  return (
+    raw.startsWith("blob:") ||
+    raw.startsWith("data:") ||
+    raw.startsWith("javascript:") ||
+    raw.startsWith("vbscript:") ||
+    raw.startsWith("//")
+  );
+}
+
+/**
+ * Ensure an IMAGE content value points at this tenant's media (or a template/https source).
+ * Rewrites clinic media `src` to the owned delivery path. Does not leak other tenants.
+ */
+async function assertOwnedWebsiteImageValue(db, input) {
+  const value = input && input.value;
+  const instance = input && input.instance;
+  const organizationId = String((input && input.organizationId) || "");
+  if (!instance || !organizationId) {
+    return { ok: false, code: RESULT.INVALID_INPUT, value: null };
+  }
+  if (value == null || typeof value !== "object" || Array.isArray(value)) {
+    return { ok: true, value };
+  }
+  const mediaIdRaw = value.mediaId || value.media_id || null;
+  const mediaId = mediaIdRaw ? String(mediaIdRaw).trim() : "";
+  const src = value.src ? String(value.src).trim() : "";
+
+  if (src && isUnsafeImageSrc(src)) {
+    return { ok: false, code: RESULT.INVALID_URL, value: null };
+  }
+
+  async function loadOwned(candidateId) {
+    if (!MEDIA_UUID_RE.test(candidateId)) {
+      return { ok: false, code: RESULT.INVALID_INPUT };
+    }
+    const loaded = await getWebsiteMedia(db, { mediaId: candidateId, organizationId });
+    if (!loaded.ok || loaded.media.status !== "active") {
+      return { ok: false, code: RESULT.NOT_FOUND };
+    }
+    if (loaded.media.instanceId !== instance.id) {
+      return { ok: false, code: RESULT.TENANT_MISMATCH };
+    }
+    return { ok: true, media: loaded.media };
+  }
+
+  if (mediaId) {
+    const owned = await loadOwned(mediaId);
+    if (!owned.ok) return { ok: false, code: owned.code, value: null };
+    return {
+      ok: true,
+      value: {
+        ...value,
+        mediaId: owned.media.id,
+        src: ownedClinicMediaSrc(instance, owned.media.id),
+      },
+    };
+  }
+
+  const clinicMatch = src.match(CLINIC_MEDIA_PATH_RE);
+  if (clinicMatch) {
+    if (clinicMatch[1] !== instance.slug) {
+      return { ok: false, code: RESULT.TENANT_MISMATCH, value: null };
+    }
+    const owned = await loadOwned(clinicMatch[2]);
+    if (!owned.ok) return { ok: false, code: owned.code, value: null };
+    return {
+      ok: true,
+      value: {
+        ...value,
+        mediaId: owned.media.id,
+        src: ownedClinicMediaSrc(instance, owned.media.id),
+      },
+    };
+  }
+
+  if (src.startsWith("/clinics/")) {
+    return { ok: false, code: RESULT.TENANT_MISMATCH, value: null };
+  }
+  if (!src || src.startsWith(TEMPLATE_ASSET_PREFIX) || /^https:\/\//i.test(src)) {
+    return { ok: true, value };
+  }
+  if (src.startsWith("/") && !src.startsWith("//")) {
+    return { ok: true, value };
+  }
+  return { ok: false, code: RESULT.INVALID_URL, value: null };
+}
+
+/**
+ * Active media not referenced in draft or published JSON. Never auto-deletes.
+ */
+async function listOrphanCandidates(db, input) {
+  const empty = { ok: true, strategy: "manual_review", autoDelete: false, media: [] };
+  if (!db || typeof db.query !== "function" || !input || !input.organizationId || !input.instanceId) {
+    return empty;
+  }
+  const rows = await db.query(
+    `SELECT m.id, m.original_filename, m.mime_type, m.size_bytes, m.created_at
+       FROM platform.website_media m
+      WHERE m.organization_id = $1
+        AND m.instance_id = $2
+        AND m.status = 'active'
+        AND NOT EXISTS (
+          SELECT 1
+            FROM platform.website_content c
+           WHERE c.organization_id = m.organization_id
+             AND c.instance_id = m.instance_id
+             AND (
+               (c.draft_value IS NOT NULL AND c.draft_value::text LIKE '%' || m.id::text || '%')
+               OR (c.published_value IS NOT NULL AND c.published_value::text LIKE '%' || m.id::text || '%')
+             )
+        )
+      ORDER BY m.created_at ASC`,
+    [input.organizationId, input.instanceId]
+  );
+  return {
+    ...empty,
+    media: rows.rows.map((row) => ({
+      id: row.id,
+      originalFilename: row.original_filename,
+      mimeType: row.mime_type,
+      sizeBytes: Number(row.size_bytes) || 0,
+      createdAt: row.created_at,
+    })),
+  };
 }
 
 module.exports = {
@@ -327,5 +468,6 @@ module.exports = {
   recordMediaUsage,
   archiveWebsiteMedia,
   isPublishedInUse,
+  assertOwnedWebsiteImageValue,
   listOrphanCandidates,
 };

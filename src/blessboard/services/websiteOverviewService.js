@@ -276,6 +276,8 @@ async function loadFoundationWebsiteOverview(db, opts) {
         : null,
       lastPublishedAt: currentPub && currentPub.publishedAt,
       lastPublishedByName: currentPub && currentPub.publishedByName,
+      publishedVersionNumber: currentPub && currentPub.versionNumber,
+      currentPub,
       themeKey: draftPages.themeKey || "default",
       hasUnpublishedChanges: hasDraft,
       publishReady,
@@ -467,6 +469,11 @@ async function loadGrowthWebsiteOverview(db, opts) {
       inlineEditPath: blessboardPublicEditPath(orgKey, "/hq/content"),
       liveAvailable: hasPublished,
       recentChangesPath: "/hq/website/recent-changes",
+      lastPublishedAt: recentPublications[0] && recentPublications[0].publishedAt,
+      lastPublishedByName: recentPublications[0] && recentPublications[0].publishedByName,
+      publishedVersionNumber:
+        (publications.items || [])[0] && (publications.items || [])[0].versionNumber,
+      hasUnpublishedChanges: hasHqDraft,
       restoredDraft: restoredDraft
         ? {
             id: restoredDraft.id,

@@ -24,6 +24,7 @@ const {
 const { registerActiveClinicWebsiteTemplate } = require("../website/activeClinicWebsiteTemplate");
 const {
   buildPublicOrganizationWebsitePath,
+  buildPublicOrganizationWebsiteUrl,
   publicOriginForProduct,
   PRODUCT_CODE,
 } = require("../../platform/website/publicWebsiteUrl");
@@ -208,7 +209,13 @@ async function getClinicWebsiteAvailability(db, input) {
         }
       : null,
     publicPath: path,
-    publicUrl: origin && path ? `${origin}${path}` : path,
+    publicUrl: path
+      ? buildPublicOrganizationWebsiteUrl({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: instance.slug,
+          origin,
+        }) || path
+      : null,
     availabilityLabel: hco && hco.website_published === true ? "Public" : "Not public",
   };
 }
@@ -290,8 +297,8 @@ async function setClinicWebsiteAvailability(db, input) {
       actionKey: ACTION.OVERRIDE,
       versionId: version ? version.id : null,
       metadata: {
-        codes: readiness.codes || [],
-        reason: String(input.reason || "").slice(0, 500) || null,
+        field_keys: Array.isArray(readiness.codes) ? readiness.codes : [],
+        reason_code: String(input.reason || "").trim().slice(0, 120) || undefined,
       },
     });
   }
@@ -307,8 +314,8 @@ async function setClinicWebsiteAvailability(db, input) {
       next: wantPublic,
       version_number: version ? version.versionNumber : null,
       ready: readiness.readyToPublish === true,
-      codes: readiness.codes || [],
-      reason: String(input.reason || "").slice(0, 500) || null,
+      field_keys: Array.isArray(readiness.codes) ? readiness.codes : [],
+      reason_code: String(input.reason || "").trim().slice(0, 120) || undefined,
     },
   });
 
@@ -320,7 +327,13 @@ async function setClinicWebsiteAvailability(db, input) {
     websitePublished: wantPublic,
     organizationKey: org.organization_key,
     publicPath: path,
-    publicUrl: origin && path ? `${origin}${path}` : path,
+    publicUrl: path
+      ? buildPublicOrganizationWebsiteUrl({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: instance.slug,
+          origin,
+        }) || path
+      : null,
     latestApprovedVersion: version,
     readiness,
   };

@@ -185,6 +185,12 @@ const {
   ONBOARDING_STATUSES,
 } = require("../../blessboard/services/organizationOnboardingSummaryService");
 const {
+  loadTenantHealthSummariesForOrganization,
+  loadTenantHealthSummary,
+  retryTenantProvisioningIfUnhealthy,
+} = require("../registration/tenantHealthSummary");
+const { PRODUCT } = require("../registration/constants");
+const {
   setOrganizationSupportRequested,
   setOrganizationNextFollowUp,
   overrideOrganizationOnboardingStatus,
@@ -1271,12 +1277,25 @@ function createPlatformAdminRouter(deps) {
     }
 
     const stats = statsResult.stats || {};
+    let schemaCompatibility = null;
+    try {
+      const {
+        inspectV7RuntimeSchemaCompatibility,
+        presentV7SchemaCompatibilityPublic,
+      } = require("../schema/v7RuntimeSchemaCompatibility");
+      schemaCompatibility = presentV7SchemaCompatibilityPublic(
+        await inspectV7RuntimeSchemaCompatibility(getPool())
+      );
+    } catch {
+      schemaCompatibility = null;
+    }
     const html = renderPlatformAdminView(
       "platform-admin/dashboard.ejs",
       shellLocals(req, res, "home", {
         pageTitle: "Platform admin",
         directorySample: list.organizations || [],
         directoryWarning,
+        schemaCompatibility,
         totalOrganizations: stats.totalOrganizations || list.total || 0,
         organizationsWithChurch: stats.organizationsWithChurch || 0,
         recentFoundationRegistrations: stats.recentFoundationRegistrations || 0,
@@ -1498,11 +1517,23 @@ function createPlatformAdminRouter(deps) {
       }
       const flash = readFlash(req);
       let onboardingSummary = null;
+      let tenantHealth = null;
       if (detail.application && detail.application.organizationId) {
         const onboard = await getOrganizationOnboardingSummary(getPool(), {
           organizationId: detail.application.organizationId,
         });
         if (onboard.ok && onboard.summary) onboardingSummary = onboard.summary;
+      }
+      try {
+        tenantHealth = await loadTenantHealthSummary(getPool(), {
+          productCode: PRODUCT.BLESSBOARD,
+          applicationId: detail.application && detail.application.id,
+          organizationId: detail.application && detail.application.organizationId,
+          organizationKey: detail.application && detail.application.organizationKey,
+          application: detail.application,
+        });
+      } catch {
+        tenantHealth = null;
       }
       const appId = detail.application && detail.application.id
         ? String(detail.application.id)
@@ -1544,6 +1575,7 @@ function createPlatformAdminRouter(deps) {
           contactMethods: detail.contactMethods || registrationAppRepo.CONTACT_METHODS,
           contactOutcomes: detail.contactOutcomes || registrationAppRepo.CONTACT_OUTCOMES,
           onboardingSummary,
+          tenantHealth,
           duplicateMatchesLoaded,
           duplicateWarning,
           intent,
@@ -3031,6 +3063,7 @@ function createPlatformAdminRouter(deps) {
         shellLocals(req, res, "access-health", {
           pageTitle: "Access health",
           checks: health.checks || [],
+          schemaCompatibility: health.schemaCompatibility || null,
         })
       );
       return res.status(200).type("html").send(html);
@@ -3257,6 +3290,14 @@ function createPlatformAdminRouter(deps) {
           organizationAuditEvents = [];
         }
       }
+      let tenantHealthSummaries = [];
+      try {
+        tenantHealthSummaries = await loadTenantHealthSummariesForOrganization(getPool(), {
+          organizationKey: detail.organization.organizationKey,
+        });
+      } catch {
+        tenantHealthSummaries = [];
+      }
       const html = renderPlatformAdminView(
         "platform-admin/organization-detail.ejs",
         shellLocals(req, res, "organizations", {
@@ -3275,6 +3316,7 @@ function createPlatformAdminRouter(deps) {
           growthTrial,
           activeSupport,
           organizationAuditEvents,
+          tenantHealthSummaries,
           followUpStatuses: registrationAppRepo.FOLLOW_UP_STATUSES,
           onboardingStatuses: ONBOARDING_STATUSES,
           inviteOnceLink: inviteOnceLink || null,
@@ -3303,6 +3345,52 @@ function createPlatformAdminRouter(deps) {
       }) || `/admin/organizations/${encodeURIComponent(String(organizationKey || "").trim().toLowerCase())}`
     );
   }
+
+  router.post(
+    "/admin/organizations/:organizationKey/retry-provision",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res) => {
+      setAdminNoStore(res);
+      const organizationKey = String(req.params.organizationKey || "")
+        .trim()
+        .toLowerCase();
+      const detailPath = orgDetailPath(organizationKey);
+      const submitted = req.body && req.body[CSRF_FIELD];
+      if (!validateCsrf(req, submitted, env)) {
+        return res.redirect(303, `${detailPath}?error=csrf`);
+      }
+      const summaries = await loadTenantHealthSummariesForOrganization(getPool(), {
+        organizationKey,
+      });
+      const unhealthy = summaries.find((item) => item && item.retryEligible);
+      if (!unhealthy) {
+        const allHealthy = summaries.length && summaries.every((item) => item.complete);
+        return res.redirect(
+          303,
+          `${detailPath}?notice=${allHealthy ? "already_healthy" : "not_retryable"}#pa-org-tenant-health`
+        );
+      }
+      const deployment = getPlatformDeploymentCode(env);
+      const result = await retryTenantProvisioningIfUnhealthy(getPool(), {
+        productCode: unhealthy.productCode,
+        applicationId: unhealthy.applicationId,
+        organizationKey,
+        actorUserId: req.platformAdminContext && req.platformAdminContext.userId,
+        dataEnvironment: "testing",
+        deploymentCode: deployment && deployment.ok ? deployment.code : undefined,
+        env,
+      });
+      if (result && result.code === "already_healthy") {
+        return res.redirect(303, `${detailPath}?notice=already_healthy#pa-org-tenant-health`);
+      }
+      if (!result || result.ok === false) {
+        const error = result && result.code === "not_retryable" ? "not_retryable" : "retry_failed";
+        return res.redirect(303, `${detailPath}?error=${error}#pa-org-tenant-health`);
+      }
+      return res.redirect(303, `${detailPath}?notice=retry_succeeded#pa-org-tenant-health`);
+    }
+  );
 
   /**
    * Org-scoped website preview for platform admins.

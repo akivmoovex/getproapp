@@ -81,6 +81,7 @@ const {
 const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
+  buildPublicWebsiteSettingsPath,
 } = require("../../platform/website/publicWebsiteUrl");
 
 /**
@@ -362,7 +363,7 @@ function createHqAdminRouter(deps) {
             organizationKey: orgKey,
           })
         : null,
-      websiteHref: "/hq/website",
+      websiteHref: buildPublicWebsiteSettingsPath({ product: PRODUCT_CODE.BLESSBOARD }),
       organizationHref: "/hq/settings",
       staffHref: "/hq/settings/staff-access",
       branchesHref: "/hq/branches",
@@ -686,15 +687,34 @@ function createHqAdminRouter(deps) {
       );
     }
     let growthTrial = null;
+    let planSnapshot = { planKey: null, planDisplayName: null, subscriptionStatus: null };
     if (tenant.organization && tenant.organization.id) {
       const trialState = await getGrowthTrialOfferState(getPool(), tenant.organization.id);
       if (trialState.ok) growthTrial = trialState;
+      const entitled = await resolveOrganizationEntitlementsSafe(getPool(), {
+        organizationId: tenant.organization.id,
+      });
+      const entitlements = entitled && entitled.entitlements;
+      if (entitlements) {
+        const plan = entitlements.plan || null;
+        const subscription = entitlements.subscription || null;
+        planSnapshot = {
+          planKey: entitlements.planKey || (plan && plan.planKey) || null,
+          planDisplayName:
+            (plan && (plan.displayName || plan.planKey)) || entitlements.planKey || null,
+          subscriptionStatus: subscription && subscription.status ? String(subscription.status) : null,
+        };
+      }
     }
+    const catalogue = {
+      ...loaded.model.catalogue,
+      ...planSnapshot,
+    };
     const html = renderHqView(
       "hq/settings.ejs",
       await shellLocals(req, res, "settings", {
         settings: loaded.model.settings,
-        catalogue: loaded.model.catalogue,
+        catalogue,
         primaryBranch: loaded.model.primaryBranch,
         growthTrial,
         error: null,
@@ -715,6 +735,9 @@ function createHqAdminRouter(deps) {
     const submitted = req.body && req.body[CSRF_FIELD];
     if (!validateCsrf(req, submitted, env)) {
       return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    }
+    if (req.body && (req.body.organizationId || req.body.churchId || req.body.branchId)) {
+      return sendControlled(req, res, 403, "Invalid settings request.");
     }
     const body = req.body || {};
     const session = req.v5Session && req.v5Session.session;

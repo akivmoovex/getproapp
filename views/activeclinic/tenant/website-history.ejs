@@ -42,5 +42,5 @@
       <% }) %>
     </tbody>
   </table>
-  <p><a href="/clinics/<%= clinic && clinic.clinicKey %>?website_edit=1&amp;website_mode=draft">Back to editor</a></p>
+  <p><a href="<%= typeof websiteEditUrl !== 'undefined' && websiteEditUrl ? websiteEditUrl : ((clinic && (clinic.publicBasePath || clinic.publicPagePaths && clinic.publicPagePaths.home)) || ('/clinics/' + (clinic && clinic.clinicKey))) + '?website_edit=1&amp;website_mode=draft' %>">Back to editor</a></p>
 </section>

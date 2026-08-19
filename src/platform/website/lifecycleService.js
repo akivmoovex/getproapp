@@ -129,10 +129,10 @@ async function applyLifecycle(db, input) {
     actionKey: input.auditActionKey || "website.lifecycle.change",
     versionId: input.targetVersionId || null,
     metadata: {
-      previous: instance.lifecycleStatus,
-      next: nextStatus,
+      from_status: instance.lifecycleStatus,
+      to_status: nextStatus,
       policy: nextPolicy,
-      reason: input.reason || null,
+      reason_code: input.reason ? String(input.reason).slice(0, 120) : null,
     },
   });
   await recordModerationEvent(db, {

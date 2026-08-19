@@ -7,6 +7,7 @@
  */
 
 const { JULFLONA_CLINIC_KEY, DEMO_CLINIC_KEY } = require("./activeClinicDemoClinicSpec");
+const { attachClinicPublicWebsitePaths } = require("../../platform/website/publicWebsiteUrl");
 
 const DOCTOR_FALLBACK = "/activeclinic/assets/doctors/doctor-fallback.svg";
 const CLINIC_DEFAULT = "/activeclinic/assets/clinic-hero-default.jpg";
@@ -218,12 +219,12 @@ function enrichDoctorMedia(profile) {
 function enrichClinicMedia(clinic) {
   if (!clinic || typeof clinic !== "object") return clinic;
   const hero = resolveClinicHero(clinic);
-  return {
+  return attachClinicPublicWebsitePaths({
     ...clinic,
     websiteHeroUrl: clinic.websiteHeroUrl || hero.src,
     heroObjectPosition: hero.objectPosition,
     heroStatus: hero.status,
-  };
+  });
 }
 
 function enrichClinicCardMedia(clinic, index) {

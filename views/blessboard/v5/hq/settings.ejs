@@ -19,8 +19,8 @@
     <h1 class="bb-hq-page-head__title">Organization &amp; branch settings</h1>
     <p class="bb-hq-lede">
       Maintain public contact details for your church and first branch.
-      Use <a href="/hq/website">Website preview &amp; publish</a> when ready to go live.
-      Service times are edited under <a href="/hq/content">Content</a>.
+      Use <a href="/hq/website">Website</a> to preview, publish, restore, and open the editor.
+      Service times are edited in the <a href="/hq/content">website editor</a>.
     </p>
   </header>
 
@@ -41,6 +41,14 @@
       <div><dt>Organization key</dt><dd><code><%= cat.organizationKey || '—' %></code></dd></div>
       <div><dt>Organization status</dt><dd><%= cat.organizationStatus || '—' %></dd></div>
       <div><dt>Church status</dt><dd><%= cat.churchStatus || '—' %></dd></div>
+      <div data-bb-hq-current-plan="1">
+        <dt>Plan</dt>
+        <dd><%= cat.planDisplayName || cat.planKey || '—' %></dd>
+      </div>
+      <div data-bb-hq-subscription="1">
+        <dt>Subscription</dt>
+        <dd><%= cat.subscriptionStatus || '—' %></dd>
+      </div>
       <% if (cat.canonicalTimezone) { %>
       <div><dt>Canonical timezone</dt><dd><%= cat.canonicalTimezone %></dd></div>
       <% } %>

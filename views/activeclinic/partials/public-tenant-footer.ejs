@@ -8,46 +8,59 @@
     if (primaryFacility.city) footerLoc.push(primaryFacility.city);
     if (primaryFacility.countryCode) footerLoc.push(primaryFacility.countryCode);
   }
+  const pages = (clinic && clinic.publicPagePaths) || {};
+  const pubHome = pages.home || (clinic && clinic.publicBasePath) || ("/clinics/" + (clinic && clinic.clinicKey ? clinic.clinicKey : ""));
+  function pub(name) {
+    if (pages[name]) return pages[name];
+    if (!name || name === "home") return pubHome;
+    var extras = { privacy: "/privacy", terms: "/terms" };
+    return pubHome + (extras[name] || ("/" + name));
+  }
 %>
 <footer class="ac-public-footer ac-public-footer--tenant" data-ac-public-footer="tenant">
   <div class="ac-public-footer__inner ac-public-footer__inner--tenant">
     <div class="ac-public-footer__col">
       <p class="ac-public-footer__brand"><strong><%= clinic.publicName %></strong></p>
       <% if (footerLoc.length) { %><p><%= footerLoc.join(", ") %></p>
-      <% } else if (clinic.locationAddressOverlay) { %><p><%= clinic.locationAddressOverlay %></p><% } %>
-      <p class="ac-public-footer__note"><%= clinic.footerTagline || 'Powered by ActiveClinic' %></p>
+      <% } else if (clinic.locationAddressOverlay || (typeof websiteEdit !== 'undefined' && websiteEdit)) { %><p><%- include('./website-editable-field', { contentKey: 'location.address', fieldValue: clinic.locationAddressOverlay || '', fieldType: 'long_text' }) %></p><% } %>
+      <p class="ac-public-footer__note"><%- include('./website-editable-field', { contentKey: 'footer.tagline', fieldValue: clinic.footerTagline || 'Powered by ActiveClinic', fieldType: 'short_text' }) %></p>
     </div>
     <div class="ac-public-footer__col">
       <h2 class="ac-public-footer__heading">Quick links</h2>
       <nav aria-label="Clinic footer links">
-        <a href="/clinics/<%= clinic.clinicKey %>/services">Services</a>
-        <a href="/clinics/<%= clinic.clinicKey %>/doctors">Doctors</a>
-        <% if (clinic.publicBookingEnabled) { %>
-        <a href="/clinics/<%= clinic.clinicKey %>/book">Book appointment</a>
-        <% } %>
+        <a href="<%= pub('services') %>">Services</a>
+        <a href="<%= pub('doctors') %>">Doctors</a>
+        <a href="<%= pub('book') %>"><%= clinic.publicBookingEnabled ? "Book appointment" : "Request appointment" %></a>
       </nav>
     </div>
     <div class="ac-public-footer__col">
       <h2 class="ac-public-footer__heading">Contact</h2>
+      <% const overlayPhone = clinic.websiteContent && clinic.websiteContent['contact.phone'] ? clinic.websiteContent['contact.phone'] : ''; %>
+      <% const overlayEmail = clinic.websiteContent && clinic.websiteContent['contact.email'] ? clinic.websiteContent['contact.email'] : ''; %>
       <ul class="ac-public-footer__list">
+        <% if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>
+        <li><%- include('./website-editable-field', { contentKey: 'contact.phone', fieldValue: overlayPhone, fieldType: 'phone' }) %></li>
+        <li><%- include('./website-editable-field', { contentKey: 'contact.email', fieldValue: overlayEmail, fieldType: 'email' }) %></li>
+        <% } else { %>
         <% if (clinic.publicPhoneDisplay) { %><li><%= clinic.publicPhoneDisplay %></li>
-        <% } else if (clinic.websiteContent && clinic.websiteContent['contact.phone']) { %><li><%= clinic.websiteContent['contact.phone'] %></li><% } %>
+        <% } else if (overlayPhone) { %><li><%= overlayPhone %></li><% } %>
         <% if (clinic.publicEmailDisplay) { %><li><%= clinic.publicEmailDisplay %></li>
-        <% } else if (clinic.websiteContent && clinic.websiteContent['contact.email']) { %><li><%= clinic.websiteContent['contact.email'] %></li><% } %>
-        <li><a href="/clinics/<%= clinic.clinicKey %>/contact">Contact form</a></li>
+        <% } else if (overlayEmail) { %><li><%= overlayEmail %></li><% } %>
+        <% } %>
+        <li><a href="<%= pub('contact') %>">Contact form</a></li>
       </ul>
     </div>
     <div class="ac-public-footer__col">
       <h2 class="ac-public-footer__heading">Legal</h2>
       <nav aria-label="Clinic legal">
-        <a href="/clinics/<%= clinic.clinicKey %>/privacy">Privacy policy</a>
-        <a href="/clinics/<%= clinic.clinicKey %>/terms">Terms of service</a>
+        <a href="<%= pub('privacy') %>">Privacy policy</a>
+        <a href="<%= pub('terms') %>">Terms of service</a>
         <a href="/clinics">ActiveClinic directory</a>
       </nav>
     </div>
   </div>
   <div class="ac-public-footer__legal">
     © <%= new Date().getFullYear() %> <%= clinic.publicName %>. All rights reserved.
-    <% if (clinic.footerLegal) { %><p class="ac-public-footer__disclaimer"><%= clinic.footerLegal %></p><% } %>
+    <% if (clinic.footerLegal || (typeof websiteEdit !== 'undefined' && websiteEdit)) { %><p class="ac-public-footer__disclaimer"><%- include('./website-editable-field', { contentKey: 'footer.legal', fieldValue: clinic.footerLegal || '', fieldType: 'long_text' }) %></p><% } %>
   </div>
 </footer>
