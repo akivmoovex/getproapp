@@ -169,7 +169,12 @@ function mapFoundationChecklist(summary) {
     const src = byKey.get(def.key);
     let state = CHECKLIST_STATE.not_started;
     if (src && src.completed) state = CHECKLIST_STATE.complete;
-    else if (src && !src.completed && summary && summary.status === "in_progress") {
+    else if (
+      src &&
+      !src.completed &&
+      summary &&
+      (summary.onboardingStatus === "in_progress" || summary.status === "in_progress")
+    ) {
       state = CHECKLIST_STATE.needs_attention;
     }
     return {

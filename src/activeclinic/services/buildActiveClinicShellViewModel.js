@@ -203,6 +203,8 @@ async function buildActiveClinicShellViewModel(db, input) {
     },
     pageData: input.pageData || {},
     activeNav,
+    provisioningIncomplete: auth.provisioningIncomplete === true,
+    failedStage: auth.failedStage || null,
   };
 }
 

@@ -87,6 +87,41 @@ test("buildPlatformRuntimeSnapshot: never includes secrets", () => {
   assert.equal(json.includes("postgres://"), false);
   assert.equal(snap.databaseHost, "aws-0-xpcpv.pooler.supabase.com");
   assert.equal(snap.deploymentCode, CODE_MOOVEX_PLATFORM_TESTING);
+  assert.equal("gitSha" in snap, true);
+  assert.equal("schemaCompatible" in snap, true);
+  assert.equal(snap.schemaCompatible, null);
+});
+
+test("buildPlatformRuntimeSnapshot: includes schema compatibility from boot without secrets", () => {
+  const snap = buildPlatformRuntimeSnapshot(
+    {
+      NODE_ENV: "production",
+      DEPLOYMENT_ENV: "testing",
+      PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING,
+      DATABASE_IDENTITY_EXPECTED: "moovex-platform-v7",
+      DATABASE_IDENTITY_ENV: "testing",
+      DATABASE_URL: "postgres://user:password@aws-0-xpcpv.pooler.supabase.com:5432/postgres",
+      SESSION_SECRET: "super-secret-session",
+      GETPRO_GIT_SHA: "0509e3035a8de3908b3b81dec4de0c03d88bd290",
+    },
+    {
+      boot: {
+        schemaCompatibility: {
+          compatible: true,
+          code: "ok",
+          missing: [],
+        },
+      },
+    }
+  );
+  const json = JSON.stringify(snap);
+  assert.equal(json.includes("password"), false);
+  assert.equal(json.includes("super-secret"), false);
+  assert.equal(typeof snap.gitSha, "string");
+  assert.ok(snap.gitSha.length >= 7);
+  assert.equal(snap.schemaCompatible, true);
+  assert.equal(snap.schemaCompatibility.compatible, true);
+  assert.deepEqual(snap.schemaCompatibility.missing, []);
 });
 
 test("createMoovexPlatformRuntimeApp: /__platform/runtime gated", async () => {

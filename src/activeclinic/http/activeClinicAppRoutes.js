@@ -34,6 +34,12 @@ const {
   loadActiveClinicDashboardHome,
 } = require("../services/loadActiveClinicDashboardHome");
 const {
+  PRODUCT,
+  evaluateOrganizationOnboarding,
+  skipOnboardingStep,
+  completeOrganizationOnboarding,
+} = require("../../platform/onboarding");
+const {
   createPlatformIdentitySession,
 } = require("../../platform/session/createDeploymentSession");
 const {
@@ -106,8 +112,120 @@ function registerActiveClinicAppRoutes(app, deps) {
     return res.status(options.status || 200).type("html").send(html);
   }
 
+  function onboardingActor(auth) {
+    return {
+      permissions: (auth && auth.permissions) || [],
+      userId: auth && auth.platformIdentity && auth.platformIdentity.id,
+    };
+  }
+
+  function onboardingScope(auth, extra) {
+    const deployment = getPlatformDeploymentCode(env);
+    return {
+      productCode: PRODUCT.ACTIVECLINIC,
+      organizationId: auth && auth.organization && auth.organization.id,
+      actor: onboardingActor(auth),
+      deploymentCode: deployment && deployment.ok ? deployment.code : "",
+      ...extra,
+    };
+  }
+
+  app.get("/app/onboarding", requireAuth, requirePermission("activeclinic.access"), async (req, res, next) => {
+    try {
+      const evaluation = await evaluateOrganizationOnboarding(
+        getPool(),
+        onboardingScope(req.activeClinicAuth, { persist: true, markResumed: true })
+      );
+      if (
+        !evaluation.ok ||
+        evaluation.canManage !== true ||
+        evaluation.status === "completed" ||
+        evaluation.status === "skipped"
+      ) {
+        return res.redirect(303, "/app");
+      }
+      return await renderShell(req, res, {
+        activeNav: "home",
+        content: "app/onboarding-content.ejs",
+        pageHeader: {
+          title: "Organization setup",
+          description: "Required clinic setup after registration.",
+          actions: [],
+        },
+        breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Setup" }],
+        pageData: { onboarding: evaluation },
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/app/onboarding/skip", requireAuth, requirePermission("activeclinic.access"), async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.redirect(303, "/app/onboarding");
+      }
+      await skipOnboardingStep(
+        getPool(),
+        onboardingScope(req.activeClinicAuth, { stepKey: req.body && req.body.step_key })
+      );
+      return res.redirect(303, "/app/onboarding");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/app/onboarding/continue", requireAuth, requirePermission("activeclinic.access"), async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.redirect(303, "/app/onboarding");
+      }
+      const evaluation = await evaluateOrganizationOnboarding(
+        getPool(),
+        onboardingScope(req.activeClinicAuth, { persist: true, markResumed: true })
+      );
+      const href =
+        evaluation && evaluation.resumeStep && evaluation.resumeStep.destinationUrl
+          ? evaluation.resumeStep.destinationUrl
+          : "/app/onboarding";
+      return res.redirect(303, href);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/app/onboarding/complete", requireAuth, requirePermission("activeclinic.access"), async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.redirect(303, "/app/onboarding");
+      }
+      const completed = await completeOrganizationOnboarding(
+        getPool(),
+        onboardingScope(req.activeClinicAuth)
+      );
+      if (!completed.ok) {
+        return res.redirect(303, "/app/onboarding");
+      }
+      return res.redirect(303, "/app");
+    } catch (err) {
+      return next(err);
+    }
+  });
+
   app.get("/app", requireAuth, requirePermission("activeclinic.access"), async (req, res, next) => {
     try {
+      let gate = { ok: false };
+      try {
+        gate = await evaluateOrganizationOnboarding(
+          getPool(),
+          onboardingScope(req.activeClinicAuth, { persist: true })
+        );
+      } catch {
+        gate = { ok: false };
+      }
+      if (gate.ok && gate.onboardingRequired === true) {
+        return res.redirect(303, "/app/onboarding");
+      }
       const csrfToken = issuePageCsrf(res, req);
       const shellBase = await buildActiveClinicShellViewModel(getPool(), {
         req,

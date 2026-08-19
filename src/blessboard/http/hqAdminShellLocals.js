@@ -195,6 +195,7 @@ async function buildHqAdminShellLocals(req, res, opts) {
     if (item.key === "attendance" && !permissionNavFlags.canViewAttendance) return false;
     if (item.key === "announcements" && !permissionNavFlags.canViewAnnouncements) return false;
     if (item.key === "reports" && !permissionNavFlags.canViewReports) return false;
+    if (item.key === "member-journey" && !permissionNavFlags.canViewJourney) return false;
     if (
       (item.key === "pastoral" || item.key === "pastoral-care") &&
       !permissionNavFlags.canViewPastoral

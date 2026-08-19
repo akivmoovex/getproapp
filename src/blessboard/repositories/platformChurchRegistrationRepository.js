@@ -37,6 +37,7 @@ const SELECT_COLUMNS = `
   organization_id, application_status, provisioning_status,
   provisioning_started_at, provisioned_at, provisioning_failed_at,
   provisioning_error_code, provisioning_error_detail,
+  last_provision_stage,
   support_requested, follow_up_status,
   assigned_support_user_id, first_contacted_at, last_contacted_at, next_follow_up_at,
   risk_decision, risk_reason_codes, risk_decided_at, rejection_reason, review_events,
@@ -595,6 +596,7 @@ async function findApplicationById(client, applicationId) {
  *   provisioningFailedAt?: Date|string|null,
  *   provisioningErrorCode?: string|null,
  *   provisioningErrorDetail?: string|null,
+ *   lastProvisionStage?: string|null,
  *   clearFailureMetadata?: boolean,
  *   legacyStatus?: string|null,
  * }} patch
@@ -626,6 +628,10 @@ async function updateApplicationProvisioningState(client, applicationId, patch) 
               WHEN $8::boolean THEN NULL
               ELSE COALESCE($11, provisioning_error_detail)
             END,
+            last_provision_stage = CASE
+              WHEN $8::boolean THEN NULL
+              ELSE COALESCE($14, last_provision_stage)
+            END,
             status = CASE WHEN $12::boolean THEN $13::text ELSE status END,
             updated_at = now()
       WHERE id = $1
@@ -644,6 +650,7 @@ async function updateApplicationProvisioningState(client, applicationId, patch) 
       !clear && patch.provisioningErrorDetail != null ? patch.provisioningErrorDetail : null,
       setLegacy,
       setLegacy ? patch.legacyStatus : null,
+      !clear && patch.lastProvisionStage != null ? patch.lastProvisionStage : null,
     ]
   );
   return r.rows[0] || null;

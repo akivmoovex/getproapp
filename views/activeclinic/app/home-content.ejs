@@ -23,6 +23,7 @@
     : [];
   var requiredComplete = clinicSetup ? clinicSetup.requiredComplete : 0;
   var requiredTotal = clinicSetup ? clinicSetup.requiredTotal : 0;
+  var organizationConsole = dash.organizationConsole || null;
 
   var primarySections = sections.filter(function (s) {
     return s.key !== 'administration';
@@ -51,6 +52,35 @@
         <dt>Access</dt>
         <dd><%= welcome.roleSummary || shell.roleSummary || 'Staff' %></dd>
       </div>
+      <% if (organizationConsole && organizationConsole.publicPath) { %>
+      <div data-ac-console-public-url="1">
+        <dt>Public URL</dt>
+        <dd>
+          <% if (organizationConsole.websiteHref) { %>
+          <a href="<%= organizationConsole.websiteHref %>"><%= organizationConsole.publicPath %></a>
+          <% } else { %>
+          <%= organizationConsole.publicPath %>
+          <% } %>
+        </dd>
+      </div>
+      <% } %>
+      <% if (organizationConsole && organizationConsole.onboardingStatus) { %>
+      <div data-ac-console-onboarding="<%= organizationConsole.onboardingStatus %>">
+        <dt>Setup</dt>
+        <dd>
+          <% if (organizationConsole.onboardingStatus === 'onboarding_required') { %>
+            Required setup is incomplete
+            <% if (organizationConsole.onboardingHref) { %>
+            · <a href="<%= organizationConsole.onboardingHref %>">Continue setup</a>
+            <% } %>
+          <% } else if (organizationConsole.onboardingStatus === 'recommended') { %>
+            Required setup is complete
+          <% } else { %>
+            Organization setup complete
+          <% } %>
+        </dd>
+      </div>
+      <% } %>
     </dl>
   </article>
 

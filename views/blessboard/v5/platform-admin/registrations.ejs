@@ -48,15 +48,16 @@
         <th>State</th>
         <th>Review reason</th>
         <th>Provisioning</th>
+        <th>Failed stage</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       <% if (!rows.length) { %>
-      <tr><td colspan="8">No registrations match this view.</td></tr>
+      <tr><td colspan="9">No registrations match this view.</td></tr>
       <% } %>
       <% rows.forEach(function (row) { %>
-      <tr data-bb-pa-registration-row="<%= row.id %>" data-product="<%= row.productCode %>" data-lifecycle="<%= row.canonicalLifecycle %>">
+      <tr data-bb-pa-registration-row="<%= row.id %>" data-product="<%= row.productCode %>" data-lifecycle="<%= row.canonicalLifecycle %>" data-partial-provision="<%= row.partialProvision ? '1' : '0' %>" data-failed-stage="<%= row.failedStage || '' %>">
         <td><%= row.productLabel %></td>
         <td><strong><%= row.organizationName || '—' %></strong></td>
         <td>
@@ -64,10 +65,24 @@
           <span class="bb-pa-hint"><%= row.applicantEmail || '' %></span>
         </td>
         <td><%= row.createdLabel || '—' %></td>
-        <td><%= row.canonicalLifecycle %></td>
+        <td>
+          <%= row.canonicalLifecycle %>
+          <% if (row.partialProvision) { %>
+          <span class="bb-pa-chip bb-pa-chip--warn">partial</span>
+          <% } %>
+        </td>
         <td><%= row.reviewReason || '—' %></td>
         <td><%= row.provisioningStatus || '—' %></td>
-        <td><a class="bb-pa-btn bb-pa-btn--ghost" href="<%= row.detailHref %>">Inspect</a></td>
+        <td><%= row.failedStage || '—' %></td>
+        <td>
+          <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= row.detailHref %>">Inspect</a>
+          <% if (row.retryable && row.retryHref) { %>
+          <form method="post" action="<%= row.retryHref %>" class="bb-pa-inline-form" data-bb-pa-retry-provision="1">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <button type="submit" class="bb-pa-btn">Retry provision</button>
+          </form>
+          <% } %>
+        </td>
       </tr>
       <% }) %>
     </tbody>

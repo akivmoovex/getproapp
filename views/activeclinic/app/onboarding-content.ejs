@@ -1,0 +1,65 @@
+<%
+  var onboarding = (pageData && pageData.onboarding) || {};
+  var steps = Array.isArray(onboarding.steps) ? onboarding.steps : [];
+  var resume = onboarding.resumeStep || null;
+  var requiredIncomplete = steps.filter(function (s) {
+    return s.kind === 'required' && s.complete !== true;
+  });
+  var canFinish = requiredIncomplete.length === 0;
+%>
+<section class="ac-dashboard" data-ac-page-section="onboarding" data-ac-onboarding="1" data-ac-onboarding-status="<%= onboarding.status || '' %>">
+  <article class="ac-panel" data-ac-onboarding-card="progress">
+    <h2 class="ac-dashboard__card-title">Organization setup</h2>
+    <p class="ac-dashboard__lead">
+      Finish required setup for this clinic. Recommended items can be skipped and completed later from Home.
+    </p>
+    <% if (onboarding.requiredTotal) { %>
+    <p class="ac-clinic-setup__progress" data-ac-onboarding-progress="1">
+      <%= onboarding.requiredComplete || 0 %> of <%= onboarding.requiredTotal %> required items complete
+    </p>
+    <% } %>
+  </article>
+
+  <article class="ac-panel ac-clinic-setup" data-ac-onboarding-card="steps">
+    <ul class="ac-checklist">
+      <% steps.forEach(function (item) { %>
+      <li
+        data-ac-onboarding-step="<%= item.key %>"
+        data-ac-onboarding-kind="<%= item.kind %>"
+        data-ac-onboarding-complete="<%= item.complete ? '1' : '0' %>"
+      >
+        <span class="ac-checklist__mark" aria-hidden="true"><%= item.complete ? '●' : '○' %></span>
+        <% if (item.destinationUrl && !item.complete) { %>
+          <a href="<%= item.destinationUrl %>"><%= item.label %></a>
+        <% } else { %>
+          <span><%= item.label %></span>
+        <% } %>
+        <span class="ac-muted"> · <%= item.kind === 'required' ? 'Required' : 'Recommended' %></span>
+        <% if (item.skipped) { %><span class="ac-muted"> · Skipped</span><% } %>
+        <% if (!item.complete && item.skippable) { %>
+        <form method="post" action="/app/onboarding/skip" style="display:inline">
+          <%- include('../partials/ac-csrf-field') %>
+          <input type="hidden" name="step_key" value="<%= item.key %>" />
+          <button type="submit" class="ac-btn ac-btn--ghost">Skip</button>
+        </form>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+  </article>
+
+  <div class="ac-action-grid" data-ac-onboarding-actions="1">
+    <% if (resume && resume.destinationUrl) { %>
+    <form method="post" action="/app/onboarding/continue">
+      <%- include('../partials/ac-csrf-field') %>
+      <button type="submit" class="ac-btn">Continue setup</button>
+    </form>
+    <% } %>
+    <% if (canFinish) { %>
+    <form method="post" action="/app/onboarding/complete">
+      <%- include('../partials/ac-csrf-field') %>
+      <button type="submit" class="ac-btn ac-btn--ghost">Go to dashboard</button>
+    </form>
+    <% } %>
+  </div>
+</section>

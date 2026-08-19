@@ -248,6 +248,7 @@ async function submitPlatformRegistration(db, input) {
     await markAdapterLifecycle(adapter, db, application, LIFECYCLE.PROVISION_FAILED, {
       reason,
       organizationId: provisioned && provisioned.organizationId,
+      failedStage: provisioned && provisioned.failedStage,
     });
     return fail(RESULT.PROVISION_FAILED, {
       reviewRequired: false,
@@ -277,6 +278,7 @@ async function submitPlatformRegistration(db, input) {
       reason: REVIEW_REASON.PROVISION_FAILURE,
       organizationId: provisioned.organizationId,
       website,
+      failedStage: "website_instance",
     });
     return fail(RESULT.PROVISION_FAILED, {
       reason: "website_initialization_failed",
@@ -352,6 +354,26 @@ async function resolvePlatformRegistrationReview(db, input) {
       provision: approved,
       env: input.env,
     });
+    if (!website || website.ok === false) {
+      await markAdapterLifecycle(
+        adapter,
+        db,
+        approved.application || { id: input.applicationId },
+        LIFECYCLE.PROVISION_FAILED,
+        {
+          reason: REVIEW_REASON.PROVISION_FAILURE,
+          organizationId: approved.organizationId,
+          website,
+          failedStage: "website_instance",
+        }
+      );
+      return fail(RESULT.PROVISION_FAILED, {
+        reason: "website_initialization_failed",
+        organizationId: approved.organizationId,
+        provision: approved,
+        website,
+      });
+    }
     await markAdapterLifecycle(adapter, db, approved.application || { id: input.applicationId }, LIFECYCLE.ACTIVE, {
       organizationId: approved.organizationId,
       website,

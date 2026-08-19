@@ -143,6 +143,24 @@ async function evaluateStaffEligibility(db, staffRow, identityRow) {
     defaultFacilityId = activeFacilities[0].facilityId;
   }
 
+  let provisioningIncomplete = false;
+  let failedStage = null;
+  try {
+    const {
+      inspectOrganizationProvisioningCompleteness,
+    } = require("../../platform/registration/provisioningRecovery");
+    const completeness = await inspectOrganizationProvisioningCompleteness(db, {
+      productCode: "activeclinic",
+      organizationId: staffRow.organization_id,
+      staffMemberId: staffRow.id,
+    });
+    provisioningIncomplete = completeness.complete !== true;
+    failedStage = completeness.failedStage || null;
+  } catch {
+    provisioningIncomplete = false;
+    failedStage = null;
+  }
+
   return {
     ok: true,
     code: RESULT.OK,
@@ -160,6 +178,8 @@ async function evaluateStaffEligibility(db, staffRow, identityRow) {
     facilityAssignments: activeFacilities,
     defaultFacilityId,
     isNetworkAdmin: Boolean(isOrgWideAdmin || hasOrgWide),
+    provisioningIncomplete,
+    failedStage,
   };
 }
 

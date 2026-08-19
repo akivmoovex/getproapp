@@ -22,6 +22,10 @@ const {
   loadOrganizationClinicSetup,
   presentClinicSetupForViewer,
 } = require("./loadActiveClinicSettingsScreens");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+} = require("../../platform/website/publicWebsiteUrl");
 
 function hasPerm(set, key) {
   return set.has(key);
@@ -151,6 +155,44 @@ async function loadActiveClinicDashboardHome(db, input) {
 
   const mode = empty ? "empty" : "ready";
 
+  const orgKey =
+    (auth.organization && (auth.organization.key || auth.organization.organizationKey)) ||
+    (shell.organization && (shell.organization.key || shell.organization.organizationKey)) ||
+    "";
+  const canWebsite = hasPerm(perms, "website.view") || hasPerm(perms, "website.edit");
+  const canOrgProfile =
+    hasPerm(perms, "activeclinic.organization.view") ||
+    hasPerm(perms, "activeclinic.organization.manage");
+  const showOrganizationConsole =
+    canSeeClinicSetupPanel(perms) || canWebsite || canOrgProfile;
+  let onboardingStatus = null;
+  if (clinicSetup && clinicSetup.presentation === "incomplete") onboardingStatus = "onboarding_required";
+  else if (clinicSetup && clinicSetup.presentation === "recommended") onboardingStatus = "recommended";
+  else if (clinicSetup && clinicSetup.presentation === "complete") onboardingStatus = "completed";
+  const organizationConsole = showOrganizationConsole
+    ? {
+        publicPath: orgKey
+          ? buildPublicOrganizationWebsitePath({
+              product: PRODUCT_CODE.ACTIVECLINIC,
+              organizationKey: orgKey,
+            })
+          : null,
+        websiteHref: canWebsite ? "/app/settings/website" : null,
+        organizationHref: canOrgProfile ? "/app/settings/organization" : null,
+        staffHref: hasPerm(perms, "activeclinic.staff.view") ? "/app/staff" : null,
+        accessHref: hasPerm(perms, "activeclinic.staff.assign_access") ? "/app/access" : null,
+        facilitiesHref:
+          hasPerm(perms, "activeclinic.facility.create") ||
+          hasPerm(perms, "activeclinic.facility.update") ||
+          hasPerm(perms, "activeclinic.facility.archive")
+            ? "/app/facilities"
+            : null,
+        settingsHref: "/app/settings",
+        onboardingHref: onboardingStatus === "onboarding_required" ? "/app/onboarding" : null,
+        onboardingStatus,
+      }
+    : null;
+
   const metrics = [];
   if (
     hasPerm(perms, "activeclinic.facility.create") ||
@@ -214,6 +256,7 @@ async function loadActiveClinicDashboardHome(db, input) {
     modules: buckets,
     authorizedTiles,
     clinicSetup,
+    organizationConsole,
     sessionTasks,
     setupTasks,
     quickActions,

@@ -7,13 +7,55 @@
  */
 
 const instanceRepo = require("../website/instanceRepository");
-const { provisionWebsiteInstance } = require("../website/provisionService");
+const { provisionWebsiteInstance, starterEntries } = require("../website/provisionService");
+const contentService = require("../website/contentService");
+const { getWebsiteTemplate } = require("../website/templateRegistry");
 
 async function maybeSeedTemplateContent(adapter, db, input) {
   if (!adapter || typeof adapter.seedTemplateContent !== "function") {
     return { ok: true, skipped: true, reason: "adapter_seed_not_defined" };
   }
   return adapter.seedTemplateContent(db, input);
+}
+
+async function seedMissingWebsiteContent(db, adapter, input, instance) {
+  if (!instance || !instance.id) {
+    return { ok: true, skipped: true, reason: "no_instance" };
+  }
+  const counted = await db.query(
+    `SELECT COUNT(*)::int AS n FROM platform.website_content WHERE instance_id = $1`,
+    [instance.id]
+  );
+  const existingCount = counted.rows[0] && counted.rows[0].n != null ? Number(counted.rows[0].n) : 0;
+  if (existingCount > 0) {
+    return { ok: true, skipped: true, reason: "content_present", seeded: 0 };
+  }
+  let defaults = {};
+  if (adapter && typeof adapter.websiteDefaults === "function") {
+    defaults =
+      (await adapter.websiteDefaults({
+        organizationId: input.organizationId,
+        application: input.application,
+        provision: input.provision,
+        env: input.env,
+      })) || {};
+  }
+  const templateId = instance.templateId || defaults.templateId;
+  const templateVersion = instance.templateVersion || defaults.templateVersion || 1;
+  const template = getWebsiteTemplate(templateId, templateVersion);
+  if (!template) {
+    return { ok: false, skipped: false, reason: "template_not_found", seeded: 0 };
+  }
+  const publishStarter =
+    defaults.seedDefaults !== false &&
+    (String(instance.status || "") === "published" || String(defaults.status || "") === "published");
+  const seeded = await contentService.seedWebsiteContent(
+    db,
+    instance,
+    starterEntries(template, defaults.contentOverrides, publishStarter),
+    null
+  );
+  return { ok: Boolean(seeded && seeded.ok), skipped: false, ...seeded };
 }
 
 async function initializeOrganizationWebsite(db, input) {
@@ -31,18 +73,20 @@ async function initializeOrganizationWebsite(db, input) {
     productCode,
   });
   if (existing) {
+    const contentRepair = await seedMissingWebsiteContent(db, adapter, input, existing);
     const templateCopy = await maybeSeedTemplateContent(adapter, db, {
       ...input,
       instance: existing,
       created: false,
     });
     return {
-      ok: true,
+      ok: contentRepair.ok !== false,
       created: false,
       existed: true,
       instance: existing,
       source: "existing",
       templateCopy,
+      contentRepair,
     };
   }
 

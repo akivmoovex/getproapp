@@ -8,6 +8,13 @@ const { submitPlatformRegistration, resolvePlatformRegistrationReview } = requir
 const { initializeOrganizationWebsite } = require("./initializeOrganizationWebsite");
 const { listUnifiedRegistrations } = require("./unifiedRegistrationQueue");
 const statusCompatibility = require("./statusCompatibility");
+const provisioningStages = require("./provisioningStages");
+const {
+  inspectOrganizationProvisioningCompleteness,
+  resumeOrganizationProvisioning,
+  isRetryablePartialProvision,
+  describePartialProvision,
+} = require("./provisioningRecovery");
 
 function getAdapter(productCode) {
   const product = String(productCode || "");
@@ -37,4 +44,9 @@ module.exports = {
   listUnifiedRegistrations,
   initializeOrganizationWebsite,
   ...statusCompatibility,
+  ...provisioningStages,
+  inspectOrganizationProvisioningCompleteness,
+  resumeOrganizationProvisioning,
+  isRetryablePartialProvision,
+  describePartialProvision,
 };

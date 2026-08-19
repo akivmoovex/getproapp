@@ -155,6 +155,9 @@
         <dt>Website</dt>
         <dd data-ac-website-state="<%= website %>"><%= website %></dd>
       </div>
+      <% if (app.last_provision_stage) { %>
+      <div><dt>Failed stage</dt><dd data-ac-last-provision-stage="1"><%= app.last_provision_stage %></dd></div>
+      <% } %>
       <% if (app.last_provision_error) { %>
       <div><dt>Last provision error</dt><dd><%= app.last_provision_error %></dd></div>
       <% } %>
@@ -169,7 +172,7 @@
   </section>
   <% } %>
 
-  <% if (pending || ((app.status === 'approved' || app.status === 'active') && app.provisioning_status !== 'provisioned')) { %>
+  <% if (pending || ((app.status === 'approved' || app.status === 'active' || app.status === 'provision_failed') && app.provisioning_status !== 'provisioned')) { %>
   <form method="post" action="/admin/clinic-registrations/<%= app.id %>/approve" data-ac-clinic-reg-approve="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <% if (needsSecondClinicAck) { %>

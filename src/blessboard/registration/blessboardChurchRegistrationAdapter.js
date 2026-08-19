@@ -301,6 +301,7 @@ async function markLifecycle(db, input) {
       organizationId: input.organizationId || undefined,
       provisioningFailedAt: new Date().toISOString(),
       provisioningErrorCode: String(input.reason || "provision_failed").slice(0, 80),
+      lastProvisionStage: input.failedStage || "website_instance",
     });
     return { ok: true };
   }

@@ -2,6 +2,7 @@
 
 const { PRODUCT } = require("./constants");
 const { toCanonicalLifecycle } = require("./lifecycle");
+const { describePartialProvision } = require("./provisioningRecovery");
 
 function formatTs(value) {
   if (!value) return "";
@@ -44,6 +45,7 @@ async function listUnifiedRegistrations(db, filters) {
               application_status,
               provisioning_status,
               provisioning_error_code AS review_reason,
+              last_provision_stage,
               organization_id,
               selected_plan
              FROM blessboard.platform_church_registration_applications
@@ -65,6 +67,7 @@ async function listUnifiedRegistrations(db, filters) {
               status AS application_status,
               provisioning_status,
               last_provision_error AS review_reason,
+              last_provision_stage,
               organization_id,
               NULL::text AS selected_plan
              FROM activeclinic.clinic_registration_applications
@@ -75,6 +78,7 @@ async function listUnifiedRegistrations(db, filters) {
 
   const mapped = [];
   for (const row of clinicRows.rows || []) {
+    const partial = describePartialProvision(PRODUCT.ACTIVECLINIC, row);
     mapped.push({
       id: row.id,
       productCode: PRODUCT.ACTIVECLINIC,
@@ -91,9 +95,18 @@ async function listUnifiedRegistrations(db, filters) {
       plan: row.selected_plan || null,
       canonicalLifecycle: toCanonicalLifecycle(PRODUCT.ACTIVECLINIC, row),
       detailHref: detailHref(PRODUCT.ACTIVECLINIC, row.id),
+      failedStage: partial.failedStage,
+      partialProvision: partial.partialProvision,
+      retryable: partial.retryable,
+      retryHref: partial.retryHref,
     });
   }
   for (const row of churchRows.rows || []) {
+    const churchRow = {
+      ...row,
+      application_status: row.application_status,
+    };
+    const partial = describePartialProvision(PRODUCT.BLESSBOARD, churchRow);
     mapped.push({
       id: row.id,
       productCode: PRODUCT.BLESSBOARD,
@@ -108,11 +121,12 @@ async function listUnifiedRegistrations(db, filters) {
       reviewReason: row.review_reason || null,
       organizationId: row.organization_id || null,
       plan: row.selected_plan || null,
-      canonicalLifecycle: toCanonicalLifecycle(PRODUCT.BLESSBOARD, {
-        ...row,
-        application_status: row.application_status,
-      }),
+      canonicalLifecycle: toCanonicalLifecycle(PRODUCT.BLESSBOARD, churchRow),
       detailHref: detailHref(PRODUCT.BLESSBOARD, row.id),
+      failedStage: partial.failedStage,
+      partialProvision: partial.partialProvision,
+      retryable: partial.retryable,
+      retryHref: partial.retryHref,
     });
   }
 

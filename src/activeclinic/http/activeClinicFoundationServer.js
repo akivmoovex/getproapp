@@ -629,6 +629,12 @@ async function startActiveClinicFoundationServer(opts) {
     } = require("../../startup/blessBoardOrgDbGate");
     await assertPlatformDatabaseIdentityOrExit(pool);
   }
+  {
+    const {
+      assertV7RuntimeSchemaCompatibilityOrExit,
+    } = require("../../platform/schema/v7RuntimeSchemaCompatibility");
+    await assertV7RuntimeSchemaCompatibilityOrExit(pool, { env: process.env });
+  }
 
   try {
     const schemaStatus = await inspectActiveClinicPublicSchema(pool);

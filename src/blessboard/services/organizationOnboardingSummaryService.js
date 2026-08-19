@@ -53,6 +53,20 @@ const CHECKLIST_LABELS = Object.freeze({
   publish: "Publish",
 });
 
+/** Required church setup — logo/website extras never block HQ dashboard. */
+const REQUIRED_CHECKLIST_KEYS = Object.freeze([
+  "organization_details",
+  "first_branch",
+  "contact_details",
+]);
+
+const RECOMMENDED_CHECKLIST_KEYS = Object.freeze([
+  "service_times",
+  "logo",
+  "preview",
+  "publish",
+]);
+
 /**
  * Derive site publication aggregate from public_pages counts.
  * Suspended org/church is reported separately — not as a publication enum.
@@ -260,9 +274,9 @@ function buildChecklist(facts, organizationKey, options = {}) {
       source: "derived",
       explanation: logoComplete
         ? "Church branding logo media is present."
-        : "No dedicated logo/branding field in V5; not inferred from generic media.",
-      actionUrl: null,
-      actionLabel: null,
+        : "Recommended. Church-managed logos are optional; use organization settings if a mark is available.",
+      actionUrl: paSafe ? null : "/hq/settings",
+      actionLabel: paSafe ? null : "Organization settings",
     },
     {
       key: "preview",
@@ -292,16 +306,21 @@ function buildChecklist(facts, organizationKey, options = {}) {
 }
 
 /**
- * Prefer stored terminal statuses; otherwise derive from checklist.
+ * Prefer stored terminal statuses; otherwise derive from required checklist items.
+ * Recommended items (logo, website extras) never block completion.
  * Manual completed/skipped overrides are respected even if checklist incomplete.
  * @param {string|null} storedStatus
- * @param {{ completed: boolean }[]} checklist
+ * @param {{ key?: string, completed: boolean }[]} checklist
  * @returns {{ status: string, derived: boolean, allRequiredComplete: boolean }}
  */
 function resolveOnboardingStatus(storedStatus, checklist) {
   const stored = String(storedStatus || "not_started");
-  const completedCount = checklist.filter((c) => c.completed).length;
-  const allRequiredComplete = completedCount === checklist.length && checklist.length > 0;
+  const items = Array.isArray(checklist) ? checklist : [];
+  const requiredItems = items.filter((c) => REQUIRED_CHECKLIST_KEYS.includes(String(c.key || "")));
+  const requiredScope = requiredItems.length ? requiredItems : items;
+  const completedCount = items.filter((c) => c.completed).length;
+  const allRequiredComplete =
+    requiredScope.length > 0 && requiredScope.every((c) => c.completed === true);
 
   if (stored === "completed" || stored === "skipped") {
     return { status: stored, derived: false, allRequiredComplete };
@@ -505,6 +524,8 @@ module.exports = {
   ONBOARDING_STATUSES,
   CHECKLIST_KEYS,
   CHECKLIST_LABELS,
+  REQUIRED_CHECKLIST_KEYS,
+  RECOMMENDED_CHECKLIST_KEYS,
   derivePublicationStatus,
   buildChecklist,
   resolveOnboardingStatus,

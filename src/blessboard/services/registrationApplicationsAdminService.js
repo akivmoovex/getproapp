@@ -2498,14 +2498,24 @@ async function approveAndProvisionRegistrationApplication(db, input) {
           String(app.provisioning_status) === "provisioned" &&
           app.organization_id
         ) {
-          await client.query("COMMIT");
-          return {
-            ok: true,
-            status: STATUS.ALREADY_PROVISIONED,
-            alreadyProvisioned: true,
-            organizationId: String(app.organization_id),
-            organizationKey: app.organization_key != null ? String(app.organization_key) : null,
-          };
+          const {
+            inspectOrganizationProvisioningCompleteness,
+          } = require("../../platform/registration/provisioningRecovery");
+          const completeness = await inspectOrganizationProvisioningCompleteness(client, {
+            productCode: "blessboard",
+            organizationId: app.organization_id,
+            application: app,
+          });
+          if (completeness.complete) {
+            await client.query("COMMIT");
+            return {
+              ok: true,
+              status: STATUS.ALREADY_PROVISIONED,
+              alreadyProvisioned: true,
+              organizationId: String(app.organization_id),
+              organizationKey: app.organization_key != null ? String(app.organization_key) : null,
+            };
+          }
         }
         if (!String(app.contact_email || "").trim()) {
           await client.query("ROLLBACK");
@@ -2532,11 +2542,21 @@ async function approveAndProvisionRegistrationApplication(db, input) {
           }
         } else {
           const appStatus = String(app.application_status || "");
-          if (appStatus === "rejected" || appStatus === "cancelled" || appStatus === "closed") {
+          const incompleteRetry =
+            String(app.provisioning_status) === "provisioning_failed" ||
+            (app.organization_id && String(app.provisioning_status) !== "provisioned");
+          if (appStatus === "rejected" || appStatus === "cancelled") {
             await client.query("ROLLBACK");
             return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
           }
-          if (!["submitted", "duplicate_review", "review_required", "provisioning"].includes(appStatus)) {
+          if (appStatus === "closed" && !incompleteRetry) {
+            await client.query("ROLLBACK");
+            return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
+          }
+          if (
+            !["submitted", "duplicate_review", "review_required", "provisioning", "provision_failed", "active"].includes(appStatus) &&
+            !incompleteRetry
+          ) {
             await client.query("ROLLBACK");
             return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
           }

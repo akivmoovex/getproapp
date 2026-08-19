@@ -169,6 +169,7 @@ const {
   tenantFromTransfer,
   STATUS: TRANSFER_STATUS,
 } = require("../services/authTransferService");
+const { PRODUCT, resolvePostLoginPath } = require("../onboarding");
 const { sha256Hex } = require("../session/sessionToken");
 
 const UNAVAILABLE_STATUS = 503;
@@ -1365,6 +1366,23 @@ function createV5FoundationApp(options) {
       if (!dest) {
         dest = safeTenantNextPath(redeemed.returnPath) || defaultTenantPostLoginPath([]);
       }
+      if (dest === "/hq" || dest === "/hq/onboarding") {
+        try {
+          const onboardingDest = await resolvePostLoginPath(getPool(), {
+            productCode: PRODUCT.BLESSBOARD,
+            organizationId: tenant.organization.id,
+            actor: {
+              userId: redeemed.transfer && redeemed.transfer.userId,
+              roles: dest === "/hq" || dest === "/hq/onboarding" ? ["church_hq_admin"] : [],
+            },
+            requestedPath: dest,
+            deploymentCode: deployment.code,
+          });
+          if (onboardingDest && onboardingDest.path) dest = onboardingDest.path;
+        } catch {
+          /* keep dest */
+        }
+      }
       return res.redirect(303, dest);
     } catch {
       return sendAuthError(req, res, 503, "Sign-in is temporarily unavailable.");
@@ -1723,6 +1741,12 @@ async function startV5FoundationServer(opts) {
     assertPlatformDatabaseIdentityOrExit,
   } = require("../../startup/blessBoardOrgDbGate");
   await assertPlatformDatabaseIdentityOrExit(pool);
+  {
+    const {
+      assertV7RuntimeSchemaCompatibilityOrExit,
+    } = require("../schema/v7RuntimeSchemaCompatibility");
+    await assertV7RuntimeSchemaCompatibilityOrExit(pool, { env: process.env });
+  }
 
   // BlessBoard product routes remain registered inside createV5FoundationApp
   // (registerBlessBoardRoutes is the documented boundary; extraction deferred).

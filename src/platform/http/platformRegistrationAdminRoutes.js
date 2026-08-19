@@ -1,6 +1,10 @@
 "use strict";
 
 const { listUnifiedRegistrations } = require("../registration/unifiedRegistrationQueue");
+const { PRODUCT } = require("../registration/constants");
+const { resumeOrganizationProvisioning } = require("../registration/provisioningRecovery");
+const { CSRF_FIELD, validateCsrf } = require("./v5Csrf");
+const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 
 function registerPlatformRegistrationAdminRoutes(router, deps) {
   const {
@@ -35,6 +39,51 @@ function registerPlatformRegistrationAdminRoutes(router, deps) {
       return next(err);
     }
   });
+
+  router.post(
+    "/admin/registrations/:product/:id/retry-provision",
+    requireApex,
+    requirePlatformAdmin,
+    async (req, res, next) => {
+      try {
+        setAdminNoStore(res);
+        const productCode = String(req.params.product || "").trim().toLowerCase();
+        const id = String(req.params.id || "").trim();
+        const listPath = "/admin/registrations";
+        const submitted = req.body && req.body[CSRF_FIELD];
+        if (!validateCsrf(req, submitted, env)) {
+          return res.redirect(303, `${listPath}?error=csrf`);
+        }
+        if (productCode !== PRODUCT.ACTIVECLINIC && productCode !== PRODUCT.BLESSBOARD) {
+          return res.redirect(303, `${listPath}?error=invalid`);
+        }
+        const deployment = getPlatformDeploymentCode(env);
+        const actorUserId =
+          req.platformAdminContext && req.platformAdminContext.userId
+            ? req.platformAdminContext.userId
+            : null;
+        const result = await resumeOrganizationProvisioning(getPool(), {
+          productCode,
+          applicationId: id,
+          actorUserId,
+          actorIdentityId: actorUserId,
+          dataEnvironment: "testing",
+          deploymentCode: deployment && deployment.ok ? deployment.code : undefined,
+          env,
+        });
+        const detailHref =
+          productCode === PRODUCT.ACTIVECLINIC
+            ? `/admin/clinic-registrations/${encodeURIComponent(id)}`
+            : `/admin/registration-applications/${encodeURIComponent(id)}`;
+        if (!result || result.ok === false) {
+          return res.redirect(303, `${detailHref}?error=retry_failed`);
+        }
+        return res.redirect(303, `${detailHref}?notice=provision_retried`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
 }
 
 module.exports = {

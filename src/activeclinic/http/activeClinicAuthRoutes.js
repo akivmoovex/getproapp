@@ -40,6 +40,7 @@ const {
   renderOrgSelectPage,
   renderChangePasswordPage,
 } = require("./renderActiveClinicAuth");
+const { PRODUCT, resolvePostLoginPath } = require("../../platform/onboarding");
 
 const SELECTION_COOKIE = "activeclinic_org_xfer";
 
@@ -64,6 +65,23 @@ function safeNextPath(raw) {
   if (s.includes("://") || s.includes("\\")) return "/app";
   if (s.length > 200) return "/app";
   return s === "/" ? "/app" : s;
+}
+
+async function activeClinicPostLoginPath(db, result, requestedNext, deploymentCode) {
+  const elig = result && result.eligibility;
+  const organizationId = elig && elig.organization && elig.organization.id;
+  if (!organizationId) return safeNextPath(requestedNext);
+  const resolved = await resolvePostLoginPath(db, {
+    productCode: PRODUCT.ACTIVECLINIC,
+    organizationId,
+    actor: {
+      permissions: elig.permissions || [],
+      userId: result.session && (result.session.platformIdentityId || result.session.userId),
+    },
+    requestedPath: safeNextPath(requestedNext),
+    deploymentCode: deploymentCode || "",
+  });
+  return resolved.path || safeNextPath(requestedNext);
 }
 
 function loginErrorMessage(result) {
@@ -200,7 +218,13 @@ function registerActiveClinicAuthRoutes(app, deps) {
       if (result.mustChangePassword || result.status === AUTH_STATUS.MUST_CHANGE_PASSWORD) {
         return res.redirect(303, "/account/change-password");
       }
-      return res.redirect(303, safeNextPath(req.body && req.body.next));
+      const dest = await activeClinicPostLoginPath(
+        getPool(),
+        result,
+        req.body && req.body.next,
+        deployment.code
+      );
+      return res.redirect(303, dest);
     } catch (err) {
       return next(err);
     }
@@ -251,7 +275,13 @@ function registerActiveClinicAuthRoutes(app, deps) {
       if (completed.mustChangePassword) {
         return res.redirect(303, "/account/change-password");
       }
-      return res.redirect(303, "/app");
+      const dest = await activeClinicPostLoginPath(
+        getPool(),
+        completed,
+        "/app",
+        deployment.code
+      );
+      return res.redirect(303, dest);
     } catch (err) {
       return next(err);
     }

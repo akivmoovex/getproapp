@@ -160,6 +160,8 @@ function createLoadActiveClinicAuth(deps) {
         mustChangePassword: identityRow.must_change_password === true,
         session,
         isNetworkAdmin: elig.isNetworkAdmin,
+        provisioningIncomplete: elig.provisioningIncomplete === true,
+        failedStage: elig.failedStage || null,
         // P07 billing/cashier compatibility aliases
         tenantId: elig.organization && elig.organization.id,
         staff: elig.staffMember,

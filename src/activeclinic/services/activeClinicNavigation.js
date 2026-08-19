@@ -139,6 +139,14 @@ const NAV_ITEMS = Object.freeze([
     group: "management",
   },
   {
+    key: "website",
+    label: "Website",
+    href: "/app/settings/website",
+    anyOf: ["website.view", "website.edit"],
+    icon: "language",
+    group: "management",
+  },
+  {
     key: "settings",
     label: "Settings",
     href: "/app/settings",
@@ -210,6 +218,8 @@ function matchActiveNavKey(pathname) {
   if (path.startsWith("/app/staff")) return "staff";
   if (path.startsWith("/app/facilities")) return "facilities";
   if (path.startsWith("/app/access")) return "access";
+  if (path.startsWith("/app/settings/website")) return "website";
+  if (path.startsWith("/app/onboarding")) return "home";
   if (path.startsWith("/app/settings")) return "settings";
   if (path.startsWith("/app/select-facility")) return "home";
   if (path.startsWith("/app/select-organization")) return "home";

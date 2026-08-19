@@ -133,6 +133,14 @@
         <% if (typeof flash !== 'undefined' && flash && flash.message) { %>
         <p class="ac-flash ac-flash--<%= flash.type || 'success' %>" role="status"><%= flash.message %></p>
         <% } %>
+        <% if (shell && shell.provisioningIncomplete) { %>
+        <p
+          class="ac-flash ac-flash--warn"
+          role="status"
+          data-ac-provisioning-incomplete="1"
+          data-ac-failed-stage="<%= shell.failedStage || '' %>"
+        >This clinic is still being set up<% if (shell.failedStage) { %> (<%= shell.failedStage.replace(/_/g, ' ') %>)<% } %>. Some website or configuration features may be unavailable until Platform Admin finishes provisioning.</p>
+        <% } %>
 
         <header class="ac-page-header">
           <div>

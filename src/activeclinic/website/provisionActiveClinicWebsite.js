@@ -1,8 +1,10 @@
 "use strict";
 
 const { withProvisioningTransaction } = require("../../platform/db/provisioningTransaction");
-const { provisionWebsiteInstance } = require("../../platform/website/provisionService");
+const { provisionWebsiteInstance, starterEntries } = require("../../platform/website/provisionService");
 const instanceRepo = require("../../platform/website/instanceRepository");
+const contentService = require("../../platform/website/contentService");
+const { getWebsiteTemplate } = require("../../platform/website/templateRegistry");
 const { recordWebsiteAudit } = require("../../platform/website/auditService");
 const {
   registerActiveClinicWebsiteTemplate,
@@ -46,6 +48,37 @@ async function provisionActiveClinicWebsite(db, input) {
     productCode: "activeclinic",
   });
   if (existing && input.allowExisting !== false) {
+    const counted = await db.query(
+      `SELECT COUNT(*)::int AS n FROM platform.website_content WHERE instance_id = $1`,
+      [existing.id]
+    );
+    const contentCount = counted.rows[0] && counted.rows[0].n != null ? Number(counted.rows[0].n) : 0;
+    if (contentCount === 0) {
+      const template = getWebsiteTemplate(
+        existing.templateId || ACTIVECLINIC_TEMPLATE_ID,
+        existing.templateVersion || input.templateVersion || ACTIVECLINIC_TEMPLATE_VERSION
+      );
+      if (template) {
+        await contentService.seedWebsiteContent(
+          db,
+          existing,
+          starterEntries(
+            template,
+            {
+              ...starterOverrides(input.publicName, {
+                phone: input.phone || input.contactPhone || "",
+                email: input.email || input.contactEmail || "",
+                address: input.address || "",
+                hours: input.hours || "",
+              }),
+              ...(input.contentOverrides || {}),
+            },
+            String(existing.status || "") === "published"
+          ),
+          input.actorIdentityId || null
+        );
+      }
+    }
     return { ok: true, code: instanceRepo.RESULT.DUPLICATE, instance: existing, created: false };
   }
 
@@ -165,6 +198,18 @@ async function provisionActiveClinicClinic(db, input) {
           return { ok: false, code: RESULT.FACILITY_FAILED, reason: createdFacility.code };
         }
       }
+    }
+
+    if (input.skipWebsite === true) {
+      return {
+        ok: true,
+        code: RESULT.OK,
+        healthcareOrganization: hco,
+        facility,
+        instance: null,
+        created: false,
+        skippedWebsite: true,
+      };
     }
 
     await client.query("SAVEPOINT ac_clinic_website");

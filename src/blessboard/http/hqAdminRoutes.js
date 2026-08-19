@@ -72,6 +72,16 @@ const {
   clearSupportContextCookie,
 } = require("../../platform/http/supportContextCookie");
 const { getApexOrigin } = require("./tenantLoginHelpers");
+const {
+  PRODUCT,
+  evaluateOrganizationOnboarding,
+  skipOnboardingStep,
+  completeOrganizationOnboarding,
+} = require("../../platform/onboarding");
+const {
+  PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
+} = require("../../platform/website/publicWebsiteUrl");
 
 /**
  * @param {string} relativePath
@@ -219,6 +229,28 @@ function createHqAdminRouter(deps) {
     return requireHqAccess(req, res, next);
   }
 
+  function onboardingActor(req) {
+    const authz = req.blessBoardAuthorizationContext || {};
+    const session = req.v5Session && req.v5Session.session;
+    return {
+      effectiveRoles: authz.effectiveRoles || [],
+      roles: authz.effectiveRoles || [],
+      userId: session && session.userId,
+    };
+  }
+
+  function onboardingScope(req, extra) {
+    const tenant = resolveTenantForAuthorization(req);
+    const deployment = getPlatformDeploymentCode(env);
+    return {
+      productCode: PRODUCT.BLESSBOARD,
+      organizationId: tenant && tenant.organization && tenant.organization.id,
+      actor: onboardingActor(req),
+      deploymentCode: deployment && deployment.ok ? deployment.code : "",
+      ...extra,
+    };
+  }
+
   /**
    * @param {import('express').Request} req
    * @param {import('express').Response} res
@@ -310,16 +342,101 @@ function createHqAdminRouter(deps) {
   }
 
   router.get("/hq", rejectApex, gateHq, async (req, res) => {
+    let gate = { ok: false };
+    try {
+      gate = await evaluateOrganizationOnboarding(getPool(), onboardingScope(req, { persist: true }));
+    } catch {
+      gate = { ok: false };
+    }
+    if (gate.ok && gate.onboardingRequired === true) {
+      return res.redirect(303, "/hq/onboarding");
+    }
     const listResult = await loadBranchList(req, res);
     if (!listResult) return;
+    const tenant = resolveTenantForAuthorization(req);
+    const orgKey = tenant && tenant.organization && tenant.organization.key;
+    const organizationConsole = {
+      publicPath: orgKey
+        ? buildPublicOrganizationWebsitePath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+          })
+        : null,
+      websiteHref: "/hq/website",
+      organizationHref: "/hq/settings",
+      staffHref: "/hq/settings/staff-access",
+      branchesHref: "/hq/branches",
+      settingsHref: "/hq/settings",
+      planHref: "/hq/settings",
+      onboardingHref: null,
+      onboardingStatus: gate.ok ? gate.status : null,
+    };
     const html = renderHqView(
       "hq/dashboard.ejs",
       await shellLocals(req, res, "home", {
         branches: listResult.branches,
         activeBranchCount: listResult.activeCount || 0,
+        organizationConsole,
       })
     );
     return res.status(200).type("html").send(html);
+  });
+
+  router.get("/hq/onboarding", rejectApex, gateHq, async (req, res) => {
+    const evaluation = await evaluateOrganizationOnboarding(
+      getPool(),
+      onboardingScope(req, { persist: true, markResumed: true })
+    );
+    if (
+      !evaluation.ok ||
+      evaluation.canManage !== true ||
+      evaluation.status === "completed" ||
+      evaluation.status === "skipped"
+    ) {
+      return res.redirect(303, "/hq");
+    }
+    const html = renderHqView(
+      "hq/onboarding.ejs",
+      await shellLocals(req, res, "home", { onboarding: evaluation })
+    );
+    return res.status(200).type("html").send(html);
+  });
+
+  router.post("/hq/onboarding/skip", rejectApex, gateHq, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    }
+    await skipOnboardingStep(getPool(), onboardingScope(req, { stepKey: req.body && req.body.step_key }));
+    return res.redirect(303, "/hq/onboarding");
+  });
+
+  router.post("/hq/onboarding/continue", rejectApex, gateHq, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    }
+    const evaluation = await evaluateOrganizationOnboarding(
+      getPool(),
+      onboardingScope(req, { persist: true, markResumed: true })
+    );
+    const href =
+      evaluation && evaluation.resumeStep && evaluation.resumeStep.destinationUrl
+        ? evaluation.resumeStep.destinationUrl
+        : "/hq/onboarding";
+    return res.redirect(303, href);
+  });
+
+  router.post("/hq/onboarding/complete", rejectApex, gateHq, async (req, res) => {
+    const submitted = req.body && req.body[CSRF_FIELD];
+    if (!validateCsrf(req, submitted, env)) {
+      return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+    }
+    const completed = await completeOrganizationOnboarding(getPool(), onboardingScope(req));
+    if (!completed.ok) {
+      return res.redirect(303, "/hq/onboarding");
+    }
+    return res.redirect(303, "/hq");
   });
 
   router.get("/hq/branches", rejectApex, gateHq, requireBranchesView, async (req, res) => {

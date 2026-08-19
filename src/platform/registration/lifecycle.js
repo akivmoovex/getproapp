@@ -26,12 +26,19 @@ function fromActiveClinic(row) {
   if (status === LIFECYCLE.PROVISION_FAILED || provisioning === "failed" || provisioning === "provisioning_failed") {
     return LIFECYCLE.PROVISION_FAILED;
   }
+  if (provisioning === "website_pending") return LIFECYCLE.PROVISION_FAILED;
   if (status === LIFECYCLE.PROVISIONING || provisioning === "in_progress" || provisioning === "provisioning") {
     return LIFECYCLE.PROVISIONING;
   }
+  if (status === LIFECYCLE.ACTIVE && provisioning && provisioning !== "provisioned") {
+    return LIFECYCLE.PROVISION_FAILED;
+  }
   if (status === LIFECYCLE.ACTIVE) return LIFECYCLE.ACTIVE;
-  if (status === "approved" && (provisioning === "provisioned" || provisioning === "website_pending")) {
+  if (status === "approved" && provisioning === "provisioned") {
     return LIFECYCLE.ACTIVE;
+  }
+  if (status === "approved" && provisioning === "website_pending") {
+    return LIFECYCLE.PROVISION_FAILED;
   }
   if (status === "approved") return LIFECYCLE.APPROVED;
   if (status === LIFECYCLE.REVIEW_REQUIRED || status === "pending_review") {
@@ -50,8 +57,12 @@ function fromBlessBoard(row) {
   if (status === LIFECYCLE.PROVISION_FAILED || provisioning === "provisioning_failed") {
     return LIFECYCLE.PROVISION_FAILED;
   }
+  if (provisioning === "website_pending") return LIFECYCLE.PROVISION_FAILED;
   if (status === LIFECYCLE.PROVISIONING || provisioning === "provisioning") {
     return LIFECYCLE.PROVISIONING;
+  }
+  if (status === LIFECYCLE.ACTIVE && provisioning && provisioning !== "provisioned") {
+    return LIFECYCLE.PROVISION_FAILED;
   }
   if (status === LIFECYCLE.ACTIVE) return LIFECYCLE.ACTIVE;
   if (provisioning === "provisioned" && row.organization_id) return LIFECYCLE.ACTIVE;

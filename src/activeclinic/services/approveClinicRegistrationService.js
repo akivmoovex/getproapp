@@ -38,6 +38,10 @@ const {
   TEMPLATE,
   sendActiveClinicEmail,
 } = require("./activeClinicEmailDelivery");
+const {
+  inspectOrganizationProvisioningCompleteness,
+} = require("../../platform/registration/provisioningRecovery");
+const { STAGE } = require("../../platform/registration/provisioningStages");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -142,13 +146,48 @@ async function markLatestApprovalDelivery(client, applicationId, deliveryStatus)
   await updateReviewEventDelivery(client, latest.rows[0].id, deliveryStatus);
 }
 
+function testFailureInjectionEnabled(input) {
+  if (!input || input.allowTestFailureInjection !== true) return false;
+  if (String(process.env.NODE_ENV || "") === "production") return false;
+  if (String((input && input.dataEnvironment) || "") === "production") return false;
+  return true;
+}
+
+function requestedFailAfter(input) {
+  return testFailureInjectionEnabled(input) ? String(input.failAfter || "").trim() : "";
+}
+
+const PRE_WEBSITE_FAIL_AFTER = new Set([
+  STAGE.ORGANIZATION,
+  STAGE.ADMINISTRATOR,
+  STAGE.ROLE_ASSIGNMENT,
+  STAGE.FACILITY_HQ,
+  STAGE.MEMBERSHIPS,
+  STAGE.DEFAULT_DEPARTMENTS,
+  STAGE.WEBSITE_INSTANCE,
+]);
+
+function provisioningStatusForStage(stage) {
+  if (stage === STAGE.WEBSITE_INSTANCE || stage === STAGE.TEMPLATE_CONTENT) {
+    return "website_pending";
+  }
+  if (stage === STAGE.AUDIT_COMPLETION || stage === STAGE.DEFAULT_DEPARTMENTS) {
+    return "failed";
+  }
+  return "failed";
+}
+
+async function persistProvisionFailure(client, appId, patch) {
+  await updateApplication(client, appId, patch);
+}
+
 async function maybeSendReadyToSignInEmail(client, input) {
   const app = input.application;
   if (!app || (String(app.status) !== "approved" && String(app.status) !== "active")) {
     return { skipped: true };
   }
   const provisioning = String(app.provisioning_status || "");
-  if (provisioning !== "provisioned" && provisioning !== "website_pending") {
+  if (provisioning !== "provisioned") {
     return { skipped: true };
   }
   if (!input.loginEligible) return { skipped: true };
@@ -297,31 +336,38 @@ async function approveAndProvisionClinicRegistration(db, input) {
 
     if (
       (app.status === "approved" || app.status === "active") &&
-      app.provisioning_status === "provisioned" &&
       app.organization_id
     ) {
-      const instance = await instanceRepo.findWebsiteInstanceByOrgProduct(client, {
-        organizationId: app.organization_id,
+      const completeness = await inspectOrganizationProvisioningCompleteness(client, {
         productCode: "activeclinic",
-      });
-      return {
-        ok: true,
-        code: RESULT.ALREADY_PROVISIONED,
-        alreadyProvisioned: true,
-        application: app,
         organizationId: app.organization_id,
-        healthcareOrganizationId: app.healthcare_organization_id,
-        facilityId: app.facility_id,
-        instance,
-        emailDelivery: await maybeSendReadyToSignInEmail(client, {
+        application: app,
+      });
+      if (completeness.complete) {
+        const instance = await instanceRepo.findWebsiteInstanceByOrgProduct(client, {
+          organizationId: app.organization_id,
+          productCode: "activeclinic",
+        });
+        return {
+          ok: true,
+          code: RESULT.ALREADY_PROVISIONED,
+          alreadyProvisioned: true,
           application: app,
-          loginEligible: Boolean(app.clinic_admin_staff_id),
-          env: input.env,
-          emailAdapter: input.emailAdapter,
-          publicOrigin: input.publicOrigin,
-          deploymentCode: input.deploymentCode,
-        }),
-      };
+          organizationId: app.organization_id,
+          healthcareOrganizationId: app.healthcare_organization_id,
+          facilityId: app.facility_id,
+          instance,
+          failedStage: null,
+          emailDelivery: await maybeSendReadyToSignInEmail(client, {
+            application: app,
+            loginEligible: Boolean(app.clinic_admin_staff_id),
+            env: input.env,
+            emailAdapter: input.emailAdapter,
+            publicOrigin: input.publicOrigin,
+            deploymentCode: input.deploymentCode,
+          }),
+        };
+      }
     }
 
     if (app.status === "rejected" || app.status === "withdrawn") {
@@ -342,7 +388,11 @@ async function approveAndProvisionClinicRegistration(db, input) {
       };
     }
 
-    await updateApplication(client, app.id, { provisioning_status: "in_progress" });
+    const failAfter = requestedFailAfter(input);
+    await updateApplication(client, app.id, {
+      provisioning_status: "in_progress",
+      last_provision_stage: STAGE.ORGANIZATION,
+    });
     await appendReviewEvent(client, {
       applicationId: app.id,
       eventType: "provisioning_started",
@@ -365,10 +415,28 @@ async function approveAndProvisionClinicRegistration(db, input) {
         deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
       }, { manageTransaction: false });
       if (!tenant.ok || !tenant.records || !tenant.records.organization) {
-        await updateApplication(client, app.id, {
-          provisioning_status: "failed",
-          last_provision_error: tenant.message || tenant.status || "tenant_failed",
-        });
+        const existingOrg = await client.query(
+          `SELECT id, organization_key FROM platform.organizations
+            WHERE organization_key = $1
+            LIMIT 1`,
+          [slug]
+        );
+        if (existingOrg.rows[0]) {
+          organizationId = existingOrg.rows[0].id;
+          slug = existingOrg.rows[0].organization_key || slug;
+          await persistProvisionFailure(client, app.id, {
+            organization_id: organizationId,
+            provisioning_status: "failed",
+            last_provision_stage: STAGE.ORGANIZATION,
+            last_provision_error: tenant.message || tenant.status || "tenant_failed",
+          });
+        } else {
+          await persistProvisionFailure(client, app.id, {
+            provisioning_status: "failed",
+            last_provision_stage: STAGE.ORGANIZATION,
+            last_provision_error: tenant.message || tenant.status || "tenant_failed",
+          });
+        }
         await appendReviewEvent(client, {
           applicationId: app.id,
           eventType: "provisioning_failed",
@@ -377,16 +445,43 @@ async function approveAndProvisionClinicRegistration(db, input) {
           visibility: "history",
           deliveryStatus: "not_applicable",
         });
-        return { ok: false, code: RESULT.TENANT_FAILED, reason: tenant.status };
+        return {
+          ok: false,
+          code: RESULT.TENANT_FAILED,
+          reason: tenant.status,
+          failedStage: STAGE.ORGANIZATION,
+          organizationId: organizationId || null,
+        };
       }
       organizationId = tenant.records.organization.id;
       slug = tenant.records.organization.organization_key || slug;
+      await updateApplication(client, app.id, {
+        organization_id: organizationId,
+        last_provision_stage: STAGE.ORGANIZATION,
+      });
     } else {
       const org = await client.query(
         `SELECT organization_key FROM platform.organizations WHERE id = $1`,
         [organizationId]
       );
       slug = org.rows[0] && org.rows[0].organization_key;
+    }
+
+    if (failAfter === STAGE.ORGANIZATION) {
+      await persistProvisionFailure(client, app.id, {
+        organization_id: organizationId,
+        status: "provision_failed",
+        provisioning_status: "failed",
+        last_provision_stage: STAGE.ORGANIZATION,
+        last_provision_error: "injected_failure:organization",
+      });
+      return {
+        ok: false,
+        code: RESULT.TENANT_FAILED,
+        reason: "injected_failure",
+        failedStage: STAGE.ORGANIZATION,
+        organizationId,
+      };
     }
 
     const clinic = await provisionActiveClinicClinic(client, {
@@ -403,12 +498,20 @@ async function approveAndProvisionClinicRegistration(db, input) {
       actorIdentityId: input.actorIdentityId || null,
       websiteStatus: "coming_soon",
       templateVersion: input.websiteTemplateVersion || undefined,
+      skipWebsite: PRE_WEBSITE_FAIL_AFTER.has(failAfter),
     });
 
     if (!clinic.ok && clinic.code !== "website_provision_failed") {
-      await updateApplication(client, app.id, {
+      const failedStage =
+        clinic.code === "healthcare_organization_failed"
+          ? STAGE.ORGANIZATION
+          : clinic.code === "facility_failed"
+            ? STAGE.FACILITY_HQ
+            : STAGE.FACILITY_HQ;
+      await persistProvisionFailure(client, app.id, {
         organization_id: organizationId,
         provisioning_status: "failed",
+        last_provision_stage: failedStage,
         last_provision_error: clinic.code || "clinic_failed",
       });
       await appendReviewEvent(client, {
@@ -419,17 +522,42 @@ async function approveAndProvisionClinicRegistration(db, input) {
         visibility: "history",
         deliveryStatus: "not_applicable",
       });
-      return { ok: false, code: RESULT.CLINIC_FAILED, reason: clinic.code, organizationId };
+      return {
+        ok: false,
+        code: RESULT.CLINIC_FAILED,
+        reason: clinic.code,
+        failedStage,
+        organizationId,
+      };
     }
 
     const hco = clinic.healthcareOrganization || null;
     const facility = clinic.facility || null;
     let instance = clinic.instance || null;
-    if (!instance && organizationId) {
+    if (!instance && organizationId && !PRE_WEBSITE_FAIL_AFTER.has(failAfter)) {
       instance = await instanceRepo.findWebsiteInstanceByOrgProduct(client, {
         organizationId,
         productCode: "activeclinic",
       });
+    }
+
+    if (failAfter === STAGE.FACILITY_HQ) {
+      await persistProvisionFailure(client, app.id, {
+        organization_id: organizationId,
+        healthcare_organization_id: hco ? hco.id : null,
+        facility_id: facility ? facility.id : null,
+        status: "provision_failed",
+        provisioning_status: "failed",
+        last_provision_stage: STAGE.FACILITY_HQ,
+        last_provision_error: "injected_failure:facility_hq",
+      });
+      return {
+        ok: false,
+        code: RESULT.CLINIC_FAILED,
+        reason: "injected_failure",
+        failedStage: STAGE.FACILITY_HQ,
+        organizationId,
+      };
     }
 
     let admin = { ok: true, staffMemberId: app.clinic_admin_staff_id, created: false, reusedIdentity: false };
@@ -446,11 +574,12 @@ async function approveAndProvisionClinicRegistration(db, input) {
         passwordHash: app.administrator_password_hash || null,
       });
       if (!admin.ok) {
-        await updateApplication(client, app.id, {
+        await persistProvisionFailure(client, app.id, {
           organization_id: organizationId,
           healthcare_organization_id: hco.id,
           facility_id: facility ? facility.id : app.facility_id,
           provisioning_status: "failed",
+          last_provision_stage: STAGE.ADMINISTRATOR,
           last_provision_error: admin.code || "clinic_admin_failed",
         });
         await appendReviewEvent(client, {
@@ -461,19 +590,195 @@ async function approveAndProvisionClinicRegistration(db, input) {
           visibility: "history",
           deliveryStatus: "not_applicable",
         });
-        return { ok: false, code: RESULT.ADMIN_FAILED, reason: admin.code, organizationId };
+        return {
+          ok: false,
+          code: RESULT.ADMIN_FAILED,
+          reason: admin.code,
+          failedStage: STAGE.ADMINISTRATOR,
+          organizationId,
+        };
+      }
+      if (failAfter === STAGE.ADMINISTRATOR || failAfter === STAGE.ROLE_ASSIGNMENT || failAfter === STAGE.MEMBERSHIPS) {
+        await persistProvisionFailure(client, app.id, {
+          organization_id: organizationId,
+          healthcare_organization_id: hco.id,
+          facility_id: facility ? facility.id : app.facility_id,
+          clinic_admin_staff_id: admin.staffMemberId,
+          status: "provision_failed",
+          provisioning_status: "failed",
+          last_provision_stage: failAfter,
+          last_provision_error: `injected_failure:${failAfter}`,
+        });
+        return {
+          ok: false,
+          code: RESULT.ADMIN_FAILED,
+          reason: "injected_failure",
+          failedStage: failAfter,
+          organizationId,
+          staffMemberId: admin.staffMemberId,
+          identityId: admin.identityId || null,
+        };
       }
       if (facility && facility.id) {
-        await ensureDefaultDepartments(client, {
+        const departments = await ensureDefaultDepartments(client, {
           organizationId,
           healthcareOrganizationId: hco.id,
           facilityId: facility.id,
         });
+        if (!departments.ok) {
+          await persistProvisionFailure(client, app.id, {
+            organization_id: organizationId,
+            healthcare_organization_id: hco.id,
+            facility_id: facility.id,
+            clinic_admin_staff_id: admin.staffMemberId,
+            provisioning_status: "failed",
+            last_provision_stage: STAGE.DEFAULT_DEPARTMENTS,
+            last_provision_error: departments.result || "departments_failed",
+          });
+          return {
+            ok: false,
+            code: RESULT.CLINIC_FAILED,
+            reason: "departments_failed",
+            failedStage: STAGE.DEFAULT_DEPARTMENTS,
+            organizationId,
+          };
+        }
+      }
+      if (failAfter === STAGE.DEFAULT_DEPARTMENTS) {
+        await persistProvisionFailure(client, app.id, {
+          organization_id: organizationId,
+          healthcare_organization_id: hco.id,
+          facility_id: facility ? facility.id : app.facility_id,
+          clinic_admin_staff_id: admin.staffMemberId,
+          status: "provision_failed",
+          provisioning_status: "failed",
+          last_provision_stage: STAGE.DEFAULT_DEPARTMENTS,
+          last_provision_error: "injected_failure:default_departments",
+        });
+        return {
+          ok: false,
+          code: RESULT.CLINIC_FAILED,
+          reason: "injected_failure",
+          failedStage: STAGE.DEFAULT_DEPARTMENTS,
+          organizationId,
+        };
       }
     }
 
-    const websiteOk = Boolean(instance);
-    const provisioningStatus = websiteOk ? "provisioned" : "website_pending";
+    if (failAfter === STAGE.WEBSITE_INSTANCE) {
+      await persistProvisionFailure(client, app.id, {
+        organization_id: organizationId,
+        healthcare_organization_id: hco ? hco.id : app.healthcare_organization_id,
+        facility_id: facility ? facility.id : app.facility_id,
+        clinic_admin_staff_id: admin.ok ? admin.staffMemberId : app.clinic_admin_staff_id,
+        status: "active",
+        provisioning_status: "website_pending",
+        last_provision_stage: STAGE.WEBSITE_INSTANCE,
+        last_provision_error: "injected_failure:website_instance",
+        administrator_password_hash: null,
+      });
+      return {
+        ok: true,
+        code: RESULT.WEBSITE_PENDING,
+        organizationId,
+        healthcareOrganization: hco,
+        facility,
+        instance: null,
+        failedStage: STAGE.WEBSITE_INSTANCE,
+        staffMemberId: admin.ok ? admin.staffMemberId : null,
+        identityId: admin.identityId || null,
+        reusedIdentity: admin.reusedIdentity === true,
+        slug,
+        alreadyProvisioned: false,
+      };
+    }
+
+    if (instance && failAfter === STAGE.TEMPLATE_CONTENT) {
+      await client.query(`DELETE FROM platform.website_content WHERE instance_id = $1`, [instance.id]);
+      await persistProvisionFailure(client, app.id, {
+        organization_id: organizationId,
+        healthcare_organization_id: hco ? hco.id : app.healthcare_organization_id,
+        facility_id: facility ? facility.id : app.facility_id,
+        website_instance_id: instance.id,
+        clinic_admin_staff_id: admin.ok ? admin.staffMemberId : app.clinic_admin_staff_id,
+        status: "active",
+        provisioning_status: "website_pending",
+        last_provision_stage: STAGE.TEMPLATE_CONTENT,
+        last_provision_error: "injected_failure:template_content",
+        administrator_password_hash: null,
+      });
+      return {
+        ok: true,
+        code: RESULT.WEBSITE_PENDING,
+        organizationId,
+        healthcareOrganization: hco,
+        facility,
+        instance,
+        failedStage: STAGE.TEMPLATE_CONTENT,
+        staffMemberId: admin.ok ? admin.staffMemberId : null,
+        identityId: admin.identityId || null,
+        reusedIdentity: admin.reusedIdentity === true,
+        slug,
+        alreadyProvisioned: false,
+      };
+    }
+
+    const completeness = await inspectOrganizationProvisioningCompleteness(client, {
+      productCode: "activeclinic",
+      organizationId,
+      application: {
+        ...app,
+        clinic_admin_staff_id: admin.ok ? admin.staffMemberId : app.clinic_admin_staff_id,
+        contact_email_normalized: app.contact_email_normalized,
+        provisioning_status: instance ? "provisioned" : "website_pending",
+      },
+    });
+    const websiteOk = completeness.stages && completeness.stages[STAGE.WEBSITE_INSTANCE] && completeness.stages[STAGE.TEMPLATE_CONTENT];
+    const departmentsOk = completeness.stages && completeness.stages[STAGE.DEFAULT_DEPARTMENTS];
+    const fullyComplete =
+      websiteOk &&
+      departmentsOk &&
+      completeness.stages[STAGE.ADMINISTRATOR] &&
+      completeness.stages[STAGE.FACILITY_HQ];
+    const failedStage = fullyComplete
+      ? failAfter === STAGE.AUDIT_COMPLETION
+        ? STAGE.AUDIT_COMPLETION
+        : null
+      : completeness.failedStage && completeness.failedStage !== STAGE.AUDIT_COMPLETION
+        ? completeness.failedStage
+        : websiteOk
+          ? STAGE.DEFAULT_DEPARTMENTS
+          : STAGE.WEBSITE_INSTANCE;
+    const provisioningStatus = fullyComplete && failAfter !== STAGE.AUDIT_COMPLETION ? "provisioned" : provisioningStatusForStage(failedStage || STAGE.WEBSITE_INSTANCE);
+
+    if (failAfter === STAGE.AUDIT_COMPLETION) {
+      await persistProvisionFailure(client, app.id, {
+        organization_id: organizationId,
+        healthcare_organization_id: hco ? hco.id : app.healthcare_organization_id,
+        facility_id: facility ? facility.id : app.facility_id,
+        website_instance_id: instance ? instance.id : null,
+        clinic_admin_staff_id: admin.ok ? admin.staffMemberId : app.clinic_admin_staff_id,
+        status: "active",
+        provisioning_status: "failed",
+        last_provision_stage: STAGE.AUDIT_COMPLETION,
+        last_provision_error: "injected_failure:audit_completion",
+        administrator_password_hash: null,
+      });
+      return {
+        ok: false,
+        code: RESULT.WEBSITE_PENDING,
+        organizationId,
+        healthcareOrganization: hco,
+        facility,
+        instance,
+        failedStage: STAGE.AUDIT_COMPLETION,
+        staffMemberId: admin.ok ? admin.staffMemberId : null,
+        identityId: admin.identityId || null,
+        slug,
+        alreadyProvisioned: false,
+      };
+    }
+
     await updateApplication(client, app.id, {
       status: "active",
       organization_id: organizationId,
@@ -482,12 +787,13 @@ async function approveAndProvisionClinicRegistration(db, input) {
       website_instance_id: instance ? instance.id : null,
       clinic_admin_staff_id: admin.ok ? admin.staffMemberId : app.clinic_admin_staff_id,
       provisioning_status: provisioningStatus,
-      provisioned_at: websiteOk ? new Date().toISOString() : null,
+      provisioned_at: fullyComplete ? new Date().toISOString() : null,
       reviewed_at: new Date().toISOString(),
       reviewed_by_platform_identity_id: input.actorIdentityId || null,
-      last_provision_error: websiteOk
+      last_provision_error: fullyComplete
         ? null
-        : String(clinic.reason || clinic.code || "website_provision_failed").slice(0, 500),
+        : String(clinic.reason || clinic.code || failedStage || "provision_incomplete").slice(0, 500),
+      last_provision_stage: fullyComplete ? null : failedStage,
       administrator_password_hash: null,
     });
 
@@ -511,10 +817,10 @@ async function approveAndProvisionClinicRegistration(db, input) {
     });
     await appendReviewEvent(client, {
       applicationId: app.id,
-      eventType: websiteOk ? "provisioning_succeeded" : "provisioning_failed",
-      body: websiteOk
+      eventType: fullyComplete ? "provisioning_succeeded" : "provisioning_failed",
+      body: fullyComplete
         ? null
-        : String(clinic.reason || clinic.code || "website_provision_failed").slice(0, 200),
+        : String(clinic.reason || clinic.code || failedStage || "provision_incomplete").slice(0, 200),
       actorId: input.actorIdentityId,
       visibility: "history",
       deliveryStatus: "not_applicable",
@@ -527,7 +833,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
       actionKey: "activeclinic.clinic_registration.approve",
       entityType: "clinic_registration_application",
       entityId: app.id,
-      outcome: websiteOk ? "success" : "partial",
+      outcome: fullyComplete ? "success" : "partial",
       metadataJson: {
         actor_kind: input.actorKind || "platform_admin",
         actor_platform_identity_id: input.actorIdentityId || null,
@@ -537,6 +843,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
           admin.reusedIdentity && identityCollision.existingActiveClinicIdentity
         ),
         acknowledged_existing_identity: acknowledged,
+        failed_stage: fullyComplete ? null : failedStage,
       },
     });
     if (instance) {
@@ -549,7 +856,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
       });
     }
 
-    const loginEligible = Boolean(admin.ok && admin.staffMemberId);
+    const loginEligible = Boolean(admin.ok && admin.staffMemberId && fullyComplete);
     app.status = "active";
     app.provisioning_status = provisioningStatus;
     const emailDelivery = await maybeSendReadyToSignInEmail(client, {
@@ -563,7 +870,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
 
     return {
       ok: true,
-      code: websiteOk ? RESULT.OK : RESULT.WEBSITE_PENDING,
+      code: fullyComplete ? RESULT.OK : RESULT.WEBSITE_PENDING,
       organizationId,
       healthcareOrganization: hco,
       facility,
@@ -573,6 +880,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
       reusedIdentity: admin.reusedIdentity === true,
       slug,
       alreadyProvisioned: false,
+      failedStage: fullyComplete ? null : failedStage,
       emailDelivery,
     };
   };
@@ -615,6 +923,7 @@ async function rejectClinicRegistration(db, input) {
       reviewed_by_platform_identity_id: input.actorIdentityId || null,
       administrator_password_hash: null,
       last_provision_error: null,
+      last_provision_stage: null,
     });
     await appendReviewEvent(client, {
       applicationId: app.id,
@@ -643,4 +952,5 @@ module.exports = {
   slugFromClinicName,
   approveAndProvisionClinicRegistration,
   rejectClinicRegistration,
+  testFailureInjectionEnabled,
 };

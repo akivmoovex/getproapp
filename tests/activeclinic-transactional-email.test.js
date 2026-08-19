@@ -587,7 +587,7 @@ describe("ActiveClinic transactional email workflows", () => {
     assert.equal(infoEvent.deliveryClaimedSent, false);
   });
 
-  it("sends ready-to-sign-in for provisioned and website_pending, not before eligibility, and not twice", async () => {
+  it("sends ready-to-sign-in for provisioned clinics only, not website_pending, and not twice", async () => {
     requireDb();
     const pending = await createPending();
     const captured = [];
@@ -638,7 +638,7 @@ describe("ActiveClinic transactional email workflows", () => {
     assert.equal(websitePending.code, "website_pending");
     assert.equal(
       websiteCapture.filter((m) => m.templateKey === TEMPLATE.READY_TO_SIGN_IN).length,
-      1
+      0
     );
 
     const detail = await getClinicRegistrationDetail(pool, pending.created.id);

@@ -135,6 +135,22 @@ const DASHBOARD_MODULE_TILES = Object.freeze([
     description: "Assign roles and scopes",
   },
   {
+    key: "organization",
+    label: "Organization profile",
+    href: "/app/settings/organization",
+    section: "administration",
+    anyOf: ["activeclinic.organization.view", "activeclinic.organization.manage"],
+    description: "Clinic identity, legal name, and regional defaults",
+  },
+  {
+    key: "website",
+    label: "Website",
+    href: "/app/settings/website",
+    section: "administration",
+    anyOf: ["website.view", "website.edit"],
+    description: "Public clinic website and publish controls",
+  },
+  {
     key: "departments",
     label: "Departments",
     href: "/app/settings/clinic-setup/departments",

@@ -151,6 +151,7 @@ async function provision(db, input) {
       reason: provisioned.code || REVIEW_REASON.PROVISION_FAILURE,
       code: provisioned.code,
       organizationId: provisioned.organizationId || null,
+      failedStage: provisioned.failedStage || null,
     };
   }
   if (provisioned.facility && provisioned.healthcareOrganization && provisioned.organizationId) {
@@ -167,24 +168,25 @@ async function provision(db, input) {
     [input.application.id]
   );
   const latest = refreshed.rows[0] || input.application;
-  return {
-    ok: true,
-    organizationId: provisioned.organizationId || latest.organization_id,
-    identityId: provisioned.identityId,
-    staffMemberId: provisioned.staffMemberId,
-    slug: provisioned.slug,
-    facility: provisioned.facility,
-    healthcareOrganization: provisioned.healthcareOrganization,
-    application: {
-      id: latest.id,
-      applicationNumber: latest.application_number,
-      status: latest.status,
-      provisioningStatus: latest.provisioning_status,
-      organizationId: latest.organization_id,
-      createdAt: latest.created_at,
-    },
-    provisioned,
-  };
+    return {
+      ok: true,
+      organizationId: provisioned.organizationId || latest.organization_id,
+      identityId: provisioned.identityId,
+      staffMemberId: provisioned.staffMemberId,
+      slug: provisioned.slug,
+      facility: provisioned.facility,
+      healthcareOrganization: provisioned.healthcareOrganization,
+      failedStage: provisioned.failedStage || null,
+      application: {
+        id: latest.id,
+        applicationNumber: latest.application_number,
+        status: latest.status,
+        provisioningStatus: latest.provisioning_status,
+        organizationId: latest.organization_id,
+        createdAt: latest.created_at,
+      },
+      provisioned,
+    };
 }
 
 async function markLifecycle(db, input) {
@@ -210,6 +212,7 @@ async function markLifecycle(db, input) {
               provisioning_status = 'provisioned',
               website_instance_id = COALESCE($2, website_instance_id),
               last_provision_error = NULL,
+              last_provision_stage = NULL,
               updated_at = now()
         WHERE id = $1
           AND status IN ('submitted', 'pending_review', 'review_required', 'provisioning', 'approved', 'active', 'provision_failed')`,
@@ -223,9 +226,11 @@ async function markLifecycle(db, input) {
           SET status = 'provision_failed',
               provisioning_status = CASE
                 WHEN provisioning_status = 'website_pending' THEN provisioning_status
+                WHEN $4::text IN ('website_instance', 'template_content') THEN 'website_pending'
                 ELSE 'failed'
               END,
               last_provision_error = $2,
+              last_provision_stage = COALESCE($4, last_provision_stage),
               organization_id = COALESCE(organization_id, $3),
               updated_at = now()
         WHERE id = $1`,
@@ -233,6 +238,7 @@ async function markLifecycle(db, input) {
         input.application.id,
         String(input.reason || "provision_failed").slice(0, 500),
         input.organizationId || null,
+        input.failedStage || null,
       ]
     );
     return { ok: true };

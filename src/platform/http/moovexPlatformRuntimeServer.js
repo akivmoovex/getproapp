@@ -74,14 +74,21 @@ function createMoovexPlatformRuntimeApp(options) {
   app.use(assignV5RequestId);
 
   app.get("/healthz", (req, res) => {
+    const boot = opts.boot || null;
+    const schema = boot && boot.schemaCompatibility ? boot.schemaCompatibility : null;
+    const {
+      readGitShaShort,
+    } = require("../../startup/startupProcessMarker");
     res.status(200).json({
-      ok: true,
+      ok: schema ? schema.compatible !== false : true,
       mode: "moovex-platform-runtime",
       deploymentCode: deployment.code,
       environment: deployment.environment,
       productSelection: "hostname",
       expectedIdentityKey: deployment.expectedIdentityKey || null,
       expectedDatabaseEnvironment: deployment.expectedDatabaseEnvironment,
+      gitSha: (boot && boot.gitSha) || readGitShaShort(),
+      schemaCompatible: schema ? schema.compatible === true : null,
     });
   });
 
@@ -244,13 +251,25 @@ async function startMoovexPlatformRuntimeServer(opts) {
     assertPlatformDatabaseIdentityOrExit,
   } = require("../../startup/blessBoardOrgDbGate");
   await assertPlatformDatabaseIdentityOrExit(pool);
+  const {
+    assertV7RuntimeSchemaCompatibilityOrExit,
+  } = require("../schema/v7RuntimeSchemaCompatibility");
+  const schemaCompatibility = await assertV7RuntimeSchemaCompatibilityOrExit(pool, { env });
+  const {
+    readGitShaShort,
+  } = require("../../startup/startupProcessMarker");
+  const boot = {
+    ...((opts && opts.boot) || {}),
+    gitSha: readGitShaShort(),
+    schemaCompatibility,
+  };
 
   const productApps = buildDefaultProductApps({ env, getPool: () => pool });
   const app = createMoovexPlatformRuntimeApp({
     env,
     getPool: () => pool,
     productApps,
-    boot: opts && opts.boot,
+    boot,
   });
   const port = env.PORT ? Number(env.PORT) : 3000;
   const host = resolveListenHost(env);

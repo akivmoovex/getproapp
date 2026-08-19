@@ -80,6 +80,18 @@ function buildPlatformRuntimeSnapshot(env, opts) {
     earlyProductionEnvLoaded: boot ? Boolean(boot.earlyProductionEnvLoaded) : null,
     productionFileMergeSkipped: boot ? Boolean(boot.productionFileMergeSkipped) : null,
     envPresencePreFile: boot && boot.envPresencePreFile ? boot.envPresencePreFile : null,
+    schemaCompatible: boot && boot.schemaCompatibility
+      ? boot.schemaCompatibility.compatible === true
+      : null,
+    schemaCompatibility: boot && boot.schemaCompatibility
+      ? {
+          compatible: boot.schemaCompatibility.compatible === true,
+          code: boot.schemaCompatibility.code || null,
+          missing: Array.isArray(boot.schemaCompatibility.missing)
+            ? boot.schemaCompatibility.missing
+            : [],
+        }
+      : null,
   };
 }
 
