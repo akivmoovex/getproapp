@@ -40,6 +40,8 @@
     "db:schema:compat:testing": "scripts/local/run-with-blessboard-env.sh testing npm run db:schema:compat",
     "db:migrate:testing": "scripts/local/run-with-blessboard-env.sh testing node db/scripts/migrate-testing.js",
     "db:preflight:testing": "scripts/local/run-with-blessboard-env.sh testing node db/scripts/preflight-testing.js",
+    "deploy:check-testing-sha": "node scripts/check-hosted-testing-sha.js",
+    "test:v7:deploy-sha": "node --test --test-concurrency=1 tests/v7-hosted-testing-sha.test.js",
     "db:runtime-smoke:testing": "scripts/local/run-with-blessboard-env.sh testing node db/scripts/v7-testing-runtime-smoke.js",
     "db:registration-qa:testing": "scripts/local/run-with-blessboard-env.sh testing node db/scripts/v7-testing-registration-qa.js",
     "test:v7:runtime-schema": "node --test --test-concurrency=1 tests/v7-runtime-schema-compatibility.test.js tests/v7-migrate-identity-gate.test.js",

@@ -94,3 +94,25 @@ Safe checks after redeploy:
 - Grep logs for `processMarker` / `dbUrlFingerprint phase=pre_file`
 - Testing-only: `GET /__platform/runtime` on `pronline.org` (blocked when `DEPLOYMENT_ENV=production`)
 
+## Unified testing deploy (V7)
+
+Hostinger testing is the **Moovex platform testing** Node app (`PLATFORM_DEPLOYMENT_CODE=moovex-platform-testing`), Git branch **`V7`**, repository **getproapp**. There is **no GitHub Actions deploy** for `V7`. `/healthz` `gitSha` is the running checkout (`.git/HEAD` or `GETPRO_GIT_SHA`).
+
+GitHub push does **not** update the running process instantly. Hostinger Git deploy typically catches up in a few minutes; if `/healthz` still shows an older SHA, use **hPanel → Node.js → Deploy / Restart** on the testing app only. Do not restart production.
+
+Operator sequence:
+
+```bash
+git push origin V7
+npm run db:preflight:testing
+# wait for Hostinger Git deploy, or Deploy/Restart the testing Node app in hPanel
+npm run deploy:check-testing-sha
+```
+
+`deploy:check-testing-sha` compares `origin/V7` with:
+
+- `https://activeclinic.pronline.org/healthz`
+- `https://blessboard.pronline.org/healthz`
+
+Expect `gitSha` match, `environment=testing`, `deploymentCode=moovex-platform-testing`, `schemaCompatible=true`. Start QA only after that check passes. Production hosts are refused.
+
