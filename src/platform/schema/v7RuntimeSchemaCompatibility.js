@@ -776,6 +776,12 @@ async function assertV7RuntimeSchemaCompatibilityOrExit(db, opts) {
   report.enforcement = enforcement;
   logger.log(formatV7RuntimeSchemaCompatibilityLog(report));
   if (!report.compatible) {
+    const pendingHint =
+      report.details &&
+      Array.isArray(report.details.missingMigrations) &&
+      report.details.missingMigrations.length
+        ? report.details.missingMigrations.join(", ")
+        : (report.missing || []).join(", ") || "required V7 migrations";
     logger.error(
       `[platform] FATAL: V7 runtime schema is incompatible with this application. ` +
         `enforcement=${enforcement.reason} ` +
@@ -785,7 +791,7 @@ async function assertV7RuntimeSchemaCompatibilityOrExit(db, opts) {
         `deploymentCode=${enforcement.deploymentCode || "unset"} ` +
         `capability=${report.capability || report.reason || "unknown"} ` +
         `missing=${(report.missing || []).join(",") || "none"}. ` +
-        `Apply pending migrations (platform/031, blessboard/095, activeclinic/030) to this database, then restart. ` +
+        `Apply pending migrations (${pendingHint}) to this database, then restart. ` +
         `Do not run migrations from application startup. ` +
         `Refusing to start so clinics are not left website_pending.`
     );

@@ -10,8 +10,14 @@ const fs = require("fs");
 const path = require("path");
 const crypto = require("crypto");
 const { Pool } = require("pg");
-const { requireDatabaseUrl } = require("./databaseUrl");
+const { requireDatabaseUrl, envStringIsSet } = require("./databaseUrl");
 const { buildFoundationPoolConfig } = require("./foundationPool");
+const {
+  checkDatabaseIdentity,
+  identityTableExists,
+  validateIdentityKey,
+  validateEnvironmentCode,
+} = require("./databaseIdentity");
 
 const MODULE_ORDER = ["platform", "blessboard", "activeclinic", "getpro", "ngo"];
 
@@ -97,6 +103,69 @@ async function ensureMigrationLedger(pool) {
 }
 
 /**
+ * Optional identity gate: when DATABASE_IDENTITY_EXPECTED is set, refuse to
+ * apply migrations against a different database purpose. Bootstrap (missing
+ * identity table or uninitialized row) still proceeds so first-run migrate works.
+ * Never prints credentials.
+ *
+ * @param {import('pg').Pool} pool
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {Promise<{ gated: boolean, skipped: boolean, reason: string, identity_key?: string, environment_code?: string }>}
+ */
+async function assertMigrateIdentityGate(pool, env) {
+  const source = env || process.env;
+  const expectedRaw = source.DATABASE_IDENTITY_EXPECTED;
+  if (!envStringIsSet(expectedRaw)) {
+    return { gated: false, skipped: true, reason: "no_expected_identity" };
+  }
+  const keyCheck = validateIdentityKey(expectedRaw);
+  if (!keyCheck.ok) {
+    throw new Error("[db:migrate] DATABASE_IDENTITY_EXPECTED is invalid. Refusing to continue.");
+  }
+  if (!(await identityTableExists(pool))) {
+    return { gated: false, skipped: true, reason: "identity_table_missing" };
+  }
+  const result = await checkDatabaseIdentity(pool, { identityKey: keyCheck.key });
+  if (result.code === "missing") {
+    return { gated: false, skipped: true, reason: "identity_row_missing" };
+  }
+  if (!result.ok) {
+    throw new Error(
+      `[db:migrate] Refusing: ${result.message || result.code || "identity mismatch"}. ` +
+        "Set DATABASE_URL to the intended database or correct DATABASE_IDENTITY_EXPECTED."
+    );
+  }
+  const actualEnv = String((result.row && result.row.environment_code) || "")
+    .trim()
+    .toLowerCase();
+  const expectedEnvRaw = source.DATABASE_IDENTITY_ENV;
+  if (envStringIsSet(expectedEnvRaw)) {
+    const envCheck = validateEnvironmentCode(expectedEnvRaw);
+    if (!envCheck.ok) {
+      throw new Error("[db:migrate] DATABASE_IDENTITY_ENV is invalid. Refusing to continue.");
+    }
+    if (actualEnv !== envCheck.env) {
+      throw new Error(
+        `[db:migrate] Refusing: environment_code=${actualEnv || "(null)"} ` +
+          `does not match DATABASE_IDENTITY_ENV=${envCheck.env}.`
+      );
+    }
+  }
+  if (actualEnv === "production" && String(source.DEPLOYMENT_ENV || "").trim().toLowerCase() === "testing") {
+    throw new Error(
+      "[db:migrate] Refusing: connected database environment_code=production while DEPLOYMENT_ENV=testing."
+    );
+  }
+  return {
+    gated: true,
+    skipped: false,
+    reason: "matched",
+    identity_key: result.row && result.row.identity_key,
+    environment_code: actualEnv,
+  };
+}
+
+/**
  * @param {import('pg').PoolClient} client
  * @param {string} moduleName
  * @param {string} version
@@ -178,6 +247,7 @@ async function migrate(opts = {}) {
     await client.query("SELECT pg_advisory_lock($1)", [FOUNDATION_MIGRATE_LOCK_KEY]);
     locked = true;
 
+    await assertMigrateIdentityGate(pool, process.env);
     await ensureMigrationLedger(pool);
 
     const migrations = discoverMigrations();
@@ -296,6 +366,7 @@ module.exports = {
   discoverMigrations,
   discoverSeeds,
   ensureMigrationLedger,
+  assertMigrateIdentityGate,
   migrate,
   status,
   statusReadOnly,

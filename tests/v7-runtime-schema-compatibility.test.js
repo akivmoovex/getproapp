@@ -728,6 +728,49 @@ describe("V7 runtime schema compatibility and website provision", () => {
     }
   });
 
+  it("reports missing BlessBoard last_provision_stage as incompatible", async () => {
+    if (!requireDb()) return;
+    const client = await pool.connect();
+    try {
+      await client.query("BEGIN");
+      await client.query(
+        `ALTER TABLE blessboard.platform_church_registration_applications
+           DROP COLUMN last_provision_stage`
+      );
+      const report = await inspectV7RuntimeSchemaCompatibility(client);
+      assert.equal(report.compatible, false);
+      assert.ok(report.missing.includes(CAPABILITY.BB_PROVISION_STAGE_COLUMNS));
+      const check = report.checks.find((row) => row.key === CAPABILITY.BB_PROVISION_STAGE_COLUMNS);
+      assert.equal(check.ok, false);
+      assert.match(String(check.remediation || ""), /099_church_registration_provision_stage/);
+    } finally {
+      await client.query("ROLLBACK").catch(() => {});
+      client.release();
+    }
+  });
+
+  it("missing V7 migration marker is reported without weakening compatible startup", async () => {
+    const fake = {
+      async query(sql) {
+        const text = String(sql);
+        if (text.includes("FROM platform.schema_migrations")) {
+          return {
+            rows: REQUIRED_MIGRATIONS.filter(
+              (item) => !(item.module === "activeclinic" && item.version === "031")
+            ).map((item) => ({ module: item.module, version: item.version })),
+          };
+        }
+        return { rows: [] };
+      },
+    };
+    const report = await inspectV7RuntimeSchemaCompatibility(fake);
+    assert.equal(report.compatible, false);
+    assert.ok(report.missing.includes(CAPABILITY.REQUIRED_MIGRATIONS));
+    const migrations = report.checks.find((row) => row.key === CAPABILITY.REQUIRED_MIGRATIONS);
+    assert.equal(migrations.ok, false);
+    assert.match(String(migrations.detail || migrations.remediation || ""), /031_clinic_registration_provision_stage/);
+  });
+
   it("simulates missing organization-admin website grants", async () => {
     if (!requireDb()) return;
     const client = await pool.connect();
