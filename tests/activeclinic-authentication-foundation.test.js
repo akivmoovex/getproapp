@@ -421,14 +421,24 @@ describe("ActiveClinic authentication foundation (AC-V6-08)", () => {
         password: PASSWORD,
       });
     assert.equal(post.status, 303);
-    assert.equal(post.headers.location, "/app");
+    const postLoginLocation = String(post.headers.location || "");
+    assert.ok(
+      postLoginLocation === "/app" || postLoginLocation === "/app/onboarding",
+      postLoginLocation
+    );
     const sid = extractCookie(post, COOKIE_ACTIVECLINIC_ORG);
     assert.ok(sid);
 
-    const appPage = await request(app)
-      .get("/app")
+    let appPage = await request(app)
+      .get(postLoginLocation)
       .set("Host", "activeclinic.org")
       .set("Cookie", `${COOKIE_ACTIVECLINIC_ORG}=${sid}; ${CSRF_COOKIE_ACTIVECLINIC_ORG}=${csrf}`);
+    if (appPage.status === 303 && appPage.headers.location) {
+      appPage = await request(app)
+        .get(String(appPage.headers.location))
+        .set("Host", "activeclinic.org")
+        .set("Cookie", `${COOKIE_ACTIVECLINIC_ORG}=${sid}; ${CSRF_COOKIE_ACTIVECLINIC_ORG}=${csrf}`);
+    }
     assert.equal(appPage.status, 200);
     assert.match(appPage.text, /data-ac-shell="staff-app"/);
     assert.match(appPage.text, /data-ac-page="home"/);

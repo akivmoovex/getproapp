@@ -14,14 +14,14 @@ function read(rel) {
 /** Canonical cache-bust versions for live V5 shells (keep in sync with templates). */
 const VERSIONS = {
   designSystem: "6",
-  apex: "14",
+  apex: "15",
   apexAuth: "6",
   tenantPublic: "54",
-  tenantAuth: "13",
+  tenantAuth: "14",
   memberPortal: "22",
   branchAdmin: "38",
   hqAdmin: "56",
-  platformAdmin: "57",
+  platformAdmin: "62",
   mediaPickerCss: "8",
   mediaPickerJs: "6",
   designSystemJs: "3",

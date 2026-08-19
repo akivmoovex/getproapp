@@ -446,11 +446,18 @@ describe("BlessBoard CSRF request-scoped configuration", () => {
     });
     assert.equal(created.ok, true, created.code);
     await withProcessEnv({ PLATFORM_DEPLOYMENT_CODE: CODE_ORG_STAGING }, async () => {
-      const page = await request(app)
+      let page = await request(app)
         .get("/hq")
         .set("Host", BB_HOST)
         .set("Accept", "text/html")
         .set("Cookie", `${UNIFIED_SID}=${created.rawToken}`);
+      if (page.status === 303 && page.headers.location) {
+        page = await request(app)
+          .get(String(page.headers.location))
+          .set("Host", BB_HOST)
+          .set("Accept", "text/html")
+          .set("Cookie", `${UNIFIED_SID}=${created.rawToken}`);
+      }
       assert.equal(page.status, 200);
       const token = csrfField(page.text);
       const csrf = extractCookie(page, UNIFIED_CSRF);

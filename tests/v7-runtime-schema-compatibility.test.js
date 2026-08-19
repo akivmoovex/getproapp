@@ -21,8 +21,10 @@ const {
   CAPABILITY,
   RESULT,
   REQUIRED_WEBSITE_PERMISSIONS,
+  REQUIRED_MIGRATIONS,
   inspectV7RuntimeSchemaCompatibility,
   shouldEnforceV7RuntimeSchemaCompatibility,
+  resolveV7RuntimeSchemaEnforcement,
   assertV7RuntimeSchemaCompatibilityOrExit,
   parseCheckValues,
   presentV7SchemaCompatibilityPublic,
@@ -57,6 +59,8 @@ const {
 } = require("../src/platform/http/moovexPlatformRuntimeServer");
 const {
   CODE_MOOVEX_PLATFORM_TESTING,
+  CODE_MOOVEX_PLATFORM_PRODUCTION,
+  MOOVEX_PLATFORM_IDENTITY_KEY,
 } = require("../src/platform/config/canonicalDeploymentProfiles");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
@@ -149,6 +153,72 @@ describe("V7 runtime schema compatibility and website provision", () => {
       "PLATFORM_LOCKED",
     ]);
     assert.equal(values.includes(PUBLISH_POLICY.TENANT_PUBLISH), false);
+  });
+
+  it("G03: DEPLOYMENT_ENV=testing enforces schema compatibility", () => {
+    const decision = resolveV7RuntimeSchemaEnforcement({ DEPLOYMENT_ENV: "testing" });
+    assert.equal(decision.enforce, true);
+    assert.equal(decision.reason, "deployment_env");
+    assert.equal(shouldEnforceV7RuntimeSchemaCompatibility({ DEPLOYMENT_ENV: "testing" }), true);
+  });
+
+  it("G03: DEPLOYMENT_ENV=production enforces schema compatibility", () => {
+    const decision = resolveV7RuntimeSchemaEnforcement({ DEPLOYMENT_ENV: "production" });
+    assert.equal(decision.enforce, true);
+    assert.equal(decision.reason, "deployment_env");
+    assert.equal(shouldEnforceV7RuntimeSchemaCompatibility({ DEPLOYMENT_ENV: "production" }), true);
+  });
+
+  it("G03: missing DEPLOYMENT_ENV still enforces for hosted testing identity", () => {
+    const env = {
+      DATABASE_IDENTITY_EXPECTED: MOOVEX_PLATFORM_IDENTITY_KEY,
+      DATABASE_IDENTITY_ENV: "testing",
+      PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING,
+    };
+    const decision = resolveV7RuntimeSchemaEnforcement(env);
+    assert.equal(decision.enforce, true);
+    assert.ok(
+      decision.reason === "database_identity" || decision.reason === "deployment_profile"
+    );
+    assert.equal(shouldEnforceV7RuntimeSchemaCompatibility(env), true);
+  });
+
+  it("G03: malformed DEPLOYMENT_ENV still enforces for hosted production identity", () => {
+    const env = {
+      DEPLOYMENT_ENV: "prod",
+      DATABASE_IDENTITY_EXPECTED: MOOVEX_PLATFORM_IDENTITY_KEY,
+      DATABASE_IDENTITY_ENV: "production",
+      PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_PRODUCTION,
+    };
+    const decision = resolveV7RuntimeSchemaEnforcement(env);
+    assert.equal(decision.enforce, true);
+    assert.notEqual(decision.reason, "deployment_env");
+    assert.equal(shouldEnforceV7RuntimeSchemaCompatibility(env), true);
+  });
+
+  it("G03: genuine local/dev environments remain unenforced", () => {
+    assert.equal(shouldEnforceV7RuntimeSchemaCompatibility({ DEPLOYMENT_ENV: "" }), false);
+    assert.equal(shouldEnforceV7RuntimeSchemaCompatibility({ NODE_ENV: "test" }), false);
+    assert.equal(shouldEnforceV7RuntimeSchemaCompatibility({ NODE_ENV: "development" }), false);
+    assert.equal(
+      shouldEnforceV7RuntimeSchemaCompatibility({
+        NODE_ENV: "test",
+        PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6,
+      }),
+      false
+    );
+    assert.equal(
+      shouldEnforceV7RuntimeSchemaCompatibility({
+        NODE_ENV: "development",
+        DATABASE_IDENTITY_EXPECTED: IDENTITY_KEY,
+        DATABASE_IDENTITY_ENV: "testing",
+      }),
+      false
+    );
+    assert.equal(
+      resolveV7RuntimeSchemaEnforcement({ NODE_ENV: "development" }).reason,
+      "local_or_unhosted"
+    );
   });
 
   it("enforces compatibility only for testing and production deployment env", () => {
@@ -442,6 +512,146 @@ describe("V7 runtime schema compatibility and website provision", () => {
     assert.ok(blocked.capability);
     const skipped = await rejectIfV7SchemaIncompatible(fake, { NODE_ENV: "test" });
     assert.equal(skipped, null);
+  });
+
+  it("G03: missing DEPLOYMENT_ENV + hosted testing identity still blocks incompatible schema", async () => {
+    const fake = {
+      async query() {
+        return { rows: [] };
+      },
+    };
+    const blocked = await rejectIfV7SchemaIncompatible(fake, {
+      DATABASE_IDENTITY_EXPECTED: MOOVEX_PLATFORM_IDENTITY_KEY,
+      DATABASE_IDENTITY_ENV: "testing",
+      PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING,
+    });
+    assert.ok(blocked);
+    assert.equal(blocked.code, "schema_mismatch");
+    assert.equal(blocked.enforcement.reason, "database_identity");
+    let exited = null;
+    const logs = [];
+    await assertV7RuntimeSchemaCompatibilityOrExit(fake, {
+      env: {
+        DATABASE_IDENTITY_EXPECTED: MOOVEX_PLATFORM_IDENTITY_KEY,
+        DATABASE_IDENTITY_ENV: "testing",
+      },
+      exit: (code) => {
+        exited = code;
+      },
+      logger: {
+        log: (line) => logs.push(String(line)),
+        error: (line) => logs.push(String(line)),
+      },
+    });
+    assert.equal(exited, 1);
+    assert.ok(logs.some((line) => /FATAL/.test(line) && /enforcement=database_identity/.test(line)));
+    assert.ok(logs.some((line) => /Do not run migrations from application startup/.test(line)));
+  });
+
+  it("G03: malformed DEPLOYMENT_ENV + hosted production identity still blocks incompatible schema", async () => {
+    const fake = {
+      async query() {
+        return { rows: [] };
+      },
+    };
+    const blocked = await rejectIfV7SchemaIncompatible(fake, {
+      DEPLOYMENT_ENV: "Production!",
+      DATABASE_IDENTITY_EXPECTED: MOOVEX_PLATFORM_IDENTITY_KEY,
+      DATABASE_IDENTITY_ENV: "production",
+      PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_PRODUCTION,
+    });
+    assert.ok(blocked);
+    assert.equal(blocked.code, "schema_mismatch");
+    assert.notEqual(blocked.enforcement.reason, "deployment_env");
+  });
+
+  it("G03: incompatible TENANT_PUBLISH is reported with platform/031 remediation", async () => {
+    const fake = {
+      async query(sql) {
+        if (String(sql).includes("website_instances_publish_policy_check")) {
+          return {
+            rows: [
+              {
+                def: "CHECK ((publish_policy = ANY (ARRAY['AUTO_PUBLISH_WITH_MODERATION'::text, 'REVIEW_BEFORE_PUBLISH'::text, 'PLATFORM_LOCKED'::text])))",
+              },
+            ],
+          };
+        }
+        return { rows: [] };
+      },
+    };
+    const report = await inspectV7RuntimeSchemaCompatibility(fake);
+    assert.equal(report.compatible, false);
+    assert.ok(report.missing.includes(CAPABILITY.TENANT_PUBLISH_POLICY));
+    const check = report.checks.find((row) => row.key === CAPABILITY.TENANT_PUBLISH_POLICY);
+    assert.equal(check.ok, false);
+    assert.match(String(check.remediation || ""), /031_website_tenant_publish_policy/);
+  });
+
+  it("G03: missing website permission migration is reported", async () => {
+    const fake = {
+      async query(sql) {
+        const text = String(sql);
+        if (text.includes("FROM blessboard.permissions")) {
+          return { rows: [] };
+        }
+        if (text.includes("FROM platform.schema_migrations")) {
+          return {
+            rows: REQUIRED_MIGRATIONS.filter(
+              (item) => !(item.module === "blessboard" && item.version === "095")
+            ).map((item) => ({ module: item.module, version: item.version })),
+          };
+        }
+        return { rows: [] };
+      },
+    };
+    const report = await inspectV7RuntimeSchemaCompatibility(fake);
+    assert.equal(report.compatible, false);
+    assert.ok(report.missing.includes(CAPABILITY.WEBSITE_PERMISSIONS));
+    const check = report.checks.find((row) => row.key === CAPABILITY.WEBSITE_PERMISSIONS);
+    assert.equal(check.ok, false);
+    assert.match(String(check.remediation || ""), /website_engine_permissions|093|094/);
+  });
+
+  it("G03: missing canonical lifecycle migration is reported", async () => {
+    const fake = {
+      async query(sql) {
+        const text = String(sql);
+        if (text.includes("clinic_registration_applications_status_check")) {
+          return {
+            rows: [
+              {
+                def: "CHECK ((status = ANY (ARRAY['submitted'::text, 'provisioning'::text, 'active'::text])))",
+              },
+            ],
+          };
+        }
+        if (text.includes("FROM platform.schema_migrations")) {
+          return {
+            rows: REQUIRED_MIGRATIONS.filter(
+              (item) =>
+                !(
+                  (item.module === "activeclinic" && item.version === "030") ||
+                  (item.module === "blessboard" && item.version === "098")
+                )
+            ).map((item) => ({ module: item.module, version: item.version })),
+          };
+        }
+        return { rows: [] };
+      },
+    };
+    const report = await inspectV7RuntimeSchemaCompatibility(fake);
+    assert.equal(report.compatible, false);
+    assert.ok(report.missing.includes(CAPABILITY.AC_CANONICAL_REGISTRATION_STATUSES));
+    assert.ok(report.missing.includes(CAPABILITY.REQUIRED_MIGRATIONS));
+    const lifecycle = report.checks.find(
+      (row) => row.key === CAPABILITY.AC_CANONICAL_REGISTRATION_STATUSES
+    );
+    assert.equal(lifecycle.ok, false);
+    assert.match(String(lifecycle.remediation || ""), /030_clinic_registration_canonical_lifecycle/);
+    const migrations = report.checks.find((row) => row.key === CAPABILITY.REQUIRED_MIGRATIONS);
+    assert.equal(migrations.ok, false);
+    assert.match(String(migrations.detail || migrations.remediation || ""), /030_clinic_registration_canonical_lifecycle|098_church_registration_canonical_lifecycle/);
   });
 
   it("schemaCompatibilityHealthz keeps readiness healthy when inspection was skipped", () => {

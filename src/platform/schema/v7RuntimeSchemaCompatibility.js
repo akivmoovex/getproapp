@@ -5,9 +5,15 @@
  * Detects application/schema drift (for example TENANT_PUBLISH before
  * platform/031) before self-registration can leave tenants half-provisioned.
  * Does not run migrations or mutate data.
+ * Hosted testing/production enforcement uses DEPLOYMENT_ENV plus the
+ * deployment-profile registry and database identity signals.
  */
 
 const { PUBLISH_POLICY } = require("../website/publishPolicy");
+const {
+  DEPLOYMENT_PROFILES,
+  getDeploymentProfile,
+} = require("../config/deploymentProfiles");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -106,12 +112,102 @@ function parseCheckValues(definition) {
   return values;
 }
 
-function shouldEnforceV7RuntimeSchemaCompatibility(env) {
-  const source = env || process.env;
-  const deploymentEnv = String(source.DEPLOYMENT_ENV || "")
+const HOSTED_SCHEMA_ENVS = new Set(["testing", "production"]);
+
+function normalizeSignal(raw) {
+  return String(raw || "")
     .trim()
     .toLowerCase();
-  return deploymentEnv === "testing" || deploymentEnv === "production";
+}
+
+function hostedIdentityKeysFromRegistry() {
+  const keys = new Set();
+  for (const profile of Object.values(DEPLOYMENT_PROFILES || {})) {
+    const key = normalizeSignal(profile && profile.expectedIdentityKey);
+    if (key) keys.add(key);
+  }
+  return keys;
+}
+
+/**
+ * Fail closed on hosted testing/production runtimes even when DEPLOYMENT_ENV
+ * is missing or malformed. Uses the deployment-profile registry and database
+ * identity env — not hostname guessing. Local/dev without those signals stays
+ * unenforced so unit tests remain usable.
+ *
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {{
+ *   enforce: boolean,
+ *   reason: string,
+ *   deploymentEnv: string,
+ *   identityEnv: string,
+ *   identityKey: string,
+ *   deploymentCode: string | null,
+ *   expectedDatabaseEnvironment: string | null,
+ * }}
+ */
+function resolveV7RuntimeSchemaEnforcement(env) {
+  const source = env || process.env;
+  const deploymentEnv = normalizeSignal(source.DEPLOYMENT_ENV);
+  const identityEnv = normalizeSignal(
+    source.DATABASE_IDENTITY_ENV || source.EXPECTED_DATABASE_ENV
+  );
+  const identityKey = normalizeSignal(source.DATABASE_IDENTITY_EXPECTED);
+  const hostedKeys = hostedIdentityKeysFromRegistry();
+  const profile = getDeploymentProfile(source);
+  const deploymentCode = profile && profile.deploymentCode ? profile.deploymentCode : null;
+  const expectedDatabaseEnvironment = profile
+    ? normalizeSignal(profile.expectedDatabaseEnvironment)
+    : "";
+  const profileDeploymentEnvironment = profile
+    ? normalizeSignal(profile.deploymentEnvironment)
+    : "";
+
+  const base = {
+    deploymentEnv,
+    identityEnv,
+    identityKey,
+    deploymentCode,
+    expectedDatabaseEnvironment: expectedDatabaseEnvironment || null,
+  };
+
+  if (HOSTED_SCHEMA_ENVS.has(deploymentEnv)) {
+    return { enforce: true, reason: "deployment_env", ...base };
+  }
+
+  if (hostedKeys.has(identityKey) && HOSTED_SCHEMA_ENVS.has(identityEnv)) {
+    return { enforce: true, reason: "database_identity", ...base };
+  }
+
+  if (hostedKeys.has(identityKey)) {
+    return { enforce: true, reason: "hosted_identity_key", ...base };
+  }
+
+  const profileIsCanonicalHostedRuntime =
+    Boolean(profile && profile.expectedIdentityKey) ||
+    (profile && profile.productSelection === "hostname");
+  if (
+    profileIsCanonicalHostedRuntime &&
+    (HOSTED_SCHEMA_ENVS.has(expectedDatabaseEnvironment) ||
+      HOSTED_SCHEMA_ENVS.has(profileDeploymentEnvironment))
+  ) {
+    return { enforce: true, reason: "deployment_profile", ...base };
+  }
+
+  if (
+    profile &&
+    HOSTED_SCHEMA_ENVS.has(identityEnv) &&
+    (HOSTED_SCHEMA_ENVS.has(expectedDatabaseEnvironment) ||
+      HOSTED_SCHEMA_ENVS.has(profileDeploymentEnvironment))
+  ) {
+    return { enforce: true, reason: "database_identity_env_and_profile", ...base };
+  }
+
+  return { enforce: false, reason: "local_or_unhosted", ...base };
+}
+
+function shouldEnforceV7RuntimeSchemaCompatibility(env) {
+  return resolveV7RuntimeSchemaEnforcement(env).enforce === true;
 }
 
 function pgCode(err) {
@@ -637,9 +733,13 @@ function schemaCompatibilityHealthz(schema) {
 function formatV7RuntimeSchemaCompatibilityLog(report) {
   const status = report && report.compatible ? "ok" : "incompatible";
   const missing = ((report && report.missing) || []).join(",") || "none";
+  const enforcement =
+    report && report.enforcement && report.enforcement.reason
+      ? report.enforcement.reason
+      : "n/a";
   return (
     `[platform] schemaCompatibility status=${status} code=${(report && report.code) || "unknown"} ` +
-    `missing=${missing}`
+    `enforcement=${enforcement} missing=${missing}`
   );
 }
 
@@ -656,7 +756,8 @@ async function assertV7RuntimeSchemaCompatibilityOrExit(db, opts) {
   const env = options.env || process.env;
   const exit = typeof options.exit === "function" ? options.exit : (code) => process.exit(code);
   const logger = options.logger || console;
-  if (!shouldEnforceV7RuntimeSchemaCompatibility(env)) {
+  const enforcement = resolveV7RuntimeSchemaEnforcement(env);
+  if (!enforcement.enforce) {
     const skipped = {
       ok: true,
       compatible: true,
@@ -664,18 +765,26 @@ async function assertV7RuntimeSchemaCompatibilityOrExit(db, opts) {
       missing: [],
       capabilities: [],
       checks: [],
-      details: { skipped: true },
-      reason: "deployment-env-not-enforced",
+      details: { skipped: true, enforcement },
+      reason: "hosted-runtime-not-detected",
+      enforcement,
     };
     logger.log(formatV7RuntimeSchemaCompatibilityLog(skipped) + " (not enforced)");
     return skipped;
   }
   const report = await inspectV7RuntimeSchemaCompatibility(db);
+  report.enforcement = enforcement;
   logger.log(formatV7RuntimeSchemaCompatibilityLog(report));
   if (!report.compatible) {
     logger.error(
       `[platform] FATAL: V7 runtime schema is incompatible with this application. ` +
-        `Missing capability: ${report.capability || report.reason || "unknown"}. ` +
+        `enforcement=${enforcement.reason} ` +
+        `deploymentEnv=${enforcement.deploymentEnv || "unset"} ` +
+        `identityKey=${enforcement.identityKey || "unset"} ` +
+        `identityEnv=${enforcement.identityEnv || "unset"} ` +
+        `deploymentCode=${enforcement.deploymentCode || "unset"} ` +
+        `capability=${report.capability || report.reason || "unknown"} ` +
+        `missing=${(report.missing || []).join(",") || "none"}. ` +
         `Apply pending migrations (platform/031, blessboard/095, activeclinic/030) to this database, then restart. ` +
         `Do not run migrations from application startup. ` +
         `Refusing to start so clinics are not left website_pending.`
@@ -690,7 +799,8 @@ async function assertV7RuntimeSchemaCompatibilityOrExit(db, opts) {
  * Returns null when compatible or not enforced.
  */
 async function rejectIfV7SchemaIncompatible(db, env) {
-  if (!shouldEnforceV7RuntimeSchemaCompatibility(env)) return null;
+  const enforcement = resolveV7RuntimeSchemaEnforcement(env);
+  if (!enforcement.enforce) return null;
   const report = await inspectV7RuntimeSchemaCompatibility(db);
   if (report.compatible) return null;
   return {
@@ -699,6 +809,7 @@ async function rejectIfV7SchemaIncompatible(db, env) {
     capability: report.capability,
     missing: report.missing,
     reason: report.reason,
+    enforcement,
     report: presentV7SchemaCompatibilityPublic(report),
   };
 }
@@ -711,6 +822,7 @@ module.exports = {
   REQUIRED_MIGRATIONS,
   CAPABILITY,
   parseCheckValues,
+  resolveV7RuntimeSchemaEnforcement,
   shouldEnforceV7RuntimeSchemaCompatibility,
   inspectV7RuntimeSchemaCompatibility,
   presentV7SchemaCompatibilityPublic,

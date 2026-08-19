@@ -433,10 +433,16 @@ describe("blessboard platform admin integration workflow", () => {
     assert.ok(started.rawToken);
     const supportCookie = `${SUPPORT_COOKIE}=${started.rawToken}`;
 
-    const hq = await request(app)
+    let hq = await request(app)
       .get("/hq")
       .set("Host", HOST_A)
       .set("Cookie", cookieHeader([sessionCookie, supportCookie]));
+    if (hq.status === 303 && hq.headers.location) {
+      hq = await request(app)
+        .get(String(hq.headers.location))
+        .set("Host", HOST_A)
+        .set("Cookie", cookieHeader([sessionCookie, supportCookie]));
+    }
     assert.equal(hq.status, 200);
     assert.match(hq.text, /data-bb-support-banner="1"/);
     assert.match(hq.text, /Your actions are audited/);

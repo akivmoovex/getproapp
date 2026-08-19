@@ -29,6 +29,7 @@ const {
   listUnifiedRegistrations,
   isSelfRegistrationProvisioningEnabled,
 } = require("../src/platform/registration");
+const { ACTION: LIFECYCLE_AUDIT_ACTION } = require("../src/platform/registration/lifecycleAudit");
 const {
   submitAndProvisionClinicRegistration,
 } = require("../src/activeclinic/services/submitClinicRegistrationService");
@@ -275,8 +276,15 @@ describe("V7 unified registration engine", () => {
       `SELECT count(*)::int AS n
          FROM platform.audit_events
         WHERE organization_id = $1
-          AND action_key = 'registration.lifecycle'`,
-      [clinic.organizationId]
+          AND action_key = ANY($2::text[])`,
+      [
+        clinic.organizationId,
+        [
+          LIFECYCLE_AUDIT_ACTION.PROVISIONING_COMPLETED,
+          LIFECYCLE_AUDIT_ACTION.ORGANIZATION_CREATED,
+          LIFECYCLE_AUDIT_ACTION.WEBSITE_INITIALIZED,
+        ],
+      ]
     );
     assert.ok(audit.rows[0].n >= 1);
   });
