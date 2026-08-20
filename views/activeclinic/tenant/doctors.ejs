@@ -6,9 +6,9 @@
   <% const list = Array.isArray(profiles) ? profiles : []; %>
   <% if (!list.length) { %>
   <div class="ac-public-empty" data-ac-empty="doctors" data-ac-state-key="empty">
-    <h2><%- include('../partials/website-editable-field', { contentKey: 'doctors.empty_heading', fieldValue: clinic.doctorsEmptyHeading || 'No public clinician profiles yet', fieldType: 'short_text' }) %></h2>
-    <p><%- include('../partials/website-editable-field', { contentKey: 'doctors.empty_body', fieldValue: clinic.doctorsEmptyBody || 'No public doctor profiles are published.', fieldType: 'long_text' }) %></p>
-    <%- include('../partials/website-operational-affordance', { href: '/app/staff', label: 'Manage doctors', manageKind: 'doctors' }) %>
+    <h2><%- include('../partials/website-editable-field', { contentKey: 'doctors.empty_heading', fieldValue: clinic.doctorsEmptyHeading || 'Doctor listings are not available yet', fieldType: 'short_text' }) %></h2>
+    <p><%- include('../partials/website-editable-field', { contentKey: 'doctors.empty_body', fieldValue: clinic.doctorsEmptyBody || 'This clinic has not published doctor listings yet.', fieldType: 'long_text' }) %></p>
+    <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue', label: 'Manage public catalogue', manageKind: 'doctors' }) %>
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.home) || ('/clinics/' + clinic.clinicKey) %>">Back to clinic home</a></p>
   </div>
   <% } else { %>
@@ -46,7 +46,7 @@
     </li>
     <% }) %>
   </ul>
-  <%- include('../partials/website-operational-affordance', { href: '/app/staff', label: 'Manage doctors', manageKind: 'doctors' }) %>
+  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue', label: 'Manage public catalogue', manageKind: 'doctors' }) %>
   <% } %>
   <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_doctors', librarySkipTypes: [] }) %>
 </section>

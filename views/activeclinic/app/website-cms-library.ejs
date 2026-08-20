@@ -16,10 +16,13 @@
   <div class="ac-mw-head">
     <div>
       <h2>Content Library</h2>
-      <p class="ac-mw-muted">Create clinic website information once and reuse it on pages and sections. Doctors and services come from ActiveClinic records when they are already published. Website-only items do not create clinical records.</p>
+      <p class="ac-mw-muted">Create clinic website information once and reuse it on pages and sections. Use Public Catalogue to show or hide doctors and services. The library edits presentation and placements only — it does not create clinical records.</p>
     </div>
     <% if (cms.canEdit) { %>
-    <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/library/new">Add content item</a>
+    <div class="ac-mw-actions">
+      <a class="ac-mw-btn" href="/app/settings/website/catalogue">Public catalogue</a>
+      <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/library/new">Add content item</a>
+    </div>
     <% } %>
   </div>
   <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>

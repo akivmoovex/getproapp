@@ -7,9 +7,9 @@
   <% const procedureList = Array.isArray(procedures) ? procedures : []; %>
   <% if (!serviceList.length && !procedureList.length) { %>
   <div class="ac-public-empty" data-ac-empty="services" data-ac-state-key="empty">
-    <h2><%- include('../partials/website-editable-field', { contentKey: 'services.empty_heading', fieldValue: clinic.servicesEmptyHeading || 'No public services yet', fieldType: 'short_text' }) %></h2>
-    <p><%- include('../partials/website-editable-field', { contentKey: 'services.empty_body', fieldValue: clinic.servicesEmptyBody || ('No public services are published yet.'), fieldType: 'long_text' }) %></p>
-    <%- include('../partials/website-operational-affordance', { href: '', label: 'Manage services', manageKind: 'services', note: 'Public consultations and procedures come from appointment types with public booking enabled. There is no dedicated service-catalogue screen yet, so this editor does not invent a link to Clinical encounters.' }) %>
+    <h2><%- include('../partials/website-editable-field', { contentKey: 'services.empty_heading', fieldValue: clinic.servicesEmptyHeading || 'Service listings are not available yet', fieldType: 'short_text' }) %></h2>
+    <p><%- include('../partials/website-editable-field', { contentKey: 'services.empty_body', fieldValue: clinic.servicesEmptyBody || 'This clinic has not published service listings yet.', fieldType: 'long_text' }) %></p>
+    <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue', label: 'Manage public catalogue', manageKind: 'services' }) %>
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.home) || ('/clinics/' + clinic.clinicKey) %>">Back to clinic home</a></p>
   </div>
   <% } %>
@@ -52,7 +52,7 @@
   </ul>
   <% } %>
   <% if (serviceList.length || procedureList.length) { %>
-  <%- include('../partials/website-operational-affordance', { href: '', label: 'Manage services', manageKind: 'services', note: 'Public consultations and procedures come from appointment types with public booking enabled. There is no dedicated service-catalogue screen yet, so this editor does not invent a link to Clinical encounters.' }) %>
+  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue', label: 'Manage public catalogue', manageKind: 'services' }) %>
   <% } %>
   <p class="ac-public-note"><a href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.pricing) || ('/clinics/' + clinic.clinicKey + '/pricing') %>">Pricing information</a> · Fees are shown only when configured by the clinic.</p>
   <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_services', librarySkipTypes: [] }) %>

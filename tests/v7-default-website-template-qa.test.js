@@ -251,7 +251,7 @@ describe("V7 default website template QA", () => {
     assert.match(pages.services.text, /data-ac-empty="services"/);
     assert.doesNotMatch(pages.services.text, /Example: General consultation/);
     assert.doesNotMatch(pages.services.text, /data-ac-template-examples="services"/);
-    assert.match(pages.doctors.text, /No public clinician profiles yet|Manage doctors/);
+    assert.match(pages.doctors.text, /Doctor listings are not available yet|Manage public catalogue/);
     assert.doesNotMatch(pages.doctors.text, /these people do not work at this clinic/i);
     assert.match(pages.location.text, addressRe);
     assert.match(pages.location.text, /Example hours/);

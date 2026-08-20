@@ -767,6 +767,7 @@ describe("v7 clinic website autonomy acceptance", { timeout: 180000 }, () => {
       "/app/settings/website/settings",
       "/app/settings/website/seo",
       "/app/settings/website/library",
+      "/app/settings/website/catalogue",
     ]) {
       const page = await request(app).get(path).set("Host", AC_HOST).set("Cookie", session);
       assert.equal(page.status, 200, path);

@@ -101,6 +101,23 @@
 }
 .ac-mw-badge--draft { background: #f1f5f9; color: #475569; }
 .ac-mw-badge--hidden { background: #ffdad6; color: #93000a; }
+.ac-mw-tabs {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  margin: 0 0 1rem;
+}
+.ac-mw-catalogue-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+.ac-mw-catalogue-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+.ac-mw-catalogue-actions form { margin: 0; }
 .ac-mw-form {
   display: grid;
   gap: 0.9rem;
@@ -471,6 +488,7 @@
   }
 }
 @media (max-width: 720px) {
+  .ac-mw { overflow-x: clip; max-width: 100%; }
   .ac-mw-card { grid-template-columns: 1fr; }
   .ac-mw-head { flex-direction: column; }
   .ac-mw-nav { gap: 0.4rem; }
@@ -481,8 +499,13 @@
   .ac-mw-actions { width: 100%; }
   .ac-mw-actions .ac-mw-btn,
   .ac-mw-actions button,
-  .ac-mw-actions a.ac-mw-btn { flex: 1 1 auto; }
+  .ac-mw-actions a.ac-mw-btn { flex: 1 1 auto; min-height: 2.75rem; }
   .ac-mw-hub-quick__row { width: 100%; }
   .ac-mw-hub-quick__row form { width: 100%; }
   .ac-mw-hub-quick__row form button { width: 100%; }
+  .ac-mw-catalogue-card,
+  .ac-mw-card--library { overflow-wrap: anywhere; }
+  .ac-mw-dialog,
+  .ac-mw-modal,
+  dialog { max-width: calc(100vw - 1.5rem); }
 }

@@ -267,6 +267,8 @@ describe("ActiveClinic website CMS", () => {
     assert.match(hub.text, /data-ac-website-action="pages"/);
     assert.match(hub.text, />Page Builder</);
     assert.match(hub.text, /SEO &amp; Social/);
+    assert.match(hub.text, /data-ac-website-action="catalogue"/);
+    assert.match(hub.text, /Public Catalogue/);
     assert.match(hub.text, /data-ac-website-action="library"/);
     assert.match(hub.text, /Content Library/);
     assert.match(hub.text, /data-ac-website-action="preview"/);

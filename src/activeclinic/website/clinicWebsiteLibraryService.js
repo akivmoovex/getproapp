@@ -9,7 +9,7 @@
 const contentService = require("../../platform/website/contentService");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const {
-  listPublicServices,
+  listWebsiteServices,
   listPublicStaffProfiles,
 } = require("../services/activeClinicPublicVisibilityService");
 const { listFacilitiesByOrganization } = require("../services/facilityService");
@@ -175,7 +175,7 @@ async function loadOperational(db, input) {
   const empty = { services: [], doctors: [], facilities: [] };
   if (!organizationId || !healthcareOrganizationId) return empty;
   const [services, doctors, facilities] = await Promise.all([
-    listPublicServices(db, { organizationId, healthcareOrganizationId }),
+    listWebsiteServices(db, { organizationId, healthcareOrganizationId }),
     listPublicStaffProfiles(db, { organizationId, healthcareOrganizationId }),
     listFacilitiesByOrganization(db, { organizationId, status: "active" }),
   ]);
@@ -272,7 +272,8 @@ function mergeLibrary(storedItems, operational, placements, pages, clinicKey) {
           stored: Boolean(stored),
           clinicTitle: service.displayName || "",
           clinicSummary: service.summary || "",
-          recordsLabel: "ActiveClinic service record",
+          recordsHref: "/app/settings/website/catalogue?tab=services",
+          recordsLabel: "Show or hide this service in Public Catalogue",
         }
       )
     );
@@ -304,8 +305,8 @@ function mergeLibrary(storedItems, operational, placements, pages, clinicKey) {
           stored: Boolean(stored),
           clinicTitle: doctor.displayName || "",
           clinicSummary: doctor.title || doctor.bio || "",
-          recordsHref: "/app/staff",
-          recordsLabel: "Manage doctors in clinic records",
+          recordsHref: "/app/settings/website/catalogue?tab=doctors",
+          recordsLabel: "Show or hide this doctor in Public Catalogue",
         }
       )
     );
@@ -832,6 +833,55 @@ async function reorderLibraryItems(db, input) {
   return { ok: true, items: next };
 }
 
+async function upsertOperationalOverlay(db, input) {
+  const edit = requireEdit(input);
+  if (!edit.ok) return edit;
+  const type = String((input && input.type) || "");
+  const operationalKey = text(input && input.operationalKey, 80);
+  if ((type !== "doctor" && type !== "service") || !operationalKey) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  const prefix = type === "service" ? "s" : "d";
+  const seeded = await cmsService.ensureCmsSeeded(db, input);
+  if (!seeded.ok) return seeded;
+  const stored = await loadStored(db, seeded.instance, seeded.organizationId);
+  const existing = stored.items.find(
+    (item) =>
+      item.source === LIBRARY_SOURCES.OPERATIONAL &&
+      item.type === type &&
+      item.operational_key === operationalKey
+  );
+  const merged = normalizeItem(
+    {
+      id: existing ? existing.id : operationalItemId(prefix, operationalKey),
+      type,
+      source: LIBRARY_SOURCES.OPERATIONAL,
+      operational_key: operationalKey,
+      title: text(input.title, 160) || (existing && existing.title) || operationalKey,
+      summary: input.summary != null ? text(input.summary, 400) : existing ? existing.summary : "",
+      body: input.body != null ? text(input.body, 4000) : existing ? existing.body : "",
+      image: existing ? existing.image : null,
+      visible:
+        input.visible != null
+          ? boolValue(input.visible, existing ? existing.visible !== false : true)
+          : existing
+            ? existing.visible !== false
+            : true,
+      featured:
+        input.featured != null
+          ? boolValue(input.featured, false) === true
+          : existing
+            ? existing.featured === true
+            : false,
+      sort_order: existing ? existing.sort_order : String(stored.items.length),
+    },
+    stored.items.length
+  );
+  const saved = await upsertStoredItem(db, input, merged);
+  if (!saved.ok) return saved;
+  return { ok: true, item: saved.item };
+}
+
 module.exports = {
   RESULT,
   LIBRARY_TYPES,
@@ -843,6 +893,7 @@ module.exports = {
   placeLibraryItem,
   removePlacement,
   reorderLibraryItems,
+  upsertOperationalOverlay,
   applyLibraryPresentation,
   libraryItemIsHidden,
 };

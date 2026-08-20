@@ -128,7 +128,8 @@ describe("v7 unified website editor mobile QA", () => {
       css,
       /@media \(max-width:\s*720px\)[\s\S]{0,400}\.ac-mw-hub-tiles[\s\S]{0,80}grid-template-columns:\s*1fr/
     );
-    assert.match(css, /\.ac-mw-hub-next/);
+    assert.match(css, /\.ac-mw-catalogue-status/);
+    assert.match(css, /overflow-x:\s*clip/);
     const shell = read("views/activeclinic/layouts/app-shell.ejs");
     assert.doesNotMatch(shell, /until Platform Admin finishes provisioning/);
   });

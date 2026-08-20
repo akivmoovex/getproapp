@@ -39,7 +39,7 @@ describe("ActiveClinic Phase 9 accessibility", () => {
     assert.match(read("src/activeclinic/http/renderActiveClinicAuth.js"), /v7-parity-13/);
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
-      /v7-parity-24/
+      /v7-parity-25/
     );
   });
 

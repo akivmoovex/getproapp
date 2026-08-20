@@ -92,9 +92,9 @@ function buildActiveClinicWebsiteTemplateContent(input) {
       `Browse care offerings {clinicName} chooses to publish. Listings appear here when the clinic publishes services from clinic operations.`,
       name
     ),
-    "services.empty_heading": "No public services yet",
+    "services.empty_heading": "Service listings are not available yet",
     "services.empty_body": interpolate(
-      `{clinicName} has not published a public service catalogue yet. Use clinic operations to add consultations and procedures patients can book.`,
+      `{clinicName} has not published service listings yet. Check back soon, or contact the clinic for current care offerings.`,
       name
     ),
     "services.examples": exampleServices(),
@@ -103,9 +103,9 @@ function buildActiveClinicWebsiteTemplateContent(input) {
       `Meet clinicians when {clinicName} publishes public profiles.`,
       name
     ),
-    "doctors.empty_heading": "No public clinician profiles yet",
+    "doctors.empty_heading": "Doctor listings are not available yet",
     "doctors.empty_body": interpolate(
-      `{clinicName} has not published public clinician profiles yet. Use staff settings to enable profiles patients can see.`,
+      `{clinicName} has not published doctor listings yet. Check back soon, or contact the clinic to ask about clinicians.`,
       name
     ),
     "doctors.examples": exampleClinicians(),

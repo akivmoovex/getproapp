@@ -13,8 +13,8 @@ const {
   listPublishableClinics,
   listPublicStaffProfiles,
   getPublicStaffProfile,
-  listPublicServices,
-  getPublicService,
+  listWebsiteServices,
+  getWebsiteService,
   listPublicProcedures,
   getPublicProcedure,
   listPublicPricePatterns,
@@ -905,7 +905,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
       if (!clinic) return undefined;
 
-      const servicesResult = await listPublicServices(getPool(), {
+      const servicesResult = await listWebsiteServices(getPool(), {
         organizationId: clinic.organizationId,
         healthcareOrganizationId: clinic.healthcareOrganizationId,
       });
@@ -934,7 +934,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
       if (!clinic) return undefined;
 
-      const serviceResult = await getPublicService(getPool(), {
+      const serviceResult = await getWebsiteService(getPool(), {
         organizationId: clinic.organizationId,
         healthcareOrganizationId: clinic.healthcareOrganizationId,
         serviceKey: req.params.serviceKey,
@@ -950,7 +950,10 @@ function registerActiveClinicPublicRoutes(app, deps) {
         }));
       }
 
-      const serviceKind = clinic.publicBookingEnabled ? "consultation" : "informational";
+      const serviceKind =
+        clinic.publicBookingEnabled && serviceResult.service && serviceResult.service.bookable
+          ? "consultation"
+          : "informational";
       return renderTenantView(req, res, clinic, "tenant/service-detail", {
         service: serviceResult.service,
         serviceKind,

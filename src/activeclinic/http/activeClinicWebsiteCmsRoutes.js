@@ -16,6 +16,7 @@ const { renderActiveClinicAppPage } = require("./renderActiveClinicShell");
 const { loadActiveClinicWebsiteSettingsScreen } = require("../services/loadActiveClinicSettingsScreens");
 const cmsService = require("../website/clinicWebsiteCmsService");
 const libraryService = require("../website/clinicWebsiteLibraryService");
+const catalogueService = require("../website/clinicWebsiteCatalogueService");
 const { PAGE_TEMPLATES, SECTION_TYPES, BLOCK_TYPES, boolValue, isAddableBlockType } = require("../website/clinicWebsiteCms");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const contentService = require("../../platform/website/contentService");
@@ -67,6 +68,8 @@ function slugErrorMessage(code) {
   if (code === "invalid_hex") return "Use a 6-digit colour like #0d9488.";
   if (code === "already_exists") return "That content is already in the library or already used on that page.";
   if (code === "record_not_found") return "That clinic record was not found. Choose an existing doctor, service, or location.";
+  if (code === "inactive") return "Inactive staff and services cannot appear on the website.";
+  if (code === "needs_profile") return "This doctor needs a name in clinic records before they can appear on the website.";
   if (code === "validation_failed") return "Check those details and try again. Use a full website address starting with https://.";
   return "Unable to save website changes.";
 }
@@ -1089,6 +1092,110 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
       imageMediaId: body && body.imageMediaId,
     };
   }
+
+  app.get(
+    "/app/settings/website/catalogue",
+    requireAuth,
+    requirePermission(viewOrEdit),
+    async (req, res, next) => {
+      try {
+        const loaded = await catalogueService.loadCatalogue(getPool(), cmsInput(req));
+        if (!loaded.ok) return deny(res, 403, "Public catalogue", slugErrorMessage(loaded.code));
+        const tab = String(req.query.tab || "doctors").trim() === "services" ? "services" : "doctors";
+        return renderShell(req, res, {
+          content: "app/website-cms-catalogue.ejs",
+          cmsActive: "catalogue",
+          pageHeader: {
+            title: "Public catalogue",
+            description: "Choose which doctors and services appear on your clinic website.",
+          },
+          breadcrumbs: breadcrumbs([{ label: "Public catalogue" }]),
+          pageData: {
+            cms: {
+              tab,
+              doctors: loaded.doctors,
+              services: loaded.services,
+              canEdit: loaded.canEdit,
+              emptyDoctors: loaded.emptyDoctors,
+              emptyServices: loaded.emptyServices,
+              saved: String(req.query.saved || "") === "1",
+              error: String(req.query.error || "") === "1" ? slugErrorMessage(req.query.code) : "",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  async function handleCatalogueAction(req, res, next, kind) {
+    try {
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return deny(res, 403, "Invalid request", "Reload the page and try again.");
+      }
+      const action = String((req.body && req.body.action) || "").trim();
+      const tab = kind === "service" ? "services" : "doctors";
+      const input = cmsInput(req);
+      let result;
+      if (kind === "doctor") {
+        if (action === "feature" || action === "unfeature") {
+          result = await catalogueService.setCatalogueFeatured(getPool(), {
+            ...input,
+            kind: "doctor",
+            staffId: req.params.staffId,
+            featured: action === "feature",
+          });
+        } else {
+          result = await catalogueService.setDoctorWebsiteVisibility(getPool(), {
+            ...input,
+            staffId: req.params.staffId,
+            visible: action !== "hide",
+          });
+        }
+      } else if (action === "feature" || action === "unfeature") {
+        result = await catalogueService.setCatalogueFeatured(getPool(), {
+          ...input,
+          kind: "service",
+          serviceId: req.params.serviceId,
+          featured: action === "feature",
+        });
+      } else {
+        result = await catalogueService.setServiceWebsiteVisibility(getPool(), {
+          ...input,
+          serviceId: req.params.serviceId,
+          visible: action !== "hide",
+        });
+      }
+      if (!result.ok) {
+        const status = result.code === "forbidden" ? 403 : result.code === "not_found" ? 404 : 303;
+        if (status === 303) {
+          return res.redirect(
+            303,
+            `/app/settings/website/catalogue?tab=${tab}&error=1&code=${encodeURIComponent(result.code || "")}`
+          );
+        }
+        return deny(res, status, "Public catalogue", slugErrorMessage(result.code));
+      }
+      return res.redirect(303, `/app/settings/website/catalogue?tab=${tab}&saved=1`);
+    } catch (err) {
+      return next(err);
+    }
+  }
+
+  app.post(
+    "/app/settings/website/catalogue/doctors/:staffId",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    (req, res, next) => handleCatalogueAction(req, res, next, "doctor")
+  );
+
+  app.post(
+    "/app/settings/website/catalogue/services/:serviceId",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    (req, res, next) => handleCatalogueAction(req, res, next, "service")
+  );
 
   app.get(
     "/app/settings/website/library",

@@ -364,7 +364,8 @@ describe("v7 bugs 04-09 website editor architecture", () => {
     assert.equal(publicServices.status, 200);
     assert.doesNotMatch(publicServices.text, /Example: General consultation/);
     assert.doesNotMatch(publicServices.text, /data-ac-template-examples=/);
-    assert.match(publicServices.text, /No public services yet|No public services are published/);
+    assert.match(publicServices.text, /Service listings are not available yet|No public services yet|No public services are published/);
+    assert.doesNotMatch(publicServices.text, /Manage public catalogue/);
 
     const publicContact = await request(app).get(`/clinics/${result.slug}/contact`);
     assert.equal(publicContact.status, 200);
@@ -385,7 +386,7 @@ describe("v7 bugs 04-09 website editor architecture", () => {
       .get(`/clinics/${result.slug}/services?website_edit=1&website_mode=draft`)
       .set("Cookie", cookie);
     assert.equal(draftServices.status, 200);
-    assert.match(draftServices.text, /Manage services/);
+    assert.match(draftServices.text, /Manage public catalogue/);
     for (const key of expectedInlineKeysForPage("services")) {
       assert.ok(websiteKeys(draftServices.text).includes(key), `services missing ${key}`);
     }

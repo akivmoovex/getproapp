@@ -314,8 +314,21 @@ async function getPublicStaffProfile(db, input) {
   return { ok: true, code: RESULT.OK, profile };
 }
 
+function mapPublicServiceRow(row) {
+  return {
+    id: row.id,
+    serviceKey: row.service_key,
+    displayName: row.display_name,
+    summary: row.public_summary || null,
+    durationMinutes: row.default_duration_minutes || null,
+    bookable: row.public_bookable === true,
+    websiteVisible: row.public_website_visible === true,
+  };
+}
+
 /**
- * List public appointment service types for clinic services page.
+ * List bookable appointment service types for public booking.
+ * Website listing uses listWebsiteServices — do not treat this as website visibility.
  */
 async function listPublicServices(db, input) {
   const organizationId = String((input && input.organizationId) || "").trim();
@@ -326,7 +339,8 @@ async function listPublicServices(db, input) {
 
   const sql = `
     SELECT ast.id, ast.service_key, ast.display_name, ast.public_summary,
-           ast.status, ast.default_duration_minutes
+           ast.status, ast.default_duration_minutes, ast.public_bookable,
+           ast.public_website_visible
     FROM activeclinic.appointment_service_types ast
     WHERE ast.organization_id = $1
       AND ast.healthcare_organization_id = $2
@@ -336,21 +350,37 @@ async function listPublicServices(db, input) {
   `;
 
   const result = await db.query(sql, [organizationId, healthcareOrganizationId]);
-  const services = result.rows.map((row) => ({
-    id: row.id,
-    serviceKey: row.service_key,
-    displayName: row.display_name,
-    summary: row.public_summary || null,
-    durationMinutes: row.default_duration_minutes || null,
-  }));
-
-  return { ok: true, code: RESULT.OK, services };
+  return { ok: true, code: RESULT.OK, services: result.rows.map(mapPublicServiceRow) };
 }
 
 /**
- * Get a single public service by key.
+ * List services eligible for the public mini-website.
+ * Includes website-visible services even when they are not bookable.
  */
-async function getPublicService(db, input) {
+async function listWebsiteServices(db, input) {
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
+  if (!UUID_RE.test(organizationId) || !UUID_RE.test(healthcareOrganizationId)) {
+    return { ok: false, code: RESULT.INVALID_INPUT, services: [] };
+  }
+
+  const sql = `
+    SELECT ast.id, ast.service_key, ast.display_name, ast.public_summary,
+           ast.status, ast.default_duration_minutes, ast.public_bookable,
+           ast.public_website_visible
+    FROM activeclinic.appointment_service_types ast
+    WHERE ast.organization_id = $1
+      AND ast.healthcare_organization_id = $2
+      AND ast.status = 'active'
+      AND (ast.public_website_visible = true OR ast.public_bookable = true)
+    ORDER BY ast.display_name ASC
+  `;
+
+  const result = await db.query(sql, [organizationId, healthcareOrganizationId]);
+  return { ok: true, code: RESULT.OK, services: result.rows.map(mapPublicServiceRow) };
+}
+
+async function getServiceByKey(db, input, websiteListing) {
   const organizationId = String((input && input.organizationId) || "").trim();
   const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
   const serviceKey = String((input && input.serviceKey) || "").trim();
@@ -359,32 +389,39 @@ async function getPublicService(db, input) {
     return { ok: false, code: RESULT.INVALID_INPUT, service: null };
   }
 
+  const eligibility = websiteListing
+    ? `(ast.public_website_visible = true OR ast.public_bookable = true)`
+    : `ast.public_bookable = true`;
   const sql = `
     SELECT ast.id, ast.service_key, ast.display_name, ast.public_summary,
-           ast.default_duration_minutes
+           ast.default_duration_minutes, ast.public_bookable, ast.public_website_visible
     FROM activeclinic.appointment_service_types ast
     WHERE ast.organization_id = $1
       AND ast.healthcare_organization_id = $2
       AND ast.service_key = $3
       AND ast.status = 'active'
-      AND ast.public_bookable = true
+      AND ${eligibility}
   `;
 
   const result = await db.query(sql, [organizationId, healthcareOrganizationId, serviceKey]);
   if (!result.rows.length) {
     return { ok: false, code: RESULT.NOT_FOUND, service: null };
   }
+  return { ok: true, code: RESULT.OK, service: mapPublicServiceRow(result.rows[0]) };
+}
 
-  const row = result.rows[0];
-  const service = {
-    id: row.id,
-    serviceKey: row.service_key,
-    displayName: row.display_name,
-    summary: row.public_summary || null,
-    durationMinutes: row.default_duration_minutes || null,
-  };
+/**
+ * Get a single bookable public service by key (booking wizard).
+ */
+async function getPublicService(db, input) {
+  return getServiceByKey(db, input, false);
+}
 
-  return { ok: true, code: RESULT.OK, service };
+/**
+ * Get a service that may appear on the public website even if it is not bookable.
+ */
+async function getWebsiteService(db, input) {
+  return getServiceByKey(db, input, true);
 }
 
 /**
@@ -492,7 +529,9 @@ module.exports = {
   listPublicStaffProfiles,
   getPublicStaffProfile,
   listPublicServices,
+  listWebsiteServices,
   getPublicService,
+  getWebsiteService,
   listPublicProcedures,
   getPublicProcedure,
   listPublicPricePatterns,
