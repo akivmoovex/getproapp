@@ -342,14 +342,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
   // ========== Platform Public Routes ==========
 
   app.get("/", (req, res) => {
-    // Auth redirect to /app
-    if (req.activeClinicAuth && req.activeClinicAuth.authenticated) {
-      if (req.activeClinicAuth.mustChangePassword) {
-        return res.redirect(303, "/account/change-password");
-      }
-      return res.redirect(303, "/app");
-    }
-    const csrfToken = issuePageCsrf(res, env, isProduction);
+    // Public ACW01 homepage for the ActiveClinic product host. Do not send
+    // visitors (anonymous or signed-in) to /login or /app from `/`.
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
     return res.status(200).type("html").send(renderPublicView("public/home", {
       csrfToken,
       pageTitle: "ActiveClinic",
