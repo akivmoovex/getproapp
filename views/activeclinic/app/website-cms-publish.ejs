@@ -1,0 +1,49 @@
+<%
+  var website = (pageData && pageData.website) || {};
+  var ux = website.ux || website;
+  var actions = (ux.actions || website.actions) || {};
+  var changes = (pageData && pageData.changes) || [];
+%>
+<section class="ac-mw" data-ac-page-section="website-publish" data-ac-mw-screen="publish">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Site Status &amp; Publishing</h2>
+      <p class="ac-mw-muted">Review pending changes and manage your clinic's live website.</p>
+    </div>
+  </div>
+  <div class="ac-mw-card" style="grid-template-columns:1fr">
+    <div>
+      <p><strong data-ac-website-status-label="1"><%= ux.statusLabel || 'Website not published yet' %></strong></p>
+      <p class="ac-mw-muted" data-ac-website-status-hint="1"><%= ux.statusHint || '' %></p>
+      <p>Last published: <span data-ac-website-last-published="1"><%= website.lastPublishedLabel || 'Not published yet' %></span></p>
+      <p>Public URL: <code data-ac-website-public-url="1"><%= website.publicUrl || website.publicPath || '—' %></code></p>
+      <div class="ac-mw-actions">
+        <% if (actions.preview) { %><a class="ac-mw-btn" href="<%= actions.preview %>">Preview site</a><% } %>
+        <% if (actions.editWebsite) { %><a class="ac-mw-btn" href="<%= actions.editWebsite %>">Edit website</a><% } %>
+        <% if (website.canPublish && actions.publishPath) { %>
+        <form method="post" action="<%= actions.publishPath %>" onsubmit="return confirm('Publish this website? Public visitors will see the current draft.');">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <input type="hidden" name="makePublic" value="1"/>
+          <input type="hidden" name="returnTo" value="/app/settings/website/publish"/>
+          <button type="submit" class="ac-mw-btn ac-mw-btn--primary" data-ac-website-action="publish">Publish all changes</button>
+        </form>
+        <% } %>
+      </div>
+    </div>
+  </div>
+  <h3>Unpublished changes (<%= changes.length %>)</h3>
+  <div class="ac-mw-list">
+    <% if (!changes.length) { %>
+    <p class="ac-mw-muted">No unpublished draft changes.</p>
+    <% } %>
+    <% changes.forEach(function (change) { %>
+    <article class="ac-mw-card" style="grid-template-columns:1fr">
+      <div>
+        <h3><%= change.contentKey %></h3>
+        <p class="ac-mw-card__meta"><%= change.changeType || 'changed' %></p>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+</section>
