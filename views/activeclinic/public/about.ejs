@@ -1,62 +1,72 @@
-<article class="acp-page" data-ac-page-section="public-about">
-  <header class="acp-page-hero">
-    <p class="ac-public-eyebrow">About ActiveClinic</p>
-    <h1>Transforming clinic operations in Zambia</h1>
-    <p class="ac-public-lede">ActiveClinic is a healthcare operations platform for clinics and hospitals. It is part of the GetPro product family, with a pilot focus on organisations in Zambia.</p>
-  </header>
-
-  <section class="acp-mission-grid" data-ac-about-section="mission">
-    <article class="acp-mission-card">
-      <h2>Our mission</h2>
-      <p>Help clinical teams manage patients, appointments, and day-to-day workflows in a secure application — while giving participating clinics an honest public presence for patients.</p>
-    </article>
-    <article class="acp-mission-card">
-      <h2>Zambia first</h2>
-      <p>Phone formats, provinces, and timezone defaults are designed for Zambian healthcare organisations, with room to grow beyond the pilot.</p>
-    </article>
-    <article class="acp-mission-card">
-      <h2>Clear boundaries</h2>
-      <p>This public site lists only clinics that choose to publish. Staff clinical work happens after sign-in — not on marketing pages.</p>
-    </article>
+<article class="acw-page" data-ac-page-section="public-about" data-ac-acw-screen="ACW06">
+  <section class="acw-hero">
+    <div>
+      <p class="acw-kicker">About ActiveClinic</p>
+      <h1>Precision technology. Human connection.</h1>
+      <p class="acw-hero__lede">ActiveClinic is a healthcare operations platform for clinics and hospitals. It is part of the GetPro product family, with a pilot focus on organisations in Zambia.</p>
+    </div>
+    <div class="acw-hero__media">
+      <%- include('../partials/ac-media', {
+        src: '/activeclinic/assets/platform/home-hero.jpg',
+        alt: '',
+        decorative: true,
+        className: 'acp-hero__image',
+        objectFit: 'cover',
+        objectPosition: 'center 30%',
+        aspect: '16 / 10',
+        width: 960,
+        height: 600,
+        loading: 'lazy',
+      }) %>
+    </div>
   </section>
 
-  <section class="ac-public-section acp-section" data-ac-about-section="platform">
-    <header class="acp-section-header">
-      <h2>The ActiveClinic platform</h2>
-      <p>Multi-tenant clinic support with isolated organisation data and patient-facing booking requests where enabled.</p>
+  <section class="acw-section" data-ac-about-section="mission">
+    <header class="acw-section-header">
+      <h2>Why ActiveClinic exists</h2>
     </header>
-    <div class="acp-feature-grid">
-      <article class="acp-feature-card">
-        <h3>Multi-tenant clinic support</h3>
-        <p>Each organisation keeps its own patients, staff, and published website content.</p>
-        <ul class="acp-check-list acp-check-list--compact">
-          <li>Isolated tenant data</li>
-          <li>Staff role management</li>
-        </ul>
+    <div class="acw-grid acw-grid--2">
+      <article class="acw-card">
+        <h3>Access for patients</h3>
+        <p>Help people find clinics that choose to publish, without exposing anyone’s medical record.</p>
       </article>
-      <article class="acp-feature-card">
-        <h3>Patient-centric access</h3>
-        <p>Patients can discover clinics, submit booking requests, and look up request status with a secure link.</p>
-        <ul class="acp-check-list acp-check-list--compact">
-          <li>Directory discovery</li>
-          <li>Reviewed booking requests</li>
-        </ul>
-      </article>
-      <article class="acp-feature-card">
-        <h3>Uncompromising security posture</h3>
-        <p>Clinical records stay in the authenticated application. Public pages never expose medical charts or results.</p>
+      <article class="acw-card">
+        <h3>Tools for local clinics</h3>
+        <p>Give enrolled teams a secure app for patients, appointments, and a website they control.</p>
       </article>
     </div>
   </section>
 
-  <section class="ac-public-section ac-public-section--alt" data-ac-about-section="capabilities">
+  <section class="acw-section acw-section--band" data-ac-about-section="principles">
+    <div class="acw-section__inner">
+      <header class="acw-section-header">
+        <h2>Our core principles</h2>
+      </header>
+      <div class="acw-grid acw-grid--3">
+        <article class="acw-card">
+          <h3>Trust</h3>
+          <p>Clinical work stays in the authenticated application. Public pages show only published content.</p>
+        </article>
+        <article class="acw-card">
+          <h3>Privacy</h3>
+          <p>Organisation data is isolated per clinic. We do not display charts, results, or billing on marketing pages.</p>
+        </article>
+        <article class="acw-card">
+          <h3>Reliability</h3>
+          <p>Phone formats, provinces, and timezone defaults are designed for Zambian healthcare organisations.</p>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="acw-section" data-ac-about-section="capabilities">
     <h2>Capability status</h2>
     <p class="ac-public-note">We label features honestly. <strong>Available</strong> means live for enrolled organisations. <strong>Pilot</strong> means limited rollout. <strong>Planned</strong> means on the roadmap — not offered as a guarantee today.</p>
     <div class="ac-capability-grid">
       <article class="ac-capability-card">
         <span class="ac-capability-badge ac-capability-badge--available">Available</span>
         <h3>Clinic directory</h3>
-        <p>Search published clinics by name, province, or city.</p>
+        <p>Search published clinics by name, location, or listed services.</p>
       </article>
       <article class="ac-capability-card">
         <span class="ac-capability-badge ac-capability-badge--available">Available</span>
@@ -81,7 +91,7 @@
       <article class="ac-capability-card">
         <span class="ac-capability-badge ac-capability-badge--pilot">Pilot</span>
         <h3>Patient portal</h3>
-        <p>Clinic-scoped patient accounts for bookings and guest-booking linkage where enabled.</p>
+        <p>Clinic-scoped patient accounts for bookings where a clinic enables them.</p>
       </article>
       <article class="ac-capability-card">
         <span class="ac-capability-badge ac-capability-badge--planned">Planned</span>
@@ -96,17 +106,17 @@
     </div>
   </section>
 
-  <section class="ac-public-section" data-ac-about-section="getpro">
+  <section class="acw-section" data-ac-about-section="getpro">
     <h2>Part of GetPro</h2>
     <p>ActiveClinic shares platform foundations with other GetPro products while keeping its own clinical workflows, design system, and public website.</p>
   </section>
 
-  <section class="acp-cta-band">
-    <div class="acp-cta-band__inner">
+  <section class="acw-cta-band">
+    <div class="acw-cta-band__inner">
       <h2>Questions about joining?</h2>
       <p class="ac-public-actions">
-        <a class="ac-btn ac-btn--primary" href="/register-clinic">Register your clinic</a>
-        <a class="ac-btn ac-btn--secondary" href="/solutions">View solutions</a>
+        <a class="ac-btn ac-btn--primary" href="/register-clinic">Register Your Clinic</a>
+        <a class="ac-btn ac-btn--secondary" href="/contact">Contact ActiveClinic</a>
       </p>
     </div>
   </section>
