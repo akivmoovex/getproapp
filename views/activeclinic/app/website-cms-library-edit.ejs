@@ -1,0 +1,123 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var item = cms.item || {};
+  var error = cms.error || "";
+  var saved = cms.saved === true;
+  var usage = item.usage || [];
+%>
+<section class="ac-mw" data-ac-page-section="website-library-edit" data-ac-mw-screen="MW09-03">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Edit Content Item</h2>
+      <p class="ac-mw-muted"><%= item.isOperational ? "Website wording for an ActiveClinic record. Changing this does not edit clinic operations." : "Website-only content. Removing it does not change clinic records." %></p>
+    </div>
+  </div>
+  <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
+  <% if (saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+
+  <div class="ac-mw-readonly">
+    <p class="ac-mw-readonly__label">Source</p>
+    <p>
+      <span class="ac-mw-badge<%= item.isOperational ? ' ac-mw-badge--ops' : ' ac-mw-badge--web' %>"><%= item.sourceLabel || "" %></span>
+      <span class="ac-mw-badge ac-mw-badge--draft"><%= item.typeLabel || item.type %></span>
+    </p>
+    <% if (item.isOperational) { %>
+    <p class="ac-mw-hint"><%= item.clinicTitle || "Clinic record" %><% if (item.clinicSummary) { %> — <%= item.clinicSummary %><% } %></p>
+    <% if (item.recordsHref) { %>
+    <p class="ac-mw-hint"><a href="<%= item.recordsHref %>"><%= item.recordsLabel || "Open clinic records" %></a></p>
+    <% } else if (item.recordsLabel) { %>
+    <p class="ac-mw-hint"><%= item.recordsLabel %></p>
+    <% } %>
+    <% } %>
+  </div>
+
+  <div class="ac-mw-readonly" data-ac-library-usage="1">
+    <p class="ac-mw-readonly__label">Currently used on</p>
+    <% if (!usage.length) { %>
+    <p class="ac-mw-hint">Not used on a page yet.</p>
+    <% } else { %>
+    <ul class="ac-mw-usage">
+      <% usage.forEach(function (entry) { %>
+      <li><%= entry.label %><% if (entry.builtin) { %> <span class="ac-mw-muted">(clinic catalogue)</span><% } %></li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+
+  <form class="ac-mw-form" method="post" action="/app/settings/website/library/<%= item.id %>">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <% if (item.type === "faq") { %>
+    <label>
+      Question
+      <input type="text" name="title" maxlength="160" value="<%= item.title || '' %>" <%= cms.canEdit ? "" : "readonly" %>/>
+    </label>
+    <label>
+      Answer
+      <textarea name="body" maxlength="4000" <%= cms.canEdit ? "" : "readonly" %>><%= item.body || "" %></textarea>
+    </label>
+    <% } else if (item.type === "testimonial") { %>
+    <label>
+      Quote
+      <textarea name="body" maxlength="4000" <%= cms.canEdit ? "" : "readonly" %>><%= item.body || "" %></textarea>
+    </label>
+    <label>
+      Attribution
+      <input type="text" name="attribution" maxlength="120" value="<%= item.attribution || '' %>" <%= cms.canEdit ? "" : "readonly" %>/>
+    </label>
+    <% } else { %>
+    <label>
+      Website title
+      <input type="text" name="title" maxlength="160" value="<%= item.title || '' %>" <%= cms.canEdit ? "" : "readonly" %>/>
+    </label>
+    <label>
+      Website summary
+      <textarea name="summary" maxlength="400" <%= cms.canEdit ? "" : "readonly" %>><%= item.summary || "" %></textarea>
+    </label>
+    <label>
+      Website details
+      <textarea name="body" maxlength="4000" <%= cms.canEdit ? "" : "readonly" %>><%= item.body || "" %></textarea>
+    </label>
+    <% } %>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="visible" value="1" <%= item.visible === false ? "" : "checked" %> <%= cms.canEdit ? "" : "disabled" %>/>
+      Visible on the website after publish
+    </label>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="featured" value="1" <%= item.featured ? "checked" : "" %> <%= cms.canEdit ? "" : "disabled" %>/>
+      Featured
+    </label>
+    <p class="ac-mw-form__legend">Website image (optional)</p>
+    <%- include('../partials/website-cms-media-field', {
+      mediaField: {
+        idName: "imageMediaId",
+        srcName: "imageSrc",
+        altName: "imageAlt",
+        altLabel: "Image description",
+        mediaId: (item.image && item.image.mediaId) || "",
+        src: (item.image && item.image.src) || "",
+        alt: (item.image && item.image.alt) || ""
+      }
+    }) %>
+    <% if (cms.canEdit) { %>
+    <div class="ac-mw-actions">
+      <a class="ac-mw-btn" href="/app/settings/website/library">Back to library</a>
+      <a class="ac-mw-btn" href="/app/settings/website/library/<%= item.id %>/use">Use on page</a>
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save content item</button>
+    </div>
+    <% } %>
+  </form>
+
+  <% if (cms.canEdit && !item.isOperational) { %>
+  <form method="post" action="/app/settings/website/library/<%= item.id %>/delete" onsubmit="return confirm('Remove this website content? Clinic records are not deleted.');">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit" class="ac-mw-btn ac-mw-btn--danger">Remove from website</button>
+  </form>
+  <% } else if (cms.canEdit && item.isOperational && item.stored) { %>
+  <form method="post" action="/app/settings/website/library/<%= item.id %>/delete" onsubmit="return confirm('Remove website wording for this clinic record? The ActiveClinic record is not deleted.');">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit" class="ac-mw-btn ac-mw-btn--danger">Remove website wording</button>
+  </form>
+  <% } %>
+</section>
+<%- include('../partials/website-cms-media-picker', { mediaListUrl: cms.mediaListUrl || "" }) %>

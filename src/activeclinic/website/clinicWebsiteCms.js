@@ -12,6 +12,8 @@ const CMS_KEYS = Object.freeze({
   PAGES: "cms.pages",
   SECTIONS: "cms.sections",
   BLOCKS: "cms.blocks",
+  LIBRARY: "cms.library",
+  PLACEMENTS: "cms.library_placements",
 });
 
 const PAGE_KIND = Object.freeze({
@@ -52,7 +54,22 @@ const BLOCK_TYPES = Object.freeze([
   { key: "buttons", label: "Buttons", group: "basic" },
   { key: "image", label: "Image", group: "media" },
   { key: "image_text", label: "Image + Text", group: "media" },
+  { key: "library", label: "Reusable content", group: "clinic" },
 ]);
+
+const LIBRARY_TYPES = Object.freeze([
+  { key: "service", label: "Service", operational: true },
+  { key: "doctor", label: "Doctor", operational: true },
+  { key: "faq", label: "FAQ", operational: false },
+  { key: "testimonial", label: "Testimonial", operational: false },
+  { key: "location", label: "Location", operational: true },
+  { key: "hours", label: "Opening hours", operational: true },
+]);
+
+const LIBRARY_SOURCES = Object.freeze({
+  OPERATIONAL: "operational",
+  WEBSITE: "website",
+});
 
 const TEMPLATE_PAGES = Object.freeze([
   {
@@ -235,6 +252,30 @@ const BLOCK_ITEM_SCHEMA = Object.freeze({
   image: { type: "image", maxLen: 500 },
   button_label: { type: "short_text", maxLen: 60 },
   button_url: { type: "url", maxLen: 500 },
+  library_item_id: { type: "short_text", maxLen: 40 },
+});
+
+const LIBRARY_ITEM_SCHEMA = Object.freeze({
+  id: { type: "short_text", maxLen: 40 },
+  type: { type: "enum", enumValues: LIBRARY_TYPES.map((item) => item.key) },
+  source: { type: "enum", enumValues: [LIBRARY_SOURCES.OPERATIONAL, LIBRARY_SOURCES.WEBSITE] },
+  operational_key: { type: "short_text", maxLen: 80 },
+  title: { type: "short_text", maxLen: 160 },
+  summary: { type: "long_text", maxLen: 400 },
+  body: { type: "long_text", maxLen: 4000 },
+  attribution: { type: "short_text", maxLen: 120 },
+  image: { type: "image", maxLen: 500 },
+  visible: { type: "boolean" },
+  featured: { type: "boolean" },
+  sort_order: { type: "short_text", maxLen: 8 },
+});
+
+const PLACEMENT_ITEM_SCHEMA = Object.freeze({
+  id: { type: "short_text", maxLen: 40 },
+  item_id: { type: "short_text", maxLen: 40 },
+  page_id: { type: "short_text", maxLen: 40 },
+  section_id: { type: "short_text", maxLen: 40 },
+  sort_order: { type: "short_text", maxLen: 8 },
 });
 
 function newCmsId(prefix) {
@@ -492,6 +533,81 @@ function isKnownBlockType(type) {
   return BLOCK_TYPES.some((item) => item.key === type);
 }
 
+function isAddableBlockType(type) {
+  return type !== "library" && isKnownBlockType(type);
+}
+
+function isLibraryType(type) {
+  return LIBRARY_TYPES.some((item) => item.key === type);
+}
+
+function libraryTypeLabel(type) {
+  const found = LIBRARY_TYPES.find((item) => item.key === type);
+  return (found && found.label) || type;
+}
+
+function librarySourceLabel(source) {
+  return source === LIBRARY_SOURCES.OPERATIONAL ? "ActiveClinic record" : "Website only";
+}
+
+function operationalItemId(kind, key) {
+  const raw = `op_${kind}_${String(key || "")}`.replace(/[^a-zA-Z0-9_]+/g, "_");
+  return raw.slice(0, 40);
+}
+
+function builtinLibraryPage(type) {
+  if (type === "service") return { pageId: "tpl_services", label: "Services page" };
+  if (type === "doctor") return { pageId: "tpl_doctors", label: "Doctors page" };
+  if (type === "location" || type === "hours") return { pageId: "tpl_location", label: "Location and hours" };
+  return null;
+}
+
+function libraryItemIsHidden(libraryItems, type, key) {
+  const wanted = String(key || "");
+  if (!wanted) return false;
+  return (libraryItems || []).some(
+    (item) =>
+      item &&
+      item.type === type &&
+      String(item.operational_key || "") === wanted &&
+      item.visible === false
+  );
+}
+
+function applyLibraryPresentation(list, libraryItems, type, keyField) {
+  const items = Array.isArray(libraryItems) ? libraryItems : [];
+  const rows = Array.isArray(list) ? list : [];
+  const hidden = new Set(
+    items
+      .filter((item) => item && item.type === type && item.visible === false && item.operational_key)
+      .map((item) => String(item.operational_key))
+  );
+  const overlays = new Map();
+  items
+    .filter((item) => item && item.type === type && item.operational_key)
+    .forEach((item) => overlays.set(String(item.operational_key), item));
+  return rows
+    .filter((row) => row && !hidden.has(String(row[keyField] || "")))
+    .map((row) => {
+      const overlay = overlays.get(String(row[keyField] || ""));
+      if (!overlay) return row;
+      const imageSrc = overlay.image && overlay.image.src ? overlay.image.src : "";
+      const next = { ...row, featured: overlay.featured === true };
+      if (overlay.title) next.displayName = overlay.title;
+      if (type === "service" && overlay.summary) next.summary = overlay.summary;
+      if (type === "doctor" && overlay.body) next.bio = overlay.body;
+      if (imageSrc) {
+        if (type === "doctor") next.photoUrl = imageSrc;
+        if (type === "service") next.iconUrl = imageSrc;
+      }
+      return next;
+    })
+    .sort((a, b) => {
+      if (Boolean(a.featured) !== Boolean(b.featured)) return a.featured ? -1 : 1;
+      return 0;
+    });
+}
+
 module.exports = {
   CMS_KEYS,
   PAGE_KIND,
@@ -499,12 +615,16 @@ module.exports = {
   PAGE_TEMPLATES,
   SECTION_TYPES,
   BLOCK_TYPES,
+  LIBRARY_TYPES,
+  LIBRARY_SOURCES,
   TEMPLATE_PAGES,
   DEFAULT_HOME_SECTIONS,
   RESERVED_SLUGS,
   PAGE_ITEM_SCHEMA,
   SECTION_ITEM_SCHEMA,
   BLOCK_ITEM_SCHEMA,
+  LIBRARY_ITEM_SCHEMA,
+  PLACEMENT_ITEM_SCHEMA,
   newCmsId,
   sortKey,
   boolValue,
@@ -523,4 +643,12 @@ module.exports = {
   blockTypeLabel,
   isAddableSectionType,
   isKnownBlockType,
+  isAddableBlockType,
+  isLibraryType,
+  libraryTypeLabel,
+  librarySourceLabel,
+  operationalItemId,
+  builtinLibraryPage,
+  applyLibraryPresentation,
+  libraryItemIsHidden,
 };

@@ -16,7 +16,11 @@
   <div class="ac-mw-builder">
     <% blocks.forEach(function (block) { %>
     <article class="ac-mw-block" data-ac-mw-item="1" data-ac-block-id="<%= block.id %>" data-ac-block-type="<%= block.type %>">
-      <p><strong><%= block.type %></strong></p>
+      <p><strong><%= block.type === 'library' ? 'Reusable content' : block.type %></strong></p>
+      <% if (block.type === 'library') { %>
+      <p class="ac-mw-muted">This block reuses a content library item. Edit the item in the library rather than duplicating it here.</p>
+      <p><a class="ac-mw-btn" href="/app/settings/website/library/<%= block.library_item_id %>">Open in content library</a></p>
+      <% } else { %>
       <form method="post" action="/app/settings/website/blocks/<%= block.id %>">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <input type="hidden" name="type" value="<%= block.type %>"/>
@@ -36,21 +40,29 @@
           <input type="hidden" name="mediaId" value="<%= (block.image && block.image.mediaId) || '' %>" data-ac-mw-media-id="1"/>
           <input type="hidden" name="imageSrc" value="<%= (block.image && block.image.src) || '' %>" data-ac-mw-media-src="1"/>
           <label>Image alt text <input type="text" name="imageAlt" value="<%= (block.image && block.image.alt) || '' %>" maxlength="240" data-ac-mw-media-alt="1"/></label>
-          <% if (block.image && block.image.src) { %>
-          <p><img src="<%= block.image.src %>" alt="<%= block.image.alt || '' %>" style="max-width:16rem" data-ac-mw-media-preview="1"/></p>
-          <% } else { %>
-          <p class="ac-mw-muted" data-ac-mw-media-preview-empty="1">No image selected.</p>
-          <% } %>
+          <p class="ac-mw-media-preview-wrap">
+            <img
+              src="<%= (block.image && block.image.src) || '' %>"
+              alt="<%= (block.image && block.image.alt) || '' %>"
+              class="ac-mw-media-preview"
+              data-ac-mw-media-preview="1"
+              <%= (block.image && block.image.src) ? '' : 'hidden' %>
+            />
+          </p>
+          <p class="ac-mw-muted" data-ac-mw-media-preview-empty="1" <%= (block.image && block.image.src) ? 'hidden' : '' %>>No image selected.</p>
           <button type="button" class="ac-mw-btn" data-ac-mw-open-media="1">Select from media library</button>
           <% } %>
           <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save block</button>
         </div>
       </form>
+      <% } %>
       <div class="ac-mw-actions">
+        <% if (block.type !== 'library') { %>
         <form method="post" action="/app/settings/website/blocks/<%= block.id %>/duplicate">
           <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
           <button type="submit" class="ac-mw-btn">Duplicate</button>
         </form>
+        <% } %>
         <form method="post" action="/app/settings/website/blocks/<%= block.id %>/delete" onsubmit="return confirm('Delete this block?');">
           <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
           <button type="submit" class="ac-mw-btn ac-mw-btn--danger">Delete</button>

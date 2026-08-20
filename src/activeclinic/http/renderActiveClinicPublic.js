@@ -18,7 +18,7 @@ const { buildClinicWebsiteNav } = require("../website/activeClinicClinicWebsiteN
 const { isPublicClinicDirectoryNavEnabled } = require("../website/activeClinicPublicCapabilities");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-website-10";
+const ASSET_VERSION = "v7-website-11";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -112,6 +112,7 @@ function renderPublicPage(input) {
     metaDescription: input.metaDescription || "",
     canonicalUrl: input.canonicalUrl || "",
     robots: input.robots || "",
+    ogImageUrl: input.ogImageUrl || (locals.ogImageUrl || (locals.clinic && locals.clinic.seoImageUrl) || ""),
     shellVariant,
     headerHtml,
     footerHtml,
@@ -126,10 +127,10 @@ function renderPublicView(relativePath, data) {
     pageId: (data && data.pageId) || pageIdGuess,
     pageTitle: (data && data.pageTitle) || "ActiveClinic",
     metaDescription: (data && data.metaDescription) || "",
+    ogImageUrl: (data && data.ogImageUrl) || "",
     contentTemplate: relativePath,
     locals: data || {},
     shellVariant: (data && data.shellVariant) || (data && data.clinic ? "tenant" : "platform"),
-    metaDescription: data && data.metaDescription,
     robots: data && data.robots,
   });
 }

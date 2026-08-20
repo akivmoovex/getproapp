@@ -15,6 +15,8 @@ const {
   PAGE_ITEM_SCHEMA,
   SECTION_ITEM_SCHEMA,
   BLOCK_ITEM_SCHEMA,
+  LIBRARY_ITEM_SCHEMA,
+  PLACEMENT_ITEM_SCHEMA,
   defaultPages,
   defaultHomeSections,
 } = require("./clinicWebsiteCms");
@@ -115,6 +117,38 @@ const KEYS = {
   "nav.pricing.label": { type: T.SHORT_TEXT, maxLen: 40, group: "nav", description: "Pricing menu label" },
   "nav.patient_information.label": { type: T.SHORT_TEXT, maxLen: 60, group: "nav", description: "Patient information menu label" },
   "page.patient_information.visible": { type: T.BOOLEAN, group: "patientInformation", description: "Show patient information page" },
+  "site.name": {
+    type: T.SHORT_TEXT,
+    maxLen: 120,
+    group: "site",
+    inline: false,
+    description: "Website display name overlay",
+  },
+  "brand.primary_color": {
+    type: T.SHORT_TEXT,
+    maxLen: 7,
+    group: "brand",
+    inline: false,
+    description: "Primary brand colour",
+  },
+  "brand.accent_color": {
+    type: T.SHORT_TEXT,
+    maxLen: 7,
+    group: "brand",
+    inline: false,
+    description: "Accent brand colour",
+  },
+  "header.show_logo": { type: T.BOOLEAN, group: "header", description: "Show logo in header" },
+  "header.show_nav": { type: T.BOOLEAN, group: "header", description: "Show navigation in header" },
+  "header.show_phone": { type: T.BOOLEAN, group: "header", description: "Show phone in header" },
+  "footer.show_contact": { type: T.BOOLEAN, group: "footer", description: "Show contact in footer" },
+  "social.facebook_url": { type: T.URL, maxLen: 500, group: "social", inline: false, description: "Facebook URL" },
+  "social.instagram_url": { type: T.URL, maxLen: 500, group: "social", inline: false, description: "Instagram URL" },
+  "social.whatsapp_url": { type: T.URL, maxLen: 500, group: "social", inline: false, description: "WhatsApp URL" },
+  "social.x_url": { type: T.URL, maxLen: 500, group: "social", inline: false, description: "X URL" },
+  "seo.title": { type: T.SHORT_TEXT, maxLen: 70, group: "seo", inline: false, description: "Search and sharing title" },
+  "seo.description": { type: T.LONG_TEXT, maxLen: 200, group: "seo", inline: false, description: "Search and sharing description" },
+  "seo.image": { type: T.IMAGE, maxLen: 500, group: "seo", inline: false, description: "Social sharing image" },
   [CMS_KEYS.PAGES]: {
     type: T.STRUCTURED,
     group: "cms",
@@ -132,6 +166,18 @@ const KEYS = {
     group: "cms",
     description: "Clinic page content blocks",
     itemSchema: BLOCK_ITEM_SCHEMA,
+  },
+  [CMS_KEYS.LIBRARY]: {
+    type: T.STRUCTURED,
+    group: "cms",
+    description: "Reusable clinic website content",
+    itemSchema: LIBRARY_ITEM_SCHEMA,
+  },
+  [CMS_KEYS.PLACEMENTS]: {
+    type: T.STRUCTURED,
+    group: "cms",
+    description: "Where reusable website content is used",
+    itemSchema: PLACEMENT_ITEM_SCHEMA,
   },
 };
 
@@ -155,7 +201,10 @@ function editableFieldsFromKeys(templateId, version) {
     validationMode: VALIDATION_MODE.CONTENT_TYPES,
     itemSchema: def.itemSchema || null,
     enumValues: def.enumValues || null,
-    inline: def.type !== CONTENT_TYPES.BOOLEAN && def.type !== CONTENT_TYPES.STRUCTURED,
+    inline:
+      def.inline === false
+        ? false
+        : def.type !== CONTENT_TYPES.BOOLEAN && def.type !== CONTENT_TYPES.STRUCTURED,
     storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: key },
   }));
 }

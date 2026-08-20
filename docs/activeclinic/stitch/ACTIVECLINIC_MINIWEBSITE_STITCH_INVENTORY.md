@@ -2,10 +2,10 @@
 
 **Stitch project:** [ActiveClinic Universal Authentication Interface](https://stitch.withgoogle.com/projects/10611909237747031838)  
 **Project ID:** `10611909237747031838`  
-**Inspected:** 2026-08-19 via Stitch MCP `list_screens`  
-**Product surface:** clinic mini-website, editor, CMS, media, drafts/publishing  
+**Inspected:** 2026-08-20 via Stitch MCP `list_screens` / `generate_screen_from_text`  
+**Product surface:** clinic mini-website, editor, CMS, media, drafts/publishing, branding & settings  
 
-Do **not** invent screens. MW08, MW09, and MW10 have **zero** screens in this project.
+Do **not** invent screens. MW11 has **zero** screens in this project.
 
 Auth screens (`active-clinic-03-*`) are out of scope for this mini-website task.
 
@@ -39,9 +39,16 @@ Auth screens (`active-clinic-03-*`) are out of scope for this mini-website task.
 | MW07 | MW07-02 Version History | `22fc73d39ad846a3aa6db72f13862def` | Desktop | existing `/clinics/:key/website/history` | IMPLEMENTED_WITH_MINOR_VARIANCE |
 | MW07 | MW07-03 Publishing Confirmation | `c2c22334084c4944af49d436e0872a88` | Desktop | browser confirm before publish | IMPLEMENTED_WITH_MINOR_VARIANCE |
 | MW07 | MW07-04 Mobile Publishing | `f0cc5328778e4bd987429652f16cdb35` | Mobile | publish page responsive | IMPLEMENTED_WITH_MINOR_VARIANCE |
-| MW08 | — | — | — | No Stitch screens | NOT_APPLICABLE |
-| MW09 | — | — | — | No Stitch screens | NOT_APPLICABLE |
-| MW10 | — | — | — | Hub implemented on `/app/settings/website` without a Stitch screen | NOT_APPLICABLE |
+| MW08 | MW08-01 Website Settings | `4a087865770e408db4e46164da6b7a7c` | Desktop | `/app/settings/website/settings` | IMPLEMENTED_MATCH |
+| MW08 | MW08-02 Branding Settings | `deb94f19f94b4c64a7e92dd0548088b2` | Desktop | `/app/settings/website/branding` | IMPLEMENTED_MATCH |
+| MW08 | MW08-03 Header and Footer Settings | `61cea0d6fd684bf8a487ec728a4c49cc` | Desktop | `/app/settings/website/chrome` | IMPLEMENTED_MATCH |
+| MW08 | MW08-04 SEO and Social Settings | `111d1da05ef84d33b72aefff93b0d9eb` | Desktop | `/app/settings/website/seo` | IMPLEMENTED_MATCH |
+| MW09 | MW09-01 Content Library | `029ffe860acf43ddbf437bbfdeaaa056` | Desktop | `/app/settings/website/library` | IMPLEMENTED_WITH_MINOR_VARIANCE |
+| MW09 | MW09-02 Add Content Item | `5ea4cb86dacc4fe9a33cb1539acb64c8` | Desktop | `/app/settings/website/library/new` | IMPLEMENTED_WITH_MINOR_VARIANCE |
+| MW09 | MW09-03 Edit Content Item | `ebedb04bff81477da2f0aca599a33daf` | Desktop | `/app/settings/website/library/:id` | IMPLEMENTED_WITH_MINOR_VARIANCE |
+| MW09 | MW09-04 Use Content on Page | `ccd7171125a74e30a6f36bf3c5343889` | Desktop | `/app/settings/website/library/:id/use` | IMPLEMENTED_WITH_MINOR_VARIANCE |
+| MW10 | MW10-01 Website Management Hub | `f819d5b03b964fb6be90059a672c90f9` | Desktop | `/app/settings/website` | IMPLEMENTED_WITH_MINOR_VARIANCE |
+| MW10 | MW10-02 Website Management Hub Mobile | `103fce48cd774b598e9731e1f8650013` | Mobile | `/app/settings/website` (responsive) | IMPLEMENTED_WITH_MINOR_VARIANCE |
 | N/A | active-clinic-03-desktop-login | `2bfbc9c71ad64bfca245d9e1a26f837d` | Desktop | out of scope | NOT_APPLICABLE |
 | N/A | active-clinic-03-mobile-login | `edb81abfe548470db687f343186ff786` | Mobile | out of scope | NOT_APPLICABLE |
 | N/A | active-clinic-03-desktop-multi-clinic-selector | `df566a9cd85e4583b019363ca2104b00` | Desktop | out of scope | NOT_APPLICABLE |
@@ -56,8 +63,14 @@ Auth screens (`active-clinic-03-*`) are out of scope for this mini-website task.
 - Block settings are an in-page form, not a separate full-screen settings layout.
 - Publish confirmation uses a native confirm dialog rather than a dedicated confirmation route.
 - Version history reuses the existing shared website history UI.
-- MW08 branding/settings, MW09 reusable collections, and MW10 hub were **not generated** in Stitch. The existing website hub was extended with CMS links without inventing those screens.
+- MW08 Stitch titles use “and” instead of “&” (`Header and Footer Settings`, `SEO and Social Settings`) because Stitch rejected ampersands in screen names. In-app headings keep “Header & Footer” / “SEO & Social”.
+- Public URL and website status on MW08-01 are read-only; hosting, DNS, and deployment are not designed here.
+- MW09 CMS screens use the shared pill navigation instead of the Stitch sidebar chrome, matching MW03–MW08.
+- Doctors and services in MW09 reuse existing ActiveClinic public records. Website-only items never create staff or appointment-type rows.
+- MW10 hub uses the shared pill navigation instead of the Stitch sidebar chrome, matching MW03–MW09. One responsive EJS view covers MW10-01 desktop and MW10-02 mobile.
+- MW10 links to existing MW03–MW09 screens. It does not add new editor screens.
+- Library items may store website presentation metadata (`image`, `featured`, `visible`, `sort_order`) without duplicating doctor or service master records.
 
 ## Architecture
 
-Pages, sections, and blocks are stored as structured keys (`cms.pages`, `cms.sections`, `cms.blocks`) on the shared V7 website engine. No second CMS schema.
+Pages, sections, blocks, and reusable content are stored as structured keys (`cms.pages`, `cms.sections`, `cms.blocks`, `cms.library`, `cms.library_placements`) on the shared V7 website engine. No second CMS schema. No separate doctors or services database.

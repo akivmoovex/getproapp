@@ -1,0 +1,83 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var values = cms.values || {};
+  var error = cms.error || "";
+  var saved = cms.saved === true;
+  var logo = values["home.logo"] && typeof values["home.logo"] === "object" ? values["home.logo"] : { src: values["home.logo"] || "" };
+  var hero = values["home.hero.image"] && typeof values["home.hero.image"] === "object" ? values["home.hero.image"] : { src: values["home.hero.image"] || "" };
+  var primary = values["brand.primary_color"] || "";
+  var accent = values["brand.accent_color"] || "";
+  var previewName = cms.clinicName || "Your clinic";
+%>
+<section class="ac-mw" data-ac-page-section="website-branding" data-ac-mw-screen="MW08-02">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Branding Settings</h2>
+      <p class="ac-mw-muted">Logo, colours, and optional cover image. The preview updates as you change these fields. Save as a draft, then publish when ready.</p>
+    </div>
+  </div>
+  <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
+  <% if (saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+  <div class="ac-mw-brand-layout">
+    <form class="ac-mw-form" method="post" action="/app/settings/website/branding" data-ac-mw-brand-form="1">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <p class="ac-mw-form__legend">Clinic logo</p>
+      <%- include('../partials/website-cms-media-field', {
+        mediaField: {
+          idName: "logoMediaId",
+          srcName: "logoSrc",
+          altName: "logoAlt",
+          altLabel: "Logo description",
+          mediaId: logo.mediaId || "",
+          src: logo.src || "",
+          alt: logo.alt || ""
+        }
+      }) %>
+      <label data-ac-mw-color="1">
+        Primary colour
+        <span class="ac-mw-color">
+          <input type="color" data-ac-mw-color-swatch value="<%= primary || '#0d9488' %>" aria-label="Primary colour picker"/>
+          <input type="text" name="primaryColor" maxlength="7" value="<%= primary %>" placeholder="#0d9488" data-ac-mw-color-text autocomplete="off"/>
+        </span>
+      </label>
+      <label data-ac-mw-color="1">
+        Accent colour
+        <span class="ac-mw-color">
+          <input type="color" data-ac-mw-color-swatch value="<%= accent || '#0f766e' %>" aria-label="Accent colour picker"/>
+          <input type="text" name="accentColor" maxlength="7" value="<%= accent %>" placeholder="#0f766e" data-ac-mw-color-text autocomplete="off"/>
+        </span>
+      </label>
+      <p class="ac-mw-hint">Use a 6-digit colour such as #0d9488. Leave blank to keep the ActiveClinic default teal.</p>
+      <p class="ac-mw-form__legend">Cover / hero image (optional)</p>
+      <%- include('../partials/website-cms-media-field', {
+        mediaField: {
+          idName: "heroMediaId",
+          srcName: "heroSrc",
+          altName: "heroAlt",
+          altLabel: "Cover image description",
+          mediaId: hero.mediaId || "",
+          src: hero.src || "",
+          alt: hero.alt || ""
+        }
+      }) %>
+      <div class="ac-mw-actions">
+        <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save branding</button>
+      </div>
+    </form>
+    <aside class="ac-mw-brand-preview" data-ac-mw-brand-preview="1" data-preview-name="<%= previewName %>" aria-label="Live branding preview">
+      <p class="ac-mw-readonly__label">Preview</p>
+      <div class="ac-mw-brand-preview__site">
+        <div class="ac-mw-brand-preview__bar">
+          <img data-ac-mw-preview-logo src="<%= logo.src || '' %>" alt="" <%= logo.src ? "" : "hidden" %>/>
+          <strong data-ac-mw-preview-name><%= previewName %></strong>
+        </div>
+        <div class="ac-mw-brand-preview__hero">
+          <img data-ac-mw-preview-hero src="<%= hero.src || '' %>" alt="" <%= hero.src ? "" : "hidden" %>/>
+          <span class="ac-mw-brand-preview__cta" data-ac-mw-preview-cta>Book appointment</span>
+        </div>
+      </div>
+    </aside>
+  </div>
+  <%- include('../partials/website-cms-media-picker', { mediaListUrl: cms.mediaListUrl || "" }) %>
+</section>

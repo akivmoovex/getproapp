@@ -34,12 +34,12 @@ describe("ActiveClinic Phase 9 accessibility", () => {
       assert.match(html, new RegExp(row[2]), row[0]);
       assert.match(html, /ac-a11y\.js/, row[0]);
     });
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-parity-13/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-website-11/);
     assert.match(read("src/activeclinic/http/renderActiveClinicPatient.js"), /v7-parity-13/);
     assert.match(read("src/activeclinic/http/renderActiveClinicAuth.js"), /v7-parity-13/);
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
-      /v7-parity-17/
+      /v7-parity-23/
     );
   });
 
@@ -122,7 +122,7 @@ describe("ActiveClinic Phase 9 accessibility", () => {
   it("tenant header marks the current clinic page and pharmacy/billing forms announce loading", () => {
     const header = read("views/activeclinic/partials/public-tenant-header.ejs");
     assert.match(header, /tenantCurrent/);
-    assert.match(header, /<%- tenantCurrent\("about"\) %>/);
+    assert.match(header, /tenantCurrent\(item\.key\)/);
     assert.match(read("views/activeclinic/layouts/auth-shell.ejs"), /Skip to content/);
     assert.match(
       read("views/activeclinic/app/pharmacy-dispense-content.ejs"),

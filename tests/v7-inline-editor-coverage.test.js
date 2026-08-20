@@ -85,7 +85,7 @@ const MINIMAL_BB = Object.freeze({
 });
 
 const AC_INLINE_KEYS = Object.entries(ACTIVECLINIC_WEBSITE_KEYS)
-  .filter(([, def]) => def.type !== CONTENT_TYPES.BOOLEAN && def.type !== CONTENT_TYPES.STRUCTURED)
+  .filter(([, def]) => def.inline !== false && def.type !== CONTENT_TYPES.BOOLEAN && def.type !== CONTENT_TYPES.STRUCTURED)
   .map(([key]) => key);
 
 const AC_PAGE_EXPECT = {

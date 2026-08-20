@@ -3,6 +3,10 @@
   const nav = (typeof clinicWebsiteNav !== "undefined" && clinicWebsiteNav) ? clinicWebsiteNav : { desktop: [], drawer: [] };
   const pages = (clinic && clinic.publicPagePaths) || {};
   const pubHome = pages.home || (clinic && clinic.publicBasePath) || ("/clinics/" + (clinic && clinic.clinicKey ? clinic.clinicKey : ""));
+  const displayName = (clinic && (clinic.websiteDisplayName || clinic.publicName)) || "";
+  const showLogo = !clinic || clinic.headerShowLogo !== false;
+  const showNav = !clinic || clinic.headerShowNav !== false;
+  const showPhone = Boolean(clinic && clinic.headerShowPhone === true && clinic.headerPhone);
   function tenantCurrent(kind) {
     var on = false;
     if (kind === "about") on = /tenant-about/.test(pid);
@@ -30,6 +34,7 @@
   <div class="ac-public-header__inner ac-public-header__inner--tenant">
     <% if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>
     <div class="ac-public-brand ac-public-brand--tenant ac-public-brand--editing">
+      <% if (showLogo) { %>
       <%- include('./website-editable-image', {
         contentKey: 'home.logo',
         imageSrc: clinic.websiteLogoUrl || '',
@@ -41,31 +46,40 @@
         imageHeight: 36,
         imagePlaceholderSrc: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
       }) %>
-      <a href="<%= pubHome %>" aria-label="<%= clinic.publicName %> home">
-        <span class="ac-public-brand__name"><%= clinic.publicName %></span>
+      <% } %>
+      <a href="<%= pubHome %>" aria-label="<%= displayName %> home">
+        <span class="ac-public-brand__name"><%= displayName %></span>
       </a>
     </div>
     <% } else { %>
-    <a class="ac-public-brand ac-public-brand--tenant" href="<%= pubHome %>" aria-label="<%= clinic.publicName %> home">
-      <% if (clinic.websiteLogoUrl) { %>
+    <a class="ac-public-brand ac-public-brand--tenant" href="<%= pubHome %>" aria-label="<%= displayName %> home">
+      <% if (showLogo && clinic.websiteLogoUrl) { %>
       <img class="ac-public-brand__logo" src="<%= clinic.websiteLogoUrl %>" alt="<%= clinic.websiteLogoAlt || '' %>" width="36" height="36"/>
-      <% } else { %>
-      <span class="ac-public-brand__mark" aria-hidden="true"><%= String(clinic.publicName || "C").charAt(0).toUpperCase() %></span>
+      <% } else if (showLogo) { %>
+      <span class="ac-public-brand__mark" aria-hidden="true"><%= String(displayName || "C").charAt(0).toUpperCase() %></span>
       <% } %>
-      <span class="ac-public-brand__name"><%= clinic.publicName %></span>
+      <span class="ac-public-brand__name"><%= displayName %></span>
     </a>
     <% } %>
+    <% if (showNav) { %>
     <nav class="ac-public-nav ac-public-nav--desktop ac-public-nav--tenant" aria-label="Clinic" data-ac-clinic-nav="desktop">
       <% (nav.desktop || []).forEach(function (item) { %>
       <a href="<%= item.href %>" class="<%= navClass(item) %>"<%- tenantCurrent(item.key) %> data-ac-nav-item="<%= item.key %>"<% if (item.protected) { %> data-ac-nav-protected="1"<% } %>><%= item.label %></a>
       <% }) %>
     </nav>
+    <% } %>
+    <% if (showPhone) { %>
+    <a class="ac-public-header__phone" href="tel:<%= String(clinic.headerPhone).replace(/\s+/g, '') %>"><%= clinic.headerPhone %></a>
+    <% } %>
+    <% if (showNav) { %>
     <button type="button" class="ac-public-nav-toggle" data-ac-nav-open aria-expanded="false" aria-controls="ac-public-drawer">
       <span class="ac-sr-only">Open menu</span>
       <span aria-hidden="true">☰</span>
     </button>
+    <% } %>
   </div>
 </header>
+<% if (showNav) { %>
 <aside id="ac-public-drawer" class="ac-public-drawer" data-ac-nav-drawer hidden>
   <div class="ac-public-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu">
     <button type="button" class="ac-public-drawer__close" data-ac-nav-close>Close</button>
@@ -76,3 +90,4 @@
     </nav>
   </div>
 </aside>
+<% } %>

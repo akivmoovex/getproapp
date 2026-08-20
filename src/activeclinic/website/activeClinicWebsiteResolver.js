@@ -10,6 +10,7 @@ const {
   registerActiveClinicWebsiteTemplate,
 } = require("./activeClinicWebsiteTemplate");
 const { buildActiveClinicWebsiteTemplateContent } = require("./activeClinicWebsiteTemplateContent");
+const { applyLibraryPresentation } = require("./clinicWebsiteCms");
 
 const MODE = resolver.MODE;
 
@@ -66,6 +67,18 @@ function pickBool(values, defaults, key, fallback) {
   return fallback;
 }
 
+function pickHexColor(values, key) {
+  const raw = values && Object.prototype.hasOwnProperty.call(values, key) ? values[key] : null;
+  const text = String(raw || "").trim();
+  return /^#[0-9A-Fa-f]{6}$/.test(text) ? text.toLowerCase() : null;
+}
+
+function pickUrl(values, defaults, key) {
+  const raw = pickContent(values, defaults, key);
+  const text = String(raw || "").trim();
+  return text || null;
+}
+
 function mergeClinicPresentation(clinic, resolved, operational) {
   const values = resolved.values || {};
   const vis = resolved.visibility || {};
@@ -91,7 +104,25 @@ function mergeClinicPresentation(clinic, resolved, operational) {
   const aboutImageMediaId =
     aboutImage && typeof aboutImage === "object" && aboutImage.mediaId ? aboutImage.mediaId : "";
   const logoImage = content("home.logo");
-  const faq = Array.isArray(content("home.faq")) ? content("home.faq") : [];
+  const libraryItems = Array.isArray(content("cms.library")) ? content("cms.library") : [];
+  const libraryPlacements = Array.isArray(content("cms.library_placements"))
+    ? content("cms.library_placements")
+    : [];
+  const libraryFaqs = libraryItems
+    .filter((item) => item && item.type === "faq" && item.visible !== false)
+    .map((item) => ({ question: item.title, answer: item.body }));
+  const libraryTestimonials = libraryItems
+    .filter((item) => item && item.type === "testimonial" && item.visible !== false)
+    .map((item) => ({ quote: item.body, attribution: item.attribution || "" }));
+  const faq = libraryFaqs.length
+    ? libraryFaqs
+    : Array.isArray(content("home.faq"))
+      ? content("home.faq")
+      : [];
+  const seoImage = content("seo.image");
+  const overlayName = String(content("site.name") || "").trim();
+  const brandPrimary = pickHexColor(values, "brand.primary_color");
+  const brandAccent = pickHexColor(values, "brand.accent_color");
   return {
     ...clinic,
     websiteContent: values,
@@ -101,6 +132,26 @@ function mergeClinicPresentation(clinic, resolved, operational) {
     websiteMode: resolved.mode,
     websiteInstanceId: resolved.instance && resolved.instance.id,
     websiteTemplateVersion: resolved.instance && resolved.instance.templateVersion,
+    websiteDisplayName: overlayName || clinic.publicName,
+    brandPrimary,
+    brandAccent,
+    headerShowLogo: pickBool(values, defaults, "header.show_logo", true) !== false,
+    headerShowNav: pickBool(values, defaults, "header.show_nav", true) !== false,
+    headerShowPhone: pickBool(values, defaults, "header.show_phone", false) === true,
+    footerShowContact: pickBool(values, defaults, "footer.show_contact", true) !== false,
+    headerPhone: content("contact.phone") || operational.phone || clinic.publicPhoneDisplay || null,
+    socialFacebookUrl: pickUrl(values, defaults, "social.facebook_url"),
+    socialInstagramUrl: pickUrl(values, defaults, "social.instagram_url"),
+    socialWhatsappUrl: pickUrl(values, defaults, "social.whatsapp_url"),
+    socialXUrl: pickUrl(values, defaults, "social.x_url"),
+    seoTitle: content("seo.title") || null,
+    seoDescription: content("seo.description") || null,
+    seoImageUrl:
+      (seoImage && typeof seoImage === "object" && seoImage.src) ||
+      (typeof seoImage === "string" ? seoImage : null) ||
+      null,
+    seoImageAlt: (seoImage && typeof seoImage === "object" && seoImage.alt ? String(seoImage.alt) : "") || "",
+    seoImageMediaId: (seoImage && typeof seoImage === "object" && seoImage.mediaId) || "",
     heroTitle: content("home.hero.title") || `Welcome to ${operational.clinic_name || clinic.publicName}`,
     heroSubtitle: content("home.hero.subtitle") || clinic.websiteAbout || null,
     heroEyebrow: content("home.hero.eyebrow") || clinic.websiteTagline || null,
@@ -136,7 +187,11 @@ function mergeClinicPresentation(clinic, resolved, operational) {
     homePreviewServicesHeading: content("home.preview.services_heading") || "Services",
     homePreviewDoctorsHeading: content("home.preview.doctors_heading") || "Doctors",
     homePreviewVisitHeading: content("home.preview.visit_heading") || "Visit us",
-    testimonials: Array.isArray(content("home.testimonials")) ? content("home.testimonials") : [],
+    testimonials: libraryTestimonials.length
+      ? libraryTestimonials
+      : Array.isArray(content("home.testimonials"))
+        ? content("home.testimonials")
+        : [],
     faq,
     showPricing:
       vis["page.pricing.visible"] !== "hidden" &&
@@ -177,6 +232,10 @@ function mergeClinicPresentation(clinic, resolved, operational) {
     cmsPages: Array.isArray(content("cms.pages")) ? content("cms.pages") : [],
     cmsSections: Array.isArray(content("cms.sections")) ? content("cms.sections") : [],
     cmsBlocks: Array.isArray(content("cms.blocks")) ? content("cms.blocks") : [],
+    cmsLibrary: libraryItems,
+    cmsLibraryPlacements: libraryPlacements,
+    doctors: applyLibraryPresentation(clinic.doctors, libraryItems, "doctor", "staffKey"),
+    services: applyLibraryPresentation(clinic.services, libraryItems, "service", "serviceKey"),
     operational,
   };
 }

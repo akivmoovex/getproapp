@@ -189,6 +189,8 @@ function buildActiveClinicWebsiteTemplateContent(input) {
     "cms.pages": require("./clinicWebsiteCms").defaultPages(),
     "cms.sections": require("./clinicWebsiteCms").defaultHomeSections(),
     "cms.blocks": [],
+    "cms.library": [],
+    "cms.library_placements": [],
   };
 }
 

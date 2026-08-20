@@ -10,14 +10,28 @@
   }
   const pages = (clinic && clinic.publicPagePaths) || {};
   const nav = (typeof clinicWebsiteNav !== "undefined" && clinicWebsiteNav) ? clinicWebsiteNav : { footerQuick: [], footerLegal: [] };
+  const displayName = (clinic && (clinic.websiteDisplayName || clinic.publicName)) || "";
+  const showContact = !clinic || clinic.footerShowContact !== false;
+  const socials = [];
+  if (clinic && clinic.socialFacebookUrl) socials.push({ label: "Facebook", href: clinic.socialFacebookUrl });
+  if (clinic && clinic.socialInstagramUrl) socials.push({ label: "Instagram", href: clinic.socialInstagramUrl });
+  if (clinic && clinic.socialWhatsappUrl) socials.push({ label: "WhatsApp", href: clinic.socialWhatsappUrl });
+  if (clinic && clinic.socialXUrl) socials.push({ label: "X", href: clinic.socialXUrl });
 %>
 <footer class="ac-public-footer ac-public-footer--tenant" data-ac-public-footer="tenant">
   <div class="ac-public-footer__inner ac-public-footer__inner--tenant">
     <div class="ac-public-footer__col">
-      <p class="ac-public-footer__brand"><strong><%= clinic.publicName %></strong></p>
+      <p class="ac-public-footer__brand"><strong><%= displayName %></strong></p>
       <% if (footerLoc.length) { %><p><%= footerLoc.join(", ") %></p>
       <% } else if (clinic.locationAddressOverlay || (typeof websiteEdit !== 'undefined' && websiteEdit)) { %><p><%- include('./website-editable-field', { contentKey: 'location.address', fieldValue: clinic.locationAddressOverlay || '', fieldType: 'long_text' }) %></p><% } %>
       <p class="ac-public-footer__note"><%- include('./website-editable-field', { contentKey: 'footer.tagline', fieldValue: clinic.footerTagline || 'Powered by ActiveClinic', fieldType: 'short_text' }) %></p>
+      <% if (socials.length) { %>
+      <nav class="ac-public-footer__social" aria-label="Social">
+        <% socials.forEach(function (item) { %>
+        <a href="<%= item.href %>" rel="noopener noreferrer"><%= item.label %></a>
+        <% }) %>
+      </nav>
+      <% } %>
     </div>
     <div class="ac-public-footer__col">
       <h2 class="ac-public-footer__heading">Quick links</h2>
@@ -27,6 +41,7 @@
         <% }) %>
       </nav>
     </div>
+    <% if (showContact) { %>
     <div class="ac-public-footer__col">
       <h2 class="ac-public-footer__heading">Contact</h2>
       <% const overlayPhone = clinic.websiteContent && clinic.websiteContent['contact.phone'] ? clinic.websiteContent['contact.phone'] : ''; %>
@@ -44,6 +59,7 @@
         <li><a href="<%= pages.contact || '' %>" data-ac-nav-item="contact">Contact form</a></li>
       </ul>
     </div>
+    <% } %>
     <div class="ac-public-footer__col">
       <h2 class="ac-public-footer__heading">Legal</h2>
       <nav aria-label="Clinic legal" data-ac-clinic-nav="footer-legal">
@@ -54,7 +70,7 @@
     </div>
   </div>
   <div class="ac-public-footer__legal">
-    © <%= new Date().getFullYear() %> <%= clinic.publicName %>. All rights reserved.
+    © <%= new Date().getFullYear() %> <%= displayName %>. All rights reserved.
     <% if (clinic.footerLegal || (typeof websiteEdit !== 'undefined' && websiteEdit)) { %><p class="ac-public-footer__disclaimer"><%- include('./website-editable-field', { contentKey: 'footer.legal', fieldValue: clinic.footerLegal || '', fieldType: 'long_text' }) %></p><% } %>
   </div>
 </footer>

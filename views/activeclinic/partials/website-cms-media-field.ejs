@@ -1,0 +1,24 @@
+<%
+  var field = typeof mediaField !== "undefined" && mediaField ? mediaField : {};
+  var src = field.src || "";
+  var alt = field.alt || "";
+%>
+<div class="ac-mw-media-field" data-ac-mw-media-field="1">
+  <input type="hidden" name="<%= field.idName %>" value="<%= field.mediaId || '' %>" data-ac-mw-media-id="1"/>
+  <input type="hidden" name="<%= field.srcName %>" value="<%= src %>" data-ac-mw-media-src="1"/>
+  <label>
+    <%= field.altLabel || "Image description" %>
+    <input type="text" name="<%= field.altName %>" maxlength="240" value="<%= alt %>" data-ac-mw-media-alt="1" placeholder="Short description for visitors"/>
+  </label>
+  <p class="ac-mw-media-preview-wrap">
+    <img
+      src="<%= src %>"
+      alt="<%= alt %>"
+      class="ac-mw-media-preview"
+      data-ac-mw-media-preview="1"
+      <%= src ? "" : "hidden" %>
+    />
+  </p>
+  <p class="ac-mw-muted" data-ac-mw-media-preview-empty="1" <%= src ? "hidden" : "" %>>No image selected.</p>
+  <button type="button" class="ac-mw-btn" data-ac-mw-open-media="1">Select from media library</button>
+</div>

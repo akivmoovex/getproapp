@@ -34,6 +34,7 @@ const {
   updateRegionalSettings,
   loadActiveClinicWebsiteSettingsScreen,
 } = require("../services/loadActiveClinicSettingsScreens");
+const cmsService = require("../website/clinicWebsiteCmsService");
 const {
   loadDepartmentsSettingsScreen,
   createDepartment,
@@ -203,12 +204,22 @@ function registerActiveClinicSettingsRoutes(app, deps) {
             "You do not have permission to manage the clinic website."
           );
         }
+        const website = loaded.website;
+        const hub = await cmsService.loadWebsiteHubStats(getPool(), {
+          organizationId: req.activeClinicAuth.organization.id,
+          clinicKey:
+            (req.activeClinicAuth.organization &&
+              (req.activeClinicAuth.organization.organizationKey || req.activeClinicAuth.organization.key)) ||
+            "",
+          grantedPermissions: req.activeClinicAuth.permissions || [],
+        });
+        const actions = (website && website.actions) || (website && website.ux && website.ux.actions) || {};
         return await renderShell(req, res, {
           activeNav: "website",
           content: "app/settings-website-content.ejs",
           pageHeader: {
-            title: "Website",
-            description: "Public clinic website status, editing, preview, and publishing.",
+            title: "Website Management Hub",
+            description: "Manage your clinic website in one place.",
             actions: [],
           },
           breadcrumbs: [
@@ -217,8 +228,13 @@ function registerActiveClinicSettingsRoutes(app, deps) {
             { label: "Website" },
           ],
           pageData: {
-            website: loaded.website,
-            cmsNav: { active: "overview" },
+            website,
+            hub,
+            cmsNav: {
+              active: "overview",
+              editHref: actions.editWebsite || "",
+              historyHref: actions.history || "",
+            },
           },
           flash:
             req.query.website === "published"

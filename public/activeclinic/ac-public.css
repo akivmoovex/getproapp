@@ -875,6 +875,18 @@ body.ac-public--tenant .ac-public-main {
   max-width: var(--acp-max);
   min-height: 4.5rem;
 }
+.ac-public-header__phone {
+  font-weight: 600;
+  color: var(--acp-primary-strong);
+  text-decoration: none;
+  white-space: nowrap;
+}
+.ac-public-footer__social {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+}
 .ac-public-brand--tenant {
   gap: 0.75rem;
 }

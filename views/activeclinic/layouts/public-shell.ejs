@@ -18,6 +18,12 @@
   <meta property="og:description" content="<%= metaDescription %>"/>
   <% } %>
   <meta property="og:type" content="website"/>
+  <% var shareImage = (typeof ogImageUrl === "string" && ogImageUrl) ? ogImageUrl : (clinic && clinic.seoImageUrl) || ""; %>
+  <% if (shareImage) { %>
+  <meta property="og:image" content="<%= shareImage %>"/>
+  <meta name="twitter:card" content="summary_large_image"/>
+  <meta name="twitter:image" content="<%= shareImage %>"/>
+  <% } %>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
@@ -29,6 +35,17 @@
   <meta name="csrf-token" content="<%= csrfToken %>"/>
   <% } %>
 </head>
+<%
+  var brandStyle = "";
+  if (shellVariant === "tenant" && clinic) {
+    if (clinic.brandPrimary) {
+      brandStyle += "--acp-primary:" + clinic.brandPrimary + ";--acp-primary-strong:" + clinic.brandPrimary + ";";
+    }
+    if (clinic.brandAccent) {
+      brandStyle += "--acp-primary-hover:" + clinic.brandAccent + ";";
+    }
+  }
+%>
 <body
   class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing' : '' %>"
   data-ac-product="activeclinic"
@@ -37,6 +54,7 @@
   data-ac-public-variant="<%= shellVariant || 'platform' %>"
   <% if (clinic && clinic.clinicKey) { %>data-pw-clinic-key="<%= clinic.clinicKey %>"<% } %>
   <% if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>data-website-editing="1"<% } %>
+  <% if (brandStyle) { %>style="<%= brandStyle %>"<% } %>
 >
   <a class="ac-public-skip" href="#ac-public-main">Skip to content</a>
   <%- include('../partials/website-version-preview-banner') %>

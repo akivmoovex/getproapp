@@ -47,6 +47,25 @@ const RESULT = Object.freeze({
 const MAX_PAGES = 40;
 const MAX_SECTIONS = 40;
 const MAX_BLOCKS = 80;
+const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
+
+const SETTINGS_KEYS = Object.freeze({
+  website: Object.freeze(["site.name", "contact.phone", "contact.email", "location.hours"]),
+  branding: Object.freeze(["home.logo", "brand.primary_color", "brand.accent_color", "home.hero.image"]),
+  chrome: Object.freeze([
+    "header.show_logo",
+    "header.show_nav",
+    "header.show_phone",
+    "footer.show_contact",
+    "footer.tagline",
+    "footer.legal",
+    "social.facebook_url",
+    "social.instagram_url",
+    "social.whatsapp_url",
+    "social.x_url",
+  ]),
+  seo: Object.freeze(["seo.title", "seo.description", "seo.image"]),
+});
 
 function asArray(value) {
   return Array.isArray(value) ? value : [];
@@ -110,6 +129,62 @@ async function saveKey(db, input, contentKey, value) {
     actorIdentityId: input.actorIdentityId || null,
     grantedPermissions: granted(input),
   });
+}
+
+function normalizeHexColor(raw) {
+  const trimmed = String(raw == null ? "" : raw).trim();
+  if (!trimmed) return { ok: true, value: null };
+  const withHash = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
+  if (!HEX_COLOR_RE.test(withHash)) return { ok: false, code: "invalid_hex" };
+  return { ok: true, value: withHash.toLowerCase() };
+}
+
+function imageValueFromParts(src, alt, mediaId) {
+  const nextSrc = String(src || "").trim();
+  const nextId = String(mediaId || "").trim();
+  const nextAlt = String(alt || "").trim();
+  if (!nextSrc && !nextId) return null;
+  return { src: nextSrc || null, alt: nextAlt || null, mediaId: nextId || null };
+}
+
+function draftMap(rows, keys) {
+  const values = {};
+  keys.forEach((key, index) => {
+    values[key] = rows[index] ? rows[index].draftValue : null;
+  });
+  return values;
+}
+
+async function loadSiteSettings(db, input, keys) {
+  const loaded = await loadInstance(db, input);
+  if (!loaded.ok) return loaded;
+  const list = Array.isArray(keys) ? keys : [];
+  const rows = await Promise.all(
+    list.map((key) =>
+      contentService.getWebsiteContentRow(db, loaded.instance.id, loaded.organizationId, key)
+    )
+  );
+  return {
+    ok: true,
+    instance: loaded.instance,
+    values: draftMap(rows, list),
+  };
+}
+
+async function saveSiteSettings(db, input, entries) {
+  const edit = requireEdit(input);
+  if (!edit.ok) return edit;
+  const loaded = await loadInstance(db, input);
+  if (!loaded.ok) return loaded;
+  const saveInput = { ...input, instanceId: loaded.instance.id };
+  const list = Array.isArray(entries) ? entries : [];
+  for (let i = 0; i < list.length; i += 1) {
+    const entry = list[i];
+    if (!entry || !entry.key) continue;
+    const saved = await saveKey(db, saveInput, entry.key, entry.value);
+    if (!saved.ok) return saved;
+  }
+  return { ok: true };
 }
 
 async function ensureCmsSeeded(db, input) {
@@ -481,6 +556,7 @@ function normalizeBlockInput(input, pageId, sortOrder) {
     image: input.image && typeof input.image === "object" ? input.image : null,
     button_label: String((input && (input.buttonLabel || input.button_label)) || "").trim().slice(0, 60),
     button_url: String((input && (input.buttonUrl || input.button_url)) || "").trim().slice(0, 500),
+    library_item_id: String((input && (input.libraryItemId || input.library_item_id)) || "").trim().slice(0, 40),
   };
 }
 
@@ -589,9 +665,46 @@ async function reorderBlocks(db, input) {
   return { ok: true, blocks: ordered };
 }
 
+async function loadWebsiteHubStats(db, input) {
+  const empty = {
+    ok: true,
+    hiddenPages: 0,
+    draftPages: 0,
+    missingContent: 0,
+    pageCount: 0,
+    builderHref: "/app/settings/website/pages",
+  };
+  try {
+    const seeded = await ensureCmsSeeded(db, input);
+    if (!seeded.ok) return empty;
+    const pages = seeded.pages || [];
+    const blocks = seeded.blocks || [];
+    const custom = pages.filter((page) => page && page.kind === PAGE_KIND.CUSTOM);
+    const builderPage = custom[0] || null;
+    return {
+      ok: true,
+      hiddenPages: pages.filter((page) => page && page.status === PAGE_STATUS.HIDDEN).length,
+      draftPages: pages.filter((page) => page && page.status === PAGE_STATUS.DRAFT).length,
+      missingContent: custom.filter((page) => !blocks.some((block) => block && block.page_id === page.id)).length,
+      pageCount: pages.length,
+      builderHref: builderPage
+        ? `/app/settings/website/pages/${builderPage.id}/builder`
+        : "/app/settings/website/pages",
+    };
+  } catch {
+    return empty;
+  }
+}
+
 module.exports = {
   RESULT,
   CMS_KEYS,
+  SETTINGS_KEYS,
+  HEX_COLOR_RE,
+  normalizeHexColor,
+  imageValueFromParts,
+  loadSiteSettings,
+  saveSiteSettings,
   loadInstance,
   ensureCmsSeeded,
   loadCmsState,
@@ -616,4 +729,5 @@ module.exports = {
   findCustomPageBySlug,
   findDraftCustomPageBySlug,
   presentPage,
+  loadWebsiteHubStats,
 };

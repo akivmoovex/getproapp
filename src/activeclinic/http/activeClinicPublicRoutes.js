@@ -38,6 +38,10 @@ const {
   GENERIC_NOT_FOUND,
 } = require("../services/clinicRegistrationApplicantStatusService");
 const {
+  applyLibraryPresentation,
+  libraryItemIsHidden,
+} = require("../website/clinicWebsiteCms");
+const {
   createPublicContactInquiry,
 } = require("../services/activeClinicPublicContactService");
 const {
@@ -143,20 +147,39 @@ function registerActiveClinicPublicRoutes(app, deps) {
     const csrfToken = issuePageCsrf(res, env, isProduction);
     const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
     const extras = extra || {};
+    const presented = website.clinic || clinic;
+    const library = presented && presented.cmsLibrary;
+    if (template === "tenant/doctors") {
+      extras.profiles = applyLibraryPresentation(
+        extras.profiles || presented.doctors || [],
+        library,
+        "doctor",
+        "staffKey"
+      );
+    }
+    if (template === "tenant/services") {
+      extras.services = applyLibraryPresentation(
+        extras.services || presented.services || [],
+        library,
+        "service",
+        "serviceKey"
+      );
+    }
     if (template === "tenant/pricing") {
       extras.pricingDisplay = resolvePublicPricingDisplay({
         patterns: extras.pricePatterns || [],
         insuranceIntro:
-          website.clinic && website.clinic.websiteContent
-            ? website.clinic.websiteContent["insurance.intro"]
-            : null,
-        pageVisible: website.clinic ? website.clinic.showPricing !== false : true,
+          presented && presented.websiteContent ? presented.websiteContent["insurance.intro"] : null,
+        pageVisible: presented ? presented.showPricing !== false : true,
       });
     }
     return res.status(200).type("html").send(renderPublicView(template, {
       csrfToken,
       ...website,
-      clinic: website.clinic,
+      clinic: presented,
+      pageTitle: extras.pageTitle || (presented && (presented.seoTitle || presented.websiteDisplayName || presented.publicName)) || "ActiveClinic",
+      metaDescription: extras.metaDescription || (presented && presented.seoDescription) || "",
+      ogImageUrl: extras.ogImageUrl || (presented && presented.seoImageUrl) || "",
       ...extras,
     }));
   }
@@ -893,7 +916,12 @@ function registerActiveClinicPublicRoutes(app, deps) {
       });
 
       return renderTenantView(req, res, clinic, "tenant/services", {
-        services: servicesResult.services || [],
+        services: applyLibraryPresentation(
+          servicesResult.services || [],
+          clinic.cmsLibrary,
+          "service",
+          "serviceKey"
+        ),
         procedures: proceduresResult.procedures || [],
       });
     } catch (err) {
@@ -912,7 +940,8 @@ function registerActiveClinicPublicRoutes(app, deps) {
         serviceKey: req.params.serviceKey,
       });
 
-      if (!serviceResult.ok) {
+      const presentedClinic = (await attachActiveClinicWebsiteLocals(getPool(), req, clinic)).clinic || clinic;
+      if (!serviceResult.ok || libraryItemIsHidden(presentedClinic.cmsLibrary, "service", req.params.serviceKey)) {
         return res.status(404).type("html").send(renderPublicView("tenant/clinic-not-found", {
           csrfToken: issuePageCsrf(res, env, isProduction),
           pageTitle: "Service not found",
@@ -970,7 +999,12 @@ function registerActiveClinicPublicRoutes(app, deps) {
       });
 
       return renderTenantView(req, res, clinic, "tenant/doctors", {
-        profiles: profilesResult.profiles || [],
+        profiles: applyLibraryPresentation(
+          profilesResult.profiles || [],
+          clinic.cmsLibrary,
+          "doctor",
+          "staffKey"
+        ),
       });
     } catch (err) {
       return next(err);
@@ -988,7 +1022,8 @@ function registerActiveClinicPublicRoutes(app, deps) {
         staffKey: req.params.staffKey,
       });
 
-      if (!profileResult.ok) {
+      const presentedClinic = (await attachActiveClinicWebsiteLocals(getPool(), req, clinic)).clinic || clinic;
+      if (!profileResult.ok || libraryItemIsHidden(presentedClinic.cmsLibrary, "doctor", req.params.staffKey)) {
         return res.status(404).type("html").send(renderPublicView("tenant/clinic-not-found", {
           csrfToken: issuePageCsrf(res, env, isProduction),
           pageTitle: "Doctor not found",

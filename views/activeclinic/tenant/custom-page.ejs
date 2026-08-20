@@ -5,19 +5,27 @@
     <p class="ac-public-muted">This page has no published content yet.</p>
   <% } %>
   <% blocks.forEach(function (block) { %>
+  <% var libraryItem = null; %>
+  <% if (block.type === "library") { %>
+    <% libraryItem = ((clinic && clinic.cmsLibrary) || []).find(function (item) { return item && item.id === block.library_item_id; }) || null; %>
+  <% } %>
+  <% if (!(block.type === "library" && libraryItem && libraryItem.visible === false)) { %>
   <div class="ac-tenant-block" data-ac-block-type="<%= block.type %>">
-    <% if (block.type === "heading" && block.heading) { %>
-    <h2><%= block.heading %></h2>
-    <% } else if (block.heading) { %>
-    <h2><%= block.heading %></h2>
+    <% var heading = libraryItem ? libraryItem.title : block.heading; %>
+    <% var body = libraryItem ? (libraryItem.body || libraryItem.summary) : block.body; %>
+    <% var attribution = libraryItem ? libraryItem.attribution : ""; %>
+    <% if ((block.type === "heading" || heading) && heading) { %>
+    <h2><%= heading %></h2>
     <% } %>
-    <% if (block.image && block.image.src) { %>
-    <p><img src="<%= block.image.src %>" alt="<%= block.image.alt || '' %>"/></p>
+    <% if ((libraryItem && libraryItem.image && libraryItem.image.src) || (block.image && block.image.src)) { %>
+    <p><img src="<%= (libraryItem && libraryItem.image && libraryItem.image.src) || block.image.src %>" alt="<%= (libraryItem && libraryItem.image && libraryItem.image.alt) || (block.image && block.image.alt) || '' %>"/></p>
     <% } %>
-    <% if (block.body) { %><p><%= block.body %></p><% } %>
+    <% if (body) { %><p><%= body %></p><% } %>
+    <% if (attribution) { %><p class="ac-public-muted"><%= attribution %></p><% } %>
     <% if (block.button_label && block.button_url) { %>
     <p><a class="ac-btn ac-btn--primary ac-btn--pill" href="<%= block.button_url %>"><%= block.button_label %></a></p>
     <% } %>
   </div>
+  <% } %>
   <% }) %>
 </section>
