@@ -1,18 +1,28 @@
 <main id="ac-auth-main" class="ac-auth-main" data-ac-auth-main="1">
-  <div class="ac-auth-card ac-auth-card--split" data-ac-composition="desktop-split">
-    <%- include('../partials/auth-brand-panel', {
-      productName: productName,
-      supportingName: supportingName,
-      tagline: tagline
-    }) %>
+  <div
+    class="ac-auth-card <%= error ? 'ac-auth-card--split ac-auth-card--error' : 'ac-auth-card--acw08' %>"
+    data-ac-composition="<%= error ? 'acw08-error' : 'acw08-login' %>"
+    data-ac-auth-screen="<%= error ? 'login-error' : 'login' %>"
+  >
+    <% if (error) { %>
+      <%- include('../partials/auth-brand-panel', {
+        productName: productName,
+        supportingName: supportingName,
+        tagline: taglineLong || tagline
+      }) %>
+    <% } %>
     <div class="ac-auth-form-panel">
-      <header class="ac-auth-mobile-header" data-ac-composition="mobile-card">
+      <header class="ac-auth-brand-header <%= error ? 'ac-auth-brand-header--error-mobile' : '' %>">
         <%- include('../partials/auth-mark') %>
-        <p class="ac-auth-mobile-header__brand">ActiveClinic</p>
-        <p class="ac-auth-mobile-header__sub"><%= supportingName %></p>
+        <p class="ac-auth-brand-header__name">ActiveClinic</p>
+        <p class="ac-auth-brand-header__tagline ac-auth-brand-header__tagline--desktop"><%= tagline %></p>
+        <p class="ac-auth-brand-header__tagline ac-auth-brand-header__tagline--mobile"><%= taglineMobile || tagline %></p>
       </header>
       <div class="ac-auth-form-inner">
-        <h1 class="ac-auth-h1">Sign In</h1>
+        <h1 class="ac-auth-h1 ac-auth-h1--welcome">Welcome back</h1>
+        <p class="ac-auth-desc ac-auth-desc--welcome">Please enter your credentials to access the clinic dashboard.</p>
+        <h1 class="ac-auth-h1 ac-auth-h1--signin">Sign In</h1>
+        <p class="ac-auth-desc ac-auth-desc--signin">Enter your credentials to access the portal.</p>
         <% if (notice) { %>
           <p class="ac-auth-alert ac-auth-alert--success" role="status"><%= notice %></p>
         <% } %>
@@ -40,7 +50,7 @@
               phoneValidationRelaxed: phoneValidationRelaxed,
               hint: 'Prefer your staff phone number. Email is accepted when registered.',
               placeholder: '97 123 4567 or email',
-              error: null,
+              error: error ? 'Check this field and try again.' : null,
               showLegacyHidden: false
             }) %>
           </div>
@@ -55,22 +65,18 @@
           }) %>
           <div class="ac-auth-row">
             <a class="ac-auth-link" href="/forgot-password">Forgot password?</a>
-            <a class="ac-auth-link" href="/register-clinic">Register your clinic</a>
           </div>
-          <button type="submit" class="ac-auth-btn" data-loading="Signing in…">
-            Sign In
+          <button type="submit" class="ac-auth-btn" data-loading="Signing you in…">
+            Sign in
             <span aria-hidden="true">→</span>
           </button>
         </form>
-        <div class="ac-auth-footer-secure ac-auth-footer-secure--mobile-only">
-          <span class="ac-auth-secure-note__icon" aria-hidden="true">
-            <svg viewBox="0 0 24 24" focusable="false" width="16" height="16">
-              <rect x="5" y="10" width="14" height="10" rx="2"/>
-              <path d="M8 10V7a4 4 0 0 1 8 0v3"/>
-            </svg>
-          </span>
-          <span>Secure portal access for authorized personnel only.</span>
-        </div>
+        <p class="ac-auth-hint ac-auth-hint--register">
+          Setting up a new clinic? <a class="ac-auth-link" href="/register-clinic">Register your clinic</a>
+        </p>
+        <% if (error) { %>
+          <p class="ac-auth-hint">Don't have an account? <a class="ac-auth-link" href="/contact">Contact administrator</a></p>
+        <% } %>
       </div>
     </div>
   </div>

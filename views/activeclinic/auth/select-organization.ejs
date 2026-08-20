@@ -1,45 +1,69 @@
-<main id="ac-auth-main" class="ac-auth-main" data-ac-auth-main="1">
-  <div class="ac-auth-card ac-auth-card--single" data-ac-visual="stitch-gap">
-    <div class="ac-auth-form-panel">
-      <header class="ac-auth-mobile-header ac-auth-mobile-header--always">
-        <%- include('../partials/auth-mark') %>
-        <h1 class="ac-auth-mobile-header__brand">Select organization</h1>
-        <p class="ac-auth-mobile-header__sub">Choose the healthcare organization to open</p>
-      </header>
-      <% if (error) { %>
-        <div id="ac-auth-error-summary" class="ac-auth-alert ac-auth-alert--error" role="alert" tabindex="-1"><%= error %></div>
-      <% } %>
-      <% if (!organizations || organizations.length === 0) { %>
-        <p class="ac-auth-alert ac-auth-alert--warning" role="status">No eligible organizations are available for this sign-in.</p>
-        <p class="ac-auth-hint"><a class="ac-auth-link" href="/login">Back to sign in</a></p>
-      <% } else { %>
-        <form method="post" action="/login/select-organization" data-ac-loading="1">
-          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-          <fieldset style="border:0;margin:0;padding:0">
-            <legend class="ac-auth-sr-only">Healthcare organization</legend>
-            <ul class="ac-auth-org-list">
-              <% organizations.forEach(function (o, idx) { %>
-                <li>
-                  <label class="ac-auth-org-option">
-                    <input
-                      type="radio"
-                      name="organization_id"
-                      value="<%= o.organizationId %>"
-                      required
-                      <%= idx === 0 ? 'checked' : '' %>
-                    />
-                    <span class="ac-auth-org-option__name"><%= o.healthcareOrganizationName || o.displayName %></span>
-                    <% if (o.staffDisplayName) { %>
-                      <span class="ac-auth-org-option__meta">Signed in as <%= o.staffDisplayName %></span>
-                    <% } %>
-                  </label>
-                </li>
-              <% }) %>
-            </ul>
-          </fieldset>
-          <button type="submit" class="ac-auth-btn" data-loading="Continuing…">Continue</button>
-        </form>
-      <% } %>
-    </div>
+<main id="ac-auth-main" class="ac-auth-main ac-auth-main--selector" data-ac-auth-main="1">
+  <div class="ac-auth-selector" data-ac-visual="acw08-selector" data-ac-auth-screen="clinic-selector">
+    <header class="ac-auth-selector__header">
+      <%- include('../partials/auth-mark') %>
+      <h1 class="ac-auth-selector__title ac-auth-selector__title--desktop">Choose a clinic</h1>
+      <h1 class="ac-auth-selector__title ac-auth-selector__title--mobile">Select a Workspace</h1>
+      <p class="ac-auth-selector__lede ac-auth-selector__lede--desktop">Select the clinic you want to work with. You can switch clinics later from your profile settings.</p>
+      <p class="ac-auth-selector__lede ac-auth-selector__lede--mobile">Choose an affiliated clinic to access its dashboard.</p>
+    </header>
+    <% if (error) { %>
+      <div id="ac-auth-error-summary" class="ac-auth-alert ac-auth-alert--error" role="alert" tabindex="-1"><%= error %></div>
+    <% } %>
+    <% if (!organizations || organizations.length === 0) { %>
+      <p class="ac-auth-alert ac-auth-alert--warning" role="status">No eligible clinics are available for this sign-in.</p>
+      <p class="ac-auth-hint"><a class="ac-auth-link" href="/login">Back to sign in</a></p>
+    <% } else { %>
+      <div class="ac-auth-selector__search" data-ac-clinic-search-wrap="1">
+        <label class="ac-auth-sr-only" for="ac-clinic-search">Search clinics</label>
+        <input
+          id="ac-clinic-search"
+          class="ac-auth-input"
+          type="search"
+          autocomplete="off"
+          placeholder="Search clinics"
+          data-ac-clinic-filter="1"
+        />
+      </div>
+      <form method="post" action="/login/select-organization" data-ac-loading="1" data-ac-org-select="1">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <ul class="ac-auth-clinic-grid">
+          <% organizations.forEach(function (o) { %>
+            <li
+              class="ac-auth-clinic-card-wrap"
+              data-ac-clinic-card="1"
+              data-ac-clinic-label="<%= (o.healthcareOrganizationName || o.displayName || '').toLowerCase() %> <%= (o.locationLabel || '').toLowerCase() %> <%= (o.roleLabel || '').toLowerCase() %>"
+            >
+              <button
+                type="submit"
+                class="ac-auth-clinic-card"
+                name="organization_id"
+                value="<%= o.organizationId %>"
+                aria-label="Enter <%= o.healthcareOrganizationName || o.displayName %>"
+              >
+                <span class="ac-auth-clinic-card__top">
+                  <span class="ac-auth-clinic-card__icon" aria-hidden="true">
+                    <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.75">
+                      <path d="M3 21V8l9-5 9 5v13"/>
+                      <path d="M9 21v-6h6v6"/>
+                    </svg>
+                  </span>
+                  <span class="ac-auth-clinic-card__status"><%= o.statusLabel || 'Active' %></span>
+                </span>
+                <span class="ac-auth-clinic-card__name"><%= o.healthcareOrganizationName || o.displayName %></span>
+                <% if (o.locationLabel) { %>
+                  <span class="ac-auth-clinic-card__meta"><%= o.locationLabel %></span>
+                <% } %>
+                <% if (o.roleLabel || o.staffDisplayName) { %>
+                  <span class="ac-auth-clinic-card__role">Your role <%= o.roleLabel || o.staffDisplayName %></span>
+                <% } %>
+                <span class="ac-auth-clinic-card__cta">Enter workspace <span aria-hidden="true">→</span></span>
+              </button>
+            </li>
+          <% }) %>
+        </ul>
+        <p class="ac-auth-hint" data-ac-clinic-empty hidden>No clinics match that search.</p>
+      </form>
+    <% } %>
   </div>
 </main>

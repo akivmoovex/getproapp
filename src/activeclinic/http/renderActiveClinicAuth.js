@@ -16,12 +16,14 @@ const {
   buildPhoneFieldLocals,
 } = require("../services/activeClinicPhoneFieldLocals");
 
-const ASSET_VERSION = "v7-parity-13";
+const ASSET_VERSION = "v7-acw-10";
 
 const DEFAULT_BRANDING = Object.freeze({
-  productName: "ActiveClinic HMS",
-  supportingName: "Juflona Hospital",
-  tagline: "Integrated Healthcare Management System",
+  productName: "ActiveClinic",
+  supportingName: "ActiveClinic",
+  tagline: "Clinic operations, connected.",
+  taglineMobile: "Clinical Precision with Human Warmth.",
+  taglineLong: "Secure access to your medical ecosystem.",
 });
 
 function baseLocals(overrides) {
@@ -35,6 +37,8 @@ function baseLocals(overrides) {
     productName: DEFAULT_BRANDING.productName,
     supportingName: DEFAULT_BRANDING.supportingName,
     tagline: DEFAULT_BRANDING.tagline,
+    taglineMobile: DEFAULT_BRANDING.taglineMobile,
+    taglineLong: DEFAULT_BRANDING.taglineLong,
     passwordMin: PASSWORD_MIN,
     composition: "split",
     ...phoneLocals,
@@ -65,11 +69,11 @@ function renderLoginPage(input) {
     phoneCountry: String((input && input.phoneCountry) || "ZM").toUpperCase(),
     nextPath: (input && input.nextPath) || null,
     csrfToken: input && input.csrfToken,
-    composition: "desktop-split",
+    composition: (input && input.error) ? "acw08-error" : "acw08-login",
   });
   const bodyHtml = renderAuthContent("auth/login.ejs", locals);
   return renderAuthShell("login", locals.pageTitle, bodyHtml, {
-    composition: "desktop-split",
+    composition: locals.composition,
   });
 }
 
@@ -86,10 +90,13 @@ function renderOrgSelectPage(input) {
           "",
         staffDisplayName:
           o.staffDisplayName || (o.staffMember && o.staffMember.displayName) || "",
+        roleLabel: o.roleLabel || "",
+        locationLabel: o.locationLabel || "",
+        statusLabel: o.statusLabel || "Active",
       }))
     : [];
   const locals = baseLocals({
-    pageTitle: "Select organization",
+    pageTitle: "Choose a clinic",
     error: (input && input.error) || null,
     organizations: orgs,
     csrfToken: input && input.csrfToken,
@@ -161,6 +168,31 @@ function renderForgotPage(input) {
   });
 }
 
+function renderForgotCheckPage(input) {
+  const locals = baseLocals({
+    pageTitle: "Check for reset instructions",
+    message:
+      (input && input.message) ||
+      "If an eligible ActiveClinic account exists for that phone or email, reset instructions are available to authorized administrators when delivery is configured.",
+    composition: "single",
+  });
+  const bodyHtml = renderAuthContent("auth/forgot-password-check.ejs", locals);
+  return renderAuthShell("forgot-password-check", locals.pageTitle, bodyHtml, {
+    composition: "single",
+  });
+}
+
+function renderResetSuccessPage() {
+  const locals = baseLocals({
+    pageTitle: "Password updated",
+    composition: "single",
+  });
+  const bodyHtml = renderAuthContent("auth/reset-password-success.ejs", locals);
+  return renderAuthShell("reset-password-success", locals.pageTitle, bodyHtml, {
+    composition: "single",
+  });
+}
+
 function renderResetPage(input) {
   if (!(input && input.valid)) {
     return renderLifecycleState({
@@ -211,6 +243,38 @@ function renderLifecycleState(input) {
   );
 }
 
+function renderAccessUnavailablePage() {
+  return renderLifecycleState({
+    pageId: "access-unavailable",
+    pageTitle: "Access unavailable",
+    stateCode: "no_eligible_clinic",
+    heading: "No clinic access",
+    message:
+      "This account signed in successfully, but it does not currently have an eligible ActiveClinic workspace.",
+    tone: "error",
+    primaryHref: "/login",
+    primaryLabel: "Return to sign in",
+    secondaryHref: "/contact",
+    secondaryLabel: "Contact support",
+  });
+}
+
+function renderPlatformAdminLanding() {
+  return renderLifecycleState({
+    pageId: "platform-admin",
+    pageTitle: "Platform administration",
+    stateCode: "platform_admin",
+    heading: "Platform administration",
+    message:
+      "This identity is a platform administrator and does not have an eligible clinic workspace on ActiveClinic. Platform operations continue in the existing platform environment.",
+    tone: "success",
+    primaryHref: "/login",
+    primaryLabel: "Return to sign in",
+    secondaryHref: "/logout",
+    secondaryLabel: "Sign out",
+  });
+}
+
 module.exports = {
   ASSET_VERSION,
   DEFAULT_BRANDING,
@@ -220,6 +284,10 @@ module.exports = {
   renderChangePasswordPage,
   renderActivatePage,
   renderForgotPage,
+  renderForgotCheckPage,
   renderResetPage,
+  renderResetSuccessPage,
   renderLifecycleState,
+  renderAccessUnavailablePage,
+  renderPlatformAdminLanding,
 };

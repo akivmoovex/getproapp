@@ -39,6 +39,8 @@ const {
   renderLoginPage,
   renderOrgSelectPage,
   renderChangePasswordPage,
+  renderAccessUnavailablePage,
+  renderPlatformAdminLanding,
 } = require("./renderActiveClinicAuth");
 const { PRODUCT, resolvePostLoginPath } = require("../../platform/onboarding");
 
@@ -85,13 +87,10 @@ async function activeClinicPostLoginPath(db, result, requestedNext, deploymentCo
 }
 
 function loginErrorMessage(result) {
-  if (result.status === AUTH_STATUS.ACCESS_UNAVAILABLE) {
-    return "Access is not available for this account.";
-  }
   if (result.failureCategory === "account_locked") {
     return "Sign-in is temporarily locked. Please wait and try again.";
   }
-  return "Phone/email or password is incorrect.";
+  return "We could not sign you in with those details. Check your phone number, email, or password and try again.";
 }
 
 /**
@@ -191,14 +190,16 @@ function registerActiveClinicAuthRoutes(app, deps) {
           path: "/",
           maxAge: 5 * 60 * 1000,
         });
+        return res.redirect(303, "/login/select-organization");
+      }
+
+      if (result.status === AUTH_STATUS.PLATFORM_ADMIN) {
         const csrfToken = issuePageCsrf(res, req);
-        return res.status(200).type("html").send(
-          renderOrgSelectPage({
-            csrfToken,
-            error: null,
-            organizations: result.organizations,
-          })
-        );
+        return res.status(200).type("html").send(renderPlatformAdminLanding({ csrfToken }));
+      }
+
+      if (result.status === AUTH_STATUS.ACCESS_UNAVAILABLE) {
+        return res.status(403).type("html").send(renderAccessUnavailablePage());
       }
 
       if (!result.ok) {
@@ -230,17 +231,63 @@ function registerActiveClinicAuthRoutes(app, deps) {
     }
   });
 
-  app.get("/login/select-organization", (req, res) => {
-    const token = req.cookies && req.cookies[SELECTION_COOKIE];
-    if (!token) return res.redirect(303, "/login");
-    const csrfToken = issuePageCsrf(res, req);
-    return res.status(200).type("html").send(
-      renderOrgSelectPage({
-        csrfToken,
-        error: "Your organization selection expired. Sign in again to continue.",
-        organizations: [],
-      })
+  async function loadSelectionOrganizations(selectionToken) {
+    const { hashSessionToken } = require("../../platform/session/sessionToken");
+    const transferRepo = require("../../platform/repositories/authTransferRepository");
+    const {
+      listEligibleActiveClinicOrganizations,
+      mapSelectorOrganization,
+    } = require("../services/activeClinicLoginEligibility");
+    const existing = await transferRepo.findAuthTransferByHash(
+      getPool(),
+      hashSessionToken(selectionToken)
     );
+    if (!existing || !existing.platform_identity_id) {
+      return { ok: false, organizations: [] };
+    }
+    if (existing.consumed_at) {
+      return { ok: false, organizations: [] };
+    }
+    if (existing.expires_at && new Date(existing.expires_at).getTime() <= Date.now()) {
+      return { ok: false, organizations: [] };
+    }
+    const listed = await listEligibleActiveClinicOrganizations(getPool(), {
+      platformIdentityId: existing.platform_identity_id,
+    });
+    if (!listed.ok) {
+      return { ok: false, organizations: [] };
+    }
+    return {
+      ok: true,
+      organizations: (listed.organizations || []).map(mapSelectorOrganization),
+    };
+  }
+
+  app.get("/login/select-organization", async (req, res, next) => {
+    try {
+      const token = req.cookies && req.cookies[SELECTION_COOKIE];
+      if (!token) return res.redirect(303, "/login");
+      const loaded = await loadSelectionOrganizations(token);
+      const csrfToken = issuePageCsrf(res, req);
+      if (!loaded.ok || loaded.organizations.length === 0) {
+        return res.status(200).type("html").send(
+          renderOrgSelectPage({
+            csrfToken,
+            error: "Your organization selection expired. Sign in again to continue.",
+            organizations: [],
+          })
+        );
+      }
+      return res.status(200).type("html").send(
+        renderOrgSelectPage({
+          csrfToken,
+          error: null,
+          organizations: loaded.organizations,
+        })
+      );
+    } catch (err) {
+      return next(err);
+    }
   });
 
   app.post("/login/select-organization", async (req, res, next) => {
@@ -262,13 +309,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
         userAgent: req.headers["user-agent"] || null,
       });
       if (!completed.ok) {
-        const csrfToken = issuePageCsrf(res, req);
-        return res.status(401).type("html").send(
-          renderLoginPage({
-            csrfToken,
-            error: "Access is not available for this account.",
-          })
-        );
+        return res.status(403).type("html").send(renderAccessUnavailablePage());
       }
       setV5SessionCookie(res, completed.rawSessionToken, { secure: isProduction, env, req });
       res.clearCookie(SELECTION_COOKIE, { path: "/" });

@@ -20,7 +20,8 @@ const {
 const {
   listEligibleActiveClinicOrganizations,
   resolveEligibleOrganization,
-  RESULT: ELIG_RESULT,
+  resolveLinkedPlatformAdmin,
+  mapSelectorOrganization,
 } = require("./activeClinicLoginEligibility");
 const {
   createPlatformIdentitySession,
@@ -46,6 +47,7 @@ const STATUS = Object.freeze({
   MUST_CHANGE_PASSWORD: "must_change_password",
   INVALID_CREDENTIALS: "invalid_credentials",
   ACCESS_UNAVAILABLE: "access_unavailable",
+  PLATFORM_ADMIN: "platform_admin",
   INVALID_INPUT: "invalid_input",
   TRANSACTION_ERROR: "transaction_error",
 });
@@ -222,6 +224,17 @@ async function authenticateActiveClinicIdentity(db, input) {
   });
 
   if (!eligible.ok || eligible.organizations.length === 0) {
+    const platformAdmin = await resolveLinkedPlatformAdmin(db, resolved.identityRow.id);
+    if (platformAdmin.isPlatformAdmin) {
+      return {
+        ok: true,
+        status: STATUS.PLATFORM_ADMIN,
+        message: "platform_admin",
+        failureCategory: "platform_admin_no_clinic",
+        platformIdentityId: resolved.identityRow.id,
+        blessBoardUserId: platformAdmin.blessBoardUserId,
+      };
+    }
     return {
       ok: false,
       status: STATUS.ACCESS_UNAVAILABLE,
@@ -300,16 +313,7 @@ async function authenticateActiveClinicIdentity(db, input) {
     ok: true,
     status: STATUS.SELECT_ORGANIZATION,
     selectionToken: issued.rawToken,
-    organizations: eligible.organizations.map((o) => ({
-      organizationId: o.organization.id,
-      organizationKey: o.organization.key,
-      displayName: o.organization.displayName,
-      healthcareOrganizationName:
-        (o.healthcareOrganization && o.healthcareOrganization.publicName) ||
-        (o.healthcareOrganization && o.healthcareOrganization.legalName) ||
-        o.organization.displayName,
-      staffDisplayName: o.staffMember.displayName,
-    })),
+    organizations: eligible.organizations.map(mapSelectorOrganization),
     mustChangePassword: Boolean(verified.mustChangePassword),
     platformIdentityId: resolved.identityRow.id,
   };

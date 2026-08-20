@@ -239,6 +239,15 @@ async function postLogin(host, identifier, password, targetApp) {
   return { getLogin, post: res, csrfCookie };
 }
 
+async function getStaffSurface(targetApp, host, cookie) {
+  let res = await request(targetApp).get("/app").set("Host", host).set("Cookie", cookie);
+  const loc = String(res.headers.location || "");
+  if (res.status === 303 && loc.startsWith("/app")) {
+    res = await request(targetApp).get(loc).set("Host", host).set("Cookie", cookie);
+  }
+  return res;
+}
+
 describe("ActiveClinic unified V7 login (moovex-platform-testing)", () => {
   before(async () => {
     resetDeploymentProfileWarningsForTests();
@@ -324,14 +333,12 @@ describe("ActiveClinic unified V7 login (moovex-platform-testing)", () => {
     assert.equal(getLogin.status, 200);
     assert.match(getLogin.text, /data-ac-page="login"/);
     assert.equal(post.status, 303, post.text && post.text.slice(0, 400));
-    assert.equal(post.headers.location, "/app");
+    const dest = String(post.headers.location || "");
+    assert.ok(dest === "/app" || dest === "/app/onboarding", dest);
     const sid = extractCookie(post, UNIFIED_SID);
     assert.ok(sid, "unified session cookie issued");
     assert.equal(extractCookie(post, COOKIE_ACTIVECLINIC_ORG), null);
-    const home = await request(app)
-      .get("/app")
-      .set("Host", AC_HOST)
-      .set("Cookie", `${UNIFIED_SID}=${sid}`);
+    const home = await getStaffSurface(app, AC_HOST, `${UNIFIED_SID}=${sid}`);
     assert.equal(home.status, 200);
     assert.match(home.text, /data-ac-shell="staff-app"/);
   });
@@ -350,8 +357,9 @@ describe("ActiveClinic unified V7 login (moovex-platform-testing)", () => {
       password: PASSWORD,
     });
     const { post } = await postLogin(AC_HOST, phone, PASSWORD, app);
-    assert.equal(post.status, 401);
-    assert.match(post.text, /Access is not available|incorrect/i);
+    assert.equal(post.status, 403);
+    assert.match(post.text, /No clinic access|eligible ActiveClinic workspace/i);
+    assert.doesNotMatch(post.text, /couldn't sign you in with those details/i);
     assert.equal(extractCookie(post, UNIFIED_SID), null);
   });
 
@@ -429,14 +437,16 @@ describe("ActiveClinic unified V7 login (moovex-platform-testing)", () => {
         password: PASSWORD,
       });
     assert.equal(post.status, 303);
-    assert.equal(post.headers.location, "/app");
+    const dest = String(post.headers.location || "");
+    assert.ok(dest === "/app" || dest === "/app/onboarding", dest);
     const sid = extractCookie(post, COOKIE_ACTIVECLINIC_ORG);
     assert.ok(sid);
     assert.equal(extractCookie(post, UNIFIED_SID), null);
-    const home = await request(legacyApp)
-      .get("/app")
-      .set("Host", "activeclinic.org")
-      .set("Cookie", `${COOKIE_ACTIVECLINIC_ORG}=${sid}`);
+    const home = await getStaffSurface(
+      legacyApp,
+      "activeclinic.org",
+      `${COOKIE_ACTIVECLINIC_ORG}=${sid}`
+    );
     assert.equal(home.status, 200);
   });
 
@@ -489,10 +499,11 @@ describe("ActiveClinic unified V7 login (moovex-platform-testing)", () => {
       scopeType: "organisation",
     });
 
-    const home1 = await request(app)
-      .get("/app")
-      .set("Host", AC_HOST)
-      .set("Cookie", cookieHeader({ [UNIFIED_SID]: sid1 }));
+    const home1 = await getStaffSurface(
+      app,
+      AC_HOST,
+      cookieHeader({ [UNIFIED_SID]: sid1 })
+    );
     sequence.GET_app_1 = home1.status;
     assert.equal(home1.status, 200);
     const csrfApp = extractCookie(home1, UNIFIED_CSRF);
@@ -518,10 +529,11 @@ describe("ActiveClinic unified V7 login (moovex-platform-testing)", () => {
     assert.ok(setCookieNames(switched).includes(UNIFIED_SID));
     assert.ok(!setCookieNames(switched).includes(COOKIE_ACTIVECLINIC_ORG));
 
-    const home2 = await request(app)
-      .get("/app")
-      .set("Host", AC_HOST)
-      .set("Cookie", cookieHeader({ [UNIFIED_SID]: sid2 }));
+    const home2 = await getStaffSurface(
+      app,
+      AC_HOST,
+      cookieHeader({ [UNIFIED_SID]: sid2 })
+    );
     sequence.GET_app_2 = home2.status;
     assert.equal(home2.status, 200);
 
@@ -561,20 +573,20 @@ describe("ActiveClinic unified V7 login (moovex-platform-testing)", () => {
       organizationId: ac.orgId,
     });
     assert.equal(created.ok, true, JSON.stringify(created));
-    const csrf = extractCookie(
-      await request(app)
-        .get("/app")
-        .set("Host", AC_HOST)
-        .set("Cookie", `${UNIFIED_SID}=${created.rawToken}`),
-      UNIFIED_CSRF
+    const csrfProbe = await getStaffSurface(
+      app,
+      AC_HOST,
+      `${UNIFIED_SID}=${created.rawToken}`
     );
-    const home = await request(app)
-      .get("/app")
-      .set("Host", AC_HOST)
-      .set("Cookie", cookieHeader({
+    const csrf = extractCookie(csrfProbe, UNIFIED_CSRF);
+    const home = await getStaffSurface(
+      app,
+      AC_HOST,
+      cookieHeader({
         [UNIFIED_SID]: created.rawToken,
         [UNIFIED_CSRF]: csrf,
-      }));
+      })
+    );
     assert.equal(home.status, 200);
     const field = home.text.match(/name="_csrf" value="([^"]+)"/);
     const switched = await request(app)

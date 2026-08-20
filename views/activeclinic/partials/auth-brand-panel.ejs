@@ -1,14 +1,14 @@
 <%#
-  Desktop brand panel (P01 Login left column).
+  Desktop brand panel for login error (ACW08-03). Pre-auth: ActiveClinic only.
 %>
-<aside class="ac-auth-brand-panel" data-ac-auth-brand-panel="1" aria-label="Product information">
+<aside class="ac-auth-brand-panel" data-ac-auth-brand-panel="1" aria-label="ActiveClinic">
   <div>
     <div class="ac-auth-brand-lockup">
       <%- include('auth-mark') %>
-      <p class="ac-auth-brand-lockup__title"><%= supportingName %></p>
+      <p class="ac-auth-brand-lockup__title">ActiveClinic</p>
     </div>
-    <p class="ac-auth-brand-panel__product"><%= productName %></p>
-    <p class="ac-auth-brand-panel__tagline"><%= tagline %></p>
+    <p class="ac-auth-brand-panel__product">Clinical Precision. Human Warmth.</p>
+    <p class="ac-auth-brand-panel__tagline"><%= tagline || 'Secure access to your medical ecosystem.' %></p>
   </div>
   <div class="ac-auth-secure-note">
     <span class="ac-auth-secure-note__icon" aria-hidden="true">

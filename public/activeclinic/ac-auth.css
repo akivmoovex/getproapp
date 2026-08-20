@@ -8,12 +8,12 @@
   --ac-auth-muted: #434653;
   --ac-auth-border: #c3c6d5;
   --ac-auth-outline: #737784;
-  --ac-auth-primary: #003c90;
-  --ac-auth-primary-hover: #002f73;
-  --ac-auth-primary-container: #0f52ba;
+  --ac-auth-primary: #00685f;
+  --ac-auth-primary-hover: #0f766e;
+  --ac-auth-primary-container: #0d9488;
   --ac-auth-on-primary: #ffffff;
   --ac-auth-secondary: #006a6a;
-  --ac-auth-focus: #1d59c1;
+  --ac-auth-focus: #0d9488;
   --ac-auth-danger: var(--ac-status-danger);
   --ac-auth-danger-bg: var(--ac-status-danger-bg);
   --ac-auth-success: var(--ac-status-success);
@@ -29,7 +29,7 @@
   --ac-auth-stack-lg: 1.5rem;
   --ac-auth-input-h: 2.75rem;
   --ac-auth-btn-h: 3rem;
-  --ac-auth-font: "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
+  --ac-auth-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
   --ac-auth-touch: var(--ac-touch);
 }
 
@@ -66,6 +66,7 @@ body.ac-auth-body {
   align-items: center;
   justify-content: center;
   padding: var(--ac-auth-gutter);
+  overflow-x: clip;
 }
 
 .ac-auth-sr-only {
@@ -155,7 +156,7 @@ body.ac-auth-body {
   height: 2.25rem;
   border-radius: 0.35rem;
   background: var(--ac-auth-primary-container);
-  color: #bcceff;
+  color: #e7fff8;
   flex-shrink: 0;
 }
 
@@ -685,5 +686,307 @@ body.ac-auth-body {
   body.ac-auth-body input,
   body.ac-auth-body select {
     min-height: 2.75rem;
+  }
+}
+
+/* ===== ACW08 shared authentication (legacy active-clinic-03-* screens) ===== */
+.ac-auth-card--acw08 {
+  max-width: 26rem;
+  margin: 0 auto;
+  border-radius: 1.25rem;
+  box-shadow: 0 12px 40px rgba(0, 31, 35, 0.08);
+}
+
+.ac-auth-card--acw08 .ac-auth-form-panel {
+  padding: 2rem 1.5rem 1.75rem;
+}
+
+.ac-auth-brand-header {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.35rem;
+  margin-bottom: 1.5rem;
+}
+
+.ac-auth-brand-header .ac-auth-mark {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 1rem;
+}
+
+.ac-auth-brand-header__name {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ac-auth-brand-header__tagline {
+  margin: 0;
+  font-size: 0.9rem;
+  color: var(--ac-auth-muted);
+}
+
+.ac-auth-brand-header__tagline--desktop {
+  display: none;
+}
+
+.ac-auth-h1--signin,
+.ac-auth-desc--signin {
+  display: none;
+}
+
+.ac-auth-h1--welcome {
+  margin-bottom: 0.35rem;
+  font-size: 1.65rem;
+}
+
+@media (min-width: 768px) {
+  .ac-auth-brand-header__tagline--desktop {
+    display: block;
+  }
+  .ac-auth-brand-header__tagline--mobile {
+    display: none;
+  }
+  .ac-auth-card--acw08 .ac-auth-h1--welcome,
+  .ac-auth-card--acw08 .ac-auth-desc--welcome {
+    display: none;
+  }
+  .ac-auth-card--acw08 .ac-auth-h1--signin,
+  .ac-auth-card--acw08 .ac-auth-desc--signin {
+    display: block;
+  }
+  .ac-auth-card--acw08 .ac-auth-h1--signin {
+    text-align: left;
+    font-size: 1.75rem;
+    margin-bottom: 0.35rem;
+  }
+  .ac-auth-card--acw08 .ac-auth-desc--signin {
+    text-align: left;
+    margin: 0 0 1.25rem;
+  }
+}
+
+.ac-auth-card--error .ac-auth-h1--welcome,
+.ac-auth-card--error .ac-auth-desc--welcome {
+  display: none;
+}
+
+.ac-auth-card--error .ac-auth-h1--signin,
+.ac-auth-card--error .ac-auth-desc--signin {
+  display: block;
+}
+
+.ac-auth-card--error .ac-auth-brand-header--error-mobile .ac-auth-brand-header__tagline--desktop {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .ac-auth-card--error .ac-auth-brand-header {
+    display: none;
+  }
+  .ac-auth-card--error .ac-auth-h1--signin {
+    text-align: left;
+  }
+  .ac-auth-card--error .ac-auth-desc--signin {
+    text-align: left;
+    margin: -0.5rem 0 1rem;
+  }
+}
+
+.ac-auth-hint--register {
+  text-align: center;
+}
+
+.ac-auth-main--selector {
+  max-width: 56rem;
+}
+
+.ac-auth-selector {
+  width: 100%;
+}
+
+.ac-auth-selector__header {
+  text-align: left;
+  margin-bottom: 1.5rem;
+}
+
+.ac-auth-selector__header .ac-auth-mark {
+  margin-bottom: 0.75rem;
+}
+
+.ac-auth-selector__title {
+  margin: 0 0 0.5rem;
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ac-auth-selector__title--desktop {
+  display: none;
+}
+
+.ac-auth-selector__lede {
+  margin: 0;
+  color: var(--ac-auth-muted);
+  max-width: 36rem;
+}
+
+.ac-auth-selector__lede--desktop {
+  display: none;
+}
+
+.ac-auth-selector__search {
+  margin: 0 0 1rem;
+}
+
+@media (min-width: 768px) {
+  .ac-auth-selector__title--desktop {
+    display: block;
+  }
+  .ac-auth-selector__title--mobile,
+  .ac-auth-selector__lede--mobile {
+    display: none;
+  }
+  .ac-auth-selector__lede--desktop {
+    display: block;
+  }
+  .ac-auth-selector__search {
+    display: none;
+  }
+}
+
+.ac-auth-clinic-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+@media (min-width: 768px) {
+  .ac-auth-clinic-grid {
+    grid-template-columns: repeat(auto-fill, minmax(16rem, 1fr));
+    gap: 1rem;
+  }
+}
+
+.ac-auth-clinic-card {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 0.35rem;
+  width: 100%;
+  text-align: left;
+  padding: 1rem 1.1rem;
+  border: 1px solid var(--ac-auth-border);
+  border-radius: 1rem;
+  background: var(--ac-auth-surface);
+  color: inherit;
+  font: inherit;
+  cursor: pointer;
+  min-height: 2.75rem;
+}
+
+.ac-auth-clinic-card:hover,
+.ac-auth-clinic-card:focus-visible {
+  border-color: var(--ac-auth-primary);
+  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+  outline: none;
+}
+
+.ac-auth-clinic-card__top {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.ac-auth-clinic-card__icon {
+  color: var(--ac-auth-primary);
+}
+
+.ac-auth-clinic-card__status {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ac-auth-success);
+  background: var(--ac-auth-success-bg);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+}
+
+.ac-auth-clinic-card__name {
+  font-size: 1.05rem;
+  font-weight: 700;
+}
+
+.ac-auth-clinic-card__meta,
+.ac-auth-clinic-card__role {
+  font-size: 0.85rem;
+  color: var(--ac-auth-muted);
+}
+
+.ac-auth-clinic-card__cta {
+  margin-top: 0.4rem;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ac-auth-primary);
+}
+
+.ac-auth-signing-in {
+  position: fixed;
+  inset: 0;
+  z-index: 80;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 1.25rem;
+  background: rgba(247, 249, 251, 0.96);
+}
+
+.ac-auth-signing-in[hidden] {
+  display: none !important;
+}
+
+.ac-auth-signing-in__card {
+  max-width: 26rem;
+  text-align: center;
+}
+
+.ac-auth-signing-in__card .ac-auth-mark {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1.1rem;
+  margin-bottom: 1rem;
+}
+
+.ac-auth-signing-in__brand {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.ac-auth-signing-in__tagline,
+.ac-auth-signing-in__copy {
+  margin: 0.35rem 0 0;
+  color: var(--ac-auth-muted);
+}
+
+.ac-auth-signing-in__title {
+  margin: 1.25rem 0 0;
+  font-size: 1.5rem;
+}
+
+@media (max-width: 390px) {
+  body.ac-auth-body {
+    padding-left: 0.75rem;
+    padding-right: 0.75rem;
+  }
+  .ac-auth-card--acw08,
+  .ac-auth-main--selector {
+    max-width: 100%;
   }
 }

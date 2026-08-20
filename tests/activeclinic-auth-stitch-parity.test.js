@@ -52,7 +52,7 @@ describe("activeclinic-auth-stitch-parity (AC-V6-S01)", () => {
     assert.match(html, /data-ac-shell="auth"/);
     assert.match(html, /data-ac-page="login"/);
     assert.match(html, /data-ac-auth-layout="1"/);
-    assert.match(html, /data-ac-composition="desktop-split"/);
+    assert.match(html, /data-ac-composition="acw08-error"/);
     assert.match(html, /<h1[^>]*>Sign In<\/h1>/);
     assert.match(html, /Phone number or email/);
     assert.match(html, /Forgot password\?/);
@@ -63,7 +63,9 @@ describe("activeclinic-auth-stitch-parity (AC-V6-S01)", () => {
     assert.match(html, /name="_csrf" value="csrf-test"/);
     assert.match(html, /role="alert"/);
     assert.match(html, /id="ac-auth-error-summary"/);
+    assert.match(html, /data-ac-signing-in/);
     assert.doesNotMatch(html, /BlessBoard|Sacred Modernity|church/i);
+    assert.doesNotMatch(html, /Juflona|Demo Clinic/i);
     assert.doesNotMatch(html, /patient|prescription|revenue/i);
     assert.doesNotMatch(html, /type="password"[^>]*value=/);
     assert.doesNotMatch(html, /Remember this device/);
@@ -81,6 +83,7 @@ describe("activeclinic-auth-stitch-parity (AC-V6-S01)", () => {
       ],
     });
     assert.match(html, /data-ac-page="select-organization"/);
+    assert.match(html, /Choose a clinic|Select a Workspace/);
     assert.match(html, /Public Hospital/);
     assert.match(html, /Ada Clinic/);
     assert.match(html, /name="organization_id"/);
@@ -185,10 +188,13 @@ describe("activeclinic-auth-stitch-parity HTTP", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /data-ac-shell="auth"/);
     assert.match(res.text, /data-ac-page="login"/);
+    assert.match(res.text, /data-ac-composition="acw08-login"/);
     assert.match(res.text, /ac-auth\.css/);
     assert.match(res.text, /Phone number or email/);
     assert.match(res.text, /ActiveClinic/);
+    assert.match(res.text, /data-ac-signing-in/);
     assert.doesNotMatch(res.text, /BlessBoard/);
+    assert.doesNotMatch(res.text, /Juflona|Demo Clinic/);
     assert.ok(extractCookie(res, CSRF_COOKIE_ACTIVECLINIC_ORG));
   });
 
@@ -234,8 +240,10 @@ describe("activeclinic-auth-stitch-parity HTTP", () => {
     const css = await request(app).get("/activeclinic/ac-auth.css");
     assert.equal(css.status, 200);
     assert.match(css.text, /--ac-auth-primary/);
+    assert.match(css.text, /ac-auth-signing-in/);
     const js = await request(app).get("/activeclinic/ac-auth.js");
     assert.equal(js.status, 200);
     assert.match(js.text, /data-ac-toggle-password/);
+    assert.match(js.text, /data-ac-signing-in|showSigningIn/);
   });
 });

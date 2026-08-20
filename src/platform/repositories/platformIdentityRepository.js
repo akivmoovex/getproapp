@@ -309,6 +309,23 @@ async function findBlessBoardUserById(db, blessBoardUserId) {
 
 /**
  * @param {{ query: Function }} db
+ * @param {string} identityId
+ */
+async function findBlessBoardUserByPlatformIdentityId(db, identityId) {
+  const result = await db.query(
+    `SELECT id, email_normalized, phone_normalized, phone_verified_at,
+            status, display_name, password_hash, platform_identity_id,
+            created_at, updated_at, last_login_at, password_changed_at
+       FROM blessboard.users
+      WHERE platform_identity_id = $1
+      LIMIT 1`,
+    [identityId]
+  );
+  return result.rows[0] || null;
+}
+
+/**
+ * @param {{ query: Function }} db
  * @param {{ userId: string, identityId: string }} input
  */
 async function setBlessBoardUserPlatformIdentity(db, input) {
@@ -372,6 +389,7 @@ module.exports = {
   findProductProfile,
   findProductProfileByProductProfile,
   findBlessBoardUserById,
+  findBlessBoardUserByPlatformIdentityId,
   setBlessBoardUserPlatformIdentity,
   clearBlessBoardUserPlatformIdentity,
   updateProductProfileStatus,
