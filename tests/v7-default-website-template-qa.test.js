@@ -116,6 +116,7 @@ function clinicPayload(overrides) {
     notes: "default website template qa",
     password: PASSWORD,
     passwordConfirm: PASSWORD,
+      acceptTerms: "on",
     deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
     dataEnvironment: "testing",
     env: { NODE_ENV: "test", PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6 },
@@ -247,8 +248,11 @@ describe("V7 default website template QA", () => {
     assert.doesNotMatch(pages.home.text, /Exterior of /);
     assert.match(pages.home.text, /acp-mobile-bottom-nav/);
     assert.match(pages.about.text, new RegExp(escapeRe(AC_PLACEHOLDER)));
-    assert.match(pages.services.text, /data-ac-template-examples="services"/);
-    assert.match(pages.doctors.text, /these people do not work at this clinic/i);
+    assert.match(pages.services.text, /data-ac-empty="services"/);
+    assert.doesNotMatch(pages.services.text, /Example: General consultation/);
+    assert.doesNotMatch(pages.services.text, /data-ac-template-examples="services"/);
+    assert.match(pages.doctors.text, /No public clinician profiles yet|Manage doctors/);
+    assert.doesNotMatch(pages.doctors.text, /these people do not work at this clinic/i);
     assert.match(pages.location.text, addressRe);
     assert.match(pages.location.text, /Example hours/);
     assert.match(pages.contact.text, emailRe);

@@ -1,7 +1,7 @@
 <section class="ac-public-section acp-page" data-ac-page-section="tenant-contact">
   <header class="acp-page-hero acp-page-hero--compact">
-    <p class="ac-public-eyebrow">Contact</p>
-    <h1>Contact <%= clinic.publicName %></h1>
+    <p class="ac-public-eyebrow"><%- include('../partials/website-editable-field', { contentKey: 'contact.eyebrow', fieldValue: clinic.contactEyebrow || 'Contact', fieldType: 'short_text' }) %></p>
+    <h1><%- include('../partials/website-editable-field', { contentKey: 'contact.page_title', fieldValue: clinic.contactPageTitle || ('Contact ' + clinic.publicName), fieldType: 'short_text' }) %></h1>
     <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'contact.intro', fieldValue: clinic.contactIntro || 'Send a message to the clinic. Staff review inquiries during business hours — this form does not send SMS or email confirmation.', fieldType: 'long_text' }) %></p>
   </header>
 
@@ -43,7 +43,7 @@
       <p class="ac-public-note">Submitting stores your inquiry for the clinic. This form does not send SMS or email confirmation.</p>
     </div>
     <aside class="acp-contact-aside">
-      <h2>Clinic contact</h2>
+      <h2><%- include('../partials/website-editable-field', { contentKey: 'contact.aside_heading', fieldValue: clinic.contactAsideHeading || 'Clinic contact', fieldType: 'short_text' }) %></h2>
       <% const overlayPhone = clinic.websiteContent && clinic.websiteContent['contact.phone'] ? clinic.websiteContent['contact.phone'] : ''; %>
       <% const overlayEmail = clinic.websiteContent && clinic.websiteContent['contact.email'] ? clinic.websiteContent['contact.email'] : ''; %>
       <% const livePhone = clinic.publicPhoneDisplay || overlayPhone; %>
@@ -59,6 +59,7 @@
         <% if (clinic.publicPhoneDisplay || clinic.publicEmailDisplay) { %>
         <p class="ac-public-muted">Public listing currently uses operations contact details.</p>
         <% } %>
+        <%- include('../partials/website-operational-affordance', { href: '/app/settings/organization', label: 'Manage clinic contact details', manageKind: 'contact' }) %>
       </div>
       <% } else if (livePhone || liveEmail) { %>
       <ul class="ac-public-list">

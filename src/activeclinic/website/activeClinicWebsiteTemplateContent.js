@@ -87,22 +87,40 @@ function buildActiveClinicWebsiteTemplateContent(input) {
       `{clinicName} is getting started on ActiveClinic. Use this page to tell patients who you are, what to expect on a visit, and how to get in touch. ${PLACEHOLDER_LABEL} Replace this description with your own clinic story. Do not present template copy as a medical claim, specialty list, or certification.`,
       name
     ),
+    "services.page_title": "Services",
     "services.intro": interpolate(
-      `Browse care offerings {clinicName} chooses to publish. Example listings below are template placeholders from the ActiveClinic demo website. They are not this clinic’s real service catalogue until you publish services from clinic operations.`,
+      `Browse care offerings {clinicName} chooses to publish. Listings appear here when the clinic publishes services from clinic operations.`,
+      name
+    ),
+    "services.empty_heading": "No public services yet",
+    "services.empty_body": interpolate(
+      `{clinicName} has not published a public service catalogue yet. Use clinic operations to add consultations and procedures patients can book.`,
       name
     ),
     "services.examples": exampleServices(),
+    "doctors.page_title": "Our Doctors",
     "doctors.intro": interpolate(
-      `Meet clinicians when {clinicName} publishes public profiles. The sample cards below are template placeholders only — they are not doctors or nurses at this clinic.`,
+      `Meet clinicians when {clinicName} publishes public profiles.`,
+      name
+    ),
+    "doctors.empty_heading": "No public clinician profiles yet",
+    "doctors.empty_body": interpolate(
+      `{clinicName} has not published public clinician profiles yet. Use staff settings to enable profiles patients can see.`,
       name
     ),
     "doctors.examples": exampleClinicians(),
+    "contact.eyebrow": "Contact",
+    "contact.page_title": interpolate("Contact {clinicName}", name),
+    "contact.aside_heading": "Clinic contact",
     "contact.intro": interpolate(
       `Contact {clinicName} for appointments and enquiries. Staff review messages during business hours. This form does not send SMS or email confirmation.`,
       name
     ),
     "contact.phone": phone || null,
     "contact.email": email || null,
+    "about.eyebrow": "About",
+    "location.eyebrow": "Visit us",
+    "location.page_title": "Location & hours",
     "location.intro": interpolate(
       `Visit {clinicName}. Address and hours below combine registration details with template guidance. Example hours are placeholders until the clinic publishes real opening times.`,
       name
@@ -123,6 +141,26 @@ function buildActiveClinicWebsiteTemplateContent(input) {
       `Call or book online when you are ready. {clinicName} will confirm the next available slot. ${PLACEHOLDER_LABEL}`,
       name
     ),
+    "home.faq_heading": "Questions",
+    "home.preview.services_heading": "Services",
+    "home.preview.doctors_heading": "Doctors",
+    "home.preview.visit_heading": "Visit us",
+    "pricing.page_title": "Pricing",
+    "pricing.intro": interpolate(
+      `Fees listed here are only those {clinicName} has chosen to publish. Contact the clinic for anything not shown.`,
+      name
+    ),
+    "patient.info_title": "Patient information",
+    "patient.info_body":
+      "Please bring a valid identity document to your visit when required by the clinic. Online appointment requests are subject to clinic confirmation.",
+    "nav.about.label": "About",
+    "nav.services.label": "Services",
+    "nav.doctors.label": "Doctors",
+    "nav.contact.label": "Contact",
+    "nav.location.label": "Location",
+    "nav.pricing.label": "Pricing",
+    "nav.patient_information.label": "Patient information",
+    "page.patient_information.visible": true,
     "home.faq": [
       {
         question: "How do I book?",

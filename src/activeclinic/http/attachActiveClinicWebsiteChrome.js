@@ -9,6 +9,7 @@ const {
 } = require("../../platform/website/permissions");
 const { resolveActiveClinicWebsite, MODE } = require("../website/activeClinicWebsiteResolver");
 const instanceRepo = require("../../platform/website/instanceRepository");
+const versionService = require("../../platform/website/versionService");
 const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
@@ -16,7 +17,12 @@ const {
   buildPublicWebsitePreviewPath,
   buildPublicWebsiteHistoryPath,
   buildPublicWebsitePublishPath,
+  appendQuery,
 } = require("../../platform/website/publicWebsiteUrl");
+const {
+  buildClinicWebsiteNav,
+  clinicWebsiteLinkQuery,
+} = require("../website/activeClinicClinicWebsiteNav");
 const submissionService = require("../../platform/website/submissionService");
 const { latestTenantVisibleNote } = require("../../platform/website/moderationEventService");
 const { LIFECYCLE_LABELS } = require("../../platform/website/lifecycleStatus");
@@ -96,15 +102,63 @@ function requestedMode(req, canEdit) {
   return MODE.LIVE;
 }
 
-async function attachActiveClinicWebsiteLocals(db, req, clinic) {
+function previewVersionIdFromRequest(req, options) {
+  if (options && options.previewVersionId) return String(options.previewVersionId);
+  const q = req && req.query ? req.query : {};
+  return String(q.website_preview_version || q.websitePreviewVersion || "").trim();
+}
+
+function applyWebsiteLinkQuery(clinic, query) {
+  if (!clinic || !clinic.publicPagePaths || !query || !Object.keys(query).length) return clinic;
+  const next = {};
+  for (const [key, href] of Object.entries(clinic.publicPagePaths)) {
+    next[key] = appendQuery(href, query);
+  }
+  return {
+    ...clinic,
+    publicPagePaths: next,
+    publicBasePath: appendQuery(clinic.publicBasePath || next.home, query),
+  };
+}
+
+async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
+  const opts = options && typeof options === "object" ? options : {};
   const canEdit = canEditClinicWebsite(req, clinic);
   const canSubmit = canSubmitClinicWebsite(req, clinic);
   const canPublish = canPublishClinicWebsite(req, clinic);
   const canRestore = canRestoreClinicWebsite(req, clinic);
-  const editRequested = String((req.query && (req.query.website_edit || req.query.websiteEdit)) || "") === "1";
-  const mode = requestedMode(req, canEdit);
-  const resolved = await resolveActiveClinicWebsite(db, { clinic, mode });
-  const outClinic = resolved.ok ? resolved.clinic : clinic;
+  const canView = canViewClinicWebsite(req, clinic);
+  const previewVersionId = previewVersionIdFromRequest(req, opts);
+  let previewVersion = opts.previewVersion || null;
+  let snapshot = opts.snapshot || null;
+  if (previewVersionId && !snapshot && (canView || canEdit || canPublish)) {
+    const instanceForPreview = await instanceRepo.findWebsiteInstanceByOrgProduct(db, {
+      organizationId: clinic.organizationId,
+      productCode: "activeclinic",
+    });
+    if (instanceForPreview) {
+      const loaded = await versionService.getWebsiteVersion(db, {
+        versionId: previewVersionId,
+        organizationId: clinic.organizationId,
+        instanceId: instanceForPreview.id,
+      });
+      if (loaded.ok) {
+        previewVersion = loaded.version;
+        snapshot = loaded.version.snapshot || {};
+      }
+    }
+  }
+  const isVersionPreview = Boolean(snapshot);
+  const editRequested =
+    !isVersionPreview &&
+    String((req.query && (req.query.website_edit || req.query.websiteEdit)) || "") === "1";
+  const mode = isVersionPreview ? MODE.LIVE : requestedMode(req, canEdit);
+  const resolved = await resolveActiveClinicWebsite(db, {
+    clinic,
+    mode,
+    snapshot: snapshot || undefined,
+  });
+  let outClinic = resolved.ok ? resolved.clinic : clinic;
   const instance = resolved.instance || null;
   const unpublishedCount = (resolved.resolved && resolved.resolved.unpublishedCount) || 0;
   let websiteWorkflowStatus = unpublishedCount > 0 ? "draft" : "live";
@@ -146,10 +200,32 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic) {
     if (note && note.notes) websiteModerationNote = String(note.notes);
   }
   if (!websiteReviewNote && websiteModerationNote) websiteReviewNote = websiteModerationNote;
+  const websiteEdit = !isVersionPreview && canEdit && editRequested && !websiteEditLocked;
+  const linkQuery = clinicWebsiteLinkQuery({
+    websiteEdit,
+    previewVersionId: isVersionPreview && previewVersion ? previewVersion.id : "",
+  });
+  outClinic = applyWebsiteLinkQuery(outClinic, linkQuery);
+  const clinicWebsiteNav = buildClinicWebsiteNav(outClinic, {
+    env: req && req.app && req.app.get && req.app.get("env") ? process.env : process.env,
+    linkQuery,
+  });
+  const restoreUrl =
+    isVersionPreview && previewVersion
+      ? buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: outClinic.clinicKey,
+          suffix: `website/versions/${previewVersion.id}/restore`,
+        })
+      : "";
   return {
     clinic: outClinic,
     instance,
-    websiteEdit: canEdit && editRequested && !websiteEditLocked,
+    clinicWebsiteNav,
+    websiteVersionPreview: isVersionPreview,
+    websitePreviewVersion: previewVersion,
+    websitePreviewRestoreUrl: restoreUrl,
+    websiteEdit,
     websiteCanEdit: canEdit,
     websiteCanSubmit: canSubmit && !websitePublishLocked,
     websiteCanPublish: canPublish && !websitePublishLocked,

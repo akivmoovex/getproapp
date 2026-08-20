@@ -3,6 +3,7 @@
 %>
 <%
   const pid = typeof pageId === "string" ? pageId : "";
+  const directoryNavEnabled = typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled;
   const show = /public-home|clinics-directory|clinics-search|public-about|public-solutions|clinic-directory|clinic-search|public-register/.test(pid);
   const clinicsOn = /clinics-directory|clinics-search|clinic-directory|clinic-search/.test(pid);
   const solutionsOn = /solutions/.test(pid);
@@ -15,10 +16,12 @@
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌂</span>
     <span class="acp-mobile-bottom-nav__label">Home</span>
   </a>
+  <% if (directoryNavEnabled) { %>
   <a class="acp-mobile-bottom-nav__item<%= clinicsOn ? ' is-active' : '' %>" href="/clinics"<% if (clinicsOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌕</span>
     <span class="acp-mobile-bottom-nav__label">Clinics</span>
   </a>
+  <% } %>
   <a class="acp-mobile-bottom-nav__item<%= solutionsOn ? ' is-active' : '' %>" href="/solutions"<% if (solutionsOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">◎</span>
     <span class="acp-mobile-bottom-nav__label">Solutions</span>

@@ -1,6 +1,6 @@
 <article class="acp-page" data-ac-page-section="tenant-about">
   <header class="acp-page-hero acp-page-hero--compact">
-    <p class="ac-public-eyebrow">About</p>
+    <p class="ac-public-eyebrow"><%- include('../partials/website-editable-field', { contentKey: 'about.eyebrow', fieldValue: clinic.aboutEyebrow || 'About', fieldType: 'short_text' }) %></p>
     <h1><%- include('../partials/website-editable-field', { contentKey: 'about.story.heading', fieldValue: clinic.aboutHeading || ('About ' + clinic.publicName), fieldType: 'short_text' }) %></h1>
     <% if (clinic.websiteTagline) { %><p class="ac-public-lede"><%= clinic.websiteTagline %></p><% } %>
   </header>
@@ -37,6 +37,7 @@
       <% if (aboutPhone) { %><li>Phone: <%= aboutPhone %></li><% } %>
       <% if (aboutEmail) { %><li>Email: <%= aboutEmail %></li><% } %>
     </ul>
+    <%- include('../partials/website-operational-affordance', { href: '/app/settings/organization', label: 'Manage clinic contact details', manageKind: 'contact' }) %>
   </section>
   <% } %>
   <p class="ac-public-actions">

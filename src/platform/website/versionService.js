@@ -3,6 +3,7 @@
 const instanceRepo = require("./instanceRepository");
 const contentService = require("./contentService");
 const { recordWebsiteAudit } = require("./auditService");
+const { assertWebsiteInstanceScope } = require("./authorizeWebsite");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -175,12 +176,19 @@ async function getWebsiteVersion(db, input) {
 }
 
 /**
- * Restore creates a new draft from version X. Does not rewrite published history.
+ * Restore copies version X into the current draft. Never publishes.
+ * Historical versions stay immutable; the live published version is unchanged.
  */
 async function restoreWebsiteVersionToDraft(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
-  if (!instance) return { ok: false, code: "website_instance_not_found" };
+  const scoped = assertWebsiteInstanceScope(instance, input);
+  if (!scoped.ok) {
+    return {
+      ok: false,
+      code: scoped.code === "website_instance_not_found" ? "website_instance_not_found" : RESULT.TENANT_MISMATCH,
+    };
+  }
   const loaded = await getWebsiteVersion(db, {
     versionId: input.versionId,
     organizationId,
@@ -190,26 +198,26 @@ async function restoreWebsiteVersionToDraft(db, input) {
   if (loaded.version.instanceId !== instance.id) {
     return { ok: false, code: RESULT.TENANT_MISMATCH };
   }
-  const snapshot = loaded.version.snapshot || {};
-  const values = snapshot.values || {};
-  for (const [key, value] of Object.entries(values)) {
-    await contentService.saveWebsiteDraft(db, {
-      organizationId,
-      instanceId: instance.id,
-      contentKey: key,
-      value,
-      actorIdentityId: input.actorIdentityId || null,
-    });
-  }
+  const applied = await contentService.applyDraftSnapshot(
+    db,
+    instance,
+    loaded.version.snapshot || {},
+    input.actorIdentityId || null
+  );
+  if (!applied.ok) return applied;
   await recordWebsiteAudit(db, {
     organizationId,
     instanceId: instance.id,
     actorIdentityId: input.actorIdentityId || null,
     actionKey: "website.rollback",
     versionId: loaded.version.id,
-    metadata: { restored_version: loaded.version.versionNumber },
+    metadata: {
+      restored_version: loaded.version.versionNumber,
+      restore_mode: "draft",
+      published_unchanged: true,
+    },
   });
-  return { ok: true, version: loaded.version };
+  return { ok: true, version: loaded.version, restoredFrom: loaded.version, publishedUnchanged: true };
 }
 
 module.exports = {

@@ -429,7 +429,7 @@ async function runActiveClinicFlow() {
     organizationId,
   });
   const afterRestoreCount = (versions3.versions || []).length;
-  assert.ok(afterRestoreCount > beforeRestoreCount, "restore appends a version");
+  assert.equal(afterRestoreCount, beforeRestoreCount, "restore does not create a published version");
   const historicAfter = await versionService.getWebsiteVersion(pool, {
     versionId: v1Id,
     organizationId,
@@ -440,11 +440,19 @@ async function runActiveClinicFlow() {
     instance,
     mode: resolver.MODE.LIVE,
   });
-  assert.equal(liveRestored.values["home.hero.title"], historicTitle);
-  const maxVersion = Math.max(...(versions3.versions || []).map((v) => Number(v.versionNumber)));
-  assert.ok(maxVersion > v1Number);
+  assert.equal(liveRestored.values["home.hero.title"], draftTitle2);
+  const draftRestored = await resolver.resolveWebsiteContent(pool, {
+    organizationId,
+    instance,
+    mode: resolver.MODE.DRAFT,
+  });
+  assert.equal(draftRestored.values["home.hero.title"], historicTitle);
+  const publicAfterRestore = await request(app).get(`/clinics/${slug}`).set("Host", AC_HOST);
+  assert.equal(publicAfterRestore.status, 200);
+  assert.match(publicAfterRestore.text, re(draftTitle2));
+  assert.doesNotMatch(publicAfterRestore.text, re(historicTitle));
   out["Restore created a new version"] = ok(
-    `new live version ${maxVersion}; historic v${v1Number} snapshot unchanged`
+    `draft restored to historic v${v1Number}; published remains ${draftTitle2}`
   );
   return out;
 }
@@ -469,6 +477,7 @@ async function runBlessBoardFlow() {
     organization_key: key,
     password: BB_PASSWORD,
     password_confirm: BB_PASSWORD,
+    acceptTerms: "on",
     branch_name: "HQ Campus",
     consent_contact: "on",
   };

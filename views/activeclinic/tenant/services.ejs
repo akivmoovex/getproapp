@@ -1,27 +1,16 @@
 <section class="ac-public-section ac-tenant-directory" data-ac-page-section="tenant-services">
   <header class="ac-tenant-page-header">
-    <h1>Services</h1>
+    <h1><%- include('../partials/website-editable-field', { contentKey: 'services.page_title', fieldValue: clinic.servicesPageTitle || 'Services', fieldType: 'short_text' }) %></h1>
     <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'services.intro', fieldValue: clinic.servicesIntro || ('Care offerings published by ' + clinic.publicName + '.'), fieldType: 'long_text' }) %></p>
   </header>
   <% const serviceList = Array.isArray(services) ? services : []; %>
   <% const procedureList = Array.isArray(procedures) ? procedures : []; %>
-  <% const serviceExamples = Array.isArray(clinic.serviceExamples) ? clinic.serviceExamples : []; %>
   <% if (!serviceList.length && !procedureList.length) { %>
   <div class="ac-public-empty" data-ac-empty="services" data-ac-state-key="empty">
-    <% if (serviceExamples.length) { %>
-    <p class="ac-template-placeholder" data-ac-template-placeholder="1">Template examples only — not this clinic’s published catalogue.</p>
-    <ul class="ac-service-cards" data-ac-template-examples="services">
-      <% serviceExamples.forEach(function(s) { %>
-      <li class="ac-service-card ac-service-card--placeholder">
-        <h3 class="ac-service-card__name"><%= s.name %></h3>
-        <% if (s.summary) { %><p class="ac-service-card__summary"><%= s.summary %></p><% } %>
-      </li>
-      <% }) %>
-    </ul>
-    <% } else { %>
-    <p>No public services are published yet.</p>
-    <% } %>
-    <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
+    <h2><%- include('../partials/website-editable-field', { contentKey: 'services.empty_heading', fieldValue: clinic.servicesEmptyHeading || 'No public services yet', fieldType: 'short_text' }) %></h2>
+    <p><%- include('../partials/website-editable-field', { contentKey: 'services.empty_body', fieldValue: clinic.servicesEmptyBody || ('No public services are published yet.'), fieldType: 'long_text' }) %></p>
+    <%- include('../partials/website-operational-affordance', { href: '', label: 'Manage services', manageKind: 'services', note: 'Public consultations and procedures come from appointment types with public booking enabled. There is no dedicated service-catalogue screen yet, so this editor does not invent a link to Clinical encounters.' }) %>
+    <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.home) || ('/clinics/' + clinic.clinicKey) %>">Back to clinic home</a></p>
   </div>
   <% } %>
   <% if (serviceList.length) { %>
@@ -62,5 +51,8 @@
     <% }) %>
   </ul>
   <% } %>
-  <p class="ac-public-note"><a href="/clinics/<%= clinic.clinicKey %>/pricing">Pricing information</a> · Fees are shown only when configured by the clinic.</p>
+  <% if (serviceList.length || procedureList.length) { %>
+  <%- include('../partials/website-operational-affordance', { href: '', label: 'Manage services', manageKind: 'services', note: 'Public consultations and procedures come from appointment types with public booking enabled. There is no dedicated service-catalogue screen yet, so this editor does not invent a link to Clinical encounters.' }) %>
+  <% } %>
+  <p class="ac-public-note"><a href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.pricing) || ('/clinics/' + clinic.clinicKey + '/pricing') %>">Pricing information</a> · Fees are shown only when configured by the clinic.</p>
 </section>

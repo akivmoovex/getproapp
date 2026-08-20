@@ -94,15 +94,17 @@
 
   <section class="ac-public-section ac-public-privacy-note">
     <h2>Honest product boundaries</h2>
-    <p>ActiveClinic does not provide medical records access on this website, does not auto-provision clinics from registration forms, and does not send SMS or WhatsApp confirmations unless explicitly enabled and integrated.</p>
+    <p>ActiveClinic does not provide medical records access on this website. Clinic registration creates the organisation immediately; a public website is unpublished until the clinic publishes it. ActiveClinic does not send SMS or WhatsApp confirmations unless explicitly enabled and integrated.</p>
   </section>
 
   <section class="acp-cta-band">
     <div class="acp-cta-band__inner">
       <h2>See it in action</h2>
       <p class="ac-public-actions">
+        <% if (typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled) { %>
         <a class="ac-btn ac-btn--primary" href="/clinics">Browse clinics</a>
-        <a class="ac-btn ac-btn--secondary" href="/register-clinic">Apply to join</a>
+        <% } %>
+        <a class="ac-btn ac-btn--secondary" href="/register-clinic">Register your clinic</a>
       </p>
     </div>
   </section>

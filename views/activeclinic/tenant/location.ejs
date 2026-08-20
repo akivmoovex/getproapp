@@ -1,7 +1,7 @@
 <section class="ac-public-section acp-page" data-ac-page-section="tenant-location">
   <header class="acp-page-hero acp-page-hero--compact">
-    <p class="ac-public-eyebrow">Visit us</p>
-    <h1>Location &amp; hours</h1>
+    <p class="ac-public-eyebrow"><%- include('../partials/website-editable-field', { contentKey: 'location.eyebrow', fieldValue: clinic.locationEyebrow || 'Visit us', fieldType: 'short_text' }) %></p>
+    <h1><%- include('../partials/website-editable-field', { contentKey: 'location.page_title', fieldValue: clinic.locationPageTitle || 'Location & hours', fieldType: 'short_text' }) %></h1>
     <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'location.intro', fieldValue: clinic.locationIntro || ('Published facility addresses and hours for ' + clinic.publicName + '.'), fieldType: 'long_text' }) %></p>
   </header>
   <% const facilityList = Array.isArray(clinic.facilities) ? clinic.facilities : []; %>
@@ -63,6 +63,7 @@
     <p class="ac-website-overlay-note">Shown on the public site only when a published facility address or hours is not available. Saving here does not change operations records, and does not publish.</p>
     <p class="ac-location-address"><%- include('../partials/website-editable-field', { contentKey: 'location.address', fieldValue: clinic.locationAddressOverlay || '', fieldType: 'long_text' }) %></p>
     <div class="ac-location-hours-overlay"><%- include('../partials/website-editable-field', { contentKey: 'location.hours', fieldValue: clinic.locationHoursOverlay || '', fieldType: 'long_text' }) %></div>
+    <%- include('../partials/website-operational-affordance', { href: '/app/facilities', label: 'Manage opening hours', manageKind: 'location' }) %>
   </div>
   <% } %>
 </section>

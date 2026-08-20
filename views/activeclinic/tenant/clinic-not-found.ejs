@@ -3,7 +3,9 @@
   <h1>Clinic not found</h1>
   <p>We could not find a published clinic at this address. The clinic may have moved, or the link may be incorrect.</p>
   <p class="ac-public-actions">
-    <a class="ac-btn ac-btn--primary" href="/clinics">Browse clinics</a>
-    <a class="ac-btn ac-btn--secondary" href="/">Back to ActiveClinic</a>
+    <a class="ac-btn ac-btn--primary" href="/">Back to ActiveClinic</a>
+    <% if (typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled) { %>
+    <a class="ac-btn ac-btn--secondary" href="/clinics">Browse clinics</a>
+    <% } %>
   </p>
 </section>

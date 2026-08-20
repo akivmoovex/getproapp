@@ -265,11 +265,27 @@ async function restoreWebsiteVersionLive(db, input) {
   return { ok: created.ok, version: created.version, restoredFrom: loaded.version };
 }
 
+/**
+ * Copy a historical version into the current draft. Does not publish.
+ */
+async function restoreWebsiteVersionToDraft(db, input) {
+  const organizationId = String((input && input.organizationId) || "");
+  const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
+  const scoped = assertWebsiteInstanceScope(instance, input);
+  if (!scoped.ok) return { ok: false, code: scoped.code === "tenant_mismatch" ? scoped.code : RESULT.NOT_FOUND };
+  return versionService.restoreWebsiteVersionToDraft(db, {
+    ...input,
+    instanceId: instance.id,
+    organizationId,
+  });
+}
+
 module.exports = {
   RESULT,
   createPublicationVersion,
   saveDraftAndMaybePublish,
   publishWebsiteDraft,
   restoreWebsiteVersionLive,
+  restoreWebsiteVersionToDraft,
   snapshotLiveContent,
 };

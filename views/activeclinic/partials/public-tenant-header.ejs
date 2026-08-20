@@ -1,19 +1,8 @@
 <%
   const pid = typeof pageId === "string" ? pageId : "";
+  const nav = (typeof clinicWebsiteNav !== "undefined" && clinicWebsiteNav) ? clinicWebsiteNav : { desktop: [], drawer: [] };
   const pages = (clinic && clinic.publicPagePaths) || {};
   const pubHome = pages.home || (clinic && clinic.publicBasePath) || ("/clinics/" + (clinic && clinic.clinicKey ? clinic.clinicKey : ""));
-  function pub(name) {
-    if (pages[name]) return pages[name];
-    if (!name || name === "home") return pubHome;
-    var extras = {
-      privacy: "/privacy",
-      terms: "/terms",
-      patientLogin: "/patient/login",
-      myBooking: "/my-booking",
-      patientInformation: "/patient-information"
-    };
-    return pubHome + (extras[name] || ("/" + name));
-  }
   function tenantCurrent(kind) {
     var on = false;
     if (kind === "about") on = /tenant-about/.test(pid);
@@ -21,8 +10,15 @@
     else if (kind === "services") on = /tenant-service|tenant-procedure/.test(pid);
     else if (kind === "pricing") on = /tenant-pricing/.test(pid);
     else if (kind === "contact") on = /tenant-contact/.test(pid);
+    else if (kind === "location") on = /tenant-location/.test(pid);
+    else if (kind === "patientInformation") on = /tenant-patient-information/.test(pid);
     else if (kind === "book") on = /booking-|appointment-entry|procedures-list/.test(pid);
     return on ? ' aria-current="page"' : "";
+  }
+  function navClass(item) {
+    if (item && item.key === "patientLogin") return "ac-public-nav__login";
+    if (item && item.key === "book") return "ac-public-nav__cta";
+    return "";
   }
 %>
 <header class="ac-public-header ac-public-header--tenant" data-ac-public-header="tenant">
@@ -45,12 +41,12 @@
         imageHeight: 36,
         imagePlaceholderSrc: 'data:image/gif;base64,R0lGODlhAQABAIAAAAAAAP///yH5BAEAAAAALAAAAAABAAEAAAIBRAA7',
       }) %>
-      <a href="<%= pub('home') %>" aria-label="<%= clinic.publicName %> home">
+      <a href="<%= pubHome %>" aria-label="<%= clinic.publicName %> home">
         <span class="ac-public-brand__name"><%= clinic.publicName %></span>
       </a>
     </div>
     <% } else { %>
-    <a class="ac-public-brand ac-public-brand--tenant" href="<%= pub('home') %>" aria-label="<%= clinic.publicName %> home">
+    <a class="ac-public-brand ac-public-brand--tenant" href="<%= pubHome %>" aria-label="<%= clinic.publicName %> home">
       <% if (clinic.websiteLogoUrl) { %>
       <img class="ac-public-brand__logo" src="<%= clinic.websiteLogoUrl %>" alt="<%= clinic.websiteLogoAlt || '' %>" width="36" height="36"/>
       <% } else { %>
@@ -59,16 +55,10 @@
       <span class="ac-public-brand__name"><%= clinic.publicName %></span>
     </a>
     <% } %>
-    <nav class="ac-public-nav ac-public-nav--desktop ac-public-nav--tenant" aria-label="Clinic">
-      <a href="<%= pub('about') %>"<%- tenantCurrent("about") %>>About</a>
-      <a href="<%= pub('doctors') %>"<%- tenantCurrent("doctors") %>>Doctors</a>
-      <a href="<%= pub('services') %>"<%- tenantCurrent("services") %>>Services</a>
-      <% if (clinic.showPricing !== false) { %>
-      <a href="<%= pub('pricing') %>"<%- tenantCurrent("pricing") %>>Pricing</a>
-      <% } %>
-      <a href="<%= pub('contact') %>"<%- tenantCurrent("contact") %>>Contact</a>
-      <a class="ac-public-nav__login" href="<%= pub('patientLogin') %>">Login</a>
-      <a class="ac-public-nav__cta" href="<%= pub('book') %>"<%- tenantCurrent("book") %>><%= clinic.publicBookingEnabled ? "Book appointment" : "Request appointment" %></a>
+    <nav class="ac-public-nav ac-public-nav--desktop ac-public-nav--tenant" aria-label="Clinic" data-ac-clinic-nav="desktop">
+      <% (nav.desktop || []).forEach(function (item) { %>
+      <a href="<%= item.href %>" class="<%= navClass(item) %>"<%- tenantCurrent(item.key) %> data-ac-nav-item="<%= item.key %>"<% if (item.protected) { %> data-ac-nav-protected="1"<% } %>><%= item.label %></a>
+      <% }) %>
     </nav>
     <button type="button" class="ac-public-nav-toggle" data-ac-nav-open aria-expanded="false" aria-controls="ac-public-drawer">
       <span class="ac-sr-only">Open menu</span>
@@ -79,21 +69,10 @@
 <aside id="ac-public-drawer" class="ac-public-drawer" data-ac-nav-drawer hidden>
   <div class="ac-public-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu">
     <button type="button" class="ac-public-drawer__close" data-ac-nav-close>Close</button>
-    <nav aria-label="Mobile clinic">
-      <a href="<%= pub('about') %>"<%- tenantCurrent("about") %>>About</a>
-      <a href="<%= pub('doctors') %>"<%- tenantCurrent("doctors") %>>Doctors</a>
-      <a href="<%= pub('services') %>"<%- tenantCurrent("services") %>>Services</a>
-      <% if (clinic.showPricing !== false) { %>
-      <a href="<%= pub('pricing') %>"<%- tenantCurrent("pricing") %>>Pricing</a>
-      <% } %>
-      <a href="<%= pub('location') %>">Location</a>
-      <a href="<%= pub('contact') %>"<%- tenantCurrent("contact") %>>Contact</a>
-      <a href="<%= pub('patientInformation') %>">Patient information</a>
-      <a href="<%= pub('book') %>"<%- tenantCurrent("book") %>><%= clinic.publicBookingEnabled ? "Book appointment" : "Request appointment" %></a>
-      <a href="<%= pub('myBooking') %>">My booking</a>
-      <a href="<%= pub('patientLogin') %>">Patient portal</a>
-      <a href="/">Back to ActiveClinic</a>
-      <a href="/clinics">All clinics</a>
+    <nav aria-label="Mobile clinic" data-ac-clinic-nav="drawer">
+      <% (nav.drawer || []).forEach(function (item) { %>
+      <a href="<%= item.href %>"<%- tenantCurrent(item.key) %> data-ac-nav-item="<%= item.key %>"<% if (item.protected) { %> data-ac-nav-protected="1"<% } %>><%= item.label %></a>
+      <% }) %>
     </nav>
   </div>
 </aside>

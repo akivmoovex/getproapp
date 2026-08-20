@@ -55,6 +55,11 @@ const {
   registerActiveClinicWebsiteTemplate,
   ACTIVECLINIC_WEBSITE_KEYS,
 } = require("../src/activeclinic/website/activeClinicWebsiteTemplate");
+const {
+  expectedInlineKeysForPage,
+  PUBLIC_PAGES,
+  unclassifiedRows,
+} = require("../src/activeclinic/website/activeClinicWebsiteEditorCoverage");
 const { CONTENT_TYPES } = require("../src/platform/website/contentTypes");
 const {
   EDITABLE_FIELDS,
@@ -84,35 +89,15 @@ const AC_INLINE_KEYS = Object.entries(ACTIVECLINIC_WEBSITE_KEYS)
   .map(([key]) => key);
 
 const AC_PAGE_EXPECT = {
-  home: [
-    "home.hero.title",
-    "home.hero.subtitle",
-    "home.hero.eyebrow",
-    "home.hero.image",
-    "home.logo",
-    "home.promo.heading",
-    "home.promo.body",
-    "services.intro",
-    "doctors.intro",
-    "footer.tagline",
-    "footer.legal",
-    "contact.phone",
-    "contact.email",
-  ],
-  about: [
-    "about.story.heading",
-    "about.story.body",
-    "about.story.image",
-    "home.logo",
-    "footer.tagline",
-    "footer.legal",
-  ],
-  contact: ["contact.intro", "contact.phone", "contact.email", "home.logo", "footer.tagline"],
-  location: ["location.intro", "location.address", "location.hours", "home.logo"],
-  services: ["services.intro", "home.logo"],
-  doctors: ["doctors.intro", "home.logo"],
-  pricing: ["insurance.intro", "home.logo"],
-  book: ["book.intro", "home.logo"],
+  home: expectedInlineKeysForPage("home"),
+  about: expectedInlineKeysForPage("about"),
+  contact: expectedInlineKeysForPage("contact"),
+  location: expectedInlineKeysForPage("location"),
+  services: expectedInlineKeysForPage("services"),
+  doctors: expectedInlineKeysForPage("doctors"),
+  pricing: expectedInlineKeysForPage("pricing"),
+  book: expectedInlineKeysForPage("book"),
+  "patient-information": expectedInlineKeysForPage("patient-information"),
 };
 
 let pool;
@@ -180,6 +165,7 @@ function clinicPayload(overrides) {
     notes: "inline editor coverage",
     password: PASSWORD,
     passwordConfirm: PASSWORD,
+      acceptTerms: "on",
     deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
     dataEnvironment: "testing",
     env: { NODE_ENV: "test", PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6 },
@@ -286,13 +272,18 @@ describe("v7 inline editor coverage — static inventory", () => {
       registered.map((f) => f.key).sort(),
       [...AC_INLINE_KEYS].sort()
     );
+    const navSource = read("src/activeclinic/website/activeClinicClinicWebsiteNav.js");
+    const collection = read("views/activeclinic/partials/website-collection-editor.ejs");
     for (const key of AC_INLINE_KEYS) {
-      assert.match(
-        corpus,
-        new RegExp(`contentKey:\\s*'${key.replace(/\./g, "\\.")}'`),
+      const literal = new RegExp(`contentKey:\\s*'${key.replace(/\./g, "\\.")}'`);
+      const inNav = navSource.includes(`"${key}"`) || navSource.includes(`'${key}'`);
+      const inCollection = collection.includes(`collectionKey: '${key}'`) || collection.includes(`"${key}"`);
+      assert.ok(
+        literal.test(corpus) || inNav || inCollection,
         `missing pencil wiring for ${key}`
       );
     }
+    assert.match(corpus, /contentKey:\s*item\.labelKey/);
     assert.match(corpus, /data-website-start="1"/);
     assert.match(corpus, /data-website-save="1"/);
     assert.match(corpus, /data-website-cancel="1"/);
@@ -303,6 +294,8 @@ describe("v7 inline editor coverage — static inventory", () => {
     assert.doesNotMatch(corpus, /contentKey:\s*'doctors\.examples'/);
     assert.doesNotMatch(corpus, /contentKey:\s*'clinic\.publicName'/);
     assert.doesNotMatch(corpus, /contentKey:\s*'operational\./);
+    assert.equal(unclassifiedRows().length, 0);
+    assert.ok(PUBLIC_PAGES.includes("contact"));
   });
 
   it("BlessBoard registered inline fields have public pencils or shared partials", () => {
@@ -387,6 +380,9 @@ describe("v7 inline editor coverage — HTTP draft save / cancel / no publish", 
       doctors: await request(app).get(acDraft(result.slug, "doctors")).set("Cookie", cookie),
       pricing: await request(app).get(acDraft(result.slug, "pricing")).set("Cookie", cookie),
       book: await request(app).get(acDraft(result.slug, "book")).set("Cookie", cookie),
+      "patient-information": await request(app)
+        .get(acDraft(result.slug, "patient-information"))
+        .set("Cookie", cookie),
     };
     for (const [name, res] of Object.entries(pages)) {
       assert.equal(res.status, 200, `${name} ${res.status}`);

@@ -14,9 +14,11 @@ const {
 const {
   enrichPublicLocals,
 } = require("../services/activeClinicPublicMediaService");
+const { buildClinicWebsiteNav } = require("../website/activeClinicClinicWebsiteNav");
+const { isPublicClinicDirectoryNavEnabled } = require("../website/activeClinicPublicCapabilities");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-website-6";
+const ASSET_VERSION = "v7-website-9";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -81,8 +83,14 @@ function renderPublicPage(input) {
     ...(input.locals || {}),
     escapeHtml,
   });
+  if (typeof locals.publicClinicDirectoryNavEnabled === "undefined") {
+    locals.publicClinicDirectoryNavEnabled = isPublicClinicDirectoryNavEnabled(process.env);
+  }
 
   const shellVariant = input.shellVariant || (locals.clinic ? "tenant" : "platform");
+  if (shellVariant === "tenant" && locals.clinic && !locals.clinicWebsiteNav) {
+    locals.clinicWebsiteNav = buildClinicWebsiteNav(locals.clinic, { env: process.env });
+  }
   const headerHtml = renderPartial(
     shellVariant === "tenant"
       ? "partials/public-tenant-header"

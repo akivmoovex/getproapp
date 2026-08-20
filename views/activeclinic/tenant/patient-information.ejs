@@ -1,5 +1,7 @@
 <article class="ac-public-section" data-ac-page-section="tenant-patient-information">
-  <h1>Patient information</h1>
-  <p>Please bring a valid identity document to your visit when required by the clinic. Online appointment requests are subject to clinic confirmation.</p>
-  <p><a href="/clinics/<%= clinic.clinicKey %>/book">Request an appointment</a></p>
+  <h1><%- include('../partials/website-editable-field', { contentKey: 'patient.info_title', fieldValue: clinic.patientInformationTitle || 'Patient information', fieldType: 'short_text' }) %></h1>
+  <div class="ac-public-prose acp-prose-card">
+    <%- include('../partials/website-editable-field', { contentKey: 'patient.info_body', fieldValue: clinic.patientInformationBody || 'Please bring a valid identity document to your visit when required by the clinic. Online appointment requests are subject to clinic confirmation.', fieldType: 'long_text' }) %>
+  </div>
+  <p><a href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.book) || ('/clinics/' + clinic.clinicKey + '/book') %>">Request an appointment</a></p>
 </article>

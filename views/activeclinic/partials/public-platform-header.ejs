@@ -1,5 +1,6 @@
 <%
   const pid = typeof pageId === "string" ? pageId : "";
+  const directoryNavEnabled = typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled;
   function currentAttr(kind) {
     var on = false;
     if (kind === "clinics") on = /clinics-directory|clinics-search|clinic-directory|clinic-search/.test(pid);
@@ -16,7 +17,9 @@
       <span class="ac-public-brand__name">ActiveClinic</span>
     </a>
     <nav class="ac-public-nav ac-public-nav--desktop" aria-label="Primary">
+      <% if (directoryNavEnabled) { %>
       <a href="/clinics"<%- currentAttr("clinics") %>>Find a clinic</a>
+      <% } %>
       <a href="/solutions"<%- currentAttr("solutions") %>>Solutions</a>
       <a href="/about"<%- currentAttr("about") %>>About</a>
       <a href="/register-clinic"<%- currentAttr("register") %>>Register a clinic</a>
@@ -32,7 +35,9 @@
   <div class="ac-public-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu">
     <button type="button" class="ac-public-drawer__close" data-ac-nav-close>Close</button>
     <nav aria-label="Mobile">
+      <% if (directoryNavEnabled) { %>
       <a href="/clinics"<%- currentAttr("clinics") %>>Find a clinic</a>
+      <% } %>
       <a href="/solutions"<%- currentAttr("solutions") %>>Solutions</a>
       <a href="/about"<%- currentAttr("about") %>>About</a>
       <a href="/register-clinic"<%- currentAttr("register") %>>Register a clinic</a>

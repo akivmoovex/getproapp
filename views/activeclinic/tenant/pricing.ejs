@@ -1,8 +1,8 @@
 <section class="acp-page" data-ac-page-section="tenant-pricing">
   <header class="acp-page-hero acp-page-hero--compact">
     <p class="ac-public-eyebrow">Pricing</p>
-    <h1>Pricing</h1>
-    <p class="ac-public-lede">Fees listed here are only those <%= clinic.publicName %> has chosen to publish. Contact the clinic for anything not shown.</p>
+    <h1><%- include('../partials/website-editable-field', { contentKey: 'pricing.page_title', fieldValue: clinic.pricingPageTitle || 'Pricing', fieldType: 'short_text' }) %></h1>
+    <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'pricing.intro', fieldValue: clinic.pricingIntro || ('Fees listed here are only those ' + clinic.publicName + ' has chosen to publish. Contact the clinic for anything not shown.'), fieldType: 'long_text' }) %></p>
   </header>
   <% const pricing = typeof pricingDisplay !== 'undefined' && pricingDisplay ? pricingDisplay : null; %>
   <% const patterns = pricing && Array.isArray(pricing.operationalCatalogue) ? pricing.operationalCatalogue : (Array.isArray(pricePatterns) ? pricePatterns : []); %>

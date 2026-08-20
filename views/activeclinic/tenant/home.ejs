@@ -103,17 +103,17 @@
 <section class="ac-public-section ac-tenant-preview" data-ac-page-section="tenant-preview">
   <div class="ac-tenant-preview__grid">
     <article class="ac-tenant-preview__card">
-      <h2>Services</h2>
+      <h2><%- include('../partials/website-editable-field', { contentKey: 'home.preview.services_heading', fieldValue: clinic.homePreviewServicesHeading || 'Services', fieldType: 'short_text' }) %></h2>
       <p><%- include('../partials/website-editable-field', { contentKey: 'services.intro', fieldValue: clinic.servicesIntro || 'Browse consultations, procedures, and care offerings published by this clinic.', fieldType: 'long_text' }) %></p>
       <a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= servicesHref %>">View services</a>
     </article>
     <article class="ac-tenant-preview__card">
-      <h2>Doctors</h2>
+      <h2><%- include('../partials/website-editable-field', { contentKey: 'home.preview.doctors_heading', fieldValue: clinic.homePreviewDoctorsHeading || 'Doctors', fieldType: 'short_text' }) %></h2>
       <p><%- include('../partials/website-editable-field', { contentKey: 'doctors.intro', fieldValue: clinic.doctorsIntro || 'Meet clinicians with public profiles where the clinic has published them.', fieldType: 'long_text' }) %></p>
       <a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= doctorsHref %>">View doctors</a>
     </article>
     <article class="ac-tenant-preview__card">
-      <h2>Visit us</h2>
+      <h2><%- include('../partials/website-editable-field', { contentKey: 'home.preview.visit_heading', fieldValue: clinic.homePreviewVisitHeading || 'Visit us', fieldType: 'short_text' }) %></h2>
       <p><% if (locationLine) { %><%= locationLine %><% } else { %>See location and opening hours.<% } %></p>
       <a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= locationHref %>">Location &amp; hours</a>
     </article>
@@ -132,16 +132,15 @@
 <% } %>
 
 <% const faqList = Array.isArray(clinic.faq) ? clinic.faq : []; %>
-<% if (clinic.showFaq && faqList.length) { %>
+<% const faqEditing = typeof websiteEdit !== 'undefined' && websiteEdit; %>
+<% if (clinic.showFaq && faqList.length || faqEditing) { %>
 <section class="ac-public-section ac-tenant-faq" data-ac-page-section="tenant-faq" aria-label="Frequently asked questions">
-  <h2>Questions</h2>
-  <dl class="ac-tenant-faq__list">
-    <% faqList.forEach(function (item) { %>
-    <div class="ac-tenant-faq__item">
-      <dt><%= item.question %></dt>
-      <dd><%= item.answer %></dd>
-    </div>
-    <% }) %>
-  </dl>
+  <h2><%- include('../partials/website-editable-field', { contentKey: 'home.faq_heading', fieldValue: clinic.faqHeading || 'Questions', fieldType: 'short_text' }) %></h2>
+  <%- include('../partials/website-collection-editor', {
+    collectionKey: 'home.faq',
+    collectionItems: faqList,
+    questionLabel: 'Question',
+    answerLabel: 'Answer',
+  }) %>
 </section>
 <% } %>

@@ -9,13 +9,7 @@
     if (primaryFacility.countryCode) footerLoc.push(primaryFacility.countryCode);
   }
   const pages = (clinic && clinic.publicPagePaths) || {};
-  const pubHome = pages.home || (clinic && clinic.publicBasePath) || ("/clinics/" + (clinic && clinic.clinicKey ? clinic.clinicKey : ""));
-  function pub(name) {
-    if (pages[name]) return pages[name];
-    if (!name || name === "home") return pubHome;
-    var extras = { privacy: "/privacy", terms: "/terms" };
-    return pubHome + (extras[name] || ("/" + name));
-  }
+  const nav = (typeof clinicWebsiteNav !== "undefined" && clinicWebsiteNav) ? clinicWebsiteNav : { footerQuick: [], footerLegal: [] };
 %>
 <footer class="ac-public-footer ac-public-footer--tenant" data-ac-public-footer="tenant">
   <div class="ac-public-footer__inner ac-public-footer__inner--tenant">
@@ -27,10 +21,10 @@
     </div>
     <div class="ac-public-footer__col">
       <h2 class="ac-public-footer__heading">Quick links</h2>
-      <nav aria-label="Clinic footer links">
-        <a href="<%= pub('services') %>">Services</a>
-        <a href="<%= pub('doctors') %>">Doctors</a>
-        <a href="<%= pub('book') %>"><%= clinic.publicBookingEnabled ? "Book appointment" : "Request appointment" %></a>
+      <nav aria-label="Clinic footer links" data-ac-clinic-nav="footer-quick">
+        <% (nav.footerQuick || []).forEach(function (item) { %>
+        <a href="<%= item.href %>" data-ac-nav-item="<%= item.key %>"<% if (item.protected) { %> data-ac-nav-protected="1"<% } %>><%= item.label %></a>
+        <% }) %>
       </nav>
     </div>
     <div class="ac-public-footer__col">
@@ -47,15 +41,15 @@
         <% if (clinic.publicEmailDisplay) { %><li><%= clinic.publicEmailDisplay %></li>
         <% } else if (overlayEmail) { %><li><%= overlayEmail %></li><% } %>
         <% } %>
-        <li><a href="<%= pub('contact') %>">Contact form</a></li>
+        <li><a href="<%= pages.contact || '' %>" data-ac-nav-item="contact">Contact form</a></li>
       </ul>
     </div>
     <div class="ac-public-footer__col">
       <h2 class="ac-public-footer__heading">Legal</h2>
-      <nav aria-label="Clinic legal">
-        <a href="<%= pub('privacy') %>">Privacy policy</a>
-        <a href="<%= pub('terms') %>">Terms of service</a>
-        <a href="/clinics">ActiveClinic directory</a>
+      <nav aria-label="Clinic legal" data-ac-clinic-nav="footer-legal">
+        <% (nav.footerLegal || []).forEach(function (item) { %>
+        <a href="<%= item.href %>" data-ac-nav-item="<%= item.key %>"<% if (item.protected) { %> data-ac-nav-protected="1"<% } %>><%= item.label %></a>
+        <% }) %>
       </nav>
     </div>
   </div>

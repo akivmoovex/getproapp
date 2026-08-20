@@ -1,10 +1,10 @@
 <section class="ac-public-section" data-ac-website-history="1">
   <h1>Website version history</h1>
-  <p>Public visitors see the current published version only. Restore creates a new current version and leaves history unchanged.</p>
+  <p>Public visitors see the current published version only. Restore copies a historical version into a new draft. The live website does not change until you publish.</p>
   <% if (typeof notice === 'string' && notice === 'published') { %>
   <p class="ac-public-note" data-ac-website-notice="published">Website published.</p>
-  <% } else if (typeof notice === 'string' && notice === 'restored') { %>
-  <p class="ac-public-note" data-ac-website-notice="restored">Previous version restored as a new current version.</p>
+  <% } else if (typeof notice === 'string' && (notice === 'restored_draft' || notice === 'restored')) { %>
+  <p class="ac-public-note" data-ac-website-notice="restored_draft">Restored as a new draft. The published website is unchanged. Review the draft, then publish when you are ready.</p>
   <% } %>
   <% if (typeof error === 'string' && error) { %>
   <p class="ac-public-error" role="alert"><%= error %></p>
@@ -32,9 +32,14 @@
         <td>
           <a href="/clinics/<%= clinic.clinicKey %>/website/versions/<%= v.id %>">Preview</a>
           <% if (canRestoreHistory && v.status !== 'published') { %>
-          <form method="post" action="/clinics/<%= clinic.clinicKey %>/website/versions/<%= v.id %>/restore" style="display:inline">
+          <form
+            method="post"
+            action="/clinics/<%= clinic.clinicKey %>/website/versions/<%= v.id %>/restore"
+            style="display:inline"
+            onsubmit="if(!confirm('Restore this version as a new draft? The live website will not change until you publish.')) return false; var b=this.querySelector('button[type=submit]'); if(b) b.disabled=true;"
+          >
             <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-            <button type="submit">Restore</button>
+            <button type="submit">Restore as new draft</button>
           </form>
           <% } %>
         </td>

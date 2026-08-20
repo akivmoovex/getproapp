@@ -11,7 +11,9 @@
     <% if (typeof clinic !== "undefined" && clinic && clinic.clinicKey) { %>
     <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact the clinic</a>
     <% } %>
-    <a class="ac-btn ac-btn--secondary" href="/clinics">Find another clinic</a>
     <a class="ac-btn ac-btn--secondary" href="/">Back to ActiveClinic</a>
+    <% if (typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled) { %>
+    <a class="ac-btn ac-btn--secondary" href="/clinics">Find another clinic</a>
+    <% } %>
   </p>
 </section>

@@ -1,3 +1,6 @@
+<%
+  const directoryNavEnabled = typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled;
+%>
 <footer class="ac-public-footer" data-ac-public-footer="platform">
   <div class="ac-public-footer__inner">
     <div class="ac-public-footer__grid">
@@ -7,14 +10,17 @@
       </div>
       <div class="ac-public-footer__col">
         <h3>Explore</h3>
+        <% if (directoryNavEnabled) { %>
         <a href="/clinics">Find a clinic</a>
+        <% } %>
         <a href="/solutions">Solutions</a>
         <a href="/about">About</a>
       </div>
       <div class="ac-public-footer__col">
-        <h3>Clinics</h3>
+        <h3>For clinic teams</h3>
         <a href="/register-clinic">Register a clinic</a>
-        <a href="/register-clinic/status">Check application status</a>
+        <a href="/terms">Terms of Service</a>
+        <a href="/privacy">Privacy Policy</a>
         <a href="/login">Staff sign in</a>
       </div>
       <div class="ac-public-footer__col">

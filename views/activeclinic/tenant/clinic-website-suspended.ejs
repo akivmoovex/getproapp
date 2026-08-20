@@ -3,7 +3,9 @@
   <h1>Website suspended</h1>
   <p>This clinic website has been suspended by the platform. The clinic account remains active.</p>
   <p class="ac-public-actions">
+    <% if (typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled) { %>
     <a class="ac-btn ac-btn--primary" href="/clinics">Find another clinic</a>
+    <% } %>
     <a class="ac-btn ac-btn--secondary" href="/">Back to ActiveClinic</a>
   </p>
 </section>

@@ -1,3 +1,6 @@
+<%
+  const directoryNavEnabled = typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled;
+%>
 <section class="acp-hero acp-hero--platform" data-ac-page-section="public-home">
   <div class="acp-hero__inner">
     <div class="acp-hero__copy">
@@ -5,8 +8,12 @@
       <h1>Healthcare Management, Simplified.</h1>
       <p class="ac-public-lede">ActiveClinic connects patients with medical facilities while empowering clinics with management tools. Designed for reliability and accessibility in Zambia.</p>
       <p class="ac-public-actions">
+        <% if (directoryNavEnabled) { %>
         <a class="ac-btn ac-btn--primary" href="/clinics">Find a Clinic</a>
         <a class="ac-btn ac-btn--secondary" href="/register-clinic">Register Your Clinic</a>
+        <% } else { %>
+        <a class="ac-btn ac-btn--primary" href="/register-clinic">Register Your Clinic</a>
+        <% } %>
       </p>
     </div>
     <div class="acp-hero__visual">
@@ -34,6 +41,7 @@
   </div>
 </section>
 
+<% if (directoryNavEnabled) { %>
 <section class="ac-public-section acp-section acp-section--cta" data-ac-home-section="discovery">
   <div class="acp-cta-card">
     <h2>Discover participating clinics</h2>
@@ -41,6 +49,7 @@
     <a class="ac-btn ac-btn--primary" href="/clinics">Browse clinic directory</a>
   </div>
 </section>
+<% } %>
 
 <section class="ac-public-section acp-section" data-ac-home-section="patient-benefits">
   <header class="acp-section-header">
@@ -77,7 +86,7 @@
       <ul class="acp-check-list">
         <li>Digital patient and appointment workflows for enrolled teams</li>
         <li>Public directory listing and clinic website pages when published</li>
-        <li>Reviewed registration — applications do not auto-provision live clinics</li>
+        <li>Create your clinic organisation immediately. Publishing a website is a separate step.</li>
       </ul>
       <p class="ac-public-actions">
         <a class="ac-btn ac-btn--primary" href="/solutions">Explore solutions</a>
@@ -129,15 +138,22 @@
 <section class="ac-public-section acp-cta-band" data-ac-home-section="final-cta">
   <div class="acp-cta-band__inner">
     <h2>Ready to get started?</h2>
-    <p>Find a participating clinic or apply to join ActiveClinic.</p>
+    <% if (directoryNavEnabled) { %>
+    <p>Find a participating clinic or register your clinic on ActiveClinic.</p>
     <p class="ac-public-actions">
       <a class="ac-btn ac-btn--primary" href="/clinics">Find a Clinic</a>
-      <a class="ac-btn ac-btn--secondary" href="/register-clinic">Apply to join</a>
+      <a class="ac-btn ac-btn--secondary" href="/register-clinic">Register your clinic</a>
     </p>
+    <% } else { %>
+    <p>Register your clinic on ActiveClinic.</p>
+    <p class="ac-public-actions">
+      <a class="ac-btn ac-btn--primary" href="/register-clinic">Register your clinic</a>
+    </p>
+    <% } %>
   </div>
 </section>
 
 <section class="ac-public-section ac-public-privacy-note" data-ac-home-section="privacy">
   <h2>Privacy and honesty</h2>
-  <p>ActiveClinic does not expose medical records on this public website. We do not claim real-time appointment availability, automated SMS delivery, or instant clinic provisioning. Capabilities marked <strong>Pilot</strong> or <strong>Planned</strong> are labelled clearly.</p>
+  <p>ActiveClinic does not expose medical records on this public website. We do not claim real-time appointment availability or automated SMS delivery. Clinic websites stay unpublished until the clinic publishes them. Capabilities marked <strong>Pilot</strong> or <strong>Planned</strong> are labelled clearly.</p>
 </section>

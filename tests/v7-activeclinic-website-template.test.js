@@ -85,6 +85,7 @@ function clinicPayload(overrides) {
     notes: "activeclinic website template",
     password: PASSWORD,
     passwordConfirm: PASSWORD,
+      acceptTerms: "on",
     deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
     dataEnvironment: "testing",
     env: { NODE_ENV: "test", PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6 },
@@ -268,11 +269,14 @@ describe("V7 ActiveClinic website template", () => {
     const addressRe = new RegExp(payload.address.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     assert.match(pages.about.text, /About /);
     assert.match(pages.about.text, emailRe);
-    assert.match(pages.services.text, /data-ac-template-examples="services"/);
-    assert.match(pages.services.text, /Template examples only/);
+    assert.match(pages.services.text, /data-ac-empty="services"/);
+    assert.match(pages.services.text, /Manage services/);
+    assert.doesNotMatch(pages.services.text, /Example: General consultation/);
+    assert.doesNotMatch(pages.services.text, /data-ac-template-examples="services"/);
     assert.doesNotMatch(pages.services.text, /View details/);
-    assert.match(pages.doctors.text, /data-ac-template-examples="doctors"/);
-    assert.match(pages.doctors.text, /these people do not work at this clinic/i);
+    assert.match(pages.doctors.text, /data-ac-empty="doctors"/);
+    assert.match(pages.doctors.text, /Manage doctors/);
+    assert.doesNotMatch(pages.doctors.text, /these people do not work at this clinic/i);
     assert.doesNotMatch(pages.doctors.text, /View profile/);
     assert.match(pages.location.text, addressRe);
     assert.match(pages.location.text, /Example hours/);

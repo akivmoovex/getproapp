@@ -1,29 +1,15 @@
 <section class="ac-public-section ac-tenant-directory" data-ac-page-section="tenant-doctors">
   <header class="ac-tenant-page-header">
-    <h1>Our Doctors</h1>
+    <h1><%- include('../partials/website-editable-field', { contentKey: 'doctors.page_title', fieldValue: clinic.doctorsPageTitle || 'Our Doctors', fieldType: 'short_text' }) %></h1>
     <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'doctors.intro', fieldValue: clinic.doctorsIntro || ('Clinicians with profiles published by ' + clinic.publicName + '.'), fieldType: 'long_text' }) %></p>
   </header>
   <% const list = Array.isArray(profiles) ? profiles : []; %>
-  <% const doctorExamples = Array.isArray(clinic.doctorExamples) ? clinic.doctorExamples : []; %>
   <% if (!list.length) { %>
   <div class="ac-public-empty" data-ac-empty="doctors" data-ac-state-key="empty">
-    <% if (doctorExamples.length) { %>
-    <p class="ac-template-placeholder" data-ac-template-placeholder="1">Template profiles only — these people do not work at this clinic.</p>
-    <ul class="ac-doctor-cards acp-doctor-grid" data-ac-template-examples="doctors">
-      <% doctorExamples.forEach(function(d) { %>
-      <li class="ac-doctor-card acp-doctor-card ac-doctor-card--placeholder">
-        <div class="ac-doctor-card__body">
-          <h2 class="ac-doctor-card__name"><%= d.name %></h2>
-          <% if (d.title) { %><p class="ac-doctor-card__title"><%= d.title %></p><% } %>
-          <% if (d.bio) { %><p class="ac-doctor-card__bio"><%= d.bio %></p><% } %>
-        </div>
-      </li>
-      <% }) %>
-    </ul>
-    <% } else { %>
-    <p>No public doctor profiles are published.</p>
-    <% } %>
-    <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="/clinics/<%= clinic.clinicKey %>">Back to clinic home</a></p>
+    <h2><%- include('../partials/website-editable-field', { contentKey: 'doctors.empty_heading', fieldValue: clinic.doctorsEmptyHeading || 'No public clinician profiles yet', fieldType: 'short_text' }) %></h2>
+    <p><%- include('../partials/website-editable-field', { contentKey: 'doctors.empty_body', fieldValue: clinic.doctorsEmptyBody || 'No public doctor profiles are published.', fieldType: 'long_text' }) %></p>
+    <%- include('../partials/website-operational-affordance', { href: '/app/staff', label: 'Manage doctors', manageKind: 'doctors' }) %>
+    <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.home) || ('/clinics/' + clinic.clinicKey) %>">Back to clinic home</a></p>
   </div>
   <% } else { %>
   <ul class="ac-doctor-cards acp-doctor-grid">
@@ -53,12 +39,13 @@
         </p>
         <% } %>
         <div class="ac-doctor-card__actions">
-          <a class="ac-btn ac-btn--primary ac-btn--block" href="/clinics/<%= clinic.clinicKey %>/book"><%= clinic.publicBookingEnabled ? "Book appointment" : "Request appointment" %></a>
+          <a class="ac-btn ac-btn--primary ac-btn--block" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.book) || ('/clinics/' + clinic.clinicKey + '/book') %>"><%= clinic.publicBookingEnabled ? "Book appointment" : "Request appointment" %></a>
           <a class="ac-btn ac-btn--secondary ac-btn--block" href="/clinics/<%= clinic.clinicKey %>/doctors/<%= d.staffKey %>">View profile</a>
         </div>
       </div>
     </li>
     <% }) %>
   </ul>
+  <%- include('../partials/website-operational-affordance', { href: '/app/staff', label: 'Manage doctors', manageKind: 'doctors' }) %>
   <% } %>
 </section>

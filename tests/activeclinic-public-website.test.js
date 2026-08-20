@@ -184,8 +184,8 @@ describe("ActiveClinic public website (P20–P26)", () => {
     assert.equal(home.status, 200);
     assert.match(home.text, /data-ac-shell="public"/);
     assert.match(home.text, /data-ac-page-section="public-home"/);
-    assert.match(home.text, /Find a Clinic/);
-    assert.match(home.text, /data-ac-home-section="discovery"/);
+    assert.doesNotMatch(home.text, /Find a Clinic/);
+    assert.doesNotMatch(home.text, /data-ac-home-section="discovery"/);
     assert.match(home.text, /data-ac-home-section="patient-benefits"/);
     assert.match(home.text, /data-ac-home-section="clinic-benefits"/);
     assert.match(home.text, /data-ac-home-section="platform-capabilities"/);
@@ -212,11 +212,11 @@ describe("ActiveClinic public website (P20–P26)", () => {
     const home = await request(app).get("/");
     assert.equal(home.status, 200);
     assert.doesNotMatch(home.text, /href="#"/);
-    assert.match(home.text, /href="\/clinics"/);
+    assert.doesNotMatch(home.text, /Find a Clinic/);
+    assert.doesNotMatch(home.text, /href="\/clinics"/);
     assert.match(home.text, /href="\/register-clinic"/);
     assert.match(home.text, /href="\/solutions"/);
     assert.match(home.text, /href="\/about"/);
-    assert.match(home.text, /Find a Clinic/);
   });
 
   it("directory empty state and search query aliases", async () => {
@@ -371,10 +371,11 @@ describe("ActiveClinic public website (P20–P26)", () => {
         countryCode: "ZM",
         password: "clinic-admin-pass-12",
         passwordConfirm: "clinic-admin-pass-12",
+        acceptTerms: "on",
       });
     assert.equal(review.status, 200);
     assert.match(review.text, /data-ac-page-section="register-clinic-review"/);
-    assert.match(review.text, /Review your application/);
+    assert.match(review.text, /Review your details/);
     assert.match(review.text, /New Clinic Lusaka/);
 
     const confirmCsrf = extractCsrf(review);
@@ -394,13 +395,14 @@ describe("ActiveClinic public website (P20–P26)", () => {
         countryCode: "ZM",
         password: "clinic-admin-pass-12",
         passwordConfirm: "clinic-admin-pass-12",
+        acceptTerms: "on",
       });
     assert.equal(ok.status, 303);
     assert.match(ok.headers.location, /^\/register-clinic\/success\?ref=AC-/);
 
     const success = await request(app).get(ok.headers.location);
     assert.equal(success.status, 200);
-    assert.match(success.text, /Application received|Registration successful|review required/i);
+    assert.match(success.text, /Your clinic is ready|review required/i);
     assert.match(success.text, /data-ac-application-ref=/);
     assert.match(success.text, /unpublished|not.*published/i);
   });

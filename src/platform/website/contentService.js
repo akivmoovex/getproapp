@@ -291,6 +291,60 @@ async function applyPublishedSnapshot(db, instance, snapshot, actorIdentityId) {
   return { ok: true };
 }
 
+/**
+ * Copy a historical snapshot into draft values only.
+ * Never writes published_value, so the live website stays unchanged.
+ */
+async function applyDraftSnapshot(db, instance, snapshot, actorIdentityId) {
+  const template = await loadTemplateForInstance(instance);
+  if (!template) return { ok: false, code: RESULT.INVALID_INPUT };
+  const values = (snapshot && snapshot.values) || {};
+  const vis = (snapshot && snapshot.visibility) || {};
+  for (const key of Object.keys(template.keys)) {
+    const def = getContentKeyDef(template, key);
+    const validated = validateContentValue(def, values[key]);
+    const wrapped = validated.ok && validated.value != null ? JSON.stringify(wrapValue(validated.value)) : null;
+    const visibility = vis[key] === "hidden" ? "hidden" : vis[key] === "visible" ? "visible" : null;
+    await db.query(
+      `INSERT INTO platform.website_content (
+         organization_id, instance_id, content_key, content_type,
+         draft_value, published_value, visibility, updated_by_identity_id
+       ) VALUES ($1,$2,$3,$4,$5::jsonb, NULL, COALESCE($6,'visible'), $7)
+       ON CONFLICT (instance_id, content_key)
+       DO UPDATE SET
+         draft_value = EXCLUDED.draft_value,
+         visibility = COALESCE($6, platform.website_content.visibility),
+         updated_by_identity_id = EXCLUDED.updated_by_identity_id,
+         updated_at = now()`,
+      [
+        instance.organizationId,
+        instance.id,
+        key,
+        def.type,
+        wrapped,
+        visibility,
+        actorIdentityId || null,
+      ]
+    );
+    const mediaId = mediaIdFromValue(validated.ok ? validated.value : null);
+    if (mediaId) {
+      await mediaService.recordMediaUsage(db, {
+        organizationId: instance.organizationId,
+        mediaId,
+        instanceId: instance.id,
+        contentKey: key,
+        usageKind: "draft",
+      });
+    }
+  }
+  await instanceRepo.updateWebsiteInstance(db, {
+    instanceId: instance.id,
+    organizationId: instance.organizationId,
+    lastEditorIdentityId: actorIdentityId || null,
+  });
+  return { ok: true };
+}
+
 function valuesEqual(a, b) {
   return JSON.stringify(a) === JSON.stringify(b);
 }
@@ -384,6 +438,7 @@ module.exports = {
   discardWebsiteDraft,
   seedWebsiteContent,
   applyPublishedSnapshot,
+  applyDraftSnapshot,
   listUnpublishedChanges,
   diffContentRows,
   valuesEqual,
