@@ -5,13 +5,15 @@
   var statusKey = website.statusKey || (ux && ux.state) || '';
 %>
 <section
-  class="ac-settings-website"
+  class="ac-settings-website ac-mw"
   data-ac-page-section="settings-website"
   data-ac-website-management="1"
   data-ac-website-state="<%= statusKey %>"
   data-ac-website-exists="<%= website.exists ? '1' : '0' %>"
   data-ac-website-draft-state="1"
+  data-ac-mw-screen="hub"
 >
+  <%- include('../partials/website-cms-nav') %>
   <div class="ac-panel" data-ac-website-status="1">
     <h2 class="ac-dashboard__card-title" style="margin-top:0">Website</h2>
     <p data-ac-website-status-label="1"><strong><%= ux.statusLabel || website.statusLabel || 'Website not published yet' %></strong></p>
@@ -64,7 +66,7 @@
   </div>
 
   <div class="ac-panel" data-ac-website-actions="1">
-    <h2 class="ac-dashboard__card-title" style="margin-top:0">Actions</h2>
+    <h2 class="ac-dashboard__card-title" style="margin-top:0">Website management</h2>
     <p class="ac-settings-website__actions" style="display:flex;flex-wrap:wrap;gap:0.5rem;align-items:center">
       <% if (actions.viewLive) { %>
       <a class="ac-btn" href="<%= actions.viewLive %>" data-ac-website-action="view-live">View live</a>
@@ -75,6 +77,11 @@
       <% if (website.canEdit && actions.editWebsite) { %>
       <a class="ac-btn" href="<%= actions.editWebsite %>" data-ac-website-action="edit">Edit website</a>
       <% } %>
+      <a class="ac-btn" href="/app/settings/website/pages" data-ac-website-action="pages">Pages</a>
+      <a class="ac-btn" href="/app/settings/website/sections" data-ac-website-action="sections">Sections</a>
+      <a class="ac-btn" href="/app/settings/website/navigation" data-ac-website-action="navigation">Navigation</a>
+      <a class="ac-btn" href="/app/settings/website/media" data-ac-website-action="media">Media</a>
+      <a class="ac-btn" href="/app/settings/website/publish" data-ac-website-action="publish-status">Drafts &amp; publishing</a>
       <% if (website.canPublish && actions.publishPath) { %>
       <form
         method="post"

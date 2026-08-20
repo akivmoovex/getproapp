@@ -216,7 +216,10 @@ function registerActiveClinicSettingsRoutes(app, deps) {
             { label: "Settings", href: "/app/settings" },
             { label: "Website" },
           ],
-          pageData: { website: loaded.website },
+          pageData: {
+            website: loaded.website,
+            cmsNav: { active: "overview" },
+          },
           flash:
             req.query.website === "published"
               ? { type: "success", message: "Website published." }
