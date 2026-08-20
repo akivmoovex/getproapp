@@ -1,8 +1,10 @@
 "use strict";
 
 /**
- * ActiveClinic HTML-aware error handler (AC-V6-S08).
+ * ActiveClinic HTML-aware error handler (AC-V6-S08 / ACW11).
  * JSON/API and non-HTML requests keep the shared V5 safe handler.
+ * Public platform paths use public chrome; /app keeps staff access-state.
+ * Status codes stay real (404/503/500) even when a styled page exists.
  */
 
 const {
@@ -13,7 +15,11 @@ const {
   renderAccessStatePage,
 } = require("./renderActiveClinicAccessState");
 const {
+  renderPublicSystemStatePage,
+} = require("./renderActiveClinicPublic");
+const {
   STATE,
+  buildFullPageState,
 } = require("../services/activeClinicStateTaxonomy");
 const { issueCsrfToken, setCsrfCookie, CSRF_FIELD } = require("../../platform/http/v5Csrf");
 
@@ -39,6 +45,31 @@ function isAuthPublicPath(path) {
   );
 }
 
+function isAppSurfacePath(path) {
+  return path === "/app" || path.startsWith("/app/");
+}
+
+function isPublicPlatformErrorPath(path) {
+  return !isAppSurfacePath(path) && !isAuthPublicPath(path);
+}
+
+function safeRetryHref(req) {
+  const raw = String((req && (req.originalUrl || req.url || req.path)) || "/");
+  const pathOnly = raw.split("?")[0];
+  if (!pathOnly.startsWith("/") || pathOnly.startsWith("//") || pathOnly.includes("\\")) {
+    return "/";
+  }
+  return pathOnly || "/";
+}
+
+function sendPublicSystem(res, status, input, fallbackHtml) {
+  try {
+    return res.status(status).type("html").send(renderPublicSystemStatePage(input));
+  } catch (_err) {
+    return res.status(status).type("html").send(fallbackHtml);
+  }
+}
+
 /**
  * @param {{ isProduction?: boolean, log?: Function, env?: NodeJS.ProcessEnv }} deps
  */
@@ -55,6 +86,7 @@ function createActiveClinicErrorHandler(deps) {
       (err && (err.statusCode || err.status) && Number(err.statusCode || err.status)) ||
       500;
     const path = String((req && (req.path || req.url)) || "").split("?")[0];
+    const publicSurface = isPublicPlatformErrorPath(path);
 
     try {
       log(buildSafeErrorLog(err, req, { includeMessage: !isProduction }));
@@ -71,6 +103,33 @@ function createActiveClinicErrorHandler(deps) {
       requestId && String(requestId).length <= 32 ? String(requestId) : null;
 
     if (status === 404) {
+      if (publicSurface) {
+        const built = buildFullPageState(STATE.NOT_FOUND, {});
+        return sendPublicSystem(
+          res,
+          404,
+          {
+            pageId: "public-system-not-found",
+            pageTitle: built.pageTitle,
+            acwScreen: "ACW11-404",
+            statePageId: "not-found",
+            stateKey: STATE.NOT_FOUND,
+            heading: built.heading,
+            message: "We could not find that page. Use Home, Find a Clinic, or Login to continue.",
+            actions: [
+              { href: "/", label: "Home", primary: true },
+              { href: "/clinics", label: "Find a Clinic" },
+              { href: "/login", label: "Login" },
+            ],
+          },
+          renderAccessStatePage({
+            stateKey: STATE.NOT_FOUND,
+            pageId: "not-found",
+            primaryHref: "/",
+            primaryLabel: "Home",
+          })
+        );
+      }
       const html = renderAccessStatePage({
         stateKey: STATE.NOT_FOUND,
         pageId: "not-found",
@@ -110,14 +169,75 @@ function createActiveClinicErrorHandler(deps) {
     }
 
     if (status === 503) {
+      const retryHref = publicSurface ? safeRetryHref(req) : path || "/app";
+      if (publicSurface) {
+        const built = buildFullPageState(STATE.SERVICE_UNAVAILABLE, {});
+        return sendPublicSystem(
+          res,
+          503,
+          {
+            pageId: "public-system-unavailable",
+            pageTitle: built.pageTitle,
+            acwScreen: "ACW11-503",
+            statePageId: "service-unavailable",
+            stateKey: STATE.SERVICE_UNAVAILABLE,
+            heading: built.heading,
+            message: built.message,
+            supportReference,
+            actions: [
+              { href: retryHref, label: "Try again", primary: true },
+              { href: "/", label: "Home" },
+              { href: "/clinics", label: "Find a Clinic" },
+            ],
+          },
+          renderAccessStatePage({
+            stateKey: STATE.SERVICE_UNAVAILABLE,
+            pageId: "service-unavailable",
+            supportReference,
+            primaryHref: retryHref,
+            primaryLabel: "Try again",
+          })
+        );
+      }
       const html = renderAccessStatePage({
         stateKey: STATE.SERVICE_UNAVAILABLE,
         pageId: "service-unavailable",
         supportReference,
-        primaryHref: path || "/app",
+        primaryHref: retryHref,
         primaryLabel: "Try again",
       });
       return res.status(503).type("html").send(html);
+    }
+
+    const errorStatus = status >= 400 ? status : 500;
+    if (publicSurface) {
+      const built = buildFullPageState(STATE.REQUEST_ERROR, {});
+      return sendPublicSystem(
+        res,
+        errorStatus,
+        {
+          pageId: "public-system-error",
+          pageTitle: built.pageTitle,
+          acwScreen: "ACW11-error",
+          statePageId: "error",
+          stateKey: STATE.REQUEST_ERROR,
+          heading: built.heading,
+          message: "Please try again. If the problem continues, return home or sign in later.",
+          supportReference: isProduction ? supportReference : supportReference,
+          actions: [
+            { href: "/", label: "Home", primary: true },
+            { href: "/login", label: "Login" },
+            { href: safeRetryHref(req), label: "Try again" },
+          ],
+        },
+        renderAccessStatePage({
+          stateKey: STATE.REQUEST_ERROR,
+          pageId: "error",
+          supportReference: isProduction ? supportReference : supportReference,
+          primaryHref: "/",
+          primaryLabel: "Home",
+        })
+      );
     }
 
     const html = renderAccessStatePage({
@@ -127,7 +247,7 @@ function createActiveClinicErrorHandler(deps) {
       primaryHref: isAuthPublicPath(path) ? "/login" : "/app",
       primaryLabel: isAuthPublicPath(path) ? "Sign in" : "Back to home",
     });
-    return res.status(status >= 400 ? status : 500).type("html").send(html);
+    return res.status(errorStatus).type("html").send(html);
   };
 }
 

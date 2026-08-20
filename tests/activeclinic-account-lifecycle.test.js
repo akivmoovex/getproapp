@@ -815,8 +815,8 @@ describe("ActiveClinic staff invitation and account lifecycle", () => {
         identifier: phone,
         [CSRF_FIELD]: csrf,
       });
-    assert.equal(forgot.status, 200);
-    assert.match(forgot.text, /eligible ActiveClinic account/i);
+    assert.ok([302, 303].includes(forgot.status));
+    assert.match(forgot.headers.location || "", /\/forgot-password\/check/);
 
     const reset = await issueAdminPasswordResetLink(pool, {
       organizationId: ac.orgId,

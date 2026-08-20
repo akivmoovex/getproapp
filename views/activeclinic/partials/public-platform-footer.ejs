@@ -1,4 +1,8 @@
-<footer class="ac-public-footer" data-ac-public-footer="platform">
+<%
+  const pid = typeof pageId === "string" ? pageId : "";
+  const featuresOn = /public-features/.test(pid);
+%>
+<footer class="ac-public-footer" data-ac-public-footer="platform" data-ac-acw-chrome="ACW12">
   <div class="ac-public-footer__inner">
     <div class="ac-public-footer__grid">
       <div class="ac-public-footer__col">
@@ -7,17 +11,12 @@
       </div>
       <div class="ac-public-footer__col">
         <h3>Platform</h3>
-        <a href="/clinics">Find a Clinic</a>
-        <a href="/for-clinics">For Clinics</a>
-        <a href="/for-patients">For Patients</a>
-        <a href="/features">Features</a>
+        <%- include('./public-platform-primary-nav') %>
+        <a href="/features"<%- featuresOn ? ' aria-current="page"' : "" %>>Features</a>
       </div>
       <div class="ac-public-footer__col">
         <h3>Company</h3>
-        <a href="/about">About</a>
-        <a href="/contact">Contact</a>
-        <a href="/register-clinic">Register Your Clinic</a>
-        <a href="/login">Login</a>
+        <%- include('./public-platform-nav-actions', { variant: 'footer' }) %>
       </div>
       <div class="ac-public-footer__col">
         <h3>Legal</h3>

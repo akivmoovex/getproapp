@@ -11,7 +11,7 @@
 
 This lock covers **only** project `10611909237747031838`. Internal ops P01–P07 live in `projects/12272131183982732110` ([screen inventory](../../activeclinic/ACTIVECLINIC_STITCH_SCREEN_INVENTORY.md)). Public P21–P27 live in `projects/17813606734422395399`.
 
-Do **not** implement a second staff authentication UI from the `active-clinic-03-*` screens. V7 already ships `/login` from P01. ACW08-01–ACW08-07 are **not present** in this project.
+Do **not** implement a second staff authentication system. ACW08-01–ACW08-07 are **absent by that name**. The seven live `active-clinic-03-*` screens **are** the ACW08 login / error / selector / signing-in designs. V7 `/login` and `/login/select-organization` reuse the existing identity, session, CSRF, and membership architecture.
 
 ---
 
@@ -82,7 +82,7 @@ Inspected screenshots of all seven `active-clinic-03-*` screens. They are **not*
 | `active-clinic-03-mobile-validation-error` | `236850040de8488c9627970faad74b62` | **UNKNOWN** | Device variant of validation-error | Yes |
 | `active-clinic-03-loading-signing-in` | `5adaedd9e29e48cc82b47dc3ac913383` | **UNKNOWN** | DISTINCT full-page “Signing you in…” | Yes — V7 uses button `data-loading="Signing in…"`, not this screen |
 
-**Product rule from this lock:** do not implement duplicate authentication UIs from these seven screens, and do not wait for ACW08 screens that are not in Stitch.
+**Product mapping (ACW08 pass, 2026-08-20):** these seven screens **are** ACW08-01–07. Implemented on existing `/login` and `/login/select-organization` (no second auth system). Google SSO is not shipped (product difference). Pre-auth chrome is ActiveClinic-only (never Juflona / Demo Clinic / tenant branding).
 
 ---
 
@@ -259,13 +259,13 @@ ACW rows map to existing apex public routes that were built against **P21** in p
 | ACW05 | ACW05-02 For Patients Mobile | Mobile | `f22cca3648c2453bad5a1edbae142158` | `GET /for-patients` | same | `IMPLEMENTED_WITH_VARIANCE` |
 | ACW06 | ACW06-01 About ActiveClinic Desktop | Desktop | `d6f4fe333ad245af89dbc517afeb8e06` | `GET /about` | `public/about.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
 | ACW06 | ACW06-02 About ActiveClinic Mobile | Mobile | `1899e7e6bbbc4a65ba083dcbe0d8fa0d` | `GET /about` (responsive) | same | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH | active-clinic-03-desktop-login | Desktop | `2bfbc9c71ad64bfca245d9e1a26f837d` | `GET/POST /login` | `auth/login.ejs` + `layouts/auth-shell.ejs` (P01 split pane; no Google SSO) | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH | active-clinic-03-mobile-login | Mobile | `edb81abfe548470db687f343186ff786` | `GET/POST /login` | same (responsive) | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH | active-clinic-03-desktop-multi-clinic-selector | Desktop | `df566a9cd85e4583b019363ca2104b00` | `GET /login/select-organization` | `auth/select-organization.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH | active-clinic-03-mobile-multi-clinic-selector | Mobile | `ef782bd739854150b5b30ea4525c50c6` | `GET /login/select-organization` | same | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH | active-clinic-03-desktop-validation-error | Desktop | `f300be014a6148329910762c0b2970c8` | `POST /login` error state | error alert on `auth/login.ejs` (not this split-pane error layout) | `PARTIAL` |
-| AUTH | active-clinic-03-mobile-validation-error | Mobile | `236850040de8488c9627970faad74b62` | `POST /login` error state | same | `PARTIAL` |
-| AUTH | active-clinic-03-loading-signing-in | Desktop | `5adaedd9e29e48cc82b47dc3ac913383` | none as a page | login button `data-loading="Signing in…"` only | `PARTIAL` |
+| AUTH / ACW08-01 | active-clinic-03-desktop-login | Desktop | `2bfbc9c71ad64bfca245d9e1a26f837d` | `GET/POST /login` | `auth/login.ejs` + `layouts/auth-shell.ejs` (centered card; no Google SSO) | `IMPLEMENTED_WITH_VARIANCE` |
+| AUTH / ACW08-02 | active-clinic-03-mobile-login | Mobile | `edb81abfe548470db687f343186ff786` | `GET/POST /login` | same (Welcome back composition) | `IMPLEMENTED_WITH_VARIANCE` |
+| AUTH / ACW08-05 | active-clinic-03-desktop-multi-clinic-selector | Desktop | `df566a9cd85e4583b019363ca2104b00` | `GET /login/select-organization` | `auth/select-organization.ejs` (Choose a clinic cards) | `IMPLEMENTED_WITH_VARIANCE` |
+| AUTH / ACW08-06 | active-clinic-03-mobile-multi-clinic-selector | Mobile | `ef782bd739854150b5b30ea4525c50c6` | `GET /login/select-organization` | same (Select a Workspace + search) | `IMPLEMENTED_WITH_VARIANCE` |
+| AUTH / ACW08-03 | active-clinic-03-desktop-validation-error | Desktop | `f300be014a6148329910762c0b2970c8` | `POST /login` error state | login error split + field errors; no stock photo | `IMPLEMENTED_WITH_VARIANCE` |
+| AUTH / ACW08-04 | active-clinic-03-mobile-validation-error | Mobile | `236850040de8488c9627970faad74b62` | `POST /login` error state | same (responsive banner) | `IMPLEMENTED_WITH_VARIANCE` |
+| AUTH / ACW08-07 | active-clinic-03-loading-signing-in | Desktop | `5adaedd9e29e48cc82b47dc3ac913383` | client overlay on `/login` submit | `partials/auth-signing-in.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
 
 ---
 
@@ -288,20 +288,20 @@ ACW rows map to existing apex public routes that were built against **P21** in p
 | ACW04 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
 | ACW05 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
 | ACW06 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
-| AUTH (`active-clinic-03-*`) | 7 | 4 | 3 | 0 | 4 | 3 | 0 | 0 | 0 |
-| **Total** | **49** | **34** | **15** | **16** | **30** | **3** | **0** | **0** | **0** |
+| AUTH (`active-clinic-03-*` / ACW08) | 7 | 4 | 3 | 0 | 7 | 0 | 0 | 0 | 0 |
+| **Total** | **49** | **34** | **15** | **16** | **33** | **0** | **0** | **0** | **0** |
 
 ### By status (all 49 live screens)
 
 | Status | Count |
 |--------|------:|
 | `IMPLEMENTED_MATCH` | 16 |
-| `IMPLEMENTED_WITH_VARIANCE` | 30 |
-| `PARTIAL` | 3 |
+| `IMPLEMENTED_WITH_VARIANCE` | 33 |
+| `PARTIAL` | 0 |
 | `NOT_IMPLEMENTED` | 0 |
 | `DUPLICATE` | 0 |
 | `NOT_APPLICABLE` | 0 |
-| **Implemented (MATCH + VARIANCE)** | **46** |
+| **Implemented (MATCH + VARIANCE)** | **49** |
 
 ### ACW07 (requested, not in Stitch)
 
@@ -311,13 +311,71 @@ No `ACW07-*` screens exist in project `10611909237747031838`. V7 still ships a r
 |-------|--------|--------|-----------|----------------|-------------------------|--------|
 | ACW07 | Contact + success (no Stitch source) | Desktop/Mobile | — | `GET/POST /contact`, `GET /contact/success` | `public/contact.ejs`, `public/contact-success.ejs`, `platform_contact_inquiries` | `IMPLEMENTED_WITH_VARIANCE` (STITCH_GAP) |
 
+### ACW09 (named screens absent; P21 is closest public-project reference)
+
+No `ACW09-*` screens exist in project `10611909237747031838`. Public-project P21 Clinic Onboarding screens (`17813606734422395399`) are a **Request Demonstration** form whose success state is pending Platform Admin review. That is a `PRODUCT_DECISION_DIFFERENCE` versus V7 self-registration (auto-provision, unpublished website, Sign in). Implemented on existing `POST /register-clinic` — no second registration path.
+
+| Phase | Screen | Device | Screen ID | Existing Route | Existing View/Component | Status |
+|-------|--------|--------|-----------|----------------|-------------------------|--------|
+| ACW09 | Clinic information | Desktop/Mobile | — (P21 onboarding `a45f68ec…` / `18f6b1a3…` closest) | `GET/POST /register-clinic` step `clinic` | `public/register-clinic.ejs` | `IMPLEMENTED_WITH_VARIANCE` (STITCH_GAP) |
+| ACW09 | Administrator information | Desktop/Mobile | — (no Stitch two-step wizard) | `POST /register-clinic` step `administrator` | same view | `IMPLEMENTED_WITH_VARIANCE` (STITCH_GAP) |
+| ACW09 | Review | Desktop/Mobile | — (P21 review `fa556d16…` / `254bcedf…`) | `POST /register-clinic` | `public/register-clinic-review.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW09 | Success | Desktop/Mobile | — (P21 success `f9f88532…` / `7f422dcc…`) | `GET /register-clinic/success` | `public/register-clinic-success.ejs` | `IMPLEMENTED_WITH_VARIANCE` (Sign in; website unpublished; no routine PA) |
+
+### ACW08 (named screens absent; kebab-case screens are the source)
+
+ACW08-01–ACW08-07 are not titled that way in Stitch. Mapped 1:1 onto the seven `active-clinic-03-*` screens and implemented on the existing V7 `/login` flow (no second auth system). Google SSO is not implemented. Platform Admin with no eligible clinic gets a dedicated access page rather than `/admin` on the ActiveClinic host (apex `/admin` remains BlessBoard).
+
+| Requested | Live Stitch screen | Route | Status |
+|-----------|--------------------|-------|--------|
+| ACW08-01 Login Desktop | `active-clinic-03-desktop-login` | `GET/POST /login` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW08-02 Login Mobile | `active-clinic-03-mobile-login` | `GET/POST /login` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW08-03 Login Error Desktop | `active-clinic-03-desktop-validation-error` | `POST /login` error | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW08-04 Login Error Mobile | `active-clinic-03-mobile-validation-error` | `POST /login` error | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW08-05 Clinic Selector Desktop | `active-clinic-03-desktop-multi-clinic-selector` | `GET /login/select-organization` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW08-06 Clinic Selector Mobile | `active-clinic-03-mobile-multi-clinic-selector` | `GET /login/select-organization` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW08-07 Signing In Loading | `active-clinic-03-loading-signing-in` | client overlay on login/select submit | `IMPLEMENTED_WITH_VARIANCE` |
+
+### ACW10 (named screens absent; do not import P27 patient recovery)
+
+No `ACW10-*` screens exist in project `10611909237747031838`. Public-project P27 patient Forgot Password / Recovery Verification / Set New Password / Password Updated screens belong to tenant `/clinics/:clinicKey/patient/*` and are **not** staff platform-identity recovery. Implemented on the existing hashed-token lifecycle (`GET/POST /forgot-password`, `GET/POST /reset-password/:token`) — no OTP shortcut and no public token disclosure.
+
+| Phase | Screen | Device | Screen ID | Existing Route | Existing View/Component | Status |
+|-------|--------|--------|-----------|----------------|-------------------------|--------|
+| ACW10 | Forgot Password | Desktop/Mobile | — (P27 patient forgot closest; not used) | `GET /forgot-password` | `auth/forgot-password.ejs` | `IMPLEMENTED_WITH_VARIANCE` (STITCH_GAP; enumeration-safe) |
+| ACW10 | Verification | Desktop/Mobile | — (no staff OTP in V7; not P27) | `GET /forgot-password/check` after `POST /forgot-password` | `auth/forgot-password-check.ejs` | `IMPLEMENTED_WITH_VARIANCE` (STITCH_GAP; same copy whether account exists) |
+| ACW10 | New Password | Desktop/Mobile | — | `GET/POST /reset-password/:token` | `auth/reset-password.ejs` | `IMPLEMENTED_WITH_VARIANCE` (hashed token, 1h TTL) |
+| ACW10 | Success | Desktop/Mobile | — | `GET /reset-password/success` | `auth/reset-password-success.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+
+### ACW11 (named screens absent; tenant/directory errors are a different surface)
+
+No `ACW11-*` screens exist in project `10611909237747031838`. Closest public-project states are P21 directory/onboarding errors and P22 tenant clinic not-found / unavailable — those stay on their existing tenant/directory routes. Platform 404 / 503 / generic error use public chrome for apex paths and staff `access-state` for `/app/*`, with real HTTP status codes.
+
+| Phase | Screen | Device | Screen ID | Existing Route | Existing View/Component | Status |
+|-------|--------|--------|-----------|----------------|-------------------------|--------|
+| ACW11 | 404 | Desktop/Mobile | — | catch-all / `err.status=404` | `public/system-state.ejs` (apex); `app/access-state.ejs` (`/app`) | `IMPLEMENTED_WITH_VARIANCE` (STITCH_GAP; HTTP 404) |
+| ACW11 | Service Unavailable | Desktop/Mobile | — | `err.status=503` | same | `IMPLEMENTED_WITH_VARIANCE` (STITCH_GAP; HTTP 503) |
+| ACW11 | Generic Error | Desktop/Mobile | — | `err.status>=500` | same | `IMPLEMENTED_WITH_VARIANCE` (STITCH_GAP; HTTP 500) |
+
+### ACW12 (actual Stitch screens in public project `17813606734422395399`)
+
+Named `ACW12-*` titles are absent from `10611909237747031838`. Live public-ecosystem chrome:
+
+| Requested | Live Stitch screen | Project | Screen ID | Device | Route / component | Status |
+|-----------|--------------------|---------|-----------|--------|-------------------|--------|
+| Header | ActiveClinic Public - Header | `17813606734422395399` | `5265ab7118c74f8b885de211483ef48c` | Mobile 780 | `partials/public-platform-header.ejs` (shared) | `IMPLEMENTED_WITH_VARIANCE` (product nav: Find a Clinic / For Clinics / For Patients / About / Contact + Login / Register Your Clinic; Stitch compact bar is menu + brand + Login) |
+| Mobile navigation | ActiveClinic Public - Mobile Navigation | `17813606734422395399` | `e0ebb2af00e944e0b90a6400ea6093ba` | Mobile 780 | drawer + `partials/ac-mobile-bottom-nav-platform.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| Footer | — (tenant Footer screen exists; not used on platform) | — | — | — | `partials/public-platform-footer.ejs` (same primary nav include) | `IMPLEMENTED_WITH_VARIANCE` (STITCH_GAP vs named platform footer) |
+
+Primary nav markup is not copied across pages: `public-platform-primary-nav.ejs` is included by header, drawer, and footer.
+
 ---
 
 ## 7. Unexpected / notable
 
 Present in Stitch but outside the MW01–MW10 / ACW01–ACW12 numbered systems:
 
-- Seven kebab-case **`active-clinic-03-*`** auth screens (project title is “Universal Authentication Interface”). These are the only auth screens here. **ACW08-01–ACW08-07 were never found.**
+- Seven kebab-case **`active-clinic-03-*`** auth screens (project title is “Universal Authentication Interface”). These **are** the ACW08 login/error/selector/loading designs. Named `ACW08-01`–`07` titles were never found.
 
 Present but incomplete vs requested ranges:
 
@@ -327,7 +385,9 @@ Present but incomplete vs requested ranges:
 Cross-project overlap (not counted as `DUPLICATE` in this project):
 
 - ACW01 / ACW02 / ACW06 overlap P21 Home / Directory / About in `17813606734422395399`.
+- ACW12 header / mobile navigation live in `17813606734422395399` (not the 49-screen auth/MW project).
 - Legacy login overlaps P01 Login in `12272131183982732110`. Do not ship a third staff login.
+- P27 patient password recovery is not ACW10. P21/P22 tenant or directory errors are not ACW11.
 
 Stitch login designs include **Sign in with Google**. V7 `/login` does not. That is a product difference, not a missing ACW08 screen.
 
@@ -336,18 +396,41 @@ Stitch login designs include **Sign in with Google**. V7 `/login` does not. That
 ## 8. Verdict
 
 `ACTIVECLINIC_STITCH_MASTER_INVENTORY_LOCKED` (screens unchanged)  
-**ACW implementation pass:** 2026-08-20 — ACW01–ACW06 shipped against live Stitch screens; ACW07 contact shipped with **STITCH_GAP**.
+**ACW implementation pass:** 2026-08-20 — ACW01–ACW06 shipped against live Stitch screens; ACW07 contact shipped with **STITCH_GAP**; ACW08 shared auth shipped on existing `/login` against the seven `active-clinic-03-*` screens; ACW09 register-clinic shipped on existing `/register-clinic` (STITCH_GAP vs named ACW09; P21 demo-request copy not used); ACW10 recovery shipped on existing hashed-token lifecycle (STITCH_GAP; not P27); ACW11 public 404/503/500 shipped with real status codes (STITCH_GAP); ACW12 shared chrome shipped against public Header + Mobile Navigation in `17813606734422395399`.
 
 | Report field | Value |
 |--------------|-------|
 | Exact Stitch screen count | **49** |
 | Unique screen count after duplicates | **49** |
 | MW count | **28** (MW01–MW07 only) |
-| ACW count | **14** (ACW01–ACW06 only) + ACW07 implemented without Stitch |
-| Legacy auth count | **7** |
-| Implemented count (MATCH + VARIANCE) | **46** Stitch screens |
-| Partial count | **3** (legacy auth states only) |
-| Not implemented count | **0** of the 14 live ACW screens |
-| Duplicates (`SAME_DESIGN` / status `DUPLICATE`) | **0** in this project; ACW08 comparison **UNKNOWN** |
-| Unexpected screens | 7× `active-clinic-03-*`; ACW07–12 absent from Stitch; MW08–10 absent; ACW08-01–07 absent |
+| ACW count | **14** (ACW01–ACW06 only) + ACW07 STITCH_GAP + ACW08 mapped from 7 kebab auth screens + ACW09 STITCH_GAP on `/register-clinic` + ACW10 STITCH_GAP on existing reset tokens + ACW11 STITCH_GAP public/app error states + ACW12 Header/Mobile Nav from `17813606734422395399` |
+| Legacy auth count | **7** (implemented as ACW08) |
+| Implemented count (MATCH + VARIANCE) | **49** Stitch screens |
+| Partial count | **0** |
+| Not implemented count | **0** of the 14 live ACW screens; **0** of the 7 auth screens |
+| Duplicates (`SAME_DESIGN` / status `DUPLICATE`) | **0** in this project; kebab auth screens mapped to ACW08 (not a second UI) |
+| Unexpected screens | 7× `active-clinic-03-*` used as ACW08; ACW07/09–11 absent by name; ACW12 chrome lives in public project `178136…`; MW08–10 absent |
 | Production touched | **NO** |
+
+---
+
+## 9. Full-screen verification pass (2026-08-20)
+
+**Live re-read:** MCP `list_screens` = **49**; `get_project.updateTime` still `2026-08-20T20:01:22.418944Z`. No new or removed screens since lock. The two extra IDs in this file (`5265ab71…`, `e0ebb2af…`) are ACW12 chrome in public project `17813606734422395399`, not this project's 49.
+
+**Status vocabulary for this pass:** `IMPLEMENTED_MATCH` · `IMPLEMENTED_WITH_MINOR_VARIANCE` · `BLOCKED` · `NOT_APPLICABLE` · `DUPLICATE`
+
+| Live screen family | Count | Verification status |
+|--------------------|------:|---------------------|
+| MW03 (4), MW04 (4), MW02-01/02, MW05-01/02, MW06-01/02/04, MW07-01 | 16 | `IMPLEMENTED_MATCH` |
+| Remaining live MW / ACW / AUTH (33) | 33 | `IMPLEMENTED_WITH_MINOR_VARIANCE` |
+| Intra-project duplicates | 0 | no `DUPLICATE` |
+| Blocked | 0 | no `BLOCKED` |
+| Unexplained `NOT_IMPLEMENTED` | 0 | none of the 49 |
+
+Named **MW08–MW10** and **ACW07 / ACW09–ACW12** titles remain **absent** from this project (`NOT_APPLICABLE` as Stitch screens). V7 still ships those extra flows as STITCH_GAP / other-project mappings — not a second UI for a missing screen.
+
+**Browser QA (real Chromium):** 1440×900, 1280×800, 390×844. Public ACW01–ACW07/09/10 routes, login, 404, published tenant home, unpublished clinic. No horizontal overflow. Skip links, `lang=en`, labelled controls. Drawer keyboard Escape + 44px targets. Unpublished clinic **403** and not listed in `/clinics`. CSRF on login/contact. `login?next=https://evil.example` does not persist an absolute URL.
+
+**Relevant suites:** 179 tests, **175 passed**, **4 failed**, **0 skipped**. Failures are authenticated `/app` → `/app/onboarding` (303) and invitation `deliveryStatus=unavailable` vs `link_generated` — not public MW/ACW Stitch routes. Website CMS, hardening, directory isolation, ACW01–ACW12, auth, contact, and registration suites passed.
+

@@ -1,16 +1,16 @@
 <%#
-  Platform mobile bottom navigation (ACW marketing).
+  Platform mobile bottom navigation (ACW marketing / ACW12 chrome).
 %>
 <%
   const pid = typeof pageId === "string" ? pageId : "";
-  const show = /public-home|clinics-directory|clinics-search|public-about|public-solutions|clinic-directory|clinic-search|public-register|for-clinics|for-patients|public-features|public-contact|clinic-website/.test(pid);
+  const show = /public-home|clinics-directory|clinics-search|public-about|public-solutions|clinic-directory|clinic-search|public-register|for-clinics|for-patients|public-features|public-contact|clinic-website|public-system/.test(pid);
   const clinicsOn = /clinics-directory|clinics-search|clinic-directory|clinic-search/.test(pid);
   const forClinicsOn = /for-clinics|public-solutions|public-features|clinic-website/.test(pid);
   const registerOn = /register/.test(pid);
   const homeOn = pid === "public-home";
 %>
 <% if (show) { %>
-<nav class="acp-mobile-bottom-nav acp-mobile-bottom-nav--platform" data-ac-mobile-bottom-nav="platform" aria-label="ActiveClinic shortcuts">
+<nav class="acp-mobile-bottom-nav acp-mobile-bottom-nav--platform" data-ac-mobile-bottom-nav="platform" data-ac-acw-chrome="ACW12" aria-label="ActiveClinic shortcuts">
   <a class="acp-mobile-bottom-nav__item<%= homeOn ? ' is-active' : '' %>" href="/"<% if (homeOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌂</span>
     <span class="acp-mobile-bottom-nav__label">Home</span>

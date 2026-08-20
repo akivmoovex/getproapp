@@ -131,7 +131,9 @@ body.ac-public-body {
   gap: 1rem;
 }
 .ac-public-drawer__panel a {
-  display: block;
+  display: flex;
+  align-items: center;
+  min-height: var(--acp-touch);
   padding: 0.75rem 0;
   color: var(--acp-ink);
   text-decoration: none;
@@ -140,6 +142,7 @@ body.ac-public-body {
 }
 .ac-public-drawer__close {
   align-self: flex-end;
+  min-width: var(--acp-touch);
   min-height: var(--acp-touch);
 }
 

@@ -31,7 +31,9 @@ const { PASSWORD_MIN } = require("../../platform/services/platformIdentityCreden
 const {
   renderActivatePage,
   renderForgotPage,
+  renderForgotCheckPage,
   renderResetPage,
+  renderResetSuccessPage,
 } = require("./renderActiveClinicAuth");
 
 function sha256Hex(value) {
@@ -80,14 +82,7 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
     legacyHeaders: false,
     keyGenerator: (req) => sha256Hex(`${clientIp(req)}`),
     handler: (req, res) => {
-      const csrfToken = issuePageCsrf(res);
-      return res.status(200).type("html").send(
-        renderForgotPage({
-          csrfToken,
-          message: NEUTRAL_MESSAGE,
-          error: null,
-        })
-      );
+      return res.redirect(303, "/forgot-password/check");
     },
   });
 
@@ -182,6 +177,12 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
     );
   });
 
+  app.get("/forgot-password/check", (_req, res) => {
+    return res.status(200).type("html").send(
+      renderForgotCheckPage({ message: NEUTRAL_MESSAGE })
+    );
+  });
+
   app.post("/forgot-password", forgotLimiter, async (req, res, next) => {
     try {
       const csrfToken = issuePageCsrf(res);
@@ -204,13 +205,7 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
         requestIp: clientIp(req),
         env,
       });
-      return res.status(200).type("html").send(
-        renderForgotPage({
-          csrfToken,
-          message: NEUTRAL_MESSAGE,
-          error: null,
-        })
-      );
+      return res.redirect(303, "/forgot-password/check");
     } catch (err) {
       return next(err);
     }
@@ -219,6 +214,10 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
   function CODE_FALLBACK() {
     return "activeclinic-org-v6";
   }
+
+  app.get("/reset-password/success", (_req, res) => {
+    return res.status(200).type("html").send(renderResetSuccessPage());
+  });
 
   app.get("/reset-password/:token", async (req, res, next) => {
     try {
@@ -295,7 +294,7 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
           })
         );
       }
-      return res.redirect(303, result.redirectTo || "/login?reset=1");
+      return res.redirect(303, result.redirectTo || "/reset-password/success");
     } catch (err) {
       return next(err);
     }
@@ -306,5 +305,7 @@ module.exports = {
   registerActiveClinicLifecycleRoutes,
   renderActivatePage,
   renderForgotPage,
+  renderForgotCheckPage,
   renderResetPage,
+  renderResetSuccessPage,
 };

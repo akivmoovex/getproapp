@@ -1,0 +1,23 @@
+<section
+  class="acw-page acw-system-state ac-public-state acp-state-card"
+  data-ac-page-section="public-system-state"
+  data-ac-acw-screen="<%= typeof acwScreen !== 'undefined' && acwScreen ? acwScreen : 'ACW11' %>"
+  data-ac-state="<%= typeof statePageId !== 'undefined' && statePageId ? statePageId : 'error' %>"
+  data-ac-state-key="<%= typeof stateKey !== 'undefined' && stateKey ? stateKey : 'request_error' %>"
+>
+  <div class="ac-public-state__icon" aria-hidden="true">
+    <% if (typeof statePageId === "string" && statePageId === "not-found") { %>⌕
+    <% } else if (typeof statePageId === "string" && statePageId === "service-unavailable") { %>⚠
+    <% } else { %>⚠<% } %>
+  </div>
+  <h1><%= heading %></h1>
+  <p class="acw-system-state__message"><%= message %></p>
+  <% if (typeof supportReference === "string" && supportReference) { %>
+  <p class="ac-public-note" data-ac-support-ref="1">Reference: <%= supportReference %></p>
+  <% } %>
+  <div class="acw-system-state__actions ac-directory-state__actions">
+    <% (Array.isArray(actions) ? actions : []).forEach(function (action) { %>
+    <a class="ac-btn <%= action.primary ? 'ac-btn--primary' : 'ac-btn--secondary' %>" href="<%= action.href %>"><%= action.label %></a>
+    <% }) %>
+  </div>
+</section>

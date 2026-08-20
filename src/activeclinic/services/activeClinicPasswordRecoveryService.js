@@ -512,7 +512,7 @@ async function completeActiveClinicPasswordReset(db, input) {
         code: RESULT.OK,
         identity: pw.identity,
         sessionsRevoked: revoked.revokedCount || 0,
-        redirectTo: "/login?reset=1",
+        redirectTo: "/reset-password/success",
       };
     } catch (err) {
       try {

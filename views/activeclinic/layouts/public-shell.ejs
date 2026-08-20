@@ -59,6 +59,8 @@
   data-ac-shell="public"
   data-ac-page="<%= pageId %>"
   data-ac-public-variant="<%= shellVariant || 'platform' %>"
+  <% if (typeof statePageId === "string" && statePageId) { %>data-ac-state="<%= statePageId %>"<% } %>
+  <% if (typeof statePageId === "string" && statePageId && typeof stateKey === "string" && stateKey) { %>data-ac-state-key="<%= stateKey %>"<% } %>
   <% if (clinic && clinic.clinicKey) { %>data-pw-clinic-key="<%= clinic.clinicKey %>"<% } %>
   <% if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>data-website-editing="1"<% } %>
   <% if (brandStyle) { %>style="<%= brandStyle %>"<% } %>

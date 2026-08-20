@@ -1,50 +1,27 @@
-<%
-  const pid = typeof pageId === "string" ? pageId : "";
-  function currentAttr(kind) {
-    var on = false;
-    if (kind === "clinics") on = /clinics-directory|clinics-search|clinic-directory|clinic-search/.test(pid);
-    else if (kind === "for-clinics") on = /for-clinics|public-solutions/.test(pid);
-    else if (kind === "features") on = /public-features/.test(pid);
-    else if (kind === "for-patients") on = /for-patients/.test(pid);
-    else if (kind === "about") on = /public-about/.test(pid);
-    else if (kind === "contact") on = /public-contact/.test(pid);
-    else if (kind === "register") on = /register/.test(pid);
-    else if (kind === "clinic-website") on = /clinic-website/.test(pid);
-    return on ? ' aria-current="page"' : "";
-  }
-%>
-<header class="ac-public-header" data-ac-public-header="platform">
+<header class="ac-public-header" data-ac-public-header="platform" data-ac-acw-chrome="ACW12">
   <div class="ac-public-header__inner">
+    <button type="button" class="ac-public-nav-toggle" data-ac-nav-open aria-expanded="false" aria-controls="ac-public-drawer" aria-haspopup="dialog">
+      <span class="ac-sr-only">Open menu</span>
+      <span aria-hidden="true">☰</span>
+    </button>
     <a class="ac-public-brand" href="/" aria-label="ActiveClinic home">
       <span class="ac-public-brand__mark" aria-hidden="true"></span>
       <span class="ac-public-brand__name">ActiveClinic</span>
     </a>
     <nav class="ac-public-nav ac-public-nav--desktop" aria-label="Primary">
-      <a href="/clinics"<%- currentAttr("clinics") %>>Find a Clinic</a>
-      <a href="/for-clinics"<%- currentAttr("for-clinics") %>>For Clinics</a>
-      <a href="/for-patients"<%- currentAttr("for-patients") %>>For Patients</a>
-      <a href="/about"<%- currentAttr("about") %>>About</a>
-      <a href="/contact"<%- currentAttr("contact") %>>Contact</a>
-      <a class="ac-public-nav__login" href="/login">Login</a>
-      <a class="ac-public-nav__cta" href="/register-clinic"<%- currentAttr("register") %>>Register Your Clinic</a>
+      <%- include('./public-platform-primary-nav') %>
     </nav>
-    <button type="button" class="ac-public-nav-toggle" data-ac-nav-open aria-expanded="false" aria-controls="ac-public-drawer">
-      <span class="ac-sr-only">Open menu</span>
-      <span aria-hidden="true">☰</span>
-    </button>
+    <div class="ac-public-header__actions">
+      <%- include('./public-platform-nav-actions', { variant: 'header' }) %>
+    </div>
   </div>
 </header>
-<aside id="ac-public-drawer" class="ac-public-drawer" data-ac-nav-drawer hidden>
+<aside id="ac-public-drawer" class="ac-public-drawer" data-ac-nav-drawer data-ac-acw-chrome="ACW12" hidden>
   <div class="ac-public-drawer__panel" role="dialog" aria-modal="true" aria-label="Menu">
-    <button type="button" class="ac-public-drawer__close" data-ac-nav-close>Close</button>
+    <button type="button" class="ac-public-drawer__close" data-ac-nav-close aria-label="Close menu">Close</button>
     <nav aria-label="Mobile">
-      <a href="/clinics"<%- currentAttr("clinics") %>>Find a Clinic</a>
-      <a href="/for-clinics"<%- currentAttr("for-clinics") %>>For Clinics</a>
-      <a href="/for-patients"<%- currentAttr("for-patients") %>>For Patients</a>
-      <a href="/about"<%- currentAttr("about") %>>About</a>
-      <a href="/contact"<%- currentAttr("contact") %>>Contact</a>
-      <a href="/login">Login</a>
-      <a href="/register-clinic"<%- currentAttr("register") %>>Register Your Clinic</a>
+      <%- include('./public-platform-primary-nav') %>
+      <%- include('./public-platform-nav-actions', { variant: 'drawer' }) %>
     </nav>
   </div>
 </aside>
