@@ -236,7 +236,7 @@ describe("ActiveClinic ACW08 shared authentication", () => {
   it("pre-auth login is ActiveClinic-only with phone-or-email and signing-in overlay", async () => {
     const html = renderLoginPage({ csrfToken: "csrf-acw08" });
     assert.match(html, /data-ac-composition="acw08-login"/);
-    assert.match(html, /Phone number or email/);
+    assert.match(html, /Email address or phone number/);
     assert.match(html, /ActiveClinic/);
     assert.match(html, /data-ac-signing-in/);
     assert.match(html, /Signing you in/);

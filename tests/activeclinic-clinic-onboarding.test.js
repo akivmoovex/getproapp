@@ -225,7 +225,7 @@ describe("ActiveClinic public clinic onboarding", () => {
     assert.doesNotMatch(page.text, /name="password"/);
     const login = await request(app).get("/login").set("Host", AC_HOST);
     assert.equal(login.status, 200);
-    assert.match(login.text, /Phone number or email|Email or phone number/);
+    assert.match(login.text, /Email address or phone number|Phone number or email|Email or phone number/);
     assert.match(login.text, /href="\/register-clinic"/);
   });
 

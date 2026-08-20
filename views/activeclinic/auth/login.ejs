@@ -39,7 +39,7 @@
           <div class="ac-auth-field">
             <%- include('../partials/phone-field', {
               id: 'identifier',
-              label: 'Phone number or email',
+              label: 'Email address or phone number',
               required: true,
               identifierMode: true,
               identifierName: 'identifier',
@@ -48,8 +48,8 @@
               nationalValue: identifier || '',
               countries: phoneCountries,
               phoneValidationRelaxed: phoneValidationRelaxed,
-              hint: 'Prefer your staff phone number. Email is accepted when registered.',
-              placeholder: '97 123 4567 or email',
+              hint: '',
+              placeholder: 'name@example.com or +260 97 000 0000',
               error: error ? 'Check this field and try again.' : null,
               showLegacyHidden: false
             }) %>
