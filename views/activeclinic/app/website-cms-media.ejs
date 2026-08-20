@@ -1,0 +1,55 @@
+<% var cms = (pageData && pageData.cms) || {}; var media = cms.media || []; var selected = cms.selected || null; var selectMode = cms.selectMode === true; %>
+<section class="ac-mw" data-ac-page-section="website-media" data-ac-mw-screen="<%= selectMode ? 'select-media' : 'media' %>">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2><%= selectMode ? 'Select Media' : 'Media Library' %></h2>
+      <p class="ac-mw-muted">Images belong to this clinic only. Other clinics cannot see or reuse this media.</p>
+    </div>
+  </div>
+  <% if (cms.canUpload) { %>
+  <form class="ac-mw-form" method="post" action="<%= cms.uploadAction %>" enctype="multipart/form-data" data-ac-mw-upload="1" data-ac-mw-ajax="1">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>
+      Upload image
+      <input type="file" name="file" accept="image/jpeg,image/png,image/webp,image/gif" required/>
+    </label>
+    <label>
+      Alt text
+      <input type="text" name="altText" maxlength="240" placeholder="Describe the image"/>
+    </label>
+    <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Upload media</button>
+    <p class="ac-mw-muted" data-ac-mw-upload-status="1">JPEG, PNG, WebP, or GIF. Maximum 5 MB.</p>
+  </form>
+  <% } %>
+  <div class="ac-mw-media-grid" data-ac-mw-media-grid="1">
+    <% if (!media.length) { %>
+    <p class="ac-mw-muted">No media uploaded yet.</p>
+    <% } %>
+    <% media.forEach(function (item) { %>
+    <figure class="ac-mw-media-card" data-ac-media-id="<%= item.id %>">
+      <% if (item.publicSrc) { %>
+      <img src="<%= item.publicSrc %>" alt="<%= item.altText || item.originalFilename || '' %>"/>
+      <% } %>
+      <figcaption>
+        <strong><%= item.originalFilename || 'Image' %></strong>
+        <p class="ac-mw-muted"><%= item.mediaKind %> · <%= Math.round((item.sizeBytes || 0) / 1024) %> KB</p>
+        <a class="ac-mw-btn" href="/app/settings/website/media/<%= item.id %>">Details</a>
+      </figcaption>
+    </figure>
+    <% }) %>
+  </div>
+  <% if (selected) { %>
+  <form class="ac-mw-form" method="post" action="/app/settings/website/media/<%= selected.id %>">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <h3>Media details</h3>
+    <% if (selected.publicSrc) { %><p><img src="<%= selected.publicSrc %>" alt="" style="max-width:20rem"/></p><% } %>
+    <label>
+      Alt text
+      <input type="text" name="altText" maxlength="240" value="<%= selected.altText || '' %>"/>
+    </label>
+    <p class="ac-mw-muted"><%= selected.originalFilename %> · <%= selected.mimeType %></p>
+    <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save metadata</button>
+  </form>
+  <% } %>
+</section>

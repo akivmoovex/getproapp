@@ -60,7 +60,9 @@ function wantsJson(req) {
 
 function settingsPublishReturnTo(raw) {
   const value = String(raw || "").trim();
-  if (value === "/app/settings" || value === "/app/settings/website") return value;
+  if (value === "/app/settings" || value === "/app/settings/website" || value === "/app/settings/website/publish") {
+    return value;
+  }
   return null;
 }
 
@@ -545,6 +547,33 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         publishedUnchanged: true,
         version: restored.version || null,
         restoredFrom: restored.restoredFrom || restored.version || null,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/website/media", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!canEditClinicWebsite(req, clinic) && !canViewClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const listed = await mediaService.listWebsiteMedia(getPool(), {
+        organizationId: clinic.organizationId,
+        instanceId: attached.instance.id,
+      });
+      return json(res, 200, {
+        ok: true,
+        media: (listed.media || []).map((item) => ({
+          ...item,
+          publicSrc: `/clinics/${clinic.clinicKey}/website/media/${item.id}`,
+        })),
       });
     } catch (err) {
       return next(err);

@@ -322,6 +322,29 @@ async function archiveWebsiteMedia(db, input) {
   return { ok: true, media: { ...loaded.media, status: "archived" } };
 }
 
+async function updateWebsiteMediaMeta(db, input) {
+  const loaded = await getWebsiteMedia(db, input);
+  if (!loaded.ok) return loaded;
+  if (loaded.media.organizationId !== String(input.organizationId || "")) {
+    return { ok: false, code: RESULT.TENANT_MISMATCH };
+  }
+  const altText = String((input && input.altText) || "").trim().slice(0, 240);
+  await db.query(
+    `UPDATE platform.website_media
+        SET alt_text = $3
+      WHERE id = $1 AND organization_id = $2`,
+    [loaded.media.id, input.organizationId, altText || null]
+  );
+  await recordWebsiteAudit(db, {
+    organizationId: input.organizationId,
+    instanceId: loaded.media.instanceId,
+    actorIdentityId: input.actorIdentityId || null,
+    actionKey: "website.media.update",
+    mediaId: loaded.media.id,
+  });
+  return { ok: true, media: { ...loaded.media, altText: altText || null } };
+}
+
 function ownedClinicMediaSrc(instance, mediaId) {
   return `/clinics/${instance.slug}/website/media/${mediaId}`;
 }
@@ -467,6 +490,7 @@ module.exports = {
   listWebsiteMedia,
   recordMediaUsage,
   archiveWebsiteMedia,
+  updateWebsiteMediaMeta,
   isPublishedInUse,
   assertOwnedWebsiteImageValue,
   listOrphanCandidates,
