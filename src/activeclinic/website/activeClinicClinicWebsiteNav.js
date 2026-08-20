@@ -2,6 +2,7 @@
 
 const { appendQuery } = require("../../platform/website/publicWebsiteUrl");
 const { isPublicClinicDirectoryNavEnabled } = require("./activeClinicPublicCapabilities");
+const { navCustomPages, publicPageHref, PAGE_STATUS } = require("./clinicWebsiteCms");
 
 const CONTENT_ITEMS = Object.freeze([
   {
@@ -154,15 +155,55 @@ function buildItem(clinic, item, surface, query) {
   };
 }
 
+function cmsPageForKey(clinic, pageKey) {
+  const pages = Array.isArray(clinic && clinic.cmsPages) ? clinic.cmsPages : [];
+  return pages.find((page) => page && (page.template_key === pageKey || page.slug === pageKey)) || null;
+}
+
+function isCmsNavVisible(clinic, item) {
+  if (!isContentVisible(clinic, item)) return false;
+  const cms = cmsPageForKey(clinic, item.key);
+  if (!cms) return true;
+  if (cms.status === PAGE_STATUS.HIDDEN) return false;
+  if (cms.in_nav === false) return false;
+  return true;
+}
+
+function customNavItems(clinic, surface, query) {
+  if (surface !== "desktop" && surface !== "drawer") return [];
+  const pages = navCustomPages(clinic && clinic.cmsPages);
+  const key = clinic && clinic.clinicKey;
+  return pages.map((page) => ({
+    key: `custom_${page.id}`,
+    kind: "content",
+    label: page.nav_label || page.title,
+    labelKey: null,
+    href: withSurfaceQuery(publicPageHref(key, page), query),
+    hideable: true,
+    visibilityKey: null,
+    protected: false,
+    sortOrder: Number(page.sort_order) || 0,
+  }));
+}
+
 function itemsForSurface(clinic, surface, query) {
   const content = CONTENT_ITEMS.filter((item) => item.surfaces.includes(surface))
-    .filter((item) => isContentVisible(clinic, item))
-    .map((item) => buildItem(clinic, item, surface, query));
+    .filter((item) => isCmsNavVisible(clinic, item))
+    .map((item) => {
+      const built = buildItem(clinic, item, surface, query);
+      const cms = cmsPageForKey(clinic, item.key);
+      if (cms && cms.nav_label) built.label = cms.nav_label;
+      built.sortOrder = cms ? Number(cms.sort_order) || 0 : 50;
+      return built;
+    })
+    .sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+  const custom = customNavItems(clinic, surface, query);
   const system = SYSTEM_ITEMS.filter((item) => item.surfaces.includes(surface)).map((item) =>
     buildItem(clinic, item, surface, query)
   );
   if (surface === "desktop") {
-    return [...content, ...system.filter((item) => item.key === "patientLogin" || item.key === "book")];
+    const merged = [...content, ...custom].sort((a, b) => (a.sortOrder || 0) - (b.sortOrder || 0));
+    return [...merged, ...system.filter((item) => item.key === "patientLogin" || item.key === "book")];
   }
   if (surface === "footerQuick") {
     return content.concat(system.filter((item) => item.key === "book"));
@@ -182,7 +223,7 @@ function itemsForSurface(clinic, surface, query) {
     const account = system.find((item) => item.key === "patientLogin");
     return [home, doctors, book, account].filter(Boolean);
   }
-  return [...content, ...system];
+  return [...content, ...custom, ...system];
 }
 
 function buildClinicWebsiteNav(clinic, options) {

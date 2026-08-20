@@ -186,6 +186,9 @@ function buildActiveClinicWebsiteTemplateContent(input) {
     "section.faq.visible": true,
     "section.promo.visible": true,
     "insurance.intro": `${PLACEHOLDER_LABEL} Add insurance information when you are ready. This is template copy, not a coverage claim.`,
+    "cms.pages": require("./clinicWebsiteCms").defaultPages(),
+    "cms.sections": require("./clinicWebsiteCms").defaultHomeSections(),
+    "cms.blocks": [],
   };
 }
 

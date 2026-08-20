@@ -10,6 +10,14 @@ const {
   PRODUCT_CODE,
 } = require("../../platform/website/editableFieldSchema");
 const { buildActiveClinicWebsiteTemplateContent } = require("./activeClinicWebsiteTemplateContent");
+const {
+  CMS_KEYS,
+  PAGE_ITEM_SCHEMA,
+  SECTION_ITEM_SCHEMA,
+  BLOCK_ITEM_SCHEMA,
+  defaultPages,
+  defaultHomeSections,
+} = require("./clinicWebsiteCms");
 
 const T = CONTENT_TYPES;
 
@@ -107,6 +115,24 @@ const KEYS = {
   "nav.pricing.label": { type: T.SHORT_TEXT, maxLen: 40, group: "nav", description: "Pricing menu label" },
   "nav.patient_information.label": { type: T.SHORT_TEXT, maxLen: 60, group: "nav", description: "Patient information menu label" },
   "page.patient_information.visible": { type: T.BOOLEAN, group: "patientInformation", description: "Show patient information page" },
+  [CMS_KEYS.PAGES]: {
+    type: T.STRUCTURED,
+    group: "cms",
+    description: "Clinic website pages",
+    itemSchema: PAGE_ITEM_SCHEMA,
+  },
+  [CMS_KEYS.SECTIONS]: {
+    type: T.STRUCTURED,
+    group: "cms",
+    description: "Clinic website sections",
+    itemSchema: SECTION_ITEM_SCHEMA,
+  },
+  [CMS_KEYS.BLOCKS]: {
+    type: T.STRUCTURED,
+    group: "cms",
+    description: "Clinic page content blocks",
+    itemSchema: BLOCK_ITEM_SCHEMA,
+  },
 };
 
 const DEFAULTS = Object.freeze(buildActiveClinicWebsiteTemplateContent());
@@ -128,6 +154,7 @@ function editableFieldsFromKeys(templateId, version) {
     permission: PERMISSIONS.EDIT,
     validationMode: VALIDATION_MODE.CONTENT_TYPES,
     itemSchema: def.itemSchema || null,
+    enumValues: def.enumValues || null,
     inline: def.type !== CONTENT_TYPES.BOOLEAN && def.type !== CONTENT_TYPES.STRUCTURED,
     storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: key },
   }));

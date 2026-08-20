@@ -174,6 +174,9 @@ function mergeClinicPresentation(clinic, resolved, operational) {
     pricingIntro: content("pricing.intro") || null,
     patientInformationTitle: content("patient.info_title") || "Patient information",
     patientInformationBody: content("patient.info_body") || null,
+    cmsPages: Array.isArray(content("cms.pages")) ? content("cms.pages") : [],
+    cmsSections: Array.isArray(content("cms.sections")) ? content("cms.sections") : [],
+    cmsBlocks: Array.isArray(content("cms.blocks")) ? content("cms.blocks") : [],
     operational,
   };
 }

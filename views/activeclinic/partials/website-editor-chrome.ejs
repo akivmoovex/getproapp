@@ -72,6 +72,10 @@
       <span class="gp-website-chrome__label-full">Version history</span>
       <span class="gp-website-chrome__label-short">History</span>
     </a>
+    <a class="ac-website-chrome__link" href="/app/settings/website" data-website-manage="1">
+      <span class="gp-website-chrome__label-full">Website management</span>
+      <span class="gp-website-chrome__label-short">Manage</span>
+    </a>
     <form method="post" action="<%= websiteFinishEditUrl %>" class="ac-website-chrome__submit">
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
       <button type="submit">
@@ -116,6 +120,10 @@
     <a class="ac-website-chrome__link" href="<%= websiteHistoryUrl %>">
       <span class="gp-website-chrome__label-full">Version history</span>
       <span class="gp-website-chrome__label-short">History</span>
+    </a>
+    <a class="ac-website-chrome__link" href="/app/settings/website" data-website-manage="1">
+      <span class="gp-website-chrome__label-full">Website management</span>
+      <span class="gp-website-chrome__label-short">Manage</span>
     </a>
     <% } %>
   </div>
