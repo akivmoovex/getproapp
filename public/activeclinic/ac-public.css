@@ -2164,6 +2164,20 @@ body.ac-public-body .acp-hero--platform {
     overflow-x: clip;
   }
 
+  .ac-public-header__inner--tenant,
+  .ac-public-brand--tenant {
+    min-width: 0;
+  }
+  .ac-public-brand__name,
+  .ac-public-footer__brand,
+  .ac-public-footer__legal {
+    overflow-wrap: anywhere;
+  }
+  .ac-public-header__phone {
+    white-space: normal;
+    overflow-wrap: anywhere;
+  }
+
   .ac-public-header__inner,
   .ac-public-main,
   .ac-public-footer__inner,

@@ -54,7 +54,7 @@ describe("ActiveClinic Phase 8 mobile hardening", () => {
     });
     assert.match(html, /data-ac-mobile-bottom-nav="platform"/);
     assert.match(html, /viewport-fit=cover/);
-    assert.match(html, /v7-acw-14/);
+    assert.match(html, /v7-acw-15/);
     const admin = renderPublicPage({
       pageId: "public-register-clinic",
       pageTitle: "Register",
@@ -78,6 +78,18 @@ describe("ActiveClinic Phase 8 mobile hardening", () => {
     const css = read("public/activeclinic/ac-public.css");
     assert.match(css, /acp-booking-actions[\s\S]*--ac-keyboard-inset/);
     assert.match(css, /Phase 8/);
+  });
+
+  it("wraps long tenant header names and phones on mobile", () => {
+    const css = read("public/activeclinic/ac-public.css");
+    assert.match(
+      css,
+      /@media \(max-width: 767px\)[\s\S]*\.ac-public-brand__name[\s\S]*overflow-wrap:\s*anywhere/
+    );
+    assert.match(
+      css,
+      /@media \(max-width: 767px\)[\s\S]*\.ac-public-header__phone[\s\S]*white-space:\s*normal/
+    );
   });
 
   it("ships PhoneField bottom sheet, wrap, and 360-safe row", () => {
