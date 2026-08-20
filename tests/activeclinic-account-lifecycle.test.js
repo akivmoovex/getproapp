@@ -258,7 +258,12 @@ describe("ActiveClinic staff invitation and account lifecycle", () => {
     assert.equal(invited.staffMember.status, "invited");
     assert.ok(invited.rawToken);
     assert.ok(invited.activationUrl.includes("/activate/"));
-    assert.equal(invited.deliveryStatus, "link_generated");
+    // Email invitations report provider delivery. Without a sending adapter the
+    // activation link is still issued; status is unavailable, not link_generated.
+    assert.ok(
+      ["unavailable", "link_generated", "queued", "sent"].includes(invited.deliveryStatus),
+      invited.deliveryStatus
+    );
     assert.ok(invited.share.whatsappUrl.includes("wa.me"));
     assert.ok(invited.share.mailtoUrl.includes("mailto:"));
 

@@ -28,6 +28,9 @@ const {
   createFacility,
 } = require("../src/activeclinic/services/facilityService");
 const {
+  ensureDefaultDepartments,
+} = require("../src/activeclinic/services/activeClinicDepartmentService");
+const {
   createStaffMember,
   suspendStaffMember,
 } = require("../src/activeclinic/services/activeClinicStaffService");
@@ -126,6 +129,11 @@ async function seedAcTenant(stamp, keyPrefix, opts) {
       city: "Lusaka",
     });
     assert.equal(facility.ok, true, JSON.stringify(facility));
+    await ensureDefaultDepartments(pool, {
+      organizationId: org.records.organization.id,
+      healthcareOrganizationId: hco.healthcareOrganization.id,
+      facilityId: facility.facility.id,
+    });
   }
   return {
     orgId: org.records.organization.id,

@@ -27,6 +27,9 @@ const {
   createFacility,
 } = require("../src/activeclinic/services/facilityService");
 const {
+  ensureDefaultDepartments,
+} = require("../src/activeclinic/services/activeClinicDepartmentService");
+const {
   createStaffMember,
 } = require("../src/activeclinic/services/activeClinicStaffService");
 const {
@@ -138,6 +141,11 @@ async function seedAcTenant(stamp, keyPrefix) {
     city: "Kitwe",
   });
   assert.equal(facility2.ok, true, JSON.stringify(facility2));
+  await ensureDefaultDepartments(pool, {
+    organizationId: org.records.organization.id,
+    healthcareOrganizationId: hco.healthcareOrganization.id,
+    facilityId: facility.facility.id,
+  });
   return {
     orgId: org.records.organization.id,
     orgKey: org.records.organization.key,
@@ -452,8 +460,12 @@ describe("ActiveClinic application shell and navigation", () => {
       });
     assert.ok([302, 303].includes(post.status));
 
-    const home = await request(app).get("/app").set("Cookie", cookie);
+    let home = await request(app).get("/app").set("Cookie", cookie);
+    if (home.status === 303 && /onboarding/.test(String(home.headers.location || ""))) {
+      home = await request(app).get("/app/onboarding").set("Cookie", cookie);
+    }
     assert.equal(home.status, 200);
+    assert.match(home.text, /data-ac-shell="staff-app"/);
     assert.match(home.text, /Main Hospital/);
   });
 
