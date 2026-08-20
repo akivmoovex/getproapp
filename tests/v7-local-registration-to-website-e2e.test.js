@@ -268,6 +268,8 @@ async function runActiveClinicFlow() {
     .set("Cookie", session);
   assert.equal(websiteSettings.status, 200);
   assert.match(websiteSettings.text, /data-ac-website-action="edit"/);
+  assert.match(websiteSettings.text, /data-ac-website-next-action="publish"/);
+  assert.doesNotMatch(websiteSettings.text, /data-ac-provisioning-incomplete/);
   out["Settings → Website"] = ok("GET /app/settings + /app/settings/website");
 
   const instance = await instanceRepo.findWebsiteInstanceByOrgProduct(pool, {

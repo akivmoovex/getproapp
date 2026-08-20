@@ -447,6 +447,38 @@ describe("V7 provisioning recovery", () => {
     assert.equal(Number(noStaff.rows[0].n), 0);
   });
 
+  it("fully provisioned clinic inspect without application is complete and login is not incomplete", async () => {
+    if (!requireDb()) return;
+    const pending = await createPendingClinic();
+    const provisioned = await approveAndProvisionClinicRegistration(
+      pool,
+      provisionInput(pending.application.id)
+    );
+    assert.equal(provisioned.ok, true, JSON.stringify(provisioned));
+    assert.ok(provisioned.organizationId);
+
+    const completeness = await inspectOrganizationProvisioningCompleteness(pool, {
+      productCode: PRODUCT.ACTIVECLINIC,
+      organizationId: provisioned.organizationId,
+    });
+    assert.equal(completeness.complete, true, JSON.stringify(completeness));
+    assert.equal(completeness.failedStage, null);
+    assert.equal(completeness.stages[STAGE.AUDIT_COMPLETION], true);
+
+    const identity = await pool.query(
+      `SELECT * FROM platform.identities WHERE email_normalized = $1 LIMIT 1`,
+      [pending.payload.contactEmail.toLowerCase()]
+    );
+    const staff = await pool.query(
+      `SELECT * FROM activeclinic.staff_members
+        WHERE organization_id = $1 AND platform_identity_id = $2 LIMIT 1`,
+      [provisioned.organizationId, identity.rows[0].id]
+    );
+    const eligible = await evaluateStaffEligibility(pool, staff.rows[0], identity.rows[0]);
+    assert.equal(eligible.ok, true, JSON.stringify(eligible));
+    assert.equal(eligible.provisioningIncomplete, false);
+  });
+
   it("BlessBoard retry with existing organization_id does not allocate a second org", async () => {
     if (!requireDb()) return;
     stamp += 1;

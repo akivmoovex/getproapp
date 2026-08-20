@@ -406,6 +406,15 @@
 .ac-mw-hub-chip--live { background: #ccfbf1; color: #0f766e; }
 .ac-mw-hub-chip--hidden { background: #ffdad6; color: #93000a; }
 .ac-mw-hub-chip--missing { background: #fee2e2; color: #991b1b; }
+.ac-mw-hub-next {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid #99f6e4;
+  border-radius: 0.75rem;
+  background: #f0fdfa;
+  color: var(--ac-mw-ink);
+  font-weight: 600;
+}
 .ac-mw-hub-quick {
   margin: 0 0 1.5rem;
   padding: 1rem 1.1rem;
@@ -466,6 +475,9 @@
   .ac-mw-head { flex-direction: column; }
   .ac-mw-nav { gap: 0.4rem; }
   .ac-mw-nav__link { min-height: 2.75rem; }
+  .ac-mw-hub-metrics,
+  .ac-mw-hub-tiles { grid-template-columns: 1fr; }
+  .ac-mw-brand-layout { grid-template-columns: 1fr; }
   .ac-mw-actions { width: 100%; }
   .ac-mw-actions .ac-mw-btn,
   .ac-mw-actions button,

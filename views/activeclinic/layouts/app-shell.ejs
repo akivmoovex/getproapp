@@ -142,7 +142,7 @@
           role="status"
           data-ac-provisioning-incomplete="1"
           data-ac-failed-stage="<%= shell.failedStage || '' %>"
-        >This clinic is still being set up<% if (shell.failedStage) { %> (<%= shell.failedStage.replace(/_/g, ' ') %>)<% } %>. Some website or configuration features may be unavailable until Platform Admin finishes provisioning.</p>
+        >This clinic is still finishing setup<% if (shell.failedStage) { %> (<%= shell.failedStage.replace(/_/g, ' ') %>)<% } %>. You can keep editing website content. Publishing may be limited until setup completes.</p>
         <% } %>
 
         <header class="ac-page-header">

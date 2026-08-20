@@ -275,6 +275,9 @@ describe("ActiveClinic website CMS", () => {
     assert.match(hub.text, /Hidden pages/);
     assert.match(hub.text, /Missing content/);
     assert.match(hub.text, /Last updated/);
+    assert.match(hub.text, /data-ac-website-next-action=/);
+    assert.doesNotMatch(hub.text, /data-ac-provisioning-incomplete/);
+    assert.doesNotMatch(hub.text, /until Platform Admin finishes provisioning/);
   });
 
   it("lets clinic admins create custom pages, blocks, and publish them", async () => {

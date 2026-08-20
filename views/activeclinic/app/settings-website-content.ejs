@@ -84,6 +84,14 @@
     <li class="ac-mw-hub-chip">Last updated<%= lastUpdated ? ': ' + lastUpdated : '' %></li>
   </ul>
 
+  <% if (!website.liveAvailable) { %>
+  <p class="ac-mw-hub-next" data-ac-website-next-action="publish">Recommended next step: review your pages, then publish so patients can find your clinic.</p>
+  <% } else if (website.unpublishedChanges) { %>
+  <p class="ac-mw-hub-next" data-ac-website-next-action="republish">You have unpublished changes. Preview them, then publish when you are ready.</p>
+  <% } else { %>
+  <p class="ac-mw-hub-next" data-ac-website-next-action="maintain">Your website is live. Use the tiles below to update pages, branding, or reusable content.</p>
+  <% } %>
+
   <div class="ac-mw-hub-quick" data-ac-website-actions="1">
     <p class="ac-mw-hub-quick__label">Quick actions</p>
     <div class="ac-mw-actions ac-mw-hub-quick__row">

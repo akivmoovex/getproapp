@@ -108,11 +108,28 @@ describe("v7 unified website editor mobile QA", () => {
     assert.match(acChrome, /websitePreviewUrl/);
     assert.match(acChrome, /Publish this website\? Public visitors will see the current draft\./);
     assert.match(acSettings, /data-ac-website-action="preview"/);
+    assert.match(acSettings, /data-ac-website-next-action=/);
     assert.match(acSettings, /onsubmit="return confirm\(/);
     assert.match(bbReview, /data-bb-preview-website="1"/);
     assert.match(bbReview, /data-bb-website-publish-review="1"/);
     assert.match(bbReview, /acknowledge_public/);
     assert.match(bbReview, /data-bb-stitch-screen-mobile="Phase 7 - Website Publish Review - Mobile"/);
     assert.match(bbReview, /data-bb-continue-editing="1"/);
+  });
+
+  it("ActiveClinic website hub stays one column with 44px targets under 720px", () => {
+    const css = read("public/activeclinic/website-cms.css");
+    assert.match(css, /\.ac-mw-nav__link[\s\S]{0,180}min-height:\s*2\.75rem/);
+    assert.match(
+      css,
+      /@media \(max-width:\s*720px\)[\s\S]{0,400}\.ac-mw-hub-metrics[\s\S]{0,80}grid-template-columns:\s*1fr/
+    );
+    assert.match(
+      css,
+      /@media \(max-width:\s*720px\)[\s\S]{0,400}\.ac-mw-hub-tiles[\s\S]{0,80}grid-template-columns:\s*1fr/
+    );
+    assert.match(css, /\.ac-mw-hub-next/);
+    const shell = read("views/activeclinic/layouts/app-shell.ejs");
+    assert.doesNotMatch(shell, /until Platform Admin finishes provisioning/);
   });
 });

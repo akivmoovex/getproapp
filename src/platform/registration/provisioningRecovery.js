@@ -203,8 +203,30 @@ async function inspectActiveClinic(db, organizationId, application, staffMemberI
     stages[STAGE.TEMPLATE_CONTENT] = contentCount > 0;
   }
 
-  const provisioning = String((application && application.provisioning_status) || "");
-  stages[STAGE.AUDIT_COMPLETION] = provisioning === "provisioned";
+  let applicationRow = application;
+  if (!applicationRow) {
+    applicationRow = await queryOne(
+      db,
+      `SELECT provisioning_status
+         FROM activeclinic.clinic_registration_applications
+        WHERE organization_id = $1
+        ORDER BY CASE WHEN provisioning_status = 'provisioned' THEN 0 ELSE 1 END,
+                 created_at DESC
+        LIMIT 1`,
+      [organizationId]
+    );
+  }
+  const provisioning = String(
+    (applicationRow &&
+      (applicationRow.provisioning_status || applicationRow.provisioningStatus)) ||
+      ""
+  );
+  if (provisioning) {
+    stages[STAGE.AUDIT_COMPLETION] = provisioning === "provisioned";
+  } else {
+    stages[STAGE.AUDIT_COMPLETION] =
+      stages[STAGE.WEBSITE_INSTANCE] === true && stages[STAGE.TEMPLATE_CONTENT] === true;
+  }
   return finishInspect(stages, details);
 }
 
