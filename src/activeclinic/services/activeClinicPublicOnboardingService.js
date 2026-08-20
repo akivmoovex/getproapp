@@ -15,8 +15,43 @@ const {
 const crypto = require("crypto");
 const { appendReviewEvent } = require("./clinicRegistrationReviewService");
 const { validateTermsAcceptance } = require("../legal/termsAcceptance");
+const { FACILITY_TYPES } = require("./facilityService");
 
 const BCRYPT_ROUNDS = 12;
+
+const CLINIC_TYPE_LABELS = Object.freeze({
+  hospital: "Hospital",
+  health_centre: "Health centre",
+  clinic: "Clinic",
+  diagnostic_centre: "Diagnostic centre",
+  pharmacy: "Pharmacy",
+  mobile_clinic: "Mobile clinic",
+  administrative_office: "Administrative office",
+  other: "Other",
+});
+
+function clinicTypeLabel(type) {
+  const key = String(type || "").trim();
+  return CLINIC_TYPE_LABELS[key] || key || "Clinic";
+}
+
+function listClinicTypeOptions() {
+  return FACILITY_TYPES.map((value) => ({ value, label: clinicTypeLabel(value) }));
+}
+
+function normalizeClinicType(raw, options) {
+  const required = Boolean(options && options.required);
+  const value = String(raw == null ? "" : raw).trim();
+  if (!value) {
+    return required
+      ? { ok: false, error: "Select a clinic type." }
+      : { ok: true, value: "clinic" };
+  }
+  if (!FACILITY_TYPES.includes(value)) {
+    return { ok: false, error: "Select a valid clinic type." };
+  }
+  return { ok: true, value };
+}
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -85,50 +120,69 @@ function normalizeZambiaPhone(raw, options) {
 function validateClinicRegistrationInput(input, options) {
   const errors = {};
   const requireTerms = Boolean(options && options.requireTermsAcceptance);
+  const clinicOnly = options && options.step === "clinic";
   // Match SQL CHECKs: clinic_name 2–200, contact_name 2–120, notes null or 1–2000.
   const clinicName = trimName(input.clinicName, 200, 2);
-  const contactName = trimName(input.contactName, 120, 2);
+  const contactName = clinicOnly ? null : trimName(input.contactName, 120, 2);
   const province = input.province ? trimName(input.province, 100, 1) : null;
   const city = input.city ? trimName(input.city, 100, 1) : null;
   const addressRaw = input.address != null ? String(input.address).trim() : "";
   const address = addressRaw ? trimName(addressRaw, 300, 1) : null;
   const notes = normalizeOptionalNotes(input.notes);
+  const clinicTypeResult = normalizeClinicType(input.clinicType || input.facilityType, {
+    required: clinicOnly || Boolean(String(input.clinicType || input.facilityType || "").trim()),
+  });
 
   if (!clinicName) {
     errors.clinicName = "Enter your clinic name (2–200 characters).";
   }
-  if (!contactName) {
-    errors.contactName = "Enter a contact name (2–120 characters).";
+  if (!clinicTypeResult.ok) {
+    errors.clinicType = clinicTypeResult.error;
   }
 
-  const email = normalizeActiveClinicEmail(input.contactEmail);
-  if (!email.ok || !email.normalized) {
-    errors.contactEmail = email.code === "email_required"
-      ? "Enter a contact email address."
-      : "Enter a valid email address.";
-  }
-
-  const phone = normalizeZambiaPhone(input.contactPhone, {
-    phoneCountry: input.phoneCountry || input.contactPhoneCountry || null,
-    phoneNational: input.phoneNational || input.contactPhoneNational || null,
-    defaultCountry: input.countryCode || "ZM",
-  });
-  if (!phone.ok) {
-    errors.contactPhone = phone.code === "phone_required"
-      ? "Enter a contact phone number."
-      : (phone.error || "Enter a valid phone number for the selected country.");
+  const countryRaw = String(input.countryCode || "").trim().toUpperCase();
+  const countryCode = /^[A-Z]{2}$/.test(countryRaw) ? countryRaw : (clinicOnly ? "" : "ZM");
+  if (clinicOnly && !countryCode) {
+    errors.countryCode = "Select a country.";
   }
 
   if (addressRaw && !address) {
     errors.address = "Enter a street address of 1–300 characters, or leave it blank.";
   }
 
-  const passwordPolicy = validatePasswordPolicy(input.password);
-  if (!passwordPolicy.ok) {
-    errors.password = "Password must be at least 10 characters.";
-  }
-  if (String(input.password || "") !== String(input.passwordConfirm || "")) {
-    errors.passwordConfirm = "Password and confirmation do not match.";
+  let email = { ok: true, normalized: null, display: null };
+  let phone = { ok: true, normalized: null, display: null };
+  let passwordPolicy = { ok: true, value: null };
+  if (!clinicOnly) {
+    if (!contactName) {
+      errors.contactName = "Enter an administrator name (2–120 characters).";
+    }
+
+    email = normalizeActiveClinicEmail(input.contactEmail);
+    if (!email.ok || !email.normalized) {
+      errors.contactEmail = !String(input.contactEmail || "").trim()
+        ? "Enter an administrator email address."
+        : "Enter a valid email address.";
+    }
+
+    phone = normalizeZambiaPhone(input.contactPhone, {
+      phoneCountry: input.phoneCountry || input.contactPhoneCountry || null,
+      phoneNational: input.phoneNational || input.contactPhoneNational || null,
+      defaultCountry: countryCode || "ZM",
+    });
+    if (!phone.ok) {
+      errors.contactPhone = phone.code === "phone_required"
+        ? "Enter an administrator phone number."
+        : (phone.error || "Enter a valid phone number for the selected country.");
+    }
+
+    passwordPolicy = validatePasswordPolicy(input.password);
+    if (!passwordPolicy.ok) {
+      errors.password = "Password must be at least 10 characters.";
+    }
+    if (String(input.password || "") !== String(input.passwordConfirm || "")) {
+      errors.passwordConfirm = "Password and confirmation do not match.";
+    }
   }
 
   let terms = { ok: true, errors: {}, termsVersion: null, privacyVersion: null };
@@ -143,25 +197,22 @@ function validateClinicRegistrationInput(input, options) {
     return { ok: false, code: RESULT.INVALID_INPUT, errors, normalized: null };
   }
 
-  const countryCode = input.countryCode && /^[A-Z]{2}$/.test(String(input.countryCode).toUpperCase())
-    ? String(input.countryCode).toUpperCase()
-    : "ZM";
-
   return {
     ok: true,
     code: RESULT.OK,
     errors: {},
     normalized: {
       clinicName,
-      contactName,
-      contactEmail: email.normalized,
-      contactEmailDisplay: email.display,
-      contactPhone: phone.normalized,
-      contactPhoneDisplay: phone.display,
+      clinicType: clinicTypeResult.value || "clinic",
+      contactName: contactName || "",
+      contactEmail: email.normalized || null,
+      contactEmailDisplay: email.display || "",
+      contactPhone: phone.normalized || null,
+      contactPhoneDisplay: phone.display || "",
       province,
       city,
       address,
-      countryCode,
+      countryCode: countryCode || "ZM",
       notes,
       termsVersion: requireTerms ? terms.termsVersion : null,
       privacyVersion: requireTerms ? terms.privacyVersion : null,
@@ -290,7 +341,10 @@ async function createClinicRegistrationApplication(db, input) {
 
 module.exports = {
   RESULT,
+  FACILITY_TYPES,
   normalizeZambiaPhone,
   validateClinicRegistrationInput,
   createClinicRegistrationApplication,
+  clinicTypeLabel,
+  listClinicTypeOptions,
 };

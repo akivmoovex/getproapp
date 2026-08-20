@@ -21,6 +21,8 @@ const {
 } = require("../services/activeClinicPublicVisibilityService");
 const {
   validateClinicRegistrationInput,
+  listClinicTypeOptions,
+  clinicTypeLabel,
 } = require("../services/activeClinicPublicOnboardingService");
 const {
   submitAndProvisionClinicRegistration,
@@ -148,6 +150,7 @@ function registerFormDataFromBody(body) {
   const fd = body || {};
   return {
     clinicName: fd.clinicName || "",
+    clinicType: fd.clinicType || fd.facilityType || "",
     contactName: fd.contactName || "",
     contactEmail: fd.contactEmail || "",
     contactPhone: fd.contactPhone || "",
@@ -161,6 +164,57 @@ function registerFormDataFromBody(body) {
     password: fd.password || "",
     passwordConfirm: fd.passwordConfirm || fd.password_confirm || "",
     acceptTerms: fd.acceptTerms || fd.accept_terms || "",
+  };
+}
+
+function inferRegisterAction(action, formData) {
+  const value = String(action || "").trim().toLowerCase();
+  if (value) return value;
+  if (formData.password || formData.contactName || formData.contactEmail) return "next-admin";
+  return "next-clinic";
+}
+
+function registerReviewFormData(formData, validated) {
+  const n = (validated && validated.normalized) || {};
+  const clinicType = n.clinicType || formData.clinicType || "clinic";
+  return {
+    clinicName: n.clinicName || formData.clinicName || "",
+    clinicType,
+    clinicTypeLabel: clinicTypeLabel(clinicType),
+    contactName: n.contactName || formData.contactName || "",
+    contactEmail: n.contactEmailDisplay || formData.contactEmail || "",
+    contactPhone: n.contactPhoneDisplay || formData.contactPhone || "",
+    province: n.province || formData.province || "",
+    city: n.city || formData.city || "",
+    address: n.address || formData.address || "",
+    countryCode: n.countryCode || formData.countryCode || "ZM",
+    notes: n.notes || formData.notes || "",
+    phoneCountry: formData.phoneCountry || "",
+    phoneNational: formData.phoneNational || "",
+    password: formData.password || "",
+    passwordConfirm: formData.passwordConfirm || "",
+  };
+}
+
+function registerPageLocals(extra) {
+  const step = extra.wizardStep || "clinic";
+  const titles = {
+    clinic: "Register your clinic",
+    administrator: "Administrator details",
+    review: "Review your details",
+    success: "Clinic created",
+    error: "Registration unavailable",
+  };
+  return {
+    pageTitle: extra.pageTitle || titles[step] || "Register your clinic",
+    pageId: extra.pageId || "public-register-clinic",
+    clinicTypeOptions: listClinicTypeOptions(),
+    wizardStep: step,
+    formState: extra.formState || "form",
+    validationErrors: extra.validationErrors || {},
+    formData: extra.formData || {},
+    error: extra.error || null,
+    ...extra,
   };
 }
 
@@ -231,13 +285,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
     keyGenerator: (req) => sha256Hex(`register|${req.body && req.body.contactEmail}|${clientIp(req)}`),
     handler: (req, res) => {
       const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(429).type("html").send(renderPublicView("public/register-clinic", {
+      return res.status(429).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
         csrfToken,
         error: "Too many requests. Please try again later.",
         formState: "form",
         validationErrors: {},
         formData: registerFormDataFromBody(req.body),
-      }));
+        wizardStep: "clinic",
+      })));
     },
   });
 
@@ -589,28 +644,43 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.get("/register-clinic", (req, res) => {
     const csrfToken = issuePageCsrf(res, env, isProduction, req);
-    return res.status(200).type("html").send(renderPublicView("public/register-clinic", {
+    return res.status(200).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
       csrfToken,
-      error: null,
-      formState: "form",
-      validationErrors: {},
-      formData: {},
-    }));
+      wizardStep: "clinic",
+      formData: { countryCode: "ZM", clinicType: "clinic" },
+    })));
   });
 
   app.post("/register-clinic", registerLimiter, async (req, res) => {
     const formData = registerFormDataFromBody(req.body);
-    const action = String((req.body && req.body.action) || "").trim().toLowerCase();
+    const action = inferRegisterAction(req.body && req.body.action, formData);
 
     if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
       const csrfToken = issuePageCsrf(res, env, isProduction, req);
-      return res.status(403).type("html").send(renderPublicView("public/register-clinic", {
+      return res.status(403).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
         csrfToken,
         error: "Your session expired. Please try again.",
-        formState: "form",
-        validationErrors: {},
         formData,
-      }));
+        wizardStep: action === "next-admin" || action === "edit-admin" ? "administrator" : "clinic",
+      })));
+    }
+
+    if (action === "edit-clinic") {
+      const csrfToken = issuePageCsrf(res, env, isProduction, req);
+      return res.status(200).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
+        csrfToken,
+        formData,
+        wizardStep: "clinic",
+      })));
+    }
+
+    if (action === "edit-admin") {
+      const csrfToken = issuePageCsrf(res, env, isProduction, req);
+      return res.status(200).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
+        csrfToken,
+        formData,
+        wizardStep: "administrator",
+      })));
     }
 
     if (action === "confirm") {
@@ -643,13 +713,12 @@ function registerActiveClinicPublicRoutes(app, deps) {
               existingStatus === "approved"
                 ? "A clinic is already registered with this email or phone."
                 : "An application with this email or phone was recently submitted. A second copy was not created.";
-            return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
+            return res.status(400).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
               csrfToken,
               error: dupMessage,
-              formState: "form",
-              validationErrors: {},
               formData,
-            }));
+              wizardStep: "administrator",
+            })));
           }
           if (result.errors && Object.keys(result.errors).length) {
             logClinicApplicationFailed({
@@ -662,20 +731,26 @@ function registerActiveClinicPublicRoutes(app, deps) {
               transactionStage: "validate",
             });
             if (result.errors.acceptTerms) {
-              return res.status(400).type("html").send(renderPublicView("public/register-clinic-review", {
+              return res.status(400).type("html").send(renderPublicView("public/register-clinic-review", registerPageLocals({
                 csrfToken,
                 error: result.errors.acceptTerms,
                 validationErrors: result.errors,
-                formData,
-              }));
+                formData: registerReviewFormData(formData),
+                wizardStep: "review",
+              })));
             }
-            return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
+            const adminError = result.errors.contactName
+              || result.errors.contactEmail
+              || result.errors.contactPhone
+              || result.errors.password
+              || result.errors.passwordConfirm;
+            return res.status(400).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
               csrfToken,
-              error: null,
               formState: "validation_error",
               validationErrors: result.errors,
               formData,
-            }));
+              wizardStep: adminError ? "administrator" : "clinic",
+            })));
           }
           if (result.code === "schema_mismatch") {
             logClinicApplicationFailed({
@@ -687,14 +762,13 @@ function registerActiveClinicPublicRoutes(app, deps) {
               failingOperation: "schema_compatibility_guard",
               transactionStage: "pre_persist",
             });
-            return res.status(503).type("html").send(renderPublicView("public/register-clinic", {
+            return res.status(503).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
               csrfToken,
               error:
                 "Clinic registration is temporarily unavailable because this deployment’s database schema is incomplete. No application was created.",
-              formState: "form",
-              validationErrors: {},
               formData,
-            }));
+              wizardStep: "clinic",
+            })));
           }
           logClinicApplicationFailed({
             requestId,
@@ -705,13 +779,12 @@ function registerActiveClinicPublicRoutes(app, deps) {
             failingOperation: "create_clinic_registration_application",
             transactionStage: "service",
           });
-          return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
+          return res.status(400).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
             csrfToken,
             error: "Please check your information and try again.",
-            formState: "form",
-            validationErrors: {},
             formData,
-          }));
+            wizardStep: "clinic",
+          })));
         }
 
         logClinicApplicationCreated({
@@ -760,46 +833,67 @@ function registerActiveClinicPublicRoutes(app, deps) {
           err,
         });
         const csrfToken = issuePageCsrf(res, env, isProduction, req);
-        return res.status(500).type("html").send(renderPublicView("public/register-clinic-server-error", {
+        return res.status(500).type("html").send(renderPublicView("public/register-clinic-server-error", registerPageLocals({
           csrfToken,
           formData,
           requestId,
           schemaHint: classified.category === "schema_missing" || classified.category === "schema_column_missing",
-        }));
+          wizardStep: "error",
+          pageId: "public-register-clinic-server-error",
+        })));
       }
     }
 
-    const validated = validateClinicRegistrationInput(formData);
     const csrfToken = issuePageCsrf(res, env, isProduction, req);
 
-    if (!validated.ok) {
-      return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
+    if (action === "next-clinic") {
+      const validated = validateClinicRegistrationInput(formData, { step: "clinic" });
+      if (!validated.ok) {
+        return res.status(400).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
+          csrfToken,
+          formState: "validation_error",
+          validationErrors: validated.errors,
+          formData,
+          wizardStep: "clinic",
+        })));
+      }
+      return res.status(200).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
         csrfToken,
-        error: null,
+        formData: {
+          ...formData,
+          clinicName: validated.normalized.clinicName,
+          clinicType: validated.normalized.clinicType,
+          countryCode: validated.normalized.countryCode,
+          province: validated.normalized.province || "",
+          city: validated.normalized.city || "",
+          address: validated.normalized.address || "",
+          notes: validated.normalized.notes || "",
+        },
+        wizardStep: "administrator",
+      })));
+    }
+
+    const validated = validateClinicRegistrationInput(formData);
+    if (!validated.ok) {
+      const adminError = validated.errors.contactName
+        || validated.errors.contactEmail
+        || validated.errors.contactPhone
+        || validated.errors.password
+        || validated.errors.passwordConfirm;
+      return res.status(400).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
+        csrfToken,
         formState: "validation_error",
         validationErrors: validated.errors,
         formData,
-      }));
+        wizardStep: adminError ? "administrator" : "clinic",
+      })));
     }
 
-    return res.status(200).type("html").send(renderPublicView("public/register-clinic-review", {
+    return res.status(200).type("html").send(renderPublicView("public/register-clinic-review", registerPageLocals({
       csrfToken,
-      formData: {
-        clinicName: validated.normalized.clinicName,
-        contactName: validated.normalized.contactName,
-        contactEmail: validated.normalized.contactEmailDisplay || formData.contactEmail,
-        contactPhone: validated.normalized.contactPhoneDisplay || formData.contactPhone,
-        province: validated.normalized.province || "",
-        city: validated.normalized.city || "",
-        address: validated.normalized.address || "",
-        countryCode: validated.normalized.countryCode,
-        notes: validated.normalized.notes || "",
-        phoneCountry: formData.phoneCountry || "",
-        phoneNational: formData.phoneNational || "",
-        password: formData.password || "",
-        passwordConfirm: formData.passwordConfirm || "",
-      },
-    }));
+      formData: registerReviewFormData(formData, validated),
+      wizardStep: "review",
+    })));
   });
 
   app.get("/register-clinic/success", (req, res) => {
@@ -807,12 +901,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
     const applicationReference = String(req.query.ref || "").trim().slice(0, 64);
     const reviewRequired = String(req.query.review || "") === "1";
     const ready = String(req.query.ready || "") === "1";
-    return res.status(200).type("html").send(renderPublicView("public/register-clinic-success", {
+    return res.status(200).type("html").send(renderPublicView("public/register-clinic-success", registerPageLocals({
       csrfToken,
       applicationReference: applicationReference || null,
       reviewRequired,
       ready: ready && !reviewRequired,
-    }));
+      wizardStep: "success",
+      pageId: "public-register-clinic-success",
+    })));
   });
 
   app.get("/register-clinic/status", (req, res) => {

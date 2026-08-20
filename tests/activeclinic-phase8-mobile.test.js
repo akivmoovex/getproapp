@@ -45,16 +45,33 @@ describe("ActiveClinic Phase 8 mobile hardening", () => {
       locals: {
         csrfField: "_csrf",
         csrfToken: "x",
-        formData: {},
+        formData: { countryCode: "ZM", clinicType: "clinic" },
         validationErrors: {},
-        phoneCountries: [],
+        phoneCountries: [{ iso: "ZM", name: "Zambia", callingCode: "+260" }],
+        clinicTypeOptions: [{ value: "clinic", label: "Clinic" }],
+        wizardStep: "clinic",
       },
     });
     assert.match(html, /data-ac-mobile-bottom-nav="platform"/);
     assert.match(html, /viewport-fit=cover/);
-    assert.match(html, /v7-parity-1[123]/);
-    assert.match(html, /data-ac-phone-field/);
-    assert.match(html, /data-ac-phone-backdrop/);
+    assert.match(html, /v7-acw-12/);
+    const admin = renderPublicPage({
+      pageId: "public-register-clinic",
+      pageTitle: "Register",
+      contentTemplate: "public/register-clinic",
+      shellVariant: "platform",
+      locals: {
+        csrfField: "_csrf",
+        csrfToken: "x",
+        formData: { clinicName: "Test Clinic", clinicType: "clinic", countryCode: "ZM" },
+        validationErrors: {},
+        phoneCountries: [{ iso: "ZM", name: "Zambia", callingCode: "+260" }],
+        clinicTypeOptions: [{ value: "clinic", label: "Clinic" }],
+        wizardStep: "administrator",
+      },
+    });
+    assert.match(admin, /data-ac-phone-field/);
+    assert.match(admin, /data-ac-phone-backdrop/);
   });
 
   it("keeps tenant bottom nav off booking and uses sticky CTA reservation", () => {

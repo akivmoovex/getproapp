@@ -561,6 +561,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
       address: app.address,
       city: app.city,
       province: app.province,
+      facilityType: input.facilityType || "clinic",
       actorIdentityId: input.actorIdentityId || null,
       websiteStatus: "coming_soon",
       templateVersion: input.websiteTemplateVersion || undefined,

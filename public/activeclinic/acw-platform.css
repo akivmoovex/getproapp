@@ -1,4 +1,4 @@
-/* ActiveClinic.org platform (ACW01–ACW07). Scoped to apex shell only.
+/* ActiveClinic.org platform (ACW01–ACW12). Scoped to apex shell only.
    Do not load on tenant clinic websites (MW screens). */
 body.ac-public--platform {
   font-family: Inter, "Public Sans", system-ui, sans-serif;
@@ -45,6 +45,61 @@ body.ac-public--platform .ac-public-nav__login {
 
 body.ac-public--platform .ac-public-nav__cta {
   border-radius: 0.5rem;
+}
+
+body.ac-public--platform .ac-public-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+body.ac-public--platform .ac-public-header__login,
+body.ac-public--platform .ac-public-header__cta {
+  min-height: var(--acp-touch);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+}
+
+body.ac-public--platform .ac-public-drawer__panel a {
+  min-height: var(--acp-touch);
+  display: flex;
+  align-items: center;
+}
+
+body.ac-public--platform .ac-public-drawer__close {
+  min-width: var(--acp-touch);
+  min-height: var(--acp-touch);
+}
+
+.acw-system-state {
+  margin: 2.5rem auto;
+  max-width: 36rem;
+  padding: 2rem 1.5rem;
+  text-align: center;
+}
+
+.acw-system-state h1 {
+  margin: 0 0 0.75rem;
+  color: var(--acp-navy);
+}
+
+.acw-system-state__message {
+  margin: 0 0 1.25rem;
+  color: var(--acp-muted);
+}
+
+.acw-system-state__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+}
+
+.acw-system-state__actions .ac-btn {
+  min-height: var(--acp-touch);
 }
 
 .acw-hero {
@@ -312,6 +367,78 @@ body.ac-public--platform .ac-public-footer__note {
   color: #93000a;
 }
 
+.acw-register {
+  padding: 1.5rem 1.25rem 3rem;
+  max-width: 42rem;
+  margin: 0 auto;
+}
+
+.acw-register__header {
+  padding: 0 0 1.25rem;
+  text-align: left;
+  max-width: none;
+  margin: 0;
+}
+
+.acw-register__header h1 {
+  margin: 0 0 0.5rem;
+  font-size: clamp(1.6rem, 4vw, 2.1rem);
+  letter-spacing: -0.02em;
+}
+
+.acw-register__form,
+.acw-register__summary,
+.acw-register__panel,
+.acw-register__note,
+.acw-register__alert {
+  margin-bottom: 1.25rem;
+}
+
+.acw-register .ac-public-form .ac-form-field select,
+.acw-register .ac-public-form textarea {
+  width: 100%;
+  min-height: var(--ac-touch, 2.75rem);
+  border: 1px solid var(--acp-border);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+}
+
+.acw-register__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.acw-register__actions .ac-btn,
+.acw-register .ac-btn {
+  min-height: 44px;
+}
+
+.acw-register-steps {
+  margin: 0 0 1.25rem;
+}
+
+@media (max-width: 390px) {
+  .acw-register {
+    padding: 1rem 0.85rem 2.5rem;
+  }
+
+  .acw-register-steps,
+  .ac-onboarding-steps {
+    flex-wrap: wrap;
+    gap: 0.35rem 0.75rem;
+  }
+
+  .acw-register__actions {
+    flex-direction: column;
+  }
+
+  .acw-register__actions .ac-btn {
+    width: 100%;
+  }
+}
+
 @media (min-width: 768px) {
   body.ac-public--platform .ac-public-nav--desktop { display: flex; }
   body.ac-public--platform .ac-public-nav-toggle { display: none; }
@@ -342,5 +469,30 @@ body.ac-public--platform .ac-public-footer__note {
 @media (max-width: 767px) {
   body.ac-public--platform .acp-mobile-bottom-nav--platform {
     padding-bottom: env(safe-area-inset-bottom);
+  }
+
+  body.ac-public--platform .ac-public-header__cta {
+    display: none;
+  }
+
+  body.ac-public--platform .ac-public-brand {
+    flex: 1;
+    min-width: 0;
+    justify-content: center;
+  }
+
+  body.ac-public--platform .ac-public-brand__name {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .acw-system-state {
+    margin: 1.25rem auto;
+    padding: 1.5rem 1rem;
+  }
+
+  .acw-system-state__actions .ac-btn {
+    width: 100%;
   }
 }

@@ -1,25 +1,35 @@
-<section class="ac-public-section acp-page acp-onboarding" data-ac-page-section="register-clinic">
-  <ol class="ac-onboarding-steps" aria-label="Registration progress">
-    <li class="ac-onboarding-steps__item ac-onboarding-steps__item--active" aria-current="step">Details</li>
-    <li class="ac-onboarding-steps__item">Review</li>
-    <li class="ac-onboarding-steps__item">Clinic created</li>
-  </ol>
+<% const step = typeof wizardStep === 'string' ? wizardStep : 'clinic'; %>
+<% const fd = formData || {}; %>
+<% const verr = validationErrors || {}; %>
+<% const types = Array.isArray(clinicTypeOptions) ? clinicTypeOptions : []; %>
+<% const countries = typeof phoneCountries !== 'undefined' && Array.isArray(phoneCountries) ? phoneCountries : []; %>
+<section
+  class="acw-page acw-register"
+  data-ac-page-section="register-clinic"
+  data-ac-acw-screen="<%= step === 'administrator' ? 'ACW09-admin' : 'ACW09-clinic' %>"
+  data-ac-acw-step="<%= step %>"
+>
+  <%- include('../partials/register-clinic-steps') %>
 
-  <header class="acp-page-hero acp-page-hero--compact">
-    <p class="ac-public-eyebrow">Clinic onboarding</p>
-    <h1>Register your clinic</h1>
-    <p class="ac-public-lede">Create your clinic workspace and administrator account. You can sign in immediately after registration. Publishing a website is a separate step.</p>
+  <header class="acw-section acw-section-header acw-register__header">
+    <p class="acw-kicker">Register clinic</p>
+    <% if (step === 'administrator') { %>
+    <h1>Administrator information</h1>
+    <p>Create the clinic administrator account. You will use this phone number or email to sign in after registration.</p>
+    <% } else { %>
+    <h1>Clinic information</h1>
+    <p>Create your clinic workspace. You can sign in immediately after registration. Publishing a website is a separate step.</p>
+    <% } %>
   </header>
 
   <% if (typeof error === 'string' && error) { %>
-  <div class="ac-public-error" role="alert"><%= error %></div>
+  <div class="ac-public-error acw-register__alert" role="alert"><%= error %></div>
   <% } %>
 
   <% if (typeof formState === 'string' && formState === 'validation_error') { %>
-  <div class="ac-public-validation-summary" role="alert" data-ac-form-state="validation_error">
+  <div class="ac-public-validation-summary acw-register__alert" role="alert" data-ac-form-state="validation_error">
     <h2 class="ac-public-validation-summary__title">Please fix the following</h2>
     <ul class="ac-public-validation-summary__list">
-      <% const verr = validationErrors || {}; %>
       <% Object.keys(verr).forEach(function(field) { %>
       <li><a href="#<%= field %>"><%= verr[field] %></a></li>
       <% }) %>
@@ -27,35 +37,32 @@
   </div>
   <% } %>
 
-  <% const fd = formData || {}; %>
-  <% const verr = validationErrors || {}; %>
-  <form method="post" action="/register-clinic" class="ac-public-form" data-ac-loading="1" novalidate>
+  <% if (step === 'administrator') { %>
+  <form method="post" action="/register-clinic" class="ac-public-form acw-form acw-register__form" data-ac-loading="1" novalidate data-ac-register-step="administrator">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <div class="ac-form-field<%= verr.clinicName ? ' ac-form-field--error' : '' %>">
-      <label for="clinicName">Clinic name <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
-      <input id="clinicName" name="clinicName" required aria-required="true" maxlength="200" value="<%= fd.clinicName || '' %>" aria-invalid="<%= verr.clinicName ? 'true' : 'false' %>"<% if (verr.clinicName) { %> aria-describedby="clinicName-error"<% } %>/>
-      <% if (verr.clinicName) { %><p class="ac-form-field__error" id="clinicName-error"><%= verr.clinicName %></p><% } %>
-    </div>
+    <input type="hidden" name="clinicName" value="<%= fd.clinicName || '' %>"/>
+    <input type="hidden" name="clinicType" value="<%= fd.clinicType || '' %>"/>
+    <input type="hidden" name="countryCode" value="<%= fd.countryCode || 'ZM' %>"/>
+    <input type="hidden" name="province" value="<%= fd.province || '' %>"/>
+    <input type="hidden" name="city" value="<%= fd.city || '' %>"/>
+    <input type="hidden" name="address" value="<%= fd.address || '' %>"/>
+    <input type="hidden" name="notes" value="<%= fd.notes || '' %>"/>
+
     <div class="ac-form-field<%= verr.contactName ? ' ac-form-field--error' : '' %>">
-      <label for="contactName">Contact name <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
-      <input id="contactName" name="contactName" required aria-required="true" maxlength="120" value="<%= fd.contactName || '' %>" aria-invalid="<%= verr.contactName ? 'true' : 'false' %>"<% if (verr.contactName) { %> aria-describedby="contactName-error"<% } %>/>
+      <label for="contactName">Administrator name <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+      <input id="contactName" name="contactName" required aria-required="true" maxlength="120" autocomplete="name" value="<%= fd.contactName || '' %>" aria-invalid="<%= verr.contactName ? 'true' : 'false' %>"<% if (verr.contactName) { %> aria-describedby="contactName-error"<% } %>/>
       <% if (verr.contactName) { %><p class="ac-form-field__error" id="contactName-error"><%= verr.contactName %></p><% } %>
-    </div>
-    <div class="ac-form-field<%= verr.contactEmail ? ' ac-form-field--error' : '' %>">
-      <label for="contactEmail">Contact email <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
-      <input id="contactEmail" name="contactEmail" type="email" required aria-required="true" value="<%= fd.contactEmail || '' %>" aria-invalid="<%= verr.contactEmail ? 'true' : 'false' %>"<% if (verr.contactEmail) { %> aria-describedby="contactEmail-error"<% } %>/>
-      <% if (verr.contactEmail) { %><p class="ac-form-field__error" id="contactEmail-error"><%= verr.contactEmail %></p><% } %>
     </div>
     <div class="ac-form-field<%= verr.contactPhone ? ' ac-form-field--error' : '' %>">
       <%- include('../partials/phone-field', {
         id: 'contactPhone',
-        label: 'Contact phone',
+        label: 'Phone',
         required: true,
-        defaultCountry: typeof defaultPhoneCountry !== 'undefined' ? defaultPhoneCountry : 'ZM',
-        selectedCountry: (fd.phoneCountry || fd.contactPhoneCountry || defaultPhoneCountry || 'ZM'),
+        defaultCountry: fd.countryCode || (typeof defaultPhoneCountry !== 'undefined' ? defaultPhoneCountry : 'ZM'),
+        selectedCountry: (fd.phoneCountry || fd.contactPhoneCountry || fd.countryCode || defaultPhoneCountry || 'ZM'),
         nationalValue: fd.phoneNational || fd.contactPhoneNational || '',
         e164Value: fd.contactPhone || '',
-        countries: typeof phoneCountries !== 'undefined' ? phoneCountries : [],
+        countries: countries,
         phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
         countryFieldName: 'phone_country',
         nationalFieldName: 'phone_national',
@@ -65,38 +72,75 @@
         placeholder: '97 123 4567'
       }) %>
     </div>
-    <div class="ac-form-field">
-      <label for="province">Province</label>
-      <input id="province" name="province" value="<%= fd.province || '' %>"/>
+    <div class="ac-form-field<%= verr.contactEmail ? ' ac-form-field--error' : '' %>">
+      <label for="contactEmail">Email <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+      <input id="contactEmail" name="contactEmail" type="email" required aria-required="true" autocomplete="email" value="<%= fd.contactEmail || '' %>" aria-invalid="<%= verr.contactEmail ? 'true' : 'false' %>"<% if (verr.contactEmail) { %> aria-describedby="contactEmail-error"<% } %>/>
+      <% if (verr.contactEmail) { %><p class="ac-form-field__error" id="contactEmail-error"><%= verr.contactEmail %></p><% } %>
+      <p class="ac-form-hint">Required for this registration path. Sign in uses email or phone.</p>
+    </div>
+    <div class="ac-form-field<%= verr.password ? ' ac-form-field--error' : '' %>">
+      <label for="password">Password <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+      <input id="password" name="password" type="password" required aria-required="true" autocomplete="new-password" minlength="10" maxlength="200" aria-invalid="<%= verr.password ? 'true' : 'false' %>"<% if (verr.password) { %> aria-describedby="password-error"<% } %>/>
+      <% if (verr.password) { %><p class="ac-form-field__error" id="password-error"><%= verr.password %></p><% } %>
+    </div>
+    <div class="ac-form-field<%= verr.passwordConfirm ? ' ac-form-field--error' : '' %>">
+      <label for="passwordConfirm">Confirm password <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+      <input id="passwordConfirm" name="passwordConfirm" type="password" required aria-required="true" autocomplete="new-password" minlength="10" maxlength="200" aria-invalid="<%= verr.passwordConfirm ? 'true' : 'false' %>"<% if (verr.passwordConfirm) { %> aria-describedby="passwordConfirm-error"<% } %>/>
+      <% if (verr.passwordConfirm) { %><p class="ac-form-field__error" id="passwordConfirm-error"><%= verr.passwordConfirm %></p><% } %>
+    </div>
+    <div class="acw-register__actions">
+      <button type="submit" class="ac-btn ac-btn--primary" name="action" value="next-admin">Continue to review</button>
+      <button type="submit" class="ac-btn ac-btn--secondary" name="action" value="edit-clinic">Back to clinic information</button>
+    </div>
+  </form>
+  <% } else { %>
+  <form method="post" action="/register-clinic" class="ac-public-form acw-form acw-register__form" data-ac-loading="1" novalidate data-ac-register-step="clinic">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <input type="hidden" name="action" value="next-clinic"/>
+    <div class="ac-form-field<%= verr.clinicName ? ' ac-form-field--error' : '' %>">
+      <label for="clinicName">Clinic name <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+      <input id="clinicName" name="clinicName" required aria-required="true" maxlength="200" value="<%= fd.clinicName || '' %>" aria-invalid="<%= verr.clinicName ? 'true' : 'false' %>"<% if (verr.clinicName) { %> aria-describedby="clinicName-error"<% } %>/>
+      <% if (verr.clinicName) { %><p class="ac-form-field__error" id="clinicName-error"><%= verr.clinicName %></p><% } %>
+    </div>
+    <div class="ac-form-field<%= verr.clinicType ? ' ac-form-field--error' : '' %>">
+      <label for="clinicType">Clinic type <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+      <select id="clinicType" name="clinicType" required aria-required="true" aria-invalid="<%= verr.clinicType ? 'true' : 'false' %>"<% if (verr.clinicType) { %> aria-describedby="clinicType-error"<% } %>>
+        <option value="">Select type</option>
+        <% types.forEach(function(opt) { %>
+        <option value="<%= opt.value %>"<%= fd.clinicType === opt.value ? ' selected' : '' %>><%= opt.label %></option>
+        <% }) %>
+      </select>
+      <% if (verr.clinicType) { %><p class="ac-form-field__error" id="clinicType-error"><%= verr.clinicType %></p><% } %>
+    </div>
+    <div class="ac-form-field<%= verr.countryCode ? ' ac-form-field--error' : '' %>">
+      <label for="countryCode">Country <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+      <select id="countryCode" name="countryCode" required aria-required="true" aria-invalid="<%= verr.countryCode ? 'true' : 'false' %>"<% if (verr.countryCode) { %> aria-describedby="countryCode-error"<% } %>>
+        <% countries.forEach(function(c) { %>
+        <option value="<%= c.iso %>"<%= String(fd.countryCode || 'ZM').toUpperCase() === c.iso ? ' selected' : '' %>><%= c.name %> (<%= c.iso %>)</option>
+        <% }) %>
+      </select>
+      <% if (verr.countryCode) { %><p class="ac-form-field__error" id="countryCode-error"><%= verr.countryCode %></p><% } %>
     </div>
     <div class="ac-form-field">
-      <label for="city">City</label>
-      <input id="city" name="city" value="<%= fd.city || '' %>"/>
+      <label for="city">City / location</label>
+      <input id="city" name="city" maxlength="100" value="<%= fd.city || '' %>"/>
+    </div>
+    <div class="ac-form-field">
+      <label for="province">Province / region</label>
+      <input id="province" name="province" maxlength="100" value="<%= fd.province || '' %>"/>
     </div>
     <div class="ac-form-field<%= verr.address ? ' ac-form-field--error' : '' %>">
       <label for="address">Street address</label>
       <input id="address" name="address" maxlength="300" value="<%= fd.address || '' %>" aria-invalid="<%= verr.address ? 'true' : 'false' %>"<% if (verr.address) { %> aria-describedby="address-error"<% } %>/>
       <% if (verr.address) { %><p class="ac-form-field__error" id="address-error"><%= verr.address %></p><% } %>
     </div>
-    <input type="hidden" name="countryCode" value="<%= fd.countryCode || 'ZM' %>"/>
-    <fieldset class="ac-form-fieldset">
-      <legend>Administrator sign-in</legend>
-      <p class="ac-form-hint">You will use this email or phone number to sign in after registration.</p>
-      <div class="ac-form-field<%= verr.password ? ' ac-form-field--error' : '' %>">
-        <label for="password">Password <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
-        <input id="password" name="password" type="password" required aria-required="true" autocomplete="new-password" minlength="10" maxlength="200" aria-invalid="<%= verr.password ? 'true' : 'false' %>"<% if (verr.password) { %> aria-describedby="password-error"<% } %>/>
-        <% if (verr.password) { %><p class="ac-form-field__error" id="password-error"><%= verr.password %></p><% } %>
-      </div>
-      <div class="ac-form-field<%= verr.passwordConfirm ? ' ac-form-field--error' : '' %>">
-        <label for="passwordConfirm">Confirm password <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
-        <input id="passwordConfirm" name="passwordConfirm" type="password" required aria-required="true" autocomplete="new-password" minlength="10" maxlength="200" aria-invalid="<%= verr.passwordConfirm ? 'true' : 'false' %>"<% if (verr.passwordConfirm) { %> aria-describedby="passwordConfirm-error"<% } %>/>
-        <% if (verr.passwordConfirm) { %><p class="ac-form-field__error" id="passwordConfirm-error"><%= verr.passwordConfirm %></p><% } %>
-      </div>
-    </fieldset>
     <div class="ac-form-field">
       <label for="notes">Notes (optional)</label>
       <textarea id="notes" name="notes" maxlength="2000"><%= fd.notes || '' %></textarea>
     </div>
-    <button type="submit" class="ac-btn ac-btn--primary">Continue to review</button>
+    <div class="acw-register__actions">
+      <button type="submit" class="ac-btn ac-btn--primary">Continue to administrator</button>
+    </div>
   </form>
+  <% } %>
 </section>

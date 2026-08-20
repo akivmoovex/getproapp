@@ -18,7 +18,7 @@ const { buildClinicWebsiteNav } = require("../website/activeClinicClinicWebsiteN
 const { isPublicClinicDirectoryNavEnabled } = require("../website/activeClinicPublicCapabilities");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-acw-01";
+const ASSET_VERSION = "v7-acw-12";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -120,6 +120,27 @@ function renderPublicPage(input) {
   });
 }
 
+function renderPublicSystemStatePage(input) {
+  const src = input && typeof input === "object" ? input : {};
+  const actions = Array.isArray(src.actions) ? src.actions : [];
+  return renderPublicPage({
+    pageId: src.pageId || "public-system-state",
+    pageTitle: src.pageTitle || "ActiveClinic",
+    contentTemplate: "public/system-state",
+    shellVariant: "platform",
+    robots: "noindex, nofollow",
+    locals: {
+      acwScreen: src.acwScreen || "ACW11",
+      statePageId: src.statePageId || "error",
+      stateKey: src.stateKey || "",
+      heading: src.heading || "Something went wrong",
+      message: src.message || "Please try again.",
+      supportReference: src.supportReference || null,
+      actions,
+    },
+  });
+}
+
 /** @deprecated prefer renderPublicPage */
 function renderPublicView(relativePath, data) {
   const pageIdGuess = String(relativePath).replace(/[\\/]/g, "-");
@@ -138,6 +159,7 @@ function renderPublicView(relativePath, data) {
 module.exports = {
   renderPublicPage,
   renderPublicView,
+  renderPublicSystemStatePage,
   VIEWS_ROOT,
   ASSET_VERSION,
   CSRF_FIELD,

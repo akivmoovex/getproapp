@@ -34,9 +34,9 @@ describe("ActiveClinic Phase 9 accessibility", () => {
       assert.match(html, new RegExp(row[2]), row[0]);
       assert.match(html, /ac-a11y\.js/, row[0]);
     });
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-website-11/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-acw-12/);
     assert.match(read("src/activeclinic/http/renderActiveClinicPatient.js"), /v7-parity-13/);
-    assert.match(read("src/activeclinic/http/renderActiveClinicAuth.js"), /v7-parity-13/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicAuth.js"), /v7-acw-10/);
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
       /v7-parity-25/
@@ -66,17 +66,34 @@ describe("ActiveClinic Phase 9 accessibility", () => {
       shellVariant: "platform",
       locals: {
         csrfToken: "x",
-        formData: {},
+        formData: { countryCode: "ZM", clinicType: "clinic" },
         formState: "validation_error",
         validationErrors: { clinicName: "Enter a clinic name" },
-        phoneCountries: [],
+        phoneCountries: [{ iso: "ZM", name: "Zambia", callingCode: "+260" }],
+        clinicTypeOptions: [{ value: "clinic", label: "Clinic" }],
+        wizardStep: "clinic",
       },
     });
     assert.match(html, /aria-describedby="clinicName-error"/);
     assert.match(html, /id="clinicName-error"/);
     assert.match(html, /data-ac-loading="1"/);
     assert.match(html, /aria-current="page"/);
-    assert.match(html, /role="dialog"/);
+    const admin = renderPublicPage({
+      pageId: "public-register-clinic",
+      pageTitle: "Register",
+      contentTemplate: "public/register-clinic",
+      shellVariant: "platform",
+      locals: {
+        csrfToken: "x",
+        formData: { clinicName: "Test Clinic", clinicType: "clinic", countryCode: "ZM" },
+        formState: "form",
+        validationErrors: {},
+        phoneCountries: [{ iso: "ZM", name: "Zambia", callingCode: "+260" }],
+        clinicTypeOptions: [{ value: "clinic", label: "Clinic" }],
+        wizardStep: "administrator",
+      },
+    });
+    assert.match(admin, /role="dialog"/);
   });
 
   it("booking progress is announced on mobile and marks the current step", () => {

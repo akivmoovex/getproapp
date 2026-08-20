@@ -140,7 +140,8 @@ describe("ActiveClinic registration Terms of Service", () => {
     const app = appWithEnv();
     const page = await request(app).get("/register-clinic");
     assert.equal(page.status, 200);
-    assert.match(page.text, />Details</);
+    assert.match(page.text, />Clinic</);
+    assert.match(page.text, />Administrator</);
     assert.match(page.text, />Review</);
     assert.match(page.text, />Clinic created</);
     assert.doesNotMatch(page.text, />Submitted</);

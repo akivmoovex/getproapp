@@ -1,19 +1,24 @@
-<section class="ac-public-section" data-ac-page-section="register-clinic-review">
-  <ol class="ac-onboarding-steps" aria-label="Registration progress">
-    <li class="ac-onboarding-steps__item ac-onboarding-steps__item--done">Details</li>
-    <li class="ac-onboarding-steps__item ac-onboarding-steps__item--active" aria-current="step">Review</li>
-    <li class="ac-onboarding-steps__item">Clinic created</li>
-  </ol>
+<% const fd = formData || {}; %>
+<% const verr = validationErrors || {}; %>
+<section
+  class="acw-page acw-register"
+  data-ac-page-section="register-clinic-review"
+  data-ac-acw-screen="ACW09-review"
+  data-ac-acw-step="review"
+>
+  <%- include('../partials/register-clinic-steps') %>
 
-  <h1>Review your details</h1>
-  <p>Check your details before creating your clinic. You can go back to edit if something is wrong.</p>
+  <header class="acw-section acw-section-header acw-register__header">
+    <p class="acw-kicker">Register clinic</p>
+    <h1>Review your details</h1>
+    <p>Check your details before creating your clinic. You can go back to edit if something is wrong.</p>
+  </header>
 
   <% if (typeof error === 'string' && error) { %>
-  <div class="ac-public-error" role="alert"><%= error %></div>
+  <div class="ac-public-error acw-register__alert" role="alert"><%= error %></div>
   <% } %>
-  <% const verr = validationErrors || {}; %>
   <% if (verr.acceptTerms) { %>
-  <div class="ac-public-validation-summary" role="alert" data-ac-form-state="validation_error">
+  <div class="ac-public-validation-summary acw-register__alert" role="alert" data-ac-form-state="validation_error">
     <h2 class="ac-public-validation-summary__title">Please fix the following</h2>
     <ul class="ac-public-validation-summary__list">
       <li><a href="#acceptTerms"><%= verr.acceptTerms %></a></li>
@@ -21,23 +26,18 @@
   </div>
   <% } %>
 
-  <% const fd = formData || {}; %>
-  <dl class="ac-review-summary">
+  <dl class="ac-review-summary acw-register__summary">
     <div class="ac-review-summary__row">
       <dt>Clinic name</dt>
       <dd><%= fd.clinicName || '—' %></dd>
     </div>
     <div class="ac-review-summary__row">
-      <dt>Contact name</dt>
-      <dd><%= fd.contactName || '—' %></dd>
+      <dt>Clinic type</dt>
+      <dd><%= fd.clinicTypeLabel || fd.clinicType || '—' %></dd>
     </div>
     <div class="ac-review-summary__row">
-      <dt>Contact email</dt>
-      <dd><%= fd.contactEmail || '—' %></dd>
-    </div>
-    <div class="ac-review-summary__row">
-      <dt>Contact phone</dt>
-      <dd><%= fd.contactPhone || '—' %></dd>
+      <dt>Country</dt>
+      <dd><%= fd.countryCode || '—' %></dd>
     </div>
     <% if (fd.province || fd.city || fd.address) { %>
     <div class="ac-review-summary__row">
@@ -45,6 +45,18 @@
       <dd><%= [fd.address, fd.city, fd.province].filter(Boolean).join(', ') %></dd>
     </div>
     <% } %>
+    <div class="ac-review-summary__row">
+      <dt>Administrator name</dt>
+      <dd><%= fd.contactName || '—' %></dd>
+    </div>
+    <div class="ac-review-summary__row">
+      <dt>Phone</dt>
+      <dd><%= fd.contactPhone || '—' %></dd>
+    </div>
+    <div class="ac-review-summary__row">
+      <dt>Email</dt>
+      <dd><%= fd.contactEmail || '—' %></dd>
+    </div>
     <div class="ac-review-summary__row">
       <dt>Administrator password</dt>
       <dd>Set — used to sign in after registration</dd>
@@ -57,25 +69,13 @@
     <% } %>
   </dl>
 
-  <p class="ac-public-note">Creating your clinic sets up your organisation and administrator account immediately. You can sign in after registration. Your public clinic website remains unpublished until you choose to publish it.</p>
+  <p class="ac-public-note acw-register__note">Creating your clinic sets up your organisation, facility, administrator account, and website foundation immediately. You can sign in after registration. Your public clinic website starts unpublished until you customize and publish it from Website Management.</p>
 
-  <div class="ac-review-actions">
+  <div class="ac-review-actions acw-register__actions">
     <form method="post" action="/register-clinic" class="ac-review-actions__confirm">
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
       <input type="hidden" name="action" value="confirm"/>
-      <input type="hidden" name="clinicName" value="<%= fd.clinicName || '' %>"/>
-      <input type="hidden" name="contactName" value="<%= fd.contactName || '' %>"/>
-      <input type="hidden" name="contactEmail" value="<%= fd.contactEmail || '' %>"/>
-      <input type="hidden" name="contactPhone" value="<%= fd.contactPhone || '' %>"/>
-      <input type="hidden" name="phone_country" value="<%= fd.phoneCountry || fd.countryCode || 'ZM' %>"/>
-      <input type="hidden" name="phone_national" value="<%= fd.phoneNational || '' %>"/>
-      <input type="hidden" name="province" value="<%= fd.province || '' %>"/>
-      <input type="hidden" name="city" value="<%= fd.city || '' %>"/>
-      <input type="hidden" name="address" value="<%= fd.address || '' %>"/>
-      <input type="hidden" name="countryCode" value="<%= fd.countryCode || 'ZM' %>"/>
-      <input type="hidden" name="notes" value="<%= fd.notes || '' %>"/>
-      <input type="hidden" name="password" value="<%= fd.password || '' %>"/>
-      <input type="hidden" name="passwordConfirm" value="<%= fd.passwordConfirm || fd.password || '' %>"/>
+      <%- include('../partials/register-clinic-hidden-fields') %>
       <div class="ac-form-field ac-form-field--checkbox<%= verr.acceptTerms ? ' ac-form-field--error' : '' %>">
         <label class="ac-form-checkbox" for="acceptTerms">
           <input
@@ -94,6 +94,11 @@
       </div>
       <button type="submit" class="ac-btn ac-btn--primary">Create clinic</button>
     </form>
-    <a class="ac-btn ac-btn--secondary" href="/register-clinic">Edit details</a>
+    <form method="post" action="/register-clinic" class="acw-register__edit">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <%- include('../partials/register-clinic-hidden-fields') %>
+      <button type="submit" class="ac-btn ac-btn--secondary" name="action" value="edit-clinic">Edit clinic information</button>
+      <button type="submit" class="ac-btn ac-btn--secondary" name="action" value="edit-admin">Edit administrator information</button>
+    </form>
   </div>
 </section>

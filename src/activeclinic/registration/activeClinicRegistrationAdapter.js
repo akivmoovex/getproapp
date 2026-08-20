@@ -21,6 +21,7 @@ const {
   registerActiveClinicWebsiteTemplate,
 } = require("../website/activeClinicWebsiteTemplate");
 const { starterOverrides } = require("../website/provisionActiveClinicWebsite");
+const { FACILITY_TYPES } = require("../services/facilityService");
 
 const productCode = PRODUCT.ACTIVECLINIC;
 
@@ -133,6 +134,12 @@ async function markReviewRequiredAdapter(db, input) {
 }
 
 async function provision(db, input) {
+  const requestedType = String(
+    (input.normalized && input.normalized.clinicType) ||
+    (input.payload && (input.payload.clinicType || input.payload.facilityType)) ||
+    "clinic"
+  ).trim();
+  const facilityType = FACILITY_TYPES.includes(requestedType) ? requestedType : "clinic";
   const provisioned = await approveAndProvisionClinicRegistration(db, {
     applicationId: input.application.id,
     actorIdentityId: null,
@@ -140,6 +147,7 @@ async function provision(db, input) {
     deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
     env: input.env,
     actorKind: (input.actor && input.actor.kind) || "public_self_registration",
+    facilityType,
   });
   if (
     !provisioned.ok &&
