@@ -155,9 +155,9 @@ describe("ActiveClinic ACW public site", () => {
     assert.match(home.text, /Find a Clinic/);
     assert.match(home.text, /Register Your Clinic/);
     assert.match(home.text, /href="\/login"/);
-    assert.match(home.text, /data-ac-home-section="clinic-benefits"/);
-    assert.match(home.text, /data-ac-home-section="patient-benefits"/);
-    assert.match(home.text, /data-ac-home-section="platform-capabilities"/);
+    assert.match(home.text, /Healthcare Precision/);
+    assert.match(home.text, /What is ActiveClinic\?/);
+    assert.match(home.text, /data-ac-home-section="what-is"/);
     assert.match(home.text, /data-ac-public-footer="platform"/);
     assert.match(home.text, /href="\/clinics"/);
     assert.match(home.text, /href="\/for-clinics"/);
@@ -190,7 +190,7 @@ describe("ActiveClinic ACW public site", () => {
     }
     const solutions = await request(app).get("/solutions");
     assert.equal(solutions.status, 200);
-    assert.match(solutions.text, /Honest product boundaries/);
+    assert.match(solutions.text, /Empowering Your Practice/);
   });
 
   it("directory excludes unpublished clinics and supports search filters", async () => {

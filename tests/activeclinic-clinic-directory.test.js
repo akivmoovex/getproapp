@@ -216,7 +216,7 @@ describe("ActiveClinic clinic directory repair", () => {
     const app = appWithEnv();
     const res = await request(app).get("/clinics").query({ q: "'; DROP TABLE clinics;--" });
     assert.equal(res.status, 200);
-    assert.match(res.text, /Clinic directory/);
+    assert.match(res.text, /Find Your Care/);
   });
 
   it("classifies missing public_website_visible as schema_column_missing", () => {

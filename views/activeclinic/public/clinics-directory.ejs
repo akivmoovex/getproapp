@@ -1,23 +1,23 @@
 <section class="acw-page" data-ac-page-section="clinic-directory" data-ac-acw-screen="ACW02">
   <header class="acw-section acw-section-header">
-    <p class="acw-kicker">Clinic directory</p>
-    <h1>Find Your Care</h1>
-    <p>Search clinics that have published a public listing on ActiveClinic. Unpublished clinics are never shown.</p>
+    <h1 class="acw-only-desktop">Find Your Care</h1>
+    <h1 class="acw-only-mobile">Find a Clinic</h1>
+    <p class="acw-only-desktop">Search our network of verified healthcare professionals to find the right clinic for your needs.</p>
   </header>
 
   <div class="acw-section" style="padding-top:0">
     <form class="acw-search" method="get" action="/clinics" role="search" data-ac-directory-search="1">
       <div>
         <label for="q">Clinic name</label>
-        <input id="q" name="q" type="search" value="<%= typeof search === 'string' ? search : '' %>" placeholder="Clinic name or keyword"/>
+        <input id="q" name="q" type="search" value="<%= typeof search === 'string' ? search : '' %>" placeholder="Clinic Name or Keyword"/>
       </div>
       <div>
         <label for="location">Location</label>
-        <input id="location" name="location" type="search" value="<%= typeof location === 'string' ? location : '' %>" placeholder="City or province"/>
+        <input id="location" name="location" type="search" value="<%= typeof location === 'string' ? location : '' %>" placeholder="City, Zip, or Neighborhood"/>
       </div>
       <div>
         <label for="service">Service</label>
-        <input id="service" name="service" type="search" value="<%= typeof service === 'string' ? service : '' %>" placeholder="Service name, if listed"/>
+        <input id="service" name="service" type="search" value="<%= typeof service === 'string' ? service : '' %>" placeholder="Any Specialty/Service"/>
       </div>
       <% if (typeof province === 'string' && province) { %><input type="hidden" name="province" value="<%= province %>"/><% } %>
       <% if (typeof city === 'string' && city) { %><input type="hidden" name="city" value="<%= city %>"/><% } %>
@@ -71,7 +71,7 @@
           city: typeof city === 'string' ? city : '',
         }) %>
         <% } else { %>
-        <p class="ac-directory-result-count" data-ac-result-count="<%= list.length %>"><%= list.length %> clinic<%= list.length === 1 ? '' : 's' %> found</p>
+        <p class="ac-directory-result-count" data-ac-result-count="<%= list.length %>">Showing <%= list.length %> Clinic<%= list.length === 1 ? '' : 's' %></p>
         <ul class="acw-clinic-grid ac-clinic-cards">
           <% list.forEach(function(c) { %>
           <%- include('../partials/public-clinic-card', { c: c }) %>

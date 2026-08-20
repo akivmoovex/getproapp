@@ -1,122 +1,144 @@
 <article class="acw-page" data-ac-page-section="public-about" data-ac-acw-screen="ACW06">
-  <section class="acw-hero">
+  <section class="acw-hero acw-hero--split acw-only-desktop">
     <div>
-      <p class="acw-kicker">About ActiveClinic</p>
-      <h1>Precision technology. Human connection.</h1>
-      <p class="acw-hero__lede">ActiveClinic is a healthcare operations platform for clinics and hospitals. It is part of the GetPro product family, with a pilot focus on organisations in Zambia.</p>
+      <h1>Precision Technology. Human Connection.</h1>
+      <p class="acw-hero__lede">To bridge the gap between clinical excellence and human connection through precision technology. ActiveClinic is fundamentally redesigning how local clinics operate and patients access care.</p>
     </div>
     <div class="acw-hero__media">
       <%- include('../partials/ac-media', {
-        src: '/activeclinic/assets/platform/home-hero.jpg',
-        alt: '',
-        decorative: true,
+        src: '/activeclinic/assets/stitch/ACW06-01-About-ActiveClinic-Desktop-1.jpg',
+        alt: 'A healthcare professional and patient in a modern consultation room.',
         className: 'acp-hero__image',
         objectFit: 'cover',
         objectPosition: 'center 30%',
-        aspect: '16 / 10',
         width: 960,
         height: 600,
-        loading: 'lazy',
+        loading: 'eager',
       }) %>
     </div>
   </section>
 
-  <section class="acw-section" data-ac-about-section="mission">
+  <section class="acw-hero acw-hero--mobile acw-only-mobile">
+    <p class="acw-kicker">About Us</p>
+    <h1>Precision in Healthcare Delivery.</h1>
+    <p class="acw-hero__lede">We build modern digital infrastructure that connects patients with professional care providers, ensuring every interaction is precise, secure, and human-centric.</p>
+  </section>
+
+  <section class="acw-section acw-only-desktop" data-ac-about-section="mission">
     <header class="acw-section-header">
-      <h2>Why ActiveClinic exists</h2>
+      <h2>Why ActiveClinic Exists</h2>
     </header>
     <div class="acw-grid acw-grid--2">
       <article class="acw-card">
-        <h3>Access for patients</h3>
-        <p>Help people find clinics that choose to publish, without exposing anyone’s medical record.</p>
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">public</span></span>
+        <h3>Democratizing Healthcare Access</h3>
+        <p>We believe that top-tier healthcare technology shouldn't be reserved for massive hospital networks. We are breaking down barriers to ensure quality digital care is accessible everywhere.</p>
       </article>
       <article class="acw-card">
-        <h3>Tools for local clinics</h3>
-        <p>Give enrolled teams a secure app for patients, appointments, and a website they control.</p>
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">storefront</span></span>
+        <h3>Empowering Local Clinics</h3>
+        <p>Providing neighborhood practices with enterprise-grade digital tools to streamline operations and focus on patient care.</p>
       </article>
     </div>
   </section>
 
-  <section class="acw-section acw-section--band" data-ac-about-section="principles">
+  <section class="acw-section acw-section--band acw-only-desktop" data-ac-about-section="principles">
     <div class="acw-section__inner">
       <header class="acw-section-header">
-        <h2>Our core principles</h2>
+        <h2>Our Core Principles</h2>
+        <p>The foundational pillars that guide every line of code we write and every feature we design.</p>
       </header>
       <div class="acw-grid acw-grid--3">
         <article class="acw-card">
-          <h3>Trust</h3>
-          <p>Clinical work stays in the authenticated application. Public pages show only published content.</p>
+          <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">shield_person</span></span>
+          <h4>Trust</h4>
+          <p>Unwavering commitment to securing patient data with enterprise-grade encryption.</p>
         </article>
         <article class="acw-card">
-          <h3>Privacy</h3>
-          <p>Organisation data is isolated per clinic. We do not display charts, results, or billing on marketing pages.</p>
+          <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span></span>
+          <h4>Privacy</h4>
+          <p>Strict HIPAA compliance and transparent data handling protocols to ensure total confidentiality.</p>
         </article>
         <article class="acw-card">
-          <h3>Reliability</h3>
-          <p>Phone formats, provinces, and timezone defaults are designed for Zambian healthcare organisations.</p>
+          <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">health_and_safety</span></span>
+          <h4>Reliability</h4>
+          <p>Guaranteed 99.9% uptime and clinical accuracy when you need it most.</p>
         </article>
       </div>
     </div>
   </section>
 
-  <section class="acw-section" data-ac-about-section="capabilities">
-    <h2>Capability status</h2>
-    <p class="ac-public-note">We label features honestly. <strong>Available</strong> means live for enrolled organisations. <strong>Pilot</strong> means limited rollout. <strong>Planned</strong> means on the roadmap — not offered as a guarantee today.</p>
-    <div class="ac-capability-grid">
-      <article class="ac-capability-card">
-        <span class="ac-capability-badge ac-capability-badge--available">Available</span>
-        <h3>Clinic directory</h3>
-        <p>Search published clinics by name, location, or listed services.</p>
+  <section class="acw-section acw-only-desktop" data-ac-about-section="data">
+    <div class="acw-split">
+      <div>
+        <p class="acw-kicker">Security First</p>
+        <h2>How We Handle Patient Data</h2>
+        <p>We adhere to the principle of least privilege, ensuring that medical records are only accessible to authorized clinical personnel directly involved in patient care.</p>
+      </div>
+      <div class="acw-hero__media">
+        <%- include('../partials/ac-media', {
+          src: '/activeclinic/assets/stitch/ACW06-01-About-ActiveClinic-Desktop-2.jpg',
+          alt: 'Secure clinical data infrastructure.',
+          className: 'acp-hero__image',
+          objectFit: 'cover',
+          width: 800,
+          height: 500,
+          loading: 'lazy',
+        }) %>
+      </div>
+    </div>
+  </section>
+
+  <section class="acw-section acw-only-mobile" data-ac-about-section="principles-mobile">
+    <header class="acw-section-header">
+      <h2>Core Principles</h2>
+    </header>
+    <div class="acw-grid">
+      <article class="acw-card">
+        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span></span>
+        <h3>Unwavering Trust</h3>
+        <p>Building reliable systems that patients and providers can depend on in critical moments.</p>
       </article>
-      <article class="ac-capability-card">
-        <span class="ac-capability-badge ac-capability-badge--available">Available</span>
-        <h3>Staff operations app</h3>
-        <p>Authenticated workspace for reception, appointments, and organisation administration.</p>
+      <article class="acw-card">
+        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">lock</span></span>
+        <h3>Absolute Privacy</h3>
+        <p>Securing health data with enterprise-grade encryption and strict access controls.</p>
       </article>
-      <article class="ac-capability-card">
-        <span class="ac-capability-badge ac-capability-badge--available">Available</span>
-        <h3>Public tenant websites</h3>
-        <p>Per-clinic pages for services, doctors, contact, and policies when published.</p>
+      <article class="acw-card">
+        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">speed</span></span>
+        <h3>System Reliability</h3>
+        <p>Maintaining high availability infrastructure to ensure seamless healthcare access 24/7.</p>
       </article>
-      <article class="ac-capability-card">
-        <span class="ac-capability-badge ac-capability-badge--available">Available</span>
-        <h3>Appointment requests</h3>
-        <p>Patients submit requests; clinics confirm — not instant booking guarantees.</p>
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">health_and_safety</span></span>
+        <h3>Democratizing Access</h3>
+        <p>Breaking down geographical and logistical barriers to ensure quality healthcare is accessible to everyone, regardless of their location.</p>
       </article>
-      <article class="ac-capability-card">
-        <span class="ac-capability-badge ac-capability-badge--pilot">Pilot</span>
-        <h3>Booking status lookup</h3>
-        <p>Patients with a booking link can view status and request changes where enabled.</p>
-      </article>
-      <article class="ac-capability-card">
-        <span class="ac-capability-badge ac-capability-badge--pilot">Pilot</span>
-        <h3>Patient portal</h3>
-        <p>Clinic-scoped patient accounts for bookings where a clinic enables them.</p>
-      </article>
-      <article class="ac-capability-card">
-        <span class="ac-capability-badge ac-capability-badge--planned">Planned</span>
-        <h3>Automated notifications</h3>
-        <p>SMS or email confirmations when delivery infrastructure is in place — not promised today.</p>
-      </article>
-      <article class="ac-capability-card">
-        <span class="ac-capability-badge ac-capability-badge--planned">Planned</span>
-        <h3>Live slot calendars</h3>
-        <p>Real-time availability requires clinic-configured schedules — not a platform-wide guarantee.</p>
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">devices</span></span>
+        <h3>Clinic Digitization</h3>
+        <p>Equipping medical practices with modern tools that streamline administrative workflows, allowing providers to focus entirely on patient care.</p>
       </article>
     </div>
   </section>
 
-  <section class="acw-section" data-ac-about-section="getpro">
-    <h2>Part of GetPro</h2>
-    <p>ActiveClinic shares platform foundations with other GetPro products while keeping its own clinical workflows, design system, and public website.</p>
+  <section class="acw-cta-band acw-only-desktop">
+    <div class="acw-cta-band__inner">
+      <h2>Ready to transform your practice?</h2>
+      <p>Join thousands of forward-thinking clinics leveraging ActiveClinic to deliver superior patient experiences.</p>
+      <p class="ac-public-actions">
+        <a class="ac-btn ac-btn--primary acw-btn-icon" href="/register-clinic">Join the Movement <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+        <a class="ac-btn ac-btn--secondary" href="/contact">Partner with Us</a>
+      </p>
+    </div>
   </section>
 
-  <section class="acw-cta-band">
+  <section class="acw-cta-band acw-only-mobile">
     <div class="acw-cta-band__inner">
-      <h2>Questions about joining?</h2>
+      <h2>Partner With Us</h2>
+      <p>Interested in bringing ActiveClinic to your practice? Connect with our integration specialists.</p>
       <p class="ac-public-actions">
-        <a class="ac-btn ac-btn--primary" href="/register-clinic">Register Your Clinic</a>
-        <a class="ac-btn ac-btn--secondary" href="/contact">Contact ActiveClinic</a>
+        <a class="ac-btn ac-btn--primary" href="/contact">Contact Sales</a>
       </p>
     </div>
   </section>

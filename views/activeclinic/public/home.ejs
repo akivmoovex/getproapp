@@ -1,126 +1,156 @@
-<section class="acw-hero" data-ac-page-section="public-home" data-ac-acw-screen="ACW01">
-  <div class="acw-hero__copy">
-    <p class="acw-kicker">Healthcare platform for Zambia</p>
-    <h1>Healthcare precision. <span class="acw-accent">Human warmth.</span></h1>
-    <p class="acw-hero__lede">ActiveClinic helps clinics run day-to-day operations and publish a public website. Patients can find participating clinics and request appointments where a clinic has enabled booking.</p>
-    <p class="ac-public-actions">
-      <a class="ac-btn ac-btn--primary" href="/clinics">Find a Clinic</a>
-      <a class="ac-btn ac-btn--secondary" href="/register-clinic">Register Your Clinic</a>
-    </p>
-  </div>
-  <div class="acw-hero__media">
-    <% const platformHeroMedia = (typeof platformHero === 'object' && platformHero) ? platformHero : { src: '/activeclinic/assets/platform/home-hero.jpg', objectPosition: 'center 35%' }; %>
-    <%- include('../partials/ac-media', {
-      src: platformHeroMedia.src,
-      alt: '',
-      decorative: true,
-      className: 'acp-hero__image',
-      objectFit: 'cover',
-      objectPosition: platformHeroMedia.objectPosition || 'center 35%',
-      aspect: '16 / 10',
-      width: 960,
-      height: 600,
-      loading: 'eager',
-    }) %>
-    <div class="acw-hero__panel">
-      <span class="acp-hero__panel-label">Built for Zambian clinics</span>
-      <strong>Phone formats, provinces, and staff workflows designed for local teams</strong>
+<section class="acw-home" data-ac-page-section="public-home" data-ac-acw-screen="ACW01">
+  <section class="acw-hero acw-hero--home acw-only-desktop" data-ac-home-section="hero">
+    <div class="acw-hero__copy">
+      <p class="acw-kicker"><span class="material-symbols-outlined" aria-hidden="true">hub</span> Unified Healthcare Platform</p>
+      <h1>Healthcare Precision, <span class="acw-accent">Human Warmth.</span></h1>
+      <p class="acw-hero__lede">The all-in-one platform for modern clinic management and seamless patient access. Connecting care providers with those who need them most.</p>
+      <p class="ac-public-actions">
+        <a class="ac-btn ac-btn--primary acw-btn-icon" href="/clinics"><span class="material-symbols-outlined" aria-hidden="true">search</span> Find a Clinic</a>
+        <a class="ac-btn ac-btn--secondary acw-btn-icon" href="/register-clinic"><span class="material-symbols-outlined" aria-hidden="true">add_business</span> Register Your Clinic</a>
+      </p>
+      <div class="acw-social-proof">
+        <div class="acw-avatars" aria-hidden="true">
+          <span class="acw-avatar">JD</span>
+          <span class="acw-avatar">AS</span>
+          <span class="acw-avatar">MK</span>
+        </div>
+        <p><strong>Trusted by 5,000+</strong><span>Clinics &amp; Patients</span></p>
+      </div>
     </div>
-  </div>
-</section>
+    <div class="acw-hero__media">
+      <%- include('../partials/ac-media', {
+        src: '/activeclinic/assets/stitch/ACW01-01-ActiveClinic-Home-Desktop-1.jpg',
+        alt: 'A bright, modern medical clinic reception area with a healthcare administrator using a tablet.',
+        className: 'acp-hero__image',
+        objectFit: 'cover',
+        objectPosition: 'center 35%',
+        width: 960,
+        height: 600,
+        loading: 'eager',
+      }) %>
+      <div class="acw-hero__panel" aria-hidden="true">
+        <span class="acw-hero__panel-icon"><span class="material-symbols-outlined filled">calendar_month</span></span>
+        <div>
+          <strong>Appointment Confirmed</strong>
+          <span>Dr. Sarah Jenkins - Today, 2:00 PM</span>
+        </div>
+        <span class="acw-badge">Upcoming</span>
+      </div>
+    </div>
+  </section>
 
-<section class="acw-section" data-ac-home-section="what-is">
-  <header class="acw-section-header">
-    <h2>What is ActiveClinic?</h2>
-    <p>A clinic operations application plus an optional public website. Clinical records stay behind staff sign-in.</p>
-  </header>
-  <div class="acw-grid acw-grid--4" data-ac-home-section="platform-capabilities">
-    <article class="acw-card">
-      <h3>Staff operations</h3>
-      <p>Patients, appointments, reception, and organisation settings after authorised staff sign in.</p>
-      <span class="ac-capability-badge ac-capability-badge--available">Available</span>
-    </article>
-    <article class="acw-card">
-      <h3>Published clinic websites</h3>
-      <p>Clinics that publish can show services, doctors, contact details, and policies on their own site.</p>
-      <span class="ac-capability-badge ac-capability-badge--available">Available</span>
-    </article>
-    <article class="acw-card">
-      <h3>Directory discovery</h3>
-      <p>Search clinics that have chosen to appear in the public directory — unpublished clinics stay hidden.</p>
-      <span class="ac-capability-badge ac-capability-badge--available">Available</span>
-    </article>
-    <article class="acw-card">
-      <h3>Responsive access</h3>
-      <p>Public pages and staff tools work on phones and desktops. No extra app download is required.</p>
-      <span class="ac-capability-badge ac-capability-badge--available">Available</span>
-    </article>
-  </div>
-</section>
+  <section class="acw-hero acw-hero--home acw-hero--mobile acw-only-mobile" data-ac-home-section="hero-mobile">
+    <p class="acw-kicker">Modern Healthcare Delivery</p>
+    <h1>Connecting Care, <span class="acw-accent">Seamlessly.</span></h1>
+    <p class="acw-hero__lede">The comprehensive platform uniting clinics and patients. Streamline operations, elevate patient experience, and build a modern healthcare practice.</p>
+    <div class="acw-hero__media">
+      <%- include('../partials/ac-media', {
+        src: '/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-1.jpg',
+        alt: 'Modern clinic interior',
+        className: 'acp-hero__image',
+        objectFit: 'cover',
+        width: 780,
+        height: 480,
+        loading: 'eager',
+      }) %>
+      <div class="acw-hero__panel" aria-hidden="true">
+        <span class="acw-hero__panel-icon"><span class="material-symbols-outlined filled">event_available</span></span>
+        <div>
+          <strong>Next Appointment</strong>
+          <span>Today, 2:30 PM</span>
+        </div>
+      </div>
+    </div>
+    <p class="ac-public-actions ac-public-actions--stack">
+      <a class="ac-btn ac-btn--primary acw-btn-icon" href="/register-clinic">Get Started <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+      <a class="ac-btn ac-btn--secondary" href="/features">Explore Features</a>
+    </p>
+  </section>
 
-<section class="acw-section acw-section--band" data-ac-home-section="patient-benefits">
-  <div class="acw-section__inner">
+  <section class="acw-section acw-only-desktop" data-ac-home-section="what-is">
     <header class="acw-section-header">
-      <h2>For patients and families</h2>
-      <p>Find participating clinics. Booking is available only where a clinic has enabled it, and requests are reviewed by clinic staff.</p>
+      <h2>What is ActiveClinic?</h2>
+      <p>A fully integrated ecosystem designed to remove friction from healthcare. We bridge the gap between clinical operations and patient experience.</p>
     </header>
-    <div class="acw-grid acw-grid--3">
-      <article class="acw-card">
-        <h3>Find a clinic</h3>
-        <p>Search published listings by name, location, or services the clinic has chosen to show.</p>
+    <div class="acw-bento">
+      <article class="acw-card acw-bento__wide">
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">sync</span></span>
+        <h3>Unified Workflows</h3>
+        <p>Connect scheduling, records, and billing in one seamless interface for your entire staff.</p>
       </article>
       <article class="acw-card">
-        <h3>Request an appointment</h3>
-        <p>Where enabled, submit a preferred time. This is not an automatic confirmation.</p>
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">health_metrics</span></span>
+        <h3>Data Precision</h3>
+        <p>Secure, accurate health records accessible when you need them.</p>
       </article>
       <article class="acw-card">
-        <h3>Use your booking link</h3>
-        <p>If a clinic provides a booking link, you can check request status from that link.</p>
+        <span class="acw-icon-box acw-icon-box--tertiary"><span class="material-symbols-outlined" aria-hidden="true">forum</span></span>
+        <h3>Instant Comm</h3>
+        <p>Secure messaging between providers and patients.</p>
+      </article>
+      <article class="acw-card acw-bento__wide acw-bento__photo">
+        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">devices</span></span>
+        <h3>Anywhere Access</h3>
+        <p>Fully responsive platform accessible on mobile, tablet, and desktop for care on the go.</p>
+        <%- include('../partials/ac-media', {
+          src: '/activeclinic/assets/stitch/ACW01-01-ActiveClinic-Home-Desktop-2.jpg',
+          alt: 'A sleek, modern dashboard interface on a monitor in a medical office.',
+          className: 'acw-bento__image',
+          objectFit: 'cover',
+          width: 640,
+          height: 400,
+          loading: 'lazy',
+        }) %>
       </article>
     </div>
-    <p class="ac-public-actions" style="justify-content:center;margin-top:1.25rem">
-      <a class="ac-btn ac-btn--primary" href="/for-patients">How it works for patients</a>
-    </p>
-  </div>
-</section>
+  </section>
 
-<section class="acw-section" data-ac-home-section="clinic-benefits">
-  <header class="acw-section-header">
-    <h2>For clinics</h2>
-    <p>Register your organisation, run staff workflows, and publish a public website when you are ready.</p>
-  </header>
-  <div class="acw-grid acw-grid--3">
-    <article class="acw-card">
-      <h3>Operations in one place</h3>
-      <p>Secure tools for enrolled teams. Public pages never show clinical charts.</p>
-    </article>
-    <article class="acw-card">
-      <h3>Your clinic website</h3>
-      <p>Edit pages, media, branding, and publishing from website management — included with an ActiveClinic organisation.</p>
-    </article>
-    <article class="acw-card">
-      <h3>Honest product labels</h3>
-      <p>Available, Pilot, and Planned capabilities are labelled clearly. We do not invent live slot calendars or SMS delivery.</p>
-    </article>
-  </div>
-  <p class="ac-public-actions" style="justify-content:center;margin-top:1.25rem">
-    <a class="ac-btn ac-btn--primary" href="/for-clinics">Explore clinic tools</a>
-    <a class="ac-btn ac-btn--ghost" href="/clinic-website">Clinic websites</a>
-  </p>
-</section>
+  <section class="acw-section acw-only-mobile" data-ac-home-section="everything">
+    <header class="acw-section-header">
+      <h2>Everything you need</h2>
+      <p>A unified ecosystem for modern healthcare.</p>
+    </header>
+    <div class="acw-grid acw-grid--1">
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">analytics</span></span>
+        <h3>Practice Management</h3>
+        <p>Comprehensive tools to run your clinic efficiently, from scheduling to billing.</p>
+      </article>
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">patient_list</span></span>
+        <h3>Patient Portal</h3>
+        <p>Empower patients with self-scheduling, records access, and secure messaging.</p>
+      </article>
+      <article class="acw-card">
+        <%- include('../partials/ac-media', {
+          src: '/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-2.jpg',
+          alt: 'Telehealth feature',
+          className: 'acw-card__media',
+          objectFit: 'cover',
+          width: 640,
+          height: 360,
+          loading: 'lazy',
+        }) %>
+        <h3>Telehealth Ready</h3>
+        <p>Integrated secure video consultations.</p>
+      </article>
+    </div>
+    <p class="acw-trust-label">Trusted by healthcare providers</p>
+    <ul class="acw-trust-logos">
+      <li>MediCare+</li>
+      <li>CityHealth</li>
+      <li>Pulse</li>
+      <li>Nova</li>
+    </ul>
+  </section>
 
-<section class="acw-cta-band" data-ac-home-section="final-cta">
-  <div class="acw-cta-band__inner">
-    <h2>Ready to get started?</h2>
-    <p>Find a participating clinic or register your clinic on ActiveClinic.</p>
-    <p class="ac-public-actions">
-      <a class="ac-btn ac-btn--primary" href="/clinics">Find a Clinic</a>
-      <a class="ac-btn ac-btn--secondary" href="/register-clinic">Register Your Clinic</a>
-    </p>
-  </div>
-</section>
-
-<section class="acw-section ac-public-privacy-note" data-ac-home-section="privacy">
-  <h2>Privacy and honesty</h2>
-  <p>ActiveClinic does not expose medical records on this public website. We do not claim real-time appointment availability or automated SMS delivery. Clinic websites stay unpublished until the clinic publishes them. Capabilities marked <strong>Pilot</strong> or <strong>Planned</strong> are labelled clearly.</p>
+  <section class="acw-cta-band acw-only-mobile" data-ac-home-section="final-cta">
+    <div class="acw-cta-band__inner">
+      <h2>Ready to transform your practice?</h2>
+      <p>Join hundreds of clinics delivering better care with ActiveClinic.</p>
+      <p class="ac-public-actions">
+        <a class="ac-btn ac-btn--primary" href="/register-clinic">Register Your Clinic</a>
+      </p>
+    </div>
+  </section>
 </section>

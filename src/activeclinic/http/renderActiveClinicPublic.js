@@ -18,7 +18,7 @@ const { buildClinicWebsiteNav } = require("../website/activeClinicClinicWebsiteN
 const { isPublicClinicDirectoryNavEnabled } = require("../website/activeClinicPublicCapabilities");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-acw-12";
+const ASSET_VERSION = "v7-acw-14";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)

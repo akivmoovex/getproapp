@@ -185,24 +185,18 @@ describe("ActiveClinic public website (P20–P26)", () => {
     assert.match(home.text, /data-ac-shell="public"/);
     assert.match(home.text, /data-ac-page-section="public-home"/);
     assert.match(home.text, /Find a Clinic/);
-    assert.match(home.text, /data-ac-home-section="patient-benefits"/);
-    assert.match(home.text, /data-ac-home-section="clinic-benefits"/);
-    assert.match(home.text, /data-ac-home-section="platform-capabilities"/);
-    assert.match(home.text, /data-ac-home-section="privacy"/);
-    assert.match(home.text, /data-ac-home-section="final-cta"/);
-    assert.match(home.text, /does not expose medical records/i);
-    assert.match(home.text, /do not claim real-time appointment availability/i);
+    assert.match(home.text, /data-ac-home-section="what-is"/);
+    assert.match(home.text, /Healthcare Precision/);
+    assert.match(home.text, /What is ActiveClinic\?/);
 
     const about = await request(app).get("/about");
     assert.equal(about.status, 200);
-    assert.match(about.text, /About ActiveClinic/);
-    assert.match(about.text, /ac-capability-badge--available/);
-    assert.match(about.text, /ac-capability-badge--pilot/);
-    assert.match(about.text, /ac-capability-badge--planned/);
+    assert.match(about.text, /Precision Technology/);
+    assert.match(about.text, /Why ActiveClinic Exists/);
 
     const solutions = await request(app).get("/solutions");
     assert.equal(solutions.status, 200);
-    assert.match(solutions.text, /Honest product boundaries/);
+    assert.match(solutions.text, /Empowering Your Practice/);
   });
 
   it("public nav links are real routes without placeholder anchors", async () => {
@@ -229,7 +223,7 @@ describe("ActiveClinic public website (P20–P26)", () => {
 
     const viaSearch = await request(app).get("/clinics?search=lusaka");
     assert.equal(viaSearch.status, 200);
-    assert.match(viaSearch.text, /Clinic directory/);
+    assert.match(viaSearch.text, /Find Your Care/);
   });
 
   it("directory error state renders without stack trace", async () => {

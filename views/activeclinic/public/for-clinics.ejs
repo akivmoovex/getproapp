@@ -1,65 +1,90 @@
 <article class="acw-page" data-ac-page-section="public-for-clinics" data-ac-acw-screen="ACW03-01">
-  <section class="acw-hero">
+  <section class="acw-hero acw-hero--split acw-only-desktop">
     <div>
-      <p class="acw-kicker">For clinics</p>
-      <h1>Run your practice. <span class="acw-accent">Publish when ready.</span></h1>
-      <p class="acw-hero__lede">ActiveClinic gives enrolled teams a secure operations app and an optional public clinic website. Registration creates your organisation immediately. Publishing a website is a separate step you control.</p>
+      <p class="acw-kicker"><span class="material-symbols-outlined" aria-hidden="true">verified</span> Trusted by 500+ Clinics</p>
+      <h1>Empowering Your Practice. <span class="acw-accent">Elevating Patient Care.</span></h1>
+      <p class="acw-hero__lede">Transform your clinic management with ActiveClinic. Streamline workflows, boost revenue, and focus on what matters most—delivering exceptional healthcare to your patients.</p>
       <p class="ac-public-actions">
-        <a class="ac-btn ac-btn--primary" href="/register-clinic">Register Your Clinic</a>
-        <a class="ac-btn ac-btn--secondary" href="/features">See platform features</a>
+        <a class="ac-btn ac-btn--primary acw-btn-icon" href="/register-clinic">Register Your Clinic <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+        <a class="ac-btn ac-btn--secondary acw-btn-icon" href="/features"><span class="material-symbols-outlined" aria-hidden="true">play_circle</span> See How It Works</a>
       </p>
     </div>
     <div class="acw-hero__media">
       <%- include('../partials/ac-media', {
-        src: '/activeclinic/assets/platform/home-hero.jpg',
-        alt: '',
-        decorative: true,
+        src: '/activeclinic/assets/stitch/ACW03-01-For-Clinics-Desktop-1.jpg',
+        alt: 'Healthcare staff using clinic software on a tablet in a modern clinic.',
         className: 'acp-hero__image',
         objectFit: 'cover',
         objectPosition: 'center 40%',
-        aspect: '16 / 10',
         width: 960,
         height: 600,
-        loading: 'lazy',
+        loading: 'eager',
       }) %>
+      <div class="acw-hero__panel" aria-hidden="true">
+        <span class="acw-hero__panel-icon"><span class="material-symbols-outlined">trending_up</span></span>
+        <div>
+          <span>Efficiency Increase</span>
+          <strong>34%</strong>
+        </div>
+      </div>
     </div>
   </section>
 
-  <section class="acw-section">
+  <section class="acw-hero acw-hero--mobile acw-only-mobile">
+    <h1>Streamline your clinical operations.</h1>
+    <p class="acw-hero__lede">ActiveClinic provides the tools you need to manage patient flow, optimize scheduling, and improve care delivery.</p>
+    <p class="ac-public-actions">
+      <a class="ac-btn ac-btn--primary" href="/contact">Book a Demo</a>
+    </p>
+  </section>
+
+  <section class="acw-section acw-only-desktop">
     <header class="acw-section-header">
-      <h2>Three pillars of clinic operations</h2>
-      <p>What enrolled organisations can use today, without exposing internal architecture.</p>
+      <h2>The Pillars of Modern Healthcare Management</h2>
+      <p>Designed specifically for the rigorous demands of modern clinical environments, ActiveClinic operates across three fundamental pillars to ensure your practice thrives.</p>
     </header>
     <div class="acw-pillars">
       <article class="acw-card">
-        <h3>Patient care coordination</h3>
-        <p>Register patients, manage appointments, and handle reception queues after staff sign-in.</p>
-        <a href="/features">Explore features</a>
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">diversity_1</span></span>
+        <h3>Patient Care</h3>
+        <p>Enhance patient satisfaction with seamless appointment booking, automated reminders, and secure messaging portals.</p>
+        <a class="acw-card-link" href="/features">Explore Features <span class="material-symbols-outlined" aria-hidden="true">arrow_right_alt</span></a>
       </article>
       <article class="acw-card acw-pillar--featured">
-        <h3>Workflow efficiency</h3>
-        <p>Staff tools for the day’s work. Public pages never include charts, prescriptions, or billing records.</p>
+        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">speed</span></span>
+        <h3>Workflow Efficiency</h3>
+        <p>Automate administrative tasks, streamline electronic health records (EHR) management, and reduce overhead. Our intelligent routing system ensures the right task gets to the right staff member instantly.</p>
+        <p class="acw-stat">Admin Time Saved <strong>15 hrs/week</strong></p>
       </article>
       <article class="acw-card">
-        <h3>Public presence</h3>
-        <p>Directory listing and a branded mini-website when you publish. Patients see only what you choose to share.</p>
-        <a href="/clinic-website">Clinic websites</a>
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">moving</span></span>
+        <h3>Revenue Growth</h3>
+        <p>Optimize billing cycles, reduce no-shows with automated systems, and identify new revenue streams through data analytics.</p>
+        <a class="acw-card-link" href="/features">View Analytics <span class="material-symbols-outlined" aria-hidden="true">arrow_right_alt</span></a>
       </article>
     </div>
   </section>
 
-  <section class="acw-section ac-public-privacy-note">
-    <h2>Honest product boundaries</h2>
-    <p>ActiveClinic does not provide medical records access on this website. Clinic registration creates the organisation immediately; a public website is unpublished until the clinic publishes it. ActiveClinic does not send SMS or WhatsApp confirmations unless explicitly enabled and integrated.</p>
-  </section>
-
-  <section class="acw-cta-band">
-    <div class="acw-cta-band__inner">
-      <h2>Start with registration</h2>
-      <p class="ac-public-actions">
-        <a class="ac-btn ac-btn--primary" href="/register-clinic">Register Your Clinic</a>
-        <a class="ac-btn ac-btn--secondary" href="/login">Staff Login</a>
-      </p>
+  <section class="acw-section acw-only-mobile">
+    <header class="acw-section-header">
+      <h2>Designed for Efficiency</h2>
+    </header>
+    <div class="acw-grid">
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span></span>
+        <h3>Intelligent Scheduling</h3>
+        <p>Automated appointment booking and reminders reduce no-shows and optimize your calendar.</p>
+      </article>
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">folder_shared</span></span>
+        <h3>Secure Patient Records</h3>
+        <p>HIPAA-compliant data storage ensures patient information is safe and instantly accessible to authorized staff.</p>
+      </article>
+    </div>
+    <div class="acw-impact">
+      <h2>Measurable Impact</h2>
+      <p><strong>40%</strong> Less Admin Time</p>
+      <p><strong>95%</strong> Patient Satisfaction</p>
     </div>
   </section>
 </article>

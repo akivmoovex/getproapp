@@ -1,59 +1,145 @@
 <article class="acw-page" data-ac-page-section="public-clinic-website" data-ac-acw-screen="ACW04">
-  <section class="acw-hero">
+  <section class="acw-hero acw-hero--split acw-only-desktop">
     <div>
-      <p class="acw-kicker">Clinic websites</p>
-      <h1>Your clinic, branded and online.</h1>
-      <p class="acw-hero__lede">Every ActiveClinic organisation can publish a public mini-website. You edit content in website management. Nothing goes live until you publish.</p>
+      <h1>Your Clinic, Branded and Online.</h1>
+      <p class="acw-hero__lede">Launch a professional, patient-ready website in minutes. No developers, no complexity—just high-fidelity healthcare presence.</p>
       <p class="ac-public-actions">
-        <a class="ac-btn ac-btn--primary" href="/register-clinic">Register Your Clinic</a>
-        <a class="ac-btn ac-btn--secondary" href="/login">Open website management</a>
+        <a class="ac-btn ac-btn--primary acw-btn-icon" href="/register-clinic">Start Building Your Site <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
       </p>
     </div>
-    <div class="acw-card">
-      <h3>What you can publish today</h3>
-      <ul class="acp-check-list">
-        <li>Home, about, services, doctors, contact, and policy pages</li>
-        <li>Inline editing on the live-looking preview</li>
-        <li>Sections, pages, content blocks, and a media library</li>
-        <li>Branding, header and footer, and SEO settings</li>
-        <li>Reusable content library and doctor/service catalogue presentation</li>
-        <li>Drafts, version history, and publish when you are ready</li>
-      </ul>
+    <div class="acw-card acw-editor-preview">
+      <p class="acw-kicker"><span class="material-symbols-outlined" aria-hidden="true">publish</span> Live Preview</p>
+      <p class="acw-editor-preview__url">apexwellness.activeclinic.co</p>
+      <%- include('../partials/ac-media', {
+        src: '/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-1.jpg',
+        alt: 'ActiveClinic Editor live preview of a branded clinic website.',
+        className: 'acw-card__media',
+        objectFit: 'cover',
+        width: 800,
+        height: 500,
+        loading: 'eager',
+      }) %>
     </div>
   </section>
 
-  <section class="acw-section">
+  <section class="acw-hero acw-hero--mobile acw-only-mobile">
+    <h1>Branded Clinic Websites, Effortlessly.</h1>
+    <p class="acw-hero__lede">A professional online presence for your practice, included with ActiveClinic.</p>
+    <p class="ac-public-actions">
+      <a class="ac-btn ac-btn--primary acw-btn-icon" href="/register-clinic">Get Started <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
+    </p>
+  </section>
+
+  <section class="acw-section acw-only-desktop">
     <header class="acw-section-header">
-      <h2>Website tools already in ActiveClinic</h2>
-      <p>These match the website management screens enrolled clinics use after sign-in. We do not promise custom domains, developer hosting, or automated marketing campaigns.</p>
+      <h2>Everything You Need to Get Online</h2>
+      <p>Powerful features designed specifically for modern medical practices.</p>
     </header>
     <div class="acw-grid acw-grid--4">
       <article class="acw-card">
-        <h3>Pages and navigation</h3>
-        <p>Add pages, set titles, and control what appears in the public menu.</p>
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">auto_awesome</span></span>
+        <h3>Easy Setup</h3>
+        <p>Pre-built templates specifically tailored for medical practices. Get started without writing a single line of code.</p>
       </article>
       <article class="acw-card">
-        <h3>Blocks and media</h3>
-        <p>Headings, text, images, and buttons. Upload clinic-owned images to the library.</p>
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">palette</span></span>
+        <h3>Branded Experience</h3>
+        <p>Apply custom colors, logos, and high-quality imagery that perfectly reflect your clinic's unique identity.</p>
       </article>
       <article class="acw-card">
-        <h3>Branding and SEO</h3>
-        <p>Colours, header, footer, and sharing text. Public URL status is shown; DNS hosting is not sold here.</p>
+        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">menu_book</span></span>
+        <h3>Service Catalog</h3>
+        <p>Elegantly display your specialties, detailed doctor profiles, and clearly communicate your opening hours.</p>
       </article>
       <article class="acw-card">
-        <h3>Publishing</h3>
-        <p>Review unpublished changes, confirm publish, and restore a previous version when needed.</p>
+        <span class="acw-icon-box acw-icon-box--tertiary"><span class="material-symbols-outlined" aria-hidden="true">event_available</span></span>
+        <h3>Patient-Friendly</h3>
+        <p>Integrated 'Book Appointment' buttons and interactive location maps to drive patient acquisition directly.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="acw-section acw-only-desktop">
+    <header class="acw-section-header">
+      <h2>Built on ActiveClinic</h2>
+      <p>See how practices are using mini-websites to grow.</p>
+    </header>
+    <div class="acw-grid acw-grid--3">
+      <article class="acw-card">
+        <%- include('../partials/ac-media', {
+          src: '/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-2.jpg',
+          alt: 'Apex Wellness Clinic website',
+          className: 'acw-card__media',
+          objectFit: 'cover',
+          width: 640,
+          height: 360,
+          loading: 'lazy',
+        }) %>
+        <h3>Apex Wellness Clinic</h3>
+        <p>apexwellness.co</p>
+      </article>
+      <article class="acw-card">
+        <%- include('../partials/ac-media', {
+          src: '/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-3.jpg',
+          alt: 'City Health Cardiology website',
+          className: 'acw-card__media',
+          objectFit: 'cover',
+          width: 640,
+          height: 360,
+          loading: 'lazy',
+        }) %>
+        <h3>City Health Cardiology</h3>
+        <p>cityhealthcardio.com</p>
+      </article>
+      <article class="acw-card">
+        <%- include('../partials/ac-media', {
+          src: '/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-4.jpg',
+          alt: 'Modern Pediatrics website',
+          className: 'acw-card__media',
+          objectFit: 'cover',
+          width: 640,
+          height: 360,
+          loading: 'lazy',
+        }) %>
+        <h3>Modern Pediatrics</h3>
+        <p>modernpediatrics.care</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="acw-section acw-only-mobile">
+    <div class="acw-grid">
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">palette</span></span>
+        <h3>100% Brandable</h3>
+        <p>Use your logo and colors to create a unique identity.</p>
+      </article>
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">person_book</span></span>
+        <h3>Patient Portal</h3>
+        <p>Integrated booking and comprehensive doctor profiles.</p>
+      </article>
+      <article class="acw-card">
+        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">travel_explore</span></span>
+        <h3>SEO Ready</h3>
+        <p>Reach more patients in your local area effectively.</p>
+      </article>
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--tertiary"><span class="material-symbols-outlined" aria-hidden="true">publish</span></span>
+        <h3>One-Click Publish</h3>
+        <p>Update your site instantly from your secure CMS.</p>
       </article>
     </div>
   </section>
 
   <section class="acw-cta-band">
     <div class="acw-cta-band__inner">
-      <h2>Ready to go digital?</h2>
-      <p>Register your clinic, then publish from website management when the pages are ready.</p>
+      <h2 class="acw-only-desktop">Ready to go digital?</h2>
+      <p class="acw-only-desktop">Every ActiveClinic subscription includes your own public mini-website at no extra cost. Enhance your practice's visibility today.</p>
+      <h2 class="acw-only-mobile">Ready to Elevate Your Practice?</h2>
+      <p class="acw-only-mobile">Join thousands of clinics delivering modern healthcare experiences.</p>
       <p class="ac-public-actions">
         <a class="ac-btn ac-btn--primary" href="/register-clinic">Register Your Clinic</a>
-        <a class="ac-btn ac-btn--secondary" href="/for-clinics">Back to For Clinics</a>
       </p>
     </div>
   </section>

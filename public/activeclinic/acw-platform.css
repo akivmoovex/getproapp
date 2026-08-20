@@ -5,7 +5,7 @@ body.ac-public--platform {
   --acp-primary: #0d9488;
   --acp-primary-strong: #00685f;
   --acp-primary-hover: #0f766e;
-  --acw-max: 72rem;
+  --acw-max: 80rem;
   overflow-x: clip;
 }
 
@@ -335,23 +335,31 @@ body.ac-public--platform .ac-public-drawer__close {
 }
 
 body.ac-public--platform .ac-public-footer {
-  background: #0b1c30;
-  color: #d3e4fe;
+  background: #e7eeff;
+  color: #3d4947;
+  border-top: 1px solid #bcc9c6;
 }
 
 body.ac-public--platform .ac-public-footer a,
 body.ac-public--platform .ac-public-footer h3,
+body.ac-public--platform .ac-public-footer h4,
 body.ac-public--platform .ac-public-footer strong,
 body.ac-public--platform .ac-public-footer p {
-  color: #e5eeff;
+  color: #111c2d;
+}
+
+body.ac-public--platform .ac-public-footer a {
+  color: #3d4947;
 }
 
 body.ac-public--platform .ac-public-footer a:hover {
-  color: #fff;
+  color: var(--acp-primary-strong);
 }
 
-body.ac-public--platform .ac-public-footer__note {
-  color: #bec6e0;
+body.ac-public--platform .ac-public-footer__note,
+body.ac-public--platform .acw-footer__copy,
+body.ac-public--platform .acw-footer__tagline {
+  color: #3d4947;
 }
 
 .acw-contact {
@@ -494,5 +502,298 @@ body.ac-public--platform .ac-public-footer__note {
 
   .acw-system-state__actions .ac-btn {
     width: 100%;
+  }
+}
+
+/* Exact Stitch ACW chrome (project 10611909237747031838) */
+body.ac-public--platform .material-symbols-outlined {
+  font-variation-settings: "FILL" 0, "wght" 400, "GRAD" 0, "opsz" 24;
+  font-size: 1.25rem;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+body.ac-public--platform .material-symbols-outlined.filled {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+
+body.ac-public--platform .ac-public-brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--acp-primary-strong);
+  font-weight: 700;
+  text-decoration: none;
+}
+
+body.ac-public--platform .ac-public-brand__icon {
+  color: var(--acp-primary-strong);
+  font-size: 1.75rem;
+}
+
+.acw-only-desktop {
+  display: none !important;
+}
+
+.acw-only-mobile {
+  display: revert;
+}
+
+@media (min-width: 768px) {
+  .acw-only-desktop {
+    display: revert !important;
+  }
+
+  .acw-only-mobile {
+    display: none !important;
+  }
+}
+
+.acw-btn-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.acw-icon-box {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.5rem;
+  background: #d8e3fb;
+  color: #3d4947;
+  margin-bottom: 1rem;
+}
+
+.acw-icon-box--primary {
+  background: #008378;
+  color: #f4fffc;
+}
+
+.acw-icon-box--secondary {
+  background: #dae2fd;
+  color: #5c647a;
+}
+
+.acw-icon-box--tertiary {
+  background: #727577;
+  color: #fff;
+}
+
+.acw-social-proof {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-top: 1.5rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid #d8e3fb;
+}
+
+.acw-social-proof p {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  font-size: 0.875rem;
+  color: #3d4947;
+}
+
+.acw-avatars {
+  display: flex;
+}
+
+.acw-avatar {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  border: 2px solid #fff;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 600;
+  margin-left: -0.75rem;
+  background: #6bd8cb;
+  color: #005049;
+}
+
+.acw-avatar:first-child {
+  margin-left: 0;
+  background: #6bd8cb;
+}
+
+.acw-avatar:nth-child(2) {
+  background: #bec6e0;
+  color: #3f465c;
+}
+
+.acw-avatar:nth-child(3) {
+  background: #c4c7c9;
+  color: #444749;
+}
+
+.acw-hero__panel {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.acw-hero__panel-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 999px;
+  background: #89f5e7;
+  color: #005049;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.acw-hero__panel strong,
+.acw-hero__panel span {
+  display: block;
+}
+
+.acw-badge {
+  margin-left: auto;
+  background: rgba(107, 216, 203, 0.2);
+  color: var(--acp-primary-strong);
+  border-radius: 0.25rem;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.acw-bento {
+  display: grid;
+  gap: 1rem;
+}
+
+.acw-bento__wide {
+  min-height: 12rem;
+}
+
+.acw-bento__photo {
+  position: relative;
+  overflow: hidden;
+}
+
+.acw-bento__image,
+.acw-card__media {
+  width: 100%;
+  border-radius: 0.75rem;
+  margin-top: 1rem;
+  max-height: 12rem;
+  object-fit: cover;
+}
+
+.acw-trust-label {
+  text-align: center;
+  margin: 2rem 0 0.75rem;
+  color: #3d4947;
+  font-weight: 600;
+}
+
+.acw-trust-logos {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 1rem 1.5rem;
+  list-style: none;
+  margin: 0 0 1.5rem;
+  padding: 0;
+  color: #565e74;
+  font-weight: 600;
+}
+
+.acw-card-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 1rem;
+  color: var(--acp-primary-strong);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.acw-stat {
+  margin-top: 1rem;
+}
+
+.acw-impact {
+  text-align: center;
+  margin-top: 2rem;
+}
+
+.acw-impact strong {
+  display: block;
+  font-size: 2rem;
+  color: var(--acp-primary-strong);
+}
+
+.acw-footer__inner {
+  display: grid;
+  gap: 1.5rem;
+  padding: 3rem 1.25rem;
+}
+
+.acw-footer__col {
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+}
+
+.acw-footer__col h4 {
+  margin: 0 0 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.05em;
+}
+
+.acw-footer__tagline,
+.acw-footer__copy {
+  margin: 0.75rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.acw-split {
+  display: grid;
+  gap: 1.5rem;
+  align-items: center;
+}
+
+.ac-public-actions--stack {
+  flex-direction: column;
+  align-items: stretch;
+}
+
+.ac-public-actions--stack .ac-btn {
+  justify-content: center;
+}
+
+@media (min-width: 768px) {
+  .acw-bento {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-auto-rows: minmax(12rem, auto);
+  }
+
+  .acw-bento__wide {
+    grid-column: span 2;
+  }
+
+  .acw-footer__inner {
+    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    align-items: start;
+  }
+
+  .acw-split {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .acw-hero--home {
+    min-height: 32rem;
   }
 }

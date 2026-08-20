@@ -1,58 +1,113 @@
 <article class="acw-page" data-ac-page-section="public-for-patients" data-ac-acw-screen="ACW05">
-  <section class="acw-hero">
+  <section class="acw-hero acw-hero--split acw-only-desktop">
     <div>
-      <p class="acw-kicker">For patients</p>
       <h1>Take control of your healthcare journey.</h1>
-      <p class="acw-hero__lede">ActiveClinic helps you find clinics that have published a public listing. Online booking is available only at participating clinics, and staff review each request.</p>
+      <p class="acw-hero__lede">ActiveClinic connects you with healthcare providers in your area. Discover clinics, book appointments, and manage your care with ease.</p>
       <p class="ac-public-actions">
-        <a class="ac-btn ac-btn--primary" href="/clinics">Find a Clinic Near You</a>
+        <a class="ac-btn ac-btn--primary acw-btn-icon" href="/clinics"><span class="material-symbols-outlined" aria-hidden="true">search</span> Find a Clinic Near You</a>
       </p>
     </div>
     <div class="acw-hero__media">
       <%- include('../partials/ac-media', {
-        src: '/activeclinic/assets/platform/home-hero.jpg',
-        alt: '',
-        decorative: true,
+        src: '/activeclinic/assets/stitch/ACW05-01-For-Patients-Desktop-1.jpg',
+        alt: 'Patient using ActiveClinic to find care.',
         className: 'acp-hero__image',
         objectFit: 'cover',
         objectPosition: 'center 35%',
-        aspect: '16 / 10',
         width: 960,
         height: 600,
-        loading: 'lazy',
+        loading: 'eager',
       }) %>
     </div>
   </section>
 
-  <section class="acw-section">
+  <section class="acw-hero acw-hero--mobile acw-only-mobile">
+    <h1>Your Health, Guided by Data.</h1>
+    <p class="acw-hero__lede">Experience high-fidelity healthcare on the go. Find specialized clinics, manage appointments, and access your health records securely from anywhere.</p>
+    <div class="acw-hero__media">
+      <%- include('../partials/ac-media', {
+        src: '/activeclinic/assets/stitch/ACW05-02-For-Patients-Mobile-1.jpg',
+        alt: 'Modern healthcare clinic',
+        className: 'acp-hero__image',
+        objectFit: 'cover',
+        width: 780,
+        height: 480,
+        loading: 'eager',
+      }) %>
+    </div>
+    <p class="ac-public-actions">
+      <a class="ac-btn ac-btn--primary acw-btn-icon" href="/clinics"><span class="material-symbols-outlined" aria-hidden="true">search</span> Find a Clinic Near You</a>
+    </p>
+  </section>
+
+  <section class="acw-section acw-only-desktop">
     <header class="acw-section-header">
-      <h2>How ActiveClinic works for you</h2>
+      <h2>How ActiveClinic Works for You</h2>
     </header>
     <div class="acw-grid acw-grid--3">
       <article class="acw-card">
-        <h3>Discover clinics</h3>
-        <p>Search published clinics by name, location, or listed services. Unpublished clinics never appear.</p>
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">search</span></span>
+        <h3>Discover Providers</h3>
+        <p>Easily search for clinics by name, specialty, or location. Find the right care tailored to your needs.</p>
       </article>
       <article class="acw-card">
-        <h3>Read clinic information</h3>
-        <p>Each public website shows what that clinic published — services, doctors, hours, and contact details can differ.</p>
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">info</span></span>
+        <h3>Transparent Information</h3>
+        <p>View comprehensive clinic profiles including available services, doctor credentials, and operating hours.</p>
       </article>
       <article class="acw-card">
-        <h3>Request a visit where enabled</h3>
-        <p>If a clinic offers online booking, you submit a request. That is not an instant confirmed slot.</p>
+        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span></span>
+        <h3>Seamless Booking</h3>
+        <p>Request or book appointments directly through the platform at participating clinics, reducing wait times.</p>
       </article>
     </div>
   </section>
 
-  <section class="acw-section acw-section--band">
-    <div class="acw-section__inner">
-      <h2>Patient accounts</h2>
-      <p>Some clinics offer a patient portal for that clinic only. Booking history and reminders depend on what the clinic enables. We do not claim a single national patient record.</p>
-      <ul class="acp-check-list">
-        <li>Clinic-scoped sign-in where the clinic has enabled it</li>
-        <li>Booking request lookup with the link the clinic provides</li>
-        <li>No medical charts on this public website</li>
-      </ul>
+  <section class="acw-section acw-section--band acw-only-desktop">
+    <div class="acw-section__inner acw-split">
+      <div>
+        <h2>Your Personal Patient Portal</h2>
+        <p>Manage your healthcare journey in one secure place. Keep track of upcoming appointments, view past visit summaries, and communicate with participating providers.</p>
+        <ul class="acp-check-list">
+          <li>Manage current and past bookings</li>
+          <li>Receive appointment reminders</li>
+        </ul>
+        <p class="ac-public-note">*Features vary by clinic</p>
+      </div>
+      <div class="acw-hero__media">
+        <%- include('../partials/ac-media', {
+          src: '/activeclinic/assets/stitch/ACW05-01-For-Patients-Desktop-2.jpg',
+          alt: 'Patient portal on a tablet.',
+          className: 'acp-hero__image',
+          objectFit: 'cover',
+          width: 800,
+          height: 500,
+          loading: 'lazy',
+        }) %>
+      </div>
+    </div>
+  </section>
+
+  <section class="acw-section acw-only-mobile">
+    <header class="acw-section-header">
+      <h2>Manage Your Care</h2>
+    </header>
+    <div class="acw-grid">
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">location_on</span></span>
+        <h3>Discover Clinics</h3>
+        <p>Locate highly-rated medical facilities based on your specific needs, location, and insurance.</p>
+      </article>
+      <article class="acw-card">
+        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span></span>
+        <h3>Book Instantly</h3>
+        <p>Schedule, reschedule, or cancel appointments with just a few taps. Real-time availability.</p>
+      </article>
+      <article class="acw-card">
+        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">description</span></span>
+        <h3>Secure Records</h3>
+        <p>Access your lab results, prescriptions, and medical history with enterprise-grade security.</p>
+      </article>
     </div>
   </section>
 </article>
