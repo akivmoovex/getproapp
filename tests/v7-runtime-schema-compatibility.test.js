@@ -99,6 +99,7 @@ function clinicPayload() {
     countryCode: "ZM",
     password: "clinic-admin-pass-12",
     passwordConfirm: "clinic-admin-pass-12",
+    acceptTerms: "on",
     deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
     dataEnvironment: "testing",
     env: { NODE_ENV: "test", PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6 },

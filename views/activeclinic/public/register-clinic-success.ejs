@@ -2,7 +2,7 @@
   <ol class="ac-onboarding-steps" aria-label="Registration progress">
     <li class="ac-onboarding-steps__item ac-onboarding-steps__item--done">Details</li>
     <li class="ac-onboarding-steps__item ac-onboarding-steps__item--done">Review</li>
-    <li class="ac-onboarding-steps__item ac-onboarding-steps__item--active" aria-current="step"><%= typeof reviewRequired !== 'undefined' && reviewRequired ? 'Review' : (typeof ready !== 'undefined' && ready ? 'Ready' : 'Submitted') %></li>
+    <li class="ac-onboarding-steps__item ac-onboarding-steps__item--active" aria-current="step"><%= typeof reviewRequired !== 'undefined' && reviewRequired ? 'Review' : 'Clinic created' %></li>
   </ol>
 
   <% if (typeof reviewRequired !== 'undefined' && reviewRequired) { %>
@@ -18,17 +18,17 @@
     <ul class="ac-public-list">
       <li>Platform Admin will review this exceptional registration.</li>
       <li>Your clinic is not active yet and you cannot sign in until review completes.</li>
-      <li>Keep your application number to check status.</li>
+      <li>Keep your reference number if you need to check status later.</li>
     </ul>
   </div>
   <p class="ac-public-actions">
-    <a class="ac-btn ac-btn--primary" href="/register-clinic/status<%= typeof applicationReference === 'string' && applicationReference ? ('?ref=' + encodeURIComponent(applicationReference)) : '' %>" data-ac-status-lookup-link="1">Check application status</a>
+    <a class="ac-btn ac-btn--primary" href="/register-clinic/status<%= typeof applicationReference === 'string' && applicationReference ? ('?ref=' + encodeURIComponent(applicationReference)) : '' %>" data-ac-status-lookup-link="1">Check registration status</a>
     <a class="ac-btn ac-btn--secondary" href="/">Return home</a>
   </p>
   <% } else if (typeof ready !== 'undefined' && ready) { %>
   <div class="ac-success-panel" data-ac-registration-outcome="ready">
-    <h1>Registration successful</h1>
-    <p>Your clinic organisation has been created and the administrator account is active. You can continue to onboarding now.</p>
+    <h1>Your clinic is ready</h1>
+    <p>Your clinic organisation and administrator account have been created. You can sign in now to finish setting up your clinic. Your public website remains unpublished until it is published separately.</p>
     <% if (typeof applicationReference === 'string' && applicationReference) { %>
     <p>Reference: <code data-ac-application-ref="<%= applicationReference %>"><%= applicationReference %></code></p>
     <% } %>
@@ -42,21 +42,21 @@
     </ul>
   </div>
   <p class="ac-public-actions">
-    <a class="ac-btn ac-btn--primary" href="/app" data-ac-continue-onboarding="1">Continue to dashboard</a>
-    <a class="ac-btn ac-btn--secondary" href="/login">Go to sign in</a>
+    <a class="ac-btn ac-btn--primary" href="/login" data-ac-sign-in="1">Sign in</a>
+    <a class="ac-btn ac-btn--secondary" href="/app" data-ac-continue-onboarding="1">Continue to dashboard</a>
     <a class="ac-btn ac-btn--secondary" href="/">Return home</a>
   </p>
   <% } else { %>
   <div class="ac-success-panel" data-ac-registration-outcome="recorded">
-    <h1>Application received</h1>
-    <p>Thank you. Your clinic registration has been recorded.</p>
+    <h1>Your clinic is ready</h1>
+    <p>Your clinic organisation and administrator account have been created. You can sign in now to finish setting up your clinic. Your public website remains unpublished until it is published separately.</p>
     <% if (typeof applicationReference === 'string' && applicationReference) { %>
     <p>Reference: <code data-ac-application-ref="<%= applicationReference %>"><%= applicationReference %></code></p>
     <% } %>
   </div>
   <p class="ac-public-actions">
-    <a class="ac-btn ac-btn--primary" href="/register-clinic/status<%= typeof applicationReference === 'string' && applicationReference ? ('?ref=' + encodeURIComponent(applicationReference)) : '' %>" data-ac-status-lookup-link="1">Check application status</a>
-    <a class="ac-btn ac-btn--secondary" href="/login">Go to sign in</a>
+    <a class="ac-btn ac-btn--primary" href="/login" data-ac-sign-in="1">Sign in</a>
+    <a class="ac-btn ac-btn--secondary" href="/">Return home</a>
   </p>
   <% } %>
 </section>

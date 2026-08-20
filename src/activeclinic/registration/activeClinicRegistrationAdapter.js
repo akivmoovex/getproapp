@@ -25,7 +25,7 @@ const { starterOverrides } = require("../website/provisionActiveClinicWebsite");
 const productCode = PRODUCT.ACTIVECLINIC;
 
 async function validate(payload) {
-  const result = validateClinicRegistrationInput(payload || {});
+  const result = validateClinicRegistrationInput(payload || {}, { requireTermsAcceptance: true });
   if (!result.ok) {
     return { ok: false, errors: result.errors || {}, code: result.code };
   }

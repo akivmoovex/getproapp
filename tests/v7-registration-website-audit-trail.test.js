@@ -130,6 +130,7 @@ async function createPendingClinic() {
     notes: "audit trail",
     password: PASSWORD,
     passwordConfirm: PASSWORD,
+    acceptTerms: "on",
   };
   const created = await createClinicRegistrationApplication(pool, payload);
   assert.equal(created.ok, true, JSON.stringify(created));
@@ -467,6 +468,7 @@ describe("V7 registration and website audit trail", () => {
       organization_key: key,
       password: PASSWORD,
       password_confirm: PASSWORD,
+      acceptTerms: "on",
       branch_name: "HQ Campus",
       consent_contact: "on",
     };

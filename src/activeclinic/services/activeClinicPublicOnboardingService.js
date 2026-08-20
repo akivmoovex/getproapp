@@ -1,9 +1,10 @@
 "use strict";
 
 /**
- * ActiveClinic public clinic onboarding applications (P21).
- * Creates pending applications; never auto-publishes a clinic.
- * Administrator password is hashed here and activated only on Platform Admin approval.
+ * ActiveClinic public clinic registration.
+ * Public confirm creates the application then auto-provisions unless exceptional
+ * review is required. Never auto-publishes the clinic website.
+ * Terms acceptance is required before persist/provision.
  */
 
 const bcrypt = require("bcryptjs");
@@ -13,6 +14,7 @@ const {
 } = require("../../platform/services/platformIdentityCredentialService");
 const crypto = require("crypto");
 const { appendReviewEvent } = require("./clinicRegistrationReviewService");
+const { validateTermsAcceptance } = require("../legal/termsAcceptance");
 
 const BCRYPT_ROUNDS = 12;
 
@@ -76,10 +78,13 @@ function normalizeZambiaPhone(raw, options) {
 
 /**
  * Validate clinic registration input without persisting.
+ * Terms acceptance is required only when requireTermsAcceptance is true
+ * (confirm / create clinic), not on the details → review step.
  * @returns {{ ok: boolean, code?: string, errors: Record<string, string>, normalized: object|null }}
  */
-function validateClinicRegistrationInput(input) {
+function validateClinicRegistrationInput(input, options) {
   const errors = {};
+  const requireTerms = Boolean(options && options.requireTermsAcceptance);
   // Match SQL CHECKs: clinic_name 2–200, contact_name 2–120, notes null or 1–2000.
   const clinicName = trimName(input.clinicName, 200, 2);
   const contactName = trimName(input.contactName, 120, 2);
@@ -126,6 +131,14 @@ function validateClinicRegistrationInput(input) {
     errors.passwordConfirm = "Password and confirmation do not match.";
   }
 
+  let terms = { ok: true, errors: {}, termsVersion: null, privacyVersion: null };
+  if (requireTerms) {
+    terms = validateTermsAcceptance(input);
+    if (!terms.ok) {
+      Object.assign(errors, terms.errors);
+    }
+  }
+
   if (Object.keys(errors).length) {
     return { ok: false, code: RESULT.INVALID_INPUT, errors, normalized: null };
   }
@@ -150,6 +163,8 @@ function validateClinicRegistrationInput(input) {
       address,
       countryCode,
       notes,
+      termsVersion: requireTerms ? terms.termsVersion : null,
+      privacyVersion: requireTerms ? terms.privacyVersion : null,
     },
     password: passwordPolicy.ok ? passwordPolicy.value : null,
   };
@@ -160,7 +175,7 @@ function validateClinicRegistrationInput(input) {
  * Detects duplicate by email or phone within 30 days.
  */
 async function createClinicRegistrationApplication(db, input) {
-  const validated = validateClinicRegistrationInput(input);
+  const validated = validateClinicRegistrationInput(input, { requireTermsAcceptance: true });
   if (!validated.ok) {
     return { ok: false, code: validated.code, errors: validated.errors, application: null };
   }
@@ -177,6 +192,8 @@ async function createClinicRegistrationApplication(db, input) {
     address,
     countryCode,
     notes,
+    termsVersion,
+    privacyVersion,
   } = validated.normalized;
   const administratorPassword = validated.password;
   if (!administratorPassword) {
@@ -222,9 +239,12 @@ async function createClinicRegistrationApplication(db, input) {
       contact_email_normalized, contact_email_display,
       contact_phone_normalized, contact_phone_display,
       province, city, address, country_code, notes, status,
-      administrator_password_hash
-    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'submitted', $13)
-    RETURNING id, application_number, status, created_at`,
+      administrator_password_hash,
+      terms_version, terms_accepted_at, privacy_version, privacy_acknowledged_at
+    ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, 'submitted', $13,
+              $14, now(), $15, now())
+    RETURNING id, application_number, status, created_at, terms_version, terms_accepted_at,
+              privacy_version, privacy_acknowledged_at`,
     [
       applicationNumber,
       clinicName,
@@ -239,6 +259,8 @@ async function createClinicRegistrationApplication(db, input) {
       countryCode,
       notes,
       administratorPasswordHash,
+      termsVersion,
+      privacyVersion,
     ]
   );
 
@@ -258,6 +280,10 @@ async function createClinicRegistrationApplication(db, input) {
       applicationNumber: row.rows[0].application_number,
       status: row.rows[0].status,
       createdAt: row.rows[0].created_at,
+      termsVersion: row.rows[0].terms_version,
+      termsAcceptedAt: row.rows[0].terms_accepted_at,
+      privacyVersion: row.rows[0].privacy_version,
+      privacyAcknowledgedAt: row.rows[0].privacy_acknowledged_at,
     },
   };
 }

@@ -302,6 +302,7 @@ describe("ActiveClinic applicant status lookup", () => {
       countryCode: "ZM",
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
+      acceptTerms: "on",
       ...overrides,
     };
     const created = await createClinicRegistrationApplication(pool, payload);
@@ -592,16 +593,22 @@ describe("ActiveClinic applicant status lookup", () => {
     assert.doesNotMatch(crossed.text, new RegExp(first.payload.clinicName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
   });
 
-  it("exposes lookup from registration and success pages", async () => {
+  it("retains status lookup for exceptional review without advertising it on registration", async () => {
     requireDb();
     const form = await request(app).get("/register-clinic").set("Host", AC_HOST);
-    assert.match(form.text, /href="\/register-clinic\/status"/);
+    assert.doesNotMatch(form.text, /href="\/register-clinic\/status"/);
     const { created, payload } = await createPending();
     const success = await request(app)
-      .get(`/register-clinic/success?ref=${encodeURIComponent(created.applicationNumber)}`)
+      .get(`/register-clinic/success?ref=${encodeURIComponent(created.applicationNumber)}&ready=1`)
       .set("Host", AC_HOST);
-    assert.match(success.text, /Check application status/);
-    assert.match(success.text, /\/register-clinic\/status\?ref=/);
+    assert.match(success.text, /Your clinic is ready/);
+    assert.match(success.text, /href="\/login"/);
+    assert.doesNotMatch(success.text, /href="\/register-clinic\/status\?ref=/);
+
+    const reviewHold = await request(app)
+      .get(`/register-clinic/success?ref=${encodeURIComponent(created.applicationNumber)}&review=1`)
+      .set("Host", AC_HOST);
+    assert.match(reviewHold.text, /\/register-clinic\/status\?ref=/);
 
     const prefill = await request(app)
       .get(`/register-clinic/status?ref=${encodeURIComponent(created.applicationNumber)}`)

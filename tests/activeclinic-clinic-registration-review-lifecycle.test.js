@@ -203,6 +203,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       notes: "Applicant submitted note",
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
+      acceptTerms: "on",
       ...overrides,
     };
     const created = await createClinicRegistrationApplication(pool, payload);
@@ -346,7 +347,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       .set("Host", AC_HOST);
     assert.equal(success.status, 200);
     assert.doesNotMatch(success.text, new RegExp(INTERNAL_NOTE));
-    assert.match(success.text, /Application received|Registration successful|review required/i);
+    assert.match(success.text, /Your clinic is ready|review required/i);
 
     const queue = await listClinicRegistrationApplications(pool, {
       status: "pending_review",
@@ -461,6 +462,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       contactPhone: nextPhone(),
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
+      acceptTerms: "on",
     });
     assert.equal(dup.ok, false);
     assert.equal(dup.code, "duplicate_application");
@@ -478,6 +480,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       contactPhone: phone,
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
+      acceptTerms: "on",
     });
     assert.equal(reapply.ok, true, JSON.stringify(reapply));
     assert.equal(reapply.application.status, "submitted");
@@ -765,6 +768,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       contactPhone: nextPhone(),
       password: "replacement-password-99",
       passwordConfirm: "replacement-password-99",
+      acceptTerms: "on",
     });
     const memberships = await pool.query(
       `SELECT count(*)::int AS n FROM activeclinic.staff_members WHERE platform_identity_id = $1`,

@@ -202,6 +202,7 @@ async function runActiveClinicFlow() {
     notes: "local e2e",
     password: AC_PASSWORD,
     passwordConfirm: AC_PASSWORD,
+    acceptTerms: "on",
   };
 
   const getForm = await request(app).get("/register-clinic").set("Host", AC_HOST);

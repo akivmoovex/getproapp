@@ -79,6 +79,7 @@ async function main() {
       countryCode: "ZM",
       password: PASSWORD,
       passwordConfirm: PASSWORD,
+      acceptTerms: "on",
       deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
       dataEnvironment: "testing",
       env,

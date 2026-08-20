@@ -84,6 +84,7 @@ async function createPendingClinic(overrides) {
     notes: "tenant health",
     password: PASSWORD,
     passwordConfirm: PASSWORD,
+    acceptTerms: "on",
     ...overrides,
   };
   const created = await createClinicRegistrationApplication(pool, payload);

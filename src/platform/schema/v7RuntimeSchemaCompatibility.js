@@ -81,6 +81,7 @@ const REQUIRED_MIGRATIONS = Object.freeze([
   { module: "activeclinic", version: "026", filename: "026_clinic_registration_provisioning.sql" },
   { module: "activeclinic", version: "030", filename: "030_clinic_registration_canonical_lifecycle.sql" },
   { module: "activeclinic", version: "031", filename: "031_clinic_registration_provision_stage.sql" },
+  { module: "activeclinic", version: "033", filename: "033_clinic_registration_terms_acceptance.sql" },
 ]);
 
 const CAPABILITY = Object.freeze({
@@ -94,6 +95,7 @@ const CAPABILITY = Object.freeze({
   WEBSITE_VERSIONING: "platform.website_versions",
   WEBSITE_CONTENT: "platform.website_content",
   AC_PROVISION_STAGE_COLUMNS: "activeclinic.clinic_registration_applications.provision_stage",
+  AC_TERMS_ACCEPTANCE_COLUMNS: "activeclinic.clinic_registration_applications.terms_version",
   BB_PROVISION_STAGE_COLUMNS: "blessboard.platform_church_registration_applications.provision_stage",
   AC_PRODUCT_TABLES: "activeclinic.core_product_tables",
   AC_WEBSITE_PUBLISHED: "activeclinic.healthcare_organizations.website_published",
@@ -555,6 +557,36 @@ async function inspectV7RuntimeSchemaCompatibility(db) {
       false,
       {
         remediation: "Apply db/migrations/activeclinic/031_clinic_registration_provision_stage.sql",
+        detail: pgCode(err),
+      }
+    );
+  }
+
+  try {
+    const missingAcTermsCols = await missingColumns(
+      db,
+      "activeclinic",
+      "clinic_registration_applications",
+      ["terms_version", "terms_accepted_at", "privacy_version", "privacy_acknowledged_at"]
+    );
+    details.missingAcTermsAcceptanceColumns = missingAcTermsCols;
+    await record(
+      CAPABILITY.AC_TERMS_ACCEPTANCE_COLUMNS,
+      "ActiveClinic registration Terms acceptance columns",
+      missingAcTermsCols.length === 0,
+      {
+        remediation: "Apply db/migrations/activeclinic/033_clinic_registration_terms_acceptance.sql",
+        detail: missingAcTermsCols.length ? `missing: ${missingAcTermsCols.join(",")}` : null,
+      }
+    );
+  } catch (err) {
+    details.acTermsAcceptanceColumnError = pgCode(err);
+    await record(
+      CAPABILITY.AC_TERMS_ACCEPTANCE_COLUMNS,
+      "ActiveClinic registration Terms acceptance columns",
+      false,
+      {
+        remediation: "Apply db/migrations/activeclinic/033_clinic_registration_terms_acceptance.sql",
         detail: pgCode(err),
       }
     );

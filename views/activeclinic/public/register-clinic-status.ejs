@@ -1,8 +1,8 @@
 <section class="ac-public-section acp-page acp-onboarding" data-ac-page-section="register-clinic-status">
   <header class="acp-page-hero acp-page-hero--compact">
     <p class="ac-public-eyebrow">Clinic onboarding</p>
-    <h1>Check application status</h1>
-    <p class="ac-public-lede">Enter your application number and the email or phone used when you applied. We will not show another clinic’s application.</p>
+    <h1>Registration status</h1>
+    <p class="ac-public-lede">Enter your registration reference and the email or phone used when you registered. We will not show another clinic’s record.</p>
   </header>
 
   <% const state = typeof lookupState === 'string' ? lookupState : 'form'; %>
@@ -55,7 +55,7 @@
       </div>
       <button type="submit" class="ac-btn ac-btn--primary">Check status</button>
     </form>
-    <p class="ac-public-note">Need to apply? <a href="/register-clinic">Register your clinic</a></p>
+    <p class="ac-public-note">Need to register? <a href="/register-clinic">Register your clinic</a></p>
   </div>
   <% } %>
 
@@ -99,7 +99,7 @@
       <% if (status.showLogin) { %>
       <a class="ac-btn ac-btn--primary" href="/login" data-ac-status-login="1">Sign in</a>
       <% } %>
-      <a class="ac-btn ac-btn--secondary" href="/register-clinic/status">Check another application</a>
+      <a class="ac-btn ac-btn--secondary" href="/register-clinic/status">Check another registration</a>
     </p>
   </article>
   <% } %>

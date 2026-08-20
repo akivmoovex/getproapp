@@ -54,6 +54,8 @@ const {
 } = require("../services/activeClinicPublicDirectoryLog");
 const { resolveDeploymentConfiguration } = require("../../platform/config/deploymentProfiles");
 const { renderPublicView } = require("./renderActiveClinicPublic");
+const { buildTermsOfServiceContent } = require("../legal/termsOfServiceContent");
+const { buildPrivacyPolicyContent } = require("../legal/privacyPolicyContent");
 const { registerActiveClinicPublicBookingRoutes } = require("./activeClinicPublicBookingRoutes");
 const {
   sendClinicResolveFailure,
@@ -115,6 +117,7 @@ function registerFormDataFromBody(body) {
     notes: fd.notes || "",
     password: fd.password || "",
     passwordConfirm: fd.passwordConfirm || fd.password_confirm || "",
+    acceptTerms: fd.acceptTerms || fd.accept_terms || "",
   };
 }
 
@@ -208,7 +211,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const csrfToken = issuePageCsrf(res, env, isProduction, req);
       return res.status(429).type("html").send(renderPublicView("public/register-clinic-status", {
         csrfToken,
-        pageTitle: "Check application status",
+        pageTitle: "Registration status",
         robots: "noindex, nofollow",
         lookupState: "form",
         error: "Too many requests. Please try again later.",
@@ -236,6 +239,28 @@ function registerActiveClinicPublicRoutes(app, deps) {
   app.get("/about", (req, res) => {
     const csrfToken = issuePageCsrf(res, env, isProduction);
     return res.status(200).type("html").send(renderPublicView("public/about", { csrfToken }));
+  });
+
+  app.get("/terms", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    return res.status(200).type("html").send(renderPublicView("public/legal-page", {
+      csrfToken,
+      pageTitle: "Terms of Service",
+      pageId: "public-terms",
+      activeNav: "terms",
+      legalDoc: buildTermsOfServiceContent(),
+    }));
+  });
+
+  app.get("/privacy", (req, res) => {
+    const csrfToken = issuePageCsrf(res, env, isProduction);
+    return res.status(200).type("html").send(renderPublicView("public/legal-page", {
+      csrfToken,
+      pageTitle: "Privacy Policy",
+      pageId: "public-privacy",
+      activeNav: "privacy",
+      legalDoc: buildPrivacyPolicyContent(),
+    }));
   });
 
   app.get("/solutions", (req, res) => {
@@ -443,6 +468,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
               failingOperation: "validate_clinic_registration_input",
               transactionStage: "validate",
             });
+            if (result.errors.acceptTerms) {
+              return res.status(400).type("html").send(renderPublicView("public/register-clinic-review", {
+                csrfToken,
+                error: result.errors.acceptTerms,
+                validationErrors: result.errors,
+                formData,
+              }));
+            }
             return res.status(400).type("html").send(renderPublicView("public/register-clinic", {
               csrfToken,
               error: null,
@@ -593,7 +626,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
     const csrfToken = issuePageCsrf(res, env, isProduction, req);
     return res.status(200).type("html").send(renderPublicView("public/register-clinic-status", {
       csrfToken,
-      pageTitle: "Check application status",
+      pageTitle: "Registration status",
       robots: "noindex, nofollow",
       lookupState: "form",
       error: null,
@@ -609,7 +642,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const csrfToken = issuePageCsrf(res, env, isProduction, req);
       return res.status(403).type("html").send(renderPublicView("public/register-clinic-status", {
         csrfToken,
-        pageTitle: "Check application status",
+        pageTitle: "Registration status",
         robots: "noindex, nofollow",
         lookupState: "form",
         error: "Your session expired. Please try again.",
@@ -631,7 +664,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
         const invalid = result.code === "invalid_input";
         return res.status(200).type("html").send(renderPublicView("public/register-clinic-status", {
           csrfToken,
-          pageTitle: "Check application status",
+          pageTitle: "Registration status",
           robots: "noindex, nofollow",
           lookupState: "form",
           error: invalid ? result.message : GENERIC_NOT_FOUND,
@@ -642,7 +675,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       }
       return res.status(200).type("html").send(renderPublicView("public/register-clinic-status", {
         csrfToken,
-        pageTitle: "Check application status",
+        pageTitle: "Registration status",
         robots: "noindex, nofollow",
         lookupState: "result",
         error: null,

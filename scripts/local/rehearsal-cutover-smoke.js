@@ -177,6 +177,7 @@ async function main() {
       countryCode: "ZM",
       password: PASSWORD,
       passwordConfirm: PASSWORD,
+      acceptTerms: "on",
     });
     if (!created.ok) {
       report.stages.c09 = { ok: false, created };

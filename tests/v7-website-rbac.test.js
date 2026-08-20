@@ -154,6 +154,7 @@ describe("v7 website RBAC — ActiveClinic", () => {
       notes: "website rbac",
       password: AC_PASSWORD,
       passwordConfirm: AC_PASSWORD,
+      acceptTerms: "on",
       deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
       dataEnvironment: "testing",
       env: { NODE_ENV: "test", PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6 },

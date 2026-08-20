@@ -512,6 +512,7 @@ describe("ActiveClinic transactional email workflows", () => {
       countryCode: "ZM",
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
+      acceptTerms: "on",
       ...overrides,
     };
     const created = await createClinicRegistrationApplication(pool, payload);

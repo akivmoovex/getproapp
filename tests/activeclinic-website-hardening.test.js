@@ -199,6 +199,7 @@ describe("ActiveClinic website hardening", () => {
       countryCode: "ZM",
       password: PASSWORD,
       passwordConfirm: PASSWORD,
+      acceptTerms: "on",
     });
     assert.equal(created.ok, true, JSON.stringify(created));
 
@@ -252,6 +253,7 @@ describe("ActiveClinic website hardening", () => {
       countryCode: "ZM",
       password: PASSWORD,
       passwordConfirm: PASSWORD,
+      acceptTerms: "on",
     });
     assert.equal(created.ok, true, JSON.stringify(created));
     const approved = await approveAndProvisionClinicRegistration(pool, {
@@ -336,6 +338,7 @@ describe("ActiveClinic website hardening", () => {
       countryCode: "ZM",
       password: PASSWORD,
       passwordConfirm: PASSWORD,
+      acceptTerms: "on",
     });
     const approved = await approveAndProvisionClinicRegistration(pool, {
       applicationId: created.application.id,

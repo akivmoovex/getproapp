@@ -116,6 +116,7 @@ function clinicPayload(overrides) {
     notes: "unified website management",
     password: PASSWORD,
     passwordConfirm: PASSWORD,
+      acceptTerms: "on",
     deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
     dataEnvironment: "testing",
     env: { NODE_ENV: "test", PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6 },

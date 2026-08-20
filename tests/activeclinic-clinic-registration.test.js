@@ -96,6 +96,7 @@ describe("ActiveClinic clinic registration repair", () => {
     notes: "Automated registration repair verification",
     password: "clinic-admin-pass-12",
     passwordConfirm: "clinic-admin-pass-12",
+    acceptTerms: "on",
   };
 
   it("form field contract maps HTML names to service/SQL columns", () => {
@@ -148,7 +149,7 @@ describe("ActiveClinic clinic registration repair", () => {
       .type("form")
       .send({ [CSRF_FIELD]: csrf, ...valid });
     assert.equal(review.status, 200);
-    assert.match(review.text, /Review your application/);
+    assert.match(review.text, /Review your details/);
     assert.match(review.text, /name="action" value="confirm"/);
 
     const csrf2 = extractCsrf(review) || csrf;
@@ -189,7 +190,7 @@ describe("ActiveClinic clinic registration repair", () => {
 
     const success = await request(app).get(confirm.headers.location);
     assert.equal(success.status, 200);
-    assert.match(success.text, /Registration successful/i);
+    assert.match(success.text, /Your clinic is ready/i);
     assert.match(success.text, /data-ac-application-ref=/);
   });
 

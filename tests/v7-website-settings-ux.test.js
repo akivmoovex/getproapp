@@ -110,6 +110,7 @@ function clinicPayload() {
     notes: "website settings ux",
     password: PASSWORD,
     passwordConfirm: PASSWORD,
+      acceptTerms: "on",
     deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
   };
 }

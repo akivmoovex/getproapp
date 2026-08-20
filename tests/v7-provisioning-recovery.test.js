@@ -84,6 +84,7 @@ async function createPendingClinic(overrides) {
     notes: "provisioning recovery",
     password: PASSWORD,
     passwordConfirm: PASSWORD,
+    acceptTerms: "on",
     ...overrides,
   };
   const created = await createClinicRegistrationApplication(pool, payload);
@@ -462,6 +463,7 @@ describe("V7 provisioning recovery", () => {
       organization_key: key,
       password: PASSWORD,
       password_confirm: PASSWORD,
+      acceptTerms: "on",
       branch_name: "HQ Campus",
       consent_contact: "on",
     };

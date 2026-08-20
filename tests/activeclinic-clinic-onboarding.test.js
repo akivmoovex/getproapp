@@ -239,6 +239,7 @@ describe("ActiveClinic public clinic onboarding", () => {
       contactPhone: "1",
       password: "short",
       passwordConfirm: "nope",
+      acceptTerms: "on",
     });
     assert.equal(confirm.status, 400);
     const after = await pool.query(
@@ -264,6 +265,7 @@ describe("ActiveClinic public clinic onboarding", () => {
       notes: "Onboarding verification",
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
+      acceptTerms: "on",
     };
     const { confirm } = await submitClinic(payload);
     assert.equal(confirm.status, 303);
@@ -394,6 +396,7 @@ describe("ActiveClinic public clinic onboarding", () => {
       contactPhone: phone,
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
+      acceptTerms: "on",
     };
     const first = await submitClinic(payload);
     assert.equal(first.confirm.status, 303);
@@ -432,6 +435,7 @@ describe("ActiveClinic public clinic onboarding", () => {
       contactPhone: nextPhone(),
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
+      acceptTerms: "on",
     };
     const b = {
       clinicName: `Iso B ${stamp}`,
@@ -440,6 +444,7 @@ describe("ActiveClinic public clinic onboarding", () => {
       contactPhone: nextPhone(),
       password: ADMIN_PASSWORD,
       passwordConfirm: ADMIN_PASSWORD,
+      acceptTerms: "on",
     };
     const subA = await submitClinic(a);
     const subB = await submitClinic(b);

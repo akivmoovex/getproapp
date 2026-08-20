@@ -2,11 +2,24 @@
   <ol class="ac-onboarding-steps" aria-label="Registration progress">
     <li class="ac-onboarding-steps__item ac-onboarding-steps__item--done">Details</li>
     <li class="ac-onboarding-steps__item ac-onboarding-steps__item--active" aria-current="step">Review</li>
-    <li class="ac-onboarding-steps__item">Submitted</li>
+    <li class="ac-onboarding-steps__item">Clinic created</li>
   </ol>
 
-  <h1>Review your application</h1>
-  <p>Check your details before submitting. You can go back to edit if something is wrong.</p>
+  <h1>Review your details</h1>
+  <p>Check your details before creating your clinic. You can go back to edit if something is wrong.</p>
+
+  <% if (typeof error === 'string' && error) { %>
+  <div class="ac-public-error" role="alert"><%= error %></div>
+  <% } %>
+  <% const verr = validationErrors || {}; %>
+  <% if (verr.acceptTerms) { %>
+  <div class="ac-public-validation-summary" role="alert" data-ac-form-state="validation_error">
+    <h2 class="ac-public-validation-summary__title">Please fix the following</h2>
+    <ul class="ac-public-validation-summary__list">
+      <li><a href="#acceptTerms"><%= verr.acceptTerms %></a></li>
+    </ul>
+  </div>
+  <% } %>
 
   <% const fd = formData || {}; %>
   <dl class="ac-review-summary">
@@ -44,7 +57,7 @@
     <% } %>
   </dl>
 
-  <p class="ac-public-note">Submitting creates your clinic organisation and administrator account. Your clinic website is not published automatically.</p>
+  <p class="ac-public-note">Creating your clinic sets up your organisation and administrator account immediately. You can sign in after registration. Your public clinic website remains unpublished until you choose to publish it.</p>
 
   <div class="ac-review-actions">
     <form method="post" action="/register-clinic" class="ac-review-actions__confirm">
@@ -63,7 +76,23 @@
       <input type="hidden" name="notes" value="<%= fd.notes || '' %>"/>
       <input type="hidden" name="password" value="<%= fd.password || '' %>"/>
       <input type="hidden" name="passwordConfirm" value="<%= fd.passwordConfirm || fd.password || '' %>"/>
-      <button type="submit" class="ac-btn ac-btn--primary">Submit application</button>
+      <div class="ac-form-field ac-form-field--checkbox<%= verr.acceptTerms ? ' ac-form-field--error' : '' %>">
+        <label class="ac-form-checkbox" for="acceptTerms">
+          <input
+            id="acceptTerms"
+            name="acceptTerms"
+            type="checkbox"
+            value="on"
+            data-ac-terms-checkbox="1"
+            aria-required="true"
+            aria-invalid="<%= verr.acceptTerms ? 'true' : 'false' %>"
+            <% if (verr.acceptTerms) { %>aria-describedby="acceptTerms-error"<% } %>
+          />
+          <span>I have read and agree to the ActiveClinic <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span>
+        </label>
+        <% if (verr.acceptTerms) { %><p class="ac-form-field__error" id="acceptTerms-error"><%= verr.acceptTerms %></p><% } %>
+      </div>
+      <button type="submit" class="ac-btn ac-btn--primary">Create clinic</button>
     </form>
     <a class="ac-btn ac-btn--secondary" href="/register-clinic">Edit details</a>
   </div>
