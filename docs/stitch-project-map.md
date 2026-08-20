@@ -1,6 +1,6 @@
 # GetPro Stitch project map
 
-**Last updated:** 2026-08-11  
+**Last updated:** 2026-08-19  
 **Purpose:** Canonical registry of Stitch design projects per GetPro product. Treat each row as an isolated design source of truth.
 
 ## Isolation rules (mandatory)
@@ -8,10 +8,10 @@
 Before retrieving or implementing any Stitch screen via MCP:
 
 1. Confirm the **target product** (`blessboard` or `activeclinic`).
-2. For ActiveClinic, confirm the **surface** (public/booking/portal vs internal operations) and its Stitch project ID.
+2. For ActiveClinic, confirm the **surface** (public/booking/portal vs internal operations vs clinic mini-website CMS) and its Stitch project ID.
 3. Call `list_screens` / `get_screen` / `download_assets` **only** against that project ID.
 4. Record the Stitch **project ID**, **screen name**, and **screen ID** in the product map / visual-parity matrix.
-5. Do **not** claim “no Stitch reference” until **both** ActiveClinic Stitch projects have been checked.
+5. Do **not** claim “no Stitch reference” until the ActiveClinic projects for that surface have been checked (public, internal ops, and mini-website CMS).
 6. Do **not** import BlessBoard navigation, terminology, layouts, or church-specific components into ActiveClinic (or the reverse).
 
 **Never** modify, move, rename, regenerate, or delete screens in another product’s Stitch project.
@@ -27,6 +27,7 @@ Shared GetPro platform architecture (host routing, sessions, multi-tenant provis
 | `blessboard` | BlessBoard | GetPro Church Platform | `projects/17124191473876947591` | Church management only | Existing church tenants | [`docs/gui/STITCH_SCREEN_MAP.md`](./gui/STITCH_SCREEN_MAP.md) |
 | `activeclinic` | ActiveClinic | ActiveClinic Public Ecosystem & Booking Flow | `projects/17813606734422395399` | Public platform, tenant sites, booking, My Booking, patient portal | **Authoritative** for P21–P27 | [`docs/activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.md`](./activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.md) |
 | `activeclinic` | ActiveClinic | ActiveClinic – Juflona Pilot | `projects/12272131183982732110` | Authenticated clinic operations (shell + P01–P07) | **Authoritative** for internal ops; Juflona pilot | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md) |
+| `activeclinic` | ActiveClinic | ActiveClinic Universal Authentication Interface (mini-website CMS screens) | `projects/10611909237747031838` | Clinic mini-website, editor, pages, sections, blocks, media, drafts/publishing | **Authoritative** for MW01–MW07 website management screens actually generated here | [`docs/activeclinic/stitch/ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md`](./activeclinic/stitch/ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md) |
 
 ### MCP quick reference
 
@@ -35,6 +36,7 @@ Shared GetPro platform architecture (host routing, sessions, multi-tenant provis
 | `blessboard` | Church | `17124191473876947591` |
 | `activeclinic` | Public / tenant / booking / portal | `17813606734422395399` |
 | `activeclinic` | Internal authenticated operations | `12272131183982732110` |
+| `activeclinic` | Clinic mini-website / CMS (MW01–MW07) | `10611909237747031838` |
 
 ---
 
@@ -54,9 +56,9 @@ Application routes, screen names, screen IDs, and implementation status live in 
 
 ---
 
-## ActiveClinic (`activeclinic`) — two authoritative Stitch projects
+## ActiveClinic (`activeclinic`) — authoritative Stitch projects by surface
 
-ActiveClinic design authority is **split by surface**. Both projects are required; neither is optional. Never use BlessBoard Stitch for ActiveClinic.
+ActiveClinic design authority is **split by surface**. Do not use BlessBoard Stitch for ActiveClinic. Do not import screens across these projects.
 
 ### Project 1 — Public / tenant / booking / portal
 
@@ -81,6 +83,18 @@ ActiveClinic design authority is **split by surface**. Both projects are require
 | Live screens (MCP 2026-08-11) | **199** |
 | Detail map | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md) |
 | Inventory | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_INVENTORY.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_INVENTORY.md) |
+
+### Project 3 — Clinic mini-website / CMS
+
+| Field | Value |
+|-------|--------|
+| Stitch project name | ActiveClinic Universal Authentication Interface |
+| Stitch project ID | `projects/10611909237747031838` |
+| URL | https://stitch.withgoogle.com/projects/10611909237747031838 |
+| Surfaces | Public clinic mini-website, website editor, pages, sections, content blocks, media library, drafts, publishing, version history |
+| Typical phases | MW01–MW07 (MW08–MW10 were requested but **not generated** in this project) |
+| Live screens (MCP 2026-08-19) | **35** (28 mini-website + 7 auth N/A for this task) |
+| Inventory | [`docs/activeclinic/stitch/ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md`](./activeclinic/stitch/ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md) |
 
 ### Shared ActiveClinic fields
 
@@ -133,7 +147,7 @@ When implementing a screen:
 
 | Check | BlessBoard | ActiveClinic |
 |-------|------------|--------------|
-| Stitch project isolated | Yes — `17124191473876947591` | Yes — **two** projects: `17813606734422395399` + `12272131183982732110` |
+| Stitch project isolated | Yes — `17124191473876947591` | Yes — **three** projects by surface: `17813606734422395399` + `12272131183982732110` + `10611909237747031838` |
 | May reuse GetPro platform shells | Architecture only | Architecture only |
 | May reuse other product’s Stitch screens | **No** | **No** (and no BlessBoard→ActiveClinic) |
 | Own navigation / roles / workflows | Church | Clinical + public/booking/portal |
