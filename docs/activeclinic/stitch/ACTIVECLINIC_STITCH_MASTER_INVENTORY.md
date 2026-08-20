@@ -211,9 +211,11 @@ Inspected screenshots of all seven `active-clinic-03-*` screens. They are **not*
 
 ## 5. Map to V7
 
-Status values: `IMPLEMENTED_MATCH` · `IMPLEMENTED_WITH_VARIANCE` · `PARTIAL` · `NOT_IMPLEMENTED` · `DUPLICATE` · `NOT_APPLICABLE`
+Final status values for this exact-parity pass: `EXACT_STITCH_PARITY` · `MINOR_ACCEPTED_VARIANCE` · `FUNCTIONAL_GAP` · `BLOCKED`
 
-ACW rows map to existing apex public routes that were built against **P21** in project `17813606734422395399`, not against these ACW screens. That is variance, not a second implementation target.
+MW rows that were not visually rewritten in this pass keep prior CMS labels `IMPLEMENTED_MATCH` / `IMPLEMENTED_WITH_VARIANCE` (function on the V7 website engine; not a new pixel claim).
+
+Public ACW and auth now target **this** Stitch project (`10611909237747031838`), not P21.
 
 | Phase | Stitch Screen | Device | Screen ID | Existing Route | Existing View/Component | Status |
 |-------|---------------|--------|-----------|----------------|-------------------------|--------|
@@ -245,63 +247,51 @@ ACW rows map to existing apex public routes that were built against **P21** in p
 | MW07 | MW07-02 Version History | Desktop | `22fc73d39ad846a3aa6db72f13862def` | `GET /clinics/:clinicKey/website/history` | `tenant/website-history.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
 | MW07 | MW07-03 Publishing Confirmation | Desktop | `c2c22334084c4944af49d436e0872a88` | publish POST (browser confirm) | native confirm, not a dedicated route | `IMPLEMENTED_WITH_VARIANCE` |
 | MW07 | MW07-04 Mobile Publishing | Mobile | `f0cc5328778e4bd987429652f16cdb35` | `GET /app/settings/website/publish` (responsive) | `app/website-cms-publish.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW01 | ACW01-01 ActiveClinic Home Desktop | Desktop | `cd19a117442440848c68b099de31e571` | `GET /` | `public/home.ejs` + platform chrome | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW01 | ACW01-02 ActiveClinic Home Mobile | Mobile | `d2771c7c7e804754a697d7550e3911ea` | `GET /` (responsive) | same | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW02 | ACW02-01 Clinic Directory Desktop | Desktop | `06e890aeec9344d4b4384389d7658659` | `GET /clinics` | `public/clinics-directory.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW02 | ACW02-02 Clinic Directory Mobile | Mobile | `00089a7dfc6848b0aedbe2acbd4b3f6f` | `GET /clinics` (responsive) | same | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW03 | ACW03-01 For Clinics Desktop | Desktop | `59af2deab69440c29a0be0d626734817` | `GET /for-clinics` (`/solutions` alias) | `public/for-clinics.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW03 | ACW03-02 For Clinics Mobile | Mobile | `1def30eaafa84ca4a95dc902c57876c3` | `GET /for-clinics` | same | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW03 | ACW03-03 Platform Features Desktop | Desktop | `6dae23abf6d04b1b8bfa05fe491fdb7d` | `GET /features` | `public/features.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW03 | ACW03-04 Platform Features Mobile | Mobile | `e75ff649e21641ef85de97a26afab1c7` | `GET /features` | same | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW04 | ACW04-01 Clinic Website Feature Desktop | Desktop | `d5710c9dd0174e49870845a511bca4ed` | `GET /clinic-website` | `public/clinic-website.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW04 | ACW04-02 Clinic Website Feature Mobile | Mobile | `2e1ef6377ace4b4ea16737d785071c7f` | `GET /clinic-website` | same | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW05 | ACW05-01 For Patients Desktop | Desktop | `db1c779c25614552b0a426a3ea7965ba` | `GET /for-patients` | `public/for-patients.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW05 | ACW05-02 For Patients Mobile | Mobile | `f22cca3648c2453bad5a1edbae142158` | `GET /for-patients` | same | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW06 | ACW06-01 About ActiveClinic Desktop | Desktop | `d6f4fe333ad245af89dbc517afeb8e06` | `GET /about` | `public/about.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW06 | ACW06-02 About ActiveClinic Mobile | Mobile | `1899e7e6bbbc4a65ba083dcbe0d8fa0d` | `GET /about` (responsive) | same | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH / ACW08-01 | active-clinic-03-desktop-login | Desktop | `2bfbc9c71ad64bfca245d9e1a26f837d` | `GET/POST /login` | `auth/login.ejs` + `layouts/auth-shell.ejs` (centered card; no Google SSO) | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH / ACW08-02 | active-clinic-03-mobile-login | Mobile | `edb81abfe548470db687f343186ff786` | `GET/POST /login` | same (Welcome back composition) | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH / ACW08-05 | active-clinic-03-desktop-multi-clinic-selector | Desktop | `df566a9cd85e4583b019363ca2104b00` | `GET /login/select-organization` | `auth/select-organization.ejs` (Choose a clinic cards) | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH / ACW08-06 | active-clinic-03-mobile-multi-clinic-selector | Mobile | `ef782bd739854150b5b30ea4525c50c6` | `GET /login/select-organization` | same (Select a Workspace + search) | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH / ACW08-03 | active-clinic-03-desktop-validation-error | Desktop | `f300be014a6148329910762c0b2970c8` | `POST /login` error state | login error split + field errors; no stock photo | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH / ACW08-04 | active-clinic-03-mobile-validation-error | Mobile | `236850040de8488c9627970faad74b62` | `POST /login` error state | same (responsive banner) | `IMPLEMENTED_WITH_VARIANCE` |
-| AUTH / ACW08-07 | active-clinic-03-loading-signing-in | Desktop | `5adaedd9e29e48cc82b47dc3ac913383` | client overlay on `/login` submit | `partials/auth-signing-in.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW01 | ACW01-01 ActiveClinic Home Desktop | Desktop | `cd19a117442440848c68b099de31e571` | `GET /` | `public/home.ejs` + platform chrome | `MINOR_ACCEPTED_VARIANCE` |
+| ACW01 | ACW01-02 ActiveClinic Home Mobile | Mobile | `d2771c7c7e804754a697d7550e3911ea` | `GET /` (responsive) | same | `MINOR_ACCEPTED_VARIANCE` |
+| ACW02 | ACW02-01 Clinic Directory Desktop | Desktop | `06e890aeec9344d4b4384389d7658659` | `GET /clinics` | `public/clinics-directory.ejs` | `MINOR_ACCEPTED_VARIANCE` |
+| ACW02 | ACW02-02 Clinic Directory Mobile | Mobile | `00089a7dfc6848b0aedbe2acbd4b3f6f` | `GET /clinics` (responsive) | same | `MINOR_ACCEPTED_VARIANCE` |
+| ACW03 | ACW03-01 For Clinics Desktop | Desktop | `59af2deab69440c29a0be0d626734817` | `GET /for-clinics` (`/solutions` alias) | `public/for-clinics.ejs` | `MINOR_ACCEPTED_VARIANCE` |
+| ACW03 | ACW03-02 For Clinics Mobile | Mobile | `1def30eaafa84ca4a95dc902c57876c3` | `GET /for-clinics` | same | `MINOR_ACCEPTED_VARIANCE` |
+| ACW03 | ACW03-03 Platform Features Desktop | Desktop | `6dae23abf6d04b1b8bfa05fe491fdb7d` | `GET /features` | `public/features.ejs` | `MINOR_ACCEPTED_VARIANCE` |
+| ACW03 | ACW03-04 Platform Features Mobile | Mobile | `e75ff649e21641ef85de97a26afab1c7` | `GET /features` | same | `MINOR_ACCEPTED_VARIANCE` |
+| ACW04 | ACW04-01 Clinic Website Feature Desktop | Desktop | `d5710c9dd0174e49870845a511bca4ed` | `GET /clinic-website` | `public/clinic-website.ejs` | `MINOR_ACCEPTED_VARIANCE` |
+| ACW04 | ACW04-02 Clinic Website Feature Mobile | Mobile | `2e1ef6377ace4b4ea16737d785071c7f` | `GET /clinic-website` | same | `MINOR_ACCEPTED_VARIANCE` |
+| ACW05 | ACW05-01 For Patients Desktop | Desktop | `db1c779c25614552b0a426a3ea7965ba` | `GET /for-patients` | `public/for-patients.ejs` | `MINOR_ACCEPTED_VARIANCE` |
+| ACW05 | ACW05-02 For Patients Mobile | Mobile | `f22cca3648c2453bad5a1edbae142158` | `GET /for-patients` | same | `MINOR_ACCEPTED_VARIANCE` |
+| ACW06 | ACW06-01 About ActiveClinic Desktop | Desktop | `d6f4fe333ad245af89dbc517afeb8e06` | `GET /about` | `public/about.ejs` | `MINOR_ACCEPTED_VARIANCE` |
+| ACW06 | ACW06-02 About ActiveClinic Mobile | Mobile | `1899e7e6bbbc4a65ba083dcbe0d8fa0d` | `GET /about` (responsive) | same | `MINOR_ACCEPTED_VARIANCE` |
+| AUTH / ACW08-01 | active-clinic-03-desktop-login | Desktop | `2bfbc9c71ad64bfca245d9e1a26f837d` | `GET/POST /login` | `auth/login.ejs` + `layouts/auth-shell.ejs` (centered card; no Google SSO) | `FUNCTIONAL_GAP` |
+| AUTH / ACW08-02 | active-clinic-03-mobile-login | Mobile | `edb81abfe548470db687f343186ff786` | `GET/POST /login` | same (Welcome back composition) | `FUNCTIONAL_GAP` |
+| AUTH / ACW08-05 | active-clinic-03-desktop-multi-clinic-selector | Desktop | `df566a9cd85e4583b019363ca2104b00` | `GET /login/select-organization` | `auth/select-organization.ejs` (Choose a clinic cards) | `MINOR_ACCEPTED_VARIANCE` |
+| AUTH / ACW08-06 | active-clinic-03-mobile-multi-clinic-selector | Mobile | `ef782bd739854150b5b30ea4525c50c6` | `GET /login/select-organization` | same (Select a Workspace + search) | `MINOR_ACCEPTED_VARIANCE` |
+| AUTH / ACW08-03 | active-clinic-03-desktop-validation-error | Desktop | `f300be014a6148329910762c0b2970c8` | `POST /login` error state | login error split + field errors; no stock photo | `MINOR_ACCEPTED_VARIANCE` |
+| AUTH / ACW08-04 | active-clinic-03-mobile-validation-error | Mobile | `236850040de8488c9627970faad74b62` | `POST /login` error state | same (responsive banner) | `MINOR_ACCEPTED_VARIANCE` |
+| AUTH / ACW08-07 | active-clinic-03-loading-signing-in | Desktop | `5adaedd9e29e48cc82b47dc3ac913383` | client overlay on `/login` submit | `partials/auth-signing-in.ejs` | `EXACT_STITCH_PARITY` |
 
 ---
 
 ## 6. Totals by phase and status
 
+### Exact-parity pass (2026-08-20, project `10611909237747031838`)
+
+| Status | Count | Screens |
+|--------|------:|---------|
+| `EXACT_STITCH_PARITY` | 1 | AUTH signing-in overlay copy |
+| `MINOR_ACCEPTED_VARIANCE` | 18 | ACW01–ACW06 (14) + auth selector/error (4) |
+| `FUNCTIONAL_GAP` | 2 | desktop + mobile login (Google SSO not rendered) |
+| `BLOCKED` | 0 | — |
+| MW prior CMS (not re-pixelled this pass) | 28 | 16 `IMPLEMENTED_MATCH` + 12 `IMPLEMENTED_WITH_VARIANCE` |
+| **Live Stitch screens** | **49** | |
+
 ### By phase
 
-| Phase | Screens | Desktop | Mobile | IMPLEMENTED_MATCH | IMPLEMENTED_WITH_VARIANCE | PARTIAL | NOT_IMPLEMENTED | DUPLICATE | NOT_APPLICABLE |
-|-------|--------:|--------:|-------:|------------------:|--------------------------:|--------:|----------------:|----------:|---------------:|
-| MW01 | 4 | 2 | 2 | 0 | 4 | 0 | 0 | 0 | 0 |
-| MW02 | 4 | 3 | 1 | 2 | 2 | 0 | 0 | 0 | 0 |
-| MW03 | 4 | 4 | 0 | 4 | 0 | 0 | 0 | 0 | 0 |
-| MW04 | 4 | 4 | 0 | 4 | 0 | 0 | 0 | 0 | 0 |
-| MW05 | 4 | 3 | 1 | 2 | 2 | 0 | 0 | 0 | 0 |
-| MW06 | 4 | 4 | 0 | 3 | 1 | 0 | 0 | 0 | 0 |
-| MW07 | 4 | 3 | 1 | 1 | 3 | 0 | 0 | 0 | 0 |
-| ACW01 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
-| ACW02 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
-| ACW03 | 4 | 2 | 2 | 0 | 4 | 0 | 0 | 0 | 0 |
-| ACW04 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
-| ACW05 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
-| ACW06 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
-| AUTH (`active-clinic-03-*` / ACW08) | 7 | 4 | 3 | 0 | 7 | 0 | 0 | 0 | 0 |
-| **Total** | **49** | **34** | **15** | **16** | **33** | **0** | **0** | **0** | **0** |
-
-### By status (all 49 live screens)
-
-| Status | Count |
-|--------|------:|
-| `IMPLEMENTED_MATCH` | 16 |
-| `IMPLEMENTED_WITH_VARIANCE` | 33 |
-| `PARTIAL` | 0 |
-| `NOT_IMPLEMENTED` | 0 |
-| `DUPLICATE` | 0 |
-| `NOT_APPLICABLE` | 0 |
-| **Implemented (MATCH + VARIANCE)** | **49** |
+| Phase | Screens | Desktop | Mobile | This-pass status |
+|-------|--------:|--------:|-------:|------------------|
+| MW01–MW07 | 28 | 23 | 5 | Prior CMS; not an exact Stitch pixel rewrite |
+| ACW01–ACW06 | 14 | 7 | 7 | `MINOR_ACCEPTED_VARIANCE` |
+| AUTH (`active-clinic-03-*`) | 7 | 4 | 3 | 1 exact, 4 minor, 2 functional gap |
+| **Total** | **49** | **34** | **15** | |
 
 ### ACW07 (requested, not in Stitch)
 
@@ -328,13 +318,13 @@ ACW08-01–ACW08-07 are not titled that way in Stitch. Mapped 1:1 onto the seven
 
 | Requested | Live Stitch screen | Route | Status |
 |-----------|--------------------|-------|--------|
-| ACW08-01 Login Desktop | `active-clinic-03-desktop-login` | `GET/POST /login` | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW08-02 Login Mobile | `active-clinic-03-mobile-login` | `GET/POST /login` | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW08-03 Login Error Desktop | `active-clinic-03-desktop-validation-error` | `POST /login` error | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW08-04 Login Error Mobile | `active-clinic-03-mobile-validation-error` | `POST /login` error | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW08-05 Clinic Selector Desktop | `active-clinic-03-desktop-multi-clinic-selector` | `GET /login/select-organization` | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW08-06 Clinic Selector Mobile | `active-clinic-03-mobile-multi-clinic-selector` | `GET /login/select-organization` | `IMPLEMENTED_WITH_VARIANCE` |
-| ACW08-07 Signing In Loading | `active-clinic-03-loading-signing-in` | client overlay on login/select submit | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW08-01 Login Desktop | `active-clinic-03-desktop-login` | `GET/POST /login` | `FUNCTIONAL_GAP` (no Google SSO) |
+| ACW08-02 Login Mobile | `active-clinic-03-mobile-login` | `GET/POST /login` | `FUNCTIONAL_GAP` (no Google SSO) |
+| ACW08-03 Login Error Desktop | `active-clinic-03-desktop-validation-error` | `POST /login` error | `MINOR_ACCEPTED_VARIANCE` |
+| ACW08-04 Login Error Mobile | `active-clinic-03-mobile-validation-error` | `POST /login` error | `MINOR_ACCEPTED_VARIANCE` |
+| ACW08-05 Clinic Selector Desktop | `active-clinic-03-desktop-multi-clinic-selector` | `GET /login/select-organization` | `MINOR_ACCEPTED_VARIANCE` |
+| ACW08-06 Clinic Selector Mobile | `active-clinic-03-mobile-multi-clinic-selector` | `GET /login/select-organization` | `MINOR_ACCEPTED_VARIANCE` |
+| ACW08-07 Signing In Loading | `active-clinic-03-loading-signing-in` | client overlay on login/select submit | `EXACT_STITCH_PARITY` |
 
 ### ACW10 (named screens absent; do not import P27 patient recovery)
 
