@@ -1,0 +1,82 @@
+<% var cms = (pageData && pageData.cms) || {}; var sections = cms.sections || []; var types = cms.sectionTypes || []; var previewHref = cms.previewHref || ""; %>
+<section class="ac-mw" data-ac-page-section="website-sections" data-ac-mw-screen="sections">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Homepage Sections</h2>
+      <p class="ac-mw-muted">Add, hide, reorder, or remove homepage sections. Changes save as draft until you publish.</p>
+    </div>
+    <% if (cms.canEdit) { %>
+    <button type="button" class="ac-mw-btn ac-mw-btn--primary" data-ac-mw-open="ac-mw-add-section">Add Section</button>
+    <% } %>
+  </div>
+  <form id="ac-mw-sections-reorder" method="post" action="/app/settings/website/sections/reorder" data-ac-mw-reorder="sections">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <input type="hidden" name="pageId" value="tpl_home"/>
+    <div class="ac-mw-list" data-ac-mw-list="1">
+      <% sections.forEach(function (section) { %>
+      <article class="ac-mw-card" data-ac-mw-item="1" data-ac-section-id="<%= section.id %>" data-ac-section-type="<%= section.type %>">
+        <div>
+          <% if (cms.canEdit) { %>
+          <button type="button" class="ac-mw-btn" data-ac-mw-move="up" aria-label="Move up">↑</button>
+          <button type="button" class="ac-mw-btn" data-ac-mw-move="down" aria-label="Move down">↓</button>
+          <input type="hidden" name="sectionIds" value="<%= section.id %>" data-ac-mw-order="1"/>
+          <% } %>
+        </div>
+        <div>
+          <h3><%= section.title || section.type %></h3>
+          <p class="ac-mw-card__meta"><%= section.type %></p>
+          <span class="ac-mw-badge<%= section.visible === false ? ' ac-mw-badge--hidden' : '' %>"><%= section.visible === false ? 'Hidden' : 'Visible' %></span>
+        </div>
+        <div class="ac-mw-actions">
+          <a class="ac-mw-btn" href="/app/settings/website/sections/<%= section.id %>">Settings</a>
+          <% if (cms.canEdit) { %>
+          <button type="submit" class="ac-mw-btn" form="ac-mw-section-vis-<%= section.id %>"><%= section.visible === false ? 'Show' : 'Hide' %></button>
+          <% } %>
+          <% if (cms.canEdit && section.locked !== true) { %>
+          <button type="submit" class="ac-mw-btn ac-mw-btn--danger" form="ac-mw-section-delete-<%= section.id %>">Delete</button>
+          <% } %>
+        </div>
+      </article>
+      <% }) %>
+    </div>
+    <% if (cms.canEdit && sections.length) { %>
+    <p><button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save section order</button></p>
+    <% } %>
+  </form>
+  <% sections.forEach(function (section) { %>
+    <% if (cms.canEdit) { %>
+    <form id="ac-mw-section-vis-<%= section.id %>" method="post" action="/app/settings/website/sections/<%= section.id %>/visibility" hidden>
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <input type="hidden" name="visible" value="<%= section.visible === false ? '1' : '0' %>"/>
+    </form>
+    <% } %>
+    <% if (cms.canEdit && section.locked !== true) { %>
+    <form id="ac-mw-section-delete-<%= section.id %>" method="post" action="/app/settings/website/sections/<%= section.id %>/delete" onsubmit="return confirm('Delete this section from the draft homepage?');" hidden>
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    </form>
+    <% } %>
+  <% }) %>
+  <% if (previewHref) { %>
+  <p><a class="ac-mw-btn" href="<%= previewHref %>">Preview homepage</a></p>
+  <% } %>
+
+  <dialog class="ac-mw-dialog" id="ac-mw-add-section">
+    <form class="ac-mw-dialog__body ac-mw-form" method="post" action="/app/settings/website/sections">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <input type="hidden" name="pageId" value="tpl_home"/>
+      <h3>Add Section</h3>
+      <p class="ac-mw-muted">Select a layout to add to your page.</p>
+      <% types.forEach(function (type) { %>
+      <label class="ac-mw-check">
+        <input type="radio" name="type" value="<%= type.key %>" required/>
+        <%= type.label %>
+      </label>
+      <% }) %>
+      <div class="ac-mw-actions">
+        <button type="button" class="ac-mw-btn" data-ac-mw-close="1">Close</button>
+        <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Add section</button>
+      </div>
+    </form>
+  </dialog>
+</section>

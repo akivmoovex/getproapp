@@ -1,0 +1,19 @@
+<%
+  var cmsNav = (typeof pageData !== "undefined" && pageData && pageData.cmsNav) || {};
+  var active = cmsNav.active || "overview";
+  var base = "/app/settings/website";
+%>
+<nav class="ac-mw-nav" data-ac-website-cms-nav="1" aria-label="Website management">
+  <a class="ac-mw-nav__link<%= active === 'overview' ? ' is-current' : '' %>" href="<%= base %>" data-ac-mw-nav="overview">Overview</a>
+  <a class="ac-mw-nav__link<%= active === 'pages' ? ' is-current' : '' %>" href="<%= base %>/pages" data-ac-mw-nav="pages">Pages</a>
+  <a class="ac-mw-nav__link<%= active === 'sections' ? ' is-current' : '' %>" href="<%= base %>/sections" data-ac-mw-nav="sections">Sections</a>
+  <a class="ac-mw-nav__link<%= active === 'navigation' ? ' is-current' : '' %>" href="<%= base %>/navigation" data-ac-mw-nav="navigation">Navigation</a>
+  <a class="ac-mw-nav__link<%= active === 'media' ? ' is-current' : '' %>" href="<%= base %>/media" data-ac-mw-nav="media">Media</a>
+  <a class="ac-mw-nav__link<%= active === 'publish' ? ' is-current' : '' %>" href="<%= base %>/publish" data-ac-mw-nav="publish">Publishing</a>
+  <% if (cmsNav.historyHref) { %>
+  <a class="ac-mw-nav__link<%= active === 'history' ? ' is-current' : '' %>" href="<%= cmsNav.historyHref %>" data-ac-mw-nav="history">Version history</a>
+  <% } %>
+  <% if (cmsNav.editHref) { %>
+  <a class="ac-mw-nav__link ac-mw-nav__link--edit" href="<%= cmsNav.editHref %>" data-ac-mw-nav="edit">Edit website</a>
+  <% } %>
+</nav>
