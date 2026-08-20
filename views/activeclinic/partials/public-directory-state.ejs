@@ -1,6 +1,6 @@
 <%
   var state = typeof directoryState === 'string' ? directoryState : 'ready';
-  var hasFilters = !!(typeof search === 'string' && search) || !!(typeof province === 'string' && province) || !!(typeof city === 'string' && city);
+  var hasFilters = !!(typeof search === 'string' && search) || !!(typeof location === 'string' && location) || !!(typeof service === 'string' && service) || !!(typeof province === 'string' && province) || !!(typeof city === 'string' && city);
 %>
 <% if (state === 'loading') { %>
 <div class="ac-directory-state ac-directory-state--loading" data-ac-directory-state="loading" data-ac-state-key="loading" role="status" aria-live="polite">

@@ -1,6 +1,8 @@
 <%
-  var filterAction = typeof filterFormAction === 'string' ? filterFormAction : '/clinics/search';
+  var filterAction = typeof filterFormAction === 'string' ? filterFormAction : '/clinics';
   var qVal = typeof search === 'string' ? search : '';
+  var locVal = typeof location === 'string' ? location : '';
+  var svcVal = typeof service === 'string' ? service : '';
   var provVal = typeof province === 'string' && province ? province : '';
   var cityVal = typeof city === 'string' && city ? city : '';
   var title = typeof filterTitle === 'string' ? filterTitle : 'Filter clinics';
@@ -16,11 +18,12 @@
     <% } %>
   </div>
   <% if (!hideSearchField) { %>
-  <label for="<%= idPrefix %>-q">Search</label>
-  <input id="<%= idPrefix %>-q" name="q" type="search" value="<%= qVal %>" placeholder="Clinic name or city"/>
+  <label for="<%= idPrefix %>-q">Clinic name</label>
+  <input id="<%= idPrefix %>-q" name="q" type="search" value="<%= qVal %>" placeholder="Clinic name"/>
   <% } else if (qVal) { %>
   <input type="hidden" name="q" value="<%= qVal %>"/>
   <% } %>
+  <% if (locVal) { %><input type="hidden" name="location" value="<%= locVal %>"/><% } %>
   <p class="ac-directory-filters__legend" id="<%= idPrefix %>-location-legend">Location</p>
   <fieldset class="ac-directory-filters__location" aria-labelledby="<%= idPrefix %>-location-legend">
   <legend class="ac-sr-only">Location</legend>
@@ -29,6 +32,8 @@
   <label for="<%= idPrefix %>-city">City</label>
   <input id="<%= idPrefix %>-city" name="city" value="<%= cityVal %>" placeholder="e.g. Lusaka"/>
   </fieldset>
+  <label for="<%= idPrefix %>-service">Service</label>
+  <input id="<%= idPrefix %>-service" name="service" type="search" value="<%= svcVal %>" placeholder="If the clinic lists it"/>
   <div class="ac-directory-filters__actions">
     <button type="submit" class="ac-btn ac-btn--primary">Apply filters</button>
     <a class="ac-btn ac-btn--secondary" href="/clinics">Clear all</a>

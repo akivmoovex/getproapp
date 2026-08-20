@@ -163,12 +163,15 @@ async function resolvePublishableClinicByKey(db, input) {
 
 /**
  * List all publishable clinics for directory pages.
- * Supports search filters (name, province, city).
+ * Supports name, location, service, province, and city filters.
+ * Never returns unpublished clinics.
  */
 async function listPublishableClinics(db, input) {
   const searchQuery = input && input.search ? String(input.search).trim() : "";
   const province = input && input.province ? String(input.province).trim() : null;
   const city = input && input.city ? String(input.city).trim() : null;
+  const location = input && input.location ? String(input.location).trim() : null;
+  const service = input && input.service ? String(input.service).trim() : null;
 
   const conditions = [];
   const params = [];
@@ -181,23 +184,58 @@ async function listPublishableClinics(db, input) {
 
   if (searchQuery.length >= 2) {
     params.push(`%${searchQuery}%`);
-    conditions.push(`h.public_name ILIKE $${params.length}`);
+    const p = params.length;
+    conditions.push(`(
+      h.public_name ILIKE $${p}
+      OR EXISTS (
+        SELECT 1 FROM activeclinic.facilities fx
+        WHERE fx.healthcare_organization_id = h.id
+          AND fx.status = 'active'
+          AND fx.show_in_directory = true
+          AND (fx.city ILIKE $${p} OR fx.province ILIKE $${p})
+      )
+      OR EXISTS (
+        SELECT 1 FROM activeclinic.appointment_service_types ast
+        WHERE ast.healthcare_organization_id = h.id
+          AND ast.organization_id = o.id
+          AND ast.status = 'active'
+          AND ast.public_website_visible = true
+          AND ast.display_name ILIKE $${p}
+      )
+    )`);
   }
 
   let facilityConditions = `f.status = 'active' AND f.show_in_directory = true`;
   if (province) {
     params.push(province);
-    facilityConditions += ` AND f.province = $${params.length}`;
+    facilityConditions += ` AND f.province ILIKE $${params.length}`;
   }
   if (city) {
     params.push(city);
-    facilityConditions += ` AND f.city = $${params.length}`;
+    facilityConditions += ` AND f.city ILIKE $${params.length}`;
+  }
+  if (location && location.length >= 2) {
+    params.push(`%${location}%`);
+    facilityConditions += ` AND (f.city ILIKE $${params.length} OR f.province ILIKE $${params.length})`;
+  }
+
+  if (service && service.length >= 2) {
+    params.push(`%${service}%`);
+    conditions.push(`EXISTS (
+      SELECT 1 FROM activeclinic.appointment_service_types asts
+      WHERE asts.healthcare_organization_id = h.id
+        AND asts.organization_id = o.id
+        AND asts.status = 'active'
+        AND asts.public_website_visible = true
+        AND asts.display_name ILIKE $${params.length}
+    )`);
   }
 
   const sql = `
     SELECT DISTINCT
       o.organization_key AS clinic_key,
       h.id AS healthcare_organization_id,
+      h.organization_id,
       h.public_name,
       h.website_tagline,
       h.website_logo_url,
@@ -207,7 +245,29 @@ async function listPublishableClinics(db, input) {
       (SELECT COUNT(*) FROM activeclinic.facilities f2
        WHERE f2.healthcare_organization_id = h.id
          AND f2.status = 'active'
-         AND f2.show_in_directory = true) AS facility_count
+         AND f2.show_in_directory = true) AS facility_count,
+      (SELECT f3.city FROM activeclinic.facilities f3
+       WHERE f3.healthcare_organization_id = h.id
+         AND f3.status = 'active'
+         AND f3.show_in_directory = true
+       ORDER BY f3.is_primary DESC NULLS LAST
+       LIMIT 1) AS city,
+      (SELECT f4.province FROM activeclinic.facilities f4
+       WHERE f4.healthcare_organization_id = h.id
+         AND f4.status = 'active'
+         AND f4.show_in_directory = true
+       ORDER BY f4.is_primary DESC NULLS LAST
+       LIMIT 1) AS province,
+      (SELECT ARRAY(
+         SELECT ast.display_name
+         FROM activeclinic.appointment_service_types ast
+         WHERE ast.healthcare_organization_id = h.id
+           AND ast.organization_id = h.organization_id
+           AND ast.status = 'active'
+           AND ast.public_website_visible = true
+         ORDER BY ast.display_name
+         LIMIT 4
+       )) AS service_names
     FROM platform.organizations o
     INNER JOIN platform.organization_products op ON o.id = op.organization_id
     INNER JOIN platform.products p ON p.id = op.product_id
@@ -233,6 +293,9 @@ async function listPublishableClinics(db, input) {
       publicEmailDisplay: row.public_email_display || null,
       publicBookingEnabled: row.public_booking_enabled === true,
       facilityCount: parseInt(row.facility_count, 10) || 0,
+      city: row.city || null,
+      province: row.province || null,
+      services: Array.isArray(row.service_names) ? row.service_names.filter(Boolean) : [],
     })
   );
 

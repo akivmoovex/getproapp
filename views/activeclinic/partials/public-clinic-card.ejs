@@ -1,0 +1,26 @@
+<%
+  var websiteHref = c.publicBasePath || (c.publicPagePaths && c.publicPagePaths.home) || ('/clinics/' + c.clinicKey);
+  var services = Array.isArray(c.services) ? c.services : [];
+%>
+<li class="acw-clinic-card ac-clinic-card" data-ac-clinic-card="1">
+  <h2><a href="<%= websiteHref %>"><%= c.publicName %></a></h2>
+  <% if (c.city || c.province) { %>
+  <p class="acw-clinic-card__meta"><%= [c.city, c.province].filter(Boolean).join(', ') %></p>
+  <% } %>
+  <% if (c.websiteTagline) { %>
+  <p class="acw-clinic-card__meta"><%= c.websiteTagline %></p>
+  <% } %>
+  <% if (services.length) { %>
+  <div class="acw-tags" aria-label="Published services">
+    <% services.forEach(function(name) { %>
+    <span class="acw-tag"><%= name %></span>
+    <% }) %>
+  </div>
+  <% } %>
+  <% if (c.publicBookingEnabled) { %>
+  <p class="acw-clinic-card__meta">Online booking requests available — clinic staff review each request.</p>
+  <% } %>
+  <p class="ac-public-actions">
+    <a class="ac-btn ac-btn--primary" href="<%= websiteHref %>">View Clinic</a>
+  </p>
+</li>
