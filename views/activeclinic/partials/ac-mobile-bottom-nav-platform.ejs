@@ -1,12 +1,11 @@
 <%#
-  Platform mobile bottom navigation (directory / marketing).
+  Platform mobile bottom navigation (ACW marketing).
 %>
 <%
   const pid = typeof pageId === "string" ? pageId : "";
-  const directoryNavEnabled = typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled;
-  const show = /public-home|clinics-directory|clinics-search|public-about|public-solutions|clinic-directory|clinic-search|public-register/.test(pid);
+  const show = /public-home|clinics-directory|clinics-search|public-about|public-solutions|clinic-directory|clinic-search|public-register|for-clinics|for-patients|public-features|public-contact|clinic-website/.test(pid);
   const clinicsOn = /clinics-directory|clinics-search|clinic-directory|clinic-search/.test(pid);
-  const solutionsOn = /solutions/.test(pid);
+  const forClinicsOn = /for-clinics|public-solutions|public-features|clinic-website/.test(pid);
   const registerOn = /register/.test(pid);
   const homeOn = pid === "public-home";
 %>
@@ -16,15 +15,13 @@
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌂</span>
     <span class="acp-mobile-bottom-nav__label">Home</span>
   </a>
-  <% if (directoryNavEnabled) { %>
   <a class="acp-mobile-bottom-nav__item<%= clinicsOn ? ' is-active' : '' %>" href="/clinics"<% if (clinicsOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">⌕</span>
-    <span class="acp-mobile-bottom-nav__label">Clinics</span>
+    <span class="acp-mobile-bottom-nav__label">Find</span>
   </a>
-  <% } %>
-  <a class="acp-mobile-bottom-nav__item<%= solutionsOn ? ' is-active' : '' %>" href="/solutions"<% if (solutionsOn) { %> aria-current="page"<% } %>>
+  <a class="acp-mobile-bottom-nav__item<%= forClinicsOn ? ' is-active' : '' %>" href="/for-clinics"<% if (forClinicsOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">◎</span>
-    <span class="acp-mobile-bottom-nav__label">Solutions</span>
+    <span class="acp-mobile-bottom-nav__label">For clinics</span>
   </a>
   <a class="acp-mobile-bottom-nav__item<%= registerOn ? ' is-active' : '' %>" href="/register-clinic"<% if (registerOn) { %> aria-current="page"<% } %>>
     <span class="acp-mobile-bottom-nav__icon" aria-hidden="true">＋</span>

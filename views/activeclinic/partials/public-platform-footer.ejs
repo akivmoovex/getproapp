@@ -1,33 +1,31 @@
-<%
-  const directoryNavEnabled = typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled;
-%>
 <footer class="ac-public-footer" data-ac-public-footer="platform">
   <div class="ac-public-footer__inner">
     <div class="ac-public-footer__grid">
       <div class="ac-public-footer__col">
         <p><strong>ActiveClinic</strong></p>
-        <p>Connected healthcare operations for clinics in Zambia and beyond.</p>
+        <p>Healthcare operations and public clinic websites for organisations in Zambia.</p>
       </div>
       <div class="ac-public-footer__col">
-        <h3>Explore</h3>
-        <% if (directoryNavEnabled) { %>
-        <a href="/clinics">Find a clinic</a>
-        <% } %>
-        <a href="/solutions">Solutions</a>
+        <h3>Platform</h3>
+        <a href="/clinics">Find a Clinic</a>
+        <a href="/for-clinics">For Clinics</a>
+        <a href="/for-patients">For Patients</a>
+        <a href="/features">Features</a>
+      </div>
+      <div class="ac-public-footer__col">
+        <h3>Company</h3>
         <a href="/about">About</a>
+        <a href="/contact">Contact</a>
+        <a href="/register-clinic">Register Your Clinic</a>
+        <a href="/login">Login</a>
       </div>
       <div class="ac-public-footer__col">
-        <h3>For clinic teams</h3>
-        <a href="/register-clinic">Register a clinic</a>
-        <a href="/terms">Terms of Service</a>
+        <h3>Legal</h3>
         <a href="/privacy">Privacy Policy</a>
-        <a href="/login">Staff sign in</a>
-      </div>
-      <div class="ac-public-footer__col">
-        <h3>Trust</h3>
+        <a href="/terms">Terms of Service</a>
         <p class="ac-public-footer__note">Clinical records stay in the authenticated app. Public pages show only what clinics publish.</p>
       </div>
     </div>
-    <p class="ac-public-footer__note">Powered by GetPro</p>
+    <p class="ac-public-footer__note">© ActiveClinic. Powered by GetPro.</p>
   </div>
 </footer>

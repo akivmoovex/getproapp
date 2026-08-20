@@ -1,0 +1,346 @@
+/* ActiveClinic.org platform (ACW01–ACW07). Scoped to apex shell only.
+   Do not load on tenant clinic websites (MW screens). */
+body.ac-public--platform {
+  font-family: Inter, "Public Sans", system-ui, sans-serif;
+  --acp-primary: #0d9488;
+  --acp-primary-strong: #00685f;
+  --acp-primary-hover: #0f766e;
+  --acw-max: 72rem;
+  overflow-x: clip;
+}
+
+body.ac-public--platform .ac-public-main {
+  max-width: none;
+  padding: 0;
+  width: 100%;
+}
+
+body.ac-public--platform .ac-public-header__inner,
+body.ac-public--platform .acw-wrap,
+body.ac-public--platform .ac-public-footer__inner {
+  max-width: var(--acw-max);
+  margin-left: auto;
+  margin-right: auto;
+}
+
+body.ac-public--platform .ac-public-nav--desktop {
+  flex: 1;
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  gap: 0.35rem 1rem;
+}
+
+body.ac-public--platform .ac-public-nav a {
+  font-size: 0.95rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+body.ac-public--platform .ac-public-nav__login {
+  background: #fff;
+  color: var(--acp-navy) !important;
+  border: 1px solid var(--acp-border);
+  border-radius: 0.5rem;
+}
+
+body.ac-public--platform .ac-public-nav__cta {
+  border-radius: 0.5rem;
+}
+
+.acw-hero {
+  display: grid;
+  gap: 1.5rem;
+  padding: 2rem 1.25rem 2.5rem;
+  max-width: var(--acw-max);
+  margin: 0 auto;
+}
+
+.acw-kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  margin: 0 0 0.75rem;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: #e5eeff;
+  color: var(--acp-primary-strong);
+  font-size: 0.8rem;
+  font-weight: 600;
+}
+
+.acw-hero h1 {
+  margin: 0 0 0.75rem;
+  font-size: clamp(1.75rem, 4vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  color: var(--acp-navy);
+}
+
+.acw-hero h1 em,
+.acw-hero h1 .acw-accent {
+  font-style: normal;
+  color: var(--acp-primary);
+}
+
+.acw-hero__lede {
+  margin: 0 0 1.25rem;
+  font-size: 1.05rem;
+  line-height: 1.6;
+  color: var(--acp-muted);
+  max-width: 38rem;
+}
+
+.acw-hero__media {
+  position: relative;
+  border-radius: 1rem;
+  overflow: hidden;
+  min-height: 14rem;
+  background: #dce9ff;
+}
+
+.acw-hero__media img,
+.acw-hero__media .acp-hero__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.acw-hero__panel {
+  position: absolute;
+  left: 1rem;
+  right: 1rem;
+  bottom: 1rem;
+  background: rgba(255, 255, 255, 0.94);
+  border: 1px solid var(--acp-border);
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+}
+
+.acw-section {
+  padding: 2.5rem 1.25rem;
+  max-width: var(--acw-max);
+  margin: 0 auto;
+}
+
+.acw-section--band {
+  background: #eff4ff;
+  max-width: none;
+  padding-left: 0;
+  padding-right: 0;
+}
+
+.acw-section--band .acw-section__inner,
+.acw-cta-band .acw-cta-band__inner {
+  max-width: var(--acw-max);
+  margin: 0 auto;
+  padding: 2.5rem 1.25rem;
+}
+
+.acw-section-header {
+  text-align: center;
+  max-width: 40rem;
+  margin: 0 auto 1.75rem;
+}
+
+.acw-section-header h2,
+.acw-split h2,
+.acw-cta-band h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.65rem;
+  letter-spacing: -0.01em;
+}
+
+.acw-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.acw-card {
+  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: 1rem;
+  padding: 1.25rem;
+}
+
+.acw-card h3 {
+  margin: 0.5rem 0 0.4rem;
+  font-size: 1.05rem;
+}
+
+.acw-card p {
+  margin: 0;
+  color: var(--acp-muted);
+  line-height: 1.5;
+}
+
+.acw-pillars {
+  display: grid;
+  gap: 1rem;
+}
+
+.acw-pillar--featured {
+  background: var(--acp-primary-strong);
+  color: #fff;
+  border-color: transparent;
+}
+
+.acw-pillar--featured p,
+.acw-pillar--featured h3 {
+  color: #fff;
+}
+
+.acw-search {
+  display: grid;
+  gap: 0.75rem;
+  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: 1rem;
+  padding: 1rem;
+  margin: 1.25rem 0 1.5rem;
+}
+
+.acw-search label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+.acw-search input {
+  width: 100%;
+  min-height: var(--ac-touch);
+  border: 1px solid var(--acp-border);
+  border-radius: 0.5rem;
+  padding: 0.55rem 0.75rem;
+  font: inherit;
+}
+
+.acw-clinic-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 1rem;
+}
+
+.acw-clinic-card {
+  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: 1rem;
+  padding: 1.1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.65rem;
+  min-width: 0;
+}
+
+.acw-clinic-card h2 {
+  margin: 0;
+  font-size: 1.1rem;
+  overflow-wrap: anywhere;
+}
+
+.acw-clinic-card__meta {
+  margin: 0;
+  color: var(--acp-muted);
+  font-size: 0.92rem;
+}
+
+.acw-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.acw-tag {
+  display: inline-flex;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: #e5eeff;
+  color: var(--acp-navy);
+  font-size: 0.75rem;
+  font-weight: 600;
+}
+
+.acw-cta-band {
+  background: var(--acp-primary-strong);
+  color: #fff;
+  text-align: center;
+}
+
+.acw-cta-band p {
+  color: rgba(255, 255, 255, 0.88);
+}
+
+.acw-cta-band .ac-btn--secondary,
+.acw-cta-band .ac-btn--ghost {
+  background: #fff;
+  color: var(--acp-primary-strong);
+}
+
+body.ac-public--platform .ac-public-footer {
+  background: #0b1c30;
+  color: #d3e4fe;
+}
+
+body.ac-public--platform .ac-public-footer a,
+body.ac-public--platform .ac-public-footer h3,
+body.ac-public--platform .ac-public-footer strong,
+body.ac-public--platform .ac-public-footer p {
+  color: #e5eeff;
+}
+
+body.ac-public--platform .ac-public-footer a:hover {
+  color: #fff;
+}
+
+body.ac-public--platform .ac-public-footer__note {
+  color: #bec6e0;
+}
+
+.acw-contact {
+  display: grid;
+  gap: 1.5rem;
+  padding: 2rem 1.25rem 3rem;
+  max-width: var(--acw-max);
+  margin: 0 auto;
+}
+
+.acw-form .ac-public-error,
+.acw-form .ac-public-field-error {
+  color: #93000a;
+}
+
+@media (min-width: 768px) {
+  body.ac-public--platform .ac-public-nav--desktop { display: flex; }
+  body.ac-public--platform .ac-public-nav-toggle { display: none; }
+
+  .acw-hero {
+    grid-template-columns: 1fr 1fr;
+    align-items: center;
+    padding: 3rem 1.5rem 3.5rem;
+    gap: 2.5rem;
+  }
+
+  .acw-grid--2 { grid-template-columns: 1fr 1fr; }
+  .acw-grid--3 { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .acw-grid--4 { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .acw-pillars { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .acw-clinic-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .acw-search {
+    grid-template-columns: 1.2fr 1fr 1fr auto;
+    align-items: end;
+  }
+  .acw-contact { grid-template-columns: 1.2fr 0.8fr; }
+}
+
+@media (min-width: 1024px) {
+  .acw-grid--4 { grid-template-columns: repeat(4, minmax(0, 1fr)); }
+}
+
+@media (max-width: 767px) {
+  body.ac-public--platform .acp-mobile-bottom-nav--platform {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+}

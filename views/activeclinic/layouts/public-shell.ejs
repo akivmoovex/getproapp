@@ -26,9 +26,16 @@
   <% } %>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <% if (shellVariant === "platform") { %>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <% } else { %>
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <% } %>
   <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/activeclinic/ac-public.css?v=<%= assetVersion %>"/>
+  <% if (shellVariant === "platform") { %>
+  <link rel="stylesheet" href="/activeclinic/acw-platform.css?v=<%= assetVersion %>"/>
+  <% } %>
   <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=<%= assetVersion %>"/>
   <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
   <link rel="stylesheet" href="/platform/website-inline-edit.css?v=<%= assetVersion %>"/>

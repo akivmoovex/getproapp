@@ -1,159 +1,126 @@
-<%
-  const directoryNavEnabled = typeof publicClinicDirectoryNavEnabled !== "undefined" && publicClinicDirectoryNavEnabled;
-%>
-<section class="acp-hero acp-hero--platform" data-ac-page-section="public-home">
-  <div class="acp-hero__inner">
-    <div class="acp-hero__copy">
-      <p class="ac-public-eyebrow">Connected healthcare for Zambia</p>
-      <h1>Healthcare Management, Simplified.</h1>
-      <p class="ac-public-lede">ActiveClinic connects patients with medical facilities while empowering clinics with management tools. Designed for reliability and accessibility in Zambia.</p>
-      <p class="ac-public-actions">
-        <% if (directoryNavEnabled) { %>
-        <a class="ac-btn ac-btn--primary" href="/clinics">Find a Clinic</a>
-        <a class="ac-btn ac-btn--secondary" href="/register-clinic">Register Your Clinic</a>
-        <% } else { %>
-        <a class="ac-btn ac-btn--primary" href="/register-clinic">Register Your Clinic</a>
-        <% } %>
-      </p>
-    </div>
-    <div class="acp-hero__visual">
-      <% const platformHeroMedia = (typeof platformHero === 'object' && platformHero) ? platformHero : { src: '/activeclinic/assets/platform/home-hero.jpg', objectPosition: 'center 35%' }; %>
-      <div class="acp-hero__media">
-        <%- include('../partials/ac-media', {
-          src: platformHeroMedia.src,
-          alt: '',
-          decorative: true,
-          className: 'acp-hero__image',
-          objectFit: 'cover',
-          objectPosition: platformHeroMedia.objectPosition || 'center 35%',
-          aspect: '16 / 10',
-          width: 960,
-          height: 600,
-          loading: 'eager',
-        }) %>
-        <div class="acp-hero__panel">
-          <span class="acp-hero__panel-label">Digital Health Solutions</span>
-          <strong>Built for Zambian clinics</strong>
-          <p>Phone formats, provinces, and secure staff workflows designed for local healthcare teams.</p>
-        </div>
-      </div>
+<section class="acw-hero" data-ac-page-section="public-home" data-ac-acw-screen="ACW01">
+  <div class="acw-hero__copy">
+    <p class="acw-kicker">Healthcare platform for Zambia</p>
+    <h1>Healthcare precision. <span class="acw-accent">Human warmth.</span></h1>
+    <p class="acw-hero__lede">ActiveClinic helps clinics run day-to-day operations and publish a public website. Patients can find participating clinics and request appointments where a clinic has enabled booking.</p>
+    <p class="ac-public-actions">
+      <a class="ac-btn ac-btn--primary" href="/clinics">Find a Clinic</a>
+      <a class="ac-btn ac-btn--secondary" href="/register-clinic">Register Your Clinic</a>
+    </p>
+  </div>
+  <div class="acw-hero__media">
+    <% const platformHeroMedia = (typeof platformHero === 'object' && platformHero) ? platformHero : { src: '/activeclinic/assets/platform/home-hero.jpg', objectPosition: 'center 35%' }; %>
+    <%- include('../partials/ac-media', {
+      src: platformHeroMedia.src,
+      alt: '',
+      decorative: true,
+      className: 'acp-hero__image',
+      objectFit: 'cover',
+      objectPosition: platformHeroMedia.objectPosition || 'center 35%',
+      aspect: '16 / 10',
+      width: 960,
+      height: 600,
+      loading: 'eager',
+    }) %>
+    <div class="acw-hero__panel">
+      <span class="acp-hero__panel-label">Built for Zambian clinics</span>
+      <strong>Phone formats, provinces, and staff workflows designed for local teams</strong>
     </div>
   </div>
 </section>
 
-<% if (directoryNavEnabled) { %>
-<section class="ac-public-section acp-section acp-section--cta" data-ac-home-section="discovery">
-  <div class="acp-cta-card">
-    <h2>Discover participating clinics</h2>
-    <p>Browse clinics that have chosen to publish a public directory listing. Each clinic controls its own services, booking settings, and contact details.</p>
-    <a class="ac-btn ac-btn--primary" href="/clinics">Browse clinic directory</a>
-  </div>
-</section>
-<% } %>
-
-<section class="ac-public-section acp-section" data-ac-home-section="patient-benefits">
-  <header class="acp-section-header">
-    <h2>For patients and families</h2>
-    <p>Discover participating clinics and submit booking requests where each clinic has enabled them.</p>
+<section class="acw-section" data-ac-home-section="what-is">
+  <header class="acw-section-header">
+    <h2>What is ActiveClinic?</h2>
+    <p>A clinic operations application plus an optional public website. Clinical records stay behind staff sign-in.</p>
   </header>
-  <div class="acp-feature-grid">
-    <article class="acp-feature-card">
-      <span class="acp-feature-card__icon" aria-hidden="true">⌕</span>
-      <h3>Find healthcare near you</h3>
-      <p>Search published clinics by name, province, or city. Only clinics that opt in appear in the directory.</p>
+  <div class="acw-grid acw-grid--4" data-ac-home-section="platform-capabilities">
+    <article class="acw-card">
+      <h3>Staff operations</h3>
+      <p>Patients, appointments, reception, and organisation settings after authorised staff sign in.</p>
       <span class="ac-capability-badge ac-capability-badge--available">Available</span>
     </article>
-    <article class="acp-feature-card">
-      <span class="acp-feature-card__icon" aria-hidden="true">◷</span>
-      <h3>Request appointments online</h3>
-      <p>Submit a preferred time. Clinic staff review requests — this is not an automatic confirmation.</p>
+    <article class="acw-card">
+      <h3>Published clinic websites</h3>
+      <p>Clinics that publish can show services, doctors, contact details, and policies on their own site.</p>
       <span class="ac-capability-badge ac-capability-badge--available">Available</span>
     </article>
-    <article class="acp-feature-card">
-      <span class="acp-feature-card__icon" aria-hidden="true">◎</span>
-      <h3>Track booking requests</h3>
-      <p>Use your booking link to check status or request changes when a clinic provides one.</p>
-      <span class="ac-capability-badge ac-capability-badge--pilot">Pilot</span>
+    <article class="acw-card">
+      <h3>Directory discovery</h3>
+      <p>Search clinics that have chosen to appear in the public directory — unpublished clinics stay hidden.</p>
+      <span class="ac-capability-badge ac-capability-badge--available">Available</span>
+    </article>
+    <article class="acw-card">
+      <h3>Responsive access</h3>
+      <p>Public pages and staff tools work on phones and desktops. No extra app download is required.</p>
+      <span class="ac-capability-badge ac-capability-badge--available">Available</span>
     </article>
   </div>
 </section>
 
-<section class="ac-public-section acp-section acp-section--split" data-ac-home-section="clinic-benefits">
-  <div class="acp-split">
-    <div class="acp-split__copy">
-      <h2>Solutions for clinics</h2>
-      <p class="ac-public-lede">Secure staff operations, public clinic websites, and reviewed onboarding for organisations that join ActiveClinic.</p>
-      <ul class="acp-check-list">
-        <li>Digital patient and appointment workflows for enrolled teams</li>
-        <li>Public directory listing and clinic website pages when published</li>
-        <li>Create your clinic organisation immediately. Publishing a website is a separate step.</li>
-      </ul>
-      <p class="ac-public-actions">
-        <a class="ac-btn ac-btn--primary" href="/solutions">Explore solutions</a>
-        <a class="ac-btn ac-btn--ghost" href="/about">About ActiveClinic</a>
-      </p>
-    </div>
-    <div class="acp-split__cards">
-      <article class="acp-mini-card">
-        <h3>Operations foundation</h3>
-        <p>Patients, appointments, reception, and organisation settings after staff sign-in.</p>
+<section class="acw-section acw-section--band" data-ac-home-section="patient-benefits">
+  <div class="acw-section__inner">
+    <header class="acw-section-header">
+      <h2>For patients and families</h2>
+      <p>Find participating clinics. Booking is available only where a clinic has enabled it, and requests are reviewed by clinic staff.</p>
+    </header>
+    <div class="acw-grid acw-grid--3">
+      <article class="acw-card">
+        <h3>Find a clinic</h3>
+        <p>Search published listings by name, location, or services the clinic has chosen to show.</p>
       </article>
-      <article class="acp-mini-card">
-        <h3>Public clinic website</h3>
-        <p>Publish services, doctors, and contact information when your organisation is ready.</p>
+      <article class="acw-card">
+        <h3>Request an appointment</h3>
+        <p>Where enabled, submit a preferred time. This is not an automatic confirmation.</p>
       </article>
-      <article class="acp-mini-card">
-        <h3>Honest product labels</h3>
-        <p>Available, Pilot, and Planned capabilities are labelled clearly on Solutions and About.</p>
+      <article class="acw-card">
+        <h3>Use your booking link</h3>
+        <p>If a clinic provides a booking link, you can check request status from that link.</p>
       </article>
     </div>
+    <p class="ac-public-actions" style="justify-content:center;margin-top:1.25rem">
+      <a class="ac-btn ac-btn--primary" href="/for-patients">How it works for patients</a>
+    </p>
   </div>
 </section>
 
-<section class="ac-public-section acp-section" data-ac-home-section="platform-capabilities">
-  <header class="acp-section-header">
-    <h2>Platform capabilities</h2>
-    <p>What ActiveClinic supports today — without inventing live guarantees.</p>
+<section class="acw-section" data-ac-home-section="clinic-benefits">
+  <header class="acw-section-header">
+    <h2>For clinics</h2>
+    <p>Register your organisation, run staff workflows, and publish a public website when you are ready.</p>
   </header>
-  <div class="acp-capability-tiles">
-    <article class="acp-tile">
-      <h3>Scheduling requests</h3>
-      <p>Patients request visits; clinics confirm on their own schedule.</p>
+  <div class="acw-grid acw-grid--3">
+    <article class="acw-card">
+      <h3>Operations in one place</h3>
+      <p>Secure tools for enrolled teams. Public pages never show clinical charts.</p>
     </article>
-    <article class="acp-tile">
-      <h3>Secure data handling</h3>
-      <p>Clinical work stays in the authenticated app. Public pages show only what clinics publish.</p>
+    <article class="acw-card">
+      <h3>Your clinic website</h3>
+      <p>Edit pages, media, branding, and publishing from website management — included with an ActiveClinic organisation.</p>
     </article>
-    <article class="acp-tile">
-      <h3>Zambia-first defaults</h3>
-      <p>Phone formats, provinces, and timezone defaults designed for Zambian healthcare organisations.</p>
-    </article>
-    <article class="acp-tile">
-      <h3>GetPro foundations</h3>
-      <p>Built on GetPro infrastructure with ActiveClinic’s own clinical workflows and design system.</p>
+    <article class="acw-card">
+      <h3>Honest product labels</h3>
+      <p>Available, Pilot, and Planned capabilities are labelled clearly. We do not invent live slot calendars or SMS delivery.</p>
     </article>
   </div>
+  <p class="ac-public-actions" style="justify-content:center;margin-top:1.25rem">
+    <a class="ac-btn ac-btn--primary" href="/for-clinics">Explore clinic tools</a>
+    <a class="ac-btn ac-btn--ghost" href="/clinic-website">Clinic websites</a>
+  </p>
 </section>
 
-<section class="ac-public-section acp-cta-band" data-ac-home-section="final-cta">
-  <div class="acp-cta-band__inner">
+<section class="acw-cta-band" data-ac-home-section="final-cta">
+  <div class="acw-cta-band__inner">
     <h2>Ready to get started?</h2>
-    <% if (directoryNavEnabled) { %>
     <p>Find a participating clinic or register your clinic on ActiveClinic.</p>
     <p class="ac-public-actions">
       <a class="ac-btn ac-btn--primary" href="/clinics">Find a Clinic</a>
-      <a class="ac-btn ac-btn--secondary" href="/register-clinic">Register your clinic</a>
+      <a class="ac-btn ac-btn--secondary" href="/register-clinic">Register Your Clinic</a>
     </p>
-    <% } else { %>
-    <p>Register your clinic on ActiveClinic.</p>
-    <p class="ac-public-actions">
-      <a class="ac-btn ac-btn--primary" href="/register-clinic">Register your clinic</a>
-    </p>
-    <% } %>
   </div>
 </section>
 
-<section class="ac-public-section ac-public-privacy-note" data-ac-home-section="privacy">
+<section class="acw-section ac-public-privacy-note" data-ac-home-section="privacy">
   <h2>Privacy and honesty</h2>
   <p>ActiveClinic does not expose medical records on this public website. We do not claim real-time appointment availability or automated SMS delivery. Clinic websites stay unpublished until the clinic publishes them. Capabilities marked <strong>Pilot</strong> or <strong>Planned</strong> are labelled clearly.</p>
 </section>
