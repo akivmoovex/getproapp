@@ -1,0 +1,58 @@
+<article class="acw-page" data-ac-page-section="public-for-patients" data-ac-acw-screen="ACW05">
+  <section class="acw-hero">
+    <div>
+      <p class="acw-kicker">For patients</p>
+      <h1>Take control of your healthcare journey.</h1>
+      <p class="acw-hero__lede">ActiveClinic helps you find clinics that have published a public listing. Online booking is available only at participating clinics, and staff review each request.</p>
+      <p class="ac-public-actions">
+        <a class="ac-btn ac-btn--primary" href="/clinics">Find a Clinic Near You</a>
+      </p>
+    </div>
+    <div class="acw-hero__media">
+      <%- include('../partials/ac-media', {
+        src: '/activeclinic/assets/platform/home-hero.jpg',
+        alt: '',
+        decorative: true,
+        className: 'acp-hero__image',
+        objectFit: 'cover',
+        objectPosition: 'center 35%',
+        aspect: '16 / 10',
+        width: 960,
+        height: 600,
+        loading: 'lazy',
+      }) %>
+    </div>
+  </section>
+
+  <section class="acw-section">
+    <header class="acw-section-header">
+      <h2>How ActiveClinic works for you</h2>
+    </header>
+    <div class="acw-grid acw-grid--3">
+      <article class="acw-card">
+        <h3>Discover clinics</h3>
+        <p>Search published clinics by name, location, or listed services. Unpublished clinics never appear.</p>
+      </article>
+      <article class="acw-card">
+        <h3>Read clinic information</h3>
+        <p>Each public website shows what that clinic published — services, doctors, hours, and contact details can differ.</p>
+      </article>
+      <article class="acw-card">
+        <h3>Request a visit where enabled</h3>
+        <p>If a clinic offers online booking, you submit a request. That is not an instant confirmed slot.</p>
+      </article>
+    </div>
+  </section>
+
+  <section class="acw-section acw-section--band">
+    <div class="acw-section__inner">
+      <h2>Patient accounts</h2>
+      <p>Some clinics offer a patient portal for that clinic only. Booking history and reminders depend on what the clinic enables. We do not claim a single national patient record.</p>
+      <ul class="acp-check-list">
+        <li>Clinic-scoped sign-in where the clinic has enabled it</li>
+        <li>Booking request lookup with the link the clinic provides</li>
+        <li>No medical charts on this public website</li>
+      </ul>
+    </div>
+  </section>
+</article>
