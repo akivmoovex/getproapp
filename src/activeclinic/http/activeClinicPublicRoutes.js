@@ -61,8 +61,9 @@ const {
   sendClinicResolveFailure,
   resolveClinicOrRespond,
 } = require("./activeClinicPublicRespond");
-const { attachActiveClinicWebsiteLocals } = require("./attachActiveClinicWebsiteChrome");
+const { attachActiveClinicWebsiteLocals, canEditClinicWebsite } = require("./attachActiveClinicWebsiteChrome");
 const { resolvePublicPricingDisplay } = require("../website/publicPricingDisplay");
+const cmsService = require("../website/clinicWebsiteCmsService");
 const {
   PRODUCT_CODE,
   sendCanonicalPublicWebsiteRedirect,
@@ -1014,6 +1015,41 @@ function registerActiveClinicPublicRoutes(app, deps) {
     validateCsrf,
     bookingLimiter,
     lookupLimiter,
+  });
+
+  app.get("/clinics/:clinicKey/p/:pageSlug", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      const pages = (website.clinic && website.clinic.cmsPages) || [];
+      const blocks = (website.clinic && website.clinic.cmsBlocks) || [];
+      const allowDraft =
+        canEditClinicWebsite(req, clinic) &&
+        (String(req.query.website_mode || "") === "draft" || String(req.query.website_edit || "") === "1");
+      const page = allowDraft
+        ? cmsService.findDraftCustomPageBySlug(pages, req.params.pageSlug)
+        : cmsService.findCustomPageBySlug(pages, req.params.pageSlug);
+      if (!page) {
+        return res.status(404).type("html").send(
+          renderPublicView("tenant/clinic-not-found", {
+            csrfToken: issuePageCsrf(res, env, isProduction),
+            pageTitle: "Page not found",
+            shellVariant: "tenant",
+            clinic: website.clinic || clinic,
+          })
+        );
+      }
+      const pageBlocks = blocks.filter((block) => block && block.page_id === page.id);
+      return renderTenantView(req, res, clinic, "tenant/custom-page", {
+        customPage: page,
+        pageBlocks,
+        pageTitle: page.meta_title || page.title || clinic.publicName,
+        metaDescription: page.meta_description || "",
+      });
+    } catch (err) {
+      return next(err);
+    }
   });
 }
 

@@ -1,0 +1,23 @@
+<% var page = typeof customPage !== "undefined" && customPage ? customPage : {}; var blocks = Array.isArray(pageBlocks) ? pageBlocks : []; %>
+<section class="ac-public-section ac-tenant-custom-page" data-ac-page-section="tenant-custom-page" data-ac-custom-page="<%= page.slug || '' %>">
+  <% if (page.title) { %><h1><%= page.title %></h1><% } %>
+  <% if (!blocks.length) { %>
+    <p class="ac-public-muted">This page has no published content yet.</p>
+  <% } %>
+  <% blocks.forEach(function (block) { %>
+  <div class="ac-tenant-block" data-ac-block-type="<%= block.type %>">
+    <% if (block.type === "heading" && block.heading) { %>
+    <h2><%= block.heading %></h2>
+    <% } else if (block.heading) { %>
+    <h2><%= block.heading %></h2>
+    <% } %>
+    <% if (block.image && block.image.src) { %>
+    <p><img src="<%= block.image.src %>" alt="<%= block.image.alt || '' %>"/></p>
+    <% } %>
+    <% if (block.body) { %><p><%= block.body %></p><% } %>
+    <% if (block.button_label && block.button_url) { %>
+    <p><a class="ac-btn ac-btn--primary ac-btn--pill" href="<%= block.button_url %>"><%= block.button_label %></a></p>
+    <% } %>
+  </div>
+  <% }) %>
+</section>
