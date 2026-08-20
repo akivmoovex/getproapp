@@ -99,7 +99,77 @@ async function createPublicContactInquiry(db, input) {
   };
 }
 
+/**
+ * Store a platform (ActiveClinic.org) contact inquiry.
+ */
+async function createPlatformContactInquiry(db, input) {
+  const senderName = trimName(input && input.senderName, 120);
+  const message = String((input && input.message) || "").trim();
+
+  if (!senderName || senderName.length < 2 || message.length < 1 || message.length > 4000) {
+    return { ok: false, code: RESULT.INVALID_INPUT, inquiry: null };
+  }
+
+  const email = normalizeActiveClinicEmail(input && input.senderEmail);
+  if (!email.ok) {
+    return { ok: false, code: email.code, inquiry: null };
+  }
+  if (!email.normalized) {
+    return { ok: false, code: "email_required", inquiry: null };
+  }
+
+  let phoneNormalized = null;
+  let phoneDisplay = null;
+  if ((input && input.senderPhone) || (input && input.phoneNational)) {
+    const phone = normalizeActiveClinicPhone({
+      phone: input.senderPhone,
+      phoneCountry: input.phoneCountry || null,
+      phoneNational: input.phoneNational || null,
+      clinicDefaultCountry: "ZM",
+      required: false,
+    });
+    if (!phone.ok) {
+      return { ok: false, code: phone.code, inquiry: null };
+    }
+    phoneNormalized = phone.normalized;
+    phoneDisplay = phone.display;
+  }
+
+  const row = await db.query(
+    `INSERT INTO activeclinic.platform_contact_inquiries (
+      sender_name, sender_email_normalized, sender_email_display,
+      sender_phone_normalized, sender_phone_display,
+      message, status
+    ) VALUES ($1, $2, $3, $4, $5, $6, 'received')
+    RETURNING id, created_at`,
+    [senderName, email.normalized, email.display, phoneNormalized, phoneDisplay, message]
+  );
+
+  return {
+    ok: true,
+    code: RESULT.OK,
+    inquiry: {
+      id: row.rows[0].id,
+      createdAt: row.rows[0].created_at,
+    },
+  };
+}
+
+function describePlatformContactErrors(code) {
+  const errors = {};
+  if (code === "email_required" || code === "invalid_email") {
+    errors.senderEmail = "Enter a valid email address.";
+  }
+  if (code === RESULT.INVALID_INPUT) {
+    errors.senderName = "Enter your name (2–120 characters).";
+    errors.message = "Enter a message (1–4000 characters).";
+  }
+  return errors;
+}
+
 module.exports = {
   RESULT,
   createPublicContactInquiry,
+  createPlatformContactInquiry,
+  describePlatformContactErrors,
 };

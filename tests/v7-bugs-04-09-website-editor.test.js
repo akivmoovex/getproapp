@@ -520,7 +520,7 @@ describe("v7 bugs 04-09 website editor architecture", () => {
     assert.equal(liveIdempotent.values["home.hero.title"], publishedTitleX);
   });
 
-  it("apex and platform chrome hide public directory navigation while /clinics remains", async () => {
+  it("apex and platform chrome advertise public directory navigation", async () => {
     if (!requireDb()) return;
     const app = createActiveClinicFoundationApp({
       getPool: () => pool,
@@ -529,22 +529,20 @@ describe("v7 bugs 04-09 website editor architecture", () => {
     });
     const home = await request(app).get("/");
     assert.equal(home.status, 200);
-    assert.doesNotMatch(home.text, />Find a clinic</i);
-    assert.doesNotMatch(home.text, /Find a Clinic/);
-    assert.doesNotMatch(home.text, />Clinics</);
-    assert.doesNotMatch(home.text, /href="\/clinics"/);
+    assert.match(home.text, /Find a Clinic/);
+    assert.match(home.text, /href="\/clinics"/);
     assert.match(home.text, /href="\/register-clinic"/);
 
     const about = await request(app).get("/about");
     assert.equal(about.status, 200);
-    assert.doesNotMatch(about.text, /href="\/clinics"/);
+    assert.match(about.text, /href="\/clinics"/);
 
     const solutions = await request(app).get("/solutions");
     assert.equal(solutions.status, 200);
-    assert.doesNotMatch(solutions.text, /href="\/clinics"/);
+    assert.match(solutions.text, /href="\/clinics"/);
 
     const directory = await request(app).get("/clinics");
     assert.equal(directory.status, 200);
-    assert.match(directory.text, /Find a Clinic|Clinic directory/);
+    assert.match(directory.text, /Find a Clinic|Find Your Care/);
   });
 });

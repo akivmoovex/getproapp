@@ -184,8 +184,7 @@ describe("ActiveClinic public website (P20–P26)", () => {
     assert.equal(home.status, 200);
     assert.match(home.text, /data-ac-shell="public"/);
     assert.match(home.text, /data-ac-page-section="public-home"/);
-    assert.doesNotMatch(home.text, /Find a Clinic/);
-    assert.doesNotMatch(home.text, /data-ac-home-section="discovery"/);
+    assert.match(home.text, /Find a Clinic/);
     assert.match(home.text, /data-ac-home-section="patient-benefits"/);
     assert.match(home.text, /data-ac-home-section="clinic-benefits"/);
     assert.match(home.text, /data-ac-home-section="platform-capabilities"/);
@@ -212,10 +211,10 @@ describe("ActiveClinic public website (P20–P26)", () => {
     const home = await request(app).get("/");
     assert.equal(home.status, 200);
     assert.doesNotMatch(home.text, /href="#"/);
-    assert.doesNotMatch(home.text, /Find a Clinic/);
-    assert.doesNotMatch(home.text, /href="\/clinics"/);
+    assert.match(home.text, /Find a Clinic/);
+    assert.match(home.text, /href="\/clinics"/);
     assert.match(home.text, /href="\/register-clinic"/);
-    assert.match(home.text, /href="\/solutions"/);
+    assert.match(home.text, /href="\/for-clinics"/);
     assert.match(home.text, /href="\/about"/);
   });
 

@@ -1,332 +1,353 @@
-# ActiveClinic Stitch — Master Inventory (Phases 1–7)
+# ActiveClinic Stitch — Master Inventory Lock
 
-**Audited:** 2026-08-04
-**Stitch project:** ActiveClinic – Juflona Pilot
-**Project ID:** `projects/12272131183982732110`
-**Source:** Stitch MCP `list_screens` + `get_project` (live)
-**Authority:** Stitch package prefixes `P01`–`P07` — not repository AC-V6-S01…S07 wave names.
+**Verdict:** `ACTIVECLINIC_STITCH_MASTER_INVENTORY_LOCKED`  
+**Locked:** 2026-08-20  
+**Authority:** live Stitch MCP `list_screens` + `get_project` (not repository docs)  
+**Stitch project:** [ActiveClinic Universal Authentication Interface](https://stitch.withgoogle.com/projects/10611909237747031838)  
+**Project ID:** `projects/10611909237747031838`  
+**Project type:** `TEXT_TO_UI_PRO`  
+**Stitch updateTime:** `2026-08-20T20:01:22.418944Z`  
+**Exact screen count:** **49**
 
-## Safety note
+This lock covers **only** project `10611909237747031838`. Internal ops P01–P07 live in `projects/12272131183982732110` ([screen inventory](../../activeclinic/ACTIVECLINIC_STITCH_SCREEN_INVENTORY.md)). Public P21–P27 live in `projects/17813606734422395399`.
 
-- Repository branch required: `V6`
-- Production touched: **no**
-- Deployed: **no** · Pushed: **no**
-- Unrelated WIP preserved (patient UI files already in working tree at start)
-
-## Actual Stitch phase structure
-
-| Phase | Exact Stitch label | Module | Screens | Desktop | Mobile | Tablet |
-|------:|--------------------|--------|--------:|--------:|-------:|-------:|
-| 1 | `P01` | Authentication / Application shell | 7 | 4 | 3 | 0 |
-| 2 | `P02` | Patients | 18 | 11 | 7 | 0 |
-| 3 | `P03` | Appointments / Reception / Queues | 20 | 17 | 3 | 0 |
-| 4 | `P04` | Triage / Consultation / Clinical notes | 12 | 10 | 2 | 0 |
-| 5 | `P05` | Pharmacy / Medication / Stock | 29 | 23 | 6 | 0 |
-| 6 | `P06` | Laboratory / Imaging / Specimens | 14 | 12 | 2 | 0 |
-| 7 | `P07` | Billing / Cashier / Invoices | 73 | 60 | 13 | 0 |
-
-### Out of Phase 1–7 (recorded, not implemented here)
-
-| Label | Count | Notes |
-|-------|------:|-------|
-| Unprefixed foundation + platform states | 10 | Duplicates of P01 + Access Restricted / Shared Error / Loading / Offline |
-| `P13` | 16 | Staff directory, roles, invitations, account security — **next Stitch package after P07 in this project** (no P08–P12 screens present) |
-| **Project total** | 199 | All screens in connected project |
-
-## Phase summary (implementation status at inventory creation)
-
-| Phase | Label | Screens | Workflows (approx) | Duplicate | Superseded | Complete | Partial | Missing | Blocked |
-|------:|-------|--------:|-------------------:|----------:|-----------:|---------:|--------:|--------:|--------:|
-| 1 | `P01` | 7 | 4 | 0 | 0 | 0 | 7 | 0 | 0 |
-| 2 | `P02` | 18 | 6 | 0 | 0 | 0 | 17 | 0 | 1 |
-| 3 | `P03` | 20 | 8 | 0 | 0 | 0 | 0 | 0 | 20 |
-| 4 | `P04` | 12 | 6 | 0 | 0 | 0 | 0 | 0 | 12 |
-| 5 | `P05` | 29 | 8 | 0 | 0 | 0 | 0 | 0 | 29 |
-| 6 | `P06` | 14 | 5 | 0 | 0 | 0 | 0 | 0 | 14 |
-| 7 | `P07` | 73 | 12 | 0 | 0 | 0 | 0 | 0 | 73 |
-| — | Unprefixed/platform | 10 | — | 6 | 0 | 0 | 4 | 0 | 0 |
-
-## Exact screen names by phase
-
-### Phase 1 — `P01` (Authentication / Application shell)
-
-Auth, dashboard, shared shell, shared states
-
-| Exact Stitch name | Screen ID | Form | Status | Backend | Route |
-|-------------------|-----------|------|--------|---------|-------|
-| P01 – Dashboard – Desktop | `390032bf54ca44ee851673a4800f9af3` | DESKTOP | PARTIAL | PARTIAL | `GET /app` |
-| P01 – Dashboard – Mobile | `8be466d48814446ab8bb087baacc6ec9` | MOBILE | PARTIAL | PARTIAL | `GET /app` |
-| P01 – Login – Desktop | `ca8a34cf1ecb4fefa2ed31fb9873ae45` | DESKTOP | PARTIAL | READY | `GET/POST /login` |
-| P01 – Login – Mobile | `026f619c35b04a5c8dde16eca9f7cf35` | MOBILE | PARTIAL | READY | `GET/POST /login` |
-| P01 – Navigation Drawer – Mobile | `9f55cec7eb884dbebc2e01c6fb0fe58e` | MOBILE | PARTIAL | READY | `(chrome) /app/*` |
-| P01 – Shared Application Shell – Desktop | `01b9125044634434b60223746b815b25` | DESKTOP | PARTIAL | READY | `(chrome) /app/*` |
-| P01 – Shared States – Desktop | `9b881d25874c41f9986246c61de32f41` | DESKTOP | PARTIAL | PARTIAL | `access-state / lifecycle-state / error handler` |
-
-### Phase 2 — `P02` (Patients)
-
-Patient list, registration wizard, profile, edit, duplicates, print card, shared states
-
-| Exact Stitch name | Screen ID | Form | Status | Backend | Route |
-|-------------------|-----------|------|--------|---------|-------|
-| P02 – Duplicate Patient Warning | `91e41fecc2b64496893b52317b7ab985` | DESKTOP | PARTIAL | READY | `POST /app/patients (duplicate gate)` |
-| P02 – Edit Patient Details – Desktop | `0c3315d05469499d9b645bc7978001bf` | DESKTOP | PARTIAL | READY | `GET/POST /app/patients/:patientNumber/edit` |
-| P02 – Edit Patient Details – Mobile | `4c6a5fe1c21c46709679f3707b8bf4dc` | MOBILE | PARTIAL | READY | `GET/POST /app/patients/:patientNumber/edit` |
-| P02 – Patient List – Desktop | `5a6728d97b674200823562bb015e10ed` | DESKTOP | PARTIAL | READY | `GET /app/patients` |
-| P02 – Patient List – Mobile | `58bd5e04f71340ff8d067721eb5562d4` | MOBILE | PARTIAL | READY | `GET /app/patients` |
-| P02 – Patient Profile Overview – Desktop | `1a15f0bf4e564c4993ca33aa2d578a58` | DESKTOP | PARTIAL | READY | `GET /app/patients/:patientNumber` |
-| P02 – Patient Profile Overview – Mobile | `99eb441b48a24fa19855e76669c0da86` | MOBILE | PARTIAL | READY | `GET /app/patients/:patientNumber` |
-| P02 – Patient Registration Success – Desktop | `cd688e761cca43a1af299769014cb5f0` | DESKTOP | PARTIAL | READY | `GET /app/patients/:patientNumber?registered=1` |
-| P02 – Patient Registration Success – Mobile | `b9615559155d41d591dbb91e18c6a090` | MOBILE | PARTIAL | READY | `GET /app/patients/:patientNumber?registered=1` |
-| P02 – Patient Shared States – Desktop | `f98b2e6f2a4a4953a4d811af7b3737a2` | DESKTOP | PARTIAL | PARTIAL | `patients empty/error/restricted` |
-| P02 – Print Patient Card Preview | `3c113fe684604dfcaeb8f6b2c071a6ca` | DESKTOP | PRODUCT_DECISION | BLOCKED | `—` |
-| P02 – Register Patient Contact – Desktop | `e1ef5e5d8a1840bcbf1f4dc859f7b812` | DESKTOP | PARTIAL | READY | `GET/POST /app/patients/new (contact section)` |
-| P02 – Register Patient Contact – Mobile | `44fb7852e24f4f7f9f6b355a195fd250` | MOBILE | PARTIAL | READY | `GET/POST /app/patients/new` |
-| P02 – Register Patient Emergency and Medical – Desktop | `026d2e6c69cd4181a282213ba1bb55da` | DESKTOP | PARTIAL | PARTIAL | `GET/POST /app/patients/new + emergency-contacts` |
-| P02 – Register Patient Emergency and Medical – Mobile | `7a495a471fed49b098de3c1605eda76e` | MOBILE | PARTIAL | PARTIAL | `GET/POST /app/patients/new` |
-| P02 – Register Patient Identity – Desktop | `40d2005b64864f35ac8df831ddae7084` | DESKTOP | PARTIAL | READY | `GET/POST /app/patients/new` |
-| P02 – Register Patient Review – Desktop | `8ef4b4d96f1f4224994d0c627bb7550e` | DESKTOP | PARTIAL | PARTIAL | `GET/POST /app/patients/new (review)` |
-| P02 – Register Patient Review – Mobile | `a6d496f38f8e4d5cb8eb4d91667c6db7` | MOBILE | PARTIAL | PARTIAL | `GET/POST /app/patients/new` |
-
-### Phase 3 — `P03` (Appointments / Reception / Queues)
-
-Appointments, reception queue, check-in, walk-in, transfers
-
-| Exact Stitch name | Screen ID | Form | Status | Backend | Route |
-|-------------------|-----------|------|--------|---------|-------|
-| P03 – Appointment Calendar – Desktop | `0fca19f233af43c49966e7eb62bccb02` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Appointment Confirmation – Desktop | `327422c1b36747039e4026a17c5a2f33` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Appointment List – Desktop | `284e9f8cd6804b0eb0f50574e2f571d6` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Appointment List – Mobile | `480ecaba5258423e8711b1fdd2f39e1b` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Appointment Shared States – Desktop | `089aa8f266664446a8b38cb69d1fda48` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Book Appointment – Desktop | `a99c6ac04cf24f2c8ca349715c1829dc` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Cancel Appointment – Desktop | `b27eafc25bad4006868f3932d08bfed5` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Create Walk-In Visit – Desktop | `305d90143b0e4381b112bf6eb113f1c2` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Doctor Schedule – Desktop | `fd009ceba70f40b2ae1755b94220c64b` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Missed Appointments – Desktop | `7d37e069c7644e7cb4c9b72349a0ccf7` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Patient Called – Desktop | `8dca6dbd36b840928e73d6674bbcb3ea` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Patient Check-In – Desktop | `9284064428f443b1a3a1504054827d91` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Patient Did Not Respond — Desktop | `f7841548662446cfa8d70d0772d3fa9f` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Queue Assignment – Desktop | `1fa99f4a358c47ffb858addae7095fe8` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Queue Stale Data Warning – Desktop | `bf9b846da6174bf995793b09e869cd30` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Reception Queue – Desktop | `8b7173ba4ff94eb2a7d7e548b5f7253d` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Reception Queue – Mobile | `73499b0dfef446c99a908b1cc56252a5` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Reschedule Appointment – Desktop | `da39a3945ace4fac85cb12bd86f0cdc2` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Reschedule Appointment – Mobile | `9429b14e9ea243ad93aec4a486db93e9` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P03 – Transfer Patient to Department – Desktop | `e807a1354fdd418391496e69e5ac5f3e` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-
-### Phase 4 — `P04` (Triage / Consultation / Clinical notes)
-
-Clinical queue, triage, vitals, consultation, orders
-
-| Exact Stitch name | Screen ID | Form | Status | Backend | Route |
-|-------------------|-----------|------|--------|---------|-------|
-| P04 – Clinical Escalation Alert | `99757cfd7d3747d490f00ac342faa519` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P04 – Clinical Queue – Desktop | `b8d47f05a83c4959ac2d3d6ca83c7dfb` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P04 – Clinical Queue – Mobile | `16897ac752a94750bf00225db66ff768` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P04 – Consultation Workspace – Desktop | `5e4dbc7265ad4e17b060b1f641996db3` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P04 – Consultation Workspace – Mobile | `15c6c639c2b04bbda97b54f127c500f8` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P04 – Create Laboratory Request | `969bbfbdf9634dbc8af598ec2277e92f` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P04 – Create Prescription | `ee9bf2322b924cd79e86619a4635f702` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P04 – Create Radiology Request | `bc4ffd8f0e8c44f48f38cc15a069656a` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P04 – Diagnosis Entry | `33a522e2f4eb45c9bdbede9ba34e0bee` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P04 – Nursing Intake – Desktop | `7959616d1673403ba3bf6ff71d18a77b` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P04 – Triage Assessment – Desktop | `3c8f7b43b7984718acf661e381c1e6f7` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P04 – Vital Signs Entry – Desktop | `dede5e72277d413497e1f870f6b4a0e1` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-
-### Phase 5 — `P05` (Pharmacy / Medication / Stock)
-
-Pharmacy dashboard, prescriptions, inventory, dispensing
-
-| Exact Stitch name | Screen ID | Form | Status | Backend | Route |
-|-------------------|-----------|------|--------|---------|-------|
-| P05 – Add Medicine | `83495a7aea6547ce873af695fcb5f604` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Dispense Prescription – Desktop | `e4d4e37c175a458d9004e1240395ba63` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Dispense Prescription – Mobile | `ace4f11562b24515866b40c5594a18e6` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Dispensing Completed – Desktop | `eeaf00f13f6f4e238da3aef30a556a57` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Dispensing Confirmation | `00a95c467df2414fb8c6dea108170b04` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Dispensing Review – Desktop | `97138791742e4338a34811a6fd7e464d` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Expiry Alerts – Desktop | `fcba0b2ed1334eacad9647e597f66959` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Low Stock Alerts – Desktop | `553dd601642d41abb89cf4c7127c221a` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Medicine Batch Detail | `6c0795f36aef4fe3b634dc350d230672` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Medicine Catalogue – Desktop | `b5e534cf921d460c9774c2772ab688e9` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Medicine Detail – Desktop | `20a62e6f34ef422b8262750b0fe9788a` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Medicine Inventory – Desktop | `1f079e7d3f9c464c8754fa09a09f2626` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Medicine Inventory – Mobile | `a0cb61de9f0f4eaa8d732d4cf143f090` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Medicine Substitution – Desktop | `e237cd030fb241deb15ed8eb0f4f895e` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Partial Dispensing – Desktop | `c7c3ea1931f74acb845208dd09d0d63d` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Patient Medicine Instructions – Mobile | `7cffba8bdac84abda7a8d31951d1948f` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Pharmacy Dashboard – Desktop | `4d83f5c845ae4d91b805a1dfd6a7268d` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Pharmacy Purchase Orders – Desktop | `0f1976955fc14d8c97f1f8c728b4e1da` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Pharmacy Stock Adjustment | `2147643a82af4fb28a8368dcff867a75` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Pharmacy Stock Transfer | `ce22d1c5de5f43ad8a458f57aa217fd3` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Prescription Clinical Review – Desktop | `99d29d4a8b204031b068e2b94dfeb95b` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Prescription Clinical Review – Mobile | `279be7b923664e449bd2001528e7c5ec` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Prescription Detail – Desktop | `2da2d7b7cd734161a9f8257c2256c6f3` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Prescription Detail – Mobile | `4f369d10d5654e68bf5a5c45d8ef7d78` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Prescription Queue – Desktop | `5472760fda8148cf8611564236ae2247` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Prescription Queue – Mobile | `322c2b620c8e4b248fa5620881555d8b` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Print Medicine Labels | `b62126b07af7488094221932b9046193` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Receive Pharmacy Stock – Desktop | `a61dbccce82b43788dc347e25843ae07` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P05 – Select Medicine Batch | `a7649e64ba1e4eee8ca0bcb6a54594bd` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-
-### Phase 6 — `P06` (Laboratory / Imaging / Specimens)
-
-Lab/radiology dashboards, specimens, results
-
-| Exact Stitch name | Screen ID | Form | Status | Backend | Route |
-|-------------------|-----------|------|--------|---------|-------|
-| P06 – Critical Result Alert | `f53854e6c18e45a094a0bab86e011e5b` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Enter Laboratory Result – Desktop | `59ee5d74ff1f47eca3c6fb09413b7c09` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Enter Radiology Report – Desktop | `41a0f1b3e1974e7ca26599bf8a37fc5f` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Laboratory Dashboard – Desktop | `5b7b36f6af3b4735a81cca8cea77ee99` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Laboratory Dashboard – Mobile | `d53f9752db564b18b35fd761ecd73dd8` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Laboratory Request Detail – Desktop | `51c3b93fec6e40aebc327a4998fb29ea` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Laboratory Request Queue – Desktop | `f8b17233f1f7457ea5fe5179207aa0d1` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Laboratory Worklist – Desktop | `cd5ff44012dd4f0f88fc7ed60848fd37` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Radiology Dashboard – Desktop | `65286a85cc674df097dedf0890378a29` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Radiology Dashboard – Mobile | `070284f5583d43598111b2f6c35d0425` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Radiology Request Queue – Desktop | `1fa6c921703145af96e47f7344b6cb62` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Specimen Collection – Desktop | `73c50eef2b10459793f12689cce27bb6` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Specimen Receipt – Desktop | `5018c7fabf324fcebfbac85d7048f19a` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P06 – Specimen Rejected | `b62c8afb0c59477d8bcfeaac7210987a` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-
-### Phase 7 — `P07` (Billing / Cashier / Invoices)
-
-Billing, cashier shifts, invoices, payments, refunds, price lists
-
-| Exact Stitch name | Screen ID | Form | Status | Backend | Route |
-|-------------------|-----------|------|--------|---------|-------|
-| P07 – Accounts Receivable – Desktop | `1829edeb5d1741be9b6ae68a219ef7cc` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Add Invoice Item | `be4481e8f31b459facf2294f73311181` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Add Service – Desktop | `764d9a2a5a634150babb4daa1d6ebf13` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Automatic Charge Review | `954a9269255245dd9c6e375f8cbdd93b` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Bank Transfer Payment – Mobile | `f23ef64e307b44f780a19817ac04ebda` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Billing Dashboard – Desktop | `ece0b9d1d9384f5d8c1e3b944f122e47` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Billing Dashboard – Mobile | `649bd7649ebf4c6eb787612f844a637e` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Card Payment – Desktop | `61922a4c2823426b8bcdc1f236c4072b` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Cash Count – Desktop | `02e8083e943d40deb9429b95a294ae30` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Cash Payment – Desktop | `2d81fb326b6644bbb11cabd7a8156e6e` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Cash Payment – Mobile | `3c8ce685b0d14b74a04e1127e341f004` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Cashier Closing – Desktop | `d3e2ff001f694720b57371ef1a60d517` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Cashier Dashboard – Desktop | `792d5cbb6f234332a088399e4ccdd545` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Cashier Shift History – Desktop | `1cd25ed2bb7a4504a63095a015bd823b` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Cashier Shift – Desktop | `1c02fc47e49c4c9990646d94a9876986` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Cashier Shift – Mobile | `0d8cd08aba454a2f971d6cc4389d98d2` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Cashier Variance – Desktop | `7dd49983c4a840b9980fb4a92d486b3c` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Collections Work Queue – Desktop | `16318693e2874e79a8463d91c6ba63ad` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Contact Patient for Payment – Desktop | `513301ae28e1423ab7431e299cf45eee` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Create Invoice – Desktop | `08ed6ee0d02447bca5e94698080bca4f` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Create Price List – Desktop | `b69484b43b074d6593f264d8df958d74` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Credit Note – Desktop | `92b97e715c6f4c308e61d3b39d66a1e9` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Deposit Payment – Desktop | `0f1fd946c97a48f99d34bd6ce8c8173c` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Finalise Invoice | `319d7fca2acb45a38432aa40a2e7cf30` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Financial Correction Access Restricted | `778eee4267984f32bcedcc38ca720fa0` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Financial Correction History | `54163d0beee74c29990bd83b77480af5` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Financial Correction History – Mobile | `a21d364d62f04c78ac8477971377eca9` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Insurance Payment Placeholder | `9c0219d791da43df8a7abf41cf0809df` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Invoice Amendment | `5bde2c1a3d954ec396679abc3888abe5` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Invoice Amendment Review – Desktop | `92af580dd9db4a3ea5734523b72287ba` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Invoice Error State | `b1a8b1855b9b4e268cd42359707d292e` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Invoice History | `06e7e10102184cc5a047e6d594f22fc2` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Invoice List – Desktop | `c479c86234b840419e821c2c48329f4e` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Invoice List – Mobile | `40fcc3c9e03e42a68e2cadbd5c1a7685` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Invoice Review – Desktop | `713f3ebe920240c1a647af277278eb2f` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Mobile Money Payment – Desktop | `2b3c2c4ef6ac4ee48a789d3a527fe9ec` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Mobile Money Payment – Mobile | `480e2d80a9f24f26b69b806d531fa913` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – NHIMA Claim Placeholder | `0489fa5d1c37481ba159eeed1cd64155` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Open Cashier Shift – Desktop | `c2f068812d0b45809a214d6ba8399ae5` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Patient Billing Account – Desktop | `a84263ac97b8484698dc36d00b498ffa` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Patient Billing Account – Mobile | `c15d892b327848a6a2897ae3a08a5803` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Patient Collections Account – Desktop | `3f50a00be7624b36af773c181b2c562c` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Patient Invoice – Desktop | `9f422c33e30c450e9502126ba4012585` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Patient Invoice – Mobile | `3735516f4ecb4624ac715c6f77e7810b` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Payment Arrangement | `02e1c1976d844c2cac63682e1853fa46` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Payment Arrangement Review | `2a0ae995f3e140da863e5aede4b2e71f` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Payment Completed – Desktop | `bda1fbd1f6f441dba26719f451ee53de` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Payment History – Desktop | `45929cd32480420aaa5788be86e183f9` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Payment Reversal Request | `2665942082b4428dbcabf3ff3a40ec60` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Payment Reversal Review – Desktop | `027b12b482934ef1a6f5dee02c888d26` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Payment Review – Desktop | `89ce6798cbca4723ae20aa61225411b2` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Price Lists – Desktop | `46cc5311173d48adb99cafe18ea331c2` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Price Override Approval | `a953a043598945fdab38285c7dab7206` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Print Patient Account Statement | `666806c4ea194d478e3baf2b7876950c` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Print Receipt | `914eee2a18f64fac81d2f0f69adc0cc8` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Print Refund Receipt | `244dc0c45a23434bb2747468a699167b` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Record Payment – Desktop | `a9654729a9a44e17832910a41f0154de` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Record Payment – Mobile | `8ca889a31c4e4ec1858c4dd4efc62731` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Refund Approval – Desktop | `d8f3108dfcda4ab9bf58472786d0484c` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Refund Completed – Desktop | `e52271b7be804e0ea95c825be9f977bd` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Refund Rejected | `b76f80fb0d164501b8108bea91813385` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Refund Request – Desktop | `685fb829c50a45af995772909fb49fb7` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Refund Request – Mobile | `8461f1792a7a41209ae2abfe44db7b6a` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Refund Review – Desktop | `438b1bb01f534492850ee8cb1253fcfe` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Revenue Reports – Desktop | `08921cb100ab462d8ec08c007f1bd895` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Revenue Reports – Detailed | `550a52476c254e258d58737fc1184bb6` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Service Catalogue – Desktop | `4ca894f70d6646eca246847cd8c39d6a` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Service Catalogue – Mobile | `1ab29b0691c04233a1c972ea99f24351` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Service Detail – Desktop | `d5eb57a8319c4130be473f8dd23851d6` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Split Payment – Desktop | `bb0a290730a44a108be9295a76478785` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Unpaid Invoices – Desktop | `defb5bc8233046a4b9b1e86ebe740d1d` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Unpaid Invoices – Mobile | `9c5a3f10f1cb44e983af2a7c36403e3d` | MOBILE | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-| P07 – Write-Off Request Placeholder | `46a8b6c4f4b846e18ab586c3d6fae6ca` | DESKTOP | SCHEMA_BLOCKED | BLOCKED | `/app/… (not implemented)` |
-
-### Unprefixed / platform (not P0N-labeled)
-
-| Exact Stitch name | Screen ID | Form | Status | Notes |
-|-------------------|-----------|------|--------|-------|
-| Access Restricted | `8731b06bbfa747e98e05372c9aafb3e9` | DESKTOP | PARTIAL | Platform state |
-| Application Shell - Desktop | `9f3abb837fc3413aa128949afce0d8c4` | DESKTOP | DUPLICATE | Duplicate of `P01 – Shared Application Shell – Desktop` |
-| Dashboard - Desktop | `c54b0a846c054044aa0ca05194e320ef` | DESKTOP | DUPLICATE | Duplicate of `P01 – Dashboard – Desktop` |
-| Dashboard - Mobile | `d19b0d5c33ae42e08ca767a11b12e591` | MOBILE | DUPLICATE | Duplicate of `P01 – Dashboard – Mobile` |
-| Login - Desktop | `8bf5c500e0d14014944618029212b2c9` | DESKTOP | DUPLICATE | Duplicate of `P01 – Login – Desktop` |
-| Login - Mobile | `6e3cbe4963c3428196b10d3bb27421d5` | MOBILE | DUPLICATE | Duplicate of `P01 – Login – Mobile` |
-| Navigation Drawer - Mobile | `87c5a80e0fcb40179c0d1ce7ea906762` | MOBILE | DUPLICATE | Duplicate of `P01 – Navigation Drawer – Mobile` |
-| Shared Error State | `72357dec37864a5a926a1d2b5c551b16` | DESKTOP | PARTIAL | Platform state |
-| Shared Loading State | `8a3f15c0be9c47efb192f206df104d5c` | DESKTOP | PARTIAL | Platform state |
-| Shared Offline State | `4d31c82537634b5f981c359662d224b3` | DESKTOP | PARTIAL | Platform state |
-
-## Canonical vs duplicate
-
-- **Canonical auth/shell:** `P01 – *` titles.
-- **SUPERSEDED/DUPLICATE:** unprefixed Login / Dashboard / Application Shell / Navigation Drawer.
-- No other superseded pairs identified without visual approval evidence; keep all P02–P07 designs canonical until product marks otherwise.
-
-## Related docs
-
-- [ACTIVECLINIC_STITCH_PHASE_01.md](./ACTIVECLINIC_STITCH_PHASE_01.md)
-- [ACTIVECLINIC_STITCH_PHASE_02.md](./ACTIVECLINIC_STITCH_PHASE_02.md)
-- [ACTIVECLINIC_STITCH_PHASE_03.md](./ACTIVECLINIC_STITCH_PHASE_03.md)
-- [ACTIVECLINIC_STITCH_PHASE_04.md](./ACTIVECLINIC_STITCH_PHASE_04.md)
-- [ACTIVECLINIC_STITCH_PHASE_05.md](./ACTIVECLINIC_STITCH_PHASE_05.md)
-- [ACTIVECLINIC_STITCH_PHASE_06.md](./ACTIVECLINIC_STITCH_PHASE_06.md)
-- [ACTIVECLINIC_STITCH_PHASE_07.md](./ACTIVECLINIC_STITCH_PHASE_07.md)
-- [ACTIVECLINIC_STITCH_ROUTE_MATRIX.md](./ACTIVECLINIC_STITCH_ROUTE_MATRIX.md)
-- [ACTIVECLINIC_STITCH_PERMISSION_MATRIX.md](./ACTIVECLINIC_STITCH_PERMISSION_MATRIX.md)
-- [ACTIVECLINIC_STITCH_DATA_CONTRACTS.md](./ACTIVECLINIC_STITCH_DATA_CONTRACTS.md)
-- [ACTIVECLINIC_STITCH_COMPONENT_MAP.md](./ACTIVECLINIC_STITCH_COMPONENT_MAP.md)
-- [ACTIVECLINIC_STITCH_RESPONSIVE_MATRIX.md](./ACTIVECLINIC_STITCH_RESPONSIVE_MATRIX.md)
-- [ACTIVECLINIC_STITCH_IMPLEMENTATION_LEDGER.md](./ACTIVECLINIC_STITCH_IMPLEMENTATION_LEDGER.md)
-- [ACTIVECLINIC_STITCH_PRODUCT_GAPS.md](./ACTIVECLINIC_STITCH_PRODUCT_GAPS.md)
+Do **not** implement a second staff authentication UI from the `active-clinic-03-*` screens. V7 already ships `/login` from P01. ACW08-01–ACW08-07 are **not present** in this project.
 
 ---
 
-# P20–P27 appendix (2026-08-04 overnight)
+## 1. Safety
 
-**Stitch design project (website/booking):** `projects/17813606734422395399` — ActiveClinic Public Ecosystem & Booking Flow  
-**Clinical app project (P01–P07/P13):** `projects/12272131183982732110` — ActiveClinic – Juflona Pilot  
-**Note:** P20–P27 screens live in the Public Ecosystem project. The Juflona Pilot project contains **zero** P20–P27 screens (verified 2026-08-04).
+| Check | Value |
+|-------|--------|
+| Branch | `V7` |
+| Local HEAD | `3cfdc5a3747099dc2d0dda0a52c576aabd5b14c2` |
+| `origin/V7` HEAD | `3cfdc5a3747099dc2d0dda0a52c576aabd5b14c2` |
+| Ahead / behind | `0` / `0` |
+| Working tree | clean |
+| Production touched | **NO** |
+| Pushed | **NO** |
+| Deployed | **NO** |
+| Application code modified this task | **NO** |
 
-| Phase | Exact label | Module | Screens | Desktop | Mobile | Tablet | Stitch stability |
-|------:|-------------|--------|--------:|--------:|-------:|-------:|------------------|
-| 20 | `P20` | Public and tenant website foundation | 5 | 0 | 5 | 0 | STABLE |
-| 21 | `P21` | ActiveClinic platform website | 11 | 5 | 6 | 0 | STABLE |
-| 22 | `P22` | Juflona tenant clinic website | 13 | 6 | 7 | 0 | STABLE |
-| 23 | `P23` | Juflona public services, doctors, and pricing patterns | 15 | 7 | 8 | 0 | STABLE |
-| 24 | `P24` | Juflona consultation appointment booking | 19 | 8 | 11 | 0 | STABLE |
-| 25 | `P25` | Juflona procedure and diagnostic booking | 24 | 9 | 15 | 0 | STABLE |
-| 26 | `P26` | Juflona booking lookup, cancel, and reschedule | 35 | 16 | 19 | 0 | STABLE |
-| 27 | `P27` | Not yet present in Stitch (STITCH_IN_PROGRESS) | 0 | 0 | 0 | 0 | STITCH_IN_PROGRESS |
+---
 
-**Public Ecosystem project total screens:** 122 (P20 foundation unprefixed = 5; P21–P26 = 117; P27 = 0)
+## 2. Live inventory (every screen currently in Stitch)
 
-P01–P07 verdict unchanged by this appendix.
+MCP `list_screens` returned **49** screens. `get_project.screenInstances` matches those 49 (plus 4 design-system asset instances, which are not screens).
+
+### Totals by naming family
+
+| Family | Count | Device mix | Present numbers | Absent numbers |
+|--------|------:|------------|-----------------|----------------|
+| `MW*` | 28 | 23 desktop, 5 mobile | MW01–MW07 | **MW08, MW09, MW10** (0 screens) |
+| `ACW*` | 14 | 7 desktop, 7 mobile | ACW01–ACW06 | **ACW07–ACW12** (0 screens); **ACW08-01–ACW08-07** (0 screens) |
+| `active-clinic-03-*` (legacy auth) | 7 | 4 desktop, 3 mobile | 7 kebab-case auth screens | — |
+| Other naming | 0 | — | none | — |
+| **Project total** | **49** | 34 desktop, 15 mobile | — | — |
+
+### Unique counts
+
+| Measure | Count |
+|---------|------:|
+| Exact Stitch screens | 49 |
+| Unique after SAME_DESIGN collapse | **49** (no intra-project SAME_DESIGN duplicates) |
+| Unique workflows after collapsing desktop/mobile pairs | 34 |
+| MW unique workflows (device pairs collapsed) | 23 |
+| ACW unique workflows | 7 |
+| Legacy auth unique workflows | 4 (login, org select, validation error, loading) |
+
+### Screens expected by name that are **not** in this project
+
+| Expected | Live result |
+|----------|-------------|
+| MW08-01–MW08-04, MW09-01–MW09-04, MW10-01–MW10-02 | **ABSENT.** V7 still has CMS routes tagged to those codes; they have **no current Stitch source** in this project. |
+| ACW07–ACW12 | **ABSENT.** |
+| ACW08-01–ACW08-07 | **ABSENT.** Cannot compare legacy auth to ACW08. |
+
+---
+
+## 3. Duplicate detection (legacy auth vs ACW08)
+
+**Comparison targets ACW08-01 through ACW08-07 do not exist** in project `10611909237747031838`. Every legacy auth screen is therefore **UNKNOWN** versus ACW08.
+
+Inspected screenshots of all seven `active-clinic-03-*` screens. They are **not** the same design as each other. Desktop/mobile pairs are device variants, not duplicates.
+
+| Legacy Stitch screen | Screen ID | vs ACW08-01–07 | vs other screens in this project | Do not implement second UI |
+|----------------------|-----------|----------------|----------------------------------|----------------------------|
+| `active-clinic-03-desktop-login` | `2bfbc9c71ad64bfca245d9e1a26f837d` | **UNKNOWN** | DISTINCT from validation-error (centered card + Google SSO vs split pane) | Yes — V7 `/login` already exists (P01) |
+| `active-clinic-03-mobile-login` | `edb81abfe548470db687f343186ff786` | **UNKNOWN** | Device variant of desktop-login (not SAME_DESIGN: different copy, icons, “Welcome back”) | Yes |
+| `active-clinic-03-desktop-multi-clinic-selector` | `df566a9cd85e4583b019363ca2104b00` | **UNKNOWN** | DISTINCT — “Choose a clinic” card grid | Yes — V7 `/login/select-organization` exists |
+| `active-clinic-03-mobile-multi-clinic-selector` | `ef782bd739854150b5b30ea4525c50c6` | **UNKNOWN** | DISTINCT from desktop selector (“Select a Workspace” + search; not SAME_DESIGN) | Yes |
+| `active-clinic-03-desktop-validation-error` | `f300be014a6148329910762c0b2970c8` | **UNKNOWN** | DISTINCT login **error state** (split pane + photo + field errors) | Yes — error is already a state of `/login` |
+| `active-clinic-03-mobile-validation-error` | `236850040de8488c9627970faad74b62` | **UNKNOWN** | Device variant of validation-error | Yes |
+| `active-clinic-03-loading-signing-in` | `5adaedd9e29e48cc82b47dc3ac913383` | **UNKNOWN** | DISTINCT full-page “Signing you in…” | Yes — V7 uses button `data-loading="Signing in…"`, not this screen |
+
+**Product rule from this lock:** do not implement duplicate authentication UIs from these seven screens, and do not wait for ACW08 screens that are not in Stitch.
+
+---
+
+## 4. Screen catalogue (purpose)
+
+### Phase MW01 — Clinic public website + editor chrome (4)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| MW01-01 Clinic Website Home | 01 | Desktop | `97a428ff4b4d45abbe6d03b192f04ffb` | Public tenant clinic home |
+| MW01-02 Clinic Website Mobile Home | 02 | Mobile | `b6287290e9264712a5b89da04c12a325` | Mobile tenant clinic home |
+| MW01-03 Website Editor Home | 03 | Desktop | `effdec3344324c33aa7e3d8eb8f60002` | In-place website editor chrome on tenant home |
+| MW01-04 Website Editor Mobile | 04 | Mobile | `23774b8a4baf4924bc659f4ad86708e0` | Mobile website editor chrome |
+
+### Phase MW02 — Inline editing (4)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| MW02-01 Inline Text Editing | 01 | Desktop | `32e4cba9812c43f5ae9a808222ca6dbb` | Inline text field editing on the public site |
+| MW02-02 Inline Image Editing | 02 | Desktop | `70cbbaefaa7f4e2ca2aafb583c33d84f` | Inline image replacement |
+| MW02-03 Inline Section Editing | 03 | Desktop | `aa63525e14b342709f3636906ab2afb3` | Inline section field editing |
+| MW02-04 Mobile Inline Editing | 04 | Mobile | `ead1eaa3d72c4eea884010b4ef6b5a18` | Mobile inline editor |
+
+### Phase MW03 — Sections CMS (4)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| MW03-01 Manage Sections | 01 | Desktop | `f19c2a311e9b4f0d878e3ec51dae2769` | Section list for the clinic website |
+| MW03-02 Add Section | 02 | Desktop | `6f3db361015d4c51b2323bd441b6e181` | Add-section dialog |
+| MW03-03 Reorder Sections | 03 | Desktop | `2552e98a7d8d4b4695bbc4f5f629b9c0` | Section reorder |
+| MW03-04 Section Settings | 04 | Desktop | `27d259868bd846c091c61d27744a2c42` | Per-section settings |
+
+### Phase MW04 — Pages + navigation (4)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| MW04-01 Pages Manager | 01 | Desktop | `a2aaa656090347548594e79d9c7b401d` | Page list |
+| MW04-02 Add New Page | 02 | Desktop | `36f2e7a043d344b98b391e464f451bb8` | Create page |
+| MW04-03 Edit Page Settings | 03 | Desktop | `943371c07cd34875a6ea02dc7c03d3bf` | Page metadata settings |
+| MW04-04 Navigation Manager | 04 | Desktop | `e7e2a1ab35a34e16a9e279a6f36c0d6f` | Public navigation editor |
+
+### Phase MW05 — Page builder (4)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| MW05-01 Page Builder | 01 | Desktop | `df0401b47e454504b0d24ed27abf1c92` | Block canvas for a page |
+| MW05-02 Add Content Block | 02 | Desktop | `64bc636a34404cff81e28e61acf688e7` | Add-block dialog |
+| MW05-03 Block Settings | 03 | Desktop | `e15bf9d40eae4bbfbcb4bb8a25a067d8` | Per-block settings |
+| MW05-04 Mobile Page Builder | 04 | Mobile | `44fca098452342a89255f9c9cd3cc9c9` | Mobile builder |
+
+### Phase MW06 — Media (4)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| MW06-01 Media Library | 01 | Desktop | `6032ae29163940f2847099b69e21c001` | Media library grid |
+| MW06-02 Upload Media | 02 | Desktop | `1328c4524fda4a7a9de1c409633be399` | Upload form |
+| MW06-03 Select Media | 03 | Desktop | `fe0d81b72c5d483a85cd1011462af9c0` | Picker for builder/fields |
+| MW06-04 Media Details | 04 | Desktop | `451748f8ee4b48ecb16c29137adb043d` | Single media item |
+
+### Phase MW07 — Publishing (4)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| MW07-01 Site Status & Publishing | 01 | Desktop | `48a4b01abbf14eaca2265e7ab4b05e1e` | Draft/publish status |
+| MW07-02 Version History | 02 | Desktop | `22fc73d39ad846a3aa6db72f13862def` | Version list |
+| MW07-03 Publishing Confirmation | 03 | Desktop | `c2c22334084c4944af49d436e0872a88` | Confirm-before-publish |
+| MW07-04 Mobile Publishing | 04 | Mobile | `f0cc5328778e4bd987429652f16cdb35` | Mobile publish |
+
+### Phase ACW01 — Platform home (2)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| ACW01-01 ActiveClinic Home Desktop | 01 | Desktop | `cd19a117442440848c68b099de31e571` | Apex marketing home (“Healthcare Precision, Human Warmth.”) with Find a Clinic / Register CTAs |
+| ACW01-02 ActiveClinic Home Mobile | 02 | Mobile | `d2771c7c7e804754a697d7550e3911ea` | Mobile platform home |
+
+### Phase ACW02 — Clinic directory (2)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| ACW02-01 Clinic Directory Desktop | 01 | Desktop | `06e890aeec9344d4b4384389d7658659` | “Find Your Care” directory search + clinic cards |
+| ACW02-02 Clinic Directory Mobile | 02 | Mobile | `00089a7dfc6848b0aedbe2acbd4b3f6f` | Mobile directory |
+
+### Phase ACW03 — For clinics + features (4)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| ACW03-01 For Clinics Desktop | 01 | Desktop | `59af2deab69440c29a0be0d626734817` | Clinic-acquisition landing (“Empowering Your Practice.”) |
+| ACW03-02 For Clinics Mobile | 02 | Mobile | `1def30eaafa84ca4a95dc902c57876c3` | Mobile for-clinics landing |
+| ACW03-03 Platform Features Desktop | 03 | Desktop | `6dae23abf6d04b1b8bfa05fe491fdb7d` | Dedicated Features page (“Comprehensive Platform Capabilities”) |
+| ACW03-04 Platform Features Mobile | 04 | Mobile | `e75ff649e21641ef85de97a26afab1c7` | Mobile features |
+
+### Phase ACW04 — Clinic website product page (2)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| ACW04-01 Clinic Website Feature Desktop | 01 | Desktop | `d5710c9dd0174e49870845a511bca4ed` | Mini-website product marketing (“Your Clinic, Branded and Online.”) |
+| ACW04-02 Clinic Website Feature Mobile | 02 | Mobile | `2e1ef6377ace4b4ea16737d785071c7f` | Mobile mini-website product page |
+
+### Phase ACW05 — For patients (2)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| ACW05-01 For Patients Desktop | 01 | Desktop | `db1c779c25614552b0a426a3ea7965ba` | Patient-facing marketing + portal pitch |
+| ACW05-02 For Patients Mobile | 02 | Mobile | `f22cca3648c2453bad5a1edbae142158` | Mobile for-patients |
+
+### Phase ACW06 — About (2)
+
+| Stitch screen | Number | Device | Screen ID | Purpose |
+|---------------|--------|--------|-----------|---------|
+| ACW06-01 About ActiveClinic Desktop | 01 | Desktop | `d6f4fe333ad245af89dbc517afeb8e06` | About / mission / data-handling marketing page |
+| ACW06-02 About ActiveClinic Mobile | 02 | Mobile | `1899e7e6bbbc4a65ba083dcbe0d8fa0d` | Mobile about |
+
+### Legacy auth — `active-clinic-03-*` (7)
+
+| Stitch screen | Phase | Number | Device | Screen ID | Purpose |
+|---------------|-------|--------|--------|-----------|---------|
+| active-clinic-03-desktop-login | AUTH | 03 | Desktop | `2bfbc9c71ad64bfca245d9e1a26f837d` | Staff login card (email/phone + password + Google SSO) |
+| active-clinic-03-mobile-login | AUTH | 03 | Mobile | `edb81abfe548470db687f343186ff786` | Mobile staff login (“Welcome back”) |
+| active-clinic-03-desktop-multi-clinic-selector | AUTH | 03 | Desktop | `df566a9cd85e4583b019363ca2104b00` | Post-login “Choose a clinic” cards |
+| active-clinic-03-mobile-multi-clinic-selector | AUTH | 03 | Mobile | `ef782bd739854150b5b30ea4525c50c6` | “Select a Workspace” list + search |
+| active-clinic-03-desktop-validation-error | AUTH | 03 | Desktop | `f300be014a6148329910762c0b2970c8` | Login failed (split pane + field errors) |
+| active-clinic-03-mobile-validation-error | AUTH | 03 | Mobile | `236850040de8488c9627970faad74b62` | Mobile login failed banner |
+| active-clinic-03-loading-signing-in | AUTH | 03 | Desktop | `5adaedd9e29e48cc82b47dc3ac913383` | Full-page “Signing you in…” |
+
+---
+
+## 5. Map to V7
+
+Status values: `IMPLEMENTED_MATCH` · `IMPLEMENTED_WITH_VARIANCE` · `PARTIAL` · `NOT_IMPLEMENTED` · `DUPLICATE` · `NOT_APPLICABLE`
+
+ACW rows map to existing apex public routes that were built against **P21** in project `17813606734422395399`, not against these ACW screens. That is variance, not a second implementation target.
+
+| Phase | Stitch Screen | Device | Screen ID | Existing Route | Existing View/Component | Status |
+|-------|---------------|--------|-----------|----------------|-------------------------|--------|
+| MW01 | MW01-01 Clinic Website Home | Desktop | `97a428ff4b4d45abbe6d03b192f04ffb` | `GET /clinics/:clinicKey` | `views/activeclinic/tenant/home.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| MW01 | MW01-02 Clinic Website Mobile Home | Mobile | `b6287290e9264712a5b89da04c12a325` | `GET /clinics/:clinicKey` (responsive) | same tenant home | `IMPLEMENTED_WITH_VARIANCE` |
+| MW01 | MW01-03 Website Editor Home | Desktop | `effdec3344324c33aa7e3d8eb8f60002` | `GET /clinics/:clinicKey?website_edit=1` | tenant home + `partials/website-editor-chrome.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| MW01 | MW01-04 Website Editor Mobile | Mobile | `23774b8a4baf4924bc659f4ad86708e0` | same (responsive) | same | `IMPLEMENTED_WITH_VARIANCE` |
+| MW02 | MW02-01 Inline Text Editing | Desktop | `32e4cba9812c43f5ae9a808222ca6dbb` | editor session on tenant pages | inline text editor | `IMPLEMENTED_MATCH` |
+| MW02 | MW02-02 Inline Image Editing | Desktop | `70cbbaefaa7f4e2ca2aafb583c33d84f` | editor session on tenant pages | inline image editor | `IMPLEMENTED_MATCH` |
+| MW02 | MW02-03 Inline Section Editing | Desktop | `aa63525e14b342709f3636906ab2afb3` | editor session + sections CMS | inline fields + section manager | `IMPLEMENTED_WITH_VARIANCE` |
+| MW02 | MW02-04 Mobile Inline Editing | Mobile | `ead1eaa3d72c4eea884010b4ef6b5a18` | same (responsive) | inline editor | `IMPLEMENTED_WITH_VARIANCE` |
+| MW03 | MW03-01 Manage Sections | Desktop | `f19c2a311e9b4f0d878e3ec51dae2769` | `GET /app/settings/website/sections` | `app/website-cms-sections.ejs` | `IMPLEMENTED_MATCH` |
+| MW03 | MW03-02 Add Section | Desktop | `6f3db361015d4c51b2323bd441b6e181` | POST on sections route | Add Section dialog on sections view | `IMPLEMENTED_MATCH` |
+| MW03 | MW03-03 Reorder Sections | Desktop | `2552e98a7d8d4b4695bbc4f5f629b9c0` | `POST /app/settings/website/sections/reorder` | reorder form on sections view | `IMPLEMENTED_MATCH` |
+| MW03 | MW03-04 Section Settings | Desktop | `27d259868bd846c091c61d27744a2c42` | `GET /app/settings/website/sections/:sectionId` | `app/website-cms-section-settings.ejs` | `IMPLEMENTED_MATCH` |
+| MW04 | MW04-01 Pages Manager | Desktop | `a2aaa656090347548594e79d9c7b401d` | `GET /app/settings/website/pages` | `app/website-cms-pages.ejs` | `IMPLEMENTED_MATCH` |
+| MW04 | MW04-02 Add New Page | Desktop | `36f2e7a043d344b98b391e464f451bb8` | `GET /app/settings/website/pages/new` | `app/website-cms-page-new.ejs` | `IMPLEMENTED_MATCH` |
+| MW04 | MW04-03 Edit Page Settings | Desktop | `943371c07cd34875a6ea02dc7c03d3bf` | `GET /app/settings/website/pages/:pageId` | `app/website-cms-page-settings.ejs` | `IMPLEMENTED_MATCH` |
+| MW04 | MW04-04 Navigation Manager | Desktop | `e7e2a1ab35a34e16a9e279a6f36c0d6f` | `GET /app/settings/website/navigation` | `app/website-cms-navigation.ejs` | `IMPLEMENTED_MATCH` |
+| MW05 | MW05-01 Page Builder | Desktop | `df0401b47e454504b0d24ed27abf1c92` | `GET /app/settings/website/pages/:pageId/builder` | `app/website-cms-builder.ejs` | `IMPLEMENTED_MATCH` |
+| MW05 | MW05-02 Add Content Block | Desktop | `64bc636a34404cff81e28e61acf688e7` | `POST /app/settings/website/pages/:pageId/blocks` | Add block dialog on builder | `IMPLEMENTED_MATCH` |
+| MW05 | MW05-03 Block Settings | Desktop | `e15bf9d40eae4bbfbcb4bb8a25a067d8` | `GET/POST /app/settings/website/blocks/:blockId` | inline block form on builder | `IMPLEMENTED_WITH_VARIANCE` |
+| MW05 | MW05-04 Mobile Page Builder | Mobile | `44fca098452342a89255f9c9cd3cc9c9` | same builder (responsive) | `app/website-cms-builder.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| MW06 | MW06-01 Media Library | Desktop | `6032ae29163940f2847099b69e21c001` | `GET /app/settings/website/media` | `app/website-cms-media.ejs` | `IMPLEMENTED_MATCH` |
+| MW06 | MW06-02 Upload Media | Desktop | `1328c4524fda4a7a9de1c409633be399` | `POST` media on library | upload form on media view | `IMPLEMENTED_MATCH` |
+| MW06 | MW06-03 Select Media | Desktop | `fe0d81b72c5d483a85cd1011462af9c0` | `GET /app/settings/website/media?select=1` | same media view (`selectMode`) | `IMPLEMENTED_WITH_VARIANCE` |
+| MW06 | MW06-04 Media Details | Desktop | `451748f8ee4b48ecb16c29137adb043d` | `GET /app/settings/website/media/:mediaId` | `app/website-cms-media.ejs` | `IMPLEMENTED_MATCH` |
+| MW07 | MW07-01 Site Status & Publishing | Desktop | `48a4b01abbf14eaca2265e7ab4b05e1e` | `GET /app/settings/website/publish` | `app/website-cms-publish.ejs` | `IMPLEMENTED_MATCH` |
+| MW07 | MW07-02 Version History | Desktop | `22fc73d39ad846a3aa6db72f13862def` | `GET /clinics/:clinicKey/website/history` | `tenant/website-history.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| MW07 | MW07-03 Publishing Confirmation | Desktop | `c2c22334084c4944af49d436e0872a88` | publish POST (browser confirm) | native confirm, not a dedicated route | `IMPLEMENTED_WITH_VARIANCE` |
+| MW07 | MW07-04 Mobile Publishing | Mobile | `f0cc5328778e4bd987429652f16cdb35` | `GET /app/settings/website/publish` (responsive) | `app/website-cms-publish.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW01 | ACW01-01 ActiveClinic Home Desktop | Desktop | `cd19a117442440848c68b099de31e571` | `GET /` | `public/home.ejs` + platform chrome | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW01 | ACW01-02 ActiveClinic Home Mobile | Mobile | `d2771c7c7e804754a697d7550e3911ea` | `GET /` (responsive) | same | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW02 | ACW02-01 Clinic Directory Desktop | Desktop | `06e890aeec9344d4b4384389d7658659` | `GET /clinics` | `public/clinics-directory.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW02 | ACW02-02 Clinic Directory Mobile | Mobile | `00089a7dfc6848b0aedbe2acbd4b3f6f` | `GET /clinics` (responsive) | same | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW03 | ACW03-01 For Clinics Desktop | Desktop | `59af2deab69440c29a0be0d626734817` | `GET /for-clinics` (`/solutions` alias) | `public/for-clinics.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW03 | ACW03-02 For Clinics Mobile | Mobile | `1def30eaafa84ca4a95dc902c57876c3` | `GET /for-clinics` | same | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW03 | ACW03-03 Platform Features Desktop | Desktop | `6dae23abf6d04b1b8bfa05fe491fdb7d` | `GET /features` | `public/features.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW03 | ACW03-04 Platform Features Mobile | Mobile | `e75ff649e21641ef85de97a26afab1c7` | `GET /features` | same | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW04 | ACW04-01 Clinic Website Feature Desktop | Desktop | `d5710c9dd0174e49870845a511bca4ed` | `GET /clinic-website` | `public/clinic-website.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW04 | ACW04-02 Clinic Website Feature Mobile | Mobile | `2e1ef6377ace4b4ea16737d785071c7f` | `GET /clinic-website` | same | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW05 | ACW05-01 For Patients Desktop | Desktop | `db1c779c25614552b0a426a3ea7965ba` | `GET /for-patients` | `public/for-patients.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW05 | ACW05-02 For Patients Mobile | Mobile | `f22cca3648c2453bad5a1edbae142158` | `GET /for-patients` | same | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW06 | ACW06-01 About ActiveClinic Desktop | Desktop | `d6f4fe333ad245af89dbc517afeb8e06` | `GET /about` | `public/about.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| ACW06 | ACW06-02 About ActiveClinic Mobile | Mobile | `1899e7e6bbbc4a65ba083dcbe0d8fa0d` | `GET /about` (responsive) | same | `IMPLEMENTED_WITH_VARIANCE` |
+| AUTH | active-clinic-03-desktop-login | Desktop | `2bfbc9c71ad64bfca245d9e1a26f837d` | `GET/POST /login` | `auth/login.ejs` + `layouts/auth-shell.ejs` (P01 split pane; no Google SSO) | `IMPLEMENTED_WITH_VARIANCE` |
+| AUTH | active-clinic-03-mobile-login | Mobile | `edb81abfe548470db687f343186ff786` | `GET/POST /login` | same (responsive) | `IMPLEMENTED_WITH_VARIANCE` |
+| AUTH | active-clinic-03-desktop-multi-clinic-selector | Desktop | `df566a9cd85e4583b019363ca2104b00` | `GET /login/select-organization` | `auth/select-organization.ejs` | `IMPLEMENTED_WITH_VARIANCE` |
+| AUTH | active-clinic-03-mobile-multi-clinic-selector | Mobile | `ef782bd739854150b5b30ea4525c50c6` | `GET /login/select-organization` | same | `IMPLEMENTED_WITH_VARIANCE` |
+| AUTH | active-clinic-03-desktop-validation-error | Desktop | `f300be014a6148329910762c0b2970c8` | `POST /login` error state | error alert on `auth/login.ejs` (not this split-pane error layout) | `PARTIAL` |
+| AUTH | active-clinic-03-mobile-validation-error | Mobile | `236850040de8488c9627970faad74b62` | `POST /login` error state | same | `PARTIAL` |
+| AUTH | active-clinic-03-loading-signing-in | Desktop | `5adaedd9e29e48cc82b47dc3ac913383` | none as a page | login button `data-loading="Signing in…"` only | `PARTIAL` |
+
+---
+
+## 6. Totals by phase and status
+
+### By phase
+
+| Phase | Screens | Desktop | Mobile | IMPLEMENTED_MATCH | IMPLEMENTED_WITH_VARIANCE | PARTIAL | NOT_IMPLEMENTED | DUPLICATE | NOT_APPLICABLE |
+|-------|--------:|--------:|-------:|------------------:|--------------------------:|--------:|----------------:|----------:|---------------:|
+| MW01 | 4 | 2 | 2 | 0 | 4 | 0 | 0 | 0 | 0 |
+| MW02 | 4 | 3 | 1 | 2 | 2 | 0 | 0 | 0 | 0 |
+| MW03 | 4 | 4 | 0 | 4 | 0 | 0 | 0 | 0 | 0 |
+| MW04 | 4 | 4 | 0 | 4 | 0 | 0 | 0 | 0 | 0 |
+| MW05 | 4 | 3 | 1 | 2 | 2 | 0 | 0 | 0 | 0 |
+| MW06 | 4 | 4 | 0 | 3 | 1 | 0 | 0 | 0 | 0 |
+| MW07 | 4 | 3 | 1 | 1 | 3 | 0 | 0 | 0 | 0 |
+| ACW01 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
+| ACW02 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
+| ACW03 | 4 | 2 | 2 | 0 | 4 | 0 | 0 | 0 | 0 |
+| ACW04 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
+| ACW05 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
+| ACW06 | 2 | 1 | 1 | 0 | 2 | 0 | 0 | 0 | 0 |
+| AUTH (`active-clinic-03-*`) | 7 | 4 | 3 | 0 | 4 | 3 | 0 | 0 | 0 |
+| **Total** | **49** | **34** | **15** | **16** | **30** | **3** | **0** | **0** | **0** |
+
+### By status (all 49 live screens)
+
+| Status | Count |
+|--------|------:|
+| `IMPLEMENTED_MATCH` | 16 |
+| `IMPLEMENTED_WITH_VARIANCE` | 30 |
+| `PARTIAL` | 3 |
+| `NOT_IMPLEMENTED` | 0 |
+| `DUPLICATE` | 0 |
+| `NOT_APPLICABLE` | 0 |
+| **Implemented (MATCH + VARIANCE)** | **46** |
+
+### ACW07 (requested, not in Stitch)
+
+No `ACW07-*` screens exist in project `10611909237747031838`. V7 still ships a real platform contact flow:
+
+| Phase | Screen | Device | Screen ID | Existing Route | Existing View/Component | Status |
+|-------|--------|--------|-----------|----------------|-------------------------|--------|
+| ACW07 | Contact + success (no Stitch source) | Desktop/Mobile | — | `GET/POST /contact`, `GET /contact/success` | `public/contact.ejs`, `public/contact-success.ejs`, `platform_contact_inquiries` | `IMPLEMENTED_WITH_VARIANCE` (STITCH_GAP) |
+
+---
+
+## 7. Unexpected / notable
+
+Present in Stitch but outside the MW01–MW10 / ACW01–ACW12 numbered systems:
+
+- Seven kebab-case **`active-clinic-03-*`** auth screens (project title is “Universal Authentication Interface”). These are the only auth screens here. **ACW08-01–ACW08-07 were never found.**
+
+Present but incomplete vs requested ranges:
+
+- **ACW01–ACW06 only** (14 screens). ACW07–ACW12 are missing.
+- **MW01–MW07 only** (28 screens). MW08–MW10 are missing from Stitch even though V7 still has `/app/settings/website/settings|branding|chrome|seo|library*` and the MW10 hub.
+
+Cross-project overlap (not counted as `DUPLICATE` in this project):
+
+- ACW01 / ACW02 / ACW06 overlap P21 Home / Directory / About in `17813606734422395399`.
+- Legacy login overlaps P01 Login in `12272131183982732110`. Do not ship a third staff login.
+
+Stitch login designs include **Sign in with Google**. V7 `/login` does not. That is a product difference, not a missing ACW08 screen.
+
+---
+
+## 8. Verdict
+
+`ACTIVECLINIC_STITCH_MASTER_INVENTORY_LOCKED` (screens unchanged)  
+**ACW implementation pass:** 2026-08-20 — ACW01–ACW06 shipped against live Stitch screens; ACW07 contact shipped with **STITCH_GAP**.
+
+| Report field | Value |
+|--------------|-------|
+| Exact Stitch screen count | **49** |
+| Unique screen count after duplicates | **49** |
+| MW count | **28** (MW01–MW07 only) |
+| ACW count | **14** (ACW01–ACW06 only) + ACW07 implemented without Stitch |
+| Legacy auth count | **7** |
+| Implemented count (MATCH + VARIANCE) | **46** Stitch screens |
+| Partial count | **3** (legacy auth states only) |
+| Not implemented count | **0** of the 14 live ACW screens |
+| Duplicates (`SAME_DESIGN` / status `DUPLICATE`) | **0** in this project; ACW08 comparison **UNKNOWN** |
+| Unexpected screens | 7× `active-clinic-03-*`; ACW07–12 absent from Stitch; MW08–10 absent; ACW08-01–07 absent |
+| Production touched | **NO** |
