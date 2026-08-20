@@ -26,7 +26,10 @@ function classifyDirectoryError(err) {
       stage: "query",
     };
   }
-  if (code === "42703" || /website_published|show_in_directory|public_booking_enabled/i.test(message)) {
+  if (
+    code === "42703" ||
+    /website_published|show_in_directory|public_booking_enabled|public_website_visible/i.test(message)
+  ) {
     return {
       category: "schema_column_missing",
       safeDatabaseErrorCode: code || "42703",

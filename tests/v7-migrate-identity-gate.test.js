@@ -128,13 +128,16 @@ describe("V7 migrate identity gate and required migration order", () => {
     assert.ok(keys.includes("activeclinic:030"));
     assert.ok(keys.includes("activeclinic:031"));
     assert.ok(keys.includes("activeclinic:033"));
+    assert.ok(keys.includes("activeclinic:034"));
     const ac030 = keys.indexOf("activeclinic:030");
     const ac031 = keys.indexOf("activeclinic:031");
     const ac033 = keys.indexOf("activeclinic:033");
+    const ac034 = keys.indexOf("activeclinic:034");
     const bb098 = keys.indexOf("blessboard:098");
     const bb099 = keys.indexOf("blessboard:099");
     assert.ok(ac030 >= 0 && ac031 > ac030);
     assert.ok(ac033 > ac031);
+    assert.ok(ac034 > ac033);
     assert.ok(bb098 >= 0 && bb099 > bb098);
   });
 

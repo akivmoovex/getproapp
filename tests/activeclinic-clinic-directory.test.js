@@ -218,4 +218,56 @@ describe("ActiveClinic clinic directory repair", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /Clinic directory/);
   });
+
+  it("classifies missing public_website_visible as schema_column_missing", () => {
+    const classified = classifyDirectoryError({
+      code: "42703",
+      message: "column ast.public_website_visible does not exist",
+    });
+    assert.equal(classified.category, "schema_column_missing");
+    assert.equal(classified.safeDatabaseErrorCode, "42703");
+  });
+
+  it("incomplete optional clinic metadata still returns 200", async () => {
+    if (!requireDb()) return;
+    const stamp = `${Date.now().toString(36)}opt`;
+    const published = await provisionPublishedClinic(stamp);
+    await pool.query(
+      `UPDATE activeclinic.healthcare_organizations
+          SET website_tagline = NULL,
+              website_logo_url = NULL,
+              public_phone_display = NULL,
+              public_email_display = NULL
+        WHERE id = $1`,
+      [published.hco.healthcareOrganization.id]
+    );
+    const app = appWithEnv();
+    const res = await request(app).get("/clinics").set("Host", "activeclinic.pronline.org");
+    assert.equal(res.status, 200);
+    assert.match(res.text, new RegExp(`Published Clinic ${stamp}`));
+    assert.match(res.text, new RegExp(`/clinics/${published.clinicKey}`));
+    assert.doesNotMatch(res.text, /Directory temporarily unavailable/);
+  });
+
+  it("BlessBoard organization does not appear in the ActiveClinic directory", async () => {
+    if (!requireDb()) return;
+    const stamp = `${Date.now().toString(36)}bb`;
+    const bb = await provisionPlatformTenant(pool, {
+      skipDomain: true,
+      dataEnvironment: "testing",
+      organizationKey: `bb_dir_${stamp}`,
+      displayName: `BlessBoard Dir ${stamp}`,
+      productKey: "blessboard",
+      productTenantKey: `bb-dir-${stamp}`,
+      deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+    });
+    assert.equal(bb.ok, true, JSON.stringify(bb));
+    const listed = await listPublishableClinics(pool, {});
+    assert.equal(listed.ok, true);
+    assert.ok(!listed.clinics.some((c) => /BlessBoard Dir/.test(c.publicName || "")));
+    const app = appWithEnv();
+    const res = await request(app).get("/clinics");
+    assert.equal(res.status, 200);
+    assert.doesNotMatch(res.text, new RegExp(`BlessBoard Dir ${stamp}`));
+  });
 });

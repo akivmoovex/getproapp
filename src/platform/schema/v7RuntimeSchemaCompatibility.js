@@ -82,6 +82,7 @@ const REQUIRED_MIGRATIONS = Object.freeze([
   { module: "activeclinic", version: "030", filename: "030_clinic_registration_canonical_lifecycle.sql" },
   { module: "activeclinic", version: "031", filename: "031_clinic_registration_provision_stage.sql" },
   { module: "activeclinic", version: "033", filename: "033_clinic_registration_terms_acceptance.sql" },
+  { module: "activeclinic", version: "034", filename: "034_service_website_visibility.sql" },
 ]);
 
 const CAPABILITY = Object.freeze({
@@ -99,6 +100,7 @@ const CAPABILITY = Object.freeze({
   BB_PROVISION_STAGE_COLUMNS: "blessboard.platform_church_registration_applications.provision_stage",
   AC_PRODUCT_TABLES: "activeclinic.core_product_tables",
   AC_WEBSITE_PUBLISHED: "activeclinic.healthcare_organizations.website_published",
+  AC_SERVICE_WEBSITE_VISIBLE: "activeclinic.appointment_service_types.public_website_visible",
   REQUIRED_MIGRATIONS: "platform.schema_migrations.v7_required",
 });
 
@@ -673,6 +675,36 @@ async function inspectV7RuntimeSchemaCompatibility(db) {
       false,
       {
         remediation: "Apply db/migrations/activeclinic/019_public_website_and_booking.sql",
+        detail: pgCode(err),
+      }
+    );
+  }
+
+  try {
+    const missingVisible = await missingColumns(
+      db,
+      "activeclinic",
+      "appointment_service_types",
+      ["public_website_visible"]
+    );
+    details.missingServiceWebsiteVisibleColumn = missingVisible;
+    await record(
+      CAPABILITY.AC_SERVICE_WEBSITE_VISIBLE,
+      "Service public_website_visible column",
+      missingVisible.length === 0,
+      {
+        remediation: "Apply db/migrations/activeclinic/034_service_website_visibility.sql",
+        detail: missingVisible.length ? "public_website_visible missing" : null,
+      }
+    );
+  } catch (err) {
+    details.serviceWebsiteVisibleError = pgCode(err);
+    await record(
+      CAPABILITY.AC_SERVICE_WEBSITE_VISIBLE,
+      "Service public_website_visible column",
+      false,
+      {
+        remediation: "Apply db/migrations/activeclinic/034_service_website_visibility.sql",
         detail: pgCode(err),
       }
     );
