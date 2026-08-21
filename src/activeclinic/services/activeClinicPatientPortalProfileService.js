@@ -37,11 +37,10 @@ async function getPatientProfile(db, input) {
 
   const row = await db.query(
     `SELECT id, patient_number, first_name, last_name, preferred_name,
-            date_of_birth, sex_at_registration,
             phone_normalized, phone_display,
             email_normalized, email_display,
-            address_line1, address_line2, address_city, address_province,
-            address_postal_code, address_country_code,
+            address_line_1, address_line_2, city, province,
+            postal_code, country_code,
             preferred_contact_method, status
      FROM activeclinic.patients
      WHERE id = $1 AND organization_id = $2 AND status = 'active'
@@ -63,18 +62,16 @@ async function getPatientProfile(db, input) {
       firstName: p.first_name,
       lastName: p.last_name,
       preferredName: p.preferred_name,
-      dateOfBirth: p.date_of_birth,
-      sexAtRegistration: p.sex_at_registration,
       phoneNormalized: p.phone_normalized,
       phoneDisplay: p.phone_display,
       emailNormalized: p.email_normalized,
       emailDisplay: p.email_display,
-      addressLine1: p.address_line1,
-      addressLine2: p.address_line2,
-      addressCity: p.address_city,
-      addressProvince: p.address_province,
-      addressPostalCode: p.address_postal_code,
-      addressCountryCode: p.address_country_code,
+      addressLine1: p.address_line_1,
+      addressLine2: p.address_line_2,
+      addressCity: p.city,
+      addressProvince: p.province,
+      addressPostalCode: p.postal_code,
+      addressCountryCode: p.country_code,
       preferredContactMethod: p.preferred_contact_method,
       status: p.status,
     },
@@ -85,6 +82,7 @@ async function getPatientProfile(db, input) {
  * Update patient profile (safe fields only).
  * Allowed: preferred_name, phone, email, address, preferred_contact_method.
  * NOT allowed: first_name, last_name, date_of_birth, sex_at_registration, patient_number, clinical fields.
+ * Address columns are the existing 008_patients names (address_line_1, city, province).
  */
 async function updatePatientProfile(db, input) {
   const patientId = String((input && input.patientId) || "").trim();
@@ -143,37 +141,37 @@ async function updatePatientProfile(db, input) {
 
   if (input.addressLine1 !== undefined) {
     const val = input.addressLine1 ? String(input.addressLine1).trim().slice(0, 200) : null;
-    updates.push(`address_line1 = $${paramIndex++}`);
+    updates.push(`address_line_1 = $${paramIndex++}`);
     values.push(val);
   }
 
   if (input.addressLine2 !== undefined) {
     const val = input.addressLine2 ? String(input.addressLine2).trim().slice(0, 200) : null;
-    updates.push(`address_line2 = $${paramIndex++}`);
+    updates.push(`address_line_2 = $${paramIndex++}`);
     values.push(val);
   }
 
   if (input.addressCity !== undefined) {
     const val = input.addressCity ? String(input.addressCity).trim().slice(0, 100) : null;
-    updates.push(`address_city = $${paramIndex++}`);
+    updates.push(`city = $${paramIndex++}`);
     values.push(val);
   }
 
   if (input.addressProvince !== undefined) {
     const val = input.addressProvince ? String(input.addressProvince).trim().slice(0, 100) : null;
-    updates.push(`address_province = $${paramIndex++}`);
+    updates.push(`province = $${paramIndex++}`);
     values.push(val);
   }
 
   if (input.addressPostalCode !== undefined) {
     const val = input.addressPostalCode ? String(input.addressPostalCode).trim().slice(0, 20) : null;
-    updates.push(`address_postal_code = $${paramIndex++}`);
+    updates.push(`postal_code = $${paramIndex++}`);
     values.push(val);
   }
 
   if (input.addressCountryCode !== undefined) {
     const val = input.addressCountryCode ? String(input.addressCountryCode).trim().slice(0, 2).toUpperCase() : null;
-    updates.push(`address_country_code = $${paramIndex++}`);
+    updates.push(`country_code = $${paramIndex++}`);
     values.push(val);
   }
 

@@ -425,7 +425,7 @@ MF05_IMPLEMENTED = YES (Phase C — visual chrome + live-state checklist on exis
 MF06_IMPLEMENTED = YES (Phase D — unpublished first-use hub on existing /app/settings/website)
 MF07_IMPLEMENTED = YES (Phase E — invite form chrome on existing staff invitation flow)
 MF10_IMPLEMENTED = YES (Phase F — public booking chrome on existing request wizard)
-MF08_IMPLEMENTED = NO
+MF08_IMPLEMENTED = YES (Phase G — patient register/profile chrome; OTP/SSO/insurance omitted)
 MF09_IMPLEMENTED = NO
 MF11_IMPLEMENTED = NO
 ```
@@ -690,9 +690,21 @@ RBAC: none
 tests: activeclinic-mf10-booking / public-booking / phase5a-procedure-booking
 ```
 
-### Phase G — deferred product expansion (not scheduled)
+### Phase G — MF08 patient registration chrome — IMPLEMENTED
 
-MF04 OTP, MF08 MFA/SSO, MF09 EHR widgets, **all of MF11**, payments, telehealth, Theme, license registry.
+```text
+PHASE: G
+MF screens: MF08-01/02 restyled; MF08-03/04 omitted OTP; MF08-05/06 mapped to existing profile
+existing routes: /clinics/:clinicKey/patient/register, /patient/profile
+goal: restyle existing patient portal identity + contact profile; omit OTP/SSO/insurance/clinical
+functional work: map portal profile SQL to existing patients address columns (no schema change)
+visual work: register.ejs + profile.ejs + acp-mf08 CSS
+schema: none
+RBAC: none
+tests: activeclinic-mf08-patient-registration / patient-portal
+```
+
+Still deferred after G: MF04 OTP, MF08 MFA/SSO, MF09 EHR widgets, **all of MF11**, payments, telehealth, Theme, license registry.
 
 ---
 
@@ -819,6 +831,43 @@ Implemented on the existing public consultation request wizard. No second bookin
 | `e9a21fe4a41045f0a1cd2e436a677866` | MF10-07 Review & Confirm Desktop | Desktop | `/book/review` | `MINOR_ACCEPTED_VARIANCE` | Pending request; no copay/insurance |
 
 Patient details, success, and procedure booking remain V7 states (`RESPONSIVE_V7_DERIVATION` / shared chrome). Missing Stitch mobile `04/06/08` remain Stitch gaps.
+
+### Known testing artifact (MF10 hosted QA)
+
+```text
+KNOWN_DISPOSABLE_MF10_BOOKING
+clinicKey: activeclinic-demo
+surface: public consultation request (pending confirmation)
+created: MF10 hosted QA
+cleanup: none — no safe hosted testing purge path; do not broad-delete DB rows
+```
+
+---
+
+## Phase G implementation (MF08)
+
+Implemented on the existing patient portal identity flow. No second patient identity system. Staff `/app/patients*` is unchanged. OTP/MFA, Google/Apple SSO, insurance, and clinical onboarding fields are omitted.
+
+Live inventory re-lock (2026-08-21): **6 screens** (3 desktop / 3 mobile). No added, removed, renamed, or redesigned MF08 screens vs the prior audit.
+
+| Stitch ID | Exact name | Device | V7 route/state | Status | Variance |
+|-----------|------------|--------|----------------|--------|----------|
+| `b17405de3052471688b455a66de53805` | MF08-01 Patient Registration Desktop | Desktop | `/clinics/:clinicKey/patient/register` | `MINOR_ACCEPTED_VARIANCE` | Split first/last name; phone-first; email optional; guest token in details; no SSO; no ClinicBuilder |
+| `2cf8f6ff9e9242a3a114ff7c2d8108f3` | MF08-02 Patient Registration Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | Responsive; Stitch “step 1 of 4 / DOB / contact preference” omitted |
+| `449d124d305845c69c93ced67fb4f6ea` | MF08-03 Verification Desktop | Desktop | **not implemented** | `FUNCTIONAL_GAP_PATIENT_MFA` | `UNSUPPORTED_CONCEPT — DO NOT IMPLEMENT` |
+| `cbaed824e43d40f980f1af298db6cd5f` | MF08-04 Verification Mobile | Mobile | **not implemented** | `FUNCTIONAL_GAP_PATIENT_MFA` | Existing `/patient/verify-phone` remains clinic-contact honesty, not a 6-digit OTP UI |
+| `7a6121f70744431a893a94130692d042` | MF08-05 Health Profile Setup Desktop | Desktop | `/clinics/:clinicKey/patient/profile` | `MINOR_ACCEPTED_VARIANCE` | Contact/address only; DOB/sex/insurance omitted |
+| `d9a0fc3847264ce08f336e0e3bfbfd7a` | MF08-06 Health Profile Setup Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | Photo/height/weight omitted |
+
+```text
+OTP implemented: NO
+SSO implemented: NO
+insurance implemented: NO
+schema changed: NO
+second patient identity system created: NO
+```
+
+Next recommended phase: **MF09 — patient dashboard, BOOKINGS-ONLY / CURRENT-DATA-ONLY**.
 
 ---
 

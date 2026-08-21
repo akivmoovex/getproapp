@@ -1,24 +1,35 @@
-<section class="acp-auth-card ac-patient-card ac-patient-card--auth" data-ac-page-section="patient-register">
+<section
+  class="acp-auth-card ac-patient-card ac-patient-card--auth acp-mf08"
+  data-ac-page-section="patient-register"
+  data-ac-mf-family="MF08"
+  data-ac-mf-screen="MF08-01"
+>
   <header class="acp-auth-card__header">
-    <p class="ac-public-eyebrow">Patient portal</p>
-    <h1>Register</h1>
+    <p class="ac-public-eyebrow"><%= (clinic && clinic.publicName) ? clinic.publicName : 'Patient portal' %></p>
+    <h1>Create an account</h1>
+    <p class="acp-auth-card__lede">
+      Register with the phone number on your clinic patient record, or with a guest booking token. This does not create a new clinical chart.
+    </p>
   </header>
   <% if (error) { %>
   <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
   <% } %>
-  <p class="ac-patient-hint acp-auth-card__lede">
-    If you have a guest booking token, enter it below. Otherwise, enter your details to match your patient record.
-  </p>
-  <form method="POST" action="/clinics/<%= clinicKey %>/patient/register" data-ac-shell="patient" data-ac-loading="1">
+  <form method="POST" action="/clinics/<%= clinicKey %>/patient/register" class="acp-mf08-form" data-ac-shell="patient" data-ac-loading="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <div class="ac-patient-field">
-      <label for="guestToken">Guest token (optional)</label>
-      <input type="text" id="guestToken" name="guestToken" autocomplete="off"/>
+    <div class="acp-mf08-grid">
+      <div class="ac-patient-field">
+        <label for="firstName">First name</label>
+        <input type="text" id="firstName" name="firstName" autocomplete="given-name" required aria-required="true"/>
+      </div>
+      <div class="ac-patient-field">
+        <label for="lastName">Last name</label>
+        <input type="text" id="lastName" name="lastName" autocomplete="family-name" required aria-required="true"/>
+      </div>
     </div>
     <div class="ac-patient-field">
       <%- include('../partials/phone-field', {
         id: 'phone',
-        label: 'Phone',
+        label: 'Mobile number',
         required: true,
         defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
         selectedCountry: (typeof phoneCountry !== 'undefined' && phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
@@ -29,27 +40,27 @@
       }) %>
     </div>
     <div class="ac-patient-field">
-      <label for="email">Email (optional)</label>
+      <label for="email">Email <span class="ac-hint">(optional)</span></label>
       <input type="email" id="email" name="email" autocomplete="email"/>
     </div>
     <div class="ac-patient-field">
-      <label for="firstName">First name</label>
-      <input type="text" id="firstName" name="firstName" autocomplete="given-name" required aria-required="true"/>
-    </div>
-    <div class="ac-patient-field">
-      <label for="lastName">Last name</label>
-      <input type="text" id="lastName" name="lastName" autocomplete="family-name" required aria-required="true"/>
-    </div>
-    <div class="ac-patient-field">
-      <label for="password">Password (min 10 characters)</label>
+      <label for="password">Password</label>
       <input type="password" id="password" name="password" autocomplete="new-password" required aria-required="true" minlength="10" aria-describedby="password-hint"/>
-      <p class="ac-hint" id="password-hint">Use at least 10 characters.</p>
+      <p class="ac-hint" id="password-hint">Use at least 10 characters. This is the patient portal password, not a clinic staff password.</p>
     </div>
-    <button type="submit" class="ac-patient-btn">Register</button>
+    <details class="acp-mf08-guest">
+      <summary>I have a guest booking token</summary>
+      <div class="ac-patient-field">
+        <label for="guestToken">Guest token (optional)</label>
+        <input type="text" id="guestToken" name="guestToken" autocomplete="off"/>
+        <p class="ac-hint">Use the token from a booking confirmation if you do not yet have a clinic patient record.</p>
+      </div>
+    </details>
+    <button type="submit" class="ac-patient-btn ac-btn ac-btn--primary" data-loading="Creating account…">Continue</button>
   </form>
-  <p class="ac-patient-links">
+  <p class="ac-patient-links ac-patient-links--stack">
     <a href="/clinics/<%= clinicKey %>/patient/login">Already have an account? Sign in</a>
-    ·
-    <a href="/clinics/<%= clinicKey %>/patient/link-guest-booking">Link a guest booking</a>
+    <a href="/clinics/<%= clinicKey %>/patient/link-guest-booking">Link a guest booking after you sign in</a>
   </p>
+  <p class="acp-auth-card__powered">Powered by ActiveClinic</p>
 </section>

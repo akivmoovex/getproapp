@@ -190,6 +190,7 @@
   max-width: 960px;
   margin: 0 auto;
   padding: 1.5rem 1rem;
+  overflow-x: clip;
 }
 
 .ac-patient-page h1,
@@ -879,5 +880,66 @@ form.ac-patient-form-inline {
   outline: 3px solid #1d59c1;
   outline-offset: 2px;
 }
+
+.acp-mf08,
+.acp-mf08-form,
+.acp-mf08-card {
+  max-width: 100%;
+  min-width: 0;
+}
+
+.acp-mf08__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acp-primary-strong);
+}
+.acp-mf08-grid {
+  display: grid;
+  gap: 0.85rem;
+}
+.acp-mf08-guest {
+  margin: 0.5rem 0 1rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.65rem 0.85rem;
+  background: #fff;
+}
+.acp-mf08-guest summary {
+  cursor: pointer;
+  min-height: 44px;
+  display: flex;
+  align-items: center;
+  font-weight: 600;
+}
+.acp-mf08-card,
+.acp-mf08-fieldset {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  padding: 1.15rem 1.2rem;
+}
+.acp-mf08-fieldset {
+  margin: 1rem 0;
+  min-width: 0;
+}
+.acp-mf08-fieldset legend {
+  font-weight: 700;
+  padding: 0 0.25rem;
+}
+@media (min-width: 768px) {
+  .acp-mf08-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 767px) {
+  .acp-mf08 .ac-patient-btn,
+  .acp-mf08 input {
+    min-height: 44px;
+  }
+}
+
 
 

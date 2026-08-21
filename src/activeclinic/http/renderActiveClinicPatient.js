@@ -13,7 +13,7 @@ const {
 } = require("../services/activeClinicPhoneFieldLocals");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-parity-13";
+const ASSET_VERSION = "v7-mf-d1";
 
 const BOOKING_STATUS_LABELS = Object.freeze({
   submitted_pending_confirmation: "Pending confirmation",

@@ -409,11 +409,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         .status(200)
         .type("html")
         .send(
-          renderPatientView("patient/register", {
-            csrfToken,
-            csrfField: CSRF_FIELD,
-            clinicKey: req.params.clinicKey,
-          })
+          renderPatientView("patient/register", patientViewPayload(clinic, csrfToken))
         );
     } catch (err) {
       return next(err);
@@ -438,12 +434,9 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
             .status(403)
             .type("html")
             .send(
-              renderPatientView("patient/register", {
-                csrfToken,
-                csrfField: CSRF_FIELD,
-                clinicKey,
+              renderPatientView("patient/register", patientViewPayload(clinic, csrfToken, {
                 error: "Invalid security token. Please try again.",
-              })
+              }))
             );
         }
 
@@ -472,12 +465,9 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
               .status(400)
               .type("html")
               .send(
-                renderPatientView("patient/register", {
-                  csrfToken,
-                  csrfField: CSRF_FIELD,
-                  clinicKey,
+                renderPatientView("patient/register", patientViewPayload(clinic, csrfToken, {
                   error: "First and last name are required without a guest token.",
-                })
+                }))
               );
           }
 
@@ -512,12 +502,9 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
             .status(400)
             .type("html")
             .send(
-              renderPatientView("patient/register", {
-                csrfToken,
-                csrfField: CSRF_FIELD,
-                clinicKey,
+              renderPatientView("patient/register", patientViewPayload(clinic, csrfToken, {
                 error: errorMsg,
-              })
+              }))
             );
         }
 
