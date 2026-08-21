@@ -24,6 +24,50 @@
   data-ac-mw-screen-mobile="MW10-02"
 >
   <%- include('../partials/website-cms-nav') %>
+  <% if (!website.liveAvailable) { %>
+  <section class="ac-mw-firstuse" data-ac-mf-family="MF06" data-ac-mf-screen="MF06-03" data-ac-website-firstuse="1">
+    <article class="ac-mw-firstuse__welcome" data-ac-website-welcome="1">
+      <p class="ac-mw-firstuse__kicker">Website</p>
+      <h2>Your clinic website is ready to customize</h2>
+      <p class="ac-mw-muted">Registration already created an unpublished website. Finish the tasks below, then publish when you are ready. Publishing is optional and does not block clinic operations.</p>
+      <p class="ac-mw-muted" data-ac-website-firstuse-url="1">
+        Public URL:
+        <code><%= website.publicUrl || website.publicPath || '—' %></code>
+        <span>(not live yet)</span>
+      </p>
+    </article>
+    <article class="ac-mw-firstuse__progress">
+      <h3>Website setup</h3>
+      <p class="ac-mw-muted">These tasks open the existing Website Management tools. There is no second website onboarding wizard.</p>
+    </article>
+    <ol class="ac-mw-firstuse__list">
+      <li class="ac-mw-firstuse__item is-complete">
+        <h3>Review pages</h3>
+        <p>Your website already has a draft structure. Review or edit pages.</p>
+        <a class="ac-mw-btn" href="/app/settings/website/pages">Open pages</a>
+      </li>
+      <li class="ac-mw-firstuse__item">
+        <h3>Customize branding</h3>
+        <p>Logo, colours, and the look of the public site.</p>
+        <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/branding">Continue</a>
+      </li>
+      <li class="ac-mw-firstuse__item">
+        <h3>Public services and doctors</h3>
+        <p>Choose which services and practitioners appear on the public website.</p>
+        <a class="ac-mw-btn" href="/app/settings/website/catalogue">Open catalogue</a>
+      </li>
+      <li class="ac-mw-firstuse__item">
+        <h3>Preview and publish</h3>
+        <p>Publishing is optional. Preview first, then make the site public when you are ready.</p>
+        <% if (actions.publishPath && website.canPublish) { %>
+        <a class="ac-mw-btn" href="/app/settings/website/publish">Review publish</a>
+        <% } else { %>
+        <a class="ac-mw-btn" href="<%= actions.preview || '/app/settings/website' %>">Preview</a>
+        <% } %>
+      </li>
+    </ol>
+  </section>
+  <% } %>
   <div class="ac-mw-head">
     <div>
       <h2>Website Management Hub</h2>

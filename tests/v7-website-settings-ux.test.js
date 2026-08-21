@@ -348,6 +348,11 @@ describe("ActiveClinic website settings HTTP", () => {
     assert.equal(page.status, 200);
     assert.match(page.text, /Website not published yet/);
     assert.match(page.text, /data-ac-website-state="unpublished"/);
+    assert.match(page.text, /data-ac-mf-family="MF06"/);
+    assert.match(page.text, /data-ac-website-firstuse="1"/);
+    assert.match(page.text, /\/app\/settings\/website\/branding/);
+    assert.match(page.text, /\/app\/settings\/website\/catalogue/);
+    assert.doesNotMatch(page.text, /Theme tab|cliniceditor\.com|clinics\.activeclinic\.org/);
     assert.doesNotMatch(page.text, /data-ac-website-action="view-live"/);
     assert.match(page.text, /data-ac-website-action="preview"/);
     assert.match(page.text, /data-ac-website-action="edit"/);
