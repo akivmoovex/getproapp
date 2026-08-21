@@ -1,25 +1,58 @@
-<section class="ac-public-section ac-booking-wizard acp-booking-shell" data-ac-page-section="booking-choose-slot">
+<%
+  var preferred = (draft && draft.preferredStartsAt) ? String(draft.preferredStartsAt) : '';
+  var preferredDate = '';
+  var preferredTime = '';
+  if (preferred) {
+    var parts = preferred.split('T');
+    preferredDate = parts[0] || '';
+    preferredTime = (parts[1] || '').slice(0, 5);
+  }
+%>
+<section
+  class="ac-public-section ac-booking-wizard acp-booking-shell acp-mf10"
+  data-ac-page-section="booking-choose-slot"
+  data-ac-mf-family="MF10"
+  data-ac-mf-screen="MF10-05"
+>
   <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
   <div class="acp-booking-layout">
     <div class="acp-booking-layout__main">
       <header class="acp-booking-header">
-        <h1>Preferred date and time</h1>
+        <p class="acp-mf10__kicker">Book an appointment</p>
+        <h1>Select date &amp; time</h1>
         <p>Your preferred time is a request only. It is not confirmed until the clinic responds.</p>
       </header>
       <% if (slotAvailabilityState === 'no_slots_published') { %>
-      <p class="ac-public-banner acp-slot-banner" data-ac-slot-state="no_slots_published">This clinic has not published bookable time slots online. Enter your preferred date and time — the clinic will confirm what is available.</p>
+      <div class="ac-public-banner acp-slot-banner acp-mf10-empty" data-ac-slot-state="no_slots_published" role="status">
+        <p>This clinic has not published bookable time slots online. Enter a preferred date and time — the clinic will confirm what is available.</p>
+        <p class="acp-mf10-empty__actions">
+          <a href="/clinics/<%= clinic.clinicKey %>/book/doctor">Choose another provider</a>
+          <a href="/clinics/<%= clinic.clinicKey %>/book">Choose another service</a>
+          <a href="/clinics/<%= clinic.clinicKey %>">Return to clinic</a>
+        </p>
+      </div>
       <% } %>
       <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
       <% if (validationErrors && validationErrors.preferredStartsAt) { %><div class="ac-public-error" role="alert"><%= validationErrors.preferredStartsAt %></div><% } %>
-      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/slot" class="ac-public-form acp-slot-form" data-ac-loading="1">
+      <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/slot" class="ac-public-form acp-slot-form acp-mf10-slot" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-        <div class="acp-field-panel">
-          <label for="preferredStartsAt">Preferred date and time</label>
-          <input id="preferredStartsAt" name="preferredStartsAt" type="datetime-local" required value="<%= (draft && draft.preferredStartsAt) || '' %>"/>
-          <p class="ac-public-note">Live slot grids are not published for this clinic. Prefer a time that works for you; staff will confirm.</p>
-        </div>
+        <fieldset class="acp-field-panel acp-mf10-slot__panel">
+          <legend>Preferred date and time</legend>
+          <div class="acp-mf10-slot__grid">
+            <div class="acp-field">
+              <label for="preferredDate">Date</label>
+              <input id="preferredDate" name="preferredDate" type="date" required value="<%= preferredDate %>"/>
+            </div>
+            <div class="acp-field">
+              <label for="preferredTime">Time</label>
+              <input id="preferredTime" name="preferredTime" type="time" required value="<%= preferredTime %>"/>
+            </div>
+          </div>
+          <input type="hidden" id="preferredStartsAt" name="preferredStartsAt" value="<%= preferred %>"/>
+          <p class="ac-public-note">These are preference fields, not live available slots.</p>
+        </fieldset>
         <div class="ac-booking-wizard__actions acp-booking-actions">
-          <button type="submit" class="ac-btn ac-btn--primary">Continue</button>
+          <button type="submit" class="ac-btn ac-btn--primary" data-loading="Continuing…">Continue</button>
           <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/doctor">Back</a>
         </div>
       </form>
@@ -27,3 +60,17 @@
     <%- include('../partials/booking-summary', { draft: draft }) %>
   </div>
 </section>
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+  var date = document.getElementById("preferredDate");
+  var time = document.getElementById("preferredTime");
+  var hidden = document.getElementById("preferredStartsAt");
+  function sync() {
+    if (!hidden) return;
+    if (date && time && date.value && time.value) hidden.value = date.value + "T" + time.value;
+  }
+  if (date) date.addEventListener("change", sync);
+  if (time) time.addEventListener("change", sync);
+  sync();
+});
+</script>

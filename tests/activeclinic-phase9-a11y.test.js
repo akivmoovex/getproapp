@@ -34,7 +34,7 @@ describe("ActiveClinic Phase 9 accessibility", () => {
       assert.match(html, new RegExp(row[2]), row[0]);
       assert.match(html, /ac-a11y\.js/, row[0]);
     });
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-mf-b1/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-mf-c1/);
     assert.match(read("src/activeclinic/http/renderActiveClinicPatient.js"), /v7-parity-13/);
     assert.match(read("src/activeclinic/http/renderActiveClinicAuth.js"), /v7-mf-a1/);
     assert.match(

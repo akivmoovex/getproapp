@@ -1,8 +1,13 @@
-<section class="ac-public-section ac-booking-wizard acp-booking-shell" data-ac-page-section="booking-patient-details">
+<section
+  class="ac-public-section ac-booking-wizard acp-booking-shell acp-mf10"
+  data-ac-page-section="booking-patient-details"
+  data-ac-mf-family="MF10"
+>
   <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
   <div class="acp-booking-layout">
     <div class="acp-booking-layout__main">
       <header class="acp-booking-header">
+        <p class="acp-mf10__kicker">Book an appointment</p>
         <h1>Your details</h1>
         <p>We need contact details so the clinic can confirm your request.</p>
       </header>

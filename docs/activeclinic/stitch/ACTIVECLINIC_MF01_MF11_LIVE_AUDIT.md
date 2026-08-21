@@ -288,11 +288,11 @@ Exactly one primary class. `UNCLEAR = 0`.
 | `d9a0fc38…` | MF08-06 Health Profile Mobile | MF08 | `RESPONSIVE_VARIANT` | |
 | `f96a31fb…` | MF09-01 Patient Dashboard Desktop | MF09 | `EXISTING_FUNCTION_DIFFERENT_UI` | Portal dashboard exists; EHR widgets extra. |
 | `9c0157d1…` | MF09-02 Patient Dashboard Mobile | MF09 | `RESPONSIVE_VARIANT` | |
-| `2e77628d…` | MF10-01 Select Service Desktop | MF10 | `EXISTING_FUNCTION_DIFFERENT_UI` | `/clinics/:clinicKey/book`. |
+| `2e77628d…` | MF10-01 Select Service Desktop | MF10 | `ALREADY_IMPLEMENTED_CURRENT_UI` | `/clinics/:clinicKey/book`. |
 | `9ea79123…` | MF10-02 Select Service Mobile | MF10 | `RESPONSIVE_VARIANT` | |
-| `897ed261…` | MF10-03 Select Provider Desktop | MF10 | `EXISTING_FUNCTION_DIFFERENT_UI` | `/book/doctor`. |
-| `270bca2e…` | MF10-05 Select Time Desktop | MF10 | `EXISTING_FUNCTION_DIFFERENT_UI` | `/book/slot`. |
-| `e9a21fe4…` | MF10-07 Review & Confirm Desktop | MF10 | `EXISTING_FUNCTION_DIFFERENT_UI` | `/book/review`; copay/insurance extra. |
+| `897ed261…` | MF10-03 Select Provider Desktop | MF10 | `ALREADY_IMPLEMENTED_CURRENT_UI` | `/book/doctor`. |
+| `270bca2e…` | MF10-05 Select Time Desktop | MF10 | `ALREADY_IMPLEMENTED_CURRENT_UI` | `/book/slot` preferred time; live slots unpublished. |
+| `e9a21fe4…` | MF10-07 Review & Confirm Desktop | MF10 | `ALREADY_IMPLEMENTED_CURRENT_UI` | `/book/review`; copay/insurance omitted. |
 | `6f642463…` | MF11-01 Medical Records Desktop | MF11 | `NEW_FUNCTIONALITY` | No patient records route. |
 | `b1a75000…` | MF11-02 Medical Records Mobile | MF11 | `RESPONSIVE_VARIANT` | Plus filter mismatch. |
 | `52a26180…` | MF11-03 Lab Result Detail Desktop | MF11 | `NEW_FUNCTIONALITY` | No patient lab-detail route. |
@@ -333,7 +333,7 @@ UNCLEAR: 0
 | MF08 OTP | **none** (phone verify exists, SMS disabled) | — | — | — | — | — | — | `NO_MATCH` |
 | MF08 profile | `/clinics/:clinicKey/patient/profile` | same | — | `patient/profile.ejs` | — | patient demographics | patient session | `PARTIAL_FUNCTION` |
 | MF09 | `GET /clinics/:clinicKey/patient` | same | portal booking list | `patient/dashboard.ejs` | — | `public_booking_requests` | patient session | `PARTIAL_FUNCTION` |
-| MF10 | `/clinics/:clinicKey/book*` | `activeClinicPublicBookingRoutes.js` | `activeClinicPublicBookingService.js` | booking wizard views | booking JS | `public_booking_requests` | public | `PARTIAL_FUNCTION` |
+| MF10 | `/clinics/:clinicKey/book*` | `activeClinicPublicBookingRoutes.js` | `activeClinicPublicBookingService.js` | booking wizard views | `ac-public.css` `.acp-mf10` | `public_booking_requests` | public | `FUNCTION_COMPLETE` minus copay/insurance/live slots |
 | MF11 | **none** | — | staff lab is `/app/diagnostics/laboratory` (wrong actor) | — | — | no patient-released results API | would need new patient clinical perms | `NO_MATCH` |
 
 ---
@@ -424,6 +424,10 @@ Reject `ONE_MASTER_ONBOARDING` that would swallow CMS. Reject `CLINIC_AND_WEBSIT
 MF05_IMPLEMENTED = YES (Phase C — visual chrome + live-state checklist on existing /app/onboarding)
 MF06_IMPLEMENTED = YES (Phase D — unpublished first-use hub on existing /app/settings/website)
 MF07_IMPLEMENTED = YES (Phase E — invite form chrome on existing staff invitation flow)
+MF10_IMPLEMENTED = YES (Phase F — public booking chrome on existing request wizard)
+MF08_IMPLEMENTED = NO
+MF09_IMPLEMENTED = NO
+MF11_IMPLEMENTED = NO
 ```
 
 ---
@@ -672,19 +676,18 @@ RBAC: none
 tests: staff invite / share-link
 ```
 
-### Phase F — Patient + booking chrome (MF08 minus OTP, MF09 bookings, MF10)
+### Phase F — MF10 booking chrome — IMPLEMENTED (MF08/MF09 not in this phase)
 
 ```text
 PHASE: F
-MF screens: MF08-01/02/05/06 (omit 03/04), MF09-01/02 bookings-only, MF10-01/02/03/05/07
-existing routes: /clinics/:clinicKey/patient*, /clinics/:clinicKey/book*
-goal: shared patient-portal chrome without EHR; booking wizard restyle without second engine
-functional work: none
-visual work: one portal shell + one booking wizard shell
+MF screens: MF10-01/02/03/05/07
+existing routes: /clinics/:clinicKey/book*
+goal: restyle existing consultation request wizard; omit copay/insurance/live slots
+functional work: none (preferred date/time fields still write preferredStartsAt)
+visual work: consultation booking templates + acp-mf10 CSS
 schema: none
 RBAC: none
-risk: medium if EHR/copay widgets are copied in — forbid that
-tests: patient portal, public booking, phase5a procedure booking, data-boundaries
+tests: activeclinic-mf10-booking / public-booking / phase5a-procedure-booking
 ```
 
 ### Phase G — deferred product expansion (not scheduled)
@@ -743,7 +746,7 @@ FUNCTIONAL_GAP: 0
 
 Transactional chrome (`data-ac-public-chrome="mf-register"`) suppresses marketing nav and the platform bottom bar on wizard pages only. `/register-clinic/status` keeps platform chrome.
 
-Next recommended phase: **MF10 — booking chrome**.
+Next recommended phase: **MF08 — patient registration / portal onboarding chrome**.
 
 ---
 
@@ -799,7 +802,23 @@ share-link supported: YES
 fake email UI added: NO
 ```
 
-Next recommended phase: **MF10 — booking chrome**.
+Next recommended phase: **MF08 — patient registration / portal onboarding chrome**.
+
+---
+
+## Phase F implementation (MF10)
+
+Implemented on the existing public consultation request wizard. No second booking engine. Live slot grids, copay, and insurance remain omitted as `INTENTIONAL_PRODUCT_VARIANCE`.
+
+| Stitch ID | Exact name | Device | V7 route/state | Status | Variance |
+|-----------|------------|--------|----------------|--------|----------|
+| `2e77628dd3214f5bb8b2ed046be10aa8` | MF10-01 Select Service Desktop | Desktop | `/clinics/:clinicKey/book` | `MINOR_ACCEPTED_VARIANCE` | Real catalogue; no sample services; no prices |
+| `9ea79123a4e04082ac9e478a438fe047` | MF10-02 Select Service Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | |
+| `897ed261d2dd46e3b4af8570ea12ecf2` | MF10-03 Select Provider Desktop | Desktop | `/book/doctor` | `MINOR_ACCEPTED_VARIANCE` | No gender/language filters, ratings, or next-available |
+| `270bca2e285c43188fafd39b5d83f28f` | MF10-05 Select Time Desktop | Desktop | `/book/slot` | `MINOR_ACCEPTED_VARIANCE` | Preferred date/time; `no_slots_published`; no fake grid |
+| `e9a21fe4a41045f0a1cd2e436a677866` | MF10-07 Review & Confirm Desktop | Desktop | `/book/review` | `MINOR_ACCEPTED_VARIANCE` | Pending request; no copay/insurance |
+
+Patient details, success, and procedure booking remain V7 states (`RESPONSIVE_V7_DERIVATION` / shared chrome). Missing Stitch mobile `04/06/08` remain Stitch gaps.
 
 ---
 

@@ -752,7 +752,9 @@
   display: grid;
   gap: 1rem;
   margin: 0 0 1.5rem;
-  max-width: 50rem;
+  max-width: min(50rem, 100%);
+  min-width: 0;
+  overflow-x: clip;
 }
 .ac-mw-firstuse__welcome,
 .ac-mw-firstuse__progress,

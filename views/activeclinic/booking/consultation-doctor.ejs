@@ -1,26 +1,32 @@
-<section class="ac-public-section ac-booking-wizard acp-booking-shell" data-ac-page-section="booking-choose-doctor">
+<section
+  class="ac-public-section ac-booking-wizard acp-booking-shell acp-mf10"
+  data-ac-page-section="booking-choose-doctor"
+  data-ac-mf-family="MF10"
+  data-ac-mf-screen="MF10-03"
+>
   <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
   <div class="acp-booking-layout">
     <div class="acp-booking-layout__main">
       <header class="acp-booking-header">
-        <h1>Choose a doctor</h1>
-        <p>Select a doctor if you have a preference, or choose any available doctor. We do not show live availability.</p>
+        <p class="acp-mf10__kicker">Book an appointment</p>
+        <h1>Select a provider</h1>
+        <p>Choose a published clinician if you have a preference, or let the clinic assign anyone available. Live next-available times are not published.</p>
       </header>
       <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
       <form method="post" action="/clinics/<%= clinic.clinicKey %>/book/doctor" class="ac-public-form" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-        <fieldset class="ac-booking-choice-list acp-choice-grid acp-choice-grid--doctors">
-          <legend class="ac-sr-only">Doctor preference</legend>
-          <label class="ac-booking-choice acp-choice-card acp-doctor-card<%= (draft && draft.anyDoctor) ? ' acp-choice-card--selected' : '' %>">
+        <fieldset class="ac-booking-choice-list acp-choice-grid acp-choice-grid--doctors acp-mf10-provider-grid">
+          <legend class="ac-sr-only">Provider preference</legend>
+          <label class="ac-booking-choice acp-choice-card acp-doctor-card acp-mf10-card<%= (draft && draft.anyDoctor) ? ' acp-choice-card--selected' : '' %>">
             <input type="radio" name="doctorChoice" value="any"<%= (draft && draft.anyDoctor) ? ' checked' : '' %>/>
             <span class="ac-booking-choice__body">
-              <strong>Any available doctor</strong>
+              <strong>Any available provider</strong>
               <span class="ac-booking-choice__meta">The clinic will assign based on availability</span>
             </span>
           </label>
           <% if (profiles && profiles.length) { %>
           <% profiles.forEach(function (doc) { %>
-          <label class="ac-booking-choice acp-choice-card acp-doctor-card<%= (draft && draft.staffKey === doc.staffKey) ? ' acp-choice-card--selected' : '' %>"<%= doc.photoIsFallback ? ' data-ac-asset-gap="doctor-photo"' : '' %>>
+          <label class="ac-booking-choice acp-choice-card acp-doctor-card acp-mf10-card<%= (draft && draft.staffKey === doc.staffKey) ? ' acp-choice-card--selected' : '' %>"<%= doc.photoIsFallback ? ' data-ac-asset-gap="doctor-photo"' : '' %>>
             <input type="radio" name="doctorChoice" value="<%= doc.staffKey %>"<%= (draft && draft.staffKey === doc.staffKey) ? ' checked' : '' %>/>
             <span class="ac-booking-choice__body">
               <span class="acp-doctor-card__avatar<%= doc.photoIsFallback ? '' : ' acp-doctor-card__avatar--photo' %>" aria-hidden="true">
@@ -47,7 +53,7 @@
           <% } %>
         </fieldset>
         <div class="ac-booking-wizard__actions acp-booking-actions">
-          <button type="submit" class="ac-btn ac-btn--primary">Continue</button>
+          <button type="submit" class="ac-btn ac-btn--primary" data-loading="Continuing…">Continue</button>
           <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book">Back</a>
         </div>
       </form>

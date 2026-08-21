@@ -1,11 +1,17 @@
-<section class="ac-public-section ac-booking-wizard acp-booking-shell" data-ac-page-section="booking-consultation-type">
+<section
+  class="ac-public-section ac-booking-wizard acp-booking-shell acp-mf10"
+  data-ac-page-section="booking-consultation-type"
+  data-ac-mf-family="MF10"
+  data-ac-mf-screen="MF10-01"
+>
   <% if (!(typeof bookingIntroOnly !== 'undefined' && bookingIntroOnly)) { %>
   <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
   <% } %>
   <div class="acp-booking-layout">
     <div class="acp-booking-layout__main">
       <header class="acp-booking-header">
-        <h1>Select consultation type</h1>
+        <p class="acp-mf10__kicker">Book an appointment</p>
+        <h1>Select service</h1>
         <p><%- include('../partials/website-editable-field', { contentKey: 'book.intro', fieldValue: (typeof clinic !== 'undefined' && clinic && clinic.bookIntro) || 'Choose the type of care you need. The clinic will confirm your appointment — this is not an automatic booking.', fieldType: 'long_text' }) %></p>
         <% if (typeof bookingIntroOnly !== 'undefined' && bookingIntroOnly) { %>
         <p class="ac-public-note">Online booking is off for visitors. This intro is website copy only — saving it does not enable bookings or publish the site.</p>
@@ -23,19 +29,19 @@
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <input type="hidden" name="wizardAction" value="continue"/>
         <% if (services && services.length) { %>
-        <fieldset class="ac-booking-choice-list acp-choice-grid">
-          <legend class="ac-sr-only">Consultation type</legend>
+        <fieldset class="ac-booking-choice-list acp-choice-grid acp-mf10-service-grid">
+          <legend class="ac-sr-only">Service</legend>
           <% services.forEach(function (svc) { %>
-          <label class="ac-booking-choice acp-choice-card<%= (draft && draft.serviceKey === svc.serviceKey) ? ' acp-choice-card--selected' : '' %>">
+          <label class="ac-booking-choice acp-choice-card acp-mf10-card<%= (draft && draft.serviceKey === svc.serviceKey) ? ' acp-choice-card--selected' : '' %>">
             <input type="radio" name="serviceKey" value="<%= svc.serviceKey %>"<%= (draft && draft.serviceKey === svc.serviceKey) ? ' checked' : '' %>/>
             <span class="ac-booking-choice__body">
               <strong><%= svc.displayName %></strong>
               <% if (svc.summary) { %><span class="ac-booking-choice__meta"><%= svc.summary %></span><% } %>
-              <span class="ac-booking-choice__meta">Price to be confirmed by clinic</span>
+              <% if (svc.durationMinutes) { %><span class="acp-mf10-card__duration"><%= svc.durationMinutes %> mins</span><% } %>
             </span>
           </label>
           <% }); %>
-          <label class="ac-booking-choice acp-choice-card<%= !(draft && draft.serviceKey) ? ' acp-choice-card--selected' : '' %>">
+          <label class="ac-booking-choice acp-choice-card acp-mf10-card<%= !(draft && draft.serviceKey) ? ' acp-choice-card--selected' : '' %>">
             <input type="radio" name="serviceKey" value=""<%= !(draft && draft.serviceKey) ? ' checked' : '' %>/>
             <span class="ac-booking-choice__body">
               <strong>General consultation</strong>
@@ -48,7 +54,7 @@
         <input type="hidden" name="serviceKey" value=""/>
         <% } %>
         <div class="ac-booking-wizard__actions acp-booking-actions">
-          <button type="submit" class="ac-btn ac-btn--primary">Continue</button>
+          <button type="submit" class="ac-btn ac-btn--primary" data-loading="Continuing…">Continue to provider</button>
           <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/procedures">Book a procedure instead</a>
         </div>
       </form>

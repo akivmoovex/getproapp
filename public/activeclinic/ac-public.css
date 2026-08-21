@@ -3037,6 +3037,87 @@ body.ac-public-body .ac-website-chrome__pills li.is-current {
   color: #fff;
 }
 
+/* MF10 public booking chrome — visual only, request-based availability */
+.acp-mf10__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acp-primary-strong);
+}
+.acp-mf10-service-grid,
+.acp-mf10-provider-grid {
+  gap: 0.85rem;
+}
+.acp-mf10-card {
+  min-height: 5.5rem;
+}
+.acp-mf10-card__duration {
+  display: inline-flex;
+  margin-top: 0.35rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--acp-primary-strong);
+}
+.acp-mf10-slot__panel {
+  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: var(--acp-radius-lg);
+  padding: 1.15rem 1.2rem;
+}
+.acp-mf10-slot__panel legend {
+  font-weight: 700;
+  padding: 0 0.25rem;
+}
+.acp-mf10-slot__grid {
+  display: grid;
+  gap: 0.85rem;
+}
+.acp-mf10-empty {
+  display: grid;
+  gap: 0.5rem;
+}
+.acp-mf10-empty__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  margin: 0;
+}
+.acp-mf10-empty__actions a {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+}
+.acp-mf10-review {
+  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: var(--acp-radius-lg);
+  padding: 1.15rem 1.25rem;
+}
+.acp-mf10-success {
+  max-width: 36rem;
+}
+@media (min-width: 768px) {
+  .acp-mf10-service-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  .acp-mf10-slot__grid {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+@media (max-width: 767px) {
+  .acp-mf10 .acp-booking-actions .ac-btn {
+    min-height: 44px;
+  }
+  .acp-mf10-slot input[type="date"],
+  .acp-mf10-slot input[type="time"] {
+    min-height: 44px;
+    width: 100%;
+  }
+}
+
+
 
 
 

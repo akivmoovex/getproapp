@@ -158,10 +158,10 @@ function resolvePublicSlotAvailabilityState() {
 }
 
 const CONSULTATION_WIZARD_STEPS = Object.freeze([
-  { key: "type", label: "Consultation type", step: 1 },
-  { key: "doctor", label: "Doctor", step: 2 },
-  { key: "slot", label: "Preferred time", step: 3 },
-  { key: "patient", label: "Your details", step: 4 },
+  { key: "type", label: "Service", step: 1 },
+  { key: "doctor", label: "Provider", step: 2 },
+  { key: "slot", label: "Time", step: 3 },
+  { key: "patient", label: "Details", step: 4 },
   { key: "review", label: "Review", step: 5 },
 ]);
 

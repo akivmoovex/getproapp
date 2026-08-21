@@ -80,6 +80,13 @@ async function resolveBookableClinic(getPool, req, res, respondDeps) {
   return { ok: true, clinic };
 }
 
+function combinePreferredDateTime(body) {
+  const date = String((body && body.preferredDate) || "").trim();
+  const time = String((body && body.preferredTime) || "").trim();
+  if (!date || !time) return "";
+  return `${date}T${time}`;
+}
+
 function validatePatientFields(body) {
   const errors = {};
   const firstName = String((body && body.patientFirstName) || "").trim();
@@ -408,7 +415,8 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
         })));
       }
 
-      const preferredStartsAt = String((req.body && req.body.preferredStartsAt) || "").trim();
+      const preferredStartsAt = String((req.body && req.body.preferredStartsAt) || "").trim()
+        || combinePreferredDateTime(req.body);
       if (!preferredStartsAt) {
         return res.status(400).type("html").send(renderPublicView("booking/consultation-slot", wizardLocals({
           csrfToken, clinic, draft, wizardStep: 3,
@@ -818,7 +826,8 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
           error: "Your session expired. Please try again.",
         })));
       }
-      const preferredStartsAt = String((req.body && req.body.preferredStartsAt) || "").trim();
+      const preferredStartsAt = String((req.body && req.body.preferredStartsAt) || "").trim()
+        || combinePreferredDateTime(req.body);
       if (!preferredStartsAt || Number.isNaN(new Date(preferredStartsAt).getTime())) {
         return res.status(400).type("html").send(renderPublicView("booking/procedure-time", procedureWizardLocals({
           csrfToken, clinic, procedure, draft, wizardStepKey: "time",
@@ -1205,7 +1214,8 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
         }));
       }
 
-      const preferredStartsAt = String((req.body && req.body.preferredStartsAt) || "").trim();
+      const preferredStartsAt = String((req.body && req.body.preferredStartsAt) || "").trim()
+        || combinePreferredDateTime(req.body);
       if (!preferredStartsAt) {
         return res.status(400).type("html").send(renderPublicView("booking/reschedule-review", {
           csrfToken, clinic, booking: verifyResult.booking, accessToken: token,

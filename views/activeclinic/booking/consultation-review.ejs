@@ -1,17 +1,24 @@
-<section class="ac-public-section ac-booking-wizard acp-booking-shell" data-ac-page-section="booking-review">
+<section
+  class="ac-public-section ac-booking-wizard acp-booking-shell acp-mf10"
+  data-ac-page-section="booking-review"
+  data-ac-mf-family="MF10"
+  data-ac-mf-screen="MF10-07"
+>
   <%- include('../partials/booking-wizard-progress', { wizardSteps: wizardSteps, wizardStep: wizardStep }) %>
   <div class="acp-booking-layout">
     <div class="acp-booking-layout__main">
       <header class="acp-booking-header">
-        <h1>Review your request</h1>
+        <p class="acp-mf10__kicker">Book an appointment</p>
+        <h1>Review &amp; confirm</h1>
         <p>Submitting creates a <strong>pending</strong> request. The clinic must confirm before it becomes an appointment.</p>
       </header>
       <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
-      <div class="ac-booking-review acp-review-panel">
+      <div class="ac-booking-review acp-review-panel acp-mf10-review">
         <dl class="ac-booking-summary__list">
-          <% if (draft.serviceDisplayName) { %><div><dt>Consultation type</dt><dd><%= draft.serviceDisplayName %></dd></div><% } %>
+          <div><dt>Clinic</dt><dd><%= (clinic && (clinic.publicName || clinic.displayName)) || '—' %></dd></div>
+          <% if (draft.serviceDisplayName) { %><div><dt>Service</dt><dd><%= draft.serviceDisplayName %></dd></div><% } else { %><div><dt>Service</dt><dd>General consultation</dd></div><% } %>
           <% if (draft.procedureDisplayName) { %><div><dt>Procedure</dt><dd><%= draft.procedureDisplayName %></dd></div><% } %>
-          <div><dt>Doctor preference</dt><dd><%= draft.anyDoctor ? 'Any available doctor' : (draft.staffDisplayName || '—') %></dd></div>
+          <div><dt>Provider</dt><dd><%= draft.anyDoctor ? 'Any available provider' : (draft.staffDisplayName || '—') %></dd></div>
           <% if (draft.preferredStartsAt) { %><div><dt>Preferred time</dt><dd><%= draft.preferredStartsAt %></dd></div><% } %>
           <% if (draft.patientFirstName) { %><div><dt>Patient</dt><dd><%= draft.patientFirstName %> <%= draft.patientLastName || '' %></dd></div><% } %>
           <div><dt>Phone</dt><dd><%= draft.patientPhone || '—' %></dd></div>
@@ -23,7 +30,7 @@
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <input type="hidden" name="idempotencyKey" value="<%= draft.idempotencyKey %>"/>
         <div class="ac-booking-wizard__actions acp-booking-actions">
-          <button type="submit" class="ac-btn ac-btn--primary">Submit request</button>
+          <button type="submit" class="ac-btn ac-btn--primary" data-loading="Submitting…">Submit request</button>
           <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/book/patient">Back</a>
         </div>
       </form>
@@ -31,7 +38,7 @@
     </div>
     <aside class="ac-booking-summary" data-ac-booking-summary>
       <h2 class="ac-booking-summary__title">Before you submit</h2>
-      <p class="ac-booking-summary__note">This creates a pending request only. Save your access link after submission to track status.</p>
+      <p class="ac-booking-summary__note">This creates a pending request only. Save your access link after submission to track status. No copay or insurance check is collected here.</p>
     </aside>
   </div>
 </section>
