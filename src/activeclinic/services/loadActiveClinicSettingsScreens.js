@@ -31,7 +31,7 @@ const instanceRepo = require("../../platform/website/instanceRepository");
 const submissionService = require("../../platform/website/submissionService");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const { loadWebsiteManagementSummary } = require("../../platform/website/websiteManagementPresentation");
-const { PRODUCT_CODE, buildPublicWebsiteEditPath } = require("../../platform/website/publicWebsiteUrl");
+const { PRODUCT_CODE } = require("../../platform/website/publicWebsiteUrl");
 const {
   NETWORK_ADMIN,
   ORGANIZATION_ADMIN,
@@ -195,7 +195,7 @@ function websiteItemLabel(state) {
   if (state === "published") return "Clinic website is public";
   if (state === "submitted") return "Clinic website submitted for publication";
   if (state === "changes_requested") return "Update clinic website after review";
-  if (state === "draft") return "Finish clinic website draft";
+  if (state === "draft") return "Customize your website";
   return "Set up clinic website";
 }
 
@@ -278,15 +278,6 @@ function calculateOrganizationSetupState(input) {
   const missing = checks.filter((c) => !c.ok);
   const complete = missing.length === 0;
 
-  const clinicKey = String(
-    (input.clinicKey || (input.website && input.website.clinicKey) || "")
-  ).trim();
-  const websiteEditUrl = clinicKey
-    ? buildPublicWebsiteEditPath({
-        product: PRODUCT_CODE.ACTIVECLINIC,
-        organizationKey: clinicKey,
-      })
-    : "/app/settings";
   const primaryHref =
     (primary && primary.href) ||
     (primary && primary.facilityKey
@@ -301,16 +292,17 @@ function calculateOrganizationSetupState(input) {
       }
     : null;
 
+  const profileComplete =
+    checkOk(checks, "public_name") &&
+    checkOk(checks, "legal_name") &&
+    checkOk(checks, "country") &&
+    checkOk(checks, "timezone") &&
+    checkOk(checks, "organization_type");
   const items = [
     setupItem({
       key: "clinic_profile",
-      label: "Complete clinic profile",
-      complete:
-        checkOk(checks, "public_name") &&
-        checkOk(checks, "legal_name") &&
-        checkOk(checks, "country") &&
-        checkOk(checks, "timezone") &&
-        checkOk(checks, "organization_type"),
+      label: profileComplete ? "Review clinic details" : "Complete clinic profile",
+      complete: profileComplete,
       classification: SETUP_CLASSIFICATION.REQUIRED_FOR_OPERATIONS,
       destinationUrl: "/app/settings/organization",
       description: "Public name, legal name, country, timezone, and organization type.",
@@ -344,11 +336,17 @@ function calculateOrganizationSetupState(input) {
     items.push(
       setupItem({
         key: "departments",
-        label: "Configure departments",
+        label:
+          primary && primary.operational && activeCount > 0
+            ? "Review departments"
+            : "Configure departments",
         complete: Boolean(primary && primary.operational && activeCount > 0),
         classification: SETUP_CLASSIFICATION.REQUIRED_FOR_OPERATIONS,
         destinationUrl: "/app/settings/clinic-setup/departments",
-        description: "At least one active department on the primary facility.",
+        description:
+          activeCount > 0
+            ? "Default departments are already provisioned. Review or adjust them for this clinic."
+            : "At least one active department on the primary facility.",
         currentState: activeCount > 0 ? `${activeCount}_active` : "none_active",
         facilityContext,
         actionPermissions: ["activeclinic.departments.manage"],
@@ -380,11 +378,11 @@ function calculateOrganizationSetupState(input) {
     items.push(
       setupItem({
         key: "additional_staff",
-        label: "Invite additional staff",
+        label: "Invite staff",
         complete: active + invited > 1,
         classification: SETUP_CLASSIFICATION.RECOMMENDED,
         destinationUrl: "/app/staff/invite",
-        description: "Invite staff beyond the original clinic administrator.",
+        description: "Invite doctors, nurses, and administrative staff beyond the clinic administrator.",
         currentState: `${active}_active_${invited}_invited`,
         actionPermissions: ["activeclinic.staff.invite"],
       })
@@ -399,9 +397,9 @@ function calculateOrganizationSetupState(input) {
         label: websiteItemLabel(state),
         complete: websiteItemComplete(state),
         classification: SETUP_CLASSIFICATION.RECOMMENDED,
-        destinationUrl: websiteEditUrl,
+        destinationUrl: "/app/settings/website",
         description:
-          "Clinic website is recommended. Publication is controlled by Platform Admin and does not block internal operations.",
+          "Registration already created an unpublished website. Customize it in Website Management. Publishing is optional and does not block clinic operations.",
         currentState: state,
         actionPermissions: ["website.edit"],
       })

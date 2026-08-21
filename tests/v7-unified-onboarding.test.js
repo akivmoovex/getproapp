@@ -410,8 +410,11 @@ describe("v7 unified organization onboarding", () => {
     const home = await request(app).get("/app").set("Cookie", cookie);
     assert.equal(home.status, 200);
     const onboard = await request(app).get("/app/onboarding").set("Cookie", cookie);
-    assert.equal(onboard.status, 303);
-    assert.equal(onboard.headers.location, "/app");
+    assert.equal(onboard.status, 200);
+    assert.match(onboard.text, /data-ac-onboarding="1"/);
+    assert.match(onboard.text, /data-ac-mf-family="MF05"/);
+    assert.match(onboard.text, /data-ac-onboarding-step="departments"/);
+    assert.match(onboard.text, /Review departments|Configure departments/);
   });
 
   it("ActiveClinic first login / dashboard redirects admin into onboarding while required is incomplete", async () => {

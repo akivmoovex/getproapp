@@ -37,6 +37,8 @@ function normalizeStep(raw, skippedSet) {
     skippable,
     destinationUrl: raw.destinationUrl != null ? String(raw.destinationUrl) : null,
     explanation: raw.explanation != null ? String(raw.explanation) : null,
+    currentState: raw.currentState != null ? String(raw.currentState) : null,
+    actionPermissions: Array.isArray(raw.actionPermissions) ? raw.actionPermissions : [],
   };
 }
 

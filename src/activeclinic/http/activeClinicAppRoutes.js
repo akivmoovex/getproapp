@@ -136,24 +136,24 @@ function registerActiveClinicAppRoutes(app, deps) {
         getPool(),
         onboardingScope(req.activeClinicAuth, { persist: true, markResumed: true })
       );
-      if (
-        !evaluation.ok ||
-        evaluation.canManage !== true ||
-        evaluation.status === "completed" ||
-        evaluation.status === "skipped"
-      ) {
+      if (!evaluation.ok || evaluation.canManage !== true) {
         return res.redirect(303, "/app");
       }
       return await renderShell(req, res, {
         activeNav: "home",
         content: "app/onboarding-content.ejs",
         pageHeader: {
-          title: "Organization setup",
-          description: "Required clinic setup after registration.",
-          actions: [],
+          title: "Welcome to ActiveClinic",
+          description: "Finish clinic setup. Required items come from live configuration, not a separate checklist.",
+          actions: evaluation.onboardingRequired
+            ? []
+            : [{ href: "/app", label: "Go to dashboard", ghost: true }],
         },
         breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Setup" }],
-        pageData: { onboarding: evaluation },
+        pageData: {
+          onboarding: evaluation,
+          viewerPermissions: (req.activeClinicAuth && req.activeClinicAuth.permissions) || [],
+        },
       });
     } catch (err) {
       return next(err);

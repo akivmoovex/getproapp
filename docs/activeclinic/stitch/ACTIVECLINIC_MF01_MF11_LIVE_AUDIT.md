@@ -270,9 +270,9 @@ Exactly one primary class. `UNCLEAR = 0`.
 | `9ab165fa…` | MF04-05 Reset Desktop | MF04 | `ALREADY_IMPLEMENTED_CURRENT_UI` | `/reset-password/:token`. |
 | `1e56748c…` | MF04-06 Reset Mobile | MF04 | `RESPONSIVE_VARIANT` | |
 | `c2546a84…` | MF04-07 Reset Success | MF04 | `ALREADY_IMPLEMENTED_CURRENT_UI` | `/reset-password/success`. |
-| `46639010…` | MF05-01 Welcome Desktop | MF05 | `EXISTING_ROUTE_NEW_STATE` | First-run interstitial; V7 goes to `/app` or `/app/onboarding`. |
-| `9576cbde…` | MF05-02 Welcome Mobile | MF05 | `RESPONSIVE_VARIANT` | |
-| `e8694bbb…` | MF05-03 Setup Checklist Desktop | MF05 | `EXISTING_FUNCTION_DIFFERENT_UI` | `/app/onboarding`. |
+| `46639010…` | MF05-01 Welcome Desktop | MF05 | `EXISTING_ROUTE_NEW_STATE` | Embedded welcome on `/app/onboarding` (not a blocking interstitial). |
+| `9576cbde…` | MF05-02 Welcome Mobile | MF05 | `RESPONSIVE_VARIANT` | Same page, mobile stacking. |
+| `e8694bbb…` | MF05-03 Setup Checklist Desktop | MF05 | `ALREADY_IMPLEMENTED_CURRENT_UI` | `/app/onboarding` MF05 chrome; completion derived from live config. |
 | `df9f49e6…` | MF05-04 Setup Checklist Mobile | MF05 | `RESPONSIVE_VARIANT` | |
 | `e61dfb58…` | MF06-01 Website Welcome Desktop | MF06 | `EXISTING_FUNCTION_DIFFERENT_UI` | `/app/settings/website` unpublished hub. |
 | `1d3629cc…` | MF06-02 Website Welcome Mobile | MF06 | `RESPONSIVE_VARIANT` | |
@@ -325,8 +325,8 @@ UNCLEAR: 0
 | MF03 | `GET/POST /register-clinic`, `/register-clinic/success` | `activeClinicPublicRoutes.js` | `submitClinicRegistrationService.js` | `public/register-clinic*.ejs` | `ac-public.js` / `acw-platform.css` | `clinic_registration_applications` | public | `PARTIAL_FUNCTION` |
 | MF04 forgot/reset | `/forgot-password`, `/reset-password/:token` | `activeClinicLifecycleRoutes.js` | password recovery service | `auth/forgot-password*.ejs`, `reset-password*.ejs` | `ac-auth.*` | identity action tokens | public | `FUNCTION_COMPLETE` minus OTP |
 | MF04 OTP | **none** | — | — | — | — | — | — | `NO_MATCH` |
-| MF05 welcome | **none dedicated** | — | — | — | — | — | — | `VISUAL_ONLY` |
-| MF05 checklist | `GET /app/onboarding` | `activeClinicAppRoutes.js` | `activeClinicOnboardingAdapter.js` | `app/onboarding-content.ejs` | app shell | `organization_onboarding_progress` + live HCO facts | `activeclinic.access` | `PARTIAL_FUNCTION` |
+| MF05 welcome | embedded on `/app/onboarding` | `activeClinicAppRoutes.js` | same adapter | `app/onboarding-content.ejs` welcome card | app shell | none | `canSeeClinicSetupPanel` | `FUNCTION_COMPLETE` (embedded, not interstitial) |
+| MF05 checklist | `GET /app/onboarding` | `activeClinicAppRoutes.js` | `activeClinicOnboardingAdapter.js` + `loadOrganizationClinicSetup` | `app/onboarding-content.ejs` | `ac-app.css` `.ac-onboarding-mf` | live HCO facts; skip keys only in `organization_onboarding_progress` | `activeclinic.access` + setup perms | `FUNCTION_COMPLETE` minus Stitch-only services/theme |
 | MF06 | `GET /app/settings/website` + CMS | `activeClinicSettingsRoutes.js`, `activeClinicWebsiteCmsRoutes.js` | `clinicWebsiteCmsService.js` | `settings-website-content.ejs` | `website-cms.*` | `website_instances` | `website.view` / `website.edit` | `PARTIAL_FUNCTION` |
 | MF07 | `GET /app/staff/invite`, `POST /app/staff/invite`, `/activate/:token` | `activeClinicStaffRoutes.js`, `activeClinicStaffAdminRoutes.js` | `activeClinicStaffInvitationService.js` | `staff-invite-content.ejs`, `staff-form-content.ejs` | staff UI | `staff_invitations` | `activeclinic.staff.invite` | `PARTIAL_FUNCTION` |
 | MF08 register | `/clinics/:clinicKey/patient/register` | `activeClinicPatientPortalRoutes.js` | portal registration service | patient register views | patient portal CSS | `patients` + `platform_identity_id` | patient public | `PARTIAL_FUNCTION` |
@@ -419,6 +419,11 @@ Why:
 - Implement MF05 as a visual of `/app/onboarding`. Treat MF06 welcome/checklist as **CMS empty/unpublished states** of `/app/settings/website`, not a second wizard. Omit Theme. Do not add `clinics.activeclinic.org` / `myclinic.cliniceditor.com` staging URLs.
 
 Reject `ONE_MASTER_ONBOARDING` that would swallow CMS. Reject `CLINIC_AND_WEBSITE_SEPARATE` as two first-run products.
+
+```text
+MF05_IMPLEMENTED = YES (Phase C — visual chrome + live-state checklist on existing /app/onboarding)
+MF06_IMPLEMENTED = NO
+```
 
 ---
 
@@ -585,15 +590,13 @@ No new permission keys for visual phases. Patient EHR would be a new domain late
 ### P1 — visual alignment of existing working flows
 
 1. **MF03** register-clinic chrome (highest isolated value).
-2. **MF05-03/04** onboarding checklist restyle (not a second system).
-3. **MF07** staff invite chrome with honest link copy.
-4. **MF10** booking step chrome on `/book*` (omit copay).
-5. **MF08-01/02** patient register chrome (no SSO).
-6. **MF09** bookings-only dashboard chrome.
+2. **MF07** staff invite chrome with honest link copy.
+3. **MF10** booking step chrome on `/book*` (omit copay).
+4. **MF08-01/02** patient register chrome (no SSO).
+5. **MF09** bookings-only dashboard chrome.
 
 ### P2 — useful partial-product enhancements
 
-- MF05-01/02 welcome interstitial (optional gate).
 - MF06 unpublished-website hub as CMS empty state (not a second onboarding).
 - MF02 leftover fake chrome already omitted — no work.
 - Enable staff-invite email later via existing Resend gate (ops, not Stitch).
@@ -607,7 +610,7 @@ OTP, SSO, Theme, License ID, specialty taxonomy, telehealth, messaging, billing/
 
 ## STAGE 17 — Implementation phases (new sequence)
 
-Phase A (MF01/MF02/MF04) is **done**. Phase B (MF03) is **done**. Do not reopen either.
+Phase A (MF01/MF02/MF04) is **done**. Phase B (MF03) is **done**. Phase C (MF05) is **done**. Do not reopen them.
 
 ### Phase B — MF03 clinic registration chrome — IMPLEMENTED
 
@@ -624,19 +627,19 @@ risk: low (do not add license, do not change clinicType enum, do not weaken pass
 expected test suites: clinic registration / ACW09 / terms acceptance
 ```
 
-### Phase C — MF05 onboarding continuity (website as subsection)
+### Phase C — MF05 onboarding continuity (website as subsection) — IMPLEMENTED
 
 ```text
 PHASE: C
-MF screens: MF05-03/04 required; MF05-01/02 optional interstitial
+MF screens: MF05-03/04 checklist; MF05-01/02 welcome embedded at top of /app/onboarding
 existing routes: /app/onboarding
 goal: one master clinic checklist visually closer to MF05; website remains a step linking to CMS
-functional work: map Stitch labels onto existing step keys; do not add “services”/“publish” as new required gates unless they already exist
-visual work: onboarding-content.ejs
+functional work: labels/destinations mapped to live configuration; no second checklist store
+visual work: onboarding-content.ejs + ac-app.css .ac-onboarding-mf
 schema: none
-RBAC: none
-risk: low if we do not invent a second checklist store
-tests: v7-unified-onboarding / activeclinic onboarding
+RBAC: none (existing clinic-setup permissions)
+risk: low — completion remains derived
+tests: activeclinic-mf05-onboarding / first-login-setup / v7-unified-onboarding
 ```
 
 ### Phase D — MF06 as CMS unpublished state (not a second onboarding)
@@ -739,7 +742,33 @@ FUNCTIONAL_GAP: 0
 
 Transactional chrome (`data-ac-public-chrome="mf-register"`) suppresses marketing nav and the platform bottom bar on wizard pages only. `/register-clinic/status` keeps platform chrome.
 
-Next recommended phase: **MF05 clinic onboarding checklist** (`/app/onboarding`).
+Next recommended phase: **MF06 unpublished/first-use Website CMS hub** (`/app/settings/website`). Do not implement a second onboarding wizard.
+
+---
+
+## Phase C implementation (MF05)
+
+Implemented on existing `/app/onboarding`. No second onboarding engine. No schema change. Completion stays derived from `loadOrganizationClinicSetup`.
+
+Welcome (MF05-01/02) is embedded at the top of the checklist page. It is not a blocking first-login interstitial and does not add a `welcome_seen` field.
+
+| Stitch ID | Exact name | Device | V7 route/state | Status | Variance |
+|-----------|------------|--------|----------------|--------|----------|
+| `46639010324140f89bf2c954950675a7` | MF05-01 Welcome to ActiveClinic Desktop | Desktop | `/app/onboarding` welcome card | `MINOR_ACCEPTED_VARIANCE` | Embedded; staff app chrome; no HIPAA copy |
+| `9576cbdeac1b43faa5c10313fe633618` | MF05-02 Welcome to ActiveClinic Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | Responsive stacking |
+| `e8694bbb106046d485a48040f2d6b94f` | MF05-03 Clinic Setup Checklist Desktop | Desktop | `/app/onboarding` | `MINOR_ACCEPTED_VARIANCE` | Real V7 steps; no services/theme; real nav |
+| `df9f49e696714d9f810e5d66b7577237` | MF05-04 Clinic Setup Checklist Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | |
+
+```text
+screens compared: 4
+PIXEL_CLOSE_MATCH: 0
+MINOR_ACCEPTED_VARIANCE: 4
+FUNCTIONAL_GAP: 0
+```
+
+Website checklist CTA is `/app/settings/website`. Publication remains recommended (submitted or published). MF06 not implemented.
+
+Next recommended phase: **MF06 unpublished/first-use Website CMS hub** (`/app/settings/website`).
 
 ---
 

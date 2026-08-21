@@ -357,7 +357,7 @@ describe("ActiveClinic clinic first-login setup (Phase C)", () => {
     assert.equal(itemByKey(draft, "website").currentState, "draft");
     assert.equal(
       itemByKey(draft, "website").destinationUrl,
-      "/clinics/sunrise?website_edit=1&website_mode=draft"
+      "/app/settings/website"
     );
 
     const published = calculateOrganizationSetupState(fullSetupInput({
@@ -420,7 +420,7 @@ describe("ActiveClinic clinic first-login setup (Phase C)", () => {
     assert.match(home.text, /data-ac-setup-item="website"/);
     assert.match(home.text, /data-ac-setup-item="additional_staff"/);
     assert.match(home.text, /\/app\/staff\/invite/);
-    assert.match(home.text, /website_edit=1/);
+    assert.match(home.text, /\/app\/settings\/website/);
     assert.doesNotMatch(home.text, /pending_review|Request information|clinic_registration/i);
     assert.match(home.text, /data-ac-dashboard-card="administration"|data-ac-dashboard-card="primary-work"/);
 
@@ -611,7 +611,7 @@ describe("ActiveClinic clinic first-login setup (Phase C)", () => {
     const managerHome = await request(app).get("/app").set("Cookie", managerCookie);
     assert.equal(managerHome.status, 200);
     assert.doesNotMatch(managerHome.text, /\/app\/settings\/organization/);
-    assert.doesNotMatch(managerHome.text, /website_edit=1/);
+    assert.doesNotMatch(managerHome.text, /\/app\/settings\/website/);
   });
 
   it("completed required setup no longer dominates the dashboard", async () => {

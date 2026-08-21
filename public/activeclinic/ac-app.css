@@ -732,6 +732,212 @@ body.ac-drawer-open .ac-drawer {
   color: var(--ac-muted);
   font-size: 0.9rem;
 }
+
+/* MF05 clinic onboarding checklist (staff app content only) */
+.ac-onboarding-mf {
+  display: grid;
+  gap: 1.25rem;
+  max-width: 50rem;
+}
+.ac-onboarding-mf__welcome,
+.ac-onboarding-mf__progress-card,
+.ac-onboarding-mf__item {
+  background: var(--ac-surface, #fff);
+  border: 1px solid var(--ac-border, #d7dee7);
+  border-radius: 0.75rem;
+  padding: 1.25rem 1.35rem;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
+}
+.ac-onboarding-mf__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ac-muted);
+}
+.ac-onboarding-mf__lede {
+  margin: 0 0 1rem;
+  color: var(--ac-muted);
+  line-height: 1.5;
+}
+.ac-onboarding-mf__facts {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+.ac-onboarding-mf__facts li {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  color: var(--ac-ink, #213145);
+  font-size: 0.95rem;
+}
+.ac-onboarding-mf__facts .material-symbols-outlined {
+  color: var(--ac-primary);
+  font-size: 1.25rem;
+}
+.ac-onboarding-mf__progress-card {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.35rem 1rem;
+  align-items: end;
+}
+.ac-onboarding-mf__progress-copy h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.1rem;
+}
+.ac-onboarding-mf__progress-copy p,
+.ac-onboarding-mf__percent {
+  margin: 0;
+  color: var(--ac-muted);
+}
+.ac-onboarding-mf__percent {
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ac-primary);
+}
+.ac-onboarding-mf__track {
+  grid-column: 1 / -1;
+  height: 0.5rem;
+  background: var(--ac-border, #dee8ff);
+  border-radius: 999px;
+  overflow: hidden;
+}
+.ac-onboarding-mf__fill {
+  height: 100%;
+  background: var(--ac-primary);
+  border-radius: 999px;
+}
+.ac-onboarding-mf__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+.ac-onboarding-mf__item {
+  display: flex;
+  gap: 0.9rem;
+  align-items: flex-start;
+}
+.ac-onboarding-mf__item.is-complete {
+  opacity: 0.88;
+}
+.ac-onboarding-mf__item.is-current {
+  border: 2px solid var(--ac-primary);
+  box-shadow: 0 10px 25px rgba(15, 23, 42, 0.08);
+}
+.ac-onboarding-mf__marker {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+  border: 2px solid var(--ac-border, #c5ced8);
+  color: var(--ac-muted);
+  font-weight: 600;
+}
+.ac-onboarding-mf__item.is-complete .ac-onboarding-mf__marker,
+.ac-onboarding-mf__item.is-current .ac-onboarding-mf__marker {
+  border-color: var(--ac-primary);
+  color: var(--ac-primary);
+  background: rgba(13, 148, 136, 0.08);
+}
+.ac-onboarding-mf__item.is-complete .ac-onboarding-mf__marker .material-symbols-outlined {
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
+}
+.ac-onboarding-mf__body {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+.ac-onboarding-mf__item-head {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  align-items: flex-start;
+}
+.ac-onboarding-mf__item-head h3 {
+  margin: 0;
+  font-size: 1.05rem;
+  display: flex;
+  gap: 0.4rem;
+  align-items: center;
+}
+.ac-onboarding-mf__icon {
+  color: var(--ac-primary);
+  font-size: 1.25rem;
+}
+.ac-onboarding-mf__badge {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 0.2rem 0.55rem;
+  border-radius: 999px;
+  background: var(--ac-bg, #f4f7fb);
+  color: var(--ac-muted);
+  white-space: nowrap;
+}
+.ac-onboarding-mf__item.is-complete .ac-onboarding-mf__badge {
+  background: rgba(13, 148, 136, 0.12);
+  color: var(--ac-primary);
+}
+.ac-onboarding-mf__item.is-current .ac-onboarding-mf__badge {
+  background: rgba(13, 148, 136, 0.16);
+  color: var(--ac-primary);
+}
+.ac-onboarding-mf__explain {
+  margin: 0.4rem 0 0.75rem;
+  color: var(--ac-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+.ac-onboarding-mf__item-actions,
+.ac-onboarding-mf__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+}
+.ac-onboarding-mf__item-actions .ac-btn,
+.ac-onboarding-mf__actions .ac-btn {
+  min-height: 44px;
+}
+.ac-onboarding-mf__actions {
+  padding-top: 0.25rem;
+}
+
+@media (max-width: 767px) {
+  .ac-onboarding-mf {
+    gap: 1rem;
+  }
+  .ac-onboarding-mf__welcome,
+  .ac-onboarding-mf__progress-card,
+  .ac-onboarding-mf__item {
+    padding: 1rem;
+  }
+  .ac-onboarding-mf__item {
+    flex-direction: column;
+  }
+  .ac-onboarding-mf__item-head {
+    flex-direction: column;
+  }
+  .ac-onboarding-mf__item-actions .ac-btn,
+  .ac-onboarding-mf__actions .ac-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+
+@media (max-width: 390px) {
+  .ac-onboarding-mf {
+    overflow-x: clip;
+  }
+}
 .ac-clinic-setup--compact {
   box-shadow: none;
 }

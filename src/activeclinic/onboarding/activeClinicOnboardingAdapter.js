@@ -26,6 +26,8 @@ function mapItem(item) {
     skippable: !required,
     destinationUrl: item.destinationUrl || null,
     explanation: item.description || null,
+    currentState: item.currentState || null,
+    actionPermissions: Array.isArray(item.actionPermissions) ? item.actionPermissions : [],
   };
 }
 

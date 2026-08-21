@@ -75,6 +75,9 @@
             <% } %>
           <% } else if (organizationConsole.onboardingStatus === 'recommended') { %>
             Required setup is complete
+            <% if (organizationConsole.onboardingHref) { %>
+            · <a href="<%= organizationConsole.onboardingHref %>">Open setup checklist</a>
+            <% } %>
           <% } else { %>
             Organization setup complete
           <% } %>
@@ -194,6 +197,7 @@
   <article class="ac-panel ac-clinic-setup ac-clinic-setup--compact" data-ac-dashboard-card="clinic-setup" data-ac-clinic-setup="recommended">
     <h2 class="ac-dashboard__card-title">Clinic setup</h2>
     <p class="ac-clinic-setup__progress">Required setup is complete. Recommended next steps:</p>
+    <p class="ac-clinic-setup__progress"><a href="/app/onboarding">Open setup checklist</a></p>
     <ul class="ac-checklist">
       <% setupRecommended.forEach(function (item) { %>
       <li data-ac-setup-item="<%= item.key %>" data-ac-setup-class="<%= item.classification || '' %>">

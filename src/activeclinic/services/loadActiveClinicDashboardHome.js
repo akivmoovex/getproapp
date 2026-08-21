@@ -187,7 +187,10 @@ async function loadActiveClinicDashboardHome(db, input) {
             ? "/app/facilities"
             : null,
         settingsHref: "/app/settings",
-        onboardingHref: onboardingStatus === "onboarding_required" ? "/app/onboarding" : null,
+        onboardingHref:
+          onboardingStatus === "onboarding_required" || onboardingStatus === "recommended"
+            ? "/app/onboarding"
+            : null,
         onboardingStatus,
       }
     : null;
