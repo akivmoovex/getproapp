@@ -424,15 +424,60 @@ describe("ActiveClinic testing tenant purge", () => {
     assert.equal(apps.rowCount, 0);
   });
 
+  it("purges disposable public booking and patient chart rows", async () => {
+    if (!requireDb()) return;
+    const clinic = await seedActiveClinic();
+    const patient = await pool.query(
+      `INSERT INTO activeclinic.patients (
+         organization_id, healthcare_organization_id, patient_number,
+         first_name, last_name, status
+       ) VALUES ($1, $2, $3, 'Ada', 'Patient', 'active')
+       RETURNING id`,
+      [clinic.orgId, clinic.hcoId, `AC-${new Date().getFullYear()}-000001`]
+    );
+    await pool.query(
+      `INSERT INTO activeclinic.public_booking_requests (
+         organization_id, healthcare_organization_id, facility_id,
+         request_number, booking_kind, patient_first_name, patient_last_name,
+         patient_phone_normalized, patient_phone_display, idempotency_key
+       ) VALUES ($1, $2, $3, $4, 'consultation', 'Ada', 'Patient',
+         '+260977000099', '+260977000099', $5)`,
+      [
+        clinic.orgId,
+        clinic.hcoId,
+        clinic.facilityId,
+        `BK-QA-${Date.now().toString(36).toUpperCase()}`,
+        `qa-idem-${clinic.organizationKey}`,
+      ]
+    );
+    const result = await purgeActiveClinicTestingOrganization(
+      pool,
+      {
+        organizationKey: clinic.organizationKey,
+        dryRun: false,
+        confirmDestructive: true,
+      },
+      TESTING_ENV
+    );
+    assert.equal(result.ok, true, JSON.stringify(result));
+    assert.equal(await orgExists(clinic.organizationKey), false);
+    const leftover = await pool.query(
+      `SELECT 1 FROM activeclinic.patients WHERE id = $1`,
+      [patient.rows[0].id]
+    );
+    assert.equal(leftover.rowCount, 0);
+  });
+
   it("refuses a tenant with unsupported operational dependency", async () => {
     if (!requireDb()) return;
     const clinic = await seedActiveClinic();
     await pool.query(
-      `INSERT INTO activeclinic.patients (
-         organization_id, healthcare_organization_id, patient_number,
-         first_name, last_name, status
-       ) VALUES ($1, $2, $3, 'Ada', 'Patient', 'active')`,
-      [clinic.orgId, clinic.hcoId, `AC-${new Date().getFullYear()}-000001`]
+      `INSERT INTO activeclinic.public_contact_inquiries (
+         organization_id, healthcare_organization_id,
+         sender_name, sender_email_normalized, sender_email_display, message
+       ) VALUES ($1, $2, 'Ada Inquiry', 'ada.inquiry@example.test', 'ada.inquiry@example.test',
+         'Please do not auto-delete this operational contact row.')`,
+      [clinic.orgId, clinic.hcoId]
     );
     const result = await purgeActiveClinicTestingOrganization(
       pool,
@@ -446,7 +491,7 @@ describe("ActiveClinic testing tenant purge", () => {
     assert.equal(result.ok, false);
     assert.equal(result.status, STATUS.BLOCKED);
     assert.equal(result.reason, "operational_data");
-    assert.ok(result.operational.patients >= 1);
+    assert.ok(result.operational.publicContactInquiries >= 1);
     assert.equal(await orgExists(clinic.organizationKey), true);
   });
 

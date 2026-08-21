@@ -7,6 +7,7 @@
  * Never uses CASCADE except existing schema ON DELETE behaviour.
  *
  * Safe delete order (after operational blockers are proven empty):
+ *  0. disposable portal/booking rows (public booking + patient chart, no EHR)
  *  1. clinic_registration_review_events (by this org's applications)
  *  2. clinic_registration_applications (this organization_id only)
  *  3. staff_role_assignments, staff_facility_assignments, staff_invitations
@@ -61,14 +62,23 @@ const SETUP_TENANT_TABLES = Object.freeze([
   { key: "chargeCatalogueItems", table: "activeclinic.charge_catalogue_items", column: "tenant_id" },
 ]);
 
-/** Clinical / financial / booking history — refuse rather than guess a delete graph. */
-const BLOCKING_ORG_TABLES = Object.freeze([
-  { key: "patients", table: "activeclinic.patients" },
+/**
+ * Public booking + patient-chart rows owned by a disposable testing org.
+ * Deleted only after eligibility; clinical/finance history still blocks.
+ */
+const DISPOSABLE_PORTAL_ORG_TABLES = Object.freeze([
+  { key: "publicBookingAccessTokens", table: "activeclinic.public_booking_access_tokens" },
+  { key: "publicBookingRequests", table: "activeclinic.public_booking_requests" },
+  { key: "patientPortalLinkEvents", table: "activeclinic.patient_portal_link_events" },
   { key: "patientIdentifiers", table: "activeclinic.patient_identifiers" },
   { key: "patientEmergencyContacts", table: "activeclinic.patient_emergency_contacts" },
   { key: "patientRegistrations", table: "activeclinic.patient_registrations" },
   { key: "patientFacilityLinks", table: "activeclinic.patient_facility_links" },
-  { key: "patientPortalLinkEvents", table: "activeclinic.patient_portal_link_events" },
+  { key: "patients", table: "activeclinic.patients" },
+]);
+
+/** Clinical / financial / staff-appointment history — refuse rather than guess a delete graph. */
+const BLOCKING_ORG_TABLES = Object.freeze([
   { key: "appointments", table: "activeclinic.appointments" },
   { key: "appointmentStatusEvents", table: "activeclinic.appointment_status_events" },
   { key: "appointmentReminderRequests", table: "activeclinic.appointment_reminder_requests" },
@@ -105,8 +115,6 @@ const BLOCKING_ORG_TABLES = Object.freeze([
   { key: "radiologyReports", table: "activeclinic.radiology_reports" },
   { key: "radiologyReportAmendments", table: "activeclinic.radiology_report_amendments" },
   { key: "publicContactInquiries", table: "activeclinic.public_contact_inquiries" },
-  { key: "publicBookingRequests", table: "activeclinic.public_booking_requests" },
-  { key: "publicBookingAccessTokens", table: "activeclinic.public_booking_access_tokens" },
 ]);
 
 const BLOCKING_TENANT_TABLES = Object.freeze([
@@ -126,6 +134,7 @@ const BLOCKING_TENANT_TABLES = Object.freeze([
 const KNOWN_ACTIVECLINIC_TABLES = Object.freeze([
   ...SETUP_ORG_TABLES.map((t) => t.table.replace("activeclinic.", "")),
   ...SETUP_TENANT_TABLES.map((t) => t.table.replace("activeclinic.", "")),
+  ...DISPOSABLE_PORTAL_ORG_TABLES.map((t) => t.table.replace("activeclinic.", "")),
   ...BLOCKING_ORG_TABLES.map((t) => t.table.replace("activeclinic.", "")),
   ...BLOCKING_TENANT_TABLES.map((t) => t.table.replace("activeclinic.", "")),
   "patient_number_counters",
@@ -273,6 +282,17 @@ async function loadScopedIds(client, organizationId) {
         .filter(Boolean)
     ),
   ];
+  const patients = await client.query(
+    `SELECT platform_identity_id
+       FROM activeclinic.patients
+      WHERE organization_id = $1
+        AND platform_identity_id IS NOT NULL`,
+    [organizationId]
+  );
+  for (const row of patients.rows) {
+    const id = String(row.platform_identity_id);
+    if (!identityIds.includes(id)) identityIds.push(id);
+  }
   const applications = await client.query(
     `SELECT id FROM activeclinic.clinic_registration_applications WHERE organization_id = $1`,
     [organizationId]
@@ -323,6 +343,10 @@ async function collectCounts(client, organizationId, scope) {
   }
   for (const spec of SETUP_TENANT_TABLES) {
     counts[spec.key] = await countWhere(client, spec.table, spec.column, organizationId);
+  }
+  counts.portal = {};
+  for (const spec of DISPOSABLE_PORTAL_ORG_TABLES) {
+    counts.portal[spec.key] = await countWhere(client, spec.table, "organization_id", organizationId);
   }
   counts.patientNumberCounters = scope.healthcareOrganizationIds.length
     ? await countSql(
@@ -570,11 +594,20 @@ async function classifyIdentities(client, organizationId, identityIds) {
           AND organization_id IS DISTINCT FROM $2`,
       [identityId, organizationId]
     );
-    if (otherStaff > 0 || blessboardUsers > 0 || otherSessions > 0) {
+    const otherPatients = await countSql(
+      client,
+      `SELECT COUNT(*)::int AS n
+         FROM activeclinic.patients
+        WHERE platform_identity_id = $1
+          AND organization_id <> $2`,
+      [identityId, organizationId]
+    );
+    if (otherStaff > 0 || blessboardUsers > 0 || otherSessions > 0 || otherPatients > 0) {
       retained.push({
         identityId,
         reasons: [
           otherStaff > 0 ? "other_staff" : null,
+          otherPatients > 0 ? "other_patient" : null,
           blessboardUsers > 0 ? "blessboard_user" : null,
           otherSessions > 0 ? "other_sessions" : null,
         ].filter(Boolean),
@@ -599,6 +632,90 @@ async function maybeFailAfter(client, step, failAfter) {
 }
 
 /**
+ * Remove public-booking and patient-chart rows for one eligible testing org.
+ * @param {{ query: Function }} client
+ * @param {string} organizationId
+ */
+async function deleteDisposablePortalRows(client, organizationId) {
+  const deleted = {};
+  const tokens = await client.query(
+    `DELETE FROM activeclinic.public_booking_access_tokens WHERE organization_id = $1`,
+    [organizationId]
+  );
+  deleted.publicBookingAccessTokens = tokens.rowCount || 0;
+
+  const linkEvents = await client.query(
+    `DELETE FROM activeclinic.patient_portal_link_events WHERE organization_id = $1`,
+    [organizationId]
+  );
+  deleted.patientPortalLinkEvents = linkEvents.rowCount || 0;
+
+  await client.query(
+    `UPDATE activeclinic.public_booking_requests
+        SET patient_id = NULL,
+            preferred_staff_id = NULL,
+            appointment_id = NULL,
+            portal_platform_identity_id = NULL
+      WHERE organization_id = $1`,
+    [organizationId]
+  );
+  const bookings = await client.query(
+    `DELETE FROM activeclinic.public_booking_requests WHERE organization_id = $1`,
+    [organizationId]
+  );
+  deleted.publicBookingRequests = bookings.rowCount || 0;
+
+  await client.query(
+    `UPDATE activeclinic.patient_identifiers SET created_by_staff_id = NULL WHERE organization_id = $1`,
+    [organizationId]
+  );
+  await client.query(
+    `UPDATE activeclinic.patient_emergency_contacts SET created_by_staff_id = NULL WHERE organization_id = $1`,
+    [organizationId]
+  );
+  await client.query(
+    `UPDATE activeclinic.patient_registrations SET registered_by_staff_id = NULL WHERE organization_id = $1`,
+    [organizationId]
+  );
+
+  const identifiers = await client.query(
+    `DELETE FROM activeclinic.patient_identifiers WHERE organization_id = $1`,
+    [organizationId]
+  );
+  deleted.patientIdentifiers = identifiers.rowCount || 0;
+  const emergency = await client.query(
+    `DELETE FROM activeclinic.patient_emergency_contacts WHERE organization_id = $1`,
+    [organizationId]
+  );
+  deleted.patientEmergencyContacts = emergency.rowCount || 0;
+  const registrations = await client.query(
+    `DELETE FROM activeclinic.patient_registrations WHERE organization_id = $1`,
+    [organizationId]
+  );
+  deleted.patientRegistrations = registrations.rowCount || 0;
+  const facilityLinks = await client.query(
+    `DELETE FROM activeclinic.patient_facility_links WHERE organization_id = $1`,
+    [organizationId]
+  );
+  deleted.patientFacilityLinks = facilityLinks.rowCount || 0;
+
+  await client.query(
+    `UPDATE activeclinic.patients
+        SET created_by_staff_id = NULL,
+            updated_by_staff_id = NULL,
+            platform_identity_id = NULL
+      WHERE organization_id = $1`,
+    [organizationId]
+  );
+  const patients = await client.query(
+    `DELETE FROM activeclinic.patients WHERE organization_id = $1`,
+    [organizationId]
+  );
+  deleted.patients = patients.rowCount || 0;
+  return deleted;
+}
+
+/**
  * Caller owns the transaction.
  * @param {{ query: Function }} client
  * @param {{
@@ -616,6 +733,8 @@ async function deleteActiveClinicTestingOrganization(client, opts) {
   }
 
   const deleted = {};
+
+  Object.assign(deleted, await deleteDisposablePortalRows(client, organizationId));
 
   const review = await client.query(
     `DELETE FROM activeclinic.clinic_registration_review_events
@@ -758,6 +877,12 @@ async function deleteActiveClinicTestingOrganization(client, opts) {
   const identityIds = Array.isArray(opts.identityIds) ? opts.identityIds : [];
   if (identityIds.length) {
     await client.query(
+      `DELETE FROM platform.deployment_sessions
+        WHERE platform_identity_id = ANY($1::uuid[])
+          AND (organization_id = $2 OR organization_id IS NULL)`,
+      [identityIds, organizationId]
+    );
+    await client.query(
       `DELETE FROM platform.identity_action_tokens
         WHERE platform_identity_id = ANY($1::uuid[])`,
       [identityIds]
@@ -783,6 +908,7 @@ module.exports = {
   RESERVED_ORGANIZATION_KEYS,
   PRODUCTION_HOSTNAME_RE,
   SETUP_ORG_TABLES,
+  DISPOSABLE_PORTAL_ORG_TABLES,
   BLOCKING_ORG_TABLES,
   BLOCKING_TENANT_TABLES,
   findOrganizationByKey,

@@ -286,11 +286,26 @@ describe("ActiveClinic RBAC role matrix (088)", () => {
     assert.deepEqual(r.rows, []);
   });
 
-  it("network_admin mirrors organization_admin permissions", async (t) => {
+  it("network_admin is a compatibility role without website publish elevation", async (t) => {
     if (!requireDb(t)) return;
     const org = await permissionsForRole(ORGANIZATION_ADMIN);
     const net = await permissionsForRole(NETWORK_ADMIN);
-    assert.deepEqual(net, org);
+    assert.ok(org.includes("website.publish"));
+    assert.ok(org.includes("website.restore"));
+    assert.ok(org.includes("website.rollback"));
+    assert.equal(net.includes("website.publish"), false);
+    assert.equal(net.includes("website.restore"), false);
+    assert.equal(net.includes("website.rollback"), false);
+    assert.ok(net.includes("website.view"));
+    assert.ok(net.includes("website.edit"));
+    assert.ok(net.includes("website.submit"));
+    const orgWithoutPublish = org.filter(
+      (key) => !["website.publish", "website.restore", "website.rollback"].includes(key)
+    );
+    const netWithoutPublish = net.filter(
+      (key) => !["website.publish", "website.restore", "website.rollback"].includes(key)
+    );
+    assert.deepEqual(netWithoutPublish, orgWithoutPublish);
   });
 
   it("lab and radiology use modality-scoped permissions (no shared operational diagnostics.*)", async (t) => {
