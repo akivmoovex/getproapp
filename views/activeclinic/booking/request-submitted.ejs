@@ -18,11 +18,13 @@
     <p class="acp-status-banner acp-status-banner--pending">This is not a confirmed appointment. Save your access link to check status.</p>
     <% if (accessToken) { %>
     <p class="ac-public-actions">
-      <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/my-booking?token=<%= accessToken %>">View my booking</a>
+      <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/my-booking?token=<%= encodeURIComponent(accessToken) %>">View my booking</a>
+      <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/patient/register?guestToken=<%= encodeURIComponent(accessToken) %>">Create a patient portal account</a>
       <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>">Back to clinic</a>
     </p>
     <% } else { %>
     <p class="ac-public-actions">
+      <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/patient/register">Create a patient portal account</a>
       <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>">Back to clinic</a>
     </p>
     <% } %>

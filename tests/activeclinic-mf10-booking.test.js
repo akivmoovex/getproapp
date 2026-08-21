@@ -145,6 +145,8 @@ describe("ActiveClinic MF10 public booking chrome", () => {
     assert.doesNotMatch(review, /Estimated Copay|Insurance Information|Confirm Appointment/);
     assert.match(success, /Pending clinic confirmation/);
     assert.doesNotMatch(success, /Appointment confirmed/);
+    assert.match(success, /patient\/register\?guestToken=/);
+    assert.match(success, /encodeURIComponent\(accessToken\)/);
   });
 
   it("consultation steps render MF10 chrome and keep pending request semantics", async () => {

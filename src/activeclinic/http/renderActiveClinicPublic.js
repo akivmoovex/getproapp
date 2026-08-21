@@ -16,6 +16,10 @@ const {
 } = require("../services/activeClinicPublicMediaService");
 const { buildClinicWebsiteNav } = require("../website/activeClinicClinicWebsiteNav");
 const { isPublicClinicDirectoryNavEnabled } = require("../website/activeClinicPublicCapabilities");
+const {
+  BOOKING_STATUS_LABELS,
+  bookingStatusLabel,
+} = require("./activeClinicBookingStatusCopy");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
 const ASSET_VERSION = "v7-mf-c1";
@@ -91,6 +95,8 @@ function renderPublicPage(input) {
     ...phoneLocals,
     ...(input.locals || {}),
     escapeHtml,
+    bookingStatusLabels: BOOKING_STATUS_LABELS,
+    bookingStatusLabel,
   });
   if (typeof locals.publicClinicDirectoryNavEnabled === "undefined") {
     locals.publicClinicDirectoryNavEnabled = isPublicClinicDirectoryNavEnabled(process.env);

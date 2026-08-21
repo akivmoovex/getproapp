@@ -285,6 +285,10 @@ describe("ActiveClinic MF08 patient registration chrome", () => {
     assert.match(getReg.text, /id="guestToken"/);
     assert.doesNotMatch(getReg.text, /Google|Apple|6-digit|ClinicBuilder/);
     assert.doesNotMatch(getReg.text, /data-patient-id|platform_identity|patientNumber/);
+    const prefill = await request(app).get(`${registerPath}?guestToken=qa-guest-token-example`);
+    assert.equal(prefill.status, 200);
+    assert.match(prefill.text, /value="qa-guest-token-example"/);
+    assert.match(prefill.text, /<details class="acp-mf08-guest" open>/);
     const csrf = extractCookie(getReg, CSRF_COOKIE_ACTIVECLINIC_ORG);
 
     const noMatch = await request(app)

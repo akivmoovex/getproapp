@@ -5,7 +5,7 @@
     <% const st = booking.status || ''; %>
     <p>
       <span class="acp-status-badge acp-status-badge--<%= st.replace(/_/g, '-') %>" data-ac-booking-status="<%= st %>">
-        <%= st.replace(/_/g, ' ') %>
+        <%= typeof bookingStatusLabel === 'function' ? bookingStatusLabel(st) : (bookingStatusLabels && bookingStatusLabels[st] ? bookingStatusLabels[st] : st.replace(/_/g, ' ')) %>
       </span>
     </p>
   </header>
@@ -47,6 +47,11 @@
   <% } else { %>
   <p class="ac-public-note" data-ac-actions-unavailable="1">Cancel and reschedule are not available for this booking status.</p>
   <% } %>
+
+  <p class="ac-public-note">
+    <a href="/clinics/<%= clinic.clinicKey %>/patient/register<%= accessToken ? ('?guestToken=' + encodeURIComponent(accessToken)) : '' %>">Create a patient portal account</a>
+    to keep this request with your clinic profile.
+  </p>
 
   <%- include('../partials/sms-honesty-note') %>
 </section>

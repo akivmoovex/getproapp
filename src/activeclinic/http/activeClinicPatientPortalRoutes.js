@@ -404,12 +404,15 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         return sendPatientClinicNotFound(res, env, isProduction);
       }
 
+      const guestTokenPrefill = String((req.query && req.query.guestToken) || "").trim().slice(0, 200);
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res
         .status(200)
         .type("html")
         .send(
-          renderPatientView("patient/register", patientViewPayload(clinic, csrfToken))
+          renderPatientView("patient/register", patientViewPayload(clinic, csrfToken, {
+            guestToken: guestTokenPrefill,
+          }))
         );
     } catch (err) {
       return next(err);

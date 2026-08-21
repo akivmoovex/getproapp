@@ -48,11 +48,11 @@
       <input type="password" id="password" name="password" autocomplete="new-password" required aria-required="true" minlength="10" aria-describedby="password-hint"/>
       <p class="ac-hint" id="password-hint">Use at least 10 characters. This is the patient portal password, not a clinic staff password.</p>
     </div>
-    <details class="acp-mf08-guest">
+    <details class="acp-mf08-guest"<% if (typeof guestToken !== 'undefined' && guestToken) { %> open<% } %>>
       <summary>I have a guest booking token</summary>
       <div class="ac-patient-field">
         <label for="guestToken">Guest token (optional)</label>
-        <input type="text" id="guestToken" name="guestToken" autocomplete="off"/>
+        <input type="text" id="guestToken" name="guestToken" autocomplete="off" value="<%= escapeHtml((typeof guestToken !== 'undefined' && guestToken) || '') %>"/>
         <p class="ac-hint">Use the token from a booking confirmation if you do not yet have a clinic patient record.</p>
       </div>
     </details>
