@@ -2187,4 +2187,43 @@ body.ac-app-body .ac-hours-list {
   }
 }
 
+.ac-staff-invite-mf {
+  display: grid;
+  gap: 1rem;
+  max-width: 42rem;
+}
+.ac-staff-invite-mf__intro,
+.ac-staff-invite-mf__card {
+  background: var(--ac-surface, #fff);
+  border: 1px solid var(--ac-border, #d7dee7);
+  border-radius: 0.75rem;
+  padding: 1.2rem 1.3rem;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
+}
+.ac-staff-invite-mf__kicker {
+  margin: 0 0 0.4rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ac-muted);
+}
+.ac-staff-invite-mf .ac-btn,
+.ac-staff-invite-mf .ac-input,
+.ac-staff-invite-mf .ac-select {
+  min-height: 44px;
+}
+@media (max-width: 767px) {
+  .ac-staff-invite-mf .ac-actions .ac-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
+@media (max-width: 390px) {
+  .ac-staff-invite-mf {
+    overflow-x: clip;
+  }
+}
+
+
 

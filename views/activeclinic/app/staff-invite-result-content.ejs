@@ -2,12 +2,27 @@
   var invite = (pageData && pageData.invite) || {};
   var staff = invite.staffMember || {};
   var share = invite.share || {};
-  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var delivery = String(invite.deliveryStatus || "link_generated");
+  var emailDelivered = delivery === "sent" || delivery === "queued";
+  var title = emailDelivered ? "Invitation sent" : "Invitation created";
 %>
-<section class="ac-invite-result" data-ac-page-section="staff-invite-result" data-ac-visual="stitch-gap">
-  <div class="ac-panel">
-    <h2 class="ac-dashboard__card-title">Invitation ready</h2>
-    <p><strong><%= staff.displayName || 'Staff member' %></strong> has been created<%= invite.identityCreated ? ' with a new login identity' : '' %>.</p>
+<section
+  class="ac-invite-result ac-staff-invite-mf"
+  data-ac-page-section="staff-invite-result"
+  data-ac-mf-family="MF07"
+  data-ac-delivery="<%= delivery %>"
+>
+  <article class="ac-staff-invite-mf__card">
+    <p class="ac-staff-invite-mf__kicker">Staff</p>
+    <h2 class="ac-dashboard__card-title" style="margin-top:0"><%= title %></h2>
+    <p>
+      <strong><%= staff.displayName || 'Staff member' %></strong>
+      <% if (emailDelivered) { %>
+      has an invitation email recorded as <%= delivery === "queued" ? "queued" : "sent" %>. Keep the copyable link below as backup.
+      <% } else { %>
+      has a pending invitation. Share the activation link below — automated email is not enabled in this environment.
+      <% } %>
+    </p>
     <% if (invite.roles && invite.roles.length) { %>
     <p class="ac-muted">Assigned roles: <%= invite.roles.map(function (r) { return r.roleKey; }).join(', ') %>.</p>
     <% } %>
@@ -32,31 +47,31 @@
     <dl class="ac-dl">
       <div>
         <dt>Delivery</dt>
-        <dd data-ac-delivery="<%= invite.deliveryStatus || 'link_generated' %>"><%= invite.deliveryLabel || 'Link generated — automated email/SMS is not configured.' %></dd>
+        <dd data-ac-delivery="<%= delivery %>"><%= invite.deliveryLabel || 'Invitation created. Copy or share the link below.' %></dd>
       </div>
       <% if (invite.expiresAt) { %>
       <div>
         <dt>Link expires</dt>
-        <dd><%= invite.expiresAt %></dd>
+        <dd data-ac-invite-expires="1"><%= invite.expiresAt %></dd>
       </div>
       <% } %>
     </dl>
 
     <% if (invite.activationUrl) { %>
     <div class="ac-field" style="margin-top:1rem">
-      <label class="ac-label" for="invite_url">Activation link</label>
+      <label class="ac-label" for="invite_url">Invitation link</label>
       <input class="ac-input" id="invite_url" readonly value="<%= invite.activationUrl %>" data-ac-invite-url="1"/>
     </div>
     <div class="ac-actions ac-actions--stack-mobile">
-      <button type="button" class="ac-btn" data-ac-copy-invite="1">Copy link</button>
+      <button type="button" class="ac-btn" data-ac-copy-invite="1">Copy invitation link</button>
       <% if (share.mailtoUrl) { %>
-      <a class="ac-btn ac-btn--ghost" data-ac-invite-email="1" href="<%= share.mailtoUrl %>">Share by email</a>
+      <a class="ac-btn ac-btn--ghost" data-ac-invite-email="1" href="<%= share.mailtoUrl %>">Share invitation</a>
       <% } %>
       <% if (share.whatsappUrl) { %>
       <a class="ac-btn ac-btn--ghost" data-ac-invite-whatsapp="1" href="<%= share.whatsappUrl %>" target="_blank" rel="noopener">Share on WhatsApp</a>
       <% } %>
     </div>
-    <p class="ac-muted" id="copy_status" hidden data-ac-copy-status="1">Invitation link copied</p>
+    <p class="ac-muted" id="copy_status" hidden data-ac-copy-status="1" role="status">Invitation link copied</p>
     <% } else { %>
     <p class="ac-muted">No activation link is available for this result.</p>
     <% } %>
@@ -65,10 +80,10 @@
       <% if (staff.id) { %>
       <a class="ac-btn" href="/app/staff/<%= encodeURIComponent(staff.id) %>">View staff profile</a>
       <% } %>
-      <a class="ac-btn ac-btn--ghost" href="/app/staff/new">Add another staff</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/staff/invite">Invite another</a>
       <a class="ac-btn ac-btn--ghost" href="/app/staff">Back to staff list</a>
     </div>
-  </div>
+  </article>
 </section>
 <script>
 document.addEventListener("DOMContentLoaded", function () {
@@ -78,7 +93,12 @@ document.addEventListener("DOMContentLoaded", function () {
   if (!btn || !input) return;
   btn.addEventListener("click", function () {
     var text = input.value;
-    function ok() { if (status) status.hidden = false; }
+    function ok() {
+      if (status) {
+        status.hidden = false;
+        status.textContent = "Invitation link copied";
+      }
+    }
     if (navigator.clipboard && navigator.clipboard.writeText) {
       navigator.clipboard.writeText(text).then(ok).catch(function () {
         input.select(); document.execCommand("copy"); ok();

@@ -66,7 +66,7 @@ const {
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const DELIVERY_LABELS = Object.freeze({
-  link_generated: "Link generated — automated email/SMS is not configured.",
+  link_generated: "Invitation created. Copy or share the link below — automated email is not enabled here.",
   sent: "Invitation email recorded as sent. Keep the copyable link below.",
   queued: "Invitation email accepted for processing. Keep the copyable link below.",
   failed: "Invitation email failed — use the link below.",
@@ -224,6 +224,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
         const inviteMode = String(req.query.invite || "") === "1";
         const form = await loadActiveClinicCreateStaffScreen(getPool(), {
           auth: req.activeClinicAuth,
+          inviteMode,
         });
         if (!form.ok) {
           return res.status(403).type("html").send(
@@ -272,13 +273,30 @@ function registerActiveClinicStaffRoutes(app, deps) {
     requirePermission("activeclinic.staff.invite"),
     async (req, res, next) => {
       try {
+        const form = await loadActiveClinicCreateStaffScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          inviteMode: true,
+        });
+        if (!form.ok) {
+          return res.status(403).type("html").send(
+            renderSimpleState(
+              "Access Restricted",
+              "You do not have permission to invite staff.",
+              {
+                state: "access-denied",
+                linkHref: "/app/staff",
+                linkLabel: "Back to staff",
+              }
+            )
+          );
+        }
         return await renderShell(req, res, {
           activeNav: "staff",
-          content: "app/staff-invite-content.ejs",
+          content: "app/staff-form-content.ejs",
           pageHeader: {
-            title: "Invite staff member",
-            description: "Start the staff invitation workflow.",
-            actions: [],
+            title: "Invite staff",
+            description: "Create a staff profile and share an activation link. Automated email is not enabled in this environment.",
+            actions: [{ label: "Staff directory", href: "/app/staff", ghost: true }],
           },
           breadcrumbs: [
             { label: "Home", href: "/app" },
@@ -286,7 +304,8 @@ function registerActiveClinicStaffRoutes(app, deps) {
             { label: "Invite" },
           ],
           pageData: {
-            stitch: { desktop: "f30963c89fad49ceabc2447dfd46f8f0" },
+            form,
+            stitch: { desktop: "f3363068e1f94e619c83a44821045461", mobile: "44c7c2fe9fff497980f9ca5b903cb785" },
           },
         });
       } catch (err) {
@@ -302,9 +321,11 @@ function registerActiveClinicStaffRoutes(app, deps) {
       }
       const auth = req.activeClinicAuth;
       const values = parseStaffFormBody(req.body);
+      const inviteMode = String((req.body && req.body.invite_mode) || "") === "1";
       const preview = await loadActiveClinicCreateStaffScreen(getPool(), {
         auth,
         values,
+        inviteMode,
       });
       if (!preview.ok) {
         return res.status(403).send("Forbidden");
@@ -314,6 +335,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
         const form = await loadActiveClinicCreateStaffScreen(getPool(), {
           auth,
           values,
+          inviteMode,
           errors: ["You do not have permission to issue staff invitations."],
         });
         return await renderShell(req, res, {
@@ -339,6 +361,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
         const form = await loadActiveClinicCreateStaffScreen(getPool(), {
           auth,
           values,
+          inviteMode,
           errors: checked.errors,
           fieldErrors: checked.fieldErrors,
         });
@@ -360,6 +383,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
         const form = await loadActiveClinicCreateStaffScreen(getPool(), {
           auth,
           values,
+          inviteMode,
           errors: ["Healthcare organization context is missing."],
         });
         return await renderShell(req, res, {
@@ -382,6 +406,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
         const form = await loadActiveClinicCreateStaffScreen(getPool(), {
           auth,
           values,
+          inviteMode,
           errors: ["Select at least one facility within your access."],
           fieldErrors: { facility_ids: "Select at least one facility." },
         });
@@ -437,6 +462,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
           const form = await loadActiveClinicCreateStaffScreen(getPool(), {
             auth,
             values,
+            inviteMode,
             errors: [inviteErrorMessage(created.code)],
           });
           return await renderShell(req, res, {
@@ -466,6 +492,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
               const form = await loadActiveClinicCreateStaffScreen(getPool(), {
                 auth,
                 values,
+                inviteMode,
                 errors: ["Facility assignment failed."],
               });
               return await renderShell(req, res, {
@@ -496,6 +523,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
             const form = await loadActiveClinicCreateStaffScreen(getPool(), {
               auth,
               values,
+              inviteMode,
               errors: [inviteErrorMessage(INVITE_RESULT.GRANT_DENIED)],
             });
             return await renderShell(req, res, {
@@ -559,6 +587,7 @@ function registerActiveClinicStaffRoutes(app, deps) {
         const form = await loadActiveClinicCreateStaffScreen(getPool(), {
           auth,
           values,
+          inviteMode,
           errors: [inviteErrorMessage(invited.code)],
         });
         return await renderShell(req, res, {
@@ -580,8 +609,10 @@ function registerActiveClinicStaffRoutes(app, deps) {
         activeNav: "staff",
         content: "app/staff-invite-result-content.ejs",
         pageHeader: {
-          title: "Invitation ready",
-          description: "Share the activation link with the new staff member.",
+          title: inviteMode ? "Invitation created" : "Invitation ready",
+          description: inviteMode
+            ? "Share the activation link. Automated email is not enabled in this environment."
+            : "Share the activation link with the new staff member.",
           actions: [],
         },
         breadcrumbs: [

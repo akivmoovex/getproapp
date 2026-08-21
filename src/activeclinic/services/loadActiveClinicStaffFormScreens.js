@@ -273,9 +273,15 @@ async function loadActiveClinicCreateStaffScreen(db, input) {
 
   const accessReview = await summarizePermissionsForRoleKeys(db, values.roleKeys);
 
+  const inviteMode = input.inviteMode === true;
+  if (inviteMode) {
+    values.issueInvitation = true;
+  }
+
   return {
     ok: true,
     mode: "create",
+    inviteMode,
     formAction: "/app/staff",
     values,
     errors: input.errors || [],

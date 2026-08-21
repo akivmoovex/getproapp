@@ -7,8 +7,20 @@
   var mode = form.mode || 'create';
   var facilities = form.facilities || [];
   var roleOptions = form.roleOptions || [];
+  var inviteMode = form.inviteMode === true || (pageData && pageData.inviteMode === true);
 %>
-<section class="ac-staff-form" data-ac-page-section="staff-<%= mode %>" data-ac-visual="stitch-gap">
+<section
+  class="ac-staff-form<%= inviteMode ? ' ac-staff-invite-mf' : '' %>"
+  data-ac-page-section="staff-<%= mode %>"
+  data-ac-visual="<%= inviteMode ? 'mf07' : 'stitch-gap' %>"
+  <% if (inviteMode) { %>data-ac-mf-family="MF07" data-ac-mf-screen="MF07-01"<% } %>
+>
+  <% if (inviteMode) { %>
+  <article class="ac-staff-invite-mf__intro">
+    <p class="ac-staff-invite-mf__kicker">Staff</p>
+    <p>Enter the details below to create an invitation. The new staff member activates with a shared link. This clinic does not send automated invitation email in testing.</p>
+  </article>
+  <% } %>
   <% if (errors.length) { %>
   <div id="ac-staff-error-summary" class="ac-flash ac-flash--error" role="alert" tabindex="-1">
     <strong>Please fix the following:</strong>
@@ -18,10 +30,13 @@
   </div>
   <% } %>
 
-  <form class="ac-panel" method="post" action="<%= form.formAction %>" data-ac-loading="1" novalidate>
+  <form class="ac-panel ac-staff-invite-mf__card" method="post" action="<%= form.formAction %>" data-ac-loading="1" novalidate>
     <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+    <% if (inviteMode) { %>
+    <input type="hidden" name="invite_mode" value="1"/>
+    <% } %>
 
-    <h2 class="ac-dashboard__card-title">Identity &amp; contact</h2>
+    <h2 class="ac-dashboard__card-title"><%= inviteMode ? 'Staff identity' : 'Identity &amp; contact' %></h2>
     <div class="ac-field">
       <label class="ac-label" for="first_name">First name</label>
       <input class="ac-input" id="first_name" name="first_name" required maxlength="100" autocomplete="given-name" value="<%= values.firstName || '' %>"/>
@@ -89,6 +104,10 @@
       <legend class="ac-dashboard__card-title">Facility assignments</legend>
       <% if (!facilities.length) { %>
       <p class="ac-muted">No assignable facilities are available for your access.</p>
+      <% } else if (inviteMode && facilities.length === 1) { %>
+      <p>This invitation will assign <strong><%= facilities[0].displayName %></strong>.</p>
+      <input type="hidden" name="facility_ids" value="<%= facilities[0].id %>"/>
+      <input type="hidden" name="primary_facility_id" value="<%= facilities[0].id %>"/>
       <% } else { %>
       <div class="ac-check-grid" data-ac-facility-multi="1">
         <% facilities.forEach(function (f) { %>
@@ -170,19 +189,24 @@
     <% } %>
 
     <% if (mode === 'create' && form.canInvite) { %>
+    <% if (inviteMode) { %>
+    <input type="hidden" name="issue_invitation" value="1"/>
+    <p class="ac-muted" style="margin-top:1rem">An activation link will be created after you submit. Share it with the new staff member.</p>
+    <% } else { %>
     <input type="hidden" name="issue_invitation" value="0"/>
     <label class="ac-check" style="margin-top:1rem">
       <input type="checkbox" name="issue_invitation" value="1" <%= values.issueInvitation ? 'checked' : '' %>/>
       Issue activation invitation now
     </label>
     <p class="ac-muted" style="font-size:.85rem">When unchecked, the staff profile is saved without a login identity. You can invite later from the staff profile.</p>
+    <% } %>
     <% } else if (mode === 'create') { %>
     <p class="ac-muted" style="margin-top:1rem">You can create the staff profile, but you do not have permission to issue activation invitations.</p>
     <input type="hidden" name="issue_invitation" value="0"/>
     <% } %>
 
     <div class="ac-actions ac-actions--stack-mobile" style="margin-top:1.25rem">
-      <button type="submit" class="ac-btn" data-loading="Saving…"><%= mode === 'create' ? (values.issueInvitation !== false && form.canInvite ? 'Create &amp; invite' : 'Create staff') : 'Save changes' %></button>
+      <button type="submit" class="ac-btn" data-loading="Saving…"><%= mode === 'create' ? (inviteMode ? 'Create invitation' : (values.issueInvitation !== false && form.canInvite ? 'Create &amp; invite' : 'Create staff')) : 'Save changes' %></button>
       <a class="ac-btn ac-btn--ghost" href="<%= mode === 'edit' && form.staff ? '/app/staff/' + encodeURIComponent(form.staff.id) : '/app/staff' %>">Cancel</a>
     </div>
   </form>

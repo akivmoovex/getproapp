@@ -274,11 +274,11 @@ Exactly one primary class. `UNCLEAR = 0`.
 | `9576cbde…` | MF05-02 Welcome Mobile | MF05 | `RESPONSIVE_VARIANT` | Same page, mobile stacking. |
 | `e8694bbb…` | MF05-03 Setup Checklist Desktop | MF05 | `ALREADY_IMPLEMENTED_CURRENT_UI` | `/app/onboarding` MF05 chrome; completion derived from live config. |
 | `df9f49e6…` | MF05-04 Setup Checklist Mobile | MF05 | `RESPONSIVE_VARIANT` | |
-| `e61dfb58…` | MF06-01 Website Welcome Desktop | MF06 | `EXISTING_FUNCTION_DIFFERENT_UI` | `/app/settings/website` unpublished hub. |
+| `e61dfb58…` | MF06-01 Website Welcome Desktop | MF06 | `ALREADY_IMPLEMENTED_CURRENT_UI` | Unpublished welcome on `/app/settings/website`. |
 | `1d3629cc…` | MF06-02 Website Welcome Mobile | MF06 | `RESPONSIVE_VARIANT` | |
-| `e12e282f…` | MF06-03 Website Checklist Desktop | MF06 | `EXISTING_FUNCTION_DIFFERENT_UI` | CMS hub tasks; Theme is extra. |
+| `e12e282f…` | MF06-03 Website Checklist Desktop | MF06 | `ALREADY_IMPLEMENTED_CURRENT_UI` | CMS first-use tasks; Theme omitted. |
 | `8522ea2d…` | MF06-04 Website Checklist Mobile | MF06 | `RESPONSIVE_VARIANT` | |
-| `f3363068…` | MF07-01 Invite Staff Desktop | MF07 | `EXISTING_FUNCTION_DIFFERENT_UI` | `/app/staff` + invite. |
+| `f3363068…` | MF07-01 Invite Staff Desktop | MF07 | `ALREADY_IMPLEMENTED_CURRENT_UI` | `/app/staff/invite` form + share-link result. |
 | `44c7c2fe…` | MF07-02 Invite Staff Mobile | MF07 | `RESPONSIVE_VARIANT` | |
 | `b17405de…` | MF08-01 Patient Registration Desktop | MF08 | `EXISTING_FUNCTION_DIFFERENT_UI` | `/clinics/:clinicKey/patient/register` + unsupported SSO. |
 | `2cf8f6ff…` | MF08-02 Patient Registration Mobile | MF08 | `RESPONSIVE_VARIANT` | |
@@ -327,8 +327,8 @@ UNCLEAR: 0
 | MF04 OTP | **none** | — | — | — | — | — | — | `NO_MATCH` |
 | MF05 welcome | embedded on `/app/onboarding` | `activeClinicAppRoutes.js` | same adapter | `app/onboarding-content.ejs` welcome card | app shell | none | `canSeeClinicSetupPanel` | `FUNCTION_COMPLETE` (embedded, not interstitial) |
 | MF05 checklist | `GET /app/onboarding` | `activeClinicAppRoutes.js` | `activeClinicOnboardingAdapter.js` + `loadOrganizationClinicSetup` | `app/onboarding-content.ejs` | `ac-app.css` `.ac-onboarding-mf` | live HCO facts; skip keys only in `organization_onboarding_progress` | `activeclinic.access` + setup perms | `FUNCTION_COMPLETE` minus Stitch-only services/theme |
-| MF06 | `GET /app/settings/website` + CMS | `activeClinicSettingsRoutes.js`, `activeClinicWebsiteCmsRoutes.js` | `clinicWebsiteCmsService.js` | `settings-website-content.ejs` | `website-cms.*` | `website_instances` | `website.view` / `website.edit` | `PARTIAL_FUNCTION` |
-| MF07 | `GET /app/staff/invite`, `POST /app/staff/invite`, `/activate/:token` | `activeClinicStaffRoutes.js`, `activeClinicStaffAdminRoutes.js` | `activeClinicStaffInvitationService.js` | `staff-invite-content.ejs`, `staff-form-content.ejs` | staff UI | `staff_invitations` | `activeclinic.staff.invite` | `PARTIAL_FUNCTION` |
+| MF06 | `GET /app/settings/website` + CMS | `activeClinicSettingsRoutes.js`, `activeClinicWebsiteCmsRoutes.js` | `clinicWebsiteCmsService.js` | `settings-website-content.ejs` | `website-cms.*` | `website_instances` | `website.view` / `website.edit` | `FUNCTION_COMPLETE` minus Theme |
+| MF07 | `GET /app/staff/invite`, `POST /app/staff`, `/activate/:token` | `activeClinicStaffRoutes.js`, `activeClinicStaffAdminRoutes.js` | `activeClinicStaffInvitationService.js` | `staff-form-content.ejs`, `staff-invite-result-content.ejs` | `ac-app.css` `.ac-staff-invite-mf` | `staff_invitations` | `activeclinic.staff.invite` + create | `FUNCTION_COMPLETE` minus email send |
 | MF08 register | `/clinics/:clinicKey/patient/register` | `activeClinicPatientPortalRoutes.js` | portal registration service | patient register views | patient portal CSS | `patients` + `platform_identity_id` | patient public | `PARTIAL_FUNCTION` |
 | MF08 OTP | **none** (phone verify exists, SMS disabled) | — | — | — | — | — | — | `NO_MATCH` |
 | MF08 profile | `/clinics/:clinicKey/patient/profile` | same | — | `patient/profile.ejs` | — | patient demographics | patient session | `PARTIAL_FUNCTION` |
@@ -422,7 +422,8 @@ Reject `ONE_MASTER_ONBOARDING` that would swallow CMS. Reject `CLINIC_AND_WEBSIT
 
 ```text
 MF05_IMPLEMENTED = YES (Phase C — visual chrome + live-state checklist on existing /app/onboarding)
-MF06_IMPLEMENTED = NO
+MF06_IMPLEMENTED = YES (Phase D — unpublished first-use hub on existing /app/settings/website)
+MF07_IMPLEMENTED = YES (Phase E — invite form chrome on existing staff invitation flow)
 ```
 
 ---
@@ -597,7 +598,7 @@ No new permission keys for visual phases. Patient EHR would be a new domain late
 
 ### P2 — useful partial-product enhancements
 
-- MF06 unpublished-website hub as CMS empty state (not a second onboarding).
+- MF10 booking step chrome on `/book*` (omit copay).
 - MF02 leftover fake chrome already omitted — no work.
 - Enable staff-invite email later via existing Resend gate (ops, not Stitch).
 - MF08 profile fields already on portal (name/phone/email/address) visual only.
@@ -610,7 +611,7 @@ OTP, SSO, Theme, License ID, specialty taxonomy, telehealth, messaging, billing/
 
 ## STAGE 17 — Implementation phases (new sequence)
 
-Phase A (MF01/MF02/MF04) is **done**. Phase B (MF03) is **done**. Phase C (MF05) is **done**. Do not reopen them.
+Phase A (MF01/MF02/MF04) is **done**. Phase B (MF03) is **done**. Phase C (MF05) is **done**. Phase D (MF06) is **done**. Phase E (MF07) is **done**. Do not reopen them.
 
 ### Phase B — MF03 clinic registration chrome — IMPLEMENTED
 
@@ -642,7 +643,7 @@ risk: low — completion remains derived
 tests: activeclinic-mf05-onboarding / first-login-setup / v7-unified-onboarding
 ```
 
-### Phase D — MF06 as CMS unpublished state (not a second onboarding)
+### Phase D — MF06 as CMS unpublished state (not a second onboarding) — IMPLEMENTED
 
 ```text
 PHASE: D
@@ -650,22 +651,22 @@ MF screens: MF06-01–04
 existing routes: /app/settings/website
 goal: unpublished hub + setup tiles that deep-link to existing CMS (pages, branding, catalogue, publish)
 functional work: none; omit Theme and fake staging host
-visual work: settings-website-content.ejs
+visual work: settings-website-content.ejs first-use block
 schema: none
 RBAC: none
 risk: medium if treated as a new wizard — must remain the existing hub
-tests: website hub / CMS
+tests: v7-website-settings-ux
 ```
 
-### Phase E — MF07 staff invite chrome
+### Phase E — MF07 staff invite chrome — IMPLEMENTED
 
 ```text
 PHASE: E
 MF screens: MF07-01/02
-existing routes: /app/staff, /app/staff/invite, /app/staff/new?invite=1
-goal: restyle list + invite dialog; CTA = create + copy link
+existing routes: GET /app/staff/invite → staff-form-content.ejs; POST /app/staff
+goal: restyle invite form + share-link success; CTA creates invitation and copyable link
 functional work: none; do not claim email sent
-visual work: staff invite templates
+visual work: staff-form-content.ejs inviteMode, staff-invite-result-content.ejs
 schema: none
 RBAC: none
 tests: staff invite / share-link
@@ -742,7 +743,7 @@ FUNCTIONAL_GAP: 0
 
 Transactional chrome (`data-ac-public-chrome="mf-register"`) suppresses marketing nav and the platform bottom bar on wizard pages only. `/register-clinic/status` keeps platform chrome.
 
-Next recommended phase: **MF06 unpublished/first-use Website CMS hub** (`/app/settings/website`). Do not implement a second onboarding wizard.
+Next recommended phase: **MF10 — booking chrome**.
 
 ---
 
@@ -766,9 +767,39 @@ MINOR_ACCEPTED_VARIANCE: 4
 FUNCTIONAL_GAP: 0
 ```
 
-Website checklist CTA is `/app/settings/website`. Publication remains recommended (submitted or published). MF06 not implemented.
+Website checklist CTA is `/app/settings/website`. Publication remains recommended (submitted or published).
 
-Next recommended phase: **MF06 unpublished/first-use Website CMS hub** (`/app/settings/website`).
+---
+
+## Phase D implementation (MF06)
+
+Implemented as unpublished first-use chrome on existing `GET /app/settings/website`. No second website onboarding wizard. Theme tab and fake staging hosts omitted.
+
+| Stitch ID | Exact name | Device | V7 route/state | Status | Variance |
+|-----------|------------|--------|----------------|--------|----------|
+| `e61dfb582bc34ff585e3acb8aa60b0d3` | MF06-01 Website Welcome Desktop | Desktop | unpublished welcome on `/app/settings/website` | `MINOR_ACCEPTED_VARIANCE` | Embedded; real CMS nav |
+| `1d3629ccea8e40d0b6720a653442c98b` | MF06-02 Website Welcome Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | |
+| `e12e282fbf784eff998dc5bcaf23ad13` | MF06-03 Website Setup Checklist Desktop | Desktop | first-use tasks linking to CMS | `MINOR_ACCEPTED_VARIANCE` | Real routes; no Theme; no cliniceditor.com |
+| `8522ea2d33ce4f748554f5535d004264` | MF06-04 Website Setup Checklist Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | |
+
+---
+
+## Phase E implementation (MF07)
+
+Implemented on existing staff invitation architecture. `GET /app/staff/invite` now renders the create/invite form. Success remains share-link first. Email transport stays gated (`NOT_PRODUCTION`).
+
+| Stitch ID | Exact name | Device | V7 route/state | Status | Variance |
+|-----------|------------|--------|----------------|--------|----------|
+| `f3363068e1f94e619c83a44821045461` | MF07-01 Invite Staff Desktop | Desktop | `/app/staff/invite` form | `MINOR_ACCEPTED_VARIANCE` | Real roles/facilities; phone required; no department dropdown; page not a staff-list modal |
+| `44c7c2fe9fff497980f9ca5b903cb785` | MF07-02 Invite Staff Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | |
+
+```text
+EMAIL_INVITE_GATED
+share-link supported: YES
+fake email UI added: NO
+```
+
+Next recommended phase: **MF10 — booking chrome**.
 
 ---
 
