@@ -2921,11 +2921,120 @@ body.ac-public-body .acp-hero--platform {
   display: block;
   font-weight: 600;
 }
-.ac-website-manage__note {
-  display: block;
-  margin-top: 0.35rem;
-  color: #4a5b6c;
-  max-width: 40rem;
+.ac-tenant-intro--mission {
+  text-align: center;
+  max-width: 46rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+.ac-tenant-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1rem;
+}
+.ac-tenant-section-head h2 { margin: 0; }
+.ac-tenant-section-link {
+  font-weight: 600;
+  color: #3d4947;
+  text-decoration: none;
+}
+.ac-service-cards--home {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+.ac-tenant-lead__grid {
+  display: grid;
+  gap: 1.5rem;
+}
+@media (min-width: 900px) {
+  .ac-tenant-lead__grid {
+    grid-template-columns: minmax(0, 1.3fr) minmax(16rem, 0.9fr);
+    align-items: start;
+  }
+}
+.ac-tenant-hours-card,
+.ac-tenant-campus {
+  padding: 1.25rem 1.35rem;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+  background: #fff;
+}
+.ac-doctor-cards--home {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(12rem, 1fr));
+  gap: 1rem;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+.ac-public-header--tenant .ac-public-header__cta {
+  border-radius: 0.5rem;
+  background: #0d9488;
+  color: #fff;
+  border-color: #0d9488;
+}
+.ac-mw-history__list {
+  display: grid;
+  gap: 0.85rem;
+  margin: 1.25rem 0;
+}
+.ac-mw-history__card {
+  display: grid;
+  gap: 0.85rem;
+  padding: 1.1rem 1.2rem;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 1rem;
+}
+@media (min-width: 720px) {
+  .ac-mw-history__card {
+    grid-template-columns: 1fr auto;
+    align-items: center;
+  }
+}
+.ac-mw-history__card h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.05rem;
+}
+.ac-mw-history__meta {
+  margin: 0;
+  color: #3d4947;
+}
+.ac-mw-history__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.ac-mw-history__actions form { margin: 0; }
+body.ac-public-body .ac-website-chrome {
+  background: #0b1c30;
+  border-bottom: 0;
+  color: #fff;
+  align-items: center;
+}
+body.ac-public-body .ac-website-chrome__link,
+body.ac-public-body .ac-website-chrome__submit button {
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  font-weight: 600;
+}
+body.ac-public-body .ac-website-chrome__pills li {
+  border-color: rgba(255, 255, 255, 0.28);
+  color: #fff;
+  background: transparent;
+}
+body.ac-public-body .ac-website-chrome__pills li.is-current {
+  background: #0d9488;
+  border-color: #0d9488;
+  color: #fff;
 }
 
 

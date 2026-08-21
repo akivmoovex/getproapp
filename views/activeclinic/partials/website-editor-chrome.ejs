@@ -27,7 +27,7 @@
   data-website-max-bytes="5242880"
 >
   <div class="ac-website-chrome__status" data-website-chrome-status="1">
-    <p><strong><%= lifecycleLabel || (websiteEdit ? 'Editing draft' : 'Live view.') %></strong>
+    <p><strong>Editor Mode</strong> <%= lifecycleLabel || (websiteEdit ? 'Editing draft' : 'Live view.') %>
       <% if (policyLabel) { %> Policy: <%= policyLabel %>.<% } %>
       <% if (lifecycle === 'offline') { %> The public website is offline. You can still use clinic operations.<% } %>
       <% if (lifecycle === 'suspended') { %> The public website is suspended. Contact Platform Admin to restore it.<% } %>
@@ -59,6 +59,9 @@
     <% } %>
   </div>
   <div class="ac-website-chrome__actions" data-website-chrome-actions="1">
+    <a class="ac-website-chrome__link" href="/app/settings/website/pages">Pages</a>
+    <a class="ac-website-chrome__link" href="/app/settings/website/sections">Sections</a>
+    <a class="ac-website-chrome__link" href="/app/settings/website/media">Assets</a>
     <% if (websiteEdit) { %>
     <a class="ac-website-chrome__link" href="?website_mode=live">
       <span class="gp-website-chrome__label-full">View live</span>
@@ -94,7 +97,7 @@
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
       <input type="hidden" name="makePublic" value="1"/>
       <button type="submit">
-        <span class="gp-website-chrome__label-full">Publish website</span>
+        <span class="gp-website-chrome__label-full">Publish</span>
         <span class="gp-website-chrome__label-short">Publish</span>
       </button>
     </form>

@@ -69,8 +69,8 @@ const CONTENT_ITEMS = Object.freeze([
 const SYSTEM_ITEMS = Object.freeze([
   {
     key: "book",
-    defaultLabel: "Book appointment",
-    requestLabel: "Request appointment",
+    defaultLabel: "Book Appointment",
+    requestLabel: "Request Appointment",
     pageKey: "book",
     kind: "system",
     surfaces: ["desktop", "drawer", "footerQuick", "bottom"],
@@ -259,16 +259,30 @@ function buildClinicWebsiteNav(clinic, options) {
     {
       key: "privacy",
       kind: "platform",
-      label: "Privacy policy",
+      label: "Privacy Policy",
       href: withSurfaceQuery(pageHref(clinic, "privacy"), query),
       protected: true,
     },
     {
       key: "terms",
       kind: "platform",
-      label: "Terms of service",
+      label: "Terms of Service",
       href: withSurfaceQuery(pageHref(clinic, "terms"), query),
       protected: true,
+    },
+    {
+      key: "patientLogin",
+      kind: "system",
+      label: "Patient Portal",
+      href: withSurfaceQuery(pageHref(clinic, "patientLogin"), query),
+      protected: true,
+    },
+    {
+      key: "contact",
+      kind: "content",
+      label: "Contact Us",
+      href: withSurfaceQuery(pageHref(clinic, "contact"), query),
+      protected: false,
     },
   ];
   if (directoryEnabled) {

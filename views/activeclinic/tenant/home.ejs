@@ -27,7 +27,7 @@
   const doctorsHref = (clinic.publicPagePaths && clinic.publicPagePaths.doctors) || (clinic.publicBasePath ? clinic.publicBasePath + "/doctors" : "/clinics/" + clinic.clinicKey + "/doctors");
   const locationHref = (clinic.publicPagePaths && clinic.publicPagePaths.location) || (clinic.publicBasePath ? clinic.publicBasePath + "/location" : "/clinics/" + clinic.clinicKey + "/location");
   const aboutHref = (clinic.publicPagePaths && clinic.publicPagePaths.about) || (clinic.publicBasePath ? clinic.publicBasePath + "/about" : "/clinics/" + clinic.clinicKey + "/about");
-  const bookingLabel = clinic.publicBookingEnabled ? "Book an appointment" : "Request an appointment";
+  const bookingLabel = clinic.publicBookingEnabled ? "Book Appointment" : "Request Appointment";
   const homeSections = (Array.isArray(clinic.cmsSections) ? clinic.cmsSections : []).filter(function (s) {
     return s && (s.page_id === "tpl_home" || !s.page_id);
   });
@@ -52,14 +52,14 @@
         <%- include('../partials/website-editable-field', { contentKey: 'home.hero.subtitle', fieldValue: clinic.heroSubtitle || clinic.websiteAbout || 'Providing compassionate, professional healthcare for our community.', fieldType: 'long_text' }) %>
       </p>
       <div class="ac-tenant-hero__actions">
-        <a class="ac-btn ac-btn--primary ac-btn--pill" href="<%= bookingHref %>"><%= bookingLabel %></a>
+        <a class="ac-btn ac-btn--primary" href="<%= bookingHref %>"><%= bookingLabel %></a>
         <% if (heroPhone) { %>
-        <a class="ac-btn ac-btn--ghost ac-btn--pill ac-btn--phone" href="tel:<%= String(heroPhone).replace(/[^\d+]/g, '') %>">
+        <a class="ac-btn ac-btn--ghost ac-btn--phone" href="tel:<%= String(heroPhone).replace(/[^\d+]/g, '') %>">
           <span class="ac-icon ac-icon--call" aria-hidden="true"></span>
           <%= heroPhone %>
         </a>
         <% } else { %>
-        <a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= contactHref %>">Contact the clinic</a>
+        <a class="ac-btn ac-btn--secondary" href="<%= contactHref %>">Contact the clinic</a>
         <% } %>
       </div>
     </div>
@@ -73,103 +73,113 @@
         imagePosition: heroPos,
         imageLoading: 'eager',
       }) %>
-      <aside class="ac-tenant-hero__badge" aria-label="Facility status">
-        <span class="ac-tenant-hero__badge-icon" aria-hidden="true">✓</span>
-        <span>
-          <strong>Listed on ActiveClinic</strong>
-          <span class="ac-tenant-hero__badge-sub">Public clinic website</span>
-        </span>
-      </aside>
     </div>
   </div>
 </section>
 <% } %>
 
-<section class="ac-tenant-trust" data-ac-page-section="tenant-trust" aria-label="Clinic highlights">
-  <ul class="ac-tenant-trust__list">
-    <li>
-      <span class="ac-tenant-trust__icon" aria-hidden="true">✓</span>
-      Verified ActiveClinic listing
-    </li>
-    <% if (primaryFacility && (primaryFacility.city || primaryFacility.province)) { %>
-    <li>
-      <span class="ac-tenant-trust__icon" aria-hidden="true">⌖</span>
-      Located in <%= primaryFacility.city || primaryFacility.province %>
-    </li>
-    <% } %>
-    <% if (clinic.publicBookingEnabled) { %>
-    <li>
-      <span class="ac-tenant-trust__icon" aria-hidden="true">◷</span>
-      Online appointment requests
-    </li>
-    <% } else { %>
-    <li>
-      <span class="ac-tenant-trust__icon" aria-hidden="true">☎</span>
-      Request a visit by phone or the contact form
-    </li>
-    <% } %>
-    <li class="ac-tenant-trust__note">Clinic staff review booking requests before confirmation</li>
-  </ul>
-</section>
-
 <% if (homeSectionVisible("text") || homeSectionVisible("introduction") || editingHome) { %>
-<section class="ac-public-section ac-tenant-intro" data-ac-page-section="tenant-intro" data-ac-home-section="introduction">
-  <p class="ac-tenant-eyebrow"><%- include('../partials/website-editable-field', { contentKey: 'about.eyebrow', fieldValue: clinic.aboutEyebrow || 'About', fieldType: 'short_text' }) %></p>
-  <h2><%- include('../partials/website-editable-field', { contentKey: 'about.story.heading', fieldValue: clinic.aboutHeading || ('About ' + clinic.publicName), fieldType: 'short_text' }) %></h2>
+<section class="ac-public-section ac-tenant-intro ac-tenant-intro--mission" data-ac-page-section="tenant-intro" data-ac-home-section="introduction">
+  <h2><%- include('../partials/website-editable-field', { contentKey: 'about.story.heading', fieldValue: clinic.aboutHeading || clinic.publicName, fieldType: 'short_text' }) %></h2>
   <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'about.story.body', fieldValue: clinic.aboutBody || clinic.websiteAbout || '', fieldType: 'long_text' }) %></p>
-  <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= aboutHref %>">Read more</a></p>
 </section>
 <% } %>
 
-<% if (homeSectionVisible("services") || homeSectionVisible("doctors") || homeSectionVisible("hours") || editingHome) { %>
-<section class="ac-public-section ac-tenant-preview" data-ac-page-section="tenant-preview">
-  <div class="ac-tenant-preview__grid">
-    <% if (homeSectionVisible("services") || editingHome) { %>
-    <article class="ac-tenant-preview__card" data-ac-home-section="services">
-      <h2><%- include('../partials/website-editable-field', { contentKey: 'home.preview.services_heading', fieldValue: clinic.homePreviewServicesHeading || 'Services', fieldType: 'short_text' }) %></h2>
-      <p><%- include('../partials/website-editable-field', { contentKey: 'services.intro', fieldValue: clinic.servicesIntro || 'Browse consultations, procedures, and care offerings published by this clinic.', fieldType: 'long_text' }) %></p>
-      <a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= servicesHref %>">View services</a>
-    </article>
-    <% } %>
+<%
+  const homeServices = (typeof services !== "undefined" && Array.isArray(services) ? services : (clinic.services || [])).slice(0, 4);
+  const homeDoctors = (typeof profiles !== "undefined" && Array.isArray(profiles) ? profiles : (clinic.doctors || [])).slice(0, 2);
+%>
+
+<% if (homeSectionVisible("services") || editingHome) { %>
+<section class="ac-public-section ac-tenant-services-grid" data-ac-page-section="tenant-preview" data-ac-home-section="services">
+  <div class="ac-tenant-section-head">
+    <h2><%- include('../partials/website-editable-field', { contentKey: 'home.preview.services_heading', fieldValue: clinic.homePreviewServicesHeading || 'Our Services', fieldType: 'short_text' }) %></h2>
+    <a class="ac-tenant-section-link" href="<%= servicesHref %>">View all</a>
+  </div>
+  <% if (homeServices.length) { %>
+  <ul class="ac-service-cards ac-service-cards--home">
+    <% homeServices.forEach(function (s) { %>
+    <li class="ac-service-card">
+      <a class="ac-service-card__link" href="/clinics/<%= clinic.clinicKey %>/services/<%= s.serviceKey %>">
+        <span class="ac-service-card__icon" aria-hidden="true">
+          <img src="<%= s.iconUrl || '/activeclinic/assets/icons/general.svg' %>" alt="" width="28" height="28" loading="lazy"/>
+        </span>
+        <h3 class="ac-service-card__name"><%= s.displayName %></h3>
+        <% if (s.summary) { %>
+        <p class="ac-service-card__summary"><%= s.summary.length > 140 ? s.summary.slice(0, 140) + "…" : s.summary %></p>
+        <% } %>
+      </a>
+    </li>
+    <% }) %>
+  </ul>
+  <% } else { %>
+  <p><%- include('../partials/website-editable-field', { contentKey: 'services.intro', fieldValue: clinic.servicesIntro || 'Browse consultations, procedures, and care offerings published by this clinic.', fieldType: 'long_text' }) %></p>
+  <p><a class="ac-btn ac-btn--secondary" href="<%= servicesHref %>">View all</a></p>
+  <% } %>
+</section>
+<% } %>
+
+<% if (homeSectionVisible("doctors") || homeSectionVisible("hours") || editingHome) { %>
+<section class="ac-public-section ac-tenant-lead" data-ac-page-section="tenant-lead">
+  <div class="ac-tenant-lead__grid">
     <% if (homeSectionVisible("doctors") || editingHome) { %>
-    <article class="ac-tenant-preview__card" data-ac-home-section="doctors">
-      <h2><%- include('../partials/website-editable-field', { contentKey: 'home.preview.doctors_heading', fieldValue: clinic.homePreviewDoctorsHeading || 'Doctors', fieldType: 'short_text' }) %></h2>
+    <div data-ac-home-section="doctors">
+      <h2><%- include('../partials/website-editable-field', { contentKey: 'home.preview.doctors_heading', fieldValue: clinic.homePreviewDoctorsHeading || 'Lead Physicians', fieldType: 'short_text' }) %></h2>
+      <% if (homeDoctors.length) { %>
+      <ul class="ac-doctor-cards ac-doctor-cards--home">
+        <% homeDoctors.forEach(function (d) { %>
+        <li class="ac-doctor-card">
+          <a href="/clinics/<%= clinic.clinicKey %>/doctors/<%= d.staffKey %>">
+            <h3 class="ac-doctor-card__name"><%= d.displayName %></h3>
+            <% if (d.title) { %><p class="ac-doctor-card__title"><%= d.title %></p><% } %>
+            <% if (d.specialty || d.departmentName) { %>
+            <p class="ac-doctor-card__tags">
+              <% if (d.specialty) { %><span class="ac-doctor-card__tag"><%= d.specialty %></span><% } %>
+              <% if (d.departmentName) { %><span class="ac-doctor-card__tag"><%= d.departmentName %></span><% } %>
+            </p>
+            <% } %>
+          </a>
+        </li>
+        <% }) %>
+      </ul>
+      <% } else { %>
       <p><%- include('../partials/website-editable-field', { contentKey: 'doctors.intro', fieldValue: clinic.doctorsIntro || 'Meet clinicians with public profiles where the clinic has published them.', fieldType: 'long_text' }) %></p>
-      <a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= doctorsHref %>">View doctors</a>
-    </article>
+      <% } %>
+      <p><a class="ac-btn ac-btn--secondary" href="<%= doctorsHref %>">View doctors</a></p>
+    </div>
     <% } %>
     <% if (homeSectionVisible("hours") || editingHome) { %>
-    <article class="ac-tenant-preview__card" data-ac-home-section="hours-preview">
-      <h2><%- include('../partials/website-editable-field', { contentKey: 'home.preview.visit_heading', fieldValue: clinic.homePreviewVisitHeading || 'Visit us', fieldType: 'short_text' }) %></h2>
-      <p><% if (locationLine) { %><%= locationLine %><% } else { %>See location and opening hours.<% } %></p>
-      <a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= locationHref %>">Location &amp; hours</a>
-    </article>
+    <aside class="ac-tenant-hours-card" data-ac-home-section="hours">
+      <h2>Opening Hours</h2>
+      <% const hoursFacility = primaryFacility; %>
+      <% const hoursMap = hoursFacility && hoursFacility.publicHours && typeof hoursFacility.publicHours === "object" ? hoursFacility.publicHours : null; %>
+      <% if (hoursMap && Object.keys(hoursMap).length) { %>
+      <dl class="ac-hours-list">
+        <% Object.keys(hoursMap).forEach(function (day) { %>
+        <dt><%= day %></dt>
+        <dd><%= hoursMap[day] %></dd>
+        <% }) %>
+      </dl>
+      <% } else if (clinic.locationHoursOverlay) { %>
+      <p class="ac-location-hours-overlay"><%- include('../partials/website-editable-field', { contentKey: 'location.hours', fieldValue: clinic.locationHoursOverlay, fieldType: 'long_text' }) %></p>
+      <% } else { %>
+      <p class="ac-public-muted">Opening hours have not been published yet.</p>
+      <% } %>
+      <% if (heroPhone) { %>
+      <p><a class="ac-btn ac-btn--secondary" href="tel:<%= String(heroPhone).replace(/[^\d+]/g, '') %>"><%= heroPhone %></a></p>
+      <% } %>
+    </aside>
     <% } %>
   </div>
-  <% if ((clinic.websiteAbout && clinic.websiteAbout.length > 160) || clinic.aboutBody) { %>
-  <p class="ac-tenant-preview__more"><a href="<%= aboutHref %>">Read more about <%= clinic.publicName %></a></p>
-  <% } %>
 </section>
 <% } %>
 
 <% if (homeSectionVisible("hours") || editingHome) { %>
-<section class="ac-public-section ac-tenant-hours" data-ac-page-section="tenant-hours" data-ac-home-section="hours">
-  <h2>Opening hours</h2>
-  <% const hoursFacility = primaryFacility; %>
-  <% const hoursMap = hoursFacility && hoursFacility.publicHours && typeof hoursFacility.publicHours === "object" ? hoursFacility.publicHours : null; %>
-  <% if (hoursMap && Object.keys(hoursMap).length) { %>
-  <dl class="ac-hours-list">
-    <% Object.keys(hoursMap).forEach(function (day) { %>
-    <dt><%= day %></dt>
-    <dd><%= hoursMap[day] %></dd>
-    <% }) %>
-  </dl>
-  <% } else if (clinic.locationHoursOverlay) { %>
-  <p class="ac-location-hours-overlay"><%- include('../partials/website-editable-field', { contentKey: 'location.hours', fieldValue: clinic.locationHoursOverlay, fieldType: 'long_text' }) %></p>
-  <% } else { %>
-  <p class="ac-public-muted">Opening hours have not been published yet.</p>
-  <% } %>
-  <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= locationHref %>">Location &amp; hours</a></p>
+<section class="ac-public-section ac-tenant-campus" data-ac-page-section="tenant-hours" data-ac-home-section="hours-campus">
+  <h2><%- include('../partials/website-editable-field', { contentKey: 'home.preview.visit_heading', fieldValue: clinic.homePreviewVisitHeading || 'Visit Our Campus', fieldType: 'short_text' }) %></h2>
+  <p><% if (locationLine) { %><%= locationLine %><% } else { %>See location and opening hours.<% } %></p>
+  <% if (heroPhone) { %><p>General Inquiries: <%= heroPhone %></p><% } %>
+  <p><a class="ac-btn ac-btn--secondary" href="<%= locationHref %>">Location &amp; hours</a></p>
 </section>
 <% } %>
 
@@ -178,8 +188,8 @@
   <h2><%- include('../partials/website-editable-field', { contentKey: 'contact.page_title', fieldValue: clinic.contactPageTitle || ('Contact ' + clinic.publicName), fieldType: 'short_text' }) %></h2>
   <p><%- include('../partials/website-editable-field', { contentKey: 'contact.intro', fieldValue: clinic.contactIntro || '', fieldType: 'long_text' }) %></p>
   <div class="ac-tenant-hero__actions">
-    <a class="ac-btn ac-btn--primary ac-btn--pill" href="<%= contactHref %>">Contact the clinic</a>
-    <a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= bookingHref %>"><%= bookingLabel %></a>
+    <a class="ac-btn ac-btn--primary" href="<%= contactHref %>">Contact the clinic</a>
+    <a class="ac-btn ac-btn--secondary" href="<%= bookingHref %>"><%= bookingLabel %></a>
   </div>
 </section>
 <% } %>
@@ -188,7 +198,7 @@
 <section class="ac-public-section ac-tenant-promo" data-ac-page-section="tenant-promo">
   <h2><%- include('../partials/website-editable-field', { contentKey: 'home.promo.heading', fieldValue: clinic.promoHeading || 'Plan your visit', fieldType: 'short_text' }) %></h2>
   <p><%- include('../partials/website-editable-field', { contentKey: 'home.promo.body', fieldValue: clinic.promoBody || '', fieldType: 'long_text' }) %></p>
-  <a class="ac-btn ac-btn--primary ac-btn--pill" href="<%= bookingHref %>"><%= bookingLabel %></a>
+  <a class="ac-btn ac-btn--primary" href="<%= bookingHref %>"><%= bookingLabel %></a>
 </section>
 <% } %>
 

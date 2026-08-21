@@ -7,6 +7,14 @@
   const showLogo = !clinic || clinic.headerShowLogo !== false;
   const showNav = !clinic || clinic.headerShowNav !== false;
   const showPhone = Boolean(clinic && clinic.headerShowPhone === true && clinic.headerPhone);
+  const desktopNav = (nav.desktop || []).filter(function (item) {
+    return item && item.key !== "book" && item.key !== "patientLogin";
+  });
+  const bookItem = (nav.desktop || []).find(function (item) { return item && item.key === "book"; });
+  const bookingHref = bookItem && bookItem.href
+    ? bookItem.href
+    : ((clinic && clinic.publicPagePaths && clinic.publicPagePaths.book) || (clinic && clinic.publicBasePath ? clinic.publicBasePath + "/book" : ""));
+  const bookingLabel = (bookItem && bookItem.label) || (clinic && clinic.publicBookingEnabled ? "Book Appointment" : "Request Appointment");
   function tenantCurrent(kind) {
     var on = false;
     if (kind === "about") on = /tenant-about/.test(pid);
@@ -63,13 +71,16 @@
     <% } %>
     <% if (showNav) { %>
     <nav class="ac-public-nav ac-public-nav--desktop ac-public-nav--tenant" aria-label="Clinic" data-ac-clinic-nav="desktop">
-      <% (nav.desktop || []).forEach(function (item) { %>
+      <% desktopNav.forEach(function (item) { %>
       <a href="<%= item.href %>" class="<%= navClass(item) %>"<%- tenantCurrent(item.key) %> data-ac-nav-item="<%= item.key %>"<% if (item.protected) { %> data-ac-nav-protected="1"<% } %>><%= item.label %></a>
       <% }) %>
     </nav>
     <% } %>
     <% if (showPhone) { %>
     <a class="ac-public-header__phone" href="tel:<%= String(clinic.headerPhone).replace(/\s+/g, '') %>"><%= clinic.headerPhone %></a>
+    <% } %>
+    <% if (bookingHref) { %>
+    <a class="ac-public-nav__cta ac-public-header__cta" href="<%= bookingHref %>" data-ac-nav-item="book"><%= bookingLabel %></a>
     <% } %>
     <% if (showNav) { %>
     <button type="button" class="ac-public-nav-toggle" data-ac-nav-open aria-expanded="false" aria-controls="ac-public-drawer">
