@@ -426,7 +426,7 @@ MF06_IMPLEMENTED = YES (Phase D — unpublished first-use hub on existing /app/s
 MF07_IMPLEMENTED = YES (Phase E — invite form chrome on existing staff invitation flow)
 MF10_IMPLEMENTED = YES (Phase F — public booking chrome on existing request wizard)
 MF08_IMPLEMENTED = YES (Phase G — patient register/profile chrome; OTP/SSO/insurance omitted)
-MF09_IMPLEMENTED = NO
+MF09_IMPLEMENTED = YES (Phase H — CURRENT-DATA-ONLY dashboard; EHR widgets omitted)
 MF11_IMPLEMENTED = NO
 ```
 
@@ -704,7 +704,21 @@ RBAC: none
 tests: activeclinic-mf08-patient-registration / patient-portal
 ```
 
-Still deferred after G: MF04 OTP, MF08 MFA/SSO, MF09 EHR widgets, **all of MF11**, payments, telehealth, Theme, license registry.
+Still deferred after G: MF04 OTP, MF08 MFA/SSO, **all of MF11**, payments, telehealth, Theme, license registry.
+
+### Phase H — MF09 patient dashboard CURRENT-DATA-ONLY — IMPLEMENTED
+
+```text
+PHASE: H
+MF screens: MF09-01/02
+existing routes: GET /clinics/:clinicKey/patient
+goal: restyle portal home with real bookings; omit EHR widgets
+functional work: none beyond truthful pending label
+visual work: dashboard.ejs + dashboard-empty.ejs + acp-mf09 CSS
+schema: none
+RBAC: none
+tests: activeclinic-mf09-patient-dashboard
+```
 
 ---
 
@@ -867,7 +881,33 @@ schema changed: NO
 second patient identity system created: NO
 ```
 
-Next recommended phase: **MF09 — patient dashboard, BOOKINGS-ONLY / CURRENT-DATA-ONLY**.
+Next recommended phase after G was MF09 (now implemented below).
+
+---
+
+## Phase H implementation (MF09)
+
+CURRENT-DATA-ONLY restyle of the existing patient portal home. No second portal. No EHR. No patient clinical-release permissions. Live inventory re-lock (2026-08-21): **2 screens** (1 desktop / 1 mobile). No added, removed, renamed, or redesigned MF09 screens.
+
+```text
+PATIENT_NOTIFICATIONS = NOT_SUPPORTED
+MF09_APPROVED_WIDGETS: welcome, next/pending booking highlight, pending/upcoming/past lists, book appointment, link guest booking, profile
+MF09_OMITTED_WIDGETS: labs, medications/refills, messages, billing/copay, telehealth Join Call, medical records, sample notifications
+```
+
+| Stitch ID | Exact name | Device | V7 route/state | Status | Variance |
+|-----------|------------|--------|----------------|--------|----------|
+| `f96a31fbffa14b1781a24cfa44cb6e7d` | MF09-01 Patient Dashboard Desktop | Desktop | `GET /clinics/:clinicKey/patient` | `MINOR_ACCEPTED_VARIANCE` | Bookings-only composition; Stitch EHR widgets omitted |
+| `9c0157d10d6f439f9892f89848f5d19c` | MF09-02 Patient Dashboard Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | Responsive stacking; same approved subset |
+
+```text
+schema changed: NO
+EHR implemented: NO
+MF11 implemented: NO
+pending status: Pending clinic confirmation
+```
+
+Next recommended phase: **FINAL MF01-MF10 CONSOLIDATION / QA**.
 
 ---
 

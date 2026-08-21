@@ -1,11 +1,63 @@
-<section class="ac-patient-page acp-portal-dashboard" data-ac-page-section="patient-dashboard">
+<%
+  const highlight = (upcoming && upcoming.length) ? upcoming[0] : ((pending && pending.length) ? pending[0] : null);
+  const highlightRef = highlight && highlight.requestNumber;
+  const highlightTitle = highlight
+    ? (highlight.serviceDisplayName || highlight.procedureDisplayName || highlight.bookingKind || highlightRef || "Booking")
+    : "";
+  const highlightWhen = highlight ? formatBookingWhen(highlight.preferredStartsAt, highlight.timezone) : "";
+  const highlightPending = highlight && String(highlight.status || "") === "submitted_pending_confirmation";
+%>
+<section
+  class="ac-patient-page acp-portal-dashboard acp-mf09"
+  data-ac-page-section="patient-dashboard"
+  data-ac-mf-family="MF09"
+  data-ac-mf-screen="MF09-01"
+>
   <header class="ac-patient-page__header acp-portal-dashboard__header">
-    <p class="ac-public-eyebrow">Patient portal</p>
-    <h1>Welcome, <%= escapeHtml(displayName) %></h1>
-    <% if (patient.patientNumber) { %>
-    <p class="ac-patient-meta">Patient number: <%= escapeHtml(patient.patientNumber) %></p>
-    <% } %>
+    <p class="ac-public-eyebrow"><%= (clinic && clinic.publicName) ? clinic.publicName : "Patient portal" %></p>
+    <h1>Welcome back, <%= escapeHtml(displayName) %>.</h1>
+    <p class="acp-auth-card__lede">
+      Here is a summary of your bookings with this clinic. Lab results, medications, messages, and billing are not available in this portal.
+    </p>
   </header>
+
+  <% if (highlight && highlightRef) { %>
+  <article class="acp-mf09-hero" aria-labelledby="acp-mf09-next-heading">
+    <p class="acp-mf09__kicker"><%= highlightPending ? "Pending request" : "Upcoming booking" %></p>
+    <h2 id="acp-mf09-next-heading"><%= escapeHtml(highlightTitle) %></h2>
+    <p class="acp-mf09-hero__meta">
+      Reference <%= escapeHtml(highlightRef) %>
+      <% if (highlight.staffDisplayName) { %> · <%= escapeHtml(highlight.staffDisplayName) %><% } %>
+      <% if (highlight.facilityDisplayName) { %> · <%= escapeHtml(highlight.facilityDisplayName) %><% } %>
+    </p>
+    <% if (highlightWhen) { %>
+    <p class="acp-mf09-hero__when">Preferred time: <%= escapeHtml(highlightWhen) %></p>
+    <% } %>
+    <p>
+      <span class="acp-status-badge acp-status-badge--<%= bookingStatusTone(highlight.status) %>">
+        <%= escapeHtml(bookingStatusLabels[highlight.status] || highlight.status || "") %>
+      </span>
+    </p>
+    <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(highlightRef) %>">View details</a>
+  </article>
+  <% } %>
+
+  <nav class="acp-mf09-actions" aria-label="Quick actions">
+    <% if (clinic && clinic.publicBookingEnabled !== false) { %>
+    <a class="acp-mf09-action" href="/clinics/<%= clinicKey %>/book">
+      <span class="acp-mf09-action__title">Book appointment</span>
+      <span class="acp-mf09-action__hint">Request a visit using the clinic booking form</span>
+    </a>
+    <% } %>
+    <a class="acp-mf09-action" href="/clinics/<%= clinicKey %>/patient/link-guest-booking">
+      <span class="acp-mf09-action__title">Link a guest booking</span>
+      <span class="acp-mf09-action__hint">Use the token from a booking confirmation</span>
+    </a>
+    <a class="acp-mf09-action" href="/clinics/<%= clinicKey %>/patient/profile">
+      <span class="acp-mf09-action__title">Your profile</span>
+      <span class="acp-mf09-action__hint">Update contact details for this clinic</span>
+    </a>
+  </nav>
 
   <div class="acp-portal-grid">
     <section class="ac-patient-section acp-portal-panel">
@@ -16,13 +68,8 @@
       </div>
       <% } else { %>
       <ul class="ac-patient-list acp-booking-list">
-        <% pending.forEach(function(b) { %>
-        <li class="acp-booking-list__item">
-          <a href="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(b.requestNumber || b.id) %>">
-            <%= escapeHtml(b.requestNumber || b.id) %>
-          </a>
-          <span class="acp-status-badge acp-status-badge--pending"><%= escapeHtml(bookingStatusLabels[b.status] || b.status || "") %></span>
-        </li>
+        <% pending.forEach(function(booking) { %>
+        <%- include('../partials/patient-booking-summary', { booking: booking }) %>
         <% }); %>
       </ul>
       <% } %>
@@ -36,13 +83,8 @@
       </div>
       <% } else { %>
       <ul class="ac-patient-list acp-booking-list">
-        <% upcoming.forEach(function(b) { %>
-        <li class="acp-booking-list__item">
-          <a href="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(b.requestNumber || b.id) %>">
-            <%= escapeHtml(b.requestNumber || b.id) %>
-          </a>
-          <span class="acp-status-badge acp-status-badge--confirmed"><%= escapeHtml(bookingStatusLabels[b.status] || b.status || "") %></span>
-        </li>
+        <% upcoming.forEach(function(booking) { %>
+        <%- include('../partials/patient-booking-summary', { booking: booking }) %>
         <% }); %>
       </ul>
       <% } %>
@@ -56,22 +98,15 @@
       </div>
       <% } else { %>
       <ul class="ac-patient-list acp-booking-list">
-        <% past.forEach(function(b) { %>
-        <li class="acp-booking-list__item">
-          <a href="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(b.requestNumber || b.id) %>">
-            <%= escapeHtml(b.requestNumber || b.id) %>
-          </a>
-          <span class="acp-status-badge acp-status-badge--done"><%= escapeHtml(bookingStatusLabels[b.status] || b.status || "") %></span>
-        </li>
+        <% past.forEach(function(booking) { %>
+        <%- include('../partials/patient-booking-summary', { booking: booking }) %>
         <% }); %>
       </ul>
       <% } %>
     </section>
   </div>
 
-  <nav class="ac-patient-actions acp-portal-actions" aria-label="Quick links">
-    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinicKey %>/patient/bookings">View all bookings</a>
-    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinicKey %>/patient/profile">Update my profile</a>
-    <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinicKey %>/patient/link-guest-booking">Link a guest booking</a>
-  </nav>
+  <p class="ac-patient-links">
+    <a href="/clinics/<%= clinicKey %>/patient/bookings">View all bookings</a>
+  </p>
 </section>

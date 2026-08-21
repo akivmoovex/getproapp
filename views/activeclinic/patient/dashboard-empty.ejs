@@ -1,27 +1,42 @@
-<section class="ac-patient-page">
-  <header class="ac-patient-page__header">
-    <h1>Welcome, <%= escapeHtml(displayName) %></h1>
-    <% if (patient.patientNumber) { %>
-    <p class="ac-patient-meta">Patient number: <%= escapeHtml(patient.patientNumber) %></p>
-    <% } %>
+<section
+  class="ac-patient-page acp-portal-dashboard acp-mf09"
+  data-ac-page-section="patient-dashboard-empty"
+  data-ac-mf-family="MF09"
+  data-ac-mf-screen="MF09-01"
+>
+  <header class="ac-patient-page__header acp-portal-dashboard__header">
+    <p class="ac-public-eyebrow"><%= (clinic && clinic.publicName) ? clinic.publicName : "Patient portal" %></p>
+    <h1>Welcome back, <%= escapeHtml(displayName) %>.</h1>
+    <p class="acp-auth-card__lede">
+      You have no bookings linked to this portal yet. Clinical records, labs, and messages are not available here.
+    </p>
   </header>
 
-  <div class="ac-patient-empty-state">
+  <div class="ac-patient-empty-state acp-mf09-empty">
     <%- include('../partials/acp-shared-state', {
       stateKind: 'empty',
       stateTitle: 'No bookings yet',
-      stateText: 'You have no bookings linked to your patient portal account yet. Book an appointment on the clinic website, or link an existing guest booking with your access token.',
+      stateText: 'Book an appointment on the clinic website, or link an existing guest booking with your access token.',
       stateMarker: 'patient-dashboard-empty',
       primaryHref: (clinic && clinic.publicBookingEnabled !== false) ? ('/clinics/' + clinicKey + '/book') : ('/clinics/' + clinicKey + '/patient/link-guest-booking'),
       primaryLabel: (clinic && clinic.publicBookingEnabled !== false) ? 'Book appointment' : 'Link a guest booking'
     }) %>
   </div>
 
-  <nav class="ac-patient-actions" aria-label="Quick links">
+  <nav class="acp-mf09-actions" aria-label="Quick actions">
     <% if (clinic && clinic.publicBookingEnabled !== false) { %>
-    <a href="/clinics/<%= clinicKey %>/book" class="ac-patient-btn ac-patient-btn--inline">Book appointment</a>
+    <a class="acp-mf09-action" href="/clinics/<%= clinicKey %>/book">
+      <span class="acp-mf09-action__title">Book appointment</span>
+      <span class="acp-mf09-action__hint">Request a visit using the clinic booking form</span>
+    </a>
     <% } %>
-    <a href="/clinics/<%= clinicKey %>/patient/link-guest-booking">Link a guest booking</a>
-    <a href="/clinics/<%= clinicKey %>/patient/profile">Update my profile</a>
+    <a class="acp-mf09-action" href="/clinics/<%= clinicKey %>/patient/link-guest-booking">
+      <span class="acp-mf09-action__title">Link a guest booking</span>
+      <span class="acp-mf09-action__hint">Use the token from a booking confirmation</span>
+    </a>
+    <a class="acp-mf09-action" href="/clinics/<%= clinicKey %>/patient/profile">
+      <span class="acp-mf09-action__title">Your profile</span>
+      <span class="acp-mf09-action__hint">Update contact details for this clinic</span>
+    </a>
   </nav>
 </section>

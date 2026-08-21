@@ -941,5 +941,99 @@ form.ac-patient-form-inline {
   }
 }
 
+.acp-mf09__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acp-primary-strong);
+}
+.acp-mf09-hero {
+  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: 1rem;
+  padding: 1.2rem 1.25rem;
+  margin: 0 0 1.15rem;
+  box-shadow: 0 8px 24px rgba(0, 31, 35, 0.06);
+}
+.acp-mf09-hero h2 {
+  margin: 0 0 0.35rem;
+  color: var(--acp-navy);
+}
+.acp-mf09-hero__meta,
+.acp-mf09-hero__when {
+  margin: 0 0 0.45rem;
+  color: var(--acp-muted);
+}
+.acp-mf09-hero .ac-btn {
+  display: inline-flex;
+  margin-top: 0.5rem;
+  min-height: 44px;
+}
+.acp-mf09-actions {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0 0 1.25rem;
+}
+.acp-mf09-action {
+  display: grid;
+  gap: 0.2rem;
+  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: 0.9rem;
+  padding: 0.9rem 1rem;
+  text-decoration: none;
+  color: inherit;
+  min-height: 44px;
+}
+.acp-mf09-action:hover,
+.acp-mf09-action:focus-visible {
+  border-color: var(--acp-primary);
+}
+.acp-mf09-action__title {
+  font-weight: 700;
+  color: var(--acp-navy);
+}
+.acp-mf09-action__hint {
+  color: var(--acp-muted);
+  font-size: 0.9rem;
+}
+.acp-mf09-booking {
+  list-style: none;
+}
+.acp-mf09-booking__link {
+  display: grid;
+  gap: 0.2rem;
+  text-decoration: none;
+  color: inherit;
+  padding: 0.55rem 0;
+  min-height: 44px;
+}
+.acp-mf09-booking__title {
+  font-weight: 700;
+  color: var(--acp-navy);
+}
+.acp-mf09-booking__meta,
+.acp-mf09-booking__when {
+  color: var(--acp-muted);
+  font-size: 0.9rem;
+}
+.acp-mf09-empty {
+  margin-bottom: 1rem;
+}
+@media (min-width: 768px) {
+  .acp-mf09-actions {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (max-width: 767px) {
+  .acp-mf09-action,
+  .acp-mf09-hero .ac-btn,
+  .acp-mf09-booking__link {
+    min-height: 44px;
+  }
+}
+
 
 

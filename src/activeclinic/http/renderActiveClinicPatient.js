@@ -13,10 +13,10 @@ const {
 } = require("../services/activeClinicPhoneFieldLocals");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-mf-d1";
+const ASSET_VERSION = "v7-mf-e1";
 
 const BOOKING_STATUS_LABELS = Object.freeze({
-  submitted_pending_confirmation: "Pending confirmation",
+  submitted_pending_confirmation: "Pending clinic confirmation",
   confirmed: "Confirmed",
   cancellation_requested: "Cancellation requested",
   reschedule_requested: "Reschedule requested",
@@ -36,6 +36,35 @@ function escapeHtml(value) {
     .replace(/"/g, "&quot;");
 }
 
+function bookingStatusTone(status) {
+  const key = String(status || "");
+  if (
+    key === "submitted_pending_confirmation" ||
+    key === "cancellation_requested" ||
+    key === "reschedule_requested" ||
+    key === "clinic_follow_up"
+  ) {
+    return "pending";
+  }
+  if (key === "confirmed") return "confirmed";
+  return "done";
+}
+
+function formatBookingWhen(iso, timezone) {
+  if (!iso) return "";
+  const date = new Date(iso);
+  if (Number.isNaN(date.getTime())) return "";
+  try {
+    return new Intl.DateTimeFormat("en-GB", {
+      dateStyle: "medium",
+      timeStyle: "short",
+      timeZone: timezone || "UTC",
+    }).format(date);
+  } catch (_err) {
+    return date.toISOString().slice(0, 16).replace("T", " ");
+  }
+}
+
 function renderPartial(relativePath, data) {
   const templatePath = relativePath.endsWith(".ejs") ? relativePath : `${relativePath}.ejs`;
   const absolute = path.join(VIEWS_ROOT, templatePath);
@@ -45,7 +74,7 @@ function renderPartial(relativePath, data) {
   const source = fs.readFileSync(absolute, "utf8");
   return ejs.render(
     source,
-    { ...(data || {}), escapeHtml, csrfField: CSRF_FIELD, bookingStatusLabels: BOOKING_STATUS_LABELS },
+    { ...(data || {}), escapeHtml, csrfField: CSRF_FIELD, bookingStatusLabels: BOOKING_STATUS_LABELS, bookingStatusTone, formatBookingWhen },
     {
       filename: absolute,
       root: VIEWS_ROOT,
@@ -90,6 +119,8 @@ function defaultLocals(data) {
     pageId: d.pageId || "patient",
     escapeHtml,
     bookingStatusLabels: BOOKING_STATUS_LABELS,
+    bookingStatusTone,
+    formatBookingWhen,
   };
 }
 
