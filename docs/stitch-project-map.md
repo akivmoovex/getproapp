@@ -27,7 +27,7 @@ Shared GetPro platform architecture (host routing, sessions, multi-tenant provis
 | `blessboard` | BlessBoard | GetPro Church Platform | `projects/17124191473876947591` | Church management only | Existing church tenants | [`docs/gui/STITCH_SCREEN_MAP.md`](./gui/STITCH_SCREEN_MAP.md) |
 | `activeclinic` | ActiveClinic | ActiveClinic Public Ecosystem & Booking Flow | `projects/17813606734422395399` | Public platform, tenant sites, booking, My Booking, patient portal | **Authoritative** for P21–P27 | [`docs/activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.md`](./activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.md) |
 | `activeclinic` | ActiveClinic | ActiveClinic – Juflona Pilot | `projects/12272131183982732110` | Authenticated clinic operations (shell + P01–P07) | **Authoritative** for internal ops; Juflona pilot | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md) |
-| `activeclinic` | ActiveClinic | ActiveClinic Universal Authentication Interface (mini-website CMS screens) | `projects/10611909237747031838` | Clinic mini-website, editor, pages, sections, blocks, media, drafts/publishing, branding & settings, reusable content | **Authoritative** for MW01–MW10 website management screens actually generated here | [`docs/activeclinic/stitch/ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md`](./activeclinic/stitch/ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md) |
+| `activeclinic` | ActiveClinic | ActiveClinic Universal Authentication Interface | `projects/10611909237747031838` | ACW marketing, kebab-case auth, MW CMS, MF01–MF11 identity/onboarding/portal exploration | **Authoritative** for MW CMS + MF staff identity chrome. Patient EHR (MF11) is **not** product-approved — P27 remains portal authority | [`docs/activeclinic/stitch/ACTIVECLINIC_MF01_MF11_LIVE_AUDIT.md`](./activeclinic/stitch/ACTIVECLINIC_MF01_MF11_LIVE_AUDIT.md) |
 
 ### MCP quick reference
 
@@ -36,7 +36,7 @@ Shared GetPro platform architecture (host routing, sessions, multi-tenant provis
 | `blessboard` | Church | `17124191473876947591` |
 | `activeclinic` | Public / tenant / booking / portal | `17813606734422395399` |
 | `activeclinic` | Internal authenticated operations | `12272131183982732110` |
-| `activeclinic` | Clinic mini-website / CMS (MW01–MW10) | `10611909237747031838` |
+| `activeclinic` | ACW / MW CMS / MF01–MF11 (identity project) | `10611909237747031838` |
 
 ---
 
@@ -91,10 +91,10 @@ ActiveClinic design authority is **split by surface**. Do not use BlessBoard Sti
 | Stitch project name | ActiveClinic Universal Authentication Interface |
 | Stitch project ID | `projects/10611909237747031838` |
 | URL | https://stitch.withgoogle.com/projects/10611909237747031838 |
-| Surfaces | Public clinic mini-website, website editor, pages, sections, content blocks, media library, drafts, publishing, version history, branding, website settings, reusable content library |
-| Typical phases | MW01–MW10 |
-| Live screens (MCP 2026-08-20) | **45** (38 mini-website + 7 auth N/A for this task) |
-| Inventory | [`docs/activeclinic/stitch/ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md`](./activeclinic/stitch/ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md) |
+| Surfaces | ACW marketing, original kebab-case auth, clinic mini-website CMS (MW), MF01–MF11 staff identity / registration / onboarding / patient exploration |
+| Typical phases | MW01–MW07 (implemented), MF01–MF04 Phase A (implemented minus OTP), MF03+ planned |
+| Live screens (MCP 2026-08-21) | **100** |
+| Inventory | [`docs/activeclinic/stitch/ACTIVECLINIC_MF01_MF11_LIVE_AUDIT.md`](./activeclinic/stitch/ACTIVECLINIC_MF01_MF11_LIVE_AUDIT.md); MW detail: [`ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md`](./activeclinic/stitch/ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md) |
 
 ### Shared ActiveClinic fields
 

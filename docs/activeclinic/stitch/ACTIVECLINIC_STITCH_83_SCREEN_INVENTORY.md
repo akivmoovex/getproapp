@@ -1,9 +1,11 @@
 # ActiveClinic Stitch expansion inventory (MF + later families)
 
-**Status:** Phase A (MF01 + MF02 + MF04 without OTP) implemented on existing auth routes. Remaining families are still audit-only.  
+> **Superseded as the live inventory.** The live project is now **100 screens** (`updateTime` `2026-08-21T00:22:14.887432Z`) including **MF11**. Use [`ACTIVECLINIC_MF01_MF11_LIVE_AUDIT.md`](./ACTIVECLINIC_MF01_MF11_LIVE_AUDIT.md) as the current MF01–MF11 source of truth. This file is retained as the historical 96-screen / Phase A checkpoint. Do not delete it.
+
+**Status (historical):** Phase A (MF01 + MF02 + MF04 without OTP) implemented on existing auth routes. Remaining families were audit-only at the 96-screen lock.  
 **Stitch project:** [ActiveClinic Universal Authentication Interface](https://stitch.withgoogle.com/projects/10611909237747031838)  
 **Project ID:** `10611909237747031838`  
-**Inspected:** 2026-08-21 via live MCP `get_project` + `list_screens` + downloaded HTML (not hotlinked)
+**Inspected (this file):** 2026-08-21 via live MCP `get_project` + `list_screens` + downloaded HTML (not hotlinked)
 
 This document **does not overwrite** the 49-screen parity checkpoint in `ACTIVECLINIC_EXACT_PARITY_AUDIT.md`.
 
