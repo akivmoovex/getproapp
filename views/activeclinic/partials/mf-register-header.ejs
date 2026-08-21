@@ -1,0 +1,12 @@
+<%#
+  MF03 transactional chrome. Marketing nav is suppressed.
+%>
+<header class="acw-mf-reg-topbar" data-ac-mf-family="MF03">
+  <a class="acw-mf-reg-topbar__brand" href="/">
+    <span class="material-symbols-outlined acw-mf-reg-topbar__icon" aria-hidden="true">medical_services</span>
+    <span>ActiveClinic</span>
+  </a>
+  <% if (typeof wizardStep === "string" && wizardStep === "administrator") { %>
+  <a class="acw-mf-reg-topbar__help" href="/contact">Need help?</a>
+  <% } %>
+</header>

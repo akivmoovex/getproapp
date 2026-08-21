@@ -126,7 +126,7 @@ describe("activeclinic MW Stitch parity chrome", () => {
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
       /v7-parity-26/
     );
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-acw-16/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-mf-b1/);
     const shell = read("views/activeclinic/layouts/app-shell.ejs");
     assert.match(shell, /ac-app-body--mw/);
     assert.match(shell, /Material\+Symbols\+Outlined/);

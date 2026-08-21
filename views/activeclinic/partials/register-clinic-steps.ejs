@@ -1,17 +1,34 @@
 <%
   var step = typeof wizardStep === 'string' ? wizardStep : 'clinic';
+  var order = { clinic: 1, administrator: 2, review: 3, success: 4, error: 4 };
+  var current = order[step] || 1;
+  var ofThree = current > 3 ? 3 : current;
+  var pct = step === 'success' || step === 'error' ? 100 : (ofThree === 1 ? 33 : ofThree === 2 ? 66 : 100);
+  var captions = {
+    clinic: 'Step 1 of 3: Clinic Details',
+    administrator: 'Step 2 of 3: Administrator Details',
+    review: 'Step 3 of 3: Review',
+    success: 'Clinic created',
+    error: 'Registration unavailable'
+  };
   function stepClass(key) {
-    var order = { clinic: 1, administrator: 2, review: 3, success: 4, error: 4 };
-    var current = order[step] || 1;
     var here = order[key] || 1;
     if (here < current) return ' ac-onboarding-steps__item--done';
     if (here === current) return ' ac-onboarding-steps__item--active';
     return '';
   }
 %>
-<ol class="ac-onboarding-steps acw-register-steps" aria-label="Registration progress">
-  <li class="ac-onboarding-steps__item<%= stepClass('clinic') %>"<%= step === 'clinic' ? ' aria-current="step"' : '' %>>Clinic</li>
-  <li class="ac-onboarding-steps__item<%= stepClass('administrator') %>"<%= step === 'administrator' ? ' aria-current="step"' : '' %>>Administrator</li>
-  <li class="ac-onboarding-steps__item<%= stepClass('review') %>"<%= step === 'review' ? ' aria-current="step"' : '' %>>Review</li>
-  <li class="ac-onboarding-steps__item<%= stepClass('success') %>"<%= step === 'success' ? ' aria-current="step"' : '' %>>Clinic created</li>
-</ol>
+<div class="acw-register-progress" data-ac-mf-progress="<%= step %>">
+  <% if (step !== 'success' && step !== 'error') { %>
+  <p class="acw-register-progress__caption"><%= captions[step] || captions.clinic %></p>
+  <div class="acw-register-progress__track" role="progressbar" aria-valuemin="1" aria-valuemax="3" aria-valuenow="<%= ofThree %>" aria-label="Registration progress, step <%= ofThree %> of 3">
+    <div class="acw-register-progress__fill" style="width: <%= pct %>%"></div>
+  </div>
+  <% } %>
+  <ol class="ac-onboarding-steps acw-register-steps ac-sr-only" aria-label="Registration progress">
+    <li class="ac-onboarding-steps__item<%= stepClass('clinic') %>"<%- step === 'clinic' ? ' aria-current="step"' : '' %>>Clinic</li>
+    <li class="ac-onboarding-steps__item<%= stepClass('administrator') %>"<%- step === 'administrator' ? ' aria-current="step"' : '' %>>Administrator</li>
+    <li class="ac-onboarding-steps__item<%= stepClass('review') %>"<%- step === 'review' ? ' aria-current="step"' : '' %>>Review</li>
+    <li class="ac-onboarding-steps__item<%= stepClass('success') %>"<%- step === 'success' ? ' aria-current="step"' : '' %>>Clinic created</li>
+  </ol>
+</div>

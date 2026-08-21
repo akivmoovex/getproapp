@@ -55,11 +55,12 @@
   }
 %>
 <body
-  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing' : '' %>"
+  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof chrome === 'string' && chrome === 'mf-register' ? ' ac-public-body--mf-register' : '' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing' : '' %>"
   data-ac-product="activeclinic"
   data-ac-shell="public"
   data-ac-page="<%= pageId %>"
   data-ac-public-variant="<%= shellVariant || 'platform' %>"
+  <% if (typeof chrome === "string" && chrome) { %>data-ac-public-chrome="<%= chrome %>"<% } %>
   <% if (typeof statePageId === "string" && statePageId) { %>data-ac-state="<%= statePageId %>"<% } %>
   <% if (typeof statePageId === "string" && statePageId && typeof stateKey === "string" && stateKey) { %>data-ac-state-key="<%= stateKey %>"<% } %>
   <% if (clinic && clinic.clinicKey) { %>data-pw-clinic-key="<%= clinic.clinicKey %>"<% } %>
@@ -80,7 +81,7 @@
   <%- footerHtml %>
   <% if (shellVariant === 'tenant' && clinic) { %>
   <%- include('../partials/ac-mobile-bottom-nav') %>
-  <% } else if (shellVariant === 'platform') { %>
+  <% } else if (shellVariant === 'platform' && !(typeof chrome === 'string' && chrome === 'mf-register')) { %>
   <%- include('../partials/ac-mobile-bottom-nav-platform') %>
   <% } %>
   <div id="ac-public-live" class="ac-sr-only" aria-live="polite"></div>

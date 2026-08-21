@@ -208,6 +208,7 @@ function registerPageLocals(extra) {
   return {
     pageTitle: extra.pageTitle || titles[step] || "Register your clinic",
     pageId: extra.pageId || "public-register-clinic",
+    chrome: extra.chrome || "mf-register",
     clinicTypeOptions: listClinicTypeOptions(),
     wizardStep: step,
     formState: extra.formState || "form",

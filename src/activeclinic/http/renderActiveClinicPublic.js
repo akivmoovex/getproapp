@@ -18,7 +18,7 @@ const { buildClinicWebsiteNav } = require("../website/activeClinicClinicWebsiteN
 const { isPublicClinicDirectoryNavEnabled } = require("../website/activeClinicPublicCapabilities");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-acw-16";
+const ASSET_VERSION = "v7-mf-b1";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -26,6 +26,15 @@ function escapeHtml(value) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;");
+}
+
+function resolvePublicChrome(input, locals) {
+  if (locals && locals.chrome) return String(locals.chrome);
+  const tpl = String((input && input.contentTemplate) || "");
+  if (/register-clinic/.test(tpl) && !/register-clinic-status/.test(tpl)) {
+    return "mf-register";
+  }
+  return "platform";
 }
 
 function renderPartial(relativePath, data) {
@@ -91,16 +100,22 @@ function renderPublicPage(input) {
   if (shellVariant === "tenant" && locals.clinic && !locals.clinicWebsiteNav) {
     locals.clinicWebsiteNav = buildClinicWebsiteNav(locals.clinic, { env: process.env });
   }
+  const chrome = resolvePublicChrome(input, locals);
+  locals.chrome = chrome;
   const headerHtml = renderPartial(
     shellVariant === "tenant"
       ? "partials/public-tenant-header"
-      : "partials/public-platform-header",
+      : chrome === "mf-register"
+        ? "partials/mf-register-header"
+        : "partials/public-platform-header",
     locals
   );
   const footerHtml = renderPartial(
     shellVariant === "tenant"
       ? "partials/public-tenant-footer"
-      : "partials/public-platform-footer",
+      : chrome === "mf-register"
+        ? "partials/mf-register-footer"
+        : "partials/public-platform-footer",
     locals
   );
   const bodyHtml = renderPartial(input.contentTemplate, locals);

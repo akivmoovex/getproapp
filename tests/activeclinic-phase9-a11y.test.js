@@ -34,7 +34,7 @@ describe("ActiveClinic Phase 9 accessibility", () => {
       assert.match(html, new RegExp(row[2]), row[0]);
       assert.match(html, /ac-a11y\.js/, row[0]);
     });
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-acw-16/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-mf-b1/);
     assert.match(read("src/activeclinic/http/renderActiveClinicPatient.js"), /v7-parity-13/);
     assert.match(read("src/activeclinic/http/renderActiveClinicAuth.js"), /v7-mf-a1/);
     assert.match(
@@ -77,7 +77,8 @@ describe("ActiveClinic Phase 9 accessibility", () => {
     assert.match(html, /aria-describedby="clinicName-error"/);
     assert.match(html, /id="clinicName-error"/);
     assert.match(html, /data-ac-loading="1"/);
-    assert.match(html, /aria-current="page"/);
+    assert.match(html, /aria-current="step"/);
+    assert.match(html, /data-ac-public-chrome="mf-register"/);
     const admin = renderPublicPage({
       pageId: "public-register-clinic",
       pageTitle: "Register",

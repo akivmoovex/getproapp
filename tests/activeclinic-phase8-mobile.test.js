@@ -36,7 +36,7 @@ describe("ActiveClinic Phase 8 mobile hardening", () => {
     assert.equal(internalMobile.length, 44);
   });
 
-  it("shows platform bottom nav on clinic registration", () => {
+  it("uses MF03 transactional chrome on clinic registration (no marketing bottom nav)", () => {
     const html = renderPublicPage({
       pageId: "public-register-clinic",
       pageTitle: "Register",
@@ -52,9 +52,10 @@ describe("ActiveClinic Phase 8 mobile hardening", () => {
         wizardStep: "clinic",
       },
     });
-    assert.match(html, /data-ac-mobile-bottom-nav="platform"/);
+    assert.match(html, /data-ac-public-chrome="mf-register"/);
+    assert.doesNotMatch(html, /data-ac-mobile-bottom-nav="platform"/);
     assert.match(html, /viewport-fit=cover/);
-    assert.match(html, /v7-acw-16/);
+    assert.match(html, /v7-mf-b1/);
     const admin = renderPublicPage({
       pageId: "public-register-clinic",
       pageTitle: "Register",

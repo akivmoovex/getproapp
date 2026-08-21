@@ -375,23 +375,176 @@ body.ac-public--platform .acw-footer__tagline {
   color: #93000a;
 }
 
+/* —— MF03 registration wizard (scoped; does not restyle marketing ACW pages) —— */
+body.ac-public-body--mf-register {
+  --acp-primary: #00685f;
+  --acp-primary-strong: #005049;
+  --acp-primary-hover: #008378;
+  --acp-bg: #f8fafc;
+  --acp-surface: #ffffff;
+  --acp-border: #e2e8f0;
+  --acp-muted: #3d4947;
+  background: var(--acp-bg);
+  color: #111c2d;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+}
+
+body.ac-public-body--mf-register .ac-public-main {
+  flex: 1 1 auto;
+  width: 100%;
+  padding: 0;
+}
+
+.acw-mf-reg-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: 4rem;
+  padding: 0 1rem;
+  background: #f9f9ff;
+  border-bottom: 1px solid #bcc9c6;
+}
+
+.acw-mf-reg-topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--acp-primary);
+  font-weight: 700;
+  font-size: 1.25rem;
+  letter-spacing: -0.01em;
+  text-decoration: none;
+}
+
+.acw-mf-reg-topbar__icon {
+  font-size: 1.75rem;
+  color: var(--acp-primary);
+}
+
+.acw-mf-reg-topbar__help {
+  color: var(--acp-muted);
+  font-size: 0.875rem;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.acw-mf-reg-topbar__help:hover,
+.acw-mf-reg-topbar__brand:hover {
+  color: var(--acp-primary-hover);
+}
+
+.acw-mf-reg-footer {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.5rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1.5rem 1rem;
+  margin-top: auto;
+  background: #f0f3ff;
+  border-top: 1px solid #bcc9c6;
+  font-size: 0.875rem;
+}
+
+.acw-mf-reg-footer__brand {
+  margin: 0;
+  font-weight: 600;
+}
+
+.acw-mf-reg-footer__nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+}
+
+.acw-mf-reg-footer__nav a {
+  color: #565e74;
+  text-decoration: none;
+}
+
+.acw-mf-reg-footer__nav a:hover {
+  color: var(--acp-primary);
+  text-decoration: underline;
+}
+
+.acw-mf-reg-footer__copy {
+  margin: 0;
+  color: #565e74;
+}
+
 .acw-register {
-  padding: 1.5rem 1.25rem 3rem;
-  max-width: 42rem;
+  padding: 2rem 1rem 3rem;
+  max-width: 48rem;
   margin: 0 auto;
 }
 
+.acw-register--success {
+  max-width: 42rem;
+  display: flex;
+  align-items: center;
+  min-height: 60vh;
+}
+
 .acw-register__header {
-  padding: 0 0 1.25rem;
+  padding: 0 0 0.5rem;
   text-align: left;
   max-width: none;
   margin: 0;
 }
 
+.acw-register__header--center {
+  text-align: center;
+}
+
 .acw-register__header h1 {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.75rem, 4vw, 2rem);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.25;
+}
+
+.acw-register__lede {
+  margin: 0 0 1.25rem;
+  color: var(--acp-muted);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.acw-register-progress {
+  margin: 0 0 1.5rem;
+}
+
+.acw-register-progress__caption {
   margin: 0 0 0.5rem;
-  font-size: clamp(1.6rem, 4vw, 2.1rem);
-  letter-spacing: -0.02em;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--acp-muted);
+}
+
+.acw-register-progress__track {
+  width: 100%;
+  height: 0.5rem;
+  background: #dee8ff;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.acw-register-progress__fill {
+  height: 100%;
+  background: var(--acp-primary);
+  border-radius: 999px;
+}
+
+.acw-register__card {
+  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: 0.5rem;
+  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
+  padding: 1.5rem;
+  margin-bottom: 1.25rem;
 }
 
 .acw-register__form,
@@ -402,48 +555,391 @@ body.ac-public--platform .acw-footer__tagline {
   margin-bottom: 1.25rem;
 }
 
+.acw-register .ac-public-form .ac-form-field {
+  margin-bottom: 1.25rem;
+}
+
+.acw-register .ac-public-form .ac-form-field label,
+.acw-register .ac-form-field label {
+  display: block;
+  margin-bottom: 0.5rem;
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--acp-muted);
+}
+
+.acw-register .ac-public-form .ac-form-field input,
 .acw-register .ac-public-form .ac-form-field select,
 .acw-register .ac-public-form textarea {
   width: 100%;
   min-height: var(--ac-touch, 2.75rem);
   border: 1px solid var(--acp-border);
   border-radius: 0.5rem;
-  padding: 0.55rem 0.75rem;
+  padding: 0.7rem 0.85rem;
   font: inherit;
+  background: #fff;
+}
+
+.acw-register .ac-public-form .ac-form-field input:focus,
+.acw-register .ac-public-form .ac-form-field select:focus,
+.acw-register .ac-public-form textarea:focus {
+  outline: none;
+  border-color: var(--acp-primary);
+  box-shadow: 0 0 0 3px rgba(0, 104, 95, 0.12);
+}
+
+.acw-register .ac-form-field--error input,
+.acw-register .ac-form-field--error select,
+.acw-register .ac-form-field--error textarea {
+  border-color: #ba1a1a;
+}
+
+.acw-register__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0 1.5rem;
+}
+
+.acw-register__icon-field {
+  position: relative;
+}
+
+.acw-register__icon-field .material-symbols-outlined {
+  position: absolute;
+  left: 0.75rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: #6d7a77;
+  font-size: 1.25rem;
+  pointer-events: none;
+}
+
+.acw-register__icon-field--top .material-symbols-outlined {
+  top: 0.85rem;
+  transform: none;
+}
+
+.acw-register__icon-field input,
+.acw-register__icon-field textarea {
+  padding-left: 2.75rem !important;
+}
+
+.acw-register__pw-wrap {
+  position: relative;
+}
+
+.acw-register__pw-wrap input {
+  padding-right: 2.75rem;
+}
+
+.acw-register__pw-toggle {
+  position: absolute;
+  right: 0.35rem;
+  top: 50%;
+  transform: translateY(-50%);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 0;
+  background: transparent;
+  color: #6d7a77;
+  cursor: pointer;
+  border-radius: 0.4rem;
+}
+
+.acw-register__pw-toggle:focus-visible {
+  outline: 2px solid var(--acp-primary);
+  outline-offset: 2px;
+}
+
+.acw-register__policy {
+  display: flex;
+  gap: 0.75rem;
+  align-items: flex-start;
+  padding: 1rem;
+  margin-bottom: 1.25rem;
+  border: 1px solid var(--acp-border);
+  border-radius: 0.5rem;
+  background: #f9f9ff;
+  font-size: 0.875rem;
+  color: var(--acp-muted);
+}
+
+.acw-register__policy .material-symbols-outlined {
+  color: var(--acp-primary);
+}
+
+.acw-register__policy-title {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+  color: #111c2d;
+}
+
+.acw-register__policy p {
+  margin: 0;
+}
+
+.acw-register__secure {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  margin: 0.5rem 0 0;
+  color: var(--acp-muted);
+  font-size: 0.8125rem;
+  opacity: 0.8;
 }
 
 .acw-register__actions {
   display: flex;
   flex-wrap: wrap;
   gap: 0.75rem;
+  justify-content: flex-end;
+  align-items: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--acp-border);
+}
+
+.acw-register__actions--end {
+  justify-content: flex-end;
+}
+
+.acw-register__actions--center {
+  justify-content: center;
+  border-top: 0;
 }
 
 .acw-register__actions .ac-btn,
 .acw-register .ac-btn {
   min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  border-radius: 0.5rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
 }
 
-.acw-register-steps {
-  margin: 0 0 1.25rem;
+.acw-register .ac-btn--primary {
+  background: var(--acp-primary);
+  border-color: var(--acp-primary);
+  color: #fff;
+}
+
+.acw-register .ac-btn--primary:hover {
+  background: var(--acp-primary-hover);
+}
+
+.acw-register .ac-btn--secondary {
+  background: #fff;
+  color: #565e74;
+  border: 1px solid var(--acp-border);
+}
+
+.acw-register-review {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.acw-register-review__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 0.75rem;
+  padding-bottom: 0.75rem;
+  margin-bottom: 0.75rem;
+  border-bottom: 1px solid var(--acp-border);
+}
+
+.acw-register-review__head h2 {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.acw-register-review__head h2 .material-symbols-outlined {
+  color: var(--acp-primary);
+}
+
+.acw-register-review__edit {
+  margin: 0;
+}
+
+.acw-register-review__edit-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  border: 0;
+  background: transparent;
+  color: var(--acp-primary);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  cursor: pointer;
+  min-height: 44px;
+}
+
+.acw-register-review__edit-btn:focus-visible {
+  outline: 2px solid var(--acp-primary);
+  outline-offset: 2px;
+}
+
+.acw-register-review__dl {
+  margin: 0;
+}
+
+.acw-register-review__dl > div {
+  margin-bottom: 0.85rem;
+}
+
+.acw-register-review__dl dt {
+  font-size: 0.75rem;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #565e74;
+}
+
+.acw-register-review__dl dd {
+  margin: 0.2rem 0 0;
+  font-weight: 500;
+}
+
+.acw-register__success-card {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.acw-register__success-icon {
+  width: 6rem;
+  height: 6rem;
+  margin: 0 auto 1.25rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(107, 216, 203, 0.2);
+  color: var(--acp-primary);
+}
+
+.acw-register__success-icon .material-symbols-outlined {
+  font-size: 3rem;
+}
+
+.acw-register-success-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  text-align: left;
+  margin: 1.5rem 0;
+}
+
+.acw-register-success-tile {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--acp-border);
+  border-radius: 0.5rem;
+  background: var(--acp-bg);
+}
+
+.acw-register-success-tile .material-symbols-outlined {
+  color: var(--acp-primary);
+}
+
+.acw-register-success-tile h2 {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.acw-register-success-tile p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--acp-muted);
+}
+
+.acw-register .ac-form-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.acw-register .ac-form-checkbox input[type="checkbox"] {
+  width: 1.25rem;
+  height: 1.25rem;
+  min-height: 1.25rem;
+  margin-top: 0.15rem;
+  flex: 0 0 auto;
+}
+
+@media (max-width: 767px) {
+  .acw-mf-reg-topbar {
+    padding: 0 1rem;
+  }
+
+  .acw-register {
+    padding: 1.25rem 1rem 6.5rem;
+  }
+
+  .acw-register__actions {
+    position: sticky;
+    bottom: 0;
+    z-index: 4;
+    flex-direction: column-reverse;
+    margin: 0 -1.5rem -1.5rem;
+    padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
+    background: #fff;
+    border-top: 1px solid var(--acp-border);
+    box-shadow: 0 -10px 25px rgba(15, 23, 42, 0.05);
+  }
+
+  .acw-register__actions .ac-btn,
+  .acw-register__actions .ac-btn--secondary {
+    width: 100%;
+  }
+
+  .acw-register-review__head {
+    flex-direction: column;
+  }
 }
 
 @media (max-width: 390px) {
   .acw-register {
-    padding: 1rem 0.85rem 2.5rem;
+    padding: 1rem 0.85rem 6.5rem;
+  }
+}
+
+@media (min-width: 768px) {
+  .acw-mf-reg-topbar,
+  .acw-mf-reg-footer {
+    padding-left: 3rem;
+    padding-right: 3rem;
   }
 
-  .acw-register-steps,
-  .ac-onboarding-steps {
-    flex-wrap: wrap;
-    gap: 0.35rem 0.75rem;
+  .acw-register {
+    padding: 3rem 1.5rem 4rem;
   }
 
-  .acw-register__actions {
-    flex-direction: column;
+  .acw-register__grid {
+    grid-template-columns: 1fr 1fr;
   }
 
-  .acw-register__actions .ac-btn {
-    width: 100%;
+  .acw-register-review {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .acw-register-success-grid {
+    grid-template-columns: 1fr 1fr;
   }
 }
 

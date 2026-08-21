@@ -92,7 +92,7 @@ ActiveClinic design authority is **split by surface**. Do not use BlessBoard Sti
 | Stitch project ID | `projects/10611909237747031838` |
 | URL | https://stitch.withgoogle.com/projects/10611909237747031838 |
 | Surfaces | ACW marketing, original kebab-case auth, clinic mini-website CMS (MW), MF01–MF11 staff identity / registration / onboarding / patient exploration |
-| Typical phases | MW01–MW07 (implemented), MF01–MF04 Phase A (implemented minus OTP), MF03+ planned |
+| Typical phases | MW01–MW07 (implemented), MF01–MF04 Phase A (implemented minus OTP), MF03 Phase B (implemented) |
 | Live screens (MCP 2026-08-21) | **100** |
 | Inventory | [`docs/activeclinic/stitch/ACTIVECLINIC_MF01_MF11_LIVE_AUDIT.md`](./activeclinic/stitch/ACTIVECLINIC_MF01_MF11_LIVE_AUDIT.md); MW detail: [`ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md`](./activeclinic/stitch/ACTIVECLINIC_MINIWEBSITE_STITCH_INVENTORY.md) |
 

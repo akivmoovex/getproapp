@@ -1,6 +1,7 @@
 # ActiveClinic MF01–MF11 live Stitch delta audit
 
 **Verdict:** `ACTIVECLINIC_MF01_MF11_AUDIT_COMPLETE`  
+**Phase B:** MF03 clinic-registration chrome implemented on existing `/register-clinic` routes (visual only; provisioning unchanged).  
 **Inspected:** 2026-08-21 via live Stitch MCP `get_project` + `list_screens` + downloaded HTML (not hotlinked)  
 **Stitch project:** [ActiveClinic Universal Authentication Interface](https://stitch.withgoogle.com/projects/10611909237747031838)  
 **Project ID:** `10611909237747031838`  
@@ -386,6 +387,7 @@ Live HTML fields:
 
 ```text
 MF03_READY_FOR_VISUAL_IMPLEMENTATION = YES
+MF03_IMPLEMENTED = YES (Phase B — visual chrome on existing engine)
 ```
 
 Reason: the wizard already works on existing routes and schema. Visual restyle does not need a migration if License ID, specialty taxonomy, and password-policy theatre are omitted. Keep V7 immediate-provision success copy (“No Platform Admin approval is required for a normal registration”) rather than inventing an approval gate.
@@ -605,9 +607,9 @@ OTP, SSO, Theme, License ID, specialty taxonomy, telehealth, messaging, billing/
 
 ## STAGE 17 — Implementation phases (new sequence)
 
-Phase A (MF01/MF02/MF04) is **done**. Do not reopen.
+Phase A (MF01/MF02/MF04) is **done**. Phase B (MF03) is **done**. Do not reopen either.
 
-### Phase B — MF03 clinic registration chrome
+### Phase B — MF03 clinic registration chrome — IMPLEMENTED
 
 ```text
 PHASE: B
@@ -710,6 +712,34 @@ Reuse, do not duplicate:
 ## Recommended NEXT prompt
 
 See operator report section N in the conversation that published this file. Highest-priority implementation phase is **Phase B — MF03 clinic registration chrome**.
+
+---
+
+## Phase B implementation (MF03)
+
+Implemented on existing `/register-clinic` routes. No second registration engine. No schema change. No OTP/SSO.
+
+| Stitch ID | Exact name | Device | V7 route/state | Status | Variance |
+|-----------|------------|--------|----------------|--------|----------|
+| `be4c228d874c4fdeaee82c28eaed7e81` | MF03-01 Register Clinic Step 1 Desktop | Desktop | `GET/POST /register-clinic` clinic | `MINOR_ACCEPTED_VARIANCE` | V7 facility types; country select; province + notes kept; no maps |
+| `8d1074d16e6348c4a7da55df89133688` | MF03-02 Register Clinic Step 1 Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | Sticky CTA; same field contract |
+| `7fac8f8297c34a1b8be5355c769a9227` | MF03-03 Register Clinic Step 2 Desktop | Desktop | administrator step | `MINOR_ACCEPTED_VARIANCE` | 10-character policy; real phone field; “Administrator name” |
+| `2cc66d42e4be422ca1c5feeea963f145` | MF03-04 Register Clinic Step 2 Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | |
+| `3792389fcddc4c81915f316a1504634e` | MF03-05 Registration Review Desktop | Desktop | review | `MINOR_ACCEPTED_VARIANCE` | No License ID / CMO; live payload; password shown as “Set” only |
+| `b4033934e522483698aa86d6fd52fe99` | MF03-06 Registration Review Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | |
+| `49217e086a5a45329a893bc775fede6d` | MF03-07 Registration Success Desktop | Desktop | `/register-clinic/success` | `MINOR_ACCEPTED_VARIANCE` | Immediate-provision copy; `/login` and `/app`; no Help Guide |
+| `f90550e4e0924997a8cada0a034e76d7` | MF03-08 Registration Success Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | |
+
+```text
+screens compared: 8
+PIXEL_CLOSE_MATCH: 0
+MINOR_ACCEPTED_VARIANCE: 8
+FUNCTIONAL_GAP: 0
+```
+
+Transactional chrome (`data-ac-public-chrome="mf-register"`) suppresses marketing nav and the platform bottom bar on wizard pages only. `/register-clinic/status` keeps platform chrome.
+
+Next recommended phase: **MF05 clinic onboarding checklist** (`/app/onboarding`).
 
 ---
 

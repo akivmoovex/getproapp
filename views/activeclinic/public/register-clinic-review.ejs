@@ -5,14 +5,15 @@
   data-ac-page-section="register-clinic-review"
   data-ac-acw-screen="ACW09-review"
   data-ac-acw-step="review"
+  data-ac-mf-family="MF03"
+  data-ac-mf-screen="MF03-05"
 >
-  <%- include('../partials/register-clinic-steps') %>
-
-  <header class="acw-section acw-section-header acw-register__header">
-    <p class="acw-kicker">Register clinic</p>
-    <h1>Review your details</h1>
-    <p>Check your details before creating your clinic. You can go back to edit if something is wrong.</p>
+  <header class="acw-register__header acw-register__header--center">
+    <h1>Review Registration Details</h1>
+    <p class="acw-register__lede">Please confirm the information below before creating your clinic.</p>
   </header>
+
+  <%- include('../partials/register-clinic-steps') %>
 
   <% if (typeof error === 'string' && error) { %>
   <div class="ac-public-error acw-register__alert" role="alert"><%= error %></div>
@@ -26,53 +27,80 @@
   </div>
   <% } %>
 
-  <dl class="ac-review-summary acw-register__summary">
-    <div class="ac-review-summary__row">
-      <dt>Clinic name</dt>
-      <dd><%= fd.clinicName || '—' %></dd>
-    </div>
-    <div class="ac-review-summary__row">
-      <dt>Clinic type</dt>
-      <dd><%= fd.clinicTypeLabel || fd.clinicType || '—' %></dd>
-    </div>
-    <div class="ac-review-summary__row">
-      <dt>Country</dt>
-      <dd><%= fd.countryCode || '—' %></dd>
-    </div>
-    <% if (fd.province || fd.city || fd.address) { %>
-    <div class="ac-review-summary__row">
-      <dt>Location</dt>
-      <dd><%= [fd.address, fd.city, fd.province].filter(Boolean).join(', ') %></dd>
-    </div>
-    <% } %>
-    <div class="ac-review-summary__row">
-      <dt>Administrator name</dt>
-      <dd><%= fd.contactName || '—' %></dd>
-    </div>
-    <div class="ac-review-summary__row">
-      <dt>Phone</dt>
-      <dd><%= fd.contactPhone || '—' %></dd>
-    </div>
-    <div class="ac-review-summary__row">
-      <dt>Email</dt>
-      <dd><%= fd.contactEmail || '—' %></dd>
-    </div>
-    <div class="ac-review-summary__row">
-      <dt>Administrator password</dt>
-      <dd>Set — used to sign in after registration</dd>
-    </div>
-    <% if (fd.notes) { %>
-    <div class="ac-review-summary__row">
-      <dt>Notes</dt>
-      <dd><%= fd.notes %></dd>
-    </div>
-    <% } %>
-  </dl>
+  <div class="acw-register-review">
+    <article class="acw-register__card acw-register-review__card">
+      <header class="acw-register-review__head">
+        <h2><span class="material-symbols-outlined" aria-hidden="true">local_hospital</span> Clinic information</h2>
+        <form method="post" action="/register-clinic" class="acw-register-review__edit">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <%- include('../partials/register-clinic-hidden-fields') %>
+          <button type="submit" class="acw-register-review__edit-btn" name="action" value="edit-clinic">
+            <span class="material-symbols-outlined" aria-hidden="true">edit</span> Edit
+          </button>
+        </form>
+      </header>
+      <dl class="acw-register-review__dl">
+        <div>
+          <dt>Clinic name</dt>
+          <dd><%= fd.clinicName || '—' %></dd>
+        </div>
+        <div>
+          <dt>Clinic type</dt>
+          <dd><%= fd.clinicTypeLabel || fd.clinicType || '—' %></dd>
+        </div>
+        <div>
+          <dt>Country</dt>
+          <dd><%= fd.countryCode || '—' %></dd>
+        </div>
+        <% if (fd.province || fd.city || fd.address) { %>
+        <div>
+          <dt>Location</dt>
+          <dd><%= [fd.address, fd.city, fd.province].filter(Boolean).join(', ') %></dd>
+        </div>
+        <% } %>
+        <% if (fd.notes) { %>
+        <div>
+          <dt>Notes</dt>
+          <dd><%= fd.notes %></dd>
+        </div>
+        <% } %>
+      </dl>
+    </article>
 
-  <p class="ac-public-note acw-register__note">Creating your clinic sets up your organisation, facility, administrator account, and website foundation immediately. You can sign in after registration. Your public clinic website starts unpublished until you customize and publish it from Website Management.</p>
+    <article class="acw-register__card acw-register-review__card">
+      <header class="acw-register-review__head">
+        <h2><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span> Administrator</h2>
+        <form method="post" action="/register-clinic" class="acw-register-review__edit">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <%- include('../partials/register-clinic-hidden-fields') %>
+          <button type="submit" class="acw-register-review__edit-btn" name="action" value="edit-admin">
+            <span class="material-symbols-outlined" aria-hidden="true">edit</span> Edit
+          </button>
+        </form>
+      </header>
+      <dl class="acw-register-review__dl">
+        <div>
+          <dt>Full name</dt>
+          <dd><%= fd.contactName || '—' %></dd>
+        </div>
+        <div>
+          <dt>Email address</dt>
+          <dd><%= fd.contactEmail || '—' %></dd>
+        </div>
+        <div>
+          <dt>Phone</dt>
+          <dd><%= fd.contactPhone || '—' %></dd>
+        </div>
+        <div>
+          <dt>Administrator password</dt>
+          <dd>Set — used to sign in after registration</dd>
+        </div>
+      </dl>
+    </article>
+  </div>
 
-  <div class="ac-review-actions acw-register__actions">
-    <form method="post" action="/register-clinic" class="ac-review-actions__confirm">
+  <div class="acw-register__card acw-register-review__confirm">
+    <form method="post" action="/register-clinic" class="ac-review-actions__confirm" data-ac-loading="1" data-ac-register-confirm="1">
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
       <input type="hidden" name="action" value="confirm"/>
       <%- include('../partials/register-clinic-hidden-fields') %>
@@ -88,17 +116,17 @@
             aria-invalid="<%= verr.acceptTerms ? 'true' : 'false' %>"
             <% if (verr.acceptTerms) { %>aria-describedby="acceptTerms-error"<% } %>
           />
-          <span>I have read and agree to the ActiveClinic <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> and acknowledge the <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span>
+          <span>I confirm that the information provided is accurate and I agree to the ActiveClinic <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span>
         </label>
         <% if (verr.acceptTerms) { %><p class="ac-form-field__error" id="acceptTerms-error"><%= verr.acceptTerms %></p><% } %>
       </div>
-      <button type="submit" class="ac-btn ac-btn--primary">Create clinic</button>
-    </form>
-    <form method="post" action="/register-clinic" class="acw-register__edit">
-      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-      <%- include('../partials/register-clinic-hidden-fields') %>
-      <button type="submit" class="ac-btn ac-btn--secondary" name="action" value="edit-clinic">Edit clinic information</button>
-      <button type="submit" class="ac-btn ac-btn--secondary" name="action" value="edit-admin">Edit administrator information</button>
+      <div class="acw-register__actions acw-register__actions--end">
+        <button type="submit" class="ac-btn ac-btn--primary" data-loading="Creating clinic…">
+          Create clinic
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </button>
+      </div>
     </form>
   </div>
+  <p class="ac-public-note acw-register__note">Creating your clinic sets up your organisation, facility, administrator account, and website foundation immediately. You can sign in after registration. Your public clinic website starts unpublished until you customize and publish it from Website Management.</p>
 </section>

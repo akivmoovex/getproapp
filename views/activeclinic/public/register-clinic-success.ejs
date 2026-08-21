@@ -1,56 +1,77 @@
 <section
-  class="acw-page acw-register"
+  class="acw-page acw-register acw-register--success"
   data-ac-page-section="register-clinic-success"
   data-ac-acw-screen="ACW09-success"
   data-ac-acw-step="success"
+  data-ac-mf-family="MF03"
+  data-ac-mf-screen="MF03-07"
   data-ac-state-key="<%= typeof reviewRequired !== 'undefined' && reviewRequired ? 'review_required' : (typeof ready !== 'undefined' && ready ? 'ready' : 'success_terminal') %>"
 >
-  <%- include('../partials/register-clinic-steps') %>
-
   <% if (typeof reviewRequired !== 'undefined' && reviewRequired) { %>
-  <div class="ac-success-panel acw-card acw-register__panel" data-ac-registration-outcome="review_required">
+  <div class="acw-register__card acw-register__success-card ac-success-panel" data-ac-registration-outcome="review_required">
+    <div class="acw-register__success-icon" aria-hidden="true">
+      <span class="material-symbols-outlined filled">pending</span>
+    </div>
     <p class="acw-kicker">Registration received</p>
     <h1>Review required</h1>
     <p>Your clinic registration needs a short review before it can be activated. This is uncommon and does not mean your details were rejected.</p>
     <% if (typeof applicationReference === 'string' && applicationReference) { %>
     <p>Reference: <code data-ac-application-ref="<%= applicationReference %>"><%= applicationReference %></code></p>
     <% } %>
+    <div class="ac-public-note acw-register__note">
+      <h2 class="ac-success-panel__subtitle">What happens next</h2>
+      <ul class="ac-public-list">
+        <li>Platform Admin will review this exceptional registration.</li>
+        <li>Your clinic is not active yet and you cannot sign in until review completes.</li>
+        <li>Keep your reference number if you need to check status later.</li>
+      </ul>
+    </div>
+    <div class="acw-register__actions acw-register__actions--center">
+      <a class="ac-btn ac-btn--primary" href="/register-clinic/status<%= typeof applicationReference === 'string' && applicationReference ? ('?ref=' + encodeURIComponent(applicationReference)) : '' %>" data-ac-status-lookup-link="1">Check registration status</a>
+      <a class="ac-btn ac-btn--secondary" href="/">Return home</a>
+    </div>
   </div>
-  <div class="ac-public-note acw-register__note">
-    <h2 class="ac-success-panel__subtitle">What happens next</h2>
-    <ul class="ac-public-list">
-      <li>Platform Admin will review this exceptional registration.</li>
-      <li>Your clinic is not active yet and you cannot sign in until review completes.</li>
-      <li>Keep your reference number if you need to check status later.</li>
-    </ul>
-  </div>
-  <p class="ac-public-actions acw-register__actions">
-    <a class="ac-btn ac-btn--primary" href="/register-clinic/status<%= typeof applicationReference === 'string' && applicationReference ? ('?ref=' + encodeURIComponent(applicationReference)) : '' %>" data-ac-status-lookup-link="1">Check registration status</a>
-    <a class="ac-btn ac-btn--secondary" href="/">Return home</a>
-  </p>
   <% } else { %>
-  <div class="ac-success-panel acw-card acw-register__panel" data-ac-registration-outcome="<%= typeof ready !== 'undefined' && ready ? 'ready' : 'recorded' %>">
-    <p class="acw-kicker">Clinic created</p>
-    <h1>Your clinic is ready</h1>
-    <p>Your organisation, clinic, and administrator account have been created. Sign in to finish setup. Your clinic website starts unpublished. You can customize and publish it from Website Management after you sign in.</p>
+  <div class="acw-register__card acw-register__success-card ac-success-panel" data-ac-registration-outcome="<%= typeof ready !== 'undefined' && ready ? 'ready' : 'recorded' %>">
+    <div class="acw-register__success-icon" aria-hidden="true">
+      <span class="material-symbols-outlined filled">check_circle</span>
+    </div>
+    <h1>Clinic Registered Successfully</h1>
+    <p class="acw-register__lede">Your clinic is ready. We have set up your organisation, clinic, and administrator account.</p>
     <% if (typeof applicationReference === 'string' && applicationReference) { %>
     <p>Reference: <code data-ac-application-ref="<%= applicationReference %>"><%= applicationReference %></code></p>
     <% } %>
+    <div class="acw-register-success-grid">
+      <div class="acw-register-success-tile">
+        <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+        <div>
+          <h2>Accounts created</h2>
+          <p>Your primary clinic and administrator accounts are configured and ready to use.</p>
+        </div>
+      </div>
+      <div class="acw-register-success-tile">
+        <span class="material-symbols-outlined" aria-hidden="true">web</span>
+        <div>
+          <h2>Website foundation</h2>
+          <p>Your clinic website foundation is built and currently in an unpublished state.</p>
+        </div>
+      </div>
+    </div>
+    <div class="ac-public-note acw-register__note">
+      <h2 class="ac-success-panel__subtitle">What happens next</h2>
+      <ul class="ac-public-list">
+        <li>Sign in with the email or phone and password you just set.</li>
+        <li>Open Website Management to customize your clinic website.</li>
+        <li>The website stays unpublished until you choose to publish it. No Platform Admin approval is required for a normal registration.</li>
+      </ul>
+    </div>
+    <div class="acw-register__actions acw-register__actions--center">
+      <a class="ac-btn ac-btn--primary" href="/login" data-ac-sign-in="1">Sign in</a>
+      <% if (typeof ready !== 'undefined' && ready) { %>
+      <a class="ac-btn ac-btn--secondary" href="/app" data-ac-continue-onboarding="1">Continue to dashboard</a>
+      <% } %>
+      <a class="ac-btn ac-btn--secondary" href="/">Return home</a>
+    </div>
   </div>
-  <div class="ac-public-note acw-register__note">
-    <h2 class="ac-success-panel__subtitle">What happens next</h2>
-    <ul class="ac-public-list">
-      <li>Sign in with the email or phone and password you just set.</li>
-      <li>Open Website Management to customize your clinic website.</li>
-      <li>The website stays unpublished until you choose to publish it. No Platform Admin approval is required for a normal registration.</li>
-    </ul>
-  </div>
-  <p class="ac-public-actions acw-register__actions">
-    <a class="ac-btn ac-btn--primary" href="/login" data-ac-sign-in="1">Sign in</a>
-    <% if (typeof ready !== 'undefined' && ready) { %>
-    <a class="ac-btn ac-btn--secondary" href="/app" data-ac-continue-onboarding="1">Continue to dashboard</a>
-    <% } %>
-    <a class="ac-btn ac-btn--secondary" href="/">Return home</a>
-  </p>
   <% } %>
 </section>
