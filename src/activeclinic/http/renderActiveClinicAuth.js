@@ -16,7 +16,7 @@ const {
   buildPhoneFieldLocals,
 } = require("../services/activeClinicPhoneFieldLocals");
 
-const ASSET_VERSION = "v7-acw-15";
+const ASSET_VERSION = "v7-mf-a1";
 
 const DEFAULT_BRANDING = Object.freeze({
   productName: "ActiveClinic",
@@ -69,7 +69,7 @@ function renderLoginPage(input) {
     phoneCountry: String((input && input.phoneCountry) || "ZM").toUpperCase(),
     nextPath: (input && input.nextPath) || null,
     csrfToken: input && input.csrfToken,
-    composition: (input && input.error) ? "acw08-error" : "acw08-login",
+    composition: (input && input.error) ? "mf01-error" : "mf01-login",
   });
   const bodyHtml = renderAuthContent("auth/login.ejs", locals);
   return renderAuthShell("login", locals.pageTitle, bodyHtml, {
@@ -96,15 +96,18 @@ function renderOrgSelectPage(input) {
       }))
     : [];
   const locals = baseLocals({
-    pageTitle: "Choose a clinic",
+    pageTitle: "Select your clinic",
     error: (input && input.error) || null,
     organizations: orgs,
     csrfToken: input && input.csrfToken,
-    composition: "single",
+    composition: "mf02-selector",
+    selectorState:
+      (input && input.selectorState) ||
+      (orgs.length === 0 ? "expired" : "ready"),
   });
   const bodyHtml = renderAuthContent("auth/select-organization.ejs", locals);
   return renderAuthShell("select-organization", locals.pageTitle, bodyHtml, {
-    composition: "single",
+    composition: "mf02-selector",
   });
 }
 
@@ -160,11 +163,11 @@ function renderForgotPage(input) {
     error: (input && input.error) || null,
     identifier: String((input && input.identifier) || ""),
     phoneCountry: String((input && input.phoneCountry) || "ZM").toUpperCase(),
-    composition: "single",
+    composition: "mf04-forgot",
   });
   const bodyHtml = renderAuthContent("auth/forgot-password.ejs", locals);
   return renderAuthShell("forgot-password", locals.pageTitle, bodyHtml, {
-    composition: "single",
+    composition: "mf04-forgot",
   });
 }
 
@@ -174,22 +177,22 @@ function renderForgotCheckPage(input) {
     message:
       (input && input.message) ||
       "If an eligible ActiveClinic account exists for that phone or email, reset instructions are available to authorized administrators when delivery is configured.",
-    composition: "single",
+    composition: "mf04-check",
   });
   const bodyHtml = renderAuthContent("auth/forgot-password-check.ejs", locals);
   return renderAuthShell("forgot-password-check", locals.pageTitle, bodyHtml, {
-    composition: "single",
+    composition: "mf04-check",
   });
 }
 
 function renderResetSuccessPage() {
   const locals = baseLocals({
     pageTitle: "Password updated",
-    composition: "single",
+    composition: "mf04-success",
   });
   const bodyHtml = renderAuthContent("auth/reset-password-success.ejs", locals);
   return renderAuthShell("reset-password-success", locals.pageTitle, bodyHtml, {
-    composition: "single",
+    composition: "mf04-success",
   });
 }
 
@@ -213,11 +216,11 @@ function renderResetPage(input) {
     csrfToken: input.csrfToken,
     token: input.token,
     error: input.error || null,
-    composition: "single",
+    composition: "mf04-reset",
   });
   const bodyHtml = renderAuthContent("auth/reset-password.ejs", locals);
   return renderAuthShell("reset-password", locals.pageTitle, bodyHtml, {
-    composition: "single",
+    composition: "mf04-reset",
   });
 }
 
@@ -232,30 +235,55 @@ function renderLifecycleState(input) {
     primaryLabel: (input && input.primaryLabel) || "Return to sign in",
     secondaryHref: (input && input.secondaryHref) || null,
     secondaryLabel: (input && input.secondaryLabel) || null,
-    composition: "single",
+    tertiaryHref: (input && input.tertiaryHref) || null,
+    tertiaryLabel: (input && input.tertiaryLabel) || null,
+    variant: (input && input.variant) || "lifecycle",
+    composition: (input && input.composition) || "single",
   });
   const bodyHtml = renderAuthContent("auth/lifecycle-state.ejs", locals);
   return renderAuthShell(
     (input && input.pageId) || "lifecycle-state",
     locals.pageTitle,
     bodyHtml,
-    { composition: "single" }
+    { composition: locals.composition }
   );
 }
 
 function renderAccessUnavailablePage() {
   return renderLifecycleState({
     pageId: "access-unavailable",
-    pageTitle: "Access unavailable",
+    pageTitle: "No clinic access",
     stateCode: "no_eligible_clinic",
-    heading: "No clinic access",
+    heading: "No Clinic Access",
     message:
-      "This account signed in successfully, but it does not currently have an eligible ActiveClinic workspace.",
+      "Your account is active, but you are not assigned to any clinic workspaces yet. Register your clinic or contact support for help.",
     tone: "error",
-    primaryHref: "/login",
-    primaryLabel: "Return to sign in",
+    primaryHref: "/register-clinic",
+    primaryLabel: "Register your clinic",
     secondaryHref: "/contact",
     secondaryLabel: "Contact support",
+    tertiaryHref: "/login",
+    tertiaryLabel: "Return to sign in",
+    variant: "no-access",
+    composition: "mf02-no-access",
+  });
+}
+
+function renderAccessDisabledPage() {
+  return renderLifecycleState({
+    pageId: "access-disabled",
+    pageTitle: "Access disabled",
+    stateCode: "access_disabled",
+    heading: "Access Disabled",
+    message:
+      "Access to this clinic workspace has been disabled. If you believe this is an error, contact the clinic administrator or ActiveClinic support.",
+    tone: "error",
+    primaryHref: "/login",
+    primaryLabel: "Sign in as a different user",
+    secondaryHref: "/contact",
+    secondaryLabel: "Contact support",
+    variant: "access-disabled",
+    composition: "mf02-disabled",
   });
 }
 
@@ -289,5 +317,6 @@ module.exports = {
   renderResetSuccessPage,
   renderLifecycleState,
   renderAccessUnavailablePage,
+  renderAccessDisabledPage,
   renderPlatformAdminLanding,
 };

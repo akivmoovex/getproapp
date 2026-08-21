@@ -244,7 +244,7 @@ describe("ActiveClinic ACW10–ACW12 recovery, errors, and public chrome", () =>
     assert.equal(forgot.status, 200);
     assert.match(forgot.text, /data-ac-acw-screen="ACW10-forgot"/);
     assert.match(forgot.text, /data-ac-shell="auth"/);
-    assert.match(forgot.text, /Phone number or email/);
+    assert.match(forgot.text, /Email address or phone number/);
     assert.doesNotMatch(forgot.text, /reset-password\/[A-Za-z0-9_-]{20,}/);
 
     const check = await request(server).get("/forgot-password/check").set("Host", AC_HOST);
@@ -256,7 +256,7 @@ describe("ActiveClinic ACW10–ACW12 recovery, errors, and public chrome", () =>
     const success = await request(server).get("/reset-password/success").set("Host", AC_HOST);
     assert.equal(success.status, 200);
     assert.match(success.text, /data-ac-acw-screen="ACW10-success"/);
-    assert.match(success.text, /Sign in/);
+    assert.match(success.text, /Sign In/i);
     assert.doesNotMatch(success.text, /Reset link unavailable/);
   });
 

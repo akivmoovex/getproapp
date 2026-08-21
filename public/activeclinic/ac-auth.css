@@ -1,7 +1,7 @@
 /* ActiveClinic authentication surfaces (AC-V6-S01). Product-isolated; does not alter BlessBoard. */
 :root {
   /* Auth palette aligned to P01 Login Stitch (navy primary); shell teal remains in ac-app.css */
-  --ac-auth-bg: #f7f9fb;
+  --ac-auth-bg: #f8f9ff;
   --ac-auth-surface: #ffffff;
   --ac-auth-surface-low: #f2f4f6;
   --ac-auth-ink: #191c1e;
@@ -986,7 +986,207 @@ body.ac-auth-body {
     padding-right: 0.75rem;
   }
   .ac-auth-card--acw08,
+  .ac-auth-card--mf,
   .ac-auth-main--selector {
     max-width: 100%;
+  }
+}
+
+/* ===== MF01 / MF02 / MF04 staff identity chrome ===== */
+body.ac-auth-body[data-ac-composition="mf02-selector"],
+body.ac-auth-body[data-ac-composition="mf02-no-access"],
+body.ac-auth-body[data-ac-composition="mf02-disabled"] {
+  justify-content: flex-start;
+  padding-top: 0;
+}
+
+.ac-auth-card--mf {
+  max-width: 26rem;
+  margin: 0 auto;
+  border-radius: 1rem;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 12px 40px rgba(11, 28, 48, 0.08);
+  padding: 2rem 1.5rem 1.75rem;
+  background: #ffffff;
+}
+
+.ac-auth-mf-brand {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 0.25rem;
+  margin-bottom: 1.25rem;
+}
+
+.ac-auth-mf-brand .ac-auth-mark {
+  width: 3.25rem;
+  height: 3.25rem;
+  border-radius: 0.85rem;
+}
+
+.ac-auth-mf-brand__name {
+  margin: 0;
+  font-size: 1.25rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+
+.ac-auth-mf-brand__kicker {
+  margin: 0;
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--ac-auth-muted);
+}
+
+.ac-auth-h1--mf {
+  text-align: center;
+  margin: 0 0 0.75rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.ac-auth-desc--mf {
+  text-align: center;
+  margin: 0 0 1.25rem;
+  color: var(--ac-auth-muted);
+}
+
+.ac-auth-card--mf .ac-auth-form-panel {
+  padding: 0;
+}
+
+.ac-auth-form-panel--center {
+  text-align: center;
+}
+
+.ac-auth-mf-footer {
+  width: 100%;
+  max-width: 56rem;
+  margin: 2rem auto 0;
+  text-align: center;
+}
+
+.ac-auth-mf-footer__brand {
+  margin: 0 0 0.5rem;
+  font-weight: 700;
+}
+
+.ac-auth-mf-footer__nav {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.75rem 1.25rem;
+}
+
+.ac-auth-mf-footer__copy {
+  margin: 0.75rem 0 0;
+  font-size: 0.75rem;
+  color: var(--ac-auth-muted);
+}
+
+.ac-auth-mf-topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  max-width: 56rem;
+  margin: 0 auto 1.5rem;
+  padding: 1rem 0;
+  gap: 1rem;
+}
+
+.ac-auth-mf-topbar__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: inherit;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.ac-auth-mf-topbar__brand:focus-visible {
+  outline: 2px solid var(--ac-auth-focus);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+.ac-auth-selector__title {
+  display: block;
+}
+
+.ac-auth-clinic-card {
+  flex-direction: row;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.ac-auth-clinic-card__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+  flex: 1;
+  min-width: 0;
+}
+
+.ac-auth-clinic-card__role {
+  display: inline-flex;
+  align-self: flex-start;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ac-auth-primary);
+  background: rgba(13, 148, 136, 0.1);
+  border-radius: 999px;
+  padding: 0.15rem 0.55rem;
+}
+
+.ac-auth-clinic-card__chevron {
+  color: var(--ac-auth-muted);
+  font-size: 1.5rem;
+  line-height: 1;
+}
+
+.ac-auth-access-actions {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.ac-auth-state-icon--reset {
+  background: rgba(13, 148, 136, 0.12);
+  color: var(--ac-auth-primary);
+}
+
+.ac-auth-signing-in__secure {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin: 1.25rem 0 0;
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ac-auth-muted);
+}
+
+.ac-auth-input:focus,
+.ac-auth-select:focus,
+.ac-auth-phone:focus-within {
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.25);
+}
+
+@media (min-width: 768px) {
+  .ac-auth-card--mf {
+    padding: 2.25rem 2rem 2rem;
+  }
+}
+
+@media (max-width: 767px) {
+  .ac-auth-mf-topbar {
+    padding-left: 0.25rem;
+    padding-right: 0.25rem;
+  }
+  .ac-auth-access-actions .ac-auth-btn {
+    width: 100%;
   }
 }

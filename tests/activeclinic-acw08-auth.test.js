@@ -235,7 +235,7 @@ describe("ActiveClinic ACW08 shared authentication", () => {
 
   it("pre-auth login is ActiveClinic-only with phone-or-email and signing-in overlay", async () => {
     const html = renderLoginPage({ csrfToken: "csrf-acw08" });
-    assert.match(html, /data-ac-composition="acw08-login"/);
+    assert.match(html, /data-ac-composition="mf01-login"/);
     assert.match(html, /Email address or phone number/);
     assert.match(html, /ActiveClinic/);
     assert.match(html, /data-ac-signing-in/);
@@ -321,7 +321,7 @@ describe("ActiveClinic ACW08 shared authentication", () => {
       .set("Host", "activeclinic.org")
       .set("Cookie", `${SELECTION_COOKIE}=${xfer}`);
     assert.equal(selector.status, 200);
-    assert.match(selector.text, /Choose a clinic|Select a Workspace/);
+    assert.match(selector.text, /Select Your Clinic/);
     assert.match(selector.text, /First Clinic ACW08/);
     assert.match(selector.text, /Second Clinic ACW08/);
     assert.match(selector.text, /data-ac-clinic-filter/);
@@ -339,7 +339,8 @@ describe("ActiveClinic ACW08 shared authentication", () => {
     });
     const disabled = await postLogin(seeded.phone, PASSWORD);
     assert.equal(disabled.post.status, 403);
-    assert.match(disabled.post.text, /No clinic access/);
+    assert.match(disabled.post.text, /Access Disabled/i);
+    assert.match(disabled.post.text, /data-ac-auth-screen="access-disabled"/);
     assert.doesNotMatch(disabled.post.text, /could not sign you in with those details/i);
     assert.equal(extractCookie(disabled.post, COOKIE_ACTIVECLINIC_ORG), null);
 
@@ -359,7 +360,8 @@ describe("ActiveClinic ACW08 shared authentication", () => {
     });
     const none = await postLogin(phone, PASSWORD);
     assert.equal(none.post.status, 403);
-    assert.match(none.post.text, /No clinic access/);
+    assert.match(none.post.text, /No Clinic Access/i);
+    assert.match(none.post.text, /data-ac-auth-screen="no-access"/);
   });
 
   it("platform admin without a clinic is not treated as a bad password", async () => {

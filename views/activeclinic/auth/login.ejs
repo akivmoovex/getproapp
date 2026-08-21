@@ -1,85 +1,72 @@
 <main id="ac-auth-main" class="ac-auth-main" data-ac-auth-main="1">
   <div
-    class="ac-auth-card <%= error ? 'ac-auth-card--split ac-auth-card--error' : 'ac-auth-card--acw08' %>"
-    data-ac-composition="<%= error ? 'acw08-error' : 'acw08-login' %>"
+    class="ac-auth-card ac-auth-card--mf <%= error ? 'ac-auth-card--mf-error' : '' %>"
+    data-ac-composition="<%= error ? 'mf01-error' : 'mf01-login' %>"
     data-ac-auth-screen="<%= error ? 'login-error' : 'login' %>"
+    data-ac-mf-family="MF01"
   >
+    <header class="ac-auth-mf-brand">
+      <%- include('../partials/auth-mark') %>
+      <p class="ac-auth-mf-brand__name">ActiveClinic</p>
+      <p class="ac-auth-mf-brand__kicker"><%= error ? 'Sign in to your clinical portal' : 'Platform administration' %></p>
+    </header>
     <% if (error) { %>
-      <%- include('../partials/auth-brand-panel', {
-        productName: productName,
-        supportingName: supportingName,
-        tagline: taglineLong || tagline
-      }) %>
+      <h1 class="ac-auth-h1 ac-auth-h1--mf">Authentication failed</h1>
+    <% } else { %>
+      <h1 class="ac-auth-h1 ac-auth-h1--mf">Sign In</h1>
     <% } %>
-    <div class="ac-auth-form-panel">
-      <header class="ac-auth-brand-header <%= error ? 'ac-auth-brand-header--error-mobile' : '' %>">
-        <%- include('../partials/auth-mark') %>
-        <p class="ac-auth-brand-header__name">ActiveClinic</p>
-        <p class="ac-auth-brand-header__tagline ac-auth-brand-header__tagline--desktop"><%= tagline %></p>
-        <p class="ac-auth-brand-header__tagline ac-auth-brand-header__tagline--mobile"><%= taglineMobile || tagline %></p>
-      </header>
-      <div class="ac-auth-form-inner">
-        <h1 class="ac-auth-h1 ac-auth-h1--welcome">Welcome back</h1>
-        <p class="ac-auth-desc ac-auth-desc--welcome">Please enter your credentials to access the clinic dashboard.</p>
-        <h1 class="ac-auth-h1 ac-auth-h1--signin">Sign In</h1>
-        <p class="ac-auth-desc ac-auth-desc--signin">Enter your credentials to access the portal.</p>
-        <% if (notice) { %>
-          <p class="ac-auth-alert ac-auth-alert--success" role="status"><%= notice %></p>
-        <% } %>
-        <% if (error) { %>
-          <div id="ac-auth-error-summary" class="ac-auth-alert ac-auth-alert--error" role="alert" tabindex="-1">
-            <%= error %>
-          </div>
-        <% } %>
-        <form method="post" action="/login" data-ac-login-form="1" data-ac-loading="1" novalidate>
-          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-          <% if (nextPath) { %>
-            <input type="hidden" name="next" value="<%= nextPath %>"/>
-          <% } %>
-          <div class="ac-auth-field">
-            <%- include('../partials/phone-field', {
-              id: 'identifier',
-              label: 'Email address or phone number',
-              required: true,
-              identifierMode: true,
-              identifierName: 'identifier',
-              defaultCountry: defaultPhoneCountry || 'ZM',
-              selectedCountry: phoneCountry || defaultPhoneCountry || 'ZM',
-              nationalValue: identifier || '',
-              countries: phoneCountries,
-              phoneValidationRelaxed: phoneValidationRelaxed,
-              hint: '',
-              placeholder: 'name@example.com or +260 97 000 0000',
-              error: error ? 'Check this field and try again.' : null,
-              showLegacyHidden: false
-            }) %>
-          </div>
-          <%- include('../partials/auth-password-field', {
-            id: 'password',
-            name: 'password',
-            label: 'Password',
-            autocomplete: 'current-password',
-            minlength: null,
-            describedBy: error ? 'ac-auth-error-summary' : null,
-            invalid: Boolean(error)
-          }) %>
-          <div class="ac-auth-row">
-            <a class="ac-auth-link" href="/forgot-password">Forgot password?</a>
-          </div>
-          <button type="submit" class="ac-auth-btn" data-loading="Signing you in…">
-            Sign in
-            <span aria-hidden="true">→</span>
-          </button>
-        </form>
-        <p class="ac-auth-hint ac-auth-hint--register">
-          Setting up a new clinic? <a class="ac-auth-link" href="/register-clinic">Register your clinic</a>
-        </p>
-        <% if (error) { %>
-          <p class="ac-auth-hint">Don't have an account? <a class="ac-auth-link" href="/contact">Contact administrator</a></p>
-        <% } %>
+    <% if (notice) { %>
+      <p class="ac-auth-alert ac-auth-alert--success" role="status"><%= notice %></p>
+    <% } %>
+    <% if (error) { %>
+      <div id="ac-auth-error-summary" class="ac-auth-alert ac-auth-alert--error" role="alert" tabindex="-1">
+        <%= error %>
       </div>
-    </div>
+    <% } %>
+    <form method="post" action="/login" data-ac-login-form="1" data-ac-loading="1" novalidate>
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <% if (nextPath) { %>
+        <input type="hidden" name="next" value="<%= nextPath %>"/>
+      <% } %>
+      <div class="ac-auth-field">
+        <%- include('../partials/phone-field', {
+          id: 'identifier',
+          label: 'Email address or phone number',
+          required: true,
+          identifierMode: true,
+          identifierName: 'identifier',
+          defaultCountry: defaultPhoneCountry || 'ZM',
+          selectedCountry: phoneCountry || defaultPhoneCountry || 'ZM',
+          nationalValue: identifier || '',
+          countries: phoneCountries,
+          phoneValidationRelaxed: phoneValidationRelaxed,
+          hint: '',
+          placeholder: 'name@example.com or +260 97 000 0000',
+          error: error ? 'Check this field and try again.' : null,
+          showLegacyHidden: false
+        }) %>
+      </div>
+      <%- include('../partials/auth-password-field', {
+        id: 'password',
+        name: 'password',
+        label: 'Password',
+        autocomplete: 'current-password',
+        minlength: null,
+        describedBy: error ? 'ac-auth-error-summary' : null,
+        invalid: Boolean(error)
+      }) %>
+      <div class="ac-auth-row">
+        <a class="ac-auth-link" href="/forgot-password">Forgot password?</a>
+      </div>
+      <button type="submit" class="ac-auth-btn" data-loading="Signing you in…">
+        Login
+      </button>
+    </form>
+    <p class="ac-auth-hint ac-auth-hint--register">
+      Don't have an account? <a class="ac-auth-link" href="/register-clinic">Register your clinic</a>
+    </p>
   </div>
+  <%- include('../partials/auth-mf-footer') %>
 </main>
 <% if (error) { %>
 <script>

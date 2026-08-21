@@ -52,8 +52,8 @@ describe("activeclinic-auth-stitch-parity (AC-V6-S01)", () => {
     assert.match(html, /data-ac-shell="auth"/);
     assert.match(html, /data-ac-page="login"/);
     assert.match(html, /data-ac-auth-layout="1"/);
-    assert.match(html, /data-ac-composition="acw08-error"/);
-    assert.match(html, /<h1[^>]*>Sign In<\/h1>/);
+    assert.match(html, /data-ac-composition="mf01-error"/);
+    assert.match(html, /Authentication failed/);
     assert.match(html, /Email address or phone number/);
     assert.match(html, /Forgot password\?/);
     assert.match(html, /data-ac-toggle-password="password"/);
@@ -64,6 +64,7 @@ describe("activeclinic-auth-stitch-parity (AC-V6-S01)", () => {
     assert.match(html, /role="alert"/);
     assert.match(html, /id="ac-auth-error-summary"/);
     assert.match(html, /data-ac-signing-in/);
+    assert.match(html, /Signing you in/);
     assert.doesNotMatch(html, /BlessBoard|Sacred Modernity|church/i);
     assert.doesNotMatch(html, /Juflona|Demo Clinic/i);
     assert.doesNotMatch(html, /patient|prescription|revenue/i);
@@ -83,7 +84,7 @@ describe("activeclinic-auth-stitch-parity (AC-V6-S01)", () => {
       ],
     });
     assert.match(html, /data-ac-page="select-organization"/);
-    assert.match(html, /Choose a clinic|Select a Workspace/);
+    assert.match(html, /Select Your Clinic/);
     assert.match(html, /Public Hospital/);
     assert.match(html, /Ada Clinic/);
     assert.match(html, /name="organization_id"/);
@@ -117,10 +118,12 @@ describe("activeclinic-auth-stitch-parity (AC-V6-S01)", () => {
   });
 
   it("forgot / reset / change-password share auth shell markers", () => {
-    assert.match(
-      renderForgotPage({ csrfToken: "c", message: "Neutral." }),
-      /data-ac-page="forgot-password"/
-    );
+    const forgot = renderForgotPage({ csrfToken: "c", message: "Neutral." });
+    assert.match(forgot, /data-ac-page="forgot-password"/);
+    assert.match(forgot, /data-ac-composition="mf04-forgot"/);
+    assert.match(forgot, /Send reset link/);
+    assert.doesNotMatch(forgot, /Send Code|verification code|6-digit|Continue with Google|Sign in with Apple/i);
+
     assert.match(
       renderResetPage({ csrfToken: "c", token: "tok", valid: true }),
       /data-ac-page="reset-password"/
@@ -188,7 +191,7 @@ describe("activeclinic-auth-stitch-parity HTTP", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /data-ac-shell="auth"/);
     assert.match(res.text, /data-ac-page="login"/);
-    assert.match(res.text, /data-ac-composition="acw08-login"/);
+    assert.match(res.text, /data-ac-composition="mf01-login"/);
     assert.match(res.text, /ac-auth\.css/);
     assert.match(res.text, /Email address or phone number/);
     assert.match(res.text, /ActiveClinic/);

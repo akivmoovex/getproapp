@@ -19,6 +19,7 @@ const {
 } = require("../../platform/services/platformIdentityCredentialService");
 const {
   listEligibleActiveClinicOrganizations,
+  classifyUnavailableAccess,
   resolveEligibleOrganization,
   resolveLinkedPlatformAdmin,
   mapSelectorOrganization,
@@ -235,11 +236,15 @@ async function authenticateActiveClinicIdentity(db, input) {
         blessBoardUserId: platformAdmin.blessBoardUserId,
       };
     }
+    const classified = await classifyUnavailableAccess(db, resolved.identityRow.id);
     return {
       ok: false,
       status: STATUS.ACCESS_UNAVAILABLE,
       message: GENERIC_ACCESS,
-      failureCategory: "no_eligible_organization",
+      failureCategory:
+        classified.kind === "access_disabled"
+          ? "access_disabled"
+          : "no_eligible_organization",
     };
   }
 

@@ -275,6 +275,29 @@ async function listEligibleActiveClinicOrganizations(db, input) {
 }
 
 /**
+ * Distinguish empty eligibility without a new schema flag.
+ * Uses existing identity usability + staff membership rows.
+ * Does not expose reason codes to public templates.
+ *
+ * @returns {Promise<{ kind: "access_disabled"|"no_clinic_access" }>}
+ */
+async function classifyUnavailableAccess(db, platformIdentityId) {
+  const identityId = String(platformIdentityId || "").trim();
+  if (!identityId) {
+    return { kind: "no_clinic_access" };
+  }
+  const identityRow = await identityRepo.findIdentityById(db, identityId);
+  if (!identityRow || !isIdentityUsable(identityRow)) {
+    return { kind: "access_disabled" };
+  }
+  const staffRows = await staffRepo.listByPlatformIdentity(db, identityId);
+  if (staffRows && staffRows.length > 0) {
+    return { kind: "access_disabled" };
+  }
+  return { kind: "no_clinic_access" };
+}
+
+/**
  * @param {{ query: Function }} db
  * @param {{ platformIdentityId: string, organizationId: string }} input
  */
@@ -324,6 +347,7 @@ module.exports = {
   RESULT,
   evaluateStaffEligibility,
   listEligibleActiveClinicOrganizations,
+  classifyUnavailableAccess,
   resolveEligibleOrganization,
   resolveLinkedPlatformAdmin,
   mapSelectorOrganization,

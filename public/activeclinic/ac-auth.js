@@ -34,6 +34,15 @@
   document.addEventListener("submit", function (e) {
     var form = e.target;
     if (!form || !form.matches) return;
+    if (form.getAttribute("data-ac-submitting") === "1") {
+      e.preventDefault();
+      return;
+    }
+    form.setAttribute("data-ac-submitting", "1");
+    var buttons = form.querySelectorAll("button[type='submit']");
+    for (var i = 0; i < buttons.length; i += 1) {
+      buttons[i].disabled = true;
+    }
     if (form.matches("[data-ac-login-form], [data-ac-org-select]")) {
       showSigningIn();
     }

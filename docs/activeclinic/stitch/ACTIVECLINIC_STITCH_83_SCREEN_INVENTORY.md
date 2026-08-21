@@ -1,6 +1,6 @@
 # ActiveClinic Stitch expansion inventory (MF + later families)
 
-**Status:** audit / planning only. No routes, schema, or UI were implemented in this pass.  
+**Status:** Phase A (MF01 + MF02 + MF04 without OTP) implemented on existing auth routes. Remaining families are still audit-only.  
 **Stitch project:** [ActiveClinic Universal Authentication Interface](https://stitch.withgoogle.com/projects/10611909237747031838)  
 **Project ID:** `10611909237747031838`  
 **Inspected:** 2026-08-21 via live MCP `get_project` + `list_screens` + downloaded HTML (not hotlinked)
@@ -520,7 +520,7 @@ Out of scope forever unless product reopens: OTP, Google/Apple, telehealth, pati
 
 ## Product decisions (only real blockers)
 
-1. **Staff login visual:** keep current `/login` (ORIGINAL auth) or restyle to MF01? Cannot keep both as “source of truth”.
+1. **Staff login visual:** **Resolved in Phase A.** `/login` uses MF01 chrome. ORIGINAL `active-clinic-03-*` screens remain historical Stitch inventory, not a second login.
 2. **Password recovery:** keep emailed token (recommended) vs build OTP (rejected unless SMS/email OTP product exists).
 3. **Patient portal scope:** booking portal (current) vs EHR dashboard (MF09). Default: booking portal.
 4. **Invite delivery:** stay manual-link (honest) vs send email.
@@ -530,11 +530,47 @@ Minor UI (card radius, copy “Sign In” vs “Login”) is not a blocker.
 
 ---
 
+## Phase A implementation (MF01 / MF02 / MF04)
+
+Implemented on existing routes. No second identity system. No OTP.
+
+| Stitch ID | Exact name | Device | V7 route/state | Status | Variance |
+|-----------|------------|--------|----------------|--------|----------|
+| `9e85a3391ebd4695a045a974d73d14f9` | MF01-01 Login Desktop | Desktop | `GET/POST /login` | `MINOR_ACCEPTED_VARIANCE` | Phone country picker; identifier label is the V7 contract “Email address or phone number”. |
+| `f435d25c1264415e8dfca6191466611c` | MF01-02 Login Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | Same responsive view. |
+| `1690fc1ce82a4aaa8289d83659e70366` | MF01-03 Login Error Desktop | Desktop | `/login` 401/403 CSRF | `MINOR_ACCEPTED_VARIANCE` | Generic credentials copy (no account enumeration). Stitch “Email Address” label not used. |
+| `7a24bd602d2c48d5826e9048dbe27daa` | MF01-04 Login Error Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | |
+| `a6dbf4e5e83e459ea95c50826ca30c34` | MF01-05 Signing In Loading | Desktop | overlay on submit | `MINOR_ACCEPTED_VARIANCE` | Overlay, not a standalone page. |
+| `2f202c49fda04f1e89b52efa2551ead0` | MF02-01 Clinic Selector Desktop | Desktop | `GET /login/select-organization` | `MINOR_ACCEPTED_VARIANCE` | Real clinic cards only. No fake notifications/help. |
+| `c31ac73459774d6c9ea384a901a19e92` | MF02-02 Clinic Selector Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | Search remains on small screens. |
+| `6a9ab5333ac9417c8705c5a880d11431` | MF02-03 No Clinic Access | Desktop | `ACCESS_UNAVAILABLE` / no staff membership | `MINOR_ACCEPTED_VARIANCE` | Actions: register clinic, contact, return to login. |
+| `d955b5cbce9f48a8a3be639123a8c6f4` | MF02-04 Clinic Access Disabled | Desktop | suspended/ineligible membership | `MINOR_ACCEPTED_VARIANCE` | Distinct from wrong password and from no membership. |
+| `5a4fbca37976482d9294d70885235fa9` | MF04-01 Forgot Password Desktop | Desktop | `GET/POST /forgot-password` | `MINOR_ACCEPTED_VARIANCE` | Copy is reset **link**, not code. |
+| `50e275a59f80463d996fcb29d2b6273d` | MF04-02 Forgot Password Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | |
+| `e7f833d56af049e3b0306d81c9761b52` | MF04-03 Verification Code Desktop | Desktop | **not implemented** | `FUNCTIONAL_GAP_OTP` | `UNSUPPORTED_CONCEPT — DO NOT IMPLEMENT` |
+| `c755d15f21144bcba48ccb5579e3dc07` | MF04-04 Verification Code Mobile | Mobile | **not implemented** | `FUNCTIONAL_GAP_OTP` | `UNSUPPORTED_CONCEPT — DO NOT IMPLEMENT` |
+| `9ab165fac045427d9679def4f38049c3` | MF04-05 Reset Password Desktop | Desktop | `GET/POST /reset-password/:token` | `MINOR_ACCEPTED_VARIANCE` | Policy remains 10 characters, not Stitch’s 12/complexity list. |
+| `1e56748ce7f843e2916ab33e06692d9e` | MF04-06 Reset Password Mobile | Mobile | same | `MINOR_ACCEPTED_VARIANCE` | |
+| `c2546a84104946619e416e26fd649789` | MF04-07 Password Reset Success | Desktop | `/reset-password/success` | `MINOR_ACCEPTED_VARIANCE` | Neutral check page is `/forgot-password/check` (not OTP). |
+
+Neutral confirmation after forgot-password remains `/forgot-password/check` (account-enumeration resistant). It is the functional substitute for MF04-03, not a code entry screen.
+
+ORIGINAL `active-clinic-03-*` screens are unchanged in the 49-screen checkpoint. They are no longer the live visual source for `/login`.
+
+```text
+screens compared: 16 (MF01+MF02+MF04)
+PIXEL_CLOSE_MATCH: 0
+MINOR_ACCEPTED_VARIANCE: 14
+FUNCTIONAL_GAP: 2 (FUNCTIONAL_GAP_OTP)
+```
+
+---
+
 ## Safety for this documentation pass
 
 ```text
 PRODUCTION TOUCHED: NO
 MAIN MERGED: NO
 SCHEMA CHANGED: NO
-FUNCTIONAL CODE CHANGED: NO
+OTP IMPLEMENTED: NO
 ```

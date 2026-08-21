@@ -40,6 +40,7 @@ const {
   renderOrgSelectPage,
   renderChangePasswordPage,
   renderAccessUnavailablePage,
+  renderAccessDisabledPage,
   renderPlatformAdminLanding,
 } = require("./renderActiveClinicAuth");
 const { PRODUCT, resolvePostLoginPath } = require("../../platform/onboarding");
@@ -199,6 +200,9 @@ function registerActiveClinicAuthRoutes(app, deps) {
       }
 
       if (result.status === AUTH_STATUS.ACCESS_UNAVAILABLE) {
+        if (result.failureCategory === "access_disabled") {
+          return res.status(403).type("html").send(renderAccessDisabledPage());
+        }
         return res.status(403).type("html").send(renderAccessUnavailablePage());
       }
 
@@ -275,6 +279,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
             csrfToken,
             error: "Your organization selection expired. Sign in again to continue.",
             organizations: [],
+            selectorState: "expired",
           })
         );
       }
@@ -309,6 +314,9 @@ function registerActiveClinicAuthRoutes(app, deps) {
         userAgent: req.headers["user-agent"] || null,
       });
       if (!completed.ok) {
+        if (completed.failureCategory === "organization_not_eligible") {
+          return res.status(403).type("html").send(renderAccessDisabledPage());
+        }
         return res.status(403).type("html").send(renderAccessUnavailablePage());
       }
       setV5SessionCookie(res, completed.rawSessionToken, { secure: isProduction, env, req });
