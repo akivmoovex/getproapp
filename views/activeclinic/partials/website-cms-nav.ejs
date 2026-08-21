@@ -2,24 +2,69 @@
   var cmsNav = (typeof pageData !== "undefined" && pageData && pageData.cmsNav) || {};
   var active = cmsNav.active || "overview";
   var base = "/app/settings/website";
+  var clinicLabel = (shell && shell.healthcareOrganization && shell.healthcareOrganization.publicName)
+    || (shell && shell.product && shell.product.displayName)
+    || "Clinic Editor";
+  function tabCurrent(key) {
+    return active === key ? " is-current" : "";
+  }
 %>
-<nav class="ac-mw-nav" data-ac-website-cms-nav="1" aria-label="Website management">
-  <a class="ac-mw-nav__link<%= active === 'overview' ? ' is-current' : '' %>" href="<%= base %>" data-ac-mw-nav="overview">Overview</a>
-  <a class="ac-mw-nav__link<%= active === 'pages' ? ' is-current' : '' %>" href="<%= base %>/pages" data-ac-mw-nav="pages">Pages</a>
-  <a class="ac-mw-nav__link<%= active === 'sections' ? ' is-current' : '' %>" href="<%= base %>/sections" data-ac-mw-nav="sections">Sections</a>
-  <a class="ac-mw-nav__link<%= active === 'navigation' ? ' is-current' : '' %>" href="<%= base %>/navigation" data-ac-mw-nav="navigation">Navigation</a>
-  <a class="ac-mw-nav__link<%= active === 'settings' ? ' is-current' : '' %>" href="<%= base %>/settings" data-ac-mw-nav="settings">Settings</a>
-  <a class="ac-mw-nav__link<%= active === 'branding' ? ' is-current' : '' %>" href="<%= base %>/branding" data-ac-mw-nav="branding">Branding</a>
-  <a class="ac-mw-nav__link<%= active === 'chrome' ? ' is-current' : '' %>" href="<%= base %>/chrome" data-ac-mw-nav="chrome">Header &amp; footer</a>
-  <a class="ac-mw-nav__link<%= active === 'seo' ? ' is-current' : '' %>" href="<%= base %>/seo" data-ac-mw-nav="seo">SEO</a>
-  <a class="ac-mw-nav__link<%= active === 'catalogue' ? ' is-current' : '' %>" href="<%= base %>/catalogue" data-ac-mw-nav="catalogue">Public catalogue</a>
-  <a class="ac-mw-nav__link<%= active === 'library' ? ' is-current' : '' %>" href="<%= base %>/library" data-ac-mw-nav="library">Content library</a>
-  <a class="ac-mw-nav__link<%= active === 'media' ? ' is-current' : '' %>" href="<%= base %>/media" data-ac-mw-nav="media">Media</a>
-  <a class="ac-mw-nav__link<%= active === 'publish' ? ' is-current' : '' %>" href="<%= base %>/publish" data-ac-mw-nav="publish">Publishing</a>
-  <% if (cmsNav.historyHref) { %>
-  <a class="ac-mw-nav__link<%= active === 'history' ? ' is-current' : '' %>" href="<%= cmsNav.historyHref %>" data-ac-mw-nav="history">Version history</a>
-  <% } %>
-  <% if (cmsNav.editHref) { %>
-  <a class="ac-mw-nav__link ac-mw-nav__link--edit" href="<%= cmsNav.editHref %>" data-ac-mw-nav="edit">Edit website</a>
-  <% } %>
-</nav>
+<div class="ac-mw-editor ac-mw-nav" data-ac-website-cms-nav="1" data-ac-mw-editor="1">
+  <header class="ac-mw-editor__top">
+    <a class="ac-mw-editor__brand" href="<%= base %>">Clinic Editor</a>
+    <nav class="ac-mw-editor__tabs" aria-label="Website editor">
+      <a class="ac-mw-editor__tab ac-mw-nav__link<%= tabCurrent('pages') %>" href="<%= base %>/pages" data-ac-mw-nav="pages">Pages</a>
+      <a class="ac-mw-editor__tab ac-mw-nav__link<%= tabCurrent('sections') %>" href="<%= base %>/sections" data-ac-mw-nav="sections">Sections</a>
+      <a class="ac-mw-editor__tab ac-mw-nav__link<%= tabCurrent('media') %>" href="<%= base %>/media" data-ac-mw-nav="media">Assets</a>
+      <% if (cmsNav.historyHref) { %>
+      <a class="ac-mw-editor__tab ac-mw-nav__link<%= tabCurrent('history') %>" href="<%= cmsNav.historyHref %>" data-ac-mw-nav="history">History</a>
+      <% } %>
+    </nav>
+    <div class="ac-mw-editor__top-actions">
+      <% if (cmsNav.editHref) { %>
+      <a class="ac-mw-editor__ghost" href="<%= cmsNav.editHref %>" data-ac-mw-nav="edit">Preview</a>
+      <% } %>
+      <a class="ac-mw-editor__publish<%= tabCurrent('publish') %>" href="<%= base %>/publish" data-ac-mw-nav="publish">Publish</a>
+    </div>
+  </header>
+  <aside class="ac-mw-editor__rail" aria-label="Editor tools">
+    <p class="ac-mw-editor__clinic">
+      <span class="ac-mw-editor__clinic-name"><%= clinicLabel %></span>
+      <span class="ac-mw-editor__clinic-meta">Draft Mode</span>
+    </p>
+    <nav class="ac-mw-editor__rail-nav">
+      <% if (cmsNav.editHref) { %>
+      <a class="ac-mw-editor__rail-link" href="<%= cmsNav.editHref %>" data-ac-mw-nav="edit">
+        <span class="material-symbols-outlined" aria-hidden="true">edit_note</span>
+        Editor
+      </a>
+      <% } %>
+      <a class="ac-mw-editor__rail-link<%= tabCurrent('sections') %>" href="<%= base %>/sections" data-ac-mw-nav="sections">
+        <span class="material-symbols-outlined" aria-hidden="true">layers</span>
+        Layers
+      </a>
+      <a class="ac-mw-editor__rail-link<%= tabCurrent('media') %>" href="<%= base %>/media" data-ac-mw-nav="media">
+        <span class="material-symbols-outlined" aria-hidden="true">image</span>
+        Media
+      </a>
+      <% if (cmsNav.historyHref) { %>
+      <a class="ac-mw-editor__rail-link<%= tabCurrent('history') %>" href="<%= cmsNav.historyHref %>" data-ac-mw-nav="history">
+        <span class="material-symbols-outlined" aria-hidden="true">history</span>
+        History
+      </a>
+      <% } %>
+    </nav>
+    <details class="ac-mw-editor__more">
+      <summary>More</summary>
+      <a href="<%= base %>" data-ac-mw-nav="overview">Overview</a>
+      <a href="<%= base %>/navigation" data-ac-mw-nav="navigation">Navigation</a>
+      <a href="<%= base %>/settings" data-ac-mw-nav="settings">Settings</a>
+      <a href="<%= base %>/branding" data-ac-mw-nav="branding">Branding</a>
+      <a href="<%= base %>/chrome" data-ac-mw-nav="chrome">Header &amp; footer</a>
+      <a href="<%= base %>/seo" data-ac-mw-nav="seo">SEO</a>
+      <a href="<%= base %>/catalogue" data-ac-mw-nav="catalogue">Public catalogue</a>
+      <a href="<%= base %>/library" data-ac-mw-nav="library">Content library</a>
+      <a href="/app">Back to clinic app</a>
+    </details>
+  </aside>
+</div>

@@ -9,30 +9,41 @@
   <div class="ac-mw-head">
     <div>
       <h2>Site Status &amp; Publishing</h2>
-      <p class="ac-mw-muted">Review pending changes and manage your clinic's live website.</p>
+      <p class="ac-mw-muted">Review pending changes and manage your clinic’s live website.</p>
     </div>
   </div>
-  <div class="ac-mw-card" style="grid-template-columns:1fr">
-    <div>
+  <div class="ac-mw-status-grid">
+    <article class="ac-mw-status-card">
+      <h3>Current Status</h3>
+      <p class="ac-mw-muted">LAST PUBLISHED / <span data-ac-website-last-published="1"><%= website.lastPublishedLabel || 'Not published yet' %></span></p>
       <p><strong data-ac-website-status-label="1"><%= ux.statusLabel || 'Website not published yet' %></strong></p>
       <p class="ac-mw-muted" data-ac-website-status-hint="1"><%= ux.statusHint || '' %></p>
-      <p>Last published: <span data-ac-website-last-published="1"><%= website.lastPublishedLabel || 'Not published yet' %></span></p>
-      <p>Public URL: <code data-ac-website-public-url="1"><%= website.publicUrl || website.publicPath || '—' %></code></p>
       <div class="ac-mw-actions">
-        <% if (actions.preview) { %><a class="ac-mw-btn" href="<%= actions.preview %>">Preview site</a><% } %>
-        <% if (actions.editWebsite) { %><a class="ac-mw-btn" href="<%= actions.editWebsite %>">Edit website</a><% } %>
         <% if (website.canPublish && actions.publishPath) { %>
-        <form method="post" action="<%= actions.publishPath %>" onsubmit="return confirm('Publish this website? Public visitors will see the current draft.');">
+        <form
+          id="ac-mw-publish-form"
+          method="post"
+          action="<%= actions.publishPath %>"
+          onsubmit="return confirm('Publish this website? Public visitors will see the current draft.');"
+        >
           <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
           <input type="hidden" name="makePublic" value="1"/>
           <input type="hidden" name="returnTo" value="/app/settings/website/publish"/>
-          <button type="submit" class="ac-mw-btn ac-mw-btn--primary" data-ac-website-action="publish">Publish all changes</button>
+          <button type="submit" class="ac-mw-btn ac-mw-btn--primary" data-ac-website-action="publish">Publish All Changes</button>
         </form>
         <% } %>
+        <% if (actions.preview) { %><a class="ac-mw-btn" href="<%= actions.preview %>">Preview Site</a><% } %>
       </div>
-    </div>
+    </article>
+    <article class="ac-mw-status-card">
+      <h3>Environment</h3>
+      <p>Live URL: <code data-ac-website-public-url="1"><%= website.publicUrl || website.publicPath || '—' %></code></p>
+      <% if (actions.editWebsite) { %>
+      <p><a class="ac-mw-btn" href="<%= actions.editWebsite %>">Edit website</a></p>
+      <% } %>
+    </article>
   </div>
-  <h3>Unpublished changes (<%= changes.length %>)</h3>
+  <h3>Unpublished Changes (<%= changes.length %>)</h3>
   <div class="ac-mw-list">
     <% if (!changes.length) { %>
     <p class="ac-mw-muted">No unpublished draft changes.</p>

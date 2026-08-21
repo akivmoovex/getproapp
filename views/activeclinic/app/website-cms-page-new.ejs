@@ -12,7 +12,7 @@
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <label>
       Page title
-      <input type="text" name="title" required maxlength="120" value="<%= cms.title || '' %>"/>
+      <input type="text" name="title" required maxlength="120" value="<%= cms.title || '' %>" placeholder="e.g., Patient Portal"/>
     </label>
     <label>
       Custom URL slug
@@ -23,7 +23,7 @@
       Add to main navigation
     </label>
     <fieldset class="ac-mw-templates">
-      <legend>Select a template</legend>
+      <legend>Select a Template</legend>
       <% templates.forEach(function (tpl, idx) { %>
       <label>
         <input type="radio" name="templateKey" value="<%= tpl.key %>" <%= idx === 0 ? 'checked' : '' %>/>

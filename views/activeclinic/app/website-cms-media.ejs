@@ -3,24 +3,34 @@
   <%- include('../partials/website-cms-nav') %>
   <div class="ac-mw-head">
     <div>
-      <h2><%= selectMode ? 'Select Media' : 'Media Library' %></h2>
-      <p class="ac-mw-muted">Images belong to this clinic only. Other clinics cannot see or reuse this media.</p>
+      <h2><%= selectMode ? 'Select from Media Library' : 'Media Library' %></h2>
+      <p class="ac-mw-muted"><%= selectMode ? 'Reuse an image already uploaded for this clinic.' : 'Images belong to this clinic only. Other clinics cannot see or reuse this media.' %></p>
     </div>
+    <% if (cms.canUpload && !selectMode) { %>
+    <button type="button" class="ac-mw-btn ac-mw-btn--primary" data-ac-mw-open="ac-mw-upload-media">Upload Media</button>
+    <% } %>
   </div>
   <% if (cms.canUpload) { %>
-  <form class="ac-mw-form" method="post" action="<%= cms.uploadAction %>" enctype="multipart/form-data" data-ac-mw-upload="1" data-ac-mw-ajax="1">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <label>
-      Upload image
-      <input type="file" name="file" accept="image/jpeg,image/png,image/webp,image/gif" required/>
-    </label>
-    <label>
-      Alt text
-      <input type="text" name="altText" maxlength="240" placeholder="Describe the image"/>
-    </label>
-    <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Upload media</button>
-    <p class="ac-mw-muted" data-ac-mw-upload-status="1">JPEG, PNG, WebP, or GIF. Maximum 5 MB.</p>
-  </form>
+  <dialog class="ac-mw-dialog" id="ac-mw-upload-media">
+    <form class="ac-mw-dialog__body ac-mw-form" method="post" action="<%= cms.uploadAction %>" enctype="multipart/form-data" data-ac-mw-upload="1" data-ac-mw-ajax="1">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <h3>Upload Media</h3>
+      <label class="ac-mw-upload-drop">
+        Drag &amp; drop files here
+        <span>Or Browse Files</span>
+        <input type="file" name="file" accept="image/jpeg,image/png,image/webp,image/gif" required/>
+      </label>
+      <label>
+        Alt text
+        <input type="text" name="altText" maxlength="240" placeholder="Describe the image for screen readers..."/>
+      </label>
+      <p class="ac-mw-muted" data-ac-mw-upload-status="1">JPEG, PNG, WebP, or GIF. Maximum 5 MB.</p>
+      <div class="ac-mw-actions">
+        <button type="button" class="ac-mw-btn" data-ac-mw-close="1">Cancel</button>
+        <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Done</button>
+      </div>
+    </form>
+  </dialog>
   <% } %>
   <div class="ac-mw-media-grid" data-ac-mw-media-grid="1">
     <% if (!media.length) { %>
@@ -42,11 +52,11 @@
   <% if (selected) { %>
   <form class="ac-mw-form" method="post" action="/app/settings/website/media/<%= selected.id %>">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <h3>Media details</h3>
+    <h3>Media Details</h3>
     <% if (selected.publicSrc) { %><p><img src="<%= selected.publicSrc %>" alt="" style="max-width:20rem"/></p><% } %>
     <label>
       Alt text
-      <input type="text" name="altText" maxlength="240" value="<%= selected.altText || '' %>"/>
+      <input type="text" name="altText" maxlength="240" value="<%= selected.altText || '' %>" placeholder="Describe the image for screen readers..."/>
     </label>
     <p class="ac-mw-muted"><%= selected.originalFilename %> · <%= selected.mimeType %></p>
     <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save metadata</button>

@@ -126,6 +126,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
       }),
     };
     shell.pageData = { ...(options.pageData || {}), cmsNav };
+    shell.websiteCmsShell = true;
     const html = renderActiveClinicAppPage(options.content, shell);
     return res.status(options.status || 200).type("html").send(html);
   }

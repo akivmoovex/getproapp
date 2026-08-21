@@ -3,16 +3,17 @@
   <%- include('../partials/website-cms-nav') %>
   <div class="ac-mw-head">
     <div>
-      <h2>Edit Page Settings</h2>
+      <h2>Page Settings</h2>
       <p class="ac-mw-muted"><%= page.title || 'Page' %> · <code><%= page.href || '' %></code></p>
     </div>
   </div>
   <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
   <form class="ac-mw-form" method="post" action="/app/settings/website/pages/<%= page.id %>">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <p class="ac-mw-form__legend">Basic Information</p>
     <label>
       Page title
-      <input type="text" name="title" required maxlength="120" value="<%= page.title || '' %>"/>
+      <input type="text" name="title" required maxlength="120" value="<%= page.title || '' %>" placeholder="e.g., About Us"/>
     </label>
     <label>
       Navigation label
@@ -36,17 +37,18 @@
       <input type="checkbox" name="inNav" value="1" <%= page.in_nav ? 'checked' : '' %>/>
       Show in navigation
     </label>
+    <p class="ac-mw-form__legend">Search Engine Optimization (SEO)</p>
     <label>
       Page title (browser / search)
-      <input type="text" name="metaTitle" maxlength="160" value="<%= page.meta_title || '' %>"/>
+      <input type="text" name="metaTitle" maxlength="160" value="<%= page.meta_title || '' %>" placeholder="Title that appears in search results"/>
     </label>
     <label>
       Meta description
-      <textarea name="metaDescription" maxlength="320"><%= page.meta_description || '' %></textarea>
+      <textarea name="metaDescription" maxlength="320" placeholder="Brief description of the page content for search engines..."><%= page.meta_description || '' %></textarea>
     </label>
     <div class="ac-mw-actions">
       <a class="ac-mw-btn" href="/app/settings/website/pages">Back</a>
-      <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save settings</button>
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save Changes</button>
     </div>
   </form>
 </section>

@@ -7,7 +7,7 @@
       <p class="ac-mw-muted">Add, hide, reorder, or remove homepage sections. Changes save as draft until you publish.</p>
     </div>
     <% if (cms.canEdit) { %>
-    <button type="button" class="ac-mw-btn ac-mw-btn--primary" data-ac-mw-open="ac-mw-add-section">Add Section</button>
+    <button type="button" class="ac-mw-btn ac-mw-btn--primary" data-ac-mw-open="ac-mw-add-section">+ Add Section</button>
     <% } %>
   </div>
   <form id="ac-mw-sections-reorder" method="post" action="/app/settings/website/sections/reorder" data-ac-mw-reorder="sections">
@@ -17,6 +17,7 @@
       <% sections.forEach(function (section) { %>
       <article class="ac-mw-card" data-ac-mw-item="1" data-ac-section-id="<%= section.id %>" data-ac-section-type="<%= section.type %>">
         <div>
+          <span class="ac-mw-grip" aria-hidden="true">⋮⋮</span>
           <% if (cms.canEdit) { %>
           <button type="button" class="ac-mw-btn" data-ac-mw-move="up" aria-label="Move up">↑</button>
           <button type="button" class="ac-mw-btn" data-ac-mw-move="down" aria-label="Move down">↓</button>

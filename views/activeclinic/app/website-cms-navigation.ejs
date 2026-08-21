@@ -13,8 +13,9 @@
       <% pages.forEach(function (page) { %>
       <article class="ac-mw-card" data-ac-mw-item="1">
         <div>
-          <button type="button" class="ac-mw-btn" data-ac-mw-move="up">↑</button>
-          <button type="button" class="ac-mw-btn" data-ac-mw-move="down">↓</button>
+          <span class="ac-mw-grip" aria-hidden="true">⋮⋮</span>
+          <button type="button" class="ac-mw-btn" data-ac-mw-move="up" aria-label="Move up">↑</button>
+          <button type="button" class="ac-mw-btn" data-ac-mw-move="down" aria-label="Move down">↓</button>
           <input type="hidden" name="pageIds" value="<%= page.id %>" data-ac-mw-order="1"/>
         </div>
         <div>

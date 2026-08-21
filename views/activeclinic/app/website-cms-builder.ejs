@@ -3,11 +3,11 @@
   <%- include('../partials/website-cms-nav') %>
   <div class="ac-mw-head">
     <div>
-      <h2><%= page.title || 'Page builder' %></h2>
-      <p class="ac-mw-muted">Add, edit, reorder, duplicate, or delete structured content blocks. HTML is not executed.</p>
+      <h2>Clinic Builder</h2>
+      <p class="ac-mw-muted"><%= page.title || 'Page' %> · Add, edit, reorder, duplicate, or delete structured content blocks. HTML is not executed.</p>
     </div>
     <% if (cms.canEdit) { %>
-    <button type="button" class="ac-mw-btn ac-mw-btn--primary" data-ac-mw-open="ac-mw-add-block">Add content block</button>
+    <button type="button" class="ac-mw-btn ac-mw-btn--primary" data-ac-mw-open="ac-mw-add-block">+ Add Content Block</button>
     <% } %>
   </div>
   <% if (!blocks.length) { %>

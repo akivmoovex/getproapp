@@ -7,7 +7,7 @@
       <p class="ac-mw-muted">Manage your clinic's website structure and content.</p>
     </div>
     <% if (cms.canEdit) { %>
-    <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/pages/new" data-ac-mw-action="add-page">Add New Page</a>
+      <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/pages/new" data-ac-mw-action="add-page">+ Add New Page</a>
     <% } %>
   </div>
   <form id="ac-mw-pages-reorder" method="post" action="/app/settings/website/pages/reorder" data-ac-mw-reorder="pages">
@@ -16,6 +16,7 @@
       <% pages.forEach(function (page) { %>
       <article class="ac-mw-card" data-ac-mw-item="1" data-ac-page-id="<%= page.id %>" data-ac-page-kind="<%= page.kind %>">
         <div>
+          <span class="ac-mw-grip" aria-hidden="true">⋮⋮</span>
           <% if (cms.canEdit) { %>
           <button type="button" class="ac-mw-btn" data-ac-mw-move="up" aria-label="Move up">↑</button>
           <button type="button" class="ac-mw-btn" data-ac-mw-move="down" aria-label="Move down">↓</button>
