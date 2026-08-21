@@ -907,7 +907,23 @@ MF11 implemented: NO
 pending status: Pending clinic confirmation
 ```
 
-Next recommended phase: **FINAL MF01-MF10 CONSOLIDATION / QA**.
+Next recommended phase after H was **FINAL MF01–MF10 CONSOLIDATION / QA** (now recorded below).
+
+---
+
+## Phase I — MF01–MF10 consolidation / QA
+
+Authoritative checkpoint: `docs/activeclinic/stitch/ACTIVECLINIC_MF01_MF10_FINAL_QA.md`.
+
+Live Stitch re-lock: `updateTime=2026-08-21T00:22:14.887432Z`, **100** screens, **no new screens**. MF11 remains deferred.
+
+Guest-booking → portal: success and My Booking now link to `/patient/register` with optional `guestToken` prefill. Pending status copy is shared as “Pending clinic confirmation”.
+
+```text
+MF01–MF10: COMPLETE_WITH_GAPS (hosted authenticated QA remains)
+MF11 IMPLEMENTED: NO
+schema changed: NO
+```
 
 ---
 
