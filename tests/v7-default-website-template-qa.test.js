@@ -240,9 +240,9 @@ describe("V7 default website template QA", () => {
       assert.match(res.text, nameRe);
       assert.doesNotMatch(res.text, BANNED_AC);
       assert.match(res.text, /data-ac-public-footer="tenant"/);
-      assert.match(res.text, /Request appointment|Book appointment/);
+      assert.match(res.text, /Request Appointment|Book Appointment/i);
     }
-    assert.match(pages.home.text, /Request an appointment|Book an appointment/);
+    assert.match(pages.home.text, /Request Appointment|Book Appointment/i);
     assert.match(pages.home.text, new RegExp(escapeRe(HERO_IMAGE_SRC)));
     assert.match(pages.home.text, /Template photo for/);
     assert.doesNotMatch(pages.home.text, /Exterior of /);

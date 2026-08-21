@@ -260,11 +260,13 @@ describe("V7 ActiveClinic website template", () => {
       assert.match(res.text, /data-ac-public-footer="tenant"/);
       assert.match(res.text, /does not provide emergency medical care/i);
     }
-    assert.match(pages.home.text, /Listed on ActiveClinic/);
-    assert.match(pages.home.text, /Public clinic website/);
+    assert.match(pages.home.text, /data-ac-home-section="services"/);
+    assert.match(pages.home.text, /Opening Hours/);
+    assert.match(pages.home.text, /data-ac-home-section="hours-campus"/);
+    assert.match(pages.home.text, /data-ac-home-section="doctors"/);
     assert.match(pages.home.text, /Plan your visit/);
     assert.match(pages.home.text, /How do I book/);
-    assert.match(pages.home.text, /Book an appointment|Contact the clinic|Request an appointment/);
+    assert.match(pages.home.text, /Book Appointment|Contact the clinic|Request Appointment/);
     const emailRe = new RegExp(payload.contactEmail.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     const addressRe = new RegExp(payload.address.replace(/[.*+?^${}()|[\]\\]/g, "\\$&"));
     assert.match(pages.about.text, /About /);

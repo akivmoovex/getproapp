@@ -291,6 +291,8 @@ describe("ActiveClinic website CMS", () => {
     assert.equal(pages.status, 200, pages.text);
     assert.match(pages.text, /Pages Manager/);
     assert.match(pages.text, /Homepage/);
+    assert.match(pages.text, /Clinic Editor/);
+    assert.match(pages.text, /data-ac-mw-nav="pages"/);
 
     const createPage = await request(app)
       .get("/app/settings/website/pages/new")
