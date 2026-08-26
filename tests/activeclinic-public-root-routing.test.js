@@ -97,7 +97,7 @@ function assertAcw01Homepage(res, label) {
   assert.match(res.text, /Register Your Clinic/, label);
   assert.match(res.text, /href="\/login"/, label);
   assert.doesNotMatch(res.text, /data-ac-page="login"/, label);
-  assert.doesNotMatch(res.text, /data-ac-composition="mf01-login"/, label);
+  assert.doesNotMatch(res.text, /data-ac-composition="p01-login"/, label);
   assert.doesNotMatch(res.text, /name="password"/, label);
 }
 
@@ -160,7 +160,7 @@ describe("ActiveClinic hostname-aware public root routing", () => {
     const res = await request(app).get("/login").set("Host", AC_HOST).set("Accept", "text/html");
     assert.equal(res.status, 200);
     assert.match(res.text, /data-ac-page="login"/);
-    assert.match(res.text, /data-ac-composition="mf01-login"/);
+    assert.match(res.text, /data-ac-composition="p01-login"/);
     assert.match(res.text, /Sign In/);
     assert.doesNotMatch(res.text, /data-ac-acw-screen="ACW01"/);
   });
@@ -289,7 +289,7 @@ describe("ActiveClinic hostname-aware public root routing", () => {
     assert.match(res.text, /BlessBoard/);
     assert.doesNotMatch(res.text, /data-ac-acw-screen="ACW01"/);
     assert.doesNotMatch(res.text, /data-ac-page="login"/);
-    assert.doesNotMatch(res.text, /data-ac-composition="mf01-login"/);
+    assert.doesNotMatch(res.text, /data-ac-composition="p01-login"/);
   });
 
   it("6. unknown and other product hosts keep existing fallback behavior", async () => {

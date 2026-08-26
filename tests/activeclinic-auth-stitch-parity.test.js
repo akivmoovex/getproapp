@@ -52,7 +52,7 @@ describe("activeclinic-auth-stitch-parity (AC-V6-S01)", () => {
     assert.match(html, /data-ac-shell="auth"/);
     assert.match(html, /data-ac-page="login"/);
     assert.match(html, /data-ac-auth-layout="1"/);
-    assert.match(html, /data-ac-composition="mf01-error"/);
+    assert.match(html, /data-ac-composition="p01-login-error"/);
     assert.match(html, /Authentication failed/);
     assert.match(html, /Email address or phone number/);
     assert.match(html, /Forgot password\?/);
@@ -191,7 +191,9 @@ describe("activeclinic-auth-stitch-parity HTTP", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /data-ac-shell="auth"/);
     assert.match(res.text, /data-ac-page="login"/);
-    assert.match(res.text, /data-ac-composition="mf01-login"/);
+    assert.match(res.text, /data-ac-composition="p01-login"/);
+    assert.match(res.text, /ac-auth-card--split/);
+    assert.match(res.text, /ac-auth-brand-panel/);
     assert.match(res.text, /ac-auth\.css/);
     assert.match(res.text, /Email address or phone number/);
     assert.match(res.text, /ActiveClinic/);

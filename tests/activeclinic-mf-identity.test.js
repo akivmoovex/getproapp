@@ -37,7 +37,7 @@ function noThirdParty(html) {
 describe("ActiveClinic MF staff identity chrome", () => {
   it("MF01 login preserves identifier contract and one login route", () => {
     const html = renderLoginPage({ csrfToken: "csrf-mf" });
-    assert.match(html, /data-ac-composition="mf01-login"/);
+    assert.match(html, /data-ac-composition="p01-login"/);
     assert.match(html, /data-ac-mf-family="MF01"/);
     assert.match(html, /<h1[^>]*>Sign In<\/h1>/);
     assert.match(html, /Email address or phone number/);
@@ -129,7 +129,7 @@ describe("ActiveClinic MF staff identity chrome", () => {
 
     const login = await request(app).get("/login").set("Host", "activeclinic.org");
     assert.equal(login.status, 200);
-    assert.match(login.text, /data-ac-composition="mf01-login"/);
+    assert.match(login.text, /data-ac-composition="p01-login"/);
 
     const appAnon = await request(app).get("/app").set("Host", "activeclinic.org");
     assert.equal(appAnon.status, 303);

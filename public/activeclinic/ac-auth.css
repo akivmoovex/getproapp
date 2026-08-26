@@ -122,6 +122,11 @@ body.ac-auth-body {
   .ac-auth-card--split {
     grid-template-columns: 1fr 1fr;
     max-width: 64rem;
+    margin: 0 auto;
+  }
+  .ac-auth-form-panel .ac-auth-h1,
+  .ac-auth-form-panel .ac-auth-desc {
+    text-align: left;
   }
 }
 

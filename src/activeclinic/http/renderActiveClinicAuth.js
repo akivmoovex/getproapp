@@ -16,7 +16,7 @@ const {
   buildPhoneFieldLocals,
 } = require("../services/activeClinicPhoneFieldLocals");
 
-const ASSET_VERSION = "v7-wave1-a1";
+const ASSET_VERSION = "v7-v1-login-1";
 
 const DEFAULT_BRANDING = Object.freeze({
   productName: "ActiveClinic",
@@ -69,7 +69,7 @@ function renderLoginPage(input) {
     phoneCountry: String((input && input.phoneCountry) || "ZM").toUpperCase(),
     nextPath: (input && input.nextPath) || null,
     csrfToken: input && input.csrfToken,
-    composition: (input && input.error) ? "mf01-error" : "mf01-login",
+    composition: (input && input.error) ? "p01-login-error" : "p01-login",
   });
   const bodyHtml = renderAuthContent("auth/login.ejs", locals);
   return renderAuthShell("login", locals.pageTitle, bodyHtml, {
