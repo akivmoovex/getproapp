@@ -1,84 +1,106 @@
-<section class="acw-page" data-ac-page-section="clinic-directory" data-ac-acw-screen="ACW02">
-  <header class="acw-section acw-section-header">
-    <h1 class="acw-only-desktop">Find Your Care</h1>
-    <h1 class="acw-only-mobile">Find a Clinic</h1>
-    <p class="acw-only-desktop">Search our network of verified healthcare professionals to find the right clinic for your needs.</p>
+<section class="acw-page acw-directory" data-ac-page-section="clinic-directory" data-ac-acw-screen="ACW02">
+  <%
+    const qVal = typeof search === 'string' ? search : '';
+    const locVal = typeof location === 'string' ? location : '';
+    const svcVal = typeof service === 'string' ? service : '';
+    const provVal = typeof province === 'string' ? province : '';
+    const cityVal = typeof city === 'string' ? city : '';
+    const list = Array.isArray(clinics) ? clinics : [];
+    const dirState = typeof directoryState === 'string' ? directoryState : 'ready';
+    const extraFiltersOn = Boolean(provVal || cityVal);
+  %>
+  <header class="acw-directory-hero">
+    <div class="acw-directory-hero__inner">
+      <h1 class="acw-only-desktop">Find Your Care</h1>
+      <h1 class="acw-only-mobile">Find a Clinic</h1>
+      <p class="acw-directory-lede acw-only-desktop">Search our network of verified healthcare professionals to find the right clinic for your needs.</p>
+
+      <form class="acw-search acw-search--desktop" method="get" action="/clinics" role="search" data-ac-directory-search="1">
+        <div class="acw-search__field">
+          <label for="q">Clinic name</label>
+          <div class="acw-search__control">
+            <span class="material-symbols-outlined" aria-hidden="true">search</span>
+            <input id="q" name="q" type="search" value="<%= qVal %>" placeholder="Clinic Name or Keyword"/>
+          </div>
+        </div>
+        <div class="acw-search__field">
+          <label for="location">Location</label>
+          <div class="acw-search__control">
+            <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+            <input id="location" name="location" type="search" value="<%= locVal %>" placeholder="City, Zip, or Neighborhood"/>
+          </div>
+        </div>
+        <div class="acw-search__field">
+          <label for="service">Service</label>
+          <div class="acw-search__control">
+            <span class="material-symbols-outlined" aria-hidden="true">medical_services</span>
+            <input id="service" name="service" type="search" value="<%= svcVal %>" placeholder="Any Specialty/Service"/>
+          </div>
+        </div>
+        <% if (provVal) { %><input type="hidden" name="province" value="<%= provVal %>"/><% } %>
+        <% if (cityVal) { %><input type="hidden" name="city" value="<%= cityVal %>"/><% } %>
+        <button type="submit" class="ac-btn ac-btn--primary acw-search__submit">
+          <span>Search Directory</span>
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </button>
+      </form>
+
+      <form class="acw-search acw-search--compact" method="get" action="/clinics" role="search" data-ac-directory-search-mobile="1">
+        <label class="ac-sr-only" for="q-mobile">Search clinics</label>
+        <div class="acw-search__control acw-search__control--grow">
+          <span class="material-symbols-outlined" aria-hidden="true">search</span>
+          <input id="q-mobile" name="q" type="search" value="<%= qVal %>" placeholder="Search clinics, specialties..."/>
+        </div>
+        <% if (locVal) { %><input type="hidden" name="location" value="<%= locVal %>"/><% } %>
+        <% if (svcVal) { %><input type="hidden" name="service" value="<%= svcVal %>"/><% } %>
+        <% if (provVal) { %><input type="hidden" name="province" value="<%= provVal %>"/><% } %>
+        <% if (cityVal) { %><input type="hidden" name="city" value="<%= cityVal %>"/><% } %>
+        <button type="button" class="acw-search__filter-btn" data-ac-filter-open aria-expanded="false" aria-controls="ac-directory-filter-drawer">
+          <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+          <span class="ac-sr-only">Filters</span>
+        </button>
+      </form>
+    </div>
   </header>
 
-  <div class="acw-section" style="padding-top:0">
-    <form class="acw-search" method="get" action="/clinics" role="search" data-ac-directory-search="1">
-      <div>
-        <label for="q">Clinic name</label>
-        <input id="q" name="q" type="search" value="<%= typeof search === 'string' ? search : '' %>" placeholder="Clinic Name or Keyword"/>
-      </div>
-      <div>
-        <label for="location">Location</label>
-        <input id="location" name="location" type="search" value="<%= typeof location === 'string' ? location : '' %>" placeholder="City, Zip, or Neighborhood"/>
-      </div>
-      <div>
-        <label for="service">Service</label>
-        <input id="service" name="service" type="search" value="<%= typeof service === 'string' ? service : '' %>" placeholder="Any Specialty/Service"/>
-      </div>
-      <% if (typeof province === 'string' && province) { %><input type="hidden" name="province" value="<%= province %>"/><% } %>
-      <% if (typeof city === 'string' && city) { %><input type="hidden" name="city" value="<%= city %>"/><% } %>
-      <button type="submit" class="ac-btn ac-btn--primary">Search Directory</button>
-    </form>
-
-    <div class="ac-directory-search-layout">
-      <aside class="ac-directory-filters-sidebar" aria-label="Filters">
+  <div class="acw-directory-body">
+    <aside id="ac-directory-filter-drawer" class="ac-directory-filter-drawer" data-ac-filter-drawer hidden>
+      <div class="ac-directory-filter-drawer__backdrop" data-ac-filter-close tabindex="-1" aria-hidden="true"></div>
+      <div class="ac-directory-filter-drawer__panel" role="dialog" aria-modal="true" aria-label="Filter clinics">
         <%- include('../partials/public-directory-filters', {
           filterFormAction: '/clinics',
-          filterTitle: 'Filters',
-          hideSearch: true,
-          hideClose: true,
-          search: typeof search === 'string' ? search : '',
-          location: typeof location === 'string' ? location : '',
-          service: typeof service === 'string' ? service : '',
-          province: typeof province === 'string' ? province : '',
-          city: typeof city === 'string' ? city : '',
+          search: qVal,
+          location: locVal,
+          service: svcVal,
+          province: provVal,
+          city: cityVal,
         }) %>
-      </aside>
-
-      <div class="ac-directory-search-main">
-        <button type="button" class="ac-btn ac-btn--secondary ac-directory-filters-toggle ac-directory-filters-toggle--mobile" data-ac-filter-open aria-expanded="false" aria-controls="ac-directory-filter-drawer">
-          Filters
-        </button>
-        <aside id="ac-directory-filter-drawer" class="ac-directory-filter-drawer" data-ac-filter-drawer hidden>
-          <div class="ac-directory-filter-drawer__backdrop" data-ac-filter-close tabindex="-1" aria-hidden="true"></div>
-          <div class="ac-directory-filter-drawer__panel" role="dialog" aria-modal="true" aria-label="Filter clinics">
-            <%- include('../partials/public-directory-filters', {
-              filterFormAction: '/clinics',
-              search: typeof search === 'string' ? search : '',
-              location: typeof location === 'string' ? location : '',
-              service: typeof service === 'string' ? service : '',
-              province: typeof province === 'string' ? province : '',
-              city: typeof city === 'string' ? city : '',
-            }) %>
-          </div>
-        </aside>
-
-        <% const list = Array.isArray(clinics) ? clinics : []; %>
-        <% const dirState = typeof directoryState === 'string' ? directoryState : 'ready'; %>
-
-        <% if (dirState === 'loading' || dirState === 'error' || (dirState === 'ready' && !list.length)) { %>
-        <%- include('../partials/public-directory-state', {
-          directoryState: dirState,
-          directoryEmpty: typeof directoryEmpty !== 'undefined' ? directoryEmpty : !list.length,
-          search: typeof search === 'string' ? search : '',
-          location: typeof location === 'string' ? location : '',
-          service: typeof service === 'string' ? service : '',
-          province: typeof province === 'string' ? province : '',
-          city: typeof city === 'string' ? city : '',
-        }) %>
-        <% } else { %>
-        <p class="ac-directory-result-count" data-ac-result-count="<%= list.length %>">Showing <%= list.length %> Clinic<%= list.length === 1 ? '' : 's' %></p>
-        <ul class="acw-clinic-grid ac-clinic-cards">
-          <% list.forEach(function(c) { %>
-          <%- include('../partials/public-clinic-card', { c: c }) %>
-          <% }) %>
-        </ul>
-        <% } %>
       </div>
+    </aside>
+
+    <% if (dirState === 'loading' || dirState === 'error' || (dirState === 'ready' && !list.length)) { %>
+    <%- include('../partials/public-directory-state', {
+      directoryState: dirState,
+      directoryEmpty: typeof directoryEmpty !== 'undefined' ? directoryEmpty : !list.length,
+      search: qVal,
+      location: locVal,
+      service: svcVal,
+      province: provVal,
+      city: cityVal,
+    }) %>
+    <% } else { %>
+    <div class="acw-directory-toolbar">
+      <p class="ac-directory-result-count" data-ac-result-count="<%= list.length %>">Showing <%= list.length %> Clinic<%= list.length === 1 ? '' : 's' %></p>
+      <button type="button" class="acw-directory-more-filters<%= extraFiltersOn ? ' is-active' : '' %>" data-ac-filter-open aria-expanded="false" aria-controls="ac-directory-filter-drawer">
+        <span class="material-symbols-outlined" aria-hidden="true">tune</span>
+        Filters
+      </button>
     </div>
+    <ul class="acw-clinic-grid">
+      <% list.forEach(function(c) { %>
+      <%- include('../partials/public-clinic-card', { c: c }) %>
+      <% }) %>
+    </ul>
+    <% } %>
   </div>
 </section>

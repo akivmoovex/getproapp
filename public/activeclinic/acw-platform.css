@@ -1293,3 +1293,295 @@ body.ac-public--platform .ac-public-brand__icon {
     min-height: 32rem;
   }
 }
+
+/* ACW02 — Clinic directory (Stitch 06e890ae… / 00089a7d…) */
+[data-ac-acw-screen="ACW02"].acw-directory {
+  padding: 0;
+  max-width: none;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-directory-hero {
+  background: #eff4ff;
+  padding: 2.25rem 1.25rem 1.5rem;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-directory-hero__inner,
+[data-ac-acw-screen="ACW02"] .acw-directory-body {
+  max-width: var(--acw-max);
+  margin: 0 auto;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-directory-hero h1 {
+  margin: 0 0 0.6rem;
+  text-align: center;
+  font-size: clamp(1.75rem, 4vw, 2.75rem);
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.15;
+  color: var(--acp-navy);
+}
+
+[data-ac-acw-screen="ACW02"] .acw-directory-lede {
+  margin: 0 auto 1.5rem;
+  max-width: 38rem;
+  text-align: center;
+  color: var(--acp-muted);
+  font-size: 1.05rem;
+  line-height: 1.6;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-search--desktop {
+  margin: 0;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-search--compact {
+  display: none;
+  margin: 0;
+  padding: 0.5rem;
+  grid-template-columns: none;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-search__field label {
+  display: block;
+  font-size: 0.8rem;
+  font-weight: 600;
+  margin-bottom: 0.3rem;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-search__control {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: 0.5rem;
+  padding: 0 0.65rem;
+  min-height: var(--acp-touch);
+}
+
+[data-ac-acw-screen="ACW02"] .acw-search__control .material-symbols-outlined {
+  color: var(--acp-muted);
+  font-size: 1.2rem;
+  flex-shrink: 0;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-search__control input {
+  border: 0;
+  padding: 0.55rem 0;
+  min-height: 0;
+  width: 100%;
+  background: transparent;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-search__control input:focus {
+  outline: none;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-search__control:focus-within {
+  border-color: var(--acp-primary);
+  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+}
+
+[data-ac-acw-screen="ACW02"] .acw-search__submit {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.35rem;
+  white-space: nowrap;
+  min-height: var(--acp-touch);
+}
+
+[data-ac-acw-screen="ACW02"] .acw-search__filter-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: var(--acp-touch);
+  min-width: var(--acp-touch);
+  min-height: var(--acp-touch);
+  border: 1px solid var(--acp-border);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--acp-navy);
+  cursor: pointer;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-directory-body {
+  padding: 1.5rem 1.25rem 3rem;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-directory-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin: 0 0 1rem;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-directory-toolbar .ac-directory-result-count {
+  margin: 0;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-directory-more-filters {
+  display: none;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.5rem;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--acp-border);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--acp-navy);
+  font: inherit;
+  font-weight: 600;
+  cursor: pointer;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-directory-more-filters.is-active {
+  border-color: var(--acp-primary);
+  color: var(--acp-primary-strong);
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card {
+  padding: 1.15rem;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__logo {
+  width: 2.75rem;
+  height: 2.75rem;
+  border-radius: 0.5rem;
+  background: #e5eeff;
+  color: var(--acp-primary-strong);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  flex-shrink: 0;
+  overflow: hidden;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__logo img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__identity {
+  min-width: 0;
+  flex: 1;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__identity h2 a {
+  color: inherit;
+  text-decoration: none;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.25rem;
+  margin-top: 0.2rem;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__meta .material-symbols-outlined {
+  font-size: 1rem;
+  color: var(--acp-muted);
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__tagline {
+  margin: 0;
+  color: var(--acp-muted);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__services-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--acp-muted);
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__cta {
+  margin-top: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  min-height: var(--acp-touch);
+  border: 1px solid var(--acp-border);
+  border-radius: 0.5rem;
+  background: #fff;
+  color: var(--acp-navy);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__cta:hover,
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__cta:focus-visible {
+  border-color: var(--acp-primary);
+  color: var(--acp-primary-strong);
+}
+
+@media (max-width: 767px) {
+  [data-ac-acw-screen="ACW02"] .acw-search--desktop {
+    display: none;
+  }
+
+  [data-ac-acw-screen="ACW02"] .acw-search--compact {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    background: transparent;
+    border: 0;
+    padding: 0;
+  }
+
+  [data-ac-acw-screen="ACW02"] .acw-search__control--grow {
+    flex: 1;
+    min-width: 0;
+  }
+
+  [data-ac-acw-screen="ACW02"] .acw-directory-hero {
+    padding: 1.25rem 1rem 1rem;
+  }
+
+  [data-ac-acw-screen="ACW02"] .acw-directory-body {
+    padding: 1rem 1rem 2rem;
+  }
+
+  [data-ac-acw-screen="ACW02"] .acw-directory-more-filters {
+    display: none !important;
+  }
+}
+
+@media (min-width: 768px) {
+  [data-ac-acw-screen="ACW02"] .acw-directory-hero {
+    padding: 3rem 1.5rem 2rem;
+  }
+
+  [data-ac-acw-screen="ACW02"] .acw-directory-body {
+    padding: 1.75rem 1.5rem 3.5rem;
+  }
+
+  [data-ac-acw-screen="ACW02"] .acw-directory-more-filters {
+    display: inline-flex;
+  }
+
+  [data-ac-acw-screen="ACW02"] .acw-search--desktop {
+    grid-template-columns: 1.2fr 1fr 1fr auto;
+    align-items: end;
+  }
+
+  [data-ac-acw-screen="ACW02"] .acw-clinic-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

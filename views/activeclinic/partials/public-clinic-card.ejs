@@ -1,26 +1,40 @@
 <%
   var websiteHref = c.publicBasePath || (c.publicPagePaths && c.publicPagePaths.home) || ('/clinics/' + c.clinicKey);
   var services = Array.isArray(c.services) ? c.services : [];
+  var logoRaw = c.websiteLogoUrl ? String(c.websiteLogoUrl).trim() : "";
+  var logoSafe = /^(https:\/\/|\/)/.test(logoRaw) ? logoRaw : "";
+  var initial = String(c.publicName || "C").trim().charAt(0).toUpperCase() || "C";
+  var locationLine = [c.city, c.province].filter(Boolean).join(", ");
 %>
 <li class="acw-clinic-card ac-clinic-card" data-ac-clinic-card="1">
-  <h2><a href="<%= websiteHref %>"><%= c.publicName %></a></h2>
-  <% if (c.city || c.province) { %>
-  <p class="acw-clinic-card__meta"><%= [c.city, c.province].filter(Boolean).join(', ') %></p>
-  <% } %>
+  <div class="acw-clinic-card__head">
+    <div class="acw-clinic-card__logo" aria-hidden="true">
+      <% if (logoSafe) { %>
+      <img src="<%= logoSafe %>" alt=""/>
+      <% } else { %>
+      <span><%= initial %></span>
+      <% } %>
+    </div>
+    <div class="acw-clinic-card__identity">
+      <h2><a href="<%= websiteHref %>"><%= c.publicName %></a></h2>
+      <% if (locationLine) { %>
+      <p class="acw-clinic-card__meta">
+        <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+        <%= locationLine %>
+      </p>
+      <% } %>
+    </div>
+  </div>
   <% if (c.websiteTagline) { %>
-  <p class="acw-clinic-card__meta"><%= c.websiteTagline %></p>
+  <p class="acw-clinic-card__tagline"><%= c.websiteTagline %></p>
   <% } %>
   <% if (services.length) { %>
+  <p class="acw-clinic-card__services-label">Key Services</p>
   <div class="acw-tags" aria-label="Published services">
     <% services.forEach(function(name) { %>
     <span class="acw-tag"><%= name %></span>
     <% }) %>
   </div>
   <% } %>
-  <% if (c.publicBookingEnabled) { %>
-  <p class="acw-clinic-card__meta">Online booking requests available — clinic staff review each request.</p>
-  <% } %>
-  <p class="ac-public-actions">
-    <a class="ac-btn ac-btn--primary" href="<%= websiteHref %>">View Clinic</a>
-  </p>
+  <a class="acw-clinic-card__cta" href="<%= websiteHref %>">View Clinic</a>
 </li>

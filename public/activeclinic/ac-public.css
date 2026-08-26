@@ -836,25 +836,12 @@ body.ac-public-body {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
   .ac-directory-filters-sidebar {
-    display: block;
-    background: #fff;
-    border: 1px solid var(--acp-border);
-    border-radius: var(--acp-radius-card);
-    padding: 1.15rem;
-  }
-  .ac-directory-filters-sidebar .ac-directory-filters__close { display: none; }
-  .ac-directory-filters-sidebar .ac-directory-filters__title {
-    font-size: 1.125rem;
-    font-weight: 700;
+    display: none;
   }
   .ac-directory-search-layout {
-    display: grid;
-    grid-template-columns: minmax(14rem, 18rem) 1fr;
-    gap: 1.5rem;
-    align-items: start;
+    display: block;
   }
   .ac-directory-filters-toggle--mobile { display: none; }
-  .ac-directory-filter-drawer { display: none !important; }
 }
 @media (min-width: 1100px) {
   .ac-capability-grid--four {
@@ -2700,7 +2687,8 @@ body.ac-public-body .acp-hero--platform {
     padding-inline: var(--acp-gutter);
   }
 
-  img,
+  .ac-public--tenant img,
+  .acp-booking-shell img,
   .ac-doctor-card__media img,
   .ac-doctor-profile__photo img,
   .acp-hero img {

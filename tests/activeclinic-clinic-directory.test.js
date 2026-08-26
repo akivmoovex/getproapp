@@ -33,6 +33,11 @@ const {
 const {
   classifyDirectoryError,
 } = require("../src/activeclinic/services/activeClinicPublicDirectoryLog");
+const {
+  renderPublicPage,
+} = require("../src/activeclinic/http/renderActiveClinicPublic");
+const fs = require("node:fs");
+const path = require("node:path");
 
 let pool;
 let databaseUrl;
@@ -269,5 +274,53 @@ describe("ActiveClinic clinic directory repair", () => {
     const res = await request(app).get("/clinics");
     assert.equal(res.status, 200);
     assert.doesNotMatch(res.text, new RegExp(`BlessBoard Dir ${stamp}`));
+  });
+
+  it("ACW02 visual structure matches Stitch composition without fake chips or a persistent sidebar", () => {
+    const html = renderPublicPage({
+      pageId: "public-clinics-directory",
+      pageTitle: "Find a Clinic",
+      contentTemplate: "public/clinics-directory",
+      shellVariant: "platform",
+      locals: {
+        clinics: [{
+          clinicKey: "demo-centre",
+          publicName: "ActiveClinic Demo Centre",
+          city: "Lusaka",
+          province: "Lusaka Province",
+          websiteTagline: "Demonstration clinic — sample information only",
+          services: ["Blood pressure check"],
+          publicBasePath: "/clinics/demo-centre",
+        }],
+        search: "",
+        location: "",
+        service: "",
+        province: "",
+        city: "",
+        directoryState: "ready",
+      },
+    });
+    assert.match(html, /data-ac-acw-screen="ACW02"/);
+    assert.match(html, /Find Your Care/);
+    assert.match(html, /Find a Clinic/);
+    assert.match(html, /data-ac-directory-search="1"/);
+    assert.match(html, /data-ac-directory-search-mobile="1"/);
+    assert.match(html, /data-ac-filter-drawer/);
+    assert.match(html, /View Clinic/);
+    assert.match(html, /href="\/clinics\/demo-centre"/);
+    assert.match(html, /Key Services/);
+    assert.doesNotMatch(html, /ac-directory-filters-sidebar/);
+    assert.doesNotMatch(html, /Open Now/);
+    assert.doesNotMatch(html, /Telehealth available/);
+    assert.doesNotMatch(html, /Accessible Facility/);
+    assert.equal((html.match(/data-ac-public-footer="platform"/g) || []).length, 1);
+    assert.equal((html.match(/id="ac-directory-filter-drawer"/g) || []).length, 1);
+    const css = fs.readFileSync(
+      path.join(__dirname, "..", "public", "activeclinic", "acw-platform.css"),
+      "utf8"
+    );
+    assert.match(css, /\[data-ac-acw-screen="ACW02"\] \.acw-search--desktop/);
+    assert.match(css, /\[data-ac-acw-screen="ACW02"\] \.acw-search--compact/);
+    assert.match(css, /@media \(max-width: 767px\)[\s\S]*acw-search--desktop[\s\S]*display:\s*none/);
   });
 });
