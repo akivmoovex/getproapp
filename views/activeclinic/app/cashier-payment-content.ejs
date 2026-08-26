@@ -31,11 +31,13 @@
 
     <div class="ac-field">
       <p class="ac-label">Payment method</p>
-      <label class="ac-radio">
-        <input type="radio" name="payment_method" value="cash" checked />
-        <span>Cash</span>
-      </label>
-      <p class="ac-help">Only cash payments are supported in the current session.</p>
+      <div class="ac-payment-methods">
+        <label class="ac-payment-method">
+          <input type="radio" name="payment_method" value="cash" checked />
+          <span>Cash</span>
+        </label>
+      </div>
+      <p class="ac-hint">Only cash payments are supported in the current session.</p>
     </div>
 
     <div class="ac-field">
@@ -49,8 +51,8 @@
     </div>
   </form>
 
-  <article class="ac-panel" style="margin-top:1.5rem">
-    <h3 class="ac-dashboard__card-title">PRODUCT_DECISION: Non-cash payment methods</h3>
+  <aside class="ac-product-note" role="note">
+    <h3 class="ac-product-note__title">Non-cash payment methods</h3>
     <p class="ac-muted">Card, mobile money, and bank transfer payments require external integration (not yet connected). Contact finance team to verify non-cash payments manually.</p>
-  </article>
+  </aside>
 </section>

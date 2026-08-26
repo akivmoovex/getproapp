@@ -3,7 +3,7 @@
   var stitch = (pageData && pageData.stitch) || {};
 %>
 <section class="ac-billing-collections" data-ac-page-section="billing-collections" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
-  <article class="ac-panel">
+  <article class="ac-panel ac-panel--table">
     <% if (items.length === 0) { %>
       <%- include('../partials/ac-inline-state', {
         inlineState: {
@@ -14,13 +14,14 @@
         }
       }) %>
     <% } else { %>
-      <table class="ac-table ac-desktop-table">
+      <div class="ac-table-wrap ac-desktop-table">
+      <table class="ac-table">
         <thead>
           <tr>
             <th>Invoice</th>
             <th>Patient</th>
             <th>Days out</th>
-            <th>Balance</th>
+            <th data-col="amount">Balance</th>
             <th></th>
           </tr>
         </thead>
@@ -38,6 +39,7 @@
           <% }) %>
         </tbody>
       </table>
+      </div>
       <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="billing-collections">
         <% items.forEach(function (row) { %>
         <li class="ac-card ac-mobile-record-card">

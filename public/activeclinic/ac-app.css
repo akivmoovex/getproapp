@@ -1932,7 +1932,8 @@ body.ac-app-body .ac-billing-account-mobile { display: none; }
 @media (max-width: 899px) {
   body.ac-app-body .ac-catalog-desktop,
   body.ac-app-body .ac-invoice-desktop,
-  body.ac-app-body .ac-billing-account-desktop { display: none; }
+  body.ac-app-body .ac-billing-account-desktop,
+  body.ac-app-body .ac-table-wrap.ac-catalog-desktop { display: none; }
   body.ac-app-body .ac-catalog-mobile,
   body.ac-app-body .ac-invoice-mobile,
   body.ac-app-body .ac-billing-account-mobile { display: grid; }
@@ -1941,6 +1942,7 @@ body.ac-app-body .ac-billing-account-mobile { display: none; }
   body.ac-app-body .ac-catalog-mobile,
   body.ac-app-body .ac-invoice-mobile,
   body.ac-app-body .ac-billing-account-mobile { display: none; }
+  body.ac-app-body .ac-table-wrap.ac-catalog-desktop { display: block; }
   body.ac-app-body .ac-catalog-desktop,
   body.ac-app-body .ac-invoice-desktop,
   body.ac-app-body .ac-billing-account-desktop { display: table; }
@@ -2219,6 +2221,269 @@ body.ac-app-body .ac-hours-list {
 @media (max-width: 390px) {
   .ac-staff-invite-mf {
     overflow-x: clip;
+  }
+}
+
+/* ===== Wave 2A — P07 Billing & Cashier module (Stitch 12272131183982732110) ===== */
+body.ac-app-body .ac-billing-dashboard,
+body.ac-app-body [class^="ac-billing-"],
+body.ac-app-body [class^="ac-cashier-"],
+body.ac-app-body [class^="ac-invoice-"],
+body.ac-app-body .ac-charge-catalog,
+body.ac-app-body .ac-payment-history {
+  display: grid;
+  gap: var(--ac-space-4, 1rem);
+}
+
+body.ac-app-body .ac-panel--table {
+  padding: 0;
+  overflow: hidden;
+}
+body.ac-app-body .ac-panel--table > .ac-table-wrap,
+body.ac-app-body .ac-panel--table > .ac-table-scroll {
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+}
+body.ac-app-body .ac-panel--table .ac-table {
+  margin: 0;
+}
+body.ac-app-body .ac-panel--table .ac-table th:first-child,
+body.ac-app-body .ac-panel--table .ac-table td:first-child {
+  padding-left: 1.05rem;
+}
+body.ac-app-body .ac-panel--table .ac-table th:last-child,
+body.ac-app-body .ac-panel--table .ac-table td:last-child {
+  padding-right: 1.05rem;
+}
+body.ac-app-body .ac-panel--table .ac-panel__heading {
+  margin: 0;
+  padding: 1rem 1.05rem 0.75rem;
+}
+body.ac-app-body .ac-table__total-label {
+  text-align: right;
+}
+body.ac-app-body .ac-panel--table .ac-table tfoot td {
+  background: var(--ac-bg-subtle);
+  border-top: 1px solid var(--ac-border-strong);
+}
+
+body.ac-app-body .ac-table .ac-money,
+body.ac-app-body .ac-table td[data-col="amount"],
+body.ac-app-body .ac-table td:last-child .ac-money {
+  text-align: right;
+  white-space: nowrap;
+}
+body.ac-app-body .ac-table th:last-child,
+body.ac-app-body .ac-table th[data-col="amount"] {
+  text-align: right;
+}
+
+body.ac-app-body .ac-status[data-status="draft"],
+body.ac-app-body .ac-status[data-status="pending"],
+body.ac-app-body .ac-status[data-status="partial"],
+body.ac-app-body .ac-status[data-status="unpaid"],
+body.ac-app-body .ac-status[data-status="overdue"] {
+  background: var(--ac-warning-bg);
+  color: var(--ac-warning);
+}
+body.ac-app-body .ac-status[data-status="posted"],
+body.ac-app-body .ac-status[data-status="open"],
+body.ac-app-body .ac-status[data-status="submitted"] {
+  background: #eff6ff;
+  color: #1d4ed8;
+}
+body.ac-app-body .ac-status[data-status="paid"],
+body.ac-app-body .ac-status[data-status="approved"],
+body.ac-app-body .ac-status[data-status="completed"],
+body.ac-app-body .ac-status[data-status="collected"] {
+  background: var(--ac-success-bg);
+  color: var(--ac-success);
+}
+body.ac-app-body .ac-status[data-status="void"],
+body.ac-app-body .ac-status[data-status="cancelled"],
+body.ac-app-body .ac-status[data-status="rejected"],
+body.ac-app-body .ac-status[data-status="failed"] {
+  background: var(--ac-danger-bg);
+  color: var(--ac-danger);
+}
+body.ac-app-body .ac-status[data-status="closed"],
+body.ac-app-body .ac-status[data-status="inactive"] {
+  background: var(--ac-bg-muted);
+  color: var(--ac-muted);
+}
+
+body.ac-app-body .ac-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem;
+  align-items: center;
+  margin-top: 1.15rem;
+  padding-top: 1rem;
+  border-top: 1px solid var(--ac-border);
+}
+body.ac-app-body .ac-form-actions .ac-btn { min-height: 2.75rem; }
+
+body.ac-app-body .ac-product-note {
+  border: 1px solid var(--ac-border);
+  border-left: 3px solid var(--ac-primary);
+  border-radius: var(--ac-radius-sm);
+  background: var(--ac-bg-subtle);
+  padding: 1rem 1.05rem;
+}
+body.ac-app-body .ac-product-note__title {
+  margin: 0 0 0.35rem;
+  font-size: 0.95rem;
+  font-weight: 700;
+  color: var(--ac-ink);
+}
+body.ac-app-body .ac-product-note p:last-child { margin-bottom: 0; }
+
+body.ac-app-body .ac-receipt {
+  max-width: 38rem;
+}
+body.ac-app-body .ac-receipt__title {
+  margin: 0 0 0.25rem;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ac-ink);
+}
+body.ac-app-body .ac-receipt__number {
+  margin: 0 0 1rem;
+  font-size: 0.9rem;
+  color: var(--ac-muted);
+}
+
+body.ac-app-body .ac-invoice-detail__summary {
+  display: grid;
+  gap: 0.75rem 1.25rem;
+  margin: 0 0 1rem;
+  padding: 0 0 1rem;
+  border-bottom: 1px solid var(--ac-border);
+}
+@media (min-width: 640px) {
+  body.ac-app-body .ac-invoice-detail__summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+@media (min-width: 900px) {
+  body.ac-app-body .ac-invoice-detail__summary {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+}
+body.ac-app-body .ac-invoice-detail__summary dt {
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ac-muted);
+}
+body.ac-app-body .ac-invoice-detail__summary dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+}
+
+body.ac-app-body .ac-p07-filter-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem;
+  margin-bottom: 0.25rem;
+}
+body.ac-app-body .ac-p07-search {
+  position: relative;
+  flex: 1 1 14rem;
+  min-width: min(100%, 16rem);
+}
+body.ac-app-body .ac-p07-search input {
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.55rem 0.85rem 0.55rem 2.35rem;
+  border: 1px solid var(--ac-border);
+  border-radius: 999px;
+  background: #fff;
+  font: inherit;
+}
+body.ac-app-body .ac-p07-search input:focus {
+  outline: 2px solid color-mix(in srgb, var(--ac-primary) 35%, transparent);
+  border-color: var(--ac-primary);
+}
+
+body.ac-app-body .ac-payment-methods {
+  display: grid;
+  gap: 0.5rem;
+  margin: 0.35rem 0 0;
+}
+body.ac-app-body .ac-payment-method {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-height: 2.75rem;
+  padding: 0.65rem 0.85rem;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background: #fff;
+  cursor: pointer;
+}
+body.ac-app-body .ac-payment-method:has(input:checked) {
+  border-color: var(--ac-primary);
+  background: color-mix(in srgb, var(--ac-primary) 8%, #fff);
+}
+body.ac-app-body .ac-payment-method input {
+  width: 1rem;
+  height: 1rem;
+  margin: 0;
+}
+
+body.ac-app-body .ac-billing-dashboard .ac-metric-grid,
+body.ac-app-body .ac-cashier-dashboard .ac-metric-grid {
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+}
+body.ac-app-body .ac-billing-dashboard .ac-stat-card,
+body.ac-app-body .ac-cashier-dashboard .ac-stat-card {
+  min-height: 7.5rem;
+}
+
+body.ac-app-body .ac-billing-corrections .ac-list--mobile-only {
+  display: none;
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  gap: 0.65rem;
+}
+body.ac-app-body .ac-billing-corrections .ac-list-card {
+  padding: 0.95rem 1rem;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-sm);
+  background: #fff;
+  box-shadow: var(--ac-shadow-sm);
+}
+
+@media (max-width: 899px) {
+  body.ac-app-body [class^="ac-billing-"] .ac-panel,
+  body.ac-app-body [class^="ac-cashier-"] .ac-panel,
+  body.ac-app-body [class^="ac-invoice-"] .ac-panel {
+    overflow-x: clip;
+  }
+  body.ac-app-body .ac-billing-corrections .ac-table-wrap { display: none; }
+  body.ac-app-body .ac-billing-corrections .ac-list--mobile-only {
+    display: grid;
+  }
+  body.ac-app-body .ac-form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  body.ac-app-body .ac-form-actions .ac-btn {
+    width: 100%;
+    justify-content: center;
+  }
+  body.ac-app-body .ac-cashier-receipt .ac-actions,
+  body.ac-app-body .ac-cashier-payment-completed .ac-form-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  body.ac-app-body .ac-cashier-receipt .ac-actions .ac-btn {
+    width: 100%;
+    justify-content: center;
   }
 }
 

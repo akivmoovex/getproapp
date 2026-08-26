@@ -3,7 +3,7 @@
   var stitch = (pageData && pageData.stitch) || {};
 %>
 <section class="ac-billing-corrections" data-ac-page-section="billing-corrections" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
-  <article class="ac-panel">
+  <article class="ac-panel ac-panel--table">
     <% if (items.length === 0) { %>
       <%- include('../partials/ac-inline-state', {
         inlineState: {
@@ -53,11 +53,3 @@
     <% } %>
   </article>
 </section>
-<style>
-  .ac-list--mobile-only { display: none; list-style: none; padding: 0; margin: 0; }
-  .ac-list-card { border-top: 1px solid rgba(0,0,0,.08); padding: .75rem 0; }
-  @media (max-width: 720px) {
-    .ac-billing-corrections .ac-table-wrap { display: none; }
-    .ac-billing-corrections .ac-list--mobile-only { display: block; }
-  }
-</style>

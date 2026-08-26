@@ -6,7 +6,7 @@
 <section class="ac-invoice-detail" data-ac-page-section="invoice-detail" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
   <article class="ac-panel">
     <h2 class="ac-dashboard__card-title">Invoice details</h2>
-    <dl class="ac-dl">
+    <dl class="ac-invoice-detail__summary">
       <div><dt>Invoice number</dt><dd><strong><%= invoice.invoice_number %></strong></dd></div>
       <div><dt>Patient</dt><dd><a href="/app/billing/patients/<%= invoice.patientNumber %>"><%= invoice.patientName %></a> · <%= invoice.patientNumber %></dd></div>
       <div><dt>Invoice date</dt><dd><%= invoice.invoice_date %></dd></div>
@@ -14,19 +14,20 @@
     </dl>
   </article>
 
-  <article class="ac-panel">
-    <h2 class="ac-dashboard__card-title">Line items</h2>
+  <article class="ac-panel ac-panel--table">
+    <h2 class="ac-dashboard__card-title ac-panel__heading">Line items</h2>
     <% if (lines.length === 0) { %>
       <p class="ac-muted">No line items.</p>
     <% } else { %>
+      <div class="ac-table-wrap">
       <table class="ac-table ac-invoice-desktop">
         <thead>
           <tr>
             <th>#</th>
             <th>Description</th>
             <th>Quantity</th>
-            <th>Unit amount</th>
-            <th>Line total</th>
+            <th data-col="amount">Unit amount</th>
+            <th data-col="amount">Line total</th>
           </tr>
         </thead>
         <tbody>
@@ -35,28 +36,29 @@
             <td><%= line.line_number %></td>
             <td><%= line.description %></td>
             <td><%= line.quantity %></td>
-            <td><%= line.unitAmountFormatted %></td>
-            <td><%= line.lineTotalFormatted %></td>
+            <td class="ac-money"><%= line.unitAmountFormatted %></td>
+            <td class="ac-money"><%= line.lineTotalFormatted %></td>
           </tr>
           <% }) %>
         </tbody>
         <tfoot>
           <tr>
-            <td colspan="4" style="text-align:right"><strong>Subtotal</strong></td>
-            <td><strong><%= invoice.subtotalFormatted %></strong></td>
+            <td colspan="4" class="ac-table__total-label"><strong>Subtotal</strong></td>
+            <td class="ac-money"><strong><%= invoice.subtotalFormatted %></strong></td>
           </tr>
           <% if (parseInt(invoice.tax_amount_minor) > 0) { %>
           <tr>
-            <td colspan="4" style="text-align:right">Tax</td>
-            <td><%= invoice.taxAmountFormatted %></td>
+            <td colspan="4" class="ac-table__total-label">Tax</td>
+            <td class="ac-money"><%= invoice.taxAmountFormatted %></td>
           </tr>
           <% } %>
           <tr>
-            <td colspan="4" style="text-align:right"><strong>Total</strong></td>
-            <td><strong><%= invoice.totalAmountFormatted %></strong></td>
+            <td colspan="4" class="ac-table__total-label"><strong>Total</strong></td>
+            <td class="ac-money"><strong><%= invoice.totalAmountFormatted %></strong></td>
           </tr>
         </tfoot>
       </table>
+      </div>
       <ul class="ac-card-list ac-invoice-mobile">
         <% lines.forEach(function (line) { %>
         <li class="ac-card">

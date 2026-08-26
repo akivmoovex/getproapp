@@ -14,13 +14,13 @@
 
     <dl class="ac-dl">
       <div><dt>Receipt date</dt><dd><%= receipt.receiptDate %></dd></div>
-      <div><dt>Amount paid</dt><dd><strong><%= receipt.amountFormatted %></strong></dd></div>
+      <div><dt>Amount paid</dt><dd class="ac-money ac-money--lg"><strong><%= receipt.amountFormatted %></strong></dd></div>
       <div><dt>Payment method</dt><dd><%= receipt.paymentMethod %></dd></div>
       <div><dt>Payment number</dt><dd><%= receipt.paymentNumber %></dd></div>
       <div><dt>Patient</dt><dd><%= receipt.issuedToPatientName %> · <%= receipt.patientNumber %></dd></div>
     </dl>
 
-    <div class="ac-actions" style="margin-top:1.5rem">
+    <div class="ac-form-actions">
       <button type="button" class="ac-btn" onclick="window.print()">Print receipt</button>
       <a href="/app/cashier/payment" class="ac-btn ac-btn--ghost">Record another payment</a>
       <a href="/app/cashier" class="ac-btn ac-btn--ghost">Back to cashier</a>

@@ -3,7 +3,7 @@
   var stitch = (pageData && pageData.stitch) || {};
 %>
 <section class="ac-payment-history" data-ac-page-section="payment-history" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
-  <article class="ac-panel">
+  <article class="ac-panel ac-panel--table">
     <% if (payments.length === 0) { %>
       <%- include('../partials/ac-inline-state', {
         inlineState: {
@@ -14,7 +14,7 @@
         }
       }) %>
     <% } else { %>
-      <div class="ac-table-scroll ac-desktop-table">
+      <div class="ac-table-wrap ac-desktop-table">
         <table class="ac-table">
           <thead>
             <tr>
@@ -22,7 +22,7 @@
               <th>Payment #</th>
               <th>Patient</th>
               <th>Method</th>
-              <th>Amount</th>
+              <th data-col="amount">Amount</th>
             </tr>
           </thead>
           <tbody>

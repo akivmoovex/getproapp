@@ -4,7 +4,7 @@
   var stitch = (pageData && pageData.stitch) || {};
 %>
 <section class="ac-invoice-list" data-ac-page-section="invoice-list" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
-  <div class="ac-panel">
+  <article class="ac-panel ac-panel--table">
     <% if (invoices.length === 0) { %>
       <%- include('../partials/ac-inline-state', {
         inlineState: {
@@ -18,40 +18,42 @@
         }
       }) %>
     <% } else { %>
-      <table class="ac-table ac-desktop-table">
-        <thead>
-          <tr>
-            <th>Invoice number</th>
-            <th>Patient</th>
-            <th>Date</th>
-            <th>Amount</th>
-            <th>Status</th>
-          </tr>
-        </thead>
-        <tbody>
-          <% invoices.forEach(function (inv) { %>
-          <tr>
-            <td><a href="/app/billing/invoices/<%= inv.id %>"><%= inv.invoice_number %></a></td>
-            <td><%= inv.patientName %> · <%= inv.patient_number %></td>
-            <td><%= inv.invoice_date %></td>
-            <td><%= inv.totalAmountFormatted %></td>
-            <td><span class="ac-status" data-status="<%= inv.status %>"><%= inv.status %></span></td>
-          </tr>
-          <% }) %>
-        </tbody>
-      </table>
+      <div class="ac-table-wrap ac-desktop-table">
+        <table class="ac-table">
+          <thead>
+            <tr>
+              <th>Invoice number</th>
+              <th>Patient</th>
+              <th>Date</th>
+              <th data-col="amount">Amount</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% invoices.forEach(function (inv) { %>
+            <tr>
+              <td><a href="/app/billing/invoices/<%= inv.id %>"><%= inv.invoice_number %></a></td>
+              <td><%= inv.patientName %> · <%= inv.patient_number %></td>
+              <td><%= inv.invoice_date %></td>
+              <td class="ac-money"><%= inv.totalAmountFormatted %></td>
+              <td><span class="ac-status" data-status="<%= inv.status %>"><%= inv.status %></span></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
       <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="invoices">
         <% invoices.forEach(function (inv) { %>
         <li class="ac-card ac-mobile-record-card">
           <a class="ac-card__link" href="/app/billing/invoices/<%= inv.id %>">
             <p class="ac-card__title"><%= inv.invoice_number %></p>
             <p class="ac-muted"><%= inv.patientName %> · <%= inv.patient_number %></p>
-            <p><strong><%= inv.totalAmountFormatted %></strong> · <%= inv.invoice_date %></p>
+            <p><strong class="ac-money"><%= inv.totalAmountFormatted %></strong> · <%= inv.invoice_date %></p>
             <p><span class="ac-status" data-status="<%= inv.status %>"><%= inv.status %></span></p>
           </a>
         </li>
         <% }) %>
       </ul>
     <% } %>
-  </div>
+  </article>
 </section>

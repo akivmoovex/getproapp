@@ -4,7 +4,7 @@
   var stitch = (pageData && pageData.stitch) || {};
 %>
 <section class="ac-charge-catalog" data-ac-page-section="charge-catalog" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
-  <div class="ac-panel">
+  <article class="ac-panel ac-panel--table">
     <% if (items.length === 0) { %>
       <%- include('../partials/ac-inline-state', {
         inlineState: {
@@ -18,13 +18,14 @@
         }
       }) %>
     <% } else { %>
-      <table class="ac-table ac-catalog-desktop">
+      <div class="ac-table-wrap ac-catalog-desktop">
+      <table class="ac-table">
         <thead>
           <tr>
             <th>Code</th>
             <th>Name</th>
             <th>Category</th>
-            <th>Amount</th>
+            <th data-col="amount">Amount</th>
             <th>Status</th>
             <th></th>
           </tr>
@@ -35,7 +36,7 @@
             <td><code><%= item.code %></code></td>
             <td><strong><%= item.name %></strong></td>
             <td><%= item.category || '—' %></td>
-            <td><%= item.amountFormatted %></td>
+            <td class="ac-money"><%= item.amountFormatted %></td>
             <td>
               <% if (item.isActive) { %>
                 <span class="ac-status" data-status="active">Active</span>
@@ -48,13 +49,14 @@
           <% }) %>
         </tbody>
       </table>
+      </div>
       <ul class="ac-card-list ac-catalog-mobile">
         <% items.forEach(function (item) { %>
         <li class="ac-card">
           <a class="ac-card__link" href="/app/billing/catalog/<%= item.id %>">
             <p class="ac-card__title"><%= item.name %></p>
             <p class="ac-muted"><code><%= item.code %></code> · <%= item.category || '—' %></p>
-            <p><strong><%= item.amountFormatted %></strong>
+            <p><strong class="ac-money"><%= item.amountFormatted %></strong>
               <span class="ac-status" data-status="<%= item.isActive ? 'active' : 'inactive' %>"><%= item.isActive ? 'Active' : 'Inactive' %></span>
             </p>
           </a>
@@ -62,5 +64,5 @@
         <% }) %>
       </ul>
     <% } %>
-  </div>
+  </article>
 </section>
