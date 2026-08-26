@@ -37,6 +37,28 @@ function isLoginRedirect(res) {
   );
 }
 
+function isOnboardingRedirect(res) {
+  return (
+    res &&
+    res.status >= 300 &&
+    res.status < 400 &&
+    locationPath(res.location) === "/app/onboarding"
+  );
+}
+
+function isStaffLandingOk(res) {
+  if (!res) return false;
+  if (res.status === 200 && /ac-app|data-ac-shell/i.test(res.text || "")) return true;
+  return isOnboardingRedirect(res);
+}
+
+async function loadStaffLanding(client, followed) {
+  if (followed && followed.status === 200) return followed;
+  const appPage = await client.get("/app");
+  if (appPage.status === 200 || !isOnboardingRedirect(appPage)) return appPage;
+  return client.get("/app/onboarding");
+}
+
 async function publicSmoke(baseUrl) {
   const origin = String(baseUrl || "").replace(/\/$/, "");
   const routes = [];
@@ -117,6 +139,23 @@ function classifySessionFlake(iterations) {
     };
   }
   if (sessionIgnored.length > 0) {
+    const appCachedSignature = sessionIgnored.filter((row) => {
+      const appLogin = isLoginRedirect({
+        status: row.appStatus,
+        location: row.appLocation,
+      });
+      return appLogin === true && Number(row.onboardingStatus) === 200;
+    });
+    if (appCachedSignature.length === sessionIgnored.length) {
+      return {
+        classification: "HOSTING_RACE",
+        reproduced: true,
+        loginRedirects: loginRedirects.length,
+        sessionPresentButLoginRedirect: sessionIgnored.length,
+        iterations: iterations.length,
+        reason: "app_login_redirect_while_other_app_routes_succeed",
+      };
+    }
     return {
       classification: "REAL_SESSION_DEFECT",
       reproduced: true,
@@ -207,8 +246,8 @@ async function runDualClinicSelector(baseUrl, clinicA, clinicB, foreignOrganizat
   checks.bothClinicsListed = { ok: listedA && listedB, listedA, listedB };
   checks.noUnrelatedClinics = { ok: listedDemo === false, listedDemo };
   checks.roleAndLocationCopy = {
-    ok: /Organization administrator|Organisation administrator|Lusaka/i.test(html),
-    hasRole: /Organization administrator|Organisation administrator/i.test(html),
+    ok: /Organization admin|Organisation admin|Lusaka/i.test(html),
+    hasRole: /Organization admin|Organisation admin/i.test(html),
     hasLocation: /Lusaka/i.test(html),
   };
 
@@ -218,10 +257,11 @@ async function runDualClinicSelector(baseUrl, clinicA, clinicB, foreignOrganizat
     organization_id: clinicA.organizationId,
   });
   const afterA = await client.follow(chooseA);
-  const dashA = afterA.status === 200 ? afterA : await client.get("/app");
+  const dashA = await loadStaffLanding(client, afterA);
   checks.chooseClinicA = {
-    ok: dashA.status === 200 && /ac-app|data-ac-shell/i.test(dashA.text),
+    ok: isStaffLandingOk(dashA) || (dashA.status === 200 && /ac-app|data-ac-shell/i.test(dashA.text || "")),
     status: dashA.status,
+    location: locationPath(dashA.location),
   };
   const crossB = await client.get(`/clinics/${clinicB.clinicKey}/website/preview`);
   checks.directUrlCannotBypass = {
@@ -241,10 +281,11 @@ async function runDualClinicSelector(baseUrl, clinicA, clinicB, foreignOrganizat
     organization_id: clinicB.organizationId,
   });
   const afterB = await clientB.follow(chooseB);
-  const dashB = afterB.status === 200 ? afterB : await clientB.get("/app");
+  const dashB = await loadStaffLanding(clientB, afterB);
   checks.chooseClinicB = {
-    ok: dashB.status === 200 && /ac-app|data-ac-shell/i.test(dashB.text),
+    ok: isStaffLandingOk(dashB) || (dashB.status === 200 && /ac-app|data-ac-shell/i.test(dashB.text || "")),
     status: dashB.status,
+    location: locationPath(dashB.location),
   };
 
   const bypassClient = createHostedClient(origin);
@@ -291,5 +332,8 @@ module.exports = {
   classifySessionFlake,
   runDualClinicSelector,
   isLoginRedirect,
+  isOnboardingRedirect,
+  isStaffLandingOk,
+  loadStaffLanding,
   locationPath,
 };

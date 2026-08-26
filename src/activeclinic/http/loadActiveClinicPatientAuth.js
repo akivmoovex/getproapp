@@ -259,6 +259,8 @@ function createRequireActiveClinicPatientAuth(options) {
       }
 
       if (req.accepts("html")) {
+        const { setV5PrivateNoStore } = require("../../platform/http/v5PrivateNoStore");
+        setV5PrivateNoStore(res);
         return res.redirect(303, resolvedLoginPath);
       }
       return res.status(401).json({ ok: false, code: "unauthenticated" });

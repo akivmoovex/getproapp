@@ -118,7 +118,7 @@ Run1 can flake on an authenticated GET 303 to `/login` immediately after a succe
 RBAC_CATALOGUE_ASSERTION: TEST_DEFECT
 ```
 
-Migration `095_website_org_admin_publish.sql` grants `website.publish` / `restore` / `rollback` only to `activeclinic_organization_admin`. `network_admin` keeps view/edit/submit from `093`. The old “mirrors organization_admin” assertion was stale. Do not broaden `network_admin`. Role copy that still says “same powers” remains a documentation inconsistency, not a permission change.
+Migration `095_website_org_admin_publish.sql` grants `website.publish` / `restore` / `rollback` only to `activeclinic_organization_admin`. `network_admin` keeps view/edit/submit from `093`. The old “mirrors organization_admin” assertion was stale. Do not broaden `network_admin`. User-facing `network_admin` copy describes view/edit/submit only and must not claim the same powers as Organization administrator.
 
 ## Deferred feature absence
 

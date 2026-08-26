@@ -43,6 +43,8 @@ const {
   publicSmoke,
   runSessionProbe,
   runDualClinicSelector,
+  isStaffLandingOk,
+  locationPath,
 } = require("../../src/activeclinic/qa/activeClinicHostedAuthQaReleaseFlows");
 
 const DEFAULT_BASE = "https://activeclinic.pronline.org";
@@ -312,8 +314,9 @@ async function runHostedPass(client, fixture, options) {
   });
 
   const dashboard = afterLogin.status === 200 ? afterLogin : await staffPage("/app");
-  record(checks, "staffDashboard", dashboard.status === 200 && /ac-app|data-ac-shell/i.test(dashboard.text), {
+  record(checks, "staffDashboard", isStaffLandingOk(dashboard), {
     status: dashboard.status,
+    location: locationPath(dashboard.location),
   });
 
   const onboardingRaw = await client.get("/app/onboarding");

@@ -147,4 +147,88 @@ describe("ActiveClinic hosted auth QA client", () => {
     assert.equal(result.classification, "NOT_REPRODUCED");
     assert.equal(result.reproduced, false);
   });
+
+  it("classifies /app login redirect with live /app/onboarding session as hosting race", () => {
+    const { classifySessionFlake } = require("../src/activeclinic/qa/activeClinicHostedAuthQaReleaseFlows");
+    const result = classifySessionFlake([
+      {
+        loginRedirect: true,
+        sessionAfterLogin: true,
+        sessionAfterOnboarding: true,
+        appStatus: 303,
+        appLocation: "/login",
+        onboardingStatus: 200,
+      },
+    ]);
+    assert.equal(result.classification, "HOSTING_RACE");
+    assert.match(result.reason, /app_login_redirect/);
+  });
+
+  it("classifies login redirects on both /app and /app/onboarding as a real session defect", () => {
+    const { classifySessionFlake } = require("../src/activeclinic/qa/activeClinicHostedAuthQaReleaseFlows");
+    const result = classifySessionFlake([
+      {
+        loginRedirect: true,
+        sessionAfterLogin: true,
+        sessionAfterOnboarding: true,
+        appStatus: 303,
+        appLocation: "/login",
+        onboardingStatus: 303,
+        onboardingLocation: "/login",
+      },
+    ]);
+    assert.equal(result.classification, "REAL_SESSION_DEFECT");
+  });
+
+  it("wrong-clinic patient 403 does not clear the clinic A session cookie", () => {
+    const {
+      createRequireActiveClinicPatientAuth,
+    } = require("../src/activeclinic/http/loadActiveClinicPatientAuth");
+    const mw = createRequireActiveClinicPatientAuth({
+      loginPath: "/login",
+      isProduction: false,
+      env: { PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing" },
+    });
+    const cleared = [];
+    const req = {
+      activeClinicPatientAuth: {
+        authenticated: false,
+        reason: "wrong_clinic_context",
+        clinicKey: "clinic-a",
+      },
+      params: { clinicKey: "clinic-b" },
+      accepts() {
+        return true;
+      },
+    };
+    const res = {
+      statusCode: 0,
+      headers: {},
+      status(code) {
+        this.statusCode = code;
+        return this;
+      },
+      type() {
+        return this;
+      },
+      send() {
+        return this;
+      },
+      setHeader(name, value) {
+        this.headers[name] = value;
+      },
+      getHeader(name) {
+        return this.headers[name];
+      },
+      clearCookie(name) {
+        cleared.push(name);
+      },
+    };
+    mw(req, res, () => {
+      throw new Error("should not next");
+    });
+    assert.equal(res.statusCode, 403);
+    assert.equal(cleared.length, 0);
+    assert.match(String(res.headers["Cache-Control"] || ""), /no-store/);
+  });
 });
