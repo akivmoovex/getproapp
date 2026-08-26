@@ -122,7 +122,7 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
     assert.match(page.text, /name="countryCode"/);
     assert.match(page.text, /name="address"/);
     assert.doesNotMatch(page.text, /name="password"/);
-    assert.match(page.text, /acw-platform.css\?v=v7-wave1-p1/);
+    assert.match(page.text, /acw-platform.css\?v=v7-v1-closure-p1/);
     const css = fs.readFileSync(
       path.join(__dirname, "..", "public", "activeclinic", "acw-platform.css"),
       "utf8"

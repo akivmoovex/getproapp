@@ -1585,3 +1585,62 @@ body.ac-public--platform .ac-public-brand__icon {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 }
+
+/* ===== V1.0 closure — registration & public marketing (Stitch MF03 / ACW) ===== */
+.acw-register {
+  max-width: 42rem;
+  margin: 0 auto;
+}
+.acw-register__header h1 {
+  font-size: 1.75rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  line-height: 1.25;
+}
+.acw-register__lede {
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  max-width: 38rem;
+}
+.acw-register__card {
+  border-radius: var(--ac-card-radius, 8px);
+  box-shadow: 0 1px 2px rgba(25, 28, 30, 0.06), 0 8px 24px rgba(25, 28, 30, 0.04);
+}
+.acw-register-progress__track {
+  height: 0.35rem;
+  background: #eceef0;
+}
+.acw-register-progress__fill {
+  background: var(--acp-primary, #003c90);
+}
+.acw-register .ac-form-checkbox {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--acp-border, #c3c6d5);
+  border-radius: var(--ac-card-radius, 8px);
+  background: #f7f9fb;
+}
+.acw-register-review {
+  gap: 1.25rem;
+}
+.acw-register-review__dl > div {
+  padding: 0.65rem 0;
+  border-bottom: 1px solid #eceef0;
+}
+.acw-register-success-tile {
+  border-radius: var(--ac-card-radius, 8px);
+}
+.acw-page.acw-register--success {
+  max-width: 48rem;
+}
+@media (min-width: 768px) {
+  .acw-register {
+    max-width: 44rem;
+    padding-top: 2.5rem;
+  }
+  .acw-register__actions {
+    justify-content: flex-end;
+  }
+  .acw-register__actions .ac-btn {
+    min-width: 10rem;
+  }
+}

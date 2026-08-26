@@ -798,3 +798,69 @@
   }
 }
 
+/* ===== V1.0 closure — website management chrome (MW01–MW10) ===== */
+.ac-mw {
+  --ac-mw-primary: #003c90;
+  --ac-mw-primary-strong: #002764;
+}
+.ac-mw-card,
+.ac-mw-firstuse__welcome,
+.ac-mw-firstuse__progress,
+.ac-mw-firstuse__item,
+.ac-mw-panel,
+.ac-mw-publish-card {
+  border-radius: var(--ac-card-radius, 8px);
+}
+.ac-mw-head h2 {
+  font-size: 1.625rem;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+}
+.ac-mw-nav__link {
+  border-radius: 999px;
+  min-height: 2.75rem;
+}
+.ac-mw-btn--primary,
+.ac-mw .ac-btn--primary {
+  background: var(--ac-mw-primary);
+  border-color: var(--ac-mw-primary);
+  color: #fff;
+}
+.ac-mw-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+.ac-mw-status--draft {
+  background: #fef3c7;
+  color: #92400e;
+}
+.ac-mw-status--published {
+  background: #ecfdf3;
+  color: #067647;
+}
+.ac-mw-hub-grid {
+  display: grid;
+  gap: 0.85rem;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+}
+@media (max-width: 767px) {
+  .ac-mw-head {
+    flex-direction: column;
+  }
+  .ac-mw-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.25rem;
+  }
+  .ac-mw-actions .ac-mw-btn,
+  .ac-mw-actions .ac-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}
