@@ -60,7 +60,7 @@ describe("project 10611909237747031838 parity matrix", () => {
   it("closure baseline document is locked", () => {
     const closure = read("docs/activeclinic/stitch/PROJECT_10611909237747031838_CLOSURE.md");
     assert.match(closure, /BASELINE_LOCKED/);
-    assert.match(closure, /CANONICAL_APPLICABLE \| 92/);
-    assert.match(closure, /N_A_REFERENCE \| 0/);
+    assert.match(closure, /\*\*CANONICAL_APPLICABLE\*\* \| 92/);
+    assert.match(closure, /\*\*N_A_REFERENCE\*\* \| 0/);
   });
 });
