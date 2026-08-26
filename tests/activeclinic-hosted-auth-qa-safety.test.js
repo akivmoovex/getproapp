@@ -118,4 +118,33 @@ describe("ActiveClinic hosted auth QA client", () => {
     assert.equal(jar.csrf(), "placeholder");
     assert.equal(jar.names().includes("blessboard_org_csrf"), false);
   });
+
+  it("last Set-Cookie for a name wins within one absorb", () => {
+    const { CookieJar } = require("../src/activeclinic/qa/activeClinicHostedAuthQaClient");
+    const expireThenSet = new CookieJar();
+    expireThenSet.absorb([
+      "moovex_platform_testing_sid=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
+      "moovex_platform_testing_sid=token; Path=/; HttpOnly; Secure; SameSite=Lax",
+    ]);
+    assert.equal(expireThenSet.sessionPresent(), true);
+    const setThenExpire = new CookieJar();
+    setThenExpire.absorb([
+      "moovex_platform_testing_sid=token; Path=/; HttpOnly; Secure; SameSite=Lax",
+      "moovex_platform_testing_sid=; Path=/; Max-Age=0; HttpOnly; Secure; SameSite=Lax",
+    ]);
+    assert.equal(setThenExpire.sessionPresent(), false);
+  });
+
+  it("classifies staff session probe with no login redirects as not reproduced", () => {
+    const { classifySessionFlake } = require("../src/activeclinic/qa/activeClinicHostedAuthQaReleaseFlows");
+    const result = classifySessionFlake([
+      {
+        loginRedirect: false,
+        sessionAfterLogin: true,
+        sessionAfterOnboarding: true,
+      },
+    ]);
+    assert.equal(result.classification, "NOT_REPRODUCED");
+    assert.equal(result.reproduced, false);
+  });
 });

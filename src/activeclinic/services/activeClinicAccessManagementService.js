@@ -93,7 +93,7 @@ const ROLE_DESCRIPTIONS = Object.freeze({
   [ORGANIZATION_ADMIN]:
     "Manages clinic settings, facilities, staff, access and audit. Does not receive clinical transaction rights automatically.",
   [NETWORK_ADMIN]:
-    "Legacy compatibility role with the same powers as Organization administrator. Prefer Organization administrator for new grants.",
+    "Legacy compatibility role for organization-wide operations. It can view, edit, and submit website changes, but cannot publish, restore, or roll back the live website. Prefer Organization administrator for new grants.",
   [FACILITY_ADMIN]:
     "Manages staff and access within assigned facilities. No organization-wide ownership or clinical write rights.",
   [CLINIC_MANAGER]:

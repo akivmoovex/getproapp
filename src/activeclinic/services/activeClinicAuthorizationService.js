@@ -36,7 +36,7 @@ const RESULT = Object.freeze({
 });
 
 const ORGANIZATION_ADMIN = "activeclinic_organization_admin";
-/** @deprecated Compat alias of ORGANIZATION_ADMIN — retain for existing assignments/tests. */
+/** @deprecated Compat role retained for existing assignments. Website publish/restore/rollback stay on organization admin only. */
 const NETWORK_ADMIN = "activeclinic_network_admin";
 const FACILITY_ADMIN = "activeclinic_facility_admin";
 const CLINIC_MANAGER = "activeclinic_clinic_manager";

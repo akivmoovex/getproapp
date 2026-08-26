@@ -49,7 +49,7 @@ for login; ActiveClinic staff contact storage requires E.164.
 | Username | Email | Demo phone | Role | Scope | Expected modules | Forbidden (examples) |
 | -------- | ----- | ---------- | ---- | ----- | ---------------- | -------------------- |
 | demo_organization_admin | demo_organization_admin@demo.activeclinic.example | +260970000001 | organization_admin | organisation | admin, facilities, staff, Roles & Access, read ops | clinical write, dispense, lab/rad result, collect/refund |
-| demo_network_admin | demo_network_admin@demo.activeclinic.example | +260970000002 | network_admin | organisation | same as org admin (**LEGACY / COMPATIBILITY**) | clinical write |
+| demo_network_admin | demo_network_admin@demo.activeclinic.example | +260970000002 | network_admin | organisation | org-wide operations + website view/edit/submit (**not** publish/restore/rollback; LEGACY) | clinical write, website.publish |
 | demo_facility_admin | demo_facility_admin@demo.activeclinic.example | +260970000003 | facility_admin | facility | facility admin, staff/schedules | clinical write, dispense, diagnostics write, finance tx |
 | demo_clinic_manager | demo_clinic_manager@demo.activeclinic.example | +260970000004 | clinic_manager | facility | operational/read oversight | refund, clinical/finance writes |
 | demo_receptionist | demo_receptionist@demo.activeclinic.example | +260970000005 | receptionist | facility | Patients, Appointments, Reception | clinical, pharmacy, diagnostics, cashier, access |

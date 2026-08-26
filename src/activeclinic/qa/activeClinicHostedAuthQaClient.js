@@ -17,6 +17,7 @@ class CookieJar {
 
   absorb(setCookieHeaders) {
     const headers = [].concat(setCookieHeaders || []);
+    const lastByName = new Map();
     for (const raw of headers) {
       const text = String(raw);
       const part = text.split(";")[0];
@@ -25,17 +26,24 @@ class CookieJar {
       const name = part.slice(0, eq).trim();
       const value = part.slice(eq + 1).trim();
       if (!name) continue;
-      if (!value || /;\s*Max-Age=0/i.test(text) || /Expires=Thu, 01 Jan 1970/i.test(text)) {
+      lastByName.set(name, { value, text });
+    }
+    for (const [name, parsed] of lastByName.entries()) {
+      const expired =
+        !parsed.value ||
+        /;\s*Max-Age=0(?:;|$)/i.test(parsed.text) ||
+        /Expires=Thu, 01 Jan 1970/i.test(parsed.text);
+      if (expired) {
         this.map.delete(name);
         this.flags.delete(name);
         continue;
       }
-      this.map.set(name, value);
+      this.map.set(name, parsed.value);
       this.flags.set(name, {
         name,
-        secure: /;\s*Secure/i.test(text),
-        httpOnly: /;\s*HttpOnly/i.test(text),
-        sameSite: ((text.match(/;\s*SameSite=([^;]+)/i) || [])[1] || "").trim(),
+        secure: /;\s*Secure/i.test(parsed.text),
+        httpOnly: /;\s*HttpOnly/i.test(parsed.text),
+        sameSite: ((parsed.text.match(/;\s*SameSite=([^;]+)/i) || [])[1] || "").trim(),
       });
     }
   }
@@ -81,6 +89,24 @@ class CookieJar {
   }
 }
 
+function summarizeSetCookie(raw) {
+  const text = String(raw || "");
+  const part = text.split(";")[0];
+  const eq = part.indexOf("=");
+  const name = eq > 0 ? part.slice(0, eq).trim() : "";
+  const value = eq > 0 ? part.slice(eq + 1).trim() : "";
+  return {
+    name,
+    hasValue: Boolean(value),
+    expired:
+      !value ||
+      /;\s*Max-Age=0(?:;|$)/i.test(text) ||
+      /Expires=Thu, 01 Jan 1970/i.test(text),
+    secure: /;\s*Secure/i.test(text),
+    httpOnly: /;\s*HttpOnly/i.test(text),
+    sameSite: ((text.match(/;\s*SameSite=([^;]+)/i) || [])[1] || "").trim(),
+  };
+}
 function extractCsrfField(html) {
   const match = String(html || "").match(
     new RegExp(`name=["']${CSRF_FIELD}["'][^>]*value=["']([^"']+)["']`, "i")
@@ -145,6 +171,7 @@ function createHostedClient(baseUrl) {
       text,
       cookieNames: jar.names(),
       sessionPresent: jar.sessionPresent(),
+      setCookieSummaries: setCookies.map(summarizeSetCookie),
     };
   }
 
@@ -188,5 +215,6 @@ module.exports = {
   CookieJar,
   extractCsrfField,
   extractMatch,
+  summarizeSetCookie,
   createHostedClient,
 };

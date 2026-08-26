@@ -26,6 +26,8 @@ const {
   EXPECTED_DB_ENV,
   provisionHostedAuthQaClinic,
   cleanupHostedAuthQaClinic,
+  attachHostedAuthQaSharedAdmin,
+  listHostedQaLeftoverOrganizations,
   publicFixtureRecord,
   hostedQaEnv,
 } = require("../../src/activeclinic/qa/activeClinicHostedAuthQaFixture");
@@ -37,6 +39,11 @@ const {
   extractCsrfField,
   extractMatch,
 } = require("../../src/activeclinic/qa/activeClinicHostedAuthQaClient");
+const {
+  publicSmoke,
+  runSessionProbe,
+  runDualClinicSelector,
+} = require("../../src/activeclinic/qa/activeClinicHostedAuthQaReleaseFlows");
 
 const DEFAULT_BASE = "https://activeclinic.pronline.org";
 const FORBIDDEN_WIDGETS = [
@@ -53,15 +60,26 @@ function parseArgs(argv) {
   const mode = parseWriteMode(argv);
   let baseUrl = DEFAULT_BASE;
   let repeat = false;
+  let release = false;
+  let noRetry = false;
+  let sessionProbe = 0;
   for (const arg of mode.rest) {
     if (arg.startsWith("--base-url=")) baseUrl = arg.slice("--base-url=".length);
     if (arg === "--repeat") repeat = true;
+    if (arg === "--release") release = true;
+    if (arg === "--no-retry") noRetry = true;
+    if (arg.startsWith("--session-probe=")) sessionProbe = Number(arg.slice("--session-probe=".length)) || 0;
   }
+  if (release && sessionProbe <= 0) sessionProbe = 12;
+  if (release) noRetry = true;
   return {
     dryRun: mode.dryRun,
     confirm: mode.confirm,
     baseUrl: String(baseUrl || DEFAULT_BASE).replace(/\/$/, ""),
     repeat,
+    release,
+    noRetry,
+    sessionProbe,
   };
 }
 
@@ -150,6 +168,13 @@ const REQUIRED_CHECKS = [
   "patientDashboard",
   "patientDeniedApp",
   "patientProfile",
+  "foreignClinicDenied",
+  "wrongClinicProfile",
+  "wrongClinicBooking",
+  "patientLogout",
+  "patientSessionInvalidated",
+  "patientLogoutRepeatSafe",
+  "patientRelogin",
   "deferredFeaturesAbsent",
 ];
 
@@ -174,7 +199,10 @@ function getPage(client, path) {
   return client.get(path).then((first) => followPage(client, first));
 }
 
-async function getStaffPage(client, path) {
+async function getStaffPage(client, path, options) {
+  if (options && options.retry === false) {
+    return getPage(client, path);
+  }
   let res = await getPage(client, path);
   if (res.status >= 300 && res.status < 400) {
     res = await getPage(client, path);
@@ -255,7 +283,9 @@ async function runBookingContinuity(client, clinicPath, fixture) {
   };
 }
 
-async function runHostedPass(client, fixture) {
+async function runHostedPass(client, fixture, options) {
+  const retry = !options || options.retry !== false;
+  const staffPage = (path) => getStaffPage(client, path, { retry });
   const checks = {};
   const mobile = { mf05: null, mf06: null, mf07: null, mf09: null };
   const clinicPath = `/clinics/${fixture.clinicKey}`;
@@ -281,7 +311,7 @@ async function runHostedPass(client, fixture) {
     location: loginPost.location ? String(loginPost.location).split("?")[0] : "",
   });
 
-  const dashboard = afterLogin.status === 200 ? afterLogin : await getStaffPage(client, "/app");
+  const dashboard = afterLogin.status === 200 ? afterLogin : await staffPage("/app");
   record(checks, "staffDashboard", dashboard.status === 200 && /ac-app|data-ac-shell/i.test(dashboard.text), {
     status: dashboard.status,
   });
@@ -290,29 +320,29 @@ async function runHostedPass(client, fixture) {
   const onboarding =
     onboardingRaw.status === 200
       ? onboardingRaw
-      : await getStaffPage(client, "/app/onboarding");
+      : await staffPage("/app/onboarding");
   record(checks, "onboarding", onboarding.status === 200 && /data-ac-mf-family="MF05"/i.test(onboarding.text), {
     status: onboarding.status,
     firstStatus: onboardingRaw.status,
     firstLocation: onboardingRaw.location ? String(onboardingRaw.location).split("?")[0] : "",
   });
 
-  const website = await getStaffPage(client, "/app/settings/website");
+  const website = await staffPage("/app/settings/website");
   record(checks, "websiteHub", website.status === 200 && !/Theme customization|staging URL/i.test(website.text), {
     status: website.status,
     location: website.location ? String(website.location).split("?")[0] : "",
   });
-  const websitePages = await getStaffPage(client, "/app/settings/website/pages");
+  const websitePages = await staffPage("/app/settings/website/pages");
   record(checks, "websitePages", websitePages.status === 200, { status: websitePages.status });
-  const websitePublish = await getStaffPage(client, "/app/settings/website/publish");
+  const websitePublish = await staffPage("/app/settings/website/publish");
   record(checks, "websitePublishGet", websitePublish.status === 200, { status: websitePublish.status });
 
-  const invite = await getStaffPage(client, "/app/staff/invite");
+  const invite = await staffPage("/app/staff/invite");
   record(checks, "staffInviteGet", invite.status === 200, {
     status: invite.status,
     location: invite.location ? String(invite.location).split("?")[0] : "",
   });
-  const inviteForm = await getStaffPage(client, "/app/staff/new?invite=1");
+  const inviteForm = await staffPage("/app/staff/new?invite=1");
   record(checks, "staffInviteForm", inviteForm.status === 200 && /data-ac-mf-family="MF07"/i.test(inviteForm.text), {
     status: inviteForm.status,
   });
@@ -394,6 +424,24 @@ async function runHostedPass(client, fixture) {
   const staffOnPatient = await client.get(`${clinicPath}/patient`);
   record(checks, "staffDeniedPatient", staffOnPatient.status === 403 || staffOnPatient.status === 303, {
     status: staffOnPatient.status,
+    leaked: /data-ac-mf-family="MF09"/i.test(staffOnPatient.text || ""),
+  });
+  const staffWrongClinic = await client.get("/clinics/activeclinic-demo/website/preview");
+  record(checks, "staffWrongClinic", staffWrongClinic.status === 403 || staffWrongClinic.status === 404, {
+    status: staffWrongClinic.status,
+    leaked: staffWrongClinic.status === 200 || staffWrongClinic.status === 303 && /\/edit\//i.test(staffWrongClinic.location || ""),
+  });
+  const staffForeignCms = await client.get("/clinics/activeclinic-demo/website/preview");
+  record(checks, "crossClinicCms", staffForeignCms.status === 403 || staffForeignCms.status === 404, {
+    status: staffForeignCms.status,
+  });
+  const staffForeignMedia = await client.get("/clinics/activeclinic-demo/website/media");
+  record(checks, "crossClinicMedia", staffForeignMedia.status === 403 || staffForeignMedia.status === 404, {
+    status: staffForeignMedia.status,
+  });
+  const staffForeignHistory = await client.get("/clinics/activeclinic-demo/website/versions");
+  record(checks, "crossClinicVersionHistory", staffForeignHistory.status === 403 || staffForeignHistory.status === 404, {
+    status: staffForeignHistory.status,
   });
 
   const staffLogout = await client.get("/logout");
@@ -470,15 +518,29 @@ async function runHostedPass(client, fixture) {
     });
     const foreign = await publicClient.get("/clinics/activeclinic-demo/patient");
     const foreignDashboard = /data-ac-mf-family="MF09"/i.test(foreign.text);
+    record(checks, "foreignClinicDenied", foreign.status === 403 && foreignDashboard === false, {
+      status: foreign.status,
+      dashboardChrome: foreignDashboard,
+    });
+    const foreignProfile = await publicClient.get("/clinics/activeclinic-demo/patient/profile");
     record(
       checks,
-      "foreignClinicDenied",
-      foreign.status === 403 ||
-        foreign.status === 404 ||
-        foreign.status === 303 ||
-        (foreign.status === 200 && foreignDashboard === false),
-      { status: foreign.status, dashboardChrome: foreignDashboard }
+      "wrongClinicProfile",
+      foreignProfile.status === 403 && !/data-ac-mf-family="MF09"/i.test(foreignProfile.text || ""),
+      { status: foreignProfile.status }
     );
+    const bookingId = extractMatch(bookingDetailHref || "", /bookings\/([^/?"]+)/);
+    if (bookingId) {
+      const foreignBooking = await publicClient.get(`/clinics/activeclinic-demo/patient/bookings/${bookingId}`);
+      record(
+        checks,
+        "wrongClinicBooking",
+        foreignBooking.status === 403 && !/Pending clinic confirmation/i.test(foreignBooking.text || ""),
+        { status: foreignBooking.status }
+      );
+    } else {
+      record(checks, "wrongClinicBooking", false, { reason: "no_booking_id" });
+    }
     const profile = await publicClient.get(`${clinicPath}/patient/profile`);
     record(checks, "patientProfile", profile.status === 200, { status: profile.status });
     mobile.mf09 = await measureOverflow(publicClient.origin, `${clinicPath}/patient`, publicClient.jar.header());
@@ -486,7 +548,38 @@ async function runHostedPass(client, fixture) {
     const pLogout = await publicClient.postForm(`${clinicPath}/patient/logout`, {
       [CSRF_FIELD]: extractCsrfField(logoutPage.text) || publicClient.jar.csrf(),
     });
-    record(checks, "patientLogout", pLogout.status === 303 || pLogout.status === 200, { status: pLogout.status });
+    record(checks, "patientLogout", (pLogout.status === 303 || pLogout.status === 200) && pLogout.status !== 500, {
+      status: pLogout.status,
+    });
+    await publicClient.follow(pLogout);
+    const oldDash = await publicClient.get(`${clinicPath}/patient`);
+    record(
+      checks,
+      "patientSessionInvalidated",
+      oldDash.status !== 200 || !/data-ac-mf-family="MF09"/i.test(oldDash.text || ""),
+      { status: oldDash.status }
+    );
+    const repeatLogout = await publicClient.postForm(`${clinicPath}/patient/logout`, {
+      [CSRF_FIELD]: extractCsrfField(oldDash.text) || publicClient.jar.csrf(),
+    });
+    record(checks, "patientLogoutRepeatSafe", repeatLogout.status !== 500 && repeatLogout.status < 500, {
+      status: repeatLogout.status,
+    });
+    const reLoginGet = await publicClient.get(`${clinicPath}/patient/login`);
+    const reLoginPost = await publicClient.postForm(`${clinicPath}/patient/login`, {
+      [CSRF_FIELD]: extractCsrfField(reLoginGet.text) || publicClient.jar.csrf(),
+      identifier: booking.patientPhone || "",
+      phone_country: "ZM",
+      password: fixture.password,
+    });
+    const reFollow = await publicClient.follow(reLoginPost);
+    const reDash = reFollow.status === 200 ? reFollow : await publicClient.get(`${clinicPath}/patient`);
+    record(
+      checks,
+      "patientRelogin",
+      reLoginPost.status === 303 && /data-ac-mf-family="MF09"|Patient Portal/i.test(reDash.text || ""),
+      { status: reLoginPost.status, dashboardStatus: reDash.status }
+    );
   } else {
     record(checks, "patientRegistration", false, { reason: "clinic_not_public" });
     record(checks, "patientLoginPost", false, { reason: "clinic_not_public" });
@@ -494,8 +587,13 @@ async function runHostedPass(client, fixture) {
     record(checks, "patientProfile", false, { reason: "clinic_not_public" });
     record(checks, "patientDeniedApp", false, { reason: "clinic_not_public" });
     record(checks, "patientLogout", false, { reason: "clinic_not_public" });
+    record(checks, "patientSessionInvalidated", false, { reason: "clinic_not_public" });
+    record(checks, "patientLogoutRepeatSafe", false, { reason: "clinic_not_public" });
+    record(checks, "patientRelogin", false, { reason: "clinic_not_public" });
     record(checks, "patientUnsupportedWidgetsAbsent", true, { reason: "skipped_unpublished" });
-    record(checks, "foreignClinicDenied", true, { reason: "skipped_unpublished" });
+    record(checks, "foreignClinicDenied", false, { reason: "clinic_not_public" });
+    record(checks, "wrongClinicProfile", false, { reason: "clinic_not_public" });
+    record(checks, "wrongClinicBooking", false, { reason: "clinic_not_public" });
     record(checks, "patientBookingDetail", false, { reason: "clinic_not_public" });
     record(checks, "dashboardPendingCopy", false, { reason: "clinic_not_public" });
   }
@@ -522,7 +620,7 @@ async function runOnce(pool, args, env) {
   let checks = {};
   let mobile = {};
   try {
-    const hosted = await runHostedPass(client, fixture);
+    const hosted = await runHostedPass(client, fixture, { retry: args.noRetry !== true });
     checks = hosted.checks;
     mobile = hosted.mobile;
   } catch (err) {
@@ -544,6 +642,110 @@ async function runOnce(pool, args, env) {
       reason: cleanup && cleanup.reason,
       deleted: cleanup && cleanup.deleted ? Object.keys(cleanup.deleted) : [],
     },
+  };
+}
+
+function summarizeCleanup(cleanup) {
+  return {
+    ok: Boolean(cleanup && cleanup.ok),
+    status: cleanup && cleanup.status,
+    reason: cleanup && cleanup.reason,
+    deleted: cleanup && cleanup.deleted ? Object.keys(cleanup.deleted) : [],
+  };
+}
+
+async function runRelease(pool, args, env) {
+  const smoke = await publicSmoke(args.baseUrl);
+  const leftoversBefore = await listHostedQaLeftoverOrganizations(pool, env);
+  for (const key of leftoversBefore.keys || []) {
+    await cleanupHostedAuthQaClinic(pool, key, env);
+  }
+  const clinicA = await provisionHostedAuthQaClinic(pool, {}, env);
+  if (!clinicA.ok) {
+    return { ok: false, phase: "provision_a", fixture: publicFixtureRecord(clinicA), publicSmoke: smoke };
+  }
+
+  let sessionProbe = null;
+  try {
+    sessionProbe = await runSessionProbe(args.baseUrl, clinicA, args.sessionProbe || 12);
+  } catch (err) {
+    sessionProbe = {
+      ok: false,
+      classification: "OTHER",
+      reproduced: false,
+      error: err && err.message ? String(err.message).slice(0, 200) : "session_probe_failed",
+    };
+  }
+
+  const client = createHostedClient(args.baseUrl);
+  let hosted = { checks: {}, mobile: {} };
+  try {
+    hosted = await runHostedPass(client, clinicA, { retry: false });
+  } catch (err) {
+    hosted.checks.runnerError = {
+      ok: false,
+      message: err && err.message ? String(err.message).slice(0, 200) : "hosted_run_failed",
+    };
+  }
+
+  const clinicB = await provisionHostedAuthQaClinic(pool, {}, env);
+  let attached = { ok: false };
+  let dual = { ok: false, checks: {} };
+  if (clinicB.ok) {
+    attached = await attachHostedAuthQaSharedAdmin(pool, clinicA, clinicB, env);
+    const demo = await pool.query(
+      `SELECT id FROM platform.organizations WHERE organization_key = 'activeclinic-demo' LIMIT 1`
+    );
+    if (attached.ok) {
+      dual = await runDualClinicSelector(
+        args.baseUrl,
+        clinicA,
+        clinicB,
+        demo.rows[0] && demo.rows[0].id,
+        measureOverflow
+      );
+    } else {
+      dual = { ok: false, reason: attached.reason || "attach_failed", checks: {} };
+    }
+  } else {
+    dual = { ok: false, reason: clinicB.reason || "provision_b_failed", checks: {} };
+  }
+
+  const cleanupB = clinicB.ok
+    ? await cleanupHostedAuthQaClinic(pool, clinicB.organizationKey, env)
+    : { ok: true, status: "skipped" };
+  const cleanupA = await cleanupHostedAuthQaClinic(pool, clinicA.organizationKey, env);
+  const leftoversAfter = await listHostedQaLeftoverOrganizations(pool, env);
+  const hostedOk = requiredPassed(hosted.checks);
+  const leftoversClear = leftoversAfter.ok === true && leftoversAfter.keys.length === 0;
+  return {
+    ok:
+      smoke.ok === true &&
+      hostedOk &&
+      Boolean(sessionProbe && sessionProbe.ok) &&
+      dual.ok === true &&
+      cleanupA.ok === true &&
+      cleanupB.ok === true &&
+      leftoversClear,
+    publicSmoke: smoke,
+    sessionProbe: {
+      ok: Boolean(sessionProbe && sessionProbe.ok),
+      classification: sessionProbe && sessionProbe.classification,
+      reproduced: Boolean(sessionProbe && sessionProbe.reproduced),
+      details: sessionProbe && sessionProbe.details,
+      iterations: sessionProbe && sessionProbe.iterations,
+    },
+    fixtureA: publicFixtureRecord(clinicA),
+    fixtureB: clinicB.ok ? publicFixtureRecord(clinicB) : clinicB,
+    attached: { ok: attached.ok === true, reason: attached.reason || null },
+    dual,
+    checks: hosted.checks,
+    mobile: hosted.mobile,
+    cleanupA: summarizeCleanup(cleanupA),
+    cleanupB: summarizeCleanup(cleanupB),
+    leftoversBefore: leftoversBefore.keys || [],
+    leftoversAfter: leftoversAfter.keys || [],
+    reservedPresent: leftoversAfter.reservedPresent || [],
   };
 }
 
@@ -585,6 +787,19 @@ async function main() {
     }
 
     const env = hostedQaEnv(process.env);
+    if (args.release) {
+      const report = await runRelease(pool, args, env);
+      emit({
+        ok: Boolean(report.ok),
+        tool: TOOL,
+        mode: "release",
+        baseUrl: args.baseUrl,
+        hostedShaCheckedSeparately: true,
+        ...report,
+      });
+      if (!report.ok) process.exitCode = 1;
+      return;
+    }
     const run1 = await runOnce(pool, args, env);
     const run2 = args.repeat ? await runOnce(pool, args, env) : null;
     emit({

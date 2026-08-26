@@ -200,6 +200,13 @@ async function permissionsForRole(roleKey) {
 }
 
 describe("ActiveClinic RBAC role matrix (088)", () => {
+  it("network_admin description does not claim organization-admin powers", () => {
+    const { ROLE_DESCRIPTIONS, NETWORK_ADMIN: NET } = require("../src/activeclinic/services/activeClinicAccessManagementService");
+    const text = ROLE_DESCRIPTIONS[NET];
+    assert.equal(/same powers/i.test(text), false);
+    assert.match(text, /cannot publish/i);
+    assert.match(text, /view, edit, and submit/i);
+  });
   before(async () => {
     try {
       const databaseUrl = await resetFoundationDatabase();

@@ -13,7 +13,7 @@ Catalogue migrations:
 | Role key | Scope | Notes |
 |----------|--------|--------|
 | `activeclinic_organization_admin` | Organisation | Canonical tenant admin (no clinical/finance write) |
-| `activeclinic_network_admin` | Organisation | Compat alias of organization admin |
+| `activeclinic_network_admin` | Organisation | Compat role: website view / edit / submit only; cannot publish, restore, or roll back |
 | `activeclinic_facility_admin` | Facility | Facility admin (narrowed — no clinical/finance write) |
 | `activeclinic_clinic_manager` | Facility | Operational oversight / read-oriented |
 | `activeclinic_receptionist` | Facility | Patients + appointments + reception |

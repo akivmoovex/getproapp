@@ -38,7 +38,7 @@ function generateQaPassword() {
 }
 
 function generatePhone() {
-  return `+26097${String(Date.now()).slice(-7)}`;
+  return `+26097${String(Date.now()).slice(-5)}${crypto.randomInt(10, 99)}`;
 }
 
 /**
@@ -144,6 +144,7 @@ async function provisionHostedAuthQaClinic(db, input, env) {
     tool: TOOL,
     organizationKey,
     clinicKey: organizationKey,
+    clinicName,
     adminEmail,
     adminPhone,
     password,
@@ -329,10 +330,123 @@ function publicFixtureRecord(fixture) {
     tool: TOOL,
     organizationKey: fixture.organizationKey,
     clinicKey: fixture.clinicKey,
+    clinicName: fixture.clinicName || null,
     adminEmail: fixture.adminEmail,
     passwordSet: true,
     bookable: fixture.bookable === true,
     websitePublished: fixture.websitePublished === true,
+  };
+}
+
+/**
+ * Link the source clinic's platform identity as organization admin on a second
+ * disposable clinic so hosted MF02 selector QA can run without demo-user mutation.
+ */
+async function attachHostedAuthQaSharedAdmin(db, source, target, env) {
+  const sourceEnv = hostedQaEnv(env);
+  const identity = await assertDatabaseTestingIdentity(db, sourceEnv);
+  if (!identity.ok) return identity;
+  if (!source || !source.identityId || !target || !target.organizationId) {
+    return { ok: false, reason: "missing_source_or_target" };
+  }
+  if (!isHostedQaOrganizationKey(source.organizationKey) || !isHostedQaOrganizationKey(target.organizationKey)) {
+    return { ok: false, reason: "organization_key_not_hosted_qa_prefix" };
+  }
+
+  const { createStaffMember, linkStaffMemberToIdentity } = require("../services/activeClinicStaffService");
+  const { linkIdentityToProductProfile } = require("../../platform/services/identityProductProfileService");
+  const { assignStaffRole, ORGANIZATION_ADMIN } = require("../services/activeClinicAuthorizationService");
+  const { assignStaffToFacility } = require("../services/activeClinicStaffFacilityService");
+
+  const hco = await db.query(
+    `SELECT id FROM activeclinic.healthcare_organizations WHERE organization_id = $1 LIMIT 1`,
+    [target.organizationId]
+  );
+  const fac = await db.query(
+    `SELECT id FROM activeclinic.facilities WHERE organization_id = $1 AND status = 'active' LIMIT 1`,
+    [target.organizationId]
+  );
+  if (!hco.rows[0] || !fac.rows[0]) {
+    return { ok: false, reason: "target_hco_or_facility_missing" };
+  }
+
+  const staff = await createStaffMember(db, {
+    organizationId: target.organizationId,
+    healthcareOrganizationId: hco.rows[0].id,
+    firstName: "Hosted",
+    lastName: "Shared",
+    employmentType: "permanent",
+    status: "active",
+    phone: generatePhone(),
+  });
+  if (!staff.ok) {
+    return { ok: false, reason: staff.code || "create_staff_failed" };
+  }
+
+  const linked = await linkStaffMemberToIdentity(db, {
+    id: staff.staffMember.id,
+    organizationId: target.organizationId,
+    platformIdentityId: source.identityId,
+  });
+  if (!linked.ok) {
+    return { ok: false, reason: linked.code || "identity_link_failed" };
+  }
+
+  const profile = await linkIdentityToProductProfile(db, {
+    identityId: source.identityId,
+    productKey: "activeclinic",
+    productProfileId: staff.staffMember.id,
+  });
+  if (!profile.ok && !["duplicate_product_link", "link_conflict", "product_profile_already_linked"].includes(profile.code)) {
+    return { ok: false, reason: profile.code || "product_profile_link_failed" };
+  }
+
+  const assigned = await assignStaffToFacility(db, {
+    organizationId: target.organizationId,
+    staffMemberId: staff.staffMember.id,
+    facilityId: fac.rows[0].id,
+    isPrimary: true,
+  });
+  if (!assigned.ok) {
+    return { ok: false, reason: assigned.code || "facility_assign_failed" };
+  }
+
+  const role = await assignStaffRole(db, {
+    organizationId: target.organizationId,
+    staffMemberId: staff.staffMember.id,
+    roleKey: ORGANIZATION_ADMIN,
+    scopeType: "organisation",
+  });
+  if (!role.ok) {
+    return { ok: false, reason: role.code || "role_assign_failed" };
+  }
+
+  return { ok: true, staffMemberId: staff.staffMember.id, roleKey: ORGANIZATION_ADMIN };
+}
+
+async function listHostedQaLeftoverOrganizations(db, env) {
+  const identity = await assertDatabaseTestingIdentity(db, hostedQaEnv(env));
+  if (!identity.ok) {
+    return { ok: false, keys: [], identity };
+  }
+  const rows = await db.query(
+    `SELECT organization_key
+       FROM platform.organizations
+      WHERE organization_key LIKE 'ac-hqa-%'
+         OR organization_key LIKE 'hosted-qa-%'
+      ORDER BY 1`
+  );
+  const reserved = await db.query(
+    `SELECT organization_key
+       FROM platform.organizations
+      WHERE organization_key = ANY($1::text[])
+      ORDER BY 1`,
+    [RESERVED_ORGANIZATION_KEYS]
+  );
+  return {
+    ok: true,
+    keys: rows.rows.map((row) => row.organization_key),
+    reservedPresent: reserved.rows.map((row) => row.organization_key),
   };
 }
 
@@ -348,5 +462,7 @@ module.exports = {
   prepareHostedAuthQaBookable,
   publishHostedAuthQaWebsite,
   cleanupHostedAuthQaClinic,
+  attachHostedAuthQaSharedAdmin,
+  listHostedQaLeftoverOrganizations,
   publicFixtureRecord,
 };
