@@ -1,51 +1,43 @@
 /* ActiveClinic authenticated application shell (AC-V6-10 / V7 Pass 3). Product-isolated.
    Tokens aligned to Stitch P01 Shared Application Shell (project 12272131183982732110). */
 :root {
-  --ac-bg: #f8fafc;
-  --ac-bg-page: #f8fafc;
-  --ac-bg-subtle: #f1f5f9;
-  --ac-bg-muted: #eef2f7;
+  --ac-bg: #f7f9fb;
+  --ac-bg-page: #f7f9fb;
+  --ac-bg-subtle: #f2f4f6;
+  --ac-bg-muted: #eceef0;
   --ac-surface: #ffffff;
-  --ac-ink: #0f172a;
-  --ac-text-ink: #0f172a;
-  --ac-muted: #475569;
-  --ac-text-muted: #475569;
-  --ac-text-subtle: #475569;
+  --ac-ink: #191c1e;
+  --ac-text-ink: #191c1e;
+  --ac-muted: #434653;
+  --ac-text-muted: #434653;
+  --ac-text-subtle: #434653;
   --ac-border: #e2e8f0;
   --ac-border-subtle: #e2e8f0;
-  --ac-border-strong: #cbd5e1;
-  --ac-primary: #1d4ed8;
-  --ac-primary-2: #1e40af;
-  --ac-primary-soft: #eef2ff;
-  --ac-primary-strong: #1e3a8a;
-  --ac-teal: #0f766e;
-  --ac-focus: #2563eb;
+  --ac-border-strong: #c3c6d5;
+  --ac-primary: #003c90;
+  --ac-primary-2: #0f52ba;
+  --ac-primary-soft: #d9e2ff;
+  --ac-primary-strong: #001945;
+  --ac-teal: #006a6a;
+  --ac-focus: #003c90;
   --ac-success: var(--ac-status-success);
   --ac-success-bg: var(--ac-status-success-bg);
   --ac-warning: var(--ac-status-warning);
   --ac-warning-bg: var(--ac-status-warning-bg);
   --ac-danger: var(--ac-status-danger);
   --ac-danger-bg: var(--ac-status-danger-bg);
-  --ac-radius: 12px;
-  --ac-radius-sm: 8px;
-  --ac-radius-lg: 16px;
+  --ac-radius: var(--ac-card-radius, 8px);
+  --ac-radius-sm: var(--ac-card-radius, 8px);
+  --ac-radius-lg: var(--ac-card-radius, 8px);
   --ac-radius-pill: 999px;
   --ac-radius-card: var(--ac-radius);
-  /* Pass8: prefer shared --ac-radius-* from tokens when adding new rules */
-  --ac-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
-  --ac-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --ac-shadow-card: var(--ac-shadow);
-  --ac-space-1: 0.25rem;
-  --ac-space-2: 0.5rem;
-  --ac-space-3: 0.75rem;
-  --ac-space-4: 1rem;
-  --ac-space-5: 1.5rem;
-  --ac-space-6: 2rem;
-  --ac-space-7: 2.5rem;
+  --ac-shadow: 0 1px 2px rgba(25, 28, 30, 0.06), 0 8px 24px rgba(25, 28, 30, 0.04);
+  --ac-shadow-sm: 0 1px 2px rgba(25, 28, 30, 0.05);
+  --ac-shadow-card: var(--ac-shadow-sm);
   --ac-sidebar-w: 16.5rem;
   --ac-content-max: 72rem;
-  --ac-font: "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
-  --ac-touch: 2.75rem;
+  --ac-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
+  --ac-touch: var(--ac-control-h, 2.75rem);
   --ac-color-primary: var(--ac-primary);
 }
 
@@ -68,26 +60,27 @@ body.ac-app-body {
   font-family: var(--ac-font);
   color: var(--ac-ink);
   background: var(--ac-bg-page);
-  font-size: 0.95rem;
-  line-height: 1.45;
+  font-size: var(--ac-text-body-md, 0.875rem);
+  line-height: var(--ac-leading-body, 1.428);
 }
 
 body.ac-app-body h1 {
-  font-size: 1.65rem;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.2;
+  font-size: var(--ac-text-headline-md, 1.5rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: var(--ac-leading-headline, 1.333);
   color: var(--ac-ink);
 }
 body.ac-app-body h2 {
-  font-size: 1.15rem;
-  font-weight: 700;
+  font-size: var(--ac-text-headline-sm, 1.25rem);
+  font-weight: 600;
   letter-spacing: -0.02em;
+  line-height: var(--ac-leading-headline, 1.333);
   color: var(--ac-ink);
 }
 body.ac-app-body h3 {
-  font-size: 0.95rem;
-  font-weight: 700;
+  font-size: var(--ac-text-body-md, 0.875rem);
+  font-weight: 600;
   color: var(--ac-ink);
 }
 
@@ -378,19 +371,21 @@ button:focus-visible {
 .ac-select,
 .ac-input {
   width: 100%;
-  min-height: 2.75rem;
-  padding: 0.65rem 0.8rem;
-  border: 1px solid var(--ac-border);
-  border-radius: 10px;
+  min-height: var(--ac-control-h, 2.75rem);
+  padding: 0.5rem 0.75rem;
+  border: 1px solid var(--ac-border-strong);
+  border-radius: var(--ac-control-radius, 2px);
   font: inherit;
-  background: #fff;
+  font-size: var(--ac-text-body-lg, 1rem);
+  background: var(--ac-surface);
   margin: 0 0 var(--ac-space-4);
 }
 label.ac-label {
   display: block;
-  font-size: 0.875rem;
-  font-weight: 600;
-  margin: 0 0 0.35rem;
+  font-size: var(--ac-text-caption, 0.75rem);
+  font-weight: 500;
+  line-height: var(--ac-leading-caption, 1.333);
+  margin: 0 0 var(--ac-space-1);
 }
 
 .ac-account details summary {
@@ -675,7 +670,9 @@ body.ac-drawer-open .ac-drawer {
 .ac-dashboard { display: grid; gap: var(--ac-space-4); }
 .ac-dashboard__card-title {
   margin: 0 0 var(--ac-space-3);
-  font-size: 1rem;
+  font-size: var(--ac-text-body-md, 0.875rem);
+  font-weight: 600;
+  line-height: var(--ac-leading-body, 1.428);
 }
 .ac-dashboard__lead { margin: 0 0 var(--ac-space-4); }
 .ac-dashboard__sections {
@@ -1454,7 +1451,7 @@ body.ac-app-body .ac-page-header {
   padding-bottom: var(--ac-space-3);
   border-bottom: 1px solid transparent;
 }
-body.ac-app-body .ac-page-header h1 { margin: 0 0 var(--ac-space-2); font-size: 1.65rem; }
+body.ac-app-body .ac-page-header h1 { margin: 0 0 var(--ac-space-2); font-size: var(--ac-text-headline-md, 1.5rem); font-weight: 600; }
 body.ac-app-body .ac-page-header p { color: var(--ac-muted); max-width: 42rem; }
 
 body.ac-app-body .ac-panel {
@@ -1483,8 +1480,8 @@ body.ac-app-body .ac-stat-card,
 body.ac-app-body .ac-metric-card {
   background: var(--ac-surface);
   border: 1px solid var(--ac-border);
-  border-radius: var(--ac-radius-lg);
-  padding: 1.1rem 1.15rem;
+  border-radius: var(--ac-radius);
+  padding: var(--ac-space-4) 1.15rem;
   box-shadow: var(--ac-shadow-sm);
 }
 body.ac-app-body .ac-stat-value,

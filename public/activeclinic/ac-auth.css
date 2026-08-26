@@ -1,33 +1,33 @@
 /* ActiveClinic authentication surfaces (AC-V6-S01). Product-isolated; does not alter BlessBoard. */
 :root {
-  /* Auth palette aligned to P01 Login Stitch (navy primary); shell teal remains in ac-app.css */
-  --ac-auth-bg: #f8f9ff;
+  /* Auth palette aligned to canonical P01 Login Stitch (ca8a34cf); shell teal remains in ac-app.css */
+  --ac-auth-bg: #f7f9fb;
   --ac-auth-surface: #ffffff;
   --ac-auth-surface-low: #f2f4f6;
   --ac-auth-ink: #191c1e;
   --ac-auth-muted: #434653;
   --ac-auth-border: #c3c6d5;
   --ac-auth-outline: #737784;
-  --ac-auth-primary: #00685f;
-  --ac-auth-primary-hover: #0f766e;
-  --ac-auth-primary-container: #0d9488;
+  --ac-auth-primary: #003c90;
+  --ac-auth-primary-hover: #0f52ba;
+  --ac-auth-primary-container: #0f52ba;
   --ac-auth-on-primary: #ffffff;
   --ac-auth-secondary: #006a6a;
-  --ac-auth-focus: #0d9488;
+  --ac-auth-focus: #003c90;
   --ac-auth-danger: var(--ac-status-danger);
   --ac-auth-danger-bg: var(--ac-status-danger-bg);
   --ac-auth-success: var(--ac-status-success);
   --ac-auth-success-bg: var(--ac-status-success-bg);
   --ac-auth-warning: var(--ac-status-warning);
   --ac-auth-warning-bg: var(--ac-status-warning-bg);
-  --ac-auth-radius: 0.5rem;
-  --ac-auth-radius-sm: 0.125rem;
+  --ac-auth-radius: var(--ac-card-radius, 8px);
+  --ac-auth-radius-sm: var(--ac-control-radius, 2px);
   --ac-auth-shadow: 0 1px 2px rgba(25, 28, 30, 0.06);
-  --ac-auth-gutter: 1rem;
-  --ac-auth-stack-sm: 0.5rem;
-  --ac-auth-stack-md: 1rem;
-  --ac-auth-stack-lg: 1.5rem;
-  --ac-auth-input-h: 2.75rem;
+  --ac-auth-gutter: var(--ac-space-4, 1rem);
+  --ac-auth-stack-sm: var(--ac-space-2, 0.5rem);
+  --ac-auth-stack-md: var(--ac-space-4, 1rem);
+  --ac-auth-stack-lg: var(--ac-space-5, 1.5rem);
+  --ac-auth-input-h: var(--ac-control-h, 2.75rem);
   --ac-auth-btn-h: 3rem;
   --ac-auth-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
   --ac-auth-touch: var(--ac-touch);
@@ -342,9 +342,10 @@ body.ac-auth-body {
 
 .ac-auth-field label {
   display: block;
-  font-size: 0.75rem;
+  font-size: var(--ac-text-caption, 0.75rem);
   font-weight: 500;
-  margin: 0 0 0.25rem;
+  line-height: var(--ac-leading-caption, 1.333);
+  margin: 0 0 var(--ac-space-1, 0.25rem);
   color: var(--ac-auth-ink);
 }
 
@@ -1003,11 +1004,11 @@ body.ac-auth-body[data-ac-composition="mf02-disabled"] {
 .ac-auth-card--mf {
   max-width: 26rem;
   margin: 0 auto;
-  border-radius: 1rem;
-  border: 1px solid #e2e8f0;
+  border-radius: var(--ac-auth-radius);
+  border: 1px solid var(--ac-auth-border);
   box-shadow: 0 12px 40px rgba(11, 28, 48, 0.08);
-  padding: 2rem 1.5rem 1.75rem;
-  background: #ffffff;
+  padding: var(--ac-space-6, 2rem) var(--ac-space-5, 1.5rem) 1.75rem;
+  background: var(--ac-auth-surface);
 }
 
 .ac-auth-mf-brand {
@@ -1022,7 +1023,7 @@ body.ac-auth-body[data-ac-composition="mf02-disabled"] {
 .ac-auth-mf-brand .ac-auth-mark {
   width: 3.25rem;
   height: 3.25rem;
-  border-radius: 0.85rem;
+  border-radius: var(--ac-auth-radius);
 }
 
 .ac-auth-mf-brand__name {
@@ -1041,9 +1042,11 @@ body.ac-auth-body[data-ac-composition="mf02-disabled"] {
 
 .ac-auth-h1--mf {
   text-align: center;
-  margin: 0 0 0.75rem;
-  font-size: 1.5rem;
+  margin: 0 0 var(--ac-space-3, 0.75rem);
+  font-size: var(--ac-text-headline-md, 1.5rem);
   font-weight: 600;
+  line-height: var(--ac-leading-headline, 1.333);
+  letter-spacing: -0.01em;
 }
 
 .ac-auth-desc--mf {
@@ -1172,7 +1175,7 @@ body.ac-auth-body[data-ac-composition="mf02-disabled"] {
 .ac-auth-input:focus,
 .ac-auth-select:focus,
 .ac-auth-phone:focus-within {
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.25);
+  box-shadow: 0 0 0 3px rgba(0, 60, 144, 0.22);
 }
 
 @media (min-width: 768px) {

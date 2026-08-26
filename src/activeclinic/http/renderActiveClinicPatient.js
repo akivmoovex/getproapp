@@ -18,7 +18,7 @@ const {
 } = require("./activeClinicBookingStatusCopy");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-mf-e1";
+const ASSET_VERSION = "v7-wave1-pt1";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)

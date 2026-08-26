@@ -34,12 +34,12 @@ describe("ActiveClinic Phase 9 accessibility", () => {
       assert.match(html, new RegExp(row[2]), row[0]);
       assert.match(html, /ac-a11y\.js/, row[0]);
     });
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-acw02-1/);
-    assert.match(read("src/activeclinic/http/renderActiveClinicPatient.js"), /v7-mf-e1/);
-    assert.match(read("src/activeclinic/http/renderActiveClinicAuth.js"), /v7-mf-a1/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-wave1-p1/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPatient.js"), /v7-wave1-pt1/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicAuth.js"), /v7-wave1-a1/);
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
-      /v7-parity-28/
+      /v7-wave1-1/
     );
   });
 
@@ -121,7 +121,7 @@ describe("ActiveClinic Phase 9 accessibility", () => {
     const tokens = read("public/activeclinic/ac-tokens.css");
     assert.match(tokens, /--acp-muted:\s*#3e494a/);
     const app = read("public/activeclinic/ac-app.css");
-    assert.match(app, /--ac-muted:\s*#475569/);
+    assert.match(app, /--ac-muted:\s*#434653/);
     assert.match(app, /input:focus-visible/);
     assert.match(app, /Status uses visible text plus colour/);
   });

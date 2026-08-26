@@ -34,6 +34,22 @@
   --ac-space-5: 1.5rem;
   --ac-space-6: 2rem;
   --ac-space-7: 3rem;
+  --ac-space-8: 2rem;
+
+  /* —— Wave 1: Stitch-aligned typography scale (P01 auth + internal ops) —— */
+  --ac-text-caption: 0.75rem;
+  --ac-text-body-md: 0.875rem;
+  --ac-text-body-lg: 1rem;
+  --ac-text-headline-sm: 1.25rem;
+  --ac-text-headline-md: 1.5rem;
+  --ac-text-headline-lg: 1.875rem;
+  --ac-leading-caption: 1.333;
+  --ac-leading-body: 1.428;
+  --ac-leading-headline: 1.333;
+
+  /* —— Wave 1: control + card radii (Stitch P01 login HTML) —— */
+  --ac-control-radius: 2px;
+  --ac-card-radius: 8px;
 
   /* —— Shared radii —— */
   --ac-radius-sm: 8px;
