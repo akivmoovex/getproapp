@@ -14,6 +14,8 @@ function setV5PrivateNoStore(res) {
     res.setHeader("Cache-Control", "private, no-store, no-cache, must-revalidate");
     res.setHeader("Pragma", "no-cache");
     res.setHeader("Surrogate-Control", "no-store");
+    res.setHeader("CDN-Cache-Control", "private, no-store");
+    res.setHeader("X-LiteSpeed-Cache-Control", "no-cache, no-store");
     // Cookie presence must not share a cache entry with anonymous 303s.
     const existing = res.getHeader("Vary");
     if (!existing) {
@@ -58,12 +60,26 @@ function wantsV5PrivateNoStore(pathOnly) {
 }
 
 /**
+ * Prefer originalUrl so exact `/app` stays private even if a proxy/sub-app
+ * rewrites req.path to `/` while originalUrl remains `/app`.
+ * @param {import('express').Request} [req]
+ */
+function requestPathOnly(req) {
+  const original = String((req && req.originalUrl) || "").split("?")[0];
+  const path = String((req && req.path) || "").split("?")[0];
+  const url = String((req && req.url) || "").split("?")[0];
+  if (wantsV5PrivateNoStore(original)) return original;
+  if (wantsV5PrivateNoStore(path)) return path;
+  if (wantsV5PrivateNoStore(url)) return url;
+  return original || path || url || "";
+}
+
+/**
  * Early middleware: mark auth / admin shells as non-cacheable.
  */
 function createV5PrivateNoStoreMiddleware() {
   return function v5PrivateNoStoreMiddleware(req, res, next) {
-    const pathOnly = String(req.path || "").split("?")[0];
-    if (wantsV5PrivateNoStore(pathOnly)) {
+    if (wantsV5PrivateNoStore(requestPathOnly(req))) {
       setV5PrivateNoStore(res);
     }
     return next();
@@ -73,5 +89,6 @@ function createV5PrivateNoStoreMiddleware() {
 module.exports = {
   setV5PrivateNoStore,
   wantsV5PrivateNoStore,
+  requestPathOnly,
   createV5PrivateNoStoreMiddleware,
 };

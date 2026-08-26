@@ -20,6 +20,12 @@ const {
   STATE,
 } = require("../services/activeClinicStateTaxonomy");
 const {
+  setAcAuthDecisionHeaders,
+} = require("./loadActiveClinicAuth");
+const {
+  cookieHeaderHasSessionSid,
+} = require("../../platform/session/v5SessionCookie");
+const {
   assertModuleDepartmentAvailable,
   RESULT: MODULE_RESULT,
 } = require("../services/activeClinicModuleAvailability");
@@ -84,6 +90,8 @@ function createRequireActiveClinicPermission(deps) {
         const auth = req.activeClinicAuth;
         if (!auth || !auth.authenticated) {
           const reason = (auth && auth.reason) || "unauthenticated";
+          const cookiePresent = cookieHeaderHasSessionSid(req);
+          const sessionFound = Boolean(req.v5Session && req.v5Session.authenticated);
           if (
             reason === "inactive_identity" ||
             reason === "eligibility_denied" ||
@@ -91,6 +99,13 @@ function createRequireActiveClinicPermission(deps) {
             reason === "product_mismatch" ||
             reason === "wrong_principal"
           ) {
+            setAcAuthDecisionHeaders(res, {
+              guard: "permissionMiddleware",
+              reason,
+              decision: "context_unavailable",
+              cookiePresent,
+              sessionFound,
+            });
             clearV5SessionCookie(res, { secure: isProduction, env, req });
             res.clearCookie(getCsrfCookieName(env, req), { path: "/" });
             const csrfToken = issueAccessStateCsrf(res, env, isProduction, req);
@@ -110,13 +125,13 @@ function createRequireActiveClinicPermission(deps) {
               )
             );
           }
-          if (
-            reason === "session_expired" ||
-            reason === "session_revoked" ||
-            reason === "unauthenticated"
-          ) {
-            /* fall through to login redirect */
-          }
+          setAcAuthDecisionHeaders(res, {
+            guard: "permissionMiddleware",
+            reason,
+            decision: "redirect_login",
+            cookiePresent,
+            sessionFound,
+          });
           return res.redirect(303, "/login");
         }
 

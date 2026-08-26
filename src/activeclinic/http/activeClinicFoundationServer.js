@@ -17,7 +17,11 @@ const {
 const {
   createActiveClinicErrorHandler,
 } = require("./createActiveClinicErrorHandler");
-const { createV5PrivateNoStoreMiddleware } = require("../../platform/http/v5PrivateNoStore");
+const {
+  createV5PrivateNoStoreMiddleware,
+  wantsV5PrivateNoStore,
+  requestPathOnly,
+} = require("../../platform/http/v5PrivateNoStore");
 const { createLoadV5Session } = require("../../platform/http/loadV5Session");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const {
@@ -113,7 +117,6 @@ const {
 } = require("../services/activeClinicAuthorizationService");
 
 function parseCookies(req) {
-  if (req.cookies) return;
   const header = req.headers && req.headers.cookie ? String(req.headers.cookie) : "";
   const out = {};
   if (header) {
@@ -130,6 +133,18 @@ function parseCookies(req) {
     }
   }
   req.cookies = out;
+}
+
+function restoreExactAppHomeUrl(req, res, next) {
+  const original = String(req.originalUrl || "").split("?")[0];
+  const pathOnly = String(req.path || "").split("?")[0];
+  if (original === "/app" && pathOnly !== "/app" && pathOnly !== "/app/") {
+    const qs = String(req.url || "").includes("?")
+      ? String(req.url).slice(String(req.url).indexOf("?"))
+      : "";
+    req.url = `/app${qs}`;
+  }
+  return next();
 }
 
 function escapeHtml(value) {
@@ -184,14 +199,17 @@ function createActiveClinicFoundationApp(options) {
     parseCookies(req);
     next();
   });
+  app.use(restoreExactAppHomeUrl);
 
   const publicDir = path.join(__dirname, "..", "..", "..", "public");
-  app.use(
-    express.static(publicDir, {
-      maxAge: isProduction ? "1d" : 0,
-      immutable: false,
-    })
-  );
+  const servePublic = express.static(publicDir, {
+    maxAge: isProduction ? "1d" : 0,
+    immutable: false,
+  });
+  app.use((req, res, next) => {
+    if (wantsV5PrivateNoStore(requestPathOnly(req))) return next();
+    return servePublic(req, res, next);
+  });
 
   app.use(
     createLoadV5Session({
@@ -225,6 +243,9 @@ function createActiveClinicFoundationApp(options) {
   registerActiveClinicPatientPortalRoutes(app, { getPool, env, isProduction });
 
   registerActiveClinicAuthRoutes(app, { getPool, env, isProduction });
+  // Exact GET /app must register before other /app/* routers so a later
+  // parameterized route cannot consume the staff home path.
+  registerActiveClinicAppRoutes(app, { getPool, env, isProduction });
   registerActiveClinicLifecycleRoutes(app, { getPool, env, isProduction });
   registerActiveClinicFacilityRoutes(app, { getPool, env, isProduction });
   registerActiveClinicStaffRoutes(app, { getPool, env, isProduction });
@@ -241,7 +262,6 @@ function createActiveClinicFoundationApp(options) {
   registerActiveClinicDiagnosticsRoutes(app, { getPool, env, isProduction });
   registerActiveClinicBillingRoutes(app, { getPool, env, isProduction });
   registerActiveClinicCashierRoutes(app, { getPool, env, isProduction });
-  registerActiveClinicAppRoutes(app, { getPool, env, isProduction });
   registerActiveClinicStaffAdminRoutes(app, { getPool, env, isProduction });
 
   app.get("/healthz", (req, res) => {

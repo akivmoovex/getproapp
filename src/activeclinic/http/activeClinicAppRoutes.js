@@ -212,7 +212,7 @@ function registerActiveClinicAppRoutes(app, deps) {
     }
   });
 
-  app.get("/app", requireAuth, requirePermission("activeclinic.access"), async (req, res, next) => {
+  app.get(["/app", "/app/"], requireAuth, requirePermission("activeclinic.access"), async (req, res, next) => {
     try {
       let gate = { ok: false };
       try {

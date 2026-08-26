@@ -22,6 +22,9 @@ const {
   deploymentAllowsPlatformIdentityPrincipal,
 } = require("../../platform/session/deploymentApplicationCompatibility");
 const { setV5PrivateNoStore } = require("../../platform/http/v5PrivateNoStore");
+const {
+  cookieHeaderHasSessionSid,
+} = require("../../platform/session/v5SessionCookie");
 
 /**
  * @param {{
@@ -176,6 +179,33 @@ function createLoadActiveClinicAuth(deps) {
 }
 
 /**
+ * Attribute login redirects without logging secrets.
+ * @param {import('express').Response} res
+ * @param {{
+ *   guard: string,
+ *   reason: string,
+ *   decision: string,
+ *   cookiePresent?: boolean,
+ *   sessionFound?: boolean,
+ * }} input
+ */
+function setAcAuthDecisionHeaders(res, input) {
+  try {
+    res.setHeader("X-AC-Auth-Guard", String((input && input.guard) || "").slice(0, 64));
+    res.setHeader("X-AC-Auth-Reason", String((input && input.reason) || "").slice(0, 64));
+    res.setHeader("X-AC-Auth-Decision", String((input && input.decision) || "").slice(0, 64));
+    if (input && input.cookiePresent != null) {
+      res.setHeader("X-AC-Cookie-Present", input.cookiePresent ? "1" : "0");
+    }
+    if (input && input.sessionFound != null) {
+      res.setHeader("X-AC-Session", input.sessionFound ? "found" : "missing");
+    }
+  } catch {
+    /* headers may be unavailable */
+  }
+}
+
+/**
  * Require authenticated ActiveClinic context. Password-change gate optional.
  * Eligibility / identity failures clear the ActiveClinic session and render a
  * context-unavailable state (no login↔app redirect loop).
@@ -203,11 +233,21 @@ function createRequireActiveClinicAuth(options) {
         ? req.v5Session.session.contextJson
         : {};
 
+    const cookiePresent = cookieHeaderHasSessionSid(req);
+    const sessionFound = Boolean(req.v5Session && req.v5Session.authenticated);
+
     // Patient portal sessions must never be cleared by staff gates.
     if (
       sessionContext.principalKind === "patient" ||
       (patientAuth && patientAuth.authenticated)
     ) {
+      setAcAuthDecisionHeaders(res, {
+        guard: "requireActiveClinicAuth",
+        reason: "wrong_principal_kind",
+        decision: "redirect_login",
+        cookiePresent,
+        sessionFound,
+      });
       if (req.accepts("html")) {
         return res.redirect(303, loginPath);
       }
@@ -237,6 +277,13 @@ function createRequireActiveClinicAuth(options) {
           STATE,
         } = require("../services/activeClinicStateTaxonomy");
 
+        setAcAuthDecisionHeaders(res, {
+          guard: "requireActiveClinicAuth",
+          reason,
+          decision: "context_unavailable",
+          cookiePresent,
+          sessionFound,
+        });
         clearV5SessionCookie(res, { secure: isProduction, env, req });
         res.clearCookie(getCsrfCookieName(env, req), { path: "/" });
         const csrfToken = issueCsrfToken(env);
@@ -258,13 +305,22 @@ function createRequireActiveClinicAuth(options) {
         );
       }
 
+      setAcAuthDecisionHeaders(res, {
+        guard: "requireActiveClinicAuth",
+        reason,
+        decision: "redirect_login",
+        cookiePresent,
+        sessionFound,
+      });
       if (req.accepts("html")) {
         return res.redirect(303, loginPath);
       }
       return res.status(401).json({ ok: false, code: "unauthenticated" });
     }
     if (auth.mustChangePassword && !allowPasswordChangeOnly) {
-      const pathOnly = String(req.path || "").split("?")[0];
+      const pathOnly = String(
+        (req.originalUrl || req.path || "").split("?")[0]
+      );
       if (
         pathOnly !== changePasswordPath &&
         pathOnly !== "/logout" &&
@@ -283,4 +339,5 @@ function createRequireActiveClinicAuth(options) {
 module.exports = {
   createLoadActiveClinicAuth,
   createRequireActiveClinicAuth,
+  setAcAuthDecisionHeaders,
 };

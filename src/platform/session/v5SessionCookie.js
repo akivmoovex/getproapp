@@ -64,25 +64,50 @@ function clearV5SessionCookie(res, opts) {
 }
 
 /**
+ * @param {string} header
+ * @param {string} name
+ * @returns {string | null}
+ */
+function readNamedCookieFromHeader(header, name) {
+  const raw = String(header || "");
+  if (!raw || !name) return null;
+  const parts = raw.split(";");
+  for (const part of parts) {
+    const idx = part.indexOf("=");
+    if (idx <= 0) continue;
+    const key = part.slice(0, idx).trim();
+    if (key !== name) continue;
+    const val = part.slice(idx + 1).trim();
+    try {
+      return decodeURIComponent(val);
+    } catch {
+      return val;
+    }
+  }
+  return null;
+}
+
+/**
  * @param {import('express').Request} req
  * @param {NodeJS.ProcessEnv} [env]
  */
 function readV5SessionCookie(req, env) {
   const name = getV5SessionCookieName(env, req);
-  if (req.cookies && req.cookies[name]) return String(req.cookies[name]);
-  // Manual Cookie header parse when cookie-parser is absent
   const header = req.headers && req.headers.cookie ? String(req.headers.cookie) : "";
-  if (!header) return null;
-  const parts = header.split(";");
-  for (const part of parts) {
-    const idx = part.indexOf("=");
-    if (idx <= 0) continue;
-    const key = part.slice(0, idx).trim();
-    if (key === name) {
-      return decodeURIComponent(part.slice(idx + 1).trim());
-    }
-  }
+  const fromHeader = readNamedCookieFromHeader(header, name);
+  if (fromHeader) return fromHeader;
+  if (req.cookies && req.cookies[name]) return String(req.cookies[name]);
   return null;
+}
+
+/**
+ * Safe boolean: Cookie header includes a session cookie name (`*_sid=`).
+ * Does not return or log cookie values.
+ * @param {import('express').Request} req
+ */
+function cookieHeaderHasSessionSid(req) {
+  const header = req && req.headers && req.headers.cookie ? String(req.headers.cookie) : "";
+  return /(?:^|;\s*)[^=;\s]*_sid=/i.test(header);
 }
 
 module.exports = {
@@ -91,4 +116,5 @@ module.exports = {
   setV5SessionCookie,
   clearV5SessionCookie,
   readV5SessionCookie,
+  cookieHeaderHasSessionSid,
 };
