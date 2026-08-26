@@ -358,7 +358,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     }
   );
 
-  app.post("/clinics/:clinicKey/patient/logout", async (req, res, next) => {
+  app.post("/clinics/:clinicKey/patient/logout", loadPatientAuth, async (req, res, next) => {
     try {
       const clinicKey = req.params.clinicKey;
       const clinic = await resolveClinicContext(clinicKey);
@@ -376,19 +376,26 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
       res.clearCookie(getCsrfCookieName(env), { path: "/" });
 
       if (req.activeClinicPatientAuth && req.activeClinicPatientAuth.authenticated) {
-        await getPool().query(
-          `INSERT INTO activeclinic.patient_portal_link_events
-            (organization_id, healthcare_organization_id, patient_id, platform_identity_id, event_type, metadata_json)
-           VALUES ($1, $2, $3, $4, $5, $6)`,
-          [
-            clinic.organizationId,
-            clinic.healthcareOrganizationId,
-            req.activeClinicPatientAuth.patient.id,
-            req.activeClinicPatientAuth.platformIdentity.id,
-            "logout",
-            JSON.stringify({ clinic_key: clinicKey }),
-          ]
-        );
+        const patientId =
+          req.activeClinicPatientAuth.patient && req.activeClinicPatientAuth.patient.id;
+        const identityId =
+          req.activeClinicPatientAuth.platformIdentity &&
+          req.activeClinicPatientAuth.platformIdentity.id;
+        if (patientId && identityId) {
+          await getPool().query(
+            `INSERT INTO activeclinic.patient_portal_link_events
+              (organization_id, healthcare_organization_id, patient_id, platform_identity_id, event_type, metadata_json)
+             VALUES ($1, $2, $3, $4, $5, $6)`,
+            [
+              clinic.organizationId,
+              clinic.healthcareOrganizationId,
+              patientId,
+              identityId,
+              "logout",
+              JSON.stringify({ clinic_key: clinicKey }),
+            ]
+          );
+        }
       }
 
       return res.redirect(303, `/clinics/${clinicKey}/patient/login`);

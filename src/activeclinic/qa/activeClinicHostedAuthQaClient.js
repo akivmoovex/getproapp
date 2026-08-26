@@ -12,18 +12,31 @@ const CSRF_COOKIE = "activeclinic_pronline_csrf";
 class CookieJar {
   constructor() {
     this.map = new Map();
+    this.flags = new Map();
   }
 
   absorb(setCookieHeaders) {
     const headers = [].concat(setCookieHeaders || []);
     for (const raw of headers) {
-      const part = String(raw).split(";")[0];
+      const text = String(raw);
+      const part = text.split(";")[0];
       const eq = part.indexOf("=");
       if (eq <= 0) continue;
       const name = part.slice(0, eq).trim();
       const value = part.slice(eq + 1).trim();
       if (!name) continue;
+      if (!value || /;\s*Max-Age=0/i.test(text) || /Expires=Thu, 01 Jan 1970/i.test(text)) {
+        this.map.delete(name);
+        this.flags.delete(name);
+        continue;
+      }
       this.map.set(name, value);
+      this.flags.set(name, {
+        name,
+        secure: /;\s*Secure/i.test(text),
+        httpOnly: /;\s*HttpOnly/i.test(text),
+        sameSite: ((text.match(/;\s*SameSite=([^;]+)/i) || [])[1] || "").trim(),
+      });
     }
   }
 
@@ -41,12 +54,30 @@ class CookieJar {
     return Array.from(this.map.keys()).sort();
   }
 
+  flagSummaries() {
+    return this.names().map((name) => this.flags.get(name) || { name });
+  }
+
   csrf() {
-    return this.map.get(CSRF_COOKIE) || "";
+    const named = this.map.get(CSRF_COOKIE);
+    if (named) return named;
+    for (const name of this.names()) {
+      if (/_csrf$/i.test(name) && !/blessboard/i.test(name)) return this.map.get(name) || "";
+    }
+    return "";
   }
 
   sessionPresent() {
-    return this.has(SESSION_COOKIE);
+    return this.names().some((name) => /_sid$/i.test(name) && !/blessboard/i.test(name));
+  }
+
+  clearSession() {
+    for (const name of this.names()) {
+      if (/_sid$/i.test(name)) {
+        this.map.delete(name);
+        this.flags.delete(name);
+      }
+    }
   }
 }
 
@@ -78,6 +109,8 @@ function createHostedClient(baseUrl) {
     const url = path.startsWith("http") ? path : `${origin}${path}`;
     const headers = {
       "User-Agent": "ActiveClinicHostedAuthQa/1.0",
+      Accept: "text/html,application/xhtml+xml",
+      Origin: origin,
       ...(options.headers || {}),
     };
     const cookie = jar.header();
@@ -125,8 +158,12 @@ function createHostedClient(baseUrl) {
       if (value == null) continue;
       body.set(key, String(value));
     }
+    const referer = path.startsWith("http") ? path : `${origin}${path}`;
     return request("POST", path, {
-      headers: { "Content-Type": "application/x-www-form-urlencoded" },
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        Referer: referer,
+      },
       body: body.toString(),
     });
   }

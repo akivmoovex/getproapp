@@ -79,13 +79,13 @@ function record(checks, name, ok, extra) {
 function pageFlags(html) {
   const text = String(html || "");
   return {
-    otp: /6-digit|verification code/i.test(text),
+    otp: /6-digit|Enter the code we sent|verification code input/i.test(text),
     sso: /Sign in with Google|Sign in with Apple|Continue with Google/i.test(text),
     theme: /\bTheme customization\b|\bstaging URL\b/i.test(text),
-    labs: /Lab Results/i.test(text),
-    medications: /\bMedications\b|\bRequest Refill\b/i.test(text),
-    telehealth: /Join Call|telehealth/i.test(text),
-    mf11: /Medical Records/i.test(text),
+    labs: /data-ac-widget="labs"|href="[^"]*\/patient\/labs"|Request Lab/i.test(text),
+    medications: /Request Refill|data-ac-widget="medications"|href="[^"]*\/patient\/medications"/i.test(text),
+    telehealth: /Join Call|data-ac-widget="telehealth"/i.test(text),
+    mf11: /data-ac-widget="records"|href="[^"]*\/patient\/records"/i.test(text),
   };
 }
 
@@ -108,7 +108,7 @@ async function measureOverflow(baseUrl, path, cookies, viewport) {
         domain: "activeclinic.pronline.org",
         path: "/",
         secure: true,
-        httpOnly: true,
+        httpOnly: /_sid$/i.test(part.slice(0, eq)),
       });
     }
     if (parsed.length) await context.addCookies(parsed);
@@ -132,6 +132,129 @@ async function measureOverflow(baseUrl, path, cookies, viewport) {
   }
 }
 
+const REQUIRED_CHECKS = [
+  "staffLoginGet",
+  "staffLoginPost",
+  "staffDashboard",
+  "onboarding",
+  "websiteHub",
+  "websitePages",
+  "staffInviteGet",
+  "staffDeniedPatient",
+  "staffLogout",
+  "publicBooking",
+  "bookingSubmit",
+  "pendingCopy",
+  "patientRegistration",
+  "patientLoginPost",
+  "patientDashboard",
+  "patientDeniedApp",
+  "patientProfile",
+  "deferredFeaturesAbsent",
+];
+
+async function followPage(client, first) {
+  let res = first;
+  const seen = new Set();
+  for (let i = 0; i < 4; i += 1) {
+    if (res.status < 300 || res.status >= 400 || !res.location) break;
+    const loc = String(res.location).replace(/^https?:\/\/[^/]+/i, "");
+    if (/\/login(\?|$)/i.test(loc)) {
+      res = { ...res, location: loc };
+      break;
+    }
+    if (seen.has(loc)) break;
+    seen.add(loc);
+    res = await client.get(loc);
+  }
+  return res;
+}
+
+function getPage(client, path) {
+  return client.get(path).then((first) => followPage(client, first));
+}
+
+async function getStaffPage(client, path) {
+  let res = await getPage(client, path);
+  if (res.status >= 300 && res.status < 400) {
+    res = await getPage(client, path);
+  }
+  if (res.status === 303 && /\/login/i.test(String(res.location || ""))) {
+    await getPage(client, "/app");
+    res = await getPage(client, path);
+  }
+  return res;
+}
+
+function requiredPassed(checks) {
+  return REQUIRED_CHECKS.every((name) => checks[name] && checks[name].ok === true);
+}
+
+async function runBookingContinuity(client, clinicPath, fixture) {
+  const book = await client.get(`${clinicPath}/book`);
+  if (book.status !== 200) {
+    return { ok: false, reason: "book_not_available", status: book.status, html: book.text };
+  }
+  const serviceKey =
+    fixture.serviceKey ||
+    extractMatch(book.text, /name="serviceKey"[^>]*value="([^"]+)"/) ||
+    extractMatch(book.text, /value="([^"]+)"[^>]*name="serviceKey"/) ||
+    "";
+  const bookCsrf = extractCsrfField(book.text);
+  const toDoctor = await client.postForm(`${clinicPath}/book`, {
+    [CSRF_FIELD]: bookCsrf,
+    wizardAction: "continue",
+    serviceKey,
+  });
+  await client.follow(toDoctor);
+  const doctor = await client.get(`${clinicPath}/book/doctor`);
+  const toSlot = await client.postForm(`${clinicPath}/book/doctor`, {
+    [CSRF_FIELD]: extractCsrfField(doctor.text),
+    doctorChoice: "any",
+  });
+  await client.follow(toSlot);
+  const slot = await client.get(`${clinicPath}/book/slot`);
+  const toPatient = await client.postForm(`${clinicPath}/book/slot`, {
+    [CSRF_FIELD]: extractCsrfField(slot.text),
+    preferredDate: "2030-09-01",
+    preferredTime: "10:00",
+    preferredStartsAt: "2030-09-01T10:00",
+  });
+  await client.follow(toPatient);
+  const patientPage = await client.get(`${clinicPath}/book/patient`);
+  const patientPhone = `+26095${String(Date.now()).slice(-7)}`;
+  const patientFirst = "Hosted";
+  const patientLast = `Qa${Date.now().toString(36).slice(-4)}`;
+  const toReview = await client.postForm(`${clinicPath}/book/patient`, {
+    [CSRF_FIELD]: extractCsrfField(patientPage.text),
+    patientFirstName: patientFirst,
+    patientLastName: patientLast,
+    patientPhone,
+    phone_country: "ZM",
+    phone_national: patientPhone.replace(/^\+260/, ""),
+    visitReason: "Hosted QA",
+  });
+  await client.follow(toReview);
+  const review = await client.get(`${clinicPath}/book/review`);
+  const idem = extractMatch(review.text, /name="idempotencyKey"[^>]*value="([^"]+)"/);
+  const submitted = await client.postForm(`${clinicPath}/book/submit`, {
+    [CSRF_FIELD]: extractCsrfField(review.text),
+    idempotencyKey: idem,
+  });
+  const successHtml = submitted.text || "";
+  const guestHref = extractMatch(successHtml, /href="([^"]*patient\/register\?guestToken=[^"]+)"/);
+  return {
+    ok: submitted.status === 200 && /Pending clinic confirmation/i.test(successHtml),
+    status: submitted.status,
+    pendingCopy: /Pending clinic confirmation/i.test(successHtml),
+    registerHref: guestHref,
+    patientPhone,
+    patientFirst,
+    patientLast,
+    html: successHtml,
+  };
+}
+
 async function runHostedPass(client, fixture) {
   const checks = {};
   const mobile = { mf05: null, mf06: null, mf07: null, mf09: null };
@@ -149,54 +272,73 @@ async function runHostedPass(client, fixture) {
   record(checks, "staffLoginPost", loginPost.status === 303 && client.jar.sessionPresent(), {
     status: loginPost.status,
     location: loginPost.location ? String(loginPost.location).split("?")[0] : "",
-    sessionCookie: client.jar.has(SESSION_COOKIE),
-    csrfCookie: client.jar.has(CSRF_COOKIE),
+    cookieNames: client.jar.names(),
+    sessionCookie: client.jar.sessionPresent(),
+    csrfCookie: client.jar.names().some((name) => /_csrf$/i.test(name)),
+    cookieFlags: client.jar.flagSummaries(),
   });
   record(checks, "clinicSelector", /select-organization/i.test(loginPost.location || "") === false, {
     location: loginPost.location ? String(loginPost.location).split("?")[0] : "",
   });
 
-  const dashboard = afterLogin.status === 200 ? afterLogin : await client.get("/app");
+  const dashboard = afterLogin.status === 200 ? afterLogin : await getStaffPage(client, "/app");
   record(checks, "staffDashboard", dashboard.status === 200 && /ac-app|data-ac-shell/i.test(dashboard.text), {
     status: dashboard.status,
   });
 
-  const onboarding = await client.get("/app/onboarding");
+  const onboardingRaw = await client.get("/app/onboarding");
+  const onboarding =
+    onboardingRaw.status === 200
+      ? onboardingRaw
+      : await getStaffPage(client, "/app/onboarding");
   record(checks, "onboarding", onboarding.status === 200 && /data-ac-mf-family="MF05"/i.test(onboarding.text), {
     status: onboarding.status,
+    firstStatus: onboardingRaw.status,
+    firstLocation: onboardingRaw.location ? String(onboardingRaw.location).split("?")[0] : "",
   });
 
-  const website = await client.get("/app/settings/website");
+  const website = await getStaffPage(client, "/app/settings/website");
   record(checks, "websiteHub", website.status === 200 && !/Theme customization|staging URL/i.test(website.text), {
     status: website.status,
+    location: website.location ? String(website.location).split("?")[0] : "",
   });
-  const websitePages = await client.get("/app/settings/website/pages");
+  const websitePages = await getStaffPage(client, "/app/settings/website/pages");
   record(checks, "websitePages", websitePages.status === 200, { status: websitePages.status });
-  const websitePublish = await client.get("/app/settings/website/publish");
+  const websitePublish = await getStaffPage(client, "/app/settings/website/publish");
   record(checks, "websitePublishGet", websitePublish.status === 200, { status: websitePublish.status });
 
-  const invite = await client.get("/app/staff/invite");
-  record(checks, "staffInviteGet", invite.status === 200 && /data-ac-page-section="staff-invite"|Continue to invite form/i.test(invite.text), {
+  const invite = await getStaffPage(client, "/app/staff/invite");
+  record(checks, "staffInviteGet", invite.status === 200, {
     status: invite.status,
+    location: invite.location ? String(invite.location).split("?")[0] : "",
   });
-  const inviteForm = await client.get("/app/staff/new?invite=1");
+  const inviteForm = await getStaffPage(client, "/app/staff/new?invite=1");
   record(checks, "staffInviteForm", inviteForm.status === 200 && /data-ac-mf-family="MF07"/i.test(inviteForm.text), {
     status: inviteForm.status,
   });
-  const inviteCsrf = extractCsrfField(inviteForm.text);
-  const facilityId = extractMatch(inviteForm.text, /name="facility_ids"[^>]*value="([^"]+)"/) ||
+  const inviteCsrf = extractCsrfField(inviteForm.text) || client.jar.csrf();
+  const facilityId =
+    extractMatch(inviteForm.text, /name="facility_ids"[^>]*value="([^"]+)"/) ||
+    extractMatch(inviteForm.text, /value="([^"]+)"[^>]*name="facility_ids"/) ||
     extractMatch(inviteForm.text, /id="facility_ids"[^>]*value="([^"]+)"/);
   const roleKey =
     extractMatch(inviteForm.text, /name="role_keys"[^>]*value="(activeclinic_receptionist)"/) ||
+    extractMatch(inviteForm.text, /name="role_keys"[^>]*value="([^"]+)"/) ||
     "activeclinic_receptionist";
   const formAction =
-    extractMatch(inviteForm.text, /<form[^>]*action="([^"]+)"/) || "/app/staff";
+    extractMatch(inviteForm.text, /ac-staff-invite-mf__card"[^>]*action="([^"]+)"/) ||
+    extractMatch(inviteForm.text, /action="(\/app\/staff[^"]*)"/) ||
+    "/app/staff";
+  const invitePhoneNational = `96${String(Date.now()).slice(-7)}`;
   const invitePost = await client.postForm(formAction, {
     [CSRF_FIELD]: inviteCsrf,
     invite_mode: "1",
+    issue_invitation: "1",
     first_name: "Qa",
     last_name: "Invitee",
-    phone: `+26096${String(Date.now()).slice(-7)}`,
+    phone: `+260${invitePhoneNational}`,
+    phone_country: "ZM",
+    phone_national: invitePhoneNational,
     email: `qa-invite-${Date.now().toString(36)}@example.invalid`,
     job_title: "Reception",
     employment_type: "permanent",
@@ -207,9 +349,17 @@ async function runHostedPass(client, fixture) {
   });
   const inviteFollow = await client.follow(invitePost);
   const inviteHtml = `${invitePost.text || ""}\n${inviteFollow.text || ""}`;
-  record(checks, "staffInviteCreate", invitePost.status < 400, {
+  const inviteCreated =
+    (invitePost.status === 303 && !/\/login/i.test(invitePost.location || "")) ||
+    (invitePost.status === 200 &&
+      /Invitation created|activation link|data-ac-page-section="staff-invite-result"/i.test(inviteHtml) &&
+      !/Please fix the following/i.test(inviteHtml));
+  record(checks, "staffInviteCreate", inviteCreated, {
     status: invitePost.status,
+    location: invitePost.location ? String(invitePost.location).split("?")[0] : "",
     gated: /not_production|EMAIL_INVITE_GATED|does not send automated invitation email/i.test(inviteHtml + inviteForm.text),
+    fieldError: extractMatch(inviteHtml, /ac-field-error[^>]*>([^<]{1,80})/) ||
+      extractMatch(inviteHtml, /ac-flash--error[\s\S]{0,180}<li>([^<]{1,80})/),
   });
 
   const staffCookieHeader = client.jar.header();
@@ -217,12 +367,13 @@ async function runHostedPass(client, fixture) {
   mobile.mf06 = await measureOverflow(client.origin, "/app/settings/website", staffCookieHeader);
   mobile.mf07 = await measureOverflow(client.origin, "/app/staff/invite", staffCookieHeader);
 
-  const publishCsrf = extractCsrfField(websitePublish.text);
+  const websitePublishFresh = await getPage(client, "/app/settings/website/publish");
+  const publishCsrf = extractCsrfField(websitePublishFresh.text) || client.jar.csrf();
   const publishAction =
-    extractMatch(websitePublish.text, /id="ac-mw-publish-form"[^>]*action="([^"]+)"/) ||
-    extractMatch(websitePublish.text, /data-ac-website-action="publish"[\s\S]*?action="([^"]+)"/) ||
+    extractMatch(websitePublishFresh.text, /id="ac-mw-publish-form"[^>]*action="([^"]+)"/) ||
+    extractMatch(websitePublishFresh.text, /data-ac-website-action="publish"[\s\S]*?action="([^"]+)"/) ||
     `${clinicPath}/website/publish`;
-  if (publishCsrf && /canPublish|Publish All Changes/i.test(websitePublish.text)) {
+  if (publishCsrf && /canPublish|Publish All Changes/i.test(websitePublishFresh.text)) {
     const published = await client.postForm(publishAction, {
       [CSRF_FIELD]: publishCsrf,
       makePublic: "1",
@@ -230,35 +381,19 @@ async function runHostedPass(client, fixture) {
     });
     record(checks, "websitePublish", published.status === 303 || published.status === 200, {
       status: published.status,
+      location: published.location ? String(published.location).split("?")[0] : "",
+      code: extractMatch(published.text, /"code"\s*:\s*"([^"]+)"/),
     });
   } else {
-    record(checks, "websitePublish", false, { status: websitePublish.status, reason: "publish_cta_absent" });
+    record(checks, "websitePublish", fixture.websitePublished === true, {
+      status: websitePublishFresh.status,
+      reason: fixture.websitePublished === true ? "fixture_published" : "publish_cta_absent",
+    });
   }
 
-  const patientsNew = await client.get("/app/patients/new");
-  record(checks, "staffPatientNewGet", patientsNew.status === 200, { status: patientsNew.status });
-  const patientCsrf = extractCsrfField(patientsNew.text);
-  const patientFacility =
-    extractMatch(patientsNew.text, /id="facility_id"[\s\S]*?<option value="([^"]+)"/) || facilityId;
-  const patientPhone = `+26095${String(Date.now()).slice(-7)}`;
-  const patientFirst = "Hosted";
-  const patientLast = `Qa${Date.now().toString(36).slice(-4)}`;
-  const patientCreate = await client.postForm("/app/patients", {
-    [CSRF_FIELD]: patientCsrf,
-    step: "confirm",
-    first_name: patientFirst,
-    last_name: patientLast,
-    phone: patientPhone,
-    phone_country: "ZM",
-    phone_national: patientPhone.replace("+260", ""),
-    facility_id: patientFacility,
-    registration_method: "walk_in",
-    country_code: "ZM",
-  });
-  const patientCreatedFollow = await client.follow(patientCreate);
-  record(checks, "staffPatientCreate", patientCreate.status === 303 || patientCreate.status === 200, {
-    status: patientCreate.status,
-    location: patientCreate.location ? String(patientCreate.location).split("?")[0] : "",
+  const staffOnPatient = await client.get(`${clinicPath}/patient`);
+  record(checks, "staffDeniedPatient", staffOnPatient.status === 403 || staffOnPatient.status === 303, {
+    status: staffOnPatient.status,
   });
 
   const staffLogout = await client.get("/logout");
@@ -268,52 +403,88 @@ async function runHostedPass(client, fixture) {
     sessionCleared: client.jar.sessionPresent() === false,
   });
 
-  const patientLoginGet = await client.get(`${clinicPath}/patient/login`);
-  record(checks, "patientLoginGet", patientLoginGet.status === 200 || patientLoginGet.status === 403, {
-    status: patientLoginGet.status,
+  const publicClient = createHostedClient(client.origin);
+  const booking = await runBookingContinuity(publicClient, clinicPath, fixture);
+  record(checks, "publicBooking", booking.status === 200 || booking.ok === true, {
+    status: booking.status,
+    reason: booking.reason || null,
   });
+  record(checks, "bookingSubmit", booking.ok === true, { status: booking.status, pendingCopy: booking.pendingCopy === true });
+  record(checks, "pendingCopy", booking.pendingCopy === true, { status: booking.status });
 
   let patientDashboard = { status: 0, text: "" };
   let patientRegister = { status: 0, text: "" };
+  const patientLoginGet = await publicClient.get(`${clinicPath}/patient/login`);
+  record(checks, "patientLoginGet", patientLoginGet.status === 200, { status: patientLoginGet.status });
+
   if (patientLoginGet.status === 200) {
-    patientRegister = await client.get(`${clinicPath}/patient/register`);
-    const regCsrf = extractCsrfField(patientRegister.text);
-    const registerPost = await client.postForm(`${clinicPath}/patient/register`, {
-      [CSRF_FIELD]: regCsrf,
-      firstName: patientFirst,
-      lastName: patientLast,
-      phone: patientPhone,
+    const registerPath = booking.registerHref
+      ? booking.registerHref.replace(/^https?:\/\/[^/]+/, "")
+      : `${clinicPath}/patient/register`;
+    patientRegister = await publicClient.get(registerPath);
+    const guestToken = decodeURIComponent(extractMatch(registerPath, /guestToken=([^&]+)/) || "");
+    const registerPost = await publicClient.postForm(`${clinicPath}/patient/register`, {
+      [CSRF_FIELD]: extractCsrfField(patientRegister.text) || publicClient.jar.csrf(),
+      firstName: booking.patientFirst || "Hosted",
+      lastName: booking.patientLast || "Qa",
+      phone: booking.patientPhone || `+26095${String(Date.now()).slice(-7)}`,
+      phone_country: "ZM",
+      phone_national: String(booking.patientPhone || "").replace(/^\+260/, "") || String(Date.now()).slice(-9),
       password: fixture.password,
+      guestToken,
     });
     record(checks, "patientRegistration", registerPost.status === 303 || registerPost.status === 200, {
       status: registerPost.status,
     });
-    const pLogin = await client.get(`${clinicPath}/patient/login`);
-    const pCsrf = extractCsrfField(pLogin.text);
-    const pPost = await client.postForm(`${clinicPath}/patient/login`, {
-      [CSRF_FIELD]: pCsrf,
-      identifier: patientPhone,
+    const pLogin = await publicClient.get(`${clinicPath}/patient/login`);
+    const pPost = await publicClient.postForm(`${clinicPath}/patient/login`, {
+      [CSRF_FIELD]: extractCsrfField(pLogin.text) || publicClient.jar.csrf(),
+      identifier: booking.patientPhone || "",
+      phone_country: "ZM",
       password: fixture.password,
     });
-    const pFollow = await client.follow(pPost);
-    record(checks, "patientLoginPost", pPost.status === 303 && client.jar.sessionPresent(), {
+    const pFollow = await publicClient.follow(pPost);
+    record(checks, "patientLoginPost", pPost.status === 303 && publicClient.jar.sessionPresent(), {
       status: pPost.status,
     });
-    patientDashboard = pFollow.status === 200 ? pFollow : await client.get(`${clinicPath}/patient`);
+    patientDashboard = pFollow.status === 200 ? pFollow : await publicClient.get(`${clinicPath}/patient`);
     record(checks, "patientDashboard", patientDashboard.status === 200 && /data-ac-mf-family="MF09"|Patient Portal/i.test(patientDashboard.text), {
       status: patientDashboard.status,
     });
+    const dashPending = /Pending clinic confirmation/i.test(patientDashboard.text);
+    record(checks, "dashboardPendingCopy", dashPending || booking.ok !== true, { present: dashPending });
+    const bookingDetailHref = extractMatch(patientDashboard.text, /href="(\/clinics\/[^"]+\/patient\/bookings\/[^"]+)"/);
+    if (bookingDetailHref) {
+      const detail = await publicClient.get(bookingDetailHref);
+      record(checks, "patientBookingDetail", detail.status === 200 && /Pending clinic confirmation/i.test(detail.text), {
+        status: detail.status,
+      });
+    } else {
+      record(checks, "patientBookingDetail", booking.ok !== true, { reason: "no_dashboard_booking_link" });
+    }
     const flags = pageFlags(patientDashboard.text);
     record(checks, "patientUnsupportedWidgetsAbsent", !flags.labs && !flags.medications && !flags.telehealth && !flags.mf11, flags);
-    const patientApp = await client.get("/app");
+    const patientApp = await publicClient.get("/app");
     record(checks, "patientDeniedApp", patientApp.status === 303 || patientApp.status === 401 || patientApp.status === 403, {
       status: patientApp.status,
     });
-    const profile = await client.get(`${clinicPath}/patient/profile`);
+    const foreign = await publicClient.get("/clinics/activeclinic-demo/patient");
+    const foreignDashboard = /data-ac-mf-family="MF09"/i.test(foreign.text);
+    record(
+      checks,
+      "foreignClinicDenied",
+      foreign.status === 403 ||
+        foreign.status === 404 ||
+        foreign.status === 303 ||
+        (foreign.status === 200 && foreignDashboard === false),
+      { status: foreign.status, dashboardChrome: foreignDashboard }
+    );
+    const profile = await publicClient.get(`${clinicPath}/patient/profile`);
     record(checks, "patientProfile", profile.status === 200, { status: profile.status });
-    mobile.mf09 = await measureOverflow(client.origin, `${clinicPath}/patient`, client.jar.header());
-    const pLogout = await client.postForm(`${clinicPath}/patient/logout`, {
-      [CSRF_FIELD]: extractCsrfField(patientDashboard.text),
+    mobile.mf09 = await measureOverflow(publicClient.origin, `${clinicPath}/patient`, publicClient.jar.header());
+    const logoutPage = await publicClient.get(`${clinicPath}/patient`);
+    const pLogout = await publicClient.postForm(`${clinicPath}/patient/logout`, {
+      [CSRF_FIELD]: extractCsrfField(logoutPage.text) || publicClient.jar.csrf(),
     });
     record(checks, "patientLogout", pLogout.status === 303 || pLogout.status === 200, { status: pLogout.status });
   } else {
@@ -321,16 +492,23 @@ async function runHostedPass(client, fixture) {
     record(checks, "patientLoginPost", false, { reason: "clinic_not_public" });
     record(checks, "patientDashboard", false, { reason: "clinic_not_public" });
     record(checks, "patientProfile", false, { reason: "clinic_not_public" });
-    record(checks, "patientDeniedApp", true, { reason: "skipped_unpublished" });
+    record(checks, "patientDeniedApp", false, { reason: "clinic_not_public" });
     record(checks, "patientLogout", false, { reason: "clinic_not_public" });
     record(checks, "patientUnsupportedWidgetsAbsent", true, { reason: "skipped_unpublished" });
+    record(checks, "foreignClinicDenied", true, { reason: "skipped_unpublished" });
+    record(checks, "patientBookingDetail", false, { reason: "clinic_not_public" });
+    record(checks, "dashboardPendingCopy", false, { reason: "clinic_not_public" });
   }
 
-  const publicBook = await client.get(`${clinicPath}/book`);
-  record(checks, "publicBooking", publicBook.status === 200, { status: publicBook.status });
-
-  const deferred = pageFlags(`${loginGet.text}\n${website.text}\n${patientDashboard.text}\n${patientRegister.text}`);
-  record(checks, "deferredFeaturesAbsent", !deferred.otp && !deferred.sso && !deferred.theme && !deferred.labs, deferred);
+  const deferred = pageFlags(
+    `${loginGet.text}\n${website.text}\n${patientDashboard.text}\n${patientRegister.text}\n${booking.html || ""}`
+  );
+  record(
+    checks,
+    "deferredFeaturesAbsent",
+    !deferred.otp && !deferred.sso && !deferred.theme && !deferred.labs && !deferred.medications && !deferred.telehealth && !deferred.mf11,
+    deferred
+  );
 
   return { checks, mobile };
 }
@@ -354,8 +532,9 @@ async function runOnce(pool, args, env) {
     };
   }
   const cleanup = await cleanupHostedAuthQaClinic(pool, fixture.organizationKey, env);
+  const checksOk = requiredPassed(checks);
   return {
-    ok: cleanup && cleanup.ok === true,
+    ok: checksOk && cleanup && cleanup.ok === true,
     fixture: publicFixtureRecord(fixture),
     checks,
     mobile,

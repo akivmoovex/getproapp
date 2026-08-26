@@ -405,10 +405,8 @@ describe("ActiveClinic MF09 patient dashboard chrome", () => {
       .get(`/clinics/${other.clinicKey}/patient`)
       .set("Cookie", `${COOKIE_ACTIVECLINIC_ORG}=${sid}`)
       .redirects(0);
-    assert.ok([200, 302, 303, 401, 403].includes(otherClinic.status));
-    if (otherClinic.status === 200) {
-      assert.doesNotMatch(otherClinic.text, new RegExp(foreignBooking.booking.requestNumber));
-    }
+    assert.ok([403, 303, 401].includes(otherClinic.status), `foreign clinic ${otherClinic.status}`);
+    assert.doesNotMatch(otherClinic.text, /data-ac-mf-family="MF09"/);
   });
 
   it("staff session cannot own the patient dashboard", async () => {

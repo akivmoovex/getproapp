@@ -65,6 +65,17 @@ function createLoadActiveClinicPatientAuth(deps) {
         return next();
       }
 
+      const urlClinicKey = String((req.params && req.params.clinicKey) || "")
+        .trim()
+        .toLowerCase();
+      const sessionClinicKey = String(sessionContext.clinicKey || "")
+        .trim()
+        .toLowerCase();
+      if (urlClinicKey && sessionClinicKey && urlClinicKey !== sessionClinicKey) {
+        req.activeClinicPatientAuth.reason = "wrong_clinic_context";
+        return next();
+      }
+
       const portalOnly = sessionContext.portalOnly === true;
       if (
         (!portalOnly && !sessionContext.patientId) ||
@@ -218,6 +229,7 @@ function createRequireActiveClinicPatientAuth(options) {
         reason === "wrong_principal" ||
         reason === "wrong_principal_kind" ||
         reason === "patient_mismatch" ||
+        reason === "wrong_clinic_context" ||
         reason === "invalid_session_context";
 
       if (contextDenied && req.accepts("html")) {
