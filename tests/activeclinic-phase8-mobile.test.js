@@ -55,7 +55,7 @@ describe("ActiveClinic Phase 8 mobile hardening", () => {
     assert.match(html, /data-ac-public-chrome="mf-register"/);
     assert.doesNotMatch(html, /data-ac-mobile-bottom-nav="platform"/);
     assert.match(html, /viewport-fit=cover/);
-    assert.match(html, /v7-v1-closure-p1/);
+    assert.match(html, /v7-proj106-p1/);
     const admin = renderPublicPage({
       pageId: "public-register-clinic",
       pageTitle: "Register",

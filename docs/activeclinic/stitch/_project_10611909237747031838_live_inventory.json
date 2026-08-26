@@ -1,0 +1,655 @@
+{
+  "projectId": "10611909237747031838",
+  "fetchedAt": "2026-08-26T20:11:59.154Z",
+  "previousCount": 108,
+  "screens": [
+    {
+      "stitchId": "2bfbc9c71ad64bfca245d9e1a26f837d",
+      "name": "active-clinic-03-desktop-login",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VjXRqO2EGuoY6oy6lPEqKITlthiP2s_mte7K9haUie2CVPU0Q4mhenjega7PxX4u1ZexA00iSm7Ys2mwYaQdA2ikqWMM_Ivf0yxq7YG7oipE0HG2xxwj2KhUv8QKt3Ngp9JjQqbW2T0Bi2mEN11w8Xb6lblHgnImnZCBFAng3JMY9WjLxHkF1D6Yd0Qq4KeDJaHkWtvRr2F7uN-zNqueVM2Apg1lcJC9V99HgBWp6qG3LpCPU9FsyWKcQ",
+      "updateTime": null
+    },
+    {
+      "stitchId": "cbaed824e43d40f980f1af298db6cd5f",
+      "name": "MF08-04 Verification Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UnlX9Y9IxUuegtubXKexB1vVdWhRiyOHo1Ul8IEqApewkQ6iAx6BvK1vltoNeG_ZE4JkiIGrBgOX0xZ5oNCnQ7Oif_w_H7-QdOE09Elb76b-6eU9gTEKFg9qfKeY0RJIWgvXJ6lIeyUyyliEXeKXNvlbzF9S2GFhrdyK_D64HY9170XstPQYDQJL9Yp2cQR3o2s5XLkhVVy9wfOFHESeq2xv68ev0mcdkzSWlxYCXfFo6bW3cGfrnA6A5I",
+      "updateTime": null
+    },
+    {
+      "stitchId": "f90550e4e0924997a8cada0a034e76d7",
+      "name": "MF03-08 Registration Success Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WfyXPcDzhjFNwIpC6R0CsjER8EGJ_pEoCHv9t0n4___l-1k-u-xRtvNcxRKrJuwZqpC1Eje7Bvv0bL2tiHylts8LAStGtk6aJwLvYBdx1047kKHMhA4GC1Zy8eAhiwVoznG1ew6GnnXeDkwt8_N4ngvZ_ylrn3i3Gr8yICBMeuxZesot7rp_9R5fEfO57eFmY2NKcx8lLUJuw1QokBTx0a3pgrzd2sH7G3Jb-aCI535Wa0HbdzmgrA4Uz4",
+      "updateTime": null
+    },
+    {
+      "stitchId": "27d259868bd846c091c61d27744a2c42",
+      "name": "MW03-04 Section Settings",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Wi4g4FpxSTmII68_lQ0AlRjq6zAjVna2maIjomxoJWvi9IDYCnkMIrKw-vWTMqVvGpB6RFAW7XIPuJse8A5BWQhiTZA_kxx8ij-VXt38jDbERuX88UNo-9JzMkbLNU7S-ROiswgAJNEtb4zM5kkR6euq1_CqHAcFXSr9X-7lXJV9iym0QBWLMz8y5ots4JLx1uKaaXUjqXP4mdhMJYpWdwcJe-EWVaPjFO_eri-5X7aNTc9BuWzwRbsHIG",
+      "updateTime": null
+    },
+    {
+      "stitchId": "5f5c82c6ede64be892ca6757ecd0823c",
+      "name": "MF11-04 Lab Result Detail Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1U9iBh07mh-j79abPtYPtH1tHufW5HS3PDGCnI9zRKCEYB-b7SMT3fQpEg5V9FqsiwD36PBXh_yAPRHUcdIwJqi_YgGHgjqQB4lzkiDTIuva85CT3gyw-IY8yyOck3gh_lBMsmo1XVGEVXSiPLybmdx7MjOfGKmsBYv7UK_X2yT8CIzmp2vCI0PDuxO4i1QsKtCqCQVtyr_JLYPo3XlSLoDl-akLPEROPhDHaA6CI09mtz8SLORuOYuVsQ",
+      "updateTime": null
+    },
+    {
+      "stitchId": "f300be014a6148329910762c0b2970c8",
+      "name": "active-clinic-03-desktop-validation-error",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XmMLnPAm6z7rlR0YmIa3Lm8MGwvRAiSZRKiJtYHxjOY7obCuLJU_o8yKaj8t1xq5Pdl1jQchnVMXUB_Pdzq076v7C4m-fwLAjO2kkKtQvsJUqfSVFrboneaQypR_sC0ULq-Jab7ybcTxNDXWWD2Da19-PZtfI9sOZ0--hz9aOcUd9dMQiBLhiBgSNpH7ZtQj1hxVk5ImPPmE7C_Lbj0M2aoy2Jhatrho6cCPMsbiRzJmppbcwa7mbj9Pce",
+      "updateTime": null
+    },
+    {
+      "stitchId": "8522ea2d33ce4f748554f5535d004264",
+      "name": "MF06-04 Website Setup Checklist Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1X86z8jqhtSTYTm942rPOm8O2_D_5i5rv4yLGb1cj2EPivQVXLr_ZV3uqX3W3cshMjHl5uIqXa-wU7RV8yO-fm-QKgc9i-j7KxI1bAhidh0ZxnCg3UdR0upKORgWvdOC7gDoutWin1qjTHbKne-3KKr7SXx5H8IVIWv24bfQHNbWBMDXPCQdGE0rZYFyoDdIjRQQeJwGdCGI7i0qjI7Fq-LOBEpLc14px9RzCeKG1LdJkZHVjOlocechtHe",
+      "updateTime": null
+    },
+    {
+      "stitchId": "e12e282fbf784eff998dc5bcaf23ad13",
+      "name": "MF06-03 Website Setup Checklist Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WzX8EBrmeCOzpSb2zQXHFhWn4q85Lv1ptuO3O9QSD_2ZL803RN-MUfCaa_fXiVjsbFsHhb9c9sB-mX1ZUTRgs1hcY25ZnIf6lVE99RJtX8iApkLMPuTgbO2iHU9E5jciPqr5v71EFEzsBI8UbmzOATewQ2X_btgqu3ymeTvOGuzXotAuiBb__picBt6J6Hl0bVIi4ktGvv5HbLfl9Hx46ohBw-3xyW6-x3enamp2LWnLNjUIYBz4dm0fJH",
+      "updateTime": null
+    },
+    {
+      "stitchId": "70cbbaefaa7f4e2ca2aafb583c33d84f",
+      "name": "MW02-02 Inline Image Editing",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VchhBr16uHbLm7rf6pYMVyB7Wx0k1L3AgmataKf7_q3jBD-ux3p0onDTYpUDlxz79eO_5i2PTDswnSICDwFVxTaE8kktdccv8lzkFAvLVCZMcSBxMPtZ_yHK4Iln6gli4PVa32Z1GzaTnx-twCM1Vbv6O8Nxil6Wyc6wXt2aQo8XwE-DWGMIVm-yXywSyZPJE6ozltRoDTRdqemSA1Hsfp6U6ld2nf3GLCf5MoHrCh4y2sCn5A5b2h5g5r",
+      "updateTime": null
+    },
+    {
+      "stitchId": "9c0157d10d6f439f9892f89848f5d19c",
+      "name": "MF09-02 Patient Dashboard Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WyxGjj59h-ORgezMA1RL__ibYK8QyYBspO8pIrpm1MYyR0UPUdItTeoUsFXD9P57wRK07h-yPHk2yYjQ9S4K98o8q6BCU_jAaDKMOTgy4-BR7nfgtpdhUF4YyQW-uV1xhqkUQmCwJ1r_hqvi4w_KRo_DD1YmjEwb-Wbqgook9GlmR2QIGxsqKIkA8Yke9pgD7NNnpV5PKxCixiG_SSA4YMY7qP0qbzA0ipzrsf9CO2jkFUNhnc_O50SxW4",
+      "updateTime": null
+    },
+    {
+      "stitchId": "451748f8ee4b48ecb16c29137adb043d",
+      "name": "MW06-04 Media Details",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1U1ci2RzSOrHxaycQH4ei3jd1FGkKVT77Oet_iJ7pudzQ5uQufjXE97X7TMzFEPqGQtGQbs9gjWhIaoRk5GpoDMjaU8L2Sqb3UXgtEFc583_iDxvbJ_-HDrezKxQRIO9dszSxvSZ3zCe0tOwj1TPlTIcx5rjyRZnLu89Ji8cnIY_UOk4gB32gklwrBiVFpBOrOPyAHjE0z1crI_eTRugk7-Sn9yho2vxly8Gl1KO8KMw-PpGrqayz9BdO_R",
+      "updateTime": null
+    },
+    {
+      "stitchId": "ebedb04bff81477da2f0aca599a33daf",
+      "name": "MW09-03 Edit Content Item",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VGWLXVC8u3g0wrFwIRLW-9UP0_cGFRWCPGruxWDuzjOSZB7LdDZrLjRMI8CH-RvLHKqOfMWTD3lSdx6ptuisXZepuQGMezz2hBrw8M7iTJPdZl381FsvWAV4TGyYV_VYMuETvr2f5Vs7V3hgHm-flE9XaarsuGE-Hq6DwpUpiLunkfPS-roPrTrh_895ryDedqxgpG66OoqzA6-WZSGmVvWpIE1wzY1bacpAyaABf-AOT816QzYkUSoHwm",
+      "updateTime": null
+    },
+    {
+      "stitchId": "44c7c2fe9fff497980f9ca5b903cb785",
+      "name": "MF07-02 Invite Staff Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WtqRKujsCDpm3q4kBC7P1p6J_94yY1tZMIUHlnfyKGSuq6g85lAUEwXPzcN590ab8b1xdwpk6LterP4tFYRlvcZnW3E0MMI3CSZUYaMJ08tIk5ei-zdyNq8d5JNoFTbz0j7Piwy0Lr1_fccnp5O1Bu1oaSYsCkX6dkEVVMtKDN6PGX4L4Rn_Gp4OkGGIHt-RUJ8rCvFaf4pZLnctNpkG9qHr8rXkuXH-F9C1LgoXhwsm58Os4_WpmCgVop",
+      "updateTime": null
+    },
+    {
+      "stitchId": "50e275a59f80463d996fcb29d2b6273d",
+      "name": "MF04-02 Forgot Password Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1W2HRWW9gRwGV6Y1XhWVK51A3WCktyoUZG4Y2Ste9sKPi50zJ8SISAnlJDB5CXLpkf-e07QMg_9ymhsYm8g0TY-Ts94KT-bS6GSZm1Iv19LQMJYdg3mNb68AXDIb9AJJV-9psHLz-yX_LdC_uHZh2GtHshkDAb2OswN3F3nKJJ-3YiS2AkDZfTgDbTv53P4Q7w1pOibjYVr3wcDGmzV8DllCl2EF4_VR_0kz1ZV3_k65gO_yqrNOLlmI2A5",
+      "updateTime": null
+    },
+    {
+      "stitchId": "1899e7e6bbbc4a65ba083dcbe0d8fa0d",
+      "name": "ACW06-02 About ActiveClinic Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VvjHGp-2HCsHBvvW54WcSCv8BdYgFv2iANs80vrTo44yQqEmZw5n4g7XeM-dschzSI9_sVOKfLSOreKHOZ98pXvthqmo-UuG-5fZsHFR91qKzFqaxjzl0MjyvaQAoZem_XI0EFUXxN8fM17D-OO1csGfmdZU7SQKt2RZn3zN4dCcT3zYpbLbnQLpzANLG-ZkcFJnZoyiyqHmsXmxwUEjUMH2alxD2eFBV1jl6vH3pnpkFiPuWmeLp9icLk",
+      "updateTime": null
+    },
+    {
+      "stitchId": "00089a7dfc6848b0aedbe2acbd4b3f6f",
+      "name": "ACW02-02 Clinic Directory Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1W0rGIlCcNyT01ffZfgLHWHP_r0IBJaXPPrQua3TE3xsHfr8afoDiJ-nemyRNS8uYJq82rsTC9agTCMjG8hxkoS913h9VRc-vfk1Kzzg1ZELAY6iGvTnsLqRQi7ZnAYLNfQkJG5_Xc7XDZ_lE3voW58m_g6vj_J3F-QObEQgMNdwzLtEqhVwWOCbPF9QQDkEAftMDv0caMPsG0Ls_qh_DkLImnP_s5FeBGT7b9lEElOBXpskf2w1jFhy_wG",
+      "updateTime": null
+    },
+    {
+      "stitchId": "a2aaa656090347548594e79d9c7b401d",
+      "name": "MW04-01 Pages Manager",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VAnbMzTV7g-o44Uxtb-HxWCvPOfwbOrO5vyCadkP-oQA2-UU10qoTTK6tS3fk4zvBHElRhokdQyFpJM1u02F6g3G3tFADU9S7mRrFG4pWqgtAJ9PF0IG8T9c3AZqPWKcp5Tp0wSL3wHzXk8Qw2CioL0Qx2qSC8vv53DNKDdQe8S7c3OpPzOSgNpQhZWRM6z-7RTiI3VcFs3lw-j_bd-zi8tO4Nxg9rjR-e-oM2R-k_jJVblILCSBn-E8V8",
+      "updateTime": null
+    },
+    {
+      "stitchId": "2e1ef6377ace4b4ea16737d785071c7f",
+      "name": "ACW04-02 Clinic Website Feature Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Uvg9r72bCu47eFjpxePCHSJkdlEFkOZ2iK3v0XGJKE1sCbOhzJptmWGRPL-64_ak9q7Pa3jZRl2wXNOBSUTCcKzxqB6VC7R-_d7hLGzimesZEeuQ-Y0CO-5r_jgxYNZsxjFvdkxU5xM6MhlxkXhsW0CQPqG5AYssGbTt8c7dPCEy_uTZ3leUAy2yVwC028rZWxuIVZSXAPzwWViZje9rnd636bdn_I_2LKzOESciN3TdMiH2fNkP_zPwWN",
+      "updateTime": null
+    },
+    {
+      "stitchId": "c755d15f21144bcba48ccb5579e3dc07",
+      "name": "MF04-04 Verification Code Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VEDjPLxlrrByPo4qLBIbgDMdjPynY8ZV4_yHct8xBstUAkR32_oEY-5OCLT8TnXJC3rQcAiutz70mScxxzC5EniM5qU8aa0YttWanKjsLMtSqNd1yhKfQHu_NkjCyn4jmMk6aZRF6BG15FgmhvOjmbpTKoKlniKqT7MCv7w3Nfx3IF9B9z8_3gO5XQWCtwvtE0sRRh0lFrqZzAnoL6zNxse5yXMsuhbPZGpu_bSBUarlxE5wmjZCfWvsIS",
+      "updateTime": null
+    },
+    {
+      "stitchId": "b6287290e9264712a5b89da04c12a325",
+      "name": "MW01-02 Clinic Website Mobile Home",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VxOa8KYSzHvHEsUhRhkHn_niIp3Fo0Qkn7ST42o1CN2fEo3PYf_fiuKJMQlNWp4OsfDJtYyrkVnBYW7i3AxX2W-SbPnpY6-Tj9g3GqyFrHyBbPRXJtiylz-NCstGeih7OCs4AKorrF0bqQXtK-AS5EyPI455QfaTVsrzoxpk8m-EGrjVCy7zWhJQSxAt8ynRUSMu-kDy7Or_zXkZCvtV4bi4QF6amaW4afruVetX4E3G24waXQkHmFn-8W",
+      "updateTime": null
+    },
+    {
+      "stitchId": "f19c2a311e9b4f0d878e3ec51dae2769",
+      "name": "MW03-01 Manage Sections",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UDhRhKME0VFDMuLj-0LL7glGq_l-ITyPGMK-1lfwxC-njKDLTU3rCGm-sJiJ0nyJQw_AC9x7JwjTu-p7morCWK_eu7YRHlCaI_hsf6i-RFOqSv4vwjf8kBA37GiWiF_SqHzxRkRa9aiSQG7rhj6mqYN46ZxyDlFaEzkqiyv2GBr0OYt8wIb1ZZhKZNuOeOVMEDOv6XTTZhhYj5AspLcGZarp6GR-AqDwx_0zptXN9CPLPR1skBuywVamp9",
+      "updateTime": null
+    },
+    {
+      "stitchId": "52a261801b9149c788445e50eab8b379",
+      "name": "MF11-03 Lab Result Detail Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VvkO6cT36c83TQKQn2dIQYJOdEGW9Ptp9jGScEiG1Ge-ciontCg-pRtomxKd42bzJr1lENygbkmSPi5J0lZnayfE03Rp_0MFttc95Cq3XWUhgwvUfAQU1a2paThbDvrTWcuKI7Z_2gax1HnWyqOSmdnh-SDbPZf2oWoHke9FM5sHX5F_FAEQU6Bs_re-BpgTSepPYcqBlLNinYLo5AXtLm3dq33Iw_X_BGL3unxdKte534A1zeFgvjYCo",
+      "updateTime": null
+    },
+    {
+      "stitchId": "48a4b01abbf14eaca2265e7ab4b05e1e",
+      "name": "MW07-01 Site Status & Publishing",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VyIhamZn4qwU-y3hJFAOJwRs80ctMXZYhSzxiRLKMmTeeAj2e50mPZzZ4CcRmlNtlRjg8hTypDis2snb_dS76MN1fz-uDdvU8Dg0RisflnWIhqSX5JRSXEMXbhBd9PJ1ptuxmh8UxwuE6rFQtLfCHyABoWnCWU-1jJD8kMsqwUgPCIGeT4Xu_vuO7gRPrZAJkgxdnqqX3Lz8ObMlH-n3xou34Ddf3Senmi1uZeKQpGbcMoeOq8VsUWAo4p",
+      "updateTime": null
+    },
+    {
+      "stitchId": "2cf8f6ff9e9242a3a114ff7c2d8108f3",
+      "name": "MF08-02 Patient Registration Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VXuXQahZUXRLyfuUkT3wiR6wS_blT-56P-llNJn-tw3QEpRejsj0IzFxXJcBt0UrBS003y77BPk7ST3qNYBg0-ohGlf2AaxLJnHZIuGADKOXTfsRlURFsiBEKcIK-BgkwnwfSQYCZDyR49AHAQ20CdUbuPZgJpVU-1hqw3JmDdGBMNCpHUetg-ZcxwUpUWnvrIQkU72lmdkHb988omI43J-aQarwPGogBwxi_PhsYArVgTTIIq394sT549",
+      "updateTime": null
+    },
+    {
+      "stitchId": "9ea79123a4e04082ac9e478a438fe047",
+      "name": "MF10-02 Select Service Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Uc99RZNOayTWszDGpmreAVs9v2YE8BEhZVRGycNOSzOKrx_jrRekyoglNnerWCs0CQciE8X9QoPYPy2z2Jiy0I3J-yAy-x9u-L1pqSKISL5T7iMtdcifY1XAX9wtPIYUpOHO3neOFyaoWF7Uj0okM3uTQ19IHZ5Npe_5OJpJlcp4XTTluh3BsD3o8C7hz1ZHXvjGedfPNL4NVRyIJTZA7xzBJ-3KSDT2s5MinZgp-tkmCIUuIRsharveil",
+      "updateTime": null
+    },
+    {
+      "stitchId": "6a9ab5333ac9417c8705c5a880d11431",
+      "name": "MF02-03 No Clinic Access",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XbZd4SYieL_f6YUeTHiNDWW5b-LqQv9zuE1lExcX5kCoalq4SniHttuuI1fw4S6uN4JsAx4lX4DwV3DmoKvphM8QDOzSLuGmG8LBXBCeGXSenPJqN7r7zcB5fJ5tZkOMc7cgQsT1c2b_3WBmSY6vKQsvY4t5fHmuOksn1DTaheMq9HS8bcCkBZLXeuvUpJRcW-ByUIQLc9aP6EuB-YJE4ElAU5lQBreh1rQsk-DTz3M9aNwG_TJr62toc",
+      "updateTime": null
+    },
+    {
+      "stitchId": "3792389fcddc4c81915f316a1504634e",
+      "name": "MF03-05 Registration Review Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UuBLkfN_agOsDnVTPqOprOiB6u-7MC278N1s8GGc0D75mRePJT6BYx4hGV0PRZPIt-2K5j3bqc-QRDzybhZpXXQ4mqfhw3aXXr6MNraf-xNZkeKKWrF2TAoJTUhOzVyqYWEgNb8ob2GB-i_VxP9G3Jjs0gWlB0_zEhBG34eXiVVu9_-qvHgtiSFwSHnQ86dRbf-B0orHP8A1NxixlfH-Wz4Tyepc7D_CppwnbDZ6fv0jEePQxI4PYZipE",
+      "updateTime": null
+    },
+    {
+      "stitchId": "1d3629ccea8e40d0b6720a653442c98b",
+      "name": "MF06-02 Website Welcome Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Wzz3c1nzys9iN9BmHlhrz0mGaU2bQ1fkzRqmGW6bXA5Bso-ioiJY6RtZX2Yor7jt8CMoRHQomTuvXeBZRx2-3-RRfP6zVregRFdPviK7iPUhN5mXHEumL_pb_lSf_YDF7KkKwc-HA_F0Lbnw_nXHlfO40IgttqJN9JPCQJMPB5FBAyP1qfplmseBaaIaMRygVpn1PCnxk26EES3XLcxig2daoRLgo94_TaulybjDHr8PYzRCgZxMOsBUM",
+      "updateTime": null
+    },
+    {
+      "stitchId": "cd19a117442440848c68b099de31e571",
+      "name": "ACW01-01 ActiveClinic Home Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WuFIV05dH9416orKA-N4sY4LJ-1L5WYraRvkEu16q9tFv_19Jr90Lp-ru_idJJtRAxxEGXUJts_Zp31kavQIdW7EKoxhYP1ptk-KzS0bFMsxDemd6qwWCZxP-V46rVYt3lj8ZO66qgY8NklFWARRibk_s79dG05FXKEdSNxRzc_EBoTd1HrGym_MY7xmThF8K3FiX3XaYf_ZzVKMxGQJjbBsO9igY_AaCgNYS6F1HosMpaSZ9w9mPw2Mo",
+      "updateTime": null
+    },
+    {
+      "stitchId": "f22cca3648c2453bad5a1edbae142158",
+      "name": "ACW05-02 For Patients Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WctAjcfc26Diw2CMGUt-3t_Lptq5fUa6Gn6XexTN-yifUAuPJRd885qaM6E98u9OODPdVS_QVZ7-_Ix8XMwlU6CmHsQFjBkpJYydx_mNtQMPZ_z4zeGeVPG9ZWrK--WfoZzl7ffal2ZmvsxqbR9v-NDFUruNqEmnNNPa3ek5fiiuxi6bBkcFksGjaBOAx_ttRq9vyNhTq72HLy5kC2zh9HQyQ2Ht_8IRWVPdhoc-Bqt6hliT0KMDINAcKj",
+      "updateTime": null
+    },
+    {
+      "stitchId": "b17405de3052471688b455a66de53805",
+      "name": "MF08-01 Patient Registration Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1V0-BUT-P-S_DL2qDRzLGvyp9cMX6Bv0kt5M7Owwa-8XObsynt9Prun6Y4M3rgN5deBAZEtVNA0_m1u1Z1aPx23AYsbxCBOSnJCt_G0qUFBBjfP28SaPSu99OIjgcc9BOkSnYLua4I0Sou88oKYIvTU1b25ikx7s2FobYJ8ruWu98hk199TPztLIfd8mDNOkk-MRSRLSH556uBlr4G2mk-YvuMpzVBaJYgnNfo2oNh6uZSFYkcEJVbApanL",
+      "updateTime": null
+    },
+    {
+      "stitchId": "1690fc1ce82a4aaa8289d83659e70366",
+      "name": "MF01-03 Login Error Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VseDveQfmwb6Lztc7In447Vb8A7woB9iZomX5VVQ7aMq_kZDicE-5bNYcpqPVM4hPXHZXsqKdkjQD9__SzuJdoB5IwLRa4BYvGldrisKbvE4FWBmEbpxDKZSoyTrPEr1P1YVv_pufEQBqP5-TIb1TYuu6h4GbK0uc78qDWo-K0_DLX6y_hwXspEMk_fFPY9tc3XkA5RKs57mR4EEEKegl9CLflhzh2VuCAV0ZW6ik4nbgZebgsjh8o-KQ",
+      "updateTime": null
+    },
+    {
+      "stitchId": "2552e98a7d8d4b4695bbc4f5f629b9c0",
+      "name": "MW03-03 Reorder Sections",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XW5RB-Mzmv8ls0307y81V_74-B24p5ld-DPAcKM28W0QUvrGRQOm4uYE2FuHbwgf4u-imDlJDDwpw41Iv7pOQVDx4RkH7qZRSBQp6BisbZqMlM0WOFORIdYStMDVpEGhIBIE1xbA8yhlsiFa5B-08zyQR1Wh4WfhFGY5PZr7RXOjpa5Zs-UZmU_qLGdSJEXxQd2PTamr80V4r_-Qz0dSMBWxJ-y1UwlRE0uIXmBH-y5cCVh-_pt4t90Cg8",
+      "updateTime": null
+    },
+    {
+      "stitchId": "236850040de8488c9627970faad74b62",
+      "name": "active-clinic-03-mobile-validation-error",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Xr-0A6t7Islg1Po7brVoP1aUfbC1JSY0kp7ijQNFnlsnzUDk9i6YzIVxQqGaqHKrAHNN7wuTfeZgUCu9IO5mPNYc-2z7Rj6KggTHT11mbMkqOVVAU_Rv0ZHzS6TMduPdlB3cEPI0YZ_teAB-e4Y-k47Y5FAbReWLfYuagwKVbvLcZy_TOscOw1hwLguEuoQbJSnDlaJzHxLSIBUQjMkyN2NvrMSZaygOK_2HRxTmhquobcEVPwrZ0KSBJ7",
+      "updateTime": null
+    },
+    {
+      "stitchId": "d5710c9dd0174e49870845a511bca4ed",
+      "name": "ACW04-01 Clinic Website Feature Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XowkY6oNnBmluxJxBz2T5EZ43CIxvYyqnLngnA8lmCZohUy2vYuc27gKhOUZ8k24zWWCTWGcFikEsUKI0gLu5g2yVoLhrQ7bschiZ58R863por14ckIFE1BVQJfxQIt0CWleI3byIEACMcGZGI9vQg2g12Fvc16ICnp6XCMD6-IRP6SjXptX6M8M4hWS225Ei9gojrk5fLedMhzz63WHc25Virtj7JHSsGNwcb1lcOXaVpFg0TpU88XTi2",
+      "updateTime": null
+    },
+    {
+      "stitchId": "df0401b47e454504b0d24ed27abf1c92",
+      "name": "MW05-01 Page Builder",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XRdBCqCFlwrixiIrbEJTpBa3FVH4yKFAtAaqbDtQKKXqJbGPk0loXjEzz-JnFyLyxjT05KC68Q0sJ5Fohsw2-D77ImCjo7bymnhImKFSisrFr0_OpVpsmojk6F9AF_HUv9-15tQeZ57GKohU7TzHW4Q511r8oaUW4vGc1JcmHlJt3fHrd8CqxGcbKXIv5-tYgw8PgSiZnzH8oug_CO-J9DF5iwzARA1n8jyhVJM3ttkg4mRxRcG__AuPzF",
+      "updateTime": null
+    },
+    {
+      "stitchId": "6f3db361015d4c51b2323bd441b6e181",
+      "name": "MW03-02 Add Section",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VUmyJqFtpnRastBiqWRe3FoPIhJY7HenYWxxqqNx5VC6rGkEXQZveQACDWPx1q5SOcEe58fYv0CH1orWcU1_cJFrfw4rZ4IFf4xMdw40LTlTiux4CayYuW6UVLphb5_TcHdLI0zD6glV0qbgtj6V0QbiGg7H4tuGd7eCs3ww_WMlEY1-HzCk9ggXMZ_qyOkOzlkFbR_HrnqwV9XyT4CnYXRYwNLSFBpEdqB91219qoNFBd1UIf60bMmj0",
+      "updateTime": null
+    },
+    {
+      "stitchId": "deb94f19f94b4c64a7e92dd0548088b2",
+      "name": "MW08-02 Branding Settings",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1U0GlcCXNNIHuwZZpGfR8TCQw5xBUSsMtwxfnWGXiuIOnlZM7Dm0o4SN9X1aVwIYVrvW3vRTCIOzH5PDt2i6duzdTYmGXiAbukWWR1ZYZNNA29bZqLMbQGhK_h6nHGoHaafro_ZwpZmLedMdhPXTcbV_BEVdEnlBcUg3pxt3WxywrtoIaUMiG8ObEazA5hWWGQT1kxomjHuS7YVyb4yDP6uYjpRAWWt8Q4g84C5K76VJDH-gjs3JhH7vm8y",
+      "updateTime": null
+    },
+    {
+      "stitchId": "e9a21fe4a41045f0a1cd2e436a677866",
+      "name": "MF10-07 Review & Confirm Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VfSl09bYGwewGTC_vHG5vTyWn08K_AkNlDU_7VAunMzVM3ugQNVdhkRKbn3Y3n3zBFQuaL-RsibvjiHXG57BzhOIoc0mmK0iPZ0qcR2VVFcgAAO3RWAYChtoGif-vUuerinakmuONy59sh9AH169M03yUtVceeOFsi9GrHR9LLegbJ-B690L4p2AQaR2girdVEZSWgqpoGJonPlntFxs5Szafg3TOeCzp6dDiEoEqo7pQcTQClTOvGqUTd",
+      "updateTime": null
+    },
+    {
+      "stitchId": "2f202c49fda04f1e89b52efa2551ead0",
+      "name": "MF02-01 Clinic Selector Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XTPVozFHFh5EbG5KQ5qCM1Vfm3egkHXPGSHrpCcmk9BLy9wB_koM75GJ64uMCGqW8N-CqmKt9yhwCCJbXGqGGPH29twtMG1IEuQPsnrjNclRmWQgdqha9d_qJzQvxvwKxTJHjhGl9MNwX4aIfiJ_4FCRLB18sdVdEqDCCOIQoSax0UM0oUZDa2_2PcQB9TlCe8qA4aS4OccCzTs5LzgbIJtSIu2hiG2pEfX7R_4p4ZRpaELSPEOpyroA0",
+      "updateTime": null
+    },
+    {
+      "stitchId": "db1c779c25614552b0a426a3ea7965ba",
+      "name": "ACW05-01 For Patients Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VM-xG85kr3nAhCmkwn2R69ChLTGPDXhSMv8t7bDLn9VQ8w_PGGVDcPKjrXtiVP8hugNHYe6G-tqXxwMJUjV3QJDVLnBuyaQqYeKUCoOg17lMjpkgTdEPicX6wy4ZL3mRhNAeoUE6PX-8DTMIDEY-6QbGYwE-4FWP_SCyzuvzBntNzbi5lQiG080y_mZQ-ZP3hdUVVFsC4UhuiR4dzgWQheew7JbEhhbsgiQsE4ademg3B0ij_k1IbXEnE",
+      "updateTime": null
+    },
+    {
+      "stitchId": "f96a31fbffa14b1781a24cfa44cb6e7d",
+      "name": "MF09-01 Patient Dashboard Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WcjmDAywQe4n4euxdyOvtKh083rqXd7wxq_kl5Q7NXlx4uzRLRqoVC2bsBh8Dw7rPsG9fu2M5Hcs2CzKqPgNAtVOhyQVH7Nln5Fi7sXXvy5jTl1-kFse2X2L2IDwRA5_liUVxLrakPx2YM0j3y8mvncXiJ66q8Xex_tF_YxMfZqQvp33qqzkl-yzl7nD2zsPbiHi0c14k7TnHArc82aYgiiA82-e4VtzAf8JABuKT73QPr5INcwzg-38o",
+      "updateTime": null
+    },
+    {
+      "stitchId": "1e56748ce7f843e2916ab33e06692d9e",
+      "name": "MF04-06 Reset Password Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1X4KEjGqOQd8dyikGQUlhIUuDdMJ95zv_3ihPU2PPnfq5ax1G5TPDRqj5NvB30iS0ORnvOuGO3d8IA_nxHU4LUqYtRGjUtvZdp8sLdHXXDwXcasGW8uSRzl4uX90mI3cMzs14V1lAiFyRkA99QR1YY22obZAQaOIP2h-YhgIqa0RFa3utEE2OQ5oJBYYO2hUEJozyEliJL_J9gk2sr4jOAtF4vL6QLcD6pwouB0Cp9kO33cUzSmxdcvpkY",
+      "updateTime": null
+    },
+    {
+      "stitchId": "b4033934e522483698aa86d6fd52fe99",
+      "name": "MF03-06 Registration Review Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1U25Lsq1TPJKdKci35L5ITiX3LCkCJGmrlCylJe7KuUxr7UA0eJW5JF3iUuEnZbDOVmIfD-NKzS5zz-YN4i7LqmjGBeKgEgRaSvzn8ChqxilB9Co8FPqder2PEKmTZbGQkBYun_ketR-oyWy5iEK5oRssj9pKdbW8CTQBzNbK8iMGCPsHTIPSZw2jNNdkh3-jat_EaDsu5kc65qDxV8WEGgM-kER3kHga8e8nl0VVDaDQl6PJZGLecFcODi",
+      "updateTime": null
+    },
+    {
+      "stitchId": "5a4fbca37976482d9294d70885235fa9",
+      "name": "MF04-01 Forgot Password Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VW4346k7UzsmGAtj7EB9CdW0p-b9phjnJwM1nson8t3JWoHwn1RyzlSSCqH3EyeN4mKxrsLaXJZ9ohdmpKGtPGKWesSTdFLywdNVrJGpbxW37v-GydrjtNXcLsfizm9EYqVpowEDtqsHeDueUfr_R4GoJcFTxotRBnjmQCAss-KLkXdzuh_MQzItuYU3P-RyoQ2u450Y2Zhhlw-epV5oyatRhMBY7mwLDgeV_DsiYzjVGj5xB49yFc6osO",
+      "updateTime": null
+    },
+    {
+      "stitchId": "7a24bd602d2c48d5826e9048dbe27daa",
+      "name": "MF01-04 Login Error Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VIIeLNxhZRh6lxKs9kk2vT2HmxZ6VHk2Sijdc9DZJnaxbnlLCuGeMEi8DZtEUv1l1Z8W57V_4tOuVq_-lj9R6ASFFwiQ0ntN1PHjsyBZu9b9sRS-3xriZBI3e8PhSVnh0hbIFqQ0YIgBd1zFWcrRFyQdTGFLCh--sK03hANc03obgU8K5wncaDfugffleVeItZ-4afi-zyUplK1Zm81nqetsTQrLK4g2mMvmj3_l7n7aGjiW0MwSzp_hQe",
+      "updateTime": null
+    },
+    {
+      "stitchId": "6032ae29163940f2847099b69e21c001",
+      "name": "MW06-01 Media Library",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UtSpnxo4UVNLXf8n7fyUxYYUbwJqRVv6gCqVifDLeYJMFWa-spYiMAKpZqu7gp6sSgNlzrek1aPekpmV5Giw9ZaXy2v-SScnVSDMxpJTeVOcJoThcrCpXQ_IRxi6ruEpctx2GmLfReOf-4Z-eNf6frDCoIZ9VoAzc2ykLuJ4iMEIju6lPmbepHfTaERAI0BmK-uRYKE58Iy_GVZMhxiD4yu5BPVWJJdiIL25tTFheBYKxA5IGv8LjiasWN",
+      "updateTime": null
+    },
+    {
+      "stitchId": "e7f833d56af049e3b0306d81c9761b52",
+      "name": "MF04-03 Verification Code Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1U6wl3j3dMHUWpjEKjC4pp1kmxjRkJv28ztfByEAtNuYOEdcJMVbbfIsN1xCqI-UKWM6lGtg2-NraPN38ueGhfBhpiJjhezz_jBiBxL2d0qxc9os60FVWtGO7c7JtJ7p_EjKQQDcGw6wOhx0h8IP_umKrJho0j2nmY8LST4x9tLfKtbiJFGqRif4OOlRM3hGA_MNCbiZOMbJx87LMyI9uiZ4EOX1j1DUkiwj3HvZIlH8J5fAmnqrc3QuIhJ",
+      "updateTime": null
+    },
+    {
+      "stitchId": "d955b5cbce9f48a8a3be639123a8c6f4",
+      "name": "MF02-04 Clinic Access Disabled",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Urmj2LDCpHnOM2BJBloCncOxY87Wbhr5_huANSBSnFwDdrY_UwI4prOThKBQehL6JiyoU12qO6F1gX9qaen3ZjURZ1Td99YxHSusdmNWeZEqjfCyhleiNThBp0U1tVuOCgKkw8XS274gO-gS8IHG5-yC3Ku1Iw6vaOSrAW2wzIoxAt4XiBVgbw5UvzRRJm0GyKhxYd2STgUqQ8T6ZVse1Tw26c3mCc2NchgToO-YDtQhj314bhO_utYbdy",
+      "updateTime": null
+    },
+    {
+      "stitchId": "44fca098452342a89255f9c9cd3cc9c9",
+      "name": "MW05-04 Mobile Page Builder",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1W8CJjJrI4cCnOpGr2_folSimJJVqSVy-UP0bjuMooCjer0nQMyontfcJFSBvPmJCO_sx0wENUnw49f59JGr1qCiLXtCvKIQCZlD90NIyYOuV-O6tgxylKLFaZ9Cy_w3E5wBAyUzi2-wJtGeqYZydqm56SQNu67gXLOsOHQfuEQxXZfG6roaCcAKNKUlnNLeXZeSBN0wXv-SDNWiFtGC1tUGy7KLpATmgMLeaADf_dFZ0jAaKlYldrxJ2kq",
+      "updateTime": null
+    },
+    {
+      "stitchId": "64bc636a34404cff81e28e61acf688e7",
+      "name": "MW05-02 Add Content Block",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1USgeuXSp0uZorv_F1DblpzZHdE7Tnfwd7rmWQ-zjtJfkd6XJsztTbb_AP3BKfVc0CfX62OTXquK3ub4T9m2xdZxEWBRK3mnmxuQKJfYrn4PdnSp1Eoom6PTRwC13XbvjFHoiXmOvNzjO39jC58BTt4EEYFukLmYJ3CLj4OQ2Cb2Vsvk2klkLIPuc98yrkU2qtyCNZqBba5vzbNxDPGFv9Z38NJzmHxzUbqhAAEu-H8Fd0NNqM1XKUrDP4",
+      "updateTime": null
+    },
+    {
+      "stitchId": "e15bf9d40eae4bbfbcb4bb8a25a067d8",
+      "name": "MW05-03 Block Settings",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WdN1qJbX55HcxRpddxQQt4p3FwoFXC75qIxhMB4SJDslb04X9W_HNdSCtpZ0eX3QKzYuwdHsJ9Uedl6fcSoNI_fgtiHubF_mBCV3Ih5PfbQ3wHeyU2Z3CDYQJ3Hc_nQQ3W4HSBsvHdS3E_0nU33HwW_e1fj2ElYZh0IdbULhMgj6gS8eLMbUl_UmPdWNPaxnZ4fzF5NKiiscOtU_A0N_VY2IEl6JwlKklRqt2tWn59WoIcCFtPGZRpZltL",
+      "updateTime": null
+    },
+    {
+      "stitchId": "be4c228d874c4fdeaee82c28eaed7e81",
+      "name": "MF03-01 Register Clinic Step 1 Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XHPYfAPNG6F6_SXwiiJybZwc7kyxRpU7CYXgOIppziwd-kAqbIjevFST0GKNCulYhi273aBFU0s7PtTQgP_xl9Kpm7ANlXk4f2r7yvhtEdYx-wkuMZo1HeqenH86r9RkH1mY0vFCpE-fm_guO3SiJHUqmbGOYJscYHOI8OipOJ94Oj9maGjS3ZDnCsXCUyLKkVyunLw19G_LXlGPiQUqi5nSgKqKqrkU4sOkjH9m1NMLoBURJ5ix0StOin",
+      "updateTime": null
+    },
+    {
+      "stitchId": "22fc73d39ad846a3aa6db72f13862def",
+      "name": "MW07-02 Version History",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Xold8UiEdV8DdBqVdeotOLELDN65YM1GRGkwH7JflWmHrT1l8UGjxLKLvpHtHuvbKpLwNicP_cyFgdI40sdp3dl7fc6CwUQzDCRHOEokyv62YZdAJD2NxhlSwOa0jUq18Ea29kpF_OdYAknPuIFYMeM9R8y4uM_8GOHZ8uHX2pVv_gtVIC-y5cv_rmj3QpyWsjkIB9w0vWkymQX8eHv7CUgyjbpVATyto9-Uhu6LvSswoo0ZXDdpF9EfEO",
+      "updateTime": null
+    },
+    {
+      "stitchId": "9ab165fac045427d9679def4f38049c3",
+      "name": "MF04-05 Reset Password Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1U1Naz8_pTdenQjducS3yjQtQW7NAp3ZWqXXuhTfFSHlcA0RFGirAQ-oQpBhfeF8ahCuU5iv87ImgPkMB7Q_ARL_cx7ypACLhT8542A49sGO8ZJ-R8reCq7uvis2mo9Oq66GTMNkBCesOL4mjzuL9QyAcnWcThvfFJzNuMInsoj6zUkMhLeuLKT5JPC1AedHLlh81vAc8OoYaB_nbxL7u7yCGZG1CbSIUTTxB3bvbEyCGBS8_SKdUXurXD8",
+      "updateTime": null
+    },
+    {
+      "stitchId": "e8694bbb106046d485a48040f2d6b94f",
+      "name": "MF05-03 Clinic Setup Checklist Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VPj2donLzgyj5X9ls8wCPxXm3Jtf77nPwmXc3RLGUWjlG6TcgLoPMCncawnG8ZMmemujV98KYvn2me3UfumnfBLMQvdMUYRVH7VqY616EouGOtvpN8gzdAuiwE3uhUI7seS0gd02tWKRPsngercdmNQ4abk49Kc0-DJITvbjGnoOz70-A2WsJ1QdAZpOhjJtMhfuL2hCObpW_pRiN9xs4LtRvF8Iw1OIZKmIqbM753YAPqvduubaVfPMQ",
+      "updateTime": null
+    },
+    {
+      "stitchId": "4a087865770e408db4e46164da6b7a7c",
+      "name": "MW08-01 Website Settings",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VilSJJVBR3uRVBkzHdpgJleObJw-CtLK62HnL1sEUg2y6rdNyy9Fn3gfKvvn2Y4Do49qKCZQWpSHbhIGfMir7NW4sh8-fGqu7yy5sGQu22_nkMBgNykV0foFCIbwYtHmRzaATbqvAf3DnjJlnWOZwRM64VaSYM4-HAuYzZo9UPbkDSDm9L4DByEnMAW4AZT7jFbWXc9Bp_ZD0nuHNAfDQq4Mz_vS3oCKqP4HoJ1I5kwamn2newDvgCM5za",
+      "updateTime": null
+    },
+    {
+      "stitchId": "effdec3344324c33aa7e3d8eb8f60002",
+      "name": "MW01-03 Website Editor Home",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1U5ip6pLtYA7eHmMHvK5aNy9__-HckESoh2zL59aoD6ZxAf7KzUNUpeibANFoKIhwmzJQ9Zg8F5M78zbTFHkXIJxSDAX-jGY5rXgv-D_RaHBeuH44N-w7o3I1rg7Gkz83IV_4Ea4jwGi2PRgJ_HAUQU9KANZv0Eq8Hxv5VHeWH9l1TtYKR4DKQXkLPXSTQMun1oR4zYuXybdM6Kcgq_zlPMdI1sQVtQNE3_OuZ8UEONDKKasKtwDqFNPKaU",
+      "updateTime": null
+    },
+    {
+      "stitchId": "270bca2e285c43188fafd39b5d83f28f",
+      "name": "MF10-05 Select Time Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VFik490v74vy6LIajL6u9qM27pMXj5YhQsDr4xlc69oBW2MY7_6z1gbGExsuSW2U2h9zMcONfGhgYtkAzlfoOyuhROEZC3RrCMCFFGdCP6DCH4sCfUTWNK7WC8nMw6nEjOrJv4XwZs6ScQ1vgt4Cz5NOmF8-AiRjDnV38D4-O9045RpOOX2kVWXLT19TH6qZFuccJfYR9c_aCFiykGcvR-aRfPCGsCckZcafQ5V6rTBbh6ZtmOYZ-7M6Bt",
+      "updateTime": null
+    },
+    {
+      "stitchId": "aa63525e14b342709f3636906ab2afb3",
+      "name": "MW02-03 Inline Section Editing",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VkeEvxLxzW3-c2JKsg0RQ7dC2lkw-BwEky_bhjP_ol7FtqqWtMtGyoMYcRsG3KR7RHADH1zsbVBl5Rccus2N4ayECQemo241ByZztiO2BmlSdrsJ1TFVBRcT3ez1KCnwPb-BVzkjZDiNmQZCgQ1O2gXeY-HWP-ybrkJecvN8WTKYleJQYDwqazClip9FTgWqAJXFufZ3qXWCQdDbtNtcXoJ-O0UUjYGnSnux0Cqvi2Yx4b339S9nwNXIU",
+      "updateTime": null
+    },
+    {
+      "stitchId": "36f2e7a043d344b98b391e464f451bb8",
+      "name": "MW04-02 Add New Page",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1X-dUe0godnrl2i65mBGKXQk9SMq-V675LTkby_QkfHW5zYwkU1uEHPms7Q5AP2olFyAGp1lApASOegMEjPr7Uy2u40ZzLeRTQHWeemurZByuvoOQe4StK1fIldJ8K-GHD09zjKRM9xDD0clsTy2m_-RWwwdLYDaf_m0de0g1Mh2I7J75h7oe4b__-nZ9NAqJ_jIGl2zpqj9pzyAvvaNSw6FMWEdxyLzsytdvX0VlGKvwazHCktNs2IKxo",
+      "updateTime": null
+    },
+    {
+      "stitchId": "edb81abfe548470db687f343186ff786",
+      "name": "active-clinic-03-mobile-login",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1X7zGSOaSxqMSPvdRL-lxEeaNyQ-xk-aJq-kDa4zXWa229kDkbBy5fOXAhplWrWGq3057w7kHw3r3F3wv3yTULvmcvTwPx7wJrx4lF01VZExbC0K8pO2N8qr-aQA8tKTaIUS_nGJwxOq1zsJszKgeCtDztPyYST30dLi34E5h2b9zTNEJHWkbdJmofztCY5H7MgGhTJx25Z7dCaO0UhRERgGMyTJsR5RbCjZgIghxX7M1eIiiemomSVMLRi",
+      "updateTime": null
+    },
+    {
+      "stitchId": "97a428ff4b4d45abbe6d03b192f04ffb",
+      "name": "MW01-01 Clinic Website Home",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XuWcqQsnp_hbXHPnK6CXwpn7_YuQCNrRUjDLlUrjVbl6XGjHJi55FqOFaVV7YCxZiF3ao76Et92RitYi4T76MW4WdzISTWaYGcIIBC1gcfD13CxJ_U-kBdqHboT3a0Hjxae1ivH08z0utUaG7g3VzxGAXoB3xns9s3oaacystebTu6DU7Yd2lKYp3sJd62Imu0ShZ4ViiwH_f6bLNzlcYdJ_YfH5RBRyA2923BiTbsBz8s3SFoWBcwWC4",
+      "updateTime": null
+    },
+    {
+      "stitchId": "b1a750008b72460c9098696ff8590578",
+      "name": "MF11-02 Medical Records Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WQOayEAGu2Zw4TJNrv4ZiQ_LGc05lmOQhKfMdT4N-wQhOKlGR2YX_PKNai14ZICJNE9oGULxVRrMSdTO3JHEQFktzKOxkjo_Ua_EfqihCqB4UJdit4qv3HF_UMc7v1ghU7jPqvI9sswIzJzIqLbAxnU_wOOHTvIxZWP0-yX24kti4Bg-uGKf1BgjMs7cNFCX9yTeslxyeb_jv4yVJ0PFCdwhSiCaTkccLdRV76tIY04yWN0CsqsgZBPhzt",
+      "updateTime": null
+    },
+    {
+      "stitchId": "c2546a84104946619e416e26fd649789",
+      "name": "MF04-07 Password Reset Success",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WcBhOSsZk-jxAezTFAQh93uRSoKFkXtuvQM2De-8MylAQ6OWk3PMkr_TtLbEfH4hW3kH1pgQeNoMak1v5dyCVxy-sQbRjDG3Umwx8peOC4svgdLFOczhVnJEcc8LJKVyybtzNptL-ksXr-SmM1kzjxfOLTYODPRNoL0nvxe3MC_G3s9_A7QmpMzxJZLiO-dIAaQLu2NNw1ecKDkWDzxgyqkVEKYorZjIkG0-kQJJAmrfJ7z6_wGjILywg",
+      "updateTime": null
+    },
+    {
+      "stitchId": "1328c4524fda4a7a9de1c409633be399",
+      "name": "MW06-02 Upload Media",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VzG84XvXrc_iPTKnIyQ4wneByTaL2JhxWuCUg8HjXUhGEzELAcfriVY_xLInTk1J61ZuNZFYXYie82jbi2EX2NAzxPSyYvHElOw-TCWkyF-rwOFLnYPwkISk289xGUwyhPsHtsCU3HkCMP3pmCpUO5MqrR3L12mgQWhRo894F6hHMrxwDggoefDIIvQcXZ-tMalTklXU0FXMFgmquZhU3A8gkK6tuPSMWn9nI3m3Yb-gy9dwT9W62nzM2F",
+      "updateTime": null
+    },
+    {
+      "stitchId": "ef782bd739854150b5b30ea4525c50c6",
+      "name": "active-clinic-03-mobile-multi-clinic-selector",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VaY_NtzKf8qjWoWqvdtrQSQoWaoNPdME8M8dnXwr3YS2I77X68y1a5NloZwEwboFbKa1iKNhC07ENEkJvPolgVkHqDrXLeIMeRKZlWFELvA6jC5dK61HNZ5M5zPlrOoWLHL6QdIKxOhZj4GxNEEdNvtgM0RJvctJPVK7BQx0K41lm-x--Ny3eefINqgbRISv4WcB2igwuNwKVgYUGaCtSscAYiAN2Wu3BdCjYYQoKwHu7foUyLueotGfI",
+      "updateTime": null
+    },
+    {
+      "stitchId": "6dae23abf6d04b1b8bfa05fe491fdb7d",
+      "name": "ACW03-03 Platform Features Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VUXomzULQ2KTmkf33DG03Rsb_vHG-WWMdEaxniXqkvOojAoFL4YAH9xAu94LFO13UrcXBzojlxU5hzCqEAnDE-VJD6WgAwhl_5HE271P_7gCShsitD2TrUPOwWUsbOVdh-56xnVF3XO_4XFiwcneDTUgwjxrnKPFY6J9O_O0qIXsfokAXaFH2XprpBbyyaa980aBuUHuET0PnshdsV2NBorATcvWrqLsSgCrKkQlxeIjprLFhLFqDHfFE",
+      "updateTime": null
+    },
+    {
+      "stitchId": "06e890aeec9344d4b4384389d7658659",
+      "name": "ACW02-01 Clinic Directory Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Uqd01IZ2BQbPFYFGH7Jr3alb-F1Fl9OW79nZ9R4o6oi_a-uZn6uLVj3U15MdvjsGMgs5fkuU47UVqZ1ZYv27lWUJaY9_q4FqN4J6-u57_zh9mpa8mDEUF60wUSRj_dVgDhL6ua3PrOvnuZw03wsEogjmdfQzrl6jAV-_Xkg60mNVi7qqN0i3QeyJ_0y8yJNVyRIxQDTJBza2PjD_1xi17RVipbHvprBIDeZRnEb1hCyoAO8jtZjUdR95M",
+      "updateTime": null
+    },
+    {
+      "stitchId": "c31ac73459774d6c9ea384a901a19e92",
+      "name": "MF02-02 Clinic Selector Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VuI4TBb2sEK4hQrbVuk7hi5q9KLBsj7mwrnNq3_iwfb44wF-LnKHfstCRZLRlcJV8Q9lRjPuiWX_nvouctdv4Qt228063HDkKCevo3f7UGWjePZUcGbL-6xlL6jCl1k7z0p35cnSsszc8sHIhWD-Qut9sXjxz3ZdgamNY6yVvwUHy-3sPKXwoT2aqsZuJjqszZXO2l_Nc4c9n1OQCcvr5vEz_wTi7amhaGX-5UMY6v1IFDeFIYYy34EF_p",
+      "updateTime": null
+    },
+    {
+      "stitchId": "943371c07cd34875a6ea02dc7c03d3bf",
+      "name": "MW04-03 Edit Page Settings",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Va9NVFSrGcV4e3ccFUT_OLQx7HSlkFEJhUiYVRI3mJMgNJO5yxl5nzoQsEH37CPPmbkgzXCWnIF_neTbW3-BmpUp_g_wgUULEpFL5lkuwnBPfYkWnUhXQGEFOMiUelAyJxt0D688Qi_7HqH0jsm5gLaAist6wkdrkAkLs5Xe4je6wL6PIJ-z0iECt6gE9FgqfxypsogZUlKPELZZdSEdewZ9lYnED66TQsTSNzeNlTMhA8wgN1jGo2TcVd",
+      "updateTime": null
+    },
+    {
+      "stitchId": "d2771c7c7e804754a697d7550e3911ea",
+      "name": "ACW01-02 ActiveClinic Home Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1X9_a4oRhWAaot4BVmPND4MKRif1pif9fje7MQ83qLKWivORtKwUzTNPe5qDI5I3orOChEEbxFeVQXrcNL5mGk3xgnaz32cLOYYJsV97Yi9_ZT1pMpzO6Qm5sG5HN3xhyIwd_dOENHviFzP6mKrLgvHV3StTKQ3JEoB87HyKSaY3N1yle3VdHUwy0_qyctP-uDz0lBCMQHwzaNQwAuckEBCvq1q0CmfTZ4sn0gU8uXOWZhhKe7DPzCy_tc",
+      "updateTime": null
+    },
+    {
+      "stitchId": "6f642463ecaa46ff940168c3860a8656",
+      "name": "MF11-01 Medical Records Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1W8qY8XWsiCwMQLHOU1AIvvzH_XuXQqJLjaWCNoQqQ40dk8mNs6piazWVmnNtj2Hl41l5QayqvyD45P7lwZbRVQgM-Dbomq7nP9q6GbqlBi0b7RVJov9_p43GYfpGhUGv-5eJJB47lbqnIWwwjnyMh_-Rf7WNW1C0w0kMDrUrKeUKHs65z5U2cfGZdXLWkHA2HhUeWvXC9AOffR4NHbOTfFZwdV1mzCfsjWFdeMuOawY6Ermgt6uRJuNO6p",
+      "updateTime": null
+    },
+    {
+      "stitchId": "d6f4fe333ad245af89dbc517afeb8e06",
+      "name": "ACW06-01 About ActiveClinic Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VWtmCR0KdOqSNZCbRgF1iQUUCFFOqczNQy9E8danz2tkkJ9_cEfTaAvL49g2uyJZsLR7FRA-31X8Yb1EQGV3AZtlkaZawoYX4Xaylt6enmjLaUuxu0bdrCdWcWma0iaAYzphSvAChhraYCx9GFpzwiNh-Un9YxnN5SfuTZRHDNNXdyFxLNsiiNAXofs6bYPW4vhGCXk5GFYFIDhMl2WsDxDHvOX4mxX8CqT-mmBiSDIoGtR-wo_Ovwf72K",
+      "updateTime": null
+    },
+    {
+      "stitchId": "5ea4cb86dacc4fe9a33cb1539acb64c8",
+      "name": "MW09-02 Add Content Item",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WsgkU3UIcmfyvW8tdNjOQXLdT53SgSQb5nSz90n2m7OzC4yva7uP9NqX3vxEIFq5GlDC8cnPictzqqHVkKHSIXK6FkhhK0Y-MAbUa5uhjhPptHtLXlbyb85Wq3R-go3zPGtFxx8EBj1NFXUJZVDu7YqUwY6sOVbQejGZcGjWr0HvEZ8Z-vWdJsaheC6vIZMFtp1rMFjR_eWS_LJpvlJ-WHF5n_pHLtLeBulqvDfCmNhe7mL9G6-J5CkJrA",
+      "updateTime": null
+    },
+    {
+      "stitchId": "449d124d305845c69c93ced67fb4f6ea",
+      "name": "MF08-03 Verification Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UVUBa9lxNGYcVOhAmnPnkQUrvQxBl-bs5og9Wa5n92cNQvqVcHr0EdT8wUS4VpvGaOZ7P1BZB3tN0PWG1mv2x23sg3UUcBwBBuXyDKf62zJA9_aFujj6OHgVwBKEgzSVeYwdx1ZUoRNbHwlKZl3GujsLc_eWY8NEMUquyxqK0DhciCjsUG3rdethvBZoD_a90_7-2_Z1GFP3fq6kKyzM4oQrKxucfzjxD83ishh-t7sTwCo3zv38QYtRz_",
+      "updateTime": null
+    },
+    {
+      "stitchId": "fe0d81b72c5d483a85cd1011462af9c0",
+      "name": "MW06-03 Select Media",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UupjEoJMPmAD6kWio0KJgHfXwMEKraRuYOUNX9WCig7davgkjiwD0harLUogdUk9xvF8Syb_KchE7V_j_tN7oahDKP1X4v0v2_j2Sgfnjg1YS0vLyBcJVsmOFs9OVzsGEKz_vPKZumBCIfgRHYqfhvU3jscdZ4CEMLgs7WJT-LBdajRH1TDjpqJAivLwnNjLnz3AHQRA2yip57OUuC_y9nR1yV0ZgEYjiVVsIpuZVGr_2xjVBKEUGveSP0",
+      "updateTime": null
+    },
+    {
+      "stitchId": "32e4cba9812c43f5ae9a808222ca6dbb",
+      "name": "MW02-01 Inline Text Editing",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XjfDBtB1utMVC6g8zvRyAoJSsenKPwlkakyG4tQgGES2aQZRNzNe11fn_-ZrtrDdqxsS7K-8qK3nl9lQWiwb0Hml6Y2Zve0iOzrolLOmxRJfGZZwwi2vm2CXEHKuRlF7h8G4Qr9Z5zhayBtEKCiHUAaOMBXA9l-d6mQabFzzClSpE0fDWRw5vSPuuh3eqqA58n6qax6kT1aYrak6EsPoMwWf_fEVk47N99hLKwkEsmRAd63txYq6A_7y3X",
+      "updateTime": null
+    },
+    {
+      "stitchId": "f819d5b03b964fb6be90059a672c90f9",
+      "name": "MW10-01 Website Management Hub",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WmqfjCn92akHfn-W9hFOP3SPdVjeDjq6VirBetOwAC4_7llVTBCVHC0rBXqbzvsk-j4WIy5MoyPUdvE3ewXBonCq4VJ2nDs5zfApl9PqprWu-cOBBnYSJpvirIedZm8FRWbFDYGqyX6UYDnW7F7K-_2ekMzMUJLU3w4vo8TPnOpTKnfB7OSWLyAuVQ2vKE-P_RPTRLdVa-MN-EPjAO3ySNiEwQU5lFN6MCUicCBAmasmb3USftMHB2MaNM",
+      "updateTime": null
+    },
+    {
+      "stitchId": "029ffe860acf43ddbf437bbfdeaaa056",
+      "name": "MW09-01 Content Library",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Vx63JwskCn0mSDFSds5p2mcQXgevXMXkPJnvnO0TyP5Rbq5exSkOMpAdGIzIQ2NoAuAUC5DNf4Qvp121yuWfPkunUrZ847FMiLsQtnfE-e40yi7K-p8UsrWJI7jyEEW72Y9OE88UmFYdtpTMp_r3WHnLj-PNSKKxx9hCYG5WLyqXTUxmAyrcq81pRUaS3n12X-GxI7MC7293hd8hAAjc09YhIfBqKl6Ye0vh1lcHtZxMZvlm_S5t02_Ccd",
+      "updateTime": null
+    },
+    {
+      "stitchId": "5adaedd9e29e48cc82b47dc3ac913383",
+      "name": "active-clinic-03-loading-signing-in",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1X4z59_Bwov5CnoJoE_HwFRWk7Llz6mwGRlRzuJ6TTKLWmURD5hVpK74Hq1tjInRssyTGbBlvMTC8BBN-2JhODYEJ7YTc1ksSimcRjzOHdH0UvpwP4QV6wDPTmE3i6DoYCJfmjoYgutAlif88c_hm4-VAt7IHb-Ba58luk9LbIr2mj_eK4cB9csDbqk9_nJba-rQt-8iDboOOM58Ysa_NeB5XWaEZMwsYYIcEXeq3mN0W3X04DSLxRd9xDK",
+      "updateTime": null
+    },
+    {
+      "stitchId": "ead1eaa3d72c4eea884010b4ef6b5a18",
+      "name": "MW02-04 Mobile Inline Editing",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UQRAkbC-KRJrgl4B36bMAqhiOsVxkRON91MhZ8wQktlls2g00Rtb2_2B_bVCfHnl6A3lvDKixoWt__GTP8t_xb_YMf98qrhgArneZkOT02yFoYbaPRgZ7MB8Ppf93BcdjhVIbKKO3SLUnNFOkTlBfoMGCh_Sn_jSe8S_oBvGt0UTb83jUrU-v1OChCqpzU3dcaQeEiON0OxJ9GW-S1gG14jUOQHDcekdgHCGcsOfJJlvTfBlULVR7EMmiY",
+      "updateTime": null
+    },
+    {
+      "stitchId": "df566a9cd85e4583b019363ca2104b00",
+      "name": "active-clinic-03-desktop-multi-clinic-selector",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UqTsoZGKOx0efZPyW54lEeAqXdQ5JCR_-HIHsSy6_DXHG-7gDNuE229aBThb7F91F7Dg8cdVEdF85yEzmz2ngdl6RdXcE8E3486MKFqnobzCjfm8YDKb06SONHa9kS3aj1_oJwokf-SjVAZy3wiSREU7UKiUW2khTzeMPYzDLSAwx1Jw9mBs62-droYz5tIrRTRzp7b1pesnvjtEchY_IbsOHdOqq_iCBtdP2rXtc8YGxVO_EEUiA0KPU",
+      "updateTime": null
+    },
+    {
+      "stitchId": "2e77628dd3214f5bb8b2ed046be10aa8",
+      "name": "MF10-01 Select Service Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Wk1HRZT3X17vjBfCcJK2yXWFHC4WBRjsvKywt7aiQte4UUjl5-K1FGkF8YKDNWAU2xAMRezfOBOVAE6i2gpyQLoLU6Jo16FTaH_Mxknzaze93DbTsTOHY1Hl6DVyZuPdz5wGxy08FvWY2mH6C5B4SbBChknHj_7verU92c0sRzBtMPse98WDnQJXWx25P-iVruBPiRFma_WP3xiJygXBWjaqG33O6qAyYQZ6twmxRuWGCbl-EFJqAWCRQ",
+      "updateTime": null
+    },
+    {
+      "stitchId": "2cc66d42e4be422ca1c5feeea963f145",
+      "name": "MF03-04 Register Clinic Step 2 Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VShVopqRe4OK1sP2mftPBIVnnTUw2nuy1WIh8B1eoJcoSHV8HcWPFbXJ6hvY2_t3IThIArkBntGNgNV0SXUBZxrzDT4D_CRicSVBRV3si2f5vhgv6e5A5-7f3i2OFwtzqDtk0HwZ1WU7Li8U5u0wFv7TD1pCFvcdok0nTcaYeRAWRCduMLbxHpPYsCehUHXyI9yzlr9kkim69S5FnvE1xo7lFTGcVlPltzaGIGTYEguJcxoArtSFt_6HIF",
+      "updateTime": null
+    },
+    {
+      "stitchId": "46639010324140f89bf2c954950675a7",
+      "name": "MF05-01 Welcome to ActiveClinic Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1W7glbINKfhGpO9Qt7nf_cRLPstsyW10oBr3J03j3lciA2K43AH3GwhxUNSJTtBWbxGCXCw-rzDNk_sDLhbwBt7_r5V3ezEx-i9oo_TbKVJurfu1YdAUj0tUHFh4DQ5IgUssk2EU7GjgC7a5qr-NVbensT0bJa74cmrz-ptgOmKE__R-JFgz1GacZge0ed0AE5TePXnpFi-dRGwenh-5r7NUccYvIDy0C016iWp3pH7nfkLn6qEFKRova2W",
+      "updateTime": null
+    },
+    {
+      "stitchId": "1def30eaafa84ca4a95dc902c57876c3",
+      "name": "ACW03-02 For Clinics Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VTyA1rLLx6m8-7EF_3x7KAYEWyEnanKTSPJWp0ivYHHA-o9jomotExb4EfuX4QXvqXZkZRPNa6p-sCH_jzmqljMfojOME9VjDDDPhiUg17BN7ORAs890waMVEkXLwS8MP-D1HXf3jyqG1yApeIuoOe0ks6_rHEF2z3RoRYCTEBJ6FYOtGMkqNiGZ9q4Fs8o9JHcEJ-a5oyYba-HFCih-7GfbzV-GQrDitJagOoNC64vyDYleE8GMLURx4U",
+      "updateTime": null
+    },
+    {
+      "stitchId": "61cea0d6fd684bf8a487ec728a4c49cc",
+      "name": "MW08-03 Header and Footer Settings",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XVvb6CRpqQR0xNgwWBby39FFF6BsNISlSMfi9YSCbiD01ObiLIa4-tMx8N6I6w-uCX8f0Vx9Y_XAPxCCiSa0aldHsdwEMUIaoLf1Tk4fOToJ9dOQ1aC62N5pnlRKw_Im3SKyXNGQbQEksQ8PUWzk4Q25qfk9NrOyExThASF9Swib1-6gOZjiqK5LuhRw-1pWxbiJYhxV-xOq_G9N4JP7dUG11DMH60WSnt5ec_wjOFfpCJ8FX1AQhMuGhr",
+      "updateTime": null
+    },
+    {
+      "stitchId": "f435d25c1264415e8dfca6191466611c",
+      "name": "MF01-02 Login Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Up86AedPe8zrZz09q5D_M6i5RSNn56s0Zu6mZanJcAELFt48OkSuej6JnHILMGjAtATtx5V-p_mux2SCmeq1gAZXYntPApWzIoVUrwZx1CuK_Tl2_7GGlEWrMCYfGws4IwrE5_KHMDO7RescdKJ89mULkQwO2cEpi9AEPiqvztpxQcaQiH5vkRBzYEKbxgTH-6aao744KSElswKBHYbIhmdDbiVnka2KsNpTvf0wwhZtpICnPpHrrNPGAB",
+      "updateTime": null
+    },
+    {
+      "stitchId": "49217e086a5a45329a893bc775fede6d",
+      "name": "MF03-07 Registration Success Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UaJgs354tGlOb0Fby5gNjnRYXRQcfOGN1rhFbhUgWC0JLYFLgX_VW4w9lpR2oZ7Zga2Gn1_M2FqAR6TD1hfRG0HWTXv5ZwjMWYBLqHNCt7_7eTZUe8S8MDcoeDZ2V_eg8yoWPkaAzplBsZ1G6eBUjh_xg1X-NYJcBCdkbHEo3MSAD17whH9wJE5H9wTfx8eu9Aujt5tJ7fFsbMwkKwkK-t5FR_siJbeFnyB4zyAGdEXx73i_c8ZdwusoB5",
+      "updateTime": null
+    },
+    {
+      "stitchId": "9576cbdeac1b43faa5c10313fe633618",
+      "name": "MF05-02 Welcome to ActiveClinic Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UrEt2MnGxQSLgYXG38pmQ5Uca-xA8GyEKB1gWfz5-HoBVuIxaqtCaAodEYSxEN2xmjXJfMW_08z0xX0E5cYqEjhT2dycLcm-yQH8A1oekjUFKleRx6ldihCJdQa_IEcjdHwlybsuD4_dwZrsQovct7sce3OG89NllRnN_AgJY9ZVYOx3sTo1OjGAjYlDtS12dwyrIcTLSqoTUtJqlPe34jDBTWLTa3UnG5-EyN8SfFybuCMuaEzUodQd8m",
+      "updateTime": null
+    },
+    {
+      "stitchId": "d9a0fc3847264ce08f336e0e3bfbfd7a",
+      "name": "MF08-06 Health Profile Setup Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VRhjVVM1UP2Nx3uRFcUML9G_sTVk_Xxq0kegyxAv28CSMlYLUbdPlMBbuWeSSlZDL3xLmpT7SWKlpjvD0CLcAieRwyZiJLgqRni53LDnQoINd9-wE8mxs0BKTJ5O_5MfRhd3onP9nbdbETNgThuPnbfvYpSL9RPl5FapHbAD2W3QWOGc34l-oURqw7sEO-CHYqNAL_RZC2yE1s1CFnGv3GB_nN-YvsxC9XO4udGUYu64f4Kjx5ixTolwEC",
+      "updateTime": null
+    },
+    {
+      "stitchId": "e61dfb582bc34ff585e3acb8aa60b0d3",
+      "name": "MF06-01 Website Welcome Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VR0PvAaDQu1lwsNUwI_1OT6GIr-NNg7Wc4NugX5pQSH9SnrItbkSQVlajBxD_EimX_g8Kj6pMoNk1DKqmdepVc1bJylMBSUt32N4OsSWEX2eRYH8uWB-qWmljXoq7lxCs9jBI-qBbTR43s_nQZFB41PeEI8p-aVbWuWq6S5dNzmA2Al3j3cf6O7lUxRpeyAGz57Fk-nMYTECcQtVwljT4DgUMCLHau9MUH3aAtnXyeMaZXBeROJYMjlMvH",
+      "updateTime": null
+    },
+    {
+      "stitchId": "7a6121f70744431a893a94130692d042",
+      "name": "MF08-05 Health Profile Setup Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UglWC74XR5kGX6BgWib0vy4Ih8VN7zYSidekAABHWJIZCtpov7gz7j0KzbVEGQX0Lj5ESYRvmE4svIA7yg_OH1cdMiBPvwNWqa_wemqzTDx8G9gQB4C7ArvWXQZ4ZfmiFr3F38B6RrK2alhJLIKbjkXxlkGWQb94Vot3W5CsimjIFQeZu7O4mVD9tZXlmdj_HXcvsjiQBMlDp88N2xHyCeVe3RbzvXx8cDgX2X5mopDoo85rXIMNla7C0",
+      "updateTime": null
+    },
+    {
+      "stitchId": "23774b8a4baf4924bc659f4ad86708e0",
+      "name": "MW01-04 Website Editor Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UJFyuNEr5Ru4zGskywElYKjMgqmf0_uNhLC_HRtA2mKGrjCF8B8K2d6lUbewCNlEnz-ychUXdJOBH7ncRUoBoubqCb2RyFvPOh3ukVFK1PmaYlSBK7mUM0Yx2Zjc1MeaM1XIeghBSOz3xUf-tTm2PmxvA1HV1sVz47Rz6rFlYDTtT-yjgP4NflYNsiZmrxGGXmRakIADNbYquj4WII1QYcM6SwGwDqejn6aUzkam2KLmohBjnYMvzoqgs5",
+      "updateTime": null
+    },
+    {
+      "stitchId": "e75ff649e21641ef85de97a26afab1c7",
+      "name": "ACW03-04 Platform Features Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UdCfjA28jl_HdqTmt5LUWC0uxgtLUnRdMU4o6vMMZzHY-cN_xqfVrUFS0NeJvYXTk2JUdkevTYS0bwKQepNo2Je67LhkKlIRdV6975nZSD5Bhk0f_ZnPTQdFtBXB6HnHgOSQkeGr5BvV5gVgyqXVEOZGyRrZucNFCtgMhe8LXoKN_nyIRn7NrSeH4KG4c8WyCKuLgqRQIpMRxh7Lr0iwe6PnQZfIh1UnckXdEViIOhw3i_8v5m6rOnvvmV",
+      "updateTime": null
+    },
+    {
+      "stitchId": "59af2deab69440c29a0be0d626734817",
+      "name": "ACW03-01 For Clinics Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1UYCvJgRdzfJy1-KsCqoLV_bbfcb9rx7-cbVhalqELctUHY0Kj0-uETZoy_bsqsn312wQtI2_piYPvqcmsJg9igfFc4OV8hS090PEDmu83lnKfKW7fN0fAH-CEm_JpVuB_u0g3uA0Ju42XBq70uC5Oz3VxzgLQxW1z-X9jM8FtGFiP6XRtzUrqZZ7ikwieljuPtfOO8hsknZQoGlxiM1QUIVLWkx1NVXuV9KXjouEUhocE3dRU0GNY_bgKw",
+      "updateTime": null
+    },
+    {
+      "stitchId": "897ed261d2dd46e3b4af8570ea12ecf2",
+      "name": "MF10-03 Select Provider Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WhLZwHU_1DZzgrTrVqVVfAHAEhYZKl-O-ftWYx0Yt2nhvtMTrVm52A7mNLzCwzXlD_jcqdn9QRRGySUIUGCEefJP5ncB1eGo-kwubcd1cXnMDHSIxtStiIfFO7V5BHG8m0yS1dmXvN_olVqwPQTLwINc6gEWsk5x8pnwwFfL01OsWfTeBA9zZWt8B_EOGzBDGtkCQ87kFOhmiI_eagfHbhkDmCpysI90b_RgE9_iJUqjrL3st8nLM2l5Iq",
+      "updateTime": null
+    },
+    {
+      "stitchId": "a6dbf4e5e83e459ea95c50826ca30c34",
+      "name": "MF01-05 Signing In Loading",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Xm_XA6uObwHLhmaAbAjxQaPyz25YBefmSFiPM0uH8iackMIGOvul2yf6qTISfh5GKtFU2n7wPjifXH_t00Yf8oJl2XWsCagFJn7ja3NPTfM-doYRJ38jPzr_1P7e51nfUxJa-Uy7l3qRN8mIYEqcfwHDiytLk35zSm5yd1yUbWSpmNzzXGFLp27uIrEok7mmyu1vz7PrL8VllGUUgKi5M6cfDGKl6q8pMohNnGZO_WlfckkbIsidyruoc",
+      "updateTime": null
+    },
+    {
+      "stitchId": "f3363068e1f94e619c83a44821045461",
+      "name": "MF07-01 Invite Staff Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1V0aVtBDLyUNNsHLlFTaepdrV3sYiJzFGHlTWqYs3NpFl9n0WZ6mnF0OlpQOZy6ysTe1NhcB6zlWD7AviXzyzCWFW30u9ZCvdYkzqLclPGFXsyLPLyL-ok112xG9QANKOC7l-Q-rLzWFBkBCqmoOXdrqErLTAmmzcw0cN68Qugn_Yu67_Q2eoDCxZ2BN4cV5br0NX9S1XQZTLlCQHxiCn5eSZqei848w2d37NFF1uYutr3RSzOW09Pw1CmW",
+      "updateTime": null
+    },
+    {
+      "stitchId": "f0cc5328778e4bd987429652f16cdb35",
+      "name": "MW07-04 Mobile Publishing",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1U2MhnS9t8WoPKd42Xu8jI3HR4wXhFjRTCuEue2WTYmr0iiZ95AOtGKPyLwaDGAYuYZS6uUcfvTH2THf2FpB4BN7emDDMYOVIRxMOjQ4mdHgxCLfWkbCm7JSWTEvwFFYL9iW7_b70wxAGkjXuC-K-KpvugZhVlHx1DFXX92RcBlOH4uUUWr0Efj8E9uS6OrhhAqS4Sf3pJpgBWlGUZDA0aywVlga9KO2sCut1YAtJJBJ1BiVVkn3UGF4eo4",
+      "updateTime": null
+    },
+    {
+      "stitchId": "111d1da05ef84d33b72aefff93b0d9eb",
+      "name": "MW08-04 SEO and Social Settings",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1WcS8Js54pq3zGqNGclB0fxAX_bHx24X4kGoapuL_2MVfws2c-pqJdhgPYmecSXchaj6CyQLLl-x7f7RMnC4h_oWEQshPPP0LzNG7S74xVto5JgduyGdgZ6dW1bQQ0G9UGLxxQUuMSBhbAp7hCmFuddLIkcsKhuQkvCi9tkttw0dey7RIkzvB_ma-9ZoEvv-K-QpeY_GPlMg7nzL9Crtvfemh0CmoiDN2UvIDB1Rs4mL7VjVtcJtDRetgFw",
+      "updateTime": null
+    },
+    {
+      "stitchId": "e7e2a1ab35a34e16a9e279a6f36c0d6f",
+      "name": "MW04-04 Navigation Manager",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1XU8xW6289w8UlYPFRL1IRWupHC-6QR_zldVCZbzmYvaRVyx6MMrB-aAPRoGYaHs_HdI0ZXeucU-jW0B5hD7NJ9-jrYuIESENV72I9d3rHo72tkuE7IagIQWGqQ09p2CYB2UCLKQ1GkW1LGFq6obkYoMYPou1DhbUMWkwoZFk8VFzhkbhiXyOjboQxyRWlnapVyZQTa_LzHIOUnN5912rywEIxguTDoolhMzrR_KAUvF8vlm6L9e5c5X3o",
+      "updateTime": null
+    },
+    {
+      "stitchId": "df9f49e696714d9f810e5d66b7577237",
+      "name": "MF05-04 Clinic Setup Checklist Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Ua4PHIMCG_VTRQ2rLT1_AONnr-vlHbleheLXBCyb23h4jn8BaFm1PHzTjpbDvWF3NBk2DbjoftEbnXAC2iNIrCVnKtVbhcFBOH3w53IkPFxQY5buERS9mrTfffMmFi5kNGprjMX0PvzJW0QoYtupikXnwc44kEdmRKsYWpdlP9dwJV-8EFQJ6mBv2-Rm6LHOJbOq2cOjj9VO3i4QcA85oFHHcElArqz208TLU1UvG3h4ATgRh4jQlorb3A",
+      "updateTime": null
+    },
+    {
+      "stitchId": "9e85a3391ebd4695a045a974d73d14f9",
+      "name": "MF01-01 Login Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1V7tZPZFvEK1Z8NLkaNV7fPRDpzSNktDsJpD6sEUVDxaaiwaNZ6DsXziLOdgetoykUNRUdeHaH2qQkHHpsDhYaX32zsd5ItpOkBCu_7DIUiLHZEDbSxBpM0kFxSNdKPsTS2zCA34ZZZMHZfxD-t3_TTc2ntHPfWxNblI_iF7RncC9cqb6pkc8WP-w9kSjb5UAsZkc_ZxO1YmAyNhxjKbVNh61U113bAX4RemI9MAcXyq62U8kk4N_Vl90lx",
+      "updateTime": null
+    },
+    {
+      "stitchId": "8d1074d16e6348c4a7da55df89133688",
+      "name": "MF03-02 Register Clinic Step 1 Mobile",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1X30k7ZZrgApTi7HEH2wI1kNeTmPyhBqKjSma1w_nS_5DHfRWqec6iPGKUaAEe6k0CKqpsQEq5U6vu905mB6RXROpGftJ9t2SToYDn1xkUMNcx8UuL04W0GCb0iifKY-FhlVE2PTKHrO_CNY15jl9EPwSd5WdijxkkrkYp6PuNGyGag80T5_2QeZZD5ca6kyXpoGs85mYnAHVn6bFPR-R61uo86QJUoKS_A46NpCyBnep8xpGVVdBbXyGhV",
+      "updateTime": null
+    },
+    {
+      "stitchId": "c2c22334084c4944af49d436e0872a88",
+      "name": "MW07-03 Publishing Confirmation",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1VaAYSo-L1gI6pKroKf_akhYtgEq90JcQRwOqeelShEgK_9OjKPnP0KjqIbtvhzqeWTIxcDnW-56GTCUDQAgrHskF8tS9i6fDLJGP9oUJFKdyvyhpfaRTnTx4t2znJuPgtKtX7av67nIaB-Xzd3WnxxbIGTWOmQWG98YLVwbrLhAtpwtCyR7sNluZkFOsk42qzEyOiU1LYFgWiRLCunwxRdvLMSDmlFU_W1bGQuHS4b7d3BjhTGNNL04QGw",
+      "updateTime": null
+    },
+    {
+      "stitchId": "7fac8f8297c34a1b8be5355c769a9227",
+      "name": "MF03-03 Register Clinic Step 2 Desktop",
+      "screenshotUrl": "https://lh3.googleusercontent.com/aida/AEtjO1Uzi6ryZKLwerxXnQlc17pM3hwITgFoonDISpWxSD10EmvtqwDUy8O2RCVLXzEfaH-NsQIduFIsoFXkW0f4fqdTTDbpNayuMQ3cWXmvTMV1nt8MutfIHsiL3SkKluBrWKiJ6FicUO1AFZMouUz351BEmS2PGEZjSR2AECv1cBkjl85omqj1SJHUAWDdVXeW5XlmtXEj_ANc5d5GVr8DuDAf0K8nNBzl5mnEutNcbszMUo3Uty3v3VkjCUVs",
+      "updateTime": null
+    }
+  ]
+}

@@ -22,7 +22,7 @@ const {
 } = require("./activeClinicBookingStatusCopy");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-v1-closure-p1";
+const ASSET_VERSION = "v7-proj106-p1";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
