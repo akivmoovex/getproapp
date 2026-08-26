@@ -208,6 +208,8 @@ function createRequireActiveClinicPatientAuth(options) {
       : String(env.NODE_ENV || "") === "production";
 
   return function requireActiveClinicPatientAuth(req, res, next) {
+    const { setV5PrivateNoStore } = require("../../platform/http/v5PrivateNoStore");
+    setV5PrivateNoStore(res);
     const auth = req.activeClinicPatientAuth;
     const clinicKey =
       (req.params && req.params.clinicKey) ||
@@ -233,13 +235,21 @@ function createRequireActiveClinicPatientAuth(options) {
         reason === "invalid_session_context";
 
       if (contextDenied && req.accepts("html")) {
-        const {
-          clearV5SessionCookie,
-        } = require("../../platform/session/v5SessionCookie");
-        const { getCsrfCookieName } = require("../../platform/http/v5Csrf");
+        const keepSession =
+          reason === "wrong_clinic_context" ||
+          reason === "wrong_principal_kind" ||
+          reason === "wrong_principal";
+        if (!keepSession) {
+          const {
+            clearV5SessionCookie,
+          } = require("../../platform/session/v5SessionCookie");
+          const { getCsrfCookieName } = require("../../platform/http/v5Csrf");
 
-        clearV5SessionCookie(res, { secure: isProduction, env });
-        res.clearCookie(getCsrfCookieName(env), { path: "/" });
+          clearV5SessionCookie(res, { secure: isProduction, env });
+          res.clearCookie(getCsrfCookieName(env), { path: "/" });
+        }
+        const { setV5PrivateNoStore } = require("../../platform/http/v5PrivateNoStore");
+        setV5PrivateNoStore(res);
         return res.status(403).type("html").send(
           `<!DOCTYPE html><html><head><title>Access unavailable</title></head>
 <body><h1>Patient portal access unavailable</h1>

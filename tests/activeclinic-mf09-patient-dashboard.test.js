@@ -407,6 +407,14 @@ describe("ActiveClinic MF09 patient dashboard chrome", () => {
       .redirects(0);
     assert.ok([403, 303, 401].includes(otherClinic.status), `foreign clinic ${otherClinic.status}`);
     assert.doesNotMatch(otherClinic.text, /data-ac-mf-family="MF09"/);
+    assert.equal(otherClinic.status, 403);
+    const otherSetCookies = [].concat(otherClinic.headers["set-cookie"] || []).join("\n");
+    assert.doesNotMatch(otherSetCookies, /Max-Age=0/i);
+    const ownAgain = await request(app)
+      .get(`/clinics/${clinic.clinicKey}/patient`)
+      .set("Cookie", `${COOKIE_ACTIVECLINIC_ORG}=${sid}`);
+    assert.equal(ownAgain.status, 200);
+    assert.match(ownAgain.text, /data-ac-mf-family="MF09"/);
   });
 
   it("staff session cannot own the patient dashboard", async () => {

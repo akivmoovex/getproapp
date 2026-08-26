@@ -187,6 +187,10 @@ describe("v5 session auth intermittent loss", () => {
     }
     assert.equal(wantsV5PrivateNoStore("/"), false);
     assert.equal(wantsV5PrivateNoStore("/pricing"), false);
+    assert.equal(wantsV5PrivateNoStore("/app"), true);
+    assert.equal(wantsV5PrivateNoStore("/app/onboarding"), true);
+    assert.equal(wantsV5PrivateNoStore("/clinics/demo/patient"), true);
+    assert.equal(wantsV5PrivateNoStore("/clinics/demo"), false);
   });
 
   it("auth gate blocks cookie-present missing sessions without store-error 503", () => {

@@ -249,5 +249,7 @@ describe("activeclinic-dashboard-shell-parity (AC-V6-S02)", () => {
     const anon = await request(app).get("/app").set("Host", "activeclinic.org");
     assert.equal(anon.status, 303);
     assert.match(anon.headers.location || "", /\/login/);
+    assert.match(String(anon.headers["cache-control"] || ""), /no-store/i);
+    assert.match(String(anon.headers.vary || ""), /Cookie/i);
   });
 });

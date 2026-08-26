@@ -50,7 +50,10 @@ function wantsV5PrivateNoStore(pathOnly) {
     p.startsWith("/hq/") ||
     p === "/member" ||
     p.startsWith("/member/") ||
-    p.startsWith("/auth/")
+    p.startsWith("/auth/") ||
+    p === "/app" ||
+    p.startsWith("/app/") ||
+    /\/patient(?:\/|$)/.test(p)
   );
 }
 

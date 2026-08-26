@@ -191,6 +191,8 @@ function createRequireActiveClinicAuth(options) {
       : String(env.NODE_ENV || "") === "production";
 
   return function requireActiveClinicAuth(req, res, next) {
+    const { setV5PrivateNoStore } = require("../../platform/http/v5PrivateNoStore");
+    setV5PrivateNoStore(res);
     const auth = req.activeClinicAuth;
     const patientAuth = req.activeClinicPatientAuth;
     const sessionContext =
