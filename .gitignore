@@ -8,6 +8,18 @@ node_modules/
 !.env.development.example
 !.env.production.example
 !.env.production.template
+.envrc
+
+# Copied local env files beside scripts/local examples (repo-root .env.*.local already ignored)
+scripts/local/env.*.local
+!scripts/local/env.*.local.example
+
+# Credential / TLS material
+*.pem
+*.p12
+*.pfx
+id_rsa
+id_ed25519
 data/*.sqlite
 data/*.sqlite-wal
 data/*.sqlite-shm

@@ -2,12 +2,28 @@ name: CI
 
 on:
   push:
-    branches: [main, v2]
+    branches: [main, v2, V7]
   pull_request:
-    branches: [main, v2]
+    branches: [main, v2, V7]
 
 jobs:
+  secret-hygiene:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Use Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Committed secret hygiene
+        run: node --test tests/committed-secret-hygiene.test.js
+
   component-check:
+    if: >
+      (github.event_name == 'push' && (github.ref_name == 'main' || github.ref_name == 'v2')) ||
+      (github.event_name == 'pull_request' && (github.base_ref == 'main' || github.base_ref == 'v2'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
