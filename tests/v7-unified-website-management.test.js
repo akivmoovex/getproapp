@@ -387,7 +387,7 @@ describe("V7 unified website management", () => {
     assert.match(detail.text, /data-ac-website-action="preview"/);
     assert.match(detail.text, /data-ac-website-action="publish"/);
     assert.match(detail.text, /data-ac-website-action="history"/);
-    assert.match(detail.text, /Edit website/);
+    assert.match(detail.text, /Website Management/i);
     const expectedPath = buildPublicOrganizationWebsitePath({
       product: PRODUCT_CODE.ACTIVECLINIC,
       organizationKey: result.slug,

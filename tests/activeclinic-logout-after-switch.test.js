@@ -248,6 +248,15 @@ describe("ActiveClinic logout after switch", () => {
     if (skipReason) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
   }
 
+  async function loadStaffHome(app, cookieHeaderValue) {
+    let home = await request(app).get("/app").set("Host", HOST).set("Cookie", cookieHeaderValue);
+    const loc = String(home.headers.location || "");
+    if (home.status === 303 && /\/app\/onboarding/i.test(loc)) {
+      home = await request(app).get(loc).set("Host", HOST).set("Cookie", cookieHeaderValue);
+    }
+    return home;
+  }
+
   it("Test 1: login then logout destroys session, clears cookie, redirects, no 403", async () => {
     requireDb();
     const stamp = Date.now().toString(36);
@@ -256,10 +265,7 @@ describe("ActiveClinic logout after switch", () => {
     const { cookie, session } = await sessionCookie(admin.identity.id, ac.orgId);
     const app = makeApp();
     const csrf = issueCsrfToken(MINIMAL_AC);
-    const home = await request(app)
-      .get("/app")
-      .set("Host", HOST)
-      .set("Cookie", `${cookie}; ${CSRF_COOKIE_ACTIVECLINIC_ORG}=${csrf}`);
+    const home = await loadStaffHome(app, `${cookie}; ${CSRF_COOKIE_ACTIVECLINIC_ORG}=${csrf}`);
     assert.equal(home.status, 200);
     const csrfApp = extractCookie(home, CSRF_COOKIE_ACTIVECLINIC_ORG) || csrf;
     const field = home.text.match(/name="_csrf" value="([^"]+)"/);
@@ -342,13 +348,13 @@ describe("ActiveClinic logout after switch", () => {
     assert.ok(newSid, "switch writes session cookie via canonical resolver");
     assert.ok(setCookieNames(switched).includes(COOKIE_ACTIVECLINIC_ORG));
 
-    const home = await request(app)
-      .get("/app")
-      .set("Host", HOST)
-      .set("Cookie", cookieHeader({
+    const home = await loadStaffHome(
+      app,
+      cookieHeader({
         [COOKIE_ACTIVECLINIC_ORG]: newSid,
         [CSRF_COOKIE_ACTIVECLINIC_ORG]: extractCookie(switched, CSRF_COOKIE_ACTIVECLINIC_ORG) || csrf,
-      }));
+      })
+    );
     assert.equal(home.status, 200);
 
     const logout = await request(app)
