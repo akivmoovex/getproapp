@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-26T20:14:47.012Z",
+  "generatedAt": "2026-08-26T20:23:22.213Z",
   "projectId": "10611909237747031838",
   "branch": "V7",
-  "headSha": "c9856144640d92545fb66dc2283a52424a847b4f",
+  "headSha": "3b8032db1e36bdd188b34f6c9221ec9f145e1cf7",
   "inventory": {
     "previousCount": 108,
     "currentCount": 108,
@@ -21,7 +21,14 @@
     "screensBelow95": 0,
     "productDifferences": 9,
     "duplicates": 7,
-    "na": 7,
+    "naReference": 0,
+    "primaryAccounting": {
+      "canonicalApplicable": 92,
+      "productDifference": 9,
+      "duplicate": 7,
+      "naReference": 0,
+      "total": 108
+    },
     "designAverage": 95.1,
     "textAverage": 98.1,
     "assetAverage": 91.1,

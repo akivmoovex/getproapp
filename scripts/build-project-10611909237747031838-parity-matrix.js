@@ -236,7 +236,24 @@ function main() {
       screensBelow95: below95.length,
       productDifferences: rows.filter((r) => r.classification === "PRODUCT_DECISION_DIFFERENCE").length,
       duplicates: rows.filter((r) => r.classification === "DUPLICATE_STITCH_VARIANT").length,
-      na: rows.filter((r) => r.implemented === "N/A").length,
+      /** Non-overlapping primary bucket — not the same as duplicate `implemented: N/A`. */
+      naReference: rows.filter(
+        (r) =>
+          r.classification === "NO_IMPLEMENTATION_REQUIRED" ||
+          r.classification === "N_A_REFERENCE"
+      ).length,
+      primaryAccounting: {
+        canonicalApplicable: canonical.length,
+        productDifference: rows.filter((r) => r.classification === "PRODUCT_DECISION_DIFFERENCE")
+          .length,
+        duplicate: rows.filter((r) => r.classification === "DUPLICATE_STITCH_VARIANT").length,
+        naReference: rows.filter(
+          (r) =>
+            r.classification === "NO_IMPLEMENTATION_REQUIRED" ||
+            r.classification === "N_A_REFERENCE"
+        ).length,
+        total: rows.length,
+      },
       designAverage: sums.n ? +(sums.design / sums.n).toFixed(1) : null,
       textAverage: sums.n ? +(sums.text / sums.n).toFixed(1) : null,
       assetAverage: sums.n ? +(sums.assets / sums.n).toFixed(1) : null,

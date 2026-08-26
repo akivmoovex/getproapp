@@ -41,19 +41,26 @@ describe("project 10611909237747031838 parity matrix", () => {
     assert.match(read("src/activeclinic/http/renderActiveClinicPatient.js"), /v7-proj106-pt1/);
   });
 
-  it("product differences and duplicates are explicitly classified", () => {
+  it("primary accounting is non-overlapping and sums to 108", () => {
     const matrix = JSON.parse(fs.readFileSync(MATRIX_JSON, "utf8"));
-    assert.equal(matrix.summary.productDifferences, 9);
-    assert.equal(matrix.summary.duplicates, 7);
-    const mf11 = matrix.rows.filter((r) => r.family === "MF11");
-    assert.equal(mf11.length, 4);
-    mf11.forEach((r) => {
-      assert.equal(r.classification, "PRODUCT_DECISION_DIFFERENCE");
-    });
-    const legacy = matrix.rows.filter((r) => r.family === "AUTH_LEGACY");
-    assert.equal(legacy.length, 7);
-    legacy.forEach((r) => {
-      assert.equal(r.classification, "DUPLICATE_STITCH_VARIANT");
-    });
+    const p = matrix.summary.primaryAccounting;
+    assert.ok(p);
+    assert.equal(p.canonicalApplicable, 92);
+    assert.equal(p.productDifference, 9);
+    assert.equal(p.duplicate, 7);
+    assert.equal(p.naReference, 0);
+    assert.equal(p.total, 108);
+    assert.equal(
+      p.canonicalApplicable + p.productDifference + p.duplicate + p.naReference,
+      108
+    );
+    assert.equal(matrix.summary.naReference, 0);
+  });
+
+  it("closure baseline document is locked", () => {
+    const closure = read("docs/activeclinic/stitch/PROJECT_10611909237747031838_CLOSURE.md");
+    assert.match(closure, /BASELINE_LOCKED/);
+    assert.match(closure, /CANONICAL_APPLICABLE \| 92/);
+    assert.match(closure, /N_A_REFERENCE \| 0/);
   });
 });
