@@ -172,6 +172,13 @@ function createHostedClient(baseUrl) {
       cookieNames: jar.names(),
       sessionPresent: jar.sessionPresent(),
       setCookieSummaries: setCookies.map(summarizeSetCookie),
+      authDecision: {
+        guard: res.headers.get("x-ac-auth-guard") || "",
+        reason: res.headers.get("x-ac-auth-reason") || "",
+        decision: res.headers.get("x-ac-auth-decision") || "",
+        cookiePresent: res.headers.get("x-ac-cookie-present") || "",
+        session: res.headers.get("x-ac-session") || "",
+      },
     };
   }
 

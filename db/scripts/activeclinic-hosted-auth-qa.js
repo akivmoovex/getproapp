@@ -155,6 +155,7 @@ async function measureOverflow(baseUrl, path, cookies, viewport) {
 const REQUIRED_CHECKS = [
   "staffLoginGet",
   "staffLoginPost",
+  "exactAppAuthenticatedRepeat",
   "staffDashboard",
   "onboarding",
   "websiteHub",
@@ -311,6 +312,36 @@ async function runHostedPass(client, fixture, options) {
   });
   record(checks, "clinicSelector", /select-organization/i.test(loginPost.location || "") === false, {
     location: loginPost.location ? String(loginPost.location).split("?")[0] : "",
+  });
+
+  const exactAppHits = [];
+  for (let i = 0; i < 10; i += 1) {
+    const hit = await client.get("/app");
+    const loc = locationPath(hit.location);
+    const loginRedirect = /\/login(\?|$)/i.test(loc);
+    const authed =
+      loginRedirect === false &&
+      (hit.status === 200 || loc === "/app/onboarding");
+    exactAppHits.push({
+      i: i + 1,
+      status: hit.status,
+      location: loc,
+      loginRedirect,
+      authed,
+      sessionPresent: hit.sessionPresent === true,
+      authGuard: hit.authDecision && hit.authDecision.guard,
+      authReason: hit.authDecision && hit.authDecision.reason,
+      authDecision: hit.authDecision && hit.authDecision.decision,
+      cookiePresentHeader: hit.authDecision && hit.authDecision.cookiePresent,
+      sessionHeader: hit.authDecision && hit.authDecision.session,
+    });
+  }
+  const exactAppAuthed = exactAppHits.filter((row) => row.authed).length;
+  const exactAppLogin = exactAppHits.filter((row) => row.loginRedirect).length;
+  record(checks, "exactAppAuthenticatedRepeat", exactAppAuthed === 10 && exactAppLogin === 0, {
+    authenticated: `${exactAppAuthed}/10`,
+    loginRedirects: `${exactAppLogin}/10`,
+    hits: exactAppHits,
   });
 
   const dashboard = afterLogin.status === 200 ? afterLogin : await staffPage("/app");
