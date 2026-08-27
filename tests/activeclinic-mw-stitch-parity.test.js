@@ -62,7 +62,13 @@ describe("activeclinic MW Stitch parity chrome", () => {
     assert.match(builder, /method="post"/);
 
     const media = read("views/activeclinic/app/website-cms-media.ejs");
-    assert.match(media, /'Media Library'/);
+    // The Stitch heading now comes from the shared library view model, which
+    // both products render, so assert it where it is actually set.
+    assert.match(
+      read("src/activeclinic/http/activeClinicWebsiteCmsRoutes.js"),
+      /heading: selectMode \? "Select from Media Library" : "Media Library"/
+    );
+    assert.match(media, /cms\.renderLibrary\(/);
     assert.match(media, /Upload Media/);
     assert.match(media, /name="file"/);
     assert.match(media, /data-ac-mw-upload="1"/);

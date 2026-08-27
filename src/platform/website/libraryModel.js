@@ -39,6 +39,11 @@ const LIBRARY_MODE = Object.freeze({
 
 const MAX_QUERY_LENGTH = 100;
 
+/** Folder rail selections that are views rather than folder rows. */
+const FOLDER_ALL = "all";
+const FOLDER_UNFILED = "unfiled";
+const MAX_FOLDER_NAME_LENGTH = 80;
+
 /** Empty-state copy, keyed by state. Products may override per surface. */
 const EMPTY_STATE_COPY = Object.freeze({
   [LIBRARY_STATE.EMPTY]: Object.freeze({
@@ -148,6 +153,8 @@ function normalizeLibraryItem(raw, extra) {
     height: Number(raw.heightPx) || null,
     createdAtLabel: formatDate(raw.createdAt),
     usageLabel: opts.usageLabel ? text(opts.usageLabel, 180) : null,
+    // Flat folder assignment; null means Unfiled.
+    folderId: raw.folderId == null ? null : String(raw.folderId),
   };
 }
 
@@ -175,6 +182,17 @@ function normalizeQuery(value) {
     .slice(0, MAX_QUERY_LENGTH);
 }
 
+/**
+ * Folder selection: "all", "unfiled", or a folder id.
+ * @param {unknown} value
+ */
+function normalizeFolderFilter(value) {
+  const raw = String(value == null ? "" : value).trim();
+  if (!raw || raw.toLowerCase() === FOLDER_ALL) return FOLDER_ALL;
+  if (raw.toLowerCase() === FOLDER_UNFILED) return FOLDER_UNFILED;
+  return raw;
+}
+
 /** @param {unknown} value */
 function normalizeKindFilter(value) {
   const raw = String(value == null ? "" : value).trim().toLowerCase();
@@ -185,18 +203,21 @@ function normalizeKindFilter(value) {
 }
 
 /**
- * Filename search plus type filtering, shared by both products.
+ * Filename search plus type and folder filtering, shared by both products.
  * @param {Array<object>} items normalized items
- * @param {{ q?: unknown, kind?: unknown }} [filters]
+ * @param {{ q?: unknown, kind?: unknown, folder?: unknown }} [filters]
  */
 function filterLibraryItems(items, filters) {
   const list = Array.isArray(items) ? items : [];
   const opts = filters && typeof filters === "object" ? filters : {};
   const q = normalizeQuery(opts.q).toLowerCase();
   const kind = normalizeKindFilter(opts.kind);
+  const folder = opts.folder === undefined ? FOLDER_ALL : normalizeFolderFilter(opts.folder);
 
   return list.filter((item) => {
     if (!item) return false;
+    if (folder === FOLDER_UNFILED && item.folderId) return false;
+    if (folder !== FOLDER_ALL && folder !== FOLDER_UNFILED && item.folderId !== folder) return false;
     if (kind && item.kind !== kind) return false;
     if (q) {
       const haystack = `${item.title || ""} ${item.altText || ""}`.toLowerCase();
@@ -245,10 +266,11 @@ function buildLibraryView(input) {
   const all = Array.isArray(opts.items) ? opts.items.filter(Boolean) : [];
   const q = normalizeQuery(opts.q);
   const kind = normalizeKindFilter(opts.kind);
+  const folder = normalizeFolderFilter(opts.folder);
   const basePath = String(opts.basePath || "");
   const isError = opts.error === true;
 
-  const items = isError ? [] : filterLibraryItems(all, { q, kind });
+  const items = isError ? [] : filterLibraryItems(all, { q, kind, folder });
 
   let state = LIBRARY_STATE.READY;
   if (isError) state = LIBRARY_STATE.ERROR;
@@ -260,13 +282,15 @@ function buildLibraryView(input) {
     counts[value] = all.filter((item) => item && item.kind === value).length;
   }
 
+  const folderParam = folder === FOLDER_ALL ? "" : folder;
+
   // Only offer type tabs for kinds the tenant actually has.
   const kindFilters = [
     {
       key: "",
       label: "All",
       count: counts.total,
-      href: appendQuery(basePath, { q }),
+      href: appendQuery(basePath, { q, folder: folderParam }),
       current: !kind,
     },
   ];
@@ -276,10 +300,63 @@ function buildLibraryView(input) {
       key: value,
       label: LIBRARY_KIND_LABEL[value],
       count: counts[value],
-      href: appendQuery(basePath, { q, type: value }),
+      href: appendQuery(basePath, { q, folder: folderParam, type: value }),
       current: kind === value,
     });
   }
+
+  // Flat folder rail: All Media, Unfiled, then each folder by name.
+  const folderRows = Array.isArray(opts.folders) ? opts.folders.filter(Boolean) : [];
+  const folderCounts = opts.folderCounts && typeof opts.folderCounts === "object"
+    ? opts.folderCounts
+    : {};
+  const foldersEnabled = opts.foldersEnabled === true;
+
+  const folderFilters = [];
+  if (foldersEnabled) {
+    folderFilters.push({
+      key: FOLDER_ALL,
+      label: "All Media",
+      count: Number(folderCounts[FOLDER_ALL]) || 0,
+      href: appendQuery(basePath, { q, type: kind }),
+      current: folder === FOLDER_ALL,
+      isFolder: false,
+    });
+    folderFilters.push({
+      key: FOLDER_UNFILED,
+      label: "Unfiled",
+      count: Number(folderCounts[FOLDER_UNFILED]) || 0,
+      href: appendQuery(basePath, { q, type: kind, folder: FOLDER_UNFILED }),
+      current: folder === FOLDER_UNFILED,
+      isFolder: false,
+    });
+    for (const row of folderRows) {
+      const id = String(row.id || "");
+      if (!id) continue;
+      folderFilters.push({
+        key: id,
+        label: text(row.name, MAX_FOLDER_NAME_LENGTH) || "Untitled folder",
+        count: Number(folderCounts[id]) || 0,
+        href: appendQuery(basePath, { q, type: kind, folder: id }),
+        current: folder === id,
+        isFolder: true,
+      });
+    }
+  }
+
+  const activeFolder = folderFilters.find((entry) => entry.current) || null;
+  // Move targets exclude the folder an asset already sits in, which is applied
+  // per card in the template.
+  const moveTargets = foldersEnabled
+    ? [{ key: "", label: "Unfiled" }].concat(
+        folderRows
+          .filter((row) => row && row.id)
+          .map((row) => ({
+            key: String(row.id),
+            label: text(row.name, MAX_FOLDER_NAME_LENGTH) || "Untitled folder",
+          }))
+      )
+    : [];
 
   const emptyState = Object.assign(
     {},
@@ -297,6 +374,19 @@ function buildLibraryView(input) {
     filteredTotal: items.length,
     q,
     kind,
+    folder,
+    foldersEnabled,
+    folderFilters,
+    activeFolder,
+    activeFolderLabel: activeFolder ? activeFolder.label : "All Media",
+    moveTargets,
+    canManageFolders: foldersEnabled && opts.canManageFolders === true,
+    folderCreateAction: opts.folderCreateAction ? String(opts.folderCreateAction) : null,
+    folderRenameAction: opts.folderRenameAction ? String(opts.folderRenameAction) : null,
+    folderDeleteAction: opts.folderDeleteAction ? String(opts.folderDeleteAction) : null,
+    moveAction: opts.moveAction ? String(opts.moveAction) : null,
+    maxFolderNameLength: MAX_FOLDER_NAME_LENGTH,
+    folderNotice: opts.folderNotice ? String(opts.folderNotice) : null,
     // "All" plus a single kind is not a choice, so offer tabs only from two
     // distinct kinds upwards.
     kindFilters: kindFilters.length > 2 ? kindFilters : [],
@@ -320,6 +410,10 @@ module.exports = {
   LIBRARY_STATE,
   LIBRARY_MODE,
   MAX_QUERY_LENGTH,
+  FOLDER_ALL,
+  FOLDER_UNFILED,
+  MAX_FOLDER_NAME_LENGTH,
+  normalizeFolderFilter,
   EMPTY_STATE_COPY,
   formatBytes,
   formatDate,

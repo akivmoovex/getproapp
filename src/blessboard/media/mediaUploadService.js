@@ -265,6 +265,7 @@ function createMediaUploadService(env, storageOverrides) {
           createdAt: asset.createdAt,
           category: mime.startsWith("image/") ? "image" : "document",
           deliveryPath: deliveryPathForAsset(asset.id),
+          folderId: asset.folderId == null ? null : asset.folderId,
         };
       }).filter(Boolean);
       return { ok: true, status: STATUS.OK, assets };

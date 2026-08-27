@@ -38,7 +38,7 @@
   </nav>
 
   <%# Shared content/media library UI — see src/platform/website/libraryModel.js %>
-  <%- libraryHtml %>
+  <%- renderLibrary(Object.assign({}, library, { csrfField: csrfField, csrfToken: csrfToken })) %>
 
   <p class="bb-ba-hint">
     Upload new files from any page or section editor. Files uploaded by HQ and by

@@ -8,6 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
 const libraryModel = require("../../platform/website/libraryModel");
+const mediaFoldersService = require("../../platform/website/mediaFoldersService");
 const {
   renderWebsiteLibrary,
   LIBRARY_STYLESHEET,
@@ -165,6 +166,25 @@ function renderContentAdminView(relativePath, data) {
   const filename = path.join(VIEWS_ROOT, relativePath);
   const source = fs.readFileSync(filename, "utf8");
   return ejs.render(source, data, { filename });
+}
+
+/** Map a shared media-folder result code to admin-facing copy. */
+function folderNoticeMessage(code) {
+  const key = String(code || "").trim();
+  if (!key) return null;
+  const messages = {
+    folder_created: "Folder created.",
+    folder_renamed: "Folder renamed.",
+    folder_deleted: "Folder deleted. Its files moved to Unfiled.",
+    media_moved: "File moved.",
+    [mediaFoldersService.RESULT.NAME_TAKEN]: "A folder with that name already exists.",
+    [mediaFoldersService.RESULT.INVALID_INPUT]: "Enter a folder name of up to 80 characters.",
+    [mediaFoldersService.RESULT.FOLDER_NOT_FOUND]: "That folder no longer exists.",
+    [mediaFoldersService.RESULT.MEDIA_NOT_FOUND]: "That file no longer exists.",
+    [mediaFoldersService.RESULT.LIMIT_REACHED]: "You have reached the folder limit.",
+    [mediaFoldersService.RESULT.TENANT_MISMATCH]: "That folder is not available.",
+  };
+  return messages[key] || null;
 }
 
 /**
@@ -943,16 +963,33 @@ function createContentAdminRouter(deps) {
       }
 
       const libraryBasePath = `${base}/media`;
+
+      // Shared media folders, keyed by the organization that owns this church.
+      const folderContext = await mediaFoldersService.loadFolderContext(getPool(), {
+        product: "blessboard",
+        scopeId: scope.churchId,
+      });
+
       const library = libraryModel.buildLibraryView({
         items: libraryModel.normalizeLibraryItems(assets, (row) => ({
           previewUrl: row.previewPath,
         })),
         q: req.query && req.query.q,
         kind: req.query && req.query.type,
+        folder: req.query && req.query.folder,
         basePath: libraryBasePath,
         heading: "Content Library",
         description:
           "Images and documents uploaded for this church. Files are shared across HQ and branches.",
+        foldersEnabled: true,
+        canManageFolders: true,
+        folders: folderContext.folders || [],
+        folderCounts: folderContext.counts || {},
+        folderCreateAction: `${libraryBasePath}/folders`,
+        folderRenameAction: `${libraryBasePath}/folders/rename`,
+        folderDeleteAction: `${libraryBasePath}/folders/delete`,
+        moveAction: `${libraryBasePath}/move`,
+        folderNotice: folderNoticeMessage(req.query && req.query.folderNotice),
         emptyState: {
           title: "No files yet",
           body: "Upload media from any website or content editor to build your library.",
@@ -965,13 +1002,108 @@ function createContentAdminRouter(deps) {
           pageTitle: "Content Library",
           scope,
           library,
-          libraryHtml: renderWebsiteLibrary(library),
+          // Rendered in the template so the shared folder and move forms can
+          // carry the CSRF token from the shell locals.
+          renderLibrary: renderWebsiteLibrary,
           libraryStylesheet: LIBRARY_STYLESHEET,
           visibility,
           basePath: base,
         })
       );
       return res.status(200).type("html").send(html);
+    });
+
+    // Folder routes precede "/media/:assetId/..." so "folders" and "move" are
+    // never captured as an asset id.
+    function folderRedirect(res, base, code, folder) {
+      const params = [];
+      if (folder) params.push(`folder=${encodeURIComponent(folder)}`);
+      if (code) params.push(`folderNotice=${encodeURIComponent(code)}`);
+      const query = params.length ? `?${params.join("&")}` : "";
+      return res.redirect(303, `${base}/media${query}`);
+    }
+
+    function folderCsrfOk(req, res) {
+      const submitted =
+        (req.body && req.body[CSRF_FIELD]) ||
+        (req.headers["x-csrf-token"] != null ? String(req.headers["x-csrf-token"]) : "");
+      if (validateCsrf(req, submitted, env)) return true;
+      res.status(403).json({ ok: false, reason: "csrf" });
+      return false;
+    }
+
+    router.post(`${p}/media/folders`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!folderCsrfOk(req, res)) return;
+      const base = String(scope.basePath || p).replace(/\/$/, "");
+      const resolved = await mediaFoldersService.resolveOrganizationId(getPool(), {
+        product: "blessboard",
+        scopeId: scope.churchId,
+      });
+      if (!resolved.ok) return folderRedirect(res, base, resolved.code, null);
+      const created = await mediaFoldersService.createFolder(getPool(), {
+        organizationId: resolved.organizationId,
+        name: req.body && req.body.name,
+      });
+      if (!created.ok) return folderRedirect(res, base, created.code, null);
+      return folderRedirect(res, base, "folder_created", created.folder.id);
+    });
+
+    router.post(`${p}/media/folders/rename`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!folderCsrfOk(req, res)) return;
+      const base = String(scope.basePath || p).replace(/\/$/, "");
+      const folderId = req.body && req.body.folderId;
+      const resolved = await mediaFoldersService.resolveOrganizationId(getPool(), {
+        product: "blessboard",
+        scopeId: scope.churchId,
+      });
+      if (!resolved.ok) return folderRedirect(res, base, resolved.code, null);
+      const renamed = await mediaFoldersService.renameFolder(getPool(), {
+        organizationId: resolved.organizationId,
+        folderId,
+        name: req.body && req.body.name,
+      });
+      if (!renamed.ok) return folderRedirect(res, base, renamed.code, folderId);
+      return folderRedirect(res, base, "folder_renamed", renamed.folder.id);
+    });
+
+    router.post(`${p}/media/folders/delete`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!folderCsrfOk(req, res)) return;
+      const base = String(scope.basePath || p).replace(/\/$/, "");
+      const resolved = await mediaFoldersService.resolveOrganizationId(getPool(), {
+        product: "blessboard",
+        scopeId: scope.churchId,
+      });
+      if (!resolved.ok) return folderRedirect(res, base, resolved.code, null);
+      // Assets are preserved: folder_id is ON DELETE SET NULL, so filed media
+      // returns to Unfiled.
+      const removed = await mediaFoldersService.deleteFolder(getPool(), {
+        organizationId: resolved.organizationId,
+        folderId: req.body && req.body.folderId,
+      });
+      if (!removed.ok) return folderRedirect(res, base, removed.code, null);
+      return folderRedirect(res, base, "folder_deleted", null);
+    });
+
+    router.post(`${p}/media/move`, rejectApex, gateContent, async (req, res) => {
+      const scope = await resolveScope(req, res);
+      if (!scope) return;
+      if (!folderCsrfOk(req, res)) return;
+      const base = String(scope.basePath || p).replace(/\/$/, "");
+      const folderId = req.body && req.body.folderId;
+      const moved = await mediaFoldersService.moveMediaToFolder(getPool(), {
+        product: "blessboard",
+        scopeId: scope.churchId,
+        mediaId: req.body && req.body.mediaId,
+        folderId,
+      });
+      if (!moved.ok) return folderRedirect(res, base, moved.code, folderId);
+      return folderRedirect(res, base, "media_moved", moved.folderId);
     });
 
     router.post(`${p}/media/:assetId/archive`, rejectApex, gateContent, async (req, res) => {

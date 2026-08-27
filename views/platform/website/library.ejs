@@ -23,6 +23,76 @@
     </p>
   </div>
 
+  <% if (library.foldersEnabled) { %>
+  <div class="gp-lib__folders" data-gp-library-folders="1">
+    <nav class="gp-lib__folder-rail" aria-label="Filter files by folder">
+      <% library.folderFilters.forEach(function (entry) { %>
+      <a
+        class="gp-lib__folder<%= entry.current ? ' is-current' : '' %><%= entry.isFolder ? '' : ' gp-lib__folder--view' %>"
+        href="<%= entry.href %>"
+        <%= entry.current ? 'aria-current="true"' : '' %>
+        data-gp-library-folder="<%= entry.key %>"
+      ><%= entry.label %> <span class="gp-lib__folder-count"><%= entry.count %></span></a>
+      <% }) %>
+    </nav>
+
+    <% if (library.canManageFolders) { %>
+    <div class="gp-lib__folder-admin">
+      <% if (library.folderCreateAction) { %>
+      <form class="gp-lib__folder-form" method="post" action="<%= library.folderCreateAction %>" data-gp-library-folder-create="1">
+        <% if (library.csrfField) { %><input type="hidden" name="<%= library.csrfField %>" value="<%= library.csrfToken %>"/><% } %>
+        <label class="gp-lib__search-label" for="gp-lib-folder-name">New folder name</label>
+        <input
+          class="gp-lib__search-input"
+          id="gp-lib-folder-name"
+          type="text"
+          name="name"
+          maxlength="<%= library.maxFolderNameLength %>"
+          placeholder="New folder name"
+          required
+        />
+        <button class="gp-lib__btn" type="submit">Create folder</button>
+      </form>
+      <% } %>
+
+      <% if (library.activeFolder && library.activeFolder.isFolder) { %>
+      <div class="gp-lib__folder-actions">
+        <% if (library.folderRenameAction) { %>
+        <form class="gp-lib__folder-form" method="post" action="<%= library.folderRenameAction %>" data-gp-library-folder-rename="1">
+          <% if (library.csrfField) { %><input type="hidden" name="<%= library.csrfField %>" value="<%= library.csrfToken %>"/><% } %>
+          <input type="hidden" name="folderId" value="<%= library.activeFolder.key %>"/>
+          <label class="gp-lib__search-label" for="gp-lib-folder-rename">Rename this folder</label>
+          <input
+            class="gp-lib__search-input"
+            id="gp-lib-folder-rename"
+            type="text"
+            name="name"
+            maxlength="<%= library.maxFolderNameLength %>"
+            value="<%= library.activeFolder.label %>"
+            required
+          />
+          <button class="gp-lib__btn" type="submit">Rename</button>
+        </form>
+        <% } %>
+        <% if (library.folderDeleteAction) { %>
+        <form class="gp-lib__folder-form" method="post" action="<%= library.folderDeleteAction %>" data-gp-library-folder-delete="1">
+          <% if (library.csrfField) { %><input type="hidden" name="<%= library.csrfField %>" value="<%= library.csrfToken %>"/><% } %>
+          <input type="hidden" name="folderId" value="<%= library.activeFolder.key %>"/>
+          <button class="gp-lib__btn gp-lib__btn--ghost" type="submit">Delete folder</button>
+          <span class="gp-lib__folder-hint">Files move to Unfiled. Nothing is deleted.</span>
+        </form>
+        <% } %>
+      </div>
+      <% } %>
+    </div>
+    <% } %>
+
+    <% if (library.folderNotice) { %>
+    <p class="gp-lib__folder-notice" role="status"><%= library.folderNotice %></p>
+    <% } %>
+  </div>
+  <% } %>
+
   <% if (library.searchEnabled || library.kindFilters.length) { %>
   <div class="gp-lib__toolbar">
     <% if (library.searchEnabled) { %>
@@ -111,6 +181,19 @@
         <% } %>
         <% if (item.detailsUrl) { %>
         <a class="gp-lib__btn gp-lib__btn--ghost gp-lib__card-action" href="<%= item.detailsUrl %>">Details</a>
+        <% } %>
+        <% if (library.canManageFolders && library.moveAction) { %>
+        <form class="gp-lib__move" method="post" action="<%= library.moveAction %>" data-gp-library-move="1">
+          <% if (library.csrfField) { %><input type="hidden" name="<%= library.csrfField %>" value="<%= library.csrfToken %>"/><% } %>
+          <input type="hidden" name="mediaId" value="<%= item.id %>"/>
+          <label class="gp-lib__search-label" for="gp-lib-move-<%= item.id %>">Move to folder</label>
+          <select class="gp-lib__move-select" id="gp-lib-move-<%= item.id %>" name="folderId">
+            <% library.moveTargets.forEach(function (target) { %>
+            <option value="<%= target.key %>" <%= (target.key || null) === (item.folderId || null) ? 'selected' : '' %>><%= target.label %></option>
+            <% }) %>
+          </select>
+          <button class="gp-lib__btn" type="submit">Move</button>
+        </form>
         <% } %>
       </div>
     </li>

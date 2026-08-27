@@ -31,7 +31,7 @@
   </dialog>
   <% } %>
   <%# Shared content/media library UI — see src/platform/website/libraryModel.js %>
-  <%- cms.libraryHtml %>
+  <%- cms.renderLibrary(Object.assign({}, cms.library, { csrfField: csrfField, csrfToken: csrfToken })) %>
   <% if (selected) { %>
   <form class="ac-mw-form" method="post" action="/app/settings/website/media/<%= selected.id %>">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>

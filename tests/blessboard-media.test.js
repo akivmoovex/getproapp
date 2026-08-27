@@ -614,6 +614,113 @@ describe("blessboard media service + http", () => {
     );
   });
 
+  it("manages shared media folders over HTTP without ever deleting assets", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const sidA = sessionCookie(users.hqA);
+    const bootA = await request(app).get("/hq/content").set("Host", HOST_A).set("Cookie", sidA);
+    const csrfA = extractCookie(bootA, CSRF_COOKIE);
+    assert.ok(csrfA);
+    const authed = cookieHeader(sidA, `${CSRF_COOKIE}=${csrfA}`);
+
+    const up = await request(app)
+      .post("/hq/content/media/upload")
+      .set("Host", HOST_A)
+      .set("Cookie", authed)
+      .field(CSRF_FIELD, csrfA)
+      .field("visibility", "public")
+      .attach("file", PDF_MIN, "folder-doc.pdf");
+    assert.equal(up.status, 200, JSON.stringify(up.body));
+    const assetId = up.body.assetId;
+    assert.ok(assetId);
+
+    const created = await request(app)
+      .post("/hq/content/media/folders")
+      .set("Host", HOST_A)
+      .set("Cookie", authed)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrfA, name: "Service Bulletins" });
+    assert.equal(created.status, 303, created.text);
+    const folderId = /folder=([0-9a-f-]{36})/.exec(created.headers.location || "");
+    assert.ok(folderId, `expected a folder id in ${created.headers.location}`);
+
+    // The new folder appears in the rail, and the asset starts Unfiled.
+    const page = await request(app)
+      .get("/hq/content/media")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "text/html");
+    assert.equal(page.status, 200);
+    assert.match(page.text, /Service Bulletins/);
+    assert.match(page.text, /data-gp-library-folder="all"/);
+    assert.match(page.text, /data-gp-library-folder="unfiled"/);
+    assert.ok(page.text.includes(`data-gp-library-folder="${folderId[1]}"`));
+
+    const moved = await request(app)
+      .post("/hq/content/media/move")
+      .set("Host", HOST_A)
+      .set("Cookie", authed)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrfA, mediaId: assetId, folderId: folderId[1] });
+    assert.equal(moved.status, 303, moved.text);
+
+    // Viewing the folder shows the asset; Unfiled no longer does.
+    const inFolder = await request(app)
+      .get(`/hq/content/media?folder=${folderId[1]}`)
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "text/html");
+    assert.ok(inFolder.text.includes(`data-gp-library-id="${assetId}"`));
+    const inUnfiled = await request(app)
+      .get("/hq/content/media?folder=unfiled")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "text/html");
+    assert.ok(!inUnfiled.text.includes(`data-gp-library-id="${assetId}"`));
+
+    const renamed = await request(app)
+      .post("/hq/content/media/folders/rename")
+      .set("Host", HOST_A)
+      .set("Cookie", authed)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrfA, folderId: folderId[1], name: "Weekly Bulletins" });
+    assert.equal(renamed.status, 303);
+    const afterRename = await request(app)
+      .get("/hq/content/media")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "text/html");
+    assert.match(afterRename.text, /Weekly Bulletins/);
+    assert.doesNotMatch(afterRename.text, /Service Bulletins/);
+
+    // Deleting the folder must keep the asset and return it to Unfiled.
+    const deleted = await request(app)
+      .post("/hq/content/media/folders/delete")
+      .set("Host", HOST_A)
+      .set("Cookie", authed)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrfA, folderId: folderId[1] });
+    assert.equal(deleted.status, 303, deleted.text);
+
+    const afterDelete = await request(app)
+      .get("/hq/content/media?limit=100")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "application/json");
+    const survivor = (afterDelete.body.assets || []).find((a) => a.id === assetId);
+    assert.ok(survivor, "deleting a folder must never delete the asset");
+    assert.equal(survivor.folderId, null, "the asset returns to Unfiled");
+    assert.doesNotMatch(afterDelete.text, /Weekly Bulletins/);
+
+    // Folder mutations require CSRF.
+    const noCsrf = await request(app)
+      .post("/hq/content/media/folders")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .type("form")
+      .send({ name: "No CSRF" });
+    assert.equal(noCsrf.status, 403);
+  });
+
   it("lists church assets and archives via content-admin JSON; denies cross-tenant list", async (t) => {
     if (skipIfNeeded(t)) return;
     const sidA = sessionCookie(users.hqA);

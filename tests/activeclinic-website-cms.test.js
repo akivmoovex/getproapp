@@ -382,6 +382,42 @@ describe("ActiveClinic website CMS", () => {
       .set("Cookie", cookies);
     assert.equal(mediaSearch.status, 200);
     assert.match(mediaSearch.text, /data-gp-library-empty="1"/);
+
+    // Shared media folders: the rail and its create form are available, and the
+    // folder views are reachable.
+    assert.match(mediaPage.text, /data-gp-library-folders="1"/);
+    assert.match(mediaPage.text, /data-gp-library-folder="all"/);
+    assert.match(mediaPage.text, /data-gp-library-folder="unfiled"/);
+    assert.match(mediaPage.text, /data-gp-library-folder-create="1"/);
+    assert.match(mediaPage.text, /All Media/);
+
+    const folderPage = await request(app)
+      .get("/app/settings/website/media")
+      .set("Cookie", cookies);
+    assert.equal(folderPage.status, 200);
+    const folderCsrf = extractCsrf(folderPage);
+    const folderCookies = cookieHeader(cookie, folderPage);
+
+    const acFolderCreate = await request(app)
+      .post("/app/settings/website/media/folders")
+      .set("Cookie", folderCookies)
+      .type("form")
+      .send({ [CSRF_FIELD]: folderCsrf, name: "Clinic Photos" });
+    assert.equal(acFolderCreate.status, 303, acFolderCreate.text);
+
+    const withFolder = await request(app)
+      .get("/app/settings/website/media")
+      .set("Cookie", cookies);
+    assert.equal(withFolder.status, 200);
+    assert.match(withFolder.text, /Clinic Photos/);
+
+    // Folder mutations reject a missing CSRF token.
+    const acNoCsrf = await request(app)
+      .post("/app/settings/website/media/folders")
+      .set("Cookie", folderCookies)
+      .type("form")
+      .send({ name: "No CSRF" });
+    assert.equal(acNoCsrf.status, 403);
     const publishPage = await request(app).get("/app/settings/website/publish").set("Cookie", cookies);
     assert.equal(publishPage.status, 200);
     assert.match(publishPage.text, /Site Status/);

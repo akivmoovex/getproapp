@@ -161,6 +161,103 @@
   color: var(--gp-lib-muted);
 }
 
+/* —— Folder rail —— */
+
+.gp-lib__folders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--gp-lib-border);
+}
+
+.gp-lib__folder-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.gp-lib__folder {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  color: inherit;
+  text-decoration: none;
+  background: var(--gp-lib-soft);
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+}
+
+.gp-lib__folder--view {
+  font-weight: 500;
+}
+
+.gp-lib__folder.is-current {
+  background: var(--gp-lib-surface);
+  border-color: var(--gp-lib-accent);
+  font-weight: 600;
+}
+
+.gp-lib__folder-count {
+  font-size: 0.75rem;
+  color: var(--gp-lib-muted);
+}
+
+.gp-lib__folder-admin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.gp-lib__folder-form {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.gp-lib__folder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.gp-lib__folder-hint,
+.gp-lib__folder-notice {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--gp-lib-muted);
+}
+
+.gp-lib__move {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  margin: 0.2rem 0 0;
+}
+
+.gp-lib__move-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.75rem;
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: inherit;
+  background: var(--gp-lib-surface);
+  border: 1px solid var(--gp-lib-border);
+  border-radius: 0.5rem;
+}
+
 /* —— Grid —— */
 
 .gp-lib__grid {
@@ -335,7 +432,8 @@
     flex: 1 1 auto;
   }
 
-  .gp-lib__filters {
+  .gp-lib__filters,
+  .gp-lib__folder-rail {
     /* Horizontal scroll on the pill row only, never the page. */
     flex-wrap: nowrap;
     overflow-x: auto;
@@ -344,8 +442,23 @@
     -webkit-overflow-scrolling: touch;
   }
 
-  .gp-lib__filter {
+  .gp-lib__filter,
+  .gp-lib__folder {
     flex: 0 0 auto;
+  }
+
+  .gp-lib__folder-admin,
+  .gp-lib__folder-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gp-lib__folder-form {
+    flex-wrap: wrap;
+  }
+
+  .gp-lib__folder-form .gp-lib__search-input {
+    flex: 1 1 100%;
   }
 
   /* One card per row keeps thumbnails legible at 390px and 360px. */

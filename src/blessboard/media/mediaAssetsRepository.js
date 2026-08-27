@@ -24,12 +24,14 @@ function mapAsset(row) {
     status: row.status,
     createdAt: row.created_at,
     archivedAt: row.archived_at,
+    // Shared media folders; null means Unfiled.
+    folderId: row.folder_id == null ? null : row.folder_id,
   };
 }
 
 const ASSET_COLS = `id, church_id, branch_id, uploaded_by_user_id, storage_bucket, storage_key,
                     original_filename, mime_type, size_bytes, sha256, visibility, status,
-                    created_at, archived_at`;
+                    created_at, archived_at, folder_id`;
 
 /**
  * @param {{ query: Function }} db

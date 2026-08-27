@@ -383,7 +383,10 @@ test("shared library CSS keeps touch targets usable", () => {
 
 test("ActiveClinic renders the shared library instead of its own grid", () => {
   const view = readRepoFile("views/activeclinic/app/website-cms-media.ejs");
-  assert.ok(view.includes("cms.libraryHtml"), "must inject the shared library UI");
+  // Rendered in the template so the shared folder and move forms can carry the
+  // CSRF token issued during shell rendering.
+  assert.ok(view.includes("cms.renderLibrary("), "must inject the shared library UI");
+  assert.ok(view.includes("csrfToken"), "mutating shared forms need the CSRF token");
   assert.ok(
     !view.includes("ac-mw-media-grid"),
     "the duplicated ActiveClinic media grid must be gone"
@@ -393,7 +396,7 @@ test("ActiveClinic renders the shared library instead of its own grid", () => {
   const routes = readRepoFile("src/activeclinic/http/activeClinicWebsiteCmsRoutes.js");
   assert.ok(routes.includes('require("../../platform/website/libraryModel")'));
   assert.ok(routes.includes("libraryModel.buildLibraryView("));
-  assert.ok(routes.includes("renderWebsiteLibrary(library)"));
+  assert.ok(routes.includes("renderLibrary: renderWebsiteLibrary"));
   // Search and type filtering are wired from the query string.
   assert.ok(routes.includes("q: req.query && req.query.q"));
   assert.ok(routes.includes("kind: req.query && req.query.type"));
@@ -436,14 +439,15 @@ test("BlessBoard serves a real Content Library page, not a raw JSON body", () =>
   const routes = readRepoFile("src/blessboard/http/contentAdminRoutes.js");
   assert.ok(routes.includes("function wantsHtml("), "content negotiation helper required");
   assert.ok(routes.includes("content-admin/media-library.ejs"));
-  assert.ok(routes.includes("renderWebsiteLibrary(library)"));
+  assert.ok(routes.includes("renderLibrary: renderWebsiteLibrary"));
   assert.ok(
     routes.includes("if (!wantsHtml(req)) {"),
     "JSON must remain the default so the media picker is unaffected"
   );
 
   const view = readRepoFile("views/blessboard/v5/content-admin/media-library.ejs");
-  assert.ok(view.includes("libraryHtml"));
+  assert.ok(view.includes("renderLibrary("));
+  assert.ok(view.includes("csrfToken"), "mutating shared forms need the CSRF token");
   assert.ok(view.includes("hq-shell-start"));
   assert.ok(view.includes("branch-admin-shell-start"));
   assert.ok(view.includes("libraryStylesheet"));

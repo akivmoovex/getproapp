@@ -22,6 +22,7 @@ const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/pe
 const contentService = require("../../platform/website/contentService");
 const mediaService = require("../../platform/website/mediaService");
 const libraryModel = require("../../platform/website/libraryModel");
+const mediaFoldersService = require("../../platform/website/mediaFoldersService");
 const {
   renderWebsiteLibrary,
   LIBRARY_STYLESHEET,
@@ -709,6 +710,25 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
     }
   );
 
+  /** Map a folder result code to visitor-facing copy. */
+  function folderNoticeMessage(code) {
+    const key = String(code || "").trim();
+    if (!key) return null;
+    const messages = {
+      folder_created: "Folder created.",
+      folder_renamed: "Folder renamed.",
+      folder_deleted: "Folder deleted. Its files moved to Unfiled.",
+      media_moved: "File moved.",
+      [mediaFoldersService.RESULT.NAME_TAKEN]: "A folder with that name already exists.",
+      [mediaFoldersService.RESULT.INVALID_INPUT]: "Enter a folder name of up to 80 characters.",
+      [mediaFoldersService.RESULT.FOLDER_NOT_FOUND]: "That folder no longer exists.",
+      [mediaFoldersService.RESULT.MEDIA_NOT_FOUND]: "That file no longer exists.",
+      [mediaFoldersService.RESULT.LIMIT_REACHED]: "You have reached the folder limit.",
+      [mediaFoldersService.RESULT.TENANT_MISMATCH]: "That folder is not available.",
+    };
+    return messages[key] || null;
+  }
+
   async function renderMediaPage(req, res, selectedId) {
     const input = cmsInput(req);
     const seeded = await cmsService.ensureCmsSeeded(getPool(), input);
@@ -724,8 +744,15 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
     const selected = selectedId ? media.find((item) => item.id === selectedId) || null : null;
     const selectMode = String(req.query.select || "") === "1";
     const basePath = "/app/settings/website/media";
+    const canEditMedia = hasWebsitePermission(input.grantedPermissions, PERMISSIONS.EDIT);
 
-    // Shared library layer: one canonical card shape, search and type filter.
+    // Shared media folders, keyed by organization for both products.
+    const folderContext = await mediaFoldersService.loadFolderContext(getPool(), {
+      product: PRODUCT_CODE.ACTIVECLINIC,
+      scopeId: input.organizationId,
+    });
+
+    // Shared library layer: one canonical card shape, search, type filter, folders.
     const library = libraryModel.buildLibraryView({
       items: libraryModel.normalizeLibraryItems(media, (row) => ({
         previewUrl: row.publicSrc,
@@ -733,6 +760,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
       })),
       q: req.query && req.query.q,
       kind: req.query && req.query.type,
+      folder: req.query && req.query.folder,
       basePath: selectMode ? `${basePath}?select=1` : basePath,
       heading: selectMode ? "Select from Media Library" : "Media Library",
       description: selectMode
@@ -741,6 +769,15 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
       selectMode,
       canUpload: hasWebsitePermission(input.grantedPermissions, PERMISSIONS.MEDIA_UPLOAD),
       uploadAction: `/clinics/${input.clinicKey}/website/media`,
+      foldersEnabled: true,
+      canManageFolders: canEditMedia && !selectMode,
+      folders: folderContext.folders || [],
+      folderCounts: folderContext.counts || {},
+      folderCreateAction: `${basePath}/folders`,
+      folderRenameAction: `${basePath}/folders/rename`,
+      folderDeleteAction: `${basePath}/folders/delete`,
+      moveAction: `${basePath}/move`,
+      folderNotice: folderNoticeMessage(req.query && req.query.folderNotice),
       emptyState: {
         title: "No media uploaded yet",
         body: "Upload a JPEG, PNG, WebP, or GIF to reuse it across your website.",
@@ -761,7 +798,9 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           selected,
           selectMode,
           library,
-          libraryHtml: renderWebsiteLibrary(library),
+          // Rendered in the template so the shared folder and move forms can
+          // carry the CSRF token issued by renderShell.
+          renderLibrary: renderWebsiteLibrary,
           libraryStylesheet: LIBRARY_STYLESHEET,
           canUpload: hasWebsitePermission(input.grantedPermissions, PERMISSIONS.MEDIA_UPLOAD),
           uploadAction: `/clinics/${input.clinicKey}/website/media`,
@@ -790,6 +829,112 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
     async (req, res, next) => {
       try {
         return await renderMediaPage(req, res, req.params.mediaId);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // Folder routes are registered before "/media/:mediaId" so "folders" and
+  // "move" are never captured as a media id.
+  function folderRedirect(res, code, folder) {
+    const params = [];
+    if (folder) params.push(`folder=${encodeURIComponent(folder)}`);
+    if (code) params.push(`folderNotice=${encodeURIComponent(code)}`);
+    const query = params.length ? `?${params.join("&")}` : "";
+    return res.redirect(303, `/app/settings/website/media${query}`);
+  }
+
+  app.post(
+    "/app/settings/website/media/folders",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return deny(res, 403, "Invalid request", "Reload the page and try again.");
+        }
+        const input = cmsInput(req);
+        const created = await mediaFoldersService.createFolder(getPool(), {
+          organizationId: input.organizationId,
+          name: req.body && req.body.name,
+          actorIdentityId: input.actorIdentityId,
+        });
+        if (!created.ok) return folderRedirect(res, created.code, null);
+        return folderRedirect(res, "folder_created", created.folder.id);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/website/media/folders/rename",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return deny(res, 403, "Invalid request", "Reload the page and try again.");
+        }
+        const input = cmsInput(req);
+        const folderId = req.body && req.body.folderId;
+        const renamed = await mediaFoldersService.renameFolder(getPool(), {
+          organizationId: input.organizationId,
+          folderId,
+          name: req.body && req.body.name,
+        });
+        if (!renamed.ok) return folderRedirect(res, renamed.code, folderId);
+        return folderRedirect(res, "folder_renamed", renamed.folder.id);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/website/media/folders/delete",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return deny(res, 403, "Invalid request", "Reload the page and try again.");
+        }
+        const input = cmsInput(req);
+        // Assets are preserved: the folder_id foreign key is ON DELETE SET NULL,
+        // so filed media returns to Unfiled.
+        const removed = await mediaFoldersService.deleteFolder(getPool(), {
+          organizationId: input.organizationId,
+          folderId: req.body && req.body.folderId,
+        });
+        if (!removed.ok) return folderRedirect(res, removed.code, null);
+        return folderRedirect(res, "folder_deleted", null);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/website/media/move",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return deny(res, 403, "Invalid request", "Reload the page and try again.");
+        }
+        const input = cmsInput(req);
+        const folderId = req.body && req.body.folderId;
+        const moved = await mediaFoldersService.moveMediaToFolder(getPool(), {
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          scopeId: input.organizationId,
+          mediaId: req.body && req.body.mediaId,
+          folderId,
+        });
+        if (!moved.ok) return folderRedirect(res, moved.code, folderId);
+        return folderRedirect(res, "media_moved", moved.folderId);
       } catch (err) {
         return next(err);
       }

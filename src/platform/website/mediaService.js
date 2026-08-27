@@ -88,6 +88,8 @@ function mapMedia(row) {
     status: row.status,
     sha256: row.sha256,
     createdAt: row.created_at,
+    // Shared media folders; null means Unfiled.
+    folderId: row.folder_id == null ? null : row.folder_id,
   };
 }
 
