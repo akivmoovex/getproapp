@@ -86,6 +86,15 @@ unrouted, so it was left alone):
   than a per-page override, so every inert HQ button benefits.
   `hq-shell-start.ejs` cache-buster moved `?v=76` → `?v=77`.
 
+Cosmetic note for V1.1, deliberately **not** changed here: the control carries
+`bb-hq-btn--ghost`, but `.bb-hq-form button` (hq-admin.css:1291) sets the primary
+violet at higher specificity, so every button inside an HQ form renders violet
+regardless of its variant class — `--secondary` and `--danger` are overridden the
+same way. Raising `--ghost` specificity would restyle many HQ screens, which is
+not justified during a QA freeze. With the new `:disabled` dimming the inert
+control is unmistakable regardless (measured `opacity: 0.5`,
+`cursor: not-allowed`, alongside a solid, full-opacity Approve).
+
 **Reclassified: `PRODUCT_DIFFERENCE / LOW`.** The publish chain itself was
 verified working end to end during QA: branch draft → submit → HQ approve → HQ
 branch publish put the branch page live while HQ and sibling branches stayed
