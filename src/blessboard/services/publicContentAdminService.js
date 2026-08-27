@@ -21,9 +21,56 @@ const STATUS = Object.freeze({
   CONFLICT: "conflict",
   LOOKUP_ERROR: "lookup_error",
   CONSTRAINT: "constraint",
+  PUBLISHED_LOCKED: "published_locked",
 });
 
 const PAGE_STATUSES = new Set(["draft", "published", "archived"]);
+
+/** Content fields whose change on a published row would alter the public site. */
+const SECTION_PUBLIC_FIELDS = Object.freeze([
+  "heading",
+  "bodyText",
+  "mediaUrl",
+  "sortOrder",
+  "sectionType",
+]);
+
+function isPublishedRow(status) {
+  return String(status == null ? "" : status).trim().toLowerCase() === "published";
+}
+
+function sameScalar(a, b) {
+  const left = a == null ? "" : String(a);
+  const right = b == null ? "" : String(b);
+  return left === right;
+}
+
+/**
+ * Draft-first invariant: ordinary editor writes must never alter a row that is
+ * already public. Seeding/provisioning and the shared publish projection pass
+ * allowPublishedWrite explicitly.
+ * @param {object} existing
+ * @param {object} fields
+ * @param {string[]} publicFields
+ */
+function mutatesPublishedContent(existing, fields, publicFields) {
+  if (!isPublishedRow(existing && existing.status)) return false;
+  return publicFields.some(
+    (key) => fields[key] !== undefined && !sameScalar(fields[key], existing[key])
+  );
+}
+
+/**
+ * True for writes originating from an interactive admin form. Those are the
+ * writes that must be draft-first; provisioning, seeding and the shared publish
+ * projection are not editor writes.
+ * @param {object} body
+ */
+function isEditorFormWrite(body) {
+  if (!body || typeof body !== "object") return false;
+  if (body.allowPublishedWrite === true) return false;
+  return body.enforcePublishConfirm === true;
+}
 const EVENT_STATUSES = new Set(["draft", "published", "cancelled", "archived"]);
 const HTML_HINT = /<\/?[a-z][\s\S]*>/i;
 
@@ -263,6 +310,14 @@ async function updatePublicPage(db, pageId, patch) {
     return await withClient(db, async (client) => {
       const existing = await repo.findPageById(client, id);
       if (!existing) return { ok: false, status: STATUS.NOT_FOUND, page: null };
+      if (isEditorFormWrite(body) && mutatesPublishedContent(existing, { title }, ["title"])) {
+        return {
+          ok: false,
+          status: STATUS.PUBLISHED_LOCKED,
+          page: existing,
+          reason: "published_requires_draft",
+        };
+      }
       if (status !== undefined) {
         const conf = requirePublishConfirm(
           existing.status,
@@ -350,6 +405,15 @@ async function createPageSection(db, input) {
     return { ok: false, status: STATUS.INVALID_INPUT, section: null, reason: "status" };
   }
   if (status === "published") {
+    if (isEditorFormWrite(raw)) {
+      // A new section may not be born public through an editor form.
+      return {
+        ok: false,
+        status: STATUS.PUBLISHED_LOCKED,
+        section: null,
+        reason: "published_requires_draft",
+      };
+    }
     const conf = requirePublishConfirm(
       "draft",
       status,
@@ -434,6 +498,17 @@ async function updatePageSection(db, sectionId, patch) {
     return await withClient(db, async (client) => {
       const existing = await repo.findSectionById(client, id);
       if (!existing) return { ok: false, status: STATUS.NOT_FOUND, section: null };
+      if (
+        isEditorFormWrite(body) &&
+        mutatesPublishedContent(existing, fields, SECTION_PUBLIC_FIELDS)
+      ) {
+        return {
+          ok: false,
+          status: STATUS.PUBLISHED_LOCKED,
+          section: existing,
+          reason: "published_requires_draft",
+        };
+      }
       if (fields.status !== undefined) {
         const conf = requirePublishConfirm(
           existing.status,
@@ -562,6 +637,20 @@ async function updateOwned(db, kind, id, patch, buildPatch) {
     return await withClient(db, async (client) => {
       const existing = await findFns[kind](client, rowId);
       if (!existing) return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      const entityContentFields = Object.keys(built.fields).filter(
+        (key) => key !== "status" && key !== "expectedUpdatedAt" && key !== "expectedRevision"
+      );
+      if (
+        isEditorFormWrite(raw) &&
+        mutatesPublishedContent(existing, built.fields, entityContentFields)
+      ) {
+        return {
+          ok: false,
+          status: STATUS.PUBLISHED_LOCKED,
+          item: existing,
+          reason: "published_requires_draft",
+        };
+      }
       if (built.fields.status !== undefined) {
         const conf = requirePublishConfirm(
           existing.status,
@@ -951,6 +1040,9 @@ async function listAdminScoped(db, input, listFn) {
 module.exports = {
   STATUS,
   CONTENT_STATUS,
+  SECTION_PUBLIC_FIELDS,
+  mutatesPublishedContent,
+  isEditorFormWrite,
   PUBLIC_PAGE_KEYS,
   httpsMediaUrl,
   buildLeaderFields,

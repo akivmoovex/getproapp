@@ -72,3 +72,60 @@ No content rows were deleted. Engine snapshots fill in on hub load or publish.
 | Overlay drafts on `public_pages` | PRODUCT_SPECIFIC store, SHOULD_BE_SHARED lifecycle (now dual-written) |
 | Classic CMS forms that can still edit published rows | LEGACY (public overlay drafts remain the isolated path) |
 | Shared publish/version/unpublish | SHOULD_BE_SHARED (done) |
+
+## Phase 2 — final migration state
+
+### Public source of truth
+
+`DERIVED_PUBLIC_PROJECTION`. `blessboard.public_pages` and
+`blessboard.page_sections` still render the public church site, but they are only
+written by the shared publish path and by provisioning/seeding tools. No editor
+form can write them directly.
+
+### Direct public mutation paths
+
+| Route / handler | Writes draft? | Writes published? | Shared engine? | Classification |
+|---|---|---|---|---|
+| `POST /{hq,branch}/content/pages/:pageKey` (title/status) | via engine draft | status transition only | yes (orchestrated publish) | SAFE |
+| `POST /{hq,branch}/content/pages/:pageKey/sections` | yes | no (refused: `published_requires_draft`) | yes | SAFE |
+| `POST /{hq,branch}/content/pages/:pageKey/sections/:sectionKey` | yes (`saveInlineFieldDraft`) | no | yes | SAFE |
+| `POST /{hq,branch}/content/api/inline-field` | yes | no | yes | SAFE |
+| `POST /{hq,branch}/content/api/structured-draft` | yes | no | yes | SAFE |
+| `POST /{hq,branch}/content/draft-changes/publish` | n/a | yes, via publish | yes | SAFE |
+| `POST /hq/website/publish`, `/hq/website/branches/:branchKey/publish` | n/a | yes, via publish | yes (`publishProductWebsite`) | SAFE |
+| `POST /hq/website/unpublish` | n/a | availability flag via engine | yes (`unpublishProductWebsite`) | SAFE |
+| `POST /{hq,branch}/content/{leadership,ministries,events,sermons,giving,contact}` entity forms | entity rows | entity rows | partial | LEGACY_READ_ONLY for page/section content; entity visibility remains product-owned |
+| `blessboard.public_pages` writes in `churchWebsitePublishService` | n/a | yes | yes | SAFE — this *is* the projection writer |
+| `publicContentRepository` writes from `websiteDraftApplyService` | n/a | yes | yes | SAFE — publish-time apply |
+| Seeding: `configureDemoChurch`, `demoMinimumDatasetService`, `testingWebsiteDemoContentService`, `homeServiceTimesService` repair | n/a | yes (`allowPublishedWrite`) | n/a | SAFE — provisioning, not an editor path |
+| `testingDataResetRepository` deletes | n/a | yes | n/a | SAFE — testing reset only |
+
+`UNKNOWN = 0`.
+
+### Version-history backfill
+
+`npm run blessboard:website-engine:backfill`
+
+Testing run against `moovex-platform-v7`:
+
+```
+WEBSITES_SCANNED = 19
+VERSIONS_CREATED = 19
+ALREADY_CURRENT = 0
+ERRORS = 0
+```
+
+Re-run confirmed idempotency (`VERSIONS_CREATED = 0`, `ALREADY_CURRENT = 19`).
+Public content fingerprints for `public_pages`, `page_sections` and
+`church_settings.website_status` were identical before and after, and
+`blessboard.website_publication_versions` stayed at 38 rows.
+
+### Remaining legacy components
+
+| Component | Status |
+|---|---|
+| `blessboard.public_pages`, `blessboard.page_sections` | DERIVED — public render compatibility |
+| `blessboard.website_publication_versions` | READ-ONLY HISTORY — legacy publication history, retained |
+| `blessboard.website_inline_field_drafts`, `website_structured_drafts` | REQUIRED — product draft representation, synced into the engine draft |
+| `publicContentAdminService.updatePublicPage` / `updatePageSection` published-write path | DEPRECATED — reachable only with `allowPublishedWrite` (provisioning/seeding) |
+| Classic section form media / layout / ordering fields on a live section | DEPRECATED — refused with guidance to the website editor, which has draft representations |

@@ -5,8 +5,10 @@ const {
   PERMISSIONS,
   hasWebsitePermission,
   canViewWebsiteAdmin,
-  canRestoreWebsite,
 } = require("../../platform/website/permissions");
+const {
+  assertWebsiteAction,
+} = require("../../platform/website-engine/permissionHooks");
 const { resolveActiveClinicWebsite, MODE } = require("../website/activeClinicWebsiteResolver");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const versionService = require("../../platform/website/versionService");
@@ -44,9 +46,20 @@ function canViewClinicWebsite(req, clinic) {
   return canViewWebsiteAdmin(grantedPermissions(req));
 }
 
-function canEditClinicWebsite(req, clinic) {
+/**
+ * Lifecycle authorization goes through the shared engine hook; this adapter only
+ * adds the ActiveClinic tenant-isolation rule.
+ * @param {import('express').Request} req
+ * @param {object} clinic
+ * @param {string} action
+ */
+function allowsClinicWebsiteAction(req, clinic, action) {
   if (!sameClinicOrganization(req, clinic)) return false;
-  return hasWebsitePermission(grantedPermissions(req), PERMISSIONS.EDIT);
+  return assertWebsiteAction(grantedPermissions(req), action).ok === true;
+}
+
+function canEditClinicWebsite(req, clinic) {
+  return allowsClinicWebsiteAction(req, clinic, "edit");
 }
 
 function canSubmitClinicWebsite(req, clinic) {
@@ -55,13 +68,11 @@ function canSubmitClinicWebsite(req, clinic) {
 }
 
 function canPublishClinicWebsite(req, clinic) {
-  if (!sameClinicOrganization(req, clinic)) return false;
-  return hasWebsitePermission(grantedPermissions(req), PERMISSIONS.PUBLISH);
+  return allowsClinicWebsiteAction(req, clinic, "publish");
 }
 
 function canRestoreClinicWebsite(req, clinic) {
-  if (!sameClinicOrganization(req, clinic)) return false;
-  return canRestoreWebsite(grantedPermissions(req));
+  return allowsClinicWebsiteAction(req, clinic, "restore");
 }
 
 function canAccessClinicWebsiteAdmin(req, clinic) {

@@ -12,6 +12,7 @@ const permissionHooks = require("./permissionHooks");
 const hubActions = require("./hubActions");
 const editorShell = require("./editorShell");
 const blessboardBridge = require("./blessboardBridge");
+const lifecycleOrchestrator = require("./lifecycleOrchestrator");
 
 module.exports = {
   ...website,
@@ -20,5 +21,11 @@ module.exports = {
   hubActions,
   editorShell,
   blessboardBridge,
+  lifecycleOrchestrator,
+  // Canonical lifecycle entry points. Named distinctly so they never shadow the
+  // lower-level src/platform/website/ primitives re-exported above.
+  publishProductWebsite: lifecycleOrchestrator.publishWebsite,
+  unpublishProductWebsite: lifecycleOrchestrator.unpublishWebsite,
+  restoreProductWebsiteVersion: lifecycleOrchestrator.restoreWebsiteVersion,
   SNAPSHOT_KEY: productSchemaRegistry.SNAPSHOT_KEY,
 };

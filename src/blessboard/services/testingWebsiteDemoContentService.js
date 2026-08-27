@@ -225,6 +225,7 @@ async function ensurePagePublished(db, { churchId, pageKey, title, dryRun, refre
     title: shouldSetTitle ? title : page.title,
     status: "published",
     confirmPublish: true,
+    allowPublishedWrite: true,
   });
   if (!updated.ok) {
     actions.push(act(`page.${pageKey}`, STATUS.ERROR, updated.reason || updated.status));
@@ -308,6 +309,7 @@ async function ensureSection(db, ctx) {
       sectionType,
       status: "published",
       confirmPublish: true,
+      allowPublishedWrite: true,
       sortOrder: sortOrder != null ? sortOrder : existing.sortOrder,
     });
     if (!updated.ok) {
@@ -345,6 +347,7 @@ async function ensureSection(db, ctx) {
     bodyText,
     status: "published",
     confirmPublish: true,
+    allowPublishedWrite: true,
     sortOrder: sortOrder != null ? sortOrder : 10,
   });
   if (!created.ok) {

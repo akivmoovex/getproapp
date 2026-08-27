@@ -103,3 +103,67 @@ BlessBoard HQ publish also applies overlay drafts to `public_pages`, then dual-w
 ## Unpublish
 
 `publicationService.unpublishWebsite` — tenant-facing take-down. Content and history remain. Product availability flags (`healthcare_organizations.website_published`, `church_settings.website_status`) sync through `lifecycleService`.
+
+## Canonical ownership
+
+Phase 2 makes the shared engine the single owner of publication semantics. The
+product layer keeps its schemas, content fields, terminology, templates, and
+ownership model, and it owns nothing else in the list below.
+
+| Concern | Owner | Notes |
+|---|---|---|
+| Drafts | Shared engine (`platform.website_content.draft_value`) | BlessBoard field/structured overlays are product-side draft *representations* that sync into the engine draft via `blessboardBridge.syncDraftToEngine`. |
+| Published versions | Shared engine (`platform.website_versions`) | Immutable rows. Never updated in place; a new version is always appended. |
+| Publication pointer | Shared engine (`platform.website_content.published_value` + `website_instances.published_at`) | `blessboard.church_settings.website_status` is a product availability flag driven by the publish path, not an independent pointer. |
+| Audit | Shared engine (`platform.website_audit_events`, `website_moderation_events`) | Product audit tables remain as additional, read-only product history. |
+| Permissions | Shared engine (`permissionHooks.assertWebsiteAction`) | Product adapters add tenant/branch isolation only. |
+| Restore | Shared engine (`publicationService.restoreWebsiteVersionToDraft`) | Restore always produces a new draft; it never mutates a version or the live site. |
+| Public projection | Shared engine writes it; product renders it | See below. |
+
+### Lifecycle entry point
+
+`lifecycleOrchestrator` is the canonical entry point for publication state
+changes:
+
+```
+publishProductWebsite / unpublishProductWebsite / restoreProductWebsiteVersion
+  -> assertWebsiteAction(grantedPermissions, action)
+  -> registered product projection handler (one transaction)
+       -> product public projection
+       -> engine version + publication pointer + audit
+```
+
+Route handlers pass `productCode` plus granted permission keys and never call a
+product publish service directly. Products register handlers through
+`registerProductLifecycle`, so the engine — not product code — decides whether a
+publication is allowed to proceed.
+
+### Public source of truth
+
+Selected model: **DERIVED_PUBLIC_PROJECTION**.
+
+- ActiveClinic renders directly from the engine published snapshot.
+- BlessBoard renders public HTML from `blessboard.public_pages` /
+  `blessboard.page_sections`, which are now a derived projection: the only
+  writers are the shared publish path (`churchWebsitePublishService` +
+  `websiteDraftApplyService`, invoked by the orchestrator) and provisioning /
+  seeding tools. They are no longer an authoritative editable store.
+- Editor forms cannot write a published row. `publicContentAdminService`
+  refuses any editor-form write (`enforcePublishConfirm`) that would change a
+  published page title or section content, and the classic section form rewrites
+  live text edits into engine field drafts.
+
+### Version-history migration
+
+Migration completeness does not depend on an administrator opening the website
+hub. Hub load still repairs harmless missing state, but the authoritative pass is
+the explicit command:
+
+```
+npm run blessboard:website-engine:backfill -- --dry-run
+npm run blessboard:website-engine:backfill
+```
+
+It is idempotent (skips any site with existing engine history), never writes
+`blessboard.*`, never changes `website_status`, preserves legacy publication
+history, and stamps `MIGRATION_ORIGIN = website_engine_backfill_v7_phase2`.

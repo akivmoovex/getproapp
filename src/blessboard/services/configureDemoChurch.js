@@ -389,6 +389,7 @@ async function ensureHomeHero(db, { churchId, branchId, heading, bodyText, media
       status: "published",
       confirmPublish: true,
       enforcePublishConfirm: true,
+      allowPublishedWrite: true,
     });
     if (!created.ok || !created.section) return { ok: false, reason: "hero_create_failed" };
     hero = created.section;
@@ -399,6 +400,7 @@ async function ensureHomeHero(db, { churchId, branchId, heading, bodyText, media
       status: "published",
       confirmPublish: true,
       enforcePublishConfirm: true,
+      allowPublishedWrite: true,
     });
   }
   await patchSectionMedia(db, hero.id, mediaUrl);
@@ -407,6 +409,7 @@ async function ensureHomeHero(db, { churchId, branchId, heading, bodyText, media
     status: "published",
     confirmPublish: true,
     enforcePublishConfirm: true,
+    allowPublishedWrite: true,
   });
   return { ok: true, pageId: page.id, sectionId: hero.id };
 }
@@ -441,6 +444,7 @@ async function ensureAboutSection(db, { churchId, branchId, heading, bodyText, m
       status: "published",
       confirmPublish: true,
       enforcePublishConfirm: true,
+      allowPublishedWrite: true,
     });
   }
   if (mediaUrl) await patchSectionMedia(db, about.id, mediaUrl);
@@ -454,11 +458,19 @@ async function ensureContactHeading(db, { churchId, branchId, heading }) {
     pageKey: "contact",
   });
   if (!page) return { ok: false, reason: "contact_page_missing" };
-  await updatePublicPage(db, page.id, { title: heading, status: "draft" });
+  await updatePublicPage(db, page.id, {
+    title: heading,
+    status: "draft",
+    allowPublishedWrite: true,
+  });
   const sections = await contentRepo.listSectionsForPage(db, page.id);
   const intro = (sections || []).find((s) => s.sectionKey === "intro") || (sections || [])[0];
   if (intro) {
-    await updatePageSection(db, intro.id, { heading, status: "draft" });
+    await updatePageSection(db, intro.id, {
+      heading,
+      status: "draft",
+      allowPublishedWrite: true,
+    });
   }
   return { ok: true, pageId: page.id };
 }
@@ -488,6 +500,7 @@ async function ensureLocationsSection(db, { churchId }) {
     heading: HQ_CONTENT.locationsHeading,
     bodyText: HQ_CONTENT.locationsText,
     status: "draft",
+    allowPublishedWrite: true,
   });
   return { ok: true, section: loc };
 }
@@ -506,6 +519,7 @@ async function ensureMinistryHighlight(db, { churchId, branchId, name, descripti
       summary: description,
       description,
       status: "draft",
+      allowPublishedWrite: true,
     });
     return { ok: true, id: existing.id, created: false };
   }

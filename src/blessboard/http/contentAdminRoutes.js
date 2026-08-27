@@ -309,6 +309,9 @@ function errorMessage(reason, conflict) {
   if (reason === "entries_limit") {
     return "Too many service times. Remove some and try again.";
   }
+  if (reason === "published_requires_draft") {
+    return "This content is live. Save your change as a draft, then publish it from the website page.";
+  }
   return "Please check the form and try again.";
 }
 
@@ -1381,7 +1384,13 @@ function createContentAdminRouter(deps) {
       if (!updated.ok) {
         const isConflict = updated.status === ADMIN_STATUS.CONFLICT;
         const isConfirm = updated.reason === "confirm_publish";
-        const statusCode = isConflict ? 409 : isConfirm || updated.status === ADMIN_STATUS.INVALID_INPUT ? 400 : 503;
+        const statusCode = isConflict
+          ? 409
+          : isConfirm ||
+              updated.status === ADMIN_STATUS.INVALID_INPUT ||
+              updated.status === ADMIN_STATUS.PUBLISHED_LOCKED
+            ? 400
+            : 503;
         const html = renderContentAdminView(
           "content-admin/page.ejs",
           await shellLocals(req, res, {
@@ -1475,7 +1484,9 @@ function createContentAdminRouter(deps) {
           })
         );
         const statusCode =
-          created.reason === "confirm_publish" || created.status === ADMIN_STATUS.INVALID_INPUT
+          created.reason === "confirm_publish" ||
+          created.status === ADMIN_STATUS.INVALID_INPUT ||
+          created.status === ADMIN_STATUS.PUBLISHED_LOCKED
             ? 400
             : 503;
         return res.status(statusCode).type("html").send(html);
@@ -1485,6 +1496,109 @@ function createContentAdminRouter(deps) {
         `${scope.basePath}/pages/${req.params.pageKey}/sections/${created.section.sectionKey}?saved=1`
       );
     });
+
+    const SAME = (a, b) => String(a == null ? "" : a) === String(b == null ? "" : b);
+
+    /**
+     * Draft-first compatibility shim for the classic section form.
+     *
+     * A live (published) section is never mutated in place. Text edits are
+     * rewritten into shared-engine field drafts; edits with no draft
+     * representation yet are refused rather than applied to the public site.
+     *
+     * @returns {Promise<boolean>} true when the response has been sent
+     */
+    async function routePublishedSectionEditToDraft(req, res, ctx) {
+      const { scope, page, sections, section, body, pageKey } = ctx;
+      if (String(section.status || "").toLowerCase() !== "published") return false;
+
+      const textChanges = [];
+      if (body.heading !== undefined && !SAME(body.heading, section.heading)) {
+        textChanges.push({ fieldKey: "heading", value: String(body.heading) });
+      }
+      if (body.body_text !== undefined && !SAME(body.body_text, section.bodyText)) {
+        textChanges.push({ fieldKey: "bodyText", value: String(body.body_text) });
+      }
+      const unsupported = [];
+      if (body.media_url !== undefined && !SAME(body.media_url, section.mediaUrl)) {
+        unsupported.push("media");
+      }
+      if (body.section_type !== undefined && !SAME(body.section_type, section.sectionType)) {
+        unsupported.push("layout");
+      }
+      if (body.sort_order !== undefined && !SAME(body.sort_order, section.sortOrder)) {
+        unsupported.push("order");
+      }
+      if (!textChanges.length && !unsupported.length) return false;
+
+      const renderSectionError = async (statusCode, message) => {
+        const html = renderContentAdminView(
+          "content-admin/section.ejs",
+          await shellLocals(req, res, {
+            scope,
+            page,
+            section,
+            sections,
+            error: message,
+            conflict: false,
+            submitted: {
+              heading: body.heading != null ? String(body.heading) : section.heading,
+              body_text: body.body_text != null ? String(body.body_text) : section.bodyText,
+              media_url: body.media_url != null ? String(body.media_url) : section.mediaUrl || "",
+              sort_order:
+                body.sort_order != null ? String(body.sort_order) : String(section.sortOrder),
+              status: body.status != null ? String(body.status) : section.status,
+              section_type:
+                body.section_type != null ? String(body.section_type) : section.sectionType,
+            },
+          })
+        );
+        res.status(statusCode).type("html").send(html);
+        return true;
+      };
+
+      if (unsupported.length) {
+        return renderSectionError(
+          400,
+          "This section is live. Image, layout and ordering changes must be made in the website editor so they can be previewed before publishing."
+        );
+      }
+
+      const perm = await assertWebsitePermission(req, "website.edit", scope.branchId);
+      if (!perm.ok) {
+        return sendControlled(req, res, perm.status || 403, perm.error, shellKind);
+      }
+
+      const { saveInlineFieldDraft } = require("../services/websiteInlineDraftService");
+      try {
+        for (const change of textChanges) {
+          await saveInlineFieldDraft(getPool(), {
+            organizationId: perm.tenant.organization.id,
+            churchId: scope.churchId,
+            branchId: scope.branchId,
+            editorUserId: perm.session.userId,
+            actorRole: legacyActorRoleLabel(req),
+            pageKey,
+            sectionKey: section.sectionKey,
+            fieldKey: change.fieldKey,
+            newValue: change.value,
+            grantedPermissions: ["website.edit"],
+          });
+        }
+      } catch (err) {
+        const message =
+          err && err.status && err.status < 500 && err.message
+            ? String(err.message)
+            : "Could not save this change. Please try again.";
+        return renderSectionError(err && err.status ? Number(err.status) : 500, message);
+      }
+
+      res.redirect(
+        303,
+        `${scope.basePath}/pages/${pageKey}/sections/${section.sectionKey}?saved=1&draft=1`
+      );
+      return true;
+    }
 
     router.post(`${p}/pages/:pageKey/sections/:sectionKey`, rejectApex, gateContent, async (req, res) => {
       const scope = await resolveScope(req, res);
@@ -1505,6 +1619,16 @@ function createContentAdminRouter(deps) {
       if (!section || section.pageId !== bundle.page.id) {
         return sendControlled(req, res, 404, "Section not found.", shellKind);
       }
+      // Draft-first: a live section is never edited in place by the classic form.
+      const draftRouted = await routePublishedSectionEditToDraft(req, res, {
+        scope,
+        page: bundle.page,
+        sections: bundle.sections || [],
+        section,
+        body,
+        pageKey: req.params.pageKey,
+      });
+      if (draftRouted) return;
       const updated = await updatePageSection(getPool(), section.id, {
         heading: body.heading,
         bodyText: body.body_text,
@@ -1521,7 +1645,13 @@ function createContentAdminRouter(deps) {
       if (!updated.ok) {
         const isConflict = updated.status === ADMIN_STATUS.CONFLICT;
         const isConfirm = updated.reason === "confirm_publish";
-        const statusCode = isConflict ? 409 : isConfirm || updated.status === ADMIN_STATUS.INVALID_INPUT ? 400 : 503;
+        const statusCode = isConflict
+          ? 409
+          : isConfirm ||
+              updated.status === ADMIN_STATUS.INVALID_INPUT ||
+              updated.status === ADMIN_STATUS.PUBLISHED_LOCKED
+            ? 400
+            : 503;
         const submitted = {
           heading: body.heading != null ? String(body.heading) : section.heading,
           body_text: body.body_text != null ? String(body.body_text) : section.bodyText,
@@ -1685,6 +1815,101 @@ function createContentAdminRouter(deps) {
       (req, res) => handleConflictResolution(req, res, "force_replace")
     );
 
+    const ENTITY_DRAFT_KINDS = Object.freeze({
+      leadership: "leader",
+      ministries: "ministry",
+      events: "event",
+      sermons: "sermon",
+      giving: "giving_method",
+      contact: "social_link",
+    });
+
+    /**
+     * Draft-first compatibility shim for the classic entity forms.
+     *
+     * Editing a published leader/ministry/event/sermon/giving/contact item is
+     * rewritten into a shared-engine structured draft so the public site only
+     * changes at publish time.
+     *
+     * @returns {Promise<boolean>} true when the response has been sent
+     */
+    async function routePublishedEntityEditToDraft(req, res, ctx) {
+      const { scope, routeKey, cfg, existing, body } = ctx;
+      if (String(existing.status || "").toLowerCase() !== "published") return false;
+
+      const draftKind = ENTITY_DRAFT_KINDS[routeKey];
+      const patch = entityPatchFromBody(routeKey, body);
+      const contentKeys = Object.keys(patch).filter(
+        (key) =>
+          !["status", "confirmPublish", "expectedUpdatedAt", "enforcePublishConfirm"].includes(key)
+      );
+      const changed = contentKeys.some(
+        (key) => patch[key] !== undefined && !SAME(patch[key], existing[key])
+      );
+      if (!changed) return false;
+
+      const renderEntityError = async (statusCode, message) => {
+        const listed = await cfg.listFn(getPool(), scopeInput(scope));
+        const html = renderContentAdminView(
+          "content-admin/entities.ejs",
+          await shellLocals(req, res, {
+            scope,
+            entityKind: routeKey,
+            entityTitle: cfg.title,
+            items: (listed && listed.items) || [],
+            statusFilter: "",
+            q: "",
+            whenFilter: "",
+            error: message,
+            conflict: false,
+            submitted: body,
+            editItemId: String(body.item_id || ""),
+            saved: false,
+          })
+        );
+        res.status(statusCode).type("html").send(html);
+        return true;
+      };
+
+      if (!draftKind) {
+        return renderEntityError(
+          400,
+          "This item is live. Edit it in the website editor so the change can be previewed before publishing."
+        );
+      }
+
+      const perm = await assertWebsitePermission(req, "website.edit", scope.branchId);
+      if (!perm.ok) {
+        return sendControlled(req, res, perm.status || 403, perm.error, shellKind);
+      }
+
+      const { saveStructuredDraft } = require("../services/websiteStructuredDraftService");
+      try {
+        await saveStructuredDraft(getPool(), {
+          organizationId: perm.tenant.organization.id,
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          editorUserId: perm.session.userId,
+          actorRole: legacyActorRoleLabel(req),
+          draftKind,
+          pageKey: cfg.pageKey,
+          sectionKey: null,
+          entityKey: String(existing.id),
+          op: "upsert",
+          payload: { ...patch, status: existing.status },
+        });
+      } catch (err) {
+        const message =
+          err && err.status && err.status < 500 && err.message
+            ? String(err.message)
+            : "Could not save this change. Please try again.";
+        return renderEntityError(err && err.status ? Number(err.status) : 500, message);
+      }
+
+      res.redirect(303, `${scope.basePath}/${routeKey}?saved=1&draft=1`);
+      return true;
+    }
+
     for (const [routeKey, cfg] of Object.entries(ENTITY_ROUTES)) {
       router.get(`${p}/${routeKey}`, rejectApex, gateContent, async (req, res) => {
         const scope = await resolveScope(req, res);
@@ -1741,6 +1966,15 @@ function createContentAdminRouter(deps) {
           if (!existing || !verifyEntityScope(existing, scope)) {
             return sendControlled(req, res, 404, "Item not found.", shellKind);
           }
+          // Draft-first: a live item is never edited in place by the classic form.
+          const entityDraftRouted = await routePublishedEntityEditToDraft(req, res, {
+            scope,
+            routeKey,
+            cfg,
+            existing,
+            body,
+          });
+          if (entityDraftRouted) return;
           result = await cfg.updateFn(getPool(), itemId, entityPatchFromBody(routeKey, body));
         } else {
           result = await cfg.createFn(getPool(), {

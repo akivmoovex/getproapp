@@ -20,11 +20,21 @@ const {
 const {
   evaluatePublishReadiness,
   acknowledgeWebsitePreview,
-  publishChurchWebsite,
-  unpublishChurchWebsite,
   STATUS: PUBLISH_STATUS,
   GAP,
 } = require("../services/churchWebsitePublishService");
+const {
+  publishWebsite: publishProductWebsite,
+  unpublishWebsite: unpublishProductWebsite,
+} = require("../../platform/website-engine/lifecycleOrchestrator");
+const {
+  PERMISSIONS: WEBSITE_PERMISSIONS,
+} = require("../../platform/website-engine/permissionHooks");
+const {
+  PRODUCT_CODE: WEBSITE_ENGINE_PRODUCT_CODE,
+} = require("../../platform/website-engine/productSchemaRegistry");
+
+const WEBSITE_PRODUCT_CODE = WEBSITE_ENGINE_PRODUCT_CODE.BLESSBOARD;
 const {
   loadHqWebsiteOverview,
 } = require("../services/websiteOverviewService");
@@ -773,25 +783,29 @@ function createChurchWebsiteAdminRouter(deps) {
       });
     }
 
-    const result = await publishChurchWebsite(getPool(), {
-      organizationId: tenant.organization && tenant.organization.id,
-      churchId: tenant.church.id,
-      branchId,
-      actorUserId: await actorUserId(req),
-      deferServiceTimes,
-      confirmPublish: body.confirm_publish,
-      publicationNote: body.publication_note || null,
-      mobilePreviewConfirmed,
-      notifyBranchAdmins:
-        body.notify_branch_admins === "1" ||
-        body.notify_branch_admins === "on" ||
-        body.notify_branch_admins === true,
-      notifyHqTeam:
-        body.notify_hq_team === "1" ||
-        body.notify_hq_team === "on" ||
-        body.notify_hq_team === true,
-      forcePublishVersion: Boolean(branchId),
-      env,
+    const result = await publishProductWebsite(getPool(), {
+      productCode: WEBSITE_PRODUCT_CODE,
+      grantedPermissions: [WEBSITE_PERMISSIONS.PUBLISH],
+      request: {
+        organizationId: tenant.organization && tenant.organization.id,
+        churchId: tenant.church.id,
+        branchId,
+        actorUserId: await actorUserId(req),
+        deferServiceTimes,
+        confirmPublish: body.confirm_publish,
+        publicationNote: body.publication_note || null,
+        mobilePreviewConfirmed,
+        notifyBranchAdmins:
+          body.notify_branch_admins === "1" ||
+          body.notify_branch_admins === "on" ||
+          body.notify_branch_admins === true,
+        notifyHqTeam:
+          body.notify_hq_team === "1" ||
+          body.notify_hq_team === "on" ||
+          body.notify_hq_team === true,
+        forcePublishVersion: Boolean(branchId),
+        env,
+      },
     });
     if (!result.ok) {
       if (result.status === PUBLISH_STATUS.NOT_READY || result.status === PUBLISH_STATUS.INVALID_INPUT) {
@@ -855,10 +869,14 @@ function createChurchWebsiteAdminRouter(deps) {
     if (!validateCsrf(req, submitted, env)) {
       return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
     }
-    const result = await unpublishChurchWebsite(getPool(), {
-      churchId: tenant.church.id,
-      actorUserId: await actorUserId(req),
-      env,
+    const result = await unpublishProductWebsite(getPool(), {
+      productCode: WEBSITE_PRODUCT_CODE,
+      grantedPermissions: [WEBSITE_PERMISSIONS.PUBLISH],
+      request: {
+        churchId: tenant.church.id,
+        actorUserId: await actorUserId(req),
+        env,
+      },
     });
     if (!result.ok) {
       if (result.reason === "website_suspended") {

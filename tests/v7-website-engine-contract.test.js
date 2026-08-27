@@ -238,5 +238,247 @@ describe("v7 website engine contract", () => {
       mode: resolver.MODE.LIVE,
     });
     assert.equal(stillLive.values["home.hero.title"], "Draft title only");
+
+    // Invariant 4/5: unpublish takes the site offline without deleting history.
+    const historyAfterUnpublish = await versionService.listWebsiteVersions(pool, {
+      instanceId,
+      organizationId,
+    });
+    assert.ok((historyAfterUnpublish.versions || []).length >= 1);
+    const stillPresent = (historyAfterUnpublish.versions || []).find((v) => v.id === first.id);
+    assert.ok(stillPresent, "published version must survive unpublish");
+    assert.deepEqual(stillPresent.snapshotJson, first.snapshotJson);
+  });
+
+  it("routes lifecycle actions through the engine orchestrator", () => {
+    const orchestrator = engine.lifecycleOrchestrator;
+    assert.equal(typeof engine.publishProductWebsite, "function");
+    assert.equal(typeof engine.unpublishProductWebsite, "function");
+
+    // Both products must resolve a registered publish handler.
+    for (const productCode of ["blessboard", "activeclinic"]) {
+      const lifecycle = orchestrator.resolveProductLifecycle(productCode);
+      assert.equal(typeof lifecycle.publish, "function", productCode);
+      assert.equal(typeof lifecycle.unpublish, "function", productCode);
+    }
+
+    // Lower-level primitives are still exported, but not as the lifecycle entry.
+    assert.notEqual(engine.publishProductWebsite, engine.publicationService.publishWebsiteDraft);
+  });
+
+  it("refuses lifecycle actions without shared publish permission", async () => {
+    const orchestrator = engine.lifecycleOrchestrator;
+    let handlerCalls = 0;
+    orchestrator.registerProductLifecycle("contract_probe", {
+      publish: async () => {
+        handlerCalls += 1;
+        return { ok: true };
+      },
+    });
+
+    const denied = await orchestrator.publishWebsite(null, {
+      productCode: "contract_probe",
+      grantedPermissions: ["website.edit"],
+      request: {},
+    });
+    assert.equal(denied.ok, false);
+    assert.equal(denied.stage, orchestrator.STAGE.PERMISSION);
+    assert.equal(denied.reason, "forbidden");
+    assert.equal(handlerCalls, 0, "product handler must not run when permission fails");
+
+    const allowed = await orchestrator.publishWebsite(null, {
+      productCode: "contract_probe",
+      grantedPermissions: ["website.publish"],
+      request: {},
+    });
+    assert.equal(allowed.ok, true);
+    assert.equal(allowed.engineOrchestrated, true);
+    assert.equal(handlerCalls, 1);
+
+    const missing = await orchestrator.unpublishWebsite(null, {
+      productCode: "contract_probe",
+      grantedPermissions: ["website.publish"],
+      request: {},
+    });
+    assert.equal(missing.ok, false);
+    assert.equal(missing.stage, orchestrator.STAGE.PRODUCT);
+  });
+
+  it("blocks classic BlessBoard CMS writes from mutating published rows", async () => {
+    const contentAdmin = require("../src/blessboard/services/publicContentAdminService");
+
+    const publishedSection = {
+      id: "11111111-1111-4111-8111-111111111111",
+      status: "published",
+      heading: "Live heading",
+      bodyText: "Live body",
+      mediaUrl: null,
+      sortOrder: 10,
+      sectionType: "hero",
+    };
+
+    // Pure guard: content change on a live row is a published mutation.
+    assert.equal(
+      contentAdmin.mutatesPublishedContent(
+        publishedSection,
+        { heading: "Edited heading" },
+        contentAdmin.SECTION_PUBLIC_FIELDS
+      ),
+      true
+    );
+    // Status-only transitions are publication, not editing.
+    assert.equal(
+      contentAdmin.mutatesPublishedContent(
+        publishedSection,
+        { heading: "Live heading" },
+        contentAdmin.SECTION_PUBLIC_FIELDS
+      ),
+      false
+    );
+    // Draft rows stay freely editable.
+    assert.equal(
+      contentAdmin.mutatesPublishedContent(
+        { ...publishedSection, status: "draft" },
+        { heading: "Edited heading" },
+        contentAdmin.SECTION_PUBLIC_FIELDS
+      ),
+      false
+    );
+
+    let writes = 0;
+    const fakeDb = {
+      query: async (sql) => {
+        const text = String(sql);
+        if (/^\s*SELECT/i.test(text)) {
+          return { rows: [{ ...publishedSection, section_key: "hero", page_id: "p" }] };
+        }
+        writes += 1;
+        return { rows: [] };
+      },
+    };
+    // findSectionById maps DB rows; stub it so the guard is what we exercise.
+    const repo = require("../src/blessboard/repositories/publicContentRepository");
+    const originalFind = repo.findSectionById;
+    repo.findSectionById = async () => publishedSection;
+    try {
+      // An editor-form write (enforcePublishConfirm) is refused outright.
+      const blocked = await contentAdmin.updatePageSection(fakeDb, publishedSection.id, {
+        heading: "Edited heading",
+        enforcePublishConfirm: true,
+      });
+      assert.equal(blocked.ok, false);
+      assert.equal(blocked.status, contentAdmin.STATUS.PUBLISHED_LOCKED);
+      assert.equal(blocked.reason, "published_requires_draft");
+      assert.equal(writes, 0, "no write may reach a published row");
+
+      // Provisioning / publish projection writes stay allowed.
+      const seeded = await contentAdmin.updatePageSection(fakeDb, publishedSection.id, {
+        heading: "Edited heading",
+        enforcePublishConfirm: true,
+        allowPublishedWrite: true,
+      });
+      assert.notEqual(seeded.status, contentAdmin.STATUS.PUBLISHED_LOCKED);
+      assert.equal(contentAdmin.isEditorFormWrite({ enforcePublishConfirm: true }), true);
+      assert.equal(
+        contentAdmin.isEditorFormWrite({ enforcePublishConfirm: true, allowPublishedWrite: true }),
+        false
+      );
+      assert.equal(contentAdmin.isEditorFormWrite({}), false);
+    } finally {
+      repo.findSectionById = originalFind;
+    }
+  });
+
+  it("keeps the classic section and entity forms on a draft-first path", () => {
+    const src = fs.readFileSync(
+      path.join(__dirname, "../src/blessboard/http/contentAdminRoutes.js"),
+      "utf8"
+    );
+    assert.match(src, /routePublishedSectionEditToDraft/);
+    assert.match(src, /routePublishedEntityEditToDraft/);
+    assert.match(src, /saveInlineFieldDraft/);
+    assert.match(src, /saveStructuredDraft/);
+    assert.match(src, /published_requires_draft/);
+  });
+
+  it("blocks classic entity form writes to published items", async () => {
+    const contentAdmin = require("../src/blessboard/services/publicContentAdminService");
+    const repo = require("../src/blessboard/repositories/publicContentRepository");
+
+    const publishedLeader = {
+      id: "22222222-2222-4222-8222-222222222222",
+      status: "published",
+      displayName: "Pastor Live",
+      roleTitle: "Senior Pastor",
+      biography: null,
+      imageUrl: null,
+      sortOrder: 1,
+    };
+
+    let writes = 0;
+    const fakeDb = {
+      query: async (sql) => {
+        if (/^\s*SELECT/i.test(String(sql))) return { rows: [] };
+        writes += 1;
+        return { rows: [] };
+      },
+    };
+    const originalFind = repo.findLeaderById;
+    repo.findLeaderById = async () => publishedLeader;
+    try {
+      const blocked = await contentAdmin.updateLeader(fakeDb, publishedLeader.id, {
+        displayName: "Pastor Edited",
+        roleTitle: "Senior Pastor",
+        enforcePublishConfirm: true,
+      });
+      assert.equal(blocked.ok, false);
+      assert.equal(blocked.status, contentAdmin.STATUS.PUBLISHED_LOCKED);
+      assert.equal(blocked.reason, "published_requires_draft");
+      assert.equal(writes, 0, "no write may reach a published entity");
+
+      // Status-only republish is still a publication, not an edit.
+      const statusOnly = await contentAdmin.updateLeader(fakeDb, publishedLeader.id, {
+        displayName: "Pastor Live",
+        roleTitle: "Senior Pastor",
+        status: "published",
+        confirmPublish: "1",
+        enforcePublishConfirm: true,
+      });
+      assert.notEqual(statusOnly.status, contentAdmin.STATUS.PUBLISHED_LOCKED);
+    } finally {
+      repo.findLeaderById = originalFind;
+    }
+  });
+
+  it("exposes an explicit, non-destructive BlessBoard backfill entry point", () => {
+    const backfill = require("../src/platform/website-engine/blessboardBackfillService");
+    assert.equal(typeof backfill.backfillBlessBoardWebsiteVersions, "function");
+    assert.equal(typeof backfill.backfillOneSite, "function");
+    assert.equal(backfill.MIGRATION_ORIGIN, "website_engine_backfill_v7_phase2");
+
+    const pkg = JSON.parse(
+      fs.readFileSync(path.join(__dirname, "../package.json"), "utf8")
+    );
+    assert.equal(
+      pkg.scripts["blessboard:website-engine:backfill"],
+      "node db/scripts/blessboard-website-engine-backfill.js"
+    );
+
+    const script = fs.readFileSync(
+      path.join(__dirname, "../db/scripts/blessboard-website-engine-backfill.js"),
+      "utf8"
+    );
+    assert.match(script, /ALLOW_PRODUCTION_BACKFILL/);
+
+    // Neither the command nor its service may write the public projection or
+    // flip publication state.
+    const service = fs.readFileSync(
+      path.join(__dirname, "../src/platform/website-engine/blessboardBackfillService.js"),
+      "utf8"
+    );
+    for (const src of [script, service]) {
+      assert.doesNotMatch(src, /(INSERT INTO|UPDATE|DELETE FROM)\s+blessboard\./i);
+      assert.doesNotMatch(src, /website_status\s*=\s*'/i);
+    }
   });
 });

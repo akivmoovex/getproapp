@@ -411,6 +411,7 @@ async function prepareDemoMinimumDataset(db, input) {
         title: pageSpec.title,
         status: "published",
         confirmPublish: true,
+        allowPublishedWrite: true,
       });
       if (!updated.ok) {
         actions.push(act(`page.${pageSpec.pageKey}`, STATUS.ERROR, updated.reason || updated.status));
@@ -445,6 +446,7 @@ async function prepareDemoMinimumDataset(db, input) {
           bodyText: pageSpec.sectionBody,
           status: "published",
           confirmPublish: true,
+          allowPublishedWrite: true,
         });
         if (typeof contentRepo.updateSection === "function") {
           await withClient(db, (c) =>
@@ -465,6 +467,7 @@ async function prepareDemoMinimumDataset(db, input) {
           bodyText: pageSpec.sectionBody,
           status: "published",
           confirmPublish: true,
+          allowPublishedWrite: true,
           sortOrder: 10,
         });
         if (!created.ok) {
