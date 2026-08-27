@@ -209,6 +209,18 @@ async function saveInlineFieldDraft(db, input) {
       // Audit must not block draft save.
     }
 
+    try {
+      const { syncDraftToEngine } = require("../../platform/website-engine/blessboardBridge");
+      await syncDraftToEngine(db, {
+        organizationId: input.organizationId,
+        churchId: input.churchId,
+        branchId: input.branchId || null,
+        actorIdentityId: input.editorUserId || null,
+      });
+    } catch {
+      // Engine draft sync must not block overlay save.
+    }
+
     return {
       saved: true,
       published: false,

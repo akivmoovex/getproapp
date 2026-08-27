@@ -287,6 +287,17 @@ function createChurchWebsiteAdminRouter(deps) {
         (tenant.organization && (tenant.organization.key || tenant.organization.organizationKey)) ||
         null;
 
+      try {
+        const { ensureEngineContent } = require("../../platform/website-engine/blessboardBridge");
+        await ensureEngineContent(getPool(), {
+          organizationId,
+          churchId: tenant.church.id,
+          slug: organizationKey,
+        });
+      } catch {
+        /* engine backfill is best-effort on hub load */
+      }
+
       if (organizationId) {
         const overview = await loadHqWebsiteOverview(getPool(), {
           organizationId,

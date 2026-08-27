@@ -812,6 +812,22 @@ async function publishChurchWebsite(db, input) {
           publishedSubmissionIds,
           alreadyPublished: inner.websiteStatus === "published",
         });
+        const {
+          publishFromLegacy,
+        } = require("../../platform/website-engine/blessboardBridge");
+        const enginePublished = await publishFromLegacy(client, {
+          organizationId: inner.organizationId,
+          churchId,
+          branchId,
+          actorIdentityId: input.actorUserId || null,
+          slug: inner.organizationKey,
+        });
+        if (!enginePublished.ok) {
+          throw Object.assign(new Error("website_engine_publish_failed"), {
+            code: "WEBSITE_ENGINE_PUBLISH",
+            engineCode: enginePublished.code,
+          });
+        }
       } catch (versionErr) {
         // Version history is required for Phase3 — fail the publish TX.
         throw versionErr;
@@ -917,6 +933,18 @@ async function unpublishChurchWebsite(db, input) {
           to_status: "draft",
           source: "hq_website",
         },
+      });
+
+      const {
+        unpublishFromLegacy,
+      } = require("../../platform/website-engine/blessboardBridge");
+      await unpublishFromLegacy(client, {
+        organizationId: String(ctx.organization_id),
+        churchId,
+        actorIdentityId: input.actorUserId || null,
+        grantedPermissions: ["website.publish"],
+        syncProductAvailability: false,
+        reason: "tenant_unpublish",
       });
 
       return {
@@ -1157,6 +1185,18 @@ async function publishInitialFoundationWebsite(client, input) {
     if (pgCode !== "42P01" && pgCode !== "42703") {
       throw versionErr;
     }
+  }
+
+  try {
+    const { publishFromLegacy } = require("../../platform/website-engine/blessboardBridge");
+    await publishFromLegacy(client, {
+      organizationId,
+      churchId,
+      actorIdentityId: (input && input.actorUserId) || null,
+      slug: keyNorm.key,
+    });
+  } catch {
+    /* Shared-engine backfill must not fail registration. */
   }
 
   return {

@@ -1,4 +1,4 @@
-<%- include('../partials/branch-admin-shell-start') %>
+<%- include('../partials/branch-admin-shell-start', { loadWebsiteEngineCss: true }) %>
 <%
   var o = overview || {};
   var page = o.branchPage || {};
@@ -59,7 +59,10 @@
       <div><dt>Service times</dt><dd><%= page.serviceTimesHint || 'Managed in branch content' %></dd></div>
     </dl>
     <p>
-      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= o.previewPath || '/branch-admin/content/preview/home' %>">Preview Branch Page</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= o.previewPath || '/branch-admin/content/preview/home' %>" data-bb-website-action="preview">Preview Branch Page</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/content" data-bb-website-action="edit">Edit Website</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/content" data-bb-website-action="settings">Website Settings</a>
+      <a class="bb-ba-btn bb-ba-btn--ghost" href="/branch-admin/content/media" data-bb-website-action="library">Content Library</a>
     </p>
   </article>
 

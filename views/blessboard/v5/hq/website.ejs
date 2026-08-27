@@ -1,4 +1,4 @@
-<%- include('../partials/hq-shell-start') %>
+<%- include('../partials/hq-shell-start', { loadWebsiteEngineCss: true }) %>
 
 <section class="bb-hq-settings" data-bb-hq-website="1" aria-label="Website publish">
   <header class="bb-hq-page-head">
@@ -69,6 +69,30 @@
   <% } %>
 
   <%- include('../partials/website-settings-status') %>
+
+  <%
+    var hubUx = (typeof websiteUx !== 'undefined' && websiteUx) ? websiteUx : (o.websiteUx || {});
+    var hubActions = hubUx.actions || {};
+    var hubTiles = {
+      paths: {
+        pages: '/hq/content',
+        settings: hubActions.settings || '/hq/website/advanced',
+        library: hubActions.library || '/hq/content/media',
+        history: hubActions.history || '/hq/website/version-history'
+      },
+      copy: {
+        pagesTitle: 'Pages',
+        pagesBody: 'Edit home, about, ministries, events, sermons, giving, and contact.',
+        settingsTitle: 'Website Settings',
+        settingsBody: 'Branding, SEO, header, footer, and website options.',
+        libraryTitle: 'Content Library',
+        libraryBody: 'Upload and reuse photos for your church website.',
+        historyTitle: 'Version History',
+        historyBody: 'Preview past versions and restore one as a new draft.'
+      }
+    };
+  %>
+  <%- include('../../../platform/website-engine/hub-tiles') %>
 
   <div class="bb-hq-panel">
     <h2 class="bb-hq-panel__title">Publish readiness</h2>

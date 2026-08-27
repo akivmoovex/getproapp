@@ -5,7 +5,7 @@ const { validateCsrf, CSRF_FIELD, issueCsrfToken, setCsrfCookie } = require("../
 const { renderPublicPage } = require("./renderActiveClinicPublic");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const contentService = require("../../platform/website/contentService");
-const publicationService = require("../../platform/website/publicationService");
+const publicationService = require("../../platform/website-engine").publicationService;
 const submissionService = require("../../platform/website/submissionService");
 const mediaService = require("../../platform/website/mediaService");
 const instanceRepo = require("../../platform/website/instanceRepository");
@@ -357,6 +357,82 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         changedKeys: published.changedKeys || [],
         availability,
       });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/website/unpublish", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return json(res, 403, { ok: false, code: "csrf" });
+      }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      if (!canPublishClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const unpublished = await publicationService.unpublishWebsite(getPool(), {
+        organizationId: clinic.organizationId,
+        instanceId: attached.instance.id,
+        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
+        actorIdentityId: actorId(req),
+        grantedPermissions: grantedPermissions(req),
+        reason: "tenant_unpublish",
+      });
+      if (!unpublished.ok) {
+        return json(res, 400, { ok: false, code: unpublished.code });
+      }
+      if (wantsHtml(req)) {
+        const returnTo = settingsPublishReturnTo(req.body && req.body.returnTo);
+        return res.redirect(303, `${returnTo || "/app/settings/website"}?website=unpublished`);
+      }
+      return json(res, 200, { ok: true, code: "unpublished", instance: unpublished.instance || null });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/website/unpublish", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return json(res, 403, { ok: false, code: "csrf" });
+      }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      if (!canPublishClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const unpublished = await publicationService.unpublishWebsite(getPool(), {
+        organizationId: clinic.organizationId,
+        instanceId: attached.instance.id,
+        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
+        actorIdentityId: actorId(req),
+        grantedPermissions: grantedPermissions(req),
+        reason: "tenant_unpublish",
+      });
+      if (!unpublished.ok) {
+        return json(res, 400, { ok: false, code: unpublished.code });
+      }
+      if (wantsHtml(req)) {
+        const returnTo = settingsPublishReturnTo(req.body && req.body.returnTo);
+        return res.redirect(303, `${returnTo || "/app/settings/website"}?website=unpublished`);
+      }
+      return json(res, 200, { ok: true, code: "unpublished", instance: unpublished.instance || null });
     } catch (err) {
       return next(err);
     }

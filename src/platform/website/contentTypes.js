@@ -148,6 +148,16 @@ function validateContentValue(def, candidate) {
       return { ok: true, value: text };
     }
     case CONTENT_TYPES.STRUCTURED: {
+      if (
+        def.acceptObject === true &&
+        candidate &&
+        typeof candidate === "object" &&
+        !Array.isArray(candidate)
+      ) {
+        const json = JSON.stringify(candidate);
+        if (json.length > (def.maxBytes || 512000)) return { ok: false, code: "too_long" };
+        return { ok: true, value: candidate };
+      }
       if (!Array.isArray(candidate)) return { ok: false, code: "invalid_structured" };
       const itemSchema = def.itemSchema || {};
       const items = [];

@@ -1132,6 +1132,17 @@ async function createRestoredDraft(db, opts) {
         },
       });
 
+      const {
+        restoreDraftFromLegacy,
+      } = require("../../platform/website-engine/blessboardBridge");
+      await restoreDraftFromLegacy(client, {
+        organizationId,
+        churchId,
+        branchId: restoreBranchId,
+        actorIdentityId: actorUserId,
+        snapshot: restoredSnapshot,
+      });
+
       return {
         ok: true,
         status: STATUS.OK,

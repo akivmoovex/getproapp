@@ -17,7 +17,7 @@ const PRODUCT_WEBSITE_DEFAULTS = Object.freeze({
   blessboard: Object.freeze({
     publishPolicy: PUBLISH_POLICY.REVIEW_BEFORE_PUBLISH,
     lifecycleStatus: LIFECYCLE_STATUS.PUBLIC,
-    adapterMode: ADAPTER_MODE.LEGACY_CMS,
+    adapterMode: ADAPTER_MODE.SHARED_ENGINE,
   }),
 });
 

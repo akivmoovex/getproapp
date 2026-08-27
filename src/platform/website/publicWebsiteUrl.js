@@ -252,6 +252,21 @@ function buildPublicWebsiteSettingsPath(input) {
   return PRODUCT_WEBSITE_SETTINGS_PATH[PRODUCT_CODE.BLESSBOARD];
 }
 
+function buildPublicWebsiteUnpublishPath(input) {
+  const product = normalizeProduct((input && (input.product || input.productCode)) || "");
+  if (product === PRODUCT_CODE.ACTIVECLINIC) {
+    const path = buildPublicOrganizationWebsitePath({
+      ...(input || {}),
+      query: undefined,
+      suffix: undefined,
+      pageKey: undefined,
+    });
+    return path ? appendQuery(`${path}/website/unpublish`, input && input.query) : null;
+  }
+  if (product !== PRODUCT_CODE.BLESSBOARD) return null;
+  return appendQuery("/hq/website/unpublish", input && input.query);
+}
+
 function buildPublicWebsitePublishPath(input) {
   const product = normalizeProduct((input && (input.product || input.productCode)) || "");
   if (product === PRODUCT_CODE.ACTIVECLINIC) {
@@ -502,6 +517,7 @@ module.exports = {
   buildPublicWebsiteHistoryPath,
   buildPublicWebsiteSettingsPath,
   buildPublicWebsitePublishPath,
+  buildPublicWebsiteUnpublishPath,
   buildPublicWebsiteAdminPath,
   buildPublicWebsitePagePaths,
   attachClinicPublicWebsitePaths,

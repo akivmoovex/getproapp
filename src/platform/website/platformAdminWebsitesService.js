@@ -350,7 +350,7 @@ async function listPlatformAdminWebsites(db, filters) {
       lastEditorId,
       lastEditor: lastEditorId,
       lifecycleStatus: row.lifecycle_status || row.bb_website_status || null,
-      adapterMode: row.adapter_mode || (productCode === PRODUCT_CODE.BLESSBOARD ? "legacy_cms" : null),
+      adapterMode: row.adapter_mode || (productCode === PRODUCT_CODE.BLESSBOARD ? "shared_engine" : null),
       slug: row.slug || row.organization_key,
       instanceId: row.instance_id,
       churchId: row.church_id,
@@ -644,6 +644,18 @@ async function applyPlatformAdminWebsiteAction(db, input) {
 
   if (action === "restore-version") {
     const versionId = String(input.versionId || "");
+    const productCode = instance && instance.productCode;
+    if (productCode === PRODUCT_CODE.BLESSBOARD || instance && instance.adapterMode === "legacy_cms") {
+      if (!churchId) return { ok: false, code: "not_found" };
+      return restoreAndPublishCurrentVersion(db, {
+        organizationId: organization.id,
+        churchId,
+        versionId,
+        actorUserId: actorIdentityId,
+        restorationReason: "Platform Admin restored a previous published version.",
+        env: input.env,
+      });
+    }
     if (instance && instance.adapterMode !== "legacy_cms") {
       return restoreWebsiteVersionLive(db, {
         organizationId: organization.id,

@@ -315,7 +315,7 @@ describe("shared website lifecycle moderation", () => {
     assert.equal(policy.ok, false);
   });
 
-  it("keeps BlessBoard adapter on legacy CMS without seeding shared content", async () => {
+    it("keeps BlessBoard on the shared website engine without seeding empty content", async () => {
     if (!requireDb()) return;
     const org = await provisionPlatformTenant(pool, {
       skipDomain: true,
@@ -335,7 +335,7 @@ describe("shared website lifecycle moderation", () => {
       slug: `wslc-bb-${stamp}`,
     });
     assert.equal(ensured.ok, true, JSON.stringify(ensured));
-    assert.equal(ensured.instance.adapterMode, "legacy_cms");
+    assert.equal(ensured.instance.adapterMode, "shared_engine");
     assert.equal(ensured.instance.publishPolicy, PUBLISH_POLICY.REVIEW_BEFORE_PUBLISH);
     const content = await pool.query(
       `SELECT count(*)::int AS n FROM platform.website_content WHERE instance_id = $1`,

@@ -338,6 +338,10 @@ function clientIp(req) {
  * }} [options]
  */
 function createV5FoundationApp(options) {
+  const {
+    registerBlessBoardWebsiteTemplate,
+  } = require("../../blessboard/website/blessboardChurchTemplate");
+  registerBlessBoardWebsiteTemplate();
   const opts = options || {};
   const getPool = typeof opts.getPool === "function" ? opts.getPool : getPgPool;
   const env = opts.env || process.env;

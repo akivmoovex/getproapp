@@ -41,6 +41,31 @@
   data-bb-content-page-key="<%= page.pageKey %>"
   data-bb-content-page-status="<%= page.status %>"
 >
+<%
+  var editorShell = {
+    productCode: 'blessboard',
+    pageKey: page && page.pageKey ? page.pageKey : 'home',
+    draft: String(pageStatus || '') === 'draft',
+    draftLabel: String(pageStatus || '') === 'draft' ? 'Unpublished draft' : 'No unpublished changes',
+    canEdit: true,
+    canPublish: typeof canPublishWebsite !== 'undefined' ? canPublishWebsite : true,
+    previewHref: typeof previewPath !== 'undefined' ? previewPath : (shellKind === 'hq' ? '/hq/content/preview/' + (page && page.pageKey ? page.pageKey : 'home') : '/branch-admin/content/preview/' + (page && page.pageKey ? page.pageKey : 'home')),
+    publishHref: shellKind === 'hq' ? '/hq/website/publish/review' : '/branch-admin/website',
+    historyHref: shellKind === 'hq' ? '/hq/website/version-history' : '/branch-admin/website',
+    hubHref: shellKind === 'hq' ? '/hq/website' : '/branch-admin/website',
+    pages: [
+      { key: 'home', label: 'Home' },
+      { key: 'about', label: 'About' },
+      { key: 'leadership', label: 'Leadership' },
+      { key: 'ministries', label: 'Ministries' },
+      { key: 'events', label: 'Events' },
+      { key: 'sermons', label: 'Sermons' },
+      { key: 'giving', label: 'Giving' },
+      { key: 'contact', label: 'Contact' }
+    ]
+  };
+%>
+<%- include('../../../platform/website-engine/editor-shell') %>
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
       <p class="bb-ba-breadcrumb">

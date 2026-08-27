@@ -9,6 +9,8 @@ const { autoPublishes, PUBLISH_POLICY } = require("./publishPolicy");
 const { LIFECYCLE_STATUS } = require("./lifecycleStatus");
 const editSessionService = require("./editSessionService");
 const { assertWebsiteInstanceScope } = require("./authorizeWebsite");
+const { hasWebsitePermission, PERMISSIONS } = require("./permissions");
+const lifecycleService = require("./lifecycleService");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -16,6 +18,7 @@ const RESULT = Object.freeze({
   PUBLISH_LOCKED: "website_publish_locked",
   POLICY_LOCKED: "website_policy_locked",
   NOT_FOUND: "website_instance_not_found",
+  FORBIDDEN: "forbidden",
 });
 
 async function currentPublishedVersionId(db, instance) {
@@ -280,11 +283,48 @@ async function restoreWebsiteVersionToDraft(db, input) {
   });
 }
 
+async function unpublishWebsite(db, input) {
+  const organizationId = String((input && input.organizationId) || "");
+  const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
+  const scoped = assertWebsiteInstanceScope(instance, input);
+  if (!scoped.ok) {
+    return {
+      ok: false,
+      code: scoped.code === "tenant_mismatch" ? scoped.code : RESULT.NOT_FOUND,
+      instance: null,
+    };
+  }
+  if (Array.isArray(input.grantedPermissions)) {
+    const allowed =
+      hasWebsitePermission(input.grantedPermissions, PERMISSIONS.PUBLISH) ||
+      hasWebsitePermission(input.grantedPermissions, PERMISSIONS.TAKE_OFFLINE);
+    if (!allowed) return { ok: false, code: RESULT.FORBIDDEN, instance };
+  }
+  const unpublished = await lifecycleService.applyLifecycle(db, {
+    organizationId,
+    instanceId: instance.id,
+    actorIdentityId: input.actorIdentityId || null,
+    lifecycleStatus: LIFECYCLE_STATUS.PROVISIONAL,
+    auditActionKey: "website.unpublish",
+    moderationActionKey: ACTION.TENANT_UNPUBLISH,
+    reason: input.reason || "tenant_unpublish",
+    notesTenantVisible: false,
+    syncProductAvailability: input.syncProductAvailability !== false,
+  });
+  return {
+    ok: unpublished.ok,
+    code: unpublished.code,
+    instance: unpublished.instance || instance,
+    publishedUnchanged: true,
+  };
+}
+
 module.exports = {
   RESULT,
   createPublicationVersion,
   saveDraftAndMaybePublish,
   publishWebsiteDraft,
+  unpublishWebsite,
   restoreWebsiteVersionLive,
   restoreWebsiteVersionToDraft,
   snapshotLiveContent,

@@ -19,6 +19,8 @@ const {
   buildPublicWebsitePreviewPath,
   buildPublicWebsiteHistoryPath,
   buildPublicWebsitePublishPath,
+  buildPublicWebsiteUnpublishPath,
+  buildPublicWebsiteSettingsPath,
 } = require("./publicWebsiteUrl");
 
 const PRESENTATION_STATE = Object.freeze({
@@ -157,6 +159,23 @@ function presentWebsiteSettingsUx(input) {
     state !== PRESENTATION_STATE.SETUP_INCOMPLETE &&
     state !== PRESENTATION_STATE.MISSING;
   const showHistory = canView && Boolean(historyPath) && exists;
+  const showUnpublish =
+    canPublish &&
+    Boolean(facts.unpublishPath) &&
+    liveAvailable &&
+    state !== PRESENTATION_STATE.SUSPENDED;
+  const showSettings =
+    canEdit &&
+    Boolean(facts.settingsPath) &&
+    state !== PRESENTATION_STATE.SUSPENDED &&
+    state !== PRESENTATION_STATE.SETUP_INCOMPLETE &&
+    state !== PRESENTATION_STATE.MISSING;
+  const showLibrary =
+    canView &&
+    Boolean(facts.libraryPath) &&
+    exists &&
+    state !== PRESENTATION_STATE.SETUP_INCOMPLETE &&
+    state !== PRESENTATION_STATE.MISSING;
   const showRetry = Boolean(retryPath) && (setupIncomplete || missing);
   const showContactPlatformAdmin =
     (setupIncomplete || missing || suspended) && !showRetry;
@@ -190,6 +209,9 @@ function presentWebsiteSettingsUx(input) {
       preview: showPreview ? previewPath : null,
       editWebsite: showEdit ? editPath : null,
       publishPath: showPublish ? publishPath : null,
+      unpublishPath: showUnpublish ? facts.unpublishPath : null,
+      settings: showSettings ? facts.settingsPath : null,
+      library: showLibrary ? facts.libraryPath : null,
       history: showHistory ? historyPath : null,
       retry: showRetry ? retryPath : null,
       contactPlatformAdmin: showContactPlatformAdmin,
@@ -262,6 +284,9 @@ function presentBlessBoardHqWebsiteSettingsUx(input) {
     historyPath: facts.historyPath || "/hq/website/version-history",
     publishPath:
       overview.publishReviewPath || facts.publishPath || "/hq/website/publish/review",
+    unpublishPath: facts.unpublishPath || "/hq/website/unpublish",
+    settingsPath: facts.settingsPath || "/hq/website/advanced",
+    libraryPath: facts.libraryPath || "/hq/content/media",
     retryPath: needsRepair ? "#website-setup-retry" : facts.retryPath || null,
     canView,
     canEdit,
@@ -426,6 +451,12 @@ async function loadWebsiteManagementSummary(db, input) {
     editPath: buildPublicWebsiteEditPath({ product: productCode, organizationKey: key }),
     historyPath: buildPublicWebsiteHistoryPath({ product: productCode, organizationKey: key }),
     publishPath: buildPublicWebsitePublishPath({ product: productCode, organizationKey: key }),
+    unpublishPath: buildPublicWebsiteUnpublishPath({ product: productCode, organizationKey: key }),
+    settingsPath: buildPublicWebsiteSettingsPath({ product: productCode, organizationKey: key }),
+    libraryPath:
+      productCode === PRODUCT_CODE.ACTIVECLINIC
+        ? "/app/settings/website/library"
+        : "/hq/content/media",
     canView,
     canEdit,
     canPublish,

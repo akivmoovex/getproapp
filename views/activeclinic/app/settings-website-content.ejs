@@ -161,6 +161,18 @@
         <button type="submit" class="ac-mw-btn ac-mw-btn--primary" data-ac-website-action="publish">Publish</button>
       </form>
       <% } %>
+      <% if (website.canPublish && actions.unpublishPath && website.liveAvailable) { %>
+      <form
+        method="post"
+        action="<%= actions.unpublishPath %>"
+        style="margin:0"
+        onsubmit="return confirm('Unpublish this website? Visitors will no longer see it. Content is preserved.');"
+      >
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <input type="hidden" name="returnTo" value="/app/settings/website"/>
+        <button type="submit" class="ac-mw-btn" data-ac-website-action="unpublish">Unpublish</button>
+      </form>
+      <% } %>
       <% if (actions.retry) { %>
       <a class="ac-mw-btn" href="<%= actions.retry %>" data-ac-website-action="retry">Retry</a>
       <% } %>

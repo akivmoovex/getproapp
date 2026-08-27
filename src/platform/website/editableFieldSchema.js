@@ -62,8 +62,10 @@ function contentDefFromField(field) {
   return {
     type: field.type,
     maxLen: field.maxLen,
+    maxBytes: field.maxBytes,
     enumValues: field.enumValues,
     itemSchema: field.itemSchema,
+    acceptObject: field.acceptObject === true,
   };
 }
 
@@ -175,6 +177,8 @@ function normalizeFieldDef(def) {
     description: def.description ? String(def.description) : "",
     enumValues: Array.isArray(def.enumValues) ? Object.freeze([...def.enumValues]) : null,
     itemSchema: def.itemSchema ? Object.freeze({ ...def.itemSchema }) : null,
+    acceptObject: def.acceptObject === true,
+    maxBytes: Number.isFinite(Number(def.maxBytes)) ? Number(def.maxBytes) : undefined,
     storage: Object.freeze({
       kind: storage.kind || STORAGE_KIND.PLATFORM_CONTENT_KEY,
       contentKey: storage.contentKey || keyNorm.key,
@@ -296,6 +300,7 @@ function ensureProductFieldsRegistered(productCode) {
     require("../../activeclinic/website/activeClinicWebsiteTemplate").registerActiveClinicWebsiteTemplate();
   } else if (code === PRODUCT_CODE.BLESSBOARD) {
     require("../../blessboard/services/websiteInlineEditableFields");
+    require("../../blessboard/website/blessboardChurchTemplate").registerBlessBoardWebsiteTemplate();
   }
 }
 

@@ -1,4 +1,4 @@
-<%- include('../partials/hq-shell-start') %>
+<%- include('../partials/hq-shell-start', { loadWebsiteEngineCss: true }) %>
 <%
   var o = overview || {};
   var counts = o.counts || {};
@@ -53,6 +53,30 @@
   <% } %>
 
   <%- include('../partials/website-settings-status') %>
+
+  <%
+    var hubUx = (typeof websiteUx !== 'undefined' && websiteUx) ? websiteUx : (o.websiteUx || {});
+    var hubActions = hubUx.actions || {};
+    var hubTiles = {
+      paths: {
+        pages: '/hq/content',
+        settings: hubActions.settings || '/hq/website/advanced',
+        library: hubActions.library || '/hq/content/media',
+        history: hubActions.history || '/hq/website/version-history'
+      },
+      copy: {
+        pagesTitle: 'Pages',
+        pagesBody: 'Edit church and branch public pages.',
+        settingsTitle: 'Website Settings',
+        settingsBody: 'Branding, SEO, header, footer, and website options.',
+        libraryTitle: 'Content Library',
+        libraryBody: 'Upload and reuse photos for your church website.',
+        historyTitle: 'Version History',
+        historyBody: 'Preview past versions and restore one as a new draft.'
+      }
+    };
+  %>
+  <%- include('../../../platform/website-engine/hub-tiles') %>
 
   <% if (typeof needsFoundationRepair !== 'undefined' && needsFoundationRepair) { %>
   <div class="bb-hq-panel" data-bb-hq-website-repair="1" id="website-setup-retry">

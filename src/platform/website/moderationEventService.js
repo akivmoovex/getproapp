@@ -15,6 +15,7 @@ const ACTION = Object.freeze({
   EDIT_UNLOCKED: "website.moderation.edit_unlocked",
   AUTO_PUBLISH: "website.moderation.auto_publish",
   TENANT_PUBLISH: "website.moderation.tenant_publish",
+  TENANT_UNPUBLISH: "website.moderation.tenant_unpublish",
   PROVISION: "website.moderation.provision",
 });
 

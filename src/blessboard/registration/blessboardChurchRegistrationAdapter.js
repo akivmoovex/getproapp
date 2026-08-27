@@ -342,7 +342,7 @@ async function websiteDefaults(input) {
     scopeRef: records.branchId || null,
     contentOverrides: {},
     seedDefaults: false,
-    adapterMode: "legacy_cms",
+    adapterMode: "shared_engine",
     publishPolicy: "REVIEW_BEFORE_PUBLISH",
     lifecycleStatus: "public",
   };

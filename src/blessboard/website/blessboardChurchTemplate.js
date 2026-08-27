@@ -2,6 +2,13 @@
 
 const { registerWebsiteTemplate } = require("../../platform/website/templateRegistry");
 const { CONTENT_TYPES } = require("../../platform/website/contentTypes");
+const {
+  registerEditableField,
+  STORAGE_KIND,
+  PRODUCT_CODE,
+} = require("../../platform/website/editableFieldSchema");
+const { PERMISSIONS } = require("../../platform/website/permissions");
+const { SNAPSHOT_KEY } = require("../../platform/website-engine/productSchemaRegistry");
 const { KEY_DEFS, VALUE_TYPES } = require("../services/websiteSettingKeyRegistry");
 const { EDITABLE_FIELDS } = require("../services/websiteInlineEditableFields");
 
@@ -59,8 +66,8 @@ function inlineFieldKeys() {
 let registered = null;
 
 function registerBlessBoardWebsiteTemplate() {
-  if (registered) return registered;
-  registered = registerWebsiteTemplate({
+  if (!registered) {
+    registered = registerWebsiteTemplate({
     templateId: "blessboard_church",
     productCode: "blessboard",
     version: 1,
@@ -68,14 +75,44 @@ function registerBlessBoardWebsiteTemplate() {
     pages: [
       { key: "home", label: "Home", mandatory: true },
       { key: "about", label: "About", mandatory: true },
+      { key: "leadership", label: "Leadership", mandatory: false },
+      { key: "ministries", label: "Ministries", mandatory: false },
+      { key: "events", label: "Events", mandatory: false },
+      { key: "sermons", label: "Sermons", mandatory: false },
+      { key: "giving", label: "Giving", mandatory: false },
       { key: "contact", label: "Contact", mandatory: true },
     ],
-    keys: { ...settingKeys(), ...inlineFieldKeys() },
+    keys: {
+      ...settingKeys(),
+      ...inlineFieldKeys(),
+      [SNAPSHOT_KEY]: {
+        type: CONTENT_TYPES.STRUCTURED,
+        acceptObject: true,
+        maxBytes: 512000,
+        group: "cms",
+        description: "Church website publication snapshot",
+      },
+    },
     requiredPublishKeys: [],
     mandatoryPages: ["home", "about", "contact"],
     defaults: {},
   });
+  }
+  registerSnapshotEditableField();
   return registered;
+}
+
+function registerSnapshotEditableField() {
+  registerEditableField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    key: SNAPSHOT_KEY,
+    type: CONTENT_TYPES.STRUCTURED,
+    acceptObject: true,
+    maxBytes: 512000,
+    permission: PERMISSIONS.EDIT,
+    storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: SNAPSHOT_KEY },
+    description: "Church website publication snapshot",
+  });
 }
 
 module.exports = {
