@@ -351,7 +351,7 @@
       <% if ((communitySection && communitySection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
       <div class="bb-tp-about-community__media">
         <% if (communitySection && communitySection.mediaUrl) { %>
-        <img class="bb-tp-media" src="<%= communitySection.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
+        <img class="bb-tp-media" src="<%= communitySection.mediaUrl %>" alt="<%= (communitySection.layoutMetadata && communitySection.layoutMetadata.altText) || '' %>" width="960" height="540" loading="lazy" decoding="async" />
         <% } %>
         <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
         <div class="bb-tp-edit-media-wrap">
@@ -360,7 +360,7 @@
             editEntityKey: 'about-community',
             editSectionKey: 'community',
             editLabel: 'Edit neighbourhood image',
-            editPayload: { imageUrl: (communitySection && communitySection.mediaUrl) || '', altText: '', focal: 'center' }
+            editPayload: { imageUrl: (communitySection && communitySection.mediaUrl) || '', altText: (communitySection && communitySection.layoutMetadata && communitySection.layoutMetadata.altText) || '', focal: 'center' }
           }) %>
         </div>
         <% } %>
@@ -430,7 +430,7 @@
       <% if (section.mediaUrl || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
       <div class="bb-tp-content-block__media">
         <% if (section.mediaUrl) { %>
-        <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="" width="960" height="540" loading="lazy" decoding="async" />
+        <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="<%= (section.layoutMetadata && section.layoutMetadata.altText) || '' %>" width="960" height="540" loading="lazy" decoding="async" />
         <% } %>
         <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
         <div class="bb-tp-edit-media-wrap">
@@ -439,7 +439,7 @@
             editEntityKey: 'about-' + (section.sectionKey || 'block'),
             editSectionKey: section.sectionKey || 'generic',
             editLabel: 'Edit section image',
-            editPayload: { imageUrl: section.mediaUrl || '', altText: '', focal: 'center' }
+            editPayload: { imageUrl: section.mediaUrl || '', altText: (section.layoutMetadata && section.layoutMetadata.altText) || '', focal: 'center' }
           }) %>
         </div>
         <% } %>

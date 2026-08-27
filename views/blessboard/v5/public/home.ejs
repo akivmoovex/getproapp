@@ -94,6 +94,7 @@
     (demoFb && demoFb.welcomeBody) ||
     '';
   var welcomeMedia = welcomeSection && welcomeSection.mediaUrl ? welcomeSection.mediaUrl : null;
+  var welcomeMediaAlt = (welcomeSection && welcomeSection.layoutMetadata && welcomeSection.layoutMetadata.altText) || '';
 
   var aboutHeading =
     (aboutPreviewSection && aboutPreviewSection.heading) ||
@@ -307,7 +308,7 @@
   <% if (welcomeMedia || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
       <div class="bb-tp-home-welcome__media">
         <% if (welcomeMedia) { %>
-        <img class="bb-tp-media" src="<%= welcomeMedia %>" alt="" width="800" height="600" loading="lazy" decoding="async" />
+        <img class="bb-tp-media" src="<%= welcomeMedia %>" alt="<%= welcomeMediaAlt %>" width="800" height="600" loading="lazy" decoding="async" />
         <% } %>
         <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
         <div class="bb-tp-edit-media-wrap">
@@ -316,7 +317,7 @@
             editEntityKey: 'home-welcome',
             editSectionKey: 'welcome',
             editLabel: 'Edit welcome image',
-            editPayload: { imageUrl: welcomeMedia || '', altText: '', focal: 'center' }
+            editPayload: { imageUrl: welcomeMedia || '', altText: welcomeMediaAlt, focal: 'center' }
           }) %>
         </div>
         <% } %>

@@ -305,10 +305,11 @@ describe("blessboard v5 frontend assets — images and tokens", () => {
     for (const rel of files) {
       const src = read(rel);
       assert.match(src, /class="bb-tp-media"/, rel);
-      // Section/CMS media blocks (single-line tags); avoid [^>] which breaks on EJS `%>`.
+      // Section/CMS media blocks (single-line tags). The alt attribute carries
+      // authored alt text, so match any value while still requiring dimensions.
       const sectionMedia =
         src.match(
-          /<img class="bb-tp-media" src="<%[^%]+%>" alt="" width="\d+" height="\d+" loading="lazy"[^/]*\/>/g
+          /<img class="bb-tp-media" src="<%=?[\s\S]*?%>" alt="[\s\S]*?" width="\d+" height="\d+" loading="lazy"[^/]*\/>/g
         ) || [];
       assert.ok(sectionMedia.length > 0, `${rel} should have sized lazy bb-tp-media imgs`);
     }

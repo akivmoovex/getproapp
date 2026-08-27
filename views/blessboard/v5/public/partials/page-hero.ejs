@@ -46,6 +46,7 @@
     }
   }
   var _mediaAlt = typeof heroMediaAlt !== 'undefined' && heroMediaAlt ? heroMediaAlt : '';
+  if (_meta.altText) _mediaAlt = _meta.altText;
   if (_meta.templateExample) {
     _mediaAlt = 'Template photo, not a photo of this congregation';
   }
@@ -204,7 +205,7 @@
           editLabel: 'Edit section image',
           editPayload: {
             imageUrl: _media || '',
-            altText: typeof heroMediaAlt !== 'undefined' && heroMediaAlt ? heroMediaAlt : '',
+            altText: _mediaAlt,
             focal: 'center'
           }
         }) %>
