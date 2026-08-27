@@ -23,7 +23,7 @@ const {
   SCOPE_TYPE,
 } = require("../services/resolveWebsiteScope");
 const svc = require("../services/websiteChangeSubmissionService");
-const { publicChurchHomePath } = require("../urls/churchUrlHelper");
+const { publicChurchHomePath, publicBranchHomePath } = require("../urls/churchUrlHelper");
 const { EDIT_QUERY } = require("./attachWebsiteAdminChrome");
 
 function renderView(relativePath, data) {
@@ -32,15 +32,49 @@ function renderView(relativePath, data) {
 
 /**
  * Canonical Branch Admin visual-editor entry for the session-resolved church.
- * Org key comes from tenant context only — never from client input.
+ *
+ * The target is the branch this actor is actually assigned to, resolved through
+ * the shared website scope resolver — never the church primary branch and never
+ * a client-supplied key. A branch admin sent to the church-wide page lands on a
+ * site they hold no grant on, so the editor offers no controls and the link is a
+ * dead end. Church-scoped actors (an HQ admin reaching this surface) keep the
+ * church-wide target, which is the site they do administer.
+ *
+ * Org and branch keys come from tenant context and the resolved scope only.
+ *
+ * @param {{ query: Function }} pool
+ * @param {import('express').Request} req
  * @param {object} tenant
- * @returns {string|null}
+ * @returns {Promise<string|null>}
  */
-function resolveBranchWebsiteEditorPath(tenant) {
+async function resolveBranchWebsiteEditorPath(pool, req, tenant) {
   const org =
     tenant && tenant.organization
       ? tenant.organization.key || tenant.organization.organizationKey || null
       : null;
+
+  const session = req && req.v5Session && req.v5Session.session;
+  const userId = session && session.userId ? String(session.userId) : null;
+
+  if (pool && userId && org) {
+    try {
+      const scope = await resolveWebsiteScope(pool, {
+        tenant,
+        authenticatedUser: userId,
+        organizationId: tenant.organization ? tenant.organization.id : null,
+        churchId: tenant.church ? tenant.church.id : null,
+        requestedBranchKey: null,
+      });
+      if (scope.ok && scope.scopeType === SCOPE_TYPE.BRANCH && scope.branchKey) {
+        const branchHome = publicBranchHomePath(org, scope.branchKey);
+        if (branchHome) return `${branchHome}?${EDIT_QUERY}=1`;
+      }
+    } catch {
+      // Fall through to the church-wide target; the public page still gates its
+      // own edit controls, so this cannot widen access.
+    }
+  }
+
   const home = publicChurchHomePath(org);
   if (!home) return null;
   return `${home}?${EDIT_QUERY}=1`;
@@ -258,8 +292,11 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     });
   }
 
-  function editorPath(tenant) {
-    return resolveBranchWebsiteEditorPath(tenant) || "/branch-admin/content";
+  async function editorPath(req, tenant) {
+    return (
+      (await resolveBranchWebsiteEditorPath(getPool(), req, tenant)) ||
+      "/branch-admin/content"
+    );
   }
 
   function draftFieldsFromBody(body) {
@@ -285,7 +322,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
     const tenant = requireBranchTenant(req, res);
     if (!tenant) return;
 
-    const editorHref = resolveBranchWebsiteEditorPath(tenant);
+    const editorHref = await resolveBranchWebsiteEditorPath(getPool(), req, tenant);
     if (!editorHref) {
       return sendControlled(
         req,
@@ -364,7 +401,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
         pageKeys: result.pageKeys,
         filters: result.filters,
         statusLabels: svc.STATUS_LABELS,
-        editorPath: editorPath(tenant),
+        editorPath: await editorPath(req, tenant),
         notice: String((req.query && req.query.notice) || "") || null,
       })
     );
@@ -403,7 +440,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
           statusLabels: svc.STATUS_LABELS,
           eventLabels: svc.EVENT_LABELS,
           listPath: "/branch-admin/website/submissions",
-          editorPath: editorPath(tenant),
+          editorPath: await editorPath(req, tenant),
           notice: String((req.query && req.query.notice) || "") || null,
           formError: String((req.query && req.query.error) || "") || null,
         })
@@ -445,7 +482,7 @@ function createWebsiteChangeSubmissionBranchRouter(deps) {
         model,
         statusLabels: svc.STATUS_LABELS,
         priorities: svc.PRIORITIES,
-        editorPath: editorPath(tenant),
+        editorPath: await editorPath(req, tenant),
         listPath: "/branch-admin/website/submissions",
         formError: String((req.query && req.query.error) || "") || null,
         notice: String((req.query && req.query.notice) || "") || null,

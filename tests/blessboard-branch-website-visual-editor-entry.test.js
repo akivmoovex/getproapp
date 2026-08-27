@@ -235,7 +235,10 @@ describe("branch admin website visual editor entry", () => {
       .set("Host", APEX)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branchA.rawToken}`));
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/c/visual-edit-a?website_edit=1");
+    // The assigned branch's site, not the church-wide page. A branch admin holds no
+    // grant on the church-wide site, so that target renders no edit controls at all.
+    assert.equal(res.headers.location, "/c/visual-edit-a/branches/hq?website_edit=1");
+    assert.match(res.headers.location, /\/branches\//);
     assert.doesNotMatch(res.headers.location, /submissions/);
   });
 
@@ -276,8 +279,8 @@ describe("branch admin website visual editor entry", () => {
       .set("Host", APEX)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branchB.rawToken}`));
     if (res.status === 303) {
-      assert.equal(res.headers.location, "/c/visual-edit-b?website_edit=1");
-      assert.notEqual(res.headers.location, "/c/visual-edit-a?website_edit=1");
+      assert.equal(res.headers.location, "/c/visual-edit-b/branches/hq?website_edit=1");
+      assert.doesNotMatch(res.headers.location, /visual-edit-a/);
     } else {
       assert.ok(res.status === 403 || res.status === 404);
     }

@@ -319,6 +319,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         instanceId: attached.instance.id,
         expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
         actorIdentityId: actorId(req),
+        grantedPermissions: grantedPermissions(req),
         allowEmpty: true,
       });
       if (!published.ok) {
@@ -552,6 +553,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
         versionId: req.params.versionId,
         actorIdentityId: actorId(req),
+        grantedPermissions: grantedPermissions(req),
       });
       if (!restored.ok) {
         if (wantsHtml(req)) {

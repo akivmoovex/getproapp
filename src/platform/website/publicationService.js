@@ -8,8 +8,8 @@ const { recordModerationEvent, ACTION } = require("./moderationEventService");
 const { autoPublishes, PUBLISH_POLICY } = require("./publishPolicy");
 const { LIFECYCLE_STATUS } = require("./lifecycleStatus");
 const editSessionService = require("./editSessionService");
-const { assertWebsiteInstanceScope } = require("./authorizeWebsite");
-const { hasWebsitePermission, PERMISSIONS } = require("./permissions");
+const { assertWebsiteInstanceScope, authorizeWebsiteAction } = require("./authorizeWebsite");
+const { PERMISSIONS } = require("./permissions");
 const lifecycleService = require("./lifecycleService");
 
 const RESULT = Object.freeze({
@@ -20,6 +20,16 @@ const RESULT = Object.freeze({
   NOT_FOUND: "website_instance_not_found",
   FORBIDDEN: "forbidden",
 });
+
+/**
+ * Map a canonical authorization failure onto this service's result codes.
+ * @param {string} code
+ */
+function authFailureCode(code) {
+  if (code === "tenant_mismatch") return "tenant_mismatch";
+  if (code === "forbidden") return RESULT.FORBIDDEN;
+  return RESULT.NOT_FOUND;
+}
 
 async function currentPublishedVersionId(db, instance) {
   const listed = await versionService.listWebsiteVersions(db, {
@@ -166,9 +176,17 @@ async function saveDraftAndMaybePublish(db, input) {
 
 async function publishWebsiteDraft(db, input) {
   const organizationId = String((input && input.organizationId) || "");
-  const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
-  const scoped = assertWebsiteInstanceScope(instance, input);
-  if (!scoped.ok) return { ok: false, code: scoped.code === "tenant_mismatch" ? scoped.code : RESULT.NOT_FOUND, version: null };
+  const authorized = await authorizeWebsiteAction(db, {
+    ...input,
+    organizationId,
+    permission: PERMISSIONS.PUBLISH,
+  });
+  if (!authorized.ok) {
+    return { ok: false, code: authFailureCode(authorized.code), version: null };
+  }
+  const instance = authorized.instance;
+  // Lock and policy checks stay after authorization: a publish-locked or
+  // review-gated site must not become directly publishable for any actor.
   if (instance.publishLocked === true || instance.publishPolicy === PUBLISH_POLICY.PLATFORM_LOCKED) {
     return { ok: false, code: RESULT.PUBLISH_LOCKED, version: null };
   }
@@ -229,9 +247,13 @@ async function publishWebsiteDraft(db, input) {
 
 async function restoreWebsiteVersionLive(db, input) {
   const organizationId = String((input && input.organizationId) || "");
-  const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
-  const scoped = assertWebsiteInstanceScope(instance, input);
-  if (!scoped.ok) return { ok: false, code: scoped.code === "tenant_mismatch" ? scoped.code : RESULT.NOT_FOUND };
+  const authorized = await authorizeWebsiteAction(db, {
+    ...input,
+    organizationId,
+    anyPermission: [PERMISSIONS.ROLLBACK, PERMISSIONS.RESTORE],
+  });
+  if (!authorized.ok) return { ok: false, code: authFailureCode(authorized.code) };
+  const instance = authorized.instance;
   await editSessionService.closeOpenSessionsForInstance(db, {
     organizationId,
     instanceId: instance.id,
@@ -273,9 +295,13 @@ async function restoreWebsiteVersionLive(db, input) {
  */
 async function restoreWebsiteVersionToDraft(db, input) {
   const organizationId = String((input && input.organizationId) || "");
-  const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
-  const scoped = assertWebsiteInstanceScope(instance, input);
-  if (!scoped.ok) return { ok: false, code: scoped.code === "tenant_mismatch" ? scoped.code : RESULT.NOT_FOUND };
+  const authorized = await authorizeWebsiteAction(db, {
+    ...input,
+    organizationId,
+    anyPermission: [PERMISSIONS.ROLLBACK, PERMISSIONS.RESTORE],
+  });
+  if (!authorized.ok) return { ok: false, code: authFailureCode(authorized.code) };
+  const instance = authorized.instance;
   return versionService.restoreWebsiteVersionToDraft(db, {
     ...input,
     instanceId: instance.id,
@@ -285,21 +311,19 @@ async function restoreWebsiteVersionToDraft(db, input) {
 
 async function unpublishWebsite(db, input) {
   const organizationId = String((input && input.organizationId) || "");
-  const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
-  const scoped = assertWebsiteInstanceScope(instance, input);
-  if (!scoped.ok) {
+  const authorized = await authorizeWebsiteAction(db, {
+    ...input,
+    organizationId,
+    anyPermission: [PERMISSIONS.PUBLISH, PERMISSIONS.TAKE_OFFLINE],
+  });
+  if (!authorized.ok) {
     return {
       ok: false,
-      code: scoped.code === "tenant_mismatch" ? scoped.code : RESULT.NOT_FOUND,
-      instance: null,
+      code: authFailureCode(authorized.code),
+      instance: authorized.instance,
     };
   }
-  if (Array.isArray(input.grantedPermissions)) {
-    const allowed =
-      hasWebsitePermission(input.grantedPermissions, PERMISSIONS.PUBLISH) ||
-      hasWebsitePermission(input.grantedPermissions, PERMISSIONS.TAKE_OFFLINE);
-    if (!allowed) return { ok: false, code: RESULT.FORBIDDEN, instance };
-  }
+  const instance = authorized.instance;
   const unpublished = await lifecycleService.applyLifecycle(db, {
     organizationId,
     instanceId: instance.id,
