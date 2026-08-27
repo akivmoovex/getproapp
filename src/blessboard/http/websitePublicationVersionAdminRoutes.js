@@ -849,7 +849,9 @@ function createWebsitePublicationVersionAdminRouter(deps) {
     return res.status(200).type("html").send(html);
   });
 
-  router.post("/hq/website/restored-draft/discard", rejectApex, gateHq, async (req, res) => {
+  // Discard re-publishes the live CMS rows from the current version, so it needs
+  // the same restore authority as the routes that created the restored draft.
+  router.post("/hq/website/restored-draft/discard", rejectApex, gateHq, requireWebsiteRestore, async (req, res) => {
     const tenant = requireTenant(req, res);
     if (!tenant) return;
     const submitted = req.body && req.body[CSRF_FIELD];

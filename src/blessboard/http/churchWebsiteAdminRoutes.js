@@ -147,6 +147,7 @@ function createChurchWebsiteAdminRouter(deps) {
 
   const requireHq = createRequireBlessBoardPermission("website.view", null, { getPool, scopeMode: "church" });
   const requireWebsitePublish = createRequireBlessBoardPermission("website.publish", null, { getPool, scopeMode: "church" });
+  const requireWebsiteEdit = createRequireBlessBoardPermission("website.edit", null, { getPool, scopeMode: "church" });
 
   async function websiteCapabilityFlags(req) {
     const tenant = resolveTenantForAuthorization(req);
@@ -417,7 +418,9 @@ function createChurchWebsiteAdminRouter(deps) {
     }
   });
 
-  router.post("/hq/website/repair-foundation", rejectApex, gateHq, async (req, res) => {
+  // Repair writes draft settings and draft pages, so it needs edit rather than
+  // the view-only shell gate.
+  router.post("/hq/website/repair-foundation", rejectApex, gateHq, requireWebsiteEdit, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.church || !tenant.church.id) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
@@ -446,7 +449,9 @@ function createChurchWebsiteAdminRouter(deps) {
     return res.redirect(303, "/hq/website?notice=foundation_repaired");
   });
 
-  router.post("/hq/website/preview-ack", rejectApex, gateHq, async (req, res) => {
+  // Acknowledging preview satisfies a publish precondition, so it is gated with
+  // publish rather than the view-only shell gate.
+  router.post("/hq/website/preview-ack", rejectApex, gateHq, requireWebsitePublish, async (req, res) => {
     const tenant = resolveTenantForAuthorization(req);
     if (!tenant || !tenant.organization || !tenant.organization.id) {
       return sendControlled(req, res, 403, "You do not have access to this site.");
@@ -853,6 +858,7 @@ function createChurchWebsiteAdminRouter(deps) {
     "/hq/website/branches/:branchKey/publish",
     rejectApex,
     gateHq,
+    requireWebsitePublish,
     async (req, res) => {
       const scope = await resolveBranchPublishScope(req, res);
       if (!scope) return;

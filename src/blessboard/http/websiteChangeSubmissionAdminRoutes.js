@@ -9,6 +9,9 @@ const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const {
   createRequireBlessBoardPermission,
 } = require("./requireBlessBoardPermission");
+const {
+  createRequireAnyBlessBoardPermission,
+} = require("./requireBlessBoardShellAccess");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { createRejectApex } = require("./rejectApex");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
@@ -103,6 +106,20 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
   const isProduction = String(env.NODE_ENV || "") === "production";
 
   const requireHq = createRequireBlessBoardPermission("website.view", null, { getPool, scopeMode: "church" });
+  // Approving a submission applies the draft and publishes the live site, so a
+  // decision needs reviewer or publisher authority, not the view-only shell gate.
+  const requireWebsiteDecision = createRequireAnyBlessBoardPermission(
+    ["website.review", "website.publish"],
+    {
+      getPool,
+      resolveResourceContext: (_req, tenant) => ({
+        organizationId: tenant.organization.id,
+        churchId: tenant.church.id,
+        branchId: null,
+      }),
+      denyMessage: "You do not have permission to decide website change submissions.",
+    }
+  );
 
   const rejectApex = createRejectApex({
     isApexHost,
@@ -426,18 +443,21 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
     "/hq/website/change-submissions/:submissionId/approve",
     rejectApex,
     gateHq,
+    requireWebsiteDecision,
     (req, res) => postDecision(req, res, "approve")
   );
   router.post(
     "/hq/website/change-submissions/:submissionId/request-changes",
     rejectApex,
     gateHq,
+    requireWebsiteDecision,
     (req, res) => postDecision(req, res, "request-changes")
   );
   router.post(
     "/hq/website/change-submissions/:submissionId/reject",
     rejectApex,
     gateHq,
+    requireWebsiteDecision,
     (req, res) => postDecision(req, res, "reject")
   );
 
@@ -537,18 +557,21 @@ function createWebsiteChangeSubmissionAdminRouter(deps) {
     "/hq/website/change-requests/:submissionId/approve",
     rejectApex,
     gateHq,
+    requireWebsiteDecision,
     (req, res) => postDecision(req, res, "approve")
   );
   router.post(
     "/hq/website/change-requests/:submissionId/request-changes",
     rejectApex,
     gateHq,
+    requireWebsiteDecision,
     (req, res) => postDecision(req, res, "request-changes")
   );
   router.post(
     "/hq/website/change-requests/:submissionId/reject",
     rejectApex,
     gateHq,
+    requireWebsiteDecision,
     (req, res) => postDecision(req, res, "reject")
   );
 

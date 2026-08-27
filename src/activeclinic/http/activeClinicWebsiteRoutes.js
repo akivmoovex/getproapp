@@ -401,44 +401,6 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
     }
   });
 
-  app.post("/clinics/:clinicKey/website/unpublish", async (req, res, next) => {
-    try {
-      const clinic = await loadClinic(req, res);
-      if (!clinic) return undefined;
-      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        return json(res, 403, { ok: false, code: "csrf" });
-      }
-      if (clientTenantOverride(req.body)) {
-        return json(res, 403, { ok: false, code: "forbidden" });
-      }
-      if (!canPublishClinicWebsite(req, clinic)) {
-        return json(res, 403, { ok: false, code: "forbidden" });
-      }
-      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
-      if (!attached.instance) {
-        return json(res, 404, { ok: false, code: "website_instance_not_found" });
-      }
-      const unpublished = await publicationService.unpublishWebsite(getPool(), {
-        organizationId: clinic.organizationId,
-        instanceId: attached.instance.id,
-        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
-        actorIdentityId: actorId(req),
-        grantedPermissions: grantedPermissions(req),
-        reason: "tenant_unpublish",
-      });
-      if (!unpublished.ok) {
-        return json(res, 400, { ok: false, code: unpublished.code });
-      }
-      if (wantsHtml(req)) {
-        const returnTo = settingsPublishReturnTo(req.body && req.body.returnTo);
-        return res.redirect(303, `${returnTo || "/app/settings/website"}?website=unpublished`);
-      }
-      return json(res, 200, { ok: true, code: "unpublished", instance: unpublished.instance || null });
-    } catch (err) {
-      return next(err);
-    }
-  });
-
   app.get("/clinics/:clinicKey/website/versions", async (req, res, next) => {
     try {
       const clinic = await loadClinic(req, res);
@@ -728,7 +690,10 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
     try {
       const clinic = await loadClinic(req, res);
       if (!clinic) return undefined;
-      const csrfValue = (req.body && req.body[CSRF_FIELD]) || req.query[CSRF_FIELD];
+      // Multipart fields are parsed before this handler, so the token always
+      // arrives in the body. Accepting it from the query would leak it through
+      // referrers and access logs.
+      const csrfValue = req.body && req.body[CSRF_FIELD];
       if (!validateCsrf(req, csrfValue, env)) {
         return json(res, 403, { ok: false, code: "csrf" });
       }

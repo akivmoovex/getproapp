@@ -352,6 +352,38 @@ describe("blessboard authorization shells (prompt 7b)", () => {
     assert.equal(pubShell.status, 200);
   });
 
+  it("website routes that publish or restore live content reject an editor without publish", async (t) => {
+    if (skipIfNeeded(t)) return;
+
+    // website_editor holds view/edit/media.upload/submit but not publish, review
+    // or rollback. Each route below either publishes the live site, republishes
+    // CMS rows, or satisfies a publish precondition, so all must deny.
+    const routes = [
+      "/hq/website/branches/campus/publish",
+      "/hq/website/preview-ack",
+      `/hq/website/change-submissions/${"0".repeat(8)}-0000-4000-8000-${"0".repeat(12)}/approve`,
+      "/hq/website/restored-draft/discard",
+    ];
+
+    for (const route of routes) {
+      const res = await request(app)
+        .post(route)
+        .set("Host", HOST)
+        .set("Cookie", cookie(rbacWebsiteEditor))
+        .type("form")
+        .send({});
+      assert.equal(res.status, 403, `${route} status=${res.status}`);
+      // Rejected by the permission gate, not merely by the CSRF check that runs
+      // inside the handler. Without the gate the request would reach the token
+      // check and report a missing-token failure instead.
+      assert.doesNotMatch(
+        String(res.text || ""),
+        /Invalid or missing CSRF token/i,
+        `${route} was rejected by CSRF rather than by permission`
+      );
+    }
+  });
+
   it("Platform Admin still lacks Finance transactions and pastoral confidential", async (t) => {
     if (skipIfNeeded(t)) return;
     const pa = await createBlessBoardUser(pool, {
