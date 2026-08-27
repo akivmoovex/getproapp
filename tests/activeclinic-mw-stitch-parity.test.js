@@ -130,7 +130,7 @@ describe("activeclinic MW Stitch parity chrome", () => {
     assert.match(css, /\.ac-mw-editor__rail-link[\s\S]{0,180}min-height:\s*2\.75rem/);
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
-      /v7-proj106-1/
+      /v7-proj106-2/
     );
     assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-proj106-p1/);
     const shell = read("views/activeclinic/layouts/app-shell.ejs");

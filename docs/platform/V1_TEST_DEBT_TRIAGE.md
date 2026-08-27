@@ -265,8 +265,28 @@ documented post-V1 debt.
 | Service-times sentinel + branch shell `Support` regex (records 7, 2) | STALE_ASSERTION | Both corrected |
 | Per-suite database isolation (record 9) | TEST_ISOLATION_BUG | **Open** — post-V1 |
 | Platform-admin deployments literals (record 3) | POST_V1 | **Open** — post-V1 |
+| `blessboard rbac e2e` → positive member journey (record 10) | POST_V1 | **Open** — post-V1 |
 
 V1_BLOCKER = 0, V1_HIGH = 0, V1_FIX = 0.
+
+### 10. `blessboard rbac e2e` — positive member journey (standing known debt)
+
+Registered during the V1 website QA-candidate pass at
+`809aa35dfb7a9ec4190df1f1fac2f0a11c76fdcb`.
+
+| Field | Value |
+|---|---|
+| Suite / assertion | `blessboard-rbac-e2e` → "positive member journey completes through cell/class/department" |
+| Classification | POST_V1 — **not** a website regression |
+| Website surface touched | None. Membership journey (cell / class / department), no website-engine code path |
+| Evidence it is pre-existing | Fails in isolation and on baseline `d806188` — i.e. before the V7 website-authorization hardening |
+| V1-core impact | 1 failure of 370; V1 website core itself is clean |
+
+This is the single failing assertion in the curated V1-core set. It shares a root
+cause family with record 9 (suites that need a provisioned database / active
+deployment row, surfacing as `inactive_deployment` or a 503 from the
+unavailable-DB guard). It must not be counted as a website defect, and it does
+not gate the website QA candidate.
 
 The blocker turned out to have **four** call sites, not one. Fixing the two
 permission gates named in record 6 exposed two more instances of the same

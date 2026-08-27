@@ -168,7 +168,9 @@
       <div class="bb-hq-panel bb-hq-phase4-rwu__decision bb-hq-phase3-wcr__decision" data-bb-phase3-wcr-decision="1">
         <h2 class="bb-hq-panel__title">Reviewer Feedback</h2>
         <p class="bb-hq-hint" role="note">
-          Approval does not publish the live website. Use Publish Website Review after approval.
+          Publishing this update takes two steps: <strong>1.</strong> approve it
+          here, then <strong>2.</strong> publish it from Publish Website Review.
+          Approval on its own never changes the live website.
         </p>
 
         <form method="post" action="<%= actionBase %>/approve" class="bb-hq-form bb-hq-phase3-wcr__form">
@@ -181,9 +183,18 @@
             <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
             Approve
           </button>
-          <button type="button" class="bb-hq-btn bb-hq-btn--ghost" disabled title="Approve and publish now is unavailable until content apply is supported">
-            Approve &amp; Publish
+          <button
+            type="button"
+            class="bb-hq-btn bb-hq-btn--ghost"
+            disabled
+            aria-describedby="bb-approve-publish-unavailable"
+          >
+            Approve &amp; Publish (not available yet)
           </button>
+          <p id="bb-approve-publish-unavailable" class="bb-hq-hint">
+            Approving and publishing in one step is planned for a later release.
+            Approve above, then publish from Publish Website Review.
+          </p>
         </form>
 
         <form method="post" action="<%= actionBase %>/request-changes" class="bb-hq-form bb-hq-phase3-wcr__form">

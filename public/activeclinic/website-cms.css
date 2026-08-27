@@ -495,7 +495,11 @@
   .ac-mw-nav__link { min-height: 2.75rem; }
   .ac-mw-hub-metrics,
   .ac-mw-hub-tiles { grid-template-columns: 1fr; }
-  .ac-mw-brand-layout { grid-template-columns: 1fr; }
+  /* minmax(0, …) so a wide min-content child (long SEO URL/title) cannot push
+     the column past the viewport. Plain 1fr keeps an auto minimum. */
+  .ac-mw-brand-layout { grid-template-columns: minmax(0, 1fr); }
+  .ac-mw-brand-preview,
+  .ac-mw-seo-preview { overflow-wrap: anywhere; }
   .ac-mw-actions { width: 100%; }
   .ac-mw-actions .ac-mw-btn,
   .ac-mw-actions button,
@@ -718,6 +722,31 @@
   text-align: center;
 }
 @media (max-width: 899px) {
+  /* The editor chrome shares a flex row with the tools rail (the element also
+     carries .ac-mw-nav). On narrow screens that squeezes the sticky header
+     below its own content width and the trailing action clips. Stack them. */
+  .ac-mw-editor {
+    display: block;
+  }
+  .ac-mw-editor__top {
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+    padding: 0.5rem 0.9rem;
+  }
+  .ac-mw-editor__brand {
+    min-width: 0;
+  }
+  /* Keep the actions right-aligned, but let them drop to their own row rather
+     than overflow when the brand or a translated label grows. */
+  .ac-mw-editor__top-actions {
+    margin-left: auto;
+    flex-wrap: wrap;
+  }
+  .ac-mw-editor__ghost,
+  .ac-mw-editor__publish {
+    padding: 0 0.85rem;
+    flex: 0 0 auto;
+  }
   .ac-mw-editor__rail {
     position: static;
     float: none;
