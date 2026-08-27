@@ -73,6 +73,15 @@ isolation, which is tracked as post-V1 work in the triage document.
 | V7 shared website engine, Phase 3 | 49 combined / 45 isolated | 49 combined / 45 isolated | 0 |
 | V1 test debt triage (Overnight 4) | 46 isolated (re-measured) | 12 isolated | 0 |
 | V1 relevant failure fixes (Overnight 5) | 53 combined / 12 isolated | 47 combined / 4 isolated | 0 |
+| Full V1 website regression (Overnight 7) | 71 (230-suite set at `dea5e0f2`) | 28 | 0 |
+
+The Overnight 7 pass measured a 230-suite website/CMS/auth/a11y selection against
+a pre-overnight baseline worktree at `dea5e0f2`: failures fell 71 → 28 with **0
+regressions and 43 assertions newly passing**. The narrower 72-suite *V1 website
+core* set is **726/726 with no skips**. Remaining failures are stale CSS/copy
+pins, platform-admin Stitch literals, one legacy V4 CSRF view, and suites that
+need a provisioned local database or a real browser — see
+`docs/platform/V1_WEBSITE_MORNING_QA_PACK.md`.
 
 The Phase 3 count is higher than Phase 2 because Phase 3 measured a broader
 suite list that deliberately includes the a11y-structure, admin-nav and demo
