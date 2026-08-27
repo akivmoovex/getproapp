@@ -149,6 +149,9 @@ const KEYS = {
   "seo.title": { type: T.SHORT_TEXT, maxLen: 70, group: "seo", inline: false, description: "Search and sharing title" },
   "seo.description": { type: T.LONG_TEXT, maxLen: 200, group: "seo", inline: false, description: "Search and sharing description" },
   "seo.image": { type: T.IMAGE, maxLen: 500, group: "seo", inline: false, description: "Social sharing image" },
+  "seo.canonical_url": { type: T.URL, maxLen: 500, group: "seo", inline: false, description: "Canonical URL override" },
+  "seo.robots": { type: T.ENUM, enumValues: ["index", "noindex"], group: "seo", inline: false, description: "Search engine indexing" },
+  "seo.sitemap_include": { type: T.BOOLEAN, group: "seo", inline: false, description: "Include in sitemap.xml" },
   [CMS_KEYS.PAGES]: {
     type: T.STRUCTURED,
     group: "cms",

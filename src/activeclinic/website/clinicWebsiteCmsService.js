@@ -64,7 +64,14 @@ const SETTINGS_KEYS = Object.freeze({
     "social.whatsapp_url",
     "social.x_url",
   ]),
-  seo: Object.freeze(["seo.title", "seo.description", "seo.image"]),
+  seo: Object.freeze([
+    "seo.title",
+    "seo.description",
+    "seo.image",
+    "seo.canonical_url",
+    "seo.robots",
+    "seo.sitemap_include",
+  ]),
 });
 
 function asArray(value) {

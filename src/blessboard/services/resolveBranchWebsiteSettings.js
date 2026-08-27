@@ -248,6 +248,12 @@ function churchValueForKey(key, ctx) {
       return ctx.churchOgImageUrl || null;
     case "seo.noindex":
       return null;
+    case "seo.canonical_url":
+      return null; // defaults to the page's own computed URL
+    case "seo.robots":
+      return "index";
+    case "seo.sitemap_include":
+      return true;
     case "presentation.parent_church_label":
       return churchName;
     case "presentation.branch_selector_label":

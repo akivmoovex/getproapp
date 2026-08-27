@@ -41,6 +41,23 @@
           alt: image.alt || ""
         }
       }) %>
+      <p class="ac-mw-form__legend">Search engine visibility</p>
+      <label>
+        Canonical URL
+        <input type="url" name="seoCanonicalUrl" maxlength="500" inputmode="url" value="<%= values['seo.canonical_url'] || '' %>" placeholder="<%= publicUrl %>"/>
+      </label>
+      <p class="ac-mw-hint">Leave empty to use this page's own address. Must start with https://.</p>
+      <label>
+        Search engine indexing
+        <select name="seoRobots">
+          <option value="index" <%= values['seo.robots'] === 'noindex' ? '' : 'selected' %>>Allow search engines to index this site</option>
+          <option value="noindex" <%= values['seo.robots'] === 'noindex' ? 'selected' : '' %>>Hide this site from search engines</option>
+        </select>
+      </label>
+      <label class="ac-mw-check">
+        <input type="checkbox" name="seoSitemapInclude" value="1" <%= values['seo.sitemap_include'] === false ? '' : 'checked' %>/>
+        Include this site in sitemap.xml
+      </label>
       <div class="ac-mw-actions">
         <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save SEO settings</button>
       </div>

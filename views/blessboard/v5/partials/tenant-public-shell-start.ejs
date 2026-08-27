@@ -17,8 +17,20 @@
   <meta property="og:title" content="<%= seo.ogTitle %>" />
   <meta property="og:description" content="<%= seo.ogDescription %>" />
   <meta property="og:url" content="<%= seo.ogUrl %>" />
+  <% if (seo.ogSiteName) { %>
+  <meta property="og:site_name" content="<%= seo.ogSiteName %>" />
+  <% } %>
   <% if (seo.ogImageUrl) { %>
   <meta property="og:image" content="<%= seo.ogImageUrl %>" />
+  <% if (seo.ogImageAlt) { %>
+  <meta property="og:image:alt" content="<%= seo.ogImageAlt %>" />
+  <% } %>
+  <% } %>
+  <meta name="twitter:card" content="<%= seo.twitterCard %>" />
+  <meta name="twitter:title" content="<%= seo.twitterTitle %>" />
+  <meta name="twitter:description" content="<%= seo.twitterDescription %>" />
+  <% if (seo.twitterImageUrl) { %>
+  <meta name="twitter:image" content="<%= seo.twitterImageUrl %>" />
   <% } %>
   <%- include('./head-design-system') %>
   <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=54' %>" />

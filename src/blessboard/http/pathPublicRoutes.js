@@ -476,15 +476,51 @@ function createPathPublicRouter(deps) {
           buildTenantPublicDiscoveryUrls,
           buildTenantPublicSitemapXml,
         } = require("./tenantPublicDiscovery");
+        const {
+          resolveSitemapExcludedBranchKeys,
+        } = require("../services/resolveSitemapExclusions");
+        const excludeBranchKeys = await resolveSitemapExcludedBranchKeys(getPool(), {
+          churchId: resolved.tenant.church.id,
+          activeBranches: websiteMode.activeBranches || [],
+        });
+
         const urls = buildTenantPublicDiscoveryUrls({
           hostname,
           routingMode: "path",
           organizationKey: resolved.organizationKey,
           websiteMode: websiteMode.websiteMode,
           activeBranches: websiteMode.activeBranches || [],
+          excludeBranchKeys,
         });
         res.setHeader("Content-Type", "application/xml; charset=utf-8");
         return res.status(200).send(buildTenantPublicSitemapXml(urls));
+      })()
+    ).catch(next);
+  });
+
+  router.get("/c/:organizationKey/robots.txt", (req, res, next) => {
+    Promise.resolve(
+      (async () => {
+        if (
+          sendCanonicalPublicWebsiteRedirect(req, res, PRODUCT_CODE.BLESSBOARD, {
+            remapOrganizationKey: (key) => legacyOrganizationKeyRedirectTarget(key) || key,
+          })
+        ) {
+          return;
+        }
+        const resolved = await resolvePathTenant(req, res, req.params.organizationKey);
+        if (!resolved) return;
+
+        const hostname = resolveHostname(req) || String(req.hostname || "");
+        const { buildRobotsTxt } = require("../../platform/website/seoDiscovery");
+        const base = `/c/${encodeURIComponent(resolved.organizationKey)}`;
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        return res.status(200).send(
+          buildRobotsTxt({
+            allow: true,
+            sitemapUrl: hostname ? `https://${hostname}${base}/sitemap.xml` : null,
+          })
+        );
       })()
     ).catch(next);
   });

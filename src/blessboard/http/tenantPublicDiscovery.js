@@ -118,9 +118,13 @@ function buildTenantPublicDiscoveryUrls(input) {
 
   if (mode === WEBSITE_MODE.MULTI_SITE) {
     const branches = Array.isArray(input.activeBranches) ? input.activeBranches : [];
+    const excluded =
+      input.excludeBranchKeys instanceof Set
+        ? input.excludeBranchKeys
+        : new Set(Array.isArray(input.excludeBranchKeys) ? input.excludeBranchKeys : []);
     for (const branch of branches) {
       const key = branch && branch.key ? String(branch.key) : "";
-      if (!key) continue;
+      if (!key || excluded.has(key)) continue;
       for (const pageKey of pageKeys) {
         pushPath(
           branchPagePath({
@@ -142,18 +146,7 @@ function buildTenantPublicDiscoveryUrls(input) {
  * @param {string[]} absoluteUrls
  */
 function buildTenantPublicSitemapXml(absoluteUrls) {
-  const urls = Array.isArray(absoluteUrls) ? absoluteUrls : [];
-  const body = urls
-    .map((loc) => {
-      const safe = String(loc || "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;");
-      return `  <url>\n    <loc>${safe}</loc>\n  </url>`;
-    })
-    .join("\n");
-  return `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`;
+  return require("../../platform/website/seoDiscovery").buildSitemapXml(absoluteUrls);
 }
 
 /**

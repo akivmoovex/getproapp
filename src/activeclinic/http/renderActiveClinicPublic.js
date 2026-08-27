@@ -15,6 +15,8 @@ const {
   enrichPublicLocals,
 } = require("../services/activeClinicPublicMediaService");
 const { buildClinicWebsiteNav } = require("../website/activeClinicClinicWebsiteNav");
+const seoModel = require("../../platform/website/seoModel");
+const { TITLE_SUFFIX: AC_TITLE_SUFFIX } = require("../website/activeClinicPublicSeo");
 const { isPublicClinicDirectoryNavEnabled } = require("../website/activeClinicPublicCapabilities");
 const {
   BOOKING_STATUS_LABELS,
@@ -126,14 +128,38 @@ function renderPublicPage(input) {
   );
   const bodyHtml = renderPartial(input.contentTemplate, locals);
 
+  const ogImageUrl =
+    input.ogImageUrl || (locals.ogImageUrl || (locals.clinic && locals.clinic.seoImageUrl) || "");
+
+  // Callers that already resolved SEO through the shared engine pass `seo`.
+  // Everything else gets the same shared model built from page-level locals.
+  const seo =
+    locals.seo && typeof locals.seo === "object"
+      ? locals.seo
+      : seoModel.buildWebsiteSeo({
+          siteName:
+            (locals.clinic && (locals.clinic.websiteDisplayName || locals.clinic.publicName)) ||
+            "",
+          pageLabel: input.pageTitle,
+          titleSuffix: AC_TITLE_SUFFIX,
+          computedUrl: input.canonicalUrl || null,
+          fallbackTitle: input.pageTitle,
+          fallbackDescription: input.metaDescription || "",
+          ogImageUrl,
+          ogImageAlt: (locals.clinic && locals.clinic.seoImageAlt) || "",
+          robotsOverride: input.robots || null,
+          forceNoindex: /noindex/i.test(String(input.robots || "")) ? true : null,
+        });
+
   return renderPartial("layouts/public-shell", {
     ...locals,
+    seo,
     pageId: input.pageId,
     pageTitle: input.pageTitle,
     metaDescription: input.metaDescription || "",
     canonicalUrl: input.canonicalUrl || "",
     robots: input.robots || "",
-    ogImageUrl: input.ogImageUrl || (locals.ogImageUrl || (locals.clinic && locals.clinic.seoImageUrl) || ""),
+    ogImageUrl,
     shellVariant,
     headerHtml,
     footerHtml,

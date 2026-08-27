@@ -70,13 +70,42 @@ const {
   resolveClinicOrRespond,
 } = require("./activeClinicPublicRespond");
 const { attachActiveClinicWebsiteLocals, canEditClinicWebsite } = require("./attachActiveClinicWebsiteChrome");
+const { buildActiveClinicPublicSeo } = require("../website/activeClinicPublicSeo");
 const { resolvePublicPricingDisplay } = require("../website/publicPricingDisplay");
 const cmsService = require("../website/clinicWebsiteCmsService");
 const {
   PRODUCT_CODE,
   sendCanonicalPublicWebsiteRedirect,
   buildPublicOrganizationWebsitePath,
+  buildPublicWebsitePagePaths,
 } = require("../../platform/website/publicWebsiteUrl");
+const { buildSitemapXml, buildRobotsTxt } = require("../../platform/website/seoDiscovery");
+
+/** Absolute https origin for discovery documents. */
+function activeClinicOrigin(req) {
+  const host = req && typeof req.get === "function" ? String(req.get("host") || "") : "";
+  const clean = host.trim().toLowerCase().replace(/:\d+$/, "");
+  return clean ? `https://${clean}` : "";
+}
+
+/**
+ * Public URLs for one clinic mini-site. Nav pages come from the shared URL
+ * builder so sitemap and canonical never drift apart.
+ */
+function activeClinicSitemapUrls(req, clinic) {
+  const organizationKey = (clinic && clinic.clinicKey) || "";
+  if (!organizationKey) return [];
+  const paths = buildPublicWebsitePagePaths({
+    product: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey,
+  });
+  if (!paths) return [];
+  const origin = activeClinicOrigin(req);
+  const skip = new Set(["patientLogin", "myBooking"]);
+  return Object.keys(paths)
+    .filter((key) => !skip.has(key) && paths[key])
+    .map((key) => `${origin}${paths[key]}`);
+}
 
 function clientIp(req) {
   return String((req.headers && req.headers["x-forwarded-for"]) || req.ip || (req.socket && req.socket.remoteAddress) || "").split(",")[0].trim();
@@ -266,14 +295,34 @@ function registerActiveClinicPublicRoutes(app, deps) {
         pageVisible: presented ? presented.showPricing !== false : true,
       });
     }
+    const pageTitle =
+      extras.pageTitle ||
+      (presented && (presented.seoTitle || presented.websiteDisplayName || presented.publicName)) ||
+      "ActiveClinic";
+    const metaDescription =
+      extras.metaDescription || (presented && presented.seoDescription) || "";
+    const ogImageUrl = extras.ogImageUrl || (presented && presented.seoImageUrl) || "";
+    const seo = buildActiveClinicPublicSeo({
+      req,
+      env: process.env,
+      clinic: presented,
+      instance: website.instance,
+      template,
+      pageTitle,
+      metaDescription,
+      ogImageUrl,
+      robots: extras.robots || null,
+      isPreview: Boolean(website.websiteVersionPreview || website.websiteEdit),
+    });
     return res.status(200).type("html").send(renderPublicView(template, {
       csrfToken,
       ...website,
       clinic: presented,
-      pageTitle: extras.pageTitle || (presented && (presented.seoTitle || presented.websiteDisplayName || presented.publicName)) || "ActiveClinic",
-      metaDescription: extras.metaDescription || (presented && presented.seoDescription) || "",
-      ogImageUrl: extras.ogImageUrl || (presented && presented.seoImageUrl) || "",
+      pageTitle,
+      metaDescription,
+      ogImageUrl,
       ...extras,
+      seo,
     }));
   }
 
@@ -993,6 +1042,59 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
   app.use("/c/:clinicKey", redirectIfNotCanonical);
   app.use("/clinics/:clinicKey", redirectIfNotCanonical);
+
+  app.get("/clinics/:clinicKey/sitemap.xml", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      const presented = website.clinic || clinic;
+      const seo = buildActiveClinicPublicSeo({
+        req,
+        env: process.env,
+        clinic: presented,
+        instance: website.instance,
+        template: "tenant/home",
+      });
+      res.setHeader("Content-Type", "application/xml; charset=utf-8");
+      if (!seo.includeInSitemap) {
+        return res.status(200).send(buildSitemapXml([]));
+      }
+      return res.status(200).send(buildSitemapXml(activeClinicSitemapUrls(req, presented)));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/robots.txt", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      const presented = website.clinic || clinic;
+      const seo = buildActiveClinicPublicSeo({
+        req,
+        env: process.env,
+        clinic: presented,
+        instance: website.instance,
+        template: "tenant/home",
+      });
+      const base = buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: presented.clinicKey,
+      });
+      res.setHeader("Content-Type", "text/plain; charset=utf-8");
+      return res.status(200).send(
+        buildRobotsTxt({
+          allow: !seo.noindex,
+          sitemapUrl:
+            !seo.noindex && base ? `${activeClinicOrigin(req)}${base}/sitemap.xml` : null,
+        })
+      );
+    } catch (err) {
+      return next(err);
+    }
+  });
 
   app.get("/clinics/:clinicKey", async (req, res, next) => {
     try {

@@ -3,12 +3,16 @@
 /**
  * Host-aware SEO for V5 tenant public pages.
  * Never include tenant UUIDs in metadata.
- * Stage 2: accepts branch-resolved SEO overrides + og image.
+ *
+ * Tag values, sanitisation, robots governance, and sitemap inclusion are owned
+ * by the shared website-engine SEO model. This adapter only supplies
+ * BlessBoard's church/branch defaults and URL composition.
  */
 
 const { PAGE_KEY_TITLES } = require("../services/publicContentConstants");
 const { PAGE_KEY_TO_PATH } = require("./tenantPublicPaths");
-const { plainMetaText, escapeAttr, safeExternalUrl } = require("./tenantPublicSafe");
+const { plainMetaText } = require("./tenantPublicSafe");
+const seoModel = require("../../platform/website/seoModel");
 
 /**
  * @param {{
@@ -25,6 +29,9 @@ const { plainMetaText, escapeAttr, safeExternalUrl } = require("./tenantPublicSa
  *   ogTitleOverride?: string|null,
  *   ogDescriptionOverride?: string|null,
  *   ogImageUrl?: string|null,
+ *   canonicalUrlOverride?: string|null,
+ *   robotsOverride?: string|null,
+ *   sitemapIncludeOverride?: boolean|null,
  *   forceNoindex?: boolean|null,
  *   branchInactive?: boolean,
  * }} input
@@ -46,58 +53,37 @@ function buildTenantPublicSeo(input) {
   const publicName = plainMetaText(input.publicName || "Church", 80) || "Church";
   const pageLabel =
     plainMetaText(input.pageTitle, 80) || PAGE_KEY_TITLES[pageKey] || "Home";
-  const env = String(input.dataEnvironment || "").toLowerCase();
-  const websiteStatus = String(input.websiteStatus || "draft").toLowerCase();
 
-  const titleOverride = plainMetaText(input.titleOverride, 80);
-  const descriptionOverride = plainMetaText(input.descriptionOverride, 160);
-  const ogTitleOverride = plainMetaText(input.ogTitleOverride, 80);
-  const ogDescriptionOverride = plainMetaText(input.ogDescriptionOverride, 160);
-  const ogImageUrl = input.ogImageUrl ? safeExternalUrl(input.ogImageUrl) : null;
+  const computedUrl = hostname ? `https://${hostname}${path}` : path;
 
-  let noindex =
-    env === "testing" ||
-    env === "demo" ||
-    websiteStatus !== "published" ||
-    Boolean(input.branchInactive);
+  // Branch deactivation is a governance noindex, same class as lifecycle state.
+  const forceNoindex = input.forceNoindex === true || Boolean(input.branchInactive);
 
-  if (input.forceNoindex === true) {
-    noindex = true;
-  }
+  const fallbackDescription =
+    plainMetaText(input.description, 160) ||
+    (pageKey === "home" ? `${publicName} — welcome.` : `${pageLabel} at ${publicName}.`);
 
-  const title =
-    titleOverride ||
-    (pageKey === "home" ? `${publicName}` : `${pageLabel} · ${publicName}`);
+  const seo = seoModel.buildWebsiteSeo({
+    siteName: publicName,
+    pageLabel,
+    computedUrl,
+    fallbackTitle:
+      pageKey === "home" ? publicName : `${pageLabel} · ${publicName}`,
+    fallbackDescription,
+    titleOverride: input.titleOverride,
+    descriptionOverride: input.descriptionOverride,
+    canonicalUrlOverride: input.canonicalUrlOverride,
+    ogTitleOverride: input.ogTitleOverride,
+    ogDescriptionOverride: input.ogDescriptionOverride,
+    ogImageUrl: input.ogImageUrl,
+    robotsOverride: input.robotsOverride,
+    sitemapIncludeOverride: input.sitemapIncludeOverride,
+    dataEnvironment: input.dataEnvironment,
+    publishState: String(input.websiteStatus || "draft").toLowerCase(),
+    forceNoindex,
+  });
 
-  let description = descriptionOverride || plainMetaText(input.description, 160);
-  if (!description) {
-    description =
-      pageKey === "home"
-        ? `${publicName} — welcome.`
-        : `${pageLabel} at ${publicName}.`;
-  }
-
-  const ogTitle = ogTitleOverride || title;
-  const ogDescription = ogDescriptionOverride || description;
-
-  const scheme = "https";
-  const canonicalUrl = hostname ? `${scheme}://${hostname}${path}` : path;
-
-  return {
-    title,
-    description,
-    canonicalUrl,
-    ogTitle,
-    ogDescription,
-    ogUrl: canonicalUrl,
-    ogImageUrl: ogImageUrl || null,
-    ogType: "website",
-    robots: noindex ? "noindex, nofollow" : "index, follow",
-    noindex,
-    titleAttr: escapeAttr(title),
-    descriptionAttr: escapeAttr(description),
-    canonicalAttr: escapeAttr(canonicalUrl),
-  };
+  return seo;
 }
 
 module.exports = {

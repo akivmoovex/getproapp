@@ -1052,6 +1052,18 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
               req.body && req.body.seoMediaId
             ),
           },
+          { key: "seo.canonical_url", value: textOrNull(req.body, "seoCanonicalUrl") },
+          {
+            key: "seo.robots",
+            value:
+              String((req.body && req.body.seoRobots) || "index") === "noindex"
+                ? "noindex"
+                : "index",
+          },
+          {
+            key: "seo.sitemap_include",
+            value: Boolean(req.body && req.body.seoSitemapInclude),
+          },
         ]);
         if (!saved.ok) {
           return await renderSettingsPage(req, res, {

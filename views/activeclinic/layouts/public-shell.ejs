@@ -3,26 +3,43 @@
 <head>
   <meta charset="utf-8"/>
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover"/>
-  <title><%= pageTitle %> · ActiveClinic</title>
-  <% if (typeof metaDescription === 'string' && metaDescription) { %>
-  <meta name="description" content="<%= metaDescription %>"/>
+  <%#
+    SEO tags come from the shared website-engine SEO model (platform/website/seoModel).
+    `seo` is always supplied by renderPublicPage; the legacy locals remain for body use.
+  %>
+  <title><%= seo.title %></title>
+  <% if (seo.description) { %>
+  <meta name="description" content="<%= seo.description %>"/>
   <% } %>
-  <% if (typeof canonicalUrl === 'string' && canonicalUrl) { %>
-  <link rel="canonical" href="<%= canonicalUrl %>"/>
+  <% if (seo.canonicalUrl) { %>
+  <link rel="canonical" href="<%= seo.canonicalUrl %>"/>
   <% } %>
-  <% if (typeof robots === 'string' && robots) { %>
-  <meta name="robots" content="<%= robots %>"/>
+  <meta name="robots" content="<%= seo.robots %>"/>
+  <meta property="og:title" content="<%= seo.ogTitle %>"/>
+  <% if (seo.ogDescription) { %>
+  <meta property="og:description" content="<%= seo.ogDescription %>"/>
   <% } %>
-  <meta property="og:title" content="<%= pageTitle %> · ActiveClinic"/>
-  <% if (typeof metaDescription === 'string' && metaDescription) { %>
-  <meta property="og:description" content="<%= metaDescription %>"/>
+  <meta property="og:type" content="<%= seo.ogType %>"/>
+  <% if (seo.ogUrl) { %>
+  <meta property="og:url" content="<%= seo.ogUrl %>"/>
   <% } %>
-  <meta property="og:type" content="website"/>
-  <% var shareImage = (typeof ogImageUrl === "string" && ogImageUrl) ? ogImageUrl : (clinic && clinic.seoImageUrl) || ""; %>
+  <% if (seo.ogSiteName) { %>
+  <meta property="og:site_name" content="<%= seo.ogSiteName %>"/>
+  <% } %>
+  <% var shareImage = seo.ogImageUrl || ""; %>
   <% if (shareImage) { %>
   <meta property="og:image" content="<%= shareImage %>"/>
-  <meta name="twitter:card" content="summary_large_image"/>
-  <meta name="twitter:image" content="<%= shareImage %>"/>
+  <% if (seo.ogImageAlt) { %>
+  <meta property="og:image:alt" content="<%= seo.ogImageAlt %>"/>
+  <% } %>
+  <% } %>
+  <meta name="twitter:card" content="<%= seo.twitterCard %>"/>
+  <meta name="twitter:title" content="<%= seo.twitterTitle %>"/>
+  <% if (seo.twitterDescription) { %>
+  <meta name="twitter:description" content="<%= seo.twitterDescription %>"/>
+  <% } %>
+  <% if (seo.twitterImageUrl) { %>
+  <meta name="twitter:image" content="<%= seo.twitterImageUrl %>"/>
   <% } %>
   <link rel="preconnect" href="https://fonts.googleapis.com"/>
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>

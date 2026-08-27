@@ -104,6 +104,7 @@ const TENANT_PUBLIC_ACTION_PATHS = Object.freeze([
   "/register",
   "/register/submitted",
   "/sitemap.xml",
+  "/robots.txt",
 ]);
 
 /**

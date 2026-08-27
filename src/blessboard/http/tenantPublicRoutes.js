@@ -389,6 +389,14 @@ function createTenantPublicRouter(deps) {
       buildTenantPublicDiscoveryUrls,
       buildTenantPublicSitemapXml,
     } = require("./tenantPublicDiscovery");
+    const {
+      resolveSitemapExcludedBranchKeys,
+    } = require("../services/resolveSitemapExclusions");
+    const excludeBranchKeys = await resolveSitemapExcludedBranchKeys(getPool(), {
+      churchId: tenant.church.id,
+      activeBranches: websiteMode.activeBranches || [],
+    });
+
     const urls = buildTenantPublicDiscoveryUrls({
       hostname,
       routingMode: "tenant",
@@ -398,13 +406,38 @@ function createTenantPublicRouter(deps) {
           : null,
       websiteMode: websiteMode.websiteMode,
       activeBranches: websiteMode.activeBranches || [],
+      excludeBranchKeys,
     });
     res.setHeader("Content-Type", "application/xml; charset=utf-8");
     return res.status(200).send(buildTenantPublicSitemapXml(urls));
   }
 
+  async function handleTenantRobots(req, res) {
+    const gate = foundationOrNull(req, res, "/robots.txt");
+    if (gate !== "ready") return gate;
+
+    const hostname = resolveHostname(req) || String(req.hostname || "");
+    const { buildRobotsTxt } = require("../../platform/website/seoDiscovery");
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    return res.status(200).send(
+      buildRobotsTxt({
+        allow: true,
+        sitemapUrl: hostname ? `https://${hostname}/sitemap.xml` : null,
+      })
+    );
+  }
+
   router.get("/sitemap.xml", (req, res, next) => {
     Promise.resolve(handleTenantSitemap(req, res))
+      .then((handled) => {
+        if (handled === null) return next();
+        return undefined;
+      })
+      .catch(next);
+  });
+
+  router.get("/robots.txt", (req, res, next) => {
+    Promise.resolve(handleTenantRobots(req, res))
       .then((handled) => {
         if (handled === null) return next();
         return undefined;

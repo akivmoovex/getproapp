@@ -1310,6 +1310,10 @@ async function loadTenantPublicPageModel(db, input) {
     ogTitleOverride: seoOverrides["seo.og_title"] || null,
     ogDescriptionOverride: seoOverrides["seo.og_description"] || null,
     ogImageUrl: seoOverrides["seo.og_image_url"] || null,
+    canonicalUrlOverride: seoOverrides["seo.canonical_url"] || null,
+    robotsOverride: seoOverrides["seo.robots"] || null,
+    sitemapIncludeOverride:
+      seoOverrides["seo.sitemap_include"] === false ? false : null,
     forceNoindex: seoOverrides["seo.noindex"] === true ? true : null,
     branchInactive: Boolean(branchInactive),
   });
