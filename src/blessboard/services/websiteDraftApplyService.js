@@ -218,6 +218,36 @@ async function applyStructuredDraft(client, draft, ctx) {
     return;
   }
 
+  if (draft.draftKind === "page_section") {
+    if (draft.op !== "reorder" || !Array.isArray(payload.order)) return;
+    const pageKey = draft.pageKey || "home";
+    const page = await contentRepo.findPageByScope(client, {
+      churchId,
+      branchId: branchId || null,
+      pageKey,
+    });
+    if (!page) return;
+    const sections = await contentRepo.listSectionsForPage(client, page.id, {});
+    const byKey = new Map((sections || []).map((s) => [String(s.sectionKey), s]));
+    let position = 0;
+    for (const key of payload.order) {
+      const section = byKey.get(String(key));
+      if (!section) continue;
+      position += 1;
+      await contentRepo.updateSection(client, section.id, { sortOrder: position * 10 });
+    }
+    // Sections absent from the draft order keep their relative order behind it.
+    const ordered = new Set(payload.order.map(String));
+    const remainder = (sections || [])
+      .filter((s) => !ordered.has(String(s.sectionKey)))
+      .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+    for (const section of remainder) {
+      position += 1;
+      await contentRepo.updateSection(client, section.id, { sortOrder: position * 10 });
+    }
+    return;
+  }
+
   if (draft.draftKind === "service_times") {
     const page = await ensurePage(client, { churchId, branchId, pageKey: "home" });
     const section = await ensureSection(client, page, "service_times", "service_times");
@@ -486,6 +516,16 @@ async function applyEntityDraft(client, draft, ctx) {
 }
 
 /**
+ * Deterministic apply order: upserts/removes first, then reorder operations.
+ * @param {object[]} drafts
+ */
+function orderedStructuredDrafts(drafts) {
+  const list = Array.isArray(drafts) ? drafts.slice() : [];
+  const weight = (d) => (d && d.op === "reorder" ? 1 : 0);
+  return list.sort((a, b) => weight(a) - weight(b));
+}
+
+/**
  * Apply all active Phase 7 drafts in the current transaction, then mark applied.
  * @param {import('pg').PoolClient} client
  * @param {{
@@ -538,7 +578,9 @@ async function applyWebsiteDraftsInTransaction(client, opts) {
   for (const d of fieldDrafts) {
     await applyFieldDraft(client, d, ctx);
   }
-  for (const d of structuredDrafts) {
+  // Reorder drafts normalise positions across a whole collection, so they must
+  // settle after the per-item upserts that may also carry a sort order.
+  for (const d of orderedStructuredDrafts(structuredDrafts)) {
     await applyStructuredDraft(client, d, ctx);
   }
 
@@ -618,7 +660,7 @@ async function applyProposedPhase7DraftsInTransaction(client, opts) {
     );
     fieldCount += 1;
   }
-  for (const d of structuredDrafts) {
+  for (const d of orderedStructuredDrafts(structuredDrafts)) {
     await applyStructuredDraft(
       client,
       {
@@ -642,6 +684,7 @@ async function applyProposedPhase7DraftsInTransaction(client, opts) {
 module.exports = {
   applyWebsiteDraftsInTransaction,
   applyProposedPhase7DraftsInTransaction,
+  orderedStructuredDrafts,
   ensurePage,
   ensureSection,
 };

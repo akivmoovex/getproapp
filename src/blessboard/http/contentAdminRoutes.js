@@ -1499,6 +1499,32 @@ function createContentAdminRouter(deps) {
 
     const SAME = (a, b) => String(a == null ? "" : a) === String(b == null ? "" : b);
 
+    /** Section keys in their current live order. */
+    function currentSectionOrder(sections) {
+      return (sections || [])
+        .slice()
+        .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+        .map((s) => String(s.sectionKey));
+    }
+
+    /**
+     * Resolve the order the admin intended by giving one section a new sort
+     * value. The result is an explicit key list so the draft reproduces the
+     * order deterministically, independent of later sort_order churn.
+     */
+    function intendedSectionOrder(sections, section, requestedSortOrder) {
+      const requested = Number(requestedSortOrder);
+      const nextSort = Number.isFinite(requested) ? requested : Number(section.sortOrder || 0);
+      const ranked = (sections || []).map((s) => ({
+        key: String(s.sectionKey),
+        sort: String(s.sectionKey) === String(section.sectionKey) ? nextSort : Number(s.sortOrder || 0),
+        // Ties resolve in favour of the section the admin just moved.
+        tie: String(s.sectionKey) === String(section.sectionKey) ? 0 : 1,
+      }));
+      ranked.sort((a, b) => a.sort - b.sort || a.tie - b.tie);
+      return ranked.map((s) => s.key);
+    }
+
     /**
      * Draft-first compatibility shim for the classic section form.
      *
@@ -1519,17 +1545,36 @@ function createContentAdminRouter(deps) {
       if (body.body_text !== undefined && !SAME(body.body_text, section.bodyText)) {
         textChanges.push({ fieldKey: "bodyText", value: String(body.body_text) });
       }
+      const existingLayout =
+        section.layoutMetadata && typeof section.layoutMetadata === "object"
+          ? section.layoutMetadata
+          : {};
+      const existingAlt = existingLayout.altText != null ? String(existingLayout.altText) : "";
+
+      const mediaChanged =
+        body.media_url !== undefined && !SAME(body.media_url, section.mediaUrl);
+      // Preserve any alt text the classic form did not send, so an older form
+      // cannot silently strip accessibility metadata from live content.
+      const nextAlt =
+        body.media_alt_text !== undefined ? String(body.media_alt_text).trim() : existingAlt;
+      const altChanged = body.media_alt_text !== undefined && !SAME(nextAlt, existingAlt);
+
+      const orderChanged =
+        body.sort_order !== undefined && !SAME(body.sort_order, section.sortOrder);
+
       const unsupported = [];
-      if (body.media_url !== undefined && !SAME(body.media_url, section.mediaUrl)) {
-        unsupported.push("media");
-      }
       if (body.section_type !== undefined && !SAME(body.section_type, section.sectionType)) {
         unsupported.push("layout");
       }
-      if (body.sort_order !== undefined && !SAME(body.sort_order, section.sortOrder)) {
-        unsupported.push("order");
+      if (
+        !textChanges.length &&
+        !mediaChanged &&
+        !altChanged &&
+        !orderChanged &&
+        !unsupported.length
+      ) {
+        return false;
       }
-      if (!textChanges.length && !unsupported.length) return false;
 
       const renderSectionError = async (statusCode, message) => {
         const html = renderContentAdminView(
@@ -1545,6 +1590,8 @@ function createContentAdminRouter(deps) {
               heading: body.heading != null ? String(body.heading) : section.heading,
               body_text: body.body_text != null ? String(body.body_text) : section.bodyText,
               media_url: body.media_url != null ? String(body.media_url) : section.mediaUrl || "",
+              media_alt_text:
+                body.media_alt_text != null ? String(body.media_alt_text) : existingAlt,
               sort_order:
                 body.sort_order != null ? String(body.sort_order) : String(section.sortOrder),
               status: body.status != null ? String(body.status) : section.status,
@@ -1560,7 +1607,7 @@ function createContentAdminRouter(deps) {
       if (unsupported.length) {
         return renderSectionError(
           400,
-          "This section is live. Image, layout and ordering changes must be made in the website editor so they can be previewed before publishing."
+          "This section is live. Layout type changes must be made in the website editor so they can be previewed before publishing."
         );
       }
 
@@ -1570,19 +1617,64 @@ function createContentAdminRouter(deps) {
       }
 
       const { saveInlineFieldDraft } = require("../services/websiteInlineDraftService");
+      const { saveStructuredDraft } = require("../services/websiteStructuredDraftService");
+      const draftBase = {
+        organizationId: perm.tenant.organization.id,
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+        editorUserId: perm.session.userId,
+        actorRole: legacyActorRoleLabel(req),
+        grantedPermissions: ["website.edit"],
+      };
+
       try {
         for (const change of textChanges) {
           await saveInlineFieldDraft(getPool(), {
-            organizationId: perm.tenant.organization.id,
-            churchId: scope.churchId,
-            branchId: scope.branchId,
-            editorUserId: perm.session.userId,
-            actorRole: legacyActorRoleLabel(req),
+            ...draftBase,
             pageKey,
             sectionKey: section.sectionKey,
             fieldKey: change.fieldKey,
             newValue: change.value,
-            grantedPermissions: ["website.edit"],
+          });
+        }
+
+        if (mediaChanged || altChanged) {
+          const nextUrl =
+            body.media_url !== undefined
+              ? String(body.media_url).trim()
+              : String(section.mediaUrl || "").trim();
+          await saveStructuredDraft(getPool(), {
+            ...draftBase,
+            draftKind: "image",
+            pageKey,
+            sectionKey: section.sectionKey,
+            entityKey: `section:${section.sectionKey}:media`,
+            op: nextUrl ? "upsert" : "remove",
+            payload: nextUrl
+              ? {
+                  imageUrl: nextUrl,
+                  altText: nextAlt,
+                  focal: existingLayout.focal || null,
+                  fit: existingLayout.fit || null,
+                }
+              : {},
+            previousPayload: {
+              imageUrl: section.mediaUrl || null,
+              altText: existingAlt || null,
+            },
+          });
+        }
+
+        if (orderChanged) {
+          await saveStructuredDraft(getPool(), {
+            ...draftBase,
+            draftKind: "page_section",
+            pageKey,
+            sectionKey: null,
+            entityKey: `page:${pageKey}:section-order`,
+            op: "reorder",
+            payload: { order: intendedSectionOrder(sections, section, body.sort_order) },
+            previousPayload: { order: currentSectionOrder(sections) },
           });
         }
       } catch (err) {
@@ -1824,6 +1916,33 @@ function createContentAdminRouter(deps) {
       contact: "social_link",
     });
 
+    /** Entity ids in their current live order. */
+    function currentEntityOrder(items) {
+      return (items || [])
+        .slice()
+        .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0))
+        .map((it) => String(it.id));
+    }
+
+    /**
+     * Resolve the order the admin intended by giving one item a new sort value.
+     * Mirrors intendedSectionOrder but keyed on entity ids.
+     */
+    function intendedEntityOrder(items, existing, requestedSortOrder) {
+      const requested = Number(requestedSortOrder);
+      const nextSort = Number.isFinite(requested) ? requested : Number(existing.sortOrder || 0);
+      const ranked = (items || []).map((it) => {
+        const isMoved = String(it.id) === String(existing.id);
+        return {
+          id: String(it.id),
+          sort: isMoved ? nextSort : Number(it.sortOrder || 0),
+          tie: isMoved ? 0 : 1,
+        };
+      });
+      ranked.sort((a, b) => a.sort - b.sort || a.tie - b.tie);
+      return ranked.map((it) => it.id);
+    }
+
     /**
      * Draft-first compatibility shim for the classic entity forms.
      *
@@ -1884,20 +2003,53 @@ function createContentAdminRouter(deps) {
       }
 
       const { saveStructuredDraft } = require("../services/websiteStructuredDraftService");
+      const draftBase = {
+        organizationId: perm.tenant.organization.id,
+        churchId: scope.churchId,
+        branchId: scope.branchId,
+        editorUserId: perm.session.userId,
+        actorRole: legacyActorRoleLabel(req),
+        draftKind,
+        pageKey: cfg.pageKey,
+        sectionKey: null,
+      };
+
+      // Ordering is expressed as a canonical reorder draft rather than an
+      // absolute sort value, so the intended order survives concurrent edits.
+      const orderChanged =
+        patch.sortOrder !== undefined && !SAME(patch.sortOrder, existing.sortOrder);
+      const contentPatch = { ...patch };
+      delete contentPatch.sortOrder;
+      const contentChanged = Object.keys(contentPatch).some(
+        (key) =>
+          !["status", "confirmPublish", "expectedUpdatedAt", "enforcePublishConfirm"].includes(
+            key
+          ) &&
+          contentPatch[key] !== undefined &&
+          !SAME(contentPatch[key], existing[key])
+      );
+
       try {
-        await saveStructuredDraft(getPool(), {
-          organizationId: perm.tenant.organization.id,
-          churchId: scope.churchId,
-          branchId: scope.branchId,
-          editorUserId: perm.session.userId,
-          actorRole: legacyActorRoleLabel(req),
-          draftKind,
-          pageKey: cfg.pageKey,
-          sectionKey: null,
-          entityKey: String(existing.id),
-          op: "upsert",
-          payload: { ...patch, status: existing.status },
-        });
+        if (contentChanged) {
+          await saveStructuredDraft(getPool(), {
+            ...draftBase,
+            entityKey: String(existing.id),
+            op: "upsert",
+            payload: { ...contentPatch, status: existing.status },
+          });
+        }
+
+        if (orderChanged) {
+          const listed = await cfg.listFn(getPool(), scopeInput(scope));
+          const items = (listed && listed.items) || [];
+          await saveStructuredDraft(getPool(), {
+            ...draftBase,
+            entityKey: `collection:${routeKey}:order`,
+            op: "reorder",
+            payload: { order: intendedEntityOrder(items, existing, patch.sortOrder) },
+            previousPayload: { order: currentEntityOrder(items) },
+          });
+        }
       } catch (err) {
         const message =
           err && err.status && err.status < 500 && err.message

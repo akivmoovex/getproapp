@@ -288,17 +288,26 @@
 
       <section class="bb-ba-page-editor__section" aria-labelledby="bb-ca-page-settings-heading" data-bb-page-section="settings">
         <h2 id="bb-ca-page-settings-heading" class="bb-ba-section-title">Page settings</h2>
+        <%
+          // A live page's title has no draft representation, so it is read-only
+          // here and changed through the website editor instead.
+          var pageTitleLocked = pageStatus === 'published';
+        %>
         <div class="bb-ba-field">
           <label for="title">Title</label>
           <input
             id="title"
             name="title"
             type="text"
-            required
+            <%= pageTitleLocked ? 'readonly' : 'required' %>
             maxlength="200"
             value="<%= pageTitleVal %>"
             autocomplete="off"
+            <%= pageTitleLocked ? 'aria-describedby="bb-ca-page-title-hint"' : '' %>
           />
+          <% if (pageTitleLocked) { %>
+          <p class="bb-ba-hint" id="bb-ca-page-title-hint">This page is live. Change its title in the website editor.</p>
+          <% } %>
         </div>
         <div class="bb-ba-field">
           <label for="status">Status</label>

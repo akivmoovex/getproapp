@@ -80,19 +80,25 @@
 
     <section class="bb-ba-page-editor__section" aria-labelledby="bb-ca-section-content-heading" data-bb-section-section="content">
       <h2 id="bb-ca-section-content-heading" class="bb-ba-section-title">Content</h2>
+      <%
+        // A live section's layout type has no draft representation, so it is
+        // read-only here and changed through the website editor instead.
+        var sectionTypeLocked = String(section.status || '').toLowerCase() === 'published';
+      %>
       <div class="bb-ba-field">
         <label for="section_type">Section type</label>
         <input
           id="section_type"
           name="section_type"
           type="text"
-          required
+          <%= sectionTypeLocked ? 'readonly' : 'required' %>
           maxlength="64"
           pattern="[a-z][a-z0-9_-]*"
           value="<%= submitted && submitted.section_type != null ? submitted.section_type : section.sectionType %>"
           autocomplete="off"
+          <%= sectionTypeLocked ? 'aria-describedby="bb-ca-section-type-hint"' : '' %>
         />
-        <p class="bb-ba-hint">Supported keys only. Unsupported widgets are not available.</p>
+        <p class="bb-ba-hint" id="bb-ca-section-type-hint"><%= sectionTypeLocked ? 'This section is live. Change its layout type in the website editor.' : 'Supported keys only. Unsupported widgets are not available.' %></p>
       </div>
       <div class="bb-ba-field">
         <label for="heading">Heading</label>
@@ -130,6 +136,19 @@
               visibility: 'public'
             }) %>
         <p class="bb-ba-hint">Uses the existing church media library for this scope.</p>
+      </div>
+      <div class="bb-ba-field">
+        <label for="media_alt_text">Image alternative text</label>
+        <input
+          id="media_alt_text"
+          name="media_alt_text"
+          type="text"
+          maxlength="200"
+          value="<%= submitted && submitted.media_alt_text != null ? submitted.media_alt_text : ((section.layoutMetadata && section.layoutMetadata.altText) || '') %>"
+          autocomplete="off"
+          aria-describedby="bb-ca-section-alt-hint"
+        />
+        <p class="bb-ba-hint" id="bb-ca-section-alt-hint">Required whenever an image is set. Describe the image for screen reader users.</p>
       </div>
     </section>
 

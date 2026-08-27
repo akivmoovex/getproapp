@@ -21,7 +21,11 @@ const DRAFT_KINDS = Object.freeze([
   "sermon",
   "giving_method",
   "social_link",
+  "page_section",
 ]);
+
+// Kinds that only carry ordering intent; they have no upsert payload.
+const REORDER_ONLY_KINDS = Object.freeze(["page_section"]);
 
 const SOCIAL_LINK_TYPES = Object.freeze([
   "facebook",
@@ -177,7 +181,16 @@ function validateStructuredPayload(kind, payload, op) {
     }
     const order = body.order.map((x) => String(x || "").trim()).filter(Boolean);
     if (!order.length) return { ok: false, error: "Reorder list cannot be empty." };
+    // A reorder draft must reproduce the intended order deterministically, so
+    // duplicates are a corrupt payload rather than something to silently dedupe.
+    if (new Set(order).size !== order.length) {
+      return { ok: false, error: "Reorder list cannot repeat the same item." };
+    }
     return { ok: true, payload: { order } };
+  }
+
+  if (REORDER_ONLY_KINDS.includes(kind)) {
+    return { ok: false, error: "This item only supports ordering changes." };
   }
 
   if (kind === "image") {
@@ -564,6 +577,7 @@ function listDemoImages() {
 
 module.exports = {
   DRAFT_KINDS,
+  REORDER_ONLY_KINDS,
   DEMO_IMAGE_PATHS,
   VIDEO_HOST_ALLOWLIST,
   SOCIAL_LINK_TYPES,

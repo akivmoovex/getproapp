@@ -203,9 +203,25 @@ function applyStructuredDraftsToModel(model, drafts) {
     sermon: [],
     giving_method: [],
     social_link: [],
+    page_section: [],
   };
   for (const d of drafts) {
     if (byKind[d.draftKind]) byKind[d.draftKind].push(d);
+  }
+
+  // Draft section order
+  for (const d of byKind.page_section) {
+    if (!d.pageKey || d.pageKey !== model.pageKey) continue;
+    if (d.op !== "reorder" || !Array.isArray(d.payload && d.payload.order)) continue;
+    const order = d.payload.order.map(String);
+    const rank = (section) => {
+      const idx = order.indexOf(String(section && section.sectionKey));
+      return idx < 0 ? Number.MAX_SAFE_INTEGER : idx;
+    };
+    model.sections = (model.sections || [])
+      .slice()
+      .sort((a, b) => rank(a) - rank(b))
+      .map((s, idx) => ({ ...s, sortOrder: (idx + 1) * 10 }));
   }
 
   // Section media (image/video)

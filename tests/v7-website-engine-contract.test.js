@@ -399,6 +399,17 @@ describe("v7 website engine contract", () => {
     assert.match(src, /saveInlineFieldDraft/);
     assert.match(src, /saveStructuredDraft/);
     assert.match(src, /published_requires_draft/);
+    // Phase 3: media and ordering edits are draft-routed, not refused.
+    assert.match(src, /media_alt_text/);
+    assert.match(src, /draftKind: "page_section"/);
+    assert.match(src, /op: "reorder"/);
+    assert.match(src, /intendedSectionOrder/);
+    assert.match(src, /intendedEntityOrder/);
+    assert.doesNotMatch(
+      src,
+      /Image, layout and ordering changes must be made/,
+      "media and ordering edits must no longer be refused outright"
+    );
   });
 
   it("blocks classic entity form writes to published items", async () => {
