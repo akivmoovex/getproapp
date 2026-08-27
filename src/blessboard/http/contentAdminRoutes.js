@@ -7,6 +7,11 @@
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
+const libraryModel = require("../../platform/website/libraryModel");
+const {
+  renderWebsiteLibrary,
+  LIBRARY_STYLESHEET,
+} = require("../../platform/website/renderWebsiteLibrary");
 const express = require("express");
 
 const {
@@ -160,6 +165,16 @@ function renderContentAdminView(relativePath, data) {
   const filename = path.join(VIEWS_ROOT, relativePath);
   const source = fs.readFileSync(filename, "utf8");
   return ejs.render(source, data, { filename });
+}
+
+/**
+ * True only when the client explicitly prefers HTML, so JSON stays the default
+ * for the media picker and any caller that sends no Accept header.
+ * @param {import('express').Request} req
+ */
+function wantsHtml(req) {
+  const accept = String((req && req.headers && req.headers.accept) || "");
+  return accept.toLowerCase().includes("text/html");
 }
 
 /**
@@ -913,11 +928,50 @@ function createContentAdminRouter(deps) {
       if (!listed.ok) {
         return res.status(503).json({ ok: false, reason: listed.reason || "lookup", assets: [] });
       }
+      const base = String(scope.basePath || p).replace(/\/$/, "");
       const assets = (listed.assets || []).map((a) => ({
         ...a,
-        previewPath: `${String(scope.basePath || p).replace(/\/$/, "")}/media/${a.id}`,
+        previewPath: `${base}/media/${a.id}`,
       }));
-      return res.status(200).json({ ok: true, assets });
+
+      // The picker (and any JSON client) keeps the existing contract. A browser
+      // navigating here previously received a raw JSON body even though the
+      // admin templates link to it as "Content Library", so serve the shared
+      // library page when the client explicitly prefers HTML.
+      if (!wantsHtml(req)) {
+        return res.status(200).json({ ok: true, assets });
+      }
+
+      const libraryBasePath = `${base}/media`;
+      const library = libraryModel.buildLibraryView({
+        items: libraryModel.normalizeLibraryItems(assets, (row) => ({
+          previewUrl: row.previewPath,
+        })),
+        q: req.query && req.query.q,
+        kind: req.query && req.query.type,
+        basePath: libraryBasePath,
+        heading: "Content Library",
+        description:
+          "Images and documents uploaded for this church. Files are shared across HQ and branches.",
+        emptyState: {
+          title: "No files yet",
+          body: "Upload media from any website or content editor to build your library.",
+        },
+      });
+
+      const html = renderContentAdminView(
+        "content-admin/media-library.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Content Library",
+          scope,
+          library,
+          libraryHtml: renderWebsiteLibrary(library),
+          libraryStylesheet: LIBRARY_STYLESHEET,
+          visibility,
+          basePath: base,
+        })
+      );
+      return res.status(200).type("html").send(html);
     });
 
     router.post(`${p}/media/:assetId/archive`, rejectApex, gateContent, async (req, res) => {

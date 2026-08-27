@@ -1,11 +1,9 @@
 <% var cms = (pageData && pageData.cms) || {}; var media = cms.media || []; var selected = cms.selected || null; var selectMode = cms.selectMode === true; %>
+<% if (cms.libraryStylesheet) { %><link rel="stylesheet" href="<%= cms.libraryStylesheet %>"/><% } %>
 <section class="ac-mw" data-ac-page-section="website-media" data-ac-mw-screen="<%= selectMode ? 'select-media' : 'media' %>">
   <%- include('../partials/website-cms-nav') %>
   <div class="ac-mw-head">
-    <div>
-      <h2><%= selectMode ? 'Select from Media Library' : 'Media Library' %></h2>
-      <p class="ac-mw-muted"><%= selectMode ? 'Reuse an image already uploaded for this clinic.' : 'Images belong to this clinic only. Other clinics cannot see or reuse this media.' %></p>
-    </div>
+    <div></div>
     <% if (cms.canUpload && !selectMode) { %>
     <button type="button" class="ac-mw-btn ac-mw-btn--primary" data-ac-mw-open="ac-mw-upload-media">Upload Media</button>
     <% } %>
@@ -32,23 +30,8 @@
     </form>
   </dialog>
   <% } %>
-  <div class="ac-mw-media-grid" data-ac-mw-media-grid="1">
-    <% if (!media.length) { %>
-    <p class="ac-mw-muted">No media uploaded yet.</p>
-    <% } %>
-    <% media.forEach(function (item) { %>
-    <figure class="ac-mw-media-card" data-ac-media-id="<%= item.id %>">
-      <% if (item.publicSrc) { %>
-      <img src="<%= item.publicSrc %>" alt="<%= item.altText || item.originalFilename || '' %>"/>
-      <% } %>
-      <figcaption>
-        <strong><%= item.originalFilename || 'Image' %></strong>
-        <p class="ac-mw-muted"><%= item.mediaKind %> · <%= Math.round((item.sizeBytes || 0) / 1024) %> KB</p>
-        <a class="ac-mw-btn" href="/app/settings/website/media/<%= item.id %>">Details</a>
-      </figcaption>
-    </figure>
-    <% }) %>
-  </div>
+  <%# Shared content/media library UI — see src/platform/website/libraryModel.js %>
+  <%- cms.libraryHtml %>
   <% if (selected) { %>
   <form class="ac-mw-form" method="post" action="/app/settings/website/media/<%= selected.id %>">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>

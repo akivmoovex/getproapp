@@ -525,6 +525,95 @@ describe("blessboard media service + http", () => {
     fs.rmSync(root, { recursive: true, force: true });
   });
 
+  it("serves the shared Content Library page to browsers and JSON to the picker", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const sidA = sessionCookie(users.hqA);
+    const bootA = await request(app).get("/hq/content").set("Host", HOST_A).set("Cookie", sidA);
+    const csrfA = extractCookie(bootA, CSRF_COOKIE);
+    assert.ok(csrfA);
+
+    const up = await request(app)
+      .post("/hq/content/media/upload")
+      .set("Host", HOST_A)
+      .set("Cookie", cookieHeader(sidA, `${CSRF_COOKIE}=${csrfA}`))
+      .field(CSRF_FIELD, csrfA)
+      .field("visibility", "public")
+      .attach("file", PNG_1X1, "library-page.png");
+    assert.equal(up.status, 200, JSON.stringify(up.body));
+    const assetId = up.body.assetId;
+    assert.ok(assetId);
+
+    // Content-hash dedupe may return an earlier identical upload, so resolve the
+    // filename the library will actually show.
+    const listed = await request(app)
+      .get("/hq/content/media?visibility=public&limit=100")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "application/json");
+    const asset = (listed.body.assets || []).find((a) => a.id === assetId);
+    assert.ok(asset, "uploaded asset must be listed");
+    const filename = asset.originalFilename;
+
+    // A browser navigating to the advertised libraryPath must get a real page,
+    // not a raw JSON body.
+    const page = await request(app)
+      .get("/hq/content/media?visibility=public")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "text/html,application/xhtml+xml,*/*;q=0.8");
+    assert.equal(page.status, 200);
+    assert.match(page.headers["content-type"], /text\/html/);
+    assert.match(page.text, /data-bb-page="content-media-library"/);
+    assert.match(page.text, /data-gp-library="1"/, "renders the shared library UI");
+    assert.match(page.text, /data-gp-library-grid="1"/);
+    assert.ok(page.text.includes(`data-gp-library-id="${assetId}"`));
+    assert.ok(page.text.includes(filename));
+    assert.match(page.text, /website-library\.css/);
+    assert.match(page.text, /Content Library/);
+    assert.doesNotMatch(page.text, /"ok":\s*true/, "must not be a JSON payload");
+    assert.doesNotMatch(page.text, /storageKey|storageBucket|supabase/i);
+
+    // Shared search and type filtering are driven by the query string.
+    const searched = await request(app)
+      .get(`/hq/content/media?q=${encodeURIComponent(filename)}`)
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "text/html");
+    assert.equal(searched.status, 200);
+    assert.ok(searched.text.includes(`data-gp-library-id="${assetId}"`));
+
+    const missed = await request(app)
+      .get("/hq/content/media?q=definitely-not-present")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "text/html");
+    assert.equal(missed.status, 200);
+    assert.match(missed.text, /data-gp-library-empty="1"/, "renders the no-results state");
+    assert.ok(!missed.text.includes(`data-gp-library-id="${assetId}"`));
+
+    // The picker contract is unchanged.
+    const asJson = await request(app)
+      .get("/hq/content/media?visibility=public")
+      .set("Host", HOST_A)
+      .set("Cookie", sidA)
+      .set("Accept", "application/json");
+    assert.equal(asJson.status, 200);
+    assert.equal(asJson.body.ok, true);
+    assert.ok(Array.isArray(asJson.body.assets));
+
+    // Tenant isolation still holds on the HTML surface.
+    const crossHtml = await request(app)
+      .get("/hq/content/media")
+      .set("Host", HOST_B)
+      .set("Cookie", sessionCookie(users.hqB))
+      .set("Accept", "text/html");
+    assert.equal(crossHtml.status, 200);
+    assert.ok(
+      !crossHtml.text.includes(assetId),
+      "church B must not see church A files"
+    );
+  });
+
   it("lists church assets and archives via content-admin JSON; denies cross-tenant list", async (t) => {
     if (skipIfNeeded(t)) return;
     const sidA = sessionCookie(users.hqA);

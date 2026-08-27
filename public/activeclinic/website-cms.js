@@ -94,8 +94,25 @@
             var button = document.createElement("button");
             button.type = "button";
             button.className = "ac-mw-media-card";
-            button.innerHTML = (item.publicSrc ? "<img src=\"" + item.publicSrc + "\" alt=\"\">" : "") +
-              "<span>" + (item.originalFilename || "Image") + "</span>";
+            // Built as DOM nodes, never markup, so filenames and alt text can
+            // never be interpreted as HTML.
+            var src = item.previewUrl || item.publicSrc;
+            if (src) {
+              var thumb = document.createElement("img");
+              thumb.src = src;
+              thumb.alt = "";
+              thumb.loading = "lazy";
+              button.appendChild(thumb);
+            }
+            var label = document.createElement("span");
+            label.textContent = item.title || item.originalFilename || "Image";
+            button.appendChild(label);
+            if (item.altText) {
+              var altHint = document.createElement("span");
+              altHint.className = "ac-mw-muted";
+              altHint.textContent = item.altText;
+              button.appendChild(altHint);
+            }
             button.addEventListener("click", function () {
               if (!pickerTarget) return;
               var idInput = pickerTarget.querySelector("[data-ac-mw-media-id]");
@@ -105,15 +122,15 @@
               var empty = pickerTarget.querySelector("[data-ac-mw-media-preview-empty]");
               if (idInput) idInput.value = item.id || "";
               if (srcInput) {
-                srcInput.value = item.publicSrc || "";
+                srcInput.value = src || "";
                 srcInput.dispatchEvent(new Event("input", { bubbles: true }));
               }
               if (altInput && !altInput.value) altInput.value = item.altText || "";
-              if (preview && item.publicSrc) {
-                preview.src = item.publicSrc;
+              if (preview && src) {
+                preview.src = src;
                 preview.hidden = false;
               }
-              if (empty) empty.hidden = Boolean(item.publicSrc);
+              if (empty) empty.hidden = Boolean(src);
               picker.close();
             });
             grid.appendChild(button);

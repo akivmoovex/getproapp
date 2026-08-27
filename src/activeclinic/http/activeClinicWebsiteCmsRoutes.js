@@ -21,6 +21,11 @@ const { PAGE_TEMPLATES, SECTION_TYPES, BLOCK_TYPES, boolValue, isAddableBlockTyp
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const contentService = require("../../platform/website/contentService");
 const mediaService = require("../../platform/website/mediaService");
+const libraryModel = require("../../platform/website/libraryModel");
+const {
+  renderWebsiteLibrary,
+  LIBRARY_STYLESHEET,
+} = require("../../platform/website/renderWebsiteLibrary");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const {
   PRODUCT_CODE,
@@ -718,6 +723,30 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
     }));
     const selected = selectedId ? media.find((item) => item.id === selectedId) || null : null;
     const selectMode = String(req.query.select || "") === "1";
+    const basePath = "/app/settings/website/media";
+
+    // Shared library layer: one canonical card shape, search and type filter.
+    const library = libraryModel.buildLibraryView({
+      items: libraryModel.normalizeLibraryItems(media, (row) => ({
+        previewUrl: row.publicSrc,
+        detailsUrl: `${basePath}/${row.id}`,
+      })),
+      q: req.query && req.query.q,
+      kind: req.query && req.query.type,
+      basePath: selectMode ? `${basePath}?select=1` : basePath,
+      heading: selectMode ? "Select from Media Library" : "Media Library",
+      description: selectMode
+        ? "Reuse an image already uploaded for this clinic."
+        : "Images belong to this clinic only. Other clinics cannot see or reuse this media.",
+      selectMode,
+      canUpload: hasWebsitePermission(input.grantedPermissions, PERMISSIONS.MEDIA_UPLOAD),
+      uploadAction: `/clinics/${input.clinicKey}/website/media`,
+      emptyState: {
+        title: "No media uploaded yet",
+        body: "Upload a JPEG, PNG, WebP, or GIF to reuse it across your website.",
+      },
+    });
+
     return renderShell(req, res, {
       content: "app/website-cms-media.ejs",
       cmsActive: "media",
@@ -731,6 +760,9 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           media,
           selected,
           selectMode,
+          library,
+          libraryHtml: renderWebsiteLibrary(library),
+          libraryStylesheet: LIBRARY_STYLESHEET,
           canUpload: hasWebsitePermission(input.grantedPermissions, PERMISSIONS.MEDIA_UPLOAD),
           uploadAction: `/clinics/${input.clinicKey}/website/media`,
         },

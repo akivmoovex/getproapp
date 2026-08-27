@@ -369,6 +369,19 @@ describe("ActiveClinic website CMS", () => {
     const mediaPage = await request(app).get("/app/settings/website/media").set("Cookie", cookies);
     assert.equal(mediaPage.status, 200);
     assert.match(mediaPage.text, /Media Library/);
+    // Shared content/media library UI, not the retired ActiveClinic-only grid.
+    assert.match(mediaPage.text, /data-gp-library="1"/);
+    assert.match(mediaPage.text, /website-library\.css/);
+    assert.doesNotMatch(mediaPage.text, /ac-mw-media-grid/);
+    // Empty library renders the shared empty state rather than a bare grid.
+    assert.match(mediaPage.text, /data-gp-library-empty="1"/);
+    assert.doesNotMatch(mediaPage.text, /storageKey|sha256/);
+
+    const mediaSearch = await request(app)
+      .get("/app/settings/website/media?q=nothing-matches&type=image")
+      .set("Cookie", cookies);
+    assert.equal(mediaSearch.status, 200);
+    assert.match(mediaSearch.text, /data-gp-library-empty="1"/);
     const publishPage = await request(app).get("/app/settings/website/publish").set("Cookie", cookies);
     assert.equal(publishPage.status, 200);
     assert.match(publishPage.text, /Site Status/);

@@ -1,0 +1,53 @@
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-start') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-start') %>
+<% } %>
+<%
+  var contentBase = (scope && scope.basePath) || (shellKind === 'hq' ? '/hq/content' : '/branch-admin/content');
+  var libraryBase = String(basePath || contentBase).replace(/\/$/, '') + '/media';
+  var activeVisibility = typeof visibility !== 'undefined' && visibility ? String(visibility) : '';
+  var visibilityOptions = [
+    { key: '', label: 'All files' },
+    { key: 'public', label: 'Public' },
+    { key: 'private', label: 'Private' }
+  ];
+%>
+<% if (typeof libraryStylesheet !== 'undefined' && libraryStylesheet) { %>
+<link rel="stylesheet" href="<%= libraryStylesheet %>"/>
+<% } %>
+<section
+  class="bb-ca-home bb-ba-content<%= shellKind === 'hq' ? ' bb-hq-content' : '' %>"
+  data-bb-page="content-media-library"
+>
+  <p class="bb-ba-breadcrumb">
+    <a href="<%= contentBase %>">Website content</a>
+    <span aria-hidden="true">/</span>
+    <span aria-current="page">Content Library</span>
+  </p>
+
+  <nav class="bb-hq-content-chips" aria-label="Filter files by visibility">
+    <% visibilityOptions.forEach(function (option) { %>
+    <a
+      class="bb-hq-content-chip<%= activeVisibility === option.key ? ' is-active' : '' %>"
+      href="<%= libraryBase %><%= option.key ? '?visibility=' + option.key : '' %>"
+      <%= activeVisibility === option.key ? 'aria-current="page"' : '' %>
+      data-bb-media-visibility-filter="<%= option.key || 'all' %>"
+    ><%= option.label %></a>
+    <% }) %>
+  </nav>
+
+  <%# Shared content/media library UI — see src/platform/website/libraryModel.js %>
+  <%- libraryHtml %>
+
+  <p class="bb-ba-hint">
+    Upload new files from any page or section editor. Files uploaded by HQ and by
+    branches share one church library.
+  </p>
+</section>
+
+<% if (shellKind === 'hq') { %>
+<%- include('../partials/hq-shell-end') %>
+<% } else { %>
+<%- include('../partials/branch-admin-shell-end') %>
+<% } %>

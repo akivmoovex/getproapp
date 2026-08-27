@@ -8,6 +8,7 @@ const contentService = require("../../platform/website/contentService");
 const publicationService = require("../../platform/website-engine").publicationService;
 const submissionService = require("../../platform/website/submissionService");
 const mediaService = require("../../platform/website/mediaService");
+const libraryModel = require("../../platform/website/libraryModel");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const editSessionService = require("../../platform/website/editSessionService");
 const {
@@ -644,11 +645,22 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,
       });
+      // Shared library DTO: canonical card fields only. Storage keys, content
+      // hashes and internal ids never reach the browser.
+      const items = libraryModel.normalizeLibraryItems(listed.media || [], (row) => ({
+        previewUrl: `/clinics/${clinic.clinicKey}/website/media/${row.id}`,
+      }));
+      const filtered = libraryModel.filterLibraryItems(items, {
+        q: req.query && req.query.q,
+        kind: req.query && req.query.type,
+      });
       return json(res, 200, {
         ok: true,
-        media: (listed.media || []).map((item) => ({
+        media: filtered.map((item) => ({
           ...item,
-          publicSrc: `/clinics/${clinic.clinicKey}/website/media/${item.id}`,
+          // Retained for the existing picker markup.
+          publicSrc: item.previewUrl,
+          originalFilename: item.title,
         })),
       });
     } catch (err) {
