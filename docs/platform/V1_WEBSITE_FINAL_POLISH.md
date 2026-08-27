@@ -78,6 +78,13 @@ unrouted, so it was left alone):
 - The workflow note now spells out the two steps explicitly: approve here, then
   publish from Publish Website Review, and approval alone never changes the live
   website.
+- `public/blessboard/v5/hq-admin.css` had **no disabled state at all** for
+  `.bb-hq-btn`, and its `:hover` rule applied to disabled buttons too — so the
+  inert control lit up on hover and otherwise looked identical to an actionable
+  one. Added a `:disabled` affordance (`opacity: 0.5; cursor: not-allowed`) and
+  excluded disabled buttons from `:hover`. This is a design-system gap rather
+  than a per-page override, so every inert HQ button benefits.
+  `hq-shell-start.ejs` cache-buster moved `?v=76` → `?v=77`.
 
 **Reclassified: `PRODUCT_DIFFERENCE / LOW`.** The publish chain itself was
 verified working end to end during QA: branch draft → submit → HQ approve → HQ
@@ -105,6 +112,15 @@ and publish", gated on `skip: !isPgConfigured()` — local Postgres availability
 unrelated to these changes.
 
 `REGRESSION_FAILURES = 0`.
+
+Because this pass touched `hq-admin.css` and the HQ shell partial, two suites
+outside the website core were also run: `blessboard-v5-a11y-structure` and
+`blessboard-platform-admin-mobile-nav`, which fail 6 assertions. A stashed
+baseline worktree at the same commit produces the **identical** 6 failures
+(97 pass / 6 fail either way), and all six assert against platform-admin
+(`bb-pa-*`) surfaces — drawer nav, `platform-admin.css` cache-bust pairing and
+platform-admin Stitch parity — not website surfaces. Registered as record 11 in
+`V1_TEST_DEBT_TRIAGE.md`.
 
 Known unrelated debt is unchanged: `blessboard rbac e2e` → "positive member
 journey completes through cell/class/department" (record 10 in

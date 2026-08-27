@@ -169,10 +169,18 @@ body.bb-hq-drawer-open { overflow: hidden; }
   padding: 0.45rem 0.65rem;
   border-radius: 0.5rem;
 }
-.bb-hq-logout button:hover,
-.bb-hq-btn:hover {
+.bb-hq-logout button:hover:not(:disabled),
+.bb-hq-btn:hover:not(:disabled) {
   color: var(--bb-ink);
   background: var(--bb-color-primary-soft, #efeaff);
+}
+/* The HQ button set had no disabled affordance, so inert controls read as
+   actionable. Dim them and drop the hover response. */
+.bb-hq-logout button:disabled,
+.bb-hq-btn:disabled,
+.bb-hq-btn[aria-disabled="true"] {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .bb-hq-btn--ghost {
   border: 1px solid var(--bb-line);

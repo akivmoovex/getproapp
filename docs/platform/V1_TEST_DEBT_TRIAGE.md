@@ -266,6 +266,7 @@ documented post-V1 debt.
 | Per-suite database isolation (record 9) | TEST_ISOLATION_BUG | **Open** — post-V1 |
 | Platform-admin deployments literals (record 3) | POST_V1 | **Open** — post-V1 |
 | `blessboard rbac e2e` → positive member journey (record 10) | POST_V1 | **Open** — post-V1 |
+| Platform-admin shell/parity assertions (record 11) | POST_V1 | **Open** — post-V1 |
 
 V1_BLOCKER = 0, V1_HIGH = 0, V1_FIX = 0.
 
@@ -287,6 +288,28 @@ cause family with record 9 (suites that need a provisioned database / active
 deployment row, surfacing as `inactive_deployment` or a 503 from the
 unavailable-DB guard). It must not be counted as a website defect, and it does
 not gate the website QA candidate.
+
+### 11. Platform-admin shell and Stitch-parity assertions (standing known debt)
+
+Registered during the V1 website final-polish pass at
+`e5260e752e8eac5c3ba606761e680759a4e35b24`. These two suites are **not** part of
+the curated V1 website core set, which is why they were not visible in the
+earlier 369/370 count; they were run here only because the pass touched
+`hq-admin.css` and the HQ shell partial.
+
+| Field | Value |
+|---|---|
+| Suites | `blessboard-v5-a11y-structure`, `blessboard-platform-admin-mobile-nav` |
+| Failing assertions | "drawer renders canonical PLATFORM_ADMIN_NAV hrefs from server locals"; "cache-busts platform-admin CSS and shell-nav JS together"; "platform admin dashboard keeps Stitch sections without fabricated metrics"; "platform admin settings keeps Stitch DNS patterns without automation or save controls"; "platform admin deployments directory keeps Stitch layout without ops or secrets"; "platform admin deployment detail keeps safe diagnostics without secrets or ops" |
+| Classification | POST_V1 — **not** a website regression |
+| Website surface touched | None. All six assert against platform-admin (`bb-pa-*`) surfaces: drawer nav, `platform-admin.css` cache-bust pairing, and platform-admin Stitch parity |
+| Evidence it is pre-existing | Identical 6 failures on a stashed baseline worktree at the same commit, i.e. with the polish changes removed: 97 pass / 6 fail both with and without them |
+
+Same family as record 3 (platform-admin deployments literals). The HQ website
+review surfaces changed in this pass are covered by
+`phase4-website-governance-stages4-5`, `phase3-branch-website-submissions`,
+`phase3-website-change-submissions` and `website-ui-completion`, all of which
+pass.
 
 The blocker turned out to have **four** call sites, not one. Fixing the two
 permission gates named in record 6 exposed two more instances of the same
