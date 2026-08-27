@@ -56,8 +56,14 @@ const BASE_ARGS = [
 ];
 
 function runCli(args, envExtra = {}) {
+  // The CLI selects its deployment from --deployment-code. An ambient
+  // PLATFORM_DEPLOYMENT_CODE in the developer's shell would otherwise be
+  // inherited by the child and trip the provisioning safety check, making this
+  // suite pass or fail depending on who runs it. Drop it unless a test sets it.
+  const inherited = { ...process.env };
+  delete inherited.PLATFORM_DEPLOYMENT_CODE;
   return spawnSync(process.execPath, [path.join(ROOT, "db/scripts/demo-v5-dataset.js"), ...args], {
-    env: { ...process.env, ...envExtra },
+    env: { ...inherited, ...envExtra },
     encoding: "utf8",
   });
 }

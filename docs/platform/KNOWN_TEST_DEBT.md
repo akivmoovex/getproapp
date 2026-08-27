@@ -35,14 +35,18 @@ Counts are from running each suite **in isolation**.
 
 | Suite | Failing subtests | Nature | Related to website engine |
 |---|---|---|---|
-| `tests/blessboard-v5-a11y-structure.test.js` | 40 → **6** | Was mostly pinned CSS cache-buster numbers, not accessibility; pins fixed. Remainder is renamed platform-admin deployment paths and drifted auth copy | No |
-| `tests/blessboard-website-mode-admin-nav.test.js` | 3 | 2 blocked by the HQ onboarding redirect (stale fixture); 1 is the real branch-authorization bug | No |
-| `tests/blessboard-demo-v5-dataset.test.js` | 2 → **0** | Leaked `PLATFORM_DEPLOYMENT_CODE`; passes 9/9 with the variable unset | No |
-| `tests/blessboard-branch-mini-website-pages.test.js` | **1** | Real branch-authorization bug (was miscounted as interference) | No |
-| `tests/blessboard-branch-service-times.test.js` | **2** | 1 real branch-authorization bug, 1 stale empty-state sentinel | No |
+| `tests/blessboard-v5-a11y-structure.test.js` | 40 → **4** | Was mostly pinned CSS cache-buster numbers, not accessibility; pins fixed. Auth-label and `Support` assertions since corrected. Remainder is renamed platform-admin deployment paths (POST_V1) | No |
+| `tests/blessboard-website-mode-admin-nav.test.js` | 3 → **0** | 2 were the HQ onboarding redirect (fixture completed); 1 was the real branch-authorization bug (fixed) | No |
+| `tests/blessboard-demo-v5-dataset.test.js` | 2 → **0** | Leaked `PLATFORM_DEPLOYMENT_CODE`; the suite no longer inherits it | No |
+| `tests/blessboard-branch-mini-website-pages.test.js` | 1 → **0** | Real branch-authorization bug (fixed) | No |
+| `tests/blessboard-branch-service-times.test.js` | 2 → **0** | 1 real branch-authorization bug (fixed), 1 stale empty-state sentinel (corrected) | No |
 
-Total in isolation: **46** as measured (was recorded as 45); **12** after the
-stale cache-buster pins were fixed.
+Total in isolation: **46** as originally measured, **12** after the stale
+cache-buster pins were fixed, and **4** after the Overnight 5 fix pass. The
+remaining 4 are the POST_V1 platform-admin deployment path literals.
+
+See `docs/platform/V1_TEST_DEBT_TRIAGE.md` for the per-assertion classification
+and what the fix pass changed.
 
 ## Cross-suite interference (not additional debt)
 
@@ -52,10 +56,14 @@ foundation database and reset it independently:
 
 - `blessboard church website preview and publish` — 2 subtests
 - `ActiveClinic website hardening` — 1 subtest
-- `Branch Admin edits only the assigned branch` — 1 subtest
+- `blessboard website scope resolver` — 1 subtest
 
-All four pass when their suite runs on its own, and all four fail identically on
-a clean baseline tree. Combined-run total: **49**.
+Each passes when its suite runs on its own, and each fails identically on a
+clean baseline tree. Combined-run total after the Overnight 5 fixes: **47**
+(baseline at the parent commit: 53, with 0 new failures introduced).
+
+Making combined runs a usable regression gate requires per-suite database
+isolation, which is tracked as post-V1 work in the triage document.
 
 ## Phase history
 
@@ -63,6 +71,8 @@ a clean baseline tree. Combined-run total: **49**.
 |---|---|---|---|
 | V7 shared website engine, Phase 2 | 6 (narrower suite set of 660 tests) | 6 | 0 |
 | V7 shared website engine, Phase 3 | 49 combined / 45 isolated | 49 combined / 45 isolated | 0 |
+| V1 test debt triage (Overnight 4) | 46 isolated (re-measured) | 12 isolated | 0 |
+| V1 relevant failure fixes (Overnight 5) | 53 combined / 12 isolated | 47 combined / 4 isolated | 0 |
 
 The Phase 3 count is higher than Phase 2 because Phase 3 measured a broader
 suite list that deliberately includes the a11y-structure, admin-nav and demo

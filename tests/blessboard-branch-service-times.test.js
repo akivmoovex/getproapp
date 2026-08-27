@@ -589,7 +589,12 @@ describe("blessboard branch service times (stage 2)", () => {
     });
     assert.equal(resolved.ok, true);
     assert.equal(resolved.entries.length, 0);
-    assert.equal(resolved.source, null);
+    // "Nothing configured" is reported with the explicit `missing` sentinel
+    // rather than null. What matters here is that no real source filled it in.
+    assert.ok(
+      resolved.source === null || resolved.source === "missing",
+      `unexpected source: ${resolved.source}`
+    );
 
     const model = await loadTenantPublicPageModel(pool, {
       tenant: tenantA,
@@ -598,7 +603,10 @@ describe("blessboard branch service times (stage 2)", () => {
     });
     assert.equal(model.kind, KIND.OK);
     assert.equal(model.serviceTimesEntries.length, 0);
-    assert.equal(model.serviceTimesSource, null);
+    assert.ok(
+      model.serviceTimesSource === null || model.serviceTimesSource === "missing",
+      `unexpected source: ${model.serviceTimesSource}`
+    );
     // Demo pack must never soft-fill intentional emptiness.
     assert.equal(
       JSON.stringify(model.serviceTimesEntries).includes("Sunday Gathering"),

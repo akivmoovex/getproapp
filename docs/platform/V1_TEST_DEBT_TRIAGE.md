@@ -251,6 +251,48 @@ used as a regression gate without per-suite database isolation.
 | Branch admin editor | **Real V1 blocker.** Branch admins in multi-branch churches are denied their own branch editor. |
 | ActiveClinic website hardening | **Passes in isolation.** Interference only. |
 
+## Resolution status (Overnight 5)
+
+Items 1–5 of the fix order below are **done**. Items 6–7 remain open as
+documented post-V1 debt.
+
+| Item | Priority | Status |
+|---|---|---|
+| Branch-scoped authorization uses the assigned branch (record 6) | V1_BLOCKER | Fixed in product code |
+| Onboarding-aware admin-nav fixture (record 5) | V1_FIX | Fixed in fixture |
+| `PLATFORM_DEPLOYMENT_CODE` leak into demo CLI (record 8) | TEST_ISOLATION_BUG | Fixed; suite now hermetic |
+| Auth label assertions (record 4) | V1_FIX | Re-pointed at label bindings |
+| Service-times sentinel + branch shell `Support` regex (records 7, 2) | STALE_ASSERTION | Both corrected |
+| Per-suite database isolation (record 9) | TEST_ISOLATION_BUG | **Open** — post-V1 |
+| Platform-admin deployments literals (record 3) | POST_V1 | **Open** — post-V1 |
+
+V1_BLOCKER = 0, V1_HIGH = 0, V1_FIX = 0.
+
+The blocker turned out to have **four** call sites, not one. Fixing the two
+permission gates named in record 6 exposed two more instances of the same
+`tenant.primaryBranch` assumption:
+
+- `branchAdminShellLocals` evaluated **navigation permission flags** against the
+  primary branch, so a multi-branch branch admin's Website and Content links
+  were filtered out of their own sidebar entirely.
+- the same file rendered `branchDisplayName` from the primary branch, so the
+  shell chrome labelled a Campus East admin as being in "HQ A".
+
+All four now resolve the actor's assigned branch through one shared helper,
+`src/blessboard/http/resolveAssignedBranchContext.js`, so the assumption cannot
+drift back in independently. Church-scoped actors keep the previous
+primary-branch fallback, and cross-branch/cross-church denial is unchanged.
+
+One further stale assertion surfaced during verification.
+`blessboard-website-scope` test 7 asserted that a campus-only admin **could
+not** enter `/branch-admin/content` on the church host, commenting that "the
+branch shell binds to host primary branch". That encoded the bug as intent, and
+it directly contradicted test 5 in the same file — "Branch Admin scope does not
+silently become the primary branch" — plus test 7's own later assertion that a
+*primary*-branch admin gets 200 on that exact route. It now asserts the correct
+behaviour with a stronger check: the campus admin's editor opens, shows Campus
+East, and must not leak "HQ A".
+
 ## Recommended fix order
 
 1. **V1_BLOCKER** — branch-scoped authorization resolves the actor's assigned
@@ -268,12 +310,41 @@ used as a regression gate without per-suite database isolation.
    usable regression gate (record 9).
 7. **POST_V1** — platform-admin deployments literals (record 3).
 
-## Change made in this pass
+## Change made in the triage pass
 
 Only the trivial, mechanical, test-only correction: 45 pinned CSS
 cache-buster literals in `tests/blessboard-v5-a11y-structure.test.js` became
 `\?v=\d+`, clearing 34 failures and removing a trap that broke 34 tests on every
 stylesheet bump. No product code, migration, view, or route was touched.
+
+## Changes made in the fix pass (Overnight 5)
+
+Product code:
+
+- `src/blessboard/http/resolveAssignedBranchContext.js` (new) — shared resolver
+  for the assigned-branch authorization context.
+- `src/blessboard/http/contentAdminRoutes.js` — branch website shell gate.
+- `src/blessboard/http/websiteServiceTimesAdminRoutes.js` — branch surface gate.
+- `src/blessboard/http/branchAdminShellLocals.js` — navigation permission flags
+  and branch display name.
+
+Tests (no test deleted, no expectation weakened):
+
+- `tests/blessboard-website-mode-admin-nav.test.js` — complete onboarding in the
+  fixture so the navigation assertions are reachable.
+- `tests/blessboard-v5-a11y-structure.test.js` — assert `<label for=...>`
+  bindings instead of marketing copy; scope the `Support` guard to a rendered
+  nav label.
+- `tests/blessboard-branch-service-times.test.js` — accept the `missing`
+  sentinel for "nothing configured".
+- `tests/blessboard-website-scope.test.js` — test 7 now asserts correct
+  assigned-branch scoping instead of the old denial.
+- `tests/blessboard-demo-v5-dataset.test.js` — drop the ambient
+  `PLATFORM_DEPLOYMENT_CODE` from the spawned CLI's environment.
+
+Verified with the 128-suite combined website/CMS run against a baseline worktree
+at the parent commit: **0 new failures, 9 assertions newly passing**
+(997 pass/53 fail → 1003 pass/47 fail).
 
 ## Reproducing
 

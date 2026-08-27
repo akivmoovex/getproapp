@@ -23,6 +23,9 @@ const {
   applyBranchWebsiteModeNav,
   applyBranchWebsiteModeModules,
 } = require("./websiteModeAdminNav");
+const {
+  createAssignedBranchResourceContextResolver,
+} = require("./resolveAssignedBranchContext");
 
 /**
  * @param {import('express').Request} req
@@ -101,12 +104,20 @@ async function buildBranchAdminShellLocals(req, res, opts) {
     canViewAttendance: false,
     canViewAnnouncements: false,
   };
+  let assignedBranchDisplayName = null;
   if (opts.getPool && session && session.userId && tenant && tenant.resolved === true) {
     try {
+      // Nav flags must be evaluated against the branch this admin is actually
+      // assigned to. Using the church primary branch hides a multi-branch
+      // branch admin's own website and content links.
+      const resourceContext = await createAssignedBranchResourceContextResolver({
+        getPool: opts.getPool,
+      })(req, tenant);
+      assignedBranchDisplayName = resourceContext.branchDisplayName || null;
       permissionNavFlags = await buildPermissionNavFlags(opts.getPool(), {
         actorUserId: session.userId,
         tenant,
-        branchId: tenant.primaryBranch && tenant.primaryBranch.id ? tenant.primaryBranch.id : null,
+        branchId: resourceContext.branchId,
       });
     } catch {
       /* fail closed */
@@ -168,7 +179,11 @@ async function buildBranchAdminShellLocals(req, res, opts) {
     csrfToken,
     csrfField: CSRF_FIELD,
     churchDisplayName: tenant && tenant.church ? tenant.church.displayName : "",
-    branchDisplayName: tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : "",
+    // Identify the branch this admin actually administers, not the church
+    // primary branch, which would mislabel every multi-branch branch admin.
+    branchDisplayName:
+      assignedBranchDisplayName ||
+      (tenant && tenant.primaryBranch ? tenant.primaryBranch.displayName : ""),
     roleLabel: primaryRoleLabel(req),
     displayName: session && session.user ? session.user.displayName : "",
     navItems,

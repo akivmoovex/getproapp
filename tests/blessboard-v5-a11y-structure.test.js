@@ -134,7 +134,11 @@ describe("blessboard v5 a11y structure — shells", () => {
         assert.doesNotMatch(end, /data-bb-nav="mobile-tabs"/);
         assert.match(end, /powered-by-getpro/);
         assert.doesNotMatch(start, /href="\/branch-admin\/reports"/);
-        assert.doesNotMatch(start, /Support/i);
+        // No platform Support nav entry may leak into the branch shell. Matched
+        // as a rendered label, not the bare word, so the intended
+        // support-mode-banner include does not trip it.
+        assert.doesNotMatch(start, />\s*Support\s*</);
+        assert.doesNotMatch(start, /href="\/admin\/support/);
       }
       if (shell.name === "platform") {
         assert.match(start, /role="dialog"/);
@@ -2562,8 +2566,13 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     assert.match(register, /data-bb-auth-group="contact"/);
     assert.match(register, /role="alert"/);
     assert.match(register, /Submit Registration/);
-    assert.match(register, /Email Address/);
-    assert.match(register, /Phone Number/);
+    // Both contact fields must stay explicitly labelled and bound to their
+    // input. Assert the binding rather than the marketing copy, which changed
+    // when email became optional and phone required.
+    assert.match(register, /<label for="email">[^<]*[Ee]mail[^<]*<\/label>/);
+    assert.match(register, /<label for="phone">[^<]*phone[^<]*<\/label>/i);
+    assert.match(register, /id="email"/);
+    assert.match(register, /id="phone"/);
     assert.doesNotMatch(register, /name="password"|name="gender"|Forgot password|waiting.?verification/i);
     assert.match(submitted, /data-bb-register-submitted="1"/);
     assert.match(submitted, /data-bb-stitch-register-submitted="11-auth-registration-submitted"/);

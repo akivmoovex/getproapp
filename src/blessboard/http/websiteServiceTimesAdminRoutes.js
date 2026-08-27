@@ -26,6 +26,9 @@ const {
   SCOPE_TYPE,
 } = require("../services/resolveWebsiteScope");
 const {
+  createAssignedBranchResourceContextResolver,
+} = require("./resolveAssignedBranchContext");
+const {
   authorizeBlessBoardTenantAccess,
   STATUS: AUTHZ_STATUS,
 } = require("../services/authorizeBlessBoardTenantAccess");
@@ -107,7 +110,13 @@ function createWebsiteServiceTimesAdminRouter(deps) {
   });
 
   const requireHq = createRequireBlessBoardPermission("website.edit", null, { getPool, scopeMode: "church" });
-  const requireBranchSurface = createRequireBlessBoardPermission("website.edit", null, { getPool });
+  // Branch admins hold website.edit on their assigned branch, which is not
+  // the church primary branch in a multi-branch church.
+  const requireBranchSurface = createRequireBlessBoardPermission(
+    "website.edit",
+    createAssignedBranchResourceContextResolver({ getPool }),
+    { getPool }
+  );
 
   function gateSession(req, res, next, loginNext, shellKind) {
     const sessionOk = Boolean(req.v5Session && req.v5Session.authenticated);

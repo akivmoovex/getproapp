@@ -16,6 +16,11 @@ const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
 const { provisionBlessBoardChurch } = require("../src/blessboard/services/provisionBlessBoardChurch");
+const { upsertProgress: upsertOnboardingProgress } = require("../src/platform/onboarding/repository");
+const {
+  STATUS: ONBOARDING_STATUS,
+  PRODUCT,
+} = require("../src/platform/onboarding/constants");
 const { createBlessBoardUser } = require("../src/blessboard/services/createBlessBoardUser");
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5Session } = require("../src/platform/session/createV5Session");
@@ -219,6 +224,19 @@ describe("website mode admin navigation (http)", () => {
           hqBranchDisplayName: "HQ",
         });
         assert.equal(ch.ok, true, ch.message);
+        // A freshly provisioned org still needs guided onboarding, and /hq
+        // redirects to /hq/onboarding until it is done. These tests are about
+        // navigation labels on the HQ dashboard, so mark onboarding complete to
+        // reach it; the redirect itself is covered by the onboarding suites.
+        await upsertOnboardingProgress(pool, {
+          organizationId: org.records.organization.id,
+          productCode: PRODUCT.BLESSBOARD,
+          status: ONBOARDING_STATUS.COMPLETED,
+          currentStepKey: null,
+          skippedStepKeys: [],
+          markStarted: true,
+          markCompleted: true,
+        });
         return {
           org: org.records.organization,
           church: ch.records.church,

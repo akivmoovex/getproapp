@@ -37,6 +37,9 @@ const {
   SCOPE_TYPE: WEBSITE_SCOPE_TYPE,
 } = require("../services/resolveWebsiteScope");
 const {
+  createAssignedBranchResourceContextResolver,
+} = require("./resolveAssignedBranchContext");
+const {
   resolveWebsiteMode,
   WEBSITE_MODE,
 } = require("../services/resolveWebsiteMode");
@@ -378,22 +381,23 @@ function createContentAdminRouter(deps) {
   });
 
   const router = express.Router();
+  const resolveAssignedBranchContext = createAssignedBranchResourceContextResolver({ getPool });
   // Final shell authorization is permission-based (website.view|edit|publish).
   // Legacy HQ/branch roles enter only via compatibility website.* grants.
   const requireWebsiteShell = createRequireAnyBlessBoardPermission(
     CONTENT_SHELL_VISIBLE_PERMISSIONS,
     {
       getPool,
-      resolveResourceContext: (_req, tenant) => ({
-        organizationId: tenant.organization.id,
-        churchId: tenant.church.id,
-        branchId:
-          variant === "hq"
-            ? null
-            : tenant.primaryBranch && tenant.primaryBranch.id
-              ? tenant.primaryBranch.id
-              : null,
-      }),
+      resolveResourceContext: async (req, tenant) => {
+        if (variant === "hq") {
+          return {
+            organizationId: tenant.organization.id,
+            churchId: tenant.church.id,
+            branchId: null,
+          };
+        }
+        return resolveAssignedBranchContext(req, tenant);
+      },
       denyMessage: "You do not have access to the website editor.",
     }
   );

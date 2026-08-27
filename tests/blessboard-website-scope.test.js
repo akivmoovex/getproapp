@@ -385,11 +385,11 @@ describe("blessboard website scope resolver", () => {
       .get("/branch-admin/content")
       .set("Host", HOST_A)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${users.campusAdmin.rawToken}`);
-    // Branch shell binds to host primary branch; campus-only admins cannot enter on HQ host.
-    assert.ok(
-      campusContent.status === 403 || campusContent.status === 303,
-      `unexpected campus content status ${campusContent.status}`
-    );
+    // The branch shell binds to the branch this admin is assigned to, never the
+    // church primary branch (test 5). Campus East opens; HQ A must not leak in.
+    assert.equal(campusContent.status, 200, campusContent.text.slice(0, 400));
+    assert.match(campusContent.text, /Campus East/i);
+    assert.doesNotMatch(campusContent.text, /HQ A/);
 
     const campusDeniedHqBranch = await request(app)
       .get("/hq/content/b/hq")
