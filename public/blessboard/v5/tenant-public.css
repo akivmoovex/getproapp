@@ -99,12 +99,32 @@ html {
   max-width: min(16rem, 48vw);
 }
 
-.bb-tp-brand__mark {
+.bb-tp-brand--editing {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.65rem;
+  min-width: 0;
+  max-width: min(16rem, 48vw);
+}
+
+.bb-tp-brand__text-link {
+  text-decoration: none;
+  color: inherit;
+  min-width: 0;
+}
+
+.bb-tp-inline-edit--logo {
   flex: 0 0 auto;
-  width: 24px; /* Stitch mobile logo h-6 */
+}
+
+.bb-tp-inline-edit--logo .ac-website-editable__preview {
+  width: 30px;
+  height: 30px;
+}
+
+.bb-tp-inline-edit--logo .bb-tp-brand__mark {
+  width: 24px;
   height: 24px;
-  border-radius: var(--bb-radius-sm);
-  object-fit: contain;
 }
 
 .bb-tp-brand__text {

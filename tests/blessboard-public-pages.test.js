@@ -2060,7 +2060,7 @@ describe("blessboard public pages", () => {
     assert.match(home.text, /Plan Your Visit/);
     assert.match(home.text, /Quick Links/);
     assert.match(home.text, /Powered by BlessBoard/);
-    assert.match(home.text, /tenant-public\.css\?v=54/);
+    assert.match(home.text, /tenant-public\.css\?v=55/);
     assert.doesNotMatch(home.text, /data-bb-preview-banner/);
     assert.doesNotMatch(home.text, /Back to content admin|Edit page/);
     assert.doesNotMatch(home.text, /href="\/hq"|href="\/admin"|bb-ca-preview/);
@@ -2127,7 +2127,7 @@ describe("blessboard public pages", () => {
     const homeRes = await request(app).get("/").set("Host", HOST_A);
     assert.equal(homeRes.status, 200);
     assert.match(homeRes.text, /Faith, Community and Hope|A Place for Growth/);
-    assert.match(homeRes.text, /tenant-public\.css\?v=54/);
+    assert.match(homeRes.text, /tenant-public\.css\?v=55/);
     assert.doesNotMatch(homeRes.text, /A Place for Growth & Community/);
 
     await pool.query(

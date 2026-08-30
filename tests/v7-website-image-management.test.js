@@ -37,6 +37,7 @@ const { CSRF_FIELD, CSRF_COOKIE, issueCsrfToken } = require("../src/platform/htt
 const instanceRepo = require("../src/platform/website/instanceRepository");
 const contentService = require("../src/platform/website/contentService");
 const publicationService = require("../src/platform/website/publicationService");
+const versionService = require("../src/platform/website/versionService");
 const resolver = require("../src/platform/website/resolver");
 const mediaService = require("../src/platform/website/mediaService");
 const {
@@ -125,6 +126,15 @@ describe("v7 website image management — source contract", () => {
     const afterElse = acImage.slice(acImage.indexOf("<% } else { %>"));
     assert.doesNotMatch(afterElse, /data-website-file/);
     assert.doesNotMatch(afterElse, /data-website-start/);
+
+    const bbBrand = read("views/blessboard/v5/public/partials/shell-brand.ejs");
+    assert.match(bbBrand, /contentKey:\s*'home\.logo'/);
+    assert.match(bbBrand, /_editing/);
+    const bbImage = read("views/blessboard/v5/partials/editable-image.ejs");
+    assert.match(bbImage, /data-website-file="1"/);
+    assert.match(bbImage, /data-website-alt="1"/);
+    const bbAfterElse = bbImage.slice(bbImage.indexOf("<% } else if (_src) { %>"));
+    assert.doesNotMatch(bbAfterElse, /data-website-file/);
 
     const trigger = read("views/blessboard/v5/partials/structured-edit-trigger.ejs");
     assert.match(trigger, /_wa && _wa\.editingMode/);
@@ -361,6 +371,139 @@ describe("v7 website image management — ActiveClinic", () => {
       .get(`/clinics/${result.slug}/website/media/${mediaId}`)
       .set("Cookie", cookies);
     assert.equal(editorMedia.status, 200);
+  });
+
+  it("logo edit saves draft only, publish updates public, restore brings the previous logo", async () => {
+    if (!requireDb()) return;
+    const { result, instance } = await seedLiveClinic();
+    const app = makeApp();
+    const adminCookie = await sessionCookie(result.identityId, result.organizationId);
+    const editPage = await request(app)
+      .get(`/clinics/${result.slug}?website_edit=1&website_mode=draft`)
+      .set("Cookie", adminCookie);
+    assert.match(editPage.text, /data-website-key="home.logo"/);
+    const csrf = extractCsrf(editPage);
+    const cookies = cookieHeader(adminCookie, editPage);
+
+    const liveBefore = await resolver.resolveWebsiteContent(pool, {
+      organizationId: result.organizationId,
+      instance,
+      mode: resolver.MODE.LIVE,
+    });
+    const liveLogoBefore = liveBefore.values["home.logo"];
+
+    const uploaded = await request(app)
+      .post(`/clinics/${result.slug}/website/media`)
+      .set("Cookie", cookies)
+      .field(CSRF_FIELD, csrf)
+      .field("altText", "Draft clinic logo")
+      .attach("file", jpegBuffer(48), { filename: "logo.jpg", contentType: "image/jpeg" });
+    assert.equal(uploaded.status, 200, uploaded.text);
+    const mediaId = JSON.parse(uploaded.text).media.id;
+
+    const saved = await request(app)
+      .post(`/clinics/${result.slug}/website/drafts`)
+      .set("Cookie", cookies)
+      .send({
+        [CSRF_FIELD]: csrf,
+        contentKey: "home.logo",
+        value: {
+          alt: "Draft clinic logo",
+          mediaId,
+          src: `/clinics/${result.slug}/website/media/${mediaId}`,
+        },
+      });
+    assert.equal(saved.status, 200, saved.text);
+    assert.equal(JSON.parse(saved.text).published, false);
+
+    const liveDraftOnly = await resolver.resolveWebsiteContent(pool, {
+      organizationId: result.organizationId,
+      instance,
+      mode: resolver.MODE.LIVE,
+    });
+    assert.deepEqual(liveDraftOnly.values["home.logo"], liveLogoBefore);
+
+    const draft = await resolver.resolveWebsiteContent(pool, {
+      organizationId: result.organizationId,
+      instance,
+      mode: resolver.MODE.DRAFT,
+    });
+    assert.equal(draft.values["home.logo"].mediaId, mediaId);
+
+    const preview = await request(app)
+      .get(`/clinics/${result.slug}?website_mode=draft`)
+      .set("Cookie", adminCookie);
+    assert.equal(preview.status, 200);
+    assert.match(preview.text, new RegExp(mediaId));
+
+    const publicBefore = await request(app).get(`/clinics/${result.slug}`);
+    assert.doesNotMatch(publicBefore.text, new RegExp(mediaId));
+
+    const published = await publicationService.publishWebsiteDraft(pool, {
+      organizationId: result.organizationId,
+      instanceId: instance.id,
+      actorIdentityId: result.identityId,
+    });
+    assert.equal(published.ok, true, JSON.stringify(published));
+
+    const liveAfter = await resolver.resolveWebsiteContent(pool, {
+      organizationId: result.organizationId,
+      instance,
+      mode: resolver.MODE.LIVE,
+    });
+    assert.equal(liveAfter.values["home.logo"].mediaId, mediaId);
+
+    const publicAfter = await request(app).get(`/clinics/${result.slug}`);
+    assert.match(publicAfter.text, new RegExp(mediaId));
+
+    const afterFirst = await versionService.listWebsiteVersions(pool, {
+      instanceId: instance.id,
+      organizationId: result.organizationId,
+    });
+    const firstPublished = (afterFirst.versions || [])
+      .slice()
+      .sort((a, b) => Number(b.versionNumber) - Number(a.versionNumber))[0];
+    assert.ok(firstPublished);
+
+    const uploaded2 = await request(app)
+      .post(`/clinics/${result.slug}/website/media`)
+      .set("Cookie", cookies)
+      .field(CSRF_FIELD, csrf)
+      .field("altText", "Second clinic logo")
+      .attach("file", jpegBuffer(52), { filename: "logo2.jpg", contentType: "image/jpeg" });
+    const mediaId2 = JSON.parse(uploaded2.text).media.id;
+    await request(app)
+      .post(`/clinics/${result.slug}/website/drafts`)
+      .set("Cookie", cookies)
+      .send({
+        [CSRF_FIELD]: csrf,
+        contentKey: "home.logo",
+        value: { alt: "Second clinic logo", mediaId: mediaId2, src: `/clinics/${result.slug}/website/media/${mediaId2}` },
+      });
+    const published2 = await publicationService.publishWebsiteDraft(pool, {
+      organizationId: result.organizationId,
+      instanceId: instance.id,
+      actorIdentityId: result.identityId,
+    });
+    assert.equal(published2.ok, true, JSON.stringify(published2));
+
+    const restored = await publicationService.restoreWebsiteVersionLive(pool, {
+      organizationId: result.organizationId,
+      instanceId: instance.id,
+      versionId: firstPublished.id,
+      grantedPermissions: ["website.rollback", "website.restore"],
+    });
+    assert.equal(restored.ok, true, JSON.stringify(restored));
+    const liveRestored = await resolver.resolveWebsiteContent(pool, {
+      organizationId: result.organizationId,
+      instance,
+      mode: resolver.MODE.LIVE,
+    });
+    const restoredLogo = liveRestored.values["home.logo"];
+    assert.ok(restoredLogo);
+    if (restoredLogo && restoredLogo.mediaId) {
+      assert.notEqual(restoredLogo.mediaId, mediaId2);
+    }
   });
 
   it("rejects unsafe types, oversized files, MIME lies, and cross-tenant media", async () => {

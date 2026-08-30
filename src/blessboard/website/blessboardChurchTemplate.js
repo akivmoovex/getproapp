@@ -91,6 +91,12 @@ function registerBlessBoardWebsiteTemplate() {
     keys: {
       ...settingKeys(),
       ...inlineFieldKeys(),
+      "home.logo": {
+        type: CONTENT_TYPES.IMAGE,
+        maxLen: 500,
+        group: "home",
+        description: "Church logo",
+      },
       [SNAPSHOT_KEY]: {
         type: CONTENT_TYPES.STRUCTURED,
         acceptObject: true,
@@ -105,7 +111,23 @@ function registerBlessBoardWebsiteTemplate() {
   });
   }
   registerSnapshotEditableField();
+  registerLogoEditableField();
   return registered;
+}
+
+const DEFAULT_BLESSBOARD_LOGO_SRC = "/church/images/brand/blessboard-small-church-logo.png";
+
+function registerLogoEditableField() {
+  registerEditableField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    key: "home.logo",
+    type: CONTENT_TYPES.IMAGE,
+    maxLen: 500,
+    permission: PERMISSIONS.EDIT,
+    storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "home.logo" },
+    group: "home",
+    description: "Church logo",
+  });
 }
 
 function registerSnapshotEditableField() {
@@ -123,6 +145,7 @@ function registerSnapshotEditableField() {
 
 module.exports = {
   registerBlessBoardWebsiteTemplate,
+  DEFAULT_BLESSBOARD_LOGO_SRC,
   BLESSBOARD_TEMPLATE_ID: "blessboard_church",
   BLESSBOARD_TEMPLATE_VERSION: 1,
 };

@@ -5,6 +5,7 @@ const instanceRepo = require("./instanceRepository");
 const { recordWebsiteAudit } = require("./auditService");
 const { safeExternalUrl } = require("./safeValues");
 const { assertWebsiteInstanceScope } = require("./authorizeWebsite");
+const { PRODUCT_CODE, publicWebsitePathPrefix } = require("./publicWebsiteUrl");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -24,6 +25,8 @@ const MEDIA_UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const CLINIC_MEDIA_PATH_RE =
   /^\/clinics\/([^/]+)\/website\/media\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
+const BLESSBOARD_MEDIA_PATH_RE =
+  /^\/c\/([^/]+)\/website\/media\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
 const TEMPLATE_ASSET_PREFIX = "/activeclinic/assets/";
 
 function detectMimeFromSignature(buffer) {
@@ -347,8 +350,16 @@ async function updateWebsiteMediaMeta(db, input) {
   return { ok: true, media: { ...loaded.media, altText: altText || null } };
 }
 
+function ownedWebsiteMediaSrc(instance, mediaId) {
+  const product = String((instance && instance.productCode) || "");
+  const prefix = publicWebsitePathPrefix(product) ||
+    (product === PRODUCT_CODE.BLESSBOARD ? "/c" : "/clinics");
+  const slug = String((instance && instance.slug) || "").trim();
+  return `${prefix}/${slug}/website/media/${mediaId}`;
+}
+
 function ownedClinicMediaSrc(instance, mediaId) {
-  return `/clinics/${instance.slug}/website/media/${mediaId}`;
+  return ownedWebsiteMediaSrc(instance, mediaId);
 }
 
 function isUnsafeImageSrc(src) {
@@ -406,29 +417,33 @@ async function assertOwnedWebsiteImageValue(db, input) {
       value: {
         ...value,
         mediaId: owned.media.id,
-        src: ownedClinicMediaSrc(instance, owned.media.id),
+        src: ownedWebsiteMediaSrc(instance, owned.media.id),
       },
     };
   }
 
   const clinicMatch = src.match(CLINIC_MEDIA_PATH_RE);
-  if (clinicMatch) {
-    if (clinicMatch[1] !== instance.slug) {
+  const blessboardMatch = src.match(BLESSBOARD_MEDIA_PATH_RE);
+  const pathMatch = clinicMatch || blessboardMatch;
+  if (pathMatch) {
+    const expectedPrefix = publicWebsitePathPrefix(instance.productCode) || "/clinics";
+    const matchedPrefix = clinicMatch ? "/clinics" : "/c";
+    if (matchedPrefix !== expectedPrefix || pathMatch[1] !== instance.slug) {
       return { ok: false, code: RESULT.TENANT_MISMATCH, value: null };
     }
-    const owned = await loadOwned(clinicMatch[2]);
+    const owned = await loadOwned(pathMatch[2]);
     if (!owned.ok) return { ok: false, code: owned.code, value: null };
     return {
       ok: true,
       value: {
         ...value,
         mediaId: owned.media.id,
-        src: ownedClinicMediaSrc(instance, owned.media.id),
+        src: ownedWebsiteMediaSrc(instance, owned.media.id),
       },
     };
   }
 
-  if (src.startsWith("/clinics/")) {
+  if (src.startsWith("/clinics/") || /^\/c\//.test(src)) {
     return { ok: false, code: RESULT.TENANT_MISMATCH, value: null };
   }
   if (!src || src.startsWith(TEMPLATE_ASSET_PREFIX) || /^https:\/\//i.test(src)) {

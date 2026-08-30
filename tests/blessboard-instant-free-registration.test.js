@@ -29,6 +29,7 @@ const {
   mapPublicPlanToOrchestratorPlanKey,
   validatePlatformChurchRegistration,
   validateAdministratorPassword,
+  deriveOrganizationKeyFromChurchName,
   validateRequestedOrganizationKey,
   formFromBody,
 } = require("../src/blessboard/services/platformChurchRegistrationValidation");
@@ -60,6 +61,11 @@ function extractCsrfToken(html) {
 
 function uniq(prefix) {
   return `${prefix}-${crypto.randomBytes(3).toString("hex")}`;
+}
+
+function allocatedKey(body) {
+  const derived = deriveOrganizationKeyFromChurchName(body && body.church_name);
+  return derived.ok ? derived.value : String((body && body.organization_key) || "");
 }
 
 describe("automatic Foundation registration", () => {
@@ -274,7 +280,7 @@ describe("automatic Foundation registration", () => {
     assert.equal(apps.rows[0].status, "closed");
     assert.ok(apps.rows[0].organization_id);
 
-    const orgKey = body.organization_key;
+    const orgKey = allocatedKey(body);
     const counts = await pool.query(
       `SELECT
          (SELECT COUNT(*)::int FROM platform.organizations WHERE organization_key = $1) AS orgs,
@@ -292,7 +298,10 @@ describe("automatic Foundation registration", () => {
            WHERE o.organization_key = $1) AS onboarding,
          (SELECT COUNT(*)::int FROM blessboard.public_pages pp
             JOIN blessboard.churches c ON c.id = pp.church_id
-           WHERE c.church_key = $1 AND pp.status = 'published') AS published`,
+           WHERE c.church_key = $1 AND pp.status = 'published') AS published,
+         (SELECT COUNT(*)::int FROM blessboard.public_pages pp
+            JOIN blessboard.churches c ON c.id = pp.church_id
+           WHERE c.church_key = $1 AND pp.status = 'draft') AS drafts`,
       [orgKey]
     );
     assert.equal(counts.rows[0].orgs, 1);
@@ -301,8 +310,9 @@ describe("automatic Foundation registration", () => {
     assert.equal(counts.rows[0].domains, 0);
     assert.equal(counts.rows[0].subs, 1);
     assert.equal(counts.rows[0].onboarding, 1);
-    // Initial Foundation publish seeds the standard public page set.
-    assert.equal(counts.rows[0].published, 8);
+    // Foundation registration seeds eight default public pages as drafts.
+    assert.equal(counts.rows[0].published, 0);
+    assert.equal(counts.rows[0].drafts, 8);
 
     const branch = await pool.query(
       `SELECT b.branch_key, b.display_name, b.display_name_normalized, b.branch_type, b.is_primary
@@ -375,7 +385,7 @@ describe("automatic Foundation registration", () => {
     assert.equal(res.headers.location, "/hq");
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
-      [body.organization_key]
+      [allocatedKey(body)]
     );
     assert.equal(orgs.rows[0].n, 1);
   });
@@ -401,7 +411,7 @@ describe("automatic Foundation registration", () => {
     assert.equal(res.headers.location, "/hq");
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
-      [body.organization_key]
+      [allocatedKey(body)]
     );
     assert.equal(orgs.rows[0].n, 1);
     const sub = await pool.query(
@@ -410,7 +420,7 @@ describe("automatic Foundation registration", () => {
          JOIN platform.organizations o ON o.id = os.organization_id
          JOIN platform.plans p ON p.id = os.plan_id
         WHERE o.organization_key = $1`,
-      [body.organization_key]
+      [allocatedKey(body)]
     );
     assert.equal(sub.rows[0].plan_key, "growth");
     assert.equal(sub.rows[0].status, "trialing");
@@ -468,24 +478,28 @@ describe("automatic Foundation registration", () => {
     assert.match(res.text, new RegExp(`value="${body.church_name.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}"`));
   });
 
-  it("reserved organization key returns field error without provisioning", async () => {
+  it("reserved church-name slug is escaped to a usable church URL without failing", async () => {
     requireDb();
     const app = makeApp({ [ENV_KEY]: "1" });
     const { csrf, cookie } = await getRegisterPage(app);
-    const body = freeBody({ organization_key: "admin" });
-    const orgsBefore = (await pool.query(`SELECT COUNT(*)::int AS n FROM platform.organizations`))
-      .rows[0].n;
+    const body = freeBody({
+      church_name: "Admin",
+      organization_key: "forged-admin-key",
+      email: `${uniq("rsv")}@example.org`,
+    });
     const res = await request(app)
       .post("/register-church")
       .set("Host", "blessboard.org")
       .set("Cookie", `${CSRF_COOKIE}=${cookie}`)
       .type("form")
       .send({ ...body, [CSRF_FIELD]: csrf });
-    assert.equal(res.status, 400);
-    assert.match(res.text, /reserved|organization key/i);
-    const orgsAfter = (await pool.query(`SELECT COUNT(*)::int AS n FROM platform.organizations`))
-      .rows[0].n;
-    assert.equal(orgsAfter, orgsBefore);
+    assert.equal(res.status, 303);
+    assert.equal(res.headers.location, "/hq");
+    const orgs = await pool.query(
+      `SELECT organization_key FROM platform.organizations WHERE organization_key = $1`,
+      ["admin-church"]
+    );
+    assert.equal(orgs.rows.length, 1);
   });
 
   it("duplicate email maps to review response without second tenant", async () => {
@@ -524,35 +538,39 @@ describe("automatic Foundation registration", () => {
     assert.equal(users.rows[0].n, 1);
   });
 
-  it("slug collision returns organization_key field error", async () => {
+  it("slug collision allocates a numeric suffix instead of asking the user for a key", async () => {
     requireDb();
     const app = makeApp({ [ENV_KEY]: "1" });
-    const key = uniq("slug");
-    const first = freeBody({ organization_key: key, email: `${uniq("s1")}@example.org` });
-    const page1 = await getRegisterPage(app);
-    const res1 = await request(app)
-      .post("/register-church")
-      .set("Host", "blessboard.org")
-      .set("Cookie", `${CSRF_COOKIE}=${page1.cookie}`)
-      .type("form")
-      .send({ ...first, [CSRF_FIELD]: page1.csrf });
-    assert.equal(res1.status, 303);
-
-    const page2 = await getRegisterPage(app);
-    const second = freeBody({
-      organization_key: key,
+    const churchName = `Grace Community ${uniq("gc")}`;
+    const base = allocatedKey({ church_name: churchName });
+    await pool.query(
+      `INSERT INTO platform.organizations (organization_key, display_name, status, data_environment)
+       VALUES ($1, 'Taken slug holder', 'active', 'testing')`,
+      [base]
+    );
+    const body = freeBody({
+      church_name: churchName,
+      organization_key: "forged-collision-key",
       email: `${uniq("s2")}@example.org`,
-      church_name: `Slug Clash ${uniq("sc")}`,
     });
-    const res2 = await request(app)
+    const page = await getRegisterPage(app);
+    const res = await request(app)
       .post("/register-church")
       .set("Host", "blessboard.org")
-      .set("Cookie", `${CSRF_COOKIE}=${page2.cookie}`)
+      .set("Cookie", `${CSRF_COOKIE}=${page.cookie}`)
       .type("form")
-      .send({ ...second, [CSRF_FIELD]: page2.csrf });
-    assert.equal(res2.status, 400);
-    assert.match(res2.text, /not available|organization key/i);
-    assert.match(res2.text, /name="organization_key"/);
+      .send({ ...body, [CSRF_FIELD]: page.csrf });
+    assert.equal(res.status, 303);
+    assert.equal(res.headers.location, "/hq");
+    const keys = await pool.query(
+      `SELECT organization_key FROM platform.organizations
+        WHERE organization_key = $1 OR organization_key = $2
+        ORDER BY organization_key`,
+      [base, `${base}-2`]
+    );
+    assert.equal(keys.rows.length, 2);
+    assert.ok(keys.rows.some((r) => r.organization_key === base));
+    assert.ok(keys.rows.some((r) => r.organization_key === `${base}-2`));
   });
 
   it("double-submit creates one application and one tenant", async () => {
@@ -581,7 +599,7 @@ describe("automatic Foundation registration", () => {
 
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
-      [body.organization_key]
+      [allocatedKey(body)]
     );
     assert.equal(orgs.rows[0].n, 1);
   });
@@ -611,7 +629,7 @@ describe("automatic Foundation registration", () => {
 
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
-      [body.organization_key]
+      [allocatedKey(body)]
     );
     assert.equal(orgs.rows[0].n, 1);
   });
@@ -646,7 +664,7 @@ describe("automatic Foundation registration", () => {
 
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
-      [body.organization_key]
+      [allocatedKey(body)]
     );
     assert.equal(orgs.rows[0].n, 1);
 
@@ -764,7 +782,7 @@ describe("automatic Foundation registration", () => {
       (
         await pool.query(
           `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
-          [body.organization_key]
+          [allocatedKey(body)]
         )
       ).rows[0].n,
       0
@@ -791,7 +809,7 @@ describe("automatic Foundation registration", () => {
     const orgRow = (
       await pool.query(
         `SELECT id FROM platform.organizations WHERE organization_key = $1`,
-        [body.organization_key]
+        [allocatedKey(body)]
       )
     ).rows[0];
     assert.ok(orgRow);
@@ -805,7 +823,7 @@ describe("automatic Foundation registration", () => {
     assert.equal(paUser.ok, true, paUser.message);
     const role = await assignBlessBoardRole(pool, {
       email: paEmail,
-      organizationKey: body.organization_key,
+      organizationKey: allocatedKey(body),
       roleKey: "platform_admin",
     });
     assert.equal(role.ok, true, role.message);
@@ -834,7 +852,7 @@ describe("automatic Foundation registration", () => {
       .set("Host", "blessboard.org")
       .set("Cookie", cookie);
     assert.equal(orgsList.status, 200);
-    assert.match(orgsList.text, new RegExp(body.organization_key));
+    assert.match(orgsList.text, new RegExp(allocatedKey(body)));
 
     const subsList = await request(adminApp)
       .get("/admin/subscriptions")
@@ -842,6 +860,6 @@ describe("automatic Foundation registration", () => {
       .set("Cookie", cookie);
     assert.equal(subsList.status, 200);
     assert.match(subsList.text, /free|Foundation/i);
-    assert.match(subsList.text, new RegExp(body.organization_key));
+    assert.match(subsList.text, new RegExp(allocatedKey(body)));
   });
 });

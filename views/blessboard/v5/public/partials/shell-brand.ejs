@@ -1,7 +1,8 @@
 <%#
   Shared public brand lockup — church identity (+ branch on mini sites).
   Stitch: 01-public-home-*-v2 (Refined) header lockup; Stage 4 branch mini-site shell.
-  Locals: publicName, church, branch, websiteScope, homeHref, primaryBranchDisplayName
+  Locals: publicName, church, branch, websiteScope, homeHref, primaryBranchDisplayName,
+          websiteLogoUrl, websiteLogoAlt, websiteLogoMediaId, websiteAdmin
 %>
 <%
   var _isBranchMini =
@@ -24,8 +25,49 @@
   var _variant = typeof brandVariant !== 'undefined' && brandVariant ? String(brandVariant) : 'header';
   var _brandClass = 'bb-tp-brand' + (_variant === 'drawer' ? ' bb-tp-brand--drawer' : '') + (_isBranchMini ? ' bb-tp-brand--branch' : '');
   var _markSize = _variant === 'drawer' ? 24 : 30;
+  var _editing = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode;
+  var _logoSrc =
+    typeof websiteLogoUrl !== 'undefined' && websiteLogoUrl
+      ? String(websiteLogoUrl)
+      : '/church/images/brand/blessboard-small-church-logo.png';
+  var _logoAlt = typeof websiteLogoAlt !== 'undefined' && websiteLogoAlt ? String(websiteLogoAlt) : '';
+  var _logoMediaId = typeof websiteLogoMediaId !== 'undefined' && websiteLogoMediaId ? String(websiteLogoMediaId) : '';
 %>
 <div class="bb-tp-brand-wrap" data-bb-brand-wrap="1">
+  <% if (_editing) { %>
+  <div class="<%= _brandClass %> bb-tp-brand--editing" data-bb-shell-brand="1"<% if (_isBranchMini) { %> data-bb-branch-mini="1"<% } %>>
+    <%- include('../../partials/editable-image', {
+      contentKey: 'home.logo',
+      imageSrc: _logoSrc,
+      imageAlt: _logoAlt,
+      imageMediaId: _logoMediaId,
+      imageClass: 'bb-tp-brand__mark',
+      imageWidth: _markSize,
+      imageHeight: _markSize,
+      imageWrapClass: 'bb-tp-inline-edit--logo'
+    }) %>
+    <a
+      class="bb-tp-brand__text-link"
+      href="<%= _home %>"
+      aria-label="<%= _churchName %><%= _branchName ? (' — ' + _branchName) : '' %> home"
+      title="<%= _churchName %><%= _branchName ? (' — ' + _branchName) : '' %>"
+    >
+      <span class="bb-tp-brand__text">
+        <span class="bb-tp-brand__name" data-bb-church-name="1"><%= _churchName %></span>
+        <% if (_branchName) { %>
+        <span class="bb-tp-brand__branch" data-bb-branch-name="1"><%= _branchName %></span>
+        <% } %>
+      </span>
+    </a>
+  </div>
+  <div class="bb-tp-brand-wrap__edits" data-bb-brand-edits="1">
+    <%- include('../../partials/settings-edit-trigger', {
+      settingsLinkId: 'identity',
+      settingsLabel: 'Edit identity',
+      settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--compact'
+    }) %>
+  </div>
+  <% } else { %>
   <a
     class="<%= _brandClass %>"
     href="<%= _home %>"
@@ -36,12 +78,12 @@
   >
     <img
       class="bb-tp-brand__mark"
-      src="/church/images/brand/blessboard-small-church-logo.png"
-      alt=""
+      src="<%= _logoSrc %>"
+      alt="<%= _logoAlt %>"
       width="<%= _markSize %>"
       height="<%= _markSize %>"
       decoding="async"
-      data-bb-platform-logo="1"
+      data-bb-church-logo="1"
     />
     <span class="bb-tp-brand__text">
       <span class="bb-tp-brand__name" data-bb-church-name="1"><%= _churchName %></span>
@@ -50,18 +92,5 @@
       <% } %>
     </span>
   </a>
-  <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-  <div class="bb-tp-brand-wrap__edits" data-bb-brand-edits="1">
-    <%- include('../../partials/settings-edit-trigger', {
-      settingsLinkId: 'identity',
-      settingsLabel: 'Edit identity',
-      settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--compact'
-    }) %>
-    <%- include('../../partials/settings-edit-trigger', {
-      settingsLinkId: 'logo',
-      settingsLabel: 'Change logo',
-      settingsClass: 'bb-tp-settings-pencil bb-tp-settings-pencil--compact'
-    }) %>
-  </div>
   <% } %>
 </div>

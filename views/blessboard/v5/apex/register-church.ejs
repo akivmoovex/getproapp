@@ -285,16 +285,22 @@
             <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
               <div class="bb-apex-field">
                 <label class="bb-apex-register-label" for="register_country">Country</label>
-                <input
+                <select
                   class="bb-apex-register-input<%= fieldHasError('country') ? ' is-error' : '' %>"
                   id="register_country"
                   name="country"
-                  type="text"
                   required
                   autocomplete="country-name"
-                  value="<%= formData.country || '' %>"
                   <%= fieldHasError('country') ? 'aria-invalid="true"' : '' %>
-                />
+                >
+                  <%
+                    var churchCountryList = (typeof phoneCountries !== 'undefined' && phoneCountries) || (typeof countries !== 'undefined' && countries) || [];
+                    var selectedChurchCountry = String(formData.country || defaultCountry || 'ZM').toUpperCase();
+                    churchCountryList.forEach(function (c) {
+                  %>
+                  <option value="<%= c.iso %>"<%= selectedChurchCountry === c.iso ? ' selected' : '' %>><%= c.name %></option>
+                  <% }); %>
+                </select>
                 <% if (fieldHasError('country') && formError) { %>
                 <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
                 <% } %>
@@ -393,25 +399,21 @@
               The public path below is a preview only — the website is not published automatically.
             </p>
             <div class="bb-apex-field">
-              <label class="bb-apex-register-label" for="register_organization_key">Organization key</label>
-              <input
-                class="bb-apex-register-input<%= fieldHasError('organization_key') ? ' is-error' : '' %>"
-                id="register_organization_key"
-                name="organization_key"
-                type="text"
-                autocomplete="off"
-                spellcheck="false"
-                maxlength="64"
-                pattern="[a-zA-Z][a-zA-Z0-9_-]{0,63}"
-                value="<%= formData.organization_key || '' %>"
-                aria-describedby="register_organization_key_hint"
-                <%= fieldHasError('organization_key') ? 'aria-invalid="true"' : '' %>
-              />
+              <label class="bb-apex-register-label" for="register_church_url">Your church URL</label>
+              <p
+                class="bb-apex-register-input bb-apex-register-input--readonly"
+                id="register_church_url"
+                data-bb-church-url="1"
+                tabindex="0"
+              ><span data-bb-church-url-base><%= typeof churchPublicUrlBase !== 'undefined' && churchPublicUrlBase ? churchPublicUrlBase : 'blessboard.com/c/' %></span><span data-bb-org-key-preview><%= orgKeyPreview || 'your-church' %></span></p>
+              <input type="hidden" name="organization_key" id="register_organization_key" value="<%= orgKeyPreview || '' %>" autocomplete="off"/>
               <p class="bb-apex-mkt-footnote" id="register_organization_key_hint">
-                Future public path preview: <code>/c/<span data-bb-org-key-preview><%= formData.organization_key || 'your-key' %></span></code>
-                (unpublished until you publish).
+                Your church URL is created automatically from your church name.
               </p>
               <% if (fieldHasError('organization_key') && formError) { %>
+              <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+              <% } %>
+              <% if (fieldHasError('church_name') && formError && /church URL/i.test(String(formError))) { %>
               <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
               <% } %>
             </div>
@@ -503,13 +505,38 @@
     btn.setAttribute("aria-busy", "true");
     btn.textContent = "Submitting…";
   });
+  var nameInput = document.getElementById("register_church_name");
   var keyInput = document.getElementById("register_organization_key");
   var preview = document.querySelector("[data-bb-org-key-preview]");
-  if (keyInput && preview) {
-    keyInput.addEventListener("input", function () {
-      var v = (keyInput.value || "").trim().toLowerCase() || "your-key";
-      preview.textContent = v;
-    });
+  var reserved = <%- JSON.stringify((typeof reservedOrganizationKeys !== 'undefined' && reservedOrganizationKeys) || []) %>;
+  function slugifyKey(raw) {
+    var s = String(raw || "")
+      .toLowerCase()
+      .normalize("NFKD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .replace(/[^a-z0-9]+/g, "-")
+      .replace(/^-+|-+$/g, "")
+      .replace(/-{2,}/g, "-")
+      .slice(0, 64);
+    if (!s) return "your-church";
+    if (!/^[a-z]/.test(s)) s = ("c-" + s).slice(0, 64);
+    if (reserved.indexOf(s) !== -1) {
+      var alt = (s + "-church").slice(0, 64);
+      if (reserved.indexOf(alt) === -1) return alt;
+    }
+    return s;
+  }
+  function syncChurchUrl() {
+    if (!preview) return;
+    var slug = slugifyKey(nameInput ? nameInput.value : "");
+    preview.textContent = slug;
+    if (keyInput) keyInput.value = slug === "your-church" ? "" : slug;
+  }
+  if (nameInput) {
+    nameInput.addEventListener("input", syncChurchUrl);
+    if (!preview || !preview.textContent || preview.textContent === "your-key" || preview.textContent === "your-church") {
+      syncChurchUrl();
+    }
   }
 })();
 </script>

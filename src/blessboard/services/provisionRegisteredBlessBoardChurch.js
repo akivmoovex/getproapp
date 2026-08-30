@@ -818,8 +818,11 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         organizationKey = await allocateUniqueOrganizationKey(client, {
           preferredKey: preferredKey || null,
           churchName: application.church_name,
-          // Operator-supplied keys must be exact; auto church-name keys collide with -2/-3.
-          exactPreferred: Boolean(preferredKey),
+          // Public self-registration derives the key and suffixes -2/-3 on collision.
+          // Operator/admin-supplied keys remain exact.
+          exactPreferred:
+            Boolean(preferredKey) &&
+            String((actorContext && actorContext.type) || "") !== "public_self_registration",
         });
       }
 

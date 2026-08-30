@@ -12,14 +12,21 @@ async function ensureBlessBoardWebsiteInstance(db, input) {
   registerBlessBoardWebsiteTemplate();
   const organizationId = String((input && input.organizationId) || "");
   const slug = String((input && input.slug) || "").trim().toLowerCase();
+  const existing = await instanceRepo.findWebsiteInstanceByOrgProduct(db, {
+    organizationId,
+    productCode: "blessboard",
+  });
+  if (existing) {
+    return { ok: true, instance: existing, created: false, existed: true };
+  }
   const provisioned = await provisionWebsiteInstance(db, {
     organizationId,
     templateId: BLESSBOARD_TEMPLATE_ID,
     templateVersion: BLESSBOARD_TEMPLATE_VERSION,
     slug: slug || organizationId.slice(0, 8),
     status: input.status || "coming_soon",
-    scopeKind: input.branchId ? "branch" : "church_wide",
-    scopeRef: input.branchId || null,
+    scopeKind: "church_wide",
+    scopeRef: null,
     actorIdentityId: input.actorIdentityId || null,
     contentOverrides: input.contentOverrides || {},
     seedDefaults: false,
@@ -46,12 +53,11 @@ async function ensureBlessBoardWebsiteInstance(db, input) {
   return provisioned;
 }
 
-async function findBlessBoardWebsiteInstance(db, organizationId, branchId) {
+async function findBlessBoardWebsiteInstance(db, organizationId, _branchId) {
   registerBlessBoardWebsiteTemplate();
   return instanceRepo.findWebsiteInstanceByOrgProduct(db, {
     organizationId,
     productCode: "blessboard",
-    scopeRef: branchId || null,
   });
 }
 

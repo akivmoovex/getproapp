@@ -1575,8 +1575,16 @@ ul.bb-apex-features {
   font: inherit;
 }
 
-.bb-apex-register-input:focus {
-  outline: 2px solid var(--bb-color-primary, #6c5ce7);
+.bb-apex-register-input--readonly {
+  background: #f3f4f6;
+  color: #4b4f58;
+  cursor: default;
+  user-select: text;
+  word-break: break-all;
+}
+
+.bb-apex-register-input--readonly:focus {
+  outline: 2px solid var(--bb-color-border, #d1dce0);
   outline-offset: 1px;
 }
 

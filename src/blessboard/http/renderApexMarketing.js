@@ -19,9 +19,18 @@ const {
   buildPlatformPhoneFieldLocals,
 } = require("../../platform/services/platformPhoneFieldLocals");
 const {
+  PRODUCT_CODE,
+  publicOriginForProduct,
+  publicWebsitePathPrefix,
+} = require("../../platform/website/publicWebsiteUrl");
+const {
   resolvePhoneValidationMode,
   VALIDATION_MODES,
 } = require("../../platform/services/phoneNumberService");
+const {
+  RESERVED_ORGANIZATION_KEYS,
+  resolveBaseOrganizationKey,
+} = require("../services/organizationKey");
 
 function renderApexView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
@@ -104,6 +113,12 @@ function renderRegisterChurchPage(opts) {
         : null,
   });
   const phoneMode = resolvePhoneValidationMode(env);
+  const origin = publicOriginForProduct(PRODUCT_CODE.BLESSBOARD, env) || "https://blessboard.com";
+  const churchPublicHost = String(origin).replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const churchPublicPathPrefix = publicWebsitePathPrefix(PRODUCT_CODE.BLESSBOARD) || "/c";
+  const churchPublicUrlBase = `${churchPublicHost}${churchPublicPathPrefix}/`;
+  const churchNameForPreview = form.church_name || (opts && opts.organizationKeyPreview) || "";
+  const derivedPreview = resolveBaseOrganizationKey(churchNameForPreview).key || "";
   return renderApexView("apex/register-church.ejs", {
     ...shellLocals(opts),
     pageTitle: "Register Your Church",
@@ -115,7 +130,12 @@ function renderRegisterChurchPage(opts) {
     workspaceReady: Boolean(opts && opts.workspaceReady),
     loginFallback: Boolean(opts && opts.loginFallback),
     review: Boolean(opts && opts.review),
-    organizationKeyPreview: (opts && opts.organizationKeyPreview) || "",
+    organizationKeyPreview:
+      (opts && opts.organizationKeyPreview) || derivedPreview || form.organization_key || "",
+    churchPublicHost,
+    churchPublicPathPrefix,
+    churchPublicUrlBase,
+    reservedOrganizationKeys: RESERVED_ORGANIZATION_KEYS,
     formError: (opts && opts.formError) || null,
     fieldError: (opts && opts.fieldError) || null,
     form,

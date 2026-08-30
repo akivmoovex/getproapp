@@ -338,8 +338,8 @@ async function websiteDefaults(input) {
     templateVersion: BLESSBOARD_TEMPLATE_VERSION,
     slug,
     status: "coming_soon",
-    scopeKind: records.branchId ? "branch" : "church_wide",
-    scopeRef: records.branchId || null,
+    scopeKind: "church_wide",
+    scopeRef: null,
     contentOverrides: {},
     seedDefaults: false,
     adapterMode: "shared_engine",
@@ -387,7 +387,6 @@ async function seedTemplateContent(db, input) {
   await seedUnpublishedEngineContent(db, {
     organizationId: input.organizationId,
     churchId,
-    branchId: records.branchId || null,
     slug: records.organizationKey || null,
   });
   return seeded;

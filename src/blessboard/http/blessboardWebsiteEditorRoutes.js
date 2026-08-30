@@ -10,7 +10,12 @@ const express = require("express");
 const multer = require("multer");
 const { validateCsrf, CSRF_FIELD } = require("../../platform/http/v5Csrf");
 const mediaService = require("../../platform/website/mediaService");
+const contentService = require("../../platform/website/contentService");
 const libraryModel = require("../../platform/website/libraryModel");
+const {
+  hasEditableField,
+  ensureProductFieldsRegistered,
+} = require("../../platform/website/editableFieldSchema");
 const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
@@ -143,13 +148,72 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       }
       const resolved = await requireEditor(req, res, "website.edit");
       if (!resolved) return undefined;
+      const value = req.body && Object.prototype.hasOwnProperty.call(req.body, "value")
+        ? req.body.value
+        : "";
+      const contentKey = String((req.body && (req.body.contentKey || req.body.key)) || "").trim();
+      ensureProductFieldsRegistered(PRODUCT_CODE.BLESSBOARD);
+      if (contentKey && hasEditableField(PRODUCT_CODE.BLESSBOARD, contentKey)) {
+        const {
+          resolveEngineInstance,
+        } = require("../website/blessboardEngineContentService");
+        const found = await resolveEngineInstance(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          slug: resolved.organizationKey,
+          actorIdentityId: actorUserId(req),
+        });
+        if (!found.ok || !found.instance) {
+          return json(res, 404, { ok: false, code: "website_instance_not_found" });
+        }
+        const engineSaved = await contentService.saveWebsiteDraft(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          instanceId: found.instance.id,
+          expectedProductCode: PRODUCT_CODE.BLESSBOARD,
+          contentKey,
+          value,
+          actorIdentityId: actorUserId(req),
+          grantedPermissions: ["website.edit"],
+        });
+        if (!engineSaved.ok) {
+          const notFound = engineSaved.code === "tenant_mismatch" || engineSaved.code === "media_not_found";
+          return json(res, notFound ? 404 : 400, {
+            ok: false,
+            code: engineSaved.code || "save_failed",
+            reason: engineSaved.reason || null,
+          });
+        }
+        if (typeof value === "string") {
+          const locator = locatorFromContentKey(contentKey);
+          if (locator) {
+            try {
+              await saveInlineFieldDraft(getPool(), {
+                organizationId: resolved.tenant.organization.id,
+                churchId: resolved.tenant.church.id,
+                branchId: null,
+                editorUserId: actorUserId(req),
+                pageKey: locator.pageKey,
+                sectionKey: locator.sectionKey,
+                fieldKey: locator.fieldKey,
+                newValue: value,
+                grantedPermissions: ["website.edit"],
+              });
+            } catch {
+              /* overlay dual-write is compatibility-only */
+            }
+          }
+        }
+        return json(res, 200, {
+          ok: true,
+          published: false,
+          code: "saved_to_draft",
+          content: engineSaved.content || null,
+          version: null,
+        });
+      }
       const locator = parseLocator(req.body);
       if (!locator) {
         return json(res, 400, { ok: false, code: "unknown_content_key" });
       }
-      const value = req.body && Object.prototype.hasOwnProperty.call(req.body, "value")
-        ? req.body.value
-        : "";
       const engineSaved = await saveFieldDraft(getPool(), {
         organizationId: resolved.tenant.organization.id,
         churchId: resolved.tenant.church.id,
@@ -288,19 +352,51 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
 
   router.get(`${pathPrefix}/website/media/:mediaId`, async (req, res, next) => {
     try {
-      const resolved = await requireEditor(req, res, "website.edit");
+      const resolved = await resolveTenant(req, res);
       if (!resolved) return undefined;
       const mediaId = String(req.params.mediaId || "");
+      const organizationId = resolved.tenant.organization.id;
       const loaded = await mediaService.getWebsiteMedia(getPool(), {
         mediaId,
-        organizationId: resolved.tenant.organization.id,
+        organizationId,
       });
       if (!loaded.ok || loaded.media.status !== "active") {
         return res.status(404).type("text").send("Not found");
       }
+      const {
+        resolveEngineInstance,
+      } = require("../website/blessboardEngineContentService");
+      const found = await resolveEngineInstance(getPool(), {
+        organizationId,
+        slug: resolved.organizationKey,
+        createIfMissing: false,
+      });
+      if (!found.ok || !found.instance || loaded.media.instanceId !== found.instance.id) {
+        return res.status(404).type("text").send("Not found");
+      }
+      const published = await mediaService.isPublishedInUse(getPool(), mediaId, organizationId);
+      if (!published) {
+        const session = req.v5Session && req.v5Session.authenticated && req.v5Session.session;
+        if (!session || !session.userId) {
+          return res.status(404).type("text").send("Not found");
+        }
+        const authz = await authorize(getPool(), {
+          actor: { userId: session.userId },
+          permission: "website.edit",
+          tenantContext: resolved.tenant,
+          resourceContext: {
+            organizationId,
+            churchId: resolved.tenant.church.id,
+            branchId: null,
+          },
+        });
+        if (!authz.allowed) {
+          return res.status(404).type("text").send("Not found");
+        }
+      }
       const payload = await mediaService.getWebsiteMediaPayload(getPool(), {
         mediaId,
-        organizationId: resolved.tenant.organization.id,
+        organizationId,
       });
       if (!payload.ok) return res.status(404).type("text").send("Not found");
       const mime = String(payload.mimeType || "").toLowerCase();
@@ -309,7 +405,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       }
       res.setHeader("Content-Type", mime);
       res.setHeader("X-Content-Type-Options", "nosniff");
-      res.setHeader("Cache-Control", "private, no-store");
+      res.setHeader("Cache-Control", published ? "public, max-age=300" : "private, no-store");
       return res.status(200).send(payload.buffer);
     } catch (err) {
       return next(err);

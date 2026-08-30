@@ -9,10 +9,14 @@
  */
 
 const { TIER_PLAN_CODES } = require("../../church/platformPricingContent");
-const { normalizeOrganizationKey } = require("./organizationKey");
+const { normalizeOrganizationKey, resolveBaseOrganizationKey } = require("./organizationKey");
 const { normalizeRegistrationPhone } = require("./normalizeRegistrationPhone");
 const { prepareBranchDisplayName } = require("./normalizeBranchDisplayName");
-const { extractPhoneFieldsFromBody } = require("../../platform/services/phoneNumberService");
+const {
+  extractPhoneFieldsFromBody,
+  listPhoneCountries,
+} = require("../../platform/services/phoneNumberService");
+const { resolveCountryCodeForUniqueness } = require("./normalizeChurchIdentity");
 const {
   PUBLIC_PLAN_CODES,
   DB_PLAN_KEYS,
@@ -184,6 +188,43 @@ function validateAdministratorPassword(password, passwordConfirm) {
 /**
  * @param {unknown} raw
  */
+function isKnownRegistrationCountry(iso) {
+  const code = String(iso || "").trim().toUpperCase();
+  if (!/^[A-Z]{2}$/.test(code)) return false;
+  return listPhoneCountries().some((row) => row.iso === code);
+}
+
+/**
+ * Church physical country — ISO-2 from the shared phone/country catalogue.
+ * @param {unknown} raw
+ */
+function validateChurchCountry(raw) {
+  const iso = resolveCountryCodeForUniqueness(raw);
+  if (!iso || !isKnownRegistrationCountry(iso)) {
+    return { ok: false, error: "Please select a country.", field: "country" };
+  }
+  return { ok: true, value: iso };
+}
+
+/**
+ * Server-authoritative organization key from church name. Submitted keys are ignored.
+ * @param {unknown} churchName
+ */
+function deriveOrganizationKeyFromChurchName(churchName) {
+  const derived = resolveBaseOrganizationKey(churchName);
+  if (!derived.ok) {
+    return {
+      ok: false,
+      error: "Please enter a church name we can use for your church URL.",
+      field: "church_name",
+    };
+  }
+  return { ok: true, value: derived.key };
+}
+
+/**
+ * @param {unknown} raw
+ */
 function validateRequestedOrganizationKey(raw) {
   const rawTrim = trim(raw, 80);
   if (!rawTrim) {
@@ -228,7 +269,7 @@ function validatePlatformChurchRegistration(body, opts = {}) {
 
   const instantFreeEnabled = Boolean(opts.instantFreeEnabled);
   const churchName = trim(body && body.church_name, 200);
-  const country = trim(body && body.country, 120);
+  const countryResult = validateChurchCountry(body && body.country);
   const city = trim(body && body.city, 120);
   const contactName = trim((body && (body.contact_name || body.full_name)) || "", 200);
   const roleInChurch = trim(body && body.role_in_church, 120) || null;
@@ -248,9 +289,8 @@ function validatePlatformChurchRegistration(body, opts = {}) {
   if (!churchName) {
     return { ok: false, error: "Please enter your church name.", field: "church_name" };
   }
-  if (!country) {
-    return { ok: false, error: "Please enter a country.", field: "country" };
-  }
+  if (!countryResult.ok) return countryResult;
+  const country = countryResult.value;
   if (!city) {
     return { ok: false, error: "Please enter a town or city.", field: "city" };
   }
@@ -310,7 +350,7 @@ function validatePlatformChurchRegistration(body, opts = {}) {
   let administratorPassword = null;
 
   if (wantsInstantProvision) {
-    const keyResult = validateRequestedOrganizationKey(body && body.organization_key);
+    const keyResult = deriveOrganizationKeyFromChurchName(churchName);
     if (!keyResult.ok) return keyResult;
     organizationKey = keyResult.value;
 
@@ -351,7 +391,7 @@ function validatePlatformChurchRegistration(body, opts = {}) {
 function formFromBody(body, opts = {}) {
   return {
     church_name: trim(body && body.church_name, 200),
-    country: trim(body && body.country, 120),
+    country: resolveCountryCodeForUniqueness(body && body.country) || trim(body && body.country, 8).toUpperCase(),
     city: trim(body && body.city, 120),
     contact_name: trim((body && (body.contact_name || body.full_name)) || "", 200),
     role_in_church: trim(body && body.role_in_church, 120),
@@ -401,6 +441,8 @@ module.exports = {
   planDisplayLabel,
   validatePlatformChurchRegistration,
   validateAdministratorPassword,
+  validateChurchCountry,
+  deriveOrganizationKeyFromChurchName,
   validateRequestedOrganizationKey,
   formFromBody,
   isHoneypotTriggered,

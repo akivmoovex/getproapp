@@ -264,7 +264,7 @@ describe("website editing completeness — settings-surface discovery", () => {
     assert.match(corpus, /settingsLinkId:\s*'service_times'/);
     assert.match(corpus, /settingsLinkId:\s*'social'/);
     assert.match(corpus, /settingsLinkId:\s*'announcement'/);
-    assert.match(corpus, /settingsLinkId:\s*'logo'/);
+    assert.match(corpus, /contentKey:\s*'home\.logo'|data-website-key="home\.logo"/);
   });
 
   it("non-edit chrome has no features panel markup when not editing", () => {
@@ -290,8 +290,8 @@ describe("website editing completeness — settings-surface discovery", () => {
     assert.match(catalog.byId.identity.href, /return_to=/);
     assert.match(catalog.byId.seo.href, /section=seo/);
     assert.match(catalog.byId.navigation.href, /\/hq\/content/);
-    assert.equal(catalog.byId.logo.available, false);
-    assert.match(catalog.byId.logo.reason || "", /platform/i);
+    assert.equal(catalog.byId.logo.available, true);
+    assert.match(catalog.byId.logo.reason || "", /inline/i);
   });
 
   it("HQ church-wide catalog uses primary branch for SEO settings", () => {

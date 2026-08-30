@@ -255,6 +255,14 @@ describe("BlessBoard V1 registration UI + immediate admin (BB-REG-01, BB-REG-03)
     assert.match(res.text, /ac-phone-field\.css/);
     assert.match(res.text, /ac-phone-field\.js/);
     assert.match(res.text, /placeholder="97 1234567"/);
+    assert.match(res.text, /name="country"/);
+    assert.match(res.text, /<select[^>]*id="register_country"/);
+    assert.match(res.text, /<option value="ZM"[^>]*selected/);
+    assert.match(res.text, /Your church URL/);
+    assert.match(res.text, /name="organization_key"/);
+    assert.match(res.text, /bb-apex-register-input--readonly/);
+    assert.doesNotMatch(res.text, /<input[^>]*name="organization_key"[^>]*(?:type="text"|pattern=)/);
+    assert.doesNotMatch(res.text, /Organization key/);
     assert.doesNotMatch(res.text, /pending until a platform administrator/i);
   });
 
@@ -318,7 +326,8 @@ describe("BlessBoard V1 registration UI + immediate admin (BB-REG-01, BB-REG-03)
       `SELECT id, organization_key FROM platform.organizations WHERE id = $1`,
       [organizationId]
     );
-    assert.equal(org.rows[0].organization_key, key);
+    assert.equal(org.rows[0].organization_key, `v1-church-${key}`);
+    assert.notEqual(org.rows[0].organization_key, key);
 
     const roles = await pool.query(
       `SELECT ur.role_key, ur.organization_id
