@@ -738,7 +738,23 @@
     else saveText();
   }
 
+  function isLocallyDirty() {
+    return (
+      dirtyController &&
+      typeof dirtyController.isDirty === "function" &&
+      dirtyController.isDirty()
+    );
+  }
+
   function cancel() {
+    if (
+      isLocallyDirty() &&
+      window.GpWebsiteLifecycle &&
+      typeof window.GpWebsiteLifecycle.guardNavigation === "function"
+    ) {
+      window.GpWebsiteLifecycle.guardNavigation(closeDialog);
+      return;
+    }
     closeDialog();
   }
 
