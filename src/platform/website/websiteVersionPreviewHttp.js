@@ -10,6 +10,8 @@ const {
 
 const GOVERNANCE_BANNER_RE =
   /<div class="bb-pa-governance-preview-banner"[^>]*>[\s\S]*?<\/div>/;
+const AC_LEGACY_VERSION_BANNER_RE =
+  /<div class="ac-website-preview-banner"[^>]*>[\s\S]*?<\/div>/;
 
 /**
  * Render a tenant-scoped historical version preview (read-only).
@@ -66,6 +68,9 @@ async function renderTenantWebsiteVersionPreview(db, input) {
       /<body([^>]*)>/i,
       `<body$1>${bannerHtml}`
     );
+  }
+  if (productCode === PRODUCT_CODE.ACTIVECLINIC && AC_LEGACY_VERSION_BANNER_RE.test(html)) {
+    html = html.replace(AC_LEGACY_VERSION_BANNER_RE, "");
   }
   return {
     ok: true,

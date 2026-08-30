@@ -148,10 +148,70 @@ async function projectPublishedSeoToBranchScope(db, input) {
   return { ok: true, projected };
 }
 
+const ENGINE_SETTINGS_KEY_RE = /^(seo\.|brand\.)/;
+const ENGINE_SETTINGS_ONLY_KEYS = new Set(["home.logo", "home.hero.image"]);
+
+function isEngineWebsiteSettingsKey(contentKey) {
+  const key = String(contentKey || "");
+  return ENGINE_SETTINGS_KEY_RE.test(key) || ENGINE_SETTINGS_ONLY_KEYS.has(key);
+}
+
+/**
+ * Publish engine-only website settings (SEO, branding, logo) without a full CMS publish.
+ * Used when legacy church publish validation blocks republish but engine drafts exist.
+ */
+async function publishBlessBoardEngineWebsiteSettingsOnly(db, input) {
+  const organizationId = String((input && input.organizationId) || "");
+  const churchId = String((input && input.churchId) || "");
+  const instance = input && input.instance;
+  const actorIdentityId = input && input.actorIdentityId;
+  const branchId =
+    input && input.branchId != null && String(input.branchId).trim()
+      ? String(input.branchId).trim()
+      : null;
+  if (!organizationId || !instance) {
+    return { ok: false, code: "website_instance_not_found" };
+  }
+  const publicationService = require("../../platform/website/publicationService");
+  const rows = await contentService.listWebsiteContent(db, instance, organizationId);
+  const changes = contentService.diffContentRows(rows);
+  if (!changes.length) {
+    return { ok: false, code: "no_engine_changes" };
+  }
+  if (!changes.every((row) => isEngineWebsiteSettingsKey(row.contentKey))) {
+    return { ok: false, code: "not_settings_only" };
+  }
+  const published = await publicationService.publishWebsiteDraft(db, {
+    organizationId,
+    instanceId: instance.id,
+    expectedProductCode: "blessboard",
+    actorIdentityId,
+    forceTenantPublish: true,
+  });
+  if (!published.ok) return published;
+  if (churchId && branchId) {
+    await projectPublishedSeoToBranchScope(db, {
+      organizationId,
+      churchId,
+      branchId,
+      instance,
+      actorUserId: actorIdentityId,
+    });
+  }
+  return {
+    ok: true,
+    code: "published",
+    engineOnly: true,
+    changedKeys: published.changedKeys || changes.map((row) => row.contentKey),
+  };
+}
+
 module.exports = {
   BB_SEO_KEYS,
   loadBlessBoardSeoEditorState,
   overlayBlessBoardEngineSeo,
   loadLegacyBlessBoardSeoFlat,
   projectPublishedSeoToBranchScope,
+  publishBlessBoardEngineWebsiteSettingsOnly,
+  isEngineWebsiteSettingsKey,
 };

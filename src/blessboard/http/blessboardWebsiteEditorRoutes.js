@@ -433,16 +433,38 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       }
       const resolved = await requireEditor(req, res, "website.publish");
       if (!resolved) return undefined;
-      const published = await publishChurchWebsite(getPool(), {
-        churchId: resolved.tenant.church.id,
-        organizationId: resolved.tenant.organization.id,
-        actorUserId: actorUserId(req),
-        deferServiceTimes: true,
-        confirmPublish: true,
-        mobilePreviewConfirmed: true,
-        relaxPreviewRequirement: true,
-        forcePublishVersion: true,
-      });
+      const found = await resolveEngineInstanceForTenant(resolved);
+      let published = { ok: false };
+      if (found.ok && found.instance) {
+        const {
+          publishBlessBoardEngineWebsiteSettingsOnly,
+        } = require("../website/blessboardEngineSeo");
+        const engineOnly = await publishBlessBoardEngineWebsiteSettingsOnly(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          churchId: resolved.tenant.church.id,
+          branchId:
+            resolved.tenant.primaryBranch && resolved.tenant.primaryBranch.id
+              ? resolved.tenant.primaryBranch.id
+              : null,
+          instance: found.instance,
+          actorIdentityId: actorUserId(req),
+        });
+        if (engineOnly.ok && engineOnly.engineOnly) {
+          published = { ok: true, status: "ok", reason: "published" };
+        }
+      }
+      if (!published.ok) {
+        published = await publishChurchWebsite(getPool(), {
+          churchId: resolved.tenant.church.id,
+          organizationId: resolved.tenant.organization.id,
+          actorUserId: actorUserId(req),
+          deferServiceTimes: true,
+          confirmPublish: true,
+          mobilePreviewConfirmed: true,
+          relaxPreviewRequirement: true,
+          forcePublishVersion: true,
+        });
+      }
       if (String(req.headers.accept || "").includes("application/json")) {
         return json(res, published.ok ? 200 : 400, {
           ok: Boolean(published.ok),

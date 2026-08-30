@@ -263,11 +263,8 @@ async function testAddSection(page, product, vp) {
     await page.locator("[data-website-add-section-panel]:not([hidden])").waitFor({ state: "visible", timeout: 10000 });
     const options = page.locator("[data-website-add-section-type]");
     const empty = page.locator("[data-website-add-section-empty]:not([hidden])");
-    if ((await options.count()) === 0 && (await empty.count()) === 0) {
-      out.notes.push("no addable section types in picker");
-      return out;
-    }
-    out.pass = true;
+    out.pass = (await options.count()) > 0 || (await empty.count()) > 0;
+    if (!out.pass) out.notes.push("add section picker did not open or list types");
     await page.keyboard.press("Escape");
   } catch (err) {
     out.notes.push(err.message);

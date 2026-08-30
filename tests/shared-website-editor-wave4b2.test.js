@@ -223,6 +223,8 @@ describe("shared website editor wave 4b2 — HTTP", () => {
   let bbOrgId;
   let bbUserId;
   let bbInstanceId;
+  let bbChurchId;
+  let bbBranchId;
   let acCookie;
   let bbCookie;
   let acApp;
@@ -308,6 +310,8 @@ describe("shared website editor wave 4b2 — HTTP", () => {
       });
       bbSlug = provisioned.records.organizationKey;
       bbOrgId = provisioned.records.organizationId;
+      bbChurchId = provisioned.records.churchId;
+      bbBranchId = provisioned.records.branchId;
       bbUserId = provisioned.records.administratorUserId;
       const bbInstance = await instanceRepo.findWebsiteInstanceByOrgProduct(pool, {
         organizationId: bbOrgId,
@@ -467,6 +471,36 @@ describe("shared website editor wave 4b2 — HTTP", () => {
       "seo.title"
     );
     assert.equal(published.publishedValue, title);
+  });
+
+  it("BB engine-only publish promotes SEO without full CMS publish", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const { publishBlessBoardEngineWebsiteSettingsOnly } = require("../src/blessboard/website/blessboardEngineSeo");
+    const title = `Engine SEO ${uniq("e")}`;
+    await contentService.saveWebsiteDraft(pool, {
+      organizationId: bbOrgId,
+      instanceId: bbInstanceId,
+      expectedProductCode: "blessboard",
+      contentKey: "seo.title",
+      value: title,
+      actorIdentityId: bbUserId,
+      grantedPermissions: ["website.edit", "website.publish"],
+    });
+    const instance = await instanceRepo.findWebsiteInstanceByOrgProduct(pool, {
+      organizationId: bbOrgId,
+      productCode: "blessboard",
+    });
+    const published = await publishBlessBoardEngineWebsiteSettingsOnly(pool, {
+      organizationId: bbOrgId,
+      churchId: bbChurchId,
+      branchId: bbBranchId,
+      instance,
+      actorIdentityId: bbUserId,
+    });
+    assert.equal(published.ok, true);
+    assert.equal(published.engineOnly, true);
+    const row = await contentService.getWebsiteContentRow(pool, bbInstanceId, bbOrgId, "seo.title");
+    assert.equal(row.publishedValue, title);
   });
 
   it("invalid add section type is rejected", async (t) => {
