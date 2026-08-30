@@ -308,9 +308,9 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
       /data-bb-website-firstuse-branding="1"[\s\S]*?<\/li>/
     );
     assert.ok(brandingItem, "expected Customize branding first-use item");
-    assert.match(brandingItem[0], /href="<%= actions\.editWebsite %>"/);
-    assert.doesNotMatch(brandingItem[0], /actions\.settings/);
-    assert.doesNotMatch(brandingItem[0], /\/hq\/website/);
+    assert.match(brandingItem[0], /href="<%= actions\.branding %>"/);
+    assert.doesNotMatch(brandingItem[0], /actions\.editWebsite/);
+    assert.doesNotMatch(brandingItem[0], /\/hq\/website\?/);
     assert.match(hub, /action="<%= actions\.publishPath %>"/);
     assert.match(hub, /confirm_publish/);
     assert.match(hub, /bb-wm-hub-metrics/);
@@ -362,21 +362,22 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.doesNotMatch(page.text, /data-ac-website-management/);
     assert.doesNotMatch(page.text, /class="ac-mw/);
 
-    const expectedEdit = buildPublicWebsiteEditPath({
-      product: PRODUCT_CODE.BLESSBOARD,
-      organizationKey: church.key,
-    });
-    assert.equal(expectedEdit, `/c/${church.key}?website_edit=1`);
+    const expectedBranding = "/hq/website/branding";
     assert.match(page.text, /data-bb-website-firstuse="1"/);
     assert.match(page.text, /Customize branding/);
     const brandingHref = hrefForWebsiteAction(page.text, "branding");
-    assert.equal(brandingHref, expectedEdit, `branding Continue href=${brandingHref}`);
+    assert.equal(brandingHref, expectedBranding, `branding Continue href=${brandingHref}`);
     assert.notEqual(brandingHref, "/hq/website");
-    assert.notEqual(brandingHref, "/hq/website/advanced");
+    assert.notEqual(brandingHref, `/c/${church.key}?website_edit=1`);
     assert.doesNotMatch(brandingHref, /\/c\/demo/i);
     assert.doesNotMatch(brandingHref, /\/branches\//);
     const settingsTile = hrefForWebsiteAction(page.text, "settings");
     assert.ok(settingsTile === "/hq/website" || settingsTile === "/hq/website/advanced");
+    const editHref = hrefForWebsiteAction(page.text, "edit");
+    assert.equal(editHref, buildPublicWebsiteEditPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: church.key,
+    }));
   });
 
   it("published church shows View live and Unpublish; drafts surface unpublished changes including logo", async () => {
@@ -419,7 +420,7 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(draftPage.text, /data-bb-website-action="view-live"/);
   });
 
-  it("Customize branding Continue opens the church-wide public editor for the signed-in church", async () => {
+  it("Customize branding Continue opens the church branding page for the signed-in church", async () => {
     requireDb();
     const church = await provisionChurch("brand");
     const other = await provisionChurch("other");
@@ -429,92 +430,37 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
       .set("Host", church.host)
       .set("Cookie", cookie);
     assert.equal(hub.status, 200, hub.text && hub.text.slice(0, 300));
-    const expectedEdit = buildPublicWebsiteEditPath({
-      product: PRODUCT_CODE.BLESSBOARD,
-      organizationKey: church.key,
-    });
     const brandingHref = hrefForWebsiteAction(hub.text, "branding");
-    assert.equal(brandingHref, expectedEdit);
-    assert.equal(brandingHref, `/c/${church.key}?website_edit=1`);
-    assert.notEqual(brandingHref, "/hq/website");
-    assert.doesNotMatch(String(brandingHref), /demo-church|\/c\/demo/i);
-    assert.doesNotMatch(String(brandingHref), /\/branches\//);
-    assert.doesNotMatch(String(brandingHref), new RegExp(`/c/${other.key}`));
+    assert.equal(brandingHref, "/hq/website/branding");
 
-    const editor = await request(makeBbApp())
-      .get(brandingHref)
+    const brandingPage = await request(makeBbApp())
+      .get("/hq/website/branding")
       .set("Host", church.host)
       .set("Cookie", cookie);
-    assert.equal(editor.status, 200, editor.text && editor.text.slice(0, 400));
-    assert.match(editor.text, /data-bb-website-editing="1"/);
-    assert.match(editor.text, /data-website-key="home.logo"/);
-    assert.match(editor.text, /data-bb-church-name="1"/);
-    assert.match(editor.text, new RegExp(`BB07 Church ${church.key}`));
-    assert.doesNotMatch(editor.text, new RegExp(`BB07 Church ${other.key}`));
-    assert.match(editor.text, /data-bb-exit-editing="1"|data-website-engine-exit="1"/);
-    const exitHref = (editor.text.match(
-      /data-(?:bb-exit-editing|website-engine-exit)="1"[^>]*href="([^"]+)"|href="([^"]+)"[^>]*data-(?:bb-exit-editing|website-engine-exit)="1"/
-    ) || [])[1] || (editor.text.match(
-      /href="([^"]+)"[^>]*data-(?:bb-exit-editing|website-engine-exit)="1"/
-    ) || [])[1];
-    if (exitHref) {
-      const decodedExit = decodeHtmlAttr(exitHref);
-      assert.doesNotMatch(decodedExit, /website_edit=1/);
-      const exited = await request(makeBbApp())
-        .get(decodedExit.startsWith("http") ? decodedExit : decodedExit)
-        .set("Host", church.host)
-        .set("Cookie", cookie);
-      assert.ok(exited.status === 200 || exited.status === 303, `exit status=${exited.status}`);
-      if (exited.status === 200) {
-        assert.doesNotMatch(exited.text, /data-bb-website-editing="1"/);
-      }
-    }
+    assert.equal(brandingPage.status, 200, brandingPage.text && brandingPage.text.slice(0, 400));
+    assert.match(brandingPage.text, /data-bb-hq-website-branding="1"/);
+    assert.match(brandingPage.text, /Branding Settings/);
+    assert.match(brandingPage.text, /data-bb-wb-brand-preview="1"/);
+    assert.match(brandingPage.text, new RegExp(`BB07 Church ${church.key}`));
+    assert.doesNotMatch(brandingPage.text, new RegExp(`BB07 Church ${other.key}`));
+    assert.match(brandingPage.text, /Primary colour/);
+    assert.match(brandingPage.text, /Accent colour/);
+    assert.match(brandingPage.text, /data-bb-edit-website="1"/);
+    assert.match(brandingPage.text, new RegExp(`/c/${church.key}\\?website_edit=1`));
 
-    const crossedHost = await request(makeBbApp())
-      .get(brandingHref)
+    const crossed = await request(makeBbApp())
+      .get("/hq/website/branding")
       .set("Host", church.host)
       .set("Cookie", await hqCookie(other, other.hqUserId));
-    assert.ok(
-      crossedHost.status === 200 ||
-        crossedHost.status === 403 ||
-        crossedHost.status === 303 ||
-        crossedHost.status === 404,
-      `cross-tenant hub-host editor status=${crossedHost.status}`
-    );
-    assert.doesNotMatch(crossedHost.text || "", /data-bb-website-editing="1"/);
-    assert.doesNotMatch(crossedHost.text || "", /data-website-key="home.logo"/);
+    assert.ok(crossed.status === 403 || crossed.status === 303, `cross-tenant status=${crossed.status}`);
+    assert.doesNotMatch(crossed.text || "", /data-bb-hq-website-branding="1"/);
 
-    const crossedUrl = await request(makeBbApp())
-      .get(brandingHref)
-      .set("Host", other.host)
-      .set("Cookie", await hqCookie(other, other.hqUserId));
-    assert.ok(
-      crossedUrl.status === 200 ||
-        crossedUrl.status === 403 ||
-        crossedUrl.status === 404 ||
-        crossedUrl.status === 303,
-      `cross-tenant other-host editor status=${crossedUrl.status}`
-    );
-    assert.doesNotMatch(crossedUrl.text || "", /data-bb-website-editing="1"/);
-    assert.doesNotMatch(crossedUrl.text || "", /data-website-key="home.logo"/);
-
-    const mutate = await request(makeBbApp())
-      .post(`/c/${church.key}/website/drafts`)
-      .set("Host", church.host)
-      .set("Cookie", await hqCookie(other, other.hqUserId))
-      .set("Accept", "application/json")
-      .send({ contentKey: "home.logo", value: { src: "/x.png", alt: "cross-tenant" } });
-    assert.ok(
-      mutate.status === 401 || mutate.status === 403,
-      `cross-tenant draft mutate status=${mutate.status}`
-    );
-
-    const branchEditor = await request(makeBbApp())
-      .get("/hq/website")
+    const branch = await request(makeBbApp())
+      .get("/hq/website/branding")
       .set("Host", church.host)
       .set("Cookie", await hqCookie(church, church.branchUserId));
-    assert.ok(branchEditor.status === 403 || branchEditor.status === 303);
-    assert.doesNotMatch(branchEditor.text || "", /data-bb-website-action="branding"/);
+    assert.ok(branch.status === 403 || branch.status === 303);
+    assert.doesNotMatch(branch.text || "", /data-bb-hq-website-branding="1"/);
   });
 
   it("branch admin cannot open HQ website hub; other church HQ cannot use this host", async () => {

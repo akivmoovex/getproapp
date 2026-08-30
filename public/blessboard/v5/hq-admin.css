@@ -6456,3 +6456,215 @@ body.bb-hq-drawer-open { overflow: hidden; }
     justify-content: center;
   }
 }
+
+/* Website branding (HQ) — structural parity with ActiveClinic MW08-02 */
+.bb-wb-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.25rem;
+}
+.bb-wb-head__links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.bb-wb-muted,
+.bb-wb-hint {
+  color: var(--bb-hq-muted, #5c5668);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.bb-wb-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.1fr) minmax(0, 0.9fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+.bb-wb-form {
+  display: grid;
+  gap: 1rem;
+}
+.bb-wb-form__legend {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+.bb-wb-form label {
+  display: grid;
+  gap: 0.35rem;
+  font-size: 0.92rem;
+}
+.bb-wb-color {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+.bb-wb-color input[type="color"] {
+  width: 2.75rem;
+  height: 2.75rem;
+  padding: 0;
+  border: 1px solid var(--bb-hq-line, #e4dfec);
+  border-radius: 8px;
+  background: #fff;
+}
+.bb-wb-color input[type="text"] {
+  flex: 1;
+  min-width: 0;
+}
+.bb-wb-media-field {
+  display: grid;
+  gap: 0.65rem;
+}
+.bb-wb-media-preview-wrap {
+  margin: 0;
+}
+.bb-wb-media-preview {
+  display: block;
+  max-width: 180px;
+  max-height: 72px;
+  width: auto;
+  height: auto;
+  border-radius: 8px;
+  border: 1px solid var(--bb-hq-line, #e4dfec);
+  object-fit: contain;
+  background: #fff;
+}
+.bb-wb-media-preview--hero {
+  max-width: 100%;
+  max-height: 140px;
+}
+.bb-wb-media-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+.bb-wb-upload span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.85rem;
+  border-radius: 8px;
+  border: 1px solid var(--bb-hq-line, #e4dfec);
+  cursor: pointer;
+}
+.bb-wb-upload input[type="file"] {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  opacity: 0;
+  overflow: hidden;
+}
+.bb-wb-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+.bb-wb-preview {
+  border: 1px solid var(--bb-hq-line, #e4dfec);
+  border-radius: 12px;
+  padding: 1rem;
+  background: #fff;
+}
+.bb-wb-preview__label {
+  margin: 0 0 0.75rem;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bb-hq-muted, #5c5668);
+}
+.bb-wb-preview__site {
+  border: 1px solid var(--bb-hq-line, #e4dfec);
+  border-radius: 10px;
+  overflow: hidden;
+  background: #faf9fc;
+}
+.bb-wb-preview__bar {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.75rem 1rem;
+  background: #fff;
+  border-bottom: 1px solid var(--bb-hq-line, #e4dfec);
+}
+.bb-wb-preview__bar img {
+  width: 32px;
+  height: 32px;
+  object-fit: contain;
+  border-radius: 6px;
+}
+.bb-wb-preview__hero {
+  position: relative;
+  min-height: 120px;
+  background: linear-gradient(135deg, var(--preview-primary, #6c5ce7), var(--preview-accent, #5341cd));
+}
+.bb-wb-preview__hero img {
+  display: block;
+  width: 100%;
+  max-height: 140px;
+  object-fit: cover;
+}
+.bb-wb-preview__cta {
+  position: absolute;
+  left: 1rem;
+  bottom: 1rem;
+  display: inline-flex;
+  align-items: center;
+  min-height: 2.75rem;
+  padding: 0.45rem 0.9rem;
+  border-radius: 999px;
+  background: var(--preview-primary, #6c5ce7);
+  color: #fff;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+.bb-wb-dialog {
+  border: 0;
+  border-radius: 12px;
+  padding: 0;
+  max-width: min(640px, calc(100vw - 2rem));
+}
+.bb-wb-dialog::backdrop {
+  background: rgba(26, 22, 37, 0.45);
+}
+.bb-wb-dialog__body {
+  padding: 1rem;
+}
+.bb-wb-media-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: 0.75rem;
+  margin: 0.75rem 0 1rem;
+}
+.bb-wb-media-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.5rem;
+  border: 1px solid var(--bb-hq-line, #e4dfec);
+  border-radius: 8px;
+  background: #fff;
+  cursor: pointer;
+  text-align: left;
+}
+.bb-wb-media-card img {
+  width: 100%;
+  aspect-ratio: 4 / 3;
+  object-fit: cover;
+  border-radius: 6px;
+}
+@media (max-width: 720px) {
+  .bb-wb-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .bb-wb-head__links {
+    width: 100%;
+  }
+  .bb-wb-head__links .bb-wm-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+}

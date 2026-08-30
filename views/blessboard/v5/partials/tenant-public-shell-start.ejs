@@ -59,6 +59,7 @@
   <% if (_isBranchMini) { %>data-bb-website-scope="branch"<% } else { %>data-bb-website-scope="church"<% } %>
   <% if (typeof isPreview !== 'undefined' && isPreview) { %>data-bb-preview="1"<% } %>
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>data-bb-website-editing="1"<% } %>
+  <% if (typeof brandStyle !== 'undefined' && brandStyle) { %>style="<%= brandStyle %>"<% } %>
 >
   <a class="bb-tp-skip" href="#bb-tp-main">Skip to content</a>
 

@@ -85,8 +85,8 @@
       <li class="bb-wm-firstuse__item" data-bb-website-firstuse-branding="1">
         <h3>Customize branding</h3>
         <p>Logo, colours, and the look of the public site.</p>
-        <% if (actions.editWebsite) { %>
-        <a class="bb-wm-btn bb-wm-btn--primary" href="<%= actions.editWebsite %>" data-bb-website-action="branding">Continue</a>
+        <% if (actions.branding) { %>
+        <a class="bb-wm-btn bb-wm-btn--primary" href="<%= actions.branding %>" data-bb-website-action="branding">Continue</a>
         <% } %>
       </li>
       <li class="bb-wm-firstuse__item">
@@ -219,6 +219,10 @@
     <a class="bb-wm-hub-tile" href="<%= actions.editWebsite || '/hq/content' %>" data-bb-website-action="pages">
       <h3>Pages</h3>
       <p>Edit home, about, ministries, events, sermons, giving, and contact on your public church website.</p>
+    </a>
+    <a class="bb-wm-hub-tile" href="<%= actions.branding || '/hq/website/branding' %>" data-bb-website-action="branding">
+      <h3>Branding</h3>
+      <p>Update logo, colours, and the look of your site.</p>
     </a>
     <a class="bb-wm-hub-tile" href="<%= actions.settings || '/hq/website/advanced' %>" data-bb-website-action="settings">
       <h3>Website Settings</h3>

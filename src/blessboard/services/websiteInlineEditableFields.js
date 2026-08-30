@@ -318,6 +318,50 @@ function registerBlessBoardEditableFields() {
       fieldKey: field.fieldKey,
     },
   }));
+  defs.push(
+    {
+      key: "home.logo",
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      templateId: "blessboard_church",
+      templateVersion: 1,
+      type: CONTENT_TYPES.IMAGE,
+      maxLen: 500,
+      permission: PERMISSIONS.EDIT,
+      validationMode: VALIDATION_MODE.CONTENT_TYPES,
+      inline: false,
+      group: "home",
+      description: "Church logo",
+      storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "home.logo" },
+    },
+    {
+      key: "brand.primary_color",
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      templateId: "blessboard_church",
+      templateVersion: 1,
+      type: CONTENT_TYPES.SHORT_TEXT,
+      maxLen: 7,
+      permission: PERMISSIONS.EDIT,
+      validationMode: VALIDATION_MODE.CONTENT_TYPES,
+      inline: false,
+      group: "brand",
+      description: "Primary brand colour",
+      storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "brand.primary_color" },
+    },
+    {
+      key: "brand.accent_color",
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      templateId: "blessboard_church",
+      templateVersion: 1,
+      type: CONTENT_TYPES.SHORT_TEXT,
+      maxLen: 7,
+      permission: PERMISSIONS.EDIT,
+      validationMode: VALIDATION_MODE.CONTENT_TYPES,
+      inline: false,
+      group: "brand",
+      description: "Accent brand colour",
+      storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "brand.accent_color" },
+    }
+  );
   registerProductEditableFields(PRODUCT_CODE.BLESSBOARD, defs);
 }
 

@@ -39,20 +39,16 @@ const {
 } = require("../website/blessboardChurchTemplate");
 const { findBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
 const { resolveWebsiteContent, MODE } = require("../../platform/website/resolver");
+const {
+  imageFromWebsiteValue,
+  pickHexColor,
+  publicBrandStyle,
+} = require("../../platform/website/branding");
+const { PRODUCT_CODE } = require("../../platform/website/publicWebsiteUrl");
 
 const EDIT_QUERY = "website_edit";
 
-function imageFromWebsiteValue(value) {
-  if (!value) return { src: "", alt: "", mediaId: "" };
-  if (typeof value === "string") return { src: value, alt: "", mediaId: "" };
-  return {
-    src: value.src ? String(value.src) : "",
-    alt: value.alt != null ? String(value.alt) : "",
-    mediaId: value.mediaId || value.media_id || "",
-  };
-}
-
-async function attachBlessBoardWebsiteLogo(db, model, tenant, mode) {
+async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
   if (!model) return;
   if (!model.websiteLogoUrl) {
     model.websiteLogoUrl = DEFAULT_BLESSBOARD_LOGO_SRC;
@@ -79,6 +75,38 @@ async function attachBlessBoardWebsiteLogo(db, model, tenant, mode) {
       model.websiteLogoAlt = img.alt;
       model.websiteLogoMediaId = img.mediaId;
     }
+    const hero = imageFromWebsiteValue(resolved.values && resolved.values["home.hero.image"]);
+    if (hero.src) {
+      model.websiteHeroUrl = hero.src;
+      model.websiteHeroAlt = hero.alt;
+      model.websiteHeroMediaId = hero.mediaId;
+      if (model.homeDemoFallback) {
+        model.homeDemoFallback = {
+          ...model.homeDemoFallback,
+          heroMediaUrl: hero.src,
+        };
+      }
+      const sections = Array.isArray(model.sections) ? model.sections : [];
+      const heroSection = sections.find(
+        (s) =>
+          s &&
+          (String(s.sectionKey || "") === "hero" ||
+            String(s.sectionType || "") === "hero" ||
+            String(s.sectionKey || "").indexOf("hero") >= 0)
+      );
+      if (heroSection) {
+        heroSection.mediaUrl = hero.src;
+        heroSection.layoutMetadata = {
+          ...(heroSection.layoutMetadata || {}),
+          altText: hero.alt || (heroSection.layoutMetadata && heroSection.layoutMetadata.altText) || "",
+        };
+      }
+    }
+    const brandPrimary = pickHexColor(resolved.values, "brand.primary_color");
+    const brandAccent = pickHexColor(resolved.values, "brand.accent_color");
+    if (brandPrimary) model.brandPrimary = brandPrimary;
+    if (brandAccent) model.brandAccent = brandAccent;
+    model.brandStyle = publicBrandStyle(PRODUCT_CODE.BLESSBOARD, brandPrimary, brandAccent);
   } catch {
     /* keep default platform mark */
   }
@@ -296,7 +324,7 @@ async function attachWebsiteAdminChrome(opts) {
     req.blessBoardTenantContext = tenant;
   }
 
-  await attachBlessBoardWebsiteLogo(db, model, tenant, "live");
+  await attachBlessBoardWebsiteBranding(db, model, tenant, "live");
 
   let authz = req.blessBoardAuthorizationContext || null;
   const session =
@@ -376,7 +404,7 @@ async function attachWebsiteAdminChrome(opts) {
     "draft";
   const showDraftContent = editingMode || previewDraftMode;
   if (showDraftContent) {
-    await attachBlessBoardWebsiteLogo(db, model, tenant, "draft");
+    await attachBlessBoardWebsiteBranding(db, model, tenant, "draft");
   }
 
   let draftCount = 0;

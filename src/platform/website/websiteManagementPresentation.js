@@ -181,6 +181,12 @@ function presentWebsiteSettingsUx(input) {
     state !== PRESENTATION_STATE.SUSPENDED &&
     state !== PRESENTATION_STATE.SETUP_INCOMPLETE &&
     state !== PRESENTATION_STATE.MISSING;
+  const showBranding =
+    canEdit &&
+    Boolean(facts.brandingPath) &&
+    state !== PRESENTATION_STATE.SUSPENDED &&
+    state !== PRESENTATION_STATE.SETUP_INCOMPLETE &&
+    state !== PRESENTATION_STATE.MISSING;
   const showLibrary =
     canView &&
     Boolean(facts.libraryPath) &&
@@ -222,6 +228,7 @@ function presentWebsiteSettingsUx(input) {
       publishPath: showPublish ? publishPath : null,
       unpublishPath: showUnpublish ? facts.unpublishPath : null,
       settings: showSettings ? facts.settingsPath : null,
+      branding: showBranding ? facts.brandingPath : null,
       library: showLibrary ? facts.libraryPath : null,
       history: showHistory ? historyPath : null,
       retry: showRetry ? retryPath : null,
@@ -297,6 +304,7 @@ function presentBlessBoardHqWebsiteSettingsUx(input) {
       overview.publishReviewPath || facts.publishPath || "/hq/website/publish/review",
     unpublishPath: facts.unpublishPath || "/hq/website/unpublish",
     settingsPath: facts.settingsPath || "/hq/website/advanced",
+    brandingPath: facts.brandingPath || "/hq/website/branding",
     libraryPath: facts.libraryPath || "/hq/content/media",
     retryPath: needsRepair ? "#website-setup-retry" : facts.retryPath || null,
     canView,
@@ -464,6 +472,10 @@ async function loadWebsiteManagementSummary(db, input) {
     publishPath: buildPublicWebsitePublishPath({ product: productCode, organizationKey: key }),
     unpublishPath: buildPublicWebsiteUnpublishPath({ product: productCode, organizationKey: key }),
     settingsPath: buildPublicWebsiteSettingsPath({ product: productCode, organizationKey: key }),
+    brandingPath:
+      productCode === PRODUCT_CODE.ACTIVECLINIC
+        ? "/app/settings/website/branding"
+        : "/hq/website/branding",
     libraryPath:
       productCode === PRODUCT_CODE.ACTIVECLINIC
         ? "/app/settings/website/library"

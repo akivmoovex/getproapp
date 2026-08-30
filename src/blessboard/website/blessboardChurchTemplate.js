@@ -97,6 +97,26 @@ function registerBlessBoardWebsiteTemplate() {
         group: "home",
         description: "Church logo",
       },
+      "brand.primary_color": {
+        type: CONTENT_TYPES.SHORT_TEXT,
+        maxLen: 7,
+        group: "brand",
+        inline: false,
+        description: "Primary brand colour",
+      },
+      "brand.accent_color": {
+        type: CONTENT_TYPES.SHORT_TEXT,
+        maxLen: 7,
+        group: "brand",
+        inline: false,
+        description: "Accent brand colour",
+      },
+      "home.hero.image": {
+        type: CONTENT_TYPES.IMAGE,
+        maxLen: 500,
+        group: "home",
+        description: "Homepage hero / cover image",
+      },
       [SNAPSHOT_KEY]: {
         type: CONTENT_TYPES.STRUCTURED,
         acceptObject: true,
@@ -112,6 +132,7 @@ function registerBlessBoardWebsiteTemplate() {
   }
   registerSnapshotEditableField();
   registerLogoEditableField();
+  registerBrandColorEditableFields();
   return registered;
 }
 
@@ -127,6 +148,32 @@ function registerLogoEditableField() {
     storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "home.logo" },
     group: "home",
     description: "Church logo",
+    inline: false,
+  });
+}
+
+function registerBrandColorEditableFields() {
+  registerEditableField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    key: "brand.primary_color",
+    type: CONTENT_TYPES.SHORT_TEXT,
+    maxLen: 7,
+    permission: PERMISSIONS.EDIT,
+    storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "brand.primary_color" },
+    group: "brand",
+    description: "Primary brand colour",
+    inline: false,
+  });
+  registerEditableField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    key: "brand.accent_color",
+    type: CONTENT_TYPES.SHORT_TEXT,
+    maxLen: 7,
+    permission: PERMISSIONS.EDIT,
+    storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "brand.accent_color" },
+    group: "brand",
+    description: "Accent brand colour",
+    inline: false,
   });
 }
 

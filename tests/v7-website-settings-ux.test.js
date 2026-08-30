@@ -638,11 +638,11 @@ describe("BlessBoard HQ website settings HTTP", () => {
     assert.match(page.text, /data-bb-website-action="history"/);
     assert.match(page.text, /Customize branding/);
     assert.match(page.text, /data-bb-website-action="branding"/);
-    assert.match(page.text, /href="\/c\/[^"]+\?website_edit=1"/);
+    assert.match(page.text, /href="\/hq\/website\/branding"/);
     const brandingHref = (page.text.match(
-      /href="(\/c\/[^"]+\?website_edit=1)"[^>]*data-bb-website-action="branding"|data-bb-website-action="branding"[^>]*href="(\/c\/[^"]+\?website_edit=1)"/
+      /href="(\/hq\/website\/branding)"[^>]*data-bb-website-action="branding"|data-bb-website-action="branding"[^>]*href="(\/hq\/website\/branding)"/
     ) || []).find((part, i) => i > 0 && part);
-    assert.ok(brandingHref, "Customize branding Continue must use the canonical church edit URL");
+    assert.ok(brandingHref, "Customize branding Continue must use the branding hub route");
     assert.notEqual(brandingHref, "/hq/website");
   });
 

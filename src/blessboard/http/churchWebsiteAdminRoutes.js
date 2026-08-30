@@ -51,7 +51,18 @@ const {
 const {
   PRODUCT_CODE,
   buildPublicWebsiteEditPath,
+  buildPublicWebsitePreviewPath,
 } = require("../../platform/website/publicWebsiteUrl");
+const {
+  BRANDING_KEYS,
+  loadWebsiteBranding,
+  saveWebsiteBranding,
+  normalizeHexColor,
+  imageValueFromParts,
+  imageFromWebsiteValue,
+  colorDefaultsForProduct,
+} = require("../../platform/website/branding");
+const { registerBlessBoardWebsiteTemplate } = require("../website/blessboardChurchTemplate");
 const {
   prepareWebsitePublishReview,
   prepareWebsitePublishSuccess,
@@ -557,6 +568,155 @@ function createChurchWebsiteAdminRouter(deps) {
       });
     }
   });
+
+  function brandingErrorMessage(code) {
+    if (code === "invalid_hex") return "Use a 6-digit colour like #6c5ce7.";
+    return "Could not save branding. Try again.";
+  }
+
+  function presentBrandingFormValues(loaded) {
+    const values = (loaded && loaded.values) || {};
+    return {
+      logo: imageFromWebsiteValue(values["home.logo"]),
+      hero: imageFromWebsiteValue(values["home.hero.image"]),
+      primaryColor: values["brand.primary_color"] || "",
+      accentColor: values["brand.accent_color"] || "",
+    };
+  }
+
+  async function renderBrandingPage(req, res, opts) {
+    const flags = await websiteCapabilityFlags(req);
+    const tenant = resolveTenantForAuthorization(req);
+    const organizationId =
+      tenant && tenant.organization && tenant.organization.id
+        ? String(tenant.organization.id)
+        : null;
+    const organizationKey =
+      (tenant &&
+        tenant.organization &&
+        (tenant.organization.key || tenant.organization.organizationKey)) ||
+      "";
+    if (!organizationId) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+    registerBlessBoardWebsiteTemplate();
+    const loaded = await loadWebsiteBranding(getPool(), {
+      organizationId,
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      keys: BRANDING_KEYS,
+    });
+    if (!loaded.ok) {
+      return sendControlled(req, res, 503, "Website branding could not be loaded.");
+    }
+    const publicBase = organizationKey
+      ? `/c/${encodeURIComponent(organizationKey)}`
+      : "";
+    const html = renderHqView(
+      "hq/website-branding.ejs",
+      await shellLocals(req, res, {
+        websiteBranding: {
+          values: presentBrandingFormValues(loaded),
+          churchName:
+            (tenant.church && tenant.church.displayName) ||
+            (tenant.church && tenant.church.publicName) ||
+            "Your church",
+          defaults: colorDefaultsForProduct(PRODUCT_CODE.BLESSBOARD),
+          canEdit: flags.canEditWebsite === true,
+          saved: Boolean(opts && opts.saved),
+          error: (opts && opts.error) || "",
+          mediaListUrl: publicBase ? `${publicBase}/website/media` : "",
+          previewHref: organizationKey
+            ? buildPublicWebsitePreviewPath({
+                product: PRODUCT_CODE.BLESSBOARD,
+                organizationKey,
+              })
+            : "",
+          editHref: organizationKey
+            ? buildPublicWebsiteEditPath({
+                product: PRODUCT_CODE.BLESSBOARD,
+                organizationKey,
+              })
+            : "",
+        },
+      })
+    );
+    return res.status(200).type("html").send(html);
+  }
+
+  router.get("/hq/website/branding", rejectApex, gateHq, async (req, res) => {
+    try {
+      return await renderBrandingPage(req, res, {
+        saved: String((req.query && req.query.saved) || "") === "1",
+      });
+    } catch {
+      return sendControlled(req, res, 503, "Website branding could not be loaded.");
+    }
+  });
+
+  router.post(
+    "/hq/website/branding",
+    rejectApex,
+    gateHq,
+    requireWebsiteEdit,
+    async (req, res) => {
+      try {
+        const tenant = resolveTenantForAuthorization(req);
+        const organizationId =
+          tenant && tenant.organization && tenant.organization.id
+            ? String(tenant.organization.id)
+            : null;
+        if (!organizationId) {
+          return sendControlled(req, res, 403, "You do not have access to this site.");
+        }
+        const submitted = req.body && req.body[CSRF_FIELD];
+        if (!validateCsrf(req, submitted, env)) {
+          return sendControlled(req, res, 403, "Invalid or missing CSRF token.");
+        }
+        const primary = normalizeHexColor(req.body && req.body.primaryColor);
+        const accent = normalizeHexColor(req.body && req.body.accentColor);
+        if (!primary.ok || !accent.ok) {
+          return await renderBrandingPage(req, res, {
+            error: brandingErrorMessage("invalid_hex"),
+          });
+        }
+        const flags = await websiteCapabilityFlags(req);
+        const saved = await saveWebsiteBranding(getPool(), {
+          organizationId,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          grantedPermissions: grantedWebsitePermissions(flags),
+          actorIdentityId: await actorUserId(req),
+          entries: [
+            {
+              key: "home.logo",
+              value: imageValueFromParts(
+                req.body && req.body.logoSrc,
+                req.body && req.body.logoAlt,
+                req.body && req.body.logoMediaId
+              ),
+            },
+            { key: "brand.primary_color", value: primary.value },
+            { key: "brand.accent_color", value: accent.value },
+            {
+              key: "home.hero.image",
+              value: imageValueFromParts(
+                req.body && req.body.heroSrc,
+                req.body && req.body.heroAlt,
+                req.body && req.body.heroMediaId
+              ),
+            },
+          ],
+        });
+        if (!saved.ok) {
+          return await renderBrandingPage(req, res, {
+            error: brandingErrorMessage(saved.code),
+          });
+        }
+        return res.redirect(303, "/hq/website/branding?saved=1");
+      } catch {
+        return sendControlled(req, res, 503, "Website branding could not be saved.");
+      }
+    }
+  );
 
   // Repair writes draft settings and draft pages, so it needs edit rather than
   // the view-only shell gate.

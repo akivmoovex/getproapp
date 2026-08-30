@@ -31,6 +31,12 @@ const {
   findDraftCustomPageBySlug,
 } = require("./clinicWebsiteCms");
 const { registerActiveClinicWebsiteTemplate } = require("./activeClinicWebsiteTemplate");
+const {
+  HEX_COLOR_RE,
+  BRANDING_KEYS,
+  normalizeHexColor,
+  imageValueFromParts,
+} = require("../../platform/website/branding");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -47,11 +53,10 @@ const RESULT = Object.freeze({
 const MAX_PAGES = 40;
 const MAX_SECTIONS = 40;
 const MAX_BLOCKS = 80;
-const HEX_COLOR_RE = /^#[0-9A-Fa-f]{6}$/;
 
 const SETTINGS_KEYS = Object.freeze({
   website: Object.freeze(["site.name", "contact.phone", "contact.email", "location.hours"]),
-  branding: Object.freeze(["home.logo", "brand.primary_color", "brand.accent_color", "home.hero.image"]),
+  branding: BRANDING_KEYS,
   chrome: Object.freeze([
     "header.show_logo",
     "header.show_nav",
@@ -136,22 +141,6 @@ async function saveKey(db, input, contentKey, value) {
     actorIdentityId: input.actorIdentityId || null,
     grantedPermissions: granted(input),
   });
-}
-
-function normalizeHexColor(raw) {
-  const trimmed = String(raw == null ? "" : raw).trim();
-  if (!trimmed) return { ok: true, value: null };
-  const withHash = trimmed.startsWith("#") ? trimmed : `#${trimmed}`;
-  if (!HEX_COLOR_RE.test(withHash)) return { ok: false, code: "invalid_hex" };
-  return { ok: true, value: withHash.toLowerCase() };
-}
-
-function imageValueFromParts(src, alt, mediaId) {
-  const nextSrc = String(src || "").trim();
-  const nextId = String(mediaId || "").trim();
-  const nextAlt = String(alt || "").trim();
-  if (!nextSrc && !nextId) return null;
-  return { src: nextSrc || null, alt: nextAlt || null, mediaId: nextId || null };
 }
 
 function draftMap(rows, keys) {

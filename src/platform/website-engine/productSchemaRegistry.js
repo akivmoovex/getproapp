@@ -73,7 +73,7 @@ const SCHEMAS = Object.freeze({
     publicPrefix: "/c",
     settingsPath: "/hq/website/advanced",
     libraryPath: "/hq/content/media",
-    brandingPath: "/hq/website/advanced",
+    brandingPath: "/hq/website/branding",
     seoPath: "/hq/website/advanced",
     navigationPath: "/hq/content",
     pagesPath: "/hq/content",
