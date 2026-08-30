@@ -35,7 +35,8 @@ const PRODUCTS = [
     editUrl: "https://blessboard.pronline.org/c/demo-church?website_edit=1&website_mode=draft",
     previewBase: "https://blessboard.pronline.org/c/demo-church",
     hideSectionKey: "welcome",
-    reorderSectionKey: "welcome",
+    reorderSectionKey: "ministries_intro",
+    reorderAction: "move_up",
     lockedSectionKey: "hero",
   },
   {
@@ -49,6 +50,7 @@ const PRODUCTS = [
       "https://activeclinic.pronline.org/clinics/qa-full-product-clinic-260817235630-805675",
     hideSectionKey: "introduction",
     reorderSectionKey: "services",
+    reorderAction: "move_up",
     lockedSectionKey: "hero",
   },
 ];
@@ -125,21 +127,41 @@ async function openSectionMenu(page, product, sectionKey) {
   return menu;
 }
 
-async function discardWebsiteDraft(page, vp) {
+async function ensureSectionVisible(page, product, sectionKey) {
+  const meta = await readManifestSection(page, sectionKey);
+  if (meta && meta.isHidden) {
+    const menu = await openSectionMenu(page, product, sectionKey);
+    const show = menu.locator('[data-website-section-action="show"]');
+    if (await show.isVisible().catch(() => false)) {
+      await show.click();
+      await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
+    } else {
+      await closeSectionMenu(page);
+    }
+  }
+}
+
+async function discardWebsiteDraftIfPresent(page, vp) {
   if (vp.isMobile) {
     await page.locator("[data-website-more-toggle]").click();
   } else {
     await page.locator("[data-website-more-toggle]").click();
   }
-  const menu = page.locator("[data-website-more-menu]:not([hidden])");
-  await menu.waitFor({ state: "visible", timeout: 5000 });
-  await menu.locator('[data-website-lifecycle-action="discard"]').click();
+    const menu = page.locator("[data-website-more-menu]:not([hidden])");
+    await menu.waitFor({ state: "visible", timeout: 5000 });
+    const discard = menu.locator('[data-website-lifecycle-action="discard"]');
+    if (!(await discard.count())) return;
+    await discard.click();
   const dialog = page.locator('[data-website-lifecycle-panel="discard"]:not([hidden])');
   await dialog.waitFor({ state: "visible", timeout: 8000 });
   await Promise.all([
     page.waitForLoadState("domcontentloaded"),
     dialog.locator('[data-website-lifecycle-confirm="discard"]').click(),
   ]);
+}
+
+async function discardWebsiteDraft(page, vp) {
+  await discardWebsiteDraftIfPresent(page, vp);
 }
 
 async function testEdit06Shell(page, product, vp) {
@@ -150,6 +172,10 @@ async function testEdit06Shell(page, product, vp) {
   try {
     await page.goto(product.editUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
     await page.waitForSelector(".gp-website-editor__toolbar", { timeout: 30000 });
+    await discardWebsiteDraftIfPresent(page, vp);
+    await page.goto(product.editUrl, { waitUntil: "domcontentloaded", timeout: 60000 });
+    await page.waitForSelector("[data-website-section-trigger]", { timeout: 30000 });
+    await ensureSectionVisible(page, product, product.hideSectionKey);
 
     const triggers = page.locator("[data-website-section-trigger]");
     const triggerCount = await triggers.count();
@@ -169,8 +195,11 @@ async function testEdit06Shell(page, product, vp) {
 
     const menu = await openSectionMenu(page, product, product.hideSectionKey);
     const menuText = await menu.textContent();
-    for (const label of ["Edit section", "Reorder", "Hide section", "Restore default"]) {
+    for (const label of ["Edit section", "Reorder", "Restore default"]) {
       if (!menuText.includes(label)) out.notes.push(`menu missing: ${label}`);
+    }
+    if (!/hide section|show section/i.test(menuText || "")) {
+      out.notes.push("menu missing hide/show section action");
     }
     if (vp.isMobile) {
       const grab = menu.locator(".gp-website-section-menu__grab");
@@ -186,10 +215,12 @@ async function testEdit06Shell(page, product, vp) {
 
     const reorderMenu = await openSectionMenu(page, product, product.reorderSectionKey);
     await reorderMenu.locator('[data-website-section-action="reorder"]').click();
-    const moveDown = reorderMenu.locator('[data-website-section-action="move_down"]');
-    await moveDown.waitFor({ state: "visible", timeout: 5000 });
+    const moveBtn = reorderMenu.locator(
+      `[data-website-section-action="${product.reorderAction || "move_down"}"]`
+    );
+    await moveBtn.waitFor({ state: "visible", timeout: 5000 });
     const beforeReorder = await readManifestSection(page, product.reorderSectionKey);
-    await moveDown.click();
+    await moveBtn.click();
     await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
     await closeSectionMenu(page);
     const afterReorder = await readManifestSection(page, product.reorderSectionKey);
