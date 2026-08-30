@@ -304,7 +304,7 @@ describe("blessboard settings http", () => {
         primaryPhone: "+260 97 100 0111",
         defaultTimezone: "Africa/Lusaka",
         defaultCountryCode: "ZM",
-        websiteStatus: "published",
+        websiteStatus: "draft",
         [CSRF_FIELD]: match[1],
       });
     assert.equal(save.status, 303);
@@ -316,7 +316,7 @@ describe("blessboard settings http", () => {
       [churchA.id]
     );
     assert.equal(row.rows[0].public_name, "Settings Church Public");
-    assert.equal(row.rows[0].website_status, "published");
+    assert.equal(row.rows[0].website_status, "draft");
     assert.equal(row.rows[0].primary_phone, "+260 97 100 0111");
     assert.equal(row.rows[0].default_timezone, "Africa/Lusaka");
 

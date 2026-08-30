@@ -29,7 +29,7 @@ INSERT INTO blessboard.roles (
   (
     'platform_website_support',
     'Website support',
-    'Review recently published customer websites without platform_admin',
+    'Platform-wide website governance: review recently published customer websites without platform_admin. Organization-scoped website.review does not unlock this console.',
     'website',
     true,
     true,
@@ -38,7 +38,7 @@ INSERT INTO blessboard.roles (
   (
     'platform_website_approver',
     'Website approver',
-    'Record post-publication website version approvals',
+    'Platform-wide website governance: record post-publication website version approvals. Does not grant hide, block, or platform_admin.',
     'website',
     true,
     true,
@@ -47,7 +47,7 @@ INSERT INTO blessboard.roles (
   (
     'platform_website_hider',
     'Website hider',
-    'Hide a public website (offline) without suspending publishing',
+    'Platform-wide website governance: hide a public website (backend state offline) without blocking publishing. Does not grant platform_admin.',
     'website',
     true,
     true,
@@ -56,7 +56,7 @@ INSERT INTO blessboard.roles (
   (
     'platform_website_blocker',
     'Website blocker',
-    'Block a website (suspended) and prevent customer publishing',
+    'Platform-wide website governance: block a website (backend state suspended) and prevent customer publishing. Does not grant platform_admin.',
     'website',
     true,
     true,
@@ -65,7 +65,7 @@ INSERT INTO blessboard.roles (
   (
     'platform_website_restorer',
     'Website restorer',
-    'Unhide, unblock, or revert a website to an approved version',
+    'Platform-wide website governance: unhide, unblock, or revert a website to an approved version. Does not grant platform_admin.',
     'website',
     true,
     true,

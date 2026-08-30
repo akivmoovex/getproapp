@@ -293,8 +293,8 @@ describe("v7 platform admin website control", () => {
     assert.equal(churchPage.status, 200, churchPage.text.slice(0, 400));
     assertVisibility(churchPage.text, { organizationKey: churchKey });
     assert.match(churchPage.text, /data-product="blessboard"/);
-    assert.match(churchPage.text, /data-website-availability="public"/);
-    assert.match(churchPage.text, /data-website-availability-form="unpublish"/);
+    assert.match(churchPage.text, /data-website-availability="not-public"/);
+    assert.match(churchPage.text, /data-website-availability-form="publish"/);
     assert.match(churchPage.text, /data-website-moderation="suspend"/);
     assert.match(churchPage.text, /data-action-restore="1"/);
     assert.match(churchPage.text, /data-website-version-history="1"/);

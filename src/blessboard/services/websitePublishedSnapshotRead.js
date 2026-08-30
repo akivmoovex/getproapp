@@ -16,6 +16,14 @@ async function churchOrganizationId(client, churchId) {
   return row.rows[0] && row.rows[0].organization_id ? String(row.rows[0].organization_id) : null;
 }
 
+function unwrapStored(value) {
+  if (!value || typeof value !== "object") return value;
+  if (Object.prototype.hasOwnProperty.call(value, "v") && value.v && typeof value.v === "object") {
+    return value.v;
+  }
+  return value;
+}
+
 function snapshotUsable(snapshot) {
   if (!snapshot || typeof snapshot !== "object") return false;
   if (snapshot.baseline === true) return false;
@@ -26,6 +34,32 @@ function snapshotUsable(snapshot) {
     0
   );
   return pages.length > 0 || entityCount > 0;
+}
+
+/**
+ * Pull a CMS-shaped snapshot out of a platform.website_versions row.
+ * Shared engine stores `{ values, visibility }` and may nest `cms.snapshot`.
+ */
+function extractCmsSnapshot(platformSnapshot) {
+  if (!platformSnapshot || typeof platformSnapshot !== "object") return null;
+  const values =
+    platformSnapshot.values && typeof platformSnapshot.values === "object"
+      ? platformSnapshot.values
+      : platformSnapshot;
+  const candidates = [
+    values["cms.snapshot"],
+    platformSnapshot["cms.snapshot"],
+    Array.isArray(platformSnapshot.pages) ? platformSnapshot : null,
+    Array.isArray(values.pages) ? values : null,
+  ];
+  for (const candidate of candidates) {
+    if (!candidate || typeof candidate !== "object") continue;
+    const cms = unwrapStored(candidate);
+    if (cms && typeof cms === "object" && (Array.isArray(cms.pages) || cms.entities)) {
+      return cms;
+    }
+  }
+  return null;
 }
 
 async function loadCurrentPublishedSnapshot(client, churchId, branchId) {
@@ -40,10 +74,11 @@ async function loadCurrentPublishedSnapshot(client, churchId, branchId) {
   return { version, snapshot: version.snapshot };
 }
 
-function overlayPublishedPage(livePage, liveSections, snapshot, pageKey) {
+function overlayPublishedPage(livePage, liveSections, snapshot, pageKey, opts) {
   const pages = Array.isArray(snapshot && snapshot.pages) ? snapshot.pages : [];
   const snapPage = pages.find((p) => String(p.pageKey || p.page_key) === String(pageKey));
   if (!snapPage) return { page: livePage, sections: liveSections, fromSnapshot: false };
+  const includeAllStatuses = Boolean(opts && opts.includeAllStatuses);
   const page = livePage
     ? { ...livePage, title: snapPage.title || livePage.title, status: "published" }
     : {
@@ -57,7 +92,7 @@ function overlayPublishedPage(livePage, liveSections, snapshot, pageKey) {
     (liveSections || []).map((s) => [String(s.sectionKey || s.section_key || ""), s])
   );
   const sections = snapSections
-    .filter((s) => String(s.status || "published") === "published")
+    .filter((s) => includeAllStatuses || String(s.status || "published") === "published")
     .map((s, idx) => {
       const key = String(s.sectionKey || s.section_key || "");
       const live = liveByKey.get(key) || {};
@@ -97,4 +132,5 @@ module.exports = {
   overlayPublishedPage,
   overlayPublishedEntities,
   snapshotUsable,
+  extractCmsSnapshot,
 };

@@ -22,6 +22,10 @@ const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
 } = require("../../platform/website/publicWebsiteUrl");
+const {
+  logBlessBoardEngineBridgeFailure,
+  logBlessBoardEngineBridgeWarning,
+} = require("../../platform/website-engine/blessboardEngineBridgeLog");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -820,12 +824,16 @@ async function publishChurchWebsite(db, input) {
           churchId,
           branchId,
           actorIdentityId: input.actorUserId || null,
+          actorUserId: input.actorUserId || null,
           slug: inner.organizationKey,
         });
         if (!enginePublished.ok) {
           throw Object.assign(new Error("website_engine_publish_failed"), {
             code: "WEBSITE_ENGINE_PUBLISH",
             engineCode: enginePublished.code,
+            organizationId: inner.organizationId,
+            instanceId: enginePublished.instance && enginePublished.instance.id,
+            cmsPublicationVersionId: publicationVersion && publicationVersion.id,
           });
         }
         try {
@@ -875,10 +883,18 @@ async function publishChurchWebsite(db, input) {
         reason: "partial_page_publish",
       };
     }
-    if (process.env.BLESSBOARD_DEBUG_PUBLISH === "1") {
-      // eslint-disable-next-line no-console
-      console.error("[publishChurchWebsite]", err && err.message, err && err.code, err && err.stack);
-    }
+    logBlessBoardEngineBridgeFailure({
+      operation: "publishChurchWebsite",
+      organizationId: requestedOrganizationId || (err && err.organizationId) || null,
+      instanceId: err && err.instanceId,
+      churchId,
+      branchId,
+      actorIdentityId: input && input.actorUserId,
+      actorUserId: input && input.actorUserId,
+      cmsPublicationVersionId: err && err.cmsPublicationVersionId,
+      engineCode: err && (err.engineCode || err.code),
+      errorClass: (err && (err.code || err.name)) || "Error",
+    });
     return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup_error" };
   }
 }
@@ -951,14 +967,23 @@ async function unpublishChurchWebsite(db, input) {
       const {
         unpublishFromLegacy,
       } = require("../../platform/website-engine/blessboardBridge");
-      await unpublishFromLegacy(client, {
+      const unpublishedEngine = await unpublishFromLegacy(client, {
         organizationId: String(ctx.organization_id),
         churchId,
         actorIdentityId: input.actorUserId || null,
+        actorUserId: input.actorUserId || null,
         grantedPermissions: ["website.publish"],
         syncProductAvailability: false,
         reason: "tenant_unpublish",
       });
+      if (!unpublishedEngine || unpublishedEngine.ok === false) {
+        throw Object.assign(new Error("website_engine_unpublish_failed"), {
+          code: "WEBSITE_ENGINE_UNPUBLISH",
+          engineCode: unpublishedEngine && unpublishedEngine.code,
+          organizationId: String(ctx.organization_id),
+          instanceId: unpublishedEngine && unpublishedEngine.instance && unpublishedEngine.instance.id,
+        });
+      }
 
       return {
         ok: true,
@@ -967,7 +992,17 @@ async function unpublishChurchWebsite(db, input) {
         websiteStatus: "draft",
       };
     });
-  } catch {
+  } catch (err) {
+    logBlessBoardEngineBridgeFailure({
+      operation: "unpublishChurchWebsite",
+      churchId,
+      actorIdentityId: input && input.actorUserId,
+      actorUserId: input && input.actorUserId,
+      organizationId: err && err.organizationId,
+      instanceId: err && err.instanceId,
+      engineCode: err && (err.engineCode || err.code),
+      errorClass: (err && (err.code || err.name)) || "Error",
+    });
     return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup_error" };
   }
 }
@@ -1134,12 +1169,21 @@ async function publishInitialFoundationWebsite(client, input) {
           actorIdentityId: (input && input.actorUserId) || null,
         });
         await client.query("RELEASE SAVEPOINT unpublished_engine_seed");
-      } catch {
+      } catch (seedErr) {
         try {
           await client.query("ROLLBACK TO SAVEPOINT unpublished_engine_seed");
         } catch {
           /* Engine seed must not abort registration. */
         }
+        logBlessBoardEngineBridgeWarning({
+          operation: "seedUnpublishedEngineContent",
+          organizationId,
+          churchId,
+          actorIdentityId: input && input.actorUserId,
+          actorUserId: input && input.actorUserId,
+          engineCode: seedErr && seedErr.code,
+          errorClass: (seedErr && (seedErr.code || seedErr.name)) || "Error",
+        });
       }
     }
     return {
@@ -1260,16 +1304,22 @@ async function publishInitialFoundationWebsite(client, input) {
     }
   }
 
-  try {
-    const { publishFromLegacy } = require("../../platform/website-engine/blessboardBridge");
-    await publishFromLegacy(client, {
+  const { publishFromLegacy } = require("../../platform/website-engine/blessboardBridge");
+  const enginePublished = await publishFromLegacy(client, {
+    organizationId,
+    churchId,
+    actorIdentityId: (input && input.actorUserId) || null,
+    actorUserId: (input && input.actorUserId) || null,
+    slug: keyNorm.key,
+  });
+  if (!enginePublished || enginePublished.ok === false) {
+    throw Object.assign(new Error("website_engine_publish_failed"), {
+      code: "WEBSITE_ENGINE_PUBLISH",
+      engineCode: enginePublished && enginePublished.code,
       organizationId,
-      churchId,
-      actorIdentityId: (input && input.actorUserId) || null,
-      slug: keyNorm.key,
+      instanceId: enginePublished && enginePublished.instance && enginePublished.instance.id,
+      cmsPublicationVersionId: publicationVersionId,
     });
-  } catch {
-    /* Shared-engine backfill must not fail registration. */
   }
 
   return {

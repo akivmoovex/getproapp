@@ -17,6 +17,9 @@ const {
 const {
   registerBlessBoardWebsiteTemplate,
 } = require("../../blessboard/website/blessboardChurchTemplate");
+const {
+  logBlessBoardEngineBridgeFailure,
+} = require("./blessboardEngineBridgeLog");
 
 const CMS_SNAPSHOT = SNAPSHOT_KEY;
 
@@ -150,28 +153,74 @@ async function ensureEngineContent(db, input) {
 }
 
 async function publishFromLegacy(db, input) {
-  const resolved = await resolveInstance(db, input);
-  if (!resolved.ok || !resolved.instance) {
-    return { ok: false, code: "website_instance_not_found", version: null };
-  }
-  const snapshot = input.snapshot || (await loadLegacySnapshot(db, input));
-  const saved = await saveEngineDraft(db, resolved.instance, snapshot, input.actorIdentityId);
-  if (!saved.ok) return { ok: false, code: saved.code, version: null };
-  const published = await publicationService.publishWebsiteDraft(db, {
-    organizationId: resolved.instance.organizationId,
-    instanceId: resolved.instance.id,
-    expectedProductCode: "blessboard",
-    actorIdentityId: input.actorIdentityId || null,
-    forceTenantPublish: true,
-    allowEmpty: true,
-  });
-  return {
-    ok: Boolean(published && published.ok),
-    code: published && published.code,
-    version: published && published.version,
-    instance: resolved.instance,
-    changedKeys: published && published.changedKeys,
+  const context = {
+    operation: "publishFromLegacy",
+    organizationId: input && input.organizationId,
+    churchId: input && input.churchId,
+    branchId: input && input.branchId,
+    actorIdentityId: input && input.actorIdentityId,
+    actorUserId: input && input.actorUserId,
   };
+  try {
+    const resolved = await resolveInstance(db, input);
+    if (!resolved.ok || !resolved.instance) {
+      logBlessBoardEngineBridgeFailure({
+        ...context,
+        engineCode: "website_instance_not_found",
+        errorClass: "website_instance_not_found",
+      });
+      return { ok: false, code: "website_instance_not_found", version: null };
+    }
+    context.organizationId = resolved.instance.organizationId;
+    context.instanceId = resolved.instance.id;
+    const snapshot = input.snapshot || (await loadLegacySnapshot(db, input));
+    const saved = await saveEngineDraft(db, resolved.instance, snapshot, input.actorIdentityId);
+    if (!saved.ok) {
+      logBlessBoardEngineBridgeFailure({
+        ...context,
+        engineCode: saved.code,
+        errorClass: saved.code || "engine_draft_failed",
+      });
+      return { ok: false, code: saved.code, version: null };
+    }
+    const published = await publicationService.publishWebsiteDraft(db, {
+      organizationId: resolved.instance.organizationId,
+      instanceId: resolved.instance.id,
+      expectedProductCode: "blessboard",
+      actorIdentityId: input.actorIdentityId || null,
+      forceTenantPublish: true,
+      allowEmpty: true,
+    });
+    if (!published || !published.ok) {
+      logBlessBoardEngineBridgeFailure({
+        ...context,
+        engineCode: published && published.code,
+        errorClass: (published && published.code) || "engine_publish_failed",
+        engineVersionId: published && published.version && published.version.id,
+      });
+      return {
+        ok: false,
+        code: published && published.code,
+        version: published && published.version,
+        instance: resolved.instance,
+        changedKeys: published && published.changedKeys,
+      };
+    }
+    return {
+      ok: true,
+      code: published.code,
+      version: published.version,
+      instance: resolved.instance,
+      changedKeys: published.changedKeys,
+    };
+  } catch (err) {
+    logBlessBoardEngineBridgeFailure({
+      ...context,
+      engineCode: err && err.code,
+      errorClass: (err && (err.code || err.name)) || "Error",
+    });
+    throw err;
+  }
 }
 
 async function restoreDraftFromLegacy(db, input) {
@@ -190,11 +239,23 @@ async function restoreDraftFromLegacy(db, input) {
 }
 
 async function unpublishFromLegacy(db, input) {
+  const context = {
+    operation: "unpublishFromLegacy",
+    organizationId: input && input.organizationId,
+    churchId: input && input.churchId,
+    actorIdentityId: input && input.actorIdentityId,
+    actorUserId: input && input.actorUserId,
+  };
   const resolved = await resolveInstance(db, input);
   if (!resolved.ok || !resolved.instance) {
+    logBlessBoardEngineBridgeFailure({
+      ...context,
+      engineCode: "website_instance_not_found",
+      errorClass: "website_instance_not_found",
+    });
     return { ok: false, code: "website_instance_not_found" };
   }
-  return publicationService.unpublishWebsite(db, {
+  const unpublished = await publicationService.unpublishWebsite(db, {
     organizationId: resolved.instance.organizationId,
     instanceId: resolved.instance.id,
     expectedProductCode: "blessboard",
@@ -203,6 +264,16 @@ async function unpublishFromLegacy(db, input) {
     syncProductAvailability: input.syncProductAvailability === true,
     reason: input.reason || "tenant_unpublish",
   });
+  if (!unpublished || unpublished.ok === false) {
+    logBlessBoardEngineBridgeFailure({
+      ...context,
+      organizationId: resolved.instance.organizationId,
+      instanceId: resolved.instance.id,
+      engineCode: unpublished && unpublished.code,
+      errorClass: (unpublished && unpublished.code) || "engine_unpublish_failed",
+    });
+  }
+  return unpublished;
 }
 
 module.exports = {

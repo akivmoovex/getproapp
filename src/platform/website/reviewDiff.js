@@ -11,6 +11,11 @@ const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
 } = require("./publicWebsiteUrl");
+const {
+  GOVERNANCE_CATEGORIES,
+  classifyGovernanceCategory,
+  categorizeDiffItem,
+} = require("./governanceDiffClassifier");
 
 const CHANGE_TYPES = Object.freeze(["added", "changed", "removed", "visibility", "reorder"]);
 
@@ -71,40 +76,20 @@ function splitKey(contentKey) {
   };
 }
 
-const DIFF_CATEGORIES = Object.freeze(["text", "image", "section", "navigation", "seo"]);
+const DIFF_CATEGORIES = GOVERNANCE_CATEGORIES;
 
-function categorizeDiffItem(item) {
-  const key = String((item && item.contentKey) || "").toLowerCase();
-  const section = String((item && item.sectionKey) || "").toLowerCase();
-  const page = String((item && item.pageKey) || "").toLowerCase();
-  const type = String((item && item.contentType) || "");
-  if (/seo|meta_title|meta_description|og_|canonical/.test(key) || page === "seo" || section === "seo") {
-    return "seo";
-  }
-  if (/nav|menu|navigation/.test(key) || section === "nav" || page === "nav") {
-    return "navigation";
-  }
-  if (type === CONTENT_TYPES.IMAGE) return "image";
-  if (
-    type === CONTENT_TYPES.STRUCTURED ||
-    (item && (item.changeType === "reorder" || item.changeType === "visibility"))
-  ) {
-    return "section";
-  }
-  return "text";
-}
-
-function groupDiffItems(items) {
+function groupDiffItems(items, template) {
   const groups = {
     text: [],
     image: [],
     section: [],
     navigation: [],
     seo: [],
+    other: [],
   };
   for (const item of items || []) {
-    const category = item.diffCategory || categorizeDiffItem(item);
-    if (!groups[category]) groups.text.push(item);
+    const category = item.diffCategory || categorizeDiffItem(item, template);
+    if (!groups[category]) groups.other.push(item);
     else groups[category].push(item);
   }
   return groups;
@@ -234,12 +219,12 @@ function buildWebsiteReviewDiff(input) {
     const def = template && template.keys ? template.keys[contentKey] : null;
     const parts = splitKey(contentKey);
     const pageKey = (def && def.group) || parts.pageKey;
-    const contentType = (raw && raw.contentType) || (def && def.type) || "short_text";
+    const contentType = (raw && raw.contentType) || (def && def.type) || "";
     const changeType = CHANGE_TYPES.includes(raw && raw.changeType)
       ? raw.changeType
       : classifyChange(raw);
-    const oldPresented = presentValue(raw.oldValue, contentType);
-    const newPresented = presentValue(raw.proposedValue, contentType);
+    const oldPresented = presentValue(raw.oldValue, contentType || "short_text");
+    const newPresented = presentValue(raw.proposedValue, contentType || "short_text");
     items.push({
       contentKey,
       pageKey,
@@ -253,13 +238,19 @@ function buildWebsiteReviewDiff(input) {
       oldVisibility: raw.oldVisibility || null,
       old: oldPresented,
       proposed: newPresented,
-      diffCategory: categorizeDiffItem({
-        contentKey,
-        pageKey,
-        sectionKey: parts.sectionKey,
-        contentType,
-        changeType,
-      }),
+      diffCategory: categorizeDiffItem(
+        {
+          contentKey,
+          pageKey,
+          sectionKey: parts.sectionKey,
+          contentType,
+          changeType,
+          productCode: template && template.productCode,
+          governanceCategory: def && def.governanceCategory,
+          group: def && def.group,
+        },
+        template
+      ),
     });
   }
   items.sort((a, b) => {
@@ -267,7 +258,7 @@ function buildWebsiteReviewDiff(input) {
     if (page) return page;
     return String(a.contentKey).localeCompare(String(b.contentKey));
   });
-  const groups = groupDiffItems(items);
+  const groups = groupDiffItems(items, template);
   return {
     items,
     groups,
@@ -306,7 +297,9 @@ function buildVersionDiff(input) {
 module.exports = {
   CHANGE_TYPES,
   DIFF_CATEGORIES,
+  GOVERNANCE_CATEGORIES,
   classifyChange,
+  classifyGovernanceCategory,
   categorizeDiffItem,
   groupDiffItems,
   buildWebsiteReviewDiff,

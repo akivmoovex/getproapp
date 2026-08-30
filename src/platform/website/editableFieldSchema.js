@@ -174,6 +174,8 @@ function normalizeFieldDef(def) {
     allowRelativeUrl: def.allowRelativeUrl === true,
     inline: def.inline !== false,
     group: def.group ? String(def.group) : null,
+    governanceCategory: def.governanceCategory ? String(def.governanceCategory) : null,
+    displayLabel: def.displayLabel ? String(def.displayLabel) : null,
     description: def.description ? String(def.description) : "",
     enumValues: Array.isArray(def.enumValues) ? Object.freeze([...def.enumValues]) : null,
     itemSchema: def.itemSchema ? Object.freeze({ ...def.itemSchema }) : null,

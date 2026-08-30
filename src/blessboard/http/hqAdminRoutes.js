@@ -825,6 +825,7 @@ function createHqAdminRouter(deps) {
       defaultCountryCode: body.defaultCountryCode,
       websiteStatus: body.websiteStatus,
       actorUserId: session && session.userId,
+      source: "hq_settings",
     });
     if (!updated.ok) {
       if (

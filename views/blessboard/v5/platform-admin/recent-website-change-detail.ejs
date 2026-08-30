@@ -17,7 +17,8 @@
     { key: 'image', label: 'Image changes' },
     { key: 'section', label: 'Section changes' },
     { key: 'navigation', label: 'Navigation changes' },
-    { key: 'seo', label: 'SEO changes' }
+    { key: 'seo', label: 'SEO changes' },
+    { key: 'other', label: 'Other changes' }
   ];
   function changeLabel(t) {
     if (t === 'added') return 'Added';
@@ -116,20 +117,22 @@
 
   <% if (visual && (visual.previousApprovedPath || visual.currentPublishedPath)) { %>
   <h2>Visual comparison</h2>
-  <p>Structured diffs above are the source of truth. Previews are additional context.</p>
-  <div class="bb-pa-website-diff__compare" data-website-visual-compare="1">
+  <p>Structured diffs above are the source of truth. Previews render the stored version through the existing website templates where that is safe. They do not publish or change drafts.</p>
+  <div class="bb-pa-website-diff__compare bb-pa-website-visual" data-website-visual-compare="1">
     <div class="bb-pa-website-diff__col">
-      <h3>Previous approved</h3>
+      <h3>Previous approved version</h3>
       <% if (visual.previousApprovedPath) { %>
-      <iframe title="Previous approved version" src="<%= visual.previousApprovedPath %>" width="100%" height="360" sandbox="allow-same-origin allow-scripts"></iframe>
+      <p class="bb-pa-hint"><%= compare.previous %></p>
+      <iframe title="Previous approved version" src="<%= visual.previousApprovedPath %>" width="100%" height="420" sandbox="allow-same-origin"></iframe>
       <% } else { %>
       <p>No previously approved version.</p>
       <% } %>
     </div>
     <div class="bb-pa-website-diff__col">
-      <h3>Current published</h3>
+      <h3>Current published version</h3>
       <% if (visual.currentSnapshotPath) { %>
-      <iframe title="Current published version" src="<%= visual.currentSnapshotPath %>" width="100%" height="360" sandbox="allow-same-origin allow-scripts"></iframe>
+      <p class="bb-pa-hint"><%= compare.current %></p>
+      <iframe title="Current published version" src="<%= visual.currentSnapshotPath %>" width="100%" height="420" sandbox="allow-same-origin"></iframe>
       <% } else if (visual.currentPublishedPath) { %>
       <p><a href="<%= visual.currentPublishedPath %>">Open live website</a></p>
       <% } else { %>
@@ -157,7 +160,11 @@
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <input type="hidden" name="return_to" value="<%= returnTo %>"/>
     <input type="hidden" name="version_id" value="<%= ver.id %>"/>
-    <label>Note <input name="note" maxlength="500"/></label>
+    <p class="bb-pa-hint">
+      Approve version v<%= ver.versionNumber %> of <%= organizationName || 'this website' %>
+      (<%= organizationKey %>). Approval is version-specific and does not approve later publishes.
+    </p>
+    <label>Optional note <input name="note" maxlength="500"/></label>
     <button type="submit" class="bb-pa-btn">Approve Version</button>
   </form>
   <% } %>
@@ -165,6 +172,7 @@
   <form method="post" action="/admin/organizations/<%= organizationKey %>/website/hide" data-website-governance="hide" data-website-moderation="offline">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <input type="hidden" name="return_to" value="<%= returnTo %>"/>
+    <p class="bb-pa-hint">The website will no longer be publicly visible. Content and drafts will be retained.</p>
     <label>Reason <input name="reason" maxlength="500" required/></label>
     <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Hide Website</button>
   </form>
@@ -180,6 +188,7 @@
   <form method="post" action="/admin/organizations/<%= organizationKey %>/website/block" data-website-governance="block" data-website-moderation="suspend">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <input type="hidden" name="return_to" value="<%= returnTo %>"/>
+    <p class="bb-pa-hint">Public access and customer publishing will be disabled until the website is unblocked.</p>
     <label>Reason <input name="reason" maxlength="500" required/></label>
     <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Block Website</button>
   </form>
@@ -198,7 +207,11 @@
     <input type="hidden" name="return_to" value="<%= returnTo %>"/>
     <input type="hidden" name="version_id" value="<%= lastAppr.id %>"/>
     <label>Reason <input name="reason" maxlength="500" required/></label>
-    <p>Revert to approved version v<%= lastAppr.versionNumber %>. This publishes a new version and keeps history.</p>
+    <p class="bb-pa-hint">
+      Current version <% if (current && current.versionNumber) { %>v<%= current.versionNumber %><% } else { %>the live site<% } %>
+      will be replaced in public by a new published copy of approved version v<%= lastAppr.versionNumber %>.
+      This creates and publishes a new version rather than deleting history.
+    </p>
     <% if (prevAppr && prevAppr.id !== lastAppr.id) { %>
     <p>Previous approved: v<%= prevAppr.versionNumber %></p>
     <% } %>

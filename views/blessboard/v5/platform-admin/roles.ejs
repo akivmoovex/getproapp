@@ -66,6 +66,9 @@
                 <% if (role.description) { %>
                 <p class="bb-pa-hint"><%= role.description %></p>
                 <% } %>
+                <% if (role.scopeLabel) { %>
+                <p class="bb-pa-hint"><%= role.scopeLabel %></p>
+                <% } %>
                 <% if (role.legacyCompatibility) { %>
                 <span class="bb-pa-chip bb-pa-chip--legacy">Legacy compatible</span>
                 <% } %>

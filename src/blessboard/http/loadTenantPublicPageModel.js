@@ -67,6 +67,7 @@ async function resolvePublishedPage(db, scope) {
       churchId: scope.churchId,
       branchId: contentBranchId,
       pageKey: scope.pageKey,
+      historicalBinding: scope.historicalBinding || null,
     });
     if (branchPage.ok && branchPage.page) {
       return { ...branchPage, contentScope: "branch" };
@@ -86,6 +87,7 @@ async function resolvePublishedPage(db, scope) {
     churchId: scope.churchId,
     branchId: null,
     pageKey: scope.pageKey,
+    historicalBinding: scope.historicalBinding || null,
   });
   if (churchPage.ok && churchPage.page) {
     return { ...churchPage, contentScope: "church" };
@@ -108,8 +110,13 @@ async function resolvePublishedPage(db, scope) {
 async function resolvePublishedList(db, listFn, churchId, contentBranchId, options) {
   const allowChurchFallback =
     !options || options.allowChurchContentFallback !== false;
+  const historicalBinding = options && options.historicalBinding ? options.historicalBinding : null;
   if (contentBranchId) {
-    const branchList = await listFn(db, { churchId, branchId: contentBranchId });
+    const branchList = await listFn(db, {
+      churchId,
+      branchId: contentBranchId,
+      historicalBinding,
+    });
     if (branchList.ok && branchList.items && branchList.items.length > 0) {
       return { ok: true, items: branchList.items, contentScope: "branch" };
     }
@@ -117,7 +124,7 @@ async function resolvePublishedList(db, listFn, churchId, contentBranchId, optio
       return { ok: true, items: [], contentScope: "branch" };
     }
   }
-  const churchList = await listFn(db, { churchId, branchId: null });
+  const churchList = await listFn(db, { churchId, branchId: null, historicalBinding });
   if (churchList.ok) {
     return {
       ok: true,
@@ -769,6 +776,11 @@ async function loadTenantPublicPageModel(db, input) {
   }
 
   const isPreview = Boolean(input.preview);
+  const historicalBinding =
+    input.historicalBinding && typeof input.historicalBinding === "object"
+      ? input.historicalBinding
+      : null;
+  const governancePreview = Boolean(input.governancePreview || historicalBinding);
   let allowChurchContentFallback = input.allowChurchContentFallback !== false;
   const churchId = tenant.church.id;
   const primaryBranchId = tenant.primaryBranch.id;
@@ -879,11 +891,11 @@ async function loadTenantPublicPageModel(db, input) {
     }
   }
 
-  if (websiteStatus === "suspended" && !isPreview) {
+  if (websiteStatus === "suspended" && !isPreview && !governancePreview) {
     return { kind: KIND.UNAVAILABLE, reason: "website_suspended" };
   }
 
-  if (!isPreview && websiteStatus !== "published") {
+  if (!isPreview && !governancePreview && websiteStatus !== "published") {
     return {
       kind: KIND.SETUP,
       reason: "website_unpublished",
@@ -946,6 +958,7 @@ async function loadTenantPublicPageModel(db, input) {
         contentBranchId,
         pageKey,
         allowChurchContentFallback,
+        historicalBinding,
       });
 
   let pageSections = isPreview
@@ -969,8 +982,9 @@ async function loadTenantPublicPageModel(db, input) {
       return { items, contentScope: list.contentScope };
     }
     const list = await resolvePublishedList(db, publishedFn, churchId, contentBranchId, {
-      allowChurchContentFallback,
-    });
+        allowChurchContentFallback,
+        historicalBinding,
+      });
     let items = (list.items || []).map(mapper);
     if (prepare) items = prepare(items);
     return { items, contentScope: list.contentScope };
@@ -1089,6 +1103,7 @@ async function loadTenantPublicPageModel(db, input) {
         )
       : await resolvePublishedList(db, listPublishedContactChannels, churchId, contentBranchId, {
           allowChurchContentFallback,
+          historicalBinding,
         });
     const allChannels = (contactList.items || []).map(mapContact);
     socialLinks = allChannels.filter((ch) => isSocialChannel(ch.channelType) && ch.href);
@@ -1311,10 +1326,10 @@ async function loadTenantPublicPageModel(db, input) {
     ogDescriptionOverride: seoOverrides["seo.og_description"] || null,
     ogImageUrl: seoOverrides["seo.og_image_url"] || null,
     canonicalUrlOverride: seoOverrides["seo.canonical_url"] || null,
-    robotsOverride: seoOverrides["seo.robots"] || null,
+    forceNoindex: governancePreview ? true : seoOverrides["seo.noindex"] === true ? true : null,
+    robotsOverride: governancePreview ? "noindex, nofollow" : seoOverrides["seo.robots"] || null,
     sitemapIncludeOverride:
       seoOverrides["seo.sitemap_include"] === false ? false : null,
-    forceNoindex: seoOverrides["seo.noindex"] === true ? true : null,
     branchInactive: Boolean(branchInactive),
   });
 
@@ -1844,6 +1859,7 @@ async function loadTenantPublicPageModel(db, input) {
           ? "Content for this page is being prepared."
           : "This page is not published yet. Please check back soon.",
     isPreview,
+    governancePreview,
     previewMeta,
     seo,
     usedPublicDemoFill,

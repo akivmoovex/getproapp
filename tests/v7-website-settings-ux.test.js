@@ -252,7 +252,7 @@ describe("presentWebsiteSettingsUx", () => {
       canPublish: true,
     });
     assert.equal(ux.state, PRESENTATION_STATE.SUSPENDED);
-    assert.equal(ux.statusLabel, "Website suspended");
+    assert.equal(ux.statusLabel, "Website blocked");
     assert.equal(ux.actions.viewLive, null);
     assert.equal(ux.actions.editWebsite, null);
     assert.equal(ux.actions.publishPath, null);
@@ -413,7 +413,7 @@ describe("ActiveClinic website settings HTTP", () => {
     const page = await request(makeAcApp()).get("/app/settings/website").set("Cookie", cookie);
     assert.equal(page.status, 200);
     assert.match(page.text, /data-ac-website-state="suspended"/);
-    assert.match(page.text, /Website suspended/);
+    assert.match(page.text, /Website blocked/);
     assert.doesNotMatch(page.text, /data-ac-website-action="view-live"/);
     assert.doesNotMatch(page.text, /data-ac-website-action="publish"/);
     assert.match(page.text, /data-ac-website-action="contact-platform-admin"/);
@@ -682,7 +682,7 @@ describe("BlessBoard HQ website settings HTTP", () => {
       .set("Host", host)
       .set("Cookie", await hqCookie(hqUserId));
     assert.equal(page.status, 200);
-    assert.match(page.text, /Website suspended/);
+    assert.match(page.text, /Website blocked/);
     assert.doesNotMatch(page.text, /data-bb-website-action="view-live"/);
     assert.match(page.text, /data-bb-website-action="contact-platform-admin"/);
   });

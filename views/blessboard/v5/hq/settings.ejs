@@ -151,7 +151,7 @@
         <option value="published" <%= settings.websiteStatus === 'published' ? 'selected' : '' %>>Published</option>
         <option value="suspended" <%= settings.websiteStatus === 'suspended' ? 'selected' : '' %>>Suspended</option>
       </select>
-      <p class="bb-hq-hint">Prefer <a href="/hq/website">Website publish</a> for readiness-checked publishing.</p>
+      <p class="bb-hq-hint">Publishing a live site must go through <a href="/hq/website">Website</a> so a shared version is recorded. This control cannot make a draft site public.</p>
     </div>
     <p class="bb-hq-hint">Primary language is not available yet (no schema column).</p>
     <p class="bb-hq-hint">Organization street address is maintained on the first branch below.</p>

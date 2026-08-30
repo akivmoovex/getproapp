@@ -6,7 +6,10 @@
 %>
 <section class="bb-pa-page" data-recent-website-changes="1" data-website-governance-console="1">
   <h1>Recently Updated</h1>
-  <p>Post-publication review. Customer websites go live without waiting for this approval.</p>
+  <p class="bb-pa-lede">
+    Platform-wide website governance. Post-publication review. Customer websites go live without waiting for this approval.
+    Organization-scoped <code>website.review</code> does not grant access to this console.
+  </p>
   <form method="get" action="/admin/recent-website-changes" class="bb-pa-filters">
     <input type="hidden" name="view" value="<%= viewMode %>"/>
     <label>Product
@@ -17,21 +20,55 @@
       </select>
     </label>
     <label>Organization
-      <input name="tenant" value="<%= f.tenant || '' %>" maxlength="80"/>
+      <input name="tenant" value="<%= f.tenant || '' %>" maxlength="80" placeholder="Name or key"/>
     </label>
-    <label>Filter
-      <select name="filter">
-        <option value="" <%= !f.filter ? 'selected' : '' %>>All</option>
-        <option value="unreviewed" <%= f.filter === 'unreviewed' ? 'selected' : '' %>>Unreviewed</option>
-        <option value="approved" <%= f.filter === 'approved' ? 'selected' : '' %>>Approved</option>
-        <option value="live" <%= f.filter === 'live' ? 'selected' : '' %>>Live</option>
-        <option value="hidden" <%= f.filter === 'hidden' ? 'selected' : '' %>>Hidden</option>
-        <option value="blocked" <%= f.filter === 'blocked' ? 'selected' : '' %>>Blocked</option>
+    <label>Review Status
+      <select name="review_status">
+        <option value="" <%= !f.reviewStatus ? 'selected' : '' %>>All</option>
+        <option value="unreviewed" <%= f.reviewStatus === 'unreviewed' ? 'selected' : '' %>>Unreviewed</option>
+        <option value="approved" <%= f.reviewStatus === 'approved' ? 'selected' : '' %>>Approved</option>
+      </select>
+    </label>
+    <label>Website Status
+      <select name="website_status">
+        <option value="" <%= !f.websiteStatus ? 'selected' : '' %>>All</option>
+        <option value="live" <%= f.websiteStatus === 'live' ? 'selected' : '' %>>Live</option>
+        <option value="hidden" <%= f.websiteStatus === 'hidden' ? 'selected' : '' %>>Hidden</option>
+        <option value="blocked" <%= f.websiteStatus === 'blocked' ? 'selected' : '' %>>Blocked</option>
       </select>
     </label>
     <button type="submit" class="bb-pa-btn">Filter</button>
   </form>
-  <table class="bb-pa-table" data-website-governance-table="1">
+  <ul class="bb-pa-website-gov-cards" data-website-governance-cards="1">
+    <% if (!rows.length) { %>
+    <li class="bb-pa-website-gov-card bb-pa-website-gov-card--empty">No recently updated websites.</li>
+    <% } %>
+    <% rows.forEach(function (row) { %>
+    <li
+      class="bb-pa-website-gov-card"
+      data-website-change-product="<%= row.productCode %>"
+      data-review-status="<%= row.reviewStatus || '' %>"
+      data-website-status="<%= row.websiteStatus || row.lifecycleStatus || '' %>"
+    >
+      <p><strong><%= row.productLabel || row.productCode %></strong> · <%= row.organizationName || row.organizationKey %></p>
+      <p><%= row.websiteName || row.organizationName || row.slug || '—' %></p>
+      <p>
+        <% if (row.publicPath) { %>
+        <a class="bb-pa-link" href="<%= row.publicPath %>"><%= row.publicPath %></a>
+        <% } else { %>—<% } %>
+      </p>
+      <p>Published by <%= row.publishedByLabel || row.publishedByIdentityId || '—' %></p>
+      <p><%= row.publishedAt ? String(row.publishedAt).slice(0, 19).replace('T', ' ') : (row.timestamp ? String(row.timestamp).slice(0, 19).replace('T', ' ') : '—') %></p>
+      <p>Current <% if (row.currentVersionNumber) { %>v<%= row.currentVersionNumber %><% } else if (row.versionNumber) { %>v<%= row.versionNumber %><% } else { %>—<% } %>
+         · Last approved <% if (row.lastApprovedVersionNumber) { %>v<%= row.lastApprovedVersionNumber %><% } else { %>—<% } %></p>
+      <p><%= row.reviewStatusLabel || row.moderationState || '—' %> · <%= row.websiteStatusLabel || row.lifecycleStatus || '—' %></p>
+      <p>
+        <a class="bb-pa-link" href="/admin/recent-website-changes/<%= row.kind === 'moderation' ? 'event' : (row.kind || 'version') %>/<%= row.id %>">Review changes</a>
+      </p>
+    </li>
+    <% }); %>
+  </ul>
+  <table class="bb-pa-table bb-pa-website-gov-table" data-website-governance-table="1">
     <thead>
       <tr>
         <th>Product</th>

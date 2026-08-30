@@ -29,12 +29,12 @@
   <p class="bb-pa-notice" data-website-availability-notice="unpublished">Website is not public. Content and versions were kept.</p>
   <% } else if (notice === 'restored') { %>
   <p class="bb-pa-notice">Previous version restored as a new live version. History was kept.</p>
-  <% } else if (notice === 'offline') { %>
-  <p class="bb-pa-notice">Website taken offline. Tenant account remains active.</p>
-  <% } else if (notice === 'suspend') { %>
-  <p class="bb-pa-notice">Website suspended. Tenant account remains active.</p>
-  <% } else if (notice === 'restore-site') { %>
-  <p class="bb-pa-notice">Website restored.</p>
+  <% } else if (notice === 'offline' || notice === 'hide') { %>
+  <p class="bb-pa-notice">Website hidden. Content and drafts were kept. The tenant account remains active.</p>
+  <% } else if (notice === 'suspend' || notice === 'block') { %>
+  <p class="bb-pa-notice">Website blocked. Public access and customer publishing are disabled until it is unblocked.</p>
+  <% } else if (notice === 'restore-site' || notice === 'unhide' || notice === 'unblock') { %>
+  <p class="bb-pa-notice">Website restored to public visibility.</p>
   <% } else if (notice === 'request-changes') { %>
   <p class="bb-pa-notice">Changes requested. Current public version was left in place unless taken offline.</p>
   <% } else if (notice === 'policy') { %>
@@ -60,6 +60,10 @@
     <dd data-website-status="<%= typeof websiteStatus !== 'undefined' ? websiteStatus : '' %>"><%= typeof websiteStatus !== 'undefined' && websiteStatus ? websiteStatus : (isPublic ? 'Public' : 'Not public') %></dd>
     <dt>Published version</dt>
     <dd data-published-version="<%= approved && approved.versionNumber ? approved.versionNumber : '' %>"><% if (approved && approved.versionNumber) { %>v<%= approved.versionNumber %><% } else { %>None<% } %></dd>
+    <dt>Last approved version</dt>
+    <dd data-last-approved-version="<%= typeof lastApprovedVersionNumber !== 'undefined' && lastApprovedVersionNumber ? lastApprovedVersionNumber : '' %>"><% if (typeof lastApprovedVersionNumber !== 'undefined' && lastApprovedVersionNumber) { %>v<%= lastApprovedVersionNumber %><% } else { %>None<% } %></dd>
+    <dt>Review status</dt>
+    <dd data-review-status="<%= typeof reviewStatus !== 'undefined' ? reviewStatus : '' %>"><%= typeof reviewStatusLabel !== 'undefined' && reviewStatusLabel ? reviewStatusLabel : '—' %></dd>
     <dt>Current draft</dt>
     <dd data-draft-state="<%= typeof currentDraft !== 'undefined' ? currentDraft : '' %>"><%= typeof currentDraft !== 'undefined' && currentDraft ? currentDraft : (unpublishedCount > 0 ? 'Unpublished changes' : 'Current') %></dd>
     <dt>Unpublished changes</dt>
@@ -116,25 +120,27 @@
   <h2>Moderation</h2>
   <p>These actions affect the public website only. They do not disable the tenant account.</p>
   <% if (canTakeOffline) { %>
-  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/offline" data-website-moderation="offline">
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/hide" data-website-moderation="offline" data-website-governance="hide">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <p class="bb-pa-hint">The website will no longer be publicly visible. Content and drafts will be retained.</p>
     <label>Reason <input name="reason" maxlength="500" required/></label>
     <label>Tenant-visible note <input name="note_public" maxlength="500"/></label>
     <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Hide Website</button>
   </form>
   <% } %>
   <% if (canSuspend) { %>
-  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/suspend" data-website-moderation="suspend">
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/block" data-website-moderation="suspend" data-website-governance="block">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <p class="bb-pa-hint">Public access and customer publishing will be disabled until the website is unblocked.</p>
     <label>Reason <input name="reason" maxlength="500" required/></label>
     <label>Tenant-visible note <input name="note_public" maxlength="500"/></label>
     <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Block Website</button>
   </form>
   <% } %>
   <% if (canRestore && (typeof canResume === 'undefined' || canResume)) { %>
-  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/restore-site" data-website-moderation="restore">
+  <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/<%= inst && inst.lifecycleStatus === 'suspended' ? 'unblock' : inst && inst.lifecycleStatus === 'offline' ? 'unhide' : 'restore-site' %>" data-website-moderation="restore">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <button type="submit" class="bb-pa-btn"><%= inst && inst.lifecycleStatus === 'suspended' ? 'Unblock Website' : inst && inst.lifecycleStatus === 'offline' ? 'Unhide Website' : 'Resume publishing' %></button>
+    <button type="submit" class="bb-pa-btn"><%= inst && inst.lifecycleStatus === 'suspended' ? 'Unblock Website' : inst && inst.lifecycleStatus === 'offline' ? 'Unhide Website' : 'Unhide / Unblock Website' %></button>
   </form>
   <% } %>
   <% if (canModerate) { %>

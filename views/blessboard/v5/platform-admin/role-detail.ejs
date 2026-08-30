@@ -27,6 +27,9 @@
       <% if (role.description) { %>
       <p class="bb-pa-lede"><%= role.description %></p>
       <% } %>
+      <% if (role.scopeLabel) { %>
+      <p class="bb-pa-hint"><%= role.scopeLabel %></p>
+      <% } %>
       <div class="bb-pa-role-detail__meta">
         <span class="bb-pa-chip bb-pa-chip--<%= role.isActive ? 'ok' : 'inactive' %>">
           <%= role.isActive ? 'Active' : 'Inactive' %>
@@ -91,6 +94,9 @@
         <li><span class="bb-pa-chip"><%= scope %></span></li>
         <% }) %>
       </ul>
+      <% if (role.scopeLabel) { %>
+      <p class="bb-pa-hint"><%= role.scopeLabel %>. Organization-scoped website.review does not unlock /admin/recent-website-changes.</p>
+      <% } %>
       <% } %>
     </section>
   </div>

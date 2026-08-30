@@ -5232,3 +5232,49 @@ a.bb-pa-btn--disabled {
     display: block;
   }
 }
+
+/* Website governance console — platform-admin.css?v=63 */
+.bb-pa-website-gov-cards {
+  display: none;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+  gap: 0.75rem;
+}
+.bb-pa-website-gov-card {
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.9rem 1rem;
+}
+.bb-pa-website-gov-card p {
+  margin: 0 0 0.35rem;
+}
+.bb-pa-website-visual {
+  align-items: stretch;
+}
+.bb-pa-website-visual iframe,
+.bb-pa-website-visual__frame {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  background: #fff;
+}
+.bb-pa-governance-preview-banner {
+  background: #1e1b4b;
+  color: #fff;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+}
+@media (max-width: 900px) {
+  .bb-pa-website-gov-table {
+    display: none;
+  }
+  .bb-pa-website-gov-cards {
+    display: grid;
+  }
+  .bb-pa-website-visual,
+  .bb-pa-website-diff__compare {
+    display: grid;
+    grid-template-columns: 1fr;
+  }
+}

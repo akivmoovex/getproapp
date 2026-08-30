@@ -10,6 +10,7 @@ const {
   authorize,
 } = require("../../blessboard/services/blessBoardRbacAuthorizationService");
 const { LEGACY_BUNDLES } = require("../../blessboard/rbac/legacyCompatibilityPermissions");
+const { isPlatformWebsiteGovernanceRole } = require("../http/websiteGovernanceAccess");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -128,9 +129,10 @@ async function listPlatformRoleCatalogue(db, input) {
     const roles = rolesRes.rows.map((row) => {
       const roleKey = String(row.role_key);
       const isPlatformAdmin = roleKey === "platform_administrator";
+      const platformWebsiteGov = isPlatformWebsiteGovernanceRole(roleKey);
       const category = String(row.role_category || "");
       const supportedScopes =
-        category === "platform"
+        category === "platform" || platformWebsiteGov
           ? ["platform"]
           : ["organisation", "church", "branch"];
       return {
@@ -142,10 +144,11 @@ async function listPlatformRoleCatalogue(db, input) {
         displayGroup: displayGroupForCategory(row.role_category),
         sensitivity: row.is_sensitive ? "Sensitive" : "Standard",
         supportedScopes,
-        permissionCount: Number(row.permission_count) || 0,
-        activeAssignmentCount: Number(row.active_assignment_count) || 0,
+        scopeLabel: platformWebsiteGov ? "Platform-wide website governance" : null,
         assignableByPlatformAdmin:
           row.is_active && !isPlatformAdmin,
+        permissionCount: Number(row.permission_count) || 0,
+        activeAssignmentCount: Number(row.active_assignment_count) || 0,
         legacyCompatibility: isLegacyCompatibleRole(roleKey),
         isActive: Boolean(row.is_active),
       };
@@ -257,9 +260,14 @@ async function getPlatformRoleDetail(db, input) {
     }
 
     const supportedScopes =
-      category === "platform"
+      category === "platform" || isPlatformWebsiteGovernanceRole(String(role.role_key))
         ? ["platform"]
         : ["organisation", "church", "branch"];
+    const platformWebsiteGov = isPlatformWebsiteGovernanceRole(String(role.role_key));
+    if (platformWebsiteGov) {
+      sodNotes =
+        "Platform-wide website governance. Assign only at platform scope. These roles do not grant platform_admin. An organization-scoped website.review grant does not unlock /admin/recent-website-changes.";
+    }
 
     const detail = {
       roleId,
@@ -270,6 +278,7 @@ async function getPlatformRoleDetail(db, input) {
       displayGroup: displayGroupForCategory(category),
       sensitivity: isSensitive ? "Sensitive" : "Standard",
       supportedScopes,
+      scopeLabel: platformWebsiteGov ? "Platform-wide website governance" : null,
       isActive: Boolean(role.is_active),
       legacyCompatibility: isLegacyCompatibleRole(String(role.role_key)),
       permissions,

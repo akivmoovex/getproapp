@@ -9,7 +9,6 @@
 
 const instanceRepo = require("./instanceRepository");
 const contentService = require("./contentService");
-const versionService = require("./versionService");
 const { buildWebsiteReviewDiff, buildVersionDiff } = require("./reviewDiff");
 const { getWebsiteTemplate } = require("./templateRegistry");
 const {
@@ -42,6 +41,12 @@ const {
 const {
   unpublishChurchWebsite,
 } = require("../../blessboard/services/churchWebsitePublishService");
+const {
+  resolveApprovedVersions,
+  reviewStatusForVersion,
+  REVIEW_STATUS,
+  REVIEW_STATUS_LABEL,
+} = require("./websiteGovernanceService");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -68,7 +73,7 @@ function websiteStatusLabel(input) {
     }
     return LIFECYCLE_LABELS[input.lifecycleStatus];
   }
-  if (input.bbWebsiteStatus === "suspended") return "Website suspended";
+  if (input.bbWebsiteStatus === "suspended") return "Website blocked";
   if (input.published) return "Website live";
   if (input.hasWebsite) return "Draft";
   return "Not provisioned";
@@ -231,6 +236,7 @@ async function listPlatformAdminWebsites(db, filters) {
         i.publish_policy,
         i.adapter_mode,
         i.status AS instance_status,
+        i.scope_ref,
         hco.website_published AS ac_website_published,
         cs.website_status AS bb_website_status,
         c.id AS church_id
@@ -240,10 +246,16 @@ async function listPlatformAdminWebsites(db, filters) {
         AND op.status = 'active'
        JOIN platform.products p
          ON p.id = op.product_id
-       LEFT JOIN platform.website_instances i
-         ON i.organization_id = o.id
-        AND i.product_code = p.product_key
-        AND i.status <> 'archived'
+       LEFT JOIN LATERAL (
+         SELECT wi.id, wi.slug, wi.lifecycle_status, wi.publish_policy, wi.adapter_mode,
+                wi.status, wi.scope_ref
+           FROM platform.website_instances wi
+          WHERE wi.organization_id = o.id
+            AND wi.product_code = p.product_key
+            AND wi.status <> 'archived'
+          ORDER BY CASE WHEN wi.scope_ref IS NULL THEN 0 ELSE 1 END, wi.created_at ASC
+          LIMIT 1
+       ) i ON true
        LEFT JOIN activeclinic.healthcare_organizations hco
          ON hco.organization_id = o.id
         AND p.product_key = 'activeclinic'
@@ -270,22 +282,31 @@ async function listPlatformAdminWebsites(db, filters) {
     let unpublishedCount = 0;
     let draftUpdatedAt = null;
 
+    let lastApprovedVersionNumber = null;
+    let reviewStatus = REVIEW_STATUS.UNREVIEWED;
+
+    if (row.instance_id) {
+      const resolved = await resolveApprovedVersions(db, {
+        organizationId: row.organization_id,
+        instanceId: row.instance_id,
+      });
+      const live = resolved.currentPublished || null;
+      currentVersionNumber = live ? live.versionNumber : null;
+      lastPublishedAt = live ? live.publishedAt : null;
+      lastPublisherId = live ? live.editorIdentityId : null;
+      lastApprovedVersionNumber =
+        resolved.lastApproved && resolved.lastApproved.version
+          ? resolved.lastApproved.version.versionNumber
+          : null;
+      reviewStatus = reviewStatusForVersion(live && live.id, resolved.lastApproved);
+    }
+
     if (productCode === PRODUCT_CODE.ACTIVECLINIC && row.instance_id) {
       const instance = await instanceRepo.findWebsiteInstanceById(
         db,
         row.instance_id,
         row.organization_id
       );
-      const versions = instance
-        ? await versionService.listWebsiteVersions(db, {
-            instanceId: instance.id,
-            organizationId: row.organization_id,
-          })
-        : { versions: [] };
-      const live = (versions.versions || []).find((v) => v.status === "published") || null;
-      currentVersionNumber = live ? live.versionNumber : null;
-      lastPublishedAt = live ? live.publishedAt : null;
-      lastPublisherId = live ? live.editorIdentityId : null;
       published = row.ac_website_published === true;
       if (instance) {
         const changes = await contentService.listUnpublishedChanges(
@@ -301,8 +322,12 @@ async function listPlatformAdminWebsites(db, filters) {
     } else if (productCode === PRODUCT_CODE.BLESSBOARD) {
       published = String(row.bb_website_status || "") === "published";
       hasWebsite = Boolean(row.church_id) || Boolean(row.instance_id);
-      if (row.organization_id) {
-        const live = await bbVersionRepo.getCurrentPublishedVersion(db, row.organization_id, null);
+      if (currentVersionNumber == null && row.organization_id) {
+        const live = await bbVersionRepo.getCurrentPublishedVersion(
+          db,
+          row.organization_id,
+          row.scope_ref || null
+        );
         if (live) {
           currentVersionNumber = live.versionNumber;
           lastPublishedAt = live.publishedAt;
@@ -343,6 +368,9 @@ async function listPlatformAdminWebsites(db, filters) {
       unpublishedCount,
       currentDraft: draftLabel({ unpublishedCount, published, hasWebsite }),
       currentVersionNumber,
+      lastApprovedVersionNumber,
+      reviewStatus,
+      reviewStatusLabel: REVIEW_STATUS_LABEL[reviewStatus] || reviewStatus,
       lastPublishedAt,
       lastPublishedLabel: formatTs(lastPublishedAt),
       lastPublisherId,
@@ -425,15 +453,22 @@ async function loadPlatformAdminWebsiteDetail(db, organizationKey, opts) {
   let lastEditorId = null;
   let lastPublisherId = null;
   let lastPublisher = null;
+  let lastApprovedVersion = null;
+  let reviewStatus = REVIEW_STATUS.UNREVIEWED;
   let clinicAvailability = null;
 
-  if (productCode === PRODUCT_CODE.ACTIVECLINIC && instance) {
-    const listed = await versionService.listWebsiteVersions(db, {
-      instanceId: instance.id,
+  if (instance) {
+    const resolved = await resolveApprovedVersions(db, {
       organizationId: organization.id,
+      instanceId: instance.id,
     });
-    versions = listed.versions || [];
-    liveVersion = versions.find((v) => v.status === "published") || null;
+    versions = resolved.versions || [];
+    liveVersion = resolved.currentPublished || null;
+    lastApprovedVersion = resolved.lastApproved || null;
+    reviewStatus = reviewStatusForVersion(liveVersion && liveVersion.id, resolved.lastApproved);
+  }
+
+  if (productCode === PRODUCT_CODE.ACTIVECLINIC && instance) {
     draftChanges = await contentService.listUnpublishedChanges(db, instance, organization.id);
     const template = getWebsiteTemplate(instance.templateId, instance.templateVersion);
     changeSummary = summarizeAcChanges(draftChanges, template);
@@ -460,12 +495,12 @@ async function loadPlatformAdminWebsiteDetail(db, organizationKey, opts) {
     );
     churchId = church.rows[0] ? church.rows[0].id : null;
     websitePublished = String((church.rows[0] && church.rows[0].website_status) || "") === "published";
-    const history = churchId
-      ? await bbVersionRepo.listVersions(db, { organizationId: organization.id, limit: 40 })
-      : { items: [] };
-    versions = history.items || [];
-    liveVersion = versions.find((v) => v.status === "published") || null;
-    lastPublisherId = liveVersion ? liveVersion.publishedBy : null;
+    if (!versions.length && churchId) {
+      const history = await bbVersionRepo.listVersions(db, { organizationId: organization.id, limit: 40 });
+      versions = history.items || [];
+      liveVersion = versions.find((v) => v.status === "published") || liveVersion;
+    }
+    lastPublisherId = liveVersion ? liveVersion.editorIdentityId || liveVersion.publishedBy : null;
     lastPublisher = liveVersion ? liveVersion.publishedByName : null;
     if (churchId) {
       const fieldDrafts = await fieldDraftRepo.listDrafts(db, { churchId });
@@ -519,6 +554,14 @@ async function loadPlatformAdminWebsiteDetail(db, organizationKey, opts) {
     publicPath: actions.viewLive,
     publicUrl: actions.viewLive,
     liveVersion,
+    lastApprovedVersion,
+    reviewStatus,
+    reviewStatusLabel: REVIEW_STATUS_LABEL[reviewStatus] || reviewStatus,
+    currentVersionNumber: liveVersion ? liveVersion.versionNumber : null,
+    lastApprovedVersionNumber:
+      lastApprovedVersion && lastApprovedVersion.version
+        ? lastApprovedVersion.version.versionNumber
+        : null,
     versions: decoratedVersions,
     draftChanges,
     changeSummary,

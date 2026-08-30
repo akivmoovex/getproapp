@@ -71,7 +71,7 @@ function sendClinicWebsiteOffline(res, deps, kind) {
   const suspended = kind === "suspended";
   return res.status(403).type("html").send(renderPublicPage({
     pageId: suspended ? "tenant-clinic-website-suspended" : "tenant-clinic-website-offline",
-    pageTitle: suspended ? "Website suspended" : "Website offline",
+    pageTitle: suspended ? "This website is not available" : "This website is not available",
     contentTemplate: suspended ? "tenant/clinic-website-suspended" : "tenant/clinic-website-offline",
     shellVariant: "platform",
     locals: { csrfToken },

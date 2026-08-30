@@ -22,6 +22,8 @@ const FRIENDLY_ERRORS = Object.freeze({
   timezone: "Enter a valid timezone (for example Africa/Lusaka).",
   country_code: "Enter a 2-letter country code (for example ZM).",
   website_status: "Choose a valid website status.",
+  website_publish_via_hub:
+    "Publish the public website from Website, not from organization settings.",
   address_line_1: "Address line 1 is too long.",
   address_line_2: "Address line 2 is too long.",
   city: "City is too long.",

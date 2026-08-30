@@ -33,6 +33,8 @@
         <th>Public URL</th>
         <th>Website status</th>
         <th>Published version</th>
+        <th>Last approved</th>
+        <th>Review</th>
         <th>Current draft</th>
         <th>Unpublished changes</th>
         <th>Last editor</th>
@@ -42,7 +44,7 @@
     </thead>
     <tbody>
       <% if (!rows.length) { %>
-      <tr><td colspan="10">No websites match this view.</td></tr>
+      <tr><td colspan="12">No websites match this view.</td></tr>
       <% } %>
       <% rows.forEach(function (site) { %>
       <tr
@@ -50,6 +52,8 @@
         data-product="<%= site.productCode %>"
         data-website-status="<%= site.websiteStatus %>"
         data-published-version="<%= site.currentVersionNumber || '' %>"
+        data-last-approved-version="<%= site.lastApprovedVersionNumber || '' %>"
+        data-review-status="<%= site.reviewStatus || '' %>"
         data-draft-state="<%= site.currentDraft %>"
         data-unpublished-count="<%= site.unpublishedCount || 0 %>"
         data-last-editor="<%= site.lastEditor || '' %>"
@@ -70,6 +74,8 @@
           <% if (site.currentVersionNumber) { %>v<%= site.currentVersionNumber %><% } else { %>—<% } %>
           <% if (site.lastPublishedLabel) { %><br/><span class="bb-pa-hint"><%= site.lastPublishedLabel %></span><% } %>
         </td>
+        <td><% if (site.lastApprovedVersionNumber) { %>v<%= site.lastApprovedVersionNumber %><% } else { %>—<% } %></td>
+        <td><%= site.reviewStatusLabel || '—' %></td>
         <td><%= site.currentDraft || '—' %></td>
         <td><%= site.unpublishedCount > 0 ? (site.unpublishedCount + ' changes') : 'None' %></td>
         <td><%= site.lastEditor || '—' %></td>

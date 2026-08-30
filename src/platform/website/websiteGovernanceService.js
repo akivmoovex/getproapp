@@ -342,7 +342,8 @@ async function hideWebsite(db, input) {
     ...input,
     ...actor,
     reason,
-    notes: input.notes || reason,
+    notes: input.notes || input.notePublic || reason,
+    notePublic: input.notePublic || null,
     auditActionKey: "website.moderation.hide",
     moderationActionKey: ACTION.HIDE,
     previousStateOverride: websiteStatusFromLifecycle(loaded.instance.lifecycleStatus),
@@ -375,7 +376,8 @@ async function blockWebsite(db, input) {
     ...input,
     ...actor,
     reason,
-    notes: input.notes || reason,
+    notes: input.notes || input.notePublic || reason,
+    notePublic: input.notePublic || null,
     editLocked: true,
     publishLocked: true,
     auditActionKey: "website.moderation.block",
@@ -443,6 +445,38 @@ async function revertToApprovedVersion(db, input) {
   };
 }
 
+/**
+ * Single dispatcher for canonical governance actions and legacy aliases.
+ * Hide/offline, block/suspend, and restore-site share this implementation.
+ */
+async function performGovernanceAction(db, action, input) {
+  const key = String(action || "");
+  if (key === "hide" || key === "offline") return hideWebsite(db, input);
+  if (key === "unhide") return unhideWebsite(db, input);
+  if (key === "block" || key === "suspend") return blockWebsite(db, input);
+  if (key === "unblock") return unblockWebsite(db, input);
+  if (key === "approve") return approveWebsiteVersion(db, input);
+  if (key === "revert") return revertToApprovedVersion(db, input);
+  if (key === "restore-site") {
+    const loaded = await loadInstance(db, input);
+    if (!loaded.ok) return loaded;
+    if (loaded.instance.lifecycleStatus === LIFECYCLE_STATUS.OFFLINE) {
+      return unhideWebsite(db, input);
+    }
+    if (loaded.instance.lifecycleStatus === LIFECYCLE_STATUS.SUSPENDED) {
+      return unblockWebsite(db, input);
+    }
+    return restoreWebsiteAvailability(db, {
+      ...input,
+      ...actorMeta(input),
+      lifecycleStatus: input.lifecycleStatus,
+      auditActionKey: input.auditActionKey || "website.moderation.unhide",
+      moderationActionKey: input.moderationActionKey || ACTION.UNHIDE,
+    });
+  }
+  return { ok: false, code: RESULT.INVALID_INPUT };
+}
+
 function buildGovernanceReview(input) {
   const instance = input && input.instance;
   const template = instance
@@ -472,22 +506,62 @@ function buildGovernanceReview(input) {
   return {
     ...diff,
     compareLabel: {
-      previous: approved ? `Previous approved (v${approved.versionNumber})` : "Previous",
-      current: current ? `Current published (v${current.versionNumber})` : "Current published",
+      previous: approved
+        ? `Previous approved version (v${approved.versionNumber})`
+        : "Previous approved version",
+      current: current
+        ? `Current published version (v${current.versionNumber})`
+        : "Current published version",
     },
     visual: {
       previousApprovedPath:
         approved && organizationKey
-          ? `/admin/organizations/${encodeURIComponent(organizationKey)}/website/versions/${approved.id}/preview`
+          ? `/admin/organizations/${encodeURIComponent(organizationKey)}/website/versions/${approved.id}/render`
           : null,
-      currentPublishedPath: publicPath || null,
+      currentPublishedPath:
+        current && organizationKey
+          ? `/admin/organizations/${encodeURIComponent(organizationKey)}/website/versions/${current.id}/render`
+          : publicPath || null,
       currentSnapshotPath:
         current && organizationKey
-          ? `/admin/organizations/${encodeURIComponent(organizationKey)}/website/versions/${current.id}/preview`
+          ? `/admin/organizations/${encodeURIComponent(organizationKey)}/website/versions/${current.id}/render`
           : null,
     },
   };
 }
+
+const CANONICAL_ACTIONS = Object.freeze({
+  hide: {
+    functionName: "hideWebsite",
+    route: "POST /admin/organizations/:organizationKey/website/hide",
+    aliases: ["POST /admin/organizations/:organizationKey/website/offline"],
+  },
+  unhide: {
+    functionName: "unhideWebsite",
+    route: "POST /admin/organizations/:organizationKey/website/unhide",
+    aliases: ["POST /admin/organizations/:organizationKey/website/restore-site (when hidden)"],
+  },
+  block: {
+    functionName: "blockWebsite",
+    route: "POST /admin/organizations/:organizationKey/website/block",
+    aliases: ["POST /admin/organizations/:organizationKey/website/suspend"],
+  },
+  unblock: {
+    functionName: "unblockWebsite",
+    route: "POST /admin/organizations/:organizationKey/website/unblock",
+    aliases: ["POST /admin/organizations/:organizationKey/website/restore-site (when blocked)"],
+  },
+  approve: {
+    functionName: "approveWebsiteVersion",
+    route: "POST /admin/organizations/:organizationKey/website/approve",
+    aliases: [],
+  },
+  revert: {
+    functionName: "revertToApprovedVersion",
+    route: "POST /admin/organizations/:organizationKey/website/revert",
+    aliases: [],
+  },
+});
 
 module.exports = {
   REVIEW_STATUS,
@@ -496,6 +570,7 @@ module.exports = {
   WEBSITE_STATUS_LABEL,
   RESULT,
   ACTION,
+  CANONICAL_ACTIONS,
   websiteStatusFromLifecycle,
   productLabel,
   resolveApprovedVersions,
@@ -507,5 +582,6 @@ module.exports = {
   blockWebsite,
   unblockWebsite,
   revertToApprovedVersion,
+  performGovernanceAction,
   buildGovernanceReview,
 };

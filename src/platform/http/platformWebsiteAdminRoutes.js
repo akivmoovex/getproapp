@@ -22,6 +22,7 @@ const {
   blockWebsite,
   unblockWebsite,
   revertToApprovedVersion,
+  performGovernanceAction,
   buildGovernanceReview,
   REVIEW_STATUS,
   WEBSITE_STATUS,
@@ -34,6 +35,7 @@ const {
   requestLiveWebsiteChanges,
 } = require("../website/lifecycleService");
 const { LIFECYCLE_STATUS } = require("../website/lifecycleStatus");
+const { renderGovernanceVersionPreview } = require("../website/governanceVersionPreview");
 const {
   loadClinicWebsiteOperational,
 } = require("../../activeclinic/services/clinicWebsiteAvailabilityService");
@@ -425,6 +427,11 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         publicUrl: detail.publicUrl,
         websitePublished: detail.websitePublished,
         liveVersion: detail.liveVersion,
+        lastApprovedVersion: detail.lastApprovedVersion,
+        lastApprovedVersionNumber: detail.lastApprovedVersionNumber,
+        reviewStatus: detail.reviewStatus,
+        reviewStatusLabel: detail.reviewStatusLabel,
+        currentVersionNumber: detail.currentVersionNumber,
         actions: detail.actions,
         canResume: detail.canResume === true,
         availability: availability || {
@@ -580,12 +587,23 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           );
         }
       } else {
+        const reviewStatus = String(req.query.review_status || "").trim();
+        const websiteStatus = String(req.query.website_status || "").trim();
         const listed = await listRecentWebsitePublications(getPool(), {
           productCode: String(req.query.product || "").trim() || null,
           tenant: String(req.query.tenant || "").trim() || null,
-          reviewStatus: filter === "unreviewed" || filter === "approved" ? filter : null,
+          reviewStatus:
+            reviewStatus === "unreviewed" || reviewStatus === "approved"
+              ? reviewStatus
+              : filter === "unreviewed" || filter === "approved"
+                ? filter
+                : null,
           websiteStatus:
-            filter === "hidden" || filter === "blocked" || filter === "live" ? filter : null,
+            websiteStatus === "hidden" || websiteStatus === "blocked" || websiteStatus === "live"
+              ? websiteStatus
+              : filter === "hidden" || filter === "blocked" || filter === "live"
+                ? filter
+                : null,
           limit: 80,
         });
         rows = listed.publications || [];
@@ -603,13 +621,15 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           env,
           isProduction: String(env.NODE_ENV || "") === "production",
           activeNav: "recent-website-changes",
-          pageTitle: "Recent Website Changes",
+          pageTitle: "Platform-wide website governance",
         }),
         changes: rows,
         view,
         filters: {
           product: String(req.query.product || ""),
           tenant: String(req.query.tenant || ""),
+          reviewStatus: String(req.query.review_status || ""),
+          websiteStatus: String(req.query.website_status || ""),
           lifecycle: String(req.query.lifecycle || ""),
           filter,
           flagged: String(req.query.flagged || "") === "1",
@@ -862,6 +882,8 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         reason: req.body && req.body.reason,
         notes: req.body && (req.body.notes || req.body.note),
         note: req.body && (req.body.note || req.body.notes),
+        notePublic: req.body && req.body.note_public,
+        notesTenantVisible: Boolean(req.body && req.body.note_public),
         versionId: (req.body && req.body.version_id) || req.params.versionId,
       };
       let result;
@@ -869,32 +891,32 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         if (!canApprove(req)) {
           return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
         }
-        result = await approveWebsiteVersion(getPool(), actor);
+        result = await performGovernanceAction(getPool(), "approve", actor);
       } else if (action === "hide") {
         if (!canTakeOffline(req)) {
           return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
         }
-        result = await hideWebsite(getPool(), actor);
+        result = await performGovernanceAction(getPool(), "hide", actor);
       } else if (action === "unhide") {
         if (!canRestore(req)) {
           return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
         }
-        result = await unhideWebsite(getPool(), actor);
+        result = await performGovernanceAction(getPool(), "unhide", actor);
       } else if (action === "block") {
         if (!canSuspend(req)) {
           return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
         }
-        result = await blockWebsite(getPool(), actor);
+        result = await performGovernanceAction(getPool(), "block", actor);
       } else if (action === "unblock") {
         if (!canRestore(req)) {
           return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
         }
-        result = await unblockWebsite(getPool(), actor);
+        result = await performGovernanceAction(getPool(), "unblock", actor);
       } else if (action === "revert") {
         if (!canRestore(req)) {
           return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
         }
-        result = await revertToApprovedVersion(getPool(), actor);
+        result = await performGovernanceAction(getPool(), "revert", actor);
       } else {
         result = { ok: false, code: "invalid_input" };
       }
@@ -920,28 +942,27 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         instanceId: loaded.instance.id,
         actorIdentityId: actorId(req),
         actorRole: actorRole(req),
+        actorDisplayName: actorDisplayName(req),
         reason: req.body && req.body.reason,
         notes: req.body && req.body.notes,
         notePublic: req.body && req.body.note_public,
         notesTenantVisible: true,
+        lifecycleStatus: req.body && req.body.lifecycle_status,
       };
       let result;
       if (action === "offline") {
         if (!canTakeOffline(req)) return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
-        result = await takeWebsiteOffline(getPool(), body);
+        result = await performGovernanceAction(getPool(), "hide", body);
       } else if (action === "suspend") {
         if (!canSuspend(req)) return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
-        result = await suspendWebsite(getPool(), {
+        result = await performGovernanceAction(getPool(), "block", {
           ...body,
           editLocked: req.body && req.body.edit_lock !== "0",
           publishLocked: req.body && req.body.publish_lock !== "0",
         });
       } else if (action === "restore-site") {
         if (!canRestore(req)) return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
-        result = await restoreWebsiteAvailability(getPool(), {
-          ...body,
-          lifecycleStatus: req.body && req.body.lifecycle_status,
-        });
+        result = await performGovernanceAction(getPool(), "restore-site", body);
       } else if (action === "request-changes") {
         if (!canModerate(req)) return res.redirect(303, websiteManagePath(organizationKey, "error=forbidden"));
         result = await requestLiveWebsiteChanges(getPool(), {
@@ -997,9 +1018,64 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           productCode: loaded.instance.productCode,
           version: decorateVersion(version.version),
           snapshot: version.version.snapshot || {},
+          renderPath: `/admin/organizations/${encodeURIComponent(organizationKey)}/website/versions/${version.version.id}/render`,
         });
         res.setHeader("X-Robots-Tag", "noindex, nofollow");
+        res.setHeader("X-Frame-Options", "SAMEORIGIN");
         return res.status(200).type("html").send(html);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  router.get(
+    "/admin/organizations/:organizationKey/website/versions/:versionId/render",
+    requireApex,
+    requireGovernance,
+    async (req, res, next) => {
+      try {
+        setAdminNoStore(res);
+        const organizationKey = String(req.params.organizationKey || "").toLowerCase();
+        const orgRow = await getPool().query(
+          `SELECT id, organization_key, display_name FROM platform.organizations
+            WHERE organization_key = $1 LIMIT 1`,
+          [organizationKey]
+        );
+        const org = orgRow.rows[0] || null;
+        if (!org) {
+          return res.status(404).type("html").send("Website not found.");
+        }
+        const version = await versionService.getWebsiteVersion(getPool(), {
+          versionId: req.params.versionId,
+          organizationId: org.id,
+        });
+        if (!version.ok) return res.status(404).type("html").send("Version not found.");
+        if (String(version.version.organizationId) !== String(org.id)) {
+          return res.status(404).type("html").send("Version not found.");
+        }
+        const instance = await instanceRepo.findWebsiteInstanceById(
+          getPool(),
+          version.version.instanceId,
+          org.id
+        );
+        if (!instance) {
+          return res.status(404).type("html").send("Website not found.");
+        }
+        const rendered = await renderGovernanceVersionPreview(getPool(), {
+          organizationKey,
+          instance,
+          version: version.version,
+          snapshot: version.version.snapshot || {},
+          label: `Governance preview of published version v${version.version.versionNumber} — not a live publication`,
+        });
+        if (!rendered.ok) {
+          return res.status(404).type("html").send("Version preview is not available.");
+        }
+        res.setHeader("X-Robots-Tag", "noindex, nofollow");
+        res.setHeader("X-Frame-Options", "SAMEORIGIN");
+        res.setHeader("Content-Security-Policy", "frame-ancestors 'self'");
+        return res.status(200).type("html").send(rendered.html);
       } catch (err) {
         return next(err);
       }
@@ -1046,19 +1122,19 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
   router.post(
     "/admin/organizations/:organizationKey/website/offline",
     requireApex,
-    requirePlatformAdmin,
+    requireGovernance,
     (req, res, next) => handleModerationAction(req, res, next, "offline")
   );
   router.post(
     "/admin/organizations/:organizationKey/website/suspend",
     requireApex,
-    requirePlatformAdmin,
+    requireGovernance,
     (req, res, next) => handleModerationAction(req, res, next, "suspend")
   );
   router.post(
     "/admin/organizations/:organizationKey/website/restore-site",
     requireApex,
-    requirePlatformAdmin,
+    requireGovernance,
     (req, res, next) => handleModerationAction(req, res, next, "restore-site")
   );
   router.post(

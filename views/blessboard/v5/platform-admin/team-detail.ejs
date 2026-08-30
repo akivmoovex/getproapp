@@ -141,7 +141,8 @@
     <h2 class="bb-pa-panel__title">Assign role</h2>
     <p class="bb-pa-lede">
       Platform scope is blocked on this church team screen.
-      Sensitive and highly sensitive roles require a reason and are audited.
+      Website governance roles (Website support, approver, hider, blocker, restorer) are platform-wide and must be assigned at platform scope.
+      Organization-scoped website.review does not grant access to /admin/recent-website-changes.
     </p>
     <form method="post" action="<%= basePath %>/<%= u.id %>/assign" class="bb-pa-form" data-bb-pa-team-assign="1">
       <input type="hidden" name="<%= csrfField || '_csrf' %>" value="<%= csrfToken || '' %>" />

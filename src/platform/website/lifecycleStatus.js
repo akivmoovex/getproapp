@@ -14,8 +14,8 @@ const LIFECYCLE_LABELS = Object.freeze({
   [LIFECYCLE_STATUS.PROVISIONAL]: "Temporary website",
   [LIFECYCLE_STATUS.PUBLIC]: "Website live",
   [LIFECYCLE_STATUS.UNDER_REVIEW]: "Changes under review",
-  [LIFECYCLE_STATUS.SUSPENDED]: "Website suspended",
-  [LIFECYCLE_STATUS.OFFLINE]: "Website offline",
+  [LIFECYCLE_STATUS.SUSPENDED]: "Website blocked",
+  [LIFECYCLE_STATUS.OFFLINE]: "Website hidden",
 });
 
 function isLifecycleStatus(value) {

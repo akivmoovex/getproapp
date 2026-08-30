@@ -11,6 +11,7 @@ const {
   loadCurrentPublishedSnapshot,
   overlayPublishedPage,
   overlayPublishedEntities,
+  snapshotUsable,
 } = require("./websitePublishedSnapshotRead");
 
 const STATUS = Object.freeze({
@@ -52,6 +53,31 @@ function normalizeScope(input) {
   if (!churchId) return { ok: false, reason: "church_id" };
   if (!pageKey || !KEY_RE.test(pageKey)) return { ok: false, reason: "page_key" };
   return { ok: true, churchId, branchId, pageKey };
+}
+
+function historicalBindingFrom(input) {
+  return input && input.historicalBinding && typeof input.historicalBinding === "object"
+    ? input.historicalBinding
+    : null;
+}
+
+function applyHistoricalCmsOverlay(livePage, liveSections, binding, pageKey) {
+  const cms = binding && binding.cmsSnapshot;
+  if (!cms || !snapshotUsable(cms)) {
+    return { page: livePage, sections: liveSections, fromSnapshot: false };
+  }
+  return overlayPublishedPage(livePage, liveSections, cms, pageKey, { includeAllStatuses: true });
+}
+
+function applyHistoricalFieldOverlay(page, sections, binding, pageKey) {
+  const values = binding && binding.fieldValues;
+  if (!values || typeof values !== "object") return { page, sections };
+  try {
+    const { applySnapshotFieldsToPage } = require("../website/blessboardEngineContentService");
+    return applySnapshotFieldsToPage({ page, sections, values, pageKey });
+  } catch {
+    return { page, sections };
+  }
 }
 
 /**
@@ -103,8 +129,36 @@ async function getPublishedPage(db, input) {
           return { ok: false, status: STATUS.NOT_FOUND, page: null, sections: [] };
         }
       }
+      const historical = historicalBindingFrom(input);
       const page = await repo.findPageByScope(client, scope);
-      if (!page || page.status !== "published") {
+      const livePublished = Boolean(page && page.status === "published");
+      const liveSections = livePublished
+        ? await repo.listSectionsForPage(client, page.id, { status: "published" })
+        : [];
+      const livePage = livePublished ? page : null;
+
+      if (historical) {
+        const cmsOverlaid = applyHistoricalCmsOverlay(
+          livePage,
+          liveSections,
+          historical,
+          scope.pageKey
+        );
+        const resolvedPage = cmsOverlaid.page || livePage;
+        const resolvedSections = cmsOverlaid.fromSnapshot ? cmsOverlaid.sections : liveSections;
+        if (!resolvedPage) {
+          return { ok: false, status: STATUS.NOT_FOUND, page: null, sections: [] };
+        }
+        const engine = applyHistoricalFieldOverlay(
+          resolvedPage,
+          resolvedSections,
+          historical,
+          scope.pageKey
+        );
+        return { ok: true, status: STATUS.OK, page: engine.page, sections: engine.sections };
+      }
+
+      if (!livePublished) {
         const snap = await loadCurrentPublishedSnapshot(client, scope.churchId, scope.branchId);
         if (snap && snap.snapshot) {
           const overlaid = overlayPublishedPage(null, [], snap.snapshot, scope.pageKey);
@@ -122,12 +176,11 @@ async function getPublishedPage(db, input) {
         }
         return { ok: false, status: STATUS.NOT_FOUND, page: null, sections: [] };
       }
-      const sections = await repo.listSectionsForPage(client, page.id, { status: "published" });
       const snap = await loadCurrentPublishedSnapshot(client, scope.churchId, scope.branchId);
-      let resolvedPage = page;
-      let resolvedSections = sections;
+      let resolvedPage = livePage;
+      let resolvedSections = liveSections;
       if (snap && snap.snapshot) {
-        const overlaid = overlayPublishedPage(page, sections, snap.snapshot, scope.pageKey);
+        const overlaid = overlayPublishedPage(livePage, liveSections, snap.snapshot, scope.pageKey);
         if (overlaid.fromSnapshot) {
           resolvedPage = overlaid.page;
           resolvedSections = overlaid.sections;
@@ -191,6 +244,13 @@ async function listPublishedContent(db, input, kind) {
         branchId: branchId === undefined ? undefined : branchId,
         status: "published",
       });
+      const historical = historicalBindingFrom(input);
+      if (historical && historical.cmsSnapshot) {
+        const overlaid = overlayPublishedEntities(kind, items, historical.cmsSnapshot);
+        if (overlaid.fromSnapshot) {
+          return { ok: true, status: STATUS.OK, items: overlaid.items };
+        }
+      }
       const snap = await loadCurrentPublishedSnapshot(
         client,
         churchId,

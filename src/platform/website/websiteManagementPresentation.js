@@ -27,6 +27,7 @@ const PRESENTATION_STATE = Object.freeze({
   SETUP_INCOMPLETE: "setup_incomplete",
   MISSING: "missing",
   SUSPENDED: "suspended",
+  HIDDEN: "hidden",
   UNPUBLISHED: "unpublished",
   COMING_SOON: "coming_soon",
   PUBLISHED: "published",
@@ -81,8 +82,12 @@ function presentWebsiteSettingsUx(input) {
   const publishPath = facts.publishPath || null;
   const retryPath = facts.retryPath || null;
 
-  const suspended =
+  const blocked =
     lifecycle === LIFECYCLE_STATUS.SUSPENDED || productStatus === "suspended";
+  const hidden =
+    lifecycle === LIFECYCLE_STATUS.OFFLINE ||
+    productStatus === "offline" ||
+    productStatus === "hidden";
   const provisioningFailed =
     facts.provisioningFailed === true || websiteFailedStage(facts.failedStage);
   const setupIncomplete =
@@ -90,7 +95,8 @@ function presentWebsiteSettingsUx(input) {
   const missing = !exists && !setupIncomplete;
 
   const publiclyLive =
-    !suspended &&
+    !blocked &&
+    !hidden &&
     !setupIncomplete &&
     (availabilityPublished === true ||
       productStatus === "published" ||
@@ -99,7 +105,8 @@ function presentWebsiteSettingsUx(input) {
 
   let state = PRESENTATION_STATE.UNPUBLISHED;
   if (setupIncomplete) state = PRESENTATION_STATE.SETUP_INCOMPLETE;
-  else if (suspended) state = PRESENTATION_STATE.SUSPENDED;
+  else if (blocked) state = PRESENTATION_STATE.SUSPENDED;
+  else if (hidden) state = PRESENTATION_STATE.HIDDEN;
   else if (missing) state = PRESENTATION_STATE.MISSING;
   else if (!liveAvailable) {
     state =
@@ -119,9 +126,13 @@ function presentWebsiteSettingsUx(input) {
       ? "Required website records are missing. Retry setup, or contact Platform Admin if this continues."
       : "Website setup did not finish. Contact Platform Admin to complete provisioning.";
   } else if (state === PRESENTATION_STATE.SUSPENDED) {
-    statusLabel = "Website suspended";
+    statusLabel = "Website blocked";
     statusHint =
-      "This website is suspended. Public visitors cannot view it. Contact Platform Admin to restore it.";
+      "This website is blocked. Public access and publishing are disabled until Platform Admin unblocks it.";
+  } else if (state === PRESENTATION_STATE.HIDDEN) {
+    statusLabel = "Website hidden";
+    statusHint =
+      "This website is temporarily hidden from the public. Content and drafts are retained. Contact Platform Admin to unhide it.";
   } else if (state === PRESENTATION_STATE.COMING_SOON) {
     statusLabel = "Website not published yet";
     statusHint =
@@ -178,7 +189,7 @@ function presentWebsiteSettingsUx(input) {
     state !== PRESENTATION_STATE.MISSING;
   const showRetry = Boolean(retryPath) && (setupIncomplete || missing);
   const showContactPlatformAdmin =
-    (setupIncomplete || missing || suspended) && !showRetry;
+    (setupIncomplete || missing || blocked || hidden) && !showRetry;
 
   return {
     state,

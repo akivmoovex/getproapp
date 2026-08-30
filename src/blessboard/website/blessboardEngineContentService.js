@@ -96,6 +96,46 @@ function readSectionFieldValue(sectionRow, fieldKey, publicContact) {
   return "";
 }
 
+function unwrapFieldValue(raw) {
+  if (raw && typeof raw === "object" && !Array.isArray(raw) && Object.prototype.hasOwnProperty.call(raw, "v")) {
+    return raw.v;
+  }
+  return raw;
+}
+
+function overlayMapFromValues(values, pageKey) {
+  const map = new Map();
+  if (!values || typeof values !== "object") return map;
+  for (const [contentKey, raw] of Object.entries(values)) {
+    if (contentKey === "cms.snapshot") continue;
+    const locator = locatorFromContentKey(contentKey);
+    if (!locator) continue;
+    if (pageKey && locator.pageKey !== pageKey && !(locator.pageKey === "home" && locator.sectionKey === "footer")) {
+      continue;
+    }
+    const value = unwrapFieldValue(raw);
+    if (value == null) continue;
+    if (value && typeof value === "object" && !Array.isArray(value)) {
+      const src = value.src || value.url || "";
+      if (src) map.set(overlayKey(locator.sectionKey, locator.fieldKey), String(src));
+      if (value.alt) map.set(overlayKey(locator.sectionKey, `${locator.fieldKey}Alt`), String(value.alt));
+      continue;
+    }
+    map.set(overlayKey(locator.sectionKey, locator.fieldKey), String(value));
+  }
+  return map;
+}
+
+function applySnapshotFieldsToPage(input) {
+  return {
+    page: input.page || null,
+    sections: applyOverlayToSections(
+      input.sections || [],
+      overlayMapFromValues(input.values, input.pageKey)
+    ),
+  };
+}
+
 function applyOverlayToSections(sections, overlayMap) {
   if (!overlayMap || !overlayMap.size) return sections || [];
   return (sections || []).map((section) => {
@@ -437,6 +477,36 @@ async function seedUnpublishedEngineContent(db, input) {
       ...input,
       publish: false,
     });
+    if (resolved.ok && resolved.instance) {
+      try {
+        const versionService = require("../../platform/website/versionService");
+        const resolver = require("../../platform/website/resolver");
+        const listed = await versionService.listWebsiteVersions(db, {
+          instanceId: resolved.instance.id,
+          organizationId: input.organizationId,
+        });
+        if (!(listed.versions || []).length) {
+          const resolvedContent = await resolver.resolveWebsiteContent(db, {
+            organizationId: input.organizationId,
+            instance: resolved.instance,
+            mode: resolver.MODE.DRAFT,
+          });
+          if (resolvedContent.ok) {
+            await versionService.createWebsiteVersion(db, {
+              instance: resolved.instance,
+              snapshot: resolver.snapshotFromResolved(resolvedContent),
+              submitterIdentityId: input.actorIdentityId || null,
+              editorIdentityId: input.actorIdentityId || null,
+              auditActionKey: "website.provision",
+              changeCount: 0,
+              changedKeys: [],
+            });
+          }
+        }
+      } catch {
+        /* Version record is listing metadata; do not abort unpublished seed. */
+      }
+    }
     return { ok: true };
   } catch {
     return { ok: false };
@@ -467,6 +537,8 @@ module.exports = {
   locatorFromContentKey,
   overlayKey,
   applyOverlayToSections,
+  overlayMapFromValues,
+  applySnapshotFieldsToPage,
   resolveEngineInstance,
   loadFieldOverlayMap,
   saveFieldDraft,
