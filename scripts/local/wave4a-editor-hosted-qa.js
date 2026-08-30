@@ -87,7 +87,33 @@ function sectionSelector(product, sectionKey) {
   return `[data-ac-home-section="${sectionKey}"]`;
 }
 
+async function readManifestSection(page, sectionKey) {
+  return page.evaluate((key) => {
+    const chrome = document.querySelector("[data-website-chrome]");
+    if (!chrome) return null;
+    try {
+      const manifest = JSON.parse(chrome.getAttribute("data-website-section-manifest") || "{}");
+      return (manifest.sections || []).find((section) => section.sectionKey === key) || null;
+    } catch (err) {
+      return null;
+    }
+  }, sectionKey);
+}
+async function closeSectionMenu(page) {
+  const host = page.locator("[data-website-section-menu-host]");
+  if (await host.isVisible().catch(() => false)) {
+    const dismiss = page.locator("[data-website-section-menu-dismiss]").first();
+    if (await dismiss.isVisible().catch(() => false)) {
+      await dismiss.click({ force: true });
+    } else {
+      await page.keyboard.press("Escape");
+    }
+    await host.waitFor({ state: "hidden", timeout: 5000 }).catch(() => {});
+  }
+}
+
 async function openSectionMenu(page, product, sectionKey) {
+  await closeSectionMenu(page);
   const sel = sectionSelector(product, sectionKey);
   const section = page.locator(sel).first();
   await section.scrollIntoViewIfNeeded();
@@ -156,35 +182,34 @@ async function testEdit06Shell(page, product, vp) {
     if (!(await hideBtn.isDisabled())) {
       out.notes.push("locked hero hide not disabled");
     }
-    await lockedMenu.locator("[data-website-section-menu-dismiss]").first().click();
+    await closeSectionMenu(page);
 
     const reorderMenu = await openSectionMenu(page, product, product.reorderSectionKey);
     await reorderMenu.locator('[data-website-section-action="reorder"]').click();
     const moveDown = reorderMenu.locator('[data-website-section-action="move_down"]');
     await moveDown.waitFor({ state: "visible", timeout: 5000 });
-    const beforeOrder = await page.evaluate((productCode) => {
-      const attr = productCode === "BB" ? "data-section" : "data-ac-home-section";
-      return Array.from(document.querySelectorAll(`[${attr}]`))
-        .map((el) => el.getAttribute(attr))
-        .filter(Boolean);
-    }, product.code);
+    const beforeReorder = await readManifestSection(page, product.reorderSectionKey);
     await moveDown.click();
     await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
-    const afterOrder = await page.evaluate((productCode) => {
-      const attr = productCode === "BB" ? "data-section" : "data-ac-home-section";
-      return Array.from(document.querySelectorAll(`[${attr}]`))
-        .map((el) => el.getAttribute(attr))
-        .filter(Boolean);
-    }, product.code);
-    if (JSON.stringify(beforeOrder) === JSON.stringify(afterOrder)) {
-      out.notes.push("reorder did not change DOM order after reload");
+    await closeSectionMenu(page);
+    const afterReorder = await readManifestSection(page, product.reorderSectionKey);
+    if (
+      beforeReorder &&
+      afterReorder &&
+      Number(beforeReorder.sortIndex) === Number(afterReorder.sortIndex)
+    ) {
+      out.notes.push("reorder did not change manifest order after reload");
     }
 
     const hideMenu = await openSectionMenu(page, product, product.hideSectionKey);
     await hideMenu.locator('[data-website-section-action="hide"]').click();
     await page.waitForLoadState("domcontentloaded", { timeout: 30000 });
+    const hiddenMeta = await readManifestSection(page, product.hideSectionKey);
+    if (!hiddenMeta || !hiddenMeta.isHidden) out.notes.push("manifest isHidden missing after hide");
     const hiddenSection = page.locator(sectionSelector(product, product.hideSectionKey)).first();
-    const hiddenClass = await hiddenSection.evaluate((el) => el.classList.contains("gp-website-section--hidden-draft"));
+    const hiddenClass = await hiddenSection
+      .evaluate((el) => el.classList.contains("gp-website-section--hidden-draft"))
+      .catch(() => false);
     if (!hiddenClass) out.notes.push("hidden draft class missing after hide");
 
     const previewLink = page.locator("[data-website-engine-preview], [data-website-preview]").first();

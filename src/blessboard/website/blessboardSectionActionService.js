@@ -50,7 +50,11 @@ function buildManifest(pageKey, sections, structuredDrafts) {
   const capabilities = ordered.map((section, index) => {
     const sectionKey = String(section.sectionKey || "");
     const locked = isLockedSection(sectionKey) || sectionKey === "hero";
-    const isHidden = section._editorHidden === true;
+    const isHidden =
+      section._draftHidden === true ||
+      section._editorHidden === true ||
+      hidden.has(sectionKey) ||
+      String(section.status || "") === "archived";
     return {
       sectionKey,
       sectionId: sectionKey,

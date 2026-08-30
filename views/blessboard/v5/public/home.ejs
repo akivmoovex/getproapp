@@ -107,6 +107,13 @@
 
   var contact = typeof publicContact !== 'undefined' && publicContact ? publicContact : null;
   var directionsHref = contact && contact.directionsUrl ? contact.directionsUrl : null;
+  var previewDraftMode = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.previewDraftMode;
+  function sectionDraftHidden(section) {
+    return section && (section._draftHidden === true || String(section.status || '') === 'archived');
+  }
+  function showSectionInPreview(section) {
+    return !previewDraftMode || !sectionDraftHidden(section);
+  }
 %>
 
 <div class="bb-tp-home" data-bb-home="1" data-bb-stitch-home="phase7-v1">
@@ -240,6 +247,7 @@
     serviceTimesVariant: 'band'
   }) %>
 
+  <% if (showSectionInPreview(welcomeSection) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
   <section class="bb-tp-container bb-tp-home-welcome" data-bb-home-welcome="1" data-section="<%= (welcomeSection && welcomeSection.sectionKey) || 'welcome' %>" aria-labelledby="bb-tp-home-welcome-heading">
     <div class="bb-tp-home-welcome__grid<%= welcomeMedia ? ' has-media' : '' %>">
       <div class="bb-tp-home-welcome__copy">
@@ -314,6 +322,7 @@
       <% } %>
     </div>
   </section>
+  <% } %>
 
   <%# Stitch home uses a single welcome intro — skip about preview when welcome is populated. %>
   <% var showHomeAbout = Boolean(aboutBody) && !welcomeBody; %>
