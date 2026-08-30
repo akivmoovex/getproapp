@@ -13,6 +13,9 @@ const { renderWebsiteStylesPage, STYLES_STYLESHEET, STYLES_SCRIPT } = require(".
 const { renderWebsiteSeoPage, SEO_STYLESHEET, SEO_SCRIPT } = require("./renderWebsiteSeo");
 const { renderWebsiteManagementPage } = require("./renderWebsiteManagementPage");
 const { HISTORY_STYLESHEET } = require("./renderWebsiteHistory");
+const {
+  loadBlessBoardSeoEditorState,
+} = require("../../blessboard/website/blessboardEngineSeo");
 
 const AC_SEO_KEYS = Object.freeze([
   "seo.title",
@@ -80,16 +83,27 @@ async function loadSeoPresentation(db, input) {
     throw Object.assign(new Error("website_instance_not_found"), { code: "website_instance_not_found" });
   }
   const keys = seoKeysForProduct(productCode);
-  const rows = await Promise.all(
-    keys.map((key) => contentService.getWebsiteContentRow(db, instance.id, organizationId, key))
-  );
-  const values = {};
-  const published = {};
-  keys.forEach((key, index) => {
-    const row = rows[index];
-    values[key] = row ? row.draftValue : null;
-    published[key] = row ? row.publishedValue : null;
-  });
+  let values = {};
+  let published = {};
+  if (productCode === "blessboard") {
+    const bbState = await loadBlessBoardSeoEditorState(db, {
+      organizationId,
+      instance,
+      churchId: input.churchId,
+      branchId: input.branchId,
+    });
+    values = bbState.values;
+    published = bbState.published;
+  } else {
+    const rows = await Promise.all(
+      keys.map((key) => contentService.getWebsiteContentRow(db, instance.id, organizationId, key))
+    );
+    keys.forEach((key, index) => {
+      const row = rows[index];
+      values[key] = row ? row.draftValue : null;
+      published[key] = row ? row.publishedValue : null;
+    });
+  }
   const page = buildSeoPageView({
     productCode,
     siteLabel: input.siteLabel,

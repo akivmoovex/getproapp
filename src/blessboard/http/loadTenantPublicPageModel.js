@@ -1248,8 +1248,19 @@ async function loadTenantPublicPageModel(db, input) {
 
   const seoPathPrefix = discoverySingleSite ? churchWidePathPrefix : pathPrefix;
 
-  const seoOverrides =
-    websiteResolved && websiteResolved.flat ? websiteResolved.flat : {};
+  let seoOverrides =
+    websiteResolved && websiteResolved.flat ? { ...websiteResolved.flat } : {};
+  if (organizationId) {
+    try {
+      const { overlayBlessBoardEngineSeo } = require("../website/blessboardEngineSeo");
+      seoOverrides = await overlayBlessBoardEngineSeo(db, seoOverrides, {
+        organizationId,
+        preview: isPreview || governancePreview,
+      });
+    } catch {
+      /* keep branch scope SEO */
+    }
+  }
   const branchInactive =
     websiteResolved &&
     websiteResolved.branchStatus &&

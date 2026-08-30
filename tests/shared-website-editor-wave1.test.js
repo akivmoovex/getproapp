@@ -298,7 +298,7 @@ describe("shared website editor wave 1 — HTTP", () => {
     assert.match(acEdit.text, /data-website-mobile-nav="1"/);
     assert.match(acEdit.text, /data-website-more-id="pages"/);
     assert.match(acEdit.text, /data-website-more-id="assets"/);
-    assert.doesNotMatch(acEdit.text, /data-website-more-id="seo"/);
+    assert.match(acEdit.text, /data-website-more-id="seo"/);
     assert.match(acEdit.text, /data-website-page-key="home"[^>]*aria-current="page"|aria-current="page"[^>]*data-website-page-key="home"/);
     assert.match(acEdit.text, /\/clinics\/[^"]+\/doctors\?website_edit=1&amp;website_mode=draft/);
     assert.doesNotMatch(acEdit.text, /Exit edit mode/);

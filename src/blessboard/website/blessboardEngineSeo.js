@@ -1,0 +1,115 @@
+"use strict";
+
+/**
+ * BlessBoard SEO adapter — shared engine draft keys overlay branch scope settings.
+ */
+
+const { resolveWebsiteContent, MODE } = require("../../platform/website/resolver");
+const contentService = require("../../platform/website/contentService");
+const { findBlessBoardWebsiteInstance } = require("./blessboardWebsiteAdapter");
+const { resolveBranchWebsiteSettings } = require("../services/resolveBranchWebsiteSettings");
+
+const BB_SEO_KEYS = Object.freeze([
+  "seo.title",
+  "seo.description",
+  "seo.og_title",
+  "seo.og_description",
+  "seo.og_image_url",
+  "seo.robots",
+  "seo.canonical_url",
+  "seo.sitemap_include",
+  "seo.noindex",
+]);
+
+function pickSeoFromFlat(flat) {
+  const source = flat && typeof flat === "object" ? flat : {};
+  const out = {};
+  for (const key of BB_SEO_KEYS) {
+    if (source[key] != null) out[key] = source[key];
+  }
+  return out;
+}
+
+async function loadLegacyBlessBoardSeoFlat(db, input) {
+  const organizationId = String((input && input.organizationId) || "");
+  const churchId = String((input && input.churchId) || "");
+  const branchId =
+    input && input.branchId != null && String(input.branchId).trim()
+      ? String(input.branchId).trim()
+      : null;
+  if (!organizationId || !churchId || !branchId) return {};
+  try {
+    const resolved = await resolveBranchWebsiteSettings(db, {
+      organizationId,
+      churchId,
+      branchId,
+    });
+    if (!resolved || !resolved.ok || !resolved.flat) return {};
+    return pickSeoFromFlat(resolved.flat);
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * SEO editor form state: engine draft rows with legacy branch settings as published baseline.
+ */
+async function loadBlessBoardSeoEditorState(db, input) {
+  const organizationId = String((input && input.organizationId) || "");
+  const instance = input && input.instance;
+  if (!organizationId || !instance) {
+    return { values: {}, published: {} };
+  }
+  const legacy = await loadLegacyBlessBoardSeoFlat(db, input);
+  const rows = await Promise.all(
+    BB_SEO_KEYS.map((key) =>
+      contentService.getWebsiteContentRow(db, instance.id, organizationId, key)
+    )
+  );
+  const values = {};
+  const published = {};
+  BB_SEO_KEYS.forEach((key, index) => {
+    const row = rows[index];
+    const legacyValue = Object.prototype.hasOwnProperty.call(legacy, key) ? legacy[key] : null;
+    published[key] = row && row.publishedValue != null ? row.publishedValue : legacyValue;
+    values[key] =
+      row && row.draftValue != null
+        ? row.draftValue
+        : row && row.publishedValue != null
+          ? row.publishedValue
+          : legacyValue;
+  });
+  return { values, published };
+}
+
+/**
+ * Public renderer overlay — engine draft/published SEO wins over branch scope settings.
+ */
+async function overlayBlessBoardEngineSeo(db, seoOverrides, input) {
+  const organizationId = String((input && input.organizationId) || "");
+  if (!organizationId) return seoOverrides || {};
+  const base = seoOverrides && typeof seoOverrides === "object" ? { ...seoOverrides } : {};
+  try {
+    const instance = await findBlessBoardWebsiteInstance(db, organizationId);
+    if (!instance) return base;
+    const resolved = await resolveWebsiteContent(db, {
+      organizationId,
+      instance,
+      mode: input && input.preview ? MODE.DRAFT : MODE.LIVE,
+    });
+    if (!resolved.ok) return base;
+    for (const key of BB_SEO_KEYS) {
+      if (resolved.values[key] != null) base[key] = resolved.values[key];
+    }
+    return base;
+  } catch {
+    return base;
+  }
+}
+
+module.exports = {
+  BB_SEO_KEYS,
+  loadBlessBoardSeoEditorState,
+  overlayBlessBoardEngineSeo,
+  loadLegacyBlessBoardSeoFlat,
+};

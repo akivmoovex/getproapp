@@ -133,6 +133,7 @@ function registerBlessBoardWebsiteTemplate() {
   registerSnapshotEditableField();
   registerLogoEditableField();
   registerBrandColorEditableFields();
+  registerSeoEditableFields();
   return registered;
 }
 
@@ -175,6 +176,24 @@ function registerBrandColorEditableFields() {
     description: "Accent brand colour",
     inline: false,
   });
+}
+
+function registerSeoEditableFields() {
+  for (const [key, def] of Object.entries(KEY_DEFS)) {
+    if (!key.startsWith("seo.")) continue;
+    registerEditableField({
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      key,
+      type: TYPE_MAP[def.type] || CONTENT_TYPES.SHORT_TEXT,
+      maxLen: def.maxLen,
+      enumValues: def.enumValues,
+      permission: PERMISSIONS.EDIT,
+      storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: key },
+      group: def.group || "seo",
+      description: def.description || key,
+      inline: false,
+    });
+  }
 }
 
 function registerSnapshotEditableField() {

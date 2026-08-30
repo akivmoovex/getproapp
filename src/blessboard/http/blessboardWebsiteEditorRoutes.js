@@ -996,6 +996,11 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           organizationId: resolved.tenant.organization.id,
           productCode: PRODUCT_CODE.BLESSBOARD,
           instance: found.instance,
+          churchId: resolved.tenant.church && resolved.tenant.church.id,
+          branchId:
+            resolved.tenant.primaryBranch && resolved.tenant.primaryBranch.id
+              ? resolved.tenant.primaryBranch.id
+              : null,
           siteLabel:
             (resolved.tenant.church && resolved.tenant.church.displayName) ||
             resolved.organizationKey,

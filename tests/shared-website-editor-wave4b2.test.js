@@ -433,6 +433,42 @@ describe("shared website editor wave 4b2 — HTTP", () => {
     assert.equal(row.draftValue, title);
   });
 
+  it("BB SEO save creates engine draft and publish updates published value", async (t) => {
+    if (skipReason) return t.skip(skipReason);
+    const page = await request(bbApp)
+      .get(`/c/${bbSlug}/website/seo`)
+      .set("Cookie", bbCookie);
+    assert.equal(page.status, 200);
+    assert.match(page.text, /data-gp-website-seo/);
+    const csrf = extractCsrf(page.text);
+    const cookie = cookieHeader(bbCookie, page);
+    const title = `BB SEO ${uniq("t")}`;
+    const saved = await request(bbApp)
+      .post(`/c/${bbSlug}/website/seo`)
+      .set("Cookie", cookie)
+      .type("form")
+      .send({ [CSRF_FIELD]: csrf, seoTitle: title, seoDescription: "BB draft description" });
+    assert.equal(saved.status, 303);
+    const row = await contentService.getWebsiteContentRow(pool, bbInstanceId, bbOrgId, "seo.title");
+    assert.ok(row, "expected engine content row");
+    assert.equal(row.draftValue, title);
+    assert.notEqual(row.publishedValue, title);
+    await publicationService.publishWebsiteDraft(pool, {
+      organizationId: bbOrgId,
+      instanceId: bbInstanceId,
+      expectedProductCode: "blessboard",
+      actorIdentityId: bbUserId,
+      allowEmpty: true,
+    });
+    const published = await contentService.getWebsiteContentRow(
+      pool,
+      bbInstanceId,
+      bbOrgId,
+      "seo.title"
+    );
+    assert.equal(published.publishedValue, title);
+  });
+
   it("invalid add section type is rejected", async (t) => {
     if (skipReason) return t.skip(skipReason);
     const res = await request(acApp)
