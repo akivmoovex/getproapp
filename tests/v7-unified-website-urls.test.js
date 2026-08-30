@@ -135,7 +135,7 @@ describe("v7 unified website URLs", () => {
         product: PRODUCT_CODE.BLESSBOARD,
         organizationKey: "demo",
       }),
-      "/hq/website/version-history"
+      "/c/demo/website/history"
     );
     assert.equal(
       buildPublicWebsiteSettingsPath({ product: PRODUCT_CODE.ACTIVECLINIC }),

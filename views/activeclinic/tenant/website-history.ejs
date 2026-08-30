@@ -1,41 +1,7 @@
-<section class="ac-public-section ac-mw-history" data-ac-website-history="1" data-ac-mw-screen="history">
-  <h1>Version History</h1>
-  <p>Public visitors see the current published version only. Restore copies a historical version into a new draft. The live website does not change until you publish.</p>
-  <% if (typeof notice === 'string' && notice === 'published') { %>
-  <p class="ac-public-note" data-ac-website-notice="published">Website published.</p>
-  <% } else if (typeof notice === 'string' && (notice === 'restored_draft' || notice === 'restored')) { %>
-  <p class="ac-public-note" data-ac-website-notice="restored_draft">Restored as a new draft. The published website is unchanged. Review the draft, then publish when you are ready.</p>
-  <% } %>
-  <% if (typeof error === 'string' && error) { %>
-  <p class="ac-public-error" role="alert"><%= error %></p>
-  <% } %>
-  <% var rows = versions || []; %>
-  <% var canRestoreHistory = typeof websiteCanRestore !== 'undefined' && websiteCanRestore; %>
-  <div class="ac-mw-history__list">
-    <% if (!rows.length) { %>
-    <p class="ac-public-muted">No published versions yet. Publish the website to create version 1.</p>
-    <% } %>
-    <% rows.forEach(function (v) { %>
-    <article class="ac-mw-history__card" data-ac-website-version="<%= v.versionNumber %>" data-ac-version-status="<%= v.status %>">
-      <div>
-        <h2>v<%= v.versionNumber %><% if (v.status === 'published') { %> — CURRENT<% } %></h2>
-        <p class="ac-mw-history__meta"><%= v.publishedAt ? String(v.publishedAt).slice(0, 16).replace('T', ' ') : '—' %> · <%= v.moderationStatus || v.status %></p>
-      </div>
-      <div class="ac-mw-history__actions">
-        <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/website/versions/<%= v.id %>">Preview</a>
-        <% if (canRestoreHistory && v.status !== 'published') { %>
-        <form
-          method="post"
-          action="/clinics/<%= clinic.clinicKey %>/website/versions/<%= v.id %>/restore"
-          onsubmit="if(!confirm('Restore this version as a new draft? The live website will not change until you publish.')) return false; var b=this.querySelector('button[type=submit]'); if(b) b.disabled=true;"
-        >
-          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-          <button type="submit" class="ac-btn ac-btn--primary">Restore as new draft</button>
-        </form>
-        <% } %>
-      </div>
-    </article>
-    <% }) %>
-  </div>
-  <p><a href="<%= typeof websiteEditUrl !== 'undefined' && websiteEditUrl ? websiteEditUrl : ((clinic && (clinic.publicBasePath || clinic.publicPagePaths && clinic.publicPagePaths.home)) || ('/clinics/' + (clinic && clinic.clinicKey))) + '?website_edit=1&amp;website_mode=draft' %>">Back to editor</a></p>
-</section>
+<% if (typeof historyStylesheet === 'string' && historyStylesheet) { %>
+<link rel="stylesheet" href="<%= historyStylesheet %>"/>
+<% } %>
+<%- typeof historyHtml !== 'undefined' ? historyHtml : '' %>
+<% if (typeof historyScript === 'string' && historyScript) { %>
+<script src="<%= historyScript %>" defer></script>
+<% } %>

@@ -636,11 +636,13 @@ async function attachWebsiteAdminChrome(opts) {
   } = require("../../platform/website-engine/editorShell");
   const {
     PRODUCT_CODE,
-    buildPublicWebsitePreviewPath,
+    buildPublicOrganizationWebsitePath,
     buildPublicWebsiteEditPath,
+    buildPublicWebsitePreviewPath,
     buildPublicWebsiteDiscardPath,
     buildPublicWebsiteUnpublishPath,
-    buildPublicOrganizationWebsitePath,
+    buildPublicWebsiteHistoryPath,
+    buildPublicWebsiteMediaLibraryPath,
   } = require("../../platform/website/publicWebsiteUrl");
   const currentPath = String(model.path || "/");
   const orgKey =
@@ -828,7 +830,22 @@ async function attachWebsiteAdminChrome(opts) {
 
   const seoLink = settingsCatalog && settingsCatalog.links && settingsCatalog.links.seo;
   const brandingHref = isHqEditor ? "/hq/website/branding" : null;
-  const historyHref = isHqEditor ? "/hq/website/version-history" : null;
+  const historyHref =
+    pathMode && publicBase && (isHqEditor || capability.isBranchEditor)
+      ? buildPublicWebsiteHistoryPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: orgKey,
+          scope: editorScope,
+        })
+      : null;
+  const mediaLibraryHref =
+    pathMode && publicBase && (isHqEditor || capability.isBranchEditor)
+      ? buildPublicWebsiteMediaLibraryPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: orgKey,
+          scope: editorScope,
+        })
+      : null;
   const editorPages = orgKey
     ? buildEditorPages({
         productCode: PRODUCT_CODE.BLESSBOARD,
@@ -863,6 +880,15 @@ async function attachWebsiteAdminChrome(opts) {
       icon: "history",
       href: historyHref,
       group: "general",
+    });
+  }
+  if (mediaLibraryHref) {
+    moreItems.push({
+      id: "assets",
+      label: "Assets",
+      icon: "folder",
+      href: mediaLibraryHref,
+      group: "product",
     });
   }
   moreItems.push({

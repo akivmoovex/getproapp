@@ -21,6 +21,11 @@ const {
   attachActiveClinicWebsiteLocals,
 } = require("./attachActiveClinicWebsiteChrome");
 const versionService = require("../../platform/website/versionService");
+const { loadHistoryPresentation } = require("../../platform/website/websiteHistoryHttp");
+const {
+  HISTORY_STYLESHEET,
+  HISTORY_SCRIPT,
+} = require("../../platform/website/renderWebsiteHistory");
 const {
   setClinicWebsiteAvailability,
 } = require("../services/clinicWebsiteAvailabilityService");
@@ -539,15 +544,34 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!attached.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found" });
       }
-      const listed = await versionService.listWebsiteVersions(getPool(), {
-        instanceId: attached.instance.id,
-        organizationId: clinic.organizationId,
-      });
       const csrfToken = issueCsrfToken(env);
       setCsrfCookie(res, csrfToken, {
         secure: String(env.NODE_ENV || "") === "production",
         env,
         req,
+      });
+      const clinicBase = buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: clinic.clinicKey,
+      });
+      const presentation = await loadHistoryPresentation(getPool(), {
+        organizationId: clinic.organizationId,
+        instance: attached.instance,
+        productCode: PRODUCT_CODE.ACTIVECLINIC,
+        siteLabel: clinic.displayName || clinic.clinicKey,
+        canRestore: canRestoreClinicWebsite(req, clinic),
+        backHref: buildPublicWebsiteEditPath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: clinic.clinicKey,
+        }),
+        previewHrefFor: (versionId) =>
+          `${clinicBase}/website/versions/${encodeURIComponent(versionId)}`,
+        restoreHrefFor: (versionId) =>
+          `${clinicBase}/website/versions/${encodeURIComponent(versionId)}/restore`,
+        notice: String(req.query.notice || ""),
+        error: String(req.query.error || ""),
+        csrfField: CSRF_FIELD,
+        csrfToken,
       });
       return res.status(200).type("html").send(
         renderPublicPage({
@@ -559,9 +583,9 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
           locals: {
             ...attached,
             csrfToken,
-            versions: listed.versions || [],
-            notice: String(req.query.notice || ""),
-            error: String(req.query.error || ""),
+            historyHtml: presentation.historyHtml,
+            historyStylesheet: HISTORY_STYLESHEET,
+            historyScript: HISTORY_SCRIPT,
           },
         })
       );
@@ -668,7 +692,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         return res.redirect(
           303,
           appendQuery(
-            buildPublicWebsiteHistoryPath({
+            buildPublicWebsiteEditPath({
               product: PRODUCT_CODE.ACTIVECLINIC,
               organizationKey: clinic.clinicKey,
             }),

@@ -20,9 +20,26 @@ const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
   buildPublicWebsitePreviewPath,
+  buildPublicWebsiteEditPath,
+  buildPublicWebsiteHistoryPath,
   appendQuery,
 } = require("../../platform/website/publicWebsiteUrl");
-const { authorize } = require("../services/blessBoardRbacAuthorizationService");
+const { authorize, listEffectivePermissions } = require("../services/blessBoardRbacAuthorizationService");
+const publicationService = require("../../platform/website/publicationService");
+const versionService = require("../../platform/website/versionService");
+const {
+  loadHistoryPresentation,
+  renderStandaloneHistoryPage,
+} = require("../../platform/website/websiteHistoryHttp");
+const { buildMediaPageView } = require("../../platform/website/mediaPageModel");
+const {
+  renderWebsiteMediaPageSection,
+  MEDIA_PAGE_SCRIPT,
+} = require("../../platform/website/renderWebsiteMediaPage");
+const { renderWebsiteManagementPage } = require("../../platform/website/renderWebsiteManagementPage");
+const { HISTORY_STYLESHEET } = require("../../platform/website/renderWebsiteHistory");
+const { LIBRARY_STYLESHEET } = require("../../platform/website/renderWebsiteLibrary");
+const { issueCsrfToken, setCsrfCookie } = require("../../platform/http/v5Csrf");
 const {
   locatorFromContentKey,
   saveFieldDraft,
@@ -112,6 +129,42 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
   const getEnv = typeof opts.getEnv === "function" ? opts.getEnv : () => process.env;
   const resolveTenant = opts.resolveTenant;
   const pathPrefix = opts.pathPrefix;
+
+  function wantsHtml(req) {
+    const accept = String((req.headers && req.headers.accept) || "");
+    return accept.includes("text/html") || !accept.includes("application/json");
+  }
+
+  async function grantedWebsitePermissions(req, tenant) {
+    const session = req.v5Session && req.v5Session.authenticated && req.v5Session.session;
+    if (!session || !session.userId) return [];
+    const listed = await listEffectivePermissions(getPool(), {
+      actor: { userId: session.userId },
+      tenantContext: tenant,
+      resourceContext: {
+        organizationId: tenant.organization.id,
+        churchId: tenant.church.id,
+        branchId: null,
+      },
+    });
+    const keys = listed && Array.isArray(listed.permissions) ? listed.permissions : [];
+    const granted = [];
+    if (keys.includes("website.edit")) granted.push("website.edit", "website.view");
+    if (keys.includes("website.publish")) granted.push("website.publish");
+    if (keys.includes("website.rollback") || keys.includes("website.restore")) {
+      granted.push("website.rollback", "website.restore");
+    }
+    return Array.from(new Set(granted));
+  }
+
+  async function resolveEngineInstanceForTenant(resolved) {
+    const { resolveEngineInstance } = require("../website/blessboardEngineContentService");
+    return resolveEngineInstance(getPool(), {
+      organizationId: resolved.tenant.organization.id,
+      slug: resolved.organizationKey,
+      createIfMissing: false,
+    });
+  }
 
   async function requireEditor(req, res, permissionKey) {
     const resolved = await resolveTenant(req, res);
@@ -563,6 +616,252 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       return next(err);
     }
   }
+
+  router.get(`${pathPrefix}/website/history`, async (req, res, next) => {
+    try {
+      const resolved = await requireEditor(req, res, "website.edit");
+      if (!resolved) return undefined;
+      const found = await resolveEngineInstanceForTenant(resolved);
+      if (!found.ok || !found.instance) {
+        return wantsHtml(req)
+          ? res.status(404).type("text").send("Website not found")
+          : json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const granted = await grantedWebsitePermissions(req, resolved.tenant);
+      const canRestore =
+        granted.includes("website.restore") || granted.includes("website.rollback");
+      const env = getEnv();
+      const csrfToken = issueCsrfToken(env);
+      setCsrfCookie(res, csrfToken, {
+        secure: String(env.NODE_ENV || "") === "production",
+        env,
+        req,
+      });
+      const basePath = buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: resolved.organizationKey,
+      });
+      const presentation = await loadHistoryPresentation(getPool(), {
+        organizationId: resolved.tenant.organization.id,
+        instance: found.instance,
+        productCode: PRODUCT_CODE.BLESSBOARD,
+        siteLabel:
+          (resolved.tenant.church && resolved.tenant.church.displayName) ||
+          resolved.organizationKey,
+        canRestore,
+        backHref: buildPublicWebsiteEditPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: resolved.organizationKey,
+        }),
+        previewHrefFor: (versionId) =>
+          basePath ? `${basePath}/website/versions/${encodeURIComponent(versionId)}` : null,
+        restoreHrefFor: (versionId) =>
+          basePath
+            ? `${basePath}/website/versions/${encodeURIComponent(versionId)}/restore`
+            : null,
+        notice: String(req.query.notice || ""),
+        error: String(req.query.error || ""),
+        csrfField: CSRF_FIELD,
+        csrfToken,
+      });
+      if (!wantsHtml(req)) {
+        return json(res, 200, {
+          ok: true,
+          versions: presentation.history.versions,
+          unpublishedCount: presentation.unpublishedCount,
+          canRestore,
+        });
+      }
+      return res.status(200).type("html").send(renderStandaloneHistoryPage(presentation));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.post(
+    `${pathPrefix}/website/versions/:versionId/restore`,
+    express.urlencoded({ extended: false }),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+          return wantsHtml(req)
+            ? res.status(403).type("text").send("Invalid CSRF token")
+            : json(res, 403, { ok: false, code: "csrf" });
+        }
+        if (clientTenantOverride(req.body)) {
+          return json(res, 403, { ok: false, code: "forbidden" });
+        }
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const found = await resolveEngineInstanceForTenant(resolved);
+        if (!found.ok || !found.instance) {
+          return json(res, 404, { ok: false, code: "website_instance_not_found" });
+        }
+        const granted = await grantedWebsitePermissions(req, resolved.tenant);
+        const restored = await publicationService.restoreWebsiteVersionToDraft(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          instanceId: found.instance.id,
+          expectedProductCode: PRODUCT_CODE.BLESSBOARD,
+          versionId: req.params.versionId,
+          actorIdentityId: actorUserId(req),
+          grantedPermissions: granted,
+        });
+        if (!restored.ok) {
+          if (wantsHtml(req)) {
+            return res.redirect(
+              303,
+              appendQuery(
+                buildPublicWebsiteHistoryPath({
+                  product: PRODUCT_CODE.BLESSBOARD,
+                  organizationKey: resolved.organizationKey,
+                }),
+                { error: restored.code || "restore_failed" }
+              )
+            );
+          }
+          return json(res, restored.code === "forbidden" ? 403 : 400, {
+            ok: false,
+            code: restored.code,
+          });
+        }
+        if (wantsHtml(req)) {
+          return res.redirect(
+            303,
+            appendQuery(
+              buildPublicWebsiteEditPath({
+                product: PRODUCT_CODE.BLESSBOARD,
+                organizationKey: resolved.organizationKey,
+              }),
+              { notice: "restored_draft" }
+            )
+          );
+        }
+        return json(res, 200, { ok: true, code: "restored_draft", publishedUnchanged: true });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  router.get(`${pathPrefix}/website/versions/:versionId`, async (req, res, next) => {
+    try {
+      const resolved = await requireEditor(req, res, "website.edit");
+      if (!resolved) return undefined;
+      const found = await resolveEngineInstanceForTenant(resolved);
+      if (!found.ok || !found.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const loaded = await versionService.getWebsiteVersion(getPool(), {
+        versionId: req.params.versionId,
+        organizationId: resolved.tenant.organization.id,
+        instanceId: found.instance.id,
+      });
+      if (!loaded.ok) {
+        return json(res, 404, { ok: false, code: loaded.code });
+      }
+      if (!wantsHtml(req)) {
+        return json(res, 200, { ok: true, version: loaded.version });
+      }
+      const bodyHtml = [
+        '<section class="gp-we-history" data-gp-website-history="1">',
+        `<h1>Version v${Number(loaded.version.versionNumber) || "—"}</h1>`,
+        "<p>Restore this version as a draft to preview it in the editor. The live website stays unchanged until you publish.</p>",
+        `<p><a class="gp-we-history__back" href="${buildPublicWebsiteHistoryPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: resolved.organizationKey,
+        })}">Back to version history</a></p>`,
+        "</section>",
+      ].join("");
+      return res.status(200).type("html").send(
+        renderWebsiteManagementPage({
+          pageTitle: `Version v${Number(loaded.version.versionNumber) || ""}`,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          siteLabel:
+            (resolved.tenant.church && resolved.tenant.church.displayName) ||
+            resolved.organizationKey,
+          backHref: buildPublicWebsiteHistoryPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: resolved.organizationKey,
+          }),
+          bodyHtml,
+          stylesheets: [HISTORY_STYLESHEET],
+          scripts: [],
+          csrfToken: "",
+        })
+      );
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.get(`${pathPrefix}/website/media-library`, async (req, res, next) => {
+    try {
+      const resolved = await requireEditor(req, res, "website.edit");
+      if (!resolved) return undefined;
+      const found = await resolveEngineInstanceForTenant(resolved);
+      if (!found.ok || !found.instance) {
+        return res.status(404).type("text").send("Website not found");
+      }
+      const env = getEnv();
+      const csrfToken = issueCsrfToken(env);
+      setCsrfCookie(res, csrfToken, {
+        secure: String(env.NODE_ENV || "") === "production",
+        env,
+        req,
+      });
+      const basePath = `${buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: resolved.organizationKey,
+      })}/website/media-library`;
+      const listed = await mediaService.listWebsiteMedia(getPool(), {
+        organizationId: resolved.tenant.organization.id,
+        instanceId: found.instance.id,
+      });
+      const items = libraryModel.normalizeLibraryItems(listed.media || [], (row) => {
+        const delivered = mediaService.presentWebsiteMediaForClient(found.instance, row);
+        return {
+          previewUrl: delivered.publicSrc,
+          detailsUrl: `${basePath}?media=${encodeURIComponent(row.id)}`,
+        };
+      });
+      const page = buildMediaPageView({
+        productCode: PRODUCT_CODE.BLESSBOARD,
+        siteLabel:
+          (resolved.tenant.church && resolved.tenant.church.displayName) ||
+          resolved.organizationKey,
+        items,
+        basePath,
+        backHref: buildPublicWebsiteEditPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: resolved.organizationKey,
+        }),
+        uploadAction: `${buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: resolved.organizationKey,
+        })}/website/media`,
+        canUpload: true,
+        q: req.query && req.query.q,
+        kind: req.query && req.query.type,
+        csrfField: CSRF_FIELD,
+        csrfToken,
+      });
+      const bodyHtml = renderWebsiteMediaPageSection(page);
+      return res.status(200).type("html").send(
+        renderWebsiteManagementPage({
+          pageTitle: page.pageTitle,
+          productCode: page.productCode,
+          siteLabel: page.siteLabel,
+          backHref: page.backHref,
+          bodyHtml,
+          stylesheets: [HISTORY_STYLESHEET, page.libraryStylesheet || LIBRARY_STYLESHEET],
+          scripts: [MEDIA_PAGE_SCRIPT],
+          csrfToken,
+        })
+      );
+    } catch (err) {
+      return next(err);
+    }
+  });
 }
 
 async function resolvePathEditorTenant(getPool, req, organizationKeyRaw) {

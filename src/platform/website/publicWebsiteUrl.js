@@ -267,11 +267,21 @@ function buildPublicWebsiteHistoryPath(input) {
     suffix: undefined,
   });
   if (!path) return null;
+  return appendQuery(`${path}/website/history`, input && input.query);
+}
+
+function buildPublicWebsiteMediaLibraryPath(input) {
   const product = normalizeProduct((input && (input.product || input.productCode)) || "");
   if (product === PRODUCT_CODE.ACTIVECLINIC) {
-    return appendQuery(`${path}/website/history`, input && input.query);
+    return appendQuery("/app/settings/website/media", input && input.query);
   }
-  return appendQuery("/hq/website/version-history", input && input.query);
+  const path = buildPublicOrganizationWebsitePath({
+    ...(input || {}),
+    query: undefined,
+    suffix: undefined,
+  });
+  if (!path) return null;
+  return appendQuery(`${path}/website/media-library`, input && input.query);
 }
 
 function buildPublicWebsiteSettingsPath(input) {
@@ -557,6 +567,7 @@ module.exports = {
   buildPublicWebsitePreviewPath,
   buildPublicWebsiteDiscardPath,
   buildPublicWebsiteHistoryPath,
+  buildPublicWebsiteMediaLibraryPath,
   buildPublicWebsiteSettingsPath,
   buildPublicWebsitePublishPath,
   buildPublicWebsiteUnpublishPath,
