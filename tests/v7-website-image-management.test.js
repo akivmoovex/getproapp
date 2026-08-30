@@ -152,7 +152,7 @@ describe("v7 website image management — source contract", () => {
     assert.match(js, /restore\(\)/);
     assert.match(js, /published === true/);
     assert.doesNotMatch(js, /website_mode=live.*POST|published:\s*true/);
-    const chrome = read("views/activeclinic/partials/website-editor-chrome.ejs");
+    const chrome = read("views/platform/website-engine/editor-chrome.ejs");
     assert.match(chrome, /data-website-max-bytes="5242880"/);
     assert.equal(mediaService.MAX_BYTES, 5242880);
   });

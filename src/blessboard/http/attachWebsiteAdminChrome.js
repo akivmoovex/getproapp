@@ -44,7 +44,7 @@ const {
   pickHexColor,
   publicBrandStyle,
 } = require("../../platform/website/branding");
-const { PRODUCT_CODE } = require("../../platform/website/publicWebsiteUrl");
+const { PRODUCT_CODE, withEditorNavigationQuery, withoutEditorNavigationQuery } = require("../../platform/website/publicWebsiteUrl");
 
 const EDIT_QUERY = "website_edit";
 
@@ -289,13 +289,7 @@ function canShowWebsiteEditChrome(input) {
  * @param {boolean} editing
  */
 function withEditQuery(path, editing) {
-  const raw = String(path || "/");
-  const [base, query = ""] = raw.split("?");
-  const params = new URLSearchParams(query);
-  if (editing) params.set(EDIT_QUERY, "1");
-  else params.delete(EDIT_QUERY);
-  const qs = params.toString();
-  return qs ? `${base}?${qs}` : base;
+  return editing ? withEditorNavigationQuery(path) : withoutEditorNavigationQuery(path);
 }
 
 /**
@@ -634,6 +628,7 @@ async function attachWebsiteAdminChrome(opts) {
 
   const {
     presentEditorShell,
+    buildEditorPages,
   } = require("../../platform/website-engine/editorShell");
   const {
     PRODUCT_CODE,
@@ -755,6 +750,66 @@ async function attachWebsiteAdminChrome(opts) {
       })
     : null;
 
+  const seoLink = settingsCatalog && settingsCatalog.links && settingsCatalog.links.seo;
+  const brandingHref = isHqEditor ? "/hq/website/branding" : null;
+  const historyHref = isHqEditor ? "/hq/website/version-history" : null;
+  const editorScope =
+    publicBranchKey && websiteScopeType === "branch"
+      ? { kind: "branch", branchKey: publicBranchKey }
+      : null;
+  const editorPages = orgKey
+    ? buildEditorPages({
+        productCode: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+        pageKey: model.pageKey,
+        scope: editorScope,
+      })
+    : [];
+  const moreItems = [];
+  if (manageHref) {
+    moreItems.push({
+      id: "settings",
+      label: "Website settings",
+      icon: "settings",
+      href: manageHref,
+      group: "general",
+    });
+  }
+  if (brandingHref) {
+    moreItems.push({
+      id: "branding",
+      label: "Branding",
+      icon: "palette",
+      href: brandingHref,
+      group: "general",
+    });
+  }
+  if (historyHref) {
+    moreItems.push({
+      id: "history",
+      label: "Version history",
+      icon: "history",
+      href: historyHref,
+      group: "general",
+    });
+  }
+  moreItems.push({
+    id: "features",
+    label: "Website features",
+    icon: "widgets",
+    action: "features",
+    group: "product",
+  });
+  if (seoLink && seoLink.available && seoLink.href) {
+    moreItems.push({
+      id: "seo",
+      label: "SEO",
+      icon: "search",
+      href: seoLink.href,
+      group: "product",
+    });
+  }
+
   model.websiteAdmin = {
     canEdit: true,
     editingMode,
@@ -779,6 +834,11 @@ async function attachWebsiteAdminChrome(opts) {
       ? presentEditorShell({
           productCode: PRODUCT_CODE.BLESSBOARD,
           pageKey: model.pageKey,
+          pages: editorPages,
+          moreItems,
+          brandingHref,
+          historyHref,
+          hubHref: manageHref,
           draft: hasDraftChanges,
           unpublishedCount: draftCount,
           canEdit: true,
@@ -786,9 +846,8 @@ async function attachWebsiteAdminChrome(opts) {
           editing: true,
           previewHref: draftPreviewHref,
           publishPath: publishUrl,
-          historyHref: isHqEditor ? "/hq/website/version-history" : null,
-          hubHref: manageHref,
           exitHref: withEditQuery(currentPath, false),
+          exitMethod: "GET",
           saveUrl,
           mediaUrl: mediaUploadUrl,
           csrfToken,

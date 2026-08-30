@@ -147,7 +147,7 @@ describe("website UI completion", () => {
     assert.match(css, /\.bb-pa-website-diff__compare/);
     assert.match(css, /@media \(max-width:\s*430px\)/);
     const shell = read("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(shell, /platform-admin.css\?v=62/);
+    assert.match(shell, /platform-admin.css\?v=63/);
   });
 
   it("inline editor uses accessible check/cross controls and wires image upload", () => {
@@ -156,6 +156,8 @@ describe("website UI completion", () => {
     const js = read("public/platform/website-inline-edit.js");
     const css = read("public/platform/website-inline-edit.css");
     const chrome = read("views/activeclinic/partials/website-editor-chrome.ejs");
+    const shared = read("views/platform/website-engine/editor-chrome.ejs");
+    const attach = read("src/activeclinic/http/attachActiveClinicWebsiteChrome.js");
     assert.match(field, /aria-label="Save field to draft"/);
     assert.match(field, /aria-label="Cancel unsaved edit"/);
     assert.match(field, /Save to draft/);
@@ -184,11 +186,11 @@ describe("website UI completion", () => {
     assert.match(css, /@media \(max-width:\s*767px\)/);
     assert.match(css, /\.gp-website-chrome-stack/);
     assert.match(css, /--gp-keyboard-inset/);
-    assert.match(chrome, /data-website-pill="changes_requested"/);
-    assert.match(chrome, /Submit for approval/);
-    assert.match(chrome, /data-website-review-note="1"/);
-    assert.match(chrome, /Preview draft/);
-    assert.match(chrome, /data-website-publish-confirm="1"/);
+    assert.match(chrome, /platform\/website-engine\/editor-chrome/);
+    assert.match(chrome, /data-website-edit-control="1"/);
+    assert.match(shared, /data-website-publish-confirm="1"/);
+    assert.match(shared, /Preview/);
+    assert.match(attach, /Submit for approval/);
     assert.match(chrome, /gp-website-chrome__label-short/);
   });
 

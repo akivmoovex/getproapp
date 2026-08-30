@@ -111,14 +111,17 @@ describe("activeclinic MW Stitch parity chrome", () => {
     assert.match(footer, /Contact Us/);
   });
 
-  it("inline editor chrome uses Editor Mode and real CMS destinations", () => {
+  it("inline editor chrome uses the shared Stitch shell and real CMS destinations", () => {
     const chrome = read("views/activeclinic/partials/website-editor-chrome.ejs");
-    assert.match(chrome, /Editor Mode/);
-    assert.match(chrome, /href="\/app\/settings\/website\/pages">Pages</);
-    assert.match(chrome, /href="\/app\/settings\/website\/sections">Sections</);
-    assert.match(chrome, /href="\/app\/settings\/website\/media">Assets</);
-    assert.match(chrome, />Publish</);
-    assert.match(chrome, /websitePublishUrl/);
+    const shared = read("views/platform/website-engine/editor-chrome.ejs");
+    const attach = read("src/activeclinic/http/attachActiveClinicWebsiteChrome.js");
+    assert.match(chrome, /platform\/website-engine\/editor-chrome/);
+    assert.match(shared, /Editing website/);
+    assert.match(attach, /href: "\/app\/settings\/website\/pages"/);
+    assert.match(attach, /href: "\/app\/settings\/website\/sections"/);
+    assert.match(attach, /href: "\/app\/settings\/website\/media"/);
+    assert.match(shared, /labels\.publish \|\| 'Publish'/);
+    assert.match(shared, /publishPath/);
     assert.doesNotMatch(chrome, />Theme</);
   });
 
@@ -130,9 +133,9 @@ describe("activeclinic MW Stitch parity chrome", () => {
     assert.match(css, /\.ac-mw-editor__rail-link[\s\S]{0,180}min-height:\s*2\.75rem/);
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
-      /v7-proj106-2/
+      /v7-urp-1/
     );
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-proj106-p1/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-proj106-p2/);
     const shell = read("views/activeclinic/layouts/app-shell.ejs");
     assert.match(shell, /ac-app-body--mw/);
     assert.match(shell, /Material\+Symbols\+Outlined/);

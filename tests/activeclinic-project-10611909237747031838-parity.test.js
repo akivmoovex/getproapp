@@ -36,7 +36,7 @@ describe("project 10611909237747031838 parity matrix", () => {
   });
 
   it("asset versions reflect project 106 closure bump", () => {
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-proj106-p1/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-proj106-p2/);
     assert.match(read("src/activeclinic/services/buildActiveClinicShellViewModel.js"), /v7-proj106-2/);
     assert.match(read("src/activeclinic/http/renderActiveClinicPatient.js"), /v7-proj106-pt1/);
   });

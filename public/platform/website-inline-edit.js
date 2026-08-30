@@ -21,6 +21,81 @@
         });
       });
     });
+    bindMoreMenu();
+    bindPageSheet();
+  }
+
+  function bindMoreMenu() {
+    document.querySelectorAll("[data-website-more]").forEach(function (wrap) {
+      var toggle = wrap.querySelector("[data-website-more-toggle]");
+      var menu = wrap.querySelector("[data-website-more-menu]");
+      if (!toggle || !menu) return;
+      function setOpen(open) {
+        menu.hidden = !open;
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      }
+      toggle.addEventListener("click", function (ev) {
+        ev.preventDefault();
+        ev.stopPropagation();
+        setOpen(menu.hidden);
+      });
+      document.addEventListener("click", function (ev) {
+        if (!wrap.contains(ev.target)) setOpen(false);
+      });
+      document.addEventListener("keydown", function (ev) {
+        if (ev.key === "Escape") setOpen(false);
+      });
+    });
+    document.querySelectorAll("[data-website-more-action]").forEach(function (btn) {
+      btn.addEventListener("click", function (ev) {
+        var action = btn.getAttribute("data-website-more-action");
+        if (action === "features") {
+          ev.preventDefault();
+          var features = document.querySelector("[data-bb-features-toggle]");
+          if (features) features.click();
+        }
+        if (action === "pages") {
+          ev.preventDefault();
+          openPageSheet();
+        }
+      });
+    });
+  }
+
+  function pageSheetEls() {
+    return {
+      overlay: document.querySelector("[data-website-page-sheet-overlay]"),
+      sheet: document.querySelector("[data-website-page-sheet]"),
+    };
+  }
+
+  function setPageSheetOpen(open) {
+    var els = pageSheetEls();
+    if (!els.sheet) return;
+    els.sheet.hidden = !open;
+    if (els.overlay) els.overlay.hidden = !open;
+  }
+
+  function openPageSheet() {
+    setPageSheetOpen(true);
+  }
+
+  function bindPageSheet() {
+    var els = pageSheetEls();
+    if (!els.sheet) return;
+    document.querySelectorAll("[data-website-page-sheet-close]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        setPageSheetOpen(false);
+      });
+    });
+    if (els.overlay) {
+      els.overlay.addEventListener("click", function () {
+        setPageSheetOpen(false);
+      });
+    }
+    document.addEventListener("keydown", function (ev) {
+      if (ev.key === "Escape") setPageSheetOpen(false);
+    });
   }
 
   bindEditorShell();
@@ -50,9 +125,23 @@
     if (slot) slot.textContent = "Saved to draft";
     if (chrome) chrome.setAttribute("data-draft", "1");
     var draft = document.querySelector("[data-website-engine-draft]");
-    if (draft && draft.textContent && /No unpublished/i.test(draft.textContent)) {
-      draft.textContent = "Unpublished draft";
+    var short = document.querySelector("[data-website-engine-draft-short]");
+    function bump(el, longForm) {
+      if (!el || !el.textContent) return;
+      var match = el.textContent.match(/Draft\s*•\s*(\d+)/);
+      if (match) {
+        var next = Number(match[1]) + 1;
+        el.textContent = longForm
+          ? "Draft • " + next + " unpublished changes"
+          : "Draft • " + next + " changes";
+        return;
+      }
+      if (/No unpublished/i.test(el.textContent)) {
+        el.textContent = longForm ? "Draft • 1 unpublished changes" : "Draft • 1 changes";
+      }
     }
+    bump(draft, true);
+    bump(short, false);
   }
 
   function setBusy(el, busy) {

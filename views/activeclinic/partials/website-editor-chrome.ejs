@@ -6,29 +6,41 @@
   var unpublished = Number(typeof websiteUnpublishedCount !== 'undefined' ? websiteUnpublishedCount : 0) || 0;
   var reviewNote = typeof websiteReviewNote !== 'undefined' && websiteReviewNote ? websiteReviewNote : '';
   var submittedAt = typeof websiteSubmittedAtLabel !== 'undefined' && websiteSubmittedAtLabel ? websiteSubmittedAtLabel : '';
-  var canResubmit = statusKey === 'changes_requested' && unpublished > 0;
   var waitingReview = statusKey === 'submitted';
   var lifecycle = typeof websiteLifecycleStatus !== 'undefined' ? websiteLifecycleStatus : '';
   var lifecycleLabel = typeof websiteLifecycleLabel !== 'undefined' ? websiteLifecycleLabel : '';
   var policyLabel = typeof websitePublishPolicyLabel !== 'undefined' ? websitePublishPolicyLabel : '';
   var editLocked = typeof websiteEditLocked !== 'undefined' && websiteEditLocked;
   var moderationNote = typeof websiteModerationNote !== 'undefined' && websiteModerationNote ? websiteModerationNote : '';
-  var tenantPublishes = typeof websitePublishPolicy !== 'undefined' && websitePublishPolicy === 'TENANT_PUBLISH';
-  var canPublish = typeof websiteCanPublish !== 'undefined' && websiteCanPublish;
-  var publishLocked = typeof websitePublishLocked !== 'undefined' && websitePublishLocked;
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : null;
+  if (shell) {
+    shell.csrfToken = typeof csrfToken !== 'undefined' ? csrfToken : (shell.csrfToken || '');
+    shell.csrfField = typeof csrfField !== 'undefined' ? csrfField : (shell.csrfField || '_csrf');
+  }
 %>
+<% if (typeof websiteEdit !== 'undefined' && websiteEdit && shell) { %>
+<div class="gp-website-editor-host" data-clinic-key="<%= clinic && clinic.clinicKey %>" data-website-status="<%= statusKey %>">
+  <%- include('../../platform/website-engine/editor-chrome', { editorShell: shell }) %>
+  <% if (moderationNote) { %>
+  <p class="gp-website-sr-only" data-website-moderation-note="1"><%= moderationNote %></p>
+  <% } %>
+  <% if (reviewNote) { %>
+  <p class="gp-website-sr-only" data-website-review-note="1"><%= reviewNote %></p>
+  <% } %>
+  <% if (submittedAt) { %>
+  <p class="gp-website-sr-only" data-website-submitted-at="1">Submitted <%= submittedAt %></p>
+  <% } %>
+</div>
+<% } else if (!editLocked) { %>
 <div
-  class="ac-website-chrome"
+  class="ac-website-chrome ac-website-chrome--entry"
   data-website-chrome="1"
-  data-website-engine-shell="1"
   data-clinic-key="<%= clinic && clinic.clinicKey %>"
   data-website-status="<%= statusKey %>"
-  data-website-save-url="<%= websiteSaveUrl || '' %>"
-  data-website-media-url="<%= websiteMediaUrl || '' %>"
-  data-website-max-bytes="5242880"
 >
   <div class="ac-website-chrome__status" data-website-chrome-status="1">
-    <p><strong>Editor Mode</strong> <%= lifecycleLabel || (websiteEdit ? 'Editing draft' : 'Live view.') %>
+    <p><strong>Website</strong>
+      <% if (lifecycleLabel) { %> <%= lifecycleLabel %>.<% } %>
       <% if (policyLabel) { %> Policy: <%= policyLabel %>.<% } %>
       <% if (lifecycle === 'offline') { %> The public website is offline. You can still use clinic operations.<% } %>
       <% if (lifecycle === 'suspended') { %> The public website is suspended. Contact Platform Admin to restore it.<% } %>
@@ -38,118 +50,27 @@
     <% if (moderationNote) { %>
     <p class="ac-website-chrome__note" data-website-moderation-note="1"><%= moderationNote %></p>
     <% } %>
-    <ul class="ac-website-chrome__pills">
-      <li data-website-pill="live"<%= statusKey === 'live' || statusKey === 'published' ? ' class="is-current"' : '' %>>Live</li>
-      <li data-website-pill="draft"<%= unpublished > 0 && statusKey !== 'submitted' ? ' class="is-current"' : '' %>>
-        Draft changes<% if (unpublished > 0) { %> (<%= unpublished %>)<% } %>
-      </li>
-      <li data-website-pill="submitted"<%= waitingReview ? ' class="is-current"' : '' %>>Submitted for approval</li>
-      <li data-website-pill="changes_requested"<%= statusKey === 'changes_requested' ? ' class="is-current"' : '' %>>Changes requested</li>
-      <li data-website-pill="published"<%= statusKey === 'published' ? ' class="is-current"' : '' %>>Approved / published</li>
-    </ul>
-    <% if (submittedAt) { %>
-    <p data-website-submitted-at="1">Submitted <%= submittedAt %></p>
+    <% if (unpublished > 0) { %>
+    <p>Draft • <%= unpublished %> unpublished changes</p>
     <% } %>
-    <% if (reviewNote) { %>
-    <p class="ac-website-chrome__note" data-website-review-note="1"><%= reviewNote %></p>
-    <% } %>
-    <% if (waitingReview && !tenantPublishes) { %>
+    <% if (waitingReview && !(typeof websitePublishPolicy !== 'undefined' && websitePublishPolicy === 'TENANT_PUBLISH')) { %>
     <p>This draft is waiting for Platform Admin review. The submitted snapshot cannot be edited.</p>
-    <% } else if (tenantPublishes && unpublished > 0) { %>
-    <p>Unpublished draft changes are not visible to the public until you publish.</p>
     <% } %>
-    <% if (typeof websiteEditorPages !== 'undefined' && websiteEditorPages && websiteEditorPages.length && websiteEdit) { %>
-    <div class="gp-website-engine-shell__pages" data-website-engine-pages="1">
-      <label class="gp-website-engine-shell__label" for="gp-website-engine-page-ac">Page</label>
-      <select id="gp-website-engine-page-ac" data-website-engine-page-select="1">
-        <% websiteEditorPages.forEach(function (page) { %>
-        <option
-          value="<%= page.key %>"
-          data-href="<%= page.editHref %>"
-          <%= page.key === (typeof websiteEditorPageKey !== 'undefined' ? websiteEditorPageKey : 'home') ? ' selected' : '' %>
-        ><%= page.label || page.key %></option>
-        <% }); %>
-      </select>
-    </div>
-    <% } %>
-    <p class="gp-website-engine-shell__save-state" data-website-engine-save-state="1"><%= unpublished > 0 ? 'Saved to draft' : 'Up to date' %></p>
-    <div class="gp-website-engine-shell__viewport" data-website-engine-viewport="1" role="group" aria-label="Desktop or mobile preview">
-      <button type="button" class="gp-website-engine-shell__viewport-btn is-current" data-website-viewport="desktop">Desktop</button>
-      <button type="button" class="gp-website-engine-shell__viewport-btn" data-website-viewport="mobile">Mobile</button>
-    </div>
   </div>
   <div class="ac-website-chrome__actions" data-website-chrome-actions="1">
-    <a class="ac-website-chrome__link" href="/app/settings/website/pages">Pages</a>
-    <a class="ac-website-chrome__link" href="/app/settings/website/sections">Sections</a>
-    <a class="ac-website-chrome__link" href="/app/settings/website/media">Assets</a>
-    <% if (websiteEdit) { %>
-    <a class="ac-website-chrome__link" href="?website_mode=live">
-      <span class="gp-website-chrome__label-full">View live</span>
-      <span class="gp-website-chrome__label-short">Live</span>
-    </a>
-    <a class="ac-website-chrome__link" href="<%= websitePreviewUrl %>" data-website-preview="1">
-      <span class="gp-website-chrome__label-full">Preview draft</span>
-      <span class="gp-website-chrome__label-short">Preview</span>
-    </a>
-    <a class="ac-website-chrome__link" href="<%= websiteHistoryUrl %>">
-      <span class="gp-website-chrome__label-full">Version history</span>
-      <span class="gp-website-chrome__label-short">History</span>
-    </a>
-    <a class="ac-website-chrome__link" href="/app/settings/website" data-website-manage="1">
-      <span class="gp-website-chrome__label-full">Website management</span>
-      <span class="gp-website-chrome__label-short">Manage</span>
-    </a>
-    <form method="post" action="<%= websiteFinishEditUrl %>" class="ac-website-chrome__submit">
-      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-      <button type="submit">
-        <span class="gp-website-chrome__label-full">Exit edit mode</span>
-        <span class="gp-website-chrome__label-short">Exit</span>
-      </button>
-    </form>
-    <% if (canPublish && !publishLocked && !waitingReview) { %>
-    <form
-      method="post"
-      action="<%= websitePublishUrl %>"
-      class="ac-website-chrome__submit"
-      data-website-publish-confirm="1"
-      data-website-publish-message="Publish this website? Public visitors will see the current draft."
-    >
-      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-      <input type="hidden" name="makePublic" value="1"/>
-      <button type="submit">
-        <span class="gp-website-chrome__label-full">Publish</span>
-        <span class="gp-website-chrome__label-short">Publish</span>
-      </button>
-    </form>
-    <% } %>
-    <% if (websiteCanSubmit && !waitingReview && !tenantPublishes) { %>
-    <form method="post" action="<%= websiteSubmitUrl %>" class="ac-website-chrome__submit">
-      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-      <button type="submit">
-        <span class="gp-website-chrome__label-full"><%= canResubmit ? 'Resubmit for approval' : 'Submit for approval' %></span>
-        <span class="gp-website-chrome__label-short"><%= canResubmit ? 'Resubmit' : 'Submit' %></span>
-      </button>
-    </form>
-    <% } %>
-    <% } else if (!editLocked) { %>
     <a class="ac-website-chrome__link" href="?website_edit=1&amp;website_mode=draft" data-website-edit-control="1">
       <span class="gp-website-chrome__label-full">Edit website</span>
       <span class="gp-website-chrome__label-short">Edit</span>
     </a>
     <a class="ac-website-chrome__link" href="<%= websitePreviewUrl %>" data-website-preview="1">
-      <span class="gp-website-chrome__label-full">Preview draft</span>
+      <span class="gp-website-chrome__label-full">Preview</span>
       <span class="gp-website-chrome__label-short">Preview</span>
-    </a>
-    <a class="ac-website-chrome__link" href="<%= websiteHistoryUrl %>">
-      <span class="gp-website-chrome__label-full">Version history</span>
-      <span class="gp-website-chrome__label-short">History</span>
     </a>
     <a class="ac-website-chrome__link" href="/app/settings/website" data-website-manage="1">
       <span class="gp-website-chrome__label-full">Website management</span>
       <span class="gp-website-chrome__label-short">Manage</span>
     </a>
-    <% } %>
   </div>
-  <%- include('./website-nav-editor') %>
 </div>
+<% } %>
 <% } %>

@@ -202,8 +202,10 @@ describe("blessboard website mobile editing stage 7", () => {
     assert.match(res.text, /bb-tp-menu-btn/);
     assert.match(res.text, /data-bb-nav="mobile-drawer"/);
     assert.match(res.text, /data-bb-stitch-screen-mobile="Phase 7 - Church Website Editing Mode - Mobile"/);
-    assert.match(res.text, /bb-tp-btn__label-short/);
+    assert.match(res.text, /data-website-mobile-nav="1"/);
+    assert.match(res.text, /gp-website-editor__preview-icon/);
     assert.match(res.text, /data-bb-exit-editing="1"/);
+    assert.match(res.text, /Exit editing/);
     assert.match(res.text, /data-bb-inline-edit="1"/);
     assert.match(res.text, /data-bb-stitch-screen-mobile="Phase 7 - Inline Text Editing - Mobile"/);
     assert.match(res.text, /bb-tp-inline-edit__field-label/);
@@ -217,10 +219,10 @@ describe("blessboard website mobile editing stage 7", () => {
     );
     assert.match(res.text, /website-inline-edit\.js/);
     assert.match(res.text, /website-structured-edit\.js/);
-    assert.match(res.text, /bb-tp-btn--touch/);
+    assert.match(res.text, /gp-website-editor__mobile-nav/);
   });
 
-  it("Review and Publish appears when draft changes exist", async () => {
+  it("Publish stays on the shared editor shell when draft changes exist", async () => {
     if (skipIfNeeded()) return;
     await saveInlineFieldDraft(pool, {
       churchId: church.id,
@@ -239,7 +241,8 @@ describe("blessboard website mobile editing stage 7", () => {
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${users.hq.rawToken}`)
       .expect(200);
     assert.match(res.text, /data-bb-review-publish="1"/);
-    assert.match(res.text, /bb-tp-btn__label-short">Review</);
+    assert.match(res.text, /Draft • \d+ unpublished changes/);
+    assert.match(res.text, />Publish</);
   });
 
   it("publish review page carries mobile stitch marker and collapsed warnings", async () => {

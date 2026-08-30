@@ -298,7 +298,7 @@ describe("branch admin website visual editor entry", () => {
     assert.match(res.text, /data-bb-inline-edit/);
     assert.match(res.text, /data-bb-field="heading"/);
     assert.match(res.text, /aria-label="Edit hero heading"/);
-    assert.match(res.text, /Exit Editing/);
+    assert.match(res.text, /Exit editing/);
     assert.doesNotMatch(res.text, /data-bb-phase4-branch-website-overview/);
   });
 

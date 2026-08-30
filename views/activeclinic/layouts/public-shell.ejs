@@ -48,6 +48,9 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
   <% } else { %>
   <link href="https://fonts.googleapis.com/css2?family=Public+Sans:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
+  <% } %>
   <% } %>
   <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/activeclinic/ac-public.css?v=<%= assetVersion %>"/>
@@ -72,7 +75,7 @@
   }
 %>
 <body
-  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof chrome === 'string' && chrome === 'mf-register' ? ' ac-public-body--mf-register' : '' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing' : '' %>"
+  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof chrome === 'string' && chrome === 'mf-register' ? ' ac-public-body--mf-register' : '' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing gp-website-editor-open' : '' %>"
   data-ac-product="activeclinic"
   data-ac-shell="public"
   data-ac-page="<%= pageId %>"
@@ -86,14 +89,17 @@
 >
   <a class="ac-public-skip" href="#ac-public-main">Skip to content</a>
   <%- include('../partials/website-version-preview-banner') %>
-  <%- headerHtml %>
   <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
   <div class="gp-website-chrome-stack" data-website-chrome-stack="1">
     <%- include('../partials/website-editor-chrome') %>
   </div>
   <% } %>
+  <%- headerHtml %>
   <main id="ac-public-main" class="ac-public-main" tabindex="-1">
     <%- bodyHtml %>
+    <% if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>
+    <%- include('../partials/website-nav-editor') %>
+    <% } %>
   </main>
   <%- footerHtml %>
   <% if (shellVariant === 'tenant' && clinic) { %>

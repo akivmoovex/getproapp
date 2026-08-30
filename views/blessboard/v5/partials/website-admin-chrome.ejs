@@ -1,7 +1,8 @@
 <%#
-  Admin website chrome — Stage 4 + Stage 2 settings discovery panel.
-  Admin view: status + Edit Website (+ demo notice). No pencils.
-  Editing mode: toolbar with Exit / Review / Website features / Edit SEO.
+  Admin website chrome.
+  Admin view: status + Edit Website.
+  Editing mode: shared Stitch editor shell (toolbar, page rail, More, mobile nav).
+  Product destinations (Features, SEO, Pages, Assets) are configured into More.
 %>
 <%
   var wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
@@ -35,7 +36,7 @@
   <% } else { %>
   <% if (wa.editorShell) { %>
   <div
-    class="bb-tp-edit-toolbar"
+    class="gp-website-editor-host"
     data-bb-edit-toolbar="1"
     data-bb-admin-mode="editing"
     data-bb-csrf="<%= wa.csrfToken %>"
@@ -45,34 +46,16 @@
     data-bb-stitch-screen-desktop="Phase 7 - Church Website Editing Mode - Desktop"
     data-bb-stitch-screen-mobile="Phase 7 - Church Website Editing Mode - Mobile"
   >
+    <button
+      type="button"
+      class="gp-website-sr-only"
+      data-bb-features-toggle="1"
+      aria-expanded="false"
+      aria-controls="bb-tp-features-panel"
+    >Website features</button>
     <%- include('../../../platform/website-engine/editor-chrome', {
-      editorShell: wa.editorShell,
-      editorPathPrefix: wa.pathPrefix || ''
+      editorShell: wa.editorShell
     }) %>
-    <div class="bb-tp-edit-toolbar__product">
-      <button
-        type="button"
-        class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--touch"
-        data-bb-features-toggle="1"
-        aria-expanded="false"
-        aria-controls="bb-tp-features-panel"
-      >
-        <span class="bb-tp-btn__label-full">Website features</span>
-        <span class="bb-tp-btn__label-short">Features</span>
-      </button>
-      <% if (wa.reviewHref) { %>
-      <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--touch" href="<%= wa.reviewHref %>" data-bb-review-publish="1">
-        <span class="bb-tp-btn__label-full">Review drafts</span>
-        <span class="bb-tp-btn__label-short">Review</span>
-      </a>
-      <% } %>
-      <% if (seoLink && seoLink.available && seoLink.href) { %>
-      <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--touch" href="<%= seoLink.href %>" data-bb-edit-seo="1">
-        <span class="bb-tp-btn__label-full">Edit SEO</span>
-        <span class="bb-tp-btn__label-short">SEO</span>
-      </a>
-      <% } %>
-    </div>
   </div>
   <% } else { %>
   <div

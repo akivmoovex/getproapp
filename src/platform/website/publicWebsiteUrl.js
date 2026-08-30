@@ -196,18 +196,37 @@ function buildPublicOrganizationWebsiteUrl(input) {
   return origin ? `${origin}${path}` : path;
 }
 
+const EDITOR_NAV_QUERY = Object.freeze({
+  website_edit: "1",
+  website_mode: "draft",
+});
+
+/**
+ * Canonical editor navigation query. BlessBoard and ActiveClinic must use both
+ * `website_edit=1` and `website_mode=draft` so draft context survives page changes.
+ */
+function withEditorNavigationQuery(path) {
+  return appendQuery(path, EDITOR_NAV_QUERY);
+}
+
+function withoutEditorNavigationQuery(path) {
+  if (path == null || path === "") return path == null ? null : "";
+  const { pathname, search } = splitPathAndSearch(path);
+  if (!search) return pathname;
+  const params = new URLSearchParams(search.slice(1));
+  params.delete("website_edit");
+  params.delete("website_mode");
+  const serialized = params.toString();
+  return serialized ? `${pathname}?${serialized}` : pathname;
+}
+
 function buildPublicWebsiteEditPath(input) {
   const path = buildPublicOrganizationWebsitePath({
     ...(input || {}),
     query: undefined,
   });
   if (!path) return null;
-  const product = normalizeProduct((input && (input.product || input.productCode)) || "");
-  const editQuery =
-    product === PRODUCT_CODE.ACTIVECLINIC
-      ? { website_edit: "1", website_mode: "draft" }
-      : { website_edit: "1" };
-  return appendQuery(appendQuery(path, editQuery), input && input.query);
+  return appendQuery(withEditorNavigationQuery(path), input && input.query);
 }
 
 function buildPublicWebsitePreviewPath(input) {
@@ -512,6 +531,9 @@ module.exports = {
   searchFromRequest,
   buildPublicOrganizationWebsitePath,
   buildPublicOrganizationWebsiteUrl,
+  EDITOR_NAV_QUERY,
+  withEditorNavigationQuery,
+  withoutEditorNavigationQuery,
   buildPublicWebsiteEditPath,
   buildPublicWebsitePreviewPath,
   buildPublicWebsiteHistoryPath,

@@ -30,6 +30,7 @@ const { latestTenantVisibleNote } = require("../../platform/website/moderationEv
 const { LIFECYCLE_LABELS } = require("../../platform/website/lifecycleStatus");
 const { POLICY_LABELS } = require("../../platform/website/publishPolicy");
 const { listProductPageTypes } = require("../../platform/website-engine/productSchemaRegistry");
+const { presentEditorShell, buildEditorPages } = require("../../platform/website-engine/editorShell");
 
 function grantedPermissions(req) {
   const auth = req.activeClinicAuth;
@@ -117,17 +118,10 @@ function websiteEditorPageKeyFromRequest(req, clinicKey) {
 }
 
 function websiteEditorPagesForClinic(clinicKey, currentKey) {
-  const base = `/clinics/${encodeURIComponent(clinicKey)}`;
-  return listProductPageTypes(PRODUCT_CODE.ACTIVECLINIC).map((page) => {
-    const href = page.path ? `${base}/${page.path}` : base;
-    const sep = href.indexOf("?") >= 0 ? "&" : "?";
-    return {
-      key: page.key,
-      label: page.label || page.key,
-      path: page.path,
-      editHref: `${href}${sep}website_edit=1&website_mode=draft`,
-      current: page.key === currentKey,
-    };
+  return buildEditorPages({
+    productCode: PRODUCT_CODE.ACTIVECLINIC,
+    organizationKey: clinicKey,
+    pageKey: currentKey,
   });
 }
 
@@ -256,6 +250,90 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
           suffix: `website/versions/${previewVersion.id}/restore`,
         })
       : "";
+  const pageKey = websiteEditorPageKeyFromRequest(req, outClinic && outClinic.clinicKey);
+  const editorPages = websiteEditorPagesForClinic(outClinic && outClinic.clinicKey, pageKey);
+  const actionUrls = clinicWebsiteActionUrls(outClinic && outClinic.clinicKey);
+  const brandingHref = "/app/settings/website/branding";
+  const hubHref = "/app/settings/website";
+  const moreItems = [];
+  moreItems.push({
+    id: "settings",
+    label: "Website settings",
+    icon: "settings",
+    href: hubHref,
+    group: "general",
+  });
+  moreItems.push({
+    id: "branding",
+    label: "Branding",
+    icon: "palette",
+    href: brandingHref,
+    group: "general",
+  });
+  moreItems.push({
+    id: "history",
+    label: "Version history",
+    icon: "history",
+    href: actionUrls.websiteHistoryUrl,
+    group: "general",
+  });
+  moreItems.push({
+    id: "pages",
+    label: "Pages",
+    icon: "layers",
+    href: "/app/settings/website/pages",
+    group: "product",
+  });
+  moreItems.push({
+    id: "sections",
+    label: "Sections",
+    icon: "view_agenda",
+    href: "/app/settings/website/sections",
+    group: "product",
+  });
+  moreItems.push({
+    id: "assets",
+    label: "Assets",
+    icon: "folder",
+    href: "/app/settings/website/media",
+    group: "product",
+  });
+  if (canSubmit && !websitePublishLocked && websiteWorkflowStatus !== "submitted" && websitePublishPolicy !== "TENANT_PUBLISH") {
+    moreItems.push({
+      id: "submit",
+      label: websiteWorkflowStatus === "changes_requested" ? "Resubmit for approval" : "Submit for approval",
+      icon: "send",
+      href: actionUrls.websiteSubmitUrl,
+      method: "POST",
+      group: "product",
+    });
+  }
+  const editorShell =
+    websiteEdit
+      ? presentEditorShell({
+          productCode: PRODUCT_CODE.ACTIVECLINIC,
+          pageKey,
+          pages: editorPages,
+          moreItems,
+          brandingHref,
+          historyHref: actionUrls.websiteHistoryUrl,
+          hubHref,
+          managePagesHref: "/app/settings/website/pages",
+          draft: unpublishedCount > 0,
+          unpublishedCount,
+          canEdit,
+          canPublish: canPublish && !websitePublishLocked && websiteWorkflowStatus !== "submitted",
+          editing: true,
+          previewHref: actionUrls.websitePreviewUrl,
+          publishPath: actionUrls.websitePublishUrl,
+          exitHref: actionUrls.websiteFinishEditUrl,
+          exitMethod: "POST",
+          exitAction: actionUrls.websiteFinishEditUrl,
+          saveUrl: actionUrls.websiteSaveUrl,
+          mediaUrl: actionUrls.websiteMediaUrl,
+          csrfField: CSRF_FIELD,
+        })
+      : null;
   return {
     clinic: outClinic,
     instance,
@@ -286,12 +364,10 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
         ? req.activeClinicAuth.platformIdentity.id
         : null,
     csrfField: CSRF_FIELD,
-    websiteEditorPageKey: websiteEditorPageKeyFromRequest(req, outClinic && outClinic.clinicKey),
-    websiteEditorPages: websiteEditorPagesForClinic(
-      outClinic && outClinic.clinicKey,
-      websiteEditorPageKeyFromRequest(req, outClinic && outClinic.clinicKey)
-    ),
-    ...clinicWebsiteActionUrls(outClinic && outClinic.clinicKey),
+    websiteEditorPageKey: pageKey,
+    websiteEditorPages: editorPages,
+    editorShell,
+    ...actionUrls,
   };
 }
 

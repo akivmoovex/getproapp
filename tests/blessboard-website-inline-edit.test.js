@@ -285,7 +285,7 @@ describe("blessboard website inline edit foundation", () => {
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`))
       .expect(200);
     assert.match(editRes.text, /data-bb-edit-toolbar/);
-    assert.match(editRes.text, /Exit Editing/);
+    assert.match(editRes.text, /Exit editing/);
     assert.match(editRes.text, /data-bb-inline-edit/);
     assert.match(editRes.text, /data-bb-inline-start/);
     assert.match(editRes.text, /website-inline-edit\.js/);

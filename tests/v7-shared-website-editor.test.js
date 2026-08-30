@@ -134,20 +134,19 @@ describe("v7 shared website editor — static mechanism", () => {
     assert.match(js, /data-website-library/);
     assert.match(js, /data-website-engine-page-select/);
     assert.match(js, /data-website-viewport/);
+    assert.match(js, /data-website-more-toggle/);
     assert.match(js, /function validateImageFile/);
 
-    for (const chrome of [acChrome, bbChrome]) {
-      assert.match(chrome, /data-website-chrome="1"/);
-      assert.match(chrome, /data-website-save-url/);
-      assert.match(chrome, /data-website-media-url/);
-      assert.match(chrome, /data-website-preview="1"/);
-      assert.match(chrome, /data-website-publish-confirm="1"/);
-      assert.match(chrome, /data-website-viewport="desktop"/);
-      assert.match(chrome, /data-website-viewport="mobile"/);
-    }
-    assert.match(acChrome, /data-website-engine-shell="1"/);
+    assert.match(acChrome, /platform\/website-engine\/editor-chrome/);
+    assert.match(bbChrome, /data-website-chrome="1"/);
+    assert.match(bbChrome, /data-website-save-url/);
+    assert.match(bbChrome, /data-website-media-url/);
+    assert.match(bbChrome, /data-website-preview="1"/);
+    assert.match(bbChrome, /data-website-publish-confirm="1"/);
     assert.match(bbChrome, /data-website-engine-shell="1"/);
-    assert.match(bbChrome, /Exit Editing/);
+    assert.match(bbChrome, /Exit editing/);
+    assert.match(bbChrome, /data-website-page-rail="1"/);
+    assert.match(bbChrome, /data-website-more="1"/);
 
     for (const field of [acText, bbText]) {
       assert.match(field, /data-website-key=/);
@@ -249,7 +248,7 @@ describe("v7 shared website editor — HTTP matrix", () => {
     assert.match(edit.text, /data-website-type="image"/);
     assert.match(edit.text, /data-website-alt="1"/);
     assert.match(edit.text, /data-website-library="1"/);
-    assert.match(edit.text, /data-website-viewport="mobile"/);
+    assert.match(edit.text, /data-website-page-rail="1"/);
     assert.match(edit.text, /\/platform\/website-inline-edit\.js/);
 
     const csrf = extractCsrf(edit.text) || issueCsrfToken(MINIMAL_AC);
@@ -346,7 +345,7 @@ describe("v7 shared website editor — HTTP matrix", () => {
     assert.match(edit.text, /data-website-type="image"/);
     assert.match(edit.text, /data-website-alt="1"/);
     assert.match(edit.text, /data-website-library="1"/);
-    assert.match(edit.text, /data-website-viewport="mobile"/);
+    assert.match(edit.text, /data-website-page-rail="1"/);
     assert.match(edit.text, /\/platform\/website-inline-edit\.js/);
     assert.match(edit.text, /data-website-structured="1"/);
     assert.match(edit.text, /\/c\/[^"]+\/website\/drafts/);

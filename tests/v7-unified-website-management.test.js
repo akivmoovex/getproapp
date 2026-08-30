@@ -261,7 +261,7 @@ describe("V7 unified website management", () => {
         product: PRODUCT_CODE.BLESSBOARD,
         organizationKey: "sunrise-church",
       }),
-      "/c/sunrise-church?website_edit=1"
+      "/c/sunrise-church?website_edit=1&website_mode=draft"
     );
   });
 
@@ -460,7 +460,7 @@ describe("V7 unified website management", () => {
     assert.match(edit.text, /data-website-chrome/);
     assert.match(edit.text, /data-website-chrome-stack/);
     assert.match(edit.text, /website-editor-mobile\.js/);
-    assert.match(edit.text, /Edit website|Editing draft|Exit edit mode/);
+    assert.match(edit.text, /Edit website|Editing website|Exit editing/);
     assert.match(edit.text, /data-website-preview="1"/);
     assert.match(edit.text, /data-website-start="1"/);
     assert.match(edit.text, /data-website-save="1"/);
@@ -719,7 +719,7 @@ describe("V7 unified website management", () => {
         product: PRODUCT_CODE.BLESSBOARD,
         organizationKey: "demo",
       }),
-      "/c/demo?website_edit=1"
+      "/c/demo?website_edit=1&website_mode=draft"
     );
     assert.equal(
       urls.buildPublicWebsitePreviewPath({
