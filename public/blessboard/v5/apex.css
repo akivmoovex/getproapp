@@ -1673,147 +1673,604 @@ ul.bb-apex-features {
   margin-bottom: 0;
 }
 
+/* BBR08 — Church Registration Successful (BlessBoard apex only) */
+.bb-apex-body[data-bb-page="register-church-success"] {
+  background: #f7f9fb;
+  color: #191c1e;
+}
+
+.bb-apex-body[data-bb-page="register-church-success"] .bb-apex-nav,
+.bb-apex-body[data-bb-page="register-church-success"] .bb-apex-header__actions {
+  display: none;
+}
+
+.bb-apex-body[data-bb-page="register-church-success"] .bb-apex-footer__grid {
+  display: none;
+}
+
+.bb-apex-body[data-bb-page="register-church-success"] .bb-apex-footer {
+  padding: 1.5rem 1rem;
+  background: #f7f9fb;
+  border-top: 0;
+}
+
+.bb-apex-body[data-bb-page="register-church-success"] .bb-apex-footer__meta {
+  justify-content: center;
+  color: #45474c;
+  font-size: 14px;
+  line-height: 20px;
+}
+
+.bb-apex-body[data-bb-page="register-church-success"] .bb-apex-footer__meta-links {
+  display: none;
+}
+
+.bb-apex-body[data-bb-page="register-church-success"] .bb-apex-brand__name,
+.bb-apex-body[data-bb-page="register-church-success"] .bb-apex-brand {
+  color: #091426;
+}
+
+.bb-apex-body[data-bb-page="register-church-success"] .bb-platform-brand__subtitle {
+  display: none;
+}
+
 .bb-apex-register--success {
-  padding: 2rem 0 3rem;
+  --bbr08-primary: #091426;
+  --bbr08-muted: #45474c;
+  --bbr08-surface: #f7f9fb;
+  --bbr08-card: #ffffff;
+  --bbr08-violet: #7b42ff;
+  --bbr08-violet-hover: #6833e0;
+  --bbr08-teal: #25686a;
+  --bbr08-teal-soft: rgba(171, 235, 237, 0.3);
+  --bbr08-teal-fixed: #aeeef0;
+  --bbr08-navy: #1e293b;
+  --bbr08-border: #c5c6cd;
+  --bbr08-ref: #f2f4f6;
+  --bbr08-badge: #eceef0;
+  padding: 2.5rem 0 2.5rem;
 }
 
 .bb-rs-wrap {
-  max-width: 48rem;
+  max-width: 56rem;
   margin: 0 auto;
+  padding-left: 1rem;
+  padding-right: 1rem;
 }
 
 .bb-rs-card {
   text-align: center;
-  padding: 2.5rem 1.5rem;
+  padding: 1.5rem;
+  background: var(--bbr08-card);
+  border: 1px solid rgba(197, 198, 205, 0.3);
+  border-radius: 0.75rem;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.04);
+}
+
+.bb-rs-only-mobile {
+  display: inline;
+}
+
+.bb-rs-only-desktop {
+  display: none;
+}
+
+.bb-rs-lede--lead,
+.bb-rs-lede--detail {
+  display: none;
+}
+
+.bb-rs-lede--mobile {
+  display: block;
 }
 
 .bb-rs-icon {
-  width: 6rem;
-  height: 6rem;
-  margin: 0 auto 1.25rem;
   border-radius: 999px;
-  display: flex;
+  display: none;
   align-items: center;
   justify-content: center;
-  background: rgba(108, 92, 231, 0.14);
-  color: var(--bb-color-primary, #6c5ce7);
+  margin: 0 auto 1.5rem;
+}
+
+.bb-rs-icon--mobile {
+  display: flex;
+  width: 4rem;
+  height: 4rem;
+  background: var(--bbr08-teal-fixed);
+  color: var(--bbr08-teal);
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
+
+.bb-rs-icon--desktop {
+  display: none;
+  width: 6rem;
+  height: 6rem;
+  background: rgba(123, 66, 255, 0.1);
+  color: var(--bbr08-violet);
 }
 
 .bb-rs-icon .material-symbols-outlined {
-  font-size: 3rem;
+  font-size: 2rem;
+  font-variation-settings: "FILL" 1, "wght" 400, "GRAD" 0, "opsz" 24;
 }
 
-.bb-rs-card h1 {
-  margin: 0 0 0.75rem;
-  font-size: 1.75rem;
-  line-height: 1.2;
+.bb-rs-title {
+  margin: 0 0 0.25rem;
+  color: var(--bbr08-primary);
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  letter-spacing: -0.01em;
   overflow-wrap: anywhere;
 }
 
 .bb-rs-lede {
-  margin: 0 auto 1rem;
-  max-width: 36rem;
-  color: var(--bb-color-muted, #44474e);
+  margin: 0 auto 1.5rem;
+  max-width: 42rem;
+  color: var(--bbr08-muted);
+  font-size: 16px;
+  line-height: 24px;
 }
 
+.bb-rs-lede--mobile {
+  display: block;
+}
+
+.bb-rs-ref {
+  width: 100%;
+  max-width: 32rem;
+  margin: 0 auto 1.5rem;
+  padding: 0.75rem;
+  background: var(--bbr08-ref);
+  border: 1px solid rgba(197, 198, 205, 0.2);
+  border-radius: 0.5rem;
+}
+
+.bb-rs-ref__label {
+  margin: 0 0 0.25rem;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--bbr08-muted);
+}
+
+.bb-rs-ref__value {
+  margin: 0;
+}
+
+.bb-rs-ref__value code,
 .bb-rs-card code {
+  display: block;
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono",
+    "Courier New", monospace;
+  font-size: 24px;
+  font-weight: 600;
+  line-height: 32px;
+  letter-spacing: 0.08em;
+  color: var(--bbr08-primary);
   overflow-wrap: anywhere;
-  word-break: break-all;
+  word-break: break-word;
+  background: transparent;
+  padding: 0;
+}
+
+.bb-rs-ref__hint {
+  display: none;
+  margin: 0.75rem 0 0;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--bbr08-muted);
 }
 
 .bb-rs-grid {
-  display: grid;
-  grid-template-columns: 1fr;
+  display: flex;
+  flex-direction: column;
   gap: 0.75rem;
   text-align: left;
-  margin: 1.5rem 0;
+  margin: 0 0 2.5rem;
+  width: 100%;
 }
 
 .bb-rs-tile {
   display: flex;
-  gap: 0.75rem;
-  padding: 1rem;
-  border: 1px solid var(--bb-color-border, #d1dce0);
-  border-radius: var(--bb-radius-md, 0.75rem);
-  background: #f8f7fc;
+  flex-direction: column;
+  gap: 0.25rem;
+  padding: 0.75rem;
+  border: 1px solid var(--bbr08-border);
+  border-radius: 0.5rem;
+  background: var(--bbr08-card);
 }
 
-.bb-rs-tile .material-symbols-outlined {
-  color: var(--bb-color-primary, #6c5ce7);
+.bb-rs-tile__head {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.bb-rs-tile__icon {
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--bbr08-teal-soft);
+  color: var(--bbr08-teal);
   flex: 0 0 auto;
 }
 
 .bb-rs-tile h2 {
-  margin: 0 0 0.25rem;
-  font-size: 0.875rem;
+  margin: 0;
+  flex: 1 1 auto;
+  font-size: 12px;
   font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  color: var(--bbr08-muted);
 }
 
 .bb-rs-tile p {
   margin: 0;
-  font-size: 0.875rem;
-  color: var(--bb-color-muted, #44474e);
+  padding-left: 3.25rem;
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--bbr08-primary);
+}
+
+.bb-rs-badge {
+  display: none;
+  margin-left: auto;
+  padding: 0.125rem 0.625rem;
+  border-radius: 999px;
+  background: var(--bbr08-badge);
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  color: var(--bbr08-muted);
 }
 
 .bb-rs-note {
+  display: none;
   text-align: left;
-  margin: 0 0 1.5rem;
+  margin: 0 0 2.5rem;
+  width: 100%;
 }
 
 .bb-rs-subtitle {
-  margin: 0 0 0.5rem;
-  font-size: 1rem;
+  margin: 0 0 1.5rem;
+  padding-bottom: 0.25rem;
+  font-size: 32px;
+  font-weight: 600;
+  line-height: 40px;
+  letter-spacing: -0.02em;
+  color: var(--bbr08-primary);
+  border-bottom: 1px solid rgba(197, 198, 205, 0.2);
 }
 
-.bb-rs-list {
+.bb-rs-steps {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1.5rem 1.5rem;
   margin: 0;
-  padding-left: 1.25rem;
+  padding: 0;
+  list-style: none;
 }
 
-.bb-rs-list li + li {
-  margin-top: 0.35rem;
+.bb-rs-step {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.5rem;
+}
+
+.bb-rs-step__num {
+  flex: 0 0 auto;
+  width: 2rem;
+  height: 2rem;
+  border-radius: 999px;
+  background: var(--bbr08-navy);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  line-height: 24px;
+}
+
+.bb-rs-step__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.bb-rs-step__title {
+  font-size: 18px;
+  font-weight: 600;
+  line-height: 28px;
+  color: var(--bbr08-primary);
+}
+
+.bb-rs-step__text {
+  font-size: 14px;
+  line-height: 20px;
+  color: var(--bbr08-muted);
 }
 
 .bb-rs-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 0.75rem;
-  justify-content: center;
+  width: 100%;
   align-items: stretch;
 }
 
-.bb-rs-actions .bb-apex-btn {
-  min-height: 44px;
+.bb-rs-btn {
   display: inline-flex;
   align-items: center;
   justify-content: center;
+  min-height: 44px;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  font-size: 12px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.05em;
+  text-decoration: none;
+  text-align: center;
+  width: 100%;
+  box-sizing: border-box;
+  transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease,
+    text-decoration-color 0.15s ease;
 }
 
-@media (max-width: 480px) {
-  .bb-apex-register--success {
-    padding: 1.25rem 0 2rem;
-  }
+.bb-rs-btn--continue {
+  background: var(--bbr08-violet);
+  color: #fff;
+  border: 1px solid transparent;
+  box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+}
 
-  .bb-rs-card {
-    padding: 1.5rem 1rem;
-  }
+.bb-rs-btn--continue:hover,
+.bb-rs-btn--continue:focus-visible {
+  background: var(--bbr08-violet-hover);
+  color: #fff;
+}
 
-  .bb-rs-actions {
-    flex-direction: column;
-  }
+.bb-rs-btn--signin {
+  background: transparent;
+  color: var(--bbr08-primary);
+  border: 1px solid var(--bbr08-border);
+}
 
-  .bb-rs-actions .bb-apex-btn {
-    width: 100%;
-  }
+.bb-rs-btn--signin:hover,
+.bb-rs-btn--signin:focus-visible {
+  background: #eceef0;
+}
+
+.bb-rs-btn--home {
+  background: transparent;
+  color: var(--bbr08-primary);
+  border: 0;
+  text-decoration: underline;
+  text-decoration-color: transparent;
+  text-underline-offset: 4px;
+}
+
+.bb-rs-btn--home:hover,
+.bb-rs-btn--home:focus-visible {
+  text-decoration-color: var(--bbr08-primary);
+  color: rgba(9, 20, 38, 0.7);
+}
+
+.bb-rs-btn:focus-visible {
+  outline: 2px solid var(--bbr08-violet);
+  outline-offset: 3px;
 }
 
 @media (min-width: 768px) {
+  .bb-apex-body[data-bb-page="register-church-success"] .bb-apex-header {
+    display: none;
+  }
+
+  .bb-apex-register--success {
+    padding: 2rem 0 3rem;
+    min-height: calc(100vh - 6rem);
+    display: flex;
+    align-items: center;
+  }
+
+  .bb-rs-wrap {
+    padding-left: 2rem;
+    padding-right: 2rem;
+  }
+
+  .bb-rs-card {
+    padding: 4rem;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+    border-color: rgba(197, 198, 205, 0.3);
+  }
+
+  .bb-rs-only-mobile,
+  .bb-rs-lede--mobile,
+  .bb-rs-icon--mobile {
+    display: none !important;
+  }
+
+  .bb-rs-only-desktop {
+    display: inline;
+  }
+
+  .bb-rs-lede--lead,
+  .bb-rs-lede--detail {
+    display: block;
+  }
+
+  .bb-rs-lede--lead {
+    margin-bottom: 0.25rem;
+    font-size: 18px;
+    line-height: 28px;
+  }
+
+  .bb-rs-lede--detail {
+    margin-bottom: 2.5rem;
+    font-size: 16px;
+    line-height: 24px;
+  }
+
+  .bb-rs-icon--desktop {
+    display: flex;
+    margin-bottom: 1.5rem;
+  }
+
+  .bb-rs-icon--desktop .material-symbols-outlined {
+    font-size: 3rem;
+  }
+
+  .bb-rs-title {
+    margin-bottom: 0.75rem;
+    font-size: 40px;
+    font-weight: 700;
+    line-height: 48px;
+    letter-spacing: -0.02em;
+  }
+
+  .bb-rs-ref {
+    max-width: 32rem;
+    margin-bottom: 4rem;
+    padding: 1.5rem;
+  }
+
+  .bb-rs-ref__value code {
+    letter-spacing: -0.02em;
+  }
+
+  .bb-rs-ref__hint {
+    display: block;
+  }
+
   .bb-rs-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 4rem;
+  }
+
+  .bb-rs-tile {
+    padding: 1.5rem;
+    border-color: rgba(197, 198, 205, 0.3);
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.04);
+    transition: transform 0.3s ease;
+  }
+
+  .bb-rs-tile:hover {
+    transform: translateY(-4px);
+  }
+
+  .bb-rs-tile h2 {
+    font-size: 24px;
+    font-weight: 600;
+    line-height: 32px;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--bbr08-primary);
+  }
+
+  .bb-rs-tile p {
+    padding-left: 0;
+    margin-top: auto;
+    font-size: 16px;
+    line-height: 24px;
+    color: var(--bbr08-muted);
+  }
+
+  .bb-rs-tile__head {
+    margin-bottom: 0.75rem;
+  }
+
+  .bb-rs-badge {
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .bb-rs-note {
+    display: block;
+  }
+
+  .bb-rs-steps {
     grid-template-columns: 1fr 1fr;
   }
 
-  .bb-rs-actions .bb-apex-btn {
+  .bb-rs-actions {
+    flex-direction: row;
+    flex-wrap: wrap;
+    justify-content: center;
+    align-items: center;
+    gap: 1.5rem;
+    width: 100%;
+    padding-top: 2.5rem;
+    border-top: 1px solid rgba(197, 198, 205, 0.2);
+  }
+
+  .bb-rs-btn {
+    width: auto;
     min-width: 10rem;
+    padding: 0.75rem 4rem;
+  }
+
+  .bb-rs-btn--signin {
+    color: var(--bbr08-teal);
+    border-color: var(--bbr08-teal);
+  }
+
+  .bb-rs-btn--signin:hover,
+  .bb-rs-btn--signin:focus-visible {
+    background: rgba(37, 104, 106, 0.05);
+  }
+
+  .bb-rs-btn--home {
+    display: inline-flex;
+    padding-left: 2.5rem;
+    padding-right: 2.5rem;
+    min-width: 0;
+  }
+
+  .bb-apex-body[data-bb-page="register-church-success"] .bb-apex-footer {
+    display: none;
+  }
+}
+
+@media (max-width: 767px) {
+  .bb-apex-body[data-bb-page="register-church-success"] .bb-apex-header {
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.06);
+    background: #f7f9fb;
+  }
+
+  .bb-apex-body[data-bb-page="register-church-success"] .bb-apex-header__inner {
+    min-height: 4rem;
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .bb-apex-register--success {
+    padding: 2.5rem 0 1.5rem;
+  }
+
+  .bb-rs-wrap {
+    max-width: 390px;
+  }
+
+  .bb-rs-card {
+    overflow-wrap: anywhere;
+  }
+
+  .bb-rs-btn--home {
+    display: none;
   }
 }
 

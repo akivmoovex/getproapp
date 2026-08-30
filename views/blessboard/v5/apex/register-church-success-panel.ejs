@@ -1,0 +1,102 @@
+<%#
+  BBR08 BlessBoard registration-success panel.
+  Consumes the shared registrationSuccess view-model. ActiveClinic does not include this file.
+%>
+<%
+  var rs = typeof registrationSuccess !== 'undefined' && registrationSuccess ? registrationSuccess : {};
+  var attrs = rs.attrs || {};
+  var ready = rs.ready === true;
+  var reference = typeof rs.reference === 'string' && rs.reference ? rs.reference : '';
+  var outcome = rs.outcome || (ready ? 'ready' : 'recorded');
+  var steps = Array.isArray(rs.nextStepItems) ? rs.nextStepItems : [];
+%>
+<article
+  class="bb-rs-card"
+  <% if (attrs.outcome) { %> <%= attrs.outcome %>="<%= outcome %>"<% } %>
+  data-bb-rs-layout="bbr08"
+>
+  <div class="bb-rs-icon bb-rs-icon--desktop" aria-hidden="true">
+    <span class="material-symbols-outlined filled">check_circle</span>
+  </div>
+  <div class="bb-rs-icon bb-rs-icon--mobile" aria-hidden="true">
+    <span class="material-symbols-outlined filled">check_circle</span>
+  </div>
+
+  <h1 class="bb-rs-title">
+    <span class="bb-rs-only-desktop"><%= rs.title %></span>
+    <span class="bb-rs-only-mobile"><%= rs.mobileTitle || rs.title %></span>
+  </h1>
+
+  <p class="bb-rs-lede bb-rs-lede--lead bb-rs-only-desktop"><%= rs.description %></p>
+  <p class="bb-rs-lede bb-rs-lede--detail bb-rs-only-desktop"><%= rs.descriptionDetail || '' %></p>
+  <p class="bb-rs-lede bb-rs-lede--mobile bb-rs-only-mobile"><%= rs.mobileDescription || rs.description %></p>
+
+  <% if (reference) { %>
+  <div class="bb-rs-ref">
+    <p class="bb-rs-ref__label"><%= rs.referenceLabel || 'Registration Reference' %></p>
+    <p class="bb-rs-ref__value">
+      <code<% if (attrs.reference) { %> <%= attrs.reference %>="<%= reference %>"<% } %>><%= reference %></code>
+    </p>
+    <% if (rs.referenceHint) { %>
+    <p class="bb-rs-ref__hint"><%= rs.referenceHint %></p>
+    <% } %>
+  </div>
+  <% } %>
+
+  <div class="bb-rs-grid">
+    <div class="bb-rs-tile">
+      <div class="bb-rs-tile__head">
+        <span class="bb-rs-tile__icon" aria-hidden="true">
+          <span class="material-symbols-outlined">manage_accounts</span>
+        </span>
+        <h2><%= rs.accountsTitle %></h2>
+      </div>
+      <p><%= rs.accountsText %></p>
+    </div>
+    <div class="bb-rs-tile">
+      <div class="bb-rs-tile__head">
+        <span class="bb-rs-tile__icon" aria-hidden="true">
+          <span class="material-symbols-outlined">web</span>
+        </span>
+        <h2><%= rs.websiteTitle %></h2>
+        <% if (rs.websiteBadge) { %>
+        <span class="bb-rs-badge"><%= rs.websiteBadge %></span>
+        <% } %>
+      </div>
+      <p><%= rs.websiteText %></p>
+    </div>
+  </div>
+
+  <% if (steps.length) { %>
+  <div class="bb-rs-note">
+    <h2 class="bb-rs-subtitle"><%= rs.nextTitle %></h2>
+    <ol class="bb-rs-steps">
+      <% steps.forEach(function (step, idx) { %>
+      <li class="bb-rs-step">
+        <span class="bb-rs-step__num" aria-hidden="true"><%= idx + 1 %></span>
+        <span class="bb-rs-step__body">
+          <span class="bb-rs-step__title"><%= step.title %></span>
+          <span class="bb-rs-step__text"><%= step.text %></span>
+        </span>
+      </li>
+      <% }); %>
+    </ol>
+  </div>
+  <% } %>
+
+  <div class="bb-rs-actions">
+    <% if (rs.showContinue && rs.dashboardHref) { %>
+    <a
+      class="bb-rs-btn bb-rs-btn--continue"
+      href="<%= rs.dashboardHref %>"
+      <% if (attrs.continue) { %> <%= attrs.continue %>="1"<% } %>
+    ><%= rs.continueLabel || 'Continue to dashboard' %></a>
+    <% } %>
+    <a
+      class="bb-rs-btn bb-rs-btn--signin"
+      href="<%= rs.signInHref || '/login' %>"
+      <% if (attrs.signIn) { %> <%= attrs.signIn %>="1"<% } %>
+    ><%= rs.signInLabel || 'Sign in' %></a>
+    <a class="bb-rs-btn bb-rs-btn--home" href="<%= rs.homeHref || '/' %>"><%= rs.homeLabel || 'Return home' %></a>
+  </div>
+</article>

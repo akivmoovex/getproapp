@@ -108,6 +108,7 @@ describe("registration success presentation (shared)", () => {
     assert.match(html, /href="\/app"/);
     assert.match(html, /Return home/);
     assert.match(html, /data-ac-application-ref="AC-TEST-1"/);
+    assert.doesNotMatch(html, /bb-rs-btn--continue|#7b42ff|data-bb-bbr08/i);
   });
 
   it("unauthenticated BlessBoard continue goes through login", () => {
@@ -205,20 +206,22 @@ describe("BB-REG-07 BlessBoard registration success screen", () => {
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${sid}`);
     assert.equal(success.status, 200);
     assert.match(success.text, /Church Registered Successfully/);
-    assert.match(success.text, /organisation, church, administrator account, and website foundation/i);
-    assert.match(success.text, /Reference:/);
+    assert.match(success.text, /Your BlessBoard church workspace is ready/);
+    assert.match(success.text, /organisation, administrator account, and church website foundation/i);
+    assert.match(success.text, /Registration Reference/);
     assert.match(success.text, /data-bb-application-ref="BB-/);
     assert.match(success.text, /Accounts created/);
     assert.match(success.text, /Website foundation/);
-    assert.match(success.text, /unpublished/);
+    assert.match(success.text, /unpublished/i);
     assert.match(success.text, /What happens next/);
-    assert.match(success.text, /No Platform Admin approval/);
+    assert.match(success.text, /Open your dashboard/);
     assert.match(success.text, /data-bb-sign-in="1"/);
     assert.match(success.text, /href="\/login"/);
     assert.match(success.text, /data-bb-continue-dashboard="1"/);
     assert.match(success.text, /href="\/hq"/);
     assert.match(success.text, /Return home/);
     assert.match(success.text, /href="\/"/);
+    assert.match(success.text, /data-bb-rs-layout="bbr08"/);
     assert.doesNotMatch(success.text, /review=1|We received your registration/);
 
     const appRow = await pool.query(

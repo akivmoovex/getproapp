@@ -109,20 +109,48 @@ const BLESSBOARD_COPY = Object.freeze({
   referencePrefix: "BB",
   successPath: "/register-church/success",
   noun: "church",
+  layout: "bbr08",
   title: "Church Registered Successfully",
-  description:
-    "Your church is ready. We have set up your organisation, church, administrator account, and website foundation.",
+  mobileTitle: "Registration Successful!",
+  description: "Your BlessBoard church workspace is ready.",
+  descriptionDetail:
+    "Your organisation, administrator account, and church website foundation have been created successfully.",
+  mobileDescription:
+    "Welcome to BlessBoard. Your church account has been successfully created and is ready to use.",
+  referenceLabel: "Registration Reference",
+  referenceHint: "Keep this reference if you need help with your registration.",
   accountsTitle: "Accounts created",
-  accountsText: "Your church and administrator accounts are configured and ready to use.",
+  accountsText:
+    "Your church workspace and administrator account are ready. You can now manage your church, branches, members, and settings.",
   websiteTitle: "Website foundation",
-  websiteText: "Your church website foundation is built and currently in an unpublished state.",
+  websiteText:
+    "Your church website has been created as a draft. It will remain unpublished until you choose to publish it.",
+  websiteBadge: "Unpublished",
   nextTitle: "What happens next",
   nextSteps: [
-    "Sign in with the email or phone number and password you just set.",
-    "Open Website Management to customise your church website.",
-    "Your website stays unpublished until you choose to publish it.",
-    "No Platform Admin approval is required for a normal registration.",
+    "Open your dashboard — Log in to view your administrative tools.",
+    "Complete your profile — Add details, logos, and contact information.",
+    "Customize website — Design your public-facing church presence.",
+    "Publish when ready — Make your site live to your community.",
   ],
+  nextStepItems: Object.freeze([
+    Object.freeze({
+      title: "Open your dashboard",
+      text: "Log in to view your administrative tools.",
+    }),
+    Object.freeze({
+      title: "Complete your profile",
+      text: "Add details, logos, and contact information.",
+    }),
+    Object.freeze({
+      title: "Customize website",
+      text: "Design your public-facing church presence.",
+    }),
+    Object.freeze({
+      title: "Publish when ready",
+      text: "Make your site live to your community.",
+    }),
+  ]),
   signInLabel: "Sign in",
   signInHref: "/login",
   continueLabel: "Continue to dashboard",

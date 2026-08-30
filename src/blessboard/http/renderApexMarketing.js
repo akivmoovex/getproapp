@@ -162,7 +162,7 @@ function renderRegisterChurchSuccessPage(opts) {
   return renderApexView("apex/register-church-success.ejs", {
     ...shellLocals(opts),
     pageTitle: "Church Registered Successfully",
-    activeNav: "register-church",
+    activeNav: "register-church-success",
     robotsNoIndex: true,
     csrfField: (opts && opts.csrfField) || "_csrf",
     registrationSuccess,
