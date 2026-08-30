@@ -1324,11 +1324,25 @@ body.gp-website-field-editor-open {
   position: fixed;
   inset: 0;
   z-index: var(--gp-we-z-field-editor);
+  padding: 16px;
+  box-sizing: border-box;
+}
+
+.gp-website-field-editor:not([hidden]) {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 16px;
-  box-sizing: border-box;
+}
+
+.gp-website-field-editor[hidden] {
+  display: none !important;
+  pointer-events: none;
+}
+
+.gp-website-field-editor__overlay[hidden],
+.gp-website-field-editor__panel[hidden] {
+  display: none !important;
+  pointer-events: none;
 }
 
 .gp-website-field-editor__overlay {

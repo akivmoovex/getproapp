@@ -18,6 +18,7 @@
 <% if (canEdit) { %>
 <div
   class="gp-website-editable ac-website-editable ac-website-editable--image<%= variant ? ' ac-website-editable--' + variant : '' %>"
+  data-website-inline="1"
   data-website-key="<%= key %>"
   data-website-type="image"
   data-website-variant="<%= logo ? 'logo' : 'image' %>"
