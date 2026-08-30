@@ -629,6 +629,7 @@ describe("BlessBoard HQ website settings HTTP", () => {
       .set("Cookie", await hqCookie(hqUserId));
     assert.equal(page.status, 200, page.text && page.text.slice(0, 240));
     assert.match(page.text, /data-bb-website-settings-ux="1"/);
+    assert.match(page.text, /data-bb-website-management="1"/);
     assert.match(page.text, /Website not published yet/);
     assert.doesNotMatch(page.text, /data-bb-website-action="view-live"/);
     assert.match(page.text, /data-bb-website-action="preview"/);

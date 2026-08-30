@@ -21,19 +21,24 @@ test("HQ Website route is registered with unlessTenant and non-empty views", () 
   const nav = read("src/blessboard/http/hqAdminNav.js");
   const shell = read("views/blessboard/v5/partials/hq-shell-start.ejs");
   const legacy = read("views/blessboard/v5/hq/website.ejs");
+  const hub = read("views/blessboard/v5/hq/website-management.ejs");
   const overview = read("views/blessboard/v5/hq/phase4-foundation-website-overview.ejs");
 
   assert.match(foundation, /createChurchWebsiteAdminRouter/);
   assert.match(route, /router\.get\(\s*"\/hq\/website"/);
   assert.match(route, /mode:\s*"unlessTenant"/);
-  assert.match(route, /renderLegacyWebsite|hq\/website\.ejs|phase4-foundation-website-overview/);
+  assert.match(route, /renderWebsiteHub|website-management\.ejs/);
   assert.match(nav, /href:\s*"\/hq\/website"/);
   assert.match(shell, /href: '\/hq\/website'/);
+  assert.match(hub, /data-bb-hq-website="1"/);
+  assert.match(hub, /data-bb-website-management="1"/);
+  assert.match(hub, /Website Management Hub/);
   assert.match(legacy, /data-bb-hq-website="1"/);
   assert.match(legacy, /Website preview/);
   assert.match(overview, /data-bb-phase4-foundation-website-overview="1"/);
   assert.match(overview, /Church Website|Website status/);
   assert.match(overview, /hq-shell-end/);
+  assert.match(hub, /hq-shell-end/);
   assert.match(legacy, /hq-shell-end/);
 });
 

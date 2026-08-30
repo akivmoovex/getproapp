@@ -51,7 +51,6 @@ const {
 const {
   PRODUCT_CODE,
   buildPublicWebsiteEditPath,
-  buildPublicWebsitePublishPath,
 } = require("../../platform/website/publicWebsiteUrl");
 const {
   prepareWebsitePublishReview,
@@ -65,8 +64,10 @@ const {
   SCOPE_TYPE,
 } = require("../services/resolveWebsiteScope");
 const { buildPermissionNavFlags } = require("./permissionNavLocals");
+const { PERMISSIONS: PLATFORM_WEBSITE_PERMISSIONS } = require("../../platform/website/permissions");
 const {
   presentBlessBoardHqWebsiteSettingsUx,
+  loadWebsiteManagementSummary,
 } = require("../../platform/website/websiteManagementPresentation");
 
 /**
@@ -243,44 +244,174 @@ function createChurchWebsiteAdminRouter(deps) {
     return session && session.userId ? String(session.userId) : null;
   }
 
+  function grantedWebsitePermissions(flags) {
+    const granted = [];
+    if (flags && flags.canViewWebsite) granted.push(PLATFORM_WEBSITE_PERMISSIONS.VIEW);
+    if (flags && flags.canEditWebsite) {
+      granted.push(PLATFORM_WEBSITE_PERMISSIONS.EDIT);
+      granted.push(PLATFORM_WEBSITE_PERMISSIONS.VIEW);
+    }
+    if (flags && flags.canPublishWebsite) granted.push(PLATFORM_WEBSITE_PERMISSIONS.PUBLISH);
+    if (flags && flags.canRestoreWebsite) {
+      granted.push(PLATFORM_WEBSITE_PERMISSIONS.RESTORE);
+      granted.push(PLATFORM_WEBSITE_PERMISSIONS.ROLLBACK);
+    }
+    return Array.from(new Set(granted));
+  }
+
+  function applyHubPublishPostPath(website, flags, opts) {
+    if (!website || typeof website !== "object") return website;
+    const actions = website.actions || (website.ux && website.ux.actions) || {};
+    const allowPublish = Boolean(flags && flags.canPublishWebsite);
+    if (allowPublish) {
+      actions.publishPath = "/hq/website/publish";
+      actions.unpublishPath = actions.unpublishPath || "/hq/website/unpublish";
+    }
+    if (opts && opts.needsFoundationRepair) {
+      actions.retry = actions.retry || "#website-setup-retry";
+    }
+    website.actions = actions;
+    if (website.ux) website.ux.actions = actions;
+    website.canEdit = Boolean(website.canEdit) || Boolean(flags && flags.canEditWebsite);
+    website.canPublish = allowPublish;
+    website.canView = flags ? flags.canViewWebsite !== false : website.canView;
+    return website;
+  }
+
+  function overlayHqUnpublishedChanges(website, overview) {
+    if (!website || !overview || overview.hasUnpublishedChanges !== true) return website;
+    website.unpublishedChanges = true;
+    website.unpublishedCount = Math.max(Number(website.unpublishedCount) || 0, Number(overview.unpublishedCount) || 0, 1);
+    if (website.liveAvailable) {
+      website.statusKey = "unpublished_changes";
+      const n = website.unpublishedCount;
+      website.statusLabel = website.publishedVersionNumber
+        ? `Published (version ${website.publishedVersionNumber}) · unpublished changes`
+        : "Published · unpublished changes";
+      website.statusHint = `${n} unpublished change${n === 1 ? "" : "s"} will not be public until you publish.`;
+    }
+    if (website.ux) {
+      website.ux.unpublishedChanges = true;
+      website.ux.unpublishedCount = website.unpublishedCount;
+      website.ux.state = website.statusKey || website.ux.state;
+      website.ux.statusLabel = website.statusLabel || website.ux.statusLabel;
+      website.ux.statusHint = website.statusHint || website.ux.statusHint;
+    }
+    return website;
+  }
+
+  async function renderWebsiteHub(req, res, opts) {
+    const flags = opts.flags || (await websiteCapabilityFlags(req));
+    const organizationId = opts.organizationId || null;
+    const organizationKey = opts.organizationKey || "";
+    const needsFoundationRepair = Boolean(opts.needsFoundationRepair);
+    let website = null;
+    if (organizationId) {
+      try {
+        const loaded = await loadWebsiteManagementSummary(getPool(), {
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          organizationId,
+          organizationKey,
+          grantedPermissions: grantedWebsitePermissions(flags),
+          origin: `${req.protocol}://${req.get("host")}`,
+          env,
+        });
+        if (loaded && loaded.ok) website = loaded.summary;
+      } catch {
+        website = null;
+      }
+    }
+    if (!website) {
+      const websiteUx = presentBlessBoardHqWebsiteSettingsUx({
+        overview: opts.overview || {},
+        flags,
+        needsFoundationRepair: false,
+        publicPath: opts.publicPath,
+        previewPath: opts.previewPath,
+      });
+      website = {
+        ...websiteUx,
+        statusKey: websiteUx.state,
+        statusLabel: websiteUx.statusLabel,
+        statusHint: websiteUx.statusHint,
+        publishedVersionLabel: websiteUx.publishedVersionLabel,
+        lastPublishedLabel: websiteUx.lastPublishedLabel,
+        lastEditedLabel: websiteUx.lastEditedLabel,
+        lastEditor: websiteUx.lastEditor,
+        unpublishedChanges: websiteUx.unpublishedChanges,
+        unpublishedCount: websiteUx.unpublishedCount,
+        liveAvailable: websiteUx.liveAvailable,
+        exists: websiteUx.exists,
+        publicPath: websiteUx.publicPath,
+        publicUrl: websiteUx.publicUrl,
+        canEdit: websiteUx.canEdit,
+        canPublish: websiteUx.canPublish,
+        canView: websiteUx.canView,
+        actions: websiteUx.actions,
+        ux: websiteUx,
+      };
+    }
+    const overview = opts.overview || {};
+    overlayHqUnpublishedChanges(website, overview);
+    if (needsFoundationRepair) {
+      website.statusLabel = "Website setup incomplete";
+      website.statusHint =
+        website.statusHint ||
+        "Required page shells or settings are missing. Repair inserts only missing structures and does not publish or overwrite existing content.";
+      if (website.ux) {
+        website.ux.statusLabel = website.statusLabel;
+        website.ux.statusHint = website.statusHint;
+      }
+    }
+    applyHubPublishPostPath(website, flags, opts);
+    const html = renderHqView(
+      "hq/website-management.ejs",
+      await shellLocals(req, res, {
+        website,
+        websiteUx: website.ux || website,
+        needsFoundationRepair: Boolean(opts.needsFoundationRepair),
+        foundationGaps: opts.foundationGaps || [],
+        notice: opts.notice || null,
+        error: opts.error || null,
+        planKey: opts.planKey || overview.planKey || "foundation",
+      })
+    );
+    return res.status(opts.status || 200).type("html").send(html);
+  }
+
   async function renderLegacyWebsite(req, res, locals) {
     const flags = await websiteCapabilityFlags(req);
     const publicPath = (locals && locals.publicPath) || "";
     const previewPath = (locals && locals.previewPath) || hqPreviewPagePath("home");
     const orgKey = (locals && locals.organizationKey) || "";
-    const editPath = orgKey
-      ? buildPublicWebsiteEditPath({
-          product: PRODUCT_CODE.BLESSBOARD,
-          organizationKey: orgKey,
-        })
-      : "/hq/content";
-    const websiteUx = presentBlessBoardHqWebsiteSettingsUx({
+    return renderWebsiteHub(req, res, {
+      flags,
+      organizationId: null,
+      organizationKey: orgKey,
+      publicPath,
+      previewPath,
+      needsFoundationRepair: Boolean(locals && locals.needsFoundationRepair),
+      foundationGaps: (locals && locals.foundationGaps) || [],
+      notice: locals && locals.notice,
+      error: locals && locals.error,
       overview: {
         publicPath,
         previewPath,
-        editPath,
-        inlineEditPath: editPath,
-        publishReviewPath: buildPublicWebsitePublishPath({
-          product: PRODUCT_CODE.BLESSBOARD,
-          organizationKey: orgKey,
-          query: locals && locals.deferServiceTimes ? { defer_service_times: "1" } : undefined,
-        }),
-        hasUnpublishedChanges:
-          String((locals && locals.readiness && locals.readiness.websiteStatus) || "") !==
-          "published",
+        editPath: orgKey
+          ? buildPublicWebsiteEditPath({
+              product: PRODUCT_CODE.BLESSBOARD,
+              organizationKey: orgKey,
+            })
+          : "/hq/content",
+        inlineEditPath: orgKey
+          ? buildPublicWebsiteEditPath({
+              product: PRODUCT_CODE.BLESSBOARD,
+              organizationKey: orgKey,
+            })
+          : "/hq/content",
         readiness: locals && locals.readiness,
       },
-      readiness: locals && locals.readiness,
-      flags,
-      needsFoundationRepair: Boolean(locals && locals.needsFoundationRepair),
-      publicPath,
-      previewPath,
     });
-    const html = renderHqView(
-      "hq/website.ejs",
-      await shellLocals(req, res, { ...(locals || {}), websiteUx })
-    );
-    return res.status(200).type("html").send(html);
   }
 
   router.get("/hq/website", rejectApex, gateHq, async (req, res) => {
@@ -309,49 +440,61 @@ function createChurchWebsiteAdminRouter(deps) {
         /* engine backfill is best-effort on hub load */
       }
 
+      const noticeRaw = String((req.query && req.query.notice) || "") || null;
+      const noticeMap = {
+        published: "Website published.",
+        unpublished: "Website unpublished. Content is preserved.",
+        preview_ack: "Preview acknowledged.",
+        foundation_repaired: "Website foundation repaired.",
+      };
+
+      let overview = null;
       if (organizationId) {
-        const overview = await loadHqWebsiteOverview(getPool(), {
+        overview = await loadHqWebsiteOverview(getPool(), {
           organizationId,
           churchId: tenant.church.id,
           organizationKey,
           env,
         });
-        if (overview && overview.ok && !overview.useLegacyWebsiteScreen) {
-          const flags = await websiteCapabilityFlags(req);
-          applyOverviewCapabilities(overview, flags);
-          const foundation = await inspectWebsiteFoundationGaps(getPool(), {
-            churchId: tenant.church.id,
-          });
-          const needsFoundationRepair = Boolean(foundation && foundation.needsRepair);
-          const websiteUx = attachHqWebsiteUx(overview, flags, {
-            needsFoundationRepair,
-            publicPath: overview.publicPath,
-            previewPath: overview.previewPath,
-          });
-          const noticeRaw = String((req.query && req.query.notice) || "") || null;
-          const noticeMap = {
-            published: "Website published.",
-            unpublished: "Website unpublished. Content is preserved.",
-            preview_ack: "Preview acknowledged.",
-            foundation_repaired: "Website foundation repaired.",
-          };
-          const viewName =
-            overview.planKey === "growth"
-              ? "hq/phase4-growth-website-workflow-overview.ejs"
-              : "hq/phase4-foundation-website-overview.ejs";
-          const html = renderHqView(
-            viewName,
-            await shellLocals(req, res, {
-              overview,
-              websiteUx,
-              needsFoundationRepair,
-              foundationGaps: (foundation && foundation.gaps) || [],
-              notice: noticeMap[noticeRaw] || noticeRaw,
-              error: null,
-            })
-          );
-          return res.status(200).type("html").send(html);
-        }
+      }
+      const flags = await websiteCapabilityFlags(req);
+      if (overview && overview.ok) applyOverviewCapabilities(overview, flags);
+      const foundation = await inspectWebsiteFoundationGaps(getPool(), {
+        churchId: tenant.church.id,
+      });
+      const needsFoundationRepair = Boolean(foundation && foundation.needsRepair);
+      const publicPath =
+        (overview && overview.publicPath) || publicChurchHomePath(organizationKey);
+      const previewPath =
+        (overview && overview.previewPath) || hqPreviewPagePath("home");
+      const editPath = organizationKey
+        ? buildPublicWebsiteEditPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey,
+          })
+        : "/hq/content";
+
+      if (organizationId) {
+        return renderWebsiteHub(req, res, {
+          flags,
+          organizationId,
+          organizationKey,
+          overview:
+            overview && overview.ok
+              ? overview
+              : {
+                  publicPath,
+                  previewPath,
+                  editPath,
+                  inlineEditPath: editPath,
+                },
+          needsFoundationRepair,
+          foundationGaps: (foundation && foundation.gaps) || [],
+          notice: noticeMap[noticeRaw] || noticeRaw,
+          publicPath,
+          previewPath,
+          planKey: (overview && overview.planKey) || "foundation",
+        });
       }
 
       const readiness = await evaluatePublishReadiness(getPool(), {
@@ -379,9 +522,6 @@ function createChurchWebsiteAdminRouter(deps) {
           foundationGaps: [],
         });
       }
-      const foundation = await inspectWebsiteFoundationGaps(getPool(), {
-        churchId: tenant.church.id,
-      });
       const orgKey =
         readiness.organizationKey || organizationKey || null;
       return renderLegacyWebsite(req, res, {
@@ -393,7 +533,7 @@ function createChurchWebsiteAdminRouter(deps) {
         previewPath: hqPreviewPagePath("home"),
         publicPath: readiness.publicPath || publicChurchHomePath(orgKey),
         organizationKey: orgKey,
-        needsFoundationRepair: Boolean(foundation && foundation.needsRepair),
+        needsFoundationRepair,
         foundationGaps: (foundation && foundation.gaps) || [],
       });
     } catch {

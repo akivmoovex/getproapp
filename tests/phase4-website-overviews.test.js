@@ -323,42 +323,41 @@ describe("phase4 website overviews", () => {
       .set("Cookie", sidCookie(rawToken));
   }
 
-  it("foundation HQ overview renders Phase4 screen with checklist and status", async () => {
+  it("foundation HQ website hub renders shared Website management presentation", async () => {
     skipIfNeeded();
     const res = await authedGet(HOST_A, "/hq/website", users.hqA.rawToken);
     assert.equal(res.status, 200);
-    assert.match(res.text, /data-bb-phase4-foundation-website-overview="1"/);
-    assert.match(
-      res.text,
-      /data-bb-stitch-screen="Phase4 - Foundation Website Overview"/
-    );
-    assert.match(res.text, /data-bb-phase4-setup-checklist="1"/);
+    assert.match(res.text, /data-bb-website-management="1"/);
+    assert.match(res.text, /data-bb-hq-website="1"/);
+    assert.match(res.text, /Website Management Hub/);
     assert.match(res.text, /data-bb-phase4-website-status="1"/);
-    assert.match(res.text, /Church setup/);
     assert.match(res.text, /Website status/);
+    assert.doesNotMatch(res.text, /data-bb-phase4-foundation-website-overview="1"/);
   });
 
-  it("foundation overview excludes growth workflow panels and forbidden technical terms", async () => {
+  it("foundation website hub excludes growth workflow panels and forbidden technical terms", async () => {
     skipIfNeeded();
     const res = await authedGet(HOST_A, "/hq/website", users.hqA.rawToken);
     assert.equal(res.status, 200);
     assert.doesNotMatch(res.text, /data-bb-phase4-recent-submissions="1"/);
     assert.doesNotMatch(res.text, /data-bb-phase4-count="waiting"/);
     assert.doesNotMatch(res.text, /Recent branch submissions/);
-    assertNoForbiddenTechnicalTerms(res.text, "foundation overview");
+    assert.doesNotMatch(res.text, /data-bb-phase4-growth-website-workflow-overview="1"/);
+    assertNoForbiddenTechnicalTerms(res.text, "foundation website hub");
   });
 
-  it("foundation overview includes navigation links and responsive marker", async () => {
+  it("foundation website hub includes shared actions and responsive marker", async () => {
     skipIfNeeded();
     const res = await authedGet(HOST_A, "/hq/website", users.hqA.rawToken);
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-viewport="responsive"/);
-    assert.match(res.text, /href="\/hq\/content"/);
-    assert.match(res.text, /Preview Website|Preview Changes/);
-    assert.match(res.text, /\/hq\/website\/publish\/review/);
+    assert.match(res.text, /website_edit=1/);
+    assert.match(res.text, /data-bb-website-action="preview"/);
+    assert.match(res.text, /data-bb-website-action="edit"/);
+    assert.match(res.text, /action="\/hq\/website\/publish"/);
   });
 
-  it("foundation overview excludes fabricated engagement metrics", async () => {
+  it("foundation website hub excludes fabricated engagement metrics", async () => {
     skipIfNeeded();
     const res = await authedGet(HOST_A, "/hq/website", users.hqA.rawToken);
     assert.equal(res.status, 200);
@@ -436,12 +435,13 @@ describe("phase4 website overviews", () => {
     assert.match(overview.undoLastPublish.href, /\/hq\/website\/version-history\/.+\/restore/);
   });
 
-  it("default HTTP plan renders foundation overview not growth workflow", async () => {
+  it("default HTTP plan renders shared website hub not growth workflow overview", async () => {
     skipIfNeeded();
     const res = await authedGet(HOST_A, "/hq/website", users.hqA.rawToken);
     assert.equal(res.status, 200);
-    assert.match(res.text, /data-bb-phase4-foundation-website-overview="1"/);
+    assert.match(res.text, /data-bb-website-management="1"/);
     assert.doesNotMatch(res.text, /data-bb-phase4-growth-website-workflow-overview="1"/);
+    assert.doesNotMatch(res.text, /href="\/hq\/website\/recent-changes"/);
   });
 
   it("normalizePlanKey and loadGrowthWebsiteOverview expose friendly growth shape", async () => {

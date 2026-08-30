@@ -705,7 +705,7 @@ describe("phase4 recent website changes", () => {
 
     const res = await authedGet(HOST_A, "/hq/website", users.hqA.rawToken);
     assert.equal(res.status, 200);
-    assert.match(res.text, /data-bb-phase4-growth-website-workflow-overview="1"/);
+    assert.match(res.text, /data-bb-website-management="1"/);
     assert.match(res.text, /href="\/hq\/website\/recent-changes"/);
     assert.match(res.text, /Recent Website Changes/);
   });
