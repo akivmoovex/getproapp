@@ -24,10 +24,14 @@
   var _variant = typeof serviceTimesVariant !== 'undefined' && serviceTimesVariant ? serviceTimesVariant : 'band';
   var _visit = typeof visitHref !== 'undefined' && visitHref ? visitHref : (typeof hrefFor === 'function' ? hrefFor('/contact') : '/contact');
   var _directions = typeof directionsHref !== 'undefined' ? directionsHref : null;
+  var _sectionKey = typeof serviceTimesSectionKey !== 'undefined' && serviceTimesSectionKey
+    ? serviceTimesSectionKey
+    : 'service_times';
 %>
 <section
   class="bb-tp-service-times bb-tp-service-times--<%= _variant %>"
   data-bb-home-service-times="1"
+  data-section="<%= _sectionKey %>"
   aria-labelledby="bb-tp-service-times-heading"
 >
   <div class="bb-tp-service-times__inner">

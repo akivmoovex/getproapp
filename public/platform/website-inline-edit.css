@@ -2015,6 +2015,16 @@ body.gp-website-section-menu-open {
   overflow: hidden;
 }
 
+body.gp-website-section-menu-open .gp-website-section__chrome {
+  z-index: 1;
+  pointer-events: none;
+}
+
+body.gp-website-section-menu-open .gp-website-section-menu__panel,
+body.gp-website-section-menu-open .gp-website-section-menu__overlay {
+  pointer-events: auto;
+}
+
 @media (max-width: 767px) {
   .gp-website-section-menu {
     align-items: flex-end;

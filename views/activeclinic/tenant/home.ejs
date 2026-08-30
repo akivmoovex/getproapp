@@ -33,7 +33,11 @@
   });
   function homeSectionVisible(type) {
     if (!homeSections.length) return true;
-    const found = homeSections.find(function (s) { return s.type === type; });
+    const aliases = { introduction: "text" };
+    const lookup = aliases[type] || type;
+    const found = homeSections.find(function (s) {
+      return s.type === lookup || s.type === type;
+    });
     if (!found) return type === "hero" || type === "promo" || type === "faq";
     return found.visible !== false;
   }
@@ -195,7 +199,7 @@
 <% } %>
 
 <% if (clinic.showPromo && homeSectionVisible("promo") && (clinic.promoHeading || clinic.promoBody || (typeof websiteEdit !== 'undefined' && websiteEdit))) { %>
-<section class="ac-public-section ac-tenant-promo" data-ac-page-section="tenant-promo">
+<section class="ac-public-section ac-tenant-promo" data-ac-page-section="tenant-promo" data-ac-home-section="promo">
   <h2><%- include('../partials/website-editable-field', { contentKey: 'home.promo.heading', fieldValue: clinic.promoHeading || 'Plan your visit', fieldType: 'short_text' }) %></h2>
   <p><%- include('../partials/website-editable-field', { contentKey: 'home.promo.body', fieldValue: clinic.promoBody || '', fieldType: 'long_text' }) %></p>
   <a class="ac-btn ac-btn--primary" href="<%= bookingHref %>"><%= bookingLabel %></a>
@@ -205,7 +209,7 @@
 <% const faqList = Array.isArray(clinic.faq) ? clinic.faq : []; %>
 <% const faqEditing = typeof websiteEdit !== 'undefined' && websiteEdit; %>
 <% if ((clinic.showFaq && homeSectionVisible("faq") && faqList.length) || faqEditing) { %>
-<section class="ac-public-section ac-tenant-faq" data-ac-page-section="tenant-faq" aria-label="Frequently asked questions">
+<section class="ac-public-section ac-tenant-faq" data-ac-page-section="tenant-faq" data-ac-home-section="faq" aria-label="Frequently asked questions">
   <h2><%- include('../partials/website-editable-field', { contentKey: 'home.faq_heading', fieldValue: clinic.faqHeading || 'Questions', fieldType: 'short_text' }) %></h2>
   <%- include('../partials/website-collection-editor', {
     collectionKey: 'home.faq',

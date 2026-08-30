@@ -15,6 +15,21 @@ const PAGE_ID_BY_KEY = Object.freeze({
   book: "tpl_book",
 });
 
+const CMS_TYPE_BY_SECTION_KEY = Object.freeze(
+  Object.fromEntries(DEFAULT_HOME_SECTIONS.map((section) => [section.key, section.type]))
+);
+
+function cmsTypeForSectionKey(sectionKey) {
+  const key = String(sectionKey || "").trim();
+  return CMS_TYPE_BY_SECTION_KEY[key] || key;
+}
+
+function sectionKeyForCmsType(cmsType) {
+  const type = String(cmsType || "").trim();
+  const match = DEFAULT_HOME_SECTIONS.find((section) => String(section.type) === type);
+  return match ? match.key : type;
+}
+
 function pageIdFor(pageKey) {
   return PAGE_ID_BY_KEY[String(pageKey || "home")] || `tpl_${String(pageKey || "home")}`;
 }
@@ -48,7 +63,7 @@ function buildHomeManifest(pageKey, cmsSections) {
       isHidden,
       isDefault: false,
       sortIndex: index,
-      selector: homeSectionSelector(def.key === "introduction" ? "introduction" : def.key),
+      selector: homeSectionSelector(def.key),
     };
   });
   return presentSectionManifest({
@@ -70,8 +85,13 @@ async function findSectionByKey(db, input, sectionKey) {
   const listed = await cmsService.listSections(db, { ...input, pageId });
   if (!listed.ok) return null;
   const key = String(sectionKey || "");
+  const cmsType = cmsTypeForSectionKey(key);
   return (listed.sections || []).find(
-    (s) => String(s.type) === key || String(s.id) === key || String(s.title || "").toLowerCase() === key
+    (s) =>
+      String(s.type) === cmsType ||
+      String(s.type) === key ||
+      String(s.id) === key ||
+      String(s.title || "").toLowerCase() === key
   );
 }
 
@@ -81,7 +101,13 @@ async function reorderByKeys(db, input) {
   if (!listed.ok) return listed;
   const order = Array.isArray(input.order) ? input.order.map(String) : [];
   const byType = new Map((listed.sections || []).map((s) => [String(s.type), s]));
-  const ids = order.map((k) => (byType.get(k) ? byType.get(k).id : null)).filter(Boolean);
+  const ids = order
+    .map((k) => {
+      const cmsType = cmsTypeForSectionKey(k);
+      return byType.get(cmsType) || byType.get(k);
+    })
+    .filter(Boolean)
+    .map((section) => section.id);
   if (!ids.length) return { ok: false, code: "not_found" };
   return cmsService.reorderSections(db, { ...input, pageId, sectionIds: ids });
 }
@@ -102,7 +128,7 @@ async function applySectionAction(db, input) {
     const order = (listed.sections || [])
       .slice()
       .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
-      .map((s) => String(s.type));
+      .map((s) => sectionKeyForCmsType(String(s.type)));
     const idx = order.indexOf(sectionKey);
     if (idx < 0) return { ok: false, code: "not_found" };
     const next = order.slice();
@@ -117,11 +143,21 @@ async function applySectionAction(db, input) {
   const section = await findSectionByKey(db, { ...input, pageKey }, sectionKey);
   if (!section) {
     if (action === "hide" || action === "show") {
-      const seeded = defaultHomeSections().find((s) => String(s.type) === sectionKey || s.id === `sec_${sectionKey}`);
+      const cmsType = cmsTypeForSectionKey(sectionKey);
+      const seeded = defaultHomeSections().find((s) => String(s.type) === cmsType);
       if (!seeded) return { ok: false, code: "not_found" };
-    } else {
-      return { ok: false, code: "not_found" };
+      const added = await cmsService.addSection(db, {
+        ...input,
+        pageId,
+        type: seeded.type,
+        title: seeded.title,
+        visible: action === "show",
+      });
+      if (!added.ok) return added;
+      if (action === "show") return added;
+      return cmsService.updateSection(db, { ...input, sectionId: added.section.id, visible: false });
     }
+    return { ok: false, code: "not_found" };
   }
 
   if (action === "hide") {

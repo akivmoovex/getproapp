@@ -110,8 +110,10 @@ async function discardWebsiteDraft(page, vp) {
   await menu.locator('[data-website-lifecycle-action="discard"]').click();
   const dialog = page.locator('[data-website-lifecycle-panel="discard"]:not([hidden])');
   await dialog.waitFor({ state: "visible", timeout: 8000 });
-  await dialog.locator('[data-website-lifecycle-confirm="discard"]').click();
-  await page.waitForLoadState("domcontentloaded");
+  await Promise.all([
+    page.waitForLoadState("domcontentloaded"),
+    dialog.locator('[data-website-lifecycle-confirm="discard"]').click(),
+  ]);
 }
 
 async function testEdit06Shell(page, product, vp) {

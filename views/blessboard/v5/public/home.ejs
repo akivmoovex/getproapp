@@ -110,7 +110,7 @@
 %>
 
 <div class="bb-tp-home" data-bb-home="1" data-bb-stitch-home="phase7-v1">
-  <section class="bb-tp-hero bb-tp-hero--phase7" aria-label="Welcome" data-bb-home-hero="1">
+  <section class="bb-tp-hero bb-tp-hero--phase7" aria-label="Welcome" data-bb-home-hero="1" data-section="hero">
     <div class="bb-tp-hero__media-plane<%= heroMedia ? ' has-media' : '' %>" aria-hidden="<%= heroMedia ? 'false' : 'true' %>">
       <%- include('../partials/editable-image', {
         editPageKey: 'home',
@@ -234,12 +234,13 @@
   <%- include('./partials/service-times-block', {
     serviceTimesEntries: serviceTimesEntriesLocal,
     serviceTimesHeading: (serviceTimesSection && serviceTimesSection.heading) || 'Service Times',
+    serviceTimesSectionKey: (serviceTimesSection && serviceTimesSection.sectionKey) || 'service_times',
     visitHref: hrefFor('/contact'),
     directionsHref: directionsHref,
     serviceTimesVariant: 'band'
   }) %>
 
-  <section class="bb-tp-container bb-tp-home-welcome" data-bb-home-welcome="1" aria-labelledby="bb-tp-home-welcome-heading">
+  <section class="bb-tp-container bb-tp-home-welcome" data-bb-home-welcome="1" data-section="<%= (welcomeSection && welcomeSection.sectionKey) || 'welcome' %>" aria-labelledby="bb-tp-home-welcome-heading">
     <div class="bb-tp-home-welcome__grid<%= welcomeMedia ? ' has-media' : '' %>">
       <div class="bb-tp-home-welcome__copy">
         <%- include('../partials/editable-text', {
@@ -317,7 +318,7 @@
   <%# Stitch home uses a single welcome intro — skip about preview when welcome is populated. %>
   <% var showHomeAbout = Boolean(aboutBody) && !welcomeBody; %>
   <% if (showHomeAbout) { %>
-  <section class="bb-tp-home-about-preview" data-bb-home-about="1" aria-labelledby="bb-tp-home-about-heading">
+  <section class="bb-tp-home-about-preview" data-bb-home-about="1" data-section="<%= (aboutPreviewSection && aboutPreviewSection.sectionKey) || 'about_preview' %>" aria-labelledby="bb-tp-home-about-heading">
     <div class="bb-tp-container">
       <%- include('./partials/section-heading', {
         sectionId: 'bb-tp-home-about-heading',
@@ -331,7 +332,7 @@
   <% } %>
 
   <% if (teasers.ministries && teasers.ministries.length) { %>
-  <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-ministries="1" aria-labelledby="bb-tp-home-ministries-heading">
+  <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-ministries="1" data-section="ministries_intro" aria-labelledby="bb-tp-home-ministries-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-ministries-heading',
       sectionTitle: (ministriesIntroSec && ministriesIntroSec.heading) || (demoFb && demoFb.ministriesIntroHeading) || 'Find Your Place',
@@ -359,7 +360,7 @@
   <% } %>
 
   <% if (teasers.events && teasers.events.length) { %>
-  <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-events="1" aria-labelledby="bb-tp-home-events-heading">
+  <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-events="1" data-section="events_intro" aria-labelledby="bb-tp-home-events-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-events-heading',
       sectionTitle: (eventsIntroSec && eventsIntroSec.heading) || (demoFb && demoFb.eventsIntroHeading) || 'Upcoming Events',
@@ -397,7 +398,7 @@
   <% } %>
 
   <% if (teasers.sermons && teasers.sermons.length) { %>
-  <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-sermons="1" aria-labelledby="bb-tp-home-sermons-heading">
+  <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-sermons="1" data-section="sermons_intro" aria-labelledby="bb-tp-home-sermons-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-sermons-heading',
       sectionTitle: (sermonsIntroSec && sermonsIntroSec.heading) || (demoFb && demoFb.sermonIntroHeading) || 'Latest Sermon',
@@ -430,7 +431,7 @@
   <% } %>
 
   <% if (teasers.leaders && teasers.leaders.length) { %>
-  <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-leadership="1" aria-labelledby="bb-tp-home-leadership-heading">
+  <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-leadership="1" data-section="leadership_intro" aria-labelledby="bb-tp-home-leadership-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-leadership-heading',
       sectionTitle: (leadershipIntroSec && leadershipIntroSec.heading) || (demoFb && demoFb.leadershipIntroHeading) || 'Meet Our Pastors',
@@ -450,7 +451,7 @@
   <% } %>
 
   <% if (typeof branchLocations !== 'undefined' && branchLocations && branchLocations.length > 1) { %>
-  <section class="bb-tp-container bb-tp-home-teaser" id="bb-tp-locations" data-bb-home-locations="1" aria-labelledby="bb-tp-home-locations-heading">
+  <section class="bb-tp-container bb-tp-home-teaser" id="bb-tp-locations" data-bb-home-locations="1" data-section="locations" aria-labelledby="bb-tp-home-locations-heading">
     <h2 id="bb-tp-home-locations-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Our locations</h2>
     <ul class="bb-tp-card-grid bb-tp-card-grid--3" data-bb-locations-list="1">
       <% branchLocations.forEach(function (loc) { %>
@@ -478,7 +479,7 @@
     editSectionKey: 'giving_cta'
   }) %>
 
-  <section class="bb-tp-container bb-tp-home-contact" data-bb-home-contact="1" aria-labelledby="bb-tp-home-contact-heading">
+  <section class="bb-tp-container bb-tp-home-contact" data-bb-home-contact="1" data-section="contact_intro" aria-labelledby="bb-tp-home-contact-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-contact-heading',
       sectionTitle: (contactIntroSec && contactIntroSec.heading) || (demoFb && demoFb.contactHeading) || 'Get in Touch',
