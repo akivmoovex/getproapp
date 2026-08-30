@@ -12,6 +12,7 @@ const {
   STATUS: ENT_STATUS,
 } = require("../../platform/services/entitlementService");
 const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
+const { assertNotLastHqAdminRemoval } = require("./blessBoardLastAdminGuard");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -388,6 +389,25 @@ async function revokeHqChurchRole(db, input) {
         if (String(existing.status) !== "active") {
           await client.query("COMMIT");
           return { ok: true, status: STATUS.OK, role: mapRoleRow(existing), alreadyRevoked: true };
+        }
+
+        if (String(existing.role_key) === "church_hq_admin") {
+          const lastAdmin = await assertNotLastHqAdminRemoval(client, {
+            organizationId,
+            churchId,
+            userId: existing.user_id,
+            excludeLegacyRoleId: roleId,
+            grant: { roleKey: "church_hq_admin", scopeType: "church" },
+          });
+          if (!lastAdmin.ok) {
+            await client.query("ROLLBACK");
+            return {
+              ok: false,
+              status: STATUS.FORBIDDEN,
+              role: null,
+              reason: lastAdmin.reason || "last_hq_admin",
+            };
+          }
         }
 
         const roleRow = await repo.updateRoleStatus(client, roleId, "inactive");

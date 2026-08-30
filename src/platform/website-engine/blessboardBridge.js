@@ -95,6 +95,23 @@ async function ensureEngineContent(db, input) {
     CMS_SNAPSHOT
   );
   if (existing && (existing.draftValue != null || existing.publishedValue != null)) {
+    if (input.churchId) {
+      try {
+        const {
+          seedFieldContentFromPages,
+        } = require("../../blessboard/website/blessboardEngineContentService");
+        await seedFieldContentFromPages(db, {
+          organizationId: instance.organizationId,
+          churchId: input.churchId,
+          branchId: input.branchId || null,
+          slug: input.slug || null,
+          publish: input.websiteStatus === "published" || input.seedPublished === true,
+          actorIdentityId: input.actorIdentityId || null,
+        });
+      } catch {
+        /* Field keys are additive; snapshot row is enough to continue. */
+      }
+    }
     return { ok: true, instance, seeded: false };
   }
   if (!input.churchId) return { ok: true, instance, seeded: false };
@@ -112,6 +129,23 @@ async function ensureEngineContent(db, input) {
     ],
     input.actorIdentityId || null
   );
+  if (input.churchId) {
+    try {
+      const {
+        seedFieldContentFromPages,
+      } = require("../../blessboard/website/blessboardEngineContentService");
+      await seedFieldContentFromPages(db, {
+        organizationId: instance.organizationId,
+        churchId: input.churchId,
+        branchId: input.branchId || null,
+        slug: input.slug || null,
+        publish: seedPublished,
+        actorIdentityId: input.actorIdentityId || null,
+      });
+    } catch {
+      /* Snapshot seed already succeeded. */
+    }
+  }
   return { ok: true, instance, seeded: true };
 }
 

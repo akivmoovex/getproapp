@@ -5,78 +5,82 @@
   var roleOptions = roles || [];
   var draft = draft || {};
 %>
-<section class="bb-hq-page" data-bb-staff-invite="1" aria-label="Add team member">
-  <header class="bb-hq-page-head">
-    <p class="bb-hq-breadcrumb">
-      <a href="/hq/settings/staff-access">Staff access</a>
-      <span aria-hidden="true">›</span>
-      <span>Add team member</span>
-    </p>
-    <h1 class="bb-hq-page-head__title">Add team member</h1>
-    <p class="bb-hq-lede">
-      Adding to <strong><%= placement === 'branch' ? 'a branch' : 'HQ (church-wide)' %></strong>.
-      Phone is required; email is optional.
-    </p>
+<section class="bb-hq-page bb-urp bb-urp-page" data-bb-staff-invite="1" data-bb-visual="stitch-urp" aria-label="Invite user">
+  <p class="bb-urp-crumb">
+    <a href="/hq/settings/staff-access">Users</a>
+    <span aria-hidden="true"> › </span>
+    <span>Invite User</span>
+  </p>
+  <header class="bb-urp-head">
+    <div>
+      <h1 class="bb-urp-title">Invite User</h1>
+      <p class="bb-urp-lede">
+        Adding to <strong><%= placement === 'branch' ? 'a branch' : 'the entire church (HQ)' %></strong>.
+        Phone is required for login; email is optional.
+      </p>
+    </div>
   </header>
 
   <% if (error) { %>
-  <p class="bb-hq-banner bb-hq-banner--error" role="alert"><%= error %></p>
+  <p class="bb-urp-banner bb-urp-banner--error" role="alert"><%= error %></p>
   <% } %>
 
-  <form method="post" action="/hq/settings/staff-access/invite" class="bb-hq-card bb-hq-roles__form" data-bb-hq-team-invite-form="1">
+  <form method="post" action="/hq/settings/staff-access/invite" class="bb-urp-panel bb-urp-section" data-bb-hq-team-invite-form="1" style="max-width:32rem">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
     <input type="hidden" name="placement" value="<%= placement %>" />
-    <div class="bb-hq-field">
+    <div class="bb-urp-field">
       <label for="first_name">First name</label>
       <input id="first_name" name="first_name" required maxlength="100" value="<%= draft.firstName || '' %>" />
     </div>
-    <div class="bb-hq-field">
+    <div class="bb-urp-field">
       <label for="last_name">Last name</label>
       <input id="last_name" name="last_name" required maxlength="100" value="<%= draft.lastName || '' %>" />
     </div>
-    <div class="bb-hq-field">
+    <div class="bb-urp-field">
       <label for="phone">Mobile phone number *</label>
       <input id="phone" name="phone" type="tel" required maxlength="40" value="<%= draft.phone || '' %>" autocomplete="tel" />
-      <p class="bb-hq-hint">Used for login, verification and invitations</p>
+      <p class="bb-urp-hint">Used for login, verification and invitations</p>
     </div>
-    <div class="bb-hq-field">
+    <div class="bb-urp-field">
       <label for="email">Email address, optional</label>
       <input id="email" name="email" type="email" maxlength="254" value="<%= draft.email || '' %>" autocomplete="email" />
-      <p class="bb-hq-hint">Used for additional notifications</p>
     </div>
     <% if (placement === 'branch') { %>
-    <div class="bb-hq-field">
+    <div class="bb-urp-field">
       <label for="branch_id">Branch</label>
       <select id="branch_id" name="branch_id" required>
-        <option value="">Select branch</option>
+        <option value="">Select a branch...</option>
         <% branchOptions.forEach(function (b) { %>
         <option value="<%= b.id %>" <%= String(draft.branchId) === String(b.id) ? 'selected' : '' %>><%= b.displayName || b.display_name %></option>
         <% }); %>
       </select>
     </div>
     <% } %>
-    <div class="bb-hq-field">
-      <label for="role_key">Role</label>
+    <div class="bb-urp-field">
+      <label for="role_key">Select Role</label>
       <select id="role_key" name="role_key" required>
         <% if (placement === 'hq') { %>
-        <option value="church_hq_admin">Organisation Administrator (HQ bootstrap)</option>
+        <option value="church_hq_admin">Church HQ Admin</option>
         <% } else { %>
-        <option value="branch_admin">Branch Administrator (bootstrap)</option>
+        <option value="branch_admin">Branch Admin</option>
         <% } %>
         <% roleOptions.forEach(function (r) { %>
-        <option value="<%= r.roleKey %>" <%= draft.roleKey === r.roleKey ? 'selected' : '' %>><%= r.displayName %> (<%= r.sensitivityLabel %>)</option>
+        <option value="<%= r.roleKey %>" <%= draft.roleKey === r.roleKey ? 'selected' : '' %>><%= r.displayName %></option>
         <% }); %>
       </select>
     </div>
-    <div class="bb-hq-field">
+    <div class="bb-urp-field">
       <label for="assignment_reason">Assignment reason</label>
       <input id="assignment_reason" name="assignment_reason" maxlength="500" value="<%= draft.assignmentReason || '' %>" />
     </div>
-    <div class="bb-hq-field">
+    <div class="bb-urp-field">
       <label for="leadership_title">Church leadership title (optional)</label>
       <input id="leadership_title" name="leadership_title" maxlength="120" />
     </div>
-    <button type="submit" class="bb-hq-btn bb-hq-btn--primary">Create invitation</button>
+    <button type="submit" class="bb-urp-btn bb-urp-btn--primary">
+      <span class="material-symbols-outlined">person_add</span>
+      Invite User
+    </button>
   </form>
 </section>
 <%- include('../partials/hq-shell-end') %>

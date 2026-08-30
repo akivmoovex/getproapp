@@ -29,6 +29,14 @@ const {
   STATUS: ASSIGN_STATUS,
 } = require("../src/blessboard/services/blessBoardRoleAssignmentService");
 const {
+  assertNotLastHqAdminRemoval,
+  countActiveHqAdmins,
+  LEGACY_HQ_ADMIN_ROLE,
+} = require("../src/blessboard/services/blessBoardLastAdminGuard");
+const {
+  revokeHqChurchRole,
+} = require("../src/blessboard/services/hqRoleManagementService");
+const {
   listStaffAccess,
   getStaffAccessDetail,
   listRoleCatalogue,
@@ -360,8 +368,10 @@ describe("blessboard staff access management", () => {
         .set("Host", HOST_A)
         .set("Cookie", cookie);
       assert.equal(res.status, 200);
-      assert.match(res.text, /Staff access/);
-      assert.match(res.text, /Church leadership position and BlessBoard system access are managed separately/);
+      assert.match(res.text, /Users/);
+      assert.match(res.text, /data-bb-staff-access="1"/);
+      assert.match(res.text, /Invite User/);
+      assert.match(res.text, /Total Users/);
     });
 
     it("unauthorised member denied (concealed)", async () => {
@@ -392,7 +402,8 @@ describe("blessboard staff access management", () => {
         .set("Host", HOST_A)
         .set("Cookie", cookie);
       assert.equal(roles.status, 200);
-      assert.match(roles.text, /Role catalogue/);
+      assert.match(roles.text, /data-bb-staff-roles="1"/);
+      assert.match(roles.text, />Roles</);
       const audit = await request(app)
         .get("/hq/settings/access-audit")
         .set("Host", HOST_A)
@@ -440,6 +451,7 @@ describe("blessboard staff access management", () => {
       assert.equal(catalogue.ok, true);
       assert.ok(catalogue.roles.every((r) => r.readOnly === true));
       assert.ok(!catalogue.roles.some((r) => r.roleKey === "platform_administrator"));
+      assert.ok(!catalogue.roles.some((r) => String(r.roleKey).startsWith("activeclinic_")));
     });
   });
 
@@ -915,6 +927,107 @@ describe("blessboard staff access management", () => {
       });
       assert.equal(audit.ok, true);
       assert.ok(Array.isArray(audit.events));
+    });
+  });
+
+  describe("last Church HQ Admin protection", () => {
+    it("blocks removing the last church_hq_admin", async () => {
+      requireDb();
+      const count = await countActiveHqAdmins(pool, orgA.id, churchA.id);
+      assert.ok(count >= 1);
+      const roleRow = await pool.query(
+        `SELECT id FROM blessboard.user_roles
+          WHERE user_id = $1 AND organization_id = $2 AND church_id = $3
+            AND role_key = $4 AND status = 'active' LIMIT 1`,
+        [actorHq.id, orgA.id, churchA.id, LEGACY_HQ_ADMIN_ROLE]
+      );
+      assert.equal(roleRow.rowCount, 1);
+      const guard = await assertNotLastHqAdminRemoval(pool, {
+        organizationId: orgA.id,
+        churchId: churchA.id,
+        userId: actorHq.id,
+        excludeLegacyRoleId: roleRow.rows[0].id,
+        grant: { roleKey: LEGACY_HQ_ADMIN_ROLE, scopeType: "church" },
+      });
+      if (count <= 1) {
+        assert.equal(guard.ok, false);
+        assert.equal(guard.reason, "last_hq_admin");
+      }
+      const selfRevoke = await revokeHqChurchRole(pool, {
+        actorUserId: actorHq.id,
+        organizationId: orgA.id,
+        churchId: churchA.id,
+        roleId: roleRow.rows[0].id,
+        confirmed: true,
+      });
+      assert.equal(selfRevoke.ok, false);
+      assert.ok(
+        selfRevoke.reason === "self_escalation" || selfRevoke.reason === "last_hq_admin"
+      );
+    });
+
+    it("allows revoke when another Church HQ Admin remains", async () => {
+      requireDb();
+      const second = await makeUser("hq-second@staff-a.test", "Second HQ");
+      assert.equal(
+        (
+          await assignBlessBoardRole(pool, {
+            email: "hq-second@staff-a.test",
+            organizationKey: "staff-org-a",
+            roleKey: "church_hq_admin",
+            churchKey: "staff-a",
+          })
+        ).ok,
+        true
+      );
+      const secondRole = await pool.query(
+        `SELECT id FROM blessboard.user_roles
+          WHERE user_id = $1 AND organization_id = $2 AND role_key = $3 AND status = 'active'
+          LIMIT 1`,
+        [second.id, orgA.id, LEGACY_HQ_ADMIN_ROLE]
+      );
+      assert.equal(secondRole.rowCount, 1);
+      const before = await countActiveHqAdmins(pool, orgA.id, churchA.id);
+      assert.ok(before >= 2);
+      const revoked = await revokeHqChurchRole(pool, {
+        actorUserId: actorHq.id,
+        organizationId: orgA.id,
+        churchId: churchA.id,
+        roleId: secondRole.rows[0].id,
+        confirmed: true,
+      });
+      assert.equal(revoked.ok, true, revoked.reason);
+      const after = await countActiveHqAdmins(pool, orgA.id, churchA.id);
+      assert.equal(after, before - 1);
+    });
+
+    it("does not treat website_editor revoke as last-admin", async () => {
+      requireDb();
+      const listed = await listStaffAccess(pool, {
+        actorUserId: actorHq.id,
+        organizationId: orgA.id,
+        churchId: churchA.id,
+        tenantContext: tenantA,
+      });
+      const target = listed.users.find((u) => u.id === actorTarget.id);
+      assert.ok(target);
+      const detail = await getStaffAccessDetail(pool, {
+        actorUserId: actorHq.id,
+        organizationId: orgA.id,
+        churchId: churchA.id,
+        tenantContext: tenantA,
+        userId: actorTarget.id,
+      });
+      const editor = (detail.activeAssignments || []).find((a) => a.roleKey === "website_editor");
+      assert.ok(editor);
+      const result = await revokeRoleAssignment(pool, {
+        actorUserId: actorHq.id,
+        assignmentId: editor.id,
+        revocationReason: "not an admin role",
+        tenantContext: tenantA,
+        actorChurchId: churchA.id,
+      });
+      assert.equal(result.ok, true, result.reason);
     });
   });
 });

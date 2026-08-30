@@ -263,7 +263,7 @@ describe("v7 new church operational readiness", () => {
     assert.ok(String(settings.rows[0].primary_email || "").trim(), "missing church contact email");
     assert.equal(settings.rows[0].default_timezone, "Africa/Lusaka");
     assert.equal(String(settings.rows[0].default_country_code || "").toUpperCase(), "ZM");
-    assert.equal(settings.rows[0].website_status, "published");
+    assert.equal(settings.rows[0].website_status, "draft");
 
     const hq = await pool.query(
       `SELECT id, branch_key, is_primary, status, country_code, timezone

@@ -37,6 +37,39 @@ const {
 
 const EDIT_QUERY = "website_edit";
 
+function queryRequestsWebsitePreview(req) {
+  const q = (req && req.query) || {};
+  if (String(q[EDIT_QUERY] || "") === "1") return true;
+  const mode = String(q.website_mode || "").trim().toLowerCase();
+  return mode === "draft" || mode === "preview";
+}
+
+/**
+ * Authorized editors may preview unpublished websites; anonymous visitors cannot.
+ * @param {{ query: Function }} pool
+ * @param {import('express').Request} req
+ * @param {object|null} tenant
+ * @param {string|null} [branchId]
+ */
+async function resolveAuthorizedPublicPreview(pool, req, tenant, branchId) {
+  if (!queryRequestsWebsitePreview(req)) return false;
+  const session =
+    req && req.v5Session && req.v5Session.authenticated && req.v5Session.session
+      ? req.v5Session.session
+      : null;
+  if (!session || !session.userId) return false;
+  try {
+    const cap = await resolveWebsiteEditCapability(pool, {
+      userId: session.userId,
+      tenant,
+      branchId: branchId || null,
+    });
+    return Boolean(cap && cap.canEdit);
+  } catch {
+    return false;
+  }
+}
+
 const SECTION_BASELINE_FIELDS = [
   "heading",
   "bodyText",
@@ -301,6 +334,7 @@ async function attachWebsiteAdminChrome(opts) {
   let publishedBaselines = Object.create(null);
   try {
     draftCount = await countAllWebsiteDrafts(db, {
+      organizationId,
       churchId,
       branchId: draftBranchId,
     });
@@ -324,6 +358,7 @@ async function attachWebsiteAdminChrome(opts) {
       }
 
       overlayMap = await loadDraftOverlayMap(db, {
+        organizationId,
         churchId,
         branchId: draftBranchId,
         pageKey: model.pageKey,
@@ -517,29 +552,48 @@ async function attachWebsiteAdminChrome(opts) {
     req,
   });
 
+  const {
+    presentEditorShell,
+  } = require("../../platform/website-engine/editorShell");
+  const {
+    PRODUCT_CODE,
+    buildPublicWebsitePreviewPath,
+    buildPublicOrganizationWebsitePath,
+  } = require("../../platform/website/publicWebsiteUrl");
   const currentPath = String(model.path || "/");
+  const orgKey =
+    (tenant && tenant.organization && (tenant.organization.key || tenant.organization.organizationKey)) ||
+    "";
+  const pathMode = String(model.routingMode || "") === "path" || String(currentPath).indexOf("/c/") === 0;
+  const publicBase = pathMode && orgKey
+    ? buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+      })
+    : "";
   const manageHref = isHqEditor ? "/hq/website" : "/branch-admin/content";
-  const saveUrl = isHqEditor
-    ? "/hq/content/api/inline-field"
-    : "/branch-admin/content/api/inline-field";
+  const saveUrl = pathMode && publicBase
+    ? `${publicBase}/website/drafts`
+    : "/website/drafts";
   const structuredSaveUrl = isHqEditor
     ? "/hq/content/api/structured-draft"
     : "/branch-admin/content/api/structured-draft";
-  const mediaUploadUrl = isHqEditor
-    ? "/hq/content/media/upload"
-    : "/branch-admin/content/media/upload";
-  const mediaListUrl = isHqEditor
-    ? "/hq/content/media"
-    : "/branch-admin/content/media";
+  const mediaUploadUrl = pathMode && publicBase
+    ? `${publicBase}/website/media`
+    : "/website/media";
+  const mediaListUrl = mediaUploadUrl;
   const reviewHref = isHqEditor
     ? "/hq/content/draft-changes"
     : "/branch-admin/content/draft-changes";
-  const publishUrl = isHqEditor
-    ? "/hq/content/api/inline-field/publish"
-    : "/branch-admin/content/api/inline-field/publish";
-  const draftPreviewHref = isHqEditor
-    ? "/hq/content/draft-preview/home"
-    : "/branch-admin/content/draft-preview/home";
+  const publishUrl = pathMode && publicBase
+    ? `${publicBase}/website/publish`
+    : "/website/publish";
+  const draftPreviewHref = orgKey
+    ? buildPublicWebsitePreviewPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+      })
+    : "/hq/content/draft-preview/home";
 
   const overrides = Object.create(null);
   for (const [k, v] of overlayMap.entries()) {
@@ -639,6 +693,34 @@ async function attachWebsiteAdminChrome(opts) {
     structuredSaveUrl,
     mediaUploadUrl,
     mediaListUrl,
+    pathPrefix: model.pathPrefix || publicBase || "",
+    canPublish: isHqEditor,
+    editorShell: editingMode
+      ? presentEditorShell({
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          pageKey: model.pageKey,
+          draft: hasDraftChanges,
+          unpublishedCount: draftCount,
+          canEdit: true,
+          canPublish: isHqEditor,
+          editing: true,
+          previewHref: draftPreviewHref,
+          publishPath: publishUrl,
+          historyHref: isHqEditor ? "/hq/website/version-history" : null,
+          hubHref: manageHref,
+          exitHref: withEditQuery(currentPath, false),
+          saveUrl,
+          mediaUrl: mediaUploadUrl,
+          csrfToken,
+          csrfField: "_csrf",
+        })
+      : null,
+    legacyInlineSaveUrl: isHqEditor
+      ? "/hq/content/api/inline-field"
+      : "/branch-admin/content/api/inline-field",
+    legacyInlinePublishUrl: isHqEditor
+      ? "/hq/content/api/inline-field/publish"
+      : "/branch-admin/content/api/inline-field/publish",
     demoImages: editingMode ? listDemoImages() : [],
     pageKey: model.pageKey,
     organizationId,
@@ -680,6 +762,7 @@ module.exports = {
   EDIT_QUERY,
   attachWebsiteAdminChrome,
   resolveWebsiteEditCapability,
+  resolveAuthorizedPublicPreview,
   canShowWebsiteEditChrome,
   withEditQuery,
   buildDisplayBaselineMap,

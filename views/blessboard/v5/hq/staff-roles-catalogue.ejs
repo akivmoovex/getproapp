@@ -1,40 +1,82 @@
 <%- include('../partials/hq-shell-start') %>
 <%
   var catalogue = roles || [];
-  function sensChip(label) {
-    if (label === 'Highly sensitive') return 'bb-hq-chip--error';
-    if (label === 'Sensitive') return 'bb-hq-chip--pending';
-    return 'bb-hq-chip--ok';
+  function roleIcon(r) {
+    var cat = String((r && r.roleCategory) || '');
+    if (cat === 'branch') return 'location_city';
+    if (cat === 'ministry' || cat === 'department') return 'diversity_3';
+    if (cat === 'pastoral') return 'volunteer_activism';
+    if (cat === 'finance') return 'payments';
+    return 'admin_panel_settings';
   }
 %>
-<section class="bb-hq-page" data-bb-staff-roles="1" aria-label="Role catalogue">
-  <header class="bb-hq-page-head">
-    <p class="bb-hq-breadcrumb">
-      <a href="/hq">Dashboard</a>
-      <span aria-hidden="true">›</span>
-      <a href="/hq/settings/staff-access">Staff access</a>
-      <span aria-hidden="true">›</span>
-      <span>Roles</span>
-    </p>
-    <h1 class="bb-hq-page-head__title">Role catalogue</h1>
-    <p class="bb-hq-lede">
-      Canonical BlessBoard roles are read-only in this stage. Permission mappings cannot be edited here.
-      Church leadership position and BlessBoard system access are managed separately.
-    </p>
+<section class="bb-hq-page bb-urp bb-urp-page" data-bb-staff-roles="1" data-bb-visual="stitch-urp" aria-label="Roles">
+  <header class="bb-urp-head">
+    <div>
+      <h1 class="bb-urp-title">Roles</h1>
+      <p class="bb-urp-lede">View and manage platform roles and their access levels.</p>
+    </div>
   </header>
 
-  <div class="bb-hq-roles__cards">
+  <p class="bb-urp-muted" style="margin-top:-1.5rem;margin-bottom:1.5rem">
+    Canonical BlessBoard roles are read-only. Permission mappings cannot be edited here.
+  </p>
+
+  <div class="bb-urp-panel bb-urp-role-table bb-urp-desktop-only">
+    <% if (!catalogue.length) { %>
+    <p class="bb-urp-empty">No roles in the catalogue.</p>
+    <% } else { %>
+    <div class="bb-urp-table-wrap">
+      <table class="bb-urp-table">
+        <thead>
+          <tr>
+            <th>Role</th>
+            <th>Description</th>
+            <th>Scope</th>
+            <th>Users</th>
+            <th>Permissions</th>
+            <th>Action</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% catalogue.forEach(function (r) { %>
+          <tr onclick="window.location='/hq/settings/roles/<%= encodeURIComponent(r.roleKey) %>'">
+            <td>
+              <div class="bb-urp-user">
+                <div class="bb-urp-avatar" aria-hidden="true"><span class="material-symbols-outlined"><%= roleIcon(r) %></span></div>
+                <strong><%= r.displayName %></strong>
+              </div>
+            </td>
+            <td class="bb-urp-muted"><%= r.description || 'No description.' %></td>
+            <td><%= r.scopeLabel || 'Global' %></td>
+            <td><%= r.assignedCount || 0 %></td>
+            <td><%= r.permissionCount || 0 %></td>
+            <td>
+              <a class="bb-urp-btn bb-urp-btn--ghost" href="/hq/settings/roles/<%= encodeURIComponent(r.roleKey) %>">View <span class="material-symbols-outlined">chevron_right</span></a>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="bb-urp-role-cards bb-urp-mobile-only">
+    <p class="bb-urp-lede">Manage system access and permissions</p>
     <% catalogue.forEach(function (r) { %>
-    <article class="bb-hq-roles__card">
-      <span class="bb-hq-chip <%= sensChip(r.sensitivityLabel) %>"><%= r.sensitivityLabel %></span>
-      <h3><a href="/hq/settings/roles/<%= encodeURIComponent(r.roleKey) %>"><%= r.displayName %></a></h3>
-      <p class="bb-hq-muted"><code class="bb-hq-key"><%= r.roleKey %></code> · <%= r.roleCategory || '—' %></p>
-      <p><%= r.description || 'No description.' %></p>
-      <p class="bb-hq-muted">
-        <%= r.assignedCount %> active assignment<%= r.assignedCount === 1 ? '' : 's' %> in this organisation ·
-        scopes: <%= (r.allowedScopeTypes || []).join(', ') %>
+    <article class="bb-urp-role-card">
+      <p class="bb-urp-chip bb-urp-chip--pending"><%= r.scopeLabel === 'Branch' ? 'Local Scope' : 'Global Scope' %></p>
+      <h3><%= r.displayName %></h3>
+      <p class="bb-urp-muted"><%= r.description || 'No description.' %></p>
+      <p class="bb-urp-muted">
+        <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">group</span>
+        <%= r.assignedCount || 0 %> Users
+        ·
+        <span class="material-symbols-outlined" style="font-size:16px;vertical-align:middle">key</span>
+        <%= r.permissionCount || 0 %> Permissions
       </p>
-      <p class="bb-hq-muted">Permission groups: <%= Object.keys(r.permissionGroups || {}).join(', ') || '—' %></p>
+      <a class="bb-urp-btn bb-urp-btn--primary" href="/hq/settings/roles/<%= encodeURIComponent(r.roleKey) %>">View Permissions</a>
     </article>
     <% }); %>
   </div>

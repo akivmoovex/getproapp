@@ -28,6 +28,7 @@ const {
   FINANCE_SUPERVISOR,
   AUDITOR,
   STAFF_ROLE,
+  WEBSITE_EDITOR,
   ACTIVECLINIC_ROLE_CATALOGUE,
   ORGANISATION_SCOPE_ONLY_ROLES,
   FACILITY_SCOPE_ONLY_ROLES,
@@ -87,6 +88,7 @@ const ROLE_LABELS = Object.freeze({
   activeclinic_finance_supervisor: "Finance supervisor",
   activeclinic_auditor: "Auditor",
   activeclinic_staff: "Staff",
+  activeclinic_website_editor: "Website editor",
 });
 
 const ROLE_DESCRIPTIONS = Object.freeze({
@@ -120,6 +122,8 @@ const ROLE_DESCRIPTIONS = Object.freeze({
   [AUDITOR]: "Read-only audit and reporting visibility. Cannot change access or clinical records.",
   [STAFF_ROLE]:
     "Minimal authenticated ActiveClinic access with facility visibility from assignments.",
+  [WEBSITE_EDITOR]:
+    "Website content editing for the clinic site. Present in the catalogue but not currently grantable from Staff Users.",
 });
 
 function rolePlainLabel(roleKey, displayName) {
@@ -710,6 +714,7 @@ module.exports = {
   staffHoldsActiveOrgWideAdmin,
   assertNotLastOrgAdminRemoval,
   isOrgWideAdminAssignmentRow,
+  isOrgWideAdminRole,
   ORGANIZATION_ADMIN,
   NETWORK_ADMIN,
   FACILITY_ADMIN,

@@ -154,13 +154,16 @@ async function backfillOneSite(db, site, dryRun) {
     }
 
     const existingVersions = await countEngineVersions(db, resolved.instance.id);
+    const isPublished = site.websiteStatus === "published";
+
     if (existingVersions > 0) {
+      if (!dryRun) {
+        await ensureEngineContent(db, { ...scope, websiteStatus: site.websiteStatus });
+      }
       detail.outcome = OUTCOME.ALREADY_CURRENT;
       detail.reason = `versions=${existingVersions}`;
       return detail;
     }
-
-    const isPublished = site.websiteStatus === "published";
 
     if (dryRun) {
       detail.outcome = isPublished ? OUTCOME.VERSION_CREATED : OUTCOME.DRAFT_SEEDED;

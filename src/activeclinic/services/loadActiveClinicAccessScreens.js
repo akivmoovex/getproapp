@@ -1,8 +1,9 @@
 "use strict";
 
 /**
- * ActiveClinic roles & access screen loaders (AC-V6-S06 / Prompt 7).
- * Stitch access screens remain STITCH_GAP / VISUAL_BLOCKED.
+ * ActiveClinic roles & access screen loaders.
+ * Visual source of truth: Stitch project 14482742053601518750.
+ * Functional source of truth: existing ActiveClinic RBAC services.
  */
 
 const accessRepo = require("../repositories/staffAccessRepository");
@@ -33,6 +34,9 @@ const {
   FACILITY_ADMIN,
   STAFF_ROLE,
   ACTIVECLINIC_ROLE_CATALOGUE,
+  isOrgWideAdminAssignmentRow,
+  assertNotLastOrgAdminRemoval,
+  isOrgWideAdminRole,
 } = require("./activeClinicAccessManagementService");
 const {
   groupPermissionKeys,
@@ -43,9 +47,9 @@ const {
 } = require("./activeClinicStaffInvitationService");
 
 const STATUS_FILTERS = Object.freeze([
-  { value: "all", label: "All staff" },
-  { value: "active", label: "Active access" },
-  { value: "pending_invite", label: "Invitation pending" },
+  { value: "all", label: "Status: All" },
+  { value: "active", label: "Active" },
+  { value: "pending_invite", label: "Pending" },
   { value: "not_activated", label: "Account not activated" },
   { value: "suspended", label: "Suspended" },
   { value: "no_access_role", label: "No access role" },
@@ -58,6 +62,99 @@ const ASSIGNMENT_STATUS_FILTERS = Object.freeze([
   { value: "expired", label: "Expired" },
   { value: "inactive", label: "Not effective" },
 ]);
+
+const ROLE_ICONS = Object.freeze({
+  activeclinic_organization_admin: "admin_panel_settings",
+  activeclinic_network_admin: "admin_panel_settings",
+  activeclinic_facility_admin: "apartment",
+  activeclinic_clinic_manager: "manage_accounts",
+  activeclinic_receptionist: "badge",
+  activeclinic_medical_records_officer: "folder_shared",
+  activeclinic_nurse: "medical_services",
+  activeclinic_clinician: "stethoscope",
+  activeclinic_pharmacist: "medication",
+  activeclinic_lab_technician: "science",
+  activeclinic_radiology_staff: "radiology",
+  activeclinic_billing_officer: "request_quote",
+  activeclinic_cashier: "payments",
+  activeclinic_finance_supervisor: "account_balance",
+  activeclinic_auditor: "policy",
+  activeclinic_staff: "groups",
+  activeclinic_website_editor: "language",
+});
+
+const STITCH_GROUP_LABELS = Object.freeze({
+  patients: "Patients",
+  appointments: "Appointments",
+  reception: "Appointments",
+  clinical: "Clinical",
+  pharmacy: "Pharmacy",
+  diagnostics: "Diagnostics",
+  laboratory: "Laboratory",
+  radiology: "Radiology",
+  billing: "Billing",
+  cashier: "Billing",
+  staff: "Staff & Access",
+  administration: "Settings",
+  reports_audit: "Settings",
+  website: "Website",
+  other: "Other",
+});
+
+function permissionLabel(key) {
+  return String(key || "")
+    .replace(/^activeclinic\./, "")
+    .replace(/^website\./, "website.")
+    .replace(/\./g, " · ")
+    .replace(/_/g, " ");
+}
+
+function stitchScopeBadge(scopeLabel) {
+  if (scopeLabel === "Organization-wide") return "Global";
+  if (scopeLabel === "Facility") return "Facility-specific";
+  return scopeLabel || "Facility-specific";
+}
+
+function accessSubtitle(roles, accessStatus) {
+  if ((roles || []).some((r) => isOrgWideAdminRole(r.roleKey))) {
+    return "Admin Access";
+  }
+  if (!(roles || []).length) {
+    return (accessStatus && accessStatus.label) || "No access";
+  }
+  if (roles.length === 1) return roles[0].roleLabel;
+  return `${roles.length} roles`;
+}
+
+function statusChipKind(key) {
+  if (key === "active") return "active";
+  if (
+    key === "pending_invite" ||
+    key === "not_activated" ||
+    key === "no_access_role"
+  ) {
+    return "pending";
+  }
+  if (key === "suspended" || key === "inactive") return "danger";
+  return "neutral";
+}
+
+function mapPermissionGroups(groups, grantedByMap) {
+  return (groups || []).map((g) => ({
+    key: g.key,
+    label: STITCH_GROUP_LABELS[g.key] || g.label,
+    count: g.count,
+    permissions: (g.permissions || []).map((p) => {
+      const key = typeof p === "string" ? p : p.key || p.label;
+      const grantedBy = grantedByMap && grantedByMap.get(key);
+      return {
+        key,
+        label: permissionLabel(key),
+        grantedBy: grantedBy || [],
+      };
+    }),
+  }));
+}
 
 function staffDisplayName(row) {
   const preferred = String(row.staff_preferred_name || "").trim();
@@ -183,7 +280,10 @@ async function summarizeStaffScopedAccess(db, input) {
   return groupPermissionKeys(permissions);
 }
 
-async function buildRoleCatalogue(db, organizationId, scopedIds) {
+async function buildRoleCatalogue(db, organizationId, scopedIds, auth) {
+  const grantableKeys = new Set(
+    (auth ? listGrantableRoleOptions(auth) : []).map((o) => o.value)
+  );
   const countResult = await db.query(
     `SELECT r.role_key, COUNT(DISTINCT a.staff_member_id)::int AS staff_count
        FROM blessboard.roles r
@@ -215,8 +315,11 @@ async function buildRoleCatalogue(db, organizationId, scopedIds) {
       label: ROLE_LABELS[roleKey] || roleKey,
       description: ROLE_DESCRIPTIONS[roleKey] || "",
       scopeLabel: scopeLabelForRole(roleKey),
+      scopeBadge: stitchScopeBadge(scopeLabelForRole(roleKey)),
       staffCount: counts.get(roleKey) || 0,
       compatibility: roleKey === NETWORK_ADMIN,
+      grantable: grantableKeys.has(roleKey),
+      icon: ROLE_ICONS[roleKey] || "badge",
       capabilityGroups: (summary.groups || []).map((g) => ({
         key: g.key,
         label: g.label,
@@ -261,7 +364,8 @@ async function loadActiveClinicAccessOverviewScreen(db, input) {
   const roleCatalogue = await buildRoleCatalogue(
     db,
     auth.organization.id,
-    scopedIds
+    scopedIds,
+    auth
   );
 
   if (tab === "catalogue") {
@@ -292,8 +396,13 @@ async function loadActiveClinicAccessOverviewScreen(db, input) {
         },
         actions: {
           canAssign: true,
+          canInvite: Array.isArray(auth.permissions)
+            ? auth.permissions.includes("activeclinic.staff.invite")
+            : false,
+          inviteHref: "/app/staff/new?invite=1",
           staffDirectoryHref: "/app/staff",
         },
+        summary: { totalStaff: 0, active: 0, administrators: 0, pending: 0 },
         organization: {
           publicName:
             (auth.healthcareOrganization &&
@@ -319,10 +428,8 @@ async function loadActiveClinicAccessOverviewScreen(db, input) {
     members = members.filter((m) => scopedIds.has(String(m.id)));
   }
 
-  const staffRows = [];
+  const allStaffRows = [];
   for (const member of members) {
-    if (facilityId === "__none__") continue;
-
     const fac = await listFacilitiesForStaff(db, {
       staffMemberId: member.id,
       organizationId: auth.organization.id,
@@ -330,9 +437,6 @@ async function loadActiveClinicAccessOverviewScreen(db, input) {
     const activeFacilities = (fac.assignments || []).filter(
       (a) => a.status === "active"
     );
-    if (facilityId && !activeFacilities.some((a) => String(a.facilityId) === String(facilityId))) {
-      continue;
-    }
 
     const roleRows = await accessRepo.listRoleAssignmentsForStaff(db, {
       staffMemberId: member.id,
@@ -356,8 +460,6 @@ async function loadActiveClinicAccessOverviewScreen(db, input) {
       });
     }
 
-    if (roleKey && !roles.some((r) => r.roleKey === roleKey)) continue;
-
     const account = await deriveAccessAccountState(
       db,
       member,
@@ -370,27 +472,20 @@ async function loadActiveClinicAccessOverviewScreen(db, input) {
       (account.key === "directory_only" || account.key === "not_activated") &&
       roles.length === 0
     ) {
-      // Keep directory-only / not-activated labels; not an error state.
       accessStatus = account;
     }
 
-    if (accountStatus !== "all" && accessStatus.key !== accountStatus) {
-      continue;
-    }
-
-    if (q) {
-      const hay = `${member.displayName} ${member.jobTitle || ""} ${roles
-        .map((r) => r.roleLabel)
-        .join(" ")}`.toLowerCase();
-      if (!hay.includes(q)) continue;
-    }
-
-    staffRows.push({
+    allStaffRows.push({
       id: member.id,
       displayName: member.displayName || staffDisplayName(member),
       jobTitle: member.jobTitle || "",
+      email: member.emailDisplay || member.emailNormalized || null,
+      phone: member.phoneDisplay || member.phoneNormalized || null,
+      initials: staffInitials(member),
       accountStatus: account,
       accessStatus,
+      accessSubtitle: accessSubtitle(roles, accessStatus),
+      statusChip: statusChipKind(accessStatus.key),
       facilities: activeFacilities.map((a) => ({
         id: a.facilityId,
         displayName: a.facilityDisplayName || a.facilityKey,
@@ -401,6 +496,47 @@ async function loadActiveClinicAccessOverviewScreen(db, input) {
       detailHref: `/app/access/staff/${member.id}`,
     });
   }
+
+  const summary = {
+    totalStaff: allStaffRows.length,
+    active: allStaffRows.filter((r) => r.accessStatus.key === "active").length,
+    administrators: allStaffRows.filter((r) =>
+      (r.roles || []).some(
+        (role) =>
+          isOrgWideAdminRole(role.roleKey) || role.roleKey === FACILITY_ADMIN
+      )
+    ).length,
+    pending: allStaffRows.filter(
+      (r) =>
+        r.accessStatus.key === "pending_invite" ||
+        r.accessStatus.key === "not_activated"
+    ).length,
+  };
+
+  const staffRows = allStaffRows.filter((row) => {
+    if (facilityId === "__none__") return false;
+    if (
+      facilityId &&
+      !(row.facilities || []).some((a) => String(a.id) === String(facilityId))
+    ) {
+      return false;
+    }
+    if (roleKey && !(row.roles || []).some((r) => r.roleKey === roleKey)) {
+      return false;
+    }
+    if (accountStatus !== "all" && row.accessStatus.key !== accountStatus) {
+      return false;
+    }
+    if (q) {
+      const hay = `${row.displayName} ${row.jobTitle || ""} ${row.email || ""} ${row.phone || ""} ${(
+        row.roles || []
+      )
+        .map((r) => r.roleLabel)
+        .join(" ")}`.toLowerCase();
+      if (!hay.includes(q)) return false;
+    }
+    return true;
+  });
 
   // Preserve assignment-centric listing for parity tests that expect
   // ?status=effective assignment rows (when status matches assignment filters).
@@ -467,6 +603,7 @@ async function loadActiveClinicAccessOverviewScreen(db, input) {
       viewMode: assignmentStatus ? "assignments" : "staff",
       resultCount: assignmentStatus ? assignments.length : staffRows.length,
       emptyMode,
+      summary,
       filters: {
         q: String(query.q || "").trim(),
         status: accountStatus,
@@ -489,6 +626,10 @@ async function loadActiveClinicAccessOverviewScreen(db, input) {
       },
       actions: {
         canAssign: true,
+        canInvite: Array.isArray(auth.permissions)
+          ? auth.permissions.includes("activeclinic.staff.invite")
+          : false,
+        inviteHref: "/app/staff/new?invite=1",
         staffDirectoryHref: "/app/staff",
       },
       organization: {
@@ -587,6 +728,18 @@ async function loadActiveClinicStaffAccessDetailScreen(db, input) {
     staffMemberId,
     facilityId: null,
   });
+  const grantedRows = await accessRepo.listPermissionKeysWithRolesForStaff(db, {
+    staffMemberId,
+    organizationId: auth.organization.id,
+    facilityId: facilityContextId,
+  });
+  const grantedByMap = new Map();
+  for (const row of grantedRows) {
+    const label = ROLE_LABELS[row.roleKey] || row.roleKey;
+    const list = grantedByMap.get(row.permissionKey) || [];
+    if (!list.includes(label)) list.push(label);
+    grantedByMap.set(row.permissionKey, list);
+  }
 
   const canManageCredentials = Array.isArray(auth.permissions)
     ? auth.permissions.includes("activeclinic.staff.manage_credentials")
@@ -627,8 +780,14 @@ async function loadActiveClinicStaffAccessDetailScreen(db, input) {
               {}
             ).displayName || "Selected facility"
           : "All facilities (union)",
-        facilityScoped: effectiveAccess,
-        organizationWide: orgWideAccess,
+        facilityScoped: {
+          ...effectiveAccess,
+          groups: mapPermissionGroups(effectiveAccess.groups, grantedByMap),
+        },
+        organizationWide: {
+          ...orgWideAccess,
+          groups: mapPermissionGroups(orgWideAccess.groups, grantedByMap),
+        },
       },
       actions: {
         canAssign: grantable.length > 0,
@@ -637,6 +796,7 @@ async function loadActiveClinicStaffAccessDetailScreen(db, input) {
         canInvite,
         canManageCredentials,
         canSuspend,
+        suspendHref: canSuspend ? `/app/staff/${staffMemberId}/suspend` : null,
       },
     },
   };
@@ -720,6 +880,9 @@ async function loadActiveClinicAssignRoleScreen(db, input) {
         id: staff.staffMember.id,
         displayName: staff.staffMember.displayName,
         status: staff.staffMember.status,
+        initials: staffInitials(staff.staffMember),
+        jobTitle: staff.staffMember.jobTitle || "",
+        disabled: staff.staffMember.status === "suspended" || staff.staffMember.status === "archived",
       },
       roleOptions,
       facilities,
@@ -845,6 +1008,35 @@ async function loadActiveClinicRevokeRoleScreen(db, input) {
     return { ok: false, code: RESULT.NOT_FOUND };
   }
 
+  const mapped = mapAssignmentDetail(row);
+  const isSelf = String(auth.staffMember.id) === String(staffMemberId);
+  const lastAdminGuard = isOrgWideAdminAssignmentRow(row)
+    ? await assertNotLastOrgAdminRemoval(db, {
+        organizationId: auth.organization.id,
+        staffMemberId,
+      })
+    : { ok: true };
+  const activeRows = await accessRepo.listRoleAssignmentsForStaff(db, {
+    staffMemberId,
+    organizationId: auth.organization.id,
+    includeInactive: false,
+  });
+  let activeCount = 0;
+  for (const arow of activeRows) {
+    const mappedActive = mapAssignmentDetail(arow);
+    const effectiveness = await evaluateAssignmentEffectiveness(db, {
+      organizationId: auth.organization.id,
+      assignment: mappedActive,
+      staffMember: staff.staffMember,
+    });
+    if (effectiveness.effective) activeCount += 1;
+  }
+  const lastRole = activeCount <= 1 && mapped.status === "active";
+  let safetyKind = "confirm";
+  if (!lastAdminGuard.ok) safetyKind = "last_org_admin";
+  else if (lastRole) safetyKind = "last_role";
+  else if (isSelf && isOrgWideAdminAssignmentRow(row)) safetyKind = "self_demotion";
+
   return {
     ok: true,
     code: RESULT.OK,
@@ -854,8 +1046,20 @@ async function loadActiveClinicRevokeRoleScreen(db, input) {
       staff: {
         id: staff.staffMember.id,
         displayName: staff.staffMember.displayName,
+        initials: staffInitials(staff.staffMember),
+        jobTitle: staff.staffMember.jobTitle || "",
+        disabled:
+          staff.staffMember.status === "suspended" ||
+          staff.staffMember.status === "archived",
       },
-      assignment: mapAssignmentDetail(row),
+      assignment: mapped,
+      safety: {
+        kind: safetyKind,
+        canSubmit: safetyKind !== "last_org_admin",
+        isSelf,
+        lastRole,
+        lastOrgAdmin: !lastAdminGuard.ok,
+      },
     },
   };
 }
@@ -872,7 +1076,7 @@ async function loadActiveClinicRoleDetailScreen(db, input) {
   }
 
   const scopedIds = await viewerScopedStaffIds(db, auth);
-  const catalogue = await buildRoleCatalogue(db, auth.organization.id, scopedIds);
+  const catalogue = await buildRoleCatalogue(db, auth.organization.id, scopedIds, auth);
   const role = catalogue.find((r) => r.key === roleKey);
   if (!role) {
     return { ok: false, code: "role_not_found" };
@@ -884,15 +1088,7 @@ async function loadActiveClinicRoleDetailScreen(db, input) {
     code: RESULT.OK,
     detail: {
       role,
-      permissionGroups: (summary.groups || []).map((g) => ({
-        key: g.key,
-        label: g.label,
-        count: g.count,
-        permissions: (g.permissions || []).map((p) => ({
-          key: String(p),
-          label: String(p),
-        })),
-      })),
+      permissionGroups: mapPermissionGroups(summary.groups || []),
       permissionCount: summary.permissionCount || 0,
       backHref: "/app/access?tab=catalogue",
       assignStaffHref: `/app/access?tab=staff&role=${encodeURIComponent(roleKey)}`,

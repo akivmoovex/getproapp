@@ -67,6 +67,7 @@ async function createPublicationVersion(db, input) {
     previousVersionId,
     moderationStatus: input.moderationStatus || "published",
     auditActionKey: input.auditActionKey || "website.publish",
+    actorRole: input.actorRole || null,
   });
   if (created.ok && input.recordModeration === true) {
     await recordModerationEvent(db, {
@@ -75,12 +76,15 @@ async function createPublicationVersion(db, input) {
       productCode: instance.productCode,
       actorIdentityId: input.actorIdentityId || null,
       actionKey: input.moderationActionKey || ACTION.AUTO_PUBLISH,
+      reason: input.reason || null,
+      notes: input.notes || input.reason || null,
       previousState: previousVersionId,
       newState: created.version && created.version.id,
       targetVersionId: created.version && created.version.id,
       metadata: {
         changed_keys: input.changedKeys || [],
         source_policy: input.sourcePolicy || instance.publishPolicy,
+        actor_role: input.actorRole || null,
       },
     });
   }
@@ -283,9 +287,12 @@ async function restoreWebsiteVersionLive(db, input) {
     sourcePolicy: "RESTORE",
     previousVersionId: loaded.version.id,
     moderationStatus: "restored",
-    auditActionKey: "website.rollback",
-    moderationActionKey: ACTION.RESTORE_VERSION,
+    auditActionKey: input.auditActionKey || "website.rollback",
+    moderationActionKey: input.moderationActionKey || ACTION.RESTORE_VERSION,
     recordModeration: true,
+    reason: input.reason || null,
+    notes: input.notes || input.reason || null,
+    actorRole: input.actorRole || null,
   });
   return { ok: created.ok, version: created.version, restoredFrom: loaded.version };
 }

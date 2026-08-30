@@ -25,6 +25,7 @@ const FIELD_TYPES = Object.freeze({
   buttonText: "buttonText",
   buttonUrl: "buttonUrl",
   contactText: "contactText",
+  image: "image",
 });
 
 /**
@@ -73,6 +74,7 @@ const EDITABLE_FIELDS = [
   ...fieldsFor("home", "hero", [
     ["heading", FIELD_TYPES.heading, 120, { required: true, guidance: "Up to 120 characters" }],
     ["bodyText", FIELD_TYPES.paragraph, 500, { guidance: "Up to 500 characters" }],
+    ["image", FIELD_TYPES.image, 500, { guidance: "Hero image" }],
   ]),
   ...heroChromeFields("home"),
   ...fieldsFor("home", "welcome", [
@@ -284,6 +286,7 @@ function mapBlessboardType(field) {
   if (field.type === FIELD_TYPES.paragraph) return CONTENT_TYPES.LONG_TEXT;
   if (field.type === FIELD_TYPES.contactText && field.fieldKey === "email") return CONTENT_TYPES.EMAIL;
   if (field.type === FIELD_TYPES.contactText && field.fieldKey === "phone") return CONTENT_TYPES.PHONE;
+  if (field.type === FIELD_TYPES.image) return CONTENT_TYPES.IMAGE;
   return CONTENT_TYPES.SHORT_TEXT;
 }
 
@@ -299,13 +302,17 @@ function registerBlessBoardEditableFields() {
     minLength: field.minLength,
     required: field.required === true,
     permission: PERMISSIONS.EDIT,
-    validationMode: VALIDATION_MODE.BLESSBOARD_INLINE,
+    validationMode:
+      field.type === FIELD_TYPES.image
+        ? VALIDATION_MODE.CONTENT_TYPES
+        : VALIDATION_MODE.BLESSBOARD_INLINE,
     allowRelativeUrl: field.type === FIELD_TYPES.buttonUrl,
     inline: true,
     group: field.pageKey,
     description: field.guidance || `${field.pageKey}.${field.sectionKey}.${field.fieldKey}`,
     storage: {
-      kind: STORAGE_KIND.BLESSBOARD_INLINE,
+      kind: STORAGE_KIND.PLATFORM_CONTENT_KEY,
+      contentKey: stableKeyFromLocator(field.pageKey, field.sectionKey, field.fieldKey),
       pageKey: field.pageKey,
       sectionKey: field.sectionKey,
       fieldKey: field.fieldKey,

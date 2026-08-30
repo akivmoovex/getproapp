@@ -82,8 +82,12 @@
 %>
 <% if (_editing) { %>
 <span
-  class="bb-tp-inline-edit"
+  class="bb-tp-inline-edit ac-website-editable"
   data-bb-inline-edit="1"
+  data-website-inline="1"
+  data-website-key="<%= _escAttr(_pageKey) %>.<%= _escAttr(_sectionKey) %>.<%= _escAttr(_fieldKey) %>"
+  data-website-type="<%= _multiline ? 'textarea' : 'text' %>"
+  data-website-value="<%= _escAttr(_value) %>"
   data-bb-page="<%= _escAttr(_pageKey) %>"
   data-bb-section="<%= _escAttr(_sectionKey) %>"
   data-bb-field="<%= _escAttr(_fieldKey) %>"
@@ -94,30 +98,31 @@
   data-bb-published-value="<%= _escAttr(_published) %>"
   data-bb-stitch-screen-mobile="Phase 7 - Inline Text Editing - Mobile"
 >
-  <span class="bb-tp-inline-edit__display" data-bb-inline-display="1">
+  <span class="bb-tp-inline-edit__display ac-website-editable__display" data-bb-inline-display="1" data-website-display="1">
     <% if (_tag === 'a') { %>
-    <a class="<%= _class %>" href="<%= _href || '#' %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></a>
+    <a class="<%= _class %>" href="<%= _href || '#' %>" data-website-value-text="1" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></a>
     <% } else if (_tag === 'h1') { %>
-    <h1 class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h1>
+    <h1 class="<%= _class %>" data-website-value-text="1" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h1>
     <% } else if (_tag === 'h2') { %>
-    <h2 class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h2>
+    <h2 class="<%= _class %>" data-website-value-text="1" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h2>
     <% } else if (_tag === 'h3') { %>
-    <h3 class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h3>
+    <h3 class="<%= _class %>" data-website-value-text="1" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></h3>
     <% } else if (_tag === 'span') { %>
-    <span class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></span>
+    <span class="<%= _class %>" data-website-value-text="1" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></span>
     <% } else { %>
-    <p class="<%= _class %>" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></p>
+    <p class="<%= _class %>" data-website-value-text="1" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></p>
     <% } %>
     <button
       type="button"
-      class="bb-tp-inline-edit__pencil"
+      class="bb-tp-inline-edit__pencil ac-website-editable__pencil"
       data-bb-inline-start="1"
+      data-website-start="1"
       aria-label="<%= _label %>"
     >
       <span class="material-symbols-outlined" aria-hidden="true">edit</span>
     </button>
   </span>
-  <span class="bb-tp-inline-edit__editor" data-bb-inline-editor="1" hidden>
+  <span class="bb-tp-inline-edit__editor ac-website-editable__editor" data-bb-inline-editor="1" data-website-editor="1" hidden>
     <span class="bb-tp-inline-edit__field-label"><%= _label %></span>
     <div class="bb-tp-inline-edit__compare" data-bb-inline-compare="1">
       <div class="bb-tp-inline-edit__compare-col" data-bb-inline-current="1">
@@ -140,6 +145,7 @@
     <textarea
       class="bb-tp-inline-edit__input"
       data-bb-inline-input="1"
+      data-website-input="1"
       maxlength="<%= _max %>"
       rows="4"
       enterkeyhint="enter"
@@ -150,6 +156,7 @@
       type="<%= _type === 'buttonUrl' ? 'url' : 'text' %>"
       class="bb-tp-inline-edit__input"
       data-bb-inline-input="1"
+      data-website-input="1"
       maxlength="<%= _max %>"
       value="<%= _escAttr(_value) %>"
       enterkeyhint="done"
@@ -163,14 +170,14 @@
     <span class="bb-tp-inline-edit__guidance" data-bb-inline-guidance="1">Up to <%= _max %> characters</span>
     <% } %>
     <span class="bb-tp-inline-edit__actions">
-      <button type="button" class="bb-tp-inline-edit__check" data-bb-inline-save="1" aria-label="Save draft">
+      <button type="button" class="bb-tp-inline-edit__check" data-bb-inline-save="1" data-website-save="1" aria-label="Save draft">
         <span class="material-symbols-outlined" aria-hidden="true">check</span>
       </button>
-      <button type="button" class="bb-tp-inline-edit__cancel" data-bb-inline-cancel="1" aria-label="Discard changes">
+      <button type="button" class="bb-tp-inline-edit__cancel" data-bb-inline-cancel="1" data-website-cancel="1" aria-label="Discard changes">
         <span class="material-symbols-outlined" aria-hidden="true">close</span>
       </button>
     </span>
-    <span class="bb-tp-inline-edit__status" data-bb-inline-status="1" role="status" aria-live="polite"></span>
+    <span class="bb-tp-inline-edit__status" data-bb-inline-status="1" data-website-status-msg="1" role="status" aria-live="polite"></span>
   </span>
 </span>
 <% } else { %>

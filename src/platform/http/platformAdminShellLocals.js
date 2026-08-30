@@ -58,7 +58,10 @@ function buildPlatformAdminShellLocals(req, res, opts) {
 
   const ctx = req.platformAdminContext || {};
   const testingMaintenance = isTestingDataMaintenanceAllowed(env);
-  const navItems = filterNavTree(PLATFORM_ADMIN_NAV, testingMaintenance);
+  let navItems = filterNavTree(PLATFORM_ADMIN_NAV, testingMaintenance);
+  if (ctx.websiteGovernanceOnly === true) {
+    navItems = navItems.filter((item) => item.key === "recent-website-changes");
+  }
   const mobileTabs = PLATFORM_ADMIN_MOBILE_TABS.map((key) => {
     for (const item of navItems) {
       if (item.key === key) return item;
@@ -81,8 +84,7 @@ function buildPlatformAdminShellLocals(req, res, opts) {
     registrations: "Registrations",
     "registration-applications": "Church Registrations",
     "clinic-registrations": "Clinic Registrations",
-    websites: "Websites",
-    "website-changes": "Website Changes",
+    "recent-website-changes": "Recent Website Changes",
     plans: "Plans",
     subscriptions: "Subscriptions",
     domains: "Domains and links",

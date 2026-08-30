@@ -20,6 +20,7 @@
 <div
   class="ac-website-chrome"
   data-website-chrome="1"
+  data-website-engine-shell="1"
   data-clinic-key="<%= clinic && clinic.clinicKey %>"
   data-website-status="<%= statusKey %>"
   data-website-save-url="<%= websiteSaveUrl || '' %>"
@@ -57,6 +58,25 @@
     <% } else if (tenantPublishes && unpublished > 0) { %>
     <p>Unpublished draft changes are not visible to the public until you publish.</p>
     <% } %>
+    <% if (typeof websiteEditorPages !== 'undefined' && websiteEditorPages && websiteEditorPages.length && websiteEdit) { %>
+    <div class="gp-website-engine-shell__pages" data-website-engine-pages="1">
+      <label class="gp-website-engine-shell__label" for="gp-website-engine-page-ac">Page</label>
+      <select id="gp-website-engine-page-ac" data-website-engine-page-select="1">
+        <% websiteEditorPages.forEach(function (page) { %>
+        <option
+          value="<%= page.key %>"
+          data-href="<%= page.editHref %>"
+          <%= page.key === (typeof websiteEditorPageKey !== 'undefined' ? websiteEditorPageKey : 'home') ? ' selected' : '' %>
+        ><%= page.label || page.key %></option>
+        <% }); %>
+      </select>
+    </div>
+    <% } %>
+    <p class="gp-website-engine-shell__save-state" data-website-engine-save-state="1"><%= unpublished > 0 ? 'Saved to draft' : 'Up to date' %></p>
+    <div class="gp-website-engine-shell__viewport" data-website-engine-viewport="1" role="group" aria-label="Desktop or mobile preview">
+      <button type="button" class="gp-website-engine-shell__viewport-btn is-current" data-website-viewport="desktop">Desktop</button>
+      <button type="button" class="gp-website-engine-shell__viewport-btn" data-website-viewport="mobile">Mobile</button>
+    </div>
   </div>
   <div class="ac-website-chrome__actions" data-website-chrome-actions="1">
     <a class="ac-website-chrome__link" href="/app/settings/website/pages">Pages</a>

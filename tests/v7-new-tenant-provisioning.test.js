@@ -468,7 +468,7 @@ describe("v7 new tenant provisioning audit", () => {
     );
     assert.equal(settings.rowCount, 1);
     assert.equal(settings.rows[0].public_name, body.church_name);
-    assert.equal(settings.rows[0].website_status, "published");
+    assert.equal(settings.rows[0].website_status, "draft");
     assert.equal(String(settings.rows[0].primary_email || "").toLowerCase(), body.email.toLowerCase());
 
     const onboarding = await pool.query(
@@ -520,11 +520,14 @@ describe("v7 new tenant provisioning audit", () => {
     );
 
     const sites = await pool.query(
-      `SELECT id, slug FROM platform.website_instances
+      `SELECT id, slug, status, publish_policy, lifecycle_status
+         FROM platform.website_instances
         WHERE organization_id = $1 AND product_code = 'blessboard' AND status <> 'archived'`,
       [organizationId]
     );
     assert.equal(sites.rowCount, 1);
+    assert.equal(sites.rows[0].status, "coming_soon");
+    assert.equal(sites.rows[0].publish_policy, "TENANT_PUBLISH");
     const publicPath = buildPublicOrganizationWebsitePath({
       product: PRODUCT_CODE.BLESSBOARD,
       organizationKey,

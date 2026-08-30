@@ -336,7 +336,7 @@ describe("shared website lifecycle moderation", () => {
     });
     assert.equal(ensured.ok, true, JSON.stringify(ensured));
     assert.equal(ensured.instance.adapterMode, "shared_engine");
-    assert.equal(ensured.instance.publishPolicy, PUBLISH_POLICY.REVIEW_BEFORE_PUBLISH);
+    assert.equal(ensured.instance.publishPolicy, PUBLISH_POLICY.TENANT_PUBLISH);
     const content = await pool.query(
       `SELECT count(*)::int AS n FROM platform.website_content WHERE instance_id = $1`,
       [ensured.instance.id]

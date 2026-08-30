@@ -2,31 +2,98 @@
   var revoke = (pageData && pageData.revoke) || {};
   var assignment = revoke.assignment || {};
   var staff = revoke.staff || {};
+  var safety = revoke.safety || { kind: 'confirm', canSubmit: true };
   var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var kind = safety.kind || 'confirm';
 %>
-<section class="ac-access-revoke" data-ac-page-section="access-revoke" data-ac-visual="stitch-gap">
-  <div class="ac-panel">
-    <h2 class="ac-dashboard__card-title" style="margin-top:0">Confirm revocation</h2>
-    <p>
-      Revoke <strong><%= assignment.roleLabel || 'this role' %></strong>
-      (<%= assignment.scopeLabel || 'scoped access' %>)
-      for <strong><%= staff.displayName || 'this staff member' %></strong>?
-    </p>
-    <p class="ac-muted">
-      Access ends immediately. The assignment remains in history for audit and is not hard-deleted.
-      Other role assignments for this staff member are unchanged.
-    </p>
+<section class="ac-access-revoke ac-urp" data-ac-page-section="access-revoke" data-ac-visual="stitch-urp" data-ac-safety="<%= kind %>">
+  <div class="ac-urp-modal-page" role="dialog" aria-modal="true" aria-labelledby="ac-urp-revoke-title">
+    <div class="ac-urp-modal">
+      <div class="ac-urp-modal__handle" aria-hidden="true"><span></span></div>
+      <header class="ac-urp-modal__head">
+        <h2 id="ac-urp-revoke-title">
+          <% if (kind === 'last_org_admin') { %>Cannot Remove Administrator
+          <% } else if (kind === 'self_demotion') { %>Warning: Self-Demotion
+          <% } else if (kind === 'last_role') { %>Remove Final Role
+          <% } else { %>Confirm revocation<% } %>
+        </h2>
+        <a class="ac-urp-close" href="<%= revoke.cancelHref || '/app/access' %>" aria-label="Close">
+          <span class="material-symbols-outlined">close</span>
+        </a>
+      </header>
+      <div class="ac-urp-modal__body">
+        <div class="ac-urp-safety ac-urp-safety--<%= kind === 'last_org_admin' ? 'error' : (kind === 'self_demotion' ? 'warn' : 'info') %>">
+          <div class="ac-urp-safety__row">
+            <div class="ac-urp-safety__icon" aria-hidden="true">
+              <span class="material-symbols-outlined">
+                <%= kind === 'last_org_admin' ? 'error' : (kind === 'self_demotion' ? 'warning' : 'info') %>
+              </span>
+            </div>
+            <div>
+              <% if (kind === 'last_org_admin') { %>
+              <h3>Cannot Remove Administrator</h3>
+              <p>This role cannot be removed because the clinic must have at least one active administrator. Assign the administrator role to another user before proceeding.</p>
+              <% } else if (kind === 'self_demotion') { %>
+              <h3>Warning: Self-Demotion</h3>
+              <p>You are about to remove your own administrative privileges. You will lose access to this administrative area immediately upon confirming.</p>
+              <% } else if (kind === 'last_role') { %>
+              <h3>Remove Final Role</h3>
+              <p>You are attempting to remove the '<%= assignment.roleLabel || 'this role' %>' role from <%= staff.displayName || 'this staff member' %>. They will have no remaining ActiveClinic role until a new one is assigned.</p>
+              <% } else { %>
+              <h3>Confirm revocation</h3>
+              <p>Revoke <strong><%= assignment.roleLabel || 'this role' %></strong> (<%= assignment.scopeLabel || 'scoped access' %>) for <strong><%= staff.displayName || 'this staff member' %></strong>?</p>
+              <% } %>
+            </div>
+          </div>
 
-    <form method="post" action="<%= revoke.formAction %>" data-ac-loading="1">
-      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
-      <div class="ac-field">
-        <label class="ac-label" for="reason">Reason <span class="ac-muted">(optional)</span></label>
-        <input class="ac-input" id="reason" name="reason" maxlength="500" placeholder="e.g. role change, left facility"/>
+          <div class="ac-urp-facility" style="margin-bottom:1rem">
+            <div class="ac-urp-avatar" aria-hidden="true"><%= staff.initials || '?' %></div>
+            <div>
+              <strong><%= staff.displayName %></strong>
+              <p class="ac-urp-muted" style="margin:.25rem 0 0"><%= assignment.roleLabel %> · <%= assignment.scopeLabel %></p>
+            </div>
+            <% if (kind === 'last_org_admin') { %>
+            <span class="ac-urp-chip ac-urp-chip--danger">Last Admin</span>
+            <% } %>
+          </div>
+
+          <% if (kind === 'last_role') { %>
+          <div class="ac-urp-alert ac-urp-alert--info">
+            <span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span>
+            <div>
+              <strong>Consequence</strong>
+              <p>Continuing revokes this role. It does not automatically suspend the user. They may be unable to use ActiveClinic until a new role is assigned.</p>
+            </div>
+          </div>
+          <% } %>
+
+          <p class="ac-urp-muted">Access ends immediately. The assignment remains in history for audit and is not hard-deleted.</p>
+
+          <% if (safety.canSubmit) { %>
+          <form method="post" action="<%= revoke.formAction %>" data-ac-loading="1">
+            <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+            <div class="ac-urp-field" style="margin:1rem 0">
+              <label class="ac-urp-stat__label" for="reason">Reason <span class="ac-urp-muted">(optional)</span></label>
+              <input class="ac-urp-select" id="reason" name="reason" maxlength="500" placeholder="e.g. role change, left facility"/>
+            </div>
+            <div class="ac-urp-modal__foot" style="padding:1rem 0 0;border:0">
+              <a class="ac-urp-btn ac-urp-btn--ghost" href="<%= revoke.cancelHref || '/app/access' %>">Cancel</a>
+              <% if (kind === 'self_demotion') { %>
+              <button type="submit" class="ac-urp-btn ac-urp-btn--warn">Proceed with Demotion</button>
+              <% } else if (kind === 'last_role') { %>
+              <button type="submit" class="ac-urp-btn">Remove Role</button>
+              <% } else { %>
+              <button type="submit" class="ac-urp-btn ac-urp-btn--danger">Revoke access</button>
+              <% } %>
+            </div>
+          </form>
+          <% } else { %>
+          <div class="ac-urp-modal__foot" style="padding:1rem 0 0;border:0">
+            <a class="ac-urp-btn" href="<%= revoke.cancelHref || '/app/access' %>">Understood</a>
+          </div>
+          <% } %>
+        </div>
       </div>
-      <div class="ac-actions-row">
-        <button type="submit" class="ac-btn ac-btn--danger">Revoke access</button>
-        <a class="ac-btn ac-btn--ghost" href="<%= revoke.cancelHref || '/app/access' %>">Cancel</a>
-      </div>
-    </form>
+    </div>
   </div>
 </section>

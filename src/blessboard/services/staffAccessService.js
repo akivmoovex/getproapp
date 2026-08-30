@@ -47,6 +47,178 @@ const PERMISSION_MODULES = Object.freeze([
   { key: "Attendance", match: /^attendance\./ },
 ]);
 
+const LEGACY_ROLE_LABELS = Object.freeze({
+  church_hq_admin: "Church HQ Admin",
+  branch_admin: "Branch Admin",
+  platform_admin: "Platform Admin",
+});
+
+function friendlyRoleLabel(roleKey, displayName) {
+  if (displayName) return displayName;
+  const key = String(roleKey || "");
+  if (LEGACY_ROLE_LABELS[key]) return LEGACY_ROLE_LABELS[key];
+  return key
+    .split("_")
+    .filter(Boolean)
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1))
+    .join(" ");
+}
+
+function initialsFromName(name) {
+  const parts = String(name || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0].charAt(0) + parts[parts.length - 1].charAt(0)).toUpperCase();
+}
+
+function formatRelativeTime(value) {
+  if (!value) return null;
+  const then = new Date(value).getTime();
+  if (!Number.isFinite(then)) return null;
+  const diff = Date.now() - then;
+  const abs = Math.abs(diff);
+  const minute = 60 * 1000;
+  const hour = 60 * minute;
+  const day = 24 * hour;
+  if (abs < minute) return "just now";
+  if (abs < hour) {
+    const n = Math.round(abs / minute);
+    return `${n} min${n === 1 ? "" : "s"} ago`;
+  }
+  if (abs < day) {
+    const n = Math.round(abs / hour);
+    return `${n} hour${n === 1 ? "" : "s"} ago`;
+  }
+  if (abs < 7 * day) {
+    const n = Math.round(abs / day);
+    return `${n}d ago`;
+  }
+  try {
+    return new Date(value).toLocaleDateString("en-GB", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+    });
+  } catch {
+    return String(value);
+  }
+}
+
+function summarizeScope(activeRoles) {
+  const roles = activeRoles || [];
+  const global = roles.some(
+    (r) =>
+      r.scopeType === "church" ||
+      r.scopeType === "organisation" ||
+      r.roleKey === "church_hq_admin"
+  );
+  if (global) return { label: "Global", icon: "account_balance", kind: "global" };
+  const withBranch = roles.find((r) => r.branchDisplayName);
+  if (withBranch) {
+    return { label: withBranch.branchDisplayName, icon: "location_on", kind: "branch" };
+  }
+  const branchScoped = roles.find((r) => r.scopeType === "branch");
+  if (branchScoped) return { label: "Branch", icon: "location_on", kind: "branch" };
+  if (!roles.length) return { label: "—", icon: "remove", kind: "none" };
+  return { label: roles[0].scopeType || "—", icon: "tune", kind: "other" };
+}
+
+function userStatusPresentation(status) {
+  const st = String(status || "").toLowerCase();
+  if (st === "active") return { key: "active", label: "Active", chip: "active" };
+  if (st === "invited") return { key: "pending", label: "Pending", chip: "pending" };
+  if (st === "inactive" || st === "suspended") {
+    return { key: "inactive", label: st === "suspended" ? "Suspended" : "Inactive", chip: "inactive" };
+  }
+  return { key: st || "unknown", label: st || "Unknown", chip: "pending" };
+}
+
+async function loadStaffAccessStats(client, organizationId, churchId) {
+  const users = await client.query(
+    `SELECT COUNT(DISTINCT u.id)::int AS cnt
+       FROM blessboard.users u
+      WHERE (
+          EXISTS (
+            SELECT 1 FROM blessboard.user_roles ur
+             WHERE ur.user_id = u.id
+               AND ur.organization_id = $1
+               AND ur.status = 'active'
+               AND (ur.church_id IS NULL OR ur.church_id = $2)
+          )
+          OR EXISTS (
+            SELECT 1 FROM blessboard.user_role_assignments a
+             WHERE a.user_id = u.id
+               AND a.organization_id = $1
+               AND (a.church_id IS NULL OR a.church_id = $2)
+          )
+        )`,
+    [organizationId, churchId]
+  );
+  const churchAdmins = await client.query(
+    `SELECT COUNT(DISTINCT uid)::int AS cnt FROM (
+       SELECT ur.user_id AS uid
+         FROM blessboard.user_roles ur
+         JOIN blessboard.users u ON u.id = ur.user_id
+        WHERE ur.organization_id = $1 AND ur.church_id = $2
+          AND ur.role_key = 'church_hq_admin' AND ur.status = 'active'
+          AND u.status IN ('active', 'invited')
+       UNION
+       SELECT a.user_id
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+         JOIN blessboard.users u ON u.id = a.user_id
+        WHERE a.organization_id = $1
+          AND a.status = 'active'
+          AND (a.expires_at IS NULL OR a.expires_at > now())
+          AND r.role_key IN ('organisation_administrator', 'church_system_administrator')
+          AND a.scope_type IN ('organisation', 'church')
+          AND (a.church_id IS NULL OR a.church_id = $2)
+          AND u.status IN ('active', 'invited')
+     ) t`,
+    [organizationId, churchId]
+  );
+  const branchAdmins = await client.query(
+    `SELECT COUNT(DISTINCT uid)::int AS cnt FROM (
+       SELECT ur.user_id AS uid
+         FROM blessboard.user_roles ur
+         JOIN blessboard.users u ON u.id = ur.user_id
+        WHERE ur.organization_id = $1 AND ur.church_id = $2
+          AND ur.role_key = 'branch_admin' AND ur.status = 'active'
+          AND u.status IN ('active', 'invited')
+       UNION
+       SELECT a.user_id
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+         JOIN blessboard.users u ON u.id = a.user_id
+        WHERE a.organization_id = $1
+          AND a.status = 'active'
+          AND (a.expires_at IS NULL OR a.expires_at > now())
+          AND r.role_key = 'branch_administrator'
+          AND (a.church_id IS NULL OR a.church_id = $2)
+          AND u.status IN ('active', 'invited')
+     ) t`,
+    [organizationId, churchId]
+  );
+  const pending = await client.query(
+    `SELECT COUNT(*)::int AS cnt
+       FROM blessboard.user_invitations i
+      WHERE i.organization_id = $1
+        AND i.church_id = $2
+        AND i.status = 'pending'
+        AND i.expires_at > now()`,
+    [organizationId, churchId]
+  );
+  return {
+    totalUsers: Number(users.rows[0] && users.rows[0].cnt) || 0,
+    churchAdmins: Number(churchAdmins.rows[0] && churchAdmins.rows[0].cnt) || 0,
+    branchAdmins: Number(branchAdmins.rows[0] && branchAdmins.rows[0].cnt) || 0,
+    pendingInvitations: Number(pending.rows[0] && pending.rows[0].cnt) || 0,
+  };
+}
+
 async function withClient(db, fn) {
   let client = null;
   let owned = false;
@@ -109,6 +281,8 @@ async function listStaffAccess(db, input) {
   const assignmentStatus = input.assignmentStatus
     ? String(input.assignmentStatus).trim()
     : "";
+  const userStatus = input.userStatus ? String(input.userStatus).trim() : "";
+  const statusFilter = userStatus || assignmentStatus;
   const sensitivity = input.sensitivity ? String(input.sensitivity).trim() : "";
   const limit = Math.min(Math.max(parseInt(String(input.limit || "50"), 10) || 50, 1), 100);
   const offset = Math.max(parseInt(String(input.offset || "0"), 10) || 0, 0);
@@ -191,14 +365,8 @@ async function listStaffAccess(db, input) {
           )
         )`;
       }
-      if (assignmentStatus === "active" || assignmentStatus === "expired" || assignmentStatus === "revoked") {
-        if (assignmentStatus === "active") {
-          where += ` AND EXISTS (
-            SELECT 1 FROM blessboard.user_role_assignments a4
-             WHERE a4.user_id = u.id AND a4.organization_id = $1 AND a4.status = 'active'
-               AND (a4.expires_at IS NULL OR a4.expires_at > now())
-          )`;
-        } else if (assignmentStatus === "expired") {
+      if (statusFilter === "expired" || statusFilter === "revoked") {
+        if (statusFilter === "expired") {
           where += ` AND EXISTS (
             SELECT 1 FROM blessboard.user_role_assignments a4
              WHERE a4.user_id = u.id AND a4.organization_id = $1
@@ -210,7 +378,20 @@ async function listStaffAccess(db, input) {
              WHERE a4.user_id = u.id AND a4.organization_id = $1 AND a4.status = 'revoked'
           )`;
         }
+      } else if (statusFilter === "pending" || statusFilter === "invited") {
+        where += ` AND u.status = 'invited'`;
+      } else if (statusFilter === "inactive") {
+        where += ` AND u.status IN ('inactive', 'suspended')`;
+      } else if (statusFilter === "active") {
+        where += ` AND u.status = 'active'`;
       }
+
+      const stats = await loadStaffAccessStats(client, organizationId, churchId);
+      const countR = await client.query(
+        `SELECT COUNT(*)::int AS cnt FROM blessboard.users u WHERE ${where}`,
+        params
+      );
+      const total = Number(countR.rows[0] && countR.rows[0].cnt) || 0;
 
       params.push(limit, offset);
       const limitIdx = params.length - 1;
@@ -222,7 +403,7 @@ async function listStaffAccess(db, input) {
       }
       const r = await client.query(
         `SELECT u.id, u.email_display, u.email_normalized, u.display_name, u.status,
-                u.created_at, u.phone_normalized, u.phone_display
+                u.created_at, u.phone_normalized, u.phone_display, u.last_login_at
            FROM blessboard.users u
           WHERE ${where}
           ORDER BY ${orderBy}
@@ -281,6 +462,13 @@ async function listStaffAccess(db, input) {
         }
 
         const { maskBlessBoardPhone } = require("./phoneFirstIdentityHelpers");
+        const displayName =
+            row.display_name ||
+            row.email_display ||
+            row.phone_display ||
+            row.email_normalized;
+        const primaryRole = activeRoles[0] || null;
+        const statusView = userStatusPresentation(row.status);
         users.push({
           id: row.id,
           emailDisplay: row.email_display || row.email_normalized,
@@ -288,13 +476,23 @@ async function listStaffAccess(db, input) {
           phoneMasked: row.phone_normalized
             ? maskBlessBoardPhone(row.phone_normalized)
             : null,
-          displayName:
-            row.display_name ||
-            row.email_display ||
-            row.phone_display ||
-            row.email_normalized,
+          displayName,
+          initials: initialsFromName(displayName),
           status: row.status,
-          activeRoles,
+          statusKey: statusView.key,
+          statusLabel: statusView.label,
+          statusChip: statusView.chip,
+          lastLoginAt: row.last_login_at || null,
+          lastActiveLabel: formatRelativeTime(row.last_login_at) || "Never",
+          roleSummary: primaryRole
+            ? friendlyRoleLabel(primaryRole.roleKey)
+            : "No role",
+          roleExtraCount: Math.max(activeRoles.length - 1, 0),
+          scopeSummary: summarizeScope(activeRoles),
+          activeRoles: activeRoles.map((r) => ({
+            ...r,
+            displayName: friendlyRoleLabel(r.roleKey),
+          })),
           hasLegacy: legacy.rows.length > 0,
           hasExpired: assignments.some(
             (a) =>
@@ -305,7 +503,7 @@ async function listStaffAccess(db, input) {
         });
       }
 
-      return { ok: true, status: STATUS.OK, users };
+      return { ok: true, status: STATUS.OK, users, total, limit, offset, stats };
     });
   } catch (err) {
     return {
@@ -339,7 +537,8 @@ async function getStaffAccessDetail(db, input) {
       }
 
       const userR = await client.query(
-        `SELECT id, email_display, email_normalized, display_name, status, created_at
+        `SELECT id, email_display, email_normalized, display_name, status, created_at,
+                phone_display, phone_normalized, last_login_at
            FROM blessboard.users WHERE id = $1 LIMIT 1`,
         [userId]
       );
@@ -373,6 +572,7 @@ async function getStaffAccessDetail(db, input) {
       for (const a of assignments) {
         const item = {
           ...a,
+          displayName: friendlyRoleLabel(a.roleKey),
           sensitivityLabel: sensitivityLabel(a.roleKey, a.isSensitiveRole),
         };
         if (a.status === "revoked") revoked.push(item);
@@ -404,6 +604,7 @@ async function getStaffAccessDetail(db, input) {
         branchDisplayName: row.branch_display_name,
         branchKey: row.branch_key,
         label: "Legacy compatibility",
+        displayName: friendlyRoleLabel(row.role_key),
         permissions: permissionsForLegacyRoleKey(row.role_key).slice(),
         scopeType: row.branch_id ? "branch" : row.role_key === "platform_admin" ? "platform" : "church",
       }));
@@ -459,15 +660,30 @@ async function getStaffAccessDetail(db, input) {
         });
       }
 
+      const { maskBlessBoardPhone } = require("./phoneFirstIdentityHelpers");
+      const displayName =
+        user.display_name || user.email_display || user.email_normalized;
+      const statusView = userStatusPresentation(user.status);
+
       return {
         ok: true,
         status: STATUS.OK,
         user: {
           id: user.id,
           emailDisplay: user.email_display || user.email_normalized,
-          displayName: user.display_name || user.email_display || user.email_normalized,
+          phoneDisplay: user.phone_display || user.phone_normalized || null,
+          phoneMasked: user.phone_normalized
+            ? maskBlessBoardPhone(user.phone_normalized)
+            : null,
+          displayName,
+          initials: initialsFromName(displayName),
           status: user.status,
+          statusKey: statusView.key,
+          statusLabel: statusView.label,
+          statusChip: statusView.chip,
           createdAt: user.created_at,
+          lastLoginAt: user.last_login_at || null,
+          lastActiveLabel: formatRelativeTime(user.last_login_at) || "Never",
         },
         legacyRoles,
         activeAssignments: active,
@@ -529,7 +745,8 @@ async function listRoleCatalogue(db, input) {
                   WHERE a.role_id = r.id AND a.organization_id = $1 AND a.status = 'active') AS assigned_count
            FROM blessboard.roles r
           WHERE r.is_active = true
-            AND r.role_key NOT IN ('platform_administrator', 'visitor')
+            AND r.role_key NOT IN ('platform_administrator', 'visitor', 'member')
+            AND r.role_key NOT LIKE 'activeclinic_%'
           ORDER BY r.role_category ASC, r.display_name ASC`,
         [organizationId]
       );
@@ -551,6 +768,13 @@ async function listRoleCatalogue(db, input) {
           isSensitive: row.is_sensitive,
           isActive: row.is_active,
           assignedCount: row.assigned_count,
+          permissionCount: perms.length,
+          scopeLabel:
+            row.role_category === "branch" ||
+            row.role_category === "ministry" ||
+            row.role_category === "department"
+              ? "Branch"
+              : "Global",
           sensitivityLabel: sensitivityLabel(row.role_key, row.is_sensitive, perms),
           permissionGroups: groups,
           allowedScopeTypes: CHURCH_ASSIGNABLE_SCOPE_TYPES.slice(),
@@ -843,4 +1067,7 @@ module.exports = {
   findUserInOrganisation,
   sensitivityLabel,
   moduleForPermission,
+  friendlyRoleLabel,
+  initialsFromName,
+  formatRelativeTime,
 };

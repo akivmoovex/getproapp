@@ -9,113 +9,158 @@
   var facilities = form.facilities || [];
   var accessPreview = form.accessPreview || null;
   var selectedKeys = values.roleKeys || (values.roleKey ? [values.roleKey] : []);
+  var selectedRole = values.roleKey || selectedKeys[0] || '';
+  var staff = form.staff || {};
+  var title = mode === 'edit' ? 'Edit assignment' : 'Assign Staff Role';
 %>
-<section class="ac-access-form" data-ac-page-section="access-<%= mode %>" data-ac-visual="stitch-gap">
-  <% if (errors.length) { %>
-  <div id="ac-access-error-summary" class="ac-flash ac-flash--error" role="alert" tabindex="-1">
-    <strong>Please fix the following:</strong>
-    <ul>
-      <% errors.forEach(function (e) { %><li><%= e %></li><% }) %>
-    </ul>
-  </div>
-  <% } %>
-
-  <% if (form.policyNote) { %>
-  <div class="ac-panel ac-flash" data-ac-policy-note="1"><%= form.policyNote %></div>
-  <% } %>
-
-  <form class="ac-panel" method="post" action="<%= form.formAction %>" data-ac-loading="1" novalidate>
-    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
-
-    <p class="ac-muted" style="margin-top:0">Staff: <strong><%= (form.staff && form.staff.displayName) || 'Staff member' %></strong></p>
-
-    <% if (mode === 'edit') { %>
-    <fieldset class="ac-field">
-      <legend class="ac-label">Edit mode</legend>
-      <label class="ac-check">
-        <input type="radio" name="edit_mode" value="expiry" <%= values.editMode !== 'replace' ? 'checked' : '' %>/>
-        Update expiry only
-      </label>
-      <label class="ac-check">
-        <input type="radio" name="edit_mode" value="replace" <%= values.editMode === 'replace' ? 'checked' : '' %>/>
-        Change role or scope (revokes current assignment and creates a new one)
-      </label>
-    </fieldset>
-
-    <div class="ac-field">
-      <label class="ac-label" for="role_key">Role</label>
-      <select class="ac-select" id="role_key" name="role_key" required>
-        <% roleOptions.forEach(function (r) { %>
-        <option value="<%= r.value %>" <%= values.roleKey === r.value ? 'selected' : '' %>><%= r.label %></option>
-        <% }) %>
-      </select>
-      <% if (fieldErrors.role_key) { %><p class="ac-field-error"><%= fieldErrors.role_key %></p><% } %>
-    </div>
-    <% } else { %>
-    <fieldset class="ac-field" data-ac-multi-role="1">
-      <legend class="ac-label">Roles</legend>
-      <p class="ac-muted" style="margin-top:0">Select one or more roles. Scope is applied per role rules.</p>
-      <div class="ac-check-grid">
-        <% roleOptions.forEach(function (r) { %>
-        <label class="ac-check">
-          <input type="checkbox" name="role_keys" value="<%= r.value %>" <%= selectedKeys.indexOf(String(r.value)) >= 0 ? 'checked' : '' %>/>
-          <span>
-            <strong><%= r.label %></strong>
-            <span class="ac-muted" style="display:block;font-size:.85rem"><%= r.description || '' %></span>
-          </span>
-        </label>
-        <% }) %>
+<section class="ac-access-form ac-urp" data-ac-page-section="access-<%= mode %>" data-ac-visual="stitch-urp" data-ac-urp-assign="1">
+  <div class="ac-urp-modal-page" role="dialog" aria-modal="true" aria-labelledby="ac-urp-assign-title">
+    <div class="ac-urp-modal">
+      <div class="ac-urp-modal__handle" aria-hidden="true"><span></span></div>
+      <header class="ac-urp-modal__head">
+        <h2 id="ac-urp-assign-title"><%= title %></h2>
+        <a class="ac-urp-close" href="<%= form.cancelHref || '/app/access' %>" aria-label="Close">
+          <span class="material-symbols-outlined">close</span>
+        </a>
+      </header>
+      <div class="ac-urp-modal__context">
+        <span class="material-symbols-outlined" aria-hidden="true">person</span>
+        <div>
+          <div class="ac-urp-stat__label">Target User</div>
+          <strong><%= staff.displayName || 'Staff member' %></strong>
+          <% if (staff.jobTitle) { %><div class="ac-urp-muted"><%= staff.jobTitle %></div><% } %>
+        </div>
       </div>
-      <% if (!roleOptions.length) { %>
-      <p class="ac-field-error">No grantable roles are available for your account.</p>
-      <% } %>
-      <% if (fieldErrors.role_keys) { %><p class="ac-field-error"><%= fieldErrors.role_keys %></p><% } %>
-    </fieldset>
-    <% } %>
 
-    <div class="ac-field">
-      <label class="ac-label" for="scope_type">Default scope for flexible roles</label>
-      <select class="ac-select" id="scope_type" name="scope_type">
-        <option value="organisation" <%= values.scopeType === 'organisation' ? 'selected' : '' %>>Organization-wide</option>
-        <option value="facility" <%= values.scopeType === 'facility' || !values.scopeType ? 'selected' : '' %>>Facility</option>
-      </select>
-      <p class="ac-muted" style="margin-top:-.5rem;font-size:.85rem">Organization-only and facility-only roles ignore this when their scope is fixed.</p>
-      <% if (fieldErrors.scope_type) { %><p class="ac-field-error"><%= fieldErrors.scope_type %></p><% } %>
-    </div>
+      <form class="ac-urp-modal__body" method="post" action="<%= form.formAction %>" data-ac-loading="1" novalidate>
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
 
-    <div class="ac-field">
-      <label class="ac-label" for="facility_id">Facility</label>
-      <select class="ac-select" id="facility_id" name="facility_id">
-        <option value="">Select facility</option>
-        <% facilities.forEach(function (f) { %>
-        <option value="<%= f.id %>" <%= String(values.facilityId) === String(f.id) ? 'selected' : '' %>><%= f.displayName %></option>
-        <% }) %>
-      </select>
-      <p class="ac-muted" style="margin-top:-.5rem;font-size:.85rem">Required for facility-scoped roles. Only facilities where the staff member is assigned are listed.</p>
-      <% if (fieldErrors.facility_id) { %><p class="ac-field-error"><%= fieldErrors.facility_id %></p><% } %>
-    </div>
+        <% if (errors.length) { %>
+        <div id="ac-access-error-summary" class="ac-urp-alert ac-urp-alert--error" role="alert" tabindex="-1">
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <div>
+            <strong>Please fix the following</strong>
+            <ul>
+              <% errors.forEach(function (e) { %><li><%= e %></li><% }) %>
+            </ul>
+          </div>
+        </div>
+        <% } %>
 
-    <div class="ac-field">
-      <label class="ac-label" for="expires_at">Expires <span class="ac-muted">(optional)</span></label>
-      <input class="ac-input" id="expires_at" name="expires_at" type="datetime-local" value="<%= values.expiresAt || '' %>"/>
-      <% if (fieldErrors.expires_at) { %><p class="ac-field-error" id="err-expires_at"><%= fieldErrors.expires_at %></p><% } %>
-    </div>
+        <% if (staff.disabled) { %>
+        <div class="ac-urp-alert ac-urp-alert--warn" data-ac-safety="disabled-user">
+          <span class="material-symbols-outlined" aria-hidden="true">warning</span>
+          <div>
+            <strong>Disabled or suspended user</strong>
+            <p>This staff member is not active. Role assignment may not take effect until the account is restored.</p>
+          </div>
+        </div>
+        <% } %>
 
-    <% if (mode === 'assign' && accessPreview && accessPreview.groups && accessPreview.groups.length) { %>
-    <div class="ac-panel ac-access-preview" data-ac-access-preview="1">
-      <h3 class="ac-dashboard__card-title" style="margin-top:0">Capability preview</h3>
-      <p class="ac-muted">Based on selected roles (server catalogue). Final access still depends on facility scope.</p>
-      <ul class="ac-role-chips">
-        <% accessPreview.groups.forEach(function (g) { %>
-        <li class="ac-chip"><%= g.label %> (<%= g.count %>)</li>
-        <% }) %>
-      </ul>
-    </div>
-    <% } %>
+        <% if (form.policyNote) { %>
+        <div class="ac-urp-alert ac-urp-alert--info" data-ac-policy-note="1"><%= form.policyNote %></div>
+        <% } %>
 
-    <div class="ac-actions-row">
-      <button type="submit" class="ac-btn"><%= mode === 'edit' ? 'Save assignment' : 'Assign roles' %></button>
-      <a class="ac-btn ac-btn--ghost" href="<%= form.cancelHref || '/app/access' %>">Cancel</a>
+        <% if (mode === 'edit') { %>
+        <fieldset class="ac-urp-field">
+          <legend class="ac-urp-stat__label" style="text-transform:uppercase;letter-spacing:.05em">Edit mode</legend>
+          <label class="ac-urp-scope-card">
+            <input type="radio" name="edit_mode" value="expiry" <%= values.editMode !== 'replace' ? 'checked' : '' %>/>
+            <span><strong>Update expiry only</strong><span class="ac-urp-muted" style="display:block">Preserve assignment history.</span></span>
+          </label>
+          <label class="ac-urp-scope-card">
+            <input type="radio" name="edit_mode" value="replace" <%= values.editMode === 'replace' ? 'checked' : '' %>/>
+            <span><strong>Change role or scope</strong><span class="ac-urp-muted" style="display:block">Revokes the current assignment and creates a new one.</span></span>
+          </label>
+        </fieldset>
+        <% } %>
+
+        <div class="ac-urp-field">
+          <label for="role_key">System Role</label>
+          <select class="ac-urp-select" id="role_key" name="role_key" required data-ac-urp-role="1">
+            <option value="" disabled <%= !selectedRole ? 'selected' : '' %>>Select a role</option>
+            <% roleOptions.forEach(function (r) { %>
+            <option value="<%= r.value %>" data-scopes="<%= (r.scopes || []).join(',') %>" <%= selectedRole === r.value ? 'selected' : '' %>><%= r.label %></option>
+            <% }) %>
+          </select>
+          <% if (!roleOptions.length) { %>
+          <p class="ac-urp-field-error">No grantable roles are available for your account.</p>
+          <% } %>
+          <% if (fieldErrors.role_key || fieldErrors.role_keys) { %><p class="ac-urp-field-error"><%= fieldErrors.role_key || fieldErrors.role_keys %></p><% } %>
+        </div>
+
+        <fieldset class="ac-urp-field">
+          <legend>Assignment Scope</legend>
+          <div class="ac-urp-scope-cards">
+            <label class="ac-urp-scope-card">
+              <input type="radio" name="scope_type" value="organisation" <%= values.scopeType === 'organisation' ? 'checked' : '' %>/>
+              <span>
+                <strong>All Facilities</strong>
+                <span class="ac-urp-muted" style="display:block">Grants organisation-wide access where the role allows it.</span>
+              </span>
+            </label>
+            <label class="ac-urp-scope-card">
+              <input type="radio" name="scope_type" value="facility" <%= values.scopeType === 'facility' || !values.scopeType ? 'checked' : '' %>/>
+              <span>
+                <strong>Specific Facility</strong>
+                <span class="ac-urp-muted" style="display:block">Restrict access to a single designated location.</span>
+              </span>
+            </label>
+          </div>
+          <% if (fieldErrors.scope_type) { %><p class="ac-urp-field-error"><%= fieldErrors.scope_type %></p><% } %>
+        </fieldset>
+
+        <div class="ac-urp-alert ac-urp-alert--error" data-ac-urp-scope-warning="1" hidden>
+          <span class="material-symbols-outlined" aria-hidden="true">error</span>
+          <div>
+            <strong>Incompatible Scope</strong>
+            <p>This role cannot use the selected scope. The server will reject invalid combinations.</p>
+          </div>
+        </div>
+
+        <div class="ac-urp-field" data-ac-urp-facility="1">
+          <label for="facility_id">Target Facility</label>
+          <select class="ac-urp-select" id="facility_id" name="facility_id">
+            <option value="">Select facility...</option>
+            <% facilities.forEach(function (f) { %>
+            <option value="<%= f.id %>" <%= String(values.facilityId) === String(f.id) ? 'selected' : '' %>><%= f.displayName %></option>
+            <% }) %>
+          </select>
+          <p class="ac-urp-muted">Required for facility-scoped roles. Only facilities where this staff member is assigned are listed.</p>
+          <% if (fieldErrors.facility_id) { %>
+          <div class="ac-urp-alert ac-urp-alert--error" data-ac-safety="invalid-facility">
+            <span class="material-symbols-outlined" aria-hidden="true">error</span>
+            <div>
+              <strong>Invalid Facility Assignment</strong>
+              <p><%= fieldErrors.facility_id %></p>
+            </div>
+          </div>
+          <% } %>
+        </div>
+
+        <div class="ac-urp-field">
+          <label for="expires_at">Expires <span class="ac-urp-muted">(optional)</span></label>
+          <input class="ac-urp-select" id="expires_at" name="expires_at" type="datetime-local" value="<%= values.expiresAt || '' %>"/>
+          <% if (fieldErrors.expires_at) { %><p class="ac-urp-field-error" id="err-expires_at"><%= fieldErrors.expires_at %></p><% } %>
+        </div>
+
+        <% if (mode === 'assign' && accessPreview && accessPreview.groups && accessPreview.groups.length) { %>
+        <div data-ac-access-preview="1">
+          <h3 class="ac-urp-stat__label" style="margin:0 0 .5rem">Capability preview</h3>
+          <p class="ac-urp-muted">Read-only summary of the selected role. Final access still depends on facility scope.</p>
+          <div class="ac-urp-preview">
+            <% accessPreview.groups.forEach(function (g) { %>
+            <span class="ac-urp-chip"><%= g.label %> (<%= g.count %>)</span>
+            <% }) %>
+          </div>
+        </div>
+        <% } %>
+
+        <div class="ac-urp-modal__foot">
+          <a class="ac-urp-btn ac-urp-btn--ghost" href="<%= form.cancelHref || '/app/access' %>">Cancel</a>
+          <button type="submit" class="ac-urp-btn"><%= mode === 'edit' ? 'Save assignment' : 'Assign Role' %></button>
+        </div>
+      </form>
     </div>
-  </form>
+  </div>
 </section>

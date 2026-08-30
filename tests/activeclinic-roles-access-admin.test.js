@@ -299,6 +299,10 @@ describe("ActiveClinic roles & access admin UI (Prompt 7)", () => {
     assert.match(catalogue.text, /Organization administrator/);
     assert.match(catalogue.text, /Clinician \/ Doctor|Receptionist|Auditor/);
     assert.match(catalogue.text, /Compatibility \/ legacy|Network administrator/);
+    assert.match(catalogue.text, /Website editor/);
+    assert.match(catalogue.text, /Not currently grantable from Staff Users/);
+    assert.match(catalogue.text, /View Permissions/);
+    assert.doesNotMatch(catalogue.text, /name="permission/);
 
     const { cookie: clinCookie } = await sessionCookie(clinician.identity.id, ac.orgId);
     const deniedClin = await request(app).get("/app/access").set("Cookie", clinCookie);
@@ -423,6 +427,7 @@ describe("ActiveClinic roles & access admin UI (Prompt 7)", () => {
     assert.match(detail.text, /Facility administrator/i);
     assert.match(detail.text, /data-ac-effective-access="1"/);
     assert.match(detail.text, /Clinical|Administration|Staff/);
+    assert.match(detail.text, /data-ac-readonly-permissions="1"/);
 
     const assignmentIds = [...detail.text.matchAll(/data-ac-assignment="([^"]+)"/g)].map(
       (m) => m[1]

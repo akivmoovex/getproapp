@@ -1,6 +1,6 @@
 # GetPro Stitch project map
 
-**Last updated:** 2026-08-19  
+**Last updated:** 2026-08-30  
 **Purpose:** Canonical registry of Stitch design projects per GetPro product. Treat each row as an isolated design source of truth.
 
 ## Isolation rules (mandatory)
@@ -25,6 +25,7 @@ Shared GetPro platform architecture (host routing, sessions, multi-tenant provis
 | Product code | Product | Stitch project name | Stitch project ID | Domain / surface | Pilot / notes | Screen map |
 |--------------|---------|---------------------|-------------------|------------------|---------------|------------|
 | `blessboard` | BlessBoard | GetPro Church Platform | `projects/17124191473876947591` | Church management only | Existing church tenants | [`docs/gui/STITCH_SCREEN_MAP.md`](./gui/STITCH_SCREEN_MAP.md) |
+| `blessboard` | BlessBoard | BlessBoard User Management | `projects/5480028321322186480` | HQ Users / Roles / Permissions | GUI authority for URP | [`docs/blessboard/stitch/BLESSBOARD_USER_ROLE_PERMISSION_STITCH_INVENTORY.md`](./blessboard/stitch/BLESSBOARD_USER_ROLE_PERMISSION_STITCH_INVENTORY.md) |
 | `activeclinic` | ActiveClinic | ActiveClinic Public Ecosystem & Booking Flow | `projects/17813606734422395399` | Public platform, tenant sites, booking, My Booking, patient portal | **Authoritative** for P21–P27 | [`docs/activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.md`](./activeclinic/stitch/ACTIVECLINIC_V7_VISUAL_PARITY_MATRIX.md) |
 | `activeclinic` | ActiveClinic | ActiveClinic – Juflona Pilot | `projects/12272131183982732110` | Authenticated clinic operations (shell + P01–P07) | **Authoritative** for internal ops; Juflona pilot | [`docs/activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md`](./activeclinic/ACTIVECLINIC_STITCH_SCREEN_MAP.md) |
 | `activeclinic` | ActiveClinic | ActiveClinic Universal Authentication Interface | `projects/10611909237747031838` | ACW marketing, kebab-case auth, MW CMS, MF01–MF11 identity/onboarding/portal exploration | **Authoritative** for MW CMS + MF staff identity chrome. Patient EHR (MF11) is **not** product-approved — P27 remains portal authority | [`docs/activeclinic/stitch/ACTIVECLINIC_MF01_MF11_LIVE_AUDIT.md`](./activeclinic/stitch/ACTIVECLINIC_MF01_MF11_LIVE_AUDIT.md) |

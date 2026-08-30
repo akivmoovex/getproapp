@@ -41,9 +41,9 @@ const HQ_ADMIN_NAV = Object.freeze([
   },
   {
     key: "staff-access",
-    label: "Staff access",
+    label: "Users",
     href: "/hq/settings/staff-access",
-    icon: "admin_panel_settings",
+    icon: "group",
     enabled: true,
     nav: true,
   },

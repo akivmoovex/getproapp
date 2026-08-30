@@ -313,6 +313,36 @@ async function listPermissionKeysForStaff(db, input) {
   return result.rows.map((r) => r.permission_key);
 }
 
+async function listPermissionKeysWithRolesForStaff(db, input) {
+  const facilityId = input.facilityId || null;
+  const result = await db.query(
+    `SELECT DISTINCT p.permission_key, r.role_key
+       FROM activeclinic.staff_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+       JOIN blessboard.role_permissions rp ON rp.role_id = a.role_id
+       JOIN blessboard.permissions p ON p.id = rp.permission_id
+      WHERE a.staff_member_id = $1
+        AND a.organization_id = $2
+        AND a.status = 'active'
+        AND (a.expires_at IS NULL OR a.expires_at > now())
+        AND p.is_active = true
+        AND (
+          $3::uuid IS NULL
+          OR a.scope_type = 'organisation'
+          OR (
+            a.scope_type = 'facility'
+            AND a.facility_id = $3
+          )
+        )
+      ORDER BY p.permission_key ASC, r.role_key ASC`,
+    [input.staffMemberId, input.organizationId, facilityId]
+  );
+  return result.rows.map((r) => ({
+    permissionKey: r.permission_key,
+    roleKey: r.role_key,
+  }));
+}
+
 module.exports = {
   insertFacilityAssignment,
   listFacilitiesForStaff,
@@ -328,4 +358,5 @@ module.exports = {
   updateRoleAssignmentExpiry,
   revokeRoleAssignment,
   listPermissionKeysForStaff,
+  listPermissionKeysWithRolesForStaff,
 };

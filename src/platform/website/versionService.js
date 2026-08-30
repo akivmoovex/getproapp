@@ -98,6 +98,9 @@ async function createWebsiteVersion(db, input) {
       count: input.changeCount || 0,
       policy: input.sourcePolicy || null,
       field_keys: input.changedKeys || [],
+      actor_role: input.actorRole || null,
+      previous: input.previousVersionId || null,
+      next: version.id,
     },
   });
   return { ok: true, version };

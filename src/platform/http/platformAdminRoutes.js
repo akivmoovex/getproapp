@@ -233,6 +233,7 @@ const { buildPlatformAdminShellLocals } = require("./platformAdminShellLocals");
 const {
   registerPlatformWebsiteAdminRoutes,
 } = require("./platformWebsiteAdminRoutes");
+const { createRequireWebsiteGovernanceAccess } = require("./websiteGovernanceAccess");
 const {
   registerPlatformRegistrationAdminRoutes,
 } = require("./platformRegistrationAdminRoutes");
@@ -5203,6 +5204,15 @@ function createPlatformAdminRouter(deps) {
     env,
     requireApex,
     requirePlatformAdmin,
+    requireWebsiteGovernance: createRequireWebsiteGovernanceAccess({
+      getPool,
+      authLog,
+      findUserStatusByIdFn,
+      listActiveAuthorizationRolesFn,
+      redirectToApexLogin,
+      shouldRedirectUnauthenticatedToLogin,
+      sendControlled,
+    }),
     renderPlatformAdminView,
     buildPlatformAdminShellLocals,
     setAdminNoStore,

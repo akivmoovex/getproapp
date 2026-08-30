@@ -17,6 +17,10 @@ const {
   REASON: AUTHZ_REASON,
 } = require("./blessBoardRbacAuthorizationService");
 const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
+const {
+  assertNotLastHqAdminRemoval,
+  isHqAdminGrant,
+} = require("./blessBoardLastAdminGuard");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -712,6 +716,29 @@ async function revokeRoleAssignment(db, input) {
       });
       if (!authz.allowed) {
         return { ok: false, status: STATUS.FORBIDDEN, assignment: null, reason: authz.reasonCode };
+      }
+
+      if (
+        isHqAdminGrant({
+          roleKey: existing.roleKey,
+          scopeType: existing.scopeType,
+        })
+      ) {
+        const lastAdmin = await assertNotLastHqAdminRemoval(client, {
+          organizationId: existing.organizationId,
+          churchId,
+          userId: existing.userId,
+          excludeAssignmentId: assignmentId,
+          grant: { roleKey: existing.roleKey, scopeType: existing.scopeType },
+        });
+        if (!lastAdmin.ok) {
+          return {
+            ok: false,
+            status: STATUS.FORBIDDEN,
+            assignment: null,
+            reason: lastAdmin.reason || "last_hq_admin",
+          };
+        }
       }
 
       const revoked = await rbacRepo.revokeAssignment(client, {

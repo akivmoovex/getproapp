@@ -501,9 +501,47 @@ body.gp-website-field-editing .bb-tp-main {
 }
 .gp-website-engine-shell select,
 .gp-website-engine-shell__link,
-.gp-website-engine-shell button {
+.gp-website-engine-shell button,
+.gp-website-engine-shell__viewport-btn {
   min-height: var(--gp-website-touch);
   min-width: var(--gp-website-touch);
+}
+.gp-website-engine-shell__viewport {
+  display: inline-flex;
+  gap: 0.25rem;
+}
+.gp-website-engine-shell__viewport-btn.is-current {
+  font-weight: 600;
+}
+.gp-website-library {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(4.5rem, 1fr));
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  max-height: 12rem;
+  overflow: auto;
+}
+.gp-website-library__item {
+  padding: 0;
+  border: 1px solid rgba(0, 0, 0, 0.12);
+  border-radius: 0.35rem;
+  overflow: hidden;
+  background: #fff;
+  cursor: pointer;
+}
+.gp-website-library__item img {
+  display: block;
+  width: 100%;
+  height: 4.5rem;
+  object-fit: cover;
+}
+body.gp-website-viewport-mobile .bb-tp-main,
+body.gp-website-viewport-mobile .ac-tenant-main,
+body.gp-website-viewport-mobile [data-bb-home],
+body.gp-website-viewport-mobile .ac-tenant-home {
+  max-width: 390px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .gp-website-engine-hub {
   display: grid;

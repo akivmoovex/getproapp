@@ -192,12 +192,7 @@ function normalizeFieldDef(def) {
 function registerEditableField(def) {
   const field = normalizeFieldDef(def);
   BY_KEY.set(productIndexKey(field.productCode, field.key), field);
-  if (
-    field.storage.kind === STORAGE_KIND.BLESSBOARD_INLINE &&
-    field.storage.pageKey &&
-    field.storage.sectionKey &&
-    field.storage.fieldKey
-  ) {
+  if (field.storage.pageKey && field.storage.sectionKey && field.storage.fieldKey) {
     BY_LOCATOR.set(
       locatorIndexKey(
         field.productCode,

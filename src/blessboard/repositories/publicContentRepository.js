@@ -414,6 +414,40 @@ async function updateSection(client, sectionId, patch) {
 }
 
 /**
+ * Section update without revision_number — Foundation provision when
+ * migration 043 is not yet applied.
+ * @param {{ query: Function }} client
+ * @param {string} sectionId
+ * @param {object} patch
+ */
+async function updateSectionForProvision(client, sectionId, patch) {
+  const r = await client.query(
+    `UPDATE blessboard.page_sections
+        SET section_type = COALESCE($2, section_type),
+            heading = COALESCE($3, heading),
+            body_text = COALESCE($4, body_text),
+            media_url = COALESCE($5, media_url),
+            sort_order = COALESCE($6, sort_order),
+            status = COALESCE($7, status),
+            layout_metadata = COALESCE($8, layout_metadata),
+            updated_at = now()
+      WHERE id = $1
+      RETURNING ${SECTION_COLS}`,
+    [
+      sectionId,
+      patch.sectionType != null ? patch.sectionType : null,
+      patch.heading !== undefined ? patch.heading : null,
+      patch.bodyText !== undefined ? patch.bodyText : null,
+      patch.mediaUrl !== undefined ? patch.mediaUrl : null,
+      patch.sortOrder != null ? patch.sortOrder : null,
+      patch.status != null ? patch.status : null,
+      patch.layoutMetadata !== undefined ? patch.layoutMetadata : null,
+    ]
+  );
+  return { section: mapSection(r.rows[0] || null), conflict: false };
+}
+
+/**
  * @param {{ query: Function }} client
  * @param {string} pageId
  * @param {string} sectionKey
@@ -964,7 +998,7 @@ async function findGivingMethodById(client, id) {
  */
 async function findChurchStatus(client, churchId) {
   const r = await client.query(
-    `SELECT id, status FROM blessboard.churches WHERE id = $1 LIMIT 1`,
+    `SELECT id, status, organization_id FROM blessboard.churches WHERE id = $1 LIMIT 1`,
     [churchId]
   );
   return r.rows[0] || null;
@@ -984,12 +1018,14 @@ async function findBranchScope(client, branchId) {
 
 module.exports = {
   findPageByScope,
+  findPageByScopeForProvision,
   findPageById,
   ensureDraftPage,
   updatePage,
   listSectionsForPage,
   insertSection,
   updateSection,
+  updateSectionForProvision,
   findSectionById,
   findSectionByPageAndKey,
   findSectionByPageAndKeyForProvision,

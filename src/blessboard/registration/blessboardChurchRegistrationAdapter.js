@@ -337,14 +337,14 @@ async function websiteDefaults(input) {
     templateId: BLESSBOARD_TEMPLATE_ID,
     templateVersion: BLESSBOARD_TEMPLATE_VERSION,
     slug,
-    status: "published",
+    status: "coming_soon",
     scopeKind: records.branchId ? "branch" : "church_wide",
     scopeRef: records.branchId || null,
     contentOverrides: {},
     seedDefaults: false,
     adapterMode: "shared_engine",
-    publishPolicy: "REVIEW_BEFORE_PUBLISH",
-    lifecycleStatus: "public",
+    publishPolicy: "TENANT_PUBLISH",
+    lifecycleStatus: "provisional",
   };
 }
 
@@ -373,7 +373,7 @@ async function seedTemplateContent(db, input) {
     (records.church && records.church.displayName) ||
     "Church";
   const city = application.city || "";
-  return seedTenantOwnedWebsiteTemplateContent(db, {
+  const seeded = await seedTenantOwnedWebsiteTemplateContent(db, {
     churchId,
     publicName,
     primaryEmail: application.contact_email || application.email || null,
@@ -381,6 +381,16 @@ async function seedTemplateContent(db, input) {
     address: application.address || city || null,
     city,
   });
+  const {
+    seedUnpublishedEngineContent,
+  } = require("../website/blessboardEngineContentService");
+  await seedUnpublishedEngineContent(db, {
+    organizationId: input.organizationId,
+    churchId,
+    branchId: records.branchId || null,
+    slug: records.organizationKey || null,
+  });
+  return seeded;
 }
 
 async function approve(db, input) {

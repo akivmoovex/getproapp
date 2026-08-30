@@ -165,7 +165,7 @@ describe("blessboard church website preview and publish", () => {
     return r.rows[0] ? r.rows[0].hostname : null;
   }
 
-  it("1–2. Foundation and Growth churches get published demo website shells without duplicates", async () => {
+  it("1–2. Foundation and Growth churches get unpublished default website shells without duplicates", async () => {
     requireDb();
     for (const plan of ["foundation", "growth"]) {
       const rec = await provisionPlan(plan);
@@ -177,7 +177,7 @@ describe("blessboard church website preview and publish", () => {
         [rec.churchId]
       );
       assert.equal(pages.rows.length, 8);
-      assert.ok(pages.rows.every((p) => p.status === "published" && p.branch_id == null));
+      assert.ok(pages.rows.every((p) => p.status === "draft" && p.branch_id == null));
 
       const again = await provisionEmptyPublicPages(pool, { churchId: rec.churchId });
       assert.equal(again.ok, true);
@@ -188,14 +188,14 @@ describe("blessboard church website preview and publish", () => {
            FROM blessboard.church_settings WHERE church_id = $1`,
         [rec.churchId]
       );
-      assert.equal(settings.rows[0].website_status, "published");
+      assert.equal(settings.rows[0].website_status, "draft");
       assert.ok(settings.rows[0].primary_email || settings.rows[0].primary_phone);
 
       const setup = await request(app)
         .get(`/c/${rec.organizationKey}`)
         .set("Host", APEX);
       assert.equal(setup.status, 200);
-      assert.match(setup.text, /data-bb-shell="tenant-public"|coming soon|being prepared/i);
+      assert.match(setup.text, /not public yet|coming soon|being prepared/i);
       assert.doesNotMatch(setup.text, new RegExp(rec.churchId, "i"));
 
       const sid = await sessionCookieFor(rec.administratorUserId, rec.organizationId);
@@ -307,6 +307,11 @@ describe("blessboard church website preview and publish", () => {
     assert.equal(notConfirmed.ok, false);
     assert.equal(notConfirmed.reason, "confirm_publish");
 
+    await acknowledgeWebsitePreview(pool, {
+      organizationId: rec.organizationId,
+      actorUserId: rec.administratorUserId,
+    });
+
     const published = await publishChurchWebsite(pool, {
       churchId: rec.churchId,
       deferServiceTimes: true,
@@ -383,6 +388,10 @@ describe("blessboard church website preview and publish", () => {
         WHERE church_id = $1`,
       [rec.churchId]
     );
+    await acknowledgeWebsitePreview(pool, {
+      organizationId: rec.organizationId,
+      actorUserId: rec.administratorUserId,
+    });
     const published = await publishChurchWebsite(pool, {
       churchId: rec.churchId,
       deferServiceTimes: true,

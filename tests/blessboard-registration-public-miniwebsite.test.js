@@ -3,9 +3,9 @@
 /**
  * Public miniwebsite after registration approval:
  * - unique organization_key allocation (+ reserved / collision)
- * - initial Foundation publish so /c/:organizationKey is live
+ * - default unpublished website so /c/:organizationKey is SETUP until HQ publish
  * - HQ public path uses /c/:key
- * - repair dry-run + apply without duplicating content
+ * - repair does not auto-publish first-use sites; republishes drifted live sites
  * - retry does not duplicate org/church/website
  */
 
@@ -43,6 +43,10 @@ const {
   inspectPublicMiniwebsiteRepair,
   repairPublicMiniwebsite,
 } = require("../src/blessboard/services/publicMiniwebsiteRepairService");
+const {
+  publishChurchWebsite,
+  acknowledgeWebsitePreview,
+} = require("../src/blessboard/services/churchWebsitePublishService");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { KIND } = require("../src/blessboard/http/loadTenantPublicPageModel");
@@ -177,7 +181,7 @@ describe("registration public miniwebsite provision", () => {
     assert.equal(publicChurchHomePath("HQ"), null);
   });
 
-  it("approved church receives unique org key and published public site", async () => {
+  it("approved church receives unique org key and unpublished default website", async () => {
     requireDb();
     const suffix = uniq("gcc");
     const churchName = `Grace Community Church ${suffix}`;
@@ -205,7 +209,7 @@ describe("registration public miniwebsite provision", () => {
       `SELECT website_status, public_name FROM blessboard.church_settings WHERE church_id = $1`,
       [approved.records.churchId]
     );
-    assert.equal(settings.rows[0].website_status, "published");
+    assert.equal(settings.rows[0].website_status, "draft");
     assert.match(String(settings.rows[0].public_name), /Grace Community Church/);
 
     const pages = await pool.query(
@@ -215,14 +219,13 @@ describe("registration public miniwebsite provision", () => {
       [approved.records.churchId]
     );
     assert.ok(pages.rowCount >= 8);
-    assert.ok(pages.rows.every((r) => r.status === "published"));
+    assert.ok(pages.rows.every((r) => r.status === "draft"));
 
     const publicRes = await request(app)
       .get(`/c/${expectedBase}`)
       .set("Host", APEX);
     assert.equal(publicRes.status, 200);
-    assert.doesNotMatch(publicRes.text, /not public yet/i);
-    assert.match(publicRes.text, /Grace Community Church/i);
+    assert.match(publicRes.text, /not public yet/i);
 
     const overview = await loadFoundationWebsiteOverview(pool, {
       organizationId: approved.records.organizationId,
@@ -231,8 +234,32 @@ describe("registration public miniwebsite provision", () => {
     });
     assert.equal(overview.ok, true);
     assert.equal(overview.publicPath, `/c/${expectedBase}`);
-    assert.equal(overview.liveAvailable, true);
+    assert.equal(overview.liveAvailable, false);
     assert.equal(overview.organizationKey, expectedBase);
+
+    await acknowledgeWebsitePreview(pool, {
+      organizationId: approved.records.organizationId,
+      actorUserId: platformAdmin.userId,
+    });
+    const published = await publishChurchWebsite(pool, {
+      churchId: approved.records.churchId,
+      actorUserId: platformAdmin.userId,
+      deferServiceTimes: true,
+      confirmPublish: true,
+    });
+    assert.equal(published.ok, true, JSON.stringify(published));
+
+    const live = await request(app).get(`/c/${expectedBase}`).set("Host", APEX);
+    assert.equal(live.status, 200);
+    assert.doesNotMatch(live.text, /not public yet/i);
+    assert.match(live.text, /Grace Community Church/i);
+
+    const overviewLive = await loadFoundationWebsiteOverview(pool, {
+      organizationId: approved.records.organizationId,
+      churchId: approved.records.churchId,
+      organizationKey: expectedBase,
+    });
+    assert.equal(overviewLive.liveAvailable, true);
   });
 
   it("collision handling allocates -2 suffix", async () => {
@@ -409,7 +436,6 @@ describe("registration public miniwebsite provision", () => {
       dataEnvironment: "testing",
     });
     assert.equal(second.ok, true);
-    assert.equal(second.alreadyProvisioned || second.status === "already_provisioned", true);
 
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
@@ -428,7 +454,7 @@ describe("registration public miniwebsite provision", () => {
     assert.equal(pages.rows[0].n, 8);
   });
 
-  it("repair dry-run reports unpublished gaps; apply publishes without overwrite", async () => {
+  it("repair does not auto-publish a complete unpublished first-use website", async () => {
     requireDb();
     const key = uniq("repair");
     const appRow = await insertFoundationApp({ church_name: `Repair ${key}` });
@@ -441,11 +467,53 @@ describe("registration public miniwebsite provision", () => {
     });
     assert.equal(approved.ok, true, approved.message || approved.status);
 
-    // Force an incomplete (draft) state as if older provisioning left the site unpublished.
-    await pool.query(
-      `UPDATE blessboard.church_settings SET website_status = 'draft' WHERE church_id = $1`,
-      [approved.records.churchId]
+    const setupRes = await request(app).get(`/c/${key}`).set("Host", APEX);
+    assert.equal(setupRes.status, 200);
+    assert.match(setupRes.text, /not public yet/i);
+
+    const dry = await inspectPublicMiniwebsiteRepair(pool, { organizationKey: key });
+    assert.equal(dry.ok, true);
+    assert.equal(
+      (dry.plannedActions || []).some((a) => a.action === "publish_initial_foundation_website"),
+      false
     );
+
+    const applied = await repairPublicMiniwebsite(pool, {
+      organizationKey: key,
+      dryRun: false,
+    });
+    assert.equal(applied.ok, true, applied.reason);
+    assert.equal(applied.after.websiteStatus, "draft");
+
+    const stillSetup = await request(app).get(`/c/${key}`).set("Host", APEX);
+    assert.match(stillSetup.text, /not public yet/i);
+  });
+
+  it("repair republishes drifted pages on an already-published site without overwrite", async () => {
+    requireDb();
+    const key = uniq("repairlive");
+    const appRow = await insertFoundationApp({ church_name: `RepairLive ${key}` });
+    const approved = await approveAndProvisionRegistrationApplication(pool, {
+      applicationId: appRow.id,
+      actorUserId: platformAdmin.userId,
+      organizationKey: key,
+      deploymentCode: DEPLOYMENT,
+      dataEnvironment: "testing",
+    });
+    assert.equal(approved.ok, true, approved.message || approved.status);
+
+    await acknowledgeWebsitePreview(pool, {
+      organizationId: approved.records.organizationId,
+      actorUserId: platformAdmin.userId,
+    });
+    const published = await publishChurchWebsite(pool, {
+      churchId: approved.records.churchId,
+      actorUserId: platformAdmin.userId,
+      deferServiceTimes: true,
+      confirmPublish: true,
+    });
+    assert.equal(published.ok, true, JSON.stringify(published));
+
     await pool.query(
       `UPDATE blessboard.public_pages SET status = 'draft' WHERE church_id = $1 AND branch_id IS NULL`,
       [approved.records.churchId]
@@ -458,13 +526,8 @@ describe("registration public miniwebsite provision", () => {
       [approved.records.churchId]
     );
 
-    const setupRes = await request(app).get(`/c/${key}`).set("Host", APEX);
-    assert.equal(setupRes.status, 200);
-    assert.match(setupRes.text, /not public yet/i);
-
     const dry = await inspectPublicMiniwebsiteRepair(pool, { organizationKey: key });
     assert.equal(dry.ok, true);
-    assert.equal(dry.needsRepair, true);
     assert.ok((dry.plannedActions || []).some((a) => a.action === "publish_initial_foundation_website"));
 
     const welcomeBefore = await pool.query(
@@ -500,9 +563,8 @@ describe("registration public miniwebsite provision", () => {
     const live = await request(app).get(`/c/${key}`).set("Host", APEX);
     assert.equal(live.status, 200);
     assert.doesNotMatch(live.text, /not public yet/i);
-    assert.match(live.text, /Repair/i);
+    assert.match(live.text, /RepairLive/i);
 
-    // Second repair leaves a valid published site untouched (idempotent).
     const again = await repairPublicMiniwebsite(pool, {
       organizationKey: key,
       dryRun: false,

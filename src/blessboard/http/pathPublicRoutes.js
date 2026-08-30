@@ -16,7 +16,10 @@ const {
 } = require("../services/organizationKeyCompat");
 const { resolveHostname } = require("../../platform/host");
 const { publicBranchHomePath, publicChurchHomePath } = require("../urls/churchUrlHelper");
-const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
+const {
+  attachWebsiteAdminChrome,
+  resolveAuthorizedPublicPreview,
+} = require("./attachWebsiteAdminChrome");
 const {
   resolveWebsiteMode,
   WEBSITE_MODE,
@@ -169,6 +172,12 @@ function createPathPublicRouter(deps) {
 
     let model;
     try {
+      const authorizedPreview = await resolveAuthorizedPublicPreview(
+        getPool(),
+        req,
+        tenant,
+        selectedBranch && selectedBranch.id
+      );
       model = await loadTenantPublicPageModel(getPool(), {
         tenant,
         pageKey,
@@ -176,6 +185,7 @@ function createPathPublicRouter(deps) {
         pathPrefix,
         selectedBranch: selectedBranch || null,
         routingMode: routingMode || "path",
+        preview: authorizedPreview,
       });
     } catch {
       return res

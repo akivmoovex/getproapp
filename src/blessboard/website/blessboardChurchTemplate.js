@@ -52,7 +52,13 @@ function inlineFieldKeys() {
         ? CONTENT_TYPES.URL
         : field.type === "paragraph"
           ? CONTENT_TYPES.LONG_TEXT
-          : CONTENT_TYPES.SHORT_TEXT;
+          : field.type === "image"
+            ? CONTENT_TYPES.IMAGE
+            : field.type === "contactText" && field.fieldKey === "email"
+              ? CONTENT_TYPES.EMAIL
+              : field.type === "contactText" && field.fieldKey === "phone"
+                ? CONTENT_TYPES.PHONE
+                : CONTENT_TYPES.SHORT_TEXT;
     keys[key] = {
       type,
       maxLen: field.maxLength || 500,

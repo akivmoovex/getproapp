@@ -43,10 +43,12 @@
     </button>
   </div>
   <div class="ac-website-editable__image-tools" data-website-image-tools="1" hidden>
+    <p class="ac-website-editable__current"><span class="ac-website-editable__current-label">Current image</span></p>
     <label class="ac-website-editable__file">
       <span>Choose or replace image</span>
       <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-website-file="1"/>
     </label>
+    <button type="button" class="ac-btn ac-btn--ghost" data-website-library="1">Media library</button>
     <label class="ac-website-editable__alt">
       Alt text
       <input type="text" maxlength="240" value="<%= alt %>" data-website-alt="1" enterkeyhint="done" autocomplete="off"/>
@@ -67,6 +69,7 @@
     </span>
     <span class="ac-website-editable__status" data-website-status-msg="1" aria-live="polite"></span>
     <progress class="ac-website-editable__progress" data-website-progress="1" hidden max="100" value="0"></progress>
+    <div class="gp-website-library" data-website-library-panel="1" hidden></div>
   </div>
 </div>
 <% } else { %>

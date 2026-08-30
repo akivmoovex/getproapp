@@ -1198,7 +1198,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         applicationId,
       });
 
-      provisioningStage = "website_published";
+      provisioningStage = "website_initialized";
       const {
         publishInitialFoundationWebsite,
       } = require("./churchWebsitePublishService");
@@ -1214,6 +1214,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         actorUserId: administratorViaInvitation ? invitingActorUserId : administratorUserId,
         env: actorContext.env || process.env,
         source: "registration_provision",
+        publish: false,
       });
       if (!initialPublish || !initialPublish.ok) {
         throw new OrchestratorError(

@@ -22,6 +22,7 @@ const moderationEventService = require("./moderationEventService");
 const lifecycleService = require("./lifecycleService");
 const publicationService = require("./publicationService");
 const recentChangesService = require("./recentChangesService");
+const websiteGovernanceService = require("./websiteGovernanceService");
 const editSessionService = require("./editSessionService");
 const publicWebsiteUrl = require("./publicWebsiteUrl");
 const websiteManagementPresentation = require("./websiteManagementPresentation");
@@ -51,6 +52,7 @@ module.exports = {
   lifecycleService,
   publicationService,
   recentChangesService,
+  websiteGovernanceService,
   editSessionService,
   publicWebsiteUrl,
   websiteManagementPresentation,

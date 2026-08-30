@@ -182,7 +182,21 @@ async function countAllWebsiteDrafts(db, opts) {
     fieldDraftRepo.countDrafts(db, opts),
     draftRepo.countStructuredDrafts(db, opts),
   ]);
-  return fieldCount + structuredCount;
+  let engineCount = 0;
+  if (opts && opts.organizationId) {
+    try {
+      const {
+        countUnpublishedEngineFields,
+      } = require("../website/blessboardEngineContentService");
+      engineCount = await countUnpublishedEngineFields(db, {
+        organizationId: opts.organizationId,
+        branchId: opts.branchId || null,
+      });
+    } catch {
+      engineCount = 0;
+    }
+  }
+  return Math.max(fieldCount + structuredCount, engineCount);
 }
 
 /**

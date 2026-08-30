@@ -118,9 +118,9 @@
   <% if (canTakeOffline) { %>
   <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/offline" data-website-moderation="offline">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <label>Reason <input name="reason" maxlength="500"/></label>
+    <label>Reason <input name="reason" maxlength="500" required/></label>
     <label>Tenant-visible note <input name="note_public" maxlength="500"/></label>
-    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Take Website Offline</button>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Hide Website</button>
   </form>
   <% } %>
   <% if (canSuspend) { %>
@@ -128,13 +128,13 @@
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <label>Reason <input name="reason" maxlength="500" required/></label>
     <label>Tenant-visible note <input name="note_public" maxlength="500"/></label>
-    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Suspend publishing</button>
+    <button type="submit" class="bb-pa-btn bb-pa-btn--ghost">Block Website</button>
   </form>
   <% } %>
   <% if (canRestore && (typeof canResume === 'undefined' || canResume)) { %>
   <form method="post" action="/admin/organizations/<%= org.organization_key %>/website/restore-site" data-website-moderation="restore">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <button type="submit" class="bb-pa-btn">Resume publishing</button>
+    <button type="submit" class="bb-pa-btn"><%= inst && inst.lifecycleStatus === 'suspended' ? 'Unblock Website' : inst && inst.lifecycleStatus === 'offline' ? 'Unhide Website' : 'Resume publishing' %></button>
   </form>
   <% } %>
   <% if (canModerate) { %>

@@ -17,15 +17,15 @@ async function ensureBlessBoardWebsiteInstance(db, input) {
     templateId: BLESSBOARD_TEMPLATE_ID,
     templateVersion: BLESSBOARD_TEMPLATE_VERSION,
     slug: slug || organizationId.slice(0, 8),
-    status: input.status || "published",
+    status: input.status || "coming_soon",
     scopeKind: input.branchId ? "branch" : "church_wide",
     scopeRef: input.branchId || null,
     actorIdentityId: input.actorIdentityId || null,
     contentOverrides: input.contentOverrides || {},
     seedDefaults: false,
     adapterMode: "shared_engine",
-    publishPolicy: "REVIEW_BEFORE_PUBLISH",
-    lifecycleStatus: input.lifecycleStatus || "public",
+    publishPolicy: input.publishPolicy || "TENANT_PUBLISH",
+    lifecycleStatus: input.lifecycleStatus || "provisional",
   });
   if (
     provisioned.ok &&

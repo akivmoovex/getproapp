@@ -1,9 +1,30 @@
 /**
- * Shared inline website editor (ActiveClinic public/preview).
+ * Shared inline website editor (ActiveClinic + BlessBoard).
  * Contract: pencil → input/textarea or image replace → ✓ draft / ✕ cancel.
  * ✓ never publishes. Unknown keys are rejected by the server allowlist.
  */
 (function () {
+  function bindEditorShell() {
+    document.querySelectorAll("[data-website-engine-page-select]").forEach(function (sel) {
+      sel.addEventListener("change", function () {
+        var opt = sel.options[sel.selectedIndex];
+        var href = opt && opt.getAttribute("data-href");
+        if (href) window.location.assign(href);
+      });
+    });
+    document.querySelectorAll("[data-website-viewport]").forEach(function (btn) {
+      btn.addEventListener("click", function () {
+        var mode = btn.getAttribute("data-website-viewport");
+        document.body.classList.toggle("gp-website-viewport-mobile", mode === "mobile");
+        document.querySelectorAll("[data-website-viewport]").forEach(function (other) {
+          other.classList.toggle("is-current", other === btn);
+        });
+      });
+    });
+  }
+
+  bindEditorShell();
+
   var chrome = document.querySelector("[data-website-chrome]");
   if (!chrome) return;
   var saveUrl = chrome.getAttribute("data-website-save-url") || "";
@@ -23,6 +44,16 @@
   var csrf = document.querySelector('meta[name="csrf-token"]');
   var csrfField = "_csrf";
   var csrfToken = csrf ? csrf.getAttribute("content") : "";
+
+  function markDraftSaved() {
+    var slot = document.querySelector("[data-website-engine-save-state]");
+    if (slot) slot.textContent = "Saved to draft";
+    if (chrome) chrome.setAttribute("data-draft", "1");
+    var draft = document.querySelector("[data-website-engine-draft]");
+    if (draft && draft.textContent && /No unpublished/i.test(draft.textContent)) {
+      draft.textContent = "Unpublished draft";
+    }
+  }
 
   function setBusy(el, busy) {
     var saveBtn = el.querySelector("[data-website-save]");
@@ -48,7 +79,11 @@
     return fetch(path, {
       method: "POST",
       credentials: "same-origin",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
+      headers: {
+        "Content-Type": "application/json",
+        Accept: "application/json",
+        "X-CSRF-Token": csrfToken,
+      },
       body: JSON.stringify(data),
     }).then(function (res) {
       return res.json().then(function (out) {
@@ -154,6 +189,7 @@
             if (currentEl) currentEl.textContent = original;
             exitEdit();
             setStatus(el, "Saved to draft", false);
+            markDraftSaved();
           } else {
             setStatus(el, (out && (out.reason || out.code)) || "Could not save", true);
           }
@@ -200,12 +236,23 @@
     var startBtn = el.querySelector("[data-website-start]");
     var tools = el.querySelector("[data-website-image-tools]");
     var progress = el.querySelector("[data-website-progress]");
+    var libraryBtn = el.querySelector("[data-website-library]");
+    var libraryPanel = el.querySelector("[data-website-library-panel]");
+    var placeholder = el.querySelector("[data-website-image-placeholder]");
     if (!img) return;
     var originalSrc = img.getAttribute("src");
     var originalAlt = altInput ? altInput.value : "";
     var originalMediaId = el.getAttribute("data-website-media-id") || "";
     var pendingFile = null;
     var pendingObjectUrl = null;
+    var pendingMediaId = null;
+
+    function showPreviewSrc(src) {
+      if (!src) return;
+      img.setAttribute("src", src);
+      img.hidden = false;
+      if (placeholder) placeholder.hidden = true;
+    }
 
     function restore() {
       if (pendingObjectUrl) {
@@ -213,9 +260,18 @@
         pendingObjectUrl = null;
       }
       pendingFile = null;
+      pendingMediaId = null;
       img.setAttribute("src", originalSrc);
+      if (!originalSrc) {
+        img.hidden = true;
+        if (placeholder) placeholder.hidden = false;
+      } else {
+        img.hidden = false;
+        if (placeholder) placeholder.hidden = true;
+      }
       if (altInput) altInput.value = originalAlt;
       if (fileInput) fileInput.value = "";
+      if (libraryPanel) libraryPanel.hidden = true;
       if (progress) {
         progress.hidden = true;
         progress.value = 0;
@@ -226,6 +282,7 @@
       el.removeAttribute("data-website-editing");
       if (tools) tools.hidden = true;
       if (startBtn) startBtn.hidden = false;
+      if (libraryPanel) libraryPanel.hidden = true;
     }
 
     function enterEdit() {
@@ -254,10 +311,59 @@
           return;
         }
         pendingFile = file;
+        pendingMediaId = null;
         if (pendingObjectUrl) URL.revokeObjectURL(pendingObjectUrl);
         pendingObjectUrl = URL.createObjectURL(file);
-        img.setAttribute("src", pendingObjectUrl);
+        showPreviewSrc(pendingObjectUrl);
         setStatus(el, "Preview only — not public until you save to draft and publish", false);
+      });
+    }
+
+    if (libraryBtn && mediaUrl) {
+      libraryBtn.addEventListener("click", function () {
+        if (!libraryPanel) return;
+        libraryPanel.hidden = false;
+        libraryPanel.textContent = "Loading library…";
+        fetch(mediaUrl, {
+          credentials: "same-origin",
+          headers: { Accept: "application/json", "X-CSRF-Token": csrfToken },
+        })
+          .then(function (res) {
+            return res.json();
+          })
+          .then(function (out) {
+            libraryPanel.textContent = "";
+            var items = (out && out.media) || [];
+            if (!items.length) {
+              libraryPanel.textContent = "No images in the library yet.";
+              return;
+            }
+            items.forEach(function (item) {
+              var pick = document.createElement("button");
+              pick.type = "button";
+              pick.className = "gp-website-library__item";
+              pick.setAttribute("data-website-library-item", "1");
+              var thumb = document.createElement("img");
+              thumb.src = item.previewUrl || item.publicSrc || "";
+              thumb.alt = item.altText || item.title || "Library image";
+              pick.appendChild(thumb);
+              pick.addEventListener("click", function () {
+                pendingFile = null;
+                pendingMediaId = item.id || item.mediaId || "";
+                if (fileInput) fileInput.value = "";
+                showPreviewSrc(item.previewUrl || item.publicSrc || mediaItemUrl(pendingMediaId));
+                if (altInput && (item.altText || item.alt)) {
+                  altInput.value = item.altText || item.alt;
+                }
+                libraryPanel.hidden = true;
+                setStatus(el, "Library image selected — save to draft to keep it", false);
+              });
+              libraryPanel.appendChild(pick);
+            });
+          })
+          .catch(function () {
+            libraryPanel.textContent = "Could not load media library";
+          });
       });
     }
 
@@ -285,11 +391,13 @@
             alt: altText,
             mediaId: uploaded && uploaded.media && uploaded.media.id
               ? uploaded.media.id
-              : originalMediaId || null,
+              : pendingMediaId || originalMediaId || null,
             src:
               uploaded && uploaded.media && uploaded.media.id
                 ? mediaItemUrl(uploaded.media.id)
-                : safeDraftSrc(),
+                : pendingMediaId
+                  ? mediaItemUrl(pendingMediaId)
+                  : safeDraftSrc(),
           };
           return postJson(saveUrl, {
             contentKey: el.getAttribute("data-website-key"),
@@ -312,16 +420,23 @@
               originalMediaId = out.uploaded.media.id;
               el.setAttribute("data-website-media-id", originalMediaId);
               originalSrc = mediaItemUrl(originalMediaId);
-              img.setAttribute("src", originalSrc);
+              showPreviewSrc(originalSrc);
+            } else if (pendingMediaId) {
+              originalMediaId = pendingMediaId;
+              el.setAttribute("data-website-media-id", originalMediaId);
+              originalSrc = mediaItemUrl(originalMediaId);
+              showPreviewSrc(originalSrc);
             }
             originalAlt = altText;
             pendingFile = null;
+            pendingMediaId = null;
             if (pendingObjectUrl) {
               URL.revokeObjectURL(pendingObjectUrl);
               pendingObjectUrl = null;
             }
             exitEdit();
             setStatus(el, "Saved to draft", false);
+            markDraftSaved();
           } else {
             restore();
             setStatus(el, (out && (out.reason || out.code)) || "Could not save", true);

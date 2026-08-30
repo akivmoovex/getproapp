@@ -89,6 +89,8 @@ function safeAssignError(reason) {
       return "Expiry must be in the future.";
     case "duplicate":
       return "An identical active assignment already exists.";
+    case "last_hq_admin":
+      return "This role cannot be removed because the church must have at least one active Church HQ Administrator.";
     default:
       return "This assignment could not be completed.";
   }
@@ -185,8 +187,11 @@ function createHqStaffAccessRouter(deps) {
         q: req.query.q,
         branchId: req.query.branch,
         roleKey: req.query.role,
-        assignmentStatus: req.query.status,
+        userStatus: req.query.status,
+        assignmentStatus: req.query.assignment,
         sensitivity: req.query.sensitivity,
+        limit: req.query.limit,
+        offset: req.query.offset,
       });
       if (!listed.ok) {
         return sendControlled(
@@ -206,9 +211,19 @@ function createHqStaffAccessRouter(deps) {
       const html = renderV5Ejs(
         "hq/staff-access-list.ejs",
         await shellLocals(req, res, {
-          pageTitle: "Staff access",
+          pageTitle: "Users",
           activeNav: "staff-access",
+          loadUrpAssets: true,
           users: listed.users,
+          stats: listed.stats || {
+            totalUsers: listed.users.length,
+            churchAdmins: 0,
+            branchAdmins: 0,
+            pendingInvitations: 0,
+          },
+          total: listed.total || listed.users.length,
+          limit: listed.limit || 50,
+          offset: listed.offset || 0,
           branches: branches.ok ? branches.branches : [],
           roles: catalogue.ok ? catalogue.roles : [],
           filters: {
@@ -244,8 +259,9 @@ function createHqStaffAccessRouter(deps) {
       const html = renderV5Ejs(
         "hq/staff-access-invite.ejs",
         await shellLocals(req, res, {
-          pageTitle: "Add team member",
+          pageTitle: "Invite user",
           activeNav: "staff-access",
+          loadUrpAssets: true,
           placement,
           branches: branches.ok ? branches.branches : [],
           roles: catalogue.ok ? catalogue.roles : [],
@@ -317,6 +333,7 @@ function createHqStaffAccessRouter(deps) {
         await shellLocals(req, res, {
           pageTitle: "Team member added",
           activeNav: "staff-access",
+          loadUrpAssets: true,
           result: created,
         })
       );
@@ -396,12 +413,15 @@ function createHqStaffAccessRouter(deps) {
         await shellLocals(req, res, {
           pageTitle: detail.user.displayName,
           activeNav: "staff-access",
+          loadUrpAssets: true,
           detail,
           scopeOptions: scopeOptions.ok ? scopeOptions.options : {},
           scopeTypes: CHURCH_ASSIGNABLE_SCOPE_TYPES.slice(),
           assignableRoles: catalogue.ok ? catalogue.roles : [],
+          actorUserId: scope.actorUserId,
           notice: String(req.query.notice || ""),
           error: String(req.query.error || ""),
+          safety: String(req.query.safety || ""),
         })
       );
       return res.status(200).type("html").send(html);
@@ -489,11 +509,17 @@ function createHqStaffAccessRouter(deps) {
         actorChurchId: scope.churchId,
       });
       if (!result.ok) {
-        return redirectWith(
-          res,
-          `/hq/settings/staff-access/${userId}`,
-          "error",
-          safeAssignError(result.reason)
+        const safety =
+          result.reason === "last_hq_admin"
+            ? "&safety=last_hq_admin"
+            : result.reason === "self_elevation"
+              ? "&safety=self_demotion"
+              : "";
+        return res.redirect(
+          303,
+          `/hq/settings/staff-access/${userId}?error=${encodeURIComponent(
+            safeAssignError(result.reason)
+          )}${safety}`
         );
       }
       return redirectWith(res, `/hq/settings/staff-access/${userId}`, "notice", "Assignment revoked.");
@@ -525,8 +551,9 @@ function createHqStaffAccessRouter(deps) {
       const html = renderV5Ejs(
         "hq/staff-roles-catalogue.ejs",
         await shellLocals(req, res, {
-          pageTitle: "Role catalogue",
+          pageTitle: "Roles",
           activeNav: "staff-access",
+          loadUrpAssets: true,
           roles: catalogue.roles,
         })
       );
@@ -557,6 +584,7 @@ function createHqStaffAccessRouter(deps) {
         await shellLocals(req, res, {
           pageTitle: detail.role.displayName,
           activeNav: "staff-access",
+          loadUrpAssets: true,
           role: detail.role,
         })
       );
@@ -591,6 +619,7 @@ function createHqStaffAccessRouter(deps) {
         await shellLocals(req, res, {
           pageTitle: "Access audit",
           activeNav: "staff-access",
+          loadUrpAssets: true,
           events: audit.events,
         })
       );

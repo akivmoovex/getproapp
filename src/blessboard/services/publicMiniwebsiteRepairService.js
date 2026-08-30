@@ -3,8 +3,8 @@
 /**
  * Idempotent repair for approved churches missing a usable public miniwebsite
  * at /c/:organizationKey. Never mutates a valid organization_key (immutable).
- * Never overwrites existing page/section copy; only publishes drafts when the
- * site is not yet publicly live.
+ * Never overwrites existing page/section copy. Unpublished first-use sites
+ * stay unpublished; repair only republishes when the site was already live.
  */
 
 const {
@@ -121,7 +121,6 @@ async function inspectPublicationGaps(client, churchId) {
   const settings = await settingsRepo.findChurchSettings(client, churchId);
   const websiteStatus = settings ? String(settings.websiteStatus || "draft") : null;
   if (!settings) gaps.push("church_settings");
-  else if (websiteStatus !== "published") gaps.push("website_status_not_published");
 
   for (const pageKey of PUBLIC_PAGE_KEYS) {
     const page = await client.query(
@@ -131,7 +130,7 @@ async function inspectPublicationGaps(client, churchId) {
       [churchId, pageKey]
     );
     if (!page.rows[0]) gaps.push(`page_missing:${pageKey}`);
-    else if (String(page.rows[0].status) !== "published") {
+    else if (websiteStatus === "published" && String(page.rows[0].status) !== "published") {
       gaps.push(`page_unpublished:${pageKey}`);
     }
   }
@@ -139,12 +138,9 @@ async function inspectPublicationGaps(client, churchId) {
   return {
     websiteStatus: websiteStatus || "missing",
     gaps,
-    needsPublish: gaps.some(
-      (g) =>
-        g === "website_status_not_published" ||
-        g.startsWith("page_unpublished:") ||
-        g.startsWith("page_missing:")
-    ),
+    needsPublish:
+      websiteStatus === "published" &&
+      gaps.some((g) => g.startsWith("page_missing:") || g.startsWith("page_unpublished:")),
   };
 }
 
@@ -352,6 +348,7 @@ async function repairPublicMiniwebsite(db, input) {
         actorUserId: (input && input.actorUserId) || null,
         env: (input && input.env) || process.env,
         source: "public_miniwebsite_repair",
+        publish: pubBefore.websiteStatus === "published",
       });
 
       if (!published.ok) {

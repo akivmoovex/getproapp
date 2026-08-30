@@ -22,6 +22,7 @@ const {
 const {
   publishChurchWebsite,
   unpublishChurchWebsite,
+  acknowledgeWebsitePreview,
 } = require("../src/blessboard/services/churchWebsitePublishService");
 const { SNAPSHOT_KEY } = require("../src/platform/website-engine/productSchemaRegistry");
 const contentService = require("../src/platform/website/contentService");
@@ -105,6 +106,8 @@ describe("v7 BlessBoard shared website engine", () => {
     });
     assert.ok(instance, "website instance missing");
     assert.equal(instance.adapterMode, ADAPTER_MODE.SHARED_ENGINE);
+    assert.equal(instance.status, "coming_soon");
+    assert.equal(instance.publishPolicy, "TENANT_PUBLISH");
     const row = await contentService.getWebsiteContentRow(
       pool,
       instance.id,
@@ -112,12 +115,28 @@ describe("v7 BlessBoard shared website engine", () => {
       SNAPSHOT_KEY
     );
     assert.ok(row, "cms.snapshot missing");
-    assert.ok(row.publishedValue || row.draftValue);
+    assert.ok(row.draftValue, "draft snapshot missing");
+    const fields = await pool.query(
+      `SELECT count(*)::int AS n
+         FROM platform.website_content
+        WHERE instance_id = $1 AND content_key <> $2`,
+      [instance.id, SNAPSHOT_KEY]
+    );
+    assert.ok(fields.rows[0].n > 0, "engine field keys missing");
+    const settings = await pool.query(
+      `SELECT website_status FROM blessboard.church_settings WHERE church_id = $1`,
+      [rec.churchId]
+    );
+    assert.equal(settings.rows[0].website_status, "draft");
   });
 
   it("HQ publish writes an engine version and unpublish preserves snapshot", async () => {
     if (!requireDb()) return;
     const rec = await provisionChurch();
+    await acknowledgeWebsitePreview(pool, {
+      organizationId: rec.organizationId,
+      actorUserId: rec.administratorUserId,
+    });
     const pagesBefore = await pool.query(
       `SELECT count(*)::int AS n FROM blessboard.public_pages WHERE church_id = $1`,
       [rec.churchId]

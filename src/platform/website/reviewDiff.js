@@ -71,6 +71,45 @@ function splitKey(contentKey) {
   };
 }
 
+const DIFF_CATEGORIES = Object.freeze(["text", "image", "section", "navigation", "seo"]);
+
+function categorizeDiffItem(item) {
+  const key = String((item && item.contentKey) || "").toLowerCase();
+  const section = String((item && item.sectionKey) || "").toLowerCase();
+  const page = String((item && item.pageKey) || "").toLowerCase();
+  const type = String((item && item.contentType) || "");
+  if (/seo|meta_title|meta_description|og_|canonical/.test(key) || page === "seo" || section === "seo") {
+    return "seo";
+  }
+  if (/nav|menu|navigation/.test(key) || section === "nav" || page === "nav") {
+    return "navigation";
+  }
+  if (type === CONTENT_TYPES.IMAGE) return "image";
+  if (
+    type === CONTENT_TYPES.STRUCTURED ||
+    (item && (item.changeType === "reorder" || item.changeType === "visibility"))
+  ) {
+    return "section";
+  }
+  return "text";
+}
+
+function groupDiffItems(items) {
+  const groups = {
+    text: [],
+    image: [],
+    section: [],
+    navigation: [],
+    seo: [],
+  };
+  for (const item of items || []) {
+    const category = item.diffCategory || categorizeDiffItem(item);
+    if (!groups[category]) groups.text.push(item);
+    else groups[category].push(item);
+  }
+  return groups;
+}
+
 function safeMediaPreviewPath(mediaId) {
   const id = String(mediaId || "").trim();
   if (!UUID_RE.test(id)) return null;
@@ -214,6 +253,13 @@ function buildWebsiteReviewDiff(input) {
       oldVisibility: raw.oldVisibility || null,
       old: oldPresented,
       proposed: newPresented,
+      diffCategory: categorizeDiffItem({
+        contentKey,
+        pageKey,
+        sectionKey: parts.sectionKey,
+        contentType,
+        changeType,
+      }),
     });
   }
   items.sort((a, b) => {
@@ -221,8 +267,10 @@ function buildWebsiteReviewDiff(input) {
     if (page) return page;
     return String(a.contentKey).localeCompare(String(b.contentKey));
   });
+  const groups = groupDiffItems(items);
   return {
     items,
+    groups,
     count: items.length,
     source: "submission_snapshot",
   };
@@ -257,7 +305,10 @@ function buildVersionDiff(input) {
 
 module.exports = {
   CHANGE_TYPES,
+  DIFF_CATEGORIES,
   classifyChange,
+  categorizeDiffItem,
+  groupDiffItems,
   buildWebsiteReviewDiff,
   buildVersionDiff,
   presentValue,

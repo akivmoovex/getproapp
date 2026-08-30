@@ -165,15 +165,18 @@ function registerActiveClinicAccessRoutes(app, deps) {
           query: req.query || {},
         });
         if (!loaded.ok) {
-          return denyPage(res, 403, "Access restricted", "You do not have permission to manage roles and access.");
+          return denyPage(res, 403, "Access Denied", "You do not have the required permissions to perform this action or access this clinical record.");
         }
+        const catalogueTab =
+          String((req.query && req.query.tab) || "").trim() === "catalogue";
         return await renderShell(req, res, {
           activeNav: "access",
           content: "app/access-content.ejs",
           pageHeader: {
-            title: "Roles & access",
-            description:
-              "Manage staff access, facility scope, and ActiveClinic role catalogue assignments.",
+            title: catalogueTab ? "Roles Overview" : "Staff Users",
+            description: catalogueTab
+              ? "Standardized access levels and permission groupings for all staff members across the facility."
+              : "Manage access and roles for all clinical facility staff.",
             actions: [
               {
                 label: "Staff directory",
@@ -212,7 +215,7 @@ function registerActiveClinicAccessRoutes(app, deps) {
           return denyPage(
             res,
             notFound ? 404 : 403,
-            notFound ? "Role not found" : "Access restricted",
+            notFound ? "Role not found" : "Access Denied",
             notFound
               ? "That role is not in the ActiveClinic catalogue."
               : "You do not have permission to view role details."
@@ -262,7 +265,7 @@ function registerActiveClinicAccessRoutes(app, deps) {
           return denyPage(
             res,
             status,
-            status === 404 ? "Staff not found" : "Access restricted",
+            status === 404 ? "Staff not found" : "Access Denied",
             status === 404
               ? "That staff profile was not found in this organization."
               : "You do not have permission to view this access record."
@@ -280,7 +283,7 @@ function registerActiveClinicAccessRoutes(app, deps) {
           content: "app/access-staff-content.ejs",
           pageHeader: {
             title: loaded.detail.staff.displayName,
-            description: "Role assignments and effective access for this staff member.",
+            description: "Assigned roles, facility membership, and effective permissions.",
             actions,
           },
           breadcrumbs: [
@@ -316,8 +319,8 @@ function registerActiveClinicAccessRoutes(app, deps) {
           activeNav: "access",
           content: "app/access-role-form-content.ejs",
           pageHeader: {
-            title: "Assign role",
-            description: `Grant one or more ActiveClinic roles to ${loaded.form.staff.displayName}.`,
+            title: "Assign Staff Role",
+            description: `Grant an ActiveClinic role to ${loaded.form.staff.displayName}.`,
             actions: [],
           },
           breadcrumbs: [

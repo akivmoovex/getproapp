@@ -164,6 +164,24 @@ async function saveInlineFieldDraft(db, input) {
     const baselinePrevious =
       existing && existing.previousValue != null ? existing.previousValue : previousValue;
 
+    const {
+      saveFieldDraft,
+    } = require("../website/blessboardEngineContentService");
+    const engineSaved = await saveFieldDraft(db, {
+      organizationId: input.organizationId,
+      churchId: input.churchId,
+      branchId: input.branchId || null,
+      pageKey,
+      sectionKey,
+      fieldKey,
+      value: validated.value,
+      actorIdentityId: input.editorUserId || null,
+      grantedPermissions: input.grantedPermissions,
+    });
+    if (!engineSaved.ok && engineSaved.code !== "website_instance_not_found") {
+      throw mapError("SAVE_FAILED", "Could not save this change. Please try again.", 500);
+    }
+
     if (String(validated.value) === String(baselinePrevious || "")) {
       if (existing) {
         await draftRepo.discardDraft(db, { id: existing.id, churchId: input.churchId });
@@ -174,6 +192,7 @@ async function saveInlineFieldDraft(db, input) {
         draftCleared: Boolean(existing),
         value: validated.value,
         previousValue: baselinePrevious,
+        engineStored: Boolean(engineSaved && engineSaved.ok),
       };
     }
 
@@ -258,15 +277,33 @@ async function saveInlineFieldDraft(db, input) {
  * @returns {Promise<Map<string, string>>}
  */
 async function loadDraftOverlayMap(db, opts) {
+  const {
+    loadFieldOverlayMap,
+  } = require("../website/blessboardEngineContentService");
+  const map = new Map();
+  try {
+    const engineMap = await loadFieldOverlayMap(db, {
+      organizationId: opts.organizationId || null,
+      churchId: opts.churchId,
+      branchId: opts.branchId === undefined ? null : opts.branchId,
+      pageKey: opts.pageKey || null,
+      mode: "draft",
+    });
+    for (const [key, value] of engineMap.entries()) {
+      map.set(key, value);
+    }
+  } catch {
+    // Compatibility overlay table still applies below.
+  }
   const drafts = await draftRepo.listDrafts(db, {
     churchId: opts.churchId,
     branchId: opts.branchId === undefined ? null : opts.branchId,
     pageKey: opts.pageKey || null,
     status: "draft",
   });
-  const map = new Map();
   for (const d of drafts) {
-    map.set(`${d.sectionKey}::${d.fieldKey}`, d.newValue);
+    const key = `${d.sectionKey}::${d.fieldKey}`;
+    if (!map.has(key)) map.set(key, d.newValue);
   }
   return map;
 }
@@ -288,6 +325,8 @@ function applyDraftsToSections(sections, overlayMap) {
     const eyebrow = overlayMap.get(`${key}::eyebrow`);
     const secondaryButtonText = overlayMap.get(`${key}::secondaryButtonText`);
     const secondaryButtonUrl = overlayMap.get(`${key}::secondaryButtonUrl`);
+    const image = overlayMap.get(`${key}::image`) || overlayMap.get(`${key}::mediaUrl`);
+    const imageAlt = overlayMap.get(`${key}::imageAlt`);
     if (
       heading === undefined &&
       bodyText === undefined &&
@@ -296,7 +335,9 @@ function applyDraftsToSections(sections, overlayMap) {
       tagline === undefined &&
       eyebrow === undefined &&
       secondaryButtonText === undefined &&
-      secondaryButtonUrl === undefined
+      secondaryButtonUrl === undefined &&
+      image === undefined &&
+      imageAlt === undefined
     ) {
       return s;
     }
@@ -309,6 +350,7 @@ function applyDraftsToSections(sections, overlayMap) {
     if (eyebrow !== undefined) layoutMetadata.eyebrow = eyebrow;
     if (secondaryButtonText !== undefined) layoutMetadata.secondaryButtonText = secondaryButtonText;
     if (secondaryButtonUrl !== undefined) layoutMetadata.secondaryButtonUrl = secondaryButtonUrl;
+    if (imageAlt !== undefined) layoutMetadata.altText = imageAlt;
     return {
       ...s,
       heading: heading !== undefined ? heading : s.heading,
@@ -318,6 +360,7 @@ function applyDraftsToSections(sections, overlayMap) {
           : tagline !== undefined && key === "footer"
             ? tagline
             : s.bodyText,
+      mediaUrl: image !== undefined ? image : s.mediaUrl,
       layoutMetadata,
     };
   });

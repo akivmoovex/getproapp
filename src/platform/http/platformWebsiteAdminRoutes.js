@@ -7,12 +7,25 @@ const versionService = require("../website/versionService");
 const mediaService = require("../website/mediaService");
 const checklistService = require("../website/checklistService");
 const auditService = require("../website/auditService");
-const { buildWebsiteReviewDiff, buildVersionDiff } = require("../website/reviewDiff");
+const { buildWebsiteReviewDiff } = require("../website/reviewDiff");
 const { PERMISSIONS, hasWebsitePermission, PLATFORM_ADMIN_PERMISSIONS } = require("../website/permissions");
 const { ALLOWED_IMAGE_MIME } = require("../website/mediaService");
 const { CSRF_FIELD, validateCsrf } = require("./v5Csrf");
 const { listRecentWebsiteChanges } = require("../website/recentChangesService");
 const { listModerationEvents } = require("../website/moderationEventService");
+const {
+  listRecentWebsitePublications,
+  resolveApprovedVersions,
+  approveWebsiteVersion,
+  hideWebsite,
+  unhideWebsite,
+  blockWebsite,
+  unblockWebsite,
+  revertToApprovedVersion,
+  buildGovernanceReview,
+  REVIEW_STATUS,
+  WEBSITE_STATUS,
+} = require("../website/websiteGovernanceService");
 const {
   takeWebsiteOffline,
   suspendWebsite,
@@ -91,6 +104,7 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
     env,
     requireApex,
     requirePlatformAdmin,
+    requireWebsiteGovernance,
     renderPlatformAdminView,
     buildPlatformAdminShellLocals,
     setAdminNoStore,
@@ -98,6 +112,21 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
 
   require("../../activeclinic/website/activeClinicWebsiteTemplate").registerActiveClinicWebsiteTemplate();
   require("../../blessboard/website/blessboardChurchTemplate").registerBlessBoardWebsiteTemplate();
+  const requireGovernance = requireWebsiteGovernance || requirePlatformAdmin;
+
+  function actorRole(req) {
+    const ctx = req.platformAdminContext || {};
+    return ctx.actorRole || (ctx.websiteGovernanceOnly ? "csr" : "platform_admin");
+  }
+
+  function actorDisplayName(req) {
+    const ctx = req.platformAdminContext || {};
+    return ctx.displayName || "";
+  }
+
+  function canApprove(req) {
+    return hasWebsitePermission(granted(req), PERMISSIONS.APPROVE);
+  }
 
   function canReview(req) {
     return (
@@ -254,7 +283,7 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
     }
   });
 
-  router.get("/admin/website-media/:mediaId", requireApex, requirePlatformAdmin, async (req, res, next) => {
+  router.get("/admin/website-media/:mediaId", requireApex, requireGovernance, async (req, res, next) => {
     try {
       setAdminNoStore(res);
       const loaded = await mediaService.getWebsiteMediaById(getPool(), req.params.mediaId);
@@ -415,6 +444,7 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         canSuspend: canSuspend(req),
         canRestore: canRestore(req),
         canManagePolicy: canManagePolicy(req),
+        canApprove: canApprove(req),
         notice: String(req.query.notice || ""),
         error: String(req.query.error || ""),
       });
@@ -507,25 +537,66 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
     }
   });
 
-  router.get("/admin/recent-website-changes", requireApex, requirePlatformAdmin, async (req, res, next) => {
+  function safeReturnTo(raw, fallback) {
+    const value = String(raw || "").trim();
+    if (!value.startsWith("/admin/")) return fallback;
+    if (value.includes("://") || value.includes("//")) return fallback;
+    if (value.startsWith("/admin/recent-website-changes") || value.startsWith("/admin/organizations/")) {
+      return value.slice(0, 240);
+    }
+    return fallback;
+  }
+
+  function governanceRedirect(req, organizationKey, query) {
+    const fallback = websiteManagePath(organizationKey, query);
+    const requested = String((req.body && req.body.return_to) || "").trim();
+    const base = safeReturnTo(requested, "");
+    if (!base) return fallback;
+    if (!query) return base;
+    return base.includes("?") ? `${base}&${query}` : `${base}?${query}`;
+  }
+
+  router.get("/admin/recent-website-changes", requireApex, requireGovernance, async (req, res, next) => {
     try {
       setAdminNoStore(res);
-      const listed = await listRecentWebsiteChanges(getPool(), {
-        productCode: String(req.query.product || "").trim() || null,
-        lifecycleStatus: String(req.query.lifecycle || "").trim() || null,
-        tenant: String(req.query.tenant || "").trim() || null,
-        flagged: String(req.query.flagged || "") === "1",
-        limit: 80,
-      });
-      let rows = listed.changes || [];
+      const view = String(req.query.view || "publications").trim();
       const filter = String(req.query.filter || "").trim();
-      if (filter === "provisional") rows = rows.filter((r) => r.lifecycleStatus === "provisional");
-      if (filter === "public") rows = rows.filter((r) => r.lifecycleStatus === "public");
-      if (filter === "suspended") rows = rows.filter((r) => r.lifecycleStatus === "suspended");
-      if (filter === "under_review") {
-        rows = rows.filter(
-          (r) => r.lifecycleStatus === "under_review" || r.moderationState === "submitted"
+      let rows = [];
+      if (view === "activity") {
+        const listed = await listRecentWebsiteChanges(getPool(), {
+          productCode: String(req.query.product || "").trim() || null,
+          lifecycleStatus: String(req.query.lifecycle || "").trim() || null,
+          tenant: String(req.query.tenant || "").trim() || null,
+          flagged: String(req.query.flagged || "") === "1",
+          limit: 80,
+        });
+        rows = listed.changes || [];
+        if (filter === "provisional") rows = rows.filter((r) => r.lifecycleStatus === "provisional");
+        if (filter === "public") rows = rows.filter((r) => r.lifecycleStatus === "public");
+        if (filter === "suspended") rows = rows.filter((r) => r.lifecycleStatus === "suspended");
+        if (filter === "under_review") {
+          rows = rows.filter(
+            (r) => r.lifecycleStatus === "under_review" || r.moderationState === "submitted"
+          );
+        }
+      } else {
+        const listed = await listRecentWebsitePublications(getPool(), {
+          productCode: String(req.query.product || "").trim() || null,
+          tenant: String(req.query.tenant || "").trim() || null,
+          reviewStatus: filter === "unreviewed" || filter === "approved" ? filter : null,
+          websiteStatus:
+            filter === "hidden" || filter === "blocked" || filter === "live" ? filter : null,
+          limit: 80,
+        });
+        rows = listed.publications || [];
+        const labels = await loadEditorLabels(
+          getPool(),
+          rows.map((row) => row.publishedByIdentityId)
         );
+        rows = rows.map((row) => ({
+          ...row,
+          publishedByLabel: labels.get(String(row.publishedByIdentityId || "")) || row.publishedByIdentityId || "—",
+        }));
       }
       const html = renderPlatformAdminView("platform-admin/recent-website-changes.ejs", {
         ...buildPlatformAdminShellLocals(req, res, {
@@ -535,6 +606,7 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           pageTitle: "Recent Website Changes",
         }),
         changes: rows,
+        view,
         filters: {
           product: String(req.query.product || ""),
           tenant: String(req.query.tenant || ""),
@@ -546,6 +618,7 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         canTakeOffline: canTakeOffline(req),
         canSuspend: canSuspend(req),
         canRestore: canRestore(req),
+        canApprove: canApprove(req),
       });
       return res.status(200).type("html").send(html);
     } catch (err) {
@@ -553,7 +626,7 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
     }
   });
 
-  router.get("/admin/recent-website-changes/:kind/:changeId", requireApex, requirePlatformAdmin, async (req, res, next) => {
+  router.get("/admin/recent-website-changes/:kind/:changeId", requireApex, requireGovernance, async (req, res, next) => {
     try {
       setAdminNoStore(res);
       const kind = String(req.params.kind || "").trim();
@@ -574,6 +647,8 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
       let editorLabel = "Editor";
       let timestamp = "";
       let actionKey = "";
+      let approved = { currentPublished: null, lastApproved: null, previousApproved: null };
+      let publicPath = "";
 
       if (kind === "version") {
         const row = await pool.query(
@@ -600,18 +675,6 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           });
           previous = prev.ok ? prev.version : null;
         }
-        const template = instance
-          ? require("../website/templateRegistry").getWebsiteTemplate(
-              instance.templateId,
-              instance.templateVersion
-            )
-          : null;
-        reviewDiff = buildVersionDiff({
-          snapshot: version.snapshot || {},
-          previousSnapshot: previous && previous.snapshot ? previous.snapshot : {},
-          changedKeys: version.changedKeys,
-          template,
-        });
         timestamp = version.publishedLabel;
         editorLabel = await loadEditorLabel(pool, version.editorIdentityId);
       } else if (kind === "submission") {
@@ -696,6 +759,24 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           limit: 40,
         });
         events = listedEvents.events || [];
+        approved = await resolveApprovedVersions(pool, {
+          organizationId: instance.organizationId,
+          instanceId: instance.id,
+        });
+        publicPath = require("../website/publicWebsiteUrl").buildPublicOrganizationWebsitePath({
+          product: productCode,
+          organizationKey,
+        });
+        if (kind === "version") {
+          reviewDiff = buildGovernanceReview({
+            instance,
+            organizationKey,
+            currentPublished: approved.currentPublished || version,
+            lastApproved: approved.lastApproved,
+            previousSnapshot: previous && previous.snapshot ? previous.snapshot : {},
+            changedKeys: version && version.changedKeys,
+          });
+        }
       }
 
       const html = renderPlatformAdminView("platform-admin/recent-website-change-detail.ejs", {
@@ -703,7 +784,7 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
           env,
           isProduction: String(env.NODE_ENV || "") === "production",
           activeNav: "recent-website-changes",
-          pageTitle: "Website change details",
+          pageTitle: "Review website changes",
         }),
         kind,
         changeId,
@@ -711,6 +792,7 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         organizationName,
         productCode,
         slug,
+        publicPath,
         instance,
         version,
         reviewDiff,
@@ -718,14 +800,27 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         editorLabel,
         timestamp,
         actionKey,
+        currentPublished: approved.currentPublished,
+        lastApproved: approved.lastApproved,
+        previousApproved: approved.previousApproved,
+        websiteStatus: instance
+          ? require("../website/websiteGovernanceService").websiteStatusFromLifecycle(
+              instance.lifecycleStatus
+            )
+          : null,
         canModerate: canModerate(req),
         canTakeOffline: canTakeOffline(req),
         canSuspend: canSuspend(req),
-        canRestoreVersion: canRestore(req) && kind === "version",
+        canApprove: canApprove(req) && kind === "version" && version,
+        canRestoreVersion: canRestore(req) && Boolean(approved.lastApproved),
         canRestoreSite:
           canRestore(req) &&
           instance &&
           (instance.lifecycleStatus === "offline" || instance.lifecycleStatus === "suspended"),
+        canUnhide: canRestore(req) && instance && instance.lifecycleStatus === "offline",
+        canUnblock: canRestore(req) && instance && instance.lifecycleStatus === "suspended",
+        notice: String(req.query.notice || ""),
+        error: String(req.query.error || ""),
       });
       return res.status(200).type("html").send(html);
     } catch (err) {
@@ -747,6 +842,69 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
     return { org: org.rows[0], instance: instances[0] || null };
   }
 
+  async function handleGovernanceAction(req, res, next, action) {
+    try {
+      const organizationKey = String(req.params.organizationKey || "").toLowerCase();
+      const fallback = `/admin/recent-website-changes`;
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return res.redirect(303, governanceRedirect(req, organizationKey, "error=csrf"));
+      }
+      const loaded = await loadOrgInstance(organizationKey);
+      if (!loaded.org || !loaded.instance) {
+        return res.redirect(303, fallback + "?error=not_found");
+      }
+      const actor = {
+        organizationId: loaded.org.id,
+        instanceId: loaded.instance.id,
+        actorIdentityId: actorId(req),
+        actorRole: actorRole(req),
+        actorDisplayName: actorDisplayName(req),
+        reason: req.body && req.body.reason,
+        notes: req.body && (req.body.notes || req.body.note),
+        note: req.body && (req.body.note || req.body.notes),
+        versionId: (req.body && req.body.version_id) || req.params.versionId,
+      };
+      let result;
+      if (action === "approve") {
+        if (!canApprove(req)) {
+          return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
+        }
+        result = await approveWebsiteVersion(getPool(), actor);
+      } else if (action === "hide") {
+        if (!canTakeOffline(req)) {
+          return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
+        }
+        result = await hideWebsite(getPool(), actor);
+      } else if (action === "unhide") {
+        if (!canRestore(req)) {
+          return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
+        }
+        result = await unhideWebsite(getPool(), actor);
+      } else if (action === "block") {
+        if (!canSuspend(req)) {
+          return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
+        }
+        result = await blockWebsite(getPool(), actor);
+      } else if (action === "unblock") {
+        if (!canRestore(req)) {
+          return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
+        }
+        result = await unblockWebsite(getPool(), actor);
+      } else if (action === "revert") {
+        if (!canRestore(req)) {
+          return res.redirect(303, governanceRedirect(req, organizationKey, "error=forbidden"));
+        }
+        result = await revertToApprovedVersion(getPool(), actor);
+      } else {
+        result = { ok: false, code: "invalid_input" };
+      }
+      const dest = governanceRedirect(req, organizationKey, result.ok ? `notice=${action}` : `error=${encodeURIComponent(result.code)}`);
+      return res.redirect(303, dest);
+    } catch (err) {
+      return next(err);
+    }
+  }
+
   async function handleModerationAction(req, res, next, action) {
     try {
       const organizationKey = String(req.params.organizationKey || "").toLowerCase();
@@ -761,6 +919,7 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
         organizationId: loaded.org.id,
         instanceId: loaded.instance.id,
         actorIdentityId: actorId(req),
+        actorRole: actorRole(req),
         reason: req.body && req.body.reason,
         notes: req.body && req.body.notes,
         notePublic: req.body && req.body.note_public,
@@ -808,6 +967,82 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
     }
   }
 
+  router.get(
+    "/admin/organizations/:organizationKey/website/versions/:versionId/preview",
+    requireApex,
+    requireGovernance,
+    async (req, res, next) => {
+      try {
+        setAdminNoStore(res);
+        const organizationKey = String(req.params.organizationKey || "").toLowerCase();
+        const loaded = await loadOrgInstance(organizationKey);
+        if (!loaded.org || !loaded.instance) {
+          return res.status(404).type("html").send("Website not found.");
+        }
+        const version = await versionService.getWebsiteVersion(getPool(), {
+          versionId: req.params.versionId,
+          organizationId: loaded.org.id,
+          instanceId: loaded.instance.id,
+        });
+        if (!version.ok) return res.status(404).type("html").send("Version not found.");
+        const html = renderPlatformAdminView("platform-admin/website-version-preview.ejs", {
+          ...buildPlatformAdminShellLocals(req, res, {
+            env,
+            isProduction: String(env.NODE_ENV || "") === "production",
+            activeNav: "recent-website-changes",
+            pageTitle: `Website version v${version.version.versionNumber}`,
+          }),
+          organizationKey,
+          organizationName: loaded.org.display_name,
+          productCode: loaded.instance.productCode,
+          version: decorateVersion(version.version),
+          snapshot: version.version.snapshot || {},
+        });
+        res.setHeader("X-Robots-Tag", "noindex, nofollow");
+        return res.status(200).type("html").send(html);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    "/admin/organizations/:organizationKey/website/approve",
+    requireApex,
+    requireGovernance,
+    (req, res, next) => handleGovernanceAction(req, res, next, "approve")
+  );
+  router.post(
+    "/admin/organizations/:organizationKey/website/hide",
+    requireApex,
+    requireGovernance,
+    (req, res, next) => handleGovernanceAction(req, res, next, "hide")
+  );
+  router.post(
+    "/admin/organizations/:organizationKey/website/unhide",
+    requireApex,
+    requireGovernance,
+    (req, res, next) => handleGovernanceAction(req, res, next, "unhide")
+  );
+  router.post(
+    "/admin/organizations/:organizationKey/website/block",
+    requireApex,
+    requireGovernance,
+    (req, res, next) => handleGovernanceAction(req, res, next, "block")
+  );
+  router.post(
+    "/admin/organizations/:organizationKey/website/unblock",
+    requireApex,
+    requireGovernance,
+    (req, res, next) => handleGovernanceAction(req, res, next, "unblock")
+  );
+  router.post(
+    "/admin/organizations/:organizationKey/website/revert",
+    requireApex,
+    requireGovernance,
+    (req, res, next) => handleGovernanceAction(req, res, next, "revert")
+  );
+
   router.post(
     "/admin/organizations/:organizationKey/website/offline",
     requireApex,
@@ -841,6 +1076,8 @@ function registerPlatformWebsiteAdminRoutes(router, deps) {
 
   void resolver;
   void LIFECYCLE_STATUS;
+  void REVIEW_STATUS;
+  void WEBSITE_STATUS;
 }
 
 module.exports = {

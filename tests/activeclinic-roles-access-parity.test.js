@@ -257,7 +257,7 @@ describe("ActiveClinic roles and access parity (AC-V6-S06)", () => {
     const overview = await request(app).get("/app/access").set("Cookie", adminCookie);
     assert.equal(overview.status, 200);
     assert.match(overview.text, /data-ac-page-section="access-overview"/);
-    assert.match(overview.text, /data-ac-visual="stitch-gap"/);
+    assert.match(overview.text, /data-ac-visual="stitch-urp"/);
     assert.match(overview.text, /Staff access|Role catalogue/);
     assert.match(overview.text, /Net Admin|Network administrator|Organization administrator/);
     assert.doesNotMatch(overview.text, /BlessBoard/i);
@@ -294,6 +294,8 @@ describe("ActiveClinic roles and access parity (AC-V6-S06)", () => {
     assert.equal(assignPage.status, 200);
     assert.match(assignPage.text, /data-ac-page-section="access-assign"/);
     assert.match(assignPage.text, /name="role_keys"|name="role_key"/);
+    assert.doesNotMatch(assignPage.text, /value="activeclinic_website_editor"/);
+    assert.doesNotMatch(assignPage.text, /name="permissions"|type="checkbox"[^>]*permission/);
 
     const noCsrf = await request(app)
       .post(`/app/access/staff/${target.staff.id}/roles`)
@@ -326,6 +328,8 @@ describe("ActiveClinic roles and access parity (AC-V6-S06)", () => {
     assert.match(detail.text, /data-ac-page-section="access-staff"/);
     assert.match(detail.text, /Currently effective/);
     assert.match(detail.text, /Staff/);
+    assert.match(detail.text, /data-ac-readonly-permissions="1"/);
+    assert.match(detail.text, /Permissions are automatically determined by assigned roles/);
 
     const assignmentMatch = detail.text.match(/data-ac-assignment="([^"]+)"/);
     assert.ok(assignmentMatch, "assignment id marker missing");

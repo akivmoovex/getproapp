@@ -112,29 +112,17 @@
 <div class="bb-tp-home" data-bb-home="1" data-bb-stitch-home="phase7-v1">
   <section class="bb-tp-hero bb-tp-hero--phase7" aria-label="Welcome" data-bb-home-hero="1">
     <div class="bb-tp-hero__media-plane<%= heroMedia ? ' has-media' : '' %>" aria-hidden="<%= heroMedia ? 'false' : 'true' %>">
-      <% if (heroMedia) { %>
-      <img
-        class="bb-tp-hero__img"
-        src="<%= heroMedia %>"
-        alt="<%= (hero && hero.layoutMetadata && hero.layoutMetadata.templateExample) || (typeof usedPublicDemoFill !== 'undefined' && usedPublicDemoFill) ? 'Template photo, not a photo of this congregation' : (publicName + ' gathering') %>"
-        width="1600"
-        height="900"
-        loading="eager"
-        decoding="async"
-      />
-      <% } else { %>
-      <div class="bb-tp-hero__fallback"></div>
-      <% } %>
+      <%- include('../partials/editable-image', {
+        editPageKey: 'home',
+        editSectionKey: 'hero',
+        editFieldKey: 'image',
+        imageSrc: heroMedia,
+        imageAlt: (hero && hero.layoutMetadata && hero.layoutMetadata.altText) || (publicName + ' gathering'),
+        imageClass: 'bb-tp-hero__img'
+      }) %>
       <div class="bb-tp-hero__scrim"></div>
       <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
       <div class="bb-tp-edit-media-wrap bb-tp-edit-media-wrap--hero">
-        <%- include('../partials/structured-edit-trigger', {
-          editKind: 'image',
-          editEntityKey: 'home-hero',
-          editSectionKey: 'hero',
-          editLabel: 'Edit hero image',
-          editPayload: { imageUrl: heroMedia || '', altText: publicName + ' gathering', focal: 'center' }
-        }) %>
         <%- include('../partials/structured-edit-trigger', {
           editKind: 'video',
           editEntityKey: 'home-hero-video',

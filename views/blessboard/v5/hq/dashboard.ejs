@@ -18,7 +18,7 @@
     { key: 'branches', label: 'Branch registry', href: '/hq/branches', icon: 'apartment' },
     { key: 'members', label: 'Members', href: '/hq/members', icon: 'badge' },
     { key: 'registrations', label: 'Registrations', href: '/hq/registrations', icon: 'how_to_reg' },
-    { key: 'staff-access', label: 'Staff access', href: '/hq/settings/staff-access', icon: 'admin_panel_settings' },
+    { key: 'staff-access', label: 'Users', href: '/hq/settings/staff-access', icon: 'group' },
     { key: 'website', label: 'Website', href: '/hq/website', icon: 'language' },
     { key: 'settings', label: 'Settings', href: '/hq/settings', icon: 'settings' },
     { key: 'reports', label: 'Reports', href: '/hq/reports', icon: 'analytics' }
@@ -157,7 +157,7 @@
       <li><a href="<%= consoleLinks.organizationHref %>" data-bb-console-link="organization">Organization profile</a></li>
       <% } %>
       <% if (allowFlag('canViewStaffAccess') && consoleLinks.staffHref) { %>
-      <li><a href="<%= consoleLinks.staffHref %>" data-bb-console-link="staff-access">Staff access</a></li>
+      <li><a href="<%= consoleLinks.staffHref %>" data-bb-console-link="staff-access">Users</a></li>
       <% } %>
       <% if (consoleLinks.branchesHref) { %>
       <li><a href="<%= consoleLinks.branchesHref %>" data-bb-console-link="branches">Branches</a></li>

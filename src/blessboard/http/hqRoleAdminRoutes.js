@@ -382,6 +382,7 @@ function createHqRoleAdminRouter(deps) {
       let error = "invalid";
       if (result.status === STATUS.CONFIRMATION_REQUIRED) error = "confirm";
       else if (result.reason === "self_escalation") error = "self";
+      else if (result.reason === "last_hq_admin") error = "last_hq_admin";
       else if (result.reason === "cross_church") error = "forbidden";
       else if (result.status === STATUS.NOT_FOUND) error = "not_found";
       else if (result.status === STATUS.FORBIDDEN) error = "forbidden";

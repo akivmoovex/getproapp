@@ -133,6 +133,9 @@ async function applyLifecycle(db, input) {
       to_status: nextStatus,
       policy: nextPolicy,
       reason_code: input.reason ? String(input.reason).slice(0, 120) : null,
+      actor_role: input.actorRole ? String(input.actorRole).slice(0, 120) : null,
+      previous: instance.lifecycleStatus,
+      next: nextStatus,
     },
   });
   await recordModerationEvent(db, {
@@ -147,7 +150,12 @@ async function applyLifecycle(db, input) {
     previousState: input.previousStateOverride || instance.lifecycleStatus,
     newState: input.newStateOverride || nextStatus,
     targetVersionId: input.targetVersionId || null,
-    metadata: { policy: nextPolicy, edit_locked: editLocked, publish_locked: publishLocked },
+    metadata: {
+      policy: nextPolicy,
+      edit_locked: editLocked,
+      publish_locked: publishLocked,
+      actor_role: input.actorRole || null,
+    },
   });
   if (
     nextStatus === LIFECYCLE_STATUS.OFFLINE ||
@@ -168,8 +176,8 @@ async function takeWebsiteOffline(db, input) {
     lifecycleStatus: LIFECYCLE_STATUS.OFFLINE,
     editLocked: false,
     publishLocked: input.publishLocked === true,
-    auditActionKey: "website.lifecycle.offline",
-    moderationActionKey: ACTION.TAKE_OFFLINE,
+    auditActionKey: input.auditActionKey || "website.lifecycle.offline",
+    moderationActionKey: input.moderationActionKey || ACTION.TAKE_OFFLINE,
     notesTenantVisible: true,
   });
 }
@@ -180,8 +188,8 @@ async function suspendWebsite(db, input) {
     lifecycleStatus: LIFECYCLE_STATUS.SUSPENDED,
     editLocked: input.editLocked !== false,
     publishLocked: input.publishLocked !== false,
-    auditActionKey: "website.lifecycle.suspend",
-    moderationActionKey: ACTION.SUSPEND,
+    auditActionKey: input.auditActionKey || "website.lifecycle.suspend",
+    moderationActionKey: input.moderationActionKey || ACTION.SUSPEND,
     notesTenantVisible: true,
   });
 }
@@ -202,8 +210,8 @@ async function restoreWebsiteAvailability(db, input) {
     lifecycleStatus: nextStatus,
     editLocked: false,
     publishLocked: false,
-    auditActionKey: "website.lifecycle.restore",
-    moderationActionKey: ACTION.RESTORE_SITE,
+    auditActionKey: input.auditActionKey || "website.lifecycle.restore",
+    moderationActionKey: input.moderationActionKey || ACTION.RESTORE_SITE,
     notesTenantVisible: true,
   });
 }

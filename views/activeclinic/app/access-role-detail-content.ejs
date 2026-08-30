@@ -3,36 +3,58 @@
   var role = detail.role || {};
   var groups = detail.permissionGroups || [];
 %>
-<section class="ac-access-role-detail" data-ac-page-section="access-role-detail" data-ac-role-key="<%= role.key || '' %>">
-  <article class="ac-panel">
-    <h2 class="ac-dashboard__card-title" style="margin-top:0"><%= role.label || 'Role' %></h2>
-    <dl class="ac-dl">
-      <div><dt>Role key</dt><dd><code><%= role.key %></code></dd></div>
-      <div><dt>Scope</dt><dd><%= role.scopeLabel || '—' %></dd></div>
-      <div><dt>Staff with role</dt><dd><%= role.staffCount != null ? role.staffCount : '—' %></dd></div>
-      <div><dt>Permissions</dt><dd><%= detail.permissionCount || 0 %></dd></div>
-    </dl>
-    <% if (role.description) { %>
-    <p><%= role.description %></p>
-    <% } %>
-    <% if (role.compatibility) { %>
-    <p class="ac-muted">Compatibility / legacy role.</p>
-    <% } %>
+<section class="ac-access-role-detail ac-urp" data-ac-page-section="access-role-detail" data-ac-role-key="<%= role.key || '' %>" data-ac-visual="stitch-urp">
+  <header class="ac-urp-pagehead">
+    <div>
+      <h2><%= role.label || 'Role' %></h2>
+      <p>Read-only permission catalogue for this ActiveClinic role. Permissions cannot be edited per user.</p>
+    </div>
+    <a class="ac-urp-btn ac-urp-btn--ghost" href="<%= detail.backHref || '/app/access?tab=catalogue' %>">Back to catalogue</a>
+  </header>
+
+  <article class="ac-urp-role-card" style="max-width:560px">
+    <div class="ac-urp-role-card__head">
+      <div class="ac-urp-role-card__title">
+        <span class="ac-urp-role-card__icon" aria-hidden="true">
+          <span class="material-symbols-outlined"><%= role.icon || 'badge' %></span>
+        </span>
+        <h3><%= role.label || 'Role' %></h3>
+      </div>
+      <span class="ac-urp-chip <%= (role.scopeBadge === 'Facility-specific') ? 'ac-urp-chip--facility' : 'ac-urp-chip--neutral' %>"><%= role.scopeBadge || role.scopeLabel || '—' %></span>
+    </div>
+    <% if (role.description) { %><p><%= role.description %></p><% } %>
+    <% if (!role.grantable) { %><p class="ac-urp-gap-note">Not currently grantable from Staff Users.</p><% } %>
+    <div class="ac-urp-role-card__stats">
+      <div>
+        <span class="ac-urp-stat__label">Staff Assigned</span>
+        <strong><%= role.staffCount != null ? role.staffCount : '—' %></strong>
+      </div>
+      <div style="text-align:right">
+        <span class="ac-urp-stat__label">Permissions</span>
+        <strong><%= detail.permissionCount || 0 %></strong>
+      </div>
+    </div>
   </article>
 
-  <% groups.forEach(function (group) { %>
-  <article class="ac-panel">
-    <h3 class="ac-dashboard__card-title" style="margin-top:0"><%= group.label %> (<%= group.count %>)</h3>
-    <ul class="ac-list">
+  <h3 class="ac-urp-stat__label" style="margin:1.5rem 0 .75rem">Effective Permissions</h3>
+  <p class="ac-urp-info"><span class="material-symbols-outlined">info</span> Permissions are automatically determined by this role. They cannot be toggled here.</p>
+  <div class="ac-urp-perms" data-ac-readonly-permissions="1">
+    <% groups.forEach(function (group) { %>
+    <details open>
+      <summary>
+        <span><%= group.label %> (<%= group.count %>)</span>
+      </summary>
       <% (group.permissions || []).forEach(function (perm) { %>
-      <li><code><%= perm.key || perm.label %></code></li>
+      <div class="ac-urp-perm">
+        <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+        <span><%= perm.label || perm.key %></span>
+      </div>
       <% }) %>
-    </ul>
-  </article>
-  <% }) %>
+    </details>
+    <% }) %>
+  </div>
 
-  <div class="ac-form-actions">
-    <a class="ac-btn" href="<%= detail.assignStaffHref || '/app/access?tab=staff' %>">View staff with this role</a>
-    <a class="ac-btn ac-btn--ghost" href="<%= detail.backHref || '/app/access?tab=catalogue' %>">Back to catalogue</a>
+  <div class="ac-urp-pagehead" style="margin-top:1.5rem">
+    <a class="ac-urp-btn" href="<%= detail.assignStaffHref || '/app/access?tab=staff' %>">View staff with this role</a>
   </div>
 </section>

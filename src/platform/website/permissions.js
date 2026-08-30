@@ -14,6 +14,7 @@ const PERMISSIONS = Object.freeze({
   SUSPEND: "website.suspend",
   RESTORE: "website.restore",
   MANAGE_POLICY: "website.manage_policy",
+  APPROVE: "website.approve",
 });
 
 const ALL = Object.freeze(Object.values(PERMISSIONS));

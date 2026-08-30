@@ -6,7 +6,10 @@
   <title><%= pageTitle %> · <%= churchDisplayName || 'BlessBoard' %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=77" />
+  <link rel="stylesheet" href="/blessboard/v5/hq-admin.css?v=81" />
+  <% if (typeof loadUrpAssets !== 'undefined' && loadUrpAssets) { %>
+  <link rel="stylesheet" href="/blessboard/v5/bb-urp.css?v=1" />
+  <% } %>
   <% var loadEngineCss = (typeof loadWebsiteEngineCss !== 'undefined' && loadWebsiteEngineCss)
     || (typeof activeNav !== 'undefined' && (activeNav === 'website' || activeNav === 'content')); %>
   <% if (loadEngineCss) { %>
@@ -24,7 +27,7 @@
         { key: 'branches', label: 'Branches', href: '/hq/branches', icon: 'apartment' },
         { key: 'registrations', label: 'Registrations', href: '/hq/registrations', icon: 'how_to_reg' },
         { key: 'members', label: 'Members', href: '/hq/members', icon: 'badge' },
-        { key: 'staff-access', label: 'Staff access', href: '/hq/settings/staff-access', icon: 'admin_panel_settings' },
+        { key: 'staff-access', label: 'Users', href: '/hq/settings/staff-access', icon: 'group' },
         { key: 'settings', label: 'Settings', href: '/hq/settings', icon: 'settings' },
         { key: 'content', label: 'Website', href: '/hq/website', icon: 'language' },
         { key: 'broadcasts', label: 'Broadcasts', href: '/hq/broadcasts', icon: 'campaign' },

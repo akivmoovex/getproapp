@@ -137,7 +137,7 @@ describe("v7 organization admin console parity", () => {
     assert.equal(hqByKey.home.label, "Dashboard");
     assert.equal(hqByKey.home.href, "/hq");
     assert.equal(hqByKey.branches.label, "Branches");
-    assert.equal(hqByKey["staff-access"].label, "Staff access");
+    assert.equal(hqByKey["staff-access"].label, "Users");
     assert.equal(hqByKey["staff-access"].href, "/hq/settings/staff-access");
     assert.equal(hqByKey.settings.label, "Settings");
     assert.equal(hqByKey.content.label, "Website");
@@ -480,7 +480,7 @@ describe("v7 organization admin console parity", () => {
     assert.match(hqPage.text, /href="\/hq\/website"/);
     assert.match(hqPage.text, /href="\/hq\/settings\/staff-access"/);
     assert.match(hqPage.text, /href="\/hq\/settings"/);
-    assert.match(hqPage.text, />Staff access</);
+    assert.match(hqPage.text, />Users</);
     assert.match(hqPage.text, />Website</);
     assert.match(hqPage.text, />Settings</);
     assert.match(hqPage.text, /data-bb-organization-console="1"/);

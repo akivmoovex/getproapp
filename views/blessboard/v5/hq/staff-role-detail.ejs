@@ -1,52 +1,78 @@
 <%- include('../partials/hq-shell-start') %>
 <%
   var r = role || {};
-  function sensChip(label) {
-    if (label === 'Highly sensitive') return 'bb-hq-chip--error';
-    if (label === 'Sensitive') return 'bb-hq-chip--pending';
-    return 'bb-hq-chip--ok';
-  }
+  var groups = r.permissionGroups || {};
+  var mods = Object.keys(groups);
 %>
-<section class="bb-hq-page" data-bb-staff-role-detail="1" aria-label="Role detail">
-  <header class="bb-hq-page-head">
-    <p class="bb-hq-breadcrumb">
-      <a href="/hq">Dashboard</a>
-      <span aria-hidden="true">›</span>
-      <a href="/hq/settings/roles">Roles</a>
-      <span aria-hidden="true">›</span>
-      <span><%= r.displayName %></span>
-    </p>
-    <h1 class="bb-hq-page-head__title"><%= r.displayName %></h1>
-    <p class="bb-hq-lede">
-      <span class="bb-hq-chip <%= sensChip(r.sensitivityLabel) %>"><%= r.sensitivityLabel %></span>
-      <code class="bb-hq-key"><%= r.roleKey %></code>
-      · <%= r.roleCategory || '—' %>
-      · <%= r.isActive ? 'Active' : 'Inactive' %>
-      · read-only catalogue
-    </p>
+<section class="bb-hq-page bb-urp bb-urp-page" data-bb-staff-role-detail="1" data-bb-visual="stitch-urp" aria-label="Role detail">
+  <p class="bb-urp-crumb">
+    <a href="/hq/settings/roles">Roles</a>
+    <span aria-hidden="true"> › </span>
+    <span><%= r.displayName %></span>
+  </p>
+
+  <header class="bb-urp-head">
+    <div>
+      <h1 class="bb-urp-title"><%= r.displayName %></h1>
+      <p class="bb-urp-lede">
+        This view displays the resolved permissions for this role across the platform. Read-only view.
+      </p>
+      <p style="margin:0.75rem 0 0">
+        <span class="bb-urp-chip bb-urp-chip--<%= r.sensitivityLabel === 'Highly sensitive' ? 'inactive' : (r.sensitivityLabel === 'Sensitive' ? 'pending' : 'active') %>"><%= r.sensitivityLabel %></span>
+        <span class="bb-urp-chip bb-urp-chip--pending"><%= r.scopeLabel || 'Global' %> Scope</span>
+        <span class="bb-urp-chip bb-urp-chip--readonly">Read-only</span>
+      </p>
+    </div>
   </header>
 
-  <section class="bb-hq-card">
-    <h2 class="bb-hq-section-title">Description</h2>
+  <article class="bb-urp-panel bb-urp-section">
+    <h2>Description</h2>
     <p><%= r.description || 'No description.' %></p>
-    <p class="bb-hq-muted">Assigned users in this organisation: <strong><%= r.assignedCount %></strong></p>
-    <p class="bb-hq-muted">Allowed scope types: <%= (r.allowedScopeTypes || []).join(', ') %></p>
-  </section>
+    <p class="bb-urp-muted"><%= r.assignedCount || 0 %> assigned users in this organisation · <%= r.permissionCount || 0 %> permissions</p>
+  </article>
 
-  <section class="bb-hq-card" aria-label="Permission groups">
-    <h2 class="bb-hq-section-title">Assigned permission groups</h2>
-    <% var groups = r.permissionGroups || {}; %>
-    <% Object.keys(groups).forEach(function (mod) { %>
-    <h3 class="bb-hq-section-title"><%= mod %></h3>
-    <ul class="bb-hq-list">
-      <% groups[mod].forEach(function (pk) { %>
-      <li><code class="bb-hq-key"><%= pk %></code></li>
-      <% }); %>
-    </ul>
-    <% }); %>
-    <% if (!Object.keys(groups).length) { %>
-    <p class="bb-hq-lede">No permissions mapped.</p>
+  <article class="bb-urp-panel bb-urp-section" style="margin-top:1.5rem" aria-label="Permissions">
+    <div class="bb-urp-section__head">
+      <h2>Effective Permissions</h2>
+      <span class="bb-urp-chip bb-urp-chip--readonly">Read-only</span>
+    </div>
+    <p class="bb-urp-lede">These permissions are read-only and derived from the role catalogue. They cannot be edited directly here.</p>
+
+    <% if (!mods.length) { %>
+    <p class="bb-urp-muted">No permissions mapped.</p>
     <% } %>
-  </section>
+
+    <div class="bb-urp-desktop-only">
+      <% mods.forEach(function (mod) { %>
+      <h3 style="margin:1.25rem 0 0.5rem"><%= mod %></h3>
+      <% groups[mod].forEach(function (pk) { %>
+      <div class="bb-urp-perm">
+        <div>
+          <div class="bb-urp-perm__name"><%= String(pk).split('.').pop().replace(/_/g, ' ') %></div>
+          <div class="bb-urp-perm__src"><%= pk %></div>
+        </div>
+        <span class="material-symbols-outlined bb-urp-icon-ok" aria-label="Granted">check_circle</span>
+      </div>
+      <% }); %>
+      <% }); %>
+    </div>
+
+    <div class="bb-urp-accordion bb-urp-mobile-only">
+      <% mods.forEach(function (mod) { %>
+      <details open>
+        <summary><%= mod %></summary>
+        <% groups[mod].forEach(function (pk) { %>
+        <div class="bb-urp-perm">
+          <div>
+            <div class="bb-urp-perm__name"><%= String(pk).split('.').pop().replace(/_/g, ' ') %></div>
+            <div class="bb-urp-perm__src">Granted</div>
+          </div>
+          <span class="material-symbols-outlined bb-urp-icon-ok">check</span>
+        </div>
+        <% }); %>
+      </details>
+      <% }); %>
+    </div>
+  </article>
 </section>
 <%- include('../partials/hq-shell-end') %>

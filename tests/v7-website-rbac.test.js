@@ -102,6 +102,8 @@ describe("v7 website RBAC — contract", () => {
     assert.ok(LEGACY_PA.includes("website.suspend"));
     assert.ok(LEGACY_PA.includes("website.restore"));
     assert.ok(LEGACY_PA.includes("website.take_offline"));
+    assert.ok(LEGACY_PA.includes("website.approve"));
+    assert.equal(hasWebsitePermission(PLATFORM_ADMIN_PERMISSIONS, PERMISSIONS.APPROVE), true);
   });
 });
 

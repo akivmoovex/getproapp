@@ -2,11 +2,13 @@
 <%
   var rows = changes || [];
   var f = filters || {};
+  var viewMode = typeof view !== 'undefined' ? view : 'publications';
 %>
-<section class="bb-pa-page" data-recent-website-changes="1">
-  <h1>Recent Website Changes</h1>
-  <p>Shared-engine changes across products. BlessBoard <code>public_pages</code> churches stay on the legacy CMS until cutover.</p>
+<section class="bb-pa-page" data-recent-website-changes="1" data-website-governance-console="1">
+  <h1>Recently Updated</h1>
+  <p>Post-publication review. Customer websites go live without waiting for this approval.</p>
   <form method="get" action="/admin/recent-website-changes" class="bb-pa-filters">
+    <input type="hidden" name="view" value="<%= viewMode %>"/>
     <label>Product
       <select name="product">
         <option value="" <%= !f.product ? 'selected' : '' %>>All</option>
@@ -14,57 +16,63 @@
         <option value="blessboard" <%= f.product === 'blessboard' ? 'selected' : '' %>>BlessBoard</option>
       </select>
     </label>
-    <label>Tenant
+    <label>Organization
       <input name="tenant" value="<%= f.tenant || '' %>" maxlength="80"/>
     </label>
     <label>Filter
       <select name="filter">
-        <option value="" <%= !f.filter ? 'selected' : '' %>>Recent</option>
-        <option value="provisional" <%= f.filter === 'provisional' ? 'selected' : '' %>>Provisional</option>
-        <option value="public" <%= f.filter === 'public' ? 'selected' : '' %>>Public</option>
-        <option value="suspended" <%= f.filter === 'suspended' ? 'selected' : '' %>>Suspended</option>
-        <option value="under_review" <%= f.filter === 'under_review' ? 'selected' : '' %>>Under review</option>
+        <option value="" <%= !f.filter ? 'selected' : '' %>>All</option>
+        <option value="unreviewed" <%= f.filter === 'unreviewed' ? 'selected' : '' %>>Unreviewed</option>
+        <option value="approved" <%= f.filter === 'approved' ? 'selected' : '' %>>Approved</option>
+        <option value="live" <%= f.filter === 'live' ? 'selected' : '' %>>Live</option>
+        <option value="hidden" <%= f.filter === 'hidden' ? 'selected' : '' %>>Hidden</option>
+        <option value="blocked" <%= f.filter === 'blocked' ? 'selected' : '' %>>Blocked</option>
       </select>
-    </label>
-    <label>
-      <input type="checkbox" name="flagged" value="1" <%= f.flagged ? 'checked' : '' %>/> Flagged
     </label>
     <button type="submit" class="bb-pa-btn">Filter</button>
   </form>
-  <table class="bb-pa-table">
+  <table class="bb-pa-table" data-website-governance-table="1">
     <thead>
       <tr>
         <th>Product</th>
-        <th>Tenant</th>
-        <th>When</th>
-        <th>Page</th>
-        <th>Changes</th>
-        <th>Old / new</th>
-        <th>Status</th>
-        <th>Policy</th>
+        <th>Organization</th>
+        <th>Website</th>
+        <th>Public URL</th>
+        <th>Published By</th>
+        <th>Published At</th>
+        <th>Current Version</th>
+        <th>Last Approved Version</th>
+        <th>Review Status</th>
+        <th>Website Status</th>
         <th></th>
       </tr>
     </thead>
     <tbody>
       <% if (!rows.length) { %>
-      <tr><td colspan="9">No recent website changes.</td></tr>
+      <tr><td colspan="11">No recently updated websites.</td></tr>
       <% } %>
       <% rows.forEach(function (row) { %>
-      <tr data-website-change-product="<%= row.productCode %>">
-        <td><%= row.productCode %></td>
+      <tr
+        data-website-change-product="<%= row.productCode %>"
+        data-review-status="<%= row.reviewStatus || '' %>"
+        data-website-status="<%= row.websiteStatus || row.lifecycleStatus || '' %>"
+      >
+        <td><%= row.productLabel || row.productCode %></td>
         <td><%= row.organizationName || row.organizationKey %></td>
-        <td><%= row.timestamp ? String(row.timestamp).slice(0, 19).replace('T', ' ') : '—' %></td>
-        <td><%= row.pageSection || row.kind %></td>
-        <td><%= row.changeCount || 0 %><% if (row.mediaChanged) { %> · media<% } %></td>
-        <td><%= (row.oldSummary || '—').slice(0, 40) %> → <%= (row.newSummary || '—').slice(0, 40) %></td>
-        <td><%= row.lifecycleStatus %> / <%= row.moderationState %></td>
-        <td><%= row.publishPolicy %></td>
+        <td><%= row.websiteName || row.organizationName || row.slug || '—' %></td>
         <td>
-          <a class="bb-pa-link" href="/admin/recent-website-changes/<%= row.kind === 'moderation' ? 'event' : row.kind %>/<%= row.id %>">View changes</a>
-          · <a class="bb-pa-link" href="/admin/organizations/<%= row.organizationKey %>/website">Manage</a>
-          <% if (row.slug && row.productCode === 'activeclinic') { %>
-          · <a class="bb-pa-link" href="/clinics/<%= row.slug %>">Live</a>
-          <% } %>
+          <% if (row.publicPath) { %>
+          <a class="bb-pa-link" href="<%= row.publicPath %>"><%= row.publicPath %></a>
+          <% } else { %>—<% } %>
+        </td>
+        <td><%= row.publishedByLabel || row.publishedByIdentityId || '—' %></td>
+        <td><%= row.publishedAt ? String(row.publishedAt).slice(0, 19).replace('T', ' ') : (row.timestamp ? String(row.timestamp).slice(0, 19).replace('T', ' ') : '—') %></td>
+        <td><% if (row.currentVersionNumber) { %>v<%= row.currentVersionNumber %><% } else if (row.versionNumber) { %>v<%= row.versionNumber %><% } else { %>—<% } %></td>
+        <td><% if (row.lastApprovedVersionNumber) { %>v<%= row.lastApprovedVersionNumber %><% } else { %>—<% } %></td>
+        <td><%= row.reviewStatusLabel || row.moderationState || '—' %></td>
+        <td><%= row.websiteStatusLabel || row.lifecycleStatus || '—' %></td>
+        <td>
+          <a class="bb-pa-link" href="/admin/recent-website-changes/<%= row.kind === 'moderation' ? 'event' : (row.kind || 'version') %>/<%= row.id %>">Review changes</a>
         </td>
       </tr>
       <% }) %>

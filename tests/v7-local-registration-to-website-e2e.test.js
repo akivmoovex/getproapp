@@ -561,27 +561,28 @@ async function runBlessBoardFlow() {
   const editPage = await request(app).get(editPath).set("Host", BB_HOST).set("Cookie", session);
   assert.equal(editPage.status, 200, editPage.text && editPage.text.slice(0, 300));
   assert.match(editPage.text, /data-bb-inline-start="1"/);
-  out["Edit website / pencil"] = ok("GET /c/{key}?website_edit=1 exposes pencils");
+  assert.match(editPage.text, /data-website-key="home\.hero\.heading"/);
+  assert.match(editPage.text, /\/platform\/website-inline-edit\.js/);
+  assert.match(editPage.text, /data-website-engine-shell="1"/);
+  out["Edit website / pencil"] = ok("GET /c/{key}?website_edit=1 exposes shared editor chrome");
 
   const editCsrf = extractBbCsrf(editPage.text);
   const editCookies = mergeCookies(session, editPage);
   const draftHeading = `BB Draft One ${key}`;
   const save = await request(app)
-    .post("/hq/content/api/inline-field")
+    .post(`/c/${key}/website/drafts`)
     .set("Host", BB_HOST)
     .set("Cookie", editCookies)
     .set("X-CSRF-Token", editCsrf || "")
     .set("Accept", "application/json")
     .send({
       [CSRF_FIELD]: editCsrf,
-      pageKey: "home",
-      sectionKey: "hero",
-      fieldKey: "heading",
+      contentKey: "home.hero.heading",
       value: draftHeading,
     });
   assert.equal(save.status, 200, save.text);
   assert.equal(save.body.published, false);
-  out["Edit text + ✓"] = ok("POST /hq/content/api/inline-field published=false");
+  out["Edit text + ✓"] = ok("POST /c/{key}/website/drafts published=false");
 
   const heroLive = await pool.query(
     `SELECT heading
@@ -595,8 +596,9 @@ async function runBlessBoardFlow() {
 
   const publicBefore = await request(app).get(`/c/${key}`).set("Host", BB_HOST);
   assert.equal(publicBefore.status, 200);
+  assert.match(publicBefore.text, /not public yet/i);
   assert.doesNotMatch(publicBefore.text, re(draftHeading));
-  out["Public live unchanged"] = ok("anonymous /c/{key} omits draft heading");
+  out["Public live unchanged"] = ok("anonymous /c/{key} is unpublished and omits draft heading");
 
   const preview = await request(app)
     .get(`/c/${key}?website_mode=draft`)
@@ -604,6 +606,8 @@ async function runBlessBoardFlow() {
     .set("Cookie", session);
   assert.equal(preview.status, 200);
   assert.match(preview.text, re(draftHeading));
+  assert.doesNotMatch(preview.text, /data-website-start="1"/);
+  assert.doesNotMatch(preview.text, /data-website-engine-shell="1"/);
   const hqPreview = await request(app)
     .get("/hq/content/preview/home")
     .set("Host", BB_HOST)
@@ -672,16 +676,14 @@ async function runBlessBoardFlow() {
   const cookies2 = mergeCookies(session, editPage2);
   const draftHeading2 = `BB Draft Two ${key}`;
   const save2 = await request(app)
-    .post("/hq/content/api/inline-field")
+    .post(`/c/${key}/website/drafts`)
     .set("Host", BB_HOST)
     .set("Cookie", cookies2)
     .set("X-CSRF-Token", csrf2 || "")
     .set("Accept", "application/json")
     .send({
       [CSRF_FIELD]: csrf2,
-      pageKey: "home",
-      sectionKey: "hero",
-      fieldKey: "heading",
+      contentKey: "home.hero.heading",
       value: draftHeading2,
     });
   assert.equal(save2.status, 200, save2.text);

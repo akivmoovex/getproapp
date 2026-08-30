@@ -17,6 +17,12 @@ const ACTION = Object.freeze({
   TENANT_PUBLISH: "website.moderation.tenant_publish",
   TENANT_UNPUBLISH: "website.moderation.tenant_unpublish",
   PROVISION: "website.moderation.provision",
+  APPROVE_VERSION: "website.moderation.approve_version",
+  HIDE: "website.moderation.hide",
+  UNHIDE: "website.moderation.unhide",
+  BLOCK: "website.moderation.block",
+  UNBLOCK: "website.moderation.unblock",
+  REVERT: "website.moderation.revert",
 });
 
 function mapEvent(row) {

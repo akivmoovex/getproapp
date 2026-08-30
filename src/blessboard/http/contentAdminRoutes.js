@@ -285,6 +285,7 @@ async function applyCurrentDraftOverlaysToModel(db, model, scope) {
   } = require("../services/websiteStructuredDraftService");
   try {
     const overlayMap = await loadDraftOverlayMap(db, {
+      organizationId: scope.organizationId || null,
       churchId: scope.churchId,
       branchId: scope.branchId,
       pageKey: model.pageKey,
@@ -2373,9 +2374,18 @@ function createContentAdminRouter(deps) {
       }
 
       const body = req.body && typeof req.body === "object" ? req.body : {};
-      const pageKey = String(body.pageKey || "").trim();
-      const sectionKey = String(body.sectionKey || "").trim();
-      const fieldKey = String(body.fieldKey || "").trim();
+      let pageKey = String(body.pageKey || "").trim();
+      let sectionKey = String(body.sectionKey || "").trim();
+      let fieldKey = String(body.fieldKey || "").trim();
+      if ((!pageKey || !sectionKey || !fieldKey) && (body.contentKey || body.key)) {
+        const { locatorFromContentKey } = require("../website/blessboardEngineContentService");
+        const locator = locatorFromContentKey(body.contentKey || body.key);
+        if (locator) {
+          pageKey = pageKey || locator.pageKey;
+          sectionKey = sectionKey || locator.sectionKey;
+          fieldKey = fieldKey || locator.fieldKey;
+        }
+      }
       const newValue = body.value != null ? String(body.value) : "";
 
       // Never trust client-provided organization / church IDs.

@@ -29,6 +29,7 @@ const submissionService = require("../../platform/website/submissionService");
 const { latestTenantVisibleNote } = require("../../platform/website/moderationEventService");
 const { LIFECYCLE_LABELS } = require("../../platform/website/lifecycleStatus");
 const { POLICY_LABELS } = require("../../platform/website/publishPolicy");
+const { listProductPageTypes } = require("../../platform/website-engine/productSchemaRegistry");
 
 function grantedPermissions(req) {
   const auth = req.activeClinicAuth;
@@ -102,6 +103,32 @@ function clinicWebsiteActionUrls(clinicKey) {
       suffix: "website/edit-session/finish",
     }),
   };
+}
+
+function websiteEditorPageKeyFromRequest(req, clinicKey) {
+  const pathName = String((req && req.path) || "");
+  const prefix = `/clinics/${clinicKey}`;
+  let rest = pathName.startsWith(prefix) ? pathName.slice(prefix.length) : pathName;
+  rest = rest.replace(/^\//, "").split("/")[0] || "";
+  if (!rest) return "home";
+  const pages = listProductPageTypes(PRODUCT_CODE.ACTIVECLINIC);
+  const match = pages.find((page) => page.path === rest || page.key === rest);
+  return match ? match.key : "home";
+}
+
+function websiteEditorPagesForClinic(clinicKey, currentKey) {
+  const base = `/clinics/${encodeURIComponent(clinicKey)}`;
+  return listProductPageTypes(PRODUCT_CODE.ACTIVECLINIC).map((page) => {
+    const href = page.path ? `${base}/${page.path}` : base;
+    const sep = href.indexOf("?") >= 0 ? "&" : "?";
+    return {
+      key: page.key,
+      label: page.label || page.key,
+      path: page.path,
+      editHref: `${href}${sep}website_edit=1&website_mode=draft`,
+      current: page.key === currentKey,
+    };
+  });
 }
 
 function requestedMode(req, canEdit) {
@@ -259,6 +286,11 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
         ? req.activeClinicAuth.platformIdentity.id
         : null,
     csrfField: CSRF_FIELD,
+    websiteEditorPageKey: websiteEditorPageKeyFromRequest(req, outClinic && outClinic.clinicKey),
+    websiteEditorPages: websiteEditorPagesForClinic(
+      outClinic && outClinic.clinicKey,
+      websiteEditorPageKeyFromRequest(req, outClinic && outClinic.clinicKey)
+    ),
     ...clinicWebsiteActionUrls(outClinic && outClinic.clinicKey),
   };
 }

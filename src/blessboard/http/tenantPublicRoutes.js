@@ -25,7 +25,10 @@ const { loadTenantPublicPageModel, KIND } = require("./loadTenantPublicPageModel
 const { renderTenantPublicPage } = require("./renderTenantPublicPage");
 const { renderControlledErrorPage, renderFoundationHome } = require("./renderTenantLandingPage");
 const { resolveHostname } = require("../../platform/host");
-const { attachWebsiteAdminChrome } = require("./attachWebsiteAdminChrome");
+const {
+  attachWebsiteAdminChrome,
+  resolveAuthorizedPublicPreview,
+} = require("./attachWebsiteAdminChrome");
 const {
   resolveWebsiteMode,
   WEBSITE_MODE,
@@ -120,6 +123,12 @@ function createTenantPublicRouter(deps) {
 
     let model;
     try {
+      const authorizedPreview = await resolveAuthorizedPublicPreview(
+        getPool(),
+        req,
+        tenant,
+        selectedBranch && selectedBranch.id
+      );
       model = await loadTenantPublicPageModel(getPool(), {
         tenant,
         pageKey,
@@ -127,6 +136,7 @@ function createTenantPublicRouter(deps) {
         pathPrefix: pathPrefix || "",
         selectedBranch: selectedBranch || null,
         routingMode: "tenant",
+        preview: authorizedPreview,
       });
     } catch {
       return res

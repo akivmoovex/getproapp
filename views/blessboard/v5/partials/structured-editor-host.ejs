@@ -10,6 +10,8 @@
   id="bb-tp-structured-editor"
   class="bb-tp-structured-editor"
   hidden
+  data-website-structured="1"
+  data-website-structured-endpoint="<%= wa.structuredSaveUrl %>"
   data-bb-structured-editor="1"
   data-bb-csrf="<%= wa.csrfToken %>"
   data-bb-structured-save="<%= wa.structuredSaveUrl %>"
@@ -34,8 +36,8 @@
     <div class="bb-tp-structured-editor__body" data-bb-structured-body="1"></div>
     <p class="bb-tp-structured-editor__status" data-bb-structured-status="1" role="status" aria-live="polite"></p>
     <footer class="bb-tp-structured-editor__footer">
-      <button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-structured-cancel="1">Cancel</button>
-      <button type="button" class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--touch" data-bb-structured-save="1">
+      <button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-structured-cancel="1" data-website-structured-cancel="1">Cancel</button>
+      <button type="button" class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--touch" data-bb-structured-save="1" data-website-structured-save="1">
         <span class="material-symbols-outlined" aria-hidden="true">check</span>
         Save draft
       </button>

@@ -569,7 +569,7 @@ async function seedServiceTimesIfEmpty(client, homePage, pack) {
     return { created: true, section };
   }
 
-  await publicContentRepo.updateSection(client, existing.id, {
+  await publicContentRepo.updateSectionForProvision(client, existing.id, {
     heading: pack.home.serviceTimesHeading || "When We Gather",
     bodyText,
     layoutMetadata,

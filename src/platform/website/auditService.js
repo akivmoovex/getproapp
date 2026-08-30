@@ -21,10 +21,14 @@ const ALLOWED_METADATA_KEYS = new Set([
   "policy",
   "source",
   "actor_type",
+  "actor_role",
   "retry",
   "ready",
   "previous",
   "next",
+  "restore_mode",
+  "restored_from",
+  "review_status",
 ]);
 
 function sanitizeWebsiteAuditMetadata(raw) {

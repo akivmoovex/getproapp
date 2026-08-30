@@ -44,6 +44,7 @@ const PLATFORM_ADMIN_PERMISSIONS = Object.freeze([
   "website.suspend",
   "website.restore",
   "website.manage_policy",
+  "website.approve",
   // No giving.* / finance.transactions.* — PA denied transaction-level Finance by default.
   "requests.view",
   "requests.manage",

@@ -6,149 +6,178 @@
   var actions = detail.actions || {};
   var effectiveAccess = detail.effectiveAccess || {};
   var facilityScoped = effectiveAccess.facilityScoped || { groups: [], permissionCount: 0 };
+  var activeAssignments = assignments.filter(function (a) { return a.canRevoke || a.effective; });
+  var chip = (staff.accountKey === 'active') ? 'active' : (staff.accountKey === 'suspended' || staff.accountKey === 'inactive') ? 'danger' : 'pending';
 %>
-<section class="ac-access-detail" data-ac-page-section="access-staff" data-ac-visual="stitch-gap">
-  <div class="ac-panel ac-staff-summary" data-ac-staff-summary="1">
-    <div class="ac-staff-summary__identity">
-      <div class="ac-avatar" aria-hidden="true"><%= staff.initials || '?' %></div>
-      <div>
-        <p class="ac-muted" style="margin:0">Staff profile</p>
-        <h2 class="ac-dashboard__card-title" style="margin:.25rem 0"><%= staff.displayName %></h2>
-        <p class="ac-muted" style="margin:0">
-          <%= staff.jobTitle || 'No job title' %> · <%= staff.statusLabel || staff.status %>
-        </p>
-        <% if (staff.email || staff.phone) { %>
-        <p class="ac-muted" style="margin:.35rem 0 0">
-          <% if (staff.email) { %><%= staff.email %><% } %>
-          <% if (staff.email && staff.phone) { %> · <% } %>
-          <% if (staff.phone) { %><%= staff.phone %><% } %>
-        </p>
-        <% } %>
-        <% if (staff.profileHref) { %>
-        <p style="margin:.75rem 0 0"><a href="<%= staff.profileHref %>">Open staff profile</a></p>
-        <% } %>
+<section class="ac-access-detail ac-urp" data-ac-page-section="access-staff" data-ac-visual="stitch-urp" data-ac-stitch-project="14482742053601518750">
+  <article class="ac-urp-detail">
+    <header class="ac-urp-detail__head" data-ac-staff-summary="1">
+      <div class="ac-urp-detail__id">
+        <div class="ac-urp-avatar ac-urp-avatar--lg" aria-hidden="true"><%= staff.initials || '?' %></div>
+        <div>
+          <h3><%= staff.displayName %></h3>
+          <p><%= staff.jobTitle || 'No job title' %></p>
+          <div style="margin-top:0.5rem">
+            <span class="ac-urp-chip ac-urp-chip--<%= chip %>">
+              <span class="ac-urp-dot" aria-hidden="true"></span>
+              <%= staff.statusLabel || staff.status %>
+            </span>
+          </div>
+        </div>
       </div>
-    </div>
-    <p class="ac-muted" data-ac-effective-count="<%= detail.activeCount || 0 %>">
-      <%= detail.activeCount || 0 %> currently effective assignment<%= (detail.activeCount || 0) === 1 ? '' : 's' %>
-    </p>
-    <% if (actions.profileHref) { %>
-    <p class="ac-muted" style="margin:0">
-      Account actions (invite, suspend, credentials) are available on the
-      <a href="<%= actions.profileHref %>">staff profile</a>
-      when your permissions allow them.
-    </p>
-    <% } %>
-  </div>
+      <a class="ac-urp-close" href="/app/access" aria-label="Close staff access">
+        <span class="material-symbols-outlined">close</span>
+      </a>
+    </header>
 
-  <div class="ac-panel">
-    <h2 class="ac-dashboard__card-title" style="margin-top:0">Facility assignments</h2>
-    <% if (!facilities.length) { %>
-    <p class="ac-muted" data-ac-empty="facility-assignments">No facility assignments on this staff profile.</p>
-    <% } else { %>
-    <ul class="ac-access-facility-list">
-      <% facilities.forEach(function (f) { %>
-      <li>
-        <strong><%= f.displayName || f.facilityKey %></strong>
-        <span class="ac-muted">
-          · <%= f.status %>
-          <%= f.isPrimary ? '· Primary' : '' %>
-        </span>
-      </li>
-      <% }) %>
-    </ul>
-    <p class="ac-muted" style="margin-bottom:0">
-      To remove a facility, edit the staff profile. Facility-scoped roles for that facility must be revoked first.
-    </p>
-    <% } %>
-  </div>
+    <div class="ac-urp-detail__body">
+      <section class="ac-urp-section">
+        <h4>Contact Details</h4>
+        <div class="ac-urp-contact-row">
+          <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+          <span><%= staff.email || 'No email on file' %></span>
+        </div>
+        <div class="ac-urp-contact-row">
+          <span class="material-symbols-outlined" aria-hidden="true">phone</span>
+          <span><%= staff.phone || 'No phone on file' %></span>
+        </div>
+      </section>
 
-  <div class="ac-panel" data-ac-effective-access="1">
-    <h2 class="ac-dashboard__card-title" style="margin-top:0">Effective access</h2>
-    <p class="ac-muted">
-      Capability summary
-      <% if (effectiveAccess.facilityContextLabel) { %>
-      for <strong><%= effectiveAccess.facilityContextLabel %></strong>
-      <% } %>
-      (server-side, facility-scoped where applicable).
-    </p>
-    <% if (!(facilityScoped.groups || []).length) { %>
-    <p class="ac-muted" data-ac-empty="effective-access">No effective permissions from current role assignments.</p>
-    <% } else { %>
-    <ul class="ac-access-capability-groups">
-      <% (facilityScoped.groups || []).forEach(function (g) { %>
-      <li>
-        <strong><%= g.label %></strong>
-        <span class="ac-muted"> · <%= g.count %> permission<%= g.count === 1 ? '' : 's' %></span>
-        <details class="ac-access-perm-details">
-          <summary>Show permissions</summary>
-          <ul>
-            <% (g.permissions || []).forEach(function (p) { %>
-            <li><code><%= p %></code></li>
-            <% }) %>
-          </ul>
-        </details>
-      </li>
-      <% }) %>
-    </ul>
-    <% } %>
-  </div>
+      <hr class="ac-urp-rule"/>
 
-  <div class="ac-panel" data-ac-role-assignments="1">
-    <div class="ac-panel__header">
-      <h2 class="ac-dashboard__card-title" style="margin-top:0">Role assignments</h2>
-      <% if (actions.canAssign) { %>
-      <a class="ac-btn" href="<%= actions.assignHref %>">Assign role</a>
-      <% } %>
-    </div>
-
-    <% if (!assignments.length) { %>
-    <%- include('../partials/ac-inline-state', {
-      inlineState: {
-        stateKey: 'empty',
-        marker: 'role-assignments',
-        title: 'No role assignments',
-        description: 'No role assignments recorded for this staff member.',
-        primaryAction: actions.canAssign
-          ? { href: actions.assignHref, label: 'Assign roles' }
-          : null
-      }
-    }) %>
-    <% } else { %>
-    <div class="ac-stack">
-      <% assignments.forEach(function (a) { %>
-      <article class="ac-access-assignment" data-ac-assignment="<%= a.id %>" data-role-key="<%= a.roleKey %>" data-effective="<%= a.effective ? '1' : '0' %>">
-        <h3 style="margin:0 0 .35rem;font-size:1rem"><%= a.roleLabel %></h3>
-        <p class="ac-muted" style="margin:0 0 .5rem"><%= a.scopeLabel %></p>
-        <p style="margin:0 0 .5rem">
-          <% if (a.effective) { %>
-          <span class="ac-badge ac-badge--success">Currently effective</span>
-          <% } else if (a.isRevoked) { %>
-          <span class="ac-badge ac-badge--danger">Revoked</span>
-          <% } else if (a.isExpired) { %>
-          <span class="ac-badge ac-badge--warning">Expired</span>
-          <% } else { %>
-          <span class="ac-badge ac-badge--warning">Not effective</span>
-          <% } %>
-          <span class="ac-muted">
-            · Status <%= a.status %>
-            · <%= a.expiresAt ? ('Expires ' + new Date(a.expiresAt).toLocaleString()) : 'No expiry' %>
-          </span>
-        </p>
-        <% if (!a.effective && a.ineffectiveReasons && a.ineffectiveReasons.length) { %>
-        <p class="ac-muted" data-ac-ineffective-reasons="1">Reasons: <%= a.ineffectiveReasons.join(', ') %></p>
+      <section class="ac-urp-section">
+        <h4>Facility Membership</h4>
+        <% if (!facilities.length) { %>
+        <p class="ac-urp-muted" data-ac-empty="facility-assignments">No facility assignments on this staff profile.</p>
+        <% } else { %>
+        <div class="ac-stack" style="gap:0.5rem">
+          <% facilities.forEach(function (f) { %>
+          <div class="ac-urp-facility">
+            <div class="ac-urp-facility__icon" aria-hidden="true"><span class="material-symbols-outlined">local_hospital</span></div>
+            <div>
+              <strong><%= f.displayName || f.facilityKey %></strong>
+              <p class="ac-urp-muted" style="margin:0.25rem 0 0"><%= f.isPrimary ? 'Primary Location' : (f.status || '') %></p>
+            </div>
+          </div>
+          <% }) %>
+        </div>
         <% } %>
-        <div class="ac-actions-row">
-          <% if (a.canEditExpiry) { %>
-          <a class="ac-btn ac-btn--ghost" href="<%= a.editHref %>">Edit</a>
-          <% } %>
-          <% if (a.canRevoke) { %>
-          <a class="ac-btn ac-btn--ghost" href="<%= a.revokeHref %>">Revoke</a>
+      </section>
+
+      <section class="ac-urp-section" data-ac-role-assignments="1">
+        <div class="ac-urp-section__head">
+          <h4>Assigned Roles</h4>
+          <% if (actions.canAssign) { %>
+          <a class="ac-urp-link" href="<%= actions.assignHref %>">
+            <span class="material-symbols-outlined" style="font-size:16px">add</span> Assign role
+          </a>
           <% } %>
         </div>
-      </article>
-      <% }) %>
+        <% if (!assignments.length) { %>
+        <p class="ac-urp-muted" data-ac-empty="role-assignments">No role assignments recorded for this staff member.</p>
+        <% } else { %>
+          <% assignments.forEach(function (a) { %>
+          <article class="ac-urp-role-row ac-access-assignment" data-ac-assignment="<%= a.id %>" data-role-key="<%= a.roleKey %>" data-effective="<%= a.effective ? '1' : '0' %>">
+            <div>
+              <h5><%= a.roleLabel %></h5>
+              <p>
+                <%= a.scopeLabel %>
+                <% if (a.effective) { %> · Currently effective
+                <% } else if (a.isRevoked) { %> · Revoked
+                <% } else if (a.isExpired) { %> · Expired
+                <% } else { %> · Not effective<% } %>
+              </p>
+              <% if (!a.effective && a.ineffectiveReasons && a.ineffectiveReasons.length) { %>
+              <p class="ac-urp-muted" data-ac-ineffective-reasons="1">Reasons: <%= a.ineffectiveReasons.join(', ') %></p>
+              <% } %>
+            </div>
+            <div class="ac-urp-actions">
+              <% if (a.canEditExpiry) { %>
+              <a class="ac-urp-revoke" href="<%= a.editHref %>" title="Edit assignment"><span class="material-symbols-outlined" style="font-size:20px">edit</span></a>
+              <% } %>
+              <% if (a.canRevoke) { %>
+              <a class="ac-urp-revoke" href="<%= a.revokeHref %>" title="Revoke role"><span class="material-symbols-outlined" style="font-size:20px">remove_circle_outline</span></a>
+              <% } %>
+            </div>
+          </article>
+          <% }) %>
+        <% } %>
+      </section>
+
+      <section class="ac-urp-section">
+        <h4>Role Scope</h4>
+        <div class="ac-urp-scope-chips">
+          <% if (!activeAssignments.length) { %>
+          <span class="ac-urp-chip">No effective scope</span>
+          <% } else { %>
+            <% activeAssignments.forEach(function (a) { %>
+            <span class="ac-urp-chip"><%= a.roleLabel %> · <%= a.scopeLabel %></span>
+            <% }) %>
+          <% } %>
+        </div>
+      </section>
+
+      <section class="ac-urp-section" data-ac-effective-access="1">
+        <h4>Effective Permissions</h4>
+        <p class="ac-urp-info">
+          <span class="material-symbols-outlined" aria-hidden="true">info</span>
+          Permissions are automatically determined by assigned roles.
+          <% if (effectiveAccess.facilityContextLabel) { %>
+          Shown for <strong><%= effectiveAccess.facilityContextLabel %></strong>.
+          <% } %>
+        </p>
+        <% if (!(facilityScoped.groups || []).length) { %>
+        <p class="ac-urp-muted" data-ac-empty="effective-access">No effective permissions from current role assignments.</p>
+        <% } else { %>
+        <div class="ac-urp-perms" data-ac-readonly-permissions="1">
+          <% (facilityScoped.groups || []).forEach(function (g) { %>
+          <details>
+            <summary>
+              <span><%= g.label %></span>
+              <span class="ac-urp-muted"><%= g.count %></span>
+            </summary>
+            <% (g.permissions || []).forEach(function (p) { %>
+            <div class="ac-urp-perm">
+              <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+              <span>
+                <%= p.label || p.key || p %>
+                <% if (p.grantedBy && p.grantedBy.length) { %>
+                <small>Granted by <%= p.grantedBy.join(', ') %></small>
+                <% } %>
+              </span>
+            </div>
+            <% }) %>
+          </details>
+          <% }) %>
+        </div>
+        <% } %>
+      </section>
     </div>
+
+    <footer class="ac-urp-detail__foot">
+      <% if (actions.canSuspend && actions.suspendHref) { %>
+      <a class="ac-urp-btn ac-urp-btn--danger" href="<%= actions.suspendHref %>">
+        <span class="material-symbols-outlined" style="font-size:20px">block</span>
+        Disable user access
+      </a>
+      <% } else if (actions.profileHref) { %>
+      <a class="ac-urp-btn ac-urp-btn--ghost" href="<%= actions.profileHref %>">Open staff profile</a>
+      <% } %>
+    </footer>
+  </article>
+
+  <div class="ac-urp-detail-mobile-foot">
+    <% if (actions.canSuspend && actions.suspendHref) { %>
+    <a class="ac-urp-btn ac-urp-btn--danger" href="<%= actions.suspendHref %>">
+      <span class="material-symbols-outlined" style="font-size:20px">person_off</span>
+      Disable User
+    </a>
+    <% } %>
+    <% if (actions.canAssign) { %>
+    <a class="ac-urp-btn" href="<%= actions.assignHref %>">
+      <span class="material-symbols-outlined" style="font-size:20px">add_moderator</span>
+      Assign Role
+    </a>
     <% } %>
   </div>
 </section>

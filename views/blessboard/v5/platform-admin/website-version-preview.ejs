@@ -1,0 +1,21 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var snap = snapshot || {};
+  var values = snap.values || {};
+  var keys = Object.keys(values);
+  var ver = version || {};
+%>
+<section class="bb-pa-page" data-website-version-preview="1">
+  <h1>Version snapshot v<%= ver.versionNumber || '' %></h1>
+  <p><%= organizationName || organizationKey %> · <%= productCode || '' %></p>
+  <% if (!keys.length) { %>
+  <p>No stored field values in this snapshot.</p>
+  <% } %>
+  <dl class="bb-pa-dl">
+    <% keys.forEach(function (key) { %>
+    <dt><%= key %></dt>
+    <dd><%= typeof values[key] === 'string' ? values[key] : JSON.stringify(values[key]) %></dd>
+    <% }); %>
+  </dl>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

@@ -80,6 +80,10 @@ const { createHqReportsRouter } = require("../../blessboard/http/hqReportsRoutes
 const { createTenantPublicRouter } = require("../../blessboard/http/tenantPublicRoutes");
 const { createPathPublicRouter } = require("../../blessboard/http/pathPublicRoutes");
 const {
+  createBlessBoardPathWebsiteEditorRouter,
+  createBlessBoardTenantWebsiteEditorRouter,
+} = require("../../blessboard/http/blessboardWebsiteEditorRoutes");
+const {
   createVanityChurchPublicRouter,
 } = require("../../blessboard/http/vanityChurchPublicRoutes");
 const { createChurchWebsiteAdminRouter } = require("../../blessboard/http/churchWebsiteAdminRoutes");
@@ -966,7 +970,22 @@ function createV5FoundationApp(options) {
     })
   );
 
-  // 8d. Tenant public website (authoritative mode; published content only)
+  // 8d. Shared website editor actions (drafts / media / preview / publish)
+  // Mounted before public GET pages so POST /website/* and /c/:key/website/* resolve here.
+  app.use(
+    createBlessBoardTenantWebsiteEditorRouter({
+      getPool,
+      getEnv: () => env,
+    })
+  );
+  app.use(
+    createBlessBoardPathWebsiteEditorRouter({
+      getPool,
+      getEnv: () => env,
+    })
+  );
+
+  // 8d1. Tenant public website (authoritative mode; published content only)
   app.use(
     createTenantPublicRouter({
       getPool,

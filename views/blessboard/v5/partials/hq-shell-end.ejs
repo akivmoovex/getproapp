@@ -10,6 +10,9 @@
   <script src="/blessboard/v5/shell-nav.js?v=3" defer></script>
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
   <script src="/blessboard/v5/hq-admin.js?v=5" defer></script>
+  <% if (typeof loadUrpAssets !== 'undefined' && loadUrpAssets) { %>
+  <script src="/blessboard/v5/bb-urp.js?v=1" defer></script>
+  <% } %>
   <% if (typeof loadMediaPicker !== 'undefined' && loadMediaPicker) { %>
   <script src="/blessboard/v5/media-picker.js?v=6" defer></script>
   <% } %>

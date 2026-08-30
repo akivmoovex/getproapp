@@ -29,7 +29,7 @@ const {
   loadActiveDepartmentTypeSet,
 } = require("./activeClinicModuleAvailability");
 
-const SHELL_ASSET_VERSION = "v7-proj106-2";
+const SHELL_ASSET_VERSION = "v7-urp-1";
 
 /**
  * @param {{ query: Function }} db

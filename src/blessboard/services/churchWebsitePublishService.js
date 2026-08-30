@@ -828,6 +828,19 @@ async function publishChurchWebsite(db, input) {
             engineCode: enginePublished.code,
           });
         }
+        try {
+          const {
+            projectPublishedFieldsToPages,
+          } = require("../website/blessboardEngineContentService");
+          await projectPublishedFieldsToPages(client, {
+            organizationId: inner.organizationId,
+            churchId,
+            branchId,
+            slug: inner.organizationKey,
+          });
+        } catch {
+          // Projection is compatibility for public_pages; engine publish already committed in this TX.
+        }
       } catch (versionErr) {
         // Version history is required for Phase3 — fail the publish TX.
         throw versionErr;
@@ -1004,10 +1017,10 @@ async function ensureInitialHomeWelcomeSection(client, fields) {
 }
 
 /**
- * First-time Foundation publish inside an existing provisioning transaction.
- * Publishes required pages + draft sections and sets website_status=published
- * so `/c/:organizationKey` is immediately usable. Skips HQ readiness gates
- * (preview ack / service-times) that block first publish after approval.
+ * First-time Foundation website initialization inside provisioning.
+ * Default path (publish !== true) seeds required pages and shared-engine
+ * drafts, leaves website_status unpublished / coming soon, and does not
+ * create a public version. Explicit HQ publish is required to go live.
  *
  * @param {{ query: Function }} client
  * @param {{
@@ -1079,6 +1092,66 @@ async function publishInitialFoundationWebsite(client, input) {
     city: (input && input.city) || null,
   });
   await ensureInitialHomeWelcomeSection(client, { churchId, publicName });
+
+  const publicPath = buildPublicOrganizationWebsitePath({
+    product: PRODUCT_CODE.BLESSBOARD,
+    organizationKey: keyNorm.key,
+  });
+  const wantPublish = Boolean(input && input.publish === true);
+  const alreadyPublishedStatus =
+    settings && String(settings.websiteStatus || "") === "published";
+
+  await settingsRepo.ensureChurchSettingsRow(client, {
+    churchId,
+    publicName,
+  });
+
+  if (!wantPublish && !alreadyPublishedStatus) {
+    let seedEngine = true;
+    try {
+      const revisionCol = await client.query(
+        `SELECT 1
+           FROM information_schema.columns
+          WHERE table_schema = 'blessboard'
+            AND table_name = 'public_pages'
+            AND column_name = 'revision_number'
+          LIMIT 1`
+      );
+      seedEngine = Boolean(revisionCol.rowCount);
+    } catch {
+      seedEngine = true;
+    }
+    if (seedEngine) {
+      await client.query("SAVEPOINT unpublished_engine_seed");
+      try {
+        const {
+          seedUnpublishedEngineContent,
+        } = require("../website/blessboardEngineContentService");
+        await seedUnpublishedEngineContent(client, {
+          organizationId,
+          churchId,
+          slug: keyNorm.key,
+          actorIdentityId: (input && input.actorUserId) || null,
+        });
+        await client.query("RELEASE SAVEPOINT unpublished_engine_seed");
+      } catch {
+        try {
+          await client.query("ROLLBACK TO SAVEPOINT unpublished_engine_seed");
+        } catch {
+          /* Engine seed must not abort registration. */
+        }
+      }
+    }
+    return {
+      ok: true,
+      status: STATUS.OK,
+      alreadyPublished: false,
+      unpublished: true,
+      pageCount: PUBLIC_PAGE_KEYS.length,
+      publicPath,
+      organizationKey: keyNorm.key,
+    };
+  }
 
   const publishedAt = new Date();
   const pageUpdate = await client.query(

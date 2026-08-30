@@ -163,6 +163,17 @@ async function applyFieldDraft(client, draft, ctx) {
     patch.layoutMetadata = mergeLayoutMetadata(section.layoutMetadata, {
       [draft.fieldKey]: draft.newValue,
     });
+  } else if (draft.fieldKey === "image" || draft.fieldKey === "mediaUrl") {
+    const raw = draft.newValue;
+    const src =
+      raw && typeof raw === "object"
+        ? String(raw.src || raw.url || "")
+        : String(raw || "");
+    const alt = raw && typeof raw === "object" ? String(raw.alt || "") : "";
+    patch.mediaUrl = src || null;
+    patch.layoutMetadata = mergeLayoutMetadata(section.layoutMetadata, {
+      altText: alt || null,
+    });
   } else {
     throw mapError("INVALID_FIELD", "Unsupported draft field.");
   }
@@ -684,6 +695,7 @@ async function applyProposedPhase7DraftsInTransaction(client, opts) {
 module.exports = {
   applyWebsiteDraftsInTransaction,
   applyProposedPhase7DraftsInTransaction,
+  applyFieldDraft,
   orderedStructuredDrafts,
   ensurePage,
   ensureSection,

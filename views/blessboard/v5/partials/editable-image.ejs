@@ -1,0 +1,62 @@
+<%#
+  Shared image editor markup (same data contract as ActiveClinic).
+  Locals: editPageKey, editSectionKey, editFieldKey, imageSrc, imageAlt, imageClass
+%>
+<%
+  var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+  var _editing = _wa && _wa.editingMode;
+  var _pageKey = typeof editPageKey !== 'undefined' ? String(editPageKey) : (_wa && _wa.pageKey ? String(_wa.pageKey) : 'home');
+  var _sectionKey = String(typeof editSectionKey !== 'undefined' ? editSectionKey : 'hero');
+  var _fieldKey = String(typeof editFieldKey !== 'undefined' ? editFieldKey : 'image');
+  var _src = typeof imageSrc !== 'undefined' && imageSrc ? String(imageSrc) : '';
+  var _alt = typeof imageAlt !== 'undefined' && imageAlt ? String(imageAlt) : '';
+  var _class = typeof imageClass !== 'undefined' && imageClass ? String(imageClass) : 'bb-tp-hero__img';
+  var _key = _pageKey + '.' + _sectionKey + '.' + _fieldKey;
+%>
+<% if (_editing) { %>
+<div
+  class="bb-tp-inline-edit bb-tp-inline-edit--image ac-website-editable ac-website-editable--image"
+  data-website-key="<%= _key %>"
+  data-website-type="image"
+  data-website-media-id=""
+  data-bb-inline-edit="1"
+  data-bb-page="<%= _pageKey %>"
+  data-bb-section="<%= _sectionKey %>"
+  data-bb-field="<%= _fieldKey %>"
+>
+  <div class="ac-website-editable__preview">
+    <% if (_src) { %>
+    <img data-website-image="1" class="<%= _class %>" src="<%= _src %>" alt="<%= _alt %>" width="1600" height="900" />
+    <% } else { %>
+    <img data-website-image="1" class="<%= _class %>" src="" alt="<%= _alt %>" width="1600" height="900" hidden />
+    <div class="bb-tp-hero__fallback" data-website-image-placeholder="1"></div>
+    <% } %>
+    <button type="button" class="bb-tp-inline-edit__pencil ac-website-editable__pencil" data-website-start="1" aria-label="Edit image">
+      <span class="material-symbols-outlined" aria-hidden="true">image</span>
+    </button>
+  </div>
+  <div class="ac-website-editable__image-tools" data-website-image-tools="1" hidden>
+    <p class="ac-website-editable__current"><span class="ac-website-editable__current-label">Current image</span></p>
+    <label class="ac-website-editable__file">
+      <span>Replace / upload</span>
+      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-website-file="1"/>
+    </label>
+    <button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" data-website-library="1">Media library</button>
+    <label class="ac-website-editable__alt">
+      Alt text
+      <input type="text" maxlength="240" value="<%= _alt %>" data-website-alt="1" enterkeyhint="done" autocomplete="off"/>
+    </label>
+    <span class="ac-website-editable__controls">
+      <button type="button" class="ac-website-editable__save" data-website-save="1" hidden aria-label="Save image to draft">Save</button>
+      <button type="button" class="ac-website-editable__cancel" data-website-cancel="1" hidden aria-label="Cancel image edit">Cancel</button>
+    </span>
+    <span class="ac-website-editable__status" data-website-status-msg="1" aria-live="polite"></span>
+    <progress class="ac-website-editable__progress" data-website-progress="1" hidden max="100" value="0"></progress>
+    <div class="gp-website-library" data-website-library-panel="1" hidden></div>
+  </div>
+</div>
+<% } else if (_src) { %>
+<img class="<%= _class %>" src="<%= _src %>" alt="<%= _alt %>" width="1600" height="900" loading="eager" decoding="async" />
+<% } else { %>
+<div class="bb-tp-hero__fallback"></div>
+<% } %>

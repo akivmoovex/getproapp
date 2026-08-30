@@ -9,127 +9,172 @@
   var actions = overview.actions || {};
   var tab = overview.tab || 'staff';
   var viewMode = overview.viewMode || 'staff';
+  var summary = overview.summary || { totalStaff: 0, active: 0, administrators: 0, pending: 0 };
+  var canInvite = actions.canInvite;
 %>
-<section class="ac-access" data-ac-page-section="access-overview" data-ac-visual="stitch-gap" data-ac-access-tab="<%= tab %>">
-  <nav class="ac-segmented" aria-label="Roles and access sections" data-ac-access-tabs="1">
+<section class="ac-access ac-urp" data-ac-page-section="access-overview" data-ac-visual="stitch-urp" data-ac-stitch-project="14482742053601518750" data-ac-access-tab="<%= tab %>">
+  <nav class="ac-urp-tabs ac-segmented" aria-label="Roles and access sections" data-ac-access-tabs="1">
     <a class="ac-segmented__item <%= tab === 'staff' ? 'is-active' : '' %>" href="/app/access?tab=staff" data-ac-tab="staff">Staff access</a>
     <a class="ac-segmented__item <%= tab === 'catalogue' ? 'is-active' : '' %>" href="/app/access?tab=catalogue" data-ac-tab="catalogue">Role catalogue</a>
   </nav>
 
   <% if (tab === 'catalogue') { %>
-  <div class="ac-panel" data-ac-access-catalogue="1">
-    <h2 class="ac-dashboard__card-title" style="margin-top:0">ActiveClinic role catalogue</h2>
-    <p class="ac-muted">System roles and their operational responsibilities. Custom roles are not available.</p>
-    <div class="ac-access-catalogue">
-      <% roles.forEach(function (role) { %>
-      <article class="ac-access-catalogue__role" data-ac-role-key="<%= role.key %>">
-        <header>
-          <h3 style="margin:0;font-size:1rem">
-            <a href="/app/access/roles/<%= encodeURIComponent(role.key) %>"><%= role.label %></a>
-          </h3>
-          <p class="ac-muted" style="margin:.25rem 0 0">
-            <%= role.scopeLabel %>
-            · <%= role.staffCount %> staff
-            <% if (role.compatibility) { %> · Compatibility / legacy<% } %>
-          </p>
-        </header>
-        <p style="margin:.75rem 0"><%= role.description %></p>
-        <% if (role.capabilityGroups && role.capabilityGroups.length) { %>
-        <ul class="ac-role-chips" aria-label="Capability groups">
-          <% role.capabilityGroups.forEach(function (g) { %>
-          <li class="ac-chip"><%= g.label %> (<%= g.count %>)</li>
-          <% }) %>
-        </ul>
-        <% } %>
-      </article>
-      <% }) %>
+  <header class="ac-urp-pagehead">
+    <div>
+      <h2>Roles Overview</h2>
+      <p>Standardized access levels and permission groupings for all staff members across the facility. These roles are read-only to ensure compliance.</p>
     </div>
+  </header>
+  <div class="ac-urp-catalogue" data-ac-access-catalogue="1">
+    <% roles.forEach(function (role) { %>
+    <article class="ac-urp-role-card" data-ac-role-key="<%= role.key %>">
+      <div class="ac-urp-role-card__head">
+        <div class="ac-urp-role-card__title">
+          <span class="ac-urp-role-card__icon" aria-hidden="true">
+            <span class="material-symbols-outlined"><%= role.icon || 'badge' %></span>
+          </span>
+          <h3><%= role.label %></h3>
+        </div>
+        <span class="ac-urp-chip <%= role.scopeBadge === 'Facility-specific' ? 'ac-urp-chip--facility' : 'ac-urp-chip--neutral' %>"><%= role.scopeBadge || role.scopeLabel %></span>
+      </div>
+      <p><%= role.description %></p>
+      <% if (!role.grantable) { %>
+      <p class="ac-urp-gap-note">Not currently grantable from Staff Users.</p>
+      <% } %>
+      <% if (role.compatibility) { %>
+      <p class="ac-urp-gap-note">Compatibility / legacy role.</p>
+      <% } %>
+      <div class="ac-urp-role-card__stats">
+        <div>
+          <span class="ac-urp-stat__label">Staff Assigned</span>
+          <strong><%= role.staffCount %></strong>
+        </div>
+        <div style="text-align:right">
+          <span class="ac-urp-stat__label">Permissions</span>
+          <strong><%= role.permissionCount || 0 %></strong>
+        </div>
+      </div>
+      <a class="ac-urp-btn ac-urp-btn--outline" href="/app/access/roles/<%= encodeURIComponent(role.key) %>">
+        <span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px">visibility</span>
+        View Permissions
+      </a>
+    </article>
+    <% }) %>
   </div>
   <% } else { %>
 
-  <form class="ac-panel ac-filter-bar" method="get" action="/app/access" data-ac-access-filters="1">
+  <header class="ac-urp-pagehead">
+    <div>
+      <h2>Staff Users</h2>
+      <p>Manage access and roles for all clinical facility staff.</p>
+    </div>
+    <% if (canInvite) { %>
+    <a class="ac-urp-btn" href="<%= actions.inviteHref || '/app/staff/new?invite=1' %>">
+      <span class="material-symbols-outlined" aria-hidden="true" style="font-size:18px;font-variation-settings:'FILL' 1">add</span>
+      Invite staff member
+    </a>
+    <% } else { %>
+    <a class="ac-urp-btn ac-urp-btn--ghost" href="<%= actions.staffDirectoryHref || '/app/staff' %>">Staff directory</a>
+    <% } %>
+  </header>
+
+  <div class="ac-urp-stats" aria-label="Staff access summary">
+    <article class="ac-urp-stat">
+      <div class="ac-urp-stat__top">
+        <span class="ac-urp-stat__label">Total Staff</span>
+        <span class="ac-urp-stat__icon"><span class="material-symbols-outlined">groups</span></span>
+      </div>
+      <div class="ac-urp-stat__value"><%= summary.totalStaff %></div>
+    </article>
+    <article class="ac-urp-stat">
+      <div class="ac-urp-stat__top">
+        <span class="ac-urp-stat__label">Active</span>
+        <span class="ac-urp-stat__icon"><span class="material-symbols-outlined">check_circle</span></span>
+      </div>
+      <div class="ac-urp-stat__value"><%= summary.active %></div>
+    </article>
+    <article class="ac-urp-stat">
+      <div class="ac-urp-stat__top">
+        <span class="ac-urp-stat__label">Administrators</span>
+        <span class="ac-urp-stat__icon"><span class="material-symbols-outlined">admin_panel_settings</span></span>
+      </div>
+      <div class="ac-urp-stat__value"><%= summary.administrators %></div>
+    </article>
+    <article class="ac-urp-stat">
+      <div class="ac-urp-stat__top">
+        <span class="ac-urp-stat__label">Pending</span>
+        <span class="ac-urp-stat__icon"><span class="material-symbols-outlined">schedule</span></span>
+      </div>
+      <div class="ac-urp-stat__value"><%= summary.pending %></div>
+    </article>
+  </div>
+
+  <form class="ac-urp-filters ac-filter-bar" method="get" action="/app/access" data-ac-access-filters="1">
     <input type="hidden" name="tab" value="staff"/>
-    <div class="ac-filter-bar__grid ac-filter-bar__grid--staff">
-      <div>
-        <label class="ac-label" for="access_search">Search</label>
-        <input class="ac-input" id="access_search" name="q" type="search" value="<%= filters.q || '' %>" placeholder="Name or role" autocomplete="off"/>
-      </div>
-      <div>
-        <label class="ac-label" for="access_status">Status</label>
-        <select class="ac-select" id="access_status" name="status">
-          <% (filterOptions.statuses || []).forEach(function (s) { %>
-          <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
-          <% }) %>
-        </select>
-      </div>
-      <div>
-        <label class="ac-label" for="access_role">Role</label>
-        <select class="ac-select" id="access_role" name="role">
-          <option value="">All roles</option>
-          <% (filterOptions.roles || []).forEach(function (r) { %>
-          <option value="<%= r.value %>" <%= filters.role === r.value ? 'selected' : '' %>><%= r.label %></option>
-          <% }) %>
-        </select>
-      </div>
-      <div>
-        <label class="ac-label" for="access_facility">Facility</label>
-        <select class="ac-select" id="access_facility" name="facility">
-          <option value="">All facilities</option>
-          <% (filterOptions.facilities || []).forEach(function (f) { %>
-          <option value="<%= f.value %>" <%= filters.facility === f.value ? 'selected' : '' %>><%= f.label %></option>
-          <% }) %>
-        </select>
-      </div>
-      <div class="ac-filter-bar__checks">
-        <button type="submit" class="ac-btn">Apply</button>
-        <% if (filters.active) { %>
-        <a class="ac-btn ac-btn--ghost" href="/app/access?tab=staff">Clear</a>
-        <% } %>
-      </div>
+    <div class="ac-urp-search">
+      <span class="material-symbols-outlined" aria-hidden="true">search</span>
+      <label class="ac-sr-only" for="access_search">Search staff members</label>
+      <input id="access_search" name="q" type="search" value="<%= filters.q || '' %>" placeholder="Search staff members..." autocomplete="off"/>
+    </div>
+    <div class="ac-urp-filter-row">
+      <label class="ac-sr-only" for="access_role">Role</label>
+      <select class="ac-urp-select ac-select" id="access_role" name="role" onchange="this.form.submit()">
+        <option value="">Role: All</option>
+        <% (filterOptions.roles || []).forEach(function (r) { %>
+        <option value="<%= r.value %>" <%= filters.role === r.value ? 'selected' : '' %>><%= r.label %></option>
+        <% }) %>
+      </select>
+      <label class="ac-sr-only" for="access_facility">Facility</label>
+      <select class="ac-urp-select ac-select" id="access_facility" name="facility" onchange="this.form.submit()">
+        <option value="">Facility: All</option>
+        <% (filterOptions.facilities || []).forEach(function (f) { %>
+        <option value="<%= f.value %>" <%= filters.facility === f.value ? 'selected' : '' %>><%= f.label %></option>
+        <% }) %>
+      </select>
+      <label class="ac-sr-only" for="access_status">Status</label>
+      <select class="ac-urp-select ac-select" id="access_status" name="status" onchange="this.form.submit()">
+        <% (filterOptions.statuses || []).forEach(function (s) { %>
+        <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+        <% }) %>
+      </select>
+      <% if (filters.active) { %>
+      <a class="ac-urp-icon-btn" href="/app/access?tab=staff" title="Clear filters">
+        <span class="material-symbols-outlined">filter_alt_off</span>
+      </a>
+      <% } %>
+      <noscript><button type="submit" class="ac-urp-btn">Apply</button></noscript>
     </div>
   </form>
 
-  <% if (overview.resultCount != null && !emptyMode) { %>
-  <p class="ac-muted" data-ac-result-count="<%= overview.resultCount %>">
-    <%= overview.resultCount %>
-    <%= viewMode === 'assignments' ? 'assignment' : 'staff member' %><%= overview.resultCount === 1 ? '' : (viewMode === 'assignments' ? 's' : 's') %>
-  </p>
-  <% } %>
-
   <% if (emptyMode === 'none') { %>
-  <%- include('../partials/ac-inline-state', {
-    inlineState: {
-      stateKey: 'empty',
-      marker: 'access-none',
-      title: 'No staff access records yet',
-      description: 'Invite staff from the directory, then assign ActiveClinic roles here.',
-      primaryAction: actions.staffDirectoryHref
-        ? { href: actions.staffDirectoryHref, label: 'Open staff directory' }
-        : null
-    }
-  }) %>
+  <div class="ac-urp-table-wrap">
+    <div class="ac-urp-empty" data-ac-empty="access-none">
+      <h3>No staff access records yet</h3>
+      <p class="ac-urp-muted">Invite staff from the directory, then assign ActiveClinic roles here.</p>
+      <% if (actions.staffDirectoryHref) { %>
+      <p><a class="ac-urp-btn ac-urp-btn--ghost" href="<%= actions.staffDirectoryHref %>">Open staff directory</a></p>
+      <% } %>
+    </div>
+  </div>
   <% } else if (emptyMode === 'filtered') { %>
-  <%- include('../partials/ac-inline-state', {
-    inlineState: {
-      stateKey: 'no_results',
-      marker: 'access-filtered',
-      title: 'No staff match these filters',
-      description: 'Try different search terms, or clear filters to see all staff you can manage.',
-      secondaryAction: { href: '/app/access?tab=staff', label: 'Clear filters' }
-    }
-  }) %>
+  <div class="ac-urp-table-wrap">
+    <div class="ac-urp-empty" data-ac-empty="access-filtered">
+      <h3>No staff match these filters</h3>
+      <p class="ac-urp-muted">Try different search terms, or clear filters to see all staff you can manage.</p>
+      <p><a class="ac-urp-btn ac-urp-btn--ghost" href="/app/access?tab=staff">Clear filters</a></p>
+    </div>
+  </div>
   <% } else if (viewMode === 'assignments') { %>
-  <div class="ac-table-wrap" data-ac-access-table="1">
-    <table class="ac-table">
+  <div class="ac-urp-table-wrap ac-table-wrap" data-ac-access-table="1">
+    <table class="ac-urp-table ac-table">
       <caption class="ac-sr-only">ActiveClinic role assignments</caption>
       <thead>
         <tr>
-          <th scope="col">Staff</th>
+          <th scope="col">Name</th>
           <th scope="col">Role</th>
           <th scope="col">Scope</th>
-          <th scope="col">Effective</th>
-          <th scope="col">Expires</th>
-          <th scope="col"><span class="ac-sr-only">Actions</span></th>
+          <th scope="col">Status</th>
+          <th scope="col" class="ac-urp-table__actions">Actions</th>
         </tr>
       </thead>
       <tbody>
@@ -137,102 +182,132 @@
         <tr data-ac-access-row="1" data-effective="<%= row.effective ? '1' : '0' %>">
           <td>
             <a href="<%= row.detailHref %>"><%= row.staff.displayName %></a>
-            <div class="ac-muted"><%= row.staff.jobTitle || row.staff.status || '' %></div>
+            <div class="ac-urp-name__sub"><%= row.staff.jobTitle || row.staff.status || '' %></div>
           </td>
           <td><%= row.roleLabel %></td>
           <td><%= row.scopeLabel %></td>
           <td>
             <% if (row.effective) { %>
-            <span class="ac-badge ac-badge--success">Effective</span>
+            <span class="ac-urp-chip ac-urp-chip--active">Effective</span>
             <% } else { %>
-            <span class="ac-badge ac-badge--warning">Not effective</span>
+            <span class="ac-urp-chip ac-urp-chip--pending">Not effective</span>
             <% } %>
           </td>
-          <td><%= row.expiresAt ? new Date(row.expiresAt).toLocaleString() : 'No expiry' %></td>
-          <td><a class="ac-btn ac-btn--ghost" href="<%= row.detailHref %>">Manage</a></td>
+          <td>
+            <div class="ac-urp-actions">
+              <a href="<%= row.detailHref %>" title="Manage"><span class="material-symbols-outlined" style="font-size:18px">edit</span></a>
+            </div>
+          </td>
         </tr>
         <% }) %>
       </tbody>
     </table>
+    <div class="ac-urp-table-foot" data-ac-result-count="<%= overview.resultCount %>">Showing <%= overview.resultCount %> assignment<%= overview.resultCount === 1 ? '' : 's' %></div>
   </div>
-  <ul class="ac-card-list ac-card-list--mobile" data-ac-access-cards="1" aria-label="Role assignments">
+  <ul class="ac-urp-cards ac-card-list ac-card-list--mobile" data-ac-access-cards="1" aria-label="Role assignments">
     <% assignments.forEach(function (row) { %>
-    <li class="ac-panel">
-      <a class="ac-card-link" href="<%= row.detailHref %>">
-        <strong><%= row.staff.displayName %></strong>
-        <div><%= row.roleLabel %> · <%= row.scopeLabel %></div>
-        <div class="ac-muted"><%= row.effective ? 'Effective' : 'Not effective' %></div>
+    <li>
+      <a class="ac-urp-card" href="<%= row.detailHref %>">
+        <div class="ac-urp-avatar" aria-hidden="true"><%= (row.staff.displayName || '?').slice(0, 2).toUpperCase() %></div>
+        <div class="ac-urp-card__body">
+          <div class="ac-urp-card__top">
+            <h3><%= row.staff.displayName %></h3>
+            <span class="ac-urp-chip <%= row.effective ? 'ac-urp-chip--active' : 'ac-urp-chip--pending' %>"><%= row.effective ? 'Active' : 'Not effective' %></span>
+          </div>
+          <div class="ac-urp-card__meta">
+            <span><span class="material-symbols-outlined">badge</span><%= row.roleLabel %></span>
+            <span><span class="material-symbols-outlined">domain</span><%= row.scopeLabel %></span>
+          </div>
+        </div>
       </a>
     </li>
     <% }) %>
   </ul>
   <% } else { %>
-  <div class="ac-table-wrap" data-ac-access-table="1" data-ac-staff-access-table="1">
-    <table class="ac-table">
+  <div class="ac-urp-table-wrap ac-table-wrap" data-ac-access-table="1" data-ac-staff-access-table="1">
+    <table class="ac-urp-table ac-table" data-ac-staff-cols="1">
       <caption class="ac-sr-only">Staff access</caption>
       <thead>
         <tr>
-          <th scope="col">Staff member</th>
-          <th scope="col">Job title</th>
-          <th scope="col">Account</th>
-          <th scope="col">Facilities</th>
-          <th scope="col">Roles</th>
-          <th scope="col">Access</th>
-          <th scope="col"><span class="ac-sr-only">Actions</span></th>
+          <th scope="col">Name</th>
+          <th scope="col">Contact</th>
+          <th scope="col">Role</th>
+          <th scope="col">Facility</th>
+          <th scope="col">Status</th>
+          <th scope="col">Actions</th>
         </tr>
       </thead>
       <tbody>
         <% staffRows.forEach(function (row) { %>
         <tr data-ac-staff-access-row="1" data-account="<%= (row.accountStatus && row.accountStatus.key) || '' %>">
-          <td><a href="<%= row.detailHref %>"><%= row.displayName %></a></td>
-          <td><%= row.jobTitle || '—' %></td>
-          <td><%= (row.accountStatus && row.accountStatus.label) || '—' %></td>
           <td>
-            <% if (!(row.facilities || []).length) { %>—<% } else { %>
-            <ul class="ac-role-chips">
-              <% row.facilities.forEach(function (f) { %>
-              <li class="ac-chip"><%= f.displayName %></li>
-              <% }) %>
-            </ul>
-            <% } %>
+            <div class="ac-urp-name">
+              <div class="ac-urp-avatar" aria-hidden="true"><%= row.initials || '?' %></div>
+              <div>
+                <a class="ac-urp-name__name" href="<%= row.detailHref %>"><%= row.displayName %></a>
+                <div class="ac-urp-name__sub"><%= row.accessSubtitle || '' %></div>
+              </div>
+            </div>
+          </td>
+          <td class="ac-urp-contact">
+            <%= row.email || '—' %><% if (row.phone) { %><span><%= row.phone %></span><% } %>
           </td>
           <td>
-            <% if (!(row.roles || []).length) { %><span class="ac-muted">None</span><% } else { %>
-            <ul class="ac-role-chips">
-              <% row.roles.forEach(function (r) { %>
-              <li class="ac-chip"><%= r.roleLabel %></li>
-              <% }) %>
-            </ul>
-            <% } %>
+            <% if (!(row.roles || []).length) { %><span class="ac-urp-muted">None</span>
+            <% } else { %><%= (row.roles || []).map(function (r) { return r.roleLabel; }).join(', ') %><% } %>
           </td>
-          <td><%= (row.accessStatus && row.accessStatus.label) || '—' %></td>
-          <td><a class="ac-btn ac-btn--ghost" href="<%= row.detailHref %>">Manage</a></td>
+          <td>
+            <% if (!(row.facilities || []).length) { %>—<% } else { %><%= (row.facilities || []).map(function (f) { return f.displayName; }).join(', ') %><% } %>
+          </td>
+          <td>
+            <span class="ac-urp-chip ac-urp-chip--<%= row.statusChip || 'neutral' %>">
+              <span class="ac-urp-dot" aria-hidden="true"></span>
+              <%= (row.accessStatus && row.accessStatus.label) || '—' %>
+            </span>
+          </td>
+          <td>
+            <div class="ac-urp-actions">
+              <a href="<%= row.detailHref %>" title="Manage access"><span class="material-symbols-outlined" style="font-size:18px">edit</span></a>
+              <a href="<%= row.detailHref %>" title="More"><span class="material-symbols-outlined" style="font-size:18px">more_vert</span></a>
+            </div>
+          </td>
         </tr>
         <% }) %>
       </tbody>
     </table>
+    <div class="ac-urp-table-foot" data-ac-result-count="<%= overview.resultCount %>">Showing <%= staffRows.length %> of <%= summary.totalStaff %> staff members</div>
   </div>
 
-  <ul class="ac-card-list ac-card-list--mobile" data-ac-access-cards="1" aria-label="Staff access">
+  <ul class="ac-urp-cards ac-card-list ac-card-list--mobile" data-ac-access-cards="1" aria-label="Staff access">
     <% staffRows.forEach(function (row) { %>
-    <li class="ac-panel">
-      <a class="ac-card-link" href="<%= row.detailHref %>">
-        <strong><%= row.displayName %></strong>
-        <div class="ac-muted"><%= row.jobTitle || 'No job title' %> · <%= (row.accountStatus && row.accountStatus.label) || '' %></div>
-        <div class="ac-role-chips" style="margin-top:.5rem">
-          <% (row.roles || []).forEach(function (r) { %>
-          <span class="ac-chip"><%= r.roleLabel %></span>
-          <% }) %>
-          <% if (!(row.roles || []).length) { %><span class="ac-chip">No roles</span><% } %>
-        </div>
-        <div class="ac-muted" style="margin-top:.5rem">
-          <% (row.facilities || []).forEach(function (f, idx) { %><%= idx ? ' · ' : '' %><%= f.displayName %><% }) %>
-          <% if (!(row.facilities || []).length) { %>No facilities<% } %>
+    <li>
+      <a class="ac-urp-card" href="<%= row.detailHref %>">
+        <div class="ac-urp-avatar" aria-hidden="true"><%= row.initials || '?' %></div>
+        <div class="ac-urp-card__body">
+          <div class="ac-urp-card__top">
+            <h3><%= row.displayName %></h3>
+            <span class="ac-urp-chip ac-urp-chip--<%= row.statusChip || 'neutral' %>"><%= (row.accessStatus && row.accessStatus.label) || '' %></span>
+          </div>
+          <div class="ac-urp-card__meta">
+            <span>
+              <span class="material-symbols-outlined">badge</span>
+              <%= (row.roles && row.roles[0] && row.roles[0].roleLabel) || row.jobTitle || 'No role' %>
+            </span>
+            <span>
+              <span class="material-symbols-outlined">domain</span>
+              <%= (row.facilities && row.facilities[0] && row.facilities[0].displayName) || 'No facilities' %>
+            </span>
+          </div>
         </div>
       </a>
     </li>
     <% }) %>
   </ul>
+  <% } %>
+  <% if (canInvite) { %>
+  <a class="ac-urp-fab" href="<%= actions.inviteHref || '/app/staff/new?invite=1' %>" title="Invite staff member" aria-label="Invite staff member">
+    <span class="material-symbols-outlined">person_add</span>
+  </a>
   <% } %>
   <% } %>
 </section>

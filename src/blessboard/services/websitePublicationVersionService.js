@@ -1142,6 +1142,19 @@ async function createRestoredDraft(db, opts) {
         actorIdentityId: actorUserId,
         snapshot: restoredSnapshot,
       });
+      try {
+        const {
+          overwriteEngineFieldsFromPages,
+        } = require("../website/blessboardEngineContentService");
+        await overwriteEngineFieldsFromPages(client, {
+          organizationId,
+          churchId,
+          branchId: restoreBranchId,
+          actorIdentityId: actorUserId,
+        });
+      } catch {
+        /* Engine field restore is best-effort; CMS rows remain the restore target. */
+      }
 
       return {
         ok: true,

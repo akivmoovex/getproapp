@@ -87,6 +87,11 @@ const CAPABILITY_GROUPS = Object.freeze([
       k.includes(".reports.") ||
       k.endsWith(".audit_view"),
   },
+  {
+    key: "website",
+    label: "Website",
+    match: (k) => k.startsWith("website."),
+  },
 ]);
 
 function groupPermissionKeys(permissionKeys) {

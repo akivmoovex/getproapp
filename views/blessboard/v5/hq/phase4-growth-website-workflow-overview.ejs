@@ -76,7 +76,7 @@
       }
     };
   %>
-  <%- include('../../../platform/website-engine/hub-tiles') %>
+  <%- include('../../../platform/website-engine/hub-tiles', { hubTiles: hubTiles }) %>
 
   <% if (typeof needsFoundationRepair !== 'undefined' && needsFoundationRepair) { %>
   <div class="bb-hq-panel" data-bb-hq-website-repair="1" id="website-setup-retry">

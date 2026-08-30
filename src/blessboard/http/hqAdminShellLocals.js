@@ -233,7 +233,7 @@ async function buildHqAdminShellLocals(req, res, opts) {
     classes: "Classes",
     departments: "Departments",
     roles: "Legacy permissions",
-    "staff-access": "Staff access",
+    "staff-access": "Users",
     settings: "Church settings",
     account: "Account",
     content: multi ? "HQ Website" : "Website",
