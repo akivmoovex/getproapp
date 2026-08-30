@@ -95,7 +95,7 @@ async function saveStructuredDraft(db, input) {
   }
   // Never accept client church/org overrides (caller must set from session).
   const op = String(input.op || "upsert").trim();
-  if (!["upsert", "remove", "reorder"].includes(op)) {
+  if (!["upsert", "remove", "reorder", "visibility", "restore_default"].includes(op)) {
     throw mapError("INVALID_OP", "Unsupported edit action.", 400);
   }
 
@@ -223,19 +223,33 @@ function applyStructuredDraftsToModel(model, drafts) {
     if (byKind[d.draftKind]) byKind[d.draftKind].push(d);
   }
 
-  // Draft section order
+  // Draft section order / visibility / restore markers
   for (const d of byKind.page_section) {
     if (!d.pageKey || d.pageKey !== model.pageKey) continue;
-    if (d.op !== "reorder" || !Array.isArray(d.payload && d.payload.order)) continue;
-    const order = d.payload.order.map(String);
-    const rank = (section) => {
-      const idx = order.indexOf(String(section && section.sectionKey));
-      return idx < 0 ? Number.MAX_SAFE_INTEGER : idx;
-    };
-    model.sections = (model.sections || [])
-      .slice()
-      .sort((a, b) => rank(a) - rank(b))
-      .map((s, idx) => ({ ...s, sortOrder: (idx + 1) * 10 }));
+    if (d.op === "reorder" && Array.isArray(d.payload && d.payload.order)) {
+      const order = d.payload.order.map(String);
+      const rank = (section) => {
+        const idx = order.indexOf(String(section && section.sectionKey));
+        return idx < 0 ? Number.MAX_SAFE_INTEGER : idx;
+      };
+      model.sections = (model.sections || [])
+        .slice()
+        .sort((a, b) => rank(a) - rank(b))
+        .map((s, idx) => ({ ...s, sortOrder: (idx + 1) * 10 }));
+      continue;
+    }
+    if (d.op === "visibility" && d.payload) {
+      const sk = String(d.payload.sectionKey || d.sectionKey || "");
+      const hidden = d.payload.hidden === true;
+      model.sections = (model.sections || []).map((s) => {
+        if (String(s.sectionKey) !== sk) return s;
+        return {
+          ...s,
+          _draftHidden: hidden,
+          status: hidden ? "archived" : s.status === "archived" ? "published" : s.status,
+        };
+      });
+    }
   }
 
   // Section media (image/video)

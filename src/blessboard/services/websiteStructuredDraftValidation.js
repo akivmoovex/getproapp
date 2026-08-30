@@ -188,6 +188,16 @@ function validateStructuredPayload(kind, payload, op) {
     }
     return { ok: true, payload: { order } };
   }
+  if (op === "visibility") {
+    const sectionKey = String(body.sectionKey || "").trim();
+    if (!sectionKey) return { ok: false, error: "Section is required." };
+    return { ok: true, payload: { sectionKey, hidden: body.hidden === true } };
+  }
+  if (op === "restore_default") {
+    const sectionKey = String(body.sectionKey || "").trim();
+    if (!sectionKey) return { ok: false, error: "Section is required." };
+    return { ok: true, payload: { sectionKey } };
+  }
 
   if (REORDER_ONLY_KINDS.includes(kind)) {
     return { ok: false, error: "This item only supports ordering changes." };

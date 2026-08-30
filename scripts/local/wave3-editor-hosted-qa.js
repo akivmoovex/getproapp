@@ -11,7 +11,11 @@ const { chromium } = require("playwright");
 const { checkHostedTestingSha } = require("../check-hosted-testing-sha");
 
 const PASS = process.env.QA_PASSWORD || "1234567890";
-const CANDIDATE_SHA = "27571f62640a061b3b80dc9704a612ead6df3f8b";
+const { execSync } = require("child_process");
+const CANDIDATE_SHA = (
+  process.env.WAVE3_CANDIDATE_SHA ||
+  execSync("git rev-parse HEAD", { encoding: "utf8" }).trim()
+);
 
 function normalizeSha(s) {
   return String(s || "").toLowerCase().slice(0, 12);
@@ -65,18 +69,37 @@ async function overflowOk(page) {
 }
 
 async function clickExit(page, vp) {
-  const desktopExit = page.locator(
-    ".gp-website-editor__exit--desktop [data-website-engine-exit], .gp-website-editor__exit--desktop [data-bb-exit-editing]"
-  );
-  if (await desktopExit.first().isVisible().catch(() => false)) {
-    await desktopExit.first().click();
-    return;
+  if (!vp.isMobile) {
+    const desktopExit = page.locator(
+      ".gp-website-editor__exit--desktop [data-website-engine-exit], .gp-website-editor__exit--desktop [data-bb-exit-editing]"
+    );
+    if (await desktopExit.first().isVisible().catch(() => false)) {
+      await desktopExit.first().click();
+      return;
+    }
+    const visibleExit = page
+      .locator("[data-website-engine-exit]:visible, [data-bb-exit-editing]:visible")
+      .filter({ hasNot: page.locator(".gp-website-editor__more-form--mobile-exit") });
+    if ((await visibleExit.count()) > 0) {
+      await visibleExit.first().click();
+      return;
+    }
   }
   await page.locator("[data-website-more-toggle]").click();
   const menuExit = page.locator(
-    ".gp-website-editor__more-menu:not([hidden]) [data-website-engine-exit], .gp-website-editor__more-menu:not([hidden]) [data-bb-exit-editing]"
+    ".gp-website-editor__more-menu:not([hidden]) [data-website-engine-exit]:visible, .gp-website-editor__more-menu:not([hidden]) [data-bb-exit-editing]:visible"
   );
   await menuExit.first().click();
+}
+
+async function dismissFieldEditor(page) {
+  const panel = page.locator("[data-website-field-editor-panel]:not([hidden])");
+  const cancel = panel.locator("[data-website-field-editor-cancel]");
+  if (await cancel.isVisible().catch(() => false)) {
+    await cancel.click();
+    return;
+  }
+  await page.keyboard.press("Escape");
 }
 
 async function openTextField(page) {
@@ -240,7 +263,7 @@ async function testUnsaved(page, product, vp) {
     const localOnly = `W3-local-${Date.now()}`;
     await panel2.locator("[data-website-input]").fill(localOnly);
     await page.waitForTimeout(200);
-    await page.locator("[data-website-field-editor-overlay]").click();
+    await dismissFieldEditor(page);
     const unsaved = page.locator('[data-website-lifecycle-panel="unsaved"]:not([hidden])');
     await unsaved.waitFor({ state: "visible", timeout: 8000 });
     const body = await unsaved.textContent();
@@ -248,14 +271,23 @@ async function testUnsaved(page, product, vp) {
     if (!/discard changes/i.test(body || "")) out.notes.push("missing discard changes");
     await page.locator('[data-website-lifecycle-confirm="keep-editing"]').click();
     await unsaved.waitFor({ state: "hidden", timeout: 5000 });
-    const stillOpen = await panel2.locator("[data-website-field-editor-panel]:not([hidden])").isVisible();
-    if (!stillOpen) out.notes.push("field dialog closed after keep editing");
-    const retained = await panel2.locator("[data-website-input]").inputValue().catch(() => "");
+    const hostOpen = await page
+      .locator("[data-website-field-editor]:not([hidden])")
+      .isVisible()
+      .catch(() => false);
+    if (!hostOpen) {
+      out.pass = false;
+      out.notes.push("field editor closed after keep editing");
+    }
+    const retained = await page
+      .locator("[data-website-field-editor-panel] [data-website-input]")
+      .inputValue()
+      .catch(() => "");
     if (!String(retained).includes(localOnly)) {
       out.pass = false;
       out.notes.push("local not retained after keep editing");
     }
-    await page.locator("[data-website-field-editor-overlay]").click();
+    await dismissFieldEditor(page);
     await unsaved.waitFor({ state: "visible", timeout: 8000 });
     await page.locator('[data-website-lifecycle-confirm="discard-local"]').click();
     await unsaved.waitFor({ state: "hidden", timeout: 5000 });

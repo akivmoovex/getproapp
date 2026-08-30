@@ -7,6 +7,7 @@
  */
 
 const { listProductPageTypes } = require("./productSchemaRegistry");
+const SECTION_LABELS = require("./sectionActionLabels");
 const {
   buildPublicWebsiteEditPath,
 } = require("../website/publicWebsiteUrl");
@@ -275,6 +276,12 @@ function presentEditorShell(input) {
     exitLabel: facts.exitLabel || LABELS.exitEditing,
     editLabel: facts.editLabel || LABELS.editWebsite,
     pageSelectLabel: facts.pageSelectLabel || "Page",
+    sectionActionsUrl: facts.sectionActionsUrl || null,
+    sectionManifest: facts.sectionManifest || null,
+    sectionManifestJson: facts.sectionManifest
+      ? JSON.stringify(facts.sectionManifest).replace(/</g, "\\u003c")
+      : "",
+    sectionActionLabels: SECTION_LABELS,
   };
 }
 

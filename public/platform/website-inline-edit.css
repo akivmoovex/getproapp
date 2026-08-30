@@ -1825,3 +1825,220 @@ body.gp-website-lifecycle-open {
   }
 }
 
+/* Wave 4A — section actions (Stitch WE01-06) */
+.gp-website-section {
+  position: relative;
+}
+
+.gp-website-section__chrome {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  z-index: 60;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  pointer-events: none;
+}
+
+.gp-website-section__trigger {
+  pointer-events: auto;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 40px;
+  height: 40px;
+  border: 1px solid var(--gp-we-outline-variant, #d0d5dd);
+  border-radius: 10px;
+  background: var(--gp-we-toolbar-bg, #fff);
+  color: var(--gp-we-on-surface, #0f172a);
+  box-shadow: 0 4px 12px rgba(15, 23, 42, 0.12);
+  cursor: pointer;
+}
+
+.gp-website-section__trigger:hover,
+.gp-website-section__trigger:focus-visible {
+  border-color: var(--gp-we-primary, #6c5ce7);
+  outline: none;
+}
+
+.gp-website-section__hidden-badge {
+  pointer-events: none;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 4px 8px;
+  border-radius: 999px;
+  background: rgba(15, 23, 42, 0.72);
+  color: #fff;
+}
+
+.gp-website-section--hidden-draft {
+  opacity: 0.55;
+  outline: 2px dashed var(--gp-we-outline-variant, #cbd5e1);
+  outline-offset: -2px;
+}
+
+.gp-website-section--focus {
+  outline: 2px solid var(--gp-we-primary, #6c5ce7);
+  outline-offset: 4px;
+}
+
+.gp-website-section-menu {
+  position: fixed;
+  inset: 0;
+  z-index: 1450;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.gp-website-section-menu[hidden] {
+  display: none !important;
+}
+
+.gp-website-section-menu__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.gp-website-section-menu__panel {
+  position: relative;
+  width: min(100%, 20rem);
+  background: var(--gp-we-toolbar-bg, #fff);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  overflow: hidden;
+}
+
+.gp-website-section-menu__panel[hidden] {
+  display: none !important;
+}
+
+.gp-website-section-menu__grab {
+  display: none;
+}
+
+.gp-website-section-menu__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 14px 16px 8px;
+}
+
+.gp-website-section-menu__title {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.gp-website-section-menu__close {
+  border: 0;
+  background: transparent;
+  cursor: pointer;
+  color: inherit;
+}
+
+.gp-website-section-menu__body {
+  display: flex;
+  flex-direction: column;
+  padding: 0 8px 8px;
+}
+
+.gp-website-section-menu__item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  text-align: left;
+  cursor: pointer;
+  color: inherit;
+  font: inherit;
+}
+
+.gp-website-section-menu__item:hover:not(:disabled),
+.gp-website-section-menu__item:focus-visible:not(:disabled) {
+  background: rgba(108, 92, 231, 0.08);
+  outline: none;
+}
+
+.gp-website-section-menu__item:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.gp-website-section-menu__sub {
+  padding-left: 12px;
+}
+
+.gp-website-section-menu__body-text {
+  margin: 0;
+  padding: 0 16px 12px;
+  color: var(--gp-we-muted, #475569);
+  font-size: 0.9rem;
+}
+
+.gp-website-section-menu__foot {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding: 12px 16px 16px;
+}
+
+.gp-website-section-menu__btn {
+  min-height: 44px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font: inherit;
+}
+
+.gp-website-section-menu__btn--ghost {
+  background: transparent;
+  border-color: var(--gp-we-outline-variant, #d0d5dd);
+}
+
+.gp-website-section-menu__btn--primary {
+  background: var(--gp-we-primary, #6c5ce7);
+  color: #fff;
+}
+
+body.gp-website-section-menu-open {
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .gp-website-section-menu {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .gp-website-section-menu__panel {
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .gp-website-section-menu__grab {
+    display: block;
+    width: 2.5rem;
+    height: 0.25rem;
+    margin: 8px auto 0;
+    border-radius: 999px;
+    background: var(--gp-we-outline-variant, #d0d5dd);
+  }
+
+  .gp-website-section__chrome {
+    top: 8px;
+    right: 8px;
+  }
+}
+

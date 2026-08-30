@@ -766,6 +766,8 @@ async function attachWebsiteAdminChrome(opts) {
     : withEditQuery(currentPath, true);
   const discardPath =
     pathMode && publicBase ? `${publicBase}/website/drafts/discard` : null;
+  const sectionActionsUrl =
+    pathMode && publicBase ? `${publicBase}/website/section-actions` : null;
   const unpublishPath = isHqEditor
     ? buildPublicWebsiteUnpublishPath({
         product: PRODUCT_CODE.BLESSBOARD,
@@ -902,6 +904,13 @@ async function attachWebsiteAdminChrome(opts) {
     });
   }
 
+  const {
+    buildManifest: buildBlessBoardSectionManifest,
+  } = require("../website/blessboardSectionActionService");
+  const sectionManifest = editingMode
+    ? buildBlessBoardSectionManifest(model.pageKey, model.sections, structuredDrafts)
+    : null;
+
   const shellFacts = {
     productCode: PRODUCT_CODE.BLESSBOARD,
     pageKey: model.pageKey,
@@ -925,6 +934,8 @@ async function attachWebsiteAdminChrome(opts) {
     mediaUrl: mediaUploadUrl,
     csrfToken,
     csrfField: "_csrf",
+    sectionActionsUrl,
+    sectionManifest,
   };
 
   model.websiteAdmin = {

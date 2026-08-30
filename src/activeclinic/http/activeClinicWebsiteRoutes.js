@@ -210,6 +210,48 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
     }
   });
 
+  app.post("/clinics/:clinicKey/website/section-actions", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return json(res, 403, { ok: false, code: "csrf" });
+      }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      if (!canEditClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const { applySectionAction } = require("../website/activeClinicSectionActionService");
+      const body = req.body && typeof req.body === "object" ? req.body : {};
+      const result = await applySectionAction(getPool(), {
+        organizationId: clinic.organizationId,
+        instanceId: attached.instance.id,
+        clinicKey: clinic.clinicKey,
+        pageKey: body.pageKey || attached.websiteEditorPageKey || "home",
+        sectionKey: body.sectionKey,
+        sectionId: body.sectionId,
+        action: body.action,
+        order: body.order,
+        actorIdentityId: actorId(req),
+        grantedPermissions: grantedPermissions(req),
+      });
+      if (!result.ok) {
+        const status =
+          result.code === "forbidden" || result.code === "locked_item" ? 403 : result.code === "not_found" ? 404 : 400;
+        return json(res, status, { ok: false, code: result.code || "action_failed" });
+      }
+      return json(res, 200, { ok: true, published: false, ...result });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
   app.post("/clinics/:clinicKey/website/drafts/discard", async (req, res, next) => {
     try {
       const clinic = await loadClinic(req, res);

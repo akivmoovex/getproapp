@@ -103,6 +103,10 @@ function clinicWebsiteActionUrls(clinicKey, pageKey) {
     websitePublishUrl: buildPublicWebsitePublishPath(base),
     websiteDiscardUrl: buildPublicWebsiteDiscardPath(base),
     websiteUnpublishUrl: buildPublicWebsiteUnpublishPath(base),
+    websiteSectionActionsUrl: buildPublicOrganizationWebsitePath({
+      ...base,
+      suffix: "website/section-actions",
+    }),
     websiteSubmitUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/submit" }),
     websiteFinishEditUrl: buildPublicOrganizationWebsitePath({
       ...base,
@@ -365,6 +369,13 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     saveUrl: actionUrls.websiteSaveUrl,
     mediaUrl: actionUrls.websiteMediaUrl,
     csrfField: CSRF_FIELD,
+    sectionActionsUrl: actionUrls.websiteSectionActionsUrl,
+    sectionManifest: websiteEdit
+      ? require("../website/activeClinicSectionActionService").buildManifest(
+          pageKey,
+          outClinic.cmsSections
+        )
+      : null,
   };
   const editorShell = websiteEdit
     ? presentEditorShell({ ...shellFacts, editing: true })

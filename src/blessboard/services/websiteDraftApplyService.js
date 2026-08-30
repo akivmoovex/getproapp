@@ -230,31 +230,68 @@ async function applyStructuredDraft(client, draft, ctx) {
   }
 
   if (draft.draftKind === "page_section") {
-    if (draft.op !== "reorder" || !Array.isArray(payload.order)) return;
-    const pageKey = draft.pageKey || "home";
-    const page = await contentRepo.findPageByScope(client, {
-      churchId,
-      branchId: branchId || null,
-      pageKey,
-    });
-    if (!page) return;
-    const sections = await contentRepo.listSectionsForPage(client, page.id, {});
-    const byKey = new Map((sections || []).map((s) => [String(s.sectionKey), s]));
-    let position = 0;
-    for (const key of payload.order) {
-      const section = byKey.get(String(key));
-      if (!section) continue;
-      position += 1;
-      await contentRepo.updateSection(client, section.id, { sortOrder: position * 10 });
+    if (draft.op === "reorder" && Array.isArray(payload.order)) {
+      const pageKey = draft.pageKey || "home";
+      const page = await contentRepo.findPageByScope(client, {
+        churchId,
+        branchId: branchId || null,
+        pageKey,
+      });
+      if (!page) return;
+      const sections = await contentRepo.listSectionsForPage(client, page.id, {});
+      const byKey = new Map((sections || []).map((s) => [String(s.sectionKey), s]));
+      let position = 0;
+      for (const key of payload.order) {
+        const section = byKey.get(String(key));
+        if (!section) continue;
+        position += 1;
+        await contentRepo.updateSection(client, section.id, { sortOrder: position * 10 });
+      }
+      const ordered = new Set(payload.order.map(String));
+      const remainder = (sections || [])
+        .filter((s) => !ordered.has(String(s.sectionKey)))
+        .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
+      for (const section of remainder) {
+        position += 1;
+        await contentRepo.updateSection(client, section.id, { sortOrder: position * 10 });
+      }
+      return;
     }
-    // Sections absent from the draft order keep their relative order behind it.
-    const ordered = new Set(payload.order.map(String));
-    const remainder = (sections || [])
-      .filter((s) => !ordered.has(String(s.sectionKey)))
-      .sort((a, b) => Number(a.sortOrder || 0) - Number(b.sortOrder || 0));
-    for (const section of remainder) {
-      position += 1;
-      await contentRepo.updateSection(client, section.id, { sortOrder: position * 10 });
+    if (draft.op === "visibility" && payload.sectionKey) {
+      const pageKey = draft.pageKey || "home";
+      const page = await contentRepo.findPageByScope(client, {
+        churchId,
+        branchId: branchId || null,
+        pageKey,
+      });
+      if (!page) return;
+      const sections = await contentRepo.listSectionsForPage(client, page.id, {});
+      const section = (sections || []).find((s) => String(s.sectionKey) === String(payload.sectionKey));
+      if (!section) return;
+      await contentRepo.updateSection(client, section.id, {
+        status: payload.hidden === true ? "archived" : "published",
+      });
+      return;
+    }
+    if (draft.op === "restore_default" && payload.sectionKey) {
+      const pageKey = draft.pageKey || "home";
+      const page = await contentRepo.findPageByScope(client, {
+        churchId,
+        branchId: branchId || null,
+        pageKey,
+      });
+      if (!page) return;
+      const sections = await contentRepo.listSectionsForPage(client, page.id, {});
+      const section = (sections || []).find((s) => String(s.sectionKey) === String(payload.sectionKey));
+      if (!section) return;
+      const baseline = draft.previousPayload && typeof draft.previousPayload === "object" ? draft.previousPayload : {};
+      await contentRepo.updateSection(client, section.id, {
+        heading: baseline.heading != null ? baseline.heading : section.heading,
+        bodyText: baseline.bodyText != null ? baseline.bodyText : section.bodyText,
+        mediaUrl: baseline.mediaUrl != null ? baseline.mediaUrl : section.mediaUrl,
+        status: "published",
+      });
+      return;
     }
     return;
   }

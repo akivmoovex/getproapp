@@ -258,6 +258,41 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
     }
   });
 
+  router.post(`${pathPrefix}/website/section-actions`, express.json({ limit: "16kb" }), async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+        return json(res, 403, { ok: false, code: "csrf" });
+      }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const resolved = await requireEditor(req, res, "website.edit");
+      if (!resolved) return undefined;
+      const { applySectionAction } = require("../website/blessboardSectionActionService");
+      const body = req.body && typeof req.body === "object" ? req.body : {};
+      const result = await applySectionAction(getPool(), {
+        organizationId: resolved.tenant.organization.id,
+        churchId: resolved.tenant.church.id,
+        branchId: null,
+        editorUserId: actorUserId(req),
+        actorRole: "church_hq_admin",
+        pageKey: body.pageKey,
+        sectionKey: body.sectionKey,
+        action: body.action,
+        order: body.order,
+        grantedPermissions: ["website.edit"],
+      });
+      if (!result.ok) {
+        const status =
+          result.code === "forbidden" || result.code === "locked_item" ? 403 : result.code === "not_found" ? 404 : 400;
+        return json(res, status, { ok: false, code: result.code || "action_failed" });
+      }
+      return json(res, 200, { ok: true, published: false, ...result });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
   router.get(`${pathPrefix}/website/preview`, async (req, res, next) => {
     try {
       const resolved = await requireEditor(req, res, "website.edit");
