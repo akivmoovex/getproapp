@@ -20,6 +20,11 @@ const { assignBlessBoardRole } = require("../../src/blessboard/services/assignBl
 const { repairWebsiteFoundation } = require("../../src/blessboard/services/websiteFoundationRepairService");
 const { registerBlessBoardWebsiteTemplate } = require("../../src/blessboard/website/blessboardChurchTemplate");
 const { purgeOrganizationTree } = require("../../src/platform/repositories/testingDataResetRepository");
+const instanceRepo = require("../../src/platform/website/instanceRepository");
+const publicationService = require("../../src/platform/website/publicationService");
+const {
+  acknowledgeWebsitePreview,
+} = require("../../src/blessboard/services/churchWebsitePublishService");
 const {
   CODE_MOOVEX_PLATFORM_TESTING,
 } = require("../../src/platform/config/deploymentProfiles");
@@ -89,12 +94,14 @@ async function provisionDisposable(pool) {
   if (!churchProv.ok) throw new Error(`provisionBlessBoardChurch: ${churchProv.message}`);
   const churchId = churchProv.records.church.id;
   await pool.query(
-    `INSERT INTO blessboard.church_settings (church_id, public_name, primary_email, website_status)
-     VALUES ($1, $2, $3, 'published')
+    `INSERT INTO blessboard.church_settings (church_id, public_name, primary_email, primary_phone, website_status)
+     VALUES ($1, $2, $3, $4, 'published')
      ON CONFLICT (church_id) DO UPDATE
        SET public_name = EXCLUDED.public_name,
+           primary_email = EXCLUDED.primary_email,
+           primary_phone = EXCLUDED.primary_phone,
            website_status = 'published'`,
-    [churchId, `BB08 Hosted QA ${key}`, email]
+    [churchId, `BB08 Hosted QA ${key}`, email, "+260971999999"]
   );
   registerBlessBoardWebsiteTemplate();
   const repaired = await repairWebsiteFoundation(pool, {
@@ -102,6 +109,24 @@ async function provisionDisposable(pool) {
     publicName: `BB08 Hosted QA ${key}`,
   });
   if (!repaired.ok) throw new Error(`repairWebsiteFoundation: ${JSON.stringify(repaired)}`);
+  const ack = await acknowledgeWebsitePreview(pool, {
+    organizationId,
+    actorUserId: null,
+    env: { DEPLOYMENT_ENV: "testing" },
+  });
+  if (!ack.ok) throw new Error(`acknowledgeWebsitePreview: ${JSON.stringify(ack)}`);
+  const instance = await instanceRepo.findWebsiteInstanceByOrgProduct(pool, {
+    organizationId,
+    productCode: "blessboard",
+  });
+  if (!instance) throw new Error("website instance missing after repair");
+  const baseline = await publicationService.publishWebsiteDraft(pool, {
+    organizationId,
+    instanceId: instance.id,
+    expectedProductCode: "blessboard",
+    allowEmpty: true,
+  });
+  if (!baseline.ok) throw new Error(`baseline publish: ${JSON.stringify(baseline)}`);
   const user = await createBlessBoardUser(pool, {
     email,
     password,
@@ -136,7 +161,9 @@ async function bodyPrimary(page) {
 }
 
 async function publishFromReview(page) {
-  await page.goto(`${BB}/hq/website/publish/review`, { waitUntil: "domcontentloaded" });
+  await page.goto(`${BB}/hq/website/publish/review?defer_service_times=1`, {
+    waitUntil: "domcontentloaded",
+  });
   const publishable = await page.locator('button[form="phase4-publish-form"]').count();
   if (!publishable) {
     const snippet = await page.locator(".bb-phase4-publish, .bb-hq-card").first().textContent().catch(() => "");
@@ -145,7 +172,7 @@ async function publishFromReview(page) {
   await page.check('input[name="preview_reviewed"]');
   const mob = page.locator('input[name="mobile_preview_confirmed"]');
   if (await mob.count()) await mob.check();
-  await page.locator('button[form="phase4-publish-form"]').first().click();
+  await page.locator("#phase4-publish-form button[type='submit']").click({ force: true });
   await page.waitForLoadState("domcontentloaded");
 }
 
@@ -162,9 +189,6 @@ async function runHostedE2E(ctx) {
       [ctx.organizationId]
     );
     step("single_website_instance", instanceCount.rows[0].n === 1, String(instanceCount.rows[0].n));
-
-    await publishFromReview(page);
-    step("baseline_publish", /publish\/success|\/c\//.test(page.url()), page.url());
 
     const livePage = await context.newPage();
     await livePage.goto(`${BB}/c/${ctx.key}`, { waitUntil: "domcontentloaded" });
@@ -239,17 +263,28 @@ async function runHostedE2E(ctx) {
     step("publish_colour_b", true);
 
     await page.goto(`${BB}/hq/website/version-history`, { waitUntil: "domcontentloaded" });
-    const restoreHref = await page.locator('a[href*="/restore"]').nth(1).getAttribute("href");
+    const restoreLink = page.locator('a[href*="/restore"]').first();
+    const restoreHref = await restoreLink.getAttribute("href", { timeout: 15000 });
     step("version_history_restore_link", !!restoreHref, restoreHref || "");
     await page.goto(`${BB}${restoreHref}`, { waitUntil: "domcontentloaded" });
     await page.fill("#restore-reason", "BUG08 hosted restore QA");
     await page.check('input[name="confirm_restore"]');
     await page.locator('form.bb-hq-phase3-restore__form button[type="submit"]').click();
-    await page.waitForLoadState("domcontentloaded");
+    await page.waitForSelector("[data-bb-phase3-restore-success]", { timeout: 30000 });
+    const previewPath = await page
+      .locator("[data-bb-phase3-restore-success] a[href*='/preview']")
+      .first()
+      .getAttribute("href");
 
     const restoredPreview = await context.newPage();
     await login(restoredPreview, ctx.email, ctx.password);
-    await restoredPreview.goto(`${BB}/c/${ctx.key}?website_mode=draft`, { waitUntil: "domcontentloaded" });
+    if (previewPath) {
+      await restoredPreview.goto(`${BB}${previewPath}`, { waitUntil: "domcontentloaded" });
+    } else {
+      await restoredPreview.goto(`${BB}/c/${ctx.key}?website_mode=draft`, {
+        waitUntil: "domcontentloaded",
+      });
+    }
     const restoredColour = await bodyPrimary(restoredPreview);
     step("restore_preview_colour", restoredColour === COLOUR_A, restoredColour || "missing");
     await restoredPreview.close();
@@ -290,8 +325,29 @@ async function main() {
           preserveOrgIds: [],
           preserveUserIds: [],
         });
-        await client.query("COMMIT");
-        step("purge_disposable", purged.ok === true, purged.reason || purged.status || "ok");
+        if (purged.ok) {
+          await client.query("COMMIT");
+          step("purge_disposable", true, purged.status || "ok");
+        } else {
+          await client.query("ROLLBACK");
+          await pool.query(
+            `UPDATE platform.organizations SET test_cleanup_eligible = true WHERE id = $1`,
+            [disposable.organizationId]
+          );
+          const retry = await pool.connect();
+          try {
+            await retry.query("BEGIN");
+            const second = await purgeOrganizationTree(retry, {
+              organizationId: disposable.organizationId,
+              preserveOrgIds: [],
+              preserveUserIds: [],
+            });
+            await retry.query(second.ok ? "COMMIT" : "ROLLBACK");
+            step("purge_disposable", second.ok === true, second.reason || second.status || "retry");
+          } finally {
+            retry.release();
+          }
+        }
       } catch (err) {
         await client.query("ROLLBACK");
         step("purge_disposable", false, err.message);
