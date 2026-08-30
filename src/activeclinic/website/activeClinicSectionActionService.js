@@ -46,8 +46,19 @@ function buildHomeManifest(pageKey, cmsSections) {
     .slice()
     .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
   const defaults = DEFAULT_HOME_SECTIONS;
-  const capabilities = defaults.map((def, index) => {
-    const found = pageSections.find((s) => String(s.type) === String(def.type) || String(s.type) === String(def.key));
+  const orderedDefaults = defaults
+    .slice()
+    .sort((a, b) => {
+      const aFound = pageSections.find((s) => String(s.type) === String(a.type));
+      const bFound = pageSections.find((s) => String(s.type) === String(b.type));
+      const aOrder = aFound ? Number(aFound.sort_order || 0) : Number(a.sortOrder || 0);
+      const bOrder = bFound ? Number(bFound.sort_order || 0) : Number(b.sortOrder || 0);
+      return aOrder - bOrder;
+    });
+  const capabilities = orderedDefaults.map((def, index) => {
+    const found = pageSections.find(
+      (s) => String(s.type) === String(def.type) || String(s.type) === String(def.key)
+    );
     const locked = def.locked === true;
     const isHidden = found ? found.visible === false : false;
     const sectionId = found ? String(found.id) : `sec_${def.key}`;

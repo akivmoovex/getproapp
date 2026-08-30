@@ -279,6 +279,52 @@ describe("shared website editor wave 4a — HTTP section actions", () => {
     assert.ok(reorder);
   });
 
+  it("BlessBoard hide section saves structured visibility draft", async (t) => {
+    if (skipReason) t.skip(skipReason);
+    const bbKey = uniq("w4a-bb-hide");
+    const row = await appRepo.createApplication(pool, {
+      church_name: `Hide ${bbKey}`,
+      country: "Zambia",
+      city: "Lusaka",
+      contact_name: "Site Admin",
+      contact_email: `${bbKey}@example.org`,
+      contact_phone: `+26097${String(Math.floor(Math.random() * 1e7)).padStart(7, "0")}`,
+      selected_plan: "foundation",
+      consent_terms: true,
+      branch_name: "Main Campus",
+    });
+    const provisioned = await provisionRegisteredBlessBoardChurch(pool, {
+      applicationId: row.id,
+      administratorPassword: BB_PASSWORD,
+      requestId: `req-${bbKey}`,
+      actorContext: {
+        type: "test",
+        source: "wave4a",
+        dataEnvironment: "testing",
+        deploymentCode: "blessboard-org-staging",
+      },
+    });
+    const result = await applyBlessBoardSectionAction(pool, {
+      organizationId: provisioned.records.organizationId,
+      churchId: provisioned.records.churchId,
+      branchId: null,
+      editorUserId: provisioned.records.administratorUserId,
+      pageKey: "home",
+      sectionKey: "welcome",
+      action: "hide",
+    });
+    assert.equal(result.ok, true);
+    const drafts = await draftRepo.listStructuredDrafts(pool, {
+      churchId: provisioned.records.churchId,
+      branchId: null,
+      pageKey: "home",
+      status: "draft",
+    });
+    const visibility = drafts.find((d) => d.draftKind === "page_section" && d.op === "visibility");
+    assert.ok(visibility);
+    assert.equal(visibility.payload.hidden, true);
+  });
+
   it("rejects cross-tenant section action via client org override", async (t) => {
     if (skipReason) t.skip(skipReason);
     const bbKey = uniq("w4a-iso");
