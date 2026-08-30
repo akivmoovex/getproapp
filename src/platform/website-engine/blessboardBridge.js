@@ -206,6 +206,31 @@ async function publishFromLegacy(db, input) {
         changedKeys: published && published.changedKeys,
       };
     }
+    if (input.churchId) {
+      try {
+        const branchRow = await db.query(
+          `SELECT id FROM blessboard.branches
+            WHERE church_id = $1 AND is_primary = true AND status = 'active'
+            LIMIT 1`,
+          [String(input.churchId)]
+        );
+        const primaryBranchId = branchRow.rows[0] && branchRow.rows[0].id;
+        if (primaryBranchId) {
+          const {
+            projectPublishedSeoToBranchScope,
+          } = require("../../blessboard/website/blessboardEngineSeo");
+          await projectPublishedSeoToBranchScope(db, {
+            organizationId: resolved.instance.organizationId,
+            churchId: String(input.churchId),
+            branchId: String(primaryBranchId),
+            instance: resolved.instance,
+            actorUserId: input.actorUserId || input.actorIdentityId || null,
+          });
+        }
+      } catch {
+        /* engine publish succeeded; scope projection is compatibility only */
+      }
+    }
     return {
       ok: true,
       code: published.code,

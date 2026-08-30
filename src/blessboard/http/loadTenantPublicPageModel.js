@@ -1250,6 +1250,19 @@ async function loadTenantPublicPageModel(db, input) {
 
   let seoOverrides =
     websiteResolved && websiteResolved.flat ? { ...websiteResolved.flat } : {};
+  if (!scopedBranchActive && organizationId && churchId && primaryBranchId) {
+    try {
+      const { loadLegacyBlessBoardSeoFlat } = require("../website/blessboardEngineSeo");
+      const churchWideSeo = await loadLegacyBlessBoardSeoFlat(db, {
+        organizationId,
+        churchId,
+        branchId: primaryBranchId,
+      });
+      seoOverrides = { ...churchWideSeo, ...seoOverrides };
+    } catch {
+      /* keep prior overrides */
+    }
+  }
   if (organizationId) {
     try {
       const { overlayBlessBoardEngineSeo } = require("../website/blessboardEngineSeo");

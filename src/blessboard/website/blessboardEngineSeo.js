@@ -107,9 +107,51 @@ async function overlayBlessBoardEngineSeo(db, seoOverrides, input) {
   }
 }
 
+/**
+ * After engine publish, project published SEO keys onto primary branch scope settings
+ * so legacy branch settings and church-wide fallbacks stay aligned with the engine.
+ */
+async function projectPublishedSeoToBranchScope(db, input) {
+  const organizationId = String((input && input.organizationId) || "");
+  const churchId = String((input && input.churchId) || "");
+  const instance = input && input.instance;
+  const branchId =
+    input && input.branchId != null && String(input.branchId).trim()
+      ? String(input.branchId).trim()
+      : null;
+  if (!organizationId || !churchId || !instance || !branchId) {
+    return { ok: true, projected: 0, skipped: true };
+  }
+  const { setWebsiteScopeOverride } = require("../services/websiteScopeSettingsService");
+  const resolved = await resolveWebsiteContent(db, {
+    organizationId,
+    instance,
+    mode: MODE.LIVE,
+  });
+  if (!resolved.ok) return { ok: false, projected: 0, code: resolved.code };
+  let projected = 0;
+  for (const key of BB_SEO_KEYS) {
+    const value = resolved.values[key];
+    if (value == null) continue;
+    const def = require("../services/websiteSettingKeyRegistry").KEY_DEFS[key];
+    const saved = await setWebsiteScopeOverride(db, {
+      organizationId,
+      churchId,
+      branchId,
+      settingKey: key,
+      value,
+      actorUserId: input.actorUserId || null,
+      allowGovernanceControlled: Boolean(def && def.hqOnly),
+    });
+    if (saved.ok) projected += 1;
+  }
+  return { ok: true, projected };
+}
+
 module.exports = {
   BB_SEO_KEYS,
   loadBlessBoardSeoEditorState,
   overlayBlessBoardEngineSeo,
   loadLegacyBlessBoardSeoFlat,
+  projectPublishedSeoToBranchScope,
 };
