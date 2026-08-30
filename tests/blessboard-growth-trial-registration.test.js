@@ -18,10 +18,12 @@ const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity")
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
+const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
 const { ENV_KEY } = require("../src/blessboard/config/instantFreeProvisioningEnabled");
 const {
   mapPublicPlanToOrchestratorPlanKey,
   isInstantProvisionPlan,
+  deriveOrganizationKeyFromChurchName,
 } = require("../src/blessboard/services/platformChurchRegistrationValidation");
 const {
   provisionRegisteredBlessBoardChurch,
@@ -119,6 +121,11 @@ describe("automatic Growth trial registration", () => {
     return { res, csrf, cookie };
   }
 
+  function allocatedKey(body) {
+    const derived = deriveOrganizationKeyFromChurchName(body && body.church_name);
+    return derived.ok ? derived.value : String((body && body.organization_key) || "");
+  }
+
   function growthBody(overrides = {}) {
     const key = uniq("growth");
     const phoneTail = String(1000000 + (Date.now() % 1000000) + Math.floor(Math.random() * 900)).slice(
@@ -178,10 +185,10 @@ describe("automatic Growth trial registration", () => {
       .type("form")
       .send({ ...body, [CSRF_FIELD]: csrf });
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/hq");
+    assertChurchReadySuccessRedirect(res.headers.location);
     assert.ok(extractCookie(res, DEFAULT_V5_COOKIE));
 
-    const orgKey = body.organization_key;
+    const orgKey = allocatedKey(body);
     const counts = await pool.query(
       `SELECT
          (SELECT COUNT(*)::int FROM platform.organizations WHERE organization_key = $1) AS orgs,
@@ -226,7 +233,7 @@ describe("automatic Growth trial registration", () => {
         WHERE lower(contact_email) = lower($1)`,
       [body.email]
     );
-    assert.equal(apps.rows[0].application_status, "closed");
+    assert.equal(apps.rows[0].application_status, "active");
     assert.equal(apps.rows[0].provisioning_status, "provisioned");
     assert.equal(apps.rows[0].selected_plan, "growth");
 
@@ -250,7 +257,12 @@ describe("automatic Growth trial registration", () => {
       administratorPassword: PASSWORD,
       requestedOrganizationKey: stamp,
       provisionedAt: clock.toISOString(),
-      actorContext: { type: "test", source: "unit", dataEnvironment: "testing" },
+      actorContext: {
+        type: "test",
+        source: "unit",
+        dataEnvironment: "testing",
+        deploymentCode: "blessboard-org-staging",
+      },
     });
     assert.equal(provisioned.ok, true, provisioned.message || provisioned.status);
     assert.equal(provisioned.records.planKey, "growth");
@@ -295,7 +307,10 @@ describe("automatic Growth trial registration", () => {
       applicationId: appRow.id,
       administratorPassword: PASSWORD,
       requestedOrganizationKey: stamp,
-      actorContext: { dataEnvironment: "testing" },
+      actorContext: {
+        dataEnvironment: "testing",
+        deploymentCode: "blessboard-org-staging",
+      },
     });
     assert.equal(provisioned.ok, true, provisioned.message);
 
@@ -341,7 +356,10 @@ describe("automatic Growth trial registration", () => {
       applicationId: appRow.id,
       administratorPassword: PASSWORD,
       requestedOrganizationKey: stamp,
-      actorContext: { dataEnvironment: "testing" },
+      actorContext: {
+        dataEnvironment: "testing",
+        deploymentCode: "blessboard-org-staging",
+      },
     });
     assert.equal(provisioned.ok, true, provisioned.message);
     const sub = await pool.query(
@@ -403,7 +421,7 @@ describe("automatic Growth trial registration", () => {
     assert.ok([303, 200, 400, 503].includes(b.status));
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
-      [body.organization_key]
+      [allocatedKey(body)]
     );
     assert.equal(orgs.rows[0].n, 1);
     const subs = await pool.query(
@@ -411,7 +429,7 @@ describe("automatic Growth trial registration", () => {
          FROM platform.organization_subscriptions os
          JOIN platform.organizations o ON o.id = os.organization_id
         WHERE o.organization_key = $1`,
-      [body.organization_key]
+      [allocatedKey(body)]
     );
     assert.equal(subs.rows[0].n, 1);
   });
@@ -477,7 +495,10 @@ describe("automatic Growth trial registration", () => {
       administratorPassword: PASSWORD,
       requestedOrganizationKey: stamp,
       provisionedAt: clock.toISOString(),
-      actorContext: { dataEnvironment: "testing" },
+      actorContext: {
+        dataEnvironment: "testing",
+        deploymentCode: "blessboard-org-staging",
+      },
     });
     assert.equal(provisioned.ok, true, provisioned.message || provisioned.status);
 

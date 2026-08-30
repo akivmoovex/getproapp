@@ -140,6 +140,9 @@ function collectRegisteredPathPatterns() {
 
   const literalFiles = [
     "src/platform/http/platformAdminRoutes.js",
+    "src/platform/http/platformRegistrationAdminRoutes.js",
+    "src/platform/http/platformWebsiteAdminRoutes.js",
+    "src/activeclinic/http/activeClinicPlatformAdminClinicRegistrationRoutes.js",
     "src/blessboard/http/apexMarketingRoutes.js",
     "src/blessboard/http/inviteAcceptRoutes.js",
     "src/blessboard/http/tenantRegistrationRoutes.js",
@@ -456,6 +459,11 @@ describe("blessboard v5 route + link audit", () => {
     assert.ok(pathRegistered(patterns, "post", "/register-church"));
     assert.ok(patterns.has("GET /register-church"));
     assert.ok(patterns.has("POST /register-church"));
+  });
+
+  it("inventories GET /register-church/success from REGISTER_SUCCESS_PATH constant", () => {
+    assert.ok(pathRegistered(patterns, "get", "/register-church/success"));
+    assert.ok(patterns.has("GET /register-church/success"));
   });
 
   it("inventories GET and POST /invite/accept from inviteAcceptRoutes literals", () => {

@@ -2,7 +2,7 @@
   Apex Register Your Church — Stitch 8640e853… / 515da582…
   Automatic Foundation + Growth trial provisioning by default (emergency env disable → enquiry).
   Network remains support-contact / enquiry only (no auto tenant).
-  Locals: authenticated, csrfToken, csrfField, submitted, networkSupportSuccess, workspaceReady, loginFallback,
+  Locals: authenticated, csrfToken, csrfField, submitted, networkSupportSuccess,
           review, organizationKeyPreview, form, formError, fieldError, selectedPlan,
           instantFreeEnabled
 %>
@@ -16,9 +16,7 @@
   function fieldHasError(name) { return activeFieldError === name; }
   var showSuccessEnquiry = typeof submitted !== 'undefined' && submitted;
   var showNetworkSupportSuccess = typeof networkSupportSuccess !== 'undefined' && networkSupportSuccess;
-  var showSuccessWorkspace = typeof workspaceReady !== 'undefined' && workspaceReady;
   var showReview = typeof review !== 'undefined' && review;
-  var showLoginFallback = typeof loginFallback !== 'undefined' && loginFallback;
 %>
 <%- include('../partials/apex-shell-start') %>
 
@@ -73,41 +71,6 @@
           </div>
         </div>
         <div class="bb-apex-register__actions">
-          <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
-        </div>
-
-        <% } else if (showSuccessWorkspace) { %>
-        <div class="bb-apex-register-success" role="status" data-bb-register-workspace="1">
-          <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
-          <div>
-            <p class="bb-apex-register-success__title">Your church workspace has been created.</p>
-            <p class="bb-apex-register-success__body">
-              The <strong>Free</strong> plan is active. Your public church website is <strong>not published yet</strong>.
-              Your administrator account is ready so you can begin setup.
-            </p>
-            <% if (orgKeyPreview) { %>
-            <p class="bb-apex-register-success__body">
-              Organization key: <code><%= orgKeyPreview %></code>
-              — future public path preview: <code>/c/<%= orgKeyPreview %></code>
-              (the public site stays unpublished until you publish it).
-            </p>
-            <% } %>
-            <p class="bb-apex-register-success__body">
-              BlessBoard may contact you to offer optional onboarding assistance. A callback is not required to keep portal access.
-            </p>
-            <% if (showLoginFallback) { %>
-            <p class="bb-apex-register-success__body">
-              Sign in with the email and password you just created to continue.
-            </p>
-            <% } %>
-          </div>
-        </div>
-        <div class="bb-apex-register__actions">
-          <% if (showLoginFallback) { %>
-          <a class="bb-apex-btn bb-apex-btn--primary" href="/login?next=%2Faccount">Sign in</a>
-          <% } else { %>
-          <a class="bb-apex-btn bb-apex-btn--primary" href="/account">Go to your account</a>
-          <% } %>
           <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
         </div>
 

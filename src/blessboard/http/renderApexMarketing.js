@@ -31,6 +31,9 @@ const {
   RESERVED_ORGANIZATION_KEYS,
   resolveBaseOrganizationKey,
 } = require("../services/organizationKey");
+const {
+  buildRegistrationSuccessViewModel,
+} = require("../../platform/registration/registrationSuccessPresentation");
 
 function renderApexView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
@@ -148,6 +151,24 @@ function renderRegisterChurchPage(opts) {
   });
 }
 
+function renderRegisterChurchSuccessPage(opts) {
+  const registrationSuccess = buildRegistrationSuccessViewModel({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    reference: opts && opts.applicationReference,
+    ready: opts && opts.ready,
+    reviewRequired: false,
+    authenticated: Boolean(opts && opts.authenticated),
+  });
+  return renderApexView("apex/register-church-success.ejs", {
+    ...shellLocals(opts),
+    pageTitle: "Church Registered Successfully",
+    activeNav: "register-church",
+    robotsNoIndex: true,
+    csrfField: (opts && opts.csrfField) || "_csrf",
+    registrationSuccess,
+  });
+}
+
 /**
  * Public email-verification result (success / generic failure / rate limit).
  * Never includes application details or the raw token.
@@ -176,5 +197,6 @@ module.exports = {
   renderPricingPage,
   renderDirectoryPage,
   renderRegisterChurchPage,
+  renderRegisterChurchSuccessPage,
   renderEmailVerificationResultPage,
 };

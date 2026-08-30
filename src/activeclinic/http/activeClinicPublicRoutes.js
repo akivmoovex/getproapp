@@ -32,6 +32,9 @@ const {
   authenticateActiveClinicIdentity,
 } = require("../services/authenticateActiveClinicIdentity");
 const { setV5SessionCookie } = require("../../platform/session/v5SessionCookie");
+const {
+  buildRegistrationSuccessRedirect,
+} = require("../../platform/registration/registrationSuccessPresentation");
 const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const { getDeploymentEnvMode } = require("../../church/blessBoardEnv");
 const { resolveHostname } = require("../../platform/host");
@@ -839,10 +842,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
           applicationReference: result.application && result.application.applicationNumber,
         });
         const ref = result.application && result.application.applicationNumber
-          ? encodeURIComponent(result.application.applicationNumber)
+          ? result.application.applicationNumber
           : "";
         if (result.reviewRequired || result.code === SUBMIT_RESULT.REVIEW_REQUIRED) {
-          return res.redirect(303, `/register-clinic/success?ref=${ref}&review=1`);
+          return res.redirect(303, buildRegistrationSuccessRedirect({
+            productCode: "activeclinic",
+            reference: ref,
+            review: true,
+          }));
         }
         if (result.ok && result.code === SUBMIT_RESULT.OK && formData.password) {
           try {
@@ -862,7 +869,11 @@ function registerActiveClinicPublicRoutes(app, deps) {
             /* session is optional; administrator can still sign in */
           }
         }
-        return res.redirect(303, `/register-clinic/success?ref=${ref}&ready=1`);
+        return res.redirect(303, buildRegistrationSuccessRedirect({
+          productCode: "activeclinic",
+          reference: ref,
+          ready: true,
+        }));
       } catch (err) {
         const classified = classifyRegistrationError(err);
         logClinicApplicationFailed({
@@ -951,6 +962,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       applicationReference: applicationReference || null,
       reviewRequired,
       ready: ready && !reviewRequired,
+      authenticated: Boolean(req.v5Session && req.v5Session.authenticated),
       wizardStep: "success",
       pageId: "public-register-clinic-success",
     })));

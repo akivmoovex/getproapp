@@ -19,6 +19,7 @@ const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity")
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
+const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const {
   validatePlatformChurchRegistration,
@@ -243,7 +244,7 @@ describe("BlessBoard V1 blocker + bugs 04–06", () => {
     requireDb();
     const { app, body, post } = await registerChurch();
     assert.equal(post.status, 303, post.text && String(post.text).slice(0, 400));
-    assert.equal(post.headers.location, "/hq");
+    assertChurchReadySuccessRedirect(post.headers.location);
 
     const appRow = await pool.query(
       `SELECT organization_id FROM blessboard.platform_church_registration_applications

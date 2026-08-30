@@ -19,6 +19,7 @@ const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity")
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
+const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
 const {
   parseInstantFreeProvisioningEnabled,
   isInstantFreeProvisioningEnabled,
@@ -264,7 +265,7 @@ describe("automatic Foundation registration", () => {
       .send({ ...body, [CSRF_FIELD]: csrf });
 
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/hq");
+    assertChurchReadySuccessRedirect(res.headers.location);
     const sid = extractCookie(res, DEFAULT_V5_COOKIE);
     assert.ok(sid, "session cookie set");
 
@@ -382,7 +383,7 @@ describe("automatic Foundation registration", () => {
       .type("form")
       .send({ ...body, [CSRF_FIELD]: csrf });
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/hq");
+    assertChurchReadySuccessRedirect(res.headers.location);
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
       [allocatedKey(body)]
@@ -408,7 +409,7 @@ describe("automatic Foundation registration", () => {
       .type("form")
       .send({ ...body, [CSRF_FIELD]: csrf });
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/hq");
+    assertChurchReadySuccessRedirect(res.headers.location);
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
       [allocatedKey(body)]
@@ -494,7 +495,7 @@ describe("automatic Foundation registration", () => {
       .type("form")
       .send({ ...body, [CSRF_FIELD]: csrf });
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/hq");
+    assertChurchReadySuccessRedirect(res.headers.location);
     const orgs = await pool.query(
       `SELECT organization_key FROM platform.organizations WHERE organization_key = $1`,
       ["admin-church"]
@@ -561,7 +562,7 @@ describe("automatic Foundation registration", () => {
       .type("form")
       .send({ ...body, [CSRF_FIELD]: page.csrf });
     assert.equal(res.status, 303);
-    assert.equal(res.headers.location, "/hq");
+    assertChurchReadySuccessRedirect(res.headers.location);
     const keys = await pool.query(
       `SELECT organization_key FROM platform.organizations
         WHERE organization_key = $1 OR organization_key = $2
@@ -625,7 +626,7 @@ describe("automatic Foundation registration", () => {
       .type("form")
       .send({ ...body, [CSRF_FIELD]: page2.csrf });
     assert.equal(res2.status, 303);
-    assert.ok(res2.headers.location === "/hq" || /ready=1/.test(res2.headers.location || ""));
+    assertChurchReadySuccessRedirect(res2.headers.location);
 
     const orgs = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
@@ -658,8 +659,7 @@ describe("automatic Foundation registration", () => {
       .send({ ...body, [CSRF_FIELD]: page.csrf });
 
     assert.equal(res.status, 303);
-    assert.match(res.headers.location || "", /ready=1/);
-    assert.match(res.headers.location || "", /login=1/);
+    assertChurchReadySuccessRedirect(res.headers.location);
     assert.ok(!extractCookie(res, DEFAULT_V5_COOKIE));
 
     const orgs = await pool.query(

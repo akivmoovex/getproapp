@@ -371,14 +371,43 @@ describe("registration risk review (Prompt 18)", () => {
     assert.equal(Boolean(approved.alreadyProvisioned), false);
     assert.ok(approved.records && approved.records.organizationId);
 
+    const orgId = approved.records.organizationId;
+    async function tenantShape() {
+      const r = await pool.query(
+        `SELECT
+           (SELECT COUNT(*)::int FROM platform.organizations WHERE id = $1) AS orgs,
+           (SELECT COUNT(*)::int FROM blessboard.churches WHERE organization_id = $1) AS churches,
+           (SELECT COUNT(*)::int FROM blessboard.branches b
+              JOIN blessboard.churches c ON c.id = b.church_id
+             WHERE c.organization_id = $1) AS branches,
+           (SELECT COUNT(*)::int FROM platform.website_instances
+             WHERE organization_id = $1 AND product_code = 'blessboard' AND status <> 'archived') AS websites,
+           (SELECT COUNT(*)::int FROM blessboard.user_roles
+             WHERE organization_id = $1 AND status = 'active') AS active_roles`,
+        [orgId]
+      );
+      return r.rows[0];
+    }
+    const afterFirst = await tenantShape();
+    assert.equal(afterFirst.orgs, 1);
+    assert.equal(afterFirst.churches, 1);
+    assert.equal(afterFirst.branches, 1);
+    assert.equal(afterFirst.websites, 1);
+
     const again = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: held.application.id,
       actorUserId: platformAdmin.userId,
       organizationKey: key,
       deploymentCode: "blessboard-org-staging",
     });
-    assert.equal(again.ok, true);
-    assert.equal(again.alreadyProvisioned, true);
+    assert.equal(again.ok, true, again.message || again.status);
+    const afterSecond = await tenantShape();
+    assert.deepEqual(afterSecond, afterFirst);
+    // Invitation-mode tenants are complete for org/website/church, but HQ roles
+    // are assigned on invite accept. Completeness may therefore be false and the
+    // second call re-enters the orchestrator. The tenant shape must stay unique.
+    assert.equal(afterSecond.orgs, 1);
+    assert.equal(afterSecond.websites, 1);
 
     const audits = await pool.query(
       `SELECT action_key, outcome FROM platform.audit_events
@@ -470,6 +499,7 @@ describe("registration risk review (Prompt 18)", () => {
       .send({ ...secondBody, [CSRF_FIELD]: csrf2 });
     assert.equal(res2.status, 303);
     assert.equal(res2.headers.location, "/register-church?review=1");
+    assert.doesNotMatch(String(res2.headers.location), /\/register-church\/success/);
     assert.doesNotMatch(String(res2.headers.location), /similar_organization|risk|fraud/i);
 
     const reviewPage = await request(app)

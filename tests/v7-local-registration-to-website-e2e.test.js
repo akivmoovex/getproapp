@@ -23,6 +23,7 @@ const {
   createActiveClinicFoundationApp,
 } = require("../src/activeclinic/http/activeClinicFoundationServer");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
+const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
 const {
   CODE_ACTIVECLINIC_ORG_V6,
   COOKIE_ACTIVECLINIC_ORG,
@@ -466,17 +467,17 @@ async function runBlessBoardFlow() {
     env: MINIMAL_BB,
     apexHosts: new Set([BB_HOST, `www.${BB_HOST}`]),
   });
-  const key = uniq("bbe2e");
+  const stamp = uniq("bbe2e");
   const body = {
-    church_name: `E2E Church ${key}`,
+    church_name: `E2E Church ${stamp}`,
     country: "Zambia",
     city: "Lusaka",
     contact_name: "Church Administrator",
     role_in_church: "Pastor",
     phone: nextPhone(),
-    email: `${key}@example.org`,
+    email: `${stamp}@example.org`,
     selected_plan: "foundation",
-    organization_key: key,
+    organization_key: stamp,
     password: BB_PASSWORD,
     password_confirm: BB_PASSWORD,
     acceptTerms: "on",
@@ -497,7 +498,7 @@ async function runBlessBoardFlow() {
   out.Register = ok(`POST /register-church → ${confirm.status} ${confirm.headers.location || ""}`);
   assert.equal(confirm.status, 303, confirm.text && confirm.text.slice(0, 400));
   const loc = String(confirm.headers.location || "");
-  assert.ok(loc === "/hq" || /ready=1/.test(loc), loc);
+  assertChurchReadySuccessRedirect(loc);
 
   const appRow = await pool.query(
     `SELECT application_status, provisioning_status, status, organization_id
@@ -509,6 +510,11 @@ async function runBlessBoardFlow() {
   assert.equal(appRow.rows[0].application_status, "active");
   assert.equal(appRow.rows[0].provisioning_status, "provisioned");
   const organizationId = appRow.rows[0].organization_id;
+  const slugRow = await pool.query(
+    `SELECT organization_key FROM platform.organizations WHERE id = $1`,
+    [organizationId]
+  );
+  const key = slugRow.rows[0].organization_key;
   const churchRow = await pool.query(
     `SELECT id FROM blessboard.churches WHERE organization_id = $1`,
     [organizationId]

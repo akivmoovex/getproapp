@@ -1673,6 +1673,150 @@ ul.bb-apex-features {
   margin-bottom: 0;
 }
 
+.bb-apex-register--success {
+  padding: 2rem 0 3rem;
+}
+
+.bb-rs-wrap {
+  max-width: 48rem;
+  margin: 0 auto;
+}
+
+.bb-rs-card {
+  text-align: center;
+  padding: 2.5rem 1.5rem;
+}
+
+.bb-rs-icon {
+  width: 6rem;
+  height: 6rem;
+  margin: 0 auto 1.25rem;
+  border-radius: 999px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(108, 92, 231, 0.14);
+  color: var(--bb-color-primary, #6c5ce7);
+}
+
+.bb-rs-icon .material-symbols-outlined {
+  font-size: 3rem;
+}
+
+.bb-rs-card h1 {
+  margin: 0 0 0.75rem;
+  font-size: 1.75rem;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.bb-rs-lede {
+  margin: 0 auto 1rem;
+  max-width: 36rem;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-rs-card code {
+  overflow-wrap: anywhere;
+  word-break: break-all;
+}
+
+.bb-rs-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 0.75rem;
+  text-align: left;
+  margin: 1.5rem 0;
+}
+
+.bb-rs-tile {
+  display: flex;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #f8f7fc;
+}
+
+.bb-rs-tile .material-symbols-outlined {
+  color: var(--bb-color-primary, #6c5ce7);
+  flex: 0 0 auto;
+}
+
+.bb-rs-tile h2 {
+  margin: 0 0 0.25rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+}
+
+.bb-rs-tile p {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-rs-note {
+  text-align: left;
+  margin: 0 0 1.5rem;
+}
+
+.bb-rs-subtitle {
+  margin: 0 0 0.5rem;
+  font-size: 1rem;
+}
+
+.bb-rs-list {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.bb-rs-list li + li {
+  margin-top: 0.35rem;
+}
+
+.bb-rs-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  justify-content: center;
+  align-items: stretch;
+}
+
+.bb-rs-actions .bb-apex-btn {
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+
+@media (max-width: 480px) {
+  .bb-apex-register--success {
+    padding: 1.25rem 0 2rem;
+  }
+
+  .bb-rs-card {
+    padding: 1.5rem 1rem;
+  }
+
+  .bb-rs-actions {
+    flex-direction: column;
+  }
+
+  .bb-rs-actions .bb-apex-btn {
+    width: 100%;
+  }
+}
+
+@media (min-width: 768px) {
+  .bb-rs-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .bb-rs-actions .bb-apex-btn {
+    min-width: 10rem;
+  }
+}
+
 .visually-hidden {
   position: absolute !important;
   width: 1px;

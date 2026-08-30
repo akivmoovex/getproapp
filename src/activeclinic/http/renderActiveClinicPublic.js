@@ -19,6 +19,9 @@ const seoModel = require("../../platform/website/seoModel");
 const { TITLE_SUFFIX: AC_TITLE_SUFFIX } = require("../website/activeClinicPublicSeo");
 const { isPublicClinicDirectoryNavEnabled } = require("../website/activeClinicPublicCapabilities");
 const {
+  buildRegistrationSuccessViewModel,
+} = require("../../platform/registration/registrationSuccessPresentation");
+const {
   BOOKING_STATUS_LABELS,
   bookingStatusLabel,
 } = require("./activeClinicBookingStatusCopy");
@@ -102,6 +105,18 @@ function renderPublicPage(input) {
   });
   if (typeof locals.publicClinicDirectoryNavEnabled === "undefined") {
     locals.publicClinicDirectoryNavEnabled = isPublicClinicDirectoryNavEnabled(process.env);
+  }
+  if (
+    /register-clinic-success/.test(String(input.contentTemplate || "")) &&
+    !locals.registrationSuccess
+  ) {
+    locals.registrationSuccess = buildRegistrationSuccessViewModel({
+      productCode: "activeclinic",
+      reference: locals.applicationReference,
+      reviewRequired: locals.reviewRequired,
+      ready: locals.ready,
+      authenticated: locals.authenticated,
+    });
   }
 
   const shellVariant = input.shellVariant || (locals.clinic ? "tenant" : "platform");

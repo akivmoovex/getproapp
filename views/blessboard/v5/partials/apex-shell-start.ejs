@@ -10,9 +10,11 @@
   <meta name="description" content="BlessBoard — one digital home for your church." />
   <% if (typeof activeNav !== 'undefined' && activeNav === 'email-verification') { %>
   <meta name="robots" content="noindex, nofollow" />
+  <% } else if (typeof robotsNoIndex !== 'undefined' && robotsNoIndex) { %>
+  <meta name="robots" content="noindex, nofollow" />
   <% } %>
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=17" />
+  <link rel="stylesheet" href="/blessboard/v5/apex.css?v=18" />
   <% if (typeof activeNav !== 'undefined' && activeNav === 'register-church') { %>
   <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=bb-reg-1" />
   <% } %>

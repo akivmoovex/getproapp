@@ -258,14 +258,14 @@ describe("registrationTraceLog provision/session shapes", () => {
           event: "church_registration_redirect",
           operation: "register_church_redirect",
           outcome: "ok",
-          redirectPath: HQ_PATH,
+          redirectPath: "/register-church/success?ref=BB-TEST&ready=1",
         }
       );
       const joined = lines.join("\n");
       assert.match(joined, /"canonicalPlanKey":"free"/);
       assert.match(joined, /"hasTrialEndsAt":false/);
       assert.match(joined, /"transactionRolledBack":false/);
-      assert.match(joined, /"redirectPath":"\/hq"/);
+      assert.match(joined, /"redirectPath":"\/register-church\/success\?ref=BB-TEST&ready=1"/);
       assert.doesNotMatch(joined, PROHIBITED);
     } finally {
       console.log = orig;

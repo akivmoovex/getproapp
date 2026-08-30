@@ -19,6 +19,7 @@ const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity")
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
+const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
 const { ENV_KEY } = require("../src/blessboard/config/instantFreeProvisioningEnabled");
 const {
   mapPublicPlanToOrchestratorPlanKey,
@@ -248,7 +249,9 @@ describe("Network support-contact registration", () => {
     assert.equal(apps.rows.length, 1);
     const row = apps.rows[0];
     assert.equal(row.selected_plan, "network");
-    assert.equal(row.application_status, "submitted");
+    // Engine holds Network as review_required (NETWORK_PLAN_MANUAL_REVIEW).
+    // Public HTTP still uses the enquiry success URL, not /success?ready=1.
+    assert.equal(row.application_status, "review_required");
     assert.equal(row.provisioning_status, "not_started");
     assert.equal(row.organization_id, null);
     assert.equal(row.support_requested, true);
@@ -361,10 +364,9 @@ describe("Network support-contact registration", () => {
       .set("Cookie", platformAdminCookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-bb-pa-plan-badge="network"/);
-    assert.match(list.text, /data-bb-pa-support-requested="1"/);
+    assert.match(list.text, /data-bb-pa-reg-filter-field="support_requested"/);
     assert.ok(list.text.includes(body.church_name));
     assert.ok(list.text.includes(body.contact_name));
-    assert.ok(list.text.includes(body.email));
     assert.match(list.text, /Network/);
 
     const apps = await pool.query(
@@ -380,6 +382,7 @@ describe("Network support-contact registration", () => {
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-bb-pa-plan-badge="network"/);
     assert.match(detail.text, /Support requested/);
+    assert.ok(detail.text.includes(body.email));
     assert.match(detail.text, /data-bb-pa-follow-up-form="1"/);
 
     const anon = await request(app)
@@ -451,7 +454,7 @@ describe("Network support-contact registration", () => {
       .type("form")
       .send({ ...freeBody, [CSRF_FIELD]: freePage.csrf });
     assert.equal(freeRes.status, 303);
-    assert.equal(freeRes.headers.location, "/hq");
+    assertChurchReadySuccessRedirect(freeRes.headers.location);
 
     const growthKey = uniq("growth");
     const gPhone = String(1000000 + Math.floor(Math.random() * 9000000)).slice(-7);
@@ -478,7 +481,7 @@ describe("Network support-contact registration", () => {
       .type("form")
       .send({ ...growthBody, [CSRF_FIELD]: growthPage.csrf });
     assert.equal(growthRes.status, 303);
-    assert.equal(growthRes.headers.location, "/hq");
+    assertChurchReadySuccessRedirect(growthRes.headers.location);
   });
 
   it("Network still enquiry-only when instant flag is on", async () => {

@@ -1,0 +1,80 @@
+<%
+  var rs = typeof registrationSuccess !== 'undefined' && registrationSuccess ? registrationSuccess : {};
+  var cls = rs.classes || {};
+  var attrs = rs.attrs || {};
+  var reviewRequired = rs.reviewRequired === true;
+  var ready = rs.ready === true;
+  var reference = typeof rs.reference === 'string' && rs.reference ? rs.reference : '';
+  var outcome = rs.outcome || (reviewRequired ? 'review_required' : (ready ? 'ready' : 'recorded'));
+%>
+<% if (reviewRequired) { %>
+<div class="<%= cls.card || '' %>"<% if (attrs.outcome) { %> <%= attrs.outcome %>="<%= outcome %>"<% } %>>
+  <div class="<%= cls.icon || '' %>" aria-hidden="true">
+    <span class="material-symbols-outlined filled">pending</span>
+  </div>
+  <% if (rs.reviewKicker) { %>
+  <p class="<%= cls.kicker || '' %>"><%= rs.reviewKicker %></p>
+  <% } %>
+  <h1><%= rs.reviewTitle %></h1>
+  <p><%= rs.reviewDescription %></p>
+  <% if (reference) { %>
+  <p>Reference: <code<% if (attrs.reference) { %> <%= attrs.reference %>="<%= reference %>"<% } %>><%= reference %></code></p>
+  <% } %>
+  <div class="<%= cls.note || '' %>">
+    <h2 class="<%= cls.subtitle || '' %>"><%= rs.nextTitle %></h2>
+    <ul class="<%= cls.list || '' %>">
+      <% (rs.reviewNextSteps || []).forEach(function (step) { %>
+      <li><%= step %></li>
+      <% }); %>
+    </ul>
+  </div>
+  <div class="<%= cls.actions || '' %>">
+    <% if (rs.reviewPrimaryLabel) { %>
+    <a class="<%= cls.btnPrimary || '' %>" href="<%= rs.reviewPrimaryHref || '/' %>"<% if (attrs.statusLookup) { %> <%= attrs.statusLookup %>="1"<% } %>><%= rs.reviewPrimaryLabel %></a>
+    <% } %>
+    <a class="<%= cls.btnSecondary || '' %>" href="<%= rs.homeHref || '/' %>"><%= rs.homeLabel || 'Return home' %></a>
+  </div>
+</div>
+<% } else { %>
+<div class="<%= cls.card || '' %>"<% if (attrs.outcome) { %> <%= attrs.outcome %>="<%= outcome %>"<% } %>>
+  <div class="<%= cls.icon || '' %>" aria-hidden="true">
+    <span class="material-symbols-outlined filled">check_circle</span>
+  </div>
+  <h1><%= rs.title %></h1>
+  <p class="<%= cls.lede || '' %>"><%= rs.description %></p>
+  <% if (reference) { %>
+  <p>Reference: <code<% if (attrs.reference) { %> <%= attrs.reference %>="<%= reference %>"<% } %>><%= reference %></code></p>
+  <% } %>
+  <div class="<%= cls.grid || '' %>">
+    <div class="<%= cls.tile || '' %>">
+      <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+      <div>
+        <h2><%= rs.accountsTitle %></h2>
+        <p><%= rs.accountsText %></p>
+      </div>
+    </div>
+    <div class="<%= cls.tile || '' %>">
+      <span class="material-symbols-outlined" aria-hidden="true">web</span>
+      <div>
+        <h2><%= rs.websiteTitle %></h2>
+        <p><%= rs.websiteText %></p>
+      </div>
+    </div>
+  </div>
+  <div class="<%= cls.note || '' %>">
+    <h2 class="<%= cls.subtitle || '' %>"><%= rs.nextTitle %></h2>
+    <ul class="<%= cls.list || '' %>">
+      <% (rs.nextSteps || []).forEach(function (step) { %>
+      <li><%= step %></li>
+      <% }); %>
+    </ul>
+  </div>
+  <div class="<%= cls.actions || '' %>">
+    <a class="<%= cls.btnPrimary || '' %>" href="<%= rs.signInHref || '/login' %>"<% if (attrs.signIn) { %> <%= attrs.signIn %>="1"<% } %>><%= rs.signInLabel || 'Sign in' %></a>
+    <% if (rs.showContinue && rs.dashboardHref) { %>
+    <a class="<%= cls.btnSecondary || '' %>" href="<%= rs.dashboardHref %>"<% if (attrs.continue) { %> <%= attrs.continue %>="1"<% } %>><%= rs.continueLabel || 'Continue to dashboard' %></a>
+    <% } %>
+    <a class="<%= cls.btnSecondary || '' %>" href="<%= rs.homeHref || '/' %>"><%= rs.homeLabel || 'Return home' %></a>
+  </div>
+</div>
+<% } %>

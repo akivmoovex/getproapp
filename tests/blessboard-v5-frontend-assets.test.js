@@ -14,7 +14,7 @@ function read(rel) {
 /** Canonical cache-bust versions for live V5 shells (keep in sync with templates). */
 const VERSIONS = {
   designSystem: "6",
-  apex: "17",
+  apex: "18",
   apexAuth: "6",
   tenantPublic: "55",
   tenantAuth: "14",

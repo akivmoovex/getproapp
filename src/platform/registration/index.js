@@ -62,4 +62,5 @@ module.exports = {
   loadTenantHealthSummariesForOrganization,
   retryTenantProvisioningIfUnhealthy,
   presentTenantHealthSummary,
+  ...require("./registrationSuccessPresentation"),
 };

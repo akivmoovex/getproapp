@@ -20,6 +20,7 @@ const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity")
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
+const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
 const {
   validatePlatformChurchRegistration,
   formFromBody,
@@ -302,7 +303,7 @@ describe("BlessBoard V1 registration UI + immediate admin (BB-REG-01, BB-REG-03)
       .send(body);
 
     assert.equal(post.status, 303);
-    assert.equal(post.headers.location, "/hq");
+    assertChurchReadySuccessRedirect(post.headers.location);
     assert.notEqual(post.headers.location, "/register-church?review=1");
     assert.doesNotMatch(String(post.headers.location || ""), /submitted=1|review=1/);
 

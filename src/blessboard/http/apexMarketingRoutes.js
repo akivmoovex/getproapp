@@ -18,6 +18,7 @@ const {
   renderPricingPage,
   renderDirectoryPage,
   renderRegisterChurchPage,
+  renderRegisterChurchSuccessPage,
   renderEmailVerificationResultPage,
 } = require("./renderApexMarketing");
 const { renderTermsPage, renderPrivacyPage } = require("./renderApexLegal");
@@ -53,8 +54,13 @@ const { mapPublicPlanToDbPlanKey } = require("../services/registrationPlanMappin
 const {
   consumeVerificationToken,
 } = require("../services/registrationEmailVerificationService");
+const {
+  generatePublicRegistrationReference,
+  buildRegistrationSuccessRedirect,
+} = require("../../platform/registration/registrationSuccessPresentation");
 
 const REGISTER_PATH = "/register-church";
+const REGISTER_SUCCESS_PATH = "/register-church/success";
 const ACCOUNT_PATH = "/account";
 const HQ_PATH = "/hq";
 const LOGIN_PATH = "/login";
@@ -391,11 +397,21 @@ function createApexMarketingRouter(deps) {
   router.get("/terms", (req, res) => withShell(req, res, renderTermsPage));
   router.get("/privacy", (req, res) => withShell(req, res, renderPrivacyPage));
 
+  router.get(REGISTER_SUCCESS_PATH, (req, res) => {
+    if (String((req.query && req.query.review) || "") === "1") {
+      return res.redirect(303, `${REGISTER_PATH}?review=1`);
+    }
+    return withShell(req, res, renderRegisterChurchSuccessPage, {
+      alwaysPassCsrf: true,
+      noStore: true,
+      applicationReference: String((req.query && req.query.ref) || "").trim().slice(0, 64),
+      ready: String((req.query && req.query.ready) || "") === "1",
+    });
+  });
+
   router.get(REGISTER_PATH, (req, res) => {
     const selectedPlan = normalizeSelectedPlan(req.query && req.query.plan);
     const submitted = String((req.query && req.query.submitted) || "") === "1";
-    const workspaceReady = String((req.query && req.query.ready) || "") === "1";
-    const loginFallback = String((req.query && req.query.login) || "") === "1";
     const review = String((req.query && req.query.review) || "") === "1";
     const submittedPlan = submitted
       ? normalizeSelectedPlan(req.query && req.query.plan) || selectedPlan
@@ -406,8 +422,9 @@ function createApexMarketingRouter(deps) {
       submitted,
       submittedPlan,
       networkSupportSuccess: submitted && submittedPlan === NETWORK_PLAN_CODE,
-      workspaceReady,
-      loginFallback,
+      // Successful provision uses REGISTER_SUCCESS_PATH — never treat ?ready=1 as form success.
+      workspaceReady: false,
+      loginFallback: false,
       review,
       organizationKeyPreview: String((req.query && req.query.key) || "")
         .trim()
@@ -627,36 +644,24 @@ function createApexMarketingRouter(deps) {
 
       issueAndSetCsrf(req, res);
 
-      if (sessionOk) {
-        // Session-scoped HQ on apex (path public /c/:key; no wildcard tenant host required).
-        logRegistrationTrace(req, {
-          event: "church_registration_redirect",
-          operation: "register_church_redirect",
-          outcome: "ok",
-          redirectPath: HQ_PATH,
-          applicationId: records.applicationId || null,
-          organizationKey: orgKey || null,
-          publicPlanCode,
-          canonicalPlanKey: records.planKey || null,
-          durationMs: Date.now() - startedAt,
-        });
-        return res.redirect(303, HQ_PATH);
-      }
-
-      const keyQ = orgKey ? `&key=${encodeURIComponent(orgKey)}` : "";
-      const loginRedirect = `${REGISTER_PATH}?ready=1&login=1${keyQ}&next=${encodeURIComponent(HQ_PATH)}`;
+      const successPath = buildRegistrationSuccessRedirect({
+        productCode: "blessboard",
+        reference: generatePublicRegistrationReference("BB"),
+        ready: true,
+      });
       logRegistrationTrace(req, {
         event: "church_registration_redirect",
         operation: "register_church_redirect",
         outcome: "ok",
-        failureCategory: "session_failed_post_commit",
-        redirectPath: `${REGISTER_PATH}?ready=1&login=1`,
+        redirectPath: successPath,
+        ...(sessionOk ? {} : { failureCategory: "session_failed_post_commit" }),
         applicationId: records.applicationId || null,
         organizationKey: orgKey || null,
         publicPlanCode,
+        canonicalPlanKey: records.planKey || null,
         durationMs: Date.now() - startedAt,
       });
-      return res.redirect(303, loginRedirect);
+      return res.redirect(303, successPath);
     } catch (err) {
       return next(err);
     }
@@ -779,6 +784,7 @@ const IN_PROGRESS_SAFE =
 module.exports = {
   createApexMarketingRouter,
   REGISTER_PATH,
+  REGISTER_SUCCESS_PATH,
   ACCOUNT_PATH,
   HQ_PATH,
   LOGIN_PATH,

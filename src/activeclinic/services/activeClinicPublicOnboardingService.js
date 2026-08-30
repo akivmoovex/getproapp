@@ -12,7 +12,9 @@ const { normalizeActiveClinicPhone, normalizeActiveClinicEmail } = require("./no
 const {
   validatePasswordPolicy,
 } = require("../../platform/services/platformIdentityCredentialService");
-const crypto = require("crypto");
+const {
+  generatePublicRegistrationReference,
+} = require("../../platform/registration/registrationSuccessPresentation");
 const { appendReviewEvent } = require("./clinicRegistrationReviewService");
 const { validateTermsAcceptance } = require("../legal/termsAcceptance");
 const { FACILITY_TYPES } = require("./facilityService");
@@ -74,9 +76,7 @@ function normalizeOptionalNotes(raw) {
 }
 
 function generateApplicationNumber() {
-  const timestamp = Date.now().toString(36).toUpperCase();
-  const random = crypto.randomBytes(3).toString("hex").toUpperCase();
-  return `AC-${timestamp}-${random}`;
+  return generatePublicRegistrationReference("AC");
 }
 
 /**

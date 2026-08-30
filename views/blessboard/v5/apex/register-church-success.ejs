@@ -1,0 +1,17 @@
+<%#
+  BlessBoard registration success — shared panel + apex shell.
+  Locals: registrationSuccess, authenticated, csrfToken
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<section
+  class="bb-apex-register bb-apex-register--success"
+  data-bb-apex-page="register-church-success"
+  data-bb-register-outcome="<%= registrationSuccess && registrationSuccess.outcome ? registrationSuccess.outcome : 'ready' %>"
+>
+  <div class="bb-apex-container bb-rs-wrap">
+    <%- include('../../../platform/registration/registration-success-panel') %>
+  </div>
+</section>
+
+<%- include('../partials/apex-shell-end') %>
