@@ -297,20 +297,21 @@ function createApexMarketingRouter(deps) {
     handler: (req, res) => {
       setRegisterNoStoreHeaders(res);
       const csrfToken = issueAndSetCsrf(req, res);
-      return res.status(429).type("html").send(
-        renderRegisterChurchPage({
-          authenticated: Boolean(req.v5Session && req.v5Session.authenticated),
-          csrfToken,
-          csrfField: CSRF_FIELD,
-          submitted: false,
-          formError: "Too many submissions from this network. Please wait a few minutes and try again.",
-          form: formFromBody(req.body || {}),
-          fieldError: null,
-          selectedPlan: normalizeSelectedPlan(req.body && req.body.selected_plan),
-          showCsrfRetry: false,
-          instantFreeEnabled: instantEnabled(),
-        })
-      );
+        return res.status(429).type("html").send(
+      renderRegisterChurchPage({
+        authenticated: Boolean(req.v5Session && req.v5Session.authenticated),
+        csrfToken,
+        csrfField: CSRF_FIELD,
+        submitted: false,
+        formError: "Too many submissions from this network. Please wait a few minutes and try again.",
+        form: formFromBody(req.body || {}),
+        fieldError: null,
+        selectedPlan: normalizeSelectedPlan(req.body && req.body.selected_plan),
+        showCsrfRetry: false,
+        instantFreeEnabled: instantEnabled(),
+        env,
+      })
+    );
     },
   });
 
@@ -416,6 +417,7 @@ function createApexMarketingRouter(deps) {
       fieldError: null,
       selectedPlan,
       showCsrfRetry: false,
+      env,
     });
   });
 
@@ -455,6 +457,7 @@ function createApexMarketingRouter(deps) {
               normalizeSelectedPlan(body.selected_plan) || selectedPlanHint || null,
             showCsrfRetry: false,
             instantFreeEnabled: flagOn,
+            env,
             ...extras,
           })
         );
@@ -481,6 +484,7 @@ function createApexMarketingRouter(deps) {
       const validation = validatePlatformChurchRegistration(body, {
         selectedPlanHint,
         instantFreeEnabled: flagOn,
+        env,
       });
       if (!validation.ok) {
         logRegistrationTrace(req, {

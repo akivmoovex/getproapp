@@ -52,5 +52,8 @@
 
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
   <script src="/blessboard/v5/apex.js?v=3" defer></script>
+  <% if (typeof activeNav !== 'undefined' && activeNav === 'register-church') { %>
+  <script src="/activeclinic/ac-phone-field.js?v=bb-reg-1" defer></script>
+  <% } %>
 </body>
 </html>

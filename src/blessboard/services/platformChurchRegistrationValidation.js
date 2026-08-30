@@ -12,6 +12,7 @@ const { TIER_PLAN_CODES } = require("../../church/platformPricingContent");
 const { normalizeOrganizationKey } = require("./organizationKey");
 const { normalizeRegistrationPhone } = require("./normalizeRegistrationPhone");
 const { prepareBranchDisplayName } = require("./normalizeBranchDisplayName");
+const { extractPhoneFieldsFromBody } = require("../../platform/services/phoneNumberService");
 const {
   PUBLIC_PLAN_CODES,
   DB_PLAN_KEYS,
@@ -120,11 +121,24 @@ function validateEmail(email) {
 }
 
 /**
- * @param {unknown} phone
- * @param {unknown} country
+ * Shared platform phone parser: structured country + national, or legacy `phone`.
+ * Church location `country` is only a fallback when the caller did not send a
+ * phone-country selector. Server env/validationMode is authoritative.
+ *
+ * @param {object} body
+ * @param {{ churchCountry?: unknown, env?: object, validationMode?: string }} [opts]
  */
-function validatePhone(phone, country) {
-  return normalizeRegistrationPhone(phone, country);
+function validatePhone(body, opts = {}) {
+  const fields = extractPhoneFieldsFromBody(body);
+  const phoneCountry = fields.phoneCountry || null;
+  const phoneNational = fields.phoneNational || null;
+  return normalizeRegistrationPhone(fields.phone, {
+    country: phoneCountry || opts.churchCountry || null,
+    phoneCountry,
+    phoneNational,
+    env: opts.env,
+    validationMode: opts.validationMode,
+  });
 }
 
 /**
@@ -203,6 +217,8 @@ function validateRequestedOrganizationKey(raw) {
  * @param {{
  *   selectedPlanHint?: string | null,
  *   instantFreeEnabled?: boolean,
+ *   env?: object,
+ *   validationMode?: string,
  * }} [opts]
  */
 function validatePlatformChurchRegistration(body, opts = {}) {
@@ -248,7 +264,11 @@ function validatePlatformChurchRegistration(body, opts = {}) {
   const emailResult = validateEmail(body && body.email);
   if (!emailResult.ok) return emailResult;
 
-  const phoneResult = validatePhone(body && body.phone, country);
+  const phoneResult = validatePhone(body, {
+    churchCountry: country,
+    env: opts.env,
+    validationMode: opts.validationMode,
+  });
   if (!phoneResult.ok) return phoneResult;
 
   if (branchCount && !/^\d{1,3}$/.test(branchCount)) {
@@ -339,6 +359,8 @@ function formFromBody(body, opts = {}) {
     branch_count: trim(body && body.branch_count, 20),
     email: trim(body && body.email, 254),
     phone: trim(body && body.phone, 50),
+    phone_country: trim(body && (body.phone_country || body.phoneCountry), 8).toUpperCase(),
+    phone_national: trim(body && (body.phone_national || body.phoneNational), 50),
     organization_key: trim(body && body.organization_key, 80),
     selected_plan:
       normalizeSelectedPlan(body && body.selected_plan) ||

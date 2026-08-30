@@ -175,6 +175,12 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(res.text, /data-bb-register-mode="instant-free"/);
     assert.match(res.text, /name="password"/);
     assert.match(res.text, /name="organization_key"/);
+    assert.match(res.text, /data-ac-phone-field/);
+    assert.match(res.text, /name="phone_country"/);
+    assert.match(res.text, /name="phone_national"/);
+    assert.match(res.text, /value="ZM"/);
+    assert.match(res.text, /\+260/);
+    assert.match(res.text, /Zambia \(\+260\)/);
     assert.doesNotMatch(res.text, /activated immediately/i);
   });
 

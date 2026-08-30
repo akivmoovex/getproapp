@@ -32,7 +32,9 @@
     if (valueInput) valueInput.value = iso;
     if (flag) flag.textContent = iso;
     if (code) {
-      if (root.classList.contains("ac-country-picker") && countryName) {
+      if (root.getAttribute("data-ac-phone-named") === "1" && countryName) {
+        code.textContent = countryName + (callingCode ? " (" + callingCode + ")" : "");
+      } else if (root.classList.contains("ac-country-picker") && countryName) {
         code.textContent = countryName + (callingCode ? " " + callingCode : "");
       } else {
         code.textContent = callingCode || iso;
@@ -45,7 +47,12 @@
     });
     if (btn) {
       var label = "Country calling code, currently " + (callingCode || iso);
-      if (root.classList.contains("ac-country-picker") && countryName) {
+      if (root.getAttribute("data-ac-phone-named") === "1" && countryName) {
+        label =
+          "Country calling code, currently " +
+          countryName +
+          (callingCode ? " (" + callingCode + ")" : "");
+      } else if (root.classList.contains("ac-country-picker") && countryName) {
         label = "Country, currently " + countryName + (callingCode ? " " + callingCode : "");
       }
       btn.setAttribute("aria-label", label);

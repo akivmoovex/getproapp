@@ -56,12 +56,18 @@
   var showRelaxed = typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed === true;
   var placeholderText = (typeof placeholder === 'string') ? placeholder : '97 123 4567';
   var callingHint = '';
+  var selectedCountryName = countryVal;
+  var namedCountry = typeof showCountryName !== 'undefined' && showCountryName === true;
   for (var i = 0; i < countryList.length; i++) {
     if (String(countryList[i].iso).toUpperCase() === countryVal) {
       callingHint = countryList[i].callingCode || '';
+      selectedCountryName = countryList[i].name || countryVal;
       break;
     }
   }
+  var buttonCodeText = namedCountry && selectedCountryName
+    ? (selectedCountryName + (callingHint ? ' (' + callingHint + ')' : ''))
+    : (callingHint || ('+' + countryVal));
 %>
 <%
   var describedIds = [];
@@ -70,7 +76,7 @@
   if (hasError) describedIds.push(fieldId + '-error');
   var describedBy = describedIds.join(' ');
 %>
-<div class="ac-phone-field" data-ac-phone-field="1" data-default-country="<%= countryVal %>">
+<div class="ac-phone-field" data-ac-phone-field="1" data-default-country="<%= countryVal %>"<% if (namedCountry) { %> data-ac-phone-named="1"<% } %>>
   <% if (labelText) { %>
   <label class="ac-label<%= typeof labelClass === 'string' ? ' ' + labelClass : '' %>" for="<%= fieldId %>-national"><%= labelText %><% if (isRequired) { %> <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span><% } %></label>
   <% } %>
@@ -86,10 +92,10 @@
         aria-haspopup="dialog"
         aria-expanded="false"
         aria-controls="<%= fieldId %>-country-list"
-        aria-label="Country calling code, currently <%= callingHint || countryVal %>"
+        aria-label="Country calling code, currently <%= namedCountry ? (selectedCountryName + (callingHint ? ' (' + callingHint + ')' : '')) : (callingHint || countryVal) %>"
       >
         <span class="ac-phone-field__flag" data-ac-phone-flag="1" aria-hidden="true"><%= countryVal %></span>
-        <span class="ac-phone-field__code" data-ac-phone-code="1"><%= callingHint || ('+' + countryVal) %></span>
+        <span class="ac-phone-field__code" data-ac-phone-code="1"><%= buttonCodeText %></span>
         <span class="ac-phone-field__chevron" aria-hidden="true">▾</span>
       </button>
       <div class="ac-phone-field__backdrop" hidden data-ac-phone-backdrop="1"></div>

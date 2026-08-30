@@ -14,7 +14,7 @@ function read(rel) {
 /** Canonical cache-bust versions for live V5 shells (keep in sync with templates). */
 const VERSIONS = {
   designSystem: "6",
-  apex: "15",
+  apex: "16",
   apexAuth: "6",
   tenantPublic: "54",
   tenantAuth: "14",
@@ -35,6 +35,10 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     assert.match(start, /activeNav === 'account'/);
     assert.match(start, new RegExp(`apex-auth\\.css\\?v=${VERSIONS.apexAuth}`));
     assert.match(start, new RegExp(`apex\\.css\\?v=${VERSIONS.apex}`));
+    assert.match(start, /activeNav === 'register-church'/);
+    assert.match(start, /ac-phone-field\.css\?v=bb-reg-1/);
+    const end = read("views/blessboard/v5/partials/apex-shell-end.ejs");
+    assert.match(end, /ac-phone-field\.js\?v=bb-reg-1/);
     const login = read("views/blessboard/v5/apex/login.ejs");
     assert.match(login, new RegExp(`apex-auth\\.css\\?v=${VERSIONS.apexAuth}`));
     assert.match(login, new RegExp(`tenant-auth\\.css\\?v=${VERSIONS.tenantAuth}`));

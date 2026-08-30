@@ -15,6 +15,13 @@ const {
   buildApexPricingFaq,
   mapDirectoryItems,
 } = require("./apexMarketingContent");
+const {
+  buildPlatformPhoneFieldLocals,
+} = require("../../platform/services/platformPhoneFieldLocals");
+const {
+  resolvePhoneValidationMode,
+  VALIDATION_MODES,
+} = require("../../platform/services/phoneNumberService");
 
 function renderApexView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
@@ -82,6 +89,21 @@ function renderDirectoryPage(opts) {
 }
 
 function renderRegisterChurchPage(opts) {
+  const form = (opts && opts.form) || {};
+  const env = (opts && opts.env) || process.env;
+  const phoneLocals = buildPlatformPhoneFieldLocals({
+    env,
+    selectedCountry: form.phone_country || null,
+    nationalValue:
+      form.phone_national ||
+      (form.phone && !String(form.phone).trim().startsWith("+") ? form.phone : "") ||
+      "",
+    e164Value:
+      !form.phone_national && form.phone && String(form.phone).trim().startsWith("+")
+        ? form.phone
+        : null,
+  });
+  const phoneMode = resolvePhoneValidationMode(env);
   return renderApexView("apex/register-church.ejs", {
     ...shellLocals(opts),
     pageTitle: "Register Your Church",
@@ -96,10 +118,13 @@ function renderRegisterChurchPage(opts) {
     organizationKeyPreview: (opts && opts.organizationKeyPreview) || "",
     formError: (opts && opts.formError) || null,
     fieldError: (opts && opts.fieldError) || null,
-    form: (opts && opts.form) || {},
+    form,
     selectedPlan: (opts && opts.selectedPlan) || null,
     showCsrfRetry: Boolean(opts && opts.showCsrfRetry),
     instantFreeEnabled: Boolean(opts && opts.instantFreeEnabled),
+    ...phoneLocals,
+    phoneValidationRelaxed: phoneMode === VALIDATION_MODES.RELAXED,
+    phoneValidationMode: phoneMode,
   });
 }
 

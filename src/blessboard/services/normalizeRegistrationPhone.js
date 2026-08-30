@@ -44,27 +44,41 @@ const PHONE_UNIQUENESS_PROVISIONING_STATUSES = Object.freeze([
 
 /**
  * @param {unknown} phone
- * @param {unknown} [country]
+ * @param {unknown | {
+ *   country?: unknown,
+ *   phoneCountry?: unknown,
+ *   phoneNational?: unknown,
+ *   env?: object,
+ *   validationMode?: string,
+ *   defaultCountry?: string | null,
+ *   requireCountry?: boolean,
+ * }} [countryOrOptions]
  * @returns {{
  *   ok: true,
  *   display: string,
- *   normalized: string
+ *   normalized: string,
+ *   countryCode?: string | null
  * } | {
  *   ok: false,
  *   error: string,
  *   field: "phone"
  * }}
  */
-function normalizeRegistrationPhone(phone, country) {
+function normalizeRegistrationPhone(phone, countryOrOptions) {
+  const opts =
+    countryOrOptions != null && typeof countryOrOptions === "object"
+      ? countryOrOptions
+      : { country: countryOrOptions };
   const result = normalizeBlessBoardPhone(phone, {
-    country,
     defaultCountry: DEFAULT_COUNTRY,
+    ...opts,
   });
   if (!result.ok) return result;
   return {
     ok: true,
     display: result.display,
     normalized: result.normalized,
+    countryCode: result.countryCode || null,
   };
 }
 

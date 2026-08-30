@@ -1931,3 +1931,85 @@ ul.bb-apex-features {
 .bb-apex-email-verify__actions {
   margin: 0;
 }
+
+/* Shared PhoneField — BlessBoard-scoped restyle (widget markup is platform/AC). */
+.bb-apex-register .ac-phone-field .ac-label.bb-apex-register-label,
+.bb-apex-register .bb-apex-field--phone .bb-apex-register-label {
+  font-size: 0.9rem;
+  font-weight: 600;
+  color: inherit;
+}
+
+.bb-apex-register .ac-phone-field__country-btn,
+.bb-apex-register .ac-phone-field__input {
+  box-sizing: border-box;
+  min-height: 2.85rem;
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #fff;
+  color: var(--bb-color-ink, #1a1c1e);
+  font: inherit;
+}
+
+.bb-apex-register .ac-phone-field__country-btn:focus-visible,
+.bb-apex-register .ac-phone-field__input:focus {
+  outline: 2px solid var(--bb-color-primary, #6c5ce7);
+  outline-offset: 1px;
+}
+
+.bb-apex-register .bb-apex-field--phone.is-error .ac-phone-field__input,
+.bb-apex-register .ac-phone-field__input.is-invalid {
+  border-color: #ba1a1a;
+}
+
+.bb-apex-register .ac-phone-field[data-ac-phone-named="1"] .ac-phone-field__country {
+  min-width: 10.75rem;
+  max-width: 56%;
+}
+
+.bb-apex-register .ac-phone-field[data-ac-phone-named="1"] .ac-phone-field__code {
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.bb-apex-register .ac-phone-field__popover {
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  border-radius: var(--bb-radius-md, 0.75rem);
+  background: #fff;
+  box-shadow: 0 12px 32px rgba(26, 28, 30, 0.16);
+}
+
+.bb-apex-register .ac-phone-field__search {
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  border-radius: var(--bb-radius-md, 0.75rem);
+  font: inherit;
+}
+
+.bb-apex-register .ac-phone-field__option.is-selected,
+.bb-apex-register .ac-phone-field__option:hover,
+.bb-apex-register .ac-phone-field__option:focus-visible {
+  background: rgba(108, 92, 231, 0.1);
+}
+
+.bb-apex-register .ac-phone-field__mode-hint {
+  color: var(--bb-color-muted, #44474e);
+}
+
+.bb-apex-register .ac-field-error {
+  color: #ba1a1a;
+  font-size: 0.875rem;
+}
+
+@media (max-width: 480px) {
+  .bb-apex-register .ac-phone-field__row {
+    flex-direction: row;
+    align-items: stretch;
+  }
+  .bb-apex-register .ac-phone-field[data-ac-phone-named="1"] .ac-phone-field__country {
+    min-width: 7.25rem;
+    max-width: 48%;
+  }
+  .bb-apex-register .ac-phone-field[data-ac-phone-named="1"] .ac-phone-field__flag {
+    display: none;
+  }
+}

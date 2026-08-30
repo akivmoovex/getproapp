@@ -193,6 +193,8 @@ function normalizeBlessBoardPhone(phone, optionsOrCountry) {
     clinicDefaultCountry: opts.clinicDefaultCountry || null,
     defaultCountry: defaultCountry || PLATFORM_DEFAULT_COUNTRY,
     required: true,
+    env: opts.env,
+    validationMode: opts.validationMode,
   });
 
   if (!result.ok) {

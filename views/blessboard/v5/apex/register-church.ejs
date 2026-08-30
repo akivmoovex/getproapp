@@ -223,39 +223,42 @@
                 <% } %>
               </div>
             </div>
-            <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
-              <div class="bb-apex-field">
-                <label class="bb-apex-register-label" for="register_phone">Phone number</label>
-                <input
-                  class="bb-apex-register-input<%= fieldHasError('phone') ? ' is-error' : '' %>"
-                  id="register_phone"
-                  name="phone"
-                  type="tel"
-                  required
-                  autocomplete="tel"
-                  value="<%= formData.phone || '' %>"
-                  <%= fieldHasError('phone') ? 'aria-invalid="true"' : '' %>
-                />
-                <% if (fieldHasError('phone') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
-                <% } %>
-              </div>
-              <div class="bb-apex-field">
-                <label class="bb-apex-register-label" for="register_role">Role in church</label>
-                <input
-                  class="bb-apex-register-input<%= fieldHasError('role_in_church') ? ' is-error' : '' %>"
-                  id="register_role"
-                  name="role_in_church"
-                  type="text"
-                  required
-                  placeholder="Pastor, administrator, elder, etc."
-                  value="<%= formData.role_in_church || '' %>"
-                  <%= fieldHasError('role_in_church') ? 'aria-invalid="true"' : '' %>
-                />
-                <% if (fieldHasError('role_in_church') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
-                <% } %>
-              </div>
+            <div class="bb-apex-field bb-apex-field--phone<%= fieldHasError('phone') ? ' is-error' : '' %>">
+              <%- include('../partials/phone-field', {
+                id: 'register_phone',
+                label: 'Phone number',
+                labelClass: 'bb-apex-register-label',
+                required: true,
+                defaultCountry: (typeof defaultCountry !== 'undefined' && defaultCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+                selectedCountry: formData.phone_country || (typeof selectedCountry !== 'undefined' && selectedCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+                nationalValue: formData.phone_national || '',
+                e164Value: formData.phone_national ? '' : (formData.phone || ''),
+                countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || (typeof countries !== 'undefined' && countries) || [],
+                phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+                countryFieldName: 'phone_country',
+                nationalFieldName: 'phone_national',
+                legacyFieldName: 'phone',
+                showLegacyHidden: true,
+                showCountryName: true,
+                error: fieldHasError('phone') ? (formError || 'Please enter a valid phone number.') : null,
+                placeholder: '97 1234567'
+              }) %>
+            </div>
+            <div class="bb-apex-field">
+              <label class="bb-apex-register-label" for="register_role">Role in church</label>
+              <input
+                class="bb-apex-register-input<%= fieldHasError('role_in_church') ? ' is-error' : '' %>"
+                id="register_role"
+                name="role_in_church"
+                type="text"
+                required
+                placeholder="Pastor, administrator, elder, etc."
+                value="<%= formData.role_in_church || '' %>"
+                <%= fieldHasError('role_in_church') ? 'aria-invalid="true"' : '' %>
+              />
+              <% if (fieldHasError('role_in_church') && formError) { %>
+              <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+              <% } %>
             </div>
           </fieldset>
 
