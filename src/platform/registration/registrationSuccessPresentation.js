@@ -118,7 +118,14 @@ const BLESSBOARD_COPY = Object.freeze({
   mobileDescription:
     "Welcome to BlessBoard. Your church account has been successfully created and is ready to use.",
   referenceLabel: "Registration Reference",
+  mobileReferenceLabel: "Church ID",
   referenceHint: "Keep this reference if you need help with your registration.",
+  mobileConfirmTitle: "Confirmation Sent",
+  mobileConfirmText:
+    "Your church registration is confirmed. Keep this page if you need help with your account.",
+  mobileNextTitle: "Next Steps",
+  mobileNextText:
+    "Complete your church profile and invite your first team members from the dashboard.",
   accountsTitle: "Accounts created",
   accountsText:
     "Your church workspace and administrator account are ready. You can now manage your church, branches, members, and settings.",
@@ -154,6 +161,8 @@ const BLESSBOARD_COPY = Object.freeze({
   signInLabel: "Sign in",
   signInHref: "/login",
   continueLabel: "Continue to dashboard",
+  mobileContinueLabel: "Continue to Dashboard",
+  mobileReceiptLabel: "View Registration Receipt",
   dashboardPath: "/hq",
   dashboardLoginPath: "/login?next=/hq",
   sessionAwareDashboard: true,

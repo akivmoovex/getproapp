@@ -206,23 +206,29 @@ describe("BB-REG-07 BlessBoard registration success screen", () => {
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${sid}`);
     assert.equal(success.status, 200);
     assert.match(success.text, /Church Registered Successfully/);
+    assert.match(success.text, /Registration Successful!/);
     assert.match(success.text, /Your BlessBoard church workspace is ready/);
     assert.match(success.text, /organisation, administrator account, and church website foundation/i);
     assert.match(success.text, /Registration Reference/);
+    assert.match(success.text, /Church ID/);
     assert.match(success.text, /data-bb-application-ref="BB-/);
     assert.match(success.text, /Accounts created/);
     assert.match(success.text, /Website foundation/);
     assert.match(success.text, /unpublished/i);
+    assert.match(success.text, /Confirmation Sent/);
+    assert.match(success.text, /Next Steps/);
     assert.match(success.text, /What happens next/);
     assert.match(success.text, /Open your dashboard/);
     assert.match(success.text, /data-bb-sign-in="1"/);
     assert.match(success.text, /href="\/login"/);
     assert.match(success.text, /data-bb-continue-dashboard="1"/);
     assert.match(success.text, /href="\/hq"/);
+    assert.match(success.text, /Continue to Dashboard/);
+    assert.match(success.text, /View Registration Receipt/);
     assert.match(success.text, /Return home/);
     assert.match(success.text, /href="\/"/);
     assert.match(success.text, /data-bb-rs-layout="bbr08"/);
-    assert.doesNotMatch(success.text, /review=1|We received your registration/);
+    assert.doesNotMatch(success.text, /admin@gracecommunity\.org|CH-8492/);
 
     const appRow = await pool.query(
       `SELECT organization_id FROM blessboard.platform_church_registration_applications

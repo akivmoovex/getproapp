@@ -1,6 +1,6 @@
 <%#
   BBR08 BlessBoard registration-success panel.
-  Consumes the shared registrationSuccess view-model. ActiveClinic does not include this file.
+  Desktop = BBR08-01-D. Mobile = BBR08-01-M. ActiveClinic does not include this file.
 %>
 <%
   var rs = typeof registrationSuccess !== 'undefined' && registrationSuccess ? registrationSuccess : {};
@@ -33,7 +33,10 @@
 
   <% if (reference) { %>
   <div class="bb-rs-ref">
-    <p class="bb-rs-ref__label"><%= rs.referenceLabel || 'Registration Reference' %></p>
+    <p class="bb-rs-ref__label">
+      <span class="bb-rs-only-desktop"><%= rs.referenceLabel || 'Registration Reference' %></span>
+      <span class="bb-rs-only-mobile"><%= rs.mobileReferenceLabel || rs.referenceLabel || 'Church ID' %></span>
+    </p>
     <p class="bb-rs-ref__value">
       <code<% if (attrs.reference) { %> <%= attrs.reference %>="<%= reference %>"<% } %>><%= reference %></code>
     </p>
@@ -43,7 +46,7 @@
   </div>
   <% } %>
 
-  <div class="bb-rs-grid">
+  <div class="bb-rs-grid bb-rs-grid--desktop">
     <div class="bb-rs-tile">
       <div class="bb-rs-tile__head">
         <span class="bb-rs-tile__icon" aria-hidden="true">
@@ -64,6 +67,27 @@
         <% } %>
       </div>
       <p><%= rs.websiteText %></p>
+    </div>
+  </div>
+
+  <div class="bb-rs-grid bb-rs-grid--mobile">
+    <div class="bb-rs-tile bb-rs-tile--row">
+      <span class="bb-rs-tile__icon bb-rs-tile__icon--mail" aria-hidden="true">
+        <span class="material-symbols-outlined">mail</span>
+      </span>
+      <div class="bb-rs-tile__copy">
+        <h2><%= rs.mobileConfirmTitle || 'Confirmation Sent' %></h2>
+        <p><%= rs.mobileConfirmText %></p>
+      </div>
+    </div>
+    <div class="bb-rs-tile bb-rs-tile--row">
+      <span class="bb-rs-tile__icon bb-rs-tile__icon--rocket" aria-hidden="true">
+        <span class="material-symbols-outlined">rocket_launch</span>
+      </span>
+      <div class="bb-rs-tile__copy">
+        <h2><%= rs.mobileNextTitle || 'Next Steps' %></h2>
+        <p><%= rs.mobileNextText %></p>
+      </div>
     </div>
   </div>
 
@@ -90,13 +114,21 @@
       class="bb-rs-btn bb-rs-btn--continue"
       href="<%= rs.dashboardHref %>"
       <% if (attrs.continue) { %> <%= attrs.continue %>="1"<% } %>
-    ><%= rs.continueLabel || 'Continue to dashboard' %></a>
+    >
+      <span class="bb-rs-only-desktop"><%= rs.continueLabel || 'Continue to dashboard' %></span>
+      <span class="bb-rs-only-mobile"><%= rs.mobileContinueLabel || rs.continueLabel || 'Continue to Dashboard' %></span>
+    </a>
     <% } %>
     <a
-      class="bb-rs-btn bb-rs-btn--signin"
+      class="bb-rs-btn bb-rs-btn--signin bb-rs-only-desktop-flex"
       href="<%= rs.signInHref || '/login' %>"
       <% if (attrs.signIn) { %> <%= attrs.signIn %>="1"<% } %>
     ><%= rs.signInLabel || 'Sign in' %></a>
+    <button
+      type="button"
+      class="bb-rs-btn bb-rs-btn--signin bb-rs-only-mobile-flex"
+      data-bb-print-receipt="1"
+    ><%= rs.mobileReceiptLabel || 'View Registration Receipt' %></button>
     <a class="bb-rs-btn bb-rs-btn--home" href="<%= rs.homeHref || '/' %>"><%= rs.homeLabel || 'Return home' %></a>
   </div>
 </article>
