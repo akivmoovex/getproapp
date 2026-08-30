@@ -75,11 +75,8 @@
   });
 
   document.querySelectorAll("[data-website-publish-confirm='1']").forEach(function (form) {
-    form.addEventListener("submit", function (ev) {
-      var message =
-        form.getAttribute("data-website-publish-message") ||
-        "Publish this website? Public visitors will see the current draft.";
-      if (!window.confirm(message)) ev.preventDefault();
+    form.addEventListener("submit", function () {
+      /* publish confirm handled by website-lifecycle.js */
     });
   });
 })();

@@ -322,6 +322,9 @@ function clinicWebsiteLinkQuery(options) {
   if (opts.websiteEdit) {
     return { website_edit: "1", website_mode: "draft" };
   }
+  if (opts.previewDraftMode) {
+    return { website_mode: "draft" };
+  }
   return {};
 }
 

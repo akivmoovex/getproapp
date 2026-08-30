@@ -31,6 +31,15 @@
   <p class="gp-website-sr-only" data-website-submitted-at="1">Submitted <%= submittedAt %></p>
   <% } %>
 </div>
+<% } else if (typeof websitePreviewDraftMode !== 'undefined' && websitePreviewDraftMode && shell) { %>
+<div
+  class="gp-website-editor-host gp-website-editor-host--preview"
+  data-clinic-key="<%= clinic && clinic.clinicKey %>"
+  data-website-status="<%= statusKey %>"
+  data-stitch-edit="WE01-07"
+>
+  <%- include('../../platform/website-engine/editor-chrome', { editorShell: shell }) %>
+</div>
 <% } else if (!editLocked) { %>
 <div
   class="ac-website-chrome ac-website-chrome--entry"

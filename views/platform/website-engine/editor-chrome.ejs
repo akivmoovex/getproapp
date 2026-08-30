@@ -21,6 +21,17 @@
       : 'gp-website-editor__more-item';
   }
 %>
+<% if (shell.previewMode) { %>
+<div
+  class="gp-website-preview-chrome"
+  data-website-chrome="1"
+  data-website-discard-url="<%= shell.discardPath || '' %>"
+  data-website-unpublish-url="<%= shell.unpublishPath || '' %>"
+>
+<%- include('./preview-banner', { editorShell: shell }) %>
+</div>
+<%- include('./lifecycle-dialog-host', { editorShell: shell }) %>
+<% } else { %>
 <div
   class="gp-website-editor"
   data-website-engine-shell="1"
@@ -31,6 +42,8 @@
   data-draft="<%= shell.draft ? '1' : '0' %>"
   data-website-save-url="<%= shell.saveUrl || '' %>"
   data-website-media-url="<%= shell.mediaUrl || '' %>"
+  data-website-discard-url="<%= shell.discardPath || '' %>"
+  data-website-unpublish-url="<%= shell.unpublishPath || '' %>"
   data-website-max-bytes="5242880"
   data-stitch-project="9585058196210789597"
   data-stitch-edit="WE01-01"
@@ -72,7 +85,6 @@
         class="gp-website-editor__publish"
         data-website-publish-confirm="1"
         data-website-engine-publish-form="1"
-        data-website-publish-message="Publish this website? Public visitors will see the current draft."
       >
         <input type="hidden" name="<%= shell.csrfField || '_csrf' %>" value="<%= shell.csrfToken || '' %>"/>
         <input type="hidden" name="confirm_publish" value="1"/>
@@ -119,6 +131,7 @@
               role="menuitem"
               data-website-more-id="<%= item.id %>"
               data-website-more-action="<%= item.action %>"
+              <% if (item.lifecycle) { %>data-website-lifecycle-action="<%= item.lifecycle %>"<% } %>
             >
               <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
               <%= item.label %>
@@ -308,3 +321,5 @@
   </div>
 </div>
 <%- include('./field-editor-host') %>
+<%- include('./lifecycle-dialog-host', { editorShell: shell }) %>
+<% } %>

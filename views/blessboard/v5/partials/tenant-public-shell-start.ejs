@@ -35,7 +35,7 @@
   <%- include('./head-design-system') %>
   <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=55' %>" />
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) { %>
-  <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v7-website-13" />
+  <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v7-website-14" />
   <meta name="csrf-token" content="<%= websiteAdmin.csrfToken %>" />
   <% } %>
 </head>
@@ -48,6 +48,7 @@
   if (typeof isPreview !== 'undefined' && isPreview) _bodyClass += ' bb-tp-body--preview';
   if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) _bodyClass += ' bb-tp-body--admin';
   if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) _bodyClass += ' bb-tp-body--editing gp-website-editor-open';
+  if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.previewDraftMode) _bodyClass += ' bb-tp-body--preview gp-website-preview-open';
   if (_isBranchMini) _bodyClass += ' bb-tp-body--branch';
   var _stackChrome = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit;
 %>
@@ -154,7 +155,7 @@
       </div>
     </div>
   </header>
-  <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta) { %>
+  <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta && !(typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.previewDraftMode)) { %>
   <div class="bb-tp-preview-banner" role="status" data-bb-preview-banner="1">
     <div class="bb-tp-preview-banner__inner">
       <strong><%= previewMeta.bannerLabel || 'Preview' %></strong>

@@ -210,6 +210,34 @@ async function discardWebsiteDraft(db, input) {
   return { ok: true, code: RESULT.OK };
 }
 
+async function discardAllWebsiteDrafts(db, input) {
+  const organizationId = String((input && input.organizationId) || "");
+  const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
+  const scoped = assertWebsiteInstanceScope(instance, input);
+  if (!scoped.ok) {
+    return {
+      ok: false,
+      code: scoped.code === "website_instance_not_found" ? RESULT.NOT_FOUND : RESULT.TENANT_MISMATCH,
+    };
+  }
+  const updated = await db.query(
+    `UPDATE platform.website_content
+        SET draft_value = published_value,
+            updated_by_identity_id = $3,
+            updated_at = now()
+      WHERE instance_id = $1 AND organization_id = $2
+        AND draft_value IS DISTINCT FROM published_value`,
+    [instance.id, organizationId, input.actorIdentityId || null]
+  );
+  await recordWebsiteAudit(db, {
+    organizationId,
+    instanceId: instance.id,
+    actorIdentityId: input.actorIdentityId || null,
+    actionKey: "website.drafts.discard_all",
+  });
+  return { ok: true, code: RESULT.OK, discarded: updated.rowCount || 0 };
+}
+
 async function seedWebsiteContent(db, instance, entries, actorIdentityId) {
   const template = await loadTemplateForInstance(instance);
   if (!template) return { ok: false, seeded: 0 };
@@ -436,6 +464,7 @@ module.exports = {
   getWebsiteContentRow,
   saveWebsiteDraft,
   discardWebsiteDraft,
+  discardAllWebsiteDrafts,
   seedWebsiteContent,
   applyPublishedSnapshot,
   applyDraftSnapshot,

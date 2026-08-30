@@ -1602,3 +1602,226 @@ textarea.gp-website-field-editor__input {
   }
 }
 
+/* Wave 3 — preview banner + lifecycle dialogs (EDIT-07/08/09/10) */
+.gp-website-preview-banner {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1200;
+  min-height: var(--gp-we-toolbar-h);
+  background: #1e1b4b;
+  color: #f8fafc;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.gp-website-preview-banner__inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 8px 16px;
+  min-height: var(--gp-we-toolbar-h);
+}
+
+.gp-website-preview-banner__copy {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.gp-website-preview-banner__title {
+  font-weight: 600;
+  font-size: 0.95rem;
+}
+
+.gp-website-preview-banner__meta {
+  font-size: 0.8rem;
+  opacity: 0.85;
+}
+
+.gp-website-preview-banner__actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+
+.gp-website-preview-banner__publish {
+  margin: 0;
+}
+
+body.gp-website-preview-open {
+  padding-top: var(--gp-we-toolbar-h);
+}
+
+.gp-website-lifecycle {
+  position: fixed;
+  inset: 0;
+  z-index: 1400;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 16px;
+}
+
+.gp-website-lifecycle[hidden] {
+  display: none !important;
+}
+
+.gp-website-lifecycle__overlay {
+  position: absolute;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+}
+
+.gp-website-lifecycle__panel {
+  position: relative;
+  width: min(100%, 28rem);
+  background: var(--gp-we-toolbar-bg);
+  border-radius: 12px;
+  box-shadow: 0 20px 40px rgba(15, 23, 42, 0.2);
+  overflow: hidden;
+}
+
+.gp-website-lifecycle__panel[hidden] {
+  display: none !important;
+}
+
+.gp-website-lifecycle__grab {
+  display: none;
+}
+
+.gp-website-lifecycle__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  padding: 16px 16px 0;
+}
+
+.gp-website-lifecycle__title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+.gp-website-lifecycle__close {
+  border: 0;
+  background: transparent;
+  color: var(--gp-we-on-surface-variant);
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 8px;
+}
+
+.gp-website-lifecycle__body {
+  margin: 0;
+  padding: 12px 16px 0;
+  color: var(--gp-we-on-surface-variant);
+  font-size: 0.92rem;
+  line-height: 1.45;
+}
+
+.gp-website-lifecycle__status {
+  margin: 0;
+  padding: 8px 16px 0;
+  font-size: 0.82rem;
+  color: var(--gp-we-on-surface-variant);
+}
+
+.gp-website-lifecycle__status.is-error {
+  color: var(--gp-we-error);
+}
+
+.gp-website-lifecycle__foot {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+  padding: 16px;
+}
+
+.gp-website-lifecycle__btn {
+  min-height: var(--gp-website-touch);
+  padding: 0 16px;
+  border-radius: 8px;
+  border: 0;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+
+.gp-website-lifecycle__btn--ghost {
+  background: transparent;
+  color: var(--gp-we-on-surface-variant);
+}
+
+.gp-website-lifecycle__btn--primary {
+  background: var(--gp-we-primary);
+  color: var(--gp-we-on-primary);
+}
+
+.gp-website-lifecycle__btn--danger {
+  background: #dc2626;
+  color: #fff;
+}
+
+.gp-website-lifecycle__btn:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+body.gp-website-lifecycle-open {
+  overflow: hidden;
+}
+
+@media (max-width: 767px) {
+  .gp-website-preview-banner__inner {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px 12px;
+  }
+
+  .gp-website-preview-banner__actions {
+    justify-content: stretch;
+  }
+
+  .gp-website-preview-banner__actions .gp-website-editor__btn,
+  .gp-website-preview-banner__actions button {
+    flex: 1 1 auto;
+    justify-content: center;
+  }
+
+  .gp-website-lifecycle {
+    align-items: flex-end;
+    padding: 0;
+  }
+
+  .gp-website-lifecycle__panel {
+    width: 100%;
+    border-radius: 16px 16px 0 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+
+  .gp-website-lifecycle__grab {
+    display: block;
+    width: 2.5rem;
+    height: 0.25rem;
+    margin: 8px auto 0;
+    border-radius: 999px;
+    background: var(--gp-we-outline-variant);
+  }
+
+  .gp-website-lifecycle__foot {
+    flex-direction: column-reverse;
+  }
+
+  .gp-website-lifecycle__foot .gp-website-lifecycle__btn {
+    width: 100%;
+  }
+}
+

@@ -75,7 +75,7 @@
   }
 %>
 <body
-  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof chrome === 'string' && chrome === 'mf-register' ? ' ac-public-body--mf-register' : '' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing gp-website-editor-open' : '' %>"
+  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof chrome === 'string' && chrome === 'mf-register' ? ' ac-public-body--mf-register' : '' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing gp-website-editor-open' : '' %><%= typeof websitePreviewDraftMode !== 'undefined' && websitePreviewDraftMode ? ' ac-public-body--website-preview gp-website-preview-open' : '' %>"
   data-ac-product="activeclinic"
   data-ac-shell="public"
   data-ac-page="<%= pageId %>"
@@ -112,6 +112,7 @@
   <script src="/activeclinic/ac-public.js?v=<%= assetVersion %>" defer></script>
   <script src="/activeclinic/ac-phone-field.js?v=<%= assetVersion %>" defer></script>
   <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
+  <script src="/platform/website-lifecycle.js?v=<%= assetVersion %>" defer></script>
   <script src="/platform/website-inline-edit.js?v=<%= assetVersion %>" defer></script>
   <script src="/platform/website-editor-mobile.js?v=<%= assetVersion %>" defer></script>
   <script src="/activeclinic/website-collection-edit.js?v=<%= assetVersion %>" defer></script>

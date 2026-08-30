@@ -19,6 +19,8 @@ const {
   buildPublicWebsitePreviewPath,
   buildPublicWebsiteHistoryPath,
   buildPublicWebsitePublishPath,
+  buildPublicWebsiteDiscardPath,
+  buildPublicWebsiteUnpublishPath,
   appendQuery,
 } = require("../../platform/website/publicWebsiteUrl");
 const {
@@ -86,10 +88,11 @@ function canAccessClinicWebsiteAdmin(req, clinic) {
   );
 }
 
-function clinicWebsiteActionUrls(clinicKey) {
+function clinicWebsiteActionUrls(clinicKey, pageKey) {
   const base = {
     product: PRODUCT_CODE.ACTIVECLINIC,
     organizationKey: clinicKey,
+    pageKey: pageKey || "home",
   };
   return {
     websiteSaveUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/drafts" }),
@@ -98,6 +101,8 @@ function clinicWebsiteActionUrls(clinicKey) {
     websiteEditUrl: buildPublicWebsiteEditPath(base),
     websiteHistoryUrl: buildPublicWebsiteHistoryPath(base),
     websitePublishUrl: buildPublicWebsitePublishPath(base),
+    websiteDiscardUrl: buildPublicWebsiteDiscardPath(base),
+    websiteUnpublishUrl: buildPublicWebsiteUnpublishPath(base),
     websiteSubmitUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/submit" }),
     websiteFinishEditUrl: buildPublicOrganizationWebsitePath({
       ...base,
@@ -181,9 +186,13 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     }
   }
   const isVersionPreview = Boolean(snapshot);
+  const draftModeQuery =
+    String((req.query && (req.query.website_mode || req.query.websiteMode)) || "").toLowerCase() ===
+    "draft";
   const editRequested =
     !isVersionPreview &&
     String((req.query && (req.query.website_edit || req.query.websiteEdit)) || "") === "1";
+  const previewDraftMode = !isVersionPreview && canEdit && draftModeQuery && !editRequested;
   const mode = isVersionPreview ? MODE.LIVE : requestedMode(req, canEdit);
   const resolved = await resolveActiveClinicWebsite(db, {
     clinic,
@@ -235,6 +244,7 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
   const websiteEdit = !isVersionPreview && canEdit && editRequested && !websiteEditLocked;
   const linkQuery = clinicWebsiteLinkQuery({
     websiteEdit,
+    previewDraftMode,
     previewVersionId: isVersionPreview && previewVersion ? previewVersion.id : "",
   });
   outClinic = applyWebsiteLinkQuery(outClinic, linkQuery);
@@ -252,9 +262,10 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
       : "";
   const pageKey = websiteEditorPageKeyFromRequest(req, outClinic && outClinic.clinicKey);
   const editorPages = websiteEditorPagesForClinic(outClinic && outClinic.clinicKey, pageKey);
-  const actionUrls = clinicWebsiteActionUrls(outClinic && outClinic.clinicKey);
+  const actionUrls = clinicWebsiteActionUrls(outClinic && outClinic.clinicKey, pageKey);
   const brandingHref = "/app/settings/website/branding";
   const hubHref = "/app/settings/website";
+  const canPublishNow = canPublish && !websitePublishLocked && websiteWorkflowStatus !== "submitted";
   const moreItems = [];
   moreItems.push({
     id: "settings",
@@ -308,31 +319,57 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
       group: "product",
     });
   }
-  const editorShell =
-    websiteEdit
-      ? presentEditorShell({
-          productCode: PRODUCT_CODE.ACTIVECLINIC,
-          pageKey,
-          pages: editorPages,
-          moreItems,
-          brandingHref,
-          historyHref: actionUrls.websiteHistoryUrl,
-          hubHref,
-          managePagesHref: "/app/settings/website/pages",
-          draft: unpublishedCount > 0,
-          unpublishedCount,
-          canEdit,
-          canPublish: canPublish && !websitePublishLocked && websiteWorkflowStatus !== "submitted",
-          editing: true,
-          previewHref: actionUrls.websitePreviewUrl,
-          publishPath: actionUrls.websitePublishUrl,
-          exitHref: actionUrls.websiteFinishEditUrl,
-          exitMethod: "POST",
-          exitAction: actionUrls.websiteFinishEditUrl,
-          saveUrl: actionUrls.websiteSaveUrl,
-          mediaUrl: actionUrls.websiteMediaUrl,
-          csrfField: CSRF_FIELD,
-        })
+  if (unpublishedCount > 0) {
+    moreItems.push({
+      id: "discard-draft",
+      label: "Discard draft changes",
+      icon: "delete",
+      action: "lifecycle",
+      lifecycle: "discard",
+      destructive: true,
+      group: "lifecycle",
+    });
+  }
+  if (canPublishNow && actionUrls.websiteUnpublishUrl) {
+    moreItems.push({
+      id: "unpublish",
+      label: "Unpublish website",
+      icon: "public_off",
+      action: "lifecycle",
+      lifecycle: "unpublish",
+      destructive: true,
+      group: "lifecycle",
+    });
+  }
+  const shellFacts = {
+    productCode: PRODUCT_CODE.ACTIVECLINIC,
+    pageKey,
+    pages: editorPages,
+    moreItems,
+    brandingHref,
+    historyHref: actionUrls.websiteHistoryUrl,
+    hubHref,
+    managePagesHref: "/app/settings/website/pages",
+    draft: unpublishedCount > 0,
+    unpublishedCount,
+    canEdit,
+    canPublish: canPublishNow,
+    previewHref: actionUrls.websitePreviewUrl,
+    backToEditHref: actionUrls.websiteEditUrl,
+    publishPath: actionUrls.websitePublishUrl,
+    discardPath: actionUrls.websiteDiscardUrl,
+    unpublishPath: canPublishNow ? actionUrls.websiteUnpublishUrl : null,
+    exitHref: actionUrls.websiteFinishEditUrl,
+    exitMethod: "POST",
+    exitAction: actionUrls.websiteFinishEditUrl,
+    saveUrl: actionUrls.websiteSaveUrl,
+    mediaUrl: actionUrls.websiteMediaUrl,
+    csrfField: CSRF_FIELD,
+  };
+  const editorShell = websiteEdit
+    ? presentEditorShell({ ...shellFacts, editing: true })
+    : previewDraftMode
+      ? presentEditorShell({ ...shellFacts, previewMode: true, editing: false })
       : null;
   return {
     clinic: outClinic,
@@ -342,6 +379,7 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     websitePreviewVersion: previewVersion,
     websitePreviewRestoreUrl: restoreUrl,
     websiteEdit,
+    websitePreviewDraftMode: previewDraftMode,
     websiteCanEdit: canEdit,
     websiteCanSubmit: canSubmit && !websitePublishLocked,
     websiteCanPublish: canPublish && !websitePublishLocked,

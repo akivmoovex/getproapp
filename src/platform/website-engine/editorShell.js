@@ -13,13 +13,29 @@ const {
 
 const LABELS = Object.freeze({
   editingWebsite: "Editing website",
+  previewingDraft: "Previewing unpublished draft",
   preview: "Preview",
   publish: "Publish",
+  backToEditing: "Back to editing",
   exitEditing: "Exit editing",
   moreAria: "More actions",
   pagesHeading: "Pages",
   pageSelectorHeading: "Page Selector",
   editWebsite: "Edit website",
+  discardDraft: "Discard draft changes",
+  unpublishWebsite: "Unpublish website",
+  keepEditing: "Keep editing",
+  discardChanges: "Discard changes",
+  publishConfirmTitle: "Publish website?",
+  publishConfirmBody: "Your draft changes will become public. Visitors will see the updated website.",
+  discardConfirmTitle: "Discard draft changes?",
+  discardConfirmBody:
+    "Unpublished draft changes will be removed. The live published website will stay unchanged.",
+  unpublishConfirmTitle: "Unpublish website?",
+  unpublishConfirmBody:
+    "The public website will be taken offline. Content and version history are preserved.",
+  unsavedTitle: "Unsaved changes",
+  unsavedBody: "You have unsaved changes that are not saved to draft yet.",
 });
 
 const PAGE_ICONS = Object.freeze({
@@ -111,6 +127,7 @@ function normalizeMoreItems(items) {
       method: href && method === "POST" ? "POST" : "GET",
       group: item.group ? String(item.group) : "general",
       destructive: item.destructive === true,
+      lifecycle: item.lifecycle ? String(item.lifecycle) : null,
     });
   }
   return out;
@@ -192,6 +209,8 @@ function presentEditorShell(input) {
   const moreItems = normalizeMoreItems(facts.moreItems);
   const mobileNav = normalizeMobileNav(facts.mobileNav, facts);
   const canPublish = facts.canPublish === true;
+  const previewMode = facts.previewMode === true;
+  const editing = facts.editing === true && !previewMode;
   const exitMethod = String(facts.exitMethod || "GET").toUpperCase() === "POST" ? "POST" : "GET";
 
   return {
@@ -207,10 +226,14 @@ function presentEditorShell(input) {
     unpublishedCount,
     canEdit: facts.canEdit === true,
     canPublish,
-    editing: facts.editing === true,
+    previewMode,
+    editing,
     previewHref: facts.previewHref || null,
+    backToEditHref: facts.backToEditHref || null,
     publishHref: facts.publishHref || null,
     publishPath: facts.publishPath || null,
+    discardPath: facts.discardPath || null,
+    unpublishPath: facts.unpublishPath || null,
     historyHref: facts.historyHref || null,
     hubHref: facts.hubHref || null,
     brandingHref: facts.brandingHref || null,
@@ -224,13 +247,27 @@ function presentEditorShell(input) {
     csrfField: facts.csrfField || "_csrf",
     labels: {
       editingWebsite: LABELS.editingWebsite,
+      previewingDraft: LABELS.previewingDraft,
       preview: facts.previewLabel || LABELS.preview,
       publish: facts.publishLabel || LABELS.publish,
+      backToEditing: LABELS.backToEditing,
       exitEditing: facts.exitLabel || LABELS.exitEditing,
       moreAria: LABELS.moreAria,
       pagesHeading: LABELS.pagesHeading,
       pageSelectorHeading: LABELS.pageSelectorHeading,
       editWebsite: facts.editLabel || LABELS.editWebsite,
+      discardDraft: LABELS.discardDraft,
+      unpublishWebsite: LABELS.unpublishWebsite,
+      keepEditing: LABELS.keepEditing,
+      discardChanges: LABELS.discardChanges,
+      publishConfirmTitle: LABELS.publishConfirmTitle,
+      publishConfirmBody: LABELS.publishConfirmBody,
+      discardConfirmTitle: LABELS.discardConfirmTitle,
+      discardConfirmBody: LABELS.discardConfirmBody,
+      unpublishConfirmTitle: LABELS.unpublishConfirmTitle,
+      unpublishConfirmBody: LABELS.unpublishConfirmBody,
+      unsavedTitle: LABELS.unsavedTitle,
+      unsavedBody: LABELS.unsavedBody,
     },
     saveLabel: facts.saveLabel || "Save draft",
     publishLabel: facts.publishLabel || LABELS.publish,

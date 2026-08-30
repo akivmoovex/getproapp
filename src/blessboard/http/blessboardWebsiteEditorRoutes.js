@@ -272,6 +272,51 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
     }
   });
 
+  router.post(
+    `${pathPrefix}/website/drafts/discard`,
+    express.urlencoded({ extended: false }),
+    express.json({ limit: "8kb" }),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+          if (String(req.headers.accept || "").includes("application/json")) {
+            return json(res, 403, { ok: false, code: "csrf" });
+          }
+          return res.status(403).type("text").send("Invalid CSRF token");
+        }
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const { discardWebsiteDrafts } = require("../services/websiteDraftPublishService");
+        const result = await discardWebsiteDrafts(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          churchId: resolved.tenant.church.id,
+          branchId: null,
+          actorUserId: actorUserId(req),
+          confirmDiscard: req.body && req.body.confirm_discard,
+          actorRole: "church_hq_admin",
+        });
+        if (String(req.headers.accept || "").includes("application/json")) {
+          return json(res, result.ok ? 200 : 400, {
+            ok: Boolean(result.ok),
+            code: result.ok ? "discarded" : result.reason || result.status,
+            discarded: result.discarded || 0,
+          });
+        }
+        const publicPath =
+          buildPublicOrganizationWebsitePath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: resolved.organizationKey,
+          }) || "/";
+        if (!result.ok) {
+          return res.redirect(303, `${publicPath}?website_discard_error=1`);
+        }
+        return res.redirect(303, appendQuery(publicPath, { website_edit: "1", website_mode: "draft" }));
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
   router.post(`${pathPrefix}/website/publish`, express.urlencoded({ extended: false }), express.json({ limit: "8kb" }), async (req, res, next) => {
     try {
       if (!validateCsrf(req, csrfFrom(req), getEnv())) {

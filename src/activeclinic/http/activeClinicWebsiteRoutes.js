@@ -36,9 +36,22 @@ const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
   buildPublicWebsiteEditPath,
+  buildPublicWebsitePreviewPath,
   buildPublicWebsiteHistoryPath,
   appendQuery,
 } = require("../../platform/website/publicWebsiteUrl");
+
+function websiteEditorPageKeyFromRequest(req, clinicKey) {
+  const pathName = String((req && req.path) || "");
+  const prefix = `/clinics/${clinicKey}`;
+  let rest = pathName.startsWith(prefix) ? pathName.slice(prefix.length) : pathName;
+  rest = rest.replace(/^\//, "").split("/")[0] || "";
+  if (!rest || rest === "website") return "home";
+  const { listProductPageTypes } = require("../../platform/website-engine/productSchemaRegistry");
+  const pages = listProductPageTypes(PRODUCT_CODE.ACTIVECLINIC);
+  const match = pages.find((page) => page.path === rest || page.key === rest);
+  return match ? match.key : "home";
+}
 
 function json(res, status, body) {
   return res.status(status).json(body);
@@ -136,11 +149,13 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!canEditClinicWebsite(req, clinic)) {
         return json(res, 403, { ok: false, code: "forbidden" });
       }
+      const pageKey = websiteEditorPageKeyFromRequest(req, clinic.clinicKey);
       return res.redirect(
         303,
-        buildPublicWebsiteEditPath({
+        buildPublicWebsitePreviewPath({
           product: PRODUCT_CODE.ACTIVECLINIC,
           organizationKey: clinic.clinicKey,
+          pageKey,
         })
       );
     } catch (err) {
@@ -211,6 +226,43 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
       if (!attached.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const discardAll =
+        req.body &&
+        (req.body.discard_all === "1" ||
+          req.body.discard_all === true ||
+          req.body.discard_all === "on");
+      const confirmDiscard =
+        req.body &&
+        (req.body.confirm_discard === "1" ||
+          req.body.confirm_discard === true ||
+          req.body.confirm_discard === "on");
+      if (discardAll) {
+        if (!confirmDiscard) {
+          return json(res, 400, { ok: false, code: "confirm_discard" });
+        }
+        const discarded = await contentService.discardAllWebsiteDrafts(getPool(), {
+          organizationId: clinic.organizationId,
+          instanceId: attached.instance.id,
+          expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
+          actorIdentityId: actorId(req),
+        });
+        if (!discarded.ok) {
+          return json(res, 400, discarded);
+        }
+        if (wantsHtml(req)) {
+          return res.redirect(
+            303,
+            appendQuery(
+              buildPublicWebsiteEditPath({
+                product: PRODUCT_CODE.ACTIVECLINIC,
+                organizationKey: clinic.clinicKey,
+              }),
+              { website_discarded: "1" }
+            )
+          );
+        }
+        return json(res, 200, discarded);
       }
       const discarded = await contentService.discardWebsiteDraft(getPool(), {
         organizationId: clinic.organizationId,

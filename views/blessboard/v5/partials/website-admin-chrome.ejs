@@ -17,7 +17,7 @@
   </div>
   <% } %>
 
-  <% if (!wa.editingMode) { %>
+  <% if (!wa.editingMode && !wa.previewDraftMode) { %>
   <div class="bb-tp-admin-bar" data-bb-admin-bar="1" data-bb-admin-mode="view">
     <div class="bb-tp-admin-bar__inner">
       <div class="bb-tp-admin-bar__left">
@@ -34,7 +34,18 @@
     </div>
   </div>
   <% } else { %>
-  <% if (wa.editorShell) { %>
+  <% if (wa.previewDraftMode && wa.editorShell) { %>
+  <div
+    class="gp-website-editor-host gp-website-editor-host--preview"
+    data-bb-admin-mode="preview"
+    data-bb-stitch-screen-desktop="Phase 7 - Church Website Draft Preview - Desktop"
+    data-bb-stitch-screen-mobile="Phase 7 - Church Website Draft Preview - Mobile"
+  >
+    <%- include('../../../platform/website-engine/editor-chrome', {
+      editorShell: wa.editorShell
+    }) %>
+  </div>
+  <% } else if (wa.editorShell) { %>
   <div
     class="gp-website-editor-host"
     data-bb-edit-toolbar="1"

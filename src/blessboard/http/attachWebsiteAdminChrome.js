@@ -44,7 +44,7 @@ const {
   pickHexColor,
   publicBrandStyle,
 } = require("../../platform/website/branding");
-const { PRODUCT_CODE, withEditorNavigationQuery, withoutEditorNavigationQuery } = require("../../platform/website/publicWebsiteUrl");
+const { PRODUCT_CODE, withEditorNavigationQuery, withoutEditorNavigationQuery, withPreviewNavigationQuery } = require("../../platform/website/publicWebsiteUrl");
 
 const EDIT_QUERY = "website_edit";
 
@@ -290,6 +290,10 @@ function canShowWebsiteEditChrome(input) {
  */
 function withEditQuery(path, editing) {
   return editing ? withEditorNavigationQuery(path) : withoutEditorNavigationQuery(path);
+}
+
+function withPreviewQuery(path) {
+  return withPreviewNavigationQuery(path);
 }
 
 /**
@@ -633,6 +637,9 @@ async function attachWebsiteAdminChrome(opts) {
   const {
     PRODUCT_CODE,
     buildPublicWebsitePreviewPath,
+    buildPublicWebsiteEditPath,
+    buildPublicWebsiteDiscardPath,
+    buildPublicWebsiteUnpublishPath,
     buildPublicOrganizationWebsitePath,
   } = require("../../platform/website/publicWebsiteUrl");
   const currentPath = String(model.path || "/");
@@ -737,6 +744,73 @@ async function attachWebsiteAdminChrome(opts) {
     (model.websiteScope && model.websiteScope.scopeType) ||
     (publicBranchKey ? "branch" : "church");
 
+  const editorScope =
+    publicBranchKey && websiteScopeType === "branch"
+      ? { kind: "branch", branchKey: publicBranchKey }
+      : null;
+  const draftPreviewHrefResolved = orgKey
+    ? buildPublicWebsitePreviewPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+        pageKey: model.pageKey,
+        scope: editorScope,
+      })
+    : draftPreviewHref;
+  const backToEditHref = orgKey
+    ? buildPublicWebsiteEditPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+        pageKey: model.pageKey,
+        scope: editorScope,
+      })
+    : withEditQuery(currentPath, true);
+  const discardPath =
+    pathMode && publicBase ? `${publicBase}/website/drafts/discard` : null;
+  const unpublishPath = isHqEditor
+    ? buildPublicWebsiteUnpublishPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: orgKey,
+      })
+    : null;
+
+  if (previewDraftMode && !editingMode) {
+    const mapPreviewNav = function mapPreviewNav(items) {
+      if (!Array.isArray(items)) return items;
+      return items.map((item) => {
+        const next = {
+          ...item,
+          href: item.href ? withPreviewQuery(item.href) : item.href,
+        };
+        if (Array.isArray(item.children)) next.children = mapPreviewNav(item.children);
+        return next;
+      });
+    };
+    if (Array.isArray(model.navItems)) {
+      model.navItems = model.navItems.map((item) => ({
+        ...item,
+        href: item.href ? withPreviewQuery(item.href) : item.href,
+      }));
+    }
+    if (model.navigation) {
+      model.navigation = {
+        ...model.navigation,
+        primaryItems: mapPreviewNav(model.navigation.primaryItems),
+        mobileItems: mapPreviewNav(model.navigation.mobileItems),
+        footerItems: mapPreviewNav(model.navigation.footerItems),
+        navItems: mapPreviewNav(model.navigation.navItems),
+        ctaItem: model.navigation.ctaItem
+          ? {
+              ...model.navigation.ctaItem,
+              href: model.navigation.ctaItem.href
+                ? withPreviewQuery(model.navigation.ctaItem.href)
+                : model.navigation.ctaItem.href,
+            }
+          : null,
+      };
+      model.footerNavItems = model.navigation.footerItems;
+    }
+  }
+
   const settingsCatalog = editingMode
     ? buildWebsitePublicEditSettingsCatalog({
         isHqEditor,
@@ -753,10 +827,6 @@ async function attachWebsiteAdminChrome(opts) {
   const seoLink = settingsCatalog && settingsCatalog.links && settingsCatalog.links.seo;
   const brandingHref = isHqEditor ? "/hq/website/branding" : null;
   const historyHref = isHqEditor ? "/hq/website/version-history" : null;
-  const editorScope =
-    publicBranchKey && websiteScopeType === "branch"
-      ? { kind: "branch", branchKey: publicBranchKey }
-      : null;
   const editorPages = orgKey
     ? buildEditorPages({
         productCode: PRODUCT_CODE.BLESSBOARD,
@@ -809,17 +879,65 @@ async function attachWebsiteAdminChrome(opts) {
       group: "product",
     });
   }
+  if (hasDraftChanges) {
+    moreItems.push({
+      id: "discard-draft",
+      label: "Discard draft changes",
+      icon: "delete",
+      action: "lifecycle",
+      lifecycle: "discard",
+      destructive: true,
+      group: "lifecycle",
+    });
+  }
+  if (isHqEditor && unpublishPath) {
+    moreItems.push({
+      id: "unpublish",
+      label: "Unpublish website",
+      icon: "public_off",
+      action: "lifecycle",
+      lifecycle: "unpublish",
+      destructive: true,
+      group: "lifecycle",
+    });
+  }
+
+  const shellFacts = {
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    pageKey: model.pageKey,
+    pages: editorPages,
+    moreItems,
+    brandingHref,
+    historyHref,
+    hubHref: manageHref,
+    draft: hasDraftChanges,
+    unpublishedCount: draftCount,
+    canEdit: true,
+    canPublish: isHqEditor,
+    previewHref: draftPreviewHrefResolved,
+    backToEditHref,
+    publishPath: publishUrl,
+    discardPath,
+    unpublishPath,
+    exitHref: withEditQuery(currentPath, false),
+    exitMethod: "GET",
+    saveUrl,
+    mediaUrl: mediaUploadUrl,
+    csrfToken,
+    csrfField: "_csrf",
+  };
 
   model.websiteAdmin = {
     canEdit: true,
     editingMode,
+    previewDraftMode: previewDraftMode && !editingMode,
     status,
     showDemoNotice: usedPublicDemoFill,
     manageHref,
     editHref: withEditQuery(currentPath, true),
     exitHref: withEditQuery(currentPath, false),
     reviewHref,
-    draftPreviewHref,
+    draftPreviewHref: draftPreviewHrefResolved,
     hasDraftChanges,
     draftCount,
     csrfToken,
@@ -831,29 +949,10 @@ async function attachWebsiteAdminChrome(opts) {
     pathPrefix: model.pathPrefix || publicBase || "",
     canPublish: isHqEditor,
     editorShell: editingMode
-      ? presentEditorShell({
-          productCode: PRODUCT_CODE.BLESSBOARD,
-          pageKey: model.pageKey,
-          pages: editorPages,
-          moreItems,
-          brandingHref,
-          historyHref,
-          hubHref: manageHref,
-          draft: hasDraftChanges,
-          unpublishedCount: draftCount,
-          canEdit: true,
-          canPublish: isHqEditor,
-          editing: true,
-          previewHref: draftPreviewHref,
-          publishPath: publishUrl,
-          exitHref: withEditQuery(currentPath, false),
-          exitMethod: "GET",
-          saveUrl,
-          mediaUrl: mediaUploadUrl,
-          csrfToken,
-          csrfField: "_csrf",
-        })
-      : null,
+      ? presentEditorShell({ ...shellFacts, editing: true })
+      : previewDraftMode
+        ? presentEditorShell({ ...shellFacts, previewMode: true, editing: false })
+        : null,
     legacyInlineSaveUrl: isHqEditor
       ? "/hq/content/api/inline-field"
       : "/branch-admin/content/api/inline-field",

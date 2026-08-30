@@ -223,6 +223,87 @@
   var lastTrigger = null;
   var focusTrapHandler = null;
   var state = null;
+  var dirtyBaseline = null;
+  var dirtyController = null;
+
+  function syncDirtyController() {
+    if (!window.GpWebsiteLifecycle) return;
+    if (dirtyController && dirtyController.isDirty()) {
+      window.GpWebsiteLifecycle.setLocalDirtyController(dirtyController);
+    } else {
+      window.GpWebsiteLifecycle.clearLocalDirtyController(dirtyController);
+    }
+  }
+
+  function clearDirtyController() {
+    dirtyBaseline = null;
+    if (window.GpWebsiteLifecycle) {
+      window.GpWebsiteLifecycle.clearLocalDirtyController(dirtyController);
+    }
+    dirtyController = null;
+  }
+
+  function captureTextBaseline(textState) {
+    if (!textState || !textState.input) return "";
+    return String(textState.input.value || "");
+  }
+
+  function textIsDirty(textState) {
+    if (!textState || !textState.input || dirtyBaseline == null) return false;
+    return String(textState.input.value || "") !== String(dirtyBaseline);
+  }
+
+  function captureImageBaseline(imageState) {
+    return {
+      alt: imageState && imageState.altInput ? String(imageState.altInput.value || "") : "",
+      pendingFile: Boolean(state && state.pendingFile),
+      pendingMediaId: state && state.pendingMediaId ? String(state.pendingMediaId) : "",
+    };
+  }
+
+  function imageIsDirty(imageState) {
+    if (!imageState || dirtyBaseline == null || !state) return false;
+    var current = captureImageBaseline(imageState);
+    return (
+      current.pendingFile !== dirtyBaseline.pendingFile ||
+      current.pendingMediaId !== dirtyBaseline.pendingMediaId ||
+      current.alt !== dirtyBaseline.alt
+    );
+  }
+
+  function installDirtyTracking() {
+    dirtyController = {
+      isDirty: function () {
+        if (!state) return false;
+        if (state.kind === "image") return imageIsDirty(state.image);
+        return textIsDirty(state.text);
+      },
+      discard: function () {
+        if (!state) return;
+        if (state.kind === "image" && state.image) {
+          if (state.pendingObjectUrl) URL.revokeObjectURL(state.pendingObjectUrl);
+          state.pendingFile = null;
+          state.pendingMediaId = null;
+          state.pendingObjectUrl = null;
+          if (state.image.altInput) state.image.altInput.value = dirtyBaseline ? dirtyBaseline.alt : "";
+          if (state.image.showNewPreview) state.image.showNewPreview("");
+        } else if (state.text && state.text.input && dirtyBaseline != null) {
+          state.text.input.value = dirtyBaseline;
+        }
+        syncDirtyController();
+      },
+    };
+    if (state.kind === "text" && state.text && state.text.input) {
+      dirtyBaseline = captureTextBaseline(state.text);
+      state.text.input.addEventListener("input", syncDirtyController);
+    } else if (state.kind === "image" && state.image) {
+      dirtyBaseline = captureImageBaseline(state.image);
+      if (state.image.altInput) {
+        state.image.altInput.addEventListener("input", syncDirtyController);
+      }
+    }
+    syncDirtyController();
+  }
 
   function setStatus(message, isError) {
     if (!statusEl) return;
@@ -287,6 +368,7 @@
     }
     state = null;
     activeField = null;
+    clearDirtyController();
     if (bodyEl) bodyEl.textContent = "";
     setStatus("", false);
     setBusy(false);
@@ -444,6 +526,7 @@
         state.pendingObjectUrl = URL.createObjectURL(file);
         showNewPreview(state.pendingObjectUrl);
         setStatus("Preview only — save draft to keep this image", false);
+        syncDirtyController();
       });
     }
 
@@ -488,6 +571,7 @@
                 }
                 libraryPanel.hidden = true;
                 setStatus("Library image selected — save draft to keep it", false);
+                syncDirtyController();
               });
               libraryPanel.appendChild(pick);
             });
@@ -535,6 +619,7 @@
       state.text = buildTextBody(fieldEl);
     }
 
+    installDirtyTracking();
     openDialog();
   }
 

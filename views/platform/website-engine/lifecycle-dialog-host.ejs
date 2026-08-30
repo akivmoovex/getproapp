@@ -1,0 +1,126 @@
+<%#
+  Wave 3 — shared lifecycle confirmation dialogs (Stitch EDIT-08/09/10).
+  Desktop modal / mobile bottom sheet via website-lifecycle.js + CSS.
+%>
+<%
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+  var labels = shell.labels || {};
+%>
+<div class="gp-website-lifecycle" data-website-lifecycle-host="1" hidden>
+  <div class="gp-website-lifecycle__overlay" data-website-lifecycle-overlay="1" hidden></div>
+
+  <div
+    class="gp-website-lifecycle__panel"
+    data-website-lifecycle-panel="publish"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gp-website-lifecycle-publish-title"
+    hidden
+  >
+    <div class="gp-website-lifecycle__grab" aria-hidden="true"></div>
+    <header class="gp-website-lifecycle__head">
+      <h2 class="gp-website-lifecycle__title" id="gp-website-lifecycle-publish-title">
+        <%= labels.publishConfirmTitle || 'Publish website?' %>
+      </h2>
+      <button type="button" class="gp-website-lifecycle__close" data-website-lifecycle-dismiss="1" aria-label="Close">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <p class="gp-website-lifecycle__body"><%= labels.publishConfirmBody || '' %></p>
+    <p class="gp-website-lifecycle__status" data-website-lifecycle-status="publish" role="status" aria-live="polite"></p>
+    <footer class="gp-website-lifecycle__foot">
+      <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--ghost" data-website-lifecycle-cancel="1">
+        Cancel
+      </button>
+      <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--primary" data-website-lifecycle-confirm="publish">
+        <%= labels.publish || 'Publish' %>
+      </button>
+    </footer>
+  </div>
+
+  <div
+    class="gp-website-lifecycle__panel"
+    data-website-lifecycle-panel="discard"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gp-website-lifecycle-discard-title"
+    hidden
+  >
+    <div class="gp-website-lifecycle__grab" aria-hidden="true"></div>
+    <header class="gp-website-lifecycle__head">
+      <h2 class="gp-website-lifecycle__title" id="gp-website-lifecycle-discard-title">
+        <%= labels.discardConfirmTitle || 'Discard draft changes?' %>
+      </h2>
+      <button type="button" class="gp-website-lifecycle__close" data-website-lifecycle-dismiss="1" aria-label="Close">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <p class="gp-website-lifecycle__body"><%= labels.discardConfirmBody || '' %></p>
+    <p class="gp-website-lifecycle__status" data-website-lifecycle-status="discard" role="status" aria-live="polite"></p>
+    <footer class="gp-website-lifecycle__foot">
+      <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--ghost" data-website-lifecycle-cancel="1">
+        Cancel
+      </button>
+      <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--danger" data-website-lifecycle-confirm="discard">
+        <%= labels.discardChanges || 'Discard changes' %>
+      </button>
+    </footer>
+  </div>
+
+  <div
+    class="gp-website-lifecycle__panel"
+    data-website-lifecycle-panel="unpublish"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gp-website-lifecycle-unpublish-title"
+    hidden
+  >
+    <div class="gp-website-lifecycle__grab" aria-hidden="true"></div>
+    <header class="gp-website-lifecycle__head">
+      <h2 class="gp-website-lifecycle__title" id="gp-website-lifecycle-unpublish-title">
+        <%= labels.unpublishConfirmTitle || 'Unpublish website?' %>
+      </h2>
+      <button type="button" class="gp-website-lifecycle__close" data-website-lifecycle-dismiss="1" aria-label="Close">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <p class="gp-website-lifecycle__body"><%= labels.unpublishConfirmBody || '' %></p>
+    <p class="gp-website-lifecycle__status" data-website-lifecycle-status="unpublish" role="status" aria-live="polite"></p>
+    <footer class="gp-website-lifecycle__foot">
+      <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--ghost" data-website-lifecycle-cancel="1">
+        Cancel
+      </button>
+      <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--danger" data-website-lifecycle-confirm="unpublish">
+        <%= labels.unpublishWebsite || 'Unpublish website' %>
+      </button>
+    </footer>
+  </div>
+
+  <div
+    class="gp-website-lifecycle__panel"
+    data-website-lifecycle-panel="unsaved"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gp-website-lifecycle-unsaved-title"
+    hidden
+  >
+    <div class="gp-website-lifecycle__grab" aria-hidden="true"></div>
+    <header class="gp-website-lifecycle__head">
+      <h2 class="gp-website-lifecycle__title" id="gp-website-lifecycle-unsaved-title">
+        <%= labels.unsavedTitle || 'Unsaved changes' %>
+      </h2>
+      <button type="button" class="gp-website-lifecycle__close" data-website-lifecycle-dismiss="1" aria-label="Close">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <p class="gp-website-lifecycle__body"><%= labels.unsavedBody || '' %></p>
+    <footer class="gp-website-lifecycle__foot">
+      <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--primary" data-website-lifecycle-confirm="keep-editing">
+        <%= labels.keepEditing || 'Keep editing' %>
+      </button>
+      <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--ghost" data-website-lifecycle-confirm="discard-local">
+        <%= labels.discardChanges || 'Discard changes' %>
+      </button>
+    </footer>
+  </div>
+</div>

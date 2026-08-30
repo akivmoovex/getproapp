@@ -201,12 +201,20 @@ const EDITOR_NAV_QUERY = Object.freeze({
   website_mode: "draft",
 });
 
+const PREVIEW_NAV_QUERY = Object.freeze({
+  website_mode: "draft",
+});
+
 /**
  * Canonical editor navigation query. BlessBoard and ActiveClinic must use both
  * `website_edit=1` and `website_mode=draft` so draft context survives page changes.
  */
 function withEditorNavigationQuery(path) {
   return appendQuery(path, EDITOR_NAV_QUERY);
+}
+
+function withPreviewNavigationQuery(path) {
+  return appendQuery(path, PREVIEW_NAV_QUERY);
 }
 
 function withoutEditorNavigationQuery(path) {
@@ -230,17 +238,26 @@ function buildPublicWebsiteEditPath(input) {
 }
 
 function buildPublicWebsitePreviewPath(input) {
+  const pageKey = input && input.pageKey;
   const path = buildPublicOrganizationWebsitePath({
     ...(input || {}),
     query: undefined,
     suffix: undefined,
+    pageKey,
   });
   if (!path) return null;
-  const product = normalizeProduct((input && (input.product || input.productCode)) || "");
-  if (product === PRODUCT_CODE.ACTIVECLINIC) {
-    return appendQuery(`${path}/website/preview`, input && input.query);
-  }
-  return appendQuery(appendQuery(path, { website_mode: "draft" }), input && input.query);
+  return appendQuery(withPreviewNavigationQuery(path), input && input.query);
+}
+
+function buildPublicWebsiteDiscardPath(input) {
+  const path = buildPublicOrganizationWebsitePath({
+    ...(input || {}),
+    query: undefined,
+    suffix: undefined,
+    pageKey: undefined,
+  });
+  if (!path) return null;
+  return appendQuery(`${path}/website/drafts/discard`, input && input.query);
 }
 
 function buildPublicWebsiteHistoryPath(input) {
@@ -532,10 +549,13 @@ module.exports = {
   buildPublicOrganizationWebsitePath,
   buildPublicOrganizationWebsiteUrl,
   EDITOR_NAV_QUERY,
+  PREVIEW_NAV_QUERY,
   withEditorNavigationQuery,
+  withPreviewNavigationQuery,
   withoutEditorNavigationQuery,
   buildPublicWebsiteEditPath,
   buildPublicWebsitePreviewPath,
+  buildPublicWebsiteDiscardPath,
   buildPublicWebsiteHistoryPath,
   buildPublicWebsiteSettingsPath,
   buildPublicWebsitePublishPath,
