@@ -74,6 +74,16 @@ function cookieHeader(base, res) {
   return extra ? `${base}; ${extra}` : base;
 }
 
+function jpegBuffer(size) {
+  const buf = Buffer.alloc(size, 0xff);
+  buf[0] = 0xff;
+  buf[1] = 0xd8;
+  buf[2] = 0xff;
+  buf[size - 2] = 0xff;
+  buf[size - 1] = 0xd9;
+  return buf;
+}
+
 function makeBbApp() {
   return createV5FoundationApp({
     getPool: () => pool,
@@ -438,6 +448,33 @@ describe("BlessBoard website branding (BUG 08)", () => {
       mode: resolver.MODE.LIVE,
     });
     assert.equal(liveRestored.values["brand.primary_color"], "#111111");
+  });
+
+  it("media upload JSON includes canonical publicSrc for branding preview", async () => {
+    requireDb();
+    const church = await provisionChurch("media");
+    const app = makeBbApp();
+    const cookie = await hqCookie(church, church.hqUserId);
+    const brandingPage = await request(app)
+      .get("/hq/website/branding")
+      .set("Host", church.host)
+      .set("Cookie", cookie);
+    const cookies = cookieHeader(cookie, brandingPage);
+    const csrf = extractCsrf(brandingPage.text);
+    const uploaded = await request(app)
+      .post(`/c/${church.key}/website/media`)
+      .set("Host", church.host)
+      .set("Cookie", cookies)
+      .field(CSRF_FIELD, csrf)
+      .field("altText", "Branding logo alt")
+      .attach("file", jpegBuffer(48), { filename: "logo.jpg", contentType: "image/jpeg" });
+    assert.equal(uploaded.status, 200, uploaded.text);
+    const body = uploaded.body;
+    assert.equal(body.ok, true);
+    assert.equal(body.published, false);
+    assert.match(body.media.publicSrc, new RegExp(`^/c/${church.key}/website/media/`));
+    assert.equal(body.media.previewUrl, body.media.publicSrc);
+    assert.match(body.media.publicSrc, new RegExp(body.media.id));
   });
 
   it("ActiveClinic branding route remains unchanged", async () => {

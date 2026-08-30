@@ -362,6 +362,35 @@ function ownedClinicMediaSrc(instance, mediaId) {
   return ownedWebsiteMediaSrc(instance, mediaId);
 }
 
+/**
+ * Canonical tenant-owned delivery path for a website media asset.
+ * @param {{ productCode?: string, slug?: string }|null} instance
+ * @param {string} mediaId
+ * @returns {string|null}
+ */
+function websiteMediaDeliveryPath(instance, mediaId) {
+  const id = String(mediaId || "").trim();
+  if (!instance || !id) return null;
+  return ownedWebsiteMediaSrc(instance, id);
+}
+
+/**
+ * API/picker DTO: storage row plus canonical delivery URLs for the owning instance.
+ * @param {{ productCode?: string, slug?: string }|null} instance
+ * @param {object|null|undefined} media
+ * @returns {object|null}
+ */
+function presentWebsiteMediaForClient(instance, media) {
+  if (!media || !media.id) return media || null;
+  const path = websiteMediaDeliveryPath(instance, media.id);
+  if (!path) return { ...media };
+  return {
+    ...media,
+    publicSrc: path,
+    previewUrl: path,
+  };
+}
+
 function isUnsafeImageSrc(src) {
   const raw = String(src || "").trim().toLowerCase();
   return (
@@ -511,4 +540,6 @@ module.exports = {
   isPublishedInUse,
   assertOwnedWebsiteImageValue,
   listOrphanCandidates,
+  websiteMediaDeliveryPath,
+  presentWebsiteMediaForClient,
 };

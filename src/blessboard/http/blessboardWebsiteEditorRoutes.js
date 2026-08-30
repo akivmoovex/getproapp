@@ -331,12 +331,10 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         organizationId: resolved.tenant.organization.id,
         instanceId: found.instance.id,
       });
-      const mediaBase = pathPrefix.includes(":organizationKey")
-        ? `/c/${encodeURIComponent(resolved.organizationKey)}/website/media`
-        : "/website/media";
-      const items = libraryModel.normalizeLibraryItems(listed.media || [], (row) => ({
-        previewUrl: `${mediaBase}/${row.id}`,
-      }));
+      const items = libraryModel.normalizeLibraryItems(listed.media || [], (row) => {
+        const delivered = mediaService.presentWebsiteMediaForClient(found.instance, row);
+        return { previewUrl: delivered.publicSrc };
+      });
       return json(res, 200, {
         ok: true,
         media: items.map((item) => ({
@@ -453,7 +451,12 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         if (!existing.ok || existing.media.instanceId !== found.instance.id) {
           return json(res, 404, { ok: false, code: "media_not_found" });
         }
-        return json(res, 200, { ok: true, published: false, media: existing.media, reused: true });
+        return json(res, 200, {
+          ok: true,
+          published: false,
+          media: mediaService.presentWebsiteMediaForClient(found.instance, existing.media),
+          reused: true,
+        });
       }
       const file = req.file || null;
       const registered = await mediaService.registerWebsiteMedia(getPool(), {
@@ -471,7 +474,11 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       if (!registered.ok) {
         return json(res, 400, { ok: false, code: registered.code || "invalid_upload" });
       }
-      return json(res, 200, { ok: true, published: false, media: registered.media });
+      return json(res, 200, {
+        ok: true,
+        published: false,
+        media: mediaService.presentWebsiteMediaForClient(found.instance, registered.media),
+      });
     } catch (err) {
       return next(err);
     }

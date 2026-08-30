@@ -611,9 +611,10 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       });
       // Shared library DTO: canonical card fields only. Storage keys, content
       // hashes and internal ids never reach the browser.
-      const items = libraryModel.normalizeLibraryItems(listed.media || [], (row) => ({
-        previewUrl: `/clinics/${clinic.clinicKey}/website/media/${row.id}`,
-      }));
+      const items = libraryModel.normalizeLibraryItems(listed.media || [], (row) => {
+        const delivered = mediaService.presentWebsiteMediaForClient(attached.instance, row);
+        return { previewUrl: delivered.publicSrc };
+      });
       const filtered = libraryModel.filterLibraryItems(items, {
         q: req.query && req.query.q,
         kind: req.query && req.query.type,
@@ -720,7 +721,12 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         if (!existing.ok || existing.media.instanceId !== attached.instance.id) {
           return json(res, 404, { ok: false, code: "media_not_found" });
         }
-        return json(res, 200, { ok: true, published: false, media: existing.media, reused: true });
+        return json(res, 200, {
+          ok: true,
+          published: false,
+          media: mediaService.presentWebsiteMediaForClient(attached.instance, existing.media),
+          reused: true,
+        });
       }
       const file = req.file || null;
       const registered = await mediaService.registerWebsiteMedia(getPool(), {
@@ -737,7 +743,14 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         storageKey: req.body && req.body.storageKey,
         buffer: file ? file.buffer : null,
       });
-      return json(res, registered.ok ? 200 : 400, registered.ok ? { ...registered, published: false } : registered);
+      if (!registered.ok) {
+        return json(res, 400, registered);
+      }
+      return json(res, 200, {
+        ok: true,
+        published: false,
+        media: mediaService.presentWebsiteMediaForClient(attached.instance, registered.media),
+      });
     } catch (err) {
       return next(err);
     }
