@@ -82,10 +82,12 @@
         <a class="bb-wm-btn" href="<%= actions.editWebsite %>" data-bb-website-action="edit">Edit Website</a>
         <% } %>
       </li>
-      <li class="bb-wm-firstuse__item">
+      <li class="bb-wm-firstuse__item" data-bb-website-firstuse-branding="1">
         <h3>Customize branding</h3>
         <p>Logo, colours, and the look of the public site.</p>
-        <a class="bb-wm-btn bb-wm-btn--primary" href="<%= actions.settings || '/hq/website/advanced' %>" data-bb-website-action="settings">Continue</a>
+        <% if (actions.editWebsite) { %>
+        <a class="bb-wm-btn bb-wm-btn--primary" href="<%= actions.editWebsite %>" data-bb-website-action="branding">Continue</a>
+        <% } %>
       </li>
       <li class="bb-wm-firstuse__item">
         <h3>Preview and publish</h3>

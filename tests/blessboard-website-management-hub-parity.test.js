@@ -41,7 +41,10 @@ const { createV5Session } = require("../src/platform/session/createV5Session");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { registerBlessBoardWebsiteTemplate } = require("../src/blessboard/website/blessboardChurchTemplate");
-const { PRODUCT_CODE } = require("../src/platform/website/publicWebsiteUrl");
+const {
+  PRODUCT_CODE,
+  buildPublicWebsiteEditPath,
+} = require("../src/platform/website/publicWebsiteUrl");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "bb-web-07-hub-parity-12";
@@ -229,6 +232,35 @@ async function hqCookie(church, userId) {
   return `${DEFAULT_V5_COOKIE}=${created.rawToken}`;
 }
 
+function hrefForWebsiteAction(html, action) {
+  const escaped = String(action).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(
+    `<a\\b[^>]*\\bhref="([^"]+)"[^>]*\\bdata-bb-website-action="${escaped}"|<a\\b[^>]*\\bdata-bb-website-action="${escaped}"[^>]*\\bhref="([^"]+)"`,
+    "i"
+  );
+  const match = String(html || "").match(re);
+  return match ? decodeHtmlAttr(match[1] || match[2]) : null;
+}
+
+function decodeHtmlAttr(value) {
+  return String(value || "")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
+function hrefForAcWebsiteAction(html, action) {
+  const escaped = String(action).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const re = new RegExp(
+    `<a\\b[^>]*\\bhref="([^"]+)"[^>]*\\bdata-ac-website-action="${escaped}"|<a\\b[^>]*\\bdata-ac-website-action="${escaped}"[^>]*\\bhref="([^"]+)"`,
+    "i"
+  );
+  const match = String(html || "").match(re);
+  return match ? decodeHtmlAttr(match[1] || match[2]) : null;
+}
+
 describe("BlessBoard Website management hub parity (BUG 07)", () => {
   before(async () => {
     try {
@@ -269,6 +301,16 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(hub, /data-bb-website-action="publish"/);
     assert.match(hub, /data-bb-website-action="unpublish"/);
     assert.match(hub, /data-bb-website-action="history"/);
+    assert.match(hub, /Customize branding/);
+    assert.match(hub, /Logo, colours, and the look of the public site/);
+    assert.match(hub, /data-bb-website-action="branding"/);
+    const brandingItem = hub.match(
+      /data-bb-website-firstuse-branding="1"[\s\S]*?<\/li>/
+    );
+    assert.ok(brandingItem, "expected Customize branding first-use item");
+    assert.match(brandingItem[0], /href="<%= actions\.editWebsite %>"/);
+    assert.doesNotMatch(brandingItem[0], /actions\.settings/);
+    assert.doesNotMatch(brandingItem[0], /\/hq\/website/);
     assert.match(hub, /action="<%= actions\.publishPath %>"/);
     assert.match(hub, /confirm_publish/);
     assert.match(hub, /bb-wm-hub-metrics/);
@@ -319,6 +361,22 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(page.text, /href="\/hq\/website\/version-history"/);
     assert.doesNotMatch(page.text, /data-ac-website-management/);
     assert.doesNotMatch(page.text, /class="ac-mw/);
+
+    const expectedEdit = buildPublicWebsiteEditPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: church.key,
+    });
+    assert.equal(expectedEdit, `/c/${church.key}?website_edit=1`);
+    assert.match(page.text, /data-bb-website-firstuse="1"/);
+    assert.match(page.text, /Customize branding/);
+    const brandingHref = hrefForWebsiteAction(page.text, "branding");
+    assert.equal(brandingHref, expectedEdit, `branding Continue href=${brandingHref}`);
+    assert.notEqual(brandingHref, "/hq/website");
+    assert.notEqual(brandingHref, "/hq/website/advanced");
+    assert.doesNotMatch(brandingHref, /\/c\/demo/i);
+    assert.doesNotMatch(brandingHref, /\/branches\//);
+    const settingsTile = hrefForWebsiteAction(page.text, "settings");
+    assert.ok(settingsTile === "/hq/website" || settingsTile === "/hq/website/advanced");
   });
 
   it("published church shows View live and Unpublish; drafts surface unpublished changes including logo", async () => {
@@ -361,6 +419,104 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(draftPage.text, /data-bb-website-action="view-live"/);
   });
 
+  it("Customize branding Continue opens the church-wide public editor for the signed-in church", async () => {
+    requireDb();
+    const church = await provisionChurch("brand");
+    const other = await provisionChurch("other");
+    const cookie = await hqCookie(church, church.hqUserId);
+    const hub = await request(makeBbApp())
+      .get("/hq/website")
+      .set("Host", church.host)
+      .set("Cookie", cookie);
+    assert.equal(hub.status, 200, hub.text && hub.text.slice(0, 300));
+    const expectedEdit = buildPublicWebsiteEditPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: church.key,
+    });
+    const brandingHref = hrefForWebsiteAction(hub.text, "branding");
+    assert.equal(brandingHref, expectedEdit);
+    assert.equal(brandingHref, `/c/${church.key}?website_edit=1`);
+    assert.notEqual(brandingHref, "/hq/website");
+    assert.doesNotMatch(String(brandingHref), /demo-church|\/c\/demo/i);
+    assert.doesNotMatch(String(brandingHref), /\/branches\//);
+    assert.doesNotMatch(String(brandingHref), new RegExp(`/c/${other.key}`));
+
+    const editor = await request(makeBbApp())
+      .get(brandingHref)
+      .set("Host", church.host)
+      .set("Cookie", cookie);
+    assert.equal(editor.status, 200, editor.text && editor.text.slice(0, 400));
+    assert.match(editor.text, /data-bb-website-editing="1"/);
+    assert.match(editor.text, /data-website-key="home.logo"/);
+    assert.match(editor.text, /data-bb-church-name="1"/);
+    assert.match(editor.text, new RegExp(`BB07 Church ${church.key}`));
+    assert.doesNotMatch(editor.text, new RegExp(`BB07 Church ${other.key}`));
+    assert.match(editor.text, /data-bb-exit-editing="1"|data-website-engine-exit="1"/);
+    const exitHref = (editor.text.match(
+      /data-(?:bb-exit-editing|website-engine-exit)="1"[^>]*href="([^"]+)"|href="([^"]+)"[^>]*data-(?:bb-exit-editing|website-engine-exit)="1"/
+    ) || [])[1] || (editor.text.match(
+      /href="([^"]+)"[^>]*data-(?:bb-exit-editing|website-engine-exit)="1"/
+    ) || [])[1];
+    if (exitHref) {
+      const decodedExit = decodeHtmlAttr(exitHref);
+      assert.doesNotMatch(decodedExit, /website_edit=1/);
+      const exited = await request(makeBbApp())
+        .get(decodedExit.startsWith("http") ? decodedExit : decodedExit)
+        .set("Host", church.host)
+        .set("Cookie", cookie);
+      assert.ok(exited.status === 200 || exited.status === 303, `exit status=${exited.status}`);
+      if (exited.status === 200) {
+        assert.doesNotMatch(exited.text, /data-bb-website-editing="1"/);
+      }
+    }
+
+    const crossedHost = await request(makeBbApp())
+      .get(brandingHref)
+      .set("Host", church.host)
+      .set("Cookie", await hqCookie(other, other.hqUserId));
+    assert.ok(
+      crossedHost.status === 200 ||
+        crossedHost.status === 403 ||
+        crossedHost.status === 303 ||
+        crossedHost.status === 404,
+      `cross-tenant hub-host editor status=${crossedHost.status}`
+    );
+    assert.doesNotMatch(crossedHost.text || "", /data-bb-website-editing="1"/);
+    assert.doesNotMatch(crossedHost.text || "", /data-website-key="home.logo"/);
+
+    const crossedUrl = await request(makeBbApp())
+      .get(brandingHref)
+      .set("Host", other.host)
+      .set("Cookie", await hqCookie(other, other.hqUserId));
+    assert.ok(
+      crossedUrl.status === 200 ||
+        crossedUrl.status === 403 ||
+        crossedUrl.status === 404 ||
+        crossedUrl.status === 303,
+      `cross-tenant other-host editor status=${crossedUrl.status}`
+    );
+    assert.doesNotMatch(crossedUrl.text || "", /data-bb-website-editing="1"/);
+    assert.doesNotMatch(crossedUrl.text || "", /data-website-key="home.logo"/);
+
+    const mutate = await request(makeBbApp())
+      .post(`/c/${church.key}/website/drafts`)
+      .set("Host", church.host)
+      .set("Cookie", await hqCookie(other, other.hqUserId))
+      .set("Accept", "application/json")
+      .send({ contentKey: "home.logo", value: { src: "/x.png", alt: "cross-tenant" } });
+    assert.ok(
+      mutate.status === 401 || mutate.status === 403,
+      `cross-tenant draft mutate status=${mutate.status}`
+    );
+
+    const branchEditor = await request(makeBbApp())
+      .get("/hq/website")
+      .set("Host", church.host)
+      .set("Cookie", await hqCookie(church, church.branchUserId));
+    assert.ok(branchEditor.status === 403 || branchEditor.status === 303);
+    assert.doesNotMatch(branchEditor.text || "", /data-bb-website-action="branding"/);
+  });
+
   it("branch admin cannot open HQ website hub; other church HQ cannot use this host", async () => {
     requireDb();
     const a = await provisionChurch("x");
@@ -401,6 +557,9 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(page.text, /data-ac-website-action="preview"/);
     assert.match(page.text, /data-ac-website-action="publish"/);
     assert.match(page.text, /data-ac-website-action="history"/);
+    assert.match(page.text, /Customize branding/);
+    assert.match(page.text, /href="\/app\/settings\/website\/branding"/);
+    assert.equal(hrefForAcWebsiteAction(page.text, "branding"), "/app/settings/website/branding");
     assert.doesNotMatch(page.text, /data-bb-website-management/);
     assert.doesNotMatch(page.text, /class="bb-wm/);
     assert.doesNotMatch(page.text, /church website/);
