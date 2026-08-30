@@ -24,6 +24,13 @@ const {
 const {
   seedTenantOwnedWebsiteTemplateContent,
 } = require("../services/seedTenantWebsiteTemplateContent");
+const {
+  IDENTITY_KIND,
+  EXISTING_ACCOUNT_MESSAGE,
+  classifyBlessBoardRegistrationIdentity,
+  findLatestApplicationForOrganization,
+} = require("../services/classifyBlessBoardRegistrationIdentity");
+const { logRegistrationTrace } = require("../services/registrationTraceLog");
 
 const productCode = PRODUCT.BLESSBOARD;
 
@@ -130,6 +137,45 @@ async function persistSubmitted(db, input) {
     };
   }
 
+  let identity = { kind: IDENTITY_KIND.FRESH };
+  try {
+    identity = await classifyBlessBoardRegistrationIdentity(db, {
+      email: data.contact_email,
+      churchName: data.church_name,
+      country: data.country,
+      organizationKey: data.organization_key || null,
+    });
+  } catch {
+    identity = { kind: IDENTITY_KIND.FRESH };
+  }
+
+  if (identity.kind === IDENTITY_KIND.OTHER_CHURCH) {
+    return {
+      ok: false,
+      error: EXISTING_ACCOUNT_MESSAGE,
+      field: "email",
+      code: "existing_account",
+      httpStatus: 400,
+      riskDecision: risk.decision,
+      riskReasonCodes: risk.reasonCodes,
+    };
+  }
+  if (identity.kind === IDENTITY_KIND.SAME_CHURCH && identity.organizationId) {
+    const existingApp = await findLatestApplicationForOrganization(db, identity.organizationId);
+    if (existingApp) {
+      return { ok: true, application: existingApp, duplicate: true, risk };
+    }
+    return {
+      ok: false,
+      error: EXISTING_ACCOUNT_MESSAGE,
+      field: "email",
+      code: "existing_account",
+      httpStatus: 400,
+      riskDecision: risk.decision,
+      riskReasonCodes: risk.reasonCodes,
+    };
+  }
+
   const {
     administrator_password: _pw,
     organization_key: _ok,
@@ -191,22 +237,64 @@ async function collectReviewSignals(db, input) {
       sourceIp: meta.source_ip,
       honeypot: false,
       organizationKey: data.organization_key || null,
+      excludeApplicationId: input.application && input.application.id ? input.application.id : null,
     });
   } catch {
     risk = { decision: RISK_DECISIONS.REVIEW_REQUIRED, reasonCodes: ["risk_evaluation_failed"] };
   }
   const networkPlan = isNetworkPlanSelection(data.selected_plan);
   const missingCredentials = !data.administrator_password || !data.organization_key;
-  return {
+  let identityKind = IDENTITY_KIND.FRESH;
+  try {
+    const identity = await classifyBlessBoardRegistrationIdentity(db, {
+      email: data.contact_email,
+      churchName: data.church_name,
+      country: data.country,
+      organizationKey: data.organization_key || null,
+      applicationOrganizationId:
+        input.application && (input.application.organization_id || input.application.organizationId),
+    });
+    identityKind = identity.kind;
+  } catch {
+    identityKind = IDENTITY_KIND.FRESH;
+  }
+  const signals = {
     networkPlan,
     plan: data.selected_plan || null,
     riskHold: risk.decision === RISK_DECISIONS.REVIEW_REQUIRED,
     riskReason: REVIEW_REASON.RISK_HOLD,
     riskDecision: risk.decision,
     riskReasonCodes: risk.reasonCodes || [],
+    identityCollision: identityKind === IDENTITY_KIND.SUSPENDED,
+    identityCollisionReason: REVIEW_REASON.IDENTITY_COLLISION,
     manualPlatformHold: missingCredentials && !networkPlan,
     extraReasons: [],
   };
+  try {
+    logRegistrationTrace(input.payload && input.payload.req, {
+      event: "church_registration_review_decision",
+      operation: "collect_review_signals",
+      decision: signals.riskHold || signals.networkPlan || signals.identityCollision || signals.manualPlatformHold
+        ? "review_required"
+        : "auto_provision",
+      reviewReason: signals.riskHold
+        ? REVIEW_REASON.RISK_HOLD
+        : signals.networkPlan
+          ? REVIEW_REASON.NETWORK_PLAN_MANUAL_REVIEW
+          : signals.identityCollision
+            ? REVIEW_REASON.IDENTITY_COLLISION
+            : signals.manualPlatformHold
+              ? REVIEW_REASON.MANUAL_PLATFORM_HOLD
+              : null,
+      reasonCodes: risk.reasonCodes || [],
+      applicationId: input.application && input.application.id ? input.application.id : null,
+      organizationKey: data.organization_key || null,
+      publicPlanCode: data.selected_plan || null,
+    });
+  } catch {
+    /* logging must not block */
+  }
+  return signals;
 }
 
 async function markReviewRequired(db, input) {
@@ -257,6 +345,26 @@ async function provision(db, input) {
   );
   if (!provisioned.ok) {
     const status = String(provisioned.status || "");
+    if (status === "existing_account" || status === "EXISTING_ACCOUNT") {
+      return {
+        ok: false,
+        reviewRequired: false,
+        reason: REVIEW_REASON.IDENTITY_COLLISION,
+        code: status,
+        field: "email",
+        provisioned,
+      };
+    }
+    if (status === "duplicate_church_name" || status === "DUPLICATE_CHURCH_NAME") {
+      return {
+        ok: false,
+        reviewRequired: false,
+        reason: REVIEW_REASON.PROVISION_FAILURE,
+        code: status,
+        field: "church_name",
+        provisioned,
+      };
+    }
     if (status === "duplicate_email_review" || status === "DUPLICATE_EMAIL_REVIEW") {
       return {
         ok: false,

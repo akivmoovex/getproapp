@@ -129,6 +129,18 @@ function logRegistrationDbError(req, err) {
 }
 
 function mapRegistrationPersistError(req, err) {
+  if (
+    err &&
+    (err.code === "existing_account" || err.name === "ExistingAccountError")
+  ) {
+    return {
+      ok: false,
+      error: err.message || "An account with this email already exists. Sign in to continue to your church workspace.",
+      field: "email",
+      code: "existing_account",
+      httpStatus: 400,
+    };
+  }
   if (err && (err.code === "duplicate_registration_phone" || err.name === "DuplicateRegistrationPhoneError")) {
     return {
       ok: false,
@@ -338,6 +350,7 @@ function mapEngineResultToChurchHttp(result, validationResult) {
       code: "review_required",
       httpStatus: 200,
       reason: result.reason,
+      reasons: result.reasons || [],
       engine: result.engine,
       ...risk,
     };
@@ -462,6 +475,31 @@ function mapProvisionFailure(provision, application) {
       code: status,
       field: "organization_key",
       error: "That organization key is not available. Please choose another.",
+      httpStatus: 400,
+    };
+  }
+  if (status === ORCH_STATUS.DUPLICATE_CHURCH_NAME) {
+    return {
+      ok: false,
+      mode: "instant_free",
+      application,
+      code: status,
+      field: "church_name",
+      error: provision.error || provision.message || "A church with this name is already registered in the selected country.",
+      httpStatus: 400,
+    };
+  }
+  if (status === ORCH_STATUS.EXISTING_ACCOUNT || status === "existing_account") {
+    return {
+      ok: false,
+      mode: "instant_free",
+      application,
+      code: status,
+      field: "email",
+      error:
+        provision.error ||
+        provision.message ||
+        "An account with this email already exists. Sign in to continue to your church workspace.",
       httpStatus: 400,
     };
   }

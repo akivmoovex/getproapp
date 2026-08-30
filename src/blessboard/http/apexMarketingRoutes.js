@@ -557,6 +557,8 @@ function createApexMarketingRouter(deps) {
             outcome: "ok",
             redirectPath: `${REGISTER_PATH}?review=1`,
             failureCategory: "review_required",
+            reviewReason: result.reason || null,
+            reasonCodes: result.reasons || result.riskReasonCodes || [],
             durationMs: Date.now() - startedAt,
           });
           return res.redirect(303, `${REGISTER_PATH}?review=1`);

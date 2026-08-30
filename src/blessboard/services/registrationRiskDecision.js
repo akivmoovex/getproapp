@@ -5,7 +5,6 @@
  * No AI scoring, device fingerprinting, or external fraud vendors.
  */
 
-const authRepo = require("../repositories/blessBoardAuthRepository");
 const {
   resolveCallingCode,
   DUPLICATE_PHONE_MESSAGE,
@@ -61,12 +60,10 @@ const REJECT_REASON_CODES = Object.freeze([
   RISK_REASON_CODES.ADMIN_REJECTED,
 ]);
 
+/** Genuine security/abuse holds only. Uniqueness and existing-account are not review. */
 const REVIEW_REASON_CODES = Object.freeze([
-  RISK_REASON_CODES.DUPLICATE_EMAIL,
-  RISK_REASON_CODES.SIMILAR_ORGANIZATION,
   RISK_REASON_CODES.IP_VELOCITY,
   RISK_REASON_CODES.PRIOR_REJECTION,
-  RISK_REASON_CODES.COUNTRY_PHONE_MISMATCH,
 ]);
 
 const PUBLIC_REVIEW_MESSAGE =
@@ -147,7 +144,7 @@ function reasonLabelsForAdmin(codes) {
 
 /**
  * When country resolves to a calling code and the E.164 phone uses a different prefix.
- * Diaspora / travel cases go to review — never automatic rejection on this signal alone.
+ * Diaspora / travel cases are allowed through — never rejection or Platform Admin review.
  * @param {unknown} country
  * @param {unknown} normalizedPhone
  */
@@ -242,16 +239,18 @@ async function findPriorRejectedMatch(db, opts) {
  * @param {string|null} sourceIp
  * @param {number} [windowMinutes]
  */
-async function countRecentApplicationsByIp(db, sourceIp, windowMinutes = IP_WINDOW_MINUTES) {
+async function countRecentApplicationsByIp(db, sourceIp, windowMinutes = IP_WINDOW_MINUTES, excludeApplicationId = null) {
   const ip = String(sourceIp || "").trim().slice(0, 64);
   if (!ip) return 0;
   const window = Math.min(Math.max(Number(windowMinutes) || IP_WINDOW_MINUTES, 1), 120);
+  const exclude = excludeApplicationId ? String(excludeApplicationId) : null;
   const r = await db.query(
     `SELECT COUNT(*)::int AS c
        FROM ${TARGET_RELATION}
       WHERE source_ip = $1
-        AND created_at >= now() - ($2::int * interval '1 minute')`,
-    [ip, window]
+        AND created_at >= now() - ($2::int * interval '1 minute')
+        AND ($3::uuid IS NULL OR id <> $3::uuid)`,
+    [ip, window, exclude]
   );
   return Number(r.rows[0] && r.rows[0].c) || 0;
 }
@@ -287,6 +286,7 @@ async function findOccupyingPhoneMatch(db, contactPhoneNormalized) {
  *   honeypot?: boolean,
  *   organizationKey?: string|null,
  *   skipPhoneLookup?: boolean,
+ *   excludeApplicationId?: string|null,
  * }} input
  */
 async function evaluateRegistrationRisk(db, input = {}) {
@@ -309,10 +309,6 @@ async function evaluateRegistrationRisk(db, input = {}) {
     reasons.push(RISK_REASON_CODES.RESERVED_ORGANIZATION_KEY);
   }
 
-  if (hasCountryPhoneMismatch(data.country, data.contact_phone_normalized)) {
-    reasons.push(RISK_REASON_CODES.COUNTRY_PHONE_MISMATCH);
-  }
-
   if (!db || typeof db.query !== "function") {
     return finalize(reasons, decidedAt, { duplicatePhoneMessage: null });
   }
@@ -320,18 +316,22 @@ async function evaluateRegistrationRisk(db, input = {}) {
   if (!input.skipPhoneLookup && data.contact_phone_normalized) {
     const phoneHit = await findOccupyingPhoneMatch(db, data.contact_phone_normalized);
     if (phoneHit) {
-      const hitEmail = String(phoneHit.contact_email || "")
-        .trim()
-        .toLowerCase();
-      const myEmail = String(data.contact_email || "")
-        .trim()
-        .toLowerCase();
-      // Same email + same phone is soft idempotency (browser retry), not a conflict.
-      if (!myEmail || hitEmail !== myEmail) {
-        reasons.push(RISK_REASON_CODES.DUPLICATE_PHONE);
-        return finalize(reasons, decidedAt, {
-          duplicatePhoneMessage: DUPLICATE_PHONE_MESSAGE,
-        });
+      const hitId = phoneHit.id != null ? String(phoneHit.id) : "";
+      const excludeId = input.excludeApplicationId ? String(input.excludeApplicationId) : "";
+      if (!excludeId || hitId !== excludeId) {
+        const hitEmail = String(phoneHit.contact_email || "")
+          .trim()
+          .toLowerCase();
+        const myEmail = String(data.contact_email || "")
+          .trim()
+          .toLowerCase();
+        // Same email + same phone is soft idempotency (browser retry), not a conflict.
+        if (!myEmail || hitEmail !== myEmail) {
+          reasons.push(RISK_REASON_CODES.DUPLICATE_PHONE);
+          return finalize(reasons, decidedAt, {
+            duplicatePhoneMessage: DUPLICATE_PHONE_MESSAGE,
+          });
+        }
       }
     }
   }
@@ -339,22 +339,6 @@ async function evaluateRegistrationRisk(db, input = {}) {
   const email = String(data.contact_email || "")
     .trim()
     .toLowerCase();
-  if (email) {
-    const existingUser = await authRepo.findUserByEmail(db, email);
-    if (existingUser) {
-      reasons.push(RISK_REASON_CODES.DUPLICATE_EMAIL);
-    }
-  }
-
-  const similar = await findSimilarOrganizationMatch(db, {
-    churchName: data.church_name,
-    city: data.city,
-    country: data.country,
-    excludeContactEmail: email || null,
-  });
-  if (similar) {
-    reasons.push(RISK_REASON_CODES.SIMILAR_ORGANIZATION);
-  }
 
   const prior = await findPriorRejectedMatch(db, {
     contactEmail: email,
@@ -365,7 +349,12 @@ async function evaluateRegistrationRisk(db, input = {}) {
   }
 
   const ipCount = isPublicSourceIp(input.sourceIp)
-    ? await countRecentApplicationsByIp(db, input.sourceIp, IP_WINDOW_MINUTES)
+    ? await countRecentApplicationsByIp(
+        db,
+        input.sourceIp,
+        IP_WINDOW_MINUTES,
+        input.excludeApplicationId || null
+      )
     : 0;
   if (ipCount >= IP_REJECT_THRESHOLD) {
     reasons.push(RISK_REASON_CODES.IP_VELOCITY_BLOCKED);

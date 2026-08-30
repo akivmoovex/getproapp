@@ -65,6 +65,7 @@ const ALLOWED_KEYS = Object.freeze(
     "missingColumns",
     "reasonCodes",
     "decision",
+    "reviewReason",
     "rootStatus",
     "persistError",
     "administratorViaInvitation",

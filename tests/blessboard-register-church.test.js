@@ -411,7 +411,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
     const orgBefore = await repo.countOrganizationsCreatedSince(pool, new Date(0));
     const { csrf, cookie } = await getRegistrationPage(app);
     const email = `valid-submit-${Date.now()}@example.org`;
-    // Unique church name: risk review flags same name+city+country as similar_organization.
+    // Unique church name so a prior Lusaka/Zambia fixture cannot collide.
     const churchName = `Valid Submit Church ${Date.now()}`;
     const res = await request(app)
       .post("/register-church")

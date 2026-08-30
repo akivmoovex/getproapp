@@ -153,7 +153,7 @@ describe("public registration schema mismatch (Prompt 073)", () => {
     assert.equal(Object.prototype.hasOwnProperty.call(result.application, "rejection_category"), false);
   });
 
-  it("duplicate_email risk still creates a review application", async () => {
+  it("orphan existing email with matching password auto-provisions (no review application)", async () => {
     requireDb();
     assert.ok(existingUserEmail);
     const phone = randomPhone();
@@ -176,29 +176,14 @@ describe("public registration schema mismatch (Prompt 073)", () => {
       { instantFreeEnabled: true }
     );
     assert.equal(validation.ok, true, validation.error);
-    const before = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.platform_church_registration_applications
-        WHERE lower(contact_email) = lower($1)`,
-      [existingUserEmail]
-    );
     const result = await submitInstantFreeChurchRegistration(
       pool,
       { ip: "203.0.113.74" },
       validation
     );
-    assert.equal(result.ok, false);
-    assert.equal(result.review, true);
-    assert.equal(result.code, "review_required");
-    assert.ok(result.application && result.application.id);
-    assert.equal(result.application.application_status, "duplicate_review");
-    assert.equal(result.application.risk_decision, "review_required");
-    assert.ok((result.riskReasonCodes || []).includes("duplicate_email"));
-    const after = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.platform_church_registration_applications
-        WHERE lower(contact_email) = lower($1)`,
-      [existingUserEmail]
-    );
-    assert.equal(after.rows[0].n, before.rows[0].n + 1);
+    assert.equal(result.ok, true, result.error || result.code);
+    assert.notEqual(result.review, true);
+    assert.ok(result.records && result.records.organizationId);
   });
 
   it("missing required column produces schema_mismatch and creates no partial application", async () => {

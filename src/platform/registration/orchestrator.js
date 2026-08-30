@@ -186,16 +186,8 @@ async function submitPlatformRegistration(db, input) {
         provision: provisioned && provisioned.ok ? provisioned : { records, alreadyProvisioned: true },
       });
     }
-    if (canonical === LIFECYCLE.REVIEW_REQUIRED) {
-      return ok(RESULT.REVIEW_REQUIRED, {
-        reviewRequired: true,
-        reason: REVIEW_REASON.DUPLICATE_CANDIDATE,
-        application,
-        canonicalLifecycle: LIFECYCLE.REVIEW_REQUIRED,
-        productCode,
-        duplicate: true,
-      });
-    }
+    // Stale review_required / submitted duplicates fall through to re-evaluate
+    // decideReview so uniqueness/email holds can auto-provision after a policy fix.
   }
 
   let signals = {};

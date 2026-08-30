@@ -199,7 +199,11 @@ describe("registration risk review (Prompt 18)", () => {
     assert.deepEqual(filterAllowlistedReasonCodes(["duplicate_phone", "ai_score", "CLEAN"]), [
       "duplicate_phone",
     ]);
-    assert.equal(decideFromReasonCodes(["similar_organization"]), RISK_DECISIONS.REVIEW_REQUIRED);
+    assert.equal(decideFromReasonCodes(["similar_organization"]), RISK_DECISIONS.ALLOW);
+    assert.equal(decideFromReasonCodes(["duplicate_email"]), RISK_DECISIONS.ALLOW);
+    assert.equal(decideFromReasonCodes(["country_phone_mismatch"]), RISK_DECISIONS.ALLOW);
+    assert.equal(decideFromReasonCodes(["ip_velocity"]), RISK_DECISIONS.REVIEW_REQUIRED);
+    assert.equal(decideFromReasonCodes(["prior_rejection"]), RISK_DECISIONS.REVIEW_REQUIRED);
     assert.equal(decideFromReasonCodes(["duplicate_phone"]), RISK_DECISIONS.REJECT);
     assert.equal(decideFromReasonCodes([]), RISK_DECISIONS.ALLOW);
     assert.equal(hasCountryPhoneMismatch("Kenya", "+254712345678"), false);
@@ -287,7 +291,7 @@ describe("registration risk review (Prompt 18)", () => {
     assert.notEqual(risk.decision, RISK_DECISIONS.REJECT);
     assert.ok(!risk.reasonCodes.includes(RISK_REASON_CODES.SIMILAR_ORGANIZATION));
 
-    // Same name + city + country → review_required (never reject on this signal).
+    // Same name + city + country is a uniqueness conflict, not Platform Admin review.
     const third = freeBody({
       church_name: sharedName,
       city: "Nairobi",
@@ -301,17 +305,13 @@ describe("registration risk review (Prompt 18)", () => {
       validateBody(third)
     );
     assert.equal(thirdResult.ok, false);
-    assert.equal(thirdResult.review, true);
-    assert.equal(thirdResult.riskDecision, RISK_DECISIONS.REVIEW_REQUIRED);
-    assert.ok(thirdResult.riskReasonCodes.includes(RISK_REASON_CODES.SIMILAR_ORGANIZATION));
-    assert.equal(thirdResult.error, PUBLIC_REVIEW_MESSAGE);
-    const row = await appRepo.findApplicationById(pool, thirdResult.application.id);
-    assert.equal(row.application_status, "review_required");
-    assert.equal(row.provisioning_status, "not_started");
-    assert.equal(row.organization_id, null);
+    assert.notEqual(thirdResult.review, true);
+    assert.notEqual(thirdResult.code, "review_required");
+    assert.equal(thirdResult.field, "church_name");
+    assert.equal(thirdResult.httpStatus, 400);
   });
 
-  it("4. review-required application does not provision", async () => {
+  it("4. orphan existing identity with matching password auto-provisions (no PA review)", async () => {
     requireDb();
     const email = `${uniq("exist")}@example.org`;
     const existing = await createBlessBoardUser(pool, {
@@ -327,35 +327,56 @@ describe("registration risk review (Prompt 18)", () => {
       { ip: "203.0.113.30" },
       validateBody(body)
     );
-    assert.equal(result.ok, false);
-    assert.equal(result.review, true);
-    assert.equal(result.code, "review_required");
-    assert.ok(result.riskReasonCodes.includes(RISK_REASON_CODES.DUPLICATE_EMAIL));
+    assert.equal(result.ok, true, result.error || result.code);
+    assert.notEqual(result.review, true);
+    assert.ok(result.records && result.records.organizationId);
     const row = await appRepo.findApplicationById(pool, result.application.id);
-    assert.equal(row.provisioning_status, "not_started");
-    assert.equal(row.organization_id, null);
-    assert.equal(row.application_status, "review_required");
+    assert.equal(row.provisioning_status, "provisioned");
+    assert.ok(row.organization_id);
   });
+
+  async function markApplicationRejected(applicationId) {
+    await pool.query(
+      `UPDATE blessboard.platform_church_registration_applications
+          SET application_status = 'rejected'
+        WHERE id = $1`,
+      [applicationId]
+    );
+  }
+
+  async function seedPriorRejection(email) {
+    const prior = await appRepo.createApplication(pool, {
+      church_name: `Prior Reject ${uniq("pr")}`,
+      country: "Kenya",
+      city: "Kisumu",
+      contact_name: "Prior",
+      contact_email: email,
+      contact_phone: `+2547${String(Date.now()).slice(-7)}`,
+      contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
+      role_in_church: "Administrator",
+      selected_plan: "foundation",
+      consent_terms: true,
+    });
+    await markApplicationRejected(prior.id);
+    return prior;
+  }
 
   it("5. admin approval provisions once (idempotent)", async () => {
     requireDb();
     const key = uniq("appr");
+    const email = `${uniq("appr")}@example.org`;
+    await seedPriorRejection(email);
+
     const body = freeBody({
       organization_key: key,
-      email: `${uniq("appr")}@example.org`,
+      email,
       church_name: `Approve Me Church ${key}`,
       city: `City-${key}`,
     });
-    // Force review via country/phone mismatch without blocking uniqueness.
-    const mismatched = {
-      ...body,
-      country: "Kenya",
-      phone: `+1555${String(Date.now()).slice(-7)}`,
-    };
     const held = await submitInstantFreeChurchRegistration(
       pool,
       { ip: "203.0.113.40" },
-      validateBody(mismatched)
+      validateBody(body)
     );
     assert.equal(held.review, true, held.error || held.code);
     assert.equal(held.application.organization_id, null);
@@ -420,13 +441,13 @@ describe("registration risk review (Prompt 18)", () => {
   it("6. admin rejection does not provision", async () => {
     requireDb();
     const key = uniq("rej");
+    const email = `${uniq("rej")}@example.org`;
+    await seedPriorRejection(email);
     const heldBody = freeBody({
       organization_key: key,
-      email: `${uniq("rej")}@example.org`,
+      email,
       church_name: `Reject Me ${key}`,
       city: `RejectCity-${key}`,
-      country: "Zambia",
-      phone: `+1555${String(Date.now() + 1).slice(-7)}`,
     });
     const held = await submitInstantFreeChurchRegistration(
       pool,
@@ -460,31 +481,14 @@ describe("registration risk review (Prompt 18)", () => {
   it("7–8. public HTTP responses stay neutral; admin detail shows allowlisted reasons", async () => {
     requireDb();
     const app = makeApp({});
-    const shared = `HTTP Similar ${uniq("http")}`;
-    const firstBody = freeBody({
-      church_name: shared,
-      city: "Lusaka",
-      country: "Zambia",
-      email: `${uniq("http1")}@example.org`,
-      organization_key: uniq("http1"),
-      phone: `+26097${String(Date.now()).slice(-7)}`,
-    });
-    const page1 = await request(app).get("/register-church?plan=foundation").set("Host", APEX);
-    const csrf1 = extractCsrfToken(page1.text);
-    const cookie1 = extractCookie(page1, CSRF_COOKIE);
-    const res1 = await request(app)
-      .post("/register-church")
-      .set("Host", APEX)
-      .set("Cookie", `${CSRF_COOKIE}=${cookie1}`)
-      .type("form")
-      .send({ ...firstBody, [CSRF_FIELD]: csrf1 });
-    assert.equal(res1.status, 303);
+    const email = `${uniq("http2")}@example.org`;
+    await seedPriorRejection(email);
 
     const secondBody = freeBody({
-      church_name: shared,
-      city: "Lusaka",
+      church_name: `HTTP Fresh ${uniq("http")}`,
+      city: "Ndola",
       country: "Zambia",
-      email: `${uniq("http2")}@example.org`,
+      email,
       organization_key: uniq("http2"),
       phone: `+26096${String(Date.now()).slice(-7)}`,
     });
@@ -500,7 +504,7 @@ describe("registration risk review (Prompt 18)", () => {
     assert.equal(res2.status, 303);
     assert.equal(res2.headers.location, "/register-church?review=1");
     assert.doesNotMatch(String(res2.headers.location), /\/register-church\/success/);
-    assert.doesNotMatch(String(res2.headers.location), /similar_organization|risk|fraud/i);
+    assert.doesNotMatch(String(res2.headers.location), /prior_rejection|risk|fraud/i);
 
     const reviewPage = await request(app)
       .get("/register-church?review=1")
@@ -511,26 +515,26 @@ describe("registration risk review (Prompt 18)", () => {
 
     const held = await pool.query(
       `SELECT id FROM blessboard.platform_church_registration_applications
-        WHERE lower(contact_email) = lower($1)`,
+        WHERE lower(contact_email) = lower($1)
+        ORDER BY created_at DESC`,
       [secondBody.email]
     );
     const detail = await getRegistrationApplicationDetail(pool, held.rows[0].id);
     assert.equal(detail.ok, true);
-    assert.ok(detail.application.riskReasonLabels.some((r) => r.code === "similar_organization"));
-    assert.match(detail.application.riskReasonLabels[0].label, /Organization name matches/i);
+    assert.ok(detail.application.riskReasonLabels.some((r) => r.code === "prior_rejection"));
   });
 
   it("9–10. authorization and CSRF protect review mutations; audit on approve", async () => {
     requireDb();
     const app = makeApp({});
     const key = uniq("csrf");
+    const email = `${uniq("csrf")}@example.org`;
+    await seedPriorRejection(email);
     const heldBody = freeBody({
       organization_key: key,
-      email: `${uniq("csrf")}@example.org`,
+      email,
       church_name: `CSRF Hold ${key}`,
       city: `CsrfCity-${key}`,
-      country: "Kenya",
-      phone: `+1444${String(Date.now()).slice(-7)}`,
     });
     const held = await submitInstantFreeChurchRegistration(
       pool,

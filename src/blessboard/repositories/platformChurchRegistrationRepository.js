@@ -330,7 +330,7 @@ async function findRecentRegistrationDuplicate(client, opts) {
         AND lower(church_name) = lower($2)
         AND created_at >= now() - ($3::int * interval '1 minute')
         AND (
-          application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning')
+          application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning', 'active')
           OR status = 'pending'
         )
       ORDER BY created_at DESC

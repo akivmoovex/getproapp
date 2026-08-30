@@ -189,7 +189,7 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
     assert.equal(counts.domains, 0);
   });
 
-  it("duplicate administrator email moves application to duplicate_review", async () => {
+  it("orphan administrator email with a different password requires sign-in, not review", async () => {
     requireDb();
     const email = `${uniq("dupe")}@example.org`;
     await createBlessBoardUser(pool, {
@@ -205,10 +205,11 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
       actorContext: { dataEnvironment: "testing" },
     });
     assert.equal(result.ok, false);
-    assert.equal(result.status, STATUS.DUPLICATE_EMAIL_REVIEW);
+    assert.equal(result.status, STATUS.EXISTING_ACCOUNT);
 
     const appRow = await appRepo.findApplicationById(pool, app.id);
-    assert.equal(appRow.application_status, "duplicate_review");
+    assert.notEqual(appRow.application_status, "review_required");
+    assert.notEqual(appRow.application_status, "duplicate_review");
     assert.equal(appRow.provisioning_status, "not_started");
     assert.equal(appRow.organization_id, null);
 

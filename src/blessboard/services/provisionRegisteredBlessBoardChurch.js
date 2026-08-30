@@ -47,6 +47,10 @@ const {
 } = require("./normalizeChurchIdentity");
 const { assertChurchNameAvailable } = require("./assertChurchNameAvailable");
 const {
+  IDENTITY_KIND,
+  classifyBlessBoardRegistrationIdentity,
+} = require("./classifyBlessBoardRegistrationIdentity");
+const {
   growthTrialEndsAtIso,
 } = require("../../platform/time/addGrowthTrialDurationUtc");
 const {
@@ -64,6 +68,7 @@ const STATUS = Object.freeze({
   PROVISIONING_IN_PROGRESS: "provisioning_in_progress",
   RETRY_NOT_ALLOWED: "retry_not_allowed",
   DUPLICATE_EMAIL_REVIEW: "duplicate_email_review",
+  EXISTING_ACCOUNT: "existing_account",
   IDENTITY_CONFLICT: "identity_conflict",
   DUPLICATE_CHURCH_NAME: "duplicate_church_name",
   SLUG_UNAVAILABLE: "slug_unavailable",
@@ -110,6 +115,12 @@ const ERROR_META = Object.freeze({
     retryable: false,
     severity: "info",
     publicMessage: "This registration needs review before it can continue.",
+  },
+  [STATUS.EXISTING_ACCOUNT]: {
+    retryable: false,
+    severity: "info",
+    publicMessage:
+      "An account with this email already exists. Sign in to continue to your church workspace.",
   },
   [STATUS.DUPLICATE_CHURCH_NAME]: {
     retryable: false,
@@ -833,9 +844,36 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       }
       const existingUser = await authRepo.findUserByEmail(client, emailNormalized);
       const resumeExistingOrg = Boolean(application.organization_id);
+      let reuseExistingUserForNewOrg = false;
       if (existingUser && !administratorViaInvitation && !resumeExistingOrg) {
-        duplicateReview = true;
-        throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review");
+        const identity = await classifyBlessBoardRegistrationIdentity(client, {
+          email: emailNormalized,
+          churchName: application.church_name,
+          country: application.country,
+          organizationKey,
+          applicationOrganizationId: application.organization_id,
+        });
+        if (identity.kind === IDENTITY_KIND.SUSPENDED) {
+          duplicateReview = true;
+          throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review");
+        }
+        if (
+          identity.kind === IDENTITY_KIND.OTHER_CHURCH ||
+          identity.kind === IDENTITY_KIND.SAME_CHURCH
+        ) {
+          throw new OrchestratorError(STATUS.EXISTING_ACCOUNT, "existing_account");
+        }
+        if (identity.kind === IDENTITY_KIND.ORPHAN_USER) {
+          const hash = existingUser.password_hash;
+          if (!hash || !administratorPassword) {
+            throw new OrchestratorError(STATUS.EXISTING_ACCOUNT, "existing_account");
+          }
+          const passwordOk = await bcrypt.compare(administratorPassword, hash);
+          if (!passwordOk) {
+            throw new OrchestratorError(STATUS.EXISTING_ACCOUNT, "existing_account");
+          }
+          reuseExistingUserForNewOrg = true;
+        }
       }
       if (existingUser && administratorViaInvitation) {
         const identity = classifyExistingAdministratorIdentity(existingUser);
@@ -1095,7 +1133,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             reason_code: administratorLinkedExisting ? "existing_user_linked" : "invited_user_created",
           },
         });
-      } else if (existingUser && resumeExistingOrg) {
+      } else if (existingUser && (resumeExistingOrg || reuseExistingUserForNewOrg)) {
         provisioningStage = "create_administrator_user";
         administratorUserId = String(existingUser.id);
         administratorLinkedExisting = true;
@@ -1142,7 +1180,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         );
         if (!user.ok) {
           throw new OrchestratorError(
-            user.status === "identity_conflict" ? STATUS.DUPLICATE_EMAIL_REVIEW : STATUS.DATABASE_CONFLICT,
+            user.status === "identity_conflict" ? STATUS.EXISTING_ACCOUNT : STATUS.DATABASE_CONFLICT,
             user.message || user.status
           );
         }
@@ -1368,6 +1406,8 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         err.status === STATUS.PLAN_CONFIGURATION_ERROR ||
         err.status === STATUS.INVALID_INPUT ||
         err.status === STATUS.DUPLICATE_EMAIL_REVIEW ||
+        err.status === STATUS.EXISTING_ACCOUNT ||
+        err.status === STATUS.DUPLICATE_CHURCH_NAME ||
         err.status === STATUS.IDENTITY_CONFLICT
       ) {
         // No tenant writes expected (or admin identity conflict before tenant writes);
@@ -1465,7 +1505,9 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         );
       }
       return fail(
-        failureCode === STATUS.DUPLICATE_EMAIL_REVIEW || failureCode === STATUS.IDENTITY_CONFLICT
+        failureCode === STATUS.DUPLICATE_EMAIL_REVIEW ||
+          failureCode === STATUS.EXISTING_ACCOUNT ||
+          failureCode === STATUS.IDENTITY_CONFLICT
           ? failureCode
           : STATUS.PROVISIONING_FAILED,
         failureDetail,

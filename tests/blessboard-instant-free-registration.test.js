@@ -503,7 +503,7 @@ describe("automatic Foundation registration", () => {
     assert.equal(orgs.rows.length, 1);
   });
 
-  it("duplicate email maps to review response without second tenant", async () => {
+  it("duplicate email that already administers another church requires sign-in, not review", async () => {
     requireDb();
     const app = makeApp({ [ENV_KEY]: "1" });
     const email = `${uniq("dup")}@example.org`;
@@ -529,8 +529,9 @@ describe("automatic Foundation registration", () => {
       .set("Cookie", `${CSRF_COOKIE}=${page2.cookie}`)
       .type("form")
       .send({ ...second, [CSRF_FIELD]: page2.csrf });
-    assert.equal(res2.status, 303);
-    assert.match(res2.headers.location || "", /review=1/);
+    assert.equal(res2.status, 400);
+    assert.match(res2.text, /already exists|Sign in/i);
+    assert.doesNotMatch(String(res2.headers.location || ""), /review=1/);
 
     const users = await pool.query(
       `SELECT COUNT(*)::int AS n FROM blessboard.users WHERE email_normalized = $1`,
