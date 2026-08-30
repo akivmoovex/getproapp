@@ -53,7 +53,6 @@ function buildManifest(pageKey, sections, structuredDrafts) {
     const isHidden =
       section._draftHidden === true ||
       section._editorHidden === true ||
-      hidden.has(sectionKey) ||
       String(section.status || "") === "archived";
     return {
       sectionKey,
