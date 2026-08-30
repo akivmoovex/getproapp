@@ -1020,6 +1020,10 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
     max-width: 100%;
   }
 
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header__inner {
+    padding-right: max(0.75rem, env(safe-area-inset-right, 0px));
+  }
+
   body.gp-website-editor-open.bb-tp-body--editing .bb-tp-drawer:not(.is-open) {
     visibility: hidden;
     pointer-events: none;
@@ -1200,11 +1204,21 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
   }
 }
 
-@media (max-width: 1279px) and (min-width: 768px) {
+@media (max-width: 1439px) and (min-width: 768px) {
   .gp-website-editor__draft--desktop {
-    max-width: 14rem;
+    max-width: 12rem;
     overflow: hidden;
     text-overflow: ellipsis;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header__actions {
+    max-width: 36%;
+  }
+}
+
+@media (max-width: 1279px) and (min-width: 768px) {
+  .gp-website-editor__draft--desktop {
+    max-width: 10rem;
   }
 }
 
