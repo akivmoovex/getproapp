@@ -198,6 +198,26 @@ function validateStructuredPayload(kind, payload, op) {
     if (!sectionKey) return { ok: false, error: "Section is required." };
     return { ok: true, payload: { sectionKey } };
   }
+  if (op === "add_section") {
+    const sectionKey = String(body.sectionKey || "").trim();
+    if (!sectionKey) return { ok: false, error: "Section key is required." };
+    const sectionType = String(body.sectionType || "plain_text").trim();
+    const heading = sanitizePlain(body.heading, 200);
+    if (!heading.ok) return heading;
+    const bodyText = sanitizePlain(body.bodyText, 4000);
+    if (!bodyText.ok) return bodyText;
+    return {
+      ok: true,
+      payload: {
+        sectionKey,
+        sectionType,
+        heading: heading.value,
+        bodyText: bodyText.value,
+        sortOrder: Number(body.sortOrder) || 0,
+        layout: body.layout ? String(body.layout) : null,
+      },
+    };
+  }
 
   if (REORDER_ONLY_KINDS.includes(kind)) {
     return { ok: false, error: "This item only supports ordering changes." };

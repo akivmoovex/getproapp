@@ -1,0 +1,32 @@
+<%#
+  Shared historical version preview banner (Wave 4B-2).
+  Locals: preview (versionPreviewModel.buildVersionPreviewView)
+%>
+<div class="gp-we-version-preview" data-gp-website-version-preview="1" role="status">
+  <div class="gp-we-version-preview__inner">
+    <div class="gp-we-version-preview__copy">
+      <p class="gp-we-version-preview__title"><strong><%= preview.title %></strong><% if (preview.referenceLabel) { %> · <%= preview.referenceLabel %><% } %></p>
+      <p class="gp-we-version-preview__meta">
+        <% if (preview.publishedAtLabel) { %>Published <%= preview.publishedAtLabel %><% } %>
+        <% if (preview.isLive) { %> · <span class="gp-we-version-preview__live">Current live version</span><% } %>
+      </p>
+      <p class="gp-we-version-preview__intro"><%= preview.intro %></p>
+    </div>
+    <div class="gp-we-version-preview__actions">
+      <% if (preview.historyHref) { %>
+      <a class="gp-we-history__btn gp-we-history__btn--ghost" href="<%= preview.historyHref %>">Back to version history</a>
+      <% } %>
+      <% if (preview.canRestore && preview.restoreHref) { %>
+      <form
+        method="post"
+        action="<%= preview.restoreHref %>"
+        class="gp-we-version-preview__restore"
+        data-gp-version-preview-restore="1"
+      >
+        <input type="hidden" name="<%= preview.csrfField %>" value="<%= preview.csrfToken %>"/>
+        <button type="submit" class="gp-we-history__btn gp-we-history__btn--primary">Restore as draft</button>
+      </form>
+      <% } %>
+    </div>
+  </div>
+</div>

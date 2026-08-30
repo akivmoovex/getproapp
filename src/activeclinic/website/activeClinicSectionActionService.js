@@ -2,7 +2,7 @@
 
 const cmsService = require("./clinicWebsiteCmsService");
 const { presentSectionManifest } = require("../../platform/website-engine/presentSectionManifest");
-const { DEFAULT_HOME_SECTIONS, defaultHomeSections } = require("./clinicWebsiteCms");
+const { DEFAULT_HOME_SECTIONS, DEFAULT_PAGE_SECTIONS, defaultHomeSections } = require("./clinicWebsiteCms");
 
 const PAGE_ID_BY_KEY = Object.freeze({
   home: "tpl_home",
@@ -38,14 +38,18 @@ function homeSectionSelector(type) {
   return `[data-ac-home-section="${type}"]`;
 }
 
-function buildHomeManifest(pageKey, cmsSections) {
+function pageSectionSelector(pageKey, type) {
+  if (String(pageKey || "home") === "home") return homeSectionSelector(type);
+  return `[data-ac-page-section="${pageKey}-${type}"]`;
+}
+
+function buildPageManifest(pageKey, cmsSections, defaults, selectorAttr) {
   const pageId = pageIdFor(pageKey);
   const sections = Array.isArray(cmsSections) ? cmsSections : [];
   const pageSections = sections
     .filter((s) => s && (s.page_id === pageId || (!s.page_id && pageKey === "home")))
     .slice()
     .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0));
-  const defaults = DEFAULT_HOME_SECTIONS;
   const orderedDefaults = defaults
     .slice()
     .sort((a, b) => {
@@ -61,34 +65,44 @@ function buildHomeManifest(pageKey, cmsSections) {
     );
     const locked = def.locked === true;
     const isHidden = found ? found.visible === false : false;
-    const sectionId = found ? String(found.id) : `sec_${def.key}`;
+    const sectionId = found ? String(found.id) : `sec_${pageKey}_${def.key}`;
     return {
       sectionKey: def.key,
       sectionId,
       pageKey,
       label: def.title,
-      canEdit: true,
-      canReorder: !locked && pageSections.length > 1,
+      canEdit: !def.domainBacked,
+      canReorder: !locked && orderedDefaults.length > 1,
       canHide: !locked,
-      canRestoreDefault: !locked,
+      canRestoreDefault: !locked && !def.domainBacked,
       isHidden,
       isDefault: false,
       sortIndex: index,
-      selector: homeSectionSelector(def.key),
+      selector: pageSectionSelector(pageKey, def.key),
+      domainBacked: def.domainBacked === true,
     };
   });
   return presentSectionManifest({
     pageKey,
-    selectorAttr: "data-ac-home-section",
+    selectorAttr,
     sections: capabilities,
   });
 }
 
+function buildHomeManifest(pageKey, cmsSections) {
+  return buildPageManifest(pageKey, cmsSections, DEFAULT_HOME_SECTIONS, "data-ac-home-section");
+}
+
 function buildManifest(pageKey, cmsSections) {
-  if (String(pageKey || "home") === "home") {
-    return buildHomeManifest(pageKey, cmsSections);
+  const key = String(pageKey || "home").trim() || "home";
+  if (key === "home") {
+    return buildHomeManifest(key, cmsSections);
   }
-  return presentSectionManifest({ pageKey, selectorAttr: "data-ac-page-section", sections: [] });
+  const defaults = DEFAULT_PAGE_SECTIONS[key];
+  if (!defaults) {
+    return presentSectionManifest({ pageKey: key, selectorAttr: "data-ac-page-section", sections: [] });
+  }
+  return buildPageManifest(key, cmsSections, defaults, "data-ac-page-section");
 }
 
 async function findSectionByKey(db, input, sectionKey) {

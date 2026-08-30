@@ -277,6 +277,7 @@ function presentEditorShell(input) {
     editLabel: facts.editLabel || LABELS.editWebsite,
     pageSelectLabel: facts.pageSelectLabel || "Page",
     sectionActionsUrl: facts.sectionActionsUrl || null,
+    addSectionUrl: facts.addSectionUrl || null,
     sectionManifest: facts.sectionManifest || null,
     sectionManifestJson: facts.sectionManifest
       ? JSON.stringify(facts.sectionManifest).replace(/</g, "\\u003c")

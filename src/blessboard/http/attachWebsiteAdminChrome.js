@@ -643,6 +643,9 @@ async function attachWebsiteAdminChrome(opts) {
     buildPublicWebsiteUnpublishPath,
     buildPublicWebsiteHistoryPath,
     buildPublicWebsiteMediaLibraryPath,
+    buildPublicWebsiteStylesPath,
+    buildPublicWebsiteSeoPath,
+    buildPublicWebsiteAddSectionPath,
   } = require("../../platform/website/publicWebsiteUrl");
   const currentPath = String(model.path || "/");
   const orgKey =
@@ -770,6 +773,8 @@ async function attachWebsiteAdminChrome(opts) {
     pathMode && publicBase ? `${publicBase}/website/drafts/discard` : null;
   const sectionActionsUrl =
     pathMode && publicBase ? `${publicBase}/website/section-actions` : null;
+  const addSectionUrl =
+    pathMode && publicBase ? `${publicBase}/website/add-section` : null;
   const unpublishPath = isHqEditor
     ? buildPublicWebsiteUnpublishPath({
         product: PRODUCT_CODE.BLESSBOARD,
@@ -828,8 +833,27 @@ async function attachWebsiteAdminChrome(opts) {
       })
     : null;
 
-  const seoLink = settingsCatalog && settingsCatalog.links && settingsCatalog.links.seo;
-  const brandingHref = isHqEditor ? "/hq/website/branding" : null;
+  const seoLink =
+    pathMode && publicBase && (isHqEditor || capability.isBranchEditor)
+      ? {
+          available: true,
+          href: buildPublicWebsiteSeoPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          }),
+        }
+      : settingsCatalog && settingsCatalog.links && settingsCatalog.links.seo;
+  const brandingHref =
+    pathMode && publicBase && (isHqEditor || capability.isBranchEditor)
+      ? buildPublicWebsiteStylesPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: orgKey,
+          scope: editorScope,
+        })
+      : isHqEditor
+        ? "/hq/website/branding"
+        : null;
   const historyHref =
     pathMode && publicBase && (isHqEditor || capability.isBranchEditor)
       ? buildPublicWebsiteHistoryPath({
@@ -961,6 +985,7 @@ async function attachWebsiteAdminChrome(opts) {
     csrfToken,
     csrfField: "_csrf",
     sectionActionsUrl,
+    addSectionUrl,
     sectionManifest,
   };
 

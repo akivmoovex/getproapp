@@ -1,0 +1,39 @@
+<%#
+  Wave 4B-2 — shared Add Section picker (desktop dialog / mobile sheet).
+%>
+<%
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+%>
+<div class="gp-website-add-section" data-website-add-section-host="1" hidden>
+  <div class="gp-website-add-section__overlay" data-website-add-section-overlay="1" hidden></div>
+  <div
+    class="gp-website-add-section__panel"
+    data-website-add-section-panel="1"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gp-website-add-section-title"
+    hidden
+  >
+    <div class="gp-website-add-section__grab" aria-hidden="true"></div>
+    <header class="gp-website-add-section__head">
+      <h2 class="gp-website-add-section__title" id="gp-website-add-section-title">Add section</h2>
+      <button type="button" class="gp-website-add-section__close" data-website-add-section-dismiss="1" aria-label="Close">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <p class="gp-website-add-section__intro">Choose a section type to add to this page draft.</p>
+    <div class="gp-website-add-section__list" data-website-add-section-list="1"></div>
+    <p class="gp-website-add-section__empty" data-website-add-section-empty="1" hidden>No more section types are available for this page.</p>
+    <p class="gp-website-add-section__error" data-website-add-section-error="1" hidden role="alert"></p>
+  </div>
+</div>
+<button
+  type="button"
+  class="gp-website-editor__add-section"
+  data-website-add-section-open="1"
+  hidden
+  aria-label="Add section"
+>
+  <span class="material-symbols-outlined" aria-hidden="true">add</span>
+  <span>Add section</span>
+</button>

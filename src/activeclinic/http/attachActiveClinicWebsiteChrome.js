@@ -21,6 +21,8 @@ const {
   buildPublicWebsitePublishPath,
   buildPublicWebsiteDiscardPath,
   buildPublicWebsiteUnpublishPath,
+  buildPublicWebsiteStylesPath,
+  buildPublicWebsiteSeoPath,
   appendQuery,
 } = require("../../platform/website/publicWebsiteUrl");
 const {
@@ -107,6 +109,12 @@ function clinicWebsiteActionUrls(clinicKey, pageKey) {
       ...base,
       suffix: "website/section-actions",
     }),
+    websiteAddSectionUrl: buildPublicOrganizationWebsitePath({
+      ...base,
+      suffix: "website/add-section",
+    }),
+    websiteStylesUrl: buildPublicWebsiteStylesPath(base),
+    websiteSeoUrl: buildPublicWebsiteSeoPath(base),
     websiteSubmitUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/submit" }),
     websiteFinishEditUrl: buildPublicOrganizationWebsitePath({
       ...base,
@@ -267,7 +275,7 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
   const pageKey = websiteEditorPageKeyFromRequest(req, outClinic && outClinic.clinicKey);
   const editorPages = websiteEditorPagesForClinic(outClinic && outClinic.clinicKey, pageKey);
   const actionUrls = clinicWebsiteActionUrls(outClinic && outClinic.clinicKey, pageKey);
-  const brandingHref = "/app/settings/website/branding";
+  const brandingHref = actionUrls.websiteStylesUrl;
   const hubHref = "/app/settings/website";
   const canPublishNow = canPublish && !websitePublishLocked && websiteWorkflowStatus !== "submitted";
   const moreItems = [];
@@ -311,6 +319,13 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     label: "Assets",
     icon: "folder",
     href: "/app/settings/website/media",
+    group: "product",
+  });
+  moreItems.push({
+    id: "seo",
+    label: "SEO",
+    icon: "search",
+    href: actionUrls.websiteSeoUrl,
     group: "product",
   });
   if (canSubmit && !websitePublishLocked && websiteWorkflowStatus !== "submitted" && websitePublishPolicy !== "TENANT_PUBLISH") {
@@ -370,6 +385,7 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     mediaUrl: actionUrls.websiteMediaUrl,
     csrfField: CSRF_FIELD,
     sectionActionsUrl: actionUrls.websiteSectionActionsUrl,
+    addSectionUrl: actionUrls.websiteAddSectionUrl,
     sectionManifest: websiteEdit
       ? require("../website/activeClinicSectionActionService").buildManifest(
           pageKey,

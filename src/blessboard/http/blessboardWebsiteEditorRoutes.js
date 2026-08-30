@@ -22,6 +22,9 @@ const {
   buildPublicWebsitePreviewPath,
   buildPublicWebsiteEditPath,
   buildPublicWebsiteHistoryPath,
+  buildPublicWebsiteStylesPath,
+  buildPublicWebsiteSeoPath,
+  buildPublicWebsiteMediaLibraryPath,
   appendQuery,
 } = require("../../platform/website/publicWebsiteUrl");
 const { authorize, listEffectivePermissions } = require("../services/blessBoardRbacAuthorizationService");
@@ -39,6 +42,21 @@ const {
 const { renderWebsiteManagementPage } = require("../../platform/website/renderWebsiteManagementPage");
 const { HISTORY_STYLESHEET } = require("../../platform/website/renderWebsiteHistory");
 const { LIBRARY_STYLESHEET } = require("../../platform/website/renderWebsiteLibrary");
+const { renderTenantWebsiteVersionPreview } = require("../../platform/website/websiteVersionPreviewHttp");
+const {
+  loadStylesPresentation,
+  loadSeoPresentation,
+  renderStandaloneStylesPage,
+  renderStandaloneSeoPage,
+  saveStylesDraft,
+  saveSeoDraft,
+  noticeFromQuery,
+  errorFromQuery,
+} = require("../../platform/website/websiteSettingsHttp");
+const {
+  listAddableSections,
+  addWebsiteSection,
+} = require("../../platform/website/websiteAddSectionService");
 const { issueCsrfToken, setCsrfCookie } = require("../../platform/http/v5Csrf");
 const {
   locatorFromContentKey,
@@ -762,33 +780,41 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       if (!wantsHtml(req)) {
         return json(res, 200, { ok: true, version: loaded.version });
       }
-      const bodyHtml = [
-        '<section class="gp-we-history" data-gp-website-history="1">',
-        `<h1>Version v${Number(loaded.version.versionNumber) || "—"}</h1>`,
-        "<p>Restore this version as a draft to preview it in the editor. The live website stays unchanged until you publish.</p>",
-        `<p><a class="gp-we-history__back" href="${buildPublicWebsiteHistoryPath({
+      const env = getEnv();
+      const csrfToken = issueCsrfToken(env);
+      setCsrfCookie(res, csrfToken, {
+        secure: String(env.NODE_ENV || "") === "production",
+        env,
+        req,
+      });
+      const basePath = buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: resolved.organizationKey,
+      });
+      const preview = await renderTenantWebsiteVersionPreview(getPool(), {
+        instance: found.instance,
+        organizationKey: resolved.organizationKey,
+        productCode: PRODUCT_CODE.BLESSBOARD,
+        version: loaded.version,
+        siteLabel:
+          (resolved.tenant.church && resolved.tenant.church.displayName) ||
+          resolved.organizationKey,
+        historyHref: buildPublicWebsiteHistoryPath({
           product: PRODUCT_CODE.BLESSBOARD,
           organizationKey: resolved.organizationKey,
-        })}">Back to version history</a></p>`,
-        "</section>",
-      ].join("");
-      return res.status(200).type("html").send(
-        renderWebsiteManagementPage({
-          pageTitle: `Version v${Number(loaded.version.versionNumber) || ""}`,
-          productCode: PRODUCT_CODE.BLESSBOARD,
-          siteLabel:
-            (resolved.tenant.church && resolved.tenant.church.displayName) ||
-            resolved.organizationKey,
-          backHref: buildPublicWebsiteHistoryPath({
-            product: PRODUCT_CODE.BLESSBOARD,
-            organizationKey: resolved.organizationKey,
-          }),
-          bodyHtml,
-          stylesheets: [HISTORY_STYLESHEET],
-          scripts: [],
-          csrfToken: "",
-        })
-      );
+        }),
+        restoreHref: basePath
+          ? `${basePath}/website/versions/${encodeURIComponent(loaded.version.id)}/restore`
+          : null,
+        canRestore: true,
+        csrfField: CSRF_FIELD,
+        csrfToken,
+      });
+      if (!preview.ok) {
+        return json(res, 404, { ok: false, code: preview.code || "preview_failed" });
+      }
+      res.setHeader("X-Robots-Tag", "noindex, nofollow");
+      return res.status(200).type("html").send(preview.html);
     } catch (err) {
       return next(err);
     }
@@ -862,6 +888,233 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       return next(err);
     }
   });
+
+  function registerSettingsAndAddSectionRoutes() {
+    router.get(`${pathPrefix}/website/styles`, async (req, res, next) => {
+      try {
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const found = await resolveEngineInstanceForTenant(resolved);
+        if (!found.ok || !found.instance) {
+          return res.status(404).type("text").send("Website not found");
+        }
+        const env = getEnv();
+        const csrfToken = issueCsrfToken(env);
+        setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
+        const basePath = buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: resolved.organizationKey,
+        });
+        const presentation = await loadStylesPresentation(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          siteLabel:
+            (resolved.tenant.church && resolved.tenant.church.displayName) ||
+            resolved.organizationKey,
+          backHref: buildPublicWebsiteEditPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: resolved.organizationKey,
+          }),
+          saveAction: `${basePath}/website/styles`,
+          mediaLibraryHref: buildPublicWebsiteMediaLibraryPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: resolved.organizationKey,
+          }),
+          csrfField: CSRF_FIELD,
+          csrfToken,
+          notice: noticeFromQuery(req.query),
+          error: errorFromQuery(req.query),
+        });
+        return res.status(200).type("html").send(renderStandaloneStylesPage(presentation));
+      } catch (err) {
+        return next(err);
+      }
+    });
+
+    router.post(`${pathPrefix}/website/styles`, express.urlencoded({ extended: false }), async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+          return json(res, 403, { ok: false, code: "csrf" });
+        }
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const found = await resolveEngineInstanceForTenant(resolved);
+        if (!found.ok || !found.instance) {
+          return json(res, 404, { ok: false, code: "website_instance_not_found" });
+        }
+        const saved = await saveStylesDraft(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          instance: found.instance,
+          body: req.body,
+          actorIdentityId: actorUserId(req),
+          grantedPermissions: ["website.edit"],
+        });
+        if (!saved.ok) {
+          return res.redirect(
+            303,
+            appendQuery(
+              buildPublicWebsiteStylesPath({
+                product: PRODUCT_CODE.BLESSBOARD,
+                organizationKey: resolved.organizationKey,
+              }),
+              { error: saved.code || "save_failed" }
+            )
+          );
+        }
+        return res.redirect(
+          303,
+          appendQuery(
+            buildPublicWebsiteStylesPath({
+              product: PRODUCT_CODE.BLESSBOARD,
+              organizationKey: resolved.organizationKey,
+            }),
+            { saved: "1" }
+          )
+        );
+      } catch (err) {
+        return next(err);
+      }
+    });
+
+    router.get(`${pathPrefix}/website/seo`, async (req, res, next) => {
+      try {
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const found = await resolveEngineInstanceForTenant(resolved);
+        if (!found.ok || !found.instance) {
+          return res.status(404).type("text").send("Website not found");
+        }
+        const env = getEnv();
+        const csrfToken = issueCsrfToken(env);
+        setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
+        const basePath = buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: resolved.organizationKey,
+        });
+        const presentation = await loadSeoPresentation(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          instance: found.instance,
+          siteLabel:
+            (resolved.tenant.church && resolved.tenant.church.displayName) ||
+            resolved.organizationKey,
+          backHref: buildPublicWebsiteEditPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: resolved.organizationKey,
+          }),
+          saveAction: `${basePath}/website/seo`,
+          csrfField: CSRF_FIELD,
+          csrfToken,
+          notice: noticeFromQuery(req.query),
+          error: errorFromQuery(req.query),
+        });
+        return res.status(200).type("html").send(renderStandaloneSeoPage(presentation));
+      } catch (err) {
+        return next(err);
+      }
+    });
+
+    router.post(`${pathPrefix}/website/seo`, express.urlencoded({ extended: false }), async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+          return json(res, 403, { ok: false, code: "csrf" });
+        }
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const found = await resolveEngineInstanceForTenant(resolved);
+        if (!found.ok || !found.instance) {
+          return json(res, 404, { ok: false, code: "website_instance_not_found" });
+        }
+        const saved = await saveSeoDraft(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          instance: found.instance,
+          body: req.body,
+          actorIdentityId: actorUserId(req),
+          grantedPermissions: ["website.edit"],
+        });
+        if (!saved.ok) {
+          return res.redirect(
+            303,
+            appendQuery(
+              buildPublicWebsiteSeoPath({
+                product: PRODUCT_CODE.BLESSBOARD,
+                organizationKey: resolved.organizationKey,
+              }),
+              { error: saved.code || "save_failed" }
+            )
+          );
+        }
+        return res.redirect(
+          303,
+          appendQuery(
+            buildPublicWebsiteSeoPath({
+              product: PRODUCT_CODE.BLESSBOARD,
+              organizationKey: resolved.organizationKey,
+            }),
+            { saved: "1" }
+          )
+        );
+      } catch (err) {
+        return next(err);
+      }
+    });
+
+    router.get(`${pathPrefix}/website/add-section/types`, async (req, res, next) => {
+      try {
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const listed = await listAddableSections(getPool(), {
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          organizationId: resolved.tenant.organization.id,
+          churchId: resolved.tenant.church.id,
+          branchId: null,
+          pageKey: req.query.pageKey,
+          grantedPermissions: ["website.edit"],
+        });
+        return json(res, 200, listed);
+      } catch (err) {
+        return next(err);
+      }
+    });
+
+    router.post(`${pathPrefix}/website/add-section`, express.json({ limit: "16kb" }), async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+          return json(res, 403, { ok: false, code: "csrf" });
+        }
+        if (clientTenantOverride(req.body)) {
+          return json(res, 403, { ok: false, code: "forbidden" });
+        }
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const body = req.body && typeof req.body === "object" ? req.body : {};
+        const added = await addWebsiteSection(getPool(), {
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          organizationId: resolved.tenant.organization.id,
+          churchId: resolved.tenant.church.id,
+          branchId: null,
+          editorUserId: actorUserId(req),
+          pageKey: body.pageKey,
+          type: body.type,
+          heading: body.heading,
+          bodyText: body.bodyText,
+          grantedPermissions: ["website.edit"],
+        });
+        if (!added.ok) {
+          const status =
+            added.code === "singleton_exists" || added.code === "invalid_section_type" ? 400 : 404;
+          return json(res, status, { ok: false, code: added.code || "add_failed" });
+        }
+        return json(res, 200, { ok: true, published: false, ...added });
+      } catch (err) {
+        return next(err);
+      }
+    });
+  }
+
+  registerSettingsAndAddSectionRoutes();
 }
 
 async function resolvePathEditorTenant(getPool, req, organizationKeyRaw) {

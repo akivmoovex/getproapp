@@ -45,6 +45,7 @@
   data-website-discard-url="<%= shell.discardPath || '' %>"
   data-website-unpublish-url="<%= shell.unpublishPath || '' %>"
   data-website-section-actions-url="<%= shell.sectionActionsUrl || '' %>"
+  data-website-add-section-url="<%= shell.addSectionUrl || '' %>"
   data-website-section-manifest="<%= shell.sectionManifestJson || '' %>"
   data-website-max-bytes="5242880"
   data-stitch-project="9585058196210789597"
@@ -323,6 +324,7 @@
   </div>
 </div>
 <%- include('./field-editor-host') %>
+<%- include('./add-section-picker', { editorShell: shell }) %>
 <%- include('./section-action-menu', { editorShell: shell }) %>
 <%- include('./lifecycle-dialog-host', { editorShell: shell }) %>
 <% } %>

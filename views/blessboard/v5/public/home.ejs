@@ -114,6 +114,25 @@
   function showSectionInPreview(section) {
     return !previewDraftMode || !sectionDraftHidden(section);
   }
+
+  var LOCKED_HOME_SECTION_KEYS = { hero: 1, service_times: 1, services: 1, worship_times: 1 };
+  var sortedHomeSections = (sections || [])
+    .slice()
+    .sort(function (a, b) {
+      return Number(a.sortOrder || 0) - Number(b.sortOrder || 0);
+    });
+  var homeMiddleOrder = sortedHomeSections
+    .map(function (s) { return String(s.sectionKey || ''); })
+    .filter(function (key) {
+      return key && !LOCKED_HOME_SECTION_KEYS[key] && key !== 'footer';
+    });
+  var teaserSectionKeys = ['ministries_intro', 'events_intro', 'sermons_intro', 'leadership_intro', 'giving_cta', 'contact_intro'];
+  var orderedTeaserKeys = homeMiddleOrder.filter(function (key) {
+    return teaserSectionKeys.indexOf(key) >= 0;
+  });
+  teaserSectionKeys.forEach(function (key) {
+    if (orderedTeaserKeys.indexOf(key) < 0) orderedTeaserKeys.push(key);
+  });
 %>
 
 <div class="bb-tp-home" data-bb-home="1" data-bb-stitch-home="phase7-v1">
@@ -340,7 +359,8 @@
   </section>
   <% } %>
 
-  <% if (teasers.ministries && teasers.ministries.length) { %>
+  <% orderedTeaserKeys.forEach(function (sectionKey) { %>
+  <% if (sectionKey === 'ministries_intro' && teasers.ministries && teasers.ministries.length) { %>
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-ministries="1" data-section="ministries_intro" aria-labelledby="bb-tp-home-ministries-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-ministries-heading',
@@ -366,9 +386,7 @@
       <% }) %>
     </div>
   </section>
-  <% } %>
-
-  <% if (teasers.events && teasers.events.length) { %>
+  <% } else if (sectionKey === 'events_intro' && teasers.events && teasers.events.length) { %>
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-events="1" data-section="events_intro" aria-labelledby="bb-tp-home-events-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-events-heading',
@@ -404,9 +422,7 @@
       <% }) %>
     </div>
   </section>
-  <% } %>
-
-  <% if (teasers.sermons && teasers.sermons.length) { %>
+  <% } else if (sectionKey === 'sermons_intro' && teasers.sermons && teasers.sermons.length) { %>
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-sermons="1" data-section="sermons_intro" aria-labelledby="bb-tp-home-sermons-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-sermons-heading',
@@ -437,9 +453,7 @@
       </div>
     </article>
   </section>
-  <% } %>
-
-  <% if (teasers.leaders && teasers.leaders.length) { %>
+  <% } else if (sectionKey === 'leadership_intro' && teasers.leaders && teasers.leaders.length) { %>
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-leadership="1" data-section="leadership_intro" aria-labelledby="bb-tp-home-leadership-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-leadership-heading',
@@ -457,24 +471,7 @@
       <% }) %>
     </div>
   </section>
-  <% } %>
-
-  <% if (typeof branchLocations !== 'undefined' && branchLocations && branchLocations.length > 1) { %>
-  <section class="bb-tp-container bb-tp-home-teaser" id="bb-tp-locations" data-bb-home-locations="1" data-section="locations" aria-labelledby="bb-tp-home-locations-heading">
-    <h2 id="bb-tp-home-locations-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Our locations</h2>
-    <ul class="bb-tp-card-grid bb-tp-card-grid--3" data-bb-locations-list="1">
-      <% branchLocations.forEach(function (loc) { %>
-      <li class="bb-tp-simple-card">
-        <h3 class="bb-tp-simple-card__title"><%= loc.displayName %></h3>
-        <% if (loc.websiteHref) { %>
-        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= loc.websiteHref %>">Visit website</a>
-        <% } %>
-      </li>
-      <% }) %>
-    </ul>
-  </section>
-  <% } %>
-
+  <% } else if (sectionKey === 'giving_cta' && (showSectionInPreview(givingCtaSec) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode))) { %>
   <%- include('./partials/cta-band', {
     ctaClass: 'bb-tp-cta-band--giving',
     ctaTitle: (givingCtaSec && givingCtaSec.heading) || (demoFb && demoFb.givingHeading) || 'Stewardship with Purpose',
@@ -487,7 +484,7 @@
     editPageKey: 'home',
     editSectionKey: 'giving_cta'
   }) %>
-
+  <% } else if (sectionKey === 'contact_intro') { %>
   <section class="bb-tp-container bb-tp-home-contact" data-bb-home-contact="1" data-section="contact_intro" aria-labelledby="bb-tp-home-contact-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-contact-heading',
@@ -528,4 +525,22 @@
       <% } %>
     </div>
   </section>
+  <% } %>
+  <% }); %>
+
+  <% if (typeof branchLocations !== 'undefined' && branchLocations && branchLocations.length > 1) { %>
+  <section class="bb-tp-container bb-tp-home-teaser" id="bb-tp-locations" data-bb-home-locations="1" data-section="locations" aria-labelledby="bb-tp-home-locations-heading">
+    <h2 id="bb-tp-home-locations-heading" class="bb-tp-section-title bb-tp-section-title--ruled">Our locations</h2>
+    <ul class="bb-tp-card-grid bb-tp-card-grid--3" data-bb-locations-list="1">
+      <% branchLocations.forEach(function (loc) { %>
+      <li class="bb-tp-simple-card">
+        <h3 class="bb-tp-simple-card__title"><%= loc.displayName %></h3>
+        <% if (loc.websiteHref) { %>
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" href="<%= loc.websiteHref %>">Visit website</a>
+        <% } %>
+      </li>
+      <% }) %>
+    </ul>
+  </section>
+  <% } %>
 </div>

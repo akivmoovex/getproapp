@@ -95,7 +95,7 @@ async function saveStructuredDraft(db, input) {
   }
   // Never accept client church/org overrides (caller must set from session).
   const op = String(input.op || "upsert").trim();
-  if (!["upsert", "remove", "reorder", "visibility", "restore_default"].includes(op)) {
+  if (!["upsert", "remove", "reorder", "visibility", "restore_default", "add_section"].includes(op)) {
     throw mapError("INVALID_OP", "Unsupported edit action.", 400);
   }
 
@@ -249,6 +249,26 @@ function applyStructuredDraftsToModel(model, drafts) {
           status: hidden ? "archived" : s.status === "archived" ? "published" : s.status,
         };
       });
+      continue;
+    }
+    if (d.op === "add_section" && d.payload) {
+      const sk = String(d.payload.sectionKey || d.sectionKey || "");
+      if (!sk) continue;
+      const exists = (model.sections || []).some((s) => String(s.sectionKey) === sk);
+      if (exists) continue;
+      model.sections = [
+        ...(model.sections || []),
+        {
+          sectionKey: sk,
+          sectionType: String(d.payload.sectionType || "plain_text"),
+          heading: d.payload.heading || "",
+          bodyText: d.payload.bodyText || "",
+          sortOrder: Number(d.payload.sortOrder) || (model.sections || []).length * 10 + 10,
+          status: "draft",
+          _isDraftNew: true,
+          layoutMetadata: d.payload.layout ? { layout: d.payload.layout } : {},
+        },
+      ];
     }
   }
 

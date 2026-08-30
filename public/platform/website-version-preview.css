@@ -1,0 +1,43 @@
+.gp-we-version-preview {
+  background: #1e1b4b;
+  color: #f8fafc;
+  padding: 0.75rem 1rem;
+  font-size: 0.9rem;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+.gp-we-version-preview__inner {
+  max-width: 72rem;
+  margin: 0 auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.gp-we-version-preview__title {
+  margin: 0 0 0.25rem;
+}
+
+.gp-we-version-preview__meta,
+.gp-we-version-preview__intro {
+  margin: 0.15rem 0 0;
+  opacity: 0.92;
+}
+
+.gp-we-version-preview__live {
+  color: #86efac;
+  font-weight: 600;
+}
+
+.gp-we-version-preview__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.gp-we-version-preview__restore {
+  margin: 0;
+}

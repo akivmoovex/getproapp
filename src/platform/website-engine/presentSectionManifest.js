@@ -35,6 +35,7 @@ function presentSectionCapability(input) {
     isDefault: input && input.isDefault === true,
     sortIndex: Number(input && input.sortIndex) || 0,
     selector: input && input.selector ? String(input.selector) : "",
+    domainBacked: input && input.domainBacked === true,
   };
 }
 

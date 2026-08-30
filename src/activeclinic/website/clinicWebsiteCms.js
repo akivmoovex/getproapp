@@ -165,6 +165,37 @@ const DEFAULT_HOME_SECTIONS = Object.freeze([
   { key: "faq", type: "faq", title: "FAQ", locked: false, visible: true, sortOrder: 7 },
 ]);
 
+const DEFAULT_PAGE_SECTIONS = Object.freeze({
+  about: Object.freeze([
+    { key: "hero", type: "hero", title: "Hero", locked: true, visible: true, sortOrder: 0 },
+    { key: "story", type: "text", title: "Our story", locked: false, visible: true, sortOrder: 1 },
+    { key: "mission", type: "text", title: "Mission", locked: false, visible: true, sortOrder: 2 },
+    { key: "values", type: "text", title: "Values", locked: false, visible: true, sortOrder: 3 },
+  ]),
+  services: Object.freeze([
+    { key: "hero", type: "hero", title: "Hero", locked: true, visible: true, sortOrder: 0 },
+    { key: "services", type: "services", title: "Services", locked: false, visible: true, sortOrder: 1, domainBacked: true },
+  ]),
+  doctors: Object.freeze([
+    { key: "hero", type: "hero", title: "Hero", locked: true, visible: true, sortOrder: 0 },
+    { key: "doctors", type: "doctors", title: "Doctors", locked: false, visible: true, sortOrder: 1, domainBacked: true },
+  ]),
+  contact: Object.freeze([
+    { key: "hero", type: "hero", title: "Hero", locked: true, visible: true, sortOrder: 0 },
+    { key: "contact", type: "contact", title: "Contact", locked: false, visible: true, sortOrder: 1 },
+    { key: "hours", type: "hours", title: "Opening Hours", locked: false, visible: true, sortOrder: 2 },
+  ]),
+  location: Object.freeze([
+    { key: "hero", type: "hero", title: "Hero", locked: true, visible: true, sortOrder: 0 },
+    { key: "hours", type: "hours", title: "Opening Hours", locked: false, visible: true, sortOrder: 1 },
+    { key: "contact", type: "contact", title: "Contact", locked: false, visible: true, sortOrder: 2 },
+  ]),
+  pricing: Object.freeze([
+    { key: "hero", type: "hero", title: "Hero", locked: true, visible: true, sortOrder: 0 },
+    { key: "services", type: "services", title: "Services", locked: false, visible: true, sortOrder: 1, domainBacked: true },
+  ]),
+});
+
 const RESERVED_SLUGS = Object.freeze(
   new Set([
     "home",
@@ -619,6 +650,7 @@ module.exports = {
   LIBRARY_SOURCES,
   TEMPLATE_PAGES,
   DEFAULT_HOME_SECTIONS,
+  DEFAULT_PAGE_SECTIONS,
   RESERVED_SLUGS,
   PAGE_ITEM_SCHEMA,
   SECTION_ITEM_SCHEMA,

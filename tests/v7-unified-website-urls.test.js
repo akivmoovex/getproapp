@@ -114,7 +114,7 @@ describe("v7 unified website URLs", () => {
         product: PRODUCT_CODE.ACTIVECLINIC,
         organizationKey: "demo",
       }),
-      "/clinics/demo/website/preview"
+      "/clinics/demo?website_mode=draft"
     );
     assert.equal(
       buildPublicWebsitePreviewPath({

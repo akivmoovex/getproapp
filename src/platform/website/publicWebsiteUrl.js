@@ -284,6 +284,54 @@ function buildPublicWebsiteMediaLibraryPath(input) {
   return appendQuery(`${path}/website/media-library`, input && input.query);
 }
 
+function buildPublicWebsiteStylesPath(input) {
+  const product = normalizeProduct((input && (input.product || input.productCode)) || "");
+  if (product === PRODUCT_CODE.ACTIVECLINIC) {
+    const path = buildPublicOrganizationWebsitePath({
+      ...(input || {}),
+      query: undefined,
+      suffix: undefined,
+    });
+    return path ? appendQuery(`${path}/website/styles`, input && input.query) : null;
+  }
+  const path = buildPublicOrganizationWebsitePath({
+    ...(input || {}),
+    query: undefined,
+    suffix: undefined,
+  });
+  if (!path) return null;
+  return appendQuery(`${path}/website/styles`, input && input.query);
+}
+
+function buildPublicWebsiteSeoPath(input) {
+  const product = normalizeProduct((input && (input.product || input.productCode)) || "");
+  if (product === PRODUCT_CODE.ACTIVECLINIC) {
+    const path = buildPublicOrganizationWebsitePath({
+      ...(input || {}),
+      query: undefined,
+      suffix: undefined,
+    });
+    return path ? appendQuery(`${path}/website/seo`, input && input.query) : null;
+  }
+  const path = buildPublicOrganizationWebsitePath({
+    ...(input || {}),
+    query: undefined,
+    suffix: undefined,
+  });
+  if (!path) return null;
+  return appendQuery(`${path}/website/seo`, input && input.query);
+}
+
+function buildPublicWebsiteAddSectionPath(input) {
+  const path = buildPublicOrganizationWebsitePath({
+    ...(input || {}),
+    query: undefined,
+    suffix: undefined,
+  });
+  if (!path) return null;
+  return appendQuery(`${path}/website/add-section`, input && input.query);
+}
+
 function buildPublicWebsiteSettingsPath(input) {
   const product = normalizeProduct((input && (input.product || input.productCode)) || "");
   const actor = String((input && input.actor) || "").trim();
@@ -568,6 +616,9 @@ module.exports = {
   buildPublicWebsiteDiscardPath,
   buildPublicWebsiteHistoryPath,
   buildPublicWebsiteMediaLibraryPath,
+  buildPublicWebsiteStylesPath,
+  buildPublicWebsiteSeoPath,
+  buildPublicWebsiteAddSectionPath,
   buildPublicWebsiteSettingsPath,
   buildPublicWebsitePublishPath,
   buildPublicWebsiteUnpublishPath,
