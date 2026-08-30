@@ -1,16 +1,5 @@
 <%#
-  Shared inline editable text field — Phase 7 Stage 4.
-  Locals:
-    editPageKey, editSectionKey, editFieldKey
-    editValue (display / current)
-    editTag (h1|h2|h3|p|span|a) default p
-    editClass (optional CSS class for display element)
-    editHref (optional — when tag is a)
-    editType (heading|paragraph|label|buttonText|buttonUrl|contactText)
-    editMaxLength (optional)
-    editGuidance (optional)
-    editId (optional id on display element)
-    editMultiline (optional boolean)
+  Shared inline editable text field — Wave 2 dialog trigger only.
 %>
 <%
   var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
@@ -35,31 +24,16 @@
   var _class = typeof editClass !== 'undefined' && editClass ? String(editClass) : '';
   var _type = typeof editType !== 'undefined' && editType ? String(editType) : 'paragraph';
   var _max = typeof editMaxLength !== 'undefined' && editMaxLength ? Number(editMaxLength) : (_type === 'heading' ? 120 : (_type === 'buttonText' ? 48 : 500));
-  var _guidance = typeof editGuidance !== 'undefined' && editGuidance ? String(editGuidance) : '';
-  var _id = typeof editId !== 'undefined' && editId ? String(editId) : '';
   var _multiline = typeof editMultiline !== 'undefined' ? Boolean(editMultiline) : (_type === 'paragraph');
   var _href = typeof editHref !== 'undefined' && editHref ? String(editHref) : '';
+  var _id = typeof editId !== 'undefined' && editId ? String(editId) : '';
   var _label = 'Edit text';
-  if (_fieldKey === 'heading' && _sectionKey === 'hero') _label = 'Edit hero heading';
+  if (_fieldKey === 'heading' && _sectionKey === 'hero') _label = 'Edit heading';
   else if (_fieldKey === 'bodyText' && _sectionKey === 'hero') _label = 'Edit hero supporting text';
   else if (_fieldKey === 'buttonText') _label = 'Edit button label';
   else if (_fieldKey === 'buttonUrl') _label = 'Edit button link';
-  else if (_fieldKey === 'phone') _label = 'Edit church phone number';
-  else if (_fieldKey === 'email') _label = 'Edit church email';
-  else if (_fieldKey === 'address') _label = 'Edit church address';
-  else if (_fieldKey === 'heading' && _sectionKey === 'welcome') _label = 'Edit welcome heading';
-  else if (_fieldKey === 'bodyText' && _sectionKey === 'welcome') _label = 'Edit welcome body';
-  else if (_fieldKey === 'heading' && _sectionKey === 'story') _label = 'Edit story heading';
-  else if (_fieldKey === 'bodyText' && _sectionKey === 'story') _label = 'Edit story body';
-  else if (_fieldKey === 'heading' && _sectionKey === 'mission') _label = 'Edit mission heading';
-  else if (_fieldKey === 'bodyText' && _sectionKey === 'mission') _label = 'Edit mission text';
-  else if (_fieldKey === 'heading' && _sectionKey === 'vision') _label = 'Edit vision heading';
-  else if (_fieldKey === 'bodyText' && _sectionKey === 'vision') _label = 'Edit vision text';
   else if (_type === 'heading') _label = 'Edit heading';
-  else if (_type === 'buttonText') _label = 'Edit button text';
-  else if (_type === 'buttonUrl') _label = 'Edit button link';
   else if (_type === 'contactText') _label = 'Edit contact text';
-  else _label = 'Edit text';
   function _escAttr(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
@@ -67,38 +41,23 @@
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
   }
-  function _escHtml(s) {
-    return String(s == null ? '' : s)
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;');
-  }
-  function _nl2brEscaped(s) {
-    return _escHtml(s).replace(/\r\n|\r|\n/g, '<br />');
-  }
-  var _publishedTrim = String(_published || '').trim();
-  var _unchanged = String(_value || '') === String(_published || '');
 %>
 <% if (_editing) { %>
 <span
-  class="bb-tp-inline-edit ac-website-editable"
-  data-bb-inline-edit="1"
+  class="gp-website-editable ac-website-editable"
   data-website-inline="1"
   data-website-key="<%= _escAttr(_pageKey) %>.<%= _escAttr(_sectionKey) %>.<%= _escAttr(_fieldKey) %>"
   data-website-type="<%= _multiline ? 'textarea' : 'text' %>"
   data-website-value="<%= _escAttr(_value) %>"
+  data-website-published-value="<%= _escAttr(_published) %>"
+  data-website-label="<%= _escAttr(_label) %>"
+  data-website-max="<%= _max %>"
+  data-website-input-type="<%= _type === 'buttonUrl' ? 'url' : 'text' %>"
   data-bb-page="<%= _escAttr(_pageKey) %>"
   data-bb-section="<%= _escAttr(_sectionKey) %>"
   data-bb-field="<%= _escAttr(_fieldKey) %>"
-  data-bb-type="<%= _escAttr(_type) %>"
-  data-bb-max="<%= _max %>"
-  data-bb-multiline="<%= _multiline ? '1' : '0' %>"
-  data-bb-value="<%= _escAttr(_value) %>"
-  data-bb-published-value="<%= _escAttr(_published) %>"
-  data-bb-stitch-screen-mobile="Phase 7 - Inline Text Editing - Mobile"
 >
-  <span class="bb-tp-inline-edit__display ac-website-editable__display" data-bb-inline-display="1" data-website-display="1">
+  <span class="gp-website-editable__display ac-website-editable__display" data-website-display="1">
     <% if (_tag === 'a') { %>
     <a class="<%= _class %>" href="<%= _href || '#' %>" data-website-value-text="1" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></a>
     <% } else if (_tag === 'h1') { %>
@@ -114,70 +73,12 @@
     <% } %>
     <button
       type="button"
-      class="bb-tp-inline-edit__pencil ac-website-editable__pencil"
-      data-bb-inline-start="1"
+      class="gp-website-editable__pencil ac-website-editable__pencil"
       data-website-start="1"
       aria-label="<%= _label %>"
     >
       <span class="material-symbols-outlined" aria-hidden="true">edit</span>
     </button>
-  </span>
-  <span class="bb-tp-inline-edit__editor ac-website-editable__editor" data-bb-inline-editor="1" data-website-editor="1" hidden>
-    <span class="bb-tp-inline-edit__field-label"><%= _label %></span>
-    <div class="bb-tp-inline-edit__compare" data-bb-inline-compare="1">
-      <div class="bb-tp-inline-edit__compare-col" data-bb-inline-current="1">
-        <span class="bb-tp-inline-edit__compare-label">Current website text</span>
-        <% if (_publishedTrim) { %>
-        <span class="bb-tp-inline-edit__compare-body" data-bb-inline-published-text="1"><%- _nl2brEscaped(_published) %></span>
-        <% } else { %>
-        <span class="bb-tp-inline-edit__compare-body bb-tp-inline-edit__compare-body--empty" data-bb-inline-published-text="1">No published text</span>
-        <% } %>
-      </div>
-      <div class="bb-tp-inline-edit__compare-col" data-bb-inline-proposed="1">
-        <span class="bb-tp-inline-edit__compare-label">Proposed new text</span>
-        <span
-          class="bb-tp-inline-edit__compare-body<%= _unchanged ? ' bb-tp-inline-edit__compare-body--unchanged' : '' %>"
-          data-bb-inline-proposed-text="1"
-        ><% if (_unchanged) { %>No change<% } else { %><%- _nl2brEscaped(_value) %><% } %></span>
-      </div>
-    </div>
-    <% if (_multiline) { %>
-    <textarea
-      class="bb-tp-inline-edit__input"
-      data-bb-inline-input="1"
-      data-website-input="1"
-      maxlength="<%= _max %>"
-      rows="4"
-      enterkeyhint="enter"
-      aria-label="<%= _label %>"
-    ><%= _value %></textarea>
-    <% } else { %>
-    <input
-      type="<%= _type === 'buttonUrl' ? 'url' : 'text' %>"
-      class="bb-tp-inline-edit__input"
-      data-bb-inline-input="1"
-      data-website-input="1"
-      maxlength="<%= _max %>"
-      value="<%= _escAttr(_value) %>"
-      enterkeyhint="done"
-      autocomplete="off"
-      aria-label="<%= _label %>"
-    />
-    <% } %>
-    <% if (_guidance) { %>
-    <span class="bb-tp-inline-edit__guidance" data-bb-inline-guidance="1"><%= _guidance %></span>
-    <% } else { %>
-    <span class="bb-tp-inline-edit__guidance" data-bb-inline-guidance="1">Up to <%= _max %> characters</span>
-    <% } %>
-    <span class="bb-tp-inline-edit__actions">
-      <button type="button" class="bb-tp-inline-edit__check" data-bb-inline-save="1" data-website-save="1" aria-label="Save draft">
-        <span class="material-symbols-outlined" aria-hidden="true">check</span>
-      </button>
-      <button type="button" class="bb-tp-inline-edit__cancel" data-bb-inline-cancel="1" data-website-cancel="1" aria-label="Discard changes">
-        <span class="material-symbols-outlined" aria-hidden="true">close</span>
-      </button>
-    </span>
-    <span class="bb-tp-inline-edit__status" data-bb-inline-status="1" data-website-status-msg="1" role="status" aria-live="polite"></span>
   </span>
 </span>
 <% } else { %>

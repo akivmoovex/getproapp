@@ -463,13 +463,11 @@ describe("V7 unified website management", () => {
     assert.match(edit.text, /Edit website|Editing website|Exit editing/);
     assert.match(edit.text, /data-website-preview="1"/);
     assert.match(edit.text, /data-website-start="1"/);
+    assert.match(edit.text, /data-website-field-editor="1"/);
     assert.match(edit.text, /data-website-save="1"/);
     assert.match(edit.text, /data-website-cancel="1"/);
     assert.match(edit.text, /data-website-type="image"/);
-    assert.match(edit.text, /data-website-input="1"/);
-    assert.match(edit.text, /<textarea[\s\S]*data-website-input="1"/);
-    assert.match(edit.text, /data-website-current/);
-    assert.match(edit.text, /Choose or replace image/);
+    assert.match(edit.text, /Save draft/);
     assert.doesNotMatch(edit.text, /contenteditable/);
     assert.match(edit.text, /data-website-key="home.hero.title"/);
     assert.match(edit.text, /data-website-key="home.hero.subtitle"/);
@@ -655,15 +653,18 @@ describe("V7 unified website management", () => {
       path.join(__dirname, "../views/blessboard/v5/partials/editable-text.ejs"),
       "utf8"
     );
+    const host = fs.readFileSync(
+      path.join(__dirname, "../views/platform/website-engine/field-editor-host.ejs"),
+      "utf8"
+    );
     assert.match(acField, /data-website-start/);
-    assert.match(acField, /data-website-save/);
-    assert.match(acField, /data-website-cancel/);
-    assert.match(acField, /data-website-input="1"/);
-    assert.match(acField, /<textarea/);
+    assert.match(host, /data-website-save/);
+    assert.match(host, /data-website-cancel/);
+    assert.doesNotMatch(acField, /data-website-input="1"/);
     assert.doesNotMatch(acField, /contenteditable/);
-    assert.match(bbField, /data-bb-inline-start|data-bb-inline-save/);
-    assert.match(bbField, /data-bb-inline-cancel/);
-    assert.match(bbField, /data-bb-inline-input="1"/);
+    assert.match(bbField, /data-website-start/);
+    assert.match(bbField, /gp-website-editable__pencil/);
+    assert.doesNotMatch(bbField, /data-bb-inline-input="1"/);
     assert.doesNotMatch(bbField, /data-bb-inline-save-publish/);
     assert.doesNotMatch(bbField, /contenteditable/);
     assert.match(acJs, /Saved to draft/);

@@ -150,34 +150,33 @@ describe("website UI completion", () => {
     assert.match(shell, /platform-admin.css\?v=63/);
   });
 
-  it("inline editor uses accessible check/cross controls and wires image upload", () => {
+  it("field editor uses shared dialog controls and wires image upload", () => {
     const field = read("views/activeclinic/partials/website-editable-field.ejs");
     const image = read("views/activeclinic/partials/website-editable-image.ejs");
+    const host = read("views/platform/website-engine/field-editor-host.ejs");
     const js = read("public/platform/website-inline-edit.js");
     const css = read("public/platform/website-inline-edit.css");
     const chrome = read("views/activeclinic/partials/website-editor-chrome.ejs");
     const shared = read("views/platform/website-engine/editor-chrome.ejs");
     const attach = read("src/activeclinic/http/attachActiveClinicWebsiteChrome.js");
-    assert.match(field, /aria-label="Save field to draft"/);
-    assert.match(field, /aria-label="Cancel unsaved edit"/);
-    assert.match(field, /Save to draft/);
-    assert.match(field, /data-website-input="1"/);
-    assert.match(field, /<textarea/);
-    assert.match(field, /enterkeyhint="done"/);
-    assert.match(field, /enterkeyhint="enter"/);
+    assert.match(field, /data-website-start="1"/);
+    assert.match(field, /gp-website-editable__pencil/);
+    assert.doesNotMatch(field, /data-website-input="1"/);
     assert.doesNotMatch(field, /contenteditable/);
+    assert.match(host, /Save draft/);
+    assert.match(host, /data-website-save="1"/);
+    assert.match(host, /data-website-cancel="1"/);
     assert.match(image, /data-website-type="image"/);
-    assert.match(image, /data-website-file="1"/);
-    assert.match(image, /data-website-alt="1"/);
+    assert.match(image, /data-website-start="1"/);
+    assert.doesNotMatch(image, /data-website-file="1"/);
     assert.match(js, /FormData/);
     assert.match(js, /mediaItemUrl/);
-    assert.match(js, /data-website-save-url/);
+    assert.match(js, /data-website-field-editor/);
     assert.match(js, /upload\.onprogress/);
     assert.match(js, /Saved to draft/);
     assert.match(js, /Escape/);
     assert.match(js, /published === true/);
     assert.match(js, /data-website-input/);
-    assert.match(js, /scrollIntoView/);
     assert.match(css, /--gp-website-touch:\s*2\.75rem/);
     assert.match(css, /min-width:\s*var\(--gp-website-touch/);
     assert.match(css, /min-height:\s*var\(--gp-website-touch/);

@@ -206,10 +206,8 @@ describe("blessboard website mobile editing stage 7", () => {
     assert.match(res.text, /gp-website-editor__preview-icon/);
     assert.match(res.text, /data-bb-exit-editing="1"/);
     assert.match(res.text, /Exit editing/);
-    assert.match(res.text, /data-bb-inline-edit="1"/);
-    assert.match(res.text, /data-bb-stitch-screen-mobile="Phase 7 - Inline Text Editing - Mobile"/);
-    assert.match(res.text, /bb-tp-inline-edit__field-label/);
-    assert.match(res.text, /enterkeyhint="done"/);
+    assert.match(res.text, /data-website-inline/);
+    assert.match(res.text, /data-website-field-editor="1"/);
     assert.match(res.text, /data-bb-structured-editor="1"/);
     assert.match(res.text, /data-bb-media-list="/);
     assert.match(res.text, /data-bb-stitch-screen-mobile-media="Phase 7 - Media Editing - Mobile"/);

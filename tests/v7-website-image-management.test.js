@@ -115,26 +115,25 @@ function extractCsrf(res, env) {
 }
 
 describe("v7 website image management — source contract", () => {
-  it("pencils and file inputs exist only in edit-mode branches", () => {
+  it("pencils exist only in edit-mode branches; file inputs live in shared field editor", () => {
     const acImage = read("views/activeclinic/partials/website-editable-image.ejs");
+    const host = read("views/platform/website-engine/field-editor-host.ejs");
+    const js = read("public/platform/website-inline-edit.js");
     assert.match(acImage, /var canEdit = typeof websiteEdit !== 'undefined' && websiteEdit/);
-    assert.match(acImage, /data-website-file="1"/);
-    assert.match(acImage, /data-website-alt="1"/);
-    assert.match(acImage, /data-website-save="1"/);
-    assert.match(acImage, /data-website-cancel="1"/);
-    assert.match(acImage, /capture="environment"/);
+    assert.match(acImage, /data-website-start="1"/);
+    assert.match(host, /data-website-field-editor="1"/);
+    assert.match(js, /data-website-file="1"/);
+    assert.match(js, /data-website-alt="1"/);
     const afterElse = acImage.slice(acImage.indexOf("<% } else { %>"));
-    assert.doesNotMatch(afterElse, /data-website-file/);
     assert.doesNotMatch(afterElse, /data-website-start/);
 
     const bbBrand = read("views/blessboard/v5/public/partials/shell-brand.ejs");
     assert.match(bbBrand, /contentKey:\s*'home\.logo'/);
     assert.match(bbBrand, /_editing/);
     const bbImage = read("views/blessboard/v5/partials/editable-image.ejs");
-    assert.match(bbImage, /data-website-file="1"/);
-    assert.match(bbImage, /data-website-alt="1"/);
+    assert.match(bbImage, /data-website-start="1"/);
     const bbAfterElse = bbImage.slice(bbImage.indexOf("<% } else if (_src) { %>"));
-    assert.doesNotMatch(bbAfterElse, /data-website-file/);
+    assert.doesNotMatch(bbAfterElse, /data-website-start/);
 
     const trigger = read("views/blessboard/v5/partials/structured-edit-trigger.ejs");
     assert.match(trigger, /_wa && _wa\.editingMode/);
@@ -149,7 +148,7 @@ describe("v7 website image management — source contract", () => {
     assert.match(js, /5 \* 1024 \* 1024|data-website-max-bytes/);
     assert.match(js, /createObjectURL/);
     assert.match(js, /Preview only/);
-    assert.match(js, /restore\(\)/);
+    assert.match(js, /closeDialog/);
     assert.match(js, /published === true/);
     assert.doesNotMatch(js, /website_mode=live.*POST|published:\s*true/);
     const chrome = read("views/platform/website-engine/editor-chrome.ejs");
@@ -283,10 +282,10 @@ describe("v7 website image management — ActiveClinic", () => {
       .set("Cookie", adminCookie);
     assert.equal(edit.status, 200);
     assert.match(edit.text, /data-website-key="home.hero.image"/);
-    assert.match(edit.text, /data-website-file="1"/);
-    assert.match(edit.text, /data-website-alt="1"/);
-    assert.match(edit.text, /capture="environment"/);
+    assert.match(edit.text, /data-website-start="1"/);
+    assert.match(edit.text, /gp-website-editable__pencil/);
     assert.match(edit.text, /data-website-key="home.logo"/);
+    assert.match(edit.text, /data-website-field-editor="1"/);
   });
 
   it("upload + draft save is unpublished; live keeps the previous image", async () => {

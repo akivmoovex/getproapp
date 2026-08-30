@@ -1,7 +1,6 @@
 /**
- * Shared inline website editor (ActiveClinic + BlessBoard).
- * Contract: pencil → input/textarea or image replace → ✓ draft / ✕ cancel.
- * ✓ never publishes. Unknown keys are rejected by the server allowlist.
+ * Shared website field editor (ActiveClinic + BlessBoard) — Wave 2.
+ * Pencil → Stitch dialog (desktop) / bottom sheet (mobile) → Save draft (never publish).
  */
 (function () {
   function bindEditorShell() {
@@ -112,13 +111,15 @@
     "image/gif": true,
   };
   if (!saveUrl) return;
+
+  var csrf = document.querySelector('meta[name="csrf-token"]');
+  var csrfField = "_csrf";
+  var csrfToken = csrf ? csrf.getAttribute("content") : "";
+
   function mediaItemUrl(mediaId) {
     if (!mediaUrl || !mediaId) return "";
     return String(mediaUrl).replace(/\/$/, "") + "/" + encodeURIComponent(mediaId);
   }
-  var csrf = document.querySelector('meta[name="csrf-token"]');
-  var csrfField = "_csrf";
-  var csrfToken = csrf ? csrf.getAttribute("content") : "";
 
   function markDraftSaved() {
     var slot = document.querySelector("[data-website-engine-save-state]");
@@ -142,21 +143,6 @@
     }
     bump(draft, true);
     bump(short, false);
-  }
-
-  function setBusy(el, busy) {
-    var saveBtn = el.querySelector("[data-website-save]");
-    var cancelBtn = el.querySelector("[data-website-cancel]");
-    el.setAttribute("aria-busy", busy ? "true" : "false");
-    if (saveBtn) saveBtn.disabled = Boolean(busy);
-    if (cancelBtn) cancelBtn.disabled = Boolean(busy);
-  }
-
-  function setStatus(el, message, isError) {
-    var slot = el.querySelector("[data-website-status-msg]");
-    if (!slot) return;
-    slot.textContent = message || "";
-    slot.classList.toggle("is-error", Boolean(isError));
   }
 
   function postJson(path, body) {
@@ -223,168 +209,222 @@
     return { ok: true };
   }
 
-  function bindTextField(el) {
-    var display = el.querySelector("[data-website-display]");
-    var editor = el.querySelector("[data-website-editor]");
-    var valueEl = el.querySelector("[data-website-value-text]");
-    var input = el.querySelector("[data-website-input]");
-    var saveBtn = el.querySelector("[data-website-save]");
-    var cancelBtn = el.querySelector("[data-website-cancel]");
-    var startBtn = el.querySelector("[data-website-start]");
-    if (!input) return;
-    var original = el.getAttribute("data-website-value");
-    if (original == null) original = input.value;
+  var host = document.querySelector("[data-website-field-editor]");
+  if (!host) return;
 
-    function exitEdit() {
-      el.removeAttribute("data-website-editing");
-      if (editor) editor.hidden = true;
-      if (display) display.hidden = false;
-    }
+  var overlay = host.querySelector("[data-website-field-editor-overlay]");
+  var panel = host.querySelector("[data-website-field-editor-panel]");
+  var bodyEl = host.querySelector("[data-website-field-editor-body]");
+  var titleEl = host.querySelector("[data-website-field-editor-title]");
+  var statusEl = host.querySelector("[data-website-field-editor-status]");
+  var saveBtn = host.querySelector("[data-website-field-editor-save]");
+  var cancelBtn = host.querySelector("[data-website-field-editor-cancel]");
+  var activeField = null;
+  var lastTrigger = null;
+  var focusTrapHandler = null;
+  var state = null;
 
-    function enterEdit() {
-      el.setAttribute("data-website-editing", "1");
-      if (display) display.hidden = true;
-      if (editor) editor.hidden = false;
-      input.value = original;
-      input.focus();
-      if (typeof input.select === "function" && el.getAttribute("data-website-type") !== "textarea") {
-        input.select();
-      }
-      try {
-        el.scrollIntoView({ block: "center", behavior: "smooth" });
-      } catch (err) {
-        /* ignore */
-      }
-    }
-
-    function save() {
-      setBusy(el, true);
-      setStatus(el, "Saving…", false);
-      postJson(saveUrl, {
-        contentKey: el.getAttribute("data-website-key"),
-        value: input.value,
-      })
-        .then(function (out) {
-          setBusy(el, false);
-          if (out && out.ok && out.published === true) {
-            setStatus(el, "Save must not publish. Draft was not applied as live.", true);
-            return;
-          }
-          if (out && out.ok) {
-            original = input.value;
-            el.setAttribute("data-website-value", original);
-            if (valueEl) valueEl.textContent = original;
-            var currentEl = el.querySelector("[data-website-current]");
-            if (currentEl) currentEl.textContent = original;
-            exitEdit();
-            setStatus(el, "Saved to draft", false);
-            markDraftSaved();
-          } else {
-            setStatus(el, (out && (out.reason || out.code)) || "Could not save", true);
-          }
-        })
-        .catch(function () {
-          setBusy(el, false);
-          setStatus(el, "Could not save", true);
-        });
-    }
-
-    function cancel() {
-      input.value = original;
-      if (valueEl) valueEl.textContent = original;
-      exitEdit();
-      setStatus(el, "", false);
-    }
-
-    if (startBtn) {
-      startBtn.addEventListener("click", function () {
-        if (el.getAttribute("data-website-editing") === "1") return;
-        enterEdit();
-      });
-    }
-    input.addEventListener("keydown", function (ev) {
-      if (el.getAttribute("data-website-editing") !== "1") return;
-      if (ev.key === "Enter" && el.getAttribute("data-website-type") !== "textarea" && !ev.shiftKey) {
-        ev.preventDefault();
-        save();
-      } else if (ev.key === "Escape") {
-        ev.preventDefault();
-        cancel();
-      }
-    });
-    if (saveBtn) saveBtn.addEventListener("click", save);
-    if (cancelBtn) cancelBtn.addEventListener("click", cancel);
+  function setStatus(message, isError) {
+    if (!statusEl) return;
+    statusEl.textContent = message || "";
+    statusEl.classList.toggle("is-error", Boolean(isError));
   }
 
-  function bindImageField(el) {
-    var img = el.querySelector("[data-website-image]");
-    var fileInput = el.querySelector("[data-website-file]");
-    var altInput = el.querySelector("[data-website-alt]");
-    var saveBtn = el.querySelector("[data-website-save]");
-    var cancelBtn = el.querySelector("[data-website-cancel]");
-    var startBtn = el.querySelector("[data-website-start]");
-    var tools = el.querySelector("[data-website-image-tools]");
-    var progress = el.querySelector("[data-website-progress]");
-    var libraryBtn = el.querySelector("[data-website-library]");
-    var libraryPanel = el.querySelector("[data-website-library-panel]");
-    var placeholder = el.querySelector("[data-website-image-placeholder]");
-    if (!img) return;
-    var originalSrc = img.getAttribute("src");
-    var originalAlt = altInput ? altInput.value : "";
-    var originalMediaId = el.getAttribute("data-website-media-id") || "";
-    var pendingFile = null;
-    var pendingObjectUrl = null;
-    var pendingMediaId = null;
+  function setBusy(busy) {
+    host.setAttribute("aria-busy", busy ? "true" : "false");
+    if (saveBtn) saveBtn.disabled = Boolean(busy);
+    if (cancelBtn) cancelBtn.disabled = Boolean(busy);
+  }
 
-    function showPreviewSrc(src) {
-      if (!src) return;
-      img.setAttribute("src", src);
-      img.hidden = false;
-      if (placeholder) placeholder.hidden = true;
-    }
+  function isOpen() {
+    return !host.hidden;
+  }
 
-    function restore() {
-      if (pendingObjectUrl) {
-        URL.revokeObjectURL(pendingObjectUrl);
-        pendingObjectUrl = null;
+  function installFocusTrap() {
+    removeFocusTrap();
+    focusTrapHandler = function (ev) {
+      if (ev.key !== "Tab" || !panel) return;
+      var focusable = panel.querySelectorAll(
+        'button:not([disabled]), [href], input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])'
+      );
+      if (!focusable.length) return;
+      var first = focusable[0];
+      var last = focusable[focusable.length - 1];
+      if (ev.shiftKey && document.activeElement === first) {
+        ev.preventDefault();
+        last.focus();
+      } else if (!ev.shiftKey && document.activeElement === last) {
+        ev.preventDefault();
+        first.focus();
       }
-      pendingFile = null;
-      pendingMediaId = null;
-      img.setAttribute("src", originalSrc);
-      if (!originalSrc) {
-        img.hidden = true;
-        if (placeholder) placeholder.hidden = false;
-      } else {
-        img.hidden = false;
-        if (placeholder) placeholder.hidden = true;
-      }
-      if (altInput) altInput.value = originalAlt;
-      if (fileInput) fileInput.value = "";
-      if (libraryPanel) libraryPanel.hidden = true;
-      if (progress) {
-        progress.hidden = true;
-        progress.value = 0;
-      }
-    }
+    };
+    document.addEventListener("keydown", focusTrapHandler);
+  }
 
-    function exitEdit() {
-      el.removeAttribute("data-website-editing");
-      if (tools) tools.hidden = true;
-      if (startBtn) startBtn.hidden = false;
-      if (libraryPanel) libraryPanel.hidden = true;
+  function removeFocusTrap() {
+    if (focusTrapHandler) {
+      document.removeEventListener("keydown", focusTrapHandler);
+      focusTrapHandler = null;
     }
+  }
 
-    function enterEdit() {
-      el.setAttribute("data-website-editing", "1");
-      if (tools) tools.hidden = false;
-      if (saveBtn) saveBtn.hidden = false;
-      if (cancelBtn) cancelBtn.hidden = false;
-      if (startBtn) startBtn.hidden = true;
-      if (altInput) altInput.focus();
+  function openDialog() {
+    host.hidden = false;
+    if (overlay) overlay.hidden = false;
+    if (panel) panel.hidden = false;
+    document.body.classList.add("gp-website-field-editor-open");
+    installFocusTrap();
+  }
+
+  function closeDialog() {
+    host.hidden = true;
+    if (overlay) overlay.hidden = true;
+    if (panel) panel.hidden = true;
+    document.body.classList.remove("gp-website-field-editor-open");
+    removeFocusTrap();
+    if (state && state.pendingObjectUrl) {
+      URL.revokeObjectURL(state.pendingObjectUrl);
+    }
+    state = null;
+    activeField = null;
+    if (bodyEl) bodyEl.textContent = "";
+    setStatus("", false);
+    setBusy(false);
+    if (lastTrigger && typeof lastTrigger.focus === "function") {
       try {
-        el.scrollIntoView({ block: "center", behavior: "smooth" });
+        lastTrigger.focus();
       } catch (err) {
         /* ignore */
+      }
+    }
+  }
+
+  function fieldLabel(fieldEl) {
+    var label = fieldEl.getAttribute("data-website-label");
+    if (label) return label;
+    var key = fieldEl.getAttribute("data-website-key") || "field";
+    var short = key.split(".").pop() || key;
+    return "Edit " + short.replace(/_/g, " ");
+  }
+
+  function isLogoField(fieldEl) {
+    return (
+      fieldEl.getAttribute("data-website-variant") === "logo" ||
+      fieldEl.classList.contains("ac-website-editable--logo") ||
+      fieldEl.getAttribute("data-website-key") === "home.logo"
+    );
+  }
+
+  function isImageField(fieldEl) {
+    var type = fieldEl.getAttribute("data-website-type") || "";
+    return type === "image" || isLogoField(fieldEl);
+  }
+
+  function buildTextBody(fieldEl) {
+    var multiline = fieldEl.getAttribute("data-website-type") === "textarea";
+    var current =
+      fieldEl.getAttribute("data-website-published-value") ||
+      fieldEl.getAttribute("data-website-value") ||
+      "";
+    var draft = fieldEl.getAttribute("data-website-value") || "";
+    var maxLen = fieldEl.getAttribute("data-website-max") || (multiline ? "500" : "120");
+    var inputType = fieldEl.getAttribute("data-website-input-type") || "text";
+
+    bodyEl.innerHTML =
+      '<div class="gp-website-field-editor__section">' +
+      '<span class="gp-website-field-editor__label">Current value</span>' +
+      '<div class="gp-website-field-editor__readonly" data-website-field-current="1"></div>' +
+      "</div>" +
+      '<div class="gp-website-field-editor__section">' +
+      '<label class="gp-website-field-editor__label" for="gp-website-field-input">New value</label>' +
+      (multiline
+        ? '<textarea id="gp-website-field-input" class="gp-website-field-editor__input" data-website-input="1" rows="5" maxlength="' +
+          maxLen +
+          '"></textarea>'
+        : '<input id="gp-website-field-input" class="gp-website-field-editor__input" data-website-input="1" type="' +
+          inputType +
+          '" maxlength="' +
+          maxLen +
+          '" autocomplete="off" />') +
+      "</div>";
+
+    var currentEl = bodyEl.querySelector("[data-website-field-current]");
+    var input = bodyEl.querySelector("[data-website-input]");
+    if (currentEl) currentEl.textContent = current || "—";
+    if (input) {
+      input.value = draft;
+      input.focus();
+      if (!multiline && typeof input.select === "function") input.select();
+    }
+    return { input: input, multiline: multiline };
+  }
+
+  function buildImageBody(fieldEl) {
+    var logo = isLogoField(fieldEl);
+    bodyEl.innerHTML =
+      '<div class="gp-website-field-editor__media-grid">' +
+      '<div class="gp-website-field-editor__section">' +
+      '<span class="gp-website-field-editor__label">Current image</span>' +
+      '<div class="gp-website-field-editor__preview-wrap">' +
+      '<img class="gp-website-field-editor__preview" data-website-field-current-image="1" alt="" />' +
+      "</div>" +
+      "</div>" +
+      '<div class="gp-website-field-editor__section">' +
+      '<span class="gp-website-field-editor__label">New image</span>' +
+      '<div class="gp-website-field-editor__preview-wrap">' +
+      '<img class="gp-website-field-editor__preview" data-website-field-new-image="1" alt="" hidden />' +
+      '<span class="gp-website-field-editor__preview-empty" data-website-field-new-empty="1">No image selected yet</span>' +
+      "</div>" +
+      "</div>" +
+      "</div>" +
+      (logo
+        ? '<p class="gp-website-field-editor__hint">Use a square PNG or SVG with a transparent background when possible.</p>'
+        : "") +
+      '<label class="gp-website-field-editor__file">' +
+      "<span>Choose or replace image</span>" +
+      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-website-file="1" />' +
+      "</label>" +
+      (mediaUrl
+        ? '<button type="button" class="gp-website-field-editor__link-btn" data-website-library="1">Choose existing</button>'
+        : "") +
+      '<div class="gp-website-library" data-website-library-panel="1" hidden></div>' +
+      '<label class="gp-website-field-editor__alt">' +
+      "Alt text" +
+      '<input type="text" maxlength="240" data-website-alt="1" autocomplete="off" enterkeyhint="done" />' +
+      "</label>" +
+      '<progress class="gp-website-field-editor__progress" data-website-progress="1" hidden max="100" value="0"></progress>';
+
+    var canvasImg = fieldEl.querySelector("[data-website-image]");
+    var currentSrc = canvasImg ? canvasImg.getAttribute("src") || "" : "";
+    var currentAlt = canvasImg ? canvasImg.getAttribute("alt") || "" : "";
+    var mediaId = fieldEl.getAttribute("data-website-media-id") || "";
+
+    var currentPreview = bodyEl.querySelector("[data-website-field-current-image]");
+    var newPreview = bodyEl.querySelector("[data-website-field-new-image]");
+    var newEmpty = bodyEl.querySelector("[data-website-field-new-empty]");
+    var altInput = bodyEl.querySelector("[data-website-alt]");
+    var fileInput = bodyEl.querySelector("[data-website-file]");
+    var libraryBtn = bodyEl.querySelector("[data-website-library]");
+    var libraryPanel = bodyEl.querySelector("[data-website-library-panel]");
+    var progress = bodyEl.querySelector("[data-website-progress]");
+
+    if (currentPreview && currentSrc) {
+      currentPreview.src = currentSrc;
+      currentPreview.alt = currentAlt;
+    } else if (currentPreview) {
+      currentPreview.hidden = true;
+    }
+    if (altInput) altInput.value = currentAlt;
+
+    function showNewPreview(src) {
+      if (!newPreview) return;
+      if (src) {
+        newPreview.src = src;
+        newPreview.hidden = false;
+        if (newEmpty) newEmpty.hidden = true;
+      } else {
+        newPreview.hidden = true;
+        if (newEmpty) newEmpty.hidden = false;
       }
     }
 
@@ -395,22 +435,20 @@
         var check = validateImageFile(file);
         if (!check.ok) {
           fileInput.value = "";
-          pendingFile = null;
-          setStatus(el, check.reason, true);
+          setStatus(check.reason, true);
           return;
         }
-        pendingFile = file;
-        pendingMediaId = null;
-        if (pendingObjectUrl) URL.revokeObjectURL(pendingObjectUrl);
-        pendingObjectUrl = URL.createObjectURL(file);
-        showPreviewSrc(pendingObjectUrl);
-        setStatus(el, "Preview only — not public until you save to draft and publish", false);
+        if (state.pendingObjectUrl) URL.revokeObjectURL(state.pendingObjectUrl);
+        state.pendingFile = file;
+        state.pendingMediaId = null;
+        state.pendingObjectUrl = URL.createObjectURL(file);
+        showNewPreview(state.pendingObjectUrl);
+        setStatus("Preview only — save draft to keep this image", false);
       });
     }
 
-    if (libraryBtn && mediaUrl) {
+    if (libraryBtn && libraryPanel && mediaUrl) {
       libraryBtn.addEventListener("click", function () {
-        if (!libraryPanel) return;
         libraryPanel.hidden = false;
         libraryPanel.textContent = "Loading library…";
         fetch(mediaUrl, {
@@ -437,15 +475,19 @@
               thumb.alt = item.altText || item.title || "Library image";
               pick.appendChild(thumb);
               pick.addEventListener("click", function () {
-                pendingFile = null;
-                pendingMediaId = item.id || item.mediaId || "";
+                state.pendingFile = null;
+                state.pendingMediaId = item.id || item.mediaId || "";
                 if (fileInput) fileInput.value = "";
-                showPreviewSrc(item.previewUrl || item.publicSrc || mediaItemUrl(pendingMediaId));
+                if (state.pendingObjectUrl) {
+                  URL.revokeObjectURL(state.pendingObjectUrl);
+                  state.pendingObjectUrl = null;
+                }
+                showNewPreview(item.previewUrl || item.publicSrc || mediaItemUrl(state.pendingMediaId));
                 if (altInput && (item.altText || item.alt)) {
                   altInput.value = item.altText || item.alt;
                 }
                 libraryPanel.hidden = true;
-                setStatus(el, "Library image selected — save to draft to keep it", false);
+                setStatus("Library image selected — save draft to keep it", false);
               });
               libraryPanel.appendChild(pick);
             });
@@ -456,110 +498,186 @@
       });
     }
 
-    function safeDraftSrc() {
-      if (originalSrc && originalSrc.indexOf("blob:") !== 0 && originalSrc.indexOf("data:") !== 0) {
-        return originalSrc;
-      }
-      if (originalMediaId) return mediaItemUrl(originalMediaId);
-      return "";
-    }
-
-    function save() {
-      var altText = altInput ? altInput.value : "";
-      setBusy(el, true);
-      setStatus(el, pendingFile ? "Uploading…" : "Saving…", false);
-      if (progress && pendingFile) progress.hidden = false;
-      var chain = pendingFile
-        ? uploadImage(pendingFile, altText, function (pct) {
-            if (progress) progress.value = pct;
-          })
-        : Promise.resolve(null);
-      chain
-        .then(function (uploaded) {
-          var value = {
-            alt: altText,
-            mediaId: uploaded && uploaded.media && uploaded.media.id
-              ? uploaded.media.id
-              : pendingMediaId || originalMediaId || null,
-            src:
-              uploaded && uploaded.media && uploaded.media.id
-                ? mediaItemUrl(uploaded.media.id)
-                : pendingMediaId
-                  ? mediaItemUrl(pendingMediaId)
-                  : safeDraftSrc(),
-          };
-          return postJson(saveUrl, {
-            contentKey: el.getAttribute("data-website-key"),
-            value: value,
-          }).then(function (out) {
-            out.uploaded = uploaded;
-            return out;
-          });
-        })
-        .then(function (out) {
-          setBusy(el, false);
-          if (progress) progress.hidden = true;
-          if (out && out.ok && out.published === true) {
-            restore();
-            setStatus(el, "Save must not publish. Draft was not applied as live.", true);
-            return;
-          }
-          if (out && out.ok) {
-            if (out.uploaded && out.uploaded.media && out.uploaded.media.id) {
-              originalMediaId = out.uploaded.media.id;
-              el.setAttribute("data-website-media-id", originalMediaId);
-              originalSrc = mediaItemUrl(originalMediaId);
-              showPreviewSrc(originalSrc);
-            } else if (pendingMediaId) {
-              originalMediaId = pendingMediaId;
-              el.setAttribute("data-website-media-id", originalMediaId);
-              originalSrc = mediaItemUrl(originalMediaId);
-              showPreviewSrc(originalSrc);
-            }
-            originalAlt = altText;
-            pendingFile = null;
-            pendingMediaId = null;
-            if (pendingObjectUrl) {
-              URL.revokeObjectURL(pendingObjectUrl);
-              pendingObjectUrl = null;
-            }
-            exitEdit();
-            setStatus(el, "Saved to draft", false);
-            markDraftSaved();
-          } else {
-            restore();
-            setStatus(el, (out && (out.reason || out.code)) || "Could not save", true);
-          }
-        })
-        .catch(function (err) {
-          setBusy(el, false);
-          if (progress) progress.hidden = true;
-          restore();
-          setStatus(el, (err && (err.reason || err.code)) || "Could not upload image", true);
-        });
-    }
-
-    function cancel() {
-      restore();
-      exitEdit();
-      setStatus(el, "", false);
-    }
-
-    if (startBtn) startBtn.addEventListener("click", enterEdit);
-    if (saveBtn) saveBtn.addEventListener("click", save);
-    if (cancelBtn) cancelBtn.addEventListener("click", cancel);
-    el.addEventListener("keydown", function (ev) {
-      if (el.getAttribute("data-website-editing") !== "1") return;
-      if (ev.key === "Escape") {
-        ev.preventDefault();
-        cancel();
-      }
-    });
+    return {
+      canvasImg: canvasImg,
+      altInput: altInput,
+      progress: progress,
+      originalSrc: currentSrc,
+      originalAlt: currentAlt,
+      originalMediaId: mediaId,
+      showNewPreview: showNewPreview,
+    };
   }
 
+  function openField(fieldEl, trigger) {
+    if (!fieldEl) return;
+    lastTrigger = trigger || fieldEl.querySelector("[data-website-start]");
+    activeField = fieldEl;
+    setStatus("", false);
+
+    var image = isImageField(fieldEl);
+    if (titleEl) {
+      if (image && isLogoField(fieldEl)) titleEl.textContent = "Edit logo";
+      else if (image) titleEl.textContent = "Edit image";
+      else titleEl.textContent = fieldLabel(fieldEl);
+    }
+
+    state = {
+      kind: image ? "image" : "text",
+      pendingFile: null,
+      pendingMediaId: null,
+      pendingObjectUrl: null,
+    };
+
+    if (image) {
+      state.image = buildImageBody(fieldEl);
+    } else {
+      state.text = buildTextBody(fieldEl);
+    }
+
+    openDialog();
+  }
+
+  function updateCanvasText(fieldEl, value) {
+    fieldEl.setAttribute("data-website-value", value);
+    var valueEl = fieldEl.querySelector("[data-website-value-text]");
+    if (valueEl) valueEl.textContent = value;
+  }
+
+  function updateCanvasImage(fieldEl, src, alt, mediaId) {
+    var img = fieldEl.querySelector("[data-website-image]");
+    var placeholder = fieldEl.querySelector("[data-website-image-placeholder]");
+    if (mediaId) fieldEl.setAttribute("data-website-media-id", mediaId);
+    if (img) {
+      if (src) {
+        img.setAttribute("src", src);
+        img.setAttribute("alt", alt || "");
+        img.hidden = false;
+      }
+    }
+    if (placeholder) placeholder.hidden = Boolean(src);
+  }
+
+  function saveText() {
+    if (!activeField || !state || !state.text || !state.text.input) return;
+    var value = state.text.input.value;
+    setBusy(true);
+    setStatus("Saving…", false);
+    postJson(saveUrl, {
+      contentKey: activeField.getAttribute("data-website-key"),
+      value: value,
+    })
+      .then(function (out) {
+        setBusy(false);
+        if (out && out.ok && out.published === true) {
+          setStatus("Save must not publish. Draft was not applied as live.", true);
+          return;
+        }
+        if (out && out.ok) {
+          updateCanvasText(activeField, value);
+          markDraftSaved();
+          closeDialog();
+        } else {
+          setStatus((out && (out.reason || out.code)) || "Could not save", true);
+        }
+      })
+      .catch(function () {
+        setBusy(false);
+        setStatus("Could not save", true);
+      });
+  }
+
+  function saveImage() {
+    if (!activeField || !state || !state.image) return;
+    var imgState = state.image;
+    var altText = imgState.altInput ? imgState.altInput.value : "";
+    setBusy(true);
+    setStatus(state.pendingFile ? "Uploading…" : "Saving…", false);
+    if (imgState.progress && state.pendingFile) imgState.progress.hidden = false;
+
+    var chain = state.pendingFile
+      ? uploadImage(state.pendingFile, altText, function (pct) {
+          if (imgState.progress) imgState.progress.value = pct;
+        })
+      : Promise.resolve(null);
+
+    chain
+      .then(function (uploaded) {
+        var value = {
+          alt: altText,
+          mediaId:
+            uploaded && uploaded.media && uploaded.media.id
+              ? uploaded.media.id
+              : state.pendingMediaId || imgState.originalMediaId || null,
+          src:
+            uploaded && uploaded.media && uploaded.media.id
+              ? mediaItemUrl(uploaded.media.id)
+              : state.pendingMediaId
+                ? mediaItemUrl(state.pendingMediaId)
+                : imgState.originalSrc,
+        };
+        return postJson(saveUrl, {
+          contentKey: activeField.getAttribute("data-website-key"),
+          value: value,
+        }).then(function (out) {
+          out.uploaded = uploaded;
+          out.value = value;
+          return out;
+        });
+      })
+      .then(function (out) {
+        setBusy(false);
+        if (imgState.progress) imgState.progress.hidden = true;
+        if (out && out.ok && out.published === true) {
+          setStatus("Save must not publish. Draft was not applied as live.", true);
+          return;
+        }
+        if (out && out.ok) {
+          updateCanvasImage(activeField, out.value.src, altText, out.value.mediaId);
+          markDraftSaved();
+          closeDialog();
+        } else {
+          setStatus((out && (out.reason || out.code)) || "Could not save", true);
+        }
+      })
+      .catch(function (err) {
+        setBusy(false);
+        if (imgState.progress) imgState.progress.hidden = true;
+        setStatus((err && (err.reason || err.code)) || "Could not upload image", true);
+      });
+  }
+
+  function save() {
+    if (!state) return;
+    if (state.kind === "image") saveImage();
+    else saveText();
+  }
+
+  function cancel() {
+    closeDialog();
+  }
+
+  if (saveBtn) saveBtn.addEventListener("click", save);
+  if (cancelBtn) cancelBtn.addEventListener("click", cancel);
+  host.querySelectorAll("[data-website-field-editor-dismiss]").forEach(function (btn) {
+    btn.addEventListener("click", cancel);
+  });
+  document.addEventListener("keydown", function (ev) {
+    if (!isOpen()) return;
+    if (ev.key === "Escape") {
+      ev.preventDefault();
+      cancel();
+    }
+  });
+
   document.querySelectorAll("[data-website-key]").forEach(function (el) {
-    var type = el.getAttribute("data-website-type") || "text";
-    if (type === "image") bindImageField(el);
-    else bindTextField(el);
+    var startBtn = el.querySelector("[data-website-start]");
+    if (!startBtn) return;
+    startBtn.addEventListener("click", function (ev) {
+      ev.preventDefault();
+      ev.stopPropagation();
+      if (isOpen()) return;
+      openField(el, startBtn);
+    });
   });
 })();

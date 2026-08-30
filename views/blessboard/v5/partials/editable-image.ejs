@@ -1,7 +1,5 @@
 <%#
-  Shared image editor markup (same data contract as ActiveClinic).
-  Locals: contentKey (optional), editPageKey, editSectionKey, editFieldKey,
-          imageSrc, imageAlt, imageClass, imageWidth, imageHeight, imageMediaId, imageWrapClass
+  Shared image editor trigger — Wave 2 dialog.
 %>
 <%
   var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
@@ -19,47 +17,31 @@
   var _height = typeof imageHeight !== 'undefined' && imageHeight ? Number(imageHeight) : 900;
   var _mediaId = typeof imageMediaId !== 'undefined' && imageMediaId ? String(imageMediaId) : '';
   var _wrapExtra = typeof imageWrapClass !== 'undefined' && imageWrapClass ? ' ' + String(imageWrapClass) : '';
+  var _logo = _key === 'home.logo' || _fieldKey === 'logo';
+  var _label = _logo ? 'Edit logo' : 'Edit image';
 %>
 <% if (_editing) { %>
 <div
-  class="bb-tp-inline-edit bb-tp-inline-edit--image ac-website-editable ac-website-editable--image<%= _wrapExtra %>"
+  class="gp-website-editable ac-website-editable ac-website-editable--image<%= _logo ? ' ac-website-editable--logo' : '' %><%= _wrapExtra %>"
   data-website-key="<%= _key %>"
   data-website-type="image"
+  data-website-variant="<%= _logo ? 'logo' : 'image' %>"
+  data-website-label="<%= _label %>"
   data-website-media-id="<%= _mediaId %>"
-  data-bb-inline-edit="1"
   data-bb-page="<%= _pageKey %>"
   data-bb-section="<%= _sectionKey %>"
   data-bb-field="<%= _fieldKey %>"
 >
-  <div class="ac-website-editable__preview">
+  <div class="gp-website-editable__preview ac-website-editable__preview">
     <% if (_src) { %>
     <img data-website-image="1" class="<%= _class %>" src="<%= _src %>" alt="<%= _alt %>" width="<%= _width %>" height="<%= _height %>" />
     <% } else { %>
     <img data-website-image="1" class="<%= _class %>" src="" alt="<%= _alt %>" width="<%= _width %>" height="<%= _height %>" hidden />
     <div class="bb-tp-hero__fallback" data-website-image-placeholder="1"></div>
     <% } %>
-    <button type="button" class="bb-tp-inline-edit__pencil ac-website-editable__pencil" data-website-start="1" aria-label="Edit image">
-      <span class="material-symbols-outlined" aria-hidden="true">image</span>
+    <button type="button" class="gp-website-editable__pencil ac-website-editable__pencil" data-website-start="1" aria-label="<%= _label %>">
+      <span class="material-symbols-outlined" aria-hidden="true"><%= _logo ? 'badge' : 'image' %></span>
     </button>
-  </div>
-  <div class="ac-website-editable__image-tools" data-website-image-tools="1" hidden>
-    <p class="ac-website-editable__current"><span class="ac-website-editable__current-label">Current image</span></p>
-    <label class="ac-website-editable__file">
-      <span>Replace / upload</span>
-      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-website-file="1"/>
-    </label>
-    <button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" data-website-library="1">Media library</button>
-    <label class="ac-website-editable__alt">
-      Alt text
-      <input type="text" maxlength="240" value="<%= _alt %>" data-website-alt="1" enterkeyhint="done" autocomplete="off"/>
-    </label>
-    <span class="ac-website-editable__controls">
-      <button type="button" class="ac-website-editable__save" data-website-save="1" hidden aria-label="Save image to draft">Save</button>
-      <button type="button" class="ac-website-editable__cancel" data-website-cancel="1" hidden aria-label="Cancel image edit">Cancel</button>
-    </span>
-    <span class="ac-website-editable__status" data-website-status-msg="1" aria-live="polite"></span>
-    <progress class="ac-website-editable__progress" data-website-progress="1" hidden max="100" value="0"></progress>
-    <div class="gp-website-library" data-website-library-panel="1" hidden></div>
   </div>
 </div>
 <% } else if (_src) { %>

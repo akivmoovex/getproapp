@@ -123,13 +123,14 @@ describe("v7 shared website editor — static mechanism", () => {
     const bbImage = read("views/blessboard/v5/partials/editable-image.ejs");
     const acText = read("views/activeclinic/partials/website-editable-field.ejs");
     const bbText = read("views/blessboard/v5/partials/editable-text.ejs");
+    const fieldHost = read("views/platform/website-engine/field-editor-host.ejs");
     const structured = read("views/blessboard/v5/partials/structured-editor-host.ejs");
     const collection = read("views/activeclinic/partials/website-collection-editor.ejs");
 
     assert.match(acShell, /\/platform\/website-inline-edit\.js/);
     assert.match(bbEnd, /\/platform\/website-inline-edit\.js/);
     assert.doesNotMatch(bbEnd, /blessboard\/v5\/website-inline-edit\.js/);
-    assert.match(js, /contentKey/);
+    assert.match(js, /data-website-field-editor/);
     assert.match(js, /published === true/);
     assert.match(js, /data-website-library/);
     assert.match(js, /data-website-engine-page-select/);
@@ -151,17 +152,15 @@ describe("v7 shared website editor — static mechanism", () => {
     for (const field of [acText, bbText]) {
       assert.match(field, /data-website-key=/);
       assert.match(field, /data-website-start="1"/);
-      assert.match(field, /data-website-save="1"/);
-      assert.match(field, /data-website-cancel="1"/);
-      assert.match(field, /data-website-input="1"/);
+      assert.match(field, /gp-website-editable__pencil/);
+      assert.doesNotMatch(field, /data-website-editor="1"/);
     }
+    assert.match(fieldHost, /data-website-save="1"/);
+    assert.match(fieldHost, /data-website-cancel="1"/);
     for (const image of [acImage, bbImage]) {
       assert.match(image, /data-website-type="image"/);
-      assert.match(image, /data-website-file="1"/);
-      assert.match(image, /data-website-alt="1"/);
-      assert.match(image, /data-website-library="1"/);
-      assert.match(image, /data-website-save="1"/);
-      assert.match(image, /data-website-cancel="1"/);
+      assert.match(image, /data-website-start="1"/);
+      assert.doesNotMatch(image, /data-website-file="1"/);
     }
     assert.match(structured, /data-website-structured="1"/);
     assert.match(structured, /Save draft/);
@@ -245,9 +244,9 @@ describe("v7 shared website editor — HTTP matrix", () => {
     assert.match(edit.text, /data-website-chrome="1"/);
     assert.match(edit.text, /data-website-engine-shell="1"/);
     assert.match(edit.text, /data-website-key="home\.hero\.title"/);
-    assert.match(edit.text, /data-website-type="image"/);
-    assert.match(edit.text, /data-website-alt="1"/);
-    assert.match(edit.text, /data-website-library="1"/);
+    assert.match(edit.text, /data-website-key="home\.hero\.image"/);
+    assert.match(edit.text, /data-website-field-editor="1"/);
+    assert.match(edit.text, /data-website-start="1"/);
     assert.match(edit.text, /data-website-page-rail="1"/);
     assert.match(edit.text, /\/platform\/website-inline-edit\.js/);
 
@@ -342,9 +341,8 @@ describe("v7 shared website editor — HTTP matrix", () => {
     assert.match(edit.text, /data-website-engine-shell="1"/);
     assert.match(edit.text, /data-website-chrome="1"/);
     assert.match(edit.text, /data-website-key="home\.hero\.heading"/);
-    assert.match(edit.text, /data-website-type="image"/);
-    assert.match(edit.text, /data-website-alt="1"/);
-    assert.match(edit.text, /data-website-library="1"/);
+    assert.match(edit.text, /data-website-field-editor="1"/);
+    assert.match(edit.text, /data-website-start="1"/);
     assert.match(edit.text, /data-website-page-rail="1"/);
     assert.match(edit.text, /\/platform\/website-inline-edit\.js/);
     assert.match(edit.text, /data-website-structured="1"/);

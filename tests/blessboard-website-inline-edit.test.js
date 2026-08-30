@@ -286,8 +286,9 @@ describe("blessboard website inline edit foundation", () => {
       .expect(200);
     assert.match(editRes.text, /data-bb-edit-toolbar/);
     assert.match(editRes.text, /Exit editing/);
-    assert.match(editRes.text, /data-bb-inline-edit/);
-    assert.match(editRes.text, /data-bb-inline-start/);
+    assert.match(editRes.text, /data-website-inline/);
+    assert.match(editRes.text, /data-website-start="1"/);
+    assert.match(editRes.text, /gp-website-editable__pencil/);
     assert.match(editRes.text, /website-inline-edit\.js/);
   });
 
@@ -346,9 +347,7 @@ describe("blessboard website inline edit foundation", () => {
       .expect(200);
     assert.match(editRes.text, /Draft Heading Only/);
     assert.match(editRes.text, /data-bb-review-publish/);
-    assert.match(editRes.text, /Current website text/);
-    assert.match(editRes.text, /Proposed new text/);
-    assert.match(editRes.text, /data-bb-published-value="Published Welcome"/);
+    assert.match(editRes.text, /data-website-published-value="Published Welcome"/);
     assert.doesNotMatch(editRes.text, /data-bb-inline-save-publish="1"/);
     assert.match(editRes.text, /data-bb-publish-url="\/hq\/content\/api\/inline-field\/publish"/);
   });
@@ -360,14 +359,13 @@ describe("blessboard website inline edit foundation", () => {
       .set("Host", HOST_A)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.hqA.rawToken}`))
       .expect(200);
-    assert.match(editRes.text, /data-bb-published-value="Published Welcome"/);
+    assert.match(editRes.text, /data-website-published-value="Published Welcome"/);
     const js = fs.readFileSync(
-      path.join(__dirname, "../public/blessboard/v5/website-inline-edit.js"),
+      path.join(__dirname, "../public/platform/website-inline-edit.js"),
       "utf8"
     );
-    assert.match(js, /data-bb-published-value/);
-    assert.match(js, /updateProposedPreview/);
-    assert.doesNotMatch(js, /setAttribute\("data-bb-published-value", input\.value\)/);
+    assert.match(js, /data-website-published-value/);
+    assert.doesNotMatch(js, /setAttribute\("data-bb-published-value"/);
     assert.doesNotMatch(js, /saveAndPublishField/);
     assert.doesNotMatch(js, /data-bb-inline-save-publish/);
   });
