@@ -566,10 +566,10 @@ async function runBlessBoardFlow() {
   const editPath = `/c/${key}?website_edit=1`;
   const editPage = await request(app).get(editPath).set("Host", BB_HOST).set("Cookie", session);
   assert.equal(editPage.status, 200, editPage.text && editPage.text.slice(0, 300));
-  assert.match(editPage.text, /data-bb-inline-start="1"/);
+  assert.match(editPage.text, /data-website-engine-shell="1"/);
   assert.match(editPage.text, /data-website-key="home\.hero\.heading"/);
   assert.match(editPage.text, /\/platform\/website-inline-edit\.js/);
-  assert.match(editPage.text, /data-website-engine-shell="1"/);
+  assert.doesNotMatch(editPage.text, /data-website-mode="live"/);
   out["Edit website / pencil"] = ok("GET /c/{key}?website_edit=1 exposes shared editor chrome");
 
   const editCsrf = extractBbCsrf(editPage.text);

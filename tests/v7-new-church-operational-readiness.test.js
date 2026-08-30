@@ -444,6 +444,8 @@ describe("v7 new church operational readiness", () => {
       .set("Host", BB_HOST)
       .set("Cookie", cookie);
     assert.equal(publicEditor.status, 200, publicEditor.text && publicEditor.text.slice(0, 400));
-    assert.match(publicEditor.text, /data-bb-inline-start="1"/);
+    assert.match(publicEditor.text, /data-website-engine-shell="1"/);
+    assert.match(publicEditor.text, /\/platform\/website-inline-edit\.js/);
+    assert.match(publicEditor.text, /data-website-key="/);
   });
 });

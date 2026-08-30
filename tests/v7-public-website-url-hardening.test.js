@@ -95,7 +95,11 @@ describe("v7 public website URL hardening", () => {
     );
     assert.equal(
       buildPublicWebsitePreviewPath({ product: PRODUCT_CODE.ACTIVECLINIC, organizationKey: key }),
-      `${pages.home}/website/preview`
+      `${pages.home}?website_mode=draft`
+    );
+    assert.doesNotMatch(
+      buildPublicWebsitePreviewPath({ product: PRODUCT_CODE.ACTIVECLINIC, organizationKey: key }),
+      /website_edit=1/
     );
     assert.equal(
       buildPublicWebsiteHistoryPath({ product: PRODUCT_CODE.ACTIVECLINIC, organizationKey: key }),
