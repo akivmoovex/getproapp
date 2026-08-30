@@ -1262,7 +1262,6 @@ body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay {
   pointer-events: none;
 }
 
-body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .gp-website-editable,
 body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .gp-website-editable__pencil,
 body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay a,
 body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay button {
