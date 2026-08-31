@@ -1932,15 +1932,21 @@ body.gp-website-lifecycle-open {
     bottom: 0.25rem;
   }
 
-  /* Phase-7 full-bleed hero: bottom-right pencils overlap the tenant header burger. */
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key$=".hero.heading"] .gp-website-editable__display {
-    padding-right: 0.25rem;
-    padding-left: calc(var(--gp-website-touch) + 0.25rem);
+  /* Phase-7 full-bleed hero: tall overlay box extends above the hero and places
+     copy under sticky editor chrome — anchor copy to the hero foot on mobile. */
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 {
+    overflow: hidden;
   }
 
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key$=".hero.heading"] .gp-website-editable__pencil {
-    right: auto;
-    left: 0.25rem;
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 .bb-tp-hero__inner--overlay {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    flex: 1 1 100%;
+    width: 100%;
+    min-height: 100%;
+    box-sizing: border-box;
+    overflow: hidden;
   }
 
   body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header {
