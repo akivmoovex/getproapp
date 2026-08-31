@@ -1271,16 +1271,13 @@ body.gp-website-editor-open .bb-tp-features-panel {
   }
 }
 
-/* BlessBoard phase-7 hero stacks copy above the media plane; let hero image pencils receive clicks. */
+/* BlessBoard phase-7 hero stacks copy above the media plane; keep overlay copy tappable. */
 body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay {
-  pointer-events: none;
+  pointer-events: auto;
 }
 
-body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .gp-website-editable__display,
-body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .ac-website-editable__display,
-body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .gp-website-editable__pencil,
-body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay a,
-body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay button {
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .gp-website-editable,
+body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay .ac-website-editable {
   pointer-events: auto;
 }
 

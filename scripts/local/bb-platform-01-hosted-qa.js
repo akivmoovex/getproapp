@@ -40,20 +40,25 @@ async function login(page) {
   await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 60000 });
 }
 
+async function openFieldEditor(page, key) {
+  const field = page.locator(`[data-website-key="${key}"]`).first();
+  await field.waitFor({ state: "visible", timeout: 15000 });
+  await page.evaluate((websiteKey) => {
+    const fieldEl = document.querySelector(`[data-website-key="${websiteKey}"]`);
+    if (!fieldEl) throw new Error(`missing field ${websiteKey}`);
+    const start = fieldEl.querySelector("[data-website-start]");
+    if (start) start.click();
+    else fieldEl.querySelector("[data-website-display]")?.click();
+  }, key);
+  const panel = page.locator("[data-website-field-editor-panel]:not([hidden])");
+  await panel.waitFor({ state: "visible", timeout: 10000 });
+  return panel;
+}
+
 async function testPencil(page, url, key) {
   await page.goto(`${BASE}${url}`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await page.waitForSelector(".gp-website-editor__toolbar", { timeout: 30000 });
-  const field = page.locator(`[data-website-key="${key}"]`).first();
-  await field.waitFor({ state: "visible", timeout: 15000 });
-  const pencil = field.locator(".gp-website-editable__pencil, [data-website-start]").first();
-  const display = field.locator("[data-website-display]").first();
-  try {
-    await pencil.click({ timeout: 5000 });
-  } catch (err) {
-    await display.click({ timeout: 5000 });
-  }
-  const panel = page.locator("[data-website-field-editor-panel]:not([hidden])");
-  await panel.waitFor({ state: "visible", timeout: 10000 });
+  const panel = await openFieldEditor(page, key);
   await panel.locator("[data-website-field-editor-cancel]").click();
   await panel.waitFor({ state: "hidden", timeout: 5000 });
   return { ok: true };
@@ -118,14 +123,7 @@ async function testSectionChrome(page) {
   await menu.waitFor({ state: "hidden", timeout: 5000 }).catch(() => {});
 
   const field = page.locator('[data-website-key="home.hero.heading"]').first();
-  const pencil = field.locator(".gp-website-editable__pencil").first();
-  try {
-    await pencil.click({ timeout: 5000 });
-  } catch (err) {
-    await field.locator("[data-website-display]").click({ timeout: 5000 });
-  }
-  const panel = page.locator("[data-website-field-editor-panel]:not([hidden])");
-  await panel.waitFor({ state: "visible", timeout: 8000 });
+  const panel = await openFieldEditor(page, "home.hero.heading");
   await panel.locator("[data-website-field-editor-cancel]").click();
 
   return { ok: Boolean(box && box.height > 0 && zMenu >= 40), zMenu, box };
@@ -139,15 +137,7 @@ async function testMobilePublishJourney(page) {
   await page.waitForSelector(".gp-website-editor__toolbar", { timeout: 30000 });
 
   const marker = `BB-MOB-PUB-${Date.now()}`;
-  const field = page.locator('[data-website-key="home.hero.heading"]').first();
-  const pencil = field.locator(".gp-website-editable__pencil");
-  try {
-    await pencil.click({ timeout: 5000 });
-  } catch (err) {
-    await field.locator("[data-website-display]").click({ timeout: 5000 });
-  }
-  const panel = page.locator("[data-website-field-editor-panel]:not([hidden])");
-  await panel.waitFor({ state: "visible", timeout: 10000 });
+  const panel = await openFieldEditor(page, "home.hero.heading");
   await panel.locator("[data-website-input]").fill(marker);
   await panel.locator("[data-website-field-editor-save]").click();
   await panel.waitFor({ state: "hidden", timeout: 15000 });
