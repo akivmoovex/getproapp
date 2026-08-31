@@ -1306,18 +1306,29 @@ body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .gp-web
 }
 
 /* Section action chrome (z-index 60) must not block inline edit pencils in the same corner. */
+body.gp-website-editor-open .gp-website-editable,
+body.gp-website-editor-open .ac-website-editable {
+  position: relative;
+  pointer-events: none;
+}
+
 body.gp-website-editor-open .gp-website-editable__display {
   position: relative;
   z-index: 65;
+  pointer-events: auto;
 }
 
 body.gp-website-editor-open .gp-website-editable[data-website-type="textarea"],
 body.gp-website-editor-open .ac-website-editable[data-website-type="textarea"] {
   display: inline-block;
-  position: relative;
   width: 100%;
   max-width: 100%;
   vertical-align: top;
+}
+
+body.gp-website-editor-open .gp-website-editable + .gp-website-editable,
+body.gp-website-editor-open .ac-website-editable + .ac-website-editable {
+  margin-top: calc(var(--gp-website-touch) + 0.35rem);
 }
 
 body.gp-website-editor-open .gp-website-editable__pencil,
