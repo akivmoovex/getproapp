@@ -50,11 +50,14 @@ describe("BB+AC P0 overflow CSS guards", () => {
     const css = read("public/activeclinic/website-cms.css");
     assert.match(css, /\.ac-app-body--mw \.ac-mw[\s\S]*overflow-x:\s*clip/);
     assert.match(css, /\[data-ac-website-firstuse-url="1"\][\s\S]*overflow-wrap:\s*anywhere/);
+    assert.match(css, /\.ac-mw-hub-meta[\s\S]*overflow-wrap:\s*anywhere/);
+    assert.match(css, /\[data-ac-website-last-editor="1"\][\s\S]*overflow-wrap:\s*anywhere/);
   });
 
   it("ac-public.css constrains clinic contact layout grid children", () => {
     const css = read("public/activeclinic/ac-public.css");
     assert.match(css, /\.acp-contact-layout[\s\S]*min-width:\s*0/);
+    assert.match(css, /\.acp-contact-aside \.ac-public-list[\s\S]*min-width:\s*0/);
     assert.match(css, /\.acp-contact-aside \.ac-public-list li[\s\S]*overflow-wrap:\s*anywhere/);
   });
 });
@@ -155,6 +158,63 @@ describe("BB+AC P0 overflow fixtures", () => {
     }
   });
 
+  it("ActiveClinic Website Hub last-editor email and public URL fit on narrow mobile", async () => {
+    const { chromium } = require("playwright");
+    const browser = await chromium.launch({ headless: true });
+    const longUrl = "https://activeclinic.pronline.org/clinics/activeclinic-demo";
+    const longEditor = "demo_organization_admin@demo.activeclinic.example";
+    const html = shell(
+      `<body class="ac-app-body ac-app-body--mw">
+        <div class="ac-main-wrap" style="display:flex;min-width:0">
+          <main class="ac-content" style="width:100%;max-width:100%;min-width:0;overflow-x:clip">
+            <section class="ac-mw ac-settings-website" data-ac-website-hub="1">
+              <div class="ac-mw-hub-metrics">
+                <article class="ac-mw-hub-metric">
+                  <p class="ac-mw-hub-metric__label">Public website URL</p>
+                  <p class="ac-mw-hub-metric__value" data-ac-website-public-url="1">
+                    <a href="${longUrl}"><code>${longUrl}</code></a>
+                  </p>
+                </article>
+              </div>
+              <p class="ac-mw-hub-meta">
+                Last updated: <strong>2026-08-27 05:37 UTC</strong>
+                · Last editor: <span data-ac-website-last-editor="1">${longEditor}</span>
+                · Publish policy: Review before publish
+              </p>
+            </section>
+          </main>
+        </div>
+      </body>`,
+      ["public/activeclinic/ac-app.css", "public/activeclinic/website-cms.css"]
+    );
+    try {
+      for (const width of [320, 360, 390, 430]) {
+        const page = await browser.newPage({ viewport: { width, height: 844 } });
+        await page.setContent(html, { waitUntil: "load" });
+        const m = await page.evaluate(() => {
+          const doc = document.documentElement;
+          const editor = document.querySelector("[data-ac-website-last-editor=\"1\"]");
+          const url = document.querySelector("[data-ac-website-public-url=\"1\"]");
+          return {
+            scrollWidth: doc.scrollWidth,
+            innerWidth: window.innerWidth,
+            ok: doc.scrollWidth <= window.innerWidth,
+            editorVisible: !!(editor && editor.getBoundingClientRect().height > 0 && (editor.textContent || "").includes("@")),
+            urlVisible: !!(url && url.getBoundingClientRect().height > 0 && (url.textContent || "").includes("http")),
+            editorRight: editor ? editor.getBoundingClientRect().right : null,
+          };
+        });
+        assert.equal(m.ok, true, `hub ${width}px overflow: scrollWidth=${m.scrollWidth} innerWidth=${m.innerWidth}`);
+        assert.equal(m.editorVisible, true, `hub ${width}px last-editor should remain visible`);
+        assert.equal(m.urlVisible, true, `hub ${width}px public URL should remain visible`);
+        assert.ok(m.editorRight <= width + 0.5, `hub ${width}px editor span right ${m.editorRight} exceeds viewport`);
+        await page.close();
+      }
+    } finally {
+      await browser.close();
+    }
+  });
+
   it("ActiveClinic clinic contact layout fits at 1024px", async () => {
     const { chromium } = require("playwright");
     const browser = await chromium.launch({ headless: true });
@@ -178,6 +238,70 @@ describe("BB+AC P0 overflow fixtures", () => {
       const m = await overflowOk(page);
       assert.equal(m.ok, true, `contact 1024 overflow: scrollWidth=${m.scrollWidth} innerWidth=${m.innerWidth}`);
       await page.close();
+    } finally {
+      await browser.close();
+    }
+  });
+
+  it("ActiveClinic clinic contact live-equivalent long phone/email fits at 768 and 1024", async () => {
+    const { chromium } = require("playwright");
+    const browser = await chromium.launch({ headless: true });
+    const html = shell(
+      `<body class="ac-public-body ac-public--tenant">
+        <header class="ac-public-header ac-public-header--tenant">
+          <div class="ac-public-header__inner ac-public-header__inner--tenant"><span>Clinic</span></div>
+        </header>
+        <main class="ac-public-main">
+          <section class="ac-public-section acp-page" data-ac-page-section="tenant-contact">
+            <header class="acp-page-hero acp-page-hero--compact"><h1>Contact ActiveClinic Demo Centre</h1></header>
+            <div class="acp-contact-layout">
+              <div class="acp-contact-layout__main">
+                <form class="ac-public-form acp-contact-form"><input type="text" name="senderName" /></form>
+              </div>
+              <aside class="acp-contact-aside">
+                <h2>Clinic contact</h2>
+                <ul class="ac-public-list">
+                  <li>Phone: +260 900 000 101 (demo)</li>
+                  <li>Email: demo.centre@activeclinic.example</li>
+                </ul>
+                <p class="ac-public-actions"><a class="ac-btn ac-btn--secondary" href="#">Location &amp; hours</a></p>
+              </aside>
+            </div>
+          </section>
+        </main>
+      </body>`,
+      ["public/activeclinic/ac-tokens.css", "public/activeclinic/ac-public.css"]
+    );
+    try {
+      for (const width of [320, 360, 390, 430, 768, 1024, 1440]) {
+        const page = await browser.newPage({ viewport: { width, height: 900 } });
+        await page.setContent(html, { waitUntil: "load" });
+        const m = await page.evaluate(() => {
+          const doc = document.documentElement;
+          const items = [...document.querySelectorAll(".acp-contact-aside .ac-public-list li")].map((li) => {
+            const r = li.getBoundingClientRect();
+            return {
+              text: (li.textContent || "").trim(),
+              right: r.right,
+              width: r.width,
+              visible: r.height > 0,
+            };
+          });
+          return {
+            scrollWidth: doc.scrollWidth,
+            innerWidth: window.innerWidth,
+            ok: doc.scrollWidth <= window.innerWidth,
+            items,
+          };
+        });
+        assert.equal(m.ok, true, `contact ${width}px overflow: scrollWidth=${m.scrollWidth} innerWidth=${m.innerWidth}`);
+        assert.equal(m.items.length, 2, `contact ${width}px should render phone and email`);
+        for (const item of m.items) {
+          assert.equal(item.visible, true, `contact ${width}px item should remain visible: ${item.text}`);
+          assert.ok(item.right <= width + 0.5, `contact ${width}px item right ${item.right} exceeds viewport`);
+        }
+        await page.close();
+      }
     } finally {
       await browser.close();
     }

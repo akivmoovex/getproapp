@@ -2393,14 +2393,16 @@ html {
     overflow-x: hidden;
   }
 
+  /* Keep canonical mobile gutter (--bb-gutter-mobile = 1rem / 16px).
+     Do not squeeze to 0.65rem — that drifts h1/body inset vs 360–430. */
   .bb-tp-header__inner,
   .bb-tp-container,
   .bb-tp-hero__inner,
   .bb-tp-page-hero__inner,
   .bb-tp-footer__inner,
   .bb-tp-preview-banner__inner {
-    padding-left: 0.65rem;
-    padding-right: 0.65rem;
+    padding-left: var(--bb-gutter-mobile, 1rem);
+    padding-right: var(--bb-gutter-mobile, 1rem);
   }
 }
 

@@ -36,7 +36,7 @@ const ROOT = path.join(__dirname, "..");
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "TestPassword99!";
 const APEX = "blessboard.org";
-const CSS_VERSION = "57";
+const CSS_VERSION = "58";
 
 const PUBLIC_PAGES = Object.freeze([
   { key: "home", suffix: "", stitch: "phase7-v1", headingHint: /Welcome|Church|Home/i },

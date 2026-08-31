@@ -401,6 +401,23 @@
   margin: 0 0 0.85rem;
   font-size: 0.875rem;
   color: var(--ac-mw-muted);
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+}
+/* Long last-editor emails / public URLs must shrink inside the CMS shell */
+.ac-mw-hub-meta [data-ac-website-last-editor="1"],
+.ac-mw-hub-metric__value[data-ac-website-public-url="1"],
+.ac-mw-hub-metric__value[data-ac-website-public-url="1"] code,
+.ac-mw-hub-metric__value[data-ac-website-public-url="1"] a,
+[data-ac-website-public-url="1"],
+[data-ac-website-public-url="1"] code {
+  display: inline-block;
+  min-width: 0;
+  max-width: 100%;
+  overflow-wrap: anywhere;
+  word-break: break-word;
 }
 .ac-mw-hub-chips {
   display: flex;
@@ -836,8 +853,9 @@
   .ac-mw-firstuse [data-ac-website-firstuse-url="1"],
   .ac-mw-firstuse [data-ac-website-firstuse-url="1"] code,
   .ac-mw-hub-metric__value,
-  .ac-mw-hub-meta,
   .ac-mw-editor__clinic-name {
+    min-width: 0;
+    max-width: 100%;
     overflow-wrap: anywhere;
     word-break: break-word;
   }

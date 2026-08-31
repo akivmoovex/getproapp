@@ -1913,8 +1913,15 @@ body.ac-public-body .acp-hero--platform {
 .acp-contact-aside {
   min-width: 0;
 }
+.acp-contact-aside .ac-public-list {
+  min-width: 0;
+  max-width: 100%;
+}
 .acp-contact-aside .ac-public-list li {
+  min-width: 0;
+  max-width: 100%;
   overflow-wrap: anywhere;
+  word-break: normal;
 }
 .acp-contact-aside,
 .acp-state-card {
