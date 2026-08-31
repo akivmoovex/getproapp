@@ -167,10 +167,7 @@ async function testMobilePublishJourney(page) {
     await page.waitForSelector(".gp-website-editor__toolbar", { timeout: 30000 });
   }
 
-  await page.locator("[data-website-engine-publish]").first().click();
-  const dialog = page.locator('[data-website-lifecycle-panel="publish"]:not([hidden])');
-  await dialog.waitFor({ state: "visible", timeout: 8000 });
-  await dialog.locator('[data-website-lifecycle-confirm="publish"]').click();
+  await clickPublishWithConfirm(page);
 
   const success =
     (await page.locator("[data-website-publish-success]").isVisible().catch(() => false)) ||
