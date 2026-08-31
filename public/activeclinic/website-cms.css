@@ -538,6 +538,8 @@
 }
 .ac-app-body--mw .ac-content {
   background: #f8fafc;
+  overflow-x: clip;
+  max-width: 100%;
 }
 .ac-mw-editor__top {
   position: sticky;
@@ -616,7 +618,10 @@
   border-right: 1px solid var(--ac-mw-border);
 }
 .ac-app-body--mw .ac-mw {
-  overflow: visible;
+  overflow-x: clip;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
   padding: 0 1.5rem 2.5rem 0;
   margin-left: 0;
 }
@@ -823,6 +828,17 @@
   min-height: 44px;
 }
 @media (max-width: 767px) {
+  .ac-app-body--mw .ac-mw {
+    padding: 0 1rem 2.5rem;
+  }
+  .ac-mw-firstuse [data-ac-website-firstuse-url="1"],
+  .ac-mw-firstuse [data-ac-website-firstuse-url="1"] code,
+  .ac-mw-hub-metric__value,
+  .ac-mw-hub-meta,
+  .ac-mw-editor__clinic-name {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+  }
   .ac-mw-firstuse__item .ac-mw-btn {
     width: 100%;
     justify-content: center;

@@ -1907,6 +1907,14 @@ body.ac-public-body .acp-hero--platform {
   display: grid;
   gap: 1.25rem;
   align-items: start;
+  min-width: 0;
+}
+.acp-contact-layout__main,
+.acp-contact-aside {
+  min-width: 0;
+}
+.acp-contact-aside .ac-public-list li {
+  overflow-wrap: anywhere;
 }
 .acp-contact-aside,
 .acp-state-card {
