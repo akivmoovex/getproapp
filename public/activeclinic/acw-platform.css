@@ -2,9 +2,6 @@
    Do not load on tenant clinic websites (MW screens). */
 body.ac-public--platform {
   font-family: Inter, "Public Sans", system-ui, sans-serif;
-  --acp-primary: #0d9488;
-  --acp-primary-strong: #00685f;
-  --acp-primary-hover: #0f766e;
   --acw-max: 80rem;
   overflow-x: clip;
 }
@@ -377,9 +374,6 @@ body.ac-public--platform .acw-footer__tagline {
 
 /* —— MF03 registration wizard (scoped; does not restyle marketing ACW pages) —— */
 body.ac-public-body--mf-register {
-  --acp-primary: #00685f;
-  --acp-primary-strong: #005049;
-  --acp-primary-hover: #008378;
   --acp-bg: #f8fafc;
   --acp-surface: #ffffff;
   --acp-border: #e2e8f0;
@@ -1187,8 +1181,8 @@ body.ac-public--platform .ac-public-brand__icon {
 }
 
 .acw-icon-box--primary {
-  background: #008378;
-  color: #f4fffc;
+  background: var(--acp-primary);
+  color: #fff;
 }
 
 .acw-icon-box--secondary {

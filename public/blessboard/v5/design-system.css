@@ -1192,7 +1192,7 @@ html.bb-ds-modal-open body {
 }
 
 .bb-powered-by__getpro {
-  color: var(--bb-color-accent);
+  color: var(--bb-color-accent-readable, var(--bb-color-accent));
   font-weight: var(--bb-font-weight-bold);
 }
 

@@ -19,8 +19,8 @@
   --ac-status-warning-bg: #fffaeb;
   --ac-status-danger: #ba1a1a;
   --ac-status-danger-bg: #ffdad6;
-  --ac-status-info: #004f56;
-  --ac-status-info-bg: #d5faff;
+  --ac-status-info: #026aa2;
+  --ac-status-info-bg: #f0f9ff;
   --ac-status-neutral: #213145;
   --ac-status-neutral-bg: #eef2f4;
   --ac-status-pending: #6b5200;
@@ -95,6 +95,7 @@
   --acp-bg: #f8f9ff;
   --acp-border: #c4c7c9;
   --acp-outline: #bac6ec;
+  --acp-focus: var(--acp-primary);
   --acp-error: #ba1a1a;
   --acp-error-bg: #ffdad6;
   --acp-radius: 0.5rem;
@@ -145,7 +146,7 @@
   --product-text: var(--acp-ink);
   --product-muted: var(--acp-muted);
   --product-border: var(--acp-border);
-  --product-focus: var(--acp-outline);
+  --product-focus: var(--acp-focus);
   --product-link: var(--acp-primary-strong);
 }
 
@@ -164,14 +165,18 @@
   color: var(--ac-status-neutral);
 }
 .ac-status-badge--success,
-.acp-status-badge--confirmed,
 .acp-status-badge--done {
+  background: var(--ac-status-success-bg);
+  color: var(--ac-status-success);
+}
+.ac-status-badge--info,
+.acp-status-badge--info {
   background: var(--ac-status-info-bg);
   color: var(--ac-status-info);
 }
-.acp-status-badge--done {
-  background: #e3f6ea;
-  color: #0f5132;
+.acp-status-badge--confirmed {
+  background: var(--acp-primary-soft);
+  color: var(--acp-primary-strong);
 }
 .ac-status-badge--pending,
 .acp-status-badge--pending {

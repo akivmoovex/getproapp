@@ -19,8 +19,8 @@
 [data-ac-shell="patient"],
 .ac-patient-body {
   font-family: var(--acp-font);
-  color: #1a202c;
-  background: #f7fafc;
+  color: var(--acp-ink);
+  background: var(--acp-bg);
   margin: 0;
   padding: 0;
   min-height: 100vh;
@@ -43,8 +43,8 @@
 }
 
 .ac-patient-header {
-  background: #fff;
-  border-bottom: 1px solid #e2e8f0;
+  background: var(--acp-surface);
+  border-bottom: 1px solid var(--acp-border);
   padding: 0.75rem 1rem;
 }
 
@@ -877,7 +877,7 @@ form.ac-patient-form-inline {
 .ac-patient-body input:focus-visible,
 .ac-patient-body select:focus-visible,
 .ac-patient-body textarea:focus-visible {
-  outline: 3px solid #1d59c1;
+  outline: 3px solid var(--acp-focus);
   outline-offset: 2px;
 }
 

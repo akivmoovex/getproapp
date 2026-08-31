@@ -13,7 +13,7 @@
   --ac-auth-primary-container: var(--acp-primary-strong, #004f56);
   --ac-auth-on-primary: #ffffff;
   --ac-auth-secondary: var(--acp-primary-strong, #004f56);
-  --ac-auth-focus: var(--acp-primary, #006068);
+  --ac-auth-focus: var(--acp-focus, var(--acp-primary, #006068));
   --ac-auth-danger: var(--ac-status-danger);
   --ac-auth-danger-bg: var(--ac-status-danger-bg);
   --ac-auth-success: var(--ac-status-success);

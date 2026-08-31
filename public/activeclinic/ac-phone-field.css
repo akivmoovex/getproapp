@@ -54,7 +54,7 @@
 }
 
 .ac-phone-field__country-btn:focus-visible {
-  outline: 3px solid var(--ac-focus, #1d59c1);
+  outline: 3px solid var(--acp-focus, var(--ac-focus, #006068));
   outline-offset: 2px;
 }
 
@@ -160,7 +160,7 @@
 .ac-phone-field__option:hover,
 .ac-phone-field__option:focus-visible {
   background: rgba(0, 60, 144, 0.08);
-  outline: 3px solid var(--ac-focus, #1d59c1);
+  outline: 3px solid var(--acp-focus, var(--ac-focus, #006068));
   outline-offset: -2px;
 }
 

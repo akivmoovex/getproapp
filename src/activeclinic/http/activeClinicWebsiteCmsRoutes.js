@@ -71,7 +71,7 @@ function slugErrorMessage(code) {
   if (code === "locked_item") return "That item cannot be changed or deleted.";
   if (code === "forbidden") return "You do not have permission to edit the website.";
   if (code === "not_found") return "That item was not found.";
-  if (code === "invalid_hex") return "Use a 6-digit colour like #0d9488.";
+  if (code === "invalid_hex") return "Use a 6-digit colour like #006068.";
   if (code === "already_exists") return "That content is already in the library or already used on that page.";
   if (code === "record_not_found") return "That clinic record was not found. Choose an existing doctor, service, or location.";
   if (code === "inactive") return "Inactive staff and services cannot appear on the website.";

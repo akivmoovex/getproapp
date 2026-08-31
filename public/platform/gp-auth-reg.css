@@ -263,7 +263,7 @@ body[data-gp-product="activeclinic"] {
   --gp-auth-surface: var(--acp-surface, #fff);
   --gp-auth-border: var(--acp-border, #c4c7c9);
   --gp-auth-muted: var(--acp-muted, #3e494a);
-  --gp-auth-focus: var(--acp-primary, #006068);
+  --gp-auth-focus: var(--acp-focus, var(--acp-primary, #006068));
   --gp-auth-id-tabs-bg: #e8f4f5;
   --gp-auth-id-tabs-border: #b8d4d6;
   --gp-reg-aside-bg-top: #f0fafb;
@@ -271,9 +271,9 @@ body[data-gp-product="activeclinic"] {
 
 body[data-gp-product="blessboard"] {
   --gp-auth-primary: var(--bb-color-primary, #6c5ce7);
-  --gp-auth-primary-strong: #5a4bd4;
-  --gp-auth-primary-hover: #7d6ff0;
-  --gp-auth-bg: var(--bb-color-bg, #f7f6fb);
+  --gp-auth-primary-strong: var(--bb-color-primary-deep, #3d348b);
+  --gp-auth-primary-hover: var(--bb-color-primary-hover, #5341cd);
+  --gp-auth-bg: var(--bb-color-page, #fbf9f6);
   --gp-auth-surface: #fff;
   --gp-auth-border: var(--bb-color-border, #d1dce0);
   --gp-auth-muted: var(--bb-color-muted, #44474e);

@@ -21,7 +21,7 @@ const BRANDING_KEYS = Object.freeze([
 
 const PRODUCT_COLOR_DEFAULTS = Object.freeze({
   [PRODUCT_CODE.ACTIVECLINIC]: Object.freeze({
-    primary: "#0d9488",
+    primary: "#006068",
     accent: "#0f766e",
   }),
   [PRODUCT_CODE.BLESSBOARD]: Object.freeze({

@@ -163,7 +163,7 @@
     var accentInput = brandForm.querySelector('[name="accentColor"]');
     var primary = primaryInput && /^#[0-9A-Fa-f]{6}$/.test(primaryInput.value.trim())
       ? primaryInput.value.trim()
-      : "#0d9488";
+      : "#006068";
     var accent = accentInput && /^#[0-9A-Fa-f]{6}$/.test(accentInput.value.trim())
       ? accentInput.value.trim()
       : "#0f766e";

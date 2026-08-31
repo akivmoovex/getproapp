@@ -294,9 +294,9 @@ textarea.ac-website-editable__input {
 .ac-website-overlay-edit {
   margin-top: 1.25rem;
   padding: 1rem 1.1rem;
-  border: 1px dashed color-mix(in srgb, var(--acp-primary, #1d59c1) 28%, #d7dee8);
+  border: 1px dashed color-mix(in srgb, var(--acp-primary, #006068) 28%, #d7dee8);
   border-radius: 0.85rem;
-  background: color-mix(in srgb, var(--acp-primary, #1d59c1) 5%, #fff);
+  background: color-mix(in srgb, var(--acp-primary, #006068) 5%, #fff);
 }
 .ac-website-overlay-edit h2,
 .ac-website-overlay-edit h3 {

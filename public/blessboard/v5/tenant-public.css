@@ -533,7 +533,7 @@ html {
 }
 
 .bb-powered-by__getpro {
-  color: var(--bb-getpro, #ff9800);
+  color: var(--bb-color-accent-readable, var(--bb-getpro, #ff9800));
   font-weight: 700;
 }
 
