@@ -135,6 +135,18 @@
   --acp-leading-tight: 1.25;
   --acp-leading-display: 2.5rem;
   --acp-leading-body: 1.5;
+
+  /* —— Cross-platform semantic aliases (product UI surfaces) —— */
+  --product-primary: var(--acp-primary);
+  --product-primary-strong: var(--acp-primary-strong);
+  --product-primary-hover: var(--acp-primary-hover);
+  --product-bg: var(--acp-bg);
+  --product-surface: var(--acp-surface);
+  --product-text: var(--acp-ink);
+  --product-muted: var(--acp-muted);
+  --product-border: var(--acp-border);
+  --product-focus: var(--acp-outline);
+  --product-link: var(--acp-primary-strong);
 }
 
 /* Semantic status badge primitives (shared by public + portal) */

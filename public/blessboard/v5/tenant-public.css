@@ -2346,7 +2346,11 @@ html {
   .bb-tp-header__inner,
   .bb-tp-container,
   .bb-tp-footer__inner,
-  .bb-tp-preview-banner__inner {
+  .bb-tp-preview-banner__inner,
+  .bb-tp-hero__inner,
+  .bb-tp-hero__inner--overlay,
+  .bb-tp-page-hero__inner,
+  .bb-tp-service-times__inner {
     padding-left: var(--bb-gutter-mobile, 1rem);
     padding-right: var(--bb-gutter-mobile, 1rem);
   }
@@ -4814,7 +4818,7 @@ html {
   width: 100%;
   max-width: var(--bb-max);
   margin: 0 auto;
-  padding: 2.25rem var(--bb-gutter-mobile, 1rem) 2rem;
+  padding: 2.25rem var(--bb-gutter) 2rem;
   display: block;
   text-align: center;
 }
@@ -4873,7 +4877,7 @@ html {
 .bb-tp-service-times__inner {
   max-width: var(--bb-max);
   margin: 0 auto;
-  padding: 0 var(--bb-gutter-mobile, 1rem);
+  padding: 0 var(--bb-gutter);
 }
 
 .bb-tp-service-times__title {

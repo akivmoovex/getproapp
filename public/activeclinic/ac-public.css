@@ -17,7 +17,7 @@ body.ac-public-body {
   margin: 0;
   min-height: 100vh;
   font-family: var(--acp-font);
-  color: #0b1c30;
+  color: var(--acp-ink);
   background: var(--acp-bg);
 }
 
@@ -55,7 +55,7 @@ body.ac-public-body {
 .ac-public-header__inner {
   max-width: var(--acp-max);
   margin: 0 auto;
-  padding: 0.85rem 1.25rem;
+  padding: 0.85rem var(--acp-gutter);
   display: flex;
   align-items: center;
   gap: 1rem;
@@ -855,7 +855,20 @@ body.ac-public--tenant {
 }
 body.ac-public--tenant .ac-public-main {
   max-width: none;
+  width: 100%;
+  margin: 0;
   padding: 0;
+}
+
+/* Canonical tenant mini-site horizontal content grid (Bug Fix 05) */
+.ac-tenant-content,
+body.ac-public--tenant .ac-public-section,
+body.ac-public--tenant .acp-page {
+  width: 100%;
+  max-width: var(--acp-max);
+  margin-inline: auto;
+  padding-inline: var(--acp-gutter);
+  box-sizing: border-box;
 }
 .ac-public-header--tenant {
   background: rgba(255, 255, 255, 0.96);
@@ -934,7 +947,7 @@ body.ac-public--tenant .ac-public-main {
   position: relative;
   max-width: var(--acp-max);
   margin: 0 auto;
-  padding: 2.5rem 1.25rem 3rem;
+  padding: 2.5rem var(--acp-gutter) 3rem;
 }
 .ac-tenant-hero::before {
   content: "";
@@ -1104,9 +1117,7 @@ body.ac-public--tenant .ac-public-main {
 
 .ac-tenant-promo,
 .ac-tenant-faq {
-  max-width: var(--acp-max);
-  margin: 0 auto;
-  padding: 0 1.25rem var(--acp-space-6);
+  padding-bottom: var(--acp-space-6);
 }
 .ac-tenant-promo {
   background: var(--acp-surface);
@@ -1167,9 +1178,7 @@ body.ac-public--tenant .ac-public-main {
 }
 
 .ac-tenant-directory {
-  max-width: var(--acp-max);
-  margin: 0 auto;
-  padding: var(--acp-space-6) 1.25rem var(--acp-space-7);
+  padding-block: var(--acp-space-6) var(--acp-space-7);
 }
 .ac-tenant-page-header {
   margin-bottom: var(--acp-space-5);
@@ -1298,7 +1307,7 @@ body.ac-public--tenant .ac-public-main {
 .ac-public-footer__inner--tenant {
   max-width: var(--acp-max);
   margin: 0 auto;
-  padding: 2rem 1.25rem 1rem;
+  padding: 2rem var(--acp-gutter) 1rem;
   display: grid;
   gap: 1.5rem;
 }
@@ -1327,7 +1336,7 @@ body.ac-public--tenant .ac-public-main {
 .ac-public-footer__legal {
   max-width: var(--acp-max);
   margin: 0 auto;
-  padding: 0.85rem 1.25rem 1.5rem;
+  padding: 0.85rem var(--acp-gutter) 1.5rem;
   color: var(--acp-muted);
   font-size: 0.88rem;
   border-top: 1px solid var(--acp-border);
@@ -1416,7 +1425,7 @@ body.ac-public-body .acp-hero--platform {
   font-size: var(--acp-text-display);
   line-height: var(--acp-leading-display);
   font-weight: 700;
-  color: #0b1c30;
+  color: var(--acp-navy);
   letter-spacing: -0.02em;
 }
 
@@ -2166,14 +2175,21 @@ body.ac-public-body .acp-hero--platform {
   }
 
   .ac-public-header__inner,
-  .ac-public-main,
   .ac-public-footer__inner,
   .ac-public-footer__inner--tenant,
-  .ac-tenant-hero,
   .ac-tenant-preview,
   .ac-tenant-trust__list,
-  .acp-page,
   .acp-hero__inner {
+    padding-left: var(--acp-gutter);
+    padding-right: var(--acp-gutter);
+  }
+
+  body.ac-public--tenant .ac-public-main {
+    padding-left: 0;
+    padding-right: 0;
+  }
+
+  body:not(.ac-public--tenant) .ac-public-main {
     padding-left: var(--acp-gutter);
     padding-right: var(--acp-gutter);
   }
@@ -2930,7 +2946,7 @@ body.ac-public-body .acp-hero--platform {
 .ac-tenant-section-head h2 { margin: 0; }
 .ac-tenant-section-link {
   font-weight: 600;
-  color: #3d4947;
+  color: var(--acp-muted);
   text-decoration: none;
 }
 .ac-service-cards--home {
@@ -2954,9 +2970,9 @@ body.ac-public-body .acp-hero--platform {
 .ac-tenant-hours-card,
 .ac-tenant-campus {
   padding: 1.25rem 1.35rem;
-  border: 1px solid #e2e8f0;
-  border-radius: 1rem;
-  background: #fff;
+  border: 1px solid var(--acp-border);
+  border-radius: var(--acp-radius-lg);
+  background: var(--acp-surface);
 }
 .ac-doctor-cards--home {
   display: grid;

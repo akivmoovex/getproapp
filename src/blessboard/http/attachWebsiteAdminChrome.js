@@ -1059,7 +1059,7 @@ async function attachWebsiteAdminChrome(opts) {
     },
   };
 
-  model.cssHref = "/blessboard/v5/tenant-public.css?v=55";
+  model.cssHref = "/blessboard/v5/tenant-public.css?v=57";
 
   return model;
 }

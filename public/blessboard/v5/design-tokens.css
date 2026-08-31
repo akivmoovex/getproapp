@@ -140,6 +140,18 @@
   /* Satellite: 800 (filters), 960 (editors), 1100+ (wide cards), 1200/1440 (marketing) */
   --bb-bp-md: 768px;
   --bb-bp-lg: 900px;
+
+  /* —— Cross-platform semantic aliases (product UI surfaces) —— */
+  --product-primary: var(--bb-color-primary);
+  --product-primary-strong: var(--bb-color-primary-deep);
+  --product-primary-hover: var(--bb-color-primary-hover);
+  --product-bg: var(--bb-color-page);
+  --product-surface: var(--bb-color-surface);
+  --product-text: var(--bb-color-ink);
+  --product-muted: var(--bb-color-muted);
+  --product-border: var(--bb-color-border);
+  --product-focus: var(--bb-color-focus-ring);
+  --product-link: var(--bb-color-primary);
 }
 
 @media (max-width: 767px) {
