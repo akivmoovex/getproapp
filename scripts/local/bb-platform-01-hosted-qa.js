@@ -134,16 +134,15 @@ async function testSectionChrome(page) {
 }
 
 async function clickPublishWithConfirm(page) {
-  await page.evaluate(() => {
-    const btn = document.querySelector("[data-website-engine-publish]");
-    if (btn) btn.click();
-  });
+  await page.locator("[data-website-engine-publish]").first().click();
+  const publishedImmediately = await page
+    .waitForURL(/website_published=1/i, { timeout: 8000 })
+    .then(() => true)
+    .catch(() => false);
+  if (publishedImmediately) return;
   const dialog = page.locator('[data-website-lifecycle-panel="publish"]:not([hidden])');
   await dialog.waitFor({ state: "visible", timeout: 15000 });
-  await page.evaluate(() => {
-    const confirm = document.querySelector('[data-website-lifecycle-confirm="publish"]');
-    if (confirm) confirm.click();
-  });
+  await dialog.locator('[data-website-lifecycle-confirm="publish"]').click();
 }
 
 async function testMobilePublishJourney(page) {
