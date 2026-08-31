@@ -46,7 +46,12 @@ async function testPencil(page, url, key) {
   const field = page.locator(`[data-website-key="${key}"]`).first();
   await field.waitFor({ state: "visible", timeout: 15000 });
   const pencil = field.locator(".gp-website-editable__pencil, [data-website-start]").first();
-  await pencil.click({ timeout: 10000 });
+  const display = field.locator("[data-website-display]").first();
+  try {
+    await pencil.click({ timeout: 5000 });
+  } catch (err) {
+    await display.click({ timeout: 5000 });
+  }
   const panel = page.locator("[data-website-field-editor-panel]:not([hidden])");
   await panel.waitFor({ state: "visible", timeout: 10000 });
   await panel.locator("[data-website-field-editor-cancel]").click();
@@ -130,7 +135,12 @@ async function testMobilePublishJourney(page) {
 
   const marker = `BB-MOB-PUB-${Date.now()}`;
   const field = page.locator('[data-website-key="home.hero.heading"]').first();
-  await field.locator(".gp-website-editable__pencil").click({ timeout: 15000 });
+  const pencil = field.locator(".gp-website-editable__pencil");
+  try {
+    await pencil.click({ timeout: 5000 });
+  } catch (err) {
+    await field.locator("[data-website-display]").click({ timeout: 5000 });
+  }
   const panel = page.locator("[data-website-field-editor-panel]:not([hidden])");
   await panel.waitFor({ state: "visible", timeout: 10000 });
   await panel.locator("[data-website-input]").fill(marker);

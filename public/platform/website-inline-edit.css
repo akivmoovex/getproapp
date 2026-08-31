@@ -1320,7 +1320,7 @@ body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .gp-web
 body.gp-website-editor-open .gp-website-editable,
 body.gp-website-editor-open .ac-website-editable {
   position: relative;
-  pointer-events: none;
+  pointer-events: auto;
 }
 
 body.gp-website-editor-open .gp-website-editable__display {
