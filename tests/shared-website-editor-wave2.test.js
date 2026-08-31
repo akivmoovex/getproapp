@@ -82,8 +82,8 @@ function extractCsrf(html) {
 }
 
 describe("shared website editor wave 2 — static shell", () => {
-  it("uses one shared field editor host in editor chrome for both products", () => {
-    const chrome = read("views/platform/website-engine/editor-chrome.ejs");
+  it("uses one shared field editor host in editor overlays for both products", () => {
+    const overlays = read("views/platform/website-engine/editor-overlays.ejs");
     const host = read("views/platform/website-engine/field-editor-host.ejs");
     const js = read("public/platform/website-inline-edit.js");
     const css = read("public/platform/website-inline-edit.css");
@@ -92,7 +92,7 @@ describe("shared website editor wave 2 — static shell", () => {
     const acImage = read("views/activeclinic/partials/website-editable-image.ejs");
     const bbImage = read("views/blessboard/v5/partials/editable-image.ejs");
 
-    assert.match(chrome, /field-editor-host/);
+    assert.match(overlays, /field-editor-host/);
     assert.match(host, /data-website-field-editor="1"/);
     assert.match(host, /Save draft/);
     assert.match(host, /data-website-save="1"/);

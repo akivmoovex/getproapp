@@ -101,12 +101,13 @@ function cookieHeader(base, res) {
 describe("shared website editor wave 4a — static section shell", () => {
   it("uses shared section menu, controller, and chrome data attributes", () => {
     const chrome = read("views/platform/website-engine/editor-chrome.ejs");
+    const overlays = read("views/platform/website-engine/editor-overlays.ejs");
     const menu = read("views/platform/website-engine/section-action-menu.ejs");
     const js = read("public/platform/website-section-actions.js");
     const css = read("public/platform/website-inline-edit.css");
     assert.match(chrome, /data-website-section-actions-url/);
     assert.match(chrome, /data-website-section-manifest/);
-    assert.match(chrome, /section-action-menu/);
+    assert.match(overlays, /section-action-menu/);
     assert.match(menu, /data-website-section-menu-host/);
     assert.match(menu, /data-website-section-action="edit"/);
     assert.match(menu, /data-website-section-action="reorder"/);
@@ -138,8 +139,10 @@ describe("shared website editor wave 4a — static section shell", () => {
 
   it("does not render section menu host outside edit chrome branch", () => {
     const chrome = read("views/platform/website-engine/editor-chrome.ejs");
+    const overlays = read("views/platform/website-engine/editor-overlays.ejs");
     const previewBranch = chrome.split("shell.previewMode")[1] || "";
     assert.doesNotMatch(previewBranch.slice(0, 500), /section-action-menu/);
+    assert.match(overlays, /section-action-menu/);
   });
 });
 
