@@ -140,7 +140,7 @@ describe("shared website editor wave 3 — static lifecycle shell", () => {
     assert.match(css, /pointer-events: none/);
     assert.match(css, /data-website-type="textarea"/);
     assert.match(css, /--gp-we-z-editable-affordance/);
-    assert.match(css, /z-index: calc\(var\(--gp-we-z-editable-affordance\) \+ 5\)/);
+    assert.match(css, /z-index: calc\(var\(--gp-we-z-section-chrome\) \+ 5\)/);
     assert.match(css, /\.gp-website-editable__display\.is-empty/);
     assert.match(css, /data-empty-hint/);
 
