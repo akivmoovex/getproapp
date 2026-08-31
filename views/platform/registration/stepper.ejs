@@ -3,9 +3,11 @@
   locals:
     currentStep (number 1-based)
     totalSteps (number)
-    caption (string)
+    caption (string, optional)
     percent (number 0-100)
-    steps[] optional { key, label } for screen-reader list
+    steps[] { key, label, shortLabel? }
+    variant: 'numbered' | 'bar' (default numbered)
+    wizardKey: current step key string
 %>
 <%
   var current = Number(typeof currentStep !== 'undefined' ? currentStep : 1) || 1;
@@ -13,8 +15,30 @@
   var pct = typeof percent === 'number' ? percent : Math.round((current / total) * 100);
   var cap = typeof caption === 'string' ? caption : ('Step ' + current + ' of ' + total);
   var stepList = Array.isArray(steps) ? steps : [];
+  var variant = typeof variant !== 'undefined' ? variant : 'numbered';
+  var activeKey = typeof wizardKey !== 'undefined' ? wizardKey : '';
 %>
-<div class="gp-reg__stepper" data-gp-reg-stepper="<%= current %>">
+<div class="gp-reg__stepper gp-reg__stepper--<%= variant %>" data-gp-reg-stepper="<%= current %>" data-gp-reg-step="<%= activeKey %>">
+  <% if (variant === 'numbered' && stepList.length) { %>
+  <ol class="gp-reg__stepper-steps" aria-label="Registration progress">
+    <% stepList.forEach(function (s, idx) {
+      var n = idx + 1;
+      var state = n < current ? 'done' : (n === current ? 'active' : 'upcoming');
+    %>
+    <li class="gp-reg__stepper-step gp-reg__stepper-step--<%= state %>"<% if (n === current) { %> aria-current="step"<% } %>>
+      <span class="gp-reg__stepper-step__marker" aria-hidden="true">
+        <% if (state === 'done') { %>
+        <span class="material-symbols-outlined">check</span>
+        <% } else { %>
+        <%= n %>
+        <% } %>
+      </span>
+      <span class="gp-reg__stepper-step__label gp-reg__stepper-step__label--full"><%= s.label || s.key %></span>
+      <span class="gp-reg__stepper-step__label gp-reg__stepper-step__label--short"><%= s.shortLabel || s.label || s.key %></span>
+    </li>
+    <% }) %>
+  </ol>
+  <% } %>
   <p class="gp-reg__stepper-caption"><%= cap %></p>
   <div
     class="gp-reg__stepper-track"

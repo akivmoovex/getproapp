@@ -1456,8 +1456,21 @@ ul.bb-apex-features {
 
 .bb-apex-register__grid {
   display: grid;
-  gap: 2rem;
+  gap: var(--gp-auth-reg-gap, 2rem);
   align-items: start;
+}
+
+@media (min-width: 960px) {
+  .bb-apex-register__grid {
+    grid-template-columns: minmax(0, 0.38fr) minmax(0, 0.62fr);
+  }
+}
+
+.bb-apex-register__aside.gp-reg__aside {
+  background: linear-gradient(180deg, var(--gp-reg-aside-bg-top, #f7f4ff) 0%, #fff 100%);
+  border: 1px solid var(--bb-color-border, #d1dce0);
+  border-radius: var(--gp-auth-reg-radius-lg, 0.75rem);
+  padding: 1.5rem;
 }
 
 .bb-apex-register__aside-title {

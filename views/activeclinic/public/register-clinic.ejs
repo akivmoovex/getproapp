@@ -6,22 +6,14 @@
 <% const provinceOptions = typeof zambiaProvinces !== 'undefined' && Array.isArray(zambiaProvinces) ? zambiaProvinces : []; %>
 <% const isZambia = String(fd.countryCode || 'ZM').toUpperCase() === 'ZM'; %>
 <section
-  class="acw-page acw-register acw-register--with-aside"
+  class="acw-page acw-register acw-register--with-aside gp-reg"
   data-ac-page-section="register-clinic"
+  data-gp-product="activeclinic"
   data-ac-acw-screen="<%= step === 'administrator' ? 'ACW09-admin' : 'ACW09-clinic' %>"
   data-ac-acw-step="<%= step %>"
   data-ac-mf-family="MF03"
   data-ac-mf-screen="<%= step === 'administrator' ? 'MF03-03' : 'MF03-01' %>"
 >
-  <header class="acw-register__header">
-    <% if (step === 'administrator') { %>
-    <h1>Create Administrator Account</h1>
-    <% } else { %>
-    <h1>Register Clinic</h1>
-    <% } %>
-  </header>
-
-  <%- include('../partials/register-clinic-steps') %>
 
   <% if (typeof error === 'string' && error) { %>
   <div class="ac-public-error acw-register__alert" role="alert"><%= error %></div>
@@ -41,9 +33,11 @@
   <% if (step === 'administrator') { %>
   <div class="acw-register__layout">
     <%- include('../partials/register-aside-admin') %>
-    <div class="acw-register__panel">
-  <p class="acw-register__lede">This account will have full access to manage the clinic profile, staff members, and settings. You will use this phone number or email to sign in after registration.</p>
-  <div class="acw-register__card">
+    <div class="acw-register__panel gp-reg__panel">
+  <div class="acw-register__card gp-reg__card">
+  <%- include('../partials/register-clinic-steps') %>
+  <h2 class="gp-reg__form-heading">Administrator Details</h2>
+  <p class="gp-reg__form-lede">Create the primary administrative account for this clinic.</p>
   <form method="post" action="/register-clinic" class="ac-public-form acw-form acw-register__form" data-ac-loading="1" novalidate data-ac-register-step="administrator">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <input type="hidden" name="clinicName" value="<%= fd.clinicName || '' %>"/>
@@ -132,7 +126,7 @@
   </div>
   <% } else { %>
   <div class="acw-register__layout">
-    <aside class="acw-register__aside" aria-labelledby="ac-register-aside-title">
+    <aside class="acw-register__aside gp-reg__aside" aria-labelledby="ac-register-aside-title">
       <p class="acw-register__aside-eyebrow">ActiveClinic</p>
       <h2 class="acw-register__aside-title" id="ac-register-aside-title">Start running your clinic digitally</h2>
       <p class="acw-register__aside-lead">Your clinic workspace is created immediately after registration. Administrator access is ready to use, and your public clinic website starts as an unpublished draft you can build and publish when ready.</p>
@@ -148,13 +142,16 @@
       </ul>
       <p class="acw-register__aside-note">Registration does not automatically publish your public clinic website.</p>
     </aside>
-    <div class="acw-register__panel">
-  <div class="acw-register__card">
+    <div class="acw-register__panel gp-reg__panel">
+  <div class="acw-register__card gp-reg__card">
+  <%- include('../partials/register-clinic-steps') %>
+  <h2 class="gp-reg__form-heading">Let's set up your clinic</h2>
+  <p class="gp-reg__form-lede">Enter the primary details for your medical practice.</p>
   <form method="post" action="/register-clinic" class="ac-public-form acw-form acw-register__form" data-ac-loading="1" novalidate data-ac-register-step="clinic">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <input type="hidden" name="action" value="next-clinic"/>
     <div class="ac-form-field<%= verr.clinicName ? ' ac-form-field--error' : '' %>">
-      <label for="clinicName">Clinic name <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
+      <label for="clinicName">Clinic Name <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
       <div class="acw-register__icon-field">
         <span class="material-symbols-outlined" aria-hidden="true">local_hospital</span>
         <input id="clinicName" name="clinicName" required aria-required="true" maxlength="200" placeholder="Enter official clinic name" value="<%= fd.clinicName || '' %>" aria-invalid="<%= verr.clinicName ? 'true' : 'false' %>"<% if (verr.clinicName) { %> aria-describedby="clinicName-error"<% } %>/>
@@ -182,7 +179,7 @@
         <% if (verr.countryCode) { %><p class="ac-form-field__error" id="countryCode-error"><%= verr.countryCode %></p><% } %>
       </div>
       <div class="ac-form-field<%= verr.city ? ' ac-form-field--error' : '' %> acw-location-field">
-        <label for="city">City / location</label>
+        <label for="city">City/Location</label>
         <input
           id="city"
           name="city"
@@ -204,7 +201,7 @@
     </div>
     <div class="acw-register__grid">
       <div class="ac-form-field<%= verr.province ? ' ac-form-field--error' : '' %>" data-ac-province-field="1">
-        <label for="provinceSelect">Province / region</label>
+        <label for="provinceSelect">Province/Region</label>
         <select id="provinceSelect" name="<%= isZambia ? 'province' : '' %>"<%= isZambia ? '' : ' hidden' %>>
           <option value="">Select province</option>
           <% provinceOptions.forEach(function(province) { %>
@@ -230,7 +227,7 @@
     <div class="acw-register__actions">
       <a class="ac-btn ac-btn--secondary" href="/">Cancel</a>
       <button type="submit" class="ac-btn ac-btn--primary" data-loading="Please wait…">
-        Next
+        Continue to Staff Setup
         <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
       </button>
     </div>

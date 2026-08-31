@@ -16,7 +16,7 @@ const {
   buildPhoneFieldLocals,
 } = require("../services/activeClinicPhoneFieldLocals");
 
-const ASSET_VERSION = "v7-shared-auth-reg-1";
+const ASSET_VERSION = "v7-auth-reg-polish-1";
 
 const DEFAULT_BRANDING = Object.freeze({
   productName: "ActiveClinic",

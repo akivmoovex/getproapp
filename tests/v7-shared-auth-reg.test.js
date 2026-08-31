@@ -45,9 +45,10 @@ describe("V7 shared auth registration", () => {
     assert.match(html, /data-ac-auth-home="1"/);
   });
 
-  it("shared registration stepper partial exists", () => {
+  it("shared registration stepper partial exists with numbered steps", () => {
     const stepper = read("views/platform/registration/stepper.ejs");
-    assert.match(stepper, /gp-reg__stepper/);
+    assert.match(stepper, /gp-reg__stepper-steps/);
+    assert.match(stepper, /gp-reg__stepper-step__marker/);
     assert.match(stepper, /role="progressbar"/);
   });
 

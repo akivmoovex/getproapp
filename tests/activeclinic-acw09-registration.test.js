@@ -122,7 +122,7 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
     assert.match(page.text, /name="countryCode"/);
     assert.match(page.text, /name="address"/);
     assert.doesNotMatch(page.text, /name="password"/);
-    assert.match(page.text, /acw-platform.css\?v=v7-ac-platform-03/);
+    assert.match(page.text, /acw-platform.css\?v=v7-auth-reg-polish-1/);
     const css = fs.readFileSync(
       path.join(__dirname, "..", "public", "activeclinic", "acw-platform.css"),
       "utf8"
@@ -422,8 +422,8 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
       await context.clearCookies();
       await page.click("[data-ac-sign-in='1']");
       await page.waitForURL(/\/login/);
-      await page.waitForSelector("#identifier, input[name=identifier]");
-      const identifierSel = (await page.$("#identifier")) ? "#identifier" : "input[name=identifier]";
+      await page.waitForSelector("#login_email, input[name=login_email]");
+      const identifierSel = (await page.$("#login_email")) ? "#login_email" : "input[name=login_email]";
       await page.fill(identifierSel, email);
       await page.fill("input[type=password]", PASSWORD);
       await page.click("button[type=submit]");

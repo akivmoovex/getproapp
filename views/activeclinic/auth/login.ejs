@@ -11,6 +11,12 @@
     }) %>
 
     <div class="ac-auth-form-panel">
+      <%- include('../../platform/auth/login-feature-panel', {
+        mode: 'mobile',
+        mobileIcon: 'local_hospital',
+        mobileTitle: 'Run your clinic from one workspace',
+        mobileLead: 'Patients, appointments, billing, and clinical workflows in one secure place.'
+      }) %>
       <% if (error) { %>
         <h1 class="ac-auth-h1">Authentication failed</h1>
         <p class="ac-auth-desc">Check your sign-in details and try again.</p>

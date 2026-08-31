@@ -133,9 +133,15 @@ describe("ActiveClinic Platform 03 — navigation and layout", () => {
       assert.match(html, /acw-register__panel/);
     }
 
-    assert.match(step1, /Step 1 of 3/);
+    assert.match(step1, /Let's set up your clinic/);
+    assert.match(step1, /gp-reg__stepper/);
+    assert.match(step1, /Staff Setup/);
+    assert.match(step1, /gp-auth-reg\.css/);
+    assert.match(step1, /data-gp-product="activeclinic"/);
+    assert.match(step2, /Administrator Details/);
     assert.match(step2, /Step 2 of 3/);
     assert.match(step3, /Step 3 of 3/);
+    assert.match(step3, /Review your clinic/);
     assert.match(step1, /data-ac-city-listbox="1"/);
     assert.match(step1, /id="provinceSelect"/);
     assert.match(step3, /href="\/register-clinic\?step=clinic"/);

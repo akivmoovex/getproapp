@@ -98,6 +98,105 @@
   margin: 0 0 1.5rem;
 }
 
+.gp-reg__stepper-steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.gp-reg__stepper-step {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  text-align: center;
+  position: relative;
+  min-width: 0;
+}
+
+.gp-reg__stepper-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 1.1rem;
+  left: calc(50% + 1.1rem);
+  right: calc(-50% + 1.1rem);
+  height: 2px;
+  background: var(--gp-reg-stepper-track, #eef2f4);
+  z-index: 0;
+}
+
+.gp-reg__stepper-step--done:not(:last-child)::after,
+.gp-reg__stepper-step--active:not(:last-child)::after {
+  background: var(--gp-auth-primary, #006068);
+}
+
+.gp-reg__stepper-step__marker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  border: 2px solid var(--gp-reg-stepper-track, #eef2f4);
+  background: var(--gp-auth-surface, #fff);
+  color: var(--gp-auth-muted, #3e494a);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.gp-reg__stepper-step__marker .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.gp-reg__stepper-step--active .gp-reg__stepper-step__marker {
+  border-color: var(--gp-auth-primary, #006068);
+  background: var(--gp-auth-primary, #006068);
+  color: #fff;
+}
+
+.gp-reg__stepper-step--done .gp-reg__stepper-step__marker {
+  border-color: var(--gp-auth-primary, #006068);
+  background: var(--gp-auth-primary, #006068);
+  color: #fff;
+}
+
+.gp-reg__stepper-step__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gp-auth-muted, #3e494a);
+  line-height: 1.25;
+}
+
+.gp-reg__stepper-step--active .gp-reg__stepper-step__label {
+  color: var(--gp-auth-primary, #006068);
+}
+
+.gp-reg__stepper-step__label--short {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .gp-reg__stepper-step__label--full {
+    display: none;
+  }
+  .gp-reg__stepper-step__label--short {
+    display: block;
+  }
+  .gp-reg__stepper-step__marker {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.8rem;
+  }
+}
+
 .gp-reg__stepper-track {
   height: 0.35rem;
   border-radius: 999px;
@@ -256,4 +355,156 @@ body[data-gp-product="blessboard"] {
 .bb-apex-register-review__dl dd {
   margin: 0;
   font-weight: 500;
+}
+
+/* —— Login feature panel (desktop aside + mobile compact) —— */
+.gp-auth-feature-panel {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .gp-auth-feature-panel {
+    display: block;
+    background: linear-gradient(165deg, var(--gp-reg-aside-bg-top, #f7f4ff) 0%, var(--gp-auth-surface, #fff) 72%);
+    border: 1px solid var(--gp-auth-border, #c4c7c9);
+    border-radius: var(--gp-auth-reg-radius-lg, 0.75rem);
+    padding: 2rem 1.75rem;
+    min-height: 100%;
+  }
+
+  .gp-auth-feature-panel__icon-wrap {
+    margin: 0 0 1.25rem;
+  }
+
+  .gp-auth-feature-panel__icon {
+    font-size: 2.5rem;
+    color: var(--gp-auth-primary, #6c5ce7);
+    background: color-mix(in srgb, var(--gp-auth-primary, #6c5ce7) 12%, transparent);
+    border-radius: 1rem;
+    padding: 0.65rem;
+  }
+
+  .gp-auth-feature-panel__title {
+    margin: 0 0 0.65rem;
+    font-size: 1.75rem;
+    line-height: 1.2;
+    font-weight: 700;
+    color: var(--gp-auth-text, #1a1c1e);
+  }
+
+  .gp-auth-feature-panel__lead {
+    margin: 0 0 1.25rem;
+    color: var(--gp-auth-muted, #44474e);
+    line-height: 1.55;
+    font-size: 1rem;
+  }
+
+  .gp-auth-feature-panel__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .gp-auth-feature-panel__list li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.6rem;
+    align-items: start;
+    font-size: 0.9rem;
+    color: var(--gp-auth-muted, #44474e);
+    line-height: 1.45;
+  }
+
+  .gp-auth-feature-panel__list .material-symbols-outlined {
+    color: var(--gp-auth-primary, #6c5ce7);
+    font-size: 1.2rem;
+  }
+}
+
+.gp-auth-feature-panel__mobile {
+  display: none;
+}
+
+@media (max-width: 959px) {
+  .gp-auth-feature-panel__mobile {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.85rem;
+    align-items: start;
+    margin: 0 0 1.25rem;
+    padding: 1rem 1.1rem;
+    border-radius: var(--gp-auth-reg-radius-lg, 0.75rem);
+    background: color-mix(in srgb, var(--gp-auth-primary, #6c5ce7) 8%, var(--gp-auth-surface, #fff));
+    border: 1px solid color-mix(in srgb, var(--gp-auth-primary, #6c5ce7) 18%, var(--gp-auth-border, #d1dce0));
+  }
+
+  .gp-auth-feature-panel__mobile-icon .material-symbols-outlined {
+    font-size: 1.75rem;
+    color: var(--gp-auth-primary, #6c5ce7);
+  }
+
+  .gp-auth-feature-panel__mobile-title {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .gp-auth-feature-panel__mobile-lead {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--gp-auth-muted, #44474e);
+    line-height: 1.45;
+  }
+
+  .bb-auth-panel {
+    display: none !important;
+  }
+}
+
+@media (max-width: 959px) {
+  .acw-register__aside {
+    display: none;
+  }
+
+  .acw-register--with-aside .acw-register__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .bb-apex-register__aside.gp-reg__aside {
+    display: none;
+  }
+}
+
+.gp-reg__form-heading {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.35rem, 3.5vw, 1.75rem);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.gp-reg__form-lede {
+  margin: 0 0 1.25rem;
+  color: var(--gp-auth-muted, #3e494a);
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+.bb-auth-register-hint {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--gp-auth-muted, #44474e);
+}
+
+.bb-auth-register-hint a {
+  color: var(--gp-auth-primary, #6c5ce7);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bb-auth-register-hint a:hover {
+  text-decoration: underline;
 }

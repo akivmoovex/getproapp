@@ -23,6 +23,7 @@ const {
   PHONE_LOGIN_STATUS,
   resolvePhoneLoginStatus,
 } = require("../src/blessboard/services/phoneLoginStatus");
+const { renderLoginPage } = require("../src/blessboard/http/renderTenantLandingPage");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const DEPLOYMENT = "blessboard-org-staging";
@@ -30,15 +31,13 @@ const PASSWORD = "correct-horse-battery-staple";
 
 describe("blessboard phone-first authentication (11E)", () => {
   it("login UI prioritizes phone wording", () => {
-    const html = fs.readFileSync(
-      path.join(__dirname, "..", "views/blessboard/v5/apex/login.ejs"),
-      "utf8"
-    );
+    const html = renderLoginPage({ csrfToken: "tok", loginMode: "phone" });
     assert.match(html, /data-gp-auth-identifier="1"/);
     assert.match(html, /data-gp-auth-id-tab="phone"/);
     assert.match(html, /data-gp-auth-id-tab="email"/);
     assert.match(html, /phone_national/);
     assert.match(html, /Welcome Back/i);
+    assert.match(html, /gp-auth-feature-panel/);
   });
 
   it("resolvePhoneLoginStatus covers missing/unverified/verified", () => {

@@ -1,19 +1,14 @@
 <% const fd = formData || {}; %>
 <% const verr = validationErrors || {}; %>
 <section
-  class="acw-page acw-register acw-register--with-aside"
+  class="acw-page acw-register acw-register--with-aside gp-reg"
   data-ac-page-section="register-clinic-review"
+  data-gp-product="activeclinic"
   data-ac-acw-screen="ACW09-review"
   data-ac-acw-step="review"
   data-ac-mf-family="MF03"
   data-ac-mf-screen="MF03-05"
 >
-  <header class="acw-register__header">
-    <h1>Review Registration Details</h1>
-    <p class="acw-register__lede">Please confirm the information below before creating your clinic.</p>
-  </header>
-
-  <%- include('../partials/register-clinic-steps') %>
 
   <% if (typeof error === 'string' && error) { %>
   <div class="ac-public-error acw-register__alert" role="alert"><%= error %></div>
@@ -39,8 +34,11 @@
 
   <div class="acw-register__layout">
     <%- include('../partials/register-aside-review') %>
-    <div class="acw-register__panel">
-  <div class="acw-register-review">
+    <div class="acw-register__panel gp-reg__panel">
+  <%- include('../partials/register-clinic-steps') %>
+  <h2 class="gp-reg__form-heading">Review your clinic</h2>
+  <p class="gp-reg__form-lede">Confirm the details below before creating your clinic workspace.</p>
+  <div class="acw-register-review gp-reg-review">
     <article class="acw-register__card acw-register-review__card">
       <header class="acw-register-review__head">
         <h2><span class="material-symbols-outlined" aria-hidden="true">local_hospital</span> Clinic information</h2>

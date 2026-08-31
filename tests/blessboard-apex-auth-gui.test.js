@@ -21,7 +21,7 @@ describe("blessboard apex auth gui states", () => {
     });
     assert.match(credentials, /data-bb-auth-error="credentials"/);
     assert.match(credentials, /bb-auth-error-summary/);
-    assert.match(credentials, /href="#email"/);
+    assert.match(credentials, /href="#login_email"/);
     assert.match(credentials, /id="email-error"/);
 
     const throttled = renderLoginPage({
@@ -68,12 +68,12 @@ describe("blessboard apex auth gui states", () => {
     assert.match(html, /href="\/forgot-password"/);
     assert.doesNotMatch(html, /Register as Member/i);
     assert.doesNotMatch(html, /Continue with (Google|Facebook)|Sign in with (Google|Facebook)|social.?login/i);
-    assert.match(html, /name="email"/);
+    assert.match(html, /name="login_email"/);
     assert.match(html, /name="password"/);
     assert.match(html, /name="_csrf"/);
     assert.match(html, /name="referrer" content="no-referrer"/);
-    assert.match(html, /tenant-auth\.css\?v=13/);
-    assert.match(html, /apex-auth\.css\?v=6/);
+    assert.match(html, /tenant-auth\.css\?v=14/);
+    assert.match(html, /apex-auth\.css\?v=7/);
   });
 
   it("auth error page classifies expired, consumed, and unauthorized messages", () => {

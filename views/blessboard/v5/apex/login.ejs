@@ -17,7 +17,7 @@
   <%- include('../partials/head-design-system') %>
   <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=14" />
   <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=7" />
-  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=7" />
+  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=8" />
   <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=7" />
 </head>
 <body
@@ -33,16 +33,17 @@
   <a class="bb-auth-skip" href="#bb-auth-login-form">Skip to sign-in form</a>
 
   <div class="bb-auth-layout">
-    <aside class="bb-auth-panel" aria-hidden="true">
-      <div class="bb-auth-panel__inner">
-        <p class="bb-auth-panel__eyebrow">
-          <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
-          Secure access
-        </p>
-        <p class="bb-auth-panel__title"><%= panelTitle %></p>
-        <p class="bb-auth-panel__lead"><%= panelLead %></p>
-      </div>
-    </aside>
+    <%- include('../../../platform/auth/login-feature-panel', {
+      mode: 'desktop',
+      icon: 'auto_awesome',
+      title: 'Manage everything',
+      lead: 'Members, events, giving, and more in one place.',
+      features: [
+        { icon: 'groups', text: 'Member directory and engagement tools' },
+        { icon: 'event', text: 'Events and fellowship coordination' },
+        { icon: 'volunteer_activism', text: 'Giving and stewardship workflows' }
+      ]
+    }) %>
 
     <main class="bb-auth-main">
       <header class="bb-auth-main__header">
@@ -64,6 +65,12 @@
       </header>
 
       <div class="bb-auth-main__body">
+        <%- include('../../../platform/auth/login-feature-panel', {
+          mode: 'mobile',
+          mobileIcon: 'groups',
+          mobileTitle: 'Connect with your community',
+          mobileLead: 'Access sermons, events, and fellowship all in one place.'
+        }) %>
         <div class="bb-auth-card bb-auth-card--login<%= transferHostname ? ' bb-auth-card--transfer' : '' %>">
           <div class="bb-auth-card__intro">
             <div class="bb-auth-card__brand-mark" aria-hidden="true">
@@ -244,6 +251,12 @@
             </div>
           </form>
 
+          <% if (!transferHostname) { %>
+          <p class="bb-auth-register-hint">
+            Don't have an account? <a href="/register-church">Register church</a>
+          </p>
+          <% } %>
+
           <p class="bb-auth-footnote">
             <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
             Access to church workspaces follows your BlessBoard roles after sign-in.
@@ -262,7 +275,7 @@
 
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
   <script src="/blessboard/v5/tenant-auth.js?v=2" defer></script>
-  <script src="/platform/gp-auth-reg.js?v=7" defer></script>
+  <script src="/platform/gp-auth-reg.js?v=8" defer></script>
   <script src="/activeclinic/ac-phone-field.js?v=7" defer></script>
 </body>
 </html>
