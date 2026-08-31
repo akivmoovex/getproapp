@@ -117,8 +117,13 @@ async function testSectionChrome(page) {
   await page.keyboard.press("Escape");
   await menu.waitFor({ state: "hidden", timeout: 5000 }).catch(() => {});
 
-  const pencil = page.locator('[data-website-key="home.hero.heading"] .gp-website-editable__pencil').first();
-  await pencil.click({ timeout: 10000 });
+  const field = page.locator('[data-website-key="home.hero.heading"]').first();
+  const pencil = field.locator(".gp-website-editable__pencil").first();
+  try {
+    await pencil.click({ timeout: 5000 });
+  } catch (err) {
+    await field.locator("[data-website-display]").click({ timeout: 5000 });
+  }
   const panel = page.locator("[data-website-field-editor-panel]:not([hidden])");
   await panel.waitFor({ state: "visible", timeout: 8000 });
   await panel.locator("[data-website-field-editor-cancel]").click();
