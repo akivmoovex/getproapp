@@ -129,6 +129,19 @@ async function testSectionChrome(page) {
   return { ok: Boolean(box && box.height > 0 && zMenu >= 40), zMenu, box };
 }
 
+async function clickPublishWithConfirm(page) {
+  await page.evaluate(() => {
+    const btn = document.querySelector("[data-website-engine-publish]");
+    if (btn) btn.click();
+  });
+  const dialog = page.locator('[data-website-lifecycle-panel="publish"]:not([hidden])');
+  await dialog.waitFor({ state: "visible", timeout: 15000 });
+  await page.evaluate(() => {
+    const confirm = document.querySelector('[data-website-lifecycle-confirm="publish"]');
+    if (confirm) confirm.click();
+  });
+}
+
 async function testMobilePublishJourney(page) {
   await page.goto(`${BASE}/hq/website`, { waitUntil: "domcontentloaded", timeout: 60000 });
   const editHref = await page.locator('[data-bb-edit-website="1"], [data-bb-website-action="edit"]').first().getAttribute("href");
