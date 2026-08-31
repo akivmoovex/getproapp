@@ -34,6 +34,11 @@
   else if (_fieldKey === 'buttonUrl') _label = 'Edit button link';
   else if (_type === 'heading') _label = 'Edit heading';
   else if (_type === 'contactText') _label = 'Edit contact text';
+  var _isEmpty = !_value || !String(_value).trim();
+  var _emptyHint = 'Click to add text';
+  if (_type === 'heading') _emptyHint = 'Click to add heading';
+  else if (_fieldKey === 'buttonText') _emptyHint = 'Click to add button label';
+  else if (_multiline) _emptyHint = 'Click to add text';
   function _escAttr(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
@@ -57,7 +62,11 @@
   data-bb-section="<%= _escAttr(_sectionKey) %>"
   data-bb-field="<%= _escAttr(_fieldKey) %>"
 >
-  <span class="gp-website-editable__display ac-website-editable__display" data-website-display="1">
+  <span
+    class="gp-website-editable__display ac-website-editable__display<%= _isEmpty ? ' is-empty' : '' %>"
+    data-website-display="1"
+    <% if (_isEmpty) { %>data-empty-hint="<%= _escAttr(_emptyHint) %>"<% } %>
+  >
     <% if (_tag === 'a') { %>
     <a class="<%= _class %>" href="<%= _href || '#' %>" data-website-value-text="1" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></a>
     <% } else if (_tag === 'h1') { %>

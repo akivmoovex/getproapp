@@ -636,14 +636,21 @@ describe("BlessBoard HQ website settings HTTP", () => {
     assert.match(page.text, /data-bb-website-action="edit"/);
     assert.match(page.text, /data-bb-website-action="publish"/);
     assert.match(page.text, /data-bb-website-action="history"/);
+    assert.match(page.text, /data-bb-website-action="media"/);
+    assert.match(page.text, /data-bb-website-action="styles"/);
+    assert.match(page.text, /data-bb-website-action="seo"/);
     assert.match(page.text, /Customize branding/);
-    assert.match(page.text, /data-bb-website-action="branding"/);
-    assert.match(page.text, /href="\/hq\/website\/branding"/);
-    const brandingHref = (page.text.match(
-      /href="(\/hq\/website\/branding)"[^>]*data-bb-website-action="branding"|data-bb-website-action="branding"[^>]*href="(\/hq\/website\/branding)"/
-    ) || []).find((part, i) => i > 0 && part);
-    assert.ok(brandingHref, "Customize branding Continue must use the branding hub route");
-    assert.notEqual(brandingHref, "/hq/website");
+    assert.match(page.text, /Build your website/);
+    assert.match(page.text, /data-bb-build-website="1"/);
+    assert.doesNotMatch(page.text, /data-bb-website-action="branding"/);
+    const churchKey = host.replace(/\.blessboard\.org$/, "");
+    assert.match(page.text, new RegExp(`/c/${churchKey}/website/history`));
+    const editHref = (page.text.match(
+      /data-bb-website-action="edit"[^>]*href="([^"]+)"|href="([^"]+)"[^>]*data-bb-website-action="edit"/
+    ) || []).slice(1).find(Boolean);
+    assert.ok(editHref, "Edit Website must be a primary hub action");
+    assert.match(editHref, /website_edit=1/);
+    assert.notEqual(editHref, "/hq/website/branding");
   });
 
   it("published church website may show View live", async () => {

@@ -627,6 +627,26 @@
     fieldEl.setAttribute("data-website-value", value);
     var valueEl = fieldEl.querySelector("[data-website-value-text]");
     if (valueEl) valueEl.textContent = value;
+    syncEmptyDisplayState(fieldEl);
+  }
+
+  function syncEmptyDisplayState(fieldEl) {
+    if (!fieldEl) return;
+    var display = fieldEl.querySelector("[data-website-display]");
+    if (!display) return;
+    var empty = !String(fieldEl.getAttribute("data-website-value") || "").trim();
+    display.classList.toggle("is-empty", empty);
+    if (empty) {
+      var hint = "Click to add text";
+      var type = String(fieldEl.getAttribute("data-website-type") || "");
+      var key = String(fieldEl.getAttribute("data-website-key") || "");
+      if (type === "textarea") hint = "Click to add text";
+      else if (/\.heading$/.test(key) || fieldEl.querySelector("h1,h2,h3")) hint = "Click to add heading";
+      else if (/buttonText/.test(key)) hint = "Click to add button label";
+      display.setAttribute("data-empty-hint", hint);
+    } else {
+      display.removeAttribute("data-empty-hint");
+    }
   }
 
   function updateCanvasImage(fieldEl, src, alt, mediaId) {
@@ -772,6 +792,7 @@
   });
 
   document.querySelectorAll("[data-website-key]").forEach(function (el) {
+    syncEmptyDisplayState(el);
     var startBtn = el.querySelector("[data-website-start]");
     if (!startBtn) return;
     startBtn.addEventListener("click", function (ev) {

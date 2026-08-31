@@ -137,6 +137,14 @@ describe("shared website editor wave 3 — static lifecycle shell", () => {
     assert.match(css, /pointer-events: none/);
     assert.match(css, /data-website-type="textarea"/);
     assert.match(css, /z-index: 80/);
+    assert.match(css, /\.gp-website-editable__display\.is-empty/);
+    assert.match(css, /data-empty-hint/);
+
+    const editableText = read("views/blessboard/v5/partials/editable-text.ejs");
+    assert.match(editableText, /is-empty/);
+    assert.match(editableText, /data-empty-hint/);
+
+    assert.match(inlineJs, /syncEmptyDisplayState/);
 
     assert.match(acChrome, /websitePreviewDraftMode/);
     assert.match(bbChrome, /previewDraftMode/);

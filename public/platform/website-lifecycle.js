@@ -151,13 +151,19 @@
   function submitPublishForm(form) {
     if (!form) return;
     var btn = form.querySelector('[type="submit"]');
-    if (btn) btn.disabled = true;
     allowPublishSubmit = true;
-    if (typeof form.requestSubmit === "function") {
-      form.requestSubmit();
-      return;
+    var submitted = false;
+    try {
+      if (typeof form.requestSubmit === "function") {
+        if (btn) form.requestSubmit(btn);
+        else form.requestSubmit();
+        submitted = true;
+      }
+    } catch (err) {
+      submitted = false;
     }
-    form.submit();
+    if (!submitted) form.submit();
+    if (btn) btn.disabled = true;
   }
 
   function confirmPublish(form) {

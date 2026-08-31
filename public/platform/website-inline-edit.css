@@ -1270,7 +1270,7 @@ body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__inner--overlay butt
 
 body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .gp-website-editable {
   position: relative;
-  z-index: 2;
+  z-index: auto;
 }
 
 /* —— Wave 2 field editor (Stitch EDIT-02/03/04) —— */
@@ -1316,6 +1316,10 @@ body.gp-website-editor-open .gp-website-editable__display {
   position: relative;
   z-index: 65;
   pointer-events: auto;
+  isolation: isolate;
+  min-height: var(--gp-website-touch);
+  padding-right: calc(var(--gp-website-touch) + 0.25rem);
+  box-sizing: border-box;
 }
 
 body.gp-website-editor-open .gp-website-editable[data-website-type="textarea"],
@@ -1328,12 +1332,12 @@ body.gp-website-editor-open .ac-website-editable[data-website-type="textarea"] {
 
 body.gp-website-editor-open .gp-website-editable + .gp-website-editable,
 body.gp-website-editor-open .ac-website-editable + .ac-website-editable {
-  margin-top: calc(var(--gp-website-touch) + 0.35rem);
+  margin-top: calc(var(--gp-website-touch) + 0.75rem);
 }
 
 body.gp-website-editor-open .gp-website-editable__pencil,
 body.gp-website-editor-open .ac-website-editable__pencil {
-  z-index: 70;
+  z-index: 80;
   pointer-events: auto;
 }
 
@@ -1341,6 +1345,28 @@ body.gp-website-editor-open .gp-website-editable[data-website-type="textarea"] .
 body.gp-website-editor-open .ac-website-editable[data-website-type="textarea"] .gp-website-editable__pencil {
   top: auto;
   bottom: 0.25rem;
+}
+
+body.gp-website-editor-open .gp-website-editable__display.is-empty {
+  outline: 1px dashed var(--gp-we-outline-variant, #cbd5e1);
+  outline-offset: 3px;
+  border-radius: 8px;
+}
+
+body.gp-website-editor-open .gp-website-editable__display.is-empty::before {
+  content: attr(data-empty-hint);
+  display: block;
+  color: var(--gp-we-muted, #64748b);
+  font-style: italic;
+  font-weight: 400;
+  font-size: 0.95em;
+  line-height: 1.4;
+  pointer-events: none;
+  padding-right: 0.25rem;
+}
+
+body.gp-website-editor-open .gp-website-editable__display.is-empty [data-website-value-text]:empty {
+  min-height: 0.25rem;
 }
 
 .gp-website-editable__pencil:hover,
@@ -1910,7 +1936,7 @@ body.gp-website-lifecycle-open {
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 60;
+  z-index: 40;
   display: flex;
   align-items: center;
   gap: 8px;

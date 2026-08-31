@@ -358,7 +358,7 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(page.text, /data-bb-website-action="publish"/);
     assert.match(page.text, /action="\/hq\/website\/publish"/);
     assert.match(page.text, /data-bb-website-action="history"/);
-    assert.match(page.text, /href="\/hq\/website\/version-history"/);
+    assert.match(page.text, new RegExp(`/c/${church.key}/website/history`));
     assert.doesNotMatch(page.text, /data-ac-website-management/);
     assert.doesNotMatch(page.text, /class="ac-mw/);
 
