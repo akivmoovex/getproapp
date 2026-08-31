@@ -129,6 +129,7 @@ describe("shared website editor wave 3 — static lifecycle shell", () => {
     assert.match(css, /\.gp-website-preview-banner/);
     assert.match(css, /\.gp-website-lifecycle/);
     assert.match(css, /body\.gp-website-editor-open \.gp-website-editable__pencil/);
+    assert.match(css, /data-website-type="textarea"/);
     assert.match(css, /z-index: 70/);
 
     assert.match(acChrome, /websitePreviewDraftMode/);

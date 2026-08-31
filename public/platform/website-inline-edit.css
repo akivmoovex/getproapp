@@ -1311,10 +1311,25 @@ body.gp-website-editor-open .gp-website-editable__display {
   z-index: 65;
 }
 
+body.gp-website-editor-open .gp-website-editable[data-website-type="textarea"],
+body.gp-website-editor-open .ac-website-editable[data-website-type="textarea"] {
+  display: inline-block;
+  position: relative;
+  width: 100%;
+  max-width: 100%;
+  vertical-align: top;
+}
+
 body.gp-website-editor-open .gp-website-editable__pencil,
 body.gp-website-editor-open .ac-website-editable__pencil {
   z-index: 70;
   pointer-events: auto;
+}
+
+body.gp-website-editor-open .gp-website-editable[data-website-type="textarea"] .gp-website-editable__pencil,
+body.gp-website-editor-open .ac-website-editable[data-website-type="textarea"] .gp-website-editable__pencil {
+  top: auto;
+  bottom: 0.25rem;
 }
 
 .gp-website-editable__pencil:hover,
