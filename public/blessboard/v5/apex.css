@@ -1872,6 +1872,51 @@ ul.bb-apex-features {
   color: var(--bbr08-muted);
 }
 
+.bb-rs-website {
+  width: 100%;
+  max-width: 40rem;
+  margin: 0 auto 1.5rem;
+  padding: 1rem;
+  border: 1px solid rgba(197, 198, 205, 0.25);
+  border-radius: 0.75rem;
+  background: #fff;
+  text-align: left;
+}
+
+.bb-rs-website__row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.bb-rs-website__url {
+  margin: 0;
+  flex: 1 1 16rem;
+  word-break: break-all;
+}
+
+.bb-rs-website__url code {
+  font-size: 16px;
+  line-height: 1.4;
+  letter-spacing: 0;
+}
+
+.bb-rs-website__status {
+  margin: 0.75rem 0 0;
+  font-size: 14px;
+  color: var(--bbr08-muted);
+}
+
+.bb-rs-website__cta {
+  margin: 1rem 0 0;
+}
+
+.bb-rs-btn--copy {
+  flex: 0 0 auto;
+}
+
 .bb-rs-grid {
   display: flex;
   flex-direction: column;

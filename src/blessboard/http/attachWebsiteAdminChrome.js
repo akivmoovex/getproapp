@@ -976,6 +976,12 @@ async function attachWebsiteAdminChrome(opts) {
     previewHref: draftPreviewHrefResolved,
     backToEditHref,
     publishPath: publishUrl,
+    publishSuccess: String((req.query && req.query.website_published) || "") === "1",
+    publishSuccessUrl:
+      buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: model.organizationKey,
+      }) || null,
     discardPath,
     unpublishPath,
     exitHref: withEditQuery(currentPath, false),

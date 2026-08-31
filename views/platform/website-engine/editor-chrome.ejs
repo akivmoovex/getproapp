@@ -32,6 +32,26 @@
 </div>
 <%- include('./lifecycle-dialog-host', { editorShell: shell }) %>
 <% } else { %>
+<% if (shell.publishSuccess) { %>
+<div class="gp-website-publish-success" data-website-publish-success="1" role="status">
+  <div class="gp-website-publish-success__inner">
+    <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+    <div class="gp-website-publish-success__copy">
+      <strong>Website published</strong>
+      <span>Your church website is now live.</span>
+      <% if (shell.publishSuccessUrl) { %>
+      <span class="gp-website-publish-success__url"><code><%= shell.publishSuccessUrl %></code></span>
+      <% } %>
+    </div>
+    <div class="gp-website-publish-success__actions">
+      <% if (shell.publishSuccessUrl) { %>
+      <a class="gp-website-editor__btn gp-website-editor__btn--primary" href="<%= shell.publishSuccessUrl %>" rel="noopener">View website</a>
+      <button type="button" class="gp-website-editor__btn gp-website-editor__btn--ghost" data-website-copy-published-url="1" data-copy-url="<%= shell.publishSuccessUrl %>" aria-label="Copy website URL">Copy URL</button>
+      <% } %>
+    </div>
+  </div>
+</div>
+<% } %>
 <div
   class="gp-website-editor"
   data-website-engine-shell="1"
@@ -327,4 +347,31 @@
 <%- include('./add-section-picker', { editorShell: shell }) %>
 <%- include('./section-action-menu', { editorShell: shell }) %>
 <%- include('./lifecycle-dialog-host', { editorShell: shell }) %>
+<script>
+(function () {
+  var btn = document.querySelector("[data-website-copy-published-url]");
+  if (!btn) return;
+  btn.addEventListener("click", function () {
+    var url = btn.getAttribute("data-copy-url") || "";
+    if (!url) return;
+    var done = function () {
+      btn.textContent = "Copied";
+      window.setTimeout(function () { btn.textContent = "Copy URL"; }, 2000);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(function () {});
+      return;
+    }
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      done();
+    } catch (_e) {}
+  });
+})();
+</script>
 <% } %>

@@ -80,7 +80,7 @@ function normalizeOrganizationKey(raw) {
 
 /**
  * Append numeric collision suffix while staying within 64 chars and ORG_KEY_RE.
- * n=1 → base; n>=2 → base-n (e.g. grace-community-church-2).
+ * n=1 → base; n>=2 → base-02, base-03, … (e.g. grace-church-02).
  * @param {string} base
  * @param {number} n
  * @returns {string}
@@ -89,7 +89,7 @@ function withOrganizationKeySuffix(base, n) {
   const root = String(base || "").trim().toLowerCase();
   if (!root) return "";
   if (!n || n <= 1) return root.slice(0, 64);
-  const suffix = `-${n}`;
+  const suffix = n < 10 ? `-0${n}` : `-${n}`;
   const maxRoot = Math.max(1, 64 - suffix.length);
   let truncated = root.slice(0, maxRoot).replace(/-+$/g, "");
   if (!truncated) truncated = "c";

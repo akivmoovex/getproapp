@@ -353,16 +353,14 @@
           <% if (instantOn) { %>
           <fieldset class="bb-apex-register-form__section" data-bb-instant-free-fields="1">
             <legend class="bb-apex-register-form__section-head">
-              <span class="material-symbols-outlined" aria-hidden="true">vpn_key</span>
-              Workspace setup
+              <span class="material-symbols-outlined" aria-hidden="true">language</span>
+              Website setup
             </legend>
             <p class="bb-apex-register__card-lead">
-              Required for <strong>Foundation — Free</strong> and <strong>Growth</strong> (30-day trial).
-              Your administrator portal is available immediately after creation.
-              The public path below is a preview only — the website is not published automatically.
+              Every Foundation church includes a free DIY mini-website. Your administrator portal and website draft are created immediately after registration. You can add your content, preview the site, and publish it when you are ready.
             </p>
             <div class="bb-apex-field">
-              <label class="bb-apex-register-label" for="register_church_url">Your church URL</label>
+              <label class="bb-apex-register-label" for="register_church_url">Your church website</label>
               <p
                 class="bb-apex-register-input bb-apex-register-input--readonly"
                 id="register_church_url"
@@ -371,7 +369,7 @@
               ><span data-bb-church-url-base><%= typeof churchPublicUrlBase !== 'undefined' && churchPublicUrlBase ? churchPublicUrlBase : 'blessboard.com/c/' %></span><span data-bb-org-key-preview><%= orgKeyPreview || 'your-church' %></span></p>
               <input type="hidden" name="organization_key" id="register_organization_key" value="<%= orgKeyPreview || '' %>" autocomplete="off"/>
               <p class="bb-apex-mkt-footnote" id="register_organization_key_hint">
-                Your church URL is created automatically from your church name.
+                Created as a draft. It will not be public until you publish it.
               </p>
               <% if (fieldHasError('organization_key') && formError) { %>
               <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
@@ -442,9 +440,7 @@
             </div>
             <p class="bb-apex-mkt-footnote">
               <% if (instantOn) { %>
-              Foundation and Growth workspaces activate immediately (Growth includes a 30-day trial).
-              Network requests remain pending until BlessBoard follows up.
-              Callbacks are optional assistance — not required for portal access.
+              Foundation workspaces activate immediately and include the free church mini-website. Growth includes a 30-day trial. Network requests remain pending until BlessBoard follows up. Optional callbacks are available if you would like assistance.
               <% } else { %>
               Applications remain pending until a platform administrator reviews them. No live church is created automatically.
               <% } %>

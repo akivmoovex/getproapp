@@ -2534,6 +2534,56 @@ async function findOrganizationIdByKey(client, organizationKey) {
 }
 
 /**
+ * Resolve a provisioned organization from the public BB-* registration reference.
+ * @param {{ query: Function }} client
+ * @param {string} publicReference
+ */
+async function findProvisionedOrganizationByPublicReference(client, publicReference) {
+  const ref = String(publicReference || "").trim();
+  if (!ref) return null;
+  const r = await client.query(
+    `SELECT a.organization_id,
+            o.organization_key,
+            COALESCE(cs.website_status, 'draft') AS website_status
+       FROM ${TARGET_RELATION} a
+       INNER JOIN platform.organizations o ON o.id = a.organization_id
+       LEFT JOIN blessboard.churches c ON c.organization_id = a.organization_id
+       LEFT JOIN blessboard.church_settings cs ON cs.church_id = c.id
+      WHERE a.public_registration_reference = $1
+        AND a.provisioning_status = 'provisioned'
+        AND a.organization_id IS NOT NULL
+      LIMIT 1`,
+    [ref]
+  );
+  const row = r.rows[0];
+  if (!row || !row.organization_key) return null;
+  return {
+    organizationId: String(row.organization_id),
+    organizationKey: String(row.organization_key),
+    websitePublished: String(row.website_status || "").toLowerCase() === "published",
+  };
+}
+
+/**
+ * @param {{ query: Function }} client
+ * @param {string} applicationId
+ * @param {string} publicReference
+ */
+async function setPublicRegistrationReference(client, applicationId, publicReference) {
+  const id = String(applicationId || "").trim();
+  const ref = String(publicReference || "").trim();
+  if (!id || !ref) return false;
+  await client.query(
+    `UPDATE ${TARGET_RELATION}
+        SET public_registration_reference = $2,
+            updated_at = now()
+      WHERE id = $1`,
+    [id, ref]
+  );
+  return true;
+}
+
+/**
  * Single-query onboarding facts for checklist + summary (avoids N+1).
  * @param {{ query: Function }} client
  * @param {{ organizationId?: string|null, organizationKey?: string|null }} input
@@ -3077,6 +3127,8 @@ module.exports = {
   findApplicationIdForOrganization,
   findApplicationIdForOrganizationKey,
   findOrganizationIdByKey,
+  findProvisionedOrganizationByPublicReference,
+  setPublicRegistrationReference,
   loadOrganizationOnboardingFacts,
   replaceRegistrationDuplicateMatches,
   listRegistrationDuplicateMatches,

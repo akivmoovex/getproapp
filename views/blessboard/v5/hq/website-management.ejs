@@ -216,36 +216,52 @@
 
   <h2 class="bb-wm-hub-access__title">Manage your website</h2>
   <div class="bb-wm-hub-tiles">
-    <a class="bb-wm-hub-tile" href="<%= actions.editWebsite || '/hq/content' %>" data-bb-website-action="pages">
-      <h3>Pages</h3>
-      <p>Edit home, about, ministries, events, sermons, giving, and contact on your public church website.</p>
-    </a>
-    <a class="bb-wm-hub-tile" href="<%= actions.branding || '/hq/website/branding' %>" data-bb-website-action="branding">
-      <h3>Branding</h3>
-      <p>Update logo, colours, and the look of your site.</p>
-    </a>
-    <a class="bb-wm-hub-tile" href="<%= actions.settings || '/hq/website/advanced' %>" data-bb-website-action="settings">
-      <h3>Website Settings</h3>
-      <p>Branding, SEO, header, footer, and website options.</p>
-    </a>
-    <a class="bb-wm-hub-tile" href="<%= actions.library || '/hq/content/media' %>" data-bb-website-action="library">
-      <h3>Content Library</h3>
-      <p>Upload and reuse photos for your church website.</p>
-    </a>
-    <% if (actions.history) { %>
-    <a class="bb-wm-hub-tile" href="<%= actions.history %>" data-bb-website-action="history">
-      <h3>Version History</h3>
-      <p>Review past versions and restore a previous draft.</p>
+    <% if (actions.editWebsite) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.editWebsite %>" data-bb-website-action="edit">
+      <h3>Edit website</h3>
+      <p>Open the visual editor to update pages, text, images, and sections on your public church website.</p>
     </a>
     <% } %>
-    <a class="bb-wm-hub-tile" href="/hq/website/workflow" data-bb-website-action="workflow">
-      <h3>Workflow</h3>
-      <p>Approvals, change submissions, and publishing workflow.</p>
+    <% if (actions.preview) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.preview %>" data-bb-website-action="preview">
+      <h3>Preview draft</h3>
+      <p>See unpublished changes exactly as visitors will once you publish.</p>
     </a>
-    <% if (websitePlanKey === 'growth') { %>
-    <a class="bb-wm-hub-tile" href="/hq/website/recent-changes" data-bb-website-action="recent-changes">
-      <h3>Recent Website Changes</h3>
-      <p>See recent publications and restore a previous version as a new draft.</p>
+    <% } %>
+    <% if (actions.viewLive) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.viewLive %>" rel="noopener" data-bb-website-action="view-live">
+      <h3>View published site</h3>
+      <p>Open the live public website visitors see today.</p>
+    </a>
+    <% } %>
+    <% if (hubWebsite.canPublish && actions.publishPath) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.publishPath %>" data-bb-website-action="publish-review">
+      <h3>Publish / Unpublish</h3>
+      <p>Review readiness, publish your draft, or take the site offline while keeping your content.</p>
+    </a>
+    <% } %>
+    <% if (actions.media) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.media %>" data-bb-website-action="media">
+      <h3>Media</h3>
+      <p>Upload and reuse photos for your church website.</p>
+    </a>
+    <% } %>
+    <% if (actions.styles) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.styles %>" data-bb-website-action="styles">
+      <h3>Styles</h3>
+      <p>Update colours, typography, and the overall look of your site.</p>
+    </a>
+    <% } %>
+    <% if (actions.seo) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.seo %>" data-bb-website-action="seo">
+      <h3>SEO</h3>
+      <p>Manage search titles, descriptions, and how your site appears in search results.</p>
+    </a>
+    <% } %>
+    <% if (actions.history) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.history %>" data-bb-website-action="history">
+      <h3>Version history</h3>
+      <p>Review past versions and restore a previous draft.</p>
     </a>
     <% } %>
   </div>

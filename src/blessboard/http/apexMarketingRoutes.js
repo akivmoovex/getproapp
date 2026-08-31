@@ -58,6 +58,10 @@ const {
   generatePublicRegistrationReference,
   buildRegistrationSuccessRedirect,
 } = require("../../platform/registration/registrationSuccessPresentation");
+const appRepo = require("../repositories/platformChurchRegistrationRepository");
+const {
+  resolveBlessBoardRegistrationSuccessWebsite,
+} = require("../services/resolveRegistrationSuccessWebsite");
 
 const REGISTER_PATH = "/register-church";
 const REGISTER_SUCCESS_PATH = "/register-church/success";
@@ -397,16 +401,35 @@ function createApexMarketingRouter(deps) {
   router.get("/terms", (req, res) => withShell(req, res, renderTermsPage));
   router.get("/privacy", (req, res) => withShell(req, res, renderPrivacyPage));
 
-  router.get(REGISTER_SUCCESS_PATH, (req, res) => {
+  router.get(REGISTER_SUCCESS_PATH, async (req, res, next) => {
     if (String((req.query && req.query.review) || "") === "1") {
       return res.redirect(303, `${REGISTER_PATH}?review=1`);
     }
-    return withShell(req, res, renderRegisterChurchSuccessPage, {
-      alwaysPassCsrf: true,
-      noStore: true,
-      applicationReference: String((req.query && req.query.ref) || "").trim().slice(0, 64),
-      ready: String((req.query && req.query.ready) || "") === "1",
-    });
+    try {
+      const ready = String((req.query && req.query.ready) || "") === "1";
+      const applicationReference = String((req.query && req.query.ref) || "").trim().slice(0, 64);
+      const sessionOrgId =
+        req.v5Session &&
+        req.v5Session.session &&
+        req.v5Session.session.organizationId != null
+          ? String(req.v5Session.session.organizationId)
+          : null;
+      const website = await resolveBlessBoardRegistrationSuccessWebsite(getPool(), {
+        reference: applicationReference,
+        ready,
+        sessionOrganizationId: sessionOrgId,
+        publicOrigin: `${req.protocol}://${req.get("host")}`,
+      });
+      return withShell(req, res, renderRegisterChurchSuccessPage, {
+        alwaysPassCsrf: true,
+        noStore: true,
+        applicationReference,
+        ready,
+        website,
+      });
+    } catch (err) {
+      return next(err);
+    }
   });
 
   router.get(REGISTER_PATH, (req, res) => {
@@ -646,9 +669,24 @@ function createApexMarketingRouter(deps) {
 
       issueAndSetCsrf(req, res);
 
+      const publicReference = generatePublicRegistrationReference("BB");
+      if (records.applicationId) {
+        try {
+          await appRepo.setPublicRegistrationReference(getPool(), records.applicationId, publicReference);
+        } catch (refErr) {
+          logRegistrationTrace(req, {
+            event: "church_registration_reference",
+            operation: "store_public_reference",
+            outcome: "fail",
+            applicationId: records.applicationId || null,
+            failureCategory: refErr && refErr.message ? String(refErr.message).slice(0, 80) : "error",
+          });
+        }
+      }
+
       const successPath = buildRegistrationSuccessRedirect({
         productCode: "blessboard",
-        reference: generatePublicRegistrationReference("BB"),
+        reference: publicReference,
         ready: true,
       });
       logRegistrationTrace(req, {

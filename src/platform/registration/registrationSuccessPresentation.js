@@ -236,6 +236,7 @@ function buildRegistrationSuccessViewModel(input) {
       : copy.reviewPrimaryHref
     : null;
   const outcome = reviewRequired ? "review_required" : ready ? "ready" : "recorded";
+  const website = (input && input.website) || {};
   return {
     ...copy,
     reviewRequired,
@@ -247,6 +248,12 @@ function buildRegistrationSuccessViewModel(input) {
     reviewPrimaryHref,
     outcome,
     stateKey: reviewRequired ? "review_required" : ready ? "ready" : "success_terminal",
+    websiteShow: Boolean(website.showWebsite),
+    websiteUrl: website.publicUrl || website.publicPath || null,
+    websitePath: website.publicPath || null,
+    websiteEditPath: website.editPath || null,
+    websiteStatusLabel: website.statusLabel || null,
+    websiteBuildLabel: "Build your website",
   };
 }
 

@@ -152,12 +152,14 @@ function renderRegisterChurchPage(opts) {
 }
 
 function renderRegisterChurchSuccessPage(opts) {
+  const website = (opts && opts.website) || {};
   const registrationSuccess = buildRegistrationSuccessViewModel({
     productCode: PRODUCT_CODE.BLESSBOARD,
     reference: opts && opts.applicationReference,
     ready: opts && opts.ready,
     reviewRequired: false,
     authenticated: Boolean(opts && opts.authenticated),
+    website,
   });
   return renderApexView("apex/register-church-success.ejs", {
     ...shellLocals(opts),

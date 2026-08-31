@@ -233,8 +233,8 @@ describe("BlessBoard V1 blocker + bugs 04–06", () => {
     assert.match(res.text, /name="country"/);
     assert.match(res.text, /<option value="ZM"[^>]*selected/);
     assert.match(res.text, /<option value="KE"/);
-    assert.match(res.text, /Your church URL/);
-    assert.match(res.text, /created automatically from your church name/);
+    assert.match(res.text, /Your church website/);
+    assert.match(res.text, /created automatically from your church name|Created as a draft/i);
     assert.match(res.text, /type="hidden"[^>]*name="organization_key"|name="organization_key"[^>]*type="hidden"/);
     assert.doesNotMatch(res.text, />Organization key</);
     assert.match(res.text, /name="phone_country"/);
@@ -433,12 +433,12 @@ describe("BlessBoard V1 blocker + bugs 04–06", () => {
     const cookie = `${DEFAULT_V5_COOKIE}=${sid || session.rawToken}`;
 
     const edit = await request(app)
-      .get(`/c/${organizationKey}?website_edit=1`)
+      .get(`/c/${organizationKey}?website_edit=1&website_mode=draft`)
       .set("Host", APEX)
       .set("Cookie", cookie);
     assert.equal(edit.status, 200, edit.text && edit.text.slice(0, 400));
     assert.match(edit.text, /data-website-key="home.logo"/);
-    assert.match(edit.text, /data-website-file="1"/);
+    assert.match(edit.text, /data-website-type="image"/);
     const csrf = extractCsrfToken(edit.text);
     const cookies = cookieHeader(cookie, edit);
 

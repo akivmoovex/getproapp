@@ -18,6 +18,9 @@ const {
   buildPublicWebsiteEditPath,
   buildPublicWebsitePreviewPath,
   buildPublicWebsiteHistoryPath,
+  buildPublicWebsiteMediaLibraryPath,
+  buildPublicWebsiteStylesPath,
+  buildPublicWebsiteSeoPath,
   buildPublicWebsitePublishPath,
   buildPublicWebsiteUnpublishPath,
   buildPublicWebsiteSettingsPath,
@@ -79,6 +82,9 @@ function presentWebsiteSettingsUx(input) {
   const previewPath = facts.previewPath || null;
   const editPath = facts.editPath || null;
   const historyPath = facts.historyPath || null;
+  const seoPath = facts.seoPath || null;
+  const stylesPath = facts.stylesPath || null;
+  const mediaPath = facts.mediaPath || facts.libraryPath || null;
   const publishPath = facts.publishPath || null;
   const retryPath = facts.retryPath || null;
 
@@ -170,6 +176,9 @@ function presentWebsiteSettingsUx(input) {
     state !== PRESENTATION_STATE.SETUP_INCOMPLETE &&
     state !== PRESENTATION_STATE.MISSING;
   const showHistory = canView && Boolean(historyPath) && exists;
+  const showSeo = canEdit && Boolean(seoPath) && exists;
+  const showStyles = canEdit && Boolean(stylesPath) && exists;
+  const showMedia = canView && Boolean(mediaPath) && exists;
   const showUnpublish =
     canPublish &&
     Boolean(facts.unpublishPath) &&
@@ -230,6 +239,9 @@ function presentWebsiteSettingsUx(input) {
       settings: showSettings ? facts.settingsPath : null,
       branding: showBranding ? facts.brandingPath : null,
       library: showLibrary ? facts.libraryPath : null,
+      media: showMedia ? mediaPath : null,
+      seo: showSeo ? seoPath : null,
+      styles: showStyles ? stylesPath : null,
       history: showHistory ? historyPath : null,
       retry: showRetry ? retryPath : null,
       contactPlatformAdmin: showContactPlatformAdmin,
@@ -469,6 +481,9 @@ async function loadWebsiteManagementSummary(db, input) {
     previewPath: buildPublicWebsitePreviewPath({ product: productCode, organizationKey: key }),
     editPath: buildPublicWebsiteEditPath({ product: productCode, organizationKey: key }),
     historyPath: buildPublicWebsiteHistoryPath({ product: productCode, organizationKey: key }),
+    seoPath: buildPublicWebsiteSeoPath({ product: productCode, organizationKey: key }),
+    stylesPath: buildPublicWebsiteStylesPath({ product: productCode, organizationKey: key }),
+    mediaPath: buildPublicWebsiteMediaLibraryPath({ product: productCode, organizationKey: key }),
     publishPath: buildPublicWebsitePublishPath({ product: productCode, organizationKey: key }),
     unpublishPath: buildPublicWebsiteUnpublishPath({ product: productCode, organizationKey: key }),
     settingsPath: buildPublicWebsiteSettingsPath({ product: productCode, organizationKey: key }),

@@ -1175,6 +1175,8 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             email: application.contact_email,
             displayName: adminDisplayName,
             passwordHash,
+            phoneNormalized: application.contact_phone_normalized || null,
+            phoneDisplay: application.contact_phone || null,
           },
           { manageTransaction: false }
         );

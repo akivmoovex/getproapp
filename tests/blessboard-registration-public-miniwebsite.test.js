@@ -167,8 +167,8 @@ describe("registration public miniwebsite provision", () => {
   it("slugifies church names and allocates collision suffixes", () => {
     assert.equal(slugifyOrganizationKey("Grace Community Church"), "grace-community-church");
     assert.equal(withOrganizationKeySuffix("grace-community-church", 1), "grace-community-church");
-    assert.equal(withOrganizationKeySuffix("grace-community-church", 2), "grace-community-church-2");
-    assert.equal(withOrganizationKeySuffix("grace-community-church", 3), "grace-community-church-3");
+    assert.equal(withOrganizationKeySuffix("grace-community-church", 2), "grace-community-church-02");
+    assert.equal(withOrganizationKeySuffix("grace-community-church", 3), "grace-community-church-03");
     const reserved = resolveBaseOrganizationKey("admin");
     assert.equal(reserved.ok, true);
     assert.notEqual(reserved.key, "admin");
@@ -293,7 +293,7 @@ describe("registration public miniwebsite provision", () => {
       },
     });
     assert.equal(a2.ok, true, a2.message || a2.status);
-    assert.equal(a2.records.organizationKey, `${firstKey}-2`);
+    assert.equal(a2.records.organizationKey, `${firstKey}-02`);
   });
 
   it("reserved base key is escaped during allocation", async () => {

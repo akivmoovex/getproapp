@@ -1602,6 +1602,44 @@ textarea.gp-website-field-editor__input {
   }
 }
 
+/* Wave 3 — publish success banner */
+.gp-website-publish-success {
+  position: sticky;
+  top: 0;
+  z-index: 1250;
+  background: #ecfdf5;
+  color: #065f46;
+  border-bottom: 1px solid #a7f3d0;
+}
+
+.gp-website-publish-success__inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 12px;
+  max-width: 1440px;
+  margin: 0 auto;
+  padding: 12px 16px;
+}
+
+.gp-website-publish-success__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  flex: 1 1 240px;
+}
+
+.gp-website-publish-success__url code {
+  font-size: 13px;
+  word-break: break-all;
+}
+
+.gp-website-publish-success__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
 /* Wave 3 — preview banner + lifecycle dialogs (EDIT-07/08/09/10) */
 .gp-website-preview-banner {
   position: fixed;

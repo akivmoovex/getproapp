@@ -40,6 +40,14 @@ function validateInput(input) {
   const emailNormalized = normalizeEmail(raw.email);
   const emailDisplay = String(raw.email != null ? raw.email : "").trim();
   const displayName = String(raw.displayName != null ? raw.displayName : "").trim();
+  const phoneNormalized =
+    raw.phoneNormalized != null && String(raw.phoneNormalized).trim()
+      ? String(raw.phoneNormalized).trim()
+      : null;
+  const phoneDisplay =
+    raw.phoneDisplay != null && String(raw.phoneDisplay).trim()
+      ? String(raw.phoneDisplay).trim()
+      : phoneNormalized;
   const password = raw.password != null ? String(raw.password) : "";
   const passwordHash = raw.passwordHash != null ? String(raw.passwordHash) : "";
 
@@ -59,6 +67,8 @@ function validateInput(input) {
         emailNormalized,
         emailDisplay: emailDisplay || emailNormalized,
         displayName,
+        phoneNormalized,
+        phoneDisplay,
         password: null,
         passwordHash,
       },
@@ -73,6 +83,8 @@ function validateInput(input) {
       emailNormalized,
       emailDisplay: emailDisplay || emailNormalized,
       displayName,
+      phoneNormalized,
+      phoneDisplay,
       password,
       passwordHash: null,
     },
@@ -149,6 +161,8 @@ async function createBlessBoardUser(db, input, options) {
           emailDisplay: req.emailDisplay,
           passwordHash,
           displayName: req.displayName,
+          phoneNormalized: req.phoneNormalized,
+          phoneDisplay: req.phoneDisplay,
         })
       );
       if (!inserted.ok) {
