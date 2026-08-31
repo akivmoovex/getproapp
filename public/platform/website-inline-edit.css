@@ -1934,58 +1934,10 @@ body.gp-website-lifecycle-open {
     bottom: 0.25rem;
   }
 
-  /* Phase-7 full-bleed hero: tall overlay box extends above the hero and places
-     copy under sticky editor chrome — anchor copy to the hero foot on mobile. */
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 {
-    overflow: hidden;
-    align-items: stretch;
-  }
-
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 .bb-tp-hero__inner--overlay {
-    display: flex;
-    flex-direction: column;
-    justify-content: flex-end;
-    flex: 1 1 100%;
-    width: 100%;
-    max-height: 100%;
-    min-height: 0;
-    box-sizing: border-box;
-    overflow: hidden;
-  }
-
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 .bb-tp-hero__copy {
-    margin-top: calc(var(--gp-we-toolbar-h) + var(--bb-header-h, 4.5rem));
-  }
-
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key$=".hero.heading"] .gp-website-editable__display {
-    display: flex;
-    flex-direction: column;
-    align-items: flex-start;
-    padding-right: 0;
-  }
-
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key$=".hero.heading"] .gp-website-editable__pencil {
-    position: static;
-    margin-top: 0.35rem;
-    flex: 0 0 auto;
-  }
-
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header {
-    z-index: var(--gp-we-z-tenant-header-editor);
-    pointer-events: none;
-  }
-
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header a,
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header button,
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header [data-bb-header-actions],
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header .bb-tp-menu-btn,
-  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header .bb-tp-drawer {
-    pointer-events: auto;
-  }
-
-  body.gp-website-editor-open .bb-tp-main,
-  body.gp-website-editor-open .ac-public-main {
-    padding-top: 0.5rem;
+  body.gp-website-editor-open.bb-tp-body--editing {
+    --gp-we-bb-chrome-h: calc(var(--gp-we-toolbar-h) + var(--bb-header-h, 4.5rem));
+    scroll-padding-top: var(--gp-we-bb-chrome-h);
+    padding-top: 0;
   }
 
   body.gp-website-editor-open .gp-website-chrome-stack {
@@ -1997,6 +1949,110 @@ body.gp-website-lifecycle-open {
   body.gp-website-editor-open .gp-website-chrome-stack .gp-website-editor__mobile-nav,
   body.gp-website-editor-open .gp-website-chrome-stack .gp-website-editor__more-menu {
     pointer-events: auto;
+  }
+
+  /* Editing stack: fixed toolbar + tenant header in one chrome column. */
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack {
+    top: 0;
+    padding-top: var(--gp-we-toolbar-h);
+    min-height: var(--gp-we-bb-chrome-h);
+    box-sizing: border-box;
+    z-index: var(--gp-we-z-tenant-header-editor);
+    pointer-events: none;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .gp-website-editor__toolbar,
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .gp-website-editor__mobile-nav,
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .gp-website-editor__more-menu {
+    pointer-events: auto;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .bb-tp-header {
+    position: relative;
+    top: auto;
+    z-index: auto;
+    pointer-events: none;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .bb-tp-header__actions {
+    pointer-events: none;
+    align-items: center;
+    flex: 0 0 auto;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .bb-tp-header a,
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .bb-tp-header button,
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .bb-tp-header .bb-tp-settings-pencil,
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .bb-tp-header [data-bb-branch-switcher],
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .bb-tp-header [data-bb-brand-edits] {
+    pointer-events: auto;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .gp-website-chrome-stack .bb-tp-menu-btn {
+    pointer-events: auto;
+    flex: 0 0 auto;
+    align-self: center;
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Phase-7 full-bleed hero: keep copy in the hero foot without negative overlay geometry. */
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 {
+    display: grid;
+    grid-template-rows: 1fr auto;
+    align-items: end;
+    overflow: hidden;
+    min-height: max(calc(100dvh - var(--gp-we-bb-chrome-h)), 16rem);
+    max-height: none;
+    padding-top: 0;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 .bb-tp-hero__media-plane {
+    grid-row: 1 / -1;
+    grid-column: 1;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 .bb-tp-hero__inner--overlay {
+    grid-row: 2;
+    grid-column: 1;
+    position: relative;
+    z-index: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    width: 100%;
+    min-height: 0;
+    box-sizing: border-box;
+    overflow: visible;
+    padding-top: 0.75rem;
+    padding-bottom: 1.25rem;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 .bb-tp-hero__copy {
+    margin-top: 0;
+    width: 100%;
+    max-width: 44rem;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key*=".hero."] .gp-website-editable__display,
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key*=".hero."] .ac-website-editable__display {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    padding-right: 0;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key*=".hero."] .gp-website-editable__pencil,
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key*=".hero."] .ac-website-editable__pencil {
+    position: static;
+    margin-top: 0.35rem;
+    flex: 0 0 auto;
+    align-self: flex-end;
+  }
+
+  body.gp-website-editor-open .bb-tp-main,
+  body.gp-website-editor-open .ac-public-main {
+    padding-top: 0.5rem;
   }
 
   body.gp-website-editor-open .gp-website-editable__display,

@@ -35,7 +35,7 @@
   <%- include('./head-design-system') %>
   <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=57' %>" />
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) { %>
-  <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v7-website-35" />
+  <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v7-website-36" />
   <link rel="stylesheet" href="/platform/website-add-section.css?v=v7-w4b2-1" />
   <meta name="csrf-token" content="<%= websiteAdmin.csrfToken %>" />
   <% } %>
@@ -52,6 +52,7 @@
   if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.previewDraftMode) _bodyClass += ' bb-tp-body--preview gp-website-preview-open';
   if (_isBranchMini) _bodyClass += ' bb-tp-body--branch';
   var _stackChrome = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit;
+  var _editingMode = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode;
 %>
 <body
   class="<%= _bodyClass %>"
@@ -68,7 +69,9 @@
   <% if (_stackChrome) { %>
   <div class="gp-website-chrome-stack" data-website-chrome-stack="1">
   <%- include('./website-admin-chrome') %>
+  <% if (!_editingMode) { %>
   </div>
+  <% } %>
   <% } %>
 
   <header class="bb-tp-header" data-bb-header="1" id="bb-tp-header">
@@ -156,6 +159,9 @@
       </div>
     </div>
   </header>
+  <% if (_stackChrome && _editingMode) { %>
+  </div>
+  <% } %>
   <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta && !(typeof websiteAdmin !== 'undefined' && websiteAdmin && (websiteAdmin.previewDraftMode || websiteAdmin.editingMode))) { %>
   <div class="bb-tp-preview-banner" role="status" data-bb-preview-banner="1">
     <div class="bb-tp-preview-banner__inner">
