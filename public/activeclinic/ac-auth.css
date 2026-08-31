@@ -1,19 +1,19 @@
 /* ActiveClinic authentication surfaces (AC-V6-S01). Product-isolated; does not alter BlessBoard. */
 :root {
-  /* Auth palette aligned to canonical P01 Login Stitch (ca8a34cf); shell teal remains in ac-app.css */
-  --ac-auth-bg: #f7f9fb;
-  --ac-auth-surface: #ffffff;
-  --ac-auth-surface-low: #f2f4f6;
-  --ac-auth-ink: #191c1e;
-  --ac-auth-muted: #434653;
-  --ac-auth-border: #c3c6d5;
-  --ac-auth-outline: #737784;
-  --ac-auth-primary: #003c90;
-  --ac-auth-primary-hover: #0f52ba;
-  --ac-auth-primary-container: #0f52ba;
+  /* Auth palette aligned to ActiveClinic public teal system (--acp-* in ac-tokens.css) */
+  --ac-auth-bg: var(--acp-bg, #f8f9ff);
+  --ac-auth-surface: var(--acp-surface, #ffffff);
+  --ac-auth-surface-low: var(--acp-surface-low, #f1f4f6);
+  --ac-auth-ink: var(--acp-ink, #181c1e);
+  --ac-auth-muted: var(--acp-muted, #3e494a);
+  --ac-auth-border: var(--acp-border, #c4c7c9);
+  --ac-auth-outline: var(--acp-outline, #bac6ec);
+  --ac-auth-primary: var(--acp-primary, #006068);
+  --ac-auth-primary-hover: var(--acp-primary-hover, #0f766e);
+  --ac-auth-primary-container: var(--acp-primary-strong, #004f56);
   --ac-auth-on-primary: #ffffff;
-  --ac-auth-secondary: #006a6a;
-  --ac-auth-focus: #003c90;
+  --ac-auth-secondary: var(--acp-primary-strong, #004f56);
+  --ac-auth-focus: var(--acp-primary, #006068);
   --ac-auth-danger: var(--ac-status-danger);
   --ac-auth-danger-bg: var(--ac-status-danger-bg);
   --ac-auth-success: var(--ac-status-success);
@@ -101,6 +101,73 @@ body.ac-auth-body {
 .ac-auth-main {
   width: 100%;
   max-width: 64rem;
+}
+
+/* Lightweight public header on login (AC Platform 03) */
+.ac-auth-public-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-auth-stack-md);
+  margin: 0 0 var(--ac-auth-stack-lg);
+  padding: 0.35rem 0;
+}
+
+.ac-auth-public-header__brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  color: var(--ac-auth-primary);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+.ac-auth-public-header__brand:hover {
+  color: var(--ac-auth-primary-hover);
+}
+
+.ac-auth-public-header__name {
+  font-size: 1.05rem;
+  letter-spacing: -0.01em;
+}
+
+.ac-auth-public-header__nav {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+}
+
+.ac-auth-public-header__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: var(--ac-auth-touch);
+  padding: 0.35rem 0.65rem;
+  border-radius: var(--ac-auth-radius-sm);
+  color: var(--ac-auth-muted);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+}
+
+.ac-auth-public-header__link .material-symbols-outlined {
+  font-size: 1.15rem;
+  color: var(--ac-auth-primary);
+}
+
+.ac-auth-public-header__link:hover {
+  color: var(--ac-auth-primary);
+  background: var(--ac-auth-surface-low);
+}
+
+.ac-auth-public-header__link--register {
+  color: var(--ac-auth-primary);
+  font-weight: 600;
+}
+
+.ac-auth-body:has(.ac-auth-public-header) .ac-auth-mobile-header {
+  display: none;
 }
 
 .ac-auth-card {

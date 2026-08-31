@@ -186,6 +186,12 @@ button:focus-visible {
   border-top: 1px solid var(--ac-border);
 }
 
+.ac-nav--utility {
+  margin-top: var(--ac-space-4);
+  padding-top: var(--ac-space-4);
+  border-top: 1px solid var(--ac-border);
+}
+
 .ac-main-wrap {
   min-width: 0;
   display: flex;

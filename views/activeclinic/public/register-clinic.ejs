@@ -3,10 +3,10 @@
 <% const verr = validationErrors || {}; %>
 <% const types = Array.isArray(clinicTypeOptions) ? clinicTypeOptions : []; %>
 <% const countries = typeof phoneCountries !== 'undefined' && Array.isArray(phoneCountries) ? phoneCountries : []; %>
-<% const provinceOptions = Array.isArray(zambiaProvinces) ? zambiaProvinces : []; %>
+<% const provinceOptions = typeof zambiaProvinces !== 'undefined' && Array.isArray(zambiaProvinces) ? zambiaProvinces : []; %>
 <% const isZambia = String(fd.countryCode || 'ZM').toUpperCase() === 'ZM'; %>
 <section
-  class="acw-page acw-register<%= step === 'clinic' ? ' acw-register--with-aside' : '' %>"
+  class="acw-page acw-register acw-register--with-aside"
   data-ac-page-section="register-clinic"
   data-ac-acw-screen="<%= step === 'administrator' ? 'ACW09-admin' : 'ACW09-clinic' %>"
   data-ac-acw-step="<%= step %>"
@@ -22,10 +22,6 @@
   </header>
 
   <%- include('../partials/register-clinic-steps') %>
-
-  <% if (step === 'administrator') { %>
-  <p class="acw-register__lede">This account will have full access to manage the clinic profile, staff members, and settings. You will use this phone number or email to sign in after registration.</p>
-  <% } %>
 
   <% if (typeof error === 'string' && error) { %>
   <div class="ac-public-error acw-register__alert" role="alert"><%= error %></div>
@@ -43,6 +39,10 @@
   <% } %>
 
   <% if (step === 'administrator') { %>
+  <div class="acw-register__layout">
+    <%- include('../partials/register-aside-admin') %>
+    <div class="acw-register__panel">
+  <p class="acw-register__lede">This account will have full access to manage the clinic profile, staff members, and settings. You will use this phone number or email to sign in after registration.</p>
   <div class="acw-register__card">
   <form method="post" action="/register-clinic" class="ac-public-form acw-form acw-register__form" data-ac-loading="1" novalidate data-ac-register-step="administrator">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
@@ -128,6 +128,8 @@
   </form>
   </div>
   <p class="acw-register__secure"><span class="material-symbols-outlined" aria-hidden="true">encrypted</span> Secure connection</p>
+    </div>
+  </div>
   <% } else { %>
   <div class="acw-register__layout">
     <aside class="acw-register__aside" aria-labelledby="ac-register-aside-title">
