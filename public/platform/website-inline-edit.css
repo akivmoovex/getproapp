@@ -1932,6 +1932,17 @@ body.gp-website-lifecycle-open {
     bottom: 0.25rem;
   }
 
+  /* Phase-7 full-bleed hero: bottom-right pencils overlap the tenant header burger. */
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key$=".hero.heading"] .gp-website-editable__display {
+    padding-right: 0.25rem;
+    padding-left: calc(var(--gp-website-touch) + 0.25rem);
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key$=".hero.heading"] .gp-website-editable__pencil {
+    right: auto;
+    left: 0.25rem;
+  }
+
   body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header {
     z-index: var(--gp-we-z-tenant-header-editor);
     pointer-events: none;
