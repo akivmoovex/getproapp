@@ -18,6 +18,11 @@ const {
 const { appendReviewEvent } = require("./clinicRegistrationReviewService");
 const { validateTermsAcceptance } = require("../legal/termsAcceptance");
 const { FACILITY_TYPES } = require("./facilityService");
+const {
+  validateProvinceForCountry,
+  isZambiaCountryCode,
+  listZambiaProvinces,
+} = require("../../platform/geography/locationService");
 
 const BCRYPT_ROUNDS = 12;
 
@@ -124,7 +129,11 @@ function validateClinicRegistrationInput(input, options) {
   // Match SQL CHECKs: clinic_name 2–200, contact_name 2–120, notes null or 1–2000.
   const clinicName = trimName(input.clinicName, 200, 2);
   const contactName = clinicOnly ? null : trimName(input.contactName, 120, 2);
-  const province = input.province ? trimName(input.province, 100, 1) : null;
+  const countryRaw = String(input.countryCode || "").trim().toUpperCase();
+  const countryCode = /^[A-Z]{2}$/.test(countryRaw) ? countryRaw : (clinicOnly ? "" : "ZM");
+  const provinceRaw = input.province != null ? String(input.province).trim() : "";
+  const provinceResult = validateProvinceForCountry(countryCode || "ZM", provinceRaw);
+  const province = provinceResult.ok ? provinceResult.province : null;
   const city = input.city ? trimName(input.city, 100, 1) : null;
   const addressRaw = input.address != null ? String(input.address).trim() : "";
   const address = addressRaw ? trimName(addressRaw, 300, 1) : null;
@@ -140,14 +149,15 @@ function validateClinicRegistrationInput(input, options) {
     errors.clinicType = clinicTypeResult.error;
   }
 
-  const countryRaw = String(input.countryCode || "").trim().toUpperCase();
-  const countryCode = /^[A-Z]{2}$/.test(countryRaw) ? countryRaw : (clinicOnly ? "" : "ZM");
   if (clinicOnly && !countryCode) {
     errors.countryCode = "Select a country.";
   }
 
   if (addressRaw && !address) {
     errors.address = "Enter a street address of 1–300 characters, or leave it blank.";
+  }
+  if (!provinceResult.ok) {
+    errors.province = provinceResult.error;
   }
 
   let email = { ok: true, normalized: null, display: null };
@@ -211,6 +221,7 @@ function validateClinicRegistrationInput(input, options) {
       contactPhoneDisplay: phone.display || "",
       province,
       city,
+      locationId: input.locationId ? String(input.locationId).trim() : null,
       address,
       countryCode: countryCode || "ZM",
       notes,
@@ -347,4 +358,6 @@ module.exports = {
   createClinicRegistrationApplication,
   clinicTypeLabel,
   listClinicTypeOptions,
+  isZambiaCountryCode,
+  listZambiaProvinces,
 };

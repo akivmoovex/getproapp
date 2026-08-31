@@ -122,7 +122,7 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
     assert.match(page.text, /name="countryCode"/);
     assert.match(page.text, /name="address"/);
     assert.doesNotMatch(page.text, /name="password"/);
-    assert.match(page.text, /acw-platform.css\?v=v7-proj106-p7/);
+    assert.match(page.text, /acw-platform.css\?v=v7-ac-platform-02/);
     const css = fs.readFileSync(
       path.join(__dirname, "..", "public", "activeclinic", "acw-platform.css"),
       "utf8"
@@ -140,7 +140,7 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
       clinicType: "hospital",
       countryCode: "ZM",
       city: "Lusaka",
-      province: "Lusaka Province",
+      province: "Lusaka",
       address: "1 Independence Avenue",
       contactName: "Ada Admin",
       contactEmail: `${stamp}@clinic.example`,
@@ -258,7 +258,7 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
       contactName: "Hub Admin",
       contactEmail: `${stamp}@clinic.example`,
       contactPhone: nextPhone(),
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       address: "2 Cairo Road",
       countryCode: "ZM",

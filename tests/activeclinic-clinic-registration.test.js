@@ -89,7 +89,7 @@ describe("ActiveClinic clinic registration repair", () => {
     contactName: "Test Administrator",
     contactEmail: "registration-test@example.invalid",
     contactPhone: "+260970000000",
-    province: "Lusaka Province",
+    province: "Lusaka",
     city: "Lusaka",
     address: "123 Independence Avenue",
     countryCode: "ZM",
@@ -106,7 +106,7 @@ describe("ActiveClinic clinic registration repair", () => {
     assert.equal(v.normalized.contactName, valid.contactName);
     assert.equal(v.normalized.contactEmail, "registration-test@example.invalid");
     assert.equal(v.normalized.contactPhone, "+260970000000");
-    assert.equal(v.normalized.province, "Lusaka Province");
+    assert.equal(v.normalized.province, "Lusaka");
     assert.equal(v.normalized.city, "Lusaka");
     assert.equal(v.normalized.address, valid.address);
     assert.equal(v.normalized.countryCode, "ZM");

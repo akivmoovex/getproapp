@@ -18,6 +18,16 @@
   <% if (typeof error === 'string' && error) { %>
   <div class="ac-public-error acw-register__alert" role="alert"><%= error %></div>
   <% } %>
+  <% if (verr && Object.keys(verr).length) { %>
+  <div class="ac-public-validation-summary acw-register__alert" role="alert" data-ac-form-state="validation_error">
+    <h2 class="ac-public-validation-summary__title">Please fix the following</h2>
+    <ul class="ac-public-validation-summary__list">
+      <% Object.keys(verr).forEach(function(field) { %>
+      <li><%= verr[field] %></li>
+      <% }) %>
+    </ul>
+  </div>
+  <% } %>
   <% if (verr.acceptTerms) { %>
   <div class="ac-public-validation-summary acw-register__alert" role="alert" data-ac-form-state="validation_error">
     <h2 class="ac-public-validation-summary__title">Please fix the following</h2>
@@ -31,13 +41,9 @@
     <article class="acw-register__card acw-register-review__card">
       <header class="acw-register-review__head">
         <h2><span class="material-symbols-outlined" aria-hidden="true">local_hospital</span> Clinic information</h2>
-        <form method="post" action="/register-clinic" class="acw-register-review__edit">
-          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-          <%- include('../partials/register-clinic-hidden-fields') %>
-          <button type="submit" class="acw-register-review__edit-btn" name="action" value="edit-clinic">
-            <span class="material-symbols-outlined" aria-hidden="true">edit</span> Edit
-          </button>
-        </form>
+        <a class="acw-register-review__edit-btn" href="/register-clinic?step=clinic">
+          <span class="material-symbols-outlined" aria-hidden="true">edit</span> Edit
+        </a>
       </header>
       <dl class="acw-register-review__dl">
         <div>
@@ -70,13 +76,9 @@
     <article class="acw-register__card acw-register-review__card">
       <header class="acw-register-review__head">
         <h2><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span> Administrator</h2>
-        <form method="post" action="/register-clinic" class="acw-register-review__edit">
-          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-          <%- include('../partials/register-clinic-hidden-fields') %>
-          <button type="submit" class="acw-register-review__edit-btn" name="action" value="edit-admin">
-            <span class="material-symbols-outlined" aria-hidden="true">edit</span> Edit
-          </button>
-        </form>
+        <a class="acw-register-review__edit-btn" href="/register-clinic?step=administrator">
+          <span class="material-symbols-outlined" aria-hidden="true">edit</span> Edit
+        </a>
       </header>
       <dl class="acw-register-review__dl">
         <div>

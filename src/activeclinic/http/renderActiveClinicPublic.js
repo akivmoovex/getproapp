@@ -27,7 +27,7 @@ const {
 } = require("./activeClinicBookingStatusCopy");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-proj106-p11";
+const ASSET_VERSION = "v7-ac-platform-02";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -116,6 +116,7 @@ function renderPublicPage(input) {
       reviewRequired: locals.reviewRequired,
       ready: locals.ready,
       authenticated: locals.authenticated,
+      website: locals.website || {},
     });
   }
 

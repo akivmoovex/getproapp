@@ -117,6 +117,11 @@ describe("shared website editor wave 3 — static lifecycle shell", () => {
     assert.match(lifecycleJs, /data-website-publish-confirm/);
     assert.match(lifecycleJs, /var publishForm = pendingPublishForm/);
     assert.match(lifecycleJs, /submitPublishForm\(publishForm\)/);
+    assert.doesNotMatch(
+      lifecycleJs,
+      /btn\.disabled = true[\s\S]{0,120}allowPublishSubmit = true/
+    );
+    assert.match(lifecycleJs, /form\.requestSubmit\(btn\)/);
     assert.match(lifecycleJs, /discard_all/);
     assert.doesNotMatch(lifecycleJs, /window\.confirm\(/);
 
@@ -131,7 +136,7 @@ describe("shared website editor wave 3 — static lifecycle shell", () => {
     assert.match(css, /body\.gp-website-editor-open \.gp-website-editable__pencil/);
     assert.match(css, /pointer-events: none/);
     assert.match(css, /data-website-type="textarea"/);
-    assert.match(css, /z-index: 70/);
+    assert.match(css, /z-index: 80/);
 
     assert.match(acChrome, /websitePreviewDraftMode/);
     assert.match(bbChrome, /previewDraftMode/);
@@ -186,7 +191,7 @@ describe("shared website editor wave 3 — HTTP lifecycle", () => {
       contactName: "Website Admin",
       contactEmail: `${stamp}@example.invalid`,
       contactPhone: `+2609${String(Date.now()).slice(-8)}`,
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       address: "1 Independence Avenue",
       countryCode: "ZM",
@@ -274,7 +279,7 @@ describe("shared website editor wave 3 — HTTP lifecycle", () => {
       contactName: "Website Admin",
       contactEmail: `${stamp}@example.invalid`,
       contactPhone: `+2609${String(Date.now()).slice(-8)}`,
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       address: "1 Independence Avenue",
       countryCode: "ZM",

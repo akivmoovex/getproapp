@@ -23,6 +23,8 @@ const {
   validateClinicRegistrationInput,
   listClinicTypeOptions,
   clinicTypeLabel,
+  listZambiaProvinces,
+  isZambiaCountryCode,
 } = require("../services/activeClinicPublicOnboardingService");
 const {
   submitAndProvisionClinicRegistration,
@@ -83,6 +85,19 @@ const {
   buildPublicWebsitePagePaths,
 } = require("../../platform/website/publicWebsiteUrl");
 const { buildSitemapXml, buildRobotsTxt } = require("../../platform/website/seoDiscovery");
+const {
+  autocompleteLocations,
+  resolveRegistrationLocation,
+  persistRegistrationLocation,
+} = require("../../platform/geography/locationService");
+const {
+  resolveActiveClinicRegistrationSuccessWebsite,
+} = require("../services/resolveActiveClinicRegistrationSuccessWebsite");
+const {
+  readRegistrationDraft,
+  writeRegistrationDraft,
+  clearRegistrationDraft,
+} = require("../services/clinicRegistrationDraft");
 
 /** Absolute https origin for discovery documents. */
 function activeClinicOrigin(req) {
@@ -178,6 +193,13 @@ function statusFormDataFrom(body, query) {
   };
 }
 
+function resolveRegisterWizardStep(raw) {
+  const step = String(raw || "clinic").trim().toLowerCase();
+  if (step === "administrator" || step === "admin") return "administrator";
+  if (step === "review") return "review";
+  return "clinic";
+}
+
 function registerFormDataFromBody(body) {
   const fd = body || {};
   return {
@@ -190,6 +212,7 @@ function registerFormDataFromBody(body) {
     phoneNational: fd.phone_national || fd.phoneNational || "",
     province: fd.province || "",
     city: fd.city || "",
+    locationId: fd.locationId || fd.location_id || "",
     address: fd.address || "",
     countryCode: fd.countryCode || fd.phone_country || "ZM",
     notes: fd.notes || "",
@@ -218,6 +241,7 @@ function registerReviewFormData(formData, validated) {
     contactPhone: n.contactPhoneDisplay || formData.contactPhone || "",
     province: n.province || formData.province || "",
     city: n.city || formData.city || "",
+    locationId: n.locationId || formData.locationId || "",
     address: n.address || formData.address || "",
     countryCode: n.countryCode || formData.countryCode || "ZM",
     notes: n.notes || formData.notes || "",
@@ -242,12 +266,37 @@ function registerPageLocals(extra) {
     pageId: extra.pageId || "public-register-clinic",
     chrome: extra.chrome || "mf-register",
     clinicTypeOptions: listClinicTypeOptions(),
+    zambiaProvinces: listZambiaProvinces(),
+    isZambiaCountryCode,
     wizardStep: step,
     formState: extra.formState || "form",
     validationErrors: extra.validationErrors || {},
     formData: extra.formData || {},
     error: extra.error || null,
     ...extra,
+  };
+}
+
+async function applyRegistrationLocation(db, formData) {
+  const resolved = await resolveRegistrationLocation(db, {
+    countryCode: formData.countryCode,
+    city: formData.city,
+    locationId: formData.locationId,
+  });
+  if (!resolved.ok) {
+    return {
+      ok: false,
+      errors: { city: resolved.error || "Select a valid city for the chosen country." },
+    };
+  }
+  return {
+    ok: true,
+    formData: {
+      ...formData,
+      city: resolved.city || formData.city || "",
+      locationId: resolved.locationId || "",
+      province: formData.province || resolved.provinceRegion || "",
+    },
   };
 }
 
@@ -690,13 +739,55 @@ function registerActiveClinicPublicRoutes(app, deps) {
     }
   });
 
-  app.get("/register-clinic", (req, res) => {
+  app.get("/register-clinic", async (req, res) => {
     const csrfToken = issuePageCsrf(res, env, isProduction, req);
+    const wizardStep = resolveRegisterWizardStep(req.query.step);
+    const draft = readRegistrationDraft(req, env);
+    const defaults = { countryCode: "ZM", clinicType: "clinic" };
+    const formData = draft && draft.formData ? { ...defaults, ...draft.formData } : defaults;
+
+    if (wizardStep === "review") {
+      if (!draft || !draft.formData) {
+        return res.redirect(302, "/register-clinic?step=clinic");
+      }
+      const validated = validateClinicRegistrationInput(formData);
+      if (!validated.ok) {
+        return res.status(200).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
+          csrfToken,
+          formData,
+          wizardStep: "clinic",
+          formState: "validation_error",
+          validationErrors: validated.errors,
+        })));
+      }
+      return res.status(200).type("html").send(renderPublicView("public/register-clinic-review", registerPageLocals({
+        csrfToken,
+        formData: registerReviewFormData(formData, validated),
+        wizardStep: "review",
+      })));
+    }
+
     return res.status(200).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
       csrfToken,
-      wizardStep: "clinic",
-      formData: { countryCode: "ZM", clinicType: "clinic" },
+      wizardStep,
+      formData,
     })));
+  });
+
+  app.get("/api/locations/autocomplete", async (req, res) => {
+    try {
+      const out = await autocompleteLocations(getPool(), {
+        countryCode: req.query.country || req.query.countryCode,
+        query: req.query.q || req.query.query,
+        limit: req.query.limit,
+      });
+      if (!out.ok) {
+        return res.status(400).json({ ok: false, code: out.code || "invalid_country", results: [] });
+      }
+      return res.status(200).json({ ok: true, results: out.results });
+    } catch (err) {
+      return res.status(500).json({ ok: false, results: [] });
+    }
   });
 
   app.post("/register-clinic", registerLimiter, async (req, res) => {
@@ -713,32 +804,25 @@ function registerActiveClinicPublicRoutes(app, deps) {
       })));
     }
 
-    if (action === "edit-clinic") {
-      const csrfToken = issuePageCsrf(res, env, isProduction, req);
-      return res.status(200).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
-        csrfToken,
-        formData,
-        wizardStep: "clinic",
-      })));
-    }
-
-    if (action === "edit-admin") {
-      const csrfToken = issuePageCsrf(res, env, isProduction, req);
-      return res.status(200).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
-        csrfToken,
-        formData,
-        wizardStep: "administrator",
-      })));
-    }
-
     if (action === "confirm") {
       const requestId = newRegistrationRequestId();
       const deployment = resolveDeploymentConfiguration(env);
       try {
+        const located = await applyRegistrationLocation(getPool(), formData);
+        if (!located.ok) {
+          const csrfToken = issuePageCsrf(res, env, isProduction, req);
+          return res.status(400).type("html").send(renderPublicView("public/register-clinic-review", registerPageLocals({
+            csrfToken,
+            validationErrors: located.errors,
+            formData: registerReviewFormData(formData),
+            wizardStep: "review",
+          })));
+        }
+        const locatedForm = located.formData;
         const deploymentCode = requirePlatformDeploymentCode(env);
         const mode = getDeploymentEnvMode(env);
         const result = await submitAndProvisionClinicRegistration(getPool(), {
-          ...formData,
+          ...locatedForm,
           deploymentCode: deploymentCode.ok ? deploymentCode.code : deployment.code,
           dataEnvironment: mode === "production" ? "production" : "testing",
           env,
@@ -844,7 +928,21 @@ function registerActiveClinicPublicRoutes(app, deps) {
         const ref = result.application && result.application.applicationNumber
           ? result.application.applicationNumber
           : "";
+        if (result.ok && ref && locatedForm.city) {
+          try {
+            await persistRegistrationLocation(getPool(), {
+              countryCode: locatedForm.countryCode,
+              city: locatedForm.city,
+              locationId: locatedForm.locationId,
+              provinceRegion: locatedForm.province,
+              registrationReference: ref,
+            });
+          } catch {
+            /* location persistence must not block registration */
+          }
+        }
         if (result.reviewRequired || result.code === SUBMIT_RESULT.REVIEW_REQUIRED) {
+          clearRegistrationDraft(res, { isProduction });
           return res.redirect(303, buildRegistrationSuccessRedirect({
             productCode: "activeclinic",
             reference: ref,
@@ -869,6 +967,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
             /* session is optional; administrator can still sign in */
           }
         }
+        clearRegistrationDraft(res, { isProduction });
         return res.redirect(303, buildRegistrationSuccessRedirect({
           productCode: "activeclinic",
           reference: ref,
@@ -903,7 +1002,17 @@ function registerActiveClinicPublicRoutes(app, deps) {
     const csrfToken = issuePageCsrf(res, env, isProduction, req);
 
     if (action === "next-clinic") {
-      const validated = validateClinicRegistrationInput(formData, { step: "clinic" });
+      const located = await applyRegistrationLocation(getPool(), formData);
+      if (!located.ok) {
+        return res.status(400).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
+          csrfToken,
+          formState: "validation_error",
+          validationErrors: located.errors,
+          formData,
+          wizardStep: "clinic",
+        })));
+      }
+      const validated = validateClinicRegistrationInput(located.formData, { step: "clinic" });
       if (!validated.ok) {
         return res.status(400).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
           csrfToken,
@@ -913,18 +1022,20 @@ function registerActiveClinicPublicRoutes(app, deps) {
           wizardStep: "clinic",
         })));
       }
+      const adminFormData = {
+        ...formData,
+        clinicName: validated.normalized.clinicName,
+        clinicType: validated.normalized.clinicType,
+        countryCode: validated.normalized.countryCode,
+        province: validated.normalized.province || "",
+        city: validated.normalized.city || "",
+        address: validated.normalized.address || "",
+        notes: validated.normalized.notes || "",
+      };
+      writeRegistrationDraft(res, env, adminFormData, { isProduction });
       return res.status(200).type("html").send(renderPublicView("public/register-clinic", registerPageLocals({
         csrfToken,
-        formData: {
-          ...formData,
-          clinicName: validated.normalized.clinicName,
-          clinicType: validated.normalized.clinicType,
-          countryCode: validated.normalized.countryCode,
-          province: validated.normalized.province || "",
-          city: validated.normalized.city || "",
-          address: validated.normalized.address || "",
-          notes: validated.normalized.notes || "",
-        },
+        formData: adminFormData,
         wizardStep: "administrator",
       })));
     }
@@ -945,24 +1056,39 @@ function registerActiveClinicPublicRoutes(app, deps) {
       })));
     }
 
+    const reviewFormData = registerReviewFormData(formData, validated);
+    writeRegistrationDraft(res, env, formData, { isProduction });
     return res.status(200).type("html").send(renderPublicView("public/register-clinic-review", registerPageLocals({
       csrfToken,
-      formData: registerReviewFormData(formData, validated),
+      formData: reviewFormData,
       wizardStep: "review",
     })));
   });
 
-  app.get("/register-clinic/success", (req, res) => {
+  app.get("/register-clinic/success", async (req, res) => {
     const csrfToken = issuePageCsrf(res, env, isProduction, req);
     const applicationReference = String(req.query.ref || "").trim().slice(0, 64);
     const reviewRequired = String(req.query.review || "") === "1";
     const ready = String(req.query.ready || "") === "1";
+    let website = null;
+    if (ready && !reviewRequired && applicationReference) {
+      try {
+        website = await resolveActiveClinicRegistrationSuccessWebsite(getPool(), {
+          reference: applicationReference,
+          ready: true,
+          publicOrigin: activeClinicOrigin(req),
+        });
+      } catch {
+        website = null;
+      }
+    }
     return res.status(200).type("html").send(renderPublicView("public/register-clinic-success", registerPageLocals({
       csrfToken,
       applicationReference: applicationReference || null,
       reviewRequired,
       ready: ready && !reviewRequired,
       authenticated: Boolean(req.v5Session && req.v5Session.authenticated),
+      website,
       wizardStep: "success",
       pageId: "public-register-clinic-success",
     })));

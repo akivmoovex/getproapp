@@ -28,6 +28,9 @@ const {
 const {
   provisionActiveClinicClinic,
 } = require("../website/provisionActiveClinicWebsite");
+const {
+  allocateUniqueOrganizationKey,
+} = require("../../platform/organization/allocateUniqueOrganizationKey");
 const { ensureDefaultDepartments } = require("./activeClinicDepartmentService");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const { recordWebsiteAudit } = require("../../platform/website/auditService");
@@ -62,19 +65,10 @@ const RESULT = Object.freeze({
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function slugFromClinicName(name, applicationNumber) {
-  const base = String(name || "clinic")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "")
-    .slice(0, 40);
-  const suffix = String(applicationNumber || "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "")
-    .slice(-6);
-  const slug = `${base || "clinic"}${suffix ? `-${suffix}` : ""}`.slice(0, 64);
-  return slug.replace(/^[^a-z0-9]+/, "c") || "clinic";
+/** @deprecated Use allocateUniqueOrganizationKey — kept for legacy tests only. */
+function slugFromClinicName(name) {
+  const { resolveBaseOrganizationKey } = require("../../blessboard/services/organizationKey");
+  return resolveBaseOrganizationKey(name || "clinic").key || "clinic";
 }
 
 function splitName(contactName) {
@@ -442,7 +436,9 @@ async function approveAndProvisionClinicRegistration(db, input) {
     let organizationId = app.organization_id;
     let slug = null;
     if (!organizationId) {
-      slug = slugFromClinicName(app.clinic_name, app.application_number);
+      slug = await allocateUniqueOrganizationKey(client, {
+        displayName: app.clinic_name,
+      });
       const tenant = await provisionPlatformTenant(client, {
         skipDomain: true,
         dataEnvironment: input.dataEnvironment || "testing",

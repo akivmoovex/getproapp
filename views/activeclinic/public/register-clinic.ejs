@@ -3,8 +3,10 @@
 <% const verr = validationErrors || {}; %>
 <% const types = Array.isArray(clinicTypeOptions) ? clinicTypeOptions : []; %>
 <% const countries = typeof phoneCountries !== 'undefined' && Array.isArray(phoneCountries) ? phoneCountries : []; %>
+<% const provinceOptions = Array.isArray(zambiaProvinces) ? zambiaProvinces : []; %>
+<% const isZambia = String(fd.countryCode || 'ZM').toUpperCase() === 'ZM'; %>
 <section
-  class="acw-page acw-register"
+  class="acw-page acw-register<%= step === 'clinic' ? ' acw-register--with-aside' : '' %>"
   data-ac-page-section="register-clinic"
   data-ac-acw-screen="<%= step === 'administrator' ? 'ACW09-admin' : 'ACW09-clinic' %>"
   data-ac-acw-step="<%= step %>"
@@ -114,10 +116,10 @@
       </div>
     </div>
     <div class="acw-register__actions">
-      <button type="submit" class="ac-btn ac-btn--secondary" name="action" value="edit-clinic">
+      <a class="ac-btn ac-btn--secondary" href="/register-clinic?step=clinic">
         <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
         Back
-      </button>
+      </a>
       <button type="submit" class="ac-btn ac-btn--primary" name="action" value="next-admin" data-loading="Please wait…">
         Continue to Review
         <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
@@ -127,6 +129,24 @@
   </div>
   <p class="acw-register__secure"><span class="material-symbols-outlined" aria-hidden="true">encrypted</span> Secure connection</p>
   <% } else { %>
+  <div class="acw-register__layout">
+    <aside class="acw-register__aside" aria-labelledby="ac-register-aside-title">
+      <p class="acw-register__aside-eyebrow">ActiveClinic</p>
+      <h2 class="acw-register__aside-title" id="ac-register-aside-title">Start running your clinic digitally</h2>
+      <p class="acw-register__aside-lead">Your clinic workspace is created immediately after registration. Administrator access is ready to use, and your public clinic website starts as an unpublished draft you can build and publish when ready.</p>
+      <ul class="acw-register__feature-list">
+        <li><span class="material-symbols-outlined" aria-hidden="true">groups</span><span><strong>Patient records</strong> — register and manage patients in one place.</span></li>
+        <li><span class="material-symbols-outlined" aria-hidden="true">calendar_month</span><span><strong>Appointments</strong> — schedule visits and manage reception workflows.</span></li>
+        <li><span class="material-symbols-outlined" aria-hidden="true">stethoscope</span><span><strong>Clinical workflows</strong> — consultations, triage, and care documentation.</span></li>
+        <li><span class="material-symbols-outlined" aria-hidden="true">payments</span><span><strong>Billing</strong> — invoices, payments, and cashier operations.</span></li>
+        <li><span class="material-symbols-outlined" aria-hidden="true">medication</span><span><strong>Pharmacy</strong> — dispensing and inventory support.</span></li>
+        <li><span class="material-symbols-outlined" aria-hidden="true">biotech</span><span><strong>Diagnostics</strong> — lab and radiology request workflows.</span></li>
+        <li><span class="material-symbols-outlined" aria-hidden="true">badge</span><span><strong>Staff access</strong> — role-based access for your clinic team.</span></li>
+        <li><span class="material-symbols-outlined" aria-hidden="true">language</span><span><strong>Free DIY clinic mini-website</strong> — customize and publish when you are ready.</span></li>
+      </ul>
+      <p class="acw-register__aside-note">Registration does not automatically publish your public clinic website.</p>
+    </aside>
+    <div class="acw-register__panel">
   <div class="acw-register__card">
   <form method="post" action="/register-clinic" class="ac-public-form acw-form acw-register__form" data-ac-loading="1" novalidate data-ac-register-step="clinic">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
@@ -159,15 +179,38 @@
         </select>
         <% if (verr.countryCode) { %><p class="ac-form-field__error" id="countryCode-error"><%= verr.countryCode %></p><% } %>
       </div>
-      <div class="ac-form-field">
+      <div class="ac-form-field<%= verr.city ? ' ac-form-field--error' : '' %> acw-location-field">
         <label for="city">City / location</label>
-        <input id="city" name="city" maxlength="100" placeholder="Enter city" value="<%= fd.city || '' %>"/>
+        <input
+          id="city"
+          name="city"
+          maxlength="100"
+          placeholder="Start typing a city or town"
+          value="<%= fd.city || '' %>"
+          autocomplete="off"
+          role="combobox"
+          aria-autocomplete="list"
+          aria-expanded="false"
+          aria-controls="cityListbox"
+          aria-invalid="<%= verr.city ? 'true' : 'false' %>"
+          <% if (verr.city) { %>aria-describedby="city-error"<% } %>
+        />
+        <input type="hidden" name="locationId" id="locationId" value="<%= fd.locationId || '' %>"/>
+        <div id="cityListbox" class="acw-location-listbox" data-ac-city-listbox="1" role="listbox" hidden></div>
+        <% if (verr.city) { %><p class="ac-form-field__error" id="city-error"><%= verr.city %></p><% } %>
       </div>
     </div>
     <div class="acw-register__grid">
-      <div class="ac-form-field">
-        <label for="province">Province / region</label>
-        <input id="province" name="province" maxlength="100" value="<%= fd.province || '' %>"/>
+      <div class="ac-form-field<%= verr.province ? ' ac-form-field--error' : '' %>" data-ac-province-field="1">
+        <label for="provinceSelect">Province / region</label>
+        <select id="provinceSelect" name="<%= isZambia ? 'province' : '' %>"<%= isZambia ? '' : ' hidden' %>>
+          <option value="">Select province</option>
+          <% provinceOptions.forEach(function(province) { %>
+          <option value="<%= province %>"<%= String(fd.province || '') === province ? ' selected' : '' %>><%= province %></option>
+          <% }) %>
+        </select>
+        <input id="provinceText" name="<%= isZambia ? '' : 'province' %>" maxlength="100" value="<%= fd.province || '' %>"<%= isZambia ? ' hidden' : '' %>/>
+        <% if (verr.province) { %><p class="ac-form-field__error" id="province-error"><%= verr.province %></p><% } %>
       </div>
       <div class="ac-form-field<%= verr.address ? ' ac-form-field--error' : '' %>">
         <label for="address">Address / location</label>
@@ -191,5 +234,8 @@
     </div>
   </form>
   </div>
+  </div>
+  </div>
+  <script src="/activeclinic/register-clinic.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : 'v7' %>" defer></script>
   <% } %>
 </section>

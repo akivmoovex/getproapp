@@ -109,7 +109,7 @@ function clinicPayload(overrides) {
     contactName: "Website Admin",
     contactEmail: `uwm-${stamp}@example.invalid`,
     contactPhone: nextPhone(),
-    province: "Lusaka Province",
+    province: "Lusaka",
     city: "Lusaka",
     address: "1 Independence Avenue",
     countryCode: "ZM",
@@ -709,7 +709,7 @@ describe("V7 unified website management", () => {
         product: PRODUCT_CODE.ACTIVECLINIC,
         organizationKey: "demo",
       }),
-      "/clinics/demo/website/preview"
+      "/clinics/demo?website_mode=draft"
     );
     assert.equal(
       urls.buildPublicWebsiteSettingsPath({ product: PRODUCT_CODE.ACTIVECLINIC }),

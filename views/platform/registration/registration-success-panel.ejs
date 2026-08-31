@@ -45,6 +45,34 @@
   <% if (reference) { %>
   <p>Reference: <code<% if (attrs.reference) { %> <%= attrs.reference %>="<%= reference %>"<% } %>><%= reference %></code></p>
   <% } %>
+  <% if (rs.websiteShow && rs.websiteUrl) { %>
+  <div class="<%= cls.note || '' %>" data-ac-registration-website="1">
+    <h2 class="<%= cls.subtitle || '' %>">Your clinic website</h2>
+    <div class="acw-register-success-website__row">
+      <p class="acw-register-success-website__url">
+        <a href="<%= rs.websiteUrl %>" rel="noopener"><code data-ac-registration-website-url="1"><%= rs.websiteUrl %></code></a>
+      </p>
+      <button
+        type="button"
+        class="<%= cls.btnSecondary || '' %> acw-register-success-website__copy"
+        data-ac-copy-website-url="1"
+        data-copy-url="<%= rs.websiteUrl %>"
+        aria-label="Copy clinic website URL"
+      >Copy</button>
+    </div>
+    <% if (rs.websiteStatusLabel) { %>
+    <p class="acw-register-success-website__status" data-ac-registration-website-status="1"><%= rs.websiteStatusLabel %></p>
+    <% } %>
+    <% if (rs.websiteEditPath) { %>
+    <p class="acw-register-success-website__cta">
+      <a class="<%= cls.btnPrimary || '' %>" href="<%= rs.websiteEditPath %>" data-ac-build-website="1">
+        <%= rs.websiteBuildLabel || 'Build your website' %>
+      </a>
+    </p>
+    <% } %>
+    <p class="acw-register-success-website__copy-status visually-hidden" data-ac-copy-status="1" role="status" aria-live="polite"></p>
+  </div>
+  <% } %>
   <div class="<%= cls.grid || '' %>">
     <div class="<%= cls.tile || '' %>">
       <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
@@ -77,4 +105,48 @@
     <a class="<%= cls.btnSecondary || '' %>" href="<%= rs.homeHref || '/' %>"><%= rs.homeLabel || 'Return home' %></a>
   </div>
 </div>
+<script>
+(function () {
+  var btn = document.querySelector("[data-ac-copy-website-url]");
+  if (!btn) return;
+  var status = document.querySelector("[data-ac-copy-status]");
+  function showCopied(message) {
+    if (!status) return;
+    status.textContent = message;
+    status.classList.remove("visually-hidden");
+    btn.textContent = "Copied";
+    window.setTimeout(function () {
+      status.textContent = "";
+      status.classList.add("visually-hidden");
+      btn.textContent = "Copy";
+    }, 2500);
+  }
+  btn.addEventListener("click", function () {
+    var url = btn.getAttribute("data-copy-url") || "";
+    if (!url) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () {
+        showCopied("Clinic website URL copied");
+      }).catch(function () {
+        showCopied("Could not copy — select the URL and copy manually");
+      });
+      return;
+    }
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = url;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "absolute";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      showCopied("Clinic website URL copied");
+    } catch (_e) {
+      showCopied("Could not copy — select the URL and copy manually");
+    }
+  });
+})();
+</script>
 <% } %>

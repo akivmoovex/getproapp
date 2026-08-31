@@ -28,10 +28,9 @@ const { recordAuditEventSafe } = require("../../platform/services/auditEventServ
 const { ACTION: LIFECYCLE_ACTION, recordLifecycleAudit } = require("../../platform/registration/lifecycleAudit");
 const { logRegistrationTrace } = require("./registrationTraceLog");
 const {
-  normalizeOrganizationKey,
-  resolveBaseOrganizationKey,
-  withOrganizationKeySuffix,
-} = require("./organizationKey");
+  allocateUniqueOrganizationKey,
+  assertOrganizationKeyAvailable,
+} = require("../../platform/organization/allocateUniqueOrganizationKey");
 const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
@@ -329,67 +328,6 @@ function buildSubscriptionAssignment(planKey, provisionedAt) {
     subscriptionNotes: null,
     subscriptionTrialSource: null,
   };
-}
-
-/**
- * @param {{ query: Function }} client
- * @param {string} organizationKey
- */
-async function assertOrganizationKeyAvailable(client, organizationKey) {
-  const r = await client.query(
-    `SELECT id FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
-    [organizationKey]
-  );
-  if (r.rows[0]) {
-    throw new OrchestratorError(STATUS.SLUG_UNAVAILABLE, "slug_unavailable");
-  }
-}
-
-/**
- * Allocate a unique organization_key inside the provisioning transaction.
- * Prefer an exact operator-supplied key when available; otherwise slugify the
- * church name and resolve collisions with -2, -3, … suffixes.
- *
- * @param {{ query: Function }} client
- * @param {{ preferredKey?: string|null, churchName?: string|null, exactPreferred?: boolean }} input
- * @returns {Promise<string>}
- */
-async function allocateUniqueOrganizationKey(client, input) {
-  const preferred = String((input && input.preferredKey) || "").trim();
-  const churchName = String((input && input.churchName) || "").trim();
-  const exactPreferred = Boolean(input && input.exactPreferred && preferred);
-
-  if (exactPreferred) {
-    const keyNorm = normalizeOrganizationKey(preferred);
-    if (!keyNorm.ok) {
-      throw new OrchestratorError(
-        keyNorm.reason === "reserved_key" ? STATUS.SLUG_UNAVAILABLE : STATUS.INVALID_INPUT,
-        keyNorm.reason === "reserved_key" ? "slug_unavailable" : "invalid_input:organizationKey"
-      );
-    }
-    await assertOrganizationKeyAvailable(client, keyNorm.key);
-    return keyNorm.key;
-  }
-
-  const base = resolveBaseOrganizationKey(preferred || churchName);
-  if (!base.ok) {
-    throw new OrchestratorError(
-      base.reason === "reserved_key" ? STATUS.SLUG_UNAVAILABLE : STATUS.INVALID_INPUT,
-      base.reason === "reserved_key" ? "slug_unavailable" : "invalid_input:organizationKey"
-    );
-  }
-
-  for (let n = 1; n <= 200; n += 1) {
-    const candidateRaw = withOrganizationKeySuffix(base.key, n);
-    const candidate = normalizeOrganizationKey(candidateRaw);
-    if (!candidate.ok) continue;
-    const r = await client.query(
-      `SELECT id FROM platform.organizations WHERE organization_key = $1 LIMIT 1`,
-      [candidate.key]
-    );
-    if (!r.rows[0]) return candidate.key;
-  }
-  throw new OrchestratorError(STATUS.SLUG_UNAVAILABLE, "slug_unavailable");
 }
 
 /**
@@ -826,15 +764,20 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         }
       }
       if (!organizationKey) {
-        organizationKey = await allocateUniqueOrganizationKey(client, {
-          preferredKey: preferredKey || null,
-          churchName: application.church_name,
-          // Public self-registration derives the key and suffixes -2/-3 on collision.
-          // Operator/admin-supplied keys remain exact.
-          exactPreferred:
-            Boolean(preferredKey) &&
-            String((actorContext && actorContext.type) || "") !== "public_self_registration",
-        });
+        try {
+          organizationKey = await allocateUniqueOrganizationKey(client, {
+            preferredKey: preferredKey || null,
+            churchName: application.church_name,
+            exactPreferred:
+              Boolean(preferredKey) &&
+              String((actorContext && actorContext.type) || "") !== "public_self_registration",
+          });
+        } catch (keyErr) {
+          if (keyErr && keyErr.code === "slug_unavailable") {
+            throw new OrchestratorError(STATUS.SLUG_UNAVAILABLE, "slug_unavailable");
+          }
+          throw keyErr;
+        }
       }
 
       provisioningStage = "resolve_administrator_identity";
