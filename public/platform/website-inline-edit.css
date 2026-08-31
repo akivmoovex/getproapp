@@ -1954,7 +1954,7 @@ body.gp-website-lifecycle-open {
   body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key$=".hero.heading"] .gp-website-editable__display {
     display: flex;
     flex-direction: column;
-    align-items: flex-end;
+    align-items: flex-start;
     padding-right: 0;
   }
 
