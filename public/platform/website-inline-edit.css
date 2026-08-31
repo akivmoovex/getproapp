@@ -1936,6 +1936,7 @@ body.gp-website-lifecycle-open {
      copy under sticky editor chrome — anchor copy to the hero foot on mobile. */
   body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 {
     overflow: hidden;
+    align-items: stretch;
   }
 
   body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 .bb-tp-hero__inner--overlay {
@@ -1944,9 +1945,23 @@ body.gp-website-lifecycle-open {
     justify-content: flex-end;
     flex: 1 1 100%;
     width: 100%;
-    min-height: 100%;
+    max-height: 100%;
+    min-height: 0;
     box-sizing: border-box;
     overflow: hidden;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key$=".hero.heading"] .gp-website-editable__display {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-end;
+    padding-right: 0;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero--phase7 [data-website-key$=".hero.heading"] .gp-website-editable__pencil {
+    position: static;
+    margin-top: 0.35rem;
+    flex: 0 0 auto;
   }
 
   body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header {
