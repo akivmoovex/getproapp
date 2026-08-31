@@ -27,8 +27,10 @@
   /* Stacking layers (low → high): canvas, editable affordances, section chrome,
      editor toolbar, menus/popovers, field editor, lifecycle dialogs. */
   --gp-we-z-canvas: 1;
-  --gp-we-z-editable-affordance: 25;
+  --gp-we-z-editable-affordance: 50;
+  --gp-we-z-editable-pencil: 55;
   --gp-we-z-section-chrome: 40;
+  --gp-we-z-tenant-header-editor: 35;
   --gp-we-z-section-menu: 100;
   --gp-we-z-field-editor: 110;
   --gp-we-z-lifecycle: 120;
@@ -1325,7 +1327,6 @@ body.gp-website-editor-open .gp-website-editable__display {
   position: relative;
   z-index: var(--gp-we-z-editable-affordance);
   pointer-events: auto;
-  isolation: isolate;
   min-height: var(--gp-website-touch);
   padding-right: calc(var(--gp-website-touch) + 0.25rem);
   box-sizing: border-box;
@@ -1346,7 +1347,7 @@ body.gp-website-editor-open .ac-website-editable + .ac-website-editable {
 
 body.gp-website-editor-open .gp-website-editable__pencil,
 body.gp-website-editor-open .ac-website-editable__pencil {
-  z-index: calc(var(--gp-we-z-section-chrome) + 5);
+  z-index: var(--gp-we-z-editable-pencil);
   pointer-events: auto;
 }
 
@@ -1923,9 +1924,22 @@ body.gp-website-lifecycle-open {
 }
 
 @media (max-width: 767px) {
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header {
+    z-index: var(--gp-we-z-tenant-header-editor);
+    pointer-events: none;
+  }
+
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header a,
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header button,
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header [data-bb-header-actions],
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header .bb-tp-menu-btn,
+  body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header .bb-tp-drawer {
+    pointer-events: auto;
+  }
+
   body.gp-website-editor-open .bb-tp-main,
   body.gp-website-editor-open .ac-public-main {
-    padding-top: calc(var(--gp-we-toolbar-h) + 0.5rem);
+    padding-top: 0.5rem;
   }
 
   body.gp-website-editor-open .gp-website-chrome-stack {
@@ -1941,7 +1955,16 @@ body.gp-website-lifecycle-open {
 
   body.gp-website-editor-open .gp-website-editable__display,
   body.gp-website-editor-open .ac-website-editable__display {
-    scroll-margin-top: calc(var(--gp-we-toolbar-h) + 1rem);
+    scroll-margin-top: calc(
+      var(--gp-we-toolbar-h) + var(--bb-header-h, 4.5rem) + 1.25rem
+    );
+    scroll-margin-bottom: calc(
+      var(--gp-we-toolbar-h) + env(safe-area-inset-bottom, 0px) + 1.25rem
+    );
+  }
+
+  body.gp-website-editor-open .gp-website-section__chrome {
+    z-index: calc(var(--gp-we-z-section-chrome) - 5);
   }
 
   .gp-website-preview-banner__inner {
