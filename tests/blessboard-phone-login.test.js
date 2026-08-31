@@ -34,9 +34,11 @@ describe("blessboard phone-first authentication (11E)", () => {
       path.join(__dirname, "..", "views/blessboard/v5/apex/login.ejs"),
       "utf8"
     );
-    assert.match(html, /Phone number or email/);
-    assert.match(html, /Prefer your mobile phone number/);
-    assert.match(html, /smartphone/);
+    assert.match(html, /data-gp-auth-identifier="1"/);
+    assert.match(html, /data-gp-auth-id-tab="phone"/);
+    assert.match(html, /data-gp-auth-id-tab="email"/);
+    assert.match(html, /phone_national/);
+    assert.match(html, /Welcome Back/i);
   });
 
   it("resolvePhoneLoginStatus covers missing/unverified/verified", () => {
