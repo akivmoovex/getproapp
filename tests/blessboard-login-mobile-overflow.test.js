@@ -63,6 +63,22 @@ describe("BlessBoard login mobile overflow", () => {
     }
   });
 
+  it("all active BlessBoard V5 auth templates reference tenant-auth.css v=15", () => {
+    const templates = [
+      "views/blessboard/v5/apex/login.ejs",
+      "views/blessboard/v5/apex/forgot-password.ejs",
+      "views/blessboard/v5/apex/reset-password.ejs",
+      "views/blessboard/v5/apex/auth-error.ejs",
+      "views/blessboard/v5/public/register.ejs",
+      "views/blessboard/v5/public/register-submitted.ejs",
+    ];
+    for (const rel of templates) {
+      const html = read(rel);
+      assert.match(html, /tenant-auth\.css\?v=15/, `${rel} must use tenant-auth.css v=15`);
+      assert.doesNotMatch(html, /tenant-auth\.css\?v=14/, `${rel} must not reference stale v=14`);
+    }
+  });
+
   it("COLOR_CHANGES: none — layout-only auth shell adjustments", () => {
     const tenantAuth = read("public/blessboard/v5/tenant-auth.css");
     const gpAuth = read("public/platform/gp-auth-reg.css");
