@@ -196,7 +196,7 @@ async function runActiveClinicFlow() {
     contactName: "Clinic Admin",
     contactEmail: `${stamp}@clinic.example`,
     contactPhone: nextPhone(),
-    province: "Lusaka Province",
+    province: "Lusaka",
     city: "Lusaka",
     address: "1 Independence Avenue",
     countryCode: "ZM",

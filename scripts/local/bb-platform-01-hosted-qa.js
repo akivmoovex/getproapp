@@ -104,9 +104,10 @@ async function testSectionChrome(page) {
   const menuBtn = page.locator("[data-website-section-trigger]").first();
   await menuBtn.waitFor({ state: "visible", timeout: 15000 });
   await menuBtn.click({ timeout: 10000 });
+  const menuHost = page.locator(".gp-website-section-menu:not([hidden])");
+  await menuHost.waitFor({ state: "visible", timeout: 8000 });
   const menu = page.locator("[data-website-section-menu-panel]:not([hidden])").first();
-  await menu.waitFor({ state: "visible", timeout: 8000 });
-  const zMenu = await menu.evaluate((el) => parseInt(getComputedStyle(el).zIndex, 10) || 0);
+  const zMenu = await menuHost.evaluate((el) => parseInt(getComputedStyle(el).zIndex, 10) || 0);
   const box = await menu.boundingBox();
   await page.keyboard.press("Escape");
   await menu.waitFor({ state: "hidden", timeout: 5000 }).catch(() => {});
@@ -118,6 +119,48 @@ async function testSectionChrome(page) {
   await panel.locator("[data-website-field-editor-cancel]").click();
 
   return { ok: Boolean(box && box.height > 0 && zMenu >= 40), zMenu, box };
+}
+
+async function testMobilePublishJourney(page) {
+  await page.goto(`${BASE}/hq/website`, { waitUntil: "domcontentloaded", timeout: 60000 });
+  const editHref = await page.locator('[data-bb-edit-website="1"], [data-bb-website-action="edit"]').first().getAttribute("href");
+  if (!editHref) throw new Error("Website Hub edit link missing");
+  await page.goto(`${BASE}${editHref}`, { waitUntil: "domcontentloaded", timeout: 60000 });
+  await page.waitForSelector(".gp-website-editor__toolbar", { timeout: 30000 });
+
+  const marker = `BB-MOB-PUB-${Date.now()}`;
+  const field = page.locator('[data-website-key="home.hero.heading"]').first();
+  await field.locator(".gp-website-editable__pencil").click({ timeout: 15000 });
+  const panel = page.locator("[data-website-field-editor-panel]:not([hidden])");
+  await panel.waitFor({ state: "visible", timeout: 10000 });
+  await panel.locator("[data-website-input]").fill(marker);
+  await panel.locator("[data-website-field-editor-save]").click();
+  await panel.waitFor({ state: "hidden", timeout: 15000 });
+
+  await page.locator('[data-website-engine-preview]').first().click({ timeout: 10000 });
+  await page.waitForURL(/website_mode=draft|preview/i, { timeout: 20000 }).catch(() => {});
+
+  const backEdit = page.locator('a[href*="website_edit=1"]').first();
+  if (await backEdit.count()) {
+    await backEdit.click({ timeout: 10000 });
+    await page.waitForSelector(".gp-website-editor__toolbar", { timeout: 30000 });
+  } else {
+    await page.goto(`${BASE}/c/demo-church?website_edit=1&website_mode=draft`, { waitUntil: "domcontentloaded" });
+    await page.waitForSelector(".gp-website-editor__toolbar", { timeout: 30000 });
+  }
+
+  await page.locator("[data-website-engine-publish]").first().click();
+  const dialog = page.locator('[data-website-lifecycle-panel="publish"]:not([hidden])');
+  await dialog.waitFor({ state: "visible", timeout: 8000 });
+  await dialog.locator('[data-website-lifecycle-confirm="publish"]').click();
+
+  const success =
+    (await page.locator("[data-website-publish-success]").isVisible().catch(() => false)) ||
+    (await page.waitForURL(/website_published=1/i, { timeout: 25000 }).then(() => true).catch(() => false));
+
+  await page.goto(`${BASE}/c/demo-church`, { waitUntil: "domcontentloaded", timeout: 60000 });
+  const publicHtml = await page.content();
+  return { ok: success && publicHtml.includes(marker), marker, success };
 }
 
 async function testPlaceholderLeak(page) {
@@ -262,8 +305,41 @@ async function main() {
   for (const vp of VIEWPORTS) {
     results.push(await runViewport(browser, vp));
   }
+  const mobileCtx = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    isMobile: true,
+    hasTouch: true,
+  });
+  const mobilePage = await mobileCtx.newPage();
+  await login(mobilePage);
+  let mobilePublish = null;
+  try {
+    mobilePublish = await testMobilePublishJourney(mobilePage);
+  } catch (err) {
+    mobilePublish = { ok: false, error: err.message };
+  }
+  await mobileCtx.close();
   await browser.close();
-  console.log(JSON.stringify({ results }, null, 2));
+  const spotMobile = results.find((r) => r.viewport === "mobile-390");
+  const spotPass = spotMobile
+    ? Object.values(spotMobile.spot).filter((v) => v === "PASS").length
+    : 0;
+  console.log(
+    JSON.stringify(
+      {
+        BB_MOBILE_PREVIEW_POINTER_INTERCEPTION:
+          spotMobile && spotMobile.spot["home.hero.heading"] === "PASS" ? "FIXED" : "FAIL",
+        SECTION_MENU_LAYERING:
+          results.some((r) => r.sectionChrome && r.sectionChrome.ok) ? "PASS" : "FAIL",
+        BB_MOBILE_SPOT_EDITABILITY: `${spotPass}/5`,
+        BB_MOBILE_UI_PUBLISH_FLOW_PASS: mobilePublish && mobilePublish.ok ? "YES" : "NO",
+        results,
+        mobilePublish,
+      },
+      null,
+      2
+    )
+  );
 }
 
 main().catch((err) => {

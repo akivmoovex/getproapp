@@ -211,7 +211,7 @@ describe("v7 website image management — ActiveClinic", () => {
       contactName: "Website Admin",
       contactEmail: `img-${stamp}@example.invalid`,
       contactPhone: `+2609${String(phoneSeq).slice(-8)}`,
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       address: "1 Independence Avenue",
       countryCode: "ZM",

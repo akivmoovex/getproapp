@@ -109,7 +109,7 @@ function clinicSpec(overrides) {
     productTenantKey: overrides.productTenantKey || overrides.organizationKey,
     dataEnvironment: "demo",
     countryCode: "ZM",
-    province: "Lusaka Province",
+    province: "Lusaka",
     city: "Lusaka",
     timezone: "Africa/Lusaka",
     currency: "ZMW",

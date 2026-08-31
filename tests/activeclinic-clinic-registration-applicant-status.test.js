@@ -297,7 +297,7 @@ describe("ActiveClinic applicant status lookup", () => {
       contactName: `Admin ${stamp}`,
       contactEmail: `status-${stamp}@clinic.example`,
       contactPhone: nextPhone(),
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       countryCode: "ZM",
       password: ADMIN_PASSWORD,

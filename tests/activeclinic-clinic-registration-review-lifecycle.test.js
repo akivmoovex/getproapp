@@ -196,7 +196,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       contactName: `Admin ${stamp}`,
       contactEmail: `admin-${stamp}@clinic.example`,
       contactPhone: nextPhone(),
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       address: "10 Cairo Road",
       countryCode: "ZM",

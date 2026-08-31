@@ -30,7 +30,6 @@
 >
 <%- include('./preview-banner', { editorShell: shell }) %>
 </div>
-<%- include('./lifecycle-dialog-host', { editorShell: shell }) %>
 <% } else { %>
 <% if (shell.publishSuccess) { %>
 <div class="gp-website-publish-success" data-website-publish-success="1" role="status">
@@ -343,10 +342,6 @@
     <% } %>
   </div>
 </div>
-<%- include('./field-editor-host') %>
-<%- include('./add-section-picker', { editorShell: shell }) %>
-<%- include('./section-action-menu', { editorShell: shell }) %>
-<%- include('./lifecycle-dialog-host', { editorShell: shell }) %>
 <script>
 (function () {
   var btn = document.querySelector("[data-website-copy-published-url]");

@@ -115,7 +115,7 @@ describe("ActiveClinic MF03 registration chrome", () => {
           clinicTypeLabel: "Hospital",
           countryCode: "ZM",
           city: "Lusaka",
-          province: "Lusaka Province",
+          province: "Lusaka",
           address: "1 Independence Avenue",
           contactName: "Ada Admin",
           contactEmail: "ada@clinic.example",

@@ -73,7 +73,7 @@ async function main() {
       contactName: "QA Clinic Admin",
       contactEmail: `bf04-clinic-${stamp}-${nonce}@example.invalid`,
       contactPhone: `+26097${String(Date.now()).slice(-7)}`,
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       address: "QA Avenue",
       countryCode: "ZM",

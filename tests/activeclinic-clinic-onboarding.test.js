@@ -260,7 +260,7 @@ describe("ActiveClinic public clinic onboarding", () => {
       contactName: "Clinic Admin",
       contactEmail: email,
       contactPhone: phone,
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       address: "1 Cairo Road",
       countryCode: "ZM",

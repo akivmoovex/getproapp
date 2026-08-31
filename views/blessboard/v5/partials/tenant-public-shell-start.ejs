@@ -33,9 +33,9 @@
   <meta name="twitter:image" content="<%= seo.twitterImageUrl %>" />
   <% } %>
   <%- include('./head-design-system') %>
-  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=55' %>" />
+  <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=56' %>" />
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) { %>
-  <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v7-website-22" />
+  <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v7-website-23" />
   <link rel="stylesheet" href="/platform/website-add-section.css?v=v7-w4b2-1" />
   <meta name="csrf-token" content="<%= websiteAdmin.csrfToken %>" />
   <% } %>
@@ -156,7 +156,7 @@
       </div>
     </div>
   </header>
-  <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta && !(typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.previewDraftMode)) { %>
+  <% if (typeof isPreview !== 'undefined' && isPreview && typeof previewMeta !== 'undefined' && previewMeta && !(typeof websiteAdmin !== 'undefined' && websiteAdmin && (websiteAdmin.previewDraftMode || websiteAdmin.editingMode))) { %>
   <div class="bb-tp-preview-banner" role="status" data-bb-preview-banner="1">
     <div class="bb-tp-preview-banner__inner">
       <strong><%= previewMeta.bannerLabel || 'Preview' %></strong>

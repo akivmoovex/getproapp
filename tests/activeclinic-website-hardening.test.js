@@ -194,7 +194,7 @@ describe("ActiveClinic website hardening", () => {
       contactName: "Ada Admin",
       contactEmail: `h01-${Date.now()}@example.test`,
       contactPhone: nextPhone(),
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       countryCode: "ZM",
       password: PASSWORD,
@@ -248,7 +248,7 @@ describe("ActiveClinic website hardening", () => {
       contactName: "Bea Admin",
       contactEmail: `h01p-${Date.now()}@example.test`,
       contactPhone: nextPhone(),
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       countryCode: "ZM",
       password: PASSWORD,
@@ -333,7 +333,7 @@ describe("ActiveClinic website hardening", () => {
       contactName: "Cara Admin",
       contactEmail: `qa-${Date.now()}@example.test`,
       contactPhone: nextPhone(),
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       countryCode: "ZM",
       password: PASSWORD,
@@ -438,10 +438,9 @@ describe("ActiveClinic website hardening", () => {
       .get(`/clinics/${slug}?website_edit=1&website_mode=draft`)
       .set("Cookie", adminCookie);
     assert.equal(editorGet.status, 200);
-    assert.match(editorGet.text, /data-website-chrome/);
-    assert.match(editorGet.text, /aria-label="Save field to draft"/);
+    assert.match(editorGet.text, /data-website-chrome|gp-website-editor__toolbar/);
+    assert.match(editorGet.text, /data-website-field-editor-save/);
     assert.match(editorGet.text, /data-website-type="image"/);
-    assert.match(editorGet.text, /data-website-chrome-status/);
     const editorCsrf = extractCsrf(editorGet);
     const jpegBuf = Buffer.alloc(32, 0);
     jpegBuf[0] = 0xff;

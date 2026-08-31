@@ -158,7 +158,7 @@ async function provisionOrg(stamp) {
     timezone: "Africa/Lusaka",
     phone: "+260970000088",
     city: "Lusaka",
-    province: "Lusaka Province",
+    province: "Lusaka",
   });
   assert.equal(facility.ok, true, JSON.stringify(facility));
   return {

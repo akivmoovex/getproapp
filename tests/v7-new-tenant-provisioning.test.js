@@ -98,7 +98,7 @@ function clinicPayload(overrides) {
     contactName: "Clinic Administrator",
     contactEmail: `ntp-clinic-${stamp}@example.invalid`,
     contactPhone: nextPhone(),
-    province: "Lusaka Province",
+    province: "Lusaka",
     city: "Lusaka",
     address: "1 Independence Avenue",
     countryCode: "ZM",

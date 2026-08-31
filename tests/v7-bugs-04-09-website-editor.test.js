@@ -89,7 +89,7 @@ function clinicPayload(overrides) {
     contactName: "Website Admin",
     contactEmail: `bugs0409-${stamp}@example.invalid`,
     contactPhone: nextPhone(),
-    province: "Lusaka Province",
+    province: "Lusaka",
     city: "Lusaka",
     address: `${stamp} Independence Avenue`,
     countryCode: "ZM",

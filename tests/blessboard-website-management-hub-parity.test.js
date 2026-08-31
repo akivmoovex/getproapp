@@ -84,7 +84,7 @@ function clinicPayload() {
     contactName: "Clinic Admin",
     contactEmail: `bb07-ac-${stamp}@example.invalid`,
     contactPhone: nextPhone(),
-    province: "Lusaka Province",
+    province: "Lusaka",
     city: "Lusaka",
     address: "1 Independence Avenue",
     countryCode: "ZM",

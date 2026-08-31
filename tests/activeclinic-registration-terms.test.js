@@ -72,7 +72,7 @@ function validFields(overrides) {
     contactName: "Terms Administrator",
     contactEmail: `terms-${stamp}@example.invalid`,
     contactPhone: nextPhone(),
-    province: "Lusaka Province",
+    province: "Lusaka",
     city: "Lusaka",
     address: "1 Independence Avenue",
     countryCode: "ZM",

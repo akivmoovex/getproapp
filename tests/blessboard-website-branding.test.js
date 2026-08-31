@@ -485,7 +485,7 @@ describe("BlessBoard website branding (BUG 08)", () => {
       contactName: "Clinic Admin",
       contactEmail: `bb08-ac-${stamp}@example.invalid`,
       contactPhone: `+2609${String(870000000 + stamp).slice(-8)}`,
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       address: "1 Independence Avenue",
       countryCode: "ZM",

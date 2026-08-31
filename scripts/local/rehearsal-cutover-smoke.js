@@ -172,7 +172,7 @@ async function main() {
       contactName: "QA Operator",
       contactEmail: `rehearsal-qa-${stamp}@example.test`,
       contactPhone: `+26097${String(Date.now()).slice(-7)}`,
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       countryCode: "ZM",
       password: PASSWORD,

@@ -56,6 +56,10 @@ const {
 const {
   ENV_KEY: SHARED_FLAG,
 } = require("../src/platform/registration/killSwitch");
+const {
+  DEFAULT_ZAMBIA_PROVINCE,
+  DEFAULT_ZAMBIA_CITY,
+} = require("./helpers/zambiaRegistrationFixtures");
 
 const PASSWORD = "TestPassword99!";
 const IDENTITY_KEY = "blessboard-platform-v5";
@@ -86,8 +90,8 @@ function clinicPayload(overrides) {
     contactName: "Clinic Administrator",
     contactEmail: `ure-clinic-${stamp}@example.invalid`,
     contactPhone: nextPhone(),
-    province: "Lusaka Province",
-    city: "Lusaka",
+    province: DEFAULT_ZAMBIA_PROVINCE,
+    city: DEFAULT_ZAMBIA_CITY,
     address: "1 Independence Avenue",
     countryCode: "ZM",
     notes: "unified registration engine",

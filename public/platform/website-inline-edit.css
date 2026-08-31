@@ -24,13 +24,25 @@
   --gp-we-z-more: 80;
   --gp-we-z-mobile-nav: 70;
   --gp-we-z-sheet: 85;
+  /* Stacking layers (low → high): canvas, editable affordances, section chrome,
+     editor toolbar, menus/popovers, field editor, lifecycle dialogs. */
+  --gp-we-z-canvas: 1;
+  --gp-we-z-editable-affordance: 25;
+  --gp-we-z-section-chrome: 40;
+  --gp-we-z-section-menu: 100;
+  --gp-we-z-field-editor: 110;
+  --gp-we-z-lifecycle: 120;
 }
 
 .gp-website-chrome-stack {
   position: sticky;
   top: 0;
   z-index: var(--gp-website-chrome-z);
-  isolation: isolate;
+}
+
+body.gp-website-editor-open .gp-website-chrome-stack,
+body.gp-website-preview-open .gp-website-chrome-stack {
+  isolation: auto;
 }
 
 .gp-website-chrome-stack .ac-public-header,
@@ -1274,9 +1286,6 @@ body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .gp-web
 }
 
 /* —— Wave 2 field editor (Stitch EDIT-02/03/04) —— */
-:root {
-  --gp-we-z-field-editor: 90;
-}
 
 .gp-website-editable__display {
   position: relative;
@@ -1314,7 +1323,7 @@ body.gp-website-editor-open .ac-website-editable {
 
 body.gp-website-editor-open .gp-website-editable__display {
   position: relative;
-  z-index: 65;
+  z-index: var(--gp-we-z-editable-affordance);
   pointer-events: auto;
   isolation: isolate;
   min-height: var(--gp-website-touch);
@@ -1337,7 +1346,7 @@ body.gp-website-editor-open .ac-website-editable + .ac-website-editable {
 
 body.gp-website-editor-open .gp-website-editable__pencil,
 body.gp-website-editor-open .ac-website-editable__pencil {
-  z-index: 80;
+  z-index: calc(var(--gp-we-z-editable-affordance) + 5);
   pointer-events: auto;
 }
 
@@ -1429,6 +1438,7 @@ body.gp-website-field-editor-open {
   position: absolute;
   inset: 0;
   background: rgba(18, 28, 42, 0.45);
+  pointer-events: auto;
 }
 
 .gp-website-field-editor__panel {
@@ -1666,6 +1676,36 @@ textarea.gp-website-field-editor__input {
   }
 }
 
+body.gp-website-field-editor-open .bb-tp-main,
+body.gp-website-field-editor-open .ac-public-main,
+body.gp-website-field-editor-open .gp-website-chrome-stack {
+  pointer-events: none;
+}
+
+body.gp-website-field-editor-open .gp-website-field-editor {
+  pointer-events: auto;
+}
+
+body.gp-website-section-menu-open .bb-tp-main,
+body.gp-website-section-menu-open .ac-public-main,
+body.gp-website-section-menu-open .gp-website-chrome-stack {
+  pointer-events: none;
+}
+
+body.gp-website-section-menu-open .gp-website-section-menu {
+  pointer-events: auto;
+}
+
+body.gp-website-lifecycle-open .bb-tp-main,
+body.gp-website-lifecycle-open .ac-public-main,
+body.gp-website-lifecycle-open .gp-website-chrome-stack {
+  pointer-events: none;
+}
+
+body.gp-website-lifecycle-open .gp-website-lifecycle {
+  pointer-events: auto;
+}
+
 /* Wave 3 — publish success banner */
 .gp-website-publish-success {
   position: sticky;
@@ -1764,11 +1804,12 @@ body.gp-website-preview-open {
 .gp-website-lifecycle {
   position: fixed;
   inset: 0;
-  z-index: 1400;
+  z-index: var(--gp-we-z-lifecycle);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
+  pointer-events: auto;
 }
 
 .gp-website-lifecycle[hidden] {
@@ -1936,7 +1977,7 @@ body.gp-website-lifecycle-open {
   position: absolute;
   top: 12px;
   right: 12px;
-  z-index: 40;
+  z-index: var(--gp-we-z-section-chrome);
   display: flex;
   align-items: center;
   gap: 8px;
@@ -1988,11 +2029,12 @@ body.gp-website-lifecycle-open {
 .gp-website-section-menu {
   position: fixed;
   inset: 0;
-  z-index: 1450;
+  z-index: var(--gp-we-z-section-menu);
   display: flex;
   align-items: center;
   justify-content: center;
   padding: 16px;
+  pointer-events: auto;
 }
 
 .gp-website-section-menu[hidden] {
@@ -2007,6 +2049,7 @@ body.gp-website-lifecycle-open {
 
 .gp-website-section-menu__panel {
   position: relative;
+  z-index: 1;
   width: min(100%, 20rem);
   background: var(--gp-we-toolbar-bg, #fff);
   border-radius: 12px;

@@ -149,7 +149,7 @@ describe("v7 website RBAC — ActiveClinic", () => {
       contactName: "Website Admin",
       contactEmail: `rbac-${stamp}@example.invalid`,
       contactPhone: nextPhone(),
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       address: "1 Independence Avenue",
       countryCode: "ZM",

@@ -271,7 +271,7 @@ describe("v7 clinic website autonomy acceptance", { timeout: 180000 }, () => {
       contactName: "Clinic Admin",
       contactEmail: `${stamp}@clinic.example`,
       contactPhone: nextPhone(),
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       address: "1 Independence Avenue",
       countryCode: "ZM",

@@ -247,7 +247,7 @@ describe("shared website editor wave 4b2 — HTTP", () => {
         contactName: "Website Admin",
         contactEmail: `${stamp}-ac@example.invalid`,
         contactPhone: `+2609${String(Date.now()).slice(-8)}`,
-        province: "Lusaka Province",
+        province: "Lusaka",
         city: "Lusaka",
         address: "1 Independence Avenue",
         countryCode: "ZM",

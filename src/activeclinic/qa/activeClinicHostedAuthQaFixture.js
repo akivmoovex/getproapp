@@ -77,7 +77,7 @@ async function provisionHostedAuthQaClinic(db, input, env) {
     contactName: "Hosted QA Admin",
     contactEmail: adminEmail,
     contactPhone: adminPhone,
-    province: "Lusaka Province",
+    province: "Lusaka",
     city: "Lusaka",
     address: "QA Avenue",
     countryCode: "ZM",

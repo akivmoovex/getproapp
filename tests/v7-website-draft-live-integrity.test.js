@@ -177,7 +177,7 @@ describe("v7 website draft/live integrity — ActiveClinic", () => {
       contactName: "Website Admin",
       contactEmail: `dli-${stamp}@example.invalid`,
       contactPhone: nextPhone(),
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       address: "1 Independence Avenue",
       countryCode: "ZM",

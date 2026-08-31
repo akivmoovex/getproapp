@@ -93,7 +93,7 @@ function clinicPayload() {
     contactName: "Schema Admin",
     contactEmail: `schema-guard-${stamp}@example.invalid`,
     contactPhone: `+2609${String(phoneSeq).slice(-8)}`,
-    province: "Lusaka Province",
+    province: "Lusaka",
     city: "Lusaka",
     address: "Schema Guard Avenue",
     countryCode: "ZM",

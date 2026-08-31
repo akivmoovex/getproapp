@@ -507,7 +507,7 @@ describe("ActiveClinic transactional email workflows", () => {
       contactName: `Admin ${stamp}`,
       contactEmail: `mail-${stamp}@clinic.example`,
       contactPhone: nextPhone(),
-      province: "Lusaka Province",
+      province: "Lusaka",
       city: "Lusaka",
       countryCode: "ZM",
       password: ADMIN_PASSWORD,

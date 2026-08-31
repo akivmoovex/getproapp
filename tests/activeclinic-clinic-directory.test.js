@@ -287,7 +287,7 @@ describe("ActiveClinic clinic directory repair", () => {
           clinicKey: "demo-centre",
           publicName: "ActiveClinic Demo Centre",
           city: "Lusaka",
-          province: "Lusaka Province",
+          province: "Lusaka",
           websiteTagline: "Demonstration clinic — sample information only",
           services: ["Blood pressure check"],
           publicBasePath: "/clinics/demo-centre",

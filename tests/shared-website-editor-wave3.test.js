@@ -90,6 +90,7 @@ function extractCsrf(html) {
 describe("shared website editor wave 3 — static lifecycle shell", () => {
   it("uses shared preview banner, lifecycle host, and controller", () => {
     const chrome = read("views/platform/website-engine/editor-chrome.ejs");
+    const overlays = read("views/platform/website-engine/editor-overlays.ejs");
     const banner = read("views/platform/website-engine/preview-banner.ejs");
     const lifecycleHost = read("views/platform/website-engine/lifecycle-dialog-host.ejs");
     const lifecycleJs = read("public/platform/website-lifecycle.js");
@@ -100,7 +101,9 @@ describe("shared website editor wave 3 — static lifecycle shell", () => {
     const bbChrome = read("views/blessboard/v5/partials/website-admin-chrome.ejs");
 
     assert.match(chrome, /preview-banner/);
-    assert.match(chrome, /lifecycle-dialog-host/);
+    assert.match(overlays, /lifecycle-dialog-host/);
+    assert.match(overlays, /field-editor-host/);
+    assert.match(overlays, /section-action-menu/);
     assert.match(chrome, /data-website-publish-confirm="1"/);
     assert.match(banner, /Previewing unpublished draft/);
     assert.match(banner, /Back to editing/);
@@ -136,7 +139,8 @@ describe("shared website editor wave 3 — static lifecycle shell", () => {
     assert.match(css, /body\.gp-website-editor-open \.gp-website-editable__pencil/);
     assert.match(css, /pointer-events: none/);
     assert.match(css, /data-website-type="textarea"/);
-    assert.match(css, /z-index: 80/);
+    assert.match(css, /--gp-we-z-editable-affordance/);
+    assert.match(css, /z-index: calc\(var\(--gp-we-z-editable-affordance\) \+ 5\)/);
     assert.match(css, /\.gp-website-editable__display\.is-empty/);
     assert.match(css, /data-empty-hint/);
 

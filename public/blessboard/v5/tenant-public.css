@@ -915,10 +915,12 @@ html {
   color: #f5f2ff;
   font-size: 0.875rem;
   line-height: 1.4;
+  pointer-events: none;
   /* Full-bleed chrome — does not alter page container max-width */
 }
 
 .bb-tp-preview-banner__inner {
+  pointer-events: auto;
   max-width: var(--bb-max);
   margin: 0 auto;
   padding: 0.65rem var(--bb-gutter-mobile, 1rem);

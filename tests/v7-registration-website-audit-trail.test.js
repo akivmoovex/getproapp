@@ -123,7 +123,7 @@ async function createPendingClinic() {
     contactName: "Clinic Administrator",
     contactEmail: `audit-clinic-${stamp}@example.invalid`,
     contactPhone: nextPhone(),
-    province: "Lusaka Province",
+    province: "Lusaka",
     city: "Lusaka",
     address: "1 Independence Avenue",
     countryCode: "ZM",

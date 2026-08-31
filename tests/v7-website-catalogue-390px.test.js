@@ -80,7 +80,7 @@ describe("v7 website catalogue 390px visual QA", { timeout: 180000 }, () => {
         contactName: "Website Admin",
         contactEmail: `mwqa-${stamp}@example.invalid`,
         contactPhone: `+2609${String(890000000 + Number.parseInt(stamp, 16)).slice(-8)}`,
-        province: "Lusaka Province",
+        province: "Lusaka",
         city: "Lusaka",
         address: "1 Independence Avenue",
         countryCode: "ZM",

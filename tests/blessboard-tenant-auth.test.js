@@ -387,14 +387,28 @@ describe("blessboard tenant-auth transfer http", () => {
       .get("/hq")
       .set("Host", HOST_A)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${sid}`);
-    assert.equal(hq.status, 200);
+    assert.equal(hq.status, 303);
+    assert.equal(hq.headers.location, "/hq/onboarding");
+
+    await pool.query(
+      `INSERT INTO blessboard.church_settings (church_id, public_name, primary_email)
+       VALUES ($1, $2, $3)
+       ON CONFLICT (church_id) DO UPDATE SET primary_email = EXCLUDED.primary_email`,
+      [churchA.id, "TA Church A", "ta-hq@example.org"]
+    );
+
+    const hqAfterOnboarding = await request(app)
+      .get("/hq")
+      .set("Host", HOST_A)
+      .set("Cookie", `${DEFAULT_V5_COOKIE}=${sid}`);
+    assert.equal(hqAfterOnboarding.status, 200);
 
     const { sid: platSid } = await completeTenantLogin(HOST_A, "ta-platform@example.org", PASSWORD);
     const platHq = await request(app)
       .get("/hq")
       .set("Host", HOST_A)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${platSid}`);
-    assert.equal(platHq.status, 200);
+    assert.equal(platHq.status, 403);
   });
 
   it("authorized branch_admin succeeds for assigned primary branch; campus-only rejected", async () => {

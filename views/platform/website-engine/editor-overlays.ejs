@@ -1,0 +1,12 @@
+<%#
+  Shared website editor overlays — rendered at document body level so fixed
+  dialogs/menus are not trapped inside gp-website-chrome-stack (z-index 60).
+  BlessBoard tenant shell + ActiveClinic public shell include this partial.
+%>
+<%
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+%>
+<%- include('./field-editor-host') %>
+<%- include('./add-section-picker', { editorShell: shell }) %>
+<%- include('./section-action-menu', { editorShell: shell }) %>
+<%- include('./lifecycle-dialog-host', { editorShell: shell }) %>
