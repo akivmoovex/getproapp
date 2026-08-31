@@ -1,11 +1,13 @@
 .ac-mw {
+  /* Website Hub (MW01–MW10): authenticated staff-management surface under ac-app shell.
+     Uses staff indigo (--ac-primary) by design — not public mini-site teal. */
   --ac-mw-primary: var(--ac-primary, #003c90);
   --ac-mw-primary-strong: var(--ac-primary-strong, #001945);
-  --ac-mw-ink: #0b1c30;
-  --ac-mw-muted: #3d4947;
-  --ac-mw-border: #e2e8f0;
-  --ac-mw-surface: #ffffff;
-  --ac-mw-soft: #f8fafc;
+  --ac-mw-ink: var(--ac-ink, #191c1e);
+  --ac-mw-muted: var(--ac-muted, #434653);
+  --ac-mw-border: var(--ac-border, #e2e8f0);
+  --ac-mw-surface: var(--ac-surface, #ffffff);
+  --ac-mw-soft: var(--ac-bg, #f7f9fb);
   font-family: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
   color: var(--ac-mw-ink);
 }

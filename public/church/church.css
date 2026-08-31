@@ -4,8 +4,9 @@
   /* Ecclesia Modern / Stitch design tokens */
   --church-violet: #6c5ce7;
   --church-violet-dark: #5341cd;
-  --church-primary: #5341cd;
-  --church-primary-container: #6c5ce7;
+  /* V5 canonical primary; hover/deep uses violet-dark / primary-container. */
+  --church-primary: #6c5ce7;
+  --church-primary-container: #5341cd;
   --church-on-primary: #ffffff;
   --church-on-primary-container: #faf6ff;
   --church-primary-fixed: #e4dfff;

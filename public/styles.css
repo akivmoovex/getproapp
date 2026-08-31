@@ -95,6 +95,7 @@
   --palette-tenant-teal: #007a4d;
   --palette-tenant-navy: #1e3a8a;
   --palette-tenant-violet: #7c3aed;
+  /* LEGACY_COMPATIBILITY: mirrored from theme.css; not loaded by V7 product shells. */
   --palette-tenant-cyan: #0d9488;
 
   /* —— Legacy aliases (used across styles.css / views) —— */

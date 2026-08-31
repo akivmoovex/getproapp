@@ -1,5 +1,6 @@
 /**
  * GetPro — reference palette (diffs only).
  * Authoritative tokens: `public/theme.css` + `public/design-system.css` (imported by `public/styles.css`).
+ * LEGACY_COMPATIBILITY: not loaded by V7 ActiveClinic or BlessBoard product shells.
  * Docs: `docs/DESIGN_SYSTEM.md`, `docs/MATERIAL_DESIGN_3.md`.
  */

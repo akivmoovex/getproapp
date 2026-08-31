@@ -884,7 +884,7 @@ body.bb-hq-drawer-open { overflow: hidden; }
   padding: 1rem 1.1rem;
 }
 .bb-hq-card--accent {
-  background: linear-gradient(135deg, #6c5ce7 0%, #5341cd 100%);
+  background: linear-gradient(135deg, var(--bb-color-primary) 0%, var(--bb-color-primary-hover) 100%);
   border-color: transparent;
   color: #fff;
 }
@@ -1959,7 +1959,7 @@ body.bb-hq-drawer-open { overflow: hidden; }
   font-weight: 600;
 }
 .bb-hq-btn--primary:hover {
-  background: #5341cd;
+  background: var(--bb-color-primary-hover);
   color: #fff;
 }
 .bb-hq-filter {
@@ -4499,8 +4499,8 @@ body.bb-hq-drawer-open { overflow: hidden; }
 }
 .bb-hq-phase3-wcr__tab.is-active {
   background: #efeaff;
-  border-color: #6c5ce7;
-  color: #6c5ce7;
+  border-color: var(--bb-color-primary);
+  color: var(--bb-color-primary);
 }
 .bb-hq-phase3-wcr__panels {
   display: grid;
@@ -4530,7 +4530,7 @@ body.bb-hq-drawer-open { overflow: hidden; }
   word-break: break-word;
 }
 .bb-hq-phase3-wcr__field--changed {
-  border-left: 3px solid #6c5ce7;
+  border-left: 3px solid var(--bb-color-primary);
   padding-left: 0.65rem;
   background: #f8f6ff;
   border-radius: 0 8px 8px 0;
@@ -4620,7 +4620,7 @@ body.bb-hq-drawer-open { overflow: hidden; }
 .bb-hq-phase3-wvh__card-head { display: flex; justify-content: space-between; gap: 0.5rem; align-items: flex-start; }
 .bb-hq-phase3-wvh__card-head h2 { margin: 0; font-size: 1.05rem; }
 .bb-hq-phase3-wvh__row--current,
-.bb-hq-phase3-wvh__card--current { box-shadow: inset 3px 0 0 #6c5ce7; }
+.bb-hq-phase3-wvh__card--current { box-shadow: inset 3px 0 0 var(--bb-color-primary); }
 .bb-hq-phase3-wvh__detail td { background: #f8f6ff; }
 @media (max-width: 900px) {
   .bb-hq-phase3-wvh__table { display: none; }
@@ -6241,7 +6241,7 @@ body.bb-hq-drawer-open { overflow: hidden; }
 
 /* BUG 07 — Website management hub (ActiveClinic /app/settings/website geometry, BlessBoard tokens) */
 .bb-wm {
-  --bb-wm-primary: #6c5ce7;
+  --bb-wm-primary: var(--bb-color-primary);
   --bb-wm-primary-strong: #5b4bd6;
   --bb-wm-ink: #191c1e;
   --bb-wm-muted: #44474e;

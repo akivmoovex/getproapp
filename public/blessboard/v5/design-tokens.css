@@ -15,7 +15,9 @@
   --bb-color-primary-soft: #efeaff;
   --bb-color-primary-deep: #3d348b;
   --bb-color-accent: #ff9800;
+  /* Decorative GetPro orange (logos, marks, non-text accents). Do not use for normal body text. */
   --bb-color-accent-readable: #c2410c;
+  /* Accessible orange for small text lockups (e.g. Powered by GetPro). */
   --bb-color-on-primary: #ffffff;
 
   /* —— Surfaces & text (Stitch warm neutrals) —— */

@@ -76,4 +76,55 @@ describe("V7 color system consolidation", () => {
     const app = read("public/activeclinic/ac-app.css");
     assert.match(app, /--ac-primary:\s*#003c90/);
   });
+
+  it("ActiveClinic patient CSS uses status and neutral tokens (no alert hex drift)", () => {
+    const css = read("public/activeclinic/ac-patient.css");
+    assert.match(css, /\.ac-patient-alert--error[\s\S]*var\(--ac-status-danger\)/);
+    assert.match(css, /\.ac-patient-alert--success[\s\S]*var\(--ac-status-success\)/);
+    assert.match(css, /\.ac-patient-honesty[\s\S]*var\(--ac-status-warning-bg\)/);
+    assert.doesNotMatch(css, /#c53030|#e53e3e|#276749|#38a169|#fbd38d/);
+    assert.doesNotMatch(css, /#0d9488/i);
+  });
+
+  it("ActiveClinic V7 CSS tree has no active #0d9488 drift", () => {
+    const acDir = path.join(ROOT, "public/activeclinic");
+    const files = fs.readdirSync(acDir).filter((f) => f.endsWith(".css"));
+    for (const file of files) {
+      const content = read(`public/activeclinic/${file}`);
+      assert.doesNotMatch(content, /#0d9488/i, `${file} must not contain legacy teal drift`);
+    }
+  });
+
+  it("legacy theme palette files are marked and isolated from V7 shells", () => {
+    assert.match(read("public/theme.css"), /LEGACY_COMPATIBILITY.*#0d9488/s);
+    assert.match(read("public/styles.css"), /LEGACY_COMPATIBILITY.*#0d9488/s);
+    assert.match(read("public/theme-colors.css"), /LEGACY_COMPATIBILITY.*not loaded by V7/s);
+  });
+
+  it("Website Hub documents staff-management context and uses staff primary", () => {
+    const css = read("public/activeclinic/website-cms.css");
+    assert.match(css, /staff-management surface/);
+    assert.match(css, /--ac-mw-primary:\s*var\(--ac-primary/);
+  });
+
+  it("BlessBoard church legacy aliases align primary with V5 canonical violet", () => {
+    const css = read("public/church/church.css");
+    assert.match(css, /--church-primary:\s*#6c5ce7/);
+    assert.match(css, /--church-primary-container:\s*#5341cd/);
+  });
+
+  it("BlessBoard design tokens define orange decorative vs readable roles", () => {
+    const tokens = read("public/blessboard/v5/design-tokens.css");
+    assert.match(tokens, /--bb-color-accent:\s*#ff9800/);
+    assert.match(tokens, /--bb-color-accent-readable:\s*#c2410c/);
+    assert.match(tokens, /Decorative GetPro orange/);
+    assert.match(tokens, /Accessible orange for small text/);
+  });
+
+  it("BlessBoard HQ admin removes obvious literal violet hover and gradient drift", () => {
+    const css = read("public/blessboard/v5/hq-admin.css");
+    assert.doesNotMatch(css, /background:\s*#5341cd/);
+    assert.doesNotMatch(css, /linear-gradient\(135deg,\s*#6c5ce7\s*0%,\s*#5341cd\s*100%\)/);
+    assert.match(css, /--bb-wm-primary:\s*var\(--bb-color-primary\)/);
+  });
 });
