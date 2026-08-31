@@ -801,5 +801,14 @@
       if (isOpen()) return;
       openField(el, startBtn);
     });
+    var display = el.querySelector("[data-website-display]");
+    if (display) {
+      display.addEventListener("click", function (ev) {
+        if (ev.target.closest("[data-website-start]")) return;
+        ev.preventDefault();
+        if (isOpen()) return;
+        openField(el, startBtn);
+      });
+    }
   });
 })();

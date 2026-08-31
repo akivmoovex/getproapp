@@ -1330,6 +1330,7 @@ body.gp-website-editor-open .gp-website-editable__display {
   min-height: var(--gp-website-touch);
   padding-right: calc(var(--gp-website-touch) + 0.25rem);
   box-sizing: border-box;
+  cursor: pointer;
 }
 
 body.gp-website-editor-open .gp-website-editable[data-website-type="textarea"],
@@ -1349,6 +1350,8 @@ body.gp-website-editor-open .gp-website-editable__pencil,
 body.gp-website-editor-open .ac-website-editable__pencil {
   z-index: var(--gp-we-z-editable-pencil);
   pointer-events: auto;
+  scroll-margin-top: calc(var(--gp-we-toolbar-h) + var(--bb-header-h, 4.5rem) + 1.5rem);
+  scroll-margin-bottom: calc(var(--gp-we-toolbar-h) + env(safe-area-inset-bottom, 0px) + 1.5rem);
 }
 
 body.gp-website-editor-open .gp-website-editable[data-website-type="textarea"] .gp-website-editable__pencil,
