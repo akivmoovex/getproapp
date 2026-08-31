@@ -1924,6 +1924,14 @@ body.gp-website-lifecycle-open {
 }
 
 @media (max-width: 767px) {
+  /* Top-right pencils sit under the fixed editor toolbar after scroll-into-view;
+     mirror textarea placement at bottom-right on narrow viewports. */
+  body.gp-website-editor-open .gp-website-editable[data-website-type="text"] .gp-website-editable__pencil,
+  body.gp-website-editor-open .ac-website-editable[data-website-type="text"] .ac-website-editable__pencil {
+    top: auto;
+    bottom: 0.25rem;
+  }
+
   body.gp-website-editor-open.bb-tp-body--editing .bb-tp-header {
     z-index: var(--gp-we-z-tenant-header-editor);
     pointer-events: none;
