@@ -423,7 +423,7 @@
 }
 .ac-mw-hub-chip--draft { background: #fef3c7; color: #92400e; }
 .ac-mw-hub-chip--live { background: #ccfbf1; color: #0f766e; }
-.ac-mw-hub-chip--hidden { background: #ffdad6; color: #93000a; }
+.ac-mw-hub-chip--hidden { background: var(--ac-status-danger-bg); color: var(--ac-status-danger); }
 .ac-mw-hub-chip--missing { background: #fee2e2; color: #991b1b; }
 .ac-mw-hub-next {
   margin: 0 0 1rem;
@@ -613,7 +613,7 @@
   min-height: calc(100vh - 3.5rem);
   padding: 1.1rem 0.85rem 1.5rem;
   background: #eef2f7;
-  border-right: 1px solid #e2e8f0;
+  border-right: 1px solid var(--ac-mw-border);
 }
 .ac-app-body--mw .ac-mw {
   overflow: visible;
@@ -631,7 +631,7 @@
   padding: 0.75rem 0.7rem;
   background: #fff;
   border-radius: 0.75rem;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ac-mw-border);
 }
 .ac-mw-editor__clinic-name {
   display: block;
@@ -709,7 +709,7 @@
 .ac-mw-status-card {
   padding: 1.15rem 1.2rem;
   background: #fff;
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--ac-mw-border);
   border-radius: 1rem;
 }
 .ac-mw-upload-drop {

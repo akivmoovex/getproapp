@@ -709,7 +709,7 @@ body.ac-public-body--mf-register .ac-public-main {
 .acw-register .ac-form-field--error input,
 .acw-register .ac-form-field--error select,
 .acw-register .ac-form-field--error textarea {
-  border-color: #ba1a1a;
+  border-color: var(--ac-status-danger);
 }
 
 .acw-register__grid {

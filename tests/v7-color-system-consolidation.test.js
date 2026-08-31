@@ -126,5 +126,7 @@ describe("V7 color system consolidation", () => {
     assert.doesNotMatch(css, /background:\s*#5341cd/);
     assert.doesNotMatch(css, /linear-gradient\(135deg,\s*#6c5ce7\s*0%,\s*#5341cd\s*100%\)/);
     assert.match(css, /--bb-wm-primary:\s*var\(--bb-color-primary\)/);
+    assert.doesNotMatch(css, /background:\s*#fff4e5|background:\s*#ecfdf5|background:\s*#efeaff/);
+    assert.doesNotMatch(css, /[^)]color:\s*#0f766e|[^)]color:\s*#b54708/);
   });
 });
