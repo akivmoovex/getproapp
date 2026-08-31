@@ -16,7 +16,7 @@ const {
   buildPhoneFieldLocals,
 } = require("../services/activeClinicPhoneFieldLocals");
 
-const ASSET_VERSION = "v7-ac-platform-03";
+const ASSET_VERSION = "v7-shared-auth-reg-1";
 
 const DEFAULT_BRANDING = Object.freeze({
   productName: "ActiveClinic",
@@ -61,15 +61,20 @@ function renderAuthContent(relativePath, locals) {
 }
 
 function renderLoginPage(input) {
+  const loginMode =
+    input && String(input.loginMode || "").toLowerCase() === "phone" ? "phone" : "email";
   const locals = baseLocals({
     pageTitle: "Sign in",
     notice: (input && input.notice) || null,
     error: (input && input.error) || null,
     identifier: String((input && input.identifier) || ""),
+    loginEmail: String((input && input.loginEmail) || (loginMode === "email" ? (input && input.identifier) : "")),
+    loginMode,
     phoneCountry: String((input && input.phoneCountry) || "ZM").toUpperCase(),
     nextPath: (input && input.nextPath) || null,
     csrfToken: input && input.csrfToken,
     composition: (input && input.error) ? "p01-login-error" : "p01-login",
+    stitchRef: loginMode === "phone" ? "32ba00f78ae7452e92efdd1caf83ed95" : "a621bbc13d2542789cb76cb0c905b248",
   });
   const bodyHtml = renderAuthContent("auth/login.ejs", locals);
   return renderAuthShell("login", locals.pageTitle, bodyHtml, {

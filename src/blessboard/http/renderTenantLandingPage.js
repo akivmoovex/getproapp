@@ -8,6 +8,7 @@ const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
+const { buildPlatformPhoneFieldLocals } = require("../../platform/services/platformPhoneFieldLocals");
 
 const TENANT_LANDING_TEMPLATE = path.join(
   __dirname,
@@ -190,6 +191,11 @@ function renderLoginPage(opts) {
   const hostKind = opts.hostKind === "tenant" ? "tenant" : "apex";
   const error = opts.error ? String(opts.error) : "";
   const errorState = classifyAuthErrorState(error);
+  const loginMode = opts.loginMode === "phone" ? "phone" : "email";
+  const phoneLocals = buildPlatformPhoneFieldLocals({
+    env: opts.env,
+    selectedCountry: opts.phoneCountry,
+  });
   // Hostname is safe to show only after authoritative transfer load (caller responsibility).
   const transferHostname =
     hostKind === "apex" && opts.transferHostname ? String(opts.transferHostname) : "";
@@ -212,6 +218,13 @@ function renderLoginPage(opts) {
     errorState,
     errorTitle: authErrorTitle(errorState),
     emailValue: opts.emailValue ? String(opts.emailValue) : "",
+    loginEmail: opts.loginEmail ? String(opts.loginEmail) : (opts.emailValue ? String(opts.emailValue) : ""),
+    loginMode,
+    phoneCountry: opts.phoneCountry || phoneLocals.defaultPhoneCountry,
+    phoneNational: opts.phoneNational || "",
+    phoneCountries: phoneLocals.phoneCountries,
+    defaultPhoneCountry: phoneLocals.defaultPhoneCountry,
+    phoneValidationRelaxed: phoneLocals.phoneValidationRelaxed,
     // Intentionally omitted from template: raw transfer tokens must not appear in HTML.
     transferHostname,
     hostKind,

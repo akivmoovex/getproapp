@@ -18,6 +18,7 @@ const {
   renderPricingPage,
   renderDirectoryPage,
   renderRegisterChurchPage,
+  renderRegisterChurchReviewPage,
   renderRegisterChurchSuccessPage,
   renderEmailVerificationResultPage,
 } = require("./renderApexMarketing");
@@ -33,9 +34,17 @@ const {
 const {
   normalizeSelectedPlan,
   validatePlatformChurchRegistration,
+  validateChurchRegistrationChurchStep,
+  validateChurchRegistrationAdministratorStep,
   formFromBody,
   NETWORK_PLAN_CODE,
+  planDisplayLabel,
 } = require("../services/platformChurchRegistrationValidation");
+const {
+  readRegistrationDraft,
+  writeRegistrationDraft,
+  clearRegistrationDraft,
+} = require("../services/churchRegistrationDraft");
 const {
   submitChurchRegistration,
   GENERIC_SAVE_ERROR,
@@ -175,6 +184,30 @@ function resolveEmailVerifyResultOutcome(req, res, env) {
 
 const CSRF_FORM_ERROR =
   "Invalid or missing security token. Reload the registration form and try again.";
+
+function resolveChurchRegisterWizardStep(raw) {
+  const step = String(raw || "church").trim().toLowerCase();
+  if (step === "administrator" || step === "admin") return "administrator";
+  if (step === "review") return "review";
+  return "church";
+}
+
+function inferChurchRegisterAction(action, formData) {
+  const value = String(action || "").trim().toLowerCase();
+  if (value) return value;
+  const hasChurch = Boolean(formData.church_name && formData.city && formData.country);
+  const hasAdmin = Boolean(
+    formData.contact_name && formData.email && formData.role_in_church
+  );
+  const hasConsent = Boolean(formData.consent_contact);
+  if (hasConsent && hasChurch && hasAdmin) return "confirm";
+  if (hasAdmin && hasChurch) return "next-admin";
+  return "next-church";
+}
+
+function mergeChurchRegistrationForm(draftForm, bodyForm) {
+  return { ...(draftForm || {}), ...(bodyForm || {}) };
+}
 
 /**
  * Prevent CDN/browser from caching HTML that embeds a one-time CSRF token.
@@ -439,24 +472,91 @@ function createApexMarketingRouter(deps) {
     const submittedPlan = submitted
       ? normalizeSelectedPlan(req.query && req.query.plan) || selectedPlan
       : null;
+
+    if (submitted || review) {
+      return withShell(req, res, renderRegisterChurchPage, {
+        alwaysPassCsrf: true,
+        noStore: true,
+        submitted,
+        submittedPlan,
+        networkSupportSuccess: submitted && submittedPlan === NETWORK_PLAN_CODE,
+        workspaceReady: false,
+        loginFallback: false,
+        review,
+        organizationKeyPreview: String((req.query && req.query.key) || "")
+          .trim()
+          .slice(0, 64),
+        formError: null,
+        form: formFromBody({}, { selectedPlanHint: selectedPlan }),
+        fieldError: null,
+        selectedPlan,
+        showCsrfRetry: false,
+        env,
+      });
+    }
+
+    const wizardStep = resolveChurchRegisterWizardStep(req.query.step);
+    const draft = readRegistrationDraft(req, env);
+    const defaults = { country: "ZM", selected_plan: selectedPlan || "" };
+    const form = formFromBody(
+      draft && draft.formData ? { ...defaults, ...draft.formData } : defaults,
+      { selectedPlanHint: selectedPlan }
+    );
+
+    if (wizardStep === "review") {
+      if (!draft || !draft.formData) {
+        return res.redirect(302, `${REGISTER_PATH}?step=church`);
+      }
+      const churchCheck = validateChurchRegistrationChurchStep(draft.formData, {
+        selectedPlanHint: selectedPlan,
+        instantFreeEnabled: instantEnabled(),
+      });
+      const adminCheck = validateChurchRegistrationAdministratorStep(draft.formData, {
+        selectedPlanHint: selectedPlan,
+        instantFreeEnabled: instantEnabled(),
+        env,
+      });
+      if (!churchCheck.ok || !adminCheck.ok) {
+        const step = !churchCheck.ok ? "church" : "administrator";
+        return res.redirect(302, `${REGISTER_PATH}?step=${step}`);
+      }
+      return withShell(req, res, renderRegisterChurchReviewPage, {
+        alwaysPassCsrf: true,
+        noStore: true,
+        wizardStep: "review",
+        form,
+        selectedPlan: form.selected_plan || selectedPlan,
+        organizationKeyPreview:
+          form.organization_key ||
+          (churchCheck.data && churchCheck.data.organization_key) ||
+          "",
+        formError: null,
+        fieldError: null,
+        showCsrfRetry: false,
+        instantFreeEnabled: instantEnabled(),
+        env,
+      });
+    }
+
+    if (wizardStep === "administrator" && (!draft || !draft.formData)) {
+      return res.redirect(302, `${REGISTER_PATH}?step=church`);
+    }
+
     return withShell(req, res, renderRegisterChurchPage, {
       alwaysPassCsrf: true,
       noStore: true,
-      submitted,
-      submittedPlan,
-      networkSupportSuccess: submitted && submittedPlan === NETWORK_PLAN_CODE,
-      // Successful provision uses REGISTER_SUCCESS_PATH — never treat ?ready=1 as form success.
-      workspaceReady: false,
-      loginFallback: false,
-      review,
-      organizationKeyPreview: String((req.query && req.query.key) || "")
+      submitted: false,
+      review: false,
+      wizardStep,
+      organizationKeyPreview: String((req.query && req.query.key) || form.organization_key || "")
         .trim()
         .slice(0, 64),
       formError: null,
-      form: formFromBody({}, { selectedPlanHint: selectedPlan }),
+      form,
       fieldError: null,
-      selectedPlan,
+      selectedPlan: form.selected_plan || selectedPlan,
       showCsrfRetry: false,
+      instantFreeEnabled: instantEnabled(),
       env,
     });
   });
@@ -486,21 +586,27 @@ function createApexMarketingRouter(deps) {
       function renderForm(status, extras) {
         // Always issue a fresh cookie+field pair after failed attempts so Back/retry works.
         const csrfToken = issueAndSetCsrf(req, res);
-        return res.status(status).type("html").send(
-          renderRegisterChurchPage({
-            authenticated,
-            csrfToken,
-            csrfField: CSRF_FIELD,
-            submitted: false,
-            form: formFromBody(body, { selectedPlanHint }),
-            selectedPlan:
-              normalizeSelectedPlan(body.selected_plan) || selectedPlanHint || null,
-            showCsrfRetry: false,
-            instantFreeEnabled: flagOn,
-            env,
-            ...extras,
-          })
-        );
+        const wizardStep = (extras && extras.wizardStep) || "church";
+        const form = formFromBody((extras && extras.form) || body, { selectedPlanHint });
+        const common = {
+          authenticated,
+          csrfToken,
+          csrfField: CSRF_FIELD,
+          submitted: false,
+          review: false,
+          form,
+          selectedPlan:
+            normalizeSelectedPlan(form.selected_plan) || selectedPlanHint || null,
+          showCsrfRetry: false,
+          instantFreeEnabled: flagOn,
+          env,
+          wizardStep,
+          ...extras,
+        };
+        if (wizardStep === "review") {
+          return res.status(status).type("html").send(renderRegisterChurchReviewPage(common));
+        }
+        return res.status(status).type("html").send(renderRegisterChurchPage(common));
       }
 
       // Validate against the request cookie BEFORE rotating the CSRF cookie.
@@ -521,7 +627,66 @@ function createApexMarketingRouter(deps) {
       }
       logCsrfDiag(req, env, "accept");
 
-      const validation = validatePlatformChurchRegistration(body, {
+      const draft = readRegistrationDraft(req, env);
+      const mergedBody = { ...(draft && draft.formData ? draft.formData : {}), ...body };
+      const mergedForm = formFromBody(mergedBody, { selectedPlanHint });
+      const action = inferChurchRegisterAction(body.action, mergedForm);
+
+      if (action === "next-church") {
+        const stepValidation = validateChurchRegistrationChurchStep(body, {
+          selectedPlanHint,
+          instantFreeEnabled: flagOn,
+        });
+        if (!stepValidation.ok) {
+          return renderForm(400, {
+            wizardStep: "church",
+            formError: stepValidation.error,
+            fieldError: stepValidation.field || null,
+            form: formFromBody(body, { selectedPlanHint }),
+          });
+        }
+        const nextForm = {
+          ...formFromBody(body, { selectedPlanHint }),
+          organization_key:
+            (stepValidation.data && stepValidation.data.organization_key) ||
+            formFromBody(body, { selectedPlanHint }).organization_key ||
+            "",
+        };
+        writeRegistrationDraft(res, env, nextForm, { isProduction });
+        return renderForm(200, { wizardStep: "administrator", form: nextForm });
+      }
+
+      if (action === "next-admin") {
+        const stepValidation = validateChurchRegistrationAdministratorStep(mergedBody, {
+          selectedPlanHint,
+          instantFreeEnabled: flagOn,
+          env,
+        });
+        if (!stepValidation.ok) {
+          const adminFields = new Set([
+            "contact_name",
+            "email",
+            "phone",
+            "role_in_church",
+            "password",
+            "password_confirm",
+          ]);
+          return renderForm(400, {
+            wizardStep: adminFields.has(stepValidation.field) ? "administrator" : "church",
+            formError: stepValidation.error,
+            fieldError: stepValidation.field || null,
+            form: mergedForm,
+          });
+        }
+        writeRegistrationDraft(res, env, mergedForm, { isProduction });
+        return renderForm(200, {
+          wizardStep: "review",
+          form: mergedForm,
+          organizationKeyPreview: mergedForm.organization_key || "",
+        });
+      }
+
+      const validation = validatePlatformChurchRegistration(mergedBody, {
         selectedPlanHint,
         instantFreeEnabled: flagOn,
         env,
@@ -539,6 +704,15 @@ function createApexMarketingRouter(deps) {
         return renderForm(400, {
           formError: validation.error,
           fieldError: validation.field || null,
+          form: mergedForm,
+          wizardStep:
+            validation.field === "consent_contact"
+              ? "review"
+              : ["contact_name", "email", "phone", "role_in_church", "password", "password_confirm"].includes(
+                  validation.field
+                )
+                ? "administrator"
+                : "church",
         });
       }
 
@@ -559,6 +733,7 @@ function createApexMarketingRouter(deps) {
       });
 
       if (result.honeypot) {
+        clearRegistrationDraft(res, { isProduction });
         issueAndSetCsrf(req, res);
         logRegistrationTrace(req, {
           event: "church_registration_redirect",
@@ -590,17 +765,31 @@ function createApexMarketingRouter(deps) {
           return renderForm(200, {
             formError: result.error || IN_PROGRESS_SAFE,
             fieldError: null,
+            form: mergedForm,
+            wizardStep: "review",
           });
         }
         if (result.field) {
+          const adminFields = new Set([
+            "contact_name",
+            "email",
+            "phone",
+            "role_in_church",
+            "password",
+            "password_confirm",
+          ]);
           return renderForm(result.httpStatus || 400, {
             formError: result.error,
             fieldError: result.field,
+            form: mergedForm,
+            wizardStep: adminFields.has(result.field) ? "administrator" : "church",
           });
         }
         return renderForm(result.httpStatus || 503, {
           formError: result.error || GENERIC_SAVE_ERROR,
           fieldError: result.field || null,
+          form: mergedForm,
+          wizardStep: "review",
         });
       }
 
@@ -668,6 +857,7 @@ function createApexMarketingRouter(deps) {
       }
 
       issueAndSetCsrf(req, res);
+      clearRegistrationDraft(res, { isProduction });
 
       const publicReference = generatePublicRegistrationReference("BB");
       if (records.applicationId) {

@@ -1,5 +1,5 @@
 <%#
-  Desktop brand panel for login error (ACW08-03). Pre-auth: ActiveClinic only.
+  Desktop brand panel for login (Stitch V7 shared auth project).
 %>
 <aside class="ac-auth-brand-panel" data-ac-auth-brand-panel="1" aria-label="ActiveClinic">
   <div>
@@ -7,8 +7,14 @@
       <%- include('auth-mark') %>
       <p class="ac-auth-brand-lockup__title">ActiveClinic</p>
     </div>
-    <p class="ac-auth-brand-panel__product">Clinical Precision. Human Warmth.</p>
-    <p class="ac-auth-brand-panel__tagline"><%= tagline || 'Secure access to your medical ecosystem.' %></p>
+    <p class="ac-auth-brand-panel__product">Run your clinic from one workspace</p>
+    <ul class="ac-auth-brand-panel__features">
+      <li><span class="material-symbols-outlined" aria-hidden="true">groups</span><span><strong>Patients</strong> — manage patient records seamlessly.</span></li>
+      <li><span class="material-symbols-outlined" aria-hidden="true">event</span><span><strong>Appointments</strong> — smart scheduling and reminders.</span></li>
+      <li><span class="material-symbols-outlined" aria-hidden="true">monitor_heart</span><span><strong>Clinical workflows</strong> — streamlined documentation.</span></li>
+      <li><span class="material-symbols-outlined" aria-hidden="true">payments</span><span><strong>Billing</strong> — integrated invoicing and claims.</span></li>
+      <li><span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span><span><strong>Staff access</strong> — role-based permissions.</span></li>
+    </ul>
   </div>
   <div class="ac-auth-secure-note">
     <span class="ac-auth-secure-note__icon" aria-hidden="true">

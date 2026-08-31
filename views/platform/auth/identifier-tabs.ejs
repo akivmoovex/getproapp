@@ -1,0 +1,31 @@
+<%#
+  Shared Email | Phone identifier tabs (Stitch V7).
+  locals: loginMode ('email'|'phone'), tabIdPrefix (optional)
+%>
+<%
+  var mode = (typeof loginMode === 'string' && loginMode === 'phone') ? 'phone' : 'email';
+  var prefix = (typeof tabIdPrefix === 'string' && tabIdPrefix) ? tabIdPrefix : 'gp-auth-id';
+%>
+<div class="gp-auth-id-tabs" role="tablist" aria-label="Sign-in method">
+  <button
+    type="button"
+    class="gp-auth-id-tabs__btn"
+    id="<%= prefix %>-tab-email"
+    role="tab"
+    aria-selected="<%= mode === 'email' ? 'true' : 'false' %>"
+    aria-controls="<%= prefix %>-panel-email"
+    data-gp-auth-id-tab="email"
+    tabindex="<%= mode === 'email' ? '0' : '-1' %>"
+  >Email</button>
+  <button
+    type="button"
+    class="gp-auth-id-tabs__btn"
+    id="<%= prefix %>-tab-phone"
+    role="tab"
+    aria-selected="<%= mode === 'phone' ? 'true' : 'false' %>"
+    aria-controls="<%= prefix %>-panel-phone"
+    data-gp-auth-id-tab="phone"
+    tabindex="<%= mode === 'phone' ? '0' : '-1' %>"
+  >Phone</button>
+</div>
+<input type="hidden" name="login_mode" value="<%= mode %>" />

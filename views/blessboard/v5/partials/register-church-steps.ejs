@@ -1,0 +1,23 @@
+<%
+  var step = typeof wizardStep === 'string' ? wizardStep : 'church';
+  var order = { church: 1, administrator: 2, review: 3 };
+  var current = order[step] || 1;
+  var pct = current === 1 ? 33 : current === 2 ? 66 : 100;
+  var captions = {
+    church: 'Step 1 of 3: Church details',
+    administrator: 'Step 2 of 3: Administrator',
+    review: 'Step 3 of 3: Review'
+  };
+  var steps = [
+    { key: 'church', label: 'Church details' },
+    { key: 'administrator', label: 'Administrator' },
+    { key: 'review', label: 'Review' }
+  ];
+%>
+<%- include('../../../platform/registration/stepper', {
+  currentStep: current,
+  totalSteps: 3,
+  caption: captions[step] || captions.church,
+  percent: pct,
+  steps: steps
+}) %>

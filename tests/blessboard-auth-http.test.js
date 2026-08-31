@@ -268,7 +268,7 @@ describe("blessboard v5 auth http", () => {
     const login = await request(app).get("/login").set("Host", "blessboard.org");
     assert.equal(login.status, 200);
     assert.match(login.text, /data-bb-shell="apex-auth"/);
-    assert.match(login.text, /for="email"/);
+    assert.match(login.text, /for="login_email"/);
     assert.match(login.text, /for="password"/);
     assert.match(login.text, /data-bb-auth-password-toggle/);
     assert.match(login.text, /name="_csrf"/);

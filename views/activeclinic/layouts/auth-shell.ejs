@@ -10,11 +10,13 @@
   <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet"/>
   <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/activeclinic/ac-auth.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=<%= assetVersion %>"/>
 </head>
 <body
   class="ac-auth-body"
   data-ac-product="activeclinic"
+  data-gp-product="activeclinic"
   data-ac-shell="auth"
   data-ac-page="<%= pageId %>"
   data-ac-auth-layout="1"
@@ -25,6 +27,7 @@
   <%- bodyHtml %>
   <script src="/activeclinic/ac-a11y.js?v=<%= assetVersion %>" defer></script>
   <script src="/activeclinic/ac-auth.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/gp-auth-reg.js?v=<%= assetVersion %>" defer></script>
   <script src="/activeclinic/ac-phone-field.js?v=<%= assetVersion %>" defer></script>
   <div id="ac-form-busy-live" class="ac-sr-only" aria-live="polite"></div>
 </body>

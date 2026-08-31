@@ -1,0 +1,36 @@
+<%#
+  Shared registration stepper (N steps).
+  locals:
+    currentStep (number 1-based)
+    totalSteps (number)
+    caption (string)
+    percent (number 0-100)
+    steps[] optional { key, label } for screen-reader list
+%>
+<%
+  var current = Number(typeof currentStep !== 'undefined' ? currentStep : 1) || 1;
+  var total = Number(typeof totalSteps !== 'undefined' ? totalSteps : 3) || 3;
+  var pct = typeof percent === 'number' ? percent : Math.round((current / total) * 100);
+  var cap = typeof caption === 'string' ? caption : ('Step ' + current + ' of ' + total);
+  var stepList = Array.isArray(steps) ? steps : [];
+%>
+<div class="gp-reg__stepper" data-gp-reg-stepper="<%= current %>">
+  <p class="gp-reg__stepper-caption"><%= cap %></p>
+  <div
+    class="gp-reg__stepper-track"
+    role="progressbar"
+    aria-valuemin="1"
+    aria-valuemax="<%= total %>"
+    aria-valuenow="<%= current %>"
+    aria-label="Registration progress, step <%= current %> of <%= total %>"
+  >
+    <div class="gp-reg__stepper-fill" style="width: <%= pct %>%"></div>
+  </div>
+  <% if (stepList.length) { %>
+  <ol class="ac-sr-only">
+    <% stepList.forEach(function (s, idx) { %>
+    <li<% if (idx + 1 === current) { %> aria-current="step"<% } %>><%= s.label || s.key %></li>
+    <% }) %>
+  </ol>
+  <% } %>
+</div>

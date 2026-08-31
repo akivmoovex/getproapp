@@ -103,6 +103,8 @@ function renderDirectoryPage(opts) {
 function renderRegisterChurchPage(opts) {
   const form = (opts && opts.form) || {};
   const env = (opts && opts.env) || process.env;
+  const wizardStep =
+    (opts && opts.wizardStep) || "church";
   const phoneLocals = buildPlatformPhoneFieldLocals({
     env,
     selectedCountry: form.phone_country || null,
@@ -126,6 +128,7 @@ function renderRegisterChurchPage(opts) {
     ...shellLocals(opts),
     pageTitle: "Register Your Church",
     activeNav: "register-church",
+    wizardStep,
     csrfField: (opts && opts.csrfField) || "_csrf",
     submitted: Boolean(opts && opts.submitted),
     submittedPlan: (opts && opts.submittedPlan) || null,
@@ -148,6 +151,42 @@ function renderRegisterChurchPage(opts) {
     ...phoneLocals,
     phoneValidationRelaxed: phoneMode === VALIDATION_MODES.RELAXED,
     phoneValidationMode: phoneMode,
+  });
+}
+
+function renderRegisterChurchReviewPage(opts) {
+  const form = (opts && opts.form) || {};
+  const env = (opts && opts.env) || process.env;
+  const phoneLocals = buildPlatformPhoneFieldLocals({
+    env,
+    selectedCountry: form.phone_country || null,
+    nationalValue: form.phone_national || "",
+    e164Value:
+      !form.phone_national && form.phone && String(form.phone).trim().startsWith("+")
+        ? form.phone
+        : null,
+  });
+  const origin = publicOriginForProduct(PRODUCT_CODE.BLESSBOARD, env) || "https://blessboard.com";
+  const churchPublicHost = String(origin).replace(/^https?:\/\//, "").replace(/\/$/, "");
+  const churchPublicPathPrefix = publicWebsitePathPrefix(PRODUCT_CODE.BLESSBOARD) || "/c";
+  const churchPublicUrlBase = `${churchPublicHost}${churchPublicPathPrefix}/`;
+  return renderApexView("apex/register-church-review.ejs", {
+    ...shellLocals(opts),
+    pageTitle: "Review Church Registration",
+    activeNav: "register-church",
+    wizardStep: "review",
+    csrfField: (opts && opts.csrfField) || "_csrf",
+    form,
+    formError: (opts && opts.formError) || null,
+    fieldError: (opts && opts.fieldError) || null,
+    selectedPlan: (opts && opts.selectedPlan) || form.selected_plan || null,
+    organizationKeyPreview:
+      (opts && opts.organizationKeyPreview) || form.organization_key || "",
+    churchPublicHost,
+    churchPublicPathPrefix,
+    churchPublicUrlBase,
+    instantFreeEnabled: Boolean(opts && opts.instantFreeEnabled),
+    ...phoneLocals,
   });
 }
 
@@ -199,6 +238,7 @@ module.exports = {
   renderPricingPage,
   renderDirectoryPage,
   renderRegisterChurchPage,
+  renderRegisterChurchReviewPage,
   renderRegisterChurchSuccessPage,
   renderEmailVerificationResultPage,
 };

@@ -204,16 +204,21 @@ describe("automatic Foundation registration", () => {
     const app = makeApp({}); // no INSTANT_FREE env → default enabled
     const { res } = await getRegisterPage(app);
     assert.match(res.text, /data-bb-register-mode="instant-free"/);
-    assert.match(res.text, /name="password"/);
-    assert.match(res.text, /name="password_confirm"/);
+    assert.match(res.text, /data-bb-register-step="church"/);
     assert.match(res.text, /name="organization_key"/);
-    assert.match(res.text, /autocomplete="new-password"/);
+    assert.doesNotMatch(res.text, /name="password"/);
+    assert.match(res.text, /gp-reg__stepper/);
     assert.match(res.text, /href="\/terms"/);
     assert.match(res.text, /href="\/privacy"/);
     assert.match(res.text, /\/c\//);
     assert.match(res.headers["cache-control"] || "", /no-store/);
     assert.ok(extractCsrfToken(res.text));
     assert.ok(extractCookie(res, CSRF_COOKIE));
+
+    const adminPage = await request(app)
+      .get("/register-church?step=administrator&plan=foundation")
+      .set("Host", "blessboard.org");
+    assert.equal(adminPage.status, 302);
   });
 
   it("explicit true still shows instant Foundation fields", async () => {
@@ -221,8 +226,8 @@ describe("automatic Foundation registration", () => {
     const app = makeApp({ [ENV_KEY]: "1" });
     const { res } = await getRegisterPage(app);
     assert.match(res.text, /data-bb-register-mode="instant-free"/);
-    assert.match(res.text, /name="password"/);
     assert.match(res.text, /name="organization_key"/);
+    assert.match(res.text, /data-bb-register-step="church"/);
   });
 
   it("validation rejects weak password, mismatch, reserved key, missing terms", () => {
@@ -568,11 +573,11 @@ describe("automatic Foundation registration", () => {
       `SELECT organization_key FROM platform.organizations
         WHERE organization_key = $1 OR organization_key = $2
         ORDER BY organization_key`,
-      [base, `${base}-2`]
+      [base, `${base}-02`]
     );
     assert.equal(keys.rows.length, 2);
     assert.ok(keys.rows.some((r) => r.organization_key === base));
-    assert.ok(keys.rows.some((r) => r.organization_key === `${base}-2`));
+    assert.ok(keys.rows.some((r) => r.organization_key === `${base}-02`));
   });
 
   it("double-submit creates one application and one tenant", async () => {

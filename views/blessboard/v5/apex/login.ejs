@@ -16,12 +16,15 @@
   <title>Sign in · BlessBoard</title>
   <%- include('../partials/head-design-system') %>
   <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=14" />
-  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=6" />
+  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=7" />
+  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=7" />
+  <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=7" />
 </head>
 <body
   class="bb-auth-body bb-auth-login<%= transferHostname ? ' bb-auth-login--transfer' : '' %>"
   data-bb-shell="apex-auth"
   data-bb-product="blessboard-v5"
+  data-gp-product="blessboard"
   data-bb-page="login"
   data-bb-stitch-login="09-auth-member-login"
   <% if (errorState) { %>data-bb-auth-error="<%= errorState %>"<% } %>
@@ -72,8 +75,8 @@
                 decoding="async"
               />
             </div>
-            <h1 class="bb-auth-card__title"><%= transferHostname ? 'Member Access' : 'Sign in' %></h1>
-            <p class="bb-auth-card__lead"><%= subtitle %></p>
+            <h1 class="bb-auth-card__title"><%= transferHostname ? 'Member Access' : 'Welcome Back' %></h1>
+            <p class="bb-auth-card__lead"><%= transferHostname ? subtitle : 'Sign in to manage your church.' %></p>
           </div>
 
           <% if (loggedOut) { %>
@@ -117,7 +120,7 @@
             <p class="bb-auth-error__body"><%= error %></p>
             <% if (errorState === 'credentials') { %>
             <ul class="bb-auth-error__list">
-              <li><a href="#email">Phone or email</a></li>
+              <li><a href="#login_email">Phone or email</a></li>
               <li><a href="#password">Password</a></li>
             </ul>
             <% } %>
@@ -130,35 +133,71 @@
             id="bb-auth-login-form"
             tabindex="-1"
             autocomplete="on"
+            data-gp-auth-identifier="1"
+            data-gp-auth-id-initial="<%= typeof loginMode !== 'undefined' ? loginMode : 'email' %>"
             <% if (error) { %>aria-describedby="bb-auth-error-summary"<% } %>
           >
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
 
-            <div class="bb-auth-field">
-              <label for="email">Phone number or email</label>
+            <%- include('../../../platform/auth/identifier-tabs', {
+              loginMode: typeof loginMode !== 'undefined' ? loginMode : 'email',
+              tabIdPrefix: 'bb-login-id'
+            }) %>
+
+            <div
+              class="gp-auth-id-panel bb-auth-field"
+              id="bb-login-id-panel-email"
+              role="tabpanel"
+              aria-labelledby="bb-login-id-tab-email"
+              data-gp-auth-id-panel="email"
+              <% if (typeof loginMode !== 'undefined' && loginMode === 'phone') { %>hidden<% } %>
+            >
+              <label for="login_email">Email address</label>
               <div class="bb-auth-input-wrap">
-                <span class="bb-auth-input-wrap__icon material-symbols-outlined" aria-hidden="true">smartphone</span>
+                <span class="bb-auth-input-wrap__icon material-symbols-outlined" aria-hidden="true">mail</span>
                 <input
-                  id="email"
-                  name="email"
-                  type="text"
-                  required
+                  id="login_email"
+                  name="login_email"
+                  type="email"
                   autocomplete="username"
-                  inputmode="tel"
-                  spellcheck="false"
-                  placeholder="Mobile phone or email"
-                  value="<%= emailValue || '' %>"
-                  data-bb-auth-identifier="1"
+                  inputmode="email"
+                  placeholder="name@church.example"
+                  value="<%= typeof loginEmail !== 'undefined' ? loginEmail : (emailValue || '') %>"
+                  <% if (typeof loginMode === 'undefined' || loginMode !== 'phone') { %>required<% } %>
                   <% if (errorState === 'credentials' || errorState === 'generic' || errorState === 'throttled') { %>
                   aria-invalid="true"
-                  aria-describedby="<%= errorState === 'credentials' ? 'email-error bb-auth-error-summary' : 'bb-auth-error-summary' %>"
                   <% } %>
                 />
               </div>
-              <p class="bb-auth-hint" id="bb-auth-identifier-hint">Prefer your mobile phone number. Email remains available for existing accounts.</p>
               <% if (errorState === 'credentials') { %>
-              <p class="bb-auth-field__error" id="email-error">Check your phone number or email and try again.</p>
+              <p class="bb-auth-field__error" id="email-error">Check your email or phone and try again.</p>
               <% } %>
+            </div>
+
+            <div
+              class="gp-auth-id-panel bb-auth-field"
+              id="bb-login-id-panel-phone"
+              role="tabpanel"
+              aria-labelledby="bb-login-id-tab-phone"
+              data-gp-auth-id-panel="phone"
+              <% if (typeof loginMode === 'undefined' || loginMode !== 'phone') { %>hidden<% } %>
+            >
+              <%- include('../partials/phone-field', {
+                id: 'login_phone',
+                label: 'Phone number',
+                labelClass: '',
+                required: typeof loginMode !== 'undefined' && loginMode === 'phone',
+                defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+                selectedCountry: (typeof phoneCountry !== 'undefined' && phoneCountry) || 'ZM',
+                nationalValue: (typeof loginMode !== 'undefined' && loginMode === 'phone') ? (phoneNational || '') : '',
+                countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+                phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+                countryFieldName: 'phone_country',
+                nationalFieldName: 'phone_national',
+                showLegacyHidden: false,
+                showCountryName: true,
+                placeholder: '97 123 4567'
+              }) %>
             </div>
 
             <div class="bb-auth-field">
@@ -223,5 +262,7 @@
 
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
   <script src="/blessboard/v5/tenant-auth.js?v=2" defer></script>
+  <script src="/platform/gp-auth-reg.js?v=7" defer></script>
+  <script src="/activeclinic/ac-phone-field.js?v=7" defer></script>
 </body>
 </html>

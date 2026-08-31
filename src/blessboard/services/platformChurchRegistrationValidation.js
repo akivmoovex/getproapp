@@ -419,6 +419,133 @@ function formFromBody(body, opts = {}) {
   };
 }
 
+/**
+ * Step 1 — church details, plan, website key preview fields.
+ * @param {object} body
+ * @param {{ selectedPlanHint?: string | null, instantFreeEnabled?: boolean }} [opts]
+ */
+function validateChurchRegistrationChurchStep(body, opts = {}) {
+  if (isHoneypotTriggered(body)) {
+    return { ok: true, honeypot: true, data: null };
+  }
+  const instantFreeEnabled = Boolean(opts.instantFreeEnabled);
+  const churchName = trim(body && body.church_name, 200);
+  const countryResult = validateChurchCountry(body && body.country);
+  const city = trim(body && body.city, 120);
+  const branchPrepared = prepareBranchDisplayName(body && body.branch_name, {
+    required: false,
+    field: "branch_name",
+  });
+  if (!branchPrepared.ok) return branchPrepared;
+  const branchCount = trim(body && body.branch_count, 20) || null;
+  const selectedPlan =
+    normalizeSelectedPlan(body && body.selected_plan) ||
+    normalizeSelectedPlan(opts.selectedPlanHint) ||
+    null;
+
+  if (!churchName) {
+    return { ok: false, error: "Please enter your church name.", field: "church_name" };
+  }
+  if (!countryResult.ok) return countryResult;
+  if (!city) {
+    return { ok: false, error: "Please enter a town or city.", field: "city" };
+  }
+  if (branchCount && !/^\d{1,3}$/.test(branchCount)) {
+    return {
+      ok: false,
+      error: "Number of branches must be a whole number up to 999.",
+      field: "branch_count",
+    };
+  }
+  const rawPlan = trim(body && body.selected_plan, 40);
+  if (rawPlan && !normalizeSelectedPlan(rawPlan)) {
+    return { ok: false, error: "Please select a valid plan interest.", field: "selected_plan" };
+  }
+  if (instantFreeEnabled && !selectedPlan) {
+    return { ok: false, error: "Please select a plan.", field: "selected_plan" };
+  }
+
+  let organizationKey = null;
+  if (instantFreeEnabled && isInstantProvisionPlan(selectedPlan)) {
+    const keyResult = deriveOrganizationKeyFromChurchName(churchName);
+    if (!keyResult.ok) return keyResult;
+    organizationKey = keyResult.value;
+  }
+
+  return {
+    ok: true,
+    data: {
+      church_name: churchName,
+      country: countryResult.value,
+      city,
+      branch_name: branchPrepared.display || null,
+      branch_count: branchCount,
+      selected_plan: selectedPlan,
+      message: trim(body && body.message, 5000) || null,
+      organization_key: organizationKey,
+    },
+  };
+}
+
+/**
+ * Step 2 — administrator contact + credentials.
+ * @param {object} body
+ * @param {{ instantFreeEnabled?: boolean, env?: object, validationMode?: string }} [opts]
+ */
+function validateChurchRegistrationAdministratorStep(body, opts = {}) {
+  const instantFreeEnabled = Boolean(opts.instantFreeEnabled);
+  const contactName = trim((body && (body.contact_name || body.full_name)) || "", 200);
+  const roleInChurch = trim(body && body.role_in_church, 120) || null;
+  const country = resolveCountryCodeForUniqueness(body && body.country);
+
+  if (!contactName) {
+    return { ok: false, error: "Please enter the contact person name.", field: "contact_name" };
+  }
+  if (!roleInChurch) {
+    return { ok: false, error: "Please enter your role in the church.", field: "role_in_church" };
+  }
+
+  const emailResult = validateEmail(body && body.email);
+  if (!emailResult.ok) return emailResult;
+
+  const phoneResult = validatePhone(body, {
+    churchCountry: country,
+    env: opts.env,
+    validationMode: opts.validationMode,
+  });
+  if (!phoneResult.ok) return phoneResult;
+
+  const selectedPlan =
+    normalizeSelectedPlan(body && body.selected_plan) ||
+    normalizeSelectedPlan(opts.selectedPlanHint) ||
+    null;
+  const wantsInstantProvision =
+    instantFreeEnabled && isInstantProvisionPlan(selectedPlan);
+
+  /** @type {string | null} */
+  let administratorPassword = null;
+  if (wantsInstantProvision) {
+    const passwordResult = validateAdministratorPassword(
+      body && body.password,
+      body && (body.password_confirm || body.password_confirmation)
+    );
+    if (!passwordResult.ok) return passwordResult;
+    administratorPassword = passwordResult.value;
+  }
+
+  return {
+    ok: true,
+    data: {
+      contact_name: contactName,
+      contact_email: emailResult.value,
+      contact_phone: phoneResult.display,
+      contact_phone_normalized: phoneResult.normalized,
+      role_in_church: roleInChurch,
+      administrator_password: administratorPassword,
+    },
+  };
+}
+
 module.exports = {
   ALLOWED_PLANS,
   FREE_PLAN_CODE,
@@ -440,6 +567,8 @@ module.exports = {
   isInstantProvisionPlan,
   planDisplayLabel,
   validatePlatformChurchRegistration,
+  validateChurchRegistrationChurchStep,
+  validateChurchRegistrationAdministratorStep,
   validateAdministratorPassword,
   validateChurchCountry,
   deriveOrganizationKeyFromChurchName,

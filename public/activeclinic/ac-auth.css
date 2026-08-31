@@ -261,6 +261,29 @@ body.ac-auth-body {
   color: var(--ac-auth-muted);
 }
 
+.ac-auth-brand-panel__features {
+  list-style: none;
+  margin: var(--ac-auth-stack-md) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.ac-auth-brand-panel__features li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.5rem;
+  align-items: start;
+  font-size: 0.875rem;
+  line-height: 1.45;
+  color: var(--ac-auth-muted);
+}
+
+.ac-auth-brand-panel__features .material-symbols-outlined {
+  color: var(--ac-auth-primary);
+  font-size: 1.2rem;
+}
+
 .ac-auth-secure-note {
   display: flex;
   align-items: flex-start;

@@ -237,7 +237,8 @@ describe("ActiveClinic ACW08 shared authentication", () => {
     const html = renderLoginPage({ csrfToken: "csrf-acw08" });
     assert.match(html, /data-ac-composition="p01-login"/);
     assert.match(html, /ac-auth-card--split/);
-    assert.match(html, /Email address or phone number/);
+    assert.match(html, /Welcome back/);
+    assert.match(html, /data-gp-auth-id-tab="email"/);
     assert.match(html, /ActiveClinic/);
     assert.match(html, /data-ac-signing-in/);
     assert.match(html, /Signing you in/);

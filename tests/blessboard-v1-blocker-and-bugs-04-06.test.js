@@ -237,7 +237,8 @@ describe("BlessBoard V1 blocker + bugs 04–06", () => {
     assert.match(res.text, /created automatically from your church name|Created as a draft/i);
     assert.match(res.text, /type="hidden"[^>]*name="organization_key"|name="organization_key"[^>]*type="hidden"/);
     assert.doesNotMatch(res.text, />Organization key</);
-    assert.match(res.text, /name="phone_country"/);
+    assert.match(res.text, /data-bb-register-step="church"/);
+    assert.match(res.text, /gp-reg__stepper/);
   });
 
   it("Foundation registration creates exactly one website instance of eight draft pages", async () => {
