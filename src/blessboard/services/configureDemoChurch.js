@@ -640,6 +640,38 @@ async function applyHqWebsiteContent(db, { organizationId, churchId, actorUserId
   return { ok: true, organizationId, actorUserId: actorUserId || null };
 }
 
+/**
+ * Withdraw stale workflow submissions that block HQ publish on the shared demo tenant.
+ * Testing fixture repair only — does not change publication policy.
+ * @param {{ query: Function }} db
+ * @param {string} organizationId
+ */
+async function clearDemoChurchPublishBlockers(db, organizationId) {
+  const pending = await db.query(
+    `UPDATE blessboard.website_change_submissions
+        SET status = 'withdrawn',
+            updated_at = now()
+      WHERE organization_id = $1
+        AND status IN ('pending_review', 'changes_requested')
+      RETURNING id`,
+    [organizationId]
+  );
+  const conflicts = await db.query(
+    `UPDATE blessboard.website_change_submissions
+        SET status = 'withdrawn',
+            updated_at = now()
+      WHERE organization_id = $1
+        AND status = 'draft'
+        AND change_type ILIKE 'Conflict draft%'
+      RETURNING id`,
+    [organizationId]
+  );
+  return {
+    withdrawnPending: pending.rowCount || 0,
+    withdrawnConflicts: conflicts.rowCount || 0,
+  };
+}
+
 async function publishScope(db, { organizationId, churchId, branchId, actorUserId }) {
   return publishChurchWebsite(db, {
     organizationId,
@@ -884,6 +916,8 @@ async function configureDemoChurch(db, input) {
       spec: NDOLA,
     });
 
+    report.workflow = await clearDemoChurchPublishBlockers(db, org.id);
+
     if (publish) {
       report.publish.hq = await publishScope(db, {
         organizationId: org.id,
@@ -931,5 +965,6 @@ module.exports = {
   NDOLA,
   HQ_CONTENT,
   configureDemoChurch,
+  clearDemoChurchPublishBlockers,
   assertTestingIdentity,
 };

@@ -14,6 +14,32 @@ const versionRepo = require("../repositories/websitePublicationVersionRepository
 const publicContentRepo = require("../repositories/publicContentRepository");
 const { PUBLIC_PAGE_KEYS, PAGE_KEY_TITLES } = require("./publicContentConstants");
 
+function errorCodeFromMessage(message) {
+  const t = String(message || "").toLowerCase();
+  if (!t) return "validation";
+  if (/schema is incomplete|branch-scoped publication|column .* does not exist/.test(t)) {
+    return "schema_incomplete";
+  }
+  if (/publication review could not load|could not be evaluated|lookup/.test(t)) {
+    return "lookup_error";
+  }
+  if (/preview confirmation|preview is required|reviewed the website preview/.test(t)) {
+    return "preview";
+  }
+  if (/mobile preview/.test(t)) return "mobile_preview";
+  if (/conflict/.test(t)) return "conflict";
+  if (/pending review|not approved|awaiting approval/.test(t)) return "pending_review";
+  if (/image|media/.test(t)) return "images";
+  if (/contact/.test(t)) return "contact";
+  if (/service.?time/.test(t)) return "service_times";
+  if (/suspend|not active|inactive/.test(t)) return "org_inactive";
+  if (/permission/.test(t)) return "permission";
+  if (/draft/.test(t)) return "draft";
+  if (/confirm.?publish|confirm publishing/.test(t)) return "confirm";
+  if (/incomplete|required content|not ready/.test(t)) return "incomplete";
+  return "validation";
+}
+
 const STATUS = Object.freeze({
   OK: "ok",
   INVALID_INPUT: "invalid_input",
@@ -297,12 +323,18 @@ async function validateWebsitePublication(db, opts) {
     }
 
     const publishable = errors.length === 0 && readyOk;
+    const issues = errors.map((message) => ({
+      code: errorCodeFromMessage(message),
+      message,
+    }));
 
     return {
       ok: true,
       status: STATUS.OK,
       publishable,
       errors,
+      issues,
+      errorCodes: issues.map((issue) => issue.code),
       warnings,
       checks,
       readiness,

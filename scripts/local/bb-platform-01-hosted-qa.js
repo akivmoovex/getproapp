@@ -34,7 +34,11 @@ const SPOT_KEYS = [
 
 async function login(page) {
   await page.goto(LOGIN, { waitUntil: "domcontentloaded", timeout: 60000 });
-  await page.locator('input[name="email"]').fill(EMAIL);
+  const emailField = page.locator(
+    'input[name="login_email"], input[data-bb-auth-email], input[name="email"]'
+  );
+  await emailField.first().waitFor({ state: "visible", timeout: 30000 });
+  await emailField.first().fill(EMAIL);
   await page.locator('input[name="password"]').fill(PASS);
   await page.locator('button[type="submit"], input[type="submit"]').first().click();
   await page.waitForURL((url) => !url.pathname.includes("/login"), { timeout: 60000 });

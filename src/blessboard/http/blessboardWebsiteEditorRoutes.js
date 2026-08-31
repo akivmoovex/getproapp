@@ -451,7 +451,20 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         });
       }
       if (!published.ok) {
-        return res.redirect(303, `/hq/website/publish/error?codes=${encodeURIComponent(published.reason || "publish")}`);
+        const { collectErrorCodes } = require("../services/websitePublishReviewService");
+        const codes = collectErrorCodes({
+          errors:
+            (published.validation && published.validation.errors) ||
+            published.validationErrors ||
+            [],
+          gaps: published.gaps || [],
+          reason: published.reason,
+        });
+        const codeList = (codes.length ? codes : [published.reason || "publish"]).join(",");
+        return res.redirect(
+          303,
+          `/hq/website/publish/error?codes=${encodeURIComponent(codeList)}`
+        );
       }
       const publicPath = buildPublicOrganizationWebsitePath({
         product: PRODUCT_CODE.BLESSBOARD,

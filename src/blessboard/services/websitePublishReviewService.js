@@ -61,7 +61,8 @@ const FRIENDLY_ERROR_BY_CODE = Object.freeze({
   service_times: "Service times are missing",
   images: "A required image is unavailable",
   branch_approval: "A branch update is not approved",
-  pending_review: "A branch update is not approved",
+  pending_review:
+    "Approve or resolve a branch website update in Change Submissions before publishing.",
   conflict: "Someone updated this content while you were editing",
   incomplete: "Website information is incomplete",
   org_inactive: "The organization is not active",
@@ -900,11 +901,18 @@ function prepareWebsitePublishError(opts) {
   const retrySafe = codes.every((c) =>
     ["preview", "mobile_preview", "confirm"].includes(c)
   );
+  const editPath = codes.includes("pending_review") || codes.includes("conflict")
+    ? "/hq/website/change-submissions"
+    : branchKey
+      ? hqWebsiteBranchDetailsPath(branchKey) || "/hq/content"
+      : "/hq/content";
   return {
     ok: true,
     status: STATUS.OK,
     stitchScreen: "Phase4 - Publish Website Error",
-    title: "Your website was not published.",
+    title: needsEdit
+      ? "Your website needs one more update before it can be published."
+      : "Your website was not published.",
     subtitle: "The live website has not changed.",
     liveUnchanged: opts && opts.liveUnchanged !== false,
     problems,
@@ -918,9 +926,7 @@ function prepareWebsitePublishError(opts) {
       ? hqWebsiteBranchBasePath(branchKey) || "/hq/website"
       : "/hq/website",
     reviewPath: hqWebsitePublishReviewPath(branchKey),
-    editPath: branchKey
-      ? hqWebsiteBranchDetailsPath(branchKey) || "/hq/content"
-      : "/hq/content",
+    editPath,
     detailsPath: branchKey
       ? hqWebsiteBranchDetailsPath(branchKey)
       : "/hq/settings",
