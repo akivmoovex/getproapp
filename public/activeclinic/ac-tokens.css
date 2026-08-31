@@ -105,6 +105,9 @@
   --acp-shadow-sm: var(--ac-shadow-sm);
   --acp-font: "Public Sans", Segoe UI, system-ui, sans-serif;
   --acp-touch: 3rem;
+  /* Layout family: AC clinic mini-site + patient portal public band
+     Desktop: 75rem (1200px) centered — 120px margin @ 1440 viewport
+     Mobile (≤767): --acp-gutter becomes 1rem (16px) via ac-public.css */
   --acp-max: 75rem;
   --acp-space-1: var(--ac-space-1);
   --acp-space-2: var(--ac-space-2);
@@ -113,7 +116,7 @@
   --acp-space-5: var(--ac-space-5);
   --acp-space-6: var(--ac-space-6);
   --acp-space-7: var(--ac-space-7);
-  --acp-gutter: 1.25rem;
+  --acp-gutter: 1.25rem; /* 20px desktop; overridden to 1rem mobile in ac-public.css */
   --acp-section-gap: 1.5rem;
   --acp-card-gap: 1rem;
   --acp-heading-mobile: clamp(1.65rem, 6vw, 2.1rem);

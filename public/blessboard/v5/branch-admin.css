@@ -437,7 +437,7 @@ body.bb-ba-drawer-open {
 .bb-ba-main {
   flex: 1;
   width: 100%;
-  max-width: 64rem;
+  max-width: var(--bb-shell-content-max, 64rem);
   margin: 0 auto;
   padding: 1.35rem 1.15rem 2rem;
   scroll-margin-top: 5rem;
@@ -1320,7 +1320,7 @@ body.bb-ba-drawer-open {
 
 @media (min-width: 900px) {
   .bb-ba-app {
-    grid-template-columns: 16.5rem minmax(0, 1fr);
+    grid-template-columns: var(--bb-sidebar-w, 16.5rem) minmax(0, 1fr);
   }
 
   .bb-ba-sidebar {

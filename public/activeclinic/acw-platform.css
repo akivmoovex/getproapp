@@ -2,6 +2,7 @@
    Do not load on tenant clinic websites (MW screens). */
 body.ac-public--platform {
   font-family: Inter, "Public Sans", system-ui, sans-serif;
+  /* Layout family: AC platform public — 80rem (1280px) centered band; 1rem mobile gutter in @767 rules */
   --acw-max: 80rem;
   overflow-x: clip;
 }

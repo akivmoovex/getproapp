@@ -399,7 +399,7 @@ body.bb-hq-drawer-open { overflow: hidden; }
 }
 .bb-hq-main {
   flex: 1;
-  max-width: 64rem;
+  max-width: var(--bb-shell-content-max, 64rem);
   width: 100%;
   margin: 0 auto;
   padding: 1.25rem 1.15rem 2rem;
@@ -1272,7 +1272,7 @@ body.bb-hq-drawer-open { overflow: hidden; }
 }
 
 @media (min-width: 900px) {
-  .bb-hq-app { grid-template-columns: 16.5rem minmax(0, 1fr); }
+  .bb-hq-app { grid-template-columns: var(--bb-sidebar-w, 16.5rem) minmax(0, 1fr); }
   .bb-hq-sidebar {
     display: flex;
     position: sticky;

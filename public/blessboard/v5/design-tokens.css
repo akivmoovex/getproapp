@@ -115,6 +115,7 @@
   --bb-header-h: 5rem; /* 80px Stitch desktop/mobile header (h-20) */
   --bb-header-h-compact: 4.5rem;
   --bb-sidebar-w: 16.5rem; /* portal desktop sidebar */
+  --bb-shell-content-max: 64rem; /* HQ + branch-admin main column cap (narrower than public --bb-max) */
   --bb-drawer-w: 22rem;
 
   /* —— Radii & shadows —— */

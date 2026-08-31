@@ -516,7 +516,9 @@
   dialog { max-width: calc(100vw - 1.5rem); }
 }
 
-/* Stitch Clinic Editor chrome (MW03–MW07) */
+/* Stitch Clinic Editor chrome (MW03–MW07)
+   Layout family: AC Website Hub (INTENTIONAL_EXCEPTION) — full-width CMS shell;
+   not comparable to staff-app .ac-content sidebar offset. */
 .ac-app-body--mw {
   background: #f8fafc;
 }
