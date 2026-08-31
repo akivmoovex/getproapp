@@ -115,6 +115,8 @@ describe("shared website editor wave 3 — static lifecycle shell", () => {
 
     assert.match(lifecycleJs, /GpWebsiteLifecycle/);
     assert.match(lifecycleJs, /data-website-publish-confirm/);
+    assert.match(lifecycleJs, /var publishForm = pendingPublishForm/);
+    assert.match(lifecycleJs, /submitPublishForm\(publishForm\)/);
     assert.match(lifecycleJs, /discard_all/);
     assert.doesNotMatch(lifecycleJs, /window\.confirm\(/);
 
@@ -126,6 +128,8 @@ describe("shared website editor wave 3 — static lifecycle shell", () => {
 
     assert.match(css, /\.gp-website-preview-banner/);
     assert.match(css, /\.gp-website-lifecycle/);
+    assert.match(css, /body\.gp-website-editor-open \.gp-website-editable__pencil/);
+    assert.match(css, /z-index: 70/);
 
     assert.match(acChrome, /websitePreviewDraftMode/);
     assert.match(bbChrome, /previewDraftMode/);

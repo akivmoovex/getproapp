@@ -217,8 +217,9 @@
       btn.addEventListener("click", function () {
         var kind = btn.getAttribute("data-website-lifecycle-confirm");
         if (kind === "publish") {
+          var publishForm = pendingPublishForm;
           closeDialog();
-          submitPublishForm(pendingPublishForm);
+          submitPublishForm(publishForm);
           return;
         }
         if (kind === "discard") {

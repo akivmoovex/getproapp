@@ -84,9 +84,11 @@
       </li>
       <li class="bb-wm-firstuse__item" data-bb-website-firstuse-branding="1">
         <h3>Customize branding</h3>
-        <p>Logo, colours, and the look of the public site.</p>
-        <% if (actions.branding) { %>
-        <a class="bb-wm-btn bb-wm-btn--primary" href="<%= actions.branding %>" data-bb-website-action="branding">Continue</a>
+        <p>Logo, colours, and the look of the public site. Open the visual editor, or use Styles for colours and typography.</p>
+        <% if (actions.editWebsite) { %>
+        <a class="bb-wm-btn bb-wm-btn--primary" href="<%= actions.editWebsite %>" data-bb-website-action="edit" data-bb-build-website="1">Build your website</a>
+        <% } else if (actions.styles) { %>
+        <a class="bb-wm-btn" href="<%= actions.styles %>" data-bb-website-action="styles">Styles</a>
         <% } %>
       </li>
       <li class="bb-wm-firstuse__item">

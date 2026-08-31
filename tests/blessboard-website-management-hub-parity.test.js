@@ -303,14 +303,14 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(hub, /data-bb-website-action="history"/);
     assert.match(hub, /Customize branding/);
     assert.match(hub, /Logo, colours, and the look of the public site/);
-    assert.match(hub, /data-bb-website-action="branding"/);
     const brandingItem = hub.match(
       /data-bb-website-firstuse-branding="1"[\s\S]*?<\/li>/
     );
     assert.ok(brandingItem, "expected Customize branding first-use item");
-    assert.match(brandingItem[0], /href="<%= actions\.branding %>"/);
-    assert.doesNotMatch(brandingItem[0], /actions\.editWebsite/);
-    assert.doesNotMatch(brandingItem[0], /\/hq\/website\?/);
+    assert.match(brandingItem[0], /Build your website/);
+    assert.match(brandingItem[0], /data-bb-build-website="1"/);
+    assert.match(brandingItem[0], /href="<%= actions\.editWebsite %>"/);
+    assert.doesNotMatch(brandingItem[0], /href="<%= actions\.branding %>"/);
     assert.match(hub, /action="<%= actions\.publishPath %>"/);
     assert.match(hub, /confirm_publish/);
     assert.match(hub, /bb-wm-hub-metrics/);
@@ -365,19 +365,18 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     const expectedBranding = "/hq/website/branding";
     assert.match(page.text, /data-bb-website-firstuse="1"/);
     assert.match(page.text, /Customize branding/);
-    const brandingHref = hrefForWebsiteAction(page.text, "branding");
-    assert.equal(brandingHref, expectedBranding, `branding Continue href=${brandingHref}`);
-    assert.notEqual(brandingHref, "/hq/website");
-    assert.notEqual(brandingHref, `/c/${church.key}?website_edit=1`);
-    assert.doesNotMatch(brandingHref, /\/c\/demo/i);
-    assert.doesNotMatch(brandingHref, /\/branches\//);
-    const settingsTile = hrefForWebsiteAction(page.text, "settings");
-    assert.ok(settingsTile === "/hq/website" || settingsTile === "/hq/website/advanced");
-    const editHref = hrefForWebsiteAction(page.text, "edit");
-    assert.equal(editHref, buildPublicWebsiteEditPath({
-      product: PRODUCT_CODE.BLESSBOARD,
-      organizationKey: church.key,
-    }));
+    assert.match(page.text, /Build your website/);
+    assert.match(page.text, /data-bb-build-website="1"/);
+    assert.doesNotMatch(page.text, /data-bb-website-action="branding"/);
+    const buildHref = hrefForWebsiteAction(page.text, "edit");
+    assert.equal(
+      buildHref,
+      buildPublicWebsiteEditPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: church.key,
+      })
+    );
+    assert.notEqual(buildHref, expectedBranding);
   });
 
   it("published church shows View live and Unpublish; drafts surface unpublished changes including logo", async () => {
@@ -420,7 +419,7 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
     assert.match(draftPage.text, /data-bb-website-action="view-live"/);
   });
 
-  it("Customize branding Continue opens the church branding page for the signed-in church", async () => {
+  it("HQ branding settings page remains available for specialist branding work", async () => {
     requireDb();
     const church = await provisionChurch("brand");
     const other = await provisionChurch("other");
@@ -430,8 +429,7 @@ describe("BlessBoard Website management hub parity (BUG 07)", () => {
       .set("Host", church.host)
       .set("Cookie", cookie);
     assert.equal(hub.status, 200, hub.text && hub.text.slice(0, 300));
-    const brandingHref = hrefForWebsiteAction(hub.text, "branding");
-    assert.equal(brandingHref, "/hq/website/branding");
+    assert.doesNotMatch(hub.text, /data-bb-website-action="branding"/);
 
     const brandingPage = await request(makeBbApp())
       .get("/hq/website/branding")

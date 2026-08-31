@@ -1305,6 +1305,18 @@ body.gp-website-editor-open.bb-tp-body--editing .bb-tp-hero__media-plane .gp-web
   z-index: 2;
 }
 
+/* Section action chrome (z-index 60) must not block inline edit pencils in the same corner. */
+body.gp-website-editor-open .gp-website-editable__display {
+  position: relative;
+  z-index: 65;
+}
+
+body.gp-website-editor-open .gp-website-editable__pencil,
+body.gp-website-editor-open .ac-website-editable__pencil {
+  z-index: 70;
+  pointer-events: auto;
+}
+
 .gp-website-editable__pencil:hover,
 .ac-website-editable__pencil:hover,
 .gp-website-editable__pencil:focus-visible,
