@@ -148,26 +148,35 @@ async function attemptSave(page, persona) {
 async function main() {
   const browser = await chromium.launch({ headless: true });
   const results = [];
+  const viewports = [
+    { label: "1440", width: 1440, height: 900 },
+    { label: "390", width: 390, height: 844 },
+  ];
 
-  for (const persona of PERSONAS) {
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    try {
-      await login(page, persona.email);
-      const result = await attemptSave(page, persona);
-      results.push(result);
-      console.log(JSON.stringify(result, null, 2));
-    } catch (err) {
-      results.push({ persona: persona.label, error: String(err.message || err) });
-      console.log(JSON.stringify({ persona: persona.label, error: String(err.message || err) }, null, 2));
-    } finally {
-      await context.close();
+  for (const persona of PERSONAS.filter((p) => p.label === "branch_admin")) {
+    for (const vp of viewports) {
+      const context = await browser.newContext({ viewport: { width: vp.width, height: vp.height } });
+      const page = await context.newPage();
+      try {
+        await login(page, persona.email);
+        const result = await attemptSave(page, persona);
+        result.viewport = vp.label;
+        results.push(result);
+        console.log(JSON.stringify(result, null, 2));
+      } catch (err) {
+        results.push({ persona: persona.label, viewport: vp.label, error: String(err.message || err) });
+        console.log(
+          JSON.stringify({ persona: persona.label, viewport: vp.label, error: String(err.message || err) }, null, 2)
+        );
+      } finally {
+        await context.close();
+      }
     }
   }
 
   await browser.close();
   const branchFail = results.find(
-    (r) => r.persona === "branch_admin" && r.request && r.request.status !== 200
+    (r) => r.request && r.request.status !== 200
   );
   process.exit(branchFail || results.some((r) => r.error) ? 1 : 0);
 }
