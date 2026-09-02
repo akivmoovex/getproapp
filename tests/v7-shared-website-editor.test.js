@@ -321,6 +321,12 @@ describe("v7 shared website editor — HTTP matrix", () => {
     });
     assert.equal(provisioned.ok, true, provisioned.message || provisioned.status);
     const rec = provisioned.records;
+    const branchRow = await pool.query(
+      `SELECT branch_key FROM blessboard.branches WHERE id = $1 LIMIT 1`,
+      [rec.branchId]
+    );
+    const branchKey = branchRow.rows[0] && branchRow.rows[0].branch_key;
+    assert.ok(branchKey, "provisioned branch key");
     const session = await createV5Session(pool, {
       deploymentCode: "blessboard-org-staging",
       userId: rec.administratorUserId,
@@ -333,8 +339,17 @@ describe("v7 shared website editor — HTTP matrix", () => {
       env: MINIMAL_BB,
     });
 
+    const orgEntry = await request(app)
+      .get(`/c/${rec.organizationKey}?website_edit=1&website_mode=draft`)
+      .redirects(0)
+      .set("Host", APEX)
+      .set("Cookie", cookie);
+    assert.equal(orgEntry.status, 301, "org home should redirect to primary branch");
+    assert.match(orgEntry.headers.location, new RegExp(`/c/${rec.organizationKey}/${branchKey}`));
+
+    const branchBase = `/c/${rec.organizationKey}/${branchKey}`;
     const edit = await request(app)
-      .get(`/c/${rec.organizationKey}?website_edit=1`)
+      .get(`${branchBase}?website_edit=1&website_mode=draft`)
       .set("Host", APEX)
       .set("Cookie", cookie);
     assert.equal(edit.status, 200, edit.text && edit.text.slice(0, 400));
@@ -346,14 +361,17 @@ describe("v7 shared website editor — HTTP matrix", () => {
     assert.match(edit.text, /data-website-page-rail="1"/);
     assert.match(edit.text, /\/platform\/website-inline-edit\.js/);
     assert.match(edit.text, /data-website-structured="1"/);
-    assert.match(edit.text, /\/c\/[^"]+\/website\/drafts/);
+    assert.match(
+      edit.text,
+      new RegExp(`${branchBase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/website/drafts`)
+    );
 
     const csrf = extractCsrf(edit.text);
     assert.ok(csrf, "csrf");
     const cookies = cookieHeader(cookie, edit);
     const heading = `Shared BB ${key}`;
     const saved = await request(app)
-      .post(`/c/${rec.organizationKey}/website/drafts`)
+      .post(`${branchBase}/website/drafts`)
       .set("Host", APEX)
       .set("Cookie", cookies)
       .set("X-CSRF-Token", csrf)
@@ -377,11 +395,11 @@ describe("v7 shared website editor — HTTP matrix", () => {
     assert.equal(String(rowDraft.draftValue || ""), heading);
     assert.notEqual(String(rowDraft.publishedValue || ""), heading);
 
-    const publicBefore = await request(app).get(`/c/${rec.organizationKey}`).set("Host", APEX);
+    const publicBefore = await request(app).get(branchBase).set("Host", APEX);
     assert.doesNotMatch(publicBefore.text, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
 
     const preview = await request(app)
-      .get(`/c/${rec.organizationKey}?website_mode=draft`)
+      .get(`${branchBase}?website_mode=draft`)
       .set("Host", APEX)
       .set("Cookie", cookie);
     assert.equal(preview.status, 200);
@@ -394,7 +412,7 @@ describe("v7 shared website editor — HTTP matrix", () => {
       actorUserId: rec.administratorUserId,
     });
     const published = await request(app)
-      .post(`/c/${rec.organizationKey}/website/publish`)
+      .post(`${branchBase}/website/publish`)
       .set("Host", APEX)
       .set("Cookie", cookies)
       .set("Accept", "application/json")
@@ -414,7 +432,7 @@ describe("v7 shared website editor — HTTP matrix", () => {
     });
     assert.ok((versions.versions || []).length >= 1, "platform.website_versions missing");
 
-    const live = await request(app).get(`/c/${rec.organizationKey}`).set("Host", APEX);
+    const live = await request(app).get(branchBase).set("Host", APEX);
     assert.equal(live.status, 200);
     assert.match(live.text, new RegExp(heading.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.doesNotMatch(live.text, /data-website-chrome/);

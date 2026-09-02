@@ -981,7 +981,8 @@ async function attachWebsiteAdminChrome(opts) {
     publishSuccessUrl:
       buildPublicOrganizationWebsitePath({
         product: PRODUCT_CODE.BLESSBOARD,
-        organizationKey: model.organizationKey,
+        organizationKey: orgKey,
+        scope: editorScope,
       }) || null,
     discardPath,
     unpublishPath,

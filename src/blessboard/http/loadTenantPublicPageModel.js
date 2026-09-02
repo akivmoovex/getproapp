@@ -822,6 +822,21 @@ async function loadTenantPublicPageModel(db, input) {
     contactSettingsBranchId
   );
   const websiteStatus = settings ? settings.websiteStatus : "draft";
+  let publicWebsiteStatus = websiteStatus;
+  if (scopedBranchActive && contentBranchId && publicWebsiteStatus !== "published") {
+    try {
+      const branchHome = await getPublishedPage(db, {
+        churchId,
+        branchId: contentBranchId,
+        pageKey: "home",
+      });
+      if (branchHome.ok && branchHome.page && String(branchHome.page.status || "") === "published") {
+        publicWebsiteStatus = "published";
+      }
+    } catch {
+      /* keep church-wide gate */
+    }
+  }
   let publicName = publicDemo.resolveCanonicalChurchName({
     publicName: settings && settings.publicName,
     churchDisplayName: tenant.church.displayName,
@@ -895,7 +910,7 @@ async function loadTenantPublicPageModel(db, input) {
     return { kind: KIND.UNAVAILABLE, reason: "website_suspended" };
   }
 
-  if (!isPreview && !governancePreview && websiteStatus !== "published") {
+  if (!isPreview && !governancePreview && publicWebsiteStatus !== "published") {
     return {
       kind: KIND.SETUP,
       reason: "website_unpublished",

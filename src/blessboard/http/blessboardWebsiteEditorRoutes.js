@@ -174,6 +174,56 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
     );
   }
 
+  function scopedEditPath(resolved, pageKey) {
+    return buildPublicWebsiteEditPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: resolved.organizationKey,
+      pageKey,
+      scope: editorScope(resolved),
+    });
+  }
+
+  function scopedHistoryPath(resolved) {
+    return buildPublicWebsiteHistoryPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: resolved.organizationKey,
+      scope: editorScope(resolved),
+    });
+  }
+
+  function scopedStylesPath(resolved) {
+    return buildPublicWebsiteStylesPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: resolved.organizationKey,
+      scope: editorScope(resolved),
+    });
+  }
+
+  function scopedSeoPath(resolved) {
+    return buildPublicWebsiteSeoPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: resolved.organizationKey,
+      scope: editorScope(resolved),
+    });
+  }
+
+  function scopedMediaLibraryPath(resolved) {
+    return buildPublicWebsiteMediaLibraryPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: resolved.organizationKey,
+      scope: editorScope(resolved),
+    });
+  }
+
+  function scopedEditorActionPath(resolved, suffix) {
+    const base = editorPublicBase(resolved);
+    return base ? `${base}${suffix}` : null;
+  }
+
+  function editorActorRole(resolved) {
+    return editorBranchId(resolved) ? "branch_admin" : "church_hq_admin";
+  }
+
   function wantsHtml(req) {
     const accept = String((req.headers && req.headers.accept) || "");
     return accept.includes("text/html") || !accept.includes("application/json");
@@ -374,7 +424,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         churchId: resolved.tenant.church.id,
         branchId: editorBranchId(resolved),
         editorUserId: actorUserId(req),
-        actorRole: "church_hq_admin",
+        actorRole: editorActorRole(resolved),
         pageKey: body.pageKey,
         sectionKey: body.sectionKey,
         action: body.action,
@@ -428,7 +478,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           branchId: editorBranchId(resolved),
           actorUserId: actorUserId(req),
           confirmDiscard: req.body && req.body.confirm_discard,
-          actorRole: "church_hq_admin",
+          actorRole: editorActorRole(resolved),
         });
         if (String(req.headers.accept || "").includes("application/json")) {
           return json(res, result.ok ? 200 : 400, {
@@ -487,6 +537,17 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           reason: published.reason,
         });
         const codeList = (codes.length ? codes : [published.reason || "publish"]).join(",");
+        const branchBase = editorPublicBase(resolved);
+        if (branchBase) {
+          return res.redirect(
+            303,
+            appendQuery(branchBase, {
+              website_edit: "1",
+              website_mode: "draft",
+              website_publish_error: codeList,
+            })
+          );
+        }
         return res.redirect(
           303,
           `/hq/website/publish/error?codes=${encodeURIComponent(codeList)}`
@@ -702,10 +763,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         env,
         req,
       });
-      const basePath = buildPublicOrganizationWebsitePath({
-        product: PRODUCT_CODE.BLESSBOARD,
-        organizationKey: resolved.organizationKey,
-      });
+      const basePath = editorPublicBase(resolved);
       const presentation = await loadHistoryPresentation(getPool(), {
         organizationId: resolved.tenant.organization.id,
         instance: found.instance,
@@ -714,10 +772,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           (resolved.tenant.church && resolved.tenant.church.displayName) ||
           resolved.organizationKey,
         canRestore,
-        backHref: buildPublicWebsiteEditPath({
-          product: PRODUCT_CODE.BLESSBOARD,
-          organizationKey: resolved.organizationKey,
-        }),
+        backHref: scopedEditPath(resolved),
         previewHrefFor: (versionId) =>
           basePath ? `${basePath}/website/versions/${encodeURIComponent(versionId)}` : null,
         restoreHrefFor: (versionId) =>
@@ -775,13 +830,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           if (wantsHtml(req)) {
             return res.redirect(
               303,
-              appendQuery(
-                buildPublicWebsiteHistoryPath({
-                  product: PRODUCT_CODE.BLESSBOARD,
-                  organizationKey: resolved.organizationKey,
-                }),
-                { error: restored.code || "restore_failed" }
-              )
+              appendQuery(scopedHistoryPath(resolved), { error: restored.code || "restore_failed" })
             );
           }
           return json(res, restored.code === "forbidden" ? 403 : 400, {
@@ -792,13 +841,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         if (wantsHtml(req)) {
           return res.redirect(
             303,
-            appendQuery(
-              buildPublicWebsiteEditPath({
-                product: PRODUCT_CODE.BLESSBOARD,
-                organizationKey: resolved.organizationKey,
-              }),
-              { notice: "restored_draft" }
-            )
+            appendQuery(scopedEditPath(resolved), { notice: "restored_draft" })
           );
         }
         return json(res, 200, { ok: true, code: "restored_draft", publishedUnchanged: true });
@@ -834,10 +877,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         env,
         req,
       });
-      const basePath = buildPublicOrganizationWebsitePath({
-        product: PRODUCT_CODE.BLESSBOARD,
-        organizationKey: resolved.organizationKey,
-      });
+      const basePath = editorPublicBase(resolved);
       const preview = await renderTenantWebsiteVersionPreview(getPool(), {
         instance: found.instance,
         organizationKey: resolved.organizationKey,
@@ -846,10 +886,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         siteLabel:
           (resolved.tenant.church && resolved.tenant.church.displayName) ||
           resolved.organizationKey,
-        historyHref: buildPublicWebsiteHistoryPath({
-          product: PRODUCT_CODE.BLESSBOARD,
-          organizationKey: resolved.organizationKey,
-        }),
+        historyHref: scopedHistoryPath(resolved),
         restoreHref: basePath
           ? `${basePath}/website/versions/${encodeURIComponent(loaded.version.id)}/restore`
           : null,
@@ -882,10 +919,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         env,
         req,
       });
-      const basePath = `${buildPublicOrganizationWebsitePath({
-        product: PRODUCT_CODE.BLESSBOARD,
-        organizationKey: resolved.organizationKey,
-      })}/website/media-library`;
+      const basePath = scopedMediaLibraryPath(resolved);
       const listed = await mediaService.listWebsiteMedia(getPool(), {
         organizationId: resolved.tenant.organization.id,
         instanceId: found.instance.id,
@@ -894,7 +928,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         const delivered = mediaService.presentWebsiteMediaForClient(found.instance, row);
         return {
           previewUrl: delivered.publicSrc,
-          detailsUrl: `${basePath}?media=${encodeURIComponent(row.id)}`,
+          detailsUrl: basePath ? `${basePath}?media=${encodeURIComponent(row.id)}` : null,
         };
       });
       const page = buildMediaPageView({
@@ -904,14 +938,8 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           resolved.organizationKey,
         items,
         basePath,
-        backHref: buildPublicWebsiteEditPath({
-          product: PRODUCT_CODE.BLESSBOARD,
-          organizationKey: resolved.organizationKey,
-        }),
-        uploadAction: `${buildPublicOrganizationWebsitePath({
-          product: PRODUCT_CODE.BLESSBOARD,
-          organizationKey: resolved.organizationKey,
-        })}/website/media`,
+        backHref: scopedEditPath(resolved),
+        uploadAction: scopedEditorActionPath(resolved, "/website/media"),
         canUpload: true,
         q: req.query && req.query.q,
         kind: req.query && req.query.type,
@@ -948,25 +976,16 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         const env = getEnv();
         const csrfToken = issueCsrfToken(env);
         setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
-        const basePath = buildPublicOrganizationWebsitePath({
-          product: PRODUCT_CODE.BLESSBOARD,
-          organizationKey: resolved.organizationKey,
-        });
+        const basePath = editorPublicBase(resolved);
         const presentation = await loadStylesPresentation(getPool(), {
           organizationId: resolved.tenant.organization.id,
           productCode: PRODUCT_CODE.BLESSBOARD,
           siteLabel:
             (resolved.tenant.church && resolved.tenant.church.displayName) ||
             resolved.organizationKey,
-          backHref: buildPublicWebsiteEditPath({
-            product: PRODUCT_CODE.BLESSBOARD,
-            organizationKey: resolved.organizationKey,
-          }),
-          saveAction: `${basePath}/website/styles`,
-          mediaLibraryHref: buildPublicWebsiteMediaLibraryPath({
-            product: PRODUCT_CODE.BLESSBOARD,
-            organizationKey: resolved.organizationKey,
-          }),
+          backHref: scopedEditPath(resolved),
+          saveAction: scopedEditorActionPath(resolved, "/website/styles"),
+          mediaLibraryHref: scopedMediaLibraryPath(resolved),
           csrfField: CSRF_FIELD,
           csrfToken,
           notice: noticeFromQuery(req.query),
@@ -1000,24 +1019,12 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         if (!saved.ok) {
           return res.redirect(
             303,
-            appendQuery(
-              buildPublicWebsiteStylesPath({
-                product: PRODUCT_CODE.BLESSBOARD,
-                organizationKey: resolved.organizationKey,
-              }),
-              { error: saved.code || "save_failed" }
-            )
+            appendQuery(scopedStylesPath(resolved), { error: saved.code || "save_failed" })
           );
         }
         return res.redirect(
           303,
-          appendQuery(
-            buildPublicWebsiteStylesPath({
-              product: PRODUCT_CODE.BLESSBOARD,
-              organizationKey: resolved.organizationKey,
-            }),
-            { saved: "1" }
-          )
+          appendQuery(scopedStylesPath(resolved), { saved: "1" })
         );
       } catch (err) {
         return next(err);
@@ -1035,27 +1042,17 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         const env = getEnv();
         const csrfToken = issueCsrfToken(env);
         setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
-        const basePath = buildPublicOrganizationWebsitePath({
-          product: PRODUCT_CODE.BLESSBOARD,
-          organizationKey: resolved.organizationKey,
-        });
         const presentation = await loadSeoPresentation(getPool(), {
           organizationId: resolved.tenant.organization.id,
           productCode: PRODUCT_CODE.BLESSBOARD,
           instance: found.instance,
           churchId: resolved.tenant.church && resolved.tenant.church.id,
-          branchId:
-            resolved.tenant.primaryBranch && resolved.tenant.primaryBranch.id
-              ? resolved.tenant.primaryBranch.id
-              : null,
+          branchId: editorBranchId(resolved),
           siteLabel:
             (resolved.tenant.church && resolved.tenant.church.displayName) ||
             resolved.organizationKey,
-          backHref: buildPublicWebsiteEditPath({
-            product: PRODUCT_CODE.BLESSBOARD,
-            organizationKey: resolved.organizationKey,
-          }),
-          saveAction: `${basePath}/website/seo`,
+          backHref: scopedEditPath(resolved),
+          saveAction: scopedEditorActionPath(resolved, "/website/seo"),
           csrfField: CSRF_FIELD,
           csrfToken,
           notice: noticeFromQuery(req.query),
@@ -1089,24 +1086,12 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         if (!saved.ok) {
           return res.redirect(
             303,
-            appendQuery(
-              buildPublicWebsiteSeoPath({
-                product: PRODUCT_CODE.BLESSBOARD,
-                organizationKey: resolved.organizationKey,
-              }),
-              { error: saved.code || "save_failed" }
-            )
+            appendQuery(scopedSeoPath(resolved), { error: saved.code || "save_failed" })
           );
         }
         return res.redirect(
           303,
-          appendQuery(
-            buildPublicWebsiteSeoPath({
-              product: PRODUCT_CODE.BLESSBOARD,
-              organizationKey: resolved.organizationKey,
-            }),
-            { saved: "1" }
-          )
+          appendQuery(scopedSeoPath(resolved), { saved: "1" })
         );
       } catch (err) {
         return next(err);

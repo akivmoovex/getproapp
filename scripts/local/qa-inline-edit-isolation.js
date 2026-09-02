@@ -4,9 +4,8 @@
 /**
  * Inline-edit isolation probe.
  *
- * `/c/:org/branches/:branch` is a PUBLIC page, so a 200 proves nothing. What
- * matters is whether the page hands the signed-in actor edit affordances. This
- * compares the Lusaka branch admin's own branch against a sibling branch and
+ * `/c/:org/:branch` is the canonical branch editor URL. Legacy `/c/:org/branches/:branch`
+ * still 301s here for redirect coverage. This compares the Lusaka branch admin's own
  * the church-wide page. Read-only GETs, no secrets printed.
  */
 
@@ -18,10 +17,11 @@ const PERSONAS = {
 };
 
 const TARGETS = [
-  ["own branch (Lusaka)", "/c/demo-church/branches/demo-church-lusaka?website_edit=1"],
-  ["sibling branch (Ndola)", "/c/demo-church/branches/demo-church-ndola?website_edit=1"],
-  ["sibling branch (Mazabuka)", "/c/demo-church/branches/demo-mazabuka?website_edit=1"],
-  ["church-wide", "/c/demo-church?website_edit=1"],
+  ["own branch (Lusaka)", "/c/demo-church/demo-church-lusaka?website_edit=1&website_mode=draft"],
+  ["sibling branch (Ndola)", "/c/demo-church/demo-church-ndola?website_edit=1&website_mode=draft"],
+  ["sibling branch (Mazabuka)", "/c/demo-church/demo-mazabuka?website_edit=1&website_mode=draft"],
+  ["legacy branch path", "/c/demo-church/branches/demo-church-lusaka?website_edit=1"],
+  ["org home redirect", "/c/demo-church?website_edit=1&website_mode=draft"],
 ];
 
 function jarFrom(res) {
