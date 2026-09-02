@@ -68,7 +68,10 @@ const {
 const {
   publishChurchWebsite,
 } = require("../services/churchWebsitePublishService");
-const { findOrganizationByKey } = require("../repositories/blessBoardCatalogueRepository");
+const {
+  findOrganizationByKey,
+  findBranchByChurchAndKey,
+} = require("../repositories/blessBoardCatalogueRepository");
 const { getBlessBoardCatalogueContext } = require("../services/getBlessBoardCatalogueContext");
 const { buildBlessBoardTenantContext } = require("./buildBlessBoardTenantContext");
 const { normalizeOrganizationKey } = require("../services/organizationKey");
@@ -148,12 +151,35 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
   const resolveTenant = opts.resolveTenant;
   const pathPrefix = opts.pathPrefix;
 
+  function editorBranchId(resolved) {
+    return resolved && resolved.branchId ? String(resolved.branchId) : null;
+  }
+
+  function editorBranchKey(resolved) {
+    return resolved && resolved.branchKey ? String(resolved.branchKey).trim() : "";
+  }
+
+  function editorScope(resolved) {
+    const branchKey = editorBranchKey(resolved);
+    return branchKey ? { kind: "branch", branchKey } : null;
+  }
+
+  function editorPublicBase(resolved) {
+    return (
+      buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: resolved.organizationKey,
+        scope: editorScope(resolved),
+      }) || null
+    );
+  }
+
   function wantsHtml(req) {
     const accept = String((req.headers && req.headers.accept) || "");
     return accept.includes("text/html") || !accept.includes("application/json");
   }
 
-  async function grantedWebsitePermissions(req, tenant) {
+  async function grantedWebsitePermissions(req, tenant, branchId) {
     const session = req.v5Session && req.v5Session.authenticated && req.v5Session.session;
     if (!session || !session.userId) return [];
     const listed = await listEffectivePermissions(getPool(), {
@@ -162,7 +188,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       resourceContext: {
         organizationId: tenant.organization.id,
         churchId: tenant.church.id,
-        branchId: null,
+        branchId: branchId || null,
       },
     });
     const keys = listed && Array.isArray(listed.permissions) ? listed.permissions : [];
@@ -180,6 +206,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
     return resolveEngineInstance(getPool(), {
       organizationId: resolved.tenant.organization.id,
       slug: resolved.organizationKey,
+      branchId: editorBranchId(resolved),
       createIfMissing: false,
     });
   }
@@ -199,7 +226,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       resourceContext: {
         organizationId: resolved.tenant.organization.id,
         churchId: resolved.tenant.church.id,
-        branchId: null,
+        branchId: editorBranchId(resolved),
       },
     });
     if (!authz.allowed) {
@@ -231,6 +258,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         const found = await resolveEngineInstance(getPool(), {
           organizationId: resolved.tenant.organization.id,
           slug: resolved.organizationKey,
+          branchId: editorBranchId(resolved),
           actorIdentityId: actorUserId(req),
         });
         if (!found.ok || !found.instance) {
@@ -260,7 +288,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
               await saveInlineFieldDraft(getPool(), {
                 organizationId: resolved.tenant.organization.id,
                 churchId: resolved.tenant.church.id,
-                branchId: null,
+                branchId: editorBranchId(resolved),
                 editorUserId: actorUserId(req),
                 pageKey: locator.pageKey,
                 sectionKey: locator.sectionKey,
@@ -288,7 +316,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       const engineSaved = await saveFieldDraft(getPool(), {
         organizationId: resolved.tenant.organization.id,
         churchId: resolved.tenant.church.id,
-        branchId: null,
+        branchId: editorBranchId(resolved),
         pageKey: locator.pageKey,
         sectionKey: locator.sectionKey,
         fieldKey: locator.fieldKey,
@@ -305,7 +333,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           await saveInlineFieldDraft(getPool(), {
             organizationId: resolved.tenant.organization.id,
             churchId: resolved.tenant.church.id,
-            branchId: null,
+            branchId: editorBranchId(resolved),
             editorUserId: actorUserId(req),
             pageKey: locator.pageKey,
             sectionKey: locator.sectionKey,
@@ -344,7 +372,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       const result = await applySectionAction(getPool(), {
         organizationId: resolved.tenant.organization.id,
         churchId: resolved.tenant.church.id,
-        branchId: null,
+        branchId: editorBranchId(resolved),
         editorUserId: actorUserId(req),
         actorRole: "church_hq_admin",
         pageKey: body.pageKey,
@@ -371,6 +399,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       const dest = buildPublicWebsitePreviewPath({
         product: PRODUCT_CODE.BLESSBOARD,
         organizationKey: resolved.organizationKey,
+        scope: editorScope(resolved),
       });
       return res.redirect(303, dest || appendQuery(req.originalUrl || "/", { website_mode: "draft" }));
     } catch (err) {
@@ -396,7 +425,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         const result = await discardWebsiteDrafts(getPool(), {
           organizationId: resolved.tenant.organization.id,
           churchId: resolved.tenant.church.id,
-          branchId: null,
+          branchId: editorBranchId(resolved),
           actorUserId: actorUserId(req),
           confirmDiscard: req.body && req.body.confirm_discard,
           actorRole: "church_hq_admin",
@@ -408,11 +437,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
             discarded: result.discarded || 0,
           });
         }
-        const publicPath =
-          buildPublicOrganizationWebsitePath({
-            product: PRODUCT_CODE.BLESSBOARD,
-            organizationKey: resolved.organizationKey,
-          }) || "/";
+        const publicPath = editorPublicBase(resolved) || "/";
         if (!result.ok) {
           return res.redirect(303, `${publicPath}?website_discard_error=1`);
         }
@@ -436,6 +461,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       const published = await publishChurchWebsite(getPool(), {
           churchId: resolved.tenant.church.id,
           organizationId: resolved.tenant.organization.id,
+          branchId: editorBranchId(resolved),
           actorUserId: actorUserId(req),
           deferServiceTimes: true,
           confirmPublish: true,
@@ -466,10 +492,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           `/hq/website/publish/error?codes=${encodeURIComponent(codeList)}`
         );
       }
-      const publicPath = buildPublicOrganizationWebsitePath({
-        product: PRODUCT_CODE.BLESSBOARD,
-        organizationKey: resolved.organizationKey,
-      });
+      const publicPath = editorPublicBase(resolved);
       const successQuery = {
         website_published: "1",
         website_edit: "1",
@@ -494,6 +517,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       const found = await resolveEngineInstance(getPool(), {
         organizationId: resolved.tenant.organization.id,
         slug: resolved.organizationKey,
+        branchId: editorBranchId(resolved),
         createIfMissing: false,
       });
       if (!found.ok || !found.instance) {
@@ -539,6 +563,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       const found = await resolveEngineInstance(getPool(), {
         organizationId,
         slug: resolved.organizationKey,
+        branchId: editorBranchId(resolved),
         createIfMissing: false,
       });
       if (!found.ok || !found.instance || loaded.media.instanceId !== found.instance.id) {
@@ -557,7 +582,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           resourceContext: {
             organizationId,
             churchId: resolved.tenant.church.id,
-            branchId: null,
+            branchId: editorBranchId(resolved),
           },
         });
         if (!authz.allowed) {
@@ -610,6 +635,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       const found = await resolveEngineInstance(getPool(), {
         organizationId: resolved.tenant.organization.id,
         slug: resolved.organizationKey,
+        branchId: editorBranchId(resolved),
         actorIdentityId: actorUserId(req),
       });
       if (!found.ok || !found.instance) {
@@ -666,7 +692,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           ? res.status(404).type("text").send("Website not found")
           : json(res, 404, { ok: false, code: "website_instance_not_found" });
       }
-      const granted = await grantedWebsitePermissions(req, resolved.tenant);
+      const granted = await grantedWebsitePermissions(req, resolved.tenant, editorBranchId(resolved));
       const canRestore =
         granted.includes("website.restore") || granted.includes("website.rollback");
       const env = getEnv();
@@ -736,7 +762,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         if (!found.ok || !found.instance) {
           return json(res, 404, { ok: false, code: "website_instance_not_found" });
         }
-        const granted = await grantedWebsitePermissions(req, resolved.tenant);
+        const granted = await grantedWebsitePermissions(req, resolved.tenant, editorBranchId(resolved));
         const restored = await publicationService.restoreWebsiteVersionToDraft(getPool(), {
           organizationId: resolved.tenant.organization.id,
           instanceId: found.instance.id,
@@ -1095,7 +1121,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           productCode: PRODUCT_CODE.BLESSBOARD,
           organizationId: resolved.tenant.organization.id,
           churchId: resolved.tenant.church.id,
-          branchId: null,
+          branchId: editorBranchId(resolved),
           pageKey: req.query.pageKey,
           grantedPermissions: ["website.edit"],
         });
@@ -1120,7 +1146,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           productCode: PRODUCT_CODE.BLESSBOARD,
           organizationId: resolved.tenant.organization.id,
           churchId: resolved.tenant.church.id,
-          branchId: null,
+          branchId: editorBranchId(resolved),
           editorUserId: actorUserId(req),
           pageKey: body.pageKey,
           type: body.type,
@@ -1183,6 +1209,20 @@ async function resolvePathEditorTenant(getPool, req, organizationKeyRaw) {
   return { tenant, organizationKey: keyNorm.key };
 }
 
+async function resolvePathBranchEditorTenant(getPool, req, organizationKeyRaw, branchKeyRaw) {
+  const base = await resolvePathEditorTenant(getPool, req, organizationKeyRaw);
+  if (!base || !base.tenant || !base.tenant.church || !base.tenant.church.id) return null;
+  const branchKey = String(branchKeyRaw || "").trim().toLowerCase();
+  if (!branchKey) return null;
+  const branch = await findBranchByChurchAndKey(getPool, base.tenant.church.id, branchKey);
+  if (!branch || !branch.id) return null;
+  return {
+    ...base,
+    branchId: String(branch.id),
+    branchKey: String(branch.branch_key || branchKey).trim(),
+  };
+}
+
 function createBlessBoardPathWebsiteEditorRouter(deps) {
   const router = express.Router();
   const getPool = deps.getPool;
@@ -1193,6 +1233,35 @@ function createBlessBoardPathWebsiteEditorRouter(deps) {
     resolveTenant: async (req, res) => {
       try {
         const resolved = await resolvePathEditorTenant(getPool(), req, req.params.organizationKey);
+        if (!resolved) {
+          json(res, 404, { ok: false, code: "not_found" });
+          return null;
+        }
+        return resolved;
+      } catch {
+        json(res, 503, { ok: false, code: "lookup_error" });
+        return null;
+      }
+    },
+  });
+  return router;
+}
+
+function createBlessBoardPathBranchWebsiteEditorRouter(deps) {
+  const router = express.Router({ mergeParams: true });
+  const getPool = deps.getPool;
+  attachBlessBoardWebsiteEditorRoutes(router, {
+    getPool,
+    getEnv: deps.getEnv,
+    pathPrefix: "/c/:organizationKey/:branchKey",
+    resolveTenant: async (req, res) => {
+      try {
+        const resolved = await resolvePathBranchEditorTenant(
+          getPool(),
+          req,
+          req.params.organizationKey,
+          req.params.branchKey
+        );
         if (!resolved) {
           json(res, 404, { ok: false, code: "not_found" });
           return null;
@@ -1232,6 +1301,7 @@ function createBlessBoardTenantWebsiteEditorRouter(deps) {
 
 module.exports = {
   createBlessBoardPathWebsiteEditorRouter,
+  createBlessBoardPathBranchWebsiteEditorRouter,
   createBlessBoardTenantWebsiteEditorRouter,
   attachBlessBoardWebsiteEditorRoutes,
 };

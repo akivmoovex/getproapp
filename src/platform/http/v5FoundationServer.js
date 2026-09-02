@@ -82,6 +82,7 @@ const { createTenantPublicRouter } = require("../../blessboard/http/tenantPublic
 const { createPathPublicRouter } = require("../../blessboard/http/pathPublicRoutes");
 const {
   createBlessBoardPathWebsiteEditorRouter,
+  createBlessBoardPathBranchWebsiteEditorRouter,
   createBlessBoardTenantWebsiteEditorRouter,
 } = require("../../blessboard/http/blessboardWebsiteEditorRoutes");
 const {
@@ -981,6 +982,12 @@ function createV5FoundationApp(options) {
   );
   app.use(
     createBlessBoardPathWebsiteEditorRouter({
+      getPool,
+      getEnv: () => env,
+    })
+  );
+  app.use(
+    createBlessBoardPathBranchWebsiteEditorRouter({
       getPool,
       getEnv: () => env,
     })
