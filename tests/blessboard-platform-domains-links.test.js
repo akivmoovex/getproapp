@@ -162,7 +162,7 @@ describe("blessboard platform domains and links", () => {
 
   it("resolves canonical church and branch public paths", () => {
     assert.equal(publicChurchHomePath("links-sys-org"), "/c/links-sys-org");
-    assert.equal(publicBranchHomePath("links-sys-org", "hq"), "/c/links-sys-org/branches/hq");
+    assert.equal(publicBranchHomePath("links-sys-org", "hq"), "/c/links-sys-org/hq");
   });
 
   it("lists public links without secrets or token leakage", async () => {

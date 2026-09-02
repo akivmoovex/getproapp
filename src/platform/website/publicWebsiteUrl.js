@@ -164,7 +164,7 @@ function buildPublicOrganizationWebsitePath(input) {
       : "";
   let path = `${prefix}/${encodeURIComponent(organizationKey)}`;
   if (product === PRODUCT_CODE.BLESSBOARD && branchKey) {
-    path = `${path}/branches/${encodeURIComponent(branchKey)}`;
+    path = `${path}/${encodeURIComponent(branchKey)}`;
   }
   path = appendPage(path, input && input.pageKey);
   path = `${path}${normalizeSuffix(input && input.suffix)}`;
@@ -466,7 +466,22 @@ function canonicalPublicWebsiteRedirect(product, reqPath, options) {
       const mappedBranch = options.remapBranchKey(organizationKey, branchKey);
       if (mappedBranch) branchKey = String(mappedBranch).trim().toLowerCase() || branchKey;
     }
-    if (branchKey) segments[2] = encodeURIComponent(branchKey);
+    if (branchKey) {
+      // Legacy /c/:org/branches/:branch → canonical /c/:org/:branch
+      segments.splice(1, 2, encodeURIComponent(branchKey));
+    }
+  } else if (productCode === PRODUCT_CODE.BLESSBOARD && segments[1]) {
+    let branchKey = String(decodeURIComponent(segments[1]) || "")
+      .trim()
+      .toLowerCase();
+    if (options && options.canonicalBranchKey) {
+      branchKey = String(options.canonicalBranchKey).trim().toLowerCase() || branchKey;
+    }
+    if (options && typeof options.remapBranchKey === "function") {
+      const mappedBranch = options.remapBranchKey(organizationKey, branchKey);
+      if (mappedBranch) branchKey = String(mappedBranch).trim().toLowerCase() || branchKey;
+    }
+    if (branchKey) segments[1] = encodeURIComponent(branchKey);
   }
 
   const rebuilt = `${prefix}/${segments.join("/")}`;

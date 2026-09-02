@@ -1246,7 +1246,8 @@ async function loadTenantPublicPageModel(db, input) {
       ? ""
       : String(publicChurchHomePath(organizationKey) || "").replace(/\/$/, "");
 
-  const seoPathPrefix = discoverySingleSite ? churchWidePathPrefix : pathPrefix;
+  // Canonical public URLs always use the caller's branch-scoped prefix when provided.
+  const seoPathPrefix = pathPrefix || churchWidePathPrefix;
 
   let seoOverrides =
     websiteResolved && websiteResolved.flat ? { ...websiteResolved.flat } : {};
@@ -1653,7 +1654,7 @@ async function loadTenantPublicPageModel(db, input) {
 
   const resolvedFooterTagline = footerTagline || demoPack.footer.description;
 
-  const navPathPrefix = discoverySingleSite ? churchWidePathPrefix : pathPrefix;
+  const navPathPrefix = pathPrefix || churchWidePathPrefix;
 
   // Navigation ministries: lightweight published list for dropdown labels.
   let navMinistries = [];

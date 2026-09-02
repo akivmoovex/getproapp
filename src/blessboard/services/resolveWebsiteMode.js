@@ -90,7 +90,7 @@ function deriveWebsiteMode(activeBranches) {
  * @param {string | { id?: string, key?: string, branchKey?: string } | null | undefined} branchRef
  */
 function branchMayHaveIndependentPublicWebsite(mode, branchRef) {
-  if (!mode || mode.ok !== true || mode.websiteMode !== WEBSITE_MODE.MULTI_SITE) {
+  if (!mode || mode.ok !== true) {
     return false;
   }
   if (branchRef == null) return false;

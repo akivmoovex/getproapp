@@ -112,29 +112,23 @@ function buildTenantPublicDiscoveryUrls(input) {
     urls.push(abs);
   }
 
-  for (const pageKey of pageKeys) {
-    pushPath(churchWidePagePath({ routingMode, organizationKey, pageKey }));
-  }
-
-  if (mode === WEBSITE_MODE.MULTI_SITE) {
-    const branches = Array.isArray(input.activeBranches) ? input.activeBranches : [];
-    const excluded =
-      input.excludeBranchKeys instanceof Set
-        ? input.excludeBranchKeys
-        : new Set(Array.isArray(input.excludeBranchKeys) ? input.excludeBranchKeys : []);
-    for (const branch of branches) {
-      const key = branch && branch.key ? String(branch.key) : "";
-      if (!key || excluded.has(key)) continue;
-      for (const pageKey of pageKeys) {
-        pushPath(
-          branchPagePath({
-            routingMode,
-            organizationKey,
-            branchKey: key,
-            pageKey,
-          })
-        );
-      }
+  const branches = Array.isArray(input.activeBranches) ? input.activeBranches : [];
+  const excluded =
+    input.excludeBranchKeys instanceof Set
+      ? input.excludeBranchKeys
+      : new Set(Array.isArray(input.excludeBranchKeys) ? input.excludeBranchKeys : []);
+  for (const branch of branches) {
+    const key = branch && branch.key ? String(branch.key) : "";
+    if (!key || excluded.has(key)) continue;
+    for (const pageKey of pageKeys) {
+      pushPath(
+        branchPagePath({
+          routingMode,
+          organizationKey,
+          branchKey: key,
+          pageKey,
+        })
+      );
     }
   }
 
@@ -162,43 +156,11 @@ function buildTenantPublicSitemapXml(absoluteUrls) {
  */
 function buildPublicBranchDiscovery(input) {
   const mode = input.websiteMode;
-  const churchHomeHref = input.churchHomeHref || "/";
   const routingMode = input.routingMode === "tenant" ? "tenant" : "path";
   const organizationKey = input.organizationKey || null;
   const currentKey = input.currentBranchKey ? String(input.currentBranchKey) : null;
   const branches =
     mode && Array.isArray(mode.activeBranches) ? mode.activeBranches : [];
-
-  if (!mode || !mode.ok || mode.websiteMode !== WEBSITE_MODE.MULTI_SITE) {
-    // single_site: location entities may list campuses, but website href is unified.
-    const locations = branches.map((b) => ({
-      key: b.key,
-      displayName: b.displayName,
-      isPrimary: Boolean(b.isPrimary),
-      kind: "location",
-      websiteHref: churchHomeHref,
-      isCurrent: currentKey ? b.key === currentKey : Boolean(b.isPrimary),
-    }));
-    return {
-      websiteMode: WEBSITE_MODE.SINGLE_SITE,
-      branchSwitcher: [],
-      branchLocations: locations,
-    };
-  }
-
-  const branchSwitcher = branches.map((b) => {
-    const href =
-      routingMode === "tenant"
-        ? tenantBranchPagePath(b.key, "home")
-        : publicBranchPagePath(organizationKey, b.key, "home");
-    return {
-      key: b.key,
-      displayName: b.displayName,
-      isPrimary: Boolean(b.isPrimary),
-      isCurrent: currentKey ? b.key === currentKey : false,
-      href,
-    };
-  });
 
   const branchLocations = branches.map((b) => ({
     key: b.key,
@@ -209,11 +171,19 @@ function buildPublicBranchDiscovery(input) {
       routingMode === "tenant"
         ? tenantBranchPagePath(b.key, "home")
         : publicBranchPagePath(organizationKey, b.key, "home"),
-    isCurrent: currentKey ? b.key === currentKey : false,
+    isCurrent: currentKey ? b.key === currentKey : Boolean(b.isPrimary),
+  }));
+
+  const branchSwitcher = branchLocations.map((loc) => ({
+    key: loc.key,
+    displayName: loc.displayName,
+    isPrimary: loc.isPrimary,
+    isCurrent: loc.isCurrent,
+    href: loc.websiteHref,
   }));
 
   return {
-    websiteMode: WEBSITE_MODE.MULTI_SITE,
+    websiteMode: mode && mode.websiteMode ? mode.websiteMode : WEBSITE_MODE.SINGLE_SITE,
     branchSwitcher,
     branchLocations,
   };

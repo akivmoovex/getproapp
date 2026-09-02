@@ -274,11 +274,12 @@ function validatePlatformChurchRegistration(body, opts = {}) {
   const contactName = trim((body && (body.contact_name || body.full_name)) || "", 200);
   const roleInChurch = trim(body && body.role_in_church, 120) || null;
   const branchPrepared = prepareBranchDisplayName(body && body.branch_name, {
-    required: false,
+    required: true,
     field: "branch_name",
+    emptyMessage: "Please enter a branch name.",
   });
   if (!branchPrepared.ok) return branchPrepared;
-  const branchName = branchPrepared.display || null;
+  const branchName = branchPrepared.display;
   const branchCount = trim(body && body.branch_count, 20) || null;
   const message = trim(body && body.message, 5000) || null;
   const selectedPlan =
@@ -433,8 +434,9 @@ function validateChurchRegistrationChurchStep(body, opts = {}) {
   const countryResult = validateChurchCountry(body && body.country);
   const city = trim(body && body.city, 120);
   const branchPrepared = prepareBranchDisplayName(body && body.branch_name, {
-    required: false,
+    required: true,
     field: "branch_name",
+    emptyMessage: "Please enter a branch name.",
   });
   if (!branchPrepared.ok) return branchPrepared;
   const branchCount = trim(body && body.branch_count, 20) || null;
@@ -478,7 +480,7 @@ function validateChurchRegistrationChurchStep(body, opts = {}) {
       church_name: churchName,
       country: countryResult.value,
       city,
-      branch_name: branchPrepared.display || null,
+      branch_name: branchPrepared.display,
       branch_count: branchCount,
       selected_plan: selectedPlan,
       message: trim(body && body.message, 5000) || null,

@@ -2544,11 +2544,24 @@ async function findProvisionedOrganizationByPublicReference(client, publicRefere
   const r = await client.query(
     `SELECT a.organization_id,
             o.organization_key,
-            COALESCE(cs.website_status, 'draft') AS website_status
+            COALESCE(cs.website_status, 'draft') AS website_status,
+            COALESCE(
+              primary_b.branch_key,
+              hq.branch_key,
+              'hq'
+            ) AS primary_branch_key
        FROM ${TARGET_RELATION} a
        INNER JOIN platform.organizations o ON o.id = a.organization_id
        LEFT JOIN blessboard.churches c ON c.organization_id = a.organization_id
        LEFT JOIN blessboard.church_settings cs ON cs.church_id = c.id
+       LEFT JOIN blessboard.branches primary_b
+         ON primary_b.church_id = c.id
+        AND primary_b.is_primary = true
+        AND primary_b.status = 'active'
+       LEFT JOIN blessboard.branches hq
+         ON hq.church_id = c.id
+        AND hq.branch_type = 'hq'
+        AND hq.status = 'active'
       WHERE a.public_registration_reference = $1
         AND a.provisioning_status = 'provisioned'
         AND a.organization_id IS NOT NULL
@@ -2560,6 +2573,8 @@ async function findProvisionedOrganizationByPublicReference(client, publicRefere
   return {
     organizationId: String(row.organization_id),
     organizationKey: String(row.organization_key),
+    primaryBranchKey: String(row.primary_branch_key || "hq"),
+    hqBranchKey: String(row.primary_branch_key || "hq"),
     websitePublished: String(row.website_status || "").toLowerCase() === "published",
   };
 }

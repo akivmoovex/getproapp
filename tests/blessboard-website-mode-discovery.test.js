@@ -72,20 +72,15 @@ describe("blessboard website mode discovery (pure)", () => {
     isPrimary: false,
   };
 
-  it("single-site sitemap excludes branch website URLs", () => {
+  it("single-site sitemap lists primary branch website URLs only", () => {
     const urls = buildTenantPublicDiscoveryUrls({
       hostname: "church.example",
       routingMode: "tenant",
       websiteMode: WEBSITE_MODE.SINGLE_SITE,
       activeBranches: [hq],
     });
-    assert.ok(urls.includes("https://church.example/"));
-    assert.ok(urls.includes("https://church.example/about"));
-    assert.equal(
-      urls.some((u) => u.includes("/branches/")),
-      false,
-      "single-site must not list branch website paths"
-    );
+    assert.ok(urls.includes("https://church.example/branches/hq"));
+    assert.ok(urls.includes("https://church.example/branches/hq/about"));
     assert.equal(new Set(urls).size, urls.length, "no duplicate canonical URLs");
   });
 
@@ -102,7 +97,7 @@ describe("blessboard website mode discovery (pure)", () => {
     assert.equal(seo.ogUrl, "https://church.example/about");
   });
 
-  it("single-site branch card links to unified website", () => {
+  it("single-site branch card links to branch website", () => {
     const mode = deriveWebsiteMode([hq]);
     const discovery = buildPublicBranchDiscovery({
       websiteMode: mode,
@@ -110,21 +105,19 @@ describe("blessboard website mode discovery (pure)", () => {
       churchHomeHref: "/",
     });
     assert.equal(discovery.websiteMode, WEBSITE_MODE.SINGLE_SITE);
-    assert.deepEqual(discovery.branchSwitcher, []);
+    assert.equal(discovery.branchSwitcher.length, 1);
     assert.equal(discovery.branchLocations.length, 1);
-    assert.equal(discovery.branchLocations[0].websiteHref, "/");
+    assert.equal(discovery.branchLocations[0].websiteHref, "/branches/hq");
     assert.equal(discovery.branchLocations[0].kind, "location");
   });
 
-  it("multi-site sitemap includes HQ and active branches; inactive excluded", () => {
+  it("multi-site sitemap includes active branch websites; inactive excluded", () => {
     const urls = buildTenantPublicDiscoveryUrls({
       hostname: "multi.example",
       routingMode: "tenant",
       websiteMode: WEBSITE_MODE.MULTI_SITE,
       activeBranches: [hq, east],
     });
-    assert.ok(urls.includes("https://multi.example/"));
-    assert.ok(urls.includes("https://multi.example/about"));
     assert.ok(urls.includes("https://multi.example/branches/hq"));
     assert.ok(urls.includes("https://multi.example/branches/campus-east"));
     assert.ok(urls.includes("https://multi.example/branches/campus-east/about"));
@@ -157,10 +150,10 @@ describe("blessboard website mode discovery (pure)", () => {
       websiteMode: WEBSITE_MODE.MULTI_SITE,
       activeBranches: [hq, east],
     });
-    assert.ok(urls.includes("https://blessboard.org/c/demo-church"));
-    assert.ok(urls.includes("https://blessboard.org/c/demo-church/branches/campus-east"));
+    assert.ok(urls.includes("https://blessboard.org/c/demo-church/hq"));
+    assert.ok(urls.includes("https://blessboard.org/c/demo-church/campus-east"));
     const xml = buildTenantPublicSitemapXml(urls);
-    assert.match(xml, /<loc>https:\/\/blessboard\.org\/c\/demo-church<\/loc>/);
+    assert.match(xml, /<loc>https:\/\/blessboard\.org\/c\/demo-church\/hq<\/loc>/);
     assert.equal(new Set(urls).size, urls.length);
   });
 });
@@ -324,7 +317,7 @@ describe("blessboard website mode discovery (integration)", () => {
     if (skipSuite) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
   }
 
-  it("single-site model: empty switcher, locations point to church home, church-wide canonical", async () => {
+  it("single-site model: branch switcher and branch-scoped canonical", async () => {
     requireDb();
     const model = await loadTenantPublicPageModel(pool, {
       tenant: tenantSingle,
@@ -341,27 +334,22 @@ describe("blessboard website mode discovery (integration)", () => {
     });
     assert.equal(model.kind, KIND.OK);
     assert.equal(model.websiteMode, WEBSITE_MODE.SINGLE_SITE);
-    assert.deepEqual(model.branchSwitcher, []);
+    assert.ok(model.branchSwitcher.length >= 1);
     assert.ok(model.branchLocations.length >= 1);
     for (const loc of model.branchLocations) {
-      assert.equal(loc.websiteHref, "/");
+      assert.match(loc.websiteHref, /^\/branches\//);
     }
-    assert.equal(model.canonicalUrl, `https://${HOST_SINGLE}/`);
-    assert.equal(model.seo.ogUrl, `https://${HOST_SINGLE}/`);
-    assert.equal(model.pathPrefix, "");
-    assert.equal(
-      Object.values(model.publicPaths).some((p) => String(p).includes("/branches/")),
-      false
-    );
+    assert.equal(model.canonicalUrl, `https://${HOST_SINGLE}/branches/hq`);
+    assert.equal(model.seo.ogUrl, `https://${HOST_SINGLE}/branches/hq`);
+    assert.equal(model.pathPrefix, `/branches/${hqSingle.key}`);
   });
 
-  it("single-site tenant sitemap excludes branch website URLs", async () => {
+  it("single-site tenant sitemap lists branch website URLs", async () => {
     requireDb();
     const res = await request(app).get("/sitemap.xml").set("Host", HOST_SINGLE);
     assert.equal(res.status, 200);
     assert.match(res.headers["content-type"], /xml/);
-    assert.match(res.text, new RegExp(`https://${HOST_SINGLE}/`));
-    assert.doesNotMatch(res.text, /\/branches\//);
+    assert.match(res.text, /\/branches\/hq/);
   });
 
   it("multi-site model: switcher + branch cards use branch websites; HQ canonical church-wide", async () => {
@@ -406,7 +394,6 @@ describe("blessboard website mode discovery (integration)", () => {
     requireDb();
     const res = await request(app).get("/sitemap.xml").set("Host", HOST_MULTI);
     assert.equal(res.status, 200);
-    assert.match(res.text, new RegExp(`https://${HOST_MULTI}/`));
     assert.match(res.text, /\/branches\/hq/);
     assert.match(res.text, /\/branches\/campus-east/);
     assert.doesNotMatch(res.text, /campus-old/);
@@ -415,32 +402,36 @@ describe("blessboard website mode discovery (integration)", () => {
     assert.equal(new Set(locs).size, locs.length, "no duplicate canonical URLs in sitemap");
   });
 
-  it("path-mode single-site sitemap excludes branch website", async () => {
+  it("path-mode single-site sitemap lists branch website URLs", async () => {
     requireDb();
     const res = await request(app)
       .get("/c/wm-disc-single/sitemap.xml")
       .set("Host", "blessboard.org");
     assert.equal(res.status, 200);
-    assert.match(res.text, /\/c\/wm-disc-single<\/loc>/);
-    assert.doesNotMatch(res.text, /\/branches\//);
+    assert.match(res.text, /\/c\/wm-disc-single\/hq<\/loc>/);
   });
 
-  it("path-mode single-site keeps church-wide /c/:org nav and canonical", async () => {
+  it("path-mode single-site keeps branch-scoped /c/:org/:branch nav and canonical", async () => {
     requireDb();
     const model = await loadTenantPublicPageModel(pool, {
       tenant: tenantSingle,
       pageKey: "about",
       hostname: "blessboard.org",
-      pathPrefix: "/c/wm-disc-single",
-      selectedBranch: null,
+      pathPrefix: "/c/wm-disc-single/hq",
+      selectedBranch: {
+        id: hqSingle.id,
+        key: hqSingle.key,
+        displayName: hqSingle.displayName || "HQ",
+        isPrimary: true,
+      },
       routingMode: "path",
     });
     assert.equal(model.kind, KIND.OK);
     assert.equal(model.websiteMode, WEBSITE_MODE.SINGLE_SITE);
-    assert.equal(model.canonicalUrl, "https://blessboard.org/c/wm-disc-single/about");
-    assert.equal(model.pathPrefix, "/c/wm-disc-single");
-    assert.equal(model.homeHref, "/c/wm-disc-single");
+    assert.equal(model.canonicalUrl, "https://blessboard.org/c/wm-disc-single/hq/about");
+    assert.equal(model.pathPrefix, "/c/wm-disc-single/hq");
+    assert.equal(model.homeHref, "/c/wm-disc-single/hq");
     const aboutNav = model.navItems.find((i) => i.key === "about");
-    assert.equal(aboutNav.href, "/c/wm-disc-single/about");
+    assert.equal(aboutNav.href, "/c/wm-disc-single/hq/about");
   });
 });

@@ -84,11 +84,15 @@ async function searchPublicOrganizations(pool, opts = {}) {
   const offset = (page - 1) * limit;
 
   const params = [];
-  const { sqlPublicDirectoryEnvironmentFilter } = require("../../church/orgDataEnvironment");
+  const {
+    sqlPublicDirectoryEnvironmentFilter,
+    sqlPublicDirectoryProductionDemoNameExclusion,
+  } = require("../../church/orgDataEnvironment");
   const clauses = [
     `o.status = 'active'`,
     `c.status = 'active'`,
     sqlPublicDirectoryEnvironmentFilter("o", opts.env),
+    sqlPublicDirectoryProductionDemoNameExclusion(opts.env),
     // Missing church_settings is not an explicit unpublish (provisioning may omit the row).
     // Explicit draft/suspended remain hidden.
     `(cs.website_status IS NULL OR cs.website_status = 'published')`,

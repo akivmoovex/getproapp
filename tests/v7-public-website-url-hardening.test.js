@@ -182,7 +182,7 @@ describe("v7 public website URL hardening", () => {
 
     const legacyBranch = await request(app).get("/c/demo/branches/lusaka?keep=1");
     assert.equal(legacyBranch.status, 301);
-    assert.equal(legacyBranch.headers.location, "/c/demo-church/branches/demo-church-lusaka?keep=1");
+    assert.equal(legacyBranch.headers.location, "/c/demo-church/demo-church-lusaka?keep=1");
 
     const canonical = await request(app).get("/c/demo-church/about?keep=1");
     assert.equal(canonical.status, 200);
@@ -199,7 +199,7 @@ describe("v7 public website URL hardening", () => {
       "/clinics/sunrise-clinic/about?keep=1",
       "/c/sunrise-church",
       "/c/sunrise-church/about?keep=1",
-      "/c/demo-church/branches/demo-church-lusaka",
+      "/c/demo-church/demo-church-lusaka",
     ];
     for (const path of already) {
       const dest = canonicalPublicWebsiteRedirect(

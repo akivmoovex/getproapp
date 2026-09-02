@@ -213,15 +213,15 @@ describe("v7 unified website URLs", () => {
         organizationKey: "grace",
         scope: { kind: "branch", branchKey: "campus-east" },
       }),
-      "/c/grace/branches/campus-east"
+      "/c/grace/campus-east"
     );
     assert.equal(
       publicBranchHomePath("grace", "campus-east"),
-      "/c/grace/branches/campus-east"
+      "/c/grace/campus-east"
     );
     assert.equal(
       publicBranchPagePath("grace", "campus-east", "about"),
-      "/c/grace/branches/campus-east/about"
+      "/c/grace/campus-east/about"
     );
     assert.equal(
       churchWidePublicPathForPage({
@@ -302,7 +302,7 @@ describe("v7 unified website URLs", () => {
             org === "demo-church" && branch === "lusaka" ? "demo-church-lusaka" : branch,
         }
       ),
-      "/c/demo-church/branches/demo-church-lusaka/about?keep=1"
+      "/c/demo-church/demo-church-lusaka/about?keep=1"
     );
     assert.equal(
       canonicalPublicWebsiteRedirect(PRODUCT_CODE.BLESSBOARD, "/c/demo-church/about?keep=1", {

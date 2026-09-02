@@ -13,7 +13,7 @@ const {
   PRODUCT_CODE,
   buildPublicWebsiteEditPath,
 } = require("../../platform/website/publicWebsiteUrl");
-const { publicChurchHomePath } = require("../urls/churchUrlHelper");
+const { publicBranchHomePath } = require("../urls/churchUrlHelper");
 
 /**
  * @param {import('pg').Pool | { query: Function }} db
@@ -80,11 +80,13 @@ async function resolveBlessBoardRegistrationSuccessWebsite(db, input) {
   }
 
   const organizationKey = String(resolved.organizationKey);
-  const publicPath = publicChurchHomePath(organizationKey);
+  const branchKey = String(resolved.primaryBranchKey || resolved.hqBranchKey || "hq");
+  const publicPath = publicBranchHomePath(organizationKey, branchKey);
   const editPath =
     buildPublicWebsiteEditPath({
       product: PRODUCT_CODE.BLESSBOARD,
       organizationKey,
+      scope: { kind: "branch", branchKey },
     }) || null;
   const origin = String((input && input.publicOrigin) || "").replace(/\/$/, "");
   const publicUrl = origin && publicPath ? `${origin}${publicPath}` : publicPath;

@@ -128,6 +128,21 @@ function sqlPublicDirectoryEnvironmentFilter(alias = "o", appEnv) {
 }
 
 /**
+ * Production deployments only: exclude churches whose public display name contains
+ * "demo" case-insensitively (e.g. Demo Church, My DEMO Church).
+ * Testing/dev deployments show demo-named tenants unchanged.
+ */
+function sqlPublicDirectoryProductionDemoNameExclusion(appEnv) {
+  const { isProductionDeployment } = require("./blessBoardEnv");
+  if (!isProductionDeployment(appEnv)) {
+    return "TRUE";
+  }
+  return `NOT (
+    lower(COALESCE(NULLIF(trim(cs.public_name), ''), c.display_name, o.display_name)) LIKE '%demo%'
+  )`;
+}
+
+/**
  * SQL fragment for production report aggregates (cross-branch KPIs, etc.).
  */
 function sqlReportAggregateEnvironmentFilter(alias = "o") {
@@ -170,6 +185,7 @@ module.exports = {
   isTestEnvironment,
   isNonProductionEnvironment,
   sqlPublicDirectoryEnvironmentFilter,
+  sqlPublicDirectoryProductionDemoNameExclusion,
   sqlReportAggregateEnvironmentFilter,
   sqlExcludeDemoTestFromReports,
 };

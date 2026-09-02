@@ -926,13 +926,18 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       }
       provisioningStage = "organization_key_created";
 
-      const hqNamePrepared = prepareBranchDisplayName(
-        application.branch_name || "Headquarters",
-        { field: "branch_name", required: true, emptyMessage: "Please enter a branch name." }
-      );
-      const hqBranchDisplayName = hqNamePrepared.ok
-        ? hqNamePrepared.display
-        : "Headquarters";
+      const hqNamePrepared = prepareBranchDisplayName(application.branch_name, {
+        field: "branch_name",
+        required: true,
+        emptyMessage: "Please enter a branch name.",
+      });
+      if (!hqNamePrepared.ok) {
+        throw new OrchestratorError(
+          STATUS.INVALID_INPUT,
+          hqNamePrepared.message || "Please enter a branch name."
+        );
+      }
+      const hqBranchDisplayName = hqNamePrepared.display;
 
       provisioningStage = "provision_church_branch";
       const church = await churchProvision.provisionBlessBoardChurch(

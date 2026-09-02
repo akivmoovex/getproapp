@@ -64,7 +64,7 @@ function publicChurchPagePath(organizationKey, pageKey) {
 }
 
 /**
- * Path-public branch mini website home: /c/:organizationKey/branches/:branchKey
+ * Path-public branch mini website home: /c/:organizationKey/:branchKey
  * @param {unknown} organizationKey
  * @param {unknown} branchKey
  * @returns {string | null}

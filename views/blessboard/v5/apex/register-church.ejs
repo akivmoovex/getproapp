@@ -330,7 +330,7 @@
                 <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
                 <% } %>
               </div>
-              <div class="bb-apex-field">
+              <div class="bb-apex-field gp-location-field">
                 <label class="bb-apex-register-label" for="register_city">Town or city</label>
                 <input
                   class="bb-apex-register-input<%= fieldHasError('city') ? ' is-error' : '' %>"
@@ -338,10 +338,17 @@
                   name="city"
                   type="text"
                   required
-                  autocomplete="address-level2"
+                  autocomplete="off"
+                  role="combobox"
+                  aria-autocomplete="list"
+                  aria-expanded="false"
+                  aria-controls="registerCityListbox"
+                  placeholder="Start typing a city or town"
                   value="<%= formData.city || '' %>"
                   <%= fieldHasError('city') ? 'aria-invalid="true"' : '' %>
                 />
+                <input type="hidden" name="locationId" id="registerLocationId" value="<%= formData.locationId || '' %>"/>
+                <div id="registerCityListbox" class="gp-location-listbox" data-gp-location-listbox="1" role="listbox" hidden></div>
                 <% if (fieldHasError('city') && formError) { %>
                 <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
                 <% } %>
@@ -349,8 +356,19 @@
             </div>
             <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
               <div class="bb-apex-field">
-                <label class="bb-apex-register-label" for="register_branch_name">Branch name <span class="bb-apex-register-label__meta">(optional)</span></label>
-                <input class="bb-apex-register-input" id="register_branch_name" name="branch_name" type="text" value="<%= formData.branch_name || '' %>" />
+                <label class="bb-apex-register-label" for="register_branch_name">Branch name</label>
+                <input
+                  class="bb-apex-register-input<%= fieldHasError('branch_name') ? ' is-error' : '' %>"
+                  id="register_branch_name"
+                  name="branch_name"
+                  type="text"
+                  required
+                  value="<%= formData.branch_name || '' %>"
+                  <%= fieldHasError('branch_name') ? 'aria-invalid="true"' : '' %>
+                />
+                <% if (fieldHasError('branch_name') && formError) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% } %>
               </div>
               <div class="bb-apex-field">
                 <label class="bb-apex-register-label" for="register_branch_count">Approximate number of branches <span class="bb-apex-register-label__meta">(optional)</span></label>
