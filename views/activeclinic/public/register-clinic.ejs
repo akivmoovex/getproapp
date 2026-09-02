@@ -80,7 +80,7 @@
       <% if (verr.contactEmail) { %><p class="ac-form-field__error" id="contactEmail-error"><%= verr.contactEmail %></p><% } %>
       <p class="ac-form-hint">Required for this registration path. Sign in uses email or phone.</p>
     </div>
-    <div class="acw-register__grid">
+    <div class="acw-register__grid acw-register__grid--password">
       <div class="ac-form-field<%= verr.password ? ' ac-form-field--error' : '' %>">
         <label for="password">Password <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
         <div class="acw-register__pw-wrap">
@@ -94,19 +94,20 @@
       <div class="ac-form-field<%= verr.passwordConfirm ? ' ac-form-field--error' : '' %>">
         <label for="passwordConfirm">Confirm password <span class="ac-required" aria-hidden="true">*</span><span class="ac-sr-only"> required</span></label>
         <div class="acw-register__pw-wrap">
-          <input id="passwordConfirm" name="passwordConfirm" type="password" required aria-required="true" autocomplete="new-password" minlength="10" maxlength="200" aria-invalid="<%= verr.passwordConfirm ? 'true' : 'false' %>"<% if (verr.passwordConfirm) { %> aria-describedby="passwordConfirm-error"<% } %>/>
+          <input id="passwordConfirm" name="passwordConfirm" type="password" required aria-required="true" autocomplete="new-password" minlength="10" maxlength="200" aria-describedby="password-confirm-status" aria-invalid="<%= verr.passwordConfirm ? 'true' : 'false' %>"<% if (verr.passwordConfirm) { %> aria-describedby="passwordConfirm-error password-confirm-status"<% } %>/>
           <button type="button" class="acw-register__pw-toggle" data-ac-toggle-password="passwordConfirm" aria-label="Show password" aria-pressed="false">
             <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
           </button>
         </div>
         <% if (verr.passwordConfirm) { %><p class="ac-form-field__error" id="passwordConfirm-error"><%= verr.passwordConfirm %></p><% } %>
+        <p class="gp-registration-password-confirm-status" id="password-confirm-status" role="status" aria-live="polite"></p>
       </div>
-    </div>
-    <div class="acw-register__policy" id="password-policy">
-      <%- include('../../platform/partials/registration-password-rules', {
-        passwordRules: typeof passwordRules !== 'undefined' ? passwordRules : [],
-        passwordInputId: 'password',
-      }) %>
+      <div class="acw-register__policy" id="password-policy">
+        <%- include('../../platform/partials/registration-password-rules', {
+          passwordRules: typeof passwordRules !== 'undefined' ? passwordRules : [],
+          passwordInputId: 'password',
+        }) %>
+      </div>
     </div>
     <div class="acw-register__actions">
       <a class="ac-btn ac-btn--secondary" href="<%= typeof registrationStepHref === 'function' ? registrationStepHref('clinic') : '/register-clinic?step=clinic&gpRegNav=1' %>" data-gp-registration-nav="1">
@@ -241,7 +242,9 @@
     if (window.GpRegistrationPasswordRules && document.getElementById("password")) {
       window.GpRegistrationPasswordRules.init({
         passwordInput: "#password",
+        confirmInput: "#passwordConfirm",
         rulesRoot: ".gp-registration-password-rules",
+        confirmStatus: "#password-confirm-status",
         minLength: <%= typeof passwordMin !== 'undefined' ? passwordMin : 10 %>,
         maxLength: <%= typeof passwordMax !== 'undefined' ? passwordMax : 200 %>,
       });

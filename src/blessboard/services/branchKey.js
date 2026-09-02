@@ -81,10 +81,52 @@ function isReservedBranchKey(key) {
   return RESERVED_SET.has(String(key || "").trim().toLowerCase());
 }
 
+/**
+ * Append numeric collision suffix while staying within 64 chars and BRANCH_KEY_RE.
+ * @param {string} base
+ * @param {number} n
+ * @returns {string}
+ */
+function withBranchKeySuffix(base, n) {
+  const root = String(base || "").trim().toLowerCase();
+  if (!root) return "";
+  if (!n || n <= 1) return root.slice(0, 64);
+  const suffix = n < 10 ? `-0${n}` : `-${n}`;
+  const maxRoot = Math.max(1, 64 - suffix.length);
+  let truncated = root.slice(0, maxRoot).replace(/-+$/g, "");
+  if (!truncated) truncated = "b";
+  if (!/^[a-z]/.test(truncated)) truncated = `b-${truncated}`.slice(0, maxRoot);
+  return `${truncated}${suffix}`.slice(0, 64);
+}
+
+/**
+ * Resolve a usable branch key from a display name (registration preview + provisioning).
+ * @param {unknown} raw
+ * @returns {{ ok: true, key: string } | { ok: false, reason: string }}
+ */
+function resolveBaseBranchKey(raw) {
+  const slug = slugifyBranchKey(raw);
+  if (!slug) return { ok: false, reason: "invalid_key" };
+
+  const direct = normalizeBranchKey(slug);
+  if (direct.ok) return direct;
+
+  if (direct.reason === "branch_key" || direct.reason === "reserved_key") {
+    const alts = [`${slug}-branch`, `campus-${slug}`, `b-${slug}`];
+    for (const alt of alts) {
+      const norm = normalizeBranchKey(alt);
+      if (norm.ok) return norm;
+    }
+  }
+  return { ok: false, reason: direct.reason || "invalid_key" };
+}
+
 module.exports = {
   BRANCH_KEY_RE,
   RESERVED_BRANCH_KEYS,
   slugifyBranchKey,
   normalizeBranchKey,
   isReservedBranchKey,
+  withBranchKeySuffix,
+  resolveBaseBranchKey,
 };

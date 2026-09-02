@@ -243,7 +243,7 @@ describe("automatic Foundation registration", () => {
       { instantFreeEnabled: true }
     );
     assert.equal(noTerms.ok, false);
-    assert.equal(noTerms.field, "consent_contact");
+    assert.equal(noTerms.field, "registration_consent");
 
     const badPlan = validatePlatformChurchRegistration(
       { ...base, selected_plan: "enterprise" },
@@ -328,7 +328,7 @@ describe("automatic Foundation registration", () => {
       [orgKey]
     );
     assert.equal(branch.rowCount, 1);
-    assert.equal(branch.rows[0].branch_key, "hq");
+    assert.equal(branch.rows[0].branch_key, "central-branch");
     assert.equal(branch.rows[0].branch_type, "hq");
     assert.equal(branch.rows[0].is_primary, true);
     assert.equal(branch.rows[0].display_name, "Central Branch");

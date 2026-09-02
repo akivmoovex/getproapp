@@ -81,8 +81,50 @@
   color: #027a48;
 }
 
+.gp-registration-password-rules__item.is-unmet {
+  color: rgba(16, 24, 40, 0.72);
+}
+
 .gp-registration-password-rules__item.is-met .gp-registration-password-rules__mark::before {
   content: "✓";
+}
+
+.gp-registration-password-confirm-status {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: rgba(16, 24, 40, 0.72);
+}
+
+.gp-registration-password-confirm-status.is-met {
+  color: #027a48;
+}
+
+.gp-registration-password-confirm-status.is-unmet {
+  color: #b42318;
+}
+
+.gp-registration-password-row,
+.bb-apex-register-form__grid--password,
+.acw-register__grid--password {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem 1.25rem;
+  align-items: start;
+}
+
+.gp-registration-password-row__rules,
+.bb-apex-register-form__password-rules,
+.acw-register__policy {
+  grid-column: 1 / -1;
+}
+
+@media (max-width: 767px) {
+  .gp-registration-password-row,
+  .bb-apex-register-form__grid--password,
+  .acw-register__grid--password {
+    grid-template-columns: minmax(0, 1fr);
+  }
 }
 
 .gp-registration-password-rules__mark::before {

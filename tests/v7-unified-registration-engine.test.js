@@ -399,7 +399,7 @@ describe("V7 unified registration engine", () => {
       [result.records.organizationId]
     );
     assert.equal(hq.rowCount, 1);
-    assert.equal(hq.rows[0].branch_key, "hq");
+    assert.equal(hq.rows[0].branch_key, "main-campus");
     assert.equal(hq.rows[0].branch_type, "hq");
     assert.equal(hq.rows[0].is_primary, true);
   });

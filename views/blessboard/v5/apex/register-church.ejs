@@ -253,7 +253,7 @@
               <span class="material-symbols-outlined" aria-hidden="true">lock</span>
               Administrator password
             </legend>
-            <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
+            <div class="bb-apex-register-form__grid bb-apex-register-form__grid--password">
               <div class="bb-apex-field">
                 <label class="bb-apex-register-label" for="register_password">Password</label>
                 <input
@@ -268,10 +268,6 @@
                 <% if (fieldHasError('password') && formError) { %>
                 <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
                 <% } %>
-                <%- include('../../../platform/partials/registration-password-rules', {
-                  passwordRules: typeof passwordRules !== 'undefined' ? passwordRules : [],
-                  passwordInputId: 'register_password',
-                }) %>
               </div>
               <div class="bb-apex-field">
                 <label class="bb-apex-register-label" for="register_password_confirm">Confirm password</label>
@@ -282,11 +278,19 @@
                   type="password"
                   autocomplete="new-password"
                   required
+                  aria-describedby="password-confirm-status"
                   <%= fieldHasError('password_confirm') ? 'aria-invalid="true"' : '' %>
                 />
                 <% if (fieldHasError('password_confirm') && formError) { %>
                 <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
                 <% } %>
+                <p class="gp-registration-password-confirm-status" id="password-confirm-status" role="status" aria-live="polite"></p>
+              </div>
+              <div class="bb-apex-register-form__password-rules">
+                <%- include('../../../platform/partials/registration-password-rules', {
+                  passwordRules: typeof passwordRules !== 'undefined' ? passwordRules : [],
+                  passwordInputId: 'register_password',
+                }) %>
               </div>
             </div>
           </fieldset>
@@ -453,8 +457,9 @@
                 id="register_church_url"
                 data-bb-church-url="1"
                 tabindex="0"
-              ><span data-bb-church-url-base><%= typeof churchPublicUrlBase !== 'undefined' && churchPublicUrlBase ? churchPublicUrlBase : 'blessboard.com/c/' %></span><span data-bb-org-key-preview><%= orgKeyPreview || 'your-church' %></span></p>
+              ><span data-bb-church-url-preview><%= typeof registrationWebsitePreviewUrl !== 'undefined' && registrationWebsitePreviewUrl ? registrationWebsitePreviewUrl.replace(/^https?:\/\//, '') : ((typeof churchPublicUrlBase !== 'undefined' && churchPublicUrlBase ? churchPublicUrlBase : 'blessboard.com/c/') + (orgKeyPreview || 'your-church') + '/' + (branchKeyPreview || 'your-branch')) %></span></p>
               <input type="hidden" name="organization_key" id="register_organization_key" value="<%= orgKeyPreview || '' %>" autocomplete="off"/>
+              <input type="hidden" name="branch_key_preview" id="register_branch_key_preview" value="<%= branchKeyPreview || '' %>" autocomplete="off"/>
               <p class="bb-apex-mkt-footnote" id="register_organization_key_hint">
                 Created as a draft. It will not be public until you publish it.
               </p>
@@ -499,7 +504,7 @@
 </section>
 
 <script>
-(function () {
+document.addEventListener("DOMContentLoaded", function () {
   var form = document.querySelector("[data-bb-register-form]");
   if (!form) return;
   form.addEventListener("submit", function () {
@@ -510,47 +515,32 @@
     btn.textContent = "Submitting…";
   });
   var nameInput = document.getElementById("register_church_name");
+  var branchInput = document.getElementById("register_branch_name");
   var keyInput = document.getElementById("register_organization_key");
-  var preview = document.querySelector("[data-bb-org-key-preview]");
-  var reserved = <%- JSON.stringify((typeof reservedOrganizationKeys !== 'undefined' && reservedOrganizationKeys) || []) %>;
-  function slugifyKey(raw) {
-    var s = String(raw || "")
-      .toLowerCase()
-      .normalize("NFKD")
-      .replace(/[\u0300-\u036f]/g, "")
-      .replace(/[^a-z0-9]+/g, "-")
-      .replace(/^-+|-+$/g, "")
-      .replace(/-{2,}/g, "-")
-      .slice(0, 64);
-    if (!s) return "your-church";
-    if (!/^[a-z]/.test(s)) s = ("c-" + s).slice(0, 64);
-    if (reserved.indexOf(s) !== -1) {
-      var alt = (s + "-church").slice(0, 64);
-      if (reserved.indexOf(alt) === -1) return alt;
-    }
-    return s;
-  }
-  function syncChurchUrl() {
-    if (!preview) return;
-    var slug = slugifyKey(nameInput ? nameInput.value : "");
-    preview.textContent = slug;
-    if (keyInput) keyInput.value = slug === "your-church" ? "" : slug;
-  }
-  if (nameInput) {
-    nameInput.addEventListener("input", syncChurchUrl);
-    if (!preview || !preview.textContent || preview.textContent === "your-key" || preview.textContent === "your-church") {
-      syncChurchUrl();
-    }
+  var branchKeyInput = document.getElementById("register_branch_key_preview");
+  var previewHost = <%- JSON.stringify(String(churchPublicHost || "").replace(/\/$/, "")) %>;
+  var previewOrigin = previewHost ? ("https://" + previewHost) : "https://blessboard.com";
+  if (window.GpRegistrationSlugPreview) {
+    window.GpRegistrationSlugPreview.initBlessBoardRegistrationUrlPreview({
+      churchInput: nameInput,
+      branchInput: branchInput,
+      previewEl: document.querySelector("[data-bb-church-url-preview]"),
+      orgHiddenInput: keyInput,
+      branchHiddenInput: branchKeyInput,
+      origin: previewOrigin,
+    });
   }
   if (window.GpRegistrationPasswordRules && document.getElementById("register_password")) {
     window.GpRegistrationPasswordRules.init({
       passwordInput: "#register_password",
+      confirmInput: "#register_password_confirm",
       rulesRoot: ".gp-registration-password-rules",
+      confirmStatus: "#password-confirm-status",
       minLength: <%= typeof passwordMin !== 'undefined' ? passwordMin : 10 %>,
       maxLength: <%= typeof passwordMax !== 'undefined' ? passwordMax : 200 %>,
     });
   }
-})();
+});
 </script>
 
 <%- include('../partials/apex-shell-end') %>

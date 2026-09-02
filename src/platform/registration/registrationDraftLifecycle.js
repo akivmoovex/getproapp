@@ -7,7 +7,11 @@
 
 const REGISTRATION_NAV_PARAM = "gpRegNav";
 
-const PASSWORD_FIELDS = Object.freeze(["password", "password_confirm"]);
+const PASSWORD_FIELDS = Object.freeze([
+  "password",
+  "password_confirm",
+  "passwordConfirm",
+]);
 
 /**
  * @param {import('express').Request|{ query?: object }|null|undefined} reqOrQuery

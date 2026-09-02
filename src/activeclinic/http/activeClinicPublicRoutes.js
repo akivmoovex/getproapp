@@ -91,7 +91,6 @@ const {
 } = require("../../platform/website/publicWebsiteUrl");
 const { buildSitemapXml, buildRobotsTxt } = require("../../platform/website/seoDiscovery");
 const {
-  autocompleteLocations,
   resolveRegistrationLocation,
   persistRegistrationLocation,
 } = require("../../platform/geography/locationService");
@@ -104,8 +103,15 @@ const {
   clearRegistrationDraft,
 } = require("../services/clinicRegistrationDraft");
 const {
-  resolveRegistrationDraftForGet,
-} = require("../../platform/registration/registrationDraftLifecycle");
+  resolveRegistrationTransactionForGet,
+  clearRegistrationTransaction,
+  persistRegistrationPasswordFromBody,
+  mergeRegistrationBodyForValidation,
+} = require("../../platform/registration/registrationTransaction");
+const { PRODUCT } = require("../../platform/registration/constants");
+const {
+  registerPlatformLocationRoutes,
+} = require("../../platform/http/platformLocationRoutes");
 
 /** Absolute https origin for discovery documents. */
 function activeClinicOrigin(req) {
@@ -256,8 +262,6 @@ function registerReviewFormData(formData, validated) {
     notes: n.notes || formData.notes || "",
     phoneCountry: formData.phoneCountry || "",
     phoneNational: formData.phoneNational || "",
-    password: formData.password || "",
-    passwordConfirm: formData.passwordConfirm || "",
   };
 }
 
@@ -330,6 +334,7 @@ async function fetchDirectoryClinics(getPoolFn, env, req, filters) {
  */
 function registerActiveClinicPublicRoutes(app, deps) {
   const getPool = deps.getPool;
+  registerPlatformLocationRoutes(app, { getPool });
   const env = deps.env;
   const isProduction = deps.isProduction;
   const respondDeps = { env, isProduction, issuePageCsrf };
@@ -767,13 +772,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
   app.get("/register-clinic", async (req, res) => {
     const csrfToken = issuePageCsrf(res, env, isProduction, req);
     const wizardStep = resolveRegisterWizardStep(req.query.step);
-    const draftResolution = resolveRegistrationDraftForGet({
+    const draftResolution = resolveRegistrationTransactionForGet({
       req,
       res,
       isProduction,
       clearDraft: clearRegistrationDraft,
       readDraft: readRegistrationDraft,
       env,
+      productCode: PRODUCT.ACTIVECLINIC,
     });
 
     if (!draftResolution.restoreDraft) {
@@ -816,24 +822,13 @@ function registerActiveClinicPublicRoutes(app, deps) {
     })));
   });
 
-  app.get("/api/locations/autocomplete", async (req, res) => {
-    try {
-      const out = await autocompleteLocations(getPool(), {
-        countryCode: req.query.country || req.query.countryCode,
-        query: req.query.q || req.query.query,
-        limit: req.query.limit,
-      });
-      if (!out.ok) {
-        return res.status(400).json({ ok: false, code: out.code || "invalid_country", results: [] });
-      }
-      return res.status(200).json({ ok: true, results: out.results });
-    } catch (err) {
-      return res.status(500).json({ ok: false, results: [] });
-    }
-  });
-
   app.post("/register-clinic", registerLimiter, async (req, res) => {
-    const formData = registerFormDataFromBody(req.body);
+    const draft = readRegistrationDraft(req, env);
+    const mergedBody = mergeRegistrationBodyForValidation(req, env, PRODUCT.ACTIVECLINIC, {
+      ...(draft && draft.formData ? draft.formData : {}),
+      ...(req.body || {}),
+    });
+    const formData = registerFormDataFromBody(mergedBody);
     const action = inferRegisterAction(req.body && req.body.action, formData);
 
     if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
@@ -985,7 +980,11 @@ function registerActiveClinicPublicRoutes(app, deps) {
           }
         }
         if (result.reviewRequired || result.code === SUBMIT_RESULT.REVIEW_REQUIRED) {
-          clearRegistrationDraft(res, { isProduction });
+          clearRegistrationTransaction(res, {
+            isProduction,
+            productCode: PRODUCT.ACTIVECLINIC,
+            clearDraft: clearRegistrationDraft,
+          });
           return res.redirect(303, buildRegistrationSuccessRedirect({
             productCode: "activeclinic",
             reference: ref,
@@ -1010,7 +1009,11 @@ function registerActiveClinicPublicRoutes(app, deps) {
             /* session is optional; administrator can still sign in */
           }
         }
-        clearRegistrationDraft(res, { isProduction });
+        clearRegistrationTransaction(res, {
+          isProduction,
+          productCode: PRODUCT.ACTIVECLINIC,
+          clearDraft: clearRegistrationDraft,
+        });
         return res.redirect(303, buildRegistrationSuccessRedirect({
           productCode: "activeclinic",
           reference: ref,
@@ -1101,6 +1104,10 @@ function registerActiveClinicPublicRoutes(app, deps) {
 
     const reviewFormData = registerReviewFormData(formData, validated);
     writeRegistrationDraft(res, env, formData, { isProduction });
+    persistRegistrationPasswordFromBody(res, env, mergedBody, {
+      isProduction,
+      productCode: PRODUCT.ACTIVECLINIC,
+    });
     return res.status(200).type("html").send(renderPublicView("public/register-clinic-review", withRegisterLocals(req, {
       csrfToken,
       formData: reviewFormData,

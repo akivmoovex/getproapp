@@ -43,8 +43,15 @@ const {
 } = require("../services/platformChurchRegistrationValidation");
 const { readRegistrationConsentValue } = require("../../platform/registration/registrationConsent");
 const {
-  resolveRegistrationDraftForGet,
-} = require("../../platform/registration/registrationDraftLifecycle");
+  resolveRegistrationTransactionForGet,
+  clearRegistrationTransaction,
+  persistRegistrationPasswordFromBody,
+  mergeRegistrationBodyForValidation,
+} = require("../../platform/registration/registrationTransaction");
+const { PRODUCT } = require("../../platform/registration/constants");
+const {
+  registerPlatformLocationRoutes,
+} = require("../../platform/http/platformLocationRoutes");
 const {
   readRegistrationDraft,
   writeRegistrationDraft,
@@ -307,6 +314,7 @@ function rateLimitKey(req) {
 function createApexMarketingRouter(deps) {
   const router = express.Router();
   const getPool = deps.getPool;
+  registerPlatformLocationRoutes(router, { getPool });
   const isApexHost = deps.isApexHost;
   const issueToken = deps.issueCsrfToken || issueCsrfToken;
   const setCookie = deps.setCsrfCookie || setCsrfCookie;
@@ -509,13 +517,14 @@ function createApexMarketingRouter(deps) {
     }
 
     const wizardStep = resolveChurchRegisterWizardStep(req.query.step);
-    const draftResolution = resolveRegistrationDraftForGet({
+    const draftResolution = resolveRegistrationTransactionForGet({
       req,
       res,
       isProduction,
       clearDraft: clearRegistrationDraft,
       readDraft: readRegistrationDraft,
       env,
+      productCode: PRODUCT.BLESSBOARD,
     });
 
     if (!draftResolution.restoreDraft) {
@@ -660,7 +669,10 @@ function createApexMarketingRouter(deps) {
       logCsrfDiag(req, env, "accept");
 
       const draft = readRegistrationDraft(req, env);
-      const mergedBody = { ...(draft && draft.formData ? draft.formData : {}), ...body };
+      const mergedBody = mergeRegistrationBodyForValidation(req, env, PRODUCT.BLESSBOARD, {
+        ...(draft && draft.formData ? draft.formData : {}),
+        ...body,
+      });
       const mergedForm = formFromBody(mergedBody, { selectedPlanHint });
       const action = inferChurchRegisterAction(body.action, mergedForm);
 
@@ -711,6 +723,10 @@ function createApexMarketingRouter(deps) {
           });
         }
         writeRegistrationDraft(res, env, mergedForm, { isProduction });
+        persistRegistrationPasswordFromBody(res, env, body, {
+          isProduction,
+          productCode: PRODUCT.BLESSBOARD,
+        });
         return renderForm(200, {
           wizardStep: "review",
           form: mergedForm,
@@ -766,7 +782,11 @@ function createApexMarketingRouter(deps) {
       });
 
       if (result.honeypot) {
-        clearRegistrationDraft(res, { isProduction });
+        clearRegistrationTransaction(res, {
+          isProduction,
+          productCode: PRODUCT.BLESSBOARD,
+          clearDraft: clearRegistrationDraft,
+        });
         issueAndSetCsrf(req, res);
         logRegistrationTrace(req, {
           event: "church_registration_redirect",
@@ -890,7 +910,11 @@ function createApexMarketingRouter(deps) {
       }
 
       issueAndSetCsrf(req, res);
-      clearRegistrationDraft(res, { isProduction });
+      clearRegistrationTransaction(res, {
+        isProduction,
+        productCode: PRODUCT.BLESSBOARD,
+        clearDraft: clearRegistrationDraft,
+      });
 
       const publicReference = generatePublicRegistrationReference("BB");
       if (records.applicationId) {

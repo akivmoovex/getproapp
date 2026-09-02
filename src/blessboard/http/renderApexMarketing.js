@@ -137,7 +137,17 @@ function renderRegisterChurchPage(opts) {
   const churchPublicPathPrefix = publicWebsitePathPrefix(PRODUCT_CODE.BLESSBOARD) || "/c";
   const churchPublicUrlBase = `${churchPublicHost}${churchPublicPathPrefix}/`;
   const churchNameForPreview = form.church_name || (opts && opts.organizationKeyPreview) || "";
-  const derivedPreview = resolveBaseOrganizationKey(churchNameForPreview).key || "";
+  const branchNameForPreview = form.branch_name || "";
+  const {
+    buildBlessBoardRegistrationWebsitePreview,
+  } = require("../../platform/registration/registrationSlugPreview");
+  const websitePreview = buildBlessBoardRegistrationWebsitePreview({
+    churchName: churchNameForPreview,
+    branchName: branchNameForPreview,
+    env,
+  });
+  const derivedPreview = websitePreview.organizationKey || resolveBaseOrganizationKey(churchNameForPreview).key || "";
+  const branchKeyPreview = websitePreview.branchKey || "";
   return renderApexView("apex/register-church.ejs", {
     ...shellLocals(opts),
     ...registrationLocalsFromOpts(opts),
@@ -153,6 +163,8 @@ function renderRegisterChurchPage(opts) {
     review: Boolean(opts && opts.review),
     organizationKeyPreview:
       (opts && opts.organizationKeyPreview) || derivedPreview || form.organization_key || "",
+    branchKeyPreview: branchKeyPreview || "",
+    registrationWebsitePreviewUrl: websitePreview.publicUrl || null,
     churchPublicHost,
     churchPublicPathPrefix,
     churchPublicUrlBase,

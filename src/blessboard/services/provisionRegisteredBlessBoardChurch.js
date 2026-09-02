@@ -181,6 +181,7 @@ const PROVISIONABLE_PLAN_KEYS = Object.freeze([PLAN_KEY_FREE, PLAN_KEY_GROWTH]);
 const PLAN_KEY = PLAN_KEY_FREE;
 const DEFAULT_DEPLOYMENT = "blessboard-org-v5";
 const HQ_BRANCH_KEY = "hq";
+const { resolveBaseBranchKey } = require("./branchKey");
 
 class OrchestratorError extends Error {
   /**
@@ -938,6 +939,16 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         );
       }
       const hqBranchDisplayName = hqNamePrepared.display;
+      const branchKeyResult = resolveBaseBranchKey(hqBranchDisplayName);
+      if (!branchKeyResult.ok) {
+        throw new OrchestratorError(
+          STATUS.INVALID_INPUT,
+          branchKeyResult.reason === "reserved_key"
+            ? "That branch URL is reserved. Please choose a different branch name."
+            : "Please enter a branch name we can use for your website URL."
+        );
+      }
+      const registrationBranchKey = branchKeyResult.key;
 
       provisioningStage = "provision_church_branch";
       const church = await churchProvision.provisionBlessBoardChurch(
@@ -948,7 +959,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           displayName,
           legalName: null,
           dataEnvironment,
-          hqBranchKey: HQ_BRANCH_KEY,
+          hqBranchKey: registrationBranchKey,
           hqBranchDisplayName,
           timezone: "Africa/Lusaka",
           countryCode,
@@ -1025,7 +1036,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
               organizationKey,
               roleKey: "branch_admin",
               churchKey: organizationKey,
-              branchKey: HQ_BRANCH_KEY,
+              branchKey: registrationBranchKey,
             },
             { manageTransaction: false }
           );
@@ -1108,7 +1119,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             organizationKey,
             roleKey: "branch_admin",
             churchKey: organizationKey,
-            branchKey: HQ_BRANCH_KEY,
+            branchKey: registrationBranchKey,
           },
           { manageTransaction: false }
         );
@@ -1158,7 +1169,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             organizationKey,
             roleKey: "branch_admin",
             churchKey: organizationKey,
-            branchKey: HQ_BRANCH_KEY,
+            branchKey: registrationBranchKey,
           },
           { manageTransaction: false }
         );
