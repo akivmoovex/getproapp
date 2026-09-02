@@ -162,7 +162,15 @@
     </div>
     <div class="ac-field">
       <label class="ac-label" for="city">City</label>
-      <input class="ac-input" id="city" name="city" maxlength="120" value="<%= values.city || '' %>"/>
+      <%- include('../../platform/partials/gp-location-field', {
+        fieldId: 'city',
+        fieldName: 'city',
+        fieldValue: values.city || '',
+        countryFieldId: 'country_code',
+        listboxId: 'cityListbox',
+        fieldClass: '',
+        inputClass: 'ac-input',
+      }) %>
     </div>
     <div class="ac-field">
       <label class="ac-label" for="address_line_1">Address line 1</label>
@@ -182,6 +190,9 @@
       <a class="ac-btn ac-btn--ghost" href="<%= mode === 'edit' && form.facility ? '/app/facilities/' + encodeURIComponent(form.facility.facilityKey) : '/app/facilities' %>">Cancel</a>
     </div>
   </form>
+<link rel="stylesheet" href="/platform/location-autocomplete.css?v=1" />
+<script src="/platform/location-autocomplete.js?v=1" defer></script>
+<script src="/platform/gp-location-field-init.js?v=1" defer></script>
 </section>
 <% if (errors.length) { %>
 <script>

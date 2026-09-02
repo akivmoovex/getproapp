@@ -58,6 +58,11 @@
   <link rel="stylesheet" href="/activeclinic/acw-platform.css?v=<%= assetVersion %>"/>
   <% if (typeof chrome === 'string' && chrome === 'mf-register') { %>
   <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/registration-ux.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/location-autocomplete.css?v=<%= assetVersion %>"/>
+  <% } %>
+  <% if (typeof pageId === 'string' && (pageId === 'public-terms' || pageId === 'public-privacy')) { %>
+  <link rel="stylesheet" href="/platform/registration-ux.css?v=<%= assetVersion %>"/>
   <% } %>
   <% } %>
   <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=<%= assetVersion %>"/>
@@ -119,6 +124,10 @@
   <script src="/activeclinic/ac-a11y.js?v=<%= assetVersion %>" defer></script>
   <script src="/activeclinic/ac-public.js?v=<%= assetVersion %>" defer></script>
   <script src="/activeclinic/ac-phone-field.js?v=<%= assetVersion %>" defer></script>
+  <% if (typeof chrome === 'string' && chrome === 'mf-register') { %>
+  <script src="/platform/registration-password-rules.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/registration-consent.js?v=<%= assetVersion %>" defer></script>
+  <% } %>
   <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
   <script src="/platform/website-lifecycle.js?v=<%= assetVersion %>" defer></script>
   <script src="/platform/website-inline-edit.js?v=<%= assetVersion %>" defer></script>

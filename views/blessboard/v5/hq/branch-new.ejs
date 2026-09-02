@@ -149,7 +149,13 @@
         </div>
         <div class="bb-hq-field">
           <label for="city">Town / city</label>
-          <input id="city" name="city" type="text" maxlength="120" value="<%= fval('city') %>" autocomplete="address-level2" />
+          <%- include('../../../platform/partials/gp-location-field', {
+            fieldId: 'city',
+            fieldName: 'city',
+            fieldValue: fval('city'),
+            countryFieldId: 'countryCode',
+            listboxId: 'cityListbox',
+          }) %>
         </div>
       </div>
 
@@ -342,4 +348,7 @@
 })();
 </script>
 
+<link rel="stylesheet" href="/platform/location-autocomplete.css?v=1" />
+<script src="/platform/location-autocomplete.js?v=1" defer></script>
+<script src="/platform/gp-location-field-init.js?v=1" defer></script>
 <%- include('../partials/hq-shell-end') %>

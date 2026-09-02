@@ -651,11 +651,23 @@ async function attachWebsiteAdminChrome(opts) {
   const orgKey =
     (tenant && tenant.organization && (tenant.organization.key || tenant.organization.organizationKey)) ||
     "";
+  const publicBranchKey =
+    (model.websiteScope && model.websiteScope.branchKey) ||
+    (model.branch && model.branch.key) ||
+    null;
+  const websiteScopeType =
+    (model.websiteScope && model.websiteScope.scopeType) ||
+    (publicBranchKey ? "branch" : "church");
+  const editorScope =
+    publicBranchKey && websiteScopeType === "branch"
+      ? { kind: "branch", branchKey: publicBranchKey }
+      : null;
   const pathMode = String(model.routingMode || "") === "path" || String(currentPath).indexOf("/c/") === 0;
   const publicBase = pathMode && orgKey
     ? buildPublicOrganizationWebsitePath({
         product: PRODUCT_CODE.BLESSBOARD,
         organizationKey: orgKey,
+        scope: editorScope,
       })
     : "";
   const manageHref = isHqEditor ? "/hq/website" : "/branch-admin/content";
@@ -679,6 +691,7 @@ async function attachWebsiteAdminChrome(opts) {
     ? buildPublicWebsitePreviewPath({
         product: PRODUCT_CODE.BLESSBOARD,
         organizationKey: orgKey,
+        scope: editorScope,
       })
     : "/hq/content/draft-preview/home";
 
@@ -737,22 +750,10 @@ async function attachWebsiteAdminChrome(opts) {
     }
   }
 
-  const publicBranchKey =
-    (model.websiteScope && model.websiteScope.branchKey) ||
-    (model.branch && model.branch.key) ||
-    null;
   const primaryBranchKey =
     (tenant && tenant.primaryBranch && tenant.primaryBranch.key) ||
     (model.church && model.church.primaryBranchKey) ||
     null;
-  const websiteScopeType =
-    (model.websiteScope && model.websiteScope.scopeType) ||
-    (publicBranchKey ? "branch" : "church");
-
-  const editorScope =
-    publicBranchKey && websiteScopeType === "branch"
-      ? { kind: "branch", branchKey: publicBranchKey }
-      : null;
   const draftPreviewHrefResolved = orgKey
     ? buildPublicWebsitePreviewPath({
         product: PRODUCT_CODE.BLESSBOARD,

@@ -166,14 +166,13 @@
         </div>
         <div class="bb-ba-field">
           <label for="city">City</label>
-          <input
-            id="city"
-            name="city"
-            type="text"
-            maxlength="120"
-            value="<%= val('city') %>"
-            autocomplete="address-level2"
-          />
+          <%- include('../../../platform/partials/gp-location-field', {
+            fieldId: 'city',
+            fieldName: 'city',
+            fieldValue: val('city'),
+            countryFieldId: 'countryCode',
+            listboxId: 'cityListbox',
+          }) %>
         </div>
         <div class="bb-ba-field">
           <label for="provinceState">Province / state</label>
@@ -336,4 +335,7 @@
   </section>
 </section>
 
+<link rel="stylesheet" href="/platform/location-autocomplete.css?v=1" />
+<script src="/platform/location-autocomplete.js?v=1" defer></script>
+<script src="/platform/gp-location-field-init.js?v=1" defer></script>
 <%- include('../partials/branch-admin-shell-end') %>

@@ -103,11 +103,10 @@
       </div>
     </div>
     <div class="acw-register__policy" id="password-policy">
-      <span class="material-symbols-outlined" aria-hidden="true">lock</span>
-      <div>
-        <p class="acw-register__policy-title">Password requirements</p>
-        <p>Password must be at least 10 characters.</p>
-      </div>
+      <%- include('../../platform/partials/registration-password-rules', {
+        passwordRules: typeof passwordRules !== 'undefined' ? passwordRules : [],
+        passwordInputId: 'password',
+      }) %>
     </div>
     <div class="acw-register__actions">
       <a class="ac-btn ac-btn--secondary" href="/register-clinic?step=clinic">
@@ -237,5 +236,17 @@
   </div>
   <script src="/platform/location-autocomplete.js?v=1" defer></script>
   <script src="/activeclinic/register-clinic.js?v=<%= typeof assetVersion !== 'undefined' ? assetVersion : 'v7' %>" defer></script>
+  <script>
+  document.addEventListener("DOMContentLoaded", function () {
+    if (window.GpRegistrationPasswordRules && document.getElementById("password")) {
+      window.GpRegistrationPasswordRules.init({
+        passwordInput: "#password",
+        rulesRoot: ".gp-registration-password-rules",
+        minLength: <%= typeof passwordMin !== 'undefined' ? passwordMin : 10 %>,
+        maxLength: <%= typeof passwordMax !== 'undefined' ? passwordMax : 200 %>,
+      });
+    }
+  });
+  </script>
   <% } %>
 </section>

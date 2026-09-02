@@ -237,8 +237,8 @@ describe("branch admin website visual editor entry", () => {
     assert.equal(res.status, 303);
     // The assigned branch's site, not the church-wide page. A branch admin holds no
     // grant on the church-wide site, so that target renders no edit controls at all.
-    assert.equal(res.headers.location, "/c/visual-edit-a/branches/hq?website_edit=1");
-    assert.match(res.headers.location, /\/branches\//);
+    assert.equal(res.headers.location, "/c/visual-edit-a/hq?website_edit=1");
+    assert.doesNotMatch(res.headers.location, /\/branches\//);
     assert.doesNotMatch(res.headers.location, /submissions/);
   });
 
@@ -279,7 +279,7 @@ describe("branch admin website visual editor entry", () => {
       .set("Host", APEX)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branchB.rawToken}`));
     if (res.status === 303) {
-      assert.equal(res.headers.location, "/c/visual-edit-b/branches/hq?website_edit=1");
+      assert.equal(res.headers.location, "/c/visual-edit-b/hq?website_edit=1");
       assert.doesNotMatch(res.headers.location, /visual-edit-a/);
     } else {
       assert.ok(res.status === 403 || res.status === 404);
@@ -289,7 +289,7 @@ describe("branch admin website visual editor entry", () => {
   it("visual editor page shows edit icons for allowlisted fields", async () => {
     if (skipIfNeeded()) return;
     const res = await request(app)
-      .get("/c/visual-edit-a?website_edit=1")
+      .get("/c/visual-edit-a/hq?website_edit=1&website_mode=draft")
       .set("Host", APEX)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branchA.rawToken}`))
       .expect(200);
@@ -416,14 +416,14 @@ describe("branch admin website visual editor entry", () => {
     );
 
     const publicRes = await request(app)
-      .get("/c/visual-edit-a")
+      .get("/c/visual-edit-a/hq")
       .set("Host", APEX)
       .expect(200);
     assert.match(publicRes.text, /Published Visual Hero/);
     assert.doesNotMatch(publicRes.text, /Branch Draft Hero/);
 
     const editRes = await request(app)
-      .get("/c/visual-edit-a?website_edit=1")
+      .get("/c/visual-edit-a/hq?website_edit=1&website_mode=draft")
       .set("Host", APEX)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${users.branchA.rawToken}`))
       .expect(200);

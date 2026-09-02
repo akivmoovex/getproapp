@@ -15,6 +15,7 @@ const {
 } = require("./churchUrlHelper");
 const {
   PRODUCT_CODE,
+  buildPublicOrganizationWebsitePath,
   buildPublicWebsiteEditPath,
   buildPublicWebsiteAdminPath,
 } = require("../../platform/website/publicWebsiteUrl");
@@ -103,10 +104,20 @@ function resolveWebsiteActionUrls(input) {
   }
 
   if (actor === "branch_admin") {
+    const branchKey = String((input && input.branchKey) || "").trim();
+    const scope = branchKey ? { kind: "branch", branchKey } : null;
+    const branchPublicPath = branchKey
+      ? buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: key,
+          scope,
+        })
+      : publicPath;
     const visualEdit =
       buildPublicWebsiteEditPath({
         product: PRODUCT_CODE.BLESSBOARD,
         organizationKey: key,
+        scope,
       }) || "/branch-admin/website";
     return {
       serviceTimesUrl: "/branch-admin/website/service-times",
@@ -115,8 +126,8 @@ function resolveWebsiteActionUrls(input) {
       editWebsiteLabel: "Edit website",
       previewUrl: visualEdit,
       previewLabel: "Open website editor",
-      publishedWebsiteUrl: publicPath,
-      publishedWebsiteLabel: publicPath ? "View published website" : null,
+      publishedWebsiteUrl: branchPublicPath,
+      publishedWebsiteLabel: branchPublicPath ? "View published website" : null,
       publishWorkflowUrl: "/branch-admin/website/submit",
       publishWorkflowLabel: "Submit website update",
     };

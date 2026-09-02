@@ -197,7 +197,7 @@ describe("V7 /branch-admin/website resolves the assigned branch", () => {
     assert.equal(res.status, 303);
     assert.equal(
       res.headers.location,
-      `/c/${ORG_KEY}/branches/campus-south?website_edit=1`
+      `/c/${ORG_KEY}/campus-south?website_edit=1`
     );
   });
 
@@ -209,8 +209,8 @@ describe("V7 /branch-admin/website resolves the assigned branch", () => {
     // The church-wide page and the HQ branch are both wrong targets here: this
     // actor's website.* grants are scoped to campus-south only.
     assert.notEqual(location, `/c/${ORG_KEY}?website_edit=1`);
-    assert.doesNotMatch(location, /\/branches\/hq(\?|$)/);
-    assert.match(location, /\/branches\/campus-south\?/);
+    assert.doesNotMatch(location, /\/hq(\?|$)/);
+    assert.match(location, /\/campus-south\?website_edit=1/);
   });
 
   it("keeps sibling branches isolated per assigned admin", async () => {
@@ -219,7 +219,7 @@ describe("V7 /branch-admin/website resolves the assigned branch", () => {
     const north = await entry(northSession);
     assert.equal(south.status, 303);
     assert.equal(north.status, 303);
-    assert.match(north.headers.location, /\/branches\/campus-north\?/);
+    assert.match(north.headers.location, /\/campus-north\?website_edit=1/);
     assert.doesNotMatch(north.headers.location, /campus-south/);
     assert.doesNotMatch(south.headers.location, /campus-north/);
     assert.notEqual(south.headers.location, north.headers.location);
@@ -235,7 +235,7 @@ describe("V7 /branch-admin/website resolves the assigned branch", () => {
       .set("Host", APEX)
       .set("Cookie", `${DEFAULT_V5_COOKIE}=${southSession}`);
     assert.equal(res.status, 303);
-    assert.match(res.headers.location, /\/branches\/campus-south\?/);
+    assert.match(res.headers.location, /\/campus-south\?website_edit=1/);
     assert.doesNotMatch(res.headers.location, /campus-north/);
   });
 });

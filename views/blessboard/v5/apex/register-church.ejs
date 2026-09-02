@@ -92,7 +92,7 @@
           </div>
         </div>
         <div class="bb-apex-register__actions">
-          <a class="bb-apex-btn bb-apex-btn--primary" href="/pricing">Review plans</a>
+          <a class="bb-apex-btn bb-apex-btn--primary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>">Review plans</a>
           <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
         </div>
 
@@ -110,7 +110,7 @@
           </div>
         </div>
         <div class="bb-apex-register__actions">
-          <a class="bb-apex-btn bb-apex-btn--primary" href="/pricing">Review plans</a>
+          <a class="bb-apex-btn bb-apex-btn--primary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>">Review plans</a>
           <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
         </div>
 
@@ -265,6 +265,10 @@
                 <% if (fieldHasError('password') && formError) { %>
                 <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
                 <% } %>
+                <%- include('../../../platform/partials/registration-password-rules', {
+                  passwordRules: typeof passwordRules !== 'undefined' ? passwordRules : [],
+                  passwordInputId: 'register_password',
+                }) %>
               </div>
               <div class="bb-apex-field">
                 <label class="bb-apex-register-label" for="register_password_confirm">Confirm password</label>
@@ -474,7 +478,7 @@
                 Continue
               </button>
               <% } %>
-              <a class="bb-apex-btn bb-apex-btn--secondary" href="/pricing">Review plans</a>
+              <a class="bb-apex-btn bb-apex-btn--secondary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>">Review plans</a>
             </div>
             <p class="bb-apex-mkt-footnote">
               <% if (instantOn) { %>
@@ -534,6 +538,14 @@
     if (!preview || !preview.textContent || preview.textContent === "your-key" || preview.textContent === "your-church") {
       syncChurchUrl();
     }
+  }
+  if (window.GpRegistrationPasswordRules && document.getElementById("register_password")) {
+    window.GpRegistrationPasswordRules.init({
+      passwordInput: "#register_password",
+      rulesRoot: ".gp-registration-password-rules",
+      minLength: <%= typeof passwordMin !== 'undefined' ? passwordMin : 10 %>,
+      maxLength: <%= typeof passwordMax !== 'undefined' ? passwordMax : 200 %>,
+    });
   }
 })();
 </script>

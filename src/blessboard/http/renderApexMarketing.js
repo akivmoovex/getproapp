@@ -34,6 +34,19 @@ const {
 const {
   buildRegistrationSuccessViewModel,
 } = require("../../platform/registration/registrationSuccessPresentation");
+const {
+  buildRegistrationPageLocals,
+  PRODUCT_CODE: REG_PRODUCT,
+} = require("../../platform/registration/registrationRenderLocals");
+
+function registrationLocalsFromOpts(opts) {
+  const step = (opts && opts.wizardStep) || null;
+  const plan =
+    (opts && opts.selectedPlan) ||
+    (opts && opts.form && opts.form.selected_plan) ||
+    null;
+  return buildRegistrationPageLocals(opts && opts.req, REG_PRODUCT.BLESSBOARD, { step, plan });
+}
 
 function renderApexView(relativePath, data) {
   return renderV5Ejs(relativePath, data);
@@ -66,6 +79,7 @@ function renderForChurchesPage(opts) {
 function renderPricingPage(opts) {
   return renderApexView("apex/pricing.ejs", {
     ...shellLocals(opts),
+    ...registrationLocalsFromOpts(opts),
     pageTitle: "Pricing",
     activeNav: "pricing",
     pricingOnboardingNote: BLESSBOARD_PRICING_ONBOARDING_NOTE,
@@ -126,6 +140,7 @@ function renderRegisterChurchPage(opts) {
   const derivedPreview = resolveBaseOrganizationKey(churchNameForPreview).key || "";
   return renderApexView("apex/register-church.ejs", {
     ...shellLocals(opts),
+    ...registrationLocalsFromOpts(opts),
     pageTitle: "Register Your Church",
     activeNav: "register-church",
     wizardStep,
@@ -172,6 +187,7 @@ function renderRegisterChurchReviewPage(opts) {
   const churchPublicUrlBase = `${churchPublicHost}${churchPublicPathPrefix}/`;
   return renderApexView("apex/register-church-review.ejs", {
     ...shellLocals(opts),
+    ...registrationLocalsFromOpts({ ...opts, wizardStep: "review" }),
     pageTitle: "Review Church Registration",
     activeNav: "register-church",
     wizardStep: "review",

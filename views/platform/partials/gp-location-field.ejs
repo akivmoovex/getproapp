@@ -1,0 +1,34 @@
+<%#
+  Shared city/town autocomplete field shell.
+  Locals: fieldId, fieldName, fieldValue, countryFieldId, listboxId, fieldClass, locationIdName, locationIdValue
+%>
+<%
+  var inputId = typeof fieldId !== 'undefined' && fieldId ? fieldId : 'city';
+  var inputName = typeof fieldName !== 'undefined' && fieldName ? fieldName : 'city';
+  var inputValue = typeof fieldValue !== 'undefined' ? fieldValue : '';
+  var countryId = typeof countryFieldId !== 'undefined' && countryFieldId ? countryFieldId : 'countryCode';
+  var listId = typeof listboxId !== 'undefined' && listboxId ? listboxId : (inputId + 'Listbox');
+  var wrapperClass = typeof fieldClass !== 'undefined' && fieldClass ? fieldClass : '';
+  var locName = typeof locationIdName !== 'undefined' && locationIdName ? locationIdName : '';
+  var locValue = typeof locationIdValue !== 'undefined' ? locationIdValue : '';
+  var inputClassName = typeof inputClass !== 'undefined' && inputClass ? inputClass : '';
+%>
+<div class="gp-location-field<%= wrapperClass ? ' ' + wrapperClass : '' %>" data-gp-location-init="1" data-gp-location-country="#<%= countryId %>" data-gp-location-city="#<%= inputId %>" data-gp-location-listbox="#<%= listId %>"<% if (locName) { %> data-gp-location-id="#<%= locName %>"<% } %> data-gp-location-custom="1">
+  <input
+    <% if (inputClassName) { %>class="<%= inputClassName %>" <% } %>
+    id="<%= inputId %>"
+    name="<%= inputName %>"
+    type="text"
+    maxlength="<%= typeof fieldMaxLength !== 'undefined' ? fieldMaxLength : 120 %>"
+    value="<%= inputValue %>"
+    autocomplete="off"
+    role="combobox"
+    aria-autocomplete="list"
+    aria-expanded="false"
+    aria-controls="<%= listId %>"
+  />
+  <% if (locName) { %>
+  <input type="hidden" id="<%= locName %>" name="<%= locName %>" value="<%= locValue %>" />
+  <% } %>
+  <div id="<%= listId %>" class="gp-location-listbox" role="listbox" hidden></div>
+</div>

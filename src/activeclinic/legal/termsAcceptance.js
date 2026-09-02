@@ -2,24 +2,31 @@
 
 /**
  * Server-side Terms of Service acceptance for ActiveClinic clinic registration.
- * Must be checked before any registration persist or provisioning write.
+ * Delegates to shared registration consent validation.
  */
 
+const {
+  CONSENT_FIELD,
+  CONSENT_REQUIRED_MESSAGE,
+  readRegistrationConsentValue,
+  validateRegistrationConsent,
+} = require("../../platform/registration/registrationConsent");
 const {
   TERMS_VERSION,
   PRIVACY_VERSION,
 } = require("./legalMetadata");
 
-const TERMS_REQUIRED_MESSAGE =
-  "You must agree to the Terms of Service before creating your clinic.";
+const TERMS_REQUIRED_MESSAGE = CONSENT_REQUIRED_MESSAGE;
 
 function isTermsAccepted(value) {
-  const raw = String(value == null ? "" : value).trim().toLowerCase();
-  return raw === "on" || raw === "true" || raw === "1" || raw === "yes";
+  return readRegistrationConsentValue({ [CONSENT_FIELD]: value });
 }
 
 function readAcceptanceValue(input) {
   if (!input || typeof input !== "object") return "";
+  if (input[CONSENT_FIELD] != null && String(input[CONSENT_FIELD]).trim() !== "") {
+    return input[CONSENT_FIELD];
+  }
   if (input.acceptTerms != null && String(input.acceptTerms).trim() !== "") {
     return input.acceptTerms;
   }
@@ -42,7 +49,8 @@ function readAcceptanceValue(input) {
  * }}
  */
 function validateTermsAcceptance(input) {
-  if (isTermsAccepted(readAcceptanceValue(input))) {
+  const result = validateRegistrationConsent(input);
+  if (result.ok) {
     return {
       ok: true,
       errors: {},
@@ -52,7 +60,7 @@ function validateTermsAcceptance(input) {
   }
   return {
     ok: false,
-    errors: { acceptTerms: TERMS_REQUIRED_MESSAGE },
+    errors: { [CONSENT_FIELD]: result.error },
   };
 }
 
@@ -60,6 +68,7 @@ module.exports = {
   TERMS_VERSION,
   PRIVACY_VERSION,
   TERMS_REQUIRED_MESSAGE,
+  CONSENT_FIELD,
   isTermsAccepted,
   readAcceptanceValue,
   validateTermsAcceptance,

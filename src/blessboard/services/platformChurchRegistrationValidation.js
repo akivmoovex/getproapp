@@ -26,6 +26,16 @@ const {
   mapPublicPlanToDbPlanKey,
   publicPlanDisplayLabel,
 } = require("./registrationPlanMapping");
+const {
+  CONSENT_FIELD,
+  readRegistrationConsentValue,
+  validateRegistrationConsent,
+} = require("../../platform/registration/registrationConsent");
+const {
+  PASSWORD_MIN,
+  PASSWORD_MAX,
+  validateRegistrationPasswordPair,
+} = require("../../platform/registration/registrationPasswordPolicy");
 
 const ALLOWED_PLANS = Object.freeze([...TIER_PLAN_CODES]);
 const FREE_PLAN_CODE = PUBLIC_PLAN_CODES.FOUNDATION;
@@ -50,8 +60,6 @@ const PLAN_ALIASES = Object.freeze({
 const PLAN_DISPLAY_LABELS = PUBLIC_DISPLAY_LABELS;
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PASSWORD_MIN = 10;
-const PASSWORD_MAX = 200;
 
 function trim(value, max) {
   return String(value == null ? "" : value)
@@ -153,7 +161,6 @@ function validatePhone(body, opts = {}) {
  */
 function validateAdministratorPassword(password, passwordConfirm) {
   const value = password != null ? String(password) : "";
-  const confirm = passwordConfirm != null ? String(passwordConfirm) : "";
   if (!value) {
     return {
       ok: false,
@@ -161,28 +168,7 @@ function validateAdministratorPassword(password, passwordConfirm) {
       field: "password",
     };
   }
-  if (value.length < PASSWORD_MIN) {
-    return {
-      ok: false,
-      error: `Password must be at least ${PASSWORD_MIN} characters.`,
-      field: "password",
-    };
-  }
-  if (value.length > PASSWORD_MAX) {
-    return {
-      ok: false,
-      error: "Password is too long.",
-      field: "password",
-    };
-  }
-  if (value !== confirm) {
-    return {
-      ok: false,
-      error: "Password confirmation does not match.",
-      field: "password_confirm",
-    };
-  }
-  return { ok: true, value };
+  return validateRegistrationPasswordPair(password, passwordConfirm);
 }
 
 /**
@@ -320,20 +306,9 @@ function validatePlatformChurchRegistration(body, opts = {}) {
     };
   }
 
-  const consent =
-    body &&
-    (body.consent_contact === "on" ||
-      body.consent_contact === "1" ||
-      body.consent_contact === true ||
-      body.consent_terms === "on" ||
-      body.consent_terms === "1" ||
-      body.consent_terms === true);
-  if (!consent) {
-    return {
-      ok: false,
-      error: "Please confirm that you agree to the Terms and Privacy Policy.",
-      field: "consent_contact",
-    };
+  const consentResult = validateRegistrationConsent(body);
+  if (!consentResult.ok) {
+    return consentResult;
   }
 
   // Reject unknown plan strings when the client sent a non-empty value.
@@ -408,14 +383,8 @@ function formFromBody(body, opts = {}) {
       normalizeSelectedPlan(opts.selectedPlanHint) ||
       "",
     message: trim(body && body.message, 5000),
-    consent_contact:
-      body &&
-      (body.consent_contact === "on" ||
-        body.consent_contact === "1" ||
-        body.consent_contact === true ||
-        body.consent_terms === "on" ||
-        body.consent_terms === "1" ||
-        body.consent_terms === true),
+    registration_consent: readRegistrationConsentValue(body),
+    consent_contact: readRegistrationConsentValue(body),
     // Never echo passwords into form locals.
   };
 }
@@ -560,6 +529,7 @@ module.exports = {
   PLAN_DISPLAY_LABELS,
   PASSWORD_MIN,
   PASSWORD_MAX,
+  CONSENT_FIELD,
   normalizeSelectedPlan,
   mapPublicPlanToOrchestratorPlanKey,
   mapPublicPlanToDbPlanKey,

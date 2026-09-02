@@ -132,7 +132,7 @@ describe("ActiveClinic registration Terms of Service", () => {
     assert.equal(fields.ok, true);
     const confirm = validateClinicRegistrationInput(validFields(), { requireTermsAcceptance: true });
     assert.equal(confirm.ok, false);
-    assert.equal(confirm.errors.acceptTerms, TERMS_REQUIRED_MESSAGE);
+    assert.equal(confirm.errors.registration_consent, TERMS_REQUIRED_MESSAGE);
   });
 
   it("registration UI uses create-clinic journey and unchecked Terms checkbox", async () => {
@@ -141,9 +141,8 @@ describe("ActiveClinic registration Terms of Service", () => {
     const page = await request(app).get("/register-clinic");
     assert.equal(page.status, 200);
     assert.match(page.text, />Clinic</);
-    assert.match(page.text, />Administrator</);
+    assert.match(page.text, />Staff Setup</);
     assert.match(page.text, />Review</);
-    assert.match(page.text, />Clinic created</);
     assert.doesNotMatch(page.text, />Submitted</);
     assert.doesNotMatch(page.text, /Submit application/);
     assert.doesNotMatch(page.text, /Already submitted\?/);
@@ -158,10 +157,10 @@ describe("ActiveClinic registration Terms of Service", () => {
     assert.equal(review.status, 200);
     assert.match(review.text, /data-ac-page-section="register-clinic-review"/);
     assert.match(review.text, /Create clinic/);
-    assert.match(review.text, /data-ac-terms-checkbox="1"/);
+    assert.match(review.text, /name="registration_consent"/);
     assert.match(review.text, /href="\/terms"/);
     assert.match(review.text, /href="\/privacy"/);
-    assert.match(review.text, /target="_blank"/);
+    assert.doesNotMatch(review.text, /target="_blank"/);
     assert.doesNotMatch(review.text, /checked/);
     assert.doesNotMatch(review.text, /Submit application/);
     assert.doesNotMatch(review.text, />Submitted</);
@@ -182,7 +181,7 @@ describe("ActiveClinic registration Terms of Service", () => {
       .type("form")
       .send({ [CSRF_FIELD]: csrf, action: "confirm", ...fields });
     assert.equal(rejected.status, 400);
-    assert.match(rejected.text, /You must agree to the Terms of Service before creating your clinic/);
+    assert.match(rejected.text, /Please confirm that you agree to the Terms of Service and Privacy Policy/);
     assert.deepEqual(await counts(), before);
 
     const falseAccept = await request(app)
@@ -204,7 +203,7 @@ describe("ActiveClinic registration Terms of Service", () => {
       env: { NODE_ENV: "test", PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6 },
     });
     assert.equal(result.ok, false);
-    assert.equal(result.errors.acceptTerms, TERMS_REQUIRED_MESSAGE);
+    assert.equal(result.errors.registration_consent, TERMS_REQUIRED_MESSAGE);
     assert.deepEqual(await counts(), before);
   });
 

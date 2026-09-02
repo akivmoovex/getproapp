@@ -71,7 +71,7 @@
           </article>
         </div>
 
-        <form class="bb-apex-register-form" action="/register-church<%= planValue ? ('?plan=' + encodeURIComponent(planValue)) : '' %>" method="post" novalidate data-bb-register-form="1">
+        <form class="bb-apex-register-form" action="/register-church<%= planValue ? ('?plan=' + encodeURIComponent(planValue)) : '' %>" method="post" novalidate data-bb-register-form="1" data-gp-registration-form="1" data-bb-register-step="review">
           <input type="hidden" name="<%= typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf' %>" value="<%= csrfToken || '' %>" />
           <input type="hidden" name="action" value="confirm" />
           <input type="hidden" name="church_name" value="<%= formData.church_name || '' %>"/>
@@ -90,18 +90,13 @@
           <input type="hidden" name="role_in_church" value="<%= formData.role_in_church || '' %>"/>
 
           <div class="bb-apex-register-form__footer">
-            <div class="bb-apex-field<%= fieldError === 'consent_contact' ? ' is-error' : '' %>">
-              <label class="bb-apex-register-checkbox">
-                <input type="checkbox" name="consent_contact" value="on" required <%= formData.consent_contact ? ' checked' : '' %> />
-                <span>
-                  I agree to the <a href="/terms">Terms of Service</a> and <a href="/privacy">Privacy Policy</a>,
-                  and consent to BlessBoard contacting me about this request.
-                </span>
-              </label>
-              <% if (fieldError === 'consent_contact' && formError) { %>
-              <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
-              <% } %>
-            </div>
+            <%- include('../../../platform/partials/registration-consent', {
+              registrationTermsHref: typeof registrationTermsHref !== 'undefined' ? registrationTermsHref : '/terms',
+              registrationPrivacyHref: typeof registrationPrivacyHref !== 'undefined' ? registrationPrivacyHref : '/privacy',
+              consentChecked: formData.registration_consent || formData.consent_contact,
+              consentError: (fieldError === 'registration_consent' || fieldError === 'consent_contact') ? formError : null,
+              consentErrorField: fieldError,
+            }) %>
             <div class="bb-apex-register__actions">
               <a class="bb-apex-btn bb-apex-btn--secondary" href="/register-church?step=administrator<%= planValue ? ('&plan=' + encodeURIComponent(planValue)) : '' %>">Back</a>
               <button class="bb-apex-btn bb-apex-btn--primary bb-apex-register-submit" type="submit">

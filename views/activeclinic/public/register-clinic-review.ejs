@@ -23,11 +23,11 @@
     </ul>
   </div>
   <% } %>
-  <% if (verr.acceptTerms) { %>
+  <% if (verr.registration_consent) { %>
   <div class="ac-public-validation-summary acw-register__alert" role="alert" data-ac-form-state="validation_error">
     <h2 class="ac-public-validation-summary__title">Please fix the following</h2>
     <ul class="ac-public-validation-summary__list">
-      <li><a href="#acceptTerms"><%= verr.acceptTerms %></a></li>
+      <li><a href="#registration_consent"><%= verr.registration_consent %></a></li>
     </ul>
   </div>
   <% } %>
@@ -103,26 +103,16 @@
   </div>
 
   <div class="acw-register__card acw-register-review__confirm">
-    <form method="post" action="/register-clinic" class="ac-review-actions__confirm" data-ac-loading="1" data-ac-register-confirm="1">
+    <form method="post" action="/register-clinic" class="ac-review-actions__confirm" data-ac-loading="1" data-ac-register-confirm="1" data-gp-registration-form="1" data-ac-register-step="review">
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
       <input type="hidden" name="action" value="confirm"/>
       <%- include('../partials/register-clinic-hidden-fields') %>
-      <div class="ac-form-field ac-form-field--checkbox<%= verr.acceptTerms ? ' ac-form-field--error' : '' %>">
-        <label class="ac-form-checkbox" for="acceptTerms">
-          <input
-            id="acceptTerms"
-            name="acceptTerms"
-            type="checkbox"
-            value="on"
-            data-ac-terms-checkbox="1"
-            aria-required="true"
-            aria-invalid="<%= verr.acceptTerms ? 'true' : 'false' %>"
-            <% if (verr.acceptTerms) { %>aria-describedby="acceptTerms-error"<% } %>
-          />
-          <span>I confirm that the information provided is accurate and I agree to the ActiveClinic <a href="/terms" target="_blank" rel="noopener noreferrer">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer">Privacy Policy</a>.</span>
-        </label>
-        <% if (verr.acceptTerms) { %><p class="ac-form-field__error" id="acceptTerms-error"><%= verr.acceptTerms %></p><% } %>
-      </div>
+      <%- include('../../platform/partials/registration-consent', {
+        registrationTermsHref: typeof registrationTermsHref !== 'undefined' ? registrationTermsHref : '/terms',
+        registrationPrivacyHref: typeof registrationPrivacyHref !== 'undefined' ? registrationPrivacyHref : '/privacy',
+        consentError: verr.registration_consent || verr.acceptTerms || null,
+        consentErrorField: verr.registration_consent ? 'registration_consent' : (verr.acceptTerms ? 'acceptTerms' : null),
+      }) %>
       <div class="acw-register__actions acw-register__actions--end">
         <button type="submit" class="ac-btn ac-btn--primary" data-loading="Creating clinic…">
           Create clinic

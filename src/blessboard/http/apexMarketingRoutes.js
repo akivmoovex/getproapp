@@ -39,7 +39,9 @@ const {
   formFromBody,
   NETWORK_PLAN_CODE,
   planDisplayLabel,
+  CONSENT_FIELD,
 } = require("../services/platformChurchRegistrationValidation");
+const { readRegistrationConsentValue } = require("../../platform/registration/registrationConsent");
 const {
   readRegistrationDraft,
   writeRegistrationDraft,
@@ -199,7 +201,7 @@ function inferChurchRegisterAction(action, formData) {
   const hasAdmin = Boolean(
     formData.contact_name && formData.email && formData.role_in_church
   );
-  const hasConsent = Boolean(formData.consent_contact);
+  const hasConsent = readRegistrationConsentValue(formData);
   if (hasConsent && hasChurch && hasAdmin) return "confirm";
   if (hasAdmin && hasChurch) return "next-admin";
   return "next-church";
@@ -345,6 +347,7 @@ function createApexMarketingRouter(deps) {
         authenticated: Boolean(req.v5Session && req.v5Session.authenticated),
         csrfToken,
         csrfField: CSRF_FIELD,
+        req,
         submitted: false,
         formError: "Too many submissions from this network. Please wait a few minutes and try again.",
         form: formFromBody(req.body || {}),
@@ -430,9 +433,15 @@ function createApexMarketingRouter(deps) {
 
   router.get("/features", (req, res) => withShell(req, res, renderFeaturesPage));
   router.get("/for-churches", (req, res) => withShell(req, res, renderForChurchesPage));
-  router.get("/pricing", (req, res) => withShell(req, res, renderPricingPage));
-  router.get("/terms", (req, res) => withShell(req, res, renderTermsPage));
-  router.get("/privacy", (req, res) => withShell(req, res, renderPrivacyPage));
+  router.get("/pricing", (req, res) =>
+    withShell(req, res, renderPricingPage, { req })
+  );
+  router.get("/terms", (req, res) =>
+    withShell(req, res, renderTermsPage, { req })
+  );
+  router.get("/privacy", (req, res) =>
+    withShell(req, res, renderPrivacyPage, { req })
+  );
 
   router.get(REGISTER_SUCCESS_PATH, async (req, res, next) => {
     if (String((req.query && req.query.review) || "") === "1") {
@@ -477,6 +486,7 @@ function createApexMarketingRouter(deps) {
       return withShell(req, res, renderRegisterChurchPage, {
         alwaysPassCsrf: true,
         noStore: true,
+        req,
         submitted,
         submittedPlan,
         networkSupportSuccess: submitted && submittedPlan === NETWORK_PLAN_CODE,
@@ -523,6 +533,7 @@ function createApexMarketingRouter(deps) {
       return withShell(req, res, renderRegisterChurchReviewPage, {
         alwaysPassCsrf: true,
         noStore: true,
+        req,
         wizardStep: "review",
         form,
         selectedPlan: form.selected_plan || selectedPlan,
@@ -545,6 +556,7 @@ function createApexMarketingRouter(deps) {
     return withShell(req, res, renderRegisterChurchPage, {
       alwaysPassCsrf: true,
       noStore: true,
+      req,
       submitted: false,
       review: false,
       wizardStep,
@@ -592,6 +604,7 @@ function createApexMarketingRouter(deps) {
           authenticated,
           csrfToken,
           csrfField: CSRF_FIELD,
+          req,
           submitted: false,
           review: false,
           form,
@@ -706,6 +719,7 @@ function createApexMarketingRouter(deps) {
           fieldError: validation.field || null,
           form: mergedForm,
           wizardStep:
+            validation.field === CONSENT_FIELD ||
             validation.field === "consent_contact"
               ? "review"
               : ["contact_name", "email", "phone", "role_in_church", "password", "password_confirm"].includes(

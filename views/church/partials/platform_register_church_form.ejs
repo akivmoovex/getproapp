@@ -148,15 +148,14 @@
       </div>
       <div class="church-field">
         <label class="bb-apex-register-label" for="register_city">Town or city</label>
-        <input
-          class="bb-apex-register-input<%= fieldHasError('city') ? ' bb-apex-register-input--error' : '' %>"
-          id="register_city"
-          name="city"
-          type="text"
-          required
-          value="<%= formData.city || '' %>"
-          <%= fieldHasError('city') ? 'aria-invalid="true"' : '' %>
-        />
+        <%- include('../../platform/partials/gp-location-field', {
+          fieldId: 'register_city',
+          fieldName: 'city',
+          fieldValue: formData.city || '',
+          countryFieldId: 'register_country',
+          listboxId: 'register_city_listbox',
+          fieldClass: fieldHasError('city') ? 'is-error' : '',
+        }) %>
         <% if (fieldHasError('city') && typeof formError !== 'undefined' && formError) { %>
         <p class="bb-apex-register-field-error" role="alert">
           <span class="material-symbols-outlined" aria-hidden="true">error</span>
