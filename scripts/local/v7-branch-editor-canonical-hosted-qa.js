@@ -61,7 +61,14 @@ async function readHero(page, url) {
   await page.goto(url, { waitUntil: "domcontentloaded", timeout: 60000 });
   return page.evaluate(() => {
     const el = document.querySelector('[data-website-key="home.hero.heading"]');
-    return el ? el.getAttribute("data-website-value") || el.textContent || "" : "";
+    if (el) {
+      const fromAttr = el.getAttribute("data-website-value");
+      if (fromAttr) return fromAttr;
+      const textEl = el.querySelector("[data-website-value-text], [data-website-display], h1, h2");
+      if (textEl && textEl.textContent) return textEl.textContent;
+    }
+    const h1 = document.querySelector("main h1, .bb-tp-hero h1, h1");
+    return h1 ? h1.textContent : "";
   });
 }
 
