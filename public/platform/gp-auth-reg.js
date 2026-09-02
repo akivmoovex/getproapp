@@ -9,6 +9,12 @@
     var panels = root.querySelectorAll("[data-gp-auth-id-panel]");
     if (!tabs.length || !panels.length) return;
 
+    function setFieldRequired(input, on) {
+      if (!input) return;
+      if (on) input.setAttribute("required", "");
+      else input.removeAttribute("required");
+    }
+
     function activate(mode) {
       tabs.forEach(function (tab) {
         var selected = tab.getAttribute("data-gp-auth-id-tab") === mode;
@@ -21,6 +27,8 @@
       });
       var hidden = root.querySelector('input[name="login_mode"]');
       if (hidden) hidden.value = mode;
+      setFieldRequired(root.querySelector('input[name="login_email"]'), mode === "email");
+      setFieldRequired(root.querySelector('input[name="phone_national"]'), mode === "phone");
     }
 
     tabs.forEach(function (tab) {
