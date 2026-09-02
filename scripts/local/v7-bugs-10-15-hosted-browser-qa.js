@@ -131,15 +131,20 @@ async function testUrlPreview(page) {
   results.network.urlPreview = { preview: normalized, expected };
 }
 
+async function gotoBbAdminStep(page) {
+  await page.context().clearCookies();
+  await page.goto(`${BB}/register-church?plan=foundation`, { waitUntil: "domcontentloaded" });
+  await page.locator("#register_church_name").fill("Layout QA Church");
+  await page.locator("#register_country").selectOption("ZM");
+  await page.locator("#register_city").fill("Lusaka");
+  await page.locator("#register_branch_name").fill("Main Branch");
+  await page.locator('button[value="next-church"]').click();
+  await page.waitForSelector('[data-bb-register-step="administrator"]', { timeout: 45000 });
+}
+
 async function testPasswordLayout(page, vp) {
   await page.setViewportSize({ width: vp.width, height: vp.height });
-  await page.goto(`${BB}/register-church?plan=foundation&step=administrator`, {
-    waitUntil: "domcontentloaded",
-  });
-  await page.locator("#register_church_name").fill("Layout QA").catch(() => {});
-  await page.goto(`${BB}/register-church?plan=foundation&step=administrator`, {
-    waitUntil: "domcontentloaded",
-  });
+  await gotoBbAdminStep(page);
   const layout = await page.evaluate(() => {
     const grid = document.querySelector(".bb-apex-register-form__grid--password");
     const pwd = document.getElementById("register_password");
@@ -164,9 +169,7 @@ async function testPasswordLayout(page, vp) {
 
 async function testPasswordRules(page) {
   await page.setViewportSize({ width: 1440, height: 900 });
-  await page.goto(`${BB}/register-church?plan=foundation&step=administrator`, {
-    waitUntil: "domcontentloaded",
-  });
+  await gotoBbAdminStep(page);
   const pwd = page.locator("#register_password");
   const confirm = page.locator("#register_password_confirm");
   await pwd.fill("short");
@@ -344,14 +347,10 @@ async function testDetourVsRefresh(page, product) {
   }
   const returnTo = product === "BB" ? "register-church" : "register-clinic";
   await page.goto(
-    `${base}/pricing?from=registration&returnTo=${returnTo}&step=administrator&gpRegNav=1`,
+    `${base}/terms?from=registration&returnTo=${returnTo}&step=administrator&gpRegNav=1`,
     { waitUntil: "domcontentloaded" }
-  ).catch(async () => {
-    await page.goto(
-      `${base}/terms?from=registration&returnTo=${returnTo}&step=administrator&gpRegNav=1`,
-      { waitUntil: "domcontentloaded" }
-    );
-  });
+  );
+  await page.locator(".gp-registration-return__link").waitFor({ state: "visible", timeout: 30000 });
   await page.locator(".gp-registration-return__link").click();
   await page.waitForURL(/register-(church|clinic)/, { timeout: 30000 });
   const preserved =
@@ -369,9 +368,9 @@ async function testDetourVsRefresh(page, product) {
 }
 
 async function testSecurityCookies(page) {
-  await page.goto(`${BB}/register-church?plan=foundation&step=administrator`, {
-    waitUntil: "domcontentloaded",
-  });
+  await gotoBbAdminStep(page);
+  await page.locator("#register_password").fill(PASS);
+  await page.locator("#register_password_confirm").fill(PASS);
   const cookies = await page.context().cookies();
   const draft = cookies.find((c) => c.name === "bb_reg_draft");
   const vault = cookies.find((c) => c.name === "bb_reg_pwd");
@@ -395,25 +394,77 @@ async function main() {
   const context = await browser.newContext();
   const page = await context.newPage();
 
-  await testAutocomplete(page, "BB");
-  await testAutocomplete(page, "AC");
-  await testUrlPreview(page);
-  await testPasswordRules(page);
-  for (const vp of VIEWPORTS) {
-    if (LAYOUT.has(vp.label)) await testPasswordLayout(page, vp);
-  }
-  await testDetourVsRefresh(page, "BB");
-  await testDetourVsRefresh(page, "AC");
-  await testSecurityCookies(page);
-
-  for (const vp of VIEWPORTS.filter((v) => DEEP.has(v.label))) {
-    await page.setViewportSize({ width: vp.width, height: vp.height });
-  }
-
-  let bbReg = null;
   try {
-    bbReg = await completeBbRegistration(page);
+    await testAutocomplete(page, "BB");
+  } catch (err) {
+    record("BUG10", "BB-autocomplete-error", false, err.message);
+  }
+  try {
+    await testAutocomplete(page, "AC");
+  } catch (err) {
+    record("BUG10", "AC-autocomplete-error", false, err.message);
+  }
+  try {
+    await testUrlPreview(page);
+  } catch (err) {
+    record("BUG11", "url-preview-error", false, err.message);
+  }
+  try {
+    await testPasswordRules(page);
+  } catch (err) {
+    record("BUG14", "rules-runtime", false, err.message);
+  }
+  for (const vp of VIEWPORTS) {
+    if (!LAYOUT.has(vp.label)) continue;
+    try {
+      await testPasswordLayout(page, vp);
+    } catch (err) {
+      record("BUG13", `layout-error-${vp.label}`, false, err.message);
+    }
+  }
+  try {
+    await testDetourVsRefresh(page, "BB");
+  } catch (err) {
+    record("BUG12", "BB-detour-error", false, err.message);
+  }
+  try {
+    await testDetourVsRefresh(page, "AC");
+  } catch (err) {
+    record("BUG12", "AC-detour-error", false, err.message);
+  }
+  try {
+    await testSecurityCookies(page);
+  } catch (err) {
+    record("BUG15", "security-cookie-error", false, err.message);
+  }
+
+  try {
+    const bbReg = await completeBbRegistration(page);
     results.network.bbFinalUrl = bbReg.finalUrl;
+    const slugMatch = String(bbReg.finalUrl || "").match(/\/c\/[a-z0-9-]+\/[a-z0-9-]+/i);
+    if (slugMatch) {
+      const canonical = await page.request.get(`${BB}${slugMatch[0]}`);
+      record(
+        "BUG03",
+        "canonical-branch-path",
+        canonical.status() === 200 || canonical.status() === 302,
+        `${slugMatch[0]} status=${canonical.status()}`
+      );
+    } else {
+      const successHtml = await page.content();
+      const pathFromSuccess = successHtml.match(/\/c\/[a-z0-9-]+\/[a-z0-9-]+/i);
+      if (pathFromSuccess) {
+        const canonical = await page.request.get(`${BB}${pathFromSuccess[0]}`);
+        record(
+          "BUG03",
+          "canonical-branch-path",
+          canonical.status() === 200 || canonical.status() === 302,
+          `${pathFromSuccess[0]} status=${canonical.status()}`
+        );
+      } else {
+        record("BUG03", "canonical-branch-path", false, "no slug from registration");
+      }
+    }
   } catch (err) {
     record("BUG15", "bb-registration-flow", false, err.message);
   }
@@ -422,9 +473,6 @@ async function main() {
   } catch (err) {
     record("BUG15", "ac-registration-flow", false, err.message);
   }
-
-  const canonical = await page.request.get(`${BB}/c/grace-community-church/lusaka-central`);
-  record("BUG03", "canonical-branch-path", canonical.status() === 200 || canonical.status() === 302, String(canonical.status()));
 
   await browser.close();
 

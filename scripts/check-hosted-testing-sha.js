@@ -50,6 +50,18 @@ function normalizeSha(value) {
   return raw.slice(0, SHA_LEN);
 }
 
+/** True when expected and hosted SHAs match exactly or share a safe prefix (>=7 hex). */
+function shaMatches(expected, hosted) {
+  const e = normalizeSha(expected);
+  const h = normalizeSha(hosted);
+  if (!e || !h) return false;
+  if (e === h) return true;
+  const minPrefix = 7;
+  if (e.length >= minPrefix && h.startsWith(e)) return true;
+  if (h.length >= minPrefix && e.startsWith(h)) return true;
+  return false;
+}
+
 function hostnameOf(urlString) {
   try {
     return new URL(urlString).hostname.toLowerCase();
@@ -177,7 +189,7 @@ function classifyHealthz(body, expectedSha) {
   if (body.schemaCompatible !== true) return "SCHEMA_INCOMPATIBLE";
   const hostedSha = normalizeSha(body.gitSha);
   if (!hostedSha) return "GIT_SHA_UNAVAILABLE";
-  if (hostedSha !== expectedSha) return "DEPLOY_DRIFT";
+  if (!shaMatches(expectedSha, hostedSha)) return "DEPLOY_DRIFT";
   return "OK";
 }
 
