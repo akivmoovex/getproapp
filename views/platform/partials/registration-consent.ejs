@@ -26,9 +26,9 @@
     />
     <span>
       I agree to the
-      <a href="<%= termsHref %>">Terms of Service</a>
+      <a href="<%= termsHref %>" data-gp-registration-nav="1">Terms of Service</a>
       and
-      <a href="<%= privacyHref %>">Privacy Policy</a>.
+      <a href="<%= privacyHref %>" data-gp-registration-nav="1">Privacy Policy</a>.
     </span>
   </label>
   <p class="gp-registration-consent__error" id="registration-consent-error" data-gp-consent-error role="alert"<% if (!hasConsentError) { %> hidden<% } %>><%= hasConsentError ? consentError : '' %></p>

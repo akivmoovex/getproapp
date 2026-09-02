@@ -58,7 +58,7 @@ describe("V7 registration UX bugs 05–08", () => {
       PRODUCT_CODE.BLESSBOARD
     );
     assert.equal(fromReg.isRegistrationReturn, true);
-    assert.equal(fromReg.backHref, "/register-church?step=administrator");
+    assert.equal(fromReg.backHref, "/register-church?step=administrator&gpRegNav=1");
     assert.equal(fromReg.backLabel, "Back to registration");
 
     const rejected = parseRegistrationReturnContext(
@@ -75,6 +75,7 @@ describe("V7 registration UX bugs 05–08", () => {
       plan: "growth",
     });
     assert.match(bb.registrationTermsHref, /returnTo=register-church/);
+    assert.match(bb.registrationTermsHref, /gpRegNav=1/);
     assert.match(bb.registrationPrivacyHref, /step=review/);
     assert.match(bb.registrationPricingHref, /plan=growth/);
 

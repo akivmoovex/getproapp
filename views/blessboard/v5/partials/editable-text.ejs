@@ -28,7 +28,7 @@
   var _href = typeof editHref !== 'undefined' && editHref ? String(editHref) : '';
   var _id = typeof editId !== 'undefined' && editId ? String(editId) : '';
   var _label = 'Edit text';
-  if (_fieldKey === 'heading' && _sectionKey === 'hero') _label = 'Edit heading';
+  if (_fieldKey === 'heading' && _sectionKey === 'hero') _label = 'Edit hero heading';
   else if (_fieldKey === 'bodyText' && _sectionKey === 'hero') _label = 'Edit hero supporting text';
   else if (_fieldKey === 'buttonText') _label = 'Edit button label';
   else if (_fieldKey === 'buttonUrl') _label = 'Edit button link';
@@ -51,6 +51,7 @@
 <span
   class="gp-website-editable ac-website-editable"
   data-website-inline="1"
+  data-bb-inline-edit="1"
   data-website-key="<%= _escAttr(_pageKey) %>.<%= _escAttr(_sectionKey) %>.<%= _escAttr(_fieldKey) %>"
   data-website-type="<%= _multiline ? 'textarea' : 'text' %>"
   data-website-value="<%= _escAttr(_value) %>"

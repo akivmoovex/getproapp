@@ -11,6 +11,7 @@ const PRODUCT_CODE = Object.freeze({
 });
 
 const REGISTRATION_FROM = "registration";
+const { withRegistrationNavParam } = require("./registrationDraftLifecycle");
 
 const ALLOWED_REGISTRATION_PATHS = Object.freeze({
   [PRODUCT_CODE.BLESSBOARD]: "/register-church",
@@ -96,7 +97,7 @@ function parseRegistrationReturnContext(reqOrQuery, product) {
     params.set("plan", plan.slice(0, 40));
   }
   const qs = params.toString();
-  const backHref = qs ? `${registrationPath}?${qs}` : registrationPath;
+  const backHref = withRegistrationNavParam(qs ? `${registrationPath}?${qs}` : registrationPath);
 
   return {
     isRegistrationReturn: true,
@@ -139,7 +140,7 @@ function buildRegistrationOutboundLink(input) {
   if (plan && product === PRODUCT_CODE.BLESSBOARD) {
     params.set("plan", plan.slice(0, 40));
   }
-  return `${targetPath}?${params.toString()}`;
+  return withRegistrationNavParam(`${targetPath}?${params.toString()}`);
 }
 
 /**
@@ -176,7 +177,9 @@ function registrationLinkLocals(input) {
 module.exports = {
   PRODUCT_CODE,
   REGISTRATION_FROM,
+  withRegistrationNavParam,
   ALLOWED_REGISTRATION_PATHS,
+  ALLOWED_WIZARD_STEPS,
   parseRegistrationReturnContext,
   buildRegistrationOutboundLink,
   registrationLinkLocals,

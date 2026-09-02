@@ -43,6 +43,9 @@ const {
 } = require("../services/platformChurchRegistrationValidation");
 const { readRegistrationConsentValue } = require("../../platform/registration/registrationConsent");
 const {
+  resolveRegistrationDraftForGet,
+} = require("../../platform/registration/registrationDraftLifecycle");
+const {
   readRegistrationDraft,
   writeRegistrationDraft,
   clearRegistrationDraft,
@@ -506,10 +509,26 @@ function createApexMarketingRouter(deps) {
     }
 
     const wizardStep = resolveChurchRegisterWizardStep(req.query.step);
-    const draft = readRegistrationDraft(req, env);
+    const draftResolution = resolveRegistrationDraftForGet({
+      req,
+      res,
+      isProduction,
+      clearDraft: clearRegistrationDraft,
+      readDraft: readRegistrationDraft,
+      env,
+    });
+
+    if (!draftResolution.restoreDraft) {
+      const planQs = selectedPlan ? `?plan=${encodeURIComponent(selectedPlan)}` : "";
+      if (wizardStep !== "church" || req.query.step) {
+        return res.redirect(302, `${REGISTER_PATH}${planQs}`);
+      }
+    }
+
+    const draft = draftResolution.restoreDraft ? draftResolution.draft : null;
     const defaults = { country: "ZM", selected_plan: selectedPlan || "" };
     const form = formFromBody(
-      draft && draft.formData ? { ...defaults, ...draft.formData } : defaults,
+      draftResolution.formData ? { ...defaults, ...draftResolution.formData } : defaults,
       { selectedPlanHint: selectedPlan }
     );
 

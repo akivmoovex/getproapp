@@ -38,7 +38,7 @@
   <%- include('../partials/register-clinic-steps') %>
   <h2 class="gp-reg__form-heading">Administrator Details</h2>
   <p class="gp-reg__form-lede">Create the primary administrative account for this clinic.</p>
-  <form method="post" action="/register-clinic" class="ac-public-form acw-form acw-register__form" data-ac-loading="1" novalidate data-ac-register-step="administrator">
+  <form method="post" action="/register-clinic" class="ac-public-form acw-form acw-register__form" data-ac-loading="1" novalidate data-ac-register-step="administrator" data-gp-registration-form="1"<% if (typeof formState === 'string' && formState === 'validation_error') { %> data-gp-registration-dirty="1"<% } %>>
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <input type="hidden" name="clinicName" value="<%= fd.clinicName || '' %>"/>
     <input type="hidden" name="clinicType" value="<%= fd.clinicType || '' %>"/>
@@ -109,7 +109,7 @@
       }) %>
     </div>
     <div class="acw-register__actions">
-      <a class="ac-btn ac-btn--secondary" href="/register-clinic?step=clinic">
+      <a class="ac-btn ac-btn--secondary" href="<%= typeof registrationStepHref === 'function' ? registrationStepHref('clinic') : '/register-clinic?step=clinic&gpRegNav=1' %>" data-gp-registration-nav="1">
         <span class="material-symbols-outlined" aria-hidden="true">arrow_back</span>
         Back
       </a>
@@ -146,7 +146,7 @@
   <%- include('../partials/register-clinic-steps') %>
   <h2 class="gp-reg__form-heading">Let's set up your clinic</h2>
   <p class="gp-reg__form-lede">Enter the primary details for your medical practice.</p>
-  <form method="post" action="/register-clinic" class="ac-public-form acw-form acw-register__form" data-ac-loading="1" novalidate data-ac-register-step="clinic">
+  <form method="post" action="/register-clinic" class="ac-public-form acw-form acw-register__form" data-ac-loading="1" novalidate data-ac-register-step="clinic" data-gp-registration-form="1"<% if (typeof formState === 'string' && formState === 'validation_error') { %> data-gp-registration-dirty="1"<% } %>>
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
     <input type="hidden" name="action" value="next-clinic"/>
     <div class="ac-form-field<%= verr.clinicName ? ' ac-form-field--error' : '' %>">

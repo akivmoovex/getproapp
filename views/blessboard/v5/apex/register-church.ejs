@@ -92,7 +92,7 @@
           </div>
         </div>
         <div class="bb-apex-register__actions">
-          <a class="bb-apex-btn bb-apex-btn--primary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>">Review plans</a>
+          <a class="bb-apex-btn bb-apex-btn--primary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>" data-gp-registration-nav="1">Review plans</a>
           <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
         </div>
 
@@ -110,7 +110,7 @@
           </div>
         </div>
         <div class="bb-apex-register__actions">
-          <a class="bb-apex-btn bb-apex-btn--primary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>">Review plans</a>
+          <a class="bb-apex-btn bb-apex-btn--primary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>" data-gp-registration-nav="1">Review plans</a>
           <a class="bb-apex-btn bb-apex-btn--secondary" href="/">Back to home</a>
         </div>
 
@@ -143,6 +143,9 @@
           method="post"
           novalidate
           data-bb-register-form="1"
+          data-gp-registration-form="1"
+          data-bb-register-step="<%= step %>"
+          <% if (formError || fieldError) { %>data-gp-registration-dirty="1"<% } %>
           autocomplete="on"
         >
           <% if (!csrfToken) { %>
@@ -478,7 +481,7 @@
                 Continue
               </button>
               <% } %>
-              <a class="bb-apex-btn bb-apex-btn--secondary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>">Review plans</a>
+              <a class="bb-apex-btn bb-apex-btn--secondary" href="<%= typeof registrationPricingHref !== 'undefined' && registrationPricingHref ? registrationPricingHref : '/pricing' %>" data-gp-registration-nav="1">Review plans</a>
             </div>
             <p class="bb-apex-mkt-footnote">
               <% if (instantOn) { %>

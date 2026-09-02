@@ -6,6 +6,7 @@
  */
 
 const crypto = require("crypto");
+const { sanitizeRegistrationDraftFormData } = require("../../platform/registration/registrationDraftLifecycle");
 
 const COOKIE_NAME = "bb_reg_draft";
 const MAX_AGE_MS = 60 * 60 * 1000;
@@ -66,7 +67,7 @@ function readRegistrationDraft(req, env) {
 
 function writeRegistrationDraft(res, env, formData, { isProduction }) {
   const payload = {
-    formData: formData || {},
+    formData: sanitizeRegistrationDraftFormData(formData),
     updatedAt: Date.now(),
   };
   const payloadB64 = Buffer.from(JSON.stringify(payload)).toString("base64url");

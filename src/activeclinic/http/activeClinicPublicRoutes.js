@@ -103,6 +103,9 @@ const {
   writeRegistrationDraft,
   clearRegistrationDraft,
 } = require("../services/clinicRegistrationDraft");
+const {
+  resolveRegistrationDraftForGet,
+} = require("../../platform/registration/registrationDraftLifecycle");
 
 /** Absolute https origin for discovery documents. */
 function activeClinicOrigin(req) {
@@ -764,9 +767,26 @@ function registerActiveClinicPublicRoutes(app, deps) {
   app.get("/register-clinic", async (req, res) => {
     const csrfToken = issuePageCsrf(res, env, isProduction, req);
     const wizardStep = resolveRegisterWizardStep(req.query.step);
-    const draft = readRegistrationDraft(req, env);
+    const draftResolution = resolveRegistrationDraftForGet({
+      req,
+      res,
+      isProduction,
+      clearDraft: clearRegistrationDraft,
+      readDraft: readRegistrationDraft,
+      env,
+    });
+
+    if (!draftResolution.restoreDraft) {
+      if (wizardStep !== "clinic" || req.query.step) {
+        return res.redirect(302, "/register-clinic");
+      }
+    }
+
     const defaults = { countryCode: "ZM", clinicType: "clinic" };
-    const formData = draft && draft.formData ? { ...defaults, ...draft.formData } : defaults;
+    const formData = draftResolution.formData
+      ? { ...defaults, ...draftResolution.formData }
+      : defaults;
+    const draft = draftResolution.restoreDraft ? draftResolution.draft : null;
 
     if (wizardStep === "review") {
       if (!draft || !draft.formData) {
