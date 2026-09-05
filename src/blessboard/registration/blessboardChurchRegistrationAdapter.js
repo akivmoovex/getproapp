@@ -382,6 +382,9 @@ async function provision(db, input) {
       reviewRequired: false,
       reason: REVIEW_REASON.PROVISION_FAILURE,
       code: status || "provisioning_failed",
+      failedStage:
+        provisioned.failedStage || provisioned.provisioningStage || null,
+      provisioningStage: provisioned.provisioningStage || provisioned.failedStage || null,
       provisioned,
     };
   }
@@ -427,7 +430,7 @@ async function markLifecycle(db, input) {
       organizationId: input.organizationId || undefined,
       provisioningFailedAt: new Date().toISOString(),
       provisioningErrorCode: String(input.reason || "provision_failed").slice(0, 80),
-      lastProvisionStage: input.failedStage || "website_instance",
+      lastProvisionStage: input.failedStage || null,
     });
     return { ok: true };
   }

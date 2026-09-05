@@ -113,6 +113,8 @@ describe("V7 registration lifecycle bug 09", () => {
     assert.match(js, /beforeunload/);
     assert.match(js, /data-gp-registration-nav/);
     assert.match(js, /releaseGuard/);
+    assert.match(js, /pageshow/);
+    assert.match(js, /restoreSubmitButtons/);
   });
 
   it("buildRegistrationPageLocals includes step href helper", () => {

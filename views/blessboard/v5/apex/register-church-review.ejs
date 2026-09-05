@@ -30,7 +30,7 @@
 
         <%- include('../partials/register-church-steps') %>
 
-        <% if (formError && !fieldError) { %>
+        <% if (formError) { %>
         <div class="bb-apex-register-alert" role="alert"><p><%= formError %></p></div>
         <% } %>
 

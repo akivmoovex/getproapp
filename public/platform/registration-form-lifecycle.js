@@ -81,7 +81,30 @@
     form.addEventListener("submit", function (ev) {
       if (ev.defaultPrevented) return;
       releaseGuard();
+      var buttons = form.querySelectorAll("[type='submit'], button[data-gp-registration-submit]");
+      for (var i = 0; i < buttons.length; i += 1) {
+        var btn = buttons[i];
+        if (btn.disabled) continue;
+        if (!btn.getAttribute("data-gp-reg-label")) {
+          btn.setAttribute("data-gp-reg-label", btn.textContent || "");
+        }
+        btn.disabled = true;
+        btn.setAttribute("aria-busy", "true");
+      }
     });
+
+    function restoreSubmitButtons() {
+      var buttons = form.querySelectorAll("[type='submit'], button[data-gp-registration-submit]");
+      for (var i = 0; i < buttons.length; i += 1) {
+        var btn = buttons[i];
+        var label = btn.getAttribute("data-gp-reg-label");
+        btn.disabled = false;
+        btn.removeAttribute("aria-busy");
+        if (label) btn.textContent = label;
+      }
+    }
+
+    global.addEventListener("pageshow", restoreSubmitButtons);
 
     global.addEventListener("beforeunload", onBeforeUnload);
 

@@ -125,7 +125,7 @@
         </p>
         <% } %>
 
-        <% if (formError && !activeFieldError) { %>
+        <% if (formError) { %>
         <div class="bb-apex-register-alert" role="alert">
           <p><%= formError %></p>
           <% if (typeof showCsrfRetry !== 'undefined' && showCsrfRetry) { %>
@@ -187,8 +187,8 @@
                   value="<%= formData.contact_name || '' %>"
                   <%= fieldHasError('contact_name') ? 'aria-invalid="true"' : '' %>
                 />
-                <% if (fieldHasError('contact_name') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% if (fieldHasError('contact_name')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter the contact person name.' %></p>
                 <% } %>
               </div>
               <div class="bb-apex-field">
@@ -203,8 +203,8 @@
                   value="<%= formData.email || '' %>"
                   <%= fieldHasError('email') ? 'aria-invalid="true"' : '' %>
                 />
-                <% if (fieldHasError('email') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% if (fieldHasError('email')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter a valid email address.' %></p>
                 <% } %>
               </div>
             </div>
@@ -241,8 +241,8 @@
                 value="<%= formData.role_in_church || '' %>"
                 <%= fieldHasError('role_in_church') ? 'aria-invalid="true"' : '' %>
               />
-              <% if (fieldHasError('role_in_church') && formError) { %>
-              <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+              <% if (fieldHasError('role_in_church')) { %>
+              <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter your role in the church.' %></p>
               <% } %>
             </div>
           </fieldset>
@@ -265,8 +265,8 @@
                   required
                   <%= fieldHasError('password') ? 'aria-invalid="true"' : '' %>
                 />
-                <% if (fieldHasError('password') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% if (fieldHasError('password')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please choose a password for your administrator account.' %></p>
                 <% } %>
               </div>
               <div class="bb-apex-field">
@@ -281,8 +281,8 @@
                   aria-describedby="password-confirm-status"
                   <%= fieldHasError('password_confirm') ? 'aria-invalid="true"' : '' %>
                 />
-                <% if (fieldHasError('password_confirm') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% if (fieldHasError('password_confirm')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Password and confirmation do not match.' %></p>
                 <% } %>
                 <p class="gp-registration-password-confirm-status" id="password-confirm-status" role="status" aria-live="polite"></p>
               </div>
@@ -314,8 +314,8 @@
                 value="<%= formData.church_name || '' %>"
                 <%= fieldHasError('church_name') ? 'aria-invalid="true"' : '' %>
               />
-              <% if (fieldHasError('church_name') && formError) { %>
-              <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+              <% if (fieldHasError('church_name')) { %>
+              <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter your church name.' %></p>
               <% } %>
             </div>
             <div class="bb-apex-register-form__grid bb-apex-register-form__grid--two">
@@ -337,8 +337,8 @@
                   <option value="<%= c.iso %>"<%= selectedChurchCountry === c.iso ? ' selected' : '' %>><%= c.name %></option>
                   <% }); %>
                 </select>
-                <% if (fieldHasError('country') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% if (fieldHasError('country')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please select a country.' %></p>
                 <% } %>
               </div>
               <div class="bb-apex-field gp-location-field">
@@ -360,8 +360,8 @@
                 />
                 <input type="hidden" name="locationId" id="registerLocationId" value="<%= formData.locationId || '' %>"/>
                 <div id="registerCityListbox" class="gp-location-listbox" data-gp-location-listbox="1" role="listbox" hidden></div>
-                <% if (fieldHasError('city') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% if (fieldHasError('city')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter a city.' %></p>
                 <% } %>
               </div>
             </div>
@@ -377,8 +377,8 @@
                   value="<%= formData.branch_name || '' %>"
                   <%= fieldHasError('branch_name') ? 'aria-invalid="true"' : '' %>
                 />
-                <% if (fieldHasError('branch_name') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% if (fieldHasError('branch_name')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter a branch name.' %></p>
                 <% } %>
               </div>
               <div class="bb-apex-field">
@@ -394,8 +394,8 @@
                   value="<%= formData.branch_count || '' %>"
                   <%= fieldHasError('branch_count') ? 'aria-invalid="true"' : '' %>
                 />
-                <% if (fieldHasError('branch_count') && formError) { %>
-                <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+                <% if (fieldHasError('branch_count')) { %>
+                <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please enter a valid number of branches.' %></p>
                 <% } %>
               </div>
             </div>
@@ -425,8 +425,8 @@
                 <option value="growth"<%= planValue === 'growth' ? ' selected' : '' %>>Growth</option>
                 <option value="network"<%= planValue === 'network' ? ' selected' : '' %>>Network</option>
               </select>
-              <% if (fieldHasError('selected_plan') && formError) { %>
-              <p class="bb-apex-register-field-error" role="alert"><%= formError %></p>
+              <% if (fieldHasError('selected_plan')) { %>
+              <p class="bb-apex-register-field-error" role="alert"><%= formError || 'Please choose a plan.' %></p>
               <% } %>
             </div>
             <div class="bb-apex-field">
@@ -505,15 +505,6 @@
 
 <script>
 document.addEventListener("DOMContentLoaded", function () {
-  var form = document.querySelector("[data-bb-register-form]");
-  if (!form) return;
-  form.addEventListener("submit", function () {
-    var btn = form.querySelector(".bb-apex-register-submit");
-    if (!btn || btn.disabled) return;
-    btn.disabled = true;
-    btn.setAttribute("aria-busy", "true");
-    btn.textContent = "Submitting…";
-  });
   var nameInput = document.getElementById("register_church_name");
   var branchInput = document.getElementById("register_branch_name");
   var keyInput = document.getElementById("register_organization_key");

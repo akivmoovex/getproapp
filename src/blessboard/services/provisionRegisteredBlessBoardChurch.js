@@ -76,6 +76,7 @@ const STATUS = Object.freeze({
   PLAN_CONFIGURATION_ERROR: "plan_configuration_error",
   DATABASE_CONFLICT: "database_conflict",
   DATABASE_UNAVAILABLE: "database_unavailable",
+  DEPLOYMENT_NOT_FOUND: "deployment_not_found",
   PROVISIONING_FAILED: "provisioning_failed",
   INTERNAL_ERROR: "internal_error",
 });
@@ -152,6 +153,11 @@ const ERROR_META = Object.freeze({
     retryable: true,
     severity: "warn",
     publicMessage: "A conflicting record prevented provisioning.",
+  },
+  [STATUS.DEPLOYMENT_NOT_FOUND]: {
+    retryable: true,
+    severity: "error",
+    publicMessage: "We could not finish creating your church workspace right now. Please try again shortly.",
   },
   [STATUS.DATABASE_UNAVAILABLE]: {
     retryable: true,
@@ -989,8 +995,15 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         { manageTransaction: false }
       );
       if (!tenant.ok) {
+        const tenantStatus = String(tenant.status || "");
         throw new OrchestratorError(
-          tenant.status === "organization_conflict" ? STATUS.SLUG_UNAVAILABLE : STATUS.DATABASE_CONFLICT,
+          tenantStatus === "organization_conflict"
+            ? STATUS.SLUG_UNAVAILABLE
+            : tenantStatus === "deployment_not_found"
+              ? STATUS.DEPLOYMENT_NOT_FOUND
+              : tenantStatus === "inactive_deployment"
+                ? STATUS.DEPLOYMENT_NOT_FOUND
+                : STATUS.DATABASE_CONFLICT,
           tenant.message || tenant.status
         );
       }
@@ -1611,7 +1624,11 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           },
           { force: true }
         );
-        return fail(err.status, err.message);
+        return fail(err.status, err.message, {
+          provisioningStage,
+          failedStage: provisioningStage,
+          rootStatus: err.status,
+        });
       }
 
       logRegistrationTrace(
@@ -1690,13 +1707,15 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       return fail(
         failureCode === STATUS.DUPLICATE_EMAIL_REVIEW ||
           failureCode === STATUS.EXISTING_ACCOUNT ||
-          failureCode === STATUS.IDENTITY_CONFLICT
+          failureCode === STATUS.IDENTITY_CONFLICT ||
+          failureCode === STATUS.DEPLOYMENT_NOT_FOUND
           ? failureCode
           : STATUS.PROVISIONING_FAILED,
         failureDetail,
         {
           rootStatus: failureCode,
           provisioningStage,
+          failedStage: provisioningStage,
         }
       );
     }

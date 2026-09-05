@@ -79,6 +79,9 @@ const {
   generatePublicRegistrationReference,
   buildRegistrationSuccessRedirect,
 } = require("../../platform/registration/registrationSuccessPresentation");
+const {
+  safeRegistrationPublicError,
+} = require("../../platform/registration/safeRegistrationPublicError");
 const appRepo = require("../repositories/platformChurchRegistrationRepository");
 const {
   resolveBlessBoardRegistrationSuccessWebsite,
@@ -295,6 +298,13 @@ function rateLimitKey(req) {
   if (!email) return ip;
   const digest = crypto.createHash("sha256").update(`${ip}|${email}`).digest("hex").slice(0, 32);
   return digest;
+}
+
+function wizardStepFromAction(action) {
+  const value = String(action || "").trim().toLowerCase();
+  if (value === "confirm") return "review";
+  if (value === "next-admin") return "administrator";
+  return "church";
 }
 
 /**
@@ -614,6 +624,7 @@ function createApexMarketingRouter(deps) {
       const selectedPlanHint = normalizeSelectedPlan(req.query && req.query.plan);
       const body = req.body || {};
       const flagOn = instantEnabled();
+      const actionHint = String(body.action || "").trim().toLowerCase();
 
       logRegistrationTrace(req, {
         event: "church_registration_post",
@@ -621,6 +632,9 @@ function createApexMarketingRouter(deps) {
         outcome: "started",
         publicPlanCode: normalizeSelectedPlan(body.selected_plan) || selectedPlanHint || null,
         mode: flagOn ? "instant_enabled" : "enquiry_only",
+        workerPid: process.pid,
+        wizardStep: wizardStepFromAction(actionHint),
+        sessionExists: Boolean(req.v5Session && req.v5Session.authenticated),
       });
 
       function renderForm(status, extras) {
@@ -628,6 +642,13 @@ function createApexMarketingRouter(deps) {
         const csrfToken = issueAndSetCsrf(req, res);
         const wizardStep = (extras && extras.wizardStep) || "church";
         const form = formFromBody((extras && extras.form) || body, { selectedPlanHint });
+        const rawError = extras && extras.formError;
+        const statusNum = Number(status);
+        const needsPublicError =
+          statusNum >= 400 || (typeof rawError === "string" && rawError.trim().length > 0);
+        const formError = needsPublicError
+          ? safeRegistrationPublicError(rawError, GENERIC_SAVE_ERROR)
+          : null;
         const common = {
           authenticated,
           csrfToken,
@@ -642,7 +663,8 @@ function createApexMarketingRouter(deps) {
           instantFreeEnabled: flagOn,
           env,
           wizardStep,
-          ...extras,
+          ...(extras || {}),
+          formError,
         };
         if (wizardStep === "review") {
           return res.status(status).type("html").send(renderRegisterChurchReviewPage(common));
@@ -658,17 +680,33 @@ function createApexMarketingRouter(deps) {
           operation: "csrf_validate",
           outcome: "fail",
           failureCategory: "csrf_invalid",
+          csrfResult: "reject",
+          workerPid: process.pid,
+          wizardStep: wizardStepFromAction(actionHint),
+          sessionExists: Boolean(req.v5Session && req.v5Session.authenticated),
+          httpStatus: 403,
           durationMs: Date.now() - startedAt,
         });
         return renderForm(403, {
           formError: CSRF_FORM_ERROR,
           fieldError: null,
           showCsrfRetry: true,
+          wizardStep: wizardStepFromAction(actionHint),
         });
       }
       logCsrfDiag(req, env, "accept");
 
       const draft = readRegistrationDraft(req, env);
+      logRegistrationTrace(req, {
+        event: "church_registration_validation",
+        operation: "csrf_validate",
+        outcome: "ok",
+        csrfResult: "accept",
+        workerPid: process.pid,
+        wizardStep: wizardStepFromAction(actionHint),
+        draftExists: Boolean(draft && draft.formData),
+        sessionExists: Boolean(req.v5Session && req.v5Session.authenticated),
+      });
       const mergedBody = mergeRegistrationBodyForValidation(req, env, PRODUCT.BLESSBOARD, {
         ...(draft && draft.formData ? draft.formData : {}),
         ...body,
@@ -838,7 +876,23 @@ function createApexMarketingRouter(deps) {
             wizardStep: adminFields.has(result.field) ? "administrator" : "church",
           });
         }
-        return renderForm(result.httpStatus || 503, {
+        const failStatus = result.httpStatus || 503;
+        logRegistrationTrace(req, {
+          event: "church_registration_application",
+          operation: "register_church_fail_response",
+          outcome: "fail",
+          failureCategory: result.code || "provisioning_failed",
+          applicationId: result.application && result.application.id,
+          publicRegistrationReference:
+            result.application && result.application.public_registration_reference,
+          duplicate: Boolean(result.duplicate || result.alreadyProvisioned),
+          alreadyProvisioned: Boolean(result.alreadyProvisioned),
+          httpStatus: failStatus,
+          wizardStep: "review",
+          workerPid: process.pid,
+          durationMs: Date.now() - startedAt,
+        });
+        return renderForm(failStatus, {
           formError: result.error || GENERIC_SAVE_ERROR,
           fieldError: result.field || null,
           form: mergedForm,
@@ -1083,4 +1137,5 @@ module.exports = {
   resolveEmailVerifyResultOutcome,
   setEmailVerifyOutcomeFlashCookie,
   DUPLICATE_REVIEW_MESSAGE,
+  wizardStepFromAction,
 };

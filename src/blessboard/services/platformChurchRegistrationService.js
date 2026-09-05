@@ -557,6 +557,20 @@ function mapProvisionFailure(provision, application) {
       httpStatus: 503,
     };
   }
+  if (
+    status === ORCH_STATUS.DEPLOYMENT_NOT_FOUND ||
+    status === "deployment_not_found" ||
+    status === "inactive_deployment"
+  ) {
+    return {
+      ok: false,
+      mode: "instant_free",
+      application,
+      code: status,
+      error: GENERIC_PROVISION_ERROR,
+      httpStatus: 503,
+    };
+  }
   return {
     ok: false,
     mode: "instant_free",

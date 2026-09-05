@@ -74,6 +74,13 @@ const ALLOWED_KEYS = Object.freeze(
     "underlyingErrorClass",
     "administratorViaInvitation",
     "invitationCreated",
+    "workerPid",
+    "wizardStep",
+    "draftExists",
+    "sessionExists",
+    "csrfResult",
+    "httpStatus",
+    "publicRegistrationReference",
   ])
 );
 

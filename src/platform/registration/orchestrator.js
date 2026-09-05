@@ -266,7 +266,12 @@ async function submitPlatformRegistration(db, input) {
     await markAdapterLifecycle(adapter, db, application, LIFECYCLE.PROVISION_FAILED, {
       reason,
       organizationId: provisioned && provisioned.organizationId,
-      failedStage: provisioned && provisioned.failedStage,
+      failedStage:
+        (provisioned &&
+          (provisioned.failedStage ||
+            provisioned.provisioningStage ||
+            (provisioned.provisioned && provisioned.provisioned.provisioningStage))) ||
+        null,
     });
     await maybeAudit(
       db,
