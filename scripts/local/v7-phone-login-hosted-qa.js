@@ -77,19 +77,21 @@ async function loginPhoneJs(page, base, phoneLocal) {
   };
 }
 
-async function tabSwitchRegression(page, base, email, phoneLocal) {
+async function tabSwitchRegression(page, context, base, email, phoneLocal, expectPath) {
   await page.goto(`${base}/login`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await page.locator('[data-gp-auth-id-tab="email"]').click();
   await page.locator('input[name="login_email"]').fill(email);
   await page.locator('[data-gp-auth-id-tab="phone"]').click();
-  let mid = await fieldState(page);
+  const mid = await fieldState(page);
   await page.locator('input[name="phone_national"]').fill(phoneLocal);
   await page.locator('[data-gp-auth-id-tab="email"]').click();
   const backEmail = await fieldState(page);
+  const emailValue = await page.locator('input[name="login_email"]').inputValue();
   await page.locator('input[name="password"]').fill(PASS);
   await page.locator('button[type="submit"]').first().click();
   await page.waitForURL((u) => !u.pathname.includes("/login"), { timeout: 60000 });
   const emailPath = new URL(page.url()).pathname;
+  await context.clearCookies();
   await page.goto(`${base}/login`, { waitUntil: "domcontentloaded", timeout: 60000 });
   await page.locator('[data-gp-auth-id-tab="phone"]').click();
   await page.locator('input[name="phone_national"]').fill(phoneLocal);
@@ -99,6 +101,7 @@ async function tabSwitchRegression(page, base, email, phoneLocal) {
   return {
     mid,
     backEmail,
+    emailValue,
     emailPath,
     phonePath: new URL(page.url()).pathname,
     ok:
@@ -107,7 +110,10 @@ async function tabSwitchRegression(page, base, email, phoneLocal) {
       backEmail.emailDisabled === false &&
       backEmail.phoneDisabled === true &&
       backEmail.emailRequired === true &&
-      backEmail.phoneRequired === false,
+      backEmail.phoneRequired === false &&
+      emailValue === email &&
+      emailPath.startsWith(expectPath) &&
+      new URL(page.url()).pathname.startsWith(expectPath),
   };
 }
 
@@ -192,42 +198,7 @@ async function main() {
   const results = [];
 
   for (const c of CASES) {
-    for (const vp of [
-      { label: "1440", width: 1440, height: 900 },
-      { label: "390", width: 390, height: 844 },
-    ]) {
-      const context = await browser.newContext({
-        viewport: { width: vp.width, height: vp.height },
-      });
-      const page = await context.newPage();
-      try {
-        const email = await loginEmailJs(page, c.base, c.email);
-        await context.clearCookies();
-        const phone = await loginPhoneJs(page, c.base, c.phoneLocal);
-        await context.clearCookies();
-        const switchReg = await tabSwitchRegression(page, c.base, c.email, c.phoneLocal);
-        results.push({
-          product: c.product,
-          viewport: vp.label,
-          kind: "js-enabled",
-          email,
-          phone,
-          switchReg,
-          sameAccount:
-            email.path.startsWith(c.expectPath) && phone.path.startsWith(c.expectPath),
-          pass:
-            email.ok &&
-            phone.ok &&
-            phone.status === 303 &&
-            switchReg.ok &&
-            email.path.startsWith(c.expectPath) &&
-            phone.path.startsWith(c.expectPath),
-        });
-      } finally {
-        await context.close();
-      }
-    }
-
+    // Prefer no-JS checks first so field-state coverage is not lost to rate limits.
     const emailNoJs = await noJsModeLogin(
       browser,
       c.base,
@@ -258,6 +229,52 @@ async function main() {
         wrongPw.stayedPhone &&
         wrongPw.hasError,
     });
+
+    for (const vp of [
+      { label: "1440", width: 1440, height: 900 },
+      { label: "390", width: 390, height: 844 },
+    ]) {
+      const context = await browser.newContext({
+        viewport: { width: vp.width, height: vp.height },
+      });
+      const page = await context.newPage();
+      try {
+        const email = await loginEmailJs(page, c.base, c.email);
+        await context.clearCookies();
+        const phone = await loginPhoneJs(page, c.base, c.phoneLocal);
+        await context.clearCookies();
+        const switchReg =
+          vp.label === "1440"
+            ? await tabSwitchRegression(
+                page,
+                context,
+                c.base,
+                c.email,
+                c.phoneLocal,
+                c.expectPath
+              )
+            : { ok: true, skipped: true };
+        results.push({
+          product: c.product,
+          viewport: vp.label,
+          kind: "js-enabled",
+          email,
+          phone,
+          switchReg,
+          sameAccount:
+            email.path.startsWith(c.expectPath) && phone.path.startsWith(c.expectPath),
+          pass:
+            email.ok &&
+            phone.ok &&
+            phone.status === 303 &&
+            switchReg.ok &&
+            email.path.startsWith(c.expectPath) &&
+            phone.path.startsWith(c.expectPath),
+        });
+      } finally {
+        await context.close();
+      }
+    }
   }
 
   await browser.close();

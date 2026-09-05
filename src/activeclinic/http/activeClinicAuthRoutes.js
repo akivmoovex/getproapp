@@ -114,19 +114,24 @@ function registerActiveClinicAuthRoutes(app, deps) {
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => {
-      const id = String((req.body && req.body.identifier) || "")
-        .trim()
-        .toLowerCase();
+      const resolved = resolveLoginIdentifierFromBody(req.body);
+      const id = String(resolved.identifier || "").trim().toLowerCase();
       return sha256Hex(`${id}|${clientIp(req)}`);
     },
     handler: (req, res) => {
       const csrfToken = issueCsrfToken(env);
       setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+      const resolved = resolveLoginIdentifierFromBody(req.body);
+      const loginMode = resolved.mode === "phone" ? "phone" : "email";
       return res.status(429).type("html").send(
         renderLoginPage({
           csrfToken,
           error: "Too many sign-in attempts. Please wait a few minutes and try again.",
-          identifier: "",
+          identifier: resolved.identifier,
+          loginEmail: req.body && req.body.login_email,
+          loginMode,
+          phoneCountry: req.body && req.body.phone_country,
+          ...buildLoginModeHrefs({ mode: loginMode }),
         })
       );
     },

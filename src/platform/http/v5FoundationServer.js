@@ -511,15 +511,16 @@ function createV5FoundationApp(options) {
     standardHeaders: true,
     legacyHeaders: false,
     keyGenerator: (req) => {
-      const email = String((req.body && req.body.email) || "")
-        .trim()
-        .toLowerCase();
+      const resolved = resolveLoginIdentifierFromBody(req.body);
+      const id = String(resolved.identifier || "").trim().toLowerCase();
       const ip = clientIp(req);
-      return sha256Hex(`${email}|${ip}`);
+      return sha256Hex(`${id}|${ip}`);
     },
     handler: (req, res) => {
       const csrfToken = issueCsrfToken(env);
       setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+      const resolved = resolveLoginIdentifierFromBody(req.body);
+      const loginMode = resolved.mode === "phone" ? "phone" : "email";
       return res
         .status(429)
         .type("html")
@@ -527,6 +528,12 @@ function createV5FoundationApp(options) {
           renderLoginPage({
             csrfToken,
             error: "Too many sign-in attempts. Please wait a few minutes and try again.",
+            loginMode,
+            ...buildLoginModeHrefs({ mode: loginMode }),
+            loginEmail: req.body && req.body.login_email,
+            emailValue: resolved.mode === "email" ? resolved.identifier : "",
+            phoneCountry: req.body && req.body.phone_country,
+            phoneNational: req.body && req.body.phone_national,
           })
         );
     },
