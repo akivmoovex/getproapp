@@ -121,6 +121,54 @@ describe("ActiveClinic phone number service", () => {
     assert.match(String(bad.error), /valid phone number/i);
   });
 
+  it("relaxed mode rejects impossible short Zambia nationals (3 and 4 digits)", () => {
+    for (const national of ["123", "1234", "97", "abcd", "!!!"]) {
+      const bad = normalizePhoneNumber({
+        phoneNational: national,
+        phoneCountry: "ZM",
+        validationMode: VALIDATION_MODES.RELAXED,
+      });
+      assert.equal(bad.ok, false, `expected reject for ${national}`);
+      assert.ok(bad.error);
+      assert.equal(bad.field, "phone");
+    }
+    const blank = normalizePhoneNumber({
+      phoneNational: "",
+      phoneCountry: "ZM",
+      validationMode: VALIDATION_MODES.RELAXED,
+      required: true,
+    });
+    assert.equal(blank.ok, false);
+    assert.equal(blank.code, "phone_required");
+
+    const valid = normalizePhoneNumber({
+      phoneNational: "971234567",
+      phoneCountry: "ZM",
+      validationMode: VALIDATION_MODES.RELAXED,
+    });
+    assert.equal(valid.ok, true);
+    assert.equal(valid.e164, "+260971234567");
+
+    const ke = normalizePhoneNumber({
+      phoneNational: "712345678",
+      phoneCountry: "KE",
+      validationMode: VALIDATION_MODES.RELAXED,
+    });
+    assert.equal(ke.ok, true);
+    assert.match(String(ke.e164), /^\+254/);
+  });
+
+  it("ActiveClinic registration helper rejects short phones", () => {
+    const short = normalizeZambiaPhone("1234", { phoneCountry: "ZM", phoneNational: "1234" });
+    assert.equal(short.ok, false);
+    const good = normalizeZambiaPhone("971234567", {
+      phoneCountry: "ZM",
+      phoneNational: "971234567",
+    });
+    assert.equal(good.ok, true);
+    assert.equal(good.normalized, "+260971234567");
+  });
+
   it("validation mode comes from trusted env only", () => {
     assert.equal(resolvePhoneValidationMode({ DEPLOYMENT_ENV: "testing" }), "relaxed");
     assert.equal(resolvePhoneValidationMode({ DEPLOYMENT_ENV: "production" }), "strict");

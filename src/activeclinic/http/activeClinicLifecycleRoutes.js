@@ -203,6 +203,7 @@ function registerActiveClinicLifecycleRoutes(app, deps) {
         country: req.body && req.body.phone_country,
         deploymentCode: deployment.ok ? deployment.code : CODE_FALLBACK(),
         requestIp: clientIp(req),
+        requestId: req.requestId || req.id || null,
         env,
       });
       return res.redirect(303, "/forgot-password/check");

@@ -60,6 +60,25 @@ const RESULT = Object.freeze({
 const NEUTRAL_MESSAGE =
   "If an eligible ActiveClinic account exists for that phone or email, reset instructions are available to authorized administrators when delivery is configured.";
 
+/**
+ * Safe structured recovery observability. Never logs tokens, passwords, or full contacts.
+ * @param {Record<string, unknown>} fields
+ */
+function logPasswordRecoveryTrace(fields) {
+  const payload = {
+    event: "activeclinic_password_recovery",
+    requestId: fields && fields.requestId != null ? String(fields.requestId).slice(0, 64) : null,
+    identifierType: fields && fields.identifierType ? String(fields.identifierType).slice(0, 16) : null,
+    identityFound: Boolean(fields && fields.identityFound),
+    tokenGenerated: Boolean(fields && fields.tokenGenerated),
+    adapterSelected: fields && fields.adapterSelected != null ? String(fields.adapterSelected).slice(0, 40) : null,
+    deliveryOutcome:
+      fields && fields.deliveryOutcome != null ? String(fields.deliveryOutcome).slice(0, 40) : null,
+    rateLimited: Boolean(fields && fields.rateLimited),
+  };
+  console.log(`[activeclinic-password-recovery] ${JSON.stringify(payload)}`);
+}
+
 function generateRawToken() {
   const rawToken = crypto.randomBytes(32).toString("base64url");
   return { rawToken, tokenHash: hashSessionToken(rawToken) };
@@ -136,10 +155,13 @@ async function findEligibleIdentityForReset(db, identifier) {
 async function requestActiveClinicPasswordReset(db, input) {
   const src = input && typeof input === "object" ? input : {};
   const deploymentCode = src.deploymentCode || CODE_ACTIVECLINIC_ORG_V6;
+  const requestId = src.requestId || null;
   const identifier = parseIdentifier(src.identifier || src.phone || src.email, {
     country: src.country || src.phoneCountry || src.phone_country || null,
   });
   const ipHash = hashIp(src.requestIp);
+  // Public forgot-password does not send mail yet (delivery deferred). Adapter stays unavailable.
+  const adapterSelected = "unavailable";
 
   const neutral = {
     ok: true,
@@ -150,6 +172,14 @@ async function requestActiveClinicPasswordReset(db, input) {
   };
 
   if (!identifier.normalized || identifier.invalid) {
+    logPasswordRecoveryTrace({
+      requestId,
+      identifierType: identifier.kind || "unknown",
+      identityFound: false,
+      tokenGenerated: false,
+      adapterSelected,
+      deliveryOutcome: "skipped_invalid_identifier",
+    });
     return neutral;
   }
 
@@ -165,6 +195,15 @@ async function requestActiveClinicPasswordReset(db, input) {
         });
         if (ipLimit.limited) {
           await client.query("COMMIT");
+          logPasswordRecoveryTrace({
+            requestId,
+            identifierType: identifier.kind,
+            identityFound: false,
+            tokenGenerated: false,
+            adapterSelected,
+            deliveryOutcome: "rate_limited",
+            rateLimited: true,
+          });
           return { ...neutral, rateLimited: true };
         }
       }
@@ -177,6 +216,15 @@ async function requestActiveClinicPasswordReset(db, input) {
       });
       if (idLimit.limited) {
         await client.query("COMMIT");
+        logPasswordRecoveryTrace({
+          requestId,
+          identifierType: identifier.kind,
+          identityFound: false,
+          tokenGenerated: false,
+          adapterSelected,
+          deliveryOutcome: "rate_limited",
+          rateLimited: true,
+        });
         return { ...neutral, rateLimited: true };
       }
 
@@ -197,6 +245,14 @@ async function requestActiveClinicPasswordReset(db, input) {
           },
         });
         await client.query("COMMIT");
+        logPasswordRecoveryTrace({
+          requestId,
+          identifierType: identifier.kind,
+          identityFound: false,
+          tokenGenerated: false,
+          adapterSelected,
+          deliveryOutcome: "skipped_unknown_or_ineligible",
+        });
         return neutral;
       }
 
@@ -251,8 +307,16 @@ async function requestActiveClinicPasswordReset(db, input) {
 
       await client.query("COMMIT");
 
-      // Public path never returns the raw token.
+      // Public path never returns the raw token. Outbound email/SMS not wired yet.
       void rawToken;
+      logPasswordRecoveryTrace({
+        requestId,
+        identifierType: identifier.kind,
+        identityFound: true,
+        tokenGenerated: true,
+        adapterSelected,
+        deliveryOutcome: DELIVERY.UNAVAILABLE,
+      });
       return {
         ...neutral,
         deliveryStatus: DELIVERY.UNAVAILABLE,

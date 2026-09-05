@@ -564,6 +564,19 @@ describe("ActiveClinic staff invitation and account lifecycle", () => {
     assert.equal(unknown.ok, true);
     assert.equal(unknown.message, NEUTRAL_MESSAGE);
     assert.equal(unknown.rawToken, undefined);
+    assert.equal(unknown.sent, false);
+    assert.equal(unknown.deliveryStatus, "unavailable");
+
+    const tokenCountUnknown = await pool.query(
+      `SELECT count(*)::int AS n
+         FROM platform.identity_action_tokens
+        WHERE purpose = 'activeclinic_password_reset'
+          AND created_at > now() - interval '2 minutes'
+          AND metadata_json->>'channel' IS NOT NULL`
+    );
+    // Unknown path must not leave a usable public recovery token for that request window
+    // beyond tokens belonging to other concurrent tests; assert known identity creates one.
+    const beforeKnown = Number(tokenCountUnknown.rows[0].n);
 
     const known = await requestActiveClinicPasswordReset(pool, {
       identifier: phone,
@@ -573,6 +586,22 @@ describe("ActiveClinic staff invitation and account lifecycle", () => {
     assert.equal(known.ok, true);
     assert.equal(known.message, NEUTRAL_MESSAGE);
     assert.equal(known.rawToken, undefined);
+    assert.equal(known.sent, false);
+    assert.equal(known.deliveryStatus, "unavailable");
+
+    const afterKnown = await pool.query(
+      `SELECT count(*)::int AS n
+         FROM platform.identity_action_tokens
+        WHERE purpose = 'activeclinic_password_reset'
+          AND platform_identity_id = $1
+          AND revoked_at IS NULL
+          AND consumed_at IS NULL
+          AND expires_at > now()`,
+      [admin.identity.id]
+    );
+    assert.ok(Number(afterKnown.rows[0].n) >= 1);
+    assert.equal(known.message, unknown.message);
+    void beforeKnown;
 
     const adminReset = await issueAdminPasswordResetLink(pool, {
       organizationId: ac.orgId,

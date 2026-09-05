@@ -298,16 +298,15 @@ function normalizePhoneNumber(input) {
         field: "phone",
       };
     }
-  } else {
-    // relaxed: require possible or at least E.164 length shape
-    if (!possible && !PHONE_E164_RE.test(e164)) {
-      return {
-        ok: false,
-        code: "phone_unparseable",
-        error: `Enter a valid phone number for ${phone.country || parsed.selectedCountry}.`,
-        field: "phone",
-      };
-    }
+  } else if (!possible) {
+    // Relaxed still rejects impossible/too-short numbers (e.g. 3–4 digit ZM nationals).
+    // Do not accept merely because the concatenated E.164 string matches length shape.
+    return {
+      ok: false,
+      code: "phone_invalid_for_country",
+      error: `Enter a valid phone number for ${phone.country || parsed.selectedCountry}.`,
+      field: "phone",
+    };
   }
 
   const national = phone.nationalNumber || "";
