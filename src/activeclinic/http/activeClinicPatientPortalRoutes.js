@@ -37,6 +37,9 @@ const {
   setPlatformIdentityPassword,
 } = require("../../platform/services/platformIdentityCredentialService");
 const {
+  extractPhoneFieldsFromBody,
+} = require("../../platform/services/phoneNumberService");
+const {
   renderPatientView,
   renderPatientClinicNotFound,
   BOOKING_STATUS_LABELS,
@@ -154,12 +157,13 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     limit: String(env.NODE_ENV || "") === "test" ? 1000 : 5,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) =>
-      sha256Hex(
-        `patient-register|${req.params.clinicKey}|${
-          (req.body && req.body.phone) || ""
-        }|${clientIp(req)}`
-      ),
+    keyGenerator: (req) => {
+      const fields = extractPhoneFieldsFromBody(req.body);
+      const phoneKey = fields.phoneNational || fields.phone || "";
+      return sha256Hex(
+        `patient-register|${req.params.clinicKey}|${phoneKey}|${clientIp(req)}`
+      );
+    },
     handler: (req, res) => {
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res
@@ -451,7 +455,14 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         }
 
         const guestToken = String((req.body && req.body.guestToken) || "").trim();
-        const phone = String((req.body && req.body.phone) || "").trim();
+        const phoneFields = extractPhoneFieldsFromBody(req.body);
+        const phoneCountry = String(
+          phoneFields.phoneCountry || (req.body && req.body.phone_country) || "ZM"
+        )
+          .trim()
+          .toUpperCase() || "ZM";
+        // Prefer split national; allow legacy phone only as controlled fallback.
+        const phone = String(phoneFields.phoneNational || phoneFields.phone || "").trim();
         const email = String((req.body && req.body.email) || "").trim();
         const firstName = String((req.body && req.body.firstName) || "").trim();
         const lastName = String((req.body && req.body.lastName) || "").trim();
@@ -466,7 +477,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
             phone,
             email: email || null,
             deploymentCode,
-            country: String((req.body && req.body.phone_country) || "ZM").trim().toUpperCase() || "ZM",
+            country: phoneCountry,
           });
         } else {
           if (!firstName || !lastName) {
@@ -490,7 +501,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
             deploymentCode,
             organizationId: clinic.organizationId,
             healthcareOrganizationId: clinic.healthcareOrganizationId,
-            country: String((req.body && req.body.phone_country) || "ZM").trim().toUpperCase() || "ZM",
+            country: phoneCountry,
           });
         }
 

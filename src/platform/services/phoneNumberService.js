@@ -384,6 +384,11 @@ function comparePhoneNumbers(a, b, options) {
 
 /**
  * Extract structured phone fields from a request body (legacy + new).
+ *
+ * Precedence at normalize time (see parsePhoneInput): phone_national wins over
+ * legacy `phone`. Legacy `phone` is RETAINED for proven callers (BB HQ/staff
+ * invites, member profile, forgot-password, church auth register, CMS, etc.).
+ * Do not remove until those UIs migrate to phone_country + phone_national.
  */
 function extractPhoneFieldsFromBody(body, prefix) {
   const b = body || {};
