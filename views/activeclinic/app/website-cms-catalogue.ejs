@@ -17,8 +17,11 @@
   <div class="ac-mw-head">
     <div>
       <h2>Public catalogue</h2>
-      <p class="ac-mw-muted">Choose which existing doctors and services appear on your public website. This does not create staff or service records, and it does not change booking or clinical settings.</p>
+      <p class="ac-mw-muted">Manage clinic services and choose which doctors and services appear on your public website. Services are stored in the shared clinic catalogue used by booking.</p>
     </div>
+    <% if (canEdit && tab === "services") { %>
+    <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/catalogue/services/new" data-ac-catalogue-action="add-service">Add service</a>
+    <% } %>
   </div>
   <% if (cms.error) { %><p class="ac-mw-error" role="alert"><%= cms.error %></p><% } %>
   <% if (cms.saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
@@ -31,7 +34,7 @@
   <% if (!rows.length) { %>
   <p class="ac-mw-muted" data-ac-catalogue-empty="<%= tab %>">
     <% if (tab === 'services') { %>
-    No clinic services are available yet. Add a service in clinic operations first, then return here to show it on the website.
+    No clinic services yet.<% if (canEdit) { %> <a href="/app/settings/website/catalogue/services/new">Add a service</a> to show it on the website.<% } %>
     <% } else { %>
     No clinic staff records are available yet. Add staff in clinic records first, then return here to show a public profile.
     <% } %>
@@ -78,7 +81,7 @@
           <button type="submit" class="ac-mw-btn" data-ac-catalogue-action="feature"><%= item.featured ? 'Remove featured' : 'Featured' %></button>
         </form>
         <% if (item.editHref) { %>
-        <a class="ac-mw-btn" href="<%= item.editHref %>" data-ac-catalogue-action="edit">Edit website presentation</a>
+        <a class="ac-mw-btn" href="<%= item.editHref %>" data-ac-catalogue-action="edit"><%= item.kind === 'service' ? 'Edit service' : 'Edit website presentation' %></a>
         <% } %>
         <% } else if (item.canShow) { %>
         <form method="post" action="/app/settings/website/catalogue/<%= item.kind === 'service' ? 'services' : 'doctors' %>/<%= item.id %>">

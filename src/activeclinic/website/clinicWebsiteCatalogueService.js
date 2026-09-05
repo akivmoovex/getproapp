@@ -3,12 +3,13 @@
 /**
  * Website Management public catalogue (doctors and services).
  * Toggles canonical public-profile / website-visible flags and CMS overlays.
- * Does not create staff or appointment-service records.
+ * Service create/edit writes the canonical appointment_service_types catalogue.
  */
 
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const libraryService = require("./clinicWebsiteLibraryService");
 const { LIBRARY_SOURCES, boolValue } = require("./clinicWebsiteCms");
+const appointmentRepo = require("../repositories/appointmentRepository");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -17,10 +18,12 @@ const RESULT = Object.freeze({
   NOT_FOUND: "not_found",
   INACTIVE: "inactive",
   NEEDS_PROFILE: "needs_profile",
+  CONFLICT: "conflict",
 });
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const SERVICE_KEY_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
 
 function granted(input) {
   return Array.isArray(input && input.grantedPermissions) ? input.grantedPermissions : [];
@@ -41,6 +44,16 @@ function slugKey(name) {
     .replace(/^-+|-+$/g, "")
     .slice(0, 40);
   return base.replace(/^[^a-z]+/, "") || "clinician";
+}
+
+function serviceKeyFromName(name) {
+  const base = String(name || "service")
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 48);
+  return base || "service";
 }
 
 function overlayFor(items, type, key) {
@@ -100,7 +113,7 @@ async function listCatalogueServices(db, input) {
     return [];
   }
   const result = await db.query(
-    `SELECT ast.id, ast.service_key, ast.display_name, ast.public_summary, ast.status,
+    `SELECT ast.id, ast.service_key, ast.display_name, ast.description, ast.public_summary, ast.status,
             ast.public_bookable, ast.public_website_visible, ast.default_duration_minutes
        FROM activeclinic.appointment_service_types ast
       WHERE ast.organization_id = $1
@@ -141,15 +154,17 @@ function presentDoctor(row, overlay) {
 
 function presentService(row, overlay) {
   const overlayHidden = overlay && overlay.visible === false;
-  const listed = row.public_website_visible === true || row.public_bookable === true;
-  const websiteVisible = listed && !overlayHidden;
+  const websiteVisible = row.public_website_visible === true && !overlayHidden;
   const active = row.status === "active";
   return {
     id: row.id,
     kind: "service",
     name: row.display_name,
-    subtitle: row.public_summary || "Consultation",
+    subtitle: row.public_summary || row.description || "Consultation",
+    description: row.description || "",
+    publicSummary: row.public_summary || "",
     serviceKey: row.service_key,
+    defaultDurationMinutes: row.default_duration_minutes || 30,
     operationallyAvailable: active,
     websiteVisible,
     overlayHidden: Boolean(overlayHidden),
@@ -161,7 +176,7 @@ function presentService(row, overlay) {
     canHide: websiteVisible,
     canFeature: websiteVisible,
     publicWebsiteVisible: row.public_website_visible === true,
-    editHref: overlay && overlay.stored ? `/app/settings/website/library/${overlay.id}` : "",
+    editHref: `/app/settings/website/catalogue/services/${row.id}/edit`,
     overlayId: overlay && overlay.stored ? overlay.id : "",
   };
 }
@@ -209,9 +224,9 @@ async function loadStaffRow(db, input, staffId) {
 
 async function loadServiceRow(db, input, serviceId) {
   const result = await db.query(
-    `SELECT ast.id, ast.service_key, ast.display_name, ast.public_summary, ast.status,
-            ast.public_bookable, ast.public_website_visible, ast.organization_id,
-            ast.healthcare_organization_id
+    `SELECT ast.id, ast.service_key, ast.display_name, ast.description, ast.public_summary, ast.status,
+            ast.public_bookable, ast.public_website_visible, ast.default_duration_minutes,
+            ast.organization_id, ast.healthcare_organization_id
        FROM activeclinic.appointment_service_types ast
       WHERE ast.id = $1
         AND ast.organization_id = $2
@@ -282,15 +297,13 @@ async function setServiceWebsiteVisibility(db, input) {
   const row = await loadServiceRow(db, input, serviceId);
   if (!row) return { ok: false, code: RESULT.NOT_FOUND };
   if (show && row.status !== "active") return { ok: false, code: RESULT.INACTIVE };
-  if (show) {
-    await db.query(
-      `UPDATE activeclinic.appointment_service_types
-          SET public_website_visible = true,
-              updated_at = now()
-        WHERE id = $1 AND organization_id = $2 AND healthcare_organization_id = $3`,
-      [row.id, input.organizationId, input.healthcareOrganizationId]
-    );
-  }
+  await db.query(
+    `UPDATE activeclinic.appointment_service_types
+        SET public_website_visible = $4,
+            updated_at = now()
+      WHERE id = $1 AND organization_id = $2 AND healthcare_organization_id = $3`,
+    [row.id, input.organizationId, input.healthcareOrganizationId, show]
+  );
   const overlay = await libraryService.upsertOperationalOverlay(db, {
     ...input,
     type: "service",
@@ -306,6 +319,191 @@ async function setServiceWebsiteVisibility(db, input) {
     serviceKey: row.service_key,
     visible: show,
     bookable: row.public_bookable === true,
+  };
+}
+
+async function uniqueServiceKey(db, input, preferred) {
+  let candidate = serviceKeyFromName(preferred);
+  if (!SERVICE_KEY_RE.test(candidate)) candidate = "service";
+  for (let i = 0; i < 16; i += 1) {
+    const key = i === 0 ? candidate : `${candidate.slice(0, 40)}-${i + 1}`;
+    const existing = await db.query(
+      `SELECT id FROM activeclinic.appointment_service_types
+        WHERE organization_id = $1
+          AND healthcare_organization_id = $2
+          AND service_key = $3
+        LIMIT 1`,
+      [input.organizationId, input.healthcareOrganizationId, key]
+    );
+    if (!existing.rows.length) return key;
+  }
+  return `${candidate.slice(0, 32)}-${Date.now().toString(36)}`;
+}
+
+async function getCatalogueService(db, input) {
+  const allowed = requireEdit(input);
+  if (!allowed.ok) {
+    const viewOk =
+      hasWebsitePermission(granted(input), PERMISSIONS.VIEW) ||
+      hasWebsitePermission(granted(input), PERMISSIONS.EDIT);
+    if (!viewOk) return { ok: false, code: RESULT.FORBIDDEN };
+  }
+  const serviceId = String((input && input.serviceId) || "");
+  if (!UUID_RE.test(serviceId)) return { ok: false, code: RESULT.INVALID_INPUT };
+  const row = await loadServiceRow(db, input, serviceId);
+  if (!row) return { ok: false, code: RESULT.NOT_FOUND };
+  const loaded = await libraryService.loadLibrary(db, input);
+  if (!loaded.ok) return loaded;
+  return {
+    ok: true,
+    service: presentService(row, overlayFor(loaded.items, "service", row.service_key)),
+    canEdit: hasWebsitePermission(granted(input), PERMISSIONS.EDIT),
+  };
+}
+
+async function createCatalogueService(db, input) {
+  const allowed = requireEdit(input);
+  if (!allowed.ok) return allowed;
+
+  const displayName = String((input && input.displayName) || "").trim();
+  if (!displayName) return { ok: false, code: RESULT.INVALID_INPUT };
+
+  const description =
+    input && Object.prototype.hasOwnProperty.call(input, "description")
+      ? String(input.description || "").trim() || null
+      : null;
+  const publicSummary =
+    input && Object.prototype.hasOwnProperty.call(input, "publicSummary")
+      ? String(input.publicSummary || "").trim() || null
+      : description;
+  const duration = Number(input && input.defaultDurationMinutes);
+  const defaultDurationMinutes =
+    Number.isFinite(duration) && duration >= 5 && duration <= 480 ? Math.round(duration) : 30;
+  const status = String((input && input.status) || "active").trim() === "inactive" ? "inactive" : "active";
+  const publicWebsiteVisible = boolValue(input && input.publicWebsiteVisible, true) === true;
+  const publicBookable = boolValue(input && input.publicBookable, false) === true;
+  const requestedKey = String((input && input.serviceKey) || "").trim().toLowerCase();
+  const serviceKey = requestedKey
+    ? SERVICE_KEY_RE.test(requestedKey)
+      ? requestedKey
+      : null
+    : await uniqueServiceKey(db, input, displayName);
+  if (!serviceKey) return { ok: false, code: RESULT.INVALID_INPUT };
+
+  if (requestedKey) {
+    const clash = await db.query(
+      `SELECT id FROM activeclinic.appointment_service_types
+        WHERE organization_id = $1 AND healthcare_organization_id = $2 AND service_key = $3
+        LIMIT 1`,
+      [input.organizationId, input.healthcareOrganizationId, serviceKey]
+    );
+    if (clash.rows.length) return { ok: false, code: RESULT.CONFLICT };
+  }
+
+  let row;
+  try {
+    row = await appointmentRepo.insertServiceType(db, {
+      organizationId: input.organizationId,
+      healthcareOrganizationId: input.healthcareOrganizationId,
+      serviceKey,
+      displayName,
+      description,
+      defaultDurationMinutes,
+      requiresAssignedStaff: false,
+      status,
+      publicSummary,
+      publicBookable,
+      publicWebsiteVisible: publicWebsiteVisible && status === "active",
+    });
+  } catch (err) {
+    if (err && (err.code === "23505" || /unique/i.test(String(err.message || "")))) {
+      return { ok: false, code: RESULT.CONFLICT };
+    }
+    throw err;
+  }
+
+  if (row.public_website_visible === true) {
+    const overlay = await libraryService.upsertOperationalOverlay(db, {
+      ...input,
+      type: "service",
+      operationalKey: row.service_key,
+      title: row.display_name,
+      summary: row.public_summary || "",
+      visible: true,
+    });
+    if (!overlay.ok) return overlay;
+  }
+
+  return {
+    ok: true,
+    serviceId: row.id,
+    serviceKey: row.service_key,
+    service: presentService(row, null),
+  };
+}
+
+async function updateCatalogueService(db, input) {
+  const allowed = requireEdit(input);
+  if (!allowed.ok) return allowed;
+
+  const serviceId = String((input && input.serviceId) || "");
+  if (!UUID_RE.test(serviceId)) return { ok: false, code: RESULT.INVALID_INPUT };
+  const existing = await loadServiceRow(db, input, serviceId);
+  if (!existing) return { ok: false, code: RESULT.NOT_FOUND };
+
+  const displayName = String((input && input.displayName) || "").trim();
+  if (!displayName) return { ok: false, code: RESULT.INVALID_INPUT };
+
+  const duration = Number(input && input.defaultDurationMinutes);
+  const defaultDurationMinutes =
+    Number.isFinite(duration) && duration >= 5 && duration <= 480
+      ? Math.round(duration)
+      : existing.default_duration_minutes || 30;
+  const status = String((input && input.status) || existing.status || "active").trim();
+  if (status !== "active" && status !== "inactive") {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  const publicWebsiteVisible = boolValue(
+    input && input.publicWebsiteVisible,
+    existing.public_website_visible === true
+  );
+  const publicBookable = boolValue(input && input.publicBookable, existing.public_bookable === true);
+
+  const patch = {
+    id: existing.id,
+    organizationId: input.organizationId,
+    healthcareOrganizationId: input.healthcareOrganizationId,
+    displayName,
+    defaultDurationMinutes,
+    status,
+    publicBookable,
+    publicWebsiteVisible: publicWebsiteVisible && status === "active",
+  };
+  if (Object.prototype.hasOwnProperty.call(input, "description")) {
+    patch.description = String(input.description || "").trim() || null;
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "publicSummary")) {
+    patch.publicSummary = String(input.publicSummary || "").trim() || null;
+  }
+
+  const row = await appointmentRepo.updateServiceType(db, patch);
+  if (!row) return { ok: false, code: RESULT.NOT_FOUND };
+
+  const overlay = await libraryService.upsertOperationalOverlay(db, {
+    ...input,
+    type: "service",
+    operationalKey: row.service_key,
+    title: row.display_name,
+    summary: row.public_summary || "",
+    visible: row.public_website_visible === true,
+  });
+  if (!overlay.ok) return overlay;
+
+  return {
+    ok: true,
+    serviceId: row.id,
+    serviceKey: row.service_key,
+    service: presentService(row, null),
   };
 }
 
@@ -342,6 +540,9 @@ async function setCatalogueFeatured(db, input) {
 module.exports = {
   RESULT,
   loadCatalogue,
+  getCatalogueService,
+  createCatalogueService,
+  updateCatalogueService,
   setDoctorWebsiteVisibility,
   setServiceWebsiteVisibility,
   setCatalogueFeatured,

@@ -31,9 +31,31 @@
   var upload = document.querySelector("[data-ac-mw-upload]");
   if (upload) {
     var status = document.querySelector("[data-ac-mw-upload-status]");
+    var maxBytes = 5 * 1024 * 1024;
+    var allowed = {
+      "image/jpeg": true,
+      "image/png": true,
+      "image/webp": true,
+      "image/gif": true,
+    };
     upload.addEventListener("submit", function (event) {
       if (!upload.getAttribute("data-ac-mw-ajax")) return;
       event.preventDefault();
+      var fileInput = upload.querySelector('input[type="file"]');
+      var file = fileInput && fileInput.files && fileInput.files[0];
+      if (!file) {
+        if (status) status.textContent = "Choose an image to upload.";
+        return;
+      }
+      var type = String(file.type || "").toLowerCase();
+      if (!allowed[type]) {
+        if (status) status.textContent = "Upload failed. Use JPEG, PNG, WebP, or GIF up to 5 MB.";
+        return;
+      }
+      if (file.size > maxBytes) {
+        if (status) status.textContent = "Upload failed. Image must be 5 MB or smaller.";
+        return;
+      }
       var body = new FormData(upload);
       if (status) status.textContent = "Uploading…";
       fetch(upload.action, {
@@ -42,16 +64,80 @@
         headers: { Accept: "application/json" },
         credentials: "same-origin",
       })
-        .then(function (res) { return res.json().then(function (json) { return { res: res, json: json }; }); })
+        .then(function (res) {
+          return res.text().then(function (text) {
+            var json = null;
+            try {
+              json = text ? JSON.parse(text) : null;
+            } catch (err) {
+              json = null;
+            }
+            return { res: res, json: json };
+          });
+        })
         .then(function (result) {
           if (!result.json || !result.json.ok) {
-            if (status) status.textContent = "Upload failed. Use JPEG, PNG, WebP, or GIF up to 5 MB.";
+            var code = result.json && result.json.code;
+            if (status) {
+              status.textContent =
+                code === "media_too_large"
+                  ? "Upload failed. Image must be 5 MB or smaller."
+                  : "Upload failed. Use JPEG, PNG, WebP, or GIF up to 5 MB.";
+            }
             return;
           }
           window.location.reload();
         })
         .catch(function () {
           if (status) status.textContent = "Upload failed. Check your connection and try again.";
+        });
+    });
+  }
+
+  var publishForm = document.getElementById("ac-mw-publish-form");
+  if (publishForm) {
+    var publishStatus = document.querySelector("[data-ac-mw-publish-status]");
+    publishForm.addEventListener("submit", function (event) {
+      event.preventDefault();
+      if (!window.confirm("Publish this website? Public visitors will see the current draft.")) {
+        return;
+      }
+      var btn = publishForm.querySelector('[type="submit"]');
+      if (btn) btn.disabled = true;
+      if (publishStatus) {
+        publishStatus.hidden = false;
+        publishStatus.textContent = "Publishing…";
+        publishStatus.classList.remove("ac-mw-error");
+      }
+      fetch(publishForm.action, {
+        method: "POST",
+        body: new FormData(publishForm),
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json, text/html",
+          "X-CSRF-Token": csrfToken(),
+        },
+        redirect: "follow",
+      })
+        .then(function (res) {
+          if (res.ok || (res.status >= 300 && res.status < 400)) {
+            if (publishStatus) publishStatus.textContent = "Published.";
+            window.location.reload();
+            return;
+          }
+          if (btn) btn.disabled = false;
+          if (publishStatus) {
+            publishStatus.textContent = "Publish failed — draft unchanged. Retry.";
+            publishStatus.classList.add("ac-mw-error");
+          }
+        })
+        .catch(function () {
+          if (btn) btn.disabled = false;
+          if (publishStatus) {
+            publishStatus.textContent =
+              "Publish failed — check your connection and retry. Draft unchanged.";
+            publishStatus.classList.add("ac-mw-error");
+          }
         });
     });
   }

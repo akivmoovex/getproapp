@@ -104,6 +104,9 @@ function mapServiceType(row) {
     defaultDurationMinutes: row.default_duration_minutes,
     requiresAssignedStaff: row.requires_assigned_staff === true,
     status: row.status,
+    publicSummary: row.public_summary || null,
+    publicBookable: row.public_bookable === true,
+    publicWebsiteVisible: row.public_website_visible === true,
   };
 }
 
@@ -192,6 +195,9 @@ async function createAppointmentServiceType(db, input) {
     defaultDurationMinutes: input.defaultDurationMinutes || 30,
     requiresAssignedStaff: input.requiresAssignedStaff === true,
     status: "active",
+    publicSummary: input.publicSummary || null,
+    publicBookable: input.publicBookable === true,
+    publicWebsiteVisible: input.publicWebsiteVisible === true,
   });
   await recordAuditEventSafe(db, {
     deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
@@ -202,6 +208,79 @@ async function createAppointmentServiceType(db, input) {
     entityId: row.id,
     outcome: "success",
     metadata: { entity_key: key },
+  });
+  return { ok: true, code: RESULT.OK, serviceType: mapServiceType(row) };
+}
+
+async function updateAppointmentServiceType(db, input) {
+  const authz = await authorize(db, {
+    organizationId: input.organizationId,
+    facilityId: null,
+    permissionKey: PERM.MANAGE_SCHEDULE,
+    actor: input.actor,
+  });
+  if (!authz.ok) return { ok: false, code: authz.code, serviceType: null };
+
+  const id = String(input.id || input.serviceTypeId || "").trim();
+  if (!UUID_RE.test(id)) {
+    return { ok: false, code: RESULT.INVALID_INPUT, serviceType: null };
+  }
+
+  const existing = await repo.findServiceTypeByOrgAndId(db, {
+    organizationId: input.organizationId,
+    healthcareOrganizationId: input.healthcareOrganizationId,
+    id,
+  });
+  if (!existing) return { ok: false, code: RESULT.SERVICE_NOT_FOUND, serviceType: null };
+
+  const status = input.status != null ? String(input.status).trim() : null;
+  if (status && status !== "active" && status !== "inactive") {
+    return { ok: false, code: RESULT.INVALID_INPUT, serviceType: null };
+  }
+
+  const displayName =
+    input.displayName != null ? String(input.displayName).trim() : undefined;
+  if (displayName !== undefined && !displayName) {
+    return { ok: false, code: RESULT.INVALID_INPUT, serviceType: null };
+  }
+
+  const duration =
+    input.defaultDurationMinutes != null ? Number(input.defaultDurationMinutes) : null;
+  if (duration != null && (!Number.isFinite(duration) || duration < 5 || duration > 480)) {
+    return { ok: false, code: RESULT.INVALID_INPUT, serviceType: null };
+  }
+
+  const patch = {
+    id,
+    organizationId: input.organizationId,
+    healthcareOrganizationId: input.healthcareOrganizationId,
+    displayName: displayName !== undefined ? displayName : null,
+    defaultDurationMinutes: duration,
+    requiresAssignedStaff:
+      typeof input.requiresAssignedStaff === "boolean" ? input.requiresAssignedStaff : null,
+    status,
+    publicBookable: typeof input.publicBookable === "boolean" ? input.publicBookable : null,
+    publicWebsiteVisible:
+      typeof input.publicWebsiteVisible === "boolean" ? input.publicWebsiteVisible : null,
+  };
+  if (Object.prototype.hasOwnProperty.call(input, "description")) {
+    patch.description = input.description;
+  }
+  if (Object.prototype.hasOwnProperty.call(input, "publicSummary")) {
+    patch.publicSummary = input.publicSummary;
+  }
+  const row = await repo.updateServiceType(db, patch);
+  if (!row) return { ok: false, code: RESULT.SERVICE_NOT_FOUND, serviceType: null };
+
+  await recordAuditEventSafe(db, {
+    deploymentCode: input.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
+    organizationId: input.organizationId,
+    actorUserId: null,
+    actionKey: "activeclinic.appointment.service_type_update",
+    entityType: "appointment_service_type",
+    entityId: row.id,
+    outcome: "success",
+    metadata: { entity_key: row.service_key, status: row.status },
   });
   return { ok: true, code: RESULT.OK, serviceType: mapServiceType(row) };
 }
@@ -856,6 +935,7 @@ module.exports = {
   RESULT,
   PERM,
   createAppointmentServiceType,
+  updateAppointmentServiceType,
   listAppointmentServiceTypes,
   createAppointment,
   updateAppointment,

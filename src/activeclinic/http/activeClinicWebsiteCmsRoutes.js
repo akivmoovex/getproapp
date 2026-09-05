@@ -77,6 +77,8 @@ function slugErrorMessage(code) {
   if (code === "inactive") return "Inactive staff and services cannot appear on the website.";
   if (code === "needs_profile") return "This doctor needs a name in clinic records before they can appear on the website.";
   if (code === "validation_failed") return "Check those details and try again. Use a full website address starting with https://.";
+  if (code === "conflict") return "A service with that key already exists. Choose another name or key.";
+  if (code === "invalid_input") return "Check the service details and try again.";
   return "Unable to save website changes.";
 }
 
@@ -1378,6 +1380,216 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
     requireAuth,
     requirePermission(PERMISSIONS.EDIT),
     (req, res, next) => handleCatalogueAction(req, res, next, "doctor")
+  );
+
+  app.get(
+    "/app/settings/website/catalogue/services/new",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    async (req, res, next) => {
+      try {
+        return renderShell(req, res, {
+          content: "app/website-cms-catalogue-service-form.ejs",
+          cmsActive: "catalogue",
+          pageHeader: {
+            title: "Add service",
+            description: "Create a clinic service in the shared catalogue used by booking and the public website.",
+          },
+          breadcrumbs: breadcrumbs([
+            { label: "Public catalogue", href: "/app/settings/website/catalogue?tab=services" },
+            { label: "Add service" },
+          ]),
+          pageData: {
+            cms: {
+              mode: "create",
+              service: {
+                name: "",
+                serviceKey: "",
+                description: "",
+                publicSummary: "",
+                defaultDurationMinutes: 30,
+                inactive: false,
+                publicWebsiteVisible: true,
+                bookable: false,
+              },
+              error: "",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/website/catalogue/services/new",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return deny(res, 403, "Invalid request", "Reload the page and try again.");
+        }
+        const body = req.body || {};
+        const created = await catalogueService.createCatalogueService(getPool(), {
+          ...cmsInput(req),
+          displayName: body.displayName || body.name,
+          serviceKey: body.serviceKey,
+          description: body.description,
+          publicSummary: body.publicSummary,
+          defaultDurationMinutes: body.defaultDurationMinutes,
+          status: body.status === "inactive" ? "inactive" : "active",
+          publicWebsiteVisible: body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+          publicBookable: body.publicBookable === "1" || body.publicBookable === "on",
+        });
+        if (!created.ok) {
+          return renderShell(req, res, {
+            content: "app/website-cms-catalogue-service-form.ejs",
+            cmsActive: "catalogue",
+            pageHeader: {
+              title: "Add service",
+              description: "Create a clinic service in the shared catalogue used by booking and the public website.",
+            },
+            breadcrumbs: breadcrumbs([
+              { label: "Public catalogue", href: "/app/settings/website/catalogue?tab=services" },
+              { label: "Add service" },
+            ]),
+            pageData: {
+              cms: {
+                mode: "create",
+                service: {
+                  name: String(body.displayName || body.name || ""),
+                  serviceKey: String(body.serviceKey || ""),
+                  description: String(body.description || ""),
+                  publicSummary: String(body.publicSummary || ""),
+                  defaultDurationMinutes: Number(body.defaultDurationMinutes) || 30,
+                  inactive: body.status === "inactive",
+                  publicWebsiteVisible:
+                    body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+                  bookable: body.publicBookable === "1" || body.publicBookable === "on",
+                },
+                error: slugErrorMessage(created.code),
+              },
+            },
+          });
+        }
+        return res.redirect(
+          303,
+          `/app/settings/website/catalogue?tab=services&saved=1`
+        );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/settings/website/catalogue/services/:serviceId/edit",
+    requireAuth,
+    requirePermission(viewOrEdit),
+    async (req, res, next) => {
+      try {
+        const loaded = await catalogueService.getCatalogueService(getPool(), {
+          ...cmsInput(req),
+          serviceId: req.params.serviceId,
+        });
+        if (!loaded.ok) {
+          const status = loaded.code === "forbidden" ? 403 : 404;
+          return deny(res, status, "Edit service", slugErrorMessage(loaded.code));
+        }
+        return renderShell(req, res, {
+          content: "app/website-cms-catalogue-service-form.ejs",
+          cmsActive: "catalogue",
+          pageHeader: {
+            title: "Edit service",
+            description: "Update the shared clinic service used by booking and the public website.",
+          },
+          breadcrumbs: breadcrumbs([
+            { label: "Public catalogue", href: "/app/settings/website/catalogue?tab=services" },
+            { label: loaded.service.name || "Edit service" },
+          ]),
+          pageData: {
+            cms: {
+              mode: "edit",
+              service: loaded.service,
+              canEdit: loaded.canEdit === true,
+              error: "",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/website/catalogue/services/:serviceId/edit",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return deny(res, 403, "Invalid request", "Reload the page and try again.");
+        }
+        const body = req.body || {};
+        const updated = await catalogueService.updateCatalogueService(getPool(), {
+          ...cmsInput(req),
+          serviceId: req.params.serviceId,
+          displayName: body.displayName || body.name,
+          description: body.description,
+          publicSummary: body.publicSummary,
+          defaultDurationMinutes: body.defaultDurationMinutes,
+          status: body.status === "inactive" ? "inactive" : "active",
+          publicWebsiteVisible: body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+          publicBookable: body.publicBookable === "1" || body.publicBookable === "on",
+        });
+        if (!updated.ok) {
+          const status = updated.code === "forbidden" ? 403 : updated.code === "not_found" ? 404 : 400;
+          if (status === 403 || status === 404) {
+            return deny(res, status, "Edit service", slugErrorMessage(updated.code));
+          }
+          const loaded = await catalogueService.getCatalogueService(getPool(), {
+            ...cmsInput(req),
+            serviceId: req.params.serviceId,
+          });
+          return renderShell(req, res, {
+            content: "app/website-cms-catalogue-service-form.ejs",
+            cmsActive: "catalogue",
+            pageHeader: {
+              title: "Edit service",
+              description: "Update the shared clinic service used by booking and the public website.",
+            },
+            breadcrumbs: breadcrumbs([
+              { label: "Public catalogue", href: "/app/settings/website/catalogue?tab=services" },
+              { label: "Edit service" },
+            ]),
+            pageData: {
+              cms: {
+                mode: "edit",
+                service: {
+                  ...(loaded.ok ? loaded.service : {}),
+                  name: String(body.displayName || body.name || ""),
+                  description: String(body.description || ""),
+                  publicSummary: String(body.publicSummary || ""),
+                  defaultDurationMinutes: Number(body.defaultDurationMinutes) || 30,
+                  inactive: body.status === "inactive",
+                  publicWebsiteVisible:
+                    body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+                  bookable: body.publicBookable === "1" || body.publicBookable === "on",
+                },
+                canEdit: true,
+                error: slugErrorMessage(updated.code),
+              },
+            },
+          });
+        }
+        return res.redirect(303, `/app/settings/website/catalogue?tab=services&saved=1`);
+      } catch (err) {
+        return next(err);
+      }
+    }
   );
 
   app.post(

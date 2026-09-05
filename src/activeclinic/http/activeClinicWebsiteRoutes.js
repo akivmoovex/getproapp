@@ -869,20 +869,44 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
           reused: true,
         });
       }
+      const mediaKind = String((req.body && req.body.mediaKind) || "").trim() || (req.file ? "image" : "");
+      if (mediaKind === "video_url") {
+        const registeredVideo = await mediaService.registerWebsiteMedia(getPool(), {
+          organizationId: clinic.organizationId,
+          instanceId: attached.instance.id,
+          expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
+          actorIdentityId: actorId(req),
+          mediaKind: "video_url",
+          externalUrl: req.body && req.body.externalUrl,
+          originalFilename: req.body && req.body.originalFilename,
+          altText: req.body && req.body.altText,
+        });
+        if (!registeredVideo.ok) {
+          return json(res, 400, registeredVideo);
+        }
+        return json(res, 200, {
+          ok: true,
+          published: false,
+          media: mediaService.presentWebsiteMediaForClient(attached.instance, registeredVideo.media),
+        });
+      }
       const file = req.file || null;
+      if (!file || !file.buffer) {
+        return json(res, 400, { ok: false, code: mediaService.RESULT.UNSAFE_TYPE });
+      }
       const registered = await mediaService.registerWebsiteMedia(getPool(), {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,
         expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
         actorIdentityId: actorId(req),
-        mediaKind: (req.body && req.body.mediaKind) || (file ? "image" : undefined),
+        mediaKind: mediaKind || "image",
         externalUrl: req.body && req.body.externalUrl,
-        originalFilename: (file && file.originalname) || (req.body && req.body.originalFilename),
-        mimeType: (file && file.mimetype) || (req.body && req.body.mimeType),
-        sizeBytes: file ? file.size : req.body && req.body.sizeBytes,
+        originalFilename: file.originalname || (req.body && req.body.originalFilename),
+        mimeType: file.mimetype || (req.body && req.body.mimeType),
+        sizeBytes: file.size,
         altText: req.body && req.body.altText,
         storageKey: req.body && req.body.storageKey,
-        buffer: file ? file.buffer : null,
+        buffer: file.buffer,
       });
       if (!registered.ok) {
         return json(res, 400, registered);

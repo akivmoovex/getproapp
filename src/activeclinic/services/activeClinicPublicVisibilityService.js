@@ -435,7 +435,7 @@ async function listWebsiteServices(db, input) {
     WHERE ast.organization_id = $1
       AND ast.healthcare_organization_id = $2
       AND ast.status = 'active'
-      AND (ast.public_website_visible = true OR ast.public_bookable = true)
+      AND ast.public_website_visible = true
     ORDER BY ast.display_name ASC
   `;
 
@@ -453,7 +453,7 @@ async function getServiceByKey(db, input, websiteListing) {
   }
 
   const eligibility = websiteListing
-    ? `(ast.public_website_visible = true OR ast.public_bookable = true)`
+    ? `ast.public_website_visible = true`
     : `ast.public_bookable = true`;
   const sql = `
     SELECT ast.id, ast.service_key, ast.display_name, ast.public_summary,

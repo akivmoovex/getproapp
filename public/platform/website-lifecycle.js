@@ -151,19 +151,49 @@
   function submitPublishForm(form) {
     if (!form) return;
     var btn = form.querySelector('[type="submit"]');
-    allowPublishSubmit = true;
-    var submitted = false;
-    try {
-      if (typeof form.requestSubmit === "function") {
-        if (btn) form.requestSubmit(btn);
-        else form.requestSubmit();
-        submitted = true;
-      }
-    } catch (err) {
-      submitted = false;
-    }
-    if (!submitted) form.submit();
     if (btn) btn.disabled = true;
+    setStatus("publish", "Publishing…", false);
+    var action = form.getAttribute("action") || window.location.href;
+    var method = String(form.getAttribute("method") || "POST").toUpperCase();
+    var fd = new FormData(form);
+    fetch(action, {
+      method: method,
+      credentials: "same-origin",
+      headers: {
+        Accept: "application/json, text/html",
+        "X-CSRF-Token": csrfToken(),
+      },
+      body: fd,
+      redirect: "follow",
+    })
+      .then(function (res) {
+        if (btn) btn.disabled = false;
+        if (res.ok || (res.status >= 300 && res.status < 400)) {
+          closeDialog();
+          showToast("Published");
+          window.location.reload();
+          return;
+        }
+        return res.text().then(function (text) {
+          var json = null;
+          try {
+            json = JSON.parse(text);
+          } catch (err) {
+            json = null;
+          }
+          setStatus(
+            "publish",
+            (json && (json.reason || json.code)) || "Publish failed — draft unchanged. Retry.",
+            true
+          );
+          allowPublishSubmit = false;
+        });
+      })
+      .catch(function () {
+        if (btn) btn.disabled = false;
+        setStatus("publish", "Publish failed — check your connection and retry. Draft unchanged.", true);
+        allowPublishSubmit = false;
+      });
   }
 
   function confirmPublish(form) {
@@ -224,7 +254,6 @@
         var kind = btn.getAttribute("data-website-lifecycle-confirm");
         if (kind === "publish") {
           var publishForm = pendingPublishForm;
-          closeDialog();
           submitPublishForm(publishForm);
           return;
         }

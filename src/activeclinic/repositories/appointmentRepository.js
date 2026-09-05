@@ -8,8 +8,9 @@ async function insertServiceType(db, row) {
   const result = await db.query(
     `INSERT INTO activeclinic.appointment_service_types (
        organization_id, healthcare_organization_id, service_key, display_name,
-       description, default_duration_minutes, requires_assigned_staff, status
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+       description, default_duration_minutes, requires_assigned_staff, status,
+       public_summary, public_bookable, public_website_visible
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
      RETURNING *`,
     [
       row.organizationId,
@@ -20,9 +21,51 @@ async function insertServiceType(db, row) {
       row.defaultDurationMinutes || 30,
       row.requiresAssignedStaff === true,
       row.status || "active",
+      row.publicSummary || null,
+      row.publicBookable === true,
+      row.publicWebsiteVisible === true,
     ]
   );
   return result.rows[0];
+}
+
+async function updateServiceType(db, input) {
+  const result = await db.query(
+    `UPDATE activeclinic.appointment_service_types
+        SET display_name = COALESCE($4, display_name),
+            description = CASE WHEN $5::boolean THEN $6 ELSE description END,
+            default_duration_minutes = COALESCE($7, default_duration_minutes),
+            requires_assigned_staff = COALESCE($8, requires_assigned_staff),
+            status = COALESCE($9, status),
+            public_summary = CASE WHEN $10::boolean THEN $11 ELSE public_summary END,
+            public_bookable = COALESCE($12, public_bookable),
+            public_website_visible = COALESCE($13, public_website_visible),
+            updated_at = now()
+      WHERE id = $1
+        AND organization_id = $2
+        AND healthcare_organization_id = $3
+      RETURNING *`,
+    [
+      input.id,
+      input.organizationId,
+      input.healthcareOrganizationId,
+      input.displayName != null ? String(input.displayName).trim() : null,
+      Object.prototype.hasOwnProperty.call(input, "description"),
+      input.description == null || String(input.description).trim() === ""
+        ? null
+        : String(input.description).trim(),
+      input.defaultDurationMinutes != null ? Number(input.defaultDurationMinutes) : null,
+      typeof input.requiresAssignedStaff === "boolean" ? input.requiresAssignedStaff : null,
+      input.status != null ? String(input.status).trim() : null,
+      Object.prototype.hasOwnProperty.call(input, "publicSummary"),
+      input.publicSummary == null || String(input.publicSummary).trim() === ""
+        ? null
+        : String(input.publicSummary).trim(),
+      typeof input.publicBookable === "boolean" ? input.publicBookable : null,
+      typeof input.publicWebsiteVisible === "boolean" ? input.publicWebsiteVisible : null,
+    ]
+  );
+  return result.rows[0] || null;
 }
 
 async function findServiceTypeByOrgAndId(db, input) {
@@ -279,6 +322,7 @@ async function listRemindersForAppointment(db, input) {
 
 module.exports = {
   insertServiceType,
+  updateServiceType,
   findServiceTypeByOrgAndId,
   listServiceTypesByOrg,
   insertAppointment,

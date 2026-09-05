@@ -143,10 +143,17 @@ async function registerWebsiteMedia(db, input) {
 
   const buffer = input.buffer || null;
   let mime = String(input.mimeType || "").trim().toLowerCase();
+  if (kind === "image") {
+    if (!Buffer.isBuffer(buffer) || buffer.length < 4) {
+      return { ok: false, code: RESULT.UNSAFE_TYPE, media: null };
+    }
+  }
   if (buffer) {
     const detected = detectMimeFromSignature(buffer);
     if (!detected) return { ok: false, code: RESULT.UNSAFE_TYPE, media: null };
-    if (mime && mime !== detected) return { ok: false, code: RESULT.UNSAFE_TYPE, media: null };
+    if (mime && mime !== "application/octet-stream" && mime !== detected) {
+      return { ok: false, code: RESULT.UNSAFE_TYPE, media: null };
+    }
     mime = detected;
     if (buffer.length > MAX_BYTES) return { ok: false, code: RESULT.TOO_LARGE, media: null };
   }
@@ -155,6 +162,9 @@ async function registerWebsiteMedia(db, input) {
   }
   const sizeBytes = buffer ? buffer.length : Number(input.sizeBytes) || 0;
   if (sizeBytes > MAX_BYTES) return { ok: false, code: RESULT.TOO_LARGE, media: null };
+  if (!mime || mime === "application/octet-stream") {
+    return { ok: false, code: RESULT.UNSAFE_TYPE, media: null };
+  }
 
   const filename = sanitizeFilename(input.originalFilename);
   const storageKey =

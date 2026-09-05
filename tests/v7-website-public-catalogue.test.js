@@ -767,4 +767,169 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
     const liveRestored = await request(app).get(`/clinics/${slug}/doctors`).set("Host", AC_HOST);
     assert.match(liveRestored.text, re(adminStaff.rows[0].display_name));
   });
+
+  it("lets website editors create, edit, disable, and publish catalogue services", async () => {
+    requireDb();
+    const clinic = await provisionClinic();
+    const app = makeApp();
+    const cookie = await sessionCookie(clinic.identityId, clinic.organizationId);
+    const name = `Managed Service ${clinic.stamp}`;
+    const edited = `Edited Service ${clinic.stamp}`;
+
+    const newPage = await request(app)
+      .get("/app/settings/website/catalogue/services/new")
+      .set("Cookie", cookie);
+    assert.equal(newPage.status, 200, newPage.text.slice(0, 300));
+    assert.match(newPage.text, /Add service/);
+
+    const created = await request(app)
+      .post("/app/settings/website/catalogue/services/new")
+      .set("Cookie", mergeCookies(cookie, newPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(newPage),
+        displayName: name,
+        description: "Canonical service description",
+        publicSummary: "Public summary",
+        defaultDurationMinutes: "45",
+        publicWebsiteVisible: "1",
+      })
+      .redirects(0);
+    assert.equal(created.status, 303, created.text.slice(0, 400));
+
+    const row = await pool.query(
+      `SELECT id, service_key, display_name, status, public_website_visible, public_summary,
+              default_duration_minutes
+         FROM activeclinic.appointment_service_types
+        WHERE organization_id = $1 AND display_name = $2
+        LIMIT 1`,
+      [clinic.organizationId, name]
+    );
+    assert.equal(row.rows.length, 1);
+    assert.equal(row.rows[0].public_website_visible, true);
+    assert.equal(Number(row.rows[0].default_duration_minutes), 45);
+
+    const list = await listWebsiteServices(pool, {
+      organizationId: clinic.organizationId,
+      healthcareOrganizationId: await resolveHcoId(clinic),
+    });
+    assert.ok(list.services.some((s) => s.displayName === name));
+
+    const editPage = await request(app)
+      .get(`/app/settings/website/catalogue/services/${row.rows[0].id}/edit`)
+      .set("Cookie", cookie);
+    assert.equal(editPage.status, 200);
+    const updated = await request(app)
+      .post(`/app/settings/website/catalogue/services/${row.rows[0].id}/edit`)
+      .set("Cookie", mergeCookies(cookie, editPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(editPage),
+        displayName: edited,
+        description: "Updated description",
+        publicSummary: "Updated summary",
+        defaultDurationMinutes: "60",
+        publicWebsiteVisible: "1",
+        status: "active",
+      })
+      .redirects(0);
+    assert.equal(updated.status, 303);
+
+    const afterEdit = await pool.query(
+      `SELECT display_name, public_summary, default_duration_minutes, status
+         FROM activeclinic.appointment_service_types WHERE id = $1`,
+      [row.rows[0].id]
+    );
+    assert.equal(afterEdit.rows[0].display_name, edited);
+    assert.equal(afterEdit.rows[0].public_summary, "Updated summary");
+    assert.equal(Number(afterEdit.rows[0].default_duration_minutes), 60);
+
+    await publishWebsite(clinic);
+    const publicPage = await request(app).get(`/clinics/${clinic.slug}/services`);
+    assert.match(publicPage.text, re(edited));
+
+    const disabled = await request(app)
+      .post(`/app/settings/website/catalogue/services/${row.rows[0].id}/edit`)
+      .set("Cookie", mergeCookies(cookie, editPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(editPage),
+        displayName: edited,
+        description: "Updated description",
+        publicSummary: "Updated summary",
+        defaultDurationMinutes: "60",
+        status: "inactive",
+      })
+      .redirects(0);
+    assert.equal(disabled.status, 303);
+    const afterDisable = await pool.query(
+      `SELECT status, public_website_visible FROM activeclinic.appointment_service_types WHERE id = $1`,
+      [row.rows[0].id]
+    );
+    assert.equal(afterDisable.rows[0].status, "inactive");
+    assert.equal(afterDisable.rows[0].public_website_visible, false);
+
+    await publishWebsite(clinic);
+    const publicHidden = await request(app).get(`/clinics/${clinic.slug}/services`);
+    assert.doesNotMatch(publicHidden.text, re(edited));
+
+    const recCookie = await (async () => {
+      const hcoId = await resolveHcoId(clinic);
+      const facility = await pool.query(
+        `SELECT id FROM activeclinic.facilities WHERE organization_id = $1 LIMIT 1`,
+        [clinic.organizationId]
+      );
+      const phone = nextPhone();
+      const identity = await createPlatformIdentity(pool, {
+        primaryEmail: `rec-svc-${clinic.stamp}@example.invalid`,
+        primaryPhone: phone,
+        phoneNormalized: phone,
+        phoneVerifiedAt: new Date().toISOString(),
+      });
+      assert.equal(identity.ok, true);
+      await setPlatformIdentityPassword(pool, {
+        identityId: identity.identity.id,
+        password: PASSWORD,
+      });
+      const staff = await createStaffMember(pool, {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: hcoId,
+        firstName: "Rec",
+        lastName: "Svc",
+        employmentType: "permanent",
+        status: "active",
+        phone,
+        platformIdentityId: identity.identity.id,
+      });
+      assert.equal(staff.ok, true);
+      await assignStaffToFacility(pool, {
+        organizationId: clinic.organizationId,
+        staffMemberId: staff.staffMember.id,
+        facilityId: facility.rows[0].id,
+        isPrimary: true,
+      });
+      const role = await assignStaffRole(pool, {
+        organizationId: clinic.organizationId,
+        staffMemberId: staff.staffMember.id,
+        roleKey: RECEPTIONIST,
+        scopeType: "facility",
+        facilityId: facility.rows[0].id,
+        assignmentOrigin: "system",
+      });
+      assert.equal(role.ok, true);
+      return sessionCookie(identity.identity.id, clinic.organizationId);
+    })();
+
+    const denied = await request(app)
+      .post("/app/settings/website/catalogue/services/new")
+      .set("Cookie", mergeCookies(recCookie, newPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(newPage),
+        displayName: `Denied ${clinic.stamp}`,
+        publicWebsiteVisible: "1",
+      })
+      .redirects(0);
+    assert.equal(denied.status, 403);
+  });
 });

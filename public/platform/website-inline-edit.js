@@ -160,13 +160,67 @@
         "X-CSRF-Token": csrfToken,
       },
       body: JSON.stringify(data),
-    }).then(function (res) {
-      return res.json().then(function (out) {
-        out = out || {};
-        out.httpStatus = res.status;
-        return out;
+    })
+      .then(function (res) {
+        return res.text().then(function (text) {
+          var out = {};
+          try {
+            out = text ? JSON.parse(text) : {};
+          } catch (err) {
+            out = { ok: false, code: "invalid_response", reason: "Could not save" };
+          }
+          out = out || {};
+          out.httpStatus = res.status;
+          if (!res.ok && out.ok !== false) out.ok = false;
+          return out;
+        });
+      })
+      .catch(function () {
+        return { ok: false, code: "network_error", reason: "Save failed — check your connection and retry" };
       });
-    });
+  }
+
+  function draftStorageKey(contentKey) {
+    var org =
+      (chrome && chrome.getAttribute("data-organization-key")) ||
+      (chrome && chrome.getAttribute("data-clinic-key")) ||
+      (document.querySelector("[data-clinic-key]") &&
+        document.querySelector("[data-clinic-key]").getAttribute("data-clinic-key")) ||
+      "";
+    return "gp-website-draft:" + org + ":" + String(contentKey || "");
+  }
+
+  function rememberLocalDraft(contentKey, value) {
+    try {
+      if (!contentKey) return;
+      window.sessionStorage.setItem(
+        draftStorageKey(contentKey),
+        JSON.stringify({ value: value, at: Date.now() })
+      );
+    } catch (err) {
+      /* ignore quota / private mode */
+    }
+  }
+
+  function clearLocalDraft(contentKey) {
+    try {
+      if (!contentKey) return;
+      window.sessionStorage.removeItem(draftStorageKey(contentKey));
+    } catch (err) {
+      /* ignore */
+    }
+  }
+
+  function readLocalDraft(contentKey) {
+    try {
+      var raw = window.sessionStorage.getItem(draftStorageKey(contentKey));
+      if (!raw) return null;
+      var parsed = JSON.parse(raw);
+      if (!parsed || typeof parsed.value !== "string") return null;
+      return parsed.value;
+    } catch (err) {
+      return null;
+    }
   }
 
   function uploadImage(file, altText, onProgress) {
@@ -409,6 +463,11 @@
       fieldEl.getAttribute("data-website-value") ||
       "";
     var draft = fieldEl.getAttribute("data-website-value") || "";
+    var contentKey = fieldEl.getAttribute("data-website-key") || "";
+    var recovered = readLocalDraft(contentKey);
+    if (recovered != null && recovered !== draft) {
+      draft = recovered;
+    }
     var maxLen = fieldEl.getAttribute("data-website-max") || (multiline ? "500" : "120");
     var inputType = fieldEl.getAttribute("data-website-input-type") || "text";
 
@@ -437,6 +496,9 @@
       input.value = draft;
       input.focus();
       if (!multiline && typeof input.select === "function") input.select();
+    }
+    if (recovered != null && recovered !== (fieldEl.getAttribute("data-website-value") || "")) {
+      setStatus("Restored unsaved text from this browser session. Save to keep it.", false);
     }
     return { input: input, multiline: multiline };
   }
@@ -666,29 +728,38 @@
   function saveText() {
     if (!activeField || !state || !state.text || !state.text.input) return;
     var value = state.text.input.value;
+    var contentKey = activeField.getAttribute("data-website-key");
+    rememberLocalDraft(contentKey, value);
     setBusy(true);
     setStatus("Saving…", false);
     postJson(saveUrl, {
-      contentKey: activeField.getAttribute("data-website-key"),
+      contentKey: contentKey,
       value: value,
     })
       .then(function (out) {
         setBusy(false);
         if (out && out.ok && out.published === true) {
           setStatus("Save must not publish. Draft was not applied as live.", true);
+          syncDirtyController();
           return;
         }
         if (out && out.ok) {
           updateCanvasText(activeField, value);
+          clearLocalDraft(contentKey);
           markDraftSaved();
           closeDialog();
         } else {
-          setStatus((out && (out.reason || out.code)) || "Could not save", true);
+          setStatus(
+            (out && (out.reason || out.code)) || "Save failed — your changes are still here. Retry.",
+            true
+          );
+          syncDirtyController();
         }
       })
       .catch(function () {
         setBusy(false);
-        setStatus("Could not save", true);
+        setStatus("Save failed — your changes are still here. Retry.", true);
+        syncDirtyController();
       });
   }
 
@@ -735,6 +806,7 @@
         if (imgState.progress) imgState.progress.hidden = true;
         if (out && out.ok && out.published === true) {
           setStatus("Save must not publish. Draft was not applied as live.", true);
+          syncDirtyController();
           return;
         }
         if (out && out.ok) {
@@ -742,13 +814,21 @@
           markDraftSaved();
           closeDialog();
         } else {
-          setStatus((out && (out.reason || out.code)) || "Could not save", true);
+          setStatus(
+            (out && (out.reason || out.code)) || "Save failed — your changes are still here. Retry.",
+            true
+          );
+          syncDirtyController();
         }
       })
       .catch(function (err) {
         setBusy(false);
         if (imgState.progress) imgState.progress.hidden = true;
-        setStatus((err && (err.reason || err.code)) || "Could not upload image", true);
+        setStatus(
+          (err && (err.reason || err.code)) || "Upload/save failed — your changes are still here. Retry.",
+          true
+        );
+        syncDirtyController();
       });
   }
 

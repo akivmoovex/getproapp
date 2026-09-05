@@ -1,0 +1,64 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var service = cms.service || {};
+  var mode = cms.mode === "edit" ? "edit" : "create";
+  var canEdit = mode === "create" || cms.canEdit === true;
+  var action = mode === "edit"
+    ? ("/app/settings/website/catalogue/services/" + encodeURIComponent(service.id || "") + "/edit")
+    : "/app/settings/website/catalogue/services/new";
+%>
+<section class="ac-mw" data-ac-page-section="website-catalogue-service-form" data-ac-mw-screen="catalogue-service-form">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2><%= mode === "edit" ? "Edit service" : "Add service" %></h2>
+      <p class="ac-mw-muted">This updates the shared clinic service catalogue used by booking and the public website.</p>
+    </div>
+  </div>
+  <% if (cms.error) { %><p class="ac-mw-error" role="alert"><%= cms.error %></p><% } %>
+  <form class="ac-mw-form" method="post" action="<%= action %>" data-ac-catalogue-service-form="1">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>
+      Public name
+      <input type="text" name="displayName" required maxlength="120" value="<%= service.name || "" %>" <%= canEdit ? "" : "readonly" %>/>
+    </label>
+    <% if (mode === "create") { %>
+    <label>
+      Service key <span class="ac-mw-muted">(optional)</span>
+      <input type="text" name="serviceKey" maxlength="48" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="auto-generated-from-name" value="<%= service.serviceKey || "" %>"/>
+    </label>
+    <% } else { %>
+    <p class="ac-mw-muted">Service key: <code><%= service.serviceKey || "" %></code></p>
+    <% } %>
+    <label>
+      Description
+      <textarea name="description" rows="3" maxlength="2000" <%= canEdit ? "" : "readonly" %>><%= service.description || "" %></textarea>
+    </label>
+    <label>
+      Public summary
+      <textarea name="publicSummary" rows="2" maxlength="500" <%= canEdit ? "" : "readonly" %>><%= service.publicSummary || "" %></textarea>
+    </label>
+    <label>
+      Default duration (minutes)
+      <input type="number" name="defaultDurationMinutes" min="5" max="480" step="5" value="<%= service.defaultDurationMinutes || 30 %>" <%= canEdit ? "" : "readonly" %>/>
+    </label>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="status" value="inactive" <%= service.inactive ? "checked" : "" %> <%= canEdit ? "" : "disabled" %>/>
+      Disabled (hidden from website and not bookable as an active service)
+    </label>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="publicWebsiteVisible" value="1" <%= service.publicWebsiteVisible || service.websiteVisible ? "checked" : "" %> <%= canEdit ? "" : "disabled" %>/>
+      Show on public website
+    </label>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="publicBookable" value="1" <%= service.bookable ? "checked" : "" %> <%= canEdit ? "" : "disabled" %>/>
+      Available for online booking
+    </label>
+    <div class="ac-mw-actions">
+      <a class="ac-mw-btn" href="/app/settings/website/catalogue?tab=services">Cancel</a>
+      <% if (canEdit) { %>
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary"><%= mode === "edit" ? "Save service" : "Add service" %></button>
+      <% } %>
+    </div>
+  </form>
+</section>

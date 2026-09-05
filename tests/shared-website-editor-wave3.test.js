@@ -124,7 +124,8 @@ describe("shared website editor wave 3 — static lifecycle shell", () => {
       lifecycleJs,
       /btn\.disabled = true[\s\S]{0,120}allowPublishSubmit = true/
     );
-    assert.match(lifecycleJs, /form\.requestSubmit\(btn\)/);
+    assert.match(lifecycleJs, /Publish failed — draft unchanged/);
+    assert.match(lifecycleJs, /fetch\(action/);
     assert.match(lifecycleJs, /discard_all/);
     assert.doesNotMatch(lifecycleJs, /window\.confirm\(/);
 
