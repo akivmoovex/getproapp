@@ -9,6 +9,16 @@
  *     node scripts/local/v7-prod-schema-compat-audit.js
  *
  * Optionally set TESTING_DATABASE_URL for side-by-side compare.
+ *
+ * Known false-positive identifiers (do NOT query these; they are not V7 defects):
+ *   blessboard.registration_applications  → blessboard.platform_church_registration_applications
+ *   blessboard.memberships                → blessboard.member_branch_memberships
+ *   blessboard.users.organization_id      → blessboard.user_roles.organization_id
+ *   blessboard.users.church_id            → blessboard.user_roles.church_id
+ *   apps.public_reference                 → public_registration_reference
+ *   apps.organization_key                 → join platform.organizations via organization_id
+ *   deployments.primary_domain            → canonical_domain
+ *   information_schema filters must use 'blessboard' (single quotes), never "blessboard"
  */
 
 const fs = require("fs");
