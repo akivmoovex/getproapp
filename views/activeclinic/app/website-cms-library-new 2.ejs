@@ -1,0 +1,120 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var types = cms.types || [];
+  var selectedType = cms.selectedType || "faq";
+  var error = cms.error || "";
+  var services = (cms.operational && cms.operational.services) || [];
+  var doctors = (cms.operational && cms.operational.doctors) || [];
+  var facilities = (cms.operational && cms.operational.facilities) || [];
+%>
+<section class="ac-mw" data-ac-page-section="website-library-new" data-ac-mw-screen="MW09-02">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Add Content Item</h2>
+      <p class="ac-mw-muted">Add reusable website copy. Choosing a doctor, service, or location uses the existing clinic record. It does not create a new clinical database.</p>
+    </div>
+  </div>
+  <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
+  <form class="ac-mw-form" method="post" action="/app/settings/website/library" data-ac-mw-library-form="1">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>
+      Content type
+      <select name="type" data-ac-mw-library-type="1">
+        <% types.forEach(function (type) { %>
+        <option value="<%= type.key %>" <%= selectedType === type.key ? "selected" : "" %>><%= type.label %></option>
+        <% }) %>
+      </select>
+    </label>
+
+    <div data-ac-mw-library-fields="service">
+      <label>
+        Clinic service record
+        <select name="serviceKey">
+          <option value="">Website highlight only</option>
+          <% services.forEach(function (service) { %>
+          <option value="<%= service.serviceKey %>"><%= service.displayName %></option>
+          <% }) %>
+        </select>
+      </label>
+      <p class="ac-mw-hint">Public services already in ActiveClinic. This does not add an appointment type.</p>
+    </div>
+
+    <div data-ac-mw-library-fields="doctor" hidden>
+      <label>
+        Clinic doctor record
+        <select name="doctorKey">
+          <option value="">Website highlight only</option>
+          <% doctors.forEach(function (doctor) { %>
+          <option value="<%= doctor.staffKey %>"><%= doctor.displayName %></option>
+          <% }) %>
+        </select>
+      </label>
+      <p class="ac-mw-hint">Doctors with a public profile. This does not add a staff member.</p>
+    </div>
+
+    <div data-ac-mw-library-fields="location,hours" hidden>
+      <label>
+        Clinic location record
+        <select name="facilityKey">
+          <option value="">Website-only location or hours</option>
+          <% facilities.forEach(function (facility) { %>
+          <option value="<%= facility.facilityKey || facility.id %>"><%= facility.displayName %></option>
+          <% }) %>
+        </select>
+      </label>
+      <p class="ac-mw-hint">Facilities already in ActiveClinic. This does not add a location.</p>
+    </div>
+
+    <label class="ac-mw-check" data-ac-mw-library-fields="service,doctor,location,hours">
+      <input type="checkbox" name="websiteOnly" value="1"/>
+      Website-only item (do not link a clinic record)
+    </label>
+
+    <label data-ac-mw-library-fields="faq">
+      Question
+      <input type="text" name="question" maxlength="160" value="<%= cms.question || '' %>"/>
+    </label>
+    <label data-ac-mw-library-fields="faq">
+      Answer
+      <textarea name="answer" maxlength="4000"><%= cms.answer || "" %></textarea>
+    </label>
+
+    <label data-ac-mw-library-fields="testimonial" hidden>
+      Quote
+      <textarea name="quote" maxlength="4000"><%= cms.quote || "" %></textarea>
+    </label>
+    <label data-ac-mw-library-fields="testimonial" hidden>
+      Attribution
+      <input type="text" name="attribution" maxlength="120" value="<%= cms.attribution || '' %>"/>
+    </label>
+
+    <label data-ac-mw-library-fields="service,doctor,location,hours,testimonial">
+      Website title
+      <input type="text" name="title" maxlength="160" value="<%= cms.title || '' %>"/>
+    </label>
+    <label data-ac-mw-library-fields="service,doctor,location,hours">
+      Website summary
+      <textarea name="summary" maxlength="400"><%= cms.summary || "" %></textarea>
+    </label>
+    <label data-ac-mw-library-fields="service,doctor,location,hours">
+      Website details
+      <textarea name="body" maxlength="4000"><%= cms.body || "" %></textarea>
+    </label>
+    <p class="ac-mw-hint" data-ac-mw-library-fields="service,doctor,location,hours">Optional website wording. Clinic records stay the source of truth for names and clinical data.</p>
+
+    <label class="ac-mw-check">
+      <input type="checkbox" name="visible" value="1" checked/>
+      Visible on the website after publish
+    </label>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="featured" value="1"/>
+      Featured
+    </label>
+
+    <div class="ac-mw-actions">
+      <a class="ac-mw-btn" href="/app/settings/website/library">Cancel</a>
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save content item</button>
+    </div>
+  </form>
+</section>

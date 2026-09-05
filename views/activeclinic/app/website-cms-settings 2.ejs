@@ -1,0 +1,66 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var values = cms.values || {};
+  var website = cms.website || {};
+  var actions = (website.actions || website.ux && website.ux.actions) || {};
+  var error = cms.error || "";
+  var saved = cms.saved === true;
+%>
+<section class="ac-mw" data-ac-page-section="website-settings" data-ac-mw-screen="MW08-01">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Website Settings</h2>
+      <p class="ac-mw-muted">Name, contact, and opening information visitors see on your clinic website. This does not change clinic records used for appointments.</p>
+    </div>
+  </div>
+  <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
+  <% if (saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+  <form class="ac-mw-form" method="post" action="/app/settings/website/settings">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>
+      Clinic website name
+      <input type="text" name="siteName" maxlength="120" value="<%= values['site.name'] || '' %>" placeholder="<%= cms.clinicName || '' %>"/>
+    </label>
+    <p class="ac-mw-hint">Leave blank to use the clinic name from your organisation profile.</p>
+    <div class="ac-mw-readonly">
+      <p class="ac-mw-readonly__label">Public URL</p>
+      <p data-ac-website-public-url="1">
+        <% if (website.publicUrl || website.publicPath) { %>
+          <% if (actions.viewLive) { %>
+          <a href="<%= actions.viewLive %>"><code><%= website.publicUrl || website.publicPath %></code></a>
+          <% } else { %>
+          <code><%= website.publicUrl || website.publicPath %></code>
+          <span class="ac-mw-muted"> (not live yet)</span>
+          <% } %>
+        <% } else { %>
+        —
+        <% } %>
+      </p>
+      <p class="ac-mw-hint">Assigned by ActiveClinic. Domain setup is not changed here.</p>
+    </div>
+    <label>
+      Phone
+      <input type="text" name="phone" maxlength="40" value="<%= values['contact.phone'] || '' %>" autocomplete="tel"/>
+    </label>
+    <label>
+      Email
+      <input type="email" name="email" maxlength="254" value="<%= values['contact.email'] || '' %>" autocomplete="email"/>
+    </label>
+    <label>
+      Opening information
+      <textarea name="hours" maxlength="1000" placeholder="Mon–Fri 08:00–17:00"><%= values['location.hours'] || '' %></textarea>
+    </label>
+    <div class="ac-mw-readonly">
+      <p class="ac-mw-readonly__label">Website status</p>
+      <p data-ac-website-status-label="1"><span class="ac-mw-badge"><%= website.statusLabel || (website.ux && website.ux.statusLabel) || 'Not published yet' %></span></p>
+      <% if (website.statusHint || (website.ux && website.ux.statusHint)) { %>
+      <p class="ac-mw-hint"><%= website.statusHint || website.ux.statusHint %></p>
+      <% } %>
+      <p class="ac-mw-hint"><a href="/app/settings/website/publish">Review drafts and publish</a></p>
+    </div>
+    <div class="ac-mw-actions">
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save website settings</button>
+    </div>
+  </form>
+</section>

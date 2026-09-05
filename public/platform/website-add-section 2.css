@@ -1,0 +1,80 @@
+.gp-website-editor__add-section {
+  position: fixed;
+  right: 1rem;
+  bottom: 5.5rem;
+  z-index: 40;
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  border: 0;
+  border-radius: 999px;
+  padding: 0.65rem 1rem;
+  background: #6c5ce7;
+  color: #fff;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.18);
+  font: inherit;
+  cursor: pointer;
+}
+
+.gp-website-add-section__overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 42, 0.45);
+  z-index: 60;
+}
+
+.gp-website-add-section__panel {
+  position: fixed;
+  left: 50%;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: min(28rem, calc(100vw - 2rem));
+  max-height: min(80vh, 40rem);
+  overflow: auto;
+  background: #fff;
+  border-radius: 1rem;
+  padding: 1rem;
+  z-index: 61;
+  box-shadow: 0 20px 50px rgba(15, 23, 42, 0.2);
+}
+
+.gp-website-add-section__list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.gp-website-add-section__option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.75rem;
+  padding: 0.75rem;
+  background: #fff;
+  cursor: pointer;
+  font: inherit;
+}
+
+.gp-website-add-section__option strong {
+  display: block;
+}
+
+.gp-website-add-section__option span {
+  display: block;
+  color: #64748b;
+  font-size: 0.875rem;
+  margin-top: 0.2rem;
+}
+
+@media (max-width: 768px) {
+  .gp-website-add-section__panel {
+    left: 0;
+    right: 0;
+    bottom: 0;
+    top: auto;
+    transform: none;
+    width: auto;
+    max-height: 75vh;
+    border-radius: 1rem 1rem 0 0;
+  }
+}

@@ -1,0 +1,112 @@
+<%#
+  BlessBoard registration review — Stitch step 3.
+  Locals: form, csrfToken, csrfField, formError, fieldError, instantFreeEnabled,
+          organizationKeyPreview, churchPublicUrlBase, selectedPlan
+%>
+<%
+  var formData = typeof form !== 'undefined' && form ? form : {};
+  var instantOn = typeof instantFreeEnabled !== 'undefined' && instantFreeEnabled;
+  var planValue = formData.selected_plan || (typeof selectedPlan !== 'undefined' && selectedPlan ? selectedPlan : '');
+  var orgKey = typeof organizationKeyPreview !== 'undefined' && organizationKeyPreview
+    ? organizationKeyPreview
+    : (formData.organization_key || '');
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<section class="bb-apex-register gp-reg" data-bb-apex-page="register-church-review" data-gp-product="blessboard" data-bb-register-step="review">
+  <div class="bb-apex-container bb-apex-register__grid gp-reg__layout">
+    <aside class="bb-apex-register__aside gp-reg__aside" aria-labelledby="bb-register-aside-title">
+      <p class="bb-apex-mkt-hero__eyebrow">Join BlessBoard</p>
+      <h1 class="bb-apex-register__aside-title" id="bb-register-aside-title">Almost there.</h1>
+      <p class="bb-apex-register__aside-lead">
+        Review your church and administrator details, then create your workspace.
+      </p>
+    </aside>
+
+    <div class="bb-apex-register__panel gp-reg__panel">
+      <div class="bb-apex-register__card">
+        <h2 class="bb-apex-register__card-title">Review your details</h2>
+        <p class="bb-apex-register__card-lead">Confirm everything looks correct before creating your church workspace.</p>
+
+        <%- include('../partials/register-church-steps') %>
+
+        <% if (formError && !fieldError) { %>
+        <div class="bb-apex-register-alert" role="alert"><p><%= formError %></p></div>
+        <% } %>
+
+        <div class="bb-apex-register-review">
+          <article class="bb-apex-register-review__card">
+            <header class="bb-apex-register-review__head">
+              <h3><span class="material-symbols-outlined" aria-hidden="true">church</span> Church</h3>
+              <a class="bb-apex-register-review__edit" href="<%= typeof registrationStepHref === 'function' ? registrationStepHref('church', planValue) : ('/register-church?step=church&gpRegNav=1' + (planValue ? ('&plan=' + encodeURIComponent(planValue)) : '')) %>" data-gp-registration-nav="1">
+                <span class="material-symbols-outlined" aria-hidden="true">edit</span> Edit
+              </a>
+            </header>
+            <dl class="bb-apex-register-review__dl">
+              <div><dt>Name</dt><dd><%= formData.church_name || '—' %></dd></div>
+              <div><dt>Country</dt><dd><%= formData.country || '—' %></dd></div>
+              <div><dt>City</dt><dd><%= formData.city || '—' %></dd></div>
+              <% if (formData.branch_name) { %><div><dt>Branch</dt><dd><%= formData.branch_name %></dd></div><% } %>
+              <% if (formData.branch_count) { %><div><dt>Branches</dt><dd><%= formData.branch_count %></dd></div><% } %>
+              <% if (planValue) { %><div><dt>Plan</dt><dd><%= planValue %></dd></div><% } %>
+              <% if (instantOn && orgKey) { %>
+              <div><dt>Website URL</dt><dd><%= (typeof churchPublicUrlBase !== 'undefined' ? churchPublicUrlBase : 'blessboard.com/c/') %><%= orgKey %></dd></div>
+              <% } %>
+            </dl>
+          </article>
+
+          <article class="bb-apex-register-review__card">
+            <header class="bb-apex-register-review__head">
+              <h3><span class="material-symbols-outlined" aria-hidden="true">person</span> Administrator</h3>
+              <a class="bb-apex-register-review__edit" href="<%= typeof registrationStepHref === 'function' ? registrationStepHref('administrator', planValue) : ('/register-church?step=administrator&gpRegNav=1' + (planValue ? ('&plan=' + encodeURIComponent(planValue)) : '')) %>" data-gp-registration-nav="1">
+                <span class="material-symbols-outlined" aria-hidden="true">edit</span> Edit
+              </a>
+            </header>
+            <dl class="bb-apex-register-review__dl">
+              <div><dt>Name</dt><dd><%= formData.contact_name || '—' %></dd></div>
+              <div><dt>Email</dt><dd><%= formData.email || '—' %></dd></div>
+              <div><dt>Phone</dt><dd><%= formData.phone || formData.phone_national || '—' %></dd></div>
+              <div><dt>Role</dt><dd><%= formData.role_in_church || '—' %></dd></div>
+            </dl>
+          </article>
+        </div>
+
+        <form class="bb-apex-register-form" action="/register-church<%= planValue ? ('?plan=' + encodeURIComponent(planValue)) : '' %>" method="post" novalidate data-bb-register-form="1" data-gp-registration-form="1" data-bb-register-step="review"<% if (formError || fieldError) { %> data-gp-registration-dirty="1"<% } %>>
+          <input type="hidden" name="<%= typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf' %>" value="<%= csrfToken || '' %>" />
+          <input type="hidden" name="action" value="confirm" />
+          <input type="hidden" name="church_name" value="<%= formData.church_name || '' %>"/>
+          <input type="hidden" name="country" value="<%= formData.country || '' %>"/>
+          <input type="hidden" name="city" value="<%= formData.city || '' %>"/>
+          <input type="hidden" name="branch_name" value="<%= formData.branch_name || '' %>"/>
+          <input type="hidden" name="branch_count" value="<%= formData.branch_count || '' %>"/>
+          <input type="hidden" name="selected_plan" value="<%= planValue || '' %>"/>
+          <input type="hidden" name="message" value="<%= formData.message || '' %>"/>
+          <input type="hidden" name="organization_key" value="<%= orgKey || '' %>"/>
+          <input type="hidden" name="contact_name" value="<%= formData.contact_name || '' %>"/>
+          <input type="hidden" name="email" value="<%= formData.email || '' %>"/>
+          <input type="hidden" name="phone_country" value="<%= formData.phone_country || '' %>"/>
+          <input type="hidden" name="phone_national" value="<%= formData.phone_national || '' %>"/>
+          <input type="hidden" name="role_in_church" value="<%= formData.role_in_church || '' %>"/>
+
+          <div class="bb-apex-register-form__footer">
+            <%- include('../../../platform/partials/registration-consent', {
+              registrationTermsHref: typeof registrationTermsHref !== 'undefined' ? registrationTermsHref : '/terms',
+              registrationPrivacyHref: typeof registrationPrivacyHref !== 'undefined' ? registrationPrivacyHref : '/privacy',
+              consentChecked: formData.registration_consent || formData.consent_contact,
+              consentError: (fieldError === 'registration_consent' || fieldError === 'consent_contact') ? formError : null,
+              consentErrorField: fieldError,
+            }) %>
+            <div class="bb-apex-register__actions">
+              <a class="bb-apex-btn bb-apex-btn--secondary" href="/register-church?step=administrator<%= planValue ? ('&plan=' + encodeURIComponent(planValue)) : '' %>">Back</a>
+              <button class="bb-apex-btn bb-apex-btn--primary bb-apex-register-submit" type="submit">
+                <%= instantOn ? 'Create church workspace' : 'Submit registration request' %>
+              </button>
+            </div>
+          </div>
+        </form>
+      </div>
+    </div>
+  </div>
+</section>
+
+<%- include('../partials/apex-shell-end') %>

@@ -1,0 +1,207 @@
+<%#
+  BBR08 BlessBoard registration-success panel.
+  Desktop = BBR08-01-D. Mobile = BBR08-01-M. ActiveClinic does not include this file.
+%>
+<%
+  var rs = typeof registrationSuccess !== 'undefined' && registrationSuccess ? registrationSuccess : {};
+  var attrs = rs.attrs || {};
+  var ready = rs.ready === true;
+  var reference = typeof rs.reference === 'string' && rs.reference ? rs.reference : '';
+  var outcome = rs.outcome || (ready ? 'ready' : 'recorded');
+  var steps = Array.isArray(rs.nextStepItems) ? rs.nextStepItems : [];
+%>
+<article
+  class="bb-rs-card"
+  <% if (attrs.outcome) { %> <%= attrs.outcome %>="<%= outcome %>"<% } %>
+  data-bb-rs-layout="bbr08"
+>
+  <div class="bb-rs-icon bb-rs-icon--desktop" aria-hidden="true">
+    <span class="material-symbols-outlined filled">check_circle</span>
+  </div>
+  <div class="bb-rs-icon bb-rs-icon--mobile" aria-hidden="true">
+    <span class="material-symbols-outlined filled">check_circle</span>
+  </div>
+
+  <h1 class="bb-rs-title">
+    <span class="bb-rs-only-desktop"><%= rs.title %></span>
+    <span class="bb-rs-only-mobile"><%= rs.mobileTitle || rs.title %></span>
+  </h1>
+
+  <p class="bb-rs-lede bb-rs-lede--lead bb-rs-only-desktop"><%= rs.description %></p>
+  <p class="bb-rs-lede bb-rs-lede--detail bb-rs-only-desktop"><%= rs.descriptionDetail || '' %></p>
+  <p class="bb-rs-lede bb-rs-lede--mobile bb-rs-only-mobile"><%= rs.mobileDescription || rs.description %></p>
+
+  <% if (reference) { %>
+  <div class="bb-rs-ref">
+    <p class="bb-rs-ref__label">
+      <span class="bb-rs-only-desktop"><%= rs.referenceLabel || 'Registration Reference' %></span>
+      <span class="bb-rs-only-mobile"><%= rs.mobileReferenceLabel || rs.referenceLabel || 'Church ID' %></span>
+    </p>
+    <p class="bb-rs-ref__value">
+      <code<% if (attrs.reference) { %> <%= attrs.reference %>="<%= reference %>"<% } %>><%= reference %></code>
+    </p>
+    <% if (rs.referenceHint) { %>
+    <p class="bb-rs-ref__hint"><%= rs.referenceHint %></p>
+    <% } %>
+  </div>
+  <% } %>
+
+  <% if (rs.websiteShow && rs.websiteUrl) { %>
+  <div class="bb-rs-website" data-bb-registration-website="1">
+    <h2 class="bb-rs-subtitle">Your church website</h2>
+    <div class="bb-rs-website__row">
+      <p class="bb-rs-website__url">
+        <a href="<%= rs.websiteUrl %>" rel="noopener"><code data-bb-registration-website-url="1"><%= rs.websiteUrl %></code></a>
+      </p>
+      <button
+        type="button"
+        class="bb-rs-btn bb-rs-btn--copy"
+        data-bb-copy-website-url="1"
+        data-copy-url="<%= rs.websiteUrl %>"
+        aria-label="Copy website URL"
+      >Copy</button>
+    </div>
+    <% if (rs.websiteStatusLabel) { %>
+    <p class="bb-rs-website__status" data-bb-registration-website-status="1"><%= rs.websiteStatusLabel %></p>
+    <% } %>
+    <% if (rs.websiteEditPath) { %>
+    <p class="bb-rs-website__cta">
+      <a class="bb-rs-btn bb-rs-btn--continue" href="<%= rs.websiteEditPath %>" data-bb-build-website="1">
+        <%= rs.websiteBuildLabel || 'Build your website' %>
+      </a>
+    </p>
+    <% } %>
+    <p class="bb-rs-website__copy-status visually-hidden" data-bb-copy-status="1" role="status" aria-live="polite"></p>
+  </div>
+  <% } %>
+
+  <div class="bb-rs-grid bb-rs-grid--desktop">
+    <div class="bb-rs-tile">
+      <div class="bb-rs-tile__head">
+        <span class="bb-rs-tile__icon" aria-hidden="true">
+          <span class="material-symbols-outlined">manage_accounts</span>
+        </span>
+        <h2><%= rs.accountsTitle %></h2>
+      </div>
+      <p><%= rs.accountsText %></p>
+    </div>
+    <div class="bb-rs-tile">
+      <div class="bb-rs-tile__head">
+        <span class="bb-rs-tile__icon" aria-hidden="true">
+          <span class="material-symbols-outlined">web</span>
+        </span>
+        <h2><%= rs.websiteTitle %></h2>
+        <% if (rs.websiteBadge) { %>
+        <span class="bb-rs-badge"><%= rs.websiteBadge %></span>
+        <% } %>
+      </div>
+      <p><%= rs.websiteText %></p>
+    </div>
+  </div>
+
+  <div class="bb-rs-grid bb-rs-grid--mobile">
+    <div class="bb-rs-tile bb-rs-tile--row">
+      <span class="bb-rs-tile__icon bb-rs-tile__icon--mail" aria-hidden="true">
+        <span class="material-symbols-outlined">mail</span>
+      </span>
+      <div class="bb-rs-tile__copy">
+        <h2><%= rs.mobileConfirmTitle || 'Confirmation Sent' %></h2>
+        <p><%= rs.mobileConfirmText %></p>
+      </div>
+    </div>
+    <div class="bb-rs-tile bb-rs-tile--row">
+      <span class="bb-rs-tile__icon bb-rs-tile__icon--rocket" aria-hidden="true">
+        <span class="material-symbols-outlined">rocket_launch</span>
+      </span>
+      <div class="bb-rs-tile__copy">
+        <h2><%= rs.mobileNextTitle || 'Next Steps' %></h2>
+        <p><%= rs.mobileNextText %></p>
+      </div>
+    </div>
+  </div>
+
+  <% if (steps.length) { %>
+  <div class="bb-rs-note">
+    <h2 class="bb-rs-subtitle"><%= rs.nextTitle %></h2>
+    <ol class="bb-rs-steps">
+      <% steps.forEach(function (step, idx) { %>
+      <li class="bb-rs-step">
+        <span class="bb-rs-step__num" aria-hidden="true"><%= idx + 1 %></span>
+        <span class="bb-rs-step__body">
+          <span class="bb-rs-step__title"><%= step.title %></span>
+          <span class="bb-rs-step__text"><%= step.text %></span>
+        </span>
+      </li>
+      <% }); %>
+    </ol>
+  </div>
+  <% } %>
+
+  <div class="bb-rs-actions">
+    <% if (rs.showContinue && rs.dashboardHref) { %>
+    <a
+      class="bb-rs-btn bb-rs-btn--continue"
+      href="<%= rs.dashboardHref %>"
+      <% if (attrs.continue) { %> <%= attrs.continue %>="1"<% } %>
+    >
+      <span class="bb-rs-only-desktop"><%= rs.continueLabel || 'Continue to dashboard' %></span>
+      <span class="bb-rs-only-mobile"><%= rs.mobileContinueLabel || rs.continueLabel || 'Continue to Dashboard' %></span>
+    </a>
+    <% } %>
+    <a
+      class="bb-rs-btn bb-rs-btn--signin bb-rs-only-desktop-flex"
+      href="<%= rs.signInHref || '/login' %>"
+      <% if (attrs.signIn) { %> <%= attrs.signIn %>="1"<% } %>
+    ><%= rs.signInLabel || 'Sign in' %></a>
+    <button
+      type="button"
+      class="bb-rs-btn bb-rs-btn--signin bb-rs-only-mobile-flex"
+      data-bb-print-receipt="1"
+    ><%= rs.mobileReceiptLabel || 'View Registration Receipt' %></button>
+    <a class="bb-rs-btn bb-rs-btn--home" href="<%= rs.homeHref || '/' %>"><%= rs.homeLabel || 'Return home' %></a>
+  </div>
+</article>
+<script>
+(function () {
+  var btn = document.querySelector("[data-bb-copy-website-url]");
+  if (!btn) return;
+  var status = document.querySelector("[data-bb-copy-status]");
+  function showCopied(message) {
+    if (!status) return;
+    status.textContent = message;
+    status.classList.remove("visually-hidden");
+    btn.textContent = "Copied";
+    window.setTimeout(function () {
+      status.textContent = "";
+      status.classList.add("visually-hidden");
+      btn.textContent = "Copy";
+    }, 2500);
+  }
+  btn.addEventListener("click", function () {
+    var url = btn.getAttribute("data-copy-url") || "";
+    if (!url) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () {
+        showCopied("Website URL copied");
+      }).catch(function () {
+        showCopied("Could not copy — select the URL and copy manually");
+      });
+      return;
+    }
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = url;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "absolute";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      showCopied("Website URL copied");
+    } catch (_e) {
+      showCopied("Could not copy — select the URL and copy manually");
+    }
+  });
+})();
+</script>

@@ -1,0 +1,37 @@
+<%
+  var pageId = typeof libraryPageId !== "undefined" ? libraryPageId : "";
+  var skipTypes = typeof librarySkipTypes !== "undefined" && Array.isArray(librarySkipTypes) ? librarySkipTypes : [];
+  var placements = (clinic && Array.isArray(clinic.cmsLibraryPlacements)) ? clinic.cmsLibraryPlacements : [];
+  var items = (clinic && Array.isArray(clinic.cmsLibrary)) ? clinic.cmsLibrary : [];
+  var placed = placements
+    .filter(function (placement) { return placement && placement.page_id === pageId; })
+    .map(function (placement) {
+      return items.find(function (item) { return item && item.id === placement.item_id; }) || null;
+    })
+    .filter(function (item) {
+      if (!item || item.visible === false) return false;
+      if (skipTypes.indexOf(item.type) !== -1) return false;
+      return true;
+    });
+%>
+<% if (placed.length) { %>
+<section class="ac-public-section ac-tenant-library" data-ac-page-section="tenant-library">
+  <% placed.forEach(function (item) { %>
+  <article class="ac-tenant-library-item" data-ac-library-type="<%= item.type %>">
+    <% if (item.type === "faq") { %>
+    <h2><%= item.title %></h2>
+    <% if (item.body) { %><p><%= item.body %></p><% } %>
+    <% } else if (item.type === "testimonial") { %>
+    <blockquote>
+      <p><%= item.body || item.summary || "" %></p>
+      <% if (item.attribution) { %><footer><%= item.attribution %></footer><% } %>
+    </blockquote>
+    <% } else { %>
+    <% if (item.title) { %><h2><%= item.title %></h2><% } %>
+    <% if (item.summary) { %><p><%= item.summary %></p><% } %>
+    <% if (item.body && item.body !== item.summary) { %><p><%= item.body %></p><% } %>
+    <% } %>
+  </article>
+  <% }) %>
+</section>
+<% } %>

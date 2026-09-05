@@ -1,0 +1,42 @@
+<% var cms = (pageData && pageData.cms) || {}; var templates = cms.templates || []; var error = cms.error || ""; %>
+<section class="ac-mw" data-ac-page-section="website-page-new" data-ac-mw-screen="add-page">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Add New Page</h2>
+      <p class="ac-mw-muted">Choose a starting point. You can customize everything later.</p>
+    </div>
+  </div>
+  <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
+  <form class="ac-mw-form" method="post" action="/app/settings/website/pages">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>
+      Page title
+      <input type="text" name="title" required maxlength="120" value="<%= cms.title || '' %>" placeholder="e.g., Patient Portal"/>
+    </label>
+    <label>
+      Custom URL slug
+      <input type="text" name="slug" maxlength="64" placeholder="patient-stories" value="<%= cms.slug || '' %>"/>
+    </label>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="inNav" value="1" <%= cms.inNav === false ? '' : 'checked' %>/>
+      Add to main navigation
+    </label>
+    <fieldset class="ac-mw-templates">
+      <legend>Select a Template</legend>
+      <% templates.forEach(function (tpl, idx) { %>
+      <label>
+        <input type="radio" name="templateKey" value="<%= tpl.key %>" <%= idx === 0 ? 'checked' : '' %>/>
+        <span>
+          <strong><%= tpl.label %></strong>
+          <span class="ac-mw-muted"><%= tpl.description %></span>
+        </span>
+      </label>
+      <% }) %>
+    </fieldset>
+    <div class="ac-mw-actions">
+      <a class="ac-mw-btn" href="/app/settings/website/pages">Cancel</a>
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Create page</button>
+    </div>
+  </form>
+</section>

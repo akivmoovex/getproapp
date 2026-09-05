@@ -1,0 +1,48 @@
+<%#
+  Stitch EDIT-07 — draft preview banner (shared BB + AC).
+%>
+<%
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+  var labels = shell.labels || {};
+%>
+<div
+  class="gp-website-preview-banner"
+  data-website-preview-banner="1"
+  data-stitch-edit="WE01-07"
+  role="status"
+>
+  <div class="gp-website-preview-banner__inner">
+    <div class="gp-website-preview-banner__copy">
+      <span class="material-symbols-outlined gp-website-preview-banner__icon" aria-hidden="true">visibility</span>
+      <span class="gp-website-preview-banner__title"><%= labels.previewingDraft || 'Previewing unpublished draft' %></span>
+      <% if (shell.draftLabel) { %>
+      <span class="gp-website-preview-banner__meta"><%= shell.draftLabel %></span>
+      <% } %>
+    </div>
+    <div class="gp-website-preview-banner__actions">
+      <% if (shell.backToEditHref) { %>
+      <a
+        class="gp-website-editor__btn gp-website-editor__btn--ghost"
+        href="<%= shell.backToEditHref %>"
+        data-website-back-to-editing="1"
+      ><%= labels.backToEditing || 'Back to editing' %></a>
+      <% } %>
+      <% if (shell.canPublish && (shell.publishHref || shell.publishPath)) { %>
+      <form
+        method="post"
+        action="<%= shell.publishHref || shell.publishPath %>"
+        class="gp-website-preview-banner__publish"
+        data-website-publish-confirm="1"
+        data-website-engine-publish-form="1"
+      >
+        <input type="hidden" name="<%= shell.csrfField || '_csrf' %>" value="<%= shell.csrfToken || '' %>"/>
+        <input type="hidden" name="confirm_publish" value="1"/>
+        <input type="hidden" name="makePublic" value="1"/>
+        <button type="submit" class="gp-website-editor__btn gp-website-editor__btn--primary" data-website-engine-publish="1">
+          <%= labels.publish || 'Publish' %>
+        </button>
+      </form>
+      <% } %>
+    </div>
+  </div>
+</div>

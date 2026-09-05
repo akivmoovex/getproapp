@@ -1,0 +1,96 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var tab = cms.tab === "services" ? "services" : "doctors";
+  var doctors = cms.doctors || [];
+  var services = cms.services || [];
+  var rows = tab === "services" ? services : doctors;
+  var canEdit = cms.canEdit === true;
+  function statusLabel(item) {
+    if (item.inactive) return "Inactive";
+    if (item.needsProfile) return "Needs profile information";
+    if (item.websiteVisible) return "Visible on website";
+    return "Hidden from website";
+  }
+%>
+<section class="ac-mw ac-mw-catalogue" data-ac-page-section="website-catalogue" data-ac-mw-screen="catalogue" data-ac-catalogue-tab="<%= tab %>">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Public catalogue</h2>
+      <p class="ac-mw-muted">Choose which existing doctors and services appear on your public website. This does not create staff or service records, and it does not change booking or clinical settings.</p>
+    </div>
+  </div>
+  <% if (cms.error) { %><p class="ac-mw-error" role="alert"><%= cms.error %></p><% } %>
+  <% if (cms.saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+
+  <nav class="ac-mw-tabs" aria-label="Public catalogue">
+    <a class="ac-mw-nav__link<%= tab === 'doctors' ? ' is-current' : '' %>" href="/app/settings/website/catalogue?tab=doctors" data-ac-catalogue-tab-link="doctors">Doctors</a>
+    <a class="ac-mw-nav__link<%= tab === 'services' ? ' is-current' : '' %>" href="/app/settings/website/catalogue?tab=services" data-ac-catalogue-tab-link="services">Services</a>
+  </nav>
+
+  <% if (!rows.length) { %>
+  <p class="ac-mw-muted" data-ac-catalogue-empty="<%= tab %>">
+    <% if (tab === 'services') { %>
+    No clinic services are available yet. Add a service in clinic operations first, then return here to show it on the website.
+    <% } else { %>
+    No clinic staff records are available yet. Add staff in clinic records first, then return here to show a public profile.
+    <% } %>
+  </p>
+  <% } %>
+
+  <div class="ac-mw-list" data-ac-mw-list="1">
+    <% rows.forEach(function (item) { %>
+    <article
+      class="ac-mw-card ac-mw-catalogue-card"
+      data-ac-catalogue-item="1"
+      data-ac-catalogue-kind="<%= item.kind %>"
+      data-ac-catalogue-id="<%= item.id %>"
+      data-ac-catalogue-visible="<%= item.websiteVisible ? '1' : '0' %>"
+      data-ac-catalogue-bookable="<%= item.bookable ? '1' : '0' %>"
+      data-ac-catalogue-inactive="<%= item.inactive ? '1' : '0' %>"
+      data-ac-catalogue-needs-profile="<%= item.needsProfile ? '1' : '0' %>"
+    >
+      <div>
+        <h3><%= item.name %></h3>
+        <p class="ac-mw-card__meta"><%= item.subtitle %></p>
+        <p class="ac-mw-catalogue-status">
+          <span class="ac-mw-badge<%= item.websiteVisible ? '' : ' ac-mw-badge--hidden' %>"><%= statusLabel(item) %></span>
+          <% if (item.kind === 'service') { %>
+          <span class="ac-mw-badge"><%= item.operationallyAvailable ? 'Operationally available' : 'Not available' %></span>
+          <span class="ac-mw-badge<%= item.bookable ? '' : ' ac-mw-badge--hidden' %>"><%= item.bookable ? 'Bookable' : 'Not bookable' %></span>
+          <% } else { %>
+          <span class="ac-mw-badge"><%= item.operationallyAvailable ? 'Active staff' : 'Not active' %></span>
+          <% } %>
+          <% if (item.featured) { %><span class="ac-mw-badge">Featured</span><% } %>
+        </p>
+      </div>
+      <% if (canEdit) { %>
+      <div class="ac-mw-actions ac-mw-catalogue-actions">
+        <% if (item.websiteVisible) { %>
+        <form method="post" action="/app/settings/website/catalogue/<%= item.kind === 'service' ? 'services' : 'doctors' %>/<%= item.id %>">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <input type="hidden" name="action" value="hide"/>
+          <button type="submit" class="ac-mw-btn" data-ac-catalogue-action="hide">Hide from website</button>
+        </form>
+        <form method="post" action="/app/settings/website/catalogue/<%= item.kind === 'service' ? 'services' : 'doctors' %>/<%= item.id %>">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <input type="hidden" name="action" value="<%= item.featured ? 'unfeature' : 'feature' %>"/>
+          <button type="submit" class="ac-mw-btn" data-ac-catalogue-action="feature"><%= item.featured ? 'Remove featured' : 'Featured' %></button>
+        </form>
+        <% if (item.editHref) { %>
+        <a class="ac-mw-btn" href="<%= item.editHref %>" data-ac-catalogue-action="edit">Edit website presentation</a>
+        <% } %>
+        <% } else if (item.canShow) { %>
+        <form method="post" action="/app/settings/website/catalogue/<%= item.kind === 'service' ? 'services' : 'doctors' %>/<%= item.id %>">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <input type="hidden" name="action" value="show"/>
+          <button type="submit" class="ac-mw-btn ac-mw-btn--primary" data-ac-catalogue-action="show">Show on website</button>
+        </form>
+        <% } %>
+      </div>
+      <% } %>
+    </article>
+    <% }) %>
+  </div>
+  <p class="ac-mw-muted">Need reusable copy, photos, or placements? Use the <a href="/app/settings/website/library">Content Library</a>.</p>
+</section>

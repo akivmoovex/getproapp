@@ -1,0 +1,119 @@
+<% var cms = (pageData && pageData.cms) || {}; var page = cms.page || {}; var blocks = cms.blocks || []; var types = cms.blockTypes || []; %>
+<section class="ac-mw" data-ac-page-section="website-builder" data-ac-mw-screen="builder">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Clinic Builder</h2>
+      <p class="ac-mw-muted"><%= page.title || 'Page' %> · Add, edit, reorder, duplicate, or delete structured content blocks. HTML is not executed.</p>
+    </div>
+    <% if (cms.canEdit) { %>
+    <button type="button" class="ac-mw-btn ac-mw-btn--primary" data-ac-mw-open="ac-mw-add-block">+ Add Content Block</button>
+    <% } %>
+  </div>
+  <% if (!blocks.length) { %>
+  <p class="ac-mw-muted">No blocks yet. Add a heading, text, image, or button.</p>
+  <% } %>
+  <div class="ac-mw-builder">
+    <% blocks.forEach(function (block) { %>
+    <article class="ac-mw-block" data-ac-mw-item="1" data-ac-block-id="<%= block.id %>" data-ac-block-type="<%= block.type %>">
+      <p><strong><%= block.type === 'library' ? 'Reusable content' : block.type %></strong></p>
+      <% if (block.type === 'library') { %>
+      <p class="ac-mw-muted">This block reuses a content library item. Edit the item in the library rather than duplicating it here.</p>
+      <p><a class="ac-mw-btn" href="/app/settings/website/library/<%= block.library_item_id %>">Open in content library</a></p>
+      <% } else { %>
+      <form method="post" action="/app/settings/website/blocks/<%= block.id %>">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <input type="hidden" name="type" value="<%= block.type %>"/>
+        <input type="hidden" name="pageId" value="<%= page.id %>"/>
+        <div class="ac-mw-form" style="border:0;padding:0;max-width:none">
+          <% if (block.type === 'heading' || block.type === 'image_text' || block.type === 'text') { %>
+          <label>Heading <input type="text" name="heading" value="<%= block.heading || '' %>" maxlength="160"/></label>
+          <% } %>
+          <% if (block.type !== 'heading' && block.type !== 'image') { %>
+          <label>Text <textarea name="body" maxlength="4000"><%= block.body || '' %></textarea></label>
+          <% } %>
+          <% if (block.type === 'buttons' || block.type === 'image_text') { %>
+          <label>Button label <input type="text" name="buttonLabel" value="<%= block.button_label || '' %>" maxlength="60"/></label>
+          <label>Button URL <input type="text" name="buttonUrl" value="<%= block.button_url || '' %>" maxlength="500"/></label>
+          <% } %>
+          <% if (block.type === 'image' || block.type === 'image_text') { %>
+          <input type="hidden" name="mediaId" value="<%= (block.image && block.image.mediaId) || '' %>" data-ac-mw-media-id="1"/>
+          <input type="hidden" name="imageSrc" value="<%= (block.image && block.image.src) || '' %>" data-ac-mw-media-src="1"/>
+          <label>Image alt text <input type="text" name="imageAlt" value="<%= (block.image && block.image.alt) || '' %>" maxlength="240" data-ac-mw-media-alt="1"/></label>
+          <p class="ac-mw-media-preview-wrap">
+            <img
+              src="<%= (block.image && block.image.src) || '' %>"
+              alt="<%= (block.image && block.image.alt) || '' %>"
+              class="ac-mw-media-preview"
+              data-ac-mw-media-preview="1"
+              <%= (block.image && block.image.src) ? '' : 'hidden' %>
+            />
+          </p>
+          <p class="ac-mw-muted" data-ac-mw-media-preview-empty="1" <%= (block.image && block.image.src) ? 'hidden' : '' %>>No image selected.</p>
+          <button type="button" class="ac-mw-btn" data-ac-mw-open-media="1">Select from media library</button>
+          <% } %>
+          <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save block</button>
+        </div>
+      </form>
+      <% } %>
+      <div class="ac-mw-actions">
+        <% if (block.type !== 'library') { %>
+        <form method="post" action="/app/settings/website/blocks/<%= block.id %>/duplicate">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <button type="submit" class="ac-mw-btn">Duplicate</button>
+        </form>
+        <% } %>
+        <form method="post" action="/app/settings/website/blocks/<%= block.id %>/delete" onsubmit="return confirm('Delete this block?');">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+          <button type="submit" class="ac-mw-btn ac-mw-btn--danger">Delete</button>
+        </form>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+  <% if (cms.canEdit && blocks.length) { %>
+  <form method="post" action="/app/settings/website/pages/<%= page.id %>/blocks/reorder" data-ac-mw-reorder="blocks">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <input type="hidden" name="pageId" value="<%= page.id %>"/>
+    <div data-ac-mw-list="1">
+      <% blocks.forEach(function (block) { %>
+      <p data-ac-mw-item="1">
+        <button type="button" class="ac-mw-btn" data-ac-mw-move="up">↑</button>
+        <button type="button" class="ac-mw-btn" data-ac-mw-move="down">↓</button>
+        <input type="hidden" name="blockIds" value="<%= block.id %>" data-ac-mw-order="1"/>
+        <%= block.type %>
+      </p>
+      <% }) %>
+    </div>
+    <p><button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save block order</button></p>
+  </form>
+  <% } %>
+
+  <dialog class="ac-mw-dialog" id="ac-mw-add-block">
+    <form class="ac-mw-dialog__body ac-mw-form" method="post" action="/app/settings/website/pages/<%= page.id %>/blocks">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <h3>Add Content Block</h3>
+      <% types.forEach(function (type) { %>
+      <label class="ac-mw-check">
+        <input type="radio" name="type" value="<%= type.key %>" required/>
+        <%= type.label %>
+      </label>
+      <% }) %>
+      <div class="ac-mw-actions">
+        <button type="button" class="ac-mw-btn" data-ac-mw-close="1">Cancel</button>
+        <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Add</button>
+      </div>
+    </form>
+  </dialog>
+  <dialog class="ac-mw-dialog" id="ac-mw-select-media" data-ac-mw-media-picker="1" data-ac-mw-media-url="<%= cms.mediaListUrl || '' %>">
+    <div class="ac-mw-dialog__body">
+      <h3>Select Media</h3>
+      <p class="ac-mw-muted">Reuse an image already uploaded for this clinic.</p>
+      <div class="ac-mw-media-grid" data-ac-mw-picker-grid="1"></div>
+      <div class="ac-mw-actions">
+        <a class="ac-mw-btn" href="/app/settings/website/media">Open media library</a>
+        <button type="button" class="ac-mw-btn" data-ac-mw-close="1">Close</button>
+      </div>
+    </div>
+  </dialog>
+</section>

@@ -1,0 +1,123 @@
+<%#
+  Shared website version history (Wave 4B-1).
+  Locals: history (historyModel.buildHistoryView)
+%>
+<section class="gp-we-history" data-gp-website-history="1" data-gp-we-screen="history">
+  <header class="gp-we-history__head">
+    <div>
+      <h1 class="gp-we-history__title"><%= history.pageTitle %></h1>
+      <% if (history.siteLabel) { %>
+      <p class="gp-we-history__site"><%= history.siteLabel %></p>
+      <% } %>
+    </div>
+    <% if (history.backHref) { %>
+    <a class="gp-we-history__back" href="<%= history.backHref %>"><%= history.backLabel %></a>
+    <% } %>
+  </header>
+
+  <p class="gp-we-history__intro"><%= history.intro %></p>
+
+  <% if (history.notice) { %>
+  <p class="gp-we-history__notice" role="status" data-gp-history-notice="1"><%= history.notice %></p>
+  <% } %>
+  <% if (history.error) { %>
+  <p class="gp-we-history__error" role="alert"><%= history.error %></p>
+  <% } %>
+
+  <% if (history.draftRow) { %>
+  <article class="gp-we-history__card gp-we-history__card--draft" data-gp-history-status="draft">
+    <div class="gp-we-history__main">
+      <div class="gp-we-history__labels">
+        <h2 class="gp-we-history__version"><%= history.draftRow.referenceLabel %></h2>
+        <span class="gp-we-history__badge gp-we-history__badge--draft">Working draft</span>
+      </div>
+      <p class="gp-we-history__meta">
+        <%= history.draftRow.publishedAtLabel %>
+        · <%= history.draftRow.changeCount %> unpublished change<%= history.draftRow.changeCount === 1 ? '' : 's' %>
+      </p>
+    </div>
+  </article>
+  <% } %>
+
+  <div class="gp-we-history__list">
+    <% if (!history.hasVersions) { %>
+    <p class="gp-we-history__empty"><%= history.emptyMessage %></p>
+    <% } %>
+    <% history.versions.forEach(function (row) { %>
+    <article
+      class="gp-we-history__card<%= row.isLive ? ' gp-we-history__card--live' : '' %>"
+      data-gp-history-version="<%= row.versionNumber %>"
+      data-gp-history-status="<%= row.status %>"
+    >
+      <div class="gp-we-history__main">
+        <div class="gp-we-history__labels">
+          <h2 class="gp-we-history__version"><%= row.referenceLabel %></h2>
+          <% if (row.isLive) { %>
+          <span class="gp-we-history__badge gp-we-history__badge--live">Current live version</span>
+          <% } else { %>
+          <span class="gp-we-history__badge">Published snapshot</span>
+          <% } %>
+        </div>
+        <p class="gp-we-history__meta">
+          <%= row.publishedAtLabel || '—' %>
+          <% if (row.moderationStatus) { %> · <%= row.moderationStatus %><% } %>
+          <% if (row.changeCount) { %> · <%= row.changeCount %> change<%= row.changeCount === 1 ? '' : 's' %><% } %>
+        </p>
+      </div>
+      <div class="gp-we-history__actions">
+        <% if (row.previewHref) { %>
+        <a class="gp-we-history__btn gp-we-history__btn--ghost" href="<%= row.previewHref %>">Preview</a>
+        <% } %>
+        <% if (row.canRestore) { %>
+        <form
+          class="gp-we-history__restore-form"
+          method="post"
+          action="<%= row.restoreHref %>"
+          data-gp-history-restore-form="1"
+          data-gp-history-version-label="<%= row.referenceLabel %>"
+        >
+          <input type="hidden" name="<%= history.csrfField %>" value="<%= history.csrfToken %>"/>
+          <button type="button" class="gp-we-history__btn gp-we-history__btn--primary" data-gp-history-restore-open="1">
+            Restore as draft
+          </button>
+        </form>
+        <% } %>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+
+  <div class="gp-we-history__dialog-host" data-gp-history-dialog-host="1" hidden>
+    <div class="gp-website-lifecycle__overlay" data-gp-history-overlay="1" hidden></div>
+    <div
+      class="gp-website-lifecycle__panel gp-we-history__dialog"
+      data-gp-history-panel="restore"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="gp-we-history-restore-title"
+      hidden
+    >
+      <div class="gp-website-lifecycle__grab" aria-hidden="true"></div>
+      <header class="gp-website-lifecycle__head">
+        <h2 class="gp-website-lifecycle__title" id="gp-we-history-restore-title">
+          <%= history.restoreConfirmTitle %>
+        </h2>
+        <button type="button" class="gp-website-lifecycle__close" data-gp-history-dismiss="1" aria-label="Close">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </header>
+      <p class="gp-website-lifecycle__body">
+        <span data-gp-history-restore-version="1"></span>
+        <%= history.restoreConfirmBody %>
+      </p>
+      <footer class="gp-website-lifecycle__foot">
+        <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--ghost" data-gp-history-dismiss="1">
+          Cancel
+        </button>
+        <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--primary" data-gp-history-restore-confirm="1">
+          <%= history.restoreConfirmAction %>
+        </button>
+      </footer>
+    </div>
+  </div>
+</section>

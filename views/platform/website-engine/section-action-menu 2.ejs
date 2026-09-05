@@ -1,0 +1,81 @@
+<%#
+  Wave 4A — shared section action menu (Stitch WE01-06).
+  Desktop popover / mobile bottom sheet via website-section-actions.js + CSS.
+%>
+<%
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+  var labels = shell.sectionActionLabels || {};
+%>
+<div class="gp-website-section-menu" data-website-section-menu-host="1" hidden>
+  <div class="gp-website-section-menu__overlay" data-website-section-menu-overlay="1" hidden></div>
+  <div
+    class="gp-website-section-menu__panel"
+    data-website-section-menu-panel="1"
+    role="menu"
+    aria-labelledby="gp-website-section-menu-title"
+    hidden
+  >
+    <div class="gp-website-section-menu__grab" aria-hidden="true"></div>
+    <header class="gp-website-section-menu__head">
+      <h2 class="gp-website-section-menu__title" id="gp-website-section-menu-title">
+        <%= labels.menuTitle || 'Section Actions' %>
+      </h2>
+      <button type="button" class="gp-website-section-menu__close" data-website-section-menu-dismiss="1" aria-label="Close">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </header>
+    <div class="gp-website-section-menu__body" data-website-section-menu-body="1">
+      <button type="button" class="gp-website-section-menu__item" data-website-section-action="edit" role="menuitem">
+        <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+        <span><%= labels.edit || 'Edit section' %></span>
+      </button>
+      <button type="button" class="gp-website-section-menu__item" data-website-section-action="reorder" role="menuitem">
+        <span class="material-symbols-outlined" aria-hidden="true">swap_vert</span>
+        <span><%= labels.reorder || 'Reorder' %></span>
+      </button>
+      <div class="gp-website-section-menu__sub" data-website-section-submenu="reorder" hidden>
+        <button type="button" class="gp-website-section-menu__item" data-website-section-action="move_up" role="menuitem">
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_upward</span>
+          <span><%= labels.moveUp || 'Move up' %></span>
+        </button>
+        <button type="button" class="gp-website-section-menu__item" data-website-section-action="move_down" role="menuitem">
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_downward</span>
+          <span><%= labels.moveDown || 'Move down' %></span>
+        </button>
+      </div>
+      <button type="button" class="gp-website-section-menu__item" data-website-section-action="hide" role="menuitem">
+        <span class="material-symbols-outlined" aria-hidden="true">visibility_off</span>
+        <span data-website-section-hide-label="1"><%= labels.hide || 'Hide section' %></span>
+      </button>
+      <button type="button" class="gp-website-section-menu__item" data-website-section-action="restore_default" role="menuitem">
+        <span class="material-symbols-outlined" aria-hidden="true">settings_backup_restore</span>
+        <span><%= labels.restoreDefault || 'Restore default' %></span>
+      </button>
+    </div>
+  </div>
+
+  <div
+    class="gp-website-section-menu__panel gp-website-section-menu__panel--confirm"
+    data-website-section-menu-panel="restore"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gp-website-section-restore-title"
+    hidden
+  >
+    <div class="gp-website-section-menu__grab" aria-hidden="true"></div>
+    <header class="gp-website-section-menu__head">
+      <h2 class="gp-website-section-menu__title" id="gp-website-section-restore-title">
+        <%= labels.restoreConfirmTitle || 'Restore default content?' %>
+      </h2>
+    </header>
+    <p class="gp-website-section-menu__body-text"><%= labels.restoreConfirmBody || '' %></p>
+    <footer class="gp-website-section-menu__foot">
+      <button type="button" class="gp-website-section-menu__btn gp-website-section-menu__btn--ghost" data-website-section-menu-dismiss="1">
+        <%= labels.cancel || 'Cancel' %>
+      </button>
+      <button type="button" class="gp-website-section-menu__btn gp-website-section-menu__btn--primary" data-website-section-confirm-restore="1">
+        <%= labels.restoreConfirmAction || 'Restore default' %>
+      </button>
+    </footer>
+  </div>
+</div>

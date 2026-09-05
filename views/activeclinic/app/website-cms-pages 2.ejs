@@ -1,0 +1,56 @@
+<% var cms = (pageData && pageData.cms) || {}; var pages = cms.pages || []; %>
+<section class="ac-mw" data-ac-page-section="website-pages" data-ac-mw-screen="pages">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Pages Manager</h2>
+      <p class="ac-mw-muted">Manage your clinic's website structure and content.</p>
+    </div>
+    <% if (cms.canEdit) { %>
+      <a class="ac-mw-btn ac-mw-btn--primary" href="/app/settings/website/pages/new" data-ac-mw-action="add-page">+ Add New Page</a>
+    <% } %>
+  </div>
+  <form id="ac-mw-pages-reorder" method="post" action="/app/settings/website/pages/reorder" data-ac-mw-reorder="pages">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <div class="ac-mw-list" data-ac-mw-list="1">
+      <% pages.forEach(function (page) { %>
+      <article class="ac-mw-card" data-ac-mw-item="1" data-ac-page-id="<%= page.id %>" data-ac-page-kind="<%= page.kind %>">
+        <div>
+          <span class="ac-mw-grip" aria-hidden="true">⋮⋮</span>
+          <% if (cms.canEdit) { %>
+          <button type="button" class="ac-mw-btn" data-ac-mw-move="up" aria-label="Move up">↑</button>
+          <button type="button" class="ac-mw-btn" data-ac-mw-move="down" aria-label="Move down">↓</button>
+          <input type="hidden" name="pageIds" value="<%= page.id %>" data-ac-mw-order="1"/>
+          <% } %>
+        </div>
+        <div>
+          <h3><%= page.title %></h3>
+          <p class="ac-mw-card__meta"><code><%= page.href || ('/' + page.slug) %></code></p>
+          <span class="ac-mw-badge<%= page.status === 'draft' ? ' ac-mw-badge--draft' : (page.status === 'hidden' ? ' ac-mw-badge--hidden' : '') %>"><%= page.status %></span>
+        </div>
+        <div class="ac-mw-actions">
+          <% if (page.kind === 'custom') { %>
+          <a class="ac-mw-btn" href="/app/settings/website/pages/<%= page.id %>/builder">Edit</a>
+          <% } else if (cms.editHref) { %>
+          <a class="ac-mw-btn" href="<%= cms.editHref %>">Edit</a>
+          <% } %>
+          <a class="ac-mw-btn" href="/app/settings/website/pages/<%= page.id %>">Settings</a>
+          <% if (cms.canEdit && page.canDelete) { %>
+          <button type="submit" class="ac-mw-btn ac-mw-btn--danger" form="ac-mw-page-delete-<%= page.id %>">Delete</button>
+          <% } %>
+        </div>
+      </article>
+      <% }) %>
+    </div>
+    <% if (cms.canEdit && pages.length) { %>
+    <p><button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save page order</button></p>
+    <% } %>
+  </form>
+  <% pages.forEach(function (page) { %>
+    <% if (cms.canEdit && page.canDelete) { %>
+    <form id="ac-mw-page-delete-<%= page.id %>" method="post" action="/app/settings/website/pages/<%= page.id %>/delete" onsubmit="return confirm('Delete this page? It will be removed from draft until you publish.');" hidden>
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    </form>
+    <% } %>
+  <% }) %>
+</section>

@@ -1,0 +1,69 @@
+<%- include('../partials/hq-shell-start') %>
+<%
+  var onboarding = typeof onboarding !== 'undefined' && onboarding ? onboarding : {};
+  var steps = Array.isArray(onboarding.steps) ? onboarding.steps : [];
+  var resume = onboarding.resumeStep || null;
+  var requiredIncomplete = steps.filter(function (s) {
+    return s.kind === 'required' && s.complete !== true;
+  });
+  var canFinish = requiredIncomplete.length === 0;
+%>
+
+<section class="bb-hq-onboarding" data-bb-hq-onboarding="1" data-bb-onboarding-status="<%= onboarding.status || '' %>" aria-label="Organization setup">
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">HQ</a>
+      <span aria-hidden="true">›</span>
+      <span>Setup</span>
+    </p>
+    <h1 class="bb-hq-page-head__title">Organization setup</h1>
+    <p class="bb-hq-lede">
+      Finish required church setup. Recommended items — including logo and extra website polish — can be skipped.
+    </p>
+    <% if (onboarding.requiredTotal) { %>
+    <p data-bb-onboarding-progress="1"><%= onboarding.requiredComplete || 0 %> of <%= onboarding.requiredTotal %> required items complete</p>
+    <% } %>
+  </header>
+
+  <ul class="bb-hq-panel" data-bb-onboarding-steps="1">
+    <% steps.forEach(function (item) { %>
+    <li
+      data-bb-onboarding-step="<%= item.key %>"
+      data-bb-onboarding-kind="<%= item.kind %>"
+      data-bb-onboarding-complete="<%= item.complete ? '1' : '0' %>"
+    >
+      <% if (item.destinationUrl && !item.complete) { %>
+        <a href="<%= item.destinationUrl %>"><%= item.label %></a>
+      <% } else { %>
+        <span><%= item.label %></span>
+      <% } %>
+      <span> · <%= item.kind === 'required' ? 'Required' : 'Recommended' %></span>
+      <% if (item.skipped) { %><span> · Skipped</span><% } %>
+      <% if (!item.complete && item.skippable) { %>
+      <form method="post" action="/hq/onboarding/skip" style="display:inline">
+        <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+        <input type="hidden" name="step_key" value="<%= item.key %>" />
+        <button type="submit" class="bb-hq-btn bb-hq-btn--ghost">Skip</button>
+      </form>
+      <% } %>
+    </li>
+    <% }) %>
+  </ul>
+
+  <div data-bb-onboarding-actions="1">
+    <% if (resume && resume.destinationUrl) { %>
+    <form method="post" action="/hq/onboarding/continue" style="display:inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit" class="bb-hq-btn">Continue setup</button>
+    </form>
+    <% } %>
+    <% if (canFinish) { %>
+    <form method="post" action="/hq/onboarding/complete" style="display:inline">
+      <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+      <button type="submit" class="bb-hq-btn bb-hq-btn--ghost">Go to dashboard</button>
+    </form>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

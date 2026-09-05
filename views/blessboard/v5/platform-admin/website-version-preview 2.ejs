@@ -1,0 +1,27 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var snap = snapshot || {};
+  var values = snap.values || {};
+  var keys = Object.keys(values);
+  var ver = version || {};
+  var renderHref = typeof renderPath !== 'undefined' ? renderPath : '';
+%>
+<section class="bb-pa-page" data-website-version-preview="1">
+  <h1>Version preview v<%= ver.versionNumber || '' %></h1>
+  <p><%= organizationName || organizationKey %> · <%= productCode || '' %></p>
+  <p class="bb-pa-hint">This is a governance preview of a stored published version. It is not a live publication and does not change drafts.</p>
+  <% if (renderHref) { %>
+  <iframe class="bb-pa-website-visual__frame" title="Rendered version preview" src="<%= renderHref %>" width="100%" height="520" sandbox="allow-same-origin"></iframe>
+  <% } %>
+  <h2>Stored fields</h2>
+  <% if (!keys.length) { %>
+  <p>No stored field values in this snapshot.</p>
+  <% } %>
+  <dl class="bb-pa-dl">
+    <% keys.forEach(function (key) { %>
+    <dt><%= key %></dt>
+    <dd><%= typeof values[key] === 'string' ? values[key] : JSON.stringify(values[key]) %></dd>
+    <% }); %>
+  </dl>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

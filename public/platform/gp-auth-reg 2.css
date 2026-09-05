@@ -1,0 +1,519 @@
+/**
+ * V7 shared auth + registration layout tokens (Stitch project 9585058196210789597).
+ * Product colors are applied via body[data-gp-product] — not shared purple/teal bleed.
+ */
+:root {
+  --gp-auth-reg-max: 75rem;
+  --gp-auth-reg-wide: 80rem;
+  --gp-auth-reg-gutter: 1.25rem;
+  --gp-auth-reg-gap: 2.5rem;
+  --gp-auth-reg-aside-ratio: 0.38;
+  --gp-auth-reg-panel-ratio: 0.62;
+  --gp-auth-reg-input-h: 3rem;
+  --gp-auth-reg-radius: 0.5rem;
+  --gp-auth-reg-radius-lg: 0.75rem;
+  --gp-auth-reg-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --gp-auth-reg-font: "Public Sans", "Hanken Grotesk", Inter, system-ui, sans-serif;
+}
+
+/* —— Identifier tabs (Email | Phone) —— */
+.gp-auth-id-tabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  margin: 0 0 1.25rem;
+  border-radius: 999px;
+  background: var(--gp-auth-id-tabs-bg, #eef2f4);
+  border: 1px solid var(--gp-auth-id-tabs-border, #c4c7c9);
+}
+
+.gp-auth-id-tabs__btn {
+  appearance: none;
+  border: 0;
+  background: transparent;
+  color: var(--gp-auth-muted, #3e494a);
+  font: inherit;
+  font-size: 0.875rem;
+  font-weight: 600;
+  min-height: 2.5rem;
+  padding: 0.35rem 1.1rem;
+  border-radius: 999px;
+  cursor: pointer;
+  text-decoration: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+}
+
+.gp-auth-id-tabs__btn[aria-selected="true"] {
+  background: var(--gp-auth-surface, #fff);
+  color: var(--gp-auth-primary, #006068);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+}
+
+.gp-auth-id-tabs__btn:focus-visible {
+  outline: 2px solid var(--gp-auth-focus, var(--gp-auth-primary, #006068));
+  outline-offset: 2px;
+}
+
+.gp-auth-id-panel[hidden] {
+  display: none !important;
+}
+
+/* —— Registration shell —— */
+.gp-reg {
+  max-width: min(var(--gp-auth-reg-wide), var(--gp-auth-reg-max));
+  margin: 0 auto;
+  padding: 2rem var(--gp-auth-reg-gutter) 4rem;
+}
+
+.gp-reg__layout {
+  display: grid;
+  gap: var(--gp-auth-reg-gap);
+  align-items: start;
+}
+
+@media (min-width: 960px) {
+  .gp-reg__layout {
+    grid-template-columns: minmax(0, var(--gp-auth-reg-aside-ratio)) minmax(0, var(--gp-auth-reg-panel-ratio));
+  }
+}
+
+.gp-reg__aside {
+  background: linear-gradient(180deg, var(--gp-reg-aside-bg-top, #f7f8fc) 0%, var(--gp-reg-aside-bg-bottom, #fff) 100%);
+  border: 1px solid var(--gp-auth-border, #c4c7c9);
+  border-radius: var(--gp-auth-reg-radius-lg);
+  padding: 1.5rem;
+}
+
+.gp-reg__panel {
+  min-width: 0;
+}
+
+.gp-reg__card {
+  background: var(--gp-auth-surface, #fff);
+  border: 1px solid var(--gp-auth-border, #c4c7c9);
+  border-radius: var(--gp-auth-reg-radius-lg);
+  box-shadow: var(--gp-auth-reg-shadow);
+  padding: 1.5rem;
+}
+
+.gp-reg__stepper {
+  margin: 0 0 1.5rem;
+}
+
+.gp-reg__stepper-steps {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.35rem;
+  list-style: none;
+  margin: 0 0 1rem;
+  padding: 0;
+}
+
+.gp-reg__stepper-step {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.45rem;
+  text-align: center;
+  position: relative;
+  min-width: 0;
+}
+
+.gp-reg__stepper-step:not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 1.1rem;
+  left: calc(50% + 1.1rem);
+  right: calc(-50% + 1.1rem);
+  height: 2px;
+  background: var(--gp-reg-stepper-track, #eef2f4);
+  z-index: 0;
+}
+
+.gp-reg__stepper-step--done:not(:last-child)::after,
+.gp-reg__stepper-step--active:not(:last-child)::after {
+  background: var(--gp-auth-primary, #006068);
+}
+
+.gp-reg__stepper-step__marker {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.2rem;
+  height: 2.2rem;
+  border-radius: 999px;
+  border: 2px solid var(--gp-reg-stepper-track, #eef2f4);
+  background: var(--gp-auth-surface, #fff);
+  color: var(--gp-auth-muted, #3e494a);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.gp-reg__stepper-step__marker .material-symbols-outlined {
+  font-size: 1.1rem;
+}
+
+.gp-reg__stepper-step--active .gp-reg__stepper-step__marker {
+  border-color: var(--gp-auth-primary, #006068);
+  background: var(--gp-auth-primary, #006068);
+  color: #fff;
+}
+
+.gp-reg__stepper-step--done .gp-reg__stepper-step__marker {
+  border-color: var(--gp-auth-primary, #006068);
+  background: var(--gp-auth-primary, #006068);
+  color: #fff;
+}
+
+.gp-reg__stepper-step__label {
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--gp-auth-muted, #3e494a);
+  line-height: 1.25;
+}
+
+.gp-reg__stepper-step--active .gp-reg__stepper-step__label {
+  color: var(--gp-auth-primary, #006068);
+}
+
+.gp-reg__stepper-step__label--short {
+  display: none;
+}
+
+@media (max-width: 520px) {
+  .gp-reg__stepper-step__label--full {
+    display: none;
+  }
+  .gp-reg__stepper-step__label--short {
+    display: block;
+  }
+  .gp-reg__stepper-step__marker {
+    width: 2rem;
+    height: 2rem;
+    font-size: 0.8rem;
+  }
+}
+
+.gp-reg__stepper-track {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: var(--gp-reg-stepper-track, #eef2f4);
+  overflow: hidden;
+  margin: 0.5rem 0 0;
+}
+
+.gp-reg__stepper-fill {
+  height: 100%;
+  background: var(--gp-auth-primary, #006068);
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+
+.gp-reg__stepper-caption {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gp-auth-muted, #3e494a);
+}
+
+.gp-reg__header h1 {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.5rem, 3vw, 1.875rem);
+  line-height: 1.2;
+}
+
+.gp-reg__lede {
+  margin: 0 0 1.25rem;
+  color: var(--gp-auth-muted, #3e494a);
+  line-height: 1.55;
+}
+
+.gp-reg__feature-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.85rem;
+}
+
+.gp-reg__feature-list li {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 0.65rem;
+  align-items: start;
+  font-size: 0.9rem;
+  line-height: 1.45;
+  color: var(--gp-auth-muted, #3e494a);
+}
+
+.gp-reg__feature-list .material-symbols-outlined {
+  color: var(--gp-auth-primary, #006068);
+  font-size: 1.25rem;
+}
+
+/* Product themes */
+body[data-gp-product="activeclinic"] {
+  --gp-auth-primary: var(--acp-primary, #006068);
+  --gp-auth-primary-strong: var(--acp-primary-strong, #004f56);
+  --gp-auth-primary-hover: var(--acp-primary-hover, #0f766e);
+  --gp-auth-bg: var(--acp-bg, #f8f9ff);
+  --gp-auth-surface: var(--acp-surface, #fff);
+  --gp-auth-border: var(--acp-border, #c4c7c9);
+  --gp-auth-muted: var(--acp-muted, #3e494a);
+  --gp-auth-focus: var(--acp-focus, var(--acp-primary, #006068));
+  --gp-auth-id-tabs-bg: #e8f4f5;
+  --gp-auth-id-tabs-border: #b8d4d6;
+  --gp-reg-aside-bg-top: #f0fafb;
+}
+
+body[data-gp-product="blessboard"] {
+  --gp-auth-primary: var(--bb-color-primary, #6c5ce7);
+  --gp-auth-primary-strong: var(--bb-color-primary-deep, #3d348b);
+  --gp-auth-primary-hover: var(--bb-color-primary-hover, #5341cd);
+  --gp-auth-bg: var(--bb-color-page, #fbf9f6);
+  --gp-auth-surface: #fff;
+  --gp-auth-border: var(--bb-color-border, #d1dce0);
+  --gp-auth-muted: var(--bb-color-muted, #44474e);
+  --gp-auth-focus: var(--bb-color-primary, #6c5ce7);
+  --gp-auth-id-tabs-bg: #f0ecff;
+  --gp-auth-id-tabs-border: #d5ccf5;
+  --gp-reg-aside-bg-top: #f7f4ff;
+}
+
+@media (max-width: 390px) {
+  .gp-reg {
+    padding: 1rem 0.85rem 5rem;
+  }
+}
+
+/* —— Registration review cards (shared) —— */
+.gp-reg-review,
+.bb-apex-register-review {
+  display: grid;
+  gap: 1rem;
+  margin: 1.25rem 0;
+}
+
+.gp-reg-review__card,
+.bb-apex-register-review__card {
+  border: 1px solid var(--gp-auth-border, #c4c7c9);
+  border-radius: var(--gp-auth-reg-radius-lg, 0.75rem);
+  padding: 1rem 1.25rem;
+  background: var(--gp-auth-surface, #fff);
+}
+
+.gp-reg-review__head,
+.bb-apex-register-review__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+}
+
+.gp-reg-review__head h3,
+.bb-apex-register-review__head h3 {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  font-size: 1rem;
+}
+
+.gp-reg-review__edit,
+.bb-apex-register-review__edit {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--gp-auth-primary, #006068);
+  text-decoration: none;
+}
+
+.gp-reg-review__dl,
+.bb-apex-register-review__dl {
+  margin: 0;
+}
+
+.gp-reg-review__dl > div,
+.bb-apex-register-review__dl > div {
+  display: grid;
+  grid-template-columns: 8rem 1fr;
+  gap: 0.5rem 1rem;
+  padding: 0.35rem 0;
+}
+
+.gp-reg-review__dl dt,
+.bb-apex-register-review__dl dt {
+  margin: 0;
+  color: var(--gp-auth-muted, #3e494a);
+  font-size: 0.875rem;
+}
+
+.gp-reg-review__dl dd,
+.bb-apex-register-review__dl dd {
+  margin: 0;
+  font-weight: 500;
+}
+
+/* —— Login feature panel (desktop aside + mobile compact) —— */
+.gp-auth-feature-panel {
+  display: none;
+}
+
+@media (min-width: 960px) {
+  .gp-auth-feature-panel {
+    display: block;
+    background: linear-gradient(165deg, var(--gp-reg-aside-bg-top, #f7f4ff) 0%, var(--gp-auth-surface, #fff) 72%);
+    border: 1px solid var(--gp-auth-border, #c4c7c9);
+    border-radius: var(--gp-auth-reg-radius-lg, 0.75rem);
+    padding: 2rem 1.75rem;
+    min-height: 100%;
+  }
+
+  .gp-auth-feature-panel__icon-wrap {
+    margin: 0 0 1.25rem;
+  }
+
+  .gp-auth-feature-panel__icon {
+    font-size: 2.5rem;
+    color: var(--gp-auth-primary, #6c5ce7);
+    background: color-mix(in srgb, var(--gp-auth-primary, #6c5ce7) 12%, transparent);
+    border-radius: 1rem;
+    padding: 0.65rem;
+  }
+
+  .gp-auth-feature-panel__title {
+    margin: 0 0 0.65rem;
+    font-size: 1.75rem;
+    line-height: 1.2;
+    font-weight: 700;
+    color: var(--gp-auth-text, #1a1c1e);
+  }
+
+  .gp-auth-feature-panel__lead {
+    margin: 0 0 1.25rem;
+    color: var(--gp-auth-muted, #44474e);
+    line-height: 1.55;
+    font-size: 1rem;
+  }
+
+  .gp-auth-feature-panel__list {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: grid;
+    gap: 0.75rem;
+  }
+
+  .gp-auth-feature-panel__list li {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.6rem;
+    align-items: start;
+    font-size: 0.9rem;
+    color: var(--gp-auth-muted, #44474e);
+    line-height: 1.45;
+  }
+
+  .gp-auth-feature-panel__list .material-symbols-outlined {
+    color: var(--gp-auth-primary, #6c5ce7);
+    font-size: 1.2rem;
+  }
+}
+
+.gp-auth-feature-panel__mobile {
+  display: none;
+}
+
+@media (max-width: 959px) {
+  .gp-auth-feature-panel__mobile {
+    display: grid;
+    grid-template-columns: auto 1fr;
+    gap: 0.85rem;
+    align-items: start;
+    width: 100%;
+    max-width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
+    margin: 0 0 1.25rem;
+    padding: 1rem 1.1rem;
+    border-radius: var(--gp-auth-reg-radius-lg, 0.75rem);
+    background: color-mix(in srgb, var(--gp-auth-primary, #6c5ce7) 8%, var(--gp-auth-surface, #fff));
+    border: 1px solid color-mix(in srgb, var(--gp-auth-primary, #6c5ce7) 18%, var(--gp-auth-border, #d1dce0));
+  }
+
+  .gp-auth-feature-panel__mobile-icon .material-symbols-outlined {
+    font-size: 1.75rem;
+    color: var(--gp-auth-primary, #6c5ce7);
+  }
+
+  .gp-auth-feature-panel__mobile-title {
+    margin: 0 0 0.25rem;
+    font-size: 1rem;
+    font-weight: 700;
+    line-height: 1.3;
+  }
+
+  .gp-auth-feature-panel__mobile-lead {
+    margin: 0;
+    font-size: 0.875rem;
+    color: var(--gp-auth-muted, #44474e);
+    line-height: 1.45;
+  }
+
+  .bb-auth-panel {
+    display: none !important;
+  }
+}
+
+@media (max-width: 959px) {
+  .acw-register__aside {
+    display: none;
+  }
+
+  .acw-register--with-aside .acw-register__layout {
+    grid-template-columns: 1fr;
+  }
+
+  .bb-apex-register__aside.gp-reg__aside {
+    display: none;
+  }
+}
+
+.gp-reg__form-heading {
+  margin: 0 0 0.35rem;
+  font-size: clamp(1.35rem, 3.5vw, 1.75rem);
+  line-height: 1.2;
+  font-weight: 700;
+}
+
+.gp-reg__form-lede {
+  margin: 0 0 1.25rem;
+  color: var(--gp-auth-muted, #3e494a);
+  line-height: 1.55;
+  font-size: 0.95rem;
+}
+
+.bb-auth-register-hint {
+  margin: 1rem 0 0;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--gp-auth-muted, #44474e);
+}
+
+.bb-auth-register-hint a {
+  color: var(--gp-auth-primary, #6c5ce7);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.bb-auth-register-hint a:hover {
+  text-decoration: underline;
+}

@@ -1,0 +1,50 @@
+<%#
+  Shared login feature panel (desktop aside + mobile compact banner).
+  locals:
+    product: 'activeclinic' | 'blessboard'
+    icon: material icon name
+    title: string
+    lead: string
+    features[]: optional { icon, text }
+    mobileTitle: optional override for mobile compact card
+%>
+<%
+  var iconName = typeof icon !== 'undefined' ? icon : 'auto_awesome';
+  var panelTitle = typeof title !== 'undefined' ? title : '';
+  var panelLead = typeof lead !== 'undefined' ? lead : '';
+  var featureItems = (typeof features !== 'undefined' && Array.isArray(features)) ? features : [];
+  var mobileHeading = typeof mobileTitle !== 'undefined' ? mobileTitle : panelTitle;
+  var panelMode = typeof mode !== 'undefined' ? mode : 'both';
+%>
+<% if (panelMode === 'desktop' || panelMode === 'both') { %>
+<aside class="gp-auth-feature-panel" aria-labelledby="gp-auth-feature-title">
+  <div class="gp-auth-feature-panel__desktop">
+    <p class="gp-auth-feature-panel__icon-wrap" aria-hidden="true">
+      <span class="material-symbols-outlined gp-auth-feature-panel__icon"><%= iconName %></span>
+    </p>
+    <h2 class="gp-auth-feature-panel__title" id="gp-auth-feature-title"><%= panelTitle %></h2>
+    <p class="gp-auth-feature-panel__lead"><%= panelLead %></p>
+    <% if (featureItems.length) { %>
+    <ul class="gp-auth-feature-panel__list">
+      <% featureItems.forEach(function (item) { %>
+      <li>
+        <% if (item.icon) { %><span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span><% } %>
+        <span><%= item.text %></span>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+</aside>
+<% } %>
+<% if (panelMode === 'mobile' || panelMode === 'both') { %>
+<div class="gp-auth-feature-panel__mobile">
+  <p class="gp-auth-feature-panel__mobile-icon" aria-hidden="true">
+    <span class="material-symbols-outlined"><%= typeof mobileIcon !== 'undefined' ? mobileIcon : iconName %></span>
+  </p>
+  <div>
+    <p class="gp-auth-feature-panel__mobile-title"><%= mobileHeading %></p>
+    <p class="gp-auth-feature-panel__mobile-lead"><%= typeof mobileLead !== 'undefined' ? mobileLead : panelLead %></p>
+  </div>
+</div>
+<% } %>

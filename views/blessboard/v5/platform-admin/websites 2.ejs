@@ -1,0 +1,97 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = websites || [];
+  var tab = String(tab || 'overview');
+  var q = q || '';
+  function tabHref(name) {
+    var qs = '?tab=' + encodeURIComponent(name);
+    if (q) qs += '&q=' + encodeURIComponent(q);
+    return '/admin/websites' + qs;
+  }
+%>
+<section class="bb-pa-page" data-bb-pa-websites="1">
+  <h1>Websites</h1>
+  <p class="bb-pa-hint">Inspect clinic and church websites. Organisation admins publish; Platform Admin governs, audits, and recovers.</p>
+  <nav class="bb-pa-tabs" aria-label="Website views">
+    <a href="<%= tabHref('overview') %>" class="<%= tab === 'overview' ? 'is-active' : '' %>">Overview</a>
+    <a href="<%= tabHref('drafts') %>" class="<%= tab === 'drafts' ? 'is-active' : '' %>">Drafts</a>
+    <a href="<%= tabHref('published') %>" class="<%= tab === 'published' ? 'is-active' : '' %>">Published</a>
+    <a href="<%= tabHref('history') %>" class="<%= tab === 'history' ? 'is-active' : '' %>">History</a>
+  </nav>
+  <form method="get" action="/admin/websites" class="bb-pa-filters bb-pa-form">
+    <input type="hidden" name="tab" value="<%= tab %>"/>
+    <label class="bb-pa-field">Search
+      <input type="search" name="q" value="<%= q %>" placeholder="Organisation, key, product"/>
+    </label>
+    <button type="submit" class="bb-pa-btn">Filter</button>
+  </form>
+  <table class="bb-pa-table" data-bb-pa-websites-table="1">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Organisation</th>
+        <th>Public URL</th>
+        <th>Website status</th>
+        <th>Published version</th>
+        <th>Last approved</th>
+        <th>Review</th>
+        <th>Current draft</th>
+        <th>Unpublished changes</th>
+        <th>Last editor</th>
+        <th>Last publisher</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!rows.length) { %>
+      <tr><td colspan="12">No websites match this view.</td></tr>
+      <% } %>
+      <% rows.forEach(function (site) { %>
+      <tr
+        data-bb-pa-website-row="<%= site.organizationKey %>"
+        data-product="<%= site.productCode %>"
+        data-website-status="<%= site.websiteStatus %>"
+        data-published-version="<%= site.currentVersionNumber || '' %>"
+        data-last-approved-version="<%= site.lastApprovedVersionNumber || '' %>"
+        data-review-status="<%= site.reviewStatus || '' %>"
+        data-draft-state="<%= site.currentDraft %>"
+        data-unpublished-count="<%= site.unpublishedCount || 0 %>"
+        data-last-editor="<%= site.lastEditor || '' %>"
+        data-last-publisher="<%= site.lastPublisher || '' %>"
+      >
+        <td><%= site.productLabel || (site.productCode === 'activeclinic' ? 'ActiveClinic' : 'BlessBoard') %></td>
+        <td>
+          <strong><%= site.displayName %></strong><br/>
+          <span class="bb-pa-hint"><%= site.organizationKey %></span>
+        </td>
+        <td>
+          <% if (site.publicPath) { %>
+          <a class="bb-pa-link" href="<%= site.publicPath %>" data-action-view-live="1"><%= site.publicPath %></a>
+          <% } else { %>—<% } %>
+        </td>
+        <td><%= site.websiteStatus || '—' %></td>
+        <td>
+          <% if (site.currentVersionNumber) { %>v<%= site.currentVersionNumber %><% } else { %>—<% } %>
+          <% if (site.lastPublishedLabel) { %><br/><span class="bb-pa-hint"><%= site.lastPublishedLabel %></span><% } %>
+        </td>
+        <td><% if (site.lastApprovedVersionNumber) { %>v<%= site.lastApprovedVersionNumber %><% } else { %>—<% } %></td>
+        <td><%= site.reviewStatusLabel || '—' %></td>
+        <td><%= site.currentDraft || '—' %></td>
+        <td><%= site.unpublishedCount > 0 ? (site.unpublishedCount + ' changes') : 'None' %></td>
+        <td><%= site.lastEditor || '—' %></td>
+        <td><%= site.lastPublisher || '—' %></td>
+        <td>
+          <% if (site.actions && site.actions.previewDraft) { %>
+          <a class="bb-pa-link" href="<%= site.actions.previewDraft %>" data-action-preview-draft="1">Preview draft</a><br/>
+          <% } %>
+          <% if (site.actions && site.actions.history) { %>
+          <a class="bb-pa-link" href="<%= site.actions.history %>" data-action-history="1">History</a><br/>
+          <% } %>
+          <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= (site.actions && site.actions.open) || ('/admin/organizations/' + site.organizationKey + '/website') %>">Open</a>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

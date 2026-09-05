@@ -1,0 +1,56 @@
+<%#
+  Shared website media library page section (Wave 4B-1).
+  Locals: page (mediaPageModel.buildMediaPageView)
+%>
+<section class="gp-we-media-page" data-gp-website-media-page="1" data-gp-we-screen="media">
+  <header class="gp-we-media-page__head">
+    <div>
+      <h1 class="gp-we-media-page__title"><%= page.pageTitle %></h1>
+      <% if (page.siteLabel) { %>
+      <p class="gp-we-media-page__site"><%= page.siteLabel %></p>
+      <% } %>
+    </div>
+  </header>
+
+  <% if (page.notice) { %>
+  <p class="gp-we-media-page__notice" role="status"><%= page.notice %></p>
+  <% } %>
+  <% if (page.error) { %>
+  <p class="gp-we-media-page__error" role="alert"><%= page.error %></p>
+  <% } %>
+
+  <% if (page.canUpload && page.uploadAction && !page.selectMode) { %>
+  <dialog class="gp-we-media-page__dialog" id="gp-we-upload-media">
+    <form
+      class="gp-we-media-page__dialog-body"
+      method="post"
+      action="<%= page.uploadAction %>"
+      enctype="multipart/form-data"
+      data-gp-media-upload="1"
+    >
+      <input type="hidden" name="<%= page.csrfField %>" value="<%= page.csrfToken %>"/>
+      <h2>Upload media</h2>
+      <label class="gp-we-media-page__drop">
+        Choose an image
+        <input type="file" name="file" accept="image/jpeg,image/png,image/webp,image/gif" required/>
+      </label>
+      <label>
+        Alt text
+        <input type="text" name="altText" maxlength="240" placeholder="Describe the image for screen readers"/>
+      </label>
+      <p class="gp-we-media-page__hint" data-gp-media-upload-status="1">JPEG, PNG, WebP, or GIF. Maximum 5 MB.</p>
+      <div class="gp-we-media-page__dialog-actions">
+        <button type="button" class="gp-we-history__btn gp-we-history__btn--ghost" data-gp-media-upload-close="1">Cancel</button>
+        <button type="submit" class="gp-we-history__btn gp-we-history__btn--primary">Upload</button>
+      </div>
+    </form>
+  </dialog>
+  <div class="gp-we-media-page__toolbar">
+    <button type="button" class="gp-we-history__btn gp-we-history__btn--primary" data-gp-media-upload-open="1">
+      Upload media
+    </button>
+  </div>
+  <% } %>
+
+  <%- page.libraryHtml %>
+</section>

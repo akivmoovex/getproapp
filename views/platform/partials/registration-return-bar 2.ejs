@@ -1,0 +1,12 @@
+<%#
+  Shared registration return bar (BlessBoard + ActiveClinic).
+  Locals: registrationReturn { isRegistrationReturn, backHref, backLabel }
+%>
+<% if (typeof registrationReturn !== 'undefined' && registrationReturn && registrationReturn.isRegistrationReturn && registrationReturn.backHref) { %>
+<nav class="gp-registration-return" aria-label="Registration navigation">
+  <a class="gp-registration-return__link" href="<%= registrationReturn.backHref %>" data-gp-registration-nav="1">
+    <span class="gp-registration-return__icon" aria-hidden="true">←</span>
+    <%= registrationReturn.backLabel || 'Back to registration' %>
+  </a>
+</nav>
+<% } %>

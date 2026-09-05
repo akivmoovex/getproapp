@@ -1,0 +1,74 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var values = cms.values || {};
+  var error = cms.error || "";
+  var saved = cms.saved === true;
+  var logo = values["home.logo"] && typeof values["home.logo"] === "object" ? values["home.logo"] : null;
+  var logoSrc = (logo && logo.src) || "";
+%>
+<section class="ac-mw" data-ac-page-section="website-chrome" data-ac-mw-screen="MW08-03">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>Header &amp; Footer Settings</h2>
+      <p class="ac-mw-muted">Choose what appears at the top and bottom of every public clinic page. Menu order is edited in Navigation.</p>
+    </div>
+  </div>
+  <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
+  <% if (saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+  <form class="ac-mw-form" method="post" action="/app/settings/website/chrome">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <p class="ac-mw-form__legend">Header</p>
+    <% if (logoSrc) { %>
+    <p class="ac-mw-media-preview-wrap"><img class="ac-mw-media-preview ac-mw-media-preview--logo" src="<%= logoSrc %>" alt=""/></p>
+    <% } %>
+    <p class="ac-mw-hint">Change the logo in <a href="/app/settings/website/branding">Branding</a>.</p>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="showLogo" value="1" <%= values["header.show_logo"] === false ? "" : "checked" %>/>
+      Show logo
+    </label>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="showNav" value="1" <%= values["header.show_nav"] === false ? "" : "checked" %>/>
+      Show navigation
+    </label>
+    <p class="ac-mw-hint"><a href="/app/settings/website/navigation">Edit menu labels and order</a></p>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="showPhone" value="1" <%= values["header.show_phone"] === true ? "checked" : "" %>/>
+      Show phone number in the header
+    </label>
+    <p class="ac-mw-form__legend">Footer</p>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="showContact" value="1" <%= values["footer.show_contact"] === false ? "" : "checked" %>/>
+      Show contact details
+    </label>
+    <label>
+      Footer text
+      <input type="text" name="tagline" maxlength="200" value="<%= values['footer.tagline'] || '' %>" placeholder="Powered by ActiveClinic"/>
+    </label>
+    <label>
+      Footer legal note
+      <textarea name="legal" maxlength="2000"><%= values['footer.legal'] || '' %></textarea>
+    </label>
+    <p class="ac-mw-form__legend">Social links</p>
+    <p class="ac-mw-hint">Paste full website addresses. Leave blank to hide a network.</p>
+    <label>
+      Facebook
+      <input type="url" name="facebookUrl" maxlength="500" value="<%= values['social.facebook_url'] || '' %>" placeholder="https://"/>
+    </label>
+    <label>
+      Instagram
+      <input type="url" name="instagramUrl" maxlength="500" value="<%= values['social.instagram_url'] || '' %>" placeholder="https://"/>
+    </label>
+    <label>
+      WhatsApp
+      <input type="url" name="whatsappUrl" maxlength="500" value="<%= values['social.whatsapp_url'] || '' %>" placeholder="https://wa.me/"/>
+    </label>
+    <label>
+      X
+      <input type="url" name="xUrl" maxlength="500" value="<%= values['social.x_url'] || '' %>" placeholder="https://"/>
+    </label>
+    <div class="ac-mw-actions">
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save header and footer</button>
+    </div>
+  </form>
+</section>

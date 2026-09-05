@@ -1,0 +1,48 @@
+<% var cms = (pageData && pageData.cms) || {}; var media = cms.media || []; var selected = cms.selected || null; var selectMode = cms.selectMode === true; %>
+<% if (cms.libraryStylesheet) { %><link rel="stylesheet" href="<%= cms.libraryStylesheet %>"/><% } %>
+<section class="ac-mw" data-ac-page-section="website-media" data-ac-mw-screen="<%= selectMode ? 'select-media' : 'media' %>">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div></div>
+    <% if (cms.canUpload && !selectMode) { %>
+    <button type="button" class="ac-mw-btn ac-mw-btn--primary" data-ac-mw-open="ac-mw-upload-media">Upload Media</button>
+    <% } %>
+  </div>
+  <% if (cms.canUpload) { %>
+  <dialog class="ac-mw-dialog" id="ac-mw-upload-media">
+    <form class="ac-mw-dialog__body ac-mw-form" method="post" action="<%= cms.uploadAction %>" enctype="multipart/form-data" data-ac-mw-upload="1" data-ac-mw-ajax="1">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <h3>Upload Media</h3>
+      <label class="ac-mw-upload-drop">
+        Drag &amp; drop files here
+        <span>Or Browse Files</span>
+        <input type="file" name="file" accept="image/jpeg,image/png,image/webp,image/gif" required/>
+      </label>
+      <label>
+        Alt text
+        <input type="text" name="altText" maxlength="240" placeholder="Describe the image for screen readers..."/>
+      </label>
+      <p class="ac-mw-muted" data-ac-mw-upload-status="1">JPEG, PNG, WebP, or GIF. Maximum 5 MB.</p>
+      <div class="ac-mw-actions">
+        <button type="button" class="ac-mw-btn" data-ac-mw-close="1">Cancel</button>
+        <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Done</button>
+      </div>
+    </form>
+  </dialog>
+  <% } %>
+  <%# Shared content/media library UI — see src/platform/website/libraryModel.js %>
+  <%- cms.renderLibrary(Object.assign({}, cms.library, { csrfField: csrfField, csrfToken: csrfToken })) %>
+  <% if (selected) { %>
+  <form class="ac-mw-form" method="post" action="/app/settings/website/media/<%= selected.id %>">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <h3>Media Details</h3>
+    <% if (selected.publicSrc) { %><p><img src="<%= selected.publicSrc %>" alt="" style="max-width:20rem"/></p><% } %>
+    <label>
+      Alt text
+      <input type="text" name="altText" maxlength="240" value="<%= selected.altText || '' %>" placeholder="Describe the image for screen readers..."/>
+    </label>
+    <p class="ac-mw-muted"><%= selected.originalFilename %> · <%= selected.mimeType %></p>
+    <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save metadata</button>
+  </form>
+  <% } %>
+</section>

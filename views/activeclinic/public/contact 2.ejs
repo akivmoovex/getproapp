@@ -1,0 +1,57 @@
+<article class="acw-page" data-ac-page-section="public-contact" data-ac-acw-screen="ACW07">
+  <header class="acw-section acw-section-header">
+    <p class="acw-kicker">Contact</p>
+    <h1>Talk with ActiveClinic</h1>
+    <p>Send a message about joining, directory listings, or the public website. This form stores your inquiry for the ActiveClinic team. It does not send SMS or email confirmation.</p>
+  </header>
+
+  <div class="acw-contact">
+    <div>
+      <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
+      <% const fd = formData || {}; %>
+      <% const fieldErrors = typeof validationErrors === 'object' && validationErrors ? validationErrors : {}; %>
+      <form method="post" action="/contact" class="ac-public-form acw-form" data-ac-loading="1" novalidate>
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+        <div class="acp-field">
+          <label for="senderName">Your name</label>
+          <input id="senderName" name="senderName" required maxlength="120" autocomplete="name" value="<%= fd.senderName || '' %>" aria-invalid="<%= fieldErrors.senderName ? 'true' : 'false' %>"/>
+          <% if (fieldErrors.senderName) { %><p class="ac-public-field-error" id="senderName-error"><%= fieldErrors.senderName %></p><% } %>
+        </div>
+        <div class="acp-field">
+          <label for="senderEmail">Email</label>
+          <input id="senderEmail" name="senderEmail" type="email" required autocomplete="email" value="<%= fd.senderEmail || '' %>" aria-invalid="<%= fieldErrors.senderEmail ? 'true' : 'false' %>"/>
+          <% if (fieldErrors.senderEmail) { %><p class="ac-public-field-error"><%= fieldErrors.senderEmail %></p><% } %>
+        </div>
+        <%- include('../partials/phone-field', {
+          id: 'senderPhone',
+          label: 'Phone (optional)',
+          required: false,
+          defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+          selectedCountry: (fd && fd.phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+          nationalValue: (fd && fd.phoneNational) || '',
+          e164Value: (fd && fd.senderPhone) || '',
+          countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+          phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+          countryFieldName: 'phone_country',
+          nationalFieldName: 'phone_national',
+          legacyFieldName: 'senderPhone',
+          showLegacyHidden: false
+        }) %>
+        <div class="acp-field">
+          <label for="message">Message</label>
+          <textarea id="message" name="message" required maxlength="4000" aria-invalid="<%= fieldErrors.message ? 'true' : 'false' %>"><%= fd.message || '' %></textarea>
+          <% if (fieldErrors.message) { %><p class="ac-public-field-error"><%= fieldErrors.message %></p><% } %>
+        </div>
+        <button type="submit" class="ac-btn ac-btn--primary">Send message</button>
+      </form>
+    </div>
+    <aside class="acw-card">
+      <h2>What to expect</h2>
+      <p>We record your message as received. Clinic clinical questions should go to the clinic’s own contact page, not this form.</p>
+      <p class="ac-public-actions">
+        <a class="ac-btn ac-btn--ghost" href="/clinics">Find a Clinic</a>
+        <a class="ac-btn ac-btn--ghost" href="/register-clinic">Register Your Clinic</a>
+      </p>
+    </aside>
+  </div>
+</article>

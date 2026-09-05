@@ -18,7 +18,8 @@ const { requireDatabaseUrl } = require("../../db/scripts/lib/databaseUrl");
 const { buildFoundationPoolConfig } = require("../../db/scripts/lib/foundationPool");
 const { checkDatabaseIdentity } = require("../../db/scripts/lib/databaseIdentity");
 
-const EXPECTED_SHA = "3c2cd0384b09e7483e2feef6bd376e126eff7ea9";
+const EXPECTED_SHA =
+  process.env.EXPECTED_SHA || "c7f0063758cc386d9067bf292843a29e0c6026cd";
 const BB = "https://blessboard.com";
 const PASS =
   process.env.QA_PASSWORD ||

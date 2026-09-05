@@ -1,0 +1,372 @@
+<%
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+  var pages = Array.isArray(shell.pages) ? shell.pages : [];
+  var moreItems = Array.isArray(shell.moreItems) ? shell.moreItems : [];
+  var mobileNav = Array.isArray(shell.mobileNav) ? shell.mobileNav : [];
+  var labels = shell.labels || {};
+  var currentPage = shell.pageKey || 'home';
+  var productCode = shell.productCode || '';
+  var moreGroups = [];
+  moreItems.forEach(function (item) {
+    var last = moreGroups.length ? moreGroups[moreGroups.length - 1] : null;
+    if (!last || last.id !== item.group) {
+      last = { id: item.group, items: [] };
+      moreGroups.push(last);
+    }
+    last.items.push(item);
+  });
+  function moreItemClass(item) {
+    return item && item.destructive
+      ? 'gp-website-editor__more-item gp-website-editor__more-item--danger'
+      : 'gp-website-editor__more-item';
+  }
+%>
+<% if (shell.previewMode) { %>
+<div
+  class="gp-website-preview-chrome"
+  data-website-chrome="1"
+  data-website-discard-url="<%= shell.discardPath || '' %>"
+  data-website-unpublish-url="<%= shell.unpublishPath || '' %>"
+>
+<%- include('./preview-banner', { editorShell: shell }) %>
+</div>
+<% } else { %>
+<% if (shell.publishSuccess) { %>
+<div class="gp-website-publish-success" data-website-publish-success="1" role="status">
+  <div class="gp-website-publish-success__inner">
+    <span class="material-symbols-outlined" aria-hidden="true">check_circle</span>
+    <div class="gp-website-publish-success__copy">
+      <strong>Website published</strong>
+      <span>Your church website is now live.</span>
+      <% if (shell.publishSuccessUrl) { %>
+      <span class="gp-website-publish-success__url"><code><%= shell.publishSuccessUrl %></code></span>
+      <% } %>
+    </div>
+    <div class="gp-website-publish-success__actions">
+      <% if (shell.publishSuccessUrl) { %>
+      <a class="gp-website-editor__btn gp-website-editor__btn--primary" href="<%= shell.publishSuccessUrl %>" rel="noopener">View website</a>
+      <button type="button" class="gp-website-editor__btn gp-website-editor__btn--ghost" data-website-copy-published-url="1" data-copy-url="<%= shell.publishSuccessUrl %>" aria-label="Copy website URL">Copy URL</button>
+      <% } %>
+    </div>
+  </div>
+</div>
+<% } %>
+<div
+  class="gp-website-editor"
+  data-website-engine-shell="1"
+  data-website-chrome="1"
+  data-gp-website-editor="1"
+  data-product="<%= productCode %>"
+  data-page-key="<%= currentPage %>"
+  data-draft="<%= shell.draft ? '1' : '0' %>"
+  data-website-save-url="<%= shell.saveUrl || '' %>"
+  data-website-media-url="<%= shell.mediaUrl || '' %>"
+  data-website-discard-url="<%= shell.discardPath || '' %>"
+  data-website-unpublish-url="<%= shell.unpublishPath || '' %>"
+  data-website-section-actions-url="<%= shell.sectionActionsUrl || '' %>"
+  data-website-add-section-url="<%= shell.addSectionUrl || '' %>"
+  data-website-section-manifest="<%= shell.sectionManifestJson || '' %>"
+  data-website-max-bytes="5242880"
+  data-stitch-project="9585058196210789597"
+  data-stitch-edit="WE01-01"
+>
+  <header class="gp-website-editor__toolbar" data-website-engine-toolbar="1" data-stitch-edit="WE01-01">
+    <div class="gp-website-editor__toolbar-start">
+      <span class="gp-website-editor__mark" aria-hidden="true">
+        <span class="material-symbols-outlined">edit_note</span>
+      </span>
+      <div class="gp-website-editor__title-block">
+        <span class="gp-website-editor__title"><%= labels.editingWebsite || 'Editing website' %></span>
+        <span
+          class="gp-website-editor__draft gp-website-editor__draft--mobile"
+          data-website-engine-draft-short="1"
+        ><%= shell.draftLabelShort || '' %></span>
+      </div>
+      <span class="gp-website-editor__rule" aria-hidden="true"></span>
+      <span class="gp-website-editor__draft gp-website-editor__draft--desktop" data-website-engine-draft="1">
+        <span class="gp-website-editor__draft-dot" aria-hidden="true"></span>
+        <%= shell.draftLabel || '' %>
+      </span>
+    </div>
+    <div class="gp-website-editor__toolbar-end">
+      <% if (shell.previewHref) { %>
+      <a
+        class="gp-website-editor__btn gp-website-editor__btn--ghost gp-website-editor__preview"
+        href="<%= shell.previewHref %>"
+        data-website-engine-preview="1"
+        data-website-preview="1"
+      >
+        <span class="material-symbols-outlined gp-website-editor__preview-icon" aria-hidden="true">visibility</span>
+        <span class="gp-website-editor__preview-label"><%= labels.preview || 'Preview' %></span>
+      </a>
+      <% } %>
+      <% if (shell.canPublish && (shell.publishHref || shell.publishPath)) { %>
+      <form
+        method="post"
+        action="<%= shell.publishHref || shell.publishPath %>"
+        class="gp-website-editor__publish"
+        data-website-publish-confirm="1"
+        data-website-engine-publish-form="1"
+      >
+        <input type="hidden" name="<%= shell.csrfField || '_csrf' %>" value="<%= shell.csrfToken || '' %>"/>
+        <input type="hidden" name="confirm_publish" value="1"/>
+        <input type="hidden" name="makePublic" value="1"/>
+        <button type="submit" class="gp-website-editor__btn gp-website-editor__btn--primary" data-website-engine-publish="1" data-bb-review-publish="1"><%= labels.publish || 'Publish' %></button>
+      </form>
+      <% } %>
+      <div class="gp-website-editor__more" data-website-more="1" data-stitch-edit="WE01-10">
+        <button
+          type="button"
+          class="gp-website-editor__icon-btn"
+          data-website-more-toggle="1"
+          aria-expanded="false"
+          aria-haspopup="true"
+          aria-controls="gp-website-editor-more-menu"
+          aria-label="<%= labels.moreAria || 'More actions' %>"
+        >
+          <span class="material-symbols-outlined gp-website-editor__more-icon--desktop" aria-hidden="true">more_horiz</span>
+          <span class="material-symbols-outlined gp-website-editor__more-icon--mobile" aria-hidden="true">more_vert</span>
+        </button>
+        <div
+          id="gp-website-editor-more-menu"
+          class="gp-website-editor__more-menu"
+          data-website-more-menu="1"
+          hidden
+          role="menu"
+        >
+          <% moreGroups.forEach(function (group, gi) { %>
+          <% if (gi > 0) { %><div class="gp-website-editor__more-sep" role="separator"></div><% } %>
+          <div class="gp-website-editor__more-group" data-website-more-group="<%= group.id %>">
+            <% group.items.forEach(function (item) { %>
+            <% if (item.method === 'POST' && item.href) { %>
+            <form method="post" action="<%= item.href %>" class="gp-website-editor__more-form" role="none">
+              <input type="hidden" name="<%= shell.csrfField || '_csrf' %>" value="<%= shell.csrfToken || '' %>"/>
+              <button type="submit" class="<%= moreItemClass(item) %>" role="menuitem" data-website-more-id="<%= item.id %>">
+                <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+                <%= item.label %>
+              </button>
+            </form>
+            <% } else if (item.action) { %>
+            <button
+              type="button"
+              class="<%= moreItemClass(item) %>"
+              role="menuitem"
+              data-website-more-id="<%= item.id %>"
+              data-website-more-action="<%= item.action %>"
+              <% if (item.lifecycle) { %>data-website-lifecycle-action="<%= item.lifecycle %>"<% } %>
+            >
+              <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+              <%= item.label %>
+            </button>
+            <% } else { %>
+            <a
+              class="<%= moreItemClass(item) %>"
+              role="menuitem"
+              href="<%= item.href %>"
+              data-website-more-id="<%= item.id %>"
+            >
+              <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+              <%= item.label %>
+            </a>
+            <% } %>
+            <% }) %>
+          </div>
+          <% }) %>
+          <% if (shell.exitMethod === 'POST' && (shell.exitAction || shell.exitHref)) { %>
+          <div class="gp-website-editor__more-sep gp-website-editor__more-sep--mobile-exit" role="separator"></div>
+          <form method="post" action="<%= shell.exitAction || shell.exitHref %>" class="gp-website-editor__more-form gp-website-editor__more-form--mobile-exit" role="none">
+            <input type="hidden" name="<%= shell.csrfField || '_csrf' %>" value="<%= shell.csrfToken || '' %>"/>
+            <button type="submit" class="gp-website-editor__more-item" role="menuitem" data-website-engine-exit="1" data-bb-exit-editing="1">
+              <span class="material-symbols-outlined" aria-hidden="true">close</span>
+              <%= labels.exitEditing || 'Exit editing' %>
+            </button>
+          </form>
+          <% } else if (shell.exitHref) { %>
+          <div class="gp-website-editor__more-sep gp-website-editor__more-sep--mobile-exit" role="separator"></div>
+          <a
+            class="gp-website-editor__more-item gp-website-editor__more-form--mobile-exit"
+            role="menuitem"
+            href="<%= shell.exitHref %>"
+            data-website-engine-exit="1"
+            data-bb-exit-editing="1"
+          >
+            <span class="material-symbols-outlined" aria-hidden="true">close</span>
+            <%= labels.exitEditing || 'Exit editing' %>
+          </a>
+          <% } %>
+        </div>
+      </div>
+      <% if (shell.exitMethod === 'POST' && (shell.exitAction || shell.exitHref)) { %>
+      <form method="post" action="<%= shell.exitAction || shell.exitHref %>" class="gp-website-editor__exit gp-website-editor__exit--desktop">
+        <input type="hidden" name="<%= shell.csrfField || '_csrf' %>" value="<%= shell.csrfToken || '' %>"/>
+        <button type="submit" class="gp-website-editor__btn gp-website-editor__btn--ghost" data-website-engine-exit="1" data-bb-exit-editing="1">
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+          <%= labels.exitEditing || 'Exit editing' %>
+        </button>
+      </form>
+      <% } else if (shell.exitHref) { %>
+      <a
+        class="gp-website-editor__btn gp-website-editor__btn--ghost gp-website-editor__exit gp-website-editor__exit--desktop"
+        href="<%= shell.exitHref %>"
+        data-website-engine-exit="1"
+        data-bb-exit-editing="1"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        <%= labels.exitEditing || 'Exit editing' %>
+      </a>
+      <% } %>
+    </div>
+    <p class="gp-website-sr-only" data-website-engine-save-state="1" aria-live="polite"><%= shell.saveStateLabel || '' %></p>
+  </header>
+
+  <nav
+    class="gp-website-editor__rail"
+    data-website-page-rail="1"
+    data-stitch-edit="WE01-05"
+    aria-label="<%= labels.pageSelectorHeading || 'Page Selector' %>"
+  >
+    <h2 class="gp-website-editor__rail-title"><%= labels.pageSelectorHeading || 'Page Selector' %></h2>
+    <ul class="gp-website-editor__rail-list">
+      <% pages.forEach(function (page) { %>
+      <li>
+        <a
+          class="gp-website-editor__rail-link<%= page.current ? ' is-current' : '' %>"
+          href="<%= page.editHref || '#' %>"
+          data-website-page-key="<%= page.key %>"
+          <% if (page.current) { %>aria-current="page"<% } %>
+        >
+          <span class="material-symbols-outlined" aria-hidden="true"><%= page.icon || 'description' %></span>
+          <%= page.label || page.key %>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+    <% if (shell.managePagesHref) { %>
+    <div class="gp-website-editor__rail-foot">
+      <a class="gp-website-editor__rail-manage" href="<%= shell.managePagesHref %>">
+        <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+        Manage Pages
+      </a>
+    </div>
+    <% } %>
+  </nav>
+
+  <nav
+    class="gp-website-editor__mobile-nav"
+    data-website-mobile-nav="1"
+    data-stitch-edit="WE01-01-M"
+    aria-label="Website editor"
+  >
+    <% mobileNav.forEach(function (item) { %>
+    <% if (item.action === 'pages') { %>
+    <button
+      type="button"
+      class="gp-website-editor__mobile-item<%= item.id === 'pages' ? ' is-current' : '' %>"
+      data-website-mobile-nav-id="<%= item.id %>"
+      data-website-more-action="pages"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+      <span><%= item.label %></span>
+    </button>
+    <% } else if (item.available && item.href) { %>
+    <a
+      class="gp-website-editor__mobile-item"
+      href="<%= item.href %>"
+      data-website-mobile-nav-id="<%= item.id %>"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+      <span><%= item.label %></span>
+    </a>
+    <% } else { %>
+    <span
+      class="gp-website-editor__mobile-item is-disabled"
+      data-website-mobile-nav-id="<%= item.id %>"
+      data-website-nav-unavailable="1"
+      title="<%= item.unavailableReason || 'Not available in this editor yet' %>"
+      aria-disabled="true"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
+      <span><%= item.label %></span>
+    </span>
+    <% } %>
+    <% }) %>
+  </nav>
+
+  <div
+    class="gp-website-editor__sheet-overlay"
+    data-website-page-sheet-overlay="1"
+    hidden
+  ></div>
+  <div
+    class="gp-website-editor__sheet"
+    data-website-page-sheet="1"
+    hidden
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gp-website-editor-sheet-title"
+  >
+    <div class="gp-website-editor__sheet-grab" aria-hidden="true"></div>
+    <div class="gp-website-editor__sheet-head">
+      <h2 id="gp-website-editor-sheet-title" class="gp-website-editor__sheet-title"><%= labels.pagesHeading || 'Pages' %></h2>
+      <button type="button" class="gp-website-editor__icon-btn" data-website-page-sheet-close="1" aria-label="Close pages">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+    </div>
+    <ul class="gp-website-editor__sheet-list">
+      <% pages.forEach(function (page) { %>
+      <li>
+        <a
+          class="gp-website-editor__sheet-link<%= page.current ? ' is-current' : '' %>"
+          href="<%= page.editHref || '#' %>"
+          data-website-page-key="<%= page.key %>"
+          <% if (page.current) { %>aria-current="page"<% } %>
+        >
+          <span class="gp-website-editor__sheet-link-main">
+            <span class="material-symbols-outlined" aria-hidden="true"><%= page.icon || 'description' %></span>
+            <%= page.label || page.key %>
+          </span>
+          <% if (page.current) { %>
+          <span class="material-symbols-outlined" aria-hidden="true">check</span>
+          <% } %>
+        </a>
+      </li>
+      <% }) %>
+    </ul>
+    <% if (shell.managePagesHref) { %>
+    <div class="gp-website-editor__sheet-foot">
+      <a class="gp-website-editor__sheet-manage" href="<%= shell.managePagesHref %>">
+        <span class="material-symbols-outlined" aria-hidden="true">settings</span>
+        Manage Pages
+      </a>
+    </div>
+    <% } %>
+  </div>
+</div>
+<script>
+(function () {
+  var btn = document.querySelector("[data-website-copy-published-url]");
+  if (!btn) return;
+  btn.addEventListener("click", function () {
+    var url = btn.getAttribute("data-copy-url") || "";
+    if (!url) return;
+    var done = function () {
+      btn.textContent = "Copied";
+      window.setTimeout(function () { btn.textContent = "Copy URL"; }, 2000);
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(done).catch(function () {});
+      return;
+    }
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      done();
+    } catch (_e) {}
+  });
+})();
+</script>
+<% } %>

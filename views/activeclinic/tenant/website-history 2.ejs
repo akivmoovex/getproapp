@@ -1,0 +1,7 @@
+<% if (typeof historyStylesheet === 'string' && historyStylesheet) { %>
+<link rel="stylesheet" href="<%= historyStylesheet %>"/>
+<% } %>
+<%- typeof historyHtml !== 'undefined' ? historyHtml : '' %>
+<% if (typeof historyScript === 'string' && historyScript) { %>
+<script src="<%= historyScript %>" defer></script>
+<% } %>

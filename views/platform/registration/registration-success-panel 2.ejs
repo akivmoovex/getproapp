@@ -1,0 +1,152 @@
+<%
+  var rs = typeof registrationSuccess !== 'undefined' && registrationSuccess ? registrationSuccess : {};
+  var cls = rs.classes || {};
+  var attrs = rs.attrs || {};
+  var reviewRequired = rs.reviewRequired === true;
+  var ready = rs.ready === true;
+  var reference = typeof rs.reference === 'string' && rs.reference ? rs.reference : '';
+  var outcome = rs.outcome || (reviewRequired ? 'review_required' : (ready ? 'ready' : 'recorded'));
+%>
+<% if (reviewRequired) { %>
+<div class="<%= cls.card || '' %>"<% if (attrs.outcome) { %> <%= attrs.outcome %>="<%= outcome %>"<% } %>>
+  <div class="<%= cls.icon || '' %>" aria-hidden="true">
+    <span class="material-symbols-outlined filled">pending</span>
+  </div>
+  <% if (rs.reviewKicker) { %>
+  <p class="<%= cls.kicker || '' %>"><%= rs.reviewKicker %></p>
+  <% } %>
+  <h1><%= rs.reviewTitle %></h1>
+  <p><%= rs.reviewDescription %></p>
+  <% if (reference) { %>
+  <p>Reference: <code<% if (attrs.reference) { %> <%= attrs.reference %>="<%= reference %>"<% } %>><%= reference %></code></p>
+  <% } %>
+  <div class="<%= cls.note || '' %>">
+    <h2 class="<%= cls.subtitle || '' %>"><%= rs.nextTitle %></h2>
+    <ul class="<%= cls.list || '' %>">
+      <% (rs.reviewNextSteps || []).forEach(function (step) { %>
+      <li><%= step %></li>
+      <% }); %>
+    </ul>
+  </div>
+  <div class="<%= cls.actions || '' %>">
+    <% if (rs.reviewPrimaryLabel) { %>
+    <a class="<%= cls.btnPrimary || '' %>" href="<%= rs.reviewPrimaryHref || '/' %>"<% if (attrs.statusLookup) { %> <%= attrs.statusLookup %>="1"<% } %>><%= rs.reviewPrimaryLabel %></a>
+    <% } %>
+    <a class="<%= cls.btnSecondary || '' %>" href="<%= rs.homeHref || '/' %>"><%= rs.homeLabel || 'Return home' %></a>
+  </div>
+</div>
+<% } else { %>
+<div class="<%= cls.card || '' %>"<% if (attrs.outcome) { %> <%= attrs.outcome %>="<%= outcome %>"<% } %>>
+  <div class="<%= cls.icon || '' %>" aria-hidden="true">
+    <span class="material-symbols-outlined filled">check_circle</span>
+  </div>
+  <h1><%= rs.title %></h1>
+  <p class="<%= cls.lede || '' %>"><%= rs.description %></p>
+  <% if (reference) { %>
+  <p>Reference: <code<% if (attrs.reference) { %> <%= attrs.reference %>="<%= reference %>"<% } %>><%= reference %></code></p>
+  <% } %>
+  <% if (rs.websiteShow && rs.websiteUrl) { %>
+  <div class="<%= cls.note || '' %>" data-ac-registration-website="1">
+    <h2 class="<%= cls.subtitle || '' %>">Your clinic website</h2>
+    <div class="acw-register-success-website__row">
+      <p class="acw-register-success-website__url">
+        <a href="<%= rs.websiteUrl %>" rel="noopener"><code data-ac-registration-website-url="1"><%= rs.websiteUrl %></code></a>
+      </p>
+      <button
+        type="button"
+        class="<%= cls.btnSecondary || '' %> acw-register-success-website__copy"
+        data-ac-copy-website-url="1"
+        data-copy-url="<%= rs.websiteUrl %>"
+        aria-label="Copy clinic website URL"
+      >Copy</button>
+    </div>
+    <% if (rs.websiteStatusLabel) { %>
+    <p class="acw-register-success-website__status" data-ac-registration-website-status="1"><%= rs.websiteStatusLabel %></p>
+    <% } %>
+    <% if (rs.websiteEditPath) { %>
+    <p class="acw-register-success-website__cta">
+      <a class="<%= cls.btnPrimary || '' %>" href="<%= rs.websiteEditPath %>" data-ac-build-website="1">
+        <%= rs.websiteBuildLabel || 'Build your website' %>
+      </a>
+    </p>
+    <% } %>
+    <p class="acw-register-success-website__copy-status visually-hidden" data-ac-copy-status="1" role="status" aria-live="polite"></p>
+  </div>
+  <% } %>
+  <div class="<%= cls.grid || '' %>">
+    <div class="<%= cls.tile || '' %>">
+      <span class="material-symbols-outlined" aria-hidden="true">account_circle</span>
+      <div>
+        <h2><%= rs.accountsTitle %></h2>
+        <p><%= rs.accountsText %></p>
+      </div>
+    </div>
+    <div class="<%= cls.tile || '' %>">
+      <span class="material-symbols-outlined" aria-hidden="true">web</span>
+      <div>
+        <h2><%= rs.websiteTitle %></h2>
+        <p><%= rs.websiteText %></p>
+      </div>
+    </div>
+  </div>
+  <div class="<%= cls.note || '' %>">
+    <h2 class="<%= cls.subtitle || '' %>"><%= rs.nextTitle %></h2>
+    <ul class="<%= cls.list || '' %>">
+      <% (rs.nextSteps || []).forEach(function (step) { %>
+      <li><%= step %></li>
+      <% }); %>
+    </ul>
+  </div>
+  <div class="<%= cls.actions || '' %>">
+    <a class="<%= cls.btnPrimary || '' %>" href="<%= rs.signInHref || '/login' %>"<% if (attrs.signIn) { %> <%= attrs.signIn %>="1"<% } %>><%= rs.signInLabel || 'Sign in' %></a>
+    <% if (rs.showContinue && rs.dashboardHref) { %>
+    <a class="<%= cls.btnSecondary || '' %>" href="<%= rs.dashboardHref %>"<% if (attrs.continue) { %> <%= attrs.continue %>="1"<% } %>><%= rs.continueLabel || 'Continue to dashboard' %></a>
+    <% } %>
+    <a class="<%= cls.btnSecondary || '' %>" href="<%= rs.homeHref || '/' %>"><%= rs.homeLabel || 'Return home' %></a>
+  </div>
+</div>
+<script>
+(function () {
+  var btn = document.querySelector("[data-ac-copy-website-url]");
+  if (!btn) return;
+  var status = document.querySelector("[data-ac-copy-status]");
+  function showCopied(message) {
+    if (!status) return;
+    status.textContent = message;
+    status.classList.remove("visually-hidden");
+    btn.textContent = "Copied";
+    window.setTimeout(function () {
+      status.textContent = "";
+      status.classList.add("visually-hidden");
+      btn.textContent = "Copy";
+    }, 2500);
+  }
+  btn.addEventListener("click", function () {
+    var url = btn.getAttribute("data-copy-url") || "";
+    if (!url) return;
+    if (navigator.clipboard && navigator.clipboard.writeText) {
+      navigator.clipboard.writeText(url).then(function () {
+        showCopied("Clinic website URL copied");
+      }).catch(function () {
+        showCopied("Could not copy — select the URL and copy manually");
+      });
+      return;
+    }
+    try {
+      var ta = document.createElement("textarea");
+      ta.value = url;
+      ta.setAttribute("readonly", "");
+      ta.style.position = "absolute";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      showCopied("Clinic website URL copied");
+    } catch (_e) {
+      showCopied("Could not copy — select the URL and copy manually");
+    }
+  });
+})();
+</script>
+<% } %>

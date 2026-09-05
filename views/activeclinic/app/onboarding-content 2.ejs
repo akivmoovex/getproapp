@@ -1,0 +1,139 @@
+<%
+  var onboarding = (pageData && pageData.onboarding) || {};
+  var steps = Array.isArray(onboarding.steps) ? onboarding.steps : [];
+  var perms = new Set(Array.isArray(pageData && pageData.viewerPermissions) ? pageData.viewerPermissions : []);
+  function canAct(item) {
+    var needed = Array.isArray(item.actionPermissions) ? item.actionPermissions : [];
+    if (!needed.length) return true;
+    return needed.some(function (key) { return perms.has(key); });
+  }
+  var visible = steps.filter(canAct);
+  var resume = onboarding.resumeStep || null;
+  if (resume && !canAct(resume)) {
+    resume = visible.find(function (s) { return s.complete !== true; }) || null;
+  }
+  var requiredIncomplete = visible.filter(function (s) {
+    return s.kind === 'required' && s.complete !== true;
+  });
+  var canFinish = requiredIncomplete.length === 0;
+  var completedCount = visible.filter(function (s) { return s.complete; }).length;
+  var totalCount = visible.length;
+  var percent = totalCount === 0 ? 0 : Math.round((completedCount / totalCount) * 100);
+  var currentKey = resume && resume.key ? resume.key : null;
+  var ICONS = {
+    clinic_profile: 'domain',
+    primary_facility: 'local_hospital',
+    administrator: 'admin_panel_settings',
+    departments: 'account_tree',
+    public_hours: 'schedule',
+    additional_staff: 'group',
+    website: 'web'
+  };
+  function statusLabel(item) {
+    if (item.complete) return 'Completed';
+    if (item.key === currentKey) return 'In progress';
+    return item.kind === 'required' ? 'To do' : 'Recommended';
+  }
+  function ctaLabel(item) {
+    if (item.complete) return 'Edit';
+    if (item.key === currentKey) return 'Continue';
+    return 'Start';
+  }
+%>
+<section
+  class="ac-onboarding-mf"
+  data-ac-page-section="onboarding"
+  data-ac-onboarding="1"
+  data-ac-onboarding-status="<%= onboarding.status || '' %>"
+  data-ac-mf-family="MF05"
+  data-ac-mf-screen="MF05-03"
+>
+  <article class="ac-onboarding-mf__welcome" data-ac-onboarding-card="welcome">
+    <p class="ac-onboarding-mf__kicker">Clinic setup</p>
+    <p class="ac-onboarding-mf__lede">Your clinic workspace is ready. Registration already created your organization, facility, administrator account, default departments, and unpublished website foundation.</p>
+    <ul class="ac-onboarding-mf__facts">
+      <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Administrator account is ready to sign in.</li>
+      <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Default departments are provisioned for this facility.</li>
+      <li><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Website exists unpublished until you choose to publish it.</li>
+    </ul>
+  </article>
+
+  <article class="ac-onboarding-mf__progress-card" data-ac-onboarding-card="progress">
+    <div class="ac-onboarding-mf__progress-copy">
+      <h2>Setup progress</h2>
+      <p data-ac-onboarding-progress="1"><%= completedCount %> of <%= totalCount %> setup items complete</p>
+    </div>
+    <p class="ac-onboarding-mf__percent" aria-hidden="true"><%= percent %>%</p>
+    <div
+      class="ac-onboarding-mf__track"
+      role="progressbar"
+      aria-valuemin="0"
+      aria-valuemax="100"
+      aria-valuenow="<%= percent %>"
+      aria-label="Clinic setup <%= percent %> percent complete"
+    >
+      <div class="ac-onboarding-mf__fill" style="width: <%= percent %>%"></div>
+    </div>
+  </article>
+
+  <ol class="ac-onboarding-mf__list" data-ac-onboarding-card="steps">
+    <% visible.forEach(function (item, index) { %>
+    <li
+      class="ac-onboarding-mf__item<%= item.complete ? ' is-complete' : '' %><%= item.key === currentKey ? ' is-current' : '' %>"
+      data-ac-onboarding-step="<%= item.key %>"
+      data-ac-onboarding-kind="<%= item.kind %>"
+      data-ac-onboarding-complete="<%= item.complete ? '1' : '0' %>"
+    >
+      <div class="ac-onboarding-mf__marker" aria-hidden="true">
+        <% if (item.complete) { %>
+        <span class="material-symbols-outlined filled">check</span>
+        <% } else { %>
+        <span class="ac-onboarding-mf__num"><%= index + 1 %></span>
+        <% } %>
+      </div>
+      <div class="ac-onboarding-mf__body">
+        <div class="ac-onboarding-mf__item-head">
+          <h3>
+            <span class="material-symbols-outlined ac-onboarding-mf__icon" aria-hidden="true"><%= ICONS[item.key] || 'task_alt' %></span>
+            <%= item.label %>
+          </h3>
+          <span class="ac-onboarding-mf__badge"><%= statusLabel(item) %></span>
+        </div>
+        <% if (item.explanation) { %>
+        <p class="ac-onboarding-mf__explain"><%= item.explanation %></p>
+        <% } %>
+        <% if (item.skipped) { %>
+        <p class="ac-muted">Skipped — you can still complete this later.</p>
+        <% } %>
+        <div class="ac-onboarding-mf__item-actions">
+          <% if (item.destinationUrl) { %>
+          <a class="ac-btn<%= item.complete || item.key !== currentKey ? ' ac-btn--ghost' : '' %>" href="<%= item.destinationUrl %>"><%= ctaLabel(item) %></a>
+          <% } %>
+          <% if (!item.complete && item.skippable) { %>
+          <form method="post" action="/app/onboarding/skip">
+            <%- include('../partials/ac-csrf-field') %>
+            <input type="hidden" name="step_key" value="<%= item.key %>" />
+            <button type="submit" class="ac-btn ac-btn--ghost">Skip for now</button>
+          </form>
+          <% } %>
+        </div>
+      </div>
+    </li>
+    <% }) %>
+  </ol>
+
+  <div class="ac-onboarding-mf__actions" data-ac-onboarding-actions="1">
+    <% if (resume && resume.destinationUrl) { %>
+    <form method="post" action="/app/onboarding/continue">
+      <%- include('../partials/ac-csrf-field') %>
+      <button type="submit" class="ac-btn">Continue setup</button>
+    </form>
+    <% } %>
+    <% if (canFinish) { %>
+    <form method="post" action="/app/onboarding/complete">
+      <%- include('../partials/ac-csrf-field') %>
+      <button type="submit" class="ac-btn ac-btn--ghost">Go to dashboard</button>
+    </form>
+    <% } %>
+  </div>
+</section>

@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="robots" content="noindex, nofollow"/>
+  <meta name="csrf-token" content="<%= csrfToken %>"/>
+  <title><%= pageTitle %></title>
+  <link rel="stylesheet" href="<%= inlineEditStylesheet %>"/>
+  <% stylesheets.forEach(function (href) { %>
+  <link rel="stylesheet" href="<%= href %>"/>
+  <% }) %>
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0"/>
+</head>
+<body class="<%= bodyClass %>">
+  <main class="gp-we-tool">
+    <%- bodyHtml %>
+  </main>
+  <% scripts.forEach(function (src) { %>
+  <script src="<%= src %>" defer></script>
+  <% }) %>
+</body>
+</html>

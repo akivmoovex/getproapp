@@ -1,0 +1,492 @@
+/*
+ * Shared content/media library UI (V7 website engine).
+ *
+ * Used by ActiveClinic and BlessBoard so library cards look and behave the
+ * same in both products. Colours come from each product's design tokens via
+ * custom properties, with neutral fallbacks, so no product palette is
+ * hard-coded here.
+ */
+
+.gp-lib {
+  --gp-lib-border: var(--ac-mw-border, var(--bb-border, #e2e8f0));
+  --gp-lib-surface: var(--ac-mw-surface, var(--bb-surface, #ffffff));
+  --gp-lib-soft: var(--ac-mw-soft, var(--bb-surface-muted, #f1f5f9));
+  --gp-lib-text: var(--ac-mw-text, var(--bb-text, #0f172a));
+  --gp-lib-muted: var(--ac-mw-muted, var(--bb-text-muted, #64748b));
+  --gp-lib-accent: var(--ac-mw-accent, var(--bb-primary, #6c5ce7));
+  --gp-lib-radius: 0.75rem;
+
+  display: block;
+  max-width: 100%;
+  color: var(--gp-lib-text);
+  /* Never let a long filename or wide grid push the admin shell sideways. */
+  overflow-x: clip;
+}
+
+.gp-lib *,
+.gp-lib *::before,
+.gp-lib *::after {
+  box-sizing: border-box;
+}
+
+/* —— Head —— */
+
+.gp-lib__head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.9rem;
+}
+
+.gp-lib__title {
+  margin: 0;
+  font-size: 1.15rem;
+  line-height: 1.3;
+}
+
+.gp-lib__description,
+.gp-lib__count {
+  margin: 0.25rem 0 0;
+  font-size: 0.85rem;
+  color: var(--gp-lib-muted);
+}
+
+.gp-lib__count {
+  white-space: nowrap;
+}
+
+/* —— Toolbar: search + type filters —— */
+
+.gp-lib__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.6rem;
+  margin-bottom: 1rem;
+}
+
+.gp-lib__search {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.gp-lib__search-label {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+.gp-lib__search-input {
+  flex: 1 1 auto;
+  min-width: 0;
+  width: 100%;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.7rem;
+  font: inherit;
+  font-size: 0.9rem;
+  color: inherit;
+  background: var(--gp-lib-surface);
+  border: 1px solid var(--gp-lib-border);
+  border-radius: 0.5rem;
+}
+
+.gp-lib__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.5rem 0.85rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 500;
+  color: inherit;
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+  background: var(--gp-lib-surface);
+  border: 1px solid var(--gp-lib-border);
+  border-radius: 0.5rem;
+}
+
+.gp-lib__btn--ghost {
+  background: transparent;
+}
+
+.gp-lib__btn:hover,
+.gp-lib__btn:focus-visible {
+  border-color: var(--gp-lib-accent);
+}
+
+.gp-lib__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.gp-lib__filter {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  color: inherit;
+  text-decoration: none;
+  background: var(--gp-lib-soft);
+  border: 1px solid transparent;
+  border-radius: 999px;
+}
+
+.gp-lib__filter.is-current {
+  background: var(--gp-lib-surface);
+  border-color: var(--gp-lib-accent);
+  font-weight: 600;
+}
+
+.gp-lib__filter-count {
+  font-size: 0.75rem;
+  color: var(--gp-lib-muted);
+}
+
+/* —— Folder rail —— */
+
+.gp-lib__folders {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  margin-bottom: 0.9rem;
+  padding-bottom: 0.9rem;
+  border-bottom: 1px solid var(--gp-lib-border);
+}
+
+.gp-lib__folder-rail {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  min-width: 0;
+}
+
+.gp-lib__folder {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-height: 2.75rem;
+  padding: 0.4rem 0.75rem;
+  font-size: 0.85rem;
+  color: inherit;
+  text-decoration: none;
+  background: var(--gp-lib-soft);
+  border: 1px solid transparent;
+  border-radius: 0.5rem;
+}
+
+.gp-lib__folder--view {
+  font-weight: 500;
+}
+
+.gp-lib__folder.is-current {
+  background: var(--gp-lib-surface);
+  border-color: var(--gp-lib-accent);
+  font-weight: 600;
+}
+
+.gp-lib__folder-count {
+  font-size: 0.75rem;
+  color: var(--gp-lib-muted);
+}
+
+.gp-lib__folder-admin {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.6rem;
+}
+
+.gp-lib__folder-form {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  min-width: 0;
+  margin: 0;
+}
+
+.gp-lib__folder-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+}
+
+.gp-lib__folder-hint,
+.gp-lib__folder-notice {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--gp-lib-muted);
+}
+
+.gp-lib__move {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  min-width: 0;
+  margin: 0.2rem 0 0;
+}
+
+.gp-lib__move-select {
+  flex: 1 1 auto;
+  min-width: 0;
+  max-width: 100%;
+  min-height: 2.75rem;
+  padding: 0.35rem 0.5rem;
+  font: inherit;
+  font-size: 0.8rem;
+  color: inherit;
+  background: var(--gp-lib-surface);
+  border: 1px solid var(--gp-lib-border);
+  border-radius: 0.5rem;
+}
+
+/* —— Grid —— */
+
+.gp-lib__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.85rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.gp-lib[data-gp-library-mode="list"] .gp-lib__grid {
+  grid-template-columns: 1fr;
+}
+
+.gp-lib__card {
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow: hidden;
+  background: var(--gp-lib-surface);
+  border: 1px solid var(--gp-lib-border);
+  border-radius: var(--gp-lib-radius);
+}
+
+.gp-lib[data-gp-library-mode="list"] .gp-lib__card {
+  flex-direction: row;
+  align-items: stretch;
+}
+
+.gp-lib__thumb {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 8rem;
+  background: var(--gp-lib-soft);
+}
+
+.gp-lib[data-gp-library-mode="list"] .gp-lib__thumb {
+  flex: 0 0 6rem;
+  height: auto;
+  min-height: 5rem;
+}
+
+.gp-lib__thumb-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.gp-lib__thumb-placeholder {
+  font-size: 1.75rem;
+  color: var(--gp-lib-muted);
+}
+
+.gp-lib__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+  min-width: 0;
+  padding: 0.7rem;
+  font-size: 0.8rem;
+}
+
+.gp-lib__name {
+  margin: 0;
+  font-weight: 600;
+  font-size: 0.85rem;
+  /* Long filenames must wrap rather than widen the card. */
+  overflow-wrap: anywhere;
+}
+
+.gp-lib__meta,
+.gp-lib__usage {
+  margin: 0;
+  color: var(--gp-lib-muted);
+  overflow-wrap: anywhere;
+}
+
+.gp-lib__meta-sep {
+  margin: 0 0.15rem;
+}
+
+.gp-lib__alt {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.gp-lib__alt-label {
+  font-weight: 600;
+  color: var(--gp-lib-muted);
+}
+
+.gp-lib__alt--missing {
+  color: var(--gp-lib-muted);
+}
+
+.gp-lib__badges {
+  margin: 0;
+}
+
+.gp-lib__badge {
+  display: inline-block;
+  padding: 0.1rem 0.45rem;
+  font-size: 0.7rem;
+  text-transform: capitalize;
+  background: var(--gp-lib-soft);
+  border-radius: 999px;
+}
+
+.gp-lib__card-action {
+  align-self: flex-start;
+  margin-top: 0.2rem;
+}
+
+/* —— Empty / error state —— */
+
+.gp-lib__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 2rem 1rem;
+  text-align: center;
+  background: var(--gp-lib-soft);
+  border: 1px dashed var(--gp-lib-border);
+  border-radius: var(--gp-lib-radius);
+}
+
+.gp-lib__empty-icon {
+  font-size: 1.75rem;
+}
+
+.gp-lib__empty-title {
+  margin: 0;
+  font-weight: 600;
+}
+
+.gp-lib__empty-body {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--gp-lib-muted);
+}
+
+/* —— Mobile: 390px and 360px —— */
+
+@media (max-width: 480px) {
+  .gp-lib__head {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+
+  .gp-lib__count {
+    white-space: normal;
+  }
+
+  .gp-lib__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gp-lib__search {
+    flex: 1 1 auto;
+    flex-wrap: wrap;
+  }
+
+  .gp-lib__search-input {
+    flex: 1 1 100%;
+  }
+
+  .gp-lib__btn {
+    flex: 1 1 auto;
+  }
+
+  .gp-lib__filters,
+  .gp-lib__folder-rail {
+    /* Horizontal scroll on the pill row only, never the page. */
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 0.2rem;
+    scrollbar-width: thin;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .gp-lib__filter,
+  .gp-lib__folder {
+    flex: 0 0 auto;
+  }
+
+  .gp-lib__folder-admin,
+  .gp-lib__folder-actions {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .gp-lib__folder-form {
+    flex-wrap: wrap;
+  }
+
+  .gp-lib__folder-form .gp-lib__search-input {
+    flex: 1 1 100%;
+  }
+
+  /* One card per row keeps thumbnails legible at 390px and 360px. */
+  .gp-lib__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gp-lib__card {
+    flex-direction: row;
+    align-items: stretch;
+  }
+
+  .gp-lib__thumb {
+    flex: 0 0 5.5rem;
+    height: auto;
+    min-height: 5.5rem;
+  }
+
+  .gp-lib__card-action {
+    /* Comfortable tap target on narrow screens. */
+    align-self: stretch;
+    text-align: center;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .gp-lib * {
+    transition: none !important;
+    animation: none !important;
+  }
+}

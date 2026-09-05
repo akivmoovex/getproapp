@@ -1,0 +1,68 @@
+<%
+  var canEdit = typeof websiteEdit !== 'undefined' && websiteEdit;
+  var key = typeof collectionKey !== 'undefined' ? String(collectionKey) : 'home.faq';
+  var items = Array.isArray(collectionItems) ? collectionItems : [];
+  var questionLabel = typeof questionLabel !== 'undefined' ? questionLabel : 'Question';
+  var answerLabel = typeof answerLabel !== 'undefined' ? answerLabel : 'Answer';
+  function escAttr(s) {
+    return String(s == null ? '' : s)
+      .replace(/&/g, '&amp;')
+      .replace(/"/g, '&quot;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;');
+  }
+%>
+<% if (canEdit) { %>
+<div
+  class="ac-website-collection"
+  data-website-collection="1"
+  data-website-collection-key="<%= key %>"
+>
+  <ol class="ac-website-collection__list" data-website-collection-list="1">
+    <% items.forEach(function (item, idx) { %>
+    <li class="ac-website-collection__item" data-website-collection-item="1" data-website-index="<%= idx %>">
+      <div class="ac-website-collection__fields">
+        <label>
+          <span><%= questionLabel %></span>
+          <input
+            type="text"
+            maxlength="200"
+            data-website-item-field="question"
+            value="<%= escAttr(item && item.question) %>"
+            aria-label="<%= questionLabel %> <%= idx + 1 %>"
+          />
+        </label>
+        <label>
+          <span><%= answerLabel %></span>
+          <textarea
+            rows="3"
+            maxlength="2000"
+            data-website-item-field="answer"
+            aria-label="<%= answerLabel %> <%= idx + 1 %>"
+          ><%= item && item.answer ? item.answer : '' %></textarea>
+        </label>
+      </div>
+      <div class="ac-website-collection__item-actions">
+        <button type="button" class="ac-btn ac-btn--ghost" data-website-collection-save-item="1">Save</button>
+        <button type="button" class="ac-btn ac-btn--ghost" data-website-collection-move="up" <%= idx === 0 ? 'disabled' : '' %>>Up</button>
+        <button type="button" class="ac-btn ac-btn--ghost" data-website-collection-move="down" <%= idx === items.length - 1 ? 'disabled' : '' %>>Down</button>
+        <button type="button" class="ac-btn ac-btn--ghost" data-website-collection-remove="1">Remove</button>
+      </div>
+    </li>
+    <% }) %>
+  </ol>
+  <p class="ac-website-collection__actions">
+    <button type="button" class="ac-btn ac-btn--secondary ac-btn--pill" data-website-collection-add="1">Add question</button>
+  </p>
+  <p class="ac-website-collection__status" data-website-collection-status="1" aria-live="polite"></p>
+</div>
+<% } else { %>
+<dl class="ac-tenant-faq__list">
+  <% items.forEach(function (item) { %>
+  <div class="ac-tenant-faq__item">
+    <dt><%= item.question %></dt>
+    <dd><%= item.answer %></dd>
+  </div>
+  <% }) %>
+</dl>
+<% } %>

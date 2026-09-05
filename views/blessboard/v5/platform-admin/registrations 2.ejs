@@ -1,0 +1,93 @@
+<%- include('../partials/platform-admin-shell-start') %>
+<%
+  var rows = registrations || [];
+  var filters = filters || {};
+  var product = String(filters.product || 'all');
+  var q = filters.q || '';
+  var lifecycle = String(filters.lifecycle || '');
+  function productHref(name) {
+    var qs = '?product=' + encodeURIComponent(name);
+    if (q) qs += '&q=' + encodeURIComponent(q);
+    if (lifecycle) qs += '&lifecycle=' + encodeURIComponent(lifecycle);
+    return '/admin/registrations' + qs;
+  }
+%>
+<section class="bb-pa-page" data-bb-pa-registrations="1">
+  <h1>Registrations</h1>
+  <p class="bb-pa-hint">Clinic and church self-registrations share one lifecycle. Open a row for product-specific review actions.</p>
+  <nav class="bb-pa-tabs" aria-label="Registration products">
+    <a href="<%= productHref('all') %>" class="<%= product === 'all' ? 'is-active' : '' %>">All</a>
+    <a href="<%= productHref('activeclinic') %>" class="<%= product === 'activeclinic' ? 'is-active' : '' %>">ActiveClinic</a>
+    <a href="<%= productHref('blessboard') %>" class="<%= product === 'blessboard' ? 'is-active' : '' %>">BlessBoard</a>
+  </nav>
+  <form method="get" action="/admin/registrations" class="bb-pa-filters bb-pa-form">
+    <input type="hidden" name="product" value="<%= product %>"/>
+    <label class="bb-pa-field">Search
+      <input type="search" name="q" value="<%= q %>" placeholder="Organisation, applicant, state"/>
+    </label>
+    <label class="bb-pa-field">State
+      <select name="lifecycle">
+        <option value="" <%= !lifecycle ? 'selected' : '' %>>All</option>
+        <option value="review_required" <%= lifecycle === 'review_required' ? 'selected' : '' %>>review_required</option>
+        <option value="active" <%= lifecycle === 'active' ? 'selected' : '' %>>active</option>
+        <option value="submitted" <%= lifecycle === 'submitted' ? 'selected' : '' %>>submitted</option>
+        <option value="provisioning" <%= lifecycle === 'provisioning' ? 'selected' : '' %>>provisioning</option>
+        <option value="provision_failed" <%= lifecycle === 'provision_failed' ? 'selected' : '' %>>provision_failed</option>
+        <option value="rejected" <%= lifecycle === 'rejected' ? 'selected' : '' %>>rejected</option>
+      </select>
+    </label>
+    <button type="submit" class="bb-pa-btn">Filter</button>
+  </form>
+  <table class="bb-pa-table" data-bb-pa-registrations-table="1">
+    <thead>
+      <tr>
+        <th>Product</th>
+        <th>Organisation</th>
+        <th>Applicant</th>
+        <th>Registered</th>
+        <th>State</th>
+        <th>Review reason</th>
+        <th>Provisioning</th>
+        <th>Failed stage</th>
+        <th>Health</th>
+        <th></th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!rows.length) { %>
+      <tr><td colspan="10">No registrations match this view.</td></tr>
+      <% } %>
+      <% rows.forEach(function (row) { %>
+      <tr data-bb-pa-registration-row="<%= row.id %>" data-product="<%= row.productCode %>" data-lifecycle="<%= row.canonicalLifecycle %>" data-partial-provision="<%= row.partialProvision ? '1' : '0' %>" data-failed-stage="<%= row.failedStage || '' %>">
+        <td><%= row.productLabel %></td>
+        <td><strong><%= row.organizationName || '—' %></strong></td>
+        <td>
+          <%= row.applicantName || '—' %><br/>
+          <span class="bb-pa-hint"><%= row.applicantEmail || '' %></span>
+        </td>
+        <td><%= row.createdLabel || '—' %></td>
+        <td>
+          <%= row.canonicalLifecycle %>
+          <% if (row.partialProvision) { %>
+          <span class="bb-pa-chip bb-pa-chip--warn">partial</span>
+          <% } %>
+        </td>
+        <td><%= row.reviewReason || '—' %></td>
+        <td><%= row.provisioningStatus || '—' %></td>
+        <td><%= row.failedStage || '—' %></td>
+        <td data-bb-pa-health-status="<%= row.healthStatus || '' %>"><%= row.healthStatus || '—' %></td>
+        <td>
+          <a class="bb-pa-btn bb-pa-btn--ghost" href="<%= row.detailHref %>">Inspect</a>
+          <% if (row.retryable && row.retryHref) { %>
+          <form method="post" action="<%= row.retryHref %>" class="bb-pa-inline-form" data-bb-pa-retry-provision="1">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+            <button type="submit" class="bb-pa-btn">Retry provision</button>
+          </form>
+          <% } %>
+        </td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+</section>
+<%- include('../partials/platform-admin-shell-end') %>

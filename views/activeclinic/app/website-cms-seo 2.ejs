@@ -1,0 +1,76 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var values = cms.values || {};
+  var website = cms.website || {};
+  var error = cms.error || "";
+  var saved = cms.saved === true;
+  var image = values["seo.image"] && typeof values["seo.image"] === "object" ? values["seo.image"] : { src: values["seo.image"] || "" };
+  var publicUrl = website.publicUrl || website.publicPath || "your-clinic-website";
+%>
+<section class="ac-mw" data-ac-page-section="website-seo" data-ac-mw-screen="MW08-04">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2>SEO &amp; Social Settings</h2>
+      <p class="ac-mw-muted">How your clinic website appears in search results and when someone shares a link.</p>
+    </div>
+  </div>
+  <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
+  <% if (saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+  <div class="ac-mw-brand-layout">
+    <form class="ac-mw-form" method="post" action="/app/settings/website/seo" data-ac-mw-seo-form="1">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <label>
+        Page title
+        <input type="text" name="seoTitle" maxlength="70" value="<%= values['seo.title'] || '' %>" placeholder="<%= cms.clinicName || 'Clinic name' %>"/>
+      </label>
+      <p class="ac-mw-hint">About 50–60 characters works well for search.</p>
+      <label>
+        Meta description
+        <textarea name="seoDescription" maxlength="200" placeholder="A short sentence about your clinic."><%= values['seo.description'] || '' %></textarea>
+      </label>
+      <p class="ac-mw-form__legend">Social sharing image</p>
+      <%- include('../partials/website-cms-media-field', {
+        mediaField: {
+          idName: "seoMediaId",
+          srcName: "seoSrc",
+          altName: "seoAlt",
+          altLabel: "Sharing image description",
+          mediaId: image.mediaId || "",
+          src: image.src || "",
+          alt: image.alt || ""
+        }
+      }) %>
+      <p class="ac-mw-form__legend">Search engine visibility</p>
+      <label>
+        Canonical URL
+        <input type="url" name="seoCanonicalUrl" maxlength="500" inputmode="url" value="<%= values['seo.canonical_url'] || '' %>" placeholder="<%= publicUrl %>"/>
+      </label>
+      <p class="ac-mw-hint">Leave empty to use this page's own address. Must start with https://.</p>
+      <label>
+        Search engine indexing
+        <select name="seoRobots">
+          <option value="index" <%= values['seo.robots'] === 'noindex' ? '' : 'selected' %>>Allow search engines to index this site</option>
+          <option value="noindex" <%= values['seo.robots'] === 'noindex' ? 'selected' : '' %>>Hide this site from search engines</option>
+        </select>
+      </label>
+      <label class="ac-mw-check">
+        <input type="checkbox" name="seoSitemapInclude" value="1" <%= values['seo.sitemap_include'] === false ? '' : 'checked' %>/>
+        Include this site in sitemap.xml
+      </label>
+      <div class="ac-mw-actions">
+        <button type="submit" class="ac-mw-btn ac-mw-btn--primary">Save SEO settings</button>
+      </div>
+    </form>
+    <aside class="ac-mw-seo-preview" data-ac-mw-seo-preview="1" data-preview-url="<%= publicUrl %>" aria-label="Search and sharing preview">
+      <p class="ac-mw-readonly__label">Preview</p>
+      <div class="ac-mw-seo-preview__card">
+        <img class="ac-mw-seo-preview__image" data-ac-mw-preview-share src="<%= image.src || '' %>" alt="" <%= image.src ? "" : "hidden" %>/>
+        <p class="ac-mw-seo-preview__url" data-ac-mw-preview-url><%= publicUrl %></p>
+        <p class="ac-mw-seo-preview__title" data-ac-mw-preview-title><%= values['seo.title'] || cms.clinicName || 'Clinic website' %></p>
+        <p class="ac-mw-seo-preview__desc" data-ac-mw-preview-desc><%= values['seo.description'] || 'A short description of your clinic.' %></p>
+      </div>
+    </aside>
+  </div>
+  <%- include('../partials/website-cms-media-picker', { mediaListUrl: cms.mediaListUrl || "" }) %>
+</section>

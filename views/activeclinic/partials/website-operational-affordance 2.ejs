@@ -1,0 +1,12 @@
+<% if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>
+<p class="ac-website-manage" data-ac-website-manage="<%= typeof manageKind !== 'undefined' ? manageKind : 'operations' %>">
+  <% if (typeof href === 'string' && href) { %>
+  <a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= href %>"><%= typeof label !== 'undefined' && label ? label : 'Manage in Clinic Settings' %></a>
+  <% } else { %>
+  <span class="ac-website-manage__label"><%= typeof label !== 'undefined' && label ? label : 'Clinic operations' %></span>
+  <% } %>
+  <% if (typeof note === 'string' && note) { %>
+  <span class="ac-website-manage__note"><%= note %></span>
+  <% } %>
+</p>
+<% } %>

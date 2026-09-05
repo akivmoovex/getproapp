@@ -1,0 +1,272 @@
+<%- include('../partials/hq-shell-start', { loadWebsiteEngineCss: true }) %>
+<%
+  var hubWebsite = (typeof website !== 'undefined' && website) ? website : {};
+  var ux = (typeof websiteUx !== 'undefined' && websiteUx) ? websiteUx : (hubWebsite.ux || hubWebsite);
+  var actions = (ux.actions || hubWebsite.actions) || {};
+  var statusKey = hubWebsite.statusKey || ux.state || '';
+  var lastUpdated = ux.lastEditedLabel || hubWebsite.lastEditedLabel || '';
+  var draftStatus = hubWebsite.unpublishedChanges
+    ? 'Draft changes waiting to go live'
+    : (hubWebsite.liveAvailable ? 'No draft changes' : 'Not published yet');
+  var websitePlanKey = typeof planKey !== 'undefined' && planKey ? String(planKey) : '';
+  var csrfName = typeof csrfField !== 'undefined' && csrfField ? csrfField : '_csrf';
+%>
+<section
+  class="bb-wm"
+  data-bb-hq-website="1"
+  data-bb-website-management="1"
+  data-bb-website-settings-ux="1"
+  data-bb-website-state="<%= statusKey %>"
+  data-bb-website-exists="<%= hubWebsite.exists ? '1' : '0' %>"
+  data-bb-website-draft-state="1"
+  data-bb-viewport="responsive"
+  aria-label="Website"
+>
+  <header class="bb-hq-page-head">
+    <p class="bb-hq-breadcrumb">
+      <a href="/hq">HQ</a>
+      <span aria-hidden="true">›</span>
+      <span>Website</span>
+    </p>
+  </header>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <p class="bb-hq-error" role="alert"><%= error %></p>
+  <% } %>
+  <% if (typeof notice !== 'undefined' && notice) { %>
+  <p class="bb-hq-ok" role="status"><%= notice %></p>
+  <% } %>
+
+  <% if (typeof needsFoundationRepair !== 'undefined' && needsFoundationRepair) { %>
+  <div class="bb-hq-panel" data-bb-hq-website-repair="1" id="website-setup-retry">
+    <h2 class="bb-hq-panel__title">Repair website foundation</h2>
+    <p>
+      Required page shells or settings are missing. Repair inserts only missing structures
+      and does not publish or overwrite existing content.
+    </p>
+    <form method="post" action="/hq/website/repair-foundation" class="bb-hq-form">
+      <input type="hidden" name="<%= csrfName %>" value="<%= csrfToken %>" />
+      <input type="hidden" name="audit_reason" value="hq_repair_website_foundation" />
+      <div class="bb-hq-field">
+        <label>
+          <input type="checkbox" name="confirm_repair" value="1" required />
+          I confirm repairing missing website foundation records only
+        </label>
+      </div>
+      <button type="submit" class="bb-wm-btn">Retry</button>
+    </form>
+  </div>
+  <% } %>
+
+  <% if (!hubWebsite.liveAvailable) { %>
+  <section class="bb-wm-firstuse" data-bb-website-firstuse="1">
+    <article class="bb-wm-firstuse__welcome">
+      <p class="bb-wm-firstuse__kicker">Website</p>
+      <h2>Your church website is ready to customize</h2>
+      <p class="bb-wm-muted">Registration already created an unpublished website. Finish the tasks below, then publish when you are ready.</p>
+      <p class="bb-wm-muted" data-bb-website-firstuse-url="1">
+        Public URL:
+        <code><%= hubWebsite.publicUrl || hubWebsite.publicPath || '—' %></code>
+        <span>(not live yet)</span>
+      </p>
+    </article>
+    <article class="bb-wm-firstuse__progress">
+      <h3>Website setup</h3>
+      <p class="bb-wm-muted">These tasks open the existing Website Management tools. There is no second website onboarding wizard.</p>
+    </article>
+    <ol class="bb-wm-firstuse__list">
+      <li class="bb-wm-firstuse__item is-complete">
+        <h3>Review pages</h3>
+        <p>Your website already has a draft structure. Review or edit pages.</p>
+        <% if (actions.editWebsite) { %>
+        <a class="bb-wm-btn" href="<%= actions.editWebsite %>" data-bb-website-action="edit">Edit Website</a>
+        <% } %>
+      </li>
+      <li class="bb-wm-firstuse__item" data-bb-website-firstuse-branding="1">
+        <h3>Customize branding</h3>
+        <p>Logo, colours, and the look of the public site. Open the visual editor, or use Styles for colours and typography.</p>
+        <% if (actions.editWebsite) { %>
+        <a class="bb-wm-btn bb-wm-btn--primary" href="<%= actions.editWebsite %>" data-bb-website-action="edit" data-bb-build-website="1">Build your website</a>
+        <% } else if (actions.styles) { %>
+        <a class="bb-wm-btn" href="<%= actions.styles %>" data-bb-website-action="styles">Styles</a>
+        <% } %>
+      </li>
+      <li class="bb-wm-firstuse__item">
+        <h3>Preview and publish</h3>
+        <p>Publishing is optional. Preview first, then make the site public when you are ready.</p>
+        <% if (actions.preview) { %>
+        <a class="bb-wm-btn" href="<%= actions.preview %>" data-bb-website-action="preview">Preview</a>
+        <% } %>
+      </li>
+    </ol>
+  </section>
+  <% } %>
+
+  <div class="bb-wm-head">
+    <div>
+      <h2>Website Management Hub</h2>
+      <p class="bb-wm-muted">A simple control center for your church website. Check status, then open the part you need.</p>
+    </div>
+  </div>
+
+  <div class="bb-wm-hub-metrics" data-bb-website-status="1" data-bb-phase4-website-status="1">
+    <article class="bb-wm-hub-metric">
+      <p class="bb-wm-hub-metric__label">Website status</p>
+      <p class="bb-wm-hub-metric__value" data-bb-website-status-label="1"><%= ux.statusLabel || hubWebsite.statusLabel || 'Website not published yet' %></p>
+      <% if (ux.statusHint || hubWebsite.statusHint) { %>
+      <p class="bb-wm-muted" data-bb-website-status-hint="1"><%= ux.statusHint || hubWebsite.statusHint %></p>
+      <% } %>
+      <p class="bb-wm-muted">Published version: <span data-bb-website-published-version="1"><%= hubWebsite.publishedVersionLabel || ux.publishedVersionLabel || (hubWebsite.publishedVersionNumber ? ('Version ' + hubWebsite.publishedVersionNumber) : 'None yet') %></span></p>
+    </article>
+    <article class="bb-wm-hub-metric">
+      <p class="bb-wm-hub-metric__label">Public website URL</p>
+      <p class="bb-wm-hub-metric__value" data-bb-website-public-url="1">
+        <% if (hubWebsite.publicUrl || hubWebsite.publicPath || ux.publicUrl || ux.publicPath) { %>
+          <% if (actions.viewLive) { %>
+          <a href="<%= actions.viewLive %>" rel="noopener"><code><%= hubWebsite.publicUrl || hubWebsite.publicPath || ux.publicUrl || ux.publicPath %></code></a>
+          <% } else { %>
+          <code><%= hubWebsite.publicUrl || hubWebsite.publicPath || ux.publicUrl || ux.publicPath %></code>
+          <span class="bb-wm-muted"> (not live yet)</span>
+          <% } %>
+        <% } else { %>
+        —
+        <% } %>
+      </p>
+    </article>
+    <article class="bb-wm-hub-metric">
+      <p class="bb-wm-hub-metric__label">Last published</p>
+      <p class="bb-wm-hub-metric__value" data-bb-website-last-published="1"><%= hubWebsite.lastPublishedLabel || ux.lastPublishedLabel || 'Not published yet' %></p>
+    </article>
+    <article class="bb-wm-hub-metric">
+      <p class="bb-wm-hub-metric__label">Unpublished changes</p>
+      <p class="bb-wm-hub-metric__value" data-bb-website-unpublished="<%= hubWebsite.unpublishedChanges ? '1' : '0' %>">
+        <%= hubWebsite.unpublishedChanges ? ('Yes (' + (hubWebsite.unpublishedCount || 0) + ')') : 'No' %>
+      </p>
+      <p class="bb-wm-muted" data-bb-website-draft-status="1"><%= draftStatus %></p>
+    </article>
+  </div>
+
+  <p class="bb-wm-hub-meta">
+    Last updated: <strong><%= lastUpdated || '—' %></strong>
+    · Last editor: <span data-bb-website-last-editor="1"><%= hubWebsite.lastEditor || ux.lastEditor || '—' %></span>
+    <% if (hubWebsite.publishPolicyLabel) { %>
+    · Publish policy: <%= hubWebsite.publishPolicyLabel %>
+    <% } %>
+  </p>
+
+  <ul class="bb-wm-hub-chips" aria-label="Website indicators">
+    <li class="bb-wm-hub-chip<%= hubWebsite.unpublishedChanges ? ' bb-wm-hub-chip--draft' : '' %>"><%= hubWebsite.unpublishedChanges ? 'Draft changes' : 'No draft changes' %></li>
+    <li class="bb-wm-hub-chip<%= hubWebsite.liveAvailable ? ' bb-wm-hub-chip--live' : '' %>"><%= hubWebsite.liveAvailable ? 'Published' : 'Not published' %></li>
+    <li class="bb-wm-hub-chip">Last updated<%= lastUpdated ? ': ' + lastUpdated : '' %></li>
+  </ul>
+
+  <% if (!hubWebsite.liveAvailable) { %>
+  <p class="bb-wm-hub-next" data-bb-website-next-action="publish">Recommended next step: review your pages, then publish so visitors can find your church.</p>
+  <% } else if (hubWebsite.unpublishedChanges) { %>
+  <p class="bb-wm-hub-next" data-bb-website-next-action="republish">You have unpublished changes. Preview them, then publish when you are ready.</p>
+  <% } else { %>
+  <p class="bb-wm-hub-next" data-bb-website-next-action="maintain">Your website is live. Use the tiles below to update pages, branding, or reusable content.</p>
+  <% } %>
+
+  <div class="bb-wm-hub-quick" data-bb-website-actions="1">
+    <p class="bb-wm-hub-quick__label">Quick actions</p>
+    <div class="bb-wm-actions bb-wm-hub-quick__row">
+      <% if (actions.viewLive) { %>
+      <a class="bb-wm-btn" href="<%= actions.viewLive %>" rel="noopener" data-bb-website-action="view-live">View live</a>
+      <% } %>
+      <% if (actions.preview) { %>
+      <a class="bb-wm-btn" href="<%= actions.preview %>" data-bb-website-action="preview">Preview</a>
+      <% } %>
+      <% if (hubWebsite.canEdit && actions.editWebsite) { %>
+      <a class="bb-wm-btn" href="<%= actions.editWebsite %>" data-bb-website-action="edit" data-bb-edit-website="1">Edit Website</a>
+      <% } %>
+      <% if (hubWebsite.canPublish && actions.publishPath) { %>
+      <form
+        method="post"
+        action="<%= actions.publishPath %>"
+        style="margin:0"
+        onsubmit="return confirm('Publish this website? Public visitors will see the current draft.');"
+      >
+        <input type="hidden" name="<%= csrfName %>" value="<%= csrfToken %>"/>
+        <input type="hidden" name="confirm_publish" value="1"/>
+        <input type="hidden" name="returnTo" value="/hq/website"/>
+        <button type="submit" class="bb-wm-btn bb-wm-btn--primary" data-bb-website-action="publish">Publish</button>
+      </form>
+      <% } %>
+      <% if (hubWebsite.canPublish && actions.unpublishPath && hubWebsite.liveAvailable) { %>
+      <form
+        method="post"
+        action="<%= actions.unpublishPath %>"
+        style="margin:0"
+        onsubmit="return confirm('Unpublish this website? Visitors will no longer see it. Content is preserved.');"
+      >
+        <input type="hidden" name="<%= csrfName %>" value="<%= csrfToken %>"/>
+        <button type="submit" class="bb-wm-btn" data-bb-website-action="unpublish">Unpublish</button>
+      </form>
+      <% } %>
+      <% if (actions.retry) { %>
+      <a class="bb-wm-btn" href="<%= actions.retry %>" data-bb-website-action="retry">Retry</a>
+      <% } %>
+      <% if (actions.contactPlatformAdmin) { %>
+      <span class="bb-wm-muted" data-bb-website-action="contact-platform-admin">Contact Platform Admin</span>
+      <% } %>
+    </div>
+    <% if (!hubWebsite.canEdit && !hubWebsite.canPublish) { %>
+    <p class="bb-wm-muted" data-bb-website-readonly="1">You can view website status. Editing and publishing require additional permission.</p>
+    <% } %>
+  </div>
+
+  <h2 class="bb-wm-hub-access__title">Manage your website</h2>
+  <div class="bb-wm-hub-tiles">
+    <% if (actions.editWebsite) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.editWebsite %>" data-bb-website-action="edit">
+      <h3>Edit website</h3>
+      <p>Open the visual editor to update pages, text, images, and sections on your public church website.</p>
+    </a>
+    <% } %>
+    <% if (actions.preview) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.preview %>" data-bb-website-action="preview">
+      <h3>Preview draft</h3>
+      <p>See unpublished changes exactly as visitors will once you publish.</p>
+    </a>
+    <% } %>
+    <% if (actions.viewLive) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.viewLive %>" rel="noopener" data-bb-website-action="view-live">
+      <h3>View published site</h3>
+      <p>Open the live public website visitors see today.</p>
+    </a>
+    <% } %>
+    <% if (hubWebsite.canPublish && actions.publishPath) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.publishPath %>" data-bb-website-action="publish-review">
+      <h3>Publish / Unpublish</h3>
+      <p>Review readiness, publish your draft, or take the site offline while keeping your content.</p>
+    </a>
+    <% } %>
+    <% if (actions.media) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.media %>" data-bb-website-action="media">
+      <h3>Media</h3>
+      <p>Upload and reuse photos for your church website.</p>
+    </a>
+    <% } %>
+    <% if (actions.styles) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.styles %>" data-bb-website-action="styles">
+      <h3>Styles</h3>
+      <p>Update colours, typography, and the overall look of your site.</p>
+    </a>
+    <% } %>
+    <% if (actions.seo) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.seo %>" data-bb-website-action="seo">
+      <h3>SEO</h3>
+      <p>Manage search titles, descriptions, and how your site appears in search results.</p>
+    </a>
+    <% } %>
+    <% if (actions.history) { %>
+    <a class="bb-wm-hub-tile" href="<%= actions.history %>" data-bb-website-action="history">
+      <h3>Version history</h3>
+      <p>Review past versions and restore a previous draft.</p>
+    </a>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/hq-shell-end') %>

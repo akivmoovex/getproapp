@@ -1,0 +1,14 @@
+<% const hidden = formData || {}; %>
+<input type="hidden" name="clinicName" value="<%= hidden.clinicName || '' %>"/>
+<input type="hidden" name="clinicType" value="<%= hidden.clinicType || '' %>"/>
+<input type="hidden" name="locationId" id="locationId" value="<%= hidden.locationId || '' %>"/>
+<input type="hidden" name="countryCode" value="<%= hidden.countryCode || 'ZM' %>"/>
+<input type="hidden" name="province" value="<%= hidden.province || '' %>"/>
+<input type="hidden" name="city" value="<%= hidden.city || '' %>"/>
+<input type="hidden" name="address" value="<%= hidden.address || '' %>"/>
+<input type="hidden" name="notes" value="<%= hidden.notes || '' %>"/>
+<input type="hidden" name="contactName" value="<%= hidden.contactName || '' %>"/>
+<input type="hidden" name="contactEmail" value="<%= hidden.contactEmail || '' %>"/>
+<input type="hidden" name="contactPhone" value="<%= hidden.contactPhone || '' %>"/>
+<input type="hidden" name="phone_country" value="<%= hidden.phoneCountry || hidden.countryCode || 'ZM' %>"/>
+<input type="hidden" name="phone_national" value="<%= hidden.phoneNational || '' %>"/>
