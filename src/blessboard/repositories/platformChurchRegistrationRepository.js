@@ -342,24 +342,28 @@ async function findRecentRegistrationDuplicate(client, opts) {
 }
 
 /**
- * Same-email + same normalized phone within the soft window (browser retry).
+ * Same-email + same normalized phone + same church within the soft window (browser retry).
+ * Different church names must not collapse into this twin — multi-org reuse needs a new application.
  * @param {{ query: Function }} client
- * @param {{ contact_email: string, contact_phone_normalized: string, windowMinutes?: number }} opts
+ * @param {{ contact_email: string, contact_phone_normalized: string, church_name?: string, windowMinutes?: number }} opts
  */
 async function findRecentPhoneIdempotentDuplicate(client, opts) {
   const normalized = String(opts.contact_phone_normalized || "").trim();
   if (!normalized) return null;
+  const churchName = String(opts.church_name || "").trim();
+  if (!churchName) return null;
   const windowMinutes = Math.min(Math.max(Number(opts.windowMinutes) || 15, 1), 60);
   const r = await client.query(
     `SELECT ${PUBLIC_WRITE_SELECT_COLUMNS}
        FROM ${TARGET_RELATION}
       WHERE lower(contact_email) = lower($1)
         AND contact_phone_normalized = $2
-        AND created_at >= now() - ($3::int * interval '1 minute')
+        AND lower(church_name) = lower($3)
+        AND created_at >= now() - ($4::int * interval '1 minute')
         AND ${phoneUniquenessSqlPredicate()}
       ORDER BY created_at DESC
       LIMIT 1`,
-    [opts.contact_email, normalized, windowMinutes]
+    [opts.contact_email, normalized, churchName, windowMinutes]
   );
   return r.rows[0] || null;
 }
@@ -428,6 +432,7 @@ async function createApplicationIdempotent(pool, fields, opts = {}) {
       const phoneRetry = await findRecentPhoneIdempotentDuplicate(client, {
         contact_email: fields.contact_email,
         contact_phone_normalized: phoneNormalized,
+        church_name: fields.church_name,
         windowMinutes: opts.windowMinutes,
       });
       if (phoneRetry) {
