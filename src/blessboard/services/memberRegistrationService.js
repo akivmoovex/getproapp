@@ -143,7 +143,9 @@ function parseProfileContact(input) {
       normalizeBlessBoardPhone,
     } = require("./normalizeBlessBoardPhone");
     const phone = normalizeBlessBoardPhone(phoneRaw, {
-      country: input.country,
+      country: input.phoneCountry || input.country,
+      phoneCountry: input.phoneCountry || input.country,
+      phoneNational: input.phoneNational,
       defaultCountry: "ZM",
     });
     if (!phone.ok) return { ok: false, reason: "phone" };

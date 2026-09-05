@@ -136,6 +136,10 @@ function validateEmail(email) {
  * Shared platform phone parser: structured country + national, or legacy `phone`.
  * Church location `country` is only a fallback when the caller did not send a
  * phone-country selector. Server env/validationMode is authoritative.
+ * 
+ * Legacy `phone` is not required for V7 forms. Comment retained for context:
+ * extractPhoneFieldsFromBody pulls from phone_national + phone_country (preferred),
+ * with legacy phone only for transitional allowLegacyPhone callers.
  *
  * @param {object} body
  * @param {{ churchCountry?: unknown, env?: object, validationMode?: string }} [opts]

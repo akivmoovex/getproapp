@@ -150,6 +150,7 @@ describe("blessboard registration phone uniqueness", () => {
     requireDb();
     const validation = validatePlatformChurchRegistration({
       church_name: "Phone Unique Church",
+      branch_name: "Main Campus",
       country: "Zambia",
       city: "Lusaka",
       contact_name: "Pastor A",
@@ -176,6 +177,7 @@ describe("blessboard registration phone uniqueness", () => {
     requireDb();
     const first = await repo.createApplicationIdempotent(pool, {
       church_name: "Collide A",
+      branch_name: "Main Campus",
       country: "Zambia",
       city: "Lusaka",
       contact_name: "A",
@@ -192,6 +194,7 @@ describe("blessboard registration phone uniqueness", () => {
       () =>
         repo.createApplicationIdempotent(pool, {
           church_name: "Collide B",
+          branch_name: "Main Campus",
           country: "Zambia",
           city: "Ndola",
           contact_name: "B",
@@ -214,6 +217,7 @@ describe("blessboard registration phone uniqueness", () => {
     requireDb();
     const fields = {
       church_name: "Retry Church",
+      branch_name: "Main Campus",
       country: "Kenya",
       city: "Nairobi",
       contact_name: "Retry",
@@ -235,6 +239,7 @@ describe("blessboard registration phone uniqueness", () => {
     requireDb();
     const created = await repo.createApplicationIdempotent(pool, {
       church_name: "Provisioned Phone Church",
+      branch_name: "Main Campus",
       country: "Ghana",
       city: "Accra",
       contact_name: "Prov",
@@ -259,6 +264,7 @@ describe("blessboard registration phone uniqueness", () => {
       () =>
         repo.createApplicationIdempotent(pool, {
           church_name: "Other Church",
+          branch_name: "Main Campus",
           country: "Ghana",
           city: "Kumasi",
           contact_name: "Other",
@@ -277,6 +283,7 @@ describe("blessboard registration phone uniqueness", () => {
     requireDb();
     const rejected = await repo.createApplicationIdempotent(pool, {
       church_name: "Rejected Phone",
+      branch_name: "Main Campus",
       country: "United States",
       city: "Austin",
       contact_name: "R",
@@ -296,6 +303,7 @@ describe("blessboard registration phone uniqueness", () => {
 
     const reused = await repo.createApplicationIdempotent(pool, {
       church_name: "Reuse After Reject",
+      branch_name: "Main Campus",
       country: "United States",
       city: "Dallas",
       contact_name: "R2",
@@ -310,6 +318,7 @@ describe("blessboard registration phone uniqueness", () => {
 
     const closed = await repo.createApplicationIdempotent(pool, {
       church_name: "Closed Enquiry",
+      branch_name: "Main Campus",
       country: "Canada",
       city: "Toronto",
       contact_name: "C",
@@ -330,6 +339,7 @@ describe("blessboard registration phone uniqueness", () => {
     );
     const closedReuse = await repo.createApplicationIdempotent(pool, {
       church_name: "Closed Reuse",
+      branch_name: "Main Campus",
       country: "Canada",
       city: "Ottawa",
       contact_name: "C2",
@@ -347,6 +357,7 @@ describe("blessboard registration phone uniqueness", () => {
     requireDb();
     await repo.createApplicationIdempotent(pool, {
       church_name: "Race Church 1",
+      branch_name: "Main Campus",
       country: "Nigeria",
       city: "Lagos",
       contact_name: "N1",
@@ -361,6 +372,7 @@ describe("blessboard registration phone uniqueness", () => {
       () =>
         repo.createApplicationIdempotent(pool, {
           church_name: "Race Church 2",
+          branch_name: "Main Campus",
           country: "Nigeria",
           city: "Abuja",
           contact_name: "N2",
@@ -378,11 +390,11 @@ describe("blessboard registration phone uniqueness", () => {
       await pool.query(
         `INSERT INTO blessboard.platform_church_registration_applications (
            status, application_status, provisioning_status,
-           church_name, country, city, contact_name, contact_email, contact_phone,
+           church_name, branch_name, country, city, contact_name, contact_email, contact_phone,
            contact_phone_normalized, consent_terms
          ) VALUES (
            'pending', 'submitted', 'not_started',
-           'Race Direct', 'Nigeria', 'Ibadan', 'N3', 'race3@example.org', '+234801000333',
+           'Race Direct', 'Main Campus', 'Nigeria', 'Ibadan', 'N3', 'race3@example.org', '+234801000333',
            '+234801000333', true
          )`
       );
@@ -407,6 +419,7 @@ describe("blessboard registration phone uniqueness", () => {
         .type("form")
         .send({
           church_name: `HTTP ${plan} Church`,
+          branch_name: "Main Campus",
           country: "Zambia",
           city: "Lusaka",
           contact_name: "HTTP User",
@@ -437,6 +450,7 @@ describe("blessboard registration phone uniqueness", () => {
       .type("form")
       .send({
         church_name: "HTTP Dup First",
+        branch_name: "Main Campus",
         country: "Zambia",
         city: "Lusaka",
         contact_name: "First",
@@ -457,6 +471,7 @@ describe("blessboard registration phone uniqueness", () => {
       .type("form")
       .send({
         church_name: "HTTP Dup Second",
+        branch_name: "Main Campus",
         country: "Zambia",
         city: "Kitwe",
         contact_name: "Second",
@@ -477,11 +492,11 @@ describe("blessboard registration phone uniqueness", () => {
     await pool.query(
       `INSERT INTO blessboard.platform_church_registration_applications (
          status, application_status, provisioning_status,
-         church_name, country, city, contact_name, contact_email, contact_phone,
+         church_name, branch_name, country, city, contact_name, contact_email, contact_phone,
          contact_phone_normalized, consent_terms
        ) VALUES (
          'pending', 'rejected', 'not_started',
-         'Legacy Local Phone', 'Zambia', 'Lusaka', 'Legacy', 'legacy-local@example.org', '0979998888',
+         'Legacy Local Phone', 'Main Campus', 'Zambia', 'Lusaka', 'Legacy', 'legacy-local@example.org', '0979998888',
          NULL, true
        )`
     );

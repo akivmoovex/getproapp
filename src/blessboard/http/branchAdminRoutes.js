@@ -40,6 +40,10 @@ const {
   STATUS: SETTINGS_STATUS,
 } = require("../services/blessBoardSettingsService");
 const {
+  resolveBlessBoardFormPhone,
+  blessBoardPhoneFieldLocals,
+} = require("../services/resolveBlessBoardFormPhone");
+const {
   inviteBlessBoardStaff,
   STATUS: INVITE_STATUS,
 } = require("../services/inviteBlessBoardStaff");
@@ -227,11 +231,17 @@ function createBranchAdminRouter(deps) {
         "Settings are temporarily unavailable."
       );
     }
+    const phoneLocals = blessBoardPhoneFieldLocals({
+      env,
+      e164Value: loaded.model.settings && loaded.model.settings.phone,
+    });
     const html = renderBranchAdminView(
       "branch-admin/settings.ejs",
       await shellLocals(req, res, "settings", {
         settings: loaded.model.settings,
         catalogue: loaded.model.catalogue,
+        loadPhoneField: true,
+        ...phoneLocals,
         error: null,
         fieldError: null,
         saved: String((req.query && req.query.saved) || "") === "1",
@@ -252,10 +262,21 @@ function createBranchAdminRouter(deps) {
     }
     const body = req.body || {};
     const session = req.v5Session && req.v5Session.session;
+    
+    // Resolve phone from split fields (optional)
+    const phoneResolved = resolveBlessBoardFormPhone(body, {
+      required: false,
+      env,
+      allowLegacyPhone: false,
+    });
+    if (body.phone_national && String(body.phone_national).trim() && !phoneResolved.result.ok) {
+      return res.redirect(303, "/branch-admin/settings?error=phone");
+    }
+    
     const updated = await updateBranchSettings(getPool(), branchId, {
       publicName: body.publicName,
       email: body.email,
-      phone: body.phone,
+      phone: phoneResolved.e164,
       timezone: body.timezone,
       countryCode: body.countryCode,
       addressLine1: body.addressLine1,
@@ -274,13 +295,21 @@ function createBranchAdminRouter(deps) {
         updated.status === SETTINGS_STATUS.CONFLICT
       ) {
         const loaded = await getBranchSettingsPageModel(getPool(), branchId);
+        const phoneLocals = blessBoardPhoneFieldLocals({
+          env,
+          selectedCountry: phoneResolved.fields.phoneCountry,
+          nationalValue: phoneResolved.fields.phoneNational,
+          e164Value: phoneResolved.e164,
+        });
         const html = renderBranchAdminView(
           "branch-admin/settings.ejs",
           await shellLocals(req, res, "settings", {
             settings: (loaded.model && loaded.model.settings) || {
               publicName: String(body.publicName || ""),
               email: body.email || null,
-              phone: body.phone || null,
+              phone: phoneResolved.e164 || null,
+              phoneCountry: phoneResolved.fields.phoneCountry,
+              phoneNational: phoneResolved.fields.phoneNational,
               timezone: body.timezone || null,
               countryCode: body.countryCode || null,
               addressLine1: body.addressLine1 || null,
@@ -292,6 +321,8 @@ function createBranchAdminRouter(deps) {
               longitude: body.longitude || null,
             },
             catalogue: loaded.model ? loaded.model.catalogue : null,
+            loadPhoneField: true,
+            ...phoneLocals,
             error: updated.message || "Please check the settings and try again.",
             fieldError: updated.reason || null,
             saved: false,

@@ -176,7 +176,11 @@ async function createScopedTeamMember(db, input) {
   const leadershipTitle = String((input && input.leadershipTitle) || "")
     .trim()
     .slice(0, 120);
-  const country = (input && input.country) || null;
+  const country = (input && (input.phoneCountry || input.country)) || null;
+  const phoneNational =
+    input && input.phoneNational != null && String(input.phoneNational).trim()
+      ? String(input.phoneNational).trim()
+      : "";
   const emailDisplay = String((input && input.email) || "").trim();
   const email = emailDisplay ? normalizeEmail(emailDisplay) : "";
   let branchId =
@@ -211,9 +215,12 @@ async function createScopedTeamMember(db, input) {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "self_assignment" };
   }
 
-  const phoneResult = normalizeBlessBoardPhone(input && input.phone, {
+  const phoneResult = normalizeBlessBoardPhone(phoneNational || (input && input.phone), {
+    phoneCountry: country,
+    phoneNational: phoneNational || null,
     country,
     defaultCountry: "ZM",
+    env: input && input.env,
   });
   if (!phoneResult.ok) {
     return {

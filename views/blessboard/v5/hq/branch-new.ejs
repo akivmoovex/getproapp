@@ -183,11 +183,20 @@
           <input id="email" name="email" type="email" maxlength="254" value="<%= fval('email') %>" autocomplete="email" />
           <% if (ferr('email')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('email') %></p><% } %>
         </div>
-        <div class="bb-hq-field<%= ferr('phone') ? ' is-invalid' : '' %>">
-          <label for="phone">Public phone</label>
-          <input id="phone" name="phone" type="tel" maxlength="32" value="<%= fval('phone') %>" placeholder="+260 97…" autocomplete="tel" />
-          <% if (ferr('phone')) { %><p class="bb-hq-field-error" role="alert"><%= ferr('phone') %></p><% } %>
-        </div>
+        <%- include('../partials/phone-field', {
+          id: 'phone',
+          label: 'Public phone',
+          required: false,
+          defaultCountry: 'ZM',
+          selectedCountry: (typeof formVals !== 'undefined' && formVals.phoneCountry) || 'ZM',
+          nationalValue: fval('phoneNational') || '',
+          e164Value: fval('phone') || '',
+          countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+          showLegacyHidden: false,
+          hint: null,
+          error: ferr('phone') || null,
+          placeholder: '97 123 4567'
+        }) %>
       </div>
 
       <div class="bb-hq-field<%= ferr('timezone') ? ' is-invalid' : '' %>">

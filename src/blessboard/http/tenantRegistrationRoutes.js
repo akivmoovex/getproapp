@@ -28,6 +28,10 @@ const {
   submitMemberRegistration,
   STATUS,
 } = require("../services/memberRegistrationService");
+const {
+  resolveBlessBoardFormPhone,
+  blessBoardPhoneFieldLocals,
+} = require("../services/resolveBlessBoardFormPhone");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
@@ -116,6 +120,8 @@ function submittedFromBody(body) {
     preferredName: String(raw.preferred_name || ""),
     email: String(raw.email || ""),
     phone: String(raw.phone || ""),
+    phone_country: String(raw.phone_country || raw.phoneCountry || ""),
+    phone_national: String(raw.phone_national || raw.phoneNational || ""),
   };
 }
 
@@ -247,6 +253,18 @@ function createTenantRegistrationRouter(deps) {
   function formLocals(req, res, scope, extra) {
     const csrfToken = issueCsrfToken(env);
     setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+    const submitted = (extra && extra.submitted) || null;
+    const phoneLocals = blessBoardPhoneFieldLocals({
+      env,
+      selectedCountry: submitted && submitted.phone_country,
+      nationalValue: submitted && submitted.phone_national,
+      e164Value:
+        submitted && submitted.phone_national
+          ? null
+          : submitted && submitted.phone
+            ? submitted.phone
+            : null,
+    });
     return {
       publicName: scope.publicName,
       branchName: scope.branchName,
@@ -257,6 +275,8 @@ function createTenantRegistrationRouter(deps) {
       fieldErrors: {},
       errorSummaryItems: [],
       submitted: null,
+      loadPhoneField: true,
+      ...phoneLocals,
       ...(extra || {}),
     };
   }
@@ -317,6 +337,11 @@ function createTenantRegistrationRouter(deps) {
         }
 
         // Ignore any client-supplied church/branch identifiers.
+        const phoneResolved = resolveBlessBoardFormPhone(body, {
+          required: true,
+          env,
+          allowLegacyPhone: false,
+        });
         const result = await submitMemberRegistration(getPool(), {
           churchId: scope.churchId,
           branchId: scope.branchId,
@@ -324,7 +349,10 @@ function createTenantRegistrationRouter(deps) {
           lastName: body.last_name,
           preferredName: body.preferred_name,
           email: body.email,
-          phone: body.phone,
+          phone: phoneResolved.e164 || "",
+          phoneCountry: phoneResolved.fields.phoneCountry,
+          phoneNational: phoneResolved.fields.phoneNational,
+          country: phoneResolved.fields.phoneCountry || "ZM",
         });
 
         if (result.ok) {

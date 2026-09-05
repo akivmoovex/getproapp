@@ -7,6 +7,9 @@
   <meta name="robots" content="noindex, nofollow" />
   <%- include('./head-design-system') %>
   <link rel="stylesheet" href="/blessboard/v5/platform-admin.css?v=63" />
+  <% if (typeof loadPhoneField !== 'undefined' && loadPhoneField) { %>
+  <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=bb-phone-1" />
+  <% } %>
 </head>
 <%
   var paNav = (typeof navItems !== 'undefined' && navItems && navItems.length)

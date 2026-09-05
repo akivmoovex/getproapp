@@ -36,11 +36,20 @@
       <label for="last_name">Last name</label>
       <input id="last_name" name="last_name" required maxlength="100" value="<%= draft.lastName || '' %>" />
     </div>
-    <div class="bb-urp-field">
-      <label for="phone">Mobile phone number *</label>
-      <input id="phone" name="phone" type="tel" required maxlength="40" value="<%= draft.phone || '' %>" autocomplete="tel" />
-      <p class="bb-urp-hint">Used for login, verification and invitations</p>
-    </div>
+    <%- include('../partials/phone-field', {
+      id: 'phone',
+      label: 'Mobile phone number',
+      required: true,
+      defaultCountry: 'ZM',
+      selectedCountry: (typeof draft !== 'undefined' && draft.phoneCountry) || 'ZM',
+      nationalValue: (draft && draft.phoneNational) || '',
+      e164Value: (draft && draft.phone) || '',
+      countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+      showLegacyHidden: false,
+      hint: 'Used for login, verification and invitations',
+      error: null,
+      placeholder: '97 123 4567'
+    }) %>
     <div class="bb-urp-field">
       <label for="email">Email address, optional</label>
       <input id="email" name="email" type="email" maxlength="254" value="<%= draft.email || '' %>" autocomplete="email" />

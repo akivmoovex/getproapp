@@ -7,6 +7,7 @@
   <meta name="robots" content="noindex, nofollow" />
   <%- include('../partials/head-design-system') %>
   <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=15" />
+  <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=bb-phone-1" />
 </head>
 <body
   class="bb-auth-body"
@@ -196,24 +197,20 @@
                 </legend>
 
                 <div class="bb-auth-field-row">
-                  <div class="bb-auth-field">
-                    <label for="phone">Mobile phone number *</label>
-                    <input
-                      id="phone"
-                      name="phone"
-                      type="tel"
-                      maxlength="40"
-                      required
-                      autocomplete="tel"
-                      inputmode="tel"
-                      <% if (fieldInvalid('phone') || fieldInvalid('phone_required')) { %>aria-invalid="true"<% } %>
-                      aria-describedby="<%= fieldDescribedBy('phone', ['bb-auth-contact-hint']) || 'bb-auth-contact-hint' %>"
-                      value="<%= sub.phone != null ? sub.phone : '' %>"
-                    />
-                    <% if (fe.phone || fe.phone_required) { %>
-                    <p class="bb-auth-field__error" id="err-phone" role="status"><%= fe.phone || fe.phone_required %></p>
-                    <% } %>
-                  </div>
+                  <%- include('../partials/phone-field', {
+                    id: 'phone',
+                    label: 'Mobile phone number',
+                    required: true,
+                    defaultCountry: 'ZM',
+                    selectedCountry: (typeof sub !== 'undefined' && sub.phone_country) || 'ZM',
+                    nationalValue: (sub && sub.phone_national) || '',
+                    e164Value: (sub && sub.phone) || '',
+                    countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+                    showLegacyHidden: false,
+                    hint: null,
+                    error: fe.phone || fe.phone_required || null,
+                    placeholder: '97 123 4567'
+                  }) %>
 
                   <div class="bb-auth-field">
                     <label for="email">Email address, optional</label>
@@ -267,5 +264,6 @@
 
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
   <script src="/blessboard/v5/tenant-auth.js?v=2" defer></script>
+  <script src="/activeclinic/ac-phone-field.js?v=bb-phone-1" defer></script>
 </body>
 </html>

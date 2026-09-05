@@ -162,24 +162,21 @@
             <% } %>
           </div>
 
-          <div class="bb-mp-field<%= fe.phone ? ' is-invalid' : '' %>">
-            <label for="phone">Mobile phone number</label>
-            <input
-              id="phone"
-              name="phone"
-              type="tel"
-              maxlength="32"
-              value="<%= profile.phoneDisplay || profile.phoneNormalized || '' %>"
-              placeholder="+260…"
-              autocomplete="tel"
-              <%= showEdit ? '' : 'readonly' %>
-              <% if (fe.phone) { %>aria-invalid="true" aria-describedby="<%= fieldDescribedBy('phone') %>"<% } %>
-            />
-            <p class="bb-mp-hint">Used for login and invitations. Email remains optional for notifications.</p>
-            <% if (fe.phone) { %>
-            <p class="bb-mp-field__error" id="err-phone"><%= fe.phone %></p>
-            <% } %>
-          </div>
+          <%- include('../partials/phone-field', {
+            id: 'phone',
+            label: 'Mobile phone number',
+            required: true,
+            defaultCountry: 'ZM',
+            selectedCountry: (typeof profile !== 'undefined' && profile.phoneCountry) || 'ZM',
+            nationalValue: (profile && profile.phoneNational) || '',
+            e164Value: (profile && profile.phoneNormalized) || '',
+            countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+            showLegacyHidden: false,
+            hint: 'Used for login and invitations. Email remains optional for notifications.',
+            error: fe.phone || null,
+            placeholder: '97 123 4567',
+            disabled: !showEdit
+          }) %>
 
           <div class="bb-mp-field<%= fe.emailDisplay ? ' is-invalid' : '' %>">
             <label for="emailDisplay">Email address, optional</label>

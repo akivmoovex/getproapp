@@ -131,11 +131,20 @@
         <label for="last_name">Last name</label>
         <input id="last_name" name="last_name" required maxlength="100" value="<%= draft.lastName || '' %>" />
       </div>
-      <div class="bb-pa-field">
-        <label for="phone">Mobile phone number *</label>
-        <input id="phone" name="phone" type="tel" required maxlength="40" value="<%= draft.phone || '' %>" autocomplete="tel" />
-        <p class="bb-pa-hint">Used for login, verification and invitations</p>
-      </div>
+      <%- include('../partials/phone-field', {
+        id: 'phone',
+        label: 'Mobile phone number',
+        required: true,
+        defaultCountry: 'ZM',
+        selectedCountry: (typeof draft !== 'undefined' && draft.phoneCountry) || 'ZM',
+        nationalValue: (draft && draft.phoneNational) || '',
+        e164Value: (draft && draft.phone) || '',
+        countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+        showLegacyHidden: false,
+        hint: 'Used for login, verification and invitations',
+        error: null,
+        placeholder: '97 123 4567'
+      }) %>
       <div class="bb-pa-field">
         <label for="email">Email address, optional</label>
         <input id="email" name="email" type="email" maxlength="254" value="<%= draft.email || '' %>" autocomplete="email" />
@@ -151,7 +160,8 @@
     <input type="hidden" name="first_name" value="<%= draft.firstName || '' %>" />
     <input type="hidden" name="last_name" value="<%= draft.lastName || '' %>" />
     <input type="hidden" name="email" value="<%= draft.email || '' %>" />
-    <input type="hidden" name="phone" value="<%= draft.phone || '' %>" />
+    <input type="hidden" name="phone_country" value="<%= draft.phoneCountry || '' %>" />
+    <input type="hidden" name="phone_national" value="<%= draft.phoneNational || '' %>" />
     <section class="bb-pa-panel">
       <h2 class="bb-pa-panel__title">HQ or branch</h2>
       <p class="bb-pa-muted">Organisation: <strong><%= org.display_name %></strong> · Church: <strong><%= org.church_name %></strong></p>
@@ -191,7 +201,8 @@
     <input type="hidden" name="first_name" value="<%= draft.firstName || '' %>" />
     <input type="hidden" name="last_name" value="<%= draft.lastName || '' %>" />
     <input type="hidden" name="email" value="<%= draft.email || '' %>" />
-    <input type="hidden" name="phone" value="<%= draft.phone || '' %>" />
+    <input type="hidden" name="phone_country" value="<%= draft.phoneCountry || '' %>" />
+    <input type="hidden" name="phone_national" value="<%= draft.phoneNational || '' %>" />
     <input type="hidden" name="placement" value="<%= placement %>" />
     <input type="hidden" name="branch_id" value="<%= draft.branchId || '' %>" />
     <input type="hidden" name="leadership_title" value="<%= draft.leadershipTitle || '' %>" />
@@ -245,7 +256,8 @@
     <input type="hidden" name="first_name" value="<%= draft.firstName || '' %>" />
     <input type="hidden" name="last_name" value="<%= draft.lastName || '' %>" />
     <input type="hidden" name="email" value="<%= draft.email || '' %>" />
-    <input type="hidden" name="phone" value="<%= draft.phone || '' %>" />
+    <input type="hidden" name="phone_country" value="<%= draft.phoneCountry || '' %>" />
+    <input type="hidden" name="phone_national" value="<%= draft.phoneNational || '' %>" />
     <input type="hidden" name="placement" value="<%= placement %>" />
     <input type="hidden" name="branch_id" value="<%= draft.branchId || '' %>" />
     <input type="hidden" name="leadership_title" value="<%= draft.leadershipTitle || '' %>" />

@@ -159,7 +159,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     legacyHeaders: false,
     keyGenerator: (req) => {
       const fields = extractPhoneFieldsFromBody(req.body);
-      const phoneKey = fields.phoneNational || fields.phone || "";
+      const phoneKey = fields.phoneNational || "";
       return sha256Hex(
         `patient-register|${req.params.clinicKey}|${phoneKey}|${clientIp(req)}`
       );
@@ -461,8 +461,8 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         )
           .trim()
           .toUpperCase() || "ZM";
-        // Prefer split national; allow legacy phone only as controlled fallback.
-        const phone = String(phoneFields.phoneNational || phoneFields.phone || "").trim();
+        // V7 patient portal register uses phone_country + phone_national only.
+        const phone = String(phoneFields.phoneNational || "").trim();
         const email = String((req.body && req.body.email) || "").trim();
         const firstName = String((req.body && req.body.firstName) || "").trim();
         const lastName = String((req.body && req.body.lastName) || "").trim();
@@ -1390,10 +1390,10 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         normalizePhoneNumber,
       } = require("../../platform/services/phoneNumberService");
       const phoneRaw =
-        (req.body && (req.body.phone_national || req.body.phone)) || "";
+        (req.body && req.body.phone_national) || "";
       if (String(phoneRaw).trim()) {
         const normalized = normalizePhoneNumber({
-          phone: req.body.phone,
+          phone: phoneRaw,
           phoneCountry: req.body.phone_country,
           phoneNational: req.body.phone_national,
           clinicDefaultCountry: clinic.countryCode || "ZM",

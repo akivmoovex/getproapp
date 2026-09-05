@@ -81,6 +81,10 @@ const {
   STATUS: TEAM_STATUS,
 } = require("../services/platformAdminTeamService");
 const {
+  resolveBlessBoardFormPhone,
+  blessBoardPhoneFieldLocals,
+} = require("../../blessboard/services/resolveBlessBoardFormPhone");
+const {
   sendPasswordReset,
   resendInvitation,
   revokeSessions,
@@ -4903,6 +4907,11 @@ function createPlatformAdminRouter(deps) {
               email: req.query.email,
             })
           : null;
+      const phoneLocals = blessBoardPhoneFieldLocals({
+        env,
+        selectedCountry: String(req.query.phone_country || ""),
+        nationalValue: String(req.query.phone_national || ""),
+      });
       const html = renderPlatformAdminView(
         "platform-admin/team-invite.ejs",
         shellLocals(req, res, "organizations", {
@@ -4913,6 +4922,7 @@ function createPlatformAdminRouter(deps) {
           assignableRoles: ctx.assignableRoles,
           scopeOptions: ctx.scopeOptions,
           scopeTypes: ctx.scopeTypes,
+          loadPhoneField: true,
           step: ["identity", "placement", "roles", "review"].includes(step)
             ? step
             : "identity",
@@ -4920,6 +4930,8 @@ function createPlatformAdminRouter(deps) {
             firstName: String(req.query.first_name || ""),
             lastName: String(req.query.last_name || ""),
             email: String(req.query.email || ""),
+            phoneCountry: String(req.query.phone_country || ""),
+            phoneNational: String(req.query.phone_national || ""),
             phone: String(req.query.phone || ""),
             branchId: draftBranchId,
             branchKey: draftBranchKey,
@@ -4931,6 +4943,7 @@ function createPlatformAdminRouter(deps) {
             assignmentReason: String(req.query.assignment_reason || ""),
             expiresAt: String(req.query.expires_at || ""),
           },
+          ...phoneLocals,
           existingUser: detected && detected.ok ? detected.user : null,
           existing_user_id: String(req.query.existing_user_id || ""),
           notice: String(req.query.notice || ""),
@@ -4961,7 +4974,8 @@ function createPlatformAdminRouter(deps) {
           "first_name",
           "last_name",
           "email",
-          "phone",
+          "phone_country",
+          "phone_national",
           "branch_id",
           "placement",
           "leadership_title",
@@ -4978,6 +4992,35 @@ function createPlatformAdminRouter(deps) {
         return res.redirect(303, `${base}/invite?${params.toString()}`);
       }
 
+      const phoneResolved = resolveBlessBoardFormPhone(body, {
+        required: true,
+        env,
+        allowLegacyPhone: false,
+      });
+      if (!phoneResolved.result.ok) {
+        const errParams = new URLSearchParams();
+        errParams.set("step", "review");
+        errParams.set("error", "phone");
+        for (const key of [
+          "first_name",
+          "last_name",
+          "email",
+          "phone_country",
+          "phone_national",
+          "branch_id",
+          "placement",
+          "leadership_title",
+          "role_key",
+          "assignment_reason",
+          "expires_at",
+        ]) {
+          if (body[key] != null && String(body[key]).trim()) {
+            errParams.set(key, String(body[key]).trim());
+          }
+        }
+        return res.redirect(303, `${base}/invite?${errParams.toString()}`);
+      }
+
       const invited = await inviteOrganizationTeamMember(getPool(), {
         actorUserId: req.platformAdminContext.userId,
         organizationKeyOrId: orgRef,
@@ -4985,7 +5028,9 @@ function createPlatformAdminRouter(deps) {
         firstName: body.first_name,
         lastName: body.last_name,
         email: body.email,
-        phone: body.phone,
+        phone: phoneResolved.e164,
+        phoneCountry: phoneResolved.fields.phoneCountry,
+        phoneNational: phoneResolved.fields.phoneNational,
         leadershipTitle: body.leadership_title,
         branchId: body.branch_id,
         placement: body.placement,
@@ -5004,7 +5049,8 @@ function createPlatformAdminRouter(deps) {
           "first_name",
           "last_name",
           "email",
-          "phone",
+          "phone_country",
+          "phone_national",
           "branch_id",
           "placement",
           "leadership_title",

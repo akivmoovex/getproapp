@@ -74,7 +74,20 @@
       <% } %>
       <label>First name <input name="firstName" required maxlength="100" value="<%= formState.firstName || '' %>"/></label>
       <label>Last name <input name="lastName" required maxlength="100" value="<%= formState.lastName || '' %>"/></label>
-      <label>Mobile phone number * <input name="phone" type="tel" required maxlength="40" value="<%= formState.phone || '' %>" autocomplete="tel"/></label>
+      <%- include('../partials/phone-field', {
+        id: 'phone',
+        label: 'Mobile phone number',
+        required: true,
+        defaultCountry: 'ZM',
+        selectedCountry: (typeof formState !== 'undefined' && formState.phoneCountry) || 'ZM',
+        nationalValue: (formState && formState.phoneNational) || '',
+        e164Value: (formState && formState.phone) || '',
+        countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+        showLegacyHidden: false,
+        hint: null,
+        error: null,
+        placeholder: '97 123 4567'
+      }) %>
       <label>Email address, optional <input name="email" type="email" maxlength="254" value="<%= formState.email || '' %>" autocomplete="email"/></label>
       <label>Source
         <select name="sourceType">

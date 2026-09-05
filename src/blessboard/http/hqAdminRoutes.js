@@ -46,6 +46,10 @@ const {
   STATUS: CREATE_BRANCH_STATUS,
 } = require("../services/createBlessBoardBranch");
 const {
+  resolveBlessBoardFormPhone,
+  blessBoardPhoneFieldLocals,
+} = require("../services/resolveBlessBoardFormPhone");
+const {
   appendWebsiteModeNoticeQuery,
   parseWebsiteModeNoticeCode,
   websiteModeNoticeMessage,
@@ -332,6 +336,8 @@ function createHqAdminRouter(deps) {
       branchKeyManuallyEdited: String(b.branchKeyManuallyEdited || "") === "1" ? "1" : "0",
       email: String(b.email || "").trim(),
       phone: String(b.phone || "").trim(),
+      phoneCountry: String(b.phone_country || b.phoneCountry || "").trim().toUpperCase(),
+      phoneNational: String(b.phone_national || b.phoneNational || "").trim(),
       timezone: String(b.timezone || "").trim(),
       countryCode: String(b.countryCode || "").trim().toUpperCase(),
       addressLine1: String(b.addressLine1 || "").trim(),
@@ -483,6 +489,7 @@ function createHqAdminRouter(deps) {
       (tenant.organization.key && String(tenant.organization.key)) ||
       (tenant.organization.organizationKey && String(tenant.organization.organizationKey)) ||
       "";
+    const phoneLocals = blessBoardPhoneFieldLocals({ env });
     const html = renderHqView(
       "hq/branch-new.ejs",
       await shellLocals(req, res, "branches", {
@@ -491,6 +498,8 @@ function createHqAdminRouter(deps) {
         error: null,
         fieldErrors: {},
         organizationKey,
+        loadPhoneField: true,
+        ...phoneLocals,
       })
     );
     return res.status(200).type("html").send(html);
@@ -514,6 +523,11 @@ function createHqAdminRouter(deps) {
       "";
 
     async function renderCreateForm(status, error, fieldErrors) {
+      const phoneLocals = blessBoardPhoneFieldLocals({
+        env,
+        selectedCountry: form.phoneCountry,
+        nationalValue: form.phoneNational,
+      });
       const html = renderHqView(
         "hq/branch-new.ejs",
         await shellLocals(req, res, "branches", {
@@ -522,6 +536,8 @@ function createHqAdminRouter(deps) {
           error,
           fieldErrors: fieldErrors || {},
           organizationKey,
+          loadPhoneField: true,
+          ...phoneLocals,
         })
       );
       return res.status(status).type("html").send(html);
@@ -539,6 +555,16 @@ function createHqAdminRouter(deps) {
       );
     }
 
+    // Resolve phone from split fields (optional)
+    const phoneResolved = resolveBlessBoardFormPhone(req.body, {
+      required: false,
+      env,
+      allowLegacyPhone: false,
+    });
+    if (form.phoneNational && !phoneResolved.result.ok) {
+      return renderCreateForm(400, "Enter a valid phone number, or leave it blank.", { phone: "Invalid phone number." });
+    }
+
     // Ignore client-supplied organization/church IDs — scope comes from session tenant only.
     const created = await createBlessBoardBranch(getPool(), {
       churchId: tenant.church.id,
@@ -546,7 +572,7 @@ function createHqAdminRouter(deps) {
       branchKey: form.branchKey,
       displayName: form.displayName,
       email: form.email,
-      phone: form.phone,
+      phone: phoneResolved.e164,
       timezone: form.timezone || null,
       countryCode: form.countryCode || null,
       addressLine1: form.addressLine1 || null,
@@ -560,6 +586,11 @@ function createHqAdminRouter(deps) {
     if (!created.ok) {
       if (created.status === CREATE_BRANCH_STATUS.LIMIT_EXCEEDED) {
         const refreshed = await loadBranchCapacity(tenant.organization.id);
+        const phoneLocals = blessBoardPhoneFieldLocals({
+          env,
+          selectedCountry: form.phoneCountry,
+          nationalValue: form.phoneNational,
+        });
         const html = renderHqView(
           "hq/branch-new.ejs",
           await shellLocals(req, res, "branches", {
@@ -570,6 +601,8 @@ function createHqAdminRouter(deps) {
               "Your plan’s active branch limit has been reached. Upgrade to add another campus.",
             fieldErrors: {},
             organizationKey,
+            loadPhoneField: true,
+            ...phoneLocals,
           })
         );
         return res.status(403).type("html").send(html);
@@ -710,6 +743,10 @@ function createHqAdminRouter(deps) {
       ...loaded.model.catalogue,
       ...planSnapshot,
     };
+    const phoneLocals = blessBoardPhoneFieldLocals({
+      env,
+      e164Value: loaded.model.primaryBranch && loaded.model.primaryBranch.phone_normalized,
+    });
     const html = renderHqView(
       "hq/settings.ejs",
       await shellLocals(req, res, "settings", {
@@ -717,6 +754,8 @@ function createHqAdminRouter(deps) {
         catalogue,
         primaryBranch: loaded.model.primaryBranch,
         growthTrial,
+        loadPhoneField: true,
+        ...phoneLocals,
         error: null,
         fieldError: null,
         saved: String((req.query && req.query.saved) || "") === "1",
@@ -777,10 +816,21 @@ function createHqAdminRouter(deps) {
       if (!branchId) {
         return sendControlled(req, res, 404, "First branch could not be found.");
       }
+      
+      // Resolve phone from split fields (optional)
+      const phoneResolved = resolveBlessBoardFormPhone(body, {
+        required: false,
+        env,
+        allowLegacyPhone: false,
+      });
+      if (body.phone_national && String(body.phone_national).trim() && !phoneResolved.result.ok) {
+        return res.redirect(303, "/hq/settings?error=phone");
+      }
+      
       const updated = await updateBranchSettings(getPool(), branchId, {
         publicName: body.publicName,
         email: body.email,
-        phone: body.phone,
+        phone: phoneResolved.e164,
         timezone: body.timezone,
         countryCode: body.countryCode,
         addressLine1: body.addressLine1,

@@ -209,7 +209,7 @@ a{color:#0f766e}
         firstName: req.body && req.body.first_name,
         lastName: req.body && req.body.last_name,
         preferredName: req.body && req.body.preferred_name,
-        phone: req.body && (req.body.phone_national || req.body.phone),
+        phone: req.body && req.body.phone_national,
         phoneCountry: req.body && (req.body.phone_country || req.body.phoneCountry),
         phoneNational: req.body && (req.body.phone_national || req.body.phoneNational),
         email: req.body && req.body.email,

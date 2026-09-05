@@ -178,10 +178,20 @@
       <label for="branchEmail">Branch email</label>
       <input id="branchEmail" name="email" type="email" maxlength="254" value="<%= bval('email') %>" />
     </div>
-    <div class="bb-hq-field">
-      <label for="branchPhone">Branch phone</label>
-      <input id="branchPhone" name="phone" type="tel" maxlength="32" value="<%= bval('phone') %>" placeholder="+260 97…" />
-    </div>
+    <%- include('../partials/phone-field', {
+      id: 'branchPhone',
+      label: 'Branch phone',
+      required: false,
+      defaultCountry: 'ZM',
+      selectedCountry: (typeof bs !== 'undefined' && bs.phoneCountry) || 'ZM',
+      nationalValue: bval('phoneNational') || '',
+      e164Value: bval('phone') || '',
+      countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+      showLegacyHidden: false,
+      hint: null,
+      error: null,
+      placeholder: '97 123 4567'
+    }) %>
     <div class="bb-hq-field">
       <label for="branchTimezone">Branch timezone</label>
       <input id="branchTimezone" name="timezone" type="text" maxlength="64" value="<%= bval('timezone') %>" placeholder="Africa/Lusaka" />

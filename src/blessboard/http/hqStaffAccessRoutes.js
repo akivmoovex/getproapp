@@ -38,6 +38,10 @@ const {
   createScopedTeamMember,
 } = require("../../platform/services/createScopedTeamMemberService");
 const { tenantAbsoluteUrl } = require("./tenantLoginHelpers");
+const {
+  resolveBlessBoardFormPhone,
+  blessBoardPhoneFieldLocals,
+} = require("../services/resolveBlessBoardFormPhone");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -256,24 +260,33 @@ function createHqStaffAccessRouter(deps) {
       });
       const branches = await listBlessBoardBranches(getPool(), scope.churchId);
       const placement = String(req.query.placement || "hq").toLowerCase() === "branch" ? "branch" : "hq";
+      const phoneLocals = blessBoardPhoneFieldLocals({
+        env,
+        selectedCountry: String(req.query.phone_country || ""),
+        nationalValue: String(req.query.phone_national || ""),
+      });
       const html = renderV5Ejs(
         "hq/staff-access-invite.ejs",
         await shellLocals(req, res, {
           pageTitle: "Invite user",
           activeNav: "staff-access",
           loadUrpAssets: true,
+          loadPhoneField: true,
           placement,
           branches: branches.ok ? branches.branches : [],
           roles: catalogue.ok ? catalogue.roles : [],
           draft: {
             firstName: String(req.query.first_name || ""),
             lastName: String(req.query.last_name || ""),
+            phoneCountry: String(req.query.phone_country || ""),
+            phoneNational: String(req.query.phone_national || ""),
             phone: String(req.query.phone || ""),
             email: String(req.query.email || ""),
             branchId: String(req.query.branch_id || ""),
             roleKey: String(req.query.role_key || ""),
             assignmentReason: String(req.query.assignment_reason || ""),
           },
+          ...phoneLocals,
           notice: String(req.query.notice || ""),
           error: String(req.query.error || ""),
         })
@@ -303,13 +316,37 @@ function createHqStaffAccessRouter(deps) {
         .toLowerCase();
       const acceptBase =
         tenantAbsoluteUrl(host, "/invite/accept", env) || "/invite/accept";
+      
+      const phoneResolved = resolveBlessBoardFormPhone(body, {
+        required: true,
+        env,
+        allowLegacyPhone: false,
+      });
+      if (!phoneResolved.result.ok) {
+        const draftParams = new URLSearchParams({
+          placement,
+          error: "phone",
+          first_name: String(body.first_name || ""),
+          last_name: String(body.last_name || ""),
+          phone_country: String(body.phone_country || ""),
+          phone_national: String(body.phone_national || ""),
+          email: String(body.email || ""),
+          branch_id: String(body.branch_id || ""),
+          role_key: String(body.role_key || ""),
+          assignment_reason: String(body.assignment_reason || ""),
+        });
+        return res.redirect(303, `/hq/settings/staff-access/invite?${draftParams.toString()}`);
+      }
+      
       const created = await createScopedTeamMember(getPool(), {
         organizationId: scope.organizationId,
         churchId: scope.churchId,
         actorUserId: scope.actorUserId,
         firstName: body.first_name,
         lastName: body.last_name,
-        phone: body.phone,
+        phone: phoneResolved.e164,
+        phoneCountry: phoneResolved.fields.phoneCountry,
+        phoneNational: phoneResolved.fields.phoneNational,
         email: body.email,
         placement,
         branchId,
@@ -323,10 +360,19 @@ function createHqStaffAccessRouter(deps) {
         env,
       });
       if (!created.ok) {
-        return res.redirect(
-          303,
-          `/hq/settings/staff-access/invite?placement=${encodeURIComponent(placement)}&error=${encodeURIComponent(created.reason || "invite_failed")}`
-        );
+        const draftParams = new URLSearchParams({
+          placement,
+          error: created.reason || "invite_failed",
+          first_name: String(body.first_name || ""),
+          last_name: String(body.last_name || ""),
+          phone_country: String(body.phone_country || ""),
+          phone_national: String(body.phone_national || ""),
+          email: String(body.email || ""),
+          branch_id: String(body.branch_id || ""),
+          role_key: String(body.role_key || ""),
+          assignment_reason: String(body.assignment_reason || ""),
+        });
+        return res.redirect(303, `/hq/settings/staff-access/invite?${draftParams.toString()}`);
       }
       const html = renderV5Ejs(
         "hq/staff-access-invite-result.ejs",

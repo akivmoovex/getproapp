@@ -20,6 +20,11 @@ const {
   STATUS,
   NEUTRAL_MESSAGE,
 } = require("../services/passwordResetService");
+const {
+  resolveBlessBoardFormPhone,
+  blessBoardPhoneFieldLocals,
+} = require("../services/resolveBlessBoardFormPhone");
+const authRepo = require("../repositories/blessBoardAuthRepository");
 
 function clientIp(req) {
   const xf = req && req.headers && req.headers["x-forwarded-for"];
@@ -47,48 +52,87 @@ function createPasswordResetRouter(opts) {
     return csrfToken;
   }
 
-  router.get("/forgot-password", requireApex, (req, res) => {
-    const csrfToken = issueCsrf(req, res);
-    const html = renderV5Ejs("apex/forgot-password.ejs", {
-      csrfToken,
+  function forgotLocals(req, res, extra) {
+    const phoneLocals = blessBoardPhoneFieldLocals({
+      env,
+      selectedCountry: extra && extra.phoneCountryValue,
+      nationalValue: extra && extra.phoneNationalValue,
+    });
+    return {
+      csrfToken: issueCsrf(req, res),
       message: null,
       error: null,
       emailValue: "",
+      phoneCountryValue: "",
+      phoneNationalValue: "",
       loginHref: "/login",
-    });
+      ...phoneLocals,
+      defaultPhoneCountry: phoneLocals.defaultCountry || "ZM",
+      ...(extra || {}),
+    };
+  }
+
+  router.get("/forgot-password", requireApex, (req, res) => {
+    const html = renderV5Ejs("apex/forgot-password.ejs", forgotLocals(req, res, {}));
     res.status(200).type("html").send(html);
   });
 
   router.post("/forgot-password", requireApex, async (req, res) => {
     const submitted = req.body && req.body[CSRF_FIELD];
+    const phoneResolved = resolveBlessBoardFormPhone(req.body, {
+      required: false,
+      env,
+      allowLegacyPhone: false,
+    });
+    const emailRaw = String((req.body && req.body.email) || "").trim();
     if (!validateCsrf(req, submitted, env)) {
-      const csrfToken = issueCsrf(req, res);
-      const html = renderV5Ejs("apex/forgot-password.ejs", {
-        csrfToken,
-        message: null,
-        error: "Your session expired. Please try again.",
-        emailValue: "",
-        loginHref: "/login",
-      });
+      const html = renderV5Ejs(
+        "apex/forgot-password.ejs",
+        forgotLocals(req, res, {
+          error: "Your session expired. Please try again.",
+          emailValue: emailRaw,
+          phoneCountryValue: phoneResolved.fields.phoneCountry,
+          phoneNationalValue: phoneResolved.fields.phoneNational,
+        })
+      );
       return res.status(403).type("html").send(html);
     }
 
-    await requestPasswordReset(getPool(), {
-      email: req.body && req.body.email,
-      requestIp: clientIp(req),
-      env,
-      publicBaseUrl: getApexOrigin(env, req.hostname),
-      source: "public_forgot_password",
-    });
+    let emailForReset = emailRaw;
+    // Phone path: look up account and deliver via email when present (no OTP/SMS).
+    if (!emailForReset && phoneResolved.e164) {
+      try {
+        const byPhone = await authRepo.findUserByPhone(
+          getPool(),
+          phoneResolved.e164
+        );
+        if (byPhone && (byPhone.email_normalized || byPhone.email_display)) {
+          emailForReset = byPhone.email_normalized || byPhone.email_display;
+        }
+      } catch (_err) {
+        /* enumeration-safe: fall through to neutral message */
+      }
+    }
 
-    const csrfToken = issueCsrf(req, res);
-    const html = renderV5Ejs("apex/forgot-password.ejs", {
-      csrfToken,
-      message: NEUTRAL_MESSAGE,
-      error: null,
-      emailValue: "",
-      loginHref: "/login",
-    });
+    if (emailForReset) {
+      await requestPasswordReset(getPool(), {
+        email: emailForReset,
+        requestIp: clientIp(req),
+        env,
+        publicBaseUrl: getApexOrigin(env, req.hostname),
+        source: "public_forgot_password",
+      });
+    }
+
+    const html = renderV5Ejs(
+      "apex/forgot-password.ejs",
+      forgotLocals(req, res, {
+        message: NEUTRAL_MESSAGE,
+        emailValue: "",
+        phoneCountryValue: "",
+        phoneNationalValue: "",
+      })
+    );
     return res.status(200).type("html").send(html);
   });
 

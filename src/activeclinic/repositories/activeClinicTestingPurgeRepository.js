@@ -632,6 +632,60 @@ async function maybeFailAfter(client, step, failAfter) {
 }
 
 /**
+ * Authorized V7 fresh-reset only: remove clinical/finance history that normally blocks purge.
+ * Deletes child tables before parents (reverse of BLOCKING_* declaration order).
+ * @param {{ query: Function }} client
+ * @param {string} organizationId
+ */
+async function deleteOperationalBlockingRows(client, organizationId) {
+  const deleted = {};
+
+  // Line/event tables without tenant_id — delete before parent finance rows.
+  const invoiceLines = await client.query(
+    `DELETE FROM activeclinic.invoice_lines
+      WHERE invoice_id IN (
+        SELECT id FROM activeclinic.invoices WHERE tenant_id = $1
+      )`,
+    [organizationId]
+  );
+  deleted.invoiceLines = invoiceLines.rowCount || 0;
+  const paymentAlloc = await client.query(
+    `DELETE FROM activeclinic.payment_allocations
+      WHERE payment_id IN (
+        SELECT id FROM activeclinic.payments WHERE tenant_id = $1
+      )`,
+    [organizationId]
+  );
+  deleted.paymentAllocations = paymentAlloc.rowCount || 0;
+  const cashierEvents = await client.query(
+    `DELETE FROM activeclinic.cashier_session_events
+      WHERE session_id IN (
+        SELECT id FROM activeclinic.cashier_sessions WHERE tenant_id = $1
+      )`,
+    [organizationId]
+  );
+  deleted.cashierSessionEvents = cashierEvents.rowCount || 0;
+
+  // Child-first: reverse declared lists so parents (appointments, invoices) go last.
+  for (const entry of BLOCKING_TENANT_TABLES.slice().reverse()) {
+    const r = await client.query(
+      `DELETE FROM ${entry.table} WHERE tenant_id = $1`,
+      [organizationId]
+    );
+    deleted[entry.key] = r.rowCount || 0;
+  }
+
+  for (const entry of BLOCKING_ORG_TABLES.slice().reverse()) {
+    const r = await client.query(
+      `DELETE FROM ${entry.table} WHERE organization_id = $1`,
+      [organizationId]
+    );
+    deleted[entry.key] = r.rowCount || 0;
+  }
+  return deleted;
+}
+
+/**
  * Remove public-booking and patient-chart rows for one eligible testing org.
  * @param {{ query: Function }} client
  * @param {string} organizationId
@@ -733,6 +787,10 @@ async function deleteActiveClinicTestingOrganization(client, opts) {
   }
 
   const deleted = {};
+
+  if (opts.deleteOperational === true) {
+    Object.assign(deleted, await deleteOperationalBlockingRows(client, organizationId));
+  }
 
   Object.assign(deleted, await deleteDisposablePortalRows(client, organizationId));
 
@@ -923,5 +981,7 @@ module.exports = {
   countSiblingDuplicateReferences,
   listUnexpectedActiveClinicOrgReferences,
   classifyIdentities,
+  deleteOperationalBlockingRows,
+  deleteDisposablePortalRows,
   deleteActiveClinicTestingOrganization,
 };

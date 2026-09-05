@@ -24,17 +24,19 @@ function resolveLoginIdentifierFromBody(body) {
   if (mode === "phone") {
     const country = String(raw.phone_country || "ZM").trim().toUpperCase() || "ZM";
     const fields = extractPhoneFieldsFromBody(raw);
-    const phoneInput = fields.phoneNational || fields.phone || "";
+    // V7 login forms submit phone_national (not legacy phone).
+    const phoneInput = String(fields.phoneNational || "").trim();
     const normalized = normalizePhoneNumber({
       phone: phoneInput,
       phoneCountry: fields.phoneCountry || country,
+      phoneNational: phoneInput,
       defaultCountry: country,
       required: false,
     });
     const identifier =
       normalized.ok && normalized.e164
         ? normalized.e164
-        : String(phoneInput || "").trim();
+        : phoneInput;
     return { mode: "phone", identifier, country };
   }
 

@@ -91,18 +91,20 @@
             autocomplete="email"
           />
         </div>
-        <div class="bb-ba-field">
-          <label for="phone">Phone</label>
-          <input
-            id="phone"
-            name="phone"
-            type="tel"
-            maxlength="32"
-            value="<%= val('phone') %>"
-            placeholder="+260…"
-            autocomplete="tel"
-          />
-        </div>
+        <%- include('../partials/phone-field', {
+          id: 'phone',
+          label: 'Phone',
+          required: false,
+          defaultCountry: 'ZM',
+          selectedCountry: (typeof s !== 'undefined' && s.phoneCountry) || 'ZM',
+          nationalValue: val('phoneNational') || '',
+          e164Value: val('phone') || '',
+          countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+          showLegacyHidden: false,
+          hint: null,
+          error: null,
+          placeholder: '97 123 4567'
+        }) %>
         <div class="bb-ba-field">
           <label for="timezone">Timezone</label>
           <input

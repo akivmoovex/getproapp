@@ -19,6 +19,10 @@ const {
 const handoverSvc = require("../services/memberJourneyHandoverService");
 const domainSvc = require("../services/memberJourneyDomainService");
 const workflowSvc = require("../services/memberJourneyWorkflowService");
+const {
+  resolveBlessBoardFormPhone,
+  blessBoardPhoneFieldLocals,
+} = require("../services/resolveBlessBoardFormPhone");
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -316,11 +320,68 @@ function createMemberJourneyAdminRouter(deps) {
     if (!requireCsrf(req, res)) return;
 
     const body = req.body || {};
+    
+    // Resolve phone from split fields (required)
+    const phoneResolved = resolveBlessBoardFormPhone(body, {
+      required: true,
+      env: ids.env,
+      allowLegacyPhone: false,
+    });
+    if (!phoneResolved.result.ok) {
+      const form = {
+        firstName: body.firstName || "",
+        lastName: body.lastName || "",
+        email: body.email || "",
+        phoneCountry: phoneResolved.fields.phoneCountry,
+        phoneNational: phoneResolved.fields.phoneNational,
+        phone: phoneResolved.fields.phone,
+        sourceType: body.sourceType || "manual",
+      };
+      const { page, limit, offset } = parsePage({});
+      const listed = await workflowSvc.listJourneyContacts(getPool(), {
+        actorUserId: ids.actorUserId,
+        organizationId: ids.organizationId,
+        churchId: ids.churchId,
+        branchId: ids.branchId,
+        tenantContext: ids.tenant,
+        limit,
+        offset,
+      });
+      const phoneLocals = blessBoardPhoneFieldLocals({
+        env: ids.env,
+        selectedCountry: phoneResolved.fields.phoneCountry,
+        nationalValue: phoneResolved.fields.phoneNational,
+      });
+      const html = renderV5Ejs(
+        "hq/member-journey-contacts.ejs",
+        await shellLocals(req, res, {
+          pageTitle: "Journey contacts",
+          activeNav: "member-journey",
+          contacts: listed.ok ? listed.contacts : [],
+          total: listed.ok ? listed.total : 0,
+          page,
+          pageSize: limit,
+          q: "",
+          sourceType: "",
+          form,
+          loadPhoneField: true,
+          ...phoneLocals,
+          duplicateMatches: [],
+          followUpStatuses: workflowSvc.FOLLOW_UP_STATUSES,
+          notice: null,
+          error: "phone",
+        })
+      );
+      return res.status(400).type("html").send(html);
+    }
+    
     const form = {
       firstName: body.firstName || "",
       lastName: body.lastName || "",
       email: body.email || "",
-      phone: body.phone || "",
+      phone: phoneResolved.e164,
+      phoneCountry: phoneResolved.fields.phoneCountry,
+      phoneNational: phoneResolved.fields.phoneNational,
       sourceType: body.sourceType || "manual",
     };
 
@@ -341,6 +402,11 @@ function createMemberJourneyAdminRouter(deps) {
         limit,
         offset,
       });
+      const phoneLocals = blessBoardPhoneFieldLocals({
+        env: ids.env,
+        selectedCountry: form.phoneCountry,
+        nationalValue: form.phoneNational,
+      });
       const html = renderV5Ejs(
         "hq/member-journey-contacts.ejs",
         await shellLocals(req, res, {
@@ -353,6 +419,8 @@ function createMemberJourneyAdminRouter(deps) {
           q: "",
           sourceType: "",
           form,
+          loadPhoneField: true,
+          ...phoneLocals,
           duplicateMatches: matches,
           followUpStatuses: workflowSvc.FOLLOW_UP_STATUSES,
           notice: null,

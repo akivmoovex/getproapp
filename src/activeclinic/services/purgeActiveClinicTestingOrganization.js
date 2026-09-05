@@ -82,9 +82,11 @@ async function assertDatabaseTestingIdentity(db, env) {
  * @param {string[]} productKeys
  * @param {string[]} hostnames
  */
-function evaluateEligibility(orgRow, preserveOrgIds, productKeys, hostnames) {
+function evaluateEligibility(orgRow, preserveOrgIds, productKeys, hostnames, opts) {
+  const options = opts || {};
+  const forceFresh = options.forceAuthorizedFreshReset === true;
   const organizationKey = String(orgRow.organization_key || "");
-  if (repo.RESERVED_ORGANIZATION_KEYS.includes(organizationKey)) {
+  if (!forceFresh && repo.RESERVED_ORGANIZATION_KEYS.includes(organizationKey)) {
     return deny(STATUS.NOT_ELIGIBLE, "reserved_demo_tenant", {
       organizationKey,
     });
@@ -94,8 +96,15 @@ function evaluateEligibility(orgRow, preserveOrgIds, productKeys, hostnames) {
       organizationKey,
     });
   }
-  if (String(orgRow.data_environment || "").toLowerCase() !== "testing") {
+  const dataEnv = String(orgRow.data_environment || "").toLowerCase();
+  if (!forceFresh && dataEnv !== "testing") {
     return deny(STATUS.NOT_ELIGIBLE, "organization_data_environment_not_testing", {
+      organizationKey,
+      dataEnvironment: orgRow.data_environment,
+    });
+  }
+  if (forceFresh && dataEnv !== "testing" && dataEnv !== "demo") {
+    return deny(STATUS.NOT_ELIGIBLE, "organization_data_environment_not_testing_or_demo", {
       organizationKey,
       dataEnvironment: orgRow.data_environment,
     });
@@ -212,6 +221,7 @@ function buildAudit(input, identity, orgRow, hcoId, mode, counts, deleted, block
  *   healthcareOrganizationId?: string,
  *   dryRun?: boolean,
  *   confirmDestructive?: boolean,
+ *   forceAuthorizedFreshReset?: boolean,
  *   actor?: string,
  *   failAfter?: string,
  *   allowTestFailureInjection?: boolean,
@@ -221,6 +231,7 @@ function buildAudit(input, identity, orgRow, hcoId, mode, counts, deleted, block
 async function purgeActiveClinicTestingOrganization(db, input, env) {
   const sourceEnv = env || process.env;
   const dryRun = input && input.dryRun === false ? false : true;
+  const forceFresh = input && input.forceAuthorizedFreshReset === true;
   if (!dryRun && !(input && input.confirmDestructive === true)) {
     return deny(STATUS.INVALID_INPUT, "confirm_required");
   }
@@ -246,7 +257,8 @@ async function purgeActiveClinicTestingOrganization(db, input, env) {
     orgRow,
     preserve.orgIds || [],
     productKeys,
-    hostnames
+    hostnames,
+    { forceAuthorizedFreshReset: forceFresh }
   );
   if (!eligibility.ok) {
     return {
@@ -266,13 +278,15 @@ async function purgeActiveClinicTestingOrganization(db, input, env) {
   );
   const ownedMedia = await repo.listOwnedMediaStorageKeys(db, organizationId);
   const identityClass = await repo.classifyIdentities(db, organizationId, scope.identityIds);
-  const blockers = collectBlockers(
-    counts,
-    operational,
-    unexpected,
-    sharedMedia,
-    siblingDuplicates
-  );
+  const blockers = forceFresh
+    ? []
+    : collectBlockers(
+        counts,
+        operational,
+        unexpected,
+        sharedMedia,
+        siblingDuplicates
+      );
 
   const reportBase = {
     organization: {
@@ -289,6 +303,7 @@ async function purgeActiveClinicTestingOrganization(db, input, env) {
     operational,
     operationalTotal,
     blockers,
+    forceAuthorizedFreshReset: forceFresh,
     retained: { identities: identityClass.retained },
     orphanCandidates: ownedMedia.map((m) => ({
       kind: "website_media_storage",
@@ -366,7 +381,8 @@ async function purgeActiveClinicTestingOrganization(db, input, env) {
         liveOrg,
         livePreserve.orgIds || [],
         liveProducts,
-        liveHosts
+        liveHosts,
+        { forceAuthorizedFreshReset: forceFresh }
       );
       if (!liveElig.ok) {
         const err = new Error(liveElig.reason);
@@ -385,13 +401,15 @@ async function purgeActiveClinicTestingOrganization(db, input, env) {
         liveScope.applicationIds,
         organizationId
       );
-      const liveBlockers = collectBlockers(
-        liveCounts.counts,
-        liveCounts.operational,
-        liveUnexpected,
-        liveShared,
-        liveDupes
-      );
+      const liveBlockers = forceFresh
+        ? []
+        : collectBlockers(
+            liveCounts.counts,
+            liveCounts.operational,
+            liveUnexpected,
+            liveShared,
+            liveDupes
+          );
       if (liveBlockers.length) {
         const err = new Error(liveBlockers[0].code);
         err.code = "BLOCKED_IN_TRANSACTION";
@@ -408,6 +426,7 @@ async function purgeActiveClinicTestingOrganization(db, input, env) {
         preserveOrgIds: livePreserve.orgIds || [],
         preserveUserIds: livePreserve.userIds || [],
         identityIds: liveIdentities.deletable,
+        deleteOperational: forceFresh === true,
         failAfter,
       });
     });

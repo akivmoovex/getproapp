@@ -43,6 +43,10 @@ const {
   PORTAL_NAV,
   PORTAL_MOBILE_TABS,
 } = require("./memberShellLocals");
+const {
+  resolveBlessBoardFormPhone,
+  blessBoardPhoneFieldLocals,
+} = require("../services/resolveBlessBoardFormPhone");
 
 const DASHBOARD_PREVIEW_LIMIT = 3;
 
@@ -394,10 +398,16 @@ function createMemberPortalRouter(deps) {
     if (!loaded.ok || !loaded.profile) {
       return res.status(403).type("text").send("You do not have member access to this site.");
     }
+    const phoneLocals = blessBoardPhoneFieldLocals({
+      env,
+      e164Value: loaded.profile.phoneNormalized,
+    });
     const html = renderMemberView(
       "member/profile.ejs",
       shellLocals(req, res, "profile", {
+        loadPhoneField: true,
         profile: loaded.profile,
+        ...phoneLocals,
         error: null,
         fieldErrors: {},
         errorSummaryItems: [],
@@ -416,12 +426,72 @@ function createMemberPortalRouter(deps) {
 
     const tenant = resolveTenantForAuthorization(req);
     const body = req.body || {};
+    
+    // Resolve phone from split fields (optional for profile)
+    const phoneResolved = resolveBlessBoardFormPhone(body, {
+      required: false,
+      env,
+      allowLegacyPhone: false,
+    });
+    if (body.phone_national && String(body.phone_national).trim() && !phoneResolved.result.ok) {
+      // Invalid phone entered
+      const loaded = await getMemberPortalProfile(getPool(), {
+        userId: req.v5Session.session.userId,
+        churchId: tenant.church.id,
+        branchId: tenant.primaryBranch.id,
+      });
+      const phoneLocals = blessBoardPhoneFieldLocals({
+        env,
+        selectedCountry: phoneResolved.fields.phoneCountry,
+        nationalValue: phoneResolved.fields.phoneNational,
+      });
+      const html = renderMemberView(
+        "member/profile.ejs",
+        shellLocals(req, res, "profile", {
+          loadPhoneField: true,
+          profile: loaded.profile
+            ? {
+                ...loaded.profile,
+                preferredName: body.preferredName !== undefined
+                  ? String(body.preferredName || "")
+                  : loaded.profile.preferredName,
+                emailDisplay: body.emailDisplay !== undefined
+                  ? String(body.emailDisplay || "")
+                  : loaded.profile.emailDisplay,
+                phoneDisplay: "",
+                phoneCountry: phoneResolved.fields.phoneCountry,
+                phoneNational: phoneResolved.fields.phoneNational,
+              }
+            : {
+                preferredName: String(body.preferredName || ""),
+                emailDisplay: String(body.emailDisplay || ""),
+                phoneDisplay: "",
+                phoneCountry: phoneResolved.fields.phoneCountry,
+                phoneNational: phoneResolved.fields.phoneNational,
+                firstName: "",
+                lastName: "",
+                emailNormalized: "",
+                phoneNormalized: null,
+                membershipStatus: "active",
+                isPrimaryBranch: true,
+              },
+          ...phoneLocals,
+          error: "Enter a valid phone number, or leave it blank.",
+          fieldErrors: { phone: "Enter a valid phone number, or leave it blank." },
+          errorSummaryItems: ["Enter a valid phone number, or leave it blank."],
+          saved: false,
+          editMode: true,
+        })
+      );
+      return res.status(400).type("html").send(html);
+    }
+    
     const updateInput = {
       userId: req.v5Session.session.userId,
       churchId: tenant.church.id,
       branchId: tenant.primaryBranch.id,
       preferredName: body.preferredName,
-      phone: body.phone,
+      phone: phoneResolved.e164,
       emailDisplay: body.emailDisplay,
     };
     // Forward privileged form fields only when present so the service can reject them.
@@ -449,9 +519,16 @@ function createMemberPortalRouter(deps) {
           branchId: tenant.primaryBranch.id,
         });
         const mapped = mapMemberProfileFieldErrors(updated.reason);
+        const phoneLocals = blessBoardPhoneFieldLocals({
+          env,
+          selectedCountry: phoneResolved.fields.phoneCountry,
+          nationalValue: phoneResolved.fields.phoneNational,
+          e164Value: phoneResolved.e164,
+        });
         const html = renderMemberView(
           "member/profile.ejs",
           shellLocals(req, res, "profile", {
+            loadPhoneField: true,
             profile: loaded.profile
               ? {
                   ...loaded.profile,
@@ -467,11 +544,15 @@ function createMemberPortalRouter(deps) {
                     body.phone !== undefined
                       ? String(body.phone || "")
                       : loaded.profile.phoneDisplay,
+                  phoneCountry: phoneResolved.fields.phoneCountry,
+                  phoneNational: phoneResolved.fields.phoneNational,
                 }
               : {
                   preferredName: String(body.preferredName || ""),
                   emailDisplay: String(body.emailDisplay || ""),
                   phoneDisplay: String(body.phone || ""),
+                  phoneCountry: phoneResolved.fields.phoneCountry,
+                  phoneNational: phoneResolved.fields.phoneNational,
                   firstName: "",
                   lastName: "",
                   emailNormalized: "",
@@ -479,6 +560,7 @@ function createMemberPortalRouter(deps) {
                   membershipStatus: "active",
                   isPrimaryBranch: true,
                 },
+            ...phoneLocals,
             error: mapped.summaryItems[0] || "Please check your profile details and try again.",
             fieldErrors: mapped.fieldErrors,
             errorSummaryItems: mapped.summaryItems,

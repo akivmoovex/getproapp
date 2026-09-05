@@ -300,6 +300,13 @@ async function listMediaObjectsForChurches(client, churchIds) {
  * @param {string} organizationId
  */
 async function deleteOrganizationWebsiteRecords(client, organizationId) {
+  // Delete restoration versions first (CHECK requires source_version_id when source_type=content_restoration).
+  await client.query(
+    `DELETE FROM blessboard.website_publication_versions
+      WHERE organization_id = $1
+        AND source_type = 'content_restoration'`,
+    [organizationId]
+  );
   // Break self-FK on publication versions before delete.
   await client.query(
     `UPDATE blessboard.website_publication_versions
@@ -444,9 +451,26 @@ async function deleteChurchScopedContent(client, churchIds) {
     [churchIds]
   );
   await client.query(
-    `DELETE FROM blessboard.giving_entries WHERE church_id = ANY($1::uuid[])`,
+    `DELETE FROM blessboard.giving_entry_events
+      WHERE entry_id IN (
+        SELECT id FROM blessboard.giving_entries WHERE church_id = ANY($1::uuid[])
+      )`,
     [churchIds]
   );
+  // Testing data reset is authorized to remove finance history; disable hard-delete guard.
+  await client.query(
+    `ALTER TABLE blessboard.giving_entries DISABLE TRIGGER giving_entries_no_hard_delete_posted`
+  );
+  try {
+    await client.query(
+      `DELETE FROM blessboard.giving_entries WHERE church_id = ANY($1::uuid[])`,
+      [churchIds]
+    );
+  } finally {
+    await client.query(
+      `ALTER TABLE blessboard.giving_entries ENABLE TRIGGER giving_entries_no_hard_delete_posted`
+    );
+  }
   await client.query(
     `DELETE FROM blessboard.giving_categories WHERE church_id = ANY($1::uuid[])`,
     [churchIds]
@@ -502,6 +526,40 @@ async function deleteChurchScopedContent(client, churchIds) {
     `DELETE FROM blessboard.user_roles
       WHERE church_id = ANY($1::uuid[])
          OR branch_id IN (SELECT id FROM blessboard.branches WHERE church_id = ANY($1::uuid[]))`,
+    [churchIds]
+  );
+  await client.query(
+    `ALTER TABLE blessboard.user_role_assignment_events DISABLE TRIGGER user_role_assignment_events_no_delete`
+  );
+  await client.query(
+    `ALTER TABLE blessboard.user_role_assignment_events DISABLE TRIGGER user_role_assignment_events_no_update`
+  );
+  try {
+    await client.query(
+      `DELETE FROM blessboard.user_role_assignment_events
+        WHERE assignment_id IN (
+          SELECT id FROM blessboard.user_role_assignments
+           WHERE church_id = ANY($1::uuid[])
+              OR organization_id IN (
+                SELECT organization_id FROM blessboard.churches WHERE id = ANY($1::uuid[])
+              )
+        )`,
+      [churchIds]
+    );
+  } finally {
+    await client.query(
+      `ALTER TABLE blessboard.user_role_assignment_events ENABLE TRIGGER user_role_assignment_events_no_delete`
+    );
+    await client.query(
+      `ALTER TABLE blessboard.user_role_assignment_events ENABLE TRIGGER user_role_assignment_events_no_update`
+    );
+  }
+  await client.query(
+    `DELETE FROM blessboard.user_role_assignments
+      WHERE church_id = ANY($1::uuid[])
+         OR organization_id IN (
+           SELECT organization_id FROM blessboard.churches WHERE id = ANY($1::uuid[])
+         )`,
     [churchIds]
   );
   await client.query(`DELETE FROM blessboard.branches WHERE church_id = ANY($1::uuid[])`, [
@@ -702,6 +760,10 @@ async function purgeOrganizationTree(client, opts) {
     [organizationIds]
   );
   await client.query(
+    `DELETE FROM blessboard.organization_staff_phones WHERE organization_id = ANY($1::uuid[])`,
+    [organizationIds]
+  );
+  await client.query(
     `DELETE FROM blessboard.user_roles
       WHERE organization_id = ANY($1::uuid[])
         AND role_key <> 'platform_admin'
@@ -758,6 +820,10 @@ async function purgeOrganizationTree(client, opts) {
   await client.query(
     `DELETE FROM platform.domains
       WHERE organization_id = ANY($1::uuid[])`,
+    [organizationIds]
+  );
+  await client.query(
+    `DELETE FROM platform.media_folders WHERE organization_id = ANY($1::uuid[])`,
     [organizationIds]
   );
 
