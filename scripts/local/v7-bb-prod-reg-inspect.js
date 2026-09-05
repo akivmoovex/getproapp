@@ -150,10 +150,12 @@ async function main() {
           )
         ).rows[0].n;
         try {
+          // V7: there is no blessboard.memberships table. Canonical branch
+          // membership rows live on blessboard.member_branch_memberships.
           membershipCount = (
             await pool.query(
               `SELECT count(*)::int AS n
-                 FROM blessboard.memberships m
+                 FROM blessboard.member_branch_memberships m
                  JOIN blessboard.members mb ON mb.id = m.member_id
                  JOIN blessboard.churches c ON c.id = mb.church_id
                 WHERE c.organization_id = $1`,
