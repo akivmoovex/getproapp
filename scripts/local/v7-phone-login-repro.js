@@ -13,9 +13,10 @@ const AC = "https://activeclinic.pronline.org";
 
 const BB_USER = {
   email: "qa.organisation_administrator@demo-church.example.test",
-  phoneE164: "+260971000002",
-  phoneLocal: "0971000002",
-  phoneNational: "971000002",
+  phoneE164: "+260971000001",
+  phoneLocal: "0971000001",
+  phoneNational: "971000001",
+  expectPath: "/hq",
 };
 
 const AC_USER = {
@@ -23,6 +24,7 @@ const AC_USER = {
   phoneE164: "+260970000001",
   phoneLocal: "0970000001",
   phoneNational: "970000001",
+  expectPath: "/app",
 };
 
 async function fetchLoginCsrf(page, base) {

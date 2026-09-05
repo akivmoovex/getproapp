@@ -9,10 +9,18 @@
     var panels = root.querySelectorAll("[data-gp-auth-id-panel]");
     if (!tabs.length || !panels.length) return;
 
-    function setFieldRequired(input, on) {
+    function setFieldActive(input, on) {
       if (!input) return;
-      if (on) input.setAttribute("required", "");
-      else input.removeAttribute("required");
+      if (on) {
+        input.removeAttribute("disabled");
+        input.setAttribute("required", "");
+      } else {
+        input.removeAttribute("required");
+        // Disabled fields are skipped by HTML5 constraint validation and not
+        // submitted — critical when the email panel stays in the DOM while
+        // the phone tab is active (and vice versa).
+        input.setAttribute("disabled", "");
+      }
     }
 
     function activate(mode) {
@@ -27,8 +35,14 @@
       });
       var hidden = root.querySelector('input[name="login_mode"]');
       if (hidden) hidden.value = mode;
-      setFieldRequired(root.querySelector('input[name="login_email"]'), mode === "email");
-      setFieldRequired(root.querySelector('input[name="phone_national"]'), mode === "phone");
+      setFieldActive(root.querySelector('input[name="login_email"]'), mode === "email");
+      setFieldActive(root.querySelector('input[name="phone_national"]'), mode === "phone");
+      // Country select is only meaningful for phone mode.
+      var country = root.querySelector('select[name="phone_country"], input[name="phone_country"]');
+      if (country) {
+        if (mode === "phone") country.removeAttribute("disabled");
+        else country.setAttribute("disabled", "");
+      }
     }
 
     tabs.forEach(function (tab) {

@@ -6,6 +6,7 @@
     - id (optional)
     - label (optional)
     - required (boolean)
+    - disabled (boolean) — skip validation/submit (login identifier inactive panel)
     - defaultCountry (ISO2, default ZM)
     - selectedCountry (ISO2)
     - nationalValue (string)
@@ -49,6 +50,7 @@
     : ((typeof phoneCountries !== 'undefined' && phoneCountries) || []);
   var labelText = (typeof label === 'string') ? label : 'Phone number';
   var isRequired = typeof required !== 'undefined' && required === true;
+  var isDisabled = typeof disabled !== 'undefined' && disabled === true;
   var hasError = typeof error !== 'undefined' && Boolean(error);
   var errorText = hasError ? error : '';
   var hintText = (typeof hint === 'string') ? hint : '';
@@ -83,7 +85,7 @@
   <div class="ac-phone-field__row">
     <div class="ac-phone-field__country">
       <label class="ac-sr-only" for="<%= fieldId %>-country">Country calling code</label>
-      <input type="hidden" name="<%= countryName %>" id="<%= fieldId %>-country-value" value="<%= countryVal %>" data-ac-phone-country-value="1"/>
+      <input type="hidden" name="<%= countryName %>" id="<%= fieldId %>-country-value" value="<%= countryVal %>" data-ac-phone-country-value="1"<%= isDisabled ? ' disabled' : '' %>/>
       <button
         type="button"
         class="ac-phone-field__country-btn"
@@ -144,8 +146,9 @@
         autocomplete="<%= isIdentifierMode ? 'username' : 'tel-national' %>"
         value="<%= nationalVal %>"
         placeholder="<%= placeholderText %>"
-        <%= isRequired ? 'required' : '' %>
-        <% if (isRequired) { %>aria-required="true"<% } %>
+        <%= isRequired && !isDisabled ? 'required' : '' %>
+        <%= isDisabled ? 'disabled' : '' %>
+        <% if (isRequired && !isDisabled) { %>aria-required="true"<% } %>
         <% if (hasError) { %>aria-invalid="true"<% } %>
         <% if (describedBy) { %>aria-describedby="<%= describedBy %>"<% } %>
         data-ac-phone-national="1"

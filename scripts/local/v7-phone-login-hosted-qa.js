@@ -15,7 +15,8 @@ const CASES = [
     product: "blessboard",
     base: "https://blessboard.pronline.org",
     email: "qa.organisation_administrator@demo-church.example.test",
-    phoneLocal: "0971000002",
+    // Same QA user as email (seed sequence +260971000001).
+    phoneLocal: "0971000001",
     expectPath: "/hq",
   },
   {
@@ -46,12 +47,14 @@ async function loginPhoneTab(page, base, phoneLocal) {
     return {
       login_mode: document.querySelector('input[name="login_mode"]')?.value,
       emailRequired: email?.required,
+      emailDisabled: email?.disabled,
       phoneRequired: phone?.required,
-      formValid: document.querySelector("form")?.checkValidity(),
+      phoneDisabled: phone?.disabled,
     };
   });
   await page.locator('input[name="phone_national"]').fill(phoneLocal);
   await page.locator('input[name="password"]').fill(PASS);
+  const formValid = await page.evaluate(() => document.querySelector("form")?.checkValidity());
   const resp = page.waitForResponse(
     (r) => r.request().method() === "POST" && r.url().includes("/login"),
     { timeout: 30000 }
@@ -60,7 +63,7 @@ async function loginPhoneTab(page, base, phoneLocal) {
   const r = await resp;
   await page.waitForTimeout(1500);
   return {
-    validity,
+    validity: { ...validity, formValid },
     status: r.status(),
     location: r.headers()["location"] || "",
     finalUrl: page.url(),
@@ -89,12 +92,25 @@ async function main() {
         const email = await loginEmail(page, c.base, c.email);
         await context.clearCookies();
         const phone = await loginPhoneTab(page, c.base, c.phoneLocal);
+        const emailPath = new URL(email.url).pathname;
+        const phonePath = new URL(phone.finalUrl).pathname;
+        const sameAccount =
+          emailPath.startsWith(c.expectPath) && phonePath.startsWith(c.expectPath);
         results.push({
           product: c.product,
           viewport: vp.label,
           email,
           phone,
-          pass: email.ok && phone.ok && phone.status === 303,
+          sameAccount,
+          pass:
+            email.ok &&
+            phone.ok &&
+            phone.status === 303 &&
+            sameAccount &&
+            phone.validity &&
+            phone.validity.emailDisabled === true &&
+            phone.validity.phoneDisabled === false &&
+            phone.validity.formValid === true,
         });
       } finally {
         await context.close();

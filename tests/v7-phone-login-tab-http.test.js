@@ -73,12 +73,13 @@ function extractCookie(res, name) {
 }
 
 describe("v7 phone login tab", () => {
-  it("gp-auth-reg.js toggles required on email vs phone inputs", () => {
+  it("gp-auth-reg.js toggles required/disabled on email vs phone inputs", () => {
     const js = read("public/platform/gp-auth-reg.js");
-    assert.match(js, /setFieldRequired/);
+    assert.match(js, /setFieldActive/);
     assert.match(js, /login_email/);
     assert.match(js, /phone_national/);
     assert.match(js, /mode === "phone"/);
+    assert.match(js, /setAttribute\("disabled"/);
   });
 
   it("resolveLoginIdentifierFromBody normalizes Zambia phone formats", () => {

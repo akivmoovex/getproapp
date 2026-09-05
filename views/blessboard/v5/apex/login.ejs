@@ -170,7 +170,7 @@
                   inputmode="email"
                   placeholder="name@church.example"
                   value="<%= typeof loginEmail !== 'undefined' ? loginEmail : (emailValue || '') %>"
-                  <% if (typeof loginMode === 'undefined' || loginMode !== 'phone') { %>required<% } %>
+                  <% if (typeof loginMode === 'undefined' || loginMode !== 'phone') { %>required<% } else { %>disabled<% } %>
                   <% if (errorState === 'credentials' || errorState === 'generic' || errorState === 'throttled') { %>
                   aria-invalid="true"
                   <% } %>
@@ -194,6 +194,7 @@
                 label: 'Phone number',
                 labelClass: '',
                 required: typeof loginMode !== 'undefined' && loginMode === 'phone',
+                disabled: typeof loginMode === 'undefined' || loginMode !== 'phone',
                 defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
                 selectedCountry: (typeof phoneCountry !== 'undefined' && phoneCountry) || 'ZM',
                 nationalValue: (typeof loginMode !== 'undefined' && loginMode === 'phone') ? (phoneNational || '') : '',
@@ -275,7 +276,7 @@
 
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
   <script src="/blessboard/v5/tenant-auth.js?v=2" defer></script>
-  <script src="/platform/gp-auth-reg.js?v=9" defer></script>
+  <script src="/platform/gp-auth-reg.js?v=10" defer></script>
   <script src="/activeclinic/ac-phone-field.js?v=7" defer></script>
 </body>
 </html>

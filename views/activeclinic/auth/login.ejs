@@ -70,7 +70,7 @@
             autocomplete="username"
             inputmode="email"
             value="<%= typeof loginEmail !== 'undefined' ? loginEmail : (typeof identifier !== 'undefined' ? identifier : '') %>"
-            <% if (typeof loginMode === 'undefined' || loginMode !== 'phone') { %>required<% } %>
+            <% if (typeof loginMode === 'undefined' || loginMode !== 'phone') { %>required<% } else { %>disabled<% } %>
             aria-invalid="<%= error ? 'true' : 'false' %>"
           />
         </div>
@@ -87,6 +87,7 @@
             id: 'login_phone',
             label: 'Phone number',
             required: typeof loginMode !== 'undefined' && loginMode === 'phone',
+            disabled: typeof loginMode === 'undefined' || loginMode !== 'phone',
             defaultCountry: defaultPhoneCountry || 'ZM',
             selectedCountry: phoneCountry || defaultPhoneCountry || 'ZM',
             nationalValue: (typeof loginMode !== 'undefined' && loginMode === 'phone') ? (identifier || '') : '',
