@@ -2495,7 +2495,11 @@ async function approveAndProvisionRegistrationApplication(db, input) {
   }
 
   const deploymentCode = (input && input.deploymentCode) || "blessboard-org-v5";
-  const dataEnvironment = (input && input.dataEnvironment) || "testing";
+  const dataEnvironment =
+    (input && input.dataEnvironment) ||
+    require("../../church/orgDataEnvironment").resolveRegistrationDataEnvironment(input && input.env, {
+      deploymentCode,
+    });
   const provisionFn = (input && input.provisionFn) || provisionRegisteredBlessBoardChurch;
 
   let appSnapshot = null;

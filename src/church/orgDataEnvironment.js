@@ -113,6 +113,62 @@ function isNonProductionEnvironment(orgOrEnv) {
 }
 
 /**
+ * Authoritative data_environment for new self-registered organizations.
+ *
+ * Prefer deployment profile / DEPLOYMENT_ENV via getDeploymentEnvMode — never
+ * silently default to testing when the runtime is production.
+ * Explicit PLATFORM_DATA_ENVIRONMENT / DATA_ENVIRONMENT may select pilot|demo;
+ * production|testing explicit values are accepted only when they match the
+ * authoritative deployment mode (avoids Hostinger misconfig flipping prod→testing).
+ *
+ * @param {NodeJS.ProcessEnv|object|null|undefined} env
+ * @param {{ explicit?: unknown, deploymentCode?: unknown }} [opts]
+ * @returns {"production"|"testing"|"pilot"|"demo"}
+ */
+function resolveRegistrationDataEnvironment(env, opts = {}) {
+  const { getDeploymentEnvMode } = require("./blessBoardEnv");
+  const mode = getDeploymentEnvMode(env);
+  const explicitRaw = String(
+    (opts && opts.explicit != null ? opts.explicit : "") ||
+      (env && env.PLATFORM_DATA_ENVIRONMENT) ||
+      (env && env.DATA_ENVIRONMENT) ||
+      ""
+  )
+    .trim()
+    .toLowerCase();
+  const explicit = explicitRaw === "test" ? "testing" : explicitRaw;
+
+  if (explicit === "pilot" || explicit === "demo") {
+    return explicit;
+  }
+  if (explicit === "production" || explicit === "testing") {
+    if (explicit === mode) return explicit;
+    // eslint-disable-next-line no-console
+    console.warn(
+      `[blessboard] ignoring data-environment override "${explicit}" that contradicts deployment mode "${mode}"`
+    );
+  }
+
+  if (!explicit && opts && opts.deploymentCode) {
+    const code = String(opts.deploymentCode || "")
+      .trim()
+      .toLowerCase();
+    if (code.includes("production") || code === "blessboard-com-production") {
+      return "production";
+    }
+    if (
+      code.includes("testing") ||
+      code.includes("staging") ||
+      code.includes("pronline")
+    ) {
+      return "testing";
+    }
+  }
+
+  return mode === "testing" ? "testing" : "production";
+}
+
+/**
  * SQL fragment: organisation alias must be `o` (or pass alias).
  * Production deployments: production + pilot only (never testing/demo).
  * Testing deployments: production + pilot + demo + testing (+ legacy `test`).
@@ -184,6 +240,7 @@ module.exports = {
   isDemoEnvironment,
   isTestEnvironment,
   isNonProductionEnvironment,
+  resolveRegistrationDataEnvironment,
   sqlPublicDirectoryEnvironmentFilter,
   sqlPublicDirectoryProductionDemoNameExclusion,
   sqlReportAggregateEnvironmentFilter,

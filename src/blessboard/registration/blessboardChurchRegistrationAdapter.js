@@ -330,8 +330,13 @@ async function provision(db, input) {
       actorContext: {
         type: "public_self_registration",
         source: "register_church",
-        dataEnvironment: input.dataEnvironment || "testing",
+        dataEnvironment:
+          input.dataEnvironment ||
+          require("../../church/orgDataEnvironment").resolveRegistrationDataEnvironment(input.env, {
+            deploymentCode: input.deploymentCode,
+          }),
         deploymentCode: input.deploymentCode || "blessboard-org-v5",
+        env: input.env || null,
       },
     },
     { allowRetry: true }

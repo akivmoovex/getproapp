@@ -661,10 +661,16 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
   const allowRetry = Boolean(options && options.allowRetry);
   const networkOrganizationShell = Boolean(options && options.networkOrganizationShell);
   const administratorViaInvitation = Boolean(options && options.administratorViaInvitation);
-  const dataEnvironment = String(actorContext.dataEnvironment || "testing")
+  const deploymentCode = String(actorContext.deploymentCode || DEFAULT_DEPLOYMENT)
     .trim()
     .toLowerCase();
-  const deploymentCode = String(actorContext.deploymentCode || DEFAULT_DEPLOYMENT)
+  const dataEnvironment = String(
+    actorContext.dataEnvironment ||
+      require("../../church/orgDataEnvironment").resolveRegistrationDataEnvironment(
+        actorContext.env,
+        { deploymentCode }
+      )
+  )
     .trim()
     .toLowerCase();
   const invitingActorUserId =

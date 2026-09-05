@@ -421,7 +421,10 @@ async function submitChurchRegistration(pool, req, validationResult, opts = {}) 
       },
       env: opts.env || {},
       deploymentCode: opts.deploymentCode || "blessboard-org-staging",
-      dataEnvironment: opts.dataEnvironment || "testing",
+      dataEnvironment: opts.dataEnvironment ||
+        require("../../church/orgDataEnvironment").resolveRegistrationDataEnvironment(opts.env, {
+          deploymentCode: opts.deploymentCode,
+        }),
     });
   } catch (err) {
     return mapRegistrationPersistError(req, err);

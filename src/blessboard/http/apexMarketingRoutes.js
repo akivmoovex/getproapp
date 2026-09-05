@@ -336,12 +336,15 @@ function createApexMarketingRouter(deps) {
     typeof deps.consumeVerificationToken === "function"
       ? deps.consumeVerificationToken
       : consumeVerificationToken;
-  const dataEnvironment = String(env.PLATFORM_DATA_ENVIRONMENT || env.DATA_ENVIRONMENT || "testing")
-    .trim()
-    .toLowerCase();
   const deploymentCode = String(env.PLATFORM_DEPLOYMENT_CODE || "blessboard-org-v5")
     .trim()
     .toLowerCase();
+  // Derive from authoritative deployment profile / DEPLOYMENT_ENV — never fall
+  // back to testing when the runtime is moovex-platform-production.
+  const {
+    resolveRegistrationDataEnvironment,
+  } = require("../../church/orgDataEnvironment");
+  const dataEnvironment = resolveRegistrationDataEnvironment(env, { deploymentCode });
 
   function issueAndSetCsrf(req, res) {
     const csrfToken = issueToken(env);

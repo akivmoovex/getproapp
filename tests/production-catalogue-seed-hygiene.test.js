@@ -66,6 +66,28 @@ describe("production catalogue seed hygiene", () => {
     assert.doesNotMatch(sql, /DELETE\s+FROM\s+blessboard\.public_pages/i);
   });
 
+  it("seed 008 is production-gated and inserts moovex-platform-production", () => {
+    const sql = fs.readFileSync(
+      path.join(ROOT, "db/seeds/008_moovex_platform_production_deployment.sql"),
+      "utf8"
+    );
+    assert.match(sql, /env_code IS DISTINCT FROM 'production'/);
+    assert.match(sql, /'moovex-platform-production'/);
+    assert.match(sql, /moovex_platform_production_sid/);
+    assert.match(sql, /ON CONFLICT \(deployment_code\) DO UPDATE/);
+    assert.match(sql, /environment_code = 'production'/);
+    // Must not INSERT the testing unified code (comment mentions are OK).
+    assert.doesNotMatch(
+      sql,
+      /INSERT INTO platform\.deployments[\s\S]*'moovex-platform-testing'/i
+    );
+  });
+
+  it("seed 006 still omits moovex-platform-production (checksum-stable; 008 owns the row)", () => {
+    const s006 = fs.readFileSync(path.join(ROOT, "db/seeds/006_v7_unified_deployments.sql"), "utf8");
+    assert.doesNotMatch(s006, /moovex-platform-production/);
+  });
+
   it("testing identity keeps testing catalogue rows after 007", async () => {
     requireDb();
     await pool.query(
@@ -119,5 +141,46 @@ describe("production catalogue seed hygiene", () => {
     await pool.query(
       `UPDATE platform.database_identity SET environment_code = 'testing'`
     );
+  });
+
+  it("production identity seed 008 ensures moovex-platform-production active", async () => {
+    requireDb();
+    await pool.query(
+      `UPDATE platform.database_identity SET environment_code = 'production'`
+    );
+    // Simulate pre-fix catalogue: remove the row if migrate already applied 008.
+    await pool.query(
+      `DELETE FROM platform.deployments WHERE deployment_code = 'moovex-platform-production'`
+    );
+    const sql = fs.readFileSync(
+      path.join(ROOT, "db/seeds/008_moovex_platform_production_deployment.sql"),
+      "utf8"
+    );
+    await pool.query(sql);
+    await pool.query(sql);
+
+    const row = await pool.query(
+      `SELECT status, environment_code, application_code, session_cookie_name, canonical_domain
+         FROM platform.deployments WHERE deployment_code = 'moovex-platform-production'`
+    );
+    assert.equal(row.rowCount, 1);
+    assert.equal(row.rows[0].status, "active");
+    assert.equal(row.rows[0].environment_code, "production");
+    assert.equal(row.rows[0].application_code, "platform");
+    assert.equal(row.rows[0].session_cookie_name, "moovex_platform_production_sid");
+    assert.ok(String(row.rows[0].canonical_domain || "").length > 0);
+
+    // Testing identity must not insert/activate the production unified row via 008.
+    await pool.query(
+      `DELETE FROM platform.deployments WHERE deployment_code = 'moovex-platform-production'`
+    );
+    await pool.query(
+      `UPDATE platform.database_identity SET environment_code = 'testing'`
+    );
+    await pool.query(sql);
+    const absent = await pool.query(
+      `SELECT 1 FROM platform.deployments WHERE deployment_code = 'moovex-platform-production'`
+    );
+    assert.equal(absent.rowCount, 0);
   });
 });
