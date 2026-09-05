@@ -14,7 +14,8 @@
     - countries (optional array of {iso,name,callingCode})
     - hint (optional)
     - error (optional)
-    - showLegacyHidden (default true) — also emit name=phone for back-compat when no prefix
+    - showLegacyHidden (default false) — optional empty name=phone for rare back-compat only
+      Split fields phone_country + phone_national are authoritative.
     - identifierMode (boolean) — national input named "identifier" for login (phone or email)
     - identifierName (default identifier when identifierMode)
     - phoneValidationRelaxed (boolean) — show testing banner
@@ -54,7 +55,7 @@
   var hasError = typeof error !== 'undefined' && Boolean(error);
   var errorText = hasError ? error : '';
   var hintText = (typeof hint === 'string') ? hint : '';
-  var showLegacy = !(typeof showLegacyHidden !== 'undefined' && showLegacyHidden === false);
+  var showLegacy = typeof showLegacyHidden !== 'undefined' && showLegacyHidden === true;
   var showRelaxed = typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed === true;
   var placeholderText = (typeof placeholder === 'string') ? placeholder : '97 123 4567';
   var callingHint = '';

@@ -39,7 +39,7 @@
         e164Value: (profile && (profile.phoneNormalized || profile.phoneDisplay)) || '',
         countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
         phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
-        showLegacyHidden: true,
+        showLegacyHidden: false,
         hint: 'Changing phone updates your patient contact record. Login identity rules may still require clinic verification.'
       }) %>
     </div>

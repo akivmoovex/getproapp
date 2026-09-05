@@ -270,6 +270,35 @@ describe("V7 provisioning recovery", () => {
     });
     assert.equal(result.failedStage, STAGE.MEMBERSHIPS);
 
+    // Primary facility with a non-hq key still satisfies FACILITY_HQ.
+    replies.facility = {
+      id: "fac-primary",
+      facility_key: "lusaka",
+      status: "active",
+      is_primary: true,
+    };
+    replies.membership = { id: "mem-1" };
+    replies.departments = { n: 8 };
+    replies.website = { id: "web-1", status: "coming_soon" };
+    replies.content = { n: 12 };
+    result = await inspectOrganizationProvisioningCompleteness(db, {
+      productCode: PRODUCT.ACTIVECLINIC,
+      organizationId: "00000000-0000-4000-8000-000000000001",
+      application: { clinic_admin_staff_id: "staff-1", provisioning_status: "provisioned" },
+    });
+    assert.equal(result.complete, true);
+    assert.equal(result.failedStage, null);
+    assert.equal(result.details.facilityKey, "lusaka");
+
+    replies.facility = { id: "fac-1", facility_key: "hq", status: "active" };
+    replies.membership = null;
+    result = await inspectOrganizationProvisioningCompleteness(db, {
+      productCode: PRODUCT.ACTIVECLINIC,
+      organizationId: "00000000-0000-4000-8000-000000000001",
+      application: { clinic_admin_staff_id: "staff-1", provisioning_status: "failed" },
+    });
+    assert.equal(result.failedStage, STAGE.MEMBERSHIPS);
+
     replies.membership = { id: "mem-1" };
     replies.departments = { n: 3 };
     result = await inspectOrganizationProvisioningCompleteness(db, {

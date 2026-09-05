@@ -132,17 +132,25 @@ async function inspectActiveClinic(db, organizationId, application, staffMemberI
     stages[STAGE.ROLE_ASSIGNMENT] = Boolean(role);
   }
 
+  // HQ stage = active facility keyed "hq" OR the designated primary facility.
+  // Demo/Julflona seeds historically used non-hq keys (e.g. lusaka) while still
+  // marking is_primary; clinic-setup checklist already treats primary as HQ.
   const facility = await queryOne(
     db,
-    `SELECT f.id, f.facility_key, f.status
+    `SELECT f.id, f.facility_key, f.status, f.is_primary
        FROM activeclinic.facilities f
       WHERE f.organization_id = $1
-        AND f.facility_key = 'hq'
+        AND f.status = 'active'
+        AND (f.facility_key = 'hq' OR f.is_primary = true)
+      ORDER BY CASE WHEN f.facility_key = 'hq' THEN 0 ELSE 1 END,
+               CASE WHEN f.is_primary THEN 0 ELSE 1 END,
+               f.created_at ASC
       LIMIT 1`,
     [organizationId]
   );
-  stages[STAGE.FACILITY_HQ] = Boolean(facility && facility.status === "active");
+  stages[STAGE.FACILITY_HQ] = Boolean(facility);
   details.facilityId = facility ? facility.id : null;
+  details.facilityKey = facility ? facility.facility_key : null;
 
   if (adminStaff && facility) {
     const membership = await queryOne(

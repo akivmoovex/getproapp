@@ -370,6 +370,19 @@ describe("AC staff invite phone validation", () => {
         });
     }
 
+    it("staff invite form does not emit legacy hidden phone field", async () => {
+      if (skip) return;
+      const get = await request(app)
+        .get("/app/staff/invite")
+        .set("Host", AC_HOST)
+        .set("Cookie", adminCookie);
+      assert.equal(get.status, 200);
+      assert.match(get.text, /name="phone_national"/);
+      assert.match(get.text, /name="phone_country"/);
+      assert.doesNotMatch(get.text, /data-ac-phone-legacy/);
+      assert.doesNotMatch(get.text, /name="phone"/);
+    });
+
     it("POST with ZM + 977198697 creates invitation (empty legacy phone)", async () => {
       if (skip) return;
       const res = await postInvite({ phone_national: "977198697" });

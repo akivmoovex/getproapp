@@ -216,6 +216,8 @@ async function inviteActiveClinicStaff(db, input) {
         preferredName: src.preferredName,
         displayName: src.displayName,
         phone: src.phone,
+        phoneCountry: src.phoneCountry || null,
+        phoneNational: src.phoneNational || null,
         email: src.email,
         employmentType: src.employmentType,
         jobTitle: src.jobTitle,

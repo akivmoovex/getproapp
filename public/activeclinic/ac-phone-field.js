@@ -59,19 +59,6 @@
       btn.setAttribute("aria-expanded", "false");
     }
     closePopover(root);
-    syncLegacy(root);
-  }
-
-  function syncLegacy(root) {
-    var legacy = root.querySelector("[data-ac-phone-legacy]");
-    if (!legacy) return;
-    var national = root.querySelector("[data-ac-phone-national]");
-    var n = national ? String(national.value || "").trim() : "";
-    if (!n || n.indexOf("@") !== -1) {
-      legacy.value = "";
-      return;
-    }
-    legacy.value = "";
   }
 
   function filterOptions(root, query) {
@@ -191,12 +178,10 @@
 
     if (national) {
       national.addEventListener("input", function () {
-        syncLegacy(root);
-      });
+          });
       national.addEventListener("focus", syncKeyboardInset);
     }
 
-    syncLegacy(root);
   }
 
   function boot() {
