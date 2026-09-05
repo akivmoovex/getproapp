@@ -38,9 +38,6 @@ const {
   resolveIdentityForLogin,
 } = require("./authenticateActiveClinicIdentity");
 const {
-  normalizeRegistrationPhone,
-} = require("../../blessboard/services/normalizeRegistrationPhone");
-const {
   normalizeActiveClinicPhone,
 } = require("./normalizeActiveClinicContact");
 const {
@@ -220,34 +217,24 @@ function assessPassword(password) {
 }
 
 /**
- * Validate QA phone with login normalizer + ActiveClinic staff E.164 helper.
- * Does not weaken either policy.
+ * Validate QA phone with shared ActiveClinic/platform normalizer.
+ * Does not weaken existing E.164 policy.
  */
 function assessQaPhone(rawPhone) {
-  const loginPhone = normalizeRegistrationPhone(rawPhone);
-  if (!loginPhone.ok) {
+  const loginPhone = normalizeActiveClinicPhone(rawPhone, { country: "ZM" });
+  if (!loginPhone.ok || !loginPhone.normalized) {
     return {
       ok: false,
       code: RESULT.PHONE_REJECTED,
       message: "QA_PHONE_FORMAT_REJECTED_BY_EXISTING_POLICY",
-      reason: loginPhone.error || "login_phone_invalid",
+      reason: loginPhone.error || loginPhone.code || "login_phone_invalid",
       acceptedFormat: "E.164 e.g. +260970000001 (Zambia national forms also normalize for login)",
-    };
-  }
-  const staffPhone = normalizeActiveClinicPhone(loginPhone.normalized);
-  if (!staffPhone.ok) {
-    return {
-      ok: false,
-      code: RESULT.PHONE_REJECTED,
-      message: "QA_PHONE_FORMAT_REJECTED_BY_EXISTING_POLICY",
-      reason: staffPhone.code,
-      acceptedFormat: "E.164 required for ActiveClinic staff contact (+260…)",
     };
   }
   return {
     ok: true,
     normalized: loginPhone.normalized,
-    display: staffPhone.display,
+    display: loginPhone.display,
   };
 }
 

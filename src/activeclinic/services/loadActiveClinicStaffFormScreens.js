@@ -36,6 +36,9 @@ const {
 const {
   summarizePermissionsForRoleKeys,
 } = require("./activeClinicInviteAccessReview");
+const {
+  normalizeActiveClinicPhone,
+} = require("./normalizeActiveClinicContact");
 
 function hasPerm(perms, key) {
   return Array.isArray(perms) ? perms.includes(key) : false;
@@ -160,9 +163,30 @@ function validateStaffFormValues(values, opts) {
     fieldErrors.last_name = "Enter a last name.";
     errors.push("Last name is required.");
   }
-  if (!values.phone) {
-    fieldErrors.phone = "Enter a phone number.";
-    errors.push("Phone is required.");
+  // Split phone UI submits phone_country + phone_national; legacy hidden `phone`
+  // is intentionally cleared by ac-phone-field.js. Validate via the shared
+  // normalizer so a filled national number is never treated as "required".
+  const phoneCheck = normalizeActiveClinicPhone({
+    phone: values.phone || null,
+    phoneCountry: values.phoneCountry || null,
+    phoneNational: values.phoneNational || null,
+  });
+  if (!phoneCheck.ok) {
+    if (phoneCheck.code === "phone_required") {
+      fieldErrors.phone = "Phone number is required.";
+      errors.push("Phone number is required.");
+    } else {
+      fieldErrors.phone = "Enter a valid phone number.";
+      errors.push("Enter a valid phone number.");
+    }
+  } else {
+    values.phone = phoneCheck.normalized;
+    if (!values.phoneNational && phoneCheck.national) {
+      values.phoneNational = phoneCheck.national;
+    }
+    if (!values.phoneCountry && phoneCheck.country) {
+      values.phoneCountry = phoneCheck.country;
+    }
   }
   if (!EMPLOYMENT_TYPES.includes(values.employmentType)) {
     fieldErrors.employment_type = "Choose a valid employment type.";

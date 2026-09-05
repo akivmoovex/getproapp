@@ -13,8 +13,8 @@ const {
   isIdentityUsable,
 } = require("../../platform/services/platformIdentityService");
 const {
-  normalizeRegistrationPhone,
-} = require("../../blessboard/services/normalizeRegistrationPhone");
+  normalizeActiveClinicPhone,
+} = require("./normalizeActiveClinicContact");
 const {
   setPlatformIdentityPassword,
 } = require("../../platform/services/platformIdentityCredentialService");
@@ -86,9 +86,14 @@ async function registerPatientWithGuestToken(db, input) {
     return { ok: false, code: RESULT.WEAK_PASSWORD, message: "password_too_short" };
   }
 
-  const phoneNorm = normalizeRegistrationPhone(phoneRaw, input.country || "ZM");
-  if (!phoneNorm.ok) {
-    return { ok: false, code: RESULT.PHONE_REQUIRED };
+  const phoneNorm = normalizeActiveClinicPhone(phoneRaw, {
+    country: input.country || "ZM",
+  });
+  if (!phoneNorm.ok || !phoneNorm.normalized) {
+    return {
+      ok: false,
+      code: phoneNorm.code === "phone_required" ? RESULT.PHONE_REQUIRED : RESULT.INVALID_INPUT,
+    };
   }
 
   const verified = await verifyBookingAccessToken(db, { token: guestToken });
@@ -282,9 +287,14 @@ async function registerPatientWithPhoneMatch(db, input) {
     return { ok: false, code: RESULT.WEAK_PASSWORD, message: "password_too_short" };
   }
 
-  const phoneNorm = normalizeRegistrationPhone(phoneRaw, input.country || "ZM");
-  if (!phoneNorm.ok) {
-    return { ok: false, code: RESULT.PHONE_REQUIRED };
+  const phoneNorm = normalizeActiveClinicPhone(phoneRaw, {
+    country: input.country || "ZM",
+  });
+  if (!phoneNorm.ok || !phoneNorm.normalized) {
+    return {
+      ok: false,
+      code: phoneNorm.code === "phone_required" ? RESULT.PHONE_REQUIRED : RESULT.INVALID_INPUT,
+    };
   }
 
   const existingIdentity = await identityRepo.findIdentitiesByNormalizedContact(db, {

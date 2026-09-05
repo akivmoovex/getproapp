@@ -9,8 +9,8 @@ const {
   normalizeEmail,
 } = require("../../platform/services/platformIdentityService");
 const {
-  normalizeRegistrationPhone,
-} = require("../../blessboard/services/normalizeRegistrationPhone");
+  normalizeActiveClinicPhone,
+} = require("./normalizeActiveClinicContact");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -117,11 +117,12 @@ async function updatePatientProfile(db, input) {
   }
 
   if (input.phone !== undefined && (input.phone || input.phoneNational)) {
-    const phoneNorm = normalizeRegistrationPhone(
-      input.phoneNational || input.phone,
-      input.phoneCountry || input.country || "ZM"
-    );
-    if (!phoneNorm.ok) {
+    const phoneNorm = normalizeActiveClinicPhone({
+      phone: input.phone || null,
+      phoneNational: input.phoneNational || null,
+      phoneCountry: input.phoneCountry || input.country || "ZM",
+    });
+    if (!phoneNorm.ok || !phoneNorm.normalized) {
       return { ok: false, code: RESULT.INVALID_INPUT, message: "invalid_phone" };
     }
     updates.push(`phone_normalized = $${paramIndex++}`);
