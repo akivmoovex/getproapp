@@ -138,6 +138,95 @@ async function truncateActiveClinicSchema(pool) {
   return { ok: true, truncated: tables.rows.length, tables: tables.rows.map((r) => r.qname) };
 }
 
+/**
+ * After AC schema truncate + BB org purge, platform.identities can remain as
+ * orphans (no staff/patient/BB user link). Truncate skips identity cleanup;
+ * this step removes only unreferenced identities and their tokens/sessions/
+ * product profiles. Never deletes identities still linked to remaining users.
+ *
+ * @param {{ query: Function }} client
+ */
+async function purgeOrphanPlatformIdentities(client) {
+  const linked = await client.query(
+    `SELECT platform_identity_id AS id
+       FROM blessboard.users
+      WHERE platform_identity_id IS NOT NULL
+     UNION
+     SELECT platform_identity_id
+       FROM activeclinic.staff_members
+      WHERE platform_identity_id IS NOT NULL
+     UNION
+     SELECT platform_identity_id
+       FROM activeclinic.patients
+      WHERE platform_identity_id IS NOT NULL`
+  );
+  const keepIds = linked.rows.map((r) => String(r.id)).filter(Boolean);
+
+  const orphans = await client.query(
+    `SELECT id
+       FROM platform.identities
+      WHERE cardinality($1::uuid[]) = 0
+         OR NOT (id = ANY($1::uuid[]))`,
+    [keepIds]
+  );
+  const orphanIds = orphans.rows.map((r) => String(r.id));
+
+  // Always clear all deployment sessions on testing reset (deterministic QA).
+  const allSessions = await client.query(`DELETE FROM platform.deployment_sessions RETURNING id`);
+
+  if (!orphanIds.length) {
+    return {
+      ok: true,
+      orphanIdentitiesDeleted: 0,
+      sessionsCleared: allSessions.rowCount || 0,
+      tokensCleared: 0,
+      profilesCleared: 0,
+      transfersCleared: 0,
+    };
+  }
+
+  const tokens = await client.query(
+    `DELETE FROM platform.identity_action_tokens
+      WHERE platform_identity_id = ANY($1::uuid[])
+         OR created_by_platform_identity_id = ANY($1::uuid[])
+      RETURNING id`,
+    [orphanIds]
+  );
+  const profiles = await client.query(
+    `DELETE FROM platform.identity_product_profiles
+      WHERE identity_id = ANY($1::uuid[])
+      RETURNING identity_id`,
+    [orphanIds]
+  );
+  let transfersCleared = 0;
+  try {
+    const transfers = await client.query(
+      `DELETE FROM platform.auth_transfers
+        WHERE platform_identity_id = ANY($1::uuid[])
+        RETURNING id`,
+      [orphanIds]
+    );
+    transfersCleared = transfers.rowCount || 0;
+  } catch (_err) {
+    transfersCleared = 0;
+  }
+  const deleted = await client.query(
+    `DELETE FROM platform.identities
+      WHERE id = ANY($1::uuid[])
+      RETURNING id`,
+    [orphanIds]
+  );
+
+  return {
+    ok: true,
+    orphanIdentitiesDeleted: deleted.rowCount || 0,
+    sessionsCleared: allSessions.rowCount || 0,
+    tokensCleared: tokens.rowCount || 0,
+    profilesCleared: profiles.rowCount || 0,
+    transfersCleared,
+  };
+}
+
 async function listAcOrgKeys(pool) {
   const r = await pool.query(
     `SELECT o.organization_key
@@ -326,10 +415,14 @@ async function main() {
         `DELETE FROM activeclinic.clinic_registration_applications
           WHERE organization_id IS NULL`
       );
+      const orphanPurge = await purgeOrphanPlatformIdentities(client);
       await client.query("COMMIT");
 
       const postOrgs = await client.query(
         `SELECT count(*)::int AS n FROM platform.organizations`
+      );
+      const postIdentities = await client.query(
+        `SELECT count(*)::int AS n FROM platform.identities`
       );
       const postIdentity = await client.query(
         `SELECT identity_key, environment_code FROM platform.database_identity LIMIT 1`
@@ -346,6 +439,8 @@ async function main() {
         identity: postIdentity.rows[0],
         schemaMigrations: postMigrations.rows[0].n,
         organizationsRemaining: postOrgs.rows[0].n,
+        identitiesRemaining: postIdentities.rows[0].n,
+        orphanIdentityPurge: orphanPurge,
         registrationsDeleted: regs,
         invitationsDeleted: invites,
         acResults,
