@@ -464,8 +464,8 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       passwordConfirm: ADMIN_PASSWORD,
       acceptTerms: "on",
     });
-    assert.equal(dup.ok, false);
-    assert.equal(dup.code, "duplicate_application");
+    assert.equal(dup.ok, true, JSON.stringify(dup));
+    assert.notEqual(dup.application.id, first.created.id);
 
     const rejected = await rejectClinicRegistration(pool, {
       applicationId: first.created.id,

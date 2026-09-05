@@ -347,8 +347,8 @@ describe("v7 new tenant provisioning audit", () => {
     assert.equal(deptsAgain.created, 0);
 
     const duplicateSubmit = await submitAndProvisionClinicRegistration(pool, payload);
-    assert.equal(duplicateSubmit.ok, false);
-    assert.equal(duplicateSubmit.code, "duplicate_application");
+    assert.equal(duplicateSubmit.ok, true, JSON.stringify(duplicateSubmit));
+    assert.equal(duplicateSubmit.organizationId, result.organizationId);
 
     assert.equal(await count(`SELECT count(*)::int AS n FROM platform.organizations WHERE id = $1`, [result.organizationId]), 1);
     assert.equal(

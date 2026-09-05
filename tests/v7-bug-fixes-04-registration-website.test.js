@@ -216,14 +216,14 @@ describe("BUG FIXES 04 registration and website versions", () => {
     assert.ok(role.rows.some((row) => row.role_key === ORGANIZATION_ADMIN));
   });
 
-  it("6 duplicate registration remains blocked", async () => {
+  it("6 exact clinic retry soft-reuses without a second application", async () => {
     if (!requireDb()) return;
     const payload = clinicPayload();
     const first = await submitAndProvisionClinicRegistration(pool, payload);
     assert.equal(first.ok, true, JSON.stringify(first));
     const second = await submitAndProvisionClinicRegistration(pool, payload);
-    assert.equal(second.ok, false);
-    assert.equal(second.code, "duplicate_application");
+    assert.equal(second.ok, true, JSON.stringify(second));
+    assert.equal(second.organizationId, first.organizationId);
   });
 
   it("7 invalid registration remains blocked", async () => {
@@ -236,7 +236,7 @@ describe("BUG FIXES 04 registration and website versions", () => {
     assert.ok(invalid.errors && (invalid.errors.clinicName || invalid.errors.password));
   });
 
-  it("8 exceptional existing-identity registration enters review_required", async () => {
+  it("8 existing-identity registration without password is rejected explicitly", async () => {
     if (!requireDb()) return;
     const payload = clinicPayload();
     const identity = await createPlatformIdentity(pool, {
@@ -250,10 +250,8 @@ describe("BUG FIXES 04 registration and website versions", () => {
     });
     assert.equal(identity.ok, true, JSON.stringify(identity));
     const held = await submitAndProvisionClinicRegistration(pool, payload);
-    assert.equal(held.ok, true, JSON.stringify(held));
-    assert.equal(held.reviewRequired, true);
-    assert.equal(held.application.status, "review_required");
-    assert.equal(held.organizationId || null, null);
+    assert.equal(held.ok, false, JSON.stringify(held));
+    assert.equal(held.code, "existing_account_requires_sign_in");
   });
 
   it("9 Platform Admin can still approve or reject review_required", async () => {

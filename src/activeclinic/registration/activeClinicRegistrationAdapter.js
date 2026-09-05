@@ -4,6 +4,7 @@ const { PRODUCT, REVIEW_REASON, LIFECYCLE } = require("../../platform/registrati
 const {
   validateClinicRegistrationInput,
   createClinicRegistrationApplication,
+  findSoftTwinClinicRegistrationApplication,
 } = require("../services/activeClinicPublicOnboardingService");
 const {
   approveAndProvisionClinicRegistration,
@@ -12,6 +13,10 @@ const {
 const {
   resolveClinicRegistrationIdentityCollision,
 } = require("../services/clinicRegistrationIdentityCollisionService");
+const {
+  ACTION: IDENTITY_ACTION,
+  resolveActiveClinicRegistrationAdministrator,
+} = require("../services/resolveActiveClinicRegistrationAdministrator");
 const { appendReviewEvent } = require("../services/clinicRegistrationReviewService");
 const { ensureDefaultDepartments } = require("../services/activeClinicDepartmentService");
 const { CODE_ACTIVECLINIC_ORG_V6 } = require("../../platform/config/deploymentProfiles");
@@ -25,6 +30,18 @@ const { FACILITY_TYPES } = require("../services/facilityService");
 
 const productCode = PRODUCT.ACTIVECLINIC;
 
+function administratorPasswordFrom(input) {
+  const normalized = (input && input.normalized) || {};
+  const payload = (input && input.payload) || {};
+  return (
+    normalized.password ||
+    payload.password ||
+    payload.administratorPassword ||
+    payload.administrator_password ||
+    null
+  );
+}
+
 async function validate(payload) {
   const result = validateClinicRegistrationInput(payload || {}, { requireTermsAcceptance: true });
   if (!result.ok) {
@@ -33,28 +50,88 @@ async function validate(payload) {
   return { ok: true, normalized: { ...result.normalized, password: result.password }, data: result.normalized };
 }
 
-async function findDuplicate(db, normalized) {
-  const email = normalized && normalized.contactEmail;
-  const phone = normalized && normalized.contactPhone;
-  if (!email && !phone) return { block: false };
-  const rows = await db.query(
-    `SELECT id, application_number, status, organization_id, provisioning_status
-       FROM activeclinic.clinic_registration_applications
-      WHERE created_at > now() - interval '30 days'
-        AND status NOT IN ('rejected', 'withdrawn')
-        AND (
-          contact_email_normalized = $1
-          OR contact_phone_normalized = $2
-        )
-      ORDER BY created_at DESC
-      LIMIT 1`,
-    [email || null, phone || null]
-  );
-  if (!rows.rows[0]) return { block: false };
-  return { block: true, application: rows.rows[0] };
+/**
+ * Do not hard-block on contact alone. Soft twins are returned from persistSubmitted
+ * so the orchestrator can re-enter provisioning (same-clinic retry).
+ */
+async function findDuplicate() {
+  return { block: false };
 }
 
 async function persistSubmitted(db, input) {
+  const normalized = input.normalized || {};
+  const password = administratorPasswordFrom(input);
+
+  const softTwin = await findSoftTwinClinicRegistrationApplication(db, {
+    clinicName: normalized.clinicName || (input.payload && input.payload.clinicName),
+    contactEmail: normalized.contactEmail || null,
+    contactPhone: normalized.contactPhone || null,
+  });
+  if (softTwin) {
+    return {
+      ok: true,
+      duplicate: true,
+      application: {
+        id: softTwin.id,
+        applicationNumber: softTwin.application_number,
+        application_number: softTwin.application_number,
+        status: softTwin.status,
+        organization_id: softTwin.organization_id,
+        organizationId: softTwin.organization_id,
+        provisioning_status: softTwin.provisioning_status,
+        clinic_name: softTwin.clinic_name,
+        contact_email: softTwin.contact_email_normalized,
+        contactEmail: softTwin.contact_email_normalized,
+        contact_phone: softTwin.contact_phone_normalized,
+        contactPhone: softTwin.contact_phone_normalized,
+        clinic_admin_staff_id: softTwin.clinic_admin_staff_id,
+        createdAt: softTwin.created_at,
+        created_at: softTwin.created_at,
+      },
+    };
+  }
+
+  const preResolve = await resolveActiveClinicRegistrationAdministrator(db, {
+    email: normalized.contactEmail || null,
+    phoneNormalized: normalized.contactPhone || null,
+    clinicName: normalized.clinicName || (input.payload && input.payload.clinicName) || null,
+    administratorPassword: password,
+    actorKind: "public_self_registration",
+  });
+  if (preResolve.action === IDENTITY_ACTION.REJECT_IDENTITY_CONFLICT) {
+    return {
+      ok: false,
+      code: "identity_conflict",
+      error: "Email and phone belong to different accounts.",
+      field: "contactEmail",
+      errors: {
+        contactEmail: "Email and phone belong to different accounts.",
+        contactPhone: "Email and phone belong to different accounts.",
+      },
+    };
+  }
+  if (
+    preResolve.action === IDENTITY_ACTION.REJECT_EXISTING_ACCOUNT &&
+    (preResolve.reason === "existing_account_password_mismatch" ||
+      preResolve.reason === "existing_account_requires_sign_in")
+  ) {
+    return {
+      ok: false,
+      code: preResolve.reason,
+      error:
+        preResolve.reason === "existing_account_password_mismatch"
+          ? "That password does not match the existing account."
+          : "An account already exists for this contact. Sign in with your existing password.",
+      field: "password",
+      errors: {
+        password:
+          preResolve.reason === "existing_account_password_mismatch"
+            ? "That password does not match the existing account."
+            : "An account already exists for this contact. Sign in with your existing password.",
+      },
+    };
+  }
+
   const created = await createClinicRegistrationApplication(db, {
     ...(input.payload || {}),
     ...(input.normalized || {}),
@@ -67,17 +144,24 @@ async function persistSubmitted(db, input) {
       application: created.application || null,
     };
   }
-  return { ok: true, application: {
-    ...created.application,
-    clinic_name: created.application.clinic_name || (input.normalized && input.normalized.clinicName) || (input.payload && input.payload.clinicName),
-    contact_email: (input.normalized && input.normalized.contactEmail) || null,
-    contactEmail: (input.normalized && input.normalized.contactEmail) || null,
-    contact_phone: (input.normalized && input.normalized.contactPhone) || null,
-    contactPhone: (input.normalized && input.normalized.contactPhone) || null,
-    contact_phone_display: (input.normalized && input.normalized.contactPhoneDisplay) || null,
-    contactPhoneDisplay: (input.normalized && input.normalized.contactPhoneDisplay) || null,
-    address: (input.normalized && input.normalized.address) || (input.payload && input.payload.address) || null,
-  } };
+  return {
+    ok: true,
+    duplicate: created.duplicate === true,
+    application: {
+      ...created.application,
+      clinic_name:
+        created.application.clinic_name ||
+        (input.normalized && input.normalized.clinicName) ||
+        (input.payload && input.payload.clinicName),
+      contact_email: (input.normalized && input.normalized.contactEmail) || null,
+      contactEmail: (input.normalized && input.normalized.contactEmail) || null,
+      contact_phone: (input.normalized && input.normalized.contactPhone) || null,
+      contactPhone: (input.normalized && input.normalized.contactPhone) || null,
+      contact_phone_display: (input.normalized && input.normalized.contactPhoneDisplay) || null,
+      contactPhoneDisplay: (input.normalized && input.normalized.contactPhoneDisplay) || null,
+      address: (input.normalized && input.normalized.address) || (input.payload && input.payload.address) || null,
+    },
+  };
 }
 
 async function collectReviewSignals(db, input) {
@@ -87,19 +171,47 @@ async function collectReviewSignals(db, input) {
     [app.id]
   );
   const full = row.rows[0] || app;
-  const collision = await resolveClinicRegistrationIdentityCollision(db, full);
-  const identityCollision = Boolean(collision && collision.existingIdentity);
-  let identityCollisionReason = null;
-  if (identityCollision) {
-    identityCollisionReason =
-      collision.requiresSecondClinicAcknowledgement || collision.existingActiveClinicIdentity
-        ? REVIEW_REASON.IDENTITY_COLLISION
-        : REVIEW_REASON.IDENTITY_COLLISION;
+  const password = administratorPasswordFrom(input);
+  const resolved = await resolveActiveClinicRegistrationAdministrator(db, {
+    email: full.contact_email_normalized,
+    phoneNormalized: full.contact_phone_normalized,
+    clinicName: full.clinic_name,
+    applicationOrganizationId: full.organization_id,
+    administratorPassword: password,
+    actorKind: "public_self_registration",
+  });
+
+  if (
+    resolved.action === IDENTITY_ACTION.REJECT_IDENTITY_CONFLICT ||
+    resolved.action === IDENTITY_ACTION.REJECT_SUSPENDED
+  ) {
+    return {
+      identityCollision: true,
+      identityCollisionReason: REVIEW_REASON.IDENTITY_COLLISION,
+      plan: null,
+      identityResolution: resolved,
+    };
   }
+
+  if (
+    resolved.action === IDENTITY_ACTION.REJECT_EXISTING_ACCOUNT &&
+    resolved.requiresSecondClinicAcknowledgement &&
+    !password
+  ) {
+    const collision = await resolveClinicRegistrationIdentityCollision(db, full);
+    return {
+      identityCollision: Boolean(collision && collision.existingIdentity),
+      identityCollisionReason: REVIEW_REASON.EXISTING_IDENTITY_ACK_REQUIRED,
+      plan: null,
+      identityResolution: resolved,
+    };
+  }
+
   return {
-    identityCollision,
-    identityCollisionReason,
+    identityCollision: false,
+    identityCollisionReason: null,
     plan: null,
+    identityResolution: resolved,
   };
 }
 
@@ -136,8 +248,8 @@ async function markReviewRequiredAdapter(db, input) {
 async function provision(db, input) {
   const requestedType = String(
     (input.normalized && input.normalized.clinicType) ||
-    (input.payload && (input.payload.clinicType || input.payload.facilityType)) ||
-    "clinic"
+      (input.payload && (input.payload.clinicType || input.payload.facilityType)) ||
+      "clinic"
   ).trim();
   const facilityType = FACILITY_TYPES.includes(requestedType) ? requestedType : "clinic";
   const provisioned = await approveAndProvisionClinicRegistration(db, {
@@ -148,16 +260,36 @@ async function provision(db, input) {
     env: input.env,
     actorKind: (input.actor && input.actor.kind) || "public_self_registration",
     facilityType,
+    administratorPassword: administratorPasswordFrom(input),
+    acknowledgeExistingIdentity: Boolean(
+      (input.payload && input.payload.acknowledgeExistingIdentity) ||
+        (input.normalized && input.normalized.acknowledgeExistingIdentity)
+    ),
   });
   if (
     !provisioned.ok &&
-    provisioned.code === "existing_identity_acknowledgement_required"
+    (provisioned.code === "existing_identity_acknowledgement_required" ||
+      provisioned.code === "existing_account_requires_sign_in" ||
+      provisioned.code === "existing_account_password_mismatch")
   ) {
     return {
       ok: false,
-      reviewRequired: true,
-      reason: REVIEW_REASON.EXISTING_IDENTITY_ACK_REQUIRED,
+      reviewRequired: provisioned.code === "existing_identity_acknowledgement_required",
+      reason:
+        provisioned.code === "existing_identity_acknowledgement_required"
+          ? REVIEW_REASON.EXISTING_IDENTITY_ACK_REQUIRED
+          : REVIEW_REASON.IDENTITY_COLLISION,
       code: provisioned.code,
+      errors: provisioned.errors || {},
+    };
+  }
+  if (!provisioned.ok && provisioned.code === "identity_conflict") {
+    return {
+      ok: false,
+      reviewRequired: false,
+      reason: REVIEW_REASON.IDENTITY_COLLISION,
+      code: provisioned.code,
+      errors: { contact: "Email and phone belong to different accounts." },
     };
   }
   if (!provisioned.ok) {
@@ -184,25 +316,26 @@ async function provision(db, input) {
     [input.application.id]
   );
   const latest = refreshed.rows[0] || input.application;
-    return {
-      ok: true,
-      organizationId: provisioned.organizationId || latest.organization_id,
-      identityId: provisioned.identityId,
-      staffMemberId: provisioned.staffMemberId,
-      slug: provisioned.slug,
-      facility: provisioned.facility,
-      healthcareOrganization: provisioned.healthcareOrganization,
-      failedStage: provisioned.failedStage || null,
-      application: {
-        id: latest.id,
-        applicationNumber: latest.application_number,
-        status: latest.status,
-        provisioningStatus: latest.provisioning_status,
-        organizationId: latest.organization_id,
-        createdAt: latest.created_at,
-      },
-      provisioned,
-    };
+  return {
+    ok: true,
+    organizationId: provisioned.organizationId || latest.organization_id,
+    identityId: provisioned.identityId,
+    staffMemberId: provisioned.staffMemberId,
+    slug: provisioned.slug,
+    facility: provisioned.facility,
+    healthcareOrganization: provisioned.healthcareOrganization,
+    failedStage: provisioned.failedStage || null,
+    alreadyProvisioned: provisioned.alreadyProvisioned === true,
+    application: {
+      id: latest.id,
+      applicationNumber: latest.application_number,
+      status: latest.status,
+      provisioningStatus: latest.provisioning_status,
+      organizationId: latest.organization_id,
+      createdAt: latest.created_at,
+    },
+    provisioned,
+  };
 }
 
 async function markLifecycle(db, input) {
@@ -310,6 +443,7 @@ async function approve(db, input) {
     deploymentCode: input.deploymentCode,
     env: input.env,
     acknowledgeExistingIdentity: input.acknowledgeExistingIdentity,
+    actorKind: "platform_admin",
   });
 }
 

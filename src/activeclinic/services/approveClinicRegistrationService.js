@@ -39,6 +39,10 @@ const {
   resolveClinicRegistrationIdentityCollision,
 } = require("./clinicRegistrationIdentityCollisionService");
 const {
+  ACTION: IDENTITY_ACTION,
+  resolveActiveClinicRegistrationAdministrator,
+} = require("./resolveActiveClinicRegistrationAdministrator");
+const {
   TEMPLATE,
   sendActiveClinicEmail,
 } = require("./activeClinicEmailDelivery");
@@ -60,6 +64,9 @@ const RESULT = Object.freeze({
   ADMIN_FAILED: "clinic_admin_failed",
   WEBSITE_PENDING: "website_pending",
   EXISTING_IDENTITY_ACK_REQUIRED: "existing_identity_acknowledgement_required",
+  IDENTITY_CONFLICT: "identity_conflict",
+  EXISTING_ACCOUNT: "existing_account_requires_sign_in",
+  EXISTING_ACCOUNT_PASSWORD_MISMATCH: "existing_account_password_mismatch",
 });
 
 const UUID_RE =
@@ -235,37 +242,57 @@ async function ensureClinicAdmin(client, input) {
   }
   let identityId = null;
   let reusedIdentity = false;
-  const existing = await client.query(
-    `SELECT id, password_hash FROM platform.identities
-      WHERE email_normalized = $1
-         OR ($2::text IS NOT NULL AND phone_normalized = $2)
-      ORDER BY CASE WHEN email_normalized = $1 THEN 0 ELSE 1 END
-      LIMIT 1`,
-    [input.email, input.phone || null]
-  );
-  if (existing.rows[0]) {
-    identityId = existing.rows[0].id;
-    reusedIdentity = true;
-    if (input.passwordHash && !existing.rows[0].password_hash) {
-      await updateIdentityPasswordHash(client, {
-        identityId,
-        passwordHash: input.passwordHash,
-        mustChangePassword: false,
-      });
+  if (input.resolvedIdentityId && UUID_RE.test(String(input.resolvedIdentityId))) {
+    const resolved = await client.query(
+      `SELECT id, password_hash FROM platform.identities WHERE id = $1 LIMIT 1`,
+      [input.resolvedIdentityId]
+    );
+    if (resolved.rows[0]) {
+      identityId = resolved.rows[0].id;
+      reusedIdentity = true;
+      // Never overwrite an existing password hash.
+      if (input.passwordHash && !resolved.rows[0].password_hash) {
+        await updateIdentityPasswordHash(client, {
+          identityId,
+          passwordHash: input.passwordHash,
+          mustChangePassword: false,
+        });
+      }
     }
-  } else {
-    const created = await createPlatformIdentity(client, {
-      status: "active",
-      primaryEmail: input.email,
-      emailNormalized: input.email,
-      emailVerifiedAt: new Date().toISOString(),
-      primaryPhone: input.phone,
-      phoneNormalized: input.phone,
-      phoneVerifiedAt: new Date().toISOString(),
-      passwordHash: input.passwordHash || null,
-    });
-    if (!created.ok) return { ok: false, code: created.code };
-    identityId = created.identity.id;
+  }
+  if (!identityId) {
+    const existing = await client.query(
+      `SELECT id, password_hash FROM platform.identities
+        WHERE email_normalized = $1
+           OR ($2::text IS NOT NULL AND phone_normalized = $2)
+        ORDER BY CASE WHEN email_normalized = $1 THEN 0 ELSE 1 END
+        LIMIT 1`,
+      [input.email, input.phone || null]
+    );
+    if (existing.rows[0]) {
+      identityId = existing.rows[0].id;
+      reusedIdentity = true;
+      if (input.passwordHash && !existing.rows[0].password_hash) {
+        await updateIdentityPasswordHash(client, {
+          identityId,
+          passwordHash: input.passwordHash,
+          mustChangePassword: false,
+        });
+      }
+    } else {
+      const created = await createPlatformIdentity(client, {
+        status: "active",
+        primaryEmail: input.email,
+        emailNormalized: input.email,
+        emailVerifiedAt: new Date().toISOString(),
+        primaryPhone: input.phone,
+        phoneNormalized: input.phone,
+        phoneVerifiedAt: new Date().toISOString(),
+        passwordHash: input.passwordHash || null,
+      });
+      if (!created.ok) return { ok: false, code: created.code };
+      identityId = created.identity.id;
+    }
   }
   const names = splitName(input.contactName);
   let staffMemberId = null;
@@ -397,7 +424,103 @@ async function approveAndProvisionClinicRegistration(db, input) {
       input.acknowledgeExistingIdentity === true ||
       input.acknowledgeExistingIdentity === "1" ||
       input.acknowledgeExistingIdentity === "on";
-    if (identityCollision.requiresSecondClinicAcknowledgement && !acknowledged) {
+    const resolvedAdmin = await resolveActiveClinicRegistrationAdministrator(client, {
+      email: app.contact_email_normalized,
+      phoneNormalized: app.contact_phone_normalized,
+      clinicName: app.clinic_name,
+      applicationOrganizationId: app.organization_id,
+      administratorPassword: input.administratorPassword || null,
+      acknowledgeExistingIdentity: acknowledged,
+      actorKind: input.actorKind || null,
+    });
+
+    if (resolvedAdmin.action === IDENTITY_ACTION.REJECT_IDENTITY_CONFLICT) {
+      return {
+        ok: false,
+        code: RESULT.IDENTITY_CONFLICT,
+        application: app,
+        reason: resolvedAdmin.reason,
+        diagnostics: resolvedAdmin.diagnostics || null,
+      };
+    }
+    if (resolvedAdmin.action === IDENTITY_ACTION.REJECT_SUSPENDED) {
+      return {
+        ok: false,
+        code: RESULT.EXISTING_IDENTITY_ACK_REQUIRED,
+        application: app,
+        identityCollision,
+        reason: resolvedAdmin.reason,
+      };
+    }
+    if (resolvedAdmin.action === IDENTITY_ACTION.ALREADY_PROVISIONED && resolvedAdmin.organizationId) {
+      const completeness = await inspectOrganizationProvisioningCompleteness(client, {
+        productCode: "activeclinic",
+        organizationId: resolvedAdmin.organizationId,
+        application: app,
+      });
+      if (completeness.complete) {
+        await updateApplication(client, app.id, {
+          status: "active",
+          provisioning_status: "provisioned",
+          organization_id: resolvedAdmin.organizationId,
+          last_provision_error: null,
+          last_provision_stage: null,
+        });
+        const instance = await instanceRepo.findWebsiteInstanceByOrgProduct(client, {
+          organizationId: resolvedAdmin.organizationId,
+          productCode: "activeclinic",
+        });
+        return {
+          ok: true,
+          code: RESULT.ALREADY_PROVISIONED,
+          alreadyProvisioned: true,
+          application: { ...app, organization_id: resolvedAdmin.organizationId, status: "active" },
+          organizationId: resolvedAdmin.organizationId,
+          identityId: resolvedAdmin.identityId,
+          instance,
+          reusedIdentity: true,
+          failedStage: null,
+        };
+      }
+    }
+    if (resolvedAdmin.action === IDENTITY_ACTION.REJECT_EXISTING_ACCOUNT) {
+      if (
+        resolvedAdmin.requiresSecondClinicAcknowledgement ||
+        resolvedAdmin.reason === "existing_identity_acknowledgement_required"
+      ) {
+        return {
+          ok: false,
+          code: RESULT.EXISTING_IDENTITY_ACK_REQUIRED,
+          application: app,
+          identityCollision,
+          reason: resolvedAdmin.reason,
+        };
+      }
+      return {
+        ok: false,
+        code:
+          resolvedAdmin.reason === "existing_account_password_mismatch"
+            ? RESULT.EXISTING_ACCOUNT_PASSWORD_MISMATCH
+            : RESULT.EXISTING_ACCOUNT,
+        application: app,
+        reason: resolvedAdmin.reason,
+        errors: {
+          password:
+            resolvedAdmin.reason === "existing_account_password_mismatch"
+              ? "That password does not match the existing account."
+              : "An account already exists for this contact. Sign in or confirm ownership.",
+        },
+      };
+    }
+
+    // Legacy ack gate: only when resolver still requires acknowledgement.
+    if (
+      identityCollision.requiresSecondClinicAcknowledgement &&
+      !acknowledged &&
+      resolvedAdmin.action !== IDENTITY_ACTION.REUSE &&
+      resolvedAdmin.action !== IDENTITY_ACTION.CREATE &&
+      resolvedAdmin.action !== IDENTITY_ACTION.ALREADY_PROVISIONED
+    ) {
       return {
         ok: false,
         code: RESULT.EXISTING_IDENTITY_ACK_REQUIRED,
@@ -647,6 +770,11 @@ async function approveAndProvisionClinicRegistration(db, input) {
         actorIdentityId: input.actorIdentityId || null,
         existingStaffId: app.clinic_admin_staff_id,
         passwordHash: app.administrator_password_hash || null,
+        resolvedIdentityId:
+          resolvedAdmin.action === IDENTITY_ACTION.REUSE ||
+          resolvedAdmin.action === IDENTITY_ACTION.ALREADY_PROVISIONED
+            ? resolvedAdmin.identityId
+            : null,
       });
       if (!admin.ok) {
         await persistProvisionFailure(client, app.id, {

@@ -239,8 +239,52 @@ function validateClinicRegistrationInput(input, options) {
 }
 
 /**
+ * Soft twin for exact same-clinic retry (BlessBoard-parity).
+ * Requires same clinic name plus matching email (and phone when both present).
+ * Different clinic names must NOT collapse into this twin — multi-clinic reuse
+ * needs a new application row.
+ *
+ * @param {{ query: Function }} db
+ * @param {{ clinicName: string, contactEmail: string|null, contactPhone: string|null, windowMinutes?: number }} opts
+ */
+async function findSoftTwinClinicRegistrationApplication(db, opts) {
+  const clinicName = String((opts && opts.clinicName) || "").trim();
+  const email = String((opts && opts.contactEmail) || "").trim().toLowerCase() || null;
+  const phone = String((opts && opts.contactPhone) || "").trim() || null;
+  if (!clinicName || (!email && !phone)) return null;
+  const windowMinutes = Math.min(Math.max(Number(opts.windowMinutes) || 30 * 24 * 60, 1), 60 * 24 * 60);
+  const rows = await db.query(
+    `SELECT id, application_number, status, organization_id, provisioning_status,
+            clinic_name, contact_email_normalized, contact_phone_normalized,
+            clinic_admin_staff_id, created_at
+       FROM activeclinic.clinic_registration_applications
+      WHERE status NOT IN ('rejected', 'withdrawn')
+        AND lower(trim(clinic_name)) = lower(trim($1))
+        AND (
+          ($2::text IS NOT NULL AND contact_email_normalized = $2)
+          OR ($3::text IS NOT NULL AND contact_phone_normalized = $3)
+        )
+        AND (
+          status IN ('active', 'approved', 'provisioning', 'provision_failed', 'review_required', 'submitted', 'pending_review')
+          OR created_at > now() - make_interval(mins => $4::int)
+        )
+      ORDER BY
+        CASE
+          WHEN status IN ('active', 'approved') THEN 0
+          WHEN organization_id IS NOT NULL THEN 1
+          ELSE 2
+        END,
+        created_at DESC
+      LIMIT 1`,
+    [clinicName, email, phone, windowMinutes]
+  );
+  return rows.rows[0] || null;
+}
+
+/**
  * Create a clinic registration application.
- * Detects duplicate by email or phone within 30 days.
+ * Soft-idempotent for the same clinic + same contact; does not block a distinct
+ * second clinic for the same administrator identity.
  */
 async function createClinicRegistrationApplication(db, input) {
   const validated = validateClinicRegistrationInput(input, { requireTermsAcceptance: true });
@@ -271,29 +315,28 @@ async function createClinicRegistrationApplication(db, input) {
   const email = { ok: true, normalized: contactEmail, display: contactEmailDisplay };
   const phone = { ok: true, normalized: contactPhone, display: contactPhoneDisplay };
 
-  // Duplicate by email or phone in last 30 days (open applications only).
-  const dupCheck = await db.query(
-    `SELECT id, application_number, status
-     FROM activeclinic.clinic_registration_applications
-     WHERE created_at > now() - interval '30 days'
-       AND status NOT IN ('rejected', 'withdrawn')
-       AND (
-         contact_email_normalized = $1
-         OR contact_phone_normalized = $2
-       )
-     ORDER BY created_at DESC
-     LIMIT 1`,
-    [email.normalized, phone.normalized]
-  );
-
-  if (dupCheck.rows.length) {
-    const existing = dupCheck.rows[0];
+  const softTwin = await findSoftTwinClinicRegistrationApplication(db, {
+    clinicName,
+    contactEmail: email.normalized,
+    contactPhone: phone.normalized,
+  });
+  if (softTwin) {
     return {
-      ok: false,
-      code: RESULT.DUPLICATE,
+      ok: true,
+      code: RESULT.OK,
+      duplicate: true,
       application: {
-        applicationNumber: existing.application_number,
-        status: existing.status,
+        id: softTwin.id,
+        applicationNumber: softTwin.application_number,
+        status: softTwin.status,
+        organization_id: softTwin.organization_id,
+        organizationId: softTwin.organization_id,
+        provisioning_status: softTwin.provisioning_status,
+        clinic_name: softTwin.clinic_name,
+        contact_email_normalized: softTwin.contact_email_normalized,
+        contact_phone_normalized: softTwin.contact_phone_normalized,
+        clinic_admin_staff_id: softTwin.clinic_admin_staff_id,
+        createdAt: softTwin.created_at,
       },
     };
   }
@@ -362,6 +405,7 @@ module.exports = {
   normalizeZambiaPhone,
   validateClinicRegistrationInput,
   createClinicRegistrationApplication,
+  findSoftTwinClinicRegistrationApplication,
   clinicTypeLabel,
   listClinicTypeOptions,
   isZambiaCountryCode,

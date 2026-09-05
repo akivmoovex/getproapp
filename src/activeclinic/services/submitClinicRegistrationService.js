@@ -81,6 +81,20 @@ async function submitAndProvisionClinicRegistration(db, input) {
         application: null,
       };
     }
+    if (
+      result.persistCode === "identity_conflict" ||
+      result.persistCode === "existing_account_requires_sign_in" ||
+      result.persistCode === "existing_account_password_mismatch"
+    ) {
+      return {
+        ok: false,
+        code: result.persistCode,
+        engine: result.engine,
+        errors: result.errors || {},
+        error: result.error || result.persistCode,
+        application: result.application || null,
+      };
+    }
     return {
       ok: false,
       code: RESULT.INVALID_INPUT,
@@ -102,6 +116,33 @@ async function submitAndProvisionClinicRegistration(db, input) {
     };
   }
   if (result.code === ENGINE_RESULT.PROVISION_FAILED) {
+    const provisionCode =
+      (result.provision && result.provision.code) || result.reason || RESULT.PROVISION_FAILED;
+    if (
+      provisionCode === "identity_conflict" ||
+      provisionCode === "existing_account_requires_sign_in" ||
+      provisionCode === "existing_account_password_mismatch"
+    ) {
+      return {
+        ok: false,
+        code: provisionCode,
+        engine: result.engine,
+        errors:
+          (result.provision && result.provision.errors) ||
+          (provisionCode === "identity_conflict"
+            ? {
+                contactEmail: "Email and phone belong to different accounts.",
+                contactPhone: "Email and phone belong to different accounts.",
+              }
+            : {
+                password:
+                  provisionCode === "existing_account_password_mismatch"
+                    ? "That password does not match the existing account."
+                    : "An account already exists for this contact.",
+              }),
+        application: result.application || null,
+      };
+    }
     return {
       ok: true,
       code: RESULT.REVIEW_REQUIRED,

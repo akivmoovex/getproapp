@@ -240,14 +240,14 @@ describe("V7 unified registration engine", () => {
     assert.equal(churchRow.rows[0].email, "church.norm@example.org");
   });
 
-  it("5 shared duplicate checks reject a second clinic and reuse a church twin", async () => {
+  it("5 shared duplicate checks soft-reuse a clinic twin and a church twin", async () => {
     if (!requireDb()) return;
     const payload = clinicPayload();
     const first = await submitAndProvisionClinicRegistration(pool, payload);
     assert.equal(first.ok, true, JSON.stringify(first));
     const second = await submitAndProvisionClinicRegistration(pool, payload);
-    assert.equal(second.ok, false);
-    assert.equal(second.code, "duplicate_application");
+    assert.equal(second.ok, true, JSON.stringify(second));
+    assert.equal(second.organizationId, first.organizationId);
     assert.equal(second.engine, ENGINE);
 
     const body = churchBody();
@@ -361,7 +361,7 @@ describe("V7 unified registration engine", () => {
     assert.ok(role.rows.some((row) => row.role_key === ORGANIZATION_ADMIN));
   });
 
-  it("12 ActiveClinic duplicate/identity decisions are made by the shared engine", async () => {
+  it("12 ActiveClinic existing identity password-verifies via shared engine", async () => {
     if (!requireDb()) return;
     const payload = clinicPayload();
     const identity = await createPlatformIdentity(pool, {
@@ -374,16 +374,21 @@ describe("V7 unified registration engine", () => {
       phoneVerifiedAt: new Date().toISOString(),
     });
     assert.equal(identity.ok, true, JSON.stringify(identity));
-    const held = await submitProductRegistration(pool, {
+    const bcrypt = require("bcryptjs");
+    await pool.query(`UPDATE platform.identities SET password_hash = $2 WHERE id = $1`, [
+      identity.identity.id,
+      await bcrypt.hash(payload.password, 12),
+    ]);
+    const provisioned = await submitProductRegistration(pool, {
       productCode: PRODUCT.ACTIVECLINIC,
       payload,
       env: {},
       dataEnvironment: "testing",
       deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
     });
-    assert.equal(held.code, RESULT.REVIEW_REQUIRED);
-    assert.equal(held.engine, ENGINE);
-    assert.equal(held.canonicalLifecycle, LIFECYCLE.REVIEW_REQUIRED);
+    assert.equal(provisioned.code, RESULT.ACTIVE, JSON.stringify(provisioned));
+    assert.equal(provisioned.engine, ENGINE);
+    assert.equal(provisioned.identityId, identity.identity.id);
   });
 
   it("13 BlessBoard adapter creates HQ", async () => {
@@ -469,7 +474,7 @@ describe("V7 unified registration engine", () => {
     assert.equal(org.rows[0].status, "active");
   });
 
-  it("19 clinic exception enters review_required", async () => {
+  it("19 clinic existing identity without password is rejected explicitly", async () => {
     if (!requireDb()) return;
     const payload = clinicPayload();
     await createPlatformIdentity(pool, {
@@ -482,9 +487,8 @@ describe("V7 unified registration engine", () => {
       phoneVerifiedAt: new Date().toISOString(),
     });
     const held = await submitAndProvisionClinicRegistration(pool, payload);
-    assert.equal(held.ok, true);
-    assert.equal(held.reviewRequired, true);
-    assert.equal(held.application.status, "review_required");
+    assert.equal(held.ok, false, JSON.stringify(held));
+    assert.equal(held.code, "existing_account_requires_sign_in");
     assert.equal(held.engine, ENGINE);
   });
 
@@ -506,16 +510,12 @@ describe("V7 unified registration engine", () => {
   it("21 PA can reject an ActiveClinic review-required registration", async () => {
     if (!requireDb()) return;
     const payload = clinicPayload();
-    await createPlatformIdentity(pool, {
-      status: "active",
-      primaryEmail: payload.contactEmail,
-      emailNormalized: payload.contactEmail,
-      emailVerifiedAt: new Date().toISOString(),
-      primaryPhone: payload.contactPhone,
-      phoneNormalized: payload.contactPhone,
-      phoneVerifiedAt: new Date().toISOString(),
+    const held = await submitAndProvisionClinicRegistration(pool, {
+      ...payload,
+      env: { SELF_REGISTRATION_PROVISIONING_ENABLED: "false" },
     });
-    const held = await submitAndProvisionClinicRegistration(pool, payload);
+    assert.equal(held.ok, true, JSON.stringify(held));
+    assert.equal(held.reviewRequired, true);
     const rejected = await rejectClinicRegistration(pool, {
       applicationId: held.application.id,
       rejectionReason: "Identity requires a manual decision.",
@@ -547,14 +547,14 @@ describe("V7 unified registration engine", () => {
     assert.equal(kill.reason, REVIEW_REASON.SELF_REGISTRATION_PROVISIONING_DISABLED);
   });
 
-  it("23 duplicate clinic submission is safely rejected", async () => {
+  it("23 duplicate clinic submission soft-reuses the same clinic", async () => {
     if (!requireDb()) return;
     const payload = clinicPayload();
     const first = await submitAndProvisionClinicRegistration(pool, payload);
     const second = await submitAndProvisionClinicRegistration(pool, payload);
     assert.equal(first.ok, true);
-    assert.equal(second.ok, false);
-    assert.equal(second.code, "duplicate_application");
+    assert.equal(second.ok, true, JSON.stringify(second));
+    assert.equal(second.organizationId, first.organizationId);
     const count = await pool.query(
       `SELECT count(*)::int AS n FROM activeclinic.clinic_registration_applications
         WHERE contact_email_normalized = $1`,
@@ -563,10 +563,10 @@ describe("V7 unified registration engine", () => {
     assert.equal(count.rows[0].n, 1);
   });
 
-  it("24 cross-product identity uses shared review policy rather than a second engine", async () => {
+  it("24 cross-product existing identity password-verifies instead of review hold", async () => {
     if (!requireDb()) return;
     const payload = clinicPayload();
-    await createPlatformIdentity(pool, {
+    const created = await createPlatformIdentity(pool, {
       status: "active",
       primaryEmail: payload.contactEmail,
       emailNormalized: payload.contactEmail,
@@ -575,33 +575,30 @@ describe("V7 unified registration engine", () => {
       phoneNormalized: payload.contactPhone,
       phoneVerifiedAt: new Date().toISOString(),
     });
-    const held = await submitProductRegistration(pool, {
+    assert.equal(created.ok, true);
+    const bcrypt = require("bcryptjs");
+    await pool.query(`UPDATE platform.identities SET password_hash = $2 WHERE id = $1`, [
+      created.identity.id,
+      await bcrypt.hash(payload.password, 12),
+    ]);
+    const provisioned = await submitProductRegistration(pool, {
       productCode: PRODUCT.ACTIVECLINIC,
       payload,
       env: {},
       dataEnvironment: "testing",
     });
-    assert.equal(held.engine, ENGINE);
-    assert.equal(held.code, RESULT.REVIEW_REQUIRED);
-    assert.ok(
-      held.reason === REVIEW_REASON.IDENTITY_COLLISION ||
-        held.reason === REVIEW_REASON.EXISTING_IDENTITY_ACK_REQUIRED
-    );
+    assert.equal(provisioned.engine, ENGINE);
+    assert.equal(provisioned.code, RESULT.ACTIVE, JSON.stringify(provisioned));
+    assert.equal(provisioned.identityId, created.identity.id);
   });
 
   it("25 provision hold does not leave a false-active organisation", async () => {
     if (!requireDb()) return;
     const payload = clinicPayload();
-    await createPlatformIdentity(pool, {
-      status: "active",
-      primaryEmail: payload.contactEmail,
-      emailNormalized: payload.contactEmail,
-      emailVerifiedAt: new Date().toISOString(),
-      primaryPhone: payload.contactPhone,
-      phoneNormalized: payload.contactPhone,
-      phoneVerifiedAt: new Date().toISOString(),
+    const held = await submitAndProvisionClinicRegistration(pool, {
+      ...payload,
+      env: { SELF_REGISTRATION_PROVISIONING_ENABLED: "false" },
     });
-    const held = await submitAndProvisionClinicRegistration(pool, payload);
     assert.equal(held.reviewRequired, true);
     const app = await pool.query(
       `SELECT organization_id, status FROM activeclinic.clinic_registration_applications WHERE id = $1`,
@@ -789,7 +786,8 @@ describe("V7 unified registration engine", () => {
     const orgId = first.organizationId;
     const identityId = first.identityId;
     const second = await submitAndProvisionClinicRegistration(pool, payload);
-    assert.equal(second.ok, false);
+    assert.equal(second.ok, true, JSON.stringify(second));
+    assert.equal(second.organizationId, orgId);
     const orgs = await pool.query(
       `SELECT count(*)::int AS n FROM platform.organizations WHERE id = $1`,
       [orgId]
