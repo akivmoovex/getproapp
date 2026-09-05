@@ -237,6 +237,7 @@
     "test:activeclinic:finance-rbac": "node --test --test-concurrency=1 tests/activeclinic-finance-rbac.test.js",
     "test:activeclinic:patient-merge-safety": "node --test --test-concurrency=1 tests/activeclinic-patient-merge-safety.test.js",
     "test:activeclinic:rbac-role-matrix": "node --test --test-concurrency=1 tests/activeclinic-rbac-role-matrix.test.js",
+    "test:activeclinic:v7-regression": "node scripts/run-activeclinic-automated-regression.js",
     "church:db-identity:init": "node scripts/init-church-database-identity.js",
     "church:v5:deploy-init": "node scripts/church-v5-deploy-init.js",
     "church:cleanup-kafue-sample": "node scripts/cleanup-kafue-sample-seed.js",
