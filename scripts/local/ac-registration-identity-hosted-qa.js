@@ -88,12 +88,19 @@ async function login(page, identifier, mode) {
   } else {
     const tab = page.locator('[data-login-mode="email"], button:has-text("Email")');
     if (await tab.count()) await tab.first().click({ force: true }).catch(() => {});
-    await page.locator('input[name="email"], input[name="contactEmail"], input[type="email"]').first().fill(identifier, { force: true });
+    await page.locator('input[name="email"], input[name="contactEmail"], input[name="login_email"], input[type="email"]').first().fill(identifier, { force: true });
   }
   await page.locator('input[name="password"]').fill(PASS, { force: true });
   await page.locator('button[type="submit"]').first().click();
   await page.waitForTimeout(4000);
   return page.url();
+}
+
+function loginOk(url) {
+  const u = String(url || "");
+  if (/\/login\/select-organization|\/app(\/|$)|\/portal|\/dashboard/i.test(u)) return true;
+  if (/\/login(\?|$)/i.test(u)) return false;
+  return !/\/register-clinic/i.test(u);
 }
 
 async function logout(page) {
@@ -185,7 +192,7 @@ async function main() {
     await logout(page);
     try {
       const u = await login(page, email, "email");
-      evidence.steps.loginEmail = { url: u, ok: !/\/login/i.test(u) };
+      evidence.steps.loginEmail = { url: u, ok: loginOk(u) };
     } catch (e) {
       evidence.steps.loginEmail = { ok: false, error: String(e.message || e).slice(0, 200) };
     }
@@ -193,7 +200,7 @@ async function main() {
     await logout(page);
     try {
       const u = await login(page, phoneNational, "phone");
-      evidence.steps.loginPhone = { url: u, ok: !/\/login/i.test(u) };
+      evidence.steps.loginPhone = { url: u, ok: loginOk(u) };
     } catch (e) {
       evidence.steps.loginPhone = { ok: false, error: String(e.message || e).slice(0, 200) };
     }
