@@ -155,15 +155,17 @@
     setStatus("publish", "Publishing…", false);
     var action = form.getAttribute("action") || window.location.href;
     var method = String(form.getAttribute("method") || "POST").toUpperCase();
-    var fd = new FormData(form);
+    // Prefer urlencoded so CSRF lands in req.body (multipart FormData does not).
+    var body = new URLSearchParams(new FormData(form));
     fetch(action, {
       method: method,
       credentials: "same-origin",
       headers: {
         Accept: "application/json, text/html",
+        "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
         "X-CSRF-Token": csrfToken(),
       },
-      body: fd,
+      body: body,
       redirect: "follow",
     })
       .then(function (res) {

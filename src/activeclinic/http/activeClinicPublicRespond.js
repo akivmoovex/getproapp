@@ -51,6 +51,8 @@ function sendClinicNotFound(res, deps) {
  * @param {{ env: NodeJS.ProcessEnv, isProduction: boolean, issuePageCsrf: Function }} deps
  */
 function sendClinicUnavailable(res, deps) {
+  const { setV5PrivateNoStore } = require("../../platform/http/v5PrivateNoStore");
+  setV5PrivateNoStore(res);
   const csrfToken = pageCsrfToken(res, deps);
   return res.status(403).type("html").send(renderPublicPage({
     pageId: "tenant-clinic-unavailable",
@@ -114,6 +116,9 @@ function isWebsiteApiRequest(req) {
  */
 async function resolveClinicOrRespond(getPool, req, res, deps) {
   const pool = getPool();
+  const editRequested =
+    String((req.query && req.query.website_edit) || "") === "1" ||
+    String((req.query && req.query.website_mode) || "") === "draft";
   let result = await resolvePublishableClinicByKey(pool, {
     clinicKey: req.params.clinicKey,
   });
@@ -131,12 +136,21 @@ async function resolveClinicOrRespond(getPool, req, res, deps) {
       const { canEditClinicWebsite } = require("./attachActiveClinicWebsiteChrome");
       if (canEditClinicWebsite(req, unpublished.clinic)) {
         result = unpublished;
+      } else if (editRequested && req.activeClinicAuth && req.activeClinicAuth.authenticated) {
+        // Authenticated but not eligible for this clinic — still avoid cacheable
+        // anonymous-shaped HTML on the editor URL.
+        const { setV5PrivateNoStore } = require("../../platform/http/v5PrivateNoStore");
+        setV5PrivateNoStore(res);
       }
     }
   }
   if (!result.ok) {
     sendClinicResolveFailure(res, result, deps);
     return null;
+  }
+  if (editRequested) {
+    const { setV5PrivateNoStore } = require("../../platform/http/v5PrivateNoStore");
+    setV5PrivateNoStore(res);
   }
   return result.clinic;
 }

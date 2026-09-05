@@ -55,6 +55,10 @@ function wantsV5PrivateNoStore(pathOnly) {
     p.startsWith("/auth/") ||
     p === "/app" ||
     p.startsWith("/app/") ||
+    // Clinic public HTML is cookie-gated for unpublished editor access.
+    // Without private/no-store + Vary: Cookie, CDNs can serve anonymous 403
+    // "unavailable" pages to authenticated editors.
+    p.startsWith("/clinics/") ||
     /\/patient(?:\/|$)/.test(p)
   );
 }

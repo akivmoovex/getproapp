@@ -109,12 +109,16 @@
         publishStatus.textContent = "Publishing…";
         publishStatus.classList.remove("ac-mw-error");
       }
+      // URL-encoded body so express.urlencoded populates req.body for CSRF.
+      // multipart FormData leaves req.body empty and publish returns 403 csrf.
+      var body = new URLSearchParams(new FormData(publishForm));
       fetch(publishForm.action, {
         method: "POST",
-        body: new FormData(publishForm),
+        body: body,
         credentials: "same-origin",
         headers: {
           Accept: "application/json, text/html",
+          "Content-Type": "application/x-www-form-urlencoded;charset=UTF-8",
           "X-CSRF-Token": csrfToken(),
         },
         redirect: "follow",
