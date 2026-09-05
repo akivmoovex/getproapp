@@ -401,12 +401,18 @@ function registerActiveClinicPublicRoutes(app, deps) {
   }
 
   // Rate limiters
+  // Count only final confirm submissions. Wizard next-clinic/next-admin posts must not
+  // share an empty-email IP bucket or QA/users burn the create quota before confirm.
   const registerLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     limit: String(env.NODE_ENV || "") === "test" ? 1000 : 5,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => sha256Hex(`register|${req.body && req.body.contactEmail}|${clientIp(req)}`),
+    skip: (req) => String((req.body && req.body.action) || "") !== "confirm",
+    keyGenerator: (req) =>
+      sha256Hex(
+        `register|${(req.body && (req.body.contactEmail || req.body.email)) || ""}|${clientIp(req)}`
+      ),
     handler: (req, res) => {
       const csrfToken = issuePageCsrf(res, env, isProduction);
       return res.status(429).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {

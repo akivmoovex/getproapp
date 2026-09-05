@@ -460,7 +460,9 @@ describe("blessboard member portal", () => {
     assert.match(form.text, /Editable/);
     assert.match(form.text, /name="preferredName"/);
     assert.match(form.text, /name="emailDisplay"/);
-    assert.match(form.text, /name="phone"/);
+    assert.match(form.text, /name="phone_country"/);
+    assert.match(form.text, /name="phone_national"/);
+    assert.doesNotMatch(form.text, /name="phone"/);
     assert.match(form.text, /name="_csrf"/);
     assert.match(form.text, /readonly/);
     assert.match(form.text, /bb-mp-form--profile is-view|is-view/);
@@ -519,7 +521,8 @@ describe("blessboard member portal", () => {
       .send({
         [CSRF_FIELD]: csrf,
         preferredName: "Preferred Port",
-        phone: "+15559876543",
+        phone_country: "US",
+        phone_national: "5559876543",
         emailDisplay: "Member@MP-A.Example.Test",
         status: "suspended",
         membershipStatus: "inactive",
@@ -544,7 +547,8 @@ describe("blessboard member portal", () => {
       .send({
         [CSRF_FIELD]: csrf2,
         preferredName: "Preferred Port",
-        phone: "+15559876543",
+        phone_country: "US",
+        phone_national: "5559876543",
         emailDisplay: "Member@MP-A.Example.Test",
       });
     assert.equal(ok.status, 303);

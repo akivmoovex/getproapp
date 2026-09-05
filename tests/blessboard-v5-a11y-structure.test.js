@@ -1114,7 +1114,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(settings, /action="\/branch-admin\/settings"/);
     assert.match(settings, /name="publicName"/);
     assert.match(settings, /name="email"/);
-    assert.match(settings, /name="phone"/);
+    assert.match(settings, /phone-field/);
+    assert.doesNotMatch(settings, /name="phone"/);
     assert.match(settings, /name="timezone"/);
     assert.match(settings, /name="countryCode"/);
     assert.match(settings, /name="addressLine1"/);
@@ -2088,7 +2089,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(profile, /action="\/member\/profile"/);
     assert.match(profile, /name="preferredName"/);
     assert.match(profile, /name="emailDisplay"/);
-    assert.match(profile, /name="phone"/);
+    assert.match(profile, /phone-field/);
+    assert.doesNotMatch(profile, /name="phone"/);
     assert.match(profile, /name="_csrf"/);
     assert.match(profile, /readonly/);
     assert.match(profile, /is-view/);
@@ -2560,7 +2562,8 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     assert.match(register, /name="last_name"/);
     assert.match(register, /name="preferred_name"/);
     assert.match(register, /name="email"/);
-    assert.match(register, /name="phone"/);
+    assert.match(register, /phone-field/);
+    assert.doesNotMatch(register, /name="phone"/);
     assert.match(register, /data-bb-auth-privacy="1"/);
     assert.match(register, /data-bb-auth-group="personal"/);
     assert.match(register, /data-bb-auth-group="contact"/);
@@ -2570,9 +2573,9 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     // input. Assert the binding rather than the marketing copy, which changed
     // when email became optional and phone required.
     assert.match(register, /<label for="email">[^<]*[Ee]mail[^<]*<\/label>/);
-    assert.match(register, /<label for="phone">[^<]*phone[^<]*<\/label>/i);
+    assert.match(register, /phone/i);
     assert.match(register, /id="email"/);
-    assert.match(register, /id="phone"/);
+    assert.match(register, /id: 'phone'/);
     assert.doesNotMatch(register, /name="password"|name="gender"|Forgot password|waiting.?verification/i);
     assert.match(submitted, /data-bb-register-submitted="1"/);
     assert.match(submitted, /data-bb-stitch-register-submitted="11-auth-registration-submitted"/);

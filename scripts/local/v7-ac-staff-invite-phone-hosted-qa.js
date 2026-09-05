@@ -10,7 +10,8 @@ const { chromium } = require("playwright");
 const { checkHostedTestingSha } = require("../check-hosted-testing-sha");
 
 const BASE = "https://activeclinic.pronline.org";
-const EMAIL = process.env.QA_EMAIL || "qa.fullproduct.260817235630@example.test";
+const EMAIL =
+  process.env.QA_EMAIL || "demo_organization_admin@demo.activeclinic.example";
 const PASS = process.env.QA_PASSWORD || "1234567890";
 const EXPECTED = "+260977198697";
 

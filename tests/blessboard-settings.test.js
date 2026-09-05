@@ -379,7 +379,8 @@ describe("blessboard settings http", () => {
         action: "branch",
         publicName: "First Branch HQ",
         email: "first-branch@example.org",
-        phone: "+260 96 111 2222",
+        phone_country: "ZM",
+        phone_national: "0961112222",
         timezone: "Africa/Lusaka",
         countryCode: "ZM",
         addressLine1: "1 Independence Ave",
@@ -396,7 +397,7 @@ describe("blessboard settings http", () => {
     );
     assert.equal(settings.rows[0].public_name, "First Branch HQ");
     assert.equal(settings.rows[0].email, "first-branch@example.org");
-    assert.equal(settings.rows[0].phone, "+260 96 111 2222");
+    assert.equal(settings.rows[0].phone, "+260961112222");
     assert.equal(settings.rows[0].address_line_1, "1 Independence Ave");
 
     const branch = await pool.query(
@@ -463,7 +464,9 @@ describe("blessboard settings http", () => {
     assert.match(page.text, /data-bb-settings-unavailable="product"/);
     assert.match(page.text, /name="publicName"/);
     assert.match(page.text, /name="email"/);
-    assert.match(page.text, /name="phone"/);
+    assert.match(page.text, /name="phone_country"/);
+    assert.match(page.text, /name="phone_national"/);
+    assert.doesNotMatch(page.text, /name="phone"/);
     assert.match(page.text, /name="timezone"/);
     assert.match(page.text, /name="countryCode"/);
     assert.match(page.text, /name="addressLine1"/);
