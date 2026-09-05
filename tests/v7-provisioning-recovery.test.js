@@ -577,6 +577,15 @@ describe("V7 provisioning recovery", () => {
     );
     const orgId = linked.rows[0].organization_id;
     assert.ok(orgId);
+    const orgMeta = await pool.query(
+      `SELECT organization_key, display_name FROM platform.organizations WHERE id = $1`,
+      [orgId]
+    );
+    // Instant-free public registration derives organization_key from church name;
+    // the submitted form key is not the catalogue key used after first provision.
+    assert.equal(orgMeta.rows.length, 1, "retry fixture must persist the first-provision organization");
+    const allocatedKey = orgMeta.rows[0].organization_key;
+    assert.ok(allocatedKey);
     await pool.query(
       `UPDATE blessboard.platform_church_registration_applications
           SET provisioning_status = 'provisioning_failed',
@@ -590,9 +599,15 @@ describe("V7 provisioning recovery", () => {
       [appId, STAGE.WEBSITE_INSTANCE]
     );
     const orgCountBefore = await count(
-      `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
-      [key]
+      `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE id = $1`,
+      [orgId]
     );
+    const keyCountBefore = await count(
+      `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
+      [allocatedKey]
+    );
+    assert.equal(orgCountBefore, 1);
+    assert.equal(keyCountBefore, 1);
     const retry = await provisionRegisteredBlessBoardChurch(
       pool,
       {
@@ -610,11 +625,22 @@ describe("V7 provisioning recovery", () => {
     );
     assert.equal(retry.ok, true, JSON.stringify(retry));
     const orgCountAfter = await count(
+      `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE id = $1`,
+      [orgId]
+    );
+    const keyCountAfter = await count(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
-      [key]
+      [allocatedKey]
+    );
+    const nameCountAfter = await count(
+      `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE display_name = $1`,
+      [body.church_name]
     );
     assert.equal(orgCountAfter, orgCountBefore);
     assert.equal(orgCountAfter, 1);
+    assert.equal(keyCountAfter, keyCountBefore);
+    assert.equal(keyCountAfter, 1);
+    assert.equal(nameCountAfter, 1);
     const users = await count(
       `SELECT COUNT(*)::int AS n FROM blessboard.users WHERE email_normalized = $1`,
       [body.email]

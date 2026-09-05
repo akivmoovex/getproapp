@@ -186,6 +186,8 @@ describe("register-church validation request trace (HTTP)", () => {
   }
 
   it("validation failure emits requestId trace without prohibited values", async () => {
+    // Wizard POSTs without action are inferred as next-church; confirm hits
+    // register_church_validate and the validation failureCategory contract.
     const app = buildApp();
     const { cookieHeader, token } = await csrfPair(app);
     const res = await request(app)
@@ -195,6 +197,7 @@ describe("register-church validation request trace (HTTP)", () => {
       .type("form")
       .send({
         [CSRF_FIELD]: token,
+        action: "confirm",
         selected_plan: "foundation",
         church_name: "",
         country: "Zambia",
