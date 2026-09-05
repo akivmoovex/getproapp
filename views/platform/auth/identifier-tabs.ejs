@@ -1,14 +1,22 @@
 <%#
   Shared Email | Phone identifier tabs (Stitch V7).
-  locals: loginMode ('email'|'phone'), tabIdPrefix (optional)
+  locals:
+    loginMode ('email'|'phone')
+    tabIdPrefix (optional)
+    modeEmailHref (optional, default /login?mode=email)
+    modePhoneHref (optional, default /login?mode=phone)
+  Tabs are real links so Phone mode works without JavaScript.
+  gp-auth-reg.js progressively enhances to switch panels without a full reload.
 %>
 <%
   var mode = (typeof loginMode === 'string' && loginMode === 'phone') ? 'phone' : 'email';
   var prefix = (typeof tabIdPrefix === 'string' && tabIdPrefix) ? tabIdPrefix : 'gp-auth-id';
+  var emailHref = (typeof modeEmailHref === 'string' && modeEmailHref) ? modeEmailHref : '/login?mode=email';
+  var phoneHref = (typeof modePhoneHref === 'string' && modePhoneHref) ? modePhoneHref : '/login?mode=phone';
 %>
 <div class="gp-auth-id-tabs" role="tablist" aria-label="Sign-in method">
-  <button
-    type="button"
+  <a
+    href="<%= emailHref %>"
     class="gp-auth-id-tabs__btn"
     id="<%= prefix %>-tab-email"
     role="tab"
@@ -16,9 +24,9 @@
     aria-controls="<%= prefix %>-panel-email"
     data-gp-auth-id-tab="email"
     tabindex="<%= mode === 'email' ? '0' : '-1' %>"
-  >Email</button>
-  <button
-    type="button"
+  >Email</a>
+  <a
+    href="<%= phoneHref %>"
     class="gp-auth-id-tabs__btn"
     id="<%= prefix %>-tab-phone"
     role="tab"
@@ -26,6 +34,6 @@
     aria-controls="<%= prefix %>-panel-phone"
     data-gp-auth-id-tab="phone"
     tabindex="<%= mode === 'phone' ? '0' : '-1' %>"
-  >Phone</button>
+  >Phone</a>
 </div>
 <input type="hidden" name="login_mode" value="<%= mode %>" />

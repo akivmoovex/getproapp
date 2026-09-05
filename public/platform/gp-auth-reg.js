@@ -2,10 +2,11 @@
 
 /**
  * V7 shared auth UI — identifier mode tabs (Email | Phone).
+ * Progressive enhancement: tabs are real links for no-JS; with JS, switch in-place.
  */
 (function () {
   function initIdentifierTabs(root) {
-    var tabs = root.querySelectorAll('[data-gp-auth-id-tab]');
+    var tabs = root.querySelectorAll("[data-gp-auth-id-tab]");
     var panels = root.querySelectorAll("[data-gp-auth-id-panel]");
     if (!tabs.length || !panels.length) return;
 
@@ -46,7 +47,9 @@
     }
 
     tabs.forEach(function (tab) {
-      tab.addEventListener("click", function () {
+      tab.addEventListener("click", function (event) {
+        // Progressive enhancement: avoid full navigation when JS is available.
+        event.preventDefault();
         activate(tab.getAttribute("data-gp-auth-id-tab"));
       });
       tab.addEventListener("keydown", function (event) {

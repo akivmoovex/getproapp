@@ -80,6 +80,16 @@ describe("v7 phone login tab", () => {
     assert.match(js, /phone_national/);
     assert.match(js, /mode === "phone"/);
     assert.match(js, /setAttribute\("disabled"/);
+    assert.match(js, /preventDefault/);
+  });
+
+  it("identifier tabs are real mode links for no-JS", () => {
+    const tabs = read("views/platform/auth/identifier-tabs.ejs");
+    assert.match(tabs, /href="<%= emailHref %>"/);
+    assert.match(tabs, /href="<%= phoneHref %>"/);
+    assert.match(tabs, /\/login\?mode=email/);
+    assert.match(tabs, /\/login\?mode=phone/);
+    assert.doesNotMatch(tabs, /<button[\s\S]*data-gp-auth-id-tab/);
   });
 
   it("resolveLoginIdentifierFromBody normalizes Zambia phone formats", () => {

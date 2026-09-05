@@ -11,6 +11,10 @@ const express = require("express");
 const morgan = require("morgan");
 const rateLimit = require("express-rate-limit");
 const { resolveLoginIdentifierFromBody } = require("../auth/resolveLoginIdentifier");
+const {
+  buildLoginModeHrefs,
+  resolveLoginModeQuery,
+} = require("../auth/loginModeQuery");
 
 const { getPgPool } = require("../../db/pg");
 const { resolveHostname } = require("../host");
@@ -1084,8 +1088,8 @@ function createV5FoundationApp(options) {
       }
       const csrfToken = issueCsrfToken(env);
       setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
-      const loginMode =
-        req.query && String(req.query.mode || "").toLowerCase() === "phone" ? "phone" : "email";
+      const loginMode = resolveLoginModeQuery(req.query && req.query.mode);
+      const modeHrefs = buildLoginModeHrefs(req.query);
       authLog.logAuthEvent(req, "apex_login_rendered", {
         outcome: "ok",
         cookieHeaderPresent: Boolean(req.headers && req.headers.cookie),
@@ -1096,6 +1100,7 @@ function createV5FoundationApp(options) {
           hostKind: "apex",
           transferHostname,
           loginMode,
+          ...modeHrefs,
           env,
           loggedOut: String((req.query && req.query.logged_out) || "") === "1",
           passwordReset: String((req.query && req.query.reset) || "") === "1",
@@ -1257,12 +1262,14 @@ function createV5FoundationApp(options) {
           result.status === "no_active_role"
             ? "Sign-in is not available for this account."
             : "Invalid email, phone number, or password.";
+        const loginMode = resolved.mode === "phone" ? "phone" : "email";
         return res.status(401).type("html").send(
           renderLoginPage({
             ...loginPageOpts,
             env,
             error: message,
-            loginMode: resolved.mode === "phone" ? "phone" : "email",
+            loginMode,
+            ...buildLoginModeHrefs({ mode: loginMode }),
             loginEmail: req.body && req.body.login_email,
             emailValue: resolved.identifier,
             phoneCountry: req.body && req.body.phone_country,

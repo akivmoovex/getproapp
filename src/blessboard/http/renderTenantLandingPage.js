@@ -220,6 +220,8 @@ function renderLoginPage(opts) {
     emailValue: opts.emailValue ? String(opts.emailValue) : "",
     loginEmail: opts.loginEmail ? String(opts.loginEmail) : (opts.emailValue ? String(opts.emailValue) : ""),
     loginMode,
+    modeEmailHref: opts.modeEmailHref || "/login?mode=email",
+    modePhoneHref: opts.modePhoneHref || "/login?mode=phone",
     phoneCountry: opts.phoneCountry || phoneLocals.defaultPhoneCountry,
     phoneNational: opts.phoneNational || "",
     phoneCountries: phoneLocals.phoneCountries,

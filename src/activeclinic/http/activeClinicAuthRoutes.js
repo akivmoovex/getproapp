@@ -44,6 +44,10 @@ const {
   renderPlatformAdminLanding,
 } = require("./renderActiveClinicAuth");
 const { resolveLoginIdentifierFromBody } = require("../../platform/auth/resolveLoginIdentifier");
+const {
+  buildLoginModeHrefs,
+  resolveLoginModeQuery,
+} = require("../../platform/auth/loginModeQuery");
 const { PRODUCT, resolvePostLoginPath } = require("../../platform/onboarding");
 
 const SELECTION_COOKIE = "activeclinic_org_xfer";
@@ -143,7 +147,8 @@ function registerActiveClinicAuthRoutes(app, deps) {
     }
     const csrfToken = issuePageCsrf(res, req);
     let notice = null;
-    const loginMode = req.query && String(req.query.mode || "").toLowerCase() === "phone" ? "phone" : "email";
+    const loginMode = resolveLoginModeQuery(req.query && req.query.mode);
+    const modeHrefs = buildLoginModeHrefs(req.query);
     if (req.query && req.query.activated === "1") {
       notice = "Your account is activated. Sign in with your new password.";
     } else if (req.query && req.query.reset === "1") {
@@ -154,7 +159,15 @@ function registerActiveClinicAuthRoutes(app, deps) {
     return res
       .status(200)
       .type("html")
-      .send(renderLoginPage({ csrfToken, error: null, notice, loginMode }));
+      .send(
+        renderLoginPage({
+          csrfToken,
+          error: null,
+          notice,
+          loginMode,
+          ...modeHrefs,
+        })
+      );
   });
 
   app.post("/login", loginLimiter, async (req, res, next) => {
@@ -162,14 +175,16 @@ function registerActiveClinicAuthRoutes(app, deps) {
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         const csrfToken = issuePageCsrf(res, req);
         const resolved = resolveLoginIdentifierFromBody(req.body);
+        const loginMode = resolved.mode === "phone" ? "phone" : "email";
         return res.status(403).type("html").send(
           renderLoginPage({
             csrfToken,
             error: "Your session expired. Please try again.",
             identifier: resolved.identifier,
             loginEmail: req.body && req.body.login_email,
-            loginMode: resolved.mode === "phone" ? "phone" : "email",
+            loginMode,
             phoneCountry: req.body && req.body.phone_country,
+            ...buildLoginModeHrefs({ mode: loginMode }),
           })
         );
       }
@@ -215,14 +230,16 @@ function registerActiveClinicAuthRoutes(app, deps) {
 
       if (!result.ok) {
         const csrfToken = issuePageCsrf(res, req);
+        const loginMode = resolved.mode === "phone" ? "phone" : "email";
         return res.status(401).type("html").send(
           renderLoginPage({
             csrfToken,
             error: loginErrorMessage(result),
             identifier: resolved.identifier,
             loginEmail: req.body && req.body.login_email,
-            loginMode: resolved.mode === "phone" ? "phone" : "email",
+            loginMode,
             phoneCountry: req.body && req.body.phone_country,
+            ...buildLoginModeHrefs({ mode: loginMode }),
           })
         );
       }

@@ -50,7 +50,9 @@
 
         <%- include('../../platform/auth/identifier-tabs', {
           loginMode: typeof loginMode !== 'undefined' ? loginMode : 'email',
-          tabIdPrefix: 'ac-login-id'
+          tabIdPrefix: 'ac-login-id',
+          modeEmailHref: typeof modeEmailHref !== 'undefined' ? modeEmailHref : '/login?mode=email',
+          modePhoneHref: typeof modePhoneHref !== 'undefined' ? modePhoneHref : '/login?mode=phone'
         }) %>
 
         <div

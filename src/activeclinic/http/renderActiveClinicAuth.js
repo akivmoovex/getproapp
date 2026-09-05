@@ -16,7 +16,7 @@ const {
   buildPhoneFieldLocals,
 } = require("../services/activeClinicPhoneFieldLocals");
 
-const ASSET_VERSION = "v7-phone-login-fix-2";
+const ASSET_VERSION = "v7-phone-login-fix-3";
 
 const DEFAULT_BRANDING = Object.freeze({
   productName: "ActiveClinic",
@@ -70,6 +70,8 @@ function renderLoginPage(input) {
     identifier: String((input && input.identifier) || ""),
     loginEmail: String((input && input.loginEmail) || (loginMode === "email" ? (input && input.identifier) : "")),
     loginMode,
+    modeEmailHref: String((input && input.modeEmailHref) || "/login?mode=email"),
+    modePhoneHref: String((input && input.modePhoneHref) || "/login?mode=phone"),
     phoneCountry: String((input && input.phoneCountry) || "ZM").toUpperCase(),
     nextPath: (input && input.nextPath) || null,
     csrfToken: input && input.csrfToken,

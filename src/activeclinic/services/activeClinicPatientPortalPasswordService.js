@@ -11,8 +11,8 @@ const {
   normalizeEmail,
 } = require("../../platform/services/platformIdentityService");
 const {
-  normalizeRegistrationPhone,
-} = require("../../blessboard/services/normalizeRegistrationPhone");
+  normalizeActiveClinicPhone,
+} = require("./normalizeActiveClinicContact");
 const {
   setPlatformIdentityPassword,
 } = require("../../platform/services/platformIdentityCredentialService");
@@ -68,8 +68,10 @@ async function requestPatientPasswordReset(db, input) {
       identityId = rows[0].id;
     }
   } else {
-    const phone = normalizeRegistrationPhone(identifier, input.country || "ZM");
-    if (phone.ok) {
+    const phone = normalizeActiveClinicPhone(identifier, {
+      country: input.country || "ZM",
+    });
+    if (phone.ok && phone.normalized) {
       const rows = await identityRepo.findIdentitiesByNormalizedContact(db, {
         phoneNormalized: phone.normalized,
       });

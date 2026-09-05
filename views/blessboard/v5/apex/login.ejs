@@ -17,7 +17,7 @@
   <%- include('../partials/head-design-system') %>
   <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=15" />
   <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=7" />
-  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=8" />
+  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=9" />
   <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=7" />
 </head>
 <body
@@ -148,7 +148,9 @@
 
             <%- include('../../../platform/auth/identifier-tabs', {
               loginMode: typeof loginMode !== 'undefined' ? loginMode : 'email',
-              tabIdPrefix: 'bb-login-id'
+              tabIdPrefix: 'bb-login-id',
+              modeEmailHref: typeof modeEmailHref !== 'undefined' ? modeEmailHref : '/login?mode=email',
+              modePhoneHref: typeof modePhoneHref !== 'undefined' ? modePhoneHref : '/login?mode=phone'
             }) %>
 
             <div
@@ -276,7 +278,7 @@
 
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
   <script src="/blessboard/v5/tenant-auth.js?v=2" defer></script>
-  <script src="/platform/gp-auth-reg.js?v=10" defer></script>
+  <script src="/platform/gp-auth-reg.js?v=11" defer></script>
   <script src="/activeclinic/ac-phone-field.js?v=7" defer></script>
 </body>
 </html>

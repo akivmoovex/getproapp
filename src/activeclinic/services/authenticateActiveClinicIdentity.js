@@ -10,8 +10,8 @@ const {
   normalizeEmail,
 } = require("../../platform/services/platformIdentityService");
 const {
-  normalizeRegistrationPhone,
-} = require("../../blessboard/services/normalizeRegistrationPhone");
+  normalizeActiveClinicPhone,
+} = require("./normalizeActiveClinicContact");
 const {
   verifyPlatformIdentityPassword,
   burnCompare,
@@ -80,8 +80,10 @@ async function resolveIdentityForLogin(db, input) {
     }
   }
 
-  const phone = normalizeRegistrationPhone(raw, input && input.country);
-  if (phone.ok) {
+  const phone = normalizeActiveClinicPhone(raw, {
+    country: input && input.country,
+  });
+  if (phone.ok && phone.normalized) {
     const rows = await identityRepo.findIdentitiesByNormalizedContact(db, {
       phoneNormalized: phone.normalized,
     });
