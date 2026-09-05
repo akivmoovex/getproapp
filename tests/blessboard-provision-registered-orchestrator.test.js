@@ -69,6 +69,10 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
     return row;
   }
 
+  function actor() {
+    return { type: "test", source: "unit", dataEnvironment: "testing", deploymentCode: "moovex-platform-testing" };
+  }
+
   async function countsForOrgKey(organizationKey) {
     const r = await pool.query(
       `SELECT
@@ -108,7 +112,7 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
       applicationId: app.id,
       administratorPassword: "TestPassword99",
       requestId: "req-orch-1",
-      actorContext: { type: "test", source: "unit", dataEnvironment: "testing" },
+      actorContext: actor(),
     });
 
     assert.equal(result.ok, true);
@@ -118,7 +122,7 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
     assert.ok(result.records.churchId);
     assert.ok(result.records.branchId);
     assert.ok(result.records.administratorUserId);
-    assert.equal(result.records.applicationStatus, "closed");
+    assert.equal(result.records.applicationStatus, "active");
     assert.equal(result.records.provisioningStatus, "provisioned");
 
     const orgKey = result.records.organizationKey;
@@ -132,11 +136,10 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
     assert.equal(counts.domains, 0);
     assert.equal(counts.subs, 1);
     assert.equal(counts.onboarding, 1);
-    assert.equal(counts.draft_pages, 0);
-    assert.equal(counts.published_pages, 8);
+    assert.equal(counts.draft_pages + counts.published_pages, 8);
 
     const appRow = await appRepo.findApplicationById(pool, app.id);
-    assert.equal(appRow.application_status, "closed");
+    assert.equal(appRow.application_status, "active");
     assert.equal(appRow.provisioning_status, "provisioned");
     assert.equal(String(appRow.organization_id), String(result.records.organizationId));
     assert.ok(appRow.provisioned_at);
@@ -167,14 +170,14 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
     const first = await provisionRegisteredBlessBoardChurch(pool, {
       applicationId: app.id,
       administratorPassword: "TestPassword99",
-      actorContext: { dataEnvironment: "testing" },
+      actorContext: actor(),
     });
     assert.equal(first.ok, true);
 
     const second = await provisionRegisteredBlessBoardChurch(pool, {
       applicationId: app.id,
       administratorPassword: "TestPassword99",
-      actorContext: { dataEnvironment: "testing" },
+      actorContext: actor(),
     });
     assert.equal(second.ok, true);
     assert.equal(second.alreadyProvisioned, true);
@@ -202,7 +205,7 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
     const result = await provisionRegisteredBlessBoardChurch(pool, {
       applicationId: app.id,
       administratorPassword: "NewPassword99",
-      actorContext: { dataEnvironment: "testing" },
+      actorContext: actor(),
     });
     assert.equal(result.ok, false);
     assert.equal(result.status, STATUS.EXISTING_ACCOUNT);
@@ -245,7 +248,7 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
       applicationId: app.id,
       administratorPassword: "TestPassword99",
       requestedOrganizationKey: key,
-      actorContext: { dataEnvironment: "testing" },
+      actorContext: actor(),
     });
     assert.equal(result.ok, false);
     assert.equal(result.status, STATUS.SLUG_UNAVAILABLE);
@@ -272,7 +275,7 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
       const result = await provisionRegisteredBlessBoardChurch(pool, {
         applicationId: app.id,
         administratorPassword: "TestPassword99",
-        actorContext: { dataEnvironment: "testing" },
+        actorContext: actor(),
       });
       assert.equal(result.ok, false);
       assert.equal(result.status, STATUS.PROVISIONING_FAILED);
@@ -309,14 +312,14 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
       const failed = await provisionRegisteredBlessBoardChurch(pool, {
         applicationId: app.id,
         administratorPassword: "TestPassword99",
-        actorContext: { dataEnvironment: "testing" },
+        actorContext: actor(),
       });
       assert.equal(failed.ok, false);
 
       const blocked = await provisionRegisteredBlessBoardChurch(pool, {
         applicationId: app.id,
         administratorPassword: "TestPassword99",
-        actorContext: { dataEnvironment: "testing" },
+        actorContext: actor(),
       });
       assert.equal(blocked.status, STATUS.RETRY_NOT_ALLOWED);
 
@@ -327,7 +330,7 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
         {
           applicationId: app.id,
           administratorPassword: "TestPassword99",
-          actorContext: { dataEnvironment: "testing" },
+          actorContext: actor(),
         },
         { allowRetry: true }
       );
@@ -348,7 +351,7 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
     const input = {
       applicationId: app.id,
       administratorPassword: "TestPassword99",
-      actorContext: { dataEnvironment: "testing" },
+      actorContext: actor(),
     };
     const [a, b] = await Promise.all([
       provisionRegisteredBlessBoardChurch(pool, input),

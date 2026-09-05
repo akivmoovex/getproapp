@@ -150,15 +150,8 @@ async function persistSubmitted(db, input) {
   }
 
   if (identity.kind === IDENTITY_KIND.OTHER_CHURCH) {
-    return {
-      ok: false,
-      error: EXISTING_ACCOUNT_MESSAGE,
-      field: "email",
-      code: "existing_account",
-      httpStatus: 400,
-      riskDecision: risk.decision,
-      riskReasonCodes: risk.reasonCodes,
-    };
+    // Multi-org reuse is handled during provisioning (password verified, roles added).
+    // Do not block persistence — provision will reject unsafe identities explicitly.
   }
   if (identity.kind === IDENTITY_KIND.SAME_CHURCH && identity.organizationId) {
     const existingApp = await findLatestApplicationForOrganization(db, identity.organizationId);
@@ -346,6 +339,16 @@ async function provision(db, input) {
   if (!provisioned.ok) {
     const status = String(provisioned.status || "");
     if (status === "existing_account" || status === "EXISTING_ACCOUNT") {
+      return {
+        ok: false,
+        reviewRequired: false,
+        reason: REVIEW_REASON.IDENTITY_COLLISION,
+        code: status,
+        field: "email",
+        provisioned,
+      };
+    }
+    if (status === "identity_conflict" || status === "IDENTITY_CONFLICT") {
       return {
         ok: false,
         reviewRequired: false,

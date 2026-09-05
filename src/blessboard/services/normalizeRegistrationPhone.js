@@ -22,12 +22,11 @@ const DUPLICATE_PHONE_MESSAGE =
   "This phone number is already linked to a BlessBoard church registration. Use a different number, or contact BlessBoard support if you need help.";
 
 /**
- * Statuses that occupy the phone for a new self-registration.
- * Included: open / in-flight applications and any provisioned (or provisioning) tenant link.
- * Excluded (terminal / abandoned enquiry): rejected, cancelled, and closed without provision.
+ * Statuses that occupy the phone for a *different* applicant's self-registration.
+ * Same-email reuse (multi-org / retry) is allowed at the application layer.
  *
- * application_status IN ('submitted', 'duplicate_review')
- * OR provisioning_status IN ('provisioning', 'provisioned', 'provisioning_failed')
+ * In-flight: submitted / review / provisioning
+ * Occupying completed: active + provisioned (blocks a different email only)
  */
 const PHONE_UNIQUENESS_APPLICATION_STATUSES = Object.freeze([
   "submitted",
@@ -95,6 +94,24 @@ function phoneUniquenessSqlPredicate(alias) {
   )`;
 }
 
+/**
+ * Whether an occupying phone row blocks a new application for this email.
+ * Same email may proceed (idempotent retry or multi-org identity reuse).
+ * @param {object|null|undefined} occupyingRow
+ * @param {string} applicantEmail
+ */
+function phoneOccupancyBlocksApplicant(occupyingRow, applicantEmail) {
+  if (!occupyingRow) return false;
+  const left = String(occupyingRow.contact_email || "")
+    .trim()
+    .toLowerCase();
+  const right = String(applicantEmail || "")
+    .trim()
+    .toLowerCase();
+  if (left && right && left === right) return false;
+  return true;
+}
+
 module.exports = {
   PHONE_E164_RE,
   DUPLICATE_PHONE_MESSAGE,
@@ -104,5 +121,6 @@ module.exports = {
   normalizeRegistrationPhone,
   resolveCallingCode,
   phoneUniquenessSqlPredicate,
+  phoneOccupancyBlocksApplicant,
   digitsOnly,
 };

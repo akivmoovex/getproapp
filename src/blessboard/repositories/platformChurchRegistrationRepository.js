@@ -96,6 +96,7 @@ const UUID_RE =
 
 const {
   phoneUniquenessSqlPredicate,
+  phoneOccupancyBlocksApplicant,
   DUPLICATE_PHONE_MESSAGE,
   normalizeRegistrationPhone,
 } = require("../services/normalizeRegistrationPhone");
@@ -433,7 +434,7 @@ async function createApplicationIdempotent(pool, fields, opts = {}) {
         return { application: phoneRetry, duplicate: true };
       }
       const phoneConflict = await findActiveRegistrationByPhone(client, phoneNormalized);
-      if (phoneConflict) {
+      if (phoneOccupancyBlocksApplicant(phoneConflict, fields.contact_email)) {
         throw new DuplicateRegistrationPhoneError();
       }
     }

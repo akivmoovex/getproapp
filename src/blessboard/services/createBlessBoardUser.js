@@ -50,6 +50,9 @@ function validateInput(input) {
       : phoneNormalized;
   const password = raw.password != null ? String(raw.password) : "";
   const passwordHash = raw.passwordHash != null ? String(raw.passwordHash) : "";
+  // Optional plaintext used only to verify an existing row when passwordHash is precomputed.
+  const passwordForVerify =
+    raw.passwordForVerify != null ? String(raw.passwordForVerify) : password;
 
   if (!emailNormalized || !EMAIL_RE.test(emailNormalized) || emailNormalized.length > 254) {
     return { ok: false, reason: "email" };
@@ -69,7 +72,7 @@ function validateInput(input) {
         displayName,
         phoneNormalized,
         phoneDisplay,
-        password: null,
+        password: passwordForVerify || null,
         passwordHash,
       },
     };
@@ -122,13 +125,30 @@ async function createBlessBoardUser(db, input, options) {
       return result;
     };
 
-    const existing = await repo.findUserByEmail(client, req.emailNormalized);
+    const existingByEmail = await repo.findUserByEmail(client, req.emailNormalized);
+    const existingByPhone = req.phoneNormalized
+      ? await repo.findUserByPhone(client, req.phoneNormalized)
+      : null;
+    if (
+      existingByEmail &&
+      existingByPhone &&
+      String(existingByEmail.id) !== String(existingByPhone.id)
+    ) {
+      return abort({
+        ok: false,
+        status: STATUS.IDENTITY_CONFLICT,
+        message: "identity_conflict",
+        user: null,
+        diagnostics: {
+          identityResolution: "email_phone_split",
+          emailMatched: true,
+          phoneMatched: true,
+        },
+      });
+    }
+    const existing = existingByEmail || existingByPhone;
     if (existing) {
-      if (
-        String(existing.display_name) === req.displayName &&
-        String(existing.status) === "active" &&
-        req.password
-      ) {
+      if (String(existing.status) === "active" && req.password && existing.password_hash) {
         const matches = await bcrypt.compare(req.password, existing.password_hash);
         if (matches) {
           await session.commitIfManaged();
@@ -142,6 +162,11 @@ async function createBlessBoardUser(db, input, options) {
               displayName: existing.display_name,
               status: existing.status,
             },
+            diagnostics: {
+              identityResolution: "already_exists",
+              emailMatched: Boolean(existingByEmail),
+              phoneMatched: Boolean(existingByPhone),
+            },
           };
         }
       }
@@ -150,6 +175,11 @@ async function createBlessBoardUser(db, input, options) {
         status: STATUS.IDENTITY_CONFLICT,
         message: "identity_conflict",
         user: null,
+        diagnostics: {
+          identityResolution: "identity_conflict",
+          emailMatched: Boolean(existingByEmail),
+          phoneMatched: Boolean(existingByPhone),
+        },
       });
     }
 
@@ -166,11 +196,22 @@ async function createBlessBoardUser(db, input, options) {
         })
       );
       if (!inserted.ok) {
+        const pg = inserted.error || null;
         return abort({
           ok: false,
           status: STATUS.IDENTITY_CONFLICT,
           message: "identity_conflict",
           user: null,
+          diagnostics: {
+            identityResolution: "unique_violation",
+            emailMatched: false,
+            phoneMatched: false,
+            underlyingErrorClass: pg && pg.name ? String(pg.name).slice(0, 80) : null,
+            postgresCode: pg && pg.code ? String(pg.code).slice(0, 8) : "23505",
+            constraint: pg && pg.constraint ? String(pg.constraint).slice(0, 120) : null,
+            table: pg && pg.table ? String(pg.table).slice(0, 120) : null,
+            schema: pg && pg.schema ? String(pg.schema).slice(0, 64) : null,
+          },
         });
       }
       user = inserted.value;
@@ -190,9 +231,25 @@ async function createBlessBoardUser(db, input, options) {
         status: user.status,
       },
     };
-  } catch {
+  } catch (err) {
     if (session) await session.safeRollbackOnError();
-    return { ok: false, status: STATUS.TRANSACTION_ERROR, message: "transaction_error", user: null };
+    const pgCode =
+      err && err.code != null && /^[0-9A-Z]{5}$/.test(String(err.code))
+        ? String(err.code)
+        : null;
+    return {
+      ok: false,
+      status: STATUS.TRANSACTION_ERROR,
+      message: "transaction_error",
+      user: null,
+      diagnostics: {
+        underlyingErrorClass: err && err.name ? String(err.name).slice(0, 80) : null,
+        postgresCode: pgCode,
+        constraint: err && err.constraint ? String(err.constraint).slice(0, 120) : null,
+        table: err && err.table ? String(err.table).slice(0, 120) : null,
+        schema: err && err.schema ? String(err.schema).slice(0, 64) : null,
+      },
+    };
   } finally {
     if (session) session.releaseIfOwned();
   }

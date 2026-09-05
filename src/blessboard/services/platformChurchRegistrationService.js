@@ -503,6 +503,18 @@ function mapProvisionFailure(provision, application) {
       httpStatus: 400,
     };
   }
+  if (status === ORCH_STATUS.IDENTITY_CONFLICT || status === "identity_conflict") {
+    return {
+      ok: false,
+      mode: "instant_free",
+      application,
+      code: status,
+      field: "email",
+      error:
+        "The administrator email and phone belong to different existing accounts. Use a matching email and phone, or contact BlessBoard support.",
+      httpStatus: 400,
+    };
+  }
   if (status === ORCH_STATUS.DUPLICATE_EMAIL_REVIEW) {
     return {
       ok: false,

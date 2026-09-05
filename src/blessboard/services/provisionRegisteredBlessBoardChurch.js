@@ -46,9 +46,10 @@ const {
 } = require("./normalizeChurchIdentity");
 const { assertChurchNameAvailable } = require("./assertChurchNameAvailable");
 const {
-  IDENTITY_KIND,
-  classifyBlessBoardRegistrationIdentity,
-} = require("./classifyBlessBoardRegistrationIdentity");
+  ACTION: ADMIN_IDENTITY_ACTION,
+  resolveBlessBoardRegistrationAdministrator,
+  extractPgDiagnostics,
+} = require("./resolveBlessBoardRegistrationAdministrator");
 const {
   growthTrialEndsAtIso,
 } = require("../../platform/time/addGrowthTrialDurationUtc");
@@ -130,7 +131,7 @@ const ERROR_META = Object.freeze({
     retryable: false,
     severity: "warn",
     publicMessage:
-      "The administrator email is already linked to an account that cannot safely own this church.",
+      "The administrator email and phone belong to different existing accounts. Use matching contact details, or contact BlessBoard support.",
   },
   [STATUS.SLUG_UNAVAILABLE]: {
     retryable: true,
@@ -179,7 +180,7 @@ const PLAN_KEY_GROWTH = "growth";
 const PROVISIONABLE_PLAN_KEYS = Object.freeze([PLAN_KEY_FREE, PLAN_KEY_GROWTH]);
 /** @deprecated Use PLAN_KEY_FREE — retained for callers that imported PLAN_KEY historically via mapPlanLabel. */
 const PLAN_KEY = PLAN_KEY_FREE;
-const DEFAULT_DEPLOYMENT = "blessboard-org-v5";
+const DEFAULT_DEPLOYMENT = "blessboard-org-staging";
 const HQ_BRANCH_KEY = "hq";
 const { resolveBaseBranchKey } = require("./branchKey");
 
@@ -194,6 +195,14 @@ class OrchestratorError extends Error {
     this.name = "OrchestratorError";
     this.status = status;
     this.extra = extra || {};
+    if (extra && extra.diagnostics && typeof extra.diagnostics === "object") {
+      this.diagnostics = extra.diagnostics;
+    }
+    if (extra && extra.cause && typeof extra.cause === "object") {
+      this.cause = extra.cause;
+      const pg = extractPgDiagnostics(extra.cause);
+      this.diagnostics = { ...(this.diagnostics || {}), ...pg };
+    }
   }
 }
 
@@ -426,20 +435,46 @@ function extractProvisionErrorDiagnostics(err) {
   if (!err || typeof err !== "object") {
     return {
       errorName: null,
+      underlyingErrorClass: null,
       postgresCode: null,
       constraint: null,
       table: null,
       schema: null,
+      identityResolution: null,
+      emailMatched: null,
+      phoneMatched: null,
     };
   }
+  const fromSelf = extractPgDiagnostics(err);
+  const fromCause = err.cause ? extractPgDiagnostics(err.cause) : {};
+  const nested =
+    err.diagnostics && typeof err.diagnostics === "object" ? err.diagnostics : {};
+  const extraDiag =
+    err.extra && err.extra.diagnostics && typeof err.extra.diagnostics === "object"
+      ? err.extra.diagnostics
+      : {};
+  const merged = { ...fromCause, ...fromSelf, ...extraDiag, ...nested };
   const pgCode =
-    err.code != null && /^[0-9A-Z]{5}$/.test(String(err.code)) ? String(err.code) : null;
+    merged.postgresCode ||
+    (err.code != null && /^[0-9A-Z]{5}$/.test(String(err.code)) ? String(err.code) : null);
   return {
     errorName: err.name != null ? String(err.name).slice(0, 80) : null,
+    underlyingErrorClass:
+      merged.underlyingErrorClass != null
+        ? String(merged.underlyingErrorClass).slice(0, 80)
+        : err.cause && err.cause.name
+          ? String(err.cause.name).slice(0, 80)
+          : null,
     postgresCode: pgCode,
-    constraint: err.constraint != null ? String(err.constraint).slice(0, 120) : null,
-    table: err.table != null ? String(err.table).slice(0, 120) : null,
-    schema: err.schema != null ? String(err.schema).slice(0, 64) : null,
+    constraint: merged.constraint != null ? String(merged.constraint).slice(0, 120) : null,
+    table: merged.table != null ? String(merged.table).slice(0, 120) : null,
+    schema: merged.schema != null ? String(merged.schema).slice(0, 64) : null,
+    identityResolution:
+      merged.identityResolution != null ? String(merged.identityResolution).slice(0, 80) : null,
+    emailMatched:
+      typeof merged.emailMatched === "boolean" ? merged.emailMatched : null,
+    phoneMatched:
+      typeof merged.phoneMatched === "boolean" ? merged.phoneMatched : null,
   };
 }
 
@@ -783,47 +818,118 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
 
       provisioningStage = "resolve_administrator_identity";
       const emailNormalized = normalizeEmail(application.contact_email);
-      if (!emailNormalized) {
+      if (!emailNormalized && !administratorViaInvitation) {
         throw new OrchestratorError(STATUS.INVALID_INPUT, "invalid_input:administratorEmail");
       }
-      const existingUser = await authRepo.findUserByEmail(client, emailNormalized);
-      const resumeExistingOrg = Boolean(application.organization_id);
-      let reuseExistingUserForNewOrg = false;
-      if (existingUser && !administratorViaInvitation && !resumeExistingOrg) {
-        const identity = await classifyBlessBoardRegistrationIdentity(client, {
-          email: emailNormalized,
-          churchName: application.church_name,
-          country: application.country,
-          organizationKey,
-          applicationOrganizationId: application.organization_id,
-        });
-        if (identity.kind === IDENTITY_KIND.SUSPENDED) {
-          duplicateReview = true;
-          throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review");
-        }
-        if (
-          identity.kind === IDENTITY_KIND.OTHER_CHURCH ||
-          identity.kind === IDENTITY_KIND.SAME_CHURCH
-        ) {
-          throw new OrchestratorError(STATUS.EXISTING_ACCOUNT, "existing_account");
-        }
-        if (identity.kind === IDENTITY_KIND.ORPHAN_USER) {
-          const hash = existingUser.password_hash;
-          if (!hash || !administratorPassword) {
-            throw new OrchestratorError(STATUS.EXISTING_ACCOUNT, "existing_account");
-          }
-          const passwordOk = await bcrypt.compare(administratorPassword, hash);
-          if (!passwordOk) {
-            throw new OrchestratorError(STATUS.EXISTING_ACCOUNT, "existing_account");
-          }
-          reuseExistingUserForNewOrg = true;
+      if (!emailNormalized && administratorViaInvitation) {
+        // Invitation may be phone-first; email still preferred for role assignment helpers.
+        if (!application.contact_phone_normalized) {
+          throw new OrchestratorError(STATUS.INVALID_INPUT, "invalid_input:administratorContact");
         }
       }
-      if (existingUser && administratorViaInvitation) {
-        const identity = classifyExistingAdministratorIdentity(existingUser);
-        if (!identity.ok) {
-          throw new OrchestratorError(STATUS.IDENTITY_CONFLICT, "identity_conflict");
+      const resumeExistingOrg = Boolean(application.organization_id);
+      let reuseExistingUserForNewOrg = false;
+      let existingUser = null;
+      let identityResolutionDiagnostics = {
+        identityResolution: null,
+        emailMatched: false,
+        phoneMatched: false,
+      };
+
+      const resolvedAdmin = await resolveBlessBoardRegistrationAdministrator(client, {
+        email: emailNormalized || application.contact_email,
+        phoneNormalized: application.contact_phone_normalized || null,
+        churchName: application.church_name,
+        country: application.country,
+        organizationKey,
+        applicationOrganizationId: application.organization_id,
+        administratorPassword: administratorViaInvitation ? null : administratorPassword,
+        administratorViaInvitation,
+      });
+      identityResolutionDiagnostics = {
+        ...(resolvedAdmin.diagnostics || {}),
+        emailMatched: Boolean(resolvedAdmin.emailMatched),
+        phoneMatched: Boolean(resolvedAdmin.phoneMatched),
+      };
+      existingUser = resolvedAdmin.user || null;
+
+      if (resolvedAdmin.action === ADMIN_IDENTITY_ACTION.REJECT_SUSPENDED) {
+        duplicateReview = true;
+        throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review", {
+          diagnostics: identityResolutionDiagnostics,
+        });
+      }
+      if (resolvedAdmin.action === ADMIN_IDENTITY_ACTION.REJECT_IDENTITY_CONFLICT) {
+        throw new OrchestratorError(STATUS.IDENTITY_CONFLICT, "identity_conflict", {
+          diagnostics: identityResolutionDiagnostics,
+        });
+      }
+      if (resolvedAdmin.action === ADMIN_IDENTITY_ACTION.REJECT_EXISTING_ACCOUNT) {
+        throw new OrchestratorError(STATUS.EXISTING_ACCOUNT, "existing_account", {
+          diagnostics: identityResolutionDiagnostics,
+        });
+      }
+      if (resolvedAdmin.action === ADMIN_IDENTITY_ACTION.ALREADY_PROVISIONED) {
+        const orgId =
+          resolvedAdmin.organizationId ||
+          application.organization_id ||
+          null;
+        if (orgId) {
+          if (!application.organization_id || String(application.organization_id) !== String(orgId)) {
+            await appRepo.updateApplicationProvisioningState(client, applicationId, {
+              organizationId: orgId,
+            });
+            application.organization_id = orgId;
+          }
+          // Inspect against the existing tenant, not this application's not_started status.
+          const completeness = await inspectOrganizationProvisioningCompleteness(client, {
+            productCode: "blessboard",
+            organizationId: orgId,
+            application: {
+              ...application,
+              organization_id: orgId,
+              provisioning_status: "provisioned",
+            },
+          });
+          const stages = completeness.stages || {};
+          const tenantReady =
+            completeness.complete ||
+            Boolean(
+              stages.organization &&
+                stages.administrator &&
+                stages.role_assignment &&
+                stages.facility_hq
+            );
+          if (tenantReady) {
+            if (application.provisioning_status !== "provisioned") {
+              await appRepo.updateApplicationProvisioningState(client, applicationId, {
+                applicationStatus: "active",
+                provisioningStatus: "provisioned",
+                organizationId: orgId,
+                provisionedAt: new Date().toISOString(),
+                clearFailureMetadata: true,
+                legacyStatus: "closed",
+              });
+              application.provisioning_status = "provisioned";
+              application.application_status = "active";
+              application.organization_id = orgId;
+            }
+            const records = await loadProvisionedRecords(client, application);
+            if (resolvedAdmin.userId && !records.administratorUserId) {
+              records.administratorUserId = resolvedAdmin.userId;
+            }
+            return { alreadyProvisioned: true, records };
+          }
+          // Incomplete same-church tenant: resume and attach roles to the existing identity.
+          reuseExistingUserForNewOrg = true;
+        } else {
+          throw new OrchestratorError(STATUS.EXISTING_ACCOUNT, "existing_account", {
+            diagnostics: identityResolutionDiagnostics,
+          });
         }
+      }
+      if (resolvedAdmin.action === ADMIN_IDENTITY_ACTION.REUSE) {
+        reuseExistingUserForNewOrg = true;
       }
 
       const provisionedAt =
@@ -992,11 +1098,13 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         let adminUser = existingUser;
         if (!adminUser) {
           adminUser = await authRepo.insertUser(client, {
-            emailNormalized,
-            emailDisplay: String(application.contact_email || emailNormalized).slice(0, 254),
+            emailNormalized: emailNormalized || null,
+            emailDisplay: String(application.contact_email || emailNormalized || "").slice(0, 254) || null,
             passwordHash: null,
             status: "invited",
             displayName: adminDisplayName.slice(0, 200),
+            phoneNormalized: application.contact_phone_normalized || null,
+            phoneDisplay: application.contact_phone || null,
           });
         } else {
           administratorLinkedExisting = true;
@@ -1004,7 +1112,9 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           // Never reset or overwrite an existing password hash.
         }
         if (!adminUser || !adminUser.id) {
-          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, "administrator_prepare_failed");
+          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, "administrator_prepare_failed", {
+            diagnostics: identityResolutionDiagnostics,
+          });
         }
         administratorUserId = String(adminUser.id);
 
@@ -1026,7 +1136,12 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             { manageTransaction: false }
           );
           if (!hqRole.ok) {
-            throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status);
+            throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status, {
+              diagnostics: {
+                ...identityResolutionDiagnostics,
+                roleStatus: hqRole.status,
+              },
+            });
           }
 
           const branchRole = await roleAssign.assignBlessBoardRole(
@@ -1041,7 +1156,16 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             { manageTransaction: false }
           );
           if (!branchRole.ok) {
-            throw new OrchestratorError(STATUS.DATABASE_CONFLICT, branchRole.message || branchRole.status);
+            throw new OrchestratorError(
+              STATUS.DATABASE_CONFLICT,
+              branchRole.message || branchRole.status,
+              {
+                diagnostics: {
+                  ...identityResolutionDiagnostics,
+                  roleStatus: branchRole.status,
+                },
+              }
+            );
           }
         }
 
@@ -1101,7 +1225,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         const hqRole = await roleAssign.assignBlessBoardRole(
           client,
           {
-            email: application.contact_email,
+            email: application.contact_email || existingUser.email_normalized,
             organizationKey,
             roleKey: "church_hq_admin",
             churchKey: organizationKey,
@@ -1109,13 +1233,18 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           { manageTransaction: false }
         );
         if (!hqRole.ok) {
-          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status);
+          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status, {
+            diagnostics: {
+              ...identityResolutionDiagnostics,
+              roleStatus: hqRole.status,
+            },
+          });
         }
 
         const branchRole = await roleAssign.assignBlessBoardRole(
           client,
           {
-            email: application.contact_email,
+            email: application.contact_email || existingUser.email_normalized,
             organizationKey,
             roleKey: "branch_admin",
             churchKey: organizationKey,
@@ -1124,7 +1253,16 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           { manageTransaction: false }
         );
         if (!branchRole.ok) {
-          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, branchRole.message || branchRole.status);
+          throw new OrchestratorError(
+            STATUS.DATABASE_CONFLICT,
+            branchRole.message || branchRole.status,
+            {
+              diagnostics: {
+                ...identityResolutionDiagnostics,
+                roleStatus: branchRole.status,
+              },
+            }
+          );
         }
       } else {
         provisioningStage = "create_administrator_user";
@@ -1134,18 +1272,88 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
             email: application.contact_email,
             displayName: adminDisplayName,
             passwordHash,
+            passwordForVerify: administratorPassword,
             phoneNormalized: application.contact_phone_normalized || null,
             phoneDisplay: application.contact_phone || null,
           },
           { manageTransaction: false }
         );
         if (!user.ok) {
-          throw new OrchestratorError(
-            user.status === "identity_conflict" ? STATUS.EXISTING_ACCOUNT : STATUS.DATABASE_CONFLICT,
-            user.message || user.status
-          );
+          const createDiag = {
+            ...identityResolutionDiagnostics,
+            ...(user.diagnostics || {}),
+          };
+          // Recoverable: identity appeared between resolve and insert — reuse when safe.
+          if (
+            user.status === "identity_conflict" ||
+            user.status === "transaction_error"
+          ) {
+            const recovered = await resolveBlessBoardRegistrationAdministrator(client, {
+              email: emailNormalized,
+              phoneNormalized: application.contact_phone_normalized || null,
+              churchName: application.church_name,
+              country: application.country,
+              organizationKey,
+              applicationOrganizationId: application.organization_id,
+              administratorPassword,
+              administratorViaInvitation: false,
+            });
+            if (
+              recovered.ok &&
+              recovered.action === ADMIN_IDENTITY_ACTION.REUSE &&
+              recovered.userId
+            ) {
+              administratorUserId = String(recovered.userId);
+              administratorLinkedExisting = true;
+              administratorWasActive =
+                recovered.user && String(recovered.user.status) === "active";
+              identityResolutionDiagnostics = {
+                ...createDiag,
+                ...(recovered.diagnostics || {}),
+                identityResolution: "reuse_after_create_conflict",
+              };
+            } else if (
+              recovered.ok &&
+              recovered.action === ADMIN_IDENTITY_ACTION.ALREADY_PROVISIONED &&
+              recovered.organizationId
+            ) {
+              application.organization_id = recovered.organizationId;
+              const records = await loadProvisionedRecords(client, {
+                ...application,
+                organization_id: recovered.organizationId,
+                provisioning_status: "provisioned",
+              });
+              return { alreadyProvisioned: true, records };
+            } else {
+              throw new OrchestratorError(
+                recovered.action === ADMIN_IDENTITY_ACTION.REJECT_IDENTITY_CONFLICT
+                  ? STATUS.IDENTITY_CONFLICT
+                  : user.status === "identity_conflict"
+                    ? STATUS.EXISTING_ACCOUNT
+                    : STATUS.DATABASE_CONFLICT,
+                recovered.reason || user.message || user.status,
+                {
+                  diagnostics: {
+                    ...createDiag,
+                    ...(recovered.diagnostics || {}),
+                  },
+                }
+              );
+            }
+          } else {
+            throw new OrchestratorError(
+              STATUS.DATABASE_CONFLICT,
+              user.message || user.status,
+              { diagnostics: createDiag }
+            );
+          }
+        } else {
+          administratorUserId = String(user.user.id);
+          if (user.status === "already_exists") {
+            administratorLinkedExisting = true;
+            administratorWasActive = true;
+          }
         }
-        administratorUserId = String(user.user.id);
 
         provisioningStage = "assign_administrator_roles";
         const hqRole = await roleAssign.assignBlessBoardRole(
@@ -1159,7 +1367,12 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           { manageTransaction: false }
         );
         if (!hqRole.ok) {
-          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status);
+          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, hqRole.message || hqRole.status, {
+            diagnostics: {
+              ...identityResolutionDiagnostics,
+              roleStatus: hqRole.status,
+            },
+          });
         }
 
         const branchRole = await roleAssign.assignBlessBoardRole(
@@ -1174,7 +1387,16 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
           { manageTransaction: false }
         );
         if (!branchRole.ok) {
-          throw new OrchestratorError(STATUS.DATABASE_CONFLICT, branchRole.message || branchRole.status);
+          throw new OrchestratorError(
+            STATUS.DATABASE_CONFLICT,
+            branchRole.message || branchRole.status,
+            {
+              diagnostics: {
+                ...identityResolutionDiagnostics,
+                roleStatus: branchRole.status,
+              },
+            }
+          );
         }
       }
 

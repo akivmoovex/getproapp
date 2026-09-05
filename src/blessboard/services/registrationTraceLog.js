@@ -68,6 +68,10 @@ const ALLOWED_KEYS = Object.freeze(
     "reviewReason",
     "rootStatus",
     "persistError",
+    "identityResolution",
+    "emailMatched",
+    "phoneMatched",
+    "underlyingErrorClass",
     "administratorViaInvitation",
     "invitationCreated",
   ])
