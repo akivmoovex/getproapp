@@ -66,6 +66,7 @@
   data-website-section-actions-url="<%= shell.sectionActionsUrl || '' %>"
   data-website-add-section-url="<%= shell.addSectionUrl || '' %>"
   data-website-section-manifest="<%= shell.sectionManifestJson || '' %>"
+  data-website-exit-href="<%= shell.exitHref || '' %>"
   data-website-max-bytes="5242880"
   data-stitch-project="9585058196210789597"
   data-stitch-edit="WE01-01"
@@ -204,6 +205,18 @@
           <%= labels.exitEditing || 'Exit editing' %>
         </button>
       </form>
+      <form method="post" action="<%= shell.exitAction || shell.exitHref %>" class="gp-website-editor__exit gp-website-editor__exit--mobile">
+        <input type="hidden" name="<%= shell.csrfField || '_csrf' %>" value="<%= shell.csrfToken || '' %>"/>
+        <button
+          type="submit"
+          class="gp-website-editor__icon-btn"
+          data-website-engine-exit="1"
+          data-bb-exit-editing="1"
+          aria-label="<%= labels.exitEditing || 'Exit editing' %>"
+        >
+          <span class="material-symbols-outlined" aria-hidden="true">close</span>
+        </button>
+      </form>
       <% } else if (shell.exitHref) { %>
       <a
         class="gp-website-editor__btn gp-website-editor__btn--ghost gp-website-editor__exit gp-website-editor__exit--desktop"
@@ -213,6 +226,15 @@
       >
         <span class="material-symbols-outlined" aria-hidden="true">close</span>
         <%= labels.exitEditing || 'Exit editing' %>
+      </a>
+      <a
+        class="gp-website-editor__icon-btn gp-website-editor__exit gp-website-editor__exit--mobile"
+        href="<%= shell.exitHref %>"
+        data-website-engine-exit="1"
+        data-bb-exit-editing="1"
+        aria-label="<%= labels.exitEditing || 'Exit editing' %>"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
       </a>
       <% } %>
     </div>

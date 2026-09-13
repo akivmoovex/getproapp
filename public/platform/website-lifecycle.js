@@ -349,6 +349,75 @@
     ev.returnValue = "";
   });
 
+  function resolveExitHref() {
+    var shell = document.querySelector("[data-website-exit-href]");
+    if (shell) {
+      var fromShell = shell.getAttribute("data-website-exit-href");
+      if (fromShell) return fromShell;
+    }
+    var exitLink = document.querySelector(
+      "a[data-website-engine-exit][href], a[data-bb-exit-editing][href]"
+    );
+    if (exitLink) return exitLink.getAttribute("href");
+    try {
+      var u = new URL(window.location.href);
+      u.searchParams.delete("website_edit");
+      u.searchParams.delete("website_mode");
+      var q = u.searchParams.toString();
+      return q ? u.pathname + "?" + q : u.pathname;
+    } catch (err) {
+      return "/";
+    }
+  }
+
+  function exitEditingViaGuard() {
+    var href = resolveExitHref();
+    var postExitBtn = document.querySelector(
+      "form.gp-website-editor__exit button[data-website-engine-exit]"
+    );
+    var form = postExitBtn && postExitBtn.closest ? postExitBtn.closest("form") : null;
+    guardNavigation(function () {
+      if (form) {
+        if (typeof form.requestSubmit === "function") form.requestSubmit();
+        else form.submit();
+        return;
+      }
+      window.location.href = href;
+    });
+  }
+
+  // Same-document Back trap: first Back reuses Exit editing + dirty guard.
+  (function armEditorBackExit() {
+    var editor = document.querySelector("[data-gp-website-editor='1']");
+    if (!editor || !window.history || typeof window.history.pushState !== "function") return;
+    if (window.__gpWebsiteEditorBackArmed) return;
+    window.__gpWebsiteEditorBackArmed = true;
+    try {
+      var marker = { gpWebsiteEditorExit: true };
+      window.history.replaceState(
+        Object.assign({}, window.history.state || {}, marker),
+        "",
+        window.location.href
+      );
+      window.history.pushState(Object.assign({}, marker, { gpWebsiteEditorArmed: true }), "", window.location.href);
+    } catch (err) {
+      return;
+    }
+    window.addEventListener("popstate", function () {
+      if (!document.querySelector("[data-gp-website-editor='1']")) return;
+      try {
+        window.history.pushState(
+          { gpWebsiteEditorExit: true, gpWebsiteEditorArmed: true },
+          "",
+          window.location.href
+        );
+      } catch (err) {
+        /* ignore */
+      }
+      exitEditingViaGuard();
+    });
+  })();
+
   window.GpWebsiteLifecycle = {
     setLocalDirtyController: function (controller) {
       localDirtyController = controller || null;
@@ -359,6 +428,8 @@
     hasLocalUnsaved: hasLocalUnsaved,
     guardNavigation: guardNavigation,
     confirmPublish: confirmPublish,
+    resolveExitHref: resolveExitHref,
+    exitEditingViaGuard: exitEditingViaGuard,
     openDiscardDialog: function () {
       openDialog("discard");
     },

@@ -908,6 +908,10 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
   display: none;
 }
 
+.gp-website-editor__exit--mobile {
+  display: none;
+}
+
 .gp-website-editor__rail {
   display: none;
   position: fixed;
@@ -1011,6 +1015,7 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
 
   .gp-website-editor__draft--mobile,
   .gp-website-editor__preview-icon,
+  .gp-website-editor__exit--mobile,
   .gp-website-editor__more-sep--mobile-exit,
   .gp-website-editor__more-form--mobile-exit {
     display: flex;

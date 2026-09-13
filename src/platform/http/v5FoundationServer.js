@@ -267,7 +267,8 @@ function isUnavailableAppPath(p) {
   ) {
     return true;
   }
-  if (pathOnly.startsWith("/church")) return true;
+  // Legacy /church/* only — do not treat /churches (V5 → /directory) as unavailable.
+  if (pathOnly === "/church" || pathOnly.startsWith("/church/")) return true;
   return false;
 }
 

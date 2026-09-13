@@ -1013,6 +1013,39 @@ function createApexMarketingRouter(deps) {
     }
   });
 
+  // Legacy V4 finder paths → V5 /directory (and /c/:org for org bookmarks).
+  // Do not leave /churches as a 503 "unavailable" trap (prefix matched /church).
+  router.get(["/churches", "/churches/"], (req, res) => {
+    if (!isApexHost(req)) {
+      return res.status(404).type("text").send("Not found");
+    }
+    const q = directoryRepo.normalizeSearchQuery(req.query && req.query.q);
+    const target = q ? `/directory?q=${encodeURIComponent(q)}` : "/directory";
+    return res.redirect(302, target);
+  });
+
+  router.get("/churches/:slug/branches", (req, res) => {
+    if (!isApexHost(req)) {
+      return res.status(404).type("text").send("Not found");
+    }
+    const slug = String((req.params && req.params.slug) || "")
+      .trim()
+      .toLowerCase();
+    if (!slug) return res.redirect(302, "/directory");
+    return res.redirect(302, `/c/${encodeURIComponent(slug)}`);
+  });
+
+  router.get("/churches/:slug", (req, res) => {
+    if (!isApexHost(req)) {
+      return res.status(404).type("text").send("Not found");
+    }
+    const slug = String((req.params && req.params.slug) || "")
+      .trim()
+      .toLowerCase();
+    if (!slug) return res.redirect(302, "/directory");
+    return res.redirect(302, `/c/${encodeURIComponent(slug)}`);
+  });
+
   router.get("/directory", async (req, res) => {
     if (!isApexHost(req)) {
       return res.status(404).type("text").send("Not found");
