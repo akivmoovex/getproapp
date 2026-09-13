@@ -531,7 +531,63 @@
   margin: 0 0 0.5rem;
   font-size: clamp(1.45rem, 3vw, 1.85rem);
   letter-spacing: -0.02em;
+  color: var(--bb-auth-ink);
+}
+
+.bb-auth-login .bb-auth-card__title {
+  color: var(--bb-auth-ink);
+}
+
+.bb-auth-card__title--desktop,
+.bb-auth-card__lead--desktop {
+  display: none;
+}
+
+.bb-auth-card__title--mobile,
+.bb-auth-card__lead--mobile {
+  display: inline;
+}
+
+@media (min-width: 960px) {
+  .bb-auth-card__title--desktop,
+  .bb-auth-card__lead--desktop {
+    display: inline;
+  }
+
+  .bb-auth-card__title--mobile,
+  .bb-auth-card__lead--mobile {
+    display: none;
+  }
+}
+
+.bb-auth-field__label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin: 0 0 0.35rem;
+}
+
+.bb-auth-field__label-row label {
+  margin: 0;
+}
+
+.bb-auth-forgot {
+  font-size: 0.8rem;
+  font-weight: 600;
   color: var(--bb-auth-violet);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+.bb-auth-forgot:hover {
+  text-decoration: underline;
+}
+
+.bb-auth-forgot:focus-visible {
+  outline: 2px solid rgba(108, 92, 231, 0.45);
+  outline-offset: 2px;
+  border-radius: 2px;
 }
 
 .bb-auth-card__lead {

@@ -15,9 +15,9 @@
   <meta name="robots" content="noindex, nofollow" />
   <title>Sign in · BlessBoard</title>
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=15" />
-  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=7" />
-  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=9" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=16" />
+  <link rel="stylesheet" href="/blessboard/v5/apex-auth.css?v=8" />
+  <link rel="stylesheet" href="/platform/gp-auth-reg.css?v=10" />
   <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=7" />
 </head>
 <body
@@ -35,13 +35,15 @@
   <div class="bb-auth-layout">
     <%- include('../../../platform/auth/login-feature-panel', {
       mode: 'desktop',
-      icon: 'auto_awesome',
-      title: 'Manage everything',
-      lead: 'Members, events, giving, and more in one place.',
+      icon: 'church',
+      title: 'Manage your church from one place',
+      lead: 'Everything you need to grow and connect your community, unified in a single, intuitive platform.',
       features: [
-        { icon: 'groups', text: 'Member directory and engagement tools' },
-        { icon: 'event', text: 'Events and fellowship coordination' },
-        { icon: 'volunteer_activism', text: 'Giving and stewardship workflows' }
+        { icon: 'groups', title: 'Members', text: 'Organize and engage your congregation effectively.' },
+        { icon: 'account_tree', title: 'Branches & Ministries', text: 'Manage multiple locations and dedicated groups.' },
+        { icon: 'event', title: 'Events', text: 'Schedule services, meetings, and special gatherings.' },
+        { icon: 'volunteer_activism', title: 'Giving', text: 'Secure and transparent donation tracking.' },
+        { icon: 'language', title: 'Website', text: 'Maintain your church\'s online presence easily.' }
       ]
     }) %>
 
@@ -50,7 +52,7 @@
         <a class="bb-auth-brand" href="/">
           <img
             class="bb-auth-brand__mark"
-            src="/church/images/brand/blessboard-small-church-logo.png"
+            src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/brand/blessboard-small-church-logo.png') : '' %>"
             alt=""
             width="32"
             height="32"
@@ -75,15 +77,29 @@
           <div class="bb-auth-card__intro">
             <div class="bb-auth-card__brand-mark" aria-hidden="true">
               <img
-                src="/church/images/brand/blessboard-small-church-logo.png"
+                src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/brand/blessboard-small-church-logo.png') : '' %>"
                 alt=""
                 width="56"
                 height="56"
                 decoding="async"
               />
             </div>
-            <h1 class="bb-auth-card__title"><%= transferHostname ? 'Member Access' : 'Welcome Back' %></h1>
-            <p class="bb-auth-card__lead"><%= transferHostname ? subtitle : 'Sign in to manage your church.' %></p>
+            <h1 class="bb-auth-card__title">
+              <% if (transferHostname) { %>
+              Member Access
+              <% } else { %>
+              <span class="bb-auth-card__title--desktop">Welcome Back</span>
+              <span class="bb-auth-card__title--mobile">Log in to your church</span>
+              <% } %>
+            </h1>
+            <p class="bb-auth-card__lead">
+              <% if (transferHostname) { %>
+              <%= subtitle %>
+              <% } else { %>
+              <span class="bb-auth-card__lead--desktop">Sign in to manage your church.</span>
+              <span class="bb-auth-card__lead--mobile">Welcome back to BlessBoard.</span>
+              <% } %>
+            </p>
           </div>
 
           <% if (loggedOut) { %>
@@ -211,7 +227,10 @@
             </div>
 
             <div class="bb-auth-field">
-              <label for="password">Password</label>
+              <div class="bb-auth-field__label-row">
+                <label for="password">Password</label>
+                <a class="bb-auth-forgot" href="/forgot-password" data-bb-auth-forgot="1">Forgot password?</a>
+              </div>
               <div class="bb-auth-password bb-auth-input-wrap">
                 <span class="bb-auth-input-wrap__icon material-symbols-outlined" aria-hidden="true">lock</span>
                 <input
@@ -241,9 +260,6 @@
               <% if (errorState === 'credentials') { %>
               <p class="bb-auth-field__error" id="password-error">Check your password and try again.</p>
               <% } %>
-              <p class="bb-auth-field__hint">
-                <a href="/forgot-password" data-bb-auth-forgot="1">Forgot password?</a>
-              </p>
             </div>
 
             <div class="bb-auth-actions">

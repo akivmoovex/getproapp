@@ -29,7 +29,10 @@
       <% featureItems.forEach(function (item) { %>
       <li>
         <% if (item.icon) { %><span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span><% } %>
-        <span><%= item.text %></span>
+        <span class="gp-auth-feature-panel__item-body">
+          <% if (item.title) { %><span class="gp-auth-feature-panel__item-title"><%= item.title %></span><% } %>
+          <span class="gp-auth-feature-panel__item-text"><%= item.text %></span>
+        </span>
       </li>
       <% }) %>
     </ul>

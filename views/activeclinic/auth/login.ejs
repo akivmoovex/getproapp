@@ -11,18 +11,18 @@
     }) %>
 
     <div class="ac-auth-form-panel">
-      <%- include('../../platform/auth/login-feature-panel', {
-        mode: 'mobile',
-        mobileIcon: 'local_hospital',
-        mobileTitle: 'Run your clinic from one workspace',
-        mobileLead: 'Patients, appointments, billing, and clinical workflows in one secure place.'
-      }) %>
       <% if (error) { %>
         <h1 class="ac-auth-h1">Authentication failed</h1>
         <p class="ac-auth-desc">Check your sign-in details and try again.</p>
       <% } else { %>
-        <h1 class="ac-auth-h1">Welcome back</h1>
-        <p class="ac-auth-desc">Log in to manage your clinic.</p>
+        <h1 class="ac-auth-h1">
+          <span class="ac-auth-h1__desktop">Welcome back</span>
+          <span class="ac-auth-h1__mobile">Log in to your clinic</span>
+        </h1>
+        <p class="ac-auth-desc">
+          <span class="ac-auth-desc__desktop">Log in to manage your clinic.</span>
+          <span class="ac-auth-desc__mobile">Welcome back to ActiveClinic</span>
+        </p>
       <% } %>
 
       <% if (notice) { %>
@@ -111,11 +111,9 @@
           autocomplete: 'current-password',
           minlength: null,
           describedBy: error ? 'ac-auth-error-summary' : null,
-          invalid: Boolean(error)
+          invalid: Boolean(error),
+          forgotHref: '/forgot-password'
         }) %>
-        <div class="ac-auth-row">
-          <a class="ac-auth-link" href="/forgot-password">Forgot password?</a>
-        </div>
         <button type="submit" class="ac-auth-btn" data-loading="Signing you in…">
           Log in
         </button>

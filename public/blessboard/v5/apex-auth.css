@@ -143,6 +143,53 @@
   animation: bb-auth-card-in 0.5s ease both;
 }
 
+/* Stitch login: full-bleed 40/60 feature + form (project 9585058196210789597) */
+@media (min-width: 960px) {
+  .bb-auth-login .bb-auth-layout {
+    grid-template-columns: minmax(0, 0.4fr) minmax(0, 0.6fr);
+  }
+
+  .bb-auth-login .gp-auth-feature-panel {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    min-height: 100vh;
+    margin: 0;
+    padding: 3rem;
+    border: 0;
+    border-radius: 0;
+    border-right: 1px solid var(--bb-color-border, #d1dce0);
+    background: #f2f3f9;
+    box-shadow: none;
+  }
+
+  .bb-auth-login .gp-auth-feature-panel__desktop {
+    max-width: 26rem;
+  }
+
+  .bb-auth-login .bb-auth-main__body {
+    justify-content: center;
+  }
+
+  .bb-auth-login .bb-auth-card--login {
+    box-shadow: none;
+    border: 0;
+    background: transparent;
+    padding: 0;
+    max-width: 28rem;
+  }
+
+  .bb-auth-login .bb-auth-card__brand-mark {
+    display: none;
+  }
+}
+
+@media (max-width: 959px) {
+  .bb-auth-login .bb-auth-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
 body[data-bb-page="auth-error"] .bb-auth-card {
   max-width: 28rem;
 }

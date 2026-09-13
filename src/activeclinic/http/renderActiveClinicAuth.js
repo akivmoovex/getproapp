@@ -16,7 +16,7 @@ const {
   buildPhoneFieldLocals,
 } = require("../services/activeClinicPhoneFieldLocals");
 
-const ASSET_VERSION = "v7-phone-login-fix-3";
+const ASSET_VERSION = "v7-login-stitch-parity-1";
 
 const DEFAULT_BRANDING = Object.freeze({
   productName: "ActiveClinic",
@@ -68,7 +68,11 @@ function renderLoginPage(input) {
     notice: (input && input.notice) || null,
     error: (input && input.error) || null,
     identifier: String((input && input.identifier) || ""),
-    loginEmail: String((input && input.loginEmail) || (loginMode === "email" ? (input && input.identifier) : "")),
+    loginEmail: String(
+      (input && input.loginEmail) ||
+        (loginMode === "email" ? (input && input.identifier) || "" : "") ||
+        ""
+    ),
     loginMode,
     modeEmailHref: String((input && input.modeEmailHref) || "/login?mode=email"),
     modePhoneHref: String((input && input.modePhoneHref) || "/login?mode=phone"),
