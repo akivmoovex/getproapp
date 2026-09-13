@@ -274,6 +274,131 @@ function createMoovexPlatformRuntimeApp(options) {
     }
   );
 
+  // Testing-only: rematerialize missing Hostinger objects for hostinger rows with no disk file.
+  // Prefer payload_bytes; otherwise clone bytes from another existing file in the same organization.
+  app.post(
+    "/__platform/qa/repair-missing-hostinger-media",
+    express.json({ limit: "16kb" }),
+    async (req, res) => {
+      const {
+        isPlatformRuntimeDiagnosticsEndpointAllowed,
+      } = require("../../startup/platformRuntimeSnapshot");
+      if (!isPlatformRuntimeDiagnosticsEndpointAllowed(env)) {
+        return res.status(404).json({ ok: false, code: "not_found" });
+      }
+      if (String(env.DEPLOYMENT_ENV || "").trim().toLowerCase() !== "testing") {
+        return res.status(403).json({ ok: false, code: "refused_non_testing_environment" });
+      }
+      if (String(deployment.code || "").trim().toLowerCase() !== "moovex-platform-testing") {
+        return res.status(403).json({ ok: false, code: "refused_non_testing_deployment" });
+      }
+      const body = req.body || {};
+      if (body.confirm !== "repair-missing-hostinger-media") {
+        return res.status(400).json({ ok: false, code: "confirm_required" });
+      }
+      try {
+        const fsp = require("fs/promises");
+        const path = require("path");
+        const {
+          resolveHostingerMediaConfig,
+        } = require("../media/hostingerMediaConfig");
+        const cfg = resolveHostingerMediaConfig(env);
+        if (!cfg.enabled || !cfg.storageRoot) {
+          return res.status(500).json({ ok: false, code: "media_storage_root_unset" });
+        }
+        const pool = (opts.getPool || getPgPool)();
+        const rows = await pool.query(
+          `SELECT m.id, m.organization_id, m.storage_key, m.mime_type, m.payload_bytes
+             FROM platform.website_media m
+             JOIN platform.website_instances i ON i.id = m.instance_id
+            WHERE m.media_kind = 'image'
+              AND m.status = 'active'
+              AND m.storage_provider = 'hostinger'
+              AND m.storage_key IS NOT NULL
+              AND i.product_code IN ('blessboard', 'activeclinic')
+            ORDER BY m.created_at ASC
+            LIMIT 5000`
+        );
+        let repaired = 0;
+        let skipped = 0;
+        let failed = 0;
+        const errors = [];
+        const donorsByOrg = new Map();
+        for (const row of rows.rows) {
+          const abs = path.join(cfg.storageRoot, ...String(row.storage_key).split("/"));
+          try {
+            await fsp.access(abs);
+            if (!donorsByOrg.has(row.organization_id)) {
+              donorsByOrg.set(row.organization_id, abs);
+            }
+            skipped += 1;
+          } catch (_err) {
+            // missing — repair below
+          }
+        }
+        for (const row of rows.rows) {
+          const abs = path.join(cfg.storageRoot, ...String(row.storage_key).split("/"));
+          try {
+            await fsp.access(abs);
+            continue;
+          } catch (_err) {
+            /* missing */
+          }
+          try {
+            let buf = null;
+            if (row.payload_bytes) {
+              buf = Buffer.isBuffer(row.payload_bytes)
+                ? row.payload_bytes
+                : Buffer.from(row.payload_bytes);
+            } else {
+              const donor = donorsByOrg.get(row.organization_id);
+              if (!donor) {
+                failed += 1;
+                errors.push({ mediaId: row.id, code: "no_donor" });
+                continue;
+              }
+              buf = await fsp.readFile(donor);
+            }
+            await fsp.mkdir(path.dirname(abs), { recursive: true });
+            await fsp.writeFile(abs, buf, { flag: "wx" });
+            repaired += 1;
+            if (!donorsByOrg.has(row.organization_id)) donorsByOrg.set(row.organization_id, abs);
+          } catch (err) {
+            if (err && err.code === "EEXIST") {
+              skipped += 1;
+              continue;
+            }
+            failed += 1;
+            errors.push({
+              mediaId: row.id,
+              code: (err && err.code) || "repair_failed",
+              message: err && err.message ? String(err.message).slice(0, 120) : "unknown",
+            });
+          }
+        }
+        return res.status(failed ? 500 : 200).json({
+          ok: failed === 0,
+          repaired,
+          skipped,
+          failed,
+          scanned: rows.rows.length,
+          errors: errors.slice(0, 20),
+          storageRoot: cfg.storageRoot,
+        });
+      } catch (err) {
+        return res.status(500).json({
+          ok: false,
+          code: (err && err.code) || "repair_failed",
+          message: err && err.message ? String(err.message).slice(0, 160) : "unknown",
+        });
+      }
+    }
+  );
+
+  // Testing-only: rematerialize missing Hostinger objects for hostinger rows with no disk file.
+  // Prefer payload_bytes; otherwise clone bytes from another existing file in the same organization.
+  // (endpoint registered above)
+
   // Testing-only: report on-disk sizes for a storage key across durable roots.
   app.get("/__platform/qa/media-file-stat", async (req, res) => {
     const {
