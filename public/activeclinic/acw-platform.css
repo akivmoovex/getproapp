@@ -356,7 +356,9 @@ body.ac-public--platform .ac-public-footer a:hover {
 
 body.ac-public--platform .ac-public-footer__note,
 body.ac-public--platform .acw-footer__copy,
-body.ac-public--platform .acw-footer__tagline {
+body.ac-public--platform .acw-footer__tagline,
+body.ac-public--platform .acw-footer__governance,
+body.ac-public--platform .acw-footer__locale {
   color: #3d4947;
 }
 
@@ -1349,28 +1351,89 @@ body.ac-public--platform .ac-public-brand__icon {
 
 .acw-footer__inner {
   display: grid;
-  gap: 1.5rem;
-  padding: 3rem 1.25rem;
+  grid-template-columns: 1fr;
+  gap: 2rem;
+  padding: 2.5rem 1.25rem 2rem;
+  max-width: var(--acw-max, 80rem);
+  margin: 0 auto;
+  width: 100%;
+  box-sizing: border-box;
+}
+
+.acw-footer__brand {
+  min-width: 0;
+}
+
+.acw-footer__logo {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  text-decoration: none;
+  margin: 0 0 0.75rem;
 }
 
 .acw-footer__col {
   display: flex;
   flex-direction: column;
-  gap: 0.65rem;
+  gap: 0.5rem;
+  min-width: 0;
 }
 
 .acw-footer__col h4 {
   margin: 0 0 0.35rem;
-  font-size: 0.875rem;
+  font-size: 0.9375rem;
   font-weight: 600;
-  letter-spacing: 0.05em;
+  letter-spacing: 0;
+  text-transform: none;
+  color: #111c2d;
+}
+
+.acw-footer__col a {
+  color: #3d4947;
+  text-decoration: none;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  font-weight: 400;
+}
+
+.acw-footer__col a:hover,
+.acw-footer__col a:focus-visible,
+.acw-footer__col a[aria-current="page"] {
+  color: var(--acp-primary-strong, #004f56);
+  text-decoration: underline;
 }
 
 .acw-footer__tagline,
-.acw-footer__copy {
-  margin: 0.75rem 0 0;
-  font-size: 0.875rem;
+.acw-footer__governance {
+  margin: 0;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  color: #3d4947;
+  max-width: 22rem;
+}
+
+.acw-footer__meta {
+  border-top: 1px solid color-mix(in srgb, #bcc9c6 40%, transparent);
+  padding: 1rem 1.25rem;
+}
+
+.acw-footer__meta-inner {
+  max-width: var(--acw-max, 80rem);
+  margin: 0 auto;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  text-align: center;
+}
+
+.acw-footer__copy,
+.acw-footer__locale {
+  margin: 0;
+  font-size: 0.75rem;
   line-height: 1.4;
+  color: #3d4947;
 }
 
 .acw-split {
@@ -1399,8 +1462,19 @@ body.ac-public--platform .ac-public-brand__icon {
   }
 
   .acw-footer__inner {
-    grid-template-columns: 1.4fr 1fr 1fr 1fr;
+    grid-template-columns: minmax(0, 1.2fr) repeat(3, minmax(0, 1fr));
     align-items: start;
+    gap: 2rem;
+    padding: 3rem 1.5rem 2.5rem;
+  }
+
+  .acw-footer__meta {
+    padding: 1rem 1.5rem;
+  }
+
+  .acw-footer__meta-inner {
+    flex-direction: row;
+    text-align: left;
   }
 
   .acw-split {

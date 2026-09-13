@@ -5,35 +5,45 @@
   const clinicsOn = /clinics-directory|clinics-search|clinic-directory|clinic-search/.test(pid);
   const forClinicsOn = /for-clinics|public-solutions/.test(pid);
   const forPatientsOn = /for-patients/.test(pid);
+  const registerOn = /register-clinic|public-register/.test(pid);
+%>
+<%#
+  Shared ActiveClinic platform public footer.
+  Stitch: ACW Contact Desktop (1fbd196cf3aa41af8aeb302b3373fb83) — copyright once, 4-col + meta bar.
 %>
 <footer class="ac-public-footer acw-footer" data-ac-public-footer="platform" data-ac-acw-chrome="ACW12">
   <div class="ac-public-footer__inner acw-footer__inner">
     <div class="acw-footer__brand">
       <a class="ac-public-brand acw-footer__logo" href="/" aria-label="ActiveClinic home">
-        <span class="material-symbols-outlined ac-public-brand__icon filled" aria-hidden="true">health_and_safety</span>
+        <span class="material-symbols-outlined ac-public-brand__icon filled" aria-hidden="true">local_hospital</span>
         <span class="ac-public-brand__name">ActiveClinic</span>
       </a>
-      <p class="acw-footer__tagline acw-only-desktop">Empowering modern healthcare delivery through precision technology and human-centric design.</p>
-      <p class="acw-footer__tagline acw-only-mobile">Modern healthcare delivery platform connecting clinics and patients for a better experience.</p>
-      <p class="acw-footer__copy acw-only-desktop">© 2024 ActiveClinic. All rights reserved.</p>
+      <p class="acw-footer__tagline">Zambia's clinical infrastructure and digital connectivity network for healthcare providers and communities.</p>
     </div>
     <div class="acw-footer__col">
       <h4>Platform</h4>
+      <a href="/for-clinics"<%- forClinicsOn ? ' aria-current="page"' : "" %>>Solutions</a>
       <a href="/clinics"<%- clinicsOn ? ' aria-current="page"' : "" %>>Find a Clinic</a>
-      <a href="/for-clinics"<%- forClinicsOn ? ' aria-current="page"' : "" %>>For Clinics</a>
       <a href="/for-patients"<%- forPatientsOn ? ' aria-current="page"' : "" %>>For Patients</a>
+      <a href="/register-clinic"<%- registerOn ? ' aria-current="page"' : "" %>>Register Your Clinic</a>
+      <a href="/login">Clinic Login</a>
     </div>
     <div class="acw-footer__col">
       <h4>Company</h4>
       <a href="/about"<%- aboutOn ? ' aria-current="page"' : "" %>>About</a>
       <a href="/contact"<%- contactOn ? ' aria-current="page"' : "" %>>Contact Us</a>
-    </div>
-    <div class="acw-footer__col">
-      <h4>Legal</h4>
       <a href="/privacy">Privacy Policy</a>
       <a href="/terms">Terms of Service</a>
-      <a href="/privacy">Security Practices</a>
     </div>
-    <p class="acw-footer__copy acw-only-mobile">© 2024 ActiveClinic. All rights reserved.</p>
+    <div class="acw-footer__col acw-footer__col--governance">
+      <h4>Governance</h4>
+      <p class="acw-footer__governance">Optimized for performance across Zambian telecommunication networks. Fully compliant with national data confidentiality standards.</p>
+    </div>
+  </div>
+  <div class="acw-footer__meta">
+    <div class="acw-footer__meta-inner">
+      <p class="acw-footer__copy">© 2026 ActiveClinic. All rights reserved.</p>
+      <p class="acw-footer__locale">Lusaka, Zambia</p>
+    </div>
   </div>
 </footer>

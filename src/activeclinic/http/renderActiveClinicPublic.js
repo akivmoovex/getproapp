@@ -25,9 +25,10 @@ const {
   BOOKING_STATUS_LABELS,
   bookingStatusLabel,
 } = require("./activeClinicBookingStatusCopy");
+const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v7-about-v11-1";
+const ASSET_VERSION = "v7-ac-footer-2026-1";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -53,7 +54,13 @@ function renderPartial(relativePath, data) {
     throw new Error(`ActiveClinic public template missing: ${relativePath}`);
   }
   const source = fs.readFileSync(absolute, "utf8");
-  return ejs.render(source, { ...(data || {}), escapeHtml, csrfField: CSRF_FIELD }, {
+  const locals = {
+    ...(data || {}),
+    escapeHtml,
+    csrfField: CSRF_FIELD,
+    cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, process.env) || "",
+  };
+  return ejs.render(source, locals, {
     filename: absolute,
     root: VIEWS_ROOT,
     views: [VIEWS_ROOT],

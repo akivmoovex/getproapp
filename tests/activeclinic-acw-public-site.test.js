@@ -159,6 +159,9 @@ describe("ActiveClinic ACW public site", () => {
     assert.match(home.text, /What is ActiveClinic\?/);
     assert.match(home.text, /data-ac-home-section="what-is"/);
     assert.match(home.text, /data-ac-public-footer="platform"/);
+    assert.match(home.text, /© 2026 ActiveClinic\. All rights reserved\./);
+    assert.equal((home.text.match(/© 2026 ActiveClinic\. All rights reserved\./g) || []).length, 1);
+    assert.doesNotMatch(home.text, /© 2024 ActiveClinic/);
     assert.match(home.text, /href="\/clinics"/);
     assert.match(home.text, /href="\/for-clinics"/);
     assert.match(home.text, /href="\/for-patients"/);
