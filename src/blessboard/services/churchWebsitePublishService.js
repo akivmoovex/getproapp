@@ -734,8 +734,26 @@ async function publishChurchWebsite(db, input) {
         });
       }
 
-      // Church-wide publish flips site flag; branch publish must not mutate main website status.
-      if (!branchId) {
+      // Church-wide and primary/HQ branch publish flip the church website flag used by
+      // the public directory. Secondary campus publishes must not force church listing.
+      let marksChurchWebsitePublished = !branchId;
+      if (branchId) {
+        const primaryCheck = await client.query(
+          `SELECT is_primary, branch_type, branch_key
+             FROM blessboard.branches
+            WHERE id = $1 AND church_id = $2
+            LIMIT 1`,
+          [branchId, churchId]
+        );
+        const branchRow = primaryCheck.rows[0] || null;
+        marksChurchWebsitePublished = Boolean(
+          branchRow &&
+            (branchRow.is_primary === true ||
+              String(branchRow.branch_type || "").toLowerCase() === "hq" ||
+              String(branchRow.branch_key || "").toLowerCase() === "hq")
+        );
+      }
+      if (marksChurchWebsitePublished) {
         const displayName = await settingsRepo.findChurchDisplayName(client, churchId);
         await settingsRepo.ensureChurchSettingsRow(client, {
           churchId,
@@ -778,13 +796,16 @@ async function publishChurchWebsite(db, input) {
         outcome: "success",
         metadata: {
           from_status: inner.websiteStatus || "draft",
-          to_status: branchId ? inner.websiteStatus || "draft" : "published",
+          to_status: marksChurchWebsitePublished
+            ? "published"
+            : inner.websiteStatus || "draft",
           count: pageUpdate.rowCount,
           field_keys: fieldKeys.length ? fieldKeys : undefined,
           source: "hq_website",
           plan_key: inner.planKey || undefined,
           website_scope: branchId ? "branch" : "church",
           branch_id: branchId || undefined,
+          marks_church_website_published: marksChurchWebsitePublished,
         },
       });
 
