@@ -2,7 +2,9 @@
 
 /**
  * ActiveClinic activation / reset link + share helpers.
- * Uses deployment publicOrigin — never hard-codes production domain in callers.
+ * Absolute origins follow the ActiveClinic product host matrix — never the shared
+ * platform apex (pronline.org / moovex.org) and never a hard-coded production host
+ * when DEPLOYMENT_ENV=testing.
  * WhatsApp = wa.me share URL only (no Business API).
  */
 
@@ -13,6 +15,10 @@ const {
   getDeploymentProfile,
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
+const {
+  publicOriginForProduct,
+  PRODUCT_CODE,
+} = require("../../platform/website/publicWebsiteUrl");
 
 const DELIVERY = Object.freeze({
   NOT_REQUESTED: "not_requested",
@@ -23,28 +29,100 @@ const DELIVERY = Object.freeze({
   UNAVAILABLE: "unavailable",
 });
 
+const ACTIVECLINIC_PRODUCT_HOSTS = Object.freeze(
+  new Set(["activeclinic.org", "activeclinic.pronline.org"])
+);
+
 /**
+ * @param {NodeJS.ProcessEnv|object|null} env
+ */
+function activeClinicEnvMode(env) {
+  const source = env && typeof env === "object" ? env : {};
+  const mode = String(
+    source.DEPLOYMENT_ENV || source.DATABASE_IDENTITY_ENV || source.NODE_ENV || ""
+  ).toLowerCase();
+  return mode === "production" ? "production" : "testing";
+}
+
+/**
+ * @param {string} origin
+ */
+function hostnameOfOrigin(origin) {
+  try {
+    return String(new URL(origin).hostname || "").toLowerCase();
+  } catch {
+    return "";
+  }
+}
+
+/**
+ * @param {string} origin
+ */
+function isActiveClinicProductOrigin(origin) {
+  return ACTIVECLINIC_PRODUCT_HOSTS.has(hostnameOfOrigin(origin));
+}
+
+/**
+ * Resolve absolute public origin for ActiveClinic invitation / reset links.
+ *
+ * Priority:
+ * 1. ACTIVECLINIC_PUBLIC_ORIGIN / PUBLIC_ORIGIN overrides
+ * 2. Deployment profile publicOrigin when it is already an ActiveClinic product host
+ *    and matches the env mode (testing ↔ *.pronline.org, production ↔ activeclinic.org)
+ * 3. Domain matrix product origin for ActiveClinic (handles shared platform deployments
+ *    whose profile publicOrigin is pronline.org / moovex.org)
+ * 4. Env-aware fallback (never force production host under testing)
+ *
  * @param {NodeJS.ProcessEnv|object|null} env
  * @param {string} [deploymentCode]
  */
 function resolvePublicOrigin(env, deploymentCode) {
+  const source = env && typeof env === "object" ? env : {};
+  const override = String(
+    source.ACTIVECLINIC_PUBLIC_ORIGIN || source.PUBLIC_ORIGIN || ""
+  )
+    .trim()
+    .replace(/\/+$/, "");
+  if (override) {
+    return override;
+  }
+
+  const mode = activeClinicEnvMode(source);
+  const fromMatrix = String(
+    publicOriginForProduct(PRODUCT_CODE.ACTIVECLINIC, source) || ""
+  ).replace(/\/+$/, "");
+
   const code = deploymentCode || CODE_ACTIVECLINIC_ORG_V6;
   try {
-    const profile = getDeploymentProfile(
-      env && typeof env === "object"
-        ? { ...env, PLATFORM_DEPLOYMENT_CODE: code }
-        : { PLATFORM_DEPLOYMENT_CODE: code }
-    );
+    const profile = getDeploymentProfile({
+      ...source,
+      PLATFORM_DEPLOYMENT_CODE: code,
+    });
     if (profile && profile.publicOrigin) {
-      return String(profile.publicOrigin).replace(/\/+$/, "");
+      const profileOrigin = String(profile.publicOrigin).replace(/\/+$/, "");
+      if (isActiveClinicProductOrigin(profileOrigin)) {
+        const host = hostnameOfOrigin(profileOrigin);
+        // Legacy activeclinic-org-v6 is labeled for local/test but points at production host.
+        if (mode === "testing" && host === "activeclinic.org") {
+          return fromMatrix || "https://activeclinic.pronline.org";
+        }
+        if (mode === "production" && host === "activeclinic.pronline.org") {
+          return fromMatrix || "https://activeclinic.org";
+        }
+        return profileOrigin;
+      }
     }
   } catch {
-    /* fall through */
+    /* fall through to matrix */
   }
-  if (env && env.PUBLIC_ORIGIN) {
-    return String(env.PUBLIC_ORIGIN).replace(/\/+$/, "");
+
+  if (fromMatrix) {
+    return fromMatrix;
   }
-  return "https://activeclinic.org";
+
+  return mode === "production"
+    ? "https://activeclinic.org"
+    : "https://activeclinic.pronline.org";
 }
 
 /**
