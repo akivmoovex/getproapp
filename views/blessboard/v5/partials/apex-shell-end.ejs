@@ -1,31 +1,35 @@
 <%#
-  Apex shell end — footer includes Batch 2b marketing routes only (no dead links).
+  Apex shell end — shared marketing footer (Stitch Contact public footer:
+  projects/9585058196210789597 screen 5a4468b398234c968733a5552ab1c3f0).
+  Only Batch 2b marketing routes — no dead links.
 %>
   </main>
 
   <footer class="bb-apex-footer" data-bb-apex-footer="1">
-    <div class="bb-apex-container">
+    <div class="bb-apex-footer__inner">
       <div class="bb-apex-footer__grid">
         <div class="bb-apex-footer__brand">
-          <p class="bb-apex-footer__name">BlessBoard</p>
-          <p class="bb-apex-footer__tagline">Building the digital foundation for the church community — websites, engagement, and administration on GetPro.</p>
+          <div class="bb-apex-footer__brand-lockup">
+            <span class="bb-apex-footer__mark material-symbols-outlined" aria-hidden="true">church</span>
+            <p class="bb-apex-footer__name">BlessBoard</p>
+          </div>
+          <p class="bb-apex-footer__tagline">Empowering churches with streamlined management, digital discoverability, and connected communities.</p>
           <p class="bb-apex-footer__powered"><%- include('./powered-by-getpro') %></p>
         </div>
         <div class="bb-apex-footer__col">
           <h2 class="bb-apex-footer__heading">Product</h2>
           <ul class="bb-apex-footer__links">
-            <li><a href="/">Home</a></li>
-            <li><a href="/about">About</a></li>
             <li><a href="/features">Features</a></li>
-            <li><a href="/for-churches">For Churches</a></li>
             <li><a href="/pricing">Pricing</a></li>
             <li><a href="/directory">Directory</a></li>
-            <li><a href="/register-church">Register Your Church</a></li>
+            <li><a href="/for-churches">For Churches</a></li>
           </ul>
         </div>
         <div class="bb-apex-footer__col">
-          <h2 class="bb-apex-footer__heading">Account</h2>
+          <h2 class="bb-apex-footer__heading">Resources</h2>
           <ul class="bb-apex-footer__links">
+            <li><a href="/about">About</a></li>
+            <li><a href="/register-church">Register Your Church</a></li>
             <% if (authenticated) { %>
             <li><a href="/account">Account</a></li>
             <% } else { %>
@@ -37,17 +41,17 @@
           <h2 class="bb-apex-footer__heading">Platform</h2>
           <ul class="bb-apex-footer__links">
             <li><a href="/contact"<%= typeof activeNav !== 'undefined' && activeNav === 'contact' ? ' aria-current="page"' : '' %>>Contact Us</a></li>
-            <li><a href="/terms">Terms of Service</a></li>
             <li><a href="/privacy">Privacy Policy</a></li>
+            <li><a href="/terms">Terms of Service</a></li>
           </ul>
         </div>
       </div>
       <div class="bb-apex-footer__meta">
-        <span>© 2026 BlessBoard. All rights reserved.</span>
-        <span class="bb-apex-footer__meta-links">
+        <p class="bb-apex-footer__copy">© 2026 BlessBoard. All rights reserved.</p>
+        <nav class="bb-apex-footer__meta-links" aria-label="Legal">
           <a href="/privacy">Privacy</a>
           <a href="/terms">Terms</a>
-        </span>
+        </nav>
       </div>
     </div>
   </footer>

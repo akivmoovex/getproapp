@@ -699,46 +699,89 @@ ul.bb-apex-features {
   justify-content: center;
 }
 
-/* —— Footer —— */
+/* —— Footer (shared Stitch public SaaS footer) —— */
 .bb-apex-footer {
-  border-top: 1px solid var(--bb-color-border, #d1dce0);
-  background: var(--bb-color-surface, #fff);
-  padding: 2.75rem 0 2rem;
-  margin-top: auto;
+  border-top: 1px solid color-mix(in srgb, #ccc3d8 50%, transparent);
+  background: #f8f9ff;
+  padding: 0;
+  margin-top: 0;
+  width: 100%;
+}
+
+.bb-apex-footer__inner {
+  max-width: 72rem; /* Stitch max-w-6xl */
+  margin: 0 auto;
+  padding: 3rem 1.5rem 2rem;
+  width: 100%;
+  box-sizing: border-box;
 }
 
 .bb-apex-footer__grid {
   display: grid;
-  gap: 1.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 2rem;
+  padding-bottom: 2.5rem;
+  align-items: start;
+}
+
+.bb-apex-footer__brand {
+  grid-column: 1 / -1;
+}
+
+.bb-apex-footer__brand-lockup {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 0.75rem;
+}
+
+.bb-apex-footer__mark {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.25rem;
+  background: var(--bb-color-primary, #6c5ce7);
+  color: #fff;
+  font-size: 1rem;
+  line-height: 1;
 }
 
 .bb-apex-footer__name {
-  margin: 0 0 0.35rem;
+  margin: 0;
   font-weight: 700;
-  color: var(--bb-color-primary, #6c5ce7);
-  font-size: 1.1rem;
+  color: var(--bb-color-ink, #1a1c1e);
+  font-size: 1rem;
+  line-height: 1.25;
 }
 
 .bb-apex-footer__tagline {
-  margin: 0 0 0.85rem;
+  margin: 0 0 0.75rem;
   color: var(--bb-color-muted, #44474e);
-  font-size: 0.95rem;
-  max-width: 28rem;
+  font-size: 0.9375rem;
+  line-height: 1.5;
+  max-width: 20rem;
+}
+
+.bb-apex-footer__powered {
+  margin: 0;
 }
 
 .bb-apex-footer__heading {
   margin: 0 0 0.65rem;
-  font-size: 0.85rem;
+  font-size: 0.75rem;
   font-weight: 600;
-  letter-spacing: 0.04em;
+  letter-spacing: 0.06em;
   text-transform: uppercase;
   color: var(--bb-color-ink, #1a1c1e);
+  line-height: 1.3;
 }
 
 .bb-apex-footer__links {
   display: flex;
   flex-direction: column;
-  gap: 0.35rem;
+  gap: 0.5rem;
   margin: 0;
   padding: 0;
   list-style: none;
@@ -747,11 +790,12 @@ ul.bb-apex-features {
 .bb-apex-footer__links a {
   color: var(--bb-color-muted, #44474e);
   text-decoration: none;
-  font-weight: 500;
-  font-size: 0.95rem;
-  min-height: var(--bb-touch-min, 2.75rem);
-  display: inline-flex;
-  align-items: center;
+  font-weight: 400;
+  font-size: 0.9375rem;
+  line-height: 1.45;
+  min-height: 0;
+  display: inline;
+  padding: 0.1rem 0;
 }
 
 .bb-apex-footer__links a:hover,
@@ -759,12 +803,28 @@ ul.bb-apex-features {
   color: var(--bb-color-primary, #6c5ce7);
 }
 
+.bb-apex-footer__links a[aria-current="page"] {
+  color: var(--bb-color-primary, #6c5ce7);
+  font-weight: 500;
+}
+
 .bb-apex-footer__meta {
-  margin-top: 1.75rem;
-  padding-top: 1rem;
-  border-top: 1px solid var(--bb-color-border, #d1dce0);
+  margin-top: 0;
+  padding-top: 1.5rem;
+  border-top: 1px solid color-mix(in srgb, #ccc3d8 40%, transparent);
   color: var(--bb-color-muted, #44474e);
-  font-size: 0.88rem;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  text-align: center;
+}
+
+.bb-apex-footer__copy {
+  margin: 0;
 }
 
 @media (min-width: 768px) {
@@ -790,8 +850,18 @@ ul.bb-apex-features {
   }
 
   .bb-apex-footer__grid {
-    grid-template-columns: 1.4fr 0.9fr 0.7fr;
-    align-items: start;
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+    gap: 2rem;
+  }
+
+  .bb-apex-footer__brand {
+    grid-column: span 2;
+  }
+
+  .bb-apex-footer__meta {
+    flex-direction: row;
+    text-align: left;
+    gap: 1rem 1.5rem;
   }
 }
 
@@ -2676,21 +2746,22 @@ ul.bb-apex-features {
   font-size: 0.9rem;
 }
 
-.bb-apex-footer__meta {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 0.75rem 1.25rem;
-  align-items: center;
-  justify-content: space-between;
-}
-
 .bb-apex-footer__meta-links {
   display: inline-flex;
-  gap: 1rem;
+  flex-wrap: wrap;
+  gap: 1.5rem;
+  justify-content: center;
 }
 
 .bb-apex-footer__meta-links a {
   color: inherit;
+  text-decoration: none;
+  font-weight: 400;
+}
+
+.bb-apex-footer__meta-links a:hover,
+.bb-apex-footer__meta-links a:focus-visible {
+  color: var(--bb-color-primary, #6c5ce7);
 }
 
 
@@ -4171,11 +4242,3 @@ ul.bb-apex-features {
   }
 }
 
-/* Tighten footer gap on contact (no unexplained whitespace above footer) */
-.bb-apex-body[data-bb-page="contact"] .bb-apex-main {
-  padding-bottom: 0;
-}
-
-.bb-apex-body[data-bb-page="contact"] .bb-apex-footer {
-  margin-top: 0;
-}
