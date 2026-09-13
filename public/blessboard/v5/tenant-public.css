@@ -5610,6 +5610,10 @@ a.bb-tp-content-card:hover {
   font-size: 0.875rem;
   line-height: 1.45;
   border-bottom: 1px solid rgba(74, 67, 56, 0.12);
+  /* Status-only: must not intercept website editor pencil clicks (BB-01). */
+  pointer-events: none;
+  position: relative;
+  z-index: 0;
 }
 
 @media (max-width: 720px) {
