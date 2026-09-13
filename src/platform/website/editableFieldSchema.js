@@ -70,6 +70,23 @@ function contentDefFromField(field) {
 }
 
 function validateBlessboardInline(field, raw) {
+  // Email/phone are registered with CONTENT_TYPES.EMAIL|PHONE but historically used the
+  // BlessBoard inline text path, which skipped format checks (BB-04).
+  if (field.type === CONTENT_TYPES.EMAIL || field.type === CONTENT_TYPES.PHONE) {
+    const validated = validateContentValue(contentDefFromField(field), raw);
+    if (!validated.ok) {
+      return {
+        ok: false,
+        code: "validation_failed",
+        reason: validated.code,
+        message:
+          field.type === CONTENT_TYPES.EMAIL
+            ? "Enter a valid email address."
+            : "Enter a valid phone number.",
+      };
+    }
+    return { ok: true, value: validated.value };
+  }
   const value = String(raw ?? "");
   if (field.type === CONTENT_TYPES.URL || field.allowRelativeUrl === true) {
     const trimmed = value.trim();
@@ -135,7 +152,10 @@ function validateEditableValue(field, candidate) {
   }
   const validated = validateContentValue(contentDefFromField(field), candidate);
   if (!validated.ok) {
-    return { ok: false, code: "validation_failed", reason: validated.code, message: validated.code };
+    let message = validated.code;
+    if (validated.code === "invalid_email") message = "Enter a valid email address.";
+    if (validated.code === "invalid_phone") message = "Enter a valid phone number.";
+    return { ok: false, code: "validation_failed", reason: validated.code, message };
   }
   if (field.required && (validated.value == null || validated.value === "")) {
     return { ok: false, code: "validation_failed", reason: "required", message: "This field is required." };

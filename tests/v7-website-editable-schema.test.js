@@ -243,6 +243,25 @@ describe("V7 website editable-field schema", () => {
     });
     assert.equal(bbValid.ok, true);
     assert.equal(bbValid.value, "Welcome");
+
+    const bbEmailOk = assertEditableMutation({
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      key: "contact.details.email",
+      value: "hello@demo-church.example.test",
+      grantedPermissions: [PERMISSIONS.EDIT],
+    });
+    assert.equal(bbEmailOk.ok, true);
+    assert.equal(bbEmailOk.value, "hello@demo-church.example.test");
+
+    const bbEmailBad = assertEditableMutation({
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      key: "contact.details.email",
+      value: "not-an-email@@@",
+      grantedPermissions: [PERMISSIONS.EDIT],
+    });
+    assert.equal(bbEmailBad.ok, false);
+    assert.equal(bbEmailBad.code, "validation_failed");
+    assert.equal(bbEmailBad.reason, "invalid_email");
   });
 
   it("unauthorized callers cannot mutate through the schema", () => {

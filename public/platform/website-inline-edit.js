@@ -779,7 +779,7 @@
           closeDialog();
         } else {
           setStatus(
-            (out && (out.reason || out.code)) || "Save failed — your changes are still here. Retry.",
+            (out && (out.reason || out.message || out.code)) || "Save failed — your changes are still here. Retry.",
             true
           );
           syncDirtyController();
@@ -818,7 +818,7 @@
             closeDialog();
           } else {
             setStatus(
-              (out && (out.reason || out.code)) || "Save failed — your changes are still here. Retry.",
+              (out && (out.reason || out.message || out.code)) || "Save failed — your changes are still here. Retry.",
               true
             );
             syncDirtyController();
@@ -875,7 +875,7 @@
           closeDialog();
         } else {
           setStatus(
-            (out && (out.reason || out.code)) || "Save failed — your changes are still here. Retry.",
+            (out && (out.reason || out.message || out.code)) || "Save failed — your changes are still here. Retry.",
             true
           );
           syncDirtyController();

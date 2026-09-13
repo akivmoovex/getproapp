@@ -103,7 +103,12 @@ async function saveWebsiteDraft(db, input) {
       return { ok: false, code: "forbidden", content: null };
     }
     if (asserted.code === "validation_failed") {
-      return { ok: false, code: RESULT.VALIDATION_FAILED, reason: asserted.reason, content: null };
+      return {
+        ok: false,
+        code: RESULT.VALIDATION_FAILED,
+        reason: asserted.message || asserted.reason,
+        content: null,
+      };
     }
     if (asserted.code === "invalid_content_key") {
       return { ok: false, code: RESULT.INVALID_INPUT, content: null };

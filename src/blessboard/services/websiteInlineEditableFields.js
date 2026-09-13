@@ -303,7 +303,9 @@ function registerBlessBoardEditableFields() {
     required: field.required === true,
     permission: PERMISSIONS.EDIT,
     validationMode:
-      field.type === FIELD_TYPES.image
+      field.type === FIELD_TYPES.image ||
+      (field.type === FIELD_TYPES.contactText &&
+        (field.fieldKey === "email" || field.fieldKey === "phone"))
         ? VALIDATION_MODE.CONTENT_TYPES
         : VALIDATION_MODE.BLESSBOARD_INLINE,
     allowRelativeUrl: field.type === FIELD_TYPES.buttonUrl,
