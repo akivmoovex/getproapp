@@ -124,14 +124,10 @@
     <div class="bb-tp-directory__sections" data-bb-leadership-sections="1">
       <% pageSections.slice(1).forEach(function (section) { %>
       <section
-        class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %>"
+        class="bb-tp-content-block<%= section.mediaUrl || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>"
         data-section="<%= section.sectionKey %>"
       >
-        <% if (section.mediaUrl) { %>
-        <div class="bb-tp-content-block__media">
-          <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="<%= (section.layoutMetadata && section.layoutMetadata.altText) || '' %>" width="960" height="540" loading="lazy" decoding="async" />
-        </div>
-        <% } %>
+        <%- include('./partials/content-block-media', { section: section, editPageKey: 'leadership' }) %>
         <div class="bb-tp-content-block__copy">
           <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
           <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>

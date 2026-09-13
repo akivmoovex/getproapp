@@ -11,6 +11,7 @@ const ejs = require("ejs");
 const {
   resolveDeploymentBrand,
 } = require("../../platform/config/deploymentBrand");
+const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 const TEMPLATE_CACHE = new Map();
@@ -36,7 +37,10 @@ function loadV5Template(relativePath) {
 function renderV5Ejs(relativePath, data) {
   const tpl = loadV5Template(relativePath);
   const locals = Object.assign(
-    { deploymentBrand: resolveDeploymentBrand() },
+    {
+      deploymentBrand: resolveDeploymentBrand(),
+      cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, process.env) || "",
+    },
     data || {}
   );
   return ejs.render(tpl.source, locals, { filename: tpl.filename });

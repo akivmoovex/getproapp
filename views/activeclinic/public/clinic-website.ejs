@@ -11,7 +11,7 @@
       <p class="acw-kicker"><span class="material-symbols-outlined" aria-hidden="true">publish</span> Live Preview</p>
       <p class="acw-editor-preview__url">apexwellness.activeclinic.co</p>
       <%- include('../partials/ac-media', {
-        src: '/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-1.jpg',
+        src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-1.jpg') : ''),
         alt: 'ActiveClinic Editor live preview of a branded clinic website.',
         className: 'acw-card__media',
         objectFit: 'cover',
@@ -67,7 +67,7 @@
     <div class="acw-grid acw-grid--3">
       <article class="acw-card">
         <%- include('../partials/ac-media', {
-          src: '/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-2.jpg',
+          src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-2.jpg') : ''),
           alt: 'Apex Wellness Clinic website',
           className: 'acw-card__media',
           objectFit: 'cover',
@@ -80,7 +80,7 @@
       </article>
       <article class="acw-card">
         <%- include('../partials/ac-media', {
-          src: '/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-3.jpg',
+          src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-3.jpg') : ''),
           alt: 'City Health Cardiology website',
           className: 'acw-card__media',
           objectFit: 'cover',
@@ -93,7 +93,7 @@
       </article>
       <article class="acw-card">
         <%- include('../partials/ac-media', {
-          src: '/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-4.jpg',
+          src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW04-01-Clinic-Website-Feature-Desktop-4.jpg') : ''),
           alt: 'Modern Pediatrics website',
           className: 'acw-card__media',
           objectFit: 'cover',

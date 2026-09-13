@@ -124,8 +124,8 @@ describe("v7 website image management — source contract", () => {
     assert.match(host, /data-website-field-editor="1"/);
     assert.match(js, /data-website-file="1"/);
     assert.match(js, /data-website-alt="1"/);
-    const afterElse = acImage.slice(acImage.indexOf("<% } else { %>"));
-    assert.doesNotMatch(afterElse, /data-website-start/);
+    const afterPublic = acImage.slice(acImage.indexOf("<% } else if (src) { %>"));
+    assert.doesNotMatch(afterPublic, /data-website-start/);
 
     const bbBrand = read("views/blessboard/v5/public/partials/shell-brand.ejs");
     assert.match(bbBrand, /contentKey:\s*'home\.logo'/);

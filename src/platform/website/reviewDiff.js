@@ -16,6 +16,7 @@ const {
   classifyGovernanceCategory,
   categorizeDiffItem,
 } = require("./governanceDiffClassifier");
+const { presentRuntimeImageSrc } = require("../media/cdnMediaPresentation");
 
 const CHANGE_TYPES = Object.freeze(["added", "changed", "removed", "visibility", "reorder"]);
 
@@ -105,23 +106,10 @@ function safePublicSrc(raw) {
   if (raw == null || raw === "") return null;
   const text = String(raw).trim();
   if (!text) return null;
-  if (text.startsWith("/activeclinic/assets/") && !text.includes("..")) {
-    return text.split("?")[0];
-  }
-  const clinicMedia = text.match(
-    /^\/clinics\/([a-z0-9][a-z0-9_-]{0,63})\/website\/media\/([0-9a-f-]{36})$/i
-  );
-  if (clinicMedia) {
-    return buildPublicOrganizationWebsitePath({
-      product: PRODUCT_CODE.ACTIVECLINIC,
-      organizationKey: clinicMedia[1],
-      suffix: `website/media/${clinicMedia[2]}`,
-    });
-  }
+  const presented = presentRuntimeImageSrc(text);
+  if (presented) return presented;
   const adminMedia = text.match(/^\/admin\/website-media\/([0-9a-f-]{36})$/i);
   if (adminMedia) return `/admin/website-media/${adminMedia[1]}`;
-  const external = safeExternalUrl(text);
-  if (external && /^https:\/\//i.test(external)) return external;
   return null;
 }
 

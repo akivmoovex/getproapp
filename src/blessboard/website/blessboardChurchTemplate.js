@@ -137,7 +137,7 @@ function registerBlessBoardWebsiteTemplate() {
   return registered;
 }
 
-const DEFAULT_BLESSBOARD_LOGO_SRC = "/church/images/brand/blessboard-small-church-logo.png";
+const DEFAULT_BLESSBOARD_LOGO_SRC = null; // Brand logo presented via CDN marketing map at render time.
 
 function registerLogoEditableField() {
   registerEditableField({

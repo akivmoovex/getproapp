@@ -49,6 +49,7 @@ const TO_KEY = "demo-church";
 const DISPLAY_NAME = "Demo Church";
 const HOSTNAME = "demo-church.blessboard.test";
 
+/** Platform soft-fill keys for Demo Church branches (presented as CDN on write/render). */
 const MEDIA = Object.freeze({
   hqHero: "/church/images/homepage/apex-feature-multibranch.jpg",
   lusakaHero: "/church/images/homepage/desktop-hero-auditorium.jpg",
@@ -366,7 +367,10 @@ async function ensureBranch(db, { organizationId, churchId, actorUserId, spec })
 
 async function patchSectionMedia(db, sectionId, mediaUrl) {
   if (!sectionId || !mediaUrl) return;
-  await contentRepo.updateSection(db, sectionId, { mediaUrl });
+  const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
+  const presented = presentRuntimeImageSrc(mediaUrl, process.env, { allowMarketing: true });
+  if (!presented) return;
+  await contentRepo.updateSection(db, sectionId, { mediaUrl: presented });
 }
 
 async function ensureHomeHero(db, { churchId, branchId, heading, bodyText, mediaUrl }) {

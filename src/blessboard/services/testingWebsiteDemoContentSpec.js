@@ -14,7 +14,7 @@ const DEFAULT_CHURCH_KEY = "demo-church";
 const DEFAULT_DISPLAY_NAME = "Demo Church";
 const DEFAULT_ACTOR_EMAIL = "church-hq-admin@example.test";
 
-/** Safe static assets already in the repo (public renderer allows same-site paths). */
+/** Safe static asset keys already in the repo (presented via CDN at seed/render). */
 const MEDIA = Object.freeze({
   homeHero: "/church/images/tenant-public/home-desktop-hero.jpg",
   aboutHero: "/church/images/tenant-public/about-hero-building.jpg",

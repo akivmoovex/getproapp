@@ -19,7 +19,7 @@
     </div>
     <div class="acw-hero__media">
       <%- include('../partials/ac-media', {
-        src: '/activeclinic/assets/stitch/ACW01-01-ActiveClinic-Home-Desktop-1.jpg',
+        src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW01-01-ActiveClinic-Home-Desktop-1.jpg') : ''),
         alt: 'A bright, modern medical clinic reception area with a healthcare administrator using a tablet.',
         className: 'acp-hero__image',
         objectFit: 'cover',
@@ -45,7 +45,7 @@
     <p class="acw-hero__lede">The comprehensive platform uniting clinics and patients. Streamline operations, elevate patient experience, and build a modern healthcare practice.</p>
     <div class="acw-hero__media">
       <%- include('../partials/ac-media', {
-        src: '/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-1.jpg',
+        src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-1.jpg') : ''),
         alt: 'Modern clinic interior',
         className: 'acp-hero__image',
         objectFit: 'cover',
@@ -93,7 +93,7 @@
         <h3>Anywhere Access</h3>
         <p>Fully responsive platform accessible on mobile, tablet, and desktop for care on the go.</p>
         <%- include('../partials/ac-media', {
-          src: '/activeclinic/assets/stitch/ACW01-01-ActiveClinic-Home-Desktop-2.jpg',
+          src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW01-01-ActiveClinic-Home-Desktop-2.jpg') : ''),
           alt: 'A sleek, modern dashboard interface on a monitor in a medical office.',
           className: 'acw-bento__image',
           objectFit: 'cover',
@@ -123,7 +123,7 @@
       </article>
       <article class="acw-card">
         <%- include('../partials/ac-media', {
-          src: '/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-2.jpg',
+          src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-2.jpg') : ''),
           alt: 'Telehealth feature',
           className: 'acw-card__media',
           objectFit: 'cover',

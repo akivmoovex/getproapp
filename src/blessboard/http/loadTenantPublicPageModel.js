@@ -23,8 +23,20 @@ const { NAV_ITEMS, PAGE_KEY_TO_PATH } = require("./tenantPublicPaths");
 const { buildPublicWebsiteNavigation } = require("./buildPublicWebsiteNavigation");
 const { buildTenantPublicSeo } = require("./tenantPublicSeo");
 const { safeExternalUrl, plainMetaText } = require("./tenantPublicSafe");
+const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
 const testingDemoSpec = require("../services/testingWebsiteDemoContentSpec");
 const publicDemo = require("../services/tenantPublicDemoContent");
+
+/**
+ * Public website image URL: allowlist then CDN presentation (drops /media, local FS, data:).
+ * @param {unknown} value
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function safePublicImageUrl(value, env) {
+  const allowed = safeExternalUrl(value);
+  if (!allowed) return null;
+  return presentRuntimeImageSrc(allowed, env || process.env);
+}
 const {
   resolvePublicServiceTimesEntries,
 } = require("../services/homeServiceTimesService");
@@ -183,7 +195,7 @@ function mapSection(section) {
     sectionType: section.sectionType,
     heading: section.heading,
     bodyText: section.bodyText,
-    mediaUrl: safeExternalUrl(section.mediaUrl),
+    mediaUrl: safePublicImageUrl(section.mediaUrl),
     sortOrder: section.sortOrder,
     status: section.status || null,
     layoutMetadata: sanitizeLayoutMetadata(section.layoutMetadata),
@@ -219,7 +231,7 @@ function mapLeader(row) {
     displayName: row.displayName,
     roleTitle: row.roleTitle,
     biography: row.biography,
-    imageUrl: safeExternalUrl(row.imageUrl),
+    imageUrl: safePublicImageUrl(row.imageUrl),
     sortOrder: row.sortOrder != null ? Number(row.sortOrder) : 0,
     status: row.status || null,
   };
@@ -234,7 +246,7 @@ function mapMinistry(row) {
     meetingDay: row.meetingDay,
     contactEmail: row.contactEmail || null,
     contactHref: row.contactEmail ? safeExternalUrl(`mailto:${row.contactEmail}`) : null,
-    imageUrl: safeExternalUrl(row.imageUrl),
+    imageUrl: safePublicImageUrl(row.imageUrl),
     sortOrder: row.sortOrder != null ? Number(row.sortOrder) : 0,
     status: row.status || null,
   };
@@ -250,7 +262,7 @@ function mapEvent(row, fallbackTimezone) {
     timezone: row.timezone || fallbackTimezone || null,
     location: row.location,
     registrationUrl: safeExternalUrl(row.registrationUrl),
-    imageUrl: safeExternalUrl(row.imageUrl),
+    imageUrl: safePublicImageUrl(row.imageUrl),
     status: row.status || null,
   };
 }
@@ -269,66 +281,40 @@ function mapSermon(row) {
     summary: parsed.summary,
     category: parsed.category,
     scripture: rowScripture || parsed.scripture || null,
-    mediaUrl: safeExternalUrl(row.mediaUrl),
+    mediaUrl: safePublicImageUrl(row.mediaUrl),
     resourceUrl: safeExternalUrl(row.resourceUrl),
     // Optional thumb for cards (soft-fill / future schema); never treat as playable mediaUrl.
-    imageUrl: safeExternalUrl(row.imageUrl),
+    imageUrl: safePublicImageUrl(row.imageUrl),
     status: row.status || null,
   };
 }
 
 /**
- * Testing/demo soft-fill for local event/sermon thumbs when CMS image is empty.
- * Uses same-site /church/images paths only — no Stitch hotlinks.
- * Only fills demo-owned titles (exact catalog match or [Demo] marker).
+ * Soft-fill missing event/sermon thumbs from platform demo assets (CDN only).
  */
 function softFillDemoEventImages(items) {
-  const catalog = testingDemoSpec.EVENTS || [];
-  return (items || []).map((ev) => {
-    if (!ev || ev.imageUrl) return ev;
-    const byTitle = catalog.find((c) => c.title === ev.title);
-    const demoMarked =
-      typeof testingDemoSpec.isDemoMarkedText === "function" &&
-      testingDemoSpec.isDemoMarkedText(ev.title);
-    if (!byTitle && !demoMarked) return ev;
-    let resolved = byTitle && byTitle.imageUrl ? byTitle.imageUrl : null;
-    if (!resolved && demoMarked) {
-      const demoItems = (items || []).filter(
-        (x) => x && testingDemoSpec.isDemoMarkedText(x.title)
-      );
-      const demoIndex = demoItems.findIndex((x) => x === ev || x.title === ev.title);
-      const pick = catalog[Math.max(0, demoIndex)] || catalog[0];
-      resolved = pick && pick.imageUrl ? pick.imageUrl : null;
-    }
-    const safe = resolved ? safeExternalUrl(resolved) : null;
-    if (!safe) return ev;
-    return { ...ev, imageUrl: safe };
+  const pack = publicDemo.buildPublicDemoPack({});
+  const demos = pack.events || [];
+  return (items || []).map((item, i) => {
+    if (!item || item.imageUrl) return item;
+    const demo = demos[i % Math.max(demos.length, 1)];
+    return {
+      ...item,
+      imageUrl: publicDemo.mediaOrFallback(null, demo && demo.imageUrl),
+    };
   });
 }
 
 function softFillDemoSermonImages(items) {
-  const catalog = testingDemoSpec.SERMONS || [];
-  return (items || []).map((sermon) => {
-    if (!sermon || sermon.imageUrl) return sermon;
-    const byTitle = catalog.find((c) => c.title === sermon.title);
-    const demoMarked =
-      typeof testingDemoSpec.isDemoMarkedText === "function" &&
-      testingDemoSpec.isDemoMarkedText(sermon.title);
-    if (!byTitle && !demoMarked) return sermon;
-    let resolved = byTitle && byTitle.imageUrl ? byTitle.imageUrl : null;
-    if (!resolved && demoMarked) {
-      const demoItems = (items || []).filter(
-        (x) => x && testingDemoSpec.isDemoMarkedText(x.title)
-      );
-      const demoIndex = demoItems.findIndex(
-        (x) => x === sermon || x.title === sermon.title
-      );
-      const pick = catalog[Math.max(0, demoIndex)] || catalog[0];
-      resolved = pick && pick.imageUrl ? pick.imageUrl : null;
-    }
-    const safe = resolved ? safeExternalUrl(resolved) : null;
-    if (!safe) return sermon;
-    return { ...sermon, imageUrl: safe };
+  const pack = publicDemo.buildPublicDemoPack({});
+  const demos = pack.sermons || [];
+  return (items || []).map((item, i) => {
+    if (!item || item.imageUrl) return item;
+    const demo = demos[i % Math.max(demos.length, 1)];
+    return {
+      ...item,
+      imageUrl: publicDemo.mediaOrFallback(null, demo && demo.imageUrl),
+    };
   });
 }
 
@@ -505,12 +491,7 @@ function mapGiving(row) {
   const qrRaw = row.qrImageUrl || row.qr_image_url || null;
   let qrImageUrl = null;
   if (qrRaw) {
-    const asPath = String(qrRaw);
-    if (asPath.startsWith("/church/images/") || asPath.startsWith("/_bb/media/")) {
-      qrImageUrl = asPath;
-    } else {
-      qrImageUrl = safeExternalUrl(asPath);
-    }
+    qrImageUrl = safePublicImageUrl(String(qrRaw));
   }
   const branchId =
     row.branchId != null
@@ -1364,7 +1345,7 @@ async function loadTenantPublicPageModel(db, input) {
     descriptionOverride: seoOverrides["seo.description"] || null,
     ogTitleOverride: seoOverrides["seo.og_title"] || null,
     ogDescriptionOverride: seoOverrides["seo.og_description"] || null,
-    ogImageUrl: seoOverrides["seo.og_image_url"] || null,
+    ogImageUrl: safePublicImageUrl(seoOverrides["seo.og_image_url"]) || null,
     canonicalUrlOverride: seoOverrides["seo.canonical_url"] || null,
     forceNoindex: governancePreview ? true : seoOverrides["seo.noindex"] === true ? true : null,
     robotsOverride: governancePreview ? "noindex, nofollow" : seoOverrides["seo.robots"] || null,
@@ -1421,7 +1402,10 @@ async function loadTenantPublicPageModel(db, input) {
   let usedPublicDemoFill = false;
 
   if (pageKey === "home") {
-    homeDemoFallback = demoPack.home;
+    homeDemoFallback = Object.freeze({
+      ...demoPack.home,
+      heroMediaUrl: publicDemo.mediaOrFallback(demoPack.home.heroMediaUrl),
+    });
     if (!homeTeasers.ministries.length) {
       homeTeasers.ministries = publicDemo.markPublicTemplateExamples(
         demoPack.ministries.slice(0, 3),
@@ -1487,12 +1471,12 @@ async function loadTenantPublicPageModel(db, input) {
     aboutDemoFallback = Object.freeze({
       heroHeading: demoPack.about.heroHeading,
       heroBody: publicDemo.withPublicTemplateNotice(demoPack.about.heroBody),
-      heroMediaUrl: demoPack.about.heroMediaUrl,
+      heroMediaUrl: safePublicImageUrl(demoPack.about.heroMediaUrl),
       story: Object.freeze({
         ...demoPack.about.story,
         bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.story.bodyText),
       }),
-      storyMediaUrl: demoPack.about.story.mediaUrl,
+      storyMediaUrl: safePublicImageUrl(demoPack.about.story.mediaUrl),
       mission: Object.freeze({
         ...demoPack.about.mission,
         bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.mission.bodyText),
@@ -1510,7 +1494,9 @@ async function loadTenantPublicPageModel(db, input) {
         ...demoPack.about.community,
         bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.community.bodyText),
       }),
-      gallery: demoPack.about.gallery,
+      gallery: (demoPack.about.gallery || [])
+        .map((url) => publicDemo.mediaOrFallback(url))
+        .filter(Boolean),
     });
     showEmptyState = false;
   }
@@ -1519,13 +1505,18 @@ async function loadTenantPublicPageModel(db, input) {
     leadershipDemoFallback = Object.freeze({
       introHeading: demoPack.leadership.introHeading,
       introBody: demoPack.leadership.introBody,
-      introMediaUrl: demoPack.leadership.introMediaUrl,
+      introMediaUrl: publicDemo.mediaOrFallback(demoPack.leadership.introMediaUrl),
     });
     if (!entities.length) {
-      entities = publicDemo.markPublicTemplateExamples(demoPack.leaders.slice(), [
-        "displayName",
-        "roleTitle",
-      ]);
+      entities = publicDemo
+        .markPublicTemplateExamples(demoPack.leaders.slice(), ["displayName", "roleTitle"])
+        .map((l, i) => ({
+          ...l,
+          imageUrl: publicDemo.mediaOrFallback(
+            l.imageUrl,
+            demoPack.leaders[i % demoPack.leaders.length].imageUrl
+          ),
+        }));
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((l, i) => ({
@@ -1543,13 +1534,18 @@ async function loadTenantPublicPageModel(db, input) {
     ministriesDemoFallback = Object.freeze({
       introHeading: demoPack.ministriesPage.introHeading,
       introBody: demoPack.ministriesPage.introBody,
-      introMediaUrl: demoPack.ministriesPage.introMediaUrl,
+      introMediaUrl: publicDemo.mediaOrFallback(demoPack.ministriesPage.introMediaUrl),
     });
     if (!entities.length) {
-      entities = publicDemo.markPublicTemplateExamples(demoPack.ministries.slice(), [
-        "name",
-        "leaderName",
-      ]);
+      entities = publicDemo
+        .markPublicTemplateExamples(demoPack.ministries.slice(), ["name", "leaderName"])
+        .map((m, i) => ({
+          ...m,
+          imageUrl: publicDemo.mediaOrFallback(
+            m.imageUrl,
+            demoPack.ministries[i % demoPack.ministries.length].imageUrl
+          ),
+        }));
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((m, i) => ({
@@ -1567,13 +1563,18 @@ async function loadTenantPublicPageModel(db, input) {
     eventsDemoFallback = Object.freeze({
       introHeading: demoPack.eventsPage.introHeading,
       introBody: demoPack.eventsPage.introBody,
-      introMediaUrl: demoPack.eventsPage.introMediaUrl,
+      introMediaUrl: publicDemo.mediaOrFallback(demoPack.eventsPage.introMediaUrl),
     });
     if (!entities.length) {
-      entities = publicDemo.markPublicTemplateExamples(
-        preparePublicEvents(demoPack.events.slice()),
-        "title"
-      );
+      entities = publicDemo
+        .markPublicTemplateExamples(preparePublicEvents(demoPack.events.slice()), "title")
+        .map((e, i) => ({
+          ...e,
+          imageUrl: publicDemo.mediaOrFallback(
+            e.imageUrl,
+            demoPack.events[i % demoPack.events.length].imageUrl
+          ),
+        }));
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((e, i) => ({
@@ -1594,13 +1595,18 @@ async function loadTenantPublicPageModel(db, input) {
     sermonsDemoFallback = Object.freeze({
       introHeading: demoPack.sermonsPage.introHeading,
       introBody: demoPack.sermonsPage.introBody,
-      introMediaUrl: demoPack.sermonsPage.introMediaUrl,
+      introMediaUrl: publicDemo.mediaOrFallback(demoPack.sermonsPage.introMediaUrl),
     });
     if (!entities.length) {
-      entities = publicDemo.markPublicTemplateExamples(demoPack.sermons.slice(), [
-        "title",
-        "speakerName",
-      ]);
+      entities = publicDemo
+        .markPublicTemplateExamples(demoPack.sermons.slice(), ["title", "speakerName"])
+        .map((s, i) => ({
+          ...s,
+          imageUrl: publicDemo.mediaOrFallback(
+            s.imageUrl,
+            demoPack.sermons[i % demoPack.sermons.length].imageUrl
+          ),
+        }));
       usedPublicDemoFill = true;
     } else {
       entities = entities.map((s, i) => ({

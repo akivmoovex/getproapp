@@ -148,6 +148,8 @@
   }
 
   function buildImageForm(p) {
+    var hasImage = Boolean(p.imageUrl);
+    var replaceLabel = hasImage ? "Replace image" : "Add image";
     var demos = demoImages()
       .map(function (d) {
         return (
@@ -170,7 +172,9 @@
       '<div class="bb-tp-se-preview bb-tp-se-preview--mobile"><img data-bb-se-preview-mobile="1" src="' +
       esc(p.imageUrl || "") +
       '" alt="" /></div></div>' +
-      field("Image URL or media path", "imageUrl", p.imageUrl || "") +
+      '<input type="hidden" name="imageUrl" value="' +
+      esc(p.imageUrl || "") +
+      '" data-bb-se-image-url="1" />' +
       field("Alternative text", "altText", p.altText || "") +
       field("Focal position", "focal", p.focal || "center", {
         type: "select",
@@ -183,28 +187,44 @@
         ],
       }) +
       '<div class="bb-tp-se-actions-row">' +
-      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">Change photo<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" hidden /></label>' +
+      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">' +
+      esc(replaceLabel) +
+      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" hidden /></label>' +
       '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1">Media library</button>' +
       '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-remove-media="1">Remove image</button>' +
       "</div>" +
       '<div class="bb-tp-se-library" data-bb-se-library-panel="1" hidden></div>' +
-      '<p class="bb-tp-se-hint">Or choose a demo image</p><div class="bb-tp-se-demos">' +
-      demos +
-      "</div></div>"
+      (demos
+        ? '<p class="bb-tp-se-hint">Optional demo soft-fill (system images)</p><div class="bb-tp-se-demos">' +
+          demos +
+          "</div>"
+        : "") +
+      "</div>"
     );
   }
 
   function buildVideoForm(p) {
+    var hasThumb = Boolean(p.thumbnailUrl);
+    var thumbLabel = hasThumb ? "Replace thumbnail" : "Add thumbnail";
     return (
-      '<div class="bb-tp-se-grid">' +
+      '<div class="bb-tp-se-grid" data-bb-media-editor="1">' +
       '<p class="bb-tp-se-hint">Video file upload is not supported. Use a YouTube or Vimeo https link.</p>' +
       field("Video URL", "videoUrl", p.videoUrl || "", { type: "url" }) +
       field("Title", "title", p.title || "") +
-      field("Thumbnail URL", "thumbnailUrl", p.thumbnailUrl || "") +
+      '<input type="hidden" name="thumbnailUrl" value="' +
+      esc(p.thumbnailUrl || "") +
+      '" data-bb-se-image-url="1" />' +
       '<div class="bb-tp-se-preview"><img data-bb-se-preview="1" src="' +
       esc(p.thumbnailUrl || "") +
       '" alt="" width="320" height="180" /></div>' +
+      '<div class="bb-tp-se-actions-row">' +
+      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">' +
+      esc(thumbLabel) +
+      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" data-bb-se-upload-target="thumbnailUrl" hidden /></label>' +
+      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="thumbnailUrl">Media library</button>' +
       '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" data-bb-se-remove-media="1">Remove video</button>' +
+      "</div>" +
+      '<div class="bb-tp-se-library" data-bb-se-library-panel="1" hidden></div>' +
       "</div>"
     );
   }
@@ -854,6 +874,8 @@
               return (
                 '<button type="button" class="bb-tp-se-demo" data-bb-demo-url="' +
                 esc(a.deliveryPath) +
+                '" data-bb-demo-target="' +
+                esc(pendingUploadTarget || "imageUrl") +
                 '"><img src="' +
                 esc(a.deliveryPath) +
                 '" alt="" width="72" height="54" loading="lazy" /><span>' +
@@ -906,11 +928,13 @@
     if (demo) {
       event.preventDefault();
       var url = demo.getAttribute("data-bb-demo-url");
-      applySelectedMedia(url);
+      applySelectedMedia(url, demo.getAttribute("data-bb-demo-target") || pendingUploadTarget || "imageUrl");
       return;
     }
-    if (event.target.closest("[data-bb-se-library='1']")) {
+    var libraryBtn = event.target.closest("[data-bb-se-library='1']");
+    if (libraryBtn) {
       event.preventDefault();
+      pendingUploadTarget = libraryBtn.getAttribute("data-bb-se-library-target") || "imageUrl";
       loadMediaLibrary();
       return;
     }

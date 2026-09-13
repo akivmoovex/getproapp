@@ -18,8 +18,13 @@
     <textarea id="<%= mode %>_biography" name="biography" rows="3" maxlength="10000"><%= val('biography', 'biography', '') %></textarea>
   </div>
   <div class="bb-ba-field">
-    <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
-    <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" autocomplete="off" />
+    <label>Photo</label>
+    <input id="<%= mode %>_image_url" name="image_url" type="hidden" value="<%= val('image_url', 'imageUrl', '') %>" />
+    <% if (val('image_url', 'imageUrl', '')) { %>
+    <p class="bb-ba-field__preview"><img src="<%= val('image_url', 'imageUrl', '') %>" alt="" width="160" height="160" loading="lazy" /></p>
+    <% } else { %>
+    <p class="bb-ba-field__hint">No photo yet — choose or upload below.</p>
+    <% } %>
   </div>
   <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
 <% } %>
@@ -53,8 +58,13 @@
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-ministries-section="media">
     <h3 id="<%= mode %>_media_heading" class="bb-ba-entities-form__section-title">Media</h3>
     <div class="bb-ba-field">
-      <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
-      <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" autocomplete="off" />
+      <label>Ministry image</label>
+      <input id="<%= mode %>_image_url" name="image_url" type="hidden" value="<%= val('image_url', 'imageUrl', '') %>" />
+      <% if (val('image_url', 'imageUrl', '')) { %>
+      <p class="bb-ba-field__preview"><img src="<%= val('image_url', 'imageUrl', '') %>" alt="" width="240" height="150" loading="lazy" /></p>
+      <% } else { %>
+      <p class="bb-ba-field__hint">No image yet — choose or upload below.</p>
+      <% } %>
     </div>
     <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
   </section>
@@ -112,8 +122,13 @@
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-events-section="media">
     <h3 id="<%= mode %>_media_heading" class="bb-ba-entities-form__section-title">Media</h3>
     <div class="bb-ba-field">
-      <label for="<%= mode %>_image_url">Image URL (HTTPS or uploaded)</label>
-      <input id="<%= mode %>_image_url" name="image_url" type="text" maxlength="2000" value="<%= val('image_url', 'imageUrl', '') %>" autocomplete="off" />
+      <label>Event image</label>
+      <input id="<%= mode %>_image_url" name="image_url" type="hidden" value="<%= val('image_url', 'imageUrl', '') %>" />
+      <% if (val('image_url', 'imageUrl', '')) { %>
+      <p class="bb-ba-field__preview"><img src="<%= val('image_url', 'imageUrl', '') %>" alt="" width="240" height="150" loading="lazy" /></p>
+      <% } else { %>
+      <p class="bb-ba-field__hint">No image yet — choose or upload below.</p>
+      <% } %>
     </div>
     <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
   </section>
@@ -161,6 +176,7 @@
       <input id="<%= mode %>_resource_url" name="resource_url" type="text" maxlength="2000" value="<%= val('resource_url', 'resourceUrl', '') %>" autocomplete="off" data-bb-sermons-field="resource_url" />
     </div>
     <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_resource_url', csrfToken: csrfToken, visibility: 'public' }) %>
+    <p class="bb-ba-field__hint">Sermon thumbnails are edited on the public sermons page (website editor).</p>
   </section>
 <% } %>
 
@@ -221,9 +237,15 @@
     <input id="<%= mode %>_button_label" name="button_label" type="text" maxlength="48" value="<%= val('button_label', 'buttonLabel', '') %>" autocomplete="off" />
   </div>
   <div class="bb-ba-field">
-    <label for="<%= mode %>_qr_image_url">QR image URL</label>
-    <input id="<%= mode %>_qr_image_url" name="qr_image_url" type="text" maxlength="2000" value="<%= val('qr_image_url', 'qrImageUrl', '') %>" autocomplete="off" />
+    <label>QR image</label>
+    <input id="<%= mode %>_qr_image_url" name="qr_image_url" type="hidden" value="<%= val('qr_image_url', 'qrImageUrl', '') %>" />
+    <% if (val('qr_image_url', 'qrImageUrl', '')) { %>
+    <p class="bb-ba-field__preview"><img src="<%= val('qr_image_url', 'qrImageUrl', '') %>" alt="" width="160" height="160" loading="lazy" /></p>
+    <% } else { %>
+    <p class="bb-ba-field__hint">No QR image yet — choose or upload below.</p>
+    <% } %>
   </div>
+  <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_qr_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
 <% } %>
 
 <div class="bb-ba-entities-form__section" <% if (entityKind === 'ministries') { %>data-bb-ministries-section="publication"<% } else if (entityKind === 'events') { %>data-bb-events-section="publication"<% } else if (entityKind === 'sermons') { %>data-bb-sermons-section="publication"<% } %>>

@@ -95,8 +95,12 @@ function validateImageUrl(raw) {
     }
     if (MEDIA_ASSET_PATH_RE.test(value)) return { ok: true, value };
     if (WEBSITE_ENGINE_MEDIA_PATH_RE.test(value)) return { ok: true, value };
+    // Demo / platform soft-fill keys → store CDN URL, never a local filesystem path.
     if (value.startsWith("/church/images/") && !/\s/.test(value)) {
-      return { ok: true, value };
+      const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
+      const presented = presentRuntimeImageSrc(value, process.env, { allowMarketing: true });
+      if (presented) return { ok: true, value: presented };
+      return { ok: false, error: "That demo image is not available on CDN." };
     }
     return { ok: false, error: "Choose an uploaded or demo image." };
   }
@@ -616,11 +620,18 @@ function isDemoImagePath(path) {
 }
 
 function listDemoImages() {
-  return Object.entries(DEMO_MEDIA || {}).map(([key, url]) => ({
-    key,
-    url,
-    label: key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()),
-  }));
+  const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
+  return Object.entries(DEMO_MEDIA || {})
+    .map(([key, path]) => {
+      const url = presentRuntimeImageSrc(path, process.env, { allowMarketing: true });
+      if (!url) return null;
+      return {
+        key,
+        url,
+        label: key.replace(/([A-Z])/g, " $1").replace(/^./, (c) => c.toUpperCase()),
+      };
+    })
+    .filter(Boolean);
 }
 
 module.exports = {

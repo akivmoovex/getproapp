@@ -9,7 +9,7 @@
     </div>
     <div class="acw-hero__media">
       <%- include('../partials/ac-media', {
-        src: '/activeclinic/assets/stitch/ACW05-01-For-Patients-Desktop-1.jpg',
+        src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW05-01-For-Patients-Desktop-1.jpg') : ''),
         alt: 'Patient using ActiveClinic to find care.',
         className: 'acp-hero__image',
         objectFit: 'cover',
@@ -26,7 +26,7 @@
     <p class="acw-hero__lede">Experience high-fidelity healthcare on the go. Find specialized clinics, manage appointments, and access your health records securely from anywhere.</p>
     <div class="acw-hero__media">
       <%- include('../partials/ac-media', {
-        src: '/activeclinic/assets/stitch/ACW05-02-For-Patients-Mobile-1.jpg',
+        src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW05-02-For-Patients-Mobile-1.jpg') : ''),
         alt: 'Modern healthcare clinic',
         className: 'acp-hero__image',
         objectFit: 'cover',
@@ -76,7 +76,7 @@
       </div>
       <div class="acw-hero__media">
         <%- include('../partials/ac-media', {
-          src: '/activeclinic/assets/stitch/ACW05-01-For-Patients-Desktop-2.jpg',
+          src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW05-01-For-Patients-Desktop-2.jpg') : ''),
           alt: 'Patient portal on a tablet.',
           className: 'acp-hero__image',
           objectFit: 'cover',

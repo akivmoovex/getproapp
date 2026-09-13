@@ -20,7 +20,7 @@
     <li class="ac-service-card">
       <a class="ac-service-card__link" href="/clinics/<%= clinic.clinicKey %>/services/<%= s.serviceKey %>">
         <span class="ac-service-card__icon" aria-hidden="true">
-          <img src="<%= s.iconUrl || '/activeclinic/assets/icons/general.svg' %>" alt="" width="28" height="28" loading="lazy"/>
+          <img src="<%= s.iconUrl || (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/icons/general.svg') : '') %>" alt="" width="28" height="28" loading="lazy"/>
         </span>
         <h3 class="ac-service-card__name"><%= s.displayName %></h3>
         <% if (s.summary) { %>
@@ -39,7 +39,7 @@
     <li class="ac-service-card">
       <a class="ac-service-card__link" href="/clinics/<%= clinic.clinicKey %>/procedures/<%= p.procedureKey %>">
         <span class="ac-service-card__icon" aria-hidden="true">
-          <img src="<%= p.iconUrl || '/activeclinic/assets/icons/procedure.svg' %>" alt="" width="28" height="28" loading="lazy"/>
+          <img src="<%= p.iconUrl || (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/icons/procedure.svg') : '') %>" alt="" width="28" height="28" loading="lazy"/>
         </span>
         <h3 class="ac-service-card__name"><%= p.displayName %></h3>
         <% if (p.summary) { %>
@@ -52,7 +52,7 @@
   </ul>
   <% } %>
   <% if (serviceList.length || procedureList.length) { %>
-  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue', label: 'Manage public catalogue', manageKind: 'services' }) %>
+  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/library', label: 'Edit service website images', note: 'Optional website images override default icons via the Content Library media picker.', manageKind: 'services' }) %>
   <% } %>
   <p class="ac-public-note"><a href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.pricing) || ('/clinics/' + clinic.clinicKey + '/pricing') %>">Pricing information</a> · Fees are shown only when configured by the clinic.</p>
   <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_services', librarySkipTypes: [] }) %>

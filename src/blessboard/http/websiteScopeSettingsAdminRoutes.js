@@ -291,6 +291,8 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
       returnTo,
       socialPlatforms: registry.SOCIAL_PLATFORMS,
       SOURCE,
+      mediaUploadUrl: "/hq/content/media/upload",
+      mediaListUrl: "/hq/content/media",
     });
     return res.type("html").send(html);
   }

@@ -31,7 +31,7 @@
             <span class="ac-booking-choice__body">
               <span class="acp-doctor-card__avatar<%= doc.photoIsFallback ? '' : ' acp-doctor-card__avatar--photo' %>" aria-hidden="true">
                 <%- include('../partials/ac-media', {
-                  src: doc.photoUrl || (typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : '/activeclinic/assets/doctors/doctor-fallback.svg'),
+                  src: doc.photoUrl || (typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/doctors/doctor-fallback.svg') : '')),
                   alt: '',
                   decorative: true,
                   className: 'acp-doctor-card__img',
@@ -40,7 +40,7 @@
                   width: 96,
                   height: 96,
                   loading: 'lazy',
-                  fallbackSrc: typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : '/activeclinic/assets/doctors/doctor-fallback.svg',
+                  fallbackSrc: typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/doctors/doctor-fallback.svg') : ''),
                 }) %>
               </span>
               <strong><%= doc.displayName %></strong>

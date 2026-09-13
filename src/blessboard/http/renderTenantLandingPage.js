@@ -9,6 +9,7 @@ const path = require("path");
 const ejs = require("ejs");
 const { renderV5Ejs } = require("./v5EjsTemplateCache");
 const { buildPlatformPhoneFieldLocals } = require("../../platform/services/platformPhoneFieldLocals");
+const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 
 const TENANT_LANDING_TEMPLATE = path.join(
   __dirname,
@@ -250,6 +251,7 @@ function renderAuthErrorPage(message) {
     message: text,
     errorState,
     pageTitle,
+    cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, process.env) || "",
   });
 }
 

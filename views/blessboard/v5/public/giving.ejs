@@ -461,12 +461,10 @@
     <% } %>
 
     <% moreSections.forEach(function (section) { %>
-    <section class="bb-tp-section bb-tp-giving-section bb-tp-content-block" data-section="<%= section.sectionKey %>">
+    <section class="bb-tp-section bb-tp-giving-section bb-tp-content-block<%= section.mediaUrl || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>" data-section="<%= section.sectionKey %>">
       <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
       <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
-      <% if (section.mediaUrl) { %>
-      <img class="bb-tp-media" src="<%= section.mediaUrl %>" alt="<%= (section.layoutMetadata && section.layoutMetadata.altText) || '' %>" width="960" height="540" loading="lazy" decoding="async" />
-      <% } %>
+      <%- include('./partials/content-block-media', { section: section, editPageKey: 'giving' }) %>
     </section>
     <% }) %>
 

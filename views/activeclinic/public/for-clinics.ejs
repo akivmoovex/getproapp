@@ -11,7 +11,7 @@
     </div>
     <div class="acw-hero__media">
       <%- include('../partials/ac-media', {
-        src: '/activeclinic/assets/stitch/ACW03-01-For-Clinics-Desktop-1.jpg',
+        src: (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/stitch/ACW03-01-For-Clinics-Desktop-1.jpg') : ''),
         alt: 'Healthcare staff using clinic software on a tablet in a modern clinic.',
         className: 'acp-hero__image',
         objectFit: 'cover',

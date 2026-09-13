@@ -103,7 +103,7 @@ describe("v7 hostinger media storage — config guards", () => {
     const storage = createHostingerMediaStorage({
       DEPLOYMENT_ENV: "testing",
       MEDIA_STORAGE_ROOT: root,
-      MEDIA_PUBLIC_BASE_URL: "/media",
+      MEDIA_PUBLIC_BASE_URL: "https://cdn.test.invalid/media",
     });
     await assert.rejects(
       () =>
@@ -131,7 +131,7 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
   const mediaEnv = () => ({
     DEPLOYMENT_ENV: "testing",
     MEDIA_STORAGE_ROOT: mediaRoot,
-    MEDIA_PUBLIC_BASE_URL: "/media",
+    MEDIA_PUBLIC_BASE_URL: "https://cdn.test.invalid/media",
   });
 
   async function seedBlessBoard(stamp) {
@@ -192,7 +192,7 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
           NODE_ENV: "test",
           DEPLOYMENT_ENV: "testing",
           MEDIA_STORAGE_ROOT: mediaRoot,
-          MEDIA_PUBLIC_BASE_URL: "/media",
+          MEDIA_PUBLIC_BASE_URL: "https://cdn.test.invalid/media",
           SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
         },
       });
@@ -229,7 +229,7 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
       uploaded.media,
       mediaEnv()
     );
-    assert.match(presented.publicSrc, /^\/media\/testing\/blessboard\//);
+    assert.match(presented.publicSrc, /^https:\/\/cdn\.test\.invalid\/media\/testing\/blessboard\//);
     assert.equal(presented.previewUrl, presented.publicSrc);
     const abs = path.join(mediaRoot, ...uploaded.media.storageKey.split("/"));
     assert.equal(fs.existsSync(abs), true);
@@ -240,7 +240,7 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
     );
     assert.equal(row.rows[0].storage_provider, PROVIDER_HOSTINGER);
     assert.equal(row.rows[0].has_payload, false);
-    const staticRes = await request(bbApp).get(presented.publicSrc);
+    const staticRes = await request(bbApp).get(`/media/${uploaded.media.storageKey}`);
     assert.equal(staticRes.status, 200);
     assert.match(String(staticRes.headers["content-type"] || ""), /image\/jpeg/);
   });
@@ -298,7 +298,8 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
     assert.equal(payload.ok, true);
     assert.ok(payload.buffer && payload.buffer.length > 0);
     const presented = mediaService.presentWebsiteMediaForClient(ctx.instance, legacy.media);
-    assert.match(presented.publicSrc, /\/website\/media\//);
+    // Legacy database-payload media has no CDN object — presentation omits forbidden routes.
+    assert.equal(presented.publicSrc, null);
   });
 
   it("testing + explicit MEDIA_STORAGE_ROOT: env wins over account-home fallback", () => {
@@ -424,7 +425,7 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
     const storage = createHostingerMediaStorage({
       DEPLOYMENT_ENV: "testing",
       MEDIA_STORAGE_ROOT: root,
-      MEDIA_PUBLIC_BASE_URL: "/media",
+      MEDIA_PUBLIC_BASE_URL: "https://cdn.test.invalid/media",
     });
     await assert.rejects(
       () =>

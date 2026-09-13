@@ -272,13 +272,43 @@
             <%= fErr[field.key] ? ' aria-invalid="true" aria-describedby="err-' + esc(field.key.replace(/\./g, '-')) + '"' : '' %>
           ><%= esc(inputFor(field)) %></textarea>
         </div>
+        <% } else if (field.type === 'image_url') { %>
+        <%
+          var imgInputId = 'val-' + field.key.replace(/\./g, '-');
+          var imgVal = String(inputFor(field) || '');
+        %>
+        <div class="bb-hq-field bb-hq-field--image" data-bb-setting-image="1">
+          <p class="bb-hq-field__legend"><%= esc(field.label) %> override</p>
+          <input
+            type="hidden"
+            id="<%= esc(imgInputId) %>"
+            name="value"
+            value="<%= esc(imgVal) %>"
+            <%= fErr[field.key] ? ' aria-invalid="true" aria-describedby="err-' + esc(field.key.replace(/\./g, '-')) + '"' : '' %>
+          />
+          <% if (imgVal) { %>
+          <p class="bb-hq-branch-settings__image-preview">
+            <img src="<%= esc(imgVal) %>" alt="" width="240" height="135" loading="lazy" decoding="async" />
+          </p>
+          <% } else { %>
+          <p class="bb-hq-muted">No image selected.</p>
+          <% } %>
+          <%- include('../content-admin/media-upload', {
+            uploadUrl: (typeof mediaUploadUrl !== 'undefined' && mediaUploadUrl) ? mediaUploadUrl : '/hq/content/media/upload',
+            listUrl: (typeof mediaListUrl !== 'undefined' && mediaListUrl) ? mediaListUrl : '/hq/content/media',
+            targetInputId: imgInputId,
+            csrfToken: csrfToken,
+            visibility: 'public'
+          }) %>
+          <p class="bb-hq-hint">Choose or upload an image from the church media library. Raw URL entry is not used for ordinary admins.</p>
+        </div>
         <% } else { %>
         <div class="bb-hq-field">
           <label for="val-<%= esc(field.key.replace(/\./g, '-')) %>"><%= esc(field.label) %> override</label>
           <input
             id="val-<%= esc(field.key.replace(/\./g, '-')) %>"
             name="value"
-            type="<%= field.type === 'email' ? 'email' : (field.type === 'url' || field.type === 'image_url' ? 'url' : 'text') %>"
+            type="<%= field.type === 'email' ? 'email' : (field.type === 'url' ? 'url' : 'text') %>"
             maxlength="<%= field.maxLen || 200 %>"
             value="<%= esc(inputFor(field)) %>"
             autocomplete="off"

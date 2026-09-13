@@ -7,6 +7,7 @@
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
+const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
 
@@ -17,7 +18,13 @@ const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic
 function renderActiveClinicView(relativePath, data) {
   const absolute = path.join(VIEWS_ROOT, relativePath);
   const source = fs.readFileSync(absolute, "utf8");
-  return ejs.render(source, data || {}, {
+  const locals = Object.assign(
+    {
+      cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, process.env) || "",
+    },
+    data || {}
+  );
+  return ejs.render(source, locals, {
     filename: absolute,
     root: VIEWS_ROOT,
     views: [VIEWS_ROOT],

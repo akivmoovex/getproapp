@@ -11,6 +11,11 @@ const {
 } = require("./activeClinicWebsiteTemplate");
 const { buildActiveClinicWebsiteTemplateContent } = require("./activeClinicWebsiteTemplateContent");
 const { applyLibraryPresentation } = require("./clinicWebsiteCms");
+const {
+  presentImageValue,
+  presentRuntimeImageSrc,
+  presentImageTree,
+} = require("../../platform/media/cdnMediaPresentation");
 
 const MODE = resolver.MODE;
 
@@ -90,20 +95,26 @@ function mergeClinicPresentation(clinic, resolved, operational) {
   });
   const content = (key) => pickContent(values, defaults, key);
   const heroImage = content("home.hero.image");
-  const heroSrc =
-    heroImage && typeof heroImage === "object" ? heroImage.src : heroImage || clinic.websiteHeroUrl || null;
-  const heroAltFromContent =
-    heroImage && typeof heroImage === "object" && heroImage.alt ? String(heroImage.alt) : "";
-  const usesDefaultHero =
-    Boolean(heroSrc) && String(heroSrc).indexOf("clinic-hero-default") !== -1;
+  const presentedHero =
+    heroImage && typeof heroImage === "object"
+      ? presentImageValue(heroImage)
+      : presentImageValue({ src: heroImage || clinic.websiteHeroUrl || null });
+  const heroSrc = presentedHero.src;
+  const heroAltFromContent = presentedHero.alt || "";
+  const usesDefaultHero = false;
   const aboutImage = content("about.story.image");
-  const aboutImageSrc =
-    aboutImage && typeof aboutImage === "object" ? aboutImage.src : aboutImage || null;
-  const aboutImageAlt =
-    aboutImage && typeof aboutImage === "object" && aboutImage.alt ? String(aboutImage.alt) : "";
-  const aboutImageMediaId =
-    aboutImage && typeof aboutImage === "object" && aboutImage.mediaId ? aboutImage.mediaId : "";
+  const presentedAbout = presentImageValue(
+    aboutImage && typeof aboutImage === "object" ? aboutImage : { src: aboutImage }
+  );
+  const aboutImageSrc = presentedAbout.src;
+  const aboutImageAlt = presentedAbout.alt || "";
+  const aboutImageMediaId = presentedAbout.mediaId || "";
   const logoImage = content("home.logo");
+  const presentedLogo = presentImageValue(
+    logoImage && typeof logoImage === "object"
+      ? logoImage
+      : { src: clinic.websiteLogoUrl || null }
+  );
   const libraryItems = Array.isArray(content("cms.library")) ? content("cms.library") : [];
   const libraryPlacements = Array.isArray(content("cms.library_placements"))
     ? content("cms.library_placements")
@@ -125,8 +136,8 @@ function mergeClinicPresentation(clinic, resolved, operational) {
   const brandAccent = pickHexColor(values, "brand.accent_color");
   return {
     ...clinic,
-    websiteContent: values,
-    websiteDefaults: defaults,
+    websiteContent: presentImageTree(values),
+    websiteDefaults: presentImageTree(defaults),
     websiteVisibility: vis,
     websiteUnpublishedCount: resolved.unpublishedCount || 0,
     websiteMode: resolved.mode,
@@ -146,28 +157,24 @@ function mergeClinicPresentation(clinic, resolved, operational) {
     socialXUrl: pickUrl(values, defaults, "social.x_url"),
     seoTitle: content("seo.title") || null,
     seoDescription: content("seo.description") || null,
-    seoImageUrl:
-      (seoImage && typeof seoImage === "object" && seoImage.src) ||
-      (typeof seoImage === "string" ? seoImage : null) ||
-      null,
+    seoImageUrl: (() => {
+      const presented = presentImageValue(
+        seoImage && typeof seoImage === "object" ? seoImage : { src: seoImage }
+      );
+      return presented.src;
+    })(),
     seoImageAlt: (seoImage && typeof seoImage === "object" && seoImage.alt ? String(seoImage.alt) : "") || "",
     seoImageMediaId: (seoImage && typeof seoImage === "object" && seoImage.mediaId) || "",
     heroTitle: content("home.hero.title") || `Welcome to ${operational.clinic_name || clinic.publicName}`,
     heroSubtitle: content("home.hero.subtitle") || clinic.websiteAbout || null,
     heroEyebrow: content("home.hero.eyebrow") || clinic.websiteTagline || null,
-    websiteHeroUrl: heroSrc || clinic.websiteHeroUrl || null,
+    websiteHeroUrl: heroSrc || null,
     websiteHeroAlt:
       heroAltFromContent ||
       (usesDefaultHero ? `Template photo for ${clinic.publicName}` : ""),
-    websiteLogoUrl:
-      (logoImage && typeof logoImage === "object" && logoImage.src) ||
-      clinic.websiteLogoUrl ||
-      null,
-    websiteLogoAlt:
-      (logoImage && typeof logoImage === "object" && logoImage.alt ? String(logoImage.alt) : "") ||
-      "",
-    websiteLogoMediaId:
-      (logoImage && typeof logoImage === "object" && logoImage.mediaId) || "",
+    websiteLogoUrl: presentedLogo.src || null,
+    websiteLogoAlt: presentedLogo.alt || "",
+    websiteLogoMediaId: presentedLogo.mediaId || "",
     aboutEyebrow: content("about.eyebrow") || "About",
     aboutHeading: content("about.story.heading") || "About our clinic",
     aboutBody: content("about.story.body") || clinic.websiteAbout || null,

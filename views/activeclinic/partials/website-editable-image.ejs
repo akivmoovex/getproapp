@@ -8,7 +8,7 @@
   var imgClass = typeof imageClassName !== 'undefined' && imageClassName ? String(imageClassName) : '';
   var placeholderSrc = typeof imagePlaceholderSrc !== 'undefined' && imagePlaceholderSrc
     ? String(imagePlaceholderSrc)
-    : '/activeclinic/assets/clinic-hero-default.jpg';
+    : '';
   var imgWidth = typeof imageWidth !== 'undefined' && imageWidth ? Number(imageWidth) : 960;
   var imgHeight = typeof imageHeight !== 'undefined' && imageHeight ? Number(imageHeight) : 600;
   var displaySrc = src || placeholderSrc;
@@ -26,6 +26,7 @@
   data-website-media-id="<%= mediaId %>"
 >
   <div class="gp-website-editable__preview ac-website-editable__preview">
+    <% if (displaySrc) { %>
     <img
       data-website-image="1"
       class="<%= imgClass %>"
@@ -34,6 +35,9 @@
       width="<%= imgWidth %>"
       height="<%= imgHeight %>"
     />
+    <% } else { %>
+    <div class="<%= imgClass %> ac-website-editable__empty" data-website-image="1" role="img" aria-label="<%= alt || label %>"></div>
+    <% } %>
     <button
       type="button"
       class="gp-website-editable__pencil ac-website-editable__pencil"
@@ -44,9 +48,9 @@
     </button>
   </div>
 </div>
-<% } else { %>
+<% } else if (src) { %>
 <%- include('./ac-media', {
-  src: src || '/activeclinic/assets/clinic-hero-default.jpg',
+  src: src,
   alt: alt,
   className: typeof imageClassName !== 'undefined' ? imageClassName : 'ac-tenant-hero__image',
   objectFit: 'cover',
@@ -55,6 +59,6 @@
   width: 960,
   height: 600,
   loading: typeof imageLoading !== 'undefined' ? imageLoading : 'eager',
-  fallbackSrc: typeof clinicHeroDefaultUrl === 'string' ? clinicHeroDefaultUrl : '/activeclinic/assets/clinic-hero-default.jpg',
+  fallbackSrc: '',
 }) %>
 <% } %>

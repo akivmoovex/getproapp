@@ -525,12 +525,15 @@
         ? '<p class="gp-website-field-editor__hint">Use a square PNG or SVG with a transparent background when possible.</p>'
         : "") +
       '<label class="gp-website-field-editor__file">' +
-      "<span>Choose or replace image</span>" +
+      "<span>" +
+      (currentSrc ? "Replace image" : "Add image") +
+      "</span>" +
       '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-website-file="1" />' +
       "</label>" +
       (mediaUrl
         ? '<button type="button" class="gp-website-field-editor__link-btn" data-website-library="1">Choose existing</button>'
         : "") +
+      '<button type="button" class="gp-website-field-editor__link-btn" data-website-remove-image="1">Remove image</button>' +
       '<div class="gp-website-library" data-website-library-panel="1" hidden></div>' +
       '<label class="gp-website-field-editor__alt">' +
       "Alt text" +
@@ -585,6 +588,7 @@
         if (state.pendingObjectUrl) URL.revokeObjectURL(state.pendingObjectUrl);
         state.pendingFile = file;
         state.pendingMediaId = null;
+        state.pendingRemove = false;
         state.pendingObjectUrl = URL.createObjectURL(file);
         showNewPreview(state.pendingObjectUrl);
         setStatus("Preview only — save draft to keep this image", false);
@@ -621,6 +625,7 @@
               pick.appendChild(thumb);
               pick.addEventListener("click", function () {
                 state.pendingFile = null;
+                state.pendingRemove = false;
                 state.pendingMediaId = item.id || item.mediaId || "";
                 if (fileInput) fileInput.value = "";
                 if (state.pendingObjectUrl) {
@@ -641,6 +646,23 @@
           .catch(function () {
             libraryPanel.textContent = "Could not load media library";
           });
+      });
+    }
+
+    var removeBtn = bodyEl.querySelector("[data-website-remove-image]");
+    if (removeBtn) {
+      removeBtn.addEventListener("click", function () {
+        state.pendingFile = null;
+        state.pendingMediaId = null;
+        state.pendingRemove = true;
+        if (fileInput) fileInput.value = "";
+        if (state.pendingObjectUrl) {
+          URL.revokeObjectURL(state.pendingObjectUrl);
+          state.pendingObjectUrl = null;
+        }
+        showNewPreview("");
+        setStatus("Image will be removed when you save draft", false);
+        syncDirtyController();
       });
     }
 
@@ -673,6 +695,7 @@
       pendingFile: null,
       pendingMediaId: null,
       pendingObjectUrl: null,
+      pendingRemove: false,
     };
 
     if (image) {
@@ -714,12 +737,18 @@
   function updateCanvasImage(fieldEl, src, alt, mediaId) {
     var img = fieldEl.querySelector("[data-website-image]");
     var placeholder = fieldEl.querySelector("[data-website-image-placeholder]");
-    if (mediaId) fieldEl.setAttribute("data-website-media-id", mediaId);
+    if (mediaId != null) fieldEl.setAttribute("data-website-media-id", mediaId || "");
     if (img) {
       if (src) {
         img.setAttribute("src", src);
         img.setAttribute("alt", alt || "");
         img.hidden = false;
+        if (img.tagName === "DIV") {
+          /* empty placeholder divs stay empty until reload */
+        }
+      } else {
+        img.removeAttribute("src");
+        img.hidden = true;
       }
     }
     if (placeholder) placeholder.hidden = Boolean(src);
@@ -770,6 +799,37 @@
     setBusy(true);
     setStatus(state.pendingFile ? "Uploading…" : "Saving…", false);
     if (imgState.progress && state.pendingFile) imgState.progress.hidden = false;
+
+    if (state.pendingRemove) {
+      return postJson(saveUrl, {
+        contentKey: activeField.getAttribute("data-website-key"),
+        value: null,
+      })
+        .then(function (out) {
+          setBusy(false);
+          if (out && out.ok && out.published === true) {
+            setStatus("Save must not publish. Draft was not applied as live.", true);
+            syncDirtyController();
+            return;
+          }
+          if (out && out.ok) {
+            updateCanvasImage(activeField, "", "", "");
+            markDraftSaved();
+            closeDialog();
+          } else {
+            setStatus(
+              (out && (out.reason || out.code)) || "Save failed — your changes are still here. Retry.",
+              true
+            );
+            syncDirtyController();
+          }
+        })
+        .catch(function () {
+          setBusy(false);
+          setStatus("Save failed — your changes are still here. Retry.", true);
+          syncDirtyController();
+        });
+    }
 
     var chain = state.pendingFile
       ? uploadImage(state.pendingFile, altText, function (pct) {

@@ -159,18 +159,27 @@ function isDemoPlaceholderContact(settings) {
 /**
  * Admin HTTPS validator rejects /church/images/* — patch via repository after create.
  * Events store thumbs in image_url. Sermon thumbs soft-fill at render time (no image_url column).
+ * Local soft-fill keys are rewritten to CDN URLs before write.
  */
+function presentDemoMediaUrl(imageUrl) {
+  if (!imageUrl) return null;
+  const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
+  return presentRuntimeImageSrc(imageUrl, process.env, { allowMarketing: true }) || null;
+}
+
 async function patchEntityImage(db, kind, id, imageUrl) {
   if (!id || !imageUrl) return;
+  const presented = presentDemoMediaUrl(imageUrl);
+  if (!presented) return;
   await withClient(db, async (client) => {
     if (kind === "leader") {
-      await contentRepo.updateLeader(client, id, { imageUrl });
+      await contentRepo.updateLeader(client, id, { imageUrl: presented });
     } else if (kind === "ministry") {
-      await contentRepo.updateMinistry(client, id, { imageUrl });
+      await contentRepo.updateMinistry(client, id, { imageUrl: presented });
     } else if (kind === "section") {
-      await contentRepo.updateSection(client, id, { mediaUrl: imageUrl });
+      await contentRepo.updateSection(client, id, { mediaUrl: presented });
     } else if (kind === "event") {
-      await contentRepo.updateEvent(client, id, { imageUrl });
+      await contentRepo.updateEvent(client, id, { imageUrl: presented });
     }
   });
 }
@@ -321,7 +330,7 @@ async function ensureSection(db, ctx) {
     await withClient(db, (c) =>
       contentRepo.updateSection(c, existing.id, {
         layoutMetadata: spec.demoLayoutMetadata(demoKey),
-        mediaUrl: mediaUrl || null,
+        mediaUrl: presentDemoMediaUrl(mediaUrl),
       })
     );
     actions.push(
@@ -360,7 +369,7 @@ async function ensureSection(db, ctx) {
     await withClient(db, (c) =>
       contentRepo.updateSection(c, created.section.id, {
         layoutMetadata: spec.demoLayoutMetadata(demoKey),
-        mediaUrl: mediaUrl || null,
+        mediaUrl: presentDemoMediaUrl(mediaUrl),
       })
     );
   }

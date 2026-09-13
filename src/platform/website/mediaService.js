@@ -13,6 +13,11 @@ const {
   buildPublicMediaUrl,
 } = require("../media/hostingerMediaConfig");
 const { createHostingerMediaStorage } = require("../media/hostingerMediaStorage");
+const {
+  presentCdnUrl,
+  presentRuntimeImageSrc,
+  resolveCdnPublicBaseUrl,
+} = require("../media/cdnMediaPresentation");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -120,7 +125,10 @@ function resolveMediaStorage(env) {
 }
 
 /**
- * Public URL for Hostinger-backed media; otherwise tenant delivery path.
+ * Public URL for website media — CDN absolute URL when Hostinger-backed.
+ * Legacy database-payload rows keep an app-mediated path only until migrated;
+ * renderers must still run presentRuntimeImageSrc (which nulls app paths without
+ * a storage key). Prefer presentWebsiteMediaForClient for API/HTML.
  * @param {{ productCode?: string, slug?: string }|null} instance
  * @param {object|null|undefined} media
  * @param {NodeJS.ProcessEnv} [env]
@@ -129,10 +137,19 @@ function resolveMediaStorage(env) {
 function resolveWebsiteMediaPublicSrc(instance, media, env) {
   if (!media || !media.id) return null;
   if (String(media.storageProvider || "") === PROVIDER_HOSTINGER && media.storageKey) {
+    const cdn = presentCdnUrl(media.storageKey, env);
+    if (cdn) return cdn;
     const cfg = resolveHostingerMediaConfig(env || process.env);
     const url = buildPublicMediaUrl(media.storageKey, cfg);
-    if (url) return url;
+    // Never present relative /media to clients when a CDN base exists or can be derived.
+    if (url && /^https:\/\//i.test(url)) return url;
+    if (url && url.startsWith("/media/")) {
+      const rewritten = presentRuntimeImageSrc(url, env);
+      if (rewritten) return rewritten;
+    }
   }
+  // Database-payload fallback: no CDN object yet — do not emit /media.
+  // App route remains for authenticated/ops delivery + 302 upgrade after migration.
   return websiteMediaDeliveryPath(instance, media.id);
 }
 
@@ -344,8 +361,8 @@ async function registerWebsiteMedia(db, input) {
     }
   }
   const media = mapMedia(rows.rows[0]);
-  if (storageProvider === PROVIDER_HOSTINGER && cfg) {
-    media.publicSrc = buildPublicMediaUrl(storageKey, cfg);
+  if (storageProvider === PROVIDER_HOSTINGER && storageKey) {
+    media.publicSrc = presentCdnUrl(storageKey, env) || null;
     media.previewUrl = media.publicSrc;
   }
   await recordWebsiteAudit(db, {
@@ -597,8 +614,14 @@ function websiteMediaDeliveryPath(instance, mediaId) {
  */
 function presentWebsiteMediaForClient(instance, media, env) {
   if (!media || !media.id) return media || null;
-  const path = resolveWebsiteMediaPublicSrc(instance, media, env);
-  if (!path) return { ...media };
+  let path = resolveWebsiteMediaPublicSrc(instance, media, env);
+  // HTML/API presentation: Hostinger → CDN only. App-mediated paths are not
+  // CDN presentation; leave publicSrc null so renderers omit forbidden URLs.
+  if (path && (path.startsWith("/c/") || path.startsWith("/clinics/") || path.startsWith("/media/"))) {
+    const rewritten = presentRuntimeImageSrc(path, env);
+    path = rewritten;
+  }
+  if (!path) return { ...media, publicSrc: null, previewUrl: null };
   return {
     ...media,
     publicSrc: path,
@@ -656,12 +679,15 @@ async function assertOwnedWebsiteImageValue(db, input) {
   if (mediaId) {
     const owned = await loadOwned(mediaId);
     if (!owned.ok) return { ok: false, code: owned.code, value: null };
+    const cdnSrc =
+      presentWebsiteMediaForClient(instance, owned.media, (input && input.env) || process.env)
+        .publicSrc || null;
     return {
       ok: true,
       value: {
         ...value,
         mediaId: owned.media.id,
-        src: resolveWebsiteMediaPublicSrc(instance, owned.media) || ownedWebsiteMediaSrc(instance, owned.media.id),
+        src: cdnSrc,
       },
     };
   }
@@ -677,12 +703,15 @@ async function assertOwnedWebsiteImageValue(db, input) {
     }
     const owned = await loadOwned(pathMatch[2]);
     if (!owned.ok) return { ok: false, code: owned.code, value: null };
+    const cdnSrc =
+      presentWebsiteMediaForClient(instance, owned.media, (input && input.env) || process.env)
+        .publicSrc || null;
     return {
       ok: true,
       value: {
         ...value,
         mediaId: owned.media.id,
-        src: resolveWebsiteMediaPublicSrc(instance, owned.media) || ownedWebsiteMediaSrc(instance, owned.media.id),
+        src: cdnSrc,
       },
     };
   }
@@ -690,14 +719,30 @@ async function assertOwnedWebsiteImageValue(db, input) {
   if (src.startsWith("/clinics/") || /^\/c\//.test(src)) {
     return { ok: false, code: RESULT.TENANT_MISMATCH, value: null };
   }
-  // Hostinger CDN/mount paths are absolute public URLs or /media/... keys.
-  if (src.startsWith("/media/") || /^https:\/\/.+\.pronline\.org\/media\//i.test(src)) {
+
+  // Compatibility: rewrite legacy /media/{key} (and absolute …/media/{key}) to CDN.
+  const rewritten = presentRuntimeImageSrc(src, (input && input.env) || process.env, {
+    allowMarketing: true,
+  });
+  if (rewritten && /^https:\/\//i.test(rewritten)) {
+    return { ok: true, value: { ...value, src: rewritten } };
+  }
+
+  // Refuse relative /media, local tenant asset paths, and data URLs for new saves.
+  if (
+    src.startsWith("/media/") ||
+    src.startsWith(TEMPLATE_ASSET_PREFIX) ||
+    src.startsWith("/church/images/") ||
+    /^data:/i.test(src)
+  ) {
+    return { ok: false, code: RESULT.INVALID_URL, value: null };
+  }
+
+  const cdnBase = resolveCdnPublicBaseUrl((input && input.env) || process.env);
+  if (cdnBase && src.startsWith(`${cdnBase}/`)) {
     return { ok: true, value };
   }
-  if (!src || src.startsWith(TEMPLATE_ASSET_PREFIX) || /^https:\/\//i.test(src)) {
-    return { ok: true, value };
-  }
-  if (src.startsWith("/") && !src.startsWith("//")) {
+  if (!src || /^https:\/\//i.test(src)) {
     return { ok: true, value };
   }
   return { ok: false, code: RESULT.INVALID_URL, value: null };

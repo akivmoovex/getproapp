@@ -7,9 +7,9 @@
   });
   function procedureIcon(proc) {
     var cat = String((proc && proc.category) || "").toLowerCase();
-    if (cat.indexOf("lab") !== -1) return "/activeclinic/assets/icons/lab.svg";
-    if (cat.indexOf("consult") !== -1) return "/activeclinic/assets/icons/consultation.svg";
-    return "/activeclinic/assets/icons/procedure.svg";
+    if (cat.indexOf("lab") !== -1) return (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/icons/lab.svg') : '');
+    if (cat.indexOf("consult") !== -1) return (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/icons/consultation.svg') : '');
+    return (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/icons/procedure.svg') : '');
   }
   function durationLabel(proc) {
     if (proc.estimatedDurationMinutes) return proc.estimatedDurationMinutes + " mins";

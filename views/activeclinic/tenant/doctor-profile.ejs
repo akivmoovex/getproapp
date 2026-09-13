@@ -2,7 +2,7 @@
   <div class="ac-doctor-profile__layout">
     <div class="ac-doctor-profile__media<%= profile.photoIsFallback ? ' ac-doctor-profile__media--fallback' : '' %>"<%= profile.photoIsFallback ? ' data-ac-asset-gap="doctor-photo"' : '' %>>
       <%- include('../partials/ac-media', {
-        src: profile.photoUrl || (typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : '/activeclinic/assets/doctors/doctor-fallback.svg'),
+        src: profile.photoUrl || (typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/doctors/doctor-fallback.svg') : '')),
         alt: profile.photoIsFallback ? '' : ('Portrait of ' + (profile.displayName || 'clinician')),
         decorative: Boolean(profile.photoIsFallback),
         className: 'ac-doctor-profile__photo',
@@ -12,7 +12,7 @@
         width: 640,
         height: 800,
         loading: 'eager',
-        fallbackSrc: typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : '/activeclinic/assets/doctors/doctor-fallback.svg',
+        fallbackSrc: typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/doctors/doctor-fallback.svg') : ''),
       }) %>
     </div>
     <div class="ac-doctor-profile__copy">

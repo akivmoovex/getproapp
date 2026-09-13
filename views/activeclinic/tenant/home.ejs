@@ -12,16 +12,14 @@
   const locationLine = locationBits.join(", ") || "";
   const locationDirectionsNote = (clinic.locationDirectionsNote || clinic.locationAddressOverlay || "").trim();
   const heroPhone = clinic.publicPhoneDisplay || (clinic.websiteContent && clinic.websiteContent["contact.phone"]) || "";
-  const heroSrc = clinic.websiteHeroUrl || "/activeclinic/assets/clinic-hero-default.jpg";
+  const heroSrc = clinic.websiteHeroUrl || "";
   const heroPos = clinic.heroObjectPosition || "center 42%";
   const seededHeroAlt =
     (clinic.websiteHeroAlt) ||
     (clinic.websiteContent && clinic.websiteContent["home.hero.image"] && clinic.websiteContent["home.hero.image"].alt) ||
     "";
-  const usesDefaultHero = String(heroSrc).indexOf("clinic-hero-default") !== -1;
-  const heroAlt = seededHeroAlt || (usesDefaultHero
-    ? ("Template photo for " + clinic.publicName)
-    : ("Photo of " + clinic.publicName));
+  const usesDefaultHero = false;
+  const heroAlt = seededHeroAlt || ("Photo of " + clinic.publicName);
   const bookingHref = (clinic.publicPagePaths && clinic.publicPagePaths.book) || (clinic.publicBasePath ? clinic.publicBasePath + "/book" : "/clinics/" + clinic.clinicKey + "/book");
   const contactHref = (clinic.publicPagePaths && clinic.publicPagePaths.contact) || (clinic.publicBasePath ? clinic.publicBasePath + "/contact" : "/clinics/" + clinic.clinicKey + "/contact");
   const servicesHref = (clinic.publicPagePaths && clinic.publicPagePaths.services) || (clinic.publicBasePath ? clinic.publicBasePath + "/services" : "/clinics/" + clinic.clinicKey + "/services");
@@ -107,7 +105,7 @@
     <li class="ac-service-card">
       <a class="ac-service-card__link" href="/clinics/<%= clinic.clinicKey %>/services/<%= s.serviceKey %>">
         <span class="ac-service-card__icon" aria-hidden="true">
-          <img src="<%= s.iconUrl || '/activeclinic/assets/icons/general.svg' %>" alt="" width="28" height="28" loading="lazy"/>
+          <img src="<%= s.iconUrl || (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/icons/general.svg') : '') %>" alt="" width="28" height="28" loading="lazy"/>
         </span>
         <h3 class="ac-service-card__name"><%= s.displayName %></h3>
         <% if (s.summary) { %>

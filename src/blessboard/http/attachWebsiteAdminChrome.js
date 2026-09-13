@@ -35,8 +35,10 @@ const {
   buildWebsitePublicEditSettingsCatalog,
 } = require("../services/websitePublicEditSettingsLinks");
 const {
-  DEFAULT_BLESSBOARD_LOGO_SRC,
-} = require("../website/blessboardChurchTemplate");
+  cdnMarketingAsset,
+  presentImageValue,
+  presentRuntimeImageSrc,
+} = require("../../platform/media/cdnMediaPresentation");
 const { findBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
 const { resolveWebsiteContent, MODE } = require("../../platform/website/resolver");
 const {
@@ -50,10 +52,17 @@ const EDIT_QUERY = "website_edit";
 
 async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
   if (!model) return;
+  const env = process.env;
   if (!model.websiteLogoUrl) {
-    model.websiteLogoUrl = DEFAULT_BLESSBOARD_LOGO_SRC;
+    model.websiteLogoUrl = cdnMarketingAsset(
+      "/church/images/brand/blessboard-small-church-logo.png",
+      env
+    );
     model.websiteLogoAlt = "";
     model.websiteLogoMediaId = "";
+  } else {
+    model.websiteLogoUrl =
+      presentRuntimeImageSrc(model.websiteLogoUrl, env) || model.websiteLogoUrl;
   }
   const organizationId =
     tenant && tenant.organization && tenant.organization.id
@@ -70,20 +79,28 @@ async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
     });
     if (!resolved.ok) return;
     const img = imageFromWebsiteValue(resolved.values && resolved.values["home.logo"]);
-    if (img.src) {
-      model.websiteLogoUrl = img.src;
-      model.websiteLogoAlt = img.alt;
-      model.websiteLogoMediaId = img.mediaId;
+    const presentedLogo = presentImageValue(
+      { src: img.src || null, alt: img.alt || null, mediaId: img.mediaId || null },
+      env
+    );
+    if (presentedLogo.src) {
+      model.websiteLogoUrl = presentedLogo.src;
+      model.websiteLogoAlt = presentedLogo.alt || img.alt;
+      model.websiteLogoMediaId = presentedLogo.mediaId || img.mediaId;
     }
     const hero = imageFromWebsiteValue(resolved.values && resolved.values["home.hero.image"]);
-    if (hero.src) {
-      model.websiteHeroUrl = hero.src;
-      model.websiteHeroAlt = hero.alt;
-      model.websiteHeroMediaId = hero.mediaId;
+    const presentedHero = presentImageValue(
+      { src: hero.src || null, alt: hero.alt || null, mediaId: hero.mediaId || null },
+      env
+    );
+    if (presentedHero.src) {
+      model.websiteHeroUrl = presentedHero.src;
+      model.websiteHeroAlt = presentedHero.alt || hero.alt;
+      model.websiteHeroMediaId = presentedHero.mediaId || hero.mediaId;
       if (model.homeDemoFallback) {
         model.homeDemoFallback = {
           ...model.homeDemoFallback,
-          heroMediaUrl: hero.src,
+          heroMediaUrl: presentedHero.src,
         };
       }
       const sections = Array.isArray(model.sections) ? model.sections : [];
@@ -95,7 +112,7 @@ async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
             String(s.sectionKey || "").indexOf("hero") >= 0)
       );
       if (heroSection) {
-        heroSection.mediaUrl = hero.src;
+        heroSection.mediaUrl = presentedHero.src;
         heroSection.layoutMetadata = {
           ...(heroSection.layoutMetadata || {}),
           altText: hero.alt || (heroSection.layoutMetadata && heroSection.layoutMetadata.altText) || "",

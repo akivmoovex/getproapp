@@ -29,7 +29,7 @@
   var _logoSrc =
     typeof websiteLogoUrl !== 'undefined' && websiteLogoUrl
       ? String(websiteLogoUrl)
-      : '/church/images/brand/blessboard-small-church-logo.png';
+      : (typeof cdnAsset==='function' ? cdnAsset('/church/images/brand/blessboard-small-church-logo.png') : '');
   var _logoAlt = typeof websiteLogoAlt !== 'undefined' && websiteLogoAlt ? String(websiteLogoAlt) : '';
   var _logoMediaId = typeof websiteLogoMediaId !== 'undefined' && websiteLogoMediaId ? String(websiteLogoMediaId) : '';
 %>

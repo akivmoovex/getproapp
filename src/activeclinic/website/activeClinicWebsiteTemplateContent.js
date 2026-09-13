@@ -12,7 +12,7 @@
  */
 
 const PLACEHOLDER_LABEL = "Template example — replace with your clinic’s information.";
-const HERO_IMAGE_SRC = "/activeclinic/assets/clinic-hero-default.jpg";
+const HERO_IMAGE_SRC = null;
 
 function clinicName(raw) {
   const name = String(raw || "").trim();
@@ -78,10 +78,15 @@ function buildActiveClinicWebsiteTemplateContent(input) {
       name
     ),
     "home.hero.eyebrow": "Community clinic",
-    "home.hero.image": {
-      src: HERO_IMAGE_SRC,
-      alt: interpolate("Template photo for {clinicName}", name),
-    },
+    "home.hero.image": HERO_IMAGE_SRC
+      ? {
+          src: HERO_IMAGE_SRC,
+          alt: interpolate("Template photo for {clinicName}", name),
+        }
+      : {
+          src: null,
+          alt: interpolate("Photo for {clinicName}", name),
+        },
     "about.story.heading": interpolate("About {clinicName}", name),
     "about.story.body": interpolate(
       `{clinicName} is getting started on ActiveClinic. Use this page to tell patients who you are, what to expect on a visit, and how to get in touch. ${PLACEHOLDER_LABEL} Replace this description with your own clinic story. Do not present template copy as a medical claim, specialty list, or certification.`,

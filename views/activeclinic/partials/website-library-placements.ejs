@@ -13,6 +13,7 @@
       if (skipTypes.indexOf(item.type) !== -1) return false;
       return true;
     });
+  var editing = typeof websiteEdit !== "undefined" && websiteEdit;
 %>
 <% if (placed.length) { %>
 <section class="ac-public-section ac-tenant-library" data-ac-page-section="tenant-library">
@@ -30,6 +31,17 @@
     <% if (item.title) { %><h2><%= item.title %></h2><% } %>
     <% if (item.summary) { %><p><%= item.summary %></p><% } %>
     <% if (item.body && item.body !== item.summary) { %><p><%= item.body %></p><% } %>
+    <% } %>
+    <% var libImg = item.image && (item.image.src || item.image.publicSrc) ? (item.image.src || item.image.publicSrc) : ""; %>
+    <% if (libImg) { %>
+    <p class="ac-tenant-library-item__media">
+      <img src="<%= libImg %>" alt="<%= (item.image && item.image.alt) || item.title || '' %>" width="960" height="540" loading="lazy" decoding="async" />
+    </p>
+    <% } %>
+    <% if (editing && item.id) { %>
+    <p class="ac-website-manage" data-ac-website-manage="library-image">
+      <a class="ac-btn ac-btn--secondary ac-btn--pill" href="/app/settings/website/library/<%= item.id %>"><%= libImg ? "Replace image" : "Add image" %></a>
+    </p>
     <% } %>
   </article>
   <% }) %>

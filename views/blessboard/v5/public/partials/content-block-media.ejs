@@ -1,0 +1,33 @@
+<%#
+  Content-block media with structured image edit (Replace / Add).
+  Locals: section (required), editPageKey (optional)
+%>
+<%
+  var _sec = typeof section !== 'undefined' && section ? section : null;
+  var _page = typeof editPageKey !== 'undefined' && editPageKey ? String(editPageKey) : '';
+  var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+  var _editing = Boolean(_wa && _wa.editingMode);
+  var _media = _sec && _sec.mediaUrl ? String(_sec.mediaUrl) : '';
+  var _alt = (_sec && _sec.layoutMetadata && _sec.layoutMetadata.altText) || '';
+  var _sectionKey = _sec && _sec.sectionKey ? String(_sec.sectionKey) : 'content';
+%>
+<% if (_media || _editing) { %>
+<div class="bb-tp-content-block__media">
+  <% if (_media) { %>
+  <img class="bb-tp-media" src="<%= _media %>" alt="<%= _alt %>" width="960" height="540" loading="lazy" decoding="async" />
+  <% } else if (_editing) { %>
+  <div class="bb-tp-media bb-tp-media--empty" data-bb-media-empty="1" aria-hidden="true"></div>
+  <% } %>
+  <% if (_editing) { %>
+  <div class="bb-tp-edit-media-wrap">
+    <%- include('../../partials/structured-edit-trigger', {
+      editKind: 'image',
+      editEntityKey: (_page ? _page + '-' : '') + _sectionKey + '-image',
+      editSectionKey: _sectionKey,
+      editLabel: _media ? 'Replace section image' : 'Add section image',
+      editPayload: { imageUrl: _media, altText: _alt, focal: 'center' }
+    }) %>
+  </div>
+  <% } %>
+</div>
+<% } %>

@@ -44,7 +44,7 @@
         <a class="bb-mp-wordmark" href="/member">
           <img
             class="bb-mp-wordmark__mark"
-            src="/church/images/brand/blessboard-small-church-logo.png"
+            src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/brand/blessboard-small-church-logo.png') : '' %>"
             alt=""
             width="28"
             height="28"
@@ -101,7 +101,7 @@
           <a class="bb-mp-wordmark bb-mp-wordmark--compact" href="/member">
             <img
               class="bb-mp-wordmark__mark"
-              src="/church/images/brand/blessboard-small-church-logo.png"
+              src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/brand/blessboard-small-church-logo.png') : '' %>"
               alt=""
               width="24"
               height="24"

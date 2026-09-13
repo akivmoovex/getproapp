@@ -41,6 +41,7 @@ const {
   buildRegistrationPageLocals,
   PRODUCT_CODE: REG_PRODUCT,
 } = require("../../platform/registration/registrationRenderLocals");
+const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 
 function registrationLocalsFromOpts(opts) {
   const step = (opts && opts.wizardStep) || null;
@@ -56,10 +57,12 @@ function renderApexView(relativePath, data) {
 }
 
 function shellLocals(opts) {
+  const env = (opts && opts.env) || process.env;
   return {
     authenticated: Boolean(opts && opts.authenticated),
     csrfToken: (opts && opts.csrfToken) || "",
     activeNav: (opts && opts.activeNav) || "home",
+    cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, env) || "",
   };
 }
 

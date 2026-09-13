@@ -115,6 +115,7 @@ async function saveWebsiteDraft(db, input) {
       organizationId,
       instance,
       value: asserted.value,
+      env: (input && input.env) || process.env,
     });
     if (!owned.ok) {
       return { ok: false, code: owned.code, content: null };

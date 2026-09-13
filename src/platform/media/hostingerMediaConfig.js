@@ -540,9 +540,34 @@ function buildPublicMediaUrl(storageKey, cfg) {
   const key = String(storageKey || "").replace(/^\/+/, "");
   if (!key) return null;
   const base = cfg && cfg.publicBaseUrl ? String(cfg.publicBaseUrl).replace(/\/+$/, "") : "";
-  if (base) return `${base}/${key}`;
+  if (base) {
+    // Prefer absolute CDN bases; relative /media is legacy mount-only.
+    return `${base}/${key}`;
+  }
   const mount = normalizeMountPath((cfg && cfg.publicMountPath) || "/media");
   return `${mount}/${key}`;
+}
+
+/**
+ * Absolute CDN public base for presentation (https://host/media).
+ * Combines MEDIA_PUBLIC_BASE_URL (when absolute) or MEDIA_CDN_ORIGIN + mount.
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {string|null}
+ */
+function resolveAbsolutePublicMediaBaseUrl(env) {
+  const source = env || process.env;
+  const raw = String(source.MEDIA_PUBLIC_BASE_URL || "").trim().replace(/\/+$/, "");
+  if (/^https:\/\//i.test(raw)) return raw;
+  const origin = String(source.MEDIA_CDN_ORIGIN || "").trim().replace(/\/+$/, "");
+  if (/^https:\/\//i.test(origin)) {
+    const mount = normalizeMountPath(
+      (raw && raw.startsWith("/") ? raw : null) ||
+        String(source.MEDIA_PUBLIC_MOUNT_PATH || "").trim() ||
+        "/media"
+    );
+    return `${origin}${mount}`;
+  }
+  return null;
 }
 
 module.exports = {
@@ -571,5 +596,6 @@ module.exports = {
   buildHostingerStorageKey,
   assertStorageKeyWritable,
   buildPublicMediaUrl,
+  resolveAbsolutePublicMediaBaseUrl,
   normalizeMountPath,
 };

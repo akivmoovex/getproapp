@@ -18,6 +18,11 @@ const CHURCH_NAME_ALIASES = Object.freeze([
   "{{publicName}}",
 ]);
 
+/**
+ * Platform soft-fill image keys (public-path aliases).
+ * Runtime presentation must go through CDN (`presentRuntimeImageSrc` /
+ * `mediaOrFallback`) — never emit these paths into HTML.
+ */
 const MEDIA = Object.freeze({
   homeHero: "/church/images/tenant-public/home-desktop-hero.jpg",
   homeHeroMobile: "/church/images/tenant-public/home-mobile-hero.jpg",
@@ -607,16 +612,22 @@ function buildPublicDemoPack(opts) {
 }
 
 /**
- * Prefer a valid media URL; otherwise fall back to a known local asset.
+ * Prefer a CDN-presented media URL. Local filesystem paths are rewritten via
+ * the platform marketing/demo asset map; unmapped local paths are refused.
  * @param {string|null|undefined} url
- * @param {string} fallback
+ * @param {string|null|undefined} [fallback]
+ * @param {NodeJS.ProcessEnv} [env]
  */
-function mediaOrFallback(url, fallback) {
-  const raw = url != null ? String(url).trim() : "";
-  if (!raw || raw === "#" || /^javascript:/i.test(raw)) {
-    return fallback || null;
+function mediaOrFallback(url, fallback, env) {
+  const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
+  const source = env || process.env;
+  for (const candidate of [url, fallback]) {
+    const raw = candidate != null ? String(candidate).trim() : "";
+    if (!raw || raw === "#" || /^javascript:/i.test(raw)) continue;
+    const presented = presentRuntimeImageSrc(raw, source, { allowMarketing: true });
+    if (presented) return presented;
   }
-  return raw;
+  return null;
 }
 
 const PUBLIC_TEMPLATE_EXAMPLE_NOTICE =

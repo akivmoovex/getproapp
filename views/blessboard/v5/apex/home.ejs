@@ -28,9 +28,9 @@
     <div class="bb-apex-hero__visual">
       <div class="bb-apex-hero__frame">
         <picture>
-          <source media="(max-width: 767px)" srcset="/church/images/homepage/apex-hero-mobile.jpg" />
+          <source media="(max-width: 767px)" srcset="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/homepage/apex-hero-mobile.jpg') : '' %>" />
           <img
-            src="/church/images/homepage/desktop-hero-auditorium.jpg"
+            src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/homepage/desktop-hero-auditorium.jpg') : '' %>"
             alt="People gathering in a warmly lit church sanctuary"
             width="960"
             height="720"
@@ -86,7 +86,7 @@
       <li class="bb-apex-feature">
         <div class="bb-apex-feature__media">
           <img
-            src="/church/images/homepage/apex-feature-website.jpg"
+            src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/homepage/apex-feature-website.jpg') : '' %>"
             alt=""
             width="640"
             height="400"
@@ -102,7 +102,7 @@
       <li class="bb-apex-feature">
         <div class="bb-apex-feature__media">
           <img
-            src="/church/images/homepage/apex-feature-engagement.jpg"
+            src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/homepage/apex-feature-engagement.jpg') : '' %>"
             alt=""
             width="640"
             height="400"
@@ -118,7 +118,7 @@
       <li class="bb-apex-feature">
         <div class="bb-apex-feature__media">
           <img
-            src="/church/images/homepage/apex-feature-admin.jpg"
+            src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/homepage/apex-feature-admin.jpg') : '' %>"
             alt=""
             width="640"
             height="400"
@@ -134,7 +134,7 @@
       <li class="bb-apex-feature">
         <div class="bb-apex-feature__media">
           <img
-            src="/church/images/homepage/apex-feature-multibranch.jpg"
+            src="<%= typeof cdnAsset==='function' ? cdnAsset('/church/images/homepage/apex-feature-multibranch.jpg') : '' %>"
             alt=""
             width="640"
             height="400"
