@@ -12,8 +12,11 @@ const {
   resolveHostingerMediaConfig,
   buildHostingerStorageKey,
   assertStorageKeyWritable,
+  assertMediaStorageRootPersistent,
   buildPublicMediaUrl,
   PROVIDER_HOSTINGER,
+  CODE_ROOT_NOT_PERSISTENT,
+  CODE_ROOT_UNSET,
 } = require("./hostingerMediaConfig");
 
 /**
@@ -28,9 +31,10 @@ function createHostingerMediaStorage(env, overrides) {
     assertStorageKeyWritable(cfg.environment, storageKey);
     if (!cfg.storageRoot) {
       const err = new Error("media_storage_root_unset");
-      err.code = "MEDIA_STORAGE_ROOT_UNSET";
+      err.code = CODE_ROOT_UNSET;
       throw err;
     }
+    assertMediaStorageRootPersistent(cfg.storageRoot, process.cwd());
     const abs = path.resolve(cfg.storageRoot, ...String(storageKey).split("/"));
     const root = path.resolve(cfg.storageRoot);
     if (abs !== root && !abs.startsWith(root + path.sep)) {
@@ -56,11 +60,18 @@ function createHostingerMediaStorage(env, overrides) {
      * }} input
      */
     async storeMedia(input) {
+      if (cfg.rejectionCode === CODE_ROOT_NOT_PERSISTENT) {
+        const err = new Error("media_storage_root_not_persistent");
+        err.code = CODE_ROOT_NOT_PERSISTENT;
+        err.reason = cfg.rejectionReason;
+        throw err;
+      }
       if (!cfg.enabled || !cfg.storageRoot) {
         const err = new Error("media_storage_disabled");
         err.code = "MEDIA_STORAGE_DISABLED";
         throw err;
       }
+      assertMediaStorageRootPersistent(cfg.storageRoot, process.cwd());
       if (!Buffer.isBuffer(input && input.buffer) || !input.buffer.length) {
         const err = new Error("invalid_media_buffer");
         err.code = "INVALID_MEDIA_BUFFER";

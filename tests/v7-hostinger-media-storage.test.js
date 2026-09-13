@@ -301,17 +301,29 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
     assert.match(presented.publicSrc, /\/website\/media\//);
   });
 
-  it("auto-enables <cwd>/media on moovex-platform-testing", () => {
+  it("does not auto-enable <cwd>/media on moovex-platform-testing", () => {
     const cfg = resolveHostingerMediaConfig({
       PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
       DEPLOYMENT_ENV: "testing",
     });
-    assert.equal(cfg.enabled, true);
-    assert.match(cfg.storageRoot, /media$/);
-    assert.equal(cfg.environment, "testing");
+    assert.equal(cfg.enabled, false);
+    assert.equal(cfg.storageRoot, null);
+    assert.equal(cfg.rejectionCode, "MEDIA_STORAGE_ROOT_UNSET");
   });
 
-  it("config reports enabled only when MEDIA_STORAGE_ROOT is set", () => {
+  it("rejects MEDIA_STORAGE_ROOT inside hbuilds/versions", () => {
+    const ephemeral = "/home/u549637099/hbuilds/versions/abc123/nodejs/media";
+    const cfg = resolveHostingerMediaConfig({
+      PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
+      DEPLOYMENT_ENV: "testing",
+      MEDIA_STORAGE_ROOT: ephemeral,
+    });
+    assert.equal(cfg.enabled, false);
+    assert.equal(cfg.rejectionCode, "MEDIA_STORAGE_ROOT_NOT_PERSISTENT");
+    assert.equal(cfg.rejectionReason, "hbuilds_versions");
+  });
+
+  it("config reports enabled only when MEDIA_STORAGE_ROOT is set and persistent", () => {
     assert.equal(resolveHostingerMediaConfig({}).enabled, false);
     assert.equal(
       resolveHostingerMediaConfig({ MEDIA_STORAGE_ROOT: mediaRoot, DEPLOYMENT_ENV: "testing" })

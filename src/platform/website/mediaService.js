@@ -231,7 +231,12 @@ async function registerWebsiteMedia(db, input) {
       storageKey = stored.storageKey;
       payloadBuffer = null;
     } catch (err) {
-      if (err && err.code === "REFUSED_PRODUCTION_MEDIA_NAMESPACE") {
+      if (
+        err &&
+        (err.code === "REFUSED_PRODUCTION_MEDIA_NAMESPACE" ||
+          err.code === "MEDIA_STORAGE_ROOT_NOT_PERSISTENT" ||
+          err.code === "MEDIA_STORAGE_ROOT_UNSET")
+      ) {
         return { ok: false, code: err.code, media: null };
       }
       throw err;

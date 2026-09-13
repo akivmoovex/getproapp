@@ -59,8 +59,8 @@ Required on Hostinger testing for **new** BlessBoard + ActiveClinic website imag
 
 | Variable | Example (testing) | Notes |
 | -------- | ----------------- | ----- |
-| `MEDIA_STORAGE_ROOT` | `/home/…/media` | Absolute directory containing `testing/` and (unused here) `production/` |
-| `MEDIA_PUBLIC_BASE_URL` | `/media` | Public URL prefix (same-origin on both product hosts). May be a full CDN origin. |
+| `MEDIA_STORAGE_ROOT` | `/home/u549637099/moovex-media` | **Required** absolute directory **outside** `hbuilds/versions/…`. Contains `testing/` and (unused on testing) `production/` |
+| `MEDIA_PUBLIC_BASE_URL` | `/media` | Optional; defaults via mount path `/media` when unset |
 | `MEDIA_PUBLIC_MOUNT_PATH` | `/media` | Optional; Express serves `MEDIA_STORAGE_ROOT` here with immutable cache headers |
 
 Storage keys (immutable):
@@ -74,10 +74,17 @@ Testing runtime **refuses** writes under `production/`. Do not set `MEDIA_STORAG
 
 When `MEDIA_STORAGE_ROOT` is unset:
 
-- Local / non-platform profiles → legacy `payload_bytes` (DB) uploads
-- `PLATFORM_DEPLOYMENT_CODE=moovex-platform-testing` → defaults to `<cwd>/media` (still only writes `testing/…`)
+- Hostinger filesystem media is **disabled**; new uploads stay on legacy `payload_bytes` (DB)
+- There is **no** silent fallback to `<cwd>/media`
 
-Set `MEDIA_STORAGE_DISABLE=1` to force DB payloads on testing if needed.
+When `MEDIA_STORAGE_ROOT` points inside `hbuilds/versions/…` (or under an ephemeral release cwd):
+
+- Config rejects with `MEDIA_STORAGE_ROOT_NOT_PERSISTENT`
+- Media writes are refused; do not use release-tree paths
+
+Confirm the live recommended path via testing `/__platform/runtime` → `mediaPersistence.recommendedMediaStorageRoot`.
+
+Set `MEDIA_STORAGE_DISABLE=1` to force DB payloads even when a root is configured.
 
 ## Dangerous if wrong
 

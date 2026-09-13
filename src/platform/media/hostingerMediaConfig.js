@@ -4,12 +4,18 @@
  * Hostinger public website media configuration.
  * Bytes live under MEDIA_STORAGE_ROOT; PostgreSQL keeps metadata only for new uploads.
  * Never exposes absolute filesystem paths to clients.
+ *
+ * Do not silently use <cwd>/media on Hostinger — release trees under hbuilds/versions
+ * are ephemeral across redeploys.
  */
 
 const path = require("path");
 
 const PROVIDER_HOSTINGER = "hostinger";
 const PROVIDER_DATABASE = "database";
+
+const CODE_ROOT_UNSET = "MEDIA_STORAGE_ROOT_UNSET";
+const CODE_ROOT_NOT_PERSISTENT = "MEDIA_STORAGE_ROOT_NOT_PERSISTENT";
 
 const PRODUCT_NAMESPACE = Object.freeze({
   blessboard: "blessboard",
@@ -37,6 +43,70 @@ function resolveMediaEnvironment(env) {
 }
 
 /**
+ * True when a filesystem path sits inside a Hostinger release/version tree (or is
+ * clearly release-relative under such a cwd).
+ * @param {string|null|undefined} absPath
+ * @param {string} [cwd]
+ * @returns {{ ephemeral: boolean, reason: string|null }}
+ */
+function classifyMediaStorageRootPersistence(absPath, cwd) {
+  if (!absPath) {
+    return { ephemeral: false, reason: null };
+  }
+  const normalized = path.resolve(String(absPath)).replace(/\\/g, "/");
+  const cwdNorm = path.resolve(String(cwd || process.cwd())).replace(/\\/g, "/");
+
+  if (normalized.includes("/hbuilds/versions/")) {
+    return { ephemeral: true, reason: "hbuilds_versions" };
+  }
+  if (cwdNorm.includes("/hbuilds/versions/")) {
+    const rel = path.relative(cwdNorm, normalized);
+    if (rel === "" || (!rel.startsWith("..") && !path.isAbsolute(rel))) {
+      return { ephemeral: true, reason: "under_ephemeral_cwd" };
+    }
+  }
+  // Reject bare "media" next to a release nodejs cwd even if resolved outside
+  // detection above (relative MEDIA_STORAGE_ROOT=media).
+  if (
+    cwdNorm.includes("/hbuilds/versions/") &&
+    (normalized === path.resolve(cwdNorm, "media").replace(/\\/g, "/") ||
+      normalized.endsWith("/nodejs/media"))
+  ) {
+    return { ephemeral: true, reason: "release_media_dir" };
+  }
+  return { ephemeral: false, reason: null };
+}
+
+/**
+ * @param {string|null|undefined} absPath
+ * @param {string} [cwd]
+ * @returns {boolean}
+ */
+function isEphemeralMediaStorageRoot(absPath, cwd) {
+  return classifyMediaStorageRootPersistence(absPath, cwd).ephemeral === true;
+}
+
+/**
+ * Throws when root is missing or not durable for Hostinger media writes.
+ * @param {string|null|undefined} storageRoot
+ * @param {string} [cwd]
+ */
+function assertMediaStorageRootPersistent(storageRoot, cwd) {
+  if (!storageRoot) {
+    const err = new Error("media_storage_root_unset");
+    err.code = CODE_ROOT_UNSET;
+    throw err;
+  }
+  const verdict = classifyMediaStorageRootPersistence(storageRoot, cwd);
+  if (verdict.ephemeral) {
+    const err = new Error("media_storage_root_not_persistent");
+    err.code = CODE_ROOT_NOT_PERSISTENT;
+    err.reason = verdict.reason;
+    throw err;
+  }
+}
+
+/**
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {{
  *   enabled: boolean,
@@ -45,23 +115,14 @@ function resolveMediaEnvironment(env) {
  *   storageRoot: string|null,
  *   publicBaseUrl: string|null,
  *   publicMountPath: string,
+ *   rejectionCode: string|null,
+ *   rejectionReason: string|null,
  * }}
  */
 function resolveHostingerMediaConfig(env) {
   const source = env || process.env;
   const configuredRoot = String(source.MEDIA_STORAGE_ROOT || "").trim() || null;
-  const deploymentCode = String(source.PLATFORM_DEPLOYMENT_CODE || "")
-    .trim()
-    .toLowerCase();
-  // On unified Hostinger testing, default to <cwd>/media so uploads leave PG
-  // without hard-coding absolute Hostinger home paths in application code.
-  const autoTestingRoot =
-    !configuredRoot &&
-    deploymentCode === "moovex-platform-testing" &&
-    String(source.MEDIA_STORAGE_DISABLE || "") !== "1"
-      ? path.join(process.cwd(), "media")
-      : null;
-  const storageRoot = configuredRoot || autoTestingRoot;
+  const disabled = String(source.MEDIA_STORAGE_DISABLE || "") === "1";
   const publicBaseUrl =
     String(source.MEDIA_PUBLIC_BASE_URL || "").trim().replace(/\/+$/, "") || null;
   const publicMountPath = normalizeMountPath(
@@ -70,14 +131,44 @@ function resolveHostingerMediaConfig(env) {
       "/media"
   );
   const environment = resolveMediaEnvironment(source);
-  const enabled = Boolean(storageRoot);
+
+  if (disabled || !configuredRoot) {
+    return {
+      enabled: false,
+      provider: PROVIDER_DATABASE,
+      environment,
+      storageRoot: null,
+      publicBaseUrl,
+      publicMountPath,
+      rejectionCode: disabled ? null : configuredRoot ? null : CODE_ROOT_UNSET,
+      rejectionReason: null,
+    };
+  }
+
+  const storageRoot = path.resolve(configuredRoot);
+  const verdict = classifyMediaStorageRootPersistence(storageRoot, process.cwd());
+  if (verdict.ephemeral) {
+    return {
+      enabled: false,
+      provider: PROVIDER_DATABASE,
+      environment,
+      storageRoot,
+      publicBaseUrl,
+      publicMountPath,
+      rejectionCode: CODE_ROOT_NOT_PERSISTENT,
+      rejectionReason: verdict.reason,
+    };
+  }
+
   return {
-    enabled,
-    provider: enabled ? PROVIDER_HOSTINGER : PROVIDER_DATABASE,
+    enabled: true,
+    provider: PROVIDER_HOSTINGER,
     environment,
-    storageRoot: storageRoot ? path.resolve(storageRoot) : null,
+    storageRoot,
     publicBaseUrl,
     publicMountPath,
+    rejectionCode: null,
+    rejectionReason: null,
   };
 }
 
@@ -232,8 +323,13 @@ module.exports = {
   PROVIDER_DATABASE,
   PRODUCT_NAMESPACE,
   MIME_EXTENSION,
+  CODE_ROOT_UNSET,
+  CODE_ROOT_NOT_PERSISTENT,
   resolveMediaEnvironment,
   resolveHostingerMediaConfig,
+  classifyMediaStorageRootPersistence,
+  isEphemeralMediaStorageRoot,
+  assertMediaStorageRootPersistent,
   productNamespace,
   extensionForMime,
   buildHostingerStorageKey,

@@ -101,7 +101,7 @@ function createMoovexPlatformRuntimeApp(options) {
   });
 
   // Testing-only non-secret runtime fingerprint (never returns DATABASE_URL / secrets).
-  app.get("/__platform/runtime", (req, res) => {
+  app.get("/__platform/runtime", async (req, res) => {
     const {
       isPlatformRuntimeDiagnosticsEndpointAllowed,
       buildPlatformRuntimeSnapshot,
@@ -109,9 +109,19 @@ function createMoovexPlatformRuntimeApp(options) {
     if (!isPlatformRuntimeDiagnosticsEndpointAllowed(env)) {
       return res.status(404).json({ ok: false, code: "not_found" });
     }
+    let mediaPersistence = null;
+    try {
+      const {
+        buildHostingerMediaPersistenceSnapshot,
+      } = require("../media/hostingerMediaPersistenceProbe");
+      mediaPersistence = await buildHostingerMediaPersistenceSnapshot(env);
+    } catch {
+      mediaPersistence = { ok: false, code: "media_persistence_probe_failed" };
+    }
     return res.status(200).json(
       buildPlatformRuntimeSnapshot(env, {
         boot: opts.boot || null,
+        mediaPersistence,
       })
     );
   });

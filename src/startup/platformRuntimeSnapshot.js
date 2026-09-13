@@ -92,6 +92,8 @@ function buildPlatformRuntimeSnapshot(env, opts) {
             : [],
         }
       : null,
+    // Populated asynchronously by the HTTP handler on testing only.
+    mediaPersistence: options.mediaPersistence || null,
   };
 }
 
