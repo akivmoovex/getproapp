@@ -148,7 +148,8 @@ function createMoovexPlatformRuntimeApp(options) {
       if (body.confirm !== "migrate-website-media-to-hostinger") {
         return res.status(400).json({ ok: false, code: "confirm_required" });
       }
-      if (body.keepPayload !== true) {
+      const clearPayload = body.clearPayload === true;
+      if (body.keepPayload !== true && !clearPayload) {
         return res.status(400).json({ ok: false, code: "keep_payload_required" });
       }
       const bulk = body.bulk === true;
@@ -171,7 +172,7 @@ function createMoovexPlatformRuntimeApp(options) {
           execute: true,
           env,
           mediaIds: bulk ? [] : ids,
-          keepPayload: true,
+          keepPayload: !clearPayload,
           allowBulk: bulk,
           reconcileExisting: bulk || body.forceRewrite === true,
           forceRewrite: body.forceRewrite === true,

@@ -523,7 +523,22 @@ function assertStorageKeyWritable(runtimeEnvironment, storageKey) {
     err.code = "UNSAFE_STORAGE_KEY";
     throw err;
   }
-  const parts = key.split("/");
+  const parts = key.split("/").filter(Boolean);
+  // Tenant uploads: {env}/{product}/{organizationId}/{mediaFile}
+  // Platform marketing: {env}/platform/{product}/.../{file}
+  if (parts.length < 4) {
+    const err = new Error("unsafe_storage_key");
+    err.code = "UNSAFE_STORAGE_KEY";
+    throw err;
+  }
+  if (parts[1] === "platform") {
+    if (parts.length < 4) {
+      const err = new Error("unsafe_storage_key");
+      err.code = "UNSAFE_STORAGE_KEY";
+      throw err;
+    }
+    return;
+  }
   if (parts.length !== 4) {
     const err = new Error("unsafe_storage_key");
     err.code = "UNSAFE_STORAGE_KEY";
