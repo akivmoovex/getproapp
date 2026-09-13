@@ -148,17 +148,23 @@ function ensureMediaRootWritable(absPath) {
 
 /**
  * Testing-only fallback root: <account-home>/moovex-media (never hard-codes username).
- * @param {{ homedir?: () => string }} [opts]
+ * Prefer /home/<user> parsed from cwd when the process runs under a Hostinger domain
+ * tree (os.homedir() may be .../domains/<site> rather than the account home).
+ * @param {{ homedir?: () => string, cwd?: string }} [opts]
  * @returns {{ accountHome: string|null, storageRoot: string|null }}
  */
 function deriveTestingAccountHomeMediaRoot(opts) {
   const options = opts || {};
-  const homedirFn = typeof options.homedir === "function" ? options.homedir : () => os.homedir();
-  let accountHome = null;
-  try {
-    accountHome = String(homedirFn() || "").trim() || null;
-  } catch {
-    accountHome = null;
+  const cwd = String(options.cwd || process.cwd()).replace(/\\/g, "/");
+  const fromCwd = cwd.match(/^(\/home\/[^/]+)/);
+  let accountHome = fromCwd ? fromCwd[1] : null;
+  if (!accountHome) {
+    const homedirFn = typeof options.homedir === "function" ? options.homedir : () => os.homedir();
+    try {
+      accountHome = String(homedirFn() || "").trim() || null;
+    } catch {
+      accountHome = null;
+    }
   }
   if (!accountHome) return { accountHome: null, storageRoot: null };
   return {
@@ -342,7 +348,10 @@ function resolveHostingerMediaConfig(env, opts) {
     });
   }
 
-  const derived = deriveTestingAccountHomeMediaRoot({ homedir: options.homedir });
+  const derived = deriveTestingAccountHomeMediaRoot({
+    homedir: options.homedir,
+    cwd,
+  });
   if (!derived.storageRoot || !derived.accountHome) {
     return disabledResult({
       rejectionCode: CODE_ROOT_UNSET,

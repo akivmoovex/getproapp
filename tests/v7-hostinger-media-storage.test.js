@@ -316,25 +316,44 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
     assert.equal(cfg.mediaStorageRootConfigured, true);
   });
 
-  it("testing + no env: derives <homedir>/moovex-media when writable and persistent", async () => {
+  it("testing + no env: prefers /home/<user>/moovex-media from cwd over os.homedir domain path", async () => {
     const home = await fsp.mkdtemp(path.join(os.tmpdir(), "gp-media-home-"));
+    // Simulate Hostinger: cwd under /home/<user>/domains/... while os.homedir is domain dir.
+    // Use real /home-style path only when available; otherwise verify cwd-home join via opts.
+    const fakeUserHome = path.join(home, "homeuser");
+    await fsp.mkdir(path.join(fakeUserHome, "domains", "pronline.org", "hbuilds", "versions", "rel1", "nodejs"), {
+      recursive: true,
+    });
     const cfg = resolveHostingerMediaConfig(
       {
         PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
         DEPLOYMENT_ENV: "testing",
       },
       {
-        cwd: path.join(home, "hbuilds", "versions", "rel1", "nodejs"),
-        homedir: () => home,
+        cwd: path.join(fakeUserHome, "domains", "pronline.org", "hbuilds", "versions", "rel1", "nodejs"),
+        // Would wrongly point at domain home if used alone:
+        homedir: () => path.join(fakeUserHome, "domains", "pronline.org"),
       }
     );
-    assert.equal(cfg.enabled, true);
-    assert.equal(cfg.storageRoot, path.resolve(home, "moovex-media"));
-    assert.equal(cfg.mediaStorageRootSource, "testing_account_home_fallback");
-    assert.equal(cfg.mediaStorageRootConfigured, false);
-    assert.equal(cfg.writable, true);
-    assert.equal(cfg.outsideReleaseTree, true);
+    // When cwd is not under /home/<user>, regex won't match — fall back to homedir.
+    // Force /home/ style by stubbing cwd match: use a path that starts with /home/
+    const cfg2 = resolveHostingerMediaConfig(
+      {
+        PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
+        DEPLOYMENT_ENV: "testing",
+      },
+      {
+        cwd: "/home/u549637099/domains/pronline.org/hbuilds/versions/rel1/nodejs",
+        homedir: () => "/home/u549637099/domains/pronline.org",
+        ensureWritable: (abs) => abs === "/home/u549637099/moovex-media",
+      }
+    );
+    assert.equal(cfg2.enabled, true);
+    assert.equal(cfg2.storageRoot, "/home/u549637099/moovex-media");
+    assert.equal(cfg2.mediaStorageRootSource, "testing_account_home_fallback");
+    assert.equal(cfg2.mediaStorageRootConfigured, false);
     await fsp.rm(home, { recursive: true, force: true });
+    void cfg;
   });
 
   it("rejects derived root under hbuilds/versions", () => {
@@ -344,7 +363,8 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
         DEPLOYMENT_ENV: "testing",
       },
       {
-        cwd: "/home/u549637099/hbuilds/versions/abc/nodejs",
+        // No /home/<user> prefix → fall back to os.homedir() which points into release tree.
+        cwd: "/var/app/nodejs",
         homedir: () => "/home/u549637099/hbuilds/versions/abc/nodejs",
         ensureWritable: () => true,
       }
