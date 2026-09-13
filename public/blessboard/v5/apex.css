@@ -587,12 +587,28 @@ body.bb-apex-body {
   gap: 1rem;
 }
 
+/* For Churches burden row — Stitch fc4bf5aa: grid-cols-1 md:grid-cols-3 gap-8 */
+.bb-apex-audience--three {
+  gap: 2rem;
+  width: 100%;
+}
+
 .bb-apex-audience__card {
   background: var(--bb-color-surface, #fff);
   border: 1px solid rgba(209, 220, 224, 0.85);
   border-radius: var(--bb-radius, 1rem);
   box-shadow: var(--bb-shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.05));
   padding: 1.5rem 1.35rem;
+  min-width: 0;
+}
+
+.bb-apex-audience--three .bb-apex-audience__card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  height: 100%;
+  padding: 2rem;
 }
 
 .bb-apex-section--surface .bb-apex-audience__card {
@@ -611,16 +627,50 @@ body.bb-apex-body {
   margin-bottom: 1rem;
 }
 
+.bb-apex-audience--three .bb-apex-audience__icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  border-radius: 999px;
+  margin-bottom: 1.5rem;
+}
+
+.bb-apex-audience--three .bb-apex-audience__icon .material-symbols-outlined {
+  font-size: 1.75rem;
+}
+
+.bb-apex-audience__icon--danger {
+  background: #fef2f2;
+  color: #dc2626;
+}
+
+.bb-apex-audience__icon--warning {
+  background: #fffbeb;
+  color: #d97706;
+}
+
+.bb-apex-audience__icon--info {
+  background: #eff6ff;
+  color: #2563eb;
+}
+
 .bb-apex-audience__title {
   margin: 0 0 0.35rem;
   font-size: 1.1rem;
   font-weight: 700;
 }
 
+.bb-apex-audience--three .bb-apex-audience__title {
+  margin: 0 0 0.75rem;
+}
+
 .bb-apex-audience__body {
   margin: 0;
   color: var(--bb-color-muted, #44474e);
   font-size: 0.98rem;
+}
+
+.bb-apex-audience--three .bb-apex-audience__body {
+  flex: 1 1 auto;
 }
 
 ul.bb-apex-features {
@@ -845,6 +895,10 @@ ul.bb-apex-features {
     grid-template-columns: 1fr 1fr;
   }
 
+  .bb-apex-audience--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
   ul.bb-apex-features {
     grid-template-columns: 1fr 1fr;
   }
@@ -880,6 +934,10 @@ ul.bb-apex-features {
 
   .bb-apex-audience {
     grid-template-columns: repeat(4, 1fr);
+  }
+
+  .bb-apex-audience--three {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
   }
 
   ul.bb-apex-features {
