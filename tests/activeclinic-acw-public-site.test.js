@@ -293,12 +293,29 @@ describe("ActiveClinic ACW public site", () => {
       [CSRF_FIELD]: validCsrf,
       senderName: "Chioma Banda",
       senderEmail: "chioma@example.com",
+      subject: "joining",
       message: "I would like to register a clinic in Lusaka.",
     });
     assert.equal(posted.status, 303);
     assert.equal(posted.headers.location, "/contact/success");
     const after = await pool.query("SELECT COUNT(*)::int AS n FROM activeclinic.platform_contact_inquiries");
     assert.equal(after.rows[0].n, before.rows[0].n + 1);
+    const latest = await pool.query(
+      `SELECT message FROM activeclinic.platform_contact_inquiries ORDER BY created_at DESC LIMIT 1`
+    );
+    assert.match(latest.rows[0].message, /\[Subject: Joining ActiveClinic\]/);
+    assert.match(latest.rows[0].message, /register a clinic in Lusaka/);
+
+    const page = await request(app).get("/contact");
+    assert.equal(page.status, 200);
+    assert.match(page.text, /Platform Enquiry Form/);
+    assert.match(page.text, /What happens next\?/);
+    assert.match(page.text, /How can we help\?/);
+    assert.match(page.text, /Ready to bring your clinic to ActiveClinic\?/);
+    assert.match(page.text, /© 2026 ActiveClinic\. All rights reserved\./);
+    assert.equal((page.text.match(/© 2026 ActiveClinic\. All rights reserved\./g) || []).length, 1);
+    assert.doesNotMatch(page.text, /data-ac-phone-field/);
+    assert.doesNotMatch(page.text, /© 2024 ActiveClinic/);
 
     const success = await agent.get("/contact/success");
     assert.equal(success.status, 200);

@@ -99,14 +99,40 @@ async function createPublicContactInquiry(db, input) {
   };
 }
 
+const PLATFORM_CONTACT_SUBJECTS = Object.freeze({
+  joining: "Joining ActiveClinic",
+  directory: "Clinic directory listing",
+  account: "Existing clinic account",
+  platform: "Website or platform question",
+  partnership: "Partnership or business enquiry",
+  other: "Other",
+});
+
+function normalizePlatformContactSubject(value) {
+  const key = String(value == null ? "" : value).trim().toLowerCase();
+  if (!Object.prototype.hasOwnProperty.call(PLATFORM_CONTACT_SUBJECTS, key)) {
+    return null;
+  }
+  return { key, label: PLATFORM_CONTACT_SUBJECTS[key] };
+}
+
 /**
  * Store a platform (ActiveClinic.org) contact inquiry.
  */
 async function createPlatformContactInquiry(db, input) {
   const senderName = trimName(input && input.senderName, 120);
-  const message = String((input && input.message) || "").trim();
+  const messageBody = String((input && input.message) || "").trim();
+  const subject = normalizePlatformContactSubject(input && input.subject);
 
-  if (!senderName || senderName.length < 2 || message.length < 1 || message.length > 4000) {
+  if (!senderName || senderName.length < 2 || messageBody.length < 1) {
+    return { ok: false, code: RESULT.INVALID_INPUT, inquiry: null };
+  }
+  if (!subject) {
+    return { ok: false, code: "subject_required", inquiry: null };
+  }
+
+  const message = `[Subject: ${subject.label}]\n\n${messageBody}`.slice(0, 4000);
+  if (message.length < 1 || message.length > 4000) {
     return { ok: false, code: RESULT.INVALID_INPUT, inquiry: null };
   }
 
@@ -123,7 +149,7 @@ async function createPlatformContactInquiry(db, input) {
   if ((input && input.senderPhone) || (input && input.phoneNational)) {
     const phone = normalizeActiveClinicPhone({
       phone: input.senderPhone,
-      phoneCountry: input.phoneCountry || null,
+      phoneCountry: input.phoneCountry || "ZM",
       phoneNational: input.phoneNational || null,
       clinicDefaultCountry: "ZM",
       required: false,
@@ -151,6 +177,7 @@ async function createPlatformContactInquiry(db, input) {
     inquiry: {
       id: row.rows[0].id,
       createdAt: row.rows[0].created_at,
+      subject: subject.key,
     },
   };
 }
@@ -159,6 +186,9 @@ function describePlatformContactErrors(code) {
   const errors = {};
   if (code === "email_required" || code === "invalid_email") {
     errors.senderEmail = "Enter a valid email address.";
+  }
+  if (code === "subject_required") {
+    errors.subject = "Select a subject for your enquiry.";
   }
   if (code === RESULT.INVALID_INPUT) {
     errors.senderName = "Enter your name (2–120 characters).";
@@ -169,6 +199,8 @@ function describePlatformContactErrors(code) {
 
 module.exports = {
   RESULT,
+  PLATFORM_CONTACT_SUBJECTS,
+  normalizePlatformContactSubject,
   createPublicContactInquiry,
   createPlatformContactInquiry,
   describePlatformContactErrors,

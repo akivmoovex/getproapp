@@ -594,8 +594,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
         senderName: req.body && req.body.senderName,
         senderEmail: req.body && req.body.senderEmail,
         senderPhone: req.body && req.body.senderPhone,
-        phoneCountry: req.body && (req.body.phone_country || req.body.phoneCountry),
+        phoneCountry: req.body && (req.body.phone_country || req.body.phoneCountry || "ZM"),
         phoneNational: req.body && (req.body.phone_national || req.body.phoneNational),
+        subject: req.body && req.body.subject,
         message: req.body && req.body.message,
       });
 

@@ -1,57 +1,252 @@
-<article class="acw-page" data-ac-page-section="public-contact" data-ac-acw-screen="ACW07">
-  <header class="acw-section acw-section-header">
-    <p class="acw-kicker">Contact</p>
-    <h1>Talk with ActiveClinic</h1>
-    <p>Send a message about joining, directory listings, or the public website. This form stores your inquiry for the ActiveClinic team. It does not send SMS or email confirmation.</p>
-  </header>
-
-  <div class="acw-contact">
-    <div>
-      <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
-      <% const fd = formData || {}; %>
-      <% const fieldErrors = typeof validationErrors === 'object' && validationErrors ? validationErrors : {}; %>
-      <form method="post" action="/contact" class="ac-public-form acw-form" data-ac-loading="1" novalidate>
-        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-        <div class="acp-field">
-          <label for="senderName">Your name</label>
-          <input id="senderName" name="senderName" required maxlength="120" autocomplete="name" value="<%= fd.senderName || '' %>" aria-invalid="<%= fieldErrors.senderName ? 'true' : 'false' %>"/>
-          <% if (fieldErrors.senderName) { %><p class="ac-public-field-error" id="senderName-error"><%= fieldErrors.senderName %></p><% } %>
-        </div>
-        <div class="acp-field">
-          <label for="senderEmail">Email</label>
-          <input id="senderEmail" name="senderEmail" type="email" required autocomplete="email" value="<%= fd.senderEmail || '' %>" aria-invalid="<%= fieldErrors.senderEmail ? 'true' : 'false' %>"/>
-          <% if (fieldErrors.senderEmail) { %><p class="ac-public-field-error"><%= fieldErrors.senderEmail %></p><% } %>
-        </div>
-        <%- include('../partials/phone-field', {
-          id: 'senderPhone',
-          label: 'Phone (optional)',
-          required: false,
-          defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
-          selectedCountry: (fd && fd.phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
-          nationalValue: (fd && fd.phoneNational) || '',
-          e164Value: (fd && fd.senderPhone) || '',
-          countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
-          phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
-          countryFieldName: 'phone_country',
-          nationalFieldName: 'phone_national',
-          legacyFieldName: 'senderPhone',
-          showLegacyHidden: false
-        }) %>
-        <div class="acp-field">
-          <label for="message">Message</label>
-          <textarea id="message" name="message" required maxlength="4000" aria-invalid="<%= fieldErrors.message ? 'true' : 'false' %>"><%= fd.message || '' %></textarea>
-          <% if (fieldErrors.message) { %><p class="ac-public-field-error"><%= fieldErrors.message %></p><% } %>
-        </div>
-        <button type="submit" class="ac-btn ac-btn--primary">Send message</button>
-      </form>
-    </div>
-    <aside class="acw-card">
-      <h2>What to expect</h2>
-      <p>We record your message as received. Clinic clinical questions should go to the clinic’s own contact page, not this form.</p>
-      <p class="ac-public-actions">
-        <a class="ac-btn ac-btn--ghost" href="/clinics">Find a Clinic</a>
-        <a class="ac-btn ac-btn--ghost" href="/register-clinic">Register Your Clinic</a>
+<%#
+  ACW07 — ActiveClinic platform Contact.
+  Stitch: projects/17813606734422395399/screens/1fbd196cf3aa41af8aeb302b3373fb83
+  (ACW – Contact ActiveClinic Desktop). Mobile follows the same sections stacked.
+%>
+<%
+  const fd = formData || {};
+  const fieldErrors = typeof validationErrors === "object" && validationErrors ? validationErrors : {};
+  const subjectVal = String(fd.subject || "").trim();
+  const subjects = [
+    { value: "joining", label: "Joining ActiveClinic" },
+    { value: "directory", label: "Clinic directory listing" },
+    { value: "account", label: "Existing clinic account" },
+    { value: "platform", label: "Website or platform question" },
+    { value: "partnership", label: "Partnership or business enquiry" },
+    { value: "other", label: "Other" },
+  ];
+%>
+<article class="acw-page acw-contact-page" data-ac-page-section="public-contact" data-ac-acw-screen="ACW07">
+  <section class="acw-contact-hero" aria-labelledby="acw-contact-title">
+    <div class="acw-contact-wrap">
+      <p class="acw-contact-hero__badge">
+        <span class="acw-contact-hero__badge-dot" aria-hidden="true"></span>
+        Contact
       </p>
-    </aside>
-  </div>
+      <h1 id="acw-contact-title">Talk with ActiveClinic</h1>
+      <p class="acw-contact-hero__lede">
+        Have a question about joining ActiveClinic, managing your clinic listing, or using the platform? Send us a message and our team will help point you in the right direction.
+      </p>
+    </div>
+  </section>
+
+  <section class="acw-contact-main" aria-label="Contact form and support options">
+    <div class="acw-contact-wrap acw-contact-main__grid">
+      <div class="acw-contact-form-card">
+        <header class="acw-contact-form-card__head">
+          <h2>Platform Enquiry Form</h2>
+          <p>Direct communication channel with our platform administration and clinic operations team.</p>
+        </header>
+
+        <% if (typeof error === "string" && error) { %>
+          <div class="ac-public-error" role="alert"><%= error %></div>
+        <% } %>
+
+        <form method="post" action="/contact" class="acw-contact-form" data-ac-loading="1" novalidate>
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+
+          <div class="acp-field">
+            <label for="senderName">Your name <span class="ac-required" aria-hidden="true">*</span></label>
+            <input
+              id="senderName"
+              name="senderName"
+              required
+              maxlength="120"
+              autocomplete="name"
+              placeholder="e.g. Dr. Mutale Phiri or Mwansa Banda"
+              value="<%= fd.senderName || '' %>"
+              aria-invalid="<%= fieldErrors.senderName ? 'true' : 'false' %>"
+            />
+            <% if (fieldErrors.senderName) { %><p class="ac-public-field-error" id="senderName-error"><%= fieldErrors.senderName %></p><% } %>
+          </div>
+
+          <div class="acp-field">
+            <label for="senderEmail">Email address <span class="ac-required" aria-hidden="true">*</span></label>
+            <input
+              id="senderEmail"
+              name="senderEmail"
+              type="email"
+              required
+              autocomplete="email"
+              placeholder="name@organization.com"
+              value="<%= fd.senderEmail || '' %>"
+              aria-invalid="<%= fieldErrors.senderEmail ? 'true' : 'false' %>"
+            />
+            <% if (fieldErrors.senderEmail) { %><p class="ac-public-field-error"><%= fieldErrors.senderEmail %></p><% } %>
+          </div>
+
+          <div class="acp-field acw-contact-phone">
+            <label for="senderPhoneNational">Phone number <span class="acw-contact-phone__optional">(optional)</span></label>
+            <div class="acw-contact-phone__row">
+              <span class="acw-contact-phone__prefix" aria-hidden="true">+260</span>
+              <input type="hidden" name="phone_country" value="ZM"/>
+              <input
+                id="senderPhoneNational"
+                class="acw-contact-phone__input"
+                name="phone_national"
+                type="tel"
+                inputmode="tel"
+                autocomplete="tel-national"
+                placeholder="971 000 000"
+                value="<%= (fd && fd.phoneNational) || '' %>"
+                aria-describedby="senderPhone-hint"
+              />
+            </div>
+            <p class="acw-contact-phone__hint" id="senderPhone-hint">Standard Zambian mobile or landline formatting.</p>
+            <% if (typeof phoneValidationRelaxed !== "undefined" && phoneValidationRelaxed) { %>
+              <p class="ac-phone-field__mode-hint">Testing environment — phone validity checks relaxed</p>
+            <% } %>
+            <% if (fieldErrors.senderPhone) { %><p class="ac-public-field-error"><%= fieldErrors.senderPhone %></p><% } %>
+          </div>
+
+          <div class="acp-field">
+            <label for="subject">Subject / reason for contacting us <span class="ac-required" aria-hidden="true">*</span></label>
+            <div class="acw-contact-select">
+              <select id="subject" name="subject" required aria-invalid="<%= fieldErrors.subject ? 'true' : 'false' %>">
+                <option value="" disabled<%= !subjectVal ? " selected" : "" %>>Select a subject...</option>
+                <% subjects.forEach(function (s) { %>
+                  <option value="<%= s.value %>"<%= subjectVal === s.value ? " selected" : "" %>><%= s.label %></option>
+                <% }) %>
+              </select>
+              <span class="material-symbols-outlined acw-contact-select__icon" aria-hidden="true">expand_more</span>
+            </div>
+            <% if (fieldErrors.subject) { %><p class="ac-public-field-error"><%= fieldErrors.subject %></p><% } %>
+          </div>
+
+          <div class="acp-field">
+            <label for="message">Message <span class="ac-required" aria-hidden="true">*</span></label>
+            <textarea
+              id="message"
+              name="message"
+              required
+              maxlength="4000"
+              rows="5"
+              placeholder="Tell us how we can assist your facility or address your question..."
+              aria-invalid="<%= fieldErrors.message ? 'true' : 'false' %>"
+            ><%= fd.message || "" %></textarea>
+            <% if (fieldErrors.message) { %><p class="ac-public-field-error"><%= fieldErrors.message %></p><% } %>
+          </div>
+
+          <div class="acw-contact-form__actions">
+            <button type="submit" class="ac-btn ac-btn--primary acw-contact-form__submit">
+              <span>Send message</span>
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </button>
+          </div>
+
+          <p class="acw-contact-form__note">
+            <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+            Please do not include confidential medical information in this form.
+          </p>
+        </form>
+      </div>
+
+      <aside class="acw-contact-help" aria-labelledby="acw-contact-help-title">
+        <h2 id="acw-contact-help-title">How can we help?</h2>
+
+        <article class="acw-contact-help__card">
+          <span class="acw-contact-help__icon" aria-hidden="true"><span class="material-symbols-outlined">domain</span></span>
+          <div>
+            <h3>For clinics</h3>
+            <p>Register your clinic or ask about joining ActiveClinic.</p>
+            <a class="acw-contact-help__link" href="/register-clinic">
+              Register your clinic
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+          </div>
+        </article>
+
+        <article class="acw-contact-help__card">
+          <span class="acw-contact-help__icon" aria-hidden="true"><span class="material-symbols-outlined">search</span></span>
+          <div>
+            <h3>Find a clinic</h3>
+            <p>Patients looking for a healthcare provider should use the ActiveClinic directory.</p>
+            <a class="acw-contact-help__link" href="/clinics">
+              Find a clinic
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+          </div>
+        </article>
+
+        <article class="acw-contact-help__card">
+          <span class="acw-contact-help__icon" aria-hidden="true"><span class="material-symbols-outlined">login</span></span>
+          <div>
+            <h3>Existing ActiveClinic users</h3>
+            <p>Sign in to access your clinic workspace.</p>
+            <a class="acw-contact-help__link" href="/login">
+              Sign in
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+          </div>
+        </article>
+
+        <div class="acw-contact-help__notice" role="note">
+          <span class="material-symbols-outlined filled" aria-hidden="true">info</span>
+          <div>
+            <h4>Non-Emergency Platform Notice</h4>
+            <p>For medical emergencies or clinical questions, contact the appropriate healthcare provider or emergency service directly.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="acw-contact-process" aria-labelledby="acw-contact-process-title">
+    <div class="acw-contact-wrap">
+      <header class="acw-contact-process__intro">
+        <h2 id="acw-contact-process-title">What happens next?</h2>
+        <p>A transparent overview of how our platform specialists address incoming queries.</p>
+      </header>
+      <ol class="acw-contact-process__grid">
+        <li class="acw-contact-process__card">
+          <div>
+            <span class="acw-contact-process__num" aria-hidden="true">1</span>
+            <h3>Send your enquiry</h3>
+            <p>Provide details about your question or organization.</p>
+          </div>
+          <p class="acw-contact-process__meta">
+            <span class="material-symbols-outlined" aria-hidden="true">description</span>
+            Intake record created
+          </p>
+        </li>
+        <li class="acw-contact-process__card">
+          <div>
+            <span class="acw-contact-process__num" aria-hidden="true">2</span>
+            <h3>Our team reviews it</h3>
+            <p>The appropriate ActiveClinic platform specialist reviews your message.</p>
+          </div>
+          <p class="acw-contact-process__meta">
+            <span class="material-symbols-outlined" aria-hidden="true">manage_accounts</span>
+            Specialist assignment
+          </p>
+        </li>
+        <li class="acw-contact-process__card">
+          <div>
+            <span class="acw-contact-process__num" aria-hidden="true">3</span>
+            <h3>We respond directly</h3>
+            <p>We connect through the contact details you provided.</p>
+          </div>
+          <p class="acw-contact-process__meta">
+            <span class="material-symbols-outlined" aria-hidden="true">mail</span>
+            Direct outreach
+          </p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="acw-contact-cta" aria-labelledby="acw-contact-cta-title">
+    <div class="acw-contact-wrap">
+      <div class="acw-contact-cta__panel">
+        <div class="acw-contact-cta__copy">
+          <h2 id="acw-contact-cta-title">Ready to bring your clinic to ActiveClinic?</h2>
+          <p>Empower your practice with Zambia's modern digital directory and appointment network.</p>
+        </div>
+        <div class="acw-contact-cta__actions">
+          <a class="ac-btn ac-btn--primary" href="/register-clinic">Register your clinic</a>
+          <a class="ac-btn ac-btn--secondary" href="/solutions">Explore ActiveClinic</a>
+        </div>
+      </div>
+    </div>
+  </section>
 </article>
