@@ -60,7 +60,7 @@ Required on Hostinger testing for **new** BlessBoard + ActiveClinic website imag
 | Variable | Example (testing) | Notes |
 | -------- | ----------------- | ----- |
 | `MEDIA_STORAGE_ROOT` | `/home/u549637099/moovex-media` | **Required** absolute directory **outside** `hbuilds/versions/…`. Contains `testing/` and (unused on testing) `production/` |
-| `MEDIA_PUBLIC_BASE_URL` | `https://blessboard.pronline.org/media` | **Required absolute https CDN base** for website image presentation. Relative `/media` is mount-only and must not appear in rendered HTML. |
+| `MEDIA_PUBLIC_BASE_URL` | `https://blessboard.pronline.org/media` | **Required absolute https CDN base** for website image presentation. Relative `/media` is mount-only and must not appear in rendered HTML. On `moovex-platform-testing`, when this (and `MEDIA_CDN_ORIGIN`) are unset, runtime falls back to `https://blessboard.pronline.org/media` so presentation never emits relative `/media` paths. Set the hPanel value explicitly for clarity. |
 | `MEDIA_PUBLIC_MOUNT_PATH` | `/media` | Optional; Express serves `MEDIA_STORAGE_ROOT` here with immutable cache headers |
 | `MEDIA_CDN_ORIGIN` | `https://blessboard.pronline.org` | Optional alternate: when `MEDIA_PUBLIC_BASE_URL` is relative, join origin + mount for absolute CDN URLs |
 

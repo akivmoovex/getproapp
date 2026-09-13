@@ -41,6 +41,8 @@ const ABSOLUTE_MEDIA_KEY_RE =
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {string|null}
  */
+const TESTING_CDN_PUBLIC_BASE_FALLBACK = "https://blessboard.pronline.org/media";
+
 function resolveCdnPublicBaseUrl(env) {
   const source = env || process.env;
   const raw = String(source.MEDIA_PUBLIC_BASE_URL || "").trim().replace(/\/+$/, "");
@@ -53,6 +55,13 @@ function resolveCdnPublicBaseUrl(env) {
         "/media"
     );
     return `${origin}${mount}`;
+  }
+  // Hostinger testing often omits MEDIA_PUBLIC_BASE_URL in hPanel; derive the
+  // documented absolute CDN base so presentation never emits relative /media.
+  const deploymentEnv = String(source.DEPLOYMENT_ENV || "").trim().toLowerCase();
+  const deploymentCode = String(source.PLATFORM_DEPLOYMENT_CODE || "").trim();
+  if (deploymentEnv === "testing" && deploymentCode === "moovex-platform-testing") {
+    return TESTING_CDN_PUBLIC_BASE_FALLBACK;
   }
   return null;
 }
@@ -254,7 +263,7 @@ function presentImageValue(value, env, opts) {
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {unknown}
  */
-function presentImageTree(input, env) {
+function presentImageTree(input, env, seen) {
   if (input == null) return input;
   if (typeof input === "string") {
     if (
@@ -272,9 +281,13 @@ function presentImageTree(input, env) {
     return input;
   }
   if (Array.isArray(input)) {
-    return input.map((item) => presentImageTree(item, env));
+    const visited = seen || new WeakSet();
+    return input.map((item) => presentImageTree(item, env, visited));
   }
   if (typeof input === "object") {
+    const visited = seen || new WeakSet();
+    if (visited.has(input)) return null;
+    visited.add(input);
     const out = {};
     for (const [k, v] of Object.entries(input)) {
       if (
@@ -290,7 +303,7 @@ function presentImageTree(input, env) {
       ) {
         out[k] = presentRuntimeImageSrc(v, env) || null;
       } else {
-        out[k] = presentImageTree(v, env);
+        out[k] = presentImageTree(v, env, visited);
       }
     }
     return out;
