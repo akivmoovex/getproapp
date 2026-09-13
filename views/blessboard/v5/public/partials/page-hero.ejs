@@ -9,6 +9,9 @@
   var _heading = typeof heroHeading !== 'undefined' ? heroHeading : '';
   var _body = typeof heroBody !== 'undefined' ? heroBody : '';
   var _media = typeof heroMedia !== 'undefined' ? heroMedia : null;
+  if (_media && typeof presentImageSrc === 'function') {
+    _media = presentImageSrc(_media) || null;
+  }
   var _eyebrow = typeof heroEyebrow !== 'undefined' ? heroEyebrow : '';
   var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
   var _canInline = Boolean(_wa && _wa.editingMode && typeof editPageKey !== 'undefined' && editPageKey && typeof editSectionKey !== 'undefined' && editSectionKey);

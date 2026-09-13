@@ -11,6 +11,9 @@
     _bio = t.length <= _bioMax ? t : (t.slice(0, _bioMax - 1) + '…');
   }
   var _img = leader && leader.imageUrl ? leader.imageUrl : null;
+  if (_img && typeof presentImageSrc === 'function') {
+    _img = presentImageSrc(_img) || null;
+  }
 %>
 <article class="bb-tp-leader-card<%= _featured ? ' bb-tp-leader-card--featured' : '' %><%= leader && leader.templateExample ? ' bb-tp-leader-card--template' : '' %>"<% if (leader && leader.templateExample) { %> data-bb-template-example="leader"<% } %>>
   <div class="bb-tp-leader-card__media<%= _img ? ' has-media' : ' is-fallback' %>">

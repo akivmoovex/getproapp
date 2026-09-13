@@ -19,6 +19,15 @@ const {
 } = require("./websiteStructuredDraftValidation");
 const auditSvc = require("./websiteAuditService");
 const mediaService = require("../../platform/website/mediaService");
+const {
+  presentRuntimeImageSrc,
+  presentImageTree,
+} = require("../../platform/media/cdnMediaPresentation");
+
+function presentDraftImageUrl(value) {
+  if (value == null || value === "") return value;
+  return presentRuntimeImageSrc(value, process.env) || null;
+}
 
 const ENTITY_FINDERS = Object.freeze({
   leader: contentRepo.findLeaderById,
@@ -314,8 +323,9 @@ function applyStructuredDraftsToModel(model, drafts) {
       });
       continue;
     }
-    const mediaUrl =
-      payload.imageUrl || payload.videoUrl || payload.thumbnailUrl || null;
+    const mediaUrl = presentDraftImageUrl(
+      payload.imageUrl || payload.videoUrl || payload.thumbnailUrl || null
+    );
     let matched = false;
     model.sections = (model.sections || []).map((s) => {
       if (String(s.sectionKey) !== sectionKey) return s;
@@ -434,7 +444,7 @@ function applyStructuredDraftsToModel(model, drafts) {
         displayName: p.displayName,
         roleTitle: p.roleTitle,
         biography: p.biography,
-        imageUrl: p.imageUrl,
+        imageUrl: presentDraftImageUrl(p.imageUrl),
         sortOrder: p.sortOrder || 0,
         status: p.status,
         seniorLeader: p.seniorLeader,
@@ -451,7 +461,7 @@ function applyStructuredDraftsToModel(model, drafts) {
           displayName: p.displayName,
           roleTitle: p.roleTitle,
           biography: p.biography,
-          imageUrl: p.imageUrl,
+          imageUrl: presentDraftImageUrl(p.imageUrl),
           sortOrder: p.sortOrder || 0,
         })),
       };
@@ -467,7 +477,7 @@ function applyStructuredDraftsToModel(model, drafts) {
         description: p.description,
         meetingDay: p.meetingDay,
         contactEmail: p.contactEmail,
-        imageUrl: p.imageUrl,
+        imageUrl: presentDraftImageUrl(p.imageUrl),
         sortOrder: p.sortOrder || 0,
         featured: p.featured,
         visible: p.visible !== false,
@@ -483,7 +493,7 @@ function applyStructuredDraftsToModel(model, drafts) {
           id: key,
           name: p.name,
           summary: p.summary,
-          imageUrl: p.imageUrl,
+          imageUrl: presentDraftImageUrl(p.imageUrl),
         })),
       };
     }
@@ -499,7 +509,7 @@ function applyStructuredDraftsToModel(model, drafts) {
       timezone: p.timezone,
       location: p.location,
       registrationUrl: p.registrationUrl,
-      imageUrl: p.imageUrl,
+      imageUrl: presentDraftImageUrl(p.imageUrl),
       featured: p.featured,
       visible: p.visible !== false,
       organizer: p.organizer,
@@ -529,9 +539,9 @@ function applyStructuredDraftsToModel(model, drafts) {
       preachedAt: p.preachedAt,
       summary: p.summary,
       scripture: p.scripture,
-      mediaUrl: p.mediaUrl,
+      mediaUrl: presentDraftImageUrl(p.mediaUrl),
       resourceUrl: p.resourceUrl,
-      imageUrl: p.imageUrl,
+      imageUrl: presentDraftImageUrl(p.imageUrl),
       featured: p.featured,
       visible: p.visible !== false,
       series: p.series,
@@ -584,7 +594,7 @@ function applyStructuredDraftsToModel(model, drafts) {
     })).filter((link) => link && link.href);
   }
 
-  return model;
+  return presentImageTree(model, process.env);
 }
 
 module.exports = {

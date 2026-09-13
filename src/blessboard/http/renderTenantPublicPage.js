@@ -7,6 +7,7 @@
 const fs = require("fs");
 const path = require("path");
 const ejs = require("ejs");
+const { presentRuntimeImageSrc, cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
@@ -29,7 +30,14 @@ function loadTemplate(relativePath) {
  */
 function renderView(relativePath, data) {
   const tpl = loadTemplate(relativePath);
-  return ejs.render(tpl.source, data, { filename: tpl.filename });
+  const locals = Object.assign(
+    {
+      presentImageSrc: (src) => presentRuntimeImageSrc(src, process.env) || "",
+      cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, process.env) || "",
+    },
+    data || {}
+  );
+  return ejs.render(tpl.source, locals, { filename: tpl.filename });
 }
 
 /**

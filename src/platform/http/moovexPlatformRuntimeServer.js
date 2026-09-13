@@ -188,6 +188,91 @@ function createMoovexPlatformRuntimeApp(options) {
     }
   );
 
+  // Testing-only: copy platform marketing images from release public/ into MEDIA_STORAGE_ROOT.
+  app.post(
+    "/__platform/qa/sync-platform-marketing-media",
+    express.json({ limit: "16kb" }),
+    async (req, res) => {
+      const {
+        isPlatformRuntimeDiagnosticsEndpointAllowed,
+      } = require("../../startup/platformRuntimeSnapshot");
+      if (!isPlatformRuntimeDiagnosticsEndpointAllowed(env)) {
+        return res.status(404).json({ ok: false, code: "not_found" });
+      }
+      if (String(env.DEPLOYMENT_ENV || "").trim().toLowerCase() !== "testing") {
+        return res.status(403).json({ ok: false, code: "refused_non_testing_environment" });
+      }
+      if (String(deployment.code || "").trim().toLowerCase() !== "moovex-platform-testing") {
+        return res.status(403).json({ ok: false, code: "refused_non_testing_deployment" });
+      }
+      const body = req.body || {};
+      if (body.confirm !== "sync-platform-marketing-media-to-hostinger") {
+        return res.status(400).json({ ok: false, code: "confirm_required" });
+      }
+      try {
+        const fs = require("fs");
+        const fsp = require("fs/promises");
+        const path = require("path");
+        const {
+          resolveHostingerMediaConfig,
+          assertStorageKeyWritable,
+        } = require("../media/hostingerMediaConfig");
+        const {
+          listMarketingPublicPaths,
+          storageKeyForPublicPath,
+          localPublicFilePath,
+        } = require("../media/platformMarketingAssets");
+        const cfg = resolveHostingerMediaConfig(env);
+        if (!cfg.enabled || !cfg.storageRoot) {
+          return res.status(500).json({ ok: false, code: "media_storage_root_unset" });
+        }
+        const repoRoot = path.resolve(__dirname, "../../..");
+        let copied = 0;
+        let skipped = 0;
+        let missing = 0;
+        const dryRun = body.dryRun === true;
+        for (const publicPath of listMarketingPublicPaths()) {
+          const key = storageKeyForPublicPath(publicPath, env);
+          const relLocal = localPublicFilePath(publicPath);
+          if (!key || !relLocal) {
+            missing += 1;
+            continue;
+          }
+          assertStorageKeyWritable(cfg.environment, key);
+          const srcAbs = path.join(repoRoot, relLocal);
+          const destAbs = path.join(cfg.storageRoot, ...key.split("/"));
+          if (!fs.existsSync(srcAbs)) {
+            missing += 1;
+            continue;
+          }
+          if (fs.existsSync(destAbs) && body.force !== true) {
+            skipped += 1;
+            continue;
+          }
+          if (!dryRun) {
+            await fsp.mkdir(path.dirname(destAbs), { recursive: true });
+            await fsp.copyFile(srcAbs, destAbs);
+          }
+          copied += 1;
+        }
+        return res.status(200).json({
+          ok: true,
+          dryRun,
+          storageRoot: cfg.storageRoot,
+          copied,
+          skipped,
+          missing,
+        });
+      } catch (err) {
+        return res.status(500).json({
+          ok: false,
+          code: (err && err.code) || "sync_failed",
+          message: err && err.message ? String(err.message).slice(0, 160) : "unknown",
+        });
+      }
+    }
+  );
+
   // Testing-only: report on-disk sizes for a storage key across durable roots.
   app.get("/__platform/qa/media-file-stat", async (req, res) => {
     const {

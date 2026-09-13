@@ -119,6 +119,8 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
     const limit = options.allowBulk
       ? Math.min(Number(options.limit) || 2000, 5000)
       : Math.min(Number(options.limit) || 100, 500);
+    // forceRewrite / reconcileExisting: include rows already marked hostinger that still
+    // hold payload_bytes so missing origin files can be (re)materialized idempotently.
     rows = await db.query(
       `SELECT m.id, m.organization_id, m.storage_key, m.storage_provider, m.mime_type,
               m.payload_bytes, i.product_code
@@ -127,8 +129,7 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
         WHERE m.media_kind = 'image'
           AND m.status = 'active'
           AND i.product_code = ANY($1::text[])
-          AND m.payload_bytes IS NOT NULL
-          AND COALESCE(m.storage_provider, 'database') <> 'hostinger'
+          ${providerClause}
         ORDER BY m.created_at ASC
         LIMIT $2`,
       [productCodes, limit]
@@ -149,13 +150,18 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
         results.push({ mediaId, skipped: true, reason: "non_website_product" });
         continue;
       }
-      const storageKey = buildHostingerStorageKey({
-        environment: cfg.environment,
-        productCode: row.product_code,
-        organizationId: row.organization_id,
-        mediaId,
-        mimeType: row.mime_type,
-      });
+      const storageKey =
+        row.storage_key &&
+        String(row.storage_key).startsWith(`${cfg.environment}/`) &&
+        !String(row.storage_key).includes("..")
+          ? String(row.storage_key)
+          : buildHostingerStorageKey({
+              environment: cfg.environment,
+              productCode: row.product_code,
+              organizationId: row.organization_id,
+              mediaId,
+              mimeType: row.mime_type,
+            });
       if (storageKey.startsWith("production/") || storageKey === "production") {
         throw Object.assign(new Error("refused_production_media_namespace"), {
           code: "REFUSED_PRODUCTION_MEDIA_NAMESPACE",
@@ -242,13 +248,13 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
       }
 
       // Metadata update only after origin verify. Failures above leave DB unchanged.
+      // Allow updating rows already marked hostinger when reconciling / clearing payload.
       if (keepPayload) {
         await db.query(
           `UPDATE platform.website_media
               SET storage_provider = $3,
                   storage_key = $4
-            WHERE id = $1 AND organization_id = $2
-              AND COALESCE(storage_provider, 'database') <> 'hostinger'`,
+            WHERE id = $1 AND organization_id = $2`,
           [mediaId, row.organization_id, PROVIDER_HOSTINGER, storageKey]
         );
       } else {
@@ -257,8 +263,7 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
               SET storage_provider = $3,
                   storage_key = $4,
                   payload_bytes = NULL
-            WHERE id = $1 AND organization_id = $2
-              AND COALESCE(storage_provider, 'database') <> 'hostinger'`,
+            WHERE id = $1 AND organization_id = $2`,
           [mediaId, row.organization_id, PROVIDER_HOSTINGER, storageKey]
         );
       }

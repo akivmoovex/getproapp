@@ -8,6 +8,9 @@
   var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
   var _editing = Boolean(_wa && _wa.editingMode);
   var _media = _sec && _sec.mediaUrl ? String(_sec.mediaUrl) : '';
+  if (_media && typeof presentImageSrc === 'function') {
+    _media = presentImageSrc(_media) || '';
+  }
   var _alt = (_sec && _sec.layoutMetadata && _sec.layoutMetadata.altText) || '';
   var _sectionKey = _sec && _sec.sectionKey ? String(_sec.sectionKey) : 'content';
 %>
