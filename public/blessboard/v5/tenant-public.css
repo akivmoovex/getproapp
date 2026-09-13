@@ -5616,6 +5616,12 @@ a.bb-tp-content-card:hover {
   z-index: 0;
 }
 
+/* Editing: hero pencils sit on field corners and must remain hittable (BB-01). */
+.bb-tp-body--editing .bb-tp-hero,
+.bb-tp-body--editing .bb-tp-hero.bb-tp-hero--phase7 {
+  overflow: visible;
+}
+
 @media (max-width: 720px) {
   .bb-tp-template-banner {
     padding: 0.7rem 1rem;

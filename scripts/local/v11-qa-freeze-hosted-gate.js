@@ -224,7 +224,7 @@ async function main() {
 
   const browser = await chromium.launch({ headless: true });
   try {
-    const bbCtx = await browser.newContext();
+    const bbCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const bbPage = await bbCtx.newPage();
     await login(bbPage, BB, "qa.organisation_administrator@demo-church.example.test");
     const bbAudit = await auditPages(
@@ -416,7 +416,7 @@ async function main() {
     await bbCtx.close();
 
     // ActiveClinic
-    const acCtx = await browser.newContext();
+    const acCtx = await browser.newContext({ viewport: { width: 1440, height: 900 } });
     const acPage = await acCtx.newPage();
     await login(acPage, AC, "demo_organization_admin@demo.activeclinic.example");
     const acAudit = await auditPages(
