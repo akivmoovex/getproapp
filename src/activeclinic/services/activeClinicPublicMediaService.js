@@ -291,6 +291,37 @@ function enrichServiceMedia(service, env) {
   };
 }
 
+/**
+ * Enrich common public-page locals with media fields (idempotent).
+ * @param {object} locals
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function enrichPublicLocals(locals, env = process.env) {
+  const out = { ...(locals || {}) };
+  if (out.clinic) out.clinic = enrichClinicMedia(out.clinic, env);
+  if (out.profile) out.profile = enrichDoctorMedia(out.profile, env);
+  if (Array.isArray(out.profiles)) {
+    out.profiles = out.profiles.map((p) => enrichDoctorMedia(p, env));
+  }
+  if (Array.isArray(out.clinics)) {
+    out.clinics = out.clinics.map((c, i) =>
+      enrichClinicCardMedia(enrichClinicMedia(c, env), i, env)
+    );
+  }
+  if (Array.isArray(out.services)) {
+    out.services = out.services.map((s) => enrichServiceMedia(s, env));
+  }
+  if (Array.isArray(out.procedures)) {
+    out.procedures = out.procedures.map((p) => enrichServiceMedia(p, env));
+  }
+  out.platformHero = out.platformHero || getPlatformHero(env);
+  out.doctorFallbackUrl =
+    out.doctorFallbackUrl || presentPath(DOCTOR_FALLBACK_PATH, env) || DOCTOR_FALLBACK_PATH;
+  out.clinicHeroDefaultUrl =
+    out.clinicHeroDefaultUrl || presentPath(CLINIC_DEFAULT_PATH, env) || CLINIC_DEFAULT_PATH;
+  return out;
+}
+
 module.exports = {
   DOCTOR_FALLBACK: DOCTOR_FALLBACK_PATH,
   CLINIC_DEFAULT: CLINIC_DEFAULT_PATH,
@@ -309,5 +340,6 @@ module.exports = {
   enrichClinicMedia,
   enrichClinicCardMedia,
   enrichServiceMedia,
+  enrichPublicLocals,
   presentPath,
 };
