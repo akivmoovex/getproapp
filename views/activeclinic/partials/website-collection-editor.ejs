@@ -28,7 +28,7 @@
             type="text"
             maxlength="200"
             data-website-item-field="question"
-            value="<%= escAttr(item && item.question) %>"
+            value="<%- escAttr(item && item.question) %>"
             aria-label="<%= questionLabel %> <%= idx + 1 %>"
           />
         </label>

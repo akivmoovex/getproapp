@@ -178,7 +178,7 @@ async function main() {
     {
       label: "AC_ADMIN",
       url: "https://activeclinic.pronline.org/login",
-      fields: { identifier: "qa.fullproduct.260817235630@example.test" },
+      fields: { identifier: "demo_organization_admin@demo.activeclinic.example" },
       expectRedirect: "/app",
       surfaces: [
         ["website CMS (edit)", "/app/settings/website"],

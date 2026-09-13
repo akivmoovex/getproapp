@@ -16,6 +16,7 @@ const {
   presentRuntimeImageSrc,
   presentImageTree,
 } = require("../../platform/media/cdnMediaPresentation");
+const { normalizePlainTextEntities } = require("../../platform/website/plainTextEntities");
 
 const MODE = resolver.MODE;
 
@@ -55,11 +56,14 @@ function valuesFromSnapshot(snapshot) {
 }
 
 function pickContent(values, defaults, key) {
+  let raw = null;
   if (Object.prototype.hasOwnProperty.call(values, key) && values[key] != null) {
-    return values[key];
+    raw = values[key];
+  } else if (Object.prototype.hasOwnProperty.call(defaults, key)) {
+    raw = defaults[key];
   }
-  if (Object.prototype.hasOwnProperty.call(defaults, key)) return defaults[key];
-  return null;
+  if (typeof raw === "string") return normalizePlainTextEntities(raw);
+  return raw;
 }
 
 function pickBool(values, defaults, key, fallback) {

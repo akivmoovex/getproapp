@@ -71,7 +71,11 @@ function validateContentValue(def, candidate) {
     case CONTENT_TYPES.SHORT_TEXT:
     case CONTENT_TYPES.LONG_TEXT:
     case CONTENT_TYPES.RICH_TEXT: {
-      const text = String(candidate).trim();
+      const { normalizePlainTextEntities } = require("./plainTextEntities");
+      const text =
+        def.type === CONTENT_TYPES.RICH_TEXT
+          ? String(candidate).trim()
+          : normalizePlainTextEntities(candidate).trim();
       const unsafe = rejectUnsafeText(text);
       if (!unsafe.ok) return unsafe;
       const max = def.maxLen || (def.type === CONTENT_TYPES.SHORT_TEXT ? 200 : 8000);

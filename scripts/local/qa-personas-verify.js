@@ -230,16 +230,21 @@ async function verifyBlessBoardPersona(pool, label, email, opts) {
 
 async function verifyActiveClinicPersona(pool, label, orgKey, email) {
   const org = await pool.query(
-    `SELECT id, organization_key, status FROM platform.organizations
-      WHERE organization_key=$1 AND data_environment='testing'`,
+    `SELECT id, organization_key, status, data_environment FROM platform.organizations
+      WHERE organization_key=$1 AND data_environment IN ('testing', 'demo')`,
     [orgKey]
   );
   if (!org.rows[0]) {
-    record(label, "organization exists", false, `no testing org ${orgKey}`);
+    record(label, "organization exists", false, `no testing/demo org ${orgKey}`);
     return;
   }
   const organizationId = org.rows[0].id;
-  record(label, "correct organization", true, `${orgKey} (${org.rows[0].status})`);
+  record(
+    label,
+    "correct organization",
+    true,
+    `${orgKey} (${org.rows[0].status}, env=${org.rows[0].data_environment})`
+  );
 
   const staff = await pool.query(
     `SELECT sm.id AS staff_member_id, sm.status AS staff_status, sm.display_name,
@@ -412,8 +417,8 @@ async function main() {
   await verifyActiveClinicPersona(
     pool,
     "AC_ADMIN",
-    "qa-full-product-clinic-260817235630-805675",
-    "qa.fullproduct.260817235630@example.test"
+    "activeclinic-demo",
+    "demo_organization_admin@demo.activeclinic.example"
   );
 
   // BlessBoard website surface readiness (shared by both BB personas).

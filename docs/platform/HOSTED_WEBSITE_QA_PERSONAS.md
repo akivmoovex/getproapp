@@ -14,12 +14,13 @@ documented in `docs/blessboard/BLESSBOARD_QA_ROLE_USERS.md`.
 |---|---|---|---|
 | BlessBoard HQ admin | **YES** | `https://blessboard.pronline.org/login` | `/hq` |
 | BlessBoard branch admin (multi-branch church) | **YES** | `https://blessboard.pronline.org/login` | `/branch-admin` |
-| ActiveClinic clinic admin | **YES** | `https://activeclinic.pronline.org/login` | `/app` |
+| ActiveClinic clinic admin (demo org admin) | **YES** | `https://activeclinic.pronline.org/login` | `/app` |
+| ActiveClinic disposable website-editor admin | **YES** (provisioned per run) | `https://activeclinic.pronline.org/login` | `/app` |
 
-45/45 database readiness checks pass, all three sign-ins succeed against the
-hosted app, and every website surface QA needs returns HTTP 200. One known
-product issue affects a single navigation link and has a verified workaround —
-see [Known issues](#known-issues).
+BlessBoard personas remain long-lived fixtures. The previous disposable
+`qa.fullproduct…` ActiveClinic website persona was **retired** after the
+testing org was purged — do not use it. Use the demo org-admin seed account or
+the disposable hosted-auth QA fixture below.
 
 ## Environment
 
@@ -140,40 +141,73 @@ This persona is the regression guard for the assigned-branch authorization fix
 `377f8c09024f`). Before that fix, a branch admin whose branch was not the church
 primary was denied their own editor.
 
-## Persona 3 — ActiveClinic clinic admin
+## Persona 3 — ActiveClinic clinic admin (stable demo seed)
+
+**Retired persona (do not use):**
+`qa.fullproduct.260817235630@example.test` /
+`qa-full-product-clinic-260817235630-805675` was purged from the testing DB and
+is no longer a supported fixture.
+
+### Preferred — reseedable demo org admin
 
 | Field | Value |
 |---|---|
-| Email | `qa.fullproduct.260817235630@example.test` |
-| Organization | `qa-full-product-clinic-260817235630-805675` |
-| Facility | `hq` (primary), active facility assignment present |
+| Email | `demo_organization_admin@demo.activeclinic.example` |
+| Organization / clinic key | `activeclinic-demo` |
+| Facility | `lusaka` (primary) |
 | Role | `activeclinic_organization_admin`, scope `organisation` |
-| Credential | Shared testing password, set via `setPlatformIdentityPassword` |
+| Credential | Shared testing password via ActiveClinic QA role-user seed (see below) |
 
-Effective website permissions: `website.view`, `website.edit`, `website.publish`,
-`website.restore`, `website.rollback` — this persona **can** exercise restore.
+Effective website permissions include `website.view`, `website.edit`,
+`website.publish` (and related restore/rollback where the role grant allows).
 
-Website state: instance `status=published`, `lifecycle=public`, not edit- or
-publish-locked, `last_published_at` set, 2 version rows present, so version
-history and restore both have data to act on.
+Reseed / reset password (testing only; never production):
 
-Verified surfaces (all HTTP 200):
+```bash
+scripts/local/run-with-blessboard-env.sh testing \
+  npm run activeclinic:seed-qa-role-users -- --confirm --password=1234567890 --reset-passwords
+```
+
+Full role table: `docs/activeclinic/ACTIVECLINIC_QA_ROLE_USERS.md`.
+
+Verified surfaces (all HTTP 200 once signed in):
 
 | Surface | Path |
 |---|---|
 | Website CMS / edit | `/app/settings/website` |
 | Pages | `/app/settings/website/pages` |
 | Media | `/app/settings/website/media` |
-| Public site | `/clinics/qa-full-product-clinic-260817235630-805675` |
-| Preview | `/clinics/:clinicKey/website/preview` |
-| Publish (POST) | `/clinics/:clinicKey/website/publish` |
-| Versions / restore | `/clinics/:clinicKey/website/versions`, `.../versions/:versionId/restore` |
+| Public site | `/clinics/activeclinic-demo` |
+| Inline editor | `/clinics/activeclinic-demo?website_edit=1` |
+| Preview | `/clinics/activeclinic-demo/website/preview` |
 
-This identity had a valid, enabled account but **no password known to QA**, which
-made it unusable for browser testing. It was repaired in place rather than
-replaced, because its published website and version history are exactly what
-website QA needs. The organization is `data_environment=testing` with
-`test_cleanup_eligible=true`, so it is disposable.
+`activeclinic-demo` is a reserved demo tenant (`data_environment=demo`) — do not
+purge it. Prefer non-destructive website edits, or restore from version history.
+
+### Alternative — disposable website-editor QA admin
+
+When you need an isolated published website + version history without touching
+the demo clinic, provision a disposable `ac-hqa-*` tenant:
+
+```bash
+scripts/local/run-with-blessboard-env.sh testing \
+  npm run activeclinic:hosted-auth-qa:testing -- --confirm
+```
+
+That flow creates a testing-only org (`test_cleanup_eligible=true`), org-admin
+identity, and clinic website surfaces for the run, then cleans up. Details:
+`docs/activeclinic/qa/ACTIVECLINIC_HOSTED_AUTH_QA.md` and
+`docs/activeclinic/qa/HOSTED_QA_FIXTURE.md`.
+
+For a password reset on an existing disposable testing org only (not demo):
+
+```bash
+scripts/local/run-with-blessboard-env.sh testing \
+  node scripts/local/qa-set-ac-admin-password.js \
+  --email=<disposable-admin@getproapp.org> --confirm --password-stdin
+```
+
+(`qa-set-ac-admin-password.js` refuses non-testing / non-cleanup-eligible orgs.)
 
 ## Isolation — verified, not assumed
 
@@ -259,7 +293,7 @@ long-lived testing fixtures, not per-run artifacts.
 | Persona | Cleanup method |
 |---|---|
 | BlessBoard HQ + branch admin | None required. Re-seed/reset idempotently with `npm run blessboard:seed-qa-role-users -- --confirm` (see `docs/blessboard/BLESSBOARD_QA_ROLE_USERS.md` for the password flag). |
-| ActiveClinic clinic admin | Organization is `test_cleanup_eligible`; purge with `purgeActiveClinicTestingOrganization` if it must be reclaimed. Reserved demo tenants are refused by that service. |
+| ActiveClinic demo org admin | None required. Re-seed/reset with `npm run activeclinic:seed-qa-role-users -- --confirm` (reserved `activeclinic-demo`). |
 | Disposable AC tenants (alternative) | `npm run activeclinic:hosted-auth-qa:testing -- --confirm` provisions an `ac-hqa-*` clinic and purges it at the end of the run. |
 
 Website content QA will create draft and publication rows in `demo-church`, which

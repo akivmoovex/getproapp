@@ -6,6 +6,8 @@
   var multiline = (fType === 'long_text' || fType === 'rich_text' || fType === 'textarea' || fType === 'paragraph');
   var fieldId = 'website-field-' + String(key).replace(/[^a-z0-9]+/gi, '-');
   var label = typeof fieldLabel !== 'undefined' && fieldLabel ? String(fieldLabel) : ('Edit ' + String(key).split('.').pop().replace(/_/g, ' '));
+  // Escape once for attributes. Use unescaped output of escAttr —
+  // EJS escaped output of escAttr would double-escape.
   function escAttr(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
@@ -20,9 +22,9 @@
   data-website-inline="1"
   data-website-key="<%= key %>"
   data-website-type="<%= multiline ? 'textarea' : 'text' %>"
-  data-website-value="<%= escAttr(value) %>"
-  data-website-published-value="<%= escAttr(value) %>"
-  data-website-label="<%= escAttr(label) %>"
+  data-website-value="<%- escAttr(value) %>"
+  data-website-published-value="<%- escAttr(value) %>"
+  data-website-label="<%- escAttr(label) %>"
   data-website-input-type="<%= fType === 'email' ? 'email' : (fType === 'phone' ? 'tel' : 'text') %>"
 >
   <span class="gp-website-editable__display ac-website-editable__display" data-website-display="1">
@@ -35,7 +37,7 @@
       type="button"
       class="gp-website-editable__pencil ac-website-editable__pencil"
       data-website-start="1"
-      aria-label="<%= escAttr(label) %>"
+      aria-label="<%- escAttr(label) %>"
     >
       <span class="material-symbols-outlined" aria-hidden="true">edit</span>
     </button>

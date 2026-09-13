@@ -374,14 +374,17 @@ function applyDraftsToSections(sections, overlayMap) {
  * @param {string} fallback
  */
 function displayWithDraft(overrides, sectionKey, fieldKey, fallback) {
-  if (!overrides) return fallback;
-  const key = `${sectionKey}::${fieldKey}`;
-  if (overrides instanceof Map) {
-    if (overrides.has(key)) return overrides.get(key);
-  } else if (Object.prototype.hasOwnProperty.call(overrides, key)) {
-    return overrides[key];
+  const { normalizePlainTextEntities } = require("../../platform/website/plainTextEntities");
+  let raw = fallback;
+  if (overrides) {
+    const key = `${sectionKey}::${fieldKey}`;
+    if (overrides instanceof Map) {
+      if (overrides.has(key)) raw = overrides.get(key);
+    } else if (Object.prototype.hasOwnProperty.call(overrides, key)) {
+      raw = overrides[key];
+    }
   }
-  return fallback;
+  return raw == null ? raw : normalizePlainTextEntities(raw);
 }
 
 /**

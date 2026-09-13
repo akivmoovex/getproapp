@@ -39,6 +39,8 @@
   if (_type === 'heading') _emptyHint = 'Click to add heading';
   else if (_fieldKey === 'buttonText') _emptyHint = 'Click to add button label';
   else if (_multiline) _emptyHint = 'Click to add text';
+  // Escape once for attributes. Use unescaped output of _escAttr below —
+  // EJS escaped output of _escAttr would double-escape.
   function _escAttr(s) {
     return String(s == null ? '' : s)
       .replace(/&/g, '&amp;')
@@ -52,21 +54,21 @@
   class="gp-website-editable ac-website-editable"
   data-website-inline="1"
   data-bb-inline-edit="1"
-  data-website-key="<%= _escAttr(_pageKey) %>.<%= _escAttr(_sectionKey) %>.<%= _escAttr(_fieldKey) %>"
+  data-website-key="<%- _escAttr(_pageKey) %>.<%- _escAttr(_sectionKey) %>.<%- _escAttr(_fieldKey) %>"
   data-website-type="<%= _multiline ? 'textarea' : 'text' %>"
-  data-website-value="<%= _escAttr(_value) %>"
-  data-website-published-value="<%= _escAttr(_published) %>"
-  data-website-label="<%= _escAttr(_label) %>"
+  data-website-value="<%- _escAttr(_value) %>"
+  data-website-published-value="<%- _escAttr(_published) %>"
+  data-website-label="<%- _escAttr(_label) %>"
   data-website-max="<%= _max %>"
   data-website-input-type="<%= _type === 'buttonUrl' ? 'url' : 'text' %>"
-  data-bb-page="<%= _escAttr(_pageKey) %>"
-  data-bb-section="<%= _escAttr(_sectionKey) %>"
-  data-bb-field="<%= _escAttr(_fieldKey) %>"
+  data-bb-page="<%- _escAttr(_pageKey) %>"
+  data-bb-section="<%- _escAttr(_sectionKey) %>"
+  data-bb-field="<%- _escAttr(_fieldKey) %>"
 >
   <span
     class="gp-website-editable__display ac-website-editable__display<%= _isEmpty ? ' is-empty' : '' %>"
     data-website-display="1"
-    <% if (_isEmpty) { %>data-empty-hint="<%= _escAttr(_emptyHint) %>"<% } %>
+    <% if (_isEmpty) { %>data-empty-hint="<%- _escAttr(_emptyHint) %>"<% } %>
   >
     <% if (_tag === 'a') { %>
     <a class="<%= _class %>" href="<%= _href || '#' %>" data-website-value-text="1" <% if (_id) { %>id="<%= _id %>"<% } %>><%= _value %></a>

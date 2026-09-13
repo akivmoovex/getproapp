@@ -23,6 +23,7 @@ const { NAV_ITEMS, PAGE_KEY_TO_PATH } = require("./tenantPublicPaths");
 const { buildPublicWebsiteNavigation } = require("./buildPublicWebsiteNavigation");
 const { buildTenantPublicSeo } = require("./tenantPublicSeo");
 const { safeExternalUrl, plainMetaText } = require("./tenantPublicSafe");
+const { normalizePlainTextEntities } = require("../../platform/website/plainTextEntities");
 const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
 const testingDemoSpec = require("../services/testingWebsiteDemoContentSpec");
 const publicDemo = require("../services/tenantPublicDemoContent");
@@ -155,33 +156,43 @@ function sanitizeLayoutMetadata(meta) {
   if (!meta || typeof meta !== "object" || Array.isArray(meta)) return null;
   const out = {};
   if (meta.schema != null) out.schema = String(meta.schema).slice(0, 64);
-  if (meta.buttonText != null) out.buttonText = String(meta.buttonText).slice(0, 48);
+  if (meta.buttonText != null) {
+    out.buttonText = normalizePlainTextEntities(meta.buttonText).slice(0, 48);
+  }
   if (meta.buttonUrl != null) out.buttonUrl = String(meta.buttonUrl).slice(0, 500);
-  if (meta.tagline != null) out.tagline = String(meta.tagline).slice(0, 200);
-  if (meta.eyebrow != null) out.eyebrow = String(meta.eyebrow).slice(0, 80);
+  if (meta.tagline != null) {
+    out.tagline = normalizePlainTextEntities(meta.tagline).slice(0, 200);
+  }
+  if (meta.eyebrow != null) {
+    out.eyebrow = normalizePlainTextEntities(meta.eyebrow).slice(0, 80);
+  }
   if (meta.secondaryButtonText != null) {
-    out.secondaryButtonText = String(meta.secondaryButtonText).slice(0, 48);
+    out.secondaryButtonText = normalizePlainTextEntities(meta.secondaryButtonText).slice(0, 48);
   }
   if (meta.secondaryButtonUrl != null) {
     out.secondaryButtonUrl = String(meta.secondaryButtonUrl).slice(0, 500);
   }
-  if (meta.altText != null) out.altText = String(meta.altText).slice(0, 200);
+  if (meta.altText != null) {
+    out.altText = normalizePlainTextEntities(meta.altText).slice(0, 200);
+  }
   if (meta.focal != null) out.focal = String(meta.focal).slice(0, 32);
   if (meta.fit != null) out.fit = String(meta.fit).slice(0, 32);
   if (meta.videoUrl != null) out.videoUrl = String(meta.videoUrl).slice(0, 500);
-  if (meta.videoTitle != null) out.videoTitle = String(meta.videoTitle).slice(0, 120);
+  if (meta.videoTitle != null) {
+    out.videoTitle = normalizePlainTextEntities(meta.videoTitle).slice(0, 120);
+  }
   if (Array.isArray(meta.entries)) {
     out.entries = meta.entries
       .filter((e) => e && typeof e === "object")
       .slice(0, 20)
       .map((e) => ({
         id: e.id != null ? String(e.id).slice(0, 64) : null,
-        name: e.name != null ? String(e.name).slice(0, 120) : "",
+        name: e.name != null ? normalizePlainTextEntities(e.name).slice(0, 120) : "",
         day: e.day != null ? String(e.day).slice(0, 16) : "",
         startTime: e.startTime != null ? String(e.startTime).slice(0, 8) : "",
         endTime: e.endTime != null ? String(e.endTime).slice(0, 8) : "",
-        location: e.location != null ? String(e.location).slice(0, 200) : "",
-        note: e.note != null ? String(e.note).slice(0, 200) : "",
+        location: e.location != null ? normalizePlainTextEntities(e.location).slice(0, 200) : "",
+        note: e.note != null ? normalizePlainTextEntities(e.note).slice(0, 200) : "",
         enabled: e.enabled !== false,
         sortOrder: Number.isFinite(Number(e.sortOrder)) ? Number(e.sortOrder) : 0,
       }));
@@ -193,8 +204,10 @@ function mapSection(section) {
   return {
     sectionKey: section.sectionKey,
     sectionType: section.sectionType,
-    heading: section.heading,
-    bodyText: section.bodyText,
+    heading:
+      section.heading != null ? normalizePlainTextEntities(section.heading) : section.heading,
+    bodyText:
+      section.bodyText != null ? normalizePlainTextEntities(section.bodyText) : section.bodyText,
     mediaUrl: safePublicImageUrl(section.mediaUrl),
     sortOrder: section.sortOrder,
     status: section.status || null,

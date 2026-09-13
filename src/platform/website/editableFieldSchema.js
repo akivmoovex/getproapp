@@ -100,7 +100,9 @@ function validateBlessboardInline(field, raw) {
     }
     return { ok: true, value: trimmed };
   }
-  const trimmed = value.trim();
+  const { normalizePlainTextEntities } = require("./plainTextEntities");
+  // Persist plain text only — never store HTML-escaped entities (EJS escapes at render).
+  const trimmed = normalizePlainTextEntities(value).trim();
   if (field.required && !trimmed) {
     return { ok: false, code: "validation_failed", reason: "required", message: "This field is required." };
   }
@@ -120,7 +122,7 @@ function validateBlessboardInline(field, raw) {
       message: `Keep this under ${field.maxLen} characters.`,
     };
   }
-  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(value)) {
+  if (/[\u0000-\u0008\u000B\u000C\u000E-\u001F]/.test(trimmed)) {
     return { ok: false, code: "validation_failed", reason: "unsafe_content", message: "Text contains invalid characters." };
   }
   return { ok: true, value: trimmed };
