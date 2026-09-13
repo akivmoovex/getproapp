@@ -7,8 +7,11 @@
  *
  * Usage (manual):
  *   DEPLOYMENT_ENV=testing node scripts/migrate-website-media-to-hostinger.js --dry-run
- *   DEPLOYMENT_ENV=testing node scripts/migrate-website-media-to-hostinger.js --confirm migrate-website-media-to-hostinger
+ *   DEPLOYMENT_ENV=testing node scripts/migrate-website-media-to-hostinger.js --confirm migrate-website-media-to-hostinger --keep-payload --bulk
  *   ... --ids=<uuid>,<uuid> --keep-payload
+ *
+ * Origin file bytes under the canonical MEDIA_STORAGE_ROOT are authoritative.
+ * Do not mirror to domains/…/moovex-media. Keep payload_bytes when --keep-payload.
  */
 
 const { createHostingerMediaStorage } = require("../src/platform/media/hostingerMediaStorage");
@@ -19,11 +22,7 @@ const {
   buildHostingerStorageKey,
 } = require("../src/platform/media/hostingerMediaConfig");
 
-/**
- * Origin file bytes under the canonical MEDIA_STORAGE_ROOT are authoritative.
- * Do not mirror to domains/…/moovex-media. CDN response-body checksum equality
- * is not required for JPEG when Hostinger edge transforms images.
- */
+const WEBSITE_PRODUCTS = Object.freeze(["blessboard", "activeclinic"]);
 
 /**
  * @param {{ query: Function }} db
@@ -32,9 +31,13 @@ const {
  *   dryRun?: boolean,
  *   execute?: boolean,
  *   allowProduction?: boolean,
+ *   allowBulk?: boolean,
  *   limit?: number,
  *   mediaIds?: string[],
  *   keepPayload?: boolean,
+ *   forceRewrite?: boolean,
+ *   reconcileExisting?: boolean,
+ *   productCodes?: string[],
  * }} [opts]
  */
 async function migrateWebsiteMediaToHostinger(db, opts) {
@@ -48,12 +51,24 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
       ok: false,
       code: cfg.rejectionCode || "media_storage_root_unset",
       migrated: 0,
+      failed: 0,
+      skipped: 0,
       storageRoot: cfg.storageRoot,
       mediaStorageRootSource: cfg.mediaStorageRootSource,
     };
   }
   if (cfg.environment !== "testing" && !options.allowProduction) {
-    return { ok: false, code: "refused_non_testing_environment", migrated: 0 };
+    return { ok: false, code: "refused_non_testing_environment", migrated: 0, failed: 0, skipped: 0 };
+  }
+  if (cfg.storageRoot && String(cfg.storageRoot).includes("/domains/pronline.org/moovex-media")) {
+    return {
+      ok: false,
+      code: "refused_non_canonical_shadow_root",
+      migrated: 0,
+      failed: 0,
+      skipped: 0,
+      storageRoot: cfg.storageRoot,
+    };
   }
   const storage = createHostingerMediaStorage(env, { config: cfg });
 
@@ -61,12 +76,29 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
     ? options.mediaIds.map((id) => String(id || "").trim().toLowerCase()).filter(Boolean)
     : [];
   if (mediaIds.length > 4 && !options.allowBulk) {
-    return { ok: false, code: "refused_more_than_four_ids_without_allow_bulk", migrated: 0 };
+    return {
+      ok: false,
+      code: "refused_more_than_four_ids_without_allow_bulk",
+      migrated: 0,
+      failed: 0,
+      skipped: 0,
+    };
+  }
+
+  const productCodes = (Array.isArray(options.productCodes) && options.productCodes.length
+    ? options.productCodes
+    : WEBSITE_PRODUCTS
+  )
+    .map((p) => String(p || "").trim().toLowerCase())
+    .filter((p) => WEBSITE_PRODUCTS.includes(p));
+  if (!productCodes.length) {
+    return { ok: false, code: "invalid_product_codes", migrated: 0, failed: 0, skipped: 0 };
   }
 
   const providerClause = options.forceRewrite
     ? `AND m.payload_bytes IS NOT NULL`
-    : `AND m.payload_bytes IS NOT NULL AND COALESCE(m.storage_provider, 'database') = 'database'`;
+    : `AND m.payload_bytes IS NOT NULL
+       AND COALESCE(m.storage_provider, 'database') <> 'hostinger'`;
 
   let rows;
   if (mediaIds.length) {
@@ -78,11 +110,15 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
         WHERE m.id = ANY($1::uuid[])
           AND m.media_kind = 'image'
           AND m.status = 'active'
+          AND i.product_code = ANY($2::text[])
           ${providerClause}
         ORDER BY m.created_at ASC`,
-      [mediaIds]
+      [mediaIds, productCodes]
     );
   } else {
+    const limit = options.allowBulk
+      ? Math.min(Number(options.limit) || 2000, 5000)
+      : Math.min(Number(options.limit) || 100, 500);
     rows = await db.query(
       `SELECT m.id, m.organization_id, m.storage_key, m.storage_provider, m.mime_type,
               m.payload_bytes, i.product_code
@@ -90,20 +126,29 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
          JOIN platform.website_instances i ON i.id = m.instance_id
         WHERE m.media_kind = 'image'
           AND m.status = 'active'
+          AND i.product_code = ANY($1::text[])
           AND m.payload_bytes IS NOT NULL
-          AND COALESCE(m.storage_provider, 'database') = 'database'
+          AND COALESCE(m.storage_provider, 'database') <> 'hostinger'
         ORDER BY m.created_at ASC
-        LIMIT $1`,
-      [Math.min(Number(options.limit) || 100, 500)]
+        LIMIT $2`,
+      [productCodes, limit]
     );
   }
 
   let migrated = 0;
+  let skipped = 0;
   const results = [];
   const errors = [];
+  const byProduct = { blessboard: 0, activeclinic: 0 };
+
   for (const row of rows.rows) {
     try {
       const mediaId = row.id;
+      if (!WEBSITE_PRODUCTS.includes(String(row.product_code || "").toLowerCase())) {
+        skipped += 1;
+        results.push({ mediaId, skipped: true, reason: "non_website_product" });
+        continue;
+      }
       const storageKey = buildHostingerStorageKey({
         environment: cfg.environment,
         productCode: row.product_code,
@@ -118,6 +163,7 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
       }
       if (dryRun) {
         migrated += 1;
+        byProduct[row.product_code] = (byProduct[row.product_code] || 0) + 1;
         results.push({
           mediaId,
           productCode: row.product_code,
@@ -148,7 +194,10 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
         wrote = true;
       } catch (err) {
         if (err && err.code === "KEY_EXISTS" && storage.mediaExists(storageKey)) {
-          if (options.forceRewrite === true) {
+          const existing = await storage.readMedia(storageKey);
+          if (Buffer.isBuffer(existing) && existing.equals(payloadBuf)) {
+            wrote = false;
+          } else if (options.forceRewrite === true || options.reconcileExisting === true) {
             await storage.deleteMedia({ storageKey });
             await storage.storeMedia({
               productCode: row.product_code,
@@ -161,7 +210,9 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
             wrote = true;
             forced = true;
           } else {
-            wrote = false;
+            throw Object.assign(new Error("hostinger_existing_file_bytes_mismatch"), {
+              code: "HOSTINGER_FILE_BYTES_MISMATCH",
+            });
           }
         } else {
           throw err;
@@ -190,12 +241,14 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
         });
       }
 
+      // Metadata update only after origin verify. Failures above leave DB unchanged.
       if (keepPayload) {
         await db.query(
           `UPDATE platform.website_media
               SET storage_provider = $3,
                   storage_key = $4
-            WHERE id = $1 AND organization_id = $2`,
+            WHERE id = $1 AND organization_id = $2
+              AND COALESCE(storage_provider, 'database') <> 'hostinger'`,
           [mediaId, row.organization_id, PROVIDER_HOSTINGER, storageKey]
         );
       } else {
@@ -204,12 +257,14 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
               SET storage_provider = $3,
                   storage_key = $4,
                   payload_bytes = NULL
-            WHERE id = $1 AND organization_id = $2`,
+            WHERE id = $1 AND organization_id = $2
+              AND COALESCE(storage_provider, 'database') <> 'hostinger'`,
           [mediaId, row.organization_id, PROVIDER_HOSTINGER, storageKey]
         );
       }
 
       migrated += 1;
+      byProduct[row.product_code] = (byProduct[row.product_code] || 0) + 1;
       results.push({
         mediaId,
         productCode: row.product_code,
@@ -220,28 +275,35 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
         keepPayload,
         fileExists: true,
         byteSize: expectedBytes,
-        storageRoot: cfg.storageRoot,
       });
     } catch (err) {
       errors.push({
         mediaId: row.id,
+        productCode: row.product_code,
         code: (err && err.code) || "migrate_failed",
         message: err && err.message ? String(err.message).slice(0, 120) : "unknown",
       });
     }
   }
+
   return {
     ok: errors.length === 0,
     dryRun,
     keepPayload,
     migrated,
+    failed: errors.length,
+    skipped,
     scanned: rows.rows.length,
-    results,
+    byProduct,
+    // Cap result detail for bulk responses; errors always fully returned.
+    results: options.allowBulk && results.length > 50 ? results.slice(0, 50) : results,
+    resultsTruncated: Boolean(options.allowBulk && results.length > 50),
     errors,
     providerFrom: PROVIDER_DATABASE,
     providerTo: PROVIDER_HOSTINGER,
     storageRoot: cfg.storageRoot,
     mediaStorageRootSource: cfg.mediaStorageRootSource,
+    mirroringDisabled: true,
   };
 }
 
@@ -264,6 +326,11 @@ async function main() {
     console.error("Refusing: pass --confirm migrate-website-media-to-hostinger to execute");
     process.exit(2);
   }
+  if (!args.includes("--keep-payload") && !dryRun) {
+    // eslint-disable-next-line no-console
+    console.error("Refusing execute without --keep-payload (payload cleanup is a separate step)");
+    process.exit(2);
+  }
   const { getPgPool } = require("../src/db/pg");
   const pool = getPgPool();
   const result = await migrateWebsiteMediaToHostinger(pool, {
@@ -272,6 +339,8 @@ async function main() {
     env: process.env,
     mediaIds: parseIdsArg(args),
     keepPayload: args.includes("--keep-payload"),
+    allowBulk: args.includes("--bulk"),
+    reconcileExisting: args.includes("--bulk") || args.includes("--reconcile"),
   });
   // eslint-disable-next-line no-console
   console.log(JSON.stringify(result));
@@ -289,4 +358,5 @@ if (require.main === module) {
 
 module.exports = {
   migrateWebsiteMediaToHostinger,
+  WEBSITE_PRODUCTS,
 };

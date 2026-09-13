@@ -126,11 +126,11 @@ function createMoovexPlatformRuntimeApp(options) {
     );
   });
 
-  // Testing-only reversible sample migrator (writes on this Hostinger worker's media root).
-  // Refuses production deployment env / production media keys; max 4 IDs; keep-payload required.
+  // Testing-only reversible media migrator (writes on this Hostinger worker's media root).
+  // Sample: body.ids (max 4). Bulk: body.bulk=true (testing website media only, keep-payload required).
   app.post(
     "/__platform/qa/migrate-website-media",
-    express.json({ limit: "32kb" }),
+    express.json({ limit: "64kb" }),
     async (req, res) => {
       const {
         isPlatformRuntimeDiagnosticsEndpointAllowed,
@@ -151,12 +151,17 @@ function createMoovexPlatformRuntimeApp(options) {
       if (body.keepPayload !== true) {
         return res.status(400).json({ ok: false, code: "keep_payload_required" });
       }
+      const bulk = body.bulk === true;
       const ids = Array.isArray(body.ids) ? body.ids.map((id) => String(id || "").trim()) : [];
-      if (!ids.length || ids.length > 4) {
-        return res.status(400).json({ ok: false, code: "ids_required_max_4" });
-      }
-      if (ids.some((id) => !/^[0-9a-f-]{36}$/i.test(id))) {
-        return res.status(400).json({ ok: false, code: "invalid_media_id" });
+      if (!bulk) {
+        if (!ids.length || ids.length > 4) {
+          return res.status(400).json({ ok: false, code: "ids_required_max_4" });
+        }
+        if (ids.some((id) => !/^[0-9a-f-]{36}$/i.test(id))) {
+          return res.status(400).json({ ok: false, code: "invalid_media_id" });
+        }
+      } else if (ids.length) {
+        return res.status(400).json({ ok: false, code: "bulk_must_not_pass_ids" });
       }
       try {
         const { migrateWebsiteMediaToHostinger } = require("../../../scripts/migrate-website-media-to-hostinger");
@@ -165,9 +170,12 @@ function createMoovexPlatformRuntimeApp(options) {
           dryRun: false,
           execute: true,
           env,
-          mediaIds: ids,
+          mediaIds: bulk ? [] : ids,
           keepPayload: true,
+          allowBulk: bulk,
+          reconcileExisting: bulk || body.forceRewrite === true,
           forceRewrite: body.forceRewrite === true,
+          limit: bulk ? 5000 : undefined,
         });
         return res.status(result.ok ? 200 : 500).json(result);
       } catch (err) {
