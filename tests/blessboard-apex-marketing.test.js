@@ -73,6 +73,7 @@ describe("blessboard apex marketing batch 2b", () => {
   it("ships marketing templates and assets", () => {
     for (const rel of [
       "views/blessboard/v5/apex/features.ejs",
+      "views/blessboard/v5/apex/about.ejs",
       "views/blessboard/v5/apex/for-churches.ejs",
       "views/blessboard/v5/apex/pricing.ejs",
       "views/blessboard/v5/apex/directory.ejs",
@@ -104,6 +105,7 @@ describe("blessboard apex marketing batch 2b", () => {
     const app = makeApp();
     const paths = [
       ["/features", /Built for the/, /data-bb-apex-page="features"/, /data-bb-batch="fg-01"/],
+      ["/about", /About BlessBoard/, /data-bb-about="platform-v11"/, null],
       ["/for-churches", /Sacred Clarity/, /data-bb-apex-page="for-churches"/, null],
       ["/pricing", /Transparent Pricing/, /data-bb-plan="growth"/, null],
       ["/directory", /Find a church/, /data-bb-apex-page="directory"/, null],

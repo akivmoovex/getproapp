@@ -1,0 +1,216 @@
+<%#
+  Apex About — Stitch project 5605422464483361302 (BlessBoard desktop + mobile)
+%>
+<%
+  var bi = typeof buildInfo === "object" && buildInfo ? buildInfo : {
+    version: "1.01.(unavailable)",
+    build: "(unavailable)",
+    environmentLabel: "Production",
+    environment: "production"
+  };
+  var envIsTesting = bi.environment === "testing";
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<article class="bb-about-v11" data-bb-about="platform-v11" data-product="BlessBoard">
+  <div class="bb-about-v11__inner">
+    <section class="bb-about-v11__hero" aria-labelledby="bb-about-heading">
+      <nav class="bb-about-v11__crumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span class="bb-about-v11__crumb-sep" aria-hidden="true">/</span>
+        <span aria-current="page">About</span>
+      </nav>
+      <p class="bb-about-v11__badge">
+        <span class="bb-about-v11__badge-dot" aria-hidden="true"></span>
+        Platform Overview
+      </p>
+      <h1 id="bb-about-heading">About BlessBoard</h1>
+      <p class="bb-about-v11__subtitle">Digital tools that help churches manage, connect and grow their communities.</p>
+    </section>
+
+    <section class="bb-about-v11__intro" aria-labelledby="bb-about-intro-title">
+      <div class="bb-about-v11__intro-card">
+        <div class="bb-about-v11__intro-accent" aria-hidden="true"></div>
+        <div class="bb-about-v11__intro-icon" aria-hidden="true">
+          <span class="material-symbols-outlined">volunteer_activism</span>
+        </div>
+        <div class="bb-about-v11__intro-body">
+          <h2 id="bb-about-intro-title" class="bb-about-v11__intro-title bb-about-v11__intro-title--desktop">Empowering Ministry Across Generations</h2>
+          <p>BlessBoard provides churches and ministry organisations with tools for managing their organisation, branches, members, website presence and digital services from one platform.</p>
+        </div>
+        <div class="bb-about-v11__intro-pill" aria-hidden="true">
+          <span class="material-symbols-outlined">verified</span>
+          <span>Unified Faith Architecture</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="bb-about-v11__system" aria-labelledby="bb-about-system-heading">
+      <div class="bb-about-v11__system-card">
+        <header class="bb-about-v11__system-head">
+          <div class="bb-about-v11__system-head-main">
+            <div class="bb-about-v11__system-icon" aria-hidden="true">
+              <span class="material-symbols-outlined">info</span>
+            </div>
+            <div>
+              <h2 id="bb-about-system-heading">
+                <span class="bb-about-v11__system-title--desktop">System &amp; Version Information</span>
+                <span class="bb-about-v11__system-title--mobile">System Information</span>
+              </h2>
+              <p class="bb-about-v11__system-lede">Runtime metadata and active deployment configuration</p>
+            </div>
+          </div>
+          <p class="bb-about-v11__status-pill" role="status">
+            <span class="bb-about-v11__status-dot" aria-hidden="true"></span>
+            <span class="bb-about-v11__status-desktop">All Systems Operational</span>
+            <span class="bb-about-v11__status-mobile"><%= bi.environmentLabel %></span>
+          </p>
+        </header>
+
+        <div class="bb-about-v11__meta-grid">
+          <div class="bb-about-v11__meta-tile">
+            <span class="bb-about-v11__meta-label">Product Target</span>
+            <span class="bb-about-v11__meta-label bb-about-v11__meta-label--mobile">Product</span>
+            <p class="bb-about-v11__meta-value">BlessBoard</p>
+            <p class="bb-about-v11__meta-foot bb-about-v11__meta-foot--accent">
+              <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+              Production Grade
+            </p>
+          </div>
+
+          <div class="bb-about-v11__meta-tile">
+            <div class="bb-about-v11__meta-label-row">
+              <span class="bb-about-v11__meta-label">Application Version</span>
+              <span class="bb-about-v11__meta-label bb-about-v11__meta-label--mobile">Version</span>
+              <span class="bb-about-v11__chip">Active</span>
+            </div>
+            <p class="bb-about-v11__meta-value bb-about-v11__meta-value--version">
+              <span class="bb-about-v11__version-prefix bb-about-v11__version-prefix--mobile">Version </span><%= bi.version %>
+            </p>
+            <p class="bb-about-v11__meta-foot">
+              <span class="material-symbols-outlined" aria-hidden="true">sync_saved_locally</span>
+              Dynamic Tag
+            </p>
+          </div>
+
+          <div class="bb-about-v11__meta-tile">
+            <span class="bb-about-v11__meta-label">Build Commit</span>
+            <span class="bb-about-v11__meta-label bb-about-v11__meta-label--mobile">Build</span>
+            <div class="bb-about-v11__build-row">
+              <code class="bb-about-v11__build" id="bb-about-build"><%= bi.build %></code>
+              <button type="button" class="bb-about-v11__copy" data-copy-target="bb-about-build" aria-label="Copy build SHA">
+                <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+              </button>
+            </div>
+            <p class="bb-about-v11__meta-foot">
+              <span class="material-symbols-outlined" aria-hidden="true">commit</span>
+              Dynamic Git SHA
+            </p>
+          </div>
+
+          <div class="bb-about-v11__meta-tile">
+            <span class="bb-about-v11__meta-label">Runtime Environment</span>
+            <span class="bb-about-v11__meta-label bb-about-v11__meta-label--mobile">Environment</span>
+            <p class="bb-about-v11__meta-value bb-about-v11__meta-value--env">
+              <span class="bb-about-v11__env-dot<%= envIsTesting ? ' bb-about-v11__env-dot--testing' : '' %>" aria-hidden="true"></span>
+              <%= bi.environmentLabel %>
+            </p>
+            <p class="bb-about-v11__meta-foot">
+              <span class="material-symbols-outlined" aria-hidden="true">cloud_done</span>
+              Deployment profile
+            </p>
+          </div>
+        </div>
+
+        <footer class="bb-about-v11__system-foot">
+          <p class="bb-about-v11__pipeline-note">
+            <span class="material-symbols-outlined" aria-hidden="true">terminal</span>
+            Version and build hashes are injected dynamically at deployment time.
+          </p>
+        </footer>
+      </div>
+    </section>
+
+    <section class="bb-about-v11__caps" aria-labelledby="bb-about-caps-heading">
+      <header class="bb-about-v11__caps-head">
+        <h2 id="bb-about-caps-heading">Platform Capabilities</h2>
+        <p class="bb-about-v11__caps-lede bb-about-v11__caps-lede--desktop">Core modules included in your platform deployment</p>
+        <p class="bb-about-v11__caps-lede bb-about-v11__caps-lede--mobile">4 Core Pillars</p>
+      </header>
+      <div class="bb-about-v11__caps-grid">
+        <article class="bb-about-v11__cap-card">
+          <div class="bb-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">language</span></div>
+          <h3>Website Management</h3>
+          <p class="bb-about-v11__cap-desc--desktop">Digital public facing church sites, customizable landing experiences &amp; devotional blogs.</p>
+          <p class="bb-about-v11__cap-desc--mobile">Modern, responsive digital presence built for ministries with real-time editing and sermon broadcasting.</p>
+          <div class="bb-about-v11__cap-foot">
+            <span class="bb-about-v11__cap-included"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Included Module</span>
+            <span>v2.4 Ready</span>
+          </div>
+        </article>
+        <article class="bb-about-v11__cap-card">
+          <div class="bb-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">hub</span></div>
+          <h3>Church &amp; Branch Management</h3>
+          <p class="bb-about-v11__cap-desc--desktop">Multi-campus orchestration, role permissions, campus facilities, and regional ministry oversight.</p>
+          <p class="bb-about-v11__cap-desc--mobile">Multi-site oversight, leadership coordination, campus events, and organizational operations.</p>
+          <div class="bb-about-v11__cap-foot">
+            <span class="bb-about-v11__cap-included"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Included Module</span>
+            <span>Multi-Tenant</span>
+          </div>
+        </article>
+        <article class="bb-about-v11__cap-card">
+          <div class="bb-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">groups</span></div>
+          <h3>Member Administration</h3>
+          <p class="bb-about-v11__cap-desc--desktop">Pastoral care pipelines, secure member directories, discipleship tracking &amp; volunteer schedules.</p>
+          <p class="bb-about-v11__cap-desc--mobile">Directory directories, family grouping, pastoral notes, volunteer rotas, and secure records.</p>
+          <div class="bb-about-v11__cap-foot">
+            <span class="bb-about-v11__cap-included"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Included Module</span>
+            <span>Encrypted PII</span>
+          </div>
+        </article>
+        <article class="bb-about-v11__cap-card">
+          <div class="bb-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">podcasts</span></div>
+          <h3>Publishing &amp; Digital Presence</h3>
+          <p class="bb-about-v11__cap-desc--desktop">Media archiving, sermon podcast distribution, integrated live streams &amp; tithe giving portals.</p>
+          <p class="bb-about-v11__cap-desc--mobile">Prayer chains, devotional notifications, bulletin distribution, and media delivery.</p>
+          <div class="bb-about-v11__cap-foot">
+            <span class="bb-about-v11__cap-included"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Included Module</span>
+            <span>Fast CDN</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <nav class="bb-about-v11__governance" aria-label="Foundation and governance">
+      <p class="bb-about-v11__governance-label">BlessBoard Foundation &amp; Governance</p>
+      <ul class="bb-about-v11__governance-links">
+        <li><a href="/privacy">Privacy Policy</a></li>
+        <li><a href="/terms">Terms of Service</a></li>
+        <li><a href="/"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Return to Home</a></li>
+      </ul>
+    </nav>
+
+    <nav class="bb-about-v11__quicklinks" aria-label="About quick links">
+      <a href="/"><span class="material-symbols-outlined" aria-hidden="true">home</span> Home <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
+      <a href="/privacy"><span class="material-symbols-outlined" aria-hidden="true">security</span> Privacy Policy <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
+      <a href="/terms"><span class="material-symbols-outlined" aria-hidden="true">gavel</span> Terms of Service <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
+    </nav>
+  </div>
+</article>
+
+<script>
+(function () {
+  var buttons = document.querySelectorAll(".bb-about-v11__copy[data-copy-target]");
+  buttons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var id = btn.getAttribute("data-copy-target");
+      var el = id ? document.getElementById(id) : null;
+      var text = el ? (el.textContent || "").trim() : "";
+      if (!text || !navigator.clipboard) return;
+      navigator.clipboard.writeText(text).catch(function () {});
+    });
+  });
+})();
+</script>
+
+<%- include('../partials/apex-shell-end') %>

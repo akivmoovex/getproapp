@@ -2806,3 +2806,648 @@ ul.bb-apex-features {
     display: none;
   }
 }
+
+/* ===== BlessBoard platform About V1.1 (Stitch project 5605422464483361302) ===== */
+.bb-apex-body .bb-about-v11 {
+  --bb-about-secondary: #4f46e5;
+  --bb-about-secondary-soft: #645efb;
+  --bb-about-surface: #f8f9ff;
+  --bb-about-surface-low: #eff4ff;
+  --bb-about-surface-container: #e5eeff;
+  --bb-about-on: #0b1c30;
+  --bb-about-muted: #45464d;
+  --bb-about-outline: #c6c6cd;
+  --bb-about-card: #ffffff;
+  --bb-about-amber: #f59e0b;
+  --bb-about-success: #059669;
+  background: var(--bb-about-surface);
+  color: var(--bb-about-on);
+}
+
+.bb-apex-body .bb-about-v11__inner {
+  width: min(100% - 2rem, 80rem);
+  margin: 0 auto;
+  padding: 2.5rem 0 3rem;
+}
+
+.bb-apex-body .bb-about-v11__hero {
+  max-width: 48rem;
+  margin-bottom: 2.5rem;
+}
+
+.bb-apex-body .bb-about-v11__crumb {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+  font-size: 0.8125rem;
+  color: var(--bb-about-muted);
+}
+
+.bb-apex-body .bb-about-v11__crumb a {
+  color: inherit;
+  text-decoration: none;
+}
+
+.bb-apex-body .bb-about-v11__crumb a:hover,
+.bb-apex-body .bb-about-v11__crumb a:focus-visible {
+  color: var(--bb-about-secondary);
+}
+
+.bb-apex-body .bb-about-v11__badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0 0 1rem;
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--bb-about-outline);
+  background: var(--bb-about-surface-container);
+  color: var(--bb-about-secondary);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.bb-apex-body .bb-about-v11__badge-dot,
+.bb-apex-body .bb-about-v11__status-dot,
+.bb-apex-body .bb-about-v11__env-dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background: var(--bb-about-secondary);
+  flex-shrink: 0;
+}
+
+.bb-apex-body .bb-about-v11__status-dot,
+.bb-apex-body .bb-about-v11__env-dot {
+  background: var(--bb-about-success);
+}
+
+.bb-apex-body .bb-about-v11__env-dot--testing {
+  background: #d97706;
+}
+
+.bb-apex-body .bb-about-v11__hero h1 {
+  margin: 0 0 1rem;
+  font-size: clamp(2rem, 4vw, 3rem);
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+  font-weight: 700;
+  color: var(--bb-about-on);
+}
+
+.bb-apex-body .bb-about-v11__subtitle {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.6;
+  color: var(--bb-about-muted);
+}
+
+.bb-apex-body .bb-about-v11__intro {
+  margin-bottom: 2.5rem;
+}
+
+.bb-apex-body .bb-about-v11__intro-card {
+  position: relative;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 1.5rem;
+  padding: 1.5rem 1.75rem;
+  border-radius: 1rem;
+  border: 1px solid #d3e4fe;
+  background: var(--bb-about-card);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.bb-apex-body .bb-about-v11__intro-accent {
+  position: absolute;
+  inset: 0 0 auto 0;
+  height: 4px;
+  background: linear-gradient(90deg, var(--bb-about-secondary), var(--bb-about-secondary-soft), var(--bb-about-amber));
+}
+
+.bb-apex-body .bb-about-v11__intro-icon {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 1rem;
+  display: grid;
+  place-items: center;
+  color: #fff;
+  background: linear-gradient(135deg, var(--bb-about-secondary), #3730a3);
+  box-shadow: 0 10px 20px rgba(79, 70, 229, 0.25);
+  flex-shrink: 0;
+}
+
+.bb-apex-body .bb-about-v11__intro-icon .material-symbols-outlined {
+  font-size: 2rem;
+}
+
+.bb-apex-body .bb-about-v11__intro-body {
+  flex: 1 1 16rem;
+  min-width: 0;
+}
+
+.bb-apex-body .bb-about-v11__intro-body h2 {
+  margin: 0 0 0.5rem;
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.bb-apex-body .bb-about-v11__intro-body p {
+  margin: 0;
+  color: var(--bb-about-muted);
+  line-height: 1.6;
+}
+
+.bb-apex-body .bb-about-v11__intro-pill {
+  display: none;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 1rem;
+  border-radius: 0.75rem;
+  border: 1px solid var(--bb-about-outline);
+  background: var(--bb-about-surface-low);
+  font-size: 0.875rem;
+  font-weight: 500;
+  color: var(--bb-about-on);
+}
+
+.bb-apex-body .bb-about-v11__intro-pill .material-symbols-outlined {
+  color: var(--bb-about-secondary);
+  font-size: 1.25rem;
+}
+
+.bb-apex-body .bb-about-v11__system {
+  margin-bottom: 3rem;
+}
+
+.bb-apex-body .bb-about-v11__system-card {
+  border-radius: 1rem;
+  border: 1px solid #d3e4fe;
+  background: var(--bb-about-card);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  overflow: hidden;
+}
+
+.bb-apex-body .bb-about-v11__system-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid #dce9ff;
+  background: #f8f9ff;
+}
+
+.bb-apex-body .bb-about-v11__system-head-main {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+.bb-apex-body .bb-about-v11__system-icon {
+  width: 2rem;
+  height: 2rem;
+  border-radius: 0.5rem;
+  display: grid;
+  place-items: center;
+  background: var(--bb-about-surface-container);
+  color: var(--bb-about-secondary);
+}
+
+.bb-apex-body .bb-about-v11__system-head h2 {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.bb-apex-body .bb-about-v11__system-lede {
+  margin: 0.15rem 0 0;
+  font-size: 0.75rem;
+  color: var(--bb-about-muted);
+}
+
+.bb-apex-body .bb-about-v11__status-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin: 0;
+  padding: 0.35rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid #a7f3d0;
+  background: #ecfdf5;
+  color: #065f46;
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.bb-apex-body .bb-about-v11__meta-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  padding: 1.5rem;
+}
+
+.bb-apex-body .bb-about-v11__meta-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 1.15rem;
+  border-radius: 0.75rem;
+  border: 1px solid rgba(198, 198, 205, 0.6);
+  background: var(--bb-about-surface-low);
+  min-width: 0;
+}
+
+.bb-apex-body .bb-about-v11__meta-label {
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--bb-about-muted);
+}
+
+.bb-apex-body .bb-about-v11__meta-label-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.bb-apex-body .bb-about-v11__chip {
+  padding: 0.1rem 0.4rem;
+  border-radius: 0.35rem;
+  background: rgba(79, 70, 229, 0.1);
+  color: var(--bb-about-secondary);
+  font-size: 0.625rem;
+  font-weight: 700;
+}
+
+.bb-apex-body .bb-about-v11__meta-value {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--bb-about-on);
+  word-break: break-word;
+}
+
+.bb-apex-body .bb-about-v11__meta-value--version {
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  color: var(--bb-about-secondary);
+  letter-spacing: -0.02em;
+}
+
+.bb-apex-body .bb-about-v11__meta-value--env {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.bb-apex-body .bb-about-v11__build-row {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  min-width: 0;
+}
+
+.bb-apex-body .bb-about-v11__build {
+  display: inline-block;
+  max-width: 100%;
+  padding: 0.15rem 0.55rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--bb-about-outline);
+  background: var(--bb-about-card);
+  font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
+  font-size: 1rem;
+  font-weight: 600;
+  overflow-wrap: anywhere;
+}
+
+.bb-apex-body .bb-about-v11__copy {
+  border: 0;
+  background: transparent;
+  color: var(--bb-about-muted);
+  border-radius: 0.5rem;
+  padding: 0.35rem;
+  cursor: pointer;
+}
+
+.bb-apex-body .bb-about-v11__copy:hover,
+.bb-apex-body .bb-about-v11__copy:focus-visible {
+  color: var(--bb-about-secondary);
+  background: #dce9ff;
+}
+
+.bb-apex-body .bb-about-v11__meta-foot {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin: 0.75rem 0 0;
+  padding-top: 0.75rem;
+  border-top: 1px solid rgba(198, 198, 205, 0.4);
+  font-size: 0.75rem;
+  color: var(--bb-about-muted);
+}
+
+.bb-apex-body .bb-about-v11__meta-foot--accent {
+  color: var(--bb-about-secondary);
+  font-weight: 600;
+}
+
+.bb-apex-body .bb-about-v11__meta-foot .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.bb-apex-body .bb-about-v11__system-foot {
+  padding: 1rem 1.5rem;
+  border-top: 1px solid #dce9ff;
+}
+
+.bb-apex-body .bb-about-v11__pipeline-note {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.4rem;
+  margin: 0;
+  font-size: 0.75rem;
+  color: #76777d;
+}
+
+.bb-apex-body .bb-about-v11__pipeline-note .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.bb-apex-body .bb-about-v11__caps {
+  margin-bottom: 2.5rem;
+}
+
+.bb-apex-body .bb-about-v11__caps-head {
+  margin-bottom: 1.5rem;
+}
+
+.bb-apex-body .bb-about-v11__caps-head h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.5rem;
+  font-weight: 600;
+}
+
+.bb-apex-body .bb-about-v11__caps-lede {
+  margin: 0;
+  color: var(--bb-about-muted);
+  font-size: 0.875rem;
+}
+
+.bb-apex-body .bb-about-v11__caps-grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+}
+
+.bb-apex-body .bb-about-v11__cap-card {
+  display: flex;
+  flex-direction: column;
+  padding: 1.35rem;
+  border-radius: 1rem;
+  border: 1px solid #d3e4fe;
+  background: var(--bb-about-card);
+  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  transition: border-color 0.15s ease;
+}
+
+.bb-apex-body .bb-about-v11__cap-card:hover {
+  border-color: rgba(79, 70, 229, 0.4);
+}
+
+.bb-apex-body .bb-about-v11__cap-icon {
+  width: 3rem;
+  height: 3rem;
+  border-radius: 0.75rem;
+  display: grid;
+  place-items: center;
+  margin-bottom: 1rem;
+  background: var(--bb-about-surface-low);
+  color: var(--bb-about-secondary);
+}
+
+.bb-apex-body .bb-about-v11__cap-card h3 {
+  margin: 0 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
+.bb-apex-body .bb-about-v11__cap-card p {
+  margin: 0;
+  color: var(--bb-about-muted);
+  font-size: 0.875rem;
+  line-height: 1.55;
+  flex: 1;
+}
+
+.bb-apex-body .bb-about-v11__cap-foot {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-top: 1.25rem;
+  padding-top: 1rem;
+  border-top: 1px solid #dce9ff;
+  font-size: 0.75rem;
+  color: var(--bb-about-muted);
+}
+
+.bb-apex-body .bb-about-v11__cap-included {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--bb-about-secondary);
+  font-weight: 600;
+}
+
+.bb-apex-body .bb-about-v11__cap-included .material-symbols-outlined {
+  font-size: 1rem;
+}
+
+.bb-apex-body .bb-about-v11__governance {
+  display: none;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1.15rem 1.5rem;
+  margin-bottom: 1rem;
+  border-radius: 1rem;
+  border: 1px solid #d3e4fe;
+  background: var(--bb-about-card);
+}
+
+.bb-apex-body .bb-about-v11__governance-label {
+  margin: 0;
+  font-weight: 600;
+  color: var(--bb-about-on);
+}
+
+.bb-apex-body .bb-about-v11__governance-links {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1.25rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  font-size: 0.8125rem;
+}
+
+.bb-apex-body .bb-about-v11__governance-links a {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  color: var(--bb-about-muted);
+  text-decoration: none;
+}
+
+.bb-apex-body .bb-about-v11__governance-links a:hover,
+.bb-apex-body .bb-about-v11__governance-links a:focus-visible {
+  color: var(--bb-about-secondary);
+}
+
+.bb-apex-body .bb-about-v11__quicklinks {
+  display: grid;
+  border-radius: 0.75rem;
+  border: 1px solid var(--bb-about-outline);
+  background: var(--bb-about-card);
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+.bb-apex-body .bb-about-v11__quicklinks a {
+  display: flex;
+  align-items: center;
+  gap: 0.65rem;
+  padding: 0.9rem 1rem;
+  color: var(--bb-about-on);
+  text-decoration: none;
+  font-size: 0.875rem;
+  font-weight: 500;
+  border-bottom: 1px solid rgba(198, 198, 205, 0.7);
+}
+
+.bb-apex-body .bb-about-v11__quicklinks a:last-child {
+  border-bottom: 0;
+}
+
+.bb-apex-body .bb-about-v11__quicklinks a:hover,
+.bb-apex-body .bb-about-v11__quicklinks a:focus-visible {
+  background: var(--bb-about-surface-low);
+}
+
+.bb-apex-body .bb-about-v11__quicklinks a .material-symbols-outlined:last-child {
+  margin-left: auto;
+  color: var(--bb-about-muted);
+  font-size: 1.1rem;
+}
+
+/* Responsive visibility helpers */
+.bb-apex-body .bb-about-v11__system-title--desktop,
+.bb-apex-body .bb-about-v11__status-desktop,
+.bb-apex-body .bb-about-v11__meta-label:not(.bb-about-v11__meta-label--mobile),
+.bb-apex-body .bb-about-v11__caps-lede--desktop,
+.bb-apex-body .bb-about-v11__cap-desc--desktop,
+.bb-apex-body .bb-about-v11__intro-title--desktop,
+.bb-apex-body .bb-about-v11__cap-foot,
+.bb-apex-body .bb-about-v11__system-lede,
+.bb-apex-body .bb-about-v11__meta-foot,
+.bb-apex-body .bb-about-v11__chip {
+  display: none;
+}
+
+.bb-apex-body .bb-about-v11__system-title--mobile,
+.bb-apex-body .bb-about-v11__status-mobile,
+.bb-apex-body .bb-about-v11__meta-label--mobile,
+.bb-apex-body .bb-about-v11__caps-lede--mobile,
+.bb-apex-body .bb-about-v11__cap-desc--mobile,
+.bb-apex-body .bb-about-v11__version-prefix--mobile {
+  display: inline;
+}
+
+.bb-apex-body .bb-about-v11__caps-lede--mobile {
+  display: block;
+}
+
+.bb-apex-body .bb-about-v11__meta-label-row .bb-about-v11__meta-label--mobile {
+  display: inline;
+}
+
+.bb-apex-body .bb-about-v11__meta-label-row .bb-about-v11__meta-label:not(.bb-about-v11__meta-label--mobile) {
+  display: none;
+}
+
+@media (min-width: 768px) {
+  .bb-apex-body .bb-about-v11__meta-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    padding: 1.75rem 2rem;
+  }
+
+  .bb-apex-body .bb-about-v11__caps-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+  }
+
+  .bb-apex-body .bb-about-v11__quicklinks {
+    display: none;
+  }
+
+  .bb-apex-body .bb-about-v11__governance {
+    display: flex;
+  }
+
+  .bb-apex-body .bb-about-v11__system-title--desktop,
+  .bb-apex-body .bb-about-v11__status-desktop,
+  .bb-apex-body .bb-about-v11__meta-label:not(.bb-about-v11__meta-label--mobile),
+  .bb-apex-body .bb-about-v11__caps-lede--desktop,
+  .bb-apex-body .bb-about-v11__cap-desc--desktop,
+  .bb-apex-body .bb-about-v11__intro-title--desktop,
+  .bb-apex-body .bb-about-v11__chip {
+    display: inline;
+  }
+
+  .bb-apex-body .bb-about-v11__caps-lede--desktop,
+  .bb-apex-body .bb-about-v11__cap-desc--desktop,
+  .bb-apex-body .bb-about-v11__system-lede {
+    display: block;
+  }
+
+  .bb-apex-body .bb-about-v11__cap-foot,
+  .bb-apex-body .bb-about-v11__meta-foot {
+    display: flex;
+  }
+
+  .bb-apex-body .bb-about-v11__system-title--mobile,
+  .bb-apex-body .bb-about-v11__status-mobile,
+  .bb-apex-body .bb-about-v11__meta-label--mobile,
+  .bb-apex-body .bb-about-v11__caps-lede--mobile,
+  .bb-apex-body .bb-about-v11__cap-desc--mobile,
+  .bb-apex-body .bb-about-v11__version-prefix--mobile {
+    display: none;
+  }
+
+  .bb-apex-body .bb-about-v11__meta-label-row .bb-about-v11__meta-label:not(.bb-about-v11__meta-label--mobile) {
+    display: inline;
+  }
+}
+
+@media (min-width: 1024px) {
+  .bb-apex-body .bb-about-v11__meta-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .bb-apex-body .bb-about-v11__caps-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .bb-apex-body .bb-about-v11__intro-pill {
+    display: inline-flex;
+  }
+}
+

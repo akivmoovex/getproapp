@@ -152,3 +152,23 @@ test("ActiveClinic GET /about renders V1.1 About without auth and without secret
     assert.doesNotMatch(res.text, pattern);
   }
 });
+
+test("BlessBoard V5 apex About renderer exposes 1.01 build metadata", () => {
+  const { renderAboutPage } = require("../src/blessboard/http/renderApexMarketing");
+  const html = renderAboutPage({
+    authenticated: false,
+    csrfToken: null,
+    env: { DEPLOYMENT_ENV: "testing", GETPRO_GIT_SHA: "aabbccddeeff0011" },
+  });
+  assert.match(html, /data-bb-shell="apex"/);
+  assert.match(html, /data-product="BlessBoard"/);
+  assert.match(html, /1\.01\.aabbccddeeff/);
+  assert.match(html, /Testing/);
+  assert.match(html, /href="\/about"/);
+  assert.match(html, /href="\/privacy"/);
+  assert.match(html, /href="\/terms"/);
+  assert.doesNotMatch(html, /data-product="ActiveClinic"/);
+  for (const pattern of SENSITIVE_PATTERNS) {
+    assert.doesNotMatch(html, pattern);
+  }
+});

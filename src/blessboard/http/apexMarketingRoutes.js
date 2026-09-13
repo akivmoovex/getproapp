@@ -21,6 +21,7 @@ const {
   renderRegisterChurchReviewPage,
   renderRegisterChurchSuccessPage,
   renderEmailVerificationResultPage,
+  renderAboutPage,
 } = require("./renderApexMarketing");
 const { renderTermsPage, renderPrivacyPage } = require("./renderApexLegal");
 const {
@@ -455,6 +456,7 @@ function createApexMarketingRouter(deps) {
     );
   }
 
+  router.get("/about", (req, res) => withShell(req, res, renderAboutPage, { env }));
   router.get("/features", (req, res) => withShell(req, res, renderFeaturesPage));
   router.get("/for-churches", (req, res) => withShell(req, res, renderForChurchesPage));
   router.get("/pricing", (req, res) =>
