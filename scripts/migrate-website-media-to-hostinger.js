@@ -58,6 +58,10 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
     return { ok: false, code: "refused_more_than_four_ids_without_allow_bulk", migrated: 0 };
   }
 
+  const providerClause = options.forceRewrite
+    ? `AND m.payload_bytes IS NOT NULL`
+    : `AND m.payload_bytes IS NOT NULL AND COALESCE(m.storage_provider, 'database') = 'database'`;
+
   let rows;
   if (mediaIds.length) {
     rows = await db.query(
@@ -68,8 +72,7 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
         WHERE m.id = ANY($1::uuid[])
           AND m.media_kind = 'image'
           AND m.status = 'active'
-          AND m.payload_bytes IS NOT NULL
-          AND COALESCE(m.storage_provider, 'database') = 'database'
+          ${providerClause}
         ORDER BY m.created_at ASC`,
       [mediaIds]
     );
@@ -118,20 +121,42 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
         continue;
       }
 
+      const expectedBytes = Buffer.isBuffer(row.payload_bytes)
+        ? row.payload_bytes.length
+        : Buffer.from(row.payload_bytes).length;
+      const payloadBuf = Buffer.isBuffer(row.payload_bytes)
+        ? row.payload_bytes
+        : Buffer.from(row.payload_bytes);
+
       let wrote = false;
+      let forced = false;
       try {
         await storage.storeMedia({
           productCode: row.product_code,
           organizationId: row.organization_id,
           mediaId,
           mimeType: row.mime_type,
-          buffer: row.payload_bytes,
+          buffer: payloadBuf,
           storageKey,
         });
         wrote = true;
       } catch (err) {
         if (err && err.code === "KEY_EXISTS" && storage.mediaExists(storageKey)) {
-          wrote = false;
+          if (options.forceRewrite === true) {
+            await storage.deleteMedia({ storageKey });
+            await storage.storeMedia({
+              productCode: row.product_code,
+              organizationId: row.organization_id,
+              mediaId,
+              mimeType: row.mime_type,
+              buffer: payloadBuf,
+              storageKey,
+            });
+            wrote = true;
+            forced = true;
+          } else {
+            wrote = false;
+          }
         } else {
           throw err;
         }
@@ -140,6 +165,22 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
       if (!storage.mediaExists(storageKey)) {
         throw Object.assign(new Error("hostinger_file_missing_after_write"), {
           code: "HOSTINGER_FILE_MISSING",
+        });
+      }
+      const onDisk = await storage.readMedia(storageKey);
+      if (!Buffer.isBuffer(onDisk) || onDisk.length !== expectedBytes) {
+        throw Object.assign(
+          new Error(
+            `hostinger_file_size_mismatch expected=${expectedBytes} actual=${
+              onDisk && onDisk.length
+            }`
+          ),
+          { code: "HOSTINGER_FILE_SIZE_MISMATCH" }
+        );
+      }
+      if (!onDisk.equals(payloadBuf)) {
+        throw Object.assign(new Error("hostinger_file_bytes_mismatch"), {
+          code: "HOSTINGER_FILE_BYTES_MISMATCH",
         });
       }
 
@@ -169,8 +210,10 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
         organizationId: row.organization_id,
         storageKey,
         wrote,
+        forced,
         keepPayload,
         fileExists: true,
+        byteSize: expectedBytes,
       });
     } catch (err) {
       errors.push({

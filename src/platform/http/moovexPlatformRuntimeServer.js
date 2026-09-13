@@ -167,6 +167,7 @@ function createMoovexPlatformRuntimeApp(options) {
           env,
           mediaIds: ids,
           keepPayload: true,
+          forceRewrite: body.forceRewrite === true,
         });
         return res.status(result.ok ? 200 : 500).json(result);
       } catch (err) {
