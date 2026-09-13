@@ -180,6 +180,79 @@ function createMoovexPlatformRuntimeApp(options) {
     }
   );
 
+  // Testing-only: report on-disk sizes for a storage key across durable roots.
+  app.get("/__platform/qa/media-file-stat", async (req, res) => {
+    const {
+      isPlatformRuntimeDiagnosticsEndpointAllowed,
+    } = require("../../startup/platformRuntimeSnapshot");
+    if (!isPlatformRuntimeDiagnosticsEndpointAllowed(env)) {
+      return res.status(404).json({ ok: false, code: "not_found" });
+    }
+    if (String(env.DEPLOYMENT_ENV || "").trim().toLowerCase() !== "testing") {
+      return res.status(403).json({ ok: false, code: "refused_non_testing_environment" });
+    }
+    const key = String(req.query.key || "").replace(/^\/+/, "");
+    if (!key || key.includes("..") || key.startsWith("production/") || key === "production") {
+      return res.status(400).json({ ok: false, code: "invalid_key" });
+    }
+    try {
+      const fs = require("fs");
+      const fsp = require("fs/promises");
+      const path = require("path");
+      const crypto = require("crypto");
+      const {
+        resolveHostingerMediaConfig,
+      } = require("../media/hostingerMediaConfig");
+      const {
+        buildPersistentMediaRootCandidates,
+      } = require("../media/hostingerMediaPersistenceProbe");
+      const cfg = resolveHostingerMediaConfig(env);
+      const roots = Array.from(
+        new Set(
+          [cfg.storageRoot, ...buildPersistentMediaRootCandidates(process.cwd())].filter(Boolean)
+        )
+      );
+      const files = [];
+      for (const root of roots) {
+        const abs = path.resolve(root, ...key.split("/"));
+        const rootAbs = path.resolve(root);
+        if (abs !== rootAbs && !abs.startsWith(rootAbs + path.sep)) {
+          files.push({ root, ok: false, code: "path_traversal" });
+          continue;
+        }
+        try {
+          const st = await fsp.stat(abs);
+          const buf = await fsp.readFile(abs);
+          files.push({
+            root,
+            exists: true,
+            size: st.size,
+            md5: crypto.createHash("md5").update(buf).digest("hex"),
+          });
+        } catch (err) {
+          files.push({
+            root,
+            exists: false,
+            code: err && err.code ? String(err.code) : "missing",
+          });
+        }
+      }
+      return res.status(200).json({
+        ok: true,
+        key,
+        storageRoot: cfg.storageRoot,
+        mediaStorageRootSource: cfg.mediaStorageRootSource,
+        files,
+      });
+    } catch (err) {
+      return res.status(500).json({
+        ok: false,
+        code: (err && err.code) || "stat_failed",
+        message: err && err.message ? String(err.message).slice(0, 160) : "unknown",
+      });
+    }
+  });
+
   app.use(
     createLoadPlatformRequestContext({
       env,
