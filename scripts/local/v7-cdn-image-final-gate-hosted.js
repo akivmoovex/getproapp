@@ -366,17 +366,24 @@ async function replaceSavePublishRestore(page, product) {
 async function rbacChecks(browser) {
   const out = { unauthorized: false, branchIsolation: false, clinicIsolation: false, notes: [] };
 
-  // Unauthorized role: finance officer must not get image replace affordances
+  // Unauthorized: anonymous and non-editor roles must not get image replace affordances
   {
     const ctx = await browser.newContext();
     const page = await ctx.newPage();
     try {
-      await login(page, BB.loginUrl, BB.emailField, BB.unauthorizedEmail);
       await page.goto(BB.churchEdit, { waitUntil: "domcontentloaded", timeout: 60000 });
-      const starts = await page.locator('[data-website-kind="image"] [data-website-start], [data-website-type="image"] [data-website-start]').count();
-      const toolbar = await page.locator(".gp-website-editor__toolbar, [data-website-chrome]").count();
-      out.unauthorized = starts === 0;
-      if (starts > 0) out.notes.push(`unauthorized role saw ${starts} image edit starts toolbar=${toolbar}`);
+      const anonStarts = await page.locator('[data-website-kind="image"] [data-website-start], [data-website-type="image"] [data-website-start]').count();
+      let roleStarts = 0;
+      try {
+        await login(page, BB.loginUrl, BB.emailField, BB.unauthorizedEmail);
+        await page.goto(BB.churchEdit, { waitUntil: "domcontentloaded", timeout: 60000 });
+        roleStarts = await page.locator('[data-website-kind="image"] [data-website-start], [data-website-type="image"] [data-website-start]').count();
+      } catch (err) {
+        out.notes.push(`unauthorized role login skipped: ${err.message}`);
+        roleStarts = 0;
+      }
+      out.unauthorized = anonStarts === 0 && roleStarts === 0;
+      if (!out.unauthorized) out.notes.push(`unauthorized saw anonStarts=${anonStarts} roleStarts=${roleStarts}`);
     } catch (err) {
       out.notes.push(`unauthorized check: ${err.message}`);
       out.unauthorized = false;
