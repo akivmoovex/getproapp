@@ -1,145 +1,223 @@
-<article class="acw-page" data-ac-page-section="public-about" data-ac-acw-screen="ACW06">
-  <section class="acw-hero acw-hero--split acw-only-desktop">
-    <div>
-      <h1>Precision Technology. Human Connection.</h1>
-      <p class="acw-hero__lede">To bridge the gap between clinical excellence and human connection through precision technology. ActiveClinic is fundamentally redesigning how local clinics operate and patients access care.</p>
-    </div>
-    <div class="acw-hero__media">
-      <%- include('../partials/ac-media', {
-        src: '/activeclinic/assets/stitch/ACW06-01-About-ActiveClinic-Desktop-1.jpg',
-        alt: 'A healthcare professional and patient in a modern consultation room.',
-        className: 'acp-hero__image',
-        objectFit: 'cover',
-        objectPosition: 'center 30%',
-        width: 960,
-        height: 600,
-        loading: 'eager',
-      }) %>
-    </div>
-  </section>
+<%
+  var bi = typeof buildInfo === "object" && buildInfo ? buildInfo : {
+    version: "1.01.(unavailable)",
+    build: "(unavailable)",
+    environmentLabel: "Production",
+    environment: "production"
+  };
+  var envIsTesting = bi.environment === "testing";
+%>
+<article class="acw-page ac-about-v11" data-ac-page-section="public-about" data-ac-acw-screen="ACW06" data-product="ActiveClinic">
+  <div class="ac-about-v11__inner">
+    <section class="ac-about-v11__hero" aria-labelledby="ac-about-heading">
+      <nav class="ac-about-v11__crumb ac-about-v11__desktop-only" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span>
+        <span aria-current="page">About</span>
+      </nav>
+      <p class="ac-about-v11__badge">
+        <span class="ac-about-v11__badge-dot" aria-hidden="true"></span>
+        <span class="ac-about-v11__desktop-only">System Overview &amp; Specifications</span>
+        <span class="ac-about-v11__mobile-only">System Overview</span>
+      </p>
+      <h1 id="ac-about-heading">About ActiveClinic</h1>
+      <p class="ac-about-v11__subtitle">Digital tools for modern clinic operations and patient services.</p>
+    </section>
 
-  <section class="acw-hero acw-hero--mobile acw-only-mobile">
-    <p class="acw-kicker">About Us</p>
-    <h1>Precision in Healthcare Delivery.</h1>
-    <p class="acw-hero__lede">We build modern digital infrastructure that connects patients with professional care providers, ensuring every interaction is precise, secure, and human-centric.</p>
-  </section>
+    <section class="ac-about-v11__intro" aria-labelledby="ac-about-intro-title">
+      <div class="ac-about-v11__intro-card">
+        <div class="ac-about-v11__intro-icon" aria-hidden="true">
+          <span class="material-symbols-outlined ac-about-v11__desktop-only">health_and_safety</span>
+          <span class="material-symbols-outlined ac-about-v11__mobile-only">medical_services</span>
+        </div>
+        <div class="ac-about-v11__intro-body">
+          <div class="ac-about-v11__intro-title-row ac-about-v11__desktop-only">
+            <h2 id="ac-about-intro-title">ActiveClinic Core Suite</h2>
+            <span class="ac-about-v11__intro-tag">Enterprise v1.0</span>
+          </div>
+          <p>ActiveClinic provides healthcare facilities with tools for managing patients, appointments, clinical operations, pharmacy, diagnostics, billing and their public digital presence.</p>
+        </div>
+        <div class="ac-about-v11__intro-pill ac-about-v11__desktop-only" aria-hidden="true">
+          <span class="material-symbols-outlined">verified_user</span>
+          <span>HIPAA &amp; SOC-2 Calibrated</span>
+        </div>
+      </div>
+    </section>
 
-  <section class="acw-section acw-only-desktop" data-ac-about-section="mission">
-    <header class="acw-section-header">
-      <h2>Why ActiveClinic Exists</h2>
-    </header>
-    <div class="acw-grid acw-grid--2">
-      <article class="acw-card">
-        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">public</span></span>
-        <h3>Democratizing Healthcare Access</h3>
-        <p>We believe that top-tier healthcare technology shouldn't be reserved for massive hospital networks. We are breaking down barriers to ensure quality digital care is accessible everywhere.</p>
-      </article>
-      <article class="acw-card">
-        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">storefront</span></span>
-        <h3>Empowering Local Clinics</h3>
-        <p>Providing neighborhood practices with enterprise-grade digital tools to streamline operations and focus on patient care.</p>
-      </article>
-    </div>
-  </section>
+    <section class="ac-about-v11__system" aria-labelledby="ac-about-system-heading">
+      <div class="ac-about-v11__system-card">
+        <header class="ac-about-v11__system-head">
+          <div class="ac-about-v11__system-head-main">
+            <span class="material-symbols-outlined" aria-hidden="true">terminal</span>
+            <h2 id="ac-about-system-heading">
+              <span class="ac-about-v11__desktop-only">Clinical Build Diagnostics</span>
+              <span class="ac-about-v11__mobile-only">System Information</span>
+            </h2>
+            <span class="ac-about-v11__verified ac-about-v11__desktop-only">
+              <span class="material-symbols-outlined" aria-hidden="true">format_image_left</span>
+              Verified Clinical Build
+            </span>
+          </div>
+          <p class="ac-about-v11__status-pill" role="status">
+            <span class="ac-about-v11__status-dot" aria-hidden="true"></span>
+            <span class="ac-about-v11__desktop-only">Operational</span>
+            <span class="ac-about-v11__mobile-only"><%= bi.environmentLabel %></span>
+          </p>
+        </header>
 
-  <section class="acw-section acw-section--band acw-only-desktop" data-ac-about-section="principles">
-    <div class="acw-section__inner">
-      <header class="acw-section-header">
-        <h2>Our Core Principles</h2>
-        <p>The foundational pillars that guide every line of code we write and every feature we design.</p>
+        <div class="ac-about-v11__meta-grid">
+          <div class="ac-about-v11__meta-tile">
+            <span class="ac-about-v11__meta-label">Product</span>
+            <p class="ac-about-v11__meta-value">
+              <span class="material-symbols-outlined ac-about-v11__desktop-only" aria-hidden="true">domain</span>
+              <span class="ac-about-v11__product-name">ActiveClinic</span>
+            </p>
+          </div>
+          <div class="ac-about-v11__meta-tile">
+            <span class="ac-about-v11__meta-label">Version</span>
+            <p class="ac-about-v11__meta-value ac-about-v11__meta-value--version">
+              <span class="ac-about-v11__version-prefix ac-about-v11__mobile-only">Version </span><%= bi.version %>
+            </p>
+          </div>
+          <div class="ac-about-v11__meta-tile">
+            <span class="ac-about-v11__meta-label"><span class="ac-about-v11__desktop-only">Build Commit</span><span class="ac-about-v11__mobile-only">Build</span></span>
+            <div class="ac-about-v11__build-row">
+              <code class="ac-about-v11__build" id="ac-about-build"><%= bi.build %></code>
+              <button type="button" class="ac-about-v11__copy" data-copy-target="ac-about-build" aria-label="Copy build SHA">
+                <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+              </button>
+            </div>
+          </div>
+          <div class="ac-about-v11__meta-tile">
+            <span class="ac-about-v11__meta-label">Environment</span>
+            <p class="ac-about-v11__meta-value ac-about-v11__meta-value--env">
+              <span class="ac-about-v11__env-dot<%= envIsTesting ? ' ac-about-v11__env-dot--testing' : '' %>" aria-hidden="true"></span>
+              <%= bi.environmentLabel %>
+            </p>
+          </div>
+        </div>
+
+        <footer class="ac-about-v11__system-foot">
+          <p>
+            <span class="material-symbols-outlined" aria-hidden="true">info</span>
+            Dynamic versioning data injected automatically from Git deployment pipeline.
+          </p>
+        </footer>
+      </div>
+    </section>
+
+    <section class="ac-about-v11__caps" aria-labelledby="ac-about-caps-heading">
+      <header class="ac-about-v11__caps-head">
+        <h2 id="ac-about-caps-heading">
+          <span class="ac-about-v11__desktop-only">Platform Information</span>
+          <span class="ac-about-v11__mobile-only">Platform Capabilities</span>
+        </h2>
+        <p class="ac-about-v11__caps-lede ac-about-v11__desktop-only">Clinical modules and operational infrastructure</p>
+        <p class="ac-about-v11__caps-lede ac-about-v11__mobile-only">6 Operational Modules</p>
       </header>
-      <div class="acw-grid acw-grid--3">
-        <article class="acw-card">
-          <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">shield_person</span></span>
-          <h4>Trust</h4>
-          <p>Unwavering commitment to securing patient data with enterprise-grade encryption.</p>
+      <div class="ac-about-v11__caps-grid">
+        <article class="ac-about-v11__cap-card">
+          <div class="ac-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">clinical_notes</span></div>
+          <h3>Patient Management</h3>
+          <p class="ac-about-v11__desktop-only">Comprehensive EHR, demographics &amp; consent</p>
+          <p class="ac-about-v11__mobile-only">Records, clinical histories &amp; demographics</p>
+          <div class="ac-about-v11__cap-foot ac-about-v11__desktop-only">
+            <span>Module ID: PM-01</span>
+            <span class="ac-about-v11__active"><span aria-hidden="true"></span> Active</span>
+          </div>
         </article>
-        <article class="acw-card">
-          <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span></span>
-          <h4>Privacy</h4>
-          <p>Strict HIPAA compliance and transparent data handling protocols to ensure total confidentiality.</p>
+        <article class="ac-about-v11__cap-card">
+          <div class="ac-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">event_available</span></div>
+          <h3>Appointments</h3>
+          <p class="ac-about-v11__desktop-only">Multi-provider scheduling &amp; queue tracking</p>
+          <p class="ac-about-v11__mobile-only">Provider calendars, triage queues &amp; bookings</p>
+          <div class="ac-about-v11__cap-foot ac-about-v11__desktop-only">
+            <span>Module ID: AP-02</span>
+            <span class="ac-about-v11__active"><span aria-hidden="true"></span> Active</span>
+          </div>
         </article>
-        <article class="acw-card">
-          <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">health_and_safety</span></span>
-          <h4>Reliability</h4>
-          <p>Guaranteed 99.9% uptime and clinical accuracy when you need it most.</p>
+        <article class="ac-about-v11__cap-card">
+          <div class="ac-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">stethoscope</span></div>
+          <h3>Clinical Services</h3>
+          <p class="ac-about-v11__desktop-only">Consultations, triage &amp; care pathways</p>
+          <p class="ac-about-v11__mobile-only">Charting, EHR encounter notes &amp; care plans</p>
+          <div class="ac-about-v11__cap-foot ac-about-v11__desktop-only">
+            <span>Module ID: CS-03</span>
+            <span class="ac-about-v11__active"><span aria-hidden="true"></span> Active</span>
+          </div>
+        </article>
+        <article class="ac-about-v11__cap-card">
+          <div class="ac-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">medication</span></div>
+          <h3>Pharmacy &amp; Diagnostics</h3>
+          <p class="ac-about-v11__desktop-only">Lab orders, e-prescriptions &amp; inventory</p>
+          <p class="ac-about-v11__mobile-only">e-Prescriptions, lab orders &amp; pathology sync</p>
+          <div class="ac-about-v11__cap-foot ac-about-v11__desktop-only">
+            <span>Module ID: PD-04</span>
+            <span class="ac-about-v11__active"><span aria-hidden="true"></span> Active</span>
+          </div>
+        </article>
+        <article class="ac-about-v11__cap-card">
+          <div class="ac-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">payments</span></div>
+          <h3>Billing</h3>
+          <p class="ac-about-v11__desktop-only">Claims processing, invoicing &amp; payment tracking</p>
+          <p class="ac-about-v11__mobile-only">Claims submission, fee schedules &amp; invoices</p>
+          <div class="ac-about-v11__cap-foot ac-about-v11__desktop-only">
+            <span>Module ID: BL-05</span>
+            <span class="ac-about-v11__active"><span aria-hidden="true"></span> Active</span>
+          </div>
+        </article>
+        <article class="ac-about-v11__cap-card">
+          <div class="ac-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">web</span></div>
+          <h3>Clinic Website</h3>
+          <p class="ac-about-v11__desktop-only">Patient portal &amp; public appointment booking</p>
+          <p class="ac-about-v11__mobile-only">Public discovery, intake forms &amp; branding</p>
+          <div class="ac-about-v11__cap-foot ac-about-v11__desktop-only">
+            <span>Module ID: CW-06</span>
+            <span class="ac-about-v11__active"><span aria-hidden="true"></span> Active</span>
+          </div>
         </article>
       </div>
-    </div>
-  </section>
+    </section>
 
-  <section class="acw-section acw-only-desktop" data-ac-about-section="data">
-    <div class="acw-split">
-      <div>
-        <p class="acw-kicker">Security First</p>
-        <h2>How We Handle Patient Data</h2>
-        <p>We adhere to the principle of least privilege, ensuring that medical records are only accessible to authorized clinical personnel directly involved in patient care.</p>
-      </div>
-      <div class="acw-hero__media">
-        <%- include('../partials/ac-media', {
-          src: '/activeclinic/assets/stitch/ACW06-01-About-ActiveClinic-Desktop-2.jpg',
-          alt: 'Secure clinical data infrastructure.',
-          className: 'acp-hero__image',
-          objectFit: 'cover',
-          width: 800,
-          height: 500,
-          loading: 'lazy',
-        }) %>
-      </div>
-    </div>
-  </section>
-
-  <section class="acw-section acw-only-mobile" data-ac-about-section="principles-mobile">
-    <header class="acw-section-header">
-      <h2>Core Principles</h2>
-    </header>
-    <div class="acw-grid">
-      <article class="acw-card">
-        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">verified_user</span></span>
-        <h3>Unwavering Trust</h3>
-        <p>Building reliable systems that patients and providers can depend on in critical moments.</p>
-      </article>
-      <article class="acw-card">
-        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">lock</span></span>
-        <h3>Absolute Privacy</h3>
-        <p>Securing health data with enterprise-grade encryption and strict access controls.</p>
-      </article>
-      <article class="acw-card">
-        <span class="acw-icon-box"><span class="material-symbols-outlined" aria-hidden="true">speed</span></span>
-        <h3>System Reliability</h3>
-        <p>Maintaining high availability infrastructure to ensure seamless healthcare access 24/7.</p>
-      </article>
-      <article class="acw-card">
-        <span class="acw-icon-box acw-icon-box--primary"><span class="material-symbols-outlined" aria-hidden="true">health_and_safety</span></span>
-        <h3>Democratizing Access</h3>
-        <p>Breaking down geographical and logistical barriers to ensure quality healthcare is accessible to everyone, regardless of their location.</p>
-      </article>
-      <article class="acw-card">
-        <span class="acw-icon-box acw-icon-box--secondary"><span class="material-symbols-outlined" aria-hidden="true">devices</span></span>
-        <h3>Clinic Digitization</h3>
-        <p>Equipping medical practices with modern tools that streamline administrative workflows, allowing providers to focus entirely on patient care.</p>
-      </article>
-    </div>
-  </section>
-
-  <section class="acw-cta-band acw-only-desktop">
-    <div class="acw-cta-band__inner">
-      <h2>Ready to transform your practice?</h2>
-      <p>Join thousands of forward-thinking clinics leveraging ActiveClinic to deliver superior patient experiences.</p>
-      <p class="ac-public-actions">
-        <a class="ac-btn ac-btn--primary acw-btn-icon" href="/register-clinic">Join the Movement <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span></a>
-        <a class="ac-btn ac-btn--secondary" href="/contact">Partner with Us</a>
+    <section class="ac-about-v11__support-bar ac-about-v11__desktop-only" aria-label="Support links">
+      <p>
+        <span class="material-symbols-outlined" aria-hidden="true">support_agent</span>
+        Need clinical infrastructure support or custom SLA?
       </p>
-    </div>
-  </section>
+      <ul>
+        <li><a href="/privacy">Privacy Policy</a></li>
+        <li><a href="/terms">Terms of Service</a></li>
+        <li><a href="/contact">Contact / Support</a></li>
+        <li><a href="/">Home</a></li>
+      </ul>
+    </section>
 
-  <section class="acw-cta-band acw-only-mobile">
-    <div class="acw-cta-band__inner">
-      <h2>Partner With Us</h2>
-      <p>Interested in bringing ActiveClinic to your practice? Connect with our integration specialists.</p>
-      <p class="ac-public-actions">
-        <a class="ac-btn ac-btn--primary" href="/contact">Contact Sales</a>
-      </p>
-    </div>
-  </section>
+    <nav class="ac-about-v11__governance ac-about-v11__mobile-only" aria-label="Governance and support">
+      <h2>Governance &amp; Support</h2>
+      <a href="/privacy"><span class="material-symbols-outlined" aria-hidden="true">policy</span> Privacy Policy <span class="material-symbols-outlined" aria-hidden="true">arrow_forward_ios</span></a>
+      <a href="/terms"><span class="material-symbols-outlined" aria-hidden="true">gavel</span> Terms of Service <span class="material-symbols-outlined" aria-hidden="true">arrow_forward_ios</span></a>
+      <a href="/contact"><span class="material-symbols-outlined" aria-hidden="true">support_agent</span> Contact / Support <span class="material-symbols-outlined" aria-hidden="true">arrow_forward_ios</span></a>
+      <a href="/"><span class="material-symbols-outlined" aria-hidden="true">home</span> Home <span class="material-symbols-outlined" aria-hidden="true">arrow_forward_ios</span></a>
+    </nav>
+
+    <p class="ac-about-v11__ops-bar ac-about-v11__mobile-only" role="status">
+      <span class="ac-about-v11__status-dot" aria-hidden="true"></span>
+      All Clinical Microservices Operational
+    </p>
+  </div>
 </article>
+
+<script>
+(function () {
+  var buttons = document.querySelectorAll(".ac-about-v11__copy[data-copy-target]");
+  buttons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var id = btn.getAttribute("data-copy-target");
+      var el = id ? document.getElementById(id) : null;
+      var text = el ? (el.textContent || "").trim() : "";
+      if (!text || !navigator.clipboard) return;
+      navigator.clipboard.writeText(text).catch(function () {});
+    });
+  });
+})();
+</script>

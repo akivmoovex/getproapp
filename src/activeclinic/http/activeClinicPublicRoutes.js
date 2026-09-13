@@ -483,11 +483,15 @@ function registerActiveClinicPublicRoutes(app, deps) {
   });
 
   app.get("/about", (req, res) => {
-    const csrfToken = issuePageCsrf(res, env, isProduction);
+    const csrfToken = issuePageCsrf(res, env, isProduction, req);
+    const { getApplicationBuildInfo } = require("../../platform/build/applicationBuildInfo");
     return res.status(200).type("html").send(renderPublicView("public/about", {
       csrfToken,
       pageTitle: "About ActiveClinic",
       pageId: "public-about",
+      metaDescription:
+        "About ActiveClinic — digital tools for modern clinic operations and patient services.",
+      buildInfo: getApplicationBuildInfo({ env }),
     }));
   });
 

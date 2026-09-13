@@ -120,7 +120,7 @@ test("church public shells reference church.css?v=47/48/49/50/51/52", () => {
   ];
   for (const rel of publicShells) {
     const text = fs.readFileSync(path.join(__dirname, "..", rel), "utf8");
-    assert.match(text, /church\.css\?v=((?:4[789]|50|51|52|53|54|55|56|57|58|59|60|61|62|63))/, `${rel} should load church.css?v=47–63`);
+    assert.match(text, /church\.css\?v=((?:4[789]|5[0-9]|6[0-9]|7[0-9]))/, `${rel} should load church.css?v=47–79`);
   }
   const publicStart = fs.readFileSync(
     path.join(__dirname, "../views/church/partials/public_shell_start.ejs"),

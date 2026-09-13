@@ -1,75 +1,215 @@
+<%
+  var bi = typeof buildInfo === "object" && buildInfo ? buildInfo : {
+    version: "1.01.(unavailable)",
+    build: "(unavailable)",
+    environmentLabel: "Production",
+    environment: "production"
+  };
+  var envIsTesting = bi.environment === "testing";
+%>
 <%- include('../partials/public_shell_start') %>
 
-<%- include('../partials/platform_info_hero', {
-  heroTitle: 'About BlessBoard',
-  heroLead: 'BlessBoard is a digital church platform that helps congregations publish online, stay in touch with members, and manage branch administration from one connected system.'
-}) %>
+<article class="bb-about-v11" data-bb-about="platform-v11" data-product="BlessBoard">
+  <div class="bb-about-v11__inner">
+    <section class="bb-about-v11__hero" aria-labelledby="bb-about-heading">
+      <nav class="bb-about-v11__crumb" aria-label="Breadcrumb">
+        <a href="/">Home</a>
+        <span class="bb-about-v11__crumb-sep" aria-hidden="true">/</span>
+        <span aria-current="page">About</span>
+      </nav>
+      <p class="bb-about-v11__badge">
+        <span class="bb-about-v11__badge-dot" aria-hidden="true"></span>
+        Platform Overview
+      </p>
+      <h1 id="bb-about-heading">About BlessBoard</h1>
+      <p class="bb-about-v11__subtitle">Digital tools that help churches manage, connect and grow their communities.</p>
+    </section>
 
-<section class="bb-platform-info-section home-desktop-design" aria-labelledby="about-what">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="about-what">What BlessBoard is</h2>
-    <p>BlessBoard is a church engagement and member platform for branches, members, and ministry teams. Each church branch can have a public website, a member portal, and administration tools on its own subdomain — for example, <code>yourchurch.blessboard.com</code>.</p>
-    <p>Verified platform capabilities include public pages (home, about, leadership, ministries, events, sermons, giving information, and contact), member registration and login, branch administration, and HQ tools for multi-branch organizations. See the <a href="/features">Features</a> page for a full list.</p>
+    <section class="bb-about-v11__intro" aria-labelledby="bb-about-intro-title">
+      <div class="bb-about-v11__intro-card">
+        <div class="bb-about-v11__intro-accent" aria-hidden="true"></div>
+        <div class="bb-about-v11__intro-icon" aria-hidden="true">
+          <span class="material-symbols-outlined">volunteer_activism</span>
+        </div>
+        <div class="bb-about-v11__intro-body">
+          <h2 id="bb-about-intro-title" class="bb-about-v11__intro-title bb-about-v11__intro-title--desktop">Empowering Ministry Across Generations</h2>
+          <p>BlessBoard provides churches and ministry organisations with tools for managing their organisation, branches, members, website presence and digital services from one platform.</p>
+        </div>
+        <div class="bb-about-v11__intro-pill" aria-hidden="true">
+          <span class="material-symbols-outlined">verified</span>
+          <span>Unified Faith Architecture</span>
+        </div>
+      </div>
+    </section>
+
+    <section class="bb-about-v11__system" aria-labelledby="bb-about-system-heading">
+      <div class="bb-about-v11__system-card">
+        <header class="bb-about-v11__system-head">
+          <div class="bb-about-v11__system-head-main">
+            <div class="bb-about-v11__system-icon" aria-hidden="true">
+              <span class="material-symbols-outlined">info</span>
+            </div>
+            <div>
+              <h2 id="bb-about-system-heading">
+                <span class="bb-about-v11__system-title--desktop">System &amp; Version Information</span>
+                <span class="bb-about-v11__system-title--mobile">System Information</span>
+              </h2>
+              <p class="bb-about-v11__system-lede">Runtime metadata and active deployment configuration</p>
+            </div>
+          </div>
+          <p class="bb-about-v11__status-pill" role="status">
+            <span class="bb-about-v11__status-dot" aria-hidden="true"></span>
+            <span class="bb-about-v11__status-desktop">All Systems Operational</span>
+            <span class="bb-about-v11__status-mobile"><%= bi.environmentLabel %></span>
+          </p>
+        </header>
+
+        <div class="bb-about-v11__meta-grid">
+          <div class="bb-about-v11__meta-tile">
+            <span class="bb-about-v11__meta-label">Product Target</span>
+            <span class="bb-about-v11__meta-label bb-about-v11__meta-label--mobile">Product</span>
+            <p class="bb-about-v11__meta-value">BlessBoard</p>
+            <p class="bb-about-v11__meta-foot bb-about-v11__meta-foot--accent">
+              <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+              Production Grade
+            </p>
+          </div>
+
+          <div class="bb-about-v11__meta-tile">
+            <div class="bb-about-v11__meta-label-row">
+              <span class="bb-about-v11__meta-label">Application Version</span>
+              <span class="bb-about-v11__meta-label bb-about-v11__meta-label--mobile">Version</span>
+              <span class="bb-about-v11__chip">Active</span>
+            </div>
+            <p class="bb-about-v11__meta-value bb-about-v11__meta-value--version">
+              <span class="bb-about-v11__version-prefix bb-about-v11__version-prefix--mobile">Version </span><%= bi.version %>
+            </p>
+            <p class="bb-about-v11__meta-foot">
+              <span class="material-symbols-outlined" aria-hidden="true">sync_saved_locally</span>
+              Dynamic Tag
+            </p>
+          </div>
+
+          <div class="bb-about-v11__meta-tile">
+            <span class="bb-about-v11__meta-label">Build Commit</span>
+            <span class="bb-about-v11__meta-label bb-about-v11__meta-label--mobile">Build</span>
+            <div class="bb-about-v11__build-row">
+              <code class="bb-about-v11__build" id="bb-about-build"><%= bi.build %></code>
+              <button type="button" class="bb-about-v11__copy" data-copy-target="bb-about-build" aria-label="Copy build SHA">
+                <span class="material-symbols-outlined" aria-hidden="true">content_copy</span>
+              </button>
+            </div>
+            <p class="bb-about-v11__meta-foot">
+              <span class="material-symbols-outlined" aria-hidden="true">commit</span>
+              Dynamic Git SHA
+            </p>
+          </div>
+
+          <div class="bb-about-v11__meta-tile">
+            <span class="bb-about-v11__meta-label">Runtime Environment</span>
+            <span class="bb-about-v11__meta-label bb-about-v11__meta-label--mobile">Environment</span>
+            <p class="bb-about-v11__meta-value bb-about-v11__meta-value--env">
+              <span class="bb-about-v11__env-dot<%= envIsTesting ? ' bb-about-v11__env-dot--testing' : '' %>" aria-hidden="true"></span>
+              <%= bi.environmentLabel %>
+            </p>
+            <p class="bb-about-v11__meta-foot">
+              <span class="material-symbols-outlined" aria-hidden="true">cloud_done</span>
+              Deployment profile
+            </p>
+          </div>
+        </div>
+
+        <footer class="bb-about-v11__system-foot">
+          <p class="bb-about-v11__pipeline-note">
+            <span class="material-symbols-outlined" aria-hidden="true">terminal</span>
+            Version and build hashes are injected dynamically at deployment time.
+          </p>
+        </footer>
+      </div>
+    </section>
+
+    <section class="bb-about-v11__caps" aria-labelledby="bb-about-caps-heading">
+      <header class="bb-about-v11__caps-head">
+        <h2 id="bb-about-caps-heading">Platform Capabilities</h2>
+        <p class="bb-about-v11__caps-lede bb-about-v11__caps-lede--desktop">Core modules included in your platform deployment</p>
+        <p class="bb-about-v11__caps-lede bb-about-v11__caps-lede--mobile">4 Core Pillars</p>
+      </header>
+      <div class="bb-about-v11__caps-grid">
+        <article class="bb-about-v11__cap-card">
+          <div class="bb-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">language</span></div>
+          <h3>Website Management</h3>
+          <p class="bb-about-v11__cap-desc--desktop">Digital public facing church sites, customizable landing experiences &amp; devotional blogs.</p>
+          <p class="bb-about-v11__cap-desc--mobile">Modern, responsive digital presence built for ministries with real-time editing and sermon broadcasting.</p>
+          <div class="bb-about-v11__cap-foot">
+            <span class="bb-about-v11__cap-included"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Included Module</span>
+            <span>v2.4 Ready</span>
+          </div>
+        </article>
+        <article class="bb-about-v11__cap-card">
+          <div class="bb-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">hub</span></div>
+          <h3>Church &amp; Branch Management</h3>
+          <p class="bb-about-v11__cap-desc--desktop">Multi-campus orchestration, role permissions, campus facilities, and regional ministry oversight.</p>
+          <p class="bb-about-v11__cap-desc--mobile">Multi-site oversight, leadership coordination, campus events, and organizational operations.</p>
+          <div class="bb-about-v11__cap-foot">
+            <span class="bb-about-v11__cap-included"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Included Module</span>
+            <span>Multi-Tenant</span>
+          </div>
+        </article>
+        <article class="bb-about-v11__cap-card">
+          <div class="bb-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">groups</span></div>
+          <h3>Member Administration</h3>
+          <p class="bb-about-v11__cap-desc--desktop">Pastoral care pipelines, secure member directories, discipleship tracking &amp; volunteer schedules.</p>
+          <p class="bb-about-v11__cap-desc--mobile">Directory directories, family grouping, pastoral notes, volunteer rotas, and secure records.</p>
+          <div class="bb-about-v11__cap-foot">
+            <span class="bb-about-v11__cap-included"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Included Module</span>
+            <span>Encrypted PII</span>
+          </div>
+        </article>
+        <article class="bb-about-v11__cap-card">
+          <div class="bb-about-v11__cap-icon" aria-hidden="true"><span class="material-symbols-outlined">podcasts</span></div>
+          <h3>Publishing &amp; Digital Presence</h3>
+          <p class="bb-about-v11__cap-desc--desktop">Media archiving, sermon podcast distribution, integrated live streams &amp; tithe giving portals.</p>
+          <p class="bb-about-v11__cap-desc--mobile">Prayer chains, devotional notifications, bulletin distribution, and media delivery.</p>
+          <div class="bb-about-v11__cap-foot">
+            <span class="bb-about-v11__cap-included"><span class="material-symbols-outlined" aria-hidden="true">check_circle</span> Included Module</span>
+            <span>Fast CDN</span>
+          </div>
+        </article>
+      </div>
+    </section>
+
+    <nav class="bb-about-v11__governance" aria-label="Foundation and governance">
+      <p class="bb-about-v11__governance-label">BlessBoard Foundation &amp; Governance</p>
+      <ul class="bb-about-v11__governance-links">
+        <li><a href="/privacy">Privacy Policy</a></li>
+        <li><a href="/terms">Terms of Service</a></li>
+        <li><a href="/support"><span class="material-symbols-outlined" aria-hidden="true">support_agent</span> Contact Support</a></li>
+        <li><a href="/"><span class="material-symbols-outlined" aria-hidden="true">arrow_back</span> Return to Home</a></li>
+      </ul>
+    </nav>
+
+    <nav class="bb-about-v11__quicklinks" aria-label="About quick links">
+      <a href="/"><span class="material-symbols-outlined" aria-hidden="true">home</span> Home <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
+      <a href="/support"><span class="material-symbols-outlined" aria-hidden="true">support_agent</span> Contact Support <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
+      <a href="/privacy"><span class="material-symbols-outlined" aria-hidden="true">security</span> Privacy Policy <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
+      <a href="/terms"><span class="material-symbols-outlined" aria-hidden="true">gavel</span> Terms of Service <span class="material-symbols-outlined" aria-hidden="true">chevron_right</span></a>
+    </nav>
   </div>
-</section>
+</article>
 
-<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="about-why">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="about-why">Why BlessBoard exists</h2>
-    <p>Church information, member communication, and administration are often scattered across paper records, messaging apps, and separate tools. Members struggle to find the right website or sign-in page. Leaders repeat the same updates in multiple places.</p>
-    <p>BlessBoard brings public-facing church information, member engagement, and branch administration into one platform — so congregations can communicate more clearly and administrators can work from a single place.</p>
-  </div>
-</section>
-
-<section class="bb-platform-info-section home-desktop-design" aria-labelledby="about-who">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="about-who">Who it serves</h2>
-    <p>BlessBoard is being developed and introduced with churches in Zambia, with a platform designed to support church communities across multiple locations and countries.</p>
-    <ul>
-      <li><strong>Individual churches</strong> — a public branch website, member registration, and tools for day-to-day ministry operations.</li>
-      <li><strong>Church members</strong> — announcements, events, ministries, resources, and requests through a signed-in member portal on their church site.</li>
-      <li><strong>Church branches</strong> — local administrators who publish content, verify members, and manage branch activities.</li>
-      <li><strong>Headquarters and denominations</strong> — organizations with multiple branches that need shared oversight, report review, and coordination across locations. Learn more on the <a href="/multi-branch">Multi-Branch</a> page.</li>
-    </ul>
-  </div>
-</section>
-
-<section class="bb-platform-info-section bb-platform-info-section--alt home-desktop-design" aria-labelledby="about-onboarding">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="about-onboarding">Onboarding churches</h2>
-    <p>BlessBoard is currently onboarding selected churches. Plans and available services may vary according to church size, branch structure and setup requirements. Contact the BlessBoard team to discuss access.</p>
-  </div>
-</section>
-
-<section class="bb-platform-info-section home-desktop-design" aria-labelledby="about-getpro">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="about-getpro">How BlessBoard and GetPro are related</h2>
-    <p>BlessBoard is developed and supported using GetPro technology. Public BlessBoard pages display <strong>Powered by GetPro</strong> attribution, consistent with the broader GetPro product family.</p>
-    <p>BlessBoard (<code>blessboard.com</code> and church subdomains) runs alongside the GetPro platform at <code>getproapp.org</code>. The same codebase serves both products; hostname determines which experience is shown.</p>
-    <p>BlessBoard platform provisioning and support are handled through BlessBoard platform administrators at <code>blessboard.com</code>. Individual churches manage their own congregation content and member access on their branch sites.</p>
-  </div>
-</section>
-
-<section class="bb-platform-info-section home-desktop-design" aria-labelledby="about-approach">
-  <div class="bb-platform-info-section__inner church-public-prose">
-    <h2 id="about-approach">Our approach</h2>
-    <ul>
-      <li><strong>Mobile-friendly access</strong> — public branch pages and the member portal use responsive layouts for phones and tablets.</li>
-      <li><strong>Simple church administration</strong> — branch tools focus on practical tasks: members, content, events, ministries, and requests.</li>
-      <li><strong>Branch-level organization</strong> — each location keeps its own subdomain, content, and admin team.</li>
-      <li><strong>Gradual adoption</strong> — churches can publish website content, enable member registration, and expand use of portal and admin features over time.</li>
-      <li><strong>Practical tools</strong> — features reflect real church workflows documented in the platform, not a generic office suite.</li>
-    </ul>
-  </div>
-</section>
-
-<%- include('../partials/platform_info_cta', {
-  ctaTitle: 'Talk with us about BlessBoard',
-  ctaLead: 'Request access for your church or ask a question about the platform.',
-  primaryHref: '/contact',
-  primaryLabel: 'Contact BlessBoard',
-  secondaryHref: registerChurchPath,
-  secondaryLabel: 'Register Your Church'
-}) %>
+<script>
+(function () {
+  var buttons = document.querySelectorAll(".bb-about-v11__copy[data-copy-target]");
+  buttons.forEach(function (btn) {
+    btn.addEventListener("click", function () {
+      var id = btn.getAttribute("data-copy-target");
+      var el = id ? document.getElementById(id) : null;
+      var text = el ? (el.textContent || "").trim() : "";
+      if (!text || !navigator.clipboard) return;
+      navigator.clipboard.writeText(text).catch(function () {});
+    });
+  });
+})();
+</script>
 
 <%- include('../partials/public_shell_end') %>

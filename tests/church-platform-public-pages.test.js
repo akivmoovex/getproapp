@@ -47,7 +47,7 @@ function makeBranchApp() {
 }
 
 const PLATFORM_PAGES = [
-  { path: "/about", title: "About BlessBoard", sections: ["What BlessBoard is", "Why BlessBoard exists", "Who it serves", "How BlessBoard and GetPro are related", "Our approach"], active: "about" },
+  { path: "/about", title: "About BlessBoard", sections: ["Platform Overview", "System", "Platform Capabilities"], active: "about" },
   { path: "/contact", title: "Contact BlessBoard", active: "contact", hasForm: true },
   { path: "/for-churches", title: "Empowering your congregation with", active: "for-churches" },
   { path: "/multi-branch", title: "One platform for every branch", active: "multi-branch" },
@@ -66,7 +66,7 @@ test("apex platform static pages render with shared shell", async () => {
   for (const page of PLATFORM_PAGES) {
     const res = await request(app).get(page.path);
     assert.equal(res.status, 200, `${page.path} should render`);
-    assert.match(res.text, /church\.css\?v=75/, `${page.path} should load public CSS`);
+    assert.match(res.text, /church\.css\?v=7[67]/, `${page.path} should load public CSS`);
     assert.match(res.text, /church-body--apex/, `${page.path} should use apex body`);
     assert.match(res.text, new RegExp(page.title), `${page.path} should include heading`);
     if (page.sections) {
@@ -84,20 +84,32 @@ test("apex platform static pages render with shared shell", async () => {
   }
 });
 
-test("apex /about page uses approved GetPro relationship wording", async () => {
-  const app = makeApexApp();
-  const res = await request(app).get("/about");
-  assert.equal(res.status, 200);
-  assert.match(res.text, /BlessBoard is developed and supported using GetPro technology/);
-  assert.match(res.text, /Powered by GetPro/);
-  assert.match(res.text, /getproapp\.org/);
-  assert.match(res.text, /Contact BlessBoard/);
-  assert.match(res.text, /Register Your Church/);
-  assert.match(res.text, /bb-platform-info-hero/);
-  assert.match(res.text, /bb-platform-info-section/);
-  assert.doesNotMatch(res.text, /Moovex/i);
-  assert.doesNotMatch(res.text, /\bfree\b/i);
-  assert.doesNotMatch(res.text, /encrypted|guaranteed uptime|trusted by thousands|market.leading/i);
+test("apex /about page renders Stitch V1.1 system About content", async () => {
+  const prevEnv = process.env.DEPLOYMENT_ENV;
+  const prevSha = process.env.GETPRO_GIT_SHA;
+  process.env.DEPLOYMENT_ENV = "testing";
+  process.env.GETPRO_GIT_SHA = "bbaboutv11sha01ff";
+  try {
+    const app = makeApexApp();
+    const res = await request(app).get("/about");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /data-bb-about="platform-v11"/);
+    assert.match(res.text, /Digital tools that help churches manage/);
+    assert.match(res.text, /1\.01\.bbaboutv11sh/);
+    assert.match(res.text, /Testing/);
+    assert.match(res.text, /bb-powered-by/);
+    assert.match(res.text, /Powered by/);
+    assert.match(res.text, /GetPro/);
+    assert.match(res.text, /href="\/support"/);
+    assert.match(res.text, /href="\/privacy"/);
+    assert.doesNotMatch(res.text, /Moovex/i);
+    assert.doesNotMatch(res.text, /guaranteed uptime|trusted by thousands|market.leading/i);
+  } finally {
+    if (prevEnv === undefined) delete process.env.DEPLOYMENT_ENV;
+    else process.env.DEPLOYMENT_ENV = prevEnv;
+    if (prevSha === undefined) delete process.env.GETPRO_GIT_SHA;
+    else process.env.GETPRO_GIT_SHA = prevSha;
+  }
 });
 
 test("apex /features page renders dedicated capability sections", async () => {
