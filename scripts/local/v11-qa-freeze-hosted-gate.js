@@ -249,14 +249,10 @@ async function main() {
       });
       await bbPage.waitForTimeout(800);
       const stamp = `QA-HERO-${Date.now().toString(36)}`;
-      const textStart = bbPage
-        .locator(
-          '[data-website-kind="text"] [data-website-start], [data-website-type="text"] [data-website-start], [data-website-kind="textarea"] [data-website-start]'
-        )
-        .first();
-      if ((await textStart.count()) > 0) {
-        await textStart.click({ force: true });
-        const input = bbPage.locator("[data-website-input], textarea, input[type=text]").first();
+      const heroPencil = bbPage.locator('[data-website-key="home.hero.heading"] [data-website-start]').first();
+      if ((await heroPencil.count()) > 0) {
+        await heroPencil.click({ timeout: 15000 });
+        const input = bbPage.locator("#gp-website-field-input, [data-website-input]").first();
         await input.waitFor({ state: "visible", timeout: 10000 });
         await input.fill(stamp);
         await bbPage.locator("[data-website-save]").click();
@@ -264,10 +260,10 @@ async function main() {
         await bbPage.reload({ waitUntil: "domcontentloaded" });
         const body = await bbPage.content();
         bb01 = body.includes(stamp)
-          ? { id: "BB-01", status: "CLOSED", detail: "hero/text draft persisted after reload" }
+          ? { id: "BB-01", status: "CLOSED", detail: "hero heading draft persisted after reload" }
           : { id: "BB-01", status: "PARTIAL", detail: "edit UI present; stamp not found after reload" };
       } else {
-        bb01 = { id: "BB-01", status: "OPEN", detail: "no text edit start found" };
+        bb01 = { id: "BB-01", status: "OPEN", detail: "home.hero.heading pencil not found" };
       }
     } catch (e) {
       bb01 = { id: "BB-01", status: "OPEN", detail: e.message };
@@ -325,10 +321,12 @@ async function main() {
         bb04 = { id: "BB-04", status: "OPEN", detail: "no contact edit starts" };
       } else {
         const textStart = bbPage
-          .locator('[data-website-kind="text"] [data-website-start], [data-website-type="text"] [data-website-start]')
+          .locator(
+            '[data-website-key*="contact"] [data-website-start], [data-website-type="text"] [data-website-start]'
+          )
           .first();
-        await textStart.click({ force: true });
-        const input = bbPage.locator("[data-website-input], textarea, input[type=text]").first();
+        await textStart.click({ timeout: 15000 });
+        const input = bbPage.locator("#gp-website-field-input, [data-website-input]").first();
         await input.waitFor({ state: "visible", timeout: 8000 });
         const before = await input.inputValue().catch(() => "");
         await input.fill("not-an-email@@@");
@@ -350,17 +348,23 @@ async function main() {
       bb04 = { id: "BB-04", status: "PARTIAL", detail: e.message };
     }
 
-    // BB-05 phone registration (administrator step)
+    // BB-05 phone registration (administrator step after church wizard)
     let bb05 = { id: "BB-05", status: "OPEN", detail: "" };
     try {
       const anon = await browser.newContext();
       const reg = await anon.newPage();
-      await reg.goto(`${BB}/register-church?step=administrator&plan=foundation`, {
-        waitUntil: "domcontentloaded",
-      });
+      await reg.goto(`${BB}/register-church?plan=foundation`, { waitUntil: "domcontentloaded" });
+      await reg.locator("#register_church_name").fill(`Freeze QA ${Date.now().toString(36)}`);
+      if ((await reg.locator("#register_country option").count()) > 1) {
+        await reg.locator("#register_country").selectOption({ index: 1 });
+      }
+      await reg.locator("#register_city").fill("Lusaka");
+      await reg.locator("#register_branch_name").fill("Main");
+      await reg.locator('button[type="submit"]').first().click();
+      await reg.waitForTimeout(1500);
       const shortTry = await fillPhoneNational(reg, "12");
       if (!shortTry.ok) {
-        bb05 = { id: "BB-05", status: "OPEN", detail: shortTry.reason };
+        bb05 = { id: "BB-05", status: "OPEN", detail: `${shortTry.reason}; url=${reg.url()}` };
       } else {
         await reg.locator('button[type="submit"], [data-bb-register-continue]').first().click();
         await reg.waitForTimeout(1200);
@@ -388,19 +392,21 @@ async function main() {
       await bbPage.goto(`${BB}/c/demo-church?website_edit=1&website_mode=draft`, {
         waitUntil: "domcontentloaded",
       });
-      const exit = bbPage
-        .locator("[data-website-exit], [data-website-engine-exit], a:has-text('Exit'), button:has-text('Exit')")
-        .first();
+      const exit = bbPage.locator("[data-website-engine-exit], [data-bb-exit-editing]").first();
       if ((await exit.count()) === 0) {
         bb06 = { id: "BB-06", status: "OPEN", detail: "exit control missing" };
       } else {
-        await exit.click({ force: true });
-        await bbPage.waitForTimeout(1200);
+        // Desktop exit may live in overflow menu — navigate href directly if hidden.
+        const href = await exit.getAttribute("href");
+        if (href) await bbPage.goto(new URL(href, BB).toString(), { waitUntil: "domcontentloaded" });
+        else await exit.click({ force: true });
+        await bbPage.waitForTimeout(800);
         const stillEdit = /website_edit=1/.test(bbPage.url());
+        const editStarts = await bbPage.locator("[data-website-start]").count();
         bb06 = {
           id: "BB-06",
-          status: stillEdit ? "PARTIAL" : "CLOSED",
-          detail: `exitPresent=true stillEditUrl=${stillEdit} url=${bbPage.url()}`,
+          status: !stillEdit && editStarts === 0 ? "CLOSED" : "PARTIAL",
+          detail: `exitPresent=true stillEditUrl=${stillEdit} editStarts=${editStarts} url=${bbPage.url()}`,
         };
       }
     } catch (e) {
@@ -470,14 +476,36 @@ async function main() {
     try {
       const regCtx = await browser.newContext();
       const regPage = await regCtx.newPage();
-      await regPage.goto(`${AC}/register-clinic?step=administrator`, { waitUntil: "domcontentloaded" });
+      await regPage.goto(`${AC}/register-clinic`, { waitUntil: "domcontentloaded" });
+      // Complete clinic step so administrator (phone) step becomes available.
+      if ((await regPage.locator('input[name="clinicName"]').count()) > 0) {
+        await regPage.locator('input[name="clinicName"]').fill(`Freeze Clinic ${Date.now().toString(36)}`);
+        if ((await regPage.locator('select[name="clinicType"] option').count()) > 1) {
+          await regPage.locator('select[name="clinicType"]').selectOption({ index: 1 });
+        }
+        if ((await regPage.locator('select[name="countryCode"] option').count()) > 1) {
+          await regPage.locator('select[name="countryCode"]').selectOption({ index: 1 });
+        }
+        await regPage.locator('input[name="city"]').fill("Lusaka");
+        await regPage.locator('button[type="submit"]').first().click();
+        await regPage.waitForTimeout(1500);
+      }
       const phone = regPage
         .locator('input[name="phone_national"], input[data-ac-phone-national], input[inputmode="tel"]')
         .first();
       const hasPhone = (await phone.count()) > 0;
       if (hasPhone) {
-        // Known demo admin phone (ZM national) — expect duplicate rejection if reached.
         await phone.fill("971234567");
+        // Fill required admin fields if present so duplicate-phone path can run.
+        if ((await regPage.locator('input[name="adminFullName"], input[name="fullName"]').count()) > 0) {
+          await regPage.locator('input[name="adminFullName"], input[name="fullName"]').first().fill("QA Admin");
+        }
+        if ((await regPage.locator('input[name="adminEmail"], input[name="email"]').count()) > 0) {
+          await regPage
+            .locator('input[name="adminEmail"], input[name="email"]')
+            .first()
+            .fill(`qa.dup.${Date.now().toString(36)}@example.test`);
+        }
         await regPage.locator('button[type="submit"], [data-ac-register-continue]').first().click();
         await regPage.waitForTimeout(1500);
         const body = await regPage.content();
@@ -485,10 +513,14 @@ async function main() {
         ac07 = {
           id: "AC-07",
           status: dupHint ? "CLOSED" : "PARTIAL",
-          detail: `phoneField=true duplicateHint=${dupHint}`,
+          detail: `phoneField=true duplicateHint=${dupHint} url=${regPage.url()}`,
         };
       } else {
-        ac07 = { id: "AC-07", status: "OPEN", detail: "registration phone field missing on administrator step" };
+        ac07 = {
+          id: "AC-07",
+          status: "OPEN",
+          detail: `registration phone field missing after clinic step; url=${regPage.url()}`,
+        };
       }
       await regCtx.close();
 
