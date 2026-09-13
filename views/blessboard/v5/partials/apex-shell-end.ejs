@@ -29,27 +29,24 @@
             <% if (authenticated) { %>
             <li><a href="/account">Account</a></li>
             <% } else { %>
-            <li><a href="/login">Login</a></li>
+            <li><a href="/login">Sign In</a></li>
             <% } %>
           </ul>
         </div>
         <div class="bb-apex-footer__col">
-          <h2 class="bb-apex-footer__heading">Legal</h2>
+          <h2 class="bb-apex-footer__heading">Platform</h2>
           <ul class="bb-apex-footer__links">
+            <li><a href="/contact"<%= typeof activeNav !== 'undefined' && activeNav === 'contact' ? ' aria-current="page"' : '' %>>Contact Us</a></li>
             <li><a href="/terms">Terms of Service</a></li>
             <li><a href="/privacy">Privacy Policy</a></li>
           </ul>
         </div>
       </div>
       <div class="bb-apex-footer__meta">
-        <% if (typeof activeNav !== 'undefined' && activeNav === 'register-church-success') { %>
-        <span>© BlessBoard. All rights reserved.</span>
-        <% } else { %>
-        <span>© BlessBoard</span>
-        <% } %>
+        <span>© 2026 BlessBoard. All rights reserved.</span>
         <span class="bb-apex-footer__meta-links">
-          <a href="/terms">Terms</a>
           <a href="/privacy">Privacy</a>
+          <a href="/terms">Terms</a>
         </span>
       </div>
     </div>

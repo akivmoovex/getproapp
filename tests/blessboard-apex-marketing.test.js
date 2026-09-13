@@ -74,6 +74,7 @@ describe("blessboard apex marketing batch 2b", () => {
     for (const rel of [
       "views/blessboard/v5/apex/features.ejs",
       "views/blessboard/v5/apex/about.ejs",
+      "views/blessboard/v5/apex/contact.ejs",
       "views/blessboard/v5/apex/for-churches.ejs",
       "views/blessboard/v5/apex/pricing.ejs",
       "views/blessboard/v5/apex/directory.ejs",
@@ -215,7 +216,7 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(res.text, /Advanced attendance and giving reports/i);
     assert.match(res.text, /Cross-branch HQ administration/i);
     assert.doesNotMatch(res.text, /Advanced workflows, scheduling/i);
-    assert.doesNotMatch(res.text, /href="\/contact"/);
+    assert.match(res.text, /href="\/contact"/);
     assert.doesNotMatch(res.text, /USD 4\.90|USD 8\.90|USD 14\.90/);
     assert.doesNotMatch(res.text, /\bProfessional\b|\bPartner\b/);
     // Canonical free tier remains plan code foundation (no legacy plan_key "free" CTA).

@@ -22,6 +22,7 @@ const {
   renderRegisterChurchSuccessPage,
   renderEmailVerificationResultPage,
   renderAboutPage,
+  renderContactPage,
 } = require("./renderApexMarketing");
 const { renderTermsPage, renderPrivacyPage } = require("./renderApexLegal");
 const {
@@ -87,8 +88,14 @@ const appRepo = require("../repositories/platformChurchRegistrationRepository");
 const {
   resolveBlessBoardRegistrationSuccessWebsite,
 } = require("../services/resolveRegistrationSuccessWebsite");
+const {
+  validatePlatformContactInquiry,
+  contactFormFromBody,
+} = require("../../church/platformInquiryValidation");
+const { submitPlatformInquiry } = require("../../services/church/platformInquiryService");
 
 const REGISTER_PATH = "/register-church";
+const CONTACT_PATH = "/contact";
 const REGISTER_SUCCESS_PATH = "/register-church/success";
 const ACCOUNT_PATH = "/account";
 const HQ_PATH = "/hq";
@@ -386,6 +393,27 @@ function createApexMarketingRouter(deps) {
     },
   });
 
+  const contactFormLimiter = rateLimit({
+    windowMs: Number(env.GETPRO_PLATFORM_FORM_RATE_WINDOW_MS) || 15 * 60 * 1000,
+    limit: Number(env.GETPRO_PLATFORM_FORM_RATE_MAX) || 12,
+    standardHeaders: true,
+    legacyHeaders: false,
+    keyGenerator: rateLimitKey,
+    handler: (req, res) => {
+      const csrfToken = issueAndSetCsrf(req, res);
+      return res.status(429).type("html").send(
+        renderContactPage({
+          authenticated: Boolean(req.v5Session && req.v5Session.authenticated),
+          csrfToken,
+          csrfField: CSRF_FIELD,
+          submitted: false,
+          formError: "Too many submissions from this network. Please wait a few minutes and try again.",
+          form: contactFormFromBody(req.body || {}),
+        })
+      );
+    },
+  });
+
   const emailVerifyWindowMs = Number(env.GETPRO_PLATFORM_FORM_RATE_WINDOW_MS) || 15 * 60 * 1000;
   const emailVerifyLimitRaw = Number(env.BLESSBOARD_EMAIL_VERIFY_RATE_LIMIT);
   const emailVerifyLimit =
@@ -457,6 +485,70 @@ function createApexMarketingRouter(deps) {
   }
 
   router.get("/about", (req, res) => withShell(req, res, renderAboutPage, { env }));
+  router.get(CONTACT_PATH, (req, res) =>
+    withShell(req, res, renderContactPage, {
+      alwaysPassCsrf: true,
+      submitted: String((req.query && req.query.submitted) || "") === "1",
+      formError: null,
+      form: {},
+      fieldError: null,
+    })
+  );
+
+  router.post(CONTACT_PATH, contactFormLimiter, async (req, res, next) => {
+    try {
+      if (!isApexHost(req)) {
+        return res.status(404).type("text").send("Not found");
+      }
+
+      const authenticated = Boolean(req.v5Session && req.v5Session.authenticated);
+      const body = req.body || {};
+
+      function renderContact(status, extras) {
+        const csrfToken = issueAndSetCsrf(req, res);
+        return res.status(status).type("html").send(
+          renderContactPage({
+            authenticated,
+            csrfToken,
+            csrfField: CSRF_FIELD,
+            submitted: false,
+            form: contactFormFromBody((extras && extras.form) || body),
+            formError: (extras && extras.formError) || null,
+            fieldError: (extras && extras.fieldError) || null,
+          })
+        );
+      }
+
+      if (!validateCsrf(req, body[CSRF_FIELD], env)) {
+        return renderContact(400, {
+          formError: "Your session expired. Please refresh and send your message again.",
+          form: body,
+        });
+      }
+
+      const validation = validatePlatformContactInquiry(body);
+      if (!validation.ok) {
+        return renderContact(400, {
+          formError: validation.error,
+          fieldError: validation.field || null,
+          form: body,
+        });
+      }
+
+      const result = await submitPlatformInquiry(req, validation);
+      if (!result.ok) {
+        return renderContact(503, {
+          formError: result.error || "We could not save your message right now. Please try again shortly.",
+          form: body,
+        });
+      }
+
+      return res.redirect(303, `${CONTACT_PATH}?submitted=1`);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
   router.get("/features", (req, res) => withShell(req, res, renderFeaturesPage));
   router.get("/for-churches", (req, res) => withShell(req, res, renderForChurchesPage));
   router.get("/pricing", (req, res) =>

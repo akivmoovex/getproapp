@@ -16,6 +16,9 @@ const {
   mapDirectoryItems,
 } = require("./apexMarketingContent");
 const {
+  CONTACT_REASON_OPTIONS,
+} = require("../../church/platformInquiryValidation");
+const {
   buildPlatformPhoneFieldLocals,
 } = require("../../platform/services/platformPhoneFieldLocals");
 const {
@@ -68,6 +71,20 @@ function renderAboutPage(opts) {
     pageTitle: "About BlessBoard",
     activeNav: "about",
     buildInfo: getApplicationBuildInfo({ env }),
+  });
+}
+
+function renderContactPage(opts) {
+  return renderApexView("apex/contact.ejs", {
+    ...shellLocals(opts),
+    pageTitle: "Contact Us",
+    activeNav: "contact",
+    csrfField: (opts && opts.csrfField) || "_csrf",
+    submitted: Boolean(opts && opts.submitted),
+    formError: (opts && opts.formError) || null,
+    fieldError: (opts && opts.fieldError) || null,
+    form: (opts && opts.form) || {},
+    contactReasons: CONTACT_REASON_OPTIONS,
   });
 }
 
@@ -273,6 +290,7 @@ function renderEmailVerificationResultPage(opts) {
 
 module.exports = {
   renderAboutPage,
+  renderContactPage,
   renderFeaturesPage,
   renderForChurchesPage,
   renderPricingPage,

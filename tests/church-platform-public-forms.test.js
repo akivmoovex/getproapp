@@ -112,18 +112,19 @@ test("validatePlatformRegisterChurchInquiry requires consent and valid fields", 
 
 test("apex GET /contact and register-church render accessible forms", async () => {
   const app = makeApexApp();
-  for (const routePath of ["/contact", BLESSBOARD_REGISTER_CHURCH_PATH]) {
-    const res = await request(app).get(routePath);
-    assert.equal(res.status, 200, `${routePath} should render`);
-    assert.match(res.text, /method="post"/);
-    assert.match(res.text, /company_website/);
-    assert.match(res.text, /church\.css\?v=75/);
-  }
   const contact = await request(app).get("/contact");
+  assert.equal(contact.status, 200);
+  assert.match(contact.text, /method="post"/);
+  assert.match(contact.text, /company_website/);
   assert.match(contact.text, /name="full_name"/);
   assert.match(contact.text, /name="subject"/);
+  assert.match(contact.text, /church\.css\?v=/);
 
   const register = await request(app).get(BLESSBOARD_REGISTER_CHURCH_PATH);
+  assert.equal(register.status, 200);
+  assert.match(register.text, /method="post"/);
+  assert.match(register.text, /company_website/);
+  assert.match(register.text, /church\.css\?v=/);
   assert.match(register.text, /name="church_name"/);
   assert.match(register.text, /name="consent_contact"/);
   assert.match(register.text, /bb-apex-register/);

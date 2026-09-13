@@ -40,13 +40,39 @@ function validatePhoneField(phone, { required = false, label = "phone number" } 
   return { ok: true, value };
 }
 
+/** Allowlisted platform Contact Us reasons (Stitch BB-CONTACT). */
+const CONTACT_REASON_OPTIONS = Object.freeze([
+  { value: "register_church", label: "I want to register my church" },
+  { value: "question_about_blessboard", label: "I have a question about BlessBoard" },
+  { value: "existing_church_account", label: "Existing church account" },
+  { value: "website_or_directory_support", label: "Website or directory support" },
+  { value: "partnership_enquiry", label: "Partnership enquiry" },
+  { value: "other", label: "Other" },
+]);
+
+const CONTACT_REASON_BY_VALUE = Object.freeze(
+  Object.fromEntries(CONTACT_REASON_OPTIONS.map((o) => [o.value, o.label]))
+);
+
+function resolveContactSubject(body) {
+  const reason = trim(body?.reason || body?.help_reason, 80).toLowerCase();
+  if (reason && CONTACT_REASON_BY_VALUE[reason]) {
+    return { ok: true, reason, subject: CONTACT_REASON_BY_VALUE[reason] };
+  }
+  const subject = trim(body?.subject, 200);
+  if (subject) {
+    return { ok: true, reason: null, subject };
+  }
+  return { ok: false };
+}
+
 function validatePlatformContactInquiry(body) {
   if (isHoneypotTriggered(body)) {
     return { ok: true, honeypot: true, data: null };
   }
 
   const fullName = trim(body?.full_name || body?.name, 200);
-  const subject = trim(body?.subject, 200);
+  const churchName = trim(body?.church_name || body?.organization_name, 200) || null;
   const message = trim(body?.message, 5000);
 
   if (!fullName) {
@@ -60,8 +86,9 @@ function validatePlatformContactInquiry(body) {
   if (!phoneResult.ok) {
     return { ok: false, error: phoneResult.error, field: "phone" };
   }
-  if (!subject) {
-    return { ok: false, error: "Please enter a subject.", field: "subject" };
+  const subjectResult = resolveContactSubject(body);
+  if (!subjectResult.ok) {
+    return { ok: false, error: "Please select how we can help.", field: "reason" };
   }
   if (message.length < 10) {
     return { ok: false, error: "Please enter a message of at least 10 characters.", field: "message" };
@@ -74,7 +101,8 @@ function validatePlatformContactInquiry(body) {
       full_name: fullName,
       email: emailResult.value,
       phone: phoneResult.value,
-      subject,
+      church_name: churchName,
+      subject: subjectResult.subject,
       message,
       consent_contact: true,
     },
@@ -177,6 +205,8 @@ function contactFormFromBody(body) {
     full_name: trim(body?.full_name || body?.name, 200),
     email: trim(body?.email, 200),
     phone: trim(body?.phone, 50),
+    church_name: trim(body?.church_name || body?.organization_name, 200),
+    reason: trim(body?.reason || body?.help_reason, 80),
     subject: trim(body?.subject, 200),
     message: trim(body?.message, 5000),
   };
@@ -202,6 +232,7 @@ function registerChurchFormFromBody(body) {
 module.exports = {
   INQUIRY_TYPES,
   INQUIRY_STATUS_OPTIONS,
+  CONTACT_REASON_OPTIONS,
   isHoneypotTriggered,
   validatePlatformContactInquiry,
   validatePlatformRegisterChurchInquiry,

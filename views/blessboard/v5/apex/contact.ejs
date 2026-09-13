@@ -1,0 +1,258 @@
+<%#
+  Apex Contact Us — Stitch project 9585058196210789597
+  BB-CONTACT-DESKTOP / BB-CONTACT-MOBILE (BlessBoard platform, not tenant church contact)
+%>
+<%
+  var formData = typeof form === "object" && form ? form : {};
+  var reasons = typeof contactReasons === "object" && contactReasons && contactReasons.length
+    ? contactReasons
+    : [];
+  var errField = typeof fieldError === "string" ? fieldError : "";
+  var csrfName = typeof csrfField === "string" && csrfField ? csrfField : "_csrf";
+%>
+<%- include('../partials/apex-shell-start') %>
+
+<article class="bb-contact" data-bb-contact="platform" data-product="BlessBoard">
+  <section class="bb-contact__hero" aria-labelledby="bb-contact-heading">
+    <p class="bb-contact__eyebrow">
+      <span class="bb-contact__eyebrow-dot" aria-hidden="true"></span>
+      CONTACT US
+    </p>
+    <h1 id="bb-contact-heading">We're here to help your ministry move forward</h1>
+    <p class="bb-contact__lead">
+      Whether you're exploring BlessBoard for your church or already using the platform, tell us how we can help.
+    </p>
+  </section>
+
+  <section class="bb-contact__main" aria-label="Contact form and quick links">
+    <div class="bb-contact__grid">
+      <div class="bb-contact__form-card">
+        <% if (submitted) { %>
+        <div class="bb-contact__alert bb-contact__alert--success" role="status">
+          <strong>Thank you — your message was received.</strong>
+          <p>
+            Your enquiry was saved for the BlessBoard platform team to review.
+            We will respond using the contact details you provided.
+            Email delivery from this form is not automated yet.
+          </p>
+          <p>
+            Need church access right away?
+            <a href="/register-church">Register Your Church</a>
+          </p>
+        </div>
+        <% } else { %>
+        <% if (formError) { %>
+        <div class="bb-contact__alert bb-contact__alert--error" role="alert"><%= formError %></div>
+        <% } %>
+
+        <form class="bb-contact__form" action="/contact" method="post" novalidate>
+          <input type="hidden" name="<%= csrfName %>" value="<%= csrfToken || '' %>" />
+          <div class="visually-hidden" aria-hidden="true">
+            <label for="bb-contact-company-website">Company website</label>
+            <input id="bb-contact-company-website" type="text" name="company_website" tabindex="-1" autocomplete="off" />
+          </div>
+
+          <div class="bb-contact__row">
+            <div class="bb-contact__field">
+              <label class="bb-contact__label" for="bb-contact-name">
+                Your name <span class="bb-contact__req" aria-hidden="true">*</span>
+              </label>
+              <input
+                class="bb-contact__input<%= errField === 'full_name' ? ' is-error' : '' %>"
+                id="bb-contact-name"
+                name="full_name"
+                type="text"
+                required
+                autocomplete="name"
+                placeholder="e.g. Pastor David or Sarah Jenkins"
+                value="<%= formData.full_name || '' %>"
+              />
+            </div>
+            <div class="bb-contact__field">
+              <label class="bb-contact__label" for="bb-contact-email">
+                Email address <span class="bb-contact__req" aria-hidden="true">*</span>
+              </label>
+              <input
+                class="bb-contact__input<%= errField === 'email' ? ' is-error' : '' %>"
+                id="bb-contact-email"
+                name="email"
+                type="email"
+                required
+                autocomplete="email"
+                placeholder="you@church.org"
+                value="<%= formData.email || '' %>"
+              />
+            </div>
+          </div>
+
+          <div class="bb-contact__row">
+            <div class="bb-contact__field">
+              <label class="bb-contact__label bb-contact__label--optional" for="bb-contact-phone">
+                Phone number <span class="bb-contact__optional">(optional)</span>
+              </label>
+              <input
+                class="bb-contact__input<%= errField === 'phone' ? ' is-error' : '' %>"
+                id="bb-contact-phone"
+                name="phone"
+                type="tel"
+                autocomplete="tel"
+                placeholder="+1 (555) 000-0000"
+                value="<%= formData.phone || '' %>"
+              />
+            </div>
+            <div class="bb-contact__field">
+              <label class="bb-contact__label bb-contact__label--optional" for="bb-contact-church">
+                Church / organization name <span class="bb-contact__optional">(optional)</span>
+              </label>
+              <input
+                class="bb-contact__input"
+                id="bb-contact-church"
+                name="church_name"
+                type="text"
+                autocomplete="organization"
+                placeholder="e.g. Grace Community Church"
+                value="<%= formData.church_name || '' %>"
+              />
+            </div>
+          </div>
+
+          <div class="bb-contact__field">
+            <label class="bb-contact__label" for="bb-contact-reason">
+              How can we help? <span class="bb-contact__req" aria-hidden="true">*</span>
+            </label>
+            <div class="bb-contact__select-wrap">
+              <select
+                class="bb-contact__input bb-contact__select<%= errField === 'reason' || errField === 'subject' ? ' is-error' : '' %>"
+                id="bb-contact-reason"
+                name="reason"
+                required
+              >
+                <option value="" disabled<%= !formData.reason ? ' selected' : '' %>>Select an option</option>
+                <% reasons.forEach(function (opt) { %>
+                <option value="<%= opt.value %>"<%= formData.reason === opt.value ? ' selected' : '' %>><%= opt.label %></option>
+                <% }) %>
+              </select>
+              <span class="material-symbols-outlined bb-contact__select-icon" aria-hidden="true">expand_more</span>
+            </div>
+          </div>
+
+          <div class="bb-contact__field">
+            <label class="bb-contact__label" for="bb-contact-message">
+              Message <span class="bb-contact__req" aria-hidden="true">*</span>
+            </label>
+            <textarea
+              class="bb-contact__input bb-contact__textarea<%= errField === 'message' ? ' is-error' : '' %>"
+              id="bb-contact-message"
+              name="message"
+              rows="4"
+              required
+              placeholder="Tell us how we can assist your team or ministry..."
+            ><%= formData.message || '' %></textarea>
+            <p class="bb-contact__helper">
+              <span class="material-symbols-outlined" aria-hidden="true">lock</span>
+              Please don't include passwords or other sensitive account information.
+            </p>
+          </div>
+
+          <button class="bb-contact__submit" type="submit">
+            <span>Send message</span>
+            <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+          </button>
+        </form>
+        <% } %>
+      </div>
+
+      <aside class="bb-contact__aside" aria-labelledby="bb-contact-aside-heading">
+        <h2 id="bb-contact-aside-heading" class="bb-contact__aside-title">Start in the right place</h2>
+        <p class="bb-contact__aside-lead">Looking for immediate access or exploring options? Jump straight to these resources.</p>
+
+        <div class="bb-contact__support-card">
+          <div class="bb-contact__support-icon" aria-hidden="true">
+            <span class="material-symbols-outlined">church</span>
+          </div>
+          <div class="bb-contact__support-body">
+            <h3>
+              <span class="material-symbols-outlined bb-contact__support-title-icon" aria-hidden="true">add_business</span>
+              New to BlessBoard?
+            </h3>
+            <p>Create your church organization and start building your digital presence.</p>
+            <a class="bb-contact__support-cta" href="/register-church">
+              <span>Register your church</span>
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="bb-contact__support-card">
+          <div class="bb-contact__support-icon" aria-hidden="true">
+            <span class="material-symbols-outlined">key</span>
+          </div>
+          <div class="bb-contact__support-body">
+            <h3>
+              <span class="material-symbols-outlined bb-contact__support-title-icon" aria-hidden="true">login</span>
+              Already using BlessBoard?
+            </h3>
+            <p>Sign in to access your church workspace.</p>
+            <a class="bb-contact__support-cta" href="/login">
+              <span>Sign in</span>
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+          </div>
+        </div>
+
+        <div class="bb-contact__support-card">
+          <div class="bb-contact__support-icon" aria-hidden="true">
+            <span class="material-symbols-outlined">explore</span>
+          </div>
+          <div class="bb-contact__support-body">
+            <h3>
+              <span class="material-symbols-outlined bb-contact__support-title-icon" aria-hidden="true">travel_explore</span>
+              Looking for a church?
+            </h3>
+            <p>Browse churches using the BlessBoard directory.</p>
+            <a class="bb-contact__support-cta" href="/directory">
+              <span>Church directory</span>
+              <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+            </a>
+          </div>
+        </div>
+      </aside>
+    </div>
+  </section>
+
+  <section class="bb-contact__process" aria-labelledby="bb-contact-process-heading">
+    <div class="bb-contact__process-inner">
+      <h2 id="bb-contact-process-heading">What happens after you contact us?</h2>
+      <ol class="bb-contact__steps">
+        <li class="bb-contact__step">
+          <span class="bb-contact__step-num" aria-hidden="true">01</span>
+          <h3>Send your message</h3>
+          <p>Submit your enquiry through the form with details on your church or question.</p>
+        </li>
+        <li class="bb-contact__step">
+          <span class="bb-contact__step-num" aria-hidden="true">02</span>
+          <h3>We route it to the right team</h3>
+          <p>Your request goes directly to onboarding, platform support, or partnerships specialists.</p>
+        </li>
+        <li class="bb-contact__step">
+          <span class="bb-contact__step-num" aria-hidden="true">03</span>
+          <h3>We respond using the contact details you provided</h3>
+          <p>A BlessBoard specialist will follow up via email or phone with clear next steps.</p>
+        </li>
+      </ol>
+    </div>
+  </section>
+
+  <section class="bb-contact__cta-wrap" aria-labelledby="bb-contact-cta-heading">
+    <div class="bb-contact__cta">
+      <h2 id="bb-contact-cta-heading">Ready to build your church's digital home?</h2>
+      <p>Get started today with modern church administration, member engagement, and a free mini-website.</p>
+      <div class="bb-contact__cta-actions">
+        <a class="bb-contact__cta-primary" href="/register-church">Register Your Church</a>
+        <a class="bb-contact__cta-secondary" href="/features">Explore Features</a>
+      </div>
+    </div>
+  </section>
+</article>
+
+<%- include('../partials/apex-shell-end') %>
