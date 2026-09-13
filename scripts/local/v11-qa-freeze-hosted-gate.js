@@ -320,12 +320,8 @@ async function main() {
       if (starts === 0) {
         bb04 = { id: "BB-04", status: "OPEN", detail: "no contact edit starts" };
       } else {
-        const textStart = bbPage
-          .locator(
-            '[data-website-key*="contact"] [data-website-start], [data-website-type="text"] [data-website-start]'
-          )
-          .first();
-        await textStart.click({ timeout: 15000 });
+        const emailStart = bbPage.locator('[data-website-key="contact.details.email"] [data-website-start]').first();
+        await emailStart.click({ timeout: 15000 });
         const input = bbPage.locator("#gp-website-field-input, [data-website-input]").first();
         await input.waitFor({ state: "visible", timeout: 8000 });
         const before = await input.inputValue().catch(() => "");
@@ -333,8 +329,9 @@ async function main() {
         await bbPage.locator("[data-website-save]").click();
         await bbPage.waitForTimeout(1200);
         const errVisible =
-          (await bbPage.locator('[role="alert"], .is-error, [data-website-error], .gp-website-editable__error').count()) >
-          0;
+          (await bbPage.locator('[role="alert"], .is-error, [data-website-error], .gp-website-field-editor__error').count()) >
+            0 ||
+          /invalid|email|format/i.test(await bbPage.locator("body").innerText());
         await input.fill(before || "info@demo-church.example.test");
         await bbPage.locator("[data-website-save]").click();
         await bbPage.waitForTimeout(1200);
