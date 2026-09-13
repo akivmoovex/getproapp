@@ -11,6 +11,9 @@
  *   ... --ids=<uuid>,<uuid> --keep-payload
  */
 
+const fs = require("fs");
+const fsp = require("fs/promises");
+const path = require("path");
 const { createHostingerMediaStorage } = require("../src/platform/media/hostingerMediaStorage");
 const {
   resolveHostingerMediaConfig,
@@ -18,6 +21,39 @@ const {
   PROVIDER_DATABASE,
   buildHostingerStorageKey,
 } = require("../src/platform/media/hostingerMediaConfig");
+const {
+  buildPersistentMediaRootCandidates,
+} = require("../src/platform/media/hostingerMediaPersistenceProbe");
+
+/**
+ * Hostinger may expose /media from a sibling durable root (account-home vs domains/…).
+ * Mirror verified bytes so public GETs cannot serve a stale shadow copy.
+ * @param {string} primaryRoot
+ * @param {string} storageKey
+ * @param {Buffer} buffer
+ * @returns {Promise<string[]>}
+ */
+async function mirrorToSiblingTestingRoots(primaryRoot, storageKey, buffer) {
+  const primary = path.resolve(primaryRoot);
+  const mirrored = [];
+  for (const candidate of buildPersistentMediaRootCandidates(process.cwd())) {
+    const root = path.resolve(candidate);
+    if (root === primary) continue;
+    if (!fs.existsSync(root)) continue;
+    const abs = path.resolve(root, ...String(storageKey).split("/"));
+    if (abs !== root && !abs.startsWith(root + path.sep)) continue;
+    await fsp.mkdir(path.dirname(abs), { recursive: true });
+    await fsp.writeFile(abs, buffer, { flag: "w" });
+    const verify = await fsp.readFile(abs);
+    if (!verify.equals(buffer)) {
+      throw Object.assign(new Error(`sibling_mirror_mismatch root=${root}`), {
+        code: "SIBLING_MIRROR_MISMATCH",
+      });
+    }
+    mirrored.push(root);
+  }
+  return mirrored;
+}
 
 /**
  * @param {{ query: Function }} db
@@ -184,6 +220,15 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
         });
       }
 
+      let mirroredRoots = [];
+      if (cfg.environment === "testing" && cfg.storageRoot) {
+        mirroredRoots = await mirrorToSiblingTestingRoots(
+          cfg.storageRoot,
+          storageKey,
+          payloadBuf
+        );
+      }
+
       if (keepPayload) {
         await db.query(
           `UPDATE platform.website_media
@@ -214,6 +259,7 @@ async function migrateWebsiteMediaToHostinger(db, opts) {
         keepPayload,
         fileExists: true,
         byteSize: expectedBytes,
+        mirroredRoots,
       });
     } catch (err) {
       errors.push({
