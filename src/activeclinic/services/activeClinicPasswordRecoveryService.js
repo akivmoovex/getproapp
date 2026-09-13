@@ -35,6 +35,16 @@ const {
   DELIVERY,
   resolvePublicOrigin,
 } = require("./activeClinicShareLinks");
+const {
+  sendActiveClinicEmail,
+  createCaptureAdapter,
+  TEMPLATE,
+} = require("./activeClinicEmailDelivery");
+const {
+  isTestingDeliveryEnv,
+  recordTestingDelivery,
+  findLatestTestingDelivery,
+} = require("./activeClinicTestingDeliveryOutbox");
 
 const PURPOSE_RESET = "activeclinic_password_reset";
 const PRODUCT_KEY = "activeclinic";
@@ -58,7 +68,7 @@ const RESULT = Object.freeze({
 });
 
 const NEUTRAL_MESSAGE =
-  "If an eligible ActiveClinic account exists for that phone or email, reset instructions are available to authorized administrators when delivery is configured.";
+  "If an eligible ActiveClinic account exists for that phone or email, reset instructions will be sent when delivery is available for this environment.";
 
 /**
  * Safe structured recovery observability. Never logs tokens, passwords, or full contacts.
@@ -156,12 +166,13 @@ async function requestActiveClinicPasswordReset(db, input) {
   const src = input && typeof input === "object" ? input : {};
   const deploymentCode = src.deploymentCode || CODE_ACTIVECLINIC_ORG_V6;
   const requestId = src.requestId || null;
+  const env = src.env || process.env;
   const identifier = parseIdentifier(src.identifier || src.phone || src.email, {
     country: src.country || src.phoneCountry || src.phone_country || null,
   });
   const ipHash = hashIp(src.requestIp);
-  // Public forgot-password does not send mail yet (delivery deferred). Adapter stays unavailable.
-  const adapterSelected = "unavailable";
+  const testingDelivery = isTestingDeliveryEnv(env);
+  const adapterSelected = testingDelivery ? "capture" : "unavailable";
 
   const neutral = {
     ok: true,
@@ -265,7 +276,21 @@ async function requestActiveClinicPasswordReset(db, input) {
       const { rawToken, tokenHash } = generateRawToken();
       const expiresAt = new Date(Date.now() + TTL_MS);
       const primaryStaff = eligible.staffRows[0];
-      await tokenRepo.insertActionToken(client, {
+      const resetUrl = buildResetPasswordUrl({
+        rawToken,
+        env,
+        deploymentCode,
+        publicOrigin: src.publicOrigin || resolvePublicOrigin(env, deploymentCode),
+      });
+
+      const metadataJson = { channel: identifier.kind };
+      if (testingDelivery) {
+        // Durable QA channel (DB metadata) — never written in production.
+        metadataJson.testingResetUrl = resetUrl;
+        metadataJson.testingDelivery = "outbox";
+      }
+
+      const token = await tokenRepo.insertActionToken(client, {
         platformIdentityId: eligible.identity.id,
         purpose: PURPOSE_RESET,
         tokenHash,
@@ -276,8 +301,69 @@ async function requestActiveClinicPasswordReset(db, input) {
         organizationId: primaryStaff.organization_id,
         staffMemberId: primaryStaff.id,
         requestIpHash: ipHash,
-        metadataJson: { channel: identifier.kind },
+        metadataJson,
       });
+
+      let deliveryStatus = DELIVERY.UNAVAILABLE;
+      let deliveryOutcome = DELIVERY.UNAVAILABLE;
+
+      if (testingDelivery) {
+        recordTestingDelivery(
+          {
+            templateKey: TEMPLATE.PASSWORD_RESET,
+            recipient: eligible.identity.emailNormalized || null,
+            identifierType: identifier.kind,
+            identifierNormalized: identifier.normalized,
+            resetUrl,
+            expiresAt,
+            tokenId: token.id,
+            platformIdentityId: eligible.identity.id,
+          },
+          env
+        );
+        deliveryStatus = DELIVERY.LINK_GENERATED;
+        deliveryOutcome = "testing_outbox";
+      }
+
+      const recipientEmail =
+        eligible.identity.emailNormalized ||
+        (primaryStaff.email_normalized
+          ? String(primaryStaff.email_normalized).toLowerCase()
+          : "");
+      if (recipientEmail) {
+        const captureStore = [];
+        const emailResult = await sendActiveClinicEmail({
+          env,
+          adapter: testingDelivery ? createCaptureAdapter(captureStore) : src.emailAdapter,
+          publicOrigin: src.publicOrigin || resolvePublicOrigin(env, deploymentCode),
+          deploymentCode,
+          templateKey: TEMPLATE.PASSWORD_RESET,
+          recipient: recipientEmail,
+          idempotencyKey: token.id ? `staff.password_reset:${token.id}` : null,
+          fields: {
+            resetUrl,
+            expiresAt,
+          },
+        });
+        if (
+          emailResult.inviteDeliveryStatus === "queued" ||
+          emailResult.inviteDeliveryStatus === "sent"
+        ) {
+          deliveryStatus =
+            emailResult.inviteDeliveryStatus === "sent" ? DELIVERY.SENT : DELIVERY.QUEUED;
+          deliveryOutcome = emailResult.providerCode || deliveryStatus;
+        } else if (testingDelivery) {
+          // Testing outbox already recorded; keep link_generated even if capture send path fails.
+          deliveryStatus = DELIVERY.LINK_GENERATED;
+          deliveryOutcome = "testing_outbox";
+        } else if (emailResult.inviteDeliveryStatus === "unavailable") {
+          deliveryStatus = DELIVERY.UNAVAILABLE;
+          deliveryOutcome = emailResult.providerCode || DELIVERY.UNAVAILABLE;
+        } else {
+          deliveryStatus = DELIVERY.FAILED;
+          deliveryOutcome = emailResult.providerCode || DELIVERY.FAILED;
+        }
+      }
 
       await recordAuditEventSafe(client, {
         deploymentCode,
@@ -291,35 +377,36 @@ async function requestActiveClinicPasswordReset(db, input) {
           actor_kind: "public",
           eligible: true,
           channel: identifier.kind,
-          delivery: DELIVERY.UNAVAILABLE,
+          delivery: deliveryStatus,
         },
       });
-      await recordAuditEventSafe(client, {
-        deploymentCode,
-        organizationId: primaryStaff.organization_id,
-        actorUserId: null,
-        actionKey: "activeclinic.delivery.unavailable",
-        entityType: "platform_identity",
-        entityId: eligible.identity.id,
-        outcome: "success",
-        metadataJson: { actor_kind: "system", purpose: PURPOSE_RESET },
-      });
+      if (deliveryStatus === DELIVERY.UNAVAILABLE) {
+        await recordAuditEventSafe(client, {
+          deploymentCode,
+          organizationId: primaryStaff.organization_id,
+          actorUserId: null,
+          actionKey: "activeclinic.delivery.unavailable",
+          entityType: "platform_identity",
+          entityId: eligible.identity.id,
+          outcome: "success",
+          metadataJson: { actor_kind: "system", purpose: PURPOSE_RESET },
+        });
+      }
 
       await client.query("COMMIT");
 
-      // Public path never returns the raw token. Outbound email/SMS not wired yet.
-      void rawToken;
       logPasswordRecoveryTrace({
         requestId,
         identifierType: identifier.kind,
         identityFound: true,
         tokenGenerated: true,
-        adapterSelected,
-        deliveryOutcome: DELIVERY.UNAVAILABLE,
+        adapterSelected: testingDelivery ? "capture" : adapterSelected,
+        deliveryOutcome,
       });
       return {
         ...neutral,
-        deliveryStatus: DELIVERY.UNAVAILABLE,
+        sent: deliveryStatus === DELIVERY.SENT || deliveryStatus === DELIVERY.QUEUED,
+        deliveryStatus,
       };
     } catch (err) {
       try {
@@ -589,6 +676,63 @@ async function completeActiveClinicPasswordReset(db, input) {
   });
 }
 
+/**
+ * Testing-only: resolve reset URL from durable token metadata / process outbox.
+ * Never returns a URL in production deployment env.
+ */
+async function lookupTestingPasswordResetDelivery(db, input) {
+  const src = input && typeof input === "object" ? input : {};
+  const env = src.env || process.env;
+  if (!isTestingDeliveryEnv(env)) {
+    return { ok: false, code: "refused_non_testing_environment" };
+  }
+  const identifier = parseIdentifier(src.identifier || src.phone || src.email, {
+    country: src.country || null,
+  });
+  if (!identifier.normalized || identifier.invalid) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+
+  const memory = findLatestTestingDelivery({
+    identifierNormalized: identifier.normalized,
+  });
+  if (memory && memory.resetUrl) {
+    return {
+      ok: true,
+      code: RESULT.OK,
+      channel: "process_outbox",
+      resetUrl: memory.resetUrl,
+      expiresAt: memory.expiresAt,
+      tokenId: memory.tokenId,
+    };
+  }
+
+  const eligible = await findEligibleIdentityForReset(db, identifier);
+  if (!eligible) {
+    return { ok: false, code: RESULT.NOT_ELIGIBLE };
+  }
+  const token = await tokenRepo.findLatestActiveToken(db, {
+    platformIdentityId: eligible.identity.id,
+    purpose: PURPOSE_RESET,
+    deploymentCode: src.deploymentCode || null,
+  });
+  const resetUrl =
+    token && token.metadataJson && token.metadataJson.testingResetUrl
+      ? String(token.metadataJson.testingResetUrl)
+      : null;
+  if (!resetUrl) {
+    return { ok: false, code: "delivery_not_found" };
+  }
+  return {
+    ok: true,
+    code: RESULT.OK,
+    channel: "token_metadata",
+    resetUrl,
+    expiresAt: token.expiresAt,
+    tokenId: token.id,
+  };
+}
+
 module.exports = {
   RESULT,
   PURPOSE_RESET,
@@ -598,5 +742,6 @@ module.exports = {
   issueAdminPasswordResetLink,
   previewResetToken,
   completeActiveClinicPasswordReset,
+  lookupTestingPasswordResetDelivery,
   resolvePublicOrigin,
 };

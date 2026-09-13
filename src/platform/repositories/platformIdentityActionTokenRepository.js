@@ -125,6 +125,29 @@ async function findById(db, tokenId) {
 }
 
 /**
+ * Latest active password-reset token for an identity (testing delivery lookup).
+ * @param {{ query: Function }} db
+ * @param {{ platformIdentityId: string, purpose: string, deploymentCode?: string|null }} input
+ */
+async function findLatestActiveToken(db, input) {
+  const params = [input.platformIdentityId, input.purpose];
+  let sql = `
+    SELECT * FROM platform.identity_action_tokens
+     WHERE platform_identity_id = $1
+       AND purpose = $2
+       AND consumed_at IS NULL
+       AND revoked_at IS NULL
+       AND expires_at > now()`;
+  if (input.deploymentCode) {
+    params.push(input.deploymentCode);
+    sql += ` AND deployment_code = $${params.length}`;
+  }
+  sql += ` ORDER BY created_at DESC LIMIT 1`;
+  const res = await db.query(sql, params);
+  return mapToken(res.rows[0] || null);
+}
+
+/**
  * One-time consume. Concurrent callers: only one succeeds.
  * @param {{ query: Function }} db
  * @param {string} tokenId
@@ -216,6 +239,7 @@ module.exports = {
   revokeActiveTokens,
   findByTokenHash,
   findById,
+  findLatestActiveToken,
   markConsumed,
   markRevoked,
   consumeRateLimitSlot,

@@ -41,5 +41,17 @@ This returns a copyable/shareable reset URL when automated delivery is unavailab
 
 ## Deferred
 
-- Real email / SMS provider integration
-- WhatsApp Business API delivery
+- Production Resend / SMS / WhatsApp Business API delivery (live transport remains production-gated)
+- Patient-portal password recovery (separate routes)
+
+## Testing delivery (moovex-platform-testing only)
+
+When `DEPLOYMENT_ENV=testing`, public forgot-password:
+
+1. Creates a hashed one-time token as usual
+2. Records the absolute reset URL in testing delivery outbox + token `metadata_json.testingResetUrl`
+3. Attempts capture-adapter email when the identity has an email (no production mail config)
+4. Still returns a neutral public response (no token in the HTTP body)
+
+QA retrieval: `GET /__platform/qa/activeclinic-password-reset-delivery?identifier=...`
+(only on `moovex-platform-testing`).

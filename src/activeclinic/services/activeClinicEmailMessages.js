@@ -9,6 +9,7 @@ const TEMPLATE = Object.freeze({
   INFORMATION_REQUESTED: "clinic_registration.information_requested",
   READY_TO_SIGN_IN: "clinic_registration.ready_to_sign_in",
   STAFF_INVITATION: "staff.invitation",
+  PASSWORD_RESET: "staff.password_reset",
 });
 
 function trimText(value, max) {
@@ -171,6 +172,47 @@ function buildStaffInvitationMessage(input) {
   };
 }
 
+function buildPasswordResetMessage(input) {
+  const resetUrl = String((input && input.resetUrl) || "").trim();
+  if (!resetUrl) return null;
+  let ctaPath = "/reset-password";
+  try {
+    ctaPath = new URL(resetUrl).pathname || ctaPath;
+  } catch {
+    if (resetUrl.startsWith("/")) ctaPath = resetUrl.split("?")[0];
+  }
+  const expiresAt = input && input.expiresAt ? String(input.expiresAt).slice(0, 19).replace("T", " ") : "";
+  const subject = "Reset your ActiveClinic password";
+  const text = [
+    "We received a request to reset your ActiveClinic password.",
+    "",
+    `Reset password: ${resetUrl}`,
+    expiresAt ? `This link expires on ${expiresAt} UTC.` : "",
+    "This link can be used only once. If you did not request a reset, you can ignore this email.",
+    "",
+    "— ActiveClinic",
+  ]
+    .filter(Boolean)
+    .join("\n");
+  const html = buildTransactionalHtml(
+    [
+      "We received a request to reset your ActiveClinic password.",
+      expiresAt ? `This link expires on ${expiresAt} UTC.` : "",
+      "This link can be used only once. If you did not request a reset, you can ignore this email.",
+    ],
+    resetUrl,
+    "Reset password"
+  );
+  return {
+    templateKey: TEMPLATE.PASSWORD_RESET,
+    subject,
+    text,
+    html,
+    ctaPath,
+    ctaUrl: resetUrl,
+  };
+}
+
 function buildActiveClinicEmailMessage(templateKey, input) {
   if (templateKey === TEMPLATE.INFORMATION_REQUESTED) {
     return buildInformationRequestedMessage(input);
@@ -181,6 +223,9 @@ function buildActiveClinicEmailMessage(templateKey, input) {
   if (templateKey === TEMPLATE.STAFF_INVITATION) {
     return buildStaffInvitationMessage(input);
   }
+  if (templateKey === TEMPLATE.PASSWORD_RESET) {
+    return buildPasswordResetMessage(input);
+  }
   return null;
 }
 
@@ -190,5 +235,6 @@ module.exports = {
   buildInformationRequestedMessage,
   buildReadyToSignInMessage,
   buildStaffInvitationMessage,
+  buildPasswordResetMessage,
   buildActiveClinicEmailMessage,
 };

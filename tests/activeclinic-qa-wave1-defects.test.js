@@ -98,8 +98,8 @@ describe("DEF-AC-002 / DEF-AC-003 password recovery", () => {
     assert.equal(unknown.deliveryStatus, DELIVERY.UNAVAILABLE);
   });
 
-  it("documents delivery-unavailable semantics for public recovery", () => {
-    assert.match(NEUTRAL_MESSAGE, /when delivery is configured/i);
+  it("documents enumeration-safe public recovery messaging", () => {
+    assert.match(NEUTRAL_MESSAGE, /eligible ActiveClinic account/i);
     assert.equal(DELIVERY.UNAVAILABLE, "unavailable");
   });
 });

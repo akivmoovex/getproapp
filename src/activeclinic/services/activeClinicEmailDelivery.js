@@ -227,6 +227,7 @@ function createCaptureAdapter(store) {
         idempotencyKey: key || null,
         subject: envelope && envelope.subject,
         activationUrl: envelope && envelope.activationUrl ? String(envelope.activationUrl) : null,
+        resetUrl: envelope && envelope.resetUrl ? String(envelope.resetUrl) : null,
       });
       return {
         sendingAvailable: true,
@@ -272,6 +273,17 @@ function resolveActiveClinicEmailAdapter(env, deps) {
   const source = env && typeof env === "object" ? env : process.env;
   const decision = liveEmailTransportDecision(source);
   if (!decision.allowed || decision.adapterName !== "resend") {
+    // Explicit testing capture only when adapter env selects it (password recovery
+    // may also inject a capture adapter). Default remains unavailable.
+    const {
+      isTestingDeliveryEnv,
+    } = require("./activeClinicTestingDeliveryOutbox");
+    if (isTestingDeliveryEnv(source) && adapterNameFromEnv(source) === "capture") {
+      if (!global.__activeClinicTestingEmailCaptureStore) {
+        global.__activeClinicTestingEmailCaptureStore = [];
+      }
+      return createCaptureAdapter(global.__activeClinicTestingEmailCaptureStore);
+    }
     return createUnavailableAdapter();
   }
   const config = readResendSenderConfig(source);
@@ -389,6 +401,7 @@ async function sendActiveClinicEmail(input) {
     idempotencyKey: src.idempotencyKey ? String(src.idempotencyKey) : null,
     activationUrl:
       templateKey === TEMPLATE.STAFF_INVITATION ? message.ctaUrl : null,
+    resetUrl: templateKey === TEMPLATE.PASSWORD_RESET ? message.ctaUrl : null,
   };
   if (adapter.sendingAvailable === true) {
     envelope.text = message.text;
