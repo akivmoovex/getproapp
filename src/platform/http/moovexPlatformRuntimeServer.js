@@ -126,6 +126,59 @@ function createMoovexPlatformRuntimeApp(options) {
     );
   });
 
+  // Testing-only reversible sample migrator (writes on this Hostinger worker's media root).
+  // Refuses production deployment env / production media keys; max 4 IDs; keep-payload required.
+  app.post(
+    "/__platform/qa/migrate-website-media",
+    express.json({ limit: "32kb" }),
+    async (req, res) => {
+      const {
+        isPlatformRuntimeDiagnosticsEndpointAllowed,
+      } = require("../../startup/platformRuntimeSnapshot");
+      if (!isPlatformRuntimeDiagnosticsEndpointAllowed(env)) {
+        return res.status(404).json({ ok: false, code: "not_found" });
+      }
+      if (String(env.DEPLOYMENT_ENV || "").trim().toLowerCase() !== "testing") {
+        return res.status(403).json({ ok: false, code: "refused_non_testing_environment" });
+      }
+      if (String(deployment.code || "").trim().toLowerCase() !== "moovex-platform-testing") {
+        return res.status(403).json({ ok: false, code: "refused_non_testing_deployment" });
+      }
+      const body = req.body || {};
+      if (body.confirm !== "migrate-website-media-to-hostinger") {
+        return res.status(400).json({ ok: false, code: "confirm_required" });
+      }
+      if (body.keepPayload !== true) {
+        return res.status(400).json({ ok: false, code: "keep_payload_required" });
+      }
+      const ids = Array.isArray(body.ids) ? body.ids.map((id) => String(id || "").trim()) : [];
+      if (!ids.length || ids.length > 4) {
+        return res.status(400).json({ ok: false, code: "ids_required_max_4" });
+      }
+      if (ids.some((id) => !/^[0-9a-f-]{36}$/i.test(id))) {
+        return res.status(400).json({ ok: false, code: "invalid_media_id" });
+      }
+      try {
+        const { migrateWebsiteMediaToHostinger } = require("../../../scripts/migrate-website-media-to-hostinger");
+        const pool = (opts.getPool || getPgPool)();
+        const result = await migrateWebsiteMediaToHostinger(pool, {
+          dryRun: false,
+          execute: true,
+          env,
+          mediaIds: ids,
+          keepPayload: true,
+        });
+        return res.status(result.ok ? 200 : 500).json(result);
+      } catch (err) {
+        return res.status(500).json({
+          ok: false,
+          code: (err && err.code) || "migrate_failed",
+          message: err && err.message ? String(err.message).slice(0, 160) : "unknown",
+        });
+      }
+    }
+  );
+
   app.use(
     createLoadPlatformRequestContext({
       env,
