@@ -194,6 +194,10 @@ describe("ActiveClinic ACW public site", () => {
     const solutions = await request(app).get("/solutions");
     assert.equal(solutions.status, 200);
     assert.match(solutions.text, /Empowering Your Practice/);
+
+    const book = await request(app).get("/book");
+    assert.equal(book.status, 302);
+    assert.match(String(book.headers.location || ""), /\/clinics$/);
   });
 
   it("directory excludes unpublished clinics and supports search filters", async () => {

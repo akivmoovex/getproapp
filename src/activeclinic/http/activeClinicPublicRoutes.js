@@ -531,6 +531,12 @@ function registerActiveClinicPublicRoutes(app, deps) {
     }));
   });
 
+  // Apex /book is not a booking wizard — guide users to pick a clinic first.
+  // Clinic-scoped booking remains at /clinics/:clinicKey/book*.
+  app.get("/book", (req, res) => {
+    return res.redirect(302, "/clinics");
+  });
+
   const contactLimiter = rateLimit({
     windowMs: 60 * 60 * 1000,
     limit: String(env.NODE_ENV || "") === "test" ? 1000 : 10,
