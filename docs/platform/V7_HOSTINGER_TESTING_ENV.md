@@ -53,6 +53,32 @@ Never run that migrator against production.
 | `GETPRO_DATABASE_URL` | **Dangerous** on V7 foundation — unused / must stay unset |
 | `CSRF_SECRET` | **Obsolete** in this codebase (not consumed) |
 
+## Public website media (Hostinger filesystem / CDN)
+
+Required on Hostinger testing for **new** BlessBoard + ActiveClinic website image uploads to leave PostgreSQL:
+
+| Variable | Example (testing) | Notes |
+| -------- | ----------------- | ----- |
+| `MEDIA_STORAGE_ROOT` | `/home/…/media` | Absolute directory containing `testing/` and (unused here) `production/` |
+| `MEDIA_PUBLIC_BASE_URL` | `/media` | Public URL prefix (same-origin on both product hosts). May be a full CDN origin. |
+| `MEDIA_PUBLIC_MOUNT_PATH` | `/media` | Optional; Express serves `MEDIA_STORAGE_ROOT` here with immutable cache headers |
+
+Storage keys (immutable):
+
+```text
+testing/blessboard/<org-id>/<media-id>.webp
+testing/activeclinic/<org-id>/<media-id>.jpg
+```
+
+Testing runtime **refuses** writes under `production/`. Do not set `MEDIA_STORAGE_ROOT` to a production tree on this deployment.
+
+When `MEDIA_STORAGE_ROOT` is unset:
+
+- Local / non-platform profiles → legacy `payload_bytes` (DB) uploads
+- `PLATFORM_DEPLOYMENT_CODE=moovex-platform-testing` → defaults to `<cwd>/media` (still only writes `testing/…`)
+
+Set `MEDIA_STORAGE_DISABLE=1` to force DB payloads on testing if needed.
+
 ## Dangerous if wrong
 
 | Variable | Risk |

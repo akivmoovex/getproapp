@@ -801,6 +801,24 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         mediaId,
         organizationId: clinic.organizationId,
       });
+      if (
+        loaded.media.storageProvider === mediaService.PROVIDER_HOSTINGER &&
+        loaded.media.storageKey
+      ) {
+        const publicSrc = mediaService.resolveWebsiteMediaPublicSrc(instance, loaded.media);
+        const reqPath = String(req.originalUrl || req.url || "").split("?")[0];
+        if (
+          publicSrc &&
+          publicSrc !== reqPath &&
+          (publicSrc.startsWith("/media/") || /^https?:\/\//i.test(publicSrc))
+        ) {
+          res.setHeader(
+            "Cache-Control",
+            published ? "public, max-age=31536000, immutable" : "private, no-store"
+          );
+          return res.redirect(302, publicSrc);
+        }
+      }
       if (!payload.ok) return res.status(404).type("text").send("Not found");
       const mime = String(payload.mimeType || "").toLowerCase();
       if (!mediaService.ALLOWED_IMAGE_MIME.has(mime)) {
@@ -808,7 +826,14 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       }
       res.setHeader("Content-Type", mime);
       res.setHeader("X-Content-Type-Options", "nosniff");
-      res.setHeader("Cache-Control", published ? "public, max-age=300" : "private, no-store");
+      res.setHeader(
+        "Cache-Control",
+        payload.storageProvider === mediaService.PROVIDER_HOSTINGER
+          ? "public, max-age=31536000, immutable"
+          : published
+            ? "public, max-age=300"
+            : "private, no-store"
+      );
       return res.status(200).send(payload.buffer);
     } catch (err) {
       return next(err);

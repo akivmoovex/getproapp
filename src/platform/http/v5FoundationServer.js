@@ -429,6 +429,9 @@ function createV5FoundationApp(options) {
     })
   );
 
+  const { mountHostingerMediaStatic } = require("./mountHostingerMediaStatic");
+  mountHostingerMediaStatic(app, env);
+
   // 1–2. Platform host + BlessBoard catalogue (diagnostic and/or tenant routing)
   if (enableHostResolution) {
     const platformDeploymentIdentity = getPlatformDeploymentCode(env);

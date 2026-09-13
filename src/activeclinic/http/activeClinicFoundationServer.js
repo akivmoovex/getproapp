@@ -211,6 +211,9 @@ function createActiveClinicFoundationApp(options) {
     return servePublic(req, res, next);
   });
 
+  const { mountHostingerMediaStatic } = require("../../platform/http/mountHostingerMediaStatic");
+  mountHostingerMediaStatic(app, env);
+
   app.use(
     createLoadV5Session({
       getPool,

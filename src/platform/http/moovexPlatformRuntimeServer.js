@@ -73,6 +73,9 @@ function createMoovexPlatformRuntimeApp(options) {
   app.set("trust proxy", resolveTrustProxy(env));
   app.use(assignV5RequestId);
 
+  const { mountHostingerMediaStatic } = require("./mountHostingerMediaStatic");
+  mountHostingerMediaStatic(app, env);
+
   app.get("/healthz", (req, res) => {
     const boot = opts.boot || null;
     const schema = boot && boot.schemaCompatibility ? boot.schemaCompatibility : null;
