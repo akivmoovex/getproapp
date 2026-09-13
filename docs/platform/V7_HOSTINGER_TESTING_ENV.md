@@ -86,7 +86,11 @@ When `MEDIA_STORAGE_ROOT` points inside `hbuilds/versions/…` (or under an ephe
 - Config rejects with `MEDIA_STORAGE_ROOT_NOT_PERSISTENT`
 - Media writes are refused; do not use release-tree paths
 
-Confirm via testing `/__platform/runtime` → `mediaPersistence` (`mediaStorageRootSource`, `configuredStorageRoot`, `writable`, `outsideReleaseTree`).
+Confirm via testing `/__platform/runtime` → `mediaPersistence` (`mediaStorageRootSource`, `configuredStorageRoot`, `writable`, `outsideReleaseTree`, `mirroringDisabled`).
+
+**Canonical root (testing):** `/home/u549637099/moovex-media` only. Do **not** mirror writes to `domains/pronline.org/moovex-media` (leftover files there may remain; they are not the read/write root).
+
+**CDN integrity:** origin file bytes/checksum under the canonical root are authoritative and must match `payload_bytes` (while keep-payload is in effect). Hostinger edge may transform JPEG response bodies — do **not** require CDN body checksum equality for JPEG; verify render, MIME, sensible dimensions, and origin checksum instead.
 
 Set `MEDIA_STORAGE_DISABLE=1` to force DB payloads even when a root is configured/derived.
 

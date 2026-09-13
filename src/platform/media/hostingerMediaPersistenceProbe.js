@@ -26,17 +26,27 @@ function accountHomeFromCwd(cwd) {
 }
 
 /**
- * Preferred durable roots for this Hostinger account — never under hbuilds/versions.
+ * Canonical durable root for this Hostinger account — never under hbuilds/versions.
+ * Only `<account-home>/moovex-media` (e.g. /home/u549637099/moovex-media).
+ * domains/pronline.org/moovex-media is intentionally excluded (no mirror / no writes).
  * @param {string} cwd
  * @returns {string[]}
  */
 function buildPersistentMediaRootCandidates(cwd) {
   const home = accountHomeFromCwd(cwd);
   if (!home) return [];
-  return [
-    path.join(home, "moovex-media"),
-    path.join(home, "domains", "pronline.org", "moovex-media"),
-  ];
+  return [path.join(home, "moovex-media")];
+}
+
+/**
+ * Non-canonical sibling that may still hold leftover files — never used for R/W.
+ * @param {string} cwd
+ * @returns {string|null}
+ */
+function nonCanonicalShadowMediaRoot(cwd) {
+  const home = accountHomeFromCwd(cwd);
+  if (!home) return null;
+  return path.join(home, "domains", "pronline.org", "moovex-media");
 }
 
 /**
@@ -137,6 +147,8 @@ async function buildHostingerMediaPersistenceSnapshot(env) {
           ? rootProbe.outsideReleaseTree
           : null,
     recommendedMediaStorageRoot: recommended ? recommended.path : null,
+    nonCanonicalShadowMediaRoot: nonCanonicalShadowMediaRoot(cwd),
+    mirroringDisabled: true,
     candidates,
   };
 }
@@ -144,6 +156,7 @@ async function buildHostingerMediaPersistenceSnapshot(env) {
 module.exports = {
   accountHomeFromCwd,
   buildPersistentMediaRootCandidates,
+  nonCanonicalShadowMediaRoot,
   probeWritableDirectory,
   buildHostingerMediaPersistenceSnapshot,
 };

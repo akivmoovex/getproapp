@@ -196,22 +196,15 @@ function createMoovexPlatformRuntimeApp(options) {
       return res.status(400).json({ ok: false, code: "invalid_key" });
     }
     try {
-      const fs = require("fs");
       const fsp = require("fs/promises");
       const path = require("path");
       const crypto = require("crypto");
       const {
         resolveHostingerMediaConfig,
       } = require("../media/hostingerMediaConfig");
-      const {
-        buildPersistentMediaRootCandidates,
-      } = require("../media/hostingerMediaPersistenceProbe");
       const cfg = resolveHostingerMediaConfig(env);
-      const roots = Array.from(
-        new Set(
-          [cfg.storageRoot, ...buildPersistentMediaRootCandidates(process.cwd())].filter(Boolean)
-        )
-      );
+      // Canonical root only — do not probe/write domains/…/moovex-media.
+      const roots = cfg.storageRoot ? [cfg.storageRoot] : [];
       const files = [];
       for (const root of roots) {
         const abs = path.resolve(root, ...key.split("/"));
@@ -242,6 +235,7 @@ function createMoovexPlatformRuntimeApp(options) {
         key,
         storageRoot: cfg.storageRoot,
         mediaStorageRootSource: cfg.mediaStorageRootSource,
+        mirroringDisabled: true,
         files,
       });
     } catch (err) {
