@@ -224,6 +224,7 @@ function mergeClinicPresentation(clinic, resolved, operational) {
     locationPageTitle: content("location.page_title") || "Location & hours",
     locationIntro: content("location.intro") || null,
     locationAddressOverlay: content("location.address") || null,
+    locationDirectionsNote: content("location.address") || null,
     locationHoursOverlay: content("location.hours") || null,
     pricingPageTitle: content("pricing.page_title") || "Pricing",
     pricingIntro: content("pricing.intro") || null,

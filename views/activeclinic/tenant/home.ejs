@@ -9,7 +9,8 @@
     if (primaryFacility.province) locationBits.push(primaryFacility.province);
     if (primaryFacility.countryCode) locationBits.push(primaryFacility.countryCode);
   }
-  const locationLine = locationBits.join(", ") || clinic.locationAddressOverlay || "";
+  const locationLine = locationBits.join(", ") || "";
+  const locationDirectionsNote = (clinic.locationDirectionsNote || clinic.locationAddressOverlay || "").trim();
   const heroPhone = clinic.publicPhoneDisplay || (clinic.websiteContent && clinic.websiteContent["contact.phone"]) || "";
   const heroSrc = clinic.websiteHeroUrl || "/activeclinic/assets/clinic-hero-default.jpg";
   const heroPos = clinic.heroObjectPosition || "center 42%";
@@ -181,7 +182,8 @@
 <% if (homeSectionVisible("hours") || editingHome) { %>
 <section class="ac-public-section ac-tenant-campus" data-ac-page-section="tenant-hours" data-ac-home-section="hours-campus">
   <h2><%- include('../partials/website-editable-field', { contentKey: 'home.preview.visit_heading', fieldValue: clinic.homePreviewVisitHeading || 'Visit Our Campus', fieldType: 'short_text' }) %></h2>
-  <p><% if (locationLine) { %><%= locationLine %><% } else { %>See location and opening hours.<% } %></p>
+  <p><% if (locationLine) { %><span data-ac-facility-address="1"><%= locationLine %></span><% } else { %>See location and opening hours.<% } %></p>
+  <% if (locationDirectionsNote) { %><p class="ac-public-muted ac-location-note__inline" data-ac-location-note="1"><%= locationDirectionsNote %></p><% } %>
   <% if (heroPhone) { %><p>General Inquiries: <%= heroPhone %></p><% } %>
   <p><a class="ac-btn ac-btn--secondary" href="<%= locationHref %>">Location &amp; hours</a></p>
 </section>

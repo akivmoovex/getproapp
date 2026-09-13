@@ -122,7 +122,7 @@ function buildActiveClinicWebsiteTemplateContent(input) {
     "location.eyebrow": "Visit us",
     "location.page_title": "Location & hours",
     "location.intro": interpolate(
-      `Visit {clinicName}. Address and hours below combine registration details with template guidance. Example hours are placeholders until the clinic publishes real opening times.`,
+      `Visit {clinicName}. Facility address and hours come from clinic registration. Optional landmark or directions notes can be added for visitors. Example hours are placeholders until the clinic publishes real opening times.`,
       name
     ),
     "location.address": address || null,

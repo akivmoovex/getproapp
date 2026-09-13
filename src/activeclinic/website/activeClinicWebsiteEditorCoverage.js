@@ -60,7 +60,7 @@ const COVERAGE = Object.freeze([
   { page: "location", section: "Page title", classification: C.EDITABLE_CONTENT, contentKey: "location.page_title", editable: true, source: "website draft" },
   { page: "location", section: "Intro", classification: C.EDITABLE_CONTENT, contentKey: "location.intro", editable: true, source: "website draft" },
   { page: "location", section: "Facilities", classification: C.OPERATIONAL_DATA, contentKey: null, editable: false, source: "clinic facilities", manageHref: "/app/facilities" },
-  { page: "location", section: "Address overlay", classification: C.EDITABLE_CONTENT, contentKey: "location.address", editable: true, source: "website draft overlay" },
+  { page: "location", section: "Landmark / Directions", classification: C.EDITABLE_CONTENT, contentKey: "location.address", editable: true, source: "website draft (supplemental note)" },
   { page: "location", section: "Hours overlay", classification: C.EDITABLE_CONTENT, contentKey: "location.hours", editable: true, source: "website draft overlay" },
   { page: "pricing", section: "Page title", classification: C.EDITABLE_CONTENT, contentKey: "pricing.page_title", editable: true, source: "website draft" },
   { page: "pricing", section: "Intro", classification: C.EDITABLE_CONTENT, contentKey: "pricing.intro", editable: true, source: "website draft" },

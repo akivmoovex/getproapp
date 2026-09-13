@@ -803,6 +803,28 @@ body.ac-public-body {
   margin-left: 0.35rem;
 }
 .ac-location-address { font-weight: 500; }
+.ac-location-note {
+  margin: 1.25rem 0 0;
+  padding: 1rem 1.15rem;
+  background: var(--acp-surface);
+  border: 1px solid var(--acp-border);
+  border-radius: var(--acp-radius);
+}
+.ac-location-note__label {
+  margin: 0 0 0.35rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  color: var(--acp-muted, #5b6470);
+}
+.ac-location-note__body {
+  margin: 0;
+  white-space: pre-wrap;
+}
+.ac-location-note__inline {
+  margin-top: 0.35rem;
+}
 .ac-hours-list {
   display: grid;
   grid-template-columns: auto 1fr;

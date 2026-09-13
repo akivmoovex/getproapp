@@ -35,7 +35,7 @@ const KEYS = {
   "contact.phone": { type: T.PHONE, maxLen: 40, group: "contact", hideable: true, description: "Marketing phone overlay" },
   "contact.email": { type: T.EMAIL, maxLen: 254, group: "contact", hideable: true, description: "Marketing email overlay" },
   "contact.intro": { type: T.LONG_TEXT, maxLen: 1000, group: "contact", description: "Contact intro" },
-  "location.address": { type: T.LONG_TEXT, maxLen: 500, group: "location", hideable: true, description: "Marketing address overlay" },
+  "location.address": { type: T.LONG_TEXT, maxLen: 500, group: "location", hideable: true, description: "Optional landmark / directions note (does not replace facility address)" },
   "location.hours": { type: T.LONG_TEXT, maxLen: 1000, group: "location", hideable: true, description: "Marketing hours overlay" },
   "footer.legal": { type: T.LONG_TEXT, maxLen: 2000, group: "footer", description: "Footer legal" },
   "footer.tagline": { type: T.SHORT_TEXT, maxLen: 200, group: "footer", description: "Footer tagline" },

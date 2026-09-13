@@ -22,8 +22,7 @@
   <div class="ac-public-footer__inner ac-public-footer__inner--tenant">
     <div class="ac-public-footer__col">
       <p class="ac-public-footer__brand"><strong><%= displayName %></strong></p>
-      <% if (footerLoc.length) { %><p><%= footerLoc.join(", ") %></p>
-      <% } else if (clinic.locationAddressOverlay || (typeof websiteEdit !== 'undefined' && websiteEdit)) { %><p><%- include('./website-editable-field', { contentKey: 'location.address', fieldValue: clinic.locationAddressOverlay || '', fieldType: 'long_text' }) %></p><% } %>
+      <% if (footerLoc.length) { %><p data-ac-facility-address="1"><%= footerLoc.join(", ") %></p><% } %>
       <p class="ac-public-footer__note"><%- include('./website-editable-field', { contentKey: 'footer.tagline', fieldValue: clinic.footerTagline || 'Powered by ActiveClinic', fieldType: 'short_text' }) %></p>
       <% if (socials.length) { %>
       <nav class="ac-public-footer__social" aria-label="Social">

@@ -6,16 +6,23 @@
   </header>
   <% const facilityList = Array.isArray(clinic.facilities) ? clinic.facilities : []; %>
   <% const locationEditing = typeof websiteEdit !== 'undefined' && websiteEdit; %>
+  <% const directionsNote = (clinic.locationDirectionsNote || clinic.locationAddressOverlay || '').trim(); %>
   <% if (!facilityList.length) { %>
   <div class="ac-public-empty acp-empty-state" data-ac-location-state="empty">
-    <% if (!locationEditing && (clinic.locationAddressOverlay || clinic.locationHoursOverlay)) { %>
-    <div class="ac-location-card acp-location-card" data-ac-template-placeholder="1">
-      <p class="ac-template-placeholder">Template location copy — replace with published facility details.</p>
-      <% if (clinic.locationAddressOverlay) { %><p class="ac-location-address"><%= clinic.locationAddressOverlay %></p><% } %>
-      <% if (clinic.locationHoursOverlay) { %><pre class="ac-location-hours-overlay"><%= clinic.locationHoursOverlay %></pre><% } %>
-    </div>
-    <% } else if (!locationEditing) { %>
+    <% if (!locationEditing) { %>
     <p>Location details have not been published for this clinic yet.</p>
+    <% if (directionsNote) { %>
+    <div class="ac-location-note" data-ac-location-note="1">
+      <h2 class="ac-location-note__label">Directions</h2>
+      <p class="ac-location-note__body"><%= directionsNote %></p>
+    </div>
+    <% } %>
+    <% if (clinic.locationHoursOverlay) { %>
+    <div class="ac-location-card acp-location-card" data-ac-template-placeholder="1">
+      <p class="ac-template-placeholder">Example hours — replace with published facility hours.</p>
+      <pre class="ac-location-hours-overlay"><%= clinic.locationHoursOverlay %></pre>
+    </div>
+    <% } %>
     <% } %>
     <p><a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact clinic</a></p>
   </div>
@@ -25,13 +32,10 @@
     <li class="ac-location-card acp-location-card" data-ac-facility="<%= f.facilityKey %>">
       <h2><%= f.displayName %><% if (f.isPrimary) { %> <span class="ac-location-badge">Primary</span><% } %></h2>
       <% const addressParts = [f.addressLine1, f.addressLine2, f.city, f.district, f.province, f.postalCode].filter(Boolean); %>
-      <% if (!f.addressLine1 && clinic.locationAddressOverlay && !locationEditing) { %>
-      <p class="ac-location-address"><%= clinic.locationAddressOverlay %></p>
-      <% } %>
       <% if (addressParts.length) { %>
-      <p class="ac-location-address"><%= addressParts.join(', ') %></p>
-      <% } else if (!clinic.locationAddressOverlay) { %>
-      <p class="ac-public-muted">Address not configured.</p>
+      <p class="ac-location-address" data-ac-facility-address="1"><%= addressParts.join(', ') %></p>
+      <% } else { %>
+      <p class="ac-public-muted" data-ac-facility-address-missing="1">Address not configured.</p>
       <% } %>
       <% if (f.phoneDisplay) { %><p>Phone: <%= f.phoneDisplay %></p><% } %>
       <% if (f.emailDisplay) { %><p>Email: <%= f.emailDisplay %></p><% } %>
@@ -56,14 +60,22 @@
     </li>
     <% }) %>
   </ul>
+  <% if (!locationEditing && directionsNote) { %>
+  <div class="ac-location-note" data-ac-location-note="1">
+    <h2 class="ac-location-note__label">Directions</h2>
+    <p class="ac-location-note__body"><%= directionsNote %></p>
+  </div>
+  <% } %>
   <% } %>
   <% if (locationEditing) { %>
   <div class="ac-website-overlay-edit" data-ac-website-overlay="location">
-    <h2>Website location overlay</h2>
-    <p class="ac-website-overlay-note">Shown on the public site only when a published facility address or hours is not available. Saving here does not change operations records, and does not publish.</p>
-    <p class="ac-location-address"><%- include('../partials/website-editable-field', { contentKey: 'location.address', fieldValue: clinic.locationAddressOverlay || '', fieldType: 'long_text' }) %></p>
-    <div class="ac-location-hours-overlay"><%- include('../partials/website-editable-field', { contentKey: 'location.hours', fieldValue: clinic.locationHoursOverlay || '', fieldType: 'long_text' }) %></div>
-    <%- include('../partials/website-operational-affordance', { href: '/app/facilities', label: 'Manage opening hours', manageKind: 'location' }) %>
+    <h2>Landmark / Directions</h2>
+    <p class="ac-website-overlay-note">Optional public location note (landmark or directions). Facility address from Operations stays authoritative and is always shown when published. This field does not replace or hide the facility address. Saving here does not change operations records, and does not publish.</p>
+    <p class="ac-location-note__body"><%- include('../partials/website-editable-field', { contentKey: 'location.address', fieldLabel: 'Landmark / Directions', fieldValue: clinic.locationAddressOverlay || '', fieldType: 'long_text' }) %></p>
+    <h3>Hours note</h3>
+    <p class="ac-website-overlay-note">Shown only when a facility has no published hours.</p>
+    <div class="ac-location-hours-overlay"><%- include('../partials/website-editable-field', { contentKey: 'location.hours', fieldLabel: 'Hours note', fieldValue: clinic.locationHoursOverlay || '', fieldType: 'long_text' }) %></div>
+    <%- include('../partials/website-operational-affordance', { href: '/app/facilities', label: 'Manage facility address &amp; hours', manageKind: 'location' }) %>
   </div>
   <% } %>
   <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_location', librarySkipTypes: [] }) %>
