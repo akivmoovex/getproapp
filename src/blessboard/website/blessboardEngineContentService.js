@@ -228,7 +228,9 @@ async function loadFieldOverlayMap(db, input) {
     if (pageKey && locator.pageKey !== pageKey && !(locator.pageKey === "home" && locator.sectionKey === "footer")) {
       continue;
     }
-    const value = mode === "live" ? row.publishedValue : row.draftValue != null ? row.draftValue : row.publishedValue;
+    const value = unwrapFieldValue(
+      mode === "live" ? row.publishedValue : row.draftValue != null ? row.draftValue : row.publishedValue
+    );
     if (value == null) continue;
     if (value && typeof value === "object" && !Array.isArray(value)) {
       const src = value.src || value.url || "";

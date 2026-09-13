@@ -950,6 +950,43 @@ async function loadTenantPublicPageModel(db, input) {
       publicContact.phoneHref = phoneDigits ? safeExternalUrl(`tel:${phoneDigits}`) : null;
     }
   }
+  // Published website-engine contact.details.* must win over settings soft defaults (BB-04).
+  if (organizationId) {
+    try {
+      const {
+        loadFieldOverlayMap,
+        overlayKey,
+      } = require("../website/blessboardEngineContentService");
+      const contactOverlay = await loadFieldOverlayMap(db, {
+        organizationId,
+        branchId: contentBranchId || null,
+        pageKey: "contact",
+        mode: isPreview ? "draft" : "live",
+        createIfMissing: false,
+      });
+      const email = contactOverlay.get(overlayKey("details", "email"));
+      const phone = contactOverlay.get(overlayKey("details", "phone"));
+      const address = contactOverlay.get(overlayKey("details", "address"));
+      if (email !== undefined || phone !== undefined || address !== undefined) {
+        publicContact = {
+          ...publicContact,
+          email: email !== undefined ? email : publicContact.email,
+          phone: phone !== undefined ? phone : publicContact.phone,
+          addressText: address !== undefined ? address : publicContact.addressText,
+          hasAny: true,
+        };
+        if (email !== undefined) {
+          publicContact.emailHref = email ? safeExternalUrl(`mailto:${email}`) : null;
+        }
+        if (phone !== undefined) {
+          const phoneDigits = String(phone || "").replace(/[^\d+]/g, "");
+          publicContact.phoneHref = phoneDigits ? safeExternalUrl(`tel:${phoneDigits}`) : null;
+        }
+      }
+    } catch {
+      /* non-fatal — keep settings-derived contact */
+    }
+  }
   const canonicalTimezone =
     (settings && settings.defaultTimezone) ||
     (branchSettings && branchSettings.timezone) ||
