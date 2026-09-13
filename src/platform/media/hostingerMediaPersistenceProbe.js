@@ -11,6 +11,7 @@ const path = require("path");
 const {
   resolveHostingerMediaConfig,
   classifyMediaStorageRootPersistence,
+  MEDIA_ROOT_SOURCE_DISABLED,
 } = require("./hostingerMediaConfig");
 
 /**
@@ -106,23 +107,35 @@ async function buildHostingerMediaPersistenceSnapshot(env) {
   const configuredVerdict = cfg.storageRoot
     ? classifyMediaStorageRootPersistence(cfg.storageRoot, cwd)
     : { ephemeral: false, reason: null };
+  const rootProbe =
+    cfg.storageRoot != null
+      ? candidates.find((c) => c.path === cfg.storageRoot) ||
+        (await probeWritableDirectory(cfg.storageRoot))
+      : null;
 
   return {
     cwd,
     cwdEphemeral: cwdVerdict.ephemeral === true,
     cwdEphemeralReason: cwdVerdict.reason,
     accountHome: accountHomeFromCwd(cwd),
+    // True only when hPanel/process env explicitly set MEDIA_STORAGE_ROOT.
     mediaStorageRootConfigured: Boolean(String(source.MEDIA_STORAGE_ROOT || "").trim()),
     mediaStorageRootEnabled: cfg.enabled === true,
+    mediaStorageRootSource: cfg.mediaStorageRootSource || MEDIA_ROOT_SOURCE_DISABLED,
     mediaStorageRejectionCode: cfg.rejectionCode || null,
     mediaStorageRejectionReason: cfg.rejectionReason || null,
     configuredRootEphemeral: configuredVerdict.ephemeral === true,
     configuredRootEphemeralReason: configuredVerdict.reason,
     publicMountPath: cfg.publicMountPath,
     publicBaseUrlConfigured: Boolean(cfg.publicBaseUrl),
-    // Absolute configured root is OK on testing diagnostics (ops need the value).
-    // Never include production secrets; this is a filesystem path only.
     configuredStorageRoot: cfg.storageRoot,
+    writable: cfg.writable != null ? cfg.writable : rootProbe ? rootProbe.writable : null,
+    outsideReleaseTree:
+      cfg.outsideReleaseTree != null
+        ? cfg.outsideReleaseTree
+        : rootProbe
+          ? rootProbe.outsideReleaseTree
+          : null,
     recommendedMediaStorageRoot: recommended ? recommended.path : null,
     candidates,
   };

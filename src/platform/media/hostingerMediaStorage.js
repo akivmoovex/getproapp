@@ -60,9 +60,9 @@ function createHostingerMediaStorage(env, overrides) {
      * }} input
      */
     async storeMedia(input) {
-      if (cfg.rejectionCode === CODE_ROOT_NOT_PERSISTENT) {
-        const err = new Error("media_storage_root_not_persistent");
-        err.code = CODE_ROOT_NOT_PERSISTENT;
+      if (cfg.rejectionCode) {
+        const err = new Error(String(cfg.rejectionCode).toLowerCase());
+        err.code = cfg.rejectionCode;
         err.reason = cfg.rejectionReason;
         throw err;
       }

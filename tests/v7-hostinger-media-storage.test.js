@@ -301,13 +301,89 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
     assert.match(presented.publicSrc, /\/website\/media\//);
   });
 
-  it("does not auto-enable <cwd>/media on moovex-platform-testing", () => {
-    const cfg = resolveHostingerMediaConfig({
-      PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
-      DEPLOYMENT_ENV: "testing",
-    });
+  it("testing + explicit MEDIA_STORAGE_ROOT: env wins over account-home fallback", () => {
+    const cfg = resolveHostingerMediaConfig(
+      {
+        PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
+        DEPLOYMENT_ENV: "testing",
+        MEDIA_STORAGE_ROOT: mediaRoot,
+      },
+      { homedir: () => "/home/other-user" }
+    );
+    assert.equal(cfg.enabled, true);
+    assert.equal(cfg.storageRoot, path.resolve(mediaRoot));
+    assert.equal(cfg.mediaStorageRootSource, "env");
+    assert.equal(cfg.mediaStorageRootConfigured, true);
+  });
+
+  it("testing + no env: derives <homedir>/moovex-media when writable and persistent", async () => {
+    const home = await fsp.mkdtemp(path.join(os.tmpdir(), "gp-media-home-"));
+    const cfg = resolveHostingerMediaConfig(
+      {
+        PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
+        DEPLOYMENT_ENV: "testing",
+      },
+      {
+        cwd: path.join(home, "hbuilds", "versions", "rel1", "nodejs"),
+        homedir: () => home,
+      }
+    );
+    assert.equal(cfg.enabled, true);
+    assert.equal(cfg.storageRoot, path.resolve(home, "moovex-media"));
+    assert.equal(cfg.mediaStorageRootSource, "testing_account_home_fallback");
+    assert.equal(cfg.mediaStorageRootConfigured, false);
+    assert.equal(cfg.writable, true);
+    assert.equal(cfg.outsideReleaseTree, true);
+    await fsp.rm(home, { recursive: true, force: true });
+  });
+
+  it("rejects derived root under hbuilds/versions", () => {
+    const cfg = resolveHostingerMediaConfig(
+      {
+        PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
+        DEPLOYMENT_ENV: "testing",
+      },
+      {
+        cwd: "/home/u549637099/hbuilds/versions/abc/nodejs",
+        homedir: () => "/home/u549637099/hbuilds/versions/abc/nodejs",
+        ensureWritable: () => true,
+      }
+    );
+    assert.equal(cfg.enabled, false);
+    assert.equal(cfg.rejectionCode, "MEDIA_STORAGE_ROOT_NOT_PERSISTENT");
+    assert.equal(cfg.mediaStorageRootSource, "disabled");
+  });
+
+  it("unwritable derived root falls back to database provider", () => {
+    const cfg = resolveHostingerMediaConfig(
+      {
+        PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
+        DEPLOYMENT_ENV: "testing",
+      },
+      {
+        cwd: "/home/u549637099/hbuilds/versions/abc/nodejs",
+        homedir: () => "/home/u549637099",
+        ensureWritable: () => false,
+      }
+    );
+    assert.equal(cfg.enabled, false);
+    assert.equal(cfg.provider, PROVIDER_DATABASE);
+    assert.equal(cfg.rejectionCode, "MEDIA_STORAGE_ROOT_NOT_WRITABLE");
+    assert.equal(cfg.mediaStorageRootSource, "disabled");
+    assert.equal(cfg.mediaStorageRootConfigured, false);
+  });
+
+  it("production + no env does not auto-enable filesystem media", () => {
+    const cfg = resolveHostingerMediaConfig(
+      {
+        PLATFORM_DEPLOYMENT_CODE: "moovex-platform-production",
+        DEPLOYMENT_ENV: "production",
+      },
+      { homedir: () => "/home/u549637099", ensureWritable: () => true }
+    );
     assert.equal(cfg.enabled, false);
     assert.equal(cfg.storageRoot, null);
+    assert.equal(cfg.mediaStorageRootSource, "disabled");
     assert.equal(cfg.rejectionCode, "MEDIA_STORAGE_ROOT_UNSET");
   });
 
@@ -323,12 +399,26 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
     assert.equal(cfg.rejectionReason, "hbuilds_versions");
   });
 
-  it("config reports enabled only when MEDIA_STORAGE_ROOT is set and persistent", () => {
-    assert.equal(resolveHostingerMediaConfig({}).enabled, false);
-    assert.equal(
-      resolveHostingerMediaConfig({ MEDIA_STORAGE_ROOT: mediaRoot, DEPLOYMENT_ENV: "testing" })
-        .enabled,
-      true
+  it("production namespace guard remains active under testing", async () => {
+    const root = await fsp.mkdtemp(path.join(os.tmpdir(), "gp-media-"));
+    const storage = createHostingerMediaStorage({
+      DEPLOYMENT_ENV: "testing",
+      MEDIA_STORAGE_ROOT: root,
+      MEDIA_PUBLIC_BASE_URL: "/media",
+    });
+    await assert.rejects(
+      () =>
+        storage.storeMedia({
+          productCode: "blessboard",
+          organizationId: "11111111-1111-4111-8111-111111111111",
+          mediaId: "22222222-2222-4222-8222-222222222222",
+          mimeType: "image/jpeg",
+          buffer: jpegBuffer(32),
+          storageKey:
+            "production/blessboard/11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.jpg",
+        }),
+      (err) => err && err.code === "REFUSED_PRODUCTION_MEDIA_NAMESPACE"
     );
+    await fsp.rm(root, { recursive: true, force: true });
   });
 });

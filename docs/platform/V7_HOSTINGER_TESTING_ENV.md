@@ -72,19 +72,23 @@ testing/activeclinic/<org-id>/<media-id>.jpg
 
 Testing runtime **refuses** writes under `production/`. Do not set `MEDIA_STORAGE_ROOT` to a production tree on this deployment.
 
-When `MEDIA_STORAGE_ROOT` is unset:
+When `MEDIA_STORAGE_ROOT` is unset on **`moovex-platform-testing`** / `DEPLOYMENT_ENV=testing`:
 
-- Hostinger filesystem media is **disabled**; new uploads stay on legacy `payload_bytes` (DB)
+- Derive `<os.homedir()>/moovex-media` (never hard-codes the Hostinger username)
+- Enable only after the path is writable, outside `hbuilds/versions/…`, and under the account home
+- Runtime reports `mediaStorageRootSource=testing_account_home_fallback` (not env=yes)
 - There is **no** silent fallback to `<cwd>/media`
+
+Production deployments **never** auto-derive a filesystem root — set `MEDIA_STORAGE_ROOT` explicitly.
 
 When `MEDIA_STORAGE_ROOT` points inside `hbuilds/versions/…` (or under an ephemeral release cwd):
 
 - Config rejects with `MEDIA_STORAGE_ROOT_NOT_PERSISTENT`
 - Media writes are refused; do not use release-tree paths
 
-Confirm the live recommended path via testing `/__platform/runtime` → `mediaPersistence.recommendedMediaStorageRoot`.
+Confirm via testing `/__platform/runtime` → `mediaPersistence` (`mediaStorageRootSource`, `configuredStorageRoot`, `writable`, `outsideReleaseTree`).
 
-Set `MEDIA_STORAGE_DISABLE=1` to force DB payloads even when a root is configured.
+Set `MEDIA_STORAGE_DISABLE=1` to force DB payloads even when a root is configured/derived.
 
 ## Dangerous if wrong
 

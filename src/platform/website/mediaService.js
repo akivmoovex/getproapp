@@ -235,6 +235,8 @@ async function registerWebsiteMedia(db, input) {
         err &&
         (err.code === "REFUSED_PRODUCTION_MEDIA_NAMESPACE" ||
           err.code === "MEDIA_STORAGE_ROOT_NOT_PERSISTENT" ||
+          err.code === "MEDIA_STORAGE_ROOT_NOT_WRITABLE" ||
+          err.code === "MEDIA_STORAGE_ROOT_OUTSIDE_ACCOUNT_HOME" ||
           err.code === "MEDIA_STORAGE_ROOT_UNSET")
       ) {
         return { ok: false, code: err.code, media: null };
