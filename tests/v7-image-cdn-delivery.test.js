@@ -85,6 +85,29 @@ describe("v7 image CDN delivery presentation", () => {
     assert.equal(presentCdnUrl(key, env), `${CDN_BASE}/${key}`);
   });
 
+  it("falls back to documented testing CDN base on moovex-platform-testing", () => {
+    const env = {
+      DEPLOYMENT_ENV: "testing",
+      PLATFORM_DEPLOYMENT_CODE: "moovex-platform-testing",
+    };
+    assert.equal(resolveCdnPublicBaseUrl(env), "https://blessboard.pronline.org/media");
+  });
+
+  it("does not invent a CDN base outside testing Hostinger profile", () => {
+    assert.equal(resolveCdnPublicBaseUrl({ DEPLOYMENT_ENV: "production" }), null);
+    assert.equal(resolveCdnPublicBaseUrl({ DEPLOYMENT_ENV: "testing" }), null);
+  });
+
+  it("presentImageTree tolerates circular object graphs", () => {
+    const env = { MEDIA_PUBLIC_BASE_URL: CDN_BASE, DEPLOYMENT_ENV: "testing" };
+    const { presentImageTree } = require("../src/platform/media/cdnMediaPresentation");
+    const circular = { home: { hero: { image: { src: "/media/testing/x.jpg", alt: "a" } } } };
+    circular.self = circular;
+    const out = presentImageTree(circular, env);
+    assert.equal(out.self, null);
+    assert.match(out.home.hero.image.src, /^https:\/\/cdn\.test\.invalid\/media\//);
+  });
+
   it("rewrites legacy /media keys and drops forbidden tenant locals", () => {
     const env = { MEDIA_PUBLIC_BASE_URL: CDN_BASE, DEPLOYMENT_ENV: "testing" };
     const key = "testing/activeclinic/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb.webp";
