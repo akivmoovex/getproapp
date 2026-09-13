@@ -1232,6 +1232,22 @@ function createV5FoundationApp(options) {
 
     try {
       const resolved = resolveLoginIdentifierFromBody(req.body);
+      if (resolved.mode === "phone" && resolved.phoneOk === false) {
+        setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+        return res.status(400).type("html").send(
+          renderLoginPage({
+            ...loginPageOpts,
+            env,
+            error: resolved.phoneError || "Enter a valid phone number.",
+            loginMode: "phone",
+            ...buildLoginModeHrefs({ mode: "phone" }),
+            loginEmail: req.body && req.body.login_email,
+            emailValue: "",
+            phoneCountry: req.body && req.body.phone_country,
+            phoneNational: req.body && req.body.phone_national,
+          })
+        );
+      }
       const result = await authenticateBlessBoardUser(getPool(), {
         identifier: resolved.identifier,
         email: resolved.identifier,

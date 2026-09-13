@@ -113,7 +113,8 @@ async function persistSubmitted(db, input) {
   if (
     preResolve.action === IDENTITY_ACTION.REJECT_EXISTING_ACCOUNT &&
     (preResolve.reason === "existing_account_password_mismatch" ||
-      preResolve.reason === "existing_account_requires_sign_in")
+      preResolve.reason === "existing_account_requires_sign_in" ||
+      preResolve.reason === "existing_identity_acknowledgement_required")
   ) {
     return {
       ok: false,
@@ -121,14 +122,20 @@ async function persistSubmitted(db, input) {
       error:
         preResolve.reason === "existing_account_password_mismatch"
           ? "That password does not match the existing account."
-          : "An account already exists for this contact. Sign in with your existing password.",
+          : preResolve.reason === "existing_identity_acknowledgement_required"
+            ? "This phone or email is already registered. Sign in with your existing password to add another clinic."
+            : "An account already exists for this contact. Sign in with your existing password.",
       field: "password",
       errors: {
         password:
           preResolve.reason === "existing_account_password_mismatch"
             ? "That password does not match the existing account."
-            : "An account already exists for this contact. Sign in with your existing password.",
+            : preResolve.reason === "existing_identity_acknowledgement_required"
+              ? "This phone or email is already registered. Sign in with your existing password to add another clinic."
+              : "An account already exists for this contact. Sign in with your existing password.",
       },
+      requiresSecondClinicAcknowledgement:
+        preResolve.requiresSecondClinicAcknowledgement === true,
     };
   }
 

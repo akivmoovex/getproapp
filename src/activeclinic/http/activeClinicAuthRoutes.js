@@ -198,6 +198,20 @@ function registerActiveClinicAuthRoutes(app, deps) {
         return res.status(503).type("html").send("Deployment unavailable");
       }
       const resolved = resolveLoginIdentifierFromBody(req.body);
+      if (resolved.mode === "phone" && resolved.phoneOk === false) {
+        const csrfToken = issuePageCsrf(res, req);
+        return res.status(400).type("html").send(
+          renderLoginPage({
+            csrfToken,
+            error: resolved.phoneError || "Enter a valid phone number.",
+            identifier: "",
+            loginEmail: req.body && req.body.login_email,
+            loginMode: "phone",
+            phoneCountry: req.body && req.body.phone_country,
+            ...buildLoginModeHrefs({ mode: "phone" }),
+          })
+        );
+      }
       const result = await authenticateActiveClinicIdentity(getPool(), {
         identifier: resolved.identifier,
         password: req.body && req.body.password,

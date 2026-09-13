@@ -132,6 +132,36 @@ async function createPlatformIdentity(db, input) {
 
   const suspendedAt = status === "suspended" ? raw.suspendedAt || new Date().toISOString() : null;
 
+  // Prefer reuse over duplicate principals. Verified unique indexes alone do not
+  // stop two unverified rows sharing a phone — login then fails closed as ambiguous.
+  if (phoneNormalized || emailNormalized) {
+    const byPhone = phoneNormalized
+      ? await repo.findIdentitiesByNormalizedContact(db, { phoneNormalized })
+      : [];
+    const byEmail = emailNormalized
+      ? await repo.findIdentitiesByNormalizedContact(db, { emailNormalized })
+      : [];
+    const byId = new Map();
+    for (const row of [...byPhone, ...byEmail]) byId.set(String(row.id), row);
+    const matches = Array.from(byId.values());
+    if (matches.length === 1) {
+      return {
+        ok: false,
+        code: RESULT.DUPLICATE_VERIFIED_PHONE,
+        identity: mapIdentity(matches[0]),
+        existingIdentityId: matches[0].id,
+      };
+    }
+    if (matches.length > 1) {
+      return {
+        ok: false,
+        code: RESULT.DUPLICATE_VERIFIED_PHONE,
+        identity: null,
+        ambiguous: true,
+      };
+    }
+  }
+
   try {
     const row = await repo.insertIdentity(db, {
       status,

@@ -290,8 +290,40 @@ async function ensureClinicAdmin(client, input) {
         phoneVerifiedAt: new Date().toISOString(),
         passwordHash: input.passwordHash || null,
       });
-      if (!created.ok) return { ok: false, code: created.code };
-      identityId = created.identity.id;
+      if (!created.ok) {
+        // Verified-phone uniqueness race / prior unverified row: reuse existing identity.
+        if (
+          created.code === "duplicate_verified_phone" ||
+          created.code === "duplicate_verified_email" ||
+          /duplicate/i.test(String(created.code || ""))
+        ) {
+          const raced = await client.query(
+            `SELECT id, password_hash FROM platform.identities
+              WHERE ($1::text IS NOT NULL AND email_normalized = $1)
+                 OR ($2::text IS NOT NULL AND phone_normalized = $2)
+              ORDER BY CASE WHEN email_normalized = $1 THEN 0 ELSE 1 END, created_at ASC
+              LIMIT 1`,
+            [input.email || null, input.phone || null]
+          );
+          if (raced.rows[0]) {
+            identityId = raced.rows[0].id;
+            reusedIdentity = true;
+            if (input.passwordHash && !raced.rows[0].password_hash) {
+              await updateIdentityPasswordHash(client, {
+                identityId,
+                passwordHash: input.passwordHash,
+                mustChangePassword: false,
+              });
+            }
+          } else {
+            return { ok: false, code: created.code };
+          }
+        } else {
+          return { ok: false, code: created.code };
+        }
+      } else {
+        identityId = created.identity.id;
+      }
     }
   }
   const names = splitName(input.contactName);

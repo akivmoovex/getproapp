@@ -121,6 +121,19 @@ describe("ActiveClinic phone number service", () => {
     assert.match(String(bad.error), /valid phone number/i);
   });
 
+  it("relaxed mode rejects possible-but-invalid wrong-length Zambia nationals", () => {
+    // 9 digits with leading 0 → libphonenumber may mark possible but not valid,
+    // historically stored as +2600… and broke login with the correct form.
+    const bad = normalizePhoneNumber({
+      phoneNational: "097719869",
+      phoneCountry: "ZM",
+      validationMode: VALIDATION_MODES.RELAXED,
+    });
+    assert.equal(bad.ok, false);
+    assert.equal(bad.code, "phone_invalid_for_country");
+    assert.equal(bad.field, "phone");
+  });
+
   it("relaxed mode rejects impossible short Zambia nationals (3 and 4 digits)", () => {
     for (const national of ["123", "1234", "97", "abcd", "!!!"]) {
       const bad = normalizePhoneNumber({

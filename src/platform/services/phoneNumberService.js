@@ -5,6 +5,10 @@
  * One shared parser → environment validation policy → E.164 storage.
  *
  * Do not invent a second normalization system; wrappers should delegate here.
+ *
+ * Canonical rule: store only libphonenumber-valid E.164. Equivalent national /
+ * international / trunk-prefix forms for a country must normalize identically.
+ * Possible-but-invalid lengths are rejected in every validation mode.
  */
 
 const {
@@ -289,18 +293,13 @@ function normalizePhoneNumber(input) {
   const possible = typeof phone.isPossible === "function" ? phone.isPossible() : true;
   const valid = typeof phone.isValid === "function" ? phone.isValid() : possible;
 
-  if (parsed.validationMode === VALIDATION_MODES.STRICT) {
-    if (!valid) {
-      return {
-        ok: false,
-        code: "phone_invalid_for_country",
-        error: `Enter a valid phone number for ${phone.country || parsed.selectedCountry}.`,
-        field: "phone",
-      };
-    }
-  } else if (!possible) {
-    // Relaxed still rejects impossible/too-short numbers (e.g. 3–4 digit ZM nationals).
-    // Do not accept merely because the concatenated E.164 string matches length shape.
+  // Identity / registration / login always require libphonenumber isValid().
+  // Relaxed mode historically accepted isPossible()-only values (e.g. Zambia
+  // `097719869` → `+260097719869`), which stored wrong-length E.164 and broke
+  // later login when the same user entered the correct national form.
+  // Both modes therefore reject possible-but-invalid and impossible numbers.
+  // (Relaxed remains the default outside production for env resolution only.)
+  if (!valid || !possible) {
     return {
       ok: false,
       code: "phone_invalid_for_country",

@@ -26,18 +26,34 @@ function resolveLoginIdentifierFromBody(body) {
     const fields = extractPhoneFieldsFromBody(raw);
     // V7 login forms submit phone_national (not legacy phone).
     const phoneInput = String(fields.phoneNational || "").trim();
+    if (!phoneInput) {
+      return { mode: "phone", identifier: "", country, phoneOk: false };
+    }
     const normalized = normalizePhoneNumber({
       phone: phoneInput,
       phoneCountry: fields.phoneCountry || country,
       phoneNational: phoneInput,
       defaultCountry: country,
-      required: false,
+      required: true,
     });
-    const identifier =
-      normalized.ok && normalized.e164
-        ? normalized.e164
-        : phoneInput;
-    return { mode: "phone", identifier, country };
+    // Never fall back to raw national digits — that diverges from stored E.164
+    // and can create ambiguous login lookups across products.
+    if (!normalized.ok || !normalized.e164) {
+      return {
+        mode: "phone",
+        identifier: "",
+        country,
+        phoneOk: false,
+        phoneError: normalized.error || "Enter a valid phone number.",
+        phoneCode: normalized.code || "phone_invalid",
+      };
+    }
+    return {
+      mode: "phone",
+      identifier: normalized.e164,
+      country: normalized.country || country,
+      phoneOk: true,
+    };
   }
 
   const legacy = String(raw.identifier || raw.login_email || raw.email || "").trim();
