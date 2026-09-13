@@ -160,7 +160,30 @@
         </span>
         <div class="bb-tp-contact-card__body">
           <h3 class="bb-tp-contact-card__label"><%= channel.label %></h3>
-          <% if (channel.href) { %>
+          <%
+            var channelEditField = null;
+            if (channelIsPhone(channel.channelType)) channelEditField = 'phone';
+            else if (channelIsEmail(channel.channelType)) channelEditField = 'email';
+            else {
+              var _chType = String(channel.channelType || '').toLowerCase();
+              if (_chType === 'address' || _chType === 'location' || _chType === 'map') channelEditField = 'address';
+            }
+          %>
+          <% if (channelEditField && typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+          <%- include('../partials/editable-text', {
+            editPageKey: 'contact',
+            editSectionKey: 'details',
+            editFieldKey: channelEditField,
+            editValue: channel.value || '',
+            editTag: channel.href ? 'a' : 'p',
+            editClass: 'bb-tp-contact-card__value',
+            editHref: channel.href || '',
+            editType: 'contactText',
+            editMaxLength: channelEditField === 'email' ? 254 : (channelEditField === 'phone' ? 40 : 300),
+            editMultiline: channelEditField === 'address',
+            editGuidance: channelEditField === 'email' ? 'Contact email' : (channelEditField === 'phone' ? 'Phone number' : 'Street address')
+          }) %>
+          <% } else if (channel.href) { %>
           <p class="bb-tp-contact-card__value">
             <a
               href="<%= channel.href %>"

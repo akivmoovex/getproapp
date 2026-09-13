@@ -1326,7 +1326,10 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return deny(res, 403, "Invalid request", "Reload the page and try again.");
       }
-      const action = String((req.body && req.body.action) || "").trim();
+      // Prefer catalogue_action — `name="action"` shadows HTMLFormElement.action in browsers.
+      const action = String(
+        (req.body && (req.body.catalogue_action || req.body.action)) || ""
+      ).trim();
       const tab = kind === "service" ? "services" : "doctors";
       const input = cmsInput(req);
       let result;

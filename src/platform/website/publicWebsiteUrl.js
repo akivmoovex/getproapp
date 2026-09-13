@@ -249,23 +249,53 @@ function buildPublicWebsitePreviewPath(input) {
   return appendQuery(withPreviewNavigationQuery(path), input && input.query);
 }
 
-function buildPublicWebsiteDiscardPath(input) {
-  const path = buildPublicOrganizationWebsitePath({
+/**
+ * Organization (and optional BlessBoard branch) public website root — never a page segment.
+ * Engine action URLs (drafts/media/publish/…) must use this base; pageKey belongs only on
+ * view/edit/preview paths.
+ */
+function buildPublicWebsiteInstancePath(input) {
+  return buildPublicOrganizationWebsitePath({
     ...(input || {}),
     query: undefined,
     suffix: undefined,
     pageKey: undefined,
   });
+}
+
+function buildPublicWebsiteDraftsPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/drafts`, input && input.query) : null;
+}
+
+function buildPublicWebsiteMediaPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/media`, input && input.query) : null;
+}
+
+function buildPublicWebsiteSectionActionsPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/section-actions`, input && input.query) : null;
+}
+
+function buildPublicWebsiteSubmitPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/submit`, input && input.query) : null;
+}
+
+function buildPublicWebsiteFinishEditPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/edit-session/finish`, input && input.query) : null;
+}
+
+function buildPublicWebsiteDiscardPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
   if (!path) return null;
   return appendQuery(`${path}/website/drafts/discard`, input && input.query);
 }
 
 function buildPublicWebsiteHistoryPath(input) {
-  const path = buildPublicOrganizationWebsitePath({
-    ...(input || {}),
-    query: undefined,
-    suffix: undefined,
-  });
+  const path = buildPublicWebsiteInstancePath(input);
   if (!path) return null;
   return appendQuery(`${path}/website/history`, input && input.query);
 }
@@ -275,11 +305,7 @@ function buildPublicWebsiteMediaLibraryPath(input) {
   if (product === PRODUCT_CODE.ACTIVECLINIC) {
     return appendQuery("/app/settings/website/media", input && input.query);
   }
-  const path = buildPublicOrganizationWebsitePath({
-    ...(input || {}),
-    query: undefined,
-    suffix: undefined,
-  });
+  const path = buildPublicWebsiteInstancePath(input);
   if (!path) return null;
   return appendQuery(`${path}/website/media-library`, input && input.query);
 }
@@ -287,47 +313,22 @@ function buildPublicWebsiteMediaLibraryPath(input) {
 function buildPublicWebsiteStylesPath(input) {
   const product = normalizeProduct((input && (input.product || input.productCode)) || "");
   if (product === PRODUCT_CODE.ACTIVECLINIC) {
-    const path = buildPublicOrganizationWebsitePath({
-      ...(input || {}),
-      query: undefined,
-      suffix: undefined,
-    });
+    const path = buildPublicWebsiteInstancePath(input);
     return path ? appendQuery(`${path}/website/styles`, input && input.query) : null;
   }
-  const path = buildPublicOrganizationWebsitePath({
-    ...(input || {}),
-    query: undefined,
-    suffix: undefined,
-  });
+  const path = buildPublicWebsiteInstancePath(input);
   if (!path) return null;
   return appendQuery(`${path}/website/styles`, input && input.query);
 }
 
 function buildPublicWebsiteSeoPath(input) {
-  const product = normalizeProduct((input && (input.product || input.productCode)) || "");
-  if (product === PRODUCT_CODE.ACTIVECLINIC) {
-    const path = buildPublicOrganizationWebsitePath({
-      ...(input || {}),
-      query: undefined,
-      suffix: undefined,
-    });
-    return path ? appendQuery(`${path}/website/seo`, input && input.query) : null;
-  }
-  const path = buildPublicOrganizationWebsitePath({
-    ...(input || {}),
-    query: undefined,
-    suffix: undefined,
-  });
+  const path = buildPublicWebsiteInstancePath(input);
   if (!path) return null;
   return appendQuery(`${path}/website/seo`, input && input.query);
 }
 
 function buildPublicWebsiteAddSectionPath(input) {
-  const path = buildPublicOrganizationWebsitePath({
-    ...(input || {}),
-    query: undefined,
-    suffix: undefined,
-  });
+  const path = buildPublicWebsiteInstancePath(input);
   if (!path) return null;
   return appendQuery(`${path}/website/add-section`, input && input.query);
 }
@@ -349,12 +350,7 @@ function buildPublicWebsiteSettingsPath(input) {
 function buildPublicWebsiteUnpublishPath(input) {
   const product = normalizeProduct((input && (input.product || input.productCode)) || "");
   if (product === PRODUCT_CODE.ACTIVECLINIC) {
-    const path = buildPublicOrganizationWebsitePath({
-      ...(input || {}),
-      query: undefined,
-      suffix: undefined,
-      pageKey: undefined,
-    });
+    const path = buildPublicWebsiteInstancePath(input);
     return path ? appendQuery(`${path}/website/unpublish`, input && input.query) : null;
   }
   if (product !== PRODUCT_CODE.BLESSBOARD) return null;
@@ -364,12 +360,7 @@ function buildPublicWebsiteUnpublishPath(input) {
 function buildPublicWebsitePublishPath(input) {
   const product = normalizeProduct((input && (input.product || input.productCode)) || "");
   if (product === PRODUCT_CODE.ACTIVECLINIC) {
-    const path = buildPublicOrganizationWebsitePath({
-      ...(input || {}),
-      query: undefined,
-      suffix: undefined,
-      pageKey: undefined,
-    });
+    const path = buildPublicWebsiteInstancePath(input);
     return path ? appendQuery(`${path}/website/publish`, input && input.query) : null;
   }
   if (product !== PRODUCT_CODE.BLESSBOARD) return null;
@@ -628,6 +619,12 @@ module.exports = {
   withoutEditorNavigationQuery,
   buildPublicWebsiteEditPath,
   buildPublicWebsitePreviewPath,
+  buildPublicWebsiteInstancePath,
+  buildPublicWebsiteDraftsPath,
+  buildPublicWebsiteMediaPath,
+  buildPublicWebsiteSectionActionsPath,
+  buildPublicWebsiteSubmitPath,
+  buildPublicWebsiteFinishEditPath,
   buildPublicWebsiteDiscardPath,
   buildPublicWebsiteHistoryPath,
   buildPublicWebsiteMediaLibraryPath,

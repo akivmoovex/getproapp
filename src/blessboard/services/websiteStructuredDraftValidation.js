@@ -46,6 +46,10 @@ const MEDIA_ASSET_PATH_RE = new RegExp(
   "i"
 );
 
+/** Shared website-engine delivery paths from platform.website_media uploads. */
+const WEBSITE_ENGINE_MEDIA_PATH_RE =
+  /^\/(?:c|clinics)\/[^/]+\/website\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
 const VIDEO_HOST_ALLOWLIST = Object.freeze(
   new Set([
     "youtube.com",
@@ -76,7 +80,8 @@ function sanitizePlain(raw, max) {
 }
 
 /**
- * Safe image URL: https, /_bb/media/:uuid, or known demo /church/images path.
+ * Safe image URL: https, /_bb/media/:uuid, shared website-engine media delivery
+ * (/c/:org/website/media/:uuid or /clinics/:key/website/media/:uuid), or known demo path.
  * @param {string} raw
  */
 function validateImageUrl(raw) {
@@ -89,6 +94,7 @@ function validateImageUrl(raw) {
       return { ok: false, error: "That image path is not allowed." };
     }
     if (MEDIA_ASSET_PATH_RE.test(value)) return { ok: true, value };
+    if (WEBSITE_ENGINE_MEDIA_PATH_RE.test(value)) return { ok: true, value };
     if (value.startsWith("/church/images/") && !/\s/.test(value)) {
       return { ok: true, value };
     }
@@ -582,6 +588,18 @@ function parseStructuredMediaAssetId(raw) {
   return value.slice(PUBLIC_MEDIA_PATH_PREFIX.length);
 }
 
+/**
+ * Parse shared website-engine media delivery path → media UUID.
+ * @param {string} raw
+ * @returns {string|null}
+ */
+function parseWebsiteEngineMediaId(raw) {
+  const value = String(raw == null ? "" : raw).trim();
+  const match = value.match(WEBSITE_ENGINE_MEDIA_PATH_RE);
+  if (!match) return null;
+  return value.split("/").pop() || null;
+}
+
 function collectStructuredImageUrls(payload) {
   if (!payload || typeof payload !== "object") return [];
   const keys = ["imageUrl", "thumbnailUrl", "qrImageUrl", "mediaUrl", "coverImage"];
@@ -619,5 +637,6 @@ module.exports = {
   listDemoImages,
   mapError,
   parseStructuredMediaAssetId,
+  parseWebsiteEngineMediaId,
   collectStructuredImageUrls,
 };

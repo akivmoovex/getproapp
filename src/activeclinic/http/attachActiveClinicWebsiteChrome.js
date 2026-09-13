@@ -23,6 +23,12 @@ const {
   buildPublicWebsiteUnpublishPath,
   buildPublicWebsiteStylesPath,
   buildPublicWebsiteSeoPath,
+  buildPublicWebsiteDraftsPath,
+  buildPublicWebsiteMediaPath,
+  buildPublicWebsiteSectionActionsPath,
+  buildPublicWebsiteAddSectionPath,
+  buildPublicWebsiteSubmitPath,
+  buildPublicWebsiteFinishEditPath,
   appendQuery,
 } = require("../../platform/website/publicWebsiteUrl");
 const {
@@ -96,30 +102,23 @@ function clinicWebsiteActionUrls(clinicKey, pageKey) {
     organizationKey: clinicKey,
     pageKey: pageKey || "home",
   };
+  // Engine mutation endpoints are instance-scoped (no page segment). pageKey is only
+  // for view/edit/preview URLs — including it produced /clinics/:key/:page/website/drafts 404s.
   return {
-    websiteSaveUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/drafts" }),
-    websiteMediaUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/media" }),
+    websiteSaveUrl: buildPublicWebsiteDraftsPath(base),
+    websiteMediaUrl: buildPublicWebsiteMediaPath(base),
     websitePreviewUrl: buildPublicWebsitePreviewPath(base),
     websiteEditUrl: buildPublicWebsiteEditPath(base),
     websiteHistoryUrl: buildPublicWebsiteHistoryPath(base),
     websitePublishUrl: buildPublicWebsitePublishPath(base),
     websiteDiscardUrl: buildPublicWebsiteDiscardPath(base),
     websiteUnpublishUrl: buildPublicWebsiteUnpublishPath(base),
-    websiteSectionActionsUrl: buildPublicOrganizationWebsitePath({
-      ...base,
-      suffix: "website/section-actions",
-    }),
-    websiteAddSectionUrl: buildPublicOrganizationWebsitePath({
-      ...base,
-      suffix: "website/add-section",
-    }),
+    websiteSectionActionsUrl: buildPublicWebsiteSectionActionsPath(base),
+    websiteAddSectionUrl: buildPublicWebsiteAddSectionPath(base),
     websiteStylesUrl: buildPublicWebsiteStylesPath(base),
     websiteSeoUrl: buildPublicWebsiteSeoPath(base),
-    websiteSubmitUrl: buildPublicOrganizationWebsitePath({ ...base, suffix: "website/submit" }),
-    websiteFinishEditUrl: buildPublicOrganizationWebsitePath({
-      ...base,
-      suffix: "website/edit-session/finish",
-    }),
+    websiteSubmitUrl: buildPublicWebsiteSubmitPath(base),
+    websiteFinishEditUrl: buildPublicWebsiteFinishEditPath(base),
   };
 }
 

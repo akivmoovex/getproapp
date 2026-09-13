@@ -15,8 +15,10 @@ const {
   listDemoImages,
   collectStructuredImageUrls,
   parseStructuredMediaAssetId,
+  parseWebsiteEngineMediaId,
 } = require("./websiteStructuredDraftValidation");
 const auditSvc = require("./websiteAuditService");
+const mediaService = require("../../platform/website/mediaService");
 
 const ENTITY_FINDERS = Object.freeze({
   leader: contentRepo.findLeaderById,
@@ -59,10 +61,26 @@ async function assertMediaAssetsInChurch(db, input) {
   const urls = collectStructuredImageUrls(input.payload);
   for (const url of urls) {
     const id = parseStructuredMediaAssetId(url);
-    if (!id) continue;
-    const asset = await mediaAssetsRepo.findMediaAssetById(db, id);
-    if (!asset || asset.status !== "active" || String(asset.churchId) !== String(input.churchId)) {
-      throw mapError("NOT_FOUND", "Image not found.", 404);
+    if (id) {
+      const asset = await mediaAssetsRepo.findMediaAssetById(db, id);
+      if (!asset || asset.status !== "active" || String(asset.churchId) !== String(input.churchId)) {
+        throw mapError("NOT_FOUND", "Image not found.", 404);
+      }
+      continue;
+    }
+    const engineMediaId = parseWebsiteEngineMediaId(url);
+    if (engineMediaId) {
+      const organizationId = String(input.organizationId || "").trim();
+      if (!organizationId) {
+        throw mapError("NOT_FOUND", "Image not found.", 404);
+      }
+      const loaded = await mediaService.getWebsiteMedia(db, {
+        mediaId: engineMediaId,
+        organizationId,
+      });
+      if (!loaded.ok || !loaded.media || loaded.media.status !== "active") {
+        throw mapError("NOT_FOUND", "Image not found.", 404);
+      }
     }
   }
 }
@@ -113,6 +131,7 @@ async function saveStructuredDraft(db, input) {
   });
   await assertMediaAssetsInChurch(db, {
     churchId: input.churchId,
+    organizationId: input.organizationId,
     payload: validated.payload,
   });
 
