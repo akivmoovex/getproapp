@@ -3869,12 +3869,28 @@ ul.bb-apex-features {
   line-height: 1.35;
 }
 
-.bb-apex-body .bb-contact__step p {
+.bb-apex-body .bb-contact__step p,
+.bb-apex-body .bb-contact__step-copy {
   margin: 0;
   grid-column: 2;
   font-size: 0.75rem;
   line-height: 1.4;
   color: var(--bb-contact-muted);
+}
+
+.bb-apex-body .bb-contact__step-copy--mobile,
+.bb-apex-body .bb-contact__step-title--mobile,
+.bb-apex-body .bb-contact__cta-lead--mobile,
+.bb-apex-body .bb-contact__cta-icon {
+  display: none;
+}
+
+.bb-apex-body .bb-contact__cta-lead {
+  margin: 0 auto 2rem;
+  max-width: 42rem;
+  font-size: 0.9375rem;
+  line-height: 1.55;
+  color: rgba(237, 224, 255, 0.95);
 }
 
 .bb-apex-body .bb-contact__cta-wrap {
@@ -4001,7 +4017,8 @@ ul.bb-apex-features {
     margin-bottom: 0.5rem;
   }
 
-  .bb-apex-body .bb-contact__step p {
+  .bb-apex-body .bb-contact__step p,
+  .bb-apex-body .bb-contact__step-copy {
     font-size: 0.8125rem;
     line-height: 1.5;
   }
@@ -4095,11 +4112,34 @@ ul.bb-apex-features {
     font-size: 1.125rem;
   }
 
+  .bb-apex-body .bb-contact__step-copy--desktop,
+  .bb-apex-body .bb-contact__step-title--desktop,
+  .bb-apex-body .bb-contact__cta-lead--desktop {
+    display: none;
+  }
+
+  .bb-apex-body .bb-contact__step-copy--mobile,
+  .bb-apex-body .bb-contact__step-title--mobile,
+  .bb-apex-body .bb-contact__cta-lead--mobile,
+  .bb-apex-body .bb-contact__cta-icon {
+    display: block;
+  }
+
+  .bb-apex-body .bb-contact__step-title--mobile {
+    display: inline;
+  }
+
+  .bb-apex-body .bb-contact__cta-icon {
+    font-size: 2rem;
+    color: #eaddff;
+    margin: 0 auto 0.5rem;
+  }
+
   .bb-apex-body .bb-contact__cta-wrap {
     padding: 2rem 1rem 0.5rem;
   }
 
-  .bb-apex-body .bb-contact__cta > p {
+  .bb-apex-body .bb-contact__cta-lead {
     margin-bottom: 1rem;
     font-size: 0.75rem;
   }
@@ -4112,6 +4152,22 @@ ul.bb-apex-features {
 
   .bb-apex-body .bb-contact__cta-secondary::after {
     content: " →";
+  }
+}
+
+/* Contact mobile: show Sign In chip like Stitch BB-CONTACT-MOBILE */
+@media (max-width: 899px) {
+  .bb-apex-body[data-bb-page="contact"] .bb-apex-header__actions .bb-apex-btn--ghost {
+    display: inline-flex;
+    min-height: 2.25rem;
+    padding: 0 0.75rem;
+    font-size: 0.75rem;
+    border: 1px solid rgba(204, 195, 216, 0.7);
+    border-radius: 0.5rem;
+  }
+
+  .bb-apex-body[data-bb-page="contact"] .bb-apex-header__actions .bb-apex-btn--primary {
+    display: none;
   }
 }
 
