@@ -506,6 +506,13 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         }
         return res.status(403).type("text").send("Invalid CSRF token");
       }
+      // Tenant / church / branch come from the trusted resolver only — never body IDs.
+      if (clientTenantOverride(req.body)) {
+        if (String(req.headers.accept || "").includes("application/json")) {
+          return json(res, 403, { ok: false, code: "forbidden" });
+        }
+        return res.status(403).type("text").send("Forbidden");
+      }
       const resolved = await requireEditor(req, res, "website.publish");
       if (!resolved) return undefined;
       const published = await publishChurchWebsite(getPool(), {

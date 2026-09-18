@@ -409,6 +409,20 @@ async function attachWebsiteAdminChrome(opts) {
     return model;
   }
 
+  // Publish authority is website.publish — not merely HQ edit scope. Editors with
+  // website.edit alone must not see Publish even when church-scoped (BB-BUG-001).
+  const publishCheck = await authorize(db, {
+    actor: { userId: session.userId },
+    permission: "website.publish",
+    tenantContext: tenant,
+    resourceContext: {
+      organizationId: tenant.organization.id,
+      churchId: tenant.church.id,
+      branchId: draftBranchId,
+    },
+  });
+  const canPublishWebsite = publishCheck.allowed === true;
+
   const churchId = tenant && tenant.church ? tenant.church.id : authz.churchId;
   const organizationId =
     tenant && tenant.organization ? tenant.organization.id : authz.organizationId;
@@ -793,12 +807,13 @@ async function attachWebsiteAdminChrome(opts) {
     pathMode && publicBase ? `${publicBase}/website/section-actions` : null;
   const addSectionUrl =
     pathMode && publicBase ? `${publicBase}/website/add-section` : null;
-  const unpublishPath = isHqEditor
-    ? buildPublicWebsiteUnpublishPath({
-        product: PRODUCT_CODE.BLESSBOARD,
-        organizationKey: orgKey,
-      })
-    : null;
+  const unpublishPath =
+    isHqEditor && canPublishWebsite
+      ? buildPublicWebsiteUnpublishPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: orgKey,
+        })
+      : null;
 
   if (previewDraftMode && !editingMode) {
     const mapPreviewNav = function mapPreviewNav(items) {
@@ -960,7 +975,7 @@ async function attachWebsiteAdminChrome(opts) {
       group: "lifecycle",
     });
   }
-  if (isHqEditor && unpublishPath) {
+  if (canPublishWebsite && unpublishPath) {
     moreItems.push({
       id: "unpublish",
       label: "Unpublish website",
@@ -990,7 +1005,7 @@ async function attachWebsiteAdminChrome(opts) {
     draft: hasDraftChanges,
     unpublishedCount: draftCount,
     canEdit: true,
-    canPublish: isHqEditor,
+    canPublish: canPublishWebsite,
     previewHref: draftPreviewHrefResolved,
     backToEditHref,
     publishPath: publishUrl,
@@ -1034,7 +1049,7 @@ async function attachWebsiteAdminChrome(opts) {
     mediaUploadUrl,
     mediaListUrl,
     pathPrefix: model.pathPrefix || publicBase || "",
-    canPublish: isHqEditor,
+    canPublish: canPublishWebsite,
     editorShell: editingMode
       ? presentEditorShell({ ...shellFacts, editing: true })
       : previewDraftMode

@@ -27,6 +27,28 @@ const REASON = Object.freeze({
 
 const PERMISSION_KEY_RE = /^[a-z][a-z0-9_]*(\.[a-z][a-z0-9_]*)+$/;
 
+/**
+ * Website publication / restore authority. When an actor has in-scope catalogue
+ * assignments, these keys must come from the catalogue — the legacy login
+ * baseline (church_hq_admin / branch_admin) must not widen a restricted role
+ * such as website_editor into a publisher via union fallthrough (BB-BUG-001).
+ */
+const WEBSITE_PUBLICATION_PERMISSIONS = Object.freeze(
+  new Set([
+    "website.publish",
+    "website.review",
+    "website.rollback",
+    "website.restore",
+    "website.take_offline",
+    "website.suspend",
+    "website.approve",
+  ])
+);
+
+function isWebsitePublicationPermission(permissionKey) {
+  return WEBSITE_PUBLICATION_PERMISSIONS.has(String(permissionKey || ""));
+}
+
 function uuidEqual(a, b) {
   if (a == null || b == null) return false;
   return String(a).toLowerCase() === String(b).toLowerCase();
@@ -349,6 +371,29 @@ async function authorize(db, input) {
           evaluatedScopes,
         });
       }
+      // In-scope catalogue roles are authoritative for publication keys. Do not
+      // fall through to the legacy login baseline, which always includes
+      // website.publish for church_hq_admin / branch_admin.
+      if (isWebsitePublicationPermission(permissionKey)) {
+        const denyReason = REASON.PERMISSION_DENIED;
+        if (perm.sensitivity === "sensitive" || perm.sensitivity === "highly_sensitive") {
+          return decision({
+            allowed: false,
+            reasonCode: denyReason,
+            permission: permissionKey,
+            matchedAssignments: [],
+            evaluatedScopes,
+            _internal: { sensitiveDenial: true },
+          });
+        }
+        return decision({
+          allowed: false,
+          reasonCode: denyReason,
+          permission: permissionKey,
+          matchedAssignments: [],
+          evaluatedScopes,
+        });
+      }
     }
 
     // 2) Legacy compatibility (active user_roles only)
@@ -495,6 +540,7 @@ async function listEffectivePermissions(db, input) {
     const set = new Set();
 
     const assignments = await rbacRepo.listActiveAssignmentsForUser(db, actorUserId, organizationId);
+    let hasScopedCatalogue = false;
     for (const assignment of assignments) {
       if (isExpired(assignment.expiresAt, now)) continue;
       const grant = {
@@ -505,6 +551,7 @@ async function listEffectivePermissions(db, input) {
         scopeId: assignment.scopeId,
       };
       if (!grantMatchesScope(grant, target)) continue;
+      hasScopedCatalogue = true;
       const keys = await rbacRepo.listPermissionKeysForRoleId(db, assignment.roleId);
       for (const k of keys) set.add(k);
     }
@@ -518,6 +565,15 @@ async function listEffectivePermissions(db, input) {
         branchId: g.branchId,
       };
       if (!grantMatchesScope(scoped, target)) continue;
+      // Mirror authorize(): catalogue-scoped actors do not inherit publication
+      // authority from the legacy login baseline alone.
+      if (
+        hasScopedCatalogue &&
+        isWebsitePublicationPermission(g.permissionKey) &&
+        !set.has(g.permissionKey)
+      ) {
+        continue;
+      }
       set.add(g.permissionKey);
     }
 
@@ -534,6 +590,8 @@ async function listEffectivePermissions(db, input) {
 module.exports = {
   REASON,
   PERMISSION_KEY_RE,
+  WEBSITE_PUBLICATION_PERMISSIONS,
+  isWebsitePublicationPermission,
   authorize,
   hasPermission,
   requirePermission,
