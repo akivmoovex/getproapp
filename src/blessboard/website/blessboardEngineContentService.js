@@ -270,6 +270,7 @@ async function saveFieldDraft(db, input) {
     value: input.value,
     actorIdentityId: input.actorIdentityId || null,
     grantedPermissions: input.grantedPermissions,
+    env: (input && input.env) || process.env,
   });
 }
 

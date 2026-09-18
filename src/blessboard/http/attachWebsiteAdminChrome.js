@@ -36,11 +36,11 @@ const {
 } = require("../services/websitePublicEditSettingsLinks");
 const {
   cdnMarketingAsset,
-  presentImageValue,
   presentRuntimeImageSrc,
 } = require("../../platform/media/cdnMediaPresentation");
 const { findBlessBoardWebsiteInstance } = require("../website/blessboardWebsiteAdapter");
 const { resolveWebsiteContent, MODE } = require("../../platform/website/resolver");
+const mediaService = require("../../platform/website/mediaService");
 const {
   imageFromWebsiteValue,
   pickHexColor,
@@ -79,20 +79,29 @@ async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
     });
     if (!resolved.ok) return;
     const img = imageFromWebsiteValue(resolved.values && resolved.values["home.logo"]);
-    const presentedLogo = presentImageValue(
-      { src: img.src || null, alt: img.alt || null, mediaId: img.mediaId || null },
-      env
-    );
+    const presentedLogo = await mediaService.hydrateWebsiteImageValue(db, {
+      organizationId,
+      instance,
+      env,
+      value: { src: img.src || null, alt: img.alt || null, mediaId: img.mediaId || null },
+    });
     if (presentedLogo.src) {
       model.websiteLogoUrl = presentedLogo.src;
       model.websiteLogoAlt = presentedLogo.alt || img.alt;
       model.websiteLogoMediaId = presentedLogo.mediaId || img.mediaId;
+    } else if (presentedLogo.mediaId || img.mediaId) {
+      // Keep mediaId even when CDN presentation is briefly unavailable so the
+      // editor can reopen/replace without losing the draft reference.
+      model.websiteLogoMediaId = presentedLogo.mediaId || img.mediaId;
+      if (presentedLogo.alt || img.alt) model.websiteLogoAlt = presentedLogo.alt || img.alt;
     }
     const hero = imageFromWebsiteValue(resolved.values && resolved.values["home.hero.image"]);
-    const presentedHero = presentImageValue(
-      { src: hero.src || null, alt: hero.alt || null, mediaId: hero.mediaId || null },
-      env
-    );
+    const presentedHero = await mediaService.hydrateWebsiteImageValue(db, {
+      organizationId,
+      instance,
+      env,
+      value: { src: hero.src || null, alt: hero.alt || null, mediaId: hero.mediaId || null },
+    });
     if (presentedHero.src) {
       model.websiteHeroUrl = presentedHero.src;
       model.websiteHeroAlt = presentedHero.alt || hero.alt;
@@ -118,6 +127,8 @@ async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
           altText: hero.alt || (heroSection.layoutMetadata && heroSection.layoutMetadata.altText) || "",
         };
       }
+    } else if (presentedHero.mediaId || hero.mediaId) {
+      model.websiteHeroMediaId = presentedHero.mediaId || hero.mediaId;
     }
     const brandPrimary = pickHexColor(resolved.values, "brand.primary_color");
     const brandAccent = pickHexColor(resolved.values, "brand.accent_color");

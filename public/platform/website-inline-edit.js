@@ -839,6 +839,10 @@
 
     chain
       .then(function (uploaded) {
+        var uploadedSrc =
+          uploaded && uploaded.media
+            ? uploaded.media.publicSrc || uploaded.media.previewUrl || ""
+            : "";
         var value = {
           alt: altText,
           mediaId:
@@ -846,12 +850,17 @@
               ? uploaded.media.id
               : state.pendingMediaId || imgState.originalMediaId || null,
           src:
-            uploaded && uploaded.media && uploaded.media.id
+            uploadedSrc ||
+            (uploaded && uploaded.media && uploaded.media.id
               ? mediaItemUrl(uploaded.media.id)
               : state.pendingMediaId
                 ? mediaItemUrl(state.pendingMediaId)
-                : imgState.originalSrc,
+                : imgState.originalSrc),
         };
+        // Never persist blob:/data: previews — only mediaId + CDN/app delivery URLs.
+        if (value.src && /^(blob:|data:)/i.test(String(value.src))) {
+          value.src = uploadedSrc || (value.mediaId ? mediaItemUrl(value.mediaId) : "");
+        }
         return postJson(saveUrl, {
           contentKey: activeField.getAttribute("data-website-key"),
           value: value,
@@ -870,7 +879,23 @@
           return;
         }
         if (out && out.ok) {
-          updateCanvasImage(activeField, out.value.src, altText, out.value.mediaId);
+          var savedValue =
+            out.content && out.content.draftValue && typeof out.content.draftValue === "object"
+              ? out.content.draftValue
+              : null;
+          var paintSrc =
+            (savedValue && savedValue.src) ||
+            (out.uploaded && out.uploaded.media && (out.uploaded.media.publicSrc || out.uploaded.media.previewUrl)) ||
+            (out.value && out.value.src) ||
+            "";
+          var paintMediaId =
+            (savedValue && savedValue.mediaId) ||
+            (out.value && out.value.mediaId) ||
+            "";
+          if (paintSrc && /^(blob:|data:)/i.test(String(paintSrc))) {
+            paintSrc = "";
+          }
+          updateCanvasImage(activeField, paintSrc, altText, paintMediaId);
           markDraftSaved();
           closeDialog();
         } else {

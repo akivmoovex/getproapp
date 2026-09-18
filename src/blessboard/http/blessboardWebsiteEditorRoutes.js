@@ -322,6 +322,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           value,
           actorIdentityId: actorUserId(req),
           grantedPermissions: ["website.edit"],
+          env: getEnv(),
         });
         if (!engineSaved.ok) {
           const notFound = engineSaved.code === "tenant_mismatch" || engineSaved.code === "media_not_found";
@@ -744,7 +745,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         return json(res, 200, {
           ok: true,
           published: false,
-          media: mediaService.presentWebsiteMediaForClient(found.instance, existing.media),
+          media: mediaService.presentWebsiteMediaForClient(found.instance, existing.media, getEnv()),
           reused: true,
         });
       }
@@ -760,6 +761,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         sizeBytes: file ? file.size : req.body && req.body.sizeBytes,
         altText: req.body && req.body.altText,
         buffer: file ? file.buffer : null,
+        env: getEnv(),
       });
       if (!registered.ok) {
         return json(res, 400, { ok: false, code: registered.code || "invalid_upload" });
@@ -767,7 +769,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       return json(res, 200, {
         ok: true,
         published: false,
-        media: mediaService.presentWebsiteMediaForClient(found.instance, registered.media),
+        media: mediaService.presentWebsiteMediaForClient(found.instance, registered.media, getEnv()),
       });
     } catch (err) {
       return next(err);

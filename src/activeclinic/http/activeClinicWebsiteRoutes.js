@@ -212,6 +212,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         visibility: req.body && req.body.visibility,
         actorIdentityId: actorId(req),
         grantedPermissions: grantedPermissions(req),
+        env,
       });
       if (!saved.ok) {
         const notFound = saved.code === "tenant_mismatch" || saved.code === "media_not_found";
@@ -890,7 +891,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         return json(res, 200, {
           ok: true,
           published: false,
-          media: mediaService.presentWebsiteMediaForClient(attached.instance, existing.media),
+          media: mediaService.presentWebsiteMediaForClient(attached.instance, existing.media, env),
           reused: true,
         });
       }
@@ -905,6 +906,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
           externalUrl: req.body && req.body.externalUrl,
           originalFilename: req.body && req.body.originalFilename,
           altText: req.body && req.body.altText,
+          env,
         });
         if (!registeredVideo.ok) {
           return json(res, 400, registeredVideo);
@@ -912,7 +914,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         return json(res, 200, {
           ok: true,
           published: false,
-          media: mediaService.presentWebsiteMediaForClient(attached.instance, registeredVideo.media),
+          media: mediaService.presentWebsiteMediaForClient(attached.instance, registeredVideo.media, env),
         });
       }
       const file = req.file || null;
@@ -932,6 +934,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         altText: req.body && req.body.altText,
         storageKey: req.body && req.body.storageKey,
         buffer: file.buffer,
+        env,
       });
       if (!registered.ok) {
         return json(res, 400, registered);
@@ -939,7 +942,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       return json(res, 200, {
         ok: true,
         published: false,
-        media: mediaService.presentWebsiteMediaForClient(attached.instance, registered.media),
+        media: mediaService.presentWebsiteMediaForClient(attached.instance, registered.media, env),
       });
     } catch (err) {
       return next(err);

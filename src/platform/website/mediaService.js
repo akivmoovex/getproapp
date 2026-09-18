@@ -16,7 +16,9 @@ const { createHostingerMediaStorage } = require("../media/hostingerMediaStorage"
 const {
   presentCdnUrl,
   presentRuntimeImageSrc,
+  presentImageValue,
   resolveCdnPublicBaseUrl,
+  parseAppMediatedMediaSrc,
 } = require("../media/cdnMediaPresentation");
 
 const RESULT = Object.freeze({
@@ -125,6 +127,16 @@ function resolveMediaStorage(env) {
 }
 
 /**
+ * Hostinger object keys live under testing/|production/. Never invent CDN URLs for
+ * legacy database-payload keys (website/...).
+ * @param {string|null|undefined} storageKey
+ * @returns {boolean}
+ */
+function isCdnObjectStorageKey(storageKey) {
+  return /^(testing|production)\//.test(String(storageKey || ""));
+}
+
+/**
  * Public URL for website media — CDN absolute URL when Hostinger-backed.
  * Legacy database-payload rows keep an app-mediated path only until migrated;
  * renderers must still run presentRuntimeImageSrc (which nulls app paths without
@@ -140,13 +152,21 @@ function resolveWebsiteMediaPublicSrc(instance, media, env) {
     const cdn = presentCdnUrl(media.storageKey, env);
     if (cdn) return cdn;
     const cfg = resolveHostingerMediaConfig(env || process.env);
-    const url = buildPublicMediaUrl(media.storageKey, cfg);
+    const url = buildPublicMediaUrl(media.storageKey, {
+      publicBaseUrl: cfg.publicBaseUrl,
+      publicMountPath: cfg.publicMountPath,
+    });
     // Never present relative /media to clients when a CDN base exists or can be derived.
     if (url && /^https:\/\//i.test(url)) return url;
     if (url && url.startsWith("/media/")) {
       const rewritten = presentRuntimeImageSrc(url, env);
       if (rewritten) return rewritten;
     }
+  }
+  // Hostinger row with a CDN object key but missing provider label — still present CDN.
+  if (isCdnObjectStorageKey(media.storageKey)) {
+    const cdn = presentCdnUrl(media.storageKey, env);
+    if (cdn) return cdn;
   }
   // Database-payload fallback: no CDN object yet — do not emit /media.
   // App route remains for authenticated/ops delivery + 302 upgrade after migration.
@@ -621,11 +641,70 @@ function presentWebsiteMediaForClient(instance, media, env) {
     const rewritten = presentRuntimeImageSrc(path, env);
     path = rewritten;
   }
+  // Last resort for CDN object keys when app-path nulling cleared the src.
+  if (!path && isCdnObjectStorageKey(media.storageKey)) {
+    path = presentCdnUrl(media.storageKey, env);
+  }
   if (!path) return { ...media, publicSrc: null, previewUrl: null };
   return {
     ...media,
     publicSrc: path,
     previewUrl: path,
+  };
+}
+
+/**
+ * Resolve an IMAGE content value to a CDN src for HTML/JSON renderers.
+ * Recovers mediaId-only (or app-mediated) drafts that lost src on save.
+ * @param {{ query: Function }} db
+ * @param {{
+ *   organizationId: string,
+ *   instance?: { id?: string, productCode?: string, slug?: string }|null,
+ *   value: unknown,
+ *   env?: NodeJS.ProcessEnv,
+ * }} input
+ * @returns {Promise<{ src: string|null, alt: string|null, mediaId: string|null }>}
+ */
+async function hydrateWebsiteImageValue(db, input) {
+  const env = (input && input.env) || process.env;
+  const value = input && input.value;
+  const organizationId = String((input && input.organizationId) || "");
+  const instance = (input && input.instance) || null;
+  const presented = presentImageValue(value, env);
+  if (presented.src && /^https:\/\//i.test(presented.src)) {
+    return presented;
+  }
+
+  let mediaId = presented.mediaId ? String(presented.mediaId) : "";
+  if (!mediaId && value && typeof value === "object" && !Array.isArray(value) && value.src) {
+    const mediated = parseAppMediatedMediaSrc(value.src);
+    if (mediated.mediaId) mediaId = mediated.mediaId;
+  }
+  if (!mediaId && typeof value === "string") {
+    const mediated = parseAppMediatedMediaSrc(value);
+    if (mediated.mediaId) mediaId = mediated.mediaId;
+  }
+  if (!mediaId || !organizationId || !db || typeof db.query !== "function") {
+    return presented;
+  }
+
+  const loaded = await getWebsiteMedia(db, { mediaId, organizationId });
+  if (!loaded.ok || loaded.media.status !== "active") {
+    return presented;
+  }
+  if (instance && instance.id && loaded.media.instanceId !== instance.id) {
+    return presented;
+  }
+
+  const publicSrc =
+    presentWebsiteMediaForClient(instance, loaded.media, env).publicSrc ||
+    (isCdnObjectStorageKey(loaded.media.storageKey)
+      ? presentCdnUrl(loaded.media.storageKey, env)
+      : null);
+  return {
+    src: publicSrc || null,
+    alt: presented.alt,
+    mediaId: loaded.media.id,
   };
 }
 
@@ -676,20 +755,28 @@ async function assertOwnedWebsiteImageValue(db, input) {
     return { ok: true, media: loaded.media };
   }
 
-  if (mediaId) {
-    const owned = await loadOwned(mediaId);
-    if (!owned.ok) return { ok: false, code: owned.code, value: null };
+  function ownedImageValue(ownedMedia, env) {
     const cdnSrc =
-      presentWebsiteMediaForClient(instance, owned.media, (input && input.env) || process.env)
-        .publicSrc || null;
+      presentWebsiteMediaForClient(instance, ownedMedia, env).publicSrc ||
+      (isCdnObjectStorageKey(ownedMedia.storageKey)
+        ? presentCdnUrl(ownedMedia.storageKey, env)
+        : null);
+    // Never persist src:null for an owned media row that has a CDN object key —
+    // that is the BB-BUG-002 / BB-1.1-017 refresh→placeholder failure mode.
     return {
       ok: true,
       value: {
         ...value,
-        mediaId: owned.media.id,
+        mediaId: ownedMedia.id,
         src: cdnSrc,
       },
     };
+  }
+
+  if (mediaId) {
+    const owned = await loadOwned(mediaId);
+    if (!owned.ok) return { ok: false, code: owned.code, value: null };
+    return ownedImageValue(owned.media, (input && input.env) || process.env);
   }
 
   const clinicMatch = src.match(CLINIC_MEDIA_PATH_RE);
@@ -703,17 +790,7 @@ async function assertOwnedWebsiteImageValue(db, input) {
     }
     const owned = await loadOwned(pathMatch[2]);
     if (!owned.ok) return { ok: false, code: owned.code, value: null };
-    const cdnSrc =
-      presentWebsiteMediaForClient(instance, owned.media, (input && input.env) || process.env)
-        .publicSrc || null;
-    return {
-      ok: true,
-      value: {
-        ...value,
-        mediaId: owned.media.id,
-        src: cdnSrc,
-      },
-    };
+    return ownedImageValue(owned.media, (input && input.env) || process.env);
   }
 
   if (src.startsWith("/clinics/") || /^\/c\//.test(src)) {
@@ -803,11 +880,13 @@ module.exports = {
   updateWebsiteMediaMeta,
   isPublishedInUse,
   assertOwnedWebsiteImageValue,
+  hydrateWebsiteImageValue,
   listOrphanCandidates,
   websiteMediaDeliveryPath,
   resolveWebsiteMediaPublicSrc,
   presentWebsiteMediaForClient,
   resolveMediaStorage,
+  isCdnObjectStorageKey,
   PROVIDER_HOSTINGER,
   PROVIDER_DATABASE,
 };
