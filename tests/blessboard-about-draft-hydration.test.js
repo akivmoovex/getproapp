@@ -105,4 +105,12 @@ describe("blessboard about draft hydration", () => {
       /storyKey\s*=\s*idx\s*===\s*0\s*\?\s*'story'/
     );
   });
+
+  it("primary/HQ public routes serve church-wide CMS (null selectedBranch)", () => {
+    const pathRoutes = read("src/blessboard/http/pathPublicRoutes.js");
+    const tenantRoutes = read("src/blessboard/http/tenantPublicRoutes.js");
+    assert.match(pathRoutes, /contentSelectedBranch/);
+    assert.match(pathRoutes, /primary && String\(activeBranch\.id\) === String\(primary\.id\)/);
+    assert.match(tenantRoutes, /contentSelectedBranch/);
+  });
 });

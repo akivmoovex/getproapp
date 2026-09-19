@@ -479,11 +479,24 @@ function createPathPublicRouter(deps) {
       resolved.organizationKey,
       activeBranch.key
     );
+    // Primary / HQ public URLs serve church-wide CMS (contentBranchId null), matching
+    // editor HQ draft scope. Non-primary branches keep independent branch CMS.
+    const primary = websiteMode.primaryActiveBranch;
+    const contentSelectedBranch =
+      primary && String(activeBranch.id) === String(primary.id)
+        ? null
+        : {
+            id: activeBranch.id,
+            key: activeBranch.key,
+            displayName: activeBranch.displayName,
+            branchType: activeBranch.branchType,
+            isPrimary: activeBranch.isPrimary,
+          };
     return renderPublicModel(req, res, {
       tenant: resolved.tenant,
       pageKey,
       pathPrefix,
-      selectedBranch: activeBranch,
+      selectedBranch: contentSelectedBranch,
       routingMode: "path",
     });
   }
