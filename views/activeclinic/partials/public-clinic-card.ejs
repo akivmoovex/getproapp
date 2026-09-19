@@ -1,5 +1,5 @@
 <%
-  var websiteHref = c.publicBasePath || (c.publicPagePaths && c.publicPagePaths.home) || ('/clinics/' + c.clinicKey);
+  var websiteHref = c.publicBasePath || (c.publicPagePaths && c.publicPagePaths.home) || (c.clinicKey ? ('/clinics/' + encodeURIComponent(String(c.clinicKey).trim())) : '');
   var services = Array.isArray(c.services) ? c.services : [];
   var logoRaw = c.websiteLogoUrl ? String(c.websiteLogoUrl).trim() : "";
   var logoSafe = /^(https:\/\/|\/)/.test(logoRaw) ? logoRaw : "";
@@ -7,34 +7,44 @@
   var locationLine = [c.city, c.province].filter(Boolean).join(", ");
 %>
 <li class="acw-clinic-card ac-clinic-card" data-ac-clinic-card="1">
-  <div class="acw-clinic-card__head">
-    <div class="acw-clinic-card__logo" aria-hidden="true">
-      <% if (logoSafe) { %>
-      <img src="<%= logoSafe %>" alt=""/>
-      <% } else { %>
-      <span><%= initial %></span>
-      <% } %>
-    </div>
-    <div class="acw-clinic-card__identity">
-      <h2><a href="<%= websiteHref %>"><%= c.publicName %></a></h2>
-      <% if (locationLine) { %>
-      <p class="acw-clinic-card__meta">
-        <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
-        <%= locationLine %>
-      </p>
-      <% } %>
-    </div>
-  </div>
-  <% if (c.websiteTagline) { %>
-  <p class="acw-clinic-card__tagline"><%= c.websiteTagline %></p>
+  <% if (websiteHref) { %>
+  <a class="acw-clinic-card__link" href="<%= websiteHref %>" data-ac-clinic-card-link="1">
+  <% } else { %>
+  <div class="acw-clinic-card__link" data-ac-clinic-card-link="0">
   <% } %>
-  <% if (services.length) { %>
-  <p class="acw-clinic-card__services-label">Key Services</p>
-  <div class="acw-tags" aria-label="Published services">
-    <% services.forEach(function(name) { %>
-    <span class="acw-tag"><%= name %></span>
-    <% }) %>
+    <div class="acw-clinic-card__head">
+      <div class="acw-clinic-card__logo" aria-hidden="true">
+        <% if (logoSafe) { %>
+        <img src="<%= logoSafe %>" alt=""/>
+        <% } else { %>
+        <span><%= initial %></span>
+        <% } %>
+      </div>
+      <div class="acw-clinic-card__identity">
+        <h2><%= c.publicName %></h2>
+        <% if (locationLine) { %>
+        <p class="acw-clinic-card__meta">
+          <span class="material-symbols-outlined" aria-hidden="true">location_on</span>
+          <%= locationLine %>
+        </p>
+        <% } %>
+      </div>
+    </div>
+    <% if (c.websiteTagline) { %>
+    <p class="acw-clinic-card__tagline"><%= c.websiteTagline %></p>
+    <% } %>
+    <% if (services.length) { %>
+    <p class="acw-clinic-card__services-label">Key Services</p>
+    <div class="acw-tags" aria-label="Published services">
+      <% services.forEach(function(name) { %>
+      <span class="acw-tag"><%= name %></span>
+      <% }) %>
+    </div>
+    <% } %>
+    <span class="acw-clinic-card__cta" aria-hidden="true">View Clinic</span>
+  <% if (websiteHref) { %>
+  </a>
+  <% } else { %>
   </div>
   <% } %>
-  <a class="acw-clinic-card__cta" href="<%= websiteHref %>">View Clinic</a>
 </li>

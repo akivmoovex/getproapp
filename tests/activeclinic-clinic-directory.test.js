@@ -308,6 +308,10 @@ describe("ActiveClinic clinic directory repair", () => {
     assert.match(html, /data-ac-filter-drawer/);
     assert.match(html, /View Clinic/);
     assert.match(html, /href="\/clinics\/demo-centre"/);
+    assert.match(html, /data-ac-clinic-card-link="1"/);
+    assert.match(html, /class="acw-clinic-card__link"/);
+    assert.doesNotMatch(html, /<h2><a href=/);
+    assert.equal((html.match(/href="\/clinics\/demo-centre"/g) || []).length, 1);
     assert.match(html, /Key Services/);
     assert.doesNotMatch(html, /ac-directory-filters-sidebar/);
     assert.doesNotMatch(html, /Open Now/);
@@ -321,6 +325,33 @@ describe("ActiveClinic clinic directory repair", () => {
     );
     assert.match(css, /\[data-ac-acw-screen="ACW02"\] \.acw-search--desktop/);
     assert.match(css, /\[data-ac-acw-screen="ACW02"\] \.acw-search--compact/);
+    assert.match(css, /\[data-ac-acw-screen="ACW02"\] \.acw-clinic-card__link/);
     assert.match(css, /@media \(max-width: 767px\)[\s\S]*acw-search--desktop[\s\S]*display:\s*none/);
+  });
+
+  it("directory card href resolves to clinic detail for published tenant", async () => {
+    if (!requireDb()) return;
+    const stamp = `${Date.now().toString(36)}nav`;
+    const published = await provisionPublishedClinic(stamp);
+    const app = appWithEnv();
+
+    const directory = await request(app).get("/clinics");
+    assert.equal(directory.status, 200);
+    assert.match(
+      directory.text,
+      new RegExp(`href="/clinics/${published.clinicKey}"[^>]*data-ac-clinic-card-link="1"`)
+    );
+    const detail = await request(app).get(`/clinics/${published.clinicKey}`);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, new RegExp(`Published Clinic ${stamp}`));
+
+    const missing = await request(app).get("/clinics/does-not-exist-clinic-key-zzzz");
+    assert.ok([404, 410].includes(missing.status));
+
+    const legacy = await request(app).get(`/c/${published.clinicKey}`);
+    assert.ok([200, 301, 302].includes(legacy.status));
+    if (legacy.status >= 300) {
+      assert.match(String(legacy.headers.location || ""), new RegExp(`/clinics/${published.clinicKey}`));
+    }
   });
 });

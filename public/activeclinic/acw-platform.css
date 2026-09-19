@@ -2128,7 +2128,30 @@ body.ac-public--platform .ac-public-brand__icon {
 }
 
 [data-ac-acw-screen="ACW02"] .acw-clinic-card {
+  padding: 0;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__link {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  gap: 0.65rem;
+  min-height: 100%;
   padding: 1.15rem;
+  color: inherit;
+  text-decoration: none;
+  border-radius: inherit;
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__link:hover .acw-clinic-card__cta,
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__link:focus-visible .acw-clinic-card__cta {
+  border-color: var(--acp-primary);
+  color: var(--acp-primary-strong);
+}
+
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__link:focus-visible {
+  outline: 2px solid var(--acp-primary);
+  outline-offset: 2px;
 }
 
 [data-ac-acw-screen="ACW02"] .acw-clinic-card__head {
@@ -2163,9 +2186,13 @@ body.ac-public--platform .ac-public-brand__icon {
   flex: 1;
 }
 
-[data-ac-acw-screen="ACW02"] .acw-clinic-card__identity h2 a {
+[data-ac-acw-screen="ACW02"] .acw-clinic-card__identity h2 {
   color: inherit;
   text-decoration: none;
+  margin: 0;
+  font-size: inherit;
+  font-weight: 700;
+  line-height: 1.3;
 }
 
 [data-ac-acw-screen="ACW02"] .acw-clinic-card__meta {
