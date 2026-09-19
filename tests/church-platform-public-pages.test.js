@@ -84,7 +84,7 @@ test("apex platform static pages render with shared shell", async () => {
   }
 });
 
-test("apex /about page renders Stitch V1.1 system About content", async () => {
+test("apex /about page renders Stitch V1.3 system About content", async () => {
   const prevEnv = process.env.DEPLOYMENT_ENV;
   const prevSha = process.env.GETPRO_GIT_SHA;
   process.env.DEPLOYMENT_ENV = "testing";
@@ -95,13 +95,15 @@ test("apex /about page renders Stitch V1.1 system About content", async () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /data-bb-about="platform-v11"/);
     assert.match(res.text, /Digital tools that help churches manage/);
-    assert.match(res.text, /1\.01\.bbaboutv11sh/);
+    assert.match(res.text, /1\.03\.bbaboutv11sh/);
+    assert.match(res.text, /Release 1\.3/);
     assert.match(res.text, /Testing/);
     assert.match(res.text, /bb-powered-by/);
     assert.match(res.text, /Powered by/);
     assert.match(res.text, /GetPro/);
     assert.match(res.text, /href="\/support"/);
     assert.match(res.text, /href="\/privacy"/);
+    assert.doesNotMatch(res.text, /1\.01\./);
     assert.doesNotMatch(res.text, /Moovex/i);
     assert.doesNotMatch(res.text, /guaranteed uptime|trusted by thousands|market.leading/i);
   } finally {

@@ -1,11 +1,14 @@
 <%
   var bi = typeof buildInfo === "object" && buildInfo ? buildInfo : {
-    version: "1.01.(unavailable)",
+    productVersion: "1.3",
+    version: "1.03.(unavailable)",
     build: "(unavailable)",
+    available: false,
     environmentLabel: "Production",
     environment: "production"
   };
   var envIsTesting = bi.environment === "testing";
+  var productLabel = bi.productVersion || "1.3";
 %>
 <article class="acw-page ac-about-v11" data-ac-page-section="public-about" data-ac-acw-screen="ACW06" data-product="ActiveClinic">
   <div class="ac-about-v11__inner">
@@ -33,7 +36,7 @@
         <div class="ac-about-v11__intro-body">
           <div class="ac-about-v11__intro-title-row ac-about-v11__desktop-only">
             <h2 id="ac-about-intro-title">ActiveClinic Core Suite</h2>
-            <span class="ac-about-v11__intro-tag">Enterprise v1.0</span>
+            <span class="ac-about-v11__intro-tag">Enterprise v<%= productLabel %></span>
           </div>
           <p>ActiveClinic provides healthcare facilities with tools for managing patients, appointments, clinical operations, pharmacy, diagnostics, billing and their public digital presence.</p>
         </div>
