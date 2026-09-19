@@ -129,7 +129,8 @@ async function addActiveClinicSection(db, input) {
   return {
     ok: true,
     section: added.section,
-    sectionKey: String(added.section && added.section.type) || type,
+    sectionKey: String((added.section && added.section.id) || type),
+    sectionId: String((added.section && added.section.id) || ""),
     published: false,
   };
 }

@@ -51,6 +51,10 @@
         <span class="material-symbols-outlined" aria-hidden="true">settings_backup_restore</span>
         <span><%= labels.restoreDefault || 'Restore default' %></span>
       </button>
+      <button type="button" class="gp-website-section-menu__item gp-website-section-menu__item--danger" data-website-section-action="remove" role="menuitem">
+        <span class="material-symbols-outlined" aria-hidden="true">delete</span>
+        <span><%= labels.remove || 'Remove section' %></span>
+      </button>
     </div>
   </div>
 
@@ -75,6 +79,31 @@
       </button>
       <button type="button" class="gp-website-section-menu__btn gp-website-section-menu__btn--primary" data-website-section-confirm-restore="1">
         <%= labels.restoreConfirmAction || 'Restore default' %>
+      </button>
+    </footer>
+  </div>
+
+  <div
+    class="gp-website-section-menu__panel gp-website-section-menu__panel--confirm"
+    data-website-section-menu-panel="remove"
+    role="dialog"
+    aria-modal="true"
+    aria-labelledby="gp-website-section-remove-title"
+    hidden
+  >
+    <div class="gp-website-section-menu__grab" aria-hidden="true"></div>
+    <header class="gp-website-section-menu__head">
+      <h2 class="gp-website-section-menu__title" id="gp-website-section-remove-title">
+        <%= labels.removeConfirmTitle || 'Remove this section?' %>
+      </h2>
+    </header>
+    <p class="gp-website-section-menu__body-text"><%= labels.removeConfirmBody || '' %></p>
+    <footer class="gp-website-section-menu__foot">
+      <button type="button" class="gp-website-section-menu__btn gp-website-section-menu__btn--ghost" data-website-section-menu-dismiss="1">
+        <%= labels.cancel || 'Cancel' %>
+      </button>
+      <button type="button" class="gp-website-section-menu__btn gp-website-section-menu__btn--danger" data-website-section-confirm-remove="1">
+        <%= labels.removeConfirmAction || 'Remove section' %>
       </button>
     </footer>
   </div>

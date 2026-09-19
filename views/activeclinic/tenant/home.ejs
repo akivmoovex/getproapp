@@ -237,8 +237,20 @@
   });
 %>
 <% extraHomeSections.forEach(function (section) { %>
-<section class="ac-public-section ac-tenant-cms-section" data-ac-home-section="<%= section.type %>" data-ac-section-id="<%= section.id %>">
-  <% if (section.heading) { %><h2><%= section.heading %></h2><% } else if (section.title) { %><h2><%= section.title %></h2><% } %>
+<section
+  class="ac-public-section ac-tenant-cms-section<%= section.type === 'image_text' ? ' ac-tenant-cms-section--image-text' : '' %>"
+  data-ac-home-section="<%= section.type %>"
+  data-ac-section-id="<%= section.id %>"
+  data-website-section-key="<%= section.id %>"
+>
+  <h2>
+    <%- include('../partials/website-editable-field', {
+      contentKey: 'cms.section.' + section.id + '.heading',
+      fieldValue: section.heading || section.title || 'New section',
+      fieldType: 'short_text',
+      fieldLabel: 'Edit section heading'
+    }) %>
+  </h2>
   <% if (section.type === "services") { %>
   <p><%= section.body || clinic.servicesIntro || "Browse consultations, procedures, and care offerings published by this clinic." %></p>
   <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= servicesHref %>">View services</a></p>
@@ -252,10 +264,25 @@
   <p><%= section.body || clinic.contactIntro || "" %></p>
   <p><a class="ac-btn ac-btn--primary ac-btn--pill" href="<%= contactHref %>">Contact the clinic</a></p>
   <% } else { %>
-  <% if (section.image && section.image.src) { %>
-  <p><img src="<%= section.image.src %>" alt="<%= section.image.alt || '' %>"/></p>
+  <% if (section.type === "image_text" || (section.image && section.image.src)) { %>
+  <div class="ac-tenant-cms-section__media">
+    <%- include('../partials/website-editable-image', {
+      contentKey: 'cms.section.' + section.id + '.image',
+      imageSrc: (section.image && section.image.src) || '',
+      imageAlt: (section.image && section.image.alt) || '',
+      imageMediaId: (section.image && section.image.mediaId) || '',
+      imageClassName: 'ac-tenant-cms-section__image',
+    }) %>
+  </div>
   <% } %>
-  <% if (section.body) { %><p><%= section.body %></p><% } %>
+  <p>
+    <%- include('../partials/website-editable-field', {
+      contentKey: 'cms.section.' + section.id + '.body',
+      fieldValue: section.body || '',
+      fieldType: 'long_text',
+      fieldLabel: 'Edit section body'
+    }) %>
+  </p>
   <% if (section.button_label && section.button_url) { %>
   <p><a class="ac-btn ac-btn--primary ac-btn--pill" href="<%= section.button_url %>"><%= section.button_label %></a></p>
   <% } %>

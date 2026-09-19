@@ -21,24 +21,32 @@ function sectionOrderKeys(sections) {
 
 function applyVisibilityDrafts(sections, drafts, pageKey) {
   const hidden = new Set();
+  const removed = new Set();
   for (const d of drafts || []) {
     if (d.draftKind !== "page_section" || d.pageKey !== pageKey) continue;
+    if (d.op === "remove") {
+      const sk = String((d.payload && d.payload.sectionKey) || d.sectionKey || "");
+      if (sk) removed.add(sk);
+      continue;
+    }
     if (d.op !== "visibility") continue;
     const sk = String((d.payload && d.payload.sectionKey) || d.sectionKey || "");
     if (!sk) continue;
     if (d.payload && d.payload.hidden === true) hidden.add(sk);
     else hidden.delete(sk);
   }
-  return (sections || []).map((s) => {
-    const key = String(s.sectionKey || "");
-    const isHidden = hidden.has(key) || String(s.status || "") === "archived";
-    return {
-      ...s,
-      _draftHidden: hidden.has(key),
-      status: hidden.has(key) ? "archived" : s.status,
-      _editorHidden: isHidden,
-    };
-  });
+  return (sections || [])
+    .filter((s) => !removed.has(String(s.sectionKey || "")))
+    .map((s) => {
+      const key = String(s.sectionKey || "");
+      const isHidden = hidden.has(key) || String(s.status || "") === "archived";
+      return {
+        ...s,
+        _draftHidden: hidden.has(key),
+        status: hidden.has(key) ? "archived" : s.status,
+        _editorHidden: isHidden,
+      };
+    });
 }
 
 function buildManifest(pageKey, sections, structuredDrafts) {
@@ -63,11 +71,14 @@ function buildManifest(pageKey, sections, structuredDrafts) {
       canEdit: true,
       canReorder: total > 1 && !locked,
       canHide: !locked,
-      canRestoreDefault: !locked && Boolean(section.sectionKey),
+      canRestoreDefault: !locked && Boolean(section.sectionKey) && section._isDraftNew !== true,
+      canRemove: !locked && (section._isDraftNew === true || String(section.sectionType || "") === "plain_text"),
       isHidden,
       isDefault: false,
+      isCustom: section._isDraftNew === true || String(section.sectionType || "") === "plain_text",
       sortIndex: index,
       selector: `[data-section="${sectionKey}"]`,
+      sectionType: String(section.sectionType || ""),
     };
   });
   return presentSectionManifest({
@@ -176,6 +187,30 @@ async function loadPageSections(db, input) {
   return contentRepo.listSectionsForPage(db, page.id, {});
 }
 
+async function removeSection(db, input) {
+  const pageKey = String(input.pageKey || "home").trim() || "home";
+  const sectionKey = String(input.sectionKey || "").trim();
+  if (!sectionKey) return { ok: false, code: "invalid_input" };
+  if (isLockedSection(sectionKey) || sectionKey === "hero") {
+    return { ok: false, code: "locked_item" };
+  }
+  await saveStructuredDraft(db, {
+    organizationId: input.organizationId,
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    editorUserId: input.editorUserId,
+    actorRole: input.actorRole || null,
+    draftKind: "page_section",
+    pageKey,
+    sectionKey,
+    entityKey: `section:${sectionKey}:remove`,
+    op: "remove",
+    payload: { sectionKey },
+    previousPayload: input.previousPayload || null,
+  });
+  return { ok: true, sectionKey };
+}
+
 async function applySectionAction(db, input) {
   const action = String(input.action || "").trim();
   const pageKey = String(input.pageKey || "home").trim() || "home";
@@ -205,6 +240,9 @@ async function applySectionAction(db, input) {
   }
   if (action === "restore_default") {
     return restoreSectionDefault(db, input);
+  }
+  if (action === "remove") {
+    return removeSection(db, input);
   }
   return { ok: false, code: "invalid_action" };
 }

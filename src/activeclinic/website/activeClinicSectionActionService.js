@@ -2,6 +2,10 @@
 
 const cmsService = require("./clinicWebsiteCmsService");
 const { presentSectionManifest } = require("../../platform/website-engine/presentSectionManifest");
+const {
+  customCmsSectionCapabilities,
+  parseCmsSectionFieldKey,
+} = require("../../platform/website-engine/sectionLifecycle");
 const { DEFAULT_HOME_SECTIONS, DEFAULT_PAGE_SECTIONS, defaultHomeSections } = require("./clinicWebsiteCms");
 
 const PAGE_ID_BY_KEY = Object.freeze({
@@ -59,13 +63,19 @@ function buildPageManifest(pageKey, cmsSections, defaults, selectorAttr) {
       const bOrder = bFound ? Number(bFound.sort_order || 0) : Number(b.sortOrder || 0);
       return aOrder - bOrder;
     });
-  const capabilities = orderedDefaults.map((def, index) => {
-    const found = pageSections.find(
-      (s) => String(s.type) === String(def.type) || String(s.type) === String(def.key)
-    );
+  const defaultCapabilities = orderedDefaults.map((def, index) => {
+    const seededId = `sec_${def.key}`.slice(0, 20);
+    const bound =
+      pageSections.find((s) => String(s.id) === seededId) ||
+      pageSections.find(
+        (s) =>
+          String(s.id || "").indexOf("sec_") === 0 &&
+          (String(s.type) === String(def.type) || String(s.type) === String(def.key))
+      ) ||
+      null;
     const locked = def.locked === true;
-    const isHidden = found ? found.visible === false : false;
-    const sectionId = found ? String(found.id) : `sec_${pageKey}_${def.key}`;
+    const isHidden = bound ? bound.visible === false : false;
+    const sectionId = bound ? String(bound.id) : seededId;
     return {
       sectionKey: def.key,
       sectionId,
@@ -75,13 +85,30 @@ function buildPageManifest(pageKey, cmsSections, defaults, selectorAttr) {
       canReorder: !locked && orderedDefaults.length > 1,
       canHide: !locked,
       canRestoreDefault: !locked && !def.domainBacked,
+      canRemove: false,
       isHidden,
-      isDefault: false,
+      isDefault: true,
+      isCustom: false,
       sortIndex: index,
       selector: pageSectionSelector(pageKey, def.key),
       domainBacked: def.domainBacked === true,
+      sectionType: def.type,
     };
   });
+
+  const customCapabilities = customCmsSectionCapabilities({
+    pageKey,
+    pageSections,
+    defaultCapabilities,
+    selectorForSection: (section) => `[data-ac-section-id="${section.id}"]`,
+  });
+
+  const capabilities = defaultCapabilities.concat(customCapabilities).map((cap, index) => ({
+    ...cap,
+    sortIndex: index,
+    canReorder: cap.canReorder && defaultCapabilities.concat(customCapabilities).length > 1,
+  }));
+
   return presentSectionManifest({
     pageKey,
     selectorAttr,
@@ -105,17 +132,27 @@ function buildManifest(pageKey, cmsSections) {
   return buildPageManifest(key, cmsSections, defaults, "data-ac-page-section");
 }
 
-async function findSectionByKey(db, input, sectionKey) {
+async function findSectionByKey(db, input, sectionKey, sectionId) {
   const pageId = pageIdFor(input.pageKey);
   const listed = await cmsService.listSections(db, { ...input, pageId });
   if (!listed.ok) return null;
-  const key = String(sectionKey || "");
+  const id = String(sectionId || "").trim();
+  const key = String(sectionKey || "").trim();
+  if (id) {
+    const byId = (listed.sections || []).find((s) => String(s.id) === id);
+    if (byId) return byId;
+  }
+  if (!key) return null;
   const cmsType = cmsTypeForSectionKey(key);
+  // Prefer exact id / seeded key match before collapsing by type.
+  const exact = (listed.sections || []).find(
+    (s) => String(s.id) === key || String(s.id) === `sec_${key}`.slice(0, 20)
+  );
+  if (exact) return exact;
   return (listed.sections || []).find(
     (s) =>
       String(s.type) === cmsType ||
       String(s.type) === key ||
-      String(s.id) === key ||
       String(s.title || "").toLowerCase() === key
   );
 }
@@ -125,11 +162,17 @@ async function reorderByKeys(db, input) {
   const listed = await cmsService.listSections(db, { ...input, pageId });
   if (!listed.ok) return listed;
   const order = Array.isArray(input.order) ? input.order.map(String) : [];
-  const byType = new Map((listed.sections || []).map((s) => [String(s.type), s]));
+  const byId = new Map((listed.sections || []).map((s) => [String(s.id), s]));
+  const byType = new Map();
+  (listed.sections || []).forEach((s) => {
+    const type = String(s.type);
+    if (!byType.has(type)) byType.set(type, s);
+  });
   const ids = order
     .map((k) => {
+      if (byId.has(k)) return byId.get(k);
       const cmsType = cmsTypeForSectionKey(k);
-      return byType.get(cmsType) || byType.get(k);
+      return byId.get(`sec_${k}`.slice(0, 20)) || byType.get(cmsType) || byType.get(k);
     })
     .filter(Boolean)
     .map((section) => section.id);
@@ -141,6 +184,7 @@ async function applySectionAction(db, input) {
   const action = String(input.action || "").trim();
   const pageKey = String(input.pageKey || "home").trim() || "home";
   const sectionKey = String(input.sectionKey || "").trim();
+  const sectionId = String(input.sectionId || "").trim();
   const pageId = pageIdFor(pageKey);
 
   if (action === "reorder" && Array.isArray(input.order)) {
@@ -150,10 +194,8 @@ async function applySectionAction(db, input) {
   if (action === "move_up" || action === "move_down") {
     const listed = await cmsService.listSections(db, { ...input, pageId });
     if (!listed.ok) return listed;
-    const order = (listed.sections || [])
-      .slice()
-      .sort((a, b) => Number(a.sort_order || 0) - Number(b.sort_order || 0))
-      .map((s) => sectionKeyForCmsType(String(s.type)));
+    const manifest = buildManifest(pageKey, listed.sections || []);
+    const order = (manifest.sections || []).map((s) => String(s.sectionKey));
     const idx = order.indexOf(sectionKey);
     if (idx < 0) return { ok: false, code: "not_found" };
     const next = order.slice();
@@ -165,7 +207,7 @@ async function applySectionAction(db, input) {
     return reorderByKeys(db, { ...input, pageKey, order: next });
   }
 
-  const section = await findSectionByKey(db, { ...input, pageKey }, sectionKey);
+  const section = await findSectionByKey(db, { ...input, pageKey }, sectionKey, sectionId);
   if (!section) {
     if (action === "hide" || action === "show") {
       const cmsType = cmsTypeForSectionKey(sectionKey);
@@ -207,12 +249,51 @@ async function applySectionAction(db, input) {
       buttonUrl: def.button_url || "",
     });
   }
+  if (action === "remove") {
+    if (section.locked === true) return { ok: false, code: "locked_item" };
+    if (String(section.id || "").indexOf("sec_") === 0) {
+      return { ok: false, code: "locked_item" };
+    }
+    return cmsService.deleteSection(db, { ...input, sectionId: section.id });
+  }
+  if (action === "update") {
+    if (section.locked === true) return { ok: false, code: "locked_item" };
+    return cmsService.updateSection(db, {
+      ...input,
+      sectionId: section.id,
+      heading: input.heading,
+      body: input.body,
+      title: input.title,
+      buttonLabel: input.buttonLabel,
+      buttonUrl: input.buttonUrl,
+      image: input.image,
+      visible: input.visible,
+    });
+  }
 
   return { ok: false, code: "invalid_action" };
+}
+
+/**
+ * Persist an inline cms.section.<id>.<field> draft edit into the CMS sections blob.
+ */
+async function saveCmsSectionFieldDraft(db, input) {
+  const parsed = parseCmsSectionFieldKey(input && input.contentKey);
+  if (!parsed) return { ok: false, code: "invalid_input" };
+  const patch = { sectionId: parsed.sectionId };
+  if (parsed.field === "heading") patch.heading = input.value;
+  else if (parsed.field === "body") patch.body = input.value;
+  else if (parsed.field === "button_label") patch.buttonLabel = input.value;
+  else if (parsed.field === "button_url") patch.buttonUrl = input.value;
+  else if (parsed.field === "image") patch.image = input.value;
+  else return { ok: false, code: "invalid_input" };
+  return cmsService.updateSection(db, { ...input, ...patch });
 }
 
 module.exports = {
   buildManifest,
   applySectionAction,
   pageIdFor,
+  saveCmsSectionFieldDraft,
+  parseCmsSectionFieldKey,
 };

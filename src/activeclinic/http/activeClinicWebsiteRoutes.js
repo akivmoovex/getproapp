@@ -203,6 +203,54 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!attached.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found" });
       }
+      const {
+        parseCmsSectionFieldKey,
+        saveCmsSectionFieldDraft,
+      } = require("../website/activeClinicSectionActionService");
+      const cmsField = parseCmsSectionFieldKey(req.body && req.body.contentKey);
+      if (cmsField) {
+        const {
+          assertEditableMutation,
+          ensureProductFieldsRegistered,
+        } = require("../../platform/website/editableFieldSchema");
+        ensureProductFieldsRegistered(PRODUCT_CODE.ACTIVECLINIC);
+        const asserted = assertEditableMutation({
+          productCode: PRODUCT_CODE.ACTIVECLINIC,
+          key: cmsField.contentKey,
+          value: req.body && req.body.value,
+          grantedPermissions: grantedPermissions(req),
+        });
+        if (!asserted.ok) {
+          return json(res, asserted.code === "forbidden" ? 403 : 400, {
+            ok: false,
+            code: asserted.code,
+            reason: asserted.reason || asserted.message || null,
+          });
+        }
+        const savedCms = await saveCmsSectionFieldDraft(getPool(), {
+          organizationId: clinic.organizationId,
+          instanceId: attached.instance.id,
+          clinicKey: clinic.clinicKey,
+          contentKey: cmsField.contentKey,
+          value: asserted.value,
+          actorIdentityId: actorId(req),
+          grantedPermissions: grantedPermissions(req),
+        });
+        if (!savedCms.ok) {
+          return json(res, savedCms.code === "forbidden" ? 403 : 400, {
+            ok: false,
+            code: savedCms.code,
+            reason: savedCms.reason || null,
+          });
+        }
+        return json(res, 200, {
+          ok: true,
+          published: false,
+          code: "saved_to_draft",
+          content: savedCms.section || null,
+          version: null,
+        });
+      }
       const saved = await contentService.saveWebsiteDraft(getPool(), {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,

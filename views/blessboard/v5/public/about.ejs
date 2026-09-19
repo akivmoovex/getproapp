@@ -20,7 +20,12 @@
   }
 
   function sectionHasContent(s) {
-    return Boolean(s && (s.heading || s.bodyText || s.mediaUrl));
+    if (!s) return false;
+    if (s._isDraftNew === true) return true;
+    if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) {
+      if (/^(text|cta)_/i.test(String(s.sectionKey || ''))) return true;
+    }
+    return Boolean(s.heading || s.bodyText || s.mediaUrl);
   }
 
   var demoFb = typeof aboutDemoFallback !== 'undefined' && aboutDemoFallback ? aboutDemoFallback : null;
@@ -425,8 +430,8 @@
   <% if (genericSections.length) { %>
   <div class="bb-tp-container bb-tp-about__body" data-bb-about-generic="1">
     <% genericSections.forEach(function (section) { %>
-    <% if (!sectionHasContent(section)) return; %>
-    <section class="bb-tp-content-block<%= section.mediaUrl ? ' bb-tp-content-block--media' : '' %>" data-section="<%= section.sectionKey %>">
+    <% if (!sectionHasContent(section) && !(typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) return; %>
+    <section class="bb-tp-content-block<%= section.mediaUrl || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>" data-section="<%= section.sectionKey %>">
       <% if (section.mediaUrl || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
       <div class="bb-tp-content-block__media">
         <% if (section.mediaUrl) { %>
@@ -446,8 +451,24 @@
       </div>
       <% } %>
       <div class="bb-tp-content-block__copy">
-        <% if (section.heading) { %><h2 class="bb-tp-section-title"><%= section.heading %></h2><% } %>
-        <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+        <h2 class="bb-tp-section-title">
+          <%- include('../partials/editable-text', {
+            editPageKey: 'about',
+            editSectionKey: section.sectionKey,
+            editFieldKey: 'heading',
+            editValue: section.heading || '',
+            editLabel: 'Edit section heading'
+          }) %>
+        </h2>
+        <p class="bb-tp-body">
+          <%- include('../partials/editable-text', {
+            editPageKey: 'about',
+            editSectionKey: section.sectionKey,
+            editFieldKey: 'bodyText',
+            editValue: section.bodyText || '',
+            editLabel: 'Edit section body'
+          }) %>
+        </p>
       </div>
     </section>
     <% }) %>

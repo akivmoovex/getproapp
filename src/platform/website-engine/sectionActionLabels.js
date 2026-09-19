@@ -17,6 +17,11 @@ module.exports = Object.freeze({
   restoreConfirmBody:
     "This section will be reset to its default configuration. Other draft changes are not affected.",
   restoreConfirmAction: "Restore default",
+  remove: "Remove section",
+  removeConfirmTitle: "Remove this section?",
+  removeConfirmBody:
+    "This removes the section from the draft website. Publish when you are ready for the change to go live.",
+  removeConfirmAction: "Remove section",
   cancel: "Cancel",
   hiddenBadge: "Hidden in draft",
 });

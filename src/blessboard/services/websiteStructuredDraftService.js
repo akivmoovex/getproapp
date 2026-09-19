@@ -297,6 +297,12 @@ function applyStructuredDraftsToModel(model, drafts) {
           layoutMetadata: d.payload.layout ? { layout: d.payload.layout } : {},
         },
       ];
+      continue;
+    }
+    if (d.op === "remove") {
+      const sk = String((d.payload && d.payload.sectionKey) || d.sectionKey || "");
+      if (!sk) continue;
+      model.sections = (model.sections || []).filter((s) => String(s.sectionKey) !== sk);
     }
   }
 

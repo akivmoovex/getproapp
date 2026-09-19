@@ -58,6 +58,35 @@ function stableKeyFromLocator(pageKey, sectionKey, fieldKey) {
   return `${String(pageKey || "").trim()}.${String(sectionKey || "").trim()}.${camelToSnake(fieldKey)}`;
 }
 
+/**
+ * Allowlist dynamically added BlessBoard text/cta sections for heading/body edits.
+ */
+function blessboardAddedSectionField(input) {
+  const pageKey = String((input && input.pageKey) || "").trim();
+  const sectionKey = String((input && input.sectionKey) || "").trim();
+  const fieldKey = String((input && input.fieldKey) || "").trim();
+  if (!pageKey || !sectionKey || !fieldKey) return null;
+  if (!/^(text|cta)_[a-z0-9]+$/i.test(sectionKey)) return null;
+  if (fieldKey !== "heading" && fieldKey !== "bodyText" && fieldKey !== "body_text") return null;
+  const normalizedField = fieldKey === "body_text" ? "bodyText" : fieldKey;
+  const maxLen = normalizedField === "heading" ? 200 : 4000;
+  return {
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    key: stableKeyFromLocator(pageKey, sectionKey, normalizedField),
+    type: normalizedField === "heading" ? CONTENT_TYPES.SHORT_TEXT : CONTENT_TYPES.LONG_TEXT,
+    maxLen,
+    permission: PERMISSIONS.EDIT,
+    validationMode: VALIDATION_MODE.BLESSBOARD_INLINE,
+    inline: true,
+    storage: {
+      kind: STORAGE_KIND.BLESSBOARD_INLINE,
+      pageKey,
+      sectionKey,
+      fieldKey: normalizedField,
+    },
+  };
+}
+
 function contentDefFromField(field) {
   return {
     type: field.type,
@@ -256,14 +285,38 @@ function resolveEditableField(input) {
   }
   if (!field) {
     const rawKey = input.key || input.contentKey || "";
-    const keyNorm = normalizeContentKey(rawKey);
-    if (!keyNorm.ok) {
-      if (input.pageKey && input.sectionKey && input.fieldKey) {
-        return { ok: false, code: "unknown_content_key" };
+    if (rawKey) {
+      const keyNorm = normalizeContentKey(rawKey);
+      if (!keyNorm.ok) {
+        return { ok: false, code: "invalid_content_key" };
       }
-      return { ok: false, code: "invalid_content_key" };
+      field = BY_KEY.get(productIndexKey(productCode, keyNorm.key)) || null;
+      if (!field && productCode === PRODUCT_CODE.ACTIVECLINIC) {
+        const {
+          cmsSectionEditableField,
+        } = require("../website-engine/sectionLifecycle");
+        field = cmsSectionEditableField(keyNorm.key);
+      }
+      if (!field && productCode === PRODUCT_CODE.BLESSBOARD) {
+        const parts = keyNorm.key.split(".");
+        if (parts.length === 3) {
+          field = blessboardAddedSectionField({
+            pageKey: parts[0],
+            sectionKey: parts[1],
+            fieldKey: parts[2] === "body_text" ? "bodyText" : parts[2],
+          });
+        }
+      }
     }
-    field = BY_KEY.get(productIndexKey(productCode, keyNorm.key)) || null;
+  }
+  if (
+    !field &&
+    productCode === PRODUCT_CODE.BLESSBOARD &&
+    input.pageKey &&
+    input.sectionKey &&
+    input.fieldKey
+  ) {
+    field = blessboardAddedSectionField(input);
   }
   if (!field) return { ok: false, code: "unknown_content_key" };
   if (input.templateId && field.templateId && String(input.templateId) !== field.templateId) {

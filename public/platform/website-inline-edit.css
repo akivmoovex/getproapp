@@ -2307,6 +2307,15 @@ body.gp-website-lifecycle-open {
   color: #fff;
 }
 
+.gp-website-section-menu__btn--danger {
+  background: #b42318;
+  color: #fff;
+}
+
+.gp-website-section-menu__item--danger {
+  color: #b42318;
+}
+
 body.gp-website-section-menu-open {
   overflow: hidden;
 }

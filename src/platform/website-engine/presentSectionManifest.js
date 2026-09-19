@@ -31,11 +31,14 @@ function presentSectionCapability(input) {
     canReorder: input && input.canReorder === true,
     canHide: input && input.canHide === true,
     canRestoreDefault: input && input.canRestoreDefault === true,
+    canRemove: input && input.canRemove === true,
     isHidden: input && input.isHidden === true,
     isDefault: input && input.isDefault === true,
+    isCustom: input && input.isCustom === true,
     sortIndex: Number(input && input.sortIndex) || 0,
     selector: input && input.selector ? String(input.selector) : "",
     domainBacked: input && input.domainBacked === true,
+    sectionType: input && input.sectionType ? String(input.sectionType) : "",
   };
 }
 

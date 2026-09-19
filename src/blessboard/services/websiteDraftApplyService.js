@@ -293,6 +293,43 @@ async function applyStructuredDraft(client, draft, ctx) {
       });
       return;
     }
+    if (draft.op === "add_section" && payload.sectionKey) {
+      const pageKey = draft.pageKey || "home";
+      const page = await ensurePage(client, { churchId, branchId, pageKey });
+      const existing = await contentRepo.findSectionByPageAndKey(client, page.id, payload.sectionKey);
+      if (existing) return;
+      await contentRepo.insertSection(client, {
+        pageId: page.id,
+        sectionKey: String(payload.sectionKey),
+        sectionType: String(payload.sectionType || "plain_text"),
+        heading: payload.heading || "New section",
+        bodyText: payload.bodyText || "",
+        mediaUrl: null,
+        sortOrder: Number(payload.sortOrder) || 100,
+        status: "published",
+        layoutMetadata: payload.layout ? { layout: payload.layout } : null,
+      });
+      return;
+    }
+    if (draft.op === "remove" && payload.sectionKey) {
+      const pageKey = draft.pageKey || "home";
+      const page = await contentRepo.findPageByScope(client, {
+        churchId,
+        branchId: branchId || null,
+        pageKey,
+      });
+      if (!page) return;
+      const sections = await contentRepo.listSectionsForPage(client, page.id, {});
+      const section = (sections || []).find((s) => String(s.sectionKey) === String(payload.sectionKey));
+      if (!section) return;
+      await contentRepo.updateSection(client, section.id, {
+        status: "archived",
+        heading: "",
+        bodyText: "",
+        mediaUrl: null,
+      });
+      return;
+    }
     return;
   }
 
