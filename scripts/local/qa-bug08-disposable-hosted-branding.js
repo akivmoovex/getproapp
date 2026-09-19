@@ -145,7 +145,9 @@ async function provisionDisposable(pool) {
 
 async function login(page, email, password) {
   await page.goto(`${BB}/login`, { waitUntil: "domcontentloaded" });
-  await page.fill('input[name="email"]', email);
+  // Hosted login uses login_email (shared auth shell); plain name=email is absent.
+  await page.locator('[data-gp-auth-id-tab="email"]').click().catch(() => {});
+  await page.fill('input[name="login_email"], input[name="email"]', email);
   await page.fill('input[name="password"]', password);
   await Promise.all([page.waitForNavigation({ waitUntil: "domcontentloaded" }), page.click('button[type="submit"]')]);
 }

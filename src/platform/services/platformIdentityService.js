@@ -145,11 +145,24 @@ async function createPlatformIdentity(db, input) {
     for (const row of [...byPhone, ...byEmail]) byId.set(String(row.id), row);
     const matches = Array.from(byId.values());
     if (matches.length === 1) {
+      const existing = matches[0];
+      const matchedPhone =
+        Boolean(phoneNormalized) &&
+        String(existing.phone_normalized || "") === String(phoneNormalized);
+      const matchedEmail =
+        Boolean(emailNormalized) &&
+        String(existing.email_normalized || "") === String(emailNormalized);
+      // Prefer the contact channel that actually collided; phone wins if both match.
+      const code = matchedPhone
+        ? RESULT.DUPLICATE_VERIFIED_PHONE
+        : matchedEmail
+          ? RESULT.DUPLICATE_VERIFIED_EMAIL
+          : RESULT.DUPLICATE_VERIFIED_PHONE;
       return {
         ok: false,
-        code: RESULT.DUPLICATE_VERIFIED_PHONE,
-        identity: mapIdentity(matches[0]),
-        existingIdentityId: matches[0].id,
+        code,
+        identity: mapIdentity(existing),
+        existingIdentityId: existing.id,
       };
     }
     if (matches.length > 1) {

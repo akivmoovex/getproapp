@@ -298,12 +298,17 @@ async function applyStructuredDraft(client, draft, ctx) {
       const page = await ensurePage(client, { churchId, branchId, pageKey });
       const existing = await contentRepo.findSectionByPageAndKey(client, page.id, payload.sectionKey);
       if (existing) return;
+      const headingRaw =
+        payload.heading != null ? String(payload.heading).trim() : "";
+      const bodyRaw =
+        payload.bodyText != null ? String(payload.bodyText).trim() : "";
       await contentRepo.insertSection(client, {
         pageId: page.id,
         sectionKey: String(payload.sectionKey),
         sectionType: String(payload.sectionType || "plain_text"),
-        heading: payload.heading || "New section",
-        bodyText: payload.bodyText || "",
+        // CHECK constraints reject ""; NULL or length≥1 only.
+        heading: headingRaw || "New section",
+        bodyText: bodyRaw || null,
         mediaUrl: null,
         sortOrder: Number(payload.sortOrder) || 100,
         status: "published",
@@ -324,8 +329,6 @@ async function applyStructuredDraft(client, draft, ctx) {
       if (!section) return;
       await contentRepo.updateSection(client, section.id, {
         status: "archived",
-        heading: "",
-        bodyText: "",
         mediaUrl: null,
       });
       return;

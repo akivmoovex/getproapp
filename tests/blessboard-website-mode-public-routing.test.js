@@ -1,7 +1,9 @@
 "use strict";
 
 /**
- * Public routing: single-site branch URLs collapse to church-wide; multi-site keeps branch sites.
+ * Public routing: legacy /branches and org-root URLs canonicalize onto primary-branch
+ * flat paths (/c/:org/:branchKey); multi-site branch sites stay independent; unknown/
+ * inactive/cross-org branch keys 404 on the canonical path.
  */
 
 const { describe, it, before, after } = require("node:test");
@@ -266,22 +268,22 @@ describe("blessboard website mode public routing", () => {
     if (skipSuite) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
   }
 
-  it("one active branch: path root redirects to church-wide home", async () => {
+  it("one active branch: legacy /branches path redirects to primary-branch home", async () => {
     requireDb();
     const res = await request(app)
       .get(`/c/wm-single/branches/${hqSingle.key}`)
       .set("Host", "blessboard.org");
     assert.equal(res.status, 301);
-    assert.equal(res.headers.location, "/c/wm-single");
+    assert.equal(res.headers.location, `/c/wm-single/${hqSingle.key}`);
   });
 
-  it("one active branch: path subpage preserves suffix", async () => {
+  it("one active branch: legacy /branches subpage preserves page on primary branch", async () => {
     requireDb();
     const res = await request(app)
       .get(`/c/wm-single/branches/${hqSingle.key}/events`)
       .set("Host", "blessboard.org");
     assert.equal(res.status, 301);
-    assert.equal(res.headers.location, "/c/wm-single/events");
+    assert.equal(res.headers.location, `/c/wm-single/${hqSingle.key}/events`);
   });
 
   it("one active branch: tenant-host branch URL redirects to church-wide", async () => {
@@ -299,9 +301,19 @@ describe("blessboard website mode public routing", () => {
     assert.equal(sermons.headers.location, "/sermons");
   });
 
-  it("single-site church-wide URLs still 200", async () => {
+  it("org root and legacy page paths redirect to primary branch; primary branch serves content", async () => {
     requireDb();
-    const pathHome = await request(app).get("/c/wm-single").set("Host", "blessboard.org");
+    const orgRoot = await request(app).get("/c/wm-single").set("Host", "blessboard.org");
+    assert.equal(orgRoot.status, 301);
+    assert.equal(orgRoot.headers.location, `/c/wm-single/${hqSingle.key}`);
+
+    const legacyAbout = await request(app).get("/c/wm-single/about").set("Host", "blessboard.org");
+    assert.equal(legacyAbout.status, 301);
+    assert.equal(legacyAbout.headers.location, `/c/wm-single/${hqSingle.key}/about`);
+
+    const pathHome = await request(app)
+      .get(`/c/wm-single/${hqSingle.key}`)
+      .set("Host", "blessboard.org");
     assert.equal(pathHome.status, 200);
     assert.match(pathHome.text, /wm-single HQ Hero/);
 
@@ -312,41 +324,72 @@ describe("blessboard website mode public routing", () => {
 
   it("multi-site: branch website remains 200 with independent content", async () => {
     requireDb();
-    const res = await request(app)
+    const legacy = await request(app)
       .get("/c/wm-multi/branches/campus-east")
+      .set("Host", "blessboard.org");
+    assert.equal(legacy.status, 301);
+    assert.equal(legacy.headers.location, "/c/wm-multi/campus-east");
+
+    const res = await request(app)
+      .get("/c/wm-multi/campus-east")
       .set("Host", "blessboard.org");
     assert.equal(res.status, 200);
     assert.match(res.text, /East Independent Hero/);
     assert.doesNotMatch(res.text, /wm-multi HQ Hero/);
 
-    const tenant = await request(app)
+    const tenantLegacy = await request(app)
       .get("/branches/campus-east")
       .set("Host", HOST_MULTI);
-    assert.equal(tenant.status, 200);
-    assert.match(tenant.text, /East Independent Hero/);
+    // Tenant hosts may still serve legacy /branches paths or canonicalize to /:branchKey.
+    if (tenantLegacy.status === 301) {
+      assert.equal(tenantLegacy.headers.location, "/campus-east");
+      const tenant = await request(app).get("/campus-east").set("Host", HOST_MULTI);
+      assert.equal(tenant.status, 200);
+      assert.match(tenant.text, /East Independent Hero/);
+    } else {
+      assert.equal(tenantLegacy.status, 200);
+      assert.match(tenantLegacy.text, /East Independent Hero/);
+    }
   });
 
   it("multi-site: HQ remains independent church-wide site", async () => {
     requireDb();
-    const res = await request(app).get("/c/wm-multi").set("Host", "blessboard.org");
+    const orgRoot = await request(app).get("/c/wm-multi").set("Host", "blessboard.org");
+    assert.equal(orgRoot.status, 301);
+    assert.equal(orgRoot.headers.location, "/c/wm-multi/hq");
+
+    const res = await request(app).get("/c/wm-multi/hq").set("Host", "blessboard.org");
     assert.equal(res.status, 200);
     assert.match(res.text, /wm-multi HQ Hero/);
     assert.doesNotMatch(res.text, /East Independent Hero/);
   });
 
-  it("inactive branch remains unavailable (404, no HQ redirect)", async () => {
+  it("inactive branch remains unavailable (404, no HQ content)", async () => {
     requireDb();
-    const res = await request(app)
+    const legacy = await request(app)
       .get(`/c/wm-multi/branches/${inactiveBranch.branch_key}`)
+      .set("Host", "blessboard.org");
+    assert.equal(legacy.status, 301);
+    assert.equal(legacy.headers.location, `/c/wm-multi/${inactiveBranch.branch_key}`);
+
+    const res = await request(app)
+      .get(`/c/wm-multi/${inactiveBranch.branch_key}`)
       .set("Host", "blessboard.org");
     assert.equal(res.status, 404);
     assert.equal(res.headers.location, undefined);
+    assert.doesNotMatch(res.text || "", /wm-multi HQ Hero/);
   });
 
   it("unknown branch remains 404", async () => {
     requireDb();
-    const res = await request(app)
+    const legacy = await request(app)
       .get("/c/wm-multi/branches/does-not-exist")
+      .set("Host", "blessboard.org");
+    assert.equal(legacy.status, 301);
+    assert.equal(legacy.headers.location, "/c/wm-multi/does-not-exist");
+
+    const res = await request(app)
+      .get("/c/wm-multi/does-not-exist")
       .set("Host", "blessboard.org");
     assert.equal(res.status, 404);
     assert.equal(res.headers.location, undefined);
@@ -354,21 +397,27 @@ describe("blessboard website mode public routing", () => {
 
   it("cross-organization branch remains 404", async () => {
     requireDb();
-    const res = await request(app)
+    const legacy = await request(app)
       .get(`/c/wm-multi/branches/${foreignBranch.branch_key}`)
+      .set("Host", "blessboard.org");
+    assert.equal(legacy.status, 301);
+    assert.equal(legacy.headers.location, `/c/wm-multi/${foreignBranch.branch_key}`);
+
+    const res = await request(app)
+      .get(`/c/wm-multi/${foreignBranch.branch_key}`)
       .set("Host", "blessboard.org");
     assert.equal(res.status, 404);
     assert.equal(res.headers.location, undefined);
   });
 
-  it("no redirect loop: church-wide target is not a branch path", async () => {
+  it("no redirect loop: primary-branch target is not a legacy /branches path", async () => {
     requireDb();
     const res = await request(app)
       .get(`/c/wm-single/branches/${hqSingle.key}/about`)
       .redirects(0)
       .set("Host", "blessboard.org");
     assert.equal(res.status, 301);
-    assert.equal(res.headers.location, "/c/wm-single/about");
+    assert.equal(res.headers.location, `/c/wm-single/${hqSingle.key}/about`);
     assert.doesNotMatch(res.headers.location, /\/branches\//);
 
     const follow = await request(app)

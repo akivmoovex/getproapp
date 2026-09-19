@@ -134,11 +134,15 @@ describe("v7 image editor coverage — editor wiring contract", () => {
     assert.match(ejs, /\/app\/settings\/website\/library\//);
   });
 
-  it("ActiveClinic doctor/service pages point website editors at Content Library media", () => {
+  it("ActiveClinic doctor/service pages point website editors at catalogue and Content Library media", () => {
     const doctors = read("views/activeclinic/tenant/doctors.ejs");
     const services = read("views/activeclinic/tenant/services.ejs");
-    assert.match(doctors, /\/app\/settings\/website\/library/);
-    assert.match(doctors, /Edit doctor website photos/);
+    // Doctors: visibility is catalogue-managed; photos are noted as Content Library.
+    assert.match(doctors, /\/app\/settings\/website\/catalogue\?tab=doctors/);
+    assert.match(doctors, /Manage public doctors/);
+    assert.match(doctors, /Content Library/);
+    assert.match(doctors, /website-library-placements/);
+    // Services: image affordance opens the Content Library media picker.
     assert.match(services, /\/app\/settings\/website\/library/);
     assert.match(services, /Edit service website images/);
   });

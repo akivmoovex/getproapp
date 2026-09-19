@@ -80,6 +80,10 @@ async function addBlessBoardSection(db, input) {
   const baseOrder = page
     ? (await contentRepo.listSectionsForPage(db, page.id, {})).length
     : 0;
+  // page_sections_heading_len / page_sections_body_text_len reject empty strings;
+  // use NULL when the editor has not supplied copy yet.
+  const headingRaw = String(input.heading || def.defaultHeading || "").trim();
+  const bodyRaw = String(input.bodyText || def.defaultBody || "").trim();
   await saveStructuredDraft(db, {
     organizationId: input.organizationId,
     churchId: input.churchId,
@@ -94,8 +98,8 @@ async function addBlessBoardSection(db, input) {
     payload: {
       sectionKey,
       sectionType: type,
-      heading: String(input.heading || def.defaultHeading || ""),
-      bodyText: String(input.bodyText || def.defaultBody || ""),
+      heading: headingRaw || null,
+      bodyText: bodyRaw || null,
       sortOrder: (baseOrder + 1) * 10,
       layout: def.layout || null,
     },
