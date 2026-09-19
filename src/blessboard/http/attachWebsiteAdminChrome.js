@@ -556,7 +556,13 @@ async function attachWebsiteAdminChrome(opts) {
         }
       }
       // Soft-fill section overlays for demo-backed copy (no CMS section yet).
+      // Demo fallbacks are Object.freeze'd for public render; thaw before draft mutation
+      // so About/Home soft-fill cannot throw and wipe draftCount/overlays below.
       if (overlayMap.size) {
+        const thawDemoFallback = (value) => {
+          if (!value || typeof value !== "object") return value;
+          return Array.isArray(value) ? value.slice() : { ...value };
+        };
         const applySoftSection = (fallbackObj, sectionKey, headingKey, bodyKey) => {
           if (!fallbackObj) return;
           const h = overlayMap.get(`${sectionKey}::heading`);
@@ -564,95 +570,105 @@ async function attachWebsiteAdminChrome(opts) {
           if (h !== undefined && headingKey) fallbackObj[headingKey] = h;
           if (b !== undefined && bodyKey) fallbackObj[bodyKey] = b;
         };
-        if (model.homeDemoFallback) {
-          applySoftSection(model.homeDemoFallback, "ministries_intro", "ministriesIntroHeading", "ministriesIntroBody");
-          applySoftSection(model.homeDemoFallback, "events_intro", "eventsIntroHeading", "eventsIntroBody");
-          applySoftSection(model.homeDemoFallback, "sermons_intro", "sermonIntroHeading", "sermonIntroBody");
-          applySoftSection(model.homeDemoFallback, "leadership_intro", "leadershipIntroHeading", "leadershipIntroBody");
-          applySoftSection(model.homeDemoFallback, "giving_cta", "givingHeading", "givingBody");
-          applySoftSection(model.homeDemoFallback, "contact_intro", "contactHeading", "contactBody");
-          const giveBtn = overlayMap.get("giving_cta::buttonText");
-          if (giveBtn !== undefined) model.homeDemoFallback.givingButtonText = giveBtn;
-        }
-        if (model.contactDemoFallback) {
-          applySoftSection(model.contactDemoFallback, "visitor_guidance", null, "visitorGuidance");
-          const vgHeading = overlayMap.get("visitor_guidance::heading");
-          if (vgHeading !== undefined) model.contactDemoFallback.visitorGuidanceHeading = vgHeading;
-          applySoftSection(model.contactDemoFallback, "office_hours", "officeHoursHeading", "officeHoursBody");
-          applySoftSection(model.contactDemoFallback, "directions", "directionsHeading", "directionsBody");
-          applySoftSection(model.contactDemoFallback, "service_reminder", "serviceReminderHeading", "serviceReminderBody");
-          applySoftSection(model.contactDemoFallback, "message", "messageHeading", "messageBody");
-        }
-        if (model.givingDemoFallback) {
-          applySoftSection(model.givingDemoFallback, "why", "whyHeading", null);
-          applySoftSection(model.givingDemoFallback, "ways", "waysHeading", "waysBody");
-          applySoftSection(model.givingDemoFallback, "accountability", "accountabilityHeading", null);
-          const accBody = overlayMap.get("accountability::bodyText");
-          if (accBody !== undefined) model.givingDemoFallback.accountability = accBody;
-          applySoftSection(model.givingDemoFallback, "stewardship", "stewardshipHeading", "stewardshipBody");
-          applySoftSection(model.givingDemoFallback, "assistance", "assistanceHeading", null);
-          const assistBody = overlayMap.get("assistance::bodyText");
-          if (assistBody !== undefined) model.givingDemoFallback.assistanceContact = assistBody;
-          const assistBtn = overlayMap.get("assistance::buttonText");
-          if (assistBtn !== undefined) model.givingDemoFallback.assistanceButtonText = assistBtn;
-          if (Array.isArray(model.givingDemoFallback.whyItems)) {
-            model.givingDemoFallback.whyItems = model.givingDemoFallback.whyItems.map((item) => {
-              const key = item.sectionKey || "";
-              if (!key) return item;
-              const title = overlayMap.get(`${key}::heading`);
-              const body = overlayMap.get(`${key}::bodyText`);
-              if (title === undefined && body === undefined) return item;
-              return {
-                ...item,
-                title: title !== undefined ? title : item.title,
-                body: body !== undefined ? body : item.body,
-              };
-            });
+        try {
+          if (model.homeDemoFallback) {
+            model.homeDemoFallback = thawDemoFallback(model.homeDemoFallback);
+            applySoftSection(model.homeDemoFallback, "ministries_intro", "ministriesIntroHeading", "ministriesIntroBody");
+            applySoftSection(model.homeDemoFallback, "events_intro", "eventsIntroHeading", "eventsIntroBody");
+            applySoftSection(model.homeDemoFallback, "sermons_intro", "sermonIntroHeading", "sermonIntroBody");
+            applySoftSection(model.homeDemoFallback, "leadership_intro", "leadershipIntroHeading", "leadershipIntroBody");
+            applySoftSection(model.homeDemoFallback, "giving_cta", "givingHeading", "givingBody");
+            applySoftSection(model.homeDemoFallback, "contact_intro", "contactHeading", "contactBody");
+            const giveBtn = overlayMap.get("giving_cta::buttonText");
+            if (giveBtn !== undefined) model.homeDemoFallback.givingButtonText = giveBtn;
           }
-        }
-        if (model.aboutDemoFallback) {
-          const valuesHeading = overlayMap.get("values::heading");
-          if (valuesHeading !== undefined) model.aboutDemoFallback.valuesHeading = valuesHeading;
-          const galleryHeading = overlayMap.get("gallery::heading");
-          if (galleryHeading !== undefined) model.aboutDemoFallback.galleryHeading = galleryHeading;
-          applySoftSection(model.aboutDemoFallback, "visitor_cta", "visitorCtaHeading", "visitorCtaBody");
-          const visitorBtn = overlayMap.get("visitor_cta::buttonText");
-          if (visitorBtn !== undefined) model.aboutDemoFallback.visitorCtaButtonText = visitorBtn;
-          ["beliefs", "community", "mission", "vision", "story"].forEach((key) => {
-            const block = model.aboutDemoFallback[key];
-            if (!block || typeof block !== "object") return;
-            const h = overlayMap.get(`${key}::heading`);
-            const b = overlayMap.get(`${key}::bodyText`);
-            if (h !== undefined || b !== undefined) {
-              model.aboutDemoFallback[key] = {
-                ...block,
-                heading: h !== undefined ? h : block.heading,
-                bodyText: b !== undefined ? b : block.bodyText,
-              };
+          if (model.contactDemoFallback) {
+            model.contactDemoFallback = thawDemoFallback(model.contactDemoFallback);
+            applySoftSection(model.contactDemoFallback, "visitor_guidance", null, "visitorGuidance");
+            const vgHeading = overlayMap.get("visitor_guidance::heading");
+            if (vgHeading !== undefined) model.contactDemoFallback.visitorGuidanceHeading = vgHeading;
+            applySoftSection(model.contactDemoFallback, "office_hours", "officeHoursHeading", "officeHoursBody");
+            applySoftSection(model.contactDemoFallback, "directions", "directionsHeading", "directionsBody");
+            applySoftSection(model.contactDemoFallback, "service_reminder", "serviceReminderHeading", "serviceReminderBody");
+            applySoftSection(model.contactDemoFallback, "message", "messageHeading", "messageBody");
+          }
+          if (model.givingDemoFallback) {
+            model.givingDemoFallback = thawDemoFallback(model.givingDemoFallback);
+            applySoftSection(model.givingDemoFallback, "why", "whyHeading", null);
+            applySoftSection(model.givingDemoFallback, "ways", "waysHeading", "waysBody");
+            applySoftSection(model.givingDemoFallback, "accountability", "accountabilityHeading", null);
+            const accBody = overlayMap.get("accountability::bodyText");
+            if (accBody !== undefined) model.givingDemoFallback.accountability = accBody;
+            applySoftSection(model.givingDemoFallback, "stewardship", "stewardshipHeading", "stewardshipBody");
+            applySoftSection(model.givingDemoFallback, "assistance", "assistanceHeading", null);
+            const assistBody = overlayMap.get("assistance::bodyText");
+            if (assistBody !== undefined) model.givingDemoFallback.assistanceContact = assistBody;
+            const assistBtn = overlayMap.get("assistance::buttonText");
+            if (assistBtn !== undefined) model.givingDemoFallback.assistanceButtonText = assistBtn;
+            if (Array.isArray(model.givingDemoFallback.whyItems)) {
+              model.givingDemoFallback.whyItems = model.givingDemoFallback.whyItems.map((item) => {
+                const key = item.sectionKey || "";
+                if (!key) return item;
+                const title = overlayMap.get(`${key}::heading`);
+                const body = overlayMap.get(`${key}::bodyText`);
+                if (title === undefined && body === undefined) return item;
+                return {
+                  ...item,
+                  title: title !== undefined ? title : item.title,
+                  body: body !== undefined ? body : item.body,
+                };
+              });
             }
-          });
-          if (Array.isArray(model.aboutDemoFallback.values)) {
-            model.aboutDemoFallback.values = model.aboutDemoFallback.values.map((item) => {
-              const key = item.sectionKey || "";
-              if (!key) return item;
+          }
+          if (model.aboutDemoFallback) {
+            model.aboutDemoFallback = thawDemoFallback(model.aboutDemoFallback);
+            const valuesHeading = overlayMap.get("values::heading");
+            if (valuesHeading !== undefined) model.aboutDemoFallback.valuesHeading = valuesHeading;
+            const galleryHeading = overlayMap.get("gallery::heading");
+            if (galleryHeading !== undefined) model.aboutDemoFallback.galleryHeading = galleryHeading;
+            applySoftSection(model.aboutDemoFallback, "visitor_cta", "visitorCtaHeading", "visitorCtaBody");
+            const visitorBtn = overlayMap.get("visitor_cta::buttonText");
+            if (visitorBtn !== undefined) model.aboutDemoFallback.visitorCtaButtonText = visitorBtn;
+            ["beliefs", "community", "mission", "vision", "story"].forEach((key) => {
+              const block = model.aboutDemoFallback[key];
+              if (!block || typeof block !== "object") return;
               const h = overlayMap.get(`${key}::heading`);
               const b = overlayMap.get(`${key}::bodyText`);
-              if (h === undefined && b === undefined) return item;
-              return {
-                ...item,
-                heading: h !== undefined ? h : item.heading,
-                bodyText: b !== undefined ? b : item.bodyText,
-              };
+              if (h !== undefined || b !== undefined) {
+                model.aboutDemoFallback[key] = {
+                  ...block,
+                  heading: h !== undefined ? h : block.heading,
+                  bodyText: b !== undefined ? b : block.bodyText,
+                };
+              }
             });
+            if (Array.isArray(model.aboutDemoFallback.values)) {
+              model.aboutDemoFallback.values = model.aboutDemoFallback.values.map((item) => {
+                const key = item.sectionKey || "";
+                if (!key) return item;
+                const h = overlayMap.get(`${key}::heading`);
+                const b = overlayMap.get(`${key}::bodyText`);
+                if (h === undefined && b === undefined) return item;
+                return {
+                  ...item,
+                  heading: h !== undefined ? h : item.heading,
+                  bodyText: b !== undefined ? b : item.bodyText,
+                };
+              });
+            }
           }
+        } catch {
+          // Soft-fill is best-effort. Never discard counted drafts / CMS overlays.
         }
       }
     }
   } catch {
-    draftCount = 0;
-    overlayMap = new Map();
-    structuredDrafts = [];
-    publishedBaselines = Object.create(null);
+    // Soft-fill is isolated above. If an earlier step failed before overlays loaded,
+    // clear empty state only — never discard a successful draftCount (About freeze bug).
+    if (!overlayMap.size) {
+      structuredDrafts = [];
+      publishedBaselines = Object.create(null);
+    }
   }
 
   const hasDraftChanges = draftCount > 0;

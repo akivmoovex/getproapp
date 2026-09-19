@@ -129,7 +129,7 @@
         <div class="bb-tp-about-story__copy">
           <% storySections.forEach(function (section, idx) { %>
           <div class="bb-tp-about-story__block" data-section="<%= section.sectionKey || 'story' %>">
-            <% var storyKey = idx === 0 ? 'story' : (section.sectionKey || ('story-' + idx)); %>
+            <% var storyKey = section.sectionKey || (idx === 0 ? 'story' : ('story-' + idx)); %>
             <% if (section.heading || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode && idx === 0)) { %>
             <%- include('../partials/editable-text', {
               editPageKey: 'about',
