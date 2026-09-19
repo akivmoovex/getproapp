@@ -226,7 +226,7 @@ describe("blessboard participation", () => {
       memberId = await provisionLinkedMember(
         "member@part-a.example.test",
         memberUser,
-        "+15551236001",
+        "+260977123601",
         churchA,
         branchA,
         hqAdmin
@@ -234,7 +234,7 @@ describe("blessboard participation", () => {
       member2Id = await provisionLinkedMember(
         "member2@part-a.example.test",
         member2User,
-        "+15551236002",
+        "+260977123602",
         churchA,
         branchA,
         hqAdmin
@@ -253,7 +253,7 @@ describe("blessboard participation", () => {
       await provisionLinkedMember(
         "member@part-b.example.test",
         memberB,
-        "+15551236003",
+        "+260977123603",
         churchB,
         branchB,
         hqB

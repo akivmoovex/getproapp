@@ -293,7 +293,7 @@ describe("blessboard platform admin integration workflow", () => {
          VALUES
            ($1, NULL, 'Integration', 'Member', 'Integration',
             'int-member@example.org', 'int-member@example.org',
-            '+15551119999', '+1 555 111 9999', 'active')
+            '+260977111999', '+260 97 711 9999', 'active')
          RETURNING id`,
         [churchA.id]
       );

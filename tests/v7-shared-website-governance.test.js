@@ -1027,51 +1027,55 @@ describe("shared website governance", () => {
       forcePublishVersion: true,
     });
     assert.equal(branchPub.ok, true, JSON.stringify(branchPub));
+
+    // Product contract (blessboardWebsiteAdapter / SHARED_WEBSITE_ENGINE): BlessBoard
+    // uses one church_wide website instance (scope_ref null). Branch mini-sites share
+    // that instance; they do not provision a separate scope_ref=branchId instance.
     const churchInstance = await instanceRepo.findWebsiteInstanceByOrgProduct(pool, {
       organizationId: rec.organizationId,
       productCode: "blessboard",
       scopeRef: null,
     });
-    const branchInstance = await instanceRepo.findWebsiteInstanceByOrgProduct(pool, {
+    const branchScopedInstance = await instanceRepo.findWebsiteInstanceByOrgProduct(pool, {
       organizationId: rec.organizationId,
       productCode: "blessboard",
       scopeRef: branchId,
     });
     assert.ok(churchInstance);
-    assert.ok(branchInstance);
-    assert.notEqual(churchInstance.id, branchInstance.id);
+    assert.equal(churchInstance.scopeKind || "church_wide", "church_wide");
+    assert.equal(branchScopedInstance, null);
+
     const churchVersions = await versionService.listWebsiteVersions(pool, {
       instanceId: churchInstance.id,
       organizationId: rec.organizationId,
     });
-    const branchVersions = await versionService.listWebsiteVersions(pool, {
-      instanceId: branchInstance.id,
-      organizationId: rec.organizationId,
-    });
     const churchLive = (churchVersions.versions || []).find((row) => row.status === "published");
-    const branchLive = (branchVersions.versions || []).find((row) => row.status === "published");
     assert.ok(churchLive);
-    assert.ok(branchLive);
+
     const churchHtml = await renderGovernanceVersionPreview(pool, {
       organizationKey: rec.organizationKey,
       instance: churchInstance,
       version: churchLive,
       snapshot: churchLive.snapshot || {},
     });
-    const branchHtml = await renderGovernanceVersionPreview(pool, {
-      organizationKey: rec.organizationKey,
-      instance: branchInstance,
-      version: branchLive,
-      snapshot: branchLive.snapshot || {},
-    });
     assert.equal(churchHtml.ok, true);
-    assert.equal(branchHtml.ok, true);
     assert.equal(churchHtml.mode, PREVIEW_MODE.FULL_HISTORICAL_WEBSITE_RENDER);
-    assert.equal(branchHtml.mode, PREVIEW_MODE.FULL_HISTORICAL_WEBSITE_RENDER);
+
+    // Branch publish must not invent a second instance id for the same org.
+    const allInstances = await pool.query(
+      `SELECT id, scope_kind, scope_ref
+         FROM platform.website_instances
+        WHERE organization_id = $1 AND product_code = 'blessboard'`,
+      [rec.organizationId]
+    );
+    assert.equal(allInstances.rows.length, 1);
+    assert.equal(String(allInstances.rows[0].id), String(churchInstance.id));
+
+    // Cross-instance version lookup still fails closed when instanceId is forged.
     const swapped = await versionService.getWebsiteVersion(pool, {
-      versionId: branchLive.id,
+      versionId: churchLive.id,
       organizationId: rec.organizationId,
-      instanceId: churchInstance.id,
+      instanceId: "00000000-0000-4000-8000-000000000099",
     });
     assert.equal(swapped.ok, false);
   });

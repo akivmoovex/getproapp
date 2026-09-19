@@ -117,7 +117,7 @@ describe("platform identity foundation (AC-V6-04)", () => {
     assert.equal(bad.ok, false);
     assert.equal(bad.code, IDENTITY_RESULT.INVALID_STATUS);
 
-    const phone = `+1555${String(Date.now()).slice(-7)}`;
+    const phone = `+26097${String(Date.now()).slice(-7)}`;
     const first = await createPlatformIdentity(pool, {
       phoneNormalized: phone,
       phoneVerifiedAt: new Date().toISOString(),

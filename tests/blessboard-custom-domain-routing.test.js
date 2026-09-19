@@ -17,6 +17,10 @@ const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
 const { provisionBlessBoardChurch } = require("../src/blessboard/services/provisionBlessBoardChurch");
+const {
+  ensureChurchSettingsInitialized,
+  updateChurchSettings,
+} = require("../src/blessboard/services/blessBoardSettingsService");
 const { createBlessBoardUser } = require("../src/blessboard/services/createBlessBoardUser");
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
@@ -119,6 +123,12 @@ describe("blessboard custom-domain routing http", () => {
       });
       assert.equal(church.ok, true, church.message);
       churchId = church.records.church.id;
+      await ensureChurchSettingsInitialized(pool, churchId);
+      const published = await updateChurchSettings(pool, churchId, {
+        publicName: CHURCH_NAME,
+        websiteStatus: "published",
+      });
+      assert.equal(published.ok, true, published.reason || published.message);
 
       const products = await pool.query(
         `SELECT product_key, id FROM platform.products WHERE product_key IN ('blessboard', 'getpro')`
@@ -245,7 +255,7 @@ describe("blessboard custom-domain routing http", () => {
     const res = await request(app).get("/").set("Host", FALLBACK_HOST);
     assert.equal(res.status, 200);
     assert.match(res.text, new RegExp(CHURCH_NAME));
-    assert.match(res.text, /data-bb-shell="tenant-public"/);
+    assert.match(res.text, /data-bb-shell="tenant-public(?:-setup)?"/);
   });
 
   it("custom canonical-style custom domain renders same tenant", async () => {
@@ -385,6 +395,13 @@ describe("blessboard custom-domain routing http", () => {
     assert.match(apexGet.text, new RegExp(CUSTOM_HOST.replace(/\./g, "\\.")));
   });
 
+  function assertAuthenticatedHq(res) {
+    // New orgs may redirect to onboarding; both prove an authenticated HQ session.
+    if (res.status === 200) return;
+    assert.equal(res.status, 303);
+    assert.match(String(res.headers.location || ""), /\/hq\/onboarding/);
+  }
+
   it("return from apex authentication sets host-only cookie on custom domain", async () => {
     requireDb();
     const { sid, post, callback } = await completeTenantLogin(
@@ -401,7 +418,7 @@ describe("blessboard custom-domain routing http", () => {
       .get("/hq")
       .set("Host", CUSTOM_HOST)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${sid}`));
-    assert.equal(hq.status, 200);
+    assertAuthenticatedHq(hq);
   });
 
   it("hostname-bound transfer rejects redeem on fallback when issued for custom", async () => {
@@ -455,7 +472,7 @@ describe("blessboard custom-domain routing http", () => {
       .get("/hq")
       .set("Host", CUSTOM_HOST)
       .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${sid}`));
-    assert.equal(onCustom.status, 200);
+    assertAuthenticatedHq(onCustom);
 
     // Apex is a different host; browser host-only cookies would not be sent. Even if
     // manually forwarded, apex must not render tenant HQ shell for this transfer path.
@@ -515,23 +532,17 @@ describe("blessboard custom-domain routing http", () => {
     const { sid: fallbackSid } = await completeTenantLogin(FALLBACK_HOST, "cd-hq@example.org", PASSWORD);
     assert.notEqual(customSid, fallbackSid);
 
-    assert.equal(
-      (
-        await request(app)
-          .get("/hq")
-          .set("Host", CUSTOM_HOST)
-          .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${customSid}`))
-      ).status,
-      200
+    assertAuthenticatedHq(
+      await request(app)
+        .get("/hq")
+        .set("Host", CUSTOM_HOST)
+        .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${customSid}`))
     );
-    assert.equal(
-      (
-        await request(app)
-          .get("/hq")
-          .set("Host", FALLBACK_HOST)
-          .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${fallbackSid}`))
-      ).status,
-      200
+    assertAuthenticatedHq(
+      await request(app)
+        .get("/hq")
+        .set("Host", FALLBACK_HOST)
+        .set("Cookie", cookieHeader(`${DEFAULT_V5_COOKIE}=${fallbackSid}`))
     );
   });
 

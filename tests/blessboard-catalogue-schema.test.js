@@ -13,6 +13,7 @@ const {
 } = require("./helpers/foundationDb");
 const { migrate } = require("../db/scripts/lib/migrator");
 const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
+const { APPROVED_PRODUCT_TABLES } = require("../db/scripts/lib/foundationVerify");
 
 async function seedOrgWithEnrolment(pool, overrides = {}) {
   const organizationKey = overrides.organizationKey || `org-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`;
@@ -67,7 +68,7 @@ describe("blessboard catalogue schema", () => {
     );
     assert.deepEqual(
       tables.rows.map((r) => r.table_name),
-      ["announcement_attachments", "announcement_audiences", "announcement_reads", "announcements", "attendance_entries", "attendance_events", "branch_settings", "branches", "church_settings", "churches", "contact_channels", "event_registrations", "events", "form_submissions", "forms", "giving_categories", "giving_entries", "giving_methods", "leaders", "media_assets", "member_branch_memberships", "member_registrations", "member_request_status_history", "member_requests", "members", "ministries", "ministry_memberships", "page_sections", "public_pages", "resources", "sermons", "user_roles", "users"]
+      [...APPROVED_PRODUCT_TABLES.blessboard]
     );
   });
 

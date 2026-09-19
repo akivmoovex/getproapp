@@ -316,8 +316,8 @@ describe("blessboard member journey foundation", () => {
 
       const memberUserA = await mkUser("member-a@mj-a.test", "Member A");
       const memberUserB = await mkUser("member-b@mj-a.test", "Member B");
-      memberA = await mkMember(memberUserA, "member-a@mj-a.test", "Member", "A", "+15550000011");
-      memberB = await mkMember(memberUserB, "member-b@mj-a.test", "Member", "B", "+15550000012");
+      memberA = await mkMember(memberUserA, "member-a@mj-a.test", "Member", "A", "+260977000011");
+      memberB = await mkMember(memberUserB, "member-b@mj-a.test", "Member", "B", "+260977000012");
     } catch (err) {
       skipSuite = true;
       skipReason = err && err.message ? String(err.message) : String(err);
@@ -652,7 +652,7 @@ describe("blessboard member journey foundation", () => {
         tenantContext: tenantA,
         firstName: "Visitor",
         lastName: "Three",
-        phone: "+15551112222",
+        phone: "+260977011222",
         sourceType: "registration_desk",
       });
       assert.equal(contact.ok, true, contact.reason);

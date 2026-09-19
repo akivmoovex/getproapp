@@ -207,8 +207,8 @@ describe("blessboard forms-requests", () => {
         return approved.member.id;
       }
 
-      memberId = await provisionLinkedMember("member@fr-a.example.test", memberUser, "+15550001001");
-      memberBId = await provisionLinkedMember("member-b@fr-a.example.test", memberBUser, "+15550001002");
+      memberId = await provisionLinkedMember("member@fr-a.example.test", memberUser, "+260977001001");
+      memberBId = await provisionLinkedMember("member-b@fr-a.example.test", memberBUser, "+260977001002");
 
       privateStorageKey = `blessboard/${churchA.id}/${crypto.randomUUID()}/note.pdf`;
       const privAbs = path.join(

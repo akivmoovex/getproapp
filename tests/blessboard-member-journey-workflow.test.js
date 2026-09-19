@@ -119,7 +119,7 @@ describe("blessboard member journey workflow", () => {
         `INSERT INTO blessboard.members
            (church_id, user_id, first_name, last_name, preferred_name,
             email_normalized, email_display, phone_normalized, phone_display, status)
-         VALUES ($1,$2,'Mem','Ber','M','member@mjw.test','member@mjw.test','+15559990001','+1', 'active')
+         VALUES ($1,$2,'Mem','Ber','M','member@mjw.test','member@mjw.test','+260977099001','+1', 'active')
          RETURNING id`,
         [church.id, memberUser.id]
       );

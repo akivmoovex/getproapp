@@ -1153,7 +1153,7 @@ describe("blessboard public pages", () => {
       description: "Direct deposit to the church operations account.",
       accountDetails: "Account Name: Demo Church\nAccount Number: 582100004567890",
       instructions: "Include your name in the transfer memo.",
-      qrImageUrl: "/church/images/giving/giving-qr-demo.png",
+      qrImageUrl: "https://example.org/giving/giving-qr-demo.png",
       buttonLabel: "",
       status: "published",
     });
@@ -1680,7 +1680,7 @@ describe("blessboard public pages", () => {
               city = $3,
               phone = $4
         WHERE branch_id = $1`,
-      [branchA.id, "12 Parity Lane", "Demo City", "+15550100"]
+      [branchA.id, "12 Parity Lane", "Demo City", "+260977550100"]
     );
 
     const res = await request(app).get("/about").set("Host", HOST_A);
@@ -1913,7 +1913,7 @@ describe("blessboard public pages", () => {
       `UPDATE blessboard.branch_settings
           SET address_line_1 = $2, city = $3, phone = $4, email = $5
         WHERE branch_id = $1`,
-      [branchA.id, "88 Contact Way", "Demo City", "+15558888", "office@example.test"]
+      [branchA.id, "88 Contact Way", "Demo City", "+260977558888", "office@example.test"]
     );
     // Avoid soft-noise from home service times on contact assertions.
     await pool.query(
@@ -2060,7 +2060,7 @@ describe("blessboard public pages", () => {
     assert.match(home.text, /Plan Your Visit/);
     assert.match(home.text, /Quick Links/);
     assert.match(home.text, /Powered by BlessBoard/);
-    assert.match(home.text, /tenant-public\.css\?v=55/);
+    assert.match(home.text, /tenant-public\.css\?v=60/);
     assert.doesNotMatch(home.text, /data-bb-preview-banner/);
     assert.doesNotMatch(home.text, /Back to content admin|Edit page/);
     assert.doesNotMatch(home.text, /href="\/hq"|href="\/admin"|bb-ca-preview/);
@@ -2127,7 +2127,7 @@ describe("blessboard public pages", () => {
     const homeRes = await request(app).get("/").set("Host", HOST_A);
     assert.equal(homeRes.status, 200);
     assert.match(homeRes.text, /Faith, Community and Hope|A Place for Growth/);
-    assert.match(homeRes.text, /tenant-public\.css\?v=55/);
+    assert.match(homeRes.text, /tenant-public\.css\?v=60/);
     assert.doesNotMatch(homeRes.text, /A Place for Growth & Community/);
 
     await pool.query(
@@ -2152,7 +2152,8 @@ describe("blessboard public pages", () => {
     assert.equal(event.ok, true, event.reason || event.status);
     const evRes = await request(app).get("/events").set("Host", HOST_A);
     assert.equal(evRes.status, 200);
-    assert.match(evRes.text, /\/church\/images\/events\//);
+    // Soft-fill images are presented as CDN URLs (never raw /church/images paths).
+    assert.match(evRes.text, /\/media\/testing\/platform\/blessboard\/demo\/events\//);
     assert.doesNotMatch(evRes.text, /bb-tp-featured-event__media is-fallback/);
     assert.match(evRes.text, /bb-tp-page-hero|data-bb-page-hero/);
 
@@ -2167,7 +2168,7 @@ describe("blessboard public pages", () => {
     assert.equal(sermon.ok, true, sermon.reason || sermon.status);
     const serRes = await request(app).get("/sermons").set("Host", HOST_A);
     assert.equal(serRes.status, 200);
-    assert.match(serRes.text, /\/church\/images\/sermons\//);
+    assert.match(serRes.text, /\/media\/testing\/platform\/blessboard\/demo\/sermons\//);
     assert.doesNotMatch(serRes.text, /bb-tp-sermon-card__media is-fallback/);
     assert.match(serRes.text, /data-bb-sermon-thumb="1"/);
 

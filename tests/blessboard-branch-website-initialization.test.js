@@ -145,7 +145,7 @@ describe("blessboard branch website initialization autonomy", () => {
       await updateBranchSettings(pool, campusEast.id, {
         publicName: "Campus East",
         email: "east@init-a.test",
-        phone: "+15552001",
+        phone: "+260977552001",
         addressLine1: "12 East Road",
         city: "Kitwe",
         countryCode: "ZM",
@@ -182,7 +182,7 @@ describe("blessboard branch website initialization autonomy", () => {
         publicName: "Init Church A",
         websiteStatus: "published",
         primaryEmail: "hq@init-a.test",
-        primaryPhone: "+15551001",
+        primaryPhone: "+260977551001",
       });
 
       const churchPages = await provisionEmptyPublicPages(pool, {
@@ -432,7 +432,7 @@ describe("blessboard branch website initialization autonomy", () => {
     assert.equal(model.kind, KIND.OK);
     assert.match(String(model.publicName || ""), /Campus East|Init Church/i);
     if (model.publicContact) {
-      assert.equal(model.publicContact.phone, "+15552001");
+      assert.equal(model.publicContact.phone, "+260977552001");
       assert.equal(model.publicContact.email, "east@init-a.test");
     }
 

@@ -268,7 +268,7 @@ describe("blessboard platform-admin directory HTTP", () => {
          VALUES
            ($1, $2, 'Ada', 'Membera', 'Ada',
             'ada.membera@example.org', 'ada.membera@example.org',
-            '+15551110001', '+1 555 111 0001', 'active')
+            '+260977111001', '+260 97 711 0001', 'active')
          RETURNING id`,
         [churchA.id, users.staffA.id]
       );
@@ -287,7 +287,7 @@ describe("blessboard platform-admin directory HTTP", () => {
          VALUES
            ($1, NULL, 'Ben', 'Memberb', 'Ben',
             'ben.memberb@example.org', 'ben.memberb@example.org',
-            '+15552220002', '+1 555 222 0002', 'active')
+            '+260977222002', '+260 97 722 0002', 'active')
          RETURNING id`,
         [churchB.id]
       );

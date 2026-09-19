@@ -210,7 +210,7 @@ describe("registration approval without password (Prompt 49)", () => {
     const body = freeBody({
       organization_key: key,
       country: "Kenya",
-      phone: `+1555${String(Date.now()).slice(-7)}`,
+      phone: `+26097${String(Date.now()).slice(-7)}`,
       email: `${key}@example.org`,
       church_name: `Held ${key}`,
       city: `City-${key}`,
@@ -267,7 +267,7 @@ describe("registration approval without password (Prompt 49)", () => {
     const body = growthBody({
       organization_key: key,
       country: "Kenya",
-      phone: `+1555${String(Date.now() + 1).slice(-7)}`,
+      phone: `+26097${String(Date.now() + 1).slice(-7)}`,
       email: `${key}@example.org`,
       church_name: `Growth Held ${key}`,
       city: `G-${key}`,
@@ -412,7 +412,7 @@ describe("registration approval without password (Prompt 49)", () => {
       organization_key: key,
       email: existingEmail,
       country: "Kenya",
-      phone: `+1555${String(Date.now() + 9).slice(-7)}`,
+      phone: `+26097${String(Date.now() + 9).slice(-7)}`,
       church_name: `Link Org ${key}`,
       city: `L-${key}`,
     });

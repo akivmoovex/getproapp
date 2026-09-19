@@ -386,7 +386,7 @@ describe("blessboard website mode transition (integration)", () => {
       branchKey: "campus-west",
       displayName: "Campus West",
       email: "west@example.com",
-      phone: "+15555550100",
+      phone: "+260977555100",
       timezone: "UTC",
       countryCode: "US",
     });

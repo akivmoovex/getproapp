@@ -207,7 +207,7 @@ describe("registration risk review (Prompt 18)", () => {
     assert.equal(decideFromReasonCodes(["duplicate_phone"]), RISK_DECISIONS.REJECT);
     assert.equal(decideFromReasonCodes([]), RISK_DECISIONS.ALLOW);
     assert.equal(hasCountryPhoneMismatch("Kenya", "+254712345678"), false);
-    assert.equal(hasCountryPhoneMismatch("Kenya", "+15551234567"), true);
+    assert.equal(hasCountryPhoneMismatch("Kenya", "+260971234567"), true);
   });
 
   it("1. clean registration is allowed and provisions", async () => {

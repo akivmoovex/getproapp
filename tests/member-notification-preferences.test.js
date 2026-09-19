@@ -210,7 +210,7 @@ describe("member notification preferences", () => {
         branchA.id,
         "member@msg-a.example.test",
         memberUser,
-        "+15551236001",
+        "+260977123601",
         hqAdmin.user.id
       );
       member2Id = await provisionLinkedMember(
@@ -218,7 +218,7 @@ describe("member notification preferences", () => {
         branchA.id,
         "member2@msg-a.example.test",
         member2User,
-        "+15551236004",
+        "+260977123604",
         hqAdmin.user.id
       );
       memberBId = await provisionLinkedMember(
@@ -226,7 +226,7 @@ describe("member notification preferences", () => {
         branchB.id,
         "member@msg-b.example.test",
         memberBUser,
-        "+15551236003",
+        "+260977123603",
         hqAdminB.user.id
       );
 
@@ -268,7 +268,7 @@ describe("member notification preferences", () => {
     assert.match(res.text, /me\*+@msg-a\.example\.test/i);
     assert.match(res.text, /\+?\*+6001/);
     assert.doesNotMatch(res.text, /member@msg-a\.example\.test/);
-    assert.doesNotMatch(res.text, /\+15551236001/);
+    assert.doesNotMatch(res.text, /\+260977123601/);
     assert.match(res.text, /data-bb-channel-unavailable="sms"/);
     assert.match(res.text, /data-bb-channel-unavailable="push"/);
     assert.match(res.text, /name="preset"/);

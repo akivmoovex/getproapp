@@ -136,7 +136,9 @@ describe("blessboard apex home gui", () => {
     assert.match(res.text, /bb-apex-hero__grid/);
     assert.match(res.text, /Designed for every member of your community/);
     assert.match(res.text, /id="capabilities"/);
+    // Marketing soft-fill images present as absolute CDN URLs (basename retained).
     assert.match(res.text, /apex-feature-website\.jpg/);
+    assert.match(res.text, /\/media\/(?:testing|production)\/platform\/blessboard\//);
     assert.match(res.text, />Home</);
     assert.match(res.text, /href="\/features"/);
     assert.match(res.text, /href="\/for-churches"/);

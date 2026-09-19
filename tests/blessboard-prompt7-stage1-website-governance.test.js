@@ -162,7 +162,7 @@ describe("blessboard prompt7 stage1 website governance foundation", () => {
         publicName: "Stage1 Church A",
         websiteStatus: "published",
         primaryEmail: "church@stage1-a.test",
-        primaryPhone: "+15551001",
+        primaryPhone: "+260977551001",
       });
       await ensureChurchSettingsInitialized(pool, churchB.id);
       await updateChurchSettings(pool, churchB.id, {

@@ -201,7 +201,7 @@ describe("blessboard v5 mobile burger browser QA", () => {
         lastName: "User",
         preferredName: "Member",
         email: "member@nav-qa.test",
-        phone: "+15551234999",
+        phone: "+260977123499",
       });
       assert.equal(submitted.ok, true, submitted.message || submitted.reason);
       const approved = await approveMemberRegistration(pool, {

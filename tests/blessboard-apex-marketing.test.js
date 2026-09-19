@@ -96,7 +96,8 @@ describe("blessboard apex marketing batch 2b", () => {
       assert.match(plan.ctaLabel, /Register Your Church/);
     }
     assert.equal(buildApexPartnerPlan(), null);
-    assert.equal(mapDirectoryVisitUrl({ slug: "grace-community" }), "/c/grace-community");
+    // Directory visit URLs use the canonical HQ public branch path.
+    assert.equal(mapDirectoryVisitUrl({ slug: "grace-community" }), "/c/grace-community/hq");
     assert.equal(mapDirectoryVisitUrl({ is_single_branch: true, branch_slug: "x" }), null);
     assert.equal(mapDirectoryVisitUrl(null), null);
   });
@@ -126,7 +127,8 @@ describe("blessboard apex marketing batch 2b", () => {
       assert.match(res.text, /href="\/directory"/);
       assert.match(res.text, /href="\/register-church"/);
       assert.match(res.text, /href="\/login"/);
-      assert.doesNotMatch(res.text, /href="\/contact"|Start Free Trial|Watch Product Tour|Schedule a Demo/i);
+      // Apex footer Contact Us is intentional; ban dead sales CTAs only.
+      assert.doesNotMatch(res.text, /Start Free Trial|Watch Product Tour|Schedule a Demo/i);
       assert.doesNotMatch(res.text, /Join over \d+|hundreds of (forward-thinking )?congregation/i);
       assert.doesNotMatch(res.text, /confirmation email has been sent/i);
       if (pathName !== "/register-church") {
@@ -176,14 +178,20 @@ describe("blessboard apex marketing batch 2b", () => {
     assert.match(res.text, /name="church_name"/);
     assert.match(res.text, /name="_csrf"/);
     assert.match(res.text, /data-bb-register-mode="instant-free"/);
-    assert.match(res.text, /name="password"/);
+    assert.match(res.text, /data-bb-register-step="church"/);
     assert.match(res.text, /name="organization_key"/);
-    assert.match(res.text, /data-ac-phone-field/);
-    assert.match(res.text, /name="phone_country"/);
-    assert.match(res.text, /name="phone_national"/);
     assert.match(res.text, /value="ZM"/);
-    assert.match(res.text, /\+260/);
-    assert.match(res.text, /Zambia \(\+260\)/);
+    // Phone + password live on the administrator wizard step (template contract).
+    const template = fs.readFileSync(
+      path.join(ROOT, "views/blessboard/v5/apex/register-church.ejs"),
+      "utf8"
+    );
+    assert.match(template, /step === 'administrator'/);
+    assert.match(template, /name="password"/);
+    assert.match(template, /name="password_confirm"/);
+    assert.match(template, /phone_country/);
+    assert.match(template, /phone_national/);
+    assert.match(template, /partials\/phone-field/);
     assert.doesNotMatch(res.text, /activated immediately/i);
   });
 

@@ -241,7 +241,7 @@ describe("registration operator approval (Prompt 48)", () => {
     const body = growthBody({
       organization_key: key,
       country: "Kenya",
-      phone: `+1555${String(Date.now()).slice(-7)}`,
+      phone: `+26097${String(Date.now()).slice(-7)}`,
       email: `${key}@example.org`,
       church_name: `Growth Review ${key}`,
       city: `GCity-${key}`,
@@ -278,7 +278,7 @@ describe("registration operator approval (Prompt 48)", () => {
     const body = freeBody({
       organization_key: key,
       country: "Kenya",
-      phone: `+1555${String(Date.now()).slice(-7)}`,
+      phone: `+26097${String(Date.now()).slice(-7)}`,
       email: `${key}@example.org`,
       church_name: `Idem Foundation ${key}`,
       city: `IdemCity-${key}`,

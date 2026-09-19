@@ -195,6 +195,7 @@ describe("blessboard members schema", () => {
       firstName: "Ada",
       lastName: "Lovelace",
       email: "ada-x@example.test",
+      phone: "+260977001001",
     });
     assert.equal(result.ok, false);
     assert.equal(result.reason, "branch_ownership");
@@ -208,7 +209,7 @@ describe("blessboard members schema", () => {
       firstName: "Grace",
       lastName: "Hopper",
       email: "grace@example.test",
-      phone: "+15551234001",
+      phone: "+260977001002",
     });
     assert.equal(first.ok, true, first.reason);
 
@@ -218,6 +219,7 @@ describe("blessboard members schema", () => {
       firstName: "Grace",
       lastName: "Copy",
       email: "grace@example.test",
+      phone: "+260977001003",
     });
     assert.equal(dupReg.ok, false);
     assert.equal(dupReg.status, STATUS.DUPLICATE_REGISTRATION);
@@ -236,6 +238,7 @@ describe("blessboard members schema", () => {
       firstName: "Grace",
       lastName: "Hopper",
       email: "grace@example.test",
+      phone: "+260977001002",
     });
     assert.equal(second.ok, true, second.reason);
     assert.equal(second.existingMemberId, approved.member.id);
@@ -251,7 +254,7 @@ describe("blessboard members schema", () => {
     assert.equal(linked.membership.isPrimary, false);
   });
 
-  it("rejects privacy-forbidden fields and requires contact", async () => {
+  it("rejects privacy-forbidden fields and requires phone", async () => {
     requireDb();
     const forbidden = await submitMemberRegistration(pool, {
       churchId: churchA.church.id,
@@ -259,19 +262,21 @@ describe("blessboard members schema", () => {
       firstName: "X",
       lastName: "Y",
       email: "priv@example.test",
+      phone: "+260977001004",
       nationalId: "123",
     });
     assert.equal(forbidden.ok, false);
     assert.match(forbidden.reason, /privacy_forbidden/);
 
-    const noContact = await submitMemberRegistration(pool, {
+    const noPhone = await submitMemberRegistration(pool, {
       churchId: churchA.church.id,
       branchId: churchA.branch.id,
       firstName: "X",
       lastName: "Y",
+      email: "nophone@example.test",
     });
-    assert.equal(noContact.ok, false);
-    assert.equal(noContact.reason, "contact_required");
+    assert.equal(noPhone.ok, false);
+    assert.equal(noPhone.reason, "phone_required");
 
     assert.ok(PRIVACY_FORBIDDEN_KEYS.includes("nationalId"));
   });
@@ -284,8 +289,9 @@ describe("blessboard members schema", () => {
       firstName: "Alan",
       lastName: "Turing",
       email: "alan@example.test",
+      phone: "+260977001005",
     });
-    assert.equal(submitted.ok, true);
+    assert.equal(submitted.ok, true, submitted.reason);
 
     const reviewed = await reviewMemberRegistration(pool, {
       registrationId: submitted.registration.id,
@@ -313,8 +319,9 @@ describe("blessboard members schema", () => {
       firstName: "Alan",
       lastName: "Turing",
       email: "alan@example.test",
+      phone: "+260977001005",
     });
-    assert.equal(again.ok, true);
+    assert.equal(again.ok, true, again.reason);
     const approved = await approveMemberRegistration(pool, {
       registrationId: again.registration.id,
       actorUserId: hqAdmin.id,
@@ -331,8 +338,9 @@ describe("blessboard members schema", () => {
       firstName: "Role",
       lastName: "Check",
       email: "role-check@example.test",
+      phone: "+260977001006",
     });
-    assert.equal(submitted.ok, true);
+    assert.equal(submitted.ok, true, submitted.reason);
 
     const denied = await approveMemberRegistration(pool, {
       registrationId: submitted.registration.id,
@@ -348,12 +356,14 @@ describe("blessboard members schema", () => {
     assert.equal(branchOk.ok, true, branchOk.reason);
   });
 
-  it("links member to existing user by email without creating accounts", async () => {
+  it("links member to existing user by phone/email without creating accounts", async () => {
     requireDb();
     const login = await createBlessBoardUser(pool, {
       email: "linked-member@example.test",
       displayName: "Linked Member",
       password: PASSWORD,
+      phoneNormalized: "+260977001007",
+      phoneDisplay: "+260977001007",
     });
     assert.equal(login.ok, true);
 
@@ -363,8 +373,9 @@ describe("blessboard members schema", () => {
       firstName: "Linked",
       lastName: "Member",
       email: "linked-member@example.test",
+      phone: "+260977001007",
     });
-    assert.equal(submitted.ok, true);
+    assert.equal(submitted.ok, true, submitted.reason);
     const approved = await approveMemberRegistration(pool, {
       registrationId: submitted.registration.id,
       actorUserId: hqAdmin.id,
@@ -384,10 +395,12 @@ describe("blessboard members schema", () => {
     const afterCount = await pool.query(`SELECT COUNT(*)::int AS n FROM blessboard.users`);
     assert.equal(afterCount.rows[0].n, beforeCount.rows[0].n);
 
+    // Phone-preferred lookup ignores a mismatched email when the member phone
+    // already matches the linked user; force conflict via explicit userId.
     const mismatch = await linkMemberToUser(pool, {
       memberId: approved.member.id,
       actorUserId: hqAdmin.id,
-      email: "hq@mem-a.example.test",
+      userId: hqAdmin.id,
     });
     assert.equal(mismatch.ok, false);
     assert.ok(
@@ -403,7 +416,9 @@ describe("blessboard members schema", () => {
       firstName: "Primary",
       lastName: "Rule",
       email: "primary-rule@example.test",
+      phone: "+260977001008",
     });
+    assert.equal(submitted.ok, true, submitted.reason);
     const approved = await approveMemberRegistration(pool, {
       registrationId: submitted.registration.id,
       actorUserId: hqAdmin.id,

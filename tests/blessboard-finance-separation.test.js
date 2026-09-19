@@ -247,7 +247,7 @@ describe("blessboard finance role separation", () => {
            (church_id, first_name, last_name, preferred_name,
             email_normalized, email_display, phone_normalized, phone_display, status)
          VALUES ($1, 'Fin', 'Member', 'Fin',
-                 'fin-member@fin-a.test', 'fin-member@fin-a.test', '+15550001111', '+15550001111', 'active')
+                 'fin-member@fin-a.test', 'fin-member@fin-a.test', '+260977001111', '+260977001111', 'active')
          RETURNING id`,
         [churchA.id]
       );

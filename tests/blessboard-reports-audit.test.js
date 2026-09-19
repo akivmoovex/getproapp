@@ -182,7 +182,7 @@ describe("blessboard reports-audit", () => {
         lastName: "Member",
         preferredName: "RA",
         email: "member@ra-a.example.test",
-        phone: "+15550002001",
+        phone: "+260977002001",
       });
       assert.equal(submitted.ok, true, submitted.reason);
       const approved = await approveMemberRegistration(pool, {
@@ -400,7 +400,7 @@ describe("blessboard reports-audit", () => {
       lastName: "Person",
       preferredName: "Pend",
       email: "pending@ra-a.example.test",
-      phone: "+15550002099",
+      phone: "+260977002099",
     });
     assert.equal(pending.ok, true, pending.reason);
 

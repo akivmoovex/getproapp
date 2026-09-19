@@ -262,8 +262,9 @@ describe("blessboard apex public directory", () => {
     assert.doesNotMatch(res.text, /Directory temporarily unavailable/);
     assert.match(res.text, /Directory Foundation Chapel/);
     assert.match(res.text, /Directory Growth Chapel/);
-    assert.match(res.text, new RegExp(`href="/c/${fixtures.foundationTesting.orgKey}"`));
-    assert.match(res.text, new RegExp(`href="/c/${fixtures.growthTesting.orgKey}"`));
+    // Directory visit URLs use the canonical HQ public branch path.
+    assert.match(res.text, new RegExp(`href="/c/${fixtures.foundationTesting.orgKey}/hq"`));
+    assert.match(res.text, new RegExp(`href="/c/${fixtures.growthTesting.orgKey}/hq"`));
   });
 
   it("church without church_settings row appears; explicit draft does not", async () => {
@@ -338,7 +339,7 @@ describe("blessboard apex public directory", () => {
     assert.doesNotMatch(miss.text, /Directory temporarily unavailable/);
   });
 
-  it("multi-branch church appears once with /c/:organizationKey visit link", async () => {
+  it("multi-branch church appears once with /c/:organizationKey/hq visit link", async () => {
     requireDb();
     process.env.DEPLOYMENT_ENV = "testing";
     const listed = await directoryRepo.searchPublicOrganizations(pool, {
@@ -351,7 +352,8 @@ describe("blessboard apex public directory", () => {
     const app = makeApp();
     const res = await request(app).get("/directory").set("Host", APEX);
     assert.equal(res.status, 200);
-    const occurrences = res.text.split(`href="/c/${fixtures.multiBranch.orgKey}"`).length - 1;
+    const occurrences =
+      res.text.split(`href="/c/${fixtures.multiBranch.orgKey}/hq"`).length - 1;
     assert.equal(occurrences, 1);
     assert.match(res.text, /Directory Multi Branch Chapel/);
   });

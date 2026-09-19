@@ -139,7 +139,14 @@ async function main() {
         ["website admin (edit)", "/hq/website"],
         ["publish review", "/hq/website/publish/review"],
         ["version history", "/hq/website/version-history"],
-        ["church public page", "/c/demo-church"],
+        // Church org root permanently redirects to the primary/HQ branch public path.
+        [
+          "church public root",
+          "/c/demo-church",
+          301,
+          "canonical HQ public path /c/demo-church/hq",
+        ],
+        ["church HQ public page", "/c/demo-church/hq"],
         ["content admin", "/hq/content"],
         ["media library", "/hq/content/media"],
       ],

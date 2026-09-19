@@ -230,19 +230,19 @@ describe("member notifications inbox", () => {
       memberId = await provisionLinkedMember(
         "member@msg-a.example.test",
         memberUser,
-        "+15551236001",
+        "+260977123601",
         branchA
       );
       member2Id = await provisionLinkedMember(
         "member2@msg-a.example.test",
         member2User,
-        "+15551236004",
+        "+260977123604",
         branchA
       );
       campusMemberId = await provisionLinkedMember(
         "campus-member@msg-a.example.test",
         campusMemberUser,
-        "+15551236002",
+        "+260977123602",
         campusBranch
       );
 
@@ -252,7 +252,7 @@ describe("member notifications inbox", () => {
         firstName: "Other",
         lastName: "Member",
         email: "member@msg-b.example.test",
-        phone: "+15551236003",
+        phone: "+260977123603",
       });
       assert.equal(submittedB.ok, true, submittedB.reason);
       const approvedB = await approveMemberRegistration(pool, {

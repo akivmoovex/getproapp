@@ -220,12 +220,12 @@ describe("blessboard member portal", () => {
       memberId = await provisionLinkedMember(
         "member@mp-a.example.test",
         memberUser,
-        "+15551234001"
+        "+260977012001"
       );
       const inactiveId = await provisionLinkedMember(
         "inactive-member@mp-a.example.test",
         inactiveMemberUser,
-        "+15551234002"
+        "+260977012002"
       );
       await pool.query(
         `UPDATE blessboard.member_branch_memberships
@@ -237,7 +237,7 @@ describe("blessboard member portal", () => {
       const wrongId = await provisionLinkedMember(
         "wrong-branch@mp-a.example.test",
         wrongBranchUser,
-        "+15551234003"
+        "+260977012003"
       );
       const secondary = await pool.query(
         `INSERT INTO blessboard.branches
@@ -494,7 +494,7 @@ describe("blessboard member portal", () => {
       .send({
         [CSRF_FIELD]: csrf,
         preferredName: "<bad>",
-        phone: "+15559876543",
+        phone: "+260977012543",
         emailDisplay: "Member@MP-A.Example.Test",
       });
     assert.equal(bad.status, 400);
@@ -521,8 +521,8 @@ describe("blessboard member portal", () => {
       .send({
         [CSRF_FIELD]: csrf,
         preferredName: "Preferred Port",
-        phone_country: "US",
-        phone_national: "5559876543",
+        phone_country: "ZM",
+        phone_national: "0977012543",
         emailDisplay: "Member@MP-A.Example.Test",
         status: "suspended",
         membershipStatus: "inactive",
@@ -547,8 +547,8 @@ describe("blessboard member portal", () => {
       .send({
         [CSRF_FIELD]: csrf2,
         preferredName: "Preferred Port",
-        phone_country: "US",
-        phone_national: "5559876543",
+        phone_country: "ZM",
+        phone_national: "0977012543",
         emailDisplay: "Member@MP-A.Example.Test",
       });
     assert.equal(ok.status, 303);
@@ -561,7 +561,7 @@ describe("blessboard member portal", () => {
       [memberId]
     );
     assert.equal(rows[0].preferred_name, "Preferred Port");
-    assert.equal(rows[0].phone_normalized, "+15559876543");
+    assert.equal(rows[0].phone_normalized, "+260977012543");
     assert.equal(rows[0].email_display, "Member@MP-A.Example.Test");
     assert.equal(rows[0].email_normalized, "member@mp-a.example.test");
     assert.equal(rows[0].first_name, "Portal");

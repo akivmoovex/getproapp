@@ -251,7 +251,7 @@ describe("blessboard pastoral welfare confidentiality", () => {
            (church_id, first_name, last_name, preferred_name,
             email_normalized, email_display, phone_normalized, phone_display, status)
          VALUES ($1, 'Member', 'A', 'Member A',
-                 'member-a@pw-a.test', 'member-a@pw-a.test', '+15550009901', '+15550009901', 'active')
+                 'member-a@pw-a.test', 'member-a@pw-a.test', '+260977009901', '+260977009901', 'active')
          RETURNING id`,
         [churchA.id]
       );

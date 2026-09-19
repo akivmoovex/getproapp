@@ -25,6 +25,10 @@ const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { provisionPlatformTenant } = require("../src/platform/services/provisionPlatformTenant");
 const { provisionBlessBoardChurch } = require("../src/blessboard/services/provisionBlessBoardChurch");
+const {
+  ensureChurchSettingsInitialized,
+  updateChurchSettings,
+} = require("../src/blessboard/services/blessBoardSettingsService");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 
@@ -127,6 +131,12 @@ describe("authoritative host allow-list http", () => {
       });
       assert.equal(church.ok, true, church.message);
       churchId = church.records.church.id;
+      await ensureChurchSettingsInitialized(pool, churchId);
+      const published = await updateChurchSettings(pool, churchId, {
+        publicName: CHURCH_NAME,
+        websiteStatus: "published",
+      });
+      assert.equal(published.ok, true, published.reason || published.message);
 
       const other = await provisionPlatformTenant(pool, {
         organizationKey: "other-org",
@@ -201,7 +211,7 @@ describe("authoritative host allow-list http", () => {
     const res = await request(app).get("/").set("Host", PILOT_HOST);
     assert.equal(res.status, 200);
     assert.match(res.text, new RegExp(CHURCH_NAME));
-    assert.match(res.text, /data-bb-shell="tenant-public"/);
+    assert.match(res.text, /data-bb-shell="tenant-public(?:-setup)?"/);
     const authLog = logs.find((l) => l.includes("blessboard_tenant_route") && !l.includes("shadow"));
     assert.ok(authLog);
     assert.match(authLog, /"allowlistDecision":"allow"/);

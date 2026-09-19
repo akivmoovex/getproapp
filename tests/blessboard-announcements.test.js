@@ -255,13 +255,13 @@ describe("blessboard announcements", () => {
       memberId = await provisionLinkedMember(
         "member@ann-a.example.test",
         memberUser,
-        "+15551235001",
+        "+260977123501",
         branchA
       );
       campusMemberId = await provisionLinkedMember(
         "campus-member@ann-a.example.test",
         campusMember,
-        "+15551235002",
+        "+260977123502",
         campusBranch
       );
 
@@ -271,7 +271,7 @@ describe("blessboard announcements", () => {
         firstName: "Other",
         lastName: "Member",
         email: "member@ann-b.example.test",
-        phone: "+15551235003",
+        phone: "+260977123503",
       });
       assert.equal(submittedB.ok, true, submittedB.reason);
       const hqB = await makeUser(

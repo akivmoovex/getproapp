@@ -182,7 +182,19 @@ function presentRuntimeImageSrc(src, env, opts) {
 
   const legacyKey = storageKeyFromLegacyMediaSrc(raw);
   if (legacyKey) {
-    return presentCdnUrl(legacyKey, env);
+    const presented = presentCdnUrl(legacyKey, env);
+    if (presented) return presented;
+    // Already-absolute https CDN URLs must survive when MEDIA_PUBLIC_BASE_URL is
+    // unset (local suites / soft-fill that already resolved via marketing fallback).
+    if (/^https:\/\//i.test(raw)) {
+      try {
+        const u = new URL(raw);
+        if (u.protocol === "https:") return u.toString();
+      } catch {
+        return null;
+      }
+    }
+    return null;
   }
 
   if (allowMarketing && isPlatformMarketingPublicPath(raw)) {
@@ -331,7 +343,13 @@ function presentImageTree(input, env, seen) {
  */
 function cdnMarketingAsset(publicPath, env) {
   const key = storageKeyForPublicPath(publicPath, env);
-  return key ? presentCdnUrl(key, env) : presentRuntimeImageSrc(publicPath, env, { allowMarketing: true });
+  if (key) {
+    const cdn = presentCdnUrl(key, env);
+    if (cdn) return cdn;
+  }
+  // When MEDIA_PUBLIC_BASE_URL is unset, presentRuntimeImageSrc still maps known
+  // soft-fill keys to the documented testing CDN base (never /church/images).
+  return presentRuntimeImageSrc(publicPath, env, { allowMarketing: true });
 }
 
 /**

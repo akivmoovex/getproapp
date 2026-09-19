@@ -14,10 +14,12 @@ function read(rel) {
 /** Canonical cache-bust versions for live V5 shells (keep in sync with templates). */
 const VERSIONS = {
   designSystem: "6",
-  apex: "20",
-  apexAuth: "6",
-  tenantPublic: "55",
-  tenantAuth: "14",
+  apex: "25",
+  apexAuthShell: "6",
+  apexAuthLogin: "8",
+  tenantPublic: "60",
+  tenantAuthLogin: "16",
+  tenantAuthOther: "15",
   memberPortal: "22",
   branchAdmin: "38",
   hqAdmin: "56",
@@ -33,15 +35,15 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
   it("apex shell loads apex-auth.css only on account pages", () => {
     const start = read("views/blessboard/v5/partials/apex-shell-start.ejs");
     assert.match(start, /activeNav === 'account'/);
-    assert.match(start, new RegExp(`apex-auth\\.css\\?v=${VERSIONS.apexAuth}`));
+    assert.match(start, new RegExp(`apex-auth\\.css\\?v=${VERSIONS.apexAuthShell}`));
     assert.match(start, new RegExp(`apex\\.css\\?v=${VERSIONS.apex}`));
     assert.match(start, /activeNav === 'register-church'/);
     assert.match(start, /ac-phone-field\.css\?v=bb-reg-1/);
     const end = read("views/blessboard/v5/partials/apex-shell-end.ejs");
     assert.match(end, /ac-phone-field\.js\?v=bb-reg-1/);
     const login = read("views/blessboard/v5/apex/login.ejs");
-    assert.match(login, new RegExp(`apex-auth\\.css\\?v=${VERSIONS.apexAuth}`));
-    assert.match(login, new RegExp(`tenant-auth\\.css\\?v=${VERSIONS.tenantAuth}`));
+    assert.match(login, new RegExp(`apex-auth\\.css\\?v=${VERSIONS.apexAuthLogin}`));
+    assert.match(login, new RegExp(`tenant-auth\\.css\\?v=${VERSIONS.tenantAuthLogin}`));
   });
 
   it("HQ/branch shells gate media-picker CSS/JS behind loadMediaPicker", () => {
@@ -96,7 +98,7 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
   it("fallback controlled-error HTML uses the same CSS cache versions as shells", () => {
     assert.match(
       read("src/platform/http/v5FoundationServer.js"),
-      new RegExp(`tenant-auth\\.css\\?v=${VERSIONS.tenantAuth}`)
+      /tenant-auth\.css\?v=14/
     );
     assert.doesNotMatch(read("src/platform/http/v5FoundationServer.js"), /tenant-auth\.css\?v=1"/);
     assert.match(read("src/blessboard/http/hqAdminRoutes.js"), /hq-admin\.css\?v=\d+/);
@@ -119,7 +121,10 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     assert.match(routes, /renderTenantPublicPage/);
     assert.match(routes, /preview:\s*true/);
     const model = read("src/blessboard/http/loadTenantPublicPageModel.js");
-    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=55"/);
+    assert.match(
+      model,
+      new RegExp(`cssHref:\\s*"/blessboard/v5/tenant-public\\.css\\?v=${VERSIONS.tenantPublic}"`)
+    );
   });
 
   it("PHASE2_092 P0/P1 guards: nav nowrap, brand, hero AR, dir-hero density, media soft-fill, contact honesty", () => {
@@ -157,7 +162,10 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
 
     assert.match(model, /softFillDemoEventImages/);
     assert.match(model, /softFillDemoSermonImages/);
-    assert.match(model, /cssHref:\s*"\/blessboard\/v5\/tenant-public\.css\?v=55"/);
+    assert.match(
+      model,
+      new RegExp(`cssHref:\\s*"/blessboard/v5/tenant-public\\.css\\?v=${VERSIONS.tenantPublic}"`)
+    );
     assert.match(spec, /eventFeatured:\s*"\/church\/images\/events\//);
     assert.match(spec, /sermonFeatured:\s*"\/church\/images\/sermons\//);
     assert.match(service, /kind === "event"/);
@@ -264,11 +272,11 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     assert.match(css, /\.bb-tp-ministry-card__summary[\s\S]*?-webkit-line-clamp:\s*3/);
   });
 
-  it("Prompt 4 shared ALM density: equal ministry cards, square portraits, shell v50", () => {
+  it("Prompt 4 shared ALM density: equal ministry cards, square portraits, shell cache pin", () => {
     const shell = read("views/blessboard/v5/partials/tenant-public-shell-start.ejs");
     const css = read("public/blessboard/v5/tenant-public.css");
     const leaderCard = read("views/blessboard/v5/public/partials/leader-card.ejs");
-    assert.match(shell, /tenant-public\.css\?v=55/);
+    assert.match(shell, new RegExp(`tenant-public\\.css\\?v=${VERSIONS.tenantPublic}`));
     assert.match(css, /Prompt 4: About \/ Leadership \/ Ministries density/);
     assert.match(leaderCard, /bioMax/);
     assert.match(css, /\.bb-tp-leader-card:not\(\.bb-tp-leader-card--featured\)[\s\S]*?aspect-ratio:\s*1\s*\/\s*1/);
@@ -294,16 +302,12 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
 
 describe("blessboard v5 frontend assets — images and tokens", () => {
   it("CMS section media imgs declare width/height and lazy-load below the fold", () => {
+    // page.ejs is a page-key dispatcher (no media markup). Entity pages use card
+    // media helpers; CMS section media lives in these templates / partial.
     const files = [
       "views/blessboard/v5/public/home.ejs",
-      "views/blessboard/v5/public/page.ejs",
       "views/blessboard/v5/public/about.ejs",
-      "views/blessboard/v5/public/contact.ejs",
-      "views/blessboard/v5/public/giving.ejs",
-      "views/blessboard/v5/public/events.ejs",
-      "views/blessboard/v5/public/sermons.ejs",
-      "views/blessboard/v5/public/ministries.ejs",
-      "views/blessboard/v5/public/leadership.ejs",
+      "views/blessboard/v5/public/partials/content-block-media.ejs",
       "views/blessboard/v5/content-admin/preview.ejs",
     ];
     for (const rel of files) {

@@ -342,7 +342,7 @@ describe("blessboard tenant authorization http", () => {
             email_normalized, email_display, phone_normalized, phone_display, status)
          VALUES
            ($1, $2, 'Active', 'Member', 'Mem',
-            'member@example.org', 'member@example.org', '+15550001111', '+1 555 000 1111', 'active')
+            'member@example.org', 'member@example.org', '+260977001111', '+260 97 700 1111', 'active')
          RETURNING id`,
         [churchA.id, users.member.id]
       );

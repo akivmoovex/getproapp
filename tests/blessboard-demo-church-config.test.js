@@ -175,7 +175,7 @@ describe("configure demo church (foundation db)", () => {
         displayName: "Test Main Branch",
         branchKey: "test-main",
         email: "main@automated-test.example.test",
-        phone: "+15550100",
+        phone: "+260977550100",
         timezone: "UTC",
         city: "Testville",
         countryCode: "US",
