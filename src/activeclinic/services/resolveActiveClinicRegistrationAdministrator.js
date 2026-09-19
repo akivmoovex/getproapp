@@ -11,7 +11,11 @@
  * - Email and phone resolving to different identities → identity_conflict.
  */
 
-const bcrypt = require("bcryptjs");
+const {
+  REGISTRATION_IDENTITY_ACTION,
+  matchRegistrationContactPrincipals,
+  authorizeExistingPrincipalReuse,
+} = require("../../platform/registration/resolveRegistrationContactIdentity");
 
 const IDENTITY_KIND = Object.freeze({
   FRESH: "fresh",
@@ -22,11 +26,11 @@ const IDENTITY_KIND = Object.freeze({
 });
 
 const ACTION = Object.freeze({
-  CREATE: "create",
-  REUSE: "reuse",
+  CREATE: REGISTRATION_IDENTITY_ACTION.CREATE,
+  REUSE: REGISTRATION_IDENTITY_ACTION.REUSE,
   ALREADY_PROVISIONED: "already_provisioned",
-  REJECT_EXISTING_ACCOUNT: "reject_existing_account",
-  REJECT_IDENTITY_CONFLICT: "reject_identity_conflict",
+  REJECT_EXISTING_ACCOUNT: REGISTRATION_IDENTITY_ACTION.REJECT_EXISTING_ACCOUNT,
+  REJECT_IDENTITY_CONFLICT: REGISTRATION_IDENTITY_ACTION.REJECT_IDENTITY_CONFLICT,
   REJECT_SUSPENDED: "reject_suspended",
 });
 
@@ -108,61 +112,24 @@ async function listLiveClinicMemberships(client, identityId) {
  * @param {object[]} phoneIdentities
  */
 function resolveMatchedIdentity(emailIdentity, phoneIdentities) {
-  const phoneIdentity = phoneIdentities.length === 1 ? phoneIdentities[0] : null;
-  const emailMatched = Boolean(emailIdentity && emailIdentity.id);
-  const phoneMatched = Boolean(phoneIdentity && phoneIdentity.id);
-
-  if (phoneIdentities.length > 1) {
+  const matched = matchRegistrationContactPrincipals(emailIdentity, phoneIdentities);
+  if (!matched.ok) {
     return {
       ok: false,
-      action: ACTION.REJECT_IDENTITY_CONFLICT,
-      reason: "phone_matches_multiple_identities",
-      emailMatched,
-      phoneMatched: true,
+      action: matched.action,
+      reason: matched.reason,
+      emailMatched: matched.emailMatched,
+      phoneMatched: matched.phoneMatched,
       identity: null,
-      diagnostics: {
-        identityResolution: "phone_ambiguous",
-        emailMatched,
-        phoneMatched: true,
-        phoneMatchCount: phoneIdentities.length,
-      },
+      diagnostics: matched.diagnostics,
     };
   }
-
-  if (
-    emailMatched &&
-    phoneMatched &&
-    String(emailIdentity.id) !== String(phoneIdentity.id)
-  ) {
-    return {
-      ok: false,
-      action: ACTION.REJECT_IDENTITY_CONFLICT,
-      reason: "email_and_phone_resolve_to_different_identities",
-      emailMatched: true,
-      phoneMatched: true,
-      identity: null,
-      diagnostics: {
-        identityResolution: "email_phone_split",
-        emailMatched: true,
-        phoneMatched: true,
-      },
-    };
-  }
-
-  const identity = emailIdentity || phoneIdentity || null;
   return {
     ok: true,
-    identity,
-    emailMatched,
-    phoneMatched,
-    matchOn:
-      emailMatched && phoneMatched
-        ? "email_and_phone"
-        : emailMatched
-          ? "email"
-          : phoneMatched
-            ? "phone"
-            : null,
+    identity: matched.principal,
+    emailMatched: matched.emailMatched,
+    phoneMatched: matched.phoneMatched,
+    matchOn: matched.matchOn,
   };
 }
 
@@ -326,11 +293,16 @@ async function resolveActiveClinicRegistrationAdministrator(client, input = {}) 
     }
   }
 
-  if (!identity.password_hash) {
+  const authorized = await authorizeExistingPrincipalReuse({
+    passwordHash: identity.password_hash,
+    password,
+    multiTenant: classified.kind === IDENTITY_KIND.OTHER_CLINIC,
+  });
+  if (!authorized.ok) {
     return {
       ok: false,
-      action: ACTION.REJECT_EXISTING_ACCOUNT,
-      reason: "existing_account_requires_sign_in",
+      action: authorized.action,
+      reason: authorized.reason,
       identity,
       identityId: String(identity.id),
       emailMatched: matched.emailMatched,
@@ -338,55 +310,15 @@ async function resolveActiveClinicRegistrationAdministrator(client, input = {}) 
       matchOn: matched.matchOn,
       identityKind: classified.kind,
       memberships,
+      requiresSecondClinicAcknowledgement:
+        authorized.reason === "existing_identity_acknowledgement_required",
       diagnostics: {
-        identityResolution: "existing_without_password",
-        emailMatched: matched.emailMatched,
-        phoneMatched: matched.phoneMatched,
-        identityKind: classified.kind,
-      },
-    };
-  }
-
-  if (!password) {
-    return {
-      ok: false,
-      action: ACTION.REJECT_EXISTING_ACCOUNT,
-      reason:
-        classified.kind === IDENTITY_KIND.OTHER_CLINIC
-          ? "existing_identity_acknowledgement_required"
-          : "existing_account_requires_sign_in",
-      identity,
-      identityId: String(identity.id),
-      emailMatched: matched.emailMatched,
-      phoneMatched: matched.phoneMatched,
-      matchOn: matched.matchOn,
-      identityKind: classified.kind,
-      memberships,
-      requiresSecondClinicAcknowledgement: classified.kind === IDENTITY_KIND.OTHER_CLINIC,
-      diagnostics: {
-        identityResolution: "password_required",
-        emailMatched: matched.emailMatched,
-        phoneMatched: matched.phoneMatched,
-        identityKind: classified.kind,
-      },
-    };
-  }
-
-  const passwordOk = await bcrypt.compare(password, String(identity.password_hash));
-  if (!passwordOk) {
-    return {
-      ok: false,
-      action: ACTION.REJECT_EXISTING_ACCOUNT,
-      reason: "existing_account_password_mismatch",
-      identity,
-      identityId: String(identity.id),
-      emailMatched: matched.emailMatched,
-      phoneMatched: matched.phoneMatched,
-      matchOn: matched.matchOn,
-      identityKind: classified.kind,
-      memberships,
-      diagnostics: {
-        identityResolution: "password_mismatch",
+        identityResolution:
+          authorized.reason === "existing_account_password_mismatch"
+            ? "password_mismatch"
+            : !identity.password_hash
+              ? "existing_without_password"
+              : "password_required",
         emailMatched: matched.emailMatched,
         phoneMatched: matched.phoneMatched,
         identityKind: classified.kind,

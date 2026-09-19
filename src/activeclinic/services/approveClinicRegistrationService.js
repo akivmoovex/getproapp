@@ -261,6 +261,9 @@ async function ensureClinicAdmin(client, input) {
     }
   }
   if (!identityId) {
+    // Fail closed: never silently attach to an existing phone/email principal.
+    // Unauthorized reuse must go through resolveActiveClinicRegistrationAdministrator
+    // (password-verified REUSE) which sets resolvedIdentityId.
     const existing = await client.query(
       `SELECT id, password_hash FROM platform.identities
         WHERE email_normalized = $1
@@ -270,61 +273,30 @@ async function ensureClinicAdmin(client, input) {
       [input.email, input.phone || null]
     );
     if (existing.rows[0]) {
-      identityId = existing.rows[0].id;
-      reusedIdentity = true;
-      if (input.passwordHash && !existing.rows[0].password_hash) {
-        await updateIdentityPasswordHash(client, {
-          identityId,
-          passwordHash: input.passwordHash,
-          mustChangePassword: false,
-        });
-      }
-    } else {
-      const created = await createPlatformIdentity(client, {
-        status: "active",
-        primaryEmail: input.email,
-        emailNormalized: input.email,
-        emailVerifiedAt: new Date().toISOString(),
-        primaryPhone: input.phone,
-        phoneNormalized: input.phone,
-        phoneVerifiedAt: new Date().toISOString(),
-        passwordHash: input.passwordHash || null,
-      });
-      if (!created.ok) {
-        // Verified-phone uniqueness race / prior unverified row: reuse existing identity.
-        if (
-          created.code === "duplicate_verified_phone" ||
-          created.code === "duplicate_verified_email" ||
-          /duplicate/i.test(String(created.code || ""))
-        ) {
-          const raced = await client.query(
-            `SELECT id, password_hash FROM platform.identities
-              WHERE ($1::text IS NOT NULL AND email_normalized = $1)
-                 OR ($2::text IS NOT NULL AND phone_normalized = $2)
-              ORDER BY CASE WHEN email_normalized = $1 THEN 0 ELSE 1 END, created_at ASC
-              LIMIT 1`,
-            [input.email || null, input.phone || null]
-          );
-          if (raced.rows[0]) {
-            identityId = raced.rows[0].id;
-            reusedIdentity = true;
-            if (input.passwordHash && !raced.rows[0].password_hash) {
-              await updateIdentityPasswordHash(client, {
-                identityId,
-                passwordHash: input.passwordHash,
-                mustChangePassword: false,
-              });
-            }
-          } else {
-            return { ok: false, code: created.code };
-          }
-        } else {
-          return { ok: false, code: created.code };
-        }
-      } else {
-        identityId = created.identity.id;
-      }
+      return { ok: false, code: "existing_account_requires_sign_in" };
     }
+    const created = await createPlatformIdentity(client, {
+      status: "active",
+      primaryEmail: input.email,
+      emailNormalized: input.email,
+      emailVerifiedAt: new Date().toISOString(),
+      primaryPhone: input.phone,
+      phoneNormalized: input.phone,
+      phoneVerifiedAt: new Date().toISOString(),
+      passwordHash: input.passwordHash || null,
+    });
+    if (!created.ok) {
+      // Race: another registration claimed this verified phone/email first.
+      if (
+        created.code === "duplicate_verified_phone" ||
+        created.code === "duplicate_verified_email" ||
+        /duplicate/i.test(String(created.code || ""))
+      ) {
+        return { ok: false, code: "existing_account_requires_sign_in" };
+      }
+      return { ok: false, code: created.code };
+    }
+    identityId = created.identity.id;
   }
   const names = splitName(input.contactName);
   let staffMemberId = null;
@@ -809,18 +781,22 @@ async function approveAndProvisionClinicRegistration(db, input) {
             : null,
       });
       if (!admin.ok) {
+        const adminCode = String(admin.code || "clinic_admin_failed");
+        const isIdentityGuard =
+          adminCode === "existing_account_requires_sign_in" ||
+          adminCode === "existing_account_password_mismatch";
         await persistProvisionFailure(client, app.id, {
           organization_id: organizationId,
           healthcare_organization_id: hco.id,
           facility_id: facility ? facility.id : app.facility_id,
           provisioning_status: "failed",
           last_provision_stage: STAGE.ADMINISTRATOR,
-          last_provision_error: admin.code || "clinic_admin_failed",
+          last_provision_error: adminCode,
         });
         await appendReviewEvent(client, {
           applicationId: app.id,
           eventType: "provisioning_failed",
-          body: String(admin.code || "clinic_admin_failed").slice(0, 200),
+          body: adminCode.slice(0, 200),
           actorId: input.actorIdentityId,
           visibility: "history",
           deliveryStatus: "not_applicable",
@@ -828,15 +804,23 @@ async function approveAndProvisionClinicRegistration(db, input) {
         await recordClinicLifecycle(client, app, input, organizationId, LIFECYCLE_ACTION.PROVISIONING_FAILED, {
           outcome: "failure",
           failedStage: STAGE.ADMINISTRATOR,
-          reasonCode: String(admin.code || "clinic_admin_failed").slice(0, 120),
+          reasonCode: adminCode.slice(0, 120),
           provisioningStatus: "failed",
         });
         return {
           ok: false,
-          code: RESULT.ADMIN_FAILED,
-          reason: admin.code,
+          code: isIdentityGuard ? adminCode : RESULT.ADMIN_FAILED,
+          reason: adminCode,
           failedStage: STAGE.ADMINISTRATOR,
           organizationId,
+          errors: isIdentityGuard
+            ? {
+                password:
+                  adminCode === "existing_account_password_mismatch"
+                    ? "That password does not match the existing account."
+                    : "An account already exists for this contact. Sign in with your existing password.",
+              }
+            : undefined,
         };
       }
       if (failAfter === STAGE.ADMINISTRATOR || failAfter === STAGE.ROLE_ASSIGNMENT || failAfter === STAGE.MEMBERSHIPS) {

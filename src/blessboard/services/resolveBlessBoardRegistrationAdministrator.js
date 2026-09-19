@@ -11,7 +11,6 @@
  * - Email and phone resolving to different users → identity_conflict.
  */
 
-const bcrypt = require("bcryptjs");
 const authRepo = require("../repositories/blessBoardAuthRepository");
 const {
   IDENTITY_KIND,
@@ -19,13 +18,18 @@ const {
   isSuspendedUser,
 } = require("./classifyBlessBoardRegistrationIdentity");
 const { normalizeEmail } = require("./createBlessBoardUser");
+const {
+  REGISTRATION_IDENTITY_ACTION,
+  matchRegistrationContactPrincipals,
+  authorizeExistingPrincipalReuse,
+} = require("../../platform/registration/resolveRegistrationContactIdentity");
 
 const ACTION = Object.freeze({
-  CREATE: "create",
-  REUSE: "reuse",
+  CREATE: REGISTRATION_IDENTITY_ACTION.CREATE,
+  REUSE: REGISTRATION_IDENTITY_ACTION.REUSE,
   ALREADY_PROVISIONED: "already_provisioned",
-  REJECT_EXISTING_ACCOUNT: "reject_existing_account",
-  REJECT_IDENTITY_CONFLICT: "reject_identity_conflict",
+  REJECT_EXISTING_ACCOUNT: REGISTRATION_IDENTITY_ACTION.REJECT_EXISTING_ACCOUNT,
+  REJECT_IDENTITY_CONFLICT: REGISTRATION_IDENTITY_ACTION.REJECT_IDENTITY_CONFLICT,
   REJECT_SUSPENDED: "reject_suspended",
 });
 
@@ -77,57 +81,36 @@ async function findUsersByPhone(client, phoneNormalized) {
  * @param {object[]} phoneUsers
  */
 function resolveMatchedUser(emailUser, phoneUsers) {
-  const phoneUser = phoneUsers.length === 1 ? phoneUsers[0] : null;
-  const emailMatched = Boolean(emailUser && emailUser.id);
-  const phoneMatched = Boolean(phoneUser && phoneUser.id);
-
-  if (phoneUsers.length > 1) {
+  const matched = matchRegistrationContactPrincipals(emailUser, phoneUsers);
+  if (!matched.ok) {
     return {
       ok: false,
-      action: ACTION.REJECT_IDENTITY_CONFLICT,
-      reason: "phone_matches_multiple_users",
-      emailMatched,
-      phoneMatched: true,
+      action: matched.action,
+      reason:
+        matched.reason === "phone_matches_multiple_identities"
+          ? "phone_matches_multiple_users"
+          : matched.reason,
+      emailMatched: matched.emailMatched,
+      phoneMatched: matched.phoneMatched,
       user: null,
-      diagnostics: {
-        identityResolution: "phone_ambiguous",
-        emailMatched,
-        phoneMatched: true,
-        phoneMatchCount: phoneUsers.length,
-      },
+      diagnostics: matched.diagnostics,
     };
   }
-
-  if (emailMatched && phoneMatched && String(emailUser.id) !== String(phoneUser.id)) {
+  if (!matched.principal) {
     return {
-      ok: false,
-      action: ACTION.REJECT_IDENTITY_CONFLICT,
-      reason: "email_and_phone_resolve_to_different_identities",
-      emailMatched: true,
-      phoneMatched: true,
+      ok: true,
       user: null,
-      diagnostics: {
-        identityResolution: "email_phone_split",
-        emailMatched: true,
-        phoneMatched: true,
-      },
+      emailMatched: false,
+      phoneMatched: false,
+      matchOn: null,
     };
   }
-
-  const user = emailUser || phoneUser || null;
   return {
     ok: true,
-    user,
-    emailMatched,
-    phoneMatched,
-    matchOn:
-      emailMatched && phoneMatched
-        ? "email_and_phone"
-        : emailMatched
-          ? "email"
-          : phoneMatched
-            ? "phone"
-            : null,
+    user: matched.principal,
+    emailMatched: matched.emailMatched,
+    phoneMatched: matched.phoneMatched,
+    matchOn: matched.matchOn,
   };
 }
 
@@ -277,14 +260,18 @@ async function resolveBlessBoardRegistrationAdministrator(client, input = {}) {
     identity.kind === IDENTITY_KIND.OTHER_CHURCH ||
     identity.kind === IDENTITY_KIND.FRESH
   ) {
-    // Phone-only match (no email on the stored user, or email lookup missed) still reuses
-    // when the password verifies — never create a duplicate login.
-    const hash = user.password_hash;
-    if (!hash || !password) {
+    // Phone-only match still reuses when the password verifies — never create a duplicate login.
+    const authorized = await authorizeExistingPrincipalReuse({
+      passwordHash: user.password_hash,
+      password,
+      // BlessBoard public copy uses the generic existing-account message (not AC ack copy).
+      multiTenant: false,
+    });
+    if (!authorized.ok) {
       return {
         ok: false,
-        action: ACTION.REJECT_EXISTING_ACCOUNT,
-        reason: "existing_account_requires_sign_in",
+        action: authorized.action,
+        reason: authorized.reason,
         user,
         userId: String(user.id),
         emailMatched: matched.emailMatched,
@@ -292,39 +279,16 @@ async function resolveBlessBoardRegistrationAdministrator(client, input = {}) {
         matchOn: matched.matchOn,
         identityKind: identity.kind,
         diagnostics: {
-          identityResolution: "existing_account",
+          identityResolution:
+            authorized.reason === "existing_account_password_mismatch"
+              ? "existing_account_password_mismatch"
+              : "existing_account",
           emailMatched: matched.emailMatched,
           phoneMatched: matched.phoneMatched,
           matchOn: matched.matchOn,
           identityKind: identity.kind,
           passwordPresent: Boolean(password),
-          hashPresent: Boolean(hash),
-        },
-      };
-    }
-    let passwordOk = false;
-    try {
-      passwordOk = await bcrypt.compare(password, hash);
-    } catch {
-      passwordOk = false;
-    }
-    if (!passwordOk) {
-      return {
-        ok: false,
-        action: ACTION.REJECT_EXISTING_ACCOUNT,
-        reason: "existing_account_password_mismatch",
-        user,
-        userId: String(user.id),
-        emailMatched: matched.emailMatched,
-        phoneMatched: matched.phoneMatched,
-        matchOn: matched.matchOn,
-        identityKind: identity.kind,
-        diagnostics: {
-          identityResolution: "existing_account_password_mismatch",
-          emailMatched: matched.emailMatched,
-          phoneMatched: matched.phoneMatched,
-          matchOn: matched.matchOn,
-          identityKind: identity.kind,
+          hashPresent: Boolean(user.password_hash),
         },
       };
     }
