@@ -358,6 +358,8 @@ describe("v7 website image management — ActiveClinic", () => {
       draft.values["home.hero.image"].src,
       `/clinics/${result.slug}/website/media/${mediaId}`
     );
+    // Guard: owned draft persistence must never drop src when mediaId is present.
+    assert.ok(draft.values["home.hero.image"].src, "draft image src must not be null");
 
     const anonPage = await request(app).get(`/clinics/${result.slug}`);
     assert.equal(anonPage.status, 200);
@@ -869,6 +871,9 @@ describe("v7 website image management — BlessBoard", () => {
     });
     assert.equal(saved.published, false);
     assert.equal(saved.saved, true);
+    // Soft-fill demo path must rewrite to absolute CDN (never stay as /church/images).
+    assert.match(String(saved.payload && saved.payload.imageUrl), /^https:\/\//);
+    assert.doesNotMatch(String(saved.payload && saved.payload.imageUrl), /\/church\/images\//);
 
     const publicRes = await request(app).get("/").set("Host", HOST_A).expect(200);
     assert.doesNotMatch(publicRes.text, /data-bb-structured-open/);

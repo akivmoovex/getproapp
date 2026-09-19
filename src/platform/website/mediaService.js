@@ -635,15 +635,18 @@ function websiteMediaDeliveryPath(instance, mediaId) {
 function presentWebsiteMediaForClient(instance, media, env) {
   if (!media || !media.id) return media || null;
   let path = resolveWebsiteMediaPublicSrc(instance, media, env);
-  // HTML/API presentation: Hostinger → CDN only. App-mediated paths are not
-  // CDN presentation; leave publicSrc null so renderers omit forbidden URLs.
-  if (path && (path.startsWith("/c/") || path.startsWith("/clinics/") || path.startsWith("/media/"))) {
+  // Prefer absolute CDN for Hostinger /media keys. Keep app-mediated
+  // /c|/clinics/.../website/media/:id paths for database-payload rows — those
+  // are the authenticated/public delivery routes until objects live on CDN.
+  if (path && path.startsWith("/media/")) {
     const rewritten = presentRuntimeImageSrc(path, env);
     path = rewritten;
   }
-  // Last resort for CDN object keys when app-path nulling cleared the src.
   if (!path && isCdnObjectStorageKey(media.storageKey)) {
     path = presentCdnUrl(media.storageKey, env);
+  }
+  if (!path && media.id) {
+    path = websiteMediaDeliveryPath(instance, media.id);
   }
   if (!path) return { ...media, publicSrc: null, previewUrl: null };
   return {
@@ -700,7 +703,8 @@ async function hydrateWebsiteImageValue(db, input) {
     presentWebsiteMediaForClient(instance, loaded.media, env).publicSrc ||
     (isCdnObjectStorageKey(loaded.media.storageKey)
       ? presentCdnUrl(loaded.media.storageKey, env)
-      : null);
+      : null) ||
+    websiteMediaDeliveryPath(instance, loaded.media.id);
   return {
     src: publicSrc || null,
     alt: presented.alt,
@@ -756,19 +760,22 @@ async function assertOwnedWebsiteImageValue(db, input) {
   }
 
   function ownedImageValue(ownedMedia, env) {
+    const presented = presentWebsiteMediaForClient(instance, ownedMedia, env);
     const cdnSrc =
-      presentWebsiteMediaForClient(instance, ownedMedia, env).publicSrc ||
+      (presented && presented.publicSrc) ||
       (isCdnObjectStorageKey(ownedMedia.storageKey)
         ? presentCdnUrl(ownedMedia.storageKey, env)
         : null);
-    // Never persist src:null for an owned media row that has a CDN object key —
-    // that is the BB-BUG-002 / BB-1.1-017 refresh→placeholder failure mode.
+    // Never persist src:null for an owned media row — CDN when available,
+    // otherwise the tenant app delivery path (database-payload / local QA).
+    // Nulling here caused draft refresh → missing image (image-management suite).
+    const src = cdnSrc || websiteMediaDeliveryPath(instance, ownedMedia.id);
     return {
       ok: true,
       value: {
         ...value,
         mediaId: ownedMedia.id,
-        src: cdnSrc,
+        src,
       },
     };
   }

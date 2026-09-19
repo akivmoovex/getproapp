@@ -298,8 +298,12 @@ describe("v7 hostinger media storage — HTTP + metadata", () => {
     assert.equal(payload.ok, true);
     assert.ok(payload.buffer && payload.buffer.length > 0);
     const presented = mediaService.presentWebsiteMediaForClient(ctx.instance, legacy.media);
-    // Legacy database-payload media has no CDN object — presentation omits forbidden routes.
-    assert.equal(presented.publicSrc, null);
+    // Legacy database-payload media has no CDN object — keep the tenant app
+    // delivery path so draft save / editor preview / published HTML still work.
+    assert.match(
+      String(presented.publicSrc || ""),
+      new RegExp(`^/c/${ctx.instance.slug}/website/media/${legacy.media.id}$`)
+    );
   });
 
   it("testing + explicit MEDIA_STORAGE_ROOT: env wins over account-home fallback", () => {

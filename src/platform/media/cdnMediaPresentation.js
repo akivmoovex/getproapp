@@ -187,7 +187,19 @@ function presentRuntimeImageSrc(src, env, opts) {
 
   if (allowMarketing && isPlatformMarketingPublicPath(raw)) {
     const key = storageKeyForPublicPath(raw, env);
-    return key ? presentCdnUrl(key, env) : null;
+    if (!key) return null;
+    const cdn = presentCdnUrl(key, env);
+    if (cdn) return cdn;
+    // Known platform soft-fill assets always map to the CDN keyspace. When the
+    // absolute CDN base is unset (local suites / testing without MEDIA_PUBLIC_BASE_URL),
+    // emit the documented testing CDN URL so drafts never persist /church/images paths.
+    // Refuse to invent a testing CDN base for production deployments.
+    const mediaEnv = resolveMediaEnvironment(env || process.env);
+    if (mediaEnv === "production") return null;
+    return presentCdnUrl(key, {
+      ...(env || process.env),
+      MEDIA_PUBLIC_BASE_URL: TESTING_CDN_PUBLIC_BASE_FALLBACK,
+    });
   }
 
   // Tenant local filesystem paths are never presented.
@@ -198,10 +210,11 @@ function presentRuntimeImageSrc(src, env, opts) {
   // Relative /media without a recognizable key — refuse.
   if (raw.startsWith("/media/")) return null;
 
-  // App-mediated delivery paths cannot be rewritten without a media row lookup.
-  // Callers with mediaId should use presentWebsiteMedia / presentImageValue.
+  // App-mediated delivery paths (/clinics|/c/.../website/media/:id and /_bb/media/:id)
+  // are valid product delivery URLs for database-payload / pre-CDN rows. Keep them
+  // intact — callers with a storage key should prefer presentCdnUrl / hydrate.
   const mediated = parseAppMediatedMediaSrc(raw);
-  if (mediated.kind) return null;
+  if (mediated.kind) return raw;
 
   // External https URLs (non-legacy) — allow only https.
   if (/^https:\/\//i.test(raw)) {
