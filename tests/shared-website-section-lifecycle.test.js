@@ -240,4 +240,10 @@ describe("shared website section lifecycle (BUG-007)", () => {
     assert.match(sql, /add_section/);
     assert.match(sql, /wsd_op_check/);
   });
+
+  it("HQ branch editor routes keep church-scoped draft branch ids", () => {
+    const src = read("src/blessboard/http/blessboardWebsiteEditorRoutes.js");
+    assert.match(src, /hqBranch && resolved\.tenant\.hqBranch\.id/);
+    assert.match(src, /church-scoped drafts/);
+  });
 });

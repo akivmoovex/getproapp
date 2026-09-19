@@ -152,7 +152,15 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
   const pathPrefix = opts.pathPrefix;
 
   function editorBranchId(resolved) {
-    return resolved && resolved.branchId ? String(resolved.branchId) : null;
+    if (!resolved || !resolved.branchId) return null;
+    const hqId =
+      resolved.tenant && resolved.tenant.hqBranch && resolved.tenant.hqBranch.id
+        ? String(resolved.tenant.hqBranch.id)
+        : "";
+    // HQ branch public paths (/c/:org/hq/...) share church-scoped drafts with the
+    // editor chrome (branch_id NULL), not the HQ branch UUID.
+    if (hqId && String(resolved.branchId) === hqId) return null;
+    return String(resolved.branchId);
   }
 
   function editorBranchKey(resolved) {
