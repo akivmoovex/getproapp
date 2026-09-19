@@ -234,4 +234,10 @@ describe("shared website section lifecycle (BUG-007)", () => {
     assert.equal(manifest.selectorAttr, "data-ac-section-id");
     assert.equal(manifest.sections[0].canRemove, true);
   });
+
+  it("blessboard migration allows add_section structured draft op", () => {
+    const sql = read("db/migrations/blessboard/107_website_structured_draft_add_section_op.sql");
+    assert.match(sql, /add_section/);
+    assert.match(sql, /wsd_op_check/);
+  });
 });
