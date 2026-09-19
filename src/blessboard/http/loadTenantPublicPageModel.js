@@ -38,6 +38,59 @@ function safePublicImageUrl(value, env) {
   if (!allowed) return null;
   return presentRuntimeImageSrc(allowed, env || process.env);
 }
+
+/**
+ * Rewrite app-mediated website-engine media paths to absolute CDN URLs when the
+ * Hostinger object exists. Keeps database-payload delivery paths unchanged.
+ * @param {import('pg').Pool|null} db
+ * @param {string|null|undefined} organizationId
+ * @param {string|null|undefined} src
+ * @param {NodeJS.ProcessEnv} [env]
+ * @returns {Promise<string|null>}
+ */
+async function hydratePublicImageUrl(db, organizationId, src, env) {
+  const presented = safePublicImageUrl(src, env);
+  if (!presented) return null;
+  if (/^https:\/\//i.test(presented)) return presented;
+  const { parseAppMediatedMediaSrc } = require("../../platform/media/cdnMediaPresentation");
+  const mediated = parseAppMediatedMediaSrc(presented);
+  if (!mediated.mediaId || !organizationId || !db || typeof db.query !== "function") {
+    return presented;
+  }
+  const mediaService = require("../../platform/website/mediaService");
+  const hydrated = await mediaService.hydrateWebsiteImageValue(db, {
+    organizationId,
+    value: { mediaId: mediated.mediaId, src: presented },
+    env: env || process.env,
+  });
+  if (hydrated && hydrated.src && /^https:\/\//i.test(hydrated.src)) {
+    return hydrated.src;
+  }
+  return presented;
+}
+
+async function hydrateEntityImageUrls(db, organizationId, items, env) {
+  if (!Array.isArray(items) || !items.length) return items;
+  const out = [];
+  for (const item of items) {
+    if (!item || typeof item !== "object") {
+      out.push(item);
+      continue;
+    }
+    const next = { ...item };
+    if (next.imageUrl) {
+      next.imageUrl = await hydratePublicImageUrl(db, organizationId, next.imageUrl, env);
+    }
+    if (next.mediaUrl) {
+      next.mediaUrl = await hydratePublicImageUrl(db, organizationId, next.mediaUrl, env);
+    }
+    if (next.thumbnailUrl) {
+      next.thumbnailUrl = await hydratePublicImageUrl(db, organizationId, next.thumbnailUrl, env);
+    }
+    out.push(next);
+  }
+  return out;
+}
 const {
   resolvePublicServiceTimesEntries,
 } = require("../services/homeServiceTimesService");
@@ -1671,6 +1724,43 @@ async function loadTenantPublicPageModel(db, input) {
       entities = softFillDemoSermonImages(entities);
     }
     showEmptyState = false;
+  }
+
+  // Historical structured rows may still store app-mediated /c/.../website/media/:id.
+  // Prefer absolute CDN URLs for public HTML when Hostinger objects exist.
+  if (organizationId && Array.isArray(entities) && entities.length) {
+    entities = await hydrateEntityImageUrls(db, organizationId, entities, process.env);
+  }
+  if (homeTeasers && typeof homeTeasers === "object") {
+    if (Array.isArray(homeTeasers.leaders)) {
+      homeTeasers = {
+        ...homeTeasers,
+        leaders: await hydrateEntityImageUrls(db, organizationId, homeTeasers.leaders, process.env),
+      };
+    }
+    if (Array.isArray(homeTeasers.ministries)) {
+      homeTeasers = {
+        ...homeTeasers,
+        ministries: await hydrateEntityImageUrls(
+          db,
+          organizationId,
+          homeTeasers.ministries,
+          process.env
+        ),
+      };
+    }
+    if (Array.isArray(homeTeasers.events)) {
+      homeTeasers = {
+        ...homeTeasers,
+        events: await hydrateEntityImageUrls(db, organizationId, homeTeasers.events, process.env),
+      };
+    }
+    if (Array.isArray(homeTeasers.sermons)) {
+      homeTeasers = {
+        ...homeTeasers,
+        sermons: await hydrateEntityImageUrls(db, organizationId, homeTeasers.sermons, process.env),
+      };
+    }
   }
 
   if (pageKey === "contact") {

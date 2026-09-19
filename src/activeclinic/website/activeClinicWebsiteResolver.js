@@ -322,10 +322,56 @@ async function resolveActiveClinicWebsite(db, input) {
   const operational = operationalFromClinic(clinicWithCatalogue);
   if (input.operational) Object.assign(operational, input.operational);
 
+  const clinicPresented = mergeClinicPresentation(clinicWithCatalogue, resolved, operational);
+  if (instance && clinic.organizationId) {
+    const mediaService = require("../../platform/website/mediaService");
+    const env = (input && input.env) || process.env;
+    const hydrateKey = async (key) => {
+      const raw = clinicPresented.websiteContent && clinicPresented.websiteContent[key];
+      if (!raw) return;
+      const hydrated = await mediaService.hydrateWebsiteImageValue(db, {
+        organizationId: clinic.organizationId,
+        instance,
+        value: raw,
+        env,
+      });
+      if (!hydrated || !hydrated.src) return;
+      clinicPresented.websiteContent[key] = {
+        ...(typeof raw === "object" && raw ? raw : {}),
+        ...hydrated,
+      };
+      if (key === "home.hero.image") {
+        clinicPresented.websiteHeroUrl = hydrated.src;
+        if (hydrated.alt) clinicPresented.websiteHeroAlt = hydrated.alt;
+      }
+      if (key === "home.logo") {
+        clinicPresented.websiteLogoUrl = hydrated.src;
+        clinicPresented.websiteLogoMediaId = hydrated.mediaId || clinicPresented.websiteLogoMediaId;
+        if (hydrated.alt) clinicPresented.websiteLogoAlt = hydrated.alt;
+      }
+      if (key === "about.story.image") {
+        clinicPresented.aboutStoryImageSrc = hydrated.src;
+        clinicPresented.aboutStoryImageMediaId =
+          hydrated.mediaId || clinicPresented.aboutStoryImageMediaId;
+        if (hydrated.alt) clinicPresented.aboutStoryImageAlt = hydrated.alt;
+      }
+    };
+    await Promise.all([
+      hydrateKey("home.hero.image"),
+      hydrateKey("home.logo"),
+      hydrateKey("about.story.image"),
+      hydrateKey("seo.image"),
+    ]);
+    if (clinicPresented.websiteContent && clinicPresented.websiteContent["seo.image"]) {
+      const seo = clinicPresented.websiteContent["seo.image"];
+      if (seo && seo.src) clinicPresented.seoImageUrl = seo.src;
+    }
+  }
+
   return {
     ok: true,
     code: VISIBILITY.OK,
-    clinic: mergeClinicPresentation(clinicWithCatalogue, resolved, operational),
+    clinic: clinicPresented,
     instance: instance || null,
     resolved,
     operational,

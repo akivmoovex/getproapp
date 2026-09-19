@@ -67,7 +67,10 @@ async function assertEntityKeysInChurch(db, input) {
 }
 
 async function assertMediaAssetsInChurch(db, input) {
+  const { presentCdnUrl } = require("../../platform/media/cdnMediaPresentation");
   const urls = collectStructuredImageUrls(input.payload);
+  const payload = input.payload && typeof input.payload === "object" ? input.payload : null;
+  const imageKeys = ["imageUrl", "thumbnailUrl", "qrImageUrl", "mediaUrl", "coverImage"];
   for (const url of urls) {
     const id = parseStructuredMediaAssetId(url);
     if (id) {
@@ -89,6 +92,16 @@ async function assertMediaAssetsInChurch(db, input) {
       });
       if (!loaded.ok || !loaded.media || loaded.media.status !== "active") {
         throw mapError("NOT_FOUND", "Image not found.", 404);
+      }
+      // Persist absolute CDN URL when the object lives on Hostinger — never leave
+      // app-mediated /c/.../website/media/:id paths in published structured content.
+      if (payload && mediaService.isCdnObjectStorageKey(loaded.media.storageKey)) {
+        const cdnSrc = presentCdnUrl(loaded.media.storageKey, process.env);
+        if (cdnSrc && /^https:\/\//i.test(cdnSrc)) {
+          for (const key of imageKeys) {
+            if (payload[key] === url) payload[key] = cdnSrc;
+          }
+        }
       }
     }
   }
