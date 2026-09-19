@@ -348,6 +348,10 @@ describe("v7 shared website editor — HTTP matrix", () => {
     assert.match(orgEntry.headers.location, new RegExp(`/c/${rec.organizationKey}/${branchKey}`));
 
     const branchBase = `/c/${rec.organizationKey}/${branchKey}`;
+    const churchWideBase = `/c/${rec.organizationKey}`;
+    // Primary/HQ public URLs use church-wide CMS + draft endpoints (not branch mini-site).
+    const draftsPath = `${churchWideBase}/website/drafts`;
+    const publishPath = `${churchWideBase}/website/publish`;
     const edit = await request(app)
       .get(`${branchBase}?website_edit=1&website_mode=draft`)
       .set("Host", APEX)
@@ -355,6 +359,7 @@ describe("v7 shared website editor — HTTP matrix", () => {
     assert.equal(edit.status, 200, edit.text && edit.text.slice(0, 400));
     assert.match(edit.text, /data-website-engine-shell="1"/);
     assert.match(edit.text, /data-website-chrome="1"/);
+    assert.match(edit.text, /data-bb-website-scope="church"/);
     assert.match(edit.text, /data-website-key="home\.hero\.heading"/);
     assert.match(edit.text, /data-website-field-editor="1"/);
     assert.match(edit.text, /data-website-start="1"/);
@@ -363,7 +368,7 @@ describe("v7 shared website editor — HTTP matrix", () => {
     assert.match(edit.text, /data-website-structured="1"/);
     assert.match(
       edit.text,
-      new RegExp(`${branchBase.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}/website/drafts`)
+      new RegExp(`${draftsPath.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}`)
     );
 
     const csrf = extractCsrf(edit.text);
@@ -371,7 +376,7 @@ describe("v7 shared website editor — HTTP matrix", () => {
     const cookies = cookieHeader(cookie, edit);
     const heading = `Shared BB ${key}`;
     const saved = await request(app)
-      .post(`${branchBase}/website/drafts`)
+      .post(draftsPath)
       .set("Host", APEX)
       .set("Cookie", cookies)
       .set("X-CSRF-Token", csrf)
@@ -412,7 +417,7 @@ describe("v7 shared website editor — HTTP matrix", () => {
       actorUserId: rec.administratorUserId,
     });
     const published = await request(app)
-      .post(`${branchBase}/website/publish`)
+      .post(publishPath)
       .set("Host", APEX)
       .set("Cookie", cookies)
       .set("Accept", "application/json")
