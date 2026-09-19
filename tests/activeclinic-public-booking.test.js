@@ -404,4 +404,108 @@ describe("ActiveClinic public booking (P24–P26)", () => {
     assert.match(cancelPost.text, /not yet cancelled/i);
     assert.match(cancelPost.text, /request — your booking is/i);
   });
+
+  it("BUG-001: wizard navigation POSTs are not blocked by submit rate limit", async () => {
+    if (!requireDb()) return;
+    const stamp = Date.now().toString(36);
+    const tenant = await provisionBookableClinic(stamp);
+    const app = createActiveClinicFoundationApp({
+      getPool: () => pool,
+      env: {
+        NODE_ENV: "test",
+        // Would previously exhaust after ~10 shared wizard posts and return JSON 429.
+        AC_BOOKING_SUBMIT_RATE_MAX: "2",
+        PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6,
+        SESSION_SECRET: "a".repeat(48),
+        DATABASE_URL: databaseUrl,
+      },
+    });
+    const base = `/clinics/${tenant.orgKey}`;
+    let cookies = [];
+    const entry = await request(app).get(`${base}/book`);
+    cookies = mergeCookies(cookies, entry);
+    let csrf = extractCsrf(entry);
+
+    for (let i = 0; i < 12; i += 1) {
+      const step = await request(app)
+        .post(`${base}/book`)
+        .set("Cookie", cookies)
+        .type("form")
+        .send({ [CSRF_FIELD]: csrf, wizardAction: "continue", serviceKey: "" });
+      assert.notEqual(step.status, 429, `wizard navigation must not 429 at attempt ${i + 1}`);
+      assert.doesNotMatch(String(step.headers["content-type"] || ""), /json/i);
+      cookies = mergeCookies(cookies, step);
+      const doctor = await request(app).get(`${base}/book/doctor`).set("Cookie", cookies);
+      cookies = mergeCookies(cookies, doctor);
+      csrf = extractCsrf(doctor);
+    }
+  });
+
+  it("BUG-001: booking submit rate limit returns HTML and still allows a valid first submit", async () => {
+    if (!requireDb()) return;
+    const stamp = Date.now().toString(36);
+    const tenant = await provisionBookableClinic(stamp);
+    const app = createActiveClinicFoundationApp({
+      getPool: () => pool,
+      env: {
+        NODE_ENV: "test",
+        AC_BOOKING_SUBMIT_RATE_MAX: "1",
+        PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6,
+        SESSION_SECRET: "a".repeat(48),
+        DATABASE_URL: databaseUrl,
+      },
+    });
+    const base = `/clinics/${tenant.orgKey}`;
+
+    async function completeToSubmit(label) {
+      let cookies = [];
+      const entry = await request(app).get(`${base}/book`);
+      cookies = mergeCookies(cookies, entry);
+      let csrf = extractCsrf(entry);
+      let r = await request(app).post(`${base}/book`).set("Cookie", cookies).type("form")
+        .send({ [CSRF_FIELD]: csrf, wizardAction: "continue", serviceKey: "" });
+      cookies = mergeCookies(cookies, r);
+      r = await request(app).get(`${base}/book/doctor`).set("Cookie", cookies);
+      cookies = mergeCookies(cookies, r);
+      csrf = extractCsrf(r);
+      r = await request(app).post(`${base}/book/doctor`).set("Cookie", cookies).type("form")
+        .send({ [CSRF_FIELD]: csrf, doctorChoice: "any" });
+      cookies = mergeCookies(cookies, r);
+      r = await request(app).get(`${base}/book/slot`).set("Cookie", cookies);
+      cookies = mergeCookies(cookies, r);
+      csrf = extractCsrf(r);
+      r = await request(app).post(`${base}/book/slot`).set("Cookie", cookies).type("form")
+        .send({ [CSRF_FIELD]: csrf, preferredStartsAt: "2030-09-01T10:00" });
+      cookies = mergeCookies(cookies, r);
+      r = await request(app).get(`${base}/book/patient`).set("Cookie", cookies);
+      cookies = mergeCookies(cookies, r);
+      csrf = extractCsrf(r);
+      r = await request(app).post(`${base}/book/patient`).set("Cookie", cookies).type("form")
+        .send({
+          [CSRF_FIELD]: csrf,
+          patientFirstName: "Rate",
+          patientLastName: label,
+          phone_country: "ZM",
+          phone_national: nextPhone().replace(/^\+260/, ""),
+          visitReason: "BUG-001 rate limit regression",
+        });
+      cookies = mergeCookies(cookies, r);
+      r = await request(app).get(`${base}/book/review`).set("Cookie", cookies);
+      cookies = mergeCookies(cookies, r);
+      csrf = extractCsrf(r);
+      const idem = r.text.match(/name="idempotencyKey"\s+value="([^"]+)"/)[1];
+      return request(app).post(`${base}/book/submit`).set("Cookie", cookies).type("form")
+        .send({ [CSRF_FIELD]: csrf, idempotencyKey: idem });
+    }
+
+    const first = await completeToSubmit("One");
+    assert.equal(first.status, 200);
+    assert.match(first.text, /Request submitted/i);
+
+    const second = await completeToSubmit("Two");
+    assert.equal(second.status, 429);
+    assert.match(String(second.headers["content-type"] || ""), /html/i);
+    assert.match(second.text, /Too many booking submissions/i);
+    assert.doesNotMatch(second.text, /rate_limit_exceeded/);
+  });
 });

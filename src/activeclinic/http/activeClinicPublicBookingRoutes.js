@@ -200,7 +200,13 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
     }
   });
 
-  app.post("/clinics/:clinicKey/book", bookingLimiter, async (req, res, next) => {
+  app.post("/clinics/:clinicKey/book", (req, res, next) => {
+    // Wizard navigation only updates a draft cookie — do not consume submit budget.
+    if (String((req.body && req.body.wizardAction) || "").trim() === "continue") {
+      return next();
+    }
+    return bookingLimiter(req, res, next);
+  }, async (req, res, next) => {
     try {
       const clinicKey = req.params.clinicKey;
       const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
@@ -320,7 +326,7 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
     }
   });
 
-  app.post("/clinics/:clinicKey/book/doctor", bookingLimiter, async (req, res, next) => {
+  app.post("/clinics/:clinicKey/book/doctor", async (req, res, next) => {
     try {
       const clinicKey = req.params.clinicKey;
       const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
@@ -396,7 +402,7 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
     }
   });
 
-  app.post("/clinics/:clinicKey/book/slot", bookingLimiter, async (req, res, next) => {
+  app.post("/clinics/:clinicKey/book/slot", async (req, res, next) => {
     try {
       const clinicKey = req.params.clinicKey;
       const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
@@ -450,7 +456,7 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
     }
   });
 
-  app.post("/clinics/:clinicKey/book/patient", bookingLimiter, async (req, res, next) => {
+  app.post("/clinics/:clinicKey/book/patient", async (req, res, next) => {
     try {
       const clinicKey = req.params.clinicKey;
       const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
@@ -543,6 +549,8 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
         patientFirstName: draft.patientFirstName,
         patientLastName: draft.patientLastName,
         patientPhone: draft.patientPhone,
+        phoneCountry: draft.phoneCountry || null,
+        phoneNational: draft.phoneNational || null,
         patientEmail: draft.patientEmail,
         visitReason: draft.visitReason,
         preferredStartsAt: draft.preferredStartsAt || null,
@@ -632,7 +640,7 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
     }
   });
 
-  app.post("/clinics/:clinicKey/book/procedures/:procedureKey", bookingLimiter, async (req, res, next) => {
+  app.post("/clinics/:clinicKey/book/procedures/:procedureKey", async (req, res, next) => {
     try {
       const clinicKey = req.params.clinicKey;
       const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
@@ -714,7 +722,7 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
     }
   });
 
-  app.post("/clinics/:clinicKey/book/procedures/:procedureKey/referral", bookingLimiter, async (req, res, next) => {
+  app.post("/clinics/:clinicKey/book/procedures/:procedureKey/referral", async (req, res, next) => {
     try {
       const clinicKey = req.params.clinicKey;
       const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
@@ -793,7 +801,7 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
     }
   });
 
-  app.post("/clinics/:clinicKey/book/procedures/:procedureKey/time", bookingLimiter, async (req, res, next) => {
+  app.post("/clinics/:clinicKey/book/procedures/:procedureKey/time", async (req, res, next) => {
     try {
       const clinicKey = req.params.clinicKey;
       const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);
@@ -874,7 +882,7 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
     }
   });
 
-  app.post("/clinics/:clinicKey/book/procedures/:procedureKey/patient", bookingLimiter, async (req, res, next) => {
+  app.post("/clinics/:clinicKey/book/procedures/:procedureKey/patient", async (req, res, next) => {
     try {
       const clinicKey = req.params.clinicKey;
       const resolved = await resolveBookableClinic(getPool, req, res, respondDeps);

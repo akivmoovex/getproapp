@@ -426,14 +426,31 @@ function registerActiveClinicPublicRoutes(app, deps) {
     },
   });
 
+  // Submit-only: wizard navigation POSTs only update a signed draft cookie and must
+  // not share a tight IP bucket. Patient phone is not present on /book/submit bodies
+  // (it lives in the draft), so key by clinic + IP. Override via AC_BOOKING_SUBMIT_RATE_MAX.
+  const bookingSubmitRateMaxRaw = Number(env.AC_BOOKING_SUBMIT_RATE_MAX);
+  const bookingSubmitRateMax =
+    Number.isFinite(bookingSubmitRateMaxRaw) && bookingSubmitRateMaxRaw > 0
+      ? bookingSubmitRateMaxRaw
+      : String(env.NODE_ENV || "") === "test"
+        ? 1000
+        : 10;
   const bookingLimiter = rateLimit({
     windowMs: 15 * 60 * 1000,
-    limit: String(env.NODE_ENV || "") === "test" ? 1000 : 10,
+    limit: bookingSubmitRateMax,
     standardHeaders: true,
     legacyHeaders: false,
-    keyGenerator: (req) => sha256Hex(`booking|${req.params.clinicKey}|${req.body && req.body.patientPhone}|${clientIp(req)}`),
+    keyGenerator: (req) =>
+      sha256Hex(`booking-submit|${req.params.clinicKey || ""}|${clientIp(req)}`),
     handler: (req, res) => {
-      return res.status(429).json({ ok: false, code: "rate_limit_exceeded" });
+      const clinicKey = String((req.params && req.params.clinicKey) || "").trim();
+      const backHref = clinicKey
+        ? `/clinics/${encodeURIComponent(clinicKey)}/book`
+        : "/clinics";
+      return res.status(429).type("html").send(
+        `<!DOCTYPE html><html lang="en"><head><meta charset="utf-8"/><meta name="viewport" content="width=device-width, initial-scale=1"/><title>Too many requests</title></head><body><h1>Too many booking submissions</h1><p>Please wait a few minutes and try again.</p><p><a href="${backHref}">Return to booking</a></p></body></html>`
+      );
     },
   });
 
