@@ -13,6 +13,9 @@ const {
   PASSWORD_MIN,
   PASSWORD_MAX,
 } = require("./registrationPasswordPolicy");
+const {
+  buildRegistrationCountryLocals,
+} = require("./registrationCountrySelection");
 
 /**
  * Build an inbound registration wizard link that preserves draft state.
@@ -50,6 +53,12 @@ function buildRegistrationStepHref(product, extra = {}) {
 function buildRegistrationPageLocals(reqOrQuery, product, extra = {}) {
   const step = extra && extra.step != null ? String(extra.step) : null;
   const plan = extra && extra.plan != null ? String(extra.plan) : null;
+  const selectedCountry =
+    (extra && (extra.selectedCountry || extra.countryCode || extra.country)) || null;
+  const countryLocals = buildRegistrationCountryLocals(product, {
+    env: (extra && extra.env) || process.env,
+    selectedCountry,
+  });
   return {
     registrationReturn: parseRegistrationReturnContext(reqOrQuery, product),
     ...registrationLinkLocals({ product, step, plan }),
@@ -61,6 +70,7 @@ function buildRegistrationPageLocals(reqOrQuery, product, extra = {}) {
     passwordRules: REGISTRATION_PASSWORD_RULES,
     passwordMin: PASSWORD_MIN,
     passwordMax: PASSWORD_MAX,
+    ...countryLocals,
   };
 }
 

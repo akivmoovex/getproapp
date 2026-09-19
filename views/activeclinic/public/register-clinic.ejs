@@ -2,7 +2,9 @@
 <% const fd = formData || {}; %>
 <% const verr = validationErrors || {}; %>
 <% const types = Array.isArray(clinicTypeOptions) ? clinicTypeOptions : []; %>
-<% const countries = typeof phoneCountries !== 'undefined' && Array.isArray(phoneCountries) ? phoneCountries : []; %>
+<% const countries = (typeof registrationCountries !== 'undefined' && Array.isArray(registrationCountries) && registrationCountries.length)
+  ? registrationCountries
+  : (typeof phoneCountries !== 'undefined' && Array.isArray(phoneCountries) ? phoneCountries : []); %>
 <% const provinceOptions = typeof zambiaProvinces !== 'undefined' && Array.isArray(zambiaProvinces) ? zambiaProvinces : []; %>
 <% const isZambia = String(fd.countryCode || 'ZM').toUpperCase() === 'ZM'; %>
 <section

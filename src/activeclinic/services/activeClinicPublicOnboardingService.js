@@ -26,6 +26,10 @@ const {
   isZambiaCountryCode,
   listZambiaProvinces,
 } = require("../../platform/geography/locationService");
+const {
+  normalizeRegistrationCountryCode,
+} = require("../../platform/registration/registrationCountrySelection");
+const { PRODUCT } = require("../../platform/registration/constants");
 
 const BCRYPT_ROUNDS = 12;
 
@@ -132,8 +136,12 @@ function validateClinicRegistrationInput(input, options) {
   // Match SQL CHECKs: clinic_name 2–200, contact_name 2–120, notes null or 1–2000.
   const clinicName = trimName(input.clinicName, 200, 2);
   const contactName = clinicOnly ? null : trimName(input.contactName, 120, 2);
-  const countryRaw = String(input.countryCode || "").trim().toUpperCase();
-  const countryCode = /^[A-Z]{2}$/.test(countryRaw) ? countryRaw : (clinicOnly ? "" : "ZM");
+  const countryResult = normalizeRegistrationCountryCode(input.countryCode, {
+    product: PRODUCT.ACTIVECLINIC,
+    required: Boolean(clinicOnly) || Boolean(String(input.countryCode || "").trim()),
+    fallbackCountry: "ZM",
+  });
+  const countryCode = countryResult.ok ? countryResult.value : "";
   const provinceRaw = input.province != null ? String(input.province).trim() : "";
   const provinceResult = validateProvinceForCountry(countryCode || "ZM", provinceRaw);
   const province = provinceResult.ok ? provinceResult.province : null;
@@ -152,10 +160,11 @@ function validateClinicRegistrationInput(input, options) {
     errors.clinicType = clinicTypeResult.error;
   }
 
-  if (clinicOnly && !countryCode) {
+  if (!countryResult.ok) {
+    errors.countryCode = countryResult.error || "Select a country.";
+  } else if (clinicOnly && !countryCode) {
     errors.countryCode = "Select a country.";
   }
-
   if (addressRaw && !address) {
     errors.address = "Enter a street address of 1–300 characters, or leave it blank.";
   }

@@ -330,7 +330,9 @@
                   <%= fieldHasError('country') ? 'aria-invalid="true"' : '' %>
                 >
                   <%
-                    var churchCountryList = (typeof phoneCountries !== 'undefined' && phoneCountries) || (typeof countries !== 'undefined' && countries) || [];
+                    var churchCountryList = (typeof registrationCountries !== 'undefined' && registrationCountries && registrationCountries.length)
+                      ? registrationCountries
+                      : ((typeof phoneCountries !== 'undefined' && phoneCountries) || (typeof countries !== 'undefined' && countries) || []);
                     var selectedChurchCountry = String(formData.country || defaultCountry || 'ZM').toUpperCase();
                     churchCountryList.forEach(function (c) {
                   %>

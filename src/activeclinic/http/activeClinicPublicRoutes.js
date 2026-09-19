@@ -278,8 +278,10 @@ function registerPageLocals(extra) {
     success: "Clinic created",
     error: "Registration unavailable",
   };
+  const formData = extra.formData || {};
   const registrationLocals = buildRegistrationPageLocals(extra.req || null, REG_PRODUCT.ACTIVECLINIC, {
     step,
+    selectedCountry: formData.countryCode || formData.country || null,
   });
   return {
     pageTitle: extra.pageTitle || titles[step] || "Register your clinic",
@@ -291,7 +293,7 @@ function registerPageLocals(extra) {
     wizardStep: step,
     formState: extra.formState || "form",
     validationErrors: extra.validationErrors || {},
-    formData: extra.formData || {},
+    formData,
     error: extra.error || null,
     ...registrationLocals,
     ...extra,

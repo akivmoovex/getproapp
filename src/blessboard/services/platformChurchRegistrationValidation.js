@@ -14,9 +14,13 @@ const { normalizeRegistrationPhone } = require("./normalizeRegistrationPhone");
 const { prepareBranchDisplayName } = require("./normalizeBranchDisplayName");
 const {
   extractPhoneFieldsFromBody,
-  listPhoneCountries,
 } = require("../../platform/services/phoneNumberService");
 const { resolveCountryCodeForUniqueness } = require("./normalizeChurchIdentity");
+const {
+  normalizeRegistrationCountryCode,
+  isSupportedRegistrationCountry,
+} = require("../../platform/registration/registrationCountrySelection");
+const { PRODUCT } = require("../../platform/registration/constants");
 const {
   PUBLIC_PLAN_CODES,
   DB_PLAN_KEYS,
@@ -179,21 +183,23 @@ function validateAdministratorPassword(password, passwordConfirm) {
  * @param {unknown} raw
  */
 function isKnownRegistrationCountry(iso) {
-  const code = String(iso || "").trim().toUpperCase();
-  if (!/^[A-Z]{2}$/.test(code)) return false;
-  return listPhoneCountries().some((row) => row.iso === code);
+  return isSupportedRegistrationCountry(PRODUCT.BLESSBOARD, iso);
 }
 
 /**
- * Church physical country — ISO-2 from the shared phone/country catalogue.
+ * Church physical country — ISO-2 from the shared registration country catalogue.
  * @param {unknown} raw
  */
 function validateChurchCountry(raw) {
-  const iso = resolveCountryCodeForUniqueness(raw);
-  if (!iso || !isKnownRegistrationCountry(iso)) {
-    return { ok: false, error: "Please select a country.", field: "country" };
+  const fromIso = resolveCountryCodeForUniqueness(raw);
+  const normalized = normalizeRegistrationCountryCode(fromIso || raw, {
+    product: PRODUCT.BLESSBOARD,
+    required: true,
+  });
+  if (!normalized.ok) {
+    return { ok: false, error: normalized.error || "Please select a country.", field: "country" };
   }
-  return { ok: true, value: iso };
+  return { ok: true, value: normalized.value };
 }
 
 /**

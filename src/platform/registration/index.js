@@ -63,4 +63,6 @@ module.exports = {
   retryTenantProvisioningIfUnhealthy,
   presentTenantHealthSummary,
   ...require("./registrationSuccessPresentation"),
+  ...require("./registrationCountrySelection"),
+  ...require("./registrationRenderLocals"),
 };

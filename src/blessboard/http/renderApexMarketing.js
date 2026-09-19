@@ -49,7 +49,13 @@ function registrationLocalsFromOpts(opts) {
     (opts && opts.selectedPlan) ||
     (opts && opts.form && opts.form.selected_plan) ||
     null;
-  return buildRegistrationPageLocals(opts && opts.req, REG_PRODUCT.BLESSBOARD, { step, plan });
+  const form = (opts && opts.form) || {};
+  return buildRegistrationPageLocals(opts && opts.req, REG_PRODUCT.BLESSBOARD, {
+    step,
+    plan,
+    selectedCountry: form.country || null,
+    env: (opts && opts.env) || process.env,
+  });
 }
 
 function renderApexView(relativePath, data) {
