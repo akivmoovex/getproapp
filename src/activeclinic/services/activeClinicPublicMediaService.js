@@ -298,7 +298,21 @@ function enrichServiceMedia(service, env) {
  */
 function enrichPublicLocals(locals, env = process.env) {
   const out = { ...(locals || {}) };
-  if (out.clinic) out.clinic = enrichClinicMedia(out.clinic, env);
+  if (out.clinic) {
+    out.clinic = enrichClinicMedia(out.clinic, env);
+    if (Array.isArray(out.clinic.doctors)) {
+      out.clinic = {
+        ...out.clinic,
+        doctors: out.clinic.doctors.map((p) => enrichDoctorMedia(p, env)),
+      };
+    }
+    if (Array.isArray(out.clinic.services)) {
+      out.clinic = {
+        ...out.clinic,
+        services: out.clinic.services.map((s) => enrichServiceMedia(s, env)),
+      };
+    }
+  }
   if (out.profile) out.profile = enrichDoctorMedia(out.profile, env);
   if (Array.isArray(out.profiles)) {
     out.profiles = out.profiles.map((p) => enrichDoctorMedia(p, env));

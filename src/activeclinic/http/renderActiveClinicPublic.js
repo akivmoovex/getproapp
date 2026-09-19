@@ -100,9 +100,7 @@ function renderPublicPage(input) {
     error: null,
     validationErrors: {},
     clinics: [],
-    services: [],
     procedures: [],
-    profiles: [],
     pageId: input.pageId,
     ...phoneLocals,
     ...(input.locals || {}),
@@ -110,6 +108,14 @@ function renderPublicPage(input) {
     bookingStatusLabels: BOOKING_STATUS_LABELS,
     bookingStatusLabel,
   });
+  if (!Array.isArray(locals.services)) locals.services = [];
+  if (!Array.isArray(locals.profiles)) locals.profiles = [];
+  if (locals.clinic && Array.isArray(locals.clinic.doctors) && locals.clinic.doctors.length && !locals.profiles.length) {
+    locals.profiles = locals.clinic.doctors;
+  }
+  if (locals.clinic && Array.isArray(locals.clinic.services) && locals.clinic.services.length && !locals.services.length) {
+    locals.services = locals.clinic.services;
+  }
   if (typeof locals.publicClinicDirectoryNavEnabled === "undefined") {
     locals.publicClinicDirectoryNavEnabled = isPublicClinicDirectoryNavEnabled(process.env);
   }

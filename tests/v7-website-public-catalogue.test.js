@@ -370,6 +370,10 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
     const liveDoctors = await request(app).get(`/clinics/${clinic.slug}/doctors`);
     assert.equal(liveDoctors.status, 200, liveDoctors.text.slice(0, 300));
     assert.match(liveDoctors.text, re(doctorName));
+    const liveHome = await request(app).get(`/clinics/${clinic.slug}`);
+    assert.equal(liveHome.status, 200, liveHome.text.slice(0, 300));
+    assert.match(liveHome.text, re(doctorName));
+    assert.match(liveHome.text, /ac-doctor-card/);
     const keyRow = await pool.query(
       `SELECT public_profile_key, public_profile_enabled FROM activeclinic.staff_members WHERE id = $1`,
       [doctor.id]
@@ -390,6 +394,8 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
     await publishWebsite(clinic);
     const liveHidden = await request(app).get(`/clinics/${clinic.slug}/doctors`);
     assert.doesNotMatch(liveHidden.text, re(doctorName));
+    const homeHidden = await request(app).get(`/clinics/${clinic.slug}`);
+    assert.doesNotMatch(homeHidden.text, re(doctorName));
     const hiddenDetail = await request(app).get(`/clinics/${clinic.slug}/doctors/${staffKey}`);
     assert.equal(hiddenDetail.status, 404);
     const staffAfterHide = await pool.query(

@@ -2,6 +2,8 @@
 
 const {
   resolvePublishableClinicByKey,
+  listPublicStaffProfiles,
+  listWebsiteServices,
   RESULT: VISIBILITY,
 } = require("../services/activeClinicPublicVisibilityService");
 const instanceRepo = require("../../platform/website/instanceRepository");
@@ -296,13 +298,34 @@ async function resolveActiveClinicWebsite(db, input) {
     });
   }
 
-  const operational = operationalFromClinic(clinic);
+  // Canonical public catalogue — same sources as /doctors and /services routes.
+  // Home and other pages read clinic.doctors / clinic.services from presentation;
+  // without this load those arrays stay empty even when profiles are published.
+  const orgIds = {
+    organizationId: clinic.organizationId,
+    healthcareOrganizationId: clinic.healthcareOrganizationId,
+  };
+  const [doctorsResult, servicesResult] = await Promise.all([
+    Array.isArray(clinic.doctors)
+      ? Promise.resolve({ ok: true, profiles: clinic.doctors })
+      : listPublicStaffProfiles(db, orgIds),
+    Array.isArray(clinic.services)
+      ? Promise.resolve({ ok: true, services: clinic.services })
+      : listWebsiteServices(db, orgIds),
+  ]);
+  const clinicWithCatalogue = {
+    ...clinic,
+    doctors: doctorsResult && doctorsResult.ok ? doctorsResult.profiles || [] : [],
+    services: servicesResult && servicesResult.ok ? servicesResult.services || [] : [],
+  };
+
+  const operational = operationalFromClinic(clinicWithCatalogue);
   if (input.operational) Object.assign(operational, input.operational);
 
   return {
     ok: true,
     code: VISIBILITY.OK,
-    clinic: mergeClinicPresentation(clinic, resolved, operational),
+    clinic: mergeClinicPresentation(clinicWithCatalogue, resolved, operational),
     instance: instance || null,
     resolved,
     operational,

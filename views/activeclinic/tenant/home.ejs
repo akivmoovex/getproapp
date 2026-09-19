@@ -89,8 +89,18 @@
 <% } %>
 
 <%
-  const homeServices = (typeof services !== "undefined" && Array.isArray(services) ? services : (clinic.services || [])).slice(0, 4);
-  const homeDoctors = (typeof profiles !== "undefined" && Array.isArray(profiles) ? profiles : (clinic.doctors || [])).slice(0, 2);
+  // Prefer route extras when non-empty; otherwise use clinic catalogue from the website resolver.
+  // renderPublicView defaults profiles/services to [] which must not hide clinic.doctors/services.
+  const homeServicesSource =
+    typeof services !== "undefined" && Array.isArray(services) && services.length
+      ? services
+      : clinic.services || [];
+  const homeDoctorsSource =
+    typeof profiles !== "undefined" && Array.isArray(profiles) && profiles.length
+      ? profiles
+      : clinic.doctors || [];
+  const homeServices = homeServicesSource.slice(0, 4);
+  const homeDoctors = homeDoctorsSource.slice(0, 2);
 %>
 
 <% if (homeSectionVisible("services") || editingHome) { %>

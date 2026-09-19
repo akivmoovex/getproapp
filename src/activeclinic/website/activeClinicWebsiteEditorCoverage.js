@@ -47,7 +47,7 @@ const COVERAGE = Object.freeze([
   { page: "doctors", section: "Intro", classification: C.EDITABLE_CONTENT, contentKey: "doctors.intro", editable: true, source: "website draft" },
   { page: "doctors", section: "Empty-state heading", classification: C.EDITABLE_CONTENT, contentKey: "doctors.empty_heading", editable: true, source: "website draft" },
   { page: "doctors", section: "Empty-state body", classification: C.EDITABLE_CONTENT, contentKey: "doctors.empty_body", editable: true, source: "website draft" },
-  { page: "doctors", section: "Actual clinician list", classification: C.OPERATIONAL_DATA, contentKey: null, editable: false, source: "staff public profiles", manageHref: "/app/staff" },
+  { page: "doctors", section: "Actual clinician list", classification: C.OPERATIONAL_DATA, contentKey: null, editable: false, source: "staff public profiles via public catalogue", manageHref: "/app/settings/website/catalogue?tab=doctors" },
   { page: "contact", section: "Eyebrow", classification: C.EDITABLE_CONTENT, contentKey: "contact.eyebrow", editable: true, source: "website draft" },
   { page: "contact", section: "Page title", classification: C.EDITABLE_CONTENT, contentKey: "contact.page_title", editable: true, source: "website draft" },
   { page: "contact", section: "Intro", classification: C.EDITABLE_CONTENT, contentKey: "contact.intro", editable: true, source: "website draft" },
