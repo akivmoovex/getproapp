@@ -382,11 +382,15 @@ async function createCatalogueService(db, input) {
   const status = String((input && input.status) || "active").trim() === "inactive" ? "inactive" : "active";
   const publicWebsiteVisible = boolValue(input && input.publicWebsiteVisible, true) === true;
   const publicBookable = boolValue(input && input.publicBookable, false) === true;
-  const requestedKey = String((input && input.serviceKey) || "").trim().toLowerCase();
+  // Normalize optional keys the same way as auto-generated ones so HTML5 / pasted
+  // values with spaces or underscores do not silently block service creation.
+  const requestedRaw = String((input && input.serviceKey) || "").trim();
+  const requestedKey = requestedRaw ? serviceKeyFromName(requestedRaw) : "";
+  if (requestedRaw && !SERVICE_KEY_RE.test(requestedKey)) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
   const serviceKey = requestedKey
-    ? SERVICE_KEY_RE.test(requestedKey)
-      ? requestedKey
-      : null
+    ? requestedKey
     : await uniqueServiceKey(db, input, displayName);
   if (!serviceKey) return { ok: false, code: RESULT.INVALID_INPUT };
 

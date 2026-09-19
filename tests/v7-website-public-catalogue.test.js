@@ -873,6 +873,40 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
     const publicHidden = await request(app).get(`/clinics/${clinic.slug}/services`);
     assert.doesNotMatch(publicHidden.text, re(edited));
 
+    const underscoreName = `Underscore Service ${clinic.stamp}`;
+    const underscoreKey = `general_consultation_${clinic.stamp}`;
+    const underscorePage = await request(app)
+      .get("/app/settings/website/catalogue/services/new")
+      .set("Cookie", cookie);
+    const underscoreCreated = await request(app)
+      .post("/app/settings/website/catalogue/services/new")
+      .set("Cookie", mergeCookies(cookie, underscorePage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(underscorePage),
+        displayName: underscoreName,
+        serviceKey: underscoreKey,
+        description: "Normalized key",
+        publicSummary: "Normalized",
+        defaultDurationMinutes: "25",
+        publicWebsiteVisible: "1",
+      })
+      .redirects(0);
+    assert.equal(underscoreCreated.status, 303, underscoreCreated.text.slice(0, 400));
+    const underscoreRow = await pool.query(
+      `SELECT service_key, default_duration_minutes
+         FROM activeclinic.appointment_service_types
+        WHERE organization_id = $1 AND display_name = $2
+        LIMIT 1`,
+      [clinic.organizationId, underscoreName]
+    );
+    assert.equal(underscoreRow.rows.length, 1);
+    assert.equal(
+      underscoreRow.rows[0].service_key,
+      underscoreKey.replace(/_/g, "-")
+    );
+    assert.equal(Number(underscoreRow.rows[0].default_duration_minutes), 25);
+
     const recCookie = await (async () => {
       const hcoId = await resolveHcoId(clinic);
       const facility = await pool.query(

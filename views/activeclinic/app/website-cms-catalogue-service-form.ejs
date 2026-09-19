@@ -25,7 +25,7 @@
     <% if (mode === "create") { %>
     <label>
       Service key <span class="ac-mw-muted">(optional)</span>
-      <input type="text" name="serviceKey" maxlength="48" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" placeholder="auto-generated-from-name" value="<%= service.serviceKey || "" %>"/>
+      <input type="text" name="serviceKey" maxlength="48" pattern="[a-z0-9]+(?:[-_][a-z0-9]+)*" title="Lowercase letters, numbers, hyphens or underscores" placeholder="auto-generated-from-name" value="<%= service.serviceKey || "" %>"/>
     </label>
     <% } else { %>
     <p class="ac-mw-muted">Service key: <code><%= service.serviceKey || "" %></code></p>
@@ -40,7 +40,7 @@
     </label>
     <label>
       Default duration (minutes)
-      <input type="number" name="defaultDurationMinutes" min="5" max="480" step="5" value="<%= service.defaultDurationMinutes || 30 %>" <%= canEdit ? "" : "readonly" %>/>
+      <input type="number" name="defaultDurationMinutes" min="5" max="480" step="1" value="<%= service.defaultDurationMinutes || 30 %>" <%= canEdit ? "" : "readonly" %>/>
     </label>
     <label class="ac-mw-check">
       <input type="checkbox" name="status" value="inactive" <%= service.inactive ? "checked" : "" %> <%= canEdit ? "" : "disabled" %>/>
