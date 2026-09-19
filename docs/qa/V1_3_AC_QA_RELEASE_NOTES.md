@@ -1,21 +1,22 @@
 # ActiveClinic V1.3 QA Release Summary
 
 **Hosted closure verdict:** `V1_3_AC_HOSTED_CLOSURE_PASS`  
-**Freeze gate verdict:** `V1_3_QA_FREEZE_BLOCKED` (shared/BB Majors remain — see freeze section)  
+**Freeze gate verdict:** `V1_3_QA_FREEZE_BLOCKED` (BB draft-hydration Major remains)  
 **Date:** 2026-09-20  
-**Candidate baseline (hosted closure):** `1640591df9bf`  
-**Freeze candidate (post shared fixes):** see SHA matrix after deploy  
+**Freeze / hosted QA SHA:** `c5910e075aac`  
+**Prior hosted closure SHA:** `1640591df9bf`  
 **QA host:** `https://activeclinic.pronline.org`  
 **Deployment:** `moovex-platform-testing` / `testing`  
 **Production:** `https://activeclinic.org` · untouched (`d4f5b190074d`)
 
-## SHA alignment
+## SHA alignment (freeze)
 
 | Surface | SHA | Aligned? |
 |---------|-----|----------|
-| Local `HEAD` (pre-fix commit) | `1640591df9bf` | Yes at closure |
-| AC hosted QA (closure) | `1640591df9bf` | Yes |
-| BB hosted QA (closure) | `1640591df9bf` | Yes |
+| Local `HEAD` | `c5910e075aac` | Yes |
+| `origin/V7` | `c5910e075aac` | Yes |
+| AC hosted QA | `c5910e075aac` | Yes |
+| BB hosted QA | `c5910e075aac` | Yes |
 | Production AC | `d4f5b190074d` | Untouched (≠ QA) |
 
 ## Hosted closure bugs (on `1640591df9bf`)
@@ -46,17 +47,17 @@ Prior hosted runs marked PARTIAL because the harness clicked Remove without `[da
 | `platform-identity-foundation` phone vs email duplicate code | **Product defect** | Fixed in `platformIdentityService.js` — email-only collision returns `duplicate_verified_email`. |
 | `v7-image-editor-coverage` doctors catalogue vs `/library` | **Test-contract drift** | Doctors editor uses catalogue + Content Library CTA; assertions updated to match product. |
 
-## Hosted critical (freeze recheck on `1640591df9bf`)
+## Hosted critical (freeze recheck on `c5910e075aac`)
 
-| Check | Result |
-|-------|--------|
-| AC login + staff app shell | PASS (prior closure + freeze smoke) |
-| AC About CDN publish persistence | PASS (BUG-008) |
-| Production AC SHA ≠ QA | Confirmed `d4f5b190074d` |
+| Check | Result | Evidence |
+|-------|--------|----------|
+| AC login + staff `/app` | **PASS** | `demo_network_admin@demo.activeclinic.example` → `/app` (`/tmp/v13-freeze/hosted-critical-final.json`) |
+| AC live About CDN | **PASS** | `/clinics/activeclinic-demo/about` media under `/media/testing/activeclinic/…` |
+| Production AC SHA ≠ QA | **PASS** | `d4f5b190074d` production |
 
 ## Remaining defects (AC)
 
-None Critical/Major from AC hosted closure. Shared identity fix pending deploy on freeze candidate.
+None Critical/Major from AC hosted closure.
 
 ## Production untouched
 
@@ -66,4 +67,4 @@ None Critical/Major from AC hosted closure. Shared identity fix pending deploy o
 ## Verdicts
 
 - Hosted closure: `V1_3_AC_HOSTED_CLOSURE_PASS`
-- Freeze: `V1_3_QA_FREEZE_BLOCKED` — blocked by BlessBoard remaining Majors (section draft hydration; empty-body publish residual until shared fix is deployed and re-verified) and freeze SHA must include post-closure commits before PASS.
+- Freeze: `V1_3_QA_FREEZE_BLOCKED` — blocked by BlessBoard Major draft-hydration (see BB notes).
