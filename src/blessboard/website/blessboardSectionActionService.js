@@ -4,6 +4,7 @@ const { presentSectionManifest } = require("../../platform/website-engine/presen
 const { saveStructuredDraft } = require("../services/websiteStructuredDraftService");
 const contentRepo = require("../repositories/publicContentRepository");
 const fieldDraftRepo = require("../repositories/websiteInlineFieldDraftRepository");
+const draftRepo = require("../repositories/websiteStructuredDraftRepository");
 
 const LOCKED_SECTIONS = new Set(["hero", "service_times", "services", "worship_times"]);
 
@@ -194,6 +195,15 @@ async function removeSection(db, input) {
   if (isLockedSection(sectionKey) || sectionKey === "hero") {
     return { ok: false, code: "locked_item" };
   }
+  // Drop a pending add draft so remove is not undone by a later add overlay.
+  await draftRepo.discardStructuredDraftByKey(db, {
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    draftKind: "page_section",
+    entityKey: `section:${sectionKey}:add`,
+    pageKey,
+    sectionKey,
+  });
   await saveStructuredDraft(db, {
     organizationId: input.organizationId,
     churchId: input.churchId,

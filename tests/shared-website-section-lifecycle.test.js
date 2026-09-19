@@ -194,9 +194,35 @@ describe("shared website section lifecycle (BUG-007)", () => {
       {
         draftKind: "page_section",
         pageKey: "about",
+        op: "add_section",
+        sectionKey: "text_abc123",
+        payload: {
+          sectionKey: "text_abc123",
+          sectionType: "plain_text",
+          heading: "New section",
+          bodyText: "Hello",
+          sortOrder: 20,
+        },
+      },
+      {
+        draftKind: "page_section",
+        pageKey: "about",
         op: "remove",
         sectionKey: "text_abc123",
         payload: { sectionKey: "text_abc123" },
+      },
+      {
+        draftKind: "page_section",
+        pageKey: "about",
+        op: "add_section",
+        sectionKey: "text_abc123",
+        payload: {
+          sectionKey: "text_abc123",
+          sectionType: "plain_text",
+          heading: "Should stay removed",
+          bodyText: "x",
+          sortOrder: 20,
+        },
       },
     ]);
     assert.ok(!withRemove.sections.some((s) => s.sectionKey === "text_abc123"));

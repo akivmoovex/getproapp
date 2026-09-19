@@ -251,7 +251,8 @@ function applyStructuredDraftsToModel(model, drafts) {
     if (byKind[d.draftKind]) byKind[d.draftKind].push(d);
   }
 
-  // Draft section order / visibility / restore markers
+  // Draft section order / visibility / restore / add / remove
+  const removedSectionKeys = new Set();
   for (const d of byKind.page_section) {
     if (!d.pageKey || d.pageKey !== model.pageKey) continue;
     if (d.op === "reorder" && Array.isArray(d.payload && d.payload.order)) {
@@ -281,7 +282,7 @@ function applyStructuredDraftsToModel(model, drafts) {
     }
     if (d.op === "add_section" && d.payload) {
       const sk = String(d.payload.sectionKey || d.sectionKey || "");
-      if (!sk) continue;
+      if (!sk || removedSectionKeys.has(sk)) continue;
       const exists = (model.sections || []).some((s) => String(s.sectionKey) === sk);
       if (exists) continue;
       model.sections = [
@@ -302,8 +303,14 @@ function applyStructuredDraftsToModel(model, drafts) {
     if (d.op === "remove") {
       const sk = String((d.payload && d.payload.sectionKey) || d.sectionKey || "");
       if (!sk) continue;
+      removedSectionKeys.add(sk);
       model.sections = (model.sections || []).filter((s) => String(s.sectionKey) !== sk);
     }
+  }
+  if (removedSectionKeys.size) {
+    model.sections = (model.sections || []).filter(
+      (s) => !removedSectionKeys.has(String(s.sectionKey || ""))
+    );
   }
 
   // Section media (image/video)
