@@ -281,7 +281,8 @@ Read-only / disposable writes during QA:
 
 | Field | Value |
 |-------|-------|
-| Commit | `822901f01ed17831ef1dd9ccf1c0ca635f6fed5e` |
+| Report tip commit | `1bed8de76f6f5237d452dccf58ea9976fa195f3a` |
+| Baseline content commit | `822901f01ed17831ef1dd9ccf1c0ca635f6fed5e` |
 | Push | Confirmed to `origin/V8` |
 
 ---
