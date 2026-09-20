@@ -399,11 +399,11 @@ describe("ActiveClinic staff invitation and account lifecycle", () => {
     assert.equal(users.rowCount, 0);
   });
 
-  it("rejects ambiguous verified-contact matches", async () => {
+  it("rejects ambiguous normalized-contact matches", async () => {
     requireDb();
     const identityRepo = require("../src/platform/repositories/platformIdentityRepository");
-    const original = identityRepo.findIdentityByVerifiedContact;
-    identityRepo.findIdentityByVerifiedContact = async () => [
+    const original = identityRepo.findIdentitiesByNormalizedContact;
+    identityRepo.findIdentitiesByNormalizedContact = async () => [
       { id: crypto.randomUUID(), status: "active" },
       { id: crypto.randomUUID(), status: "active" },
     ];
@@ -416,7 +416,7 @@ describe("ActiveClinic staff invitation and account lifecycle", () => {
       assert.equal(result.ok, false);
       assert.equal(result.code, MATCH_RESULT.AMBIGUOUS_MATCH);
     } finally {
-      identityRepo.findIdentityByVerifiedContact = original;
+      identityRepo.findIdentitiesByNormalizedContact = original;
     }
   });
 

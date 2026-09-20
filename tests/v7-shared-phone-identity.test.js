@@ -617,4 +617,80 @@ describe("shared phone identity", () => {
     assert.equal(second.identityId, first.identityId);
     assert.notEqual(second.organizationId, first.organizationId);
   });
+
+  it("invitation links unverified identity by normalized phone (no second principal)", async () => {
+    requireDb();
+    const {
+      createPlatformIdentity,
+    } = require("../src/platform/services/platformIdentityService");
+    const {
+      resolveOrCreateInvitationIdentity,
+      RESULT: INVITE_RESULT,
+    } = require("../src/activeclinic/services/resolveActiveClinicInvitationIdentity");
+
+    const stamp = uniq("phinv");
+    const phone = `+26097${String(Date.now() + 81).slice(-7)}`;
+    const created = await createPlatformIdentity(pool, {
+      status: "active",
+      primaryPhone: phone,
+      phoneNormalized: phone,
+      // Intentionally unverified — prior invitation / incomplete activation shape.
+      phoneVerifiedAt: null,
+      primaryEmail: `${stamp}@example.invalid`,
+      emailNormalized: `${stamp}@example.invalid`,
+      passwordHash: null,
+      requireContact: true,
+    });
+    assert.equal(created.ok, true, JSON.stringify(created));
+
+    const linked = await resolveOrCreateInvitationIdentity(pool, {
+      phoneNormalized: phone,
+      organizationId: crypto.randomUUID(),
+      deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+    });
+    assert.equal(linked.ok, true, JSON.stringify(linked));
+    assert.equal(linked.code, INVITE_RESULT.LINKED_EXISTING);
+    assert.equal(linked.identity.id, created.identity.id);
+    assert.equal(linked.created, false);
+    assert.match(String(linked.matchMethod || ""), /phone/);
+
+    const identities = await pool.query(
+      `SELECT id FROM platform.identities WHERE phone_normalized = $1`,
+      [phone]
+    );
+    assert.equal(identities.rows.length, 1);
+  });
+
+  it("concurrent createPlatformIdentity keeps a single principal per phone", async () => {
+    requireDb();
+    const {
+      createPlatformIdentity,
+    } = require("../src/platform/services/platformIdentityService");
+
+    const stamp = uniq("phcrt");
+    const phone = `+26097${String(Date.now() + 91).slice(-7)}`;
+    const results = await Promise.all(
+      [1, 2, 3, 4].map((n) =>
+        createPlatformIdentity(pool, {
+          status: "active",
+          primaryPhone: phone,
+          phoneNormalized: phone,
+          primaryEmail: `${stamp}-${n}@example.invalid`,
+          emailNormalized: `${stamp}-${n}@example.invalid`,
+          passwordHash: null,
+          requireContact: true,
+        })
+      )
+    );
+    const okCount = results.filter((r) => r.ok).length;
+    const dupCount = results.filter((r) => !r.ok).length;
+    assert.equal(okCount, 1, JSON.stringify(results));
+    assert.equal(dupCount, 3);
+
+    const identities = await pool.query(
+      `SELECT id FROM platform.identities WHERE phone_normalized = $1`,
+      [phone]
+    );
+    assert.equal(identities.rows.length, 1);
+  });
 });

@@ -5,11 +5,11 @@
  *
  * Order:
  * 1. Explicit platform_identity_id (authorized selector)
- * 2. Unique verified normalized phone
- * 3. Unique verified normalized email
- * 4. No match → create
+ * 2. Unique normalized phone (verified or not — never mint a second principal)
+ * 3. Unique normalized email (verified or not)
+ * 4. No match → create (serialized; collision reuses existing)
  *
- * Never auto-link on name, unverified contact, or partial match.
+ * Never auto-link on name or partial match. Never transfer or merge identities.
  */
 
 const identityRepo = require("../../platform/repositories/platformIdentityRepository");
@@ -88,7 +88,9 @@ async function resolveOrCreateInvitationIdentity(db, input) {
   }
 
   if (phoneNormalized) {
-    const phoneMatches = await identityRepo.findIdentityByVerifiedContact(db, {
+    // Match any identity with this normalized phone (verified or not). A prior
+    // invitation may have created an unverified principal — never mint a second one.
+    const phoneMatches = await identityRepo.findIdentitiesByNormalizedContact(db, {
       phoneNormalized,
     });
     if (phoneMatches.length > 1) {
@@ -101,7 +103,7 @@ async function resolveOrCreateInvitationIdentity(db, input) {
         entityId: null,
         outcome: "denied",
         metadataJson: {
-          match_channel: "verified_phone",
+          match_channel: "normalized_phone",
           match_count: phoneMatches.length,
           actor_kind: "system",
         },
@@ -111,7 +113,7 @@ async function resolveOrCreateInvitationIdentity(db, input) {
         code: RESULT.AMBIGUOUS_MATCH,
         identity: null,
         created: false,
-        matchChannel: "verified_phone",
+        matchChannel: "normalized_phone",
       };
     }
     if (phoneMatches.length === 1) {
@@ -129,13 +131,15 @@ async function resolveOrCreateInvitationIdentity(db, input) {
         code: RESULT.LINKED_EXISTING,
         identity,
         created: false,
-        matchMethod: "verified_phone",
+        matchMethod: phoneMatches[0].phone_verified_at
+          ? "verified_phone"
+          : "normalized_phone",
       };
     }
   }
 
   if (emailNormalized) {
-    const emailMatches = await identityRepo.findIdentityByVerifiedContact(db, {
+    const emailMatches = await identityRepo.findIdentitiesByNormalizedContact(db, {
       emailNormalized,
     });
     if (emailMatches.length > 1) {
@@ -148,7 +152,7 @@ async function resolveOrCreateInvitationIdentity(db, input) {
         entityId: null,
         outcome: "denied",
         metadataJson: {
-          match_channel: "verified_email",
+          match_channel: "normalized_email",
           match_count: emailMatches.length,
           actor_kind: "system",
         },
@@ -158,7 +162,7 @@ async function resolveOrCreateInvitationIdentity(db, input) {
         code: RESULT.AMBIGUOUS_MATCH,
         identity: null,
         created: false,
-        matchChannel: "verified_email",
+        matchChannel: "normalized_email",
       };
     }
     if (emailMatches.length === 1) {
@@ -176,13 +180,17 @@ async function resolveOrCreateInvitationIdentity(db, input) {
         code: RESULT.LINKED_EXISTING,
         identity,
         created: false,
-        matchMethod: "verified_email",
+        matchMethod: emailMatches[0].email_verified_at
+          ? "verified_email"
+          : "normalized_email",
       };
     }
   }
 
   // Create without password. Contacts are recorded but not auto-verified so
   // invitation matching remains conservative for subsequent invites.
+  // createPlatformIdentity serializes same-contact creates; on collision link
+  // the existing principal instead of minting a second login.
   const created = await createPlatformIdentity(db, {
     status: "active",
     primaryPhone: src.primaryPhone || phoneNormalized,
@@ -194,6 +202,28 @@ async function resolveOrCreateInvitationIdentity(db, input) {
     requireContact: true,
   });
   if (!created.ok) {
+    if (
+      created.identity &&
+      (created.code === IDENTITY_RESULT.DUPLICATE_VERIFIED_PHONE ||
+        created.code === IDENTITY_RESULT.DUPLICATE_VERIFIED_EMAIL)
+    ) {
+      const identity = created.identity;
+      if (identity.status !== "active" || identity.lockedAt || identity.suspendedAt) {
+        return {
+          ok: false,
+          code: RESULT.IDENTITY_DISABLED,
+          identity,
+          created: false,
+        };
+      }
+      return {
+        ok: true,
+        code: RESULT.LINKED_EXISTING,
+        identity,
+        created: false,
+        matchMethod: "create_collision_reuse",
+      };
+    }
     return {
       ok: false,
       code:

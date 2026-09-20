@@ -134,71 +134,135 @@ async function createPlatformIdentity(db, input) {
 
   // Prefer reuse over duplicate principals. Verified unique indexes alone do not
   // stop two unverified rows sharing a phone — login then fails closed as ambiguous.
-  if (phoneNormalized || emailNormalized) {
-    const byPhone = phoneNormalized
-      ? await repo.findIdentitiesByNormalizedContact(db, { phoneNormalized })
-      : [];
-    const byEmail = emailNormalized
-      ? await repo.findIdentitiesByNormalizedContact(db, { emailNormalized })
-      : [];
-    const byId = new Map();
-    for (const row of [...byPhone, ...byEmail]) byId.set(String(row.id), row);
-    const matches = Array.from(byId.values());
-    if (matches.length === 1) {
-      const existing = matches[0];
-      const matchedPhone =
-        Boolean(phoneNormalized) &&
-        String(existing.phone_normalized || "") === String(phoneNormalized);
-      const matchedEmail =
-        Boolean(emailNormalized) &&
-        String(existing.email_normalized || "") === String(emailNormalized);
-      // Prefer the contact channel that actually collided; phone wins if both match.
-      const code = matchedPhone
-        ? RESULT.DUPLICATE_VERIFIED_PHONE
-        : matchedEmail
-          ? RESULT.DUPLICATE_VERIFIED_EMAIL
-          : RESULT.DUPLICATE_VERIFIED_PHONE;
-      return {
-        ok: false,
-        code,
-        identity: mapIdentity(existing),
-        existingIdentityId: existing.id,
-      };
+  // Transaction advisory locks serialize concurrent creates for the same normalized
+  // contact without requiring a new unique index to be applied overnight.
+  const lockKeys = [];
+  if (phoneNormalized) lockKeys.push(`platform.identity.phone:${phoneNormalized}`);
+  if (emailNormalized) lockKeys.push(`platform.identity.email:${emailNormalized}`);
+
+  return withIdentityContactLocks(db, lockKeys, async (client) => {
+    if (phoneNormalized || emailNormalized) {
+      const byPhone = phoneNormalized
+        ? await repo.findIdentitiesByNormalizedContact(client, { phoneNormalized })
+        : [];
+      const byEmail = emailNormalized
+        ? await repo.findIdentitiesByNormalizedContact(client, { emailNormalized })
+        : [];
+      const byId = new Map();
+      for (const row of [...byPhone, ...byEmail]) byId.set(String(row.id), row);
+      const matches = Array.from(byId.values());
+      if (matches.length === 1) {
+        const existing = matches[0];
+        const matchedPhone =
+          Boolean(phoneNormalized) &&
+          String(existing.phone_normalized || "") === String(phoneNormalized);
+        const matchedEmail =
+          Boolean(emailNormalized) &&
+          String(existing.email_normalized || "") === String(emailNormalized);
+        // Prefer the contact channel that actually collided; phone wins if both match.
+        const code = matchedPhone
+          ? RESULT.DUPLICATE_VERIFIED_PHONE
+          : matchedEmail
+            ? RESULT.DUPLICATE_VERIFIED_EMAIL
+            : RESULT.DUPLICATE_VERIFIED_PHONE;
+        return {
+          ok: false,
+          code,
+          identity: mapIdentity(existing),
+          existingIdentityId: existing.id,
+        };
+      }
+      if (matches.length > 1) {
+        return {
+          ok: false,
+          code: RESULT.DUPLICATE_VERIFIED_PHONE,
+          identity: null,
+          ambiguous: true,
+        };
+      }
     }
-    if (matches.length > 1) {
-      return {
-        ok: false,
-        code: RESULT.DUPLICATE_VERIFIED_PHONE,
-        identity: null,
-        ambiguous: true,
-      };
+
+    try {
+      const row = await repo.insertIdentity(client, {
+        status,
+        primaryPhone,
+        phoneNormalized,
+        phoneVerifiedAt,
+        primaryEmail,
+        emailNormalized,
+        emailVerifiedAt,
+        passwordHash,
+        mustChangePassword: raw.mustChangePassword === true,
+        lockedAt: raw.lockedAt || null,
+        suspendedAt,
+      });
+      return { ok: true, code: RESULT.OK, identity: mapIdentity(row) };
+    } catch (err) {
+      const msg = err && err.message ? String(err.message) : "";
+      if (/identities_verified_phone_uidx|identities_phone_normalized/i.test(msg)) {
+        return { ok: false, code: RESULT.DUPLICATE_VERIFIED_PHONE, identity: null };
+      }
+      if (/identities_verified_email_uidx|identities_email_normalized/i.test(msg)) {
+        return { ok: false, code: RESULT.DUPLICATE_VERIFIED_EMAIL, identity: null };
+      }
+      throw err;
     }
+  });
+}
+
+/**
+ * Hold contact advisory locks on one connection for check+insert.
+ * Uses pg_advisory_xact_lock so locks release with the transaction (pool-safe).
+ *
+ * @param {{ query: Function, connect?: Function }} db
+ * @param {string[]} lockKeys
+ * @param {(client: { query: Function }) => Promise<*>} work
+ */
+async function withIdentityContactLocks(db, lockKeys, work) {
+  if (!lockKeys.length) {
+    return work(db);
+  }
+
+  const isPool = typeof db.totalCount === "number";
+  let client = db;
+  let release = null;
+  let ownsTransaction = false;
+
+  if (isPool) {
+    client = await db.connect();
+    release = () => client.release();
   }
 
   try {
-    const row = await repo.insertIdentity(db, {
-      status,
-      primaryPhone,
-      phoneNormalized,
-      phoneVerifiedAt,
-      primaryEmail,
-      emailNormalized,
-      emailVerifiedAt,
-      passwordHash,
-      mustChangePassword: raw.mustChangePassword === true,
-      lockedAt: raw.lockedAt || null,
-      suspendedAt,
-    });
-    return { ok: true, code: RESULT.OK, identity: mapIdentity(row) };
-  } catch (err) {
-    const msg = err && err.message ? String(err.message) : "";
-    if (/identities_verified_phone_uidx/i.test(msg)) {
-      return { ok: false, code: RESULT.DUPLICATE_VERIFIED_PHONE, identity: null };
+    if (!isPool) {
+      const tx = await client.query("SELECT txid_current_if_assigned() AS txid");
+      if (tx.rows[0] && tx.rows[0].txid == null) {
+        await client.query("BEGIN");
+        ownsTransaction = true;
+      }
+    } else {
+      await client.query("BEGIN");
+      ownsTransaction = true;
     }
-    if (/identities_verified_email_uidx/i.test(msg)) {
-      return { ok: false, code: RESULT.DUPLICATE_VERIFIED_EMAIL, identity: null };
+
+    for (const key of lockKeys) {
+      await client.query("SELECT pg_advisory_xact_lock(hashtext($1))", [key]);
+    }
+
+    const result = await work(client);
+    if (ownsTransaction) await client.query("COMMIT");
+    return result;
+  } catch (err) {
+    if (ownsTransaction) {
+      try {
+        await client.query("ROLLBACK");
+      } catch {
+        // ignore rollback errors
+      }
     }
     throw err;
+  } finally {
+    if (release) release();
   }
 }
 
