@@ -8,7 +8,12 @@
 const { organizationHasActiveProduct } = require("../../platform/services/organizationProductService");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const { blocksAnonymousPublic, LIFECYCLE_STATUS } = require("../../platform/website/lifecycleStatus");
-const { attachClinicPublicWebsitePaths } = require("../../platform/website/publicWebsiteUrl");
+const {
+  PRODUCT_CODE,
+  attachClinicPublicWebsitePaths,
+  buildPublicOrganizationWebsitePath,
+  normalizeOrganizationKey,
+} = require("../../platform/website/publicWebsiteUrl");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
@@ -21,6 +26,47 @@ const RESULT = Object.freeze({
   WEBSITE_OFFLINE: "website_offline",
   WEBSITE_SUSPENDED: "website_suspended",
 });
+
+/**
+ * Canonical public detail href for a directory card.
+ * Always uses shared URL helpers — never trust a stale publicBasePath override.
+ */
+function directoryClinicDetailHref(clinicKey) {
+  const key = normalizeOrganizationKey(clinicKey);
+  if (!key) return "";
+  return (
+    buildPublicOrganizationWebsitePath({
+      product: PRODUCT_CODE.ACTIVECLINIC,
+      organizationKey: key,
+    }) || ""
+  );
+}
+
+function presentDirectoryClinic(row) {
+  const clinicKey = normalizeOrganizationKey(row && row.clinic_key);
+  const detailHref = directoryClinicDetailHref(clinicKey);
+  const presented = attachClinicPublicWebsitePaths({
+    clinicKey,
+    publicName: row.public_name,
+    websiteTagline: row.website_tagline || null,
+    websiteLogoUrl: row.website_logo_url || null,
+    publicPhoneDisplay: row.public_phone_display || null,
+    publicEmailDisplay: row.public_email_display || null,
+    publicBookingEnabled: row.public_booking_enabled === true,
+    facilityCount: parseInt(row.facility_count, 10) || 0,
+    city: row.city || null,
+    province: row.province || null,
+    services: Array.isArray(row.service_names) ? row.service_names.filter(Boolean) : [],
+    // Force canonical home path so cards cannot leak to another tenant URL.
+    publicBasePath: detailHref || undefined,
+  });
+  return {
+    ...presented,
+    clinicKey,
+    detailHref,
+    publicBasePath: detailHref || (presented && presented.publicBasePath) || "",
+  };
+}
 
 async function findOrganizationByKey(db, clinicKey) {
   const rows = await db.query(
@@ -283,21 +329,7 @@ async function listPublishableClinics(db, input) {
   `;
 
   const result = await db.query(sql, params);
-  const clinics = result.rows.map((row) =>
-    attachClinicPublicWebsitePaths({
-      clinicKey: row.clinic_key,
-      publicName: row.public_name,
-      websiteTagline: row.website_tagline || null,
-      websiteLogoUrl: row.website_logo_url || null,
-      publicPhoneDisplay: row.public_phone_display || null,
-      publicEmailDisplay: row.public_email_display || null,
-      publicBookingEnabled: row.public_booking_enabled === true,
-      facilityCount: parseInt(row.facility_count, 10) || 0,
-      city: row.city || null,
-      province: row.province || null,
-      services: Array.isArray(row.service_names) ? row.service_names.filter(Boolean) : [],
-    })
-  );
+  const clinics = result.rows.map((row) => presentDirectoryClinic(row));
 
   return { ok: true, code: RESULT.OK, clinics };
 }
@@ -589,6 +621,8 @@ module.exports = {
   RESULT,
   resolvePublishableClinicByKey,
   listPublishableClinics,
+  directoryClinicDetailHref,
+  presentDirectoryClinic,
   listPublicStaffProfiles,
   getPublicStaffProfile,
   listPublicServices,

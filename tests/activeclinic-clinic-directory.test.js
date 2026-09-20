@@ -309,6 +309,7 @@ describe("ActiveClinic clinic directory repair", () => {
     assert.match(html, /View Clinic/);
     assert.match(html, /href="\/clinics\/demo-centre"/);
     assert.match(html, /data-ac-clinic-card-link="1"/);
+    assert.match(html, /data-ac-clinic-key="demo-centre"/);
     assert.match(html, /class="acw-clinic-card__link"/);
     assert.doesNotMatch(html, /<h2><a href=/);
     assert.equal((html.match(/href="\/clinics\/demo-centre"/g) || []).length, 1);
@@ -341,6 +342,10 @@ describe("ActiveClinic clinic directory repair", () => {
       directory.text,
       new RegExp(`href="/clinics/${published.clinicKey}"[^>]*data-ac-clinic-card-link="1"`)
     );
+    assert.match(
+      directory.text,
+      new RegExp(`data-ac-clinic-key="${published.clinicKey}"`)
+    );
     const detail = await request(app).get(`/clinics/${published.clinicKey}`);
     assert.equal(detail.status, 200);
     assert.match(detail.text, new RegExp(`Published Clinic ${stamp}`));
@@ -353,5 +358,99 @@ describe("ActiveClinic clinic directory repair", () => {
     if (legacy.status >= 300) {
       assert.match(String(legacy.headers.location || ""), new RegExp(`/clinics/${published.clinicKey}`));
     }
+  });
+
+  it("every directory card href opens the matching clinic and ignores unpublished tenants", async () => {
+    if (!requireDb()) return;
+    const stamp = `${Date.now().toString(36)}all`;
+    const a = await provisionPublishedClinic(`${stamp}a`);
+    const b = await provisionPublishedClinic(`${stamp}b`);
+    const hidden = await provisionPlatformTenant(pool, {
+      skipDomain: true,
+      dataEnvironment: "testing",
+      organizationKey: `ac_hidnav_${stamp}`,
+      displayName: "Hidden Nav Clinic",
+      productKey: "activeclinic",
+      productTenantKey: `ac-hidnav-${stamp}`,
+      deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+    });
+    assert.equal(hidden.ok, true);
+    const hidHco = await createHealthcareOrganization(pool, {
+      organizationId: hidden.records.organization.id,
+      legalName: "Hidden Nav Legal",
+      publicName: `Hidden Nav Never ${stamp}`,
+      organizationType: "private_healthcare",
+      countryCode: "ZM",
+      timezone: "Africa/Lusaka",
+    });
+    assert.equal(hidHco.ok, true);
+
+    const app = appWithEnv();
+    const directory = await request(app).get("/clinics");
+    assert.equal(directory.status, 200);
+    assert.doesNotMatch(directory.text, new RegExp(`Hidden Nav Never ${stamp}`));
+
+    const hrefRe =
+      /<a[^>]*class="acw-clinic-card__link"[^>]*href="(\/clinics\/[^"]+)"[^>]*data-ac-clinic-card-link="1"[^>]*data-ac-clinic-key="([^"]+)"/gs;
+    const cards = [];
+    let match;
+    while ((match = hrefRe.exec(directory.text))) {
+      cards.push({ href: match[1], key: match[2] });
+    }
+    // Fallback if whitespace between attributes breaks the primary regex.
+    if (!cards.length) {
+      const loose =
+        /href="(\/clinics\/[^"]+)"[\s\S]{0,120}?data-ac-clinic-card-link="1"[\s\S]{0,80}?data-ac-clinic-key="([^"]+)"/g;
+      while ((match = loose.exec(directory.text))) {
+        cards.push({ href: match[1], key: match[2] });
+      }
+    }
+    assert.ok(cards.length >= 2);
+    const byKey = new Map(cards.map((c) => [c.key, c.href]));
+    assert.equal(byKey.get(a.clinicKey), `/clinics/${a.clinicKey}`);
+    assert.equal(byKey.get(b.clinicKey), `/clinics/${b.clinicKey}`);
+    assert.equal(byKey.has(`ac_hidnav_${stamp}`), false);
+
+    for (const entry of [
+      { clinic: a, label: `${stamp}a` },
+      { clinic: b, label: `${stamp}b` },
+    ]) {
+      const page = await request(app).get(`/clinics/${entry.clinic.clinicKey}`);
+      assert.equal(page.status, 200, entry.clinic.clinicKey);
+      assert.match(page.text, new RegExp(`Published Clinic ${entry.label}`));
+      assert.match(page.text, new RegExp(entry.clinic.clinicKey));
+      const other = entry.clinic === a ? b : a;
+      assert.doesNotMatch(
+        page.text,
+        new RegExp(`data-ac-clinic-key="${other.clinicKey}"`)
+      );
+    }
+
+    await pool.query(
+      `UPDATE activeclinic.healthcare_organizations
+          SET website_published = false
+        WHERE organization_id = $1`,
+      [a.org.records.organization.id]
+    );
+    const afterUnpublish = await request(app).get("/clinics");
+    assert.doesNotMatch(
+      afterUnpublish.text,
+      new RegExp(`href="/clinics/${a.clinicKey}"[^>]*data-ac-clinic-card-link="1"`)
+    );
+    const directUnpublished = await request(app).get(`/clinics/${a.clinicKey}`);
+    assert.ok(
+      [403, 404, 410].includes(directUnpublished.status),
+      `unpublished direct status ${directUnpublished.status}`
+    );
+  });
+
+  it("directoryClinicDetailHref always uses the shared /clinics/:key helper", () => {
+    const {
+      directoryClinicDetailHref,
+    } = require("../src/activeclinic/services/activeClinicPublicVisibilityService");
+    assert.equal(directoryClinicDetailHref("Julflona-Clinic"), "/clinics/julflona-clinic");
+    assert.equal(directoryClinicDetailHref(" ac-demo "), "/clinics/ac-demo");
+    assert.equal(directoryClinicDetailHref(""), "");
+    assert.equal(directoryClinicDetailHref(null), "");
   });
 });

@@ -2141,6 +2141,8 @@ body.ac-public--platform .ac-public-brand__icon {
   color: inherit;
   text-decoration: none;
   border-radius: inherit;
+  cursor: pointer;
+  -webkit-tap-highlight-color: transparent;
 }
 
 [data-ac-acw-screen="ACW02"] .acw-clinic-card__link:hover .acw-clinic-card__cta,

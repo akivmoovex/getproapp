@@ -1,14 +1,36 @@
 <%
-  var websiteHref = c.publicBasePath || (c.publicPagePaths && c.publicPagePaths.home) || (c.clinicKey ? ('/clinics/' + encodeURIComponent(String(c.clinicKey).trim())) : '');
+  var clinicKey = String((c && (c.clinicKey || c.organizationKey)) || "").trim().toLowerCase();
+  var expectedHref = clinicKey ? ("/clinics/" + encodeURIComponent(clinicKey)) : "";
+  // Prefer shared helper paths; fall closed to the canonical /clinics/:clinicKey route.
+  var websiteHref = String(
+    (c && c.detailHref) ||
+    (c && c.publicBasePath) ||
+    (c && c.publicPagePaths && c.publicPagePaths.home) ||
+    expectedHref ||
+    ""
+  ).trim();
+  if (expectedHref && websiteHref && websiteHref !== expectedHref && websiteHref.indexOf(expectedHref + "/") !== 0) {
+    websiteHref = expectedHref;
+  }
+  if (!websiteHref && expectedHref) websiteHref = expectedHref;
   var services = Array.isArray(c.services) ? c.services : [];
   var logoRaw = c.websiteLogoUrl ? String(c.websiteLogoUrl).trim() : "";
   var logoSafe = /^(https:\/\/|\/)/.test(logoRaw) ? logoRaw : "";
   var initial = String(c.publicName || "C").trim().charAt(0).toUpperCase() || "C";
   var locationLine = [c.city, c.province].filter(Boolean).join(", ");
 %>
-<li class="acw-clinic-card ac-clinic-card" data-ac-clinic-card="1">
+<li
+  class="acw-clinic-card ac-clinic-card"
+  data-ac-clinic-card="1"
+  <% if (clinicKey) { %>data-ac-clinic-key="<%= clinicKey %>"<% } %>
+>
   <% if (websiteHref) { %>
-  <a class="acw-clinic-card__link" href="<%= websiteHref %>" data-ac-clinic-card-link="1">
+  <a
+    class="acw-clinic-card__link"
+    href="<%= websiteHref %>"
+    data-ac-clinic-card-link="1"
+    <% if (clinicKey) { %>data-ac-clinic-key="<%= clinicKey %>"<% } %>
+  >
   <% } else { %>
   <div class="acw-clinic-card__link" data-ac-clinic-card-link="0">
   <% } %>
