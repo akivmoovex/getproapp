@@ -279,7 +279,10 @@ Read-only / disposable writes during QA:
 
 ## Commit / push
 
-Filled after commit of this document to `origin/V8`.
+| Field | Value |
+|-------|-------|
+| Commit | `822901f01ed17831ef1dd9ccf1c0ca635f6fed5e` |
+| Push | Confirmed to `origin/V8` |
 
 ---
 
