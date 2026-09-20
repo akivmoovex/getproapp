@@ -110,6 +110,21 @@ async function persistSubmitted(db, input) {
       },
     };
   }
+  if (preResolve.action === IDENTITY_ACTION.REJECT_SUSPENDED) {
+    return {
+      ok: false,
+      code: "reject_suspended",
+      error:
+        "This contact cannot be used for a new clinic registration. Sign in with an active account, or use a different phone or email.",
+      field: "contactPhone",
+      errors: {
+        contactPhone:
+          "This contact cannot be used for a new clinic registration. Sign in with an active account, or use a different phone or email.",
+        contactEmail:
+          "This contact cannot be used for a new clinic registration. Sign in with an active account, or use a different phone or email.",
+      },
+    };
+  }
   if (
     preResolve.action === IDENTITY_ACTION.REJECT_EXISTING_ACCOUNT &&
     (preResolve.reason === "existing_account_password_mismatch" ||
@@ -297,6 +312,18 @@ async function provision(db, input) {
       reason: REVIEW_REASON.IDENTITY_COLLISION,
       code: provisioned.code,
       errors: { contact: "Email and phone belong to different accounts." },
+    };
+  }
+  if (!provisioned.ok && provisioned.code === "reject_suspended") {
+    return {
+      ok: false,
+      reviewRequired: false,
+      reason: REVIEW_REASON.IDENTITY_COLLISION,
+      code: provisioned.code,
+      errors: {
+        contactPhone:
+          "This contact cannot be used for a new clinic registration. Sign in with an active account, or use a different phone or email.",
+      },
     };
   }
   if (!provisioned.ok) {

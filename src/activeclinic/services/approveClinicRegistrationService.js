@@ -65,6 +65,7 @@ const RESULT = Object.freeze({
   WEBSITE_PENDING: "website_pending",
   EXISTING_IDENTITY_ACK_REQUIRED: "existing_identity_acknowledgement_required",
   IDENTITY_CONFLICT: "identity_conflict",
+  REJECT_SUSPENDED: "reject_suspended",
   EXISTING_ACCOUNT: "existing_account_requires_sign_in",
   EXISTING_ACCOUNT_PASSWORD_MISMATCH: "existing_account_password_mismatch",
 });
@@ -264,12 +265,15 @@ async function ensureClinicAdmin(client, input) {
     // Fail closed: never silently attach to an existing phone/email principal.
     // Unauthorized reuse must go through resolveActiveClinicRegistrationAdministrator
     // (password-verified REUSE) which sets resolvedIdentityId.
+    // Lock matching rows so concurrent registrations cannot create a second identity
+    // for the same phone/email before the verified unique indexes apply.
     const existing = await client.query(
       `SELECT id, password_hash FROM platform.identities
         WHERE email_normalized = $1
            OR ($2::text IS NOT NULL AND phone_normalized = $2)
         ORDER BY CASE WHEN email_normalized = $1 THEN 0 ELSE 1 END
-        LIMIT 1`,
+        LIMIT 1
+        FOR UPDATE`,
       [input.email, input.phone || null]
     );
     if (existing.rows[0]) {
@@ -450,10 +454,16 @@ async function approveAndProvisionClinicRegistration(db, input) {
     if (resolvedAdmin.action === IDENTITY_ACTION.REJECT_SUSPENDED) {
       return {
         ok: false,
-        code: RESULT.EXISTING_IDENTITY_ACK_REQUIRED,
+        code: RESULT.REJECT_SUSPENDED,
         application: app,
         identityCollision,
         reason: resolvedAdmin.reason,
+        errors: {
+          contactPhone:
+            "This contact cannot be used for a new clinic registration. Sign in with an active account, or use a different phone or email.",
+          contactEmail:
+            "This contact cannot be used for a new clinic registration. Sign in with an active account, or use a different phone or email.",
+        },
       };
     }
     if (resolvedAdmin.action === IDENTITY_ACTION.ALREADY_PROVISIONED && resolvedAdmin.organizationId) {

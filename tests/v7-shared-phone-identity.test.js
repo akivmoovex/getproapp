@@ -467,4 +467,154 @@ describe("shared phone identity", () => {
     });
     assert.equal(good.ok, true);
   });
+
+  it("BUG-009: suspended identity phone rejects without creating a second principal", async () => {
+    requireDb();
+    const stamp = uniq("phsus");
+    const phone = `+26097${String(Date.now() + 61).slice(-7)}`;
+    const first = await submitAndProvisionClinicRegistration(pool, {
+      clinicName: `Sus A ${stamp}`,
+      contactName: "Sus Admin",
+      contactPhone: phone,
+      contactEmail: `${stamp}-a@example.invalid`,
+      province: "Lusaka",
+      city: "Lusaka",
+      address: "10 Sus Rd",
+      countryCode: "ZM",
+      password: PASSWORD,
+      passwordConfirm: PASSWORD,
+      acceptTerms: "on",
+      deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+      dataEnvironment: "testing",
+      env: { NODE_ENV: "test", PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6 },
+    });
+    assert.equal(first.ok, true, JSON.stringify(first));
+
+    await pool.query(
+      `UPDATE platform.identities
+          SET status = 'suspended', suspended_at = now(), updated_at = now()
+        WHERE id = $1`,
+      [first.identityId]
+    );
+
+    const second = await submitAndProvisionClinicRegistration(pool, {
+      clinicName: `Sus B ${stamp}`,
+      contactName: "Sus Admin",
+      contactPhone: phone,
+      contactEmail: `${stamp}-b@example.invalid`,
+      province: "Lusaka",
+      city: "Lusaka",
+      address: "11 Sus Rd",
+      countryCode: "ZM",
+      password: PASSWORD,
+      passwordConfirm: PASSWORD,
+      acceptTerms: "on",
+      deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+      dataEnvironment: "testing",
+      env: { NODE_ENV: "test", PLATFORM_DEPLOYMENT_CODE: CODE_ACTIVECLINIC_ORG_V6 },
+    });
+    assert.equal(second.ok, false, JSON.stringify(second));
+    assert.equal(second.code, "reject_suspended");
+    const errText = JSON.stringify(second.errors || {});
+    assert.match(errText, /cannot be used for a new clinic registration/i);
+    assert.doesNotMatch(errText, /password_hash|SQLSTATE|node_modules/i);
+
+    const identities = await pool.query(
+      `SELECT id, status FROM platform.identities WHERE phone_normalized = $1`,
+      [phone]
+    );
+    assert.equal(identities.rows.length, 1);
+    assert.equal(identities.rows[0].status, "suspended");
+  });
+
+  it("V8: authorized multi-clinic reuse provisions under moovex-platform-v8-testing", async () => {
+    requireDb();
+    const {
+      CODE_MOOVEX_PLATFORM_V8_TESTING,
+    } = require("../src/platform/config/deploymentProfiles");
+
+    const dep = await pool.query(
+      `SELECT 1 FROM platform.deployments WHERE deployment_code = $1 AND status = 'active'`,
+      [CODE_MOOVEX_PLATFORM_V8_TESTING]
+    );
+    if (!dep.rows[0]) {
+      // Foundation DB in CI may not have run seed 009 yet — insert for this suite only.
+      await pool.query(
+        `INSERT INTO platform.deployments (
+           deployment_code, application_code, release_version, canonical_domain,
+           environment_code, status, jobs_enabled, database_access_mode, session_cookie_name
+         ) VALUES (
+           $1, 'platform', 'v8', 'neuniversity.org', 'testing', 'active', false,
+           'read_write', 'moovex_platform_v8_testing_sid'
+         )
+         ON CONFLICT (deployment_code) DO UPDATE SET status = 'active', updated_at = now()`,
+        [CODE_MOOVEX_PLATFORM_V8_TESTING]
+      );
+    }
+
+    const stamp = uniq("phv8");
+    const phone = `+26097${String(Date.now() + 71).slice(-7)}`;
+    const env = {
+      NODE_ENV: "test",
+      PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_V8_TESTING,
+      DEPLOYMENT_ENV: "testing",
+    };
+    const first = await submitAndProvisionClinicRegistration(pool, {
+      clinicName: `V8 Phone A ${stamp}`,
+      contactName: "V8 Admin",
+      contactPhone: phone,
+      contactEmail: `${stamp}-a@example.invalid`,
+      province: "Lusaka",
+      city: "Lusaka",
+      address: "12 V8 Rd",
+      countryCode: "ZM",
+      password: PASSWORD,
+      passwordConfirm: PASSWORD,
+      acceptTerms: "on",
+      deploymentCode: CODE_MOOVEX_PLATFORM_V8_TESTING,
+      dataEnvironment: "testing",
+      env,
+    });
+    assert.equal(first.ok, true, JSON.stringify(first));
+    assert.equal(first.reviewRequired, false);
+
+    const thief = await submitAndProvisionClinicRegistration(pool, {
+      clinicName: `V8 Phone Thief ${stamp}`,
+      contactName: "V8 Thief",
+      contactPhone: phone,
+      contactEmail: `${stamp}-thief@example.invalid`,
+      province: "Lusaka",
+      city: "Lusaka",
+      address: "13 V8 Rd",
+      countryCode: "ZM",
+      password: "WrongPassword99!",
+      passwordConfirm: "WrongPassword99!",
+      acceptTerms: "on",
+      deploymentCode: CODE_MOOVEX_PLATFORM_V8_TESTING,
+      dataEnvironment: "testing",
+      env,
+    });
+    assert.equal(thief.ok, false, JSON.stringify(thief));
+    assert.equal(thief.code, "existing_account_password_mismatch");
+
+    const second = await submitAndProvisionClinicRegistration(pool, {
+      clinicName: `V8 Phone B ${stamp}`,
+      contactName: "V8 Admin",
+      contactPhone: phone,
+      contactEmail: `${stamp}-b@example.invalid`,
+      province: "Lusaka",
+      city: "Lusaka",
+      address: "14 V8 Rd",
+      countryCode: "ZM",
+      password: PASSWORD,
+      passwordConfirm: PASSWORD,
+      acceptTerms: "on",
+      deploymentCode: CODE_MOOVEX_PLATFORM_V8_TESTING,
+      dataEnvironment: "testing",
+      env,
+    });
+    assert.equal(second.ok, true, JSON.stringify(second));
+    assert.equal(second.identityId, first.identityId);
+    assert.notEqual(second.organizationId, first.organizationId);
+  });
 });

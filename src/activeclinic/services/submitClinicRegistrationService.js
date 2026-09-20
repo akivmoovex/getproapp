@@ -83,8 +83,10 @@ async function submitAndProvisionClinicRegistration(db, input) {
     }
     if (
       result.persistCode === "identity_conflict" ||
+      result.persistCode === "reject_suspended" ||
       result.persistCode === "existing_account_requires_sign_in" ||
-      result.persistCode === "existing_account_password_mismatch"
+      result.persistCode === "existing_account_password_mismatch" ||
+      result.persistCode === "existing_identity_acknowledgement_required"
     ) {
       return {
         ok: false,
@@ -120,8 +122,10 @@ async function submitAndProvisionClinicRegistration(db, input) {
       (result.provision && result.provision.code) || result.reason || RESULT.PROVISION_FAILED;
     if (
       provisionCode === "identity_conflict" ||
+      provisionCode === "reject_suspended" ||
       provisionCode === "existing_account_requires_sign_in" ||
-      provisionCode === "existing_account_password_mismatch"
+      provisionCode === "existing_account_password_mismatch" ||
+      provisionCode === "existing_identity_acknowledgement_required"
     ) {
       return {
         ok: false,
@@ -134,10 +138,19 @@ async function submitAndProvisionClinicRegistration(db, input) {
                 contactEmail: "Email and phone belong to different accounts.",
                 contactPhone: "Email and phone belong to different accounts.",
               }
+            : provisionCode === "reject_suspended"
+              ? {
+                  contactPhone:
+                    "This contact cannot be used for a new clinic registration. Sign in with an active account, or use a different phone or email.",
+                  contactEmail:
+                    "This contact cannot be used for a new clinic registration. Sign in with an active account, or use a different phone or email.",
+                }
             : {
                 password:
                   provisionCode === "existing_account_password_mismatch"
                     ? "That password does not match the existing account."
+                    : provisionCode === "existing_identity_acknowledgement_required"
+                      ? "This phone or email is already registered. Sign in with your existing password to add another clinic."
                     : "An account already exists for this contact.",
               }),
         application: result.application || null,

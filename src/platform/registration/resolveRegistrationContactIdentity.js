@@ -28,6 +28,7 @@ const REGISTRATION_IDENTITY_REASON = Object.freeze({
   PASSWORD_REQUIRED: "existing_account_requires_sign_in",
   PASSWORD_MISMATCH: "existing_account_password_mismatch",
   ACK_REQUIRED: "existing_identity_acknowledgement_required",
+  SUSPENDED: "suspended_identity",
 });
 
 /**
@@ -203,6 +204,14 @@ function registrationIdentityFieldErrors(reason) {
   ) {
     return {
       password: "An account already exists for this contact. Sign in with your existing password.",
+    };
+  }
+  if (code === REGISTRATION_IDENTITY_REASON.SUSPENDED || code === "reject_suspended") {
+    return {
+      contactPhone:
+        "This contact cannot be used for a new clinic registration. Sign in with an active account, or use a different phone or email.",
+      contactEmail:
+        "This contact cannot be used for a new clinic registration. Sign in with an active account, or use a different phone or email.",
     };
   }
   return {};
