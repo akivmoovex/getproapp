@@ -6,7 +6,7 @@
   <title>Registration Submitted · <%= publicName %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=15" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=16" />
 </head>
 <body
   class="bb-auth-body"
@@ -16,6 +16,8 @@
   data-bb-stitch-register-submitted="11-auth-registration-submitted"
   data-bb-membership="submitted"
   data-screen="BB07"
+  data-bb-screen-desktop="BB07-D"
+  data-bb-screen-mobile="BB07-M"
 >
   <a class="bb-auth-skip" href="#bb-auth-submitted">Skip to confirmation</a>
 
@@ -82,6 +84,11 @@
             <strong class="bb-auth-emphasis">pending administrator review</strong>.
             An account is not created automatically.
           </p>
+          <% if (typeof registrationReference !== 'undefined' && registrationReference) { %>
+          <p class="bb-auth-reference" data-bb-registration-reference="1">
+            Reference: <code><%= registrationReference %></code>
+          </p>
+          <% } %>
 
           <aside class="bb-auth-callout" data-bb-register-next="1">
             <span class="material-symbols-outlined" aria-hidden="true">info</span>

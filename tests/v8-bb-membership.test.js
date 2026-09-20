@@ -465,5 +465,18 @@ describe("V8 BlessBoard membership workflow", () => {
       "utf8"
     );
     assert.match(register, /data-bb-membership="public-apply"/);
+    assert.match(register, /data-bb-screen-desktop="BB03-D"/);
+    assert.match(register, /data-bb-membership-step-nav/);
+    assert.match(register, /data-bb-step-next/);
+    const submitted = fs.readFileSync(
+      path.join(__dirname, "..", "views/blessboard/v5/public/register-submitted.ejs"),
+      "utf8"
+    );
+    assert.match(submitted, /data-bb-registration-reference/);
+    assert.match(submitted, /data-bb-screen-desktop="BB07-D"/);
+    assert.match(
+      fs.readFileSync(path.join(__dirname, "..", "views/platform/forms/bb-membership-forms.ejs"), "utf8"),
+      /data-bb-screen-mobile="BB01-M"/
+    );
   });
 });

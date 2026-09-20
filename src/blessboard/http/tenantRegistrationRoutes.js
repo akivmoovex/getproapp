@@ -344,9 +344,16 @@ function createTenantRegistrationRouter(deps) {
       .then(() => {
         const scope = resolveHostScope(req, res);
         if (!scope) return;
+        const rawRef = String((req.query && req.query.ref) || "").trim();
+        const registrationReference =
+          /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
+            rawRef
+          )
+            ? rawRef
+            : null;
         const html = renderRegistrationView(
           "public/register-submitted.ejs",
-          formLocals(req, res, scope, {})
+          formLocals(req, res, scope, { registrationReference })
         );
         return res.status(200).type("html").send(html);
       })
@@ -432,7 +439,12 @@ function createTenantRegistrationRouter(deps) {
             registrationId: result.registration && result.registration.id,
             existingMember: Boolean(result.existingMemberId),
           });
-          return res.redirect(303, "/register/submitted");
+          return res.redirect(
+            303,
+            `/register/submitted?ref=${encodeURIComponent(
+              (result.registration && result.registration.id) || ""
+            )}`
+          );
         }
 
         const duplicate =

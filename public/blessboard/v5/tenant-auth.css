@@ -962,6 +962,30 @@
   }
 }
 
+.bb-auth-step-nav {
+  margin-top: 0.75rem;
+}
+
+.bb-auth-step-nav__status {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--bb-auth-muted);
+}
+
+.bb-auth-actions--steps {
+  margin-top: 0;
+}
+
+.bb-auth-reference {
+  margin: 0.75rem 0 0;
+  font-size: 0.85rem;
+  color: var(--bb-auth-muted);
+}
+
+.bb-auth-reference code {
+  word-break: break-all;
+}
+
 @media (max-width: 899px) {
   .bb-auth-main__body {
     align-items: flex-start;
