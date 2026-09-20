@@ -71,8 +71,8 @@ After each task, report:
 | **Report** | [`docs/releases/V8_BB_ANNOUNCEMENTS_PROMPT12.md`](./V8_BB_ANNOUNCEMENTS_PROMPT12.md) |
 | **Changed files** | `112_announcement_public_audience_v8.sql` · announcements service/repo/admin/public routes/views/CSS · tenant public paths/nav · tests · docs |
 | **Test results** | BB V8 **6/6 PASS**; blessboard-announcements regression **18/18 PASS** |
-| **Commit SHA** | _(pending commit)_ |
-| **Push status** | _(pending push)_ |
+| **Commit SHA** | `b413d2ecc0ffd2a5f7860d636fc8ac028436fd5c` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for CODE_PASS. Migration `112` not applied on hosted DB. Scheduler still unavailable (lazy visibility). |
 
 ### PROMPT 11 — V8 shared announcement publication (AN01–AN05)
