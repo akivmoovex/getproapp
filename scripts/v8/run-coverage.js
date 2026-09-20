@@ -23,6 +23,7 @@ const {
 const COVERAGE_TEST_FILES = Object.freeze([
   "tests/v8-db-compatibility-baseline.test.js",
   "tests/v8-environment-isolation.test.js",
+  "tests/v8-bug002-hostinger-upstream-503.test.js",
   "tests/v8-migration-contract.test.js",
   "tests/v8-tenant-product-isolation.test.js",
   "tests/v8-shared-module-coverage.test.js",
@@ -37,7 +38,6 @@ const COVERAGE_TEST_FILES = Object.freeze([
   "tests/shared-website-section-lifecycle.test.js",
   "tests/deployment-profiles.test.js",
 ]);
-
 /**
  * Justified exclusions from the 90% line gate (documented; do not expand casually).
  * Coverage still runs on these files when included in targets; exclusions only

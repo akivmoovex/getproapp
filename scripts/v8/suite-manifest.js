@@ -31,6 +31,7 @@ const SHARED_PLATFORM = Object.freeze({
     "tests/platform-v5-sessions.test.js",
     "tests/v7-runtime-env-isolation.test.js",
     "tests/v8-shared-module-coverage.test.js",
+    "tests/v8-bug002-hostinger-upstream-503.test.js",
     "tests/v8-shared-auth-password-security.test.js",
     "tests/v8-shared-verification.test.js",
     "tests/v8-shared-session-security.test.js",
@@ -54,6 +55,7 @@ const COMPATIBILITY = Object.freeze({
     "tests/v8-db-compatibility-baseline.test.js",
     "tests/v8-migration-contract.test.js",
     "tests/v8-environment-isolation.test.js",
+    "tests/v8-bug002-hostinger-upstream-503.test.js",
     "tests/v7-runtime-schema-compatibility.test.js",
     "tests/v7-migrate-identity-gate.test.js",
     "tests/v7-tenant-isolation-security.test.js",
@@ -126,6 +128,7 @@ const ACTIVECLINIC = Object.freeze({
 const COVERAGE_TARGETS = Object.freeze([
   "src/platform/schema/v8DbCompatibilityContract.js",
   "src/platform/config/v8DeploymentIsolation.js",
+  "src/platform/ops/hostingerUpstreamProbe.js",
   "src/platform/http/platformRequestContext.js",
   "src/platform/config/canonicalHostRegistry.js",
   "src/platform/session/v5SessionCookie.js",
