@@ -16,10 +16,13 @@ const {
   getCsrfCookieName,
 } = require("../../platform/http/v5Csrf");
 const {
-  setV5SessionCookie,
   clearV5SessionCookie,
 } = require("../../platform/session/v5SessionCookie");
-const { terminateV5BrowserSession } = require("../../platform/session/terminateV5BrowserSession");
+const {
+  issueAuthenticatedSessionCookie,
+  logoutAuthenticatedBrowserSession,
+  applyLogoutResponseHeaders,
+} = require("../../platform/session/sharedSessionSecurity");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const { resolveHostname } = require("../../platform/host");
 const {
@@ -263,7 +266,12 @@ function registerActiveClinicAuthRoutes(app, deps) {
         );
       }
 
-      setV5SessionCookie(res, result.rawToken, { secure: isProduction, env, req });
+      await issueAuthenticatedSessionCookie(req, res, {
+        rawToken: result.rawToken,
+        env,
+        isProduction,
+        getPool,
+      });
       res.clearCookie(SELECTION_COOKIE, { path: "/" });
       if (result.mustChangePassword || result.status === AUTH_STATUS.MUST_CHANGE_PASSWORD) {
         return res.redirect(303, "/account/change-password");
@@ -364,7 +372,12 @@ function registerActiveClinicAuthRoutes(app, deps) {
         }
         return res.status(403).type("html").send(renderAccessUnavailablePage());
       }
-      setV5SessionCookie(res, completed.rawSessionToken, { secure: isProduction, env, req });
+      await issueAuthenticatedSessionCookie(req, res, {
+        rawToken: completed.rawSessionToken,
+        env,
+        isProduction,
+        getPool,
+      });
       res.clearCookie(SELECTION_COOKIE, { path: "/" });
       if (completed.mustChangePassword) {
         return res.redirect(303, "/account/change-password");
@@ -395,11 +408,10 @@ function registerActiveClinicAuthRoutes(app, deps) {
           editSessionService.CLOSE_REASON.LOGOUT
         ).catch(() => {});
       }
-      await terminateV5BrowserSession(req, res, {
+      await logoutAuthenticatedBrowserSession(req, res, {
         env,
         isProduction,
         getPool,
-        csrfCookieName: getCsrfCookieName(env, req),
         extraCookieNames: [SELECTION_COOKIE],
       });
     } catch {
@@ -407,6 +419,7 @@ function registerActiveClinicAuthRoutes(app, deps) {
         clearV5SessionCookie(res, { secure: isProduction, env, req });
         res.clearCookie(getCsrfCookieName(env, req), { path: "/" });
         res.clearCookie(SELECTION_COOKIE, { path: "/" });
+        applyLogoutResponseHeaders(res);
       } catch {
         /* ignore secondary clear failures */
       }
@@ -470,7 +483,12 @@ function registerActiveClinicAuthRoutes(app, deps) {
         userAgent: req.headers["user-agent"] || null,
       });
       if (fresh.ok) {
-        setV5SessionCookie(res, fresh.rawToken, { secure: isProduction, env, req });
+        await issueAuthenticatedSessionCookie(req, res, {
+          rawToken: fresh.rawToken,
+          env,
+          isProduction,
+          getPool,
+        });
       }
       return res.redirect(303, "/app");
     } catch (err) {

@@ -44,6 +44,7 @@ function wantsV5PrivateNoStore(pathOnly) {
     p === "/login" ||
     p.startsWith("/login/") ||
     p === "/logout" ||
+    p.startsWith("/logout/") ||
     p === "/admin" ||
     p.startsWith("/admin/") ||
     p === "/branch-admin" ||
@@ -53,13 +54,25 @@ function wantsV5PrivateNoStore(pathOnly) {
     p === "/member" ||
     p.startsWith("/member/") ||
     p.startsWith("/auth/") ||
+    p === "/account" ||
+    p.startsWith("/account/") ||
+    p === "/invite" ||
+    p.startsWith("/invite/") ||
+    p === "/reset-password" ||
+    p.startsWith("/reset-password/") ||
+    p === "/verify" ||
+    p.startsWith("/verify/") ||
     p === "/app" ||
     p.startsWith("/app/") ||
+    p.startsWith("/api/") ||
     // Clinic public HTML is cookie-gated for unpublished editor access.
     // Without private/no-store + Vary: Cookie, CDNs can serve anonymous 403
     // "unavailable" pages to authenticated editors.
     p.startsWith("/clinics/") ||
-    /\/patient(?:\/|$)/.test(p)
+    /\/patient(?:\/|$)/.test(p) ||
+    /\/billing(?:\/|$)/.test(p) ||
+    /\/pharmacy(?:\/|$)/.test(p) ||
+    /\/cashier(?:\/|$)/.test(p)
   );
 }
 

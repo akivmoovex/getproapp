@@ -25,6 +25,11 @@ const {
 const {
   createV5PrivateNoStoreMiddleware,
 } = require("./v5PrivateNoStore");
+const {
+  issueAuthenticatedSessionCookie,
+  logoutAuthenticatedBrowserSession,
+  createAuthenticatedResponseNoStoreMiddleware,
+} = require("../session/sharedSessionSecurity");
 const { createV5AuthLogger } = require("./v5AuthObservability");
 const { createLoadPlatformHostContext } = require("./loadPlatformHostContext");
 const {
@@ -151,12 +156,6 @@ const {
   validateCsrf,
   setCsrfCookie,
 } = require("./v5Csrf");
-const {
-  setV5SessionCookie,
-  clearV5SessionCookie,
-  readV5SessionCookie,
-} = require("../session/v5SessionCookie");
-const { revokeV5Session } = require("../session/revokeV5Session");
 const { authenticateBlessBoardUser } = require("../../blessboard/services/authenticateBlessBoardUser");
 const {
   listActiveRolesForUser,
@@ -466,6 +465,7 @@ function createV5FoundationApp(options) {
       env,
     })
   );
+  app.use(createAuthenticatedResponseNoStoreMiddleware());
 
   // 4b. Apex session-scoped tenant (HQ website lifecycle without wildcard hosts)
   app.use(
@@ -1309,10 +1309,11 @@ function createV5FoundationApp(options) {
         outcome: "ok",
         roleKeys: result.roles,
       });
-      setV5SessionCookie(res, result.rawToken, {
-        secure: isProduction,
+      await issueAuthenticatedSessionCookie(req, res, {
+        rawToken: result.rawToken,
         env,
-        req,
+        isProduction,
+        getPool,
       });
       setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
       authLog.logAuthEvent(req, "apex_login_session_created", {
@@ -1425,10 +1426,11 @@ function createV5FoundationApp(options) {
         }
         return sendAuthError(req, res, status, message);
       }
-      setV5SessionCookie(res, redeemed.rawSessionToken, {
-        secure: isProduction,
+      await issueAuthenticatedSessionCookie(req, res, {
+        rawToken: redeemed.rawSessionToken,
         env,
-        req,
+        isProduction,
+        getPool,
       });
       const {
         resolveTenantPortalAccess,
@@ -1494,19 +1496,11 @@ function createV5FoundationApp(options) {
     if (!validateCsrf(req, submitted, env)) {
       return res.status(403).type("text").send("Invalid or missing CSRF token.");
     }
-    const deployment = getPlatformDeploymentCode(env);
-    const rawToken = readV5SessionCookie(req, env);
-    try {
-      if (deployment.ok && deployment.code && rawToken) {
-        await revokeV5Session(getPool(), {
-          rawToken,
-          deploymentCode: deployment.code,
-        });
-      }
-    } catch {
-      /* fail-open clear cookie */
-    }
-    clearV5SessionCookie(res, { secure: isProduction, env, req });
+    await logoutAuthenticatedBrowserSession(req, res, {
+      env,
+      isProduction,
+      getPool,
+    });
     const csrfToken = issueCsrfToken(env);
     setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
     return res.redirect(303, "/login");

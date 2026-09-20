@@ -446,10 +446,31 @@ async function countActiveSessionsForUser(client, userId) {
 
 /**
  * Revoke all non-revoked sessions for a user (including not-yet-expired).
+ * Prefer deployment-scoped revoke so V8 operations cannot wipe V7 rows.
  * @param {{ query: Function }} client
  * @param {string} userId
+ * @param {{ deploymentCode?: string, allowGlobal?: boolean }} [opts]
  */
-async function revokeAllSessionsForUser(client, userId) {
+async function revokeAllSessionsForUser(client, userId, opts) {
+  const options = opts && typeof opts === "object" ? opts : {};
+  const deploymentCode = options.deploymentCode
+    ? String(options.deploymentCode).trim().toLowerCase()
+    : "";
+  if (deploymentCode) {
+    const r = await client.query(
+      `UPDATE platform.deployment_sessions
+          SET revoked_at = now()
+        WHERE user_id = $1
+          AND deployment_code = $2
+          AND revoked_at IS NULL
+        RETURNING id`,
+      [userId, deploymentCode]
+    );
+    return r.rowCount || 0;
+  }
+  if (!options.allowGlobal) {
+    return 0;
+  }
   const r = await client.query(
     `UPDATE platform.deployment_sessions
         SET revoked_at = now()

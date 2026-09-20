@@ -187,7 +187,10 @@ async function resetBlessBoardUserPassword(db, input, options) {
 
     const passwordHash = await bcrypt.hash(req.password, BCRYPT_ROUNDS);
     await repo.updateUserPasswordHash(client, user.id, passwordHash);
-    const revokedCount = await repo.revokeAllSessionsForUser(client, user.id);
+    const revokedCount = await repo.revokeAllSessionsForUser(client, user.id, {
+      deploymentCode: req.deploymentCode,
+      allowGlobal: false,
+    });
 
     const organizationId = await repo.findAuditOrganizationIdForUser(client, user.id);
     if (organizationId) {

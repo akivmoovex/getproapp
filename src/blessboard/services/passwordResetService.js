@@ -22,6 +22,10 @@ const {
   PASSWORD_MIN,
   PASSWORD_MAX,
 } = require("../../platform/auth/sharedPasswordPolicy");
+const {
+  revokeSessionsByBlessBoardUser,
+} = require("../../platform/session/revokeV5Session");
+const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const PURPOSE = "password_reset";
 const TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -495,14 +499,18 @@ async function completePasswordReset(db, input) {
           purpose: PURPOSE,
         });
 
-        // Invalidate deployment sessions for this user.
-        await client.query(
-          `UPDATE platform.deployment_sessions
-              SET revoked_at = now()
-            WHERE user_id = $1
-              AND revoked_at IS NULL`,
-          [String(user.id)]
-        );
+        // Invalidate sessions for this user in the current deployment only
+        // (V8 must not revoke concurrent V7 testing sessions).
+        const explicitCode = String(src.deploymentCode || "").trim().toLowerCase();
+        const deployment = explicitCode
+          ? { ok: true, code: explicitCode }
+          : getPlatformDeploymentCode(src.env || process.env);
+        if (deployment.ok && deployment.code) {
+          await revokeSessionsByBlessBoardUser(client, {
+            userId: String(user.id),
+            deploymentCode: deployment.code,
+          });
+        }
 
         if (typeof client.query === "function") await client.query("COMMIT");
 

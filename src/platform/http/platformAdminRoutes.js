@@ -249,10 +249,8 @@ const {
   validateCsrf,
 } = require("./v5Csrf");
 const {
-  clearV5SessionCookie,
-  readV5SessionCookie,
-} = require("../session/v5SessionCookie");
-const { revokeV5Session } = require("../session/revokeV5Session");
+  logoutAuthenticatedBrowserSession,
+} = require("../session/sharedSessionSecurity");
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 const { getApexOrigin } = require("../../blessboard/http/tenantLoginHelpers");
 const {
@@ -1353,19 +1351,11 @@ function createPlatformAdminRouter(deps) {
     if (!validateCsrf(req, submitted, env)) {
       return res.status(403).type("text").send("Invalid or missing CSRF token.");
     }
-    const deployment = getPlatformDeploymentCode(env);
-    const rawToken = readV5SessionCookie(req, env);
-    try {
-      if (deployment.ok && deployment.code && rawToken) {
-        await revokeV5Session(getPool(), {
-          rawToken,
-          deploymentCode: deployment.code,
-        });
-      }
-    } catch {
-      /* fail-open clear cookie */
-    }
-    clearV5SessionCookie(res, { secure: isProduction, env });
+    await logoutAuthenticatedBrowserSession(req, res, {
+      env,
+      isProduction,
+      getPool,
+    });
     return res.redirect(303, "/login");
   });
 

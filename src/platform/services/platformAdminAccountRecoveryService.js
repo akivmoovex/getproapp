@@ -40,6 +40,29 @@ const STATUS = Object.freeze({
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+/**
+ * Session revoke opts: prefer current deployment so V8 ops cannot wipe V7 rows.
+ * @param {{ deploymentCode?: string, env?: NodeJS.ProcessEnv, allowGlobalSessionRevoke?: boolean }} input
+ */
+function sessionRevokeOpts(input) {
+  const src = input && typeof input === "object" ? input : {};
+  const explicit = String(src.deploymentCode || "").trim().toLowerCase();
+  if (explicit) {
+    return {
+      deploymentCode: explicit,
+      allowGlobal: Boolean(src.allowGlobalSessionRevoke),
+    };
+  }
+  const deployment = getPlatformDeploymentCode(src.env || process.env);
+  if (deployment.ok && deployment.code) {
+    return {
+      deploymentCode: deployment.code,
+      allowGlobal: Boolean(src.allowGlobalSessionRevoke),
+    };
+  }
+  return { allowGlobal: Boolean(src.allowGlobalSessionRevoke) };
+}
+
 const RATE_WINDOW_MS = 15 * 60 * 1000;
 const RATE_MAX_PA_ACTION = 8;
 const RATE_MAX_INVITE = 5;
@@ -391,7 +414,7 @@ async function revokeSessions(db, input) {
     if (await consumePaActionRate(client, user.id, "revoke_sessions")) {
       return { ok: false, status: STATUS.RATE_LIMITED, reason: "rate_limited" };
     }
-    const count = await authRepo.revokeAllSessionsForUser(client, user.id);
+    const count = await authRepo.revokeAllSessionsForUser(client, user.id, sessionRevokeOpts(input));
     const orgId = await authRepo.findAuditOrganizationIdForUser(client, user.id);
     await auditRecovery(db, {
       env: input.env,
@@ -425,7 +448,11 @@ async function requirePasswordChange(db, input) {
       return { ok: false, status: STATUS.RATE_LIMITED, reason: "rate_limited" };
     }
     await authRepo.setPasswordChangeRequired(client, user.id, true);
-    const revokedCount = await authRepo.revokeAllSessionsForUser(client, user.id);
+    const revokedCount = await authRepo.revokeAllSessionsForUser(
+      client,
+      user.id,
+      sessionRevokeOpts(input)
+    );
     const orgId = await authRepo.findAuditOrganizationIdForUser(client, user.id);
     await auditRecovery(db, {
       env: input.env,
@@ -466,7 +493,11 @@ async function suspendSignIn(db, input) {
     }
     const fromStatus = String(user.status);
     await authRepo.updateUserStatus(client, user.id, "suspended");
-    const revokedCount = await authRepo.revokeAllSessionsForUser(client, user.id);
+    const revokedCount = await authRepo.revokeAllSessionsForUser(
+      client,
+      user.id,
+      sessionRevokeOpts(input)
+    );
     const orgId = await authRepo.findAuditOrganizationIdForUser(client, user.id);
     await auditRecovery(db, {
       env: input.env,

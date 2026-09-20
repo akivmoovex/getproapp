@@ -7,7 +7,10 @@
 const rateLimit = require("express-rate-limit");
 const crypto = require("crypto");
 const { issueCsrfToken, setCsrfCookie, validateCsrf, CSRF_FIELD } = require("../../platform/http/v5Csrf");
-const { setV5SessionCookie, clearV5SessionCookie } = require("../../platform/session/v5SessionCookie");
+const {
+  issueAuthenticatedSessionCookie,
+  logoutAuthenticatedBrowserSession,
+} = require("../../platform/session/sharedSessionSecurity");
 const {
   authenticatePatientIdentity,
 } = require("../services/activeClinicPatientPortalAuthService");
@@ -354,7 +357,12 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
             );
         }
 
-        setV5SessionCookie(res, auth.rawToken, { secure: isProduction, env });
+        await issueAuthenticatedSessionCookie(req, res, {
+          rawToken: auth.rawToken,
+          env,
+          isProduction,
+          getPool,
+        });
         return res.redirect(303, `/clinics/${clinicKey}/patient`);
       } catch (err) {
         return next(err);
@@ -375,9 +383,11 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         return res.status(403).json({ ok: false, code: "csrf_invalid" });
       }
 
-      clearV5SessionCookie(res, { secure: isProduction, env });
-      const { getCsrfCookieName } = require("../../platform/http/v5Csrf");
-      res.clearCookie(getCsrfCookieName(env), { path: "/" });
+      await logoutAuthenticatedBrowserSession(req, res, {
+        env,
+        isProduction,
+        getPool,
+      });
 
       if (req.activeClinicPatientAuth && req.activeClinicPatientAuth.authenticated) {
         const patientId =

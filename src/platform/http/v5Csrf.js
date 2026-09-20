@@ -47,13 +47,8 @@ function getCsrfCookieName(env, req) {
  * @param {NodeJS.ProcessEnv} [env]
  */
 function getCsrfSecret(env) {
-  const source = env || process.env;
-  const secret = String(source.SESSION_SECRET || "").trim();
-  if (secret) return secret;
-  if (String(source.NODE_ENV || "").toLowerCase() === "production") {
-    throw new Error("SESSION_SECRET is required for V5 CSRF in production");
-  }
-  return "dev_v5_csrf_secret_change_me";
+  const { resolveSessionSigningSecret } = require("../session/sharedSessionSecurity");
+  return resolveSessionSigningSecret(env);
 }
 
 /**

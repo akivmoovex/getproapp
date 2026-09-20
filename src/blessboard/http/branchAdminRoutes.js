@@ -25,14 +25,13 @@ const {
   setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
 const {
-  clearV5SessionCookie,
-  readV5SessionCookie,
-} = require("../../platform/session/v5SessionCookie");
-const { revokeV5Session } = require("../../platform/session/revokeV5Session");
+  logoutAuthenticatedBrowserSession,
+} = require("../../platform/session/sharedSessionSecurity");
 const { exitSupport } = require("../../platform/services/platformSupportModeService");
 const {
   readSupportContextCookie,
   clearSupportContextCookie,
+  cookieName: supportContextCookieName,
 } = require("../../platform/http/supportContextCookie");
 const {
   getBranchSettingsPageModel,
@@ -47,7 +46,6 @@ const {
   inviteBlessBoardStaff,
   STATUS: INVITE_STATUS,
 } = require("../services/inviteBlessBoardStaff");
-const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 const { tenantAbsoluteUrl } = require("./tenantLoginHelpers");
 const { createRejectApex } = require("./rejectApex");
@@ -433,19 +431,12 @@ function createBranchAdminRouter(deps) {
     if (!validateCsrf(req, submitted, env)) {
       return res.status(403).type("text").send("Invalid or missing CSRF token.");
     }
-    const deployment = getPlatformDeploymentCode(env);
-    const rawToken = readV5SessionCookie(req, env);
-    try {
-      if (deployment.ok && deployment.code && rawToken) {
-        await revokeV5Session(getPool(), {
-          rawToken,
-          deploymentCode: deployment.code,
-        });
-      }
-    } catch {
-      /* fail-open clear cookie */
-    }
-    clearV5SessionCookie(res, { secure: isProduction, env, req });
+    await logoutAuthenticatedBrowserSession(req, res, {
+      env,
+      isProduction,
+      getPool,
+      extraCookieNames: [supportContextCookieName(env)],
+    });
     clearSupportContextCookie(res, { secure: isProduction, env });
     const csrfToken = issueCsrfToken(env);
     setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });

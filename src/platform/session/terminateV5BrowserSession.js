@@ -5,15 +5,38 @@
  * Logout is a session-termination operation: it must complete even when
  * tenant/org/facility/product context is stale. Cookie names always come
  * from the same deployment/session resolver used at login.
+ *
+ * Revoke is always scoped by deployment_code so a V8 logout cannot invalidate
+ * V7 session rows that share the same PostgreSQL database.
  */
 
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
+const { buildHostOnlyCookieOptions } = require("../config/v8DeploymentIsolation");
 const {
   readV5SessionCookie,
   clearV5SessionCookie,
   getV5SessionCookieName,
 } = require("./v5SessionCookie");
 const { revokeV5Session } = require("./revokeV5Session");
+
+/**
+ * @param {import('express').Response} res
+ * @param {string} cookieName
+ * @param {{ secure?: boolean, env?: NodeJS.ProcessEnv }} opts
+ */
+function clearHostOnlyCookie(res, cookieName, opts) {
+  const name = String(cookieName || "").trim();
+  if (!name) return;
+  const env = (opts && opts.env) || process.env;
+  const base = buildHostOnlyCookieOptions(env);
+  const secure = opts && opts.secure !== undefined ? opts.secure : base.secure;
+  res.clearCookie(name, {
+    ...base,
+    secure,
+    // CSRF cookies are readable; clear with matching path/host-only attrs.
+    httpOnly: false,
+  });
+}
 
 /**
  * @param {import('express').Request} req
@@ -60,11 +83,17 @@ async function terminateV5BrowserSession(req, res, deps) {
 
   clearV5SessionCookie(res, { secure: isProduction, env, req });
   if (csrfCookieName) {
-    res.clearCookie(csrfCookieName, { path: "/" });
+    clearHostOnlyCookie(res, csrfCookieName, { secure: isProduction, env });
   }
   for (const name of extraCookieNames) {
     const cookieName = String(name || "").trim();
-    if (cookieName) res.clearCookie(cookieName, { path: "/" });
+    if (!cookieName) continue;
+    const base = buildHostOnlyCookieOptions(env);
+    const secure = isProduction ? true : base.secure;
+    // Clear once with host-only attrs (covers HttpOnly session-like cookies).
+    res.clearCookie(cookieName, { ...base, secure });
+    // And once with httpOnly:false for double-submit CSRF-style cookies.
+    clearHostOnlyCookie(res, cookieName, { secure, env });
   }
 
   return {
@@ -79,4 +108,5 @@ async function terminateV5BrowserSession(req, res, deps) {
 
 module.exports = {
   terminateV5BrowserSession,
+  clearHostOnlyCookie,
 };

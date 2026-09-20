@@ -20,6 +20,7 @@ const {
   STATUS,
   NEUTRAL_MESSAGE,
 } = require("../services/passwordResetService");
+const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const {
   resolveBlessBoardFormPhone,
   blessBoardPhoneFieldLocals,
@@ -175,6 +176,10 @@ function createPasswordResetRouter(opts) {
       token,
       password: req.body && req.body.password,
       passwordConfirm: req.body && req.body.password_confirm,
+      env,
+      deploymentCode: (getPlatformDeploymentCode(env).ok
+        ? getPlatformDeploymentCode(env).code
+        : null),
     });
 
     if (result.ok) {

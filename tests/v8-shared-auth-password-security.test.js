@@ -298,6 +298,7 @@ describe("V8 BlessBoard + ActiveClinic password recovery security", () => {
       token,
       password: NEW_PASSWORD,
       passwordConfirm: NEW_PASSWORD,
+      deploymentCode: CODE_ORG_STAGING,
     });
     assert.equal(done.ok, true);
 

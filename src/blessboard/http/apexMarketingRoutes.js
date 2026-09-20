@@ -69,8 +69,8 @@ const {
 } = require("../config/instantFreeProvisioningEnabled");
 const { establishBlessBoardSession } = require("../services/establishBlessBoardSession");
 const {
-  setV5SessionCookie,
-} = require("../../platform/session/v5SessionCookie");
+  issueAuthenticatedSessionCookie,
+} = require("../../platform/session/sharedSessionSecurity");
 const { resolveHostname } = require("../../platform/host");
 const { logRegistrationTrace } = require("../services/registrationTraceLog");
 const { mapPublicPlanToDbPlanKey } = require("../services/registrationPlanMapping");
@@ -1032,7 +1032,12 @@ function createApexMarketingRouter(deps) {
           userAgent: (req.get && req.get("user-agent")) || null,
         });
         if (sessionResult.ok && sessionResult.rawToken) {
-          setV5SessionCookie(res, sessionResult.rawToken, { secure: isProduction, env });
+          await issueAuthenticatedSessionCookie(req, res, {
+            rawToken: sessionResult.rawToken,
+            env,
+            isProduction,
+            getPool,
+          });
           sessionOk = true;
           logRegistrationTrace(req, {
             event: "church_registration_session",

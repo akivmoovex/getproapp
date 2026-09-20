@@ -43,10 +43,8 @@ const {
   createPlatformIdentitySession,
 } = require("../../platform/session/createDeploymentSession");
 const {
-  setV5SessionCookie,
-  readV5SessionCookie,
-} = require("../../platform/session/v5SessionCookie");
-const { revokeV5Session } = require("../../platform/session/revokeV5Session");
+  issueAuthenticatedSessionCookie,
+} = require("../../platform/session/sharedSessionSecurity");
 const {
   renderAccessStatePage,
   STATE,
@@ -354,7 +352,6 @@ function registerActiveClinicAppRoutes(app, deps) {
         return res.redirect(303, "/app/select-organization");
       }
 
-      const rawToken = readV5SessionCookie(req, env);
       const identityId = req.activeClinicAuth.platformIdentity.id;
       const fresh = await createPlatformIdentitySession(getPool(), {
         deploymentCode: deployment.code,
@@ -373,17 +370,12 @@ function registerActiveClinicAppRoutes(app, deps) {
       if (!fresh.ok) {
         return res.redirect(303, "/app/select-organization");
       }
-      if (rawToken) {
-        try {
-          await revokeV5Session(getPool(), {
-            rawToken,
-            deploymentCode: deployment.code,
-          });
-        } catch {
-          /* new session already issued */
-        }
-      }
-      setV5SessionCookie(res, fresh.rawToken, { secure: isProduction, env, req });
+      await issueAuthenticatedSessionCookie(req, res, {
+        rawToken: fresh.rawToken,
+        env,
+        isProduction,
+        getPool,
+      });
       issuePageCsrf(res, req);
       return res.redirect(303, "/app");
     } catch (err) {

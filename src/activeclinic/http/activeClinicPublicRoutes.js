@@ -33,7 +33,9 @@ const {
 const {
   authenticateActiveClinicIdentity,
 } = require("../services/authenticateActiveClinicIdentity");
-const { setV5SessionCookie } = require("../../platform/session/v5SessionCookie");
+const {
+  issueAuthenticatedSessionCookie,
+} = require("../../platform/session/sharedSessionSecurity");
 const {
   buildRegistrationSuccessRedirect,
 } = require("../../platform/registration/registrationSuccessPresentation");
@@ -1039,7 +1041,12 @@ function registerActiveClinicPublicRoutes(app, deps) {
               userAgent: req.headers["user-agent"] || null,
             });
             if (auth && auth.ok && auth.rawToken) {
-              setV5SessionCookie(res, auth.rawToken, { secure: isProduction, env, req });
+              await issueAuthenticatedSessionCookie(req, res, {
+                rawToken: auth.rawToken,
+                env,
+                isProduction,
+                getPool,
+              });
             }
           } catch {
             /* session is optional; administrator can still sign in */

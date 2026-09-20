@@ -28,6 +28,7 @@ const COVERAGE_TEST_FILES = Object.freeze([
   "tests/v8-shared-module-coverage.test.js",
   "tests/v8-shared-auth-password-security.test.js",
   "tests/v8-shared-verification.test.js",
+  "tests/v8-shared-session-security.test.js",
   "tests/deployment-profiles.test.js",
 ]);
 

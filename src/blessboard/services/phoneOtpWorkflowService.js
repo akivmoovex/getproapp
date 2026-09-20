@@ -20,6 +20,7 @@ const {
   validatePasswordPair,
 } = require("../../platform/auth/sharedPasswordPolicy");
 const { hashSessionToken } = require("../../platform/session/sessionToken");
+const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const inviteRepo = require("../repositories/userInvitationRepository");
 const authRepo = require("../repositories/blessBoardAuthRepository");
 const { BCRYPT_ROUNDS } = require("./createBlessBoardUser");
@@ -369,7 +370,11 @@ async function completePhonePasswordRecovery(db, input, env) {
         }
 
         await authRepo.updateUserPasswordHash(client, user.id, passwordHash);
-        const revoked = await authRepo.revokeAllSessionsForUser(client, user.id);
+        const deployment = getPlatformDeploymentCode(env || process.env);
+        const revoked = await authRepo.revokeAllSessionsForUser(client, user.id, {
+          deploymentCode: deployment.ok ? deployment.code : undefined,
+          allowGlobal: false,
+        });
         await client.query("COMMIT");
         return {
           ok: true,

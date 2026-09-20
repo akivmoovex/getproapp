@@ -23,6 +23,9 @@ const {
   requestPathOnly,
 } = require("../../platform/http/v5PrivateNoStore");
 const { createLoadV5Session } = require("../../platform/http/loadV5Session");
+const {
+  createAuthenticatedResponseNoStoreMiddleware,
+} = require("../../platform/session/sharedSessionSecurity");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const {
   resolveDeploymentConfiguration,
@@ -222,6 +225,7 @@ function createActiveClinicFoundationApp(options) {
       env,
     })
   );
+  app.use(createAuthenticatedResponseNoStoreMiddleware());
 
   app.use(createLoadActiveClinicProductContext({ getPool, env }));
 

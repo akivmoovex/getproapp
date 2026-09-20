@@ -22,6 +22,7 @@ V8 is the development line for GetPro **V2.0** product work (BlessBoard + Active
 9. **Use the V8 regression gate.** Before merge, run `npm run test:v8:regression` (add `--with-coverage` / `test:v8:regression:coverage` when shared-platform modules change). See [`docs/testing/V8_TEST_INFRASTRUCTURE.md`](../testing/V8_TEST_INFRASTRUCTURE.md). Tests must use disposable fixtures and must never delete hosted V7 data.
 10. **Shared auth password policy.** Registration, invitations, recovery, and password changes must use `src/platform/auth/sharedPasswordPolicy.js`. See [`docs/security/V8_SHARED_AUTH_PASSWORD_SECURITY.md`](../security/V8_SHARED_AUTH_PASSWORD_SECURITY.md).
 11. **Shared email/phone verification.** Use `src/platform/verification/sharedVerificationService.js`. Legacy null verification timestamps must not lock users out of login. See [`docs/security/V8_SHARED_VERIFICATION.md`](../security/V8_SHARED_VERIFICATION.md).
+12. **Shared session & logout security.** Use `src/platform/session/sharedSessionSecurity.js`. V7/V8 must use distinct cookie names and prefer distinct signing secrets; logout and revoke must stay deployment-scoped. See [`docs/security/V8_SHARED_SESSION_SECURITY.md`](../security/V8_SHARED_SESSION_SECURITY.md).
 
 ## Branch model (summary)
 

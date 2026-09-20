@@ -16,11 +16,8 @@ const {
   setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
 const {
-  clearV5SessionCookie,
-  readV5SessionCookie,
-} = require("../../platform/session/v5SessionCookie");
-const { revokeV5Session } = require("../../platform/session/revokeV5Session");
-const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
+  logoutAuthenticatedBrowserSession,
+} = require("../../platform/session/sharedSessionSecurity");
 const {
   getMemberPortalProfile,
   updateMemberPortalProfile,
@@ -588,19 +585,11 @@ function createMemberPortalRouter(deps) {
     if (!validateCsrf(req, submitted, env)) {
       return res.status(403).type("text").send("Invalid or missing CSRF token.");
     }
-    const deployment = getPlatformDeploymentCode(env);
-    const rawToken = readV5SessionCookie(req, env);
-    try {
-      if (deployment.ok && deployment.code && rawToken) {
-        await revokeV5Session(getPool(), {
-          rawToken,
-          deploymentCode: deployment.code,
-        });
-      }
-    } catch {
-      /* fail-open clear cookie */
-    }
-    clearV5SessionCookie(res, { secure: isProduction, env, req });
+    await logoutAuthenticatedBrowserSession(req, res, {
+      env,
+      isProduction,
+      getPool,
+    });
     const csrfToken = issueCsrfToken(env);
     setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
     return res.redirect(303, "/");
