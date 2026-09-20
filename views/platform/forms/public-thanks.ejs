@@ -5,6 +5,12 @@
     <h1 class="mx-forms-title">Submission received</h1>
     <p class="mx-forms-sub" style="margin-left:auto;margin-right:auto">
       Thank you<%= form && form.title ? ' for completing “' + form.title + '”' : '' %>.
+      <% if (typeof idempotentReplay !== 'undefined' && idempotentReplay) { %>
+        Your previous submission was already recorded.
+      <% } %>
     </p>
+    <% if (typeof submission !== 'undefined' && submission && submission.id) { %>
+      <p style="font-size:0.85rem;color:var(--mx-forms-muted)">Reference: <%= submission.id %></p>
+    <% } %>
   </div>
 </div>

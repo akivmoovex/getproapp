@@ -5268,6 +5268,29 @@ function createPlatformAdminRouter(deps) {
     setAdminNoStore,
   });
 
+  // SH14 — cross-tenant forms overview (platform administrators only)
+  router.get("/admin/forms", requireApex, requirePlatformAdmin, async (req, res) => {
+    setAdminNoStore(res);
+    const { listPlatformFormsOverview } = require("../forms/tenantFormService");
+    const { renderFormView } = require("../forms/renderFormView");
+    const overview = await listPlatformFormsOverview(getPool(), {
+      productCode: req.query.product || null,
+      limit: 200,
+      authz: async (action) => ({ ok: action === "platform_admin" }),
+    });
+    if (!overview.ok) {
+      return sendControlled(req, res, 403, "You do not have access to platform forms.");
+    }
+    const html = renderFormView("platform-overview", {
+      brand: { productName: "Moovex Platform", productClass: "mx-forms--blessboard" },
+      forms: overview.forms,
+      stitchScreen: "SH14",
+      mobile: true,
+      pageTitle: "Platform forms",
+    });
+    return res.status(200).type("html").send(html);
+  });
+
   return router;
 }
 

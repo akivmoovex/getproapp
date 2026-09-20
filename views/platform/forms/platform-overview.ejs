@@ -1,0 +1,53 @@
+<% const pageTitle = 'Platform forms overview'; %>
+<div class="mx-forms-shell" data-screen="SH14">
+  <div class="mx-forms-top">
+    <div>
+      <div class="mx-forms-brand">Moovex Platform · Forms</div>
+      <h1 class="mx-forms-title">Cross-tenant forms overview</h1>
+      <p class="mx-forms-sub">Authorized platform administrators only. Tenant data remains scoped by organization.</p>
+    </div>
+  </div>
+
+  <div class="mx-forms-desktop-only mx-forms-panel">
+    <table class="mx-forms-table">
+      <thead>
+        <tr>
+          <th>Organization</th>
+          <th>Product</th>
+          <th>Form</th>
+          <th>Status</th>
+          <th>Submissions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% (forms || []).forEach(function (f) { %>
+          <tr>
+            <td>
+              <strong><%= f.organizationName %></strong>
+              <div style="font-size:0.8rem;color:var(--mx-forms-muted)"><%= f.organizationKey %></div>
+            </td>
+            <td><%= f.productCode %></td>
+            <td><%= f.title %></td>
+            <td><span class="mx-forms-badge mx-forms-badge--<%= f.status %>"><%= f.status %></span></td>
+            <td><%= f.submissionCount %></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+    <% if (!(forms && forms.length)) { %>
+      <p style="color:var(--mx-forms-muted)">No tenant forms yet.</p>
+    <% } %>
+  </div>
+
+  <div class="mx-forms-mobile-only mx-forms-cards">
+    <% (forms || []).forEach(function (f) { %>
+      <div class="mx-forms-card">
+        <strong><%= f.title %></strong>
+        <div style="margin-top:0.35rem;font-size:0.85rem;color:var(--mx-forms-muted)">
+          <%= f.organizationName %> · <%= f.productCode %> · <%= f.submissionCount %> submissions
+        </div>
+        <span class="mx-forms-badge mx-forms-badge--<%= f.status %>"><%= f.status %></span>
+      </div>
+    <% }) %>
+  </div>
+</div>

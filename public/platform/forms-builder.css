@@ -258,6 +258,21 @@
   margin-top: 1rem;
 }
 
+.mx-forms-input-error {
+  border-color: var(--mx-forms-danger) !important;
+  outline-color: var(--mx-forms-danger);
+}
+
+.mx-forms-field-error-label {
+  color: var(--mx-forms-danger);
+}
+
+.mx-forms-field-hint {
+  margin: 0.2rem 0 0;
+  font-size: 0.8rem;
+  color: var(--mx-forms-danger);
+}
+
 /* Mobile: stack studio; use cards instead of wide tables */
 @media (max-width: 799px) {
   .mx-forms-desktop-only { display: none !important; }

@@ -21,8 +21,27 @@ const PRODUCT_CODES = Object.freeze({
   ACTIVECLINIC: "activeclinic",
 });
 
+/** Form submission review statuses (SH13) — not clinical record states. */
+const REVIEW_STATUSES = Object.freeze({
+  SUBMITTED: "submitted",
+  IN_REVIEW: "in_review",
+  ACCEPTED: "accepted",
+  REJECTED: "rejected",
+  CLOSED: "closed",
+});
+
+const REVIEW_TRANSITIONS = Object.freeze({
+  submitted: Object.freeze(["in_review", "rejected", "closed"]),
+  in_review: Object.freeze(["accepted", "rejected", "submitted", "closed"]),
+  accepted: Object.freeze(["closed", "in_review"]),
+  rejected: Object.freeze(["closed", "in_review"]),
+  closed: Object.freeze([]),
+});
+
 module.exports = {
   ACCESS_MODES,
   FORM_STATUSES,
   PRODUCT_CODES,
+  REVIEW_STATUSES,
+  REVIEW_TRANSITIONS,
 };

@@ -1,0 +1,69 @@
+<% const pageTitle = form.title + ' · Submissions'; %>
+<div class="mx-forms-shell" data-screen="SH11">
+  <div class="mx-forms-top">
+    <div>
+      <div class="mx-forms-brand"><%= brand.productName %> · Submissions</div>
+      <h1 class="mx-forms-title"><%= form.title %></h1>
+      <p class="mx-forms-sub">Review respondent answers. Internal notes stay restricted to managers.</p>
+    </div>
+    <a class="mx-forms-btn mx-forms-btn--ghost" href="<%= adminBasePath %>/<%= form.id %>/studio">Studio</a>
+  </div>
+  <nav class="mx-forms-nav">
+    <a href="<%= adminBasePath %>/<%= form.id %>/studio">Studio</a>
+    <a href="<%= adminBasePath %>/<%= form.id %>/preview">Preview</a>
+    <a href="<%= adminBasePath %>/<%= form.id %>/publication">Publication</a>
+    <a href="<%= adminBasePath %>/<%= form.id %>/sharing">Sharing</a>
+    <a class="is-active" href="<%= adminBasePath %>/<%= form.id %>/submissions">Submissions</a>
+  </nav>
+
+  <form method="get" class="mx-forms-panel" style="margin-bottom:1rem">
+    <label for="status">Filter by status</label>
+    <select id="status" name="status" onchange="this.form.submit()">
+      <option value="">All</option>
+      <% Object.values(reviewStatuses || {}).forEach(function (st) { %>
+        <option value="<%= st %>" <%= filterStatus === st ? 'selected' : '' %>><%= st %></option>
+      <% }) %>
+    </select>
+  </form>
+
+  <div class="mx-forms-desktop-only mx-forms-panel">
+    <% if (!(submissions && submissions.length)) { %>
+      <p style="color:var(--mx-forms-muted)">No submissions yet.</p>
+    <% } else { %>
+      <table class="mx-forms-table">
+        <thead>
+          <tr>
+            <th>Submitted</th>
+            <th>Email</th>
+            <th>Status</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          <% submissions.forEach(function (s) { %>
+            <tr>
+              <td><%= s.submittedAt ? new Date(s.submittedAt).toISOString().slice(0,19) : '—' %>Z</td>
+              <td><%= s.submitterEmail || '—' %></td>
+              <td><span class="mx-forms-badge"><%= s.reviewStatus %></span></td>
+              <td><a href="<%= adminBasePath %>/<%= form.id %>/submissions/<%= s.id %>">Open</a></td>
+            </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    <% } %>
+  </div>
+
+  <div class="mx-forms-mobile-only mx-forms-cards">
+    <% (submissions || []).forEach(function (s) { %>
+      <a class="mx-forms-card" href="<%= adminBasePath %>/<%= form.id %>/submissions/<%= s.id %>" style="display:block;text-decoration:none;color:inherit">
+        <div style="display:flex;justify-content:space-between;gap:0.5rem">
+          <strong><%= s.submitterEmail || 'Anonymous' %></strong>
+          <span class="mx-forms-badge"><%= s.reviewStatus %></span>
+        </div>
+        <div style="margin-top:0.35rem;color:var(--mx-forms-muted);font-size:0.85rem">
+          <%= s.submittedAt ? new Date(s.submittedAt).toISOString().slice(0,16) : '' %>
+        </div>
+      </a>
+    <% }) %>
+  </div>
+</div>

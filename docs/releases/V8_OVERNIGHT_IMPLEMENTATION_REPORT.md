@@ -59,6 +59,22 @@ After each task, report:
 
 ## Task log
 
+### PROMPT 08 — V8 public forms and submission review (SH08–SH15)
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_SHARED_FORMS_END_TO_END_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` @ `175be7b2` (synced with `origin/V8` before task) |
+| **Scope** | Public submit/validate/confirm; admin submissions review; platform overview; consent/idempotency/rate-limit; no notifications |
+| **Stitch** | `projects/5087412725796049014` |
+| **Report** | [`docs/releases/V8_SHARED_FORMS_E2E_PROMPT08.md`](./V8_SHARED_FORMS_E2E_PROMPT08.md) |
+| **Changed files** | `040_shared_form_submission_review.sql` · forms service/repo/routes/views · platform `/admin/forms` · tests · docs |
+| **Test results** | Form builder **10/10** + e2e **9/9** = **19/19 PASS**; BB forms-requests regression PASS |
+| **Commit SHA** | _(filled after commit)_ |
+| **Push status** | _(filled after push)_ |
+| **Blockers** | None. Migrations 039/040 not applied on hosted DB. |
+
 ### PROMPT 07 — V8 shared form builder (SH01–SH07)
 
 | Field | Value |

@@ -1,0 +1,83 @@
+<%
+  const pageTitle = 'Submission';
+  const fields = (form && form.schemaJson && form.schemaJson.fields) || [];
+  const answers = (submission && submission.answersJson) || {};
+%>
+<div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'SH12' %>">
+  <div class="mx-forms-top">
+    <div>
+      <div class="mx-forms-brand"><%= brand.productName %> · Submission</div>
+      <h1 class="mx-forms-title"><%= form ? form.title : 'Submission' %></h1>
+      <p class="mx-forms-sub">
+        Status <span class="mx-forms-badge"><%= submission && submission.reviewStatus %></span>
+        · <%= submission && submission.submittedAt ? new Date(submission.submittedAt).toISOString() : '' %>
+      </p>
+    </div>
+    <a class="mx-forms-btn mx-forms-btn--ghost" href="<%= adminBasePath %>/<%= form.id %>/submissions">All submissions</a>
+  </div>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="mx-forms-alert mx-forms-alert--danger"><%= error %></div>
+  <% } %>
+
+  <div class="mx-forms-grid mx-forms-grid--share">
+    <section class="mx-forms-panel">
+      <h2>Answers</h2>
+      <% if (!submission) { %>
+        <p>Submission not found.</p>
+      <% } else { %>
+        <dl>
+          <% fields.forEach(function (field) { %>
+            <dt style="font-weight:700;margin-top:0.65rem"><%= field.label %></dt>
+            <dd style="margin:0.15rem 0 0;color:var(--mx-forms-muted)">
+              <%= answers[field.key] == null || answers[field.key] === '' ? '—' : answers[field.key] %>
+            </dd>
+          <% }) %>
+        </dl>
+        <p style="margin-top:1rem;font-size:0.85rem;color:var(--mx-forms-muted)">
+          Email: <%= submission.submitterEmail || '—' %>
+          <% if (submission.consentAcceptedAt) { %> · Consent recorded<% } %>
+        </p>
+      <% } %>
+    </section>
+
+    <section class="mx-forms-panel">
+      <h2>Review</h2>
+      <% if (canManage && submission) { %>
+        <form method="post" action="<%= adminBasePath %>/<%= form.id %>/submissions/<%= submission.id %>/review">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+          <label for="review_status">Change status</label>
+          <select id="review_status" name="review_status" required>
+            <option value="<%= submission.reviewStatus %>"><%= submission.reviewStatus %> (current)</option>
+            <% (allowedNext || []).forEach(function (st) { %>
+              <option value="<%= st %>"><%= st %></option>
+            <% }) %>
+          </select>
+
+          <% if (canEditNotes) { %>
+            <label for="internal_notes">Internal notes (restricted)</label>
+            <textarea id="internal_notes" name="internal_notes" rows="4" maxlength="5000"><%= submission.internalNotes || '' %></textarea>
+            <p style="font-size:0.8rem;color:var(--mx-forms-muted)">Not shown to respondents.</p>
+          <% } %>
+
+          <div class="mx-forms-actions">
+            <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Save review</button>
+          </div>
+        </form>
+      <% } else if (submission && submission.internalNotes == null) { %>
+        <p style="color:var(--mx-forms-muted)">View-only. Managers can change status and add internal notes.</p>
+      <% } %>
+
+      <% if (submission && Array.isArray(submission.statusHistory) && submission.statusHistory.length) { %>
+        <h3 style="margin-top:1.25rem">History</h3>
+        <ul>
+          <% submission.statusHistory.forEach(function (h) { %>
+            <li style="font-size:0.85rem;color:var(--mx-forms-muted)">
+              <%= h.at || '' %>: <%= h.from ? (h.from + ' → ') : '' %><%= h.to || '' %>
+            </li>
+          <% }) %>
+        </ul>
+      <% } %>
+    </section>
+  </div>
+</div>

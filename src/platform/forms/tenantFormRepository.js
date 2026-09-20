@@ -4,7 +4,14 @@ const FORM_COLUMNS = `
   id, organization_id, product_code, form_key, title, description, category,
   schema_json, schema_version, status, access_mode, discoverable, public_token,
   published_at, unpublished_at, created_by_identity_id, updated_by_identity_id,
-  created_at, updated_at
+  created_at, updated_at, branch_id, facility_id, require_consent
+`;
+
+const SUBMISSION_COLUMNS = `
+  id, form_id, organization_id, product_code, schema_version, answers_json,
+  submitter_email, access_token_id, status, review_status, internal_notes,
+  idempotency_key, consent_accepted_at, branch_id, facility_id,
+  reviewed_by_identity_id, reviewed_at, status_history_json, submitted_at
 `;
 
 function mapForm(row) {
@@ -29,7 +36,38 @@ function mapForm(row) {
     updatedByIdentityId: row.updated_by_identity_id,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    branchId: row.branch_id || null,
+    facilityId: row.facility_id || null,
+    requireConsent: row.require_consent !== false,
   };
+}
+
+function mapSubmission(row, { includeInternalNotes } = {}) {
+  if (!row) return null;
+  const out = {
+    id: row.id,
+    formId: row.form_id,
+    organizationId: row.organization_id,
+    productCode: row.product_code,
+    schemaVersion: row.schema_version,
+    answersJson: row.answers_json,
+    submitterEmail: row.submitter_email,
+    accessTokenId: row.access_token_id,
+    status: row.status,
+    reviewStatus: row.review_status || row.status || "submitted",
+    idempotencyKey: row.idempotency_key || null,
+    consentAcceptedAt: row.consent_accepted_at || null,
+    branchId: row.branch_id || null,
+    facilityId: row.facility_id || null,
+    reviewedByIdentityId: row.reviewed_by_identity_id || null,
+    reviewedAt: row.reviewed_at || null,
+    statusHistory: row.status_history_json || [],
+    submittedAt: row.submitted_at,
+  };
+  if (includeInternalNotes) {
+    out.internalNotes = row.internal_notes || null;
+  }
+  return out;
 }
 
 async function insertForm(client, row) {
@@ -270,13 +308,23 @@ async function markAccessTokenUsed(client, { id, organizationId }) {
 }
 
 async function insertSubmission(client, row) {
+  const history = [
+    {
+      at: new Date().toISOString(),
+      to: "submitted",
+      by: null,
+      note: "public_submit",
+    },
+  ];
   const result = await client.query(
     `INSERT INTO platform.tenant_form_submissions (
        form_id, organization_id, product_code, schema_version, answers_json,
-       submitter_email, access_token_id, status
-     ) VALUES ($1,$2,$3,$4,$5::jsonb,$6,$7,'submitted')
-     RETURNING id, form_id, organization_id, product_code, schema_version,
-               answers_json, submitter_email, access_token_id, status, submitted_at`,
+       submitter_email, access_token_id, status, review_status, idempotency_key,
+       consent_accepted_at, branch_id, facility_id, status_history_json
+     ) VALUES (
+       $1,$2,$3,$4,$5::jsonb,$6,$7,'submitted','submitted',$8,$9,$10,$11,$12::jsonb
+     )
+     RETURNING ${SUBMISSION_COLUMNS}`,
     [
       row.formId,
       row.organizationId,
@@ -285,44 +333,201 @@ async function insertSubmission(client, row) {
       JSON.stringify(row.answersJson),
       row.submitterEmail || null,
       row.accessTokenId || null,
+      row.idempotencyKey || null,
+      row.consentAcceptedAt || null,
+      row.branchId || null,
+      row.facilityId || null,
+      JSON.stringify(history),
     ]
   );
-  const r = result.rows[0];
-  return {
-    id: r.id,
-    formId: r.form_id,
-    organizationId: r.organization_id,
-    productCode: r.product_code,
-    schemaVersion: r.schema_version,
-    answersJson: r.answers_json,
-    submitterEmail: r.submitter_email,
-    accessTokenId: r.access_token_id,
-    status: r.status,
-    submittedAt: r.submitted_at,
-  };
+  return mapSubmission(result.rows[0], { includeInternalNotes: false });
 }
 
-async function listSubmissions(client, { formId, organizationId, limit }) {
+async function findSubmissionByIdempotency(client, { formId, idempotencyKey }) {
+  if (!idempotencyKey) return null;
   const result = await client.query(
-    `SELECT id, form_id, organization_id, product_code, schema_version,
-            answers_json, submitter_email, access_token_id, status, submitted_at
+    `SELECT ${SUBMISSION_COLUMNS}
        FROM platform.tenant_form_submissions
-      WHERE form_id = $1 AND organization_id = $2
-      ORDER BY submitted_at DESC
-      LIMIT $3`,
-    [formId, organizationId, Math.min(Math.max(Number(limit) || 50, 1), 200)]
+      WHERE form_id = $1 AND idempotency_key = $2
+      LIMIT 1`,
+    [formId, idempotencyKey]
   );
+  return mapSubmission(result.rows[0] || null, { includeInternalNotes: false });
+}
+
+async function getSubmissionById(
+  client,
+  { id, organizationId, formId, includeInternalNotes, branchId, facilityId }
+) {
+  const params = [id, organizationId];
+  let sql = `
+    SELECT ${SUBMISSION_COLUMNS}
+      FROM platform.tenant_form_submissions
+     WHERE id = $1 AND organization_id = $2`;
+  if (formId) {
+    params.push(formId);
+    sql += ` AND form_id = $${params.length}`;
+  }
+  if (branchId) {
+    params.push(branchId);
+    sql += ` AND branch_id = $${params.length}`;
+  }
+  if (facilityId) {
+    params.push(facilityId);
+    sql += ` AND facility_id = $${params.length}`;
+  }
+  sql += ` LIMIT 1`;
+  const result = await client.query(sql, params);
+  return mapSubmission(result.rows[0] || null, {
+    includeInternalNotes: includeInternalNotes === true,
+  });
+}
+
+async function listSubmissions(
+  client,
+  {
+    formId,
+    organizationId,
+    limit,
+    reviewStatus,
+    branchId,
+    facilityId,
+    includeInternalNotes,
+  }
+) {
+  const params = [formId, organizationId];
+  let sql = `
+    SELECT ${SUBMISSION_COLUMNS}
+      FROM platform.tenant_form_submissions
+     WHERE form_id = $1 AND organization_id = $2`;
+  if (reviewStatus) {
+    params.push(reviewStatus);
+    sql += ` AND review_status = $${params.length}`;
+  }
+  if (branchId) {
+    params.push(branchId);
+    sql += ` AND branch_id = $${params.length}`;
+  }
+  if (facilityId) {
+    params.push(facilityId);
+    sql += ` AND facility_id = $${params.length}`;
+  }
+  params.push(Math.min(Math.max(Number(limit) || 50, 1), 200));
+  sql += ` ORDER BY submitted_at DESC LIMIT $${params.length}`;
+  const result = await client.query(sql, params);
+  return result.rows.map((r) =>
+    mapSubmission(r, { includeInternalNotes: includeInternalNotes === true })
+  );
+}
+
+async function updateSubmissionReview(client, row) {
+  const result = await client.query(
+    `UPDATE platform.tenant_form_submissions SET
+       review_status = $4,
+       status = CASE WHEN $4 = 'closed' THEN 'archived' ELSE 'submitted' END,
+       internal_notes = CASE WHEN $5::boolean THEN $6 ELSE internal_notes END,
+       reviewed_by_identity_id = $7,
+       reviewed_at = now(),
+       status_history_json = COALESCE(status_history_json, '[]'::jsonb) || $8::jsonb
+     WHERE id = $1
+       AND organization_id = $2
+       AND form_id = $3
+     RETURNING ${SUBMISSION_COLUMNS}`,
+    [
+      row.id,
+      row.organizationId,
+      row.formId,
+      row.reviewStatus,
+      row.setInternalNotes === true,
+      row.internalNotes != null ? row.internalNotes : null,
+      row.reviewedByIdentityId || null,
+      JSON.stringify([row.historyEntry || {}]),
+    ]
+  );
+  return mapSubmission(result.rows[0] || null, { includeInternalNotes: true });
+}
+
+async function hitSubmissionRateLimit(client, { formId, bucketKey, maxHits, windowMs }) {
+  const windowStart = new Date(Date.now() - windowMs);
+  const existing = await client.query(
+    `SELECT id, hit_count, window_started_at
+       FROM platform.tenant_form_submission_rate_limits
+      WHERE form_id = $1 AND bucket_key = $2
+      LIMIT 1`,
+    [formId, bucketKey]
+  );
+  if (!existing.rows[0]) {
+    await client.query(
+      `INSERT INTO platform.tenant_form_submission_rate_limits (form_id, bucket_key, hit_count)
+       VALUES ($1, $2, 1)
+       ON CONFLICT (form_id, bucket_key) DO UPDATE SET
+         hit_count = platform.tenant_form_submission_rate_limits.hit_count + 1,
+         window_started_at = CASE
+           WHEN platform.tenant_form_submission_rate_limits.window_started_at < $3
+             THEN now()
+           ELSE platform.tenant_form_submission_rate_limits.window_started_at
+         END`,
+      [formId, bucketKey, windowStart]
+    );
+    return { ok: true, limited: false };
+  }
+  const row = existing.rows[0];
+  const started = new Date(row.window_started_at);
+  if (started < windowStart) {
+    await client.query(
+      `UPDATE platform.tenant_form_submission_rate_limits
+          SET hit_count = 1, window_started_at = now()
+        WHERE id = $1`,
+      [row.id]
+    );
+    return { ok: true, limited: false };
+  }
+  if (row.hit_count >= maxHits) {
+    return { ok: true, limited: true };
+  }
+  await client.query(
+    `UPDATE platform.tenant_form_submission_rate_limits
+        SET hit_count = hit_count + 1
+      WHERE id = $1`,
+    [row.id]
+  );
+  return { ok: true, limited: false };
+}
+
+async function listFormsCrossTenant(client, { productCode, limit }) {
+  const params = [];
+  let sql = `
+    SELECT f.id, f.organization_id, f.product_code, f.form_key, f.title, f.status,
+           f.access_mode, f.discoverable, f.schema_version, f.updated_at,
+           o.organization_key, o.display_name AS organization_name,
+           (
+             SELECT count(*)::int FROM platform.tenant_form_submissions s
+              WHERE s.form_id = f.id
+           ) AS submission_count
+      FROM platform.tenant_forms f
+      JOIN platform.organizations o ON o.id = f.organization_id
+     WHERE 1=1`;
+  if (productCode) {
+    params.push(productCode);
+    sql += ` AND f.product_code = $${params.length}`;
+  }
+  params.push(Math.min(Math.max(Number(limit) || 100, 1), 500));
+  sql += ` ORDER BY f.updated_at DESC LIMIT $${params.length}`;
+  const result = await client.query(sql, params);
   return result.rows.map((r) => ({
     id: r.id,
-    formId: r.form_id,
     organizationId: r.organization_id,
+    organizationKey: r.organization_key,
+    organizationName: r.organization_name,
     productCode: r.product_code,
-    schemaVersion: r.schema_version,
-    answersJson: r.answers_json,
-    submitterEmail: r.submitter_email,
-    accessTokenId: r.access_token_id,
+    formKey: r.form_key,
+    title: r.title,
     status: r.status,
-    submittedAt: r.submitted_at,
+    accessMode: r.access_mode,
+    discoverable: r.discoverable === true,
+    schemaVersion: r.schema_version,
+    submissionCount: r.submission_count,
+    updatedAt: r.updated_at,
   }));
 }
 
@@ -338,5 +543,10 @@ module.exports = {
   findAccessTokenByHash,
   markAccessTokenUsed,
   insertSubmission,
+  findSubmissionByIdempotency,
+  getSubmissionById,
   listSubmissions,
+  updateSubmissionReview,
+  hitSubmissionRateLimit,
+  listFormsCrossTenant,
 };

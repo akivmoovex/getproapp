@@ -13,7 +13,7 @@ const {
   validateFormCategory,
   ALLOWED_FIELD_TYPES,
 } = require("./formSchema");
-const { ACCESS_MODES, FORM_STATUSES, PRODUCT_CODES } = require("./formAccess");
+const { ACCESS_MODES, FORM_STATUSES, PRODUCT_CODES, REVIEW_STATUSES, REVIEW_TRANSITIONS } = require("./formAccess");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -715,6 +715,9 @@ async function getPublicForm(db, input) {
         publicToken: form.publicToken,
         productCode: form.productCode,
         organizationId: form.organizationId,
+        requireConsent: form.requireConsent !== false,
+        branchId: form.branchId || null,
+        facilityId: form.facilityId || null,
       },
     };
   } catch (err) {
@@ -730,6 +733,15 @@ async function submitPublicForm(db, input) {
     return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found" };
   }
 
+  let idempotencyKey = String(input.idempotencyKey || "").trim();
+  if (idempotencyKey) {
+    if (idempotencyKey.length < 8 || idempotencyKey.length > 128) {
+      return { ok: false, status: STATUS.INVALID_INPUT, reason: "idempotency_key" };
+    }
+  } else {
+    idempotencyKey = null;
+  }
+
   try {
     return await withClient(db, async (client) => {
       const form = await repo.getFormByPublicToken(client, {
@@ -740,11 +752,54 @@ async function submitPublicForm(db, input) {
         return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found" };
       }
 
+      // Isolation: optional branch/facility must match form scope when provided
+      if (input.branchId && form.branchId && String(input.branchId) !== String(form.branchId)) {
+        return { ok: false, status: STATUS.FORBIDDEN, reason: "branch_mismatch" };
+      }
+      if (
+        input.facilityId &&
+        form.facilityId &&
+        String(input.facilityId) !== String(form.facilityId)
+      ) {
+        return { ok: false, status: STATUS.FORBIDDEN, reason: "facility_mismatch" };
+      }
+
+      const rateBucket = String(input.rateBucket || input.clientIpHash || "anon").slice(0, 200);
+      const rate = await repo.hitSubmissionRateLimit(client, {
+        formId: form.id,
+        bucketKey: rateBucket,
+        maxHits: Number(input.rateLimitMax) > 0 ? Number(input.rateLimitMax) : 20,
+        windowMs: Number(input.rateLimitWindowMs) > 0 ? Number(input.rateLimitWindowMs) : 10 * 60 * 1000,
+      });
+      if (rate.limited) {
+        return { ok: false, status: STATUS.POLICY, reason: "rate_limited" };
+      }
+
+      if (form.requireConsent !== false) {
+        if (input.consentAccepted !== true && input.consentAccepted !== "1" && input.consentAccepted !== "on") {
+          return { ok: false, status: STATUS.INVALID_INPUT, reason: "consent_required" };
+        }
+      }
+
+      if (idempotencyKey) {
+        const existing = await repo.findSubmissionByIdempotency(client, {
+          formId: form.id,
+          idempotencyKey,
+        });
+        if (existing) {
+          return {
+            ok: true,
+            status: STATUS.OK,
+            submission: existing,
+            idempotentReplay: true,
+          };
+        }
+      }
+
       let accessTokenId = null;
       let submitterEmail = null;
 
       if (form.accessMode === ACCESS_MODES.OPEN_PUBLIC) {
-        // Open public: link possession is sufficient (SH07 Option A).
         submitterEmail = normalizeEmail(input.email) || null;
       } else if (form.accessMode === ACCESS_MODES.EMAIL_TOKEN) {
         const accessToken = String(input.accessToken || "").trim();
@@ -780,16 +835,39 @@ async function submitPublicForm(db, input) {
         return { ok: false, status: STATUS.INVALID_INPUT, reason: answers.reason };
       }
 
-      const submission = await repo.insertSubmission(client, {
-        formId: form.id,
-        organizationId: form.organizationId,
-        productCode: form.productCode,
-        schemaVersion: form.schemaVersion,
-        answersJson: answers.answers,
-        submitterEmail,
-        accessTokenId,
-      });
-      return { ok: true, status: STATUS.OK, submission };
+      try {
+        const submission = await repo.insertSubmission(client, {
+          formId: form.id,
+          organizationId: form.organizationId,
+          productCode: form.productCode,
+          schemaVersion: form.schemaVersion,
+          answersJson: answers.answers,
+          submitterEmail,
+          accessTokenId,
+          idempotencyKey,
+          consentAcceptedAt:
+            form.requireConsent !== false ? new Date() : input.consentAccepted ? new Date() : null,
+          branchId: form.branchId || input.branchId || null,
+          facilityId: form.facilityId || input.facilityId || null,
+        });
+        return { ok: true, status: STATUS.OK, submission, idempotentReplay: false };
+      } catch (err) {
+        if (/unique|duplicate/i.test(String(err && err.message)) && idempotencyKey) {
+          const existing = await repo.findSubmissionByIdempotency(client, {
+            formId: form.id,
+            idempotencyKey,
+          });
+          if (existing) {
+            return {
+              ok: true,
+              status: STATUS.OK,
+              submission: existing,
+              idempotentReplay: true,
+            };
+          }
+        }
+        throw err;
+      }
     });
   } catch (err) {
     return mapDbError(err);
@@ -804,6 +882,14 @@ async function listFormSubmissions(db, input) {
   const gate = await runAuthz(input.authz, "view");
   if (!gate.ok) return gate;
 
+  const includeNotes = input.includeInternalNotes === true;
+  if (includeNotes) {
+    const manageGate = await runAuthz(input.authz, "manage");
+    if (!manageGate.ok) {
+      return { ok: false, status: STATUS.FORBIDDEN, reason: "notes_restricted" };
+    }
+  }
+
   try {
     const result = await withClient(db, async (client) => {
       const form = await repo.getFormById(client, {
@@ -812,20 +898,189 @@ async function listFormSubmissions(db, input) {
         productCode: product.productCode,
       });
       if (!form) return null;
+      if (input.branchId && form.branchId && String(input.branchId) !== String(form.branchId)) {
+        return { forbidden: "branch_mismatch" };
+      }
+      if (
+        input.facilityId &&
+        form.facilityId &&
+        String(input.facilityId) !== String(form.facilityId)
+      ) {
+        return { forbidden: "facility_mismatch" };
+      }
       const submissions = await repo.listSubmissions(client, {
         formId: form.id,
         organizationId: org.organizationId,
         limit: input.limit,
+        reviewStatus: input.reviewStatus || null,
+        branchId: input.branchId || null,
+        facilityId: input.facilityId || null,
+        includeInternalNotes: includeNotes,
       });
       return { form, submissions };
     });
     if (!result) return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found" };
+    if (result.forbidden) {
+      return { ok: false, status: STATUS.FORBIDDEN, reason: result.forbidden };
+    }
     return {
       ok: true,
       status: STATUS.OK,
       form: result.form,
       submissions: result.submissions,
     };
+  } catch (err) {
+    return mapDbError(err);
+  }
+}
+
+async function getFormSubmission(db, input) {
+  const org = assertOrgId(input && input.organizationId);
+  if (!org.ok) return { ok: false, status: STATUS.INVALID_INPUT, reason: org.reason };
+  const product = assertProductCode(input && input.productCode);
+  if (!product.ok) return { ok: false, status: STATUS.INVALID_INPUT, reason: product.reason };
+  const gate = await runAuthz(input.authz, "view");
+  if (!gate.ok) return gate;
+
+  const canManage = (await runAuthz(input.authz, "manage")).ok === true;
+
+  try {
+    const result = await withClient(db, async (client) => {
+      const form = await repo.getFormById(client, {
+        id: input.formId,
+        organizationId: org.organizationId,
+        productCode: product.productCode,
+      });
+      if (!form) return null;
+      const submission = await repo.getSubmissionById(client, {
+        id: input.submissionId,
+        organizationId: org.organizationId,
+        formId: form.id,
+        includeInternalNotes: canManage,
+        branchId: input.branchId || null,
+        facilityId: input.facilityId || null,
+      });
+      if (!submission) return { form, submission: null };
+      return { form, submission };
+    });
+    if (!result) return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found" };
+    if (!result.submission) {
+      return { ok: false, status: STATUS.NOT_FOUND, reason: "submission_not_found" };
+    }
+    return {
+      ok: true,
+      status: STATUS.OK,
+      form: result.form,
+      submission: result.submission,
+      canEditNotes: canManage,
+    };
+  } catch (err) {
+    return mapDbError(err);
+  }
+}
+
+async function reviewFormSubmission(db, input) {
+  const org = assertOrgId(input && input.organizationId);
+  if (!org.ok) return { ok: false, status: STATUS.INVALID_INPUT, reason: org.reason };
+  const product = assertProductCode(input && input.productCode);
+  if (!product.ok) return { ok: false, status: STATUS.INVALID_INPUT, reason: product.reason };
+  const gate = await runAuthz(input.authz, "manage");
+  if (!gate.ok) return gate;
+
+  const nextStatus = String(input.reviewStatus || "").trim();
+  if (!Object.values(REVIEW_STATUSES).includes(nextStatus)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, reason: "review_status" };
+  }
+
+  let notes = undefined;
+  let setNotes = false;
+  if (input.internalNotes !== undefined) {
+    setNotes = true;
+    const plain = plainText(input.internalNotes, "internal_notes", {
+      required: false,
+      max: 5000,
+    });
+    if (!plain.ok) {
+      return { ok: false, status: STATUS.INVALID_INPUT, reason: plain.reason };
+    }
+    notes = plain.value;
+  }
+
+  try {
+    const result = await withClient(db, async (client) => {
+      const form = await repo.getFormById(client, {
+        id: input.formId,
+        organizationId: org.organizationId,
+        productCode: product.productCode,
+      });
+      if (!form) return null;
+      const existing = await repo.getSubmissionById(client, {
+        id: input.submissionId,
+        organizationId: org.organizationId,
+        formId: form.id,
+        includeInternalNotes: true,
+        branchId: input.branchId || null,
+        facilityId: input.facilityId || null,
+      });
+      if (!existing) return { missing: true };
+      const allowed = REVIEW_TRANSITIONS[existing.reviewStatus] || [];
+      if (nextStatus !== existing.reviewStatus && !allowed.includes(nextStatus)) {
+        return { badTransition: true, from: existing.reviewStatus };
+      }
+      const updated = await repo.updateSubmissionReview(client, {
+        id: existing.id,
+        organizationId: org.organizationId,
+        formId: form.id,
+        reviewStatus: nextStatus,
+        setInternalNotes: setNotes,
+        internalNotes: notes,
+        reviewedByIdentityId: input.actorIdentityId || null,
+        historyEntry: {
+          at: new Date().toISOString(),
+          from: existing.reviewStatus,
+          to: nextStatus,
+          by: input.actorIdentityId || null,
+        },
+      });
+      return { form, submission: updated };
+    });
+    if (!result) return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found" };
+    if (result.missing) {
+      return { ok: false, status: STATUS.NOT_FOUND, reason: "submission_not_found" };
+    }
+    if (result.badTransition) {
+      return {
+        ok: false,
+        status: STATUS.CONFLICT,
+        reason: "invalid_transition",
+        from: result.from,
+      };
+    }
+    return {
+      ok: true,
+      status: STATUS.OK,
+      form: result.form,
+      submission: result.submission,
+    };
+  } catch (err) {
+    return mapDbError(err);
+  }
+}
+
+/**
+ * Platform-admin-only cross-tenant forms overview (SH14).
+ */
+async function listPlatformFormsOverview(db, input) {
+  const gate = await runAuthz(input.authz, "platform_admin");
+  if (!gate.ok) return gate;
+  try {
+    const forms = await withClient(db, (client) =>
+      repo.listFormsCrossTenant(client, {
+        productCode: input.productCode || null,
+        limit: input.limit,
+      })
+    );
+    return { ok: true, status: STATUS.OK, forms };
   } catch (err) {
     return mapDbError(err);
   }
@@ -865,6 +1120,8 @@ module.exports = {
   ACCESS_MODES,
   FORM_STATUSES,
   PRODUCT_CODES,
+  REVIEW_STATUSES,
+  REVIEW_TRANSITIONS,
   ALLOWED_FIELD_TYPES,
   createForm,
   updateFormMeta,
@@ -879,5 +1136,8 @@ module.exports = {
   getPublicForm,
   submitPublicForm,
   listFormSubmissions,
+  getFormSubmission,
+  reviewFormSubmission,
+  listPlatformFormsOverview,
   listVersions,
 };

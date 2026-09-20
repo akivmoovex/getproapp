@@ -272,6 +272,7 @@ describe("v8 shared form builder", () => {
         email: "ada@example.com",
         topic: "General",
       },
+      consentAccepted: true,
     });
     assert.equal(openSubmit.ok, true, openSubmit.reason);
 
@@ -288,6 +289,7 @@ describe("v8 shared form builder", () => {
       productCode: "activeclinic",
       publicToken: published.form.publicToken,
       answers: { full_name: "X", email: "x@example.com" },
+      consentAccepted: true,
     });
     assert.equal(blocked.ok, false);
     assert.equal(blocked.status, "not_found");
@@ -328,6 +330,7 @@ describe("v8 shared form builder", () => {
       publicToken: published.form.publicToken,
       answers: { full_name: "Pat", email: "pat@example.com" },
       email: "pat@example.com",
+      consentAccepted: true,
     });
     assert.equal(noToken.ok, false);
     assert.equal(noToken.status, "forbidden");
@@ -347,6 +350,7 @@ describe("v8 shared form builder", () => {
       answers: { full_name: "Pat", email: "other@example.com" },
       email: "other@example.com",
       accessToken: issued.accessToken.token,
+      consentAccepted: true,
     });
     assert.equal(wrongEmail.ok, false);
 
@@ -356,6 +360,7 @@ describe("v8 shared form builder", () => {
       answers: { full_name: "Pat", email: "pat@example.com" },
       email: "pat@example.com",
       accessToken: issued.accessToken.token,
+      consentAccepted: true,
     });
     assert.equal(ok.ok, true, ok.reason);
   });
