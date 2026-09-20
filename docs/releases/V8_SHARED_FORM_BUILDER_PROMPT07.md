@@ -3,6 +3,7 @@
 **Branch:** `V8` only  
 **Verdict:** `V8_SHARED_FORM_BUILDER_CODE_PASS`  
 **Date:** 2026-09-21  
+**Commit:** `af85053488729c584966268496e32b33cca1f96e` (report tip `523f5616`)  
 **Stitch:** https://stitch.withgoogle.com/projects/5087412725796049014 (`projects/5087412725796049014`)  
 **Hosts:** Code + local automated tests only (no deploy / no migration apply)
 
