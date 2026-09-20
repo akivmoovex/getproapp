@@ -1,0 +1,160 @@
+<%
+  const pageTitle = form ? form.title : 'New form';
+  const fields = (form && form.schemaJson && form.schemaJson.fields) || [];
+  const tabs = form ? [
+    { href: adminBasePath + '/' + form.id + '/studio', label: 'Studio', id: 'SH03' },
+    { href: adminBasePath + '/' + form.id + '/preview', label: 'Preview', id: 'SH05' },
+    { href: adminBasePath + '/' + form.id + '/publication', label: 'Publication', id: 'SH06' },
+    { href: adminBasePath + '/' + form.id + '/sharing', label: 'Sharing', id: 'SH07' },
+  ] : [];
+%>
+<div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'SH03' %>">
+  <div class="mx-forms-top">
+    <div>
+      <div class="mx-forms-brand"><%= brand.productName %> · Form Studio</div>
+      <h1 class="mx-forms-title"><%= form ? 'Build form' : 'Create form' %></h1>
+      <p class="mx-forms-sub">Allowlisted field types only. No clinical intake or executable validation rules.</p>
+    </div>
+    <a class="mx-forms-btn mx-forms-btn--ghost" href="<%= adminBasePath %>">All forms</a>
+  </div>
+
+  <% if (form) { %>
+    <nav class="mx-forms-nav" aria-label="Form sections">
+      <% tabs.forEach(function (tab) { %>
+        <a class="<%= stitchScreen === tab.id || (stitchScreen === 'SH04' && tab.id === 'SH03') ? 'is-active' : '' %>" href="<%= tab.href %>"><%= tab.label %></a>
+      <% }) %>
+    </nav>
+  <% } %>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="mx-forms-alert mx-forms-alert--danger"><%= error %></div>
+  <% } %>
+
+  <form method="post" action="<%= form ? (adminBasePath + '/' + form.id + '/studio') : (adminBasePath + '/new') %>">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+    <div class="mx-forms-grid mx-forms-grid--studio">
+      <aside class="mx-forms-panel mx-forms-palette">
+        <h2>Field palette</h2>
+        <p style="color:var(--mx-forms-muted);font-size:0.85rem;margin-top:0">Tap a type, then edit settings on the canvas.</p>
+        <% (allowedFieldTypes || []).forEach(function (type) { %>
+          <button type="button" class="mx-forms-btn" data-add-field="<%= type %>" <%= canManage ? '' : 'disabled' %>><%= type %></button>
+        <% }) %>
+      </aside>
+
+      <section class="mx-forms-panel">
+        <h2>Form details</h2>
+        <label for="title">Title</label>
+        <input id="title" name="title" type="text" required maxlength="200" value="<%= form ? form.title : '' %>" <%= canManage ? '' : 'readonly' %> />
+
+        <label for="form_key">Form key</label>
+        <input id="form_key" name="form_key" type="text" maxlength="64" value="<%= form ? form.formKey : '' %>" <%= form ? 'readonly' : '' %> placeholder="optional-slug" />
+
+        <label for="category">Category</label>
+        <select id="category" name="category" <%= canManage ? '' : 'disabled' %>>
+          <% (allowedCategories || ['general']).forEach(function (cat) { %>
+            <option value="<%= cat %>" <%= form && form.category === cat ? 'selected' : '' %>><%= cat %></option>
+          <% }) %>
+        </select>
+
+        <label for="description">Description</label>
+        <textarea id="description" name="description" rows="3" maxlength="5000" <%= canManage ? '' : 'readonly' %>><%= form && form.description ? form.description : '' %></textarea>
+
+        <h3 style="margin-top:1.25rem">Fields</h3>
+        <div id="mx-fields">
+          <% if (!fields.length) { %>
+            <p style="color:var(--mx-forms-muted)">No fields yet. Add from the palette.</p>
+          <% } %>
+          <% fields.forEach(function (field, idx) { %>
+            <div class="mx-forms-field-row" data-field-settings>
+              <label>Key</label>
+              <input name="field_key" type="text" required value="<%= field.key %>" <%= canManage ? '' : 'readonly' %> />
+              <label>Type</label>
+              <select name="field_type" <%= canManage ? '' : 'disabled' %>>
+                <% (allowedFieldTypes || []).forEach(function (type) { %>
+                  <option value="<%= type %>" <%= field.type === type ? 'selected' : '' %>><%= type %></option>
+                <% }) %>
+              </select>
+              <label>Label</label>
+              <input name="field_label" type="text" required value="<%= field.label %>" <%= canManage ? '' : 'readonly' %> />
+              <label>
+                <input type="checkbox" <%= field.required ? 'checked' : '' %> <%= canManage ? '' : 'disabled' %> onchange="this.nextElementSibling.value=this.checked?'1':'0'" />
+                Required
+              </label>
+              <input type="hidden" name="field_required" value="<%= field.required ? '1' : '0' %>" />
+              <% if (field.type === 'select') { %>
+                <label>Options (comma or newline)</label>
+                <textarea name="field_options" rows="2" <%= canManage ? '' : 'readonly' %>><%= (field.options || []).join(', ') %></textarea>
+              <% } else { %>
+                <input type="hidden" name="field_options" value="" />
+              <% } %>
+            </div>
+          <% }) %>
+        </div>
+
+        <% if (canManage) { %>
+          <div class="mx-forms-actions">
+            <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Save form</button>
+          </div>
+        <% } %>
+      </section>
+
+      <aside class="mx-forms-panel">
+        <h2>Field settings</h2>
+        <p style="color:var(--mx-forms-muted);font-size:0.85rem">
+          Required flags and select options are edited per field on the canvas (SH04).
+          Executable validators are rejected.
+        </p>
+        <% if (form) { %>
+          <p><span class="mx-forms-badge mx-forms-badge--<%= form.status %>"><%= form.status %></span></p>
+          <p style="font-size:0.85rem;color:var(--mx-forms-muted)">Schema v<%= form.schemaVersion %></p>
+        <% } %>
+      </aside>
+    </div>
+  </form>
+</div>
+
+<template id="mx-field-template">
+  <div class="mx-forms-field-row" data-field-settings>
+    <label>Key</label>
+    <input name="field_key" type="text" required value="" />
+    <label>Type</label>
+    <select name="field_type"></select>
+    <label>Label</label>
+    <input name="field_label" type="text" required value="" />
+    <label>
+      <input type="checkbox" onchange="this.nextElementSibling.value=this.checked?'1':'0'" />
+      Required
+    </label>
+    <input type="hidden" name="field_required" value="0" />
+    <input type="hidden" name="field_options" value="" />
+  </div>
+</template>
+
+<script>
+(function () {
+  var types = <%- JSON.stringify(allowedFieldTypes || []) %>;
+  var canManage = <%= canManage ? 'true' : 'false' %>;
+  if (!canManage) return;
+  var host = document.getElementById('mx-fields');
+  var tpl = document.getElementById('mx-field-template');
+  document.querySelectorAll('[data-add-field]').forEach(function (btn) {
+    btn.addEventListener('click', function () {
+      var type = btn.getAttribute('data-add-field');
+      var node = tpl.content.cloneNode(true);
+      var select = node.querySelector('select[name="field_type"]');
+      types.forEach(function (t) {
+        var opt = document.createElement('option');
+        opt.value = t;
+        opt.textContent = t;
+        if (t === type) opt.selected = true;
+        select.appendChild(opt);
+      });
+      var key = type + '_' + Math.random().toString(36).slice(2, 7);
+      node.querySelector('input[name="field_key"]').value = key;
+      node.querySelector('input[name="field_label"]').value = type.charAt(0).toUpperCase() + type.slice(1);
+      if (host.querySelector('p')) host.innerHTML = '';
+      host.appendChild(node);
+    });
+  });
+})();
+</script>

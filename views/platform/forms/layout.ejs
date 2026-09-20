@@ -1,0 +1,14 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= typeof pageTitle !== 'undefined' && pageTitle ? pageTitle : ((brand && brand.productName) || 'Forms') %> · Form Studio</title>
+  <link rel="stylesheet" href="/platform/forms-builder.css?v=1" />
+</head>
+<body class="mx-forms <%= (brand && brand.productClass) || '' %> <%= typeof mobile !== 'undefined' && mobile ? 'mx-forms--mobile' : '' %>"
+      data-product="<%= (brand && brand.productClass === 'mx-forms--blessboard') ? 'blessboard' : 'activeclinic' %>"
+      data-stitch="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : '' %>">
+  <%- body %>
+</body>
+</html>

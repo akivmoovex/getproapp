@@ -1,0 +1,15 @@
+<% const pageTitle = 'Forms'; %>
+<div class="mx-forms-shell" data-screen="SH02">
+  <div class="mx-forms-empty mx-forms-panel">
+    <div class="mx-forms-brand"><%= brand.productName %> · Form Studio</div>
+    <h1 class="mx-forms-title">No forms yet</h1>
+    <p class="mx-forms-sub" style="margin-left:auto;margin-right:auto">
+      Build a controlled schema, preview it, then publish a public link or email-token invite.
+    </p>
+    <% if (canManage) { %>
+      <div class="mx-forms-actions" style="justify-content:center">
+        <a class="mx-forms-btn mx-forms-btn--primary" href="<%= adminBasePath %>/new">Create your first form</a>
+      </div>
+    <% } %>
+  </div>
+</div>

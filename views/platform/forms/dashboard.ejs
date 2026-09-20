@@ -1,0 +1,55 @@
+<% const pageTitle = 'Forms'; %>
+<div class="mx-forms-shell" data-screen="SH01">
+  <div class="mx-forms-top">
+    <div>
+      <div class="mx-forms-brand"><%= brand.productName %> · Form Studio</div>
+      <h1 class="mx-forms-title">Forms Management</h1>
+      <p class="mx-forms-sub">Create, publish, and share tenant forms with controlled schemas.</p>
+    </div>
+    <% if (canManage) { %>
+      <a class="mx-forms-btn mx-forms-btn--primary" href="<%= adminBasePath %>/new">Create form</a>
+    <% } %>
+  </div>
+
+  <div class="mx-forms-desktop-only mx-forms-panel">
+    <table class="mx-forms-table">
+      <thead>
+        <tr>
+          <th>Title</th>
+          <th>Status</th>
+          <th>Access</th>
+          <th>Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% forms.forEach(function (form) { %>
+          <tr>
+            <td>
+              <strong><%= form.title %></strong>
+              <div style="color:var(--mx-forms-muted);font-size:0.85rem"><%= form.formKey %></div>
+            </td>
+            <td><span class="mx-forms-badge mx-forms-badge--<%= form.status %>"><%= form.status %></span></td>
+            <td><%= form.accessMode %><% if (form.discoverable) { %> · listed<% } else { %> · unlisted<% } %></td>
+            <td><%= form.updatedAt ? new Date(form.updatedAt).toISOString().slice(0,10) : '—' %></td>
+            <td><a href="<%= adminBasePath %>/<%= form.id %>/studio">Open</a></td>
+          </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="mx-forms-mobile-only mx-forms-cards">
+    <% forms.forEach(function (form) { %>
+      <a class="mx-forms-card" href="<%= adminBasePath %>/<%= form.id %>/studio" style="display:block;text-decoration:none;color:inherit">
+        <div style="display:flex;justify-content:space-between;gap:0.5rem;align-items:center">
+          <strong><%= form.title %></strong>
+          <span class="mx-forms-badge mx-forms-badge--<%= form.status %>"><%= form.status %></span>
+        </div>
+        <div style="margin-top:0.35rem;color:var(--mx-forms-muted);font-size:0.85rem">
+          <%= form.accessMode %> · v<%= form.schemaVersion %>
+        </div>
+      </a>
+    <% }) %>
+  </div>
+</div>

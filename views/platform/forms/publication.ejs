@@ -1,0 +1,56 @@
+<% const pageTitle = 'Publication · ' + form.title; %>
+<div class="mx-forms-shell" data-screen="SH06">
+  <div class="mx-forms-top">
+    <div>
+      <div class="mx-forms-brand"><%= brand.productName %> · Publication</div>
+      <h1 class="mx-forms-title"><%= form.title %></h1>
+      <p class="mx-forms-sub">Publish a validated schema version, or unpublish to stop public submissions.</p>
+    </div>
+  </div>
+  <nav class="mx-forms-nav">
+    <a href="<%= adminBasePath %>/<%= form.id %>/studio">Studio</a>
+    <a href="<%= adminBasePath %>/<%= form.id %>/preview">Preview</a>
+    <a class="is-active" href="<%= adminBasePath %>/<%= form.id %>/publication">Publication</a>
+    <a href="<%= adminBasePath %>/<%= form.id %>/sharing">Sharing</a>
+  </nav>
+
+  <div class="mx-forms-panel">
+    <p>Status: <span class="mx-forms-badge mx-forms-badge--<%= form.status %>"><%= form.status %></span></p>
+    <p style="color:var(--mx-forms-muted)">Schema version <%= form.schemaVersion %></p>
+    <% if (form.publishedAt) { %>
+      <p style="color:var(--mx-forms-muted)">Last published <%= new Date(form.publishedAt).toISOString() %></p>
+    <% } %>
+    <% if (form.unpublishedAt) { %>
+      <p style="color:var(--mx-forms-muted)">Last unpublished <%= new Date(form.unpublishedAt).toISOString() %></p>
+    <% } %>
+
+    <% if (canManage) { %>
+      <div class="mx-forms-actions">
+        <% if (form.status !== 'published') { %>
+          <form method="post" action="<%= adminBasePath %>/<%= form.id %>/publish">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+            <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Publish</button>
+          </form>
+        <% } else { %>
+          <form method="post" action="<%= adminBasePath %>/<%= form.id %>/unpublish">
+            <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+            <button class="mx-forms-btn" type="submit">Unpublish</button>
+          </form>
+        <% } %>
+      </div>
+    <% } %>
+  </div>
+
+  <div class="mx-forms-panel" style="margin-top:1rem">
+    <h2>Version history</h2>
+    <% if (!(versions && versions.length)) { %>
+      <p style="color:var(--mx-forms-muted)">No published versions yet.</p>
+    <% } else { %>
+      <ul>
+        <% versions.forEach(function (v) { %>
+          <li>v<%= v.schemaVersion %> · <%= v.title %> · <%= new Date(v.publishedAt).toISOString().slice(0,19) %>Z</li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </div>
+</div>

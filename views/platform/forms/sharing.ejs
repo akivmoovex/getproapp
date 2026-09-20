@@ -1,0 +1,94 @@
+<% const pageTitle = 'Sharing · ' + form.title; %>
+<div class="mx-forms-shell" data-screen="SH07">
+  <div class="mx-forms-top">
+    <div>
+      <div class="mx-forms-brand"><%= brand.productName %> · Sharing &amp; Access</div>
+      <h1 class="mx-forms-title">Form sharing and access</h1>
+      <p class="mx-forms-sub">Hiding a link does not restrict submission access. Access mode does.</p>
+    </div>
+  </div>
+  <nav class="mx-forms-nav">
+    <a href="<%= adminBasePath %>/<%= form.id %>/studio">Studio</a>
+    <a href="<%= adminBasePath %>/<%= form.id %>/preview">Preview</a>
+    <a href="<%= adminBasePath %>/<%= form.id %>/publication">Publication</a>
+    <a class="is-active" href="<%= adminBasePath %>/<%= form.id %>/sharing">Sharing</a>
+  </nav>
+
+  <div class="mx-forms-alert mx-forms-alert--info">
+    <strong>Discovery vs payload access.</strong>
+    Unlisting only affects discovery. Open public or email-token governs who may submit.
+  </div>
+
+  <div class="mx-forms-grid mx-forms-grid--share">
+    <section class="mx-forms-panel">
+      <h2>Public URL</h2>
+      <label>Link</label>
+      <input type="text" readonly value="<%= publicUrl %>" />
+      <p style="font-size:0.85rem;color:var(--mx-forms-muted)">Path: <%= publicPath %></p>
+
+      <h3 style="margin-top:1rem">QR code</h3>
+      <% if (qrDataUrl) { %>
+        <img class="mx-forms-qr" src="<%= qrDataUrl %>" alt="Form QR code" />
+      <% } else { %>
+        <p style="color:var(--mx-forms-muted)">QR unavailable.</p>
+      <% } %>
+    </section>
+
+    <section class="mx-forms-panel">
+      <h2>Access control</h2>
+      <% if (canManage) { %>
+        <form method="post" action="<%= adminBasePath %>/<%= form.id %>/sharing">
+          <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+          <label>Respondent access tier</label>
+          <label style="font-weight:500">
+            <input type="radio" name="access_mode" value="open_public" <%= form.accessMode === 'open_public' ? 'checked' : '' %> />
+            Open public access
+          </label>
+          <label style="font-weight:500">
+            <input type="radio" name="access_mode" value="email_token" <%= form.accessMode === 'email_token' ? 'checked' : '' %> />
+            Email token access
+          </label>
+
+          <label style="margin-top:1rem;font-weight:500">
+            <input type="checkbox" name="discoverable" value="1" <%= form.discoverable ? 'checked' : '' %> />
+            Discoverable in listings
+          </label>
+
+          <h3 style="margin-top:1.25rem">Issue email token</h3>
+          <label for="invite_email">Invite email</label>
+          <input id="invite_email" name="invite_email" type="email" />
+          <label style="font-weight:500">
+            <input type="checkbox" name="issue_email" value="1" />
+            Generate access token for this email
+          </label>
+
+          <div class="mx-forms-actions">
+            <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Save sharing settings</button>
+          </div>
+        </form>
+      <% } else { %>
+        <p>Access: <%= form.accessMode %></p>
+        <p>Discoverable: <%= form.discoverable ? 'yes' : 'no' %></p>
+      <% } %>
+
+      <% if (issuedToken) { %>
+        <div class="mx-forms-alert" style="margin-top:1rem">
+          Token for <%= issuedToken.email %> (shown once):
+          <code><%= issuedToken.token %></code>
+        </div>
+      <% } %>
+
+      <h3 style="margin-top:1.25rem">Security matrix</h3>
+      <table class="mx-forms-matrix">
+        <thead>
+          <tr><th>Channel</th><th>Discovery</th><th>Access</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Direct URL</td><td>Anyone with link</td><td>Governed by access mode</td></tr>
+          <tr><td>QR code</td><td>Physical ingress</td><td>Same as URL</td></tr>
+          <tr><td>Unlisted</td><td>Hidden from lists</td><td>Does not block submitters</td></tr>
+        </tbody>
+      </table>
+    </section>
+  </div>
+</div>

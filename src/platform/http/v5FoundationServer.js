@@ -892,6 +892,21 @@ function createV5FoundationApp(options) {
       variant: "branch",
     })
   );
+  const {
+    registerBlessBoardSharedFormRoutes,
+  } = require("../../blessboard/http/registerBlessBoardSharedFormRoutes");
+  registerBlessBoardSharedFormRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    variant: "hq",
+  });
+  registerBlessBoardSharedFormRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    variant: "branch",
+  });
   app.use(
     createHqReportsRouter({
       getPool,

@@ -1,0 +1,41 @@
+<%
+  const pageTitle = 'Preview · ' + form.title;
+  const fields = (form.schemaJson && form.schemaJson.fields) || [];
+%>
+<div class="mx-forms-shell" data-screen="SH05">
+  <div class="mx-forms-top">
+    <div>
+      <div class="mx-forms-brand"><%= brand.productName %> · Preview</div>
+      <h1 class="mx-forms-title"><%= form.title %></h1>
+      <p class="mx-forms-sub"><%= form.description || 'Draft preview — submissions are not accepted until published.' %></p>
+    </div>
+    <a class="mx-forms-btn mx-forms-btn--ghost" href="<%= adminBasePath %>/<%= form.id %>/studio">Back to studio</a>
+  </div>
+  <nav class="mx-forms-nav">
+    <a href="<%= adminBasePath %>/<%= form.id %>/studio">Studio</a>
+    <a class="is-active" href="<%= adminBasePath %>/<%= form.id %>/preview">Preview</a>
+    <a href="<%= adminBasePath %>/<%= form.id %>/publication">Publication</a>
+    <a href="<%= adminBasePath %>/<%= form.id %>/sharing">Sharing</a>
+  </nav>
+  <div class="mx-forms-panel" style="max-width:560px">
+    <% fields.forEach(function (field) { %>
+      <label><%= field.label %><% if (field.required) { %> *<% } %></label>
+      <% if (field.type === 'textarea') { %>
+        <textarea disabled rows="3"></textarea>
+      <% } else if (field.type === 'select') { %>
+        <select disabled>
+          <% (field.options || []).forEach(function (opt) { %>
+            <option><%= opt %></option>
+          <% }) %>
+        </select>
+      <% } else if (field.type === 'checkbox') { %>
+        <input type="checkbox" disabled />
+      <% } else { %>
+        <input type="<%= field.type === 'email' ? 'email' : field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : field.type === 'phone' ? 'tel' : 'text' %>" disabled />
+      <% } %>
+    <% }) %>
+    <% if (!fields.length) { %>
+      <p style="color:var(--mx-forms-muted)">Add fields in Form Studio before previewing.</p>
+    <% } %>
+  </div>
+</div>

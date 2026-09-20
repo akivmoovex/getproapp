@@ -59,6 +59,22 @@ After each task, report:
 
 ## Task log
 
+### PROMPT 07 — V8 shared form builder (SH01–SH07)
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_SHARED_FORM_BUILDER_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` @ `997d2665` (synced with `origin/V8` before task) |
+| **Scope** | Shared tenant form builder SH01–SH07; CRUD/publish/access/QR; BB+AC branding; additive migration 039 (not applied) |
+| **Stitch** | `projects/5087412725796049014` |
+| **Report** | [`docs/releases/V8_SHARED_FORM_BUILDER_PROMPT07.md`](./V8_SHARED_FORM_BUILDER_PROMPT07.md) |
+| **Changed files** | `db/migrations/platform/039_shared_tenant_forms.sql` · `src/platform/forms/*` · `src/platform/http/sharedFormBuilderRoutes.js` · AC/BB mounts · views/CSS · `tests/v8-shared-form-builder.test.js` · docs |
+| **Test results** | Shared form builder **10/10 PASS**; BB forms-requests regression **11/11 PASS** |
+| **Commit SHA** | _(filled after commit)_ |
+| **Push status** | _(filled after push)_ |
+| **Blockers** | None. Migration `039` created but not applied on hosted DB (overnight rule). |
+
 ### PROMPT 06 — V8 AC directory navigation fix
 
 | Field | Value |

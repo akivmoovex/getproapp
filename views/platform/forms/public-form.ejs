@@ -1,0 +1,46 @@
+<% const pageTitle = form ? form.title : 'Form'; %>
+<div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'SH08' %>">
+  <% if (!form) { %>
+    <div class="mx-forms-alert mx-forms-alert--danger"><%= error || 'Unavailable' %></div>
+  <% } else { %>
+    <div class="mx-forms-brand"><%= brand.productName %></div>
+    <h1 class="mx-forms-title"><%= form.title %></h1>
+    <% if (form.description) { %><p class="mx-forms-sub"><%= form.description %></p><% } %>
+
+    <% if (typeof error !== 'undefined' && error) { %>
+      <div class="mx-forms-alert mx-forms-alert--danger"><%= error %></div>
+    <% } %>
+
+    <form class="mx-forms-panel" method="post" action="/f/<%= form.publicToken %>" style="max-width:560px;margin-top:1rem">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <% if (form.accessMode === 'email_token') { %>
+        <label for="email">Email</label>
+        <input id="email" name="email" type="email" required value="<%= typeof email !== 'undefined' ? email : '' %>" />
+        <label for="access_token">Access token</label>
+        <input id="access_token" name="access_token" type="text" required value="<%= typeof accessToken !== 'undefined' ? accessToken : '' %>" />
+      <% } %>
+      <% ((form.schemaJson && form.schemaJson.fields) || []).forEach(function (field) { %>
+        <label for="f_<%= field.key %>"><%= field.label %><% if (field.required) { %> *<% } %></label>
+        <% if (field.type === 'textarea') { %>
+          <textarea id="f_<%= field.key %>" name="<%= field.key %>" rows="3" <%= field.required ? 'required' : '' %>></textarea>
+        <% } else if (field.type === 'select') { %>
+          <select id="f_<%= field.key %>" name="<%= field.key %>" <%= field.required ? 'required' : '' %>>
+            <option value="">Select…</option>
+            <% (field.options || []).forEach(function (opt) { %>
+              <option value="<%= opt %>"><%= opt %></option>
+            <% }) %>
+          </select>
+        <% } else if (field.type === 'checkbox') { %>
+          <input id="f_<%= field.key %>" name="<%= field.key %>" type="checkbox" value="true" />
+        <% } else { %>
+          <input id="f_<%= field.key %>" name="<%= field.key %>"
+            type="<%= field.type === 'email' ? 'email' : field.type === 'number' ? 'number' : field.type === 'date' ? 'date' : field.type === 'phone' ? 'tel' : 'text' %>"
+            <%= field.required ? 'required' : '' %> />
+        <% } %>
+      <% }) %>
+      <div class="mx-forms-actions">
+        <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Submit</button>
+      </div>
+    </form>
+  <% } %>
+</div>
