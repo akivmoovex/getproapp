@@ -968,6 +968,7 @@ async function listFormSubmissions(db, input) {
         branchId: input.branchId || null,
         facilityId: input.facilityId || null,
         includeInternalNotes: includeNotes,
+        searchQuery: input.searchQuery || null,
       });
       return { form, submissions };
     });

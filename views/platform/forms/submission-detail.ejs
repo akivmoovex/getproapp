@@ -2,8 +2,17 @@
   const pageTitle = 'Submission';
   const fields = (form && form.schemaJson && form.schemaJson.fields) || [];
   const answers = (submission && submission.answersJson) || {};
+  const screen = typeof stitchScreen !== 'undefined' ? stitchScreen : 'SH12';
+  const isReview = screen === 'SH13' || canManage;
 %>
-<div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'SH12' %>">
+<div
+  class="mx-forms-shell"
+  data-screen="<%= screen %>"
+  data-stitch-desktop="<%= isReview ? 'SH13-D' : 'SH12-D' %>"
+  data-stitch-mobile="<%= isReview ? 'SH13-M' : 'SH12-M' %>"
+  data-stitch-desktop-id="<%= isReview ? 'a51f34cd0f6b481c859e7dab70de731e' : 'c70e79e6889f4ba6993e092a3da2c131' %>"
+  data-stitch-mobile-id="<%= isReview ? '5cee2be61a5143809a313a32ce644c7f' : 'efea6ef9ffb54f7683b3523d44e69427' %>"
+>
   <div class="mx-forms-top">
     <div>
       <div class="mx-forms-brand"><%= brand.productName %> · Submission</div>
@@ -17,11 +26,11 @@
   </div>
 
   <% if (typeof error !== 'undefined' && error) { %>
-    <div class="mx-forms-alert mx-forms-alert--danger"><%= error %></div>
+    <div class="mx-forms-alert mx-forms-alert--danger" role="alert"><%= error %></div>
   <% } %>
 
   <div class="mx-forms-grid mx-forms-grid--share">
-    <section class="mx-forms-panel">
+    <section class="mx-forms-panel" data-screen="SH12" data-mx-forms-answers="1">
       <h2>Answers</h2>
       <% if (!submission) { %>
         <p>Submission not found.</p>
@@ -41,13 +50,17 @@
       <% } %>
     </section>
 
-    <section class="mx-forms-panel">
+    <section
+      class="mx-forms-panel"
+      data-screen="<%= canManage ? 'SH13' : 'SH12' %>"
+      data-mx-forms-review="1"
+    >
       <h2>Review</h2>
       <% if (canManage && submission) { %>
-        <form method="post" action="<%= adminBasePath %>/<%= form.id %>/submissions/<%= submission.id %>/review">
+        <form method="post" action="<%= adminBasePath %>/<%= form.id %>/submissions/<%= submission.id %>/review" data-mx-forms-review-form="1">
           <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
           <label for="review_status">Change status</label>
-          <select id="review_status" name="review_status" required>
+          <select id="review_status" name="review_status" required data-mx-forms-current-status="<%= submission.reviewStatus %>">
             <option value="<%= submission.reviewStatus %>"><%= submission.reviewStatus %> (current)</option>
             <% (allowedNext || []).forEach(function (st) { %>
               <option value="<%= st %>"><%= st %></option>
@@ -57,26 +70,44 @@
           <% if (canEditNotes) { %>
             <label for="internal_notes">Internal notes (restricted)</label>
             <textarea id="internal_notes" name="internal_notes" rows="4" maxlength="5000"><%= submission.internalNotes || '' %></textarea>
-            <p style="font-size:0.8rem;color:var(--mx-forms-muted)">Not shown to respondents.</p>
+            <p style="font-size:0.8rem;color:var(--mx-forms-muted)">Not shown to respondents or view-only staff.</p>
+          <% } else { %>
+            <p style="font-size:0.85rem;color:var(--mx-forms-muted)" data-mx-forms-notes-redacted="1">Internal notes are hidden for your role.</p>
           <% } %>
+
+          <label style="margin-top:1rem;font-weight:500">
+            <input type="checkbox" name="confirm_status_change" value="1" data-mx-forms-confirm-status="1" />
+            I confirm this status change (required when changing status).
+          </label>
 
           <div class="mx-forms-actions">
             <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Save review</button>
           </div>
         </form>
-      <% } else if (submission && submission.internalNotes == null) { %>
+      <% } else if (submission) { %>
         <p style="color:var(--mx-forms-muted)">View-only. Managers can change status and add internal notes.</p>
+        <p style="font-size:0.85rem;color:var(--mx-forms-muted)" data-mx-forms-notes-redacted="1">Internal notes are hidden for your role.</p>
       <% } %>
 
       <% if (submission && Array.isArray(submission.statusHistory) && submission.statusHistory.length) { %>
-        <h3 style="margin-top:1.25rem">History</h3>
-        <ul>
+        <h3 style="margin-top:1.25rem">Audit history</h3>
+        <ul class="mx-forms-audit-list" data-mx-forms-audit="1">
           <% submission.statusHistory.forEach(function (h) { %>
             <li style="font-size:0.85rem;color:var(--mx-forms-muted)">
-              <%= h.at || '' %>: <%= h.from ? (h.from + ' → ') : '' %><%= h.to || '' %>
+              <time><%= h.at || '' %></time>:
+              <%= h.from ? (h.from + ' → ') : '' %><%= h.to || '' %>
+              <% if (h.by) { %> · reviewer <code><%= h.by %></code><% } %>
             </li>
           <% }) %>
         </ul>
+      <% } %>
+      <% if (submission && submission.reviewedAt) { %>
+        <p style="font-size:0.8rem;color:var(--mx-forms-muted);margin-top:0.75rem">
+          Last reviewed <%= new Date(submission.reviewedAt).toISOString() %>
+          <% if (submission.reviewedByIdentityId) { %>
+            by <code><%= submission.reviewedByIdentityId %></code>
+          <% } %>
+        </p>
       <% } %>
     </section>
   </div>

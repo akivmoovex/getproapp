@@ -729,6 +729,7 @@ function createSharedFormBuilderRouter(deps) {
       productCode,
       formId: req.params.formId,
       reviewStatus: req.query.status || null,
+      searchQuery: req.query.q || null,
       branchId: scope.branchId,
       facilityId: scope.facilityId,
       includeInternalNotes: false,
@@ -753,6 +754,7 @@ function createSharedFormBuilderRouter(deps) {
       submissions: listed.submissions,
       reviewStatuses: REVIEW_STATUSES,
       filterStatus: req.query.status || "",
+      searchQuery: String(req.query.q || "").trim(),
       canManage: deps.canManage(req) === true,
       stitchScreen: "SH11",
       mobile: true,
@@ -806,19 +808,8 @@ function createSharedFormBuilderRouter(deps) {
     if (!tenant || !deps.canManage(req)) return res.status(403).send("Forbidden");
     if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) return res.status(403).send("CSRF");
     const scope = scopeFromTenant(tenant);
-    const reviewed = await tenantFormService.reviewFormSubmission(getPool(), {
-      organizationId: tenant.organizationId,
-      productCode,
-      formId: req.params.formId,
-      submissionId: req.params.submissionId,
-      reviewStatus: req.body.review_status,
-      internalNotes: req.body.internal_notes,
-      actorIdentityId: tenant.actorIdentityId,
-      branchId: scope.branchId,
-      facilityId: scope.facilityId,
-      authz: authzFor(req, true),
-    });
-    if (!reviewed.ok) {
+
+    async function renderReviewError(message) {
       const current = await tenantFormService.getFormSubmission(getPool(), {
         organizationId: tenant.organizationId,
         productCode,
@@ -840,10 +831,44 @@ function createSharedFormBuilderRouter(deps) {
         allowedNext:
           (current.submission && REVIEW_TRANSITIONS[current.submission.reviewStatus]) || [],
         reviewStatuses: REVIEW_STATUSES,
-        error: "Unable to update status. Check the transition and try again.",
+        error: message,
         stitchScreen: "SH13",
         mobile: true,
       });
+    }
+
+    const currentForConfirm = await tenantFormService.getFormSubmission(getPool(), {
+      organizationId: tenant.organizationId,
+      productCode,
+      formId: req.params.formId,
+      submissionId: req.params.submissionId,
+      branchId: scope.branchId,
+      facilityId: scope.facilityId,
+      authz: authzFor(req, false),
+    });
+    if (
+      currentForConfirm.ok &&
+      currentForConfirm.submission &&
+      String(req.body.review_status || "") !== String(currentForConfirm.submission.reviewStatus) &&
+      !(req.body.confirm_status_change === "1" || req.body.confirm_status_change === "on")
+    ) {
+      return renderReviewError("Confirm the status change before saving.");
+    }
+
+    const reviewed = await tenantFormService.reviewFormSubmission(getPool(), {
+      organizationId: tenant.organizationId,
+      productCode,
+      formId: req.params.formId,
+      submissionId: req.params.submissionId,
+      reviewStatus: req.body.review_status,
+      internalNotes: req.body.internal_notes,
+      actorIdentityId: tenant.actorIdentityId,
+      branchId: scope.branchId,
+      facilityId: scope.facilityId,
+      authz: authzFor(req, true),
+    });
+    if (!reviewed.ok) {
+      return renderReviewError("Unable to update status. Check the transition and try again.");
     }
     return res.redirect(
       303,

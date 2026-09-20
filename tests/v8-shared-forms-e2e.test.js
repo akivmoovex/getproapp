@@ -266,6 +266,35 @@ describe("v8 shared forms end-to-end", () => {
     });
     assert.equal(closed.ok, true);
 
+    const searched = await tenantFormService.listFormSubmissions(pool, {
+      organizationId: orgA.id,
+      productCode: "activeclinic",
+      formId: form.id,
+      searchQuery: "sam@example",
+      authz: allowViewOnly(),
+    });
+    assert.equal(searched.ok, true);
+    assert.equal(searched.submissions.length, 1);
+    assert.match(
+      JSON.stringify(searched.submissions[0].answersJson || {}) +
+        String(searched.submissions[0].submitterEmail || ""),
+      /sam@example/i
+    );
+
+    const miss = await tenantFormService.listFormSubmissions(pool, {
+      organizationId: orgA.id,
+      productCode: "activeclinic",
+      formId: form.id,
+      searchQuery: "nobody-here-xyz",
+      authz: allowViewOnly(),
+    });
+    assert.equal(miss.ok, true);
+    assert.equal(miss.submissions.length, 0);
+
+    const history = reviewed.submission.statusHistory || [];
+    assert.ok(history.length >= 1);
+    assert.ok(history.some((h) => h.to === "in_review"));
+
     const invalid = await tenantFormService.reviewFormSubmission(pool, {
       organizationId: orgA.id,
       productCode: "activeclinic",
@@ -361,6 +390,24 @@ describe("v8 shared forms end-to-end", () => {
     assert.match(thanks, /data-screen="SH10"/);
     assert.match(thanks, /data-stitch-desktop="SH10-D"/);
     assert.match(thanks, /data-mx-forms-reference/);
+
+    const list = fs.readFileSync(path.join(viewsDir, "submissions.ejs"), "utf8");
+    assert.match(list, /data-screen="SH11"/);
+    assert.match(list, /data-stitch-desktop="SH11-D"/);
+    assert.match(list, /data-mx-forms-search/);
+    assert.match(list, /name="q"/);
+    assert.doesNotMatch(list, /Approve member|membership workflow/i);
+
+    const detail = fs.readFileSync(path.join(viewsDir, "submission-detail.ejs"), "utf8");
+    assert.match(detail, /data-mx-forms-review/);
+    assert.match(detail, /confirm_status_change/);
+    assert.match(detail, /data-mx-forms-audit/);
+    assert.match(detail, /SH13-D|SH12-D/);
+
+    const overview = fs.readFileSync(path.join(viewsDir, "platform-overview.ejs"), "utf8");
+    assert.match(overview, /data-screen="SH14"/);
+    assert.match(overview, /data-stitch-desktop="SH14-D"/);
+    assert.match(overview, /no cross-tenant selector/i);
 
     const layout = fs.readFileSync(path.join(viewsDir, "layout.ejs"), "utf8");
     assert.match(layout, /forms-builder\.css\?v=4/);

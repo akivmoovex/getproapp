@@ -78,6 +78,22 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 
 ## Task log
 
+### PROMPT 05 — V8 shared submission management (SH11–SH14)
+
+| Field | Value |
+|-------|-------|
+| **Status** | COMPLETE · verdict `V8_SHARED_SUBMISSION_MANAGEMENT_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch** | `V8` (synced with `origin/V8`) |
+| **Existing functionality reused** | `d76b2975` review service · migration `040` · Prompt 04 public submit |
+| **Changed files** | `tenantFormRepository.js` · `tenantFormService.js` · `sharedFormBuilderRoutes.js` · submissions/detail/overview views · e2e tests · docs |
+| **Tests** | Form builder + e2e **19/19 PASS** |
+| **Commit SHA** | _(filled after commit)_ |
+| **Push status** | Pending push to `origin/V8` |
+| **Blockers** | None for PASS. Migration `040` still not applied on hosted DB. |
+| **Next task** | BB membership / activity / announcements per matrix when prompted |
+| **Report** | [`V8_SHARED_SUBMISSION_MANAGEMENT_PROMPT05.md`](./V8_SHARED_SUBMISSION_MANAGEMENT_PROMPT05.md) |
+
 ### PROMPT 04 — V8 shared public form submission (SH08–SH10)
 
 | Field | Value |

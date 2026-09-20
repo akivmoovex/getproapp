@@ -1,10 +1,17 @@
 <% const pageTitle = form.title + ' · Submissions'; %>
-<div class="mx-forms-shell" data-screen="SH11">
+<div
+  class="mx-forms-shell"
+  data-screen="SH11"
+  data-stitch-desktop="SH11-D"
+  data-stitch-mobile="SH11-M"
+  data-stitch-desktop-id="a3e586e93a1b4919bc470a0785827f1f"
+  data-stitch-mobile-id="adda161a3a514cf6b59a3626c4d691c0"
+>
   <div class="mx-forms-top">
     <div>
       <div class="mx-forms-brand"><%= brand.productName %> · Submissions</div>
       <h1 class="mx-forms-title"><%= form.title %></h1>
-      <p class="mx-forms-sub">Review respondent answers. Internal notes stay restricted to managers.</p>
+      <p class="mx-forms-sub">Review respondent answers. Internal notes stay restricted to managers. These reviews do not grant membership or staff roles.</p>
     </div>
     <a class="mx-forms-btn mx-forms-btn--ghost" href="<%= adminBasePath %>/<%= form.id %>/studio">Studio</a>
   </div>
@@ -16,14 +23,19 @@
     <a class="is-active" href="<%= adminBasePath %>/<%= form.id %>/submissions">Submissions</a>
   </nav>
 
-  <form method="get" class="mx-forms-panel" style="margin-bottom:1rem">
+  <form method="get" class="mx-forms-panel mx-forms-submissions-filters" style="margin-bottom:1rem" data-mx-forms-search="1">
+    <label for="q">Search email or answers</label>
+    <input id="q" name="q" type="search" maxlength="120" value="<%= typeof searchQuery !== 'undefined' ? searchQuery : '' %>" placeholder="Email or keyword" />
     <label for="status">Filter by status</label>
-    <select id="status" name="status" onchange="this.form.submit()">
+    <select id="status" name="status">
       <option value="">All</option>
       <% Object.values(reviewStatuses || {}).forEach(function (st) { %>
         <option value="<%= st %>" <%= filterStatus === st ? 'selected' : '' %>><%= st %></option>
       <% }) %>
     </select>
+    <div class="mx-forms-actions">
+      <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Apply</button>
+    </div>
   </form>
 
   <div class="mx-forms-desktop-only mx-forms-panel">

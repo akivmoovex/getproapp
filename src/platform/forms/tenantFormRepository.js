@@ -420,6 +420,7 @@ async function listSubmissions(
     branchId,
     facilityId,
     includeInternalNotes,
+    searchQuery,
   }
 ) {
   const params = [formId, organizationId];
@@ -438,6 +439,14 @@ async function listSubmissions(
   if (facilityId) {
     params.push(facilityId);
     sql += ` AND facility_id = $${params.length}`;
+  }
+  const q = String(searchQuery || "").trim().slice(0, 120);
+  if (q) {
+    params.push(`%${q.replace(/[%_]/g, "")}%`);
+    sql += ` AND (
+      COALESCE(submitter_email, '') ILIKE $${params.length}
+      OR COALESCE(answers_json::text, '') ILIKE $${params.length}
+    )`;
   }
   params.push(Math.min(Math.max(Number(limit) || 50, 1), 200));
   sql += ` ORDER BY submitted_at DESC LIMIT $${params.length}`;
