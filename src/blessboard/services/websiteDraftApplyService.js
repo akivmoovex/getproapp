@@ -309,11 +309,44 @@ async function applyStructuredDraft(client, draft, ctx) {
         // CHECK constraints reject ""; NULL or length≥1 only.
         heading: headingRaw || "New section",
         bodyText: bodyRaw || null,
-        mediaUrl: null,
+        mediaUrl:
+          payload.mediaUrl != null && String(payload.mediaUrl).trim()
+            ? String(payload.mediaUrl).trim()
+            : null,
         sortOrder: Number(payload.sortOrder) || 100,
         status: "published",
         layoutMetadata: payload.layout ? { layout: payload.layout } : null,
       });
+      return;
+    }
+    if (draft.op === "update_section" && payload.sectionKey) {
+      const pageKey = draft.pageKey || "home";
+      const page = await contentRepo.findPageByScope(client, {
+        churchId,
+        branchId: branchId || null,
+        pageKey,
+      });
+      if (!page) return;
+      const section = await contentRepo.findSectionByPageAndKey(
+        client,
+        page.id,
+        String(payload.sectionKey)
+      );
+      if (!section) return;
+      const patch = { status: "published" };
+      if (payload.heading !== undefined) {
+        const h = String(payload.heading || "").trim();
+        patch.heading = h || "New section";
+      }
+      if (payload.bodyText !== undefined) {
+        const b = String(payload.bodyText || "").trim();
+        patch.bodyText = b || null;
+      }
+      if (payload.mediaUrl !== undefined) {
+        const m = payload.mediaUrl == null ? "" : String(payload.mediaUrl).trim();
+        patch.mediaUrl = m || null;
+      }
+      await contentRepo.updateSection(client, section.id, patch);
       return;
     }
     if (draft.op === "remove" && payload.sectionKey) {

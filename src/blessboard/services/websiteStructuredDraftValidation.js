@@ -216,6 +216,11 @@ function validateStructuredPayload(kind, payload, op) {
     if (!heading.ok) return heading;
     const bodyText = sanitizePlain(body.bodyText, 4000);
     if (!bodyText.ok) return bodyText;
+    const mediaUrl =
+      body.mediaUrl != null && String(body.mediaUrl).trim()
+        ? validateImageUrl(body.mediaUrl)
+        : { ok: true, value: null };
+    if (!mediaUrl.ok) return mediaUrl;
     return {
       ok: true,
       payload: {
@@ -223,10 +228,33 @@ function validateStructuredPayload(kind, payload, op) {
         sectionType,
         heading: heading.value,
         bodyText: bodyText.value,
+        mediaUrl: mediaUrl.value,
         sortOrder: Number(body.sortOrder) || 0,
         layout: body.layout ? String(body.layout) : null,
       },
     };
+  }
+  if (op === "update_section") {
+    const sectionKey = String(body.sectionKey || "").trim();
+    if (!sectionKey) return { ok: false, error: "Section key is required." };
+    const heading =
+      body.heading !== undefined ? sanitizePlain(body.heading, 200) : { ok: true, value: undefined };
+    if (!heading.ok) return heading;
+    const bodyText =
+      body.bodyText !== undefined ? sanitizePlain(body.bodyText, 4000) : { ok: true, value: undefined };
+    if (!bodyText.ok) return bodyText;
+    const mediaUrl =
+      body.mediaUrl !== undefined
+        ? body.mediaUrl == null || String(body.mediaUrl).trim() === ""
+          ? { ok: true, value: null }
+          : validateImageUrl(body.mediaUrl)
+        : { ok: true, value: undefined };
+    if (!mediaUrl.ok) return mediaUrl;
+    const payload = { sectionKey };
+    if (heading.value !== undefined) payload.heading = heading.value;
+    if (bodyText.value !== undefined) payload.bodyText = bodyText.value;
+    if (mediaUrl.value !== undefined) payload.mediaUrl = mediaUrl.value;
+    return { ok: true, payload };
   }
 
   if (REORDER_ONLY_KINDS.includes(kind)) {

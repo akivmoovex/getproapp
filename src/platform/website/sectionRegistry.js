@@ -16,6 +16,29 @@ const BLESSBOARD_SECTION_TYPES = Object.freeze([
     keyPrefix: "text",
     defaultHeading: "New section",
     defaultBody: "",
+    kind: "text",
+  },
+  {
+    type: "image",
+    label: "Image",
+    description: "Full-width image with optional caption.",
+    pages: Object.freeze(["home", "about", "giving"]),
+    singleton: false,
+    keyPrefix: "image",
+    defaultHeading: "Image",
+    defaultBody: "",
+    kind: "image",
+  },
+  {
+    type: "image_text",
+    label: "Image + Text",
+    description: "Image beside heading and body copy.",
+    pages: Object.freeze(["home", "about", "giving"]),
+    singleton: false,
+    keyPrefix: "story",
+    defaultHeading: "Our story",
+    defaultBody: "",
+    kind: "image_text",
   },
   {
     type: "plain_text",
@@ -27,6 +50,7 @@ const BLESSBOARD_SECTION_TYPES = Object.freeze([
     defaultHeading: "Take the next step",
     defaultBody: "",
     layout: "cta",
+    kind: "text",
   },
 ]);
 
@@ -127,6 +151,7 @@ function listAddableSectionTypes(productCode, pageKey, existingTypesOrKeys) {
       defaultHeading: def.defaultHeading || "",
       defaultBody: def.defaultBody || "",
       layout: def.layout || null,
+      kind: def.kind || null,
     }));
 }
 

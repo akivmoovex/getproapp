@@ -35,6 +35,8 @@ const SHARED_PLATFORM = Object.freeze({
     "tests/v8-shared-verification.test.js",
     "tests/v8-shared-session-security.test.js",
     "tests/v8-shared-rbac-tenant-isolation.test.js",
+    "tests/v8-shared-website-sections.test.js",
+    "tests/shared-website-section-lifecycle.test.js",
   ]),
 });
 
@@ -59,6 +61,8 @@ const COMPATIBILITY = Object.freeze({
     "tests/v8-shared-verification.test.js",
     "tests/v8-shared-session-security.test.js",
     "tests/v8-shared-rbac-tenant-isolation.test.js",
+    "tests/v8-shared-website-sections.test.js",
+    "tests/shared-website-section-lifecycle.test.js",
   ]),
 });
 
@@ -127,6 +131,9 @@ const COVERAGE_TARGETS = Object.freeze([
   "src/platform/rbac/sharedTenantScope.js",
   "src/platform/rbac/sharedAuthzDecision.js",
   "src/platform/rbac/sharedRbacFacade.js",
+  "src/platform/website/sections/sectionValidation.js",
+  "src/platform/website/sections/sectionOrdering.js",
+  "src/platform/website/sections/sectionManagementService.js",
 ]);
 
 const COVERAGE_LINE_THRESHOLD = 90;

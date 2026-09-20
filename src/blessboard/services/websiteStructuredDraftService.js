@@ -135,7 +135,7 @@ async function saveStructuredDraft(db, input) {
   }
   // Never accept client church/org overrides (caller must set from session).
   const op = String(input.op || "upsert").trim();
-  if (!["upsert", "remove", "reorder", "visibility", "restore_default", "add_section"].includes(op)) {
+  if (!["upsert", "remove", "reorder", "visibility", "restore_default", "add_section", "update_section"].includes(op)) {
     throw mapError("INVALID_OP", "Unsupported edit action.", 400);
   }
 
@@ -305,12 +305,28 @@ function applyStructuredDraftsToModel(model, drafts) {
           sectionType: String(d.payload.sectionType || "plain_text"),
           heading: d.payload.heading || "",
           bodyText: d.payload.bodyText || "",
+          mediaUrl: d.payload.mediaUrl || null,
           sortOrder: Number(d.payload.sortOrder) || (model.sections || []).length * 10 + 10,
           status: "draft",
           _isDraftNew: true,
           layoutMetadata: d.payload.layout ? { layout: d.payload.layout } : {},
         },
       ];
+      continue;
+    }
+    if (d.op === "update_section" && d.payload) {
+      const sk = String(d.payload.sectionKey || d.sectionKey || "");
+      if (!sk || removedSectionKeys.has(sk)) continue;
+      model.sections = (model.sections || []).map((s) => {
+        if (String(s.sectionKey) !== sk) return s;
+        return {
+          ...s,
+          heading: d.payload.heading !== undefined ? d.payload.heading || "" : s.heading,
+          bodyText: d.payload.bodyText !== undefined ? d.payload.bodyText || "" : s.bodyText,
+          mediaUrl: d.payload.mediaUrl !== undefined ? d.payload.mediaUrl : s.mediaUrl,
+          _draftUpdated: true,
+        };
+      });
       continue;
     }
     if (d.op === "remove") {

@@ -24,6 +24,7 @@ V8 is the development line for GetPro **V2.0** product work (BlessBoard + Active
 11. **Shared email/phone verification.** Use `src/platform/verification/sharedVerificationService.js`. Legacy null verification timestamps must not lock users out of login. See [`docs/security/V8_SHARED_VERIFICATION.md`](../security/V8_SHARED_VERIFICATION.md).
 12. **Shared session & logout security.** Use `src/platform/session/sharedSessionSecurity.js`. V7/V8 must use distinct cookie names and prefer distinct signing secrets; logout and revoke must stay deployment-scoped. See [`docs/security/V8_SHARED_SESSION_SECURITY.md`](../security/V8_SHARED_SESSION_SECURITY.md).
 13. **Shared RBAC & tenant isolation.** Use `src/platform/rbac/` for forged-ID rejection, decision mapping, and platform-admin least privilege. Keep product-owned permission catalogues. See [`docs/security/V8_SHARED_RBAC_TENANT_ISOLATION.md`](../security/V8_SHARED_RBAC_TENANT_ISOLATION.md).
+14. **Shared website section management.** Use `src/platform/website/sections/` for validation, ordering, and lifecycle; keep BB/AC storage adapters. See [`docs/platform/V8_SHARED_WEBSITE_SECTIONS.md`](./V8_SHARED_WEBSITE_SECTIONS.md).
 
 ## Branch model (summary)
 

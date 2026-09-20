@@ -73,10 +73,15 @@ function buildManifest(pageKey, sections, structuredDrafts) {
       canReorder: total > 1 && !locked,
       canHide: !locked,
       canRestoreDefault: !locked && Boolean(section.sectionKey) && section._isDraftNew !== true,
-      canRemove: !locked && (section._isDraftNew === true || String(section.sectionType || "") === "plain_text"),
+      canRemove:
+        !locked &&
+        (section._isDraftNew === true ||
+          ["plain_text", "image", "image_text"].includes(String(section.sectionType || ""))),
       isHidden,
       isDefault: false,
-      isCustom: section._isDraftNew === true || String(section.sectionType || "") === "plain_text",
+      isCustom:
+        section._isDraftNew === true ||
+        ["plain_text", "image", "image_text"].includes(String(section.sectionType || "")),
       sortIndex: index,
       selector: `[data-section="${sectionKey}"]`,
       sectionType: String(section.sectionType || ""),
@@ -221,6 +226,51 @@ async function removeSection(db, input) {
   return { ok: true, sectionKey };
 }
 
+async function updateSectionContent(db, input) {
+  const pageKey = String(input.pageKey || "home").trim() || "home";
+  const sectionKey = String(input.sectionKey || "").trim();
+  if (!sectionKey) return { ok: false, code: "invalid_input", published: false };
+  if (isLockedSection(sectionKey) || sectionKey === "hero") {
+    return { ok: false, code: "locked_item", published: false };
+  }
+  const page = await contentRepo.findPageByScope(db, {
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    pageKey,
+  });
+  const live = page
+    ? (await contentRepo.listSectionsForPage(db, page.id, {})).find(
+        (s) => String(s.sectionKey) === sectionKey
+      )
+    : null;
+  await saveStructuredDraft(db, {
+    organizationId: input.organizationId,
+    churchId: input.churchId,
+    branchId: input.branchId || null,
+    editorUserId: input.editorUserId,
+    actorRole: input.actorRole || null,
+    draftKind: "page_section",
+    pageKey,
+    sectionKey,
+    entityKey: `section:${sectionKey}:update`,
+    op: "update_section",
+    payload: {
+      sectionKey,
+      heading: input.heading,
+      bodyText: input.bodyText,
+      mediaUrl: input.mediaUrl,
+    },
+    previousPayload: live
+      ? {
+          heading: live.heading,
+          bodyText: live.bodyText,
+          mediaUrl: live.mediaUrl,
+        }
+      : null,
+  });
+  return { ok: true, sectionKey, published: false };
+}
+
 async function applySectionAction(db, input) {
   const action = String(input.action || "").trim();
   const pageKey = String(input.pageKey || "home").trim() || "home";
@@ -254,6 +304,9 @@ async function applySectionAction(db, input) {
   if (action === "remove") {
     return removeSection(db, input);
   }
+  if (action === "update" || action === "update_section") {
+    return updateSectionContent(db, input);
+  }
   return { ok: false, code: "invalid_action" };
 }
 
@@ -263,4 +316,5 @@ module.exports = {
   applySectionAction,
   applyVisibilityDrafts,
   sectionOrderKeys,
+  updateSectionContent,
 };

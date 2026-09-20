@@ -1,6 +1,5 @@
 "use strict";
 
-const crypto = require("crypto");
 const {
   listAddableSectionTypes,
   resolveSectionTypeDefinition,
@@ -11,14 +10,15 @@ const { saveStructuredDraft } = require("../../blessboard/services/websiteStruct
 const contentRepo = require("../../blessboard/repositories/publicContentRepository");
 const cmsService = require("../../activeclinic/website/clinicWebsiteCmsService");
 const { pageIdFor } = require("../../activeclinic/website/activeClinicSectionActionService");
+const { allocateStableSectionId } = require("./sections/sectionOrdering");
+const { validateSectionContent } = require("./sections/sectionValidation");
+const { PERMISSIONS, hasWebsitePermission } = require("./permissions");
 
-function uniqueSectionKey(prefix) {
-  const safe = String(prefix || "section")
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9_]+/g, "_")
-    .replace(/^_+|_+$/g, "");
-  return `${safe || "section"}_${crypto.randomBytes(3).toString("hex")}`;
+function requireEdit(input) {
+  if (!hasWebsitePermission(input && input.grantedPermissions, PERMISSIONS.EDIT)) {
+    return { ok: false, code: "forbidden", published: false };
+  }
+  return { ok: true };
 }
 
 async function listBlessBoardExistingSectionKeys(db, input) {
@@ -47,6 +47,8 @@ async function listActiveClinicExistingSectionTypes(db, input) {
 }
 
 async function listAddableSections(db, input) {
+  const gate = requireEdit(input);
+  if (!gate.ok) return gate;
   const productCode = String(input.productCode || "").trim().toLowerCase();
   const pageKey = String(input.pageKey || "home").trim() || "home";
   let existing = [];
@@ -59,6 +61,7 @@ async function listAddableSections(db, input) {
     ok: true,
     sections: listAddableSectionTypes(productCode, pageKey, existing),
     existing,
+    published: false,
   };
 }
 
@@ -66,12 +69,23 @@ async function addBlessBoardSection(db, input) {
   const pageKey = String(input.pageKey || "home").trim() || "home";
   const type = String(input.type || "").trim();
   const def = resolveSectionTypeDefinition(PRODUCT_CODE.BLESSBOARD, type, pageKey);
-  if (!def) return { ok: false, code: "invalid_section_type" };
+  if (!def) return { ok: false, code: "invalid_section_type", published: false };
   const existing = await listBlessBoardExistingSectionKeys(db, input);
   if (isSingletonViolation(PRODUCT_CODE.BLESSBOARD, type, existing)) {
-    return { ok: false, code: "singleton_exists" };
+    return { ok: false, code: "singleton_exists", published: false };
   }
-  const sectionKey = uniqueSectionKey(def.keyPrefix || type);
+  const content = validateSectionContent({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    sectionType: type,
+    heading: input.heading != null ? input.heading : def.defaultHeading,
+    bodyText: input.bodyText != null ? input.bodyText : def.defaultBody,
+    mediaUrl: input.mediaUrl,
+    image: input.image,
+  });
+  if (!content.ok) {
+    return { ok: false, code: "malformed_content", error: content.error, published: false };
+  }
+  const sectionKey = allocateStableSectionId(def.keyPrefix || type, { style: "bb" });
   const page = await contentRepo.findPageByScope(db, {
     churchId: input.churchId,
     branchId: input.branchId || null,
@@ -80,10 +94,7 @@ async function addBlessBoardSection(db, input) {
   const baseOrder = page
     ? (await contentRepo.listSectionsForPage(db, page.id, {})).length
     : 0;
-  // page_sections_heading_len / page_sections_body_text_len reject empty strings;
-  // use NULL when the editor has not supplied copy yet.
-  const headingRaw = String(input.heading || def.defaultHeading || "").trim();
-  const bodyRaw = String(input.bodyText || def.defaultBody || "").trim();
+  const headingRaw = content.payload.heading || def.defaultHeading || "New section";
   await saveStructuredDraft(db, {
     organizationId: input.organizationId,
     churchId: input.churchId,
@@ -98,24 +109,43 @@ async function addBlessBoardSection(db, input) {
     payload: {
       sectionKey,
       sectionType: type,
-      heading: headingRaw || null,
-      bodyText: bodyRaw || null,
+      heading: headingRaw,
+      bodyText: content.payload.bodyText,
+      mediaUrl: content.payload.mediaUrl,
       sortOrder: (baseOrder + 1) * 10,
       layout: def.layout || null,
     },
     previousPayload: null,
   });
-  return { ok: true, sectionKey, sectionType: type, published: false };
+  return {
+    ok: true,
+    sectionKey,
+    sectionType: type,
+    published: false,
+  };
 }
 
 async function addActiveClinicSection(db, input) {
   const pageKey = String(input.pageKey || "home").trim() || "home";
   const type = String(input.type || "").trim();
   const def = resolveSectionTypeDefinition(PRODUCT_CODE.ACTIVECLINIC, type, pageKey);
-  if (!def) return { ok: false, code: "invalid_section_type" };
+  if (!def) return { ok: false, code: "invalid_section_type", published: false };
   const existing = await listActiveClinicExistingSectionTypes(db, input);
   if (isSingletonViolation(PRODUCT_CODE.ACTIVECLINIC, type, existing)) {
-    return { ok: false, code: "singleton_exists" };
+    return { ok: false, code: "singleton_exists", published: false };
+  }
+  const content = validateSectionContent({
+    productCode: PRODUCT_CODE.ACTIVECLINIC,
+    sectionType: type,
+    heading: input.heading,
+    body: input.body != null ? input.body : input.bodyText,
+    image: input.image,
+    title: input.title || def.label,
+    buttonLabel: input.buttonLabel,
+    buttonUrl: input.buttonUrl,
+  });
+  if (!content.ok) {
+    return { ok: false, code: "malformed_content", error: content.error, published: false };
   }
   const pageId = pageIdFor(pageKey);
   const added = await cmsService.addSection(db, {
@@ -124,12 +154,15 @@ async function addActiveClinicSection(db, input) {
     clinicId: input.clinicId,
     pageId,
     type,
-    title: String(input.title || def.label || type),
-    heading: String(input.heading || ""),
-    body: String(input.body || input.bodyText || ""),
+    title: content.payload.title || def.label || type,
+    heading: content.payload.heading || "",
+    body: content.payload.body || "",
+    image: content.payload.image,
+    buttonLabel: content.payload.buttonLabel || "",
+    buttonUrl: content.payload.buttonUrl || "",
     grantedPermissions: input.grantedPermissions,
   });
-  if (!added.ok) return added;
+  if (!added.ok) return { ...added, published: false };
   return {
     ok: true,
     section: added.section,
@@ -140,6 +173,8 @@ async function addActiveClinicSection(db, input) {
 }
 
 async function addWebsiteSection(db, input) {
+  const gate = requireEdit(input);
+  if (!gate.ok) return gate;
   const productCode = String(input.productCode || "").trim().toLowerCase();
   if (productCode === PRODUCT_CODE.BLESSBOARD) {
     return addBlessBoardSection(db, input);
@@ -147,7 +182,7 @@ async function addWebsiteSection(db, input) {
   if (productCode === PRODUCT_CODE.ACTIVECLINIC) {
     return addActiveClinicSection(db, input);
   }
-  return { ok: false, code: "invalid_product" };
+  return { ok: false, code: "invalid_product", published: false };
 }
 
 module.exports = {

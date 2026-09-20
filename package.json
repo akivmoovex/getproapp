@@ -58,6 +58,7 @@
     "test:v8:verification": "node --test --test-concurrency=1 tests/v8-shared-verification.test.js",
     "test:v8:session-security": "node --test --test-concurrency=1 tests/v8-shared-session-security.test.js",
     "test:v8:rbac-isolation": "node --test --test-concurrency=1 tests/v8-shared-rbac-tenant-isolation.test.js",
+    "test:v8:website-sections": "node --test --test-concurrency=1 tests/v8-shared-website-sections.test.js",
     "db:bootstrap:foundation": "node db/scripts/bootstrap-foundation.js",
     "db:verify:foundation": "node db/scripts/verify-foundation.js",
     "test:db:foundation": "node --test tests/db-foundation.test.js",
