@@ -71,8 +71,8 @@ After each task, report:
 | **Report** | [`docs/releases/V8_SHARED_FORM_BUILDER_PROMPT07.md`](./V8_SHARED_FORM_BUILDER_PROMPT07.md) |
 | **Changed files** | `db/migrations/platform/039_shared_tenant_forms.sql` · `src/platform/forms/*` · `src/platform/http/sharedFormBuilderRoutes.js` · AC/BB mounts · views/CSS · `tests/v8-shared-form-builder.test.js` · docs |
 | **Test results** | Shared form builder **10/10 PASS**; BB forms-requests regression **11/11 PASS** |
-| **Commit SHA** | _(filled after commit)_ |
-| **Push status** | _(filled after push)_ |
+| **Commit SHA** | `af85053488729c584966268496e32b33cca1f96e` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None. Migration `039` created but not applied on hosted DB (overnight rule). |
 
 ### PROMPT 06 — V8 AC directory navigation fix
