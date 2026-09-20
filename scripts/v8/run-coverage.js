@@ -31,6 +31,7 @@ const COVERAGE_TEST_FILES = Object.freeze([
   "tests/v8-shared-session-security.test.js",
   "tests/v8-shared-rbac-tenant-isolation.test.js",
   "tests/v8-shared-website-sections.test.js",
+  "tests/v8-shared-website-lifecycle.test.js",
   "tests/shared-website-section-lifecycle.test.js",
   "tests/deployment-profiles.test.js",
 ]);

@@ -11,6 +11,9 @@ const editSessionService = require("./editSessionService");
 const { assertWebsiteInstanceScope, authorizeWebsiteAction } = require("./authorizeWebsite");
 const { PERMISSIONS } = require("./permissions");
 const lifecycleService = require("./lifecycleService");
+const {
+  assertDraftRowsV7CompatibleForPublish,
+} = require("./v7CompatibleWebsitePublish");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -19,6 +22,7 @@ const RESULT = Object.freeze({
   POLICY_LOCKED: "website_policy_locked",
   NOT_FOUND: "website_instance_not_found",
   FORBIDDEN: "forbidden",
+  V8_INCOMPATIBLE: "v8_incompatible_publish",
 });
 
 /**
@@ -199,6 +203,15 @@ async function publishWebsiteDraft(db, input) {
   }
 
   const rows = await contentService.listWebsiteContent(db, instance, organizationId);
+  const compatibility = assertDraftRowsV7CompatibleForPublish(rows);
+  if (!compatibility.ok) {
+    return {
+      ok: false,
+      code: RESULT.V8_INCOMPATIBLE,
+      version: null,
+      blockers: compatibility.blockers,
+    };
+  }
   const changedKeys = [];
   for (const row of rows) {
     if (!contentService.valuesEqual(row.draftValue, row.publishedValue)) {

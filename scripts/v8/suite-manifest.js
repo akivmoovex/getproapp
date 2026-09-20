@@ -36,6 +36,7 @@ const SHARED_PLATFORM = Object.freeze({
     "tests/v8-shared-session-security.test.js",
     "tests/v8-shared-rbac-tenant-isolation.test.js",
     "tests/v8-shared-website-sections.test.js",
+    "tests/v8-shared-website-lifecycle.test.js",
     "tests/shared-website-section-lifecycle.test.js",
   ]),
 });
@@ -62,6 +63,7 @@ const COMPATIBILITY = Object.freeze({
     "tests/v8-shared-session-security.test.js",
     "tests/v8-shared-rbac-tenant-isolation.test.js",
     "tests/v8-shared-website-sections.test.js",
+    "tests/v8-shared-website-lifecycle.test.js",
     "tests/shared-website-section-lifecycle.test.js",
   ]),
 });
@@ -134,6 +136,7 @@ const COVERAGE_TARGETS = Object.freeze([
   "src/platform/website/sections/sectionValidation.js",
   "src/platform/website/sections/sectionOrdering.js",
   "src/platform/website/sections/sectionManagementService.js",
+  "src/platform/website/v7CompatibleWebsitePublish.js",
 ]);
 
 const COVERAGE_LINE_THRESHOLD = 90;

@@ -2,7 +2,10 @@
 
 /**
  * Hostinger filesystem media adapter for public website images only.
- * API: storeMedia / deleteMedia / getPublicUrl / mediaExists
+ * API: storeMedia / deleteMedia / getPublicUrl / mediaExists / readMedia
+ *
+ * Writes/deletes are namespace-strict (V8 → testing-v8/, V7 → testing/).
+ * Reads allow V8 to serve existing V7 testing/ objects without mutating them.
  */
 
 const fs = require("fs");
@@ -12,10 +15,10 @@ const {
   resolveHostingerMediaConfig,
   buildHostingerStorageKey,
   assertStorageKeyWritable,
+  assertStorageKeyReadable,
   assertMediaStorageRootPersistent,
   buildPublicMediaUrl,
   PROVIDER_HOSTINGER,
-  CODE_ROOT_NOT_PERSISTENT,
   CODE_ROOT_UNSET,
 } = require("./hostingerMediaConfig");
 
@@ -27,8 +30,16 @@ function createHostingerMediaStorage(env, overrides) {
   const cfg =
     (overrides && overrides.config) || resolveHostingerMediaConfig(env || process.env);
 
-  function absoluteFor(storageKey) {
-    assertStorageKeyWritable(cfg.environment, storageKey);
+  /**
+   * @param {string} storageKey
+   * @param {"read"|"write"} mode
+   */
+  function absoluteFor(storageKey, mode) {
+    if (mode === "write") {
+      assertStorageKeyWritable(cfg.environment, storageKey);
+    } else {
+      assertStorageKeyReadable(cfg.environment, storageKey);
+    }
     if (!cfg.storageRoot) {
       const err = new Error("media_storage_root_unset");
       err.code = CODE_ROOT_UNSET;
@@ -87,7 +98,7 @@ function createHostingerMediaStorage(env, overrides) {
           mimeType: input.mimeType,
         });
       assertStorageKeyWritable(cfg.environment, storageKey);
-      const abs = absoluteFor(storageKey);
+      const abs = absoluteFor(storageKey, "write");
       await fsp.mkdir(path.dirname(abs), { recursive: true });
       try {
         await fsp.writeFile(abs, input.buffer, { flag: "wx" });
@@ -108,10 +119,11 @@ function createHostingerMediaStorage(env, overrides) {
 
     /**
      * Prefer orphan cleanup later; callers should avoid deleting published refs.
+     * Deletes are write-namespace-strict so V8 cannot unlink V7 testing/ bytes.
      * @param {{ storageKey: string }} input
      */
     async deleteMedia(input) {
-      const abs = absoluteFor(input.storageKey);
+      const abs = absoluteFor(input.storageKey, "write");
       try {
         await fsp.unlink(abs);
       } catch (err) {
@@ -135,7 +147,7 @@ function createHostingerMediaStorage(env, overrides) {
      */
     mediaExists(storageKey) {
       try {
-        return fs.existsSync(absoluteFor(storageKey));
+        return fs.existsSync(absoluteFor(storageKey, "read"));
       } catch {
         return false;
       }
@@ -146,7 +158,7 @@ function createHostingerMediaStorage(env, overrides) {
      * @returns {Promise<Buffer>}
      */
     async readMedia(storageKey) {
-      return fsp.readFile(absoluteFor(storageKey));
+      return fsp.readFile(absoluteFor(storageKey, "read"));
     },
   };
 }

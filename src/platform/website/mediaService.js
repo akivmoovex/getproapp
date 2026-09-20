@@ -26,7 +26,9 @@ const RESULT = Object.freeze({
   INVALID_INPUT: "invalid_input",
   NOT_FOUND: "media_not_found",
   TENANT_MISMATCH: "tenant_mismatch",
-  IN_USE: "media_in_use_published",
+  IN_USE: "media_in_use",
+  IN_USE_PUBLISHED: "media_in_use_published",
+  IN_USE_DRAFT: "media_in_use_draft",
   UNSAFE_TYPE: "unsafe_media_type",
   TOO_LARGE: "media_too_large",
   INVALID_URL: "invalid_media_url",
@@ -133,7 +135,7 @@ function resolveMediaStorage(env) {
  * @returns {boolean}
  */
 function isCdnObjectStorageKey(storageKey) {
-  return /^(testing|production)\//.test(String(storageKey || ""));
+  return /^(testing(?:-v8)?|production)\//.test(String(storageKey || ""));
 }
 
 /**
@@ -556,14 +558,70 @@ async function isPublishedInUse(db, mediaId, organizationId) {
   return published.rowCount > 0;
 }
 
+/**
+ * True when draft or published content (or usage rows) still reference the media.
+ * Soft-archive must not remove shared bytes while either lifecycle side needs them.
+ * Prefer published / history classification when both draft and published match.
+ */
+async function isMediaReferenced(db, mediaId, organizationId) {
+  const published = await db.query(
+    `SELECT 1 FROM platform.website_content
+      WHERE organization_id = $1
+        AND published_value IS NOT NULL
+        AND published_value::text LIKE $2
+      LIMIT 1`,
+    [organizationId, `%${mediaId}%`]
+  );
+  if (published.rowCount) return { referenced: true, kind: "published" };
+
+  const versions = await db.query(
+    `SELECT 1 FROM platform.website_versions
+      WHERE organization_id = $1
+        AND snapshot_json IS NOT NULL
+        AND snapshot_json::text LIKE $2
+      LIMIT 1`,
+    [organizationId, `%${mediaId}%`]
+  );
+  if (versions.rowCount) return { referenced: true, kind: "version_history" };
+
+  const draft = await db.query(
+    `SELECT 1 FROM platform.website_content
+      WHERE organization_id = $1
+        AND draft_value IS NOT NULL
+        AND draft_value::text LIKE $2
+      LIMIT 1`,
+    [organizationId, `%${mediaId}%`]
+  );
+  if (draft.rowCount) return { referenced: true, kind: "draft" };
+
+  const usages = await db.query(
+    `SELECT usage_kind FROM platform.website_media_usages
+      WHERE media_id = $1 AND organization_id = $2
+      ORDER BY CASE usage_kind WHEN 'published' THEN 0 WHEN 'draft' THEN 1 ELSE 2 END
+      LIMIT 1`,
+    [mediaId, organizationId]
+  );
+  if (usages.rowCount) {
+    return { referenced: true, kind: String(usages.rows[0].usage_kind || "usage") };
+  }
+  return { referenced: false, kind: null };
+}
+
 async function archiveWebsiteMedia(db, input) {
   const loaded = await getWebsiteMedia(db, input);
   if (!loaded.ok) return loaded;
   if (loaded.media.organizationId !== input.organizationId) {
     return { ok: false, code: RESULT.TENANT_MISMATCH };
   }
-  if (await isPublishedInUse(db, loaded.media.id, input.organizationId)) {
-    return { ok: false, code: RESULT.IN_USE, media: loaded.media };
+  const ref = await isMediaReferenced(db, loaded.media.id, input.organizationId);
+  if (ref.referenced) {
+    const code =
+      ref.kind === "draft"
+        ? RESULT.IN_USE_DRAFT
+        : ref.kind === "published" || ref.kind === "version_history"
+          ? RESULT.IN_USE_PUBLISHED
+          : RESULT.IN_USE;
+    return { ok: false, code, media: loaded.media, referenceKind: ref.kind };
   }
   await db.query(
     `UPDATE platform.website_media SET status = 'archived' WHERE id = $1 AND organization_id = $2`,
@@ -886,6 +944,7 @@ module.exports = {
   archiveWebsiteMedia,
   updateWebsiteMediaMeta,
   isPublishedInUse,
+  isMediaReferenced,
   assertOwnedWebsiteImageValue,
   hydrateWebsiteImageValue,
   listOrphanCandidates,

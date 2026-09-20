@@ -31,9 +31,9 @@ const APP_MEDIA_PATH_RE =
 const BB_CLASSIC_MEDIA_RE =
   /^\/_bb\/media\/([0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12})$/i;
 const MEDIA_KEY_RE =
-  /^(?:https?:\/\/[^/]+)?\/media\/((?:testing|production)\/[A-Za-z0-9._/-]+)$/i;
+  /^(?:https?:\/\/[^/]+)?\/media\/((?:testing(?:-v8)?|production)\/[A-Za-z0-9._/-]+)$/i;
 const ABSOLUTE_MEDIA_KEY_RE =
-  /^https:\/\/[^/]+\/media\/((?:testing|production)\/[A-Za-z0-9._/-]+)$/i;
+  /^https:\/\/[^/]+\/media\/((?:testing(?:-v8)?|production)\/[A-Za-z0-9._/-]+)$/i;
 
 /**
  * Absolute CDN public base (e.g. https://blessboard.pronline.org/media).
@@ -58,9 +58,14 @@ function resolveCdnPublicBaseUrl(env) {
   }
   // Hostinger testing often omits MEDIA_PUBLIC_BASE_URL in hPanel; derive the
   // documented absolute CDN base so presentation never emits relative /media.
+  // V7 (pronline) and V8 (neuniversity) share the same testing media mount.
   const deploymentEnv = String(source.DEPLOYMENT_ENV || "").trim().toLowerCase();
   const deploymentCode = String(source.PLATFORM_DEPLOYMENT_CODE || "").trim();
-  if (deploymentEnv === "testing" && deploymentCode === "moovex-platform-testing") {
+  if (
+    deploymentEnv === "testing" &&
+    (deploymentCode === "moovex-platform-testing" ||
+      deploymentCode === "moovex-platform-v8-testing")
+  ) {
     return TESTING_CDN_PUBLIC_BASE_FALLBACK;
   }
   return null;
@@ -121,7 +126,7 @@ function storageKeyFromLegacyMediaSrc(src) {
   if (rel) return rel[1];
   if (raw.startsWith("/media/")) {
     const key = raw.slice("/media/".length).replace(/^\/+/, "");
-    if (/^(testing|production)\//.test(key) && !key.includes("..")) return key;
+    if (/^(testing(?:-v8)?|production)\//.test(key) && !key.includes("..")) return key;
   }
   return null;
 }

@@ -27,6 +27,7 @@ const RESULT = Object.freeze({
   NOT_FOUND: "website_instance_not_found",
   TENANT_MISMATCH: "tenant_mismatch",
   VALIDATION_FAILED: "validation_failed",
+  CONFLICT: "conflict",
 });
 
 function mapContent(row) {
@@ -135,6 +136,16 @@ async function saveWebsiteDraft(db, input) {
   const validated = { ok: true, value: asserted.value };
   const wrapped = validated.value == null ? null : JSON.stringify(wrapValue(validated.value));
   const visibility = input.visibility === "hidden" ? "hidden" : input.visibility === "visible" ? "visible" : null;
+  let expectedUpdatedAt = null;
+  if (input.expectedUpdatedAt != null && String(input.expectedUpdatedAt).trim()) {
+    const raw = input.expectedUpdatedAt;
+    if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+      expectedUpdatedAt = raw.toISOString();
+    } else {
+      const parsed = new Date(String(raw).trim());
+      expectedUpdatedAt = Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+    }
+  }
 
   const rows = await db.query(
     `INSERT INTO platform.website_content (
@@ -148,6 +159,9 @@ async function saveWebsiteDraft(db, input) {
        sort_order = COALESCE($9, platform.website_content.sort_order),
        updated_by_identity_id = EXCLUDED.updated_by_identity_id,
        updated_at = now()
+     WHERE $10::timestamptz IS NULL
+        OR date_trunc('milliseconds', platform.website_content.updated_at) =
+           date_trunc('milliseconds', $10::timestamptz)
      RETURNING *`,
     [
       organizationId,
@@ -159,8 +173,21 @@ async function saveWebsiteDraft(db, input) {
       Number.isFinite(Number(input.sortOrder)) ? Number(input.sortOrder) : def.sortOrder || 0,
       input.actorIdentityId || null,
       Number.isFinite(Number(input.sortOrder)) ? Number(input.sortOrder) : null,
+      expectedUpdatedAt,
     ]
   );
+  if (!rows.rowCount) {
+    if (expectedUpdatedAt) {
+      const current = await getWebsiteContentRow(db, instanceId, organizationId, keyNorm.key);
+      return {
+        ok: false,
+        code: RESULT.CONFLICT,
+        content: current,
+        reason: "stale_draft_revision",
+      };
+    }
+    return { ok: false, code: RESULT.NOT_FOUND, content: null };
+  }
   await instanceRepo.updateWebsiteInstance(db, {
     instanceId: instance.id,
     organizationId,

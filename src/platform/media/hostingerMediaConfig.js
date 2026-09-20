@@ -528,13 +528,43 @@ function buildHostingerStorageKey(input) {
 }
 
 /**
+ * Shared path-safety checks for Hostinger object keys (read or write).
+ * @param {string} storageKey
+ */
+function assertStorageKeyPathSafe(storageKey) {
+  const key = String(storageKey || "").replace(/^\/+/, "");
+  if (key.includes("..") || key.includes("\\") || key.startsWith("/") || path.isAbsolute(key)) {
+    const err = new Error("unsafe_storage_key");
+    err.code = "UNSAFE_STORAGE_KEY";
+    throw err;
+  }
+  const parts = key.split("/").filter(Boolean);
+  // Tenant uploads: {env}/{product}/{organizationId}/{mediaFile}
+  // Platform marketing: {env}/platform/{product}/.../{file}
+  if (parts.length < 4) {
+    const err = new Error("unsafe_storage_key");
+    err.code = "UNSAFE_STORAGE_KEY";
+    throw err;
+  }
+  if (parts[1] === "platform") {
+    return key;
+  }
+  if (parts.length !== 4) {
+    const err = new Error("unsafe_storage_key");
+    err.code = "UNSAFE_STORAGE_KEY";
+    throw err;
+  }
+  return key;
+}
+
+/**
  * Testing / V8 runtimes must never write under production/.
  * V8 writes under testing-v8/; V7 testing writes under testing/.
  * @param {string} runtimeEnvironment
  * @param {string} storageKey
  */
 function assertStorageKeyWritable(runtimeEnvironment, storageKey) {
-  const key = String(storageKey || "").replace(/^\/+/, "");
+  const key = assertStorageKeyPathSafe(storageKey);
   const runtime = String(runtimeEnvironment || "")
     .trim()
     .toLowerCase();
@@ -565,30 +595,65 @@ function assertStorageKeyWritable(runtimeEnvironment, storageKey) {
     err.code = "MEDIA_ENVIRONMENT_MISMATCH";
     throw err;
   }
-  if (key.includes("..") || key.includes("\\") || key.startsWith("/") || path.isAbsolute(key)) {
-    const err = new Error("unsafe_storage_key");
-    err.code = "UNSAFE_STORAGE_KEY";
+}
+
+/**
+ * Read compatibility: V8 may serve existing V7 testing/ objects; V7 must not
+ * read testing-v8/; production stays isolated. Never allows production/ from
+ * non-production runtimes.
+ * @param {string} runtimeEnvironment
+ * @param {string} storageKey
+ */
+function assertStorageKeyReadable(runtimeEnvironment, storageKey) {
+  const key = assertStorageKeyPathSafe(storageKey);
+  const runtime = String(runtimeEnvironment || "")
+    .trim()
+    .toLowerCase();
+  if (
+    runtime !== "testing" &&
+    runtime !== "testing-v8" &&
+    runtime !== "production"
+  ) {
+    const err = new Error("invalid_media_environment");
+    err.code = "INVALID_MEDIA_ENVIRONMENT";
     throw err;
   }
-  const parts = key.split("/").filter(Boolean);
-  // Tenant uploads: {env}/{product}/{organizationId}/{mediaFile}
-  // Platform marketing: {env}/platform/{product}/.../{file}
-  if (parts.length < 4) {
-    const err = new Error("unsafe_storage_key");
-    err.code = "UNSAFE_STORAGE_KEY";
-    throw err;
-  }
-  if (parts[1] === "platform") {
-    if (parts.length < 4) {
-      const err = new Error("unsafe_storage_key");
-      err.code = "UNSAFE_STORAGE_KEY";
+  if (runtime === "production") {
+    if (!key.startsWith("production/")) {
+      const err = new Error("media_environment_mismatch");
+      err.code = "MEDIA_ENVIRONMENT_MISMATCH";
       throw err;
     }
     return;
   }
-  if (parts.length !== 4) {
-    const err = new Error("unsafe_storage_key");
-    err.code = "UNSAFE_STORAGE_KEY";
+  if (key === "production" || key.startsWith("production/")) {
+    const err = new Error("refused_production_media_namespace");
+    err.code = "REFUSED_PRODUCTION_MEDIA_NAMESPACE";
+    throw err;
+  }
+  if (runtime === "testing") {
+    if (!(key === "testing" || key.startsWith("testing/"))) {
+      const err = new Error("refused_v8_media_namespace");
+      err.code = "REFUSED_V8_MEDIA_NAMESPACE";
+      throw err;
+    }
+    // Defend against testing-v8 being mistaken for testing/ via prefix.
+    if (key === "testing-v8" || key.startsWith("testing-v8/")) {
+      const err = new Error("refused_v8_media_namespace");
+      err.code = "REFUSED_V8_MEDIA_NAMESPACE";
+      throw err;
+    }
+    return;
+  }
+  // testing-v8: may read shared V7 testing/ and own testing-v8/ keys.
+  if (
+    !(
+      key.startsWith("testing-v8/") ||
+      (key.startsWith("testing/") && !key.startsWith("testing-v8/"))
+    )
+  ) {
+    const err = new Error("media_environment_mismatch");
+    err.code = "MEDIA_ENVIRONMENT_MISMATCH";
     throw err;
   }
 }
@@ -657,7 +722,9 @@ module.exports = {
   productNamespace,
   extensionForMime,
   buildHostingerStorageKey,
+  assertStorageKeyPathSafe,
   assertStorageKeyWritable,
+  assertStorageKeyReadable,
   buildPublicMediaUrl,
   resolveAbsolutePublicMediaBaseUrl,
   normalizeMountPath,
