@@ -59,6 +59,23 @@ After each task, report:
 
 ## Task log
 
+### PROMPT 01 — V8 QA baseline and media audit
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_QA_BASELINE_COMPLETE` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` @ `7c695b8d` (synced with `origin/V8` before task) |
+| **Scope** | Audit AC QA items 1–5 + regressions 6–8 + V8 BB/AC media; docs only; no runtime changes |
+| **Report** | [`docs/releases/V8_QA_BASELINE_AND_MEDIA_AUDIT.md`](./V8_QA_BASELINE_AND_MEDIA_AUDIT.md) |
+| **Classifications** | 1–8 + media → **ALREADY_FIXED** (0 REPRODUCED / 0 BLOCKED) |
+| **Changed files** | `docs/releases/V8_QA_BASELINE_AND_MEDIA_AUDIT.md` · `docs/releases/V8_OVERNIGHT_IMPLEMENTATION_REPORT.md` |
+| **Test results** | Focused local cluster **45/45 PASS** (booking, phone identity, directory, V8 media) |
+| **Hosted (read-only)** | V8 healthz tip `7c695b8d63b9`; public AC routes 200; homepage images 200 `testing/platform/…` on neuniversity CDN |
+| **Commit SHA** | *(filled after commit)* |
+| **Push status** | *(filled after push)* |
+| **Blockers** | None for audit completion. Overnight rule 10 deferred hosted write retests (booking submit, duplicate-phone POST, staff CRUD/invite/CMS/upload). |
+
 ### PROMPT 00 — V8 overnight rules
 
 | Field | Value |
