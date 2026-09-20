@@ -357,6 +357,7 @@ function createTenantPublicRouter(deps) {
     "/ministries",
     "/events",
     "/sermons",
+    "/announcements",
     "/contact",
     "/giving",
   ];

@@ -15,6 +15,7 @@ const PATH_TO_PAGE_KEY = Object.freeze({
   "/ministries": "ministries",
   "/events": "events",
   "/sermons": "sermons",
+  "/announcements": "announcements",
   "/contact": "contact",
   "/giving": "giving",
 });
@@ -26,6 +27,7 @@ const PAGE_KEY_TO_PATH = Object.freeze({
   ministries: "/ministries",
   events: "/events",
   sermons: "/sermons",
+  announcements: "/announcements",
   contact: "/contact",
   giving: "/giving",
 });
@@ -37,6 +39,7 @@ const PAGE_SUFFIXES = Object.freeze([
   "/ministries",
   "/events",
   "/sermons",
+  "/announcements",
   "/contact",
   "/giving",
 ]);

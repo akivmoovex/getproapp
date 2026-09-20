@@ -12,6 +12,7 @@ const PUBLIC_PAGE_KEYS = Object.freeze([
   "ministries",
   "events",
   "sermons",
+  "announcements",
   "contact",
   "giving",
 ]);
@@ -23,6 +24,7 @@ const PAGE_KEY_TITLES = Object.freeze({
   ministries: "Ministries",
   events: "Events",
   sermons: "Sermons",
+  announcements: "Announcements",
   contact: "Contact",
   giving: "Giving",
 });

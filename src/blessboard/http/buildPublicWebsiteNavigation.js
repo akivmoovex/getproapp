@@ -198,6 +198,7 @@ function buildPublicWebsiteNavigation(input) {
     const mediaChildren = [
       link("sermons", "Sermons"),
       link("events", "Events"),
+      link("announcements", "Announcements"),
     ].filter(Boolean);
     if (mediaChildren.length > 1) {
       primaryItems.push(
@@ -205,7 +206,7 @@ function buildPublicWebsiteNavigation(input) {
           key: "media-group",
           label: "Media",
           href: null,
-          isActive: isActiveKey(activeKey, ["sermons", "events"]),
+          isActive: isActiveKey(activeKey, ["sermons", "events", "announcements"]),
           children: mediaChildren,
         })
       );
@@ -322,6 +323,7 @@ function buildPublicWebsiteNavigation(input) {
     const mediaChildren = [
       link("sermons", "Sermons"),
       link("events", "Events"),
+      link("announcements", "Announcements"),
     ].filter(Boolean);
     if (mediaChildren.length > 1) {
       primaryItems.push(
@@ -329,7 +331,7 @@ function buildPublicWebsiteNavigation(input) {
           key: "media-group",
           label: "Media",
           href: null,
-          isActive: isActiveKey(activeKey, ["sermons", "events"]),
+          isActive: isActiveKey(activeKey, ["sermons", "events", "announcements"]),
           children: mediaChildren,
         })
       );

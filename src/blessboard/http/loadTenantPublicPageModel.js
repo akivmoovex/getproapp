@@ -27,6 +27,9 @@ const { normalizePlainTextEntities } = require("../../platform/website/plainText
 const { presentRuntimeImageSrc } = require("../../platform/media/cdnMediaPresentation");
 const testingDemoSpec = require("../services/testingWebsiteDemoContentSpec");
 const publicDemo = require("../services/tenantPublicDemoContent");
+const {
+  listPublicWebsiteAnnouncements,
+} = require("../services/announcementsService");
 
 /**
  * Public website image URL: allowlist then CDN presentation (drops /media, local FS, data:).
@@ -1126,6 +1129,15 @@ async function loadTenantPublicPageModel(db, input) {
     entities = list.items;
     entitiesScope = list.contentScope;
     entitiesEmptyMessage = "Sermons will appear here when published.";
+  } else if (pageKey === "announcements") {
+    const listed = await listPublicWebsiteAnnouncements(db, {
+      churchId,
+      branchId: contentBranchId,
+      limit: 50,
+    });
+    entities = listed.ok ? listed.items || [] : [];
+    entitiesScope = contentBranchId ? "branch" : "church";
+    entitiesEmptyMessage = "Announcements will appear here when published.";
   } else if (pageKey === "contact") {
     const list = await loadEntityList(
       listPublishedContactChannels,
@@ -1474,7 +1486,9 @@ async function loadTenantPublicPageModel(db, input) {
   let showEmptyState = false;
   if (pageKey === "contact") {
     showEmptyState = !hasEntities && !hasSections && !publicContact.hasAny;
-  } else if (["leadership", "ministries", "events", "sermons", "giving"].includes(pageKey)) {
+  } else if (
+    ["leadership", "ministries", "events", "sermons", "announcements", "giving"].includes(pageKey)
+  ) {
     showEmptyState = !hasEntities && !hasSections;
   } else if (pageKey === "home") {
     showEmptyState = !hasSections && !hasHomeTeasers;

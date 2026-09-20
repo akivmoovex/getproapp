@@ -1,0 +1,39 @@
+<%#
+  BB22 — Public Church Announcement Detail (desktop + mobile).
+  Stitch: 41278eb49dff432da7b83d6f01f37f9c / c9a739da878c4467b03344734e3b1e50
+%>
+<%- include('../partials/tenant-public-shell-start') %>
+
+<section
+  class="bb-tp-directory bb-tp-announcement-detail"
+  data-bb-announcement-detail="1"
+  data-bb-stitch="BB22"
+  data-bb-stitch-desktop="41278eb49dff432da7b83d6f01f37f9c"
+  data-bb-stitch-mobile="c9a739da878c4467b03344734e3b1e50"
+  aria-label="Announcement"
+>
+  <div class="bb-tp-container" style="padding-top:1.5rem;padding-bottom:3rem;max-width:46rem">
+    <p class="bb-tp-ann-meta">
+      <a href="<%= hrefFor('/announcements') %>">← All announcements</a>
+    </p>
+    <% if (!item) { %>
+      <h1 class="bb-tp-ann-title">Announcement unavailable</h1>
+      <p>This notice is not published or has ended.</p>
+    <% } else { %>
+      <p class="bb-tp-ann-meta">
+        <% if (item.branchId) { %><span class="bb-tp-ann-badge bb-tp-ann-badge--branch">Campus</span>
+        <% } else { %><span class="bb-tp-ann-badge">Church-wide</span><% } %>
+        <% if (item.publishedAt) { %><span><%= formatWhen(item.publishedAt, item.timezone) %></span><% } %>
+      </p>
+      <h1 class="bb-tp-ann-title"><%= item.title %></h1>
+      <div class="bb-tp-ann-body" style="white-space:pre-wrap;line-height:1.6;margin-top:1rem"><%= item.body %></div>
+      <% if (item.actionUrl && item.actionLabel) { %>
+        <p style="margin-top:1.25rem">
+          <a class="bb-tp-btn bb-tp-btn--primary" href="<%= item.actionUrl %>" rel="noopener noreferrer"><%= item.actionLabel %></a>
+        </p>
+      <% } %>
+    <% } %>
+  </div>
+</section>
+
+<%- include('../partials/tenant-public-shell-end') %>

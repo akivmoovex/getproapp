@@ -528,6 +528,82 @@ async function findMediaAssetMeta(client, mediaAssetId) {
   return rows[0] || null;
 }
 
+/**
+ * Public church website feed: audience=public, effective published window only.
+ * @param {{ query: Function }} client
+ * @param {{ churchId: string, branchId?: string|null, limit?: number, offset?: number }} opts
+ */
+async function listPublicWebsiteAnnouncements(client, opts) {
+  const limit = Math.min(Math.max(Number(opts.limit) || 50, 1), 100);
+  const offset = Math.max(Number(opts.offset) || 0, 0);
+  const branchId =
+    opts.branchId != null && String(opts.branchId).trim()
+      ? String(opts.branchId).trim()
+      : null;
+  const branchClause = branchId
+    ? "(a.branch_id IS NULL OR a.branch_id = $2)"
+    : "a.branch_id IS NULL";
+  const params = branchId
+    ? [opts.churchId, branchId, limit, offset]
+    : [opts.churchId, limit, offset];
+  const limitIdx = branchId ? 3 : 2;
+  const offsetIdx = branchId ? 4 : 3;
+  const { rows } = await client.query(
+    `SELECT a.id, a.church_id, a.branch_id, a.title, a.body, a.status,
+            a.is_pinned, a.is_featured, a.featured_until, a.action_url, a.action_label,
+            a.published_at, a.created_by_user_id, a.created_at, a.updated_at,
+            a.timezone, a.starts_at, a.ends_at
+       FROM blessboard.announcements a
+       INNER JOIN blessboard.announcement_audiences aud
+         ON aud.announcement_id = a.id AND aud.audience_key = 'public'
+      WHERE a.church_id = $1
+        AND ${branchClause}
+        AND (
+          (
+            a.status = 'published'
+            AND (a.starts_at IS NULL OR a.starts_at <= now())
+            AND (a.ends_at IS NULL OR a.ends_at > now())
+          )
+          OR (
+            a.status = 'scheduled'
+            AND a.starts_at IS NOT NULL
+            AND a.starts_at <= now()
+            AND (a.ends_at IS NULL OR a.ends_at > now())
+          )
+        )
+      ORDER BY a.is_pinned DESC, a.is_featured DESC,
+               a.published_at DESC NULLS LAST, a.starts_at DESC NULLS LAST, a.created_at DESC
+      LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
+    params
+  );
+  return rows.map(mapAnnouncement);
+}
+
+/**
+ * Publication audit history from platform.audit_events (append-only writes).
+ */
+async function listAnnouncementAuditEvents(client, { churchId, announcementId, limit }) {
+  const lim = Math.min(Math.max(Number(limit) || 40, 1), 100);
+  const { rows } = await client.query(
+    `SELECT id, action_key, outcome, metadata_json, actor_user_id, created_at
+       FROM platform.audit_events
+      WHERE church_id = $1
+        AND entity_type = 'announcement'
+        AND entity_id = $2::uuid
+      ORDER BY created_at DESC
+      LIMIT $3`,
+    [churchId, announcementId, lim]
+  );
+  return rows.map((row) => ({
+    id: row.id,
+    actionKey: row.action_key,
+    outcome: row.outcome,
+    metadata: row.metadata_json || {},
+    actorUserId: row.actor_user_id || null,
+    createdAt: row.created_at,
+  }));
+}
+
 module.exports = {
   mapAnnouncement,
   mapAudience,
@@ -536,6 +612,8 @@ module.exports = {
   findAnnouncementById,
   listAnnouncements,
   listMemberAnnouncements,
+  listPublicWebsiteAnnouncements,
+  listAnnouncementAuditEvents,
   insertAnnouncement,
   updateAnnouncement,
   listAudiences,

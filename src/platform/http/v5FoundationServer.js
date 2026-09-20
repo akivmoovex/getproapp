@@ -971,6 +971,16 @@ function createV5FoundationApp(options) {
       env,
     })
   );
+  const {
+    createAnnouncementPublicRouter,
+  } = require("../../blessboard/http/announcementPublicRoutes");
+  app.use(
+    createAnnouncementPublicRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      getTenantRoutingMode: () => getBlessBoardTenantRoutingMode(env),
+    })
+  );
   app.use(
     createHqReportsRouter({
       getPool,

@@ -59,6 +59,22 @@ After each task, report:
 
 ## Task log
 
+### PROMPT 12 — V8 BlessBoard announcements (BB19–BB22)
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_BB_ANNOUNCEMENTS_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` |
+| **Scope** | BB19–BB22 admin + public website announcements; HQ/branch visibility; timed window; public audience; audit history; no notifications |
+| **Stitch** | `projects/5087412725796049014` |
+| **Report** | [`docs/releases/V8_BB_ANNOUNCEMENTS_PROMPT12.md`](./V8_BB_ANNOUNCEMENTS_PROMPT12.md) |
+| **Changed files** | `112_announcement_public_audience_v8.sql` · announcements service/repo/admin/public routes/views/CSS · tenant public paths/nav · tests · docs |
+| **Test results** | BB V8 **6/6 PASS**; blessboard-announcements regression **18/18 PASS** |
+| **Commit SHA** | _(pending commit)_ |
+| **Push status** | _(pending push)_ |
+| **Blockers** | None for CODE_PASS. Migration `112` not applied on hosted DB. Scheduler still unavailable (lazy visibility). |
+
 ### PROMPT 11 — V8 shared announcement publication (AN01–AN05)
 
 | Field | Value |

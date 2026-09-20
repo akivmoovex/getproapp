@@ -17,8 +17,15 @@
     return list.map(function (k) {
       if (k === 'members') return 'Members';
       if (k === 'admins') return 'Admins';
+      if (k === 'public') return 'Website';
       return k;
     }).join(', ');
+  }
+  function dtLocal(value) {
+    if (!value) return '';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().slice(0, 16);
   }
 %>
 
@@ -26,6 +33,7 @@
   class="bb-ann-admin bb-ba-ann-publish<%= isHq ? ' bb-hq-ann-publish' : '' %>"
   data-bb-announcement-admin-publish="1"
   data-bb-stitch-announcement-publish="<%= stitchKey %>"
+  data-bb-stitch="BB20"
   <% if (isHq) { %>data-bb-hq-announcement-publish="1"<% } %>
 >
   <%- include('./_testing-platform-admin-banner') %>
@@ -82,9 +90,33 @@
   >
     <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
     <input type="hidden" name="expected_updated_at" value="<%= item.updatedAt && item.updatedAt.toISOString ? item.updatedAt.toISOString() : item.updatedAt %>" />
+    <fieldset class="bb-ann-fieldset">
+      <legend>Publication mode</legend>
+      <label class="bb-ann-check">
+        <input type="radio" name="publish_mode" value="now" checked />
+        Publish now
+      </label>
+      <label class="bb-ann-check">
+        <input type="radio" name="publish_mode" value="timed" />
+        Set start time for later visibility (lazy — no background worker)
+      </label>
+    </fieldset>
+    <div class="bb-ba-field">
+      <label for="timezone">Timezone</label>
+      <input id="timezone" type="text" name="timezone" value="<%= item.timezone || 'UTC' %>" />
+    </div>
+    <div class="bb-ba-field">
+      <label for="starts_at">Starts at (required for timed mode)</label>
+      <input id="starts_at" type="datetime-local" name="starts_at" value="<%= dtLocal(item.startsAt) %>" />
+    </div>
+    <div class="bb-ba-field">
+      <label for="ends_at">Ends at (optional)</label>
+      <input id="ends_at" type="datetime-local" name="ends_at" value="<%= dtLocal(item.endsAt) %>" />
+    </div>
+    <p class="bb-ba-hint" data-lazy-visibility="1">Live notifications are not sent. Unpublished and expired notices never appear on the public website.</p>
     <label class="bb-ann-check">
-      <input type="checkbox" name="confirm_publish" value="1" required />
-      I confirm publishing this announcement to the selected audience in this scope
+      <input type="checkbox" name="confirm_publish" value="1" />
+      I confirm publishing now (required for publish-now; optional for timed mode)
     </label>
     <div class="bb-ba-decision__actions">
       <a class="bb-ba-btn bb-ba-btn--ghost" href="<%= basePath %>/<%= item.id %>" data-bb-ann-cancel="1">Cancel</a>

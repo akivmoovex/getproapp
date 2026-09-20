@@ -8,11 +8,13 @@
   var audiences = (item && item.audiences) || [];
   var hasMembers = audiences.indexOf('members') !== -1;
   var hasAdmins = audiences.indexOf('admins') !== -1;
+  var hasPublic = audiences.indexOf('public') !== -1;
   var isCreate = formMode === 'create';
   var isEdit = formMode === 'edit';
   var currentStatus = item && item.status ? String(item.status) : 'draft';
   var isDraft = currentStatus === 'draft';
   var isPublished = currentStatus === 'published';
+  var isTimed = currentStatus === 'scheduled';
   var previewTitle = item && item.title ? item.title : 'Announcement title';
   var previewBody = item && item.body ? item.body : 'Message preview will appear here as you write.';
   var stitchKey = isHq ? '61-hq-broadcast-center' : '35-branch-announcements-management';
@@ -25,15 +27,23 @@
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'draft') return 'Draft';
+    if (key === 'sched'+'uled') return 'Timed';
     if (key === 'published') return 'Published';
+    if (key === 'expired') return 'Expired';
     if (key === 'archived') return 'Archived';
     return s || '—';
   }
   function statusChip(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'published') return 'bb-ba-chip--ok';
-    if (key === 'draft') return 'bb-ba-chip--pending';
+    if (key === 'sched'+'uled' || key === 'draft') return 'bb-ba-chip--pending';
     return 'bb-ba-chip--muted';
+  }
+  function dtLocal(value) {
+    if (!value) return '';
+    var d = value instanceof Date ? value : new Date(value);
+    if (isNaN(d.getTime())) return '';
+    return d.toISOString().slice(0, 16);
   }
 %>
 
@@ -41,7 +51,10 @@
   class="bb-ann-admin bb-ba-ann-editor<%= isHq ? ' bb-hq-ann-editor' : '' %>"
   data-bb-announcement-admin-form="1"
   data-bb-form-mode="<%= formMode %>"
+  data-bb-stitch="BB20"
   data-bb-stitch-announcement-editor="<%= stitchKey %>"
+  data-bb-stitch-desktop="582319678613475782e5c9d8da317186"
+  data-bb-stitch-mobile="82d2eb920dec4052ac8fee6b9a2a607c"
   <% if (isHq) { %>data-bb-hq-announcement-editor="1"<% } %>
 >
   <%- include('./_testing-platform-admin-banner') %>
@@ -173,6 +186,10 @@
             <input type="checkbox" name="audience_admins" value="1" <%= hasAdmins ? 'checked' : '' %> />
             Admins
           </label>
+          <label class="bb-ann-check">
+            <input type="checkbox" name="audience_public" value="1" <%= hasPublic ? 'checked' : '' %> />
+            Church website (public visitors)
+          </label>
         </fieldset>
         <fieldset class="bb-ann-fieldset">
           <legend>Placement</legend>
@@ -192,6 +209,37 @@
           Exact confirmation is shown again before publish.
         </p>
         <% } %>
+      </section>
+
+      <section class="bb-ba-ann-editor__section" aria-labelledby="bb-ann-window-heading" data-bb-ann-section="window">
+        <h2 id="bb-ann-window-heading" class="bb-ba-section-title">Visibility window</h2>
+        <p class="bb-ba-hint" data-lazy-visibility="1">
+          No background job runner is configured. Timed notices become visible when the start time is reached (lazy evaluation). Live notifications are not sent.
+        </p>
+        <% if (isDraft || isTimed) { %>
+        <div class="bb-ba-field">
+          <label for="status">Save as</label>
+          <select id="status" name="status">
+            <option value="draft" <%= !isTimed ? 'selected' : '' %>>Draft</option>
+            <option value="timed" <%= isTimed ? 'selected' : '' %>>Timed</option>
+          </select>
+        </div>
+        <% } %>
+        <div class="bb-ba-field">
+          <label for="timezone">Timezone</label>
+          <input id="timezone" type="text" name="timezone" maxlength="64"
+                 value="<%= item && item.timezone ? item.timezone : 'UTC' %>" />
+        </div>
+        <div class="bb-ba-field">
+          <label for="starts_at">Starts at (UTC)</label>
+          <input id="starts_at" type="datetime-local" name="starts_at"
+                 value="<%= dtLocal(item && item.startsAt) %>" />
+        </div>
+        <div class="bb-ba-field">
+          <label for="ends_at">Ends at (UTC)</label>
+          <input id="ends_at" type="datetime-local" name="ends_at"
+                 value="<%= dtLocal(item && item.endsAt) %>" />
+        </div>
       </section>
 
       <section class="bb-ba-ann-editor__section" aria-labelledby="bb-ann-action-heading" data-bb-ann-section="action">

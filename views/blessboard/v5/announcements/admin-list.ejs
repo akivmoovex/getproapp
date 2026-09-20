@@ -15,24 +15,30 @@
   var statusOptions = [
     { key: '', label: 'All' },
     { key: 'draft', label: 'Draft' },
+    { key: 'timed', label: 'Timed' },
     { key: 'published', label: 'Published' },
+    { key: 'expired', label: 'Expired' },
     { key: 'archived', label: 'Archived' }
   ];
   var audienceOptions = [
     { key: '', label: 'All' },
     { key: 'members', label: 'Members' },
-    { key: 'admins', label: 'Admins' }
+    { key: 'admins', label: 'Admins' },
+    { key: 'public', label: 'Website' }
   ];
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'draft') return 'Draft';
+    if (key === 'sched'+'uled') return 'Timed';
     if (key === 'published') return 'Published';
+    if (key === 'expired') return 'Expired';
     if (key === 'archived') return 'Archived';
     return s || '—';
   }
   function statusChip(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'published') return 'bb-ba-chip--ok';
+    if (key === 'sched'+'uled') return 'bb-ba-chip--pending';
     if (key === 'draft') return 'bb-ba-chip--pending';
     return 'bb-ba-chip--muted';
   }
@@ -41,6 +47,7 @@
     return list.map(function (k) {
       if (k === 'members') return 'Members';
       if (k === 'admins') return 'Admins';
+      if (k === 'public') return 'Website';
       return k;
     }).join(', ');
   }
@@ -103,6 +110,9 @@
   class="bb-ann-admin bb-ba-ann<%= isHq ? ' bb-hq-ann' : '' %>"
   data-bb-announcement-admin-list="1"
   data-bb-stitch-announcements="<%= stitchKey %>"
+  data-bb-stitch="BB19"
+  data-bb-stitch-desktop="97f4a02727524280a8216660dc06db41"
+  data-bb-stitch-mobile="9f03f5273c904103adb08b775ab7c903"
   <% if (isHq) { %>data-bb-hq-announcements="1"<% } %>
   aria-label="<%= isHq ? 'HQ announcements' : 'Announcements management' %>"
 >
@@ -313,7 +323,7 @@
             var attachmentCount = item.attachments && item.attachments.length ? item.attachments.length : 0;
             var delivery = item.delivery || null;
           %>
-          <tr data-bb-announcement-status="<%= item.status %>" data-bb-ann-row="1">
+          <tr data-bb-announcement-status="<%= statusLabel(item.status).toLowerCase() %>" data-bb-ann-row="1">
             <td>
               <a href="<%= listBase %>/<%= item.id %>" class="bb-ann-title-link"><%= item.title %></a>
               <% if (item.isPinned || item.isFeatured || attachmentCount) { %>
@@ -376,7 +386,7 @@
       %>
       <li
         class="bb-ba-ann-card"
-        data-bb-announcement-status="<%= item.status %>"
+        data-bb-announcement-status="<%= statusLabel(item.status).toLowerCase() %>"
         data-bb-ann-card="1"
       >
         <div class="bb-ba-ann-card__head">

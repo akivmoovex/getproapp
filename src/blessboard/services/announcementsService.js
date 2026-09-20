@@ -28,7 +28,7 @@ const STATUS = Object.freeze({
   LOOKUP_ERROR: "lookup_error",
 });
 
-const AUDIENCE_KEYS = Object.freeze(["members", "admins"]);
+const AUDIENCE_KEYS = Object.freeze(["members", "admins", "public"]);
 const STATUSES = Object.freeze(
   new Set(["draft", "scheduled", "published", "expired", "archived"])
 );
@@ -500,7 +500,10 @@ async function createAnnouncement(db, input) {
     return await withClient(db, async (client) => {
       let capabilityMode = null;
       if (input.tenant) {
-        const permission = nextStatus === "published" ? "announcements.publish" : "announcements.manage";
+        const permission =
+          nextStatus === "published" || nextStatus === "scheduled"
+            ? "announcements.publish"
+            : "announcements.manage";
         const authz = await authorizeActor(client, {
           actorUserId,
           tenant: input.tenant,
@@ -633,9 +636,11 @@ async function updateAnnouncement(db, id, patch) {
       const nextStatus =
         built.fields.status !== undefined ? built.fields.status : existing.status;
       const willPublish = nextStatus === "published" && existing.status !== "published";
+      const willSchedule = nextStatus === "scheduled" && existing.status !== "scheduled";
       
       if (raw.tenant && raw.actorUserId) {
-        const permission = willPublish ? "announcements.publish" : "announcements.manage";
+        const permission =
+          willPublish || willSchedule ? "announcements.publish" : "announcements.manage";
         const authz = await authorizeActor(client, {
           actorUserId: raw.actorUserId,
           tenant: raw.tenant,
@@ -714,6 +719,8 @@ async function updateAnnouncement(db, id, patch) {
         let actionKey = "announcement_updated";
         if (nextStatus === "published" && existing.status !== "published") {
           actionKey = "announcement_published";
+        } else if (nextStatus === "scheduled" && existing.status !== "scheduled") {
+          actionKey = "announcement_scheduled";
         } else if (nextStatus === "archived" && existing.status !== "archived") {
           actionKey = "announcement_archived";
         }
@@ -1009,6 +1016,138 @@ async function removeAnnouncementAttachment(db, input) {
   }
 }
 
+function resolveEffectiveStatus(ann, now) {
+  const clock = now instanceof Date ? now : new Date();
+  const stored = String((ann && ann.status) || "draft");
+  if (stored === "archived" || stored === "draft" || stored === "expired") return stored;
+  const starts = ann.startsAt ? new Date(ann.startsAt) : null;
+  const ends = ann.endsAt ? new Date(ann.endsAt) : null;
+  if (stored === "scheduled") {
+    if (starts && starts.getTime() > clock.getTime()) return "scheduled";
+    if (ends && ends.getTime() <= clock.getTime()) return "expired";
+    return "published";
+  }
+  if (stored === "published") {
+    if (ends && ends.getTime() <= clock.getTime()) return "expired";
+    if (starts && starts.getTime() > clock.getTime()) return "scheduled";
+    return "published";
+  }
+  return stored;
+}
+
+function isPubliclyVisible(ann, now) {
+  return resolveEffectiveStatus(ann, now) === "published";
+}
+
+async function listPublicWebsiteAnnouncements(db, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  if (!churchId) {
+    return { ok: false, status: STATUS.INVALID_INPUT, items: [], reason: "scope" };
+  }
+  let branchId = null;
+  if (input.branchId != null && String(input.branchId).trim()) {
+    branchId = String(input.branchId).trim();
+  }
+  try {
+    return await withClient(db, async (client) => {
+      const items = await repo.listPublicWebsiteAnnouncements(client, {
+        churchId,
+        branchId,
+        limit: input.limit,
+        offset: input.offset,
+      });
+      const now = new Date();
+      return {
+        ok: true,
+        status: STATUS.OK,
+        items: items
+          .map((item) => ({
+            ...item,
+            effectiveStatus: resolveEffectiveStatus(item, now),
+            body: String(item.body || ""),
+            title: String(item.title || ""),
+            actionUrl: item.actionUrl ? safeExternalUrl(item.actionUrl) : null,
+          }))
+          .filter((item) => item.effectiveStatus === "published"),
+        scheduler: SCHEDULER_DEPENDENCY,
+      };
+    });
+  } catch (err) {
+    return { ...mapDbError(err), items: [] };
+  }
+}
+
+async function getPublicWebsiteAnnouncement(db, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  const id = String((input && input.id) || "").trim();
+  if (!churchId || !UUID_RE.test(id)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, item: null, reason: "scope" };
+  }
+  let branchId = null;
+  if (input.branchId != null && String(input.branchId).trim()) {
+    branchId = String(input.branchId).trim();
+  }
+  try {
+    return await withClient(db, async (client) => {
+      const existing = await repo.findAnnouncementById(client, id);
+      if (!existing || String(existing.churchId) !== churchId) {
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      if (branchId) {
+        if (existing.branchId && String(existing.branchId) !== branchId) {
+          return { ok: false, status: STATUS.NOT_FOUND, item: null };
+        }
+      } else if (existing.branchId) {
+        // Church-wide site does not expose branch-only announcements.
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      const audiences = await repo.listAudiences(client, id);
+      if (!audiences.some((a) => a.audienceKey === "public")) {
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      if (!isPubliclyVisible(existing)) {
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      return {
+        ok: true,
+        status: STATUS.OK,
+        item: {
+          ...existing,
+          effectiveStatus: "published",
+          audiences: audiences.map((a) => a.audienceKey),
+          attachments: [],
+          actionUrl: existing.actionUrl ? safeExternalUrl(existing.actionUrl) : null,
+          body: String(existing.body || ""),
+          title: String(existing.title || ""),
+        },
+        scheduler: SCHEDULER_DEPENDENCY,
+      };
+    });
+  } catch (err) {
+    return { ...mapDbError(err), item: null };
+  }
+}
+
+async function listAnnouncementPublicationHistory(db, input) {
+  const churchId = String((input && input.churchId) || "").trim();
+  const id = String((input && input.id) || "").trim();
+  if (!churchId || !UUID_RE.test(id)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [] };
+  }
+  try {
+    return await withClient(db, async (client) => {
+      const events = await repo.listAnnouncementAuditEvents(client, {
+        churchId,
+        announcementId: id,
+        limit: input.limit,
+      });
+      return { ok: true, status: STATUS.OK, events };
+    });
+  } catch (err) {
+    return { ...mapDbError(err), events: [] };
+  }
+}
+
 module.exports = {
   STATUS,
   AUDIENCE_KEYS,
@@ -1019,6 +1158,8 @@ module.exports = {
   requirePublishConfirm,
   httpsOrMediaUrl,
   presentAnnouncementForRender,
+  resolveEffectiveStatus,
+  isPubliclyVisible,
   createAnnouncement,
   updateAnnouncement,
   listAdminAnnouncements,
@@ -1027,4 +1168,7 @@ module.exports = {
   getMemberAnnouncement,
   markAnnouncementRead,
   removeAnnouncementAttachment,
+  listPublicWebsiteAnnouncements,
+  getPublicWebsiteAnnouncement,
+  listAnnouncementPublicationHistory,
 };

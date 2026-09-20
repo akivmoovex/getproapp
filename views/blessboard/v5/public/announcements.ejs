@@ -1,0 +1,88 @@
+<%#
+  BB21 — Public Church Announcements List (desktop + mobile).
+  Stitch: 56a52063d18d44bbab92a99dc7fda6b9 / 277a1a7f8b9844aaa4a1e2e28b64a655
+  Only effective published + public audience (no draft/expired/unpublished).
+%>
+<%
+  var announcements = (entities || []).filter(function (a) {
+    return a && String(a.title || '').trim();
+  });
+  var featured = null;
+  for (var i = 0; i < announcements.length; i++) {
+    if (announcements[i].isFeatured) { featured = announcements[i]; break; }
+  }
+  if (!featured && announcements.length) featured = announcements[0];
+  var rest = announcements.filter(function (a) { return !featured || a.id !== featured.id; });
+  function snippet(text) {
+    var t = String(text || '').replace(/\s+/g, ' ').trim();
+    if (t.length <= 160) return t;
+    return t.slice(0, 157) + '…';
+  }
+  function whenLabel(item) {
+    if (item.publishedAt) return formatWhen(item.publishedAt, item.timezone);
+    if (item.startsAt) return formatWhen(item.startsAt, item.timezone);
+    return '';
+  }
+%>
+
+<section
+  class="bb-tp-directory bb-tp-announcements"
+  data-bb-announcements="1"
+  data-bb-stitch="BB21"
+  data-bb-stitch-desktop="56a52063d18d44bbab92a99dc7fda6b9"
+  data-bb-stitch-mobile="277a1a7f8b9844aaa4a1e2e28b64a655"
+  aria-label="Announcements"
+>
+  <%- include('./partials/page-hero', {
+    heroHeading: pageTitle || 'Announcements',
+    heroBody: 'Stay connected with gatherings, notices, and community life.',
+    heroMedia: null,
+    heroMediaAlt: '',
+    heroEyebrow: 'Parish Bulletins',
+    heroClass: 'bb-tp-announcements-hero',
+    heroCtaPrimary: { href: hrefFor('/contact'), label: 'Plan a Visit' },
+    heroCtaSecondary: { href: hrefFor('/events'), label: 'Upcoming Events' },
+    heroLayoutMetadata: null,
+    editPageKey: 'announcements',
+    editSectionKey: 'hero'
+  }) %>
+
+  <div class="bb-tp-container bb-tp-directory__body">
+    <% if (showEmptyState) { %>
+      <%- include('./partials/empty-state') %>
+    <% } %>
+
+    <% if (featured) { %>
+    <article class="bb-tp-ann-featured" data-bb-ann-featured="1">
+      <p class="bb-tp-ann-meta">
+        <% if (featured.isFeatured) { %><span class="bb-tp-ann-badge">Featured</span><% } %>
+        <% if (featured.branchId) { %><span class="bb-tp-ann-badge bb-tp-ann-badge--branch">Campus</span><% } else { %><span class="bb-tp-ann-badge">Church-wide</span><% } %>
+        <% if (whenLabel(featured)) { %><span><%= whenLabel(featured) %></span><% } %>
+      </p>
+      <h2 class="bb-tp-ann-title">
+        <a href="<%= hrefFor('/announcements/' + featured.id) %>"><%= featured.title %></a>
+      </h2>
+      <p class="bb-tp-ann-body"><%= snippet(featured.body) %></p>
+      <a class="bb-tp-btn bb-tp-btn--primary" href="<%= hrefFor('/announcements/' + featured.id) %>">Open announcement</a>
+    </article>
+    <% } %>
+
+    <% if (rest.length) { %>
+    <ul class="bb-tp-ann-list" data-bb-ann-list="1">
+      <% rest.forEach(function (item) { %>
+      <li class="bb-tp-ann-card">
+        <p class="bb-tp-ann-meta">
+          <% if (item.branchId) { %><span class="bb-tp-ann-badge bb-tp-ann-badge--branch">Campus</span><% } %>
+          <% if (whenLabel(item)) { %><span><%= whenLabel(item) %></span><% } %>
+        </p>
+        <h3 class="bb-tp-ann-title">
+          <a href="<%= hrefFor('/announcements/' + item.id) %>"><%= item.title %></a>
+        </h3>
+        <p class="bb-tp-ann-body"><%= snippet(item.body) %></p>
+        <a class="bb-tp-btn bb-tp-btn--ghost" href="<%= hrefFor('/announcements/' + item.id) %>">Open announcement</a>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+</section>
