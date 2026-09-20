@@ -77,6 +77,15 @@ function websiteEditorPageKeyFromRequest(req, clinicKey) {
 }
 
 function json(res, status, body) {
+  const req = res && res.req;
+  if (req) {
+    const { ensureCorrelationId } = require("../../platform/http/sharedApiError");
+    const correlationId = ensureCorrelationId(req, res);
+    const payload = body && typeof body === "object" ? { ...body } : { ok: false };
+    if (payload.requestId == null) payload.requestId = correlationId;
+    if (payload.correlationId == null) payload.correlationId = correlationId;
+    return res.status(status).json(payload);
+  }
   return res.status(status).json(body);
 }
 

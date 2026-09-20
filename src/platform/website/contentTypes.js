@@ -6,6 +6,10 @@
  */
 
 const { safeExternalUrl } = require("./safeValues");
+const {
+  validateEmail,
+  validatePhone,
+} = require("../validation/sharedFieldValidators");
 
 const CONTENT_TYPES = Object.freeze({
   SHORT_TEXT: "short_text",
@@ -23,8 +27,6 @@ const CONTENT_TYPES = Object.freeze({
 
 const CONTENT_TYPE_SET = new Set(Object.values(CONTENT_TYPES));
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-const PHONE_RE = /^\+?[0-9][0-9\s().-]{6,31}$/;
 const KEY_RE = /^[a-z][a-z0-9_.]{0,95}$/;
 const UNSAFE_SCHEME_RE = /^(javascript|data|vbscript):/i;
 const SCRIPT_RE = /<\s*script\b/i;
@@ -86,18 +88,14 @@ function validateContentValue(def, candidate) {
       return { ok: true, value: text };
     }
     case CONTENT_TYPES.EMAIL: {
-      const text = String(candidate).trim().toLowerCase();
-      if (text.length > (def.maxLen || 254) || !EMAIL_RE.test(text)) {
-        return { ok: false, code: "invalid_email" };
-      }
-      return { ok: true, value: text };
+      const checked = validateEmail(candidate, { maxLen: def.maxLen || 254 });
+      if (!checked.ok) return { ok: false, code: checked.code || "invalid_email" };
+      return { ok: true, value: checked.value };
     }
     case CONTENT_TYPES.PHONE: {
-      const text = String(candidate).trim();
-      if (!PHONE_RE.test(text) || text.length > (def.maxLen || 40)) {
-        return { ok: false, code: "invalid_phone" };
-      }
-      return { ok: true, value: text };
+      const checked = validatePhone(candidate, { maxLen: def.maxLen || 40 });
+      if (!checked.ok) return { ok: false, code: checked.code || "invalid_phone" };
+      return { ok: true, value: checked.value };
     }
     case CONTENT_TYPES.URL:
     case CONTENT_TYPES.IMAGE:

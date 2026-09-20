@@ -25,7 +25,9 @@ function assignV5RequestId(req, res, next) {
       ? candidate
       : crypto.randomBytes(12).toString("hex");
   req.requestId = requestId;
+  req.correlationId = requestId;
   res.setHeader("X-Request-Id", requestId);
+  res.setHeader("X-Correlation-Id", requestId);
   return next();
 }
 
@@ -86,7 +88,14 @@ function createV5ErrorHandler(deps) {
     }
     const status = payload.status >= 400 && payload.status < 600 ? payload.status : 500;
     if (req.accepts && req.accepts("json") && !req.accepts("html")) {
-      return res.status(status).json({ ok: false, reason: "server_error", requestId: req.requestId || null });
+      const requestId = req.requestId || null;
+      return res.status(status).json({
+        ok: false,
+        reason: "server_error",
+        code: "server_error",
+        requestId,
+        correlationId: requestId,
+      });
     }
     return res.status(status).type("text").send(GENERIC_SERVER_ERROR);
   };

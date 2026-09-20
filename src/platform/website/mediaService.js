@@ -21,6 +21,12 @@ const {
   parseAppMediatedMediaSrc,
 } = require("../media/cdnMediaPresentation");
 
+const {
+  MEDIA_LIMITS,
+  ALLOWED_IMAGE_MIME: SHARED_ALLOWED_IMAGE_MIME,
+  validateImageUpload,
+} = require("../validation/sharedFieldValidators");
+
 const RESULT = Object.freeze({
   OK: "ok",
   INVALID_INPUT: "invalid_input",
@@ -34,9 +40,9 @@ const RESULT = Object.freeze({
   INVALID_URL: "invalid_media_url",
 });
 
-const ALLOWED_IMAGE_MIME = new Set(["image/jpeg", "image/png", "image/webp", "image/gif"]);
+const ALLOWED_IMAGE_MIME = SHARED_ALLOWED_IMAGE_MIME;
 const REJECTED_MIME = /^(application\/x-msdownload|application\/x-executable|application\/x-sh|text\/html|image\/svg\+xml)/i;
-const MAX_BYTES = 5 * 1024 * 1024;
+const MAX_BYTES = MEDIA_LIMITS.maxBytes;
 const MEDIA_UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const CLINIC_MEDIA_PATH_RE =
@@ -234,7 +240,17 @@ async function registerWebsiteMedia(db, input) {
       return { ok: false, code: RESULT.UNSAFE_TYPE, media: null };
     }
     mime = detected;
-    if (buffer.length > MAX_BYTES) return { ok: false, code: RESULT.TOO_LARGE, media: null };
+    const sized = validateImageUpload(
+      { mimeType: mime, sizeBytes: buffer.length, buffer },
+      { maxBytes: MAX_BYTES }
+    );
+    if (!sized.ok) {
+      return {
+        ok: false,
+        code: sized.code === "media_too_large" ? RESULT.TOO_LARGE : RESULT.UNSAFE_TYPE,
+        media: null,
+      };
+    }
   }
   if (REJECTED_MIME.test(mime) || (kind === "image" && !ALLOWED_IMAGE_MIME.has(mime))) {
     return { ok: false, code: RESULT.UNSAFE_TYPE, media: null };

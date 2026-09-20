@@ -99,6 +99,15 @@ function sendClinicResolveFailure(res, result, deps) {
  */
 function sendClinicResolveFailureJson(res, result) {
   const mapped = clinicResolveFailurePayload(result);
+  const req = res && res.req;
+  if (req) {
+    const { sendSafeApiError } = require("../../platform/http/sharedApiError");
+    return sendSafeApiError(req, res, {
+      status: mapped.status,
+      code: mapped.code,
+      reason: mapped.code,
+    });
+  }
   return res.status(mapped.status).json({ ok: false, code: mapped.code });
 }
 

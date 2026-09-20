@@ -26,6 +26,7 @@ V8 is the development line for GetPro **V2.0** product work (BlessBoard + Active
 13. **Shared RBAC & tenant isolation.** Use `src/platform/rbac/` for forged-ID rejection, decision mapping, and platform-admin least privilege. Keep product-owned permission catalogues. See [`docs/security/V8_SHARED_RBAC_TENANT_ISOLATION.md`](../security/V8_SHARED_RBAC_TENANT_ISOLATION.md).
 14. **Shared website section management.** Use `src/platform/website/sections/` for validation, ordering, and lifecycle; keep BB/AC storage adapters. See [`docs/platform/V8_SHARED_WEBSITE_SECTIONS.md`](./V8_SHARED_WEBSITE_SECTIONS.md).
 15. **Shared website publish & media persistence.** Draft/publish/restore and Hostinger media must stay V7-compatible: V8 writes `testing-v8/`, may read V7 `testing/` keys, never deletes shared media while referenced, and must not publish V8-only section shapes into shared snapshots. See [`docs/platform/V8_SHARED_WEBSITE_LIFECYCLE.md`](./V8_SHARED_WEBSITE_LIFECYCLE.md).
+16. **Shared validation & error handling.** Use `src/platform/validation/` and `src/platform/http/sharedApiError.js` for reusable field checks and safe API errors with correlation IDs. Keep product business rules separate; preserve V7 `ok`/`code`/`reason` contracts. See [`docs/platform/V8_SHARED_VALIDATION.md`](./V8_SHARED_VALIDATION.md).
 
 ## Branch model (summary)
 

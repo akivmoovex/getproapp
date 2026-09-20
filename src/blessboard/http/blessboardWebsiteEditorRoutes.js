@@ -77,7 +77,29 @@ const { buildBlessBoardTenantContext } = require("./buildBlessBoardTenantContext
 const { normalizeOrganizationKey } = require("../services/organizationKey");
 
 function json(res, status, body) {
+  const req = res && res.req;
+  if (req) {
+    return jsonWithCorrelation(req, res, status, body);
+  }
   return res.status(status).json(body);
+}
+
+/**
+ * Safe JSON API response with correlation id (additive; keeps caller body shape).
+ * @param {import('express').Request} req
+ * @param {import('express').Response} res
+ * @param {number} status
+ * @param {object} body
+ */
+function jsonWithCorrelation(req, res, status, body) {
+  const {
+    ensureCorrelationId,
+  } = require("../../platform/http/sharedApiError");
+  const correlationId = ensureCorrelationId(req, res);
+  const payload = body && typeof body === "object" ? { ...body } : { ok: false };
+  if (payload.requestId == null) payload.requestId = correlationId;
+  if (payload.correlationId == null) payload.correlationId = correlationId;
+  return res.status(status).json(payload);
 }
 
 function csrfFrom(req) {
