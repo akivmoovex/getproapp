@@ -5,10 +5,15 @@
     build: "(unavailable)",
     available: false,
     environmentLabel: "Production",
-    environment: "production"
+    environment: "production",
+    platformLine: "v7"
   };
   var envIsTesting = bi.environment === "testing";
   var productLabel = bi.productVersion || "1.3";
+  var isV8About = bi.platformLine === "v8";
+  var versionDisplay = isV8About
+    ? (bi.productVersionLabel || ("Version " + productLabel))
+    : bi.version;
 %>
 <article class="acw-page ac-about-v11" data-ac-page-section="public-about" data-ac-acw-screen="ACW06" data-product="ActiveClinic">
   <div class="ac-about-v11__inner">
@@ -79,7 +84,11 @@
           <div class="ac-about-v11__meta-tile">
             <span class="ac-about-v11__meta-label">Version</span>
             <p class="ac-about-v11__meta-value ac-about-v11__meta-value--version">
-              <span class="ac-about-v11__version-prefix ac-about-v11__mobile-only">Version </span><%= bi.version %>
+              <% if (isV8About) { %>
+              <%= versionDisplay %>
+              <% } else { %>
+              <span class="ac-about-v11__version-prefix ac-about-v11__mobile-only">Version </span><%= versionDisplay %>
+              <% } %>
             </p>
           </div>
           <div class="ac-about-v11__meta-tile">

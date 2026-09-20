@@ -5,9 +5,14 @@
     build: "(unavailable)",
     available: false,
     environmentLabel: "Production",
-    environment: "production"
+    environment: "production",
+    platformLine: "v7"
   };
   var envIsTesting = bi.environment === "testing";
+  var isV8About = bi.platformLine === "v8";
+  var versionDisplay = isV8About
+    ? (bi.productVersionLabel || ("Version " + (bi.productVersion || bi.version)))
+    : bi.version;
 %>
 <%- include('../partials/public_shell_start') %>
 
@@ -84,7 +89,11 @@
               <span class="bb-about-v11__chip">Active</span>
             </div>
             <p class="bb-about-v11__meta-value bb-about-v11__meta-value--version">
-              <span class="bb-about-v11__version-prefix bb-about-v11__version-prefix--mobile">Version </span><%= bi.version %>
+              <% if (isV8About) { %>
+              <%= versionDisplay %>
+              <% } else { %>
+              <span class="bb-about-v11__version-prefix bb-about-v11__version-prefix--mobile">Version </span><%= versionDisplay %>
+              <% } %>
             </p>
             <p class="bb-about-v11__meta-foot">
               <span class="material-symbols-outlined" aria-hidden="true">sync_saved_locally</span>
