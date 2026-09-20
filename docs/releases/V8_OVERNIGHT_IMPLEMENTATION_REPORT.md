@@ -70,8 +70,8 @@ After each task, report:
 | **Report** | [`docs/releases/V8_AC_SERVICES_PROFILES_PROMPT05.md`](./V8_AC_SERVICES_PROFILES_PROMPT05.md) |
 | **Changed files** | `src/activeclinic/http/activeClinicPublicRoutes.js` · `src/activeclinic/website/clinicWebsiteCatalogueService.js` · `tests/v7-website-public-catalogue.test.js` · docs |
 | **Test results** | Catalogue **6/6**; website CMS **9/9 PASS** |
-| **Commit SHA** | (filled after commit) |
-| **Push status** | (filled after push) |
+| **Commit SHA** | `f297e53183eb364a9cfd749d6ec0ad7b1a33733b` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None |
 
 ### PROMPT 04 — V8 shared phone identity fix
