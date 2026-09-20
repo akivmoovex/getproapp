@@ -59,6 +59,23 @@ After each task, report:
 
 ## Task log
 
+### PROMPT 02 — V8 shared media delivery fix
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_MEDIA_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` @ `3e53e4ad` (synced with `origin/V8` before task) |
+| **Scope** | Verify/complete shared media delivery; strengthen tests; no Hostinger workaround; no deploy |
+| **Runtime changes** | None required — Prompt 01 defects already fixed in `f52ee500` |
+| **Report** | [`docs/releases/V8_SHARED_MEDIA_DELIVERY_PROMPT02.md`](./V8_SHARED_MEDIA_DELIVERY_PROMPT02.md) |
+| **Changed files** | `tests/v8-shared-media-resolution.test.js` (+4 cases) · `docs/releases/V8_SHARED_MEDIA_DELIVERY_PROMPT02.md` · `docs/releases/V8_OVERNIGHT_IMPLEMENTATION_REPORT.md` |
+| **Test results** | Media unit **18/18**; cluster **78/78**; full `test:v8:regression` **983/983 PASS** (173.7s) |
+| **Hosted (read-only)** | BB 6/6 + AC 4/4 homepage images **200**; `testing/platform/…` on neuniversity CDN |
+| **Commit SHA** | *(filled after commit)* |
+| **Push status** | *(filled after push)* |
+| **Blockers** | None (`EXTERNAL_BLOCKER` not applicable). Optional later operator deploy to align hosted `gitSha` with tip. |
+
 ### PROMPT 01 — V8 QA baseline and media audit
 
 | Field | Value |

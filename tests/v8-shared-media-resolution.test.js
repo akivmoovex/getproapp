@@ -280,4 +280,87 @@ describe("V8 shared media resolution and image delivery", () => {
     );
     assert.match(url, /blessboard\.pronline\.org/);
   });
+
+  it("15. Never accepts temporary Hostinger release trees as MEDIA_STORAGE_ROOT", () => {
+    const ephemeral =
+      "/home/u549637099/domains/neuniversity.org/hbuilds/versions/abc123/nodejs/media";
+    const cfg = resolveHostingerMediaConfig({
+      ...V8_ENV_BASE,
+      MEDIA_STORAGE_ROOT: ephemeral,
+    });
+    assert.equal(cfg.enabled, false);
+    assert.equal(cfg.rejectionCode, "MEDIA_STORAGE_ROOT_NOT_PERSISTENT");
+    assert.equal(cfg.rejectionReason, "hbuilds_versions");
+  });
+
+  it("16. Preserves existing testing/ CDN database references on V8 present", () => {
+    const dbUrl =
+      "https://blessboard.pronline.org/media/testing/blessboard/11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.jpg";
+    const presented = presentRuntimeImageSrc(dbUrl, V8_ENV_BASE);
+    assert.match(presented, /\/media\/testing\/blessboard\//);
+    assert.match(presented, /11111111-1111-4111-8111-111111111111/);
+    assert.doesNotMatch(presented, /testing-v8\/blessboard/);
+    // Absolute custom CDN bases are honored when configured (no rewrite of host).
+    const custom = presentRuntimeImageSrc(dbUrl, {
+      ...V8_ENV_BASE,
+      MEDIA_PUBLIC_BASE_URL: "https://cdn.custom.example/media",
+    });
+    assert.equal(
+      custom,
+      "https://cdn.custom.example/media/testing/blessboard/11111111-1111-4111-8111-111111111111/22222222-2222-4222-8222-222222222222.jpg"
+    );
+  });
+
+  it("17. BB and AC marketing soft-fill render without testing-v8/platform keys", () => {
+    const bbPaths = [
+      "/church/images/brand/blessboard-small-church-logo.png",
+      "/church/images/homepage/desktop-hero-auditorium.jpg",
+      "/church/images/homepage/apex-feature-website.jpg",
+    ];
+    const acPaths = [
+      "/activeclinic/assets/stitch/ACW01-01-ActiveClinic-Home-Desktop-1.jpg",
+      "/activeclinic/assets/stitch/ACW01-02-ActiveClinic-Home-Mobile-1.jpg",
+      "/activeclinic/assets/clinic/julflona-hero.jpg",
+    ];
+    for (const publicPath of [...bbPaths, ...acPaths]) {
+      const src = presentRuntimeImageSrc(publicPath, V8_ENV_BASE, {
+        allowMarketing: true,
+      });
+      assert.ok(src, `expected soft-fill for ${publicPath}`);
+      assert.match(src, /\/media\/testing\/platform\//);
+      assert.doesNotMatch(src, /testing-v8\/platform/);
+      assert.doesNotMatch(src, /pronline\.org/);
+      assert.match(src, /neuniversity\.org/);
+    }
+  });
+
+  it("18. Authorization: refuse production writes and path-escape keys from V8", () => {
+    assert.throws(
+      () =>
+        assertStorageKeyWritable(
+          "testing-v8",
+          "production/blessboard/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/x.jpg"
+        ),
+      (err) =>
+        err &&
+        (err.code === "REFUSED_PRODUCTION_MEDIA_NAMESPACE" ||
+          /refused_production/i.test(String(err.message || "")))
+    );
+    assert.throws(
+      () =>
+        assertStorageKeyReadable(
+          "testing-v8",
+          "production/blessboard/aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa/x.jpg"
+        ),
+      (err) =>
+        err &&
+        (err.code === "REFUSED_PRODUCTION_MEDIA_NAMESPACE" ||
+          /refused_production/i.test(String(err.message || "")))
+    );
+    assert.throws(() =>
+      assertStorageKeyReadable("testing-v8", "testing/../production/secret.jpg")
+    );
+    // Presentation helper only rejects path escapes; namespace gates are above.
+    assert.equal(presentCdnUrl("testing/../../x", V8_ENV_BASE), null);
+  });
 });
