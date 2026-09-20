@@ -13,6 +13,7 @@ const {
   attachClinicPublicWebsitePaths,
   buildPublicOrganizationWebsitePath,
   normalizeOrganizationKey,
+  isPublicOrganizationKey,
 } = require("../../platform/website/publicWebsiteUrl");
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -33,7 +34,7 @@ const RESULT = Object.freeze({
  */
 function directoryClinicDetailHref(clinicKey) {
   const key = normalizeOrganizationKey(clinicKey);
-  if (!key) return "";
+  if (!isPublicOrganizationKey(key)) return "";
   return (
     buildPublicOrganizationWebsitePath({
       product: PRODUCT_CODE.ACTIVECLINIC,
@@ -44,7 +45,9 @@ function directoryClinicDetailHref(clinicKey) {
 
 function presentDirectoryClinic(row) {
   const clinicKey = normalizeOrganizationKey(row && row.clinic_key);
+  if (!isPublicOrganizationKey(clinicKey)) return null;
   const detailHref = directoryClinicDetailHref(clinicKey);
+  if (!detailHref) return null;
   const presented = attachClinicPublicWebsitePaths({
     clinicKey,
     publicName: row.public_name,
@@ -58,13 +61,13 @@ function presentDirectoryClinic(row) {
     province: row.province || null,
     services: Array.isArray(row.service_names) ? row.service_names.filter(Boolean) : [],
     // Force canonical home path so cards cannot leak to another tenant URL.
-    publicBasePath: detailHref || undefined,
+    publicBasePath: detailHref,
   });
   return {
     ...presented,
     clinicKey,
     detailHref,
-    publicBasePath: detailHref || (presented && presented.publicBasePath) || "",
+    publicBasePath: detailHref,
   };
 }
 
@@ -84,8 +87,14 @@ async function findOrganizationByKey(db, clinicKey) {
  * Returns public-safe DTO with no internal UUIDs in HTML when avoidable.
  */
 async function resolvePublishableClinicByKey(db, input) {
-  const clinicKey = String((input && input.clinicKey) || "").trim().toLowerCase();
-  if (!clinicKey) {
+  const rawKey = String((input && input.clinicKey) || "").trim();
+  let clinicKey = "";
+  try {
+    clinicKey = normalizeOrganizationKey(decodeURIComponent(rawKey));
+  } catch {
+    clinicKey = normalizeOrganizationKey(rawKey);
+  }
+  if (!isPublicOrganizationKey(clinicKey)) {
     return { ok: false, code: RESULT.INVALID_INPUT, clinic: null };
   }
 
@@ -329,7 +338,9 @@ async function listPublishableClinics(db, input) {
   `;
 
   const result = await db.query(sql, params);
-  const clinics = result.rows.map((row) => presentDirectoryClinic(row));
+  const clinics = result.rows
+    .map((row) => presentDirectoryClinic(row))
+    .filter(Boolean);
 
   return { ok: true, code: RESULT.OK, clinics };
 }

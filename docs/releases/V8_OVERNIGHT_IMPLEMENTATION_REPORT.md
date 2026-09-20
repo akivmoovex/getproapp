@@ -59,6 +59,21 @@ After each task, report:
 
 ## Task log
 
+### PROMPT 06 — V8 AC directory navigation fix
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_AC_DIRECTORY_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` @ `696f2b3d` (synced with `origin/V8` before task) |
+| **Scope** | Directory card → canonical clinic URL; invalid-key fail-closed; unpublished/inactive visibility |
+| **Report** | [`docs/releases/V8_AC_DIRECTORY_NAVIGATION_PROMPT06.md`](./V8_AC_DIRECTORY_NAVIGATION_PROMPT06.md) |
+| **Changed files** | `src/platform/website/publicWebsiteUrl.js` · `src/activeclinic/services/activeClinicPublicVisibilityService.js` · `views/activeclinic/partials/public-clinic-card.ejs` · `tests/activeclinic-clinic-directory.test.js` · docs |
+| **Test results** | Directory **14/14 PASS** |
+| **Commit SHA** | (filled after commit) |
+| **Push status** | (filled after push) |
+| **Blockers** | None |
+
 ### PROMPT 05 — V8 AC services and doctor profiles
 
 | Field | Value |

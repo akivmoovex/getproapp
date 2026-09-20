@@ -448,9 +448,62 @@ describe("ActiveClinic clinic directory repair", () => {
     const {
       directoryClinicDetailHref,
     } = require("../src/activeclinic/services/activeClinicPublicVisibilityService");
+    const {
+      isPublicOrganizationKey,
+    } = require("../src/platform/website/publicWebsiteUrl");
     assert.equal(directoryClinicDetailHref("Julflona-Clinic"), "/clinics/julflona-clinic");
     assert.equal(directoryClinicDetailHref(" ac-demo "), "/clinics/ac-demo");
     assert.equal(directoryClinicDetailHref(""), "");
     assert.equal(directoryClinicDetailHref(null), "");
+    assert.equal(directoryClinicDetailHref(".."), "");
+    assert.equal(directoryClinicDetailHref("."), "");
+    assert.equal(directoryClinicDetailHref("foo/bar"), "");
+    assert.equal(directoryClinicDetailHref("has space"), "");
+    assert.equal(isPublicOrganizationKey("julflona-clinic"), true);
+    assert.equal(isPublicOrganizationKey(".."), false);
+  });
+
+  it("invalid clinic keys fail closed; encoded and inactive clinics behave safely", async () => {
+    if (!requireDb()) return;
+    const stamp = `${Date.now().toString(36)}enc`;
+    const published = await provisionPublishedClinic(stamp);
+    const app = appWithEnv();
+
+    const encoded = await request(app)
+      .get(`/clinics/${encodeURIComponent(published.clinicKey.toUpperCase())}`)
+      .redirects(1);
+    assert.equal(encoded.status, 200);
+    assert.match(encoded.text, new RegExp(`Published Clinic ${stamp}`));
+    assert.match(String(encoded.request.url || ""), new RegExp(published.clinicKey));
+
+    for (const bad of [
+      "_leading-underscore",
+      "9starts-with-digit",
+      "has space",
+      "bad!",
+      "too-long-" + "x".repeat(80),
+      "does-not-exist-clinic-key-zzzz",
+    ]) {
+      const res = await request(app).get(`/clinics/${encodeURIComponent(bad)}`);
+      assert.ok(
+        [400, 404, 410].includes(res.status),
+        `expected fail-closed for ${bad}, got ${res.status}`
+      );
+    }
+
+    await pool.query(
+      `UPDATE platform.organizations SET status = 'inactive', updated_at = now() WHERE id = $1`,
+      [published.org.records.organization.id]
+    );
+    const listed = await request(app).get("/clinics");
+    assert.doesNotMatch(
+      listed.text,
+      new RegExp(`href="/clinics/${published.clinicKey}"[^>]*data-ac-clinic-card-link="1"`)
+    );
+    const directInactive = await request(app).get(`/clinics/${published.clinicKey}`);
+    assert.ok(
+      [403, 404, 410].includes(directInactive.status),
+      `inactive direct status ${directInactive.status}`
+    );
   });
 });
