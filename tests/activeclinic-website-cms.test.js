@@ -200,8 +200,8 @@ async function insertPublicService(clinic, spec) {
   await pool.query(
     `INSERT INTO activeclinic.appointment_service_types (
        organization_id, healthcare_organization_id, service_key,
-       display_name, public_bookable, public_summary, status
-     ) VALUES ($1, $2, $3, $4, true, $5, 'active')`,
+       display_name, public_bookable, public_website_visible, public_summary, status
+     ) VALUES ($1, $2, $3, $4, true, true, $5, 'active')`,
     [clinic.organizationId, await resolveClinicHcoId(clinic), spec.serviceKey, spec.displayName, spec.summary]
   );
 }
