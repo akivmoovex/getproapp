@@ -250,7 +250,64 @@
 .mx-ann-mobile-only { display: none; }
 
 @media (max-width: 720px) {
+  .mx-ann-shell {
+    padding: 1rem 1rem 5.5rem;
+  }
+
+  .mx-ann-top {
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+  }
+
+  .mx-ann-title {
+    font-size: 1.35rem;
+    line-height: 1.25;
+  }
+
   .mx-ann-desktop-only { display: none; }
   .mx-ann-mobile-only { display: block; }
   .mx-ann-grid2 { grid-template-columns: 1fr; }
+
+  .mx-ann-panel,
+  .mx-ann-form,
+  .mx-ann-card,
+  .mx-ann-banner {
+    padding: 0.9rem;
+  }
+
+  .mx-ann-form .mx-ann-label {
+    margin-top: 0.85rem;
+  }
+
+  .mx-ann-input,
+  .mx-ann-textarea {
+    font-size: 1rem; /* avoid iOS zoom */
+  }
+
+  .mx-ann-media {
+    margin-top: 1rem;
+  }
+
+  .mx-ann-actions {
+    flex-direction: column;
+    align-items: stretch;
+    position: sticky;
+    bottom: 0;
+    z-index: 5;
+    margin: 1rem -0.25rem 0;
+    padding: 0.75rem 0.25rem calc(0.75rem + env(safe-area-inset-bottom, 0));
+    background: linear-gradient(180deg, transparent, var(--mx-ann-bg) 28%);
+  }
+
+  .mx-ann-actions .mx-ann-btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .mx-ann-history {
+    padding-left: 1.1rem;
+  }
 }

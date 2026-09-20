@@ -91,8 +91,8 @@ Desktop / Mobile columns rate **UI parity against Stitch -D / -M**, not backend 
 | Code | Workflow | Desktop | Mobile | Overall | Primary surface |
 |------|----------|---------|--------|---------|-----------------|
 | AN01 | Dashboard | IMPLEMENTED | IMPLEMENTED | **IMPLEMENTED** | `views/platform/announcements/dashboard.ejs` |
-| AN02 | Create/edit | IMPLEMENTED | PARTIAL | **PARTIAL** | `editor.ejs` — markers present; mobile CSS sparse |
-| AN03 | Schedule window | IMPLEMENTED | PARTIAL | **PARTIAL** | `schedule.ejs` + dependency banner |
+| AN02 | Create/edit | IMPLEMENTED | IMPLEMENTED | **IMPLEMENTED** | `editor.ejs` — mobile form density + sticky actions |
+| AN03 | Schedule window | IMPLEMENTED | IMPLEMENTED | **IMPLEMENTED** | `schedule.ejs` + dependency banner |
 | AN04 | Preview | IMPLEMENTED | IMPLEMENTED | **IMPLEMENTED** | `preview.ejs` |
 | AN05 | Confirm publish | IMPLEMENTED | IMPLEMENTED | **IMPLEMENTED** | `confirm-publish.ejs` |
 

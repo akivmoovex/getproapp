@@ -12,7 +12,7 @@
     <div class="mx-ann-banner mx-ann-banner--error" role="alert"><%= error %></div>
   <% } %>
 
-  <form class="mx-ann-panel mx-ann-form" method="post" action="<%= mode === 'create' ? basePath : (basePath + '/' + item.id) %>" data-ann-editor="1">
+  <form class="mx-ann-panel mx-ann-form" method="post" action="<%= mode === 'create' ? basePath : (basePath + '/' + item.id) %>" data-ann-editor="1" data-ann-mobile-form="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
 
     <label class="mx-ann-label" for="title">Title</label>

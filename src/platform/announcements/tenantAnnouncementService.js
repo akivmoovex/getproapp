@@ -372,6 +372,13 @@ async function updateAnnouncement(db, input) {
         patch.status = next;
       }
 
+      const startBound =
+        patch.startsAt !== undefined ? patch.startsAt : existing.startsAt;
+      const endBound = patch.endsAt !== undefined ? patch.endsAt : existing.endsAt;
+      if (startBound && endBound && new Date(endBound) < new Date(startBound)) {
+        return { ok: false, status: STATUS.INVALID_INPUT, reason: "ends_before_starts" };
+      }
+
       const updated = await repo.updateAnnouncement(client, patch);
       await repo.insertEvent(client, {
         announcementId: id,

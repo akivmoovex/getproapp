@@ -78,6 +78,22 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 
 ## Task log
 
+### PROMPT 08 — V8 shared announcement engine (AN01–AN05)
+
+| Field | Value |
+|-------|-------|
+| **Status** | COMPLETE · verdict `V8_SHARED_ANNOUNCEMENT_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch** | `V8` (synced with `origin/V8`) |
+| **Existing functionality reused** | Prompt 11 studio `8d581371` · `tenantAnnouncementService` · BB/AC mounts · website publish remains separate CMS |
+| **Changed files** | `tenantAnnouncementService.js` · `announcements.css` · editor/schedule/layout · shared announcement tests · docs |
+| **Tests** | Shared + BB announcements **28/28 PASS** |
+| **Commit SHA** | *(recorded after push)* |
+| **Push status** | Pending push to `origin/V8` |
+| **Blockers** | Scheduler worker still unavailable (`SCHEDULER_DEPENDENCY.available=false`); lazy visibility only. Migrations `042`/`111` not applied hosted. |
+| **Next task** | Next overnight prompt as directed |
+| **Report** | [`V8_SHARED_ANNOUNCEMENT_PROMPT08.md`](./V8_SHARED_ANNOUNCEMENT_PROMPT08.md) |
+
 ### PROMPT 07 — V8 BlessBoard membership management (BB11–BB18)
 
 | Field | Value |

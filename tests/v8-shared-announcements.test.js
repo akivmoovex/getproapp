@@ -244,6 +244,64 @@ describe("V8 shared announcements AN01–AN05", () => {
     assert.ok(loaded.history.some((h) => h.eventCode === "archived"));
   });
 
+  it("rejects ends_before_starts and supports unpublish to draft with history", async () => {
+    requireDb();
+    const org = await seedOrg("blessboard", uniq("ann-bounds"));
+    const created = await createAnnouncement(pool, {
+      organizationId: org.id,
+      productCode: "blessboard",
+      title: "Window check",
+      body: "Bounds",
+      status: "draft",
+      timezone: "Africa/Johannesburg",
+      authz: allow("manage"),
+    });
+    assert.equal(created.ok, true);
+
+    const badWindow = await updateAnnouncement(pool, {
+      organizationId: org.id,
+      productCode: "blessboard",
+      id: created.item.id,
+      startsAt: "2026-07-10T00:00:00.000Z",
+      endsAt: "2026-07-01T00:00:00.000Z",
+      authz: allow("manage"),
+    });
+    assert.equal(badWindow.ok, false);
+    assert.equal(badWindow.reason, "ends_before_starts");
+
+    const published = await updateAnnouncement(pool, {
+      organizationId: org.id,
+      productCode: "blessboard",
+      id: created.item.id,
+      status: "published",
+      confirmPublish: true,
+      startsAt: new Date(Date.now() - 60000).toISOString(),
+      endsAt: null,
+      authz: allow("manage"),
+    });
+    assert.equal(published.ok, true, published.reason);
+
+    const unpublished = await updateAnnouncement(pool, {
+      organizationId: org.id,
+      productCode: "blessboard",
+      id: created.item.id,
+      status: "draft",
+      authz: allow("manage"),
+    });
+    assert.equal(unpublished.ok, true, unpublished.reason);
+    assert.equal(unpublished.item.status, "draft");
+    assert.equal(unpublished.item.publiclyVisible, false);
+
+    const loaded = await getAnnouncement(pool, {
+      organizationId: org.id,
+      productCode: "blessboard",
+      id: created.item.id,
+      authz: allow("view"),
+    });
+    assert.equal(loaded.ok, true);
+    assert.ok(loaded.history.some((h) => h.fromStatus === "published" && h.toStatus === "draft"));
+  });
+
   it("rejects HTML body and unsafe media URL", async () => {
     requireDb();
     const org = await seedOrg("blessboard", uniq("ann-safe"));
@@ -323,25 +381,21 @@ describe("V8 shared announcements AN01–AN05", () => {
 
   it("AN01–AN05 views and CSS exist with stitch markers", () => {
     const views = [
-      "dashboard.ejs",
-      "editor.ejs",
-      "schedule.ejs",
-      "preview.ejs",
-      "confirm-publish.ejs",
-      "layout.ejs",
+      ["dashboard.ejs", "AN01"],
+      ["editor.ejs", "AN02"],
+      ["schedule.ejs", "AN03"],
+      ["preview.ejs", "AN04"],
+      ["confirm-publish.ejs", "AN05"],
     ];
-    for (const name of views) {
-      const p = path.join(
-        __dirname,
-        "../views/platform/announcements",
-        name
-      );
+    for (const [name, code] of views) {
+      const p = path.join(__dirname, "../views/platform/announcements", name);
       assert.ok(fs.existsSync(p), name);
       const html = fs.readFileSync(p, "utf8");
-      if (name !== "layout.ejs" && name !== "access-denied.ejs") {
-        assert.match(html, /data-screen="AN0[1-5]"/);
-      }
+      assert.match(html, new RegExp(`data-screen="${code}"`));
+      assert.match(html, new RegExp(`data-stitch-desktop="${code}-D"`));
+      assert.match(html, new RegExp(`data-stitch-mobile="${code}-M"`));
     }
+    assert.ok(fs.existsSync(path.join(__dirname, "../views/platform/announcements/layout.ejs")));
     assert.ok(
       fs.existsSync(path.join(__dirname, "../public/platform/announcements.css"))
     );
@@ -353,6 +407,14 @@ describe("V8 shared announcements AN01–AN05", () => {
     assert.match(css, /mx-ann--activeclinic/);
     assert.match(css, /#6c5ce7/);
     assert.match(css, /#0f766e/);
+    assert.match(css, /@media \(max-width:\s*720px\)/);
+    assert.match(css, /\.mx-ann-actions\s*\{[^}]*flex-direction:\s*column/s);
+    assert.match(css, /\.mx-ann-top\s*\{[^}]*flex-direction:\s*column/s);
+    const layout = fs.readFileSync(
+      path.join(__dirname, "../views/platform/announcements/layout.ejs"),
+      "utf8"
+    );
+    assert.match(layout, /announcements\.css\?v=2/);
   });
 
   it("additive migrations 042 and 111 exist (not applied hosted)", () => {

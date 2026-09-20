@@ -14,7 +14,7 @@
     <% } %>
   </div>
 
-  <form class="mx-ann-panel mx-ann-form" method="post" action="<%= basePath %>/<%= item.id %>">
+  <form class="mx-ann-panel mx-ann-form" method="post" action="<%= basePath %>/<%= item.id %>" data-ann-schedule-form="1" data-ann-mobile-form="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
     <input type="hidden" name="title" value="<%= item.title %>" />
     <input type="hidden" name="body" value="<%= item.body %>" />
