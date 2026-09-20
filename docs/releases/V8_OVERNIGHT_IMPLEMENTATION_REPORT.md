@@ -59,6 +59,22 @@ After each task, report:
 
 ## Task log
 
+### PROMPT 09 — V8 BlessBoard membership (BB01–BB08, BB11–BB18)
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_BB_MEMBERSHIP_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` @ `415ff2ea` (synced with `origin/V8` before task) |
+| **Scope** | Intake publish; multi-step apply without login; review (approve / needs follow-up / decline); pastoral redaction; branch transfers; HQ/branch RBAC |
+| **Stitch** | `projects/5087412725796049014` |
+| **Report** | [`docs/releases/V8_BB_MEMBERSHIP_PROMPT09.md`](./V8_BB_MEMBERSHIP_PROMPT09.md) |
+| **Changed files** | `110_membership_workflow_v8.sql` · membership workflow service/routes · registration/member views · tests · docs |
+| **Test results** | `tests/v8-bb-membership.test.js` **7/7 PASS** |
+| **Commit SHA** | `938813bdd61c1a6f9f6af9b633b31d7a0e77e5d8` |
+| **Push status** | Pushed to `origin/V8` |
+| **Blockers** | None. Migration `110` not applied on hosted DB. |
+
 ### PROMPT 08 — V8 public forms and submission review (SH08–SH15)
 
 | Field | Value |
