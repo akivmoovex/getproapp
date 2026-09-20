@@ -407,6 +407,7 @@ describe("v8 shared form builder", () => {
       "sharing",
       "public-form",
       "public-thanks",
+      "access-denied",
     ]) {
       assert.ok(fs.existsSync(path.join(viewsDir, `${name}.ejs`)), name);
     }
@@ -417,6 +418,36 @@ describe("v8 shared form builder", () => {
     assert.match(css, /@media \(max-width: 799px\)/);
     assert.match(css, /mx-forms--blessboard/);
     assert.match(css, /mx-forms--activeclinic/);
+    assert.match(css, /\.mx-forms-grid--studio/);
+    assert.match(css, /\.mx-forms-field-settings/);
+    assert.match(css, /flex-direction:\s*column/);
+
+    const studio = fs.readFileSync(path.join(viewsDir, "studio.ejs"), "utf8");
+    assert.match(studio, /data-stitch-desktop="SH03-D"/);
+    assert.match(studio, /data-stitch-mobile="SH03-M"/);
+    assert.match(studio, /data-screen="SH04"/);
+    assert.match(studio, /data-stitch-desktop="SH04-D"/);
+
+    const denied = fs.readFileSync(path.join(viewsDir, "access-denied.ejs"), "utf8");
+    assert.match(denied, /data-screen="SH15"/);
+    assert.match(denied, /data-stitch-desktop="SH15-D"/);
+    assert.match(denied, /data-stitch-mobile="SH15-M"/);
+
+    for (const [file, code] of [
+      ["dashboard.ejs", "SH01"],
+      ["dashboard-empty.ejs", "SH02"],
+      ["preview.ejs", "SH05"],
+      ["publication.ejs", "SH06"],
+      ["sharing.ejs", "SH07"],
+    ]) {
+      const html = fs.readFileSync(path.join(viewsDir, file), "utf8");
+      assert.match(html, new RegExp(`data-screen="${code}"`));
+      assert.match(html, new RegExp(`data-stitch-desktop="${code}-D"`));
+      assert.match(html, new RegExp(`data-stitch-mobile="${code}-M"`));
+    }
+
+    const layout = fs.readFileSync(path.join(viewsDir, "layout.ejs"), "utf8");
+    assert.match(layout, /forms-builder\.css\?v=3/);
   });
 
   it("ActiveClinic HTTP: website editor can open form studio", async () => {

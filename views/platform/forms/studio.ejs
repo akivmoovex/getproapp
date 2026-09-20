@@ -9,7 +9,14 @@
     { href: adminBasePath + '/' + form.id + '/submissions', label: 'Submissions', id: 'SH11' },
   ] : [];
 %>
-<div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'SH03' %>">
+<div
+  class="mx-forms-shell"
+  data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'SH03' %>"
+  data-stitch-desktop="SH03-D"
+  data-stitch-mobile="SH03-M"
+  data-stitch-desktop-id="1f34ea48c3b4440fb81cc9b30b911bb7"
+  data-stitch-mobile-id="0f5e6cefcee04f11ab84853dbb78f062"
+>
   <div class="mx-forms-top">
     <div>
       <div class="mx-forms-brand"><%= brand.productName %> · Form Studio</div>
@@ -99,7 +106,14 @@
         <% } %>
       </section>
 
-      <aside class="mx-forms-panel">
+      <aside
+        class="mx-forms-panel mx-forms-field-settings"
+        data-screen="SH04"
+        data-stitch-desktop="SH04-D"
+        data-stitch-mobile="SH04-M"
+        data-stitch-desktop-id="e25fd0c0b9bf47d59ae76f647321bc09"
+        data-stitch-mobile-id="a515485001e04439b6bd365edaacc527"
+      >
         <h2>Field settings</h2>
         <p style="color:var(--mx-forms-muted);font-size:0.85rem">
           Required flags and select options are edited per field on the canvas (SH04).

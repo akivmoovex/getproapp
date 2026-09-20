@@ -78,6 +78,22 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 
 ## Task log
 
+### PROMPT 03 — V8 shared form builder (SH01–SH07, SH15)
+
+| Field | Value |
+|-------|-------|
+| **Status** | COMPLETE · verdict `V8_SHARED_FORM_BUILDER_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch** | `V8` (synced with `origin/V8`) |
+| **Existing functionality reused** | `af850534` form builder · `039` migration · `tenantFormService` / `formSchema` / BB+AC mounts |
+| **Changed files** | studio/access-denied/dashboard*/preview/publication/sharing/layout · `forms-builder.css` · `v8-shared-form-builder.test.js` · docs |
+| **Tests** | Form builder **10/10**; BB forms-requests **11/11 PASS** |
+| **Commit SHA** | _(filled after commit)_ |
+| **Push status** | Pending push to `origin/V8` |
+| **Blockers** | None for CODE_PASS. Migration `039` still not applied on hosted DB. |
+| **Next task** | SH08–SH14 public submit / review when prompted |
+| **Report** | [`V8_SHARED_FORM_BUILDER_PROMPT03.md`](./V8_SHARED_FORM_BUILDER_PROMPT03.md) |
+
 ### PROMPT 02 — V8 P0/P1 QA defect closure
 
 | Field | Value |

@@ -273,10 +273,47 @@
   color: var(--mx-forms-danger);
 }
 
-/* Mobile: stack studio; use cards instead of wide tables */
+/* Mobile: stack studio; use cards instead of wide tables (SH03-M / SH04-M) */
 @media (max-width: 799px) {
   .mx-forms-desktop-only { display: none !important; }
   .mx-forms-shell { padding: 1rem 0.85rem 2.5rem; }
+  .mx-forms-title { font-size: 1.35rem; }
+  .mx-forms-nav {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    padding-bottom: 0.35rem;
+  }
+  .mx-forms-nav a { flex: 0 0 auto; }
+  .mx-forms-grid--studio {
+    display: flex;
+    flex-direction: column;
+    gap: 0.85rem;
+  }
+  .mx-forms-palette {
+    order: 0;
+  }
+  .mx-forms-palette .mx-forms-btn,
+  .mx-forms-palette button {
+    display: inline-block;
+    width: auto;
+    margin: 0 0.35rem 0.35rem 0;
+  }
+  .mx-forms-field-settings {
+    order: 2;
+  }
+  .mx-forms-field-row {
+    padding: 0.85rem;
+  }
+  .mx-forms-field-row label {
+    margin-top: 0.5rem;
+  }
+  .mx-forms-actions {
+    position: sticky;
+    bottom: 0;
+    padding: 0.65rem 0 0.25rem;
+    background: linear-gradient(transparent, var(--mx-forms-bg) 35%);
+  }
   .mx-forms-table thead { display: none; }
   .mx-forms-table tr {
     display: block;
