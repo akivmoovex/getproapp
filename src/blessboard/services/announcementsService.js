@@ -29,7 +29,16 @@ const STATUS = Object.freeze({
 });
 
 const AUDIENCE_KEYS = Object.freeze(["members", "admins"]);
-const STATUSES = Object.freeze(new Set(["draft", "published", "archived"]));
+const STATUSES = Object.freeze(
+  new Set(["draft", "scheduled", "published", "expired", "archived"])
+);
+/** No background scheduler — visibility is evaluated lazily at read time. */
+const SCHEDULER_DEPENDENCY = Object.freeze({
+  available: false,
+  mode: "lazy_read_time_evaluation",
+  reason:
+    "No background announcement scheduler is configured. Scheduled items become visible when starts_at <= now (and ends_at is null or > now).",
+});
 const HTML_HINT = /<\/?[a-z][\s\S]*>/i;
 const MEDIA_ASSET_PATH_RE =
   /^\/_bb\/media\/[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -416,6 +425,44 @@ function buildFields(raw, { partial }) {
       fields.actionLabel = label.value;
       fields.clearAction = false;
     }
+  }
+  if (!partial || raw.timezone !== undefined) {
+    const tz = String(raw.timezone == null || raw.timezone === "" ? "UTC" : raw.timezone).trim();
+    if (!/^[A-Za-z0-9_+\/\-]{1,64}$/.test(tz)) return { ok: false, reason: "timezone" };
+    fields.timezone = tz;
+  }
+  const hasStarts = raw.startsAt !== undefined || raw.starts_at !== undefined;
+  if (!partial || hasStarts) {
+    const rawStart = raw.startsAt !== undefined ? raw.startsAt : raw.starts_at;
+    if (rawStart == null || rawStart === "") {
+      fields.setStartsAt = true;
+      fields.startsAt = null;
+    } else {
+      const d = new Date(String(rawStart));
+      if (Number.isNaN(d.getTime())) return { ok: false, reason: "starts_at" };
+      fields.setStartsAt = true;
+      fields.startsAt = d.toISOString();
+    }
+  }
+  const hasEnds = raw.endsAt !== undefined || raw.ends_at !== undefined;
+  if (!partial || hasEnds) {
+    const rawEnd = raw.endsAt !== undefined ? raw.endsAt : raw.ends_at;
+    if (rawEnd == null || rawEnd === "") {
+      fields.setEndsAt = true;
+      fields.endsAt = null;
+    } else {
+      const d = new Date(String(rawEnd));
+      if (Number.isNaN(d.getTime())) return { ok: false, reason: "ends_at" };
+      fields.setEndsAt = true;
+      fields.endsAt = d.toISOString();
+    }
+  }
+  if (fields.startsAt && fields.endsAt && new Date(fields.endsAt) < new Date(fields.startsAt)) {
+    return { ok: false, reason: "ends_before_starts" };
+  }
+  if (fields.status === "scheduled") {
+    const startVal = fields.startsAt !== undefined ? fields.startsAt : null;
+    if (!partial && !startVal) return { ok: false, reason: "starts_at_required" };
   }
   return { ok: true, fields };
 }
@@ -841,7 +888,14 @@ async function getMemberAnnouncement(db, input) {
       if (!existing || String(existing.churchId) !== churchId) {
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
-      if (existing.status !== "published") {
+      if (existing.status !== "published" && existing.status !== "scheduled") {
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      const now = Date.now();
+      if (existing.startsAt && new Date(existing.startsAt).getTime() > now) {
+        return { ok: false, status: STATUS.NOT_FOUND, item: null };
+      }
+      if (existing.endsAt && new Date(existing.endsAt).getTime() <= now) {
         return { ok: false, status: STATUS.NOT_FOUND, item: null };
       }
       if (existing.branchId && String(existing.branchId) !== branchId) {
@@ -896,7 +950,17 @@ async function markAnnouncementRead(db, input) {
   try {
     return await withClient(db, async (client) => {
       const existing = await repo.findAnnouncementById(client, id);
-      if (!existing || String(existing.churchId) !== churchId || existing.status !== "published") {
+      if (!existing || String(existing.churchId) !== churchId) {
+        return { ok: false, status: STATUS.NOT_FOUND, read: null };
+      }
+      if (existing.status !== "published" && existing.status !== "scheduled") {
+        return { ok: false, status: STATUS.NOT_FOUND, read: null };
+      }
+      const now = Date.now();
+      if (existing.startsAt && new Date(existing.startsAt).getTime() > now) {
+        return { ok: false, status: STATUS.NOT_FOUND, read: null };
+      }
+      if (existing.endsAt && new Date(existing.endsAt).getTime() <= now) {
         return { ok: false, status: STATUS.NOT_FOUND, read: null };
       }
       if (existing.branchId && String(existing.branchId) !== branchId) {
@@ -948,6 +1012,7 @@ async function removeAnnouncementAttachment(db, input) {
 module.exports = {
   STATUS,
   AUDIENCE_KEYS,
+  SCHEDULER_DEPENDENCY,
   DEFAULT_PRODUCT_POLICY,
   resolveAnnouncementProductPolicy,
   evaluateAnnouncementCapability,

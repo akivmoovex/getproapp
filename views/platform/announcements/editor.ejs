@@ -1,0 +1,106 @@
+<div class="mx-ann-shell" data-screen="AN02" data-stitch-desktop="AN02-D" data-stitch-mobile="AN02-M">
+  <div class="mx-ann-top">
+    <div>
+      <div class="mx-ann-brand"><%= brand.productName %> · Announcements</div>
+      <h1 class="mx-ann-title"><%= mode === 'create' ? 'New announcement' : 'Edit announcement' %></h1>
+      <p class="mx-ann-sub">Plain-text body only. Attach media via the shared picker path or HTTPS URL.</p>
+    </div>
+    <a class="mx-ann-btn mx-ann-btn--ghost" href="<%= basePath %>">All announcements</a>
+  </div>
+
+  <% if (error) { %>
+    <div class="mx-ann-banner mx-ann-banner--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <form class="mx-ann-panel mx-ann-form" method="post" action="<%= mode === 'create' ? basePath : (basePath + '/' + item.id) %>" data-ann-editor="1">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+
+    <label class="mx-ann-label" for="title">Title</label>
+    <input class="mx-ann-input" id="title" name="title" maxlength="200" required
+           value="<%= item && item.title ? item.title : '' %>" />
+
+    <label class="mx-ann-label" for="body">Body</label>
+    <textarea class="mx-ann-input mx-ann-textarea" id="body" name="body" rows="8" maxlength="20000" required><%= item && item.body ? item.body : '' %></textarea>
+
+    <div class="mx-ann-grid2">
+      <div>
+        <label class="mx-ann-label" for="status">Status</label>
+        <select class="mx-ann-input" id="status" name="status">
+          <% const st = (item && item.status) || 'draft'; %>
+          <option value="draft" <%= st === 'draft' ? 'selected' : '' %>>Draft</option>
+          <option value="scheduled" <%= st === 'scheduled' ? 'selected' : '' %>>Scheduled</option>
+          <option value="published" <%= st === 'published' ? 'selected' : '' %>>Published</option>
+          <option value="archived" <%= st === 'archived' ? 'selected' : '' %>>Archived</option>
+        </select>
+      </div>
+      <div>
+        <label class="mx-ann-label" for="timezone">Timezone</label>
+        <input class="mx-ann-input" id="timezone" name="timezone" maxlength="64"
+               value="<%= item && item.timezone ? item.timezone : 'UTC' %>" />
+      </div>
+    </div>
+
+    <div class="mx-ann-grid2">
+      <div>
+        <label class="mx-ann-label" for="starts_at">Starts at (UTC ISO)</label>
+        <input class="mx-ann-input" id="starts_at" name="starts_at" type="datetime-local"
+               value="<%= item && item.startsAt ? new Date(item.startsAt).toISOString().slice(0,16) : '' %>" />
+      </div>
+      <div>
+        <label class="mx-ann-label" for="ends_at">Ends at (UTC ISO)</label>
+        <input class="mx-ann-input" id="ends_at" name="ends_at" type="datetime-local"
+               value="<%= item && item.endsAt ? new Date(item.endsAt).toISOString().slice(0,16) : '' %>" />
+      </div>
+    </div>
+
+    <fieldset class="mx-ann-media" data-shared-media-picker="1">
+      <legend>Media</legend>
+      <label class="mx-ann-label" for="media_url">Media URL (HTTPS or /_bb/media/… / /_ac/media/…)</label>
+      <input class="mx-ann-input" id="media_url" name="media_url"
+             value="<%= item && item.mediaUrl ? item.mediaUrl : '' %>"
+             placeholder="/_bb/media/…" data-media-url-input="1" />
+      <label class="mx-ann-label" for="media_asset_ref">Media asset ref</label>
+      <input class="mx-ann-input" id="media_asset_ref" name="media_asset_ref" maxlength="200"
+             value="<%= item && item.mediaAssetRef ? item.mediaAssetRef : '' %>"
+             data-media-asset-ref="1" />
+      <p class="mx-ann-muted">Use the product media library picker when available; unsafe URLs are rejected.</p>
+    </fieldset>
+
+    <% if (mode !== 'create') { %>
+      <label class="mx-ann-check">
+        <input type="checkbox" name="confirm_publish" value="1" />
+        Confirm publish if setting status to published
+      </label>
+    <% } else { %>
+      <label class="mx-ann-check">
+        <input type="checkbox" name="confirm_publish" value="1" />
+        Confirm publish (required when status is published)
+      </label>
+    <% } %>
+
+    <div class="mx-ann-actions">
+      <button type="submit" class="mx-ann-btn mx-ann-btn--primary">Save</button>
+      <% if (item && item.id) { %>
+        <a class="mx-ann-btn mx-ann-btn--ghost" href="<%= basePath %>/<%= item.id %>/schedule">Scheduling</a>
+        <a class="mx-ann-btn mx-ann-btn--ghost" href="<%= basePath %>/<%= item.id %>/preview">Preview</a>
+        <a class="mx-ann-btn mx-ann-btn--ghost" href="<%= basePath %>/<%= item.id %>/confirm-publish">Publish…</a>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (typeof history !== 'undefined' && history && history.length) { %>
+    <section class="mx-ann-panel" style="margin-top:1rem" data-publication-history="1">
+      <h2 class="mx-ann-section-title">Publication history</h2>
+      <ul class="mx-ann-history">
+        <% history.forEach(function (ev) { %>
+          <li>
+            <strong><%= ev.eventCode %></strong>
+            <%= ev.fromStatus || '—' %> → <%= ev.toStatus %>
+            <span class="mx-ann-muted"><%= ev.createdAt ? new Date(ev.createdAt).toISOString() : '' %></span>
+            <% if (ev.summary) { %><div class="mx-ann-muted"><%= ev.summary %></div><% } %>
+          </li>
+        <% }) %>
+      </ul>
+    </section>
+  <% } %>
+</div>

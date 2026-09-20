@@ -264,6 +264,14 @@ function createActiveClinicFoundationApp(options) {
     registerActiveClinicSharedFormRoutes,
   } = require("./registerActiveClinicSharedFormRoutes");
   registerActiveClinicSharedFormRoutes(app, { getPool, env, isProduction });
+  const {
+    registerActiveClinicSharedAnnouncementRoutes,
+  } = require("./registerActiveClinicSharedAnnouncementRoutes");
+  registerActiveClinicSharedAnnouncementRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+  });
   registerActiveClinicPatientRoutes(app, { getPool, env, isProduction });
   registerActiveClinicAppointmentRoutes(app, { getPool, env, isProduction });
   registerActiveClinicReceptionRoutes(app, { getPool, env, isProduction });

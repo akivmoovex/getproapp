@@ -1,0 +1,29 @@
+<div class="mx-ann-shell" data-screen="AN05" data-stitch-desktop="AN05-D" data-stitch-mobile="AN05-M">
+  <div class="mx-ann-top">
+    <div>
+      <div class="mx-ann-brand"><%= brand.productName %> · Confirm</div>
+      <h1 class="mx-ann-title"><%= action === 'unpublish' ? 'Confirm unpublish' : 'Confirm publish' %></h1>
+      <p class="mx-ann-sub">Publication changes are recorded in history. No push/SMS/email delivery is triggered.</p>
+    </div>
+    <a class="mx-ann-btn mx-ann-btn--ghost" href="<%= basePath %>/<%= item.id %>/preview">Back to preview</a>
+  </div>
+
+  <div class="mx-ann-panel">
+    <h2 class="mx-ann-section-title"><%= item.title %></h2>
+    <p class="mx-ann-muted">Stored: <%= item.status %> · Effective: <%= item.effectiveStatus %></p>
+    <pre class="mx-ann-preview__body" style="white-space:pre-wrap;font-family:inherit"><%= item.body %></pre>
+
+    <form method="post" action="<%= basePath %>/<%= item.id %>/confirm-publish" class="mx-ann-actions" style="margin-top:1.25rem">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <% if (action === 'unpublish') { %>
+        <input type="hidden" name="action" value="unpublish" />
+        <button type="submit" class="mx-ann-btn mx-ann-btn--danger">Unpublish to draft</button>
+      <% } else { %>
+        <input type="hidden" name="action" value="publish" />
+        <button type="submit" class="mx-ann-btn mx-ann-btn--primary">Confirm publish</button>
+        <button type="submit" class="mx-ann-btn mx-ann-btn--ghost" name="action" value="archive">Archive instead</button>
+        <a class="mx-ann-btn mx-ann-btn--ghost" href="<%= basePath %>/<%= item.id %>/confirm-publish?action=unpublish">Unpublish…</a>
+      <% } %>
+    </form>
+  </div>
+</div>

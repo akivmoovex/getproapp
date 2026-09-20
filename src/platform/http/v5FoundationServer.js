@@ -908,6 +908,21 @@ function createV5FoundationApp(options) {
     variant: "branch",
   });
   const {
+    registerBlessBoardSharedAnnouncementRoutes,
+  } = require("../../blessboard/http/registerBlessBoardSharedAnnouncementRoutes");
+  registerBlessBoardSharedAnnouncementRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    variant: "hq",
+  });
+  registerBlessBoardSharedAnnouncementRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    variant: "branch",
+  });
+  const {
     createMembershipWorkflowAdminRouter,
   } = require("../../blessboard/http/membershipWorkflowAdminRoutes");
   app.use(

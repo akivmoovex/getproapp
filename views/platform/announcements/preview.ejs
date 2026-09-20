@@ -1,0 +1,27 @@
+<div class="mx-ann-shell" data-screen="AN04" data-stitch-desktop="AN04-D" data-stitch-mobile="AN04-M">
+  <div class="mx-ann-top">
+    <div>
+      <div class="mx-ann-brand"><%= brand.productName %> · Preview</div>
+      <h1 class="mx-ann-title">Announcement preview</h1>
+      <p class="mx-ann-sub">Safe rendering — title and body are escaped plain text. No live notifications.</p>
+    </div>
+    <div class="mx-ann-actions">
+      <a class="mx-ann-btn mx-ann-btn--ghost" href="<%= basePath %>/<%= item.id %>">Edit</a>
+      <a class="mx-ann-btn mx-ann-btn--primary" href="<%= basePath %>/<%= item.id %>/confirm-publish">Publish…</a>
+    </div>
+  </div>
+
+  <article class="mx-ann-panel mx-ann-preview" data-ann-preview="1">
+    <div class="mx-ann-preview__meta">
+      <span class="mx-ann-badge mx-ann-badge--<%= item.effectiveStatus %>"><%= item.effectiveStatus %></span>
+      <span class="mx-ann-muted"><%= item.timezone || 'UTC' %></span>
+    </div>
+    <h2 class="mx-ann-preview__title"><%= item.title %></h2>
+    <div class="mx-ann-preview__body"><%= item.body %></div>
+    <% if (item.mediaUrl) { %>
+      <div class="mx-ann-preview__media">
+        <img src="<%= item.mediaUrl %>" alt="" loading="lazy" referrerpolicy="no-referrer" />
+      </div>
+    <% } %>
+  </article>
+</div>

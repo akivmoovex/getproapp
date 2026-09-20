@@ -1,0 +1,17 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title><%= typeof pageTitle !== 'undefined' && pageTitle ? pageTitle : 'Announcements' %> · <%= (brand && brand.productName) || 'Moovex' %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/platform/announcements.css?v=1" />
+</head>
+<body class="mx-ann <%= (brand && brand.productClass) || '' %> <%= typeof mobile !== 'undefined' && mobile ? 'mx-ann--mobile' : '' %>"
+      data-product="<%= (brand && brand.productClass === 'mx-ann--blessboard') ? 'blessboard' : 'activeclinic' %>"
+      data-stitch="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : '' %>">
+  <%- body %>
+</body>
+</html>

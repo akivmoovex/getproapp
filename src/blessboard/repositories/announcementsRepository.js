@@ -6,7 +6,8 @@
 
 const ANNOUNCEMENT_COLS = `id, church_id, branch_id, title, body, status,
   is_pinned, is_featured, featured_until, action_url, action_label,
-  published_at, created_by_user_id, created_at, updated_at`;
+  published_at, created_by_user_id, created_at, updated_at,
+  timezone, starts_at, ends_at`;
 
 /**
  * @param {object|null} row
@@ -29,6 +30,9 @@ function mapAnnouncement(row) {
     createdByUserId: row.created_by_user_id || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    timezone: row.timezone || "UTC",
+    startsAt: row.starts_at || null,
+    endsAt: row.ends_at || null,
   };
 }
 
@@ -150,7 +154,8 @@ async function listAnnouncements(client, opts) {
   const { rows } = await client.query(
     `SELECT a.id, a.church_id, a.branch_id, a.title, a.body, a.status,
             a.is_pinned, a.is_featured, a.featured_until, a.action_url, a.action_label,
-            a.published_at, a.created_by_user_id, a.created_at, a.updated_at
+            a.published_at, a.created_by_user_id, a.created_at, a.updated_at,
+            a.timezone, a.starts_at, a.ends_at
        ${from}
       WHERE ${where}
       ORDER BY a.is_pinned DESC, a.published_at DESC NULLS LAST, a.updated_at DESC
@@ -177,6 +182,7 @@ async function listMemberAnnouncements(client, opts) {
     `SELECT a.id, a.church_id, a.branch_id, a.title, a.body, a.status,
             a.is_pinned, a.is_featured, a.featured_until, a.action_url, a.action_label,
             a.published_at, a.created_by_user_id, a.created_at, a.updated_at,
+            a.timezone, a.starts_at, a.ends_at,
             r.first_seen_at AS read_first_seen_at,
             r.read_at AS read_read_at
        FROM blessboard.announcements a
@@ -185,7 +191,19 @@ async function listMemberAnnouncements(client, opts) {
        LEFT JOIN blessboard.announcement_reads r
          ON r.announcement_id = a.id AND r.member_id = $3
       WHERE a.church_id = $1
-        AND a.status = 'published'
+        AND (
+          (
+            a.status = 'published'
+            AND (a.starts_at IS NULL OR a.starts_at <= now())
+            AND (a.ends_at IS NULL OR a.ends_at > now())
+          )
+          OR (
+            a.status = 'scheduled'
+            AND a.starts_at IS NOT NULL
+            AND a.starts_at <= now()
+            AND (a.ends_at IS NULL OR a.ends_at > now())
+          )
+        )
         AND (a.branch_id IS NULL OR a.branch_id = $2)
       ORDER BY a.is_pinned DESC, a.published_at DESC NULLS LAST, a.created_at DESC
       LIMIT $4 OFFSET $5`,
@@ -207,8 +225,9 @@ async function insertAnnouncement(client, fields) {
   const { rows } = await client.query(
     `INSERT INTO blessboard.announcements
        (church_id, branch_id, title, body, status, is_pinned, is_featured,
-        featured_until, action_url, action_label, published_at, created_by_user_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+        featured_until, action_url, action_label, published_at, created_by_user_id,
+        timezone, starts_at, ends_at)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15)
      RETURNING ${ANNOUNCEMENT_COLS}`,
     [
       fields.churchId,
@@ -223,6 +242,9 @@ async function insertAnnouncement(client, fields) {
       fields.actionLabel || null,
       fields.publishedAt || null,
       fields.createdByUserId || null,
+      fields.timezone || "UTC",
+      fields.startsAt || null,
+      fields.endsAt || null,
     ]
   );
   return mapAnnouncement(rows[0]);
@@ -249,6 +271,11 @@ async function updateAnnouncement(client, id, patch) {
     patch.actionLabel !== undefined ? patch.actionLabel : null,
     patch.publishedAt !== undefined ? patch.publishedAt : null,
     patch.setPublishedAtNow === true,
+    patch.timezone != null ? patch.timezone : null,
+    patch.setStartsAt === true,
+    patch.startsAt !== undefined ? patch.startsAt : null,
+    patch.setEndsAt === true,
+    patch.endsAt !== undefined ? patch.endsAt : null,
   ];
   let where = "id = $1";
   if (patch.expectedUpdatedAt != null) {
@@ -282,6 +309,9 @@ async function updateAnnouncement(client, id, patch) {
               WHEN $12::timestamptz IS NOT NULL THEN $12::timestamptz
               ELSE published_at
             END,
+            timezone = COALESCE($14, timezone),
+            starts_at = CASE WHEN $15::boolean THEN $16 ELSE starts_at END,
+            ends_at = CASE WHEN $17::boolean THEN $18 ELSE ends_at END,
             updated_at = now()
       WHERE ${where}
       RETURNING ${ANNOUNCEMENT_COLS}`,

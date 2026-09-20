@@ -59,6 +59,23 @@ After each task, report:
 
 ## Task log
 
+### PROMPT 11 — V8 shared announcement publication (AN01–AN05)
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_SHARED_ANNOUNCEMENTS_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` |
+| **Scope** | Shared tenant announcements CRUD; draft/scheduled/published/expired/archived; preview + publish confirm; timezone/window; media picker hook; safe public render; BB+AC branding; publication history |
+| **Stitch** | `projects/5087412725796049014` |
+| **Report** | [`docs/releases/V8_SHARED_ANNOUNCEMENTS_PROMPT11.md`](./V8_SHARED_ANNOUNCEMENTS_PROMPT11.md) |
+| **Changed files** | `042_shared_tenant_announcements.sql` · `111_announcement_schedule_v8.sql` · tenant announcement service/repo/routes/views/CSS · BB/AC mounts · BB schedule wiring · tests · docs |
+| **Test results** | Shared announcements **9/9 PASS**; BB announcements regression **18/18 PASS** |
+| **Scheduler** | **Unavailable** — `SCHEDULER_DEPENDENCY.available=false`; lazy read-time visibility only; no workers/notifications |
+| **Commit SHA** | _(pending commit)_ |
+| **Push status** | _(pending push)_ |
+| **Blockers** | None for CODE_PASS. Migrations `042`/`111` not applied on hosted DB. No background scheduler (documented dependency). |
+
 ### PROMPT 10 — V8 BB visitor, event & ministry registration (BB08–BB10)
 
 | Field | Value |

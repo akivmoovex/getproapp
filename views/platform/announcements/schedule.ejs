@@ -1,0 +1,60 @@
+<div class="mx-ann-shell" data-screen="AN03" data-stitch-desktop="AN03-D" data-stitch-mobile="AN03-M">
+  <div class="mx-ann-top">
+    <div>
+      <div class="mx-ann-brand"><%= brand.productName %> · Scheduling</div>
+      <h1 class="mx-ann-title">Scheduling &amp; visibility</h1>
+      <p class="mx-ann-sub"><%= item.title %></p>
+    </div>
+    <a class="mx-ann-btn mx-ann-btn--ghost" href="<%= basePath %>/<%= item.id %>">Back to editor</a>
+  </div>
+
+  <div class="mx-ann-banner" role="status" data-scheduler-dependency="1">
+    <% if (scheduler && !scheduler.available) { %>
+      <strong>Scheduler unavailable.</strong> <%= scheduler.reason %>
+    <% } %>
+  </div>
+
+  <form class="mx-ann-panel mx-ann-form" method="post" action="<%= basePath %>/<%= item.id %>">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+    <input type="hidden" name="title" value="<%= item.title %>" />
+    <input type="hidden" name="body" value="<%= item.body %>" />
+
+    <label class="mx-ann-label" for="status">Stored status</label>
+    <select class="mx-ann-input" id="status" name="status">
+      <% ['draft','scheduled','published','archived'].forEach(function (s) { %>
+        <option value="<%= s %>" <%= item.status === s ? 'selected' : '' %>><%= s %></option>
+      <% }) %>
+    </select>
+
+    <label class="mx-ann-label" for="timezone">Timezone</label>
+    <input class="mx-ann-input" id="timezone" name="timezone" value="<%= item.timezone || 'UTC' %>" />
+
+    <div class="mx-ann-grid2">
+      <div>
+        <label class="mx-ann-label" for="starts_at">Starts at</label>
+        <input class="mx-ann-input" id="starts_at" name="starts_at" type="datetime-local"
+               value="<%= item.startsAt ? new Date(item.startsAt).toISOString().slice(0,16) : '' %>" />
+      </div>
+      <div>
+        <label class="mx-ann-label" for="ends_at">Ends at</label>
+        <input class="mx-ann-input" id="ends_at" name="ends_at" type="datetime-local"
+               value="<%= item.endsAt ? new Date(item.endsAt).toISOString().slice(0,16) : '' %>" />
+      </div>
+    </div>
+
+    <p class="mx-ann-muted">
+      Effective now: <span class="mx-ann-badge mx-ann-badge--<%= item.effectiveStatus %>"><%= item.effectiveStatus %></span>
+      · Publicly visible: <%= item.publiclyVisible ? 'yes' : 'no' %>
+    </p>
+
+    <label class="mx-ann-check">
+      <input type="checkbox" name="confirm_publish" value="1" />
+      Confirm if changing to published
+    </label>
+
+    <div class="mx-ann-actions">
+      <button type="submit" class="mx-ann-btn mx-ann-btn--primary">Save schedule</button>
+      <a class="mx-ann-btn mx-ann-btn--ghost" href="<%= basePath %>/<%= item.id %>/preview">Preview</a>
+    </div>
+  </form>
+</div>
