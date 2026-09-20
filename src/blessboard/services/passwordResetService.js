@@ -17,6 +17,11 @@ const {
   sendPasswordResetEmail,
   DELIVERY_CODE,
 } = require("./passwordResetEmailDelivery");
+const {
+  validatePasswordPair,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
+} = require("../../platform/auth/sharedPasswordPolicy");
 
 const PURPOSE = "password_reset";
 const TTL_MS = 60 * 60 * 1000; // 1 hour
@@ -52,12 +57,21 @@ function hashIp(ip) {
   return crypto.createHash("sha256").update(`bb-reset-ip:${raw}`).digest("hex");
 }
 
-function validatePassword(password) {
-  const value = password != null ? String(password) : "";
-  if (!value || value.length < 10 || value.length > 200) {
-    return { ok: false, reason: "password" };
+function validatePassword(password, confirmPassword) {
+  if (arguments.length < 2) {
+    const pair = validatePasswordPair(password, password);
+    if (!pair.ok) return { ok: false, reason: "password" };
+    return { ok: true, value: pair.value };
   }
-  return { ok: true, value };
+  const pair = validatePasswordPair(password, confirmPassword);
+  if (!pair.ok) {
+    return {
+      ok: false,
+      reason: pair.field === "password_confirm" ? "confirm" : "password",
+      code: pair.code,
+    };
+  }
+  return { ok: true, value: pair.value };
 }
 
 async function withClient(db, fn) {
@@ -436,12 +450,14 @@ async function completePasswordReset(db, input) {
   if (!rawToken || rawToken.length < 20) {
     return { ok: false, status: STATUS.INVALID_TOKEN };
   }
-  const passwordCheck = validatePassword(src.password);
+  const passwordCheck = validatePassword(src.password, src.passwordConfirm);
   if (!passwordCheck.ok) {
-    return { ok: false, status: STATUS.WEAK_PASSWORD, reason: "password" };
-  }
-  if (String(src.passwordConfirm != null ? src.passwordConfirm : "") !== passwordCheck.value) {
-    return { ok: false, status: STATUS.MISMATCH, reason: "confirm" };
+    return {
+      ok: false,
+      status:
+        passwordCheck.reason === "confirm" ? STATUS.MISMATCH : STATUS.WEAK_PASSWORD,
+      reason: passwordCheck.reason,
+    };
   }
 
   const tokenHash = hashSessionToken(rawToken);
@@ -546,6 +562,8 @@ module.exports = {
   TTL_MS,
   NEUTRAL_MESSAGE,
   DELIVERY_CODE,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
   requestPasswordReset,
   platformAdminRequestPasswordReset,
   completePasswordReset,

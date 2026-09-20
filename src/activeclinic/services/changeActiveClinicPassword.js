@@ -7,9 +7,11 @@
 const {
   verifyPlatformIdentityPassword,
   setPlatformIdentityPassword,
-  validatePasswordPolicy,
   RESULT: CRED_RESULT,
 } = require("../../platform/services/platformIdentityCredentialService");
+const {
+  validatePasswordPair,
+} = require("../../platform/auth/sharedPasswordPolicy");
 const identityRepo = require("../../platform/repositories/platformIdentityRepository");
 const {
   revokeSessionsByPlatformIdentity,
@@ -52,12 +54,15 @@ async function changeActiveClinicPassword(db, input) {
   if (!identityId || !currentPassword || !newPassword || !deploymentCode) {
     return { ok: false, code: RESULT.INVALID_INPUT };
   }
-  if (newPassword !== confirmPassword) {
-    return { ok: false, code: RESULT.MISMATCH };
-  }
-  const policy = validatePasswordPolicy(newPassword);
-  if (!policy.ok) {
-    return { ok: false, code: RESULT.WEAK_PASSWORD };
+  const pair = validatePasswordPair(newPassword, confirmPassword);
+  if (!pair.ok) {
+    return {
+      ok: false,
+      code:
+        pair.code === "confirmation_mismatch"
+          ? RESULT.MISMATCH
+          : RESULT.WEAK_PASSWORD,
+    };
   }
 
   const verified = await verifyPlatformIdentityPassword(db, {
@@ -71,7 +76,7 @@ async function changeActiveClinicPassword(db, input) {
 
   const set = await setPlatformIdentityPassword(db, {
     identityId,
-    password: newPassword,
+    password: pair.value,
     mustChangePassword: false,
   });
   if (!set.ok) {

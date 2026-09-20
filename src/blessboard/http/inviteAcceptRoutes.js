@@ -68,9 +68,15 @@ function createInviteAcceptRouter(deps) {
     }
     const token = String((req.body && req.body.token) || "");
     const password = req.body && req.body.password;
+    const passwordConfirm =
+      req.body && (req.body.password_confirm || req.body.passwordConfirm);
     const csrfToken = ensureCsrf(req, res);
 
-    const result = await acceptInvitation(getPool(), { token, password });
+    const result = await acceptInvitation(getPool(), {
+      token,
+      password,
+      passwordConfirm,
+    });
     if (!result.ok) {
       const peeked = await getInvitationForAccept(getPool(), token);
       const html = renderView("invite/accept.ejs", {

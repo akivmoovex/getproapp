@@ -17,6 +17,11 @@ const {
 } = require("../../platform/services/entitlementService");
 const { recordBlessBoardAudit } = require("./recordBlessBoardAudit");
 const { hashSessionToken } = require("../../platform/session/sessionToken");
+const {
+  validatePasswordPair,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
+} = require("../../platform/auth/sharedPasswordPolicy");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -48,12 +53,21 @@ function generateInviteToken() {
   return { rawToken, tokenHash: hashSessionToken(rawToken) };
 }
 
-function validatePassword(password) {
-  const value = password != null ? String(password) : "";
-  if (!value || value.length < 10 || value.length > 200) {
-    return { ok: false, reason: "password" };
+function validatePassword(password, confirmPassword) {
+  // When only password is supplied (legacy callers), confirm against itself so
+  // length policy still applies without forcing a confirm argument.
+  const confirm =
+    arguments.length >= 2 ? confirmPassword : password;
+  const pair = validatePasswordPair(password, confirm);
+  if (!pair.ok) {
+    return {
+      ok: false,
+      reason: pair.field === "password_confirm" ? "confirm" : "password",
+      code: pair.code,
+      message: pair.error,
+    };
   }
-  return { ok: true, value };
+  return { ok: true, value: pair.value };
 }
 
 async function withClient(db, fn) {
@@ -616,13 +630,15 @@ async function acceptInvitation(db, input) {
     input && input.password != null && String(input.password).length > 0;
   let passwordHash = null;
   if (passwordProvided) {
-    const passwordCheck = validatePassword(input.password);
+    const passwordCheck = validatePassword(input.password, input.passwordConfirm);
     if (!passwordCheck.ok) {
       return {
         ok: false,
         status: STATUS.INVALID_INPUT,
-        reason: "password",
-        message: "Choose a password between 10 and 200 characters.",
+        reason: passwordCheck.reason || "password",
+        message:
+          passwordCheck.message ||
+          `Choose a password between ${PASSWORD_MIN} and ${PASSWORD_MAX} characters.`,
       };
     }
     passwordHash = await bcrypt.hash(passwordCheck.value, BCRYPT_ROUNDS);
@@ -853,6 +869,8 @@ module.exports = {
   INVITE_ROLES,
   INVITE_TTL_MS,
   GENERIC_ACCEPT_FAILURE,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
   inviteBlessBoardStaff,
   listPendingInvitations,
   revokeInvitation,

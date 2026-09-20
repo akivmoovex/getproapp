@@ -12,10 +12,16 @@ const {
   mapIdentity,
   isIdentityUsable,
 } = require("./platformIdentityService");
+const {
+  DEFAULT_PASSWORD_MIN,
+  DEFAULT_PASSWORD_MAX,
+  validatePasswordPolicy: validateSharedPasswordPolicy,
+  resolvePasswordLengthBounds,
+} = require("../auth/sharedPasswordPolicy");
 
 const BCRYPT_ROUNDS = 12;
-const PASSWORD_MIN = 10;
-const PASSWORD_MAX = 200;
+const PASSWORD_MIN = DEFAULT_PASSWORD_MIN;
+const PASSWORD_MAX = DEFAULT_PASSWORD_MAX;
 const LOCKOUT_THRESHOLD = 8;
 const LOCKOUT_MS = 15 * 60 * 1000;
 
@@ -33,12 +39,16 @@ const RESULT = Object.freeze({
   MISSING_CREDENTIAL: "missing_credential",
 });
 
-function validatePasswordPolicy(password) {
-  const value = password != null ? String(password) : "";
-  if (!value || value.length < PASSWORD_MIN || value.length > PASSWORD_MAX) {
+/**
+ * @param {unknown} password
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function validatePasswordPolicy(password, env) {
+  const result = validateSharedPasswordPolicy(password, env);
+  if (!result.ok) {
     return { ok: false, code: RESULT.WEAK_PASSWORD };
   }
-  return { ok: true, value };
+  return { ok: true, value: result.value };
 }
 
 async function burnCompare(password) {
@@ -182,6 +192,7 @@ module.exports = {
   LOCKOUT_THRESHOLD,
   LOCKOUT_MS,
   validatePasswordPolicy,
+  resolvePasswordLengthBounds,
   setPlatformIdentityPassword,
   verifyPlatformIdentityPassword,
   burnCompare,

@@ -15,9 +15,11 @@ const {
 } = require("../../platform/session/revokeV5Session");
 const {
   setPlatformIdentityPassword,
-  validatePasswordPolicy,
   RESULT: CRED_RESULT,
 } = require("../../platform/services/platformIdentityCredentialService");
+const {
+  validatePasswordPair,
+} = require("../../platform/auth/sharedPasswordPolicy");
 const {
   isIdentityUsable,
   mapIdentity,
@@ -583,11 +585,16 @@ async function completeActiveClinicPasswordReset(db, input) {
   const rawToken = String(src.rawToken || "").trim();
   const deploymentCode = src.deploymentCode || CODE_ACTIVECLINIC_ORG_V6;
   if (!rawToken) return { ok: false, code: RESULT.INVALID_TOKEN };
-  if (src.password !== src.passwordConfirm) {
-    return { ok: false, code: RESULT.MISMATCH };
+  const pair = validatePasswordPair(src.password, src.passwordConfirm);
+  if (!pair.ok) {
+    return {
+      ok: false,
+      code:
+        pair.code === "confirmation_mismatch"
+          ? RESULT.MISMATCH
+          : RESULT.WEAK_PASSWORD,
+    };
   }
-  const policy = validatePasswordPolicy(src.password);
-  if (!policy.ok) return { ok: false, code: RESULT.WEAK_PASSWORD };
 
   return withClient(db, async (client) => {
     await client.query("BEGIN");
@@ -608,9 +615,16 @@ async function completeActiveClinicPasswordReset(db, input) {
         return { ok: false, code: RESULT.CONSUMED };
       }
 
+      // Invalidate any concurrent recovery tokens for this identity.
+      await tokenRepo.revokeActiveTokens(client, {
+        platformIdentityId: token.platformIdentityId,
+        purpose: PURPOSE_RESET,
+        deploymentCode,
+      });
+
       const pw = await setPlatformIdentityPassword(client, {
         identityId: token.platformIdentityId,
-        password: policy.value,
+        password: pair.value,
         mustChangePassword: false,
       });
       if (!pw.ok) {

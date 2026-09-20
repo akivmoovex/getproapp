@@ -2,70 +2,61 @@
 
 /**
  * Shared registration password policy (BlessBoard + ActiveClinic).
- * Single source of truth for server validation and UI rule display.
+ * Delegates to platform auth sharedPasswordPolicy (V8 single source of truth).
  */
 
 const {
   PASSWORD_MIN,
   PASSWORD_MAX,
+  DEFAULT_PASSWORD_MIN,
+  DEFAULT_PASSWORD_MAX,
+  resolvePasswordLengthBounds,
   validatePasswordPolicy,
-} = require("../services/platformIdentityCredentialService");
+  validatePasswordPair,
+  getPasswordPolicyRules,
+  evaluatePasswordRules,
+  POLICY_RESULT,
+} = require("../auth/sharedPasswordPolicy");
 
-const REGISTRATION_PASSWORD_RULES = Object.freeze([
-  {
-    id: "min_length",
-    label: `At least ${PASSWORD_MIN} characters`,
-    test: (value) => String(value || "").length >= PASSWORD_MIN,
-  },
-  {
-    id: "max_length",
-    label: `No more than ${PASSWORD_MAX} characters`,
-    test: (value) => String(value || "").length <= PASSWORD_MAX,
-  },
-]);
+/**
+ * @param {NodeJS.ProcessEnv} [env]
+ */
+function getRegistrationPasswordRules(env) {
+  return getPasswordPolicyRules(env);
+}
+
+/** @type {ReadonlyArray<{ id: string, label: string, test: Function }>} */
+const REGISTRATION_PASSWORD_RULES = getPasswordPolicyRules();
 
 /**
  * @param {unknown} password
  * @param {unknown} confirmPassword
+ * @param {NodeJS.ProcessEnv} [env]
  */
-function validateRegistrationPasswordPair(password, confirmPassword) {
-  const policy = validatePasswordPolicy(password);
-  if (!policy.ok) {
-    return {
-      ok: false,
-      error: `Password must be at least ${PASSWORD_MIN} characters.`,
-      field: "password",
-    };
-  }
-  const confirm = String(confirmPassword == null ? "" : confirmPassword);
-  if (confirm !== policy.value) {
-    return {
-      ok: false,
-      error: "Password and confirmation do not match.",
-      field: "password_confirm",
-    };
-  }
-  return { ok: true, value: policy.value };
+function validateRegistrationPasswordPair(password, confirmPassword, env) {
+  return validatePasswordPair(password, confirmPassword, env);
 }
 
 /**
- * Evaluate live rule status for UI.
  * @param {unknown} password
+ * @param {NodeJS.ProcessEnv} [env]
  */
-function evaluateRegistrationPasswordRules(password) {
-  const value = String(password == null ? "" : password);
-  return REGISTRATION_PASSWORD_RULES.map((rule) => ({
-    id: rule.id,
-    label: rule.label,
-    met: rule.test(value),
-  }));
+function evaluateRegistrationPasswordRules(password, env) {
+  return evaluatePasswordRules(password, env);
 }
 
 module.exports = {
   PASSWORD_MIN,
   PASSWORD_MAX,
+  DEFAULT_PASSWORD_MIN,
+  DEFAULT_PASSWORD_MAX,
+  POLICY_RESULT,
   REGISTRATION_PASSWORD_RULES,
+  getRegistrationPasswordRules,
+  resolvePasswordLengthBounds,
   validatePasswordPolicy,
+  validatePasswordPair,
   validateRegistrationPasswordPair,
   evaluateRegistrationPasswordRules,
+  evaluatePasswordRules,
 };

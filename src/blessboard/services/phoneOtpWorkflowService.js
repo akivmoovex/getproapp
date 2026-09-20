@@ -15,8 +15,10 @@ const {
 const {
   acceptInvitation,
   STATUS: INVITE_STATUS,
-  validatePassword,
 } = require("./inviteBlessBoardStaff");
+const {
+  validatePasswordPair,
+} = require("../../platform/auth/sharedPasswordPolicy");
 const { hashSessionToken } = require("../../platform/session/sessionToken");
 const inviteRepo = require("../repositories/userInvitationRepository");
 const authRepo = require("../repositories/blessBoardAuthRepository");
@@ -328,15 +330,16 @@ async function completePhonePasswordRecovery(db, input, env) {
     return { ok: false, status: STATUS.INVALID_INPUT, reason: "ids" };
   }
 
-  const passwordCheck = validatePassword(input && input.password);
-  if (!passwordCheck.ok) {
-    return { ok: false, status: STATUS.INVALID_INPUT, reason: "password" };
-  }
-  if (
-    String(input.passwordConfirm != null ? input.passwordConfirm : "") !==
-    passwordCheck.value
-  ) {
-    return { ok: false, status: STATUS.INVALID_INPUT, reason: "confirm" };
+  const passwordPair = validatePasswordPair(
+    input && input.password,
+    input && input.passwordConfirm
+  );
+  if (!passwordPair.ok) {
+    return {
+      ok: false,
+      status: STATUS.INVALID_INPUT,
+      reason: passwordPair.field === "password_confirm" ? "confirm" : "password",
+    };
   }
 
   // Invitation OTP cannot be reused here — purpose is bound.
@@ -351,7 +354,7 @@ async function completePhonePasswordRecovery(db, input, env) {
   );
   if (!checked.ok) return mapOtpFailure(checked) || checked;
 
-  const passwordHash = await bcrypt.hash(passwordCheck.value, BCRYPT_ROUNDS);
+  const passwordHash = await bcrypt.hash(passwordPair.value, BCRYPT_ROUNDS);
 
   try {
     return await withClient(db, async (client) => {

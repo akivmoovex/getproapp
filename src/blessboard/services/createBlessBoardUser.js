@@ -14,6 +14,11 @@ const {
   openProvisioningSession,
   runInsertWithUniqueRecovery,
 } = require("../../platform/db/provisioningTransaction");
+const {
+  validatePasswordPolicy,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
+} = require("../../platform/auth/sharedPasswordPolicy");
 
 const STATUS = Object.freeze({
   CREATED: "created",
@@ -77,7 +82,8 @@ function validateInput(input) {
       },
     };
   }
-  if (!password || password.length < 10 || password.length > 200) {
+  const policy = validatePasswordPolicy(password);
+  if (!policy.ok) {
     return { ok: false, reason: "password" };
   }
   return {
@@ -88,7 +94,7 @@ function validateInput(input) {
       displayName,
       phoneNormalized,
       phoneDisplay,
-      password,
+      password: policy.value,
       passwordHash: null,
     },
   };
@@ -258,6 +264,8 @@ async function createBlessBoardUser(db, input, options) {
 module.exports = {
   STATUS,
   BCRYPT_ROUNDS,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
   normalizeEmail,
   validateInput,
   createBlessBoardUser,

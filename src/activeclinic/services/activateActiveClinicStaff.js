@@ -11,9 +11,11 @@ const staffRepo = require("../repositories/staffMemberRepository");
 const { hashSessionToken } = require("../../platform/session/sessionToken");
 const {
   setPlatformIdentityPassword,
-  validatePasswordPolicy,
   RESULT: CRED_RESULT,
 } = require("../../platform/services/platformIdentityCredentialService");
+const {
+  validatePasswordPair,
+} = require("../../platform/auth/sharedPasswordPolicy");
 const { recordAuditEventSafe } = require("../../platform/services/auditEventService");
 const {
   CODE_ACTIVECLINIC_ORG_V6,
@@ -145,12 +147,15 @@ async function activateActiveClinicStaff(db, input) {
   if (!rawToken) {
     return { ok: false, code: RESULT.INVALID_TOKEN };
   }
-  if (password !== passwordConfirm) {
-    return { ok: false, code: RESULT.MISMATCH };
-  }
-  const policy = validatePasswordPolicy(password);
-  if (!policy.ok) {
-    return { ok: false, code: RESULT.WEAK_PASSWORD };
+  const pair = validatePasswordPair(password, passwordConfirm);
+  if (!pair.ok) {
+    return {
+      ok: false,
+      code:
+        pair.code === "confirmation_mismatch"
+          ? RESULT.MISMATCH
+          : RESULT.WEAK_PASSWORD,
+    };
   }
 
   return withClient(db, async (client) => {
@@ -201,9 +206,15 @@ async function activateActiveClinicStaff(db, input) {
         return { ok: false, code: RESULT.CONSUMED };
       }
 
+      await tokenRepo.revokeActiveTokens(client, {
+        platformIdentityId: token.platformIdentityId,
+        purpose: PURPOSE_ACTIVATION,
+        deploymentCode,
+      });
+
       const pw = await setPlatformIdentityPassword(client, {
         identityId: token.platformIdentityId,
-        password: policy.value,
+        password: pair.value,
         mustChangePassword: false,
       });
       if (!pw.ok) {

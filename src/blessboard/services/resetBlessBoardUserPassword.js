@@ -13,6 +13,11 @@ const {
   resolveManageTransactionOption,
   openProvisioningSession,
 } = require("../../platform/db/provisioningTransaction");
+const {
+  validatePasswordPolicy: validateSharedPasswordPolicy,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
+} = require("../../platform/auth/sharedPasswordPolicy");
 
 const STATUS = Object.freeze({
   RESET: "reset",
@@ -25,19 +30,19 @@ const STATUS = Object.freeze({
   TRANSACTION_ERROR: "transaction_error",
 });
 
-/** Match createBlessBoardUser bcrypt cost. */
+/** Match shared platform password policy (bcrypt cost unchanged). */
 const BCRYPT_ROUNDS = 12;
 
 /**
- * Same length policy as createBlessBoardUser (10–200).
  * @param {unknown} password
+ * @param {NodeJS.ProcessEnv} [env]
  */
-function validatePasswordPolicy(password) {
-  const value = password != null ? String(password) : "";
-  if (!value || value.length < 10 || value.length > 200) {
+function validatePasswordPolicy(password, env) {
+  const policy = validateSharedPasswordPolicy(password, env);
+  if (!policy.ok) {
     return { ok: false, reason: "password" };
   }
-  return { ok: true, value };
+  return { ok: true, value: policy.value };
 }
 
 /**
@@ -241,6 +246,8 @@ async function resetBlessBoardUserPassword(db, input, options) {
 module.exports = {
   STATUS,
   BCRYPT_ROUNDS,
+  PASSWORD_MIN,
+  PASSWORD_MAX,
   validatePasswordPolicy,
   validateResetInput,
   resetBlessBoardUserPassword,
