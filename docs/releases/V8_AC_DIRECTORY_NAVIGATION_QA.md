@@ -27,6 +27,8 @@ Directory cards previously linked only the title and CTA. Logo/body clicks staye
 
 ## Hosted verification (`activeclinic.neuniversity.org/clinics`)
 
+| Hosted SHA | `9197741a6c36` |
+
 | Check | Result |
 |-------|--------|
 | Card markup | Full-card `data-ac-clinic-card-link="1"` on every clinic |
