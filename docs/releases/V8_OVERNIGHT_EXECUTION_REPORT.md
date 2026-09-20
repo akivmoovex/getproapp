@@ -88,8 +88,8 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 | **Existing functionality reused** | Membership `938813bd` · activity `41030f85` · shared form engine from Prompts 03–05 |
 | **Changed files** | `tenantRegistrationRoutes.js` · register/submitted · BB01/BB02/activity admin views · `tenant-auth.css` · membership tests · docs |
 | **Tests** | Membership + activity + forms **31/31 PASS** |
-| **Commit SHA** | _(filled after commit)_ |
-| **Push status** | Pending push to `origin/V8` |
+| **Commit SHA** | `aa718c3597582c0de17d809a0dd8d460428a06b3` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for CODE_PASS. Migrations `110`/`041` still not applied on hosted DB. |
 | **Next task** | BB11+ membership review / announcements when prompted |
 | **Report** | [`V8_BB_PUBLIC_REGISTRATION_PROMPT06.md`](./V8_BB_PUBLIC_REGISTRATION_PROMPT06.md) |
