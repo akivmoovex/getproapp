@@ -78,6 +78,23 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 
 ## Task log
 
+### PROMPT 01 — V8 implementation baseline
+
+| Field | Value |
+|-------|-------|
+| **Status** | COMPLETE · verdict `V8_IMPLEMENTATION_BASELINE_COMPLETE` |
+| **Date** | 2026-09-21 |
+| **Branch** | `V8` @ `61226f50` (fetched; synced with `origin/V8`) |
+| **Existing functionality reused** | Prior overnight CODE_PASS for SH/BB/AN + AC media/booking/phone/catalogue/directory; Stitch MCP inventory; per-prompt docs |
+| **Changed files** | `docs/releases/V8_IMPLEMENTATION_BASELINE.md` (created) · this execution report |
+| **Tests** | N/A (audit only; no application code). Prior regression **984/984** still the last gate. |
+| **Commit SHA** | _(filled after commit)_ |
+| **Push status** | Pending push to `origin/V8` |
+| **Blockers** | None for audit completion. Open for later work: unapplied migrations 039–042/110–112; BB18-M missing in Stitch; PARTIAL Stitch mobile/marker gaps (SH09/SH13/studio/AN02–03); scheduler unavailable; hosted verification still required. |
+| **Next task** | Dependency matrix priority ≥2 PARTIAL polish only if prompted — do not rebuild IMPLEMENTED flows |
+| **Hosted verification** | Not claimed (rule 15) |
+| **Report** | [`V8_IMPLEMENTATION_BASELINE.md`](./V8_IMPLEMENTATION_BASELINE.md) |
+
 ### PROMPT 00 — V8 overnight execution rules
 
 | Field | Value |
