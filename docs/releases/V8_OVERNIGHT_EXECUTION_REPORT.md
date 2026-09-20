@@ -88,8 +88,8 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 | **Existing functionality reused** | Prompt 11 studio `8d581371` · `tenantAnnouncementService` · BB/AC mounts · website publish remains separate CMS |
 | **Changed files** | `tenantAnnouncementService.js` · `announcements.css` · editor/schedule/layout · shared announcement tests · docs |
 | **Tests** | Shared + BB announcements **28/28 PASS** |
-| **Commit SHA** | *(recorded after push)* |
-| **Push status** | Pending push to `origin/V8` |
+| **Commit SHA** | `c1c5b5fa15793d1588cfbe09f009fec4fd97f5bd` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | Scheduler worker still unavailable (`SCHEDULER_DEPENDENCY.available=false`); lazy visibility only. Migrations `042`/`111` not applied hosted. |
 | **Next task** | Next overnight prompt as directed |
 | **Report** | [`V8_SHARED_ANNOUNCEMENT_PROMPT08.md`](./V8_SHARED_ANNOUNCEMENT_PROMPT08.md) |

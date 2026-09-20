@@ -159,7 +159,7 @@ Operator-only (outside overnight): apply in order on shared testing DB, then dep
 **Incomplete UI (PARTIAL backlog only):**
 
 1. SH09 / SH13 dedicated `data-screen` + visual states vs Stitch  
-2. SH03 / SH04 / AN02 / AN03 / BB01 / BB02 / BB15 / BB16 mobile Stitch density  
+2. SH03 / SH04 / BB01 / BB02 / BB15 / BB16 mobile Stitch density  
 3. BB18-M Stitch screen missing → **BLOCKED** for inventing mobile-only chrome  
 
 ---
@@ -176,7 +176,7 @@ Work **down** this list. Skip rows already **IMPLEMENTED** unless fixing a liste
 | 3 | SH08–SH15 public + review | 2 + 040 | IMPLEMENTED / PARTIAL (SH09/SH13 markers) | Marker/state polish if prompted |
 | 4 | BB01–BB07, BB11–BB18 membership | 3 + 110 | Mostly IMPLEMENTED; BB18-M BLOCKED in Stitch | Wait for BB18-M or reuse responsive list |
 | 5 | BB08–BB10 activity registration | 3 + 041 | IMPLEMENTED | Reuse |
-| 6 | AN01–AN05 shared announcements | 042 (+111 for BB schedule cols) | IMPLEMENTED / PARTIAL mobile | Polish if prompted; no scheduler worker |
+| 6 | AN01–AN05 shared announcements | 042 (+111 for BB schedule cols) | IMPLEMENTED | Scheduler worker gated; lazy visibility only |
 | 7 | BB19–BB22 public/admin announcements | 6 + 112 | IMPLEMENTED | Reuse |
 | 8 | Background announcement scheduler | Product decision | **BLOCKED** (`available=false`) | Keep lazy evaluation |
 | 9 | Hosted deploy + write + write verification | 1 + tip SHA | BLOCKED overnight | Never claim hosted PASS from local tests |
@@ -190,7 +190,7 @@ Work **down** this list. Skip rows already **IMPLEMENTED** unless fixing a liste
 |--------|------------:|--------:|--------:|-------------------:|
 | SH01–SH15 | 11 | 4 | 0 | 0 |
 | BB01–BB18 | 13 | 5 | 0 | 0 |
-| AN01–AN05 | 3 | 2 | 0 | 0 |
+| AN01–AN05 | 5 | 0 | 0 | 0 |
 | BB19–BB22 | 4 | 0 | 0 | 0 |
 
 \* No workflow is overall BLOCKED for **code**; BB18 **mobile Stitch** and **hosted/migrations/scheduler** are the open blockers.
