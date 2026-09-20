@@ -72,8 +72,8 @@ After each task, report:
 | **Changed files** | `042_shared_tenant_announcements.sql` · `111_announcement_schedule_v8.sql` · tenant announcement service/repo/routes/views/CSS · BB/AC mounts · BB schedule wiring · tests · docs |
 | **Test results** | Shared announcements **9/9 PASS**; BB announcements regression **18/18 PASS** |
 | **Scheduler** | **Unavailable** — `SCHEDULER_DEPENDENCY.available=false`; lazy read-time visibility only; no workers/notifications |
-| **Commit SHA** | _(pending commit)_ |
-| **Push status** | _(pending push)_ |
+| **Commit SHA** | `8d581371aa63418f3357329914c7063ae9ebf5c2` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for CODE_PASS. Migrations `042`/`111` not applied on hosted DB. No background scheduler (documented dependency). |
 
 ### PROMPT 10 — V8 BB visitor, event & ministry registration (BB08–BB10)
