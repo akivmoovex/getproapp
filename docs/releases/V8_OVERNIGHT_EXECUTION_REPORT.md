@@ -78,6 +78,22 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 
 ## Task log
 
+### PROMPT 02 — V8 P0/P1 QA defect closure
+
+| Field | Value |
+|-------|-------|
+| **Status** | COMPLETE · verdict `V8_QA_DEFECTS_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch** | `V8` @ `f36af4af` (synced with `origin/V8`) |
+| **Existing functionality reused** | Booking `9a0c3045` · phone `f5515341` · catalogue `f297e531` · directory `bb1ab5e9` · media `f52ee500`/`d587615d` |
+| **Changed files** | `docs/releases/V8_QA_DEFECTS_PROMPT02.md` · this execution report |
+| **Tests** | Focused AC+media cluster **81/81 PASS** (no failures to fix) |
+| **Commit SHA** | _(filled after commit)_ |
+| **Push status** | Pending push to `origin/V8` |
+| **Blockers** | None for CODE_PASS. Hosted write retests still required (not claimed). |
+| **Next task** | Continue overnight matrix (PARTIAL Stitch polish or forms/membership gaps) without redoing these defects |
+| **Report** | [`V8_QA_DEFECTS_PROMPT02.md`](./V8_QA_DEFECTS_PROMPT02.md) |
+
 ### PROMPT 01 — V8 implementation baseline
 
 | Field | Value |
