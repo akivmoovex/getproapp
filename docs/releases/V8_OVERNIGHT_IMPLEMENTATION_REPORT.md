@@ -70,8 +70,8 @@ After each task, report:
 | **Report** | [`docs/releases/V8_AC_BOOKING_INQUIRY_PROMPT03.md`](./V8_AC_BOOKING_INQUIRY_PROMPT03.md) |
 | **Changed files** | `src/activeclinic/services/activeClinicPublicContactService.js` · `src/activeclinic/http/activeClinicPublicRoutes.js` · `views/activeclinic/tenant/contact-success.ejs` · `views/activeclinic/public/contact-success.ejs` · `tests/activeclinic-public-website.test.js` · `tests/activeclinic-public-booking.test.js` · docs |
 | **Test results** | Focused **18/18**; ActiveClinic suite **105/105 PASS** |
-| **Commit SHA** | *(filled after commit)* |
-| **Push status** | *(filled after push)* |
+| **Commit SHA** | `9a0c3045b9aff9873bbfadd16476cb221a52b2e1` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None |
 
 ### PROMPT 02 — V8 shared media delivery fix
