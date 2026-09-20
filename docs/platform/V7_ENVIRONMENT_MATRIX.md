@@ -44,11 +44,14 @@ SESSION_SECRET=<secret>
 NODE_ENV=production
 DEPLOYMENT_ENV=testing
 PLATFORM_DEPLOYMENT_CODE=moovex-platform-v8-testing
+BASE_DOMAIN=neuniversity.org
 DATABASE_URL=<same testing DB as V7>
 DATABASE_IDENTITY_EXPECTED=moovex-platform-v7
 DATABASE_IDENTITY_ENV=testing
 SESSION_SECRET=<distinct V8 secret>
 ```
+
+`BASE_DOMAIN` must be `neuniversity.org` when set (V7 testing uses `pronline.org`). Deployment code and database identity remain distinct.
 
 See [`V8_HOSTINGER_TESTING_ENV.md`](./V8_HOSTINGER_TESTING_ENV.md).
 

@@ -37,12 +37,16 @@ Do **not** invent credentials. Copy secrets from your operator vault; use a **di
 NODE_ENV=production
 DEPLOYMENT_ENV=testing
 PLATFORM_DEPLOYMENT_CODE=moovex-platform-v8-testing
+BASE_DOMAIN=neuniversity.org
 DATABASE_URL=<same V7 testing PostgreSQL URL>
 DATABASE_IDENTITY_EXPECTED=moovex-platform-v7
 DATABASE_IDENTITY_ENV=testing
 SESSION_SECRET=<distinct long random secret for V8>
 ```
 
+`BASE_DOMAIN` is optional when omitted, but if set it **must** be `neuniversity.org` (profile `canonicalDomain`). Do not set `BASE_DOMAIN=pronline.org` on the V8 app.
+
+**Application deployment identity** (`PLATFORM_DEPLOYMENT_CODE=moovex-platform-v8-testing`) is separate from **database identity** (`moovex-platform-v7` / `testing`). Both V7 and V8 testing share that database identity.
 Optional:
 
 ```env
