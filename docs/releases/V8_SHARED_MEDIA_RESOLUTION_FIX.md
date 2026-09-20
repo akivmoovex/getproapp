@@ -3,10 +3,9 @@
 **Recorded:** 2026-09-20  
 **Branch:** `V8`  
 **Priority:** P1  
-**Final status:** `V8_SHARED_MEDIA_RESOLUTION_PARTIAL`
+**Final status:** `V8_SHARED_MEDIA_HOSTED_PASS`
 
-Code and tests are on `origin/V8` at **`f52ee5003609b34a20631ec4af4f3fa5ceacde0b`**.  
-Hosted V8 still serves **`c568b817d054`** (pre-fix). Homepages still emit broken `testing-v8/platform/...` URLs on the V7 CDN host. Do **not** claim hosted PASS until Deploy/Restart loads `f52ee500…` and images return `image/*` **200**.
+Code landed in **`f52ee5003609b34a20631ec4af4f3fa5ceacde0b`**. Hosted V8 now serves a tip that includes that fix (`0c873840debe` at verification). Homepages emit `testing/platform/...` on the V8 CDN host and images return `image/*` **200/206**.
 
 ---
 
@@ -140,8 +139,8 @@ After fix (code):
 
 | Ref | SHA |
 |-----|-----|
-| Intended / `origin/V8` | `f52ee5003609b34a20631ec4af4f3fa5ceacde0b` |
-| Hosted BB/AC `/healthz` | `c568b817d054` — **does not match** |
+| Fix commit | `f52ee5003609b34a20631ec4af4f3fa5ceacde0b` |
+| Hosted BB/AC `/healthz` (2026-09-20 re-verify) | `0c873840debe` — includes media fix · `mediaWriteNamespace=testing-v8` · `platformLine=v8` |
 
 ---
 
@@ -149,10 +148,15 @@ After fix (code):
 
 | Surface | Result |
 |---------|--------|
-| Hosted BB/AC homepage images | Still **404** (old build) |
-| Hosted Julflona hero | Still **404** (old build) |
-| Direct V8 `/media/testing/platform/...` | **200** (storage OK) |
-| New upload disposable QA on hosted | **Not run** — blocked on deploy of `f52ee500` |
+| Hosted BB homepage logos/heroes/features | **200/206** `image/*`; browser `naturalWidth>0` |
+| Hosted AC homepage stitch heroes | **200/206** `image/*` (CDN host `blessboard.neuniversity.org`) |
+| Hosted Julflona hero + doctors | **200/206**; hero `naturalWidth=1376`; doctor photos load |
+| Julflona services icons | **200/206** `image/svg+xml` |
+| Direct V8 `/media/testing/platform/...` on BB + AC hosts | **200** |
+| Mistaken `/media/testing-v8/platform/...` | still **404** (expected — files live under `testing/`) |
+| HTML `testing-v8` soft-fill leaks on V8 pages | **0** |
+| V7 BB/AC homepage images | unchanged **200/206** under `testing/platform/` |
+| New V8 write namespace | preserved `testing-v8/` (unit coverage) |
 
 ---
 
@@ -177,10 +181,9 @@ After fix (code):
 
 ## Remaining blockers
 
-1. **Hostinger Deploy/Restart** V8 app on branch `V8` through commit **`f52ee500…`**.  
-2. Re-verify BB + AC homepages: `img` src must use `.../media/testing/platform/...` on `blessboard.neuniversity.org` (or absolute https CDN base), **200** `image/*`.  
-3. Re-check Julflona (or similar) miniwebsite hero.  
-4. Optional: disposable V8 upload → confirm write key under `testing-v8/` and public URL 200.
+None for shared website media delivery on hosted V8.
+
+Optional follow-up (not required for PASS): disposable authenticated V8 CMS upload → confirm write key under `testing-v8/` and public URL 200 after publish (covered by unit suite today).
 
 No change to `MEDIA_STORAGE_ROOT` is recommended.
 
@@ -188,6 +191,6 @@ No change to `MEDIA_STORAGE_ROOT` is recommended.
 
 ## Final status
 
-**`V8_SHARED_MEDIA_RESOLUTION_PARTIAL`**
+**`V8_SHARED_MEDIA_HOSTED_PASS`**
 
-Reason: root cause fixed in code with full automated PASS; hosted still on prior SHA so images do not yet render on live V8 sites.
+Reason: shared presentation reads `testing/platform/` marketing keys and uses the V8 CDN host; Hostinger mount serves existing files; browser + HTTP verification green on BB and AC V8; V7 unchanged; write namespace remains `testing-v8/` for new uploads.
