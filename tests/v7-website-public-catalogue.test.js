@@ -972,4 +972,230 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
       .redirects(0);
     assert.equal(denied.status, 403);
   });
+
+  it("lets website editors create, edit, unpublish, and delete public doctor profiles without login", async () => {
+    requireDb();
+    const clinic = await provisionClinic();
+    const app = makeApp();
+    const cookie = await sessionCookie(clinic.identityId, clinic.organizationId);
+    const name = `Dr Managed ${clinic.stamp}`;
+    const edited = `Dr Edited ${clinic.stamp}`;
+
+    const newPage = await request(app)
+      .get("/app/settings/website/catalogue/doctors/new")
+      .set("Cookie", cookie);
+    assert.equal(newPage.status, 200, newPage.text.slice(0, 300));
+    assert.match(newPage.text, /Add doctor profile/);
+    assert.match(newPage.text, /does not create a staff login/);
+
+    const created = await request(app)
+      .post("/app/settings/website/catalogue/doctors/new")
+      .set("Cookie", mergeCookies(cookie, newPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(newPage),
+        publicDisplayName: name,
+        specialty: "Cardiologist",
+        biography: "Public biography for website visitors.",
+        publicWebsiteVisible: "1",
+      })
+      .redirects(0);
+    assert.equal(created.status, 303, created.text.slice(0, 400));
+
+    const row = await pool.query(
+      `SELECT id, platform_identity_id, public_display_name, public_title, public_bio,
+              public_profile_key, public_profile_enabled, status
+         FROM activeclinic.staff_members
+        WHERE organization_id = $1 AND public_display_name = $2
+        LIMIT 1`,
+      [clinic.organizationId, name]
+    );
+    assert.equal(row.rows.length, 1);
+    assert.equal(row.rows[0].platform_identity_id, null);
+    assert.equal(row.rows[0].public_profile_enabled, true);
+    assert.equal(row.rows[0].public_title, "Cardiologist");
+    assert.equal(row.rows[0].public_bio, "Public biography for website visitors.");
+    assert.ok(row.rows[0].public_profile_key);
+
+    const catalogue = await request(app)
+      .get("/app/settings/website/catalogue?tab=doctors")
+      .set("Cookie", cookie);
+    assert.match(catalogue.text, re(name));
+    assert.match(catalogue.text, /Add doctor profile/);
+    assert.match(catalogue.text, re(`/app/settings/website/catalogue/doctors/${row.rows[0].id}/edit`));
+
+    const editPage = await request(app)
+      .get(`/app/settings/website/catalogue/doctors/${row.rows[0].id}/edit`)
+      .set("Cookie", cookie);
+    assert.equal(editPage.status, 200);
+    assert.match(editPage.text, /Edit doctor profile/);
+
+    const updated = await request(app)
+      .post(`/app/settings/website/catalogue/doctors/${row.rows[0].id}/edit`)
+      .set("Cookie", mergeCookies(cookie, editPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(editPage),
+        publicDisplayName: edited,
+        specialty: "Pediatrician",
+        biography: "Updated biography.",
+        publicWebsiteVisible: "1",
+        status: "active",
+      })
+      .redirects(0);
+    assert.equal(updated.status, 303);
+
+    const afterEdit = await pool.query(
+      `SELECT public_display_name, public_title, public_bio, public_profile_enabled, platform_identity_id
+         FROM activeclinic.staff_members WHERE id = $1`,
+      [row.rows[0].id]
+    );
+    assert.equal(afterEdit.rows[0].public_display_name, edited);
+    assert.equal(afterEdit.rows[0].public_title, "Pediatrician");
+    assert.equal(afterEdit.rows[0].public_bio, "Updated biography.");
+    assert.equal(afterEdit.rows[0].platform_identity_id, null);
+
+    await publishWebsite(clinic);
+    const publicPage = await request(app).get(`/clinics/${clinic.slug}/doctors`);
+    assert.match(publicPage.text, re(edited));
+    const detail = await request(app).get(
+      `/clinics/${clinic.slug}/doctors/${row.rows[0].public_profile_key}`
+    );
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, re(edited));
+    assert.match(detail.text, /Updated biography/);
+
+    const unpublished = await request(app)
+      .post(`/app/settings/website/catalogue/doctors/${row.rows[0].id}/edit`)
+      .set("Cookie", mergeCookies(cookie, editPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(editPage),
+        publicDisplayName: edited,
+        specialty: "Pediatrician",
+        biography: "Updated biography.",
+        status: "active",
+      })
+      .redirects(0);
+    assert.equal(unpublished.status, 303);
+    const afterHide = await pool.query(
+      `SELECT public_profile_enabled FROM activeclinic.staff_members WHERE id = $1`,
+      [row.rows[0].id]
+    );
+    assert.equal(afterHide.rows[0].public_profile_enabled, false);
+
+    await publishWebsite(clinic);
+    const publicHidden = await request(app).get(`/clinics/${clinic.slug}/doctors`);
+    assert.doesNotMatch(publicHidden.text, re(edited));
+
+    const deleted = await request(app)
+      .post(`/app/settings/website/catalogue/doctors/${row.rows[0].id}/delete`)
+      .set("Cookie", mergeCookies(cookie, editPage))
+      .type("form")
+      .send({ [CSRF_FIELD]: extractCsrf(editPage) })
+      .redirects(0);
+    assert.equal(deleted.status, 303);
+    const afterDelete = await pool.query(
+      `SELECT status, public_profile_enabled FROM activeclinic.staff_members WHERE id = $1`,
+      [row.rows[0].id]
+    );
+    assert.equal(afterDelete.rows[0].status, "archived");
+    assert.equal(afterDelete.rows[0].public_profile_enabled, false);
+
+    const other = await provisionClinic();
+    const otherCookie = await sessionCookie(other.identityId, other.organizationId);
+    const otherNewPage = await request(app)
+      .get("/app/settings/website/catalogue/doctors/new")
+      .set("Cookie", otherCookie);
+    const steal = await request(app)
+      .post("/app/settings/website/catalogue/doctors/new")
+      .set("Cookie", mergeCookies(otherCookie, otherNewPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(otherNewPage),
+        publicDisplayName: `Dr Steal ${other.stamp}`,
+        specialty: "GP",
+        publicWebsiteVisible: "1",
+      })
+      .redirects(0);
+    assert.equal(steal.status, 303, steal.text.slice(0, 400));
+    const stealRow = await pool.query(
+      `SELECT id FROM activeclinic.staff_members
+        WHERE organization_id = $1 AND public_display_name = $2 LIMIT 1`,
+      [other.organizationId, `Dr Steal ${other.stamp}`]
+    );
+    assert.equal(stealRow.rows.length, 1);
+    const crossEdit = await request(app)
+      .post(`/app/settings/website/catalogue/doctors/${stealRow.rows[0].id}/edit`)
+      .set("Cookie", mergeCookies(cookie, editPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(editPage),
+        publicDisplayName: "Should Not Save",
+        specialty: "X",
+        publicWebsiteVisible: "1",
+      })
+      .redirects(0);
+    assert.equal(crossEdit.status, 404);
+
+    const recCookie = await (async () => {
+      const hcoId = await resolveHcoId(clinic);
+      const facility = await pool.query(
+        `SELECT id FROM activeclinic.facilities WHERE organization_id = $1 LIMIT 1`,
+        [clinic.organizationId]
+      );
+      const phone = nextPhone();
+      const identity = await createPlatformIdentity(pool, {
+        primaryEmail: `rec-doc-${clinic.stamp}@example.invalid`,
+        primaryPhone: phone,
+        phoneNormalized: phone,
+        phoneVerifiedAt: new Date().toISOString(),
+      });
+      assert.equal(identity.ok, true);
+      await setPlatformIdentityPassword(pool, {
+        identityId: identity.identity.id,
+        password: PASSWORD,
+      });
+      const staff = await createStaffMember(pool, {
+        organizationId: clinic.organizationId,
+        healthcareOrganizationId: hcoId,
+        firstName: "Rec",
+        lastName: "Doc",
+        employmentType: "permanent",
+        status: "active",
+        phone,
+        platformIdentityId: identity.identity.id,
+      });
+      assert.equal(staff.ok, true);
+      await assignStaffToFacility(pool, {
+        organizationId: clinic.organizationId,
+        staffMemberId: staff.staffMember.id,
+        facilityId: facility.rows[0].id,
+        isPrimary: true,
+      });
+      const role = await assignStaffRole(pool, {
+        organizationId: clinic.organizationId,
+        staffMemberId: staff.staffMember.id,
+        roleKey: RECEPTIONIST,
+        scopeType: "facility",
+        facilityId: facility.rows[0].id,
+        assignmentOrigin: "system",
+      });
+      assert.equal(role.ok, true);
+      return sessionCookie(identity.identity.id, clinic.organizationId);
+    })();
+
+    const denied = await request(app)
+      .post("/app/settings/website/catalogue/doctors/new")
+      .set("Cookie", mergeCookies(recCookie, newPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(newPage),
+        publicDisplayName: `Denied Doc ${clinic.stamp}`,
+        specialty: "GP",
+        publicWebsiteVisible: "1",
+      })
+      .redirects(0);
+    assert.equal(denied.status, 403);
+  });
 });

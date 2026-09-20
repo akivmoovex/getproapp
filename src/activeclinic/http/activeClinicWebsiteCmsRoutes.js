@@ -75,10 +75,11 @@ function slugErrorMessage(code) {
   if (code === "already_exists") return "That content is already in the library or already used on that page.";
   if (code === "record_not_found") return "That clinic record was not found. Choose an existing doctor, service, or location.";
   if (code === "inactive") return "Inactive staff and services cannot appear on the website.";
-  if (code === "needs_profile") return "This doctor needs a name in clinic records before they can appear on the website.";
+  if (code === "needs_profile") return "This doctor needs a public name before they can appear on the website.";
   if (code === "validation_failed") return "Check those details and try again. Use a full website address starting with https://.";
-  if (code === "conflict") return "A service with that key already exists. Choose another name or key.";
-  if (code === "invalid_input") return "Check the service details and try again.";
+  if (code === "conflict") return "A profile or service with that key already exists. Choose another name or key.";
+  if (code === "invalid_input") return "Check the details and try again.";
+  if (code === "has_login") return "This staff member has a login. Remove only the public profile, or manage the account under Staff.";
   return "Unable to save website changes.";
 }
 
@@ -1377,6 +1378,256 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
       return next(err);
     }
   }
+
+  app.get(
+    "/app/settings/website/catalogue/doctors/new",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    async (req, res, next) => {
+      try {
+        return renderShell(req, res, {
+          content: "app/website-cms-catalogue-doctor-form.ejs",
+          cmsActive: "catalogue",
+          pageHeader: {
+            title: "Add doctor profile",
+            description: "Create a public professional profile for the clinic website. No staff login is created.",
+          },
+          breadcrumbs: breadcrumbs([
+            { label: "Public catalogue", href: "/app/settings/website/catalogue?tab=doctors" },
+            { label: "Add doctor profile" },
+          ]),
+          pageData: {
+            cms: {
+              mode: "create",
+              doctor: {
+                name: "",
+                staffKey: "",
+                title: "",
+                bio: "",
+                inactive: false,
+                publicProfileEnabled: true,
+                websiteVisible: true,
+                hasLogin: false,
+                image: { mediaId: "", src: "", alt: "" },
+              },
+              mediaListUrl: `/clinics/${cmsInput(req).clinicKey}/website/media`,
+              error: "",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/website/catalogue/doctors/new",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return deny(res, 403, "Invalid request", "Reload the page and try again.");
+        }
+        const body = req.body || {};
+        const created = await catalogueService.createCatalogueDoctor(getPool(), {
+          ...cmsInput(req),
+          publicDisplayName: body.publicDisplayName || body.displayName || body.name,
+          specialty: body.specialty || body.publicTitle || body.title,
+          biography: body.biography || body.publicBio || body.bio,
+          profileKey: body.profileKey || body.staffKey,
+          status: body.status === "inactive" ? "inactive" : "active",
+          publicWebsiteVisible: body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+          imageMediaId: body.imageMediaId,
+          imageSrc: body.imageSrc,
+          imageAlt: body.imageAlt,
+        });
+        if (!created.ok) {
+          return renderShell(req, res, {
+            content: "app/website-cms-catalogue-doctor-form.ejs",
+            cmsActive: "catalogue",
+            pageHeader: {
+              title: "Add doctor profile",
+              description: "Create a public professional profile for the clinic website. No staff login is created.",
+            },
+            breadcrumbs: breadcrumbs([
+              { label: "Public catalogue", href: "/app/settings/website/catalogue?tab=doctors" },
+              { label: "Add doctor profile" },
+            ]),
+            pageData: {
+              cms: {
+                mode: "create",
+                doctor: {
+                  name: String(body.publicDisplayName || body.displayName || body.name || ""),
+                  staffKey: String(body.profileKey || body.staffKey || ""),
+                  title: String(body.specialty || body.publicTitle || body.title || ""),
+                  bio: String(body.biography || body.publicBio || body.bio || ""),
+                  inactive: body.status === "inactive",
+                  publicProfileEnabled:
+                    body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+                  websiteVisible:
+                    body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+                  hasLogin: false,
+                  image: {
+                    mediaId: String(body.imageMediaId || ""),
+                    src: String(body.imageSrc || ""),
+                    alt: String(body.imageAlt || ""),
+                  },
+                },
+                mediaListUrl: `/clinics/${cmsInput(req).clinicKey}/website/media`,
+                error: slugErrorMessage(created.code),
+              },
+            },
+          });
+        }
+        return res.redirect(303, `/app/settings/website/catalogue?tab=doctors&saved=1`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.get(
+    "/app/settings/website/catalogue/doctors/:staffId/edit",
+    requireAuth,
+    requirePermission(viewOrEdit),
+    async (req, res, next) => {
+      try {
+        const loaded = await catalogueService.getCatalogueDoctor(getPool(), {
+          ...cmsInput(req),
+          staffId: req.params.staffId,
+        });
+        if (!loaded.ok) {
+          const status = loaded.code === "forbidden" ? 403 : 404;
+          return deny(res, status, "Edit doctor profile", slugErrorMessage(loaded.code));
+        }
+        return renderShell(req, res, {
+          content: "app/website-cms-catalogue-doctor-form.ejs",
+          cmsActive: "catalogue",
+          pageHeader: {
+            title: "Edit doctor profile",
+            description: "Update the public professional profile shown on the clinic website.",
+          },
+          breadcrumbs: breadcrumbs([
+            { label: "Public catalogue", href: "/app/settings/website/catalogue?tab=doctors" },
+            { label: loaded.doctor.name || "Edit profile" },
+          ]),
+          pageData: {
+            cms: {
+              mode: "edit",
+              doctor: loaded.doctor,
+              canEdit: loaded.canEdit === true,
+              mediaListUrl: `/clinics/${cmsInput(req).clinicKey}/website/media`,
+              error: "",
+            },
+          },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/website/catalogue/doctors/:staffId/edit",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return deny(res, 403, "Invalid request", "Reload the page and try again.");
+        }
+        const body = req.body || {};
+        const updated = await catalogueService.updateCatalogueDoctor(getPool(), {
+          ...cmsInput(req),
+          staffId: req.params.staffId,
+          publicDisplayName: body.publicDisplayName || body.displayName || body.name,
+          specialty: body.specialty || body.publicTitle || body.title,
+          biography: body.biography || body.publicBio || body.bio,
+          status: body.status === "inactive" ? "inactive" : "active",
+          publicWebsiteVisible: body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+          imageMediaId: body.imageMediaId,
+          imageSrc: body.imageSrc,
+          imageAlt: body.imageAlt,
+        });
+        if (!updated.ok) {
+          const status = updated.code === "forbidden" ? 403 : updated.code === "not_found" ? 404 : 400;
+          if (status === 403 || status === 404) {
+            return deny(res, status, "Edit doctor profile", slugErrorMessage(updated.code));
+          }
+          const loaded = await catalogueService.getCatalogueDoctor(getPool(), {
+            ...cmsInput(req),
+            staffId: req.params.staffId,
+          });
+          return renderShell(req, res, {
+            content: "app/website-cms-catalogue-doctor-form.ejs",
+            cmsActive: "catalogue",
+            pageHeader: {
+              title: "Edit doctor profile",
+              description: "Update the public professional profile shown on the clinic website.",
+            },
+            breadcrumbs: breadcrumbs([
+              { label: "Public catalogue", href: "/app/settings/website/catalogue?tab=doctors" },
+              { label: "Edit profile" },
+            ]),
+            pageData: {
+              cms: {
+                mode: "edit",
+                doctor: {
+                  ...(loaded.ok ? loaded.doctor : {}),
+                  id: req.params.staffId,
+                  name: String(body.publicDisplayName || body.displayName || body.name || ""),
+                  title: String(body.specialty || body.publicTitle || body.title || ""),
+                  bio: String(body.biography || body.publicBio || body.bio || ""),
+                  inactive: body.status === "inactive",
+                  publicProfileEnabled:
+                    body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+                  websiteVisible:
+                    body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+                  image: {
+                    mediaId: String(body.imageMediaId || ""),
+                    src: String(body.imageSrc || ""),
+                    alt: String(body.imageAlt || ""),
+                  },
+                },
+                canEdit: true,
+                mediaListUrl: `/clinics/${cmsInput(req).clinicKey}/website/media`,
+                error: slugErrorMessage(updated.code),
+              },
+            },
+          });
+        }
+        return res.redirect(303, `/app/settings/website/catalogue?tab=doctors&saved=1`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/settings/website/catalogue/doctors/:staffId/delete",
+    requireAuth,
+    requirePermission(PERMISSIONS.EDIT),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return deny(res, 403, "Invalid request", "Reload the page and try again.");
+        }
+        const deleted = await catalogueService.deleteCatalogueDoctor(getPool(), {
+          ...cmsInput(req),
+          staffId: req.params.staffId,
+        });
+        if (!deleted.ok) {
+          const status = deleted.code === "forbidden" ? 403 : deleted.code === "not_found" ? 404 : 400;
+          return deny(res, status, "Delete doctor profile", slugErrorMessage(deleted.code));
+        }
+        return res.redirect(303, `/app/settings/website/catalogue?tab=doctors&saved=1`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
 
   app.post(
     "/app/settings/website/catalogue/doctors/:staffId",

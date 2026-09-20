@@ -4,12 +4,15 @@
  * Website Management public catalogue (doctors and services).
  * Toggles canonical public-profile / website-visible flags and CMS overlays.
  * Service create/edit writes the canonical appointment_service_types catalogue.
+ * Doctor create/edit writes public profile fields on staff_members without granting login.
  */
 
+const crypto = require("crypto");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const libraryService = require("./clinicWebsiteLibraryService");
 const { LIBRARY_SOURCES, boolValue } = require("./clinicWebsiteCms");
 const appointmentRepo = require("../repositories/appointmentRepository");
+const { createStaffMember } = require("../services/activeClinicStaffService");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -19,11 +22,13 @@ const RESULT = Object.freeze({
   INACTIVE: "inactive",
   NEEDS_PROFILE: "needs_profile",
   CONFLICT: "conflict",
+  HAS_LOGIN: "has_login",
 });
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const SERVICE_KEY_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+const PROFILE_KEY_RE = /^[a-z][a-z0-9_-]{0,63}$/;
 
 function granted(input) {
   return Array.isArray(input && input.grantedPermissions) ? input.grantedPermissions : [];
@@ -95,7 +100,7 @@ async function listCatalogueStaff(db, input) {
   const result = await db.query(
     `SELECT s.id, s.status, s.display_name, s.first_name, s.last_name, s.job_title,
             s.public_display_name, s.public_title, s.public_bio, s.public_profile_key,
-            s.public_profile_enabled
+            s.public_profile_enabled, s.platform_identity_id
        FROM activeclinic.staff_members s
       WHERE s.organization_id = $1
         AND s.healthcare_organization_id = $2
@@ -125,17 +130,38 @@ async function listCatalogueServices(db, input) {
   return result.rows;
 }
 
+function splitPublicName(name) {
+  const cleaned = String(name || "")
+    .trim()
+    .replace(/^(dr|doctor)\.?\s+/i, "");
+  const parts = cleaned.split(/\s+/).filter(Boolean);
+  if (!parts.length) return { firstName: null, lastName: null };
+  if (parts.length === 1) return { firstName: parts[0].slice(0, 100), lastName: parts[0].slice(0, 100) };
+  return {
+    firstName: parts[0].slice(0, 100),
+    lastName: parts.slice(1).join(" ").slice(0, 100),
+  };
+}
+
+function syntheticPublicProfilePhone() {
+  const n = crypto.randomBytes(4).readUInt32BE(0) % 100000000;
+  return `+2609${String(n).padStart(8, "0")}`;
+}
+
 function presentDoctor(row, overlay) {
   const name = String(row.public_display_name || row.display_name || "").trim();
   const active = row.status === "active";
   const overlayHidden = overlay && overlay.visible === false;
   const websiteVisible = row.public_profile_enabled === true && !overlayHidden;
   const needsProfile = !name;
+  const image = overlay && overlay.image ? overlay.image : null;
   return {
     id: row.id,
     kind: "doctor",
     name: name || `${row.first_name || ""} ${row.last_name || ""}`.trim() || "Staff member",
     subtitle: row.public_title || row.job_title || "Staff",
+    title: row.public_title || row.job_title || "",
+    bio: row.public_bio || "",
     staffKey: row.public_profile_key || "",
     operationallyAvailable: active,
     websiteVisible,
@@ -147,7 +173,15 @@ function presentDoctor(row, overlay) {
     canHide: websiteVisible,
     canFeature: websiteVisible,
     publicProfileEnabled: row.public_profile_enabled === true,
-    editHref: overlay && overlay.stored ? `/app/settings/website/library/${overlay.id}` : "",
+    hasLogin: Boolean(row.platform_identity_id),
+    image: image
+      ? {
+          mediaId: image.mediaId || "",
+          src: image.src || "",
+          alt: image.alt || "",
+        }
+      : { mediaId: "", src: "", alt: "" },
+    editHref: `/app/settings/website/catalogue/doctors/${row.id}/edit`,
     overlayId: overlay && overlay.stored ? overlay.id : "",
   };
 }
@@ -211,7 +245,8 @@ async function loadStaffRow(db, input, staffId) {
   const result = await db.query(
     `SELECT s.id, s.status, s.display_name, s.first_name, s.last_name, s.job_title,
             s.public_display_name, s.public_title, s.public_bio, s.public_profile_key,
-            s.public_profile_enabled, s.organization_id, s.healthcare_organization_id
+            s.public_profile_enabled, s.organization_id, s.healthcare_organization_id,
+            s.platform_identity_id
        FROM activeclinic.staff_members s
       WHERE s.id = $1
         AND s.organization_id = $2
@@ -511,6 +546,286 @@ async function updateCatalogueService(db, input) {
   };
 }
 
+async function syncDoctorOverlay(db, input, row, opts) {
+  const key = row.public_profile_key;
+  if (!key) return { ok: true };
+  const overlayInput = {
+    ...input,
+    type: "doctor",
+    operationalKey: key,
+    title: row.public_display_name || row.display_name,
+    summary: row.public_title || row.job_title || "",
+    body: row.public_bio || "",
+    visible: opts && opts.visible != null ? opts.visible : row.public_profile_enabled === true,
+  };
+  if (opts && Object.prototype.hasOwnProperty.call(opts, "imageMediaId")) {
+    overlayInput.imageMediaId = opts.imageMediaId;
+    overlayInput.imageSrc = opts.imageSrc;
+    overlayInput.imageAlt = opts.imageAlt;
+  }
+  if (opts && opts.featured != null) overlayInput.featured = opts.featured;
+  return libraryService.upsertOperationalOverlay(db, overlayInput);
+}
+
+async function applyPublicProfileFields(db, input, staffId, fields) {
+  const result = await db.query(
+    `UPDATE activeclinic.staff_members
+        SET public_display_name = $4,
+            public_title = $5,
+            public_bio = $6,
+            public_profile_key = $7,
+            public_profile_enabled = $8,
+            job_title = COALESCE($9, job_title),
+            display_name = COALESCE($10, display_name),
+            status = COALESCE($11, status),
+            updated_at = now()
+      WHERE id = $1
+        AND organization_id = $2
+        AND healthcare_organization_id = $3
+      RETURNING id, status, display_name, first_name, last_name, job_title,
+                public_display_name, public_title, public_bio, public_profile_key,
+                public_profile_enabled, organization_id, healthcare_organization_id,
+                platform_identity_id`,
+    [
+      staffId,
+      input.organizationId,
+      input.healthcareOrganizationId,
+      fields.publicDisplayName,
+      fields.publicTitle,
+      fields.publicBio,
+      fields.publicProfileKey,
+      fields.publicProfileEnabled === true,
+      fields.jobTitle || null,
+      fields.displayName || null,
+      fields.status || null,
+    ]
+  );
+  return result.rows[0] || null;
+}
+
+async function getCatalogueDoctor(db, input) {
+  const view =
+    hasWebsitePermission(granted(input), PERMISSIONS.VIEW) ||
+    hasWebsitePermission(granted(input), PERMISSIONS.EDIT);
+  if (!view) return { ok: false, code: RESULT.FORBIDDEN };
+  const staffId = String((input && input.staffId) || "");
+  if (!UUID_RE.test(staffId)) return { ok: false, code: RESULT.INVALID_INPUT };
+  const row = await loadStaffRow(db, input, staffId);
+  if (!row || row.status === "archived") return { ok: false, code: RESULT.NOT_FOUND };
+  const loaded = await libraryService.loadLibrary(db, input);
+  if (!loaded.ok) return loaded;
+  const overlay = overlayFor(loaded.items, "doctor", row.public_profile_key);
+  return {
+    ok: true,
+    doctor: presentDoctor(row, overlay),
+    canEdit: hasWebsitePermission(granted(input), PERMISSIONS.EDIT),
+  };
+}
+
+async function createCatalogueDoctor(db, input) {
+  const allowed = requireEdit(input);
+  if (!allowed.ok) return allowed;
+
+  const publicDisplayName = String((input && input.publicDisplayName) || input.displayName || "").trim();
+  if (!publicDisplayName || publicDisplayName.length > 200) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  const publicTitle = String((input && (input.publicTitle || input.specialty || input.title)) || "")
+    .trim()
+    .slice(0, 120) || null;
+  const publicBio = String((input && (input.publicBio || input.biography || input.bio)) || "")
+    .trim()
+    .slice(0, 2000) || null;
+  const status = String((input && input.status) || "active").trim() === "inactive" ? "inactive" : "active";
+  const publicWebsiteVisible = boolValue(input && input.publicWebsiteVisible, true) === true;
+  const requestedRaw = String((input && (input.profileKey || input.staffKey || input.publicProfileKey)) || "").trim();
+  const requestedKey = requestedRaw ? slugKey(requestedRaw) : "";
+  if (requestedRaw && !PROFILE_KEY_RE.test(requestedKey)) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+
+  const names = splitPublicName(publicDisplayName);
+  const firstName = String((input && input.firstName) || names.firstName || "").trim().slice(0, 100);
+  const lastName = String((input && input.lastName) || names.lastName || "").trim().slice(0, 100);
+  if (!firstName || !lastName) return { ok: false, code: RESULT.INVALID_INPUT };
+
+  // Never attach a platform identity — public profiles do not grant login.
+  const created = await createStaffMember(db, {
+    organizationId: input.organizationId,
+    healthcareOrganizationId: input.healthcareOrganizationId,
+    firstName,
+    lastName,
+    displayName: publicDisplayName,
+    jobTitle: publicTitle || "Clinician",
+    employmentType: "visiting",
+    status,
+    phone: syntheticPublicProfilePhone(),
+    email: null,
+  });
+  if (!created.ok) {
+    if (created.code === RESULT.FORBIDDEN || created.code === "activeclinic_product_not_enabled") {
+      return { ok: false, code: RESULT.FORBIDDEN };
+    }
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+
+  const staffId = created.staffMember.id;
+  let profileKey = requestedKey || (await uniqueProfileKey(db, input.healthcareOrganizationId, staffId, publicDisplayName));
+  if (requestedKey) {
+    const clash = await db.query(
+      `SELECT id FROM activeclinic.staff_members
+        WHERE healthcare_organization_id = $1 AND public_profile_key = $2 AND id <> $3
+        LIMIT 1`,
+      [input.healthcareOrganizationId, profileKey, staffId]
+    );
+    if (clash.rows.length) {
+      await db.query(
+        `UPDATE activeclinic.staff_members SET status = 'archived', updated_at = now()
+          WHERE id = $1 AND organization_id = $2`,
+        [staffId, input.organizationId]
+      );
+      return { ok: false, code: RESULT.CONFLICT };
+    }
+  }
+
+  const enabled = publicWebsiteVisible && status === "active";
+  const row = await applyPublicProfileFields(db, input, staffId, {
+    publicDisplayName,
+    publicTitle,
+    publicBio,
+    publicProfileKey: profileKey,
+    publicProfileEnabled: enabled,
+    jobTitle: publicTitle || "Clinician",
+    displayName: publicDisplayName,
+    status,
+  });
+  if (!row) return { ok: false, code: RESULT.NOT_FOUND };
+
+  const overlay = await syncDoctorOverlay(db, input, row, {
+    visible: enabled,
+    imageMediaId: input.imageMediaId,
+    imageSrc: input.imageSrc,
+    imageAlt: input.imageAlt,
+  });
+  if (!overlay.ok) return overlay;
+
+  return {
+    ok: true,
+    staffId: row.id,
+    staffKey: row.public_profile_key,
+    doctor: presentDoctor(row, null),
+  };
+}
+
+async function updateCatalogueDoctor(db, input) {
+  const allowed = requireEdit(input);
+  if (!allowed.ok) return allowed;
+
+  const staffId = String((input && input.staffId) || "");
+  if (!UUID_RE.test(staffId)) return { ok: false, code: RESULT.INVALID_INPUT };
+  const existing = await loadStaffRow(db, input, staffId);
+  if (!existing || existing.status === "archived") return { ok: false, code: RESULT.NOT_FOUND };
+
+  const publicDisplayName = String(
+    (input && input.publicDisplayName) || input.displayName || existing.public_display_name || existing.display_name || ""
+  ).trim();
+  if (!publicDisplayName || publicDisplayName.length > 200) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  const hasTitle =
+    Object.prototype.hasOwnProperty.call(input || {}, "publicTitle") ||
+    Object.prototype.hasOwnProperty.call(input || {}, "specialty") ||
+    Object.prototype.hasOwnProperty.call(input || {}, "title");
+  const publicTitle = hasTitle
+    ? String((input.publicTitle || input.specialty || input.title || "")).trim().slice(0, 120) || null
+    : existing.public_title;
+  const hasBio =
+    Object.prototype.hasOwnProperty.call(input || {}, "publicBio") ||
+    Object.prototype.hasOwnProperty.call(input || {}, "biography") ||
+    Object.prototype.hasOwnProperty.call(input || {}, "bio");
+  const publicBio = hasBio
+    ? String((input.publicBio || input.biography || input.bio || "")).trim().slice(0, 2000) || null
+    : existing.public_bio;
+  const statusRaw = String((input && input.status) || existing.status || "active").trim();
+  const status = statusRaw === "inactive" ? "inactive" : statusRaw === "active" ? "active" : existing.status;
+  if (status !== "active" && status !== "inactive") {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  const publicWebsiteVisible = boolValue(
+    input && input.publicWebsiteVisible,
+    existing.public_profile_enabled === true
+  );
+  const enabled = publicWebsiteVisible === true && status === "active";
+  const profileKey =
+    existing.public_profile_key ||
+    (await uniqueProfileKey(db, existing.healthcare_organization_id, existing.id, publicDisplayName));
+
+  const row = await applyPublicProfileFields(db, input, staffId, {
+    publicDisplayName,
+    publicTitle,
+    publicBio,
+    publicProfileKey: profileKey,
+    publicProfileEnabled: enabled,
+    jobTitle: publicTitle || existing.job_title,
+    displayName: publicDisplayName,
+    status,
+  });
+  if (!row) return { ok: false, code: RESULT.NOT_FOUND };
+
+  const overlay = await syncDoctorOverlay(db, input, row, {
+    visible: enabled,
+    imageMediaId: input.imageMediaId,
+    imageSrc: input.imageSrc,
+    imageAlt: input.imageAlt,
+  });
+  if (!overlay.ok) return overlay;
+
+  return {
+    ok: true,
+    staffId: row.id,
+    staffKey: row.public_profile_key,
+    doctor: presentDoctor(row, null),
+  };
+}
+
+async function deleteCatalogueDoctor(db, input) {
+  const allowed = requireEdit(input);
+  if (!allowed.ok) return allowed;
+
+  const staffId = String((input && input.staffId) || "");
+  if (!UUID_RE.test(staffId)) return { ok: false, code: RESULT.INVALID_INPUT };
+  const existing = await loadStaffRow(db, input, staffId);
+  if (!existing || existing.status === "archived") return { ok: false, code: RESULT.NOT_FOUND };
+
+  // Authenticated staff accounts stay; only clear/unpublish the public profile.
+  if (existing.platform_identity_id) {
+    const row = await applyPublicProfileFields(db, input, staffId, {
+      publicDisplayName: existing.public_display_name || existing.display_name,
+      publicTitle: existing.public_title,
+      publicBio: existing.public_bio,
+      publicProfileKey: existing.public_profile_key,
+      publicProfileEnabled: false,
+    });
+    if (row && row.public_profile_key) {
+      await syncDoctorOverlay(db, input, row, { visible: false });
+    }
+    return { ok: true, staffId, unpublished: true, archived: false };
+  }
+
+  if (existing.public_profile_key) {
+    await syncDoctorOverlay(db, input, existing, { visible: false });
+  }
+  await db.query(
+    `UPDATE activeclinic.staff_members
+        SET status = 'archived',
+            public_profile_enabled = false,
+            updated_at = now()
+      WHERE id = $1 AND organization_id = $2 AND healthcare_organization_id = $3`,
+    [staffId, input.organizationId, input.healthcareOrganizationId]
+  );
+  return { ok: true, staffId, unpublished: true, archived: true };
+}
+
 async function setCatalogueFeatured(db, input) {
   const allowed = requireEdit(input);
   if (!allowed.ok) return allowed;
@@ -547,6 +862,10 @@ module.exports = {
   getCatalogueService,
   createCatalogueService,
   updateCatalogueService,
+  getCatalogueDoctor,
+  createCatalogueDoctor,
+  updateCatalogueDoctor,
+  deleteCatalogueDoctor,
   setDoctorWebsiteVisibility,
   setServiceWebsiteVisibility,
   setCatalogueFeatured,

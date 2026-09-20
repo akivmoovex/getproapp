@@ -1,0 +1,87 @@
+<%
+  var cms = (pageData && pageData.cms) || {};
+  var doctor = cms.doctor || {};
+  var mode = cms.mode === "edit" ? "edit" : "create";
+  var canEdit = mode === "create" || cms.canEdit === true;
+  var action = mode === "edit"
+    ? ("/app/settings/website/catalogue/doctors/" + encodeURIComponent(doctor.id || "") + "/edit")
+    : "/app/settings/website/catalogue/doctors/new";
+  var image = doctor.image || {};
+%>
+<section class="ac-mw" data-ac-page-section="website-catalogue-doctor-form" data-ac-mw-screen="catalogue-doctor-form">
+  <%- include('../partials/website-cms-nav') %>
+  <div class="ac-mw-head">
+    <div>
+      <h2><%= mode === "edit" ? "Edit doctor profile" : "Add doctor profile" %></h2>
+      <p class="ac-mw-muted">
+        Public professional profiles appear on your clinic website.
+        <% if (mode === "create") { %>Creating a profile here does not create a staff login.<% } %>
+        <% if (mode === "edit" && doctor.hasLogin) { %>This person also has a staff login; editing here only changes the public website profile.<% } %>
+      </p>
+    </div>
+  </div>
+  <% if (cms.error) { %><p class="ac-mw-error" role="alert"><%= cms.error %></p><% } %>
+  <form class="ac-mw-form" method="post" action="<%= action %>" data-ac-catalogue-doctor-form="1">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <label>
+      Public name
+      <input type="text" name="publicDisplayName" required maxlength="200" value="<%= doctor.name || "" %>" <%= canEdit ? "" : "readonly" %>/>
+    </label>
+    <% if (mode === "create") { %>
+    <label>
+      Profile key <span class="ac-mw-muted">(optional)</span>
+      <input type="text" name="profileKey" maxlength="64" pattern="[a-z][a-z0-9_-]{0,63}" title="Lowercase letter first, then letters, numbers, hyphens, or underscores" placeholder="auto-generated-from-name" value="<%= doctor.staffKey || "" %>"/>
+    </label>
+    <% } else { %>
+    <p class="ac-mw-muted">Profile key: <code><%= doctor.staffKey || "" %></code></p>
+    <% } %>
+    <label>
+      Title / specialty
+      <input type="text" name="specialty" maxlength="120" value="<%= doctor.title || doctor.subtitle || "" %>" <%= canEdit ? "" : "readonly" %> placeholder="e.g. Pediatrician"/>
+    </label>
+    <label>
+      Biography
+      <textarea name="biography" rows="5" maxlength="2000" <%= canEdit ? "" : "readonly" %>><%= doctor.bio || "" %></textarea>
+    </label>
+    <p class="ac-mw-form__legend">Photo (optional)</p>
+    <%- include('../partials/website-cms-media-field', {
+      mediaField: {
+        idName: "imageMediaId",
+        srcName: "imageSrc",
+        altName: "imageAlt",
+        altLabel: "Photo description",
+        mediaId: image.mediaId || "",
+        src: image.src || "",
+        alt: image.alt || ""
+      }
+    }) %>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="status" value="inactive" <%= doctor.inactive ? "checked" : "" %> <%= canEdit ? "" : "disabled" %>/>
+      Disabled (hidden from website)
+    </label>
+    <label class="ac-mw-check">
+      <input type="checkbox" name="publicWebsiteVisible" value="1" <%= doctor.publicProfileEnabled || doctor.websiteVisible ? "checked" : "" %> <%= canEdit ? "" : "disabled" %>/>
+      Show on public website
+    </label>
+    <div class="ac-mw-actions">
+      <a class="ac-mw-btn" href="/app/settings/website/catalogue?tab=doctors">Cancel</a>
+      <% if (canEdit) { %>
+      <button type="submit" class="ac-mw-btn ac-mw-btn--primary"><%= mode === "edit" ? "Save profile" : "Add profile" %></button>
+      <% } %>
+    </div>
+  </form>
+
+  <% if (mode === "edit" && canEdit) { %>
+  <form
+    method="post"
+    action="/app/settings/website/catalogue/doctors/<%= encodeURIComponent(doctor.id || "") %>/delete"
+    onsubmit="return confirm('<%= doctor.hasLogin ? 'Remove this public profile from the website? The staff login account is kept.' : 'Delete this public profile? It will no longer appear on the website.' %>');"
+  >
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <button type="submit" class="ac-mw-btn ac-mw-btn--danger" data-ac-catalogue-action="delete-doctor">
+      <%= doctor.hasLogin ? "Remove public profile" : "Delete public profile" %>
+    </button>
+  </form>
+  <% } %>
+</section>
+<%- include('../partials/website-cms-media-picker', { mediaListUrl: cms.mediaListUrl || "" }) %>
