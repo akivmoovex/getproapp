@@ -88,8 +88,8 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 | **Existing functionality reused** | Prior overnight implementation report + SH/BB/AN code already on tip; Stitch project verified via MCP |
 | **Changed files** | `docs/releases/V8_OVERNIGHT_EXECUTION_REPORT.md` (created) |
 | **Tests** | N/A (rules + living report only; no application code) |
-| **Commit SHA** | _(filled after commit)_ |
-| **Push status** | Pending push to `origin/V8` |
+| **Commit SHA** | `44f44ea8d595ed5a178023311805553f92578074` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for PROMPT 00. Hosted deploy/restart/migrations/messages forbidden by rule 12. Stitch inventory: 83/84 (BB18 D/M pair incomplete). |
 | **Next task** | First product overnight prompt after PROMPT 00 — inspect tip before coding; reuse prior SH/BB/AN work |
 | **Hosted verification** | Not claimed (docs-only; rule 15) |
