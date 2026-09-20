@@ -1547,12 +1547,18 @@ function registerActiveClinicPublicRoutes(app, deps) {
         }));
       }
 
+      const [presentedService] = applyLibraryPresentation(
+        [serviceResult.service],
+        presentedClinic.cmsLibrary,
+        "service",
+        "serviceKey"
+      );
       const serviceKind =
-        clinic.publicBookingEnabled && serviceResult.service && serviceResult.service.bookable
+        clinic.publicBookingEnabled && presentedService && presentedService.bookable
           ? "consultation"
           : "informational";
       return renderTenantView(req, res, clinic, "tenant/service-detail", {
-        service: serviceResult.service,
+        service: presentedService || serviceResult.service,
         serviceKind,
       });
     } catch (err) {
@@ -1632,8 +1638,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
         }));
       }
 
+      const [presentedProfile] = applyLibraryPresentation(
+        [profileResult.profile],
+        presentedClinic.cmsLibrary,
+        "doctor",
+        "staffKey"
+      );
       return renderTenantView(req, res, clinic, "tenant/doctor-profile", {
-        profile: profileResult.profile,
+        profile: presentedProfile || profileResult.profile,
       });
     } catch (err) {
       return next(err);

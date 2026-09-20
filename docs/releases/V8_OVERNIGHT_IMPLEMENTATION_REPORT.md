@@ -59,6 +59,21 @@ After each task, report:
 
 ## Task log
 
+### PROMPT 05 — V8 AC services and doctor profiles
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_AC_SERVICES_PROFILES_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` @ `419bec2b` (synced with `origin/V8` before task) |
+| **Scope** | Services + doctor profiles Create→Publish→Public; photo persist; RBAC/tenant isolation |
+| **Report** | [`docs/releases/V8_AC_SERVICES_PROFILES_PROMPT05.md`](./V8_AC_SERVICES_PROFILES_PROMPT05.md) |
+| **Changed files** | `src/activeclinic/http/activeClinicPublicRoutes.js` · `src/activeclinic/website/clinicWebsiteCatalogueService.js` · `tests/v7-website-public-catalogue.test.js` · docs |
+| **Test results** | Catalogue **6/6**; website CMS **9/9 PASS** |
+| **Commit SHA** | (filled after commit) |
+| **Push status** | (filled after push) |
+| **Blockers** | None |
+
 ### PROMPT 04 — V8 shared phone identity fix
 
 | Field | Value |

@@ -1198,4 +1198,86 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
       .redirects(0);
     assert.equal(denied.status, 403);
   });
+
+  it("persists doctor photo through edit and renders it on public list and detail", async () => {
+    requireDb();
+    const clinic = await provisionClinic();
+    const app = makeApp();
+    const cookie = await sessionCookie(clinic.identityId, clinic.organizationId);
+    const name = `Dr Photo ${clinic.stamp}`;
+    const photoMediaId = crypto.randomUUID();
+    const photoSrc = `/clinics/${clinic.slug}/website/media/${photoMediaId}`;
+
+    const newPage = await request(app)
+      .get("/app/settings/website/catalogue/doctors/new")
+      .set("Cookie", cookie);
+    assert.equal(newPage.status, 200);
+
+    const created = await request(app)
+      .post("/app/settings/website/catalogue/doctors/new")
+      .set("Cookie", mergeCookies(cookie, newPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(newPage),
+        publicDisplayName: name,
+        specialty: "Dermatologist",
+        biography: "Photo profile biography.",
+        publicWebsiteVisible: "1",
+        imageMediaId: photoMediaId,
+        imageSrc: photoSrc,
+        imageAlt: "Portrait of clinic doctor",
+      })
+      .redirects(0);
+    assert.equal(created.status, 303, created.text.slice(0, 400));
+
+    const row = await pool.query(
+      `SELECT id, public_profile_key, platform_identity_id
+         FROM activeclinic.staff_members
+        WHERE organization_id = $1 AND public_display_name = $2
+        LIMIT 1`,
+      [clinic.organizationId, name]
+    );
+    assert.equal(row.rows.length, 1);
+    assert.equal(row.rows[0].platform_identity_id, null);
+    const staffId = row.rows[0].id;
+    const staffKey = row.rows[0].public_profile_key;
+
+    const editPage = await request(app)
+      .get(`/app/settings/website/catalogue/doctors/${staffId}/edit`)
+      .set("Cookie", cookie);
+    assert.equal(editPage.status, 200);
+    assert.match(editPage.text, re(photoSrc));
+
+    // Save without image fields (empty body keys) must keep the existing photo.
+    const saved = await request(app)
+      .post(`/app/settings/website/catalogue/doctors/${staffId}/edit`)
+      .set("Cookie", mergeCookies(cookie, editPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(editPage),
+        publicDisplayName: name,
+        specialty: "Dermatologist",
+        biography: "Photo profile biography.",
+        publicWebsiteVisible: "1",
+        status: "active",
+        imageMediaId: "",
+        imageSrc: "",
+        imageAlt: "",
+      })
+      .redirects(0);
+    assert.equal(saved.status, 303);
+
+    await publishWebsite(clinic);
+
+    const list = await request(app).get(`/clinics/${clinic.slug}/doctors`);
+    assert.equal(list.status, 200);
+    assert.match(list.text, re(name));
+    assert.match(list.text, re(photoMediaId));
+
+    const detail = await request(app).get(`/clinics/${clinic.slug}/doctors/${staffKey}`);
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, re(name));
+    assert.match(detail.text, re(photoMediaId));
+    assert.doesNotMatch(detail.text, /ac-doctor-profile__media--fallback/);
+  });
 });

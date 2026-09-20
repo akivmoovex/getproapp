@@ -41,6 +41,23 @@ function requireEdit(input) {
   return { ok: true };
 }
 
+/**
+ * Empty catalogue form image fields must not clear an existing operational overlay photo.
+ * Only forward image* keys when a real media selection is present.
+ */
+function sanitizeOverlayImageInput(payload) {
+  const next = { ...(payload || {}) };
+  delete next.image;
+  const mediaId = String(next.imageMediaId || "").trim();
+  const src = String(next.imageSrc || "").trim();
+  if (!(mediaId || src)) {
+    delete next.imageMediaId;
+    delete next.imageSrc;
+    delete next.imageAlt;
+  }
+  return next;
+}
+
 function slugKey(name) {
   const base = String(name || "clinician")
     .trim()
@@ -296,29 +313,35 @@ async function setDoctorWebsiteVisibility(db, input) {
         WHERE id = $1 AND organization_id = $2`,
       [row.id, input.organizationId, profileKey, name]
     );
-    const overlay = await libraryService.upsertOperationalOverlay(db, {
-      ...input,
-      type: "doctor",
-      operationalKey: profileKey,
-      title: name,
-      summary: row.public_title || row.job_title || "",
-      body: row.public_bio || "",
-      visible: true,
-    });
+    const overlay = await libraryService.upsertOperationalOverlay(
+      db,
+      sanitizeOverlayImageInput({
+        ...input,
+        type: "doctor",
+        operationalKey: profileKey,
+        title: name,
+        summary: row.public_title || row.job_title || "",
+        body: row.public_bio || "",
+        visible: true,
+      })
+    );
     if (!overlay.ok) return overlay;
     return { ok: true, staffId: row.id, staffKey: profileKey, visible: true };
   }
   const key = row.public_profile_key;
   if (!key) return { ok: true, staffId: row.id, visible: false };
-  const overlay = await libraryService.upsertOperationalOverlay(db, {
-    ...input,
-    type: "doctor",
-    operationalKey: key,
-    title: name || row.display_name,
-    summary: row.public_title || row.job_title || "",
-    body: row.public_bio || "",
-    visible: false,
-  });
+  const overlay = await libraryService.upsertOperationalOverlay(
+    db,
+    sanitizeOverlayImageInput({
+      ...input,
+      type: "doctor",
+      operationalKey: key,
+      title: name || row.display_name,
+      summary: row.public_title || row.job_title || "",
+      body: row.public_bio || "",
+      visible: false,
+    })
+  );
   if (!overlay.ok) return overlay;
   return { ok: true, staffId: row.id, staffKey: key, visible: false };
 }
@@ -339,14 +362,17 @@ async function setServiceWebsiteVisibility(db, input) {
       WHERE id = $1 AND organization_id = $2 AND healthcare_organization_id = $3`,
     [row.id, input.organizationId, input.healthcareOrganizationId, show]
   );
-  const overlay = await libraryService.upsertOperationalOverlay(db, {
-    ...input,
-    type: "service",
-    operationalKey: row.service_key,
-    title: row.display_name,
-    summary: row.public_summary || "",
-    visible: show,
-  });
+  const overlay = await libraryService.upsertOperationalOverlay(
+    db,
+    sanitizeOverlayImageInput({
+      ...input,
+      type: "service",
+      operationalKey: row.service_key,
+      title: row.display_name,
+      summary: row.public_summary || "",
+      visible: show,
+    })
+  );
   if (!overlay.ok) return overlay;
   return {
     ok: true,
@@ -462,14 +488,17 @@ async function createCatalogueService(db, input) {
   }
 
   if (row.public_website_visible === true) {
-    const overlay = await libraryService.upsertOperationalOverlay(db, {
-      ...input,
-      type: "service",
-      operationalKey: row.service_key,
-      title: row.display_name,
-      summary: row.public_summary || "",
-      visible: true,
-    });
+    const overlay = await libraryService.upsertOperationalOverlay(
+      db,
+      sanitizeOverlayImageInput({
+        ...input,
+        type: "service",
+        operationalKey: row.service_key,
+        title: row.display_name,
+        summary: row.public_summary || "",
+        visible: true,
+      })
+    );
     if (!overlay.ok) return overlay;
   }
 
@@ -528,14 +557,17 @@ async function updateCatalogueService(db, input) {
   const row = await appointmentRepo.updateServiceType(db, patch);
   if (!row) return { ok: false, code: RESULT.NOT_FOUND };
 
-  const overlay = await libraryService.upsertOperationalOverlay(db, {
-    ...input,
-    type: "service",
-    operationalKey: row.service_key,
-    title: row.display_name,
-    summary: row.public_summary || "",
-    visible: row.public_website_visible === true,
-  });
+  const overlay = await libraryService.upsertOperationalOverlay(
+    db,
+    sanitizeOverlayImageInput({
+      ...input,
+      type: "service",
+      operationalKey: row.service_key,
+      title: row.display_name,
+      summary: row.public_summary || "",
+      visible: row.public_website_visible === true,
+    })
+  );
   if (!overlay.ok) return overlay;
 
   return {
@@ -549,7 +581,7 @@ async function updateCatalogueService(db, input) {
 async function syncDoctorOverlay(db, input, row, opts) {
   const key = row.public_profile_key;
   if (!key) return { ok: true };
-  const overlayInput = {
+  const overlayInput = sanitizeOverlayImageInput({
     ...input,
     type: "doctor",
     operationalKey: key,
@@ -557,11 +589,14 @@ async function syncDoctorOverlay(db, input, row, opts) {
     summary: row.public_title || row.job_title || "",
     body: row.public_bio || "",
     visible: opts && opts.visible != null ? opts.visible : row.public_profile_enabled === true,
-  };
-  if (opts && Object.prototype.hasOwnProperty.call(opts, "imageMediaId")) {
-    overlayInput.imageMediaId = opts.imageMediaId;
-    overlayInput.imageSrc = opts.imageSrc;
-    overlayInput.imageAlt = opts.imageAlt;
+    imageMediaId: opts && opts.imageMediaId,
+    imageSrc: opts && opts.imageSrc,
+    imageAlt: opts && opts.imageAlt,
+  });
+  if (opts && opts.clearImage === true) {
+    overlayInput.imageMediaId = "";
+    overlayInput.imageSrc = "";
+    overlayInput.imageAlt = "";
   }
   if (opts && opts.featured != null) overlayInput.featured = opts.featured;
   return libraryService.upsertOperationalOverlay(db, overlayInput);
@@ -834,24 +869,30 @@ async function setCatalogueFeatured(db, input) {
   if (kind === "doctor") {
     const row = await loadStaffRow(db, input, String(input.staffId || ""));
     if (!row || !row.public_profile_key) return { ok: false, code: RESULT.NOT_FOUND };
-    return libraryService.upsertOperationalOverlay(db, {
-      ...input,
-      type: "doctor",
-      operationalKey: row.public_profile_key,
-      title: row.public_display_name || row.display_name,
-      featured,
-    });
+    return libraryService.upsertOperationalOverlay(
+      db,
+      sanitizeOverlayImageInput({
+        ...input,
+        type: "doctor",
+        operationalKey: row.public_profile_key,
+        title: row.public_display_name || row.display_name,
+        featured,
+      })
+    );
   }
   if (kind === "service") {
     const row = await loadServiceRow(db, input, String(input.serviceId || ""));
     if (!row) return { ok: false, code: RESULT.NOT_FOUND };
-    return libraryService.upsertOperationalOverlay(db, {
-      ...input,
-      type: "service",
-      operationalKey: row.service_key,
-      title: row.display_name,
-      featured,
-    });
+    return libraryService.upsertOperationalOverlay(
+      db,
+      sanitizeOverlayImageInput({
+        ...input,
+        type: "service",
+        operationalKey: row.service_key,
+        title: row.display_name,
+        featured,
+      })
+    );
   }
   return { ok: false, code: RESULT.INVALID_INPUT };
 }
