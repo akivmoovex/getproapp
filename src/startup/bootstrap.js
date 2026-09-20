@@ -50,6 +50,10 @@ const PRODUCTION_FALLBACK_HOME = "/home/u549637099";
 function buildProductionFallbackCandidates(appRoot, cwd, startupEntry) {
   const explicit = String(process.env.GETPRO_PRODUCTION_ENV_FILE_FALLBACK || "").trim();
   const hay = `${String(appRoot)}\n${String(cwd)}\n${String(startupEntry)}`.toLowerCase();
+  const {
+    shouldPreferNeuniversityProductionEnvFiles,
+  } = require("../platform/config/v8HostingerEnvCompat");
+  const preferNeuniversity = shouldPreferNeuniversityProductionEnvFiles(process.env, hay);
   const deterministic = [];
   // BlessBoard.org / V5 must prefer its own production file before any shared getpro/.env.production
   // that still carries blessboard.com canonical defaults.
@@ -58,7 +62,11 @@ function buildProductionFallbackCandidates(appRoot, cwd, startupEntry) {
     deterministic.push(`${PRODUCTION_FALLBACK_HOME}/blessboard.org/.env.production`);
     deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.blessboard.org`);
   }
-  if (hay.includes("pronline")) {
+  // V8 neuniversity apps must not inherit pronline/.env.production (stale V7 deployment code).
+  if (preferNeuniversity) {
+    deterministic.push(`${PRODUCTION_FALLBACK_HOME}/neuniversity/.env.production`);
+    deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.neuniversity`);
+  } else if (hay.includes("pronline")) {
     deterministic.push(`${PRODUCTION_FALLBACK_HOME}/pronline/.env.production`);
     deterministic.push(`${PRODUCTION_FALLBACK_HOME}/.env.production.pronline`);
   }
@@ -244,6 +252,20 @@ function runBootstrap() {
       buildStartupProcessMarker({ appRoot, phase: "pre_file" })
     )
   );
+
+  // Hostinger V8 apps: remap stale inherited moovex-platform-testing when BASE_DOMAIN
+  // is explicitly neuniversity.org (see v8HostingerEnvCompat.js). Runs after pre_file
+  // snapshot so logs still show the Hostinger-injected value.
+  const {
+    applyV8HostingerStaleDeploymentCodeCompat,
+  } = require("../platform/config/v8HostingerEnvCompat");
+  const v8EnvCompat = applyV8HostingerStaleDeploymentCodeCompat(process.env);
+  if (v8EnvCompat.applied) {
+    logEnvTracePhase("after_v8_hostinger_env_compat", {
+      startupEntry,
+      presence: snapshotEnvPresenceYesNo(),
+    });
+  }
 
   let earlyProductionEnvPath = null;
   let earlyProductionEnvExists = false;
