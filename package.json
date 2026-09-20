@@ -45,6 +45,7 @@
     "db:runtime-smoke:testing": "scripts/local/run-with-blessboard-env.sh testing node db/scripts/v7-testing-runtime-smoke.js",
     "db:registration-qa:testing": "scripts/local/run-with-blessboard-env.sh testing node db/scripts/v7-testing-registration-qa.js",
     "test:v7:runtime-schema": "node --test --test-concurrency=1 tests/v7-runtime-schema-compatibility.test.js tests/v7-migrate-identity-gate.test.js",
+    "test:v8:db-compat": "node --test --test-concurrency=1 tests/v8-db-compatibility-baseline.test.js",
     "db:bootstrap:foundation": "node db/scripts/bootstrap-foundation.js",
     "db:verify:foundation": "node db/scripts/verify-foundation.js",
     "test:db:foundation": "node --test tests/db-foundation.test.js",
