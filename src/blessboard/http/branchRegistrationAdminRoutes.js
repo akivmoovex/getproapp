@@ -27,6 +27,9 @@ const {
   STATUS,
 } = require("../services/memberRegistrationService");
 const {
+  getMembershipApplicationForReview,
+} = require("../services/membershipWorkflowService");
+const {
   renderBranchAdminView,
   sendLoginUnavailable,
 } = require("./branchAdminRoutes");
@@ -209,10 +212,11 @@ function createBranchRegistrationAdminRouter(deps) {
       if (!scope) return;
       const registrationKey = String(req.params.registrationKey || "").trim();
 
-      const loaded = await getMemberRegistrationForManager(getPool(), {
+      const loaded = await getMembershipApplicationForReview(getPool(), {
         registrationId: registrationKey,
         actorUserId: scope.actorUserId,
         churchId: scope.churchId,
+        tenant: resolveTenantForAuthorization(req),
       });
 
       if (!loaded.ok || !loaded.registration) {
@@ -235,6 +239,8 @@ function createBranchRegistrationAdminRouter(deps) {
         await shellLocals(req, res, "registrations", {
           pageTitle: "Registration review",
           registration: loaded.registration,
+          membershipReviewEvents: loaded.reviewEvents || [],
+          canViewPastoralNotes: Boolean(loaded.canViewPastoralNotes),
           hostBranchId: scope.branchId,
           error: null,
           saved: String((req.query && req.query.saved) || ""),

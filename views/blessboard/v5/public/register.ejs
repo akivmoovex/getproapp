@@ -15,6 +15,10 @@
   data-bb-product="blessboard-v5"
   data-bb-page="register"
   data-bb-stitch-register="10-auth-member-registration"
+  data-bb-membership="public-apply"
+  data-screen="BB03"
+  data-bb-screen-desktop="BB03-D"
+  data-bb-screen-mobile="BB03-M"
 >
 <%
   var fe = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
@@ -115,7 +119,7 @@
             >
               <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
 
-              <fieldset class="bb-auth-fieldset" data-bb-auth-group="personal">
+              <fieldset class="bb-auth-fieldset" data-bb-membership-step="1" data-screen="BB03" data-bb-auth-group="personal">
                 <legend class="bb-auth-fieldset__legend">
                   <span class="material-symbols-outlined" aria-hidden="true">badge</span>
                   <span class="bb-auth-fieldset__legend-desktop">Personal Info</span>
@@ -234,6 +238,81 @@
                 <p class="bb-auth-hint" id="bb-auth-contact-hint">Mobile phone is required for registration. Email is optional for additional notifications.</p>
               </fieldset>
 
+              <%
+                var showSpiritual = typeof enableSpiritualBackground === 'undefined' || enableSpiritualBackground;
+                var showInterests = typeof enableParticipationInterests === 'undefined' || enableParticipationInterests;
+                var app = sub || {};
+                var selectedInterests = Array.isArray(app.interests) ? app.interests : [];
+              %>
+
+              <% if (showSpiritual) { %>
+              <fieldset class="bb-auth-fieldset" data-bb-membership-step="2" data-screen="BB04" data-bb-auth-group="spiritual">
+                <legend class="bb-auth-fieldset__legend">
+                  <span class="material-symbols-outlined" aria-hidden="true">auto_stories</span>
+                  <span>Spiritual background <span class="bb-auth-optional">(optional)</span></span>
+                </legend>
+                <div class="bb-auth-field">
+                  <label for="faith_background">Faith background</label>
+                  <textarea id="faith_background" name="faith_background" rows="3" maxlength="500"
+                    placeholder="Share briefly if you would like"><%= app.faithBackground || '' %></textarea>
+                </div>
+                <div class="bb-auth-field">
+                  <label for="baptism_status">Baptism status</label>
+                  <select id="baptism_status" name="baptism_status">
+                    <option value="">Prefer not to say</option>
+                    <option value="baptized" <%= app.baptismStatus === 'baptized' ? 'selected' : '' %>>Baptized</option>
+                    <option value="not_baptized" <%= app.baptismStatus === 'not_baptized' ? 'selected' : '' %>>Not baptized</option>
+                    <option value="considering" <%= app.baptismStatus === 'considering' ? 'selected' : '' %>>Considering baptism</option>
+                  </select>
+                </div>
+                <div class="bb-auth-field">
+                  <label for="previous_church">Previous church (optional)</label>
+                  <input id="previous_church" name="previous_church" type="text" maxlength="200"
+                    value="<%= app.previousChurch || '' %>" />
+                </div>
+              </fieldset>
+              <% } %>
+
+              <% if (showInterests) { %>
+              <fieldset class="bb-auth-fieldset" data-bb-membership-step="3" data-screen="BB05" data-bb-auth-group="interests">
+                <legend class="bb-auth-fieldset__legend">
+                  <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
+                  <span>Participation interests <span class="bb-auth-optional">(optional)</span></span>
+                </legend>
+                <div class="bb-auth-field">
+                  <label>Areas of interest</label>
+                  <label style="font-weight:500"><input type="checkbox" name="interests" value="worship" <%= selectedInterests.indexOf('worship') >= 0 ? 'checked' : '' %> /> Worship</label>
+                  <label style="font-weight:500"><input type="checkbox" name="interests" value="youth" <%= selectedInterests.indexOf('youth') >= 0 ? 'checked' : '' %> /> Youth</label>
+                  <label style="font-weight:500"><input type="checkbox" name="interests" value="outreach" <%= selectedInterests.indexOf('outreach') >= 0 ? 'checked' : '' %> /> Outreach</label>
+                  <label style="font-weight:500"><input type="checkbox" name="interests" value="hospitality" <%= selectedInterests.indexOf('hospitality') >= 0 ? 'checked' : '' %> /> Hospitality</label>
+                </div>
+                <div class="bb-auth-field">
+                  <label for="ministry_interest">Ministry interest</label>
+                  <input id="ministry_interest" name="ministry_interest" type="text" maxlength="200"
+                    value="<%= app.ministryInterest || '' %>" />
+                </div>
+                <div class="bb-auth-field">
+                  <label for="availability">Availability</label>
+                  <input id="availability" name="availability" type="text" maxlength="200"
+                    value="<%= app.availability || '' %>" placeholder="e.g. Sundays, weekday evenings" />
+                </div>
+              </fieldset>
+              <% } %>
+
+              <fieldset class="bb-auth-fieldset" data-bb-membership-step="4" data-screen="BB06" data-bb-auth-group="review">
+                <legend class="bb-auth-fieldset__legend">
+                  <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
+                  <span>Review and submit</span>
+                </legend>
+                <label style="font-weight:500">
+                  <input type="checkbox" name="consent_contact" value="1" <%= app.consentContact ? 'checked' : '' %> />
+                  Leadership may contact me about this application using the details I provided.
+                </label>
+                <p class="bb-auth-hint">
+                  Submitting creates a membership application only. It does not create a login account or password.
+                </p>
+              </fieldset>
+
               <p class="bb-auth-privacy" id="bb-auth-privacy-note" data-bb-auth-privacy="1">
                 <span class="material-symbols-outlined" aria-hidden="true">security</span>
                 <span>
@@ -243,7 +322,7 @@
                 </span>
               </p>
 
-              <div class="bb-auth-actions">
+              <div class="bb-auth-actions" data-bb-membership-step="submit">
                 <button class="bb-auth-btn bb-auth-btn--primary" type="submit">Submit Registration</button>
                 <a class="bb-auth-btn bb-auth-btn--ghost" href="/">Back to homepage</a>
               </div>

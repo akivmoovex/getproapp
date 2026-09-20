@@ -907,6 +907,27 @@ function createV5FoundationApp(options) {
     isProduction,
     variant: "branch",
   });
+  const {
+    createMembershipWorkflowAdminRouter,
+  } = require("../../blessboard/http/membershipWorkflowAdminRoutes");
+  app.use(
+    createMembershipWorkflowAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+      variant: "hq",
+    })
+  );
+  app.use(
+    createMembershipWorkflowAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+      variant: "branch",
+    })
+  );
   app.use(
     createHqReportsRouter({
       getPool,

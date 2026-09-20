@@ -1,0 +1,25 @@
+<% const pageTitle = form.title; %>
+<div class="mx-forms-shell" data-screen="BB02" data-bb-membership="form-edit">
+  <div class="mx-forms-top">
+    <div>
+      <div class="mx-forms-brand">BlessBoard · Membership form</div>
+      <h1 class="mx-forms-title"><%= form.title %></h1>
+      <p class="mx-forms-sub">Status <span class="mx-forms-badge mx-forms-badge--<%= form.status %>"><%= form.status %></span></p>
+    </div>
+    <a class="mx-forms-btn mx-forms-btn--ghost" href="<%= basePath %>/forms">All forms</a>
+  </div>
+  <div class="mx-forms-panel">
+    <p>Spiritual background step: <%= form.enableSpiritualBackground ? 'on' : 'off' %></p>
+    <p>Participation interests step: <%= form.enableParticipationInterests ? 'on' : 'off' %></p>
+    <% if (form.status !== 'published') { %>
+      <form method="post" action="<%= basePath %>/forms/<%= form.id %>/publish">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+        <div class="mx-forms-actions">
+          <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Publish membership form</button>
+        </div>
+      </form>
+    <% } else { %>
+      <p style="color:var(--mx-forms-muted)">Published <%= form.publishedAt ? new Date(form.publishedAt).toISOString() : '' %>. Public apply uses /register with optional steps.</p>
+    <% } %>
+  </div>
+</div>

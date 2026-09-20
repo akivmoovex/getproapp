@@ -1,0 +1,28 @@
+<% const pageTitle = 'Branch transfer'; %>
+<div class="mx-forms-shell" data-screen="BB16" data-bb-membership="transfer">
+  <div class="mx-forms-top">
+    <div>
+      <div class="mx-forms-brand">BlessBoard · Branch transfer</div>
+      <h1 class="mx-forms-title">Transfer request</h1>
+      <p class="mx-forms-sub">Status <span class="mx-forms-badge"><%= transfer.status %></span></p>
+    </div>
+  </div>
+  <div class="mx-forms-panel">
+    <p>From branch: <%= transfer.fromBranchId %></p>
+    <p>To branch: <%= transfer.toBranchId %></p>
+    <p>Reason: <%= transfer.reason || '—' %></p>
+    <% if (transfer.status === 'requested') { %>
+      <form method="post" action="<%= basePath %>/transfers/<%= transfer.id %>/review">
+        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+        <label for="reviewer_notes">Reviewer notes</label>
+        <textarea id="reviewer_notes" name="reviewer_notes" rows="3" maxlength="2000"></textarea>
+        <div class="mx-forms-actions">
+          <button class="mx-forms-btn mx-forms-btn--primary" type="submit" name="decision" value="approved">Approve transfer</button>
+          <button class="mx-forms-btn" type="submit" name="decision" value="declined">Decline</button>
+        </div>
+      </form>
+    <% } else { %>
+      <p style="color:var(--mx-forms-muted)">Reviewed <%= transfer.reviewedAt ? new Date(transfer.reviewedAt).toISOString() : '' %></p>
+    <% } %>
+  </div>
+</div>

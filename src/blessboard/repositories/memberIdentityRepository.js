@@ -56,6 +56,11 @@ function mapRegistration(row) {
     reviewedByUserId: row.reviewed_by_user_id,
     reviewedAt: row.reviewed_at,
     reviewNotes: row.review_notes,
+    intakeFormId: row.intake_form_id || null,
+    applicationJson: row.application_json || {},
+    pastoralNotes: row.pastoral_notes || null,
+    pastoralNotesUpdatedAt: row.pastoral_notes_updated_at || null,
+    pastoralNotesUpdatedByUserId: row.pastoral_notes_updated_by_user_id || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
     branchKey: row.branch_key || null,
@@ -73,6 +78,8 @@ const MEMBERSHIP_COLS = `id, member_id, branch_id, membership_status, is_primary
 const REGISTRATION_COLS = `id, church_id, branch_id, first_name, last_name, preferred_name,
                            email_normalized, email_display, phone_normalized, phone_display,
                            status, member_id, reviewed_by_user_id, reviewed_at, review_notes,
+                           intake_form_id, application_json, pastoral_notes,
+                           pastoral_notes_updated_at, pastoral_notes_updated_by_user_id,
                            created_at, updated_at`;
 
 async function findMemberById(client, id) {
@@ -114,19 +121,28 @@ async function findActiveMemberByUserId(client, input) {
 async function updateMemberProfileFields(client, fields) {
   const { rows } = await client.query(
     `UPDATE blessboard.members
-        SET preferred_name = $2,
-            email_display = $3,
-            phone_normalized = $4,
-            phone_display = $5,
+        SET first_name = COALESCE($2, first_name),
+            last_name = COALESCE($3, last_name),
+            preferred_name = CASE WHEN $4::boolean THEN $5 ELSE preferred_name END,
+            email_display = CASE WHEN $6::boolean THEN $7 ELSE email_display END,
+            email_normalized = CASE WHEN $6::boolean THEN lower(trim($7)) ELSE email_normalized END,
+            phone_normalized = CASE WHEN $8::boolean THEN $9 ELSE phone_normalized END,
+            phone_display = CASE WHEN $10::boolean THEN $11 ELSE phone_display END,
             updated_at = now()
       WHERE id = $1
-        AND status = 'active'
+        AND status IN ('active', 'pending', 'inactive')
       RETURNING ${MEMBER_COLS}`,
     [
       fields.memberId,
+      fields.firstName != null ? fields.firstName : null,
+      fields.lastName != null ? fields.lastName : null,
+      fields.preferredName !== undefined,
       fields.preferredName !== undefined ? fields.preferredName : null,
+      fields.emailDisplay !== undefined,
       fields.emailDisplay !== undefined ? fields.emailDisplay : null,
+      fields.phoneNormalized !== undefined,
       fields.phoneNormalized !== undefined ? fields.phoneNormalized : null,
+      fields.phoneDisplay !== undefined,
       fields.phoneDisplay !== undefined ? fields.phoneDisplay : null,
     ]
   );
@@ -269,7 +285,7 @@ async function findOpenRegistrationByEmail(client, churchId, emailNormalized) {
        FROM blessboard.member_registrations
       WHERE church_id = $1
         AND email_normalized = $2
-        AND status IN ('submitted', 'under_review')
+        AND status IN ('submitted', 'under_review', 'needs_follow_up')
       LIMIT 1`,
     [churchId, emailNormalized]
   );
@@ -283,7 +299,7 @@ async function findOpenRegistrationByPhone(client, churchId, phoneNormalized) {
        FROM blessboard.member_registrations
       WHERE church_id = $1
         AND phone_normalized = $2
-        AND status IN ('submitted', 'under_review')
+        AND status IN ('submitted', 'under_review', 'needs_follow_up')
       LIMIT 1`,
     [churchId, phoneNormalized]
   );
@@ -294,8 +310,9 @@ async function insertRegistration(client, fields) {
   const { rows } = await client.query(
     `INSERT INTO blessboard.member_registrations
        (church_id, branch_id, first_name, last_name, preferred_name,
-        email_normalized, email_display, phone_normalized, phone_display, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'submitted')
+        email_normalized, email_display, phone_normalized, phone_display, status,
+        intake_form_id, application_json)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'submitted', $10, $11::jsonb)
      RETURNING ${REGISTRATION_COLS}`,
     [
       fields.churchId,
@@ -307,6 +324,8 @@ async function insertRegistration(client, fields) {
       fields.emailDisplay || null,
       fields.phoneNormalized || null,
       fields.phoneDisplay || null,
+      fields.intakeFormId || null,
+      JSON.stringify(fields.applicationJson || {}),
     ]
   );
   return mapRegistration(rows[0]);
@@ -739,7 +758,7 @@ async function findMemberInChurch(client, input) {
     `SELECT m.id, m.church_id, m.user_id, m.first_name, m.last_name, m.preferred_name,
             m.email_normalized, m.email_display, m.phone_normalized, m.phone_display,
             m.status, m.created_at, m.updated_at,
-            mb.membership_status, mb.is_primary, mb.joined_at,
+            mb.membership_status, mb.is_primary, mb.joined_at, mb.branch_id,
             b.branch_key, b.display_name AS branch_display_name
        FROM blessboard.members m
        INNER JOIN LATERAL (
@@ -759,6 +778,7 @@ async function findMemberInChurch(client, input) {
   const member = mapMember(rows[0]);
   return {
     ...member,
+    branchId: rows[0].branch_id || null,
     membershipStatus: rows[0].membership_status,
     isPrimary: Boolean(rows[0].is_primary),
     joinedAt: rows[0].joined_at,
@@ -767,10 +787,296 @@ async function findMemberInChurch(client, input) {
   };
 }
 
+function mapIntakeForm(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    churchId: row.church_id,
+    branchId: row.branch_id,
+    formKey: row.form_key,
+    title: row.title,
+    description: row.description,
+    status: row.status,
+    enableSpiritualBackground: row.enable_spiritual_background !== false,
+    enableParticipationInterests: row.enable_participation_interests !== false,
+    publishedAt: row.published_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function insertIntakeForm(client, fields) {
+  const { rows } = await client.query(
+    `INSERT INTO blessboard.membership_intake_forms (
+       church_id, branch_id, form_key, title, description, status,
+       enable_spiritual_background, enable_participation_interests,
+       created_by_user_id, updated_by_user_id
+     ) VALUES ($1,$2,$3,$4,$5,'draft',$6,$7,$8,$8)
+     RETURNING *`,
+    [
+      fields.churchId,
+      fields.branchId || null,
+      fields.formKey,
+      fields.title,
+      fields.description || null,
+      fields.enableSpiritualBackground !== false,
+      fields.enableParticipationInterests !== false,
+      fields.createdByUserId || null,
+    ]
+  );
+  return mapIntakeForm(rows[0]);
+}
+
+async function updateIntakeForm(client, fields) {
+  const { rows } = await client.query(
+    `UPDATE blessboard.membership_intake_forms SET
+       title = COALESCE($3, title),
+       description = CASE WHEN $4::boolean THEN $5 ELSE description END,
+       enable_spiritual_background = COALESCE($6, enable_spiritual_background),
+       enable_participation_interests = COALESCE($7, enable_participation_interests),
+       status = COALESCE($8, status),
+       published_at = CASE WHEN $9::boolean THEN $10 ELSE published_at END,
+       updated_by_user_id = $11,
+       updated_at = now()
+     WHERE id = $1 AND church_id = $2
+     RETURNING *`,
+    [
+      fields.id,
+      fields.churchId,
+      fields.title != null ? fields.title : null,
+      fields.description !== undefined,
+      fields.description != null ? fields.description : null,
+      fields.enableSpiritualBackground != null ? fields.enableSpiritualBackground : null,
+      fields.enableParticipationInterests != null ? fields.enableParticipationInterests : null,
+      fields.status != null ? fields.status : null,
+      fields.setPublishedAt === true,
+      fields.publishedAt || null,
+      fields.updatedByUserId || null,
+    ]
+  );
+  return mapIntakeForm(rows[0] || null);
+}
+
+async function getIntakeFormById(client, { id, churchId }) {
+  const { rows } = await client.query(
+    `SELECT * FROM blessboard.membership_intake_forms
+      WHERE id = $1 AND church_id = $2 LIMIT 1`,
+    [id, churchId]
+  );
+  return mapIntakeForm(rows[0] || null);
+}
+
+async function getPublishedIntakeFormForChurch(client, { churchId, branchId }) {
+  const { rows } = await client.query(
+    `SELECT * FROM blessboard.membership_intake_forms
+      WHERE church_id = $1
+        AND status = 'published'
+        AND (branch_id IS NULL OR branch_id = $2)
+      ORDER BY CASE WHEN branch_id = $2 THEN 0 ELSE 1 END, published_at DESC NULLS LAST
+      LIMIT 1`,
+    [churchId, branchId || null]
+  );
+  return mapIntakeForm(rows[0] || null);
+}
+
+async function listIntakeForms(client, { churchId, status }) {
+  const params = [churchId];
+  let sql = `SELECT * FROM blessboard.membership_intake_forms WHERE church_id = $1`;
+  if (status) {
+    params.push(status);
+    sql += ` AND status = $${params.length}`;
+  }
+  sql += ` ORDER BY updated_at DESC`;
+  const { rows } = await client.query(sql, params);
+  return rows.map(mapIntakeForm);
+}
+
+async function insertReviewEvent(client, fields) {
+  const { rows } = await client.query(
+    `INSERT INTO blessboard.member_registration_review_events (
+       registration_id, church_id, branch_id, from_status, to_status,
+       decision_code, decision_summary, actor_user_id
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8)
+     RETURNING id, registration_id, from_status, to_status, decision_code,
+               decision_summary, actor_user_id, created_at`,
+    [
+      fields.registrationId,
+      fields.churchId,
+      fields.branchId,
+      fields.fromStatus || null,
+      fields.toStatus,
+      fields.decisionCode,
+      fields.decisionSummary || null,
+      fields.actorUserId || null,
+    ]
+  );
+  const r = rows[0];
+  return {
+    id: r.id,
+    registrationId: r.registration_id,
+    fromStatus: r.from_status,
+    toStatus: r.to_status,
+    decisionCode: r.decision_code,
+    decisionSummary: r.decision_summary,
+    actorUserId: r.actor_user_id,
+    createdAt: r.created_at,
+  };
+}
+
+async function listReviewEvents(client, { registrationId, churchId }) {
+  const { rows } = await client.query(
+    `SELECT id, registration_id, from_status, to_status, decision_code,
+            decision_summary, actor_user_id, created_at
+       FROM blessboard.member_registration_review_events
+      WHERE registration_id = $1 AND church_id = $2
+      ORDER BY created_at ASC`,
+    [registrationId, churchId]
+  );
+  return rows.map((r) => ({
+    id: r.id,
+    registrationId: r.registration_id,
+    fromStatus: r.from_status,
+    toStatus: r.to_status,
+    decisionCode: r.decision_code,
+    decisionSummary: r.decision_summary,
+    actorUserId: r.actor_user_id,
+    createdAt: r.created_at,
+  }));
+}
+
+async function updatePastoralNotes(client, fields) {
+  const { rows } = await client.query(
+    `UPDATE blessboard.member_registrations SET
+       pastoral_notes = $3,
+       pastoral_notes_updated_at = now(),
+       pastoral_notes_updated_by_user_id = $4,
+       updated_at = now()
+     WHERE id = $1 AND church_id = $2
+     RETURNING ${REGISTRATION_COLS}`,
+    [fields.id, fields.churchId, fields.pastoralNotes, fields.actorUserId || null]
+  );
+  return mapRegistration(rows[0] || null);
+}
+
+async function insertTransferRequest(client, fields) {
+  const { rows } = await client.query(
+    `INSERT INTO blessboard.member_branch_transfer_requests (
+       church_id, member_id, from_branch_id, to_branch_id, status, reason,
+       requested_by_user_id
+     ) VALUES ($1,$2,$3,$4,'requested',$5,$6)
+     RETURNING *`,
+    [
+      fields.churchId,
+      fields.memberId,
+      fields.fromBranchId,
+      fields.toBranchId,
+      fields.reason || null,
+      fields.requestedByUserId || null,
+    ]
+  );
+  return mapTransfer(rows[0]);
+}
+
+function mapTransfer(row) {
+  if (!row) return null;
+  return {
+    id: row.id,
+    churchId: row.church_id,
+    memberId: row.member_id,
+    fromBranchId: row.from_branch_id,
+    toBranchId: row.to_branch_id,
+    status: row.status,
+    reason: row.reason,
+    reviewerNotes: row.reviewer_notes,
+    requestedByUserId: row.requested_by_user_id,
+    reviewedByUserId: row.reviewed_by_user_id,
+    reviewedAt: row.reviewed_at,
+    createdAt: row.created_at,
+    updatedAt: row.updated_at,
+  };
+}
+
+async function getTransferById(client, { id, churchId }) {
+  const { rows } = await client.query(
+    `SELECT * FROM blessboard.member_branch_transfer_requests
+      WHERE id = $1 AND church_id = $2 LIMIT 1`,
+    [id, churchId]
+  );
+  return mapTransfer(rows[0] || null);
+}
+
+async function listTransfers(client, { churchId, status, memberId }) {
+  const params = [churchId];
+  let sql = `SELECT * FROM blessboard.member_branch_transfer_requests WHERE church_id = $1`;
+  if (status) {
+    params.push(status);
+    sql += ` AND status = $${params.length}`;
+  }
+  if (memberId) {
+    params.push(memberId);
+    sql += ` AND member_id = $${params.length}`;
+  }
+  sql += ` ORDER BY created_at DESC LIMIT 100`;
+  const { rows } = await client.query(sql, params);
+  return rows.map(mapTransfer);
+}
+
+async function updateTransferStatus(client, fields) {
+  const { rows } = await client.query(
+    `UPDATE blessboard.member_branch_transfer_requests SET
+       status = $3,
+       reviewer_notes = COALESCE($4, reviewer_notes),
+       reviewed_by_user_id = $5,
+       reviewed_at = now(),
+       updated_at = now()
+     WHERE id = $1 AND church_id = $2
+     RETURNING *`,
+    [
+      fields.id,
+      fields.churchId,
+      fields.status,
+      fields.reviewerNotes !== undefined ? fields.reviewerNotes : null,
+      fields.reviewedByUserId || null,
+    ]
+  );
+  return mapTransfer(rows[0] || null);
+}
+
+async function setPrimaryMembershipBranch(client, { memberId, fromBranchId, toBranchId }) {
+  await client.query(
+    `UPDATE blessboard.member_branch_memberships
+        SET is_primary = false, updated_at = now()
+      WHERE member_id = $1 AND branch_id = $2`,
+    [memberId, fromBranchId]
+  );
+  const existing = await client.query(
+    `SELECT id FROM blessboard.member_branch_memberships
+      WHERE member_id = $1 AND branch_id = $2 LIMIT 1`,
+    [memberId, toBranchId]
+  );
+  if (existing.rows[0]) {
+    await client.query(
+      `UPDATE blessboard.member_branch_memberships
+          SET is_primary = true, membership_status = 'active', updated_at = now()
+        WHERE id = $1`,
+      [existing.rows[0].id]
+    );
+  } else {
+    await client.query(
+      `INSERT INTO blessboard.member_branch_memberships
+         (member_id, branch_id, membership_status, is_primary, joined_at)
+       VALUES ($1, $2, 'active', true, now())`,
+      [memberId, toBranchId]
+    );
+  }
+}
+
 module.exports = {
   mapMember,
   mapMembership,
   mapRegistration,
+  mapIntakeForm,
+  mapTransfer,
   findMemberById,
   findActiveMemberByUserId,
   updateMemberProfileFields,
@@ -796,4 +1102,17 @@ module.exports = {
   findBranchById,
   findChurchById,
   findUserById,
+  insertIntakeForm,
+  updateIntakeForm,
+  getIntakeFormById,
+  getPublishedIntakeFormForChurch,
+  listIntakeForms,
+  insertReviewEvent,
+  listReviewEvents,
+  updatePastoralNotes,
+  insertTransferRequest,
+  getTransferById,
+  listTransfers,
+  updateTransferStatus,
+  setPrimaryMembershipBranch,
 };

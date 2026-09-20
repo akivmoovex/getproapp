@@ -1,7 +1,7 @@
 <%- include('../partials/branch-admin-shell-start') %>
 <%
   var reg = registration || {};
-  var open = reg.status === 'submitted' || reg.status === 'under_review';
+  var open = reg.status === 'submitted' || reg.status === 'under_review' || reg.status === 'needs_follow_up';
   var displayHeading = [reg.firstName, reg.lastName].filter(Boolean).join(' ') || 'Registration';
   var initialsSource = [reg.firstName, reg.lastName].filter(Boolean);
   var initials = initialsSource
@@ -10,11 +10,18 @@
     .slice(0, 2)
     .toUpperCase();
   if (!initials) initials = '?';
+  var appJson = reg.applicationJson && typeof reg.applicationJson === 'object' ? reg.applicationJson : {};
+  var auditEvents = (typeof membershipReviewEvents !== 'undefined' && membershipReviewEvents)
+    ? membershipReviewEvents
+    : [];
+  var canViewPastoral = Boolean(typeof canViewPastoralNotes !== 'undefined' && canViewPastoralNotes);
+  var pastoralRestricted = Boolean(reg.pastoralNotesRestricted) || !canViewPastoral;
 
   function statusLabel(s) {
     var key = String(s || '').toLowerCase();
     if (key === 'submitted') return 'Pending';
     if (key === 'under_review') return 'In review';
+    if (key === 'needs_follow_up') return 'Needs follow-up';
     if (key === 'approved') return 'Approved';
     if (key === 'rejected') return 'Rejected';
     if (key === 'withdrawn') return 'Withdrawn';
@@ -22,7 +29,7 @@
   }
   function statusChip(s) {
     var key = String(s || '').toLowerCase();
-    if (key === 'submitted' || key === 'under_review') return 'bb-ba-chip--pending';
+    if (key === 'submitted' || key === 'under_review' || key === 'needs_follow_up') return 'bb-ba-chip--pending';
     if (key === 'approved') return 'bb-ba-chip--ok';
     if (key === 'rejected') return 'bb-ba-chip--danger';
     return 'bb-ba-chip--muted';
@@ -79,6 +86,8 @@
   class="bb-ba-reg-detail"
   data-bb-registration-detail="1"
   data-bb-stitch-registration-detail="26-branch-member-verification-queue"
+  data-bb-membership="application-detail"
+  data-screen="BB12"
   data-bb-reg-status="<%= reg.status || '' %>"
 >
   <header class="bb-ba-page-head bb-ba-page-head--split">
@@ -204,6 +213,32 @@
         </dl>
       </section>
 
+      <% if (appJson && Object.keys(appJson).length) { %>
+      <section class="bb-ba-panel" data-bb-reg-application="1" data-screen="BB12">
+        <h2 class="bb-ba-section-title">Application answers</h2>
+        <dl class="bb-ba-reg-dl">
+          <% if (appJson.faithBackground) { %>
+          <div class="bb-ba-reg-dl__row"><dt>Faith background</dt><dd><%= appJson.faithBackground %></dd></div>
+          <% } %>
+          <% if (appJson.baptismStatus) { %>
+          <div class="bb-ba-reg-dl__row"><dt>Baptism</dt><dd><%= appJson.baptismStatus %></dd></div>
+          <% } %>
+          <% if (appJson.previousChurch) { %>
+          <div class="bb-ba-reg-dl__row"><dt>Previous church</dt><dd><%= appJson.previousChurch %></dd></div>
+          <% } %>
+          <% if (appJson.interests && appJson.interests.length) { %>
+          <div class="bb-ba-reg-dl__row"><dt>Interests</dt><dd><%= appJson.interests.join(', ') %></dd></div>
+          <% } %>
+          <% if (appJson.ministryInterest) { %>
+          <div class="bb-ba-reg-dl__row"><dt>Ministry interest</dt><dd><%= appJson.ministryInterest %></dd></div>
+          <% } %>
+          <% if (appJson.availability) { %>
+          <div class="bb-ba-reg-dl__row"><dt>Availability</dt><dd><%= appJson.availability %></dd></div>
+          <% } %>
+        </dl>
+      </section>
+      <% } %>
+
       <section class="bb-ba-panel" aria-labelledby="bb-ba-reg-history-heading" data-bb-reg-history="1">
         <h2 id="bb-ba-reg-history-heading" class="bb-ba-section-title">Status history</h2>
         <% if (!history.length) { %>
@@ -263,16 +298,55 @@
             <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
             Approve
           </button>
+          <form
+            method="post"
+            action="/branch-admin/membership/registrations/<%= reg.id %>/follow-up"
+            style="display:inline"
+            data-bb-reg-follow-up="1"
+            data-screen="BB13"
+          >
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+            <input type="hidden" name="review_notes" id="bb-ba-followup-notes-mirror" value="" />
+            <button type="submit" class="bb-ba-btn bb-ba-btn--ghost">Needs follow-up</button>
+          </form>
           <button
             type="button"
             class="bb-ba-btn bb-ba-btn--danger"
             data-bb-ds-modal-open="bb-ba-reject-modal"
           >
             <span class="material-symbols-outlined" aria-hidden="true">cancel</span>
-            Reject
+            Decline
           </button>
         </div>
       </section>
+
+      <section class="bb-ba-panel" data-bb-reg-pastoral="1">
+        <h2 class="bb-ba-section-title">Confidential pastoral notes</h2>
+        <% if (pastoralRestricted) { %>
+        <p class="bb-ba-hint" data-bb-pastoral-restricted="1">Restricted. Requires pastoral_cases.view_restricted.</p>
+        <% } else { %>
+        <form method="post" action="/branch-admin/membership/registrations/<%= reg.id %>/pastoral-notes">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <textarea name="pastoral_notes" rows="4" maxlength="5000"><%= reg.pastoralNotes || '' %></textarea>
+          <button type="submit" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm">Save pastoral notes</button>
+        </form>
+        <% } %>
+      </section>
+
+      <% if (auditEvents && auditEvents.length) { %>
+      <section class="bb-ba-panel" data-bb-reg-audit="1">
+        <h2 class="bb-ba-section-title">Review audit</h2>
+        <ol class="bb-ba-reg-timeline">
+          <% auditEvents.forEach(function (ev) { %>
+          <li data-bb-reg-audit-event="<%= ev.decisionCode %>">
+            <strong><%= ev.decisionCode %></strong>
+            <% if (ev.decisionSummary) { %> — <%= ev.decisionSummary %><% } %>
+            <span class="bb-ba-hint"><%= formatWhen(ev.createdAt) %></span>
+          </li>
+          <% }) %>
+        </ol>
+      </section>
+      <% } %>
 
       <div
         class="bb-ds-modal"
@@ -379,17 +453,27 @@
 (function () {
   var notes = document.getElementById("shared_review_notes");
   var approveForm = document.getElementById("bb-ba-approve-form");
-  if (!notes || !approveForm) return;
-  approveForm.addEventListener("submit", function () {
-    var existing = approveForm.querySelector('input[name="review_notes"]');
-    if (!existing) {
-      existing = document.createElement("input");
-      existing.type = "hidden";
-      existing.name = "review_notes";
-      approveForm.appendChild(existing);
+  var followMirror = document.getElementById("bb-ba-followup-notes-mirror");
+  if (notes && approveForm) {
+    approveForm.addEventListener("submit", function () {
+      var existing = approveForm.querySelector('input[name="review_notes"]');
+      if (!existing) {
+        existing = document.createElement("input");
+        existing.type = "hidden";
+        existing.name = "review_notes";
+        approveForm.appendChild(existing);
+      }
+      existing.value = notes.value || "";
+    });
+  }
+  if (notes && followMirror) {
+    var followForm = followMirror.form;
+    if (followForm) {
+      followForm.addEventListener("submit", function () {
+        followMirror.value = notes.value || "";
+      });
     }
-    existing.value = notes.value || "";
-  });
+  }
 })();
 </script>
 

@@ -331,6 +331,8 @@ async function submitMemberRegistration(db, input) {
         churchId,
         branchId,
         ...profile.value,
+        intakeFormId: raw.intakeFormId || null,
+        applicationJson: raw.applicationJson || {},
       });
       return {
         ok: true,
@@ -388,7 +390,11 @@ async function reviewMemberRegistration(db, input) {
           await client.query("ROLLBACK");
           return { ok: false, status: gate.status, reason: gate.reason, registration: null };
         }
-        if (registration.status !== "submitted" && registration.status !== "under_review") {
+        if (
+          registration.status !== "submitted" &&
+          registration.status !== "under_review" &&
+          registration.status !== "needs_follow_up"
+        ) {
           await client.query("ROLLBACK");
           return {
             ok: false,
@@ -402,6 +408,20 @@ async function reviewMemberRegistration(db, input) {
           status: "under_review",
           reviewedByUserId: actorUserId,
         });
+        try {
+          await repo.insertReviewEvent(client, {
+            registrationId,
+            churchId: registration.churchId,
+            branchId: registration.branchId,
+            fromStatus: registration.status,
+            toStatus: "under_review",
+            decisionCode: "under_review",
+            decisionSummary: null,
+            actorUserId,
+          });
+        } catch {
+          /* optional if migration not present in older DBs */
+        }
         await client.query("COMMIT");
         return { ok: true, status: STATUS.OK, registration: updated };
       } catch (err) {
@@ -470,7 +490,11 @@ async function approveMemberRegistration(db, input) {
             membership: null,
           };
         }
-        if (registration.status !== "submitted" && registration.status !== "under_review") {
+        if (
+          registration.status !== "submitted" &&
+          registration.status !== "under_review" &&
+          registration.status !== "needs_follow_up"
+        ) {
           await client.query("ROLLBACK");
           return {
             ok: false,
@@ -575,6 +599,20 @@ async function approveMemberRegistration(db, input) {
           reviewedAt: new Date().toISOString(),
           reviewNotes,
         });
+        try {
+          await repo.insertReviewEvent(client, {
+            registrationId,
+            churchId: registration.churchId,
+            branchId: registration.branchId,
+            fromStatus: registration.status,
+            toStatus: "approved",
+            decisionCode: "approved",
+            decisionSummary: reviewNotes,
+            actorUserId,
+          });
+        } catch {
+          /* optional if migration not present */
+        }
 
         await client.query("COMMIT");
         try {
@@ -672,7 +710,11 @@ async function rejectMemberRegistration(db, input) {
           await client.query("ROLLBACK");
           return { ok: false, status: gate.status, reason: gate.reason, registration: null };
         }
-        if (registration.status !== "submitted" && registration.status !== "under_review") {
+        if (
+          registration.status !== "submitted" &&
+          registration.status !== "under_review" &&
+          registration.status !== "needs_follow_up"
+        ) {
           await client.query("ROLLBACK");
           return {
             ok: false,
@@ -688,6 +730,20 @@ async function rejectMemberRegistration(db, input) {
           reviewedAt: new Date().toISOString(),
           reviewNotes,
         });
+        try {
+          await repo.insertReviewEvent(client, {
+            registrationId,
+            churchId: registration.churchId,
+            branchId: registration.branchId,
+            fromStatus: registration.status,
+            toStatus: "rejected",
+            decisionCode: "rejected",
+            decisionSummary: reviewNotes,
+            actorUserId,
+          });
+        } catch {
+          /* optional if migration not present */
+        }
         await client.query("COMMIT");
         return { ok: true, status: STATUS.OK, registration: updated };
       } catch (err) {
@@ -969,6 +1025,10 @@ async function getMemberRegistrationForManager(db, input) {
           createdAt: registration.createdAt,
           updatedAt: registration.updatedAt,
           memberId: registration.memberId,
+          intakeFormId: registration.intakeFormId || null,
+          applicationJson: registration.applicationJson || {},
+          pastoralNotes: registration.pastoralNotes || null,
+          pastoralNotesUpdatedAt: registration.pastoralNotesUpdatedAt || null,
           branchKey,
           branchDisplayName,
           // Internal authz only — not for templates

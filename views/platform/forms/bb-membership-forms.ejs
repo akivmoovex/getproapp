@@ -1,0 +1,41 @@
+<% const pageTitle = 'Membership forms'; %>
+<div class="mx-forms-shell" data-screen="BB01" data-bb-membership="forms-dashboard">
+  <div class="mx-forms-top">
+    <div>
+      <div class="mx-forms-brand">BlessBoard · Membership</div>
+      <h1 class="mx-forms-title">Registration forms</h1>
+      <p class="mx-forms-sub">Publish a church membership intake form. Visitors apply without creating a login.</p>
+    </div>
+  </div>
+
+  <div class="mx-forms-panel" style="margin-bottom:1rem">
+    <h2>Create form</h2>
+    <form method="post" action="<%= basePath %>/forms">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken || '' %>" />
+      <label for="title">Title</label>
+      <input id="title" name="title" type="text" required maxlength="200" />
+      <label for="form_key">Form key (optional)</label>
+      <input id="form_key" name="form_key" type="text" maxlength="64" />
+      <label style="font-weight:500"><input type="checkbox" name="enable_spiritual" value="1" checked /> Optional spiritual background step</label>
+      <label style="font-weight:500"><input type="checkbox" name="enable_interests" value="1" checked /> Participation interests step</label>
+      <div class="mx-forms-actions">
+        <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Create</button>
+      </div>
+    </form>
+  </div>
+
+  <div class="mx-forms-cards">
+    <% (forms || []).forEach(function (form) { %>
+      <a class="mx-forms-card" href="<%= basePath %>/forms/<%= form.id %>" style="display:block;text-decoration:none;color:inherit">
+        <div style="display:flex;justify-content:space-between;gap:0.5rem">
+          <strong><%= form.title %></strong>
+          <span class="mx-forms-badge mx-forms-badge--<%= form.status %>"><%= form.status %></span>
+        </div>
+        <div style="margin-top:0.35rem;color:var(--mx-forms-muted);font-size:0.85rem"><%= form.formKey %></div>
+      </a>
+    <% }) %>
+    <% if (!(forms && forms.length)) { %>
+      <div class="mx-forms-panel mx-forms-empty">No membership forms yet.</div>
+    <% } %>
+  </div>
+</div>

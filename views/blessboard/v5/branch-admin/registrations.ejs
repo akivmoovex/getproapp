@@ -8,6 +8,7 @@
     { key: '', label: 'All' },
     { key: 'submitted', label: 'Pending' },
     { key: 'under_review', label: 'In review' },
+    { key: 'needs_follow_up', label: 'Needs follow-up' },
     { key: 'approved', label: 'Approved' },
     { key: 'rejected', label: 'Rejected' },
     { key: 'withdrawn', label: 'Withdrawn' }
@@ -16,6 +17,7 @@
     var key = String(s || '').toLowerCase();
     if (key === 'submitted') return 'Pending';
     if (key === 'under_review') return 'In review';
+    if (key === 'needs_follow_up') return 'Needs follow-up';
     if (key === 'approved') return 'Approved';
     if (key === 'rejected') return 'Rejected';
     if (key === 'withdrawn') return 'Withdrawn';
@@ -23,7 +25,7 @@
   }
   function statusChip(s) {
     var key = String(s || '').toLowerCase();
-    if (key === 'submitted' || key === 'under_review') return 'bb-ba-chip--pending';
+    if (key === 'submitted' || key === 'under_review' || key === 'needs_follow_up') return 'bb-ba-chip--pending';
     if (key === 'approved') return 'bb-ba-chip--ok';
     if (key === 'rejected') return 'bb-ba-chip--danger';
     return 'bb-ba-chip--muted';
@@ -69,6 +71,8 @@
   class="bb-ba-reg"
   data-bb-registration-queue="1"
   data-bb-stitch-registrations="26-branch-member-verification-queue"
+  data-bb-membership="review-queue"
+  data-screen="BB11"
 >
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>

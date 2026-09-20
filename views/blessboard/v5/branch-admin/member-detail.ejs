@@ -47,6 +47,8 @@
   class="bb-ba-member-detail"
   data-bb-member-detail="1"
   data-bb-stitch-member-detail="27-branch-member-profile"
+  data-bb-membership="member-profile"
+  data-screen="BB14"
   data-bb-member-status="<%= m.status || '' %>"
 >
   <header class="bb-ba-page-head bb-ba-page-head--split">
@@ -245,12 +247,51 @@
           These Stitch actions and histories are not supported on this branch-admin profile yet.
         </p>
         <ul class="bb-ba-member-unavailable__list">
-          <li>Profile editing and status changes</li>
           <li>Administrative notes and activity history</li>
           <li>Attendance, giving, and request timelines</li>
           <li>Ministry assignments and family links</li>
           <li>Identity documents and verification checklists</li>
         </ul>
+      </section>
+
+      <section class="bb-ba-panel" data-bb-member-edit="1" data-screen="BB15">
+        <h2 class="bb-ba-section-title">Edit profile</h2>
+        <form method="post" action="/branch-admin/membership/members/<%= m.id %>/edit">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <div class="bb-ba-field">
+            <label for="first_name">First name</label>
+            <input id="first_name" name="first_name" type="text" maxlength="100" value="<%= m.firstName || '' %>" />
+          </div>
+          <div class="bb-ba-field">
+            <label for="last_name">Last name</label>
+            <input id="last_name" name="last_name" type="text" maxlength="100" value="<%= m.lastName || '' %>" />
+          </div>
+          <div class="bb-ba-field">
+            <label for="preferred_name">Preferred name</label>
+            <input id="preferred_name" name="preferred_name" type="text" maxlength="100" value="<%= m.preferredName || '' %>" />
+          </div>
+          <div class="bb-ba-field">
+            <label for="email">Email</label>
+            <input id="email" name="email" type="email" maxlength="254" value="<%= m.emailDisplay || '' %>" />
+          </div>
+          <button type="submit" class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm">Save profile</button>
+        </form>
+      </section>
+
+      <section class="bb-ba-panel" data-bb-member-transfer="1" data-screen="BB16">
+        <h2 class="bb-ba-section-title">Request branch transfer</h2>
+        <form method="post" action="/branch-admin/membership/members/<%= m.id %>/transfer">
+          <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
+          <div class="bb-ba-field">
+            <label for="to_branch_id">Destination branch ID</label>
+            <input id="to_branch_id" name="to_branch_id" type="text" required maxlength="64" />
+          </div>
+          <div class="bb-ba-field">
+            <label for="reason">Reason</label>
+            <textarea id="reason" name="reason" rows="3" maxlength="1000"></textarea>
+          </div>
+          <button type="submit" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm">Request transfer</button>
+        </form>
       </section>
     </aside>
   </div>

@@ -24,14 +24,15 @@ const {
   validateCsrf,
   setCsrfCookie,
 } = require("../../platform/http/v5Csrf");
+const { STATUS } = require("../services/memberRegistrationService");
 const {
-  submitMemberRegistration,
-  STATUS,
-} = require("../services/memberRegistrationService");
+  submitMembershipApplication,
+} = require("../services/membershipWorkflowService");
 const {
   resolveBlessBoardFormPhone,
   blessBoardPhoneFieldLocals,
 } = require("../services/resolveBlessBoardFormPhone");
+const memberIdentityRepo = require("../repositories/memberIdentityRepository");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "blessboard", "v5");
 
@@ -114,6 +115,13 @@ function mapRegistrationFieldErrors(reason) {
  */
 function submittedFromBody(body) {
   const raw = body || {};
+  const interests = [];
+  const interestRaw = raw.interests;
+  if (Array.isArray(interestRaw)) {
+    for (const item of interestRaw) interests.push(String(item || ""));
+  } else if (interestRaw) {
+    interests.push(String(interestRaw));
+  }
   return {
     firstName: String(raw.first_name || ""),
     lastName: String(raw.last_name || ""),
@@ -122,6 +130,26 @@ function submittedFromBody(body) {
     phone: String(raw.phone || ""),
     phone_country: String(raw.phone_country || raw.phoneCountry || ""),
     phone_national: String(raw.phone_national || raw.phoneNational || ""),
+    faithBackground: String(raw.faith_background || ""),
+    baptismStatus: String(raw.baptism_status || ""),
+    previousChurch: String(raw.previous_church || ""),
+    interests,
+    ministryInterest: String(raw.ministry_interest || ""),
+    availability: String(raw.availability || ""),
+    consentContact: Boolean(raw.consent_contact),
+  };
+}
+
+function applicationFromBody(body) {
+  const submitted = submittedFromBody(body);
+  return {
+    faithBackground: submitted.faithBackground || undefined,
+    baptismStatus: submitted.baptismStatus || undefined,
+    previousChurch: submitted.previousChurch || undefined,
+    interests: submitted.interests.length ? submitted.interests : undefined,
+    ministryInterest: submitted.ministryInterest || undefined,
+    availability: submitted.availability || undefined,
+    consentContact: submitted.consentContact || undefined,
   };
 }
 
@@ -283,12 +311,28 @@ function createTenantRegistrationRouter(deps) {
 
   router.get("/register", (req, res, next) => {
     Promise.resolve()
-      .then(() => {
+      .then(async () => {
         const scope = resolveHostScope(req, res);
         if (!scope) return;
+        let intakeForm = null;
+        try {
+          intakeForm = await memberIdentityRepo.getPublishedIntakeFormForChurch(getPool(), {
+            churchId: scope.churchId,
+            branchId: scope.branchId,
+          });
+        } catch {
+          intakeForm = null;
+        }
         const html = renderRegistrationView(
           "public/register.ejs",
-          formLocals(req, res, scope, { error: null, submitted: null })
+          formLocals(req, res, scope, {
+            error: null,
+            submitted: null,
+            intakeForm,
+            enableSpiritualBackground: !intakeForm || intakeForm.enableSpiritualBackground,
+            enableParticipationInterests:
+              !intakeForm || intakeForm.enableParticipationInterests,
+          })
         );
         return res.status(200).type("html").send(html);
       })
@@ -324,6 +368,15 @@ function createTenantRegistrationRouter(deps) {
             churchId: scope.churchId,
             branchId: scope.branchId,
           });
+          let intakeForm = null;
+          try {
+            intakeForm = await memberIdentityRepo.getPublishedIntakeFormForChurch(getPool(), {
+              churchId: scope.churchId,
+              branchId: scope.branchId,
+            });
+          } catch {
+            intakeForm = null;
+          }
           const html = renderRegistrationView(
             "public/register.ejs",
             formLocals(req, res, scope, {
@@ -331,6 +384,10 @@ function createTenantRegistrationRouter(deps) {
               fieldErrors: {},
               errorSummaryItems: [GENERIC_ERROR_MESSAGE],
               submitted: submittedFromBody(body),
+              intakeForm,
+              enableSpiritualBackground: !intakeForm || intakeForm.enableSpiritualBackground,
+              enableParticipationInterests:
+                !intakeForm || intakeForm.enableParticipationInterests,
             })
           );
           return res.status(403).type("html").send(html);
@@ -342,7 +399,16 @@ function createTenantRegistrationRouter(deps) {
           env,
           allowLegacyPhone: false,
         });
-        const result = await submitMemberRegistration(getPool(), {
+        let intakeForm = null;
+        try {
+          intakeForm = await memberIdentityRepo.getPublishedIntakeFormForChurch(getPool(), {
+            churchId: scope.churchId,
+            branchId: scope.branchId,
+          });
+        } catch {
+          intakeForm = null;
+        }
+        const result = await submitMembershipApplication(getPool(), {
           churchId: scope.churchId,
           branchId: scope.branchId,
           firstName: body.first_name,
@@ -353,6 +419,8 @@ function createTenantRegistrationRouter(deps) {
           phoneCountry: phoneResolved.fields.phoneCountry,
           phoneNational: phoneResolved.fields.phoneNational,
           country: phoneResolved.fields.phoneCountry || "ZM",
+          intakeFormId: intakeForm ? intakeForm.id : null,
+          application: applicationFromBody(body),
         });
 
         if (result.ok) {
@@ -397,6 +465,10 @@ function createTenantRegistrationRouter(deps) {
               ? mapped.summaryItems
               : [errorMessage],
             submitted: submittedFromBody(body),
+            intakeForm,
+            enableSpiritualBackground: !intakeForm || intakeForm.enableSpiritualBackground,
+            enableParticipationInterests:
+              !intakeForm || intakeForm.enableParticipationInterests,
           })
         );
         return res.status(duplicate ? 409 : 400).type("html").send(html);
