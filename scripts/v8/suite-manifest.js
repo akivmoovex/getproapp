@@ -38,6 +38,7 @@ const SHARED_PLATFORM = Object.freeze({
     "tests/v8-shared-website-sections.test.js",
     "tests/v8-shared-website-lifecycle.test.js",
     "tests/v8-shared-validation.test.js",
+    "tests/v8-shared-audit-logging.test.js",
     "tests/shared-website-section-lifecycle.test.js",
   ]),
 });
@@ -66,6 +67,7 @@ const COMPATIBILITY = Object.freeze({
     "tests/v8-shared-website-sections.test.js",
     "tests/v8-shared-website-lifecycle.test.js",
     "tests/v8-shared-validation.test.js",
+    "tests/v8-shared-audit-logging.test.js",
     "tests/shared-website-section-lifecycle.test.js",
   ]),
 });
@@ -141,6 +143,8 @@ const COVERAGE_TARGETS = Object.freeze([
   "src/platform/website/v7CompatibleWebsitePublish.js",
   "src/platform/validation/sharedFieldValidators.js",
   "src/platform/http/sharedApiError.js",
+  "src/platform/audit/sharedAuditCatalog.js",
+  "src/platform/audit/sharedAuditLogging.js",
 ]);
 
 const COVERAGE_LINE_THRESHOLD = 90;

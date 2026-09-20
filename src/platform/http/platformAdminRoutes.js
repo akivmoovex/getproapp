@@ -95,9 +95,6 @@ const {
   STATUS: RECOVERY_STATUS,
 } = require("../services/platformAdminAccountRecoveryService");
 const {
-  listOrganizationAuditEvents,
-} = require("../services/auditEventService");
-const {
   setSupportContextCookie,
   clearSupportContextCookie,
   readSupportContextCookie,
@@ -3251,19 +3248,32 @@ function createPlatformAdminRouter(deps) {
       let organizationAuditEvents = [];
       if (churchScope && churchScope.organizationId) {
         try {
-          const auditPage = await listOrganizationAuditEvents(getPool(), {
+          const {
+            authorizeAuditLogAccess,
+            listSharedPlatformAuditEvents,
+          } = require("../audit/sharedAuditLogging");
+          const access = authorizeAuditLogAccess({
+            isPlatformAdmin: true,
             organizationId: churchScope.organizationId,
-            actionCategory: "platform",
-            limit: 25,
+            requestedOrganizationId: churchScope.organizationId,
           });
-          if (auditPage.ok) {
-            organizationAuditEvents = (auditPage.events || []).map((ev) => ({
-              id: String(ev.id),
-              actionKey: String(ev.actionKey || ""),
-              entityType: ev.entityType != null ? String(ev.entityType) : "",
-              outcome: ev.outcome != null ? String(ev.outcome) : "",
-              createdAt: ev.createdAt || null,
-            }));
+          if (access.ok) {
+            const auditPage = await listSharedPlatformAuditEvents(getPool(), {
+              organizationId: churchScope.organizationId,
+              requestedOrganizationId: churchScope.organizationId,
+              isPlatformAdmin: true,
+              actionCategory: "platform",
+              limit: 25,
+            });
+            if (auditPage.ok) {
+              organizationAuditEvents = (auditPage.events || []).map((ev) => ({
+                id: String(ev.id),
+                actionKey: String(ev.actionKey || ""),
+                entityType: ev.entityType != null ? String(ev.entityType) : "",
+                outcome: ev.outcome != null ? String(ev.outcome) : "",
+                createdAt: ev.createdAt || null,
+              }));
+            }
           }
         } catch {
           organizationAuditEvents = [];

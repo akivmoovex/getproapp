@@ -7,7 +7,9 @@
  * an organization exists.
  */
 
-const { recordAuditEventSafe } = require("../services/auditEventService");
+const {
+  recordSharedPlatformAudit,
+} = require("../audit/sharedAuditLogging");
 
 const ACTION = Object.freeze({
   SUBMITTED: "registration.submitted",
@@ -71,16 +73,20 @@ async function recordLifecycleAudit(db, input) {
     Object.assign(metadata, input.metadata);
   }
 
-  const result = await recordAuditEventSafe(db, {
+  const result = await recordSharedPlatformAudit(db, {
     deploymentCode: (input && input.deploymentCode) || "moovex-platform-testing",
     organizationId,
     churchId: input.churchId || null,
     branchId: input.branchId || null,
+    facilityId: input.facilityId || null,
     actorUserId: input.actorUserId || null,
+    actorIdentityId: input.actorIdentityId || null,
+    actorType: input.actorType || input.actor_type || input.actorKind || null,
     actionKey,
     entityType: input.entityType || "registration_application",
     entityId: input.entityId || input.applicationId || null,
     outcome: input.outcome || "success",
+    productCode: compact(input.productCode || input.product_code) || null,
     metadata,
   });
   return { recorded: Boolean(result && result.ok), result };

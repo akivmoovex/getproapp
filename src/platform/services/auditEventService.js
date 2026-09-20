@@ -24,6 +24,11 @@ const FORBIDDEN_METADATA_KEYS = Object.freeze([
   "token",
   "session_token",
   "sessiontoken",
+  "session_secret",
+  "otp",
+  "otp_code",
+  "one_time_password",
+  "verification_code",
   "csrf",
   "csrf_token",
   "authorization",
@@ -58,6 +63,13 @@ const FORBIDDEN_METADATA_KEYS = Object.freeze([
   "notes",
   "answers",
   "answers_json",
+  "patient_name",
+  "patient_email",
+  "patient_phone",
+  "clinical_notes",
+  "diagnosis",
+  "prescription",
+  "lab_result",
 ]);
 
 const ALLOWED_METADATA_KEYS = Object.freeze([
@@ -102,6 +114,13 @@ const ALLOWED_METADATA_KEYS = Object.freeze([
   "failed_stage",
   "provisioning_status",
   "retry",
+  "role_key",
+  "permission_key",
+  "invite_id",
+  "verification_channel",
+  "website_action",
+  "correlation_id",
+  "dedupe_key",
 ]);
 
 const ACTION_KEY_RE = /^[a-z][a-z0-9_.]{1,95}$/;
@@ -172,7 +191,7 @@ function sanitizeAuditMetadata(raw) {
       redactedKeys.push(key);
       continue;
     }
-    if (FORBIDDEN_METADATA_KEYS.includes(k) || /password|token|secret|cookie|csrf/i.test(k)) {
+    if (FORBIDDEN_METADATA_KEYS.includes(k) || /password|token|secret|cookie|csrf|otp/i.test(k)) {
       redactedKeys.push(k);
       continue;
     }
@@ -235,6 +254,12 @@ async function recordAuditEvent(db, input) {
 
   let churchId = input.churchId == null || input.churchId === "" ? null : String(input.churchId);
   let branchId = input.branchId == null || input.branchId === "" ? null : String(input.branchId);
+  let facilityId =
+    input.facilityId == null || input.facilityId === "" ? null : String(input.facilityId);
+  let productCode =
+    input.productCode == null || input.productCode === ""
+      ? null
+      : String(input.productCode).trim().toLowerCase();
   let actorUserId =
     input.actorUserId == null || input.actorUserId === "" ? null : String(input.actorUserId);
   let entityId = input.entityId == null || input.entityId === "" ? null : String(input.entityId);
@@ -243,6 +268,12 @@ async function recordAuditEvent(db, input) {
   }
   if (branchId && !UUID_RE.test(branchId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: "branch_id" };
+  }
+  if (facilityId && !UUID_RE.test(facilityId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: "facility_id" };
+  }
+  if (productCode && !/^[a-z][a-z0-9_]{1,31}$/.test(productCode)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: "product_code" };
   }
   if (actorUserId && !UUID_RE.test(actorUserId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: "actor_user_id" };
@@ -257,16 +288,21 @@ async function recordAuditEvent(db, input) {
     return { ok: false, status: STATUS.INVALID_INPUT, event: null, reason: sanitized.reason };
   }
 
+  const critical = input.critical === true;
+
   try {
     return await withClient(db, async (client) => {
-      // Isolate audit failures so a best-effort write cannot abort a caller's open transaction.
+      // Best-effort writes use a savepoint so audit failure cannot abort caller TX.
+      // Critical security mutations skip the savepoint so failure participates in the TX.
       const sp = `audit_sp_${Date.now().toString(36)}_${Math.floor(Math.random() * 1e6)}`;
       let usedSavepoint = false;
-      try {
-        await client.query(`SAVEPOINT ${sp}`);
-        usedSavepoint = true;
-      } catch {
-        usedSavepoint = false;
+      if (!critical) {
+        try {
+          await client.query(`SAVEPOINT ${sp}`);
+          usedSavepoint = true;
+        } catch {
+          usedSavepoint = false;
+        }
       }
       try {
         const event = await repo.insertAuditEvent(client, {
@@ -274,6 +310,8 @@ async function recordAuditEvent(db, input) {
           organizationId,
           churchId,
           branchId,
+          facilityId,
+          productCode,
           actorUserId,
           actionKey,
           entityType,
@@ -290,7 +328,7 @@ async function recordAuditEvent(db, input) {
           event,
           redactedKeys: sanitized.redactedKeys,
         };
-      } catch {
+      } catch (err) {
         if (usedSavepoint) {
           try {
             await client.query(`ROLLBACK TO SAVEPOINT ${sp}`);
@@ -298,6 +336,9 @@ async function recordAuditEvent(db, input) {
           } catch {
             /* ignore nested rollback failures */
           }
+        }
+        if (critical) {
+          throw err;
         }
         return {
           ok: false,
@@ -337,6 +378,18 @@ async function listOrganizationAuditEvents(db, input) {
   let branchId = input.branchId == null || input.branchId === "" ? null : String(input.branchId);
   if (branchId && !UUID_RE.test(branchId)) {
     return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "branch_id" };
+  }
+  let facilityId =
+    input.facilityId == null || input.facilityId === "" ? null : String(input.facilityId);
+  if (facilityId && !UUID_RE.test(facilityId)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "facility_id" };
+  }
+  let productCode =
+    input.productCode == null || input.productCode === ""
+      ? null
+      : String(input.productCode).trim().toLowerCase();
+  if (productCode && !/^[a-z][a-z0-9_]{1,31}$/.test(productCode)) {
+    return { ok: false, status: STATUS.INVALID_INPUT, events: [], reason: "product_code" };
   }
   let actorUserId =
     input.actorUserId == null || input.actorUserId === "" ? null : String(input.actorUserId);
@@ -406,6 +459,8 @@ async function listOrganizationAuditEvents(db, input) {
         organizationId,
         churchId,
         branchId,
+        facilityId,
+        productCode,
         actorUserId,
         actionKey,
         actionCategory,
