@@ -70,8 +70,8 @@ After each task, report:
 | **Report** | [`docs/releases/V8_AC_DIRECTORY_NAVIGATION_PROMPT06.md`](./V8_AC_DIRECTORY_NAVIGATION_PROMPT06.md) |
 | **Changed files** | `src/platform/website/publicWebsiteUrl.js` · `src/activeclinic/services/activeClinicPublicVisibilityService.js` · `views/activeclinic/partials/public-clinic-card.ejs` · `tests/activeclinic-clinic-directory.test.js` · docs |
 | **Test results** | Directory **14/14 PASS** |
-| **Commit SHA** |  |
-| **Push status** | Pushed to  |
+| **Commit SHA** | `bb1ab5e9d95170285bc172502078f68c202c4ec4` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None |
 
 ### PROMPT 05 — V8 AC services and doctor profiles
