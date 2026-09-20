@@ -88,8 +88,8 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 | **Existing functionality reused** | Booking `9a0c3045` · phone `f5515341` · catalogue `f297e531` · directory `bb1ab5e9` · media `f52ee500`/`d587615d` |
 | **Changed files** | `docs/releases/V8_QA_DEFECTS_PROMPT02.md` · this execution report |
 | **Tests** | Focused AC+media cluster **81/81 PASS** (no failures to fix) |
-| **Commit SHA** | _(filled after commit)_ |
-| **Push status** | Pending push to `origin/V8` |
+| **Commit SHA** | `2806ed46098ff2e7388b5ad5a53fd6645002518d` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for CODE_PASS. Hosted write retests still required (not claimed). |
 | **Next task** | Continue overnight matrix (PARTIAL Stitch polish or forms/membership gaps) without redoing these defects |
 | **Report** | [`V8_QA_DEFECTS_PROMPT02.md`](./V8_QA_DEFECTS_PROMPT02.md) |
