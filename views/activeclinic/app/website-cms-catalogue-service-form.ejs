@@ -25,7 +25,7 @@
     <% if (mode === "create") { %>
     <label>
       Service key <span class="ac-mw-muted">(optional)</span>
-      <input type="text" name="serviceKey" maxlength="48" pattern="[a-z0-9]+(?:[-_][a-z0-9]+)*" title="Lowercase letters, numbers, hyphens or underscores" placeholder="auto-generated-from-name" value="<%= service.serviceKey || "" %>"/>
+      <input type="text" name="serviceKey" maxlength="48" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" title="Lowercase letters, numbers, and hyphens" placeholder="auto-generated-from-name" value="<%= service.serviceKey || "" %>"/>
     </label>
     <% } else { %>
     <p class="ac-mw-muted">Service key: <code><%= service.serviceKey || "" %></code></p>
