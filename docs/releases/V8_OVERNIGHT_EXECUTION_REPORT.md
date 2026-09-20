@@ -88,8 +88,8 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 | **Existing functionality reused** | `d76b2975` review service · migration `040` · Prompt 04 public submit |
 | **Changed files** | `tenantFormRepository.js` · `tenantFormService.js` · `sharedFormBuilderRoutes.js` · submissions/detail/overview views · e2e tests · docs |
 | **Tests** | Form builder + e2e **19/19 PASS** |
-| **Commit SHA** | _(filled after commit)_ |
-| **Push status** | Pending push to `origin/V8` |
+| **Commit SHA** | `e651a889bd95ace26c1555663352728faf950d37` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for PASS. Migration `040` still not applied on hosted DB. |
 | **Next task** | BB membership / activity / announcements per matrix when prompted |
 | **Report** | [`V8_SHARED_SUBMISSION_MANAGEMENT_PROMPT05.md`](./V8_SHARED_SUBMISSION_MANAGEMENT_PROMPT05.md) |
