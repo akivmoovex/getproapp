@@ -478,5 +478,39 @@ describe("V8 BlessBoard membership workflow", () => {
       fs.readFileSync(path.join(__dirname, "..", "views/platform/forms/bb-membership-forms.ejs"), "utf8"),
       /data-bb-screen-mobile="BB01-M"/
     );
+
+    const reviewQueue = fs.readFileSync(
+      path.join(__dirname, "..", "views/blessboard/v5/branch-admin/registrations.ejs"),
+      "utf8"
+    );
+    assert.match(reviewQueue, /data-bb-screen-desktop="BB11-D"/);
+    assert.match(reviewQueue, /data-bb-screen-mobile="BB11-M"/);
+    assert.doesNotMatch(reviewQueue, /Attendance Rate|Volunteer Hours|live KPI|99\.9%/i);
+
+    const reviewDetail = fs.readFileSync(
+      path.join(__dirname, "..", "views/blessboard/v5/branch-admin/registration-detail.ejs"),
+      "utf8"
+    );
+    assert.match(reviewDetail, /data-bb-screen-desktop="BB12-D"/);
+    assert.match(reviewDetail, /data-bb-screen-desktop="BB13-D"/);
+    assert.match(reviewDetail, /data-bb-reg-audit|data-bb-pastoral/);
+    assert.match(reviewDetail, /does <strong>not<\/strong> create a login account/i);
+
+    const memberDetail = fs.readFileSync(
+      path.join(__dirname, "..", "views/blessboard/v5/branch-admin/member-detail.ejs"),
+      "utf8"
+    );
+    assert.match(memberDetail, /data-bb-screen-desktop="BB14-D"/);
+    assert.match(memberDetail, /data-bb-screen-desktop="BB15-D"/);
+    assert.match(memberDetail, /data-bb-screen-desktop="BB16-D"/);
+    assert.match(memberDetail, /confirm_transfer/);
+    assert.doesNotMatch(memberDetail, /Attendance Rate|Volunteer Hours|Birthday|ECCL-/i);
+
+    const branchMembers = fs.readFileSync(
+      path.join(__dirname, "..", "views/blessboard/v5/branch-admin/members.ejs"),
+      "utf8"
+    );
+    assert.match(branchMembers, /data-bb-screen-desktop="BB18-D"/);
+    assert.match(branchMembers, /data-bb-screen-mobile="BB18-M"/);
   });
 });

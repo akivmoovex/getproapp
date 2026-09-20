@@ -88,6 +88,8 @@
   data-bb-stitch-registration-detail="26-branch-member-verification-queue"
   data-bb-membership="application-detail"
   data-screen="BB12"
+  data-bb-screen-desktop="BB12-D"
+  data-bb-screen-mobile="BB12-M"
   data-bb-reg-status="<%= reg.status || '' %>"
 >
   <header class="bb-ba-page-head bb-ba-page-head--split">
@@ -304,6 +306,8 @@
             style="display:inline"
             data-bb-reg-follow-up="1"
             data-screen="BB13"
+            data-bb-screen-desktop="BB13-D"
+            data-bb-screen-mobile="BB13-M"
           >
             <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
             <input type="hidden" name="review_notes" id="bb-ba-followup-notes-mirror" value="" />
@@ -320,7 +324,7 @@
         </div>
       </section>
 
-      <section class="bb-ba-panel" data-bb-reg-pastoral="1">
+      <section class="bb-ba-panel" data-bb-reg-pastoral="1" data-bb-screen-desktop="BB13-D" data-bb-pastoral-panel="1">
         <h2 class="bb-ba-section-title">Confidential pastoral notes</h2>
         <% if (pastoralRestricted) { %>
         <p class="bb-ba-hint" data-bb-pastoral-restricted="1">Restricted. Requires pastoral_cases.view_restricted.</p>

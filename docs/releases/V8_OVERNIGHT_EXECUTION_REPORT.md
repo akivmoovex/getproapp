@@ -78,6 +78,22 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 
 ## Task log
 
+### PROMPT 07 — V8 BlessBoard membership management (BB11–BB18)
+
+| Field | Value |
+|-------|-------|
+| **Status** | COMPLETE · verdict `V8_BB_MEMBERSHIP_MANAGEMENT_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch** | `V8` (synced with `origin/V8`) |
+| **Existing functionality reused** | Membership workflow `938813bd` · Prompt 09 CODE_PASS · shared RBAC / submission services |
+| **Changed files** | `membershipWorkflowAdminRoutes.js` · HQ/branch member + registration views · `bb-membership-transfer.ejs` · register step label · membership tests · docs |
+| **Tests** | Membership + a11y structure **97/97 PASS** |
+| **Commit SHA** | *(recorded after push)* |
+| **Push status** | Pending push to `origin/V8` |
+| **Blockers** | None for PASS. Migration `110` still not applied on hosted DB. BB18-M Stitch inventory gap (responsive markers only). |
+| **Next task** | Next overnight prompt as directed |
+| **Report** | [`V8_BB_MEMBERSHIP_MANAGEMENT_PROMPT07.md`](./V8_BB_MEMBERSHIP_MANAGEMENT_PROMPT07.md) |
+
 ### PROMPT 06 — V8 BlessBoard public registration (BB01–BB10)
 
 | Field | Value |

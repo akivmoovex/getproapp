@@ -225,6 +225,9 @@ function createMembershipWorkflowAdminRouter(deps) {
     if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
       return res.status(403).send("CSRF");
     }
+    if (!(req.body && (req.body.confirm_transfer === "1" || req.body.confirm_transfer === "on"))) {
+      return res.status(400).send("Confirm the same-church transfer before continuing.");
+    }
     const result = await requestMemberBranchTransfer(getPool(), {
       churchId: ctx.churchId,
       memberId: req.params.memberId,

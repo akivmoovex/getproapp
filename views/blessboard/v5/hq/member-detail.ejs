@@ -9,7 +9,7 @@
   }
 %>
 
-<section class="bb-hq-member-detail" data-bb-hq-member-detail="1" data-bb-membership="member-profile" data-screen="BB14" aria-label="Member profile">
+<section class="bb-hq-member-detail" data-bb-hq-member-detail="1" data-bb-membership="member-profile" data-screen="BB14" data-bb-screen-desktop="BB14-D" data-bb-screen-mobile="BB14-M" aria-label="Member profile">
   <p class="bb-hq-breadcrumb">
     <a href="/hq">HQ</a>
     <span aria-hidden="true">›</span>
@@ -72,7 +72,7 @@
     Linking a login is a separate step. Approving a registration never promises an automatic account.
   </p>
 
-  <article class="bb-hq-panel" data-bb-member-edit="1" data-screen="BB15">
+  <article class="bb-hq-panel" data-bb-member-edit="1" data-screen="BB15" data-bb-screen-desktop="BB15-D" data-bb-screen-mobile="BB15-M">
     <h2 class="bb-hq-section-title">Edit profile</h2>
     <form method="post" action="/hq/membership/members/<%= m.id %>/edit">
       <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= csrfToken %>" />
@@ -82,11 +82,12 @@
       <input id="hq_last_name" name="last_name" type="text" maxlength="100" value="<%= m.lastName || '' %>" />
       <label for="hq_preferred_name">Preferred name</label>
       <input id="hq_preferred_name" name="preferred_name" type="text" maxlength="100" value="<%= m.preferredName || '' %>" />
+      <p class="bb-hq-hint">Editing profile fields does not create or change a login account.</p>
       <button type="submit">Save profile</button>
     </form>
   </article>
 
-  <article class="bb-hq-panel" data-bb-member-transfer="1" data-screen="BB16">
+  <article class="bb-hq-panel" data-bb-member-transfer="1" data-screen="BB16" data-bb-screen-desktop="BB16-D" data-bb-screen-mobile="BB16-M">
     <h2 class="bb-hq-section-title">Request branch transfer</h2>
     <form method="post" action="/hq/membership/members/<%= m.id %>/transfer">
       <input type="hidden" name="<%= typeof csrfField !== 'undefined' ? csrfField : '_csrf' %>" value="<%= csrfToken %>" />
@@ -94,6 +95,10 @@
       <input id="hq_to_branch_id" name="to_branch_id" type="text" required maxlength="64" />
       <label for="hq_reason">Reason</label>
       <textarea id="hq_reason" name="reason" rows="3" maxlength="1000"></textarea>
+      <label class="bb-hq-hint" style="display:block;margin:0.75rem 0">
+        <input type="checkbox" name="confirm_transfer" value="1" required />
+        I confirm this transfer request stays within the same church.
+      </label>
       <button type="submit">Request transfer</button>
     </form>
   </article>
