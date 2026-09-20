@@ -68,6 +68,31 @@ async function createPublicContactInquiry(db, input) {
     phoneDisplay = phone.display;
   }
 
+  // Retry / double-submit protection without schema changes: same clinic + email +
+  // message within a short window reuses the existing receipt (not an appointment).
+  const recent = await db.query(
+    `SELECT id, created_at
+       FROM activeclinic.public_contact_inquiries
+      WHERE organization_id = $1
+        AND sender_email_normalized = $2
+        AND message = $3
+        AND created_at > NOW() - INTERVAL '30 minutes'
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    [organizationId, email.normalized, message]
+  );
+  if (recent.rows[0]) {
+    return {
+      ok: true,
+      code: RESULT.OK,
+      duplicate: true,
+      inquiry: {
+        id: recent.rows[0].id,
+        createdAt: recent.rows[0].created_at,
+      },
+    };
+  }
+
   const row = await db.query(
     `INSERT INTO activeclinic.public_contact_inquiries (
       organization_id, healthcare_organization_id, facility_id,
@@ -161,6 +186,29 @@ async function createPlatformContactInquiry(db, input) {
     phoneDisplay = phone.display;
   }
 
+  const recent = await db.query(
+    `SELECT id, created_at
+       FROM activeclinic.platform_contact_inquiries
+      WHERE sender_email_normalized = $1
+        AND message = $2
+        AND created_at > NOW() - INTERVAL '30 minutes'
+      ORDER BY created_at DESC
+      LIMIT 1`,
+    [email.normalized, message]
+  );
+  if (recent.rows[0]) {
+    return {
+      ok: true,
+      code: RESULT.OK,
+      duplicate: true,
+      inquiry: {
+        id: recent.rows[0].id,
+        createdAt: recent.rows[0].created_at,
+        subject: subject.key,
+      },
+    };
+  }
+
   const row = await db.query(
     `INSERT INTO activeclinic.platform_contact_inquiries (
       sender_name, sender_email_normalized, sender_email_display,
@@ -184,15 +232,34 @@ async function createPlatformContactInquiry(db, input) {
 
 function describePlatformContactErrors(code) {
   const errors = {};
-  if (code === "email_required" || code === "invalid_email") {
+  if (code === "email_required" || code === "invalid_email" || code === "email_invalid") {
     errors.senderEmail = "Enter a valid email address.";
   }
   if (code === "subject_required") {
     errors.subject = "Select a subject for your enquiry.";
   }
+  if (code === "invalid_phone" || code === "phone_required" || code === "phone_invalid") {
+    errors.phone_national = "Enter a valid phone number.";
+  }
   if (code === RESULT.INVALID_INPUT) {
     errors.senderName = "Enter your name (2–120 characters).";
     errors.message = "Enter a message (1–4000 characters).";
+  }
+  return errors;
+}
+
+/** Field-safe messages for clinic (tenant) contact inquiries — never expose codes/stack. */
+function describeClinicContactErrors(code) {
+  const errors = {};
+  if (code === "email_required" || code === "invalid_email" || code === "email_invalid") {
+    errors.senderEmail = "Enter a valid email address.";
+  }
+  if (code === "invalid_phone" || code === "phone_required" || code === "phone_invalid") {
+    errors.phone_national = "Enter a valid phone number.";
+  }
+  if (code === RESULT.INVALID_INPUT) {
+    errors.senderName = "Enter your name.";
+    errors.message = "Enter a message.";
   }
   return errors;
 }
@@ -204,4 +271,5 @@ module.exports = {
   createPublicContactInquiry,
   createPlatformContactInquiry,
   describePlatformContactErrors,
+  describeClinicContactErrors,
 };

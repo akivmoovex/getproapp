@@ -17,6 +17,7 @@ const {
 const {
   createConsultationBookingRequest,
   createProcedureBookingRequest,
+  findPublicBookingByIdempotencyKey,
 } = require("../services/activeClinicPublicBookingService");
 const {
   verifyBookingAccessToken,
@@ -529,7 +530,40 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
       const clinic = resolved.clinic;
       const csrfToken = issuePageCsrf(res, env, isProduction);
       const draft = readBookingDraft(req, env, clinicKey);
-      if (!draft || !draft.patientFirstName) return res.redirect(303, `/clinics/${clinicKey}/book`);
+      const bodyIdempotencyKey = String((req.body && req.body.idempotencyKey) || "").trim();
+
+      // After a successful submit the draft cookie is cleared. A browser retry that
+      // still posts the same idempotency key must return the existing receipt — not
+      // restart the wizard (and must not create a second row).
+      if (!draft || !draft.patientFirstName) {
+        if (bodyIdempotencyKey) {
+          if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+            return res.status(403).type("html").send(renderPublicView("booking/consultation-review", wizardLocals({
+              csrfToken,
+              clinic,
+              draft: emptyConsultationDraft(),
+              wizardStep: 5,
+              error: "Your session expired. Please try again.",
+            })));
+          }
+          const existing = await findPublicBookingByIdempotencyKey(getPool(), {
+            organizationId: clinic.organizationId,
+            idempotencyKey: bodyIdempotencyKey,
+          });
+          if (existing.ok) {
+            return res.status(200).type("html").send(renderPublicView("booking/request-submitted", {
+              csrfToken,
+              clinic,
+              booking: existing.booking,
+              accessToken: existing.booking.accessToken,
+              pageTitle: "Request submitted",
+              robots: "noindex",
+              duplicateSubmit: true,
+            }));
+          }
+        }
+        return res.redirect(303, `/clinics/${clinicKey}/book`);
+      }
 
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return res.status(403).type("html").send(renderPublicView("booking/consultation-review", wizardLocals({
@@ -537,7 +571,8 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
         })));
       }
 
-      const idempotencyKey = String((req.body && req.body.idempotencyKey) || draft.idempotencyKey || "").trim()
+      const idempotencyKey = bodyIdempotencyKey
+        || String(draft.idempotencyKey || "").trim()
         || generateIdempotencyKey();
 
       const result = await createConsultationBookingRequest(getPool(), {
@@ -987,7 +1022,9 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
       }
       const procedure = procedureResult.procedure;
       const draft = readBookingDraft(req, env, clinicKey);
-      if (
+      const csrfToken = issuePageCsrf(res, env, isProduction);
+      const bodyIdempotencyKey = String((req.body && req.body.idempotencyKey) || "").trim();
+      const draftIncomplete =
         !draft
         || draft.bookingKind !== "procedure"
         || draft.procedureId !== procedure.id
@@ -996,18 +1033,45 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
         || !draft.preferredStartsAt
         || !draft.patientFirstName
         || !draft.patientLastName
-        || !draft.patientPhone
-      ) {
+        || !draft.patientPhone;
+
+      if (draftIncomplete) {
+        if (bodyIdempotencyKey) {
+          if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+            return res.status(403).type("html").send(renderPublicView("tenant/clinic-unavailable", {
+              csrfToken,
+              pageTitle: "Session expired",
+              pageLead: "Your session expired. Please try again from the booking form.",
+              shellVariant: "tenant",
+              clinic,
+            }));
+          }
+          const existing = await findPublicBookingByIdempotencyKey(getPool(), {
+            organizationId: clinic.organizationId,
+            idempotencyKey: bodyIdempotencyKey,
+          });
+          if (existing.ok) {
+            return res.status(200).type("html").send(renderPublicView("booking/request-submitted", {
+              csrfToken,
+              clinic,
+              booking: existing.booking,
+              accessToken: existing.booking.accessToken,
+              pageTitle: "Request submitted",
+              robots: "noindex",
+              duplicateSubmit: true,
+            }));
+          }
+        }
         return res.redirect(303, `/clinics/${clinicKey}/book/procedures/${procedure.procedureKey}`);
       }
-      const csrfToken = issuePageCsrf(res, env, isProduction);
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
         return res.status(403).type("html").send(renderPublicView("booking/procedure-review", procedureWizardLocals({
           csrfToken, clinic, procedure, draft, wizardStepKey: "review",
           error: "Your session expired. Please try again.",
         })));
       }
-      const idempotencyKey = String((req.body && req.body.idempotencyKey) || draft.idempotencyKey || "").trim()
+      const idempotencyKey = bodyIdempotencyKey
+        || String(draft.idempotencyKey || "").trim()
         || generateIdempotencyKey();
       const result = await createProcedureBookingRequest(getPool(), {
         organizationId: clinic.organizationId,

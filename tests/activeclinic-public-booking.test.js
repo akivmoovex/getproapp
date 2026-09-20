@@ -299,6 +299,71 @@ describe("ActiveClinic public booking (P24–P26)", () => {
     assert.equal(rows.rows[0].n, 1);
   });
 
+  it("V8: retry after draft cookie cleared still returns existing booking receipt", async () => {
+    if (!requireDb()) return;
+    const stamp = Date.now().toString(36);
+    const tenant = await provisionBookableClinic(stamp);
+    const app = appWithEnv();
+    const base = `/clinics/${tenant.orgKey}`;
+
+    let cookies = [];
+    const entry = await request(app).get(`${base}/book`);
+    cookies = mergeCookies(cookies, entry);
+    let csrf = extractCsrf(entry);
+    let r = await request(app).post(`${base}/book`).set("Cookie", cookies).type("form")
+      .send({ [CSRF_FIELD]: csrf, wizardAction: "continue", serviceKey: "" });
+    cookies = mergeCookies(cookies, r);
+    r = await request(app).get(`${base}/book/doctor`).set("Cookie", cookies);
+    cookies = mergeCookies(cookies, r);
+    csrf = extractCsrf(r);
+    r = await request(app).post(`${base}/book/doctor`).set("Cookie", cookies).type("form")
+      .send({ [CSRF_FIELD]: csrf, doctorChoice: "any" });
+    cookies = mergeCookies(cookies, r);
+    r = await request(app).get(`${base}/book/slot`).set("Cookie", cookies);
+    cookies = mergeCookies(cookies, r);
+    csrf = extractCsrf(r);
+    r = await request(app).post(`${base}/book/slot`).set("Cookie", cookies).type("form")
+      .send({ [CSRF_FIELD]: csrf, preferredStartsAt: "2030-08-01T10:00" });
+    cookies = mergeCookies(cookies, r);
+    r = await request(app).get(`${base}/book/patient`).set("Cookie", cookies);
+    cookies = mergeCookies(cookies, r);
+    csrf = extractCsrf(r);
+    r = await request(app).post(`${base}/book/patient`).set("Cookie", cookies).type("form").send({
+      [CSRF_FIELD]: csrf,
+      patientFirstName: "Clear",
+      patientLastName: "Retry",
+      patientPhone: "+260977000333",
+      patientEmail: `clear.retry.${stamp}@example.invalid`,
+      visitReason: "post-clear retry",
+    });
+    cookies = mergeCookies(cookies, r);
+    const review = await request(app).get(`${base}/book/review`).set("Cookie", cookies);
+    cookies = mergeCookies(cookies, review);
+    csrf = extractCsrf(review);
+    const idem = review.text.match(/name="idempotencyKey"\s+value="([^"]+)"/)[1];
+
+    const first = await request(app).post(`${base}/book/submit`).set("Cookie", cookies).type("form")
+      .send({ [CSRF_FIELD]: csrf, idempotencyKey: idem });
+    assert.equal(first.status, 200);
+    assert.match(first.text, /Request submitted|pending clinic confirmation/i);
+    // Absorb Set-Cookie from first response (draft cleared), then retry with new CSRF.
+    cookies = mergeCookies(cookies, first);
+    const retryCsrfPage = await request(app).get(`${base}/book`).set("Cookie", cookies);
+    cookies = mergeCookies(cookies, retryCsrfPage);
+    csrf = extractCsrf(retryCsrfPage) || extractCsrf(first);
+    const retry = await request(app).post(`${base}/book/submit`).set("Cookie", cookies).type("form")
+      .send({ [CSRF_FIELD]: csrf, idempotencyKey: idem });
+    assert.equal(retry.status, 200);
+    assert.match(retry.text, /Request submitted|pending clinic confirmation/i);
+    assert.doesNotMatch(retry.text, /password_hash|SQLSTATE|node_modules|deployment_not_found/);
+
+    const rows = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM activeclinic.public_booking_requests WHERE organization_id = $1 AND idempotency_key = $2`,
+      [tenant.organizationId, idem]
+    );
+    assert.equal(rows.rows[0].n, 1);
+  });
+
   it("procedure referral honesty banner on booking form", async () => {
     if (!requireDb()) return;
     const stamp = Date.now().toString(36);

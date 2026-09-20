@@ -191,8 +191,9 @@ describe("ActiveClinic public website (P20–P26)", () => {
 
     const about = await request(app).get("/about");
     assert.equal(about.status, 200);
-    assert.match(about.text, /Precision Technology/);
-    assert.match(about.text, /Why ActiveClinic Exists/);
+    assert.match(about.text, /data-ac-page-section="public-about"/);
+    assert.match(about.text, /About ActiveClinic/);
+    assert.match(about.text, /Platform Capabilities|Platform Information/);
 
     const solutions = await request(app).get("/solutions");
     assert.equal(solutions.status, 200);
@@ -554,6 +555,41 @@ describe("ActiveClinic public website (P20–P26)", () => {
     assert.equal(contactSuccess.status, 200);
     assert.match(contactSuccess.text, /data-ac-page-section="tenant-contact-success"/);
     assert.match(contactSuccess.text, /Message received/);
+
+    // Duplicate retry (same email+message) must not create a second inquiry row.
+    const contactForm2 = await request(app).get(`/clinics/${tenant.orgKey}/contact`);
+    const csrf2 = extractCsrf(contactForm2);
+    const dupPost = await request(app)
+      .post(`/clinics/${tenant.orgKey}/contact`)
+      .set("Cookie", contactForm2.headers["set-cookie"])
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf2,
+        senderName: "Test User",
+        senderEmail: `user-${stamp}@example.com`,
+        message: "Hello clinic",
+      });
+    assert.equal(dupPost.status, 303);
+    const inqCount = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM activeclinic.public_contact_inquiries
+        WHERE organization_id = $1 AND sender_email_normalized = $2 AND message = $3`,
+      [tenant.organizationId, `user-${stamp}@example.com`, "Hello clinic"]
+    );
+    assert.equal(inqCount.rows[0].n, 1);
+
+    const invalidContact = await request(app)
+      .post(`/clinics/${tenant.orgKey}/contact`)
+      .set("Cookie", contactForm2.headers["set-cookie"])
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf2,
+        senderName: "",
+        senderEmail: "not-an-email",
+        message: "",
+      });
+    assert.equal(invalidContact.status, 400);
+    assert.match(invalidContact.text, /Please check your information/i);
+    assert.doesNotMatch(invalidContact.text, /password_hash|SQLSTATE|stack|node_modules/);
 
     const services = await request(app).get(`/clinics/${tenant.orgKey}/services`);
     assert.equal(services.status, 200);

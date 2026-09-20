@@ -8,16 +8,18 @@
   <div class="acp-contact-layout">
     <div class="acp-contact-layout__main">
       <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
-      <% const fd = formData || {}; %>
+      <% const fd = formData || {}; const verr = (typeof validationErrors === 'object' && validationErrors) ? validationErrors : {}; %>
       <form method="post" action="/clinics/<%= clinic.clinicKey %>/contact" class="ac-public-form acp-contact-form" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-        <div class="acp-field">
+        <div class="acp-field<%= verr.senderName ? ' acp-field--error' : '' %>">
           <label for="senderName">Your name</label>
-          <input id="senderName" name="senderName" required value="<%= fd.senderName || '' %>"/>
+          <input id="senderName" name="senderName" required value="<%= fd.senderName || '' %>" aria-invalid="<%= verr.senderName ? 'true' : 'false' %>"/>
+          <% if (verr.senderName) { %><p class="ac-form-field__error"><%= verr.senderName %></p><% } %>
         </div>
-        <div class="acp-field">
+        <div class="acp-field<%= verr.senderEmail ? ' acp-field--error' : '' %>">
           <label for="senderEmail">Email</label>
-          <input id="senderEmail" name="senderEmail" type="email" required value="<%= fd.senderEmail || '' %>"/>
+          <input id="senderEmail" name="senderEmail" type="email" required value="<%= fd.senderEmail || '' %>" aria-invalid="<%= verr.senderEmail ? 'true' : 'false' %>"/>
+          <% if (verr.senderEmail) { %><p class="ac-form-field__error"><%= verr.senderEmail %></p><% } %>
         </div>
         <%- include('../partials/phone-field', {
           id: 'senderPhone',
@@ -34,9 +36,10 @@
           legacyFieldName: 'senderPhone',
           showLegacyHidden: false
         }) %>
-        <div class="acp-field">
+        <div class="acp-field<%= verr.message ? ' acp-field--error' : '' %>">
           <label for="message">Message</label>
-          <textarea id="message" name="message" required maxlength="4000"><%= fd.message || '' %></textarea>
+          <textarea id="message" name="message" required maxlength="4000" aria-invalid="<%= verr.message ? 'true' : 'false' %>"><%= fd.message || '' %></textarea>
+          <% if (verr.message) { %><p class="ac-form-field__error"><%= verr.message %></p><% } %>
         </div>
         <button type="submit" class="ac-btn ac-btn--primary">Send message</button>
       </form>

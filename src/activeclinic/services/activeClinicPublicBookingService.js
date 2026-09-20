@@ -503,6 +503,43 @@ async function createProcedureBookingRequest(db, input) {
   };
 }
 
+/**
+ * Resolve an existing booking request by org-scoped idempotency key.
+ * Used when a retry arrives after the draft cookie was cleared.
+ */
+async function findPublicBookingByIdempotencyKey(db, input) {
+  const organizationId = String((input && input.organizationId) || "").trim();
+  const idempotencyKey = String((input && input.idempotencyKey) || "").trim();
+  if (!UUID_RE.test(organizationId) || !idempotencyKey || idempotencyKey.length > 128) {
+    return { ok: false, code: RESULT.INVALID_INPUT, booking: null };
+  }
+
+  const existingRow = await db.query(
+    `SELECT b.id, b.request_number, b.status, b.created_at, b.booking_kind
+       FROM activeclinic.public_booking_requests b
+      WHERE b.organization_id = $1 AND b.idempotency_key = $2
+      LIMIT 1`,
+    [organizationId, idempotencyKey]
+  );
+  if (!existingRow.rows.length) {
+    return { ok: false, code: "not_found", booking: null };
+  }
+  const existing = existingRow.rows[0];
+  return {
+    ok: true,
+    code: RESULT.OK,
+    duplicate: true,
+    booking: {
+      id: existing.id,
+      requestNumber: existing.request_number,
+      status: existing.status,
+      createdAt: existing.created_at,
+      bookingKind: existing.booking_kind,
+      accessToken: null,
+    },
+  };
+}
+
 module.exports = {
   RESULT,
   generateIdempotencyKey,
@@ -511,5 +548,6 @@ module.exports = {
   matchGuestPatient,
   createConsultationBookingRequest,
   createProcedureBookingRequest,
+  findPublicBookingByIdempotencyKey,
   finalizeBookingWithMatchAssessment,
 };

@@ -59,6 +59,7 @@ const {
   createPublicContactInquiry,
   createPlatformContactInquiry,
   describePlatformContactErrors,
+  describeClinicContactErrors,
 } = require("../services/activeClinicPublicContactService");
 const {
   newRegistrationRequestId,
@@ -1359,6 +1360,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       return renderTenantView(req, res, clinic, "tenant/contact", {
         error: null,
         formData: {},
+        validationErrors: {},
       });
     } catch (err) {
       return next(err);
@@ -1414,6 +1416,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
           csrfToken,
           clinic,
           error: "Please check your information and try again.",
+          validationErrors: describeClinicContactErrors(result.code),
           formData: req.body || {},
         }));
       }
