@@ -88,8 +88,8 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 | **Existing functionality reused** | Prompt 12 BB announcements · Prompt 08 shared engine · media picker · public website paths |
 | **Changed files** | admin/public announcement views · `tenant-public.css` + cssHref pins · `v8-bb-announcements` + public-pages tests · docs |
 | **Tests** | BB announcements suites **25/25 PASS** |
-| **Commit SHA** | *(recorded after push)* |
-| **Push status** | Pending push to `origin/V8` |
+| **Commit SHA** | `9322053691cb826b9385a656ab07fbf20bbfcf80` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for CODE_PASS. Scheduler worker still gated; migration `112` not applied hosted. |
 | **Next task** | Next overnight prompt as directed |
 | **Report** | [`V8_BB_ANNOUNCEMENTS_PROMPT09.md`](./V8_BB_ANNOUNCEMENTS_PROMPT09.md) |
