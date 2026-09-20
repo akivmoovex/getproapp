@@ -165,7 +165,7 @@ After each task, report:
 | **Scope** | Consolidate Prompts 01–12; run shared-platform + compatibility + BlessBoard + ActiveClinic regression; document migrations, Stitch, V7 compat, blockers, hosted gates |
 | **Regression** | **984/984 PASS** (172.5s) · overnight-focused **115/115 PASS** |
 | **Gate fix** | Sync `tenant-public.css?v=61` pins; update branch member-detail a11y contract for BB15/BB16 forms |
-| **Commit SHA** | _(this commit)_ |
+| **Commit SHA** | `7bf771cb71a015f0a4d0c8059140e9eeba79ecdf` |
 | **Push status** | Pushed to `origin/V8` |
 | **Blockers** | Hosted verification + unapplied migrations + no deploy (documented; do not block CODE_WITH_GATES) |
 
