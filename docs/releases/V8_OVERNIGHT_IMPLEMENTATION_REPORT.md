@@ -72,8 +72,8 @@ After each task, report:
 | **Changed files** | `docs/releases/V8_QA_BASELINE_AND_MEDIA_AUDIT.md` · `docs/releases/V8_OVERNIGHT_IMPLEMENTATION_REPORT.md` |
 | **Test results** | Focused local cluster **45/45 PASS** (booking, phone identity, directory, V8 media) |
 | **Hosted (read-only)** | V8 healthz tip `7c695b8d63b9`; public AC routes 200; homepage images 200 `testing/platform/…` on neuniversity CDN |
-| **Commit SHA** | *(filled after commit)* |
-| **Push status** | *(filled after push)* |
+| **Commit SHA** | `a46b7f8249578e3732baa2dcad7c9bed725a595c` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for audit completion. Overnight rule 10 deferred hosted write retests (booking submit, duplicate-phone POST, staff CRUD/invite/CMS/upload). |
 
 ### PROMPT 00 — V8 overnight rules
