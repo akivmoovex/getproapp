@@ -4,7 +4,8 @@ const FORM_COLUMNS = `
   id, organization_id, product_code, form_key, title, description, category,
   schema_json, schema_version, status, access_mode, discoverable, public_token,
   published_at, unpublished_at, created_by_identity_id, updated_by_identity_id,
-  created_at, updated_at, branch_id, facility_id, require_consent
+  created_at, updated_at, branch_id, facility_id, require_consent,
+  linked_resource_type, linked_resource_id, registration_closed, max_submissions
 `;
 
 const SUBMISSION_COLUMNS = `
@@ -39,6 +40,10 @@ function mapForm(row) {
     branchId: row.branch_id || null,
     facilityId: row.facility_id || null,
     requireConsent: row.require_consent !== false,
+    linkedResourceType: row.linked_resource_type || null,
+    linkedResourceId: row.linked_resource_id || null,
+    registrationClosed: row.registration_closed === true,
+    maxSubmissions: row.max_submissions != null ? Number(row.max_submissions) : null,
   };
 }
 
@@ -75,8 +80,13 @@ async function insertForm(client, row) {
     `INSERT INTO platform.tenant_forms (
        organization_id, product_code, form_key, title, description, category,
        schema_json, schema_version, status, access_mode, discoverable, public_token,
-       created_by_identity_id, updated_by_identity_id
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$10,$11,$12,$13,$13)
+       created_by_identity_id, updated_by_identity_id,
+       branch_id, facility_id, require_consent,
+       linked_resource_type, linked_resource_id, registration_closed, max_submissions
+     ) VALUES (
+       $1,$2,$3,$4,$5,$6,$7::jsonb,$8,$9,$10,$11,$12,$13,$13,
+       $14,$15,COALESCE($16, true),$17,$18,COALESCE($19, false),$20
+     )
      RETURNING ${FORM_COLUMNS}`,
     [
       row.organizationId,
@@ -92,6 +102,13 @@ async function insertForm(client, row) {
       row.discoverable === true,
       row.publicToken,
       row.createdByIdentityId || null,
+      row.branchId || null,
+      row.facilityId || null,
+      row.requireConsent !== false,
+      row.linkedResourceType || null,
+      row.linkedResourceId || null,
+      row.registrationClosed === true,
+      row.maxSubmissions != null ? row.maxSubmissions : null,
     ]
   );
   return mapForm(result.rows[0]);
@@ -111,6 +128,10 @@ async function updateForm(client, input) {
        published_at = CASE WHEN $13::boolean THEN $14 ELSE published_at END,
        unpublished_at = CASE WHEN $15::boolean THEN $16 ELSE unpublished_at END,
        updated_by_identity_id = $17,
+       linked_resource_type = CASE WHEN $18::boolean THEN $19 ELSE linked_resource_type END,
+       linked_resource_id = CASE WHEN $18::boolean THEN $20 ELSE linked_resource_id END,
+       registration_closed = COALESCE($21, registration_closed),
+       max_submissions = CASE WHEN $22::boolean THEN $23 ELSE max_submissions END,
        updated_at = now()
      WHERE id = $1
        AND organization_id = $2
@@ -134,6 +155,12 @@ async function updateForm(client, input) {
       input.setUnpublishedAt === true,
       input.unpublishedAt || null,
       input.updatedByIdentityId || null,
+      input.setLinkedResource === true,
+      input.linkedResourceType != null ? input.linkedResourceType : null,
+      input.linkedResourceId != null ? input.linkedResourceId : null,
+      input.registrationClosed != null ? input.registrationClosed === true : null,
+      input.setMaxSubmissions === true,
+      input.maxSubmissions != null ? input.maxSubmissions : null,
     ]
   );
   return mapForm(result.rows[0] || null);
@@ -531,6 +558,53 @@ async function listFormsCrossTenant(client, { productCode, limit }) {
   }));
 }
 
+async function findOpenSubmissionByEmail(client, { formId, email }) {
+  const normalized = String(email || "").trim().toLowerCase();
+  if (!normalized) return null;
+  const result = await client.query(
+    `SELECT ${SUBMISSION_COLUMNS}
+       FROM platform.tenant_form_submissions
+      WHERE form_id = $1
+        AND lower(submitter_email) = $2
+        AND review_status IN ('submitted', 'in_review', 'accepted')
+      LIMIT 1`,
+    [formId, normalized]
+  );
+  return mapSubmission(result.rows[0] || null, { includeInternalNotes: false });
+}
+
+async function countOpenSubmissions(client, { formId }) {
+  const result = await client.query(
+    `SELECT count(*)::int AS c
+       FROM platform.tenant_form_submissions
+      WHERE form_id = $1
+        AND review_status IN ('submitted', 'in_review', 'accepted')`,
+    [formId]
+  );
+  return result.rows[0] ? Number(result.rows[0].c) : 0;
+}
+
+async function getPublishedFormByLinkedResource(client, {
+  organizationId,
+  productCode,
+  linkedResourceType,
+  linkedResourceId,
+}) {
+  const result = await client.query(
+    `SELECT ${FORM_COLUMNS}
+       FROM platform.tenant_forms
+      WHERE organization_id = $1
+        AND product_code = $2
+        AND linked_resource_type = $3
+        AND linked_resource_id = $4
+        AND status = 'published'
+      ORDER BY published_at DESC NULLS LAST
+      LIMIT 1`,
+    [organizationId, productCode, linkedResourceType, linkedResourceId]
+  );
+  return mapForm(result.rows[0] || null);
+}
+
 module.exports = {
   insertForm,
   updateForm,
@@ -544,6 +618,9 @@ module.exports = {
   markAccessTokenUsed,
   insertSubmission,
   findSubmissionByIdempotency,
+  findOpenSubmissionByEmail,
+  countOpenSubmissions,
+  getPublishedFormByLinkedResource,
   getSubmissionById,
   listSubmissions,
   updateSubmissionReview,

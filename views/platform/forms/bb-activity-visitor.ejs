@@ -1,0 +1,42 @@
+<%
+  const pageTitle = form ? form.title : 'Visitor registration';
+  const fields = (form && form.schemaJson && form.schemaJson.fields) || [];
+  const priorAnswers = typeof answers !== 'undefined' && answers ? answers : {};
+  const errs = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
+  const idem = typeof idempotencyKey !== 'undefined' ? idempotencyKey : '';
+  const action = '/visit';
+%>
+<div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'BB08' %>" data-bb-activity="visitor" data-bb-screen-desktop="BB08-D" data-bb-screen-mobile="BB08-M">
+  <div class="mx-forms-brand">BlessBoard</div>
+  <h1 class="mx-forms-title"><%= form ? form.title : 'Plan a visit' %></h1>
+  <p class="mx-forms-sub">Tell us you are coming. Leadership may follow up using the contact details you provide.</p>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="mx-forms-alert mx-forms-alert--danger" role="alert"><%= error %></div>
+  <% } %>
+  <% if (!form) { %>
+    <div class="mx-forms-panel mx-forms-empty">Visitor registration is not open right now.</div>
+  <% } else { %>
+    <form class="mx-forms-panel" method="post" action="<%= action %>" style="max-width:560px;margin-top:1rem" novalidate>
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <input type="hidden" name="idempotency_key" value="<%= idem %>" />
+      <% fields.forEach(function (field) { %>
+        <label for="f_<%= field.key %>"><%= field.label %><% if (field.required) { %> *<% } %></label>
+        <% if (field.type === 'textarea') { %>
+          <textarea id="f_<%= field.key %>" name="<%= field.key %>" rows="3" <%= field.required ? 'required' : '' %>><%= priorAnswers[field.key] || '' %></textarea>
+        <% } else { %>
+          <input id="f_<%= field.key %>" name="<%= field.key %>"
+            type="<%= field.type === 'email' ? 'email' : field.type === 'date' ? 'date' : field.type === 'phone' ? 'tel' : 'text' %>"
+            <%= field.required ? 'required' : '' %>
+            value="<%= priorAnswers[field.key] != null ? priorAnswers[field.key] : '' %>" />
+        <% } %>
+      <% }) %>
+      <label style="margin-top:1rem;font-weight:500">
+        <input type="checkbox" name="consent" value="1" required />
+        I consent to be contacted about this visit. This does not create a login account.
+      </label>
+      <div class="mx-forms-actions">
+        <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Submit</button>
+      </div>
+    </form>
+  <% } %>
+</div>

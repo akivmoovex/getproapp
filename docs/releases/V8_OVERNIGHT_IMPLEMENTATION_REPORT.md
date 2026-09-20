@@ -59,6 +59,22 @@ After each task, report:
 
 ## Task log
 
+### PROMPT 10 — V8 BB visitor, event & ministry registration (BB08–BB10)
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_BB_ACTIVITY_REGISTRATION_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` @ `8566e5ed` (synced with `origin/V8` before task) |
+| **Scope** | Shared-form visitor/event/ministry registration; consent; duplicates; capacity/closure; no auto roles |
+| **Stitch** | `projects/5087412725796049014` |
+| **Report** | [`docs/releases/V8_BB_ACTIVITY_REGISTRATION_PROMPT10.md`](./V8_BB_ACTIVITY_REGISTRATION_PROMPT10.md) |
+| **Changed files** | `041_activity_registration_v8.sql` · activity service/routes/views · formSchema/repo/submit · tests · docs |
+| **Test results** | Activity **5/5 PASS**; shared forms builder+e2e **19/19 PASS** |
+| **Commit SHA** | _(filled after push)_ |
+| **Push status** | Pending push |
+| **Blockers** | None. Migration `041` not applied on hosted DB. |
+
 ### PROMPT 09 — V8 BlessBoard membership (BB01–BB08, BB11–BB18)
 
 | Field | Value |

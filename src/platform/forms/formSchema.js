@@ -24,6 +24,8 @@ const ALLOWED_FORM_CATEGORIES = Object.freeze([
   "registration",
   "event",
   "survey",
+  "visitor",
+  "ministry",
 ]);
 
 const FORBIDDEN_FORM_CATEGORIES = Object.freeze([

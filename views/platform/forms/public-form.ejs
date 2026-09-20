@@ -4,8 +4,12 @@
   const priorAnswers = typeof answers !== 'undefined' && answers ? answers : {};
   const errs = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
   const idem = typeof idempotencyKey !== 'undefined' ? idempotencyKey : '';
+  let activityScreen = typeof stitchScreen !== 'undefined' ? stitchScreen : 'SH08';
+  if (form && form.category === 'visitor') activityScreen = 'BB08';
+  if (form && form.category === 'event') activityScreen = 'BB09';
+  if (form && form.category === 'ministry') activityScreen = 'BB10';
 %>
-<div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'SH08' %>">
+<div class="mx-forms-shell" data-screen="<%= activityScreen %>" data-bb-form-category="<%= form && form.category ? form.category : '' %>">
   <% if (!form) { %>
     <div class="mx-forms-alert mx-forms-alert--danger"><%= error || 'Unavailable' %></div>
   <% } else { %>

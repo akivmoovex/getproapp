@@ -1,0 +1,22 @@
+<%
+  const pageTitle = 'Registration received';
+  const kindLocal = typeof kind !== 'undefined' ? kind : 'visitor';
+%>
+<div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'BB08' %>" data-bb-activity="thanks" data-bb-activity-kind="<%= kindLocal %>">
+  <div class="mx-forms-brand">BlessBoard</div>
+  <h1 class="mx-forms-title">Thank you</h1>
+  <p class="mx-forms-sub">
+    Your registration was received. Authorized church leaders may follow up.
+    <% if (kindLocal === 'ministry') { %>
+      No ministry leadership role or login account was created.
+    <% } else { %>
+      No login account was created.
+    <% } %>
+  </p>
+  <p data-bb-login-created="<%= typeof loginCreated !== 'undefined' && loginCreated ? '1' : '0' %>"
+     data-bb-ministry-role-granted="<%= typeof ministryRoleGranted !== 'undefined' && ministryRoleGranted ? '1' : '0' %>"
+     hidden></p>
+  <div class="mx-forms-actions">
+    <a class="mx-forms-btn mx-forms-btn--ghost" href="/">Back to homepage</a>
+  </div>
+</div>

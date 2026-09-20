@@ -1,0 +1,45 @@
+<%
+  const pageTitle = form ? form.title : 'Event registration';
+  const fields = (form && form.schemaJson && form.schemaJson.fields) || [];
+  const priorAnswers = typeof answers !== 'undefined' && answers ? answers : {};
+  const idem = typeof idempotencyKey !== 'undefined' ? idempotencyKey : '';
+  const eventIdLocal = typeof eventId !== 'undefined' ? eventId : '';
+  const action = '/events/' + encodeURIComponent(eventIdLocal) + '/register';
+%>
+<div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'BB09' %>" data-bb-activity="event" data-bb-screen-desktop="BB09-D" data-bb-screen-mobile="BB09-M">
+  <div class="mx-forms-brand">BlessBoard · Event</div>
+  <h1 class="mx-forms-title"><%= form ? form.title : 'Event registration' %></h1>
+  <% if (typeof spotsRemaining === 'number') { %>
+    <p class="mx-forms-sub" data-bb-capacity="<%= spotsRemaining %>">Spots remaining: <%= spotsRemaining %></p>
+  <% } %>
+  <% if (typeof error !== 'undefined' && error) { %>
+    <div class="mx-forms-alert mx-forms-alert--danger" role="alert"><%= error %></div>
+  <% } %>
+  <% if (!form) { %>
+    <div class="mx-forms-panel mx-forms-empty">Event registration is closed or unavailable.</div>
+  <% } else { %>
+    <form class="mx-forms-panel" method="post" action="<%= action %>" style="max-width:560px;margin-top:1rem" novalidate>
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <input type="hidden" name="idempotency_key" value="<%= idem %>" />
+      <% fields.forEach(function (field) { %>
+        <label for="f_<%= field.key %>"><%= field.label %><% if (field.required) { %> *<% } %></label>
+        <% if (field.type === 'textarea') { %>
+          <textarea id="f_<%= field.key %>" name="<%= field.key %>" rows="3" <%= field.required ? 'required' : '' %>><%= priorAnswers[field.key] || '' %></textarea>
+        <% } else { %>
+          <input id="f_<%= field.key %>" name="<%= field.key %>"
+            type="<%= field.type === 'email' ? 'email' : field.type === 'number' ? 'number' : field.type === 'phone' ? 'tel' : 'text' %>"
+            <%= field.required ? 'required' : '' %>
+            value="<%= priorAnswers[field.key] != null ? priorAnswers[field.key] : '' %>" />
+        <% } %>
+      <% }) %>
+      <label style="margin-top:1rem;font-weight:500">
+        <input type="checkbox" name="consent" value="1" required />
+        I consent to communications about this event.
+      </label>
+      <div class="mx-forms-actions">
+        <button class="mx-forms-btn mx-forms-btn--primary" type="submit"
+          <%= (typeof spotsRemaining === 'number' && spotsRemaining <= 0) ? 'disabled' : '' %>>Register</button>
+      </div>
+    </form>
+  <% } %>
+</div>

@@ -180,6 +180,16 @@ async function createForm(db, input) {
         discoverable: false,
         publicToken: newPublicToken(),
         createdByIdentityId: input.actorIdentityId || null,
+        branchId: input.branchId || null,
+        facilityId: input.facilityId || null,
+        requireConsent: input.requireConsent !== false,
+        linkedResourceType: input.linkedResourceType || null,
+        linkedResourceId: input.linkedResourceId || null,
+        registrationClosed: input.registrationClosed === true,
+        maxSubmissions:
+          input.maxSubmissions != null && Number(input.maxSubmissions) > 0
+            ? Number(input.maxSubmissions)
+            : null,
       })
     );
     return { ok: true, status: STATUS.OK, form };
@@ -781,6 +791,10 @@ async function submitPublicForm(db, input) {
         }
       }
 
+      if (form.registrationClosed === true) {
+        return { ok: false, status: STATUS.POLICY, reason: "registration_closed" };
+      }
+
       if (idempotencyKey) {
         const existing = await repo.findSubmissionByIdempotency(client, {
           formId: form.id,
@@ -828,6 +842,44 @@ async function submitPublicForm(db, input) {
         });
       } else {
         return { ok: false, status: STATUS.FORBIDDEN, reason: "access_mode" };
+      }
+
+      // Activity forms (visitor/event/ministry) require email for consent follow-up + duplicate prevention.
+      const activityCategory = ["visitor", "event", "ministry", "registration"].includes(
+        String(form.category || "")
+      );
+      if (activityCategory && !submitterEmail) {
+        // Prefer answers.email when top-level email omitted
+        const answerEmail =
+          input.answers && (input.answers.email || input.answers.Email)
+            ? normalizeEmail(input.answers.email || input.answers.Email)
+            : null;
+        submitterEmail = answerEmail;
+      }
+      if (activityCategory && !submitterEmail) {
+        return { ok: false, status: STATUS.INVALID_INPUT, reason: "email_required" };
+      }
+
+      if (submitterEmail) {
+        const dup = await repo.findOpenSubmissionByEmail(client, {
+          formId: form.id,
+          email: submitterEmail,
+        });
+        if (dup) {
+          return {
+            ok: false,
+            status: STATUS.CONFLICT,
+            reason: "duplicate_submission",
+            submission: dup,
+          };
+        }
+      }
+
+      if (form.maxSubmissions != null) {
+        const openCount = await repo.countOpenSubmissions(client, { formId: form.id });
+        if (openCount >= form.maxSubmissions) {
+          return { ok: false, status: STATUS.POLICY, reason: "capacity_full" };
+        }
       }
 
       const answers = validateFormAnswers(form.schemaJson, input.answers);

@@ -928,6 +928,34 @@ function createV5FoundationApp(options) {
       variant: "branch",
     })
   );
+  const {
+    createActivityRegistrationAdminRouter,
+    createActivityRegistrationPublicRouter,
+  } = require("../../blessboard/http/activityRegistrationRoutes");
+  app.use(
+    createActivityRegistrationAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+      variant: "hq",
+    })
+  );
+  app.use(
+    createActivityRegistrationAdminRouter({
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+      env,
+      sendUnavailable,
+      variant: "branch",
+    })
+  );
+  app.use(
+    createActivityRegistrationPublicRouter({
+      getPool,
+      env,
+    })
+  );
   app.use(
     createHqReportsRouter({
       getPool,
