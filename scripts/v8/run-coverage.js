@@ -28,6 +28,7 @@ const COVERAGE_TEST_FILES = Object.freeze([
   "tests/v8-deployment-profile.test.js",
   "tests/v8-hostinger-env-profile-conflict.test.js",
   "tests/v8-about-version-2.test.js",
+  "tests/v8-qa-homepage-v2-only.test.js",
   "tests/v8-migration-contract.test.js",
   "tests/v8-tenant-product-isolation.test.js",
   "tests/v8-shared-module-coverage.test.js",

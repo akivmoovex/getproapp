@@ -21,7 +21,8 @@ const {
   buildRedirectLocation,
 } = require("./legacyDomainRedirectServer");
 
-const QA_PRODUCT_LINKS = Object.freeze([
+/** V7 QA hub on pronline.org — full product matrix (unchanged). */
+const QA_PRODUCT_LINKS_V7 = Object.freeze([
   { label: "BlessBoard (V7)", href: "https://blessboard.pronline.org" },
   { label: "ActiveClinic (V7)", href: "https://activeclinic.pronline.org" },
   { label: "BlessBoard (V8)", href: "https://blessboard.neuniversity.org" },
@@ -30,20 +31,91 @@ const QA_PRODUCT_LINKS = Object.freeze([
   { label: "Netraz", href: "https://netraz.pronline.org" },
 ]);
 
-function renderPlatformQaLauncher(res, platform) {
-  const brand = (platform && platform.brand) || "Moovex Platform QA";
-  const links = QA_PRODUCT_LINKS.map(
+/** @deprecated Alias for V7 links; prefer resolveQaProductLinks(deployment). */
+const QA_PRODUCT_LINKS = QA_PRODUCT_LINKS_V7;
+
+/**
+ * Build QA launcher product cards from the active deployment profile.
+ * V8 (neuniversity.org): Version 2.0 BlessBoard + ActiveClinic only.
+ * V7 (pronline.org): existing multi-product matrix.
+ *
+ * @param {{ platformLine?: string, apexDomains?: string[] } | null | undefined} deployment
+ * @param {{ platformLine?: string } | null | undefined} [platform]
+ * @returns {ReadonlyArray<{ label: string, href: string }>}
+ */
+function resolveQaProductLinks(deployment, platform) {
+  const line = String(
+    (deployment && deployment.platformLine) ||
+      (platform && platform.platformLine) ||
+      "v7"
+  )
+    .trim()
+    .toLowerCase();
+  if (line !== "v8") {
+    return QA_PRODUCT_LINKS_V7;
+  }
+  const apex = Array.isArray(deployment && deployment.apexDomains)
+    ? deployment.apexDomains
+    : [];
+  const bbHost =
+    apex.find((h) => /^blessboard\./i.test(String(h || ""))) ||
+    "blessboard.neuniversity.org";
+  const acHost =
+    apex.find((h) => /^activeclinic\./i.test(String(h || ""))) ||
+    "activeclinic.neuniversity.org";
+  return Object.freeze([
+    { label: "BlessBoard V2.0", href: `https://${bbHost}/` },
+    { label: "ActiveClinic V2.0", href: `https://${acHost}/` },
+  ]);
+}
+
+/**
+ * @param {import('express').Response} res
+ * @param {{ brand?: string, platformLine?: string } | null | undefined} platform
+ * @param {{ platformLine?: string, apexDomains?: string[], canonicalDomain?: string } | null | undefined} [deployment]
+ */
+function renderPlatformQaLauncher(res, platform, deployment) {
+  const isV8 =
+    String(
+      (platform && platform.platformLine) ||
+        (deployment && deployment.platformLine) ||
+        ""
+    )
+      .trim()
+      .toLowerCase() === "v8";
+  const brand =
+    (platform && platform.brand) ||
+    (isV8 ? "Moovex Platform V8 QA" : "Moovex Platform QA");
+  const subtitle = isV8
+    ? "Version 2.0 Development and Testing"
+    : "Testing platform hub on <code>pronline.org</code>. Product apps open on their own hostnames.";
+  const links = resolveQaProductLinks(deployment, platform).map(
     (item) =>
-      `<li><a href="${item.href}">${item.label}</a> — <code>${item.href}</code></li>`
+      `<li class="qa-product-card"><a href="${item.href}">${item.label}</a> — <code>${item.href}</code></li>`
   ).join("\n");
+  const hubDomain =
+    (deployment && deployment.canonicalDomain) ||
+    (isV8 ? "neuniversity.org" : "pronline.org");
   return res.status(200).type("html").send(`<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>${brand}</title></head>
-<body data-site-type="platform" data-brand="moovex-platform-qa" data-environment="testing">
+<title>${brand}</title>
+<style>
+  body{font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;margin:0;padding:1.5rem;line-height:1.5;color:#1a1a1a;background:#f7f7f8}
+  main{max-width:40rem;margin:0 auto}
+  h1{font-size:clamp(1.5rem,4vw,2rem);margin:0 0 .5rem}
+  .qa-subtitle{margin:0 0 1.25rem;color:#444}
+  ul{list-style:none;padding:0;margin:0 0 1.25rem;display:grid;gap:.75rem}
+  .qa-product-card{background:#fff;border:1px solid #e2e2e6;border-radius:.5rem;padding:.9rem 1rem}
+  .qa-product-card a{font-weight:600;color:#1a1a1a}
+  code{font-size:.85em;word-break:break-all}
+  @media (min-width:640px){ul{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body data-site-type="platform" data-brand="moovex-platform-qa" data-environment="testing" data-platform-line="${isV8 ? "v8" : "v7"}" data-hub-domain="${hubDomain}">
 <main>
   <h1>${brand}</h1>
-  <p>Testing platform hub on <code>pronline.org</code>. Product apps open on their own hostnames.</p>
+  <p class="qa-subtitle">${subtitle}</p>
   <ul>
 ${links}
   </ul>
@@ -562,19 +634,23 @@ function createMoovexPlatformRuntimeApp(options) {
     }
 
     if (platform.siteType === "platform") {
-      if (platform.redirectTargetOrigin && platform.canonicalHost === "www.pronline.org") {
+      if (platform.redirectTargetOrigin) {
         return res.redirect(301, buildRedirectLocation(platform.redirectTargetOrigin, req));
       }
       const pathName = String(req.path || "/");
       if (pathName === "/" || pathName === "") {
-        return renderPlatformQaLauncher(res, platform);
+        return renderPlatformQaLauncher(res, platform, deployment);
       }
       // Do not expose product operational routes on the QA hub host.
+      const hubLinks = resolveQaProductLinks(deployment, platform);
+      const hubDomain =
+        (deployment && deployment.canonicalDomain) ||
+        (platform.platformLine === "v8" ? "neuniversity.org" : "pronline.org");
       return res.status(404).json({
         ok: false,
         code: "platform_qa_hub_only",
-        message: "pronline.org is the testing QA launcher only. Use product hostnames for app routes.",
-        links: QA_PRODUCT_LINKS,
+        message: `${hubDomain} is the testing QA launcher only. Use product hostnames for app routes.`,
+        links: hubLinks,
       });
     }
 
@@ -729,5 +805,7 @@ module.exports = {
   buildDefaultProductApps,
   startMoovexPlatformRuntimeServer,
   renderPlatformQaLauncher,
+  resolveQaProductLinks,
   QA_PRODUCT_LINKS,
+  QA_PRODUCT_LINKS_V7,
 };
