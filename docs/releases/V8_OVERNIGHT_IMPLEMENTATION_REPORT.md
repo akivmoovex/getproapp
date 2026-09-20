@@ -1,0 +1,84 @@
+# V8 Overnight Implementation Report
+
+**Repository:** `akivmoovex/getproapp`  
+**Branch:** `V8` only  
+**Canonical file:** `docs/releases/V8_OVERNIGHT_IMPLEMENTATION_REPORT.md`  
+**Started:** 2026-09-21  
+**Hosts:** V8 `*.neuniversity.org` · V7 `*.pronline.org` · Production **DO NOT TOUCH**  
+**Database:** V7 and V8 share the existing testing database (`moovex-platform-v7` / `testing`)  
+**Overnight Stitch (BlessBoard membership registration):** https://stitch.withgoogle.com/projects/5087412725796049014 (`projects/5087412725796049014`)
+
+Update this file after every overnight prompt. Append a task section; do not overwrite prior task results.
+
+---
+
+## Overnight operating rules (PROMPT 00)
+
+For every overnight task:
+
+1. Fetch `origin/V8` and confirm the working branch is `V8`.
+2. Preserve unrelated work (do not revert or rewrite unrelated dirty paths).
+3. Inspect existing code and approved Stitch screens before implementing.
+4. Reuse shared platform services for common BlessBoard / ActiveClinic functionality.
+5. Implement **desktop and mobile** layouts from their Stitch references.
+6. Write automated tests for all new and modified code.
+7. Verify validation, RBAC, tenant isolation, and persistence.
+8. Run relevant regression and V7 compatibility tests.
+9. Commit and push completed work to `origin/V8`.
+10. **Do not** deploy, restart, apply migrations, send real notifications, or modify hosted data overnight.
+11. If blocked, record the reason and continue only with independent tasks.
+12. **Never** claim hosted PASS without hosted verification.
+
+### Hard isolation
+
+| Line | Host / branch | Overnight action |
+|------|---------------|------------------|
+| V8 | `V8` · `neuniversity.org` | Code + docs + local/automated tests only |
+| V7 | `V7` · `pronline.org` | Do not modify |
+| Production | `blessboard.com` / `activeclinic.org` | **DO NOT TOUCH** |
+
+### Stitch isolation reminder
+
+- BlessBoard membership overnight screens: `projects/5087412725796049014` (this overnight series).
+- Do not cross-import ActiveClinic Stitch into BlessBoard (or the reverse).
+- Existing product registry: [`docs/stitch-project-map.md`](../stitch-project-map.md).
+- Open deferred issues: [`docs/releases/V8_BACKLOG.md`](./V8_BACKLOG.md).
+
+### Per-task return format (mandatory)
+
+After each task, report:
+
+- **STATUS**
+- **Changed files**
+- **Test results**
+- **Commit SHA**
+- **Push status**
+- **Blockers**
+
+---
+
+## Task log
+
+### PROMPT 00 — V8 overnight rules
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` @ `76c2c80e` (synced with `origin/V8` before this task) |
+| **Scope** | Establish overnight rules and this living report; no product implementation |
+| **Stitch verified** | Project reachable via MCP: **BlessBoard Membership Registration Workflow** (`projects/5087412725796049014`) |
+| **Changed files** | `docs/releases/V8_OVERNIGHT_IMPLEMENTATION_REPORT.md` (created) |
+| **Test results** | N/A (documentation only; no application code changed) |
+| **Commit SHA** | *(filled after commit)* |
+| **Push status** | *(filled after push)* |
+| **Blockers** | None for PROMPT 00. Hosted deploy/restart/migrations/notifications remain **forbidden** overnight by rule 10. |
+| **Hosted verification** | Not claimed (docs-only; rule 12) |
+
+---
+
+## Cumulative overnight notes
+
+- PROMPT 00 establishes process only. Subsequent prompts must append task sections above the cumulative notes (or below the task log heading) without deleting history.
+- Do not auto-apply DB migrations overnight even if migration files are committed.
+- Shared testing DB may be used by local automated tests with disposable fixtures only; do not mutate hosted tenant data.
