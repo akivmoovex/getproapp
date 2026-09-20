@@ -10,7 +10,10 @@
  */
 
 const path = require("path");
-const { resolveMediaEnvironment } = require("./hostingerMediaConfig");
+const {
+  resolveMediaEnvironment,
+  resolveMediaReadEnvironment,
+} = require("./hostingerMediaConfig");
 
 /** @type {Readonly<Record<string, string>>} publicPath → relative key under platform/ */
 const PUBLIC_TO_RELATIVE_KEY = Object.freeze({
@@ -143,14 +146,25 @@ function isPlatformMarketingPublicPath(publicPath) {
 }
 
 /**
+ * Storage key for a known platform marketing public path.
+ *
+ * Presentation/read (default): use the shared read namespace so V8 serves existing
+ * V7 objects under `testing/platform/...` (V8 write namespace is `testing-v8/`).
+ * Sync/write paths must pass `{ forWrite: true }` to target the runtime write ns.
+ *
  * @param {string} publicPath
  * @param {NodeJS.ProcessEnv} [env]
+ * @param {{ forWrite?: boolean }} [options]
  * @returns {string|null} full storage key including environment prefix
  */
-function storageKeyForPublicPath(publicPath, env) {
+function storageKeyForPublicPath(publicPath, env, options) {
   const rel = PUBLIC_TO_RELATIVE_KEY[String(publicPath || "").trim()];
   if (!rel) return null;
-  const environment = resolveMediaEnvironment(env || process.env);
+  const writeNs = resolveMediaEnvironment(env || process.env);
+  const environment =
+    options && options.forWrite === true
+      ? writeNs
+      : resolveMediaReadEnvironment(writeNs);
   return `${environment}/platform/${rel}`;
 }
 

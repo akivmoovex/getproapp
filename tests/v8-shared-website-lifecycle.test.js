@@ -144,7 +144,7 @@ describe("V8 shared website lifecycle — media namespace / CDN", () => {
         DEPLOYMENT_ENV: "testing",
         PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_V8_TESTING,
       }),
-      "https://blessboard.pronline.org/media"
+      "https://blessboard.neuniversity.org/media"
     );
     assert.equal(
       resolveMediaEnvironment({

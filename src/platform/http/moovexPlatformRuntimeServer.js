@@ -312,7 +312,7 @@ function createMoovexPlatformRuntimeApp(options) {
         let missing = 0;
         const dryRun = body.dryRun === true;
         for (const publicPath of listMarketingPublicPaths()) {
-          const key = storageKeyForPublicPath(publicPath, env);
+          const key = storageKeyForPublicPath(publicPath, env, { forWrite: true });
           const relLocal = localPublicFilePath(publicPath);
           if (!key || !relLocal) {
             missing += 1;

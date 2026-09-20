@@ -37,11 +37,33 @@ const ABSOLUTE_MEDIA_KEY_RE =
 
 /**
  * Absolute CDN public base (e.g. https://blessboard.pronline.org/media).
- * Relative `/media` alone is not a valid presentation base.
+ * Relative `/media` alone is not a valid presentation base — derive an absolute
+ * origin from MEDIA_CDN_ORIGIN or the deployment line fallback.
  * @param {NodeJS.ProcessEnv} [env]
  * @returns {string|null}
  */
-const TESTING_CDN_PUBLIC_BASE_FALLBACK = "https://blessboard.pronline.org/media";
+const V7_TESTING_CDN_PUBLIC_BASE_FALLBACK = "https://blessboard.pronline.org/media";
+const V8_TESTING_CDN_PUBLIC_BASE_FALLBACK =
+  "https://blessboard.neuniversity.org/media";
+/** @deprecated Prefer line-aware fallbacks; kept for older call sites. */
+const TESTING_CDN_PUBLIC_BASE_FALLBACK = V7_TESTING_CDN_PUBLIC_BASE_FALLBACK;
+
+/**
+ * @param {NodeJS.ProcessEnv} source
+ * @returns {string|null}
+ */
+function resolveTestingCdnFallbackBase(source) {
+  const deploymentEnv = String(source.DEPLOYMENT_ENV || "").trim().toLowerCase();
+  const deploymentCode = String(source.PLATFORM_DEPLOYMENT_CODE || "").trim();
+  if (deploymentEnv !== "testing") return null;
+  if (deploymentCode === "moovex-platform-v8-testing") {
+    return V8_TESTING_CDN_PUBLIC_BASE_FALLBACK;
+  }
+  if (deploymentCode === "moovex-platform-testing") {
+    return V7_TESTING_CDN_PUBLIC_BASE_FALLBACK;
+  }
+  return null;
+}
 
 function resolveCdnPublicBaseUrl(env) {
   const source = env || process.env;
@@ -56,19 +78,36 @@ function resolveCdnPublicBaseUrl(env) {
     );
     return `${origin}${mount}`;
   }
-  // Hostinger testing often omits MEDIA_PUBLIC_BASE_URL in hPanel; derive the
-  // documented absolute CDN base so presentation never emits relative /media.
-  // V7 (pronline) and V8 (neuniversity) share the same testing media mount.
-  const deploymentEnv = String(source.DEPLOYMENT_ENV || "").trim().toLowerCase();
-  const deploymentCode = String(source.PLATFORM_DEPLOYMENT_CODE || "").trim();
-  if (
-    deploymentEnv === "testing" &&
-    (deploymentCode === "moovex-platform-testing" ||
-      deploymentCode === "moovex-platform-v8-testing")
-  ) {
-    return TESTING_CDN_PUBLIC_BASE_FALLBACK;
+  // Hostinger often sets MEDIA_PUBLIC_BASE_URL=/media (relative mount). Derive an
+  // absolute https base so HTML never emits relative /media/ or the wrong line host.
+  const fallback = resolveTestingCdnFallbackBase(source);
+  if (fallback) {
+    if (raw.startsWith("/")) {
+      try {
+        const u = new URL(fallback);
+        return `${u.origin}${normalizeMountPath(raw)}`;
+      } catch {
+        return fallback;
+      }
+    }
+    return fallback;
   }
   return null;
+}
+
+/**
+ * Shared platform marketing soft-fill lives under testing/platform/ (V7 sync).
+ * Coerce mistaken testing-v8/platform/ presentation keys so V8 HTML can still
+ * resolve existing objects without copying or rewriting DB rows.
+ * @param {string} storageKey
+ * @returns {string}
+ */
+function coerceSharedPlatformMarketingReadKey(storageKey) {
+  const key = String(storageKey || "").replace(/^\/+/, "");
+  if (/^testing-v8\/platform\//i.test(key)) {
+    return `testing/${key.slice("testing-v8/".length)}`;
+  }
+  return key;
 }
 
 /**
@@ -77,7 +116,9 @@ function resolveCdnPublicBaseUrl(env) {
  * @returns {string|null}
  */
 function presentCdnUrl(storageKey, env) {
-  const key = String(storageKey || "").replace(/^\/+/, "");
+  const key = coerceSharedPlatformMarketingReadKey(
+    String(storageKey || "").replace(/^\/+/, "")
+  );
   if (!key || key.includes("..") || key.includes("\\")) return null;
   const base = resolveCdnPublicBaseUrl(env);
   if (base) return `${base}/${key}`;
@@ -213,9 +254,12 @@ function presentRuntimeImageSrc(src, env, opts) {
     // Refuse to invent a testing CDN base for production deployments.
     const mediaEnv = resolveMediaEnvironment(env || process.env);
     if (mediaEnv === "production") return null;
+    const fallbackBase =
+      resolveTestingCdnFallbackBase(env || process.env) ||
+      V7_TESTING_CDN_PUBLIC_BASE_FALLBACK;
     return presentCdnUrl(key, {
       ...(env || process.env),
-      MEDIA_PUBLIC_BASE_URL: TESTING_CDN_PUBLIC_BASE_FALLBACK,
+      MEDIA_PUBLIC_BASE_URL: fallbackBase,
     });
   }
 
@@ -378,4 +422,7 @@ module.exports = {
   parseAppMediatedMediaSrc,
   marketingPublicBasename,
   resolveMediaEnvironment,
+  V7_TESTING_CDN_PUBLIC_BASE_FALLBACK,
+  V8_TESTING_CDN_PUBLIC_BASE_FALLBACK,
+  TESTING_CDN_PUBLIC_BASE_FALLBACK,
 };

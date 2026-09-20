@@ -38,7 +38,7 @@ async function main() {
   let skipped = 0;
   let missing = 0;
   for (const publicPath of listMarketingPublicPaths()) {
-    const key = storageKeyForPublicPath(publicPath, env);
+    const key = storageKeyForPublicPath(publicPath, env, { forWrite: true });
     const relLocal = localPublicFilePath(publicPath);
     if (!key || !relLocal) {
       missing += 1;
