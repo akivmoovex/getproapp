@@ -78,6 +78,22 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 
 ## Task log
 
+### PROMPT 09 — V8 BlessBoard announcements (BB19–BB22)
+
+| Field | Value |
+|-------|-------|
+| **Status** | COMPLETE · verdict `V8_BB_ANNOUNCEMENTS_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch** | `V8` (synced with `origin/V8`) |
+| **Existing functionality reused** | Prompt 12 BB announcements · Prompt 08 shared engine · media picker · public website paths |
+| **Changed files** | admin/public announcement views · `tenant-public.css` + cssHref pins · `v8-bb-announcements` + public-pages tests · docs |
+| **Tests** | BB announcements suites **25/25 PASS** |
+| **Commit SHA** | *(recorded after push)* |
+| **Push status** | Pending push to `origin/V8` |
+| **Blockers** | None for CODE_PASS. Scheduler worker still gated; migration `112` not applied hosted. |
+| **Next task** | Next overnight prompt as directed |
+| **Report** | [`V8_BB_ANNOUNCEMENTS_PROMPT09.md`](./V8_BB_ANNOUNCEMENTS_PROMPT09.md) |
+
 ### PROMPT 08 — V8 shared announcement engine (AN01–AN05)
 
 | Field | Value |

@@ -3113,7 +3113,7 @@ function createContentAdminRouter(deps) {
       }
 
       model.websiteAdmin = null;
-      model.cssHref = "/blessboard/v5/tenant-public.css?v=61";
+      model.cssHref = "/blessboard/v5/tenant-public.css?v=62";
       const html = renderTenantPublicPage(model);
       return res.status(200).type("html").send(html);
     });

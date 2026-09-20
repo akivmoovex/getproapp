@@ -115,16 +115,41 @@ describe("V8 BlessBoard announcements BB19–BB22", () => {
   it("documents scheduler unavailable and stitch markers for BB19–BB22", () => {
     assert.equal(SCHEDULER_DEPENDENCY.available, false);
     const checks = [
-      ["views/blessboard/v5/announcements/admin-list.ejs", /BB19/],
-      ["views/blessboard/v5/announcements/admin-form.ejs", /BB20/],
-      ["views/blessboard/v5/public/announcements.ejs", /BB21/],
-      ["views/blessboard/v5/public/announcement-detail.ejs", /BB22/],
+      ["views/blessboard/v5/announcements/admin-list.ejs", "BB19"],
+      ["views/blessboard/v5/announcements/admin-form.ejs", "BB20"],
+      ["views/blessboard/v5/announcements/admin-publish.ejs", "BB20"],
+      ["views/blessboard/v5/public/announcements.ejs", "BB21"],
+      ["views/blessboard/v5/public/announcement-detail.ejs", "BB22"],
     ];
-    for (const [rel, re] of checks) {
+    for (const [rel, code] of checks) {
       const p = path.join(__dirname, "..", rel);
       assert.ok(fs.existsSync(p), rel);
-      assert.match(fs.readFileSync(p, "utf8"), re);
+      const html = fs.readFileSync(p, "utf8");
+      assert.match(html, new RegExp(`data-bb-stitch="${code}"`));
+      assert.match(html, new RegExp(`data-bb-screen-desktop="${code}-D"`));
+      assert.match(html, new RegExp(`data-bb-screen-mobile="${code}-M"`));
     }
+    assert.match(
+      fs.readFileSync(
+        path.join(__dirname, "../views/blessboard/v5/announcements/admin-form.ejs"),
+        "utf8"
+      ),
+      /loadMediaPicker:\s*true/
+    );
+    assert.match(
+      fs.readFileSync(
+        path.join(__dirname, "../views/blessboard/v5/announcements/admin-detail.ejs"),
+        "utf8"
+      ),
+      /data-publication-history="1"/
+    );
+    assert.match(
+      fs.readFileSync(
+        path.join(__dirname, "../public/blessboard/v5/tenant-public.css"),
+        "utf8"
+      ),
+      /@media \(max-width:\s*720px\)[\s\S]*\.bb-tp-announcements \.bb-tp-btn/
+    );
     assert.ok(
       fs.existsSync(
         path.join(__dirname, "../db/migrations/blessboard/112_announcement_public_audience_v8.sql")
@@ -360,6 +385,51 @@ describe("V8 BlessBoard announcements BB19–BB22", () => {
     );
     assert.equal(rows[0].status, "published");
     assert.equal(rows[0].timezone, "UTC");
+  });
+
+  it("unpublish removes website visibility and isolates across churches", async () => {
+    requireDb();
+    const a = await seedChurch(uniq("bbann5a"));
+    const b = await seedChurch(uniq("bbann5b"));
+    const published = await createAnnouncement(pool, {
+      churchId: a.church.id,
+      actorUserId: a.user.id,
+      tenant: a.tenant,
+      title: "Visible then gone",
+      body: "Body",
+      status: "published",
+      confirmPublish: true,
+      enforcePublishConfirm: true,
+      audiences: ["public"],
+    });
+    assert.equal(published.ok, true, published.reason);
+
+    const cross = await getPublicWebsiteAnnouncement(pool, {
+      churchId: b.church.id,
+      id: published.item.id,
+    });
+    assert.equal(cross.ok, false);
+
+    const unpublished = await updateAnnouncement(pool, published.item.id, {
+      churchId: a.church.id,
+      scopeBranchId: null,
+      actorUserId: a.user.id,
+      tenant: a.tenant,
+      status: "draft",
+    });
+    assert.equal(unpublished.ok, true, unpublished.reason);
+    assert.equal(unpublished.item.status, "draft");
+
+    const listed = await listPublicWebsiteAnnouncements(pool, {
+      churchId: a.church.id,
+      branchId: null,
+    });
+    assert.equal(listed.items.length, 0);
+    const miss = await getPublicWebsiteAnnouncement(pool, {
+      churchId: a.church.id,
+      id: published.item.id,
+    });
+    assert.equal(miss.ok, false);
   });
 
   it("public paths and navigation include announcements", () => {

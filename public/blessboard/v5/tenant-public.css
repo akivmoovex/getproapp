@@ -6996,3 +6996,30 @@ a.bb-tp-content-card:hover {
 .bb-tp-ann-title a:hover { text-decoration: underline; }
 .bb-tp-ann-body { margin: 0 0 0.85rem; color: #334155; line-height: 1.55; }
 .bb-tp-announcement-detail .bb-tp-ann-title { font-size: clamp(1.4rem, 3vw, 2rem); }
+
+@media (max-width: 720px) {
+  .bb-tp-announcements .bb-tp-ann-featured,
+  .bb-tp-announcements .bb-tp-ann-card {
+    padding: 0.95rem 1rem;
+    border-radius: 14px;
+  }
+
+  .bb-tp-announcements .bb-tp-ann-title {
+    font-size: 1.2rem;
+  }
+
+  .bb-tp-announcements .bb-tp-btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+
+  .bb-tp-announcement-detail .bb-tp-container {
+    padding-left: 1rem;
+    padding-right: 1rem;
+  }
+
+  .bb-tp-announcement-detail .bb-tp-ann-title {
+    font-size: 1.45rem;
+  }
+}
