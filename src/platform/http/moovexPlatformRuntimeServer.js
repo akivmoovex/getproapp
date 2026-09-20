@@ -22,8 +22,10 @@ const {
 } = require("./legacyDomainRedirectServer");
 
 const QA_PRODUCT_LINKS = Object.freeze([
-  { label: "BlessBoard", href: "https://blessboard.pronline.org" },
-  { label: "ActiveClinic", href: "https://activeclinic.pronline.org" },
+  { label: "BlessBoard (V7)", href: "https://blessboard.pronline.org" },
+  { label: "ActiveClinic (V7)", href: "https://activeclinic.pronline.org" },
+  { label: "BlessBoard (V8)", href: "https://blessboard.neuniversity.org" },
+  { label: "ActiveClinic (V8)", href: "https://activeclinic.neuniversity.org" },
   { label: "GetPro", href: "https://getproapp.pronline.org" },
   { label: "Netraz", href: "https://netraz.pronline.org" },
 ]);
@@ -91,9 +93,14 @@ function createMoovexPlatformRuntimeApp(options) {
       mode: "moovex-platform-runtime",
       deploymentCode: deployment.code,
       environment: deployment.environment,
+      platformLine: deployment.platformLine || "v7",
       productSelection: "hostname",
       expectedIdentityKey: deployment.expectedIdentityKey || null,
       expectedDatabaseEnvironment: deployment.expectedDatabaseEnvironment,
+      sessionCookieName: deployment.sessionCookieName || null,
+      mediaWriteNamespace: deployment.mediaWriteNamespace || null,
+      jobsEnabled: deployment.jobsEnabled === true,
+      apexDomains: deployment.apexDomains || [],
       gitSha: (boot && boot.gitSha) || readGitShaShort(),
       schemaCompatible: schemaHealth.schemaCompatible,
       schemaCompatibility: schemaHealth.schemaCompatibility,
@@ -658,6 +665,17 @@ async function startMoovexPlatformRuntimeServer(opts) {
   } = require("../../startup/platformRuntimeDiagnostics");
   logPlatformRuntimeDiagnostics(env);
 
+  const {
+    assertV8EnvironmentSafeOrError,
+    isV8Deployment,
+  } = require("../config/v8DeploymentIsolation");
+  const v8Gate = assertV8EnvironmentSafeOrError(env);
+  if (!v8Gate.ok) {
+    // eslint-disable-next-line no-console
+    console.error(`[moovex] ${v8Gate.message}`);
+    process.exit(1);
+  }
+
   const pool = getPgPool();
   const {
     assertPlatformDatabaseIdentityOrExit,
@@ -674,6 +692,7 @@ async function startMoovexPlatformRuntimeServer(opts) {
     ...((opts && opts.boot) || {}),
     gitSha: readGitShaShort(),
     schemaCompatibility,
+    platformLine: isV8Deployment(env) ? "v8" : "v7",
   };
 
   const productApps = buildDefaultProductApps({ env, getPool: () => pool });
@@ -685,6 +704,7 @@ async function startMoovexPlatformRuntimeServer(opts) {
   });
   const port = env.PORT ? Number(env.PORT) : 3000;
   const host = resolveListenHost(env);
+  const deployment = resolveDeploymentConfiguration(env);
 
   await new Promise((resolve, reject) => {
     try {
@@ -692,7 +712,8 @@ async function startMoovexPlatformRuntimeServer(opts) {
         // eslint-disable-next-line no-console
         console.log(
           `[moovex] platform runtime listening on ${host}:${port} ` +
-            `(deployment=${resolveDeploymentConfiguration(env).code}, productSelection=hostname)`
+            `(deployment=${deployment.code}, productSelection=hostname, ` +
+            `platformLine=${deployment.platformLine || "v7"})`
         );
         resolve(server);
       });

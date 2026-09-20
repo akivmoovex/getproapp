@@ -43,14 +43,42 @@ const MIME_EXTENSION = Object.freeze({
 
 /**
  * @param {NodeJS.ProcessEnv} [env]
- * @returns {"testing"|"production"}
+ * @returns {"testing"|"testing-v8"|"production"}
  */
 function resolveMediaEnvironment(env) {
   const source = env || process.env;
+  try {
+    const {
+      resolveDeploymentConfiguration,
+    } = require("../config/deploymentProfiles");
+    const deployment = resolveDeploymentConfiguration(source);
+    const ns = String(deployment.mediaWriteNamespace || "")
+      .trim()
+      .toLowerCase();
+    if (ns === "testing-v8" || ns === "testing" || ns === "production") {
+      return ns;
+    }
+    if (deployment.platformLine === "v8") return "testing-v8";
+  } catch {
+    /* fall through */
+  }
   const raw = String(source.DEPLOYMENT_ENV || source.DATABASE_IDENTITY_ENV || "")
     .trim()
     .toLowerCase();
   if (raw === "production") return "production";
+  return "testing";
+}
+
+/**
+ * Logical media environment for read compatibility (V8 can serve V7 testing media).
+ * @param {string} writeNamespace
+ * @returns {"testing"|"production"}
+ */
+function resolveMediaReadEnvironment(writeNamespace) {
+  const ns = String(writeNamespace || "")
+    .trim()
+    .toLowerCase();
+  if (ns === "production") return "production";
   return "testing";
 }
 
@@ -340,7 +368,9 @@ function resolveHostingerMediaConfig(env, opts) {
 
   // Production (and any non-testing profile) stays fail-closed without explicit root.
   const allowTestingFallback =
-    environment === "testing" && deploymentCode === "moovex-platform-testing";
+    (environment === "testing" || environment === "testing-v8") &&
+    (deploymentCode === "moovex-platform-testing" ||
+      deploymentCode === "moovex-platform-v8-testing");
   if (!allowTestingFallback) {
     return disabledResult({
       rejectionCode: CODE_ROOT_UNSET,
@@ -469,7 +499,11 @@ function buildHostingerStorageKey(input) {
   const mediaId = String((input && input.mediaId) || "")
     .trim()
     .toLowerCase();
-  if (environment !== "testing" && environment !== "production") {
+  if (
+    environment !== "testing" &&
+    environment !== "testing-v8" &&
+    environment !== "production"
+  ) {
     const err = new Error("invalid_media_environment");
     err.code = "INVALID_MEDIA_ENVIRONMENT";
     throw err;
@@ -494,7 +528,8 @@ function buildHostingerStorageKey(input) {
 }
 
 /**
- * Testing runtimes must never write under production/.
+ * Testing / V8 runtimes must never write under production/.
+ * V8 writes under testing-v8/; V7 testing writes under testing/.
  * @param {string} runtimeEnvironment
  * @param {string} storageKey
  */
@@ -503,12 +538,24 @@ function assertStorageKeyWritable(runtimeEnvironment, storageKey) {
   const runtime = String(runtimeEnvironment || "")
     .trim()
     .toLowerCase();
-  if (runtime === "testing" && (key === "production" || key.startsWith("production/"))) {
+  if (
+    (runtime === "testing" || runtime === "testing-v8") &&
+    (key === "production" || key.startsWith("production/"))
+  ) {
     const err = new Error("refused_production_media_namespace");
     err.code = "REFUSED_PRODUCTION_MEDIA_NAMESPACE";
     throw err;
   }
-  if (runtime !== "testing" && runtime !== "production") {
+  if (runtime === "testing" && (key === "testing-v8" || key.startsWith("testing-v8/"))) {
+    const err = new Error("refused_v8_media_namespace");
+    err.code = "REFUSED_V8_MEDIA_NAMESPACE";
+    throw err;
+  }
+  if (
+    runtime !== "testing" &&
+    runtime !== "testing-v8" &&
+    runtime !== "production"
+  ) {
     const err = new Error("invalid_media_environment");
     err.code = "INVALID_MEDIA_ENVIRONMENT";
     throw err;
@@ -598,6 +645,7 @@ module.exports = {
   MEDIA_ROOT_SOURCE_TESTING_FALLBACK,
   MEDIA_ROOT_SOURCE_DISABLED,
   resolveMediaEnvironment,
+  resolveMediaReadEnvironment,
   resolveHostingerMediaConfig,
   classifyMediaStorageRootPersistence,
   isEphemeralMediaStorageRoot,

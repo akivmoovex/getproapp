@@ -65,6 +65,54 @@ function assertHostnameMatchesEnvironment(runtimeEnvironment, site) {
 }
 
 /**
+ * Hostname-selected platform runtimes only accept hosts listed on the profile
+ * apexDomains (prevents V7 pronline hosts on V8 neuniversity workers and vice versa).
+ * @param {object|null} profile
+ * @param {{ hostname: string, platformLine?: string|null }} site
+ */
+function assertHostnameAllowedForDeployment(profile, site) {
+  if (!profile || profile.productSelection !== "hostname") {
+    return { ok: true };
+  }
+  const apex = Array.isArray(profile.apexDomains) ? profile.apexDomains : [];
+  const host = String(site.hostname || "")
+    .trim()
+    .toLowerCase();
+  const allowed = new Set(apex.map((h) => String(h).trim().toLowerCase()).filter(Boolean));
+  if (!allowed.has(host)) {
+    return {
+      ok: false,
+      code: "PLATFORM_HOST_NOT_IN_DEPLOYMENT",
+      message:
+        `Hostname ${JSON.stringify(host)} is not allowed for deployment ` +
+        `${JSON.stringify(profile.deploymentCode)}.`,
+      hostname: host,
+      deploymentCode: profile.deploymentCode,
+    };
+  }
+  const profileLine = String(profile.platformLine || "v7")
+    .trim()
+    .toLowerCase();
+  const hostLine = String(site.platformLine || "v7")
+    .trim()
+    .toLowerCase();
+  if (profileLine && hostLine && profileLine !== hostLine) {
+    return {
+      ok: false,
+      code: "PLATFORM_LINE_HOST_MISMATCH",
+      message:
+        `Hostname ${JSON.stringify(host)} belongs to platformLine=${hostLine} ` +
+        `but deployment ${profile.deploymentCode} is platformLine=${profileLine}.`,
+      hostname: host,
+      deploymentCode: profile.deploymentCode,
+      platformLine: profileLine,
+      hostPlatformLine: hostLine,
+    };
+  }
+  return { ok: true };
+}
+
+/**
  * Build immutable platform context from runtime + hostname.
  * @param {{
  *   env?: NodeJS.ProcessEnv,
@@ -158,6 +206,20 @@ function resolvePlatformRequestContext(input) {
     };
   }
 
+  const apexMatch = assertHostnameAllowedForDeployment(profile, site);
+  if (!apexMatch.ok) {
+    return {
+      ok: false,
+      code: apexMatch.code,
+      message: apexMatch.message,
+      runtimeEnvironment,
+      hostname: site.hostname,
+      productSelection,
+      deployment,
+      platformLine: profile && profile.platformLine ? profile.platformLine : null,
+    };
+  }
+
   let productKey = null;
   let brand = site.brand;
   let siteType = site.siteType;
@@ -222,6 +284,8 @@ function resolvePlatformRequestContext(input) {
     redirectTargetOrigin: site.redirectTargetOrigin || null,
     productSelection,
     deploymentCode: deployment.code || null,
+    platformLine:
+      (profile && profile.platformLine) || site.platformLine || "v7",
     hostSource,
   });
 
@@ -255,7 +319,12 @@ function createLoadPlatformRequestContext(opts) {
       if (typeof options.onUnknown === "function") {
         return options.onUnknown(req, res, result);
       }
-      const status = result.code === "PLATFORM_ENVIRONMENT_HOST_MISMATCH" ? 421 : 404;
+      const status =
+        result.code === "PLATFORM_ENVIRONMENT_HOST_MISMATCH" ||
+        result.code === "PLATFORM_HOST_NOT_IN_DEPLOYMENT" ||
+        result.code === "PLATFORM_LINE_HOST_MISMATCH"
+          ? 421
+          : 404;
       return res.status(status).json({
         ok: false,
         code: result.code,
@@ -276,6 +345,7 @@ module.exports = {
   UnknownPlatformHostError,
   PlatformEnvironmentHostMismatchError,
   assertHostnameMatchesEnvironment,
+  assertHostnameAllowedForDeployment,
   resolvePlatformRequestContext,
   createLoadPlatformRequestContext,
 };

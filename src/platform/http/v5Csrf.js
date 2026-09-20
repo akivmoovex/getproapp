@@ -112,6 +112,8 @@ function validateCsrf(req, submitted, env) {
   return crypto.timingSafeEqual(left, right);
 }
 
+const { buildHostOnlyCookieOptions } = require("../config/v8DeploymentIsolation");
+
 /**
  * @param {import('express').Response} res
  * @param {string} token
@@ -120,14 +122,13 @@ function validateCsrf(req, submitted, env) {
 function setCsrfCookie(res, token, opts) {
   const env = (opts && opts.env) || process.env;
   const req = opts && opts.req;
-  const secure =
-    opts && opts.secure !== undefined ? opts.secure : String(env.NODE_ENV || "") === "production";
+  const base = buildHostOnlyCookieOptions(env);
+  const secure = opts && opts.secure !== undefined ? opts.secure : base.secure;
   const cookieName = getCsrfCookieName(env, req);
   res.cookie(cookieName, token, {
+    ...base,
     httpOnly: false, // double-submit must be readable by form issuance from server; value is HMAC-signed
     secure,
-    sameSite: "lax",
-    path: "/",
     maxAge: 12 * 60 * 60 * 1000,
   });
 }

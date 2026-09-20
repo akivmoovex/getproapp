@@ -13,6 +13,7 @@ const CANONICAL_PLATFORM_IDENTITY_KEY = "moovex-platform-v7";
  *   hostname: string,
  *   productKey: string|null,
  *   environment: "testing"|"production",
+ *   platformLine: "v7"|"v8"|null,
  *   brand: string,
  *   siteType: "product"|"corporate"|"legacy-redirect"|"platform",
  *   sessionCookieName: string,
@@ -22,138 +23,187 @@ const CANONICAL_PLATFORM_IDENTITY_KEY = "moovex-platform-v7";
  * }>} CanonicalHostSite
  */
 
+function freezeHost(input) {
+  return Object.freeze({
+    hostname: input.hostname,
+    productKey: input.productKey == null ? null : input.productKey,
+    environment: input.environment,
+    platformLine: input.platformLine || "v7",
+    brand: input.brand,
+    siteType: input.siteType,
+    sessionCookieName: input.sessionCookieName,
+    csrfCookieName: input.csrfCookieName,
+    redirectTargetOrigin: input.redirectTargetOrigin || null,
+    status: input.status || "canonical",
+  });
+}
+
 /** @type {Readonly<Record<string, CanonicalHostSite>>} */
 const CANONICAL_HOST_REGISTRY = Object.freeze({
-  "pronline.org": Object.freeze({
+  "pronline.org": freezeHost({
     hostname: "pronline.org",
     productKey: null,
     environment: "testing",
+    platformLine: "v7",
     brand: "Moovex Platform QA",
     siteType: "platform",
     sessionCookieName: "moovex_pronline_hub_sid",
     csrfCookieName: "moovex_pronline_hub_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "www.pronline.org": Object.freeze({
+  "www.pronline.org": freezeHost({
     hostname: "www.pronline.org",
     productKey: null,
     environment: "testing",
+    platformLine: "v7",
     brand: "Moovex Platform QA",
     siteType: "platform",
     sessionCookieName: "moovex_pronline_hub_sid",
     csrfCookieName: "moovex_pronline_hub_csrf",
     redirectTargetOrigin: "https://pronline.org",
-    status: "canonical",
   }),
-  "blessboard.com": Object.freeze({
+  "blessboard.com": freezeHost({
     hostname: "blessboard.com",
     productKey: "blessboard",
     environment: "production",
+    platformLine: "v7",
     brand: "BlessBoard",
     siteType: "product",
     sessionCookieName: "blessboard_com_sid",
     csrfCookieName: "blessboard_org_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "www.blessboard.com": Object.freeze({
+  "www.blessboard.com": freezeHost({
     hostname: "www.blessboard.com",
     productKey: "blessboard",
     environment: "production",
+    platformLine: "v7",
     brand: "BlessBoard",
     siteType: "product",
     sessionCookieName: "blessboard_com_sid",
     csrfCookieName: "blessboard_org_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "blessboard.pronline.org": Object.freeze({
+  "blessboard.pronline.org": freezeHost({
     hostname: "blessboard.pronline.org",
     productKey: "blessboard",
     environment: "testing",
+    platformLine: "v7",
     brand: "BlessBoard",
     siteType: "product",
     sessionCookieName: "blessboard_pronline_sid",
     csrfCookieName: "blessboard_pronline_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "activeclinic.org": Object.freeze({
+  "activeclinic.org": freezeHost({
     hostname: "activeclinic.org",
     productKey: "activeclinic",
     environment: "production",
+    platformLine: "v7",
     brand: "ActiveClinic",
     siteType: "product",
     sessionCookieName: "activeclinic_org_prod_sid",
     csrfCookieName: "activeclinic_org_prod_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "www.activeclinic.org": Object.freeze({
+  "www.activeclinic.org": freezeHost({
     hostname: "www.activeclinic.org",
     productKey: "activeclinic",
     environment: "production",
+    platformLine: "v7",
     brand: "ActiveClinic",
     siteType: "product",
     sessionCookieName: "activeclinic_org_prod_sid",
     csrfCookieName: "activeclinic_org_prod_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "activeclinic.pronline.org": Object.freeze({
+  "activeclinic.pronline.org": freezeHost({
     hostname: "activeclinic.pronline.org",
     productKey: "activeclinic",
     environment: "testing",
+    platformLine: "v7",
     brand: "ActiveClinic",
     siteType: "product",
     sessionCookieName: "activeclinic_pronline_sid",
     csrfCookieName: "activeclinic_pronline_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "getproapp.org": Object.freeze({
+  /** V8 isolated testing — BlessBoard (neuniversity.org). */
+  "blessboard.neuniversity.org": freezeHost({
+    hostname: "blessboard.neuniversity.org",
+    productKey: "blessboard",
+    environment: "testing",
+    platformLine: "v8",
+    brand: "BlessBoard",
+    siteType: "product",
+    sessionCookieName: "blessboard_neuniversity_v8_sid",
+    csrfCookieName: "blessboard_neuniversity_v8_csrf",
+  }),
+  /** V8 isolated testing — ActiveClinic (neuniversity.org). */
+  "activeclinic.neuniversity.org": freezeHost({
+    hostname: "activeclinic.neuniversity.org",
+    productKey: "activeclinic",
+    environment: "testing",
+    platformLine: "v8",
+    brand: "ActiveClinic",
+    siteType: "product",
+    sessionCookieName: "activeclinic_neuniversity_v8_sid",
+    csrfCookieName: "activeclinic_neuniversity_v8_csrf",
+  }),
+  "neuniversity.org": freezeHost({
+    hostname: "neuniversity.org",
+    productKey: null,
+    environment: "testing",
+    platformLine: "v8",
+    brand: "Moovex Platform V8 QA",
+    siteType: "platform",
+    sessionCookieName: "moovex_neuniversity_v8_hub_sid",
+    csrfCookieName: "moovex_neuniversity_v8_hub_csrf",
+  }),
+  "www.neuniversity.org": freezeHost({
+    hostname: "www.neuniversity.org",
+    productKey: null,
+    environment: "testing",
+    platformLine: "v8",
+    brand: "Moovex Platform V8 QA",
+    siteType: "platform",
+    sessionCookieName: "moovex_neuniversity_v8_hub_sid",
+    csrfCookieName: "moovex_neuniversity_v8_hub_csrf",
+    redirectTargetOrigin: "https://neuniversity.org",
+  }),
+  "getproapp.org": freezeHost({
     hostname: "getproapp.org",
     productKey: "getpro",
     environment: "production",
+    platformLine: "v7",
     brand: "GetPro",
     siteType: "product",
     sessionCookieName: "getproapp_org_sid",
     csrfCookieName: "getproapp_org_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "www.getproapp.org": Object.freeze({
+  "www.getproapp.org": freezeHost({
     hostname: "www.getproapp.org",
     productKey: "getpro",
     environment: "production",
+    platformLine: "v7",
     brand: "GetPro",
     siteType: "product",
     sessionCookieName: "getproapp_org_sid",
     csrfCookieName: "getproapp_org_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
   /** Canonical GetPro testing hostname. */
-  "getproapp.pronline.org": Object.freeze({
+  "getproapp.pronline.org": freezeHost({
     hostname: "getproapp.pronline.org",
     productKey: "getpro",
     environment: "testing",
+    platformLine: "v7",
     brand: "GetPro",
     siteType: "product",
     sessionCookieName: "getproapp_pronline_sid",
     csrfCookieName: "getproapp_pronline_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
   /**
    * Compatibility alias → getproapp.pronline.org (temporary; not canonical).
    * Runtime issues a 301 when redirectTargetOrigin is set on a product host.
    */
-  "getpro.pronline.org": Object.freeze({
+  "getpro.pronline.org": freezeHost({
     hostname: "getpro.pronline.org",
     productKey: "getpro",
     environment: "testing",
+    platformLine: "v7",
     brand: "GetPro",
     siteType: "product",
     sessionCookieName: "getpro_pronline_sid",
@@ -161,77 +211,72 @@ const CANONICAL_HOST_REGISTRY = Object.freeze({
     redirectTargetOrigin: "https://getproapp.pronline.org",
     status: "legacy",
   }),
-  "netraz.org": Object.freeze({
+  "netraz.org": freezeHost({
     hostname: "netraz.org",
     productKey: "ngo",
     environment: "production",
+    platformLine: "v7",
     brand: "Netraz",
     siteType: "product",
     sessionCookieName: "netraz_org_sid",
     csrfCookieName: "netraz_org_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "www.netraz.org": Object.freeze({
+  "www.netraz.org": freezeHost({
     hostname: "www.netraz.org",
     productKey: "ngo",
     environment: "production",
+    platformLine: "v7",
     brand: "Netraz",
     siteType: "product",
     sessionCookieName: "netraz_org_sid",
     csrfCookieName: "netraz_org_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "netraz.pronline.org": Object.freeze({
+  "netraz.pronline.org": freezeHost({
     hostname: "netraz.pronline.org",
     productKey: "ngo",
     environment: "testing",
+    platformLine: "v7",
     brand: "Netraz",
     siteType: "product",
     sessionCookieName: "netraz_pronline_sid",
     csrfCookieName: "netraz_pronline_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "moovex.org": Object.freeze({
+  "moovex.org": freezeHost({
     hostname: "moovex.org",
     productKey: null,
     environment: "production",
+    platformLine: "v7",
     brand: "Moovex",
     siteType: "corporate",
     sessionCookieName: "moovex_org_sid",
     csrfCookieName: "moovex_org_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "www.moovex.org": Object.freeze({
+  "www.moovex.org": freezeHost({
     hostname: "www.moovex.org",
     productKey: null,
     environment: "production",
+    platformLine: "v7",
     brand: "Moovex",
     siteType: "corporate",
     sessionCookieName: "moovex_org_sid",
     csrfCookieName: "moovex_org_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
-  "moovex.pronline.org": Object.freeze({
+  "moovex.pronline.org": freezeHost({
     hostname: "moovex.pronline.org",
     productKey: null,
     environment: "testing",
+    platformLine: "v7",
     brand: "Moovex",
     siteType: "corporate",
     sessionCookieName: "moovex_pronline_sid",
     csrfCookieName: "moovex_pronline_csrf",
-    redirectTargetOrigin: null,
-    status: "canonical",
   }),
   /** Prepared legacy redirect — not activated on Hostinger yet. */
-  "blessboard.org": Object.freeze({
+  "blessboard.org": freezeHost({
     hostname: "blessboard.org",
     productKey: "blessboard",
     environment: "production",
+    platformLine: "v7",
     brand: "BlessBoard",
     siteType: "legacy-redirect",
     sessionCookieName: "blessboard_org_redirect_sid",
@@ -239,10 +284,11 @@ const CANONICAL_HOST_REGISTRY = Object.freeze({
     redirectTargetOrigin: "https://blessboard.com",
     status: "prepared",
   }),
-  "www.blessboard.org": Object.freeze({
+  "www.blessboard.org": freezeHost({
     hostname: "www.blessboard.org",
     productKey: "blessboard",
     environment: "production",
+    platformLine: "v7",
     brand: "BlessBoard",
     siteType: "legacy-redirect",
     sessionCookieName: "blessboard_org_redirect_sid",

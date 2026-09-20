@@ -2,10 +2,11 @@
 
 ## Preferred unified runtimes
 
-| Deployment code | Product selection | Environment | DB identity key | DB env |
-| --------------- | ----------------- | ----------- | --------------- | ------ |
-| `moovex-platform-testing` | hostname | testing | `moovex-platform-v7` | testing |
-| `moovex-platform-production` | hostname | production | `moovex-platform-v7` | production |
+| Deployment code | Product selection | Environment | DB identity key | DB env | Hosts |
+| --------------- | ----------------- | ----------- | --------------- | ------ | ----- |
+| `moovex-platform-testing` | hostname | testing | `moovex-platform-v7` | testing | `*.pronline.org` (V7) |
+| `moovex-platform-v8-testing` | hostname | testing | `moovex-platform-v7` | testing | `*.neuniversity.org` (V8) |
+| `moovex-platform-production` | hostname | production | `moovex-platform-v7` | production | production product TLDs |
 
 ## Transitional product-specific profiles (still registered)
 
@@ -25,7 +26,7 @@
 
 ## Hostinger values (apply later — not applied)
 
-### Preferred testing
+### Preferred testing (V7 / pronline.org)
 
 ```env
 NODE_ENV=production
@@ -36,6 +37,20 @@ DATABASE_IDENTITY_EXPECTED=moovex-platform-v7
 DATABASE_IDENTITY_ENV=testing
 SESSION_SECRET=<secret>
 ```
+
+### Preferred V8 testing (neuniversity.org) — separate Hostinger app
+
+```env
+NODE_ENV=production
+DEPLOYMENT_ENV=testing
+PLATFORM_DEPLOYMENT_CODE=moovex-platform-v8-testing
+DATABASE_URL=<same testing DB as V7>
+DATABASE_IDENTITY_EXPECTED=moovex-platform-v7
+DATABASE_IDENTITY_ENV=testing
+SESSION_SECRET=<distinct V8 secret>
+```
+
+See [`V8_HOSTINGER_TESTING_ENV.md`](./V8_HOSTINGER_TESTING_ENV.md).
 
 ### Preferred production — FUTURE ONLY
 

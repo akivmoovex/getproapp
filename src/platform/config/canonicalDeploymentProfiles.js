@@ -22,6 +22,7 @@ const CODE_NETRAZ_PRONLINE_TESTING = "netraz-pronline-testing";
 const CODE_MOOVEX_ORG_PRODUCTION = "moovex-org-production";
 const CODE_MOOVEX_PLATFORM_TESTING = "moovex-platform-testing";
 const CODE_MOOVEX_PLATFORM_PRODUCTION = "moovex-platform-production";
+const CODE_MOOVEX_PLATFORM_V8_TESTING = "moovex-platform-v8-testing";
 
 /** Canonical identity key shared by testing + production platform DBs (env code differs). */
 const MOOVEX_PLATFORM_IDENTITY_KEY = "moovex-platform-v7";
@@ -59,9 +60,13 @@ const ALL_PRODUCT_FOREIGN_TLDS = Object.freeze([
   "blessboard.org",
   "www.blessboard.org",
   "blessboard.pronline.org",
+  "blessboard.neuniversity.org",
   "activeclinic.org",
   "www.activeclinic.org",
   "activeclinic.pronline.org",
+  "activeclinic.neuniversity.org",
+  "neuniversity.org",
+  "www.neuniversity.org",
   "getproapp.org",
   "www.getproapp.org",
   "getproapp.pronline.org",
@@ -118,6 +123,12 @@ function defineProfile(input) {
     defaultCountry: input.defaultCountry || "ZM",
     redirectTargetOrigin: input.redirectTargetOrigin || null,
     redirectEnabledByDefault: Boolean(input.redirectEnabledByDefault),
+    /** Isolation line: v7 (pronline) vs v8 (neuniversity). */
+    platformLine: input.platformLine || "v7",
+    /** Filesystem media write prefix (testing | testing-v8 | production). */
+    mediaWriteNamespace: input.mediaWriteNamespace || null,
+    /** Temp/cache/queue namespace under process state dirs. */
+    isolationNamespace: input.isolationNamespace || null,
   });
 }
 
@@ -443,6 +454,52 @@ const PROFILE_MOOVEX_PLATFORM_TESTING = defineProfile({
   brandSubtitle: "Testing Platform",
   brandSubtitleVariant: "demo",
   defaultCountry: "ZM",
+  platformLine: "v7",
+  mediaWriteNamespace: "testing",
+  isolationNamespace: "v7-testing",
+});
+
+/**
+ * Unified Moovex V8 testing runtime — hostname product selection on neuniversity.org.
+ * Shares moovex-platform-v7 DB identity with V7 testing; isolated cookies, jobs off,
+ * media writes under testing-v8/. One Node process can serve both BB + AC V8 hosts.
+ */
+const PROFILE_MOOVEX_PLATFORM_V8_TESTING = defineProfile({
+  deploymentCode: CODE_MOOVEX_PLATFORM_V8_TESTING,
+  productCode: "platform",
+  brand: "Moovex Platform V8",
+  siteType: "platform",
+  profileStatus: "canonical",
+  productSelection: "hostname",
+  expectedIdentityKey: MOOVEX_PLATFORM_IDENTITY_KEY,
+  deploymentEnvironment: "testing",
+  runtimeMode: RUNTIME_V5_FOUNDATION,
+  canonicalDomain: "neuniversity.org",
+  publicOrigin: "https://neuniversity.org",
+  apexDomains: [
+    "neuniversity.org",
+    "www.neuniversity.org",
+    "blessboard.neuniversity.org",
+    "activeclinic.neuniversity.org",
+  ],
+  churchHostDomain: "blessboard.neuniversity.org",
+  sessionCookieName: "moovex_platform_v8_testing_sid",
+  csrfCookieName: "moovex_platform_v8_testing_csrf",
+  expectedDatabaseEnvironment: "testing",
+  jobsEnabled: false,
+  hostContextMode: "diagnostic",
+  foreignTlds: foreignExcept([
+    "neuniversity.org",
+    "www.neuniversity.org",
+    "blessboard.neuniversity.org",
+    "activeclinic.neuniversity.org",
+  ]),
+  brandSubtitle: "V8 Testing",
+  brandSubtitleVariant: "demo",
+  defaultCountry: "ZM",
+  platformLine: "v8",
+  mediaWriteNamespace: "testing-v8",
+  isolationNamespace: "v8-testing",
 });
 
 const PROFILE_MOOVEX_PLATFORM_PRODUCTION = defineProfile({
@@ -490,6 +547,9 @@ const PROFILE_MOOVEX_PLATFORM_PRODUCTION = defineProfile({
   brandSubtitle: null,
   brandSubtitleVariant: null,
   defaultCountry: "ZM",
+  platformLine: "v7",
+  mediaWriteNamespace: "production",
+  isolationNamespace: "v7-production",
 });
 
 /** @type {Readonly<Record<string, object>>} */
@@ -507,6 +567,7 @@ const CANONICAL_DEPLOYMENT_PROFILES = Object.freeze({
   [CODE_NETRAZ_PRONLINE_TESTING]: PROFILE_NETRAZ_PRONLINE_TESTING,
   [CODE_MOOVEX_ORG_PRODUCTION]: PROFILE_MOOVEX_ORG_PRODUCTION,
   [CODE_MOOVEX_PLATFORM_TESTING]: PROFILE_MOOVEX_PLATFORM_TESTING,
+  [CODE_MOOVEX_PLATFORM_V8_TESTING]: PROFILE_MOOVEX_PLATFORM_V8_TESTING,
   [CODE_MOOVEX_PLATFORM_PRODUCTION]: PROFILE_MOOVEX_PLATFORM_PRODUCTION,
 });
 
@@ -609,8 +670,12 @@ const ALL_SESSION_COOKIE_NAMES = Object.freeze([
   "moovex_pronline_sid",
   "moovex_pronline_hub_sid",
   "moovex_platform_testing_sid",
+  "moovex_platform_v8_testing_sid",
   "moovex_platform_production_sid",
   "blessboard_org_redirect_sid",
+  "blessboard_neuniversity_v8_sid",
+  "activeclinic_neuniversity_v8_sid",
+  "moovex_neuniversity_v8_hub_sid",
   "getpro_sid",
 ]);
 
@@ -629,8 +694,12 @@ const ALL_CSRF_COOKIE_NAMES = Object.freeze([
   "moovex_pronline_csrf",
   "moovex_pronline_hub_csrf",
   "moovex_platform_testing_csrf",
+  "moovex_platform_v8_testing_csrf",
   "moovex_platform_production_csrf",
   "blessboard_org_redirect_csrf",
+  "blessboard_neuniversity_v8_csrf",
+  "activeclinic_neuniversity_v8_csrf",
+  "moovex_neuniversity_v8_hub_csrf",
 ]);
 
 module.exports = {
@@ -649,6 +718,7 @@ module.exports = {
   CODE_NETRAZ_PRONLINE_TESTING,
   CODE_MOOVEX_ORG_PRODUCTION,
   CODE_MOOVEX_PLATFORM_TESTING,
+  CODE_MOOVEX_PLATFORM_V8_TESTING,
   CODE_MOOVEX_PLATFORM_PRODUCTION,
   MOOVEX_PLATFORM_IDENTITY_KEY,
   CODE_ORG_V5,

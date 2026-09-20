@@ -7,6 +7,7 @@
 
 const { SESSION_TTL_MS } = require("../session/sessionToken");
 const { getDeploymentProfile, V5_SESSION_COOKIE } = require("../config/deploymentProfiles");
+const { buildHostOnlyCookieOptions } = require("../config/v8DeploymentIsolation");
 
 const DEFAULT_V5_COOKIE = V5_SESSION_COOKIE;
 
@@ -35,13 +36,11 @@ function getV5SessionCookieName(env, req) {
 function setV5SessionCookie(res, rawToken, opts) {
   const env = (opts && opts.env) || process.env;
   const req = opts && opts.req;
-  const secure =
-    opts && opts.secure !== undefined ? opts.secure : String(env.NODE_ENV || "") === "production";
+  const base = buildHostOnlyCookieOptions(env);
+  const secure = opts && opts.secure !== undefined ? opts.secure : base.secure;
   res.cookie(getV5SessionCookieName(env, req), rawToken, {
-    httpOnly: true,
+    ...base,
     secure,
-    sameSite: "lax",
-    path: "/",
     maxAge: SESSION_TTL_MS,
   });
 }
@@ -53,13 +52,11 @@ function setV5SessionCookie(res, rawToken, opts) {
 function clearV5SessionCookie(res, opts) {
   const env = (opts && opts.env) || process.env;
   const req = opts && opts.req;
-  const secure =
-    opts && opts.secure !== undefined ? opts.secure : String(env.NODE_ENV || "") === "production";
+  const base = buildHostOnlyCookieOptions(env);
+  const secure = opts && opts.secure !== undefined ? opts.secure : base.secure;
   res.clearCookie(getV5SessionCookieName(env, req), {
-    httpOnly: true,
+    ...base,
     secure,
-    sameSite: "lax",
-    path: "/",
   });
 }
 

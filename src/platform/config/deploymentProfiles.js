@@ -40,6 +40,7 @@ const CODE_NETRAZ_ORG_PRODUCTION = catalogue.CODE_NETRAZ_ORG_PRODUCTION;
 const CODE_NETRAZ_PRONLINE_TESTING = catalogue.CODE_NETRAZ_PRONLINE_TESTING;
 const CODE_MOOVEX_ORG_PRODUCTION = catalogue.CODE_MOOVEX_ORG_PRODUCTION;
 const CODE_MOOVEX_PLATFORM_TESTING = catalogue.CODE_MOOVEX_PLATFORM_TESTING;
+const CODE_MOOVEX_PLATFORM_V8_TESTING = catalogue.CODE_MOOVEX_PLATFORM_V8_TESTING;
 const CODE_MOOVEX_PLATFORM_PRODUCTION = catalogue.CODE_MOOVEX_PLATFORM_PRODUCTION;
 const MOOVEX_PLATFORM_IDENTITY_KEY = catalogue.MOOVEX_PLATFORM_IDENTITY_KEY;
 /** @deprecated Prefer CODE_ORG_STAGING */
@@ -290,6 +291,9 @@ function resolveDeploymentConfiguration(env) {
       brandSubtitleVariant: null,
       defaultCountry: null,
       redirectTargetOrigin: null,
+      platformLine: null,
+      mediaWriteNamespace: null,
+      isolationNamespace: null,
       profile: null,
     };
   }
@@ -319,6 +323,9 @@ function resolveDeploymentConfiguration(env) {
     brandSubtitleVariant: profile.brandSubtitleVariant || null,
     defaultCountry: profile.defaultCountry || "ZM",
     redirectTargetOrigin: profile.redirectTargetOrigin || null,
+    platformLine: profile.platformLine || "v7",
+    mediaWriteNamespace: profile.mediaWriteNamespace || null,
+    isolationNamespace: profile.isolationNamespace || null,
     profile,
   };
 }
@@ -517,6 +524,51 @@ function validateAuthoritativeProfileCompatibility(env, opts = {}) {
         };
       }
       noteMatch("DATABASE_IDENTITY_ENV", raw);
+    }
+  }
+
+  // V8 testing must never target production identity/env or enable jobs.
+  if (profile.platformLine === "v8") {
+    const depEnv = envTrim(source, "DEPLOYMENT_ENV").toLowerCase();
+    if (depEnv === "production") {
+      return {
+        ok: false,
+        code: "v8_production_env_refused",
+        message:
+          `DEPLOYMENT_ENV=production is refused for V8 profile ${profile.deploymentCode}. ` +
+          `Use DEPLOYMENT_ENV=testing on neuniversity.org. Refusing to start.`,
+        warnings,
+      };
+    }
+    const idEnv = envTrim(source, "DATABASE_IDENTITY_ENV").toLowerCase();
+    if (idEnv === "production") {
+      return {
+        ok: false,
+        code: "v8_production_identity_env_refused",
+        message:
+          `DATABASE_IDENTITY_ENV=production is refused for V8 profile ${profile.deploymentCode}. ` +
+          `V8 shares the testing database identity only. Refusing to start.`,
+        warnings,
+      };
+    }
+    if (profile.jobsEnabled !== false) {
+      return {
+        ok: false,
+        code: "v8_jobs_must_be_disabled",
+        message:
+          `V8 profile ${profile.deploymentCode} must keep jobsEnabled=false ` +
+          `so V8 workers cannot notify V7 users. Refusing to start.`,
+        warnings,
+      };
+    }
+    if (profile.expectedDatabaseEnvironment !== "testing") {
+      return {
+        ok: false,
+        code: "v8_expected_db_env_invalid",
+        message:
+          `V8 profile ${profile.deploymentCode} must use expectedDatabaseEnvironment=testing.`,
+        warnings,
+      };
     }
   }
 
@@ -855,6 +907,7 @@ module.exports = {
   CODE_NETRAZ_PRONLINE_TESTING,
   CODE_MOOVEX_ORG_PRODUCTION,
   CODE_MOOVEX_PLATFORM_TESTING,
+  CODE_MOOVEX_PLATFORM_V8_TESTING,
   CODE_MOOVEX_PLATFORM_PRODUCTION,
   MOOVEX_PLATFORM_IDENTITY_KEY,
   CODE_ORG_V5,

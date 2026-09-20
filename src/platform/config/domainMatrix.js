@@ -17,6 +17,14 @@ const DOMAIN_MATRIX = Object.freeze([
     productOrSite: "BlessBoard",
     productKey: "blessboard",
     domain: "blessboard.pronline.org",
+    platformLine: "v7",
+  }),
+  Object.freeze({
+    type: "testing-v8",
+    productOrSite: "BlessBoard",
+    productKey: "blessboard",
+    domain: "blessboard.neuniversity.org",
+    platformLine: "v8",
   }),
   Object.freeze({
     type: "legacy-redirect",
@@ -36,6 +44,14 @@ const DOMAIN_MATRIX = Object.freeze([
     productOrSite: "ActiveClinic",
     productKey: "activeclinic",
     domain: "activeclinic.pronline.org",
+    platformLine: "v7",
+  }),
+  Object.freeze({
+    type: "testing-v8",
+    productOrSite: "ActiveClinic",
+    productKey: "activeclinic",
+    domain: "activeclinic.neuniversity.org",
+    platformLine: "v8",
   }),
   Object.freeze({
     type: "production",
@@ -80,6 +96,14 @@ const DOMAIN_MATRIX = Object.freeze([
     productOrSite: "Platform",
     productKey: null,
     domain: "pronline.org",
+    platformLine: "v7",
+  }),
+  Object.freeze({
+    type: "testing-namespace-v8",
+    productOrSite: "Platform V8",
+    productKey: null,
+    domain: "neuniversity.org",
+    platformLine: "v8",
   }),
   Object.freeze({
     type: "private-project",
@@ -91,11 +115,16 @@ const DOMAIN_MATRIX = Object.freeze([
 ]);
 
 const TESTING_NAMESPACE = "pronline.org";
+const V8_TESTING_NAMESPACE = "neuniversity.org";
 
 const HOSTINGER_DEPLOYMENT_CODES = Object.freeze([
   Object.freeze({
-    hostingerApp: "Moovex platform testing (preferred)",
+    hostingerApp: "Moovex platform testing (preferred V7)",
     deploymentCode: "moovex-platform-testing",
+  }),
+  Object.freeze({
+    hostingerApp: "Moovex platform V8 testing (neuniversity.org)",
+    deploymentCode: "moovex-platform-v8-testing",
   }),
   Object.freeze({
     hostingerApp: "Moovex platform production (future)",
@@ -138,5 +167,6 @@ const HOSTINGER_DEPLOYMENT_CODES = Object.freeze([
 module.exports = {
   DOMAIN_MATRIX,
   TESTING_NAMESPACE,
+  V8_TESTING_NAMESPACE,
   HOSTINGER_DEPLOYMENT_CODES,
 };
