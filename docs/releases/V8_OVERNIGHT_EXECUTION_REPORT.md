@@ -88,8 +88,8 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 | **Existing functionality reused** | Membership workflow `938813bd` · Prompt 09 CODE_PASS · shared RBAC / submission services |
 | **Changed files** | `membershipWorkflowAdminRoutes.js` · HQ/branch member + registration views · `bb-membership-transfer.ejs` · register step label · membership tests · docs |
 | **Tests** | Membership + a11y structure **97/97 PASS** |
-| **Commit SHA** | *(recorded after push)* |
-| **Push status** | Pending push to `origin/V8` |
+| **Commit SHA** | `65dbf4ef2eff95ad1742736efb70ca9e1d6f49ad` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for PASS. Migration `110` still not applied on hosted DB. BB18-M Stitch inventory gap (responsive markers only). |
 | **Next task** | Next overnight prompt as directed |
 | **Report** | [`V8_BB_MEMBERSHIP_MANAGEMENT_PROMPT07.md`](./V8_BB_MEMBERSHIP_MANAGEMENT_PROMPT07.md) |
