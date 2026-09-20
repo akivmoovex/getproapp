@@ -70,8 +70,8 @@ After each task, report:
 | **Stitch verified** | Project reachable via MCP: **BlessBoard Membership Registration Workflow** (`projects/5087412725796049014`) |
 | **Changed files** | `docs/releases/V8_OVERNIGHT_IMPLEMENTATION_REPORT.md` (created) |
 | **Test results** | N/A (documentation only; no application code changed) |
-| **Commit SHA** | *(filled after commit)* |
-| **Push status** | *(filled after push)* |
+| **Commit SHA** | `807825c737e240a484b1c4a89526b626da3f861d` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for PROMPT 00. Hosted deploy/restart/migrations/notifications remain **forbidden** overnight by rule 10. |
 | **Hosted verification** | Not claimed (docs-only; rule 12) |
 
