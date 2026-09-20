@@ -70,8 +70,8 @@ After each task, report:
 | **Report** | [`docs/releases/V8_SHARED_PHONE_IDENTITY_PROMPT04.md`](./V8_SHARED_PHONE_IDENTITY_PROMPT04.md) |
 | **Changed files** | `src/platform/services/platformIdentityService.js` · `src/activeclinic/services/resolveActiveClinicInvitationIdentity.js` · `tests/v7-shared-phone-identity.test.js` · `tests/activeclinic-account-lifecycle.test.js` · docs |
 | **Test results** | Shared phone **13/13**; BB login + registration identity + AC lifecycle **29/29 PASS** |
-| **Commit SHA** | (filled after commit) |
-| **Push status** | (filled after push) |
+| **Commit SHA** | `f5515341698a74a0ffd3e4698380eb96cf194789` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for code pass. Unique-all-phones migration not applied overnight (advisory locks instead). |
 
 ### PROMPT 03 — V8 ActiveClinic booking and inquiry fix
