@@ -88,8 +88,8 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 | **Existing functionality reused** | `af850534` form builder · `039` migration · `tenantFormService` / `formSchema` / BB+AC mounts |
 | **Changed files** | studio/access-denied/dashboard*/preview/publication/sharing/layout · `forms-builder.css` · `v8-shared-form-builder.test.js` · docs |
 | **Tests** | Form builder **10/10**; BB forms-requests **11/11 PASS** |
-| **Commit SHA** | _(filled after commit)_ |
-| **Push status** | Pending push to `origin/V8` |
+| **Commit SHA** | `8eb82df09bc9cc05ae7a980e81acc4795bbbd38a` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for CODE_PASS. Migration `039` still not applied on hosted DB. |
 | **Next task** | SH08–SH14 public submit / review when prompted |
 | **Report** | [`V8_SHARED_FORM_BUILDER_PROMPT03.md`](./V8_SHARED_FORM_BUILDER_PROMPT03.md) |
