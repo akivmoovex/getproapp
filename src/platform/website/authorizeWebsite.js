@@ -2,11 +2,15 @@
 
 const { hasWebsitePermission, PERMISSIONS } = require("./permissions");
 const instanceRepo = require("./instanceRepository");
+const { uuidEqual } = require("../rbac/sharedTenantScope");
 
 function assertWebsiteInstanceScope(instance, input) {
   if (!instance) return { ok: false, code: "website_instance_not_found" };
   const organizationId = String((input && input.organizationId) || "");
-  if (organizationId && instance.organizationId !== organizationId) {
+  if (
+    organizationId &&
+    !uuidEqual(instance.organizationId, organizationId)
+  ) {
     return { ok: false, code: "tenant_mismatch" };
   }
   const expectedProductCode = String((input && input.expectedProductCode) || "").trim();

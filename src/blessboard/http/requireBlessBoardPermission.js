@@ -11,6 +11,13 @@ const {
 } = require("../services/blessBoardRbacAuthorizationService");
 const { resolveTenantForAuthorization } = require("./loadBlessBoardAuthorizationContext");
 const { recordBlessBoardAudit } = require("../services/recordBlessBoardAudit");
+const {
+  assertResourceInsideBlessBoardTenant,
+} = require("../../platform/rbac/sharedTenantScope");
+const {
+  mapAuthzDecisionToHttp,
+  authzDecision,
+} = require("../../platform/rbac/sharedAuthzDecision");
 
 function sendControlled(status, message, req, res) {
   const wantsHtml = String(req.get("accept") || "").includes("text/html");
@@ -132,16 +139,18 @@ function createRequireBlessBoardPermission(permissionKey, resolveResourceContext
       }
 
       // Ownership first: resource context must stay inside trusted tenant.
-      if (
-        String(resourceContext.organizationId) !== String(tenant.organization.id) ||
-        String(resourceContext.churchId) !== String(tenant.church.id)
-      ) {
-        return sendControlled(
-          concealAsNotFound ? 404 : 403,
-          concealAsNotFound ? "Not found." : "You do not have access to this site.",
-          req,
-          res
+      const scope = assertResourceInsideBlessBoardTenant(resourceContext, tenant);
+      if (!scope.ok) {
+        const mapped = mapAuthzDecisionToHttp(
+          authzDecision({
+            allowed: false,
+            reasonCode: scope.reasonCode,
+            httpStatus: scope.httpStatus,
+            concealAsNotFound,
+          }),
+          { concealAsNotFound }
         );
+        return sendControlled(mapped.status, mapped.message, req, res);
       }
 
       const result = await authorize(pool, {

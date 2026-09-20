@@ -17,8 +17,8 @@ const {
   findUserStatusById,
 } = require("../../blessboard/repositories/blessBoardAuthorizationRepository");
 const {
-  authorize: authorizeBlessBoardPermission,
-} = require("../../blessboard/services/blessBoardRbacAuthorizationService");
+  evaluatePlatformAdminPermission,
+} = require("../rbac/sharedAuthzDecision");
 const {
   listPlatformOrganizations,
   getPlatformAdminDashboardStats,
@@ -1033,31 +1033,15 @@ function createPlatformAdminRouter(deps) {
         if (!actorUserId || !pool) {
           return sendControlled(req, res, 403, "You do not have access to this resource.");
         }
-        const decision = await authorizeBlessBoardPermission(pool, {
-          actor: { userId: actorUserId },
-          permission: permissionKey,
-          tenantContext: {
-            organizationId: null,
-            churchId: null,
-            primaryBranchId: null,
-          },
-          resourceContext: {
-            organizationId: null,
-            churchId: null,
-            branchId: null,
-          },
+        const decision = await evaluatePlatformAdminPermission(pool, {
+          actorUserId,
+          permissionKey,
+          env,
         });
         if (decision && decision.allowed === true) return next();
-        const roles = await pool.query(
-          `SELECT 1
-             FROM blessboard.user_roles
-            WHERE user_id = $1
-              AND role_key = 'platform_admin'
-              AND status = 'active'
-            LIMIT 1`,
-          [actorUserId]
-        );
-        if (roles.rows[0]) return next();
+        if (decision && decision.reasonCode === "RBAC_LOOKUP_ERROR") {
+          return sendControlled(req, res, 503, "Authorization is temporarily unavailable.");
+        }
         return sendControlled(req, res, 403, "You do not have access to this resource.");
       } catch {
         return sendControlled(req, res, 503, "Authorization is temporarily unavailable.");

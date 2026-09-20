@@ -32,6 +32,10 @@ const {
 const {
   PERM: DEPT_PERM,
 } = require("../services/activeClinicDepartmentService");
+const {
+  assertActiveClinicAuthScope,
+  rejectForgedTenantIdentifiers,
+} = require("../../platform/rbac/sharedTenantScope");
 
 function issueAccessStateCsrf(res, env, isProduction, req) {
   const csrfToken = issueCsrfToken(env);
@@ -139,8 +143,66 @@ function createRequireActiveClinicPermission(deps) {
           return res.redirect(303, "/account/change-password");
         }
 
+        const forged = rejectForgedTenantIdentifiers({
+          body: req.body,
+          query: req.query,
+          trusted: {
+            organizationId: auth.organization && auth.organization.id,
+            facilityId:
+              auth.selectedFacility && auth.selectedFacility.id
+                ? auth.selectedFacility.id
+                : null,
+          },
+          allowMatchingTrusted: true,
+        });
+        if (!forged.ok) {
+          const csrfToken = issueAccessStateCsrf(res, env, isProduction, req);
+          return res.status(403).type("html").send(
+            renderSimpleState(
+              "Access restricted",
+              "You do not have access to this area. Ask an administrator if you need permission, or return to an area you can use.",
+              {
+                state: "access-denied",
+                stateKey: STATE.ACCESS_RESTRICTED,
+                heading: "You do not have access to this area",
+                linkHref: "/app",
+                linkLabel: "Back to home",
+                showLogout: true,
+                csrfToken,
+              }
+            )
+          );
+        }
+
         const facilityId =
           (auth.selectedFacility && auth.selectedFacility.id) || null;
+        const scope = assertActiveClinicAuthScope(
+          {
+            organizationId: auth.organization.id,
+            facilityId,
+          },
+          auth,
+          { requireFacility: false }
+        );
+        if (!scope.ok) {
+          const csrfToken = issueAccessStateCsrf(res, env, isProduction, req);
+          return res.status(scope.httpStatus || 403).type("html").send(
+            renderSimpleState(
+              "Access restricted",
+              "You do not have access to this area. Ask an administrator if you need permission, or return to an area you can use.",
+              {
+                state: "access-denied",
+                stateKey: STATE.ACCESS_RESTRICTED,
+                heading: "You do not have access to this area",
+                linkHref: "/app",
+                linkLabel: "Back to home",
+                showLogout: true,
+                csrfToken,
+              }
+            )
+          );
+        }
+
         let allowed = false;
         for (const permissionKey of requiredKeys) {
           const checked = await authorizeStaffPermission(getPool(), {
