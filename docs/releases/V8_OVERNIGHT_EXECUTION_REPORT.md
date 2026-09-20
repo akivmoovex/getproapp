@@ -88,8 +88,8 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 | **Existing functionality reused** | `d76b2975` public submit/idempotency/rate-limit · `040` migration · form builder from Prompt 03 |
 | **Changed files** | `public-form.ejs` · `public-thanks.ejs` · `forms-builder.css` · `layout.ejs` · e2e + builder tests · docs |
 | **Tests** | Form builder + e2e **19/19 PASS** |
-| **Commit SHA** | _(filled after commit)_ |
-| **Push status** | Pending push to `origin/V8` |
+| **Commit SHA** | `05d4eea79c73fd39364ef344e69d8ed43ba06264` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None for CODE_PASS. Migrations 039/040 still not applied on hosted DB. |
 | **Next task** | SH11–SH14 submission review when prompted |
 | **Report** | [`V8_PUBLIC_FORMS_PROMPT04.md`](./V8_PUBLIC_FORMS_PROMPT04.md) |
