@@ -71,8 +71,8 @@ After each task, report:
 | **Report** | [`docs/releases/V8_BB_ACTIVITY_REGISTRATION_PROMPT10.md`](./V8_BB_ACTIVITY_REGISTRATION_PROMPT10.md) |
 | **Changed files** | `041_activity_registration_v8.sql` · activity service/routes/views · formSchema/repo/submit · tests · docs |
 | **Test results** | Activity **5/5 PASS**; shared forms builder+e2e **19/19 PASS** |
-| **Commit SHA** | _(filled after push)_ |
-| **Push status** | Pending push |
+| **Commit SHA** | `41030f85cae92333ffd168350815a8f705360ea0` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None. Migration `041` not applied on hosted DB. |
 
 ### PROMPT 09 — V8 BlessBoard membership (BB01–BB08, BB11–BB18)
