@@ -447,7 +447,7 @@ describe("v8 shared form builder", () => {
     }
 
     const layout = fs.readFileSync(path.join(viewsDir, "layout.ejs"), "utf8");
-    assert.match(layout, /forms-builder\.css\?v=3/);
+    assert.match(layout, /forms-builder\.css\?v=4/);
   });
 
   it("ActiveClinic HTTP: website editor can open form studio", async () => {

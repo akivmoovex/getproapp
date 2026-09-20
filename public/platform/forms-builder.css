@@ -273,6 +273,41 @@
   color: var(--mx-forms-danger);
 }
 
+.mx-forms-error-summary__banner {
+  margin: 0.5rem 0 0;
+}
+
+.mx-forms-error-summary__list {
+  margin: 0.5rem 0 0;
+  padding-left: 1.25rem;
+}
+
+.mx-forms-error-summary__list a {
+  color: inherit;
+  font-weight: 600;
+}
+
+.mx-forms-btn.is-submitting,
+.mx-forms-btn[aria-busy="true"] {
+  opacity: 0.75;
+  cursor: wait;
+}
+
+.mx-forms-submitting-hint {
+  margin: 0.65rem 0 0;
+  font-size: 0.85rem;
+  color: var(--mx-forms-muted);
+}
+
+.mx-forms-public-form {
+  width: 100%;
+}
+
+.mx-forms-reference code {
+  font-size: 0.8rem;
+  word-break: break-all;
+}
+
 /* Mobile: stack studio; use cards instead of wide tables (SH03-M / SH04-M) */
 @media (max-width: 799px) {
   .mx-forms-desktop-only { display: none !important; }

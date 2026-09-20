@@ -1,5 +1,12 @@
 <% const pageTitle = 'Thank you'; %>
-<div class="mx-forms-shell" data-screen="SH10">
+<div
+  class="mx-forms-shell mx-forms-public-thanks"
+  data-screen="SH10"
+  data-stitch-desktop="SH10-D"
+  data-stitch-mobile="SH10-M"
+  data-stitch-desktop-id="334db8f3d9314a8cb86a361c057f1eb3"
+  data-stitch-mobile-id="172093f06b9d41089ded3d09964aff29"
+>
   <div class="mx-forms-panel mx-forms-empty">
     <div class="mx-forms-brand"><%= brand.productName %></div>
     <h1 class="mx-forms-title">Submission received</h1>
@@ -10,7 +17,9 @@
       <% } %>
     </p>
     <% if (typeof submission !== 'undefined' && submission && submission.id) { %>
-      <p style="font-size:0.85rem;color:var(--mx-forms-muted)">Reference: <%= submission.id %></p>
+      <p class="mx-forms-reference" style="font-size:0.85rem;color:var(--mx-forms-muted)">
+        Reference: <code data-mx-forms-reference="1"><%= submission.id %></code>
+      </p>
     <% } %>
   </div>
 </div>

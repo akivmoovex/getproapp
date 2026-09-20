@@ -78,6 +78,22 @@ Unapplied additive migrations from prior wave (still not to be applied overnight
 
 ## Task log
 
+### PROMPT 04 — V8 shared public form submission (SH08–SH10)
+
+| Field | Value |
+|-------|-------|
+| **Status** | COMPLETE · verdict `V8_PUBLIC_FORMS_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch** | `V8` (synced with `origin/V8`) |
+| **Existing functionality reused** | `d76b2975` public submit/idempotency/rate-limit · `040` migration · form builder from Prompt 03 |
+| **Changed files** | `public-form.ejs` · `public-thanks.ejs` · `forms-builder.css` · `layout.ejs` · e2e + builder tests · docs |
+| **Tests** | Form builder + e2e **19/19 PASS** |
+| **Commit SHA** | _(filled after commit)_ |
+| **Push status** | Pending push to `origin/V8` |
+| **Blockers** | None for CODE_PASS. Migrations 039/040 still not applied on hosted DB. |
+| **Next task** | SH11–SH14 submission review when prompted |
+| **Report** | [`V8_PUBLIC_FORMS_PROMPT04.md`](./V8_PUBLIC_FORMS_PROMPT04.md) |
+
 ### PROMPT 03 — V8 shared form builder (SH01–SH07, SH15)
 
 | Field | Value |

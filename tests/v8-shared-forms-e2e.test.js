@@ -346,7 +346,24 @@ describe("v8 shared forms end-to-end", () => {
       "utf8"
     );
     assert.match(css, /mx-forms-input-error/);
+    assert.match(css, /mx-forms-error-summary/);
+    assert.match(css, /is-submitting/);
     assert.match(css, /@media \(max-width: 799px\)/);
+
+    const publicForm = fs.readFileSync(path.join(viewsDir, "public-form.ejs"), "utf8");
+    assert.match(publicForm, /data-stitch-desktop="SH08-D"|stitchDesktop/);
+    assert.match(publicForm, /SH09-D/);
+    assert.match(publicForm, /data-mx-forms-error-summary/);
+    assert.match(publicForm, /data-mx-forms-submit/);
+    assert.match(publicForm, /Submitting/);
+
+    const thanks = fs.readFileSync(path.join(viewsDir, "public-thanks.ejs"), "utf8");
+    assert.match(thanks, /data-screen="SH10"/);
+    assert.match(thanks, /data-stitch-desktop="SH10-D"/);
+    assert.match(thanks, /data-mx-forms-reference/);
+
+    const layout = fs.readFileSync(path.join(viewsDir, "layout.ejs"), "utf8");
+    assert.match(layout, /forms-builder\.css\?v=4/);
   });
 
   it("V7 BlessBoard formSchema still validates shared schemas", () => {
@@ -449,7 +466,10 @@ describe("v8 shared forms end-to-end", () => {
         consent: "1",
       });
     assert.equal(bad.status, 200);
-    assert.match(bad.text, /data-stitch="SH09"|check the highlighted|Please check/i);
+    assert.match(bad.text, /data-stitch="SH09"/);
+    assert.match(bad.text, /Please check the highlighted fields/i);
+    assert.match(bad.text, /data-mx-forms-error-summary/);
+    assert.match(bad.text, /data-stitch-desktop="SH09-D"/);
 
     const csrf2 = extractCsrf(bad.text) || csrf;
     const cookieJar2 = mergeCookies(getPage, bad);
@@ -469,7 +489,9 @@ describe("v8 shared forms end-to-end", () => {
         consent: "1",
       });
     assert.equal(okSubmit.status, 200, okSubmit.text.slice(0, 500));
-    assert.match(okSubmit.text, /Submission received|data-stitch="SH10"/);
+    assert.match(okSubmit.text, /Submission received/);
+    assert.match(okSubmit.text, /data-stitch="SH10"/);
+    assert.match(okSubmit.text, /data-mx-forms-reference|Reference:/);
 
     const session = await createPlatformIdentitySession(pool, {
       deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
