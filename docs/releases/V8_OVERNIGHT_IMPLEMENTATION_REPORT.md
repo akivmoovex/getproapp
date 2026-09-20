@@ -71,8 +71,8 @@ After each task, report:
 | **Report** | [`docs/releases/V8_SHARED_FORMS_E2E_PROMPT08.md`](./V8_SHARED_FORMS_E2E_PROMPT08.md) |
 | **Changed files** | `040_shared_form_submission_review.sql` · forms service/repo/routes/views · platform `/admin/forms` · tests · docs |
 | **Test results** | Form builder **10/10** + e2e **9/9** = **19/19 PASS**; BB forms-requests regression PASS |
-| **Commit SHA** | _(filled after commit)_ |
-| **Push status** | _(filled after push)_ |
+| **Commit SHA** | `d76b297526c4a1f0496201a17f8a329490633a77` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | None. Migrations 039/040 not applied on hosted DB. |
 
 ### PROMPT 07 — V8 shared form builder (SH01–SH07)
