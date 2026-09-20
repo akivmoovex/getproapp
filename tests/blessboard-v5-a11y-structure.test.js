@@ -1224,7 +1224,15 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(detail, /data-bb-member-section-unavailable="attendance"/);
     assert.match(detail, /bb-ba-chip--readonly/);
     assert.match(detail, /Read-only/);
-    assert.doesNotMatch(detail, /method="post"|name="_csrf"|name="status"/);
+    // V8 BB15/BB16: profile edit + branch transfer (CSRF) — not legacy Suspend/notes chrome
+    assert.match(detail, /data-bb-member-edit="1"/);
+    assert.match(detail, /data-bb-member-transfer="1"/);
+    assert.match(detail, /data-screen="BB15"/);
+    assert.match(detail, /data-screen="BB16"/);
+    assert.match(detail, /action="\/branch-admin\/membership\/members\/<%= m\.id %>\/edit"/);
+    assert.match(detail, /action="\/branch-admin\/membership\/members\/<%= m\.id %>\/transfer"/);
+    assert.match(detail, /name="_csrf"/);
+    assert.doesNotMatch(detail, /name="status"/);
     assert.doesNotMatch(detail, /\bSuspend\b|Add Note|Verify Member|Edit Roles|Assign to Ministry/i);
     assert.doesNotMatch(detail, /email_normalized|phone_normalized|churchId|branchId|userId/);
     assert.doesNotMatch(detail, /Attendance Rate|Volunteer Hours|Birthday|Home Address|ECCL-/i);

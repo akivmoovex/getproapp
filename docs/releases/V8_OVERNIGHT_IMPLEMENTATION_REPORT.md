@@ -4,11 +4,107 @@
 **Branch:** `V8` only  
 **Canonical file:** `docs/releases/V8_OVERNIGHT_IMPLEMENTATION_REPORT.md`  
 **Started:** 2026-09-21  
+**Report closed:** 2026-09-21 (PROMPT 13)  
 **Hosts:** V8 `*.neuniversity.org` · V7 `*.pronline.org` · Production **DO NOT TOUCH**  
 **Database:** V7 and V8 share the existing testing database (`moovex-platform-v7` / `testing`)  
-**Overnight Stitch (BlessBoard membership registration):** https://stitch.withgoogle.com/projects/5087412725796049014 (`projects/5087412725796049014`)
+**Overnight Stitch:** https://stitch.withgoogle.com/projects/5087412725796049014 (`projects/5087412725796049014`)
 
-Update this file after every overnight prompt. Append a task section; do not overwrite prior task results.
+**PROMPT 13 verdict:** `V8_OVERNIGHT_IMPLEMENTATION_COMPLETE_WITH_GATES`
+
+---
+
+## Executive summary (PROMPT 13)
+
+Overnight Prompts **01–12** delivered code + docs + local automated tests on `origin/V8` only. No deploy, restart, migration apply, real notifications, or hosted data writes were performed.
+
+| Prompt | Title | Status | Implementation SHA | Report SHA |
+|--------|-------|--------|--------------------|------------|
+| 01 | QA baseline + media audit | **PASS** | docs `a46b7f82` (audit tip `7c695b8d`) | `3e53e4ad` |
+| 02 | Shared media delivery | **PASS** | `d587615d` | `67e337bb` |
+| 03 | AC booking + inquiry | **PASS** | `9a0c3045` | `57ec3b0f` |
+| 04 | Shared phone identity | **PASS** | `f5515341` | `419bec2b` |
+| 05 | AC services + doctor profiles | **PASS** | `f297e531` | `696f2b3d` |
+| 06 | AC directory navigation | **PASS** | `bb1ab5e9` | `997d2665` |
+| 07 | Shared form builder (SH01–SH07) | **PASS** | `af850534` | `523f5616` / `175be7b2` |
+| 08 | Public forms + submission review (SH08–SH15) | **PASS** | `d76b2975` | `415ff2ea` |
+| 09 | BB membership (BB01–BB08, BB11–BB18) | **PASS** | `938813bd` | `8566e5ed` |
+| 10 | BB activity registration (BB08–BB10) | **PASS** | `41030f85` | `0cb4788c` |
+| 11 | Shared announcements (AN01–AN05) | **PASS** | `8d581371` | `8c9cee9b` |
+| 12 | BB announcements (BB19–BB22) | **PASS** | `b413d2ec` | `bca9dcd6` |
+
+**Status legend:** PASS = code + local automated tests complete for the prompt scope · PARTIAL = incomplete scope with salvageable work · BLOCKED = cannot proceed · NOT_RUN = not attempted.
+
+None of Prompts 01–12 are PARTIAL / BLOCKED / NOT_RUN for **code pass**. All remain **hosted-unverified** for write/deploy paths (overnight rule 10 + 12).
+
+### Consolidated regression (PROMPT 13)
+
+Command: `npm run test:v8:regression` (`scripts/v8/run-regression.js`)
+
+| Suite | Result | Tests |
+|-------|--------|------:|
+| shared-platform | **PASS** | 361/361 |
+| compatibility (V7/V8) | **PASS** | 276/276 |
+| blessboard | **PASS** | 241/241 |
+| activeclinic | **PASS** | 106/106 |
+| **Total** | **PASS** in 172.5s | **984/984** |
+
+Overnight-focused cluster (media, phone, booking, catalogue, directory, form builder, forms e2e, membership, activity registration, shared + BB announcements): **115/115 PASS**.
+
+Shared-module coverage gate (`tests/v8-shared-module-coverage.test.js`, targets in `scripts/v8/suite-manifest.js` with **≥90% line** contract for listed modules): **14/14 PASS** (included in shared-platform / compatibility suites).
+
+### Gate-fix included with this report
+
+PROMPT 12 bumped `tenant-public.css?v=61` without syncing model/cssHref pins and PROMPT 09 added BB15/BB16 CSRF forms on branch member detail, which initially failed the BlessBoard regression a11y/asset pins. Those pins were aligned so the consolidated gate passes; no product behavior change beyond cache-bust consistency and a11y-contract update for intentional membership edit/transfer forms.
+
+### Migrations created but **not applied** (overnight rule 10)
+
+| Migration | Prompt |
+|-----------|--------|
+| `db/migrations/platform/039_shared_tenant_forms.sql` | 07 |
+| `db/migrations/platform/040_shared_form_submission_review.sql` | 08 |
+| `db/migrations/platform/041_activity_registration_v8.sql` | 10 |
+| `db/migrations/platform/042_shared_tenant_announcements.sql` | 11 |
+| `db/migrations/blessboard/110_membership_workflow_v8.sql` | 09 |
+| `db/migrations/blessboard/111_announcement_schedule_v8.sql` | 11 |
+| `db/migrations/blessboard/112_announcement_public_audience_v8.sql` | 12 |
+
+Optional / deferred (not overnight-applied): unique-all-phones migration (Prompt 04 used advisory locks instead).
+
+### Stitch implementation status
+
+| Area | Project | Status |
+|------|---------|--------|
+| Overnight membership / forms / announcements | `projects/5087412725796049014` | **Implemented** for SH01–SH15, BB01–BB22 (admin/public markers + views), AN01–AN05 shared surfaces |
+| Desktop + mobile | Same project | Layouts from Stitch D/M pairs where inventory exists; product CSS scoped BB violet / AC teal |
+| ActiveClinic public/ops Stitch | Separate product projects (see `docs/stitch-project-map.md`) | Prompts 03/05/06 reused existing AC surfaces — **no cross-import** from BlessBoard Stitch |
+| Visual hosted parity | — | **Not claimed** (no deploy; hosted verification still required) |
+
+Inventory detail: [`V8_SHARED_FORM_BUILDER_STITCH_INVENTORY.md`](./V8_SHARED_FORM_BUILDER_STITCH_INVENTORY.md) and per-prompt reports.
+
+### V7 compatibility
+
+- Compatibility suite **PASS** (shared-DB contract, migration idempotency, runtime schema gate, tenant/product isolation).
+- V7 booking / registration / phone identity paths preserved; additive columns default safely.
+- V7 branch `pronline.org` and production hosts were **not modified**.
+
+### Remaining blockers / gates still open
+
+1. **Hosted verification still required** for write flows (booking submit, duplicate-phone POST, staff CRUD/invite/CMS/upload, form submit, membership apply/review, announcement publish) — overnight forbids hosted writes.
+2. **Migrations not applied** on shared testing DB — new tables/columns unavailable on hosted until operator migration window.
+3. **No V8 deploy/restart** — hosted `gitSha` may lag tip; public CSS `?v=61` not live until deploy.
+4. **Announcement scheduler unavailable** — `SCHEDULER_DEPENDENCY.available=false`; lazy read-time visibility only; no background workers / notifications.
+5. Open deferred items remain in [`V8_BACKLOG.md`](./V8_BACKLOG.md).
+
+### Hosted verification still required (checklist)
+
+- [ ] Operator apply migrations 039–042 + 110–112 on testing DB
+- [ ] Deploy/restart V8 (`neuniversity.org`) to tip SHA
+- [ ] Re-verify BB/AC media CDN paths on live hosts
+- [ ] Hosted AC booking/inquiry + directory + catalogue CRUD
+- [ ] Hosted shared forms public submit + admin review
+- [ ] Hosted BB membership apply/review/transfer
+- [ ] Hosted BB/AC announcements publish + public visibility window
+- [ ] Confirm no real SMS/email fired
 
 ---
 
@@ -58,6 +154,20 @@ After each task, report:
 ---
 
 ## Task log
+
+### PROMPT 13 — V8 overnight implementation report
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_OVERNIGHT_IMPLEMENTATION_COMPLETE_WITH_GATES` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` |
+| **Scope** | Consolidate Prompts 01–12; run shared-platform + compatibility + BlessBoard + ActiveClinic regression; document migrations, Stitch, V7 compat, blockers, hosted gates |
+| **Regression** | **984/984 PASS** (172.5s) · overnight-focused **115/115 PASS** |
+| **Gate fix** | Sync `tenant-public.css?v=61` pins; update branch member-detail a11y contract for BB15/BB16 forms |
+| **Commit SHA** | _(this commit)_ |
+| **Push status** | Pushed to `origin/V8` |
+| **Blockers** | Hosted verification + unapplied migrations + no deploy (documented; do not block CODE_WITH_GATES) |
 
 ### PROMPT 12 — V8 BlessBoard announcements (BB19–BB22)
 
@@ -273,3 +383,4 @@ After each task, report:
 - PROMPT 00 establishes process only. Subsequent prompts must append task sections above the cumulative notes (or below the task log heading) without deleting history.
 - Do not auto-apply DB migrations overnight even if migration files are committed.
 - Shared testing DB may be used by local automated tests with disposable fixtures only; do not mutate hosted tenant data.
+- PROMPT 13 closes the overnight series with consolidated gates; hosted operator follow-up is explicitly out of overnight scope.
