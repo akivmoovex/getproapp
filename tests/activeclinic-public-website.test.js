@@ -555,6 +555,20 @@ describe("ActiveClinic public website (P20–P26)", () => {
     assert.equal(contactSuccess.status, 200);
     assert.match(contactSuccess.text, /data-ac-page-section="tenant-contact-success"/);
     assert.match(contactSuccess.text, /Message received/);
+    assert.match(contactSuccess.text, /not a booking or appointment confirmation/i);
+
+    const inquiryRow = await pool.query(
+      `SELECT organization_id, healthcare_organization_id, facility_id, status
+         FROM activeclinic.public_contact_inquiries
+        WHERE organization_id = $1 AND sender_email_normalized = $2 AND message = $3
+        ORDER BY created_at DESC LIMIT 1`,
+      [tenant.organizationId, `user-${stamp}@example.com`, "Hello clinic"]
+    );
+    assert.equal(inquiryRow.rows.length, 1);
+    assert.equal(inquiryRow.rows[0].organization_id, tenant.organizationId);
+    assert.equal(inquiryRow.rows[0].healthcare_organization_id, tenant.healthcareOrganizationId);
+    assert.equal(inquiryRow.rows[0].facility_id, tenant.facilityId);
+    assert.equal(inquiryRow.rows[0].status, "received");
 
     // Duplicate retry (same email+message) must not create a second inquiry row.
     const contactForm2 = await request(app).get(`/clinics/${tenant.orgKey}/contact`);
@@ -576,6 +590,19 @@ describe("ActiveClinic public website (P20–P26)", () => {
       [tenant.organizationId, `user-${stamp}@example.com`, "Hello clinic"]
     );
     assert.equal(inqCount.rows[0].n, 1);
+
+    // Tenant isolation: a second clinic must not receive the first clinic's inquiry rows.
+    const other = await provisionPublishedClinic(`${stamp}b`, {
+      organizationKey: `ac_tenant_${stamp}b`,
+      productTenantKey: `ac-tenant-${stamp}b`,
+      publicName: "Other Tenant Clinic",
+    });
+    const otherCount = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM activeclinic.public_contact_inquiries
+        WHERE organization_id = $1`,
+      [other.organizationId]
+    );
+    assert.equal(otherCount.rows[0].n, 0);
 
     const invalidContact = await request(app)
       .post(`/clinics/${tenant.orgKey}/contact`)

@@ -1400,7 +1400,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
       const result = await createPublicContactInquiry(getPool(), {
         organizationId: clinic.organizationId,
         healthcareOrganizationId: clinic.healthcareOrganizationId,
-        facilityId: null,
+        facilityId: clinic.primaryFacilityId || null,
         senderName: req.body.senderName,
         senderEmail: req.body.senderEmail,
         senderPhone: req.body.senderPhone || null,

@@ -2,46 +2,81 @@
 
 /**
  * ActiveClinic public contact inquiries (P22).
- * Stores received inquiries; never claims delivery.
+ * Stores received inquiries; never claims delivery or appointment confirmation.
  */
 
+const {
+  validateUuid,
+  validateText,
+} = require("../../platform/validation");
 const { normalizeActiveClinicPhone, normalizeActiveClinicEmail } = require("./normalizeActiveClinicContact");
 
 const RESULT = Object.freeze({
   OK: "ok",
   INVALID_INPUT: "invalid_input",
+  FACILITY_NOT_FOUND: "facility_not_found",
 });
-
-const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
-function trimName(value, max) {
-  const text = String(value == null ? "" : value).trim();
-  if (!text || text.length > max) return null;
-  return text.slice(0, max);
-}
 
 /**
  * Store a public contact inquiry.
  */
 async function createPublicContactInquiry(db, input) {
-  const organizationId = String((input && input.organizationId) || "").trim();
-  const healthcareOrganizationId = String((input && input.healthcareOrganizationId) || "").trim();
-  const facilityId = input && input.facilityId ? String(input.facilityId).trim() : null;
-
-  if (!UUID_RE.test(organizationId) || !UUID_RE.test(healthcareOrganizationId)) {
+  const organizationIdCheck = validateUuid(input && input.organizationId, {
+    field: "organizationId",
+    required: true,
+  });
+  const hcoCheck = validateUuid(input && input.healthcareOrganizationId, {
+    field: "healthcareOrganizationId",
+    required: true,
+  });
+  if (!organizationIdCheck.ok || !hcoCheck.ok) {
     return { ok: false, code: RESULT.INVALID_INPUT, inquiry: null };
   }
+  const organizationId = organizationIdCheck.value;
+  const healthcareOrganizationId = hcoCheck.value;
 
-  if (facilityId && !UUID_RE.test(facilityId)) {
-    return { ok: false, code: RESULT.INVALID_INPUT, inquiry: null };
+  let facilityId = null;
+  if (input && input.facilityId) {
+    const facilityCheck = validateUuid(input.facilityId, {
+      field: "facilityId",
+      required: true,
+    });
+    if (!facilityCheck.ok) {
+      return { ok: false, code: RESULT.INVALID_INPUT, inquiry: null };
+    }
+    facilityId = facilityCheck.value;
+    const owned = await db.query(
+      `SELECT f.id
+         FROM activeclinic.facilities f
+        WHERE f.id = $1
+          AND f.organization_id = $2
+          AND f.healthcare_organization_id = $3
+          AND f.status = 'active'
+        LIMIT 1`,
+      [facilityId, organizationId, healthcareOrganizationId]
+    );
+    if (!owned.rows[0]) {
+      return { ok: false, code: RESULT.FACILITY_NOT_FOUND, inquiry: null };
+    }
   }
 
-  const senderName = trimName(input.senderName, 120);
-  const message = String(input.message || "").trim();
-
-  if (!senderName || message.length < 1 || message.length > 4000) {
+  const nameCheck = validateText(input && input.senderName, {
+    field: "senderName",
+    required: true,
+    minLen: 1,
+    maxLen: 120,
+  });
+  const messageCheck = validateText(input && input.message, {
+    field: "message",
+    required: true,
+    minLen: 1,
+    maxLen: 4000,
+  });
+  if (!nameCheck.ok || !messageCheck.ok) {
     return { ok: false, code: RESULT.INVALID_INPUT, inquiry: null };
   }
+  const senderName = nameCheck.value;
+  const message = messageCheck.value;
 
   const email = normalizeActiveClinicEmail(input.senderEmail);
   if (!email.ok) {
@@ -145,18 +180,29 @@ function normalizePlatformContactSubject(value) {
  * Store a platform (ActiveClinic.org) contact inquiry.
  */
 async function createPlatformContactInquiry(db, input) {
-  const senderName = trimName(input && input.senderName, 120);
-  const messageBody = String((input && input.message) || "").trim();
+  const nameCheck = validateText(input && input.senderName, {
+    field: "senderName",
+    required: true,
+    minLen: 2,
+    maxLen: 120,
+  });
+  const messageBodyCheck = validateText(input && input.message, {
+    field: "message",
+    required: true,
+    minLen: 1,
+    maxLen: 4000,
+  });
   const subject = normalizePlatformContactSubject(input && input.subject);
 
-  if (!senderName || senderName.length < 2 || messageBody.length < 1) {
+  if (!nameCheck.ok || !messageBodyCheck.ok) {
     return { ok: false, code: RESULT.INVALID_INPUT, inquiry: null };
   }
   if (!subject) {
     return { ok: false, code: "subject_required", inquiry: null };
   }
 
-  const message = `[Subject: ${subject.label}]\n\n${messageBody}`.slice(0, 4000);
+  const senderName = nameCheck.value;
+  const message = `[Subject: ${subject.label}]\n\n${messageBodyCheck.value}`.slice(0, 4000);
   if (message.length < 1 || message.length > 4000) {
     return { ok: false, code: RESULT.INVALID_INPUT, inquiry: null };
   }
@@ -256,6 +302,9 @@ function describeClinicContactErrors(code) {
   }
   if (code === "invalid_phone" || code === "phone_required" || code === "phone_invalid") {
     errors.phone_national = "Enter a valid phone number.";
+  }
+  if (code === RESULT.FACILITY_NOT_FOUND) {
+    errors.message = "This clinic cannot accept the inquiry right now.";
   }
   if (code === RESULT.INVALID_INPUT) {
     errors.senderName = "Enter your name.";

@@ -59,6 +59,21 @@ After each task, report:
 
 ## Task log
 
+### PROMPT 03 — V8 ActiveClinic booking and inquiry fix
+
+| Field | Value |
+|-------|-------|
+| **STATUS** | COMPLETE · verdict `V8_AC_BOOKING_CODE_PASS` |
+| **Date** | 2026-09-21 |
+| **Branch confirmed** | `V8` @ `67e337bb` (synced with `origin/V8` before task) |
+| **Scope** | Harden clinic booking/inquiry ownership, shared validation, confirmation copy; preserve V7 booking |
+| **Report** | [`docs/releases/V8_AC_BOOKING_INQUIRY_PROMPT03.md`](./V8_AC_BOOKING_INQUIRY_PROMPT03.md) |
+| **Changed files** | `src/activeclinic/services/activeClinicPublicContactService.js` · `src/activeclinic/http/activeClinicPublicRoutes.js` · `views/activeclinic/tenant/contact-success.ejs` · `views/activeclinic/public/contact-success.ejs` · `tests/activeclinic-public-website.test.js` · `tests/activeclinic-public-booking.test.js` · docs |
+| **Test results** | Focused **18/18**; ActiveClinic suite **105/105 PASS** |
+| **Commit SHA** | *(filled after commit)* |
+| **Push status** | *(filled after push)* |
+| **Blockers** | None |
+
 ### PROMPT 02 — V8 shared media delivery fix
 
 | Field | Value |

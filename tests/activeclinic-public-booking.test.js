@@ -102,6 +102,7 @@ async function provisionBookableClinic(stamp) {
     orgKey,
     organizationId: org.records.organization.id,
     healthcareOrganizationId: hco.healthcareOrganization.id,
+    facilityId: facility.facility.id,
   };
 }
 
@@ -237,11 +238,15 @@ describe("ActiveClinic public booking (P24–P26)", () => {
     assert.match(submit.text, /SMS reminders are not sent/i);
 
     const rows = await pool.query(
-      `SELECT status FROM activeclinic.public_booking_requests WHERE organization_id = $1`,
+      `SELECT status, facility_id, organization_id, healthcare_organization_id
+         FROM activeclinic.public_booking_requests WHERE organization_id = $1`,
       [tenant.organizationId]
     );
     assert.equal(rows.rows.length, 1);
     assert.equal(rows.rows[0].status, "submitted_pending_confirmation");
+    assert.equal(rows.rows[0].facility_id, tenant.facilityId);
+    assert.equal(rows.rows[0].organization_id, tenant.organizationId);
+    assert.equal(rows.rows[0].healthcare_organization_id, tenant.healthcareOrganizationId);
   });
 
   it("duplicate wizard submit is idempotent", async () => {
