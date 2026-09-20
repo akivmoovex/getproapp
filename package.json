@@ -55,6 +55,7 @@
     "test:v8:coverage": "node scripts/v8/run-coverage.js",
     "test:v8:hosted-smoke": "node scripts/v8/hosted-smoke.js",
     "test:v8:auth-security": "node --test --test-concurrency=1 tests/v8-shared-auth-password-security.test.js",
+    "test:v8:verification": "node --test --test-concurrency=1 tests/v8-shared-verification.test.js",
     "db:bootstrap:foundation": "node db/scripts/bootstrap-foundation.js",
     "db:verify:foundation": "node db/scripts/verify-foundation.js",
     "test:db:foundation": "node --test tests/db-foundation.test.js",

@@ -1,0 +1,41 @@
+<%#
+  Shared verification form partial (V8).
+  Stitch project projects/2734098283637220752 has no screens yet — this
+  partial is a product-neutral structure products brand via CSS wrappers.
+  Locals: challenge, csrfToken, csrfField, actionPath, brandName, error
+%>
+<section class="gp-verify" data-gp-shared-verification="1">
+  <h1 class="gp-verify__title">Verify your <%= channel === 'email' ? 'email' : 'phone' %></h1>
+  <p class="gp-verify__lede">
+    Enter the code we sent to
+    <strong><%= challenge && challenge.identifierMasked ? challenge.identifierMasked : 'your contact' %></strong>
+    to continue with <%= typeof brandName !== 'undefined' && brandName ? brandName : 'your account' %>.
+  </p>
+  <% if (typeof error !== 'undefined' && error) { %>
+  <p class="gp-verify__error" role="alert"><%= error %></p>
+  <% } %>
+  <form method="post" action="<%= actionPath %>" class="gp-verify__form" data-gp-verify-form="1">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+    <input type="hidden" name="challenge_id" value="<%= challenge && challenge.id ? challenge.id : '' %>" />
+    <div class="gp-verify__field">
+      <label for="verification_code">Verification code</label>
+      <input
+        id="verification_code"
+        name="code"
+        type="text"
+        inputmode="numeric"
+        autocomplete="one-time-code"
+        required
+        minlength="4"
+        maxlength="8"
+        pattern="[0-9]*"
+      />
+    </div>
+    <button type="submit" class="gp-verify__submit">Verify</button>
+  </form>
+  <form method="post" action="<%= actionPath %>/resend" class="gp-verify__resend">
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+    <input type="hidden" name="challenge_id" value="<%= challenge && challenge.id ? challenge.id : '' %>" />
+    <button type="submit" class="gp-verify__resend-btn">Resend code</button>
+  </form>
+</section>

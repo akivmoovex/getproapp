@@ -32,6 +32,7 @@ const SHARED_PLATFORM = Object.freeze({
     "tests/v7-runtime-env-isolation.test.js",
     "tests/v8-shared-module-coverage.test.js",
     "tests/v8-shared-auth-password-security.test.js",
+    "tests/v8-shared-verification.test.js",
   ]),
 });
 
@@ -53,6 +54,7 @@ const COMPATIBILITY = Object.freeze({
     "tests/v8-tenant-product-isolation.test.js",
     "tests/v8-shared-module-coverage.test.js",
     "tests/v8-shared-auth-password-security.test.js",
+    "tests/v8-shared-verification.test.js",
   ]),
 });
 
@@ -114,6 +116,8 @@ const COVERAGE_TARGETS = Object.freeze([
   "src/platform/config/canonicalHostRegistry.js",
   "src/platform/session/v5SessionCookie.js",
   "src/platform/auth/sharedPasswordPolicy.js",
+  "src/platform/verification/sharedVerificationPolicy.js",
+  "src/platform/verification/sharedVerificationService.js",
 ]);
 
 const COVERAGE_LINE_THRESHOLD = 90;
