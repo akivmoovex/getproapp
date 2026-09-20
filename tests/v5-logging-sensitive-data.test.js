@@ -301,7 +301,8 @@ describe("V5 source safety — supabase + foundation wiring", () => {
       path.join(ROOT, "src/platform/http/v5FoundationServer.js"),
       "utf8"
     );
-    assert.match(src, /sha256Hex\(`\$\{email\}\|\$\{ip\}`\)/);
+    assert.match(src, /sha256Hex\(`\$\{id\}\|\$\{ip\}`\)/);
+    assert.match(src, /keyGenerator:\s*\(req\)\s*=>/);
     assert.doesNotMatch(src, /console\.(log|info|warn|error)\([^)]*email/i);
   });
 

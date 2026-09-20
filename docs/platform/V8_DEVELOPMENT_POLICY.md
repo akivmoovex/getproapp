@@ -19,6 +19,7 @@ V8 is the development line for GetPro **V2.0** product work (BlessBoard + Active
 6. **V8 deploys separately to neuniversity.org.** V8 hosted validation and releases use the neuniversity.org deployment path only. See [`V8_HOSTINGER_TESTING_ENV.md`](./V8_HOSTINGER_TESTING_ENV.md).
 7. **V7 continues on pronline.org.** Existing V7 hosted environments on pronline.org stay on the V7 line.
 8. **No automatic migrations or deployments to production.** V8 work must not auto-migrate production databases or auto-deploy to production. Production changes require explicit operator approval and a documented release procedure.
+9. **Use the V8 regression gate.** Before merge, run `npm run test:v8:regression` (add `--with-coverage` / `test:v8:regression:coverage` when shared-platform modules change). See [`docs/testing/V8_TEST_INFRASTRUCTURE.md`](../testing/V8_TEST_INFRASTRUCTURE.md). Tests must use disposable fixtures and must never delete hosted V7 data.
 
 ## Branch model (summary)
 

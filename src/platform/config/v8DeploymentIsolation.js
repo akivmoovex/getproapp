@@ -44,6 +44,11 @@ function resolvePlatformLine(env) {
  */
 function isV8Deployment(env) {
   const source = env || process.env;
+  const rawCode = String(source.PLATFORM_DEPLOYMENT_CODE || "")
+    .trim()
+    .toLowerCase();
+  // Detect V8 even when profile resolution fails closed (e.g. DEPLOYMENT_ENV=production).
+  if (rawCode === CODE_MOOVEX_PLATFORM_V8_TESTING) return true;
   const deployment = resolveDeploymentConfiguration(source);
   if (deployment.platformLine === "v8") return true;
   return String(deployment.code || "").trim().toLowerCase() === CODE_MOOVEX_PLATFORM_V8_TESTING;
