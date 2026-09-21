@@ -19,12 +19,20 @@ const {
   authzDecision,
 } = require("../../platform/rbac/sharedAuthzDecision");
 
-function sendControlled(status, message, req, res) {
+function sendControlled(status, message, req, res, hooks) {
   const wantsHtml = String(req.get("accept") || "").includes("text/html");
   if (wantsHtml) {
     if (status === 401) {
       const next = encodeURIComponent(req.originalUrl || req.url || "/");
       return res.redirect(303, `/login?next=${next}`);
+    }
+    if (
+      status === 403 &&
+      hooks &&
+      typeof hooks.onHtmlForbidden === "function"
+    ) {
+      const handled = hooks.onHtmlForbidden(req, res, { status, message });
+      if (handled !== false) return handled;
     }
     return res.status(status).type("html").send(`<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"/><title>Access</title></head>
@@ -68,6 +76,7 @@ function resolveHostBranchResourceContext(_req, tenant) {
  *   getTenant?: Function,
  *   concealAsNotFound?: boolean,
  *   scopeMode?: 'church'|'host_branch',
+ *   onHtmlForbidden?: (req, res, ctx: { status: number, message: string }) => any,
  * }} [deps]
  */
 function createRequireBlessBoardPermission(permissionKey, resolveResourceContext, deps) {
@@ -77,6 +86,9 @@ function createRequireBlessBoardPermission(permissionKey, resolveResourceContext
   const concealAsNotFound = options.concealAsNotFound === true;
   const key = String(permissionKey || "").trim();
   const scopeMode = options.scopeMode === "church" ? "church" : null;
+  const onHtmlForbidden =
+    typeof options.onHtmlForbidden === "function" ? options.onHtmlForbidden : null;
+  const denyHooks = onHtmlForbidden ? { onHtmlForbidden } : null;
   const effectiveResolve =
     typeof resolveResourceContext === "function"
       ? resolveResourceContext
@@ -91,7 +103,7 @@ function createRequireBlessBoardPermission(permissionKey, resolveResourceContext
           ? req.v5Session.session
           : null;
       if (!session || !session.userId) {
-        return sendControlled(401, "Sign-in is required.", req, res);
+        return sendControlled(401, "Sign-in is required.", req, res, denyHooks);
       }
 
       const tenant = getTenant(req);
@@ -100,16 +112,17 @@ function createRequireBlessBoardPermission(permissionKey, resolveResourceContext
           concealAsNotFound ? 404 : 403,
           concealAsNotFound ? "Not found." : "You do not have access to this site.",
           req,
-          res
+          res,
+          denyHooks
         );
       }
 
       if (typeof getPool !== "function") {
-        return sendControlled(503, "Access check is temporarily unavailable.", req, res);
+        return sendControlled(503, "Access check is temporarily unavailable.", req, res, denyHooks);
       }
       const pool = getPool();
       if (!pool || typeof pool.query !== "function") {
-        return sendControlled(503, "Access check is temporarily unavailable.", req, res);
+        return sendControlled(503, "Access check is temporarily unavailable.", req, res, denyHooks);
       }
 
       let resourceContext = {
@@ -150,7 +163,7 @@ function createRequireBlessBoardPermission(permissionKey, resolveResourceContext
           }),
           { concealAsNotFound }
         );
-        return sendControlled(mapped.status, mapped.message, req, res);
+        return sendControlled(mapped.status, mapped.message, req, res, denyHooks);
       }
 
       const result = await authorize(pool, {
@@ -167,13 +180,13 @@ function createRequireBlessBoardPermission(permissionKey, resolveResourceContext
       };
 
       if (result.reasonCode === REASON.LOOKUP_ERROR) {
-        return sendControlled(503, "Access check is temporarily unavailable.", req, res);
+        return sendControlled(503, "Access check is temporarily unavailable.", req, res, denyHooks);
       }
       if (
         result.reasonCode === REASON.UNAUTHENTICATED ||
         result.reasonCode === REASON.INACTIVE_USER
       ) {
-        return sendControlled(401, "Sign-in is required.", req, res);
+        return sendControlled(401, "Sign-in is required.", req, res, denyHooks);
       }
       if (!result.allowed) {
         if (result._internal && result._internal.sensitiveDenial) {
@@ -200,13 +213,14 @@ function createRequireBlessBoardPermission(permissionKey, resolveResourceContext
           concealAsNotFound ? 404 : 403,
           concealAsNotFound ? "Not found." : "You do not have access to this site.",
           req,
-          res
+          res,
+          denyHooks
         );
       }
 
       return next();
     } catch {
-      return sendControlled(503, "Access check is temporarily unavailable.", req, res);
+      return sendControlled(503, "Access check is temporarily unavailable.", req, res, denyHooks);
     }
   };
 }

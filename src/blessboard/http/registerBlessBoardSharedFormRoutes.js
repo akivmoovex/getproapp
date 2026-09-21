@@ -53,12 +53,39 @@ function registerBlessBoardSharedFormRoutes(app, deps) {
   const variant = deps.variant === "branch" ? "branch" : "hq";
   const adminBasePath = variant === "hq" ? "/hq/form-studio" : "/branch-admin/form-studio";
 
+  const brand = {
+    productName: "BlessBoard",
+    productClass: "mx-forms--blessboard",
+  };
+
+  function sendHtml(res, html, status) {
+    res.status(status || 200).type("html").send(html);
+  }
+
+  function renderFormStudioForbidden(req, res) {
+    sendHtml(
+      res,
+      renderFormView("access-denied", {
+        brand,
+        adminBasePath,
+        stitchScreen: "SH15",
+        mobile: true,
+        pageTitle: "Access denied",
+      }),
+      403
+    );
+    return true;
+  }
+
   const requireSession = createRequireV5AuthenticatedSession({
     loginNext: adminBasePath,
   });
   const requireView = createRequireBlessBoardPermission("requests.view", null, {
     getPool,
     scopeMode: variant === "hq" ? "church" : undefined,
+    onHtmlForbidden(req, res) {
+      return renderFormStudioForbidden(req, res);
+    },
   });
 
   function requireAdmin(req, res, next) {
@@ -93,20 +120,13 @@ function registerBlessBoardSharedFormRoutes(app, deps) {
     });
   }
 
-  function sendHtml(res, html, status) {
-    res.status(status || 200).type("html").send(html);
-  }
-
   const router = createSharedFormBuilderRouter({
     productCode: "blessboard",
     adminBasePath,
     getPool,
     env,
     isProduction,
-    brand: {
-      productName: "BlessBoard",
-      productClass: "mx-forms--blessboard",
-    },
+    brand,
     requireAdmin,
     canView(req) {
       return hasPermission(req, "requests.view") || hasPermission(req, "requests.manage");
@@ -124,7 +144,8 @@ function registerBlessBoardSharedFormRoutes(app, deps) {
       };
     },
     renderAdmin(req, res, viewName, locals) {
-      sendHtml(res, renderFormView(viewName, locals));
+      const status = viewName === "access-denied" ? 403 : 200;
+      sendHtml(res, renderFormView(viewName, locals), status);
     },
     renderPublic(req, res, viewName, locals) {
       sendHtml(res, renderFormView(viewName, locals));

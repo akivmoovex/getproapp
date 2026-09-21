@@ -74,7 +74,12 @@ function registerActiveClinicSharedFormRoutes(app, deps) {
       };
     },
     renderAdmin(req, res, viewName, locals) {
-      sendHtml(res, renderFormView(viewName, { ...locals, pageTitle: locals.pageTitle }));
+      const status = viewName === "access-denied" ? 403 : 200;
+      sendHtml(
+        res,
+        renderFormView(viewName, { ...locals, pageTitle: locals.pageTitle }),
+        status
+      );
     },
     renderPublic(req, res, viewName, locals) {
       sendHtml(res, renderFormView(viewName, locals));

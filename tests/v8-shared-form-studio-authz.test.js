@@ -460,9 +460,11 @@ describe("V8 shared Form Studio authorization", () => {
     const bad = await request(app)
       .get("/hq/form-studio/00000000-0000-0000-0000-000000000000/studio")
       .set("Host", HOST_A)
-      .set("Cookie", cookie);
-    assert.equal(bad.status, 200);
-    assert.match(bad.text, /Access denied/i);
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(bad.status, 403);
+    assert.match(bad.text, /data-screen=["']SH15["']/i);
+    assert.match(bad.text, /Access Denied: Form or Action Unavailable/i);
     assert.doesNotMatch(bad.text, /not yet available in BlessBoard V5/i);
   });
 
@@ -513,6 +515,35 @@ describe("V8 shared Form Studio authorization", () => {
     }
   });
 
+  it("branch HQ Form Studio deny renders SH15 access-denied (403)", async () => {
+    requireDb();
+    const cookie = await sessionCookieFor(users.branch);
+    const res = await request(app)
+      .get("/hq/form-studio")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie)
+      .set("Accept", "text/html");
+    assert.equal(res.status, 403);
+    assert.match(res.text, /data-screen=["']SH15["']/i);
+    assert.match(res.text, /data-stitch-desktop=["']SH15-D["']/i);
+    assert.match(res.text, /Access Denied: Form or Action Unavailable/i);
+    assert.doesNotMatch(res.text, /<title>Access<\/title>/i);
+    assert.match(res.text, /HTTP 403/i);
+  });
+
+  it("branch HQ Form Studio API deny stays plain 403 text contract", async () => {
+    requireDb();
+    const cookie = await sessionCookieFor(users.branch);
+    const res = await request(app)
+      .get("/hq/form-studio")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie)
+      .set("Accept", "application/json");
+    assert.equal(res.status, 403);
+    assert.match(res.text, /You do not have access to this site/i);
+    assert.doesNotMatch(res.text, /data-screen=["']SH15["']/i);
+  });
+
   it("role without requests.* is denied form studio", async () => {
     requireDb();
     const cookie = await sessionCookieFor(users.viewer);
@@ -523,6 +554,9 @@ describe("V8 shared Form Studio authorization", () => {
       .set("Accept", "text/html");
     assert.ok([403, 401].includes(res.status), `unexpected ${res.status}`);
     assert.doesNotMatch(res.text || "", /name=["']title["']/i);
+    if (res.status === 403) {
+      assert.match(res.text, /data-screen=["']SH15["']/i);
+    }
   });
 
   it("cross-tenant HQ is denied on another church host", async () => {

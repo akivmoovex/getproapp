@@ -533,3 +533,58 @@
     margin-top: 1.25rem;
   }
 }
+
+/* SH15 — Forms access denied (Stitch intent, product-skinned) */
+.mx-forms-denied {
+  max-width: 36rem;
+  margin-left: auto;
+  margin-right: auto;
+}
+.mx-forms-denied__badge {
+  display: inline-flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 1rem;
+}
+.mx-forms-denied__code {
+  display: inline-block;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: #991b1b;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  border-radius: 999px;
+  padding: 0.28rem 0.7rem;
+}
+.mx-forms-denied__label {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--mx-forms-muted);
+  letter-spacing: 0.02em;
+}
+.mx-forms-denied__reason {
+  margin: 1rem auto 0;
+  max-width: 34rem;
+  color: var(--mx-forms-ink);
+  font-size: 0.95rem;
+  line-height: 1.5;
+}
+.mx-forms-denied__notice {
+  margin: 1.25rem auto 0;
+  max-width: 34rem;
+  text-align: left;
+  background: var(--mx-forms-accent-soft);
+  border: 1px solid color-mix(in srgb, var(--mx-forms-accent) 25%, var(--mx-forms-border));
+  border-radius: 12px;
+  padding: 0.85rem 1rem;
+  font-size: 0.88rem;
+  line-height: 1.45;
+  color: var(--mx-forms-ink);
+}
+.mx-forms-denied .mx-forms-actions {
+  margin-top: 1.5rem;
+}

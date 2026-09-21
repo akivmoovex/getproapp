@@ -432,6 +432,9 @@ describe("v8 shared form builder", () => {
     assert.match(denied, /data-screen="SH15"/);
     assert.match(denied, /data-stitch-desktop="SH15-D"/);
     assert.match(denied, /data-stitch-mobile="SH15-M"/);
+    assert.match(denied, /Access Denied: Form or Action Unavailable/);
+    assert.match(denied, /HTTP 403/);
+    assert.match(denied, /Multi-tenant isolation notice/);
 
     for (const [file, code] of [
       ["dashboard.ejs", "SH01"],
@@ -447,7 +450,7 @@ describe("v8 shared form builder", () => {
     }
 
     const layout = fs.readFileSync(path.join(viewsDir, "layout.ejs"), "utf8");
-    assert.match(layout, /forms-builder\.css\?v=5/);
+    assert.match(layout, /forms-builder\.css\?v=6/);
   });
 
   it("ActiveClinic HTTP: website editor can open form studio", async () => {

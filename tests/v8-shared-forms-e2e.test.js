@@ -410,7 +410,7 @@ describe("v8 shared forms end-to-end", () => {
     assert.match(overview, /no cross-tenant selector/i);
 
     const layout = fs.readFileSync(path.join(viewsDir, "layout.ejs"), "utf8");
-    assert.match(layout, /forms-builder\.css\?v=5/);
+    assert.match(layout, /forms-builder\.css\?v=6/);
   });
 
   it("V7 BlessBoard formSchema still validates shared schemas", () => {
