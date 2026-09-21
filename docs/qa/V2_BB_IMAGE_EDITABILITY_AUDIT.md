@@ -98,8 +98,11 @@ Catalogue source of truth: `src/blessboard/website/blessboardImageEditorCoverage
 
 ## Deployment SHA
 
-Filled after deploy: see hosted JSON / report footer.
+- **Hosted V8:** `7e07cb8082fe` (`moovex-platform-v8-testing`)
+- **Audit doc commit:** `7e07cb80`
+- **Hosted smoke:** PASS (`scripts/local/v2-bb-all-images-editability-hosted.js`)
+- **Public edit URL:** https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/?website_edit=1&website_mode=draft
 
 ## Production untouched
 
-Confirmed via `https://blessboard.pronline.org/healthz` (non-V8 platform line).
+**YES** — `https://blessboard.pronline.org/healthz` → SHA `03a89106e2fe`, non-V8 platform line.
