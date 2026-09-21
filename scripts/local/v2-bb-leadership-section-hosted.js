@@ -120,10 +120,20 @@ function countLeaders(html) {
     const text = m[1]
       .replace(/<[^>]+>/g, " ")
       .replace(/\s+/g, " ")
+      .replace(/\bedit\b/gi, " ")
+      .replace(/\s+/g, " ")
       .trim();
     if (text) names.push(text);
   }
   return { count: names.length, names };
+}
+
+function namesInclude(names, target) {
+  const needle = String(target || "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+  return (names || []).some((n) => String(n).toLowerCase().includes(needle));
 }
 
 async function waitForDeploy(prefix, maxMs = 12 * 60 * 1000) {
@@ -349,8 +359,8 @@ async function main() {
     },
     mid,
     after,
-    bothNamesPresent: after.names.includes(memberA.name) && after.names.includes(memberB.name),
-    existingPreserved: before.names.every((n) => after.names.includes(n) || /V2 Sec /.test(n)),
+    bothNamesPresent: namesInclude(after.names, memberA.name) && namesInclude(after.names, memberB.name),
+    existingPreserved: before.names.every((n) => namesInclude(after.names, n) || /V2 Sec /.test(n)),
   };
 
   const previewUrl = `${BB}/c/${ORG}/leadership?website_preview=1&website_mode=draft`;
@@ -358,10 +368,13 @@ async function main() {
   const previewLeaders = countLeaders(preview.body);
   result.preview = {
     status: preview.status,
-    hasMemberA: previewLeaders.names.includes(memberA.name),
-    hasMemberB: previewLeaders.names.includes(memberB.name),
+    hasMemberA: namesInclude(previewLeaders.names, memberA.name),
+    hasMemberB: namesInclude(previewLeaders.names, memberB.name),
   };
 
+  // Fresh CSRF immediately before publish (token rotates after draft saves).
+  const publishPage = await follow(auth.jar, await req(auth.jar, editUrl), BB);
+  token = csrf(publishPage.body) || token;
   const published = await publishWebsite(auth.jar, token);
   result.publish = {
     status: published.status,
@@ -372,14 +385,43 @@ async function main() {
     location: published.location,
   };
 
-  // Refresh CSRF after publish redirect and re-check public.
+  // If path publish hits CSRF, retry via HQ publish once with a fresh token.
+  if (!result.publish.ok) {
+    const hqPage = await follow(auth.jar, await req(auth.jar, `${BB}/hq/content`), BB);
+    const hqToken = csrf(hqPage.body) || token;
+    const hqPub = await req(auth.jar, `${BB}/hq/website/publish`, {
+      method: "POST",
+      accept: "application/json",
+      headers: {
+        "X-CSRF-Token": hqToken,
+        Referer: `${BB}/hq/content`,
+      },
+      json: { _csrf: hqToken },
+    });
+    let hqJson = {};
+    try {
+      hqJson = JSON.parse(hqPub.body || "{}");
+    } catch (_e) {
+      hqJson = { raw: String(hqPub.body || "").slice(0, 400) };
+    }
+    result.publishHqRetry = {
+      status: hqPub.status,
+      ok:
+        (hqPub.status === 200 && (hqJson.ok === true || hqJson.published === true)) ||
+        (hqPub.status >= 300 && hqPub.status < 400),
+      body: hqJson,
+      location: hqPub.location || "",
+    };
+    if (result.publishHqRetry.ok) result.publish.ok = true;
+  }
+
   await sleep(1500);
   const publicPage = await follow(new Jar(), await req(new Jar(), `${BB}/c/${ORG}/leadership`), BB);
   const publicLeaders = countLeaders(publicPage.body);
   result.publicRender = {
     status: publicPage.status,
-    hasMemberA: publicLeaders.names.includes(memberA.name),
-    hasMemberB: publicLeaders.names.includes(memberB.name),
+    hasMemberA: namesInclude(publicLeaders.names, memberA.name),
+    hasMemberB: namesInclude(publicLeaders.names, memberB.name),
     count: publicLeaders.count,
   };
 
