@@ -111,6 +111,7 @@ function mapSermon(row) {
     summary: row.summary,
     mediaUrl: row.media_url,
     resourceUrl: row.resource_url,
+    imageUrl: row.image_url != null ? row.image_url : null,
     status: row.status,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
@@ -176,7 +177,7 @@ const MINISTRY_COLS = `id, church_id, branch_id, name, summary, description, mee
 const EVENT_COLS = `id, church_id, branch_id, title, summary, starts_at, ends_at, timezone,
                     location, registration_url, image_url, capacity, status, created_at, updated_at`;
 const SERMON_COLS = `id, church_id, branch_id, title, speaker_name, preached_at, summary,
-                     media_url, resource_url, status, created_at, updated_at`;
+                     media_url, resource_url, image_url, status, created_at, updated_at`;
 const CONTACT_COLS = `id, church_id, branch_id, channel_type, label, value, sort_order,
                       status, created_at, updated_at`;
 const GIVING_COLS = `id, church_id, branch_id, method_type, label, description, account_details,
@@ -814,8 +815,8 @@ async function insertSermon(client, fields) {
   const r = await client.query(
     `INSERT INTO blessboard.sermons
        (church_id, branch_id, title, speaker_name, preached_at, summary,
-        media_url, resource_url, status)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+        media_url, resource_url, image_url, status)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
      RETURNING ${SERMON_COLS}`,
     [
       fields.churchId,
@@ -826,6 +827,7 @@ async function insertSermon(client, fields) {
       fields.summary,
       fields.mediaUrl,
       fields.resourceUrl,
+      fields.imageUrl != null ? fields.imageUrl : null,
       fields.status || "draft",
     ]
   );
@@ -843,7 +845,8 @@ async function updateSermon(client, id, patch) {
             summary = COALESCE($5, summary),
             media_url = COALESCE($6, media_url),
             resource_url = COALESCE($7, resource_url),
-            status = COALESCE($8, status)`,
+            image_url = COALESCE($8, image_url),
+            status = COALESCE($9, status)`,
     values: [
       patch.title != null ? patch.title : null,
       patch.speakerName != null ? patch.speakerName : null,
@@ -851,6 +854,7 @@ async function updateSermon(client, id, patch) {
       patch.summary !== undefined ? patch.summary : null,
       patch.mediaUrl !== undefined ? patch.mediaUrl : null,
       patch.resourceUrl !== undefined ? patch.resourceUrl : null,
+      patch.imageUrl !== undefined ? patch.imageUrl : null,
       patch.status != null ? patch.status : null,
     ],
     findById: findSermonById,

@@ -142,6 +142,7 @@ describe("v7 image editor coverage — editor wiring contract", () => {
     assert.match(ejs, /Upload from computer/);
     assert.match(ejs, /srcName:\s*'image_url'/);
     assert.match(ejs, /srcName:\s*'qr_image_url'/);
+    assert.match(ejs, /data-bb-entity-photo="sermon"/);
   });
 
   it("BlessBoard content blocks expose structured image edit triggers", () => {

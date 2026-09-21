@@ -200,6 +200,28 @@
   </section>
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-sermons-section="media">
     <h3 id="<%= mode %>_media_heading" class="bb-ba-entities-form__section-title">Media &amp; resources</h3>
+    <div class="bb-ba-field" data-bb-entity-photo="sermon">
+      <label>Sermon thumbnail</label>
+      <p class="bb-ba-field__hint">
+        Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+        Thumbnails are stored in the shared church media library (CDN).
+      </p>
+      <% var _sermonImg = val('image_url', 'imageUrl', ''); %>
+      <% var _sermonMediaListUrl = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) ? String(websiteMediaListUrl) : ''; %>
+      <%- include('../../../platform/website/partials/media-field', {
+        mediaField: {
+          idName: mode + '_image_media_id',
+          srcName: 'image_url',
+          altName: mode + '_image_alt',
+          altLabel: 'Thumbnail description',
+          mediaId: '',
+          src: _sermonImg,
+          alt: '',
+          emptyText: 'No thumbnail yet — upload from computer or choose from the Content Library.'
+        },
+        mediaListUrl: _sermonMediaListUrl
+      }) %>
+    </div>
     <div class="bb-ba-field">
       <label for="<%= mode %>_media_url">Media URL (HTTPS)</label>
       <input id="<%= mode %>_media_url" name="media_url" type="url" maxlength="2000" value="<%= val('media_url', 'mediaUrl', '') %>" autocomplete="off" data-bb-sermons-field="media_url" />
@@ -209,8 +231,7 @@
       <label for="<%= mode %>_resource_url">Resource URL (HTTPS or uploaded)</label>
       <input id="<%= mode %>_resource_url" name="resource_url" type="text" maxlength="2000" value="<%= val('resource_url', 'resourceUrl', '') %>" autocomplete="off" data-bb-sermons-field="resource_url" />
     </div>
-    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_resource_url', csrfToken: csrfToken, visibility: 'public' }) %>
-    <p class="bb-ba-field__hint">Sermon thumbnails are edited on the public sermons page (website editor).</p>
+    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_resource_url', csrfToken: csrfToken, visibility: 'public', allowDocuments: true }) %>
   </section>
 <% } %>
 

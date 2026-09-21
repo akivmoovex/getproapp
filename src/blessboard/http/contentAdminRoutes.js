@@ -3285,6 +3285,7 @@ function entityPatchFromBody(routeKey, body) {
         summary: body.summary,
         mediaUrl: body.media_url,
         resourceUrl: body.resource_url,
+        imageUrl: body.image_url,
       };
     case "contact":
       return {

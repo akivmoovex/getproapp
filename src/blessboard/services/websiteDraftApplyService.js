@@ -713,6 +713,7 @@ async function applyEntityDraft(client, draft, ctx) {
       summary: payload.summary || null,
       mediaUrl: payload.mediaUrl || null,
       resourceUrl: payload.resourceUrl || null,
+      imageUrl: payload.imageUrl || null,
       status: "published",
     };
     if (isExisting) {

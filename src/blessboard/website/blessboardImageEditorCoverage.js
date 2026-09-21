@@ -131,14 +131,14 @@ const COVERAGE = Object.freeze([
     id: "bb.sermon.thumbnail",
     surface: "Sermon thumbnails",
     classification: C.EDITABLE,
-    editor: "structured_sermon+home_sermon_edit_image",
+    editor: "structured_sermon+content_admin_media+durable_image_url",
     keys: ["sermon.imageUrl"],
   },
   {
     id: "bb.home.sermon.image",
     surface: "Home Listen and Reflect / latest sermon image",
     classification: C.EDITABLE,
-    editor: "structured_sermon",
+    editor: "structured_sermon+durable_image_url",
     keys: ["home.sermons_intro.sermon.imageUrl"],
   },
   {

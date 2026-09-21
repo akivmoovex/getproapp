@@ -836,10 +836,10 @@
         }
         var media = result.data.media || result.data.asset || {};
         var path =
-          result.data.deliveryPath ||
           media.publicSrc ||
-          media.deliveryPath ||
           media.previewUrl ||
+          result.data.deliveryPath ||
+          media.deliveryPath ||
           media.src ||
           "";
         if (!path) {
@@ -887,7 +887,7 @@
         var assets = rawItems.filter(function (a) {
           if (!a) return false;
           var mime = String(a.mimeType || a.mediaKind || a.kind || "");
-          var src = a.deliveryPath || a.publicSrc || a.previewUrl || a.src || "";
+          var src = a.publicSrc || a.previewUrl || a.deliveryPath || a.src || "";
           if (!src) return false;
           if (mime && mime.indexOf("image/") !== 0 && mime !== "image" && mime !== "IMAGE") {
             return false;
@@ -903,7 +903,7 @@
           '<p class="bb-tp-se-hint">Choose from your media library</p><div class="bb-tp-se-demos bb-tp-se-library-grid">' +
           assets
             .map(function (a) {
-              var src = a.deliveryPath || a.publicSrc || a.previewUrl || a.src || "";
+              var src = a.publicSrc || a.previewUrl || a.deliveryPath || a.src || "";
               return (
                 '<button type="button" class="bb-tp-se-demo" data-bb-demo-url="' +
                 esc(src) +

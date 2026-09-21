@@ -137,8 +137,9 @@ function markers(html) {
     sharedField: /data-gp-we-media-field="1"/i.test(html),
     websiteMedia: html.includes(`/c/${ORG}/website/media`),
     killSwitchUpload: /data-upload-url="\/hq\/content\/media\/upload"/i.test(html),
-    structuredJs: /website-structured-edit\.js\?v=v2-bb-all-img-1/.test(html),
+    structuredJs: /website-structured-edit\.js\?v=v2-bb-(?:all-img-1|univ-img-1)/.test(html),
     editImage: /Edit image|data-bb-dialog-title="Edit image"/i.test(html),
+    sermonThumbField: /data-bb-entity-photo="sermon"/i.test(html),
   };
 }
 
@@ -201,6 +202,7 @@ async function main() {
     ["ministriesAdmin", "/hq/content/ministries"],
     ["eventsAdmin", "/hq/content/events"],
     ["givingAdmin", "/hq/content/giving"],
+    ["sermonsAdmin", "/hq/content/sermons"],
     ["homeEdit", `/c/${ORG}/?website_edit=1&website_mode=draft`],
     ["aboutEdit", `/c/${ORG}/about?website_edit=1&website_mode=draft`],
     ["sermonsEdit", `/c/${ORG}/sermons?website_edit=1&website_mode=draft`],
@@ -208,14 +210,19 @@ async function main() {
   ]) {
     const page = await follow(jar, await req(jar, `${BB}${pathSuffix}`), BB);
     const m = markers(page.body);
+    const adminOk =
+      m.uploadFromComputer && m.contentLibrary && m.websiteMedia && !m.killSwitchUpload;
+    const sermonsAdminOk = adminOk && m.sermonThumbField;
     checks[key] = {
       status: page.status,
       ...m,
       ok:
         page.status === 200 &&
-        (key.endsWith("Admin")
-          ? m.uploadFromComputer && m.contentLibrary && m.websiteMedia && !m.killSwitchUpload
-          : m.structuredJs && (m.editImage || key === "aboutEdit")),
+        (key === "sermonsAdmin"
+          ? sermonsAdminOk
+          : key.endsWith("Admin")
+            ? adminOk
+            : m.structuredJs && (m.editImage || key === "aboutEdit")),
     };
   }
 

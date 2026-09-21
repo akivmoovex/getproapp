@@ -172,12 +172,12 @@ Redesign the BlessBoard public Sermons page to keep **Featured Sermon**, insert 
 
 ### Known code gaps (pre-implementation — backlog only)
 
-Documented from the post–Bug 04 image-editability audit / gap agents. **Do not treat soft-filled sermon thumbnails as durable until these land with this item (or a linked schema task).**
+> **Update (2026-09-21 / Bug 19):** Sermon thumbnail durability is addressed by additive migration `113_sermon_thumbnail_image_url.sql` plus repo/draft-apply/content-admin wiring. Remaining items below that still apply to the broader Sermons redesign (Upcoming/Recent/YouTube) stay in scope for **V2-BB-SERMONS-01**.
 
-1. **No durable sermon thumbnail column** — `blessboard.sermons` (`db/migrations/blessboard/016_create_sermons.sql`) has `media_url` / `resource_url` only; there is **no** `image_url` (or equivalent thumbnail) column. `SERMON_COLS` / `mapSermon` / insert-update paths in `publicContentRepository.js` do not persist thumbnails.
-2. **Draft apply drops sermon images** — `websiteDraftApplyService.js` sermon branch builds fields from title/speaker/preachedAt/summary/mediaUrl/resourceUrl only; **`payload.imageUrl` is not written** even when the structured editor collects it.
-3. **Soft-fill vs persistence** — public/editor soft-fill may show template or transient image URLs that **do not round-trip** through draft → publish for sermon entities. Implementation must add additive schema (or an approved alternate durable media ref) + apply/repo mapping before claiming thumbnail editability.
-4. **Platform preference (shared)** — structured `media-field` still prefers `deliveryPath` before `publicSrc` in some builders (`website-structured-edit.js`). Prefer **`publicSrc` (CDN URL) first** when both exist so Hostinger delivery matches other Bug 04 surfaces; track with this item or a small shared follow-up under V2-MEDIA-01 / Bug 04 hygiene.
+1. ~~**No durable sermon thumbnail column**~~ — **Addressed in Bug 19** (`blessboard.sermons.image_url`).
+2. ~~**Draft apply drops sermon images**~~ — **Addressed in Bug 19** (`websiteDraftApplyService` passes `payload.imageUrl`).
+3. Soft-fill vs persistence — soft-fill remains for empty tenants; once a tenant thumbnail is published it must round-trip via `image_url` (verify in Bug 19 QA).
+4. ~~**Platform preference (shared)**~~ — **Addressed in Bug 19** (`website-structured-edit.js` prefers `publicSrc` before `deliveryPath`).
 
 ### Acceptance criteria (when implementation is scheduled)
 
