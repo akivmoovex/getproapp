@@ -9,9 +9,11 @@
 
 ## Final status
 
-**`V2_SHARED_MEDIA_CONVERSION_QA_PARTIAL`** — automated contract + unit coverage PASS; hosted conversion smoke pending deploy of this tip (see Deployment SHA below once live).
+**`V2_SHARED_MEDIA_CONVERSION_QA_PASS`**
 
-**Production untouched:** **YES** (verified against `blessboard.pronline.org` in hosted script; must remain non-V8).
+Hosted conversion smoke (`scripts/local/v2-shared-media-type-conversion-hosted.js`) returned **PASS** against tip SHA `5b2d9468371e` on `moovex-platform-v8-testing` (BlessBoard + ActiveClinic).
+
+**Production untouched:** **YES** (`blessboard.pronline.org` SHA `03a89106e2fe`, non-V8).
 
 ---
 
@@ -133,18 +135,18 @@ Contact was the reported repro: photograph after video did not survive publish.
 
 | Path | Automated | Hosted |
 |------|-----------|--------|
-| Contact video → image draft preview | Covered by helper + Bug 21 soft-fill | Scripted |
-| Contact publish after image | Apply unit + hosted script | Pending tip deploy |
-| Public Contact hero shows photo (not YouTube URL) | Hosted script assert | Pending tip deploy |
-| Home YouTube control payload | Contract | Spot-check in script |
-| Cross-section isolation | Bug 16 tests + hosted guard | Pending tip deploy |
-| Desktop / mobile | Same asset + fit preview in editor | Same public CSS |
-| Existing websites with legacy `videoUrl` | Image publish clears active video, keeps `previousVideo*` | Hosted seeds video then converts |
+| Contact video → image draft preview | PASS | PASS |
+| Contact publish after image | PASS | PASS |
+| Public Contact hero shows photo (not YouTube URL) | — | PASS (`99f3284b…png`) |
+| Home YouTube control payload | PASS | PASS |
+| Cross-section isolation | PASS (Bug 16 + hosted) | PASS |
+| Desktop / mobile | Same asset + fit preview | Same public CSS |
+| Existing websites with legacy `videoUrl` | Image publish clears active video, keeps `previousVideo*` | Hosted seeded video then converted |
 | Newly provisioned defaults | Soft-fill image paths unchanged | Untouched |
-| Shared media regression | Existing parity / isolation suites | Run after deploy |
+| Shared media / CDN | Hostinger `publicSrc` | PASS |
 
 Hosted runner: `scripts/local/v2-shared-media-type-conversion-hosted.js`  
-Env: `V2_SHARED_MEDIA_CONV_EXPECTED_SHA=<12-char prefix>`
+Evidence: `/tmp/v2-shared-media-type-conversion-hosted.json` (`status: PASS`, finished `2026-09-21T18:58:12.621Z`)
 
 ---
 
@@ -183,8 +185,9 @@ node --test tests/v2-shared-media-type-conversion.test.js \
 |------|-------|
 | Target | `https://blessboard.neuniversity.org` (+ AC healthz SHA family) |
 | Script | `scripts/local/v2-shared-media-type-conversion-hosted.js` |
-| Result | **Pending** until tip SHA is live on `moovex-platform-v8-testing` |
-| Evidence file | `/tmp/v2-shared-media-type-conversion-hosted.json` (after run) |
+| Result | **PASS** |
+| Evidence file | `/tmp/v2-shared-media-type-conversion-hosted.json` |
+| Flow | Seed YouTube on Contact hero → publish → convert to Hostinger photograph → publish → public `<img>` shows photo id `99f3284b…` (not YouTube URL) |
 
 ---
 
@@ -192,10 +195,10 @@ node --test tests/v2-shared-media-type-conversion.test.js \
 
 | Surface | SHA |
 |---------|-----|
-| Source tip (this change set) | *fill after commit* |
-| Hosted `blessboard.neuniversity.org` `/healthz` | *fill after deploy* |
-| Hosted `activeclinic.neuniversity.org` `/healthz` | *fill after deploy* |
-| Production `blessboard.pronline.org` | Must remain non-V8 / unchanged |
+| Source tip | `5b2d9468371e835fb9a24e0302310f93ac9890b6` |
+| Hosted `blessboard.neuniversity.org` `/healthz` | `5b2d9468371e` (`platformLine=v8`, `environment=testing`) |
+| Hosted `activeclinic.neuniversity.org` `/healthz` | `5b2d9468371e` |
+| Production `blessboard.pronline.org` | `03a89106e2fe` (non-V8; untouched) |
 
 ---
 
@@ -204,7 +207,6 @@ node --test tests/v2-shared-media-type-conversion.test.js \
 1. **V2-MEDIA-01** — public responsive YouTube embed / shared player (backlog). Conversion persists URLs; public heroes still show photograph/poster.
 2. **V2-BB-CONTACT-01** — Contact page Stitch redesign video→image framing (design pending); persistence bug fixed independently.
 3. ActiveClinic — no convertible section UI yet; library `video_url` kind only.
-4. Hosted PASS required to promote status to `V2_SHARED_MEDIA_CONVERSION_QA_PASS`.
 
 ---
 
