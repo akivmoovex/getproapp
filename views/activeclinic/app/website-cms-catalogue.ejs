@@ -26,7 +26,7 @@
     <% } %>
   </div>
   <% if (cms.error) { %><p class="ac-mw-error" role="alert"><%= cms.error %></p><% } %>
-  <% if (cms.saved) { %><p class="ac-mw-saved" role="status">Saved as a draft. Publish when you are ready for the public site to update.</p><% } %>
+  <% if (cms.saved) { %><p class="ac-mw-saved" role="status">Saved. Profiles marked visible appear on the public Doctors page; hidden profiles stay private.</p><% } %>
 
   <nav class="ac-mw-tabs" aria-label="Public catalogue">
     <a class="ac-mw-nav__link<%= tab === 'doctors' ? ' is-current' : '' %>" href="/app/settings/website/catalogue?tab=doctors" data-ac-catalogue-tab-link="doctors">Doctors</a>

@@ -8,7 +8,7 @@
   <div class="ac-public-empty" data-ac-empty="doctors" data-ac-state-key="empty">
     <h2><%- include('../partials/website-editable-field', { contentKey: 'doctors.empty_heading', fieldValue: clinic.doctorsEmptyHeading || 'Doctor listings are not available yet', fieldType: 'short_text' }) %></h2>
     <p><%- include('../partials/website-editable-field', { contentKey: 'doctors.empty_body', fieldValue: clinic.doctorsEmptyBody || 'This clinic has not published doctor listings yet.', fieldType: 'long_text' }) %></p>
-    <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=doctors', label: 'Manage public doctors', note: 'Publish clinician profiles from the public catalogue. Photos can be added in the Content Library.', manageKind: 'doctors' }) %>
+    <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=doctors', label: 'Manage public doctors', note: 'Publish clinician profiles from the public catalogue. Photos use the shared media picker.', manageKind: 'doctors' }) %>
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.home) || ('/clinics/' + clinic.clinicKey) %>">Back to clinic home</a></p>
   </div>
   <% } else { %>
@@ -46,7 +46,7 @@
     </li>
     <% }) %>
   </ul>
-  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=doctors', label: 'Manage public doctors', note: 'Visibility is controlled in the public catalogue. Website photos use the Content Library media picker.', manageKind: 'doctors' }) %>
+  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=doctors', label: 'Manage public doctors', note: 'Visibility is controlled in the public catalogue. Profile photos use the shared media picker.', manageKind: 'doctors' }) %>
   <% } %>
   <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_doctors', librarySkipTypes: [] }) %>
 </section>

@@ -7,6 +7,7 @@
     ? ("/app/settings/website/catalogue/doctors/" + encodeURIComponent(doctor.id || "") + "/edit")
     : "/app/settings/website/catalogue/doctors/new";
   var image = doctor.image || {};
+  var linkableStaff = Array.isArray(cms.linkableStaff) ? cms.linkableStaff : [];
 %>
 <section class="ac-mw" data-ac-page-section="website-catalogue-doctor-form" data-ac-mw-screen="catalogue-doctor-form">
   <%- include('../partials/website-cms-nav') %>
@@ -15,7 +16,7 @@
       <h2><%= mode === "edit" ? "Edit doctor profile" : "Add doctor profile" %></h2>
       <p class="ac-mw-muted">
         Public professional profiles appear on your clinic website.
-        <% if (mode === "create") { %>Creating a profile here does not create a staff login.<% } %>
+        <% if (mode === "create") { %>Creating a new profile here does not create a staff login. Prefer linking an existing clinician when they already have a clinic account.<% } %>
         <% if (mode === "edit" && doctor.hasLogin) { %>This person also has a staff login; editing here only changes the public website profile.<% } %>
       </p>
     </div>
@@ -23,6 +24,19 @@
   <% if (cms.error) { %><p class="ac-mw-error" role="alert"><%= cms.error %></p><% } %>
   <form class="ac-mw-form" method="post" action="<%= action %>" data-ac-catalogue-doctor-form="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <% if (mode === "create" && linkableStaff.length) { %>
+    <label>
+      Existing clinician <span class="ac-mw-muted">(optional — avoids duplicate records)</span>
+      <select name="existingStaffId" <%= canEdit ? "" : "disabled" %>>
+        <option value="">New public-only profile (no login)</option>
+        <% linkableStaff.forEach(function (staff) { %>
+        <option value="<%= staff.id %>"<%= String(doctor.existingStaffId || "") === String(staff.id) ? " selected" : "" %>>
+          <%= staff.name %><%= staff.hasLogin ? " · has staff login" : "" %>
+        </option>
+        <% }) %>
+      </select>
+    </label>
+    <% } %>
     <label>
       Public name
       <input type="text" name="publicDisplayName" required maxlength="200" value="<%= doctor.name || "" %>" <%= canEdit ? "" : "readonly" %>/>
@@ -36,8 +50,16 @@
     <p class="ac-mw-muted">Profile key: <code><%= doctor.staffKey || "" %></code></p>
     <% } %>
     <label>
-      Title / specialty
-      <input type="text" name="specialty" maxlength="120" value="<%= doctor.title || doctor.subtitle || "" %>" <%= canEdit ? "" : "readonly" %> placeholder="e.g. Pediatrician"/>
+      Professional title
+      <input type="text" name="professionalTitle" maxlength="120" value="<%= doctor.title || "" %>" <%= canEdit ? "" : "readonly" %> placeholder="e.g. Consultant Physician"/>
+    </label>
+    <label>
+      Specialization
+      <input type="text" name="specialty" maxlength="120" value="<%= doctor.specialty || doctor.subtitle || "" %>" <%= canEdit ? "" : "readonly" %> placeholder="e.g. Pediatrics"/>
+    </label>
+    <label>
+      Qualifications <span class="ac-mw-muted">(optional)</span>
+      <input type="text" name="qualifications" maxlength="240" value="<%= doctor.qualifications || "" %>" <%= canEdit ? "" : "readonly" %> placeholder="e.g. MBChB, MMed"/>
     </label>
     <label>
       Biography

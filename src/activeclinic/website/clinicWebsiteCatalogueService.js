@@ -190,25 +190,76 @@ function splitPublicName(name) {
   };
 }
 
+function splitPublicBio(publicBio) {
+  const text = String(publicBio || "").trim();
+  const match = text.match(/^Qualifications:\s*([^\n]+)(?:\n+([\s\S]*))?$/i);
+  if (!match) return { qualifications: "", biography: text };
+  return {
+    qualifications: String(match[1] || "").trim(),
+    biography: String(match[2] || "").trim(),
+  };
+}
+
+function composePublicBio(biography, qualifications) {
+  const bio = String(biography || "").trim();
+  const quals = String(qualifications || "").trim();
+  if (!quals) return bio || null;
+  if (!bio) return `Qualifications: ${quals}`.slice(0, 2000);
+  if (/^Qualifications:/i.test(bio)) return bio.slice(0, 2000);
+  return `Qualifications: ${quals}\n\n${bio}`.slice(0, 2000);
+}
+
+function resolveDoctorTitleFields(input, existing) {
+  const hasProfessionalTitle = Object.prototype.hasOwnProperty.call(input || {}, "professionalTitle");
+  const hasSpecialty =
+    Object.prototype.hasOwnProperty.call(input || {}, "specialty") ||
+    Object.prototype.hasOwnProperty.call(input || {}, "publicTitle") ||
+    Object.prototype.hasOwnProperty.call(input || {}, "title");
+  const professionalTitle = hasProfessionalTitle
+    ? String(input.professionalTitle || "").trim().slice(0, 120) || null
+    : existing
+      ? existing.public_title
+      : null;
+  const specialtyRaw = hasSpecialty
+    ? String(input.specialty || input.publicTitle || input.title || "").trim().slice(0, 120) || null
+    : existing
+      ? existing.job_title
+      : null;
+  // Prefer explicit professional title for public_title; fall back to specialty/title.
+  const publicTitle =
+    professionalTitle ||
+    (hasSpecialty ? specialtyRaw : existing ? existing.public_title : specialtyRaw) ||
+    null;
+  const jobTitle = specialtyRaw || publicTitle || (existing && existing.job_title) || "Clinician";
+  return { publicTitle, jobTitle, specialty: specialtyRaw || "" };
+}
+
 function syntheticPublicProfilePhone() {
   const n = crypto.randomBytes(4).readUInt32BE(0) % 100000000;
   return `+2609${String(n).padStart(8, "0")}`;
 }
 
 function presentDoctor(row, overlay) {
-  const name = String(row.public_display_name || row.display_name || "").trim();
+  const publicName = String(row.public_display_name || "").trim();
+  const name = publicName || String(row.display_name || "").trim();
   const active = row.status === "active";
   const overlayHidden = overlay && overlay.visible === false;
   const websiteVisible = row.public_profile_enabled === true && !overlayHidden;
-  const needsProfile = !name;
+  // Public profile is incomplete until a dedicated public name and profile key exist.
+  const needsProfile = !publicName || !row.public_profile_key;
   const image = overlay && overlay.image ? overlay.image : null;
+  const title = String(row.public_title || "").trim();
+  const specialty = String(row.job_title || "").trim();
+  const splitBio = splitPublicBio(row.public_bio);
   return {
     id: row.id,
     kind: "doctor",
     name: name || `${row.first_name || ""} ${row.last_name || ""}`.trim() || "Staff member",
-    subtitle: row.public_title || row.job_title || "Staff",
-    title: row.public_title || row.job_title || "",
-    bio: row.public_bio || "",
+    subtitle: title || specialty || "Staff",
+    title,
+    specialty: specialty && specialty !== title ? specialty : specialty || "",
+    qualifications: splitBio.qualifications,
+    bio: splitBio.biography || row.public_bio || "",
     staffKey: row.public_profile_key || "",
     operationallyAvailable: active,
     websiteVisible,
@@ -713,18 +764,34 @@ async function createCatalogueDoctor(db, input) {
   const allowed = requireEdit(input);
   if (!allowed.ok) return allowed;
 
+  const existingStaffId = String((input && input.existingStaffId) || "").trim();
+  if (UUID_RE.test(existingStaffId)) {
+    // Publish/edit public profile on an existing clinician — never create a duplicate identity.
+    return updateCatalogueDoctor(db, {
+      ...input,
+      staffId: existingStaffId,
+    });
+  }
+
   const publicDisplayName = String((input && input.publicDisplayName) || input.displayName || "").trim();
   if (!publicDisplayName || publicDisplayName.length > 200) {
     return { ok: false, code: RESULT.INVALID_INPUT };
   }
-  const publicTitle = String((input && (input.publicTitle || input.specialty || input.title)) || "")
-    .trim()
-    .slice(0, 120) || null;
-  const publicBio = String((input && (input.publicBio || input.biography || input.bio)) || "")
-    .trim()
-    .slice(0, 2000) || null;
+  const titles = resolveDoctorTitleFields(input, null);
+  const hasBio =
+    Object.prototype.hasOwnProperty.call(input || {}, "publicBio") ||
+    Object.prototype.hasOwnProperty.call(input || {}, "biography") ||
+    Object.prototype.hasOwnProperty.call(input || {}, "bio") ||
+    Object.prototype.hasOwnProperty.call(input || {}, "qualifications");
+  const publicBio = hasBio
+    ? composePublicBio(
+        input.publicBio || input.biography || input.bio,
+        input.qualifications
+      )
+    : null;
   const status = String((input && input.status) || "active").trim() === "inactive" ? "inactive" : "active";
-  const publicWebsiteVisible = boolValue(input && input.publicWebsiteVisible, true) === true;
+  // Draft-safe: public profiles stay unpublished until the editor explicitly opts in.
+  const publicWebsiteVisible = boolValue(input && input.publicWebsiteVisible, false) === true;
   const requestedRaw = String((input && (input.profileKey || input.staffKey || input.publicProfileKey)) || "").trim();
   const requestedKey = requestedRaw ? slugKey(requestedRaw) : "";
   if (requestedRaw && !PROFILE_KEY_RE.test(requestedKey)) {
@@ -743,7 +810,7 @@ async function createCatalogueDoctor(db, input) {
     firstName,
     lastName,
     displayName: publicDisplayName,
-    jobTitle: publicTitle || "Clinician",
+    jobTitle: titles.jobTitle || "Clinician",
     employmentType: "visiting",
     status,
     phone: syntheticPublicProfilePhone(),
@@ -778,11 +845,11 @@ async function createCatalogueDoctor(db, input) {
   const enabled = publicWebsiteVisible && status === "active";
   const row = await applyPublicProfileFields(db, input, staffId, {
     publicDisplayName,
-    publicTitle,
+    publicTitle: titles.publicTitle,
     publicBio,
     publicProfileKey: profileKey,
     publicProfileEnabled: enabled,
-    jobTitle: publicTitle || "Clinician",
+    jobTitle: titles.jobTitle || "Clinician",
     displayName: publicDisplayName,
     status,
   });
@@ -819,19 +886,24 @@ async function updateCatalogueDoctor(db, input) {
   if (!publicDisplayName || publicDisplayName.length > 200) {
     return { ok: false, code: RESULT.INVALID_INPUT };
   }
-  const hasTitle =
-    Object.prototype.hasOwnProperty.call(input || {}, "publicTitle") ||
-    Object.prototype.hasOwnProperty.call(input || {}, "specialty") ||
-    Object.prototype.hasOwnProperty.call(input || {}, "title");
-  const publicTitle = hasTitle
-    ? String((input.publicTitle || input.specialty || input.title || "")).trim().slice(0, 120) || null
-    : existing.public_title;
+  const titles = resolveDoctorTitleFields(input, existing);
   const hasBio =
     Object.prototype.hasOwnProperty.call(input || {}, "publicBio") ||
     Object.prototype.hasOwnProperty.call(input || {}, "biography") ||
-    Object.prototype.hasOwnProperty.call(input || {}, "bio");
+    Object.prototype.hasOwnProperty.call(input || {}, "bio") ||
+    Object.prototype.hasOwnProperty.call(input || {}, "qualifications");
+  const existingSplit = splitPublicBio(existing.public_bio);
   const publicBio = hasBio
-    ? String((input.publicBio || input.biography || input.bio || "")).trim().slice(0, 2000) || null
+    ? composePublicBio(
+        Object.prototype.hasOwnProperty.call(input || {}, "biography") ||
+          Object.prototype.hasOwnProperty.call(input || {}, "publicBio") ||
+          Object.prototype.hasOwnProperty.call(input || {}, "bio")
+          ? input.publicBio || input.biography || input.bio
+          : existingSplit.biography,
+        Object.prototype.hasOwnProperty.call(input || {}, "qualifications")
+          ? input.qualifications
+          : existingSplit.qualifications
+      )
     : existing.public_bio;
   const statusRaw = String((input && input.status) || existing.status || "active").trim();
   const status = statusRaw === "inactive" ? "inactive" : statusRaw === "active" ? "active" : existing.status;
@@ -849,12 +921,13 @@ async function updateCatalogueDoctor(db, input) {
 
   const row = await applyPublicProfileFields(db, input, staffId, {
     publicDisplayName,
-    publicTitle,
+    publicTitle: titles.publicTitle,
     publicBio,
     publicProfileKey: profileKey,
     publicProfileEnabled: enabled,
-    jobTitle: publicTitle || existing.job_title,
-    displayName: publicDisplayName,
+    jobTitle: titles.jobTitle || existing.job_title,
+    // Keep operational display_name for login staff; only refresh for public-only rows.
+    displayName: existing.platform_identity_id ? existing.display_name : publicDisplayName,
     status,
   });
   if (!row) return { ok: false, code: RESULT.NOT_FOUND };

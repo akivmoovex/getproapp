@@ -1379,18 +1379,50 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
     }
   }
 
+  function linkableStaffFromCatalogue(loaded) {
+    return ((loaded && loaded.doctors) || [])
+      .filter((row) => row && !row.inactive && (!row.publicProfileEnabled || row.needsProfile))
+      .map((row) => ({
+        id: row.id,
+        name: row.name,
+        hasLogin: row.hasLogin === true,
+      }));
+  }
+
+  function doctorFormFieldsFromBody(body) {
+    return {
+      name: String(body.publicDisplayName || body.displayName || body.name || ""),
+      staffKey: String(body.profileKey || body.staffKey || ""),
+      title: String(body.professionalTitle || body.publicTitle || body.title || ""),
+      specialty: String(body.specialty || ""),
+      qualifications: String(body.qualifications || ""),
+      bio: String(body.biography || body.publicBio || body.bio || ""),
+      existingStaffId: String(body.existingStaffId || ""),
+      inactive: body.status === "inactive",
+      publicProfileEnabled: body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+      websiteVisible: body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
+      hasLogin: false,
+      image: {
+        mediaId: String(body.imageMediaId || ""),
+        src: String(body.imageSrc || ""),
+        alt: String(body.imageAlt || ""),
+      },
+    };
+  }
+
   app.get(
     "/app/settings/website/catalogue/doctors/new",
     requireAuth,
     requirePermission(PERMISSIONS.EDIT),
     async (req, res, next) => {
       try {
+        const loaded = await catalogueService.loadCatalogue(getPool(), cmsInput(req));
         return renderShell(req, res, {
           content: "app/website-cms-catalogue-doctor-form.ejs",
           cmsActive: "catalogue",
           pageHeader: {
             title: "Add doctor profile",
-            description: "Create a public professional profile for the clinic website. No staff login is created.",
+            description: "Create a public professional profile for the clinic website. Linking an existing clinician does not change their login.",
           },
           breadcrumbs: breadcrumbs([
             { label: "Public catalogue", href: "/app/settings/website/catalogue?tab=doctors" },
@@ -1403,13 +1435,16 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
                 name: "",
                 staffKey: "",
                 title: "",
+                specialty: "",
+                qualifications: "",
                 bio: "",
                 inactive: false,
-                publicProfileEnabled: true,
-                websiteVisible: true,
+                publicProfileEnabled: false,
+                websiteVisible: false,
                 hasLogin: false,
                 image: { mediaId: "", src: "", alt: "" },
               },
+              linkableStaff: loaded.ok ? linkableStaffFromCatalogue(loaded) : [],
               mediaListUrl: `/clinics/${cmsInput(req).clinicKey}/website/media`,
               error: "",
             },
@@ -1433,8 +1468,11 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
         const body = req.body || {};
         const created = await catalogueService.createCatalogueDoctor(getPool(), {
           ...cmsInput(req),
+          existingStaffId: body.existingStaffId,
           publicDisplayName: body.publicDisplayName || body.displayName || body.name,
+          professionalTitle: body.professionalTitle,
           specialty: body.specialty || body.publicTitle || body.title,
+          qualifications: body.qualifications,
           biography: body.biography || body.publicBio || body.bio,
           profileKey: body.profileKey || body.staffKey,
           status: body.status === "inactive" ? "inactive" : "active",
@@ -1444,12 +1482,13 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           imageAlt: body.imageAlt,
         });
         if (!created.ok) {
+          const loaded = await catalogueService.loadCatalogue(getPool(), cmsInput(req));
           return renderShell(req, res, {
             content: "app/website-cms-catalogue-doctor-form.ejs",
             cmsActive: "catalogue",
             pageHeader: {
               title: "Add doctor profile",
-              description: "Create a public professional profile for the clinic website. No staff login is created.",
+              description: "Create a public professional profile for the clinic website. Linking an existing clinician does not change their login.",
             },
             breadcrumbs: breadcrumbs([
               { label: "Public catalogue", href: "/app/settings/website/catalogue?tab=doctors" },
@@ -1458,23 +1497,8 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
             pageData: {
               cms: {
                 mode: "create",
-                doctor: {
-                  name: String(body.publicDisplayName || body.displayName || body.name || ""),
-                  staffKey: String(body.profileKey || body.staffKey || ""),
-                  title: String(body.specialty || body.publicTitle || body.title || ""),
-                  bio: String(body.biography || body.publicBio || body.bio || ""),
-                  inactive: body.status === "inactive",
-                  publicProfileEnabled:
-                    body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
-                  websiteVisible:
-                    body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
-                  hasLogin: false,
-                  image: {
-                    mediaId: String(body.imageMediaId || ""),
-                    src: String(body.imageSrc || ""),
-                    alt: String(body.imageAlt || ""),
-                  },
-                },
+                doctor: doctorFormFieldsFromBody(body),
+                linkableStaff: loaded.ok ? linkableStaffFromCatalogue(loaded) : [],
                 mediaListUrl: `/clinics/${cmsInput(req).clinicKey}/website/media`,
                 error: slugErrorMessage(created.code),
               },
@@ -1543,7 +1567,9 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           ...cmsInput(req),
           staffId: req.params.staffId,
           publicDisplayName: body.publicDisplayName || body.displayName || body.name,
+          professionalTitle: body.professionalTitle,
           specialty: body.specialty || body.publicTitle || body.title,
+          qualifications: body.qualifications,
           biography: body.biography || body.publicBio || body.bio,
           status: body.status === "inactive" ? "inactive" : "active",
           publicWebsiteVisible: body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
@@ -1577,19 +1603,8 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
                 doctor: {
                   ...(loaded.ok ? loaded.doctor : {}),
                   id: req.params.staffId,
-                  name: String(body.publicDisplayName || body.displayName || body.name || ""),
-                  title: String(body.specialty || body.publicTitle || body.title || ""),
-                  bio: String(body.biography || body.publicBio || body.bio || ""),
-                  inactive: body.status === "inactive",
-                  publicProfileEnabled:
-                    body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
-                  websiteVisible:
-                    body.publicWebsiteVisible === "1" || body.publicWebsiteVisible === "on",
-                  image: {
-                    mediaId: String(body.imageMediaId || ""),
-                    src: String(body.imageSrc || ""),
-                    alt: String(body.imageAlt || ""),
-                  },
+                  ...doctorFormFieldsFromBody(body),
+                  hasLogin: loaded.ok ? loaded.doctor.hasLogin : false,
                 },
                 canEdit: true,
                 mediaListUrl: `/clinics/${cmsInput(req).clinicKey}/website/media`,

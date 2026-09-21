@@ -21,6 +21,7 @@
       <p class="ac-public-banner" data-ac-sample-profile="1">Sample profile for demonstration only</p>
       <% } %>
       <% if (profile.title) { %><p class="ac-doctor-profile__title"><%= profile.title %></p><% } %>
+      <% if (profile.specialty) { %><p class="ac-doctor-profile__specialty"><%= profile.specialty %></p><% } %>
       <% if (profile.bio) { %><p class="ac-doctor-profile__bio"><%= profile.bio %></p><% } %>
       <p><a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book?doctor=<%= profile.staffKey %>"><%= clinic.publicBookingEnabled ? "Request appointment" : "Request a visit" %></a></p>
     </div>

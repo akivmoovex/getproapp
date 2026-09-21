@@ -1050,6 +1050,9 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
     assert.equal(newPage.status, 200, newPage.text.slice(0, 300));
     assert.match(newPage.text, /Add doctor profile/);
     assert.match(newPage.text, /does not create a staff login/);
+    assert.match(newPage.text, /name="professionalTitle"/);
+    assert.match(newPage.text, /name="qualifications"/);
+    assert.doesNotMatch(newPage.text, /name="publicWebsiteVisible"[^>]*checked/);
 
     const created = await request(app)
       .post("/app/settings/website/catalogue/doctors/new")
@@ -1260,6 +1263,105 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
       })
       .redirects(0);
     assert.equal(denied.status, 403);
+  });
+
+  it("publishes an existing clinician profile without creating a duplicate staff row", async () => {
+    requireDb();
+    const clinic = await provisionClinic();
+    const app = makeApp();
+    const cookie = await sessionCookie(clinic.identityId, clinic.organizationId);
+    const hcoId = await resolveHcoId(clinic);
+    const phone = nextPhone();
+    const staff = await createStaffMember(pool, {
+      organizationId: clinic.organizationId,
+      healthcareOrganizationId: hcoId,
+      firstName: "Existing",
+      lastName: `Clinician${clinic.stamp}`,
+      employmentType: "permanent",
+      status: "active",
+      phone,
+      email: null,
+    });
+    assert.equal(staff.ok, true, JSON.stringify(staff));
+    const staffId = staff.staffMember.id;
+    const beforeCount = await pool.query(
+      `SELECT count(*)::int AS n FROM activeclinic.staff_members
+        WHERE organization_id = $1 AND healthcare_organization_id = $2 AND status <> 'archived'`,
+      [clinic.organizationId, hcoId]
+    );
+
+    const newPage = await request(app)
+      .get("/app/settings/website/catalogue/doctors/new")
+      .set("Cookie", cookie);
+    assert.equal(newPage.status, 200);
+    assert.match(newPage.text, re(staffId));
+
+    const publicName = `Dr Existing ${clinic.stamp}`;
+    const created = await request(app)
+      .post("/app/settings/website/catalogue/doctors/new")
+      .set("Cookie", mergeCookies(cookie, newPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(newPage),
+        existingStaffId: staffId,
+        publicDisplayName: publicName,
+        professionalTitle: "Consultant",
+        specialty: "Internal Medicine",
+        qualifications: "MBChB",
+        biography: "Existing clinician biography.",
+        publicWebsiteVisible: "1",
+      })
+      .redirects(0);
+    assert.equal(created.status, 303, created.text.slice(0, 400));
+
+    const afterCount = await pool.query(
+      `SELECT count(*)::int AS n FROM activeclinic.staff_members
+        WHERE organization_id = $1 AND healthcare_organization_id = $2 AND status <> 'archived'`,
+      [clinic.organizationId, hcoId]
+    );
+    assert.equal(afterCount.rows[0].n, beforeCount.rows[0].n);
+
+    const row = await pool.query(
+      `SELECT id, public_display_name, public_title, job_title, public_bio, public_profile_enabled,
+              public_profile_key, platform_identity_id
+         FROM activeclinic.staff_members WHERE id = $1`,
+      [staffId]
+    );
+    assert.equal(row.rows[0].public_display_name, publicName);
+    assert.equal(row.rows[0].public_title, "Consultant");
+    assert.equal(row.rows[0].job_title, "Internal Medicine");
+    assert.match(String(row.rows[0].public_bio || ""), /Qualifications:\s*MBChB/);
+    assert.equal(row.rows[0].public_profile_enabled, true);
+    assert.ok(row.rows[0].public_profile_key);
+
+    const draftName = `Dr Draft ${clinic.stamp}`;
+    const draftPage = await request(app)
+      .get("/app/settings/website/catalogue/doctors/new")
+      .set("Cookie", cookie);
+    const draftCreated = await request(app)
+      .post("/app/settings/website/catalogue/doctors/new")
+      .set("Cookie", mergeCookies(cookie, draftPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(draftPage),
+        publicDisplayName: draftName,
+        specialty: "GP",
+        biography: "Draft only",
+      })
+      .redirects(0);
+    assert.equal(draftCreated.status, 303);
+    const draftRow = await pool.query(
+      `SELECT public_profile_enabled FROM activeclinic.staff_members
+        WHERE organization_id = $1 AND public_display_name = $2 LIMIT 1`,
+      [clinic.organizationId, draftName]
+    );
+    assert.equal(draftRow.rows[0].public_profile_enabled, false);
+
+    await publishWebsite(clinic);
+    const publicDoctors = await request(app).get(`/clinics/${clinic.slug}/doctors`);
+    assert.match(publicDoctors.text, re(publicName));
+    assert.match(publicDoctors.text, /Internal Medicine/);
+    assert.doesNotMatch(publicDoctors.text, re(draftName));
   });
 
   it("persists doctor photo through edit and renders it on public list and detail", async () => {

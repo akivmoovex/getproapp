@@ -358,7 +358,7 @@ async function listPublicStaffProfiles(db, input) {
 
   const sql = `
     SELECT s.id, s.public_profile_key, s.public_display_name,
-           s.public_title, s.public_bio, s.status
+           s.public_title, s.public_bio, s.job_title, s.status
     FROM activeclinic.staff_members s
     WHERE s.organization_id = $1
       AND s.healthcare_organization_id = $2
@@ -374,6 +374,8 @@ async function listPublicStaffProfiles(db, input) {
     staffKey: row.public_profile_key,
     displayName: row.public_display_name,
     title: row.public_title || null,
+    specialty:
+      row.job_title && row.job_title !== row.public_title ? row.job_title : null,
     bio: row.public_bio || null,
   }));
 
@@ -394,7 +396,7 @@ async function getPublicStaffProfile(db, input) {
 
   const sql = `
     SELECT s.id, s.public_profile_key, s.public_display_name,
-           s.public_title, s.public_bio
+           s.public_title, s.public_bio, s.job_title
     FROM activeclinic.staff_members s
     WHERE s.organization_id = $1
       AND s.healthcare_organization_id = $2
@@ -414,6 +416,8 @@ async function getPublicStaffProfile(db, input) {
     staffKey: row.public_profile_key,
     displayName: row.public_display_name,
     title: row.public_title || null,
+    specialty:
+      row.job_title && row.job_title !== row.public_title ? row.job_title : null,
     bio: row.public_bio || null,
   };
 
