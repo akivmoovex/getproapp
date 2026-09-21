@@ -502,7 +502,7 @@
       editPageKey: 'home',
       editSectionKey: 'leadership_intro'
     }) %>
-    <div class="bb-tp-card-grid bb-tp-card-grid--3">
+    <div class="bb-tp-card-grid bb-tp-card-grid--3" data-bb-home-leader-cards="1">
       <% teasers.leaders.slice(0, 3).forEach(function (leader) { %>
       <%- include('./partials/leader-card', { leader: leader, featured: false, bioMax: 120 }) %>
       <% }) %>

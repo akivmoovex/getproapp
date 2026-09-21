@@ -1,6 +1,8 @@
 <%#
-  Pencil trigger for structured editors (image, video, collections).
-  Locals: editKind, editEntityKey, editSectionKey (optional), editLabel, editPayload (optional object)
+  Pencil / CTA trigger for structured editors (image, video, collections, leaders).
+  Locals:
+    editKind, editEntityKey, editSectionKey (optional), editLabel, editPayload (optional),
+    editDialogTitle (optional), editButtonText (optional — when set, renders a visible text CTA)
 %>
 <%
   var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
@@ -11,20 +13,25 @@
   var _dialogTitle = typeof editDialogTitle !== 'undefined' && editDialogTitle
     ? String(editDialogTitle)
     : '';
+  var _buttonText = typeof editButtonText !== 'undefined' && editButtonText
+    ? String(editButtonText)
+    : '';
   var _payload = typeof editPayload !== 'undefined' && editPayload ? editPayload : {};
 %>
 <% if (_wa && _wa.editingMode && _kind) { %>
 <button
   type="button"
-  class="bb-tp-structured-pencil"
+  class="<%= _buttonText ? 'bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-structured-edit-cta' : 'bb-tp-structured-pencil' %>"
   data-bb-structured-open="1"
   data-bb-kind="<%= _kind %>"
   data-bb-entity="<%= _entity %>"
   <% if (_section) { %>data-bb-section="<%= _section %>"<% } %>
   <% if (_dialogTitle) { %>data-bb-dialog-title="<%= _dialogTitle %>"<% } %>
+  <% if (_buttonText) { %>data-bb-edit-details="1"<% } %>
   data-bb-payload="<%= JSON.stringify(_payload).replace(/"/g, '&quot;') %>"
   aria-label="<%= _label %>"
 >
   <span class="material-symbols-outlined" aria-hidden="true">edit</span>
+  <% if (_buttonText) { %><span class="bb-tp-structured-edit-cta__label"><%= _buttonText %></span><% } %>
 </button>
 <% } %>
