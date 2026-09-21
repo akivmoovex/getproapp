@@ -170,18 +170,23 @@ async function login() {
 }
 
 function extractEditTriggers(html) {
-  const sectionMatch = html.match(
-    /data-bb-home-events="1"[\s\S]*?data-bb-home-event-cards="1"([\s\S]*?)(?:<\/section>|<section )/
+  const sectionMatch = String(html || "").match(
+    /data-bb-home-event-cards="1"([\s\S]*?)(?:<\/section>|<section\b|$)/
   );
   const slice = sectionMatch ? sectionMatch[1] : "";
   const triggers = [];
-  const re =
-    /data-bb-kind="event"[\s\S]{0,220}?data-bb-entity="([^"]+)"[\s\S]{0,220}?aria-label="Edit image"|data-bb-entity="([^"]+)"[\s\S]{0,220}?data-bb-kind="event"[\s\S]{0,220}?aria-label="Edit image"/gi;
+  const buttonRe = /<button\b[^>]*>/gi;
   let m;
-  while ((m = re.exec(slice))) {
-    triggers.push(m[1] || m[2]);
+  while ((m = buttonRe.exec(slice))) {
+    const tag = m[0];
+    if (!/data-bb-kind="event"/.test(tag)) continue;
+    if (!/aria-label="Edit image"/.test(tag) && !/data-bb-dialog-title="Edit image"/.test(tag)) {
+      continue;
+    }
+    const entity = (tag.match(/data-bb-entity="([^"]+)"/) || [])[1];
+    if (entity) triggers.push(entity);
   }
-  return [...new Set(triggers.filter(Boolean))];
+  return [...new Set(triggers)];
 }
 
 function extractUploadUrl(html) {
