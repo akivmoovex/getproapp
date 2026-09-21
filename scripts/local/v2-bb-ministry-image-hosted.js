@@ -408,9 +408,12 @@ async function main() {
     ok: draftMarkers.every((m) => m.present),
   };
 
-  // Isolation: each upload marker should appear once (one ministry), not thrice swapped.
+  // Isolation: each ministry keeps its own durable media id (CDN path prefixes share org folder).
   result.isolation = {
-    ok: draftMarkers.every((m) => m.present) && new Set(uploads.map((u) => u.srcPrefix)).size === 3,
+    ok:
+      draftMarkers.every((m) => m.present) &&
+      new Set(uploads.map((u) => u.mediaId).filter(Boolean)).size === 3,
+    uniqueMediaIds: new Set(uploads.map((u) => u.mediaId).filter(Boolean)).size,
     uniqueSrcPrefixes: new Set(uploads.map((u) => u.srcPrefix)).size,
   };
 
