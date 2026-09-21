@@ -13,7 +13,7 @@ Do **not** implement items marked **OPEN — NOT IMPLEMENTED** until explicitly 
 | ID | Title | Product | Status | Priority |
 |----|-------|---------|--------|----------|
 | **V2-BB-18** | About page — Our Values save error (`unknown_content_key`) | BlessBoard | **FIXED (regression covered by Bug 20)** | P1 |
-| **V2-BB-20** | Contact page — opening hours not editable | BlessBoard | **IN PROGRESS** | P1 |
+| **V2-BB-20** | Contact page — opening hours not editable | BlessBoard | **FIXED — HOSTED PASS** | P1 |
 
 ---
 
@@ -105,7 +105,7 @@ The website administrator cannot save an edit to the **Our Values** text.
 | **Page** | Church mini-website → Contact |
 | **Section** | Office Hours / opening hours body |
 | **Environment** | Neuniversity V2.0 testing |
-| **Status** | **IN PROGRESS** |
+| **Status** | **FIXED — HOSTED PASS** (`0ddee7694a3d`) |
 | **Added** | 2026-09-21 |
 
 ### Root cause (summary)
@@ -126,6 +126,7 @@ The website administrator cannot save an edit to the **Our Values** text.
 | Date | Status | Note |
 |------|--------|------|
 | 2026-09-21 | **IN PROGRESS** | Implementation + hosted verification in Bug 20 wave. |
+| 2026-09-21 | **FIXED — HOSTED PASS** | Smoke PASS on SHA `0ddee7694a3d`; draft/preview/publish/public + Bug 18 regression. |
 
 ---
 
