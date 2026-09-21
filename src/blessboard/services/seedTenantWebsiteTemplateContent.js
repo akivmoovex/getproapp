@@ -285,8 +285,8 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
     {
       pageKey: "about",
       spec: {
-        sectionKey: "gallery",
-        sectionType: "gallery",
+        sectionKey: "life_together",
+        sectionType: "life_together",
         heading: pack.about.lifeTogether.heading || "Life Together",
         bodyText: labeledBody(
           pack.about.lifeTogether.bodyText,

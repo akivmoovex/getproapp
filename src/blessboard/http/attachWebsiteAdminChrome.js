@@ -632,14 +632,26 @@ async function attachWebsiteAdminChrome(opts) {
             ["beliefs", "community", "mission", "vision", "story", "lifeTogether"].forEach((key) => {
               const block = model.aboutDemoFallback[key];
               if (!block || typeof block !== "object") return;
-              const sectionKey = key === "lifeTogether" ? "gallery" : key;
+              const sectionKey =
+                key === "lifeTogether"
+                  ? block.sectionKey === "gallery"
+                    ? "gallery"
+                    : "life_together"
+                  : key;
               const h = overlayMap.get(`${sectionKey}::heading`);
               const b = overlayMap.get(`${sectionKey}::bodyText`);
-              if (h !== undefined || b !== undefined) {
+              // Legacy Life Together key "gallery" plus canonical life_together.
+              const hLegacy =
+                key === "lifeTogether" ? overlayMap.get("gallery::heading") : undefined;
+              const bLegacy =
+                key === "lifeTogether" ? overlayMap.get("gallery::bodyText") : undefined;
+              const nextHeading = h !== undefined ? h : hLegacy !== undefined ? hLegacy : block.heading;
+              const nextBody = b !== undefined ? b : bLegacy !== undefined ? bLegacy : block.bodyText;
+              if (h !== undefined || b !== undefined || hLegacy !== undefined || bLegacy !== undefined) {
                 model.aboutDemoFallback[key] = {
                   ...block,
-                  heading: h !== undefined ? h : block.heading,
-                  bodyText: b !== undefined ? b : block.bodyText,
+                  heading: nextHeading,
+                  bodyText: nextBody,
                 };
               }
             });

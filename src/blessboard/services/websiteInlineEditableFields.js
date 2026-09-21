@@ -164,9 +164,16 @@ const EDITABLE_FIELDS = [
     ["heading", FIELD_TYPES.heading, 120],
     ["bodyText", FIELD_TYPES.paragraph, 2000],
   ]),
+  ...fieldsFor("about", "life_together", [
+    ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 2000],
+  ]),
+  // Legacy Life Together section key (pre life_together rename).
   ...fieldsFor("about", "gallery", [
     ["heading", FIELD_TYPES.heading, 120],
+    ["bodyText", FIELD_TYPES.paragraph, 2000],
   ]),
+  ...fieldsFor("about", "gallery_heading", [["heading", FIELD_TYPES.heading, 120]]),
   ...fieldsFor("about", "gallery_1", [["heading", FIELD_TYPES.label, 120]]),
   ...fieldsFor("about", "gallery_2", [["heading", FIELD_TYPES.label, 120]]),
   ...fieldsFor("about", "gallery_3", [["heading", FIELD_TYPES.label, 120]]),

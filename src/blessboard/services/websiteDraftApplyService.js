@@ -191,9 +191,32 @@ async function applyStructuredDraft(client, draft, ctx) {
 
   if (draft.draftKind === "image" || draft.draftKind === "video") {
     const pageKey = draft.pageKey || "home";
-    const sectionKey = draft.sectionKey || "hero";
+    let sectionKey = draft.sectionKey || "hero";
+    const {
+      isLifeTogetherSectionKey,
+      isAboutGallerySlotKey,
+      aboutGallerySlotIndex,
+      ABOUT_GALLERY_SLOT_COUNT,
+      LIFE_TOGETHER_SECTION_KEY,
+    } = require("../website/aboutSectionImageKeys");
+    // About Life Together must never target a gallery_* slot. Canonicalize legacy "gallery".
+    if (pageKey === "about" && isLifeTogetherSectionKey(sectionKey)) {
+      sectionKey = sectionKey === "gallery" ? "gallery" : LIFE_TOGETHER_SECTION_KEY;
+    }
+    if (pageKey === "about" && isAboutGallerySlotKey(sectionKey)) {
+      const idx = aboutGallerySlotIndex(sectionKey);
+      if (idx < 0 || idx >= ABOUT_GALLERY_SLOT_COUNT) {
+        throw mapError("INVALID_SECTION", "About gallery slots are limited to gallery_1..gallery_3.");
+      }
+    }
     const page = await ensurePage(client, { churchId, branchId, pageKey });
-    const section = await ensureSection(client, page, sectionKey, sectionKey);
+    const sectionType =
+      pageKey === "about" && isLifeTogetherSectionKey(sectionKey)
+        ? sectionKey === "gallery"
+          ? "gallery"
+          : "life_together"
+        : sectionKey;
+    const section = await ensureSection(client, page, sectionKey, sectionType);
     if (draft.op === "remove") {
       const updated = await contentRepo.updateSection(client, section.id, {
         mediaUrl: null,

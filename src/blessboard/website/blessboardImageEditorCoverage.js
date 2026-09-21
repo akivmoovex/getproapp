@@ -81,7 +81,7 @@ const COVERAGE = Object.freeze([
     surface: "About Life Together featured image",
     classification: C.EDITABLE,
     editor: "structured_image",
-    keys: ["about.gallery.mediaUrl"],
+    keys: ["about.life_together.mediaUrl", "about.gallery.mediaUrl"],
   },
   {
     id: "bb.about.visit_sunday.image",
@@ -92,10 +92,10 @@ const COVERAGE = Object.freeze([
   },
   {
     id: "bb.about.gallery",
-    surface: "About gallery grid images",
+    surface: "About gallery grid images (gallery_1..gallery_3 only)",
     classification: C.EDITABLE,
     editor: "structured_image",
-    keys: ["about.gallery_N.mediaUrl"],
+    keys: ["about.gallery_1.mediaUrl", "about.gallery_2.mediaUrl", "about.gallery_3.mediaUrl"],
   },
   {
     id: "bb.content_block.media",

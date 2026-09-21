@@ -453,22 +453,34 @@ function applyStructuredDraftsToModel(model, drafts) {
       };
     }
     if (model.pageKey === "about" && /^gallery_\d+$/.test(sectionKey) && mediaUrl && model.aboutDemoFallback) {
-      const idx = Number(String(sectionKey).replace("gallery_", "")) - 1;
-      if (idx >= 0) {
+      const {
+        aboutGallerySlotIndex,
+        ABOUT_GALLERY_SLOT_COUNT,
+      } = require("../website/aboutSectionImageKeys");
+      const idx = aboutGallerySlotIndex(sectionKey);
+      if (idx >= 0 && idx < ABOUT_GALLERY_SLOT_COUNT) {
         const gallery = Array.isArray(model.aboutDemoFallback.gallery)
-          ? model.aboutDemoFallback.gallery.slice()
+          ? model.aboutDemoFallback.gallery.slice(0, ABOUT_GALLERY_SLOT_COUNT)
           : [];
-        while (gallery.length <= idx) gallery.push("");
+        while (gallery.length < ABOUT_GALLERY_SLOT_COUNT) gallery.push("");
         gallery[idx] = mediaUrl;
-        model.aboutDemoFallback = { ...model.aboutDemoFallback, gallery };
+        model.aboutDemoFallback = {
+          ...model.aboutDemoFallback,
+          gallery: gallery.slice(0, ABOUT_GALLERY_SLOT_COUNT),
+        };
       }
     }
-    if (model.pageKey === "about" && sectionKey === "gallery" && mediaUrl && model.aboutDemoFallback) {
-      const life = model.aboutDemoFallback.lifeTogether || {};
-      model.aboutDemoFallback = {
-        ...model.aboutDemoFallback,
-        lifeTogether: { ...life, mediaUrl },
-      };
+    if (model.pageKey === "about" && mediaUrl && model.aboutDemoFallback) {
+      const {
+        isLifeTogetherSectionKey,
+      } = require("../website/aboutSectionImageKeys");
+      if (isLifeTogetherSectionKey(sectionKey)) {
+        const life = model.aboutDemoFallback.lifeTogether || {};
+        model.aboutDemoFallback = {
+          ...model.aboutDemoFallback,
+          lifeTogether: { ...life, sectionKey, mediaUrl },
+        };
+      }
     }
     if (model.pageKey === "about" && sectionKey === "visitor_cta" && mediaUrl && model.aboutDemoFallback) {
       model.aboutDemoFallback = {

@@ -14,9 +14,10 @@
     if (blob.indexOf('value') >= 0) return 'values';
     if (blob.indexOf('belief') >= 0 || blob.indexOf('foundation') >= 0) return 'beliefs';
     if (blob.indexOf('community') >= 0 || blob.indexOf('involvement') >= 0) return 'community';
-    // Exact gallery intro ("Life Together") vs gallery_N grid slots — keep independent.
-    if (key === 'gallery' || (type === 'gallery' && !/^gallery_\d+$/.test(key))) return 'lifeTogether';
-    if (/^gallery_\d+$/.test(key) || (blob.indexOf('gallery') >= 0 && type === 'image')) return 'gallery';
+    // Life Together uses life_together (canonical) or legacy exact "gallery" — never gallery_N.
+    if (key === 'life_together' || type === 'life_together') return 'lifeTogether';
+    if (key === 'gallery' && type !== 'image') return 'lifeTogether';
+    if (/^gallery_\d+$/.test(key)) return 'gallery';
     if (key === 'visitor_cta' || blob.indexOf('visit on') >= 0 || (type === 'cta' && blob.indexOf('visit') >= 0)) {
       return 'visitor';
     }
@@ -65,12 +66,13 @@
   var communitySection = null;
   var lifeTogetherSection = null;
   var visitorSection = null;
-  var galleryUrls = [];
+  var gallerySlotMap = {};
   var genericSections = [];
 
   rest.forEach(function (s) {
     if (!sectionHasContent(s)) return;
     var kind = classifyAboutSection(s);
+    var key = String(s.sectionKey || '').toLowerCase();
     if (kind === 'story') storySections.push(s);
     else if (kind === 'mission' && !missionSection) missionSection = s;
     else if (kind === 'vision' && !visionSection) visionSection = s;
@@ -79,9 +81,18 @@
     else if (kind === 'community' && !communitySection) communitySection = s;
     else if (kind === 'lifeTogether' && !lifeTogetherSection) lifeTogetherSection = s;
     else if (kind === 'visitor' && !visitorSection) visitorSection = s;
-    else if (kind === 'gallery' && s.mediaUrl) galleryUrls.push(s.mediaUrl);
-    else genericSections.push(s);
+    else if (kind === 'gallery' && s.mediaUrl && /^gallery_\d+$/.test(key)) {
+      gallerySlotMap[key] = s.mediaUrl;
+    } else if (kind === 'gallery') {
+      // Ignore non-slot "gallery" media — never append Life Together into the grid.
+    } else genericSections.push(s);
   });
+
+  var galleryUrls = [];
+  for (var gi = 1; gi <= 3; gi += 1) {
+    var slotKey = 'gallery_' + gi;
+    if (gallerySlotMap[slotKey]) galleryUrls.push(gallerySlotMap[slotKey]);
+  }
 
   if (!storySections.length && demoFb && demoFb.story && sectionHasContent(demoFb.story)) {
     storySections = [demoFb.story];
@@ -104,7 +115,9 @@
       layoutMetadata: { altText: 'Visit on Sunday' }
     };
   }
-  if (!galleryUrls.length && demoFb && demoFb.gallery) galleryUrls = demoFb.gallery.slice();
+  if (!galleryUrls.length && demoFb && demoFb.gallery) {
+    galleryUrls = demoFb.gallery.slice(0, 3);
+  }
 
   // Soft-fill missing images only — never overwrite church-customized mediaUrl.
   if (lifeTogetherSection && !lifeTogetherSection.mediaUrl && demoFb && demoFb.lifeTogether && demoFb.lifeTogether.mediaUrl) {
@@ -466,7 +479,8 @@
   <% } %>
 
   <% if ((lifeTogetherSection && sectionHasContent(lifeTogetherSection)) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode && lifeTogetherSection)) { %>
-  <section class="bb-tp-container bb-tp-about-life-together bb-tp-content-block<%= (lifeTogetherSection && lifeTogetherSection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>" data-bb-about-life-together="1" data-section="gallery" aria-labelledby="bb-tp-about-life-together-heading">
+  <% var _lifeSectionKey = (lifeTogetherSection && lifeTogetherSection.sectionKey) || 'life_together'; %>
+  <section class="bb-tp-container bb-tp-about-life-together bb-tp-content-block<%= (lifeTogetherSection && lifeTogetherSection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>" data-bb-about-life-together="1" data-section="<%= _lifeSectionKey %>" aria-labelledby="bb-tp-about-life-together-heading">
     <% if ((lifeTogetherSection && lifeTogetherSection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
     <div class="bb-tp-content-block__media">
       <% if (lifeTogetherSection && lifeTogetherSection.mediaUrl) { %>
@@ -486,7 +500,7 @@
         <%- include('../partials/structured-edit-trigger', {
           editKind: 'image',
           editEntityKey: 'about-life-together',
-          editSectionKey: 'gallery',
+          editSectionKey: _lifeSectionKey,
           editLabel: 'Edit Life Together image',
           editPayload: {
             imageUrl: (lifeTogetherSection && lifeTogetherSection.mediaUrl) || '',
@@ -501,7 +515,7 @@
     <div class="bb-tp-content-block__copy">
       <%- include('../partials/editable-text', {
         editPageKey: 'about',
-        editSectionKey: 'gallery',
+        editSectionKey: _lifeSectionKey,
         editFieldKey: 'heading',
         editValue: (lifeTogetherSection && lifeTogetherSection.heading) || 'Life Together',
         editTag: 'h2',
@@ -513,7 +527,7 @@
       }) %>
       <%- include('../partials/editable-text', {
         editPageKey: 'about',
-        editSectionKey: 'gallery',
+        editSectionKey: _lifeSectionKey,
         editFieldKey: 'bodyText',
         editValue: (lifeTogetherSection && lifeTogetherSection.bodyText) || '',
         editTag: 'p',

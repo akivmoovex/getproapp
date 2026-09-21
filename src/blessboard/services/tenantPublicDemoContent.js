@@ -268,8 +268,8 @@ function buildPublicDemoPack(opts) {
       mediaUrl: null,
     }),
     lifeTogether: Object.freeze({
-      sectionKey: "gallery",
-      sectionType: "gallery",
+      sectionKey: "life_together",
+      sectionType: "life_together",
       heading: "Life Together",
       bodyText: `Sundays and midweek gatherings at ${N} are where friendships form, children are known by name, and faith becomes a shared practice — not a private habit. Come early, stay after, and let the room become familiar.`,
       mediaUrl: MEDIA.aboutLifeTogether,

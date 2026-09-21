@@ -31,9 +31,9 @@ describe("v2 BlessBoard About default Life Together and Visit images", () => {
     assert.match(map, /about\/about-branch-building\.jpg/);
   });
 
-  it("new-church seed writes independent mediaUrl for gallery and visitor_cta", () => {
+  it("new-church seed writes independent mediaUrl for life_together and visitor_cta", () => {
     const seed = read("src/blessboard/services/seedTenantWebsiteTemplateContent.js");
-    assert.match(seed, /sectionKey:\s*"gallery"/);
+    assert.match(seed, /sectionKey:\s*"life_together"/);
     assert.match(seed, /mediaUrl:\s*pack\.about\.lifeTogether\.mediaUrl/);
     assert.match(seed, /sectionKey:\s*"visitor_cta"/);
     assert.match(seed, /mediaUrl:\s*pack\.about\.visitorCtaMediaUrl/);
@@ -81,8 +81,8 @@ describe("v2 BlessBoard About default Life Together and Visit images", () => {
             mediaUrl: "/media/demo/hero.jpg",
           },
           {
-            sectionKey: "gallery",
-            sectionType: "gallery",
+            sectionKey: "life_together",
+            sectionType: "life_together",
             heading: "Life Together",
             bodyText: "Fellowship copy",
             mediaUrl: "/media/demo/life-together.jpg",
@@ -150,8 +150,8 @@ describe("v2 BlessBoard About default Life Together and Visit images", () => {
             bodyText: "Hello",
           },
           {
-            sectionKey: "gallery",
-            sectionType: "gallery",
+            sectionKey: "life_together",
+            sectionType: "life_together",
             heading: "Life Together",
             bodyText: "Custom fellowship",
             mediaUrl: "/media/custom/life.jpg",
