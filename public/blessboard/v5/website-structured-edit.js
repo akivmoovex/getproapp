@@ -823,7 +823,19 @@
           );
           return;
         }
-        var path = result.data.deliveryPath || "";
+        var media = result.data.media || result.data.asset || {};
+        var path =
+          result.data.deliveryPath ||
+          media.publicSrc ||
+          media.deliveryPath ||
+          media.previewUrl ||
+          media.src ||
+          "";
+        if (!path) {
+          progress.textContent = "Upload failed — previous image kept.";
+          setStatus("Upload succeeded but no image URL was returned. Previous image kept.", "error");
+          return;
+        }
         applySelectedMedia(path, pendingUploadTarget);
         progress.textContent = "Upload complete — save draft to keep it.";
         setStatus("Upload ready — save draft to keep it.", "ok");
@@ -860,8 +872,16 @@
           setStatus("Could not load media library.", "error");
           return;
         }
-        var assets = (result.data.assets || []).filter(function (a) {
-          return a && String(a.mimeType || "").indexOf("image/") === 0 && a.deliveryPath;
+        var rawItems = result.data.assets || result.data.media || [];
+        var assets = rawItems.filter(function (a) {
+          if (!a) return false;
+          var mime = String(a.mimeType || a.mediaKind || a.kind || "");
+          var src = a.deliveryPath || a.publicSrc || a.previewUrl || a.src || "";
+          if (!src) return false;
+          if (mime && mime.indexOf("image/") !== 0 && mime !== "image" && mime !== "IMAGE") {
+            return false;
+          }
+          return true;
         });
         if (!assets.length) {
           panel.innerHTML =
@@ -872,15 +892,16 @@
           '<p class="bb-tp-se-hint">Choose from your media library</p><div class="bb-tp-se-demos bb-tp-se-library-grid">' +
           assets
             .map(function (a) {
+              var src = a.deliveryPath || a.publicSrc || a.previewUrl || a.src || "";
               return (
                 '<button type="button" class="bb-tp-se-demo" data-bb-demo-url="' +
-                esc(a.deliveryPath) +
+                esc(src) +
                 '" data-bb-demo-target="' +
                 esc(pendingUploadTarget || "imageUrl") +
                 '"><img src="' +
-                esc(a.deliveryPath) +
+                esc(src) +
                 '" alt="" width="72" height="54" loading="lazy" /><span>' +
-                esc(a.originalFilename || "Image") +
+                esc(a.originalFilename || a.title || "Image") +
                 "</span></button>"
               );
             })

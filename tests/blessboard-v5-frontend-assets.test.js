@@ -17,7 +17,7 @@ const VERSIONS = {
   apex: "25",
   apexAuthShell: "6",
   apexAuthLogin: "8",
-  tenantPublic: "63",
+  tenantPublic: "67",
   tenantAuthLogin: "16",
   tenantAuthOther: "15",
   memberPortal: "22",

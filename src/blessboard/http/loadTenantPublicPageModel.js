@@ -2025,7 +2025,7 @@ async function loadTenantPublicPageModel(db, input) {
     apexHref: "https://blessboard.org/",
     visitHref,
     giveHref,
-    cssHref: "/blessboard/v5/tenant-public.css?v=63",
+    cssHref: "/blessboard/v5/tenant-public.css?v=67",
     pathPrefix: navPathPrefix,
     homeHref: navPathPrefix || "/",
     churchHomeHref,

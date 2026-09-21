@@ -34,7 +34,7 @@
   <% if (leader && leader.templateExample) { %> data-bb-template-example="leader"<% } %>
   <% if (_canEdit) { %> data-bb-leader-card="1" data-bb-leader-id="<%= _leaderKey %>"<% } %>
 >
-  <div class="bb-tp-leader-card__media<%= _img ? ' has-media' : ' is-fallback' %>">
+  <div class="bb-tp-leader-card__media<%= _img ? ' has-media' : ' is-fallback' %><%= _canEdit ? ' bb-tp-edit-media-wrap' : '' %>">
     <% if (_img) { %>
     <img
       src="<%= _img %>"
@@ -43,11 +43,31 @@
       height="<%= _featured ? 600 : 400 %>"
       loading="<%= _featured ? 'eager' : 'lazy' %>"
       decoding="async"
+      data-bb-leader-image="1"
     />
     <% } else { %>
     <div class="bb-tp-avatar<%= _featured ? ' bb-tp-avatar--xl' : '' %>" role="img" aria-label="<%= leader.displayName %>">
       <%= initials(leader.displayName) %>
     </div>
+    <% } %>
+    <% if (_canEdit) { %>
+    <%- include('../../partials/entity-image-edit-trigger', {
+      editKind: 'leader',
+      editEntityKey: _leaderKey,
+      editPayload: {
+        displayName: _nameClean,
+        roleTitle: _roleClean,
+        biography: _bioClean,
+        imageUrl: leader.imageUrl || '',
+        sortOrder: leader.sortOrder != null ? leader.sortOrder : 10,
+        seniorLeader: Boolean(_featured || leader.seniorLeader),
+        visible: leader.visible !== false,
+        contactPublic: Boolean(leader.contactPublic),
+        email: leader.email || '',
+        phone: leader.phone || '',
+        socialUrl: leader.socialUrl || ''
+      }
+    }) %>
     <% } %>
   </div>
   <div class="bb-tp-leader-card__body">
