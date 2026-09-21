@@ -12,7 +12,8 @@ Do **not** implement items marked **OPEN — NOT IMPLEMENTED** until explicitly 
 
 | ID | Title | Product | Status | Priority |
 |----|-------|---------|--------|----------|
-| **V2-BB-18** | About page — Our Values save error (`unknown_content_key`) | BlessBoard | **OPEN — NOT IMPLEMENTED** | P1 |
+| **V2-BB-18** | About page — Our Values save error (`unknown_content_key`) | BlessBoard | **FIXED (regression covered by Bug 20)** | P1 |
+| **V2-BB-20** | Contact page — opening hours not editable | BlessBoard | **IN PROGRESS** | P1 |
 
 ---
 
@@ -89,6 +90,42 @@ The website administrator cannot save an edit to the **Our Values** text.
 | Date | Status | Note |
 |------|--------|------|
 | 2026-09-21 | **OPEN — NOT IMPLEMENTED** | Documented from V2.0 Bug 18 backlog request. No application, schema, deploy, or production changes. |
+| 2026-09-21 | **FIXED (regression covered by Bug 20)** | Aggregate `about.values` sections no longer emit unregistered `bodyText` editors; only allowlisted `value_*` cards are editable. Tests: `tests/v2-bb-contact-hours-edit.test.js`. |
+
+---
+
+## V2-BB-20 — Contact page opening hours not editable
+
+| Field | Value |
+|-------|--------|
+| **Bug ID** | V2-BB-20 |
+| **Title** | BlessBoard Contact — opening hours text cannot be edited |
+| **Product** | BlessBoard |
+| **Priority** | P1 |
+| **Page** | Church mini-website → Contact |
+| **Section** | Office Hours / opening hours body |
+| **Environment** | Neuniversity V2.0 testing |
+| **Status** | **IN PROGRESS** |
+| **Added** | 2026-09-21 |
+
+### Root cause (summary)
+
+1. Contact hours block lacked `data-section="office_hours"`, so section-actions could not bind when a CMS `office_hours` section existed.
+2. Soft-fill opening-hours body was suppressed when an empty/stub `office_hours` section existed (`!officeHoursSection` gate).
+3. Related Bug 18: About “Our Values” cards could emit `about.values.bodyText` (unregistered) → `unknown_content_key`.
+
+### Field mapping
+
+| Public text | Content key | Storage |
+|-------------|-------------|---------|
+| Office Hours heading | `contact.office_hours.heading` | page section `office_hours.heading` / soft-fill |
+| Opening hours body | `contact.office_hours.bodyText` (`body_text` in schema) | page section `office_hours.bodyText` / soft-fill |
+
+### Status history
+
+| Date | Status | Note |
+|------|--------|------|
+| 2026-09-21 | **IN PROGRESS** | Implementation + hosted verification in Bug 20 wave. |
 
 ---
 
@@ -97,3 +134,4 @@ The website administrator cannot save an edit to the **Our Values** text.
 | Date | Change |
 |------|--------|
 | 2026-09-21 | Created file; added **V2-BB-18** About page Our Values save error (`unknown_content_key`). |
+| 2026-09-21 | Added **V2-BB-20** Contact opening hours; marked Bug 18 fixed via Bug 20 regression coverage. |

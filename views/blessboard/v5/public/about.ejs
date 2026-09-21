@@ -62,6 +62,7 @@
   var missionSection = null;
   var visionSection = null;
   var valueSections = [];
+  var valuesHeadingFromCms = null;
   var beliefsSection = null;
   var communitySection = null;
   var lifeTogetherSection = null;
@@ -76,7 +77,15 @@
     if (kind === 'story') storySections.push(s);
     else if (kind === 'mission' && !missionSection) missionSection = s;
     else if (kind === 'vision' && !visionSection) visionSection = s;
-    else if (kind === 'values') valueSections.push(s);
+    else if (kind === 'values') {
+      // Aggregate "values" section is the group heading only — not a value card.
+      // Emitting about.values.bodyText here caused Bug 18 (unknown_content_key).
+      if (key === 'values') {
+        if (!valuesHeadingFromCms) valuesHeadingFromCms = s;
+      } else {
+        valueSections.push(s);
+      }
+    }
     else if (kind === 'beliefs' && !beliefsSection) beliefsSection = s;
     else if (kind === 'community' && !communitySection) communitySection = s;
     else if (kind === 'lifeTogether' && !lifeTogetherSection) lifeTogetherSection = s;
@@ -306,7 +315,7 @@
         editPageKey: 'about',
         editSectionKey: 'values',
         editFieldKey: 'heading',
-        editValue: (demoFb && demoFb.valuesHeading) || 'Core Values',
+        editValue: (valuesHeadingFromCms && valuesHeadingFromCms.heading) || (demoFb && demoFb.valuesHeading) || 'Core Values',
         editTag: 'h2',
         editClass: 'bb-tp-section-title bb-tp-about-values__heading',
         editType: 'heading',
@@ -317,9 +326,14 @@
         <% valueSections.forEach(function (section, idx) { %>
         <% if (!sectionHasContent(section) && !(typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) return; %>
         <% var valueKey = section.sectionKey || ('value_' + idx); %>
+        <%
+          // Only emit editors for allowlisted value_* keys (Bug 18 regression).
+          var valueKeyOk = /^(value_presence|value_integrity|value_compassion|value_discipleship)$/.test(String(valueKey));
+        %>
         <li class="bb-tp-about-values__item" data-section="<%= valueKey %>">
           <span class="bb-tp-about-values__icon material-symbols-outlined" aria-hidden="true"><%= VALUE_ICONS[idx % VALUE_ICONS.length] %></span>
           <div>
+            <% if (valueKeyOk) { %>
             <%- include('../partials/editable-text', {
               editPageKey: 'about',
               editSectionKey: valueKey,
@@ -342,6 +356,10 @@
               editMaxLength: 1000,
               editMultiline: true
             }) %>
+            <% } else { %>
+            <h3 class="bb-tp-about-values__title"><%= section.heading || '' %></h3>
+            <% if (section.bodyText) { %><p class="bb-tp-body"><%= section.bodyText %></p><% } %>
+            <% } %>
           </div>
         </li>
         <% }) %>

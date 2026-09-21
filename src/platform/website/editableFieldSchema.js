@@ -291,6 +291,18 @@ function resolveEditableField(input) {
         return { ok: false, code: "invalid_content_key" };
       }
       field = BY_KEY.get(productIndexKey(productCode, keyNorm.key)) || null;
+      if (!field) {
+        // Accept camelCase field segments from the DOM (bodyText → body_text).
+        const rawParts = String(rawKey).trim().split(".");
+        if (rawParts.length >= 3) {
+          const snakeKey = `${rawParts[0]}.${rawParts[1]}.${camelToSnake(rawParts.slice(2).join("."))}`
+            .trim()
+            .toLowerCase();
+          if (snakeKey !== keyNorm.key) {
+            field = BY_KEY.get(productIndexKey(productCode, snakeKey)) || null;
+          }
+        }
+      }
       if (!field && productCode === PRODUCT_CODE.ACTIVECLINIC) {
         const {
           cmsSectionEditableField,
@@ -363,7 +375,19 @@ function listEditableFields(productCode) {
 }
 
 function hasEditableField(productCode, key) {
-  return BY_KEY.has(productIndexKey(productCode, key));
+  const raw = String(key || "").trim();
+  if (!raw) return false;
+  if (BY_KEY.has(productIndexKey(productCode, raw))) return true;
+  // DOM/editors may emit camelCase field segments (bodyText) while the schema
+  // stores snake_case (body_text). Accept both without widening the allowlist.
+  const parts = raw.split(".");
+  if (parts.length >= 3) {
+    const normalized = `${parts[0]}.${parts[1]}.${camelToSnake(parts.slice(2).join("."))}`;
+    if (normalized !== raw && BY_KEY.has(productIndexKey(productCode, normalized))) {
+      return true;
+    }
+  }
+  return false;
 }
 
 function ensureProductFieldsRegistered(productCode) {

@@ -46,7 +46,7 @@
     'Office Hours';
   var officeHoursBody =
     (officeHoursSection && officeHoursSection.bodyText) ||
-    (demoFb && !officeHoursSection ? demoFb.officeHoursBody : null) ||
+    (demoFb && demoFb.officeHoursBody) ||
     null;
 
   function formatTimeLabel(hhmm) {
@@ -354,7 +354,12 @@
     <% } %>
 
     <% if ((officeHoursHeading && officeHoursBody) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
-    <section class="bb-tp-contact-hours" data-bb-contact-hours="1" aria-labelledby="bb-tp-contact-hours-heading">
+    <section
+      class="bb-tp-contact-hours"
+      data-bb-contact-hours="1"
+      data-section="<%= (officeHoursSection && officeHoursSection.sectionKey) || 'office_hours' %>"
+      aria-labelledby="bb-tp-contact-hours-heading"
+    >
       <%- include('../partials/editable-text', {
         editPageKey: 'contact',
         editSectionKey: 'office_hours',
@@ -365,7 +370,8 @@
         editType: 'heading',
         editId: 'bb-tp-contact-hours-heading',
         editMaxLength: 120,
-        editMultiline: false
+        editMultiline: false,
+        editLabel: 'Edit office hours heading'
       }) %>
       <%- include('../partials/editable-text', {
         editPageKey: 'contact',
@@ -376,7 +382,9 @@
         editClass: 'bb-tp-body',
         editType: 'paragraph',
         editMaxLength: 500,
-        editMultiline: true
+        editMultiline: true,
+        editLabel: 'Edit opening hours',
+        editGuidance: 'Days and opening hours (for example: Monday – Thursday · 9:00 AM – 4:00 PM)'
       }) %>
     </section>
     <% } %>
