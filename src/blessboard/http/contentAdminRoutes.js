@@ -600,6 +600,10 @@ function createContentAdminRouter(deps) {
    * @param {object} [extra]
    */
   async function shellLocals(req, res, extra) {
+    const withMedia = {
+      websiteMediaListUrl: websiteMediaListUrlForReq(req),
+      ...(extra || {}),
+    };
     if (variant === "hq") {
       return buildHqAdminShellLocals(req, res, {
         env,
@@ -610,7 +614,7 @@ function createContentAdminRouter(deps) {
         extra: {
           shellKind: "hq",
           formClass,
-          ...(extra || {}),
+          ...withMedia,
         },
       });
     }
@@ -623,7 +627,7 @@ function createContentAdminRouter(deps) {
       extra: {
         shellKind: "branch",
         formClass,
-        ...(extra || {}),
+        ...withMedia,
       },
     });
   }

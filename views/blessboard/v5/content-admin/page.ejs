@@ -1,7 +1,10 @@
+<%
+  var _pageSharedMedia = typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl;
+%>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-start', { loadMediaPicker: true }) %>
+<%- include('../partials/hq-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_pageSharedMedia) }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true }) %>
+<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_pageSharedMedia) }) %>
 <% } %>
 <%
   var pageStatus = submitted && submitted.status ? submitted.status : page.status;
@@ -480,22 +483,37 @@
         <textarea id="body_text" name="body_text" rows="4" maxlength="20000"><%= draft && draft.body_text ? draft.body_text : '' %></textarea>
       </div>
       <div class="bb-ba-field">
-        <label for="media_url">Media URL (HTTPS)</label>
-        <input
-          id="media_url"
-          name="media_url"
-          type="url"
-          maxlength="2000"
-          value="<%= draft && draft.media_url ? draft.media_url : '' %>"
-          placeholder="https://"
-          autocomplete="off"
-        />
+        <label>Section image</label>
+        <p class="bb-ba-field__hint">
+          Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+        </p>
+        <% var _pageMediaSrc = draft && draft.media_url ? draft.media_url : ''; %>
+        <% var _pageMediaList = typeof websiteMediaListUrl !== 'undefined' ? String(websiteMediaListUrl || '') : ''; %>
+        <% if (_pageMediaList) { %>
+        <%- include('../../../platform/website/partials/media-field', {
+          mediaField: {
+            idName: 'media_media_id',
+            srcName: 'media_url',
+            altName: 'media_alt_draft',
+            altLabel: 'Image description',
+            mediaId: '',
+            src: _pageMediaSrc,
+            alt: '',
+            emptyText: 'No image selected — upload from computer or choose from the Content Library.'
+          },
+          mediaListUrl: _pageMediaList
+        }) %>
+        <% } else { %>
+        <input id="media_url" name="media_url" type="hidden" value="<%= _pageMediaSrc %>" />
         <%- include('media-upload', {
               uploadUrl: scope.basePath + '/media/upload',
               targetInputId: 'media_url',
               csrfToken: csrfToken,
-              visibility: 'public'
+              visibility: 'public',
+              currentSrc: _pageMediaSrc,
+              srcName: 'media_url'
             }) %>
+        <% } %>
       </div>
       <div class="bb-ba-page-editor__grid">
         <div class="bb-ba-field">
@@ -594,8 +612,11 @@
 })();
 </script>
 
+<% if (_pageSharedMedia) { %>
+<%- include('../../../platform/website/partials/media-picker-dialog', { mediaListUrl: websiteMediaListUrl }) %>
+<% } %>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-end', { loadMediaPicker: true }) %>
+<%- include('../partials/hq-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_pageSharedMedia) }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true }) %>
+<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_pageSharedMedia) }) %>
 <% } %>

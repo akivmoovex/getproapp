@@ -69,16 +69,27 @@
   </section>
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-ministries-section="media">
     <h3 id="<%= mode %>_media_heading" class="bb-ba-entities-form__section-title">Media</h3>
-    <div class="bb-ba-field">
+    <div class="bb-ba-field" data-bb-entity-photo="ministry">
       <label>Ministry image</label>
-      <input id="<%= mode %>_image_url" name="image_url" type="hidden" value="<%= val('image_url', 'imageUrl', '') %>" />
-      <% if (val('image_url', 'imageUrl', '')) { %>
-      <p class="bb-ba-field__preview"><img src="<%= val('image_url', 'imageUrl', '') %>" alt="" width="240" height="150" loading="lazy" /></p>
-      <% } else { %>
-      <p class="bb-ba-field__hint">No image yet — choose or upload below.</p>
-      <% } %>
+      <p class="bb-ba-field__hint">
+        Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+      </p>
+      <% var _ministryImg = val('image_url', 'imageUrl', ''); %>
+      <% var _entityMediaListUrl = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) ? String(websiteMediaListUrl) : ''; %>
+      <%- include('../../../platform/website/partials/media-field', {
+        mediaField: {
+          idName: mode + '_image_media_id',
+          srcName: 'image_url',
+          altName: mode + '_image_alt',
+          altLabel: 'Image description',
+          mediaId: '',
+          src: _ministryImg,
+          alt: '',
+          emptyText: 'No image yet — upload from computer or choose from the Content Library.'
+        },
+        mediaListUrl: _entityMediaListUrl
+      }) %>
     </div>
-    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
   </section>
 <% } %>
 
@@ -133,16 +144,27 @@
   </section>
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-events-section="media">
     <h3 id="<%= mode %>_media_heading" class="bb-ba-entities-form__section-title">Media</h3>
-    <div class="bb-ba-field">
+    <div class="bb-ba-field" data-bb-entity-photo="event">
       <label>Event image</label>
-      <input id="<%= mode %>_image_url" name="image_url" type="hidden" value="<%= val('image_url', 'imageUrl', '') %>" />
-      <% if (val('image_url', 'imageUrl', '')) { %>
-      <p class="bb-ba-field__preview"><img src="<%= val('image_url', 'imageUrl', '') %>" alt="" width="240" height="150" loading="lazy" /></p>
-      <% } else { %>
-      <p class="bb-ba-field__hint">No image yet — choose or upload below.</p>
-      <% } %>
+      <p class="bb-ba-field__hint">
+        Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+      </p>
+      <% var _eventImg = val('image_url', 'imageUrl', ''); %>
+      <% var _eventMediaListUrl = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) ? String(websiteMediaListUrl) : ''; %>
+      <%- include('../../../platform/website/partials/media-field', {
+        mediaField: {
+          idName: mode + '_image_media_id',
+          srcName: 'image_url',
+          altName: mode + '_image_alt',
+          altLabel: 'Image description',
+          mediaId: '',
+          src: _eventImg,
+          alt: '',
+          emptyText: 'No image yet — upload from computer or choose from the Content Library.'
+        },
+        mediaListUrl: _eventMediaListUrl
+      }) %>
     </div>
-    <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
   </section>
 <% } %>
 
@@ -248,16 +270,27 @@
     <label for="<%= mode %>_button_label">Button label</label>
     <input id="<%= mode %>_button_label" name="button_label" type="text" maxlength="48" value="<%= val('button_label', 'buttonLabel', '') %>" autocomplete="off" />
   </div>
-  <div class="bb-ba-field">
+  <div class="bb-ba-field" data-bb-entity-photo="giving-qr">
     <label>QR image</label>
-    <input id="<%= mode %>_qr_image_url" name="qr_image_url" type="hidden" value="<%= val('qr_image_url', 'qrImageUrl', '') %>" />
-    <% if (val('qr_image_url', 'qrImageUrl', '')) { %>
-    <p class="bb-ba-field__preview"><img src="<%= val('qr_image_url', 'qrImageUrl', '') %>" alt="" width="160" height="160" loading="lazy" /></p>
-    <% } else { %>
-    <p class="bb-ba-field__hint">No QR image yet — choose or upload below.</p>
-    <% } %>
+    <p class="bb-ba-field__hint">
+      Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+    </p>
+    <% var _qrImg = val('qr_image_url', 'qrImageUrl', ''); %>
+    <% var _qrMediaListUrl = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) ? String(websiteMediaListUrl) : ''; %>
+    <%- include('../../../platform/website/partials/media-field', {
+      mediaField: {
+        idName: mode + '_qr_media_id',
+        srcName: 'qr_image_url',
+        altName: mode + '_qr_alt',
+        altLabel: 'QR description',
+        mediaId: '',
+        src: _qrImg,
+        alt: '',
+        emptyText: 'No QR image yet — upload from computer or choose from the Content Library.'
+      },
+      mediaListUrl: _qrMediaListUrl
+    }) %>
   </div>
-  <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_qr_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
 <% } %>
 
 <div class="bb-ba-entities-form__section" <% if (entityKind === 'ministries') { %>data-bb-ministries-section="publication"<% } else if (entityKind === 'events') { %>data-bb-events-section="publication"<% } else if (entityKind === 'sermons') { %>data-bb-sermons-section="publication"<% } %>>

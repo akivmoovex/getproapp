@@ -1,10 +1,14 @@
 <%
-  var _useSharedLeaderMedia = entityKind === 'leadership';
+  var _useSharedWebsiteMedia =
+    entityKind === 'leadership' ||
+    entityKind === 'ministries' ||
+    entityKind === 'events' ||
+    entityKind === 'giving';
 %>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedLeaderMedia }) %>
+<%- include('../partials/hq-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedWebsiteMedia }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedLeaderMedia }) %>
+<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedWebsiteMedia }) %>
 <% } %>
 <%
   var allItems = items || [];
@@ -806,11 +810,11 @@
 </script>
 <% } %>
 
-<% if (_useSharedLeaderMedia && typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) { %>
+<% if (_useSharedWebsiteMedia && typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) { %>
 <%- include('../../../platform/website/partials/media-picker-dialog', { mediaListUrl: websiteMediaListUrl }) %>
 <% } %>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedLeaderMedia }) %>
+<%- include('../partials/hq-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedWebsiteMedia }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedLeaderMedia }) %>
+<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedWebsiteMedia }) %>
 <% } %>

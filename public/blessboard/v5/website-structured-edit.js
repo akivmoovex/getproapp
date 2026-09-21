@@ -148,6 +148,7 @@
   }
 
   function buildImageForm(p) {
+    var fieldName = p.fieldName || "imageUrl";
     var hasImage = Boolean(p.imageUrl);
     var replaceLabel = hasImage ? "Replace image" : "Upload from computer";
     var demos = demoImages()
@@ -155,6 +156,8 @@
         return (
           '<button type="button" class="bb-tp-se-demo" data-bb-demo-url="' +
           esc(d.url) +
+          '" data-bb-demo-target="' +
+          esc(fieldName) +
           '"><img src="' +
           esc(d.url) +
           '" alt="" width="72" height="54" loading="lazy" /><span>' +
@@ -172,7 +175,9 @@
       '<div class="bb-tp-se-preview bb-tp-se-preview--mobile"><img data-bb-se-preview-mobile="1" src="' +
       esc(p.imageUrl || "") +
       '" alt="" /></div></div>' +
-      '<input type="hidden" name="imageUrl" value="' +
+      '<input type="hidden" name="' +
+      esc(fieldName) +
+      '" value="' +
       esc(p.imageUrl || "") +
       '" data-bb-se-image-url="1" />' +
       field("Alternative text", "altText", p.altText || "") +
@@ -189,9 +194,15 @@
       '<div class="bb-tp-se-actions-row">' +
       '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">' +
       esc(replaceLabel) +
-      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" hidden /></label>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1">Choose from Content Library</button>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-remove-media="1">Remove image</button>' +
+      '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" data-bb-se-upload-target="' +
+      esc(fieldName) +
+      '" hidden /></label>' +
+      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="' +
+      esc(fieldName) +
+      '">Choose from Content Library</button>' +
+      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-remove-media="1" data-bb-se-remove-target="' +
+      esc(fieldName) +
+      '">Remove image</button>' +
       "</div>" +
       '<div class="bb-tp-se-library" data-bb-se-library-panel="1" hidden></div>' +
       (demos
@@ -426,12 +437,12 @@
       field("Instructions", "instructions", p.instructions || "", { type: "textarea", rows: 3 }) +
       field("External payment URL", "externalUrl", p.externalUrl || "", { type: "url" }) +
       field("Button label", "buttonLabel", p.buttonLabel || "Open published link") +
-      field("QR image URL (optional)", "qrImageUrl", p.qrImageUrl || "") +
-      '<div class="bb-tp-se-actions-row">' +
-      '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">Upload QR image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" data-bb-se-upload-target="qrImageUrl" hidden /></label>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="qrImageUrl">Choose from Content Library</button>' +
-      "</div>" +
-      '<p class="bb-tp-se-hint">Use an uploaded media path, demo image path, or https image URL for QR.</p>' +
+      buildImageForm({
+        imageUrl: p.qrImageUrl || "",
+        altText: (p.label || "Giving") + " QR code",
+        fieldName: "qrImageUrl",
+        focal: "center",
+      }) +
       field("Visible on website", "visible", p.visible !== false, { type: "checkbox" }) +
       field("Display order", "sortOrder", p.sortOrder != null ? p.sortOrder : 10, { type: "number" })
     );
@@ -747,7 +758,7 @@
     var name = fieldName || "imageUrl";
     var input = host.querySelector('[name="' + name + '"]') || host.querySelector('[name="imageUrl"]');
     if (input) input.value = url;
-    if (name === "imageUrl" || name === "thumbnailUrl") {
+    if (name === "imageUrl" || name === "thumbnailUrl" || name === "qrImageUrl") {
       host.querySelectorAll("[data-bb-se-preview], [data-bb-se-preview-mobile]").forEach(function (img) {
         img.src = url;
       });
@@ -979,7 +990,13 @@
     }
     if (event.target.closest("[data-bb-se-remove-media='1']")) {
       event.preventDefault();
-      ["imageUrl", "videoUrl", "thumbnailUrl"].forEach(function (n) {
+      var removeBtn = event.target.closest("[data-bb-se-remove-media='1']");
+      var removeTarget =
+        (removeBtn && removeBtn.getAttribute("data-bb-se-remove-target")) || "";
+      var clearNames = removeTarget
+        ? [removeTarget]
+        : ["imageUrl", "videoUrl", "thumbnailUrl", "qrImageUrl"];
+      clearNames.forEach(function (n) {
         var el = host.querySelector('[name="' + n + '"]');
         if (el) el.value = "";
       });

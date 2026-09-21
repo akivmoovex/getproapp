@@ -117,27 +117,31 @@ describe("v7 image editor coverage — editor wiring contract", () => {
 
   it("BlessBoard structured image editor uses media picker without raw URL text field", () => {
     const js = read("public/blessboard/v5/website-structured-edit.js");
-    assert.match(js, /type="hidden" name="imageUrl"/);
+    assert.match(js, /type="hidden" name="/);
+    assert.match(js, /data-bb-se-image-url="1"/);
     assert.match(js, /Upload from computer|Replace image/);
     assert.match(js, /Choose from Content Library|data-bb-se-library="1"/);
     assert.match(js, /data-bb-se-remove-media="1"/);
     assert.doesNotMatch(js, /Image URL or media path/);
+    assert.doesNotMatch(js, /QR image URL \(optional\)/);
   });
 
-  it("BlessBoard branch settings IMAGE_URL fields use shared media picker", () => {
+  it("BlessBoard branch settings IMAGE_URL fields use shared media field", () => {
     const ejs = read("views/blessboard/v5/hq/branch-website-settings.ejs");
     assert.match(ejs, /field\.type === 'image_url'/);
-    assert.match(ejs, /media-upload/);
-    assert.match(ejs, /type="hidden"/);
-    assert.doesNotMatch(ejs, /image_url \? 'url'/);
+    assert.match(ejs, /platform\/website\/partials\/media-field/);
+    assert.match(ejs, /Upload from computer/);
+    assert.doesNotMatch(ejs, /content-admin\/media-upload/);
   });
 
-  it("BlessBoard content-admin entity images hide raw URL text boxes", () => {
+  it("BlessBoard content-admin entity images use shared media field without raw URL boxes", () => {
     const ejs = read("views/blessboard/v5/content-admin/entity-fields.ejs");
     assert.doesNotMatch(ejs, /Image URL \(HTTPS or uploaded\)/);
     assert.doesNotMatch(ejs, /QR image URL/);
-    assert.match(ejs, /media-upload/);
-    assert.match(ejs, /name="image_url" type="hidden"/);
+    assert.match(ejs, /platform\/website\/partials\/media-field/);
+    assert.match(ejs, /Upload from computer/);
+    assert.match(ejs, /srcName:\s*'image_url'/);
+    assert.match(ejs, /srcName:\s*'qr_image_url'/);
   });
 
   it("BlessBoard content blocks expose structured image edit triggers", () => {
@@ -170,6 +174,25 @@ describe("v7 image editor coverage — editor wiring contract", () => {
     assert.match(home, /data-bb-event-image="1"/);
     assert.match(events, /entity-image-edit-trigger/);
     assert.match(events, /data-bb-event-image="1"/);
+  });
+
+  it("BlessBoard home and sermons pages expose Edit image on sermon thumbnails", () => {
+    const home = read("views/blessboard/v5/public/home.ejs");
+    const sermons = read("views/blessboard/v5/public/sermons.ejs");
+    assert.match(home, /data-bb-home-sermons="1"/);
+    assert.match(home, /editKind:\s*'sermon'/);
+    assert.match(home, /entity-image-edit-trigger/);
+    assert.match(sermons, /entity-image-edit-trigger/);
+    assert.match(sermons, /data-bb-sermon-image="1"/);
+  });
+
+  it("BlessBoard giving QR uses shared Upload from computer controls without raw URL", () => {
+    const js = read("public/blessboard/v5/website-structured-edit.js");
+    const giving = read("views/blessboard/v5/public/giving.ejs");
+    assert.match(js, /fieldName:\s*"qrImageUrl"/);
+    assert.doesNotMatch(js, /QR image URL \(optional\)/);
+    assert.match(giving, /entity-image-edit-trigger/);
+    assert.match(giving, /data-bb-giving-qr/);
   });
 
   it("ActiveClinic library placements render images and edit affordances", () => {

@@ -1,7 +1,10 @@
+<%
+  var _sectionSharedMedia = typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl;
+%>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-start', { loadMediaPicker: true }) %>
+<%- include('../partials/hq-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_sectionSharedMedia) }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true }) %>
+<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_sectionSharedMedia) }) %>
 <% } %>
 <%
   var sectionStatus = submitted && submitted.status != null ? submitted.status : section.status;
@@ -120,22 +123,39 @@
     <section class="bb-ba-page-editor__section" aria-labelledby="bb-ca-section-media-heading" data-bb-section-section="media">
       <h2 id="bb-ca-section-media-heading" class="bb-ba-section-title">Media</h2>
       <div class="bb-ba-field">
-        <label for="media_url">Media URL (HTTPS or uploaded)</label>
-        <input
-          id="media_url"
-          name="media_url"
-          type="text"
-          maxlength="2000"
-          value="<%= submitted && submitted.media_url != null ? submitted.media_url : (section.mediaUrl || '') %>"
-          autocomplete="off"
-        />
+        <label>Section image</label>
+        <p class="bb-ba-hint">
+          Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+        </p>
+        <%
+          var _secMediaSrc = submitted && submitted.media_url != null ? submitted.media_url : (section.mediaUrl || '');
+          var _secMediaList = typeof websiteMediaListUrl !== 'undefined' ? String(websiteMediaListUrl || '') : '';
+        %>
+        <% if (_secMediaList) { %>
+        <%- include('../../../platform/website/partials/media-field', {
+          mediaField: {
+            idName: 'media_media_id',
+            srcName: 'media_url',
+            altName: 'media_alt_picker',
+            altLabel: 'Temporary picker description',
+            mediaId: '',
+            src: _secMediaSrc,
+            alt: '',
+            emptyText: 'No image selected — upload from computer or choose from the Content Library.'
+          },
+          mediaListUrl: _secMediaList
+        }) %>
+        <% } else { %>
+        <input id="media_url" name="media_url" type="hidden" value="<%= _secMediaSrc %>" />
         <%- include('media-upload', {
               uploadUrl: scope.basePath + '/media/upload',
               targetInputId: 'media_url',
               csrfToken: csrfToken,
-              visibility: 'public'
+              visibility: 'public',
+              currentSrc: _secMediaSrc,
+              srcName: 'media_url'
             }) %>
-        <p class="bb-ba-hint">Uses the existing church media library for this scope.</p>
+        <% } %>
       </div>
       <div class="bb-ba-field">
         <label for="media_alt_text">Image alternative text</label>
@@ -215,8 +235,11 @@
 })();
 </script>
 
+<% if (_sectionSharedMedia) { %>
+<%- include('../../../platform/website/partials/media-picker-dialog', { mediaListUrl: websiteMediaListUrl }) %>
+<% } %>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-end', { loadMediaPicker: true }) %>
+<%- include('../partials/hq-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_sectionSharedMedia) }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true }) %>
+<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: Boolean(_sectionSharedMedia) }) %>
 <% } %>

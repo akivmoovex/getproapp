@@ -1,4 +1,4 @@
-<%- include('../partials/hq-shell-start') %>
+<%- include('../partials/hq-shell-start', { loadSharedWebsiteMedia: true, loadMediaPicker: true }) %>
 <%
   var ed = typeof editor !== 'undefined' && editor ? editor : { sections: [], serviceTimes: {} };
   var sections = Array.isArray(ed.sections) ? ed.sections : [];
@@ -276,31 +276,29 @@
         <%
           var imgInputId = 'val-' + field.key.replace(/\./g, '-');
           var imgVal = String(inputFor(field) || '');
+          var _branchMediaList = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl)
+            ? String(websiteMediaListUrl)
+            : ((typeof mediaListUrl !== 'undefined' && mediaListUrl) ? String(mediaListUrl) : '');
         %>
         <div class="bb-hq-field bb-hq-field--image" data-bb-setting-image="1">
           <p class="bb-hq-field__legend"><%= esc(field.label) %> override</p>
-          <input
-            type="hidden"
-            id="<%= esc(imgInputId) %>"
-            name="value"
-            value="<%= esc(imgVal) %>"
-            <%= fErr[field.key] ? ' aria-invalid="true" aria-describedby="err-' + esc(field.key.replace(/\./g, '-')) + '"' : '' %>
-          />
-          <% if (imgVal) { %>
-          <p class="bb-hq-branch-settings__image-preview">
-            <img src="<%= esc(imgVal) %>" alt="" width="240" height="135" loading="lazy" decoding="async" />
+          <p class="bb-hq-hint">
+            Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
           </p>
-          <% } else { %>
-          <p class="bb-hq-muted">No image selected.</p>
-          <% } %>
-          <%- include('../content-admin/media-upload', {
-            uploadUrl: (typeof mediaUploadUrl !== 'undefined' && mediaUploadUrl) ? mediaUploadUrl : '/hq/content/media/upload',
-            listUrl: (typeof mediaListUrl !== 'undefined' && mediaListUrl) ? mediaListUrl : '/hq/content/media',
-            targetInputId: imgInputId,
-            csrfToken: csrfToken,
-            visibility: 'public'
+          <%- include('../../../platform/website/partials/media-field', {
+            mediaField: {
+              idName: imgInputId + '_media_id',
+              srcName: 'value',
+              altName: imgInputId + '_alt',
+              altLabel: 'Image description',
+              mediaId: '',
+              src: imgVal,
+              alt: '',
+              emptyText: 'No image selected.'
+            },
+            mediaListUrl: _branchMediaList
           }) %>
-          <p class="bb-hq-hint">Choose or upload an image from the church media library. Raw URL entry is not used for ordinary admins.</p>
+          <p class="bb-hq-hint">Images are stored in the shared church media library (CDN). Raw URL entry is not used for ordinary admins.</p>
         </div>
         <% } else { %>
         <div class="bb-hq-field">
@@ -436,4 +434,9 @@
   </section>
 </section>
 
-<%- include('../partials/hq-shell-end') %>
+<% if (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) { %>
+<%- include('../../../platform/website/partials/media-picker-dialog', { mediaListUrl: websiteMediaListUrl }) %>
+<% } else if (typeof mediaListUrl !== 'undefined' && mediaListUrl) { %>
+<%- include('../../../platform/website/partials/media-picker-dialog', { mediaListUrl: mediaListUrl }) %>
+<% } %>
+<%- include('../partials/hq-shell-end', { loadSharedWebsiteMedia: true, loadMediaPicker: true }) %>

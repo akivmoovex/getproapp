@@ -389,8 +389,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.doesNotMatch(js, /supabase|STORAGE_KEY|service_role|createSignedUrl/i);
     assert.match(dsJs, /BlessBoardDesignSystem/);
     assert.match(dsJs, /trapTabKey/);
-    assert.match(partial, /data-bb-stitch-media="shared-ui-states"/);
-    assert.match(partial, /aria-haspopup="dialog"/);
+    assert.match(partial, /Upload from computer|data-bb-media-picker|data-bb-media-upload-shared/);
+    assert.match(partial, /platform\/website\/partials\/media-field|aria-haspopup="dialog"/);
     assert.match(baStart, /loadMediaPicker/);
     assert.match(baStart, /media-picker\.css\?v=8/);
     assert.match(hqStart, /loadMediaPicker/);
@@ -1567,7 +1567,8 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(page, /data-bb-page-section-cards="1"/);
     assert.match(page, /data-bb-page-add-section="1"/);
     assert.match(page, /data-bb-content-action="preview"/);
-    assert.match(page, /media-upload/);
+    assert.match(page, /media-upload|platform\/website\/partials\/media-field/);
+    assert.match(page, /Upload from computer/);
     assert.doesNotMatch(page, /drag.?and.?drop|live.?edit|custom HTML|theme editor|SEO settings/i);
     assert.match(section, /data-bb-content-section-editor="1"/);
     assert.match(section, /data-bb-stitch-section-editor="34-branch-website-editor"/);
@@ -1580,7 +1581,9 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(section, /name="sort_order"/);
     assert.match(section, /name="status"/);
     assert.match(section, /name="confirm_publish"/);
-    assert.match(section, /media-upload/);
+    assert.match(section, /media-upload|platform\/website\/partials\/media-field/);
+    assert.match(section, /Upload from computer/);
+    assert.doesNotMatch(section, /Media URL \(HTTPS or uploaded\)/);
     assert.doesNotMatch(section, /custom HTML|theme widget|drag.?and.?drop/i);
     assert.match(css, /\.bb-ba-page-editor/);
     assert.match(css, /\.bb-ba-page-section-card/);
@@ -1618,7 +1621,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(fields, /name="description"/);
     assert.match(fields, /name="meeting_day"/);
     assert.match(fields, /name="contact_email"/);
-    assert.match(fields, /name="image_url"/);
+    assert.match(fields, /srcName:\s*'image_url'|name="image_url"/);
     assert.match(fields, /name="sort_order"/);
     assert.match(fields, /name="status"/);
     assert.match(fields, /name="confirm_publish"/);
@@ -1626,7 +1629,7 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(fields, /data-bb-entity-confirm-wrap/);
     assert.match(fields, /data-bb-ministries-section="content"/);
     assert.match(fields, /data-bb-ministries-section="media"/);
-    assert.match(fields, /media-upload/);
+    assert.match(fields, /platform\/website\/partials\/media-field|Upload from computer/);
     assert.doesNotMatch(entities, /Total Members|Active Leaders|1,248|\+12%/i);
     assert.doesNotMatch(entities, /href="[^"]*\/export"|bb-ba-btn[^>]*>\s*Export/i);
     assert.doesNotMatch(entities, /Leader:\s|Members:<\/th>|data-bb-entity-leader=|data-bb-entity-member-count=/i);
@@ -1667,13 +1670,13 @@ describe("blessboard v5 a11y structure — shell-nav + media picker", () => {
     assert.match(fields, /name="timezone"/);
     assert.match(fields, /name="location"/);
     assert.match(fields, /name="registration_url"/);
-    assert.match(fields, /name="image_url"/);
+    assert.match(fields, /srcName:\s*'image_url'|name="image_url"/);
     assert.match(fields, /name="confirm_publish"/);
     assert.match(fields, /data-bb-events-section="details"/);
     assert.match(fields, /data-bb-events-section="schedule"/);
     assert.match(fields, /data-bb-events-section="registration"/);
     assert.match(fields, /data-bb-events-section="media"/);
-    assert.match(fields, /media-upload/);
+    assert.match(fields, /platform\/website\/partials\/media-field|Upload from computer/);
     assert.doesNotMatch(entities, /43 Registered|data-bb-events-registration-count=/i);
     assert.doesNotMatch(entities, /href="[^"]*\/roster"|bb-ba-btn[^>]*>\s*Manage roster|ticket sales|payment gateway/i);
     assert.doesNotMatch(entities, /19-member-resources/);

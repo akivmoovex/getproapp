@@ -32,10 +32,11 @@ describe("v2 bb ministry leader image upload contracts", () => {
     assert.doesNotMatch(leadershipBlock, /\/media\/upload/);
   });
 
-  it("entities admin loads shared website media assets for leadership", () => {
+  it("entities admin loads shared website media assets for image-bearing entities", () => {
     const entities = read("views/blessboard/v5/content-admin/entities.ejs");
-    assert.match(entities, /_useSharedLeaderMedia\s*=\s*entityKind === 'leadership'/);
-    assert.match(entities, /loadSharedWebsiteMedia:\s*_useSharedLeaderMedia/);
+    assert.match(entities, /_useSharedWebsiteMedia/);
+    assert.match(entities, /entityKind === 'leadership'/);
+    assert.match(entities, /loadSharedWebsiteMedia:\s*_useSharedWebsiteMedia/);
     assert.match(entities, /platform\/website\/partials\/media-picker-dialog/);
   });
 

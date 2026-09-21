@@ -393,7 +393,7 @@
             <% } %>
 
             <% if (method.qrImageUrl) { %>
-            <figure class="bb-tp-giving-card__qr" data-bb-giving-qr="1">
+            <figure class="bb-tp-giving-card__qr<%= editing ? ' bb-tp-edit-media-wrap' : '' %>" data-bb-giving-qr="1">
               <img
                 src="<%= method.qrImageUrl %>"
                 alt="QR code for <%= method.label %>"
@@ -401,9 +401,48 @@
                 height="144"
                 loading="lazy"
                 decoding="async"
+                data-bb-giving-qr-image="1"
               />
               <figcaption class="bb-tp-giving-card__qr-caption">Scan to open this method</figcaption>
+              <% if (editing) { %>
+              <%- include('../partials/entity-image-edit-trigger', {
+                editKind: 'giving_method',
+                editEntityKey: method.id || ('method-' + (method.label || 'new')),
+                editPayload: {
+                  methodType: method.methodType || 'other',
+                  label: method.label || '',
+                  description: method.description || '',
+                  accountDetails: method.accountDetails || '',
+                  instructions: method.instructions || '',
+                  externalUrl: method.externalUrl || '',
+                  buttonLabel: method.buttonLabel || 'Open published link',
+                  qrImageUrl: method.qrImageUrl || '',
+                  visible: true,
+                  sortOrder: method.sortOrder != null ? method.sortOrder : 10
+                }
+              }) %>
+              <% } %>
             </figure>
+            <% } else if (editing) { %>
+            <div class="bb-tp-giving-card__qr bb-tp-giving-card__qr--empty bb-tp-edit-media-wrap" data-bb-giving-qr="1">
+              <p class="bb-tp-se-hint">No QR image</p>
+              <%- include('../partials/entity-image-edit-trigger', {
+                editKind: 'giving_method',
+                editEntityKey: method.id || ('method-' + (method.label || 'new')),
+                editPayload: {
+                  methodType: method.methodType || 'other',
+                  label: method.label || '',
+                  description: method.description || '',
+                  accountDetails: method.accountDetails || '',
+                  instructions: method.instructions || '',
+                  externalUrl: method.externalUrl || '',
+                  buttonLabel: method.buttonLabel || 'Open published link',
+                  qrImageUrl: '',
+                  visible: true,
+                  sortOrder: method.sortOrder != null ? method.sortOrder : 10
+                }
+              }) %>
+            </div>
             <% } %>
           </div>
 

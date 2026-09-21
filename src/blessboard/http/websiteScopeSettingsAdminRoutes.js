@@ -291,8 +291,11 @@ function createWebsiteScopeSettingsAdminRouter(deps) {
       returnTo,
       socialPlatforms: registry.SOCIAL_PLATFORMS,
       SOURCE,
-      mediaUploadUrl: "/hq/content/media/upload",
-      mediaListUrl: "/hq/content/media",
+      mediaUploadUrl: orgKey ? `/c/${encodeURIComponent(orgKey)}/website/media` : "",
+      mediaListUrl: orgKey ? `/c/${encodeURIComponent(orgKey)}/website/media` : "",
+      websiteMediaListUrl: orgKey ? `/c/${encodeURIComponent(orgKey)}/website/media` : "",
+      loadSharedWebsiteMedia: true,
+      loadMediaPicker: true,
     });
     return res.type("html").send(html);
   }

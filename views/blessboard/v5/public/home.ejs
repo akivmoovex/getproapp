@@ -472,13 +472,30 @@
       editSectionKey: 'sermons_intro'
     }) %>
     <% var sermon = teasers.sermons[0]; %>
-    <article class="bb-tp-sermon-feature">
-      <% if (sermon.imageUrl) { %>
-      <div class="bb-tp-sermon-feature__media">
-        <img src="<%= sermon.imageUrl %>" alt="<%= sermon.title %>" width="800" height="450" loading="lazy" decoding="async" />
+    <article class="bb-tp-sermon-feature" data-bb-sermon-feature="1" data-bb-sermon-id="<%= sermon.id || '' %>">
+      <div class="bb-tp-sermon-feature__media<%= sermon.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
+        <% if (sermon.imageUrl) { %>
+        <img src="<%= sermon.imageUrl %>" alt="<%= sermon.title %>" width="800" height="450" loading="lazy" decoding="async" data-bb-sermon-image="1" />
         <span class="bb-tp-sermon-feature__play material-symbols-outlined" aria-hidden="true">play_arrow</span>
+        <% } else { %>
+        <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
+        <% } %>
+        <%- include('../partials/entity-image-edit-trigger', {
+          editKind: 'sermon',
+          editEntityKey: String(sermon.id || ('sermon-' + (sermon.title || 'home'))),
+          editPayload: {
+            title: sermon.title || '',
+            speakerName: sermon.speakerName || '',
+            preachedAt: sermon.preachedAt || '',
+            summary: sermon.summary || '',
+            scripture: sermon.scripture || '',
+            mediaUrl: sermon.mediaUrl || '',
+            imageUrl: sermon.imageUrl || '',
+            featured: true,
+            visible: true
+          }
+        }) %>
       </div>
-      <% } %>
       <div class="bb-tp-sermon-feature__copy">
         <% if (sermon.category) { %><p class="bb-tp-eyebrow"><%= sermon.category %></p><% } %>
         <h3 class="bb-tp-sermon-feature__title"><%= sermon.title %></h3>
