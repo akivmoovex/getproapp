@@ -280,7 +280,15 @@ async function publishWebsite(jar, token) {
     form: { _csrf: token, confirmPublish: "1" },
     headers: { Referer: `${BB}/c/${ORG}/leadership?website_edit=1&website_mode=draft` },
   });
-  return follow(jar, res, BB);
+  if (res.status === 303 || res.status === 302) {
+    return { status: res.status, location: res.location, okHttp: true };
+  }
+  const followed = await follow(jar, res, BB);
+  return {
+    status: followed.status,
+    location: followed.location || followed.url || "",
+    okHttp: followed.status === 200 || followed.status === 303,
+  };
 }
 
 async function main() {
@@ -451,15 +459,27 @@ async function main() {
       !String((siblingAfter && siblingAfter.imageUrl) || "").includes(mediaId),
   };
 
+  // Refresh CSRF from the public editor before publish (draft save may rotate tokens).
+  const beforePublish = await follow(
+    auth.jar,
+    await req(auth.jar, `${BB}/c/${ORG}/leadership?website_edit=1&website_mode=draft`),
+    BB
+  );
+  token = csrf(beforePublish.body) || token;
   const pub = await publishWebsite(auth.jar, token);
   result.publish = {
     status: pub.status,
-    ok: pub.status === 200,
+    ok: Boolean(pub.okHttp),
+    location: pub.location || null,
   };
 
   await sleep(1500);
   const publicAnon = new Jar();
-  const publicPage = await req(publicAnon, `${BB}/c/${ORG}/leadership`);
+  const publicPage = await follow(
+    publicAnon,
+    await req(publicAnon, `${BB}/c/${ORG}/leadership`),
+    BB
+  );
   const publicHas = (publicPage.body || "").includes(mediaId);
   result.publicRender = {
     status: publicPage.status,
