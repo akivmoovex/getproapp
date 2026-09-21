@@ -24,6 +24,8 @@ const {
   submitMemberRegistration,
   approveMemberRegistration,
   rejectMemberRegistration,
+  listBranchMembersForManager,
+  getBranchMembershipOverviewForManager,
   STATUS,
 } = require("../src/blessboard/services/memberRegistrationService");
 const {
@@ -556,18 +558,141 @@ describe("V8 BlessBoard membership workflow", () => {
       path.join(__dirname, "..", "views/blessboard/v5/branch-admin/members.ejs"),
       "utf8"
     );
-    // BB18-M remains Stitch-blocked: only BB18-D exists in project inventory.
     assert.match(branchMembers, /data-bb-screen-desktop="BB18-D"/);
     assert.match(branchMembers, /data-bb-screen-mobile="BB18-M"/);
+    assert.match(branchMembers, /data-bb-stitch-id-mobile="108d56c422634faea23a285fde9f9cd5"/);
+    assert.match(branchMembers, /data-bb-members-overview="1"/);
+    assert.match(branchMembers, /data-bb-members-metrics="1"/);
+    assert.match(branchMembers, /data-bb-members-queue="1"/);
+    assert.match(branchMembers, /data-bb-members-visitors="1"/);
+    assert.match(branchMembers, /data-bb-members-transfers="1"/);
     assert.match(branchMembers, /bb-ba-members-cards/);
+    assert.match(branchMembers, /href="\/branch-admin\/registrations"/);
+    assert.match(branchMembers, /href="\/branch-admin\/activity-forms"/);
+    assert.doesNotMatch(branchMembers, /HIPAA|Pastoral Privilege|Background Screened|Communicants|Holy Baptisms/i);
+    assert.doesNotMatch(branchMembers, /pastoralNotes|pastoral_notes|Confidential pastoral/i);
+
+    assert.match(baCss, /bb-ba-members-overview/);
+    assert.match(baCss, /bb-ba-members-metrics/);
+    assert.match(baCss, /@media \(max-width:\s*899px\)[\s\S]*max-width:\s*390px/);
   });
 
-  it("documents BB18-M Stitch design as missing (cannot invent)", () => {
+  it("documents BB18-M as IMPLEMENTED_AND_TESTED (84/84)", () => {
     const coverage = fs.readFileSync(
       path.join(__dirname, "..", "docs/releases/V8_SCREEN_IMPLEMENTATION_COVERAGE.md"),
       "utf8"
     );
     assert.match(coverage, /BB18-M/);
-    assert.match(coverage, /BLOCKED|missing/i);
+    assert.match(coverage, /IMPLEMENTED_AND_TESTED.*\*\*84\*\*|84\/84/);
+    assert.match(coverage, /BB18-M[\s\S]*IMPLEMENTED_AND_TESTED/);
+    assert.doesNotMatch(coverage, /BB18-M[\s\S]{0,80}`BLOCKED`/);
+  });
+
+  it("builds branch membership overview with scoped counts and no pastoral notes", async () => {
+    requireDb();
+    const key = uniq("bb18-ov");
+    const seed = await seedChurch(key);
+    const admin = await makeUser({
+      email: `ov-${key}@example.test`,
+      organizationKey: key,
+      churchKey: key,
+      roleKey: "branch_admin",
+      branchKey: "hq",
+    });
+    const outsider = await makeUser({
+      email: `out-${key}@example.test`,
+      organizationKey: key,
+      churchKey: key,
+      roleKey: "branch_admin",
+      branchKey: "north",
+    });
+
+    const phone = nextPhone();
+    const submitted = await submitMemberRegistration(pool, {
+      churchId: seed.church.id,
+      branchId: seed.branch.id,
+      firstName: "Quinn",
+      lastName: "Queue",
+      phone,
+    });
+    assert.equal(submitted.ok, true, submitted.reason);
+
+    await pool.query(
+      `UPDATE blessboard.member_registrations
+          SET pastoral_notes = $2, pastoral_notes_updated_at = now()
+        WHERE id = $1`,
+      [submitted.registration.id, "Secret pastoral note must not appear"]
+    );
+
+    const approvedPhone = nextPhone();
+    const toApprove = await submitMemberRegistration(pool, {
+      churchId: seed.church.id,
+      branchId: seed.branch.id,
+      firstName: "Mia",
+      lastName: "Member",
+      phone: approvedPhone,
+    });
+    const approved = await approveMemberRegistration(pool, {
+      registrationId: toApprove.registration.id,
+      actorUserId: admin.id,
+      tenant: tenantCtx(seed),
+    });
+    assert.equal(approved.ok, true, approved.reason);
+
+    const xfer = await requestMemberBranchTransfer(pool, {
+      churchId: seed.church.id,
+      memberId: approved.member.id,
+      toBranchId: seed.branch2.id,
+      actorUserId: admin.id,
+      tenant: tenantCtx(seed),
+      reason: "Relocate",
+    });
+    assert.equal(xfer.ok, true, xfer.reason);
+
+    const overview = await getBranchMembershipOverviewForManager(pool, {
+      actorUserId: admin.id,
+      churchId: seed.church.id,
+      branchId: seed.branch.id,
+      organizationId: seed.organization.id,
+      tenant: tenantCtx(seed),
+    });
+    assert.equal(overview.ok, true, overview.reason);
+    assert.ok(overview.statusCounts.total >= 1);
+    assert.ok(overview.reviewQueue.total >= 1);
+    assert.ok(overview.reviewQueue.items.some((i) => i.id === submitted.registration.id));
+    assert.equal(overview.openTransfers.total, 1);
+    assert.equal(overview.openTransfers.items[0].id, xfer.transfer.id);
+    assert.equal(overview.openTransfers.items[0].direction, "outbound");
+
+    const serialized = JSON.stringify(overview);
+    assert.doesNotMatch(serialized, /Secret pastoral|pastoralNotes|pastoral_notes/i);
+    assert.doesNotMatch(serialized, /reviewerNotes|review_notes/i);
+
+    const denied = await getBranchMembershipOverviewForManager(pool, {
+      actorUserId: outsider.id,
+      churchId: seed.church.id,
+      branchId: seed.branch.id,
+      organizationId: seed.organization.id,
+      tenant: {
+        resolved: true,
+        church: { id: seed.church.id },
+        primaryBranch: { id: seed.branch2.id },
+        organization: { id: seed.organization.id },
+      },
+    });
+    assert.equal(denied.ok, false);
+    assert.equal(denied.status, STATUS.FORBIDDEN);
+
+    const listed = await listBranchMembersForManager(pool, {
+      actorUserId: admin.id,
+      churchId: seed.church.id,
+      branchId: seed.branch.id,
+      q: "Mia",
+      limit: 10,
+      offset: 0,
+      tenant: tenantCtx(seed),
+    });
+    assert.equal(listed.ok, true, listed.reason);
+    assert.ok(listed.items.some((m) => m.firstName === "Mia"));
   });
 });

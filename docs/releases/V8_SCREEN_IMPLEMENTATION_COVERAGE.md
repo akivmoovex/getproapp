@@ -1,26 +1,22 @@
 # V8 Screen Implementation Coverage Audit
 
-**Branch:** `origin/V8` @ `112c6883932314889f137e02355dd6dbdc6bc807` (PROMPT 14 mobile closure)  
+**Branch:** `origin/V8` (PROMPT 22 — BB18-M final screen)  
 **Date:** 2026-09-21  
 **Stitch project:** [`projects/5087412725796049014`](https://stitch.withgoogle.com/projects/5087412725796049014)  
 **Scope:** All approved overnight screens **SH01–SH15**, **BB01–BB22**, **AN01–AN05** × desktop (**-D**) + mobile (**-M**) = **84** viewport screens  
-**Baseline commits:** coverage `63a3de62` · overnight rules `807825c7`  
-**Method:** Stitch MCP `list_screens` (re-verified PROMPT 14) + tip routes/views/CSS/RBAC/services + local automated tests.  
+**Baseline commits:** coverage `63a3de62` · overnight rules `807825c7` · PROMPT 14 `112c6883` / tip `8933eea5`  
+**Method:** Stitch MCP `list_screens` (PROMPT 22 re-verify: **85** titled screens incl. BB18-M ×2) + tip routes/views/CSS/RBAC/services + local automated tests.  
 **Constraints:** No deploy · no hosted data mutation · hosted Stitch visual parity **not claimed**
 
-### PROMPT 14 verdict
+### PROMPT 22 verdict
 
-**`V8_MOBILE_CLOSURE_PARTIAL_WITH_BLOCKERS`**
+**`V8_84_SCREEN_IMPLEMENTATION_COMPLETE`**
 
 | Screen | Result |
 |--------|--------|
-| BB01-M | Closed → `IMPLEMENTED_AND_TESTED` (Stitch `bf56891b…`) |
-| BB02-M | Closed → `IMPLEMENTED_AND_TESTED` (Stitch `f09b2b03…`) |
-| BB15-M | Closed → `IMPLEMENTED_AND_TESTED` (Stitch `9207936b…`) |
-| BB16-M | Closed → `IMPLEMENTED_AND_TESTED` (Stitch `9a061086…`) |
-| BB18-M | **Still BLOCKED** — Stitch design genuinely absent (only BB18-D exists) |
+| BB18-M | Closed → `IMPLEMENTED_AND_TESTED` (Stitch `108d56c422634faea23a285fde9f9cd5`, tall/mobile reference; duplicate short `43df43c2…` not used) |
 
-Do **not** claim 84/84 until BB18-M is supplied in Stitch.
+**Package:** **84/84** `IMPLEMENTED_AND_TESTED` · **0** `PARTIAL` · **0** `BLOCKED`
 
 ---
 
@@ -45,10 +41,10 @@ Do **not** claim 84/84 until BB18-M is supplied in Stitch.
 | Metric | Count |
 |--------|------:|
 | Expected approved viewport screens | **84** |
-| Titled screens present in Stitch MCP | **83** |
-| Missing Stitch design | **1** (`BB18-M`) |
+| Titled screens present in Stitch MCP | **85** (BB18-M published twice; canonical = `108d56c4…`) |
+| Missing Stitch design | **0** |
 
-All SH01–SH15 (−D/−M), AN01–AN05 (−D/−M), and BB01–BB22 (−D) exist. **BB18-M** is absent from the Stitch inventory.
+All SH01–SH15 (−D/−M), AN01–AN05 (−D/−M), and BB01–BB22 (−D/−M) exist in Stitch.
 
 ---
 
@@ -56,14 +52,14 @@ All SH01–SH15 (−D/−M), AN01–AN05 (−D/−M), and BB01–BB22 (−D) exi
 
 | Classification | Count |
 |----------------|------:|
-| `IMPLEMENTED_AND_TESTED` | **83** |
+| `IMPLEMENTED_AND_TESTED` | **84** |
 | `IMPLEMENTED_NOT_VERIFIED` | **0** |
 | `PARTIAL` | **0** |
 | `NOT_IMPLEMENTED` | **0** |
-| `BLOCKED` | **1** |
+| `BLOCKED` | **0** |
 | **Total** | **84** |
 
-**Code present (including PARTIAL fallbacks):** 83 viewport surfaces have V8 UI. BB18-M has a responsive branch-list fallback that is **not** counted as Stitch-complete (`BLOCKED`).
+**Code present:** 84 viewport surfaces have V8 UI including BB18-M branch membership overview (metrics, review queue, visitor summary, transfers, directory) on `/branch-admin/members`.
 
 ---
 
@@ -71,11 +67,11 @@ All SH01–SH15 (−D/−M), AN01–AN05 (−D/−M), and BB01–BB22 (−D) exi
 
 | Metric | Count |
 |--------|------:|
-| `IMPLEMENTED_AND_TESTED` | **83** |
-| Consolidated regression (PROMPT 10) | **984/984 PASS** |
-| Overnight feature cluster | **130/130 PASS** |
+| `IMPLEMENTED_AND_TESTED` | **84** |
+| Consolidated regression (PROMPT 10 baseline) | **984/984 PASS** (prior) |
+| Overnight feature cluster | **130/130 PASS** (prior) |
 
-BLOCKED (**1** — BB18-M) is **not** counted as successfully completed. PARTIAL is **0** after PROMPT 14.
+**0** `BLOCKED` · **0** `PARTIAL`.
 
 ---
 
@@ -84,9 +80,9 @@ BLOCKED (**1** — BB18-M) is **not** counted as successfully completed. PARTIAL
 | Status | Screens | Count |
 |--------|---------|------:|
 | `PARTIAL` | — | **0** |
-| `BLOCKED` | BB18-M | **1** |
+| `BLOCKED` | — | **0** |
 | `NOT_IMPLEMENTED` | — | **0** |
-| **Remaining to close** | | **1** |
+| **Remaining to close** | | **0** |
 
 ---
 
@@ -97,29 +93,30 @@ BLOCKED (**1** — BB18-M) is **not** counted as successfully completed. PARTIAL
 | Shared forms (SH01–SH15) | Desktop | 15 | 0 | 0 | 0 | 15 |
 | Shared forms (SH01–SH15) | Mobile | 15 | 0 | 0 | 0 | 15 |
 | BlessBoard (BB01–BB22) | Desktop | 22 | 0 | 0 | 0 | 22 |
-| BlessBoard (BB01–BB22) | Mobile | 21 | 0 | 1 | 0 | 22 |
+| BlessBoard (BB01–BB22) | Mobile | 22 | 0 | 0 | 0 | 22 |
 | Shared announcements (AN01–AN05) | Desktop | 5 | 0 | 0 | 0 | 5 |
 | Shared announcements (AN01–AN05) | Mobile | 5 | 0 | 0 | 0 | 5 |
-| **All** | **D+M** | **83** | **0** | **1** | **0** | **84** |
+| **All** | **D+M** | **84** | **0** | **0** | **0** | **84** |
 
 ---
 
 ## 5. Missing user flows
 
-1. **BB18-M Stitch design** — confirmed missing on re-audit (PROMPT 14). Cannot implement Stitch-parity mobile branch membership overview until supplied.
+1. ~~**BB18-M Stitch design**~~ — **closed in PROMPT 22** (Stitch published; implemented on branch members overview).
 2. **Hosted end-to-end flows** — code present; operator verification + migrations `039–042` / `110–112` still required.
 3. **Automatic announcement schedule promotion** — `SCHEDULER_DEPENDENCY.available=false` (lazy visibility). Not a missing screen.
 
 ---
 
-## Prompt 14 tests (local)
+## Prompt 22 tests (local)
 
 | Suite | Pass | Fail | Skip |
 |-------|-----:|-----:|-----:|
-| `v8-bb-membership` | 8 | 0 | 0 |
+| `v8-bb-membership` | 9 | 0 | 0 |
+| `v8-bb-activity-registration` + `v8-bb-announcements` + V7 schema/identity | 57 | 0 | 0 |
 | `shared-platform` (`run-suite`) | 361 | 0 | 0 |
+| `compatibility` (`run-suite`) | 276 | 0 | 0 |
 | `blessboard` (`run-suite`) | 241 | 0 | 0 |
-| V7 DB compatibility + migration contract | 19 | 0 | 0 |
 
 ---
 
@@ -127,7 +124,8 @@ BLOCKED (**1** — BB18-M) is **not** counted as successfully completed. PARTIAL
 
 | Priority | Design / decision | Why |
 |---------:|-------------------|-----|
-| 1 | **BB18-M — Branch Membership Overview (Mobile 390px)** | Only missing approved Stitch viewport; PROMPT 14 stopped here |
+| — | **None for 84-screen package** | All approved Stitch viewports implemented and locally tested |
+| Hosted | Apply additive migrations + operator QA | Unapplied `039–042` / `110–112` gate hosted feature availability |
 | 2 | Optional: browser visual parity QA after V8 deploy | Hosted visual sign-off not done overnight |
 | 3 | Product decision: announcement background scheduler vs permanent lazy mode | Not a screen; affects AN03 expectations |
 
@@ -220,8 +218,8 @@ BLOCKED (**1** — BB18-M) is **not** counted as successfully completed. PARTIAL
 | BB16-M | BB16-M — Branch Transfer Request and Review (Mobile) | `9a061086176e…` | `IMPLEMENTED_AND_TESTED` | PROMPT 14: request sticky actions + transfer review triage; local tests. |
 | BB17-D | BB17-D — HQ Membership Overview (Desktop) | `4a49ce69c910…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/hq/members.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
 | BB17-M | BB17-M — HQ Membership Overview (Mobile) | `12be27718612…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/hq/members.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
-| BB18-D | BB18-D — Branch Membership Overview (Desktop) | `566f9eda1b2b…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/branch-admin/members.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
-| BB18-M | BB18-M (MISSING IN STITCH) | — | `BLOCKED` | PROMPT 14 re-verified: no titled BB18-M in `5087412725796049014` (BB18-D `566f9eda…` + BB17-M exist). Do not invent. Responsive cards are fallback only. |
+| BB18-D | BB18-D — Branch Membership Overview (Desktop) | `566f9eda1b2b…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/branch-admin/members.ejs (overview + directory). Local tests: v8-bb-membership. |
+| BB18-M | BB18-M — Branch Membership Overview (Mobile) | `108d56c422634fae…` | `IMPLEMENTED_AND_TESTED` | PROMPT 22: metrics, review queue, visitor summary, transfers, search/directory; Stitch `108d56c4…`; no HIPAA/pastoral/background claims; pastoral notes excluded from overview payload. |
 | BB19-D | BB19-D — Church Announcements Dashboard (Desktop) | `97f4a0272752…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/announcements/admin-list.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
 | BB19-M | BB19-M — Church Announcements Dashboard (Mobile) | `9f03f5273c90…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/announcements/admin-list.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
 | BB20-D | BB20-D — Church Announcement Create/Edit (Desktop) | `582319678613…` | `IMPLEMENTED_AND_TESTED` | Surface: announcements/admin-form.ejs + admin-publish.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
@@ -252,7 +250,7 @@ BLOCKED (**1** — BB18-M) is **not** counted as successfully completed. PARTIAL
 
 | Source | Role |
 |--------|------|
-| Stitch MCP `list_screens` on `5087412725796049014` | Designed screen inventory (83/84) |
+| Stitch MCP `list_screens` on `5087412725796049014` | Designed screen inventory (85 titled; 84 unique viewports) |
 | `views/platform/forms/*`, `views/platform/announcements/*`, `views/blessboard/v5/**` | Implemented surfaces + D/M markers |
 | `public/platform/forms-builder.css`, `announcements.css`, BlessBoard admin/public CSS | Responsive D/M layouts |
 | `tests/v8-shared-form-builder.test.js`, `v8-shared-forms-e2e.test.js`, `v8-bb-membership.test.js`, `v8-bb-activity-registration.test.js`, `v8-shared-announcements.test.js`, `v8-bb-announcements.test.js` | Local screen/functional coverage |

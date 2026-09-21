@@ -4,6 +4,16 @@
   var searchQ = typeof q !== 'undefined' && q ? String(q) : '';
   var activeStatus = typeof statusFilter !== 'undefined' && statusFilter ? String(statusFilter) : '';
   var hasFilter = Boolean(searchQ || activeStatus);
+  var ov = typeof overview !== 'undefined' && overview ? overview : null;
+  var statusCounts = (ov && ov.statusCounts) || { total: typeof total === 'number' ? total : 0, byStatus: {} };
+  var byStatus = statusCounts.byStatus || {};
+  var activeCount = Number(byStatus.active) || 0;
+  var pendingMemberCount = Number(byStatus.pending) || 0;
+  var reviewQueue = (ov && ov.reviewQueue) || { total: 0, items: [] };
+  var openTransfers = (ov && ov.openTransfers) || { total: 0, items: [] };
+  var visitorSummary = (ov && ov.visitorSummary) || { available: false, total: 0 };
+  var queueItems = reviewQueue.items || [];
+  var transferItems = openTransfers.items || [];
   var statusOptions = [
     { key: '', label: 'All' },
     { key: 'active', label: 'Active' },
@@ -19,14 +29,20 @@
     if (key === 'inactive') return 'Inactive';
     if (key === 'suspended') return 'Suspended';
     if (key === 'archived') return 'Archived';
+    if (key === 'submitted') return 'Pending review';
+    if (key === 'under_review') return 'In review';
+    if (key === 'needs_follow_up') return 'Needs follow-up';
+    if (key === 'requested') return 'Requested';
+    if (key === 'approved') return 'Approved';
+    if (key === 'declined') return 'Declined';
     return s || '—';
   }
   function statusChip(s) {
     var key = String(s || '').toLowerCase();
-    if (key === 'active') return 'bb-ba-chip--ok';
-    if (key === 'pending') return 'bb-ba-chip--pending';
+    if (key === 'active' || key === 'approved') return 'bb-ba-chip--ok';
+    if (key === 'pending' || key === 'submitted' || key === 'under_review' || key === 'needs_follow_up' || key === 'requested') return 'bb-ba-chip--pending';
     if (key === 'inactive' || key === 'archived') return 'bb-ba-chip--muted';
-    if (key === 'suspended') return 'bb-ba-chip--danger';
+    if (key === 'suspended' || key === 'declined' || key === 'rejected') return 'bb-ba-chip--danger';
     return 'bb-ba-chip--muted';
   }
   function membershipLabel(s) {
@@ -60,6 +76,10 @@
     if (activeStatus) params.push('status=' + encodeURIComponent(activeStatus));
     return '/branch-admin/members?' + params.join('&');
   }
+  var branchLabel = branchDisplayName || churchDisplayName || 'this branch';
+  var pendingApps = Number(reviewQueue.total) || 0;
+  var transferOpen = Number(openTransfers.total) || 0;
+  var visitorTotal = visitorSummary.available ? (Number(visitorSummary.total) || 0) : null;
 %>
 
 <section
@@ -70,6 +90,8 @@
   data-screen="BB18"
   data-bb-screen-desktop="BB18-D"
   data-bb-screen-mobile="BB18-M"
+  data-bb-stitch-id-mobile="108d56c422634faea23a285fde9f9cd5"
+  data-bb-stitch-id-desktop="566f9eda1b2b41199224f4eaec1a8550"
 >
   <header class="bb-ba-page-head bb-ba-page-head--split">
     <div>
@@ -79,16 +101,18 @@
         <span>Members</span>
       </p>
       <div class="bb-ba-members__title-row">
-        <h1 class="bb-ba-page-head__title">Member directory</h1>
+        <h1 class="bb-ba-page-head__title">Branch membership</h1>
         <% if (typeof total === 'number' && total >= 0) { %>
         <span class="bb-ba-members__count" data-bb-member-total="<%= total %>">
           <%= total %> <%= hasFilter ? (total === 1 ? 'match' : 'matches') : (total === 1 ? 'member' : 'members') %>
         </span>
         <% } %>
       </div>
-      <p class="bb-ba-lede">
-        Members with a membership on
-        <strong><%= branchDisplayName || churchDisplayName %></strong>.
+      <p class="bb-ba-lede" data-bb-members-context="1">
+        Membership for <strong><%= branchLabel %></strong>
+        <% if (typeof churchDisplayName !== 'undefined' && churchDisplayName && branchDisplayName) { %>
+        · <%= churchDisplayName %>
+        <% } %>.
         Contact fields are display-only — no normalized identifiers are shown.
       </p>
     </div>
@@ -99,6 +123,156 @@
       </a>
     </p>
   </header>
+
+  <section
+    class="bb-ba-members-overview"
+    data-bb-members-overview="1"
+    data-bb-bb18-m="1"
+    aria-label="Branch membership overview"
+  >
+    <div class="bb-ba-members-metrics" data-bb-members-metrics="1">
+      <a class="bb-ba-members-metric" href="/branch-admin/members" data-bb-metric="roll">
+        <span class="bb-ba-members-metric__icon material-symbols-outlined" aria-hidden="true">groups</span>
+        <span class="bb-ba-members-metric__label">Member roll</span>
+        <span class="bb-ba-members-metric__value" data-bb-metric-value="total"><%= Number(statusCounts.total) || 0 %></span>
+        <span class="bb-ba-members-metric__meta">
+          <%= activeCount %> active<% if (pendingMemberCount) { %> · <%= pendingMemberCount %> pending<% } %>
+        </span>
+      </a>
+      <a class="bb-ba-members-metric" href="/branch-admin/registrations" data-bb-metric="queue">
+        <span class="bb-ba-members-metric__icon material-symbols-outlined" aria-hidden="true">how_to_reg</span>
+        <span class="bb-ba-members-metric__label">Review queue</span>
+        <span class="bb-ba-members-metric__value" data-bb-metric-value="queue"><%= pendingApps %></span>
+        <span class="bb-ba-members-metric__meta"><%= pendingApps === 1 ? 'application' : 'applications' %> awaiting review</span>
+      </a>
+      <a class="bb-ba-members-metric" href="/branch-admin/activity-forms" data-bb-metric="visitors">
+        <span class="bb-ba-members-metric__icon material-symbols-outlined" aria-hidden="true">handshake</span>
+        <span class="bb-ba-members-metric__label">Visitor forms</span>
+        <% if (visitorTotal !== null) { %>
+        <span class="bb-ba-members-metric__value" data-bb-metric-value="visitors"><%= visitorTotal %></span>
+        <span class="bb-ba-members-metric__meta">submissions · last 30 days</span>
+        <% } else { %>
+        <span class="bb-ba-members-metric__value bb-ba-members-metric__value--link">Open</span>
+        <span class="bb-ba-members-metric__meta">Manage visitor registration</span>
+        <% } %>
+      </a>
+      <a class="bb-ba-members-metric" href="#bb-ba-members-transfers" data-bb-metric="transfers">
+        <span class="bb-ba-members-metric__icon material-symbols-outlined" aria-hidden="true">swap_horiz</span>
+        <span class="bb-ba-members-metric__label">Transfers</span>
+        <span class="bb-ba-members-metric__value" data-bb-metric-value="transfers"><%= transferOpen %></span>
+        <span class="bb-ba-members-metric__meta"><%= transferOpen === 1 ? 'open request' : 'open requests' %></span>
+      </a>
+    </div>
+
+    <section class="bb-ba-panel bb-ba-members-queue" data-bb-members-queue="1" aria-labelledby="bb-ba-members-queue-heading">
+      <div class="bb-ba-members-panel__head">
+        <h2 id="bb-ba-members-queue-heading" class="bb-ba-members-panel__title">Review queue</h2>
+        <p class="bb-ba-members-panel__meta">
+          <%= pendingApps %> <%= pendingApps === 1 ? 'in queue' : 'in queue' %>
+        </p>
+      </div>
+      <% if (!queueItems.length) { %>
+      <div class="bb-ba-members-overview-empty" data-bb-members-queue-empty="1" role="status">
+        <p>No applications waiting for this branch.</p>
+        <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/branch-admin/registrations">Open verification queue</a>
+      </div>
+      <% } else { %>
+      <ul class="bb-ba-members-queue-list">
+        <% queueItems.forEach(function (item) { %>
+        <li class="bb-ba-members-queue-item" data-bb-queue-status="<%= item.status %>">
+          <div class="bb-ba-members-queue-item__main">
+            <span class="bb-ba-avatar" aria-hidden="true"><%= initials(item) %></span>
+            <div>
+              <p class="bb-ba-members-queue-item__name"><%= item.firstName %> <%= item.lastName %></p>
+              <p class="bb-ba-members-queue-item__meta">
+                <span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+                <% var when = formatWhen(item.createdAt); if (when) { %> · <%= when %><% } %>
+              </p>
+            </div>
+          </div>
+          <a
+            class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
+            href="/branch-admin/registrations/<%= item.id %>"
+            data-bb-queue-action="open"
+          >Review</a>
+        </li>
+        <% }) %>
+      </ul>
+      <p class="bb-ba-members-overview-foot">
+        <a class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm" href="/branch-admin/registrations">
+          View all queue items
+          <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+        </a>
+      </p>
+      <% } %>
+    </section>
+
+    <section class="bb-ba-panel bb-ba-members-visitors" data-bb-members-visitors="1" aria-labelledby="bb-ba-members-visitors-heading">
+      <div class="bb-ba-members-panel__head">
+        <h2 id="bb-ba-members-visitors-heading" class="bb-ba-members-panel__title">Visitor registration</h2>
+        <% if (visitorTotal !== null) { %>
+        <p class="bb-ba-members-panel__meta"><%= visitorTotal %> in last 30 days</p>
+        <% } %>
+      </div>
+      <p class="bb-ba-lede bb-ba-lede--compact">
+        Public visitor forms collect contact and consent for follow-up. Counts reflect submitted forms for this church when available.
+      </p>
+      <p class="bb-ba-members-overview-foot">
+        <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/branch-admin/activity-forms">
+          <span class="material-symbols-outlined" aria-hidden="true">handshake</span>
+          Activity forms
+        </a>
+        <a class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm" href="/branch-admin/forms">
+          <span class="material-symbols-outlined" aria-hidden="true">description</span>
+          Branch forms
+        </a>
+      </p>
+    </section>
+
+    <section
+      id="bb-ba-members-transfers"
+      class="bb-ba-panel bb-ba-members-transfers"
+      data-bb-members-transfers="1"
+      aria-labelledby="bb-ba-members-transfers-heading"
+    >
+      <div class="bb-ba-members-panel__head">
+        <h2 id="bb-ba-members-transfers-heading" class="bb-ba-members-panel__title">Branch transfers</h2>
+        <p class="bb-ba-members-panel__meta"><%= transferOpen %> open</p>
+      </div>
+      <% if (!transferItems.length) { %>
+      <div class="bb-ba-members-overview-empty" data-bb-members-transfers-empty="1" role="status">
+        <p>No open transfer requests involving this branch.</p>
+      </div>
+      <% } else { %>
+      <ul class="bb-ba-members-transfer-list">
+        <% transferItems.forEach(function (item) {
+          var dirIcon = item.direction === 'outbound' ? 'north_east' : 'south_west';
+          var dirLabel = item.direction === 'outbound'
+            ? ('To ' + (item.toBranchDisplayName || item.toBranchKey || 'another branch'))
+            : ('From ' + (item.fromBranchDisplayName || item.fromBranchKey || 'another branch'));
+        %>
+        <li class="bb-ba-members-transfer-item" data-bb-transfer-direction="<%= item.direction %>">
+          <div class="bb-ba-members-transfer-item__main">
+            <span class="material-symbols-outlined bb-ba-members-transfer-item__dir" aria-hidden="true"><%= dirIcon %></span>
+            <div>
+              <p class="bb-ba-members-queue-item__name"><%= item.firstName %> <%= item.lastName %></p>
+              <p class="bb-ba-members-queue-item__meta"><%= dirLabel %></p>
+              <p class="bb-ba-members-queue-item__meta">
+                <span class="bb-ba-chip <%= statusChip(item.status) %>"><%= statusLabel(item.status) %></span>
+              </p>
+            </div>
+          </div>
+          <a
+            class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm"
+            href="/branch-admin/membership/transfers/<%= item.id %>"
+            data-bb-transfer-action="open"
+          >Open</a>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </section>
+  </section>
 
   <form
     method="get"
@@ -174,7 +348,7 @@
 
   <section class="bb-ba-panel bb-ba-members-panel" aria-labelledby="bb-ba-members-list-heading">
     <div class="bb-ba-members-panel__head">
-      <h2 id="bb-ba-members-list-heading" class="bb-ba-members-panel__title">Members</h2>
+      <h2 id="bb-ba-members-list-heading" class="bb-ba-members-panel__title">Directory</h2>
       <% if (typeof total === 'number') { %>
       <p class="bb-ba-members-panel__meta">
         Showing <%= rows.length %> of <%= total %>

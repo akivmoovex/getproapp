@@ -23,6 +23,7 @@ const {
   rejectMemberRegistration,
   reviewMemberRegistration,
   listBranchMembersForManager,
+  getBranchMembershipOverviewForManager,
   getBranchMemberForManager,
   STATUS,
 } = require("../services/memberRegistrationService");
@@ -346,6 +347,7 @@ function createBranchRegistrationAdminRouter(deps) {
     const page = Math.max(Number((req.query && req.query.page) || 1) || 1, 1);
     const limit = 20;
     const offset = (page - 1) * limit;
+    const tenant = resolveTenantForAuthorization(req);
 
     const listed = await listBranchMembersForManager(getPool(), {
       actorUserId: scope.actorUserId,
@@ -355,6 +357,7 @@ function createBranchRegistrationAdminRouter(deps) {
       q: q || null,
       limit,
       offset,
+      tenant,
     });
 
     if (!listed.ok) {
@@ -373,11 +376,36 @@ function createBranchRegistrationAdminRouter(deps) {
       );
     }
 
+    const overview = await getBranchMembershipOverviewForManager(getPool(), {
+      actorUserId: scope.actorUserId,
+      churchId: scope.churchId,
+      branchId: scope.branchId,
+      organizationId:
+        tenant && tenant.organization && tenant.organization.id
+          ? tenant.organization.id
+          : null,
+      tenant,
+    });
+
+    const overviewSafe = overview && overview.ok
+      ? {
+          statusCounts: overview.statusCounts,
+          reviewQueue: overview.reviewQueue,
+          openTransfers: overview.openTransfers,
+          visitorSummary: overview.visitorSummary,
+        }
+      : {
+          statusCounts: { total: listed.total, byStatus: {} },
+          reviewQueue: { total: 0, items: [] },
+          openTransfers: { total: 0, items: [] },
+          visitorSummary: { available: false, total: 0 },
+        };
+
     const totalPages = Math.max(1, Math.ceil(listed.total / limit));
     const html = renderBranchAdminView(
       "branch-admin/members.ejs",
       await shellLocals(req, res, "members", {
-        pageTitle: "Member directory",
+        pageTitle: "Branch membership",
         items: listed.items,
         total: listed.total,
         page,
@@ -385,6 +413,7 @@ function createBranchRegistrationAdminRouter(deps) {
         limit,
         q,
         statusFilter: status,
+        overview: overviewSafe,
       })
     );
     return res.status(200).type("html").send(html);

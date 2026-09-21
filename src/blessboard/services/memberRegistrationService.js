@@ -1127,6 +1127,91 @@ async function listBranchMembersForManager(db, input) {
 }
 
 /**
+ * Branch membership overview (BB18) — metrics + queue + transfers.
+ * Never includes pastoral notes or confidential fields.
+ */
+async function getBranchMembershipOverviewForManager(db, input) {
+  const raw = input && typeof input === "object" ? input : {};
+  const churchId = String(raw.churchId || "").trim();
+  const branchId = String(raw.branchId || "").trim();
+  const actorUserId = String(raw.actorUserId || "").trim();
+  const organizationId =
+    raw.organizationId != null && String(raw.organizationId).trim()
+      ? String(raw.organizationId).trim()
+      : null;
+  const empty = {
+    ok: false,
+    status: STATUS.INVALID_INPUT,
+    reason: "scope",
+    statusCounts: { total: 0, byStatus: {} },
+    reviewQueue: { total: 0, items: [] },
+    openTransfers: { total: 0, items: [] },
+    visitorSummary: { available: false, total: 0 },
+  };
+  if (!churchId || !branchId || !actorUserId) {
+    return empty;
+  }
+
+  try {
+    return await withClient(db, async (client) => {
+      const gate = await requireMemberManager(client, {
+        actorUserId,
+        churchId,
+        branchId,
+        tenant: raw.tenant,
+      });
+      if (!gate.ok) {
+        return {
+          ...empty,
+          ok: false,
+          status: gate.status,
+          reason: gate.reason,
+        };
+      }
+
+      const statusCounts = await repo.countMembersByStatusForBranch(client, {
+        churchId,
+        branchId,
+      });
+      const reviewQueue = await repo.listReviewQueueForBranch(client, {
+        churchId,
+        branchId,
+        limit: 5,
+      });
+      const openTransfers = await repo.listOpenTransfersForBranch(client, {
+        churchId,
+        branchId,
+        limit: 5,
+      });
+
+      let visitorSummary = { available: false, total: 0 };
+      if (organizationId) {
+        visitorSummary = await repo.countVisitorSubmissions30d(client, {
+          organizationId,
+          branchId,
+        });
+      }
+
+      return {
+        ok: true,
+        status: STATUS.OK,
+        statusCounts,
+        reviewQueue,
+        openTransfers,
+        visitorSummary,
+      };
+    });
+  } catch {
+    return {
+      ...empty,
+      ok: false,
+      status: STATUS.LOOKUP_ERROR,
+      reason: "lookup",
+    };
+  }
+}
+
+/**
  * Load one member on the host branch for managers.
  */
 async function getBranchMemberForManager(db, input) {
@@ -1334,6 +1419,7 @@ module.exports = {
   listMemberRegistrations,
   getMemberRegistrationForManager,
   listBranchMembersForManager,
+  getBranchMembershipOverviewForManager,
   getBranchMemberForManager,
   listChurchMembersForManager,
   getChurchMemberForManager,

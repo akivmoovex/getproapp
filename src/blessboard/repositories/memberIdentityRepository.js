@@ -1021,6 +1021,165 @@ async function listTransfers(client, { churchId, status, memberId }) {
   return rows.map(mapTransfer);
 }
 
+/**
+ * Branch-scoped member status counts for membership overview (BB18).
+ * @param {{ query: Function }} client
+ * @param {{ churchId: string, branchId: string }} input
+ */
+async function countMembersByStatusForBranch(client, { churchId, branchId }) {
+  const { rows } = await client.query(
+    `SELECT m.status, COUNT(*)::int AS n
+       FROM blessboard.members m
+       INNER JOIN blessboard.member_branch_memberships mb ON mb.member_id = m.id
+      WHERE m.church_id = $1 AND mb.branch_id = $2
+      GROUP BY m.status`,
+    [churchId, branchId]
+  );
+  const byStatus = Object.create(null);
+  let total = 0;
+  for (const row of rows) {
+    const key = String(row.status || "").toLowerCase() || "unknown";
+    const n = Number(row.n) || 0;
+    byStatus[key] = n;
+    total += n;
+  }
+  return { total, byStatus };
+}
+
+/**
+ * Open registration queue for a branch (no pastoral / review notes).
+ * @param {{ query: Function }} client
+ * @param {{ churchId: string, branchId: string, limit?: number }} input
+ */
+async function listReviewQueueForBranch(client, { churchId, branchId, limit }) {
+  const lim = Math.min(Math.max(Number(limit) || 5, 1), 20);
+  const statuses = ["submitted", "under_review", "needs_follow_up"];
+  const countRes = await client.query(
+    `SELECT COUNT(*)::int AS n
+       FROM blessboard.member_registrations r
+      WHERE r.church_id = $1 AND r.branch_id = $2 AND r.status = ANY($3::text[])`,
+    [churchId, branchId, statuses]
+  );
+  const total = countRes.rows[0] ? Number(countRes.rows[0].n) : 0;
+  const { rows } = await client.query(
+    `SELECT r.id, r.first_name, r.last_name, r.preferred_name, r.status, r.created_at, r.updated_at
+       FROM blessboard.member_registrations r
+      WHERE r.church_id = $1 AND r.branch_id = $2 AND r.status = ANY($3::text[])
+      ORDER BY
+        CASE r.status
+          WHEN 'needs_follow_up' THEN 0
+          WHEN 'under_review' THEN 1
+          ELSE 2
+        END,
+        r.created_at ASC,
+        r.id ASC
+      LIMIT $4`,
+    [churchId, branchId, statuses, lim]
+  );
+  return {
+    total,
+    items: rows.map((row) => ({
+      id: row.id,
+      firstName: row.first_name,
+      lastName: row.last_name,
+      preferredName: row.preferred_name || null,
+      status: row.status,
+      createdAt: row.created_at,
+      updatedAt: row.updated_at,
+    })),
+  };
+}
+
+/**
+ * Open branch transfers touching this branch (privacy-limited; no reviewer notes).
+ * @param {{ query: Function }} client
+ * @param {{ churchId: string, branchId: string, limit?: number }} input
+ */
+async function listOpenTransfersForBranch(client, { churchId, branchId, limit }) {
+  const lim = Math.min(Math.max(Number(limit) || 5, 1), 20);
+  const countRes = await client.query(
+    `SELECT COUNT(*)::int AS n
+       FROM blessboard.member_branch_transfer_requests t
+      WHERE t.church_id = $1
+        AND t.status = 'requested'
+        AND (t.from_branch_id = $2 OR t.to_branch_id = $2)`,
+    [churchId, branchId]
+  );
+  const total = countRes.rows[0] ? Number(countRes.rows[0].n) : 0;
+  const { rows } = await client.query(
+    `SELECT t.id, t.member_id, t.from_branch_id, t.to_branch_id, t.status, t.created_at,
+            m.first_name, m.last_name, m.preferred_name,
+            fb.branch_key AS from_branch_key, fb.display_name AS from_branch_display_name,
+            tb.branch_key AS to_branch_key, tb.display_name AS to_branch_display_name
+       FROM blessboard.member_branch_transfer_requests t
+       INNER JOIN blessboard.members m ON m.id = t.member_id
+       LEFT JOIN blessboard.branches fb ON fb.id = t.from_branch_id
+       LEFT JOIN blessboard.branches tb ON tb.id = t.to_branch_id
+      WHERE t.church_id = $1
+        AND t.status = 'requested'
+        AND (t.from_branch_id = $2 OR t.to_branch_id = $2)
+      ORDER BY t.created_at DESC, t.id DESC
+      LIMIT $3`,
+    [churchId, branchId, lim]
+  );
+  return {
+    total,
+    items: rows.map((row) => {
+      const fromId = String(row.from_branch_id || "");
+      const scopeId = String(branchId);
+      return {
+        id: row.id,
+        memberId: row.member_id,
+        firstName: row.first_name,
+        lastName: row.last_name,
+        preferredName: row.preferred_name || null,
+        status: row.status,
+        createdAt: row.created_at,
+        direction: fromId === scopeId ? "outbound" : "inbound",
+        fromBranchId: row.from_branch_id,
+        toBranchId: row.to_branch_id,
+        fromBranchKey: row.from_branch_key || null,
+        fromBranchDisplayName: row.from_branch_display_name || null,
+        toBranchKey: row.to_branch_key || null,
+        toBranchDisplayName: row.to_branch_display_name || null,
+      };
+    }),
+  };
+}
+
+/**
+ * Optional visitor-form submission count (30d). Soft-fails when activity tables absent.
+ * @param {{ query: Function }} client
+ * @param {{ organizationId: string, branchId: string }} input
+ */
+async function countVisitorSubmissions30d(client, { organizationId, branchId }) {
+  const orgId = String(organizationId || "").trim();
+  const bId = String(branchId || "").trim();
+  if (!orgId || !bId) {
+    return { available: false, total: 0 };
+  }
+  try {
+    const { rows } = await client.query(
+      `SELECT COUNT(*)::int AS n
+         FROM platform.tenant_form_submissions s
+         INNER JOIN platform.tenant_forms f ON f.id = s.form_id
+        WHERE f.organization_id = $1
+          AND f.product_code = 'blessboard'
+          AND f.category = 'visitor'
+          AND s.created_at >= (now() - interval '30 days')
+          AND (
+            s.branch_id = $2
+            OR (s.branch_id IS NULL AND f.branch_id = $2)
+            OR (s.branch_id IS NULL AND f.branch_id IS NULL)
+          )`,
+      [orgId, bId]
+    );
+    return { available: true, total: rows[0] ? Number(rows[0].n) : 0 };
+  } catch {
+    return { available: false, total: 0 };
+  }
+}
+
 async function updateTransferStatus(client, fields) {
   const { rows } = await client.query(
     `UPDATE blessboard.member_branch_transfer_requests SET
@@ -1113,6 +1272,10 @@ module.exports = {
   insertTransferRequest,
   getTransferById,
   listTransfers,
+  countMembersByStatusForBranch,
+  listReviewQueueForBranch,
+  listOpenTransfersForBranch,
+  countVisitorSubmissions30d,
   updateTransferStatus,
   setPrimaryMembershipBranch,
 };

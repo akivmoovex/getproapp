@@ -257,7 +257,7 @@ describe("branch-admin route reconciliation (apex runtime)", () => {
 
     const markers = {
       "/branch-admin/registrations": /Verification queue|Registrations|No pending|empty|data-bb-/i,
-      "/branch-admin/members": /data-bb-member-directory|Member directory|No members/i,
+      "/branch-admin/members": /data-bb-member-directory|Branch membership|Member directory|No members/i,
       "/branch-admin/announcements": /Announcements|data-bb-ann|No announcements|empty/i,
       "/branch-admin/attendance": /Attendance|data-bb-|No attendance|empty/i,
       "/branch-admin/giving": /Giving|data-bb-|No giving|empty/i,
