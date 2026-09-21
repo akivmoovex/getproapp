@@ -29,9 +29,6 @@ const {
   createHostedClient,
   extractCsrfField,
 } = require(`${root}/src/activeclinic/qa/activeClinicHostedAuthQaClient`);
-const {
-  setPlatformIdentityPassword,
-} = require(`${root}/src/platform/services/platformIdentityCredentialService`);
 
 const BB = process.env.V2_BB_HOSTED_BASE || "https://blessboard.neuniversity.org";
 const AC = process.env.V2_AC_HOSTED_BASE || "https://activeclinic.neuniversity.org";
@@ -40,7 +37,6 @@ const V7_AC = "https://activeclinic.pronline.org";
 const EXPECTED_SHA_PREFIX = process.env.V2_MEDIA_EXPECTED_SHA || "PLACEHOLDER";
 const OUT = process.env.V2_MEDIA_OUT || "/tmp/v2-shared-media-upload-parity-hosted.json";
 const CREDS_PATH = path.join(root, ".env.v8-qa-tenants.local");
-const TEMP_PASSWORD = `V2MediaQa!${crypto.randomBytes(4).toString("hex")}`;
 
 const creds = {};
 if (fs.existsSync(CREDS_PATH)) {
@@ -288,11 +284,15 @@ async function runBb(result) {
     BB
   );
 
-  // Structured / public editor assets
-  const publicEdit = await req(login.jar, `${BB}/c/${org}?edit=1`);
-  const inlineHasUpload = /Upload from computer|Choose from Content Library/i.test(
-    fs.readFileSync(path.join(root, "public/platform/website-inline-edit.js"), "utf8")
-  ) && /website-inline-edit\.js\?v=v2-media-parity-1/i.test(publicEdit.body);
+  // Public editor shell cache-bust (website_edit=1 enables editingMode)
+  const publicEdit = await follow(
+    login.jar,
+    await req(login.jar, `${BB}/c/${org}?website_edit=1&website_mode=draft`),
+    BB
+  );
+  const inlineHasUpload =
+    /website-inline-edit\.js\?v=v2-media-parity-1/i.test(publicEdit.body) &&
+    /website-inline-edit\.css\?v=v2-media-parity-1/i.test(publicEdit.body);
 
   // CDN / media GET
   let cdnOk = false;
@@ -382,26 +382,29 @@ async function runAc(db, result) {
       return;
     }
     organizationKey = fixture.organizationKey || fixture.clinicKey;
-    const adminId = fixture.adminIdentityId || fixture.adminUserId;
-    if (adminId) {
-      await setPlatformIdentityPassword(db, {
-        identityId: adminId,
-        password: TEMP_PASSWORD,
-        env: process.env,
-      });
+    const email = fixture.adminEmail;
+    const password = fixture.password;
+    if (!email || !password) {
+      result.activeclinic = { ok: false, reason: "missing_fixture_credentials", organizationKey };
+      return;
     }
-    const email = fixture.adminEmail || fixture.loginEmail;
     const client = createHostedClient(AC);
     const loginGet = await client.get("/login");
     const csrf = extractCsrfField(loginGet.text) || client.jar.csrf();
     const loginPost = await client.postForm("/login", {
       [CSRF_FIELD]: csrf,
       identifier: email,
-      password: TEMP_PASSWORD,
+      password,
     });
     await client.follow(loginPost);
     if (!client.jar.sessionPresent()) {
-      result.activeclinic = { ok: false, reason: "login_failed", organizationKey };
+      result.activeclinic = {
+        ok: false,
+        reason: "login_failed",
+        organizationKey,
+        loginStatus: loginPost.status,
+        location: loginPost.location || null,
+      };
       return;
     }
 
@@ -595,8 +598,16 @@ async function main() {
 
   await runBb(result);
 
-  const databaseUrl = resolveDatabaseUrlSafe(process.env);
-  const db = createProvisionPool(databaseUrl);
+  const databaseUrl = resolveDatabaseUrlSafe();
+  if (!databaseUrl.ok) {
+    result.activeclinic = { ok: false, reason: databaseUrl.message || "DATABASE_URL_required" };
+    result.status = "BLOCKED";
+    result.blockReason = "activeclinic_db_url";
+    fs.writeFileSync(OUT, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(2);
+  }
+  const db = createProvisionPool(databaseUrl.connectionString);
   try {
     await runAc(db, result);
   } finally {
