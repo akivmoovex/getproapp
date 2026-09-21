@@ -394,14 +394,22 @@ function applyStructuredDraftsToModel(model, drafts) {
       });
       continue;
     }
-    const mediaUrl = presentDraftImageUrl(
-      d.draftKind === "image"
-        ? payload.imageUrl || null
-        : d.draftKind === "video"
-          ? // Bug 22: never treat the YouTube/Vimeo URL as the image src; only a thumbnail.
-            payload.thumbnailUrl || null
-          : payload.imageUrl || payload.thumbnailUrl || null
-    );
+    // Bug 22: draft overlay and publish apply share resolveSectionMediaFromDraft.
+    const { resolveSectionMediaFromDraft } = require("../website/sectionMediaDraftFields");
+    const existingSection = (model.sections || []).find((s) => String(s.sectionKey) === sectionKey);
+    const resolved =
+      d.draftKind === "image" || d.draftKind === "video"
+        ? resolveSectionMediaFromDraft({
+            draftKind: d.draftKind,
+            payload,
+            existingMediaUrl: existingSection && existingSection.mediaUrl,
+            existingLayout: existingSection && existingSection.layoutMetadata,
+          })
+        : {
+            mediaUrl: presentDraftImageUrl(payload.imageUrl || payload.thumbnailUrl || null),
+            layoutPatch: {},
+          };
+    const mediaUrl = presentDraftImageUrl(resolved.mediaUrl);
     let matched = false;
     model.sections = (model.sections || []).map((s) => {
       if (String(s.sectionKey) !== sectionKey) return s;
@@ -411,9 +419,7 @@ function applyStructuredDraftsToModel(model, drafts) {
         mediaUrl: mediaUrl || s.mediaUrl,
         layoutMetadata: {
           ...(s.layoutMetadata || {}),
-          ...(d.draftKind === "image"
-            ? { altText: payload.altText, focal: payload.focal, fit: payload.fit }
-            : { videoUrl: payload.videoUrl, videoTitle: payload.title }),
+          ...resolved.layoutPatch,
         },
       };
     });
@@ -428,10 +434,7 @@ function applyStructuredDraftsToModel(model, drafts) {
           mediaUrl,
           sortOrder: 50,
           status: "draft",
-          layoutMetadata:
-            d.draftKind === "image"
-              ? { altText: payload.altText, focal: payload.focal, fit: payload.fit }
-              : { videoUrl: payload.videoUrl, videoTitle: payload.title },
+          layoutMetadata: { ...resolved.layoutPatch },
         },
       ];
     }

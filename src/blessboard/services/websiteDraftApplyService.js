@@ -225,28 +225,23 @@ async function applyStructuredDraft(client, draft, ctx) {
           altText: null,
           videoUrl: null,
           videoTitle: null,
+          mediaKind: null,
         }),
       });
       if (!updated.section) throw mapError("APPLY_FAILED", "Could not clear media.");
       return;
     }
-    const mediaUrl =
-      payload.imageUrl || payload.videoUrl || payload.thumbnailUrl || null;
-    const layoutPatch =
-      draft.draftKind === "image"
-        ? {
-            altText: payload.altText || null,
-            focal: payload.focal || null,
-            fit: payload.fit || null,
-          }
-        : {
-            videoUrl: payload.videoUrl || null,
-            videoTitle: payload.title || null,
-          };
+    const { resolveSectionMediaFromDraft } = require("../website/sectionMediaDraftFields");
+    const resolved = resolveSectionMediaFromDraft({
+      draftKind: draft.draftKind,
+      payload,
+      existingMediaUrl: section.mediaUrl,
+      existingLayout: section.layoutMetadata,
+    });
     const updated = await contentRepo.updateSection(client, section.id, {
-      mediaUrl,
+      mediaUrl: resolved.mediaUrl,
       status: "published",
-      layoutMetadata: mergeLayoutMetadata(section.layoutMetadata, layoutPatch),
+      layoutMetadata: mergeLayoutMetadata(section.layoutMetadata, resolved.layoutPatch),
     });
     if (!updated.section) throw mapError("APPLY_FAILED", "Could not update media.");
     return;

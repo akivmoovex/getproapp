@@ -153,8 +153,12 @@
           editKind: 'video',
           editEntityKey: 'home-hero-video',
           editSectionKey: 'hero',
-          editLabel: 'Edit hero video',
-          editPayload: { videoUrl: '', title: '', thumbnailUrl: heroMedia || '' }
+          editLabel: 'Edit hero YouTube video',
+          editPayload: {
+            videoUrl: (hero && hero.layoutMetadata && hero.layoutMetadata.videoUrl) || '',
+            title: (hero && hero.layoutMetadata && hero.layoutMetadata.videoTitle) || '',
+            thumbnailUrl: heroMedia || ''
+          }
         }) %>
       </div>
       <% } %>

@@ -167,7 +167,8 @@
       })
       .join("");
     return (
-      '<div class="bb-tp-se-grid" data-bb-media-editor="1" data-bb-stitch-screen-mobile="Phase 7 - Media Editing - Mobile">' +
+      '<div class="bb-tp-se-grid" data-bb-media-editor="1" data-bb-media-mode="image" data-bb-stitch-screen-mobile="Phase 7 - Media Editing - Mobile">' +
+      '<p class="bb-tp-se-hint" data-bb-media-mode-hint="image">Photograph mode — saves as the section image and clears any YouTube URL for this section only (previous video is retained for restore).</p>' +
       '<div class="bb-tp-se-preview"><img data-bb-se-preview="1" src="' +
       esc(p.imageUrl || "") +
       '" alt="" width="320" height="200" /></div>' +
@@ -218,8 +219,8 @@
     var hasThumb = Boolean(p.thumbnailUrl);
     var thumbLabel = hasThumb ? "Replace thumbnail" : "Add thumbnail";
     return (
-      '<div class="bb-tp-se-grid" data-bb-media-editor="1">' +
-      '<p class="bb-tp-se-hint">Video file upload is not supported. Use a YouTube or Vimeo https link.</p>' +
+      '<div class="bb-tp-se-grid" data-bb-media-editor="1" data-bb-media-mode="youtube">' +
+      '<p class="bb-tp-se-hint" data-bb-media-mode-hint="youtube">YouTube mode — paste an approved YouTube or Vimeo https link. Optional thumbnail is shown as the section photograph until shared YouTube embed (V2-MEDIA-01) ships. Video files are not uploaded.</p>' +
       field("Video URL", "videoUrl", p.videoUrl || "", { type: "url" }) +
       field("Title", "title", p.title || "") +
       '<input type="hidden" name="thumbnailUrl" value="' +
@@ -472,8 +473,8 @@
   function titleFor(kind) {
     return (
       {
-        image: "Edit image",
-        video: "Edit video",
+        image: "Photograph",
+        video: "YouTube video",
         service_times: "Edit service times",
         leader: "Edit leadership member",
         ministry: "Edit ministry",

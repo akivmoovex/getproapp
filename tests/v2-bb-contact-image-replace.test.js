@@ -27,10 +27,12 @@ describe("v2-bb contact hero image replacement (Bug 21)", () => {
 
   it("structured image drafts update contact soft-fill heroMediaUrl and do not use videoUrl as img src", () => {
     const src = read("src/blessboard/services/websiteStructuredDraftService.js");
+    const helper = read("src/blessboard/website/sectionMediaDraftFields.js");
     assert.match(src, /pageKey === "contact" && model\.contactDemoFallback/);
     assert.match(src, /heroMediaUrl: mediaUrl/);
-    assert.match(src, /draftKind === "video"/);
-    assert.match(src, /never treat the YouTube\/Vimeo URL as the image src/);
+    assert.match(src, /resolveSectionMediaFromDraft/);
+    assert.match(helper, /never write a video stream URL into mediaUrl/i);
+    assert.match(helper, /Poster only/);
     assert.doesNotMatch(
       src,
       /presentDraftImageUrl\(\s*payload\.imageUrl \|\| payload\.videoUrl \|\| payload\.thumbnailUrl/

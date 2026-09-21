@@ -394,14 +394,24 @@ async function loadWebsiteDraftChangesReview(db, opts) {
       let mLabel = null;
 
       if (d.draftKind === "image" || d.draftKind === "video") {
-        const prevUrl = previous.imageUrl || previous.videoUrl || previous.thumbnailUrl || "";
-        const nextUrl = payload.imageUrl || payload.videoUrl || payload.thumbnailUrl || "";
-        previousDisplay = mediaLabel(prevUrl);
+        // Bug 22: never use YouTube URL as review thumbnail src.
+        const prevUrl =
+          previous.imageUrl || previous.thumbnailUrl || previous.previousImageUrl || "";
+        const nextUrl =
+          d.draftKind === "image"
+            ? payload.imageUrl || ""
+            : payload.thumbnailUrl || "";
+        const nextVideo =
+          d.draftKind === "video" && payload.videoUrl ? String(payload.videoUrl) : "";
+        previousDisplay = mediaLabel(prevUrl) || (previous.videoUrl ? "YouTube video" : "");
         newDisplay =
           d.op === "remove"
             ? "Removed"
-            : mediaLabel(nextUrl) +
-              (payload.altText ? ` — ${String(payload.altText).slice(0, 80)}` : "");
+            : d.draftKind === "video"
+              ? (nextVideo ? mediaLabel(nextVideo) : "YouTube video") +
+                (nextUrl ? ` · poster ${mediaLabel(nextUrl)}` : "")
+              : mediaLabel(nextUrl) +
+                (payload.altText ? ` — ${String(payload.altText).slice(0, 80)}` : "");
         thumb = d.op === "remove" ? null : mediaThumb(nextUrl);
         mLabel = newDisplay;
         contentItemLabel = `${sectionTitle(sectionKey)} · ${KIND_LABELS[d.draftKind]}`;
