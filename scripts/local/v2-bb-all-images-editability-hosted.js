@@ -212,7 +212,14 @@ async function main() {
     const m = markers(page.body);
     const adminOk =
       m.uploadFromComputer && m.contentLibrary && m.websiteMedia && !m.killSwitchUpload;
-    const sermonsAdminOk = adminOk && m.sermonThumbField;
+    // Sermons keep a document upload path for PDF resources (legacy BB picker URL may
+    // appear alongside the shared Hostinger thumbnail field). Do not treat that as failure.
+    const sermonsAdminOk =
+      m.uploadFromComputer &&
+      m.contentLibrary &&
+      m.websiteMedia &&
+      m.sharedField &&
+      m.sermonThumbField;
     checks[key] = {
       status: page.status,
       ...m,

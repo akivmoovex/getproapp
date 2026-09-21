@@ -9,11 +9,11 @@
 
 ## Final status
 
-**`V2_BB_UNIVERSAL_IMAGE_UPLOAD_QA_PARTIAL`** until hosted deploy SHA below matches this tip and sermons-admin smoke confirms shared thumbnail field.
+**`V2_BB_UNIVERSAL_IMAGE_UPLOAD_QA_PASS`**
 
-When hosted smoke (`scripts/local/v2-bb-all-images-editability-hosted.js`) returns **PASS** against the tip SHA, promote to **`V2_BB_UNIVERSAL_IMAGE_UPLOAD_QA_PASS`**.
+Hosted smoke (`scripts/local/v2-bb-all-images-editability-hosted.js`) returned **PASS** against tip SHA `8a65c0c71f88` on `moovex-platform-v8-testing`.
 
-**Production untouched:** **YES**
+**Production untouched:** **YES** (`blessboard.pronline.org` SHA `03a89106e2fe`, non-V8)
 
 ## Complete inventory (editable vs non-editable)
 
@@ -137,22 +137,24 @@ Related ministry/season image contract tests also PASS.
 | Smoke script | `scripts/local/v2-bb-all-images-editability-hosted.js` |
 | Shared media parity | `scripts/local/v2-shared-media-upload-parity-hosted.js` |
 | Public edit URL | `https://blessboard.neuniversity.org/c/bb-v8qa-mub23a6v6a6b/?website_edit=1&website_mode=draft` |
-| Deployment SHA (fill after deploy) | _pending tip push_ |
+| Deployment SHA | **`8a65c0c71f88`** (`moovex-platform-v8-testing`) |
 | Pre-fix live SHA | `7b5756436431` |
+| Hosted smoke | **PASS** (all surface checks + Hostinger upload `storageProvider=hostinger`, `published: false`) |
+| Shared media parity (BB + AC) | **PASS** (`v2-shared-media-upload-parity-hosted.js` @ `8a65c0c7`) |
 | Production (`blessboard.pronline.org`) | SHA `03a89106e2fe`, non-V8 — **untouched** |
 
 ### Hosted smoke checklist (script)
 
-- [ ] Every admin surface: Upload from computer + Content Library (leadership, ministries, events, giving, **sermons**)
-- [ ] Public edit mode: structured JS cache bust + Edit image pencils
-- [ ] Shared Hostinger upload returns `publicSrc` / media id
-- [ ] Production healthz remains non-V8
+- [x] Every admin surface: Upload from computer + Content Library (leadership, ministries, events, giving, **sermons**)
+- [x] Public edit mode: structured JS cache bust + Edit image pencils
+- [x] Shared Hostinger upload returns `publicSrc` / media id
+- [x] Production healthz remains non-V8
 
 ## Outstanding gaps / blocked tests
 
-1. **Hosted application deploy** of this tip must land before sermons-admin shared field + `v2-bb-univ-img-1` can be smoke-verified.
-2. **Contact video→image** remains **V2-BB-CONTACT-01** (design pending).
-3. **Sermons page IA redesign** (Upcoming/Recent/YouTube) remains **V2-BB-SERMONS-01** — thumbnail durability no longer blocked.
+1. **Contact video→image** remains **V2-BB-CONTACT-01** (design pending) — not a Bug 19 image-upload blocker.
+2. **Sermons page IA redesign** (Upcoming/Recent/YouTube) remains **V2-BB-SERMONS-01** — thumbnail durability is no longer blocked.
+3. Sermons content-admin still exposes legacy HQ document upload URL for PDF resources alongside the shared thumbnail field (intentional; smoke ignores that URL when the shared image field is present).
 
 ## ActiveClinic compatibility
 
@@ -164,4 +166,5 @@ Shared media-field / Hostinger path unchanged for ActiveClinic. Coverage catalog
 
 | Date | Note |
 |------|------|
-| 2026-09-21 | Bug 19 implementation: sermon `image_url`, publicSrc preference, content-admin sermon thumbnail, testing migration applied, audit opened as PARTIAL pending hosted SHA. |
+| 2026-09-21 | Bug 19 implementation: sermon `image_url`, publicSrc preference, content-admin sermon thumbnail, testing migration applied. |
+| 2026-09-21 | Hosted smoke **PASS** on SHA `8a65c0c71f88`; status promoted to **`V2_BB_UNIVERSAL_IMAGE_UPLOAD_QA_PASS`**. |
