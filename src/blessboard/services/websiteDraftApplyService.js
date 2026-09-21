@@ -607,8 +607,12 @@ async function applyEntityDraft(client, draft, ctx) {
   }
 
   if (kind === "event") {
+    const stripTemplate = (value) =>
+      String(value || "")
+        .replace(/\s*\(template example\)\s*$/i, "")
+        .trim();
     const fields = {
-      title: payload.title || "Event",
+      title: stripTemplate(payload.title) || "Event",
       summary: payload.summary || null,
       startsAt: payload.startsAt || null,
       endsAt: payload.endsAt || null,
@@ -622,6 +626,51 @@ async function applyEntityDraft(client, draft, ctx) {
       const existing = await findFns.event(client, entityKey);
       if (existing && String(existing.churchId) === String(churchId)) {
         await updateFns.event(client, entityKey, fields);
+        return;
+      }
+    }
+    const {
+      isSoftFillEntityKey,
+      softFillItemsForKind,
+      SOFT_FILL_COLLECTIONS,
+    } = require("./websiteSoftFillCollectionService");
+    if (isSoftFillEntityKey("event", entityKey)) {
+      const published = await contentRepo.listEvents(client, {
+        churchId,
+        branchId: branchId || null,
+        status: "published",
+      });
+      const norm = (title) => stripTemplate(title).toLowerCase();
+      const matched = published.find((row) => norm(row.title) === norm(fields.title));
+      if (matched) {
+        await updateFns.event(client, matched.id, fields);
+        return;
+      }
+      if (!published.length) {
+        const cfg = SOFT_FILL_COLLECTIONS.event;
+        const siblings = softFillItemsForKind("event", null);
+        for (const item of siblings) {
+          const siblingPayload = cfg.payloadFromItem(item);
+          const rowFields =
+            String(item.id) === entityKey
+              ? fields
+              : {
+                  title: stripTemplate(siblingPayload.title) || "Event",
+                  summary: siblingPayload.summary || null,
+                  startsAt: siblingPayload.startsAt || null,
+                  endsAt: siblingPayload.endsAt || null,
+                  timezone: siblingPayload.timezone || null,
+                  location: siblingPayload.location || null,
+                  registrationUrl: siblingPayload.registrationUrl || null,
+                  imageUrl: siblingPayload.imageUrl || null,
+                  status: "published",
+                };
+          await insertFns.event(client, {
+            churchId,
+            branchId: branchId || null,
+            ...rowFields,
+          });
+        }
         return;
       }
     }

@@ -153,10 +153,23 @@ describe("v7 image editor coverage — editor wiring contract", () => {
   it("BlessBoard home ministry cards expose Edit image with shared structured picker", () => {
     const card = read("views/blessboard/v5/public/partials/content-card.ejs");
     const home = read("views/blessboard/v5/public/home.ejs");
+    const trigger = read("views/blessboard/v5/partials/entity-image-edit-trigger.ejs");
     assert.match(home, /cardMinistry:\s*m/);
-    assert.match(card, /editLabel:\s*'Edit image'/);
+    assert.match(card, /entity-image-edit-trigger/);
     assert.match(card, /editKind:\s*'ministry'/);
-    assert.match(card, /editDialogTitle:\s*'Edit image'/);
+    assert.match(trigger, /editLabel:\s*'Edit image'/);
+    assert.match(trigger, /editDialogTitle:\s*'Edit image'/);
+  });
+
+  it("BlessBoard home This Season event cards expose Edit image on event records", () => {
+    const home = read("views/blessboard/v5/public/home.ejs");
+    const events = read("views/blessboard/v5/public/events.ejs");
+    assert.match(home, /data-bb-home-event-cards="1"/);
+    assert.match(home, /entity-image-edit-trigger/);
+    assert.match(home, /editKind:\s*'event'/);
+    assert.match(home, /data-bb-event-image="1"/);
+    assert.match(events, /entity-image-edit-trigger/);
+    assert.match(events, /data-bb-event-image="1"/);
   });
 
   it("ActiveClinic library placements render images and edit affordances", () => {

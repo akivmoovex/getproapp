@@ -42,11 +42,9 @@
     <span class="material-symbols-outlined" aria-hidden="true"><%= typeof cardIcon !== 'undefined' && cardIcon ? cardIcon : 'groups' %></span>
     <% } %>
     <% if (_canEditMinistryImage) { %>
-    <%- include('../../partials/structured-edit-trigger', {
+    <%- include('../../partials/entity-image-edit-trigger', {
       editKind: 'ministry',
       editEntityKey: _ministryKey,
-      editLabel: 'Edit image',
-      editDialogTitle: 'Edit image',
       editPayload: {
         name: _nameClean,
         summary: _summaryClean,

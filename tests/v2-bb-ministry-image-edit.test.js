@@ -32,10 +32,12 @@ describe("v2 BlessBoard home ministry image editing", () => {
 
   it("ministries page media exposes Edit image with distinct entity keys", () => {
     const src = read("views/blessboard/v5/public/ministries.ejs");
-    assert.match(src, /editLabel:\s*'Edit image'/);
-    assert.match(src, /editDialogTitle:\s*'Edit image'/);
+    const trigger = read("views/blessboard/v5/partials/entity-image-edit-trigger.ejs");
+    assert.match(src, /entity-image-edit-trigger/);
     assert.match(src, /data-bb-ministry-image="1"/);
     assert.match(src, /bb-tp-edit-media-wrap/);
+    assert.match(trigger, /editLabel:\s*'Edit image'/);
+    assert.match(trigger, /editDialogTitle:\s*'Edit image'/);
   });
 
   it("structured editor honors dialog title override and shared picker labels", () => {

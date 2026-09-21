@@ -6058,12 +6058,16 @@ a.bb-tp-content-card:hover {
   max-width: 100%;
 }
 .bb-tp-body--editing .bb-tp-content-card__media.bb-tp-edit-media-wrap,
-.bb-tp-body--editing .bb-tp-ministry-card__media.bb-tp-edit-media-wrap {
+.bb-tp-body--editing .bb-tp-ministry-card__media.bb-tp-edit-media-wrap,
+.bb-tp-body--editing .bb-tp-event-card__media.bb-tp-edit-media-wrap,
+.bb-tp-body--editing .bb-tp-featured-event__media.bb-tp-edit-media-wrap {
   display: block;
   width: 100%;
 }
 .bb-tp-body--editing .bb-tp-content-card__media .bb-tp-structured-pencil,
-.bb-tp-body--editing .bb-tp-ministry-card__media .bb-tp-structured-pencil {
+.bb-tp-body--editing .bb-tp-ministry-card__media .bb-tp-structured-pencil,
+.bb-tp-body--editing .bb-tp-event-card__media .bb-tp-structured-pencil,
+.bb-tp-body--editing .bb-tp-featured-event__media .bb-tp-structured-pencil {
   position: absolute;
   top: 0.5rem;
   right: 0.5rem;

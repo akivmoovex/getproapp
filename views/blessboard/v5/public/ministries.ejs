@@ -114,11 +114,9 @@
             <span class="material-symbols-outlined bb-tp-ministry-card__fallback-icon" role="img" aria-label="<%= ministry.name %>">groups</span>
             <% } %>
             <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-            <%- include('../partials/structured-edit-trigger', {
+            <%- include('../partials/entity-image-edit-trigger', {
               editKind: 'ministry',
               editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
-              editLabel: 'Edit image',
-              editDialogTitle: 'Edit image',
               editPayload: {
                 name: String(ministry.name || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
                 summary: ministry.summary,
@@ -208,11 +206,9 @@
             <span class="material-symbols-outlined bb-tp-ministry-card__fallback-icon" role="img" aria-label="<%= ministry.name %>">groups</span>
             <% } %>
             <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-            <%- include('../partials/structured-edit-trigger', {
+            <%- include('../partials/entity-image-edit-trigger', {
               editKind: 'ministry',
               editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
-              editLabel: 'Edit image',
-              editDialogTitle: 'Edit image',
               editPayload: {
                 name: String(ministry.name || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
                 summary: ministry.summary,

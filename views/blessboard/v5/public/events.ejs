@@ -90,7 +90,7 @@
     <section class="bb-tp-featured-event" aria-label="Featured event" data-bb-event-featured="1">
       <h2 class="bb-tp-featured-event__label bb-tp-section-title--ruled">Featured Gathering</h2>
       <article class="bb-tp-featured-event__card">
-        <div class="bb-tp-featured-event__media<%= featured.imageUrl ? '' : ' is-fallback' %>">
+        <div class="bb-tp-featured-event__media<%= featured.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
           <% if (featured.imageUrl) { %>
           <img
             src="<%= featured.imageUrl %>"
@@ -99,6 +99,7 @@
             height="540"
             loading="eager"
             decoding="async"
+            data-bb-event-image="1"
           />
           <% } else if (featuredParts.month || featuredParts.day) { %>
           <div
@@ -111,6 +112,24 @@
           </div>
           <% } else { %>
           <span class="material-symbols-outlined bb-tp-featured-event__fallback-icon" role="img" aria-label="<%= featured.title %>">event</span>
+          <% } %>
+          <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+          <%- include('../partials/entity-image-edit-trigger', {
+            editKind: 'event',
+            editEntityKey: String(featured.id || ('event-' + featured.title)),
+            editPayload: {
+              title: String(featured.title || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
+              summary: featured.summary,
+              startsAt: featured.startsAt,
+              endsAt: featured.endsAt,
+              location: featured.location,
+              registrationUrl: featured.registrationUrl,
+              imageUrl: featured.imageUrl,
+              timezone: featured.timezone,
+              featured: true,
+              visible: true
+            }
+          }) %>
           <% } %>
         </div>
         <div class="bb-tp-featured-event__copy">
@@ -193,10 +212,10 @@
       <ul class="bb-tp-event-grid">
         <% rest.forEach(function (event) { %>
         <% var parts = formatEventParts(event.startsAt, event.timezone, event.endsAt); %>
-        <li class="bb-tp-event-card" data-bb-event-item="1">
-          <div class="bb-tp-event-card__media<%= event.imageUrl ? '' : ' is-fallback' %>">
+        <li class="bb-tp-event-card" data-bb-event-item="1" data-bb-event-id="<%= String(event.id || ('event-' + event.title)) %>">
+          <div class="bb-tp-event-card__media<%= event.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
             <% if (event.imageUrl) { %>
-            <img src="<%= event.imageUrl %>" alt="<%= event.title %>" width="400" height="240" loading="lazy" decoding="async" />
+            <img src="<%= event.imageUrl %>" alt="<%= event.title %>" width="400" height="240" loading="lazy" decoding="async" data-bb-event-image="1" />
             <% } else { %>
             <span class="material-symbols-outlined" aria-hidden="true">event</span>
             <% } %>
@@ -209,6 +228,24 @@
               <% if (parts.month) { %><span class="bb-tp-event-card__month"><%= parts.month %></span><% } %>
               <% if (parts.day) { %><strong class="bb-tp-event-card__day"><%= parts.day %></strong><% } %>
             </div>
+            <% } %>
+            <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+            <%- include('../partials/entity-image-edit-trigger', {
+              editKind: 'event',
+              editEntityKey: String(event.id || ('event-' + event.title)),
+              editPayload: {
+                title: String(event.title || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
+                summary: event.summary,
+                startsAt: event.startsAt,
+                endsAt: event.endsAt,
+                location: event.location,
+                registrationUrl: event.registrationUrl,
+                imageUrl: event.imageUrl,
+                timezone: event.timezone,
+                featured: false,
+                visible: true
+              }
+            }) %>
             <% } %>
           </div>
           <div class="bb-tp-event-card__body">

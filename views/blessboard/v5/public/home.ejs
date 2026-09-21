@@ -399,15 +399,51 @@
       editPageKey: 'home',
       editSectionKey: 'events_intro'
     }) %>
-    <div class="bb-tp-card-grid bb-tp-card-grid--2">
+    <div class="bb-tp-card-grid bb-tp-card-grid--2" data-bb-home-event-cards="1">
       <% teasers.events.slice(0, 2).forEach(function (event) { %>
       <% var parts = formatEventParts(event.startsAt, event.timezone, event.endsAt); %>
-      <article class="bb-tp-event-card bb-tp-event-card--media">
-        <% if (event.imageUrl) { %>
-        <div class="bb-tp-event-card__media">
-          <img src="<%= event.imageUrl %>" alt="<%= event.title %>" width="640" height="360" loading="lazy" decoding="async" />
+      <% var _eventKey = String(event.id || ('event-' + (event.title || 'item'))); %>
+      <% var _eventTitleClean = String(event.title || '').replace(/\s*\(template example\)\s*$/i, '').trim(); %>
+      <% var _eventImg = event.imageUrl; %>
+      <% if (_eventImg && typeof presentImageSrc === 'function') { _eventImg = presentImageSrc(_eventImg) || _eventImg; } %>
+      <article
+        class="bb-tp-event-card bb-tp-event-card--media"
+        data-bb-event-card="1"
+        data-bb-event-id="<%= _eventKey %>"
+      >
+        <div class="bb-tp-event-card__media<%= _eventImg ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
+          <% if (_eventImg) { %>
+          <img
+            src="<%= _eventImg %>"
+            alt="<%= event.title %>"
+            width="640"
+            height="360"
+            loading="lazy"
+            decoding="async"
+            data-bb-event-image="1"
+          />
+          <% } else { %>
+          <span class="material-symbols-outlined" aria-hidden="true">event</span>
+          <% } %>
+          <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+          <%- include('../partials/entity-image-edit-trigger', {
+            editKind: 'event',
+            editEntityKey: _eventKey,
+            editPayload: {
+              title: _eventTitleClean,
+              summary: event.summary,
+              startsAt: event.startsAt,
+              endsAt: event.endsAt,
+              location: event.location,
+              registrationUrl: event.registrationUrl,
+              imageUrl: event.imageUrl || '',
+              timezone: event.timezone,
+              featured: Boolean(event.featured),
+              visible: event.visible !== false
+            }
+          }) %>
+          <% } %>
         </div>
-        <% } %>
         <div class="bb-tp-event-card__body">
           <div class="bb-tp-event-card__date" aria-hidden="true">
             <span class="bb-tp-event-card__month"><%= parts.month %></span>
