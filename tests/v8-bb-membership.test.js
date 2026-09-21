@@ -467,9 +467,23 @@ describe("V8 BlessBoard membership workflow", () => {
       "utf8"
     );
     assert.match(register, /data-bb-membership="public-apply"/);
+    assert.match(register, /data-bb-membership-wizard="1"/);
     assert.match(register, /data-bb-screen-desktop="BB03-D"/);
     assert.match(register, /data-bb-membership-step-nav/);
     assert.match(register, /data-bb-step-next/);
+    assert.match(register, /data-bb-membership-panel="1"/);
+    assert.match(register, /data-bb-membership-panel="2"/);
+    assert.match(register, /data-bb-membership-panel="3"/);
+    assert.match(register, /data-bb-membership-panel="4"/);
+    assert.match(register, /data-bb-membership-review/);
+    assert.match(register, /membership-wizard\.js\?v=1/);
+    assert.match(
+      fs.readFileSync(
+        path.join(__dirname, "..", "public/blessboard/v5/membership-wizard.js"),
+        "utf8"
+      ),
+      /function validateCurrent/
+    );
     const submitted = fs.readFileSync(
       path.join(__dirname, "..", "views/blessboard/v5/public/register-submitted.ejs"),
       "utf8"

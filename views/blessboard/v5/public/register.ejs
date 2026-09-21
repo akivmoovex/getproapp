@@ -6,7 +6,7 @@
   <title>Register · <%= publicName %></title>
   <meta name="robots" content="noindex, nofollow" />
   <%- include('../partials/head-design-system') %>
-  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=16" />
+  <link rel="stylesheet" href="/blessboard/v5/tenant-auth.css?v=17" />
   <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=bb-phone-1" />
 </head>
 <body
@@ -16,6 +16,7 @@
   data-bb-page="register"
   data-bb-stitch-register="10-auth-member-registration"
   data-bb-membership="public-apply"
+  data-bb-membership-wizard="1"
   data-screen="BB03"
   data-bb-screen-desktop="BB03-D"
   data-bb-screen-mobile="BB03-M"
@@ -27,6 +28,16 @@
     : (error ? [error] : []);
   var hasErrors = Boolean(error) || summaryItems.length > 0;
   var sub = submitted || {};
+  var showSpiritual = typeof enableSpiritualBackground === 'undefined' || enableSpiritualBackground;
+  var showInterests = typeof enableParticipationInterests === 'undefined' || enableParticipationInterests;
+  var selectedInterests = Array.isArray(sub.interests) ? sub.interests : [];
+  var registerAction = typeof formAction !== 'undefined' && formAction ? formAction : '/register';
+  var initialStep = 1;
+  if (hasErrors) {
+    if (fe.firstName || fe.lastName || fe.preferredName || fe.phone || fe.phone_required || fe.email) initialStep = 1;
+    else if (fe.consentContact || fe.consent) initialStep = 4;
+    else initialStep = 4;
+  }
   function fieldInvalid(key) { return Boolean(fe[key]); }
   function fieldDescribedBy(key, extraIds) {
     var ids = [];
@@ -34,6 +45,10 @@
     if (extraIds) ids = ids.concat(extraIds);
     return ids.length ? ids.join(' ') : null;
   }
+  var stepDefs = [{ n: 1, code: 'BB03', label: 'Personal' }];
+  if (showSpiritual) stepDefs.push({ n: 2, code: 'BB04', label: 'Spiritual' });
+  if (showInterests) stepDefs.push({ n: 3, code: 'BB05', label: 'Interests' });
+  stepDefs.push({ n: 4, code: 'BB06', label: 'Review' });
 %>
   <a class="bb-auth-skip" href="#bb-auth-form">Skip to registration form</a>
 
@@ -81,11 +96,36 @@
             <h1 class="bb-auth-card__hero-title">Member Registration</h1>
             <p class="bb-auth-card__hero-lead">
               Join our community at <%= publicName %><% if (branchName) { %> · <%= branchName %><% } %>.
-              Please fill in your details below. Leadership reviews applications before member access is granted.
+              Complete each step below. Leadership reviews applications before member access is granted.
             </p>
           </div>
 
           <div class="bb-auth-card__body">
+            <nav
+              class="bb-auth-wizard"
+              data-bb-membership-progress="1"
+              aria-label="Registration progress"
+            >
+              <ol class="bb-auth-wizard__list">
+                <% stepDefs.forEach(function (s, i) { %>
+                <li
+                  class="bb-auth-wizard__item<%= initialStep === s.n ? ' is-current' : (initialStep > s.n ? ' is-done' : '') %>"
+                  data-bb-wizard-node="<%= s.n %>"
+                  data-bb-wizard-code="<%= s.code %>"
+                >
+                  <span class="bb-auth-wizard__node" aria-hidden="true"><%= i + 1 %></span>
+                  <span class="bb-auth-wizard__label"><%= s.label %></span>
+                </li>
+                <% }) %>
+              </ol>
+              <div class="bb-auth-wizard__bar" aria-hidden="true">
+                <span class="bb-auth-wizard__bar-fill" data-bb-wizard-bar style="width:<%= Math.round((1 / stepDefs.length) * 100) %>%"></span>
+              </div>
+              <p class="bb-auth-wizard__status" data-bb-step-status aria-live="polite">
+                Step 1 of <%= stepDefs.length %>: Personal
+              </p>
+            </nav>
+
             <% if (hasErrors) { %>
             <div
               class="bb-auth-error"
@@ -110,208 +150,302 @@
 
             <form
               method="post"
-              action="<%= typeof formAction !== 'undefined' && formAction ? formAction : '/register' %>"
+              action="<%= registerAction %>"
               class="bb-auth-form bb-auth-form--register"
               id="bb-auth-form"
               tabindex="-1"
               novalidate
+              data-bb-membership-initial-step="<%= initialStep %>"
               aria-describedby="<%= hasErrors ? 'bb-auth-error-summary bb-auth-contact-hint bb-auth-privacy-note' : 'bb-auth-contact-hint bb-auth-privacy-note' %>"
             >
               <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
 
-              <fieldset class="bb-auth-fieldset" data-bb-membership-step="1" data-screen="BB03" data-bb-screen-desktop="BB03-D" data-bb-screen-mobile="BB03-M" data-bb-auth-group="personal">
-                <legend class="bb-auth-fieldset__legend">
-                  <span class="material-symbols-outlined" aria-hidden="true">badge</span>
-                  <span class="bb-auth-fieldset__legend-desktop">Personal Info</span>
-                  <span class="bb-auth-fieldset__legend-mobile">Personal Information</span>
-                </legend>
+              <div
+                class="bb-auth-wizard-panel"
+                data-bb-membership-step="1"
+                data-bb-membership-panel="1"
+                data-screen="BB03"
+                data-bb-screen-desktop="BB03-D"
+                data-bb-screen-mobile="BB03-M"
+                data-bb-auth-group="personal"
+              >
+                <fieldset class="bb-auth-fieldset">
+                  <legend class="bb-auth-fieldset__legend">
+                    <span class="material-symbols-outlined" aria-hidden="true">badge</span>
+                    <span class="bb-auth-fieldset__legend-desktop">Personal Info</span>
+                    <span class="bb-auth-fieldset__legend-mobile">Personal Information</span>
+                  </legend>
 
-                <div class="bb-auth-field-row">
+                  <div class="bb-auth-field-row">
+                    <div class="bb-auth-field">
+                      <label for="first_name">
+                        First name
+                        <span class="bb-auth-required" aria-hidden="true">*</span>
+                      </label>
+                      <input
+                        id="first_name"
+                        name="first_name"
+                        type="text"
+                        required
+                        maxlength="100"
+                        autocomplete="given-name"
+                        aria-required="true"
+                        <% if (fieldInvalid('firstName')) { %>aria-invalid="true"<% } %>
+                        <% var firstDesc = fieldDescribedBy('firstName'); if (firstDesc) { %>aria-describedby="<%= firstDesc %>"<% } %>
+                        value="<%= sub.firstName != null ? sub.firstName : '' %>"
+                      />
+                      <% if (fe.firstName) { %>
+                      <p class="bb-auth-field__error" id="err-firstName" role="status"><%= fe.firstName %></p>
+                      <% } %>
+                    </div>
+
+                    <div class="bb-auth-field">
+                      <label for="last_name">
+                        Last name
+                        <span class="bb-auth-required" aria-hidden="true">*</span>
+                      </label>
+                      <input
+                        id="last_name"
+                        name="last_name"
+                        type="text"
+                        required
+                        maxlength="100"
+                        autocomplete="family-name"
+                        aria-required="true"
+                        <% if (fieldInvalid('lastName')) { %>aria-invalid="true"<% } %>
+                        <% var lastDesc = fieldDescribedBy('lastName'); if (lastDesc) { %>aria-describedby="<%= lastDesc %>"<% } %>
+                        value="<%= sub.lastName != null ? sub.lastName : '' %>"
+                      />
+                      <% if (fe.lastName) { %>
+                      <p class="bb-auth-field__error" id="err-lastName" role="status"><%= fe.lastName %></p>
+                      <% } %>
+                    </div>
+                  </div>
+
                   <div class="bb-auth-field">
-                    <label for="first_name">
-                      First name
-                      <span class="bb-auth-required" aria-hidden="true">*</span>
+                    <label for="preferred_name">
+                      Preferred name
+                      <span class="bb-auth-optional">(optional)</span>
                     </label>
                     <input
-                      id="first_name"
-                      name="first_name"
+                      id="preferred_name"
+                      name="preferred_name"
                       type="text"
-                      required
                       maxlength="100"
-                      autocomplete="given-name"
-                      aria-required="true"
-                      <% if (fieldInvalid('firstName')) { %>aria-invalid="true"<% } %>
-                      <% var firstDesc = fieldDescribedBy('firstName'); if (firstDesc) { %>aria-describedby="<%= firstDesc %>"<% } %>
-                      value="<%= sub.firstName != null ? sub.firstName : '' %>"
+                      autocomplete="nickname"
+                      aria-describedby="<%= fieldDescribedBy('preferredName', ['hint-preferredName']) || 'hint-preferredName' %>"
+                      <% if (fieldInvalid('preferredName')) { %>aria-invalid="true"<% } %>
+                      value="<%= sub.preferredName != null ? sub.preferredName : '' %>"
                     />
-                    <% if (fe.firstName) { %>
-                    <p class="bb-auth-field__error" id="err-firstName" role="status"><%= fe.firstName %></p>
+                    <p class="bb-auth-hint" id="hint-preferredName">How you would like to be addressed, if different from your first name.</p>
+                    <% if (fe.preferredName) { %>
+                    <p class="bb-auth-field__error" id="err-preferredName" role="status"><%= fe.preferredName %></p>
                     <% } %>
                   </div>
+                </fieldset>
 
-                  <div class="bb-auth-field">
-                    <label for="last_name">
-                      Last name
-                      <span class="bb-auth-required" aria-hidden="true">*</span>
-                    </label>
-                    <input
-                      id="last_name"
-                      name="last_name"
-                      type="text"
-                      required
-                      maxlength="100"
-                      autocomplete="family-name"
-                      aria-required="true"
-                      <% if (fieldInvalid('lastName')) { %>aria-invalid="true"<% } %>
-                      <% var lastDesc = fieldDescribedBy('lastName'); if (lastDesc) { %>aria-describedby="<%= lastDesc %>"<% } %>
-                      value="<%= sub.lastName != null ? sub.lastName : '' %>"
-                    />
-                    <% if (fe.lastName) { %>
-                    <p class="bb-auth-field__error" id="err-lastName" role="status"><%= fe.lastName %></p>
-                    <% } %>
+                <fieldset class="bb-auth-fieldset" data-bb-auth-group="contact">
+                  <legend class="bb-auth-fieldset__legend">
+                    <span class="material-symbols-outlined" aria-hidden="true">contact_mail</span>
+                    Contact
+                  </legend>
+
+                  <div class="bb-auth-field-row">
+                    <%- include('../partials/phone-field', {
+                      id: 'phone',
+                      label: 'Mobile phone number',
+                      required: true,
+                      defaultCountry: 'ZM',
+                      selectedCountry: (typeof sub !== 'undefined' && sub.phone_country) || 'ZM',
+                      nationalValue: (sub && sub.phone_national) || '',
+                      e164Value: (sub && sub.phone) || '',
+                      countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+                      showLegacyHidden: false,
+                      hint: null,
+                      error: fe.phone || fe.phone_required || null,
+                      placeholder: '97 123 4567'
+                    }) %>
+
+                    <div class="bb-auth-field">
+                      <label for="email">Email address, optional</label>
+                      <input
+                        id="email"
+                        name="email"
+                        type="email"
+                        maxlength="254"
+                        autocomplete="email"
+                        inputmode="email"
+                        <% if (fieldInvalid('email')) { %>aria-invalid="true"<% } %>
+                        aria-describedby="<%= fieldDescribedBy('email', ['bb-auth-contact-hint']) || 'bb-auth-contact-hint' %>"
+                        value="<%= sub.email != null ? sub.email : '' %>"
+                      />
+                      <% if (fe.email) { %>
+                      <p class="bb-auth-field__error" id="err-email" role="status"><%= fe.email %></p>
+                      <% } %>
+                    </div>
                   </div>
-                </div>
 
-                <div class="bb-auth-field">
-                  <label for="preferred_name">
-                    Preferred name
-                    <span class="bb-auth-optional">(optional)</span>
-                  </label>
-                  <input
-                    id="preferred_name"
-                    name="preferred_name"
-                    type="text"
-                    maxlength="100"
-                    autocomplete="nickname"
-                    aria-describedby="<%= fieldDescribedBy('preferredName', ['hint-preferredName']) || 'hint-preferredName' %>"
-                    <% if (fieldInvalid('preferredName')) { %>aria-invalid="true"<% } %>
-                    value="<%= sub.preferredName != null ? sub.preferredName : '' %>"
-                  />
-                  <p class="bb-auth-hint" id="hint-preferredName">How you would like to be addressed, if different from your first name.</p>
-                  <% if (fe.preferredName) { %>
-                  <p class="bb-auth-field__error" id="err-preferredName" role="status"><%= fe.preferredName %></p>
-                  <% } %>
-                </div>
-              </fieldset>
-
-              <fieldset class="bb-auth-fieldset" data-bb-auth-group="contact">
-                <legend class="bb-auth-fieldset__legend">
-                  <span class="material-symbols-outlined" aria-hidden="true">contact_mail</span>
-                  Contact
-                </legend>
-
-                <div class="bb-auth-field-row">
-                  <%- include('../partials/phone-field', {
-                    id: 'phone',
-                    label: 'Mobile phone number',
-                    required: true,
-                    defaultCountry: 'ZM',
-                    selectedCountry: (typeof sub !== 'undefined' && sub.phone_country) || 'ZM',
-                    nationalValue: (sub && sub.phone_national) || '',
-                    e164Value: (sub && sub.phone) || '',
-                    countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
-                    showLegacyHidden: false,
-                    hint: null,
-                    error: fe.phone || fe.phone_required || null,
-                    placeholder: '97 123 4567'
-                  }) %>
-
-                  <div class="bb-auth-field">
-                    <label for="email">Email address, optional</label>
-                    <input
-                      id="email"
-                      name="email"
-                      type="email"
-                      maxlength="254"
-                      autocomplete="email"
-                      inputmode="email"
-                      <% if (fieldInvalid('email')) { %>aria-invalid="true"<% } %>
-                      aria-describedby="<%= fieldDescribedBy('email', ['bb-auth-contact-hint']) || 'bb-auth-contact-hint' %>"
-                      value="<%= sub.email != null ? sub.email : '' %>"
-                    />
-                    <% if (fe.email) { %>
-                    <p class="bb-auth-field__error" id="err-email" role="status"><%= fe.email %></p>
-                    <% } %>
-                  </div>
-                </div>
-
-                <p class="bb-auth-hint" id="bb-auth-contact-hint">Mobile phone is required for registration. Email is optional for additional notifications.</p>
-              </fieldset>
-
-              <%
-                var showSpiritual = typeof enableSpiritualBackground === 'undefined' || enableSpiritualBackground;
-                var showInterests = typeof enableParticipationInterests === 'undefined' || enableParticipationInterests;
-                var app = sub || {};
-                var selectedInterests = Array.isArray(app.interests) ? app.interests : [];
-              %>
+                  <p class="bb-auth-hint" id="bb-auth-contact-hint">Mobile phone is required for registration. Email is optional for additional notifications.</p>
+                </fieldset>
+              </div>
 
               <% if (showSpiritual) { %>
-              <fieldset class="bb-auth-fieldset" data-bb-membership-step="2" data-screen="BB04" data-bb-screen-desktop="BB04-D" data-bb-screen-mobile="BB04-M" data-bb-auth-group="spiritual">
-                <legend class="bb-auth-fieldset__legend">
-                  <span class="material-symbols-outlined" aria-hidden="true">auto_stories</span>
-                  <span>Spiritual background <span class="bb-auth-optional">(optional)</span></span>
-                </legend>
-                <div class="bb-auth-field">
-                  <label for="faith_background">Faith background</label>
-                  <textarea id="faith_background" name="faith_background" rows="3" maxlength="500"
-                    placeholder="Share briefly if you would like"><%= app.faithBackground || '' %></textarea>
-                </div>
-                <div class="bb-auth-field">
-                  <label for="baptism_status">Baptism status</label>
-                  <select id="baptism_status" name="baptism_status">
-                    <option value="">Prefer not to say</option>
-                    <option value="baptized" <%= app.baptismStatus === 'baptized' ? 'selected' : '' %>>Baptized</option>
-                    <option value="not_baptized" <%= app.baptismStatus === 'not_baptized' ? 'selected' : '' %>>Not baptized</option>
-                    <option value="considering" <%= app.baptismStatus === 'considering' ? 'selected' : '' %>>Considering baptism</option>
-                  </select>
-                </div>
-                <div class="bb-auth-field">
-                  <label for="previous_church">Previous church (optional)</label>
-                  <input id="previous_church" name="previous_church" type="text" maxlength="200"
-                    value="<%= app.previousChurch || '' %>" />
-                </div>
-              </fieldset>
+              <div
+                class="bb-auth-wizard-panel"
+                data-bb-membership-step="2"
+                data-bb-membership-panel="2"
+                data-screen="BB04"
+                data-bb-screen-desktop="BB04-D"
+                data-bb-screen-mobile="BB04-M"
+                data-bb-auth-group="spiritual"
+                hidden
+              >
+                <fieldset class="bb-auth-fieldset">
+                  <legend class="bb-auth-fieldset__legend">
+                    <span class="material-symbols-outlined" aria-hidden="true">auto_stories</span>
+                    <span>Spiritual background <span class="bb-auth-optional">(optional)</span></span>
+                  </legend>
+                  <div class="bb-auth-field">
+                    <label for="faith_background">Faith background</label>
+                    <textarea id="faith_background" name="faith_background" rows="3" maxlength="500"
+                      placeholder="Share briefly if you would like"><%= sub.faithBackground || '' %></textarea>
+                  </div>
+                  <div class="bb-auth-field">
+                    <label for="baptism_status">Baptism status</label>
+                    <select id="baptism_status" name="baptism_status">
+                      <option value="">Prefer not to say</option>
+                      <option value="baptized" <%= sub.baptismStatus === 'baptized' ? 'selected' : '' %>>Baptized</option>
+                      <option value="not_baptized" <%= sub.baptismStatus === 'not_baptized' ? 'selected' : '' %>>Not baptized</option>
+                      <option value="considering" <%= sub.baptismStatus === 'considering' ? 'selected' : '' %>>Considering baptism</option>
+                    </select>
+                  </div>
+                  <div class="bb-auth-field">
+                    <label for="previous_church">Previous church (optional)</label>
+                    <input id="previous_church" name="previous_church" type="text" maxlength="200"
+                      value="<%= sub.previousChurch || '' %>" />
+                  </div>
+                </fieldset>
+              </div>
               <% } %>
 
               <% if (showInterests) { %>
-              <fieldset class="bb-auth-fieldset" data-bb-membership-step="3" data-screen="BB05" data-bb-screen-desktop="BB05-D" data-bb-screen-mobile="BB05-M" data-bb-auth-group="interests">
-                <legend class="bb-auth-fieldset__legend">
-                  <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
-                  <span>Participation interests <span class="bb-auth-optional">(optional)</span></span>
-                </legend>
-                <div class="bb-auth-field">
-                  <label>Areas of interest</label>
-                  <label style="font-weight:500"><input type="checkbox" name="interests" value="worship" <%= selectedInterests.indexOf('worship') >= 0 ? 'checked' : '' %> /> Worship</label>
-                  <label style="font-weight:500"><input type="checkbox" name="interests" value="youth" <%= selectedInterests.indexOf('youth') >= 0 ? 'checked' : '' %> /> Youth</label>
-                  <label style="font-weight:500"><input type="checkbox" name="interests" value="outreach" <%= selectedInterests.indexOf('outreach') >= 0 ? 'checked' : '' %> /> Outreach</label>
-                  <label style="font-weight:500"><input type="checkbox" name="interests" value="hospitality" <%= selectedInterests.indexOf('hospitality') >= 0 ? 'checked' : '' %> /> Hospitality</label>
-                </div>
-                <div class="bb-auth-field">
-                  <label for="ministry_interest">Ministry interest</label>
-                  <input id="ministry_interest" name="ministry_interest" type="text" maxlength="200"
-                    value="<%= app.ministryInterest || '' %>" />
-                </div>
-                <div class="bb-auth-field">
-                  <label for="availability">Availability</label>
-                  <input id="availability" name="availability" type="text" maxlength="200"
-                    value="<%= app.availability || '' %>" placeholder="e.g. Sundays, weekday evenings" />
-                </div>
-              </fieldset>
+              <div
+                class="bb-auth-wizard-panel"
+                data-bb-membership-step="3"
+                data-bb-membership-panel="3"
+                data-screen="BB05"
+                data-bb-screen-desktop="BB05-D"
+                data-bb-screen-mobile="BB05-M"
+                data-bb-auth-group="interests"
+                hidden
+              >
+                <fieldset class="bb-auth-fieldset">
+                  <legend class="bb-auth-fieldset__legend">
+                    <span class="material-symbols-outlined" aria-hidden="true">volunteer_activism</span>
+                    <span>Participation interests <span class="bb-auth-optional">(optional)</span></span>
+                  </legend>
+                  <div class="bb-auth-field bb-auth-field--checks">
+                    <span class="bb-auth-field__group-label">Areas of interest</span>
+                    <label class="bb-auth-check"><input type="checkbox" name="interests" value="worship" <%= selectedInterests.indexOf('worship') >= 0 ? 'checked' : '' %> /> Worship</label>
+                    <label class="bb-auth-check"><input type="checkbox" name="interests" value="youth" <%= selectedInterests.indexOf('youth') >= 0 ? 'checked' : '' %> /> Youth</label>
+                    <label class="bb-auth-check"><input type="checkbox" name="interests" value="outreach" <%= selectedInterests.indexOf('outreach') >= 0 ? 'checked' : '' %> /> Outreach</label>
+                    <label class="bb-auth-check"><input type="checkbox" name="interests" value="hospitality" <%= selectedInterests.indexOf('hospitality') >= 0 ? 'checked' : '' %> /> Hospitality</label>
+                  </div>
+                  <div class="bb-auth-field">
+                    <label for="ministry_interest">Ministry interest</label>
+                    <input id="ministry_interest" name="ministry_interest" type="text" maxlength="200"
+                      value="<%= sub.ministryInterest || '' %>" />
+                  </div>
+                  <div class="bb-auth-field">
+                    <label for="availability">Availability</label>
+                    <input id="availability" name="availability" type="text" maxlength="200"
+                      value="<%= sub.availability || '' %>" placeholder="e.g. Sundays, weekday evenings" />
+                  </div>
+                </fieldset>
+              </div>
               <% } %>
 
-              <fieldset class="bb-auth-fieldset" data-bb-membership-step="4" data-screen="BB06" data-bb-screen-desktop="BB06-D" data-bb-screen-mobile="BB06-M" data-bb-auth-group="review">
-                <legend class="bb-auth-fieldset__legend">
-                  <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
-                  <span>Review and submit</span>
-                </legend>
-                <label style="font-weight:500">
-                  <input type="checkbox" name="consent_contact" value="1" <%= app.consentContact ? 'checked' : '' %> />
-                  Leadership may contact me about this application using the details I provided.
-                </label>
-                <p class="bb-auth-hint">
-                  Submitting creates a membership application only. It does not create a login account or password.
-                </p>
-              </fieldset>
+              <div
+                class="bb-auth-wizard-panel"
+                data-bb-membership-step="4"
+                data-bb-membership-panel="4"
+                data-screen="BB06"
+                data-bb-screen-desktop="BB06-D"
+                data-bb-screen-mobile="BB06-M"
+                data-bb-auth-group="review"
+                hidden
+              >
+                <fieldset class="bb-auth-fieldset">
+                  <legend class="bb-auth-fieldset__legend">
+                    <span class="material-symbols-outlined" aria-hidden="true">fact_check</span>
+                    <span>Review and submit</span>
+                  </legend>
+
+                  <div class="bb-auth-review" data-bb-membership-review="1">
+                    <h2 class="bb-auth-review__title">Check your details</h2>
+                    <dl class="bb-auth-review__dl">
+                      <div class="bb-auth-review__row">
+                        <dt>Name</dt>
+                        <dd data-bb-review="name"><%= [sub.firstName, sub.lastName].filter(Boolean).join(' ') || '—' %></dd>
+                      </div>
+                      <div class="bb-auth-review__row">
+                        <dt>Preferred name</dt>
+                        <dd data-bb-review="preferred"><%= sub.preferredName || '—' %></dd>
+                      </div>
+                      <div class="bb-auth-review__row">
+                        <dt>Mobile phone</dt>
+                        <dd data-bb-review="phone"><%= sub.phone || sub.phone_national || '—' %></dd>
+                      </div>
+                      <div class="bb-auth-review__row">
+                        <dt>Email</dt>
+                        <dd data-bb-review="email"><%= sub.email || '—' %></dd>
+                      </div>
+                      <% if (showSpiritual) { %>
+                      <div class="bb-auth-review__row">
+                        <dt>Faith background</dt>
+                        <dd data-bb-review="faith"><%= sub.faithBackground || '—' %></dd>
+                      </div>
+                      <div class="bb-auth-review__row">
+                        <dt>Baptism status</dt>
+                        <dd data-bb-review="baptism"><%= sub.baptismStatus || '—' %></dd>
+                      </div>
+                      <div class="bb-auth-review__row">
+                        <dt>Previous church</dt>
+                        <dd data-bb-review="previousChurch"><%= sub.previousChurch || '—' %></dd>
+                      </div>
+                      <% } %>
+                      <% if (showInterests) { %>
+                      <div class="bb-auth-review__row">
+                        <dt>Interests</dt>
+                        <dd data-bb-review="interests"><%= selectedInterests.length ? selectedInterests.join(', ') : '—' %></dd>
+                      </div>
+                      <div class="bb-auth-review__row">
+                        <dt>Ministry interest</dt>
+                        <dd data-bb-review="ministry"><%= sub.ministryInterest || '—' %></dd>
+                      </div>
+                      <div class="bb-auth-review__row">
+                        <dt>Availability</dt>
+                        <dd data-bb-review="availability"><%= sub.availability || '—' %></dd>
+                      </div>
+                      <% } %>
+                    </dl>
+                  </div>
+
+                  <label class="bb-auth-check bb-auth-check--consent">
+                    <input type="checkbox" name="consent_contact" value="1" required <%= sub.consentContact ? 'checked' : '' %> />
+                    Leadership may contact me about this application using the details I provided.
+                  </label>
+                  <p class="bb-auth-hint">
+                    Submitting creates a membership application only. It does not create a login account or password.
+                  </p>
+                </fieldset>
+
+                <div class="bb-auth-actions" data-bb-membership-step="submit">
+                  <button class="bb-auth-btn bb-auth-btn--primary" type="submit" data-bb-membership-submit="1">
+                    Submit Registration
+                  </button>
+                </div>
+              </div>
 
               <p class="bb-auth-privacy" id="bb-auth-privacy-note" data-bb-auth-privacy="1">
                 <span class="material-symbols-outlined" aria-hidden="true">security</span>
@@ -322,54 +456,15 @@
                 </span>
               </p>
 
-              <div class="bb-auth-step-nav" data-bb-membership-step-nav="1" hidden>
-                <p class="bb-auth-step-nav__status" data-bb-step-status aria-live="polite">Step 1</p>
+              <div class="bb-auth-step-nav" data-bb-membership-step-nav="1">
                 <div class="bb-auth-actions bb-auth-actions--steps">
                   <button type="button" class="bb-auth-btn bb-auth-btn--ghost" data-bb-step-prev>Back</button>
                   <button type="button" class="bb-auth-btn bb-auth-btn--primary" data-bb-step-next>Next step</button>
+                  <a class="bb-auth-btn bb-auth-btn--ghost" href="/" data-bb-step-home>Back to homepage</a>
                 </div>
-              </div>
-
-              <div class="bb-auth-actions" data-bb-membership-step="submit">
-                <button class="bb-auth-btn bb-auth-btn--primary" type="submit">Submit Registration</button>
-                <a class="bb-auth-btn bb-auth-btn--ghost" href="/">Back to homepage</a>
+                <p class="bb-auth-step-nav__error" data-bb-step-error hidden role="alert"></p>
               </div>
             </form>
-            <script>
-              (function () {
-                var form = document.getElementById("bb-auth-form");
-                if (!form || !window.matchMedia) return;
-                var mobile = window.matchMedia("(max-width: 899px)");
-                var steps = Array.prototype.slice.call(
-                  form.querySelectorAll("[data-bb-membership-step]:not([data-bb-membership-step='submit'])")
-                );
-                var submitRow = form.querySelector("[data-bb-membership-step='submit']");
-                var nav = form.querySelector("[data-bb-membership-step-nav]");
-                var status = form.querySelector("[data-bb-step-status]");
-                var prev = form.querySelector("[data-bb-step-prev]");
-                var next = form.querySelector("[data-bb-step-next]");
-                var idx = 0;
-                function apply() {
-                  var useSteps = mobile.matches && steps.length > 1;
-                  if (nav) nav.hidden = !useSteps;
-                  steps.forEach(function (el, i) {
-                    el.hidden = useSteps ? i !== idx : false;
-                  });
-                  if (submitRow) submitRow.hidden = useSteps && idx < steps.length - 1;
-                  if (prev) prev.disabled = idx === 0;
-                  if (next) next.hidden = !useSteps || idx >= steps.length - 1;
-                  if (status) {
-                    status.textContent = useSteps
-                      ? "Step " + (idx + 1) + " of " + steps.length
-                      : "";
-                  }
-                }
-                if (prev) prev.addEventListener("click", function () { if (idx > 0) { idx -= 1; apply(); } });
-                if (next) next.addEventListener("click", function () { if (idx < steps.length - 1) { idx += 1; apply(); } });
-                mobile.addEventListener("change", apply);
-                apply();
-              })();
-            </script>
           </div>
         </div>
       </div>
@@ -387,5 +482,6 @@
   <script src="/blessboard/v5/design-system.js?v=3" defer></script>
   <script src="/blessboard/v5/tenant-auth.js?v=2" defer></script>
   <script src="/activeclinic/ac-phone-field.js?v=bb-phone-1" defer></script>
+  <script src="/blessboard/v5/membership-wizard.js?v=1" defer></script>
 </body>
 </html>

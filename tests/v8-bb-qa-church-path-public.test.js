@@ -254,6 +254,11 @@ describe("V8 QA church path-public routing", () => {
       .set("Accept", "text/html");
     assert.equal(register.status, 200);
     assert.match(register.text, /data-bb-membership|bb-auth-form--register|First name/i);
+    assert.match(register.text, /data-bb-membership-wizard="1"/);
+    assert.match(register.text, /data-bb-membership-panel="1"/);
+    assert.match(register.text, /data-bb-membership-panel="4"/);
+    assert.match(register.text, /data-bb-step-next/);
+    assert.match(register.text, /membership-wizard\.js/);
     assert.match(register.text, new RegExp(`/c/${orgKey}/register`));
 
     const visit = await request(app)

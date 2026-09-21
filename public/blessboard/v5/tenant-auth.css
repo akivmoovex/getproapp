@@ -963,7 +963,7 @@
 }
 
 .bb-auth-step-nav {
-  margin-top: 0.75rem;
+  margin-top: 1rem;
 }
 
 .bb-auth-step-nav__status {
@@ -972,8 +972,155 @@
   color: var(--bb-auth-muted);
 }
 
+.bb-auth-step-nav__error {
+  margin: 0.65rem 0 0;
+  color: #b91c1c;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
 .bb-auth-actions--steps {
   margin-top: 0;
+  flex-wrap: wrap;
+}
+
+.bb-auth-wizard {
+  margin: 0 0 1.25rem;
+}
+
+.bb-auth-wizard__list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.65rem 1rem;
+  align-items: flex-start;
+}
+
+.bb-auth-wizard__item {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  color: var(--bb-auth-muted);
+  font-size: 0.82rem;
+  font-weight: 600;
+}
+
+.bb-auth-wizard__node {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 999px;
+  border: 2px solid #cbd5e1;
+  background: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.bb-auth-wizard__item.is-current .bb-auth-wizard__node {
+  border-color: #1d4ed8;
+  background: #1d4ed8;
+  color: #fff;
+}
+
+.bb-auth-wizard__item.is-done .bb-auth-wizard__node {
+  border-color: #1d4ed8;
+  background: #eff4ff;
+  color: #1d4ed8;
+}
+
+.bb-auth-wizard__item.is-current .bb-auth-wizard__label {
+  color: var(--bb-auth-ink, #0f172a);
+}
+
+.bb-auth-wizard__bar {
+  display: none;
+  margin: 0.75rem 0 0;
+  height: 0.35rem;
+  border-radius: 999px;
+  background: #e2e8f0;
+  overflow: hidden;
+}
+
+.bb-auth-wizard__bar-fill {
+  display: block;
+  height: 100%;
+  background: #1d4ed8;
+  border-radius: inherit;
+  transition: width 0.2s ease;
+}
+
+.bb-auth-wizard__status {
+  margin: 0.55rem 0 0;
+  font-size: 0.85rem;
+  color: var(--bb-auth-muted);
+}
+
+.bb-auth-wizard-panel[hidden] {
+  display: none !important;
+}
+
+.bb-auth-field--checks {
+  display: grid;
+  gap: 0.45rem;
+}
+
+.bb-auth-field__group-label {
+  display: block;
+  font-weight: 600;
+  margin-bottom: 0.25rem;
+}
+
+.bb-auth-check {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  font-weight: 500;
+}
+
+.bb-auth-check--consent {
+  margin: 1rem 0 0.5rem;
+}
+
+.bb-auth-review {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--bb-auth-border, #e2e8f0);
+  border-radius: 12px;
+  background: #f8fafc;
+}
+
+.bb-auth-review__title {
+  margin: 0 0 0.65rem;
+  font-size: 1rem;
+}
+
+.bb-auth-review__dl {
+  margin: 0;
+  display: grid;
+  gap: 0.55rem;
+}
+
+.bb-auth-review__row {
+  display: grid;
+  gap: 0.15rem;
+}
+
+.bb-auth-review__row dt {
+  font-size: 0.72rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--bb-auth-muted);
+}
+
+.bb-auth-review__row dd {
+  margin: 0;
+  font-weight: 600;
+  word-break: break-word;
 }
 
 .bb-auth-reference {
@@ -987,6 +1134,14 @@
 }
 
 @media (max-width: 899px) {
+  .bb-auth-wizard__list {
+    display: none;
+  }
+
+  .bb-auth-wizard__bar {
+    display: block;
+  }
+
   .bb-auth-main__body {
     align-items: flex-start;
     padding-top: 1.25rem;
@@ -1001,12 +1156,14 @@
     border-radius: calc(var(--bb-auth-radius) + 2px);
   }
 
-  .bb-auth-form--register .bb-auth-actions {
+  .bb-auth-form--register .bb-auth-actions,
+  .bb-auth-form--register .bb-auth-step-nav {
     position: sticky;
     bottom: 0;
     margin: 0.5rem -0.25rem 0;
     padding: 0.85rem 0.25rem 0.15rem;
     background: linear-gradient(180deg, rgba(255, 255, 255, 0) 0%, var(--bb-auth-surface) 28%);
+    z-index: 2;
   }
 
   .bb-auth-badge--success {

@@ -2563,7 +2563,8 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
     const login = read("views/blessboard/v5/apex/login.ejs");
     const authError = read("views/blessboard/v5/apex/auth-error.ejs");
     assert.match(register, /method="post"/);
-    assert.match(register, /action="\/register"/);
+    assert.match(register, /action="<%= registerAction %>"|action="\/register"/);
+    assert.match(register, /\/register/);
     assert.match(register, /name="<%= csrfField %>"/);
     assert.match(register, /name="first_name"/);
     assert.match(register, /name="last_name"/);
@@ -2629,17 +2630,28 @@ describe("blessboard v5 a11y structure — viewport CSS breakpoints present", ()
   it("registration template keeps Stitch grouping without unsupported wizard fields", () => {
     const register = read("views/blessboard/v5/public/register.ejs");
     const css = read("public/blessboard/v5/tenant-auth.css");
+    const wizardJs = read("public/blessboard/v5/membership-wizard.js");
     assert.match(register, /data-bb-stitch-register="10-auth-member-registration"/);
+    assert.match(register, /data-bb-membership-wizard="1"/);
     assert.match(register, /Join Our Community/);
     assert.match(register, /Personal Info/);
     assert.match(register, /Personal Information/);
     assert.match(register, /bb-auth-required/);
     assert.match(register, /hint-preferredName/);
     assert.match(register, /bb-auth-contact-hint/);
-    assert.doesNotMatch(register, /name="ministry"|name="address"|name="emergency"|Continue\b/i);
+    assert.match(register, /data-bb-membership-panel="1"/);
+    assert.match(register, /data-bb-membership-panel="4"/);
+    assert.match(register, /data-bb-membership-review/);
+    assert.match(register, /membership-wizard\.js/);
+    assert.doesNotMatch(register, /name="ministry"|name="address"|name="emergency"/i);
+    assert.doesNotMatch(register, />\s*Continue\s*</);
+    assert.match(wizardJs, /validateCurrent/);
+    assert.match(wizardJs, /data-bb-membership-panel/);
     assert.match(css, /\.bb-auth-card__hero-eyebrow--mobile/);
     assert.match(css, /\.bb-auth-fieldset__legend-mobile/);
     assert.match(css, /\.bb-auth-form--register/);
+    assert.match(css, /\.bb-auth-wizard__/);
+    assert.match(css, /\.bb-auth-review__/);
   });
 
   it("registration submitted template keeps Stitch success chrome without fabricated timing", () => {
