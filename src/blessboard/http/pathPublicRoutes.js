@@ -36,11 +36,15 @@ const {
   legacyChurchWidePageRedirectTarget,
   orgHomeRedirectTarget,
 } = require("./pathPublicBranchRouting");
+const {
+  createPathPublicChurchActionRouter,
+} = require("./pathPublicChurchActionRoutes");
 
 /**
  * @param {{
  *   getPool: () => { query: Function, connect?: Function },
  *   getEnv?: () => NodeJS.ProcessEnv,
+ *   registrationLimiter?: Function,
  * }} deps
  */
 function createPathPublicRouter(deps) {
@@ -500,6 +504,16 @@ function createPathPublicRouter(deps) {
       routingMode: "path",
     });
   }
+
+  // Membership / visitor / announcement detail under /c/:org (before branch catch-all).
+  router.use(
+    createPathPublicChurchActionRouter({
+      getPool,
+      resolvePathTenant,
+      env: getEnv(),
+      registrationLimiter: deps.registrationLimiter,
+    })
+  );
 
   // Org-level discovery (must register before /:branchKey catch-all).
   router.get("/c/:organizationKey/sitemap.xml", (req, res, next) => {

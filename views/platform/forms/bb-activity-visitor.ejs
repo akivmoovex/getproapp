@@ -4,7 +4,8 @@
   const priorAnswers = typeof answers !== 'undefined' && answers ? answers : {};
   const errs = typeof fieldErrors !== 'undefined' && fieldErrors ? fieldErrors : {};
   const idem = typeof idempotencyKey !== 'undefined' ? idempotencyKey : '';
-  const action = '/visit';
+  const action =
+    typeof formAction !== "undefined" && formAction ? formAction : "/visit";
 %>
 <div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'BB08' %>" data-bb-activity="visitor" data-bb-screen-desktop="BB08-D" data-bb-screen-mobile="BB08-M">
   <div class="mx-forms-brand">BlessBoard</div>

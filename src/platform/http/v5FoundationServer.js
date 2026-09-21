@@ -1112,6 +1112,7 @@ function createV5FoundationApp(options) {
     createPathPublicRouter({
       getPool,
       getEnv: () => env,
+      registrationLimiter,
     })
   );
 

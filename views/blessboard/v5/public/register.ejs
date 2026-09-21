@@ -110,7 +110,7 @@
 
             <form
               method="post"
-              action="/register"
+              action="<%= typeof formAction !== 'undefined' && formAction ? formAction : '/register' %>"
               class="bb-auth-form bb-auth-form--register"
               id="bb-auth-form"
               tabindex="-1"
