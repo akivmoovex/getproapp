@@ -171,6 +171,27 @@ async function saveStructuredDraft(db, input) {
     editorUserId: input.editorUserId,
   });
 
+  let softFillSiblings = null;
+  if (op === "upsert") {
+    try {
+      const {
+        ensureSoftFillSiblingDrafts,
+      } = require("./websiteSoftFillCollectionService");
+      softFillSiblings = await ensureSoftFillSiblingDrafts(db, {
+        organizationId: input.organizationId,
+        churchId: input.churchId,
+        branchId: input.branchId || null,
+        editorUserId: input.editorUserId,
+        draftKind: kind,
+        entityKey,
+        pageKey: input.pageKey || null,
+        publicName: input.publicName || null,
+      });
+    } catch {
+      softFillSiblings = { seeded: 0, skipped: "seed_error" };
+    }
+  }
+
   try {
     await auditSvc.recordWebsiteAuditEvent(db, {
       organizationId: input.organizationId,
@@ -185,7 +206,14 @@ async function saveStructuredDraft(db, input) {
       result: "success",
       before: input.previousPayload || {},
       after: validated.payload,
-      metadata: { source: "structured_editor", op, published: false, entityKey },
+      metadata: {
+        source: "structured_editor",
+        op,
+        published: false,
+        entityKey,
+        softFillSiblingsSeeded:
+          softFillSiblings && softFillSiblings.seeded != null ? softFillSiblings.seeded : 0,
+      },
     });
   } catch {
     // non-blocking
@@ -200,6 +228,7 @@ async function saveStructuredDraft(db, input) {
     op,
     payload: draft.payload,
     updatedAt: draft.updatedAt,
+    softFillSiblings,
   };
 }
 
@@ -447,16 +476,18 @@ function applyStructuredDraftsToModel(model, drafts) {
     }
   }
 
-  // Entity collections
+  // Entity collections — per-member upsert/remove only. Never replace the whole list
+  // from a single-member draft (soft-fill siblings must survive editing one pastor).
   function applyCollection(list, kindDrafts, mapPayload) {
     let items = Array.isArray(list) ? list.slice() : [];
+    const baselineCount = items.length;
     for (const d of kindDrafts) {
       const key = String(d.entityKey);
       if (d.op === "remove") {
         items = items.filter((it) => String(it.id || it._draftKey) !== key);
         continue;
       }
-      if (d.op === "reorder" && Array.isArray(d.payload.order)) {
+      if (d.op === "reorder" && Array.isArray(d.payload && d.payload.order)) {
         const order = d.payload.order.map(String);
         items.sort((a, b) => {
           const ai = order.indexOf(String(a.id || a._draftKey));
@@ -473,8 +504,40 @@ function applyStructuredDraftsToModel(model, drafts) {
         continue;
       }
       const idx = items.findIndex((it) => String(it.id || it._draftKey) === key);
-      if (idx >= 0) items[idx] = { ...items[idx], ...mapped, id: items[idx].id || key };
-      else items.push({ ...mapped, id: key, _draftKey: key, _isDraftNew: true });
+      if (idx >= 0) {
+        items[idx] = {
+          ...items[idx],
+          ...mapped,
+          id: items[idx].id || key,
+          _draftKey: items[idx]._draftKey || key,
+        };
+      } else {
+        items.push({ ...mapped, id: key, _draftKey: key, _isDraftNew: true });
+      }
+    }
+    // Defensive: a lone upsert must never shrink a soft-fill/base collection.
+    const onlyUpserts = kindDrafts.every(
+      (d) => d.op !== "remove" && !(d.payload && d.payload.visible === false)
+    );
+    if (onlyUpserts && baselineCount > 0 && items.length < baselineCount) {
+      items = Array.isArray(list) ? list.slice() : items;
+      for (const d of kindDrafts) {
+        if (d.op === "remove") continue;
+        const key = String(d.entityKey);
+        const mapped = mapPayload(d.payload || {}, key);
+        if (mapped.visible === false) continue;
+        const idx = items.findIndex((it) => String(it.id || it._draftKey) === key);
+        if (idx >= 0) {
+          items[idx] = {
+            ...items[idx],
+            ...mapped,
+            id: items[idx].id || key,
+            _draftKey: items[idx]._draftKey || key,
+          };
+        } else {
+          items.push({ ...mapped, id: key, _draftKey: key, _isDraftNew: true });
+        }
+      }
     }
     return items;
   }

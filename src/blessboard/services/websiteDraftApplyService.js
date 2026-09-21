@@ -474,6 +474,53 @@ async function applyEntityDraft(client, draft, ctx) {
         return;
       }
     }
+    const {
+      isSoftFillEntityKey,
+      softFillItemsForKind,
+      SOFT_FILL_COLLECTIONS,
+    } = require("./websiteSoftFillCollectionService");
+    if (isSoftFillEntityKey("leader", entityKey)) {
+      const published = await contentRepo.listLeaders(client, {
+        churchId,
+        branchId: branchId || null,
+        status: "published",
+      });
+      const norm = (name) =>
+        String(name || "")
+          .replace(/\s*\(template example\)\s*$/i, "")
+          .trim()
+          .toLowerCase();
+      const matched = published.find((row) => norm(row.displayName) === norm(fields.displayName));
+      if (matched) {
+        await updateFns.leader(client, matched.id, fields);
+        return;
+      }
+      if (!published.length) {
+        const cfg = SOFT_FILL_COLLECTIONS.leader;
+        const siblings = softFillItemsForKind("leader", null);
+        for (const item of siblings) {
+          const siblingPayload = cfg.payloadFromItem(item);
+          const rowFields =
+            String(item.id) === entityKey
+              ? fields
+              : {
+                  displayName: siblingPayload.displayName || "Leader",
+                  roleTitle: siblingPayload.roleTitle || null,
+                  biography: siblingPayload.biography || null,
+                  imageUrl: siblingPayload.imageUrl || null,
+                  sortOrder:
+                    siblingPayload.sortOrder != null ? Number(siblingPayload.sortOrder) : 0,
+                  status: "published",
+                };
+          await insertFns.leader(client, {
+            churchId,
+            branchId: branchId || null,
+            ...rowFields,
+          });
+        }
+        return;
+      }
+    }
     await insertFns.leader(client, {
       churchId,
       branchId: branchId || null,
