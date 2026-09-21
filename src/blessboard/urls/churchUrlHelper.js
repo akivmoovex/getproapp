@@ -7,23 +7,13 @@
 
 const { normalizeOrganizationKey } = require("../services/organizationKey");
 const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
+const { PUBLIC_PAGE_KEYS } = require("../services/publicContentConstants");
 const {
   buildPublicOrganizationWebsitePath,
   buildPublicWebsiteSettingsPath,
   buildPublicWebsitePublishPath,
   PRODUCT_CODE,
 } = require("../../platform/website/publicWebsiteUrl");
-
-const PUBLIC_PAGE_KEYS = Object.freeze([
-  "home",
-  "about",
-  "leadership",
-  "ministries",
-  "events",
-  "sermons",
-  "contact",
-  "giving",
-]);
 
 /**
  * @param {unknown} organizationKey

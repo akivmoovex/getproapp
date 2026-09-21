@@ -6722,18 +6722,26 @@ body.bb-hq-drawer-open { overflow: hidden; }
   .bb-hq-panel--mobile-form textarea {
     font-size: 1rem;
   }
-  .bb-hq-actions--sticky {
-    position: sticky;
-    bottom: 0;
-    z-index: 6;
+  /* BB14-M: keep Save/Transfer in normal flow so sticky bars do not cover fields. */
+  .bb-hq-member-detail .bb-hq-actions--sticky,
+  .bb-hq-panel--mobile-form .bb-hq-actions--sticky {
+    position: static;
+    z-index: auto;
     flex-direction: column;
     align-items: stretch;
-    margin: 1rem 0 0;
-    padding: 0.75rem 0 calc(0.75rem + env(safe-area-inset-bottom, 0));
-    background: linear-gradient(180deg, transparent, #f8fafc 30%);
+    margin: 1.15rem 0 0;
+    padding: 0.85rem 0 0;
+    border-top: 1px solid var(--bb-line, #e2e8f0);
+    background: transparent;
   }
   .bb-hq-actions--sticky .bb-hq-btn,
   .bb-hq-actions--sticky button {
     width: 100%;
+  }
+  .bb-hq-member-detail .bb-hq-panel--mobile-form {
+    padding-bottom: 0.35rem;
+  }
+  .bb-hq-member-detail .bb-hq-panel--mobile-form + .bb-hq-panel--mobile-form {
+    margin-top: 0.35rem;
   }
 }

@@ -301,6 +301,16 @@ describe("V8 QA church path-public routing", () => {
     assert.doesNotMatch(missing.text, /not yet available in BlessBoard V5/i);
   });
 
+  it("redirects church-wide /announcements list to primary branch (BB21)", async () => {
+    requireDb();
+    const res = await request(app)
+      .get(`/c/${orgKey}/announcements`)
+      .set("Host", HOST)
+      .redirects(0);
+    assert.equal(res.status, 301);
+    assert.match(String(res.headers.location || ""), new RegExp(`/c/${orgKey}/hq/announcements`));
+  });
+
   it("serves public announcement detail under /c/:org/announcements/:id", async () => {
     requireDb();
     const list = await request(app)
