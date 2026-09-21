@@ -46,7 +46,7 @@ None of Prompts 01–09 are PARTIAL / BLOCKED / NOT_RUN for **code pass**.
 | 07 | BB membership management BB11–BB18 | **PASS** | `65dbf4ef` | `b6937d26` |
 | 08 | Shared announcement engine AN01–AN05 | **PASS** | `c1c5b5fa` | `418ecd75` |
 | 09 | BB announcements BB19–BB22 | **PASS** | `93220536` | `206cdcd8` |
-| 10 | Final QA report + regression gate | **PASS** | *(this commit)* | *(SHA record follow-up)* |
+| 10 | Final QA report + regression gate | **PASS** | `9fd942e7` | *(SHA record follow-up)* |
 
 All implementation + record commits above are **pushed to `origin/V8`**.
 
@@ -336,8 +336,8 @@ For every following prompt:
 | **Existing functionality reused** | Prompts 01–09 CODE_PASS · prior wave SH/BB/AN · `test:v8:regression` |
 | **Changed files** | `V8_OVERNIGHT_EXECUTION_REPORT.md` · `blessboard-v5-frontend-assets.test.js` (tenantPublic pin `62`) |
 | **Tests** | Regression **984/984 PASS** (164.0s) · overnight cluster **130/130 PASS** |
-| **Commit SHA** | *(recorded after push)* |
-| **Push status** | Pending push to `origin/V8` |
+| **Commit SHA** | `9fd942e7d62f4a838c6853f63c9feb1302826320` |
+| **Push status** | Pushed to `origin/V8` |
 | **Blockers** | Operational only: hosted deploy + migrations + write verification. Scheduler gate retained by design. BB18-M Stitch gap. |
 | **Next task** | Operator QA deployment per prerequisites above |
 | **Hosted verification** | Still required (not claimed) |
