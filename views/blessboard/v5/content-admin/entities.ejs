@@ -1,7 +1,10 @@
+<%
+  var _useSharedLeaderMedia = entityKind === 'leadership';
+%>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-start', { loadMediaPicker: true }) %>
+<%- include('../partials/hq-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedLeaderMedia }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true }) %>
+<%- include('../partials/branch-admin-shell-start', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedLeaderMedia }) %>
 <% } %>
 <%
   var allItems = items || [];
@@ -803,8 +806,11 @@
 </script>
 <% } %>
 
+<% if (_useSharedLeaderMedia && typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) { %>
+<%- include('../../../platform/website/partials/media-picker-dialog', { mediaListUrl: websiteMediaListUrl }) %>
+<% } %>
 <% if (shellKind === 'hq') { %>
-<%- include('../partials/hq-shell-end', { loadMediaPicker: true }) %>
+<%- include('../partials/hq-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedLeaderMedia }) %>
 <% } else { %>
-<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true }) %>
+<%- include('../partials/branch-admin-shell-end', { loadMediaPicker: true, loadSharedWebsiteMedia: _useSharedLeaderMedia }) %>
 <% } %>

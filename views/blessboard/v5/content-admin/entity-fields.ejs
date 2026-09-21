@@ -17,16 +17,28 @@
     <label for="<%= mode %>_biography">Biography</label>
     <textarea id="<%= mode %>_biography" name="biography" rows="3" maxlength="10000"><%= val('biography', 'biography', '') %></textarea>
   </div>
-  <div class="bb-ba-field">
+  <div class="bb-ba-field" data-bb-leadership-photo="1">
     <label>Photo</label>
-    <input id="<%= mode %>_image_url" name="image_url" type="hidden" value="<%= val('image_url', 'imageUrl', '') %>" />
-    <% if (val('image_url', 'imageUrl', '')) { %>
-    <p class="bb-ba-field__preview"><img src="<%= val('image_url', 'imageUrl', '') %>" alt="" width="160" height="160" loading="lazy" /></p>
-    <% } else { %>
-    <p class="bb-ba-field__hint">No photo yet — choose or upload below.</p>
-    <% } %>
+    <p class="bb-ba-field__hint">
+      Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+      Photos are stored in the shared church media library (CDN) and apply only to this ministry leader profile.
+    </p>
+    <% var _leaderPhotoSrc = val('image_url', 'imageUrl', ''); %>
+    <% var _leaderMediaListUrl = (typeof websiteMediaListUrl !== 'undefined' && websiteMediaListUrl) ? String(websiteMediaListUrl) : ''; %>
+    <%- include('../../../platform/website/partials/media-field', {
+      mediaField: {
+        idName: mode + '_image_media_id',
+        srcName: 'image_url',
+        altName: mode + '_image_alt',
+        altLabel: 'Photo description',
+        mediaId: '',
+        src: _leaderPhotoSrc,
+        alt: '',
+        emptyText: 'No photo yet — upload from computer or choose from the Content Library.'
+      },
+      mediaListUrl: _leaderMediaListUrl
+    }) %>
   </div>
-  <%- include('media-upload', { uploadUrl: scope.basePath + '/media/upload', targetInputId: mode + '_image_url', csrfToken: csrfToken, visibility: 'public' }) %>
 <% } %>
 
 <% if (entityKind === 'ministries') { %>

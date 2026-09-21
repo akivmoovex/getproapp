@@ -633,6 +633,21 @@ function createContentAdminRouter(deps) {
   }
 
   /**
+   * Shared Hostinger/CDN media list+upload URL used by ActiveClinic and
+   * BlessBoard branding — not the legacy `/hq/content/media/upload` kill-switch path.
+   * @param {import('express').Request} req
+   */
+  function websiteMediaListUrlForReq(req) {
+    const tenant = resolveTenantForAuthorization(req);
+    const orgKey =
+      tenant &&
+      tenant.organization &&
+      (tenant.organization.key || tenant.organization.organizationKey);
+    if (!orgKey) return "";
+    return `/c/${encodeURIComponent(String(orgKey))}/website/media`;
+  }
+
+  /**
    * Map resolveWebsiteScope failure to an HTTP response. Returns null for callers.
    * @param {import('express').Request} req
    * @param {import('express').Response} res
@@ -2175,6 +2190,7 @@ function createContentAdminRouter(deps) {
             submitted: body,
             editItemId: String(body.item_id || ""),
             saved: false,
+            websiteMediaListUrl: websiteMediaListUrlForReq(req),
           })
         );
         res.status(statusCode).type("html").send(html);
@@ -2288,6 +2304,7 @@ function createContentAdminRouter(deps) {
             conflict: false,
             submitted: null,
             saved: String((req.query && req.query.saved) || "") === "1",
+            websiteMediaListUrl: websiteMediaListUrlForReq(req),
           })
         );
         return res.status(200).type("html").send(html);
@@ -2345,6 +2362,7 @@ function createContentAdminRouter(deps) {
               submitted: body,
               editItemId: action === "update" ? String(body.item_id || "") : null,
               saved: false,
+              websiteMediaListUrl: websiteMediaListUrlForReq(req),
             })
           );
           return res.status(statusCode).type("html").send(html);
