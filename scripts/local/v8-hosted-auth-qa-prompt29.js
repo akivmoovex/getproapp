@@ -653,21 +653,75 @@ function fillFormFields(html, overrides) {
   }
 
   {
+    // Booking is a multi-step wizard ending at POST /book/submit.
+    // A contact-style POST to /book (no wizardAction) hits the legacy single-form
+    // path and correctly returns 400 when patient/slot fields are missing.
     const bj = new Jar();
-    const bpage = await req(bj, `${AC}/clinics/${clinic}/book`);
-    const fields = fillFormFields(bpage.body, {
-      __email: `qa+book${Date.now()}@example.invalid`,
-      __phone: "977001188",
-      __name: "V8 QA Booker",
-      __message: "Disposable booking QA",
-    });
-    const action = ((bpage.body.match(/<form[^>]*action=["']([^"']*)["']/) || [])[1] || "").trim();
+    const stamp = Date.now();
+    const entry = await req(bj, `${AC}/clinics/${clinic}/book`);
+    let token = csrf(entry.body);
+    const serviceMatch = entry.body.match(/name=["']serviceKey["'][^>]*value=["']([^"']+)["']/i);
+    let step = await follow(
+      bj,
+      await req(bj, `${AC}/clinics/${clinic}/book`, {
+        method: "POST",
+        form: {
+          _csrf: token,
+          wizardAction: "continue",
+          serviceKey: (serviceMatch && serviceMatch[1]) || "",
+        },
+        headers: { Referer: `${AC}/clinics/${clinic}/book` },
+      }),
+      AC
+    );
+    token = csrf(step.body);
+    step = await follow(
+      bj,
+      await req(bj, `${AC}/clinics/${clinic}/book/doctor`, {
+        method: "POST",
+        form: { _csrf: token, doctorChoice: "any" },
+        headers: { Referer: `${AC}/clinics/${clinic}/book/doctor` },
+      }),
+      AC
+    );
+    token = csrf(step.body);
+    step = await follow(
+      bj,
+      await req(bj, `${AC}/clinics/${clinic}/book/slot`, {
+        method: "POST",
+        form: { _csrf: token, preferredStartsAt: "2030-06-15T09:30" },
+        headers: { Referer: `${AC}/clinics/${clinic}/book/slot` },
+      }),
+      AC
+    );
+    token = csrf(step.body);
+    step = await follow(
+      bj,
+      await req(bj, `${AC}/clinics/${clinic}/book/patient`, {
+        method: "POST",
+        form: {
+          _csrf: token,
+          patientFirstName: "V8",
+          patientLastName: "Booker",
+          patientPhone: "+260977001331",
+          patientEmail: `qa+book${stamp}@example.invalid`,
+          visitReason: "Disposable booking hosted QA",
+        },
+        headers: { Referer: `${AC}/clinics/${clinic}/book/patient` },
+      }),
+      AC
+    );
+    token = csrf(step.body);
+    const idem =
+      (step.body.match(/name=["']idempotencyKey["'][^>]*value=["']([^"']+)/) ||
+        step.body.match(/value=["']([^"']+)["'][^>]*name=["']idempotencyKey["']/) ||
+        [])[1] || "";
     const sub = await follow(
       bj,
-      await req(bj, action ? new URL(action, AC).toString() : `${AC}/clinics/${clinic}/book`, {
+      await req(bj, `${AC}/clinics/${clinic}/book/submit`, {
         method: "POST",
-        form: fields,
-        headers: { Referer: `${AC}/clinics/${clinic}/book` },
+        form: { _csrf: token, idempotencyKey: idem },
+        headers: { Referer: `${AC}/clinics/${clinic}/book/review` },
       }),
       AC
     );
@@ -676,7 +730,33 @@ function fillFormFields(html, overrides) {
       path: new URL(sub.url).pathname,
       title: title(sub.body),
       denied: denied(sub.body),
+      pendingConfirmation: /pending clinic confirmation|not a confirmed appointment/i.test(sub.body),
+      section: ((sub.body.match(/data-ac-page-section=["']([^"']+)/) || [])[1] || null),
       snip: sub.body.replace(/\s+/g, " ").slice(0, 180),
+    };
+
+    // Expected 400: incomplete legacy POST body (contact-style fields) on /book.
+    const badJar = new Jar();
+    const badPage = await req(badJar, `${AC}/clinics/${clinic}/book`);
+    const bad = await follow(
+      badJar,
+      await req(badJar, `${AC}/clinics/${clinic}/book`, {
+        method: "POST",
+        form: {
+          _csrf: csrf(badPage.body),
+          __email: `qa+bad${stamp}@example.invalid`,
+          __phone: "977001188",
+          __name: "Bad Payload",
+        },
+        headers: { Referer: `${AC}/clinics/${clinic}/book` },
+      }),
+      AC
+    );
+    out.regression.bookInvalidLegacyPost = {
+      status: bad.status,
+      expected400: bad.status === 400,
+      section: ((bad.body.match(/data-ac-page-section=["']([^"']+)/) || [])[1] || null),
+      note: "POST /book without wizardAction requires patient/slot fields; contact-style body → 400",
     };
   }
 
@@ -770,6 +850,23 @@ function fillFormFields(html, overrides) {
       id: "V8-QA-AC-BOOK-SUBMIT-403",
       severity: "high",
       summary: "Disposable AC clinic booking POST returns 403",
+    });
+  }
+  if (
+    out.regression.bookSubmit &&
+    !(out.regression.bookSubmit.status === 200 && out.regression.bookSubmit.pendingConfirmation)
+  ) {
+    out.defects.push({
+      id: "V8-QA-AC-BOOK-SUBMIT-FAIL",
+      severity: "high",
+      summary: "Disposable AC clinic wizard submit did not reach pending confirmation receipt",
+    });
+  }
+  if (out.regression.bookInvalidLegacyPost && !out.regression.bookInvalidLegacyPost.expected400) {
+    out.defects.push({
+      id: "V8-QA-AC-BOOK-INVALID-LEGACY",
+      severity: "medium",
+      summary: "Incomplete legacy POST /book did not return expected 400 validation response",
     });
   }
 

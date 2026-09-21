@@ -578,4 +578,38 @@ describe("ActiveClinic public booking (P24–P26)", () => {
     assert.match(second.text, /Too many booking submissions/i);
     assert.doesNotMatch(second.text, /rate_limit_exceeded/);
   });
+
+  it("incomplete legacy POST /book (no wizardAction) returns 400 validation, not a booking", async () => {
+    if (!requireDb()) return;
+    const stamp = Date.now().toString(36);
+    const tenant = await provisionBookableClinic(stamp);
+    const app = appWithEnv();
+    const base = `/clinics/${tenant.orgKey}`;
+
+    const entry = await request(app).get(`${base}/book`);
+    assert.equal(entry.status, 200);
+    const cookies = mergeCookies([], entry);
+    const csrf = extractCsrf(entry);
+
+    const bad = await request(app)
+      .post(`${base}/book`)
+      .set("Cookie", cookies)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        // Contact-style fields — intentionally missing patient/slot contract.
+        __email: `bad.${stamp}@example.invalid`,
+        __phone: "977001188",
+        __name: "Not A Booking",
+      });
+    assert.equal(bad.status, 400);
+    assert.match(bad.text, /Unable to submit booking request|Check your details/i);
+    assert.match(bad.text, /data-ac-page-section="booking-entry"/);
+
+    const rows = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM activeclinic.public_booking_requests WHERE organization_id = $1`,
+      [tenant.organizationId]
+    );
+    assert.equal(rows.rows[0].n, 0);
+  });
 });
