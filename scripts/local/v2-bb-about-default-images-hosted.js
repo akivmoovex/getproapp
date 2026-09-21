@@ -144,6 +144,8 @@ function analyzeAbout(html, label) {
   const visitImgs = sectionImages(visit);
   const lifeSrc = lifeImgs[0] || "";
   const visitSrc = visitImgs[0] || "";
+  const usesApprovedLife = /about-culture-1|about\/about-culture-1/i.test(lifeSrc);
+  const usesApprovedVisit = /about-branch-building|about\/about-branch-building/i.test(visitSrc);
   return {
     label,
     hasLifeTogether: /data-bb-about-life-together="1"/.test(html),
@@ -154,9 +156,10 @@ function analyzeAbout(html, label) {
     galleryImageCount: galleryImgs.length,
     lifeImage: lifeSrc ? lifeSrc.slice(0, 140) : null,
     visitImage: visitSrc ? visitSrc.slice(0, 140) : null,
-    lifeOk: Boolean(lifeSrc) && /about-culture-1|life-together|about\/about-culture/i.test(lifeSrc),
-    visitOk:
-      Boolean(visitSrc) && /about-branch-building|visit-sunday|about\/about-branch/i.test(visitSrc),
+    lifeHasImage: Boolean(lifeSrc),
+    visitHasImage: Boolean(visitSrc),
+    usesApprovedLife,
+    usesApprovedVisit,
     independentFromGallery:
       Boolean(lifeSrc) &&
       Boolean(visitSrc) &&
@@ -364,20 +367,40 @@ async function main() {
   );
   result.relogin = analyzeAbout(again.body, "qa-relogin");
 
-  const passChurch = (c) =>
+  const passTemplateDefaults = (c) =>
     c.hasLifeTogether &&
     c.hasVisit &&
-    c.lifeOk &&
-    c.visitOk &&
+    c.lifeHasImage &&
+    c.visitHasImage &&
+    c.usesApprovedLife &&
+    c.usesApprovedVisit &&
     c.independentFromGallery &&
     !c.orphanGenericLife &&
     !c.orphanGenericVisit;
 
+  // Existing churches may keep customized media; require images + independence only.
+  const passExistingWithImages = (c) =>
+    c.hasLifeTogether &&
+    c.hasVisit &&
+    c.lifeHasImage &&
+    c.visitHasImage &&
+    c.independentFromGallery &&
+    !c.orphanGenericLife &&
+    !c.orphanGenericVisit;
+
+  result.customizationPreservation = {
+    demo22KeepsNonDefaultMedia:
+      result.demoChurch22.lifeHasImage &&
+      result.demoChurch22.visitHasImage &&
+      (!result.demoChurch22.usesApprovedLife || !result.demoChurch22.usesApprovedVisit),
+    ok: passExistingWithImages(result.demoChurch22),
+  };
+
   result.status =
-    passChurch(result.qaChurch) &&
-    passChurch(result.demoChurch22) &&
-    passChurch(result.draftPreview) &&
-    passChurch(result.relogin) &&
+    passTemplateDefaults(result.qaChurch) &&
+    passExistingWithImages(result.demoChurch22) &&
+    passTemplateDefaults(result.draftPreview) &&
+    passTemplateDefaults(result.relogin) &&
     result.cdn.ok &&
     result.productionUntouched.ok &&
     result.marketingSync.status === 200 &&
@@ -387,10 +410,10 @@ async function main() {
 
   if (result.status !== "PASS") {
     result.blockReason = [
-      !passChurch(result.qaChurch) && "qa_church_missing_defaults",
-      !passChurch(result.demoChurch22) && "demo22_missing_defaults",
-      !passChurch(result.draftPreview) && "draft_missing_defaults",
-      !passChurch(result.relogin) && "relogin_missing_defaults",
+      !passTemplateDefaults(result.qaChurch) && "qa_church_missing_defaults",
+      !passExistingWithImages(result.demoChurch22) && "demo22_missing_images",
+      !passTemplateDefaults(result.draftPreview) && "draft_missing_defaults",
+      !passTemplateDefaults(result.relogin) && "relogin_missing_defaults",
       !result.cdn.ok && "cdn_fetch_failed",
       !(result.marketingSync.status === 200 && result.marketingSync.json.ok) && "marketing_sync_failed",
       !result.productionUntouched.ok && "production_touched",

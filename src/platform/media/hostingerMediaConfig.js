@@ -559,7 +559,9 @@ function assertStorageKeyPathSafe(storageKey) {
 
 /**
  * Testing / V8 runtimes must never write under production/.
- * V8 writes under testing-v8/; V7 testing writes under testing/.
+ * V8 tenant uploads write under testing-v8/; V7 testing writes under testing/.
+ * V8 may also seed shared platform marketing objects under testing/platform/
+ * (the shared read namespace used by CDN presentation).
  * @param {string} runtimeEnvironment
  * @param {string} storageKey
  */
@@ -589,6 +591,9 @@ function assertStorageKeyWritable(runtimeEnvironment, storageKey) {
     const err = new Error("invalid_media_environment");
     err.code = "INVALID_MEDIA_ENVIRONMENT";
     throw err;
+  }
+  if (runtime === "testing-v8" && key.startsWith("testing/platform/")) {
+    return;
   }
   if (!key.startsWith(`${runtime}/`)) {
     const err = new Error("media_environment_mismatch");

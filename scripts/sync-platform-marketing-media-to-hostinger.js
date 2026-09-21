@@ -38,7 +38,9 @@ async function main() {
   let skipped = 0;
   let missing = 0;
   for (const publicPath of listMarketingPublicPaths()) {
-    const key = storageKeyForPublicPath(publicPath, env, { forWrite: true });
+    // Shared marketing soft-fill is presented from the read namespace
+    // (testing/platform/… on V8). Write there so CDN URLs resolve.
+    const key = storageKeyForPublicPath(publicPath, env);
     const relLocal = localPublicFilePath(publicPath);
     if (!key || !relLocal) {
       missing += 1;
