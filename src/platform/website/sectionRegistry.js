@@ -113,6 +113,35 @@ const SINGLETON_KEYS = Object.freeze({
   [PRODUCT_CODE.ACTIVECLINIC]: Object.freeze(["hero", "promo", "faq"]),
 });
 
+/** Pages managed as entity collections — not freeform section canvases. */
+const BLESSBOARD_COLLECTION_PAGES = Object.freeze({
+  leadership: Object.freeze({
+    memberAction: "Add leadership member",
+    emptyHint:
+      "Leadership uses a fixed page layout. To expand the team, use Add leadership member — not Add section.",
+  }),
+  ministries: Object.freeze({
+    memberAction: "Add ministry",
+    emptyHint:
+      "Ministries uses a fixed page layout. To expand the list, use Add ministry — not Add section.",
+  }),
+  events: Object.freeze({
+    memberAction: "Add event",
+    emptyHint:
+      "Events uses a fixed page layout. To expand the list, use Add event — not Add section.",
+  }),
+  sermons: Object.freeze({
+    memberAction: "Add sermon",
+    emptyHint:
+      "Sermons uses a fixed page layout. To expand the list, use Add sermon — not Add section.",
+  }),
+  announcements: Object.freeze({
+    memberAction: null,
+    emptyHint:
+      "Announcements uses a fixed page layout. Add announcements from content management — not Add section.",
+  }),
+});
+
 function registryForProduct(productCode) {
   const product = String(productCode || "").trim().toLowerCase();
   if (product === PRODUCT_CODE.ACTIVECLINIC) return ACTIVECLINIC_SECTION_TYPES;
@@ -123,6 +152,11 @@ function registryForProduct(productCode) {
 function normalizePageKey(pageKey) {
   const key = String(pageKey || "home").trim().toLowerCase();
   return key || "home";
+}
+
+function collectionPageGuidance(pageKey) {
+  const page = normalizePageKey(pageKey);
+  return BLESSBOARD_COLLECTION_PAGES[page] || null;
 }
 
 /**
@@ -157,6 +191,31 @@ function listAddableSectionTypes(productCode, pageKey, existingTypesOrKeys) {
 
 /**
  * @param {string} productCode
+ * @param {string} pageKey
+ * @param {string[]} [existingTypesOrKeys]
+ */
+function describeAddSectionAvailability(productCode, pageKey, existingTypesOrKeys) {
+  const sections = listAddableSectionTypes(productCode, pageKey, existingTypesOrKeys || []);
+  const guidance = collectionPageGuidance(pageKey);
+  const canAdd = sections.length > 0;
+  let emptyHint = "No more section types are available for this page.";
+  if (!canAdd && guidance && guidance.emptyHint) {
+    emptyHint = guidance.emptyHint;
+  } else if (!canAdd) {
+    emptyHint =
+      "No more section types are available for this page. Existing sections can still be edited.";
+  }
+  return {
+    canAddSection: canAdd,
+    sections,
+    emptyHint,
+    memberAction: guidance && guidance.memberAction ? guidance.memberAction : null,
+    collectionManaged: Boolean(guidance),
+  };
+}
+
+/**
+ * @param {string} productCode
  * @param {string} type
  * @param {string} pageKey
  */
@@ -179,7 +238,10 @@ module.exports = {
   BLESSBOARD_SECTION_TYPES,
   ACTIVECLINIC_SECTION_TYPES,
   SINGLETON_KEYS,
+  BLESSBOARD_COLLECTION_PAGES,
   listAddableSectionTypes,
+  describeAddSectionAvailability,
+  collectionPageGuidance,
   resolveSectionTypeDefinition,
   isSingletonViolation,
 };

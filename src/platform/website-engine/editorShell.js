@@ -278,6 +278,11 @@ function presentEditorShell(input) {
     pageSelectLabel: facts.pageSelectLabel || "Page",
     sectionActionsUrl: facts.sectionActionsUrl || null,
     addSectionUrl: facts.addSectionUrl || null,
+    canAddSection: facts.canAddSection !== false,
+    addSectionEmptyHint:
+      facts.addSectionEmptyHint ||
+      "No more section types are available for this page.",
+    addSectionMemberAction: facts.addSectionMemberAction || null,
     sectionManifest: facts.sectionManifest || null,
     sectionManifestJson: facts.sectionManifest
       ? JSON.stringify(facts.sectionManifest).replace(/</g, "\\u003c")

@@ -16,6 +16,11 @@
   cursor: pointer;
 }
 
+.gp-website-editor__add-section[hidden],
+.gp-website-add-section[hidden] {
+  display: none !important;
+}
+
 .gp-website-add-section__overlay {
   position: fixed;
   inset: 0;

@@ -62,6 +62,18 @@ async function listAddableSections(db, input) {
     sections: listAddableSectionTypes(productCode, pageKey, existing),
     existing,
     published: false,
+    ...(() => {
+      const {
+        describeAddSectionAvailability,
+      } = require("./sectionRegistry");
+      const availability = describeAddSectionAvailability(productCode, pageKey, existing);
+      return {
+        canAddSection: availability.canAddSection,
+        emptyHint: availability.emptyHint,
+        memberAction: availability.memberAction,
+        collectionManaged: availability.collectionManaged,
+      };
+    })(),
   };
 }
 

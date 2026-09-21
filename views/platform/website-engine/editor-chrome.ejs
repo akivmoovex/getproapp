@@ -65,6 +65,8 @@
   data-website-unpublish-url="<%= shell.unpublishPath || '' %>"
   data-website-section-actions-url="<%= shell.sectionActionsUrl || '' %>"
   data-website-add-section-url="<%= shell.addSectionUrl || '' %>"
+  data-website-can-add-section="<%= shell.canAddSection === false ? '0' : '1' %>"
+  data-website-add-section-empty-hint="<%= shell.addSectionEmptyHint || '' %>"
   data-website-section-manifest="<%= shell.sectionManifestJson || '' %>"
   data-website-exit-href="<%= shell.exitHref || '' %>"
   data-website-max-bytes="5242880"

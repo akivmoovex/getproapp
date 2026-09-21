@@ -71,15 +71,37 @@
 
   <div class="bb-tp-container bb-tp-directory__body">
     <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
-    <p class="bb-tp-edit-collection-actions">
+    <p class="bb-tp-edit-collection-actions" data-bb-leadership-add-member="1">
       <%- include('../partials/structured-edit-trigger', {
         editKind: 'leader',
         editEntityKey: 'new-leader',
         editLabel: 'Add leadership member',
         editPayload: { displayName: '', roleTitle: '', biography: '', imageUrl: '', visible: true, sortOrder: 100 }
       }) %>
-      <span class="bb-tp-se-hint">Add leadership member</span>
+      <button
+        type="button"
+        class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--touch"
+        data-bb-leadership-add-member-btn="1"
+        aria-label="Add leadership member"
+      >Add leadership member</button>
+      <span class="bb-tp-se-hint">Adds a new person to this leadership page. Does not replace existing members. Layout sections are fixed — use this control instead of Add section.</span>
     </p>
+    <script>
+      (function () {
+        var wrap = document.querySelector("[data-bb-leadership-add-member='1']");
+        if (!wrap) return;
+        var btn = wrap.querySelector("[data-bb-leadership-add-member-btn='1']");
+        var trigger = wrap.querySelector("[data-bb-structured-open='1'][data-bb-kind='leader']");
+        if (!btn || !trigger) return;
+        btn.addEventListener("click", function () {
+          trigger.setAttribute(
+            "data-bb-entity",
+            "new-leader-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8)
+          );
+          trigger.click();
+        });
+      })();
+    </script>
     <% } %>
     <% if (featured) { %>
     <section class="bb-tp-featured-leader" aria-label="Senior leader" data-bb-leadership-featured="1">

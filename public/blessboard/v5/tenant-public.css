@@ -6013,6 +6013,28 @@ a.bb-tp-content-card:hover {
   margin-top: 0.25rem;
   color: #5b6472;
 }
+.bb-tp-edit-collection-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.75rem 1rem;
+  margin: 0 0 1.5rem;
+}
+.bb-tp-edit-collection-actions .bb-tp-structured-pencil {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+.bb-tp-edit-collection-actions .bb-tp-se-hint {
+  flex: 1 1 12rem;
+  margin: 0;
+}
 .bb-tp-se-hint {
   font-size: 0.85rem;
   color: #5b6472;

@@ -902,9 +902,25 @@
       } catch (e) {
         payload = {};
       }
+      var kind = openBtn.getAttribute("data-bb-kind");
+      var entityKey = openBtn.getAttribute("data-bb-entity") || "default";
+      var newKeyPrefix = {
+        leader: "new-leader",
+        ministry: "new-ministry",
+        event: "new-event",
+        sermon: "new-sermon",
+        giving_method: "new-giving",
+        social_link: "new-social",
+      }[kind];
+      // Exact template keys only — do not remint already-unique draft member keys.
+      if (newKeyPrefix && entityKey === newKeyPrefix) {
+        entityKey =
+          newKeyPrefix + "-" + Date.now() + "-" + Math.random().toString(36).slice(2, 8);
+        openBtn.setAttribute("data-bb-entity", entityKey);
+      }
       openEditor({
-        kind: openBtn.getAttribute("data-bb-kind"),
-        entityKey: openBtn.getAttribute("data-bb-entity") || "default",
+        kind: kind,
+        entityKey: entityKey,
         sectionKey: openBtn.getAttribute("data-bb-section") || "",
         payload: payload,
         op: openBtn.getAttribute("data-bb-op") || "upsert",

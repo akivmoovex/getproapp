@@ -7,7 +7,11 @@
   if (!chrome || !host || !openBtn) return;
 
   var endpoint = chrome.getAttribute("data-website-add-section-url");
-  if (!endpoint) return;
+  var canAdd = chrome.getAttribute("data-website-can-add-section") !== "0";
+  if (!endpoint || !canAdd) {
+    openBtn.hidden = true;
+    return;
+  }
 
   openBtn.hidden = false;
   var panel = host.querySelector("[data-website-add-section-panel]");
@@ -16,6 +20,10 @@
   var empty = host.querySelector("[data-website-add-section-empty]");
   var error = host.querySelector("[data-website-add-section-error]");
   var pageKey = chrome.getAttribute("data-page-key") || "home";
+  var emptyHint =
+    chrome.getAttribute("data-website-add-section-empty-hint") ||
+    (empty && empty.getAttribute("data-website-add-section-empty-hint")) ||
+    "No more section types are available for this page.";
   var busy = false;
 
   function csrfToken() {
@@ -45,7 +53,10 @@
     list.innerHTML = "";
     var types = Array.isArray(items) ? items : [];
     if (!types.length) {
-      if (empty) empty.hidden = false;
+      if (empty) {
+        empty.hidden = false;
+        empty.textContent = emptyHint;
+      }
       return;
     }
     if (empty) empty.hidden = true;
@@ -88,9 +99,13 @@
         if (!result.ok || !result.body || !result.body.ok) {
           throw new Error((result.body && result.body.code) || "load_failed");
         }
-        renderTypes(result.body.sections || []);
+        var sections = result.body.sections || [];
+        if (!sections.length && result.body.emptyHint) {
+          emptyHint = result.body.emptyHint;
+        }
+        renderTypes(sections);
       })
-      .catch(function (err) {
+      .catch(function () {
         if (error) {
           error.hidden = false;
           error.textContent = "Could not load section types.";

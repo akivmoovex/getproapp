@@ -1021,6 +1021,18 @@ async function attachWebsiteAdminChrome(opts) {
     ? buildBlessBoardSectionManifest(model.pageKey, model.sections, structuredDrafts)
     : null;
 
+  const {
+    describeAddSectionAvailability,
+  } = require("../../platform/website/sectionRegistry");
+  const existingSectionKeys = (model.sections || [])
+    .map((s) => String((s && (s.sectionKey || s.sectionType)) || ""))
+    .filter(Boolean);
+  const addSectionAvailability = describeAddSectionAvailability(
+    PRODUCT_CODE.BLESSBOARD,
+    model.pageKey,
+    existingSectionKeys
+  );
+
   const shellFacts = {
     productCode: PRODUCT_CODE.BLESSBOARD,
     pageKey: model.pageKey,
@@ -1052,7 +1064,10 @@ async function attachWebsiteAdminChrome(opts) {
     csrfToken,
     csrfField: "_csrf",
     sectionActionsUrl,
-    addSectionUrl,
+    addSectionUrl: addSectionAvailability.canAddSection ? addSectionUrl : null,
+    canAddSection: addSectionAvailability.canAddSection,
+    addSectionEmptyHint: addSectionAvailability.emptyHint,
+    addSectionMemberAction: addSectionAvailability.memberAction,
     sectionManifest,
   };
 
@@ -1120,7 +1135,7 @@ async function attachWebsiteAdminChrome(opts) {
     },
   };
 
-  model.cssHref = "/blessboard/v5/tenant-public.css?v=62";
+  model.cssHref = "/blessboard/v5/tenant-public.css?v=63";
 
   return model;
 }

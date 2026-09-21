@@ -1,9 +1,13 @@
 <%#
   Wave 4B-2 — shared Add Section picker (desktop dialog / mobile sheet).
+  Collection-managed pages hide this control when no section types remain.
 %>
 <%
   var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+  var canAddSection = shell.canAddSection !== false && Boolean(shell.addSectionUrl);
+  var emptyHint = shell.addSectionEmptyHint || 'No more section types are available for this page.';
 %>
+<% if (canAddSection) { %>
 <div class="gp-website-add-section" data-website-add-section-host="1" hidden>
   <div class="gp-website-add-section__overlay" data-website-add-section-overlay="1" hidden></div>
   <div
@@ -23,7 +27,12 @@
     </header>
     <p class="gp-website-add-section__intro">Choose a section type to add to this page draft.</p>
     <div class="gp-website-add-section__list" data-website-add-section-list="1"></div>
-    <p class="gp-website-add-section__empty" data-website-add-section-empty="1" hidden>No more section types are available for this page.</p>
+    <p
+      class="gp-website-add-section__empty"
+      data-website-add-section-empty="1"
+      data-website-add-section-empty-hint="<%= emptyHint %>"
+      hidden
+    ><%= emptyHint %></p>
     <p class="gp-website-add-section__error" data-website-add-section-error="1" hidden role="alert"></p>
   </div>
 </div>
@@ -37,3 +46,4 @@
   <span class="material-symbols-outlined" aria-hidden="true">add</span>
   <span>Add section</span>
 </button>
+<% } %>
