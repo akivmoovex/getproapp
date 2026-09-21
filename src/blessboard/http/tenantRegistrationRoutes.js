@@ -209,6 +209,15 @@ function createTenantRegistrationRouter(deps) {
    */
   function resolveHostScope(req, res) {
     if (isApexHost(req)) {
+      // Product / QA hub hosts are apex — member /register is tenant-hostname only.
+      // Returning null without a response previously hung until the proxy timed out
+      // (seen on blessboard.neuniversity.org/register while /register-church stayed 200).
+      // Do not redirect to /register-church: that is church-organization signup, not
+      // member registration.
+      res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "This BlessBoard site could not be found."));
       return null;
     }
     const mode = getTenantRoutingMode();

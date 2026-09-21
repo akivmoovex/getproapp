@@ -240,6 +240,17 @@ describe("blessboard member registration http", () => {
     assert.ok(extractCookie(res, CSRF_COOKIE));
   });
 
+  it("fails closed quickly on apex/product hub /register (no hang, no church redirect)", async (t) => {
+    if (skipIfNeeded(t)) return;
+    const started = Date.now();
+    const res = await request(app).get("/register").set("Host", "blessboard.org");
+    const elapsedMs = Date.now() - started;
+    assert.equal(res.status, 404);
+    assert.match(res.text, /could not be found/i);
+    assert.doesNotMatch(res.text, /Register Your Church|register-church/i);
+    assert.ok(elapsedMs < 3000, `apex /register must not hang (took ${elapsedMs}ms)`);
+  });
+
   it("maps validation reasons to field-level errors without leaking internals", () => {
     const missing = mapRegistrationFieldErrors("first_name");
     assert.equal(missing.fieldErrors.firstName, "Enter your first name.");
