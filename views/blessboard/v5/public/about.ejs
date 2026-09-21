@@ -14,7 +14,12 @@
     if (blob.indexOf('value') >= 0) return 'values';
     if (blob.indexOf('belief') >= 0 || blob.indexOf('foundation') >= 0) return 'beliefs';
     if (blob.indexOf('community') >= 0 || blob.indexOf('involvement') >= 0) return 'community';
-    if (blob.indexOf('gallery') >= 0) return 'gallery';
+    // Exact gallery intro ("Life Together") vs gallery_N grid slots — keep independent.
+    if (key === 'gallery' || (type === 'gallery' && !/^gallery_\d+$/.test(key))) return 'lifeTogether';
+    if (/^gallery_\d+$/.test(key) || (blob.indexOf('gallery') >= 0 && type === 'image')) return 'gallery';
+    if (key === 'visitor_cta' || blob.indexOf('visit on') >= 0 || (type === 'cta' && blob.indexOf('visit') >= 0)) {
+      return 'visitor';
+    }
     if (blob.indexOf('story') >= 0 || blob.indexOf('history') >= 0) return 'story';
     return 'generic';
   }
@@ -58,6 +63,8 @@
   var valueSections = [];
   var beliefsSection = null;
   var communitySection = null;
+  var lifeTogetherSection = null;
+  var visitorSection = null;
   var galleryUrls = [];
   var genericSections = [];
 
@@ -70,6 +77,8 @@
     else if (kind === 'values') valueSections.push(s);
     else if (kind === 'beliefs' && !beliefsSection) beliefsSection = s;
     else if (kind === 'community' && !communitySection) communitySection = s;
+    else if (kind === 'lifeTogether' && !lifeTogetherSection) lifeTogetherSection = s;
+    else if (kind === 'visitor' && !visitorSection) visitorSection = s;
     else if (kind === 'gallery' && s.mediaUrl) galleryUrls.push(s.mediaUrl);
     else genericSections.push(s);
   });
@@ -84,7 +93,26 @@
   }
   if (!beliefsSection && demoFb && demoFb.beliefs) beliefsSection = demoFb.beliefs;
   if (!communitySection && demoFb && demoFb.community) communitySection = demoFb.community;
+  if (!lifeTogetherSection && demoFb && demoFb.lifeTogether) lifeTogetherSection = demoFb.lifeTogether;
+  if (!visitorSection && demoFb && (demoFb.visitorCtaHeading || demoFb.visitorCtaMediaUrl)) {
+    visitorSection = {
+      sectionKey: 'visitor_cta',
+      sectionType: 'cta',
+      heading: demoFb.visitorCtaHeading,
+      bodyText: demoFb.visitorCtaBody,
+      mediaUrl: demoFb.visitorCtaMediaUrl || null,
+      layoutMetadata: { altText: 'Visit on Sunday' }
+    };
+  }
   if (!galleryUrls.length && demoFb && demoFb.gallery) galleryUrls = demoFb.gallery.slice();
+
+  // Soft-fill missing images only — never overwrite church-customized mediaUrl.
+  if (lifeTogetherSection && !lifeTogetherSection.mediaUrl && demoFb && demoFb.lifeTogether && demoFb.lifeTogether.mediaUrl) {
+    lifeTogetherSection = Object.assign({}, lifeTogetherSection, { mediaUrl: demoFb.lifeTogether.mediaUrl });
+  }
+  if (visitorSection && !visitorSection.mediaUrl && demoFb && demoFb.visitorCtaMediaUrl) {
+    visitorSection = Object.assign({}, visitorSection, { mediaUrl: demoFb.visitorCtaMediaUrl });
+  }
 
   var storyMedia = [];
   storySections.forEach(function (s) {
@@ -95,7 +123,17 @@
   /* Avoid repeating mission/vision/story blocks already rendered above. */
   genericSections = genericSections.filter(function (s) {
     var kind = classifyAboutSection(s);
-    if (kind === 'mission' || kind === 'vision' || kind === 'story' || kind === 'values' || kind === 'beliefs' || kind === 'community') {
+    if (
+      kind === 'mission' ||
+      kind === 'vision' ||
+      kind === 'story' ||
+      kind === 'values' ||
+      kind === 'beliefs' ||
+      kind === 'community' ||
+      kind === 'lifeTogether' ||
+      kind === 'visitor' ||
+      kind === 'gallery'
+    ) {
       return false;
     }
     var heading = String(s.heading || '').toLowerCase();
@@ -379,7 +417,7 @@
   <section class="bb-tp-container bb-tp-about-gallery" data-bb-about-gallery="1" aria-label="Image gallery">
     <%- include('../partials/editable-text', {
       editPageKey: 'about',
-      editSectionKey: 'gallery',
+      editSectionKey: 'gallery_heading',
       editFieldKey: 'heading',
       editValue: (demoFb && demoFb.galleryHeading) || ('Life at ' + publicName),
       editTag: 'h2',
@@ -424,6 +462,128 @@
       </li>
       <% }) %>
     </ul>
+  </section>
+  <% } %>
+
+  <% if ((lifeTogetherSection && sectionHasContent(lifeTogetherSection)) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode && lifeTogetherSection)) { %>
+  <section class="bb-tp-container bb-tp-about-life-together bb-tp-content-block<%= (lifeTogetherSection && lifeTogetherSection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>" data-bb-about-life-together="1" data-section="gallery" aria-labelledby="bb-tp-about-life-together-heading">
+    <% if ((lifeTogetherSection && lifeTogetherSection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
+    <div class="bb-tp-content-block__media">
+      <% if (lifeTogetherSection && lifeTogetherSection.mediaUrl) { %>
+      <img
+        class="bb-tp-media"
+        src="<%= lifeTogetherSection.mediaUrl %>"
+        alt="<%= (lifeTogetherSection.layoutMetadata && lifeTogetherSection.layoutMetadata.altText) || 'Life together' %>"
+        width="960"
+        height="540"
+        loading="lazy"
+        decoding="async"
+        data-bb-about-life-together-image="1"
+      />
+      <% } %>
+      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+      <div class="bb-tp-edit-media-wrap">
+        <%- include('../partials/structured-edit-trigger', {
+          editKind: 'image',
+          editEntityKey: 'about-life-together',
+          editSectionKey: 'gallery',
+          editLabel: 'Edit Life Together image',
+          editPayload: {
+            imageUrl: (lifeTogetherSection && lifeTogetherSection.mediaUrl) || '',
+            altText: (lifeTogetherSection && lifeTogetherSection.layoutMetadata && lifeTogetherSection.layoutMetadata.altText) || 'Life together',
+            focal: 'center'
+          }
+        }) %>
+      </div>
+      <% } %>
+    </div>
+    <% } %>
+    <div class="bb-tp-content-block__copy">
+      <%- include('../partials/editable-text', {
+        editPageKey: 'about',
+        editSectionKey: 'gallery',
+        editFieldKey: 'heading',
+        editValue: (lifeTogetherSection && lifeTogetherSection.heading) || 'Life Together',
+        editTag: 'h2',
+        editClass: 'bb-tp-section-title',
+        editType: 'heading',
+        editId: 'bb-tp-about-life-together-heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'about',
+        editSectionKey: 'gallery',
+        editFieldKey: 'bodyText',
+        editValue: (lifeTogetherSection && lifeTogetherSection.bodyText) || '',
+        editTag: 'p',
+        editClass: 'bb-tp-body',
+        editType: 'paragraph',
+        editMaxLength: 2000,
+        editMultiline: true
+      }) %>
+    </div>
+  </section>
+  <% } %>
+
+  <% if ((visitorSection && sectionHasContent(visitorSection)) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode && visitorSection)) { %>
+  <section class="bb-tp-container bb-tp-about-visit bb-tp-content-block<%= (visitorSection && visitorSection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-content-block--media' : '' %>" data-bb-about-visit="1" data-section="visitor_cta" aria-labelledby="bb-tp-about-visit-heading">
+    <% if ((visitorSection && visitorSection.mediaUrl) || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
+    <div class="bb-tp-content-block__media">
+      <% if (visitorSection && visitorSection.mediaUrl) { %>
+      <img
+        class="bb-tp-media"
+        src="<%= visitorSection.mediaUrl %>"
+        alt="<%= (visitorSection.layoutMetadata && visitorSection.layoutMetadata.altText) || 'Visit on Sunday' %>"
+        width="960"
+        height="540"
+        loading="lazy"
+        decoding="async"
+        data-bb-about-visit-image="1"
+      />
+      <% } %>
+      <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+      <div class="bb-tp-edit-media-wrap">
+        <%- include('../partials/structured-edit-trigger', {
+          editKind: 'image',
+          editEntityKey: 'about-visit-sunday',
+          editSectionKey: 'visitor_cta',
+          editLabel: 'Edit Visit on Sunday image',
+          editPayload: {
+            imageUrl: (visitorSection && visitorSection.mediaUrl) || '',
+            altText: (visitorSection && visitorSection.layoutMetadata && visitorSection.layoutMetadata.altText) || 'Visit on Sunday',
+            focal: 'center'
+          }
+        }) %>
+      </div>
+      <% } %>
+    </div>
+    <% } %>
+    <div class="bb-tp-content-block__copy">
+      <%- include('../partials/editable-text', {
+        editPageKey: 'about',
+        editSectionKey: 'visitor_cta',
+        editFieldKey: 'heading',
+        editValue: (visitorSection && visitorSection.heading) || (demoFb && demoFb.visitorCtaHeading) || 'Visit on a Sunday',
+        editTag: 'h2',
+        editClass: 'bb-tp-section-title',
+        editType: 'heading',
+        editId: 'bb-tp-about-visit-heading',
+        editMaxLength: 120,
+        editMultiline: false
+      }) %>
+      <%- include('../partials/editable-text', {
+        editPageKey: 'about',
+        editSectionKey: 'visitor_cta',
+        editFieldKey: 'bodyText',
+        editValue: (visitorSection && visitorSection.bodyText) || (demoFb && demoFb.visitorCtaBody) || '',
+        editTag: 'p',
+        editClass: 'bb-tp-body',
+        editType: 'paragraph',
+        editMaxLength: 2000,
+        editMultiline: true
+      }) %>
+    </div>
   </section>
   <% } %>
 
@@ -478,15 +638,16 @@
   <div data-bb-about-join="1">
   <%- include('./partials/cta-band', {
     ctaClass: 'bb-tp-cta-band--visit',
-    ctaTitle: (demoFb && demoFb.visitorCtaHeading) || ('Experience ' + publicName),
-    ctaBody: (demoFb && demoFb.visitorCtaBody) || ('Whether you are a seeker or a long-time believer, there is a seat for you at ' + publicName + '. Join us this Sunday.'),
+    ctaTitle: 'Experience ' + publicName,
+    ctaBody: 'Ready to take a next step? Plan your visit or ask for directions — greeters will help you feel at home.',
     ctaPrimary: {
       href: hrefFor('/contact'),
-      label: (demoFb && demoFb.visitorCtaButtonText) || 'Plan Your Visit'
+      label: (demoFb && demoFb.visitorCtaButtonText) || ((visitorSection && visitorSection.layoutMetadata && visitorSection.layoutMetadata.buttonText) || 'Plan Your Visit')
     },
-    ctaSecondary: { href: hrefFor('/contact'), label: 'Get Directions' },
+    ctaSecondary: { href: hrefFor('/contact'), label: (visitorSection && visitorSection.layoutMetadata && visitorSection.layoutMetadata.secondaryButtonText) || 'Get Directions' },
     editPageKey: 'about',
-    editSectionKey: 'visitor_cta'
+    editSectionKey: 'visitor_cta_actions',
+    ctaLayoutMetadata: null
   }) %>
   </div>
 </section>

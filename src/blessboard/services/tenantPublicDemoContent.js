@@ -31,6 +31,10 @@ const MEDIA = Object.freeze({
   aboutGallery1: "/church/images/tenant-public/about-hero-building.jpg",
   aboutGallery2: "/church/images/tenant-public/home-desktop-hero.jpg",
   aboutGallery3: "/church/images/leadership/ministry-1.jpg",
+  /** Life Together featured image — independent from the three-image gallery grid. */
+  aboutLifeTogether: "/church/images/about/about-culture-1.jpg",
+  /** Visit on Sunday featured image — independent from gallery + Life Together. */
+  aboutVisitSunday: "/church/images/about/about-branch-building.jpg",
   pastor: "/church/images/leadership/pastor-desktop.jpg",
   associate: "/church/images/leadership/assistant-desktop.jpg",
   leader3: "/church/images/leadership/elder-1.jpg",
@@ -263,8 +267,16 @@ function buildPublicDemoPack(opts) {
       bodyText: `${N} invests time and resources in local education support, neighbourhood care projects, and partnerships that strengthen the city around us. We prefer steady presence over spectacle — showing up with meals, mentoring, and practical help when it matters.`,
       mediaUrl: null,
     }),
+    lifeTogether: Object.freeze({
+      sectionKey: "gallery",
+      sectionType: "gallery",
+      heading: "Life Together",
+      bodyText: `Sundays and midweek gatherings at ${N} are where friendships form, children are known by name, and faith becomes a shared practice — not a private habit. Come early, stay after, and let the room become familiar.`,
+      mediaUrl: MEDIA.aboutLifeTogether,
+    }),
     visitorCtaHeading: "Visit on a Sunday",
     visitorCtaBody: `Come see ${N} in person. Arrive a few minutes early, find a greeter, and stay after the service if you would like to meet someone from the pastoral team. You are welcome exactly as you are.`,
+    visitorCtaMediaUrl: MEDIA.aboutVisitSunday,
     gallery: Object.freeze([MEDIA.aboutGallery1, MEDIA.aboutGallery2, MEDIA.aboutGallery3]),
   });
 

@@ -77,11 +77,25 @@ const COVERAGE = Object.freeze([
     keys: ["about.community.mediaUrl"],
   },
   {
-    id: "bb.about.gallery",
-    surface: "About gallery / content section images",
+    id: "bb.about.life_together.image",
+    surface: "About Life Together featured image",
     classification: C.EDITABLE,
     editor: "structured_image",
     keys: ["about.gallery.mediaUrl"],
+  },
+  {
+    id: "bb.about.visit_sunday.image",
+    surface: "About Visit on Sunday featured image",
+    classification: C.EDITABLE,
+    editor: "structured_image",
+    keys: ["about.visitor_cta.mediaUrl"],
+  },
+  {
+    id: "bb.about.gallery",
+    surface: "About gallery grid images",
+    classification: C.EDITABLE,
+    editor: "structured_image",
+    keys: ["about.gallery_N.mediaUrl"],
   },
   {
     id: "bb.content_block.media",

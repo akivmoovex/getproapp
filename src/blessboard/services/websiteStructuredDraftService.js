@@ -463,6 +463,19 @@ function applyStructuredDraftsToModel(model, drafts) {
         model.aboutDemoFallback = { ...model.aboutDemoFallback, gallery };
       }
     }
+    if (model.pageKey === "about" && sectionKey === "gallery" && mediaUrl && model.aboutDemoFallback) {
+      const life = model.aboutDemoFallback.lifeTogether || {};
+      model.aboutDemoFallback = {
+        ...model.aboutDemoFallback,
+        lifeTogether: { ...life, mediaUrl },
+      };
+    }
+    if (model.pageKey === "about" && sectionKey === "visitor_cta" && mediaUrl && model.aboutDemoFallback) {
+      model.aboutDemoFallback = {
+        ...model.aboutDemoFallback,
+        visitorCtaMediaUrl: mediaUrl,
+      };
+    }
   }
 
   // Service times

@@ -624,16 +624,17 @@ async function attachWebsiteAdminChrome(opts) {
             model.aboutDemoFallback = thawDemoFallback(model.aboutDemoFallback);
             const valuesHeading = overlayMap.get("values::heading");
             if (valuesHeading !== undefined) model.aboutDemoFallback.valuesHeading = valuesHeading;
-            const galleryHeading = overlayMap.get("gallery::heading");
-            if (galleryHeading !== undefined) model.aboutDemoFallback.galleryHeading = galleryHeading;
+            const galleryGridHeading = overlayMap.get("gallery_heading::heading");
+            if (galleryGridHeading !== undefined) model.aboutDemoFallback.galleryHeading = galleryGridHeading;
             applySoftSection(model.aboutDemoFallback, "visitor_cta", "visitorCtaHeading", "visitorCtaBody");
             const visitorBtn = overlayMap.get("visitor_cta::buttonText");
             if (visitorBtn !== undefined) model.aboutDemoFallback.visitorCtaButtonText = visitorBtn;
-            ["beliefs", "community", "mission", "vision", "story"].forEach((key) => {
+            ["beliefs", "community", "mission", "vision", "story", "lifeTogether"].forEach((key) => {
               const block = model.aboutDemoFallback[key];
               if (!block || typeof block !== "object") return;
-              const h = overlayMap.get(`${key}::heading`);
-              const b = overlayMap.get(`${key}::bodyText`);
+              const sectionKey = key === "lifeTogether" ? "gallery" : key;
+              const h = overlayMap.get(`${sectionKey}::heading`);
+              const b = overlayMap.get(`${sectionKey}::bodyText`);
               if (h !== undefined || b !== undefined) {
                 model.aboutDemoFallback[key] = {
                   ...block,

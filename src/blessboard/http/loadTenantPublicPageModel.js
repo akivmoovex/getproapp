@@ -1611,6 +1611,14 @@ async function loadTenantPublicPageModel(db, input) {
         ...demoPack.about.community,
         bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.community.bodyText),
       }),
+      lifeTogether: Object.freeze({
+        ...demoPack.about.lifeTogether,
+        bodyText: publicDemo.withPublicTemplateNotice(demoPack.about.lifeTogether.bodyText),
+        mediaUrl: publicDemo.mediaOrFallback(demoPack.about.lifeTogether.mediaUrl),
+      }),
+      visitorCtaHeading: demoPack.about.visitorCtaHeading,
+      visitorCtaBody: publicDemo.withPublicTemplateNotice(demoPack.about.visitorCtaBody),
+      visitorCtaMediaUrl: publicDemo.mediaOrFallback(demoPack.about.visitorCtaMediaUrl),
       gallery: (demoPack.about.gallery || [])
         .map((url) => publicDemo.mediaOrFallback(url))
         .filter(Boolean),

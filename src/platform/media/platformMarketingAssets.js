@@ -50,6 +50,12 @@ const PUBLIC_TO_RELATIVE_KEY = Object.freeze({
     "blessboard/demo/tenant-public/home-mobile-hero.jpg",
   "/church/images/tenant-public/about-hero-building.jpg":
     "blessboard/demo/tenant-public/about-hero-building.jpg",
+  "/church/images/about/about-culture-1.jpg": "blessboard/demo/about/about-culture-1.jpg",
+  "/church/images/about/about-culture-2.jpg": "blessboard/demo/about/about-culture-2.jpg",
+  "/church/images/about/about-culture-3.jpg": "blessboard/demo/about/about-culture-3.jpg",
+  "/church/images/about/about-culture-4.jpg": "blessboard/demo/about/about-culture-4.jpg",
+  "/church/images/about/about-branch-building.jpg":
+    "blessboard/demo/about/about-branch-building.jpg",
   "/church/images/homepage/mobile-hero-sanctuary.jpg":
     "blessboard/homepage/mobile-hero-sanctuary.jpg",
   "/church/images/homepage/mobile-ministry-worship.jpg":

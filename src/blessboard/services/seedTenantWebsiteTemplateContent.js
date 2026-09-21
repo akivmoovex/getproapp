@@ -287,9 +287,17 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
       spec: {
         sectionKey: "gallery",
         sectionType: "gallery",
-        heading: "Life Together",
-        bodyText: PLACEHOLDER_LABEL,
+        heading: pack.about.lifeTogether.heading || "Life Together",
+        bodyText: labeledBody(
+          pack.about.lifeTogether.bodyText,
+          "This Life Together section is template copy — replace with your congregation’s story."
+        ),
+        mediaUrl: pack.about.lifeTogether.mediaUrl || null,
         sortOrder: 12,
+        layoutMetadata: {
+          altText: "Life together at church",
+          templateExample: true,
+        },
       },
     },
     ...pack.about.gallery.map((src, index) => ({
@@ -310,12 +318,15 @@ function buildBlessBoardWebsiteTemplateSpecs(pack, fields) {
         sectionType: "cta",
         heading: pack.about.visitorCtaHeading,
         bodyText: pack.about.visitorCtaBody,
+        mediaUrl: pack.about.visitorCtaMediaUrl || null,
         sortOrder: 20,
         layoutMetadata: {
           buttonText: "Plan a visit",
           buttonUrl: "/contact",
           secondaryButtonText: "Contact us",
           secondaryButtonUrl: "/contact",
+          altText: "Visit on Sunday",
+          templateExample: true,
         },
       },
     },

@@ -282,7 +282,11 @@ function createMoovexPlatformRuntimeApp(options) {
       if (String(env.DEPLOYMENT_ENV || "").trim().toLowerCase() !== "testing") {
         return res.status(403).json({ ok: false, code: "refused_non_testing_environment" });
       }
-      if (String(deployment.code || "").trim().toLowerCase() !== "moovex-platform-testing") {
+      const deployCode = String(deployment.code || "").trim().toLowerCase();
+      if (
+        deployCode !== "moovex-platform-testing" &&
+        deployCode !== "moovex-platform-v8-testing"
+      ) {
         return res.status(403).json({ ok: false, code: "refused_non_testing_deployment" });
       }
       const body = req.body || {};
