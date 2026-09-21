@@ -505,6 +505,11 @@
 
   function buildImageBody(fieldEl) {
     var logo = isLogoField(fieldEl);
+    var canvasImg = fieldEl.querySelector("[data-website-image]");
+    var currentSrc = canvasImg ? canvasImg.getAttribute("src") || "" : "";
+    var currentAlt = canvasImg ? canvasImg.getAttribute("alt") || "" : "";
+    var mediaId = fieldEl.getAttribute("data-website-media-id") || "";
+    var hasCurrent = Boolean(currentSrc);
     bodyEl.innerHTML =
       '<div class="gp-website-field-editor__media-grid">' +
       '<div class="gp-website-field-editor__section">' +
@@ -524,27 +529,26 @@
       (logo
         ? '<p class="gp-website-field-editor__hint">Use a square PNG or SVG with a transparent background when possible.</p>'
         : "") +
-      '<label class="gp-website-field-editor__file">' +
+      '<div class="gp-website-field-editor__media-actions">' +
+      '<label class="gp-website-field-editor__file gp-website-field-editor__file--primary">' +
       "<span>" +
-      (currentSrc ? "Replace image" : "Add image") +
+      (hasCurrent ? "Replace image" : "Upload from computer") +
       "</span>" +
       '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-website-file="1" />' +
       "</label>" +
       (mediaUrl
-        ? '<button type="button" class="gp-website-field-editor__link-btn" data-website-library="1">Choose existing</button>'
+        ? '<button type="button" class="gp-website-field-editor__link-btn" data-website-library="1">Choose from Content Library</button>'
         : "") +
-      '<button type="button" class="gp-website-field-editor__link-btn" data-website-remove-image="1">Remove image</button>' +
+      '<button type="button" class="gp-website-field-editor__link-btn" data-website-remove-image="1"' +
+      (hasCurrent ? "" : " hidden") +
+      ">Remove image</button>" +
+      "</div>" +
       '<div class="gp-website-library" data-website-library-panel="1" hidden></div>' +
       '<label class="gp-website-field-editor__alt">' +
       "Alt text" +
       '<input type="text" maxlength="240" data-website-alt="1" autocomplete="off" enterkeyhint="done" />' +
       "</label>" +
       '<progress class="gp-website-field-editor__progress" data-website-progress="1" hidden max="100" value="0"></progress>';
-
-    var canvasImg = fieldEl.querySelector("[data-website-image]");
-    var currentSrc = canvasImg ? canvasImg.getAttribute("src") || "" : "";
-    var currentAlt = canvasImg ? canvasImg.getAttribute("alt") || "" : "";
-    var mediaId = fieldEl.getAttribute("data-website-media-id") || "";
 
     var currentPreview = bodyEl.querySelector("[data-website-field-current-image]");
     var newPreview = bodyEl.querySelector("[data-website-field-new-image]");
@@ -554,6 +558,8 @@
     var libraryBtn = bodyEl.querySelector("[data-website-library]");
     var libraryPanel = bodyEl.querySelector("[data-website-library-panel]");
     var progress = bodyEl.querySelector("[data-website-progress]");
+    var removeBtn = bodyEl.querySelector("[data-website-remove-image]");
+    var uploadLabel = bodyEl.querySelector(".gp-website-field-editor__file span");
 
     if (currentPreview && currentSrc) {
       currentPreview.src = currentSrc;
@@ -585,12 +591,19 @@
           setStatus(check.reason, true);
           return;
         }
+        if (!mediaUrl) {
+          fileInput.value = "";
+          setStatus("Media upload is unavailable. Reload the page or open Content Library from website settings.", true);
+          return;
+        }
         if (state.pendingObjectUrl) URL.revokeObjectURL(state.pendingObjectUrl);
         state.pendingFile = file;
         state.pendingMediaId = null;
         state.pendingRemove = false;
         state.pendingObjectUrl = URL.createObjectURL(file);
         showNewPreview(state.pendingObjectUrl);
+        if (uploadLabel) uploadLabel.textContent = "Replace image";
+        if (removeBtn) removeBtn.hidden = false;
         setStatus("Preview only — save draft to keep this image", false);
         syncDirtyController();
       });
@@ -611,7 +624,7 @@
             libraryPanel.textContent = "";
             var items = (out && out.media) || [];
             if (!items.length) {
-              libraryPanel.textContent = "No images in the library yet.";
+              libraryPanel.textContent = "No images in the Content Library yet. Upload from your computer above.";
               return;
             }
             items.forEach(function (item) {
@@ -633,11 +646,13 @@
                   state.pendingObjectUrl = null;
                 }
                 showNewPreview(item.previewUrl || item.publicSrc || mediaItemUrl(state.pendingMediaId));
+                if (uploadLabel) uploadLabel.textContent = "Replace image";
+                if (removeBtn) removeBtn.hidden = false;
                 if (altInput && (item.altText || item.alt)) {
                   altInput.value = item.altText || item.alt;
                 }
                 libraryPanel.hidden = true;
-                setStatus("Library image selected — save draft to keep it", false);
+                setStatus("Content Library image selected — save draft to keep it", false);
                 syncDirtyController();
               });
               libraryPanel.appendChild(pick);
@@ -649,7 +664,6 @@
       });
     }
 
-    var removeBtn = bodyEl.querySelector("[data-website-remove-image]");
     if (removeBtn) {
       removeBtn.addEventListener("click", function () {
         state.pendingFile = null;
@@ -661,6 +675,8 @@
           state.pendingObjectUrl = null;
         }
         showNewPreview("");
+        if (uploadLabel) uploadLabel.textContent = "Upload from computer";
+        removeBtn.hidden = true;
         setStatus("Image will be removed when you save draft", false);
         syncDirtyController();
       });

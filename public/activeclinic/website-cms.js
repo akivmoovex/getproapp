@@ -162,6 +162,8 @@
 
   var picker = document.querySelector("[data-ac-mw-media-picker]");
   var pickerTarget = null;
+  // Shared platform media field owns upload + library when present.
+  if (!document.querySelector("[data-gp-we-media-field]")) {
   document.querySelectorAll("[data-ac-mw-open-media]").forEach(function (btn) {
     btn.addEventListener("click", function () {
       pickerTarget = btn.closest("[data-ac-mw-media-field]") || btn.closest("form");
@@ -231,7 +233,7 @@
         });
     });
   });
-
+  }
   document.querySelectorAll("[data-ac-mw-color]").forEach(function (root) {
     var swatch = root.querySelector("[data-ac-mw-color-swatch]");
     var text = root.querySelector("[data-ac-mw-color-text]");

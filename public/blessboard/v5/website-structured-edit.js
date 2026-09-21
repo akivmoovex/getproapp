@@ -149,7 +149,7 @@
 
   function buildImageForm(p) {
     var hasImage = Boolean(p.imageUrl);
-    var replaceLabel = hasImage ? "Replace image" : "Add image";
+    var replaceLabel = hasImage ? "Replace image" : "Upload from computer";
     var demos = demoImages()
       .map(function (d) {
         return (
@@ -190,7 +190,7 @@
       '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">' +
       esc(replaceLabel) +
       '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" hidden /></label>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1">Media library</button>' +
+      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1">Choose from Content Library</button>' +
       '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-remove-media="1">Remove image</button>' +
       "</div>" +
       '<div class="bb-tp-se-library" data-bb-se-library-panel="1" hidden></div>' +
@@ -221,7 +221,7 @@
       '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">' +
       esc(thumbLabel) +
       '<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" data-bb-se-upload-target="thumbnailUrl" hidden /></label>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="thumbnailUrl">Media library</button>' +
+      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="thumbnailUrl">Choose from Content Library</button>' +
       '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm" data-bb-se-remove-media="1">Remove video</button>' +
       "</div>" +
       '<div class="bb-tp-se-library" data-bb-se-library-panel="1" hidden></div>' +
@@ -429,7 +429,7 @@
       field("QR image URL (optional)", "qrImageUrl", p.qrImageUrl || "") +
       '<div class="bb-tp-se-actions-row">' +
       '<label class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch bb-tp-se-change-photo">Upload QR image<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" capture="environment" data-bb-se-upload="1" data-bb-se-upload-target="qrImageUrl" hidden /></label>' +
-      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="qrImageUrl">Media library</button>' +
+      '<button type="button" class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--touch" data-bb-se-library="1" data-bb-se-library-target="qrImageUrl">Choose from Content Library</button>' +
       "</div>" +
       '<p class="bb-tp-se-hint">Use an uploaded media path, demo image path, or https image URL for QR.</p>' +
       field("Visible on website", "visible", p.visible !== false, { type: "checkbox" }) +

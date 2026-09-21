@@ -1,0 +1,50 @@
+<%#
+  Shared platform website media field (BlessBoard + ActiveClinic).
+  Locals: mediaField { idName, srcName, altName, altLabel, mediaId, src, alt, emptyText, previewClass }
+          mediaListUrl (optional — upload/list endpoint)
+%>
+<%
+  var field = typeof mediaField !== "undefined" && mediaField ? mediaField : {};
+  var src = field.src || "";
+  var alt = field.alt || "";
+  var listUrl = typeof mediaListUrl !== "undefined" ? String(mediaListUrl || "") : "";
+  var emptyText = field.emptyText || "No image selected.";
+  var previewClass = field.previewClass ? String(field.previewClass) : "";
+%>
+<div
+  class="gp-we-media-field ac-mw-media-field bb-wb-media-field"
+  data-gp-we-media-field="1"
+  data-ac-mw-media-field="1"
+  data-bb-wb-media-field="1"
+  data-gp-we-media-url="<%= listUrl %>"
+>
+  <input type="hidden" name="<%= field.idName %>" value="<%= field.mediaId || '' %>" data-gp-we-media-id="1" data-ac-mw-media-id="1" data-bb-wb-media-id="1"/>
+  <input type="hidden" name="<%= field.srcName %>" value="<%= src %>" data-gp-we-media-src="1" data-ac-mw-media-src="1" data-bb-wb-media-src="1"/>
+  <label class="gp-we-media-field__alt">
+    <%= field.altLabel || "Image description" %>
+    <input type="text" name="<%= field.altName %>" maxlength="240" value="<%= alt %>" data-gp-we-media-alt="1" data-ac-mw-media-alt="1" data-bb-wb-media-alt="1" placeholder="Short description for visitors"/>
+  </label>
+  <p class="gp-we-media-field__preview-wrap ac-mw-media-preview-wrap bb-wb-media-preview-wrap">
+    <img
+      src="<%= src %>"
+      alt="<%= alt %>"
+      class="gp-we-media-field__preview ac-mw-media-preview bb-wb-media-preview<%= previewClass ? ' ' + previewClass : '' %>"
+      data-gp-we-media-preview="1"
+      data-ac-mw-media-preview="1"
+      data-bb-wb-media-preview="1"
+      <%= src ? "" : "hidden" %>
+    />
+  </p>
+  <p class="gp-we-media-field__empty ac-mw-muted bb-wb-muted" data-gp-we-media-preview-empty="1" data-ac-mw-media-preview-empty="1" data-bb-wb-media-preview-empty="1" <%= src ? "hidden" : "" %>><%= emptyText %></p>
+  <p class="gp-we-media-field__status" data-gp-we-media-status="1" role="status"></p>
+  <div class="gp-we-media-field__actions">
+    <label class="gp-we-media-field__btn gp-we-media-field__btn--primary">
+      <span data-gp-we-media-upload-label="1"><%= src ? "Replace image" : "Upload from computer" %></span>
+      <input type="file" accept="image/jpeg,image/png,image/webp,image/gif" data-gp-we-media-file="1" hidden/>
+    </label>
+    <% if (listUrl) { %>
+    <button type="button" class="gp-we-media-field__btn" data-gp-we-media-open-library="1">Choose from Content Library</button>
+    <% } %>
+    <button type="button" class="gp-we-media-field__btn gp-we-media-field__btn--ghost" data-gp-we-media-remove="1" <%= src ? "" : "hidden" %>>Remove image</button>
+  </div>
+</div>

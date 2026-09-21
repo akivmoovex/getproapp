@@ -21,6 +21,9 @@
   <% if (typeof loadMediaPicker !== 'undefined' && loadMediaPicker) { %>
   <link rel="stylesheet" href="/blessboard/v5/media-picker.css?v=8" />
   <% } %>
+  <% if (typeof loadSharedWebsiteMedia !== 'undefined' && loadSharedWebsiteMedia) { %>
+  <link rel="stylesheet" href="/platform/website-media-field.css?v=v2-media-parity-1" />
+  <% } %>
 </head>
 <%
   var hqNav = (typeof navItems !== 'undefined' && navItems && navItems.length)

@@ -83,20 +83,43 @@ describe("v7 image editor coverage — classification matrices", () => {
 });
 
 describe("v7 image editor coverage — editor wiring contract", () => {
-  it("shared inline image dialog exposes Add/Replace, library, and Remove (no raw URL box)", () => {
+  it("shared inline image dialog exposes Upload/Replace, Content Library, and Remove (no raw URL box)", () => {
     const js = read("public/platform/website-inline-edit.js");
-    assert.match(js, /Replace image|Add image/);
+    assert.match(js, /Upload from computer|Replace image/);
+    assert.match(js, /Choose from Content Library/);
     assert.match(js, /data-website-library="1"/);
     assert.match(js, /data-website-remove-image="1"/);
     assert.match(js, /pendingRemove/);
     assert.doesNotMatch(js, /Image URL or media path|type="url"[^>]*data-website-image-url/);
   });
 
+  it("shared platform media field exposes upload, library, replace, and remove actions", () => {
+    const field = read("views/platform/website/partials/media-field.ejs");
+    const picker = read("views/platform/website/partials/media-picker-dialog.ejs");
+    const js = read("public/platform/website-media-field.js");
+    assert.match(field, /Upload from computer/);
+    assert.match(field, /Choose from Content Library/);
+    assert.match(field, /Replace image/);
+    assert.match(field, /Remove image/);
+    assert.match(picker, /Upload from computer/);
+    assert.match(picker, /Content Library/);
+    assert.match(js, /data-gp-we-media-file/);
+    assert.match(js, /uploadFile/);
+    assert.match(js, /FormData/);
+  });
+
+  it("ActiveClinic CMS media field reuses the shared platform partial", () => {
+    const acField = read("views/activeclinic/partials/website-cms-media-field.ejs");
+    const acPicker = read("views/activeclinic/partials/website-cms-media-picker.ejs");
+    assert.match(acField, /platform\/website\/partials\/media-field/);
+    assert.match(acPicker, /platform\/website\/partials\/media-picker-dialog/);
+  });
+
   it("BlessBoard structured image editor uses media picker without raw URL text field", () => {
     const js = read("public/blessboard/v5/website-structured-edit.js");
     assert.match(js, /type="hidden" name="imageUrl"/);
-    assert.match(js, /Add image|Replace image/);
-    assert.match(js, /data-bb-se-library="1"/);
+    assert.match(js, /Upload from computer|Replace image/);
+    assert.match(js, /Choose from Content Library|data-bb-se-library="1"/);
     assert.match(js, /data-bb-se-remove-media="1"/);
     assert.doesNotMatch(js, /Image URL or media path/);
   });
@@ -137,13 +160,11 @@ describe("v7 image editor coverage — editor wiring contract", () => {
   it("ActiveClinic doctor/service pages point website editors at catalogue and Content Library media", () => {
     const doctors = read("views/activeclinic/tenant/doctors.ejs");
     const services = read("views/activeclinic/tenant/services.ejs");
-    // Doctors: visibility is catalogue-managed; photos are noted as Content Library.
     assert.match(doctors, /\/app\/settings\/website\/catalogue\?tab=doctors/);
     assert.match(doctors, /Manage public doctors/);
-    assert.match(doctors, /Content Library/);
+    assert.match(doctors, /media picker|Content Library/i);
     assert.match(doctors, /website-library-placements/);
-    // Services: image affordance opens the Content Library media picker.
-    assert.match(services, /\/app\/settings\/website\/library/);
-    assert.match(services, /Edit service website images/);
+    assert.match(services, /\/app\/settings\/website\/catalogue\?tab=services/);
+    assert.match(services, /Manage public catalogue/);
   });
 });
