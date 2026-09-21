@@ -5,6 +5,17 @@
   <% if (service.durationMinutes) { %>
   <p class="ac-public-muted">Typical duration: about <%= service.durationMinutes %> minutes (clinic-provided estimate).</p>
   <% } %>
+  <% const editingServiceDetail = typeof websiteEdit !== 'undefined' && websiteEdit; %>
+  <% const detailEditHref = service.editHref || (service.id ? ('/app/settings/website/catalogue/services/' + encodeURIComponent(service.id) + '/edit') : ''); %>
+  <% if (editingServiceDetail && detailEditHref) { %>
+  <p class="ac-service-detail__editor" data-ac-edit-service-wrap="1">
+    <a
+      class="ac-btn ac-btn--secondary ac-btn--pill"
+      href="<%= detailEditHref %>?returnTo=<%= encodeURIComponent('/clinics/' + clinic.clinicKey + '/services/' + service.serviceKey + '?website_edit=1&website_mode=draft') %>"
+      data-ac-edit-service="1"
+    >Edit service</a>
+  </p>
+  <% } %>
   <% if (serviceKind === 'consultation' && clinic.publicBookingEnabled) { %>
   <p class="ac-public-actions">
     <a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book?service=<%= service.serviceKey %>">Request this service</a>

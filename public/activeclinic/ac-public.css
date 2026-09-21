@@ -1320,6 +1320,16 @@ body.ac-public--tenant .acp-page {
   font-weight: 600;
   font-size: 0.92rem;
 }
+.ac-service-card__editor,
+.ac-service-detail__editor {
+  margin: 0.75rem 0 0;
+  padding: 0 0.15rem;
+}
+.ac-service-card__editor .ac-btn,
+.ac-service-detail__editor .ac-btn {
+  width: 100%;
+  justify-content: center;
+}
 
 .ac-public-footer--tenant {
   background: #fff;

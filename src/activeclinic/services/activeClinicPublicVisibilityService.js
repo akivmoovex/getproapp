@@ -433,6 +433,9 @@ function mapPublicServiceRow(row) {
     durationMinutes: row.default_duration_minutes || null,
     bookable: row.public_bookable === true,
     websiteVisible: row.public_website_visible === true,
+    editHref: row.id
+      ? `/app/settings/website/catalogue/services/${row.id}/edit`
+      : null,
   };
 }
 

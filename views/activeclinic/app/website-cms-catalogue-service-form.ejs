@@ -8,6 +8,7 @@
     : "/app/settings/website/catalogue/services/new";
   var image = service.image || {};
   var categoryValue = service.category || service.publicSummary || "";
+  var returnTo = cms.returnTo || "";
 %>
 <section class="ac-mw" data-ac-page-section="website-catalogue-service-form" data-ac-mw-screen="catalogue-service-form">
   <%- include('../partials/website-cms-nav') %>
@@ -20,6 +21,7 @@
   <% if (cms.error) { %><p class="ac-mw-error" role="alert"><%= cms.error %></p><% } %>
   <form class="ac-mw-form" method="post" action="<%= action %>" data-ac-catalogue-service-form="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <% if (returnTo) { %><input type="hidden" name="returnTo" value="<%= returnTo %>"/><% } %>
     <label>
       Public name
       <input type="text" name="displayName" required maxlength="120" value="<%= service.name || "" %>" <%= canEdit ? "" : "readonly" %>/>
@@ -74,7 +76,7 @@
       Available for online booking
     </label>
     <div class="ac-mw-actions">
-      <a class="ac-mw-btn" href="/app/settings/website/catalogue?tab=services">Cancel</a>
+      <a class="ac-mw-btn" href="<%= returnTo || '/app/settings/website/catalogue?tab=services' %>">Cancel</a>
       <% if (canEdit) { %>
       <button type="submit" class="ac-mw-btn ac-mw-btn--primary"><%= mode === "edit" ? "Save service" : "Add service" %></button>
       <% } %>

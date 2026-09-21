@@ -166,5 +166,7 @@ describe("v7 image editor coverage — editor wiring contract", () => {
     assert.match(doctors, /website-library-placements/);
     assert.match(services, /\/app\/settings\/website\/catalogue\?tab=services/);
     assert.match(services, /Manage public catalogue/);
+    assert.match(services, /data-ac-edit-service="1"/);
+    assert.match(services, /Edit service/);
   });
 });

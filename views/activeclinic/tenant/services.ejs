@@ -5,6 +5,8 @@
   </header>
   <% const serviceList = Array.isArray(services) ? services : []; %>
   <% const procedureList = Array.isArray(procedures) ? procedures : []; %>
+  <% const editingServices = typeof websiteEdit !== 'undefined' && websiteEdit; %>
+  <% const servicesReturnTo = '/clinics/' + clinic.clinicKey + '/services?website_edit=1&website_mode=draft'; %>
   <% if (!serviceList.length && !procedureList.length) { %>
   <div class="ac-public-empty" data-ac-empty="services" data-ac-state-key="empty">
     <h2><%- include('../partials/website-editable-field', { contentKey: 'services.empty_heading', fieldValue: clinic.servicesEmptyHeading || 'Service listings are not available yet', fieldType: 'short_text' }) %></h2>
@@ -17,7 +19,8 @@
   <h2 class="acp-section-title">Consultations</h2>
   <ul class="ac-service-cards">
     <% serviceList.forEach(function(s) { %>
-    <li class="ac-service-card">
+    <% const serviceEditHref = s.editHref || (s.id ? ('/app/settings/website/catalogue/services/' + encodeURIComponent(s.id) + '/edit') : ''); %>
+    <li class="ac-service-card" data-ac-service-card="1"<%= s.id ? (' data-ac-service-id="' + s.id + '"') : '' %><%= s.serviceKey ? (' data-ac-service-key="' + s.serviceKey + '"') : '' %>>
       <a class="ac-service-card__link" href="/clinics/<%= clinic.clinicKey %>/services/<%= s.serviceKey %>">
         <span class="ac-service-card__icon" aria-hidden="true">
           <img src="<%= s.iconUrl || (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/icons/general.svg') : '') %>" alt="" width="28" height="28" loading="lazy"/>
@@ -28,6 +31,15 @@
         <% } %>
         <span class="ac-service-card__cta">View details</span>
       </a>
+      <% if (editingServices && serviceEditHref) { %>
+      <p class="ac-service-card__editor">
+        <a
+          class="ac-btn ac-btn--secondary ac-btn--pill"
+          href="<%= serviceEditHref %>?returnTo=<%= encodeURIComponent(servicesReturnTo) %>"
+          data-ac-edit-service="1"
+        >Edit service</a>
+      </p>
+      <% } %>
     </li>
     <% }) %>
   </ul>

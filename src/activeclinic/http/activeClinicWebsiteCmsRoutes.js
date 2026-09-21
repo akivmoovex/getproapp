@@ -64,6 +64,17 @@ function cmsInput(req) {
   };
 }
 
+/** Allow only same-origin relative return paths for catalogue editor handoff. */
+function sanitizeCatalogueReturnTo(raw) {
+  const value = String(raw || "").trim();
+  if (!value || value.length > 400) return "";
+  if (!value.startsWith("/")) return "";
+  if (value.startsWith("//")) return "";
+  if (/[\r\n]/.test(value)) return "";
+  if (!(value.startsWith("/clinics/") || value.startsWith("/app/settings/website/"))) return "";
+  return value;
+}
+
 function slugErrorMessage(code) {
   if (code === "reserved_slug") return "That URL is reserved for clinic pages. Choose another slug.";
   if (code === "duplicate_slug") return "That URL is already used by another page.";
@@ -1781,6 +1792,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           const status = loaded.code === "forbidden" ? 403 : 404;
           return deny(res, status, "Edit service", slugErrorMessage(loaded.code));
         }
+        const returnTo = sanitizeCatalogueReturnTo(req.query && req.query.returnTo);
         return renderShell(req, res, {
           content: "app/website-cms-catalogue-service-form.ejs",
           cmsActive: "catalogue",
@@ -1798,6 +1810,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
               service: loaded.service,
               canEdit: loaded.canEdit === true,
               mediaListUrl: `/clinics/${cmsInput(req).clinicKey}/website/media`,
+              returnTo,
               error: "",
             },
           },
@@ -1818,6 +1831,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           return deny(res, 403, "Invalid request", "Reload the page and try again.");
         }
         const body = req.body || {};
+        const returnTo = sanitizeCatalogueReturnTo(body.returnTo);
         const updated = await catalogueService.updateCatalogueService(getPool(), {
           ...cmsInput(req),
           serviceId: req.params.serviceId,
@@ -1875,12 +1889,16 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
                 },
                 canEdit: true,
                 mediaListUrl: `/clinics/${cmsInput(req).clinicKey}/website/media`,
+                returnTo,
                 error: slugErrorMessage(updated.code),
               },
             },
           });
         }
-        return res.redirect(303, `/app/settings/website/catalogue?tab=services&saved=1`);
+        return res.redirect(
+          303,
+          returnTo || `/app/settings/website/catalogue?tab=services&saved=1`
+        );
       } catch (err) {
         return next(err);
       }
