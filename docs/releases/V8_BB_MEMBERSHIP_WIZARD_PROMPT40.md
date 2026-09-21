@@ -1,10 +1,12 @@
 # V8 BlessBoard Membership Wizard — Prompt 40
 
-**Verdict:** pending hosted verify  
+**Verdict:** `V8_BB_MEMBERSHIP_WIZARD_PASS`  
 **Date:** 2026-09-21  
 **Branch:** `V8` only  
+**Implementation SHA:** `37cd39a3ba18feacba6d6c3beecddae82cfc7dee`  
+**Hosted application SHA:** `37cd39a3ba18` (confirmed `/healthz`)  
 **Stitch:** BB03–BB07 desktop + mobile (`projects/5087412725796049014`)  
-**QA tenant:** `bb-v8qa-mub23a6v6a6b` (path-public `/c/:org/register`)
+**QA tenant:** `bb-v8qa-mub23a6v6a6b` via path-public `/c/:org/register`
 
 ## Goal
 
@@ -37,6 +39,19 @@ Requirements covered: functional Next/Back, DOM-preserved fields, step-1 validat
 | `shared-platform` | PASS |
 | `compatibility` | PASS |
 
-## Hosted
+## Hosted evidence (`37cd39a3ba18`)
 
-Filled after deploy.
+Harness: `scripts/local/v8-bb-membership-wizard-p40-hosted.js`
+
+| Check | Result |
+|-------|--------|
+| GET `/c/bb-v8qa-…/register` | **200**, wizard + panels 1–4 + Next + review |
+| Path-public form action | `/c/bb-v8qa-mub23a6v6a6b/register` |
+| Submit disposable application | BB07 confirmation, ref `2682ae15-659d-4631-b501-c4afacb23f15` |
+| No auto login copy | Present |
+| Missing first name | **400**, stayed on form |
+| Pastoral notes in public HTML | Absent |
+
+## Final verdict
+
+**`V8_BB_MEMBERSHIP_WIZARD_PASS`**
