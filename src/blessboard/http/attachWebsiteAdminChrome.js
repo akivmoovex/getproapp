@@ -536,6 +536,18 @@ async function attachWebsiteAdminChrome(opts) {
             heroMediaUrl: model._draftHeroMediaUrl,
           };
         }
+        if (model.aboutDemoFallback) {
+          model.aboutDemoFallback = {
+            ...model.aboutDemoFallback,
+            heroMediaUrl: model._draftHeroMediaUrl,
+          };
+        }
+        if (model.contactDemoFallback) {
+          model.contactDemoFallback = {
+            ...model.contactDemoFallback,
+            heroMediaUrl: model._draftHeroMediaUrl,
+          };
+        }
         const hasHero = (model.sections || []).some(
           (s) => s && String(s.sectionKey || "") === "hero"
         );

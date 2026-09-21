@@ -395,7 +395,12 @@ function applyStructuredDraftsToModel(model, drafts) {
       continue;
     }
     const mediaUrl = presentDraftImageUrl(
-      payload.imageUrl || payload.videoUrl || payload.thumbnailUrl || null
+      d.draftKind === "image"
+        ? payload.imageUrl || null
+        : d.draftKind === "video"
+          ? // Bug 22: never treat the YouTube/Vimeo URL as the image src; only a thumbnail.
+            payload.thumbnailUrl || null
+          : payload.imageUrl || payload.thumbnailUrl || null
     );
     let matched = false;
     model.sections = (model.sections || []).map((s) => {
@@ -438,6 +443,9 @@ function applyStructuredDraftsToModel(model, drafts) {
       }
       if (model.pageKey === "about" && model.aboutDemoFallback) {
         model.aboutDemoFallback = { ...model.aboutDemoFallback, heroMediaUrl: mediaUrl };
+      }
+      if (model.pageKey === "contact" && model.contactDemoFallback) {
+        model.contactDemoFallback = { ...model.contactDemoFallback, heroMediaUrl: mediaUrl };
       }
       if (model.pageKey === "giving" && model.givingDemoFallback) {
         model.givingDemoFallback = { ...model.givingDemoFallback, introMediaUrl: mediaUrl };
