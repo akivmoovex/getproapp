@@ -852,13 +852,15 @@ async function upsertOperationalOverlay(db, input) {
       item.operational_key === operationalKey
   );
   const nextImage =
-    input.image !== undefined
-      ? normalizeImage(input.image)
-      : input.imageSrc !== undefined || input.imageMediaId !== undefined
-        ? cmsService.imageValueFromParts(input.imageSrc, input.imageAlt, input.imageMediaId)
-        : existing
-          ? existing.image
-          : null;
+    input.clearImage === true
+      ? null
+      : input.image !== undefined
+        ? normalizeImage(input.image)
+        : input.imageSrc !== undefined || input.imageMediaId !== undefined
+          ? cmsService.imageValueFromParts(input.imageSrc, input.imageAlt, input.imageMediaId)
+          : existing
+            ? existing.image
+            : null;
   const merged = normalizeItem(
     {
       id: existing ? existing.id : operationalItemId(prefix, operationalKey),

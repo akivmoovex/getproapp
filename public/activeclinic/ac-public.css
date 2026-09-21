@@ -1311,6 +1311,17 @@ body.ac-public--tenant .acp-page {
   gap: 0.5rem;
   margin-top: 0.85rem;
 }
+.ac-doctor-profile__editor {
+  display: grid;
+  gap: 0.45rem;
+  margin: 0.85rem 0 1rem;
+}
+.ac-doctor-profile__editor-note {
+  display: block;
+  font-size: 0.9rem;
+  color: var(--acp-muted);
+  line-height: 1.4;
+}
 .ac-btn--block { width: 100%; justify-content: center; }
 .ac-doctor-card__cta,
 .ac-service-card__cta {

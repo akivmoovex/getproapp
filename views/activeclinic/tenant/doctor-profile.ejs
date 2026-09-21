@@ -23,6 +23,18 @@
       <% if (profile.title) { %><p class="ac-doctor-profile__title"><%= profile.title %></p><% } %>
       <% if (profile.specialty) { %><p class="ac-doctor-profile__specialty"><%= profile.specialty %></p><% } %>
       <% if (profile.bio) { %><p class="ac-doctor-profile__bio"><%= profile.bio %></p><% } %>
+      <% const editingDoctorProfile = typeof websiteEdit !== 'undefined' && websiteEdit; %>
+      <% const profileEditHref = profile.editHref || (profile.id ? ('/app/settings/website/catalogue/doctors/' + encodeURIComponent(profile.id) + '/edit') : ''); %>
+      <% if (editingDoctorProfile && profileEditHref) { %>
+      <p class="ac-doctor-profile__editor" data-ac-edit-doctor-wrap="1">
+        <a
+          class="ac-btn ac-btn--secondary ac-btn--pill"
+          href="<%= profileEditHref %>?returnTo=<%= encodeURIComponent('/clinics/' + clinic.clinicKey + '/doctors/' + profile.staffKey + '?website_edit=1&website_mode=draft') %>"
+          data-ac-edit-doctor="1"
+        >Edit doctor profile</a>
+        <span class="ac-doctor-profile__editor-note">Upload or replace the public photograph with Upload from computer or Choose from Content Library. Changes stay in draft until you publish the website.</span>
+      </p>
+      <% } %>
       <p><a class="ac-btn ac-btn--primary" href="/clinics/<%= clinic.clinicKey %>/book?doctor=<%= profile.staffKey %>"><%= clinic.publicBookingEnabled ? "Request appointment" : "Request a visit" %></a></p>
     </div>
   </div>

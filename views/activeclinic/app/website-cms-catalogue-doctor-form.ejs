@@ -8,6 +8,7 @@
     : "/app/settings/website/catalogue/doctors/new";
   var image = doctor.image || {};
   var linkableStaff = Array.isArray(cms.linkableStaff) ? cms.linkableStaff : [];
+  var returnTo = cms.returnTo || "";
 %>
 <section class="ac-mw" data-ac-page-section="website-catalogue-doctor-form" data-ac-mw-screen="catalogue-doctor-form">
   <%- include('../partials/website-cms-nav') %>
@@ -24,6 +25,7 @@
   <% if (cms.error) { %><p class="ac-mw-error" role="alert"><%= cms.error %></p><% } %>
   <form class="ac-mw-form" method="post" action="<%= action %>" data-ac-catalogue-doctor-form="1">
     <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+    <% if (returnTo) { %><input type="hidden" name="returnTo" value="<%= returnTo %>"/><% } %>
     <% if (mode === "create" && linkableStaff.length) { %>
     <label>
       Existing clinician <span class="ac-mw-muted">(optional — avoids duplicate records)</span>
@@ -65,8 +67,14 @@
       Biography
       <textarea name="biography" rows="5" maxlength="2000" <%= canEdit ? "" : "readonly" %>><%= doctor.bio || "" %></textarea>
     </label>
-    <p class="ac-mw-form__legend">Photo (optional)</p>
+    <p class="ac-mw-form__legend">Public photograph (optional)</p>
+    <p class="ac-mw-muted" data-ac-doctor-photo-hint="1">
+      Use <strong>Upload from computer</strong> or <strong>Choose from Content Library</strong>.
+      Photos are stored in the shared clinic media library (CDN) and apply only to this public profile — not to staff login accounts.
+      Unpublished photo changes stay in draft until you publish the website.
+    </p>
     <%- include('../partials/website-cms-media-field', {
+      mediaListUrl: cms.mediaListUrl || "",
       mediaField: {
         idName: "imageMediaId",
         srcName: "imageSrc",
@@ -74,7 +82,8 @@
         altLabel: "Photo description",
         mediaId: image.mediaId || "",
         src: image.src || "",
-        alt: image.alt || ""
+        alt: image.alt || "",
+        emptyText: "No public photograph selected."
       }
     }) %>
     <label class="ac-mw-check">
@@ -86,7 +95,7 @@
       Show on public website
     </label>
     <div class="ac-mw-actions">
-      <a class="ac-mw-btn" href="/app/settings/website/catalogue?tab=doctors">Cancel</a>
+      <a class="ac-mw-btn" href="<%= returnTo || '/app/settings/website/catalogue?tab=doctors' %>">Cancel</a>
       <% if (canEdit) { %>
       <button type="submit" class="ac-mw-btn ac-mw-btn--primary"><%= mode === "edit" ? "Save profile" : "Add profile" %></button>
       <% } %>

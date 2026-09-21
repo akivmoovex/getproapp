@@ -1537,6 +1537,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           const status = loaded.code === "forbidden" ? 403 : 404;
           return deny(res, status, "Edit doctor profile", slugErrorMessage(loaded.code));
         }
+        const returnTo = sanitizeCatalogueReturnTo(req.query && req.query.returnTo);
         return renderShell(req, res, {
           content: "app/website-cms-catalogue-doctor-form.ejs",
           cmsActive: "catalogue",
@@ -1554,6 +1555,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
               doctor: loaded.doctor,
               canEdit: loaded.canEdit === true,
               mediaListUrl: `/clinics/${cmsInput(req).clinicKey}/website/media`,
+              returnTo,
               error: "",
             },
           },
@@ -1574,6 +1576,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
           return deny(res, 403, "Invalid request", "Reload the page and try again.");
         }
         const body = req.body || {};
+        const returnTo = sanitizeCatalogueReturnTo(body.returnTo);
         const updated = await catalogueService.updateCatalogueDoctor(getPool(), {
           ...cmsInput(req),
           staffId: req.params.staffId,
@@ -1619,12 +1622,16 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
                 },
                 canEdit: true,
                 mediaListUrl: `/clinics/${cmsInput(req).clinicKey}/website/media`,
+                returnTo,
                 error: slugErrorMessage(updated.code),
               },
             },
           });
         }
-        return res.redirect(303, `/app/settings/website/catalogue?tab=doctors&saved=1`);
+        return res.redirect(
+          303,
+          returnTo || `/app/settings/website/catalogue?tab=doctors&saved=1`
+        );
       } catch (err) {
         return next(err);
       }

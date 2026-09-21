@@ -45,18 +45,29 @@ function requireEdit(input) {
 }
 
 /**
- * Empty catalogue form image fields must not clear an existing operational overlay photo.
- * Only forward image* keys when a real media selection is present.
+ * Empty catalogue form image fields must not clear an existing operational overlay photo
+ * unless the editor explicitly submitted the image fields empty (Remove image).
+ * Only omit image* keys when they were absent from the payload entirely.
  */
 function sanitizeOverlayImageInput(payload) {
   const next = { ...(payload || {}) };
   delete next.image;
+  const hasImageKeys =
+    Object.prototype.hasOwnProperty.call(payload || {}, "imageMediaId") ||
+    Object.prototype.hasOwnProperty.call(payload || {}, "imageSrc");
   const mediaId = String(next.imageMediaId || "").trim();
   const src = String(next.imageSrc || "").trim();
   if (!(mediaId || src)) {
-    delete next.imageMediaId;
-    delete next.imageSrc;
-    delete next.imageAlt;
+    if (hasImageKeys) {
+      next.imageMediaId = "";
+      next.imageSrc = "";
+      next.imageAlt = String(next.imageAlt || "").trim();
+      next.clearImage = true;
+    } else {
+      delete next.imageMediaId;
+      delete next.imageSrc;
+      delete next.imageAlt;
+    }
   }
   return next;
 }
@@ -692,14 +703,21 @@ async function syncDoctorOverlay(db, input, row, opts) {
     summary: row.public_title || row.job_title || "",
     body: row.public_bio || "",
     visible: opts && opts.visible != null ? opts.visible : row.public_profile_enabled === true,
-    imageMediaId: opts && opts.imageMediaId,
-    imageSrc: opts && opts.imageSrc,
-    imageAlt: opts && opts.imageAlt,
+    imageMediaId: opts && Object.prototype.hasOwnProperty.call(opts, "imageMediaId")
+      ? opts.imageMediaId
+      : input.imageMediaId,
+    imageSrc: opts && Object.prototype.hasOwnProperty.call(opts, "imageSrc")
+      ? opts.imageSrc
+      : input.imageSrc,
+    imageAlt: opts && Object.prototype.hasOwnProperty.call(opts, "imageAlt")
+      ? opts.imageAlt
+      : input.imageAlt,
   });
-  if (opts && opts.clearImage === true) {
+  if ((opts && opts.clearImage === true) || overlayInput.clearImage === true) {
     overlayInput.imageMediaId = "";
     overlayInput.imageSrc = "";
     overlayInput.imageAlt = "";
+    overlayInput.clearImage = true;
   }
   if (opts && opts.featured != null) overlayInput.featured = opts.featured;
   return libraryService.upsertOperationalOverlay(db, overlayInput);
@@ -867,7 +885,7 @@ async function createCatalogueDoctor(db, input) {
     ok: true,
     staffId: row.id,
     staffKey: row.public_profile_key,
-    doctor: presentDoctor(row, null),
+    doctor: presentDoctor(row, overlay.item || null),
   };
 }
 
@@ -944,7 +962,7 @@ async function updateCatalogueDoctor(db, input) {
     ok: true,
     staffId: row.id,
     staffKey: row.public_profile_key,
-    doctor: presentDoctor(row, null),
+    doctor: presentDoctor(row, overlay.item || null),
   };
 }
 

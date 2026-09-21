@@ -4,6 +4,8 @@
     <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'doctors.intro', fieldValue: clinic.doctorsIntro || ('Clinicians with profiles published by ' + clinic.publicName + '.'), fieldType: 'long_text' }) %></p>
   </header>
   <% const list = Array.isArray(profiles) ? profiles : []; %>
+  <% const editingDoctors = typeof websiteEdit !== 'undefined' && websiteEdit; %>
+  <% const doctorsReturnTo = '/clinics/' + clinic.clinicKey + '/doctors?website_edit=1&website_mode=draft'; %>
   <% if (!list.length) { %>
   <div class="ac-public-empty" data-ac-empty="doctors" data-ac-state-key="empty">
     <h2><%- include('../partials/website-editable-field', { contentKey: 'doctors.empty_heading', fieldValue: clinic.doctorsEmptyHeading || 'Doctor listings are not available yet', fieldType: 'short_text' }) %></h2>
@@ -14,7 +16,8 @@
   <% } else { %>
   <ul class="ac-doctor-cards acp-doctor-grid">
     <% list.forEach(function(d) { %>
-    <li class="ac-doctor-card acp-doctor-card<%= d.photoIsFallback ? ' ac-doctor-card--fallback' : '' %>"<%= d.photoIsFallback ? ' data-ac-asset-gap="doctor-photo"' : '' %>>
+    <% const doctorEditHref = d.editHref || (d.id ? ('/app/settings/website/catalogue/doctors/' + encodeURIComponent(d.id) + '/edit') : ''); %>
+    <li class="ac-doctor-card acp-doctor-card<%= d.photoIsFallback ? ' ac-doctor-card--fallback' : '' %>"<%= d.photoIsFallback ? ' data-ac-asset-gap="doctor-photo"' : '' %> data-ac-doctor-card="1"<%= d.id ? (' data-ac-doctor-id="' + d.id + '"') : '' %><%= d.staffKey ? (' data-ac-doctor-key="' + d.staffKey + '"') : '' %>>
       <div class="ac-doctor-card__media<%= d.photoIsFallback ? '' : ' ac-doctor-card__media--photo' %>">
         <%- include('../partials/ac-media', {
           src: d.photoUrl || (typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/doctors/doctor-fallback.svg') : '')),
@@ -41,12 +44,19 @@
         <div class="ac-doctor-card__actions">
           <a class="ac-btn ac-btn--primary ac-btn--block" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.book) || ('/clinics/' + clinic.clinicKey + '/book') %>"><%= clinic.publicBookingEnabled ? "Book appointment" : "Request appointment" %></a>
           <a class="ac-btn ac-btn--secondary ac-btn--block" href="/clinics/<%= clinic.clinicKey %>/doctors/<%= d.staffKey %>">View profile</a>
+          <% if (editingDoctors && doctorEditHref) { %>
+          <a
+            class="ac-btn ac-btn--secondary ac-btn--block"
+            href="<%= doctorEditHref %>?returnTo=<%= encodeURIComponent(doctorsReturnTo) %>"
+            data-ac-edit-doctor="1"
+          >Edit doctor profile</a>
+          <% } %>
         </div>
       </div>
     </li>
     <% }) %>
   </ul>
-  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=doctors', label: 'Manage public doctors', note: 'Visibility is controlled in the public catalogue. Profile photos use the shared media picker.', manageKind: 'doctors' }) %>
+  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=doctors', label: 'Manage public doctors', note: 'Visibility is controlled in the public catalogue. Profile photos use Upload from computer or Choose from Content Library on each doctor profile.', manageKind: 'doctors' }) %>
   <% } %>
   <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_doctors', librarySkipTypes: [] }) %>
 </section>

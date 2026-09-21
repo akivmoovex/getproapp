@@ -377,6 +377,7 @@ async function listPublicStaffProfiles(db, input) {
     specialty:
       row.job_title && row.job_title !== row.public_title ? row.job_title : null,
     bio: row.public_bio || null,
+    editHref: row.id ? `/app/settings/website/catalogue/doctors/${row.id}/edit` : null,
   }));
 
   return { ok: true, code: RESULT.OK, profiles };
@@ -419,6 +420,7 @@ async function getPublicStaffProfile(db, input) {
     specialty:
       row.job_title && row.job_title !== row.public_title ? row.job_title : null,
     bio: row.public_bio || null,
+    editHref: row.id ? `/app/settings/website/catalogue/doctors/${row.id}/edit` : null,
   };
 
   return { ok: true, code: RESULT.OK, profile };
