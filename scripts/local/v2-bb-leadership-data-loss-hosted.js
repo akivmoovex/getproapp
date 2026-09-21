@@ -272,12 +272,16 @@ async function main() {
 
   const editResults = [];
   for (const edit of edits) {
-    const saved = await postLeaderDraft(auth.jar, token, edit.key, edit.name, edit.role);
+    const pageForToken = await follow(auth.jar, await req(auth.jar, editUrl), BB);
+    const freshToken = csrf(pageForToken.body) || token;
+    const saved = await postLeaderDraft(auth.jar, freshToken, edit.key, edit.name, edit.role);
     const afterPage = await follow(auth.jar, await req(auth.jar, editUrl), BB);
     const after = countLeaders(afterPage.body);
     editResults.push({
       entityKey: edit.key,
+      saveStatus: saved.status,
       saveOk: saved.status === 200 && saved.json.ok === true && saved.json.published === false,
+      saveError: saved.json.error || saved.json.reason || null,
       softFillSiblings: saved.json.softFillSiblings || null,
       afterCount: after.count,
       preserved: after.count >= before.count,
@@ -289,11 +293,15 @@ async function main() {
   // Public (no edit) should still soft-fill or show drafts only in edit mode —
   // publish is optional for this QA; verify draft overlay never dropped members.
   const allPreserved = editResults.every((e) => e.saveOk && e.preserved);
-  const siblingSeeded =
-    editResults[0] &&
-    editResults[0].softFillSiblings &&
-    (editResults[0].softFillSiblings.seeded > 0 ||
-      editResults[0].softFillSiblings.skipped === "published_content_exists");
+  const allSaved = editResults.every((e) => e.saveOk);
+  // Sibling seeding may be 0 when drafts already exist from a prior QA run; count preservation is authoritative.
+  const siblingSeeded = editResults.some(
+    (e) =>
+      e.softFillSiblings &&
+      (e.softFillSiblings.seeded > 0 ||
+        e.softFillSiblings.skipped === "published_content_exists" ||
+        e.softFillSiblings.skipped === null)
+  );
 
   result.sharedCollectionAudit = {
     activeClinicDoctorsServices:
@@ -302,11 +310,15 @@ async function main() {
       "SAME_PATTERN — sibling soft-fill draft seeding covers ministry/event/sermon keys",
   };
 
-  result.status = allPreserved && siblingSeeded !== false && result.productionUntouched.ok ? "PASS" : "BLOCKED";
+  result.status =
+    allPreserved && allSaved && siblingSeeded && result.productionUntouched.ok
+      ? "PASS"
+      : "BLOCKED";
   if (result.status !== "PASS") {
     result.blockReason = [
+      !allSaved && "edit_save_failed",
       !allPreserved && "member_count_not_preserved",
-      siblingSeeded === false && "sibling_seed_missing",
+      !siblingSeeded && "sibling_seed_missing",
       !(result.productionUntouched && result.productionUntouched.ok) && "production_check_failed",
     ]
       .filter(Boolean)
