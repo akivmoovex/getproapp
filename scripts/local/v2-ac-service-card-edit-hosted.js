@@ -12,7 +12,7 @@ const path = require("path");
 const root = path.resolve(__dirname, "../..");
 process.chdir(root);
 
-require("dotenv").config({ path: ".env.testing.local" });
+require("dotenv").config({ path: ".env.testing.local", quiet: true });
 
 const {
   createProvisionPool,
@@ -95,16 +95,26 @@ function extractEditHrefs(html) {
     /data-ac-edit-service="1"[^>]*href="([^"]+)"|href="([^"]+)"[^>]*data-ac-edit-service="1"/gi;
   let m;
   while ((m = reHref.exec(html))) {
-    hrefs.push(m[1] || m[2]);
+    const raw = m[1] || m[2];
+    if (raw) hrefs.push(raw.replace(/&amp;/g, "&"));
   }
-  // Fallback: anchors containing Edit service that point at catalogue edit
   if (!hrefs.length) {
     const loose =
       /href="(\/app\/settings\/website\/catalogue\/services\/[0-9a-f-]{36}\/edit[^"]*)"[^>]*>\s*Edit service/gi;
-    while ((m = loose.exec(html))) hrefs.push(m[1]);
+    while ((m = loose.exec(html))) hrefs.push(String(m[1]).replace(/&amp;/g, "&"));
   }
   return hrefs;
 }
+
+function decodeAttr(value) {
+  return String(value || "")
+    .replace(/&amp;/g, "&")
+    .replace(/&quot;/g, '"')
+    .replace(/&#39;/g, "'")
+    .replace(/&lt;/g, "<")
+    .replace(/&gt;/g, ">");
+}
+
 
 function extractCardNames(html) {
   const names = [];
@@ -158,8 +168,14 @@ async function main() {
     deploymentCode: prodBody.deploymentCode || null,
   };
 
-  const dbUrl = resolveDatabaseUrlSafe(process.env);
-  const db = createProvisionPool(dbUrl);
+  const url = resolveDatabaseUrlSafe();
+  if (!url.ok) {
+    result.blockReason = "missing_database_url";
+    fs.writeFileSync(OUT, JSON.stringify(result, null, 2));
+    console.log(JSON.stringify(result, null, 2));
+    process.exit(2);
+  }
+  const db = createProvisionPool(url.connectionString);
   const prior = await db.query(`SELECT password_hash FROM platform.identities WHERE id = $1`, [
     UNILABS_ADMIN_ID,
   ]);
@@ -244,10 +260,8 @@ async function main() {
         formGet.status === 200 &&
         /data-ac-catalogue-service-form="1"/.test(formGet.text || "") &&
         /name="displayName"/.test(formGet.text || "") &&
-        /name="imageMediaId"|imageMediaId/.test(formGet.text || "") &&
-        /website-cms-media-picker|data-ac-media-picker|mediaListUrl|Choose image|Upload/.test(
-          formGet.text || ""
-        ),
+        /imageMediaId/.test(formGet.text || "") &&
+        /website-cms-media-field|media-field|data-website-media/.test(formGet.text || ""),
       hasReturnTo: /name="returnTo"/.test(formGet.text || ""),
       title: /Edit service/.test(formGet.text || ""),
     };
@@ -255,7 +269,7 @@ async function main() {
     const originalNameMatch = String(formGet.text || "").match(
       /name="displayName"[^>]*value="([^"]*)"/i
     );
-    const originalName = (originalNameMatch && originalNameMatch[1]) || "";
+    const originalName = decodeAttr((originalNameMatch && originalNameMatch[1]) || "");
     const siblingNamesBefore = extractCardNames((await client.get(editUrl)).text || "").filter(
       (n) => n !== originalName
     );
@@ -264,10 +278,18 @@ async function main() {
     const editedName = `V2 Card Edited ${s}`;
     const editedSummary = `Card edit QA ${s}`;
     const returnToMatch = String(formGet.text || "").match(/name="returnTo"[^>]*value="([^"]*)"/i);
-    const returnTo = (returnToMatch && returnToMatch[1]) || editUrl;
+    const returnTo = decodeAttr((returnToMatch && returnToMatch[1]) || editUrl);
+    const actionMatch = String(formGet.text || "").match(
+      /data-ac-catalogue-service-form="1"[^>]*action="([^"]+)"|action="([^"]+)"[^>]*data-ac-catalogue-service-form="1"/i
+    );
+    const actionPath =
+      (actionMatch && decodeAttr(actionMatch[1] || actionMatch[2])) || targetHref.split("?")[0];
 
-    const editPost = await client.postForm(targetHref.split("?")[0], {
-      [CSRF_FIELD]: extractCsrfField(formGet.text) || client.jar.csrf(),
+    // Fresh CSRF immediately before save (cookie can rotate after intermediate GETs).
+    const freshForm = await client.get(targetHref);
+    const csrf = extractCsrfField(freshForm.text) || client.jar.csrf();
+    const editPost = await client.postForm(actionPath, {
+      [CSRF_FIELD]: csrf,
       displayName: editedName,
       category: "Consultation",
       description: `Updated via card edit ${s}`,
@@ -283,6 +305,8 @@ async function main() {
       ok: editPost.status === 303,
       location: editPost.location || null,
       returnedToServices: /\/services/.test(String(editPost.location || afterRedirect.url || "")),
+      csrfPresent: Boolean(csrf),
+      actionPath,
     };
 
     const afterEditPage = await client.get(editUrl);
