@@ -3,6 +3,12 @@
 /**
  * BlessBoard mount for shared Moovex form builder (SH01–SH07).
  * Separate from legacy member-only blessboard.forms; branding stays BlessBoard.
+ *
+ * Soft canView/canManage checks read catalogue permissions from
+ * blessBoardAuthorizationContext.permissions (populated by
+ * loadBlessBoardAuthorizationContext via listEffectivePermissions).
+ * HQ routes re-scope that list to church-wide (branchId null) to match
+ * createRequireBlessBoardPermission scopeMode: "church".
  */
 
 const {
@@ -17,6 +23,7 @@ const {
 } = require("../../platform/http/v5SessionAuthGate");
 const {
   resolveTenantForAuthorization,
+  resolveEffectivePermissionKeys,
 } = require("./loadBlessBoardAuthorizationContext");
 
 function hasPermission(req, key) {
@@ -30,6 +37,13 @@ function hasPermission(req, key) {
       req.v5Session.authorization.permissions) ||
     [];
   return sessionPerms.includes(key);
+}
+
+function formStudioResourceBranchId(tenant, variant) {
+  if (variant === "hq") return null;
+  return tenant && tenant.primaryBranch && tenant.primaryBranch.id
+    ? tenant.primaryBranch.id
+    : null;
 }
 
 function registerBlessBoardSharedFormRoutes(app, deps) {
@@ -51,7 +65,32 @@ function registerBlessBoardSharedFormRoutes(app, deps) {
     if (!requireSession(req, res, { loginNext: req.originalUrl || adminBasePath })) {
       return;
     }
-    return requireView(req, res, next);
+    return requireView(req, res, async () => {
+      // Align soft canView/canManage with the same resource scope as requireView.
+      try {
+        const tenant = resolveTenantForAuthorization(req);
+        const session =
+          req.v5Session && req.v5Session.authenticated && req.v5Session.session
+            ? req.v5Session.session
+            : null;
+        const pool = typeof getPool === "function" ? getPool() : null;
+        if (tenant && session && session.userId && pool) {
+          const permissions = await resolveEffectivePermissionKeys(pool, {
+            userId: session.userId,
+            tenant,
+            branchId: formStudioResourceBranchId(tenant, variant),
+          });
+          const prev = req.blessBoardAuthorizationContext || {};
+          req.blessBoardAuthorizationContext = {
+            ...prev,
+            permissions,
+          };
+        }
+      } catch {
+        // Leave prior context; canView/canManage stay fail-closed when empty.
+      }
+      return next();
+    });
   }
 
   function sendHtml(res, html, status) {
