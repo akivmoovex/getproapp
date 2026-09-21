@@ -57,7 +57,8 @@ const EQUIVALENT_FORMS = [
 const INVALID_FORMS = [
   { raw: "097719869", label: "too-short-with-trunk-0" },
   { raw: "09771", label: "far-too-short" },
-  { raw: "09771986970", label: "too-long" },
+  // 11-digit NSN after trunk strip — beyond ZM relaxed 9–10 mobile allowance
+  { raw: "097719869701", label: "too-long" },
   { raw: "abcdefghij", label: "letters" },
   { raw: "123", label: "tiny" },
   { raw: "+260123", label: "invalid-e164" },

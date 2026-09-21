@@ -6,9 +6,11 @@
  *
  * Do not invent a second normalization system; wrappers should delegate here.
  *
- * Canonical rule: store only libphonenumber-valid E.164. Equivalent national /
- * international / trunk-prefix forms for a country must normalize identically.
- * Possible-but-invalid lengths are rejected in every validation mode.
+ * Canonical rule: store E.164 that passed the active validation policy.
+ * Equivalent national / international / trunk-prefix forms for a country must
+ * normalize identically. Strict (production) requires libphonenumber isValid().
+ * Relaxed (testing) additionally allows documented Zambia mobile NSN lengths
+ * and synthetic fixtures without accepting trunk-zero leaks into E.164.
  */
 
 const {
@@ -290,16 +292,11 @@ function normalizePhoneNumber(input) {
     };
   }
 
-  const possible = typeof phone.isPossible === "function" ? phone.isPossible() : true;
-  const valid = typeof phone.isValid === "function" ? phone.isValid() : possible;
-
-  // Identity / registration / login always require libphonenumber isValid().
-  // Relaxed mode historically accepted isPossible()-only values (e.g. Zambia
-  // `097719869` → `+260097719869`), which stored wrong-length E.164 and broke
-  // later login when the same user entered the correct national form.
-  // Both modes therefore reject possible-but-invalid and impossible numbers.
-  // (Relaxed remains the default outside production for env resolution only.)
-  if (!valid || !possible) {
+  // Strict (production): libphonenumber isValid() + isPossible().
+  // Relaxed (testing): same, plus Zambia mobile NSN 9–10 digit family and
+  // synthetic all-zero fixtures — never trunk-zero leaks (+2600…).
+  const policy = passesValidationPolicy(phone, parsed, e164);
+  if (!policy.ok) {
     return {
       ok: false,
       code: "phone_invalid_for_country",
@@ -322,8 +319,8 @@ function normalizePhoneNumber(input) {
     callingCode,
     display: e164.slice(0, 40),
     displayNational: national,
-    possible: Boolean(possible),
-    valid: Boolean(valid),
+    possible: policy.possible,
+    valid: policy.valid,
     validationMode: parsed.validationMode,
     // compatibility aliases used by existing callers
     normalized: e164,
@@ -359,6 +356,79 @@ function getCountryFromE164(e164) {
   } catch (_err) {
     return null;
   }
+}
+
+/**
+ * Trunk 0 kept inside nationalNumber yields wrong E.164 (e.g. +260097719869).
+ * Synthetic all-zero fixture (+260000000000) is exempt for testing.
+ * @param {{ nationalNumber?: string, format: (f: string) => string }} phone
+ */
+function hasTrunkZeroLeak(phone) {
+  const national = String(phone.nationalNumber || "");
+  if (/^0{9}$/.test(national)) return false;
+  if (national.startsWith("0")) return true;
+  try {
+    const e164 = phone.format("E.164");
+    if (/^\+2600{9}$/.test(e164)) return false;
+    if (/^\+2600/.test(e164)) return true;
+  } catch (_err) {
+    /* ignore */
+  }
+  return false;
+}
+
+/**
+ * Zambia NSNs accepted under RELAXED (testing) when libphonenumber isValid() is false.
+ * ITU mobile NSN is 9 digits ([579]########). Product/QA also accepts a 10-digit
+ * mobile NSN of the same prefix family so forms like 9710000021 / 09710000021 /
+ * +2609710000021 / 2609710000021 normalize to +2609710000021 without double-prefixing.
+ * @param {string} national
+ */
+function isZmRelaxedAcceptableNational(national) {
+  const n = String(national || "");
+  if (/^[579]\d{8,9}$/.test(n)) return true;
+  if (/^(?:21|63)\d{7}$/.test(n)) return true;
+  if (/^0{9}$/.test(n)) return true;
+  return false;
+}
+
+/**
+ * @param {{
+ *   isValid?: () => boolean,
+ *   isPossible?: () => boolean,
+ *   nationalNumber?: string,
+ *   country?: string|null,
+ *   format: (f: string) => string,
+ * }} phone
+ * @param {{ validationMode: string, selectedCountry: string }} parsed
+ * @param {string} e164
+ */
+function passesValidationPolicy(phone, parsed, e164) {
+  const possible = typeof phone.isPossible === "function" ? phone.isPossible() : true;
+  const valid = typeof phone.isValid === "function" ? phone.isValid() : possible;
+  if (valid && possible) {
+    return { ok: true, possible: Boolean(possible), valid: Boolean(valid) };
+  }
+
+  if (parsed.validationMode !== VALIDATION_MODES.RELAXED) {
+    return { ok: false, possible: Boolean(possible), valid: Boolean(valid) };
+  }
+
+  if (hasTrunkZeroLeak(phone)) {
+    return { ok: false, possible: Boolean(possible), valid: Boolean(valid) };
+  }
+
+  const country = phone.country || parsed.selectedCountry || null;
+  const national = String(phone.nationalNumber || "");
+  if (
+    country === "ZM" &&
+    isZmRelaxedAcceptableNational(national) &&
+    PHONE_E164_RE.test(e164)
+  ) {
+    return { ok: true, possible: Boolean(possible), valid: Boolean(valid) };
+  }
+
+  return { ok: false, possible: Boolean(possible), valid: Boolean(valid) };
 }
 
 function comparePhoneNumbers(a, b, options) {
