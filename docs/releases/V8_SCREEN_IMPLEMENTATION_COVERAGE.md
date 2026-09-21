@@ -1,11 +1,26 @@
 # V8 Screen Implementation Coverage Audit
 
-**Branch:** `origin/V8` @ `b16fcbdee4de5d04284d3639a3a1b4541b65c638`  
+**Branch:** `origin/V8` (PROMPT 14 mobile closure)  
 **Date:** 2026-09-21  
 **Stitch project:** [`projects/5087412725796049014`](https://stitch.withgoogle.com/projects/5087412725796049014)  
 **Scope:** All approved overnight screens **SH01–SH15**, **BB01–BB22**, **AN01–AN05** × desktop (**-D**) + mobile (**-M**) = **84** viewport screens  
-**Method:** Stitch MCP `list_screens` + tip routes/views/CSS/RBAC/services + local automated tests (PROMPT 10 regression **984/984**).  
+**Baseline commits:** coverage `63a3de62` · overnight rules `807825c7`  
+**Method:** Stitch MCP `list_screens` (re-verified PROMPT 14) + tip routes/views/CSS/RBAC/services + local automated tests.  
 **Constraints:** No deploy · no hosted data mutation · hosted Stitch visual parity **not claimed**
+
+### PROMPT 14 verdict
+
+**`V8_MOBILE_CLOSURE_PARTIAL_WITH_BLOCKERS`**
+
+| Screen | Result |
+|--------|--------|
+| BB01-M | Closed → `IMPLEMENTED_AND_TESTED` (Stitch `bf56891b…`) |
+| BB02-M | Closed → `IMPLEMENTED_AND_TESTED` (Stitch `f09b2b03…`) |
+| BB15-M | Closed → `IMPLEMENTED_AND_TESTED` (Stitch `9207936b…`) |
+| BB16-M | Closed → `IMPLEMENTED_AND_TESTED` (Stitch `9a061086…`) |
+| BB18-M | **Still BLOCKED** — Stitch design genuinely absent (only BB18-D exists) |
+
+Do **not** claim 84/84 until BB18-M is supplied in Stitch.
 
 ---
 
@@ -41,9 +56,9 @@ All SH01–SH15 (−D/−M), AN01–AN05 (−D/−M), and BB01–BB22 (−D) exi
 
 | Classification | Count |
 |----------------|------:|
-| `IMPLEMENTED_AND_TESTED` | **79** |
+| `IMPLEMENTED_AND_TESTED` | **83** |
 | `IMPLEMENTED_NOT_VERIFIED` | **0** |
-| `PARTIAL` | **4** |
+| `PARTIAL` | **0** |
 | `NOT_IMPLEMENTED` | **0** |
 | `BLOCKED` | **1** |
 | **Total** | **84** |
@@ -56,11 +71,11 @@ All SH01–SH15 (−D/−M), AN01–AN05 (−D/−M), and BB01–BB22 (−D) exi
 
 | Metric | Count |
 |--------|------:|
-| `IMPLEMENTED_AND_TESTED` | **79** |
+| `IMPLEMENTED_AND_TESTED` | **83** |
 | Consolidated regression (PROMPT 10) | **984/984 PASS** |
 | Overnight feature cluster | **130/130 PASS** |
 
-PARTIAL (**4**) and BLOCKED (**1**) are **not** counted as successfully completed Stitch screens.
+BLOCKED (**1** — BB18-M) is **not** counted as successfully completed. PARTIAL is **0** after PROMPT 14.
 
 ---
 
@@ -68,10 +83,10 @@ PARTIAL (**4**) and BLOCKED (**1**) are **not** counted as successfully complete
 
 | Status | Screens | Count |
 |--------|---------|------:|
-| `PARTIAL` | BB01-M, BB02-M, BB15-M, BB16-M | **4** |
+| `PARTIAL` | — | **0** |
 | `BLOCKED` | BB18-M | **1** |
 | `NOT_IMPLEMENTED` | — | **0** |
-| **Remaining to close** | | **5** |
+| **Remaining to close** | | **1** |
 
 ---
 
@@ -82,22 +97,29 @@ PARTIAL (**4**) and BLOCKED (**1**) are **not** counted as successfully complete
 | Shared forms (SH01–SH15) | Desktop | 15 | 0 | 0 | 0 | 15 |
 | Shared forms (SH01–SH15) | Mobile | 15 | 0 | 0 | 0 | 15 |
 | BlessBoard (BB01–BB22) | Desktop | 22 | 0 | 0 | 0 | 22 |
-| BlessBoard (BB01–BB22) | Mobile | 17 | 4 | 1 | 0 | 22 |
+| BlessBoard (BB01–BB22) | Mobile | 21 | 0 | 1 | 0 | 22 |
 | Shared announcements (AN01–AN05) | Desktop | 5 | 0 | 0 | 0 | 5 |
 | Shared announcements (AN01–AN05) | Mobile | 5 | 0 | 0 | 0 | 5 |
-| **All** | **D+M** | **79** | **4** | **1** | **0** | **84** |
+| **All** | **D+M** | **83** | **0** | **1** | **0** | **84** |
 
 ---
 
 ## 5. Missing user flows
 
-None of the approved SH/BB/AN **workflows** are missing as greenfield gaps on tip. Remaining gaps are viewport/parity related:
+1. **BB18-M Stitch design** — confirmed missing on re-audit (PROMPT 14). Cannot implement Stitch-parity mobile branch membership overview until supplied.
+2. **Hosted end-to-end flows** — code present; operator verification + migrations `039–042` / `110–112` still required.
+3. **Automatic announcement schedule promotion** — `SCHEDULER_DEPENDENCY.available=false` (lazy visibility). Not a missing screen.
 
-1. **BB18 mobile Stitch flow** — branch member directory mobile cannot be claimed Stitch-complete until BB18-M is designed.
-2. **Membership admin mobile density** — BB01-M / BB02-M forms dashboard and editor need a closer Stitch -M layout pass.
-3. **Member edit / transfer mobile density** — BB15-M / BB16-M remain inline panels vs dedicated Stitch -M compositions.
-4. **Hosted end-to-end flows** (code present; operator verification missing): form publish→submit→review; membership apply→pastoral decision→transfer; announcement publish→public website. Overnight forbids hosted writes; migrations `039–042` / `110–112` not applied.
-5. **Automatic announcement schedule promotion** — product gate (`SCHEDULER_DEPENDENCY.available=false`). AN03 UI exists with lazy visibility — not a missing screen; missing **worker** only if product later requires background promotion.
+---
+
+## Prompt 14 tests (local)
+
+| Suite | Pass | Fail | Skip |
+|-------|-----:|-----:|-----:|
+| `v8-bb-membership` | 8 | 0 | 0 |
+| `shared-platform` (`run-suite`) | 361 | 0 | 0 |
+| `blessboard` (`run-suite`) | 241 | 0 | 0 |
+| V7 DB compatibility + migration contract | 19 | 0 | 0 |
 
 ---
 
@@ -105,11 +127,9 @@ None of the approved SH/BB/AN **workflows** are missing as greenfield gaps on ti
 
 | Priority | Design / decision | Why |
 |---------:|-------------------|-----|
-| 1 | **BB18-M** — Branch members overview (Mobile) | Only missing approved Stitch viewport (83→84) |
-| 2 | BB01-M / BB02-M visual refresh (or confirm shared-forms shell as intentional) | Close PARTIAL membership admin mobile |
-| 3 | BB15-M / BB16-M dedicated mobile edit/transfer compositions (or accept inline panels) | Close PARTIAL member management mobile |
-| 4 | Optional: Stitch visual parity QA pass (browser vs -D/-M) after V8 deploy | Hosted visual sign-off not done overnight |
-| 5 | Product decision: announcement background scheduler vs permanent lazy mode | Not a screen; affects AN03 “scheduled” expectations |
+| 1 | **BB18-M — Branch Membership Overview (Mobile 390px)** | Only missing approved Stitch viewport; PROMPT 14 stopped here |
+| 2 | Optional: browser visual parity QA after V8 deploy | Hosted visual sign-off not done overnight |
+| 3 | Product decision: announcement background scheduler vs permanent lazy mode | Not a screen; affects AN03 expectations |
 
 ---
 
@@ -167,9 +187,9 @@ None of the approved SH/BB/AN **workflows** are missing as greenfield gaps on ti
 | Screen | Stitch title | Stitch ID | Status | Notes |
 |--------|--------------|-----------|--------|-------|
 | BB01-D | BB01-D — Church Registration Forms Dashboard (Desktop) | `0621c6f8120f…` | `IMPLEMENTED_AND_TESTED` | Surface: views/platform/forms/bb-membership-forms.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
-| BB01-M | BB01-M — Church Registration Forms Dashboard (Mobile) | `bf56891b8289…` | `PARTIAL` | Markers + shared forms shell; mobile Stitch density thinner than approved -M (admin dashboard/editor). |
+| BB01-M | BB01-M — Church Registration Forms Dashboard (Mobile) | `bf56891b8289…` | `IMPLEMENTED_AND_TESTED` | PROMPT 14: sticky head, status chips, create panel, 390px CSS; local tests. |
 | BB02-D | BB02-D — Church Form Create/Edit (Desktop) | `62d5a8f5a30d…` | `IMPLEMENTED_AND_TESTED` | Surface: views/platform/forms/bb-membership-form-edit.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
-| BB02-M | BB02-M — Church Form Create/Edit (Mobile) | `f09b2b0363e4…` | `PARTIAL` | Markers + shared forms shell; mobile Stitch density thinner than approved -M (admin dashboard/editor). |
+| BB02-M | BB02-M — Church Form Create/Edit (Mobile) | `f09b2b0363e4…` | `IMPLEMENTED_AND_TESTED` | PROMPT 14: sticky back/publish actions, intake step cards; local tests. |
 | BB03-D | BB03-D — Membership Step 1: Personal and Contact Details (Desktop) | `2f0bae8c4771…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/public/register.ejs step 1. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
 | BB03-M | BB03-M — Membership Step 1: Personal and Contact Details (Mobile) | `c99162767a86…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/public/register.ejs step 1. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
 | BB04-D | BB04-D — Membership Step 2: Optional Spiritual Background (Desktop) | `b280e8e395f7…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/public/register.ejs step 2. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
@@ -195,13 +215,13 @@ None of the approved SH/BB/AN **workflows** are missing as greenfield gaps on ti
 | BB14-D | BB14-D — Approved Member Profile (Desktop) | `f6d7c0a2a83e…` | `IMPLEMENTED_AND_TESTED` | Surface: HQ/branch member-detail.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
 | BB14-M | BB14-M — Approved Member Profile (Mobile) | `fb006b2c2b75…` | `IMPLEMENTED_AND_TESTED` | Surface: HQ/branch member-detail.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
 | BB15-D | BB15-D — Member Details Edit (Desktop) | `dc0cb51d596e…` | `IMPLEMENTED_AND_TESTED` | Surface: member-detail.ejs edit panel. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
-| BB15-M | BB15-M — Member Details Edit (Mobile) | `9207936b1268…` | `PARTIAL` | Inline edit/transfer panels on member detail; D/M markers present; Stitch -M density not separately verified. |
+| BB15-M | BB15-M — Member Details Edit (Mobile) | `9207936b1268…` | `IMPLEMENTED_AND_TESTED` | PROMPT 14: mobile edit fieldset + sticky save on HQ/branch member detail; local tests. |
 | BB16-D | BB16-D — Branch Transfer Request and Review (Desktop) | `00181d8abae9…` | `IMPLEMENTED_AND_TESTED` | Surface: member-detail.ejs transfer + bb-membership-transfer.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
-| BB16-M | BB16-M — Branch Transfer Request and Review (Mobile) | `9a061086176e…` | `PARTIAL` | Inline edit/transfer panels on member detail; D/M markers present; Stitch -M density not separately verified. |
+| BB16-M | BB16-M — Branch Transfer Request and Review (Mobile) | `9a061086176e…` | `IMPLEMENTED_AND_TESTED` | PROMPT 14: request sticky actions + transfer review triage; local tests. |
 | BB17-D | BB17-D — HQ Membership Overview (Desktop) | `4a49ce69c910…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/hq/members.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
 | BB17-M | BB17-M — HQ Membership Overview (Mobile) | `12be27718612…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/hq/members.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
 | BB18-D | BB18-D — Branch Membership Overview (Desktop) | `566f9eda1b2b…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/branch-admin/members.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
-| BB18-M | BB18-M (MISSING IN STITCH) | — | `BLOCKED` | Stitch BB18-M absent (83/84). Branch list ships responsive cards + BB18-M markers as fallback only — not Stitch-parity complete. |
+| BB18-M | BB18-M (MISSING IN STITCH) | — | `BLOCKED` | PROMPT 14 re-verified: no titled BB18-M in `5087412725796049014` (BB18-D `566f9eda…` + BB17-M exist). Do not invent. Responsive cards are fallback only. |
 | BB19-D | BB19-D — Church Announcements Dashboard (Desktop) | `97f4a0272752…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/announcements/admin-list.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
 | BB19-M | BB19-M — Church Announcements Dashboard (Mobile) | `9f03f5273c90…` | `IMPLEMENTED_AND_TESTED` | Surface: views/blessboard/v5/announcements/admin-list.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |
 | BB20-D | BB20-D — Church Announcement Create/Edit (Desktop) | `582319678613…` | `IMPLEMENTED_AND_TESTED` | Surface: announcements/admin-form.ejs + admin-publish.ejs. Local tests: v8-bb-membership / v8-bb-activity-registration / v8-bb-announcements (+ blessboard-announcements). |

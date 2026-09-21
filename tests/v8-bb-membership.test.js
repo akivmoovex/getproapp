@@ -502,15 +502,72 @@ describe("V8 BlessBoard membership workflow", () => {
     );
     assert.match(memberDetail, /data-bb-screen-desktop="BB14-D"/);
     assert.match(memberDetail, /data-bb-screen-desktop="BB15-D"/);
+    assert.match(memberDetail, /data-bb-screen-mobile="BB15-M"/);
     assert.match(memberDetail, /data-bb-screen-desktop="BB16-D"/);
+    assert.match(memberDetail, /data-bb-screen-mobile="BB16-M"/);
     assert.match(memberDetail, /confirm_transfer/);
+    assert.match(memberDetail, /data-bb-member-edit-form="1"/);
+    assert.match(memberDetail, /data-bb-member-transfer-form="1"/);
+    assert.match(memberDetail, /bb-ba-actions--sticky/);
     assert.doesNotMatch(memberDetail, /Attendance Rate|Volunteer Hours|Birthday|ECCL-/i);
+
+    const formsDash = fs.readFileSync(
+      path.join(__dirname, "..", "views/platform/forms/bb-membership-forms.ejs"),
+      "utf8"
+    );
+    assert.match(formsDash, /data-bb-screen-mobile="BB01-M"/);
+    assert.match(formsDash, /data-bb-forms-status-chips="1"/);
+    assert.match(formsDash, /data-bb-forms-create="1"/);
+    assert.match(formsDash, /bf56891b82894edba59cb34bc7cbf562/);
+
+    const formEdit = fs.readFileSync(
+      path.join(__dirname, "..", "views/platform/forms/bb-membership-form-edit.ejs"),
+      "utf8"
+    );
+    assert.match(formEdit, /data-bb-screen-mobile="BB02-M"/);
+    assert.match(formEdit, /data-bb-form-publish-form="1"|Published /);
+    assert.match(formEdit, /mx-forms-actions--sticky|Published /);
+    assert.match(formEdit, /f09b2b0363e44286b745727fb1ac2c76/);
+
+    const transfer = fs.readFileSync(
+      path.join(__dirname, "..", "views/platform/forms/bb-membership-transfer.ejs"),
+      "utf8"
+    );
+    assert.match(transfer, /data-bb-screen-mobile="BB16-M"/);
+    assert.match(transfer, /data-bb-transfer-triage="1"|data-bb-transfer-audit="1"/);
+    assert.match(transfer, /decision" value="approved"/);
+    assert.match(transfer, /decision" value="declined"/);
+    assert.match(transfer, /9a061086176e49d3b55eabc3d95f2e1e/);
+
+    const formsCss = fs.readFileSync(
+      path.join(__dirname, "..", "public/platform/forms-builder.css"),
+      "utf8"
+    );
+    assert.match(formsCss, /mx-forms-shell--bb-membership/);
+    assert.match(formsCss, /@media \(max-width:\s*799px\)[\s\S]*max-width:\s*390px/);
+
+    const baCss = fs.readFileSync(
+      path.join(__dirname, "..", "public/blessboard/v5/branch-admin.css"),
+      "utf8"
+    );
+    assert.match(baCss, /bb-ba-actions--sticky/);
 
     const branchMembers = fs.readFileSync(
       path.join(__dirname, "..", "views/blessboard/v5/branch-admin/members.ejs"),
       "utf8"
     );
+    // BB18-M remains Stitch-blocked: only BB18-D exists in project inventory.
     assert.match(branchMembers, /data-bb-screen-desktop="BB18-D"/);
     assert.match(branchMembers, /data-bb-screen-mobile="BB18-M"/);
+    assert.match(branchMembers, /bb-ba-members-cards/);
+  });
+
+  it("documents BB18-M Stitch design as missing (cannot invent)", () => {
+    const coverage = fs.readFileSync(
+      path.join(__dirname, "..", "docs/releases/V8_SCREEN_IMPLEMENTATION_COVERAGE.md"),
+      "utf8"
+    );
+    assert.match(coverage, /BB18-M/);
+    assert.match(coverage, /BLOCKED|missing/i);
   });
 });

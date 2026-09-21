@@ -1,28 +1,52 @@
 <% const pageTitle = 'Branch transfer'; %>
-<div class="mx-forms-shell" data-screen="BB16" data-bb-membership="transfer" data-bb-screen-desktop="BB16-D" data-bb-screen-mobile="BB16-M">
-  <div class="mx-forms-top">
+<div
+  class="mx-forms-shell mx-forms-shell--bb-membership"
+  data-screen="BB16"
+  data-bb-membership="transfer"
+  data-bb-screen-desktop="BB16-D"
+  data-bb-screen-mobile="BB16-M"
+  data-bb-stitch-id-mobile="9a061086176e49d3b55eabc3d95f2e1e"
+>
+  <header class="mx-forms-top mx-forms-top--sticky" data-bb-transfer-head="1">
     <div>
       <div class="mx-forms-brand">BlessBoard · Branch transfer</div>
-      <h1 class="mx-forms-title">Transfer request</h1>
-      <p class="mx-forms-sub">Status <span class="mx-forms-badge"><%= transfer.status %></span></p>
+      <h1 class="mx-forms-title">Transfer review</h1>
+      <p class="mx-forms-sub">
+        Status <span class="mx-forms-badge"><%= transfer.status %></span>
+      </p>
     </div>
-  </div>
-  <div class="mx-forms-panel">
-    <p>From branch: <%= transfer.fromBranchId %></p>
-    <p>To branch: <%= transfer.toBranchId %></p>
-    <p>Reason: <%= transfer.reason || '—' %></p>
-    <% if (transfer.status === 'requested') { %>
-      <form method="post" action="<%= basePath %>/transfers/<%= transfer.id %>/review">
-        <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
-        <label for="reviewer_notes">Reviewer notes</label>
-        <textarea id="reviewer_notes" name="reviewer_notes" rows="3" maxlength="2000"></textarea>
-        <div class="mx-forms-actions">
-          <button class="mx-forms-btn mx-forms-btn--primary" type="submit" name="decision" value="approved">Approve transfer</button>
-          <button class="mx-forms-btn" type="submit" name="decision" value="declined">Decline</button>
-        </div>
-      </form>
-    <% } else { %>
-      <p style="color:var(--mx-forms-muted)">Reviewed <%= transfer.reviewedAt ? new Date(transfer.reviewedAt).toISOString() : '' %></p>
+  </header>
+
+  <section class="mx-forms-panel" data-bb-transfer-overview="1">
+    <h2 class="mx-forms-section-title">Transfer overview</h2>
+    <dl class="mx-forms-dl">
+      <div><dt>From branch</dt><dd><%= transfer.fromBranchId %></dd></div>
+      <div><dt>To branch</dt><dd><%= transfer.toBranchId %></dd></div>
+      <div><dt>Reason</dt><dd><%= transfer.reason || '—' %></dd></div>
+    </dl>
+  </section>
+
+  <% if (transfer.status === 'requested') { %>
+  <section class="mx-forms-panel" data-bb-transfer-triage="1">
+    <h2 class="mx-forms-section-title">Reviewer decision</h2>
+    <form method="post" action="<%= basePath %>/transfers/<%= transfer.id %>/review" data-bb-transfer-review-form="1">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
+      <label class="mx-forms-label" for="reviewer_notes">Reviewer notes</label>
+      <textarea class="mx-forms-input mx-forms-textarea" id="reviewer_notes" name="reviewer_notes" rows="4" maxlength="2000" required></textarea>
+      <p class="mx-forms-muted">Destination must remain within the same church. Cross-church transfers are rejected.</p>
+      <div class="mx-forms-actions mx-forms-actions--sticky mx-forms-actions--split">
+        <button class="mx-forms-btn mx-forms-btn--primary" type="submit" name="decision" value="approved">Approve transfer</button>
+        <button class="mx-forms-btn mx-forms-btn--danger" type="submit" name="decision" value="declined">Decline / retain</button>
+      </div>
+    </form>
+  </section>
+  <% } else { %>
+  <section class="mx-forms-panel" data-bb-transfer-audit="1">
+    <h2 class="mx-forms-section-title">Audit</h2>
+    <p class="mx-forms-muted">Reviewed <%= transfer.reviewedAt ? new Date(transfer.reviewedAt).toISOString() : '' %></p>
+    <% if (transfer.reviewerNotes) { %>
+      <p><%= transfer.reviewerNotes %></p>
     <% } %>
-  </div>
+  </section>
+  <% } %>
 </div>

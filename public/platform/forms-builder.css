@@ -368,3 +368,168 @@
 @media (min-width: 800px) {
   .mx-forms-mobile-only { display: none !important; }
 }
+
+/* BB01-M / BB02-M / BB16-M membership mobile density (390px) */
+.mx-forms-shell--bb-membership .mx-forms-label {
+  display: block;
+  margin: 0.75rem 0 0.35rem;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.mx-forms-shell--bb-membership .mx-forms-input,
+.mx-forms-shell--bb-membership .mx-forms-textarea {
+  width: 100%;
+  padding: 0.7rem 0.8rem;
+  border: 1px solid var(--mx-forms-border);
+  border-radius: 10px;
+  font: inherit;
+}
+.mx-forms-shell--bb-membership .mx-forms-check {
+  display: flex;
+  gap: 0.5rem;
+  align-items: flex-start;
+  margin: 0.75rem 0;
+  font-weight: 500;
+}
+.mx-forms-shell--bb-membership .mx-forms-chips {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 0 0 0.75rem;
+  margin-bottom: 0.25rem;
+}
+.mx-forms-shell--bb-membership .mx-forms-chip {
+  flex: 0 0 auto;
+  border: 1px solid var(--mx-forms-border);
+  background: var(--mx-forms-surface);
+  color: var(--mx-forms-ink);
+  border-radius: 999px;
+  padding: 0.4rem 0.85rem;
+  font: inherit;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+}
+.mx-forms-shell--bb-membership .mx-forms-chip.is-active {
+  background: var(--mx-forms-accent);
+  border-color: var(--mx-forms-accent);
+  color: #fff;
+}
+.mx-forms-shell--bb-membership .mx-forms-card--membership {
+  padding: 1rem;
+}
+.mx-forms-shell--bb-membership .mx-forms-card__row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  align-items: flex-start;
+}
+.mx-forms-shell--bb-membership .mx-forms-card__meta {
+  margin-top: 0.35rem;
+  color: var(--mx-forms-muted);
+  font-size: 0.85rem;
+}
+.mx-forms-shell--bb-membership .mx-forms-card__cta {
+  margin-top: 0.65rem;
+  color: var(--mx-forms-accent);
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.mx-forms-shell--bb-membership .mx-forms-back {
+  display: inline-block;
+  margin-bottom: 0.35rem;
+  color: var(--mx-forms-accent);
+  text-decoration: none;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+.mx-forms-shell--bb-membership .mx-forms-step-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.65rem;
+}
+.mx-forms-shell--bb-membership .mx-forms-step {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 0.85rem;
+  border: 1px solid var(--mx-forms-border);
+  border-radius: 12px;
+  background: #fafbff;
+}
+.mx-forms-shell--bb-membership .mx-forms-step.is-on {
+  border-color: color-mix(in srgb, var(--mx-forms-accent) 35%, var(--mx-forms-border));
+  background: var(--mx-forms-accent-soft);
+}
+.mx-forms-shell--bb-membership .mx-forms-section-title {
+  margin: 0 0 0.75rem;
+  font-size: 1.05rem;
+}
+.mx-forms-shell--bb-membership .mx-forms-dl {
+  margin: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+.mx-forms-shell--bb-membership .mx-forms-dl dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--mx-forms-muted);
+}
+.mx-forms-shell--bb-membership .mx-forms-dl dd {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+}
+.mx-forms-btn--danger {
+  background: var(--mx-forms-danger);
+  border-color: var(--mx-forms-danger);
+  color: #fff;
+}
+
+@media (max-width: 799px) {
+  .mx-forms-shell--bb-membership {
+    padding: 0.85rem 0.85rem 5.5rem;
+    max-width: 390px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .mx-forms-shell--bb-membership .mx-forms-top--sticky {
+    position: sticky;
+    top: 0;
+    z-index: 8;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 0.75rem;
+    padding: 0.65rem 0 0.85rem;
+    margin-bottom: 0.75rem;
+    background: linear-gradient(180deg, var(--mx-forms-bg) 70%, transparent);
+  }
+  .mx-forms-shell--bb-membership .mx-forms-actions--sticky {
+    position: sticky;
+    bottom: 0;
+    z-index: 7;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 1rem -0.15rem 0;
+    padding: 0.75rem 0.15rem calc(0.75rem + env(safe-area-inset-bottom, 0));
+    background: linear-gradient(180deg, transparent, var(--mx-forms-bg) 28%);
+  }
+  .mx-forms-shell--bb-membership .mx-forms-actions--sticky .mx-forms-btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+  .mx-forms-shell--bb-membership .mx-forms-actions--split {
+    gap: 0.55rem;
+  }
+  .mx-forms-shell--bb-membership .mx-forms-input,
+  .mx-forms-shell--bb-membership .mx-forms-textarea {
+    font-size: 1rem;
+  }
+  .mx-forms-shell--bb-membership .mx-forms-panel--create {
+    margin-top: 1.25rem;
+  }
+}

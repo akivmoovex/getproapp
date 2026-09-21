@@ -5772,3 +5772,54 @@ body.bb-ba-drawer-open {
   outline: 2px solid #fdba74;
   outline-offset: 2px;
 }
+
+/* BB15-M / BB16-M member edit + transfer mobile density */
+.bb-ba-fieldset {
+  border: 1px solid rgba(15, 23, 42, 0.08);
+  border-radius: 14px;
+  padding: 0.85rem 1rem 1rem;
+  margin: 0 0 1rem;
+}
+.bb-ba-fieldset legend {
+  padding: 0 0.35rem;
+  font-weight: 700;
+  font-size: 0.85rem;
+}
+.bb-ba-check {
+  display: flex;
+  gap: 0.55rem;
+  align-items: flex-start;
+  margin: 0.85rem 0;
+  font-weight: 500;
+}
+.bb-ba-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.55rem;
+  margin-top: 0.85rem;
+}
+@media (max-width: 799px) {
+  .bb-ba-panel--mobile-form {
+    margin-bottom: 1rem;
+  }
+  .bb-ba-panel--mobile-form .bb-ba-field input,
+  .bb-ba-panel--mobile-form .bb-ba-field textarea {
+    width: 100%;
+    font-size: 1rem;
+  }
+  .bb-ba-actions--sticky {
+    position: sticky;
+    bottom: 0;
+    z-index: 6;
+    flex-direction: column;
+    align-items: stretch;
+    margin: 1rem -0.25rem 0;
+    padding: 0.75rem 0.25rem calc(0.75rem + env(safe-area-inset-bottom, 0));
+    background: linear-gradient(180deg, transparent, #f8fafc 30%);
+  }
+  .bb-ba-actions--sticky .bb-ba-btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}

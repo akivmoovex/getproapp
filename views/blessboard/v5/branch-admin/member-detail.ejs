@@ -256,48 +256,56 @@
         </ul>
       </section>
 
-      <section class="bb-ba-panel" data-bb-member-edit="1" data-screen="BB15" data-bb-screen-desktop="BB15-D" data-bb-screen-mobile="BB15-M">
+      <section class="bb-ba-panel bb-ba-panel--mobile-form" data-bb-member-edit="1" data-screen="BB15" data-bb-screen-desktop="BB15-D" data-bb-screen-mobile="BB15-M" data-bb-stitch-id-mobile="9207936b1268431fba2640c297438a11">
         <h2 class="bb-ba-section-title">Edit profile</h2>
-        <form method="post" action="/branch-admin/membership/members/<%= m.id %>/edit">
+        <p class="bb-ba-hint" data-bb-edit-locked="1">Legal identity stays on the member record. Prefer contact and preferred-name edits here — this never creates a login.</p>
+        <form method="post" action="/branch-admin/membership/members/<%= m.id %>/edit" data-bb-member-edit-form="1">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
-          <div class="bb-ba-field">
-            <label for="first_name">First name</label>
-            <input id="first_name" name="first_name" type="text" maxlength="100" value="<%= m.firstName || '' %>" />
+          <fieldset class="bb-ba-fieldset">
+            <legend>Editable contact</legend>
+            <div class="bb-ba-field">
+              <label for="first_name">First name</label>
+              <input id="first_name" name="first_name" type="text" maxlength="100" value="<%= m.firstName || '' %>" autocomplete="given-name" />
+            </div>
+            <div class="bb-ba-field">
+              <label for="last_name">Last name</label>
+              <input id="last_name" name="last_name" type="text" maxlength="100" value="<%= m.lastName || '' %>" autocomplete="family-name" />
+            </div>
+            <div class="bb-ba-field">
+              <label for="preferred_name">Preferred name</label>
+              <input id="preferred_name" name="preferred_name" type="text" maxlength="100" value="<%= m.preferredName || '' %>" />
+            </div>
+            <div class="bb-ba-field">
+              <label for="email">Email</label>
+              <input id="email" name="email" type="email" maxlength="254" value="<%= m.emailDisplay || '' %>" autocomplete="email" />
+            </div>
+          </fieldset>
+          <div class="bb-ba-actions bb-ba-actions--sticky">
+            <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Save profile</button>
           </div>
-          <div class="bb-ba-field">
-            <label for="last_name">Last name</label>
-            <input id="last_name" name="last_name" type="text" maxlength="100" value="<%= m.lastName || '' %>" />
-          </div>
-          <div class="bb-ba-field">
-            <label for="preferred_name">Preferred name</label>
-            <input id="preferred_name" name="preferred_name" type="text" maxlength="100" value="<%= m.preferredName || '' %>" />
-          </div>
-          <div class="bb-ba-field">
-            <label for="email">Email</label>
-            <input id="email" name="email" type="email" maxlength="254" value="<%= m.emailDisplay || '' %>" />
-          </div>
-          <p class="bb-ba-hint">Editing profile fields does not create or change a login account.</p>
-          <button type="submit" class="bb-ba-btn bb-ba-btn--primary bb-ba-btn--sm">Save profile</button>
         </form>
       </section>
 
-      <section class="bb-ba-panel" data-bb-member-transfer="1" data-screen="BB16" data-bb-screen-desktop="BB16-D" data-bb-screen-mobile="BB16-M">
+      <section class="bb-ba-panel bb-ba-panel--mobile-form" data-bb-member-transfer="1" data-screen="BB16" data-bb-screen-desktop="BB16-D" data-bb-screen-mobile="BB16-M" data-bb-stitch-id-mobile="9a061086176e49d3b55eabc3d95f2e1e">
         <h2 class="bb-ba-section-title">Request branch transfer</h2>
-        <form method="post" action="/branch-admin/membership/members/<%= m.id %>/transfer">
+        <p class="bb-ba-hint">Transfers stay inside this church. Destination branch must belong to the same church.</p>
+        <form method="post" action="/branch-admin/membership/members/<%= m.id %>/transfer" data-bb-member-transfer-form="1">
           <input type="hidden" name="_csrf" value="<%= csrfToken %>" />
           <div class="bb-ba-field">
             <label for="to_branch_id">Destination branch ID</label>
-            <input id="to_branch_id" name="to_branch_id" type="text" required maxlength="64" />
+            <input id="to_branch_id" name="to_branch_id" type="text" required maxlength="64" inputmode="text" />
           </div>
           <div class="bb-ba-field">
             <label for="reason">Reason</label>
             <textarea id="reason" name="reason" rows="3" maxlength="1000"></textarea>
           </div>
-          <label class="bb-ba-hint" style="display:block;margin:0.75rem 0">
+          <label class="bb-ba-check">
             <input type="checkbox" name="confirm_transfer" value="1" required />
             I confirm this transfer request stays within the same church.
           </label>
-          <button type="submit" class="bb-ba-btn bb-ba-btn--ghost bb-ba-btn--sm">Request transfer</button>
+          <div class="bb-ba-actions bb-ba-actions--sticky">
+            <button type="submit" class="bb-ba-btn bb-ba-btn--primary">Request transfer</button>
+          </div>
         </form>
       </section>
     </aside>

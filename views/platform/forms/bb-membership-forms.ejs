@@ -1,41 +1,88 @@
 <% const pageTitle = 'Membership forms'; %>
-<div class="mx-forms-shell" data-screen="BB01" data-bb-membership="forms-dashboard" data-bb-screen-desktop="BB01-D" data-bb-screen-mobile="BB01-M">
-  <div class="mx-forms-top">
+<%
+  var formsList = forms || [];
+  var draftCount = 0;
+  var publishedCount = 0;
+  formsList.forEach(function (f) {
+    if (String(f.status || '') === 'published') publishedCount += 1;
+    else draftCount += 1;
+  });
+%>
+<div
+  class="mx-forms-shell mx-forms-shell--bb-membership"
+  data-screen="BB01"
+  data-bb-membership="forms-dashboard"
+  data-bb-screen-desktop="BB01-D"
+  data-bb-screen-mobile="BB01-M"
+  data-bb-stitch-id-mobile="bf56891b82894edba59cb34bc7cbf562"
+>
+  <header class="mx-forms-top mx-forms-top--sticky" data-bb-mobile-forms-head="1">
     <div>
       <div class="mx-forms-brand">BlessBoard · Membership</div>
       <h1 class="mx-forms-title">Registration forms</h1>
       <p class="mx-forms-sub">Publish a church membership intake form. Visitors apply without creating a login.</p>
     </div>
-  </div>
+    <a class="mx-forms-btn mx-forms-btn--primary mx-forms-mobile-only" href="#bb-membership-create" data-bb-forms-create-jump="1">+ Create form</a>
+  </header>
 
-  <div class="mx-forms-panel" style="margin-bottom:1rem">
-    <h2>Create form</h2>
-    <form method="post" action="<%= basePath %>/forms">
-      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken || '' %>" />
-      <label for="title">Title</label>
-      <input id="title" name="title" type="text" required maxlength="200" />
-      <label for="form_key">Form key (optional)</label>
-      <input id="form_key" name="form_key" type="text" maxlength="64" />
-      <label style="font-weight:500"><input type="checkbox" name="enable_spiritual" value="1" checked /> Optional spiritual background step</label>
-      <label style="font-weight:500"><input type="checkbox" name="enable_interests" value="1" checked /> Participation interests step</label>
-      <div class="mx-forms-actions">
-        <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Create</button>
-      </div>
-    </form>
-  </div>
+  <nav class="mx-forms-chips" aria-label="Filter by status" data-bb-forms-status-chips="1">
+    <button type="button" class="mx-forms-chip is-active" data-bb-forms-filter="all">All (<%= formsList.length %>)</button>
+    <button type="button" class="mx-forms-chip" data-bb-forms-filter="draft">Draft (<%= draftCount %>)</button>
+    <button type="button" class="mx-forms-chip" data-bb-forms-filter="published">Published (<%= publishedCount %>)</button>
+  </nav>
 
-  <div class="mx-forms-cards">
-    <% (forms || []).forEach(function (form) { %>
-      <a class="mx-forms-card" href="<%= basePath %>/forms/<%= form.id %>" style="display:block;text-decoration:none;color:inherit">
-        <div style="display:flex;justify-content:space-between;gap:0.5rem">
+  <div class="mx-forms-cards" data-bb-forms-card-list="1">
+    <% formsList.forEach(function (form) { %>
+      <a
+        class="mx-forms-card mx-forms-card--membership"
+        href="<%= basePath %>/forms/<%= form.id %>"
+        data-bb-form-status="<%= form.status || 'draft' %>"
+        style="display:block;text-decoration:none;color:inherit"
+      >
+        <div class="mx-forms-card__row">
           <strong><%= form.title %></strong>
           <span class="mx-forms-badge mx-forms-badge--<%= form.status %>"><%= form.status %></span>
         </div>
-        <div style="margin-top:0.35rem;color:var(--mx-forms-muted);font-size:0.85rem"><%= form.formKey %></div>
+        <div class="mx-forms-card__meta"><%= form.formKey %></div>
+        <div class="mx-forms-card__cta">Open form →</div>
       </a>
     <% }) %>
-    <% if (!(forms && forms.length)) { %>
-      <div class="mx-forms-panel mx-forms-empty">No membership forms yet.</div>
+    <% if (!formsList.length) { %>
+      <div class="mx-forms-panel mx-forms-empty" data-bb-forms-empty="1">No membership forms yet.</div>
     <% } %>
   </div>
+
+  <section class="mx-forms-panel mx-forms-panel--create" id="bb-membership-create" data-bb-forms-create="1">
+    <h2>Create form</h2>
+    <form method="post" action="<%= basePath %>/forms" data-bb-forms-create-form="1">
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken || '' %>" />
+      <label class="mx-forms-label" for="title">Title</label>
+      <input class="mx-forms-input" id="title" name="title" type="text" required maxlength="200" />
+      <label class="mx-forms-label" for="form_key">Form key (optional)</label>
+      <input class="mx-forms-input" id="form_key" name="form_key" type="text" maxlength="64" />
+      <label class="mx-forms-check"><input type="checkbox" name="enable_spiritual" value="1" checked /> Optional spiritual background step</label>
+      <label class="mx-forms-check"><input type="checkbox" name="enable_interests" value="1" checked /> Participation interests step</label>
+      <div class="mx-forms-actions mx-forms-actions--sticky">
+        <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Create</button>
+      </div>
+    </form>
+  </section>
 </div>
+<script>
+(function () {
+  var chips = document.querySelectorAll("[data-bb-forms-filter]");
+  var cards = document.querySelectorAll("[data-bb-form-status]");
+  if (!chips.length) return;
+  chips.forEach(function (chip) {
+    chip.addEventListener("click", function () {
+      var filter = chip.getAttribute("data-bb-forms-filter") || "all";
+      chips.forEach(function (c) { c.classList.toggle("is-active", c === chip); });
+      cards.forEach(function (card) {
+        var st = card.getAttribute("data-bb-form-status") || "draft";
+        var show = filter === "all" || st === filter;
+        card.hidden = !show;
+      });
+    });
+  });
+})();
+</script>

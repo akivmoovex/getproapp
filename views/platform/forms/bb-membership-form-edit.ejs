@@ -1,25 +1,55 @@
 <% const pageTitle = form.title; %>
-<div class="mx-forms-shell" data-screen="BB02" data-bb-membership="form-edit" data-bb-screen-desktop="BB02-D" data-bb-screen-mobile="BB02-M">
-  <div class="mx-forms-top">
+<div
+  class="mx-forms-shell mx-forms-shell--bb-membership"
+  data-screen="BB02"
+  data-bb-membership="form-edit"
+  data-bb-screen-desktop="BB02-D"
+  data-bb-screen-mobile="BB02-M"
+  data-bb-stitch-id-mobile="f09b2b0363e44286b745727fb1ac2c76"
+>
+  <header class="mx-forms-top mx-forms-top--sticky" data-bb-form-edit-head="1">
     <div>
+      <a class="mx-forms-back" href="<%= basePath %>/forms">← Back to forms</a>
       <div class="mx-forms-brand">BlessBoard · Membership form</div>
       <h1 class="mx-forms-title"><%= form.title %></h1>
-      <p class="mx-forms-sub">Status <span class="mx-forms-badge mx-forms-badge--<%= form.status %>"><%= form.status %></span></p>
+      <p class="mx-forms-sub">
+        Status
+        <span class="mx-forms-badge mx-forms-badge--<%= form.status %>"><%= form.status %></span>
+      </p>
     </div>
-    <a class="mx-forms-btn mx-forms-btn--ghost" href="<%= basePath %>/forms">All forms</a>
-  </div>
-  <div class="mx-forms-panel">
-    <p>Spiritual background step: <%= form.enableSpiritualBackground ? 'on' : 'off' %></p>
-    <p>Participation interests step: <%= form.enableParticipationInterests ? 'on' : 'off' %></p>
+    <a class="mx-forms-btn mx-forms-btn--ghost mx-forms-desktop-only" href="<%= basePath %>/forms">All forms</a>
+  </header>
+
+  <section class="mx-forms-panel" data-bb-form-steps="1">
+    <h2 class="mx-forms-section-title">Intake steps</h2>
+    <ul class="mx-forms-step-list">
+      <li class="mx-forms-step <%= form.enableSpiritualBackground ? 'is-on' : 'is-off' %>">
+        <strong>Spiritual background</strong>
+        <span><%= form.enableSpiritualBackground ? 'Enabled' : 'Off' %></span>
+      </li>
+      <li class="mx-forms-step <%= form.enableParticipationInterests ? 'is-on' : 'is-off' %>">
+        <strong>Participation interests</strong>
+        <span><%= form.enableParticipationInterests ? 'Enabled' : 'Off' %></span>
+      </li>
+    </ul>
+    <p class="mx-forms-muted">Step toggles are set at create time. Publishing unlocks public `/register` with the configured steps.</p>
+  </section>
+
+  <section class="mx-forms-panel" data-bb-form-publish="1">
+    <h2 class="mx-forms-section-title">Publication</h2>
     <% if (form.status !== 'published') { %>
-      <form method="post" action="<%= basePath %>/forms/<%= form.id %>/publish">
+      <form method="post" action="<%= basePath %>/forms/<%= form.id %>/publish" data-bb-form-publish-form="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
-        <div class="mx-forms-actions">
+        <p class="mx-forms-muted">Publishing makes this the active membership intake for the church. No login accounts are created.</p>
+        <div class="mx-forms-actions mx-forms-actions--sticky">
           <button class="mx-forms-btn mx-forms-btn--primary" type="submit">Publish membership form</button>
         </div>
       </form>
     <% } else { %>
-      <p style="color:var(--mx-forms-muted)">Published <%= form.publishedAt ? new Date(form.publishedAt).toISOString() : '' %>. Public apply uses /register with optional steps.</p>
+      <p class="mx-forms-muted">
+        Published <%= form.publishedAt ? new Date(form.publishedAt).toISOString() : '' %>.
+        Public apply uses `/register` with optional steps.
+      </p>
     <% } %>
-  </div>
+  </section>
 </div>
