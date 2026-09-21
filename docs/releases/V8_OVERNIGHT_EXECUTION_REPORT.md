@@ -46,7 +46,7 @@ None of Prompts 01–09 are PARTIAL / BLOCKED / NOT_RUN for **code pass**.
 | 07 | BB membership management BB11–BB18 | **PASS** | `65dbf4ef` | `b6937d26` |
 | 08 | Shared announcement engine AN01–AN05 | **PASS** | `c1c5b5fa` | `418ecd75` |
 | 09 | BB announcements BB19–BB22 | **PASS** | `93220536` | `206cdcd8` |
-| 10 | Final QA report + regression gate | **PASS** | `9fd942e7` | *(SHA record follow-up)* |
+| 10 | Final QA report + regression gate | **PASS** | `9fd942e7` | `0bcb81a4` |
 
 All implementation + record commits above are **pushed to `origin/V8`**.
 
