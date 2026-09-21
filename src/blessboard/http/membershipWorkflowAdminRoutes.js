@@ -24,11 +24,45 @@ const {
   requestMemberBranchTransfer,
   reviewMemberBranchTransfer,
   updateApprovedMemberProfile,
-  STATUS,
 } = require("../services/membershipWorkflowService");
+const {
+  listMemberRegistrations,
+  STATUS: REG_STATUS,
+} = require("../services/memberRegistrationService");
+const {
+  listBlessBoardBranches,
+  resolveBlessBoardBranchForChurch,
+  STATUS: BRANCH_STATUS,
+} = require("../services/listBlessBoardBranches");
 const { buildHqAdminShellLocals } = require("./hqAdminShellLocals");
 const { buildBranchAdminShellLocals } = require("./branchAdminShellLocals");
 const { renderFormView } = require("../../platform/forms/renderFormView");
+const { renderV5Ejs } = require("./v5EjsTemplateCache");
+const { renderBranchAdminView } = require("./branchAdminRoutes");
+
+const PAGE_LIMIT = 20;
+
+function presentHqRegistration(reg) {
+  if (!reg) return null;
+  return {
+    id: reg.id,
+    firstName: reg.firstName,
+    lastName: reg.lastName,
+    preferredName: reg.preferredName,
+    emailDisplay: reg.emailDisplay,
+    phoneDisplay: reg.phoneDisplay,
+    status: reg.status,
+    reviewNotes: reg.reviewNotes,
+    reviewedAt: reg.reviewedAt,
+    createdAt: reg.createdAt,
+    updatedAt: reg.updatedAt,
+    memberId: reg.memberId || null,
+    branchKey: reg.branchKey || null,
+    branchDisplayName: reg.branchDisplayName || null,
+    // Never expose pastoral notes on the HQ presentation surface.
+    pastoralNotesRestricted: true,
+  };
+}
 
 function createMembershipWorkflowAdminRouter(deps) {
   const getPool = deps.getPool;
@@ -37,6 +71,7 @@ function createMembershipWorkflowAdminRouter(deps) {
   const isProduction = String(env.NODE_ENV || "") === "production";
   const variant = deps.variant === "branch" ? "branch" : "hq";
   const basePath = variant === "hq" ? "/hq/membership" : "/branch-admin/membership";
+  const registrationsPath = variant === "hq" ? "/hq/registrations" : "/branch-admin/registrations";
 
   const router = express.Router();
   const requireView = createRequireBlessBoardPermission("members.view", null, {
@@ -77,7 +112,157 @@ function createMembershipWorkflowAdminRouter(deps) {
     res.status(status || 200).type("html").send(html);
   }
 
+  async function shellLocals(req, res, activeNav, extra) {
+    if (variant === "hq") {
+      return buildHqAdminShellLocals(req, res, {
+        env,
+        isProduction,
+        getPool,
+        activeNav,
+        extra,
+      });
+    }
+    return buildBranchAdminShellLocals(req, res, {
+      env,
+      isProduction,
+      getPool,
+      activeNav,
+      extra,
+    });
+  }
+
   router.use(basePath, rejectApex, gate);
+
+  // BB11 — membership review queue (was missing: fall-through → foundation 503)
+  router.get(basePath, async (req, res) => {
+    const ctx = tenantContext(req);
+    if (!ctx) return res.status(403).send("Forbidden");
+
+    const q = String((req.query && req.query.q) || "").slice(0, 100);
+    const status = String((req.query && req.query.status) || "")
+      .trim()
+      .toLowerCase();
+    const page = Math.max(Number((req.query && req.query.page) || 1) || 1, 1);
+    const offset = (page - 1) * PAGE_LIMIT;
+
+    let branchId = ctx.branchId;
+    let branchKey = "";
+    if (variant === "hq") {
+      const rawBranch = String((req.query && req.query.branch) || "")
+        .trim()
+        .toLowerCase();
+      if (rawBranch) {
+        const resolved = await resolveBlessBoardBranchForChurch(getPool(), ctx.churchId, rawBranch);
+        if (!resolved.ok) {
+          const code = resolved.status === BRANCH_STATUS.LOOKUP_ERROR ? 503 : 404;
+          return res.status(code).send("Branch not available");
+        }
+        branchId = resolved.branch.id;
+        branchKey = resolved.branch.key;
+      }
+    }
+
+    const listed = await listMemberRegistrations(getPool(), {
+      actorUserId: ctx.actorUserId,
+      churchId: ctx.churchId,
+      branchId: branchId || null,
+      status: status || null,
+      q: q || null,
+      limit: PAGE_LIMIT,
+      offset,
+    });
+    if (!listed.ok) {
+      return res
+        .status(listed.status === REG_STATUS.FORBIDDEN ? 403 : 503)
+        .send("Registrations are temporarily unavailable.");
+    }
+
+    const totalPages = Math.max(1, Math.ceil(listed.total / PAGE_LIMIT));
+    const localsExtra = {
+      pageTitle: variant === "hq" ? "Membership review" : "Verification queue",
+      items: listed.items,
+      total: listed.total,
+      page,
+      totalPages,
+      limit: PAGE_LIMIT,
+      q,
+      statusFilter: status,
+      error: null,
+      saved: String((req.query && req.query.saved) || ""),
+      membershipBasePath: basePath,
+      registrationsPath,
+    };
+
+    if (variant === "hq") {
+      const branches = await listBlessBoardBranches(getPool(), ctx.churchId);
+      localsExtra.branchFilter = branchKey;
+      localsExtra.branches = branches.ok ? branches.branches : [];
+      const html = renderV5Ejs(
+        "hq/registrations.ejs",
+        await shellLocals(req, res, "registrations", localsExtra)
+      );
+      return sendHtml(res, html);
+    }
+
+    const html = renderBranchAdminView(
+      "branch-admin/registrations.ejs",
+      await shellLocals(req, res, "registrations", localsExtra)
+    );
+    return sendHtml(res, html);
+  });
+
+  // BB12 — application detail (pastoral notes gated)
+  router.get(basePath + "/registrations/:registrationId", async (req, res) => {
+    const ctx = tenantContext(req);
+    if (!ctx) return res.status(403).send("Forbidden");
+    const registrationId = String(req.params.registrationId || "").trim();
+
+    const loaded = await getMembershipApplicationForReview(getPool(), {
+      registrationId,
+      actorUserId: ctx.actorUserId,
+      churchId: ctx.churchId,
+      tenant: ctx.tenant,
+      branchId: ctx.branchId,
+    });
+    if (!loaded.ok || !loaded.registration) {
+      const code =
+        loaded.status === REG_STATUS.FORBIDDEN
+          ? 403
+          : loaded.status === REG_STATUS.NOT_FOUND
+            ? 404
+            : 503;
+      return res
+        .status(code)
+        .send(code === 404 ? "Registration not found." : "You do not have access to this registration.");
+    }
+
+    if (variant === "hq") {
+      const html = renderV5Ejs(
+        "hq/registration-detail.ejs",
+        await shellLocals(req, res, "registrations", {
+          pageTitle: "Membership application",
+          registration: presentHqRegistration(loaded.registration),
+          membershipReviewEvents: loaded.reviewEvents || [],
+          canViewPastoralNotes: false,
+        })
+      );
+      return sendHtml(res, html);
+    }
+
+    const html = renderBranchAdminView(
+      "branch-admin/registration-detail.ejs",
+      await shellLocals(req, res, "registrations", {
+        pageTitle: "Registration review",
+        registration: loaded.registration,
+        membershipReviewEvents: loaded.reviewEvents || [],
+        canViewPastoralNotes: Boolean(loaded.canViewPastoralNotes),
+        hostBranchId: ctx.branchId,
+        error: null,
+        saved: String((req.query && req.query.saved) || ""),
+      })
+    );
+    return sendHtml(res, html);
+  });
 
   // BB01 — forms dashboard
   router.get(basePath + "/forms", async (req, res) => {
@@ -317,11 +502,6 @@ function createMembershipWorkflowAdminRouter(deps) {
     if (!result.ok) return res.status(400).send(result.reason || "Unable to save");
     return res.redirect(303, back);
   });
-
-  void getMembershipApplicationForReview;
-  void buildHqAdminShellLocals;
-  void buildBranchAdminShellLocals;
-  void STATUS;
 
   return router;
 }
