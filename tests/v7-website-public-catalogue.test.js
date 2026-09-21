@@ -787,6 +787,9 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
       .set("Cookie", cookie);
     assert.equal(newPage.status, 200, newPage.text.slice(0, 300));
     assert.match(newPage.text, /Add service/);
+    assert.match(newPage.text, /name="category"/);
+    assert.match(newPage.text, /name="imageMediaId"/);
+    assert.doesNotMatch(newPage.text, /name="publicWebsiteVisible"[^>]*checked/);
 
     const created = await request(app)
       .post("/app/settings/website/catalogue/services/new")
@@ -912,6 +915,66 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
       underscoreKey.replace(/_/g, "-")
     );
     assert.equal(Number(underscoreRow.rows[0].default_duration_minutes), 25);
+
+    const draftName = `Draft Service ${clinic.stamp}`;
+    const draftPage = await request(app)
+      .get("/app/settings/website/catalogue/services/new")
+      .set("Cookie", cookie);
+    const draftCreated = await request(app)
+      .post("/app/settings/website/catalogue/services/new")
+      .set("Cookie", mergeCookies(cookie, draftPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(draftPage),
+        displayName: draftName,
+        category: "Diagnostics",
+        description: "Draft catalogue service",
+        defaultDurationMinutes: "30",
+      })
+      .redirects(0);
+    assert.equal(draftCreated.status, 303, draftCreated.text.slice(0, 400));
+    const draftRow = await pool.query(
+      `SELECT id, service_key, public_website_visible, public_summary
+         FROM activeclinic.appointment_service_types
+        WHERE organization_id = $1 AND display_name = $2
+        LIMIT 1`,
+      [clinic.organizationId, draftName]
+    );
+    assert.equal(draftRow.rows.length, 1);
+    assert.equal(draftRow.rows[0].public_website_visible, false);
+    assert.equal(draftRow.rows[0].public_summary, "Diagnostics");
+    const draftList = await listWebsiteServices(pool, {
+      organizationId: clinic.organizationId,
+      healthcareOrganizationId: await resolveHcoId(clinic),
+    });
+    assert.ok(!draftList.services.some((s) => s.displayName === draftName));
+
+    const digitName = `24 Hour Labs ${clinic.stamp}`;
+    const digitPage = await request(app)
+      .get("/app/settings/website/catalogue/services/new")
+      .set("Cookie", cookie);
+    const digitCreated = await request(app)
+      .post("/app/settings/website/catalogue/services/new")
+      .set("Cookie", mergeCookies(cookie, digitPage))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(digitPage),
+        displayName: digitName,
+        description: "Leading digits normalized",
+        publicWebsiteVisible: "1",
+      })
+      .redirects(0);
+    assert.equal(digitCreated.status, 303, digitCreated.text.slice(0, 400));
+    const digitRow = await pool.query(
+      `SELECT service_key, public_website_visible
+         FROM activeclinic.appointment_service_types
+        WHERE organization_id = $1 AND display_name = $2
+        LIMIT 1`,
+      [clinic.organizationId, digitName]
+    );
+    assert.equal(digitRow.rows.length, 1);
+    assert.match(digitRow.rows[0].service_key, /^[a-z]/);
+    assert.equal(digitRow.rows[0].public_website_visible, true);
 
     const recCookie = await (async () => {
       const hcoId = await resolveHcoId(clinic);

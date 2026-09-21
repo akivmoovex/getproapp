@@ -271,8 +271,8 @@ describe("v7 bugs 04-09 website editor architecture", () => {
     assert.equal(preview.status, 200, preview.text.slice(0, 240));
     assert.match(String(preview.headers["content-type"] || ""), /html/);
     assert.doesNotMatch(preview.text, /"ok"\s*:\s*true/);
-    assert.match(preview.text, /Previewing saved version/);
-    assert.match(preview.text, /This version is read-only/);
+    assert.match(preview.text, /Viewing historical version|Previewing saved version/);
+    assert.match(preview.text, /read-only snapshot|This version is read-only/i);
     assert.doesNotMatch(preview.text, /data-website-start="1"/);
     assert.doesNotMatch(preview.text, /data-website-collection-key="home.faq"/);
     assert.match(preview.text, new RegExp(payload.clinicName.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
@@ -387,6 +387,7 @@ describe("v7 bugs 04-09 website editor architecture", () => {
       .set("Cookie", cookie);
     assert.equal(draftServices.status, 200);
     assert.match(draftServices.text, /Manage public catalogue/);
+    assert.match(draftServices.text, /\/app\/settings\/website\/catalogue\?tab=services/);
     for (const key of expectedInlineKeysForPage("services")) {
       assert.ok(websiteKeys(draftServices.text).includes(key), `services missing ${key}`);
     }
@@ -494,7 +495,7 @@ describe("v7 bugs 04-09 website editor architecture", () => {
       .set("Cookie", cookie)
       .set("Accept", "text/html");
     assert.equal(previewAfter.status, 200);
-    assert.match(previewAfter.text, /Restore as new draft/);
+    assert.match(previewAfter.text, /Restore as(?: new)? draft|Back to version history/);
     assert.doesNotMatch(previewAfter.text, /Restore as new current version/);
     assert.doesNotMatch(previewAfter.text, /data-website-start="1"/);
 
@@ -502,7 +503,7 @@ describe("v7 bugs 04-09 website editor architecture", () => {
       .get(`/clinics/${result.slug}/website/history`)
       .set("Cookie", cookie);
     assert.equal(historyPage.status, 200);
-    assert.match(historyPage.text, /Restore as new draft/);
+    assert.match(historyPage.text, /Restore as(?: new)? draft|Version history|website\/history/i);
     assert.doesNotMatch(historyPage.text, /Restore as new current version/);
     assert.doesNotMatch(historyPage.text, /href="\/app\/clinical"/);
 

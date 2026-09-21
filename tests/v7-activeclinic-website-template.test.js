@@ -273,11 +273,12 @@ describe("V7 ActiveClinic website template", () => {
     assert.match(pages.about.text, emailRe);
     assert.match(pages.services.text, /data-ac-empty="services"/);
     assert.match(pages.services.text, /Manage public catalogue/);
+    assert.match(pages.services.text, /\/app\/settings\/website\/catalogue\?tab=services/);
     assert.doesNotMatch(pages.services.text, /Example: General consultation/);
     assert.doesNotMatch(pages.services.text, /data-ac-template-examples="services"/);
     assert.doesNotMatch(pages.services.text, /View details/);
     assert.match(pages.doctors.text, /data-ac-empty="doctors"/);
-    assert.match(pages.doctors.text, /Manage public catalogue/);
+    assert.match(pages.doctors.text, /Manage public doctors/);
     assert.doesNotMatch(pages.doctors.text, /these people do not work at this clinic/i);
     assert.doesNotMatch(pages.doctors.text, /View profile/);
     assert.match(pages.location.text, addressRe);

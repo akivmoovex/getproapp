@@ -27,8 +27,11 @@ const RESULT = Object.freeze({
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const SERVICE_KEY_RE = /^[a-z0-9]+(?:-[a-z0-9]+)*$/;
+// Matches appointment_service_types_key_format: letter first, then [a-z0-9_-].
+const SERVICE_KEY_RE = /^[a-z][a-z0-9_-]{0,63}$/;
 const PROFILE_KEY_RE = /^[a-z][a-z0-9_-]{0,63}$/;
+const SERVICE_DESCRIPTION_MAX = 500;
+const SERVICE_SUMMARY_MAX = 1000;
 
 function granted(input) {
   return Array.isArray(input && input.grantedPermissions) ? input.grantedPermissions : [];
@@ -72,10 +75,37 @@ function serviceKeyFromName(name) {
   const base = String(name || "service")
     .trim()
     .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/_/g, "-")
+    .replace(/[^a-z0-9-]+/g, "-")
     .replace(/^-+|-+$/g, "")
-    .slice(0, 48);
-  return base || "service";
+    .slice(0, 64);
+  // DB requires a leading letter (same rule as staff public_profile_key).
+  return base.replace(/^[^a-z]+/, "").slice(0, 64) || "service";
+}
+
+function clampText(value, max) {
+  const text = String(value || "").trim();
+  if (!text) return null;
+  return text.length > max ? text.slice(0, max) : text;
+}
+
+function resolveServiceCategoryAndSummary(input, existing) {
+  const hasCategory = input && Object.prototype.hasOwnProperty.call(input, "category");
+  const hasSummary = input && Object.prototype.hasOwnProperty.call(input, "publicSummary");
+  const categoryRaw = hasCategory ? String(input.category || "").trim() : "";
+  const summaryRaw = hasSummary
+    ? String(input.publicSummary || "").trim()
+    : existing
+      ? String(existing.public_summary || "").trim()
+      : "";
+  // Category is the public short label; fall back to explicit summary, then description.
+  const publicSummary =
+    clampText(summaryRaw || categoryRaw, SERVICE_SUMMARY_MAX) ||
+    (existing ? existing.public_summary || null : null);
+  return {
+    category: categoryRaw || (publicSummary || ""),
+    publicSummary,
+  };
 }
 
 function overlayFor(items, type, key) {
@@ -207,13 +237,16 @@ function presentService(row, overlay) {
   const overlayHidden = overlay && overlay.visible === false;
   const websiteVisible = row.public_website_visible === true && !overlayHidden;
   const active = row.status === "active";
+  const image = overlay && overlay.image ? overlay.image : null;
+  const publicSummary = row.public_summary || "";
   return {
     id: row.id,
     kind: "service",
     name: row.display_name,
-    subtitle: row.public_summary || row.description || "Consultation",
+    subtitle: publicSummary || row.description || "Consultation",
     description: row.description || "",
-    publicSummary: row.public_summary || "",
+    category: publicSummary,
+    publicSummary,
     serviceKey: row.service_key,
     defaultDurationMinutes: row.default_duration_minutes || 30,
     operationallyAvailable: active,
@@ -227,6 +260,13 @@ function presentService(row, overlay) {
     canHide: websiteVisible,
     canFeature: websiteVisible,
     publicWebsiteVisible: row.public_website_visible === true,
+    image: image
+      ? {
+          mediaId: image.mediaId || "",
+          src: image.src || "",
+          alt: image.alt || "",
+        }
+      : { mediaId: "", src: "", alt: "" },
     editHref: `/app/settings/website/catalogue/services/${row.id}/edit`,
     overlayId: overlay && overlay.stored ? overlay.id : "",
   };
@@ -431,17 +471,24 @@ async function createCatalogueService(db, input) {
 
   const description =
     input && Object.prototype.hasOwnProperty.call(input, "description")
-      ? String(input.description || "").trim() || null
+      ? clampText(input.description, SERVICE_DESCRIPTION_MAX)
       : null;
-  const publicSummary =
-    input && Object.prototype.hasOwnProperty.call(input, "publicSummary")
-      ? String(input.publicSummary || "").trim() || null
-      : description;
+  if (
+    input &&
+    Object.prototype.hasOwnProperty.call(input, "description") &&
+    String(input.description || "").trim() &&
+    !description
+  ) {
+    return { ok: false, code: RESULT.INVALID_INPUT };
+  }
+  const { publicSummary: categoryOrSummary } = resolveServiceCategoryAndSummary(input, null);
+  const publicSummary = categoryOrSummary || description;
   const duration = Number(input && input.defaultDurationMinutes);
   const defaultDurationMinutes =
     Number.isFinite(duration) && duration >= 5 && duration <= 480 ? Math.round(duration) : 30;
   const status = String((input && input.status) || "active").trim() === "inactive" ? "inactive" : "active";
-  const publicWebsiteVisible = boolValue(input && input.publicWebsiteVisible, true) === true;
+  // Draft-safe: do not publish to the public website unless the editor explicitly opts in.
+  const publicWebsiteVisible = boolValue(input && input.publicWebsiteVisible, false) === true;
   const publicBookable = boolValue(input && input.publicBookable, false) === true;
   // Normalize optional keys the same way as auto-generated ones so HTML5 / pasted
   // values with spaces or underscores do not silently block service creation.
@@ -484,23 +531,24 @@ async function createCatalogueService(db, input) {
     if (err && (err.code === "23505" || /unique/i.test(String(err.message || "")))) {
       return { ok: false, code: RESULT.CONFLICT };
     }
+    if (err && (err.code === "23514" || /check/i.test(String(err.message || "")))) {
+      return { ok: false, code: RESULT.INVALID_INPUT };
+    }
     throw err;
   }
 
-  if (row.public_website_visible === true) {
-    const overlay = await libraryService.upsertOperationalOverlay(
-      db,
-      sanitizeOverlayImageInput({
-        ...input,
-        type: "service",
-        operationalKey: row.service_key,
-        title: row.display_name,
-        summary: row.public_summary || "",
-        visible: true,
-      })
-    );
-    if (!overlay.ok) return overlay;
-  }
+  const overlay = await libraryService.upsertOperationalOverlay(
+    db,
+    sanitizeOverlayImageInput({
+      ...input,
+      type: "service",
+      operationalKey: row.service_key,
+      title: row.display_name,
+      summary: row.public_summary || "",
+      visible: row.public_website_visible === true,
+    })
+  );
+  if (!overlay.ok) return overlay;
 
   return {
     ok: true,
@@ -548,10 +596,14 @@ async function updateCatalogueService(db, input) {
     publicWebsiteVisible: publicWebsiteVisible && status === "active",
   };
   if (Object.prototype.hasOwnProperty.call(input, "description")) {
-    patch.description = String(input.description || "").trim() || null;
+    patch.description = clampText(input.description, SERVICE_DESCRIPTION_MAX);
   }
-  if (Object.prototype.hasOwnProperty.call(input, "publicSummary")) {
-    patch.publicSummary = String(input.publicSummary || "").trim() || null;
+  if (
+    Object.prototype.hasOwnProperty.call(input, "publicSummary") ||
+    Object.prototype.hasOwnProperty.call(input, "category")
+  ) {
+    const resolved = resolveServiceCategoryAndSummary(input, existing);
+    patch.publicSummary = resolved.publicSummary;
   }
 
   const row = await appointmentRepo.updateServiceType(db, patch);

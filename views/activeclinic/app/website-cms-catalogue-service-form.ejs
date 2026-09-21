@@ -6,6 +6,8 @@
   var action = mode === "edit"
     ? ("/app/settings/website/catalogue/services/" + encodeURIComponent(service.id || "") + "/edit")
     : "/app/settings/website/catalogue/services/new";
+  var image = service.image || {};
+  var categoryValue = service.category || service.publicSummary || "";
 %>
 <section class="ac-mw" data-ac-page-section="website-catalogue-service-form" data-ac-mw-screen="catalogue-service-form">
   <%- include('../partials/website-cms-nav') %>
@@ -25,23 +27,40 @@
     <% if (mode === "create") { %>
     <label>
       Service key <span class="ac-mw-muted">(optional)</span>
-      <input type="text" name="serviceKey" maxlength="48" pattern="[a-z0-9]+(?:-[a-z0-9]+)*" title="Lowercase letters, numbers, and hyphens" placeholder="auto-generated-from-name" value="<%= service.serviceKey || "" %>"/>
+      <input type="text" name="serviceKey" maxlength="64" pattern="[a-z][a-z0-9_-]{0,63}" title="Lowercase letter first, then letters, numbers, hyphens, or underscores" placeholder="auto-generated-from-name" value="<%= service.serviceKey || "" %>"/>
     </label>
     <% } else { %>
     <p class="ac-mw-muted">Service key: <code><%= service.serviceKey || "" %></code></p>
     <% } %>
     <label>
-      Description
-      <textarea name="description" rows="3" maxlength="2000" <%= canEdit ? "" : "readonly" %>><%= service.description || "" %></textarea>
+      Category <span class="ac-mw-muted">(optional)</span>
+      <input type="text" name="category" maxlength="120" value="<%= categoryValue %>" placeholder="e.g. Consultation, Diagnostics" <%= canEdit ? "" : "readonly" %>/>
     </label>
     <label>
-      Public summary
+      Description
+      <textarea name="description" rows="3" maxlength="500" <%= canEdit ? "" : "readonly" %>><%= service.description || "" %></textarea>
+    </label>
+    <label>
+      Public summary <span class="ac-mw-muted">(optional — defaults to category)</span>
       <textarea name="publicSummary" rows="2" maxlength="500" <%= canEdit ? "" : "readonly" %>><%= service.publicSummary || "" %></textarea>
     </label>
     <label>
       Default duration (minutes)
       <input type="number" name="defaultDurationMinutes" min="5" max="480" step="1" value="<%= service.defaultDurationMinutes || 30 %>" <%= canEdit ? "" : "readonly" %>/>
     </label>
+    <p class="ac-mw-muted">Optional public prices are managed on the clinic website pricing page, not on each service record.</p>
+    <p class="ac-mw-form__legend">Image (optional)</p>
+    <%- include('../partials/website-cms-media-field', {
+      mediaField: {
+        idName: "imageMediaId",
+        srcName: "imageSrc",
+        altName: "imageAlt",
+        altLabel: "Image description",
+        mediaId: image.mediaId || "",
+        src: image.src || "",
+        alt: image.alt || ""
+      }
+    }) %>
     <label class="ac-mw-check">
       <input type="checkbox" name="status" value="inactive" <%= service.inactive ? "checked" : "" %> <%= canEdit ? "" : "disabled" %>/>
       Disabled (hidden from website and not bookable as an active service)
@@ -62,3 +81,4 @@
     </div>
   </form>
 </section>
+<%- include('../partials/website-cms-media-picker', { mediaListUrl: cms.mediaListUrl || "" }) %>
