@@ -1,6 +1,6 @@
 # V8 Screen Implementation Coverage Audit
 
-**Branch:** `origin/V8` (PROMPT 14 mobile closure)  
+**Branch:** `origin/V8` @ `112c6883932314889f137e02355dd6dbdc6bc807` (PROMPT 14 mobile closure)  
 **Date:** 2026-09-21  
 **Stitch project:** [`projects/5087412725796049014`](https://stitch.withgoogle.com/projects/5087412725796049014)  
 **Scope:** All approved overnight screens **SH01–SH15**, **BB01–BB22**, **AN01–AN05** × desktop (**-D**) + mobile (**-M**) = **84** viewport screens  
