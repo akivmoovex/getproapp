@@ -170,35 +170,53 @@ function extractLeaderImageTriggers(html) {
   );
   const slice = sectionMatch ? sectionMatch[1] : html;
   const triggers = [];
-  const re =
-    /data-bb-structured-open="1"[\s\S]*?data-bb-kind="leader"[\s\S]*?data-bb-entity="([^"]+)"[\s\S]*?aria-label="Edit image"/gi;
+  // Match within a single button tag so Edit details CTAs cannot steal the entity key.
+  const buttonRe = /<button\b[^>]*data-bb-structured-open="1"[^>]*>/gi;
   let m;
-  while ((m = re.exec(slice))) {
-    triggers.push(m[1]);
-  }
-  if (!triggers.length) {
-    const re2 =
-      /aria-label="Edit image"[\s\S]{0,500}?data-bb-entity="([^"]+)"|data-bb-entity="([^"]+)"[\s\S]{0,500}?aria-label="Edit image"/gi;
-    while ((m = re2.exec(slice))) {
-      const key = m[1] || m[2];
-      if (key && /leader/i.test(key)) triggers.push(key);
-    }
+  while ((m = buttonRe.exec(slice))) {
+    const tag = m[0];
+    if (!/data-bb-kind="leader"/.test(tag)) continue;
+    if (!/data-bb-dialog-title="Edit image"|aria-label="Edit image"/.test(tag)) continue;
+    if (/data-bb-edit-details="1"/.test(tag)) continue;
+    const em = tag.match(/data-bb-entity="([^"]+)"/);
+    if (em) triggers.push(em[1]);
   }
   return [...new Set(triggers)];
 }
 
-function extractOriginalImages(html) {
+function extractLeaderCards(html) {
   const sectionMatch = html.match(
     /data-bb-home-leader-cards="1"([\s\S]*?)(?:<\/section>|<section\b|$)/
   );
   const slice = sectionMatch ? sectionMatch[1] : html;
-  const out = [];
-  const cardRe = /data-bb-leader-id="([^"]+)"[\s\S]*?(?:data-bb-leader-image="1"[^>]*src="([^"]*)"|src="([^"]*)"[^>]*data-bb-leader-image="1")/gi;
+  const cards = [];
+  const cardRe = /<article\b([^>]*data-bb-leader-card="1"[^>]*)>([\s\S]*?)<\/article>/gi;
   let m;
   while ((m = cardRe.exec(slice))) {
-    out.push({ entityKey: m[1], src: m[2] || m[3] || "" });
+    const attrs = m[1];
+    const body = m[2];
+    const id = (attrs.match(/data-bb-leader-id="([^"]+)"/) || [])[1] || "";
+    const name = ((body.match(/bb-tp-leader-card__name[^>]*>([^<]+)/i) || [])[1] || "").trim();
+    const role = ((body.match(/data-bb-leader-role="1"[^>]*>([^<]+)/i) || [])[1] || "").trim();
+    const bio = ((body.match(/data-bb-leader-bio="1"[^>]*>([^<]+)/i) || [])[1] || "").trim();
+    const img = ((body.match(/data-bb-leader-image="1"[^>]*src="([^"]*)"/i) ||
+      body.match(/src="([^"]*)"[^>]*data-bb-leader-image="1"/i) ||
+      [])[1] || "").trim();
+    const payloadMatch = body.match(
+      /data-bb-dialog-title="Edit image"[^>]*data-bb-payload="([^"]+)"|data-bb-payload="([^"]+)"[^>]*data-bb-dialog-title="Edit image"/i
+    );
+    let payload = {};
+    const rawPayload = payloadMatch ? payloadMatch[1] || payloadMatch[2] : "";
+    if (rawPayload) {
+      try {
+        payload = JSON.parse(rawPayload.replace(/&quot;/g, '"'));
+      } catch (_e) {
+        payload = {};
+      }
+    }
+    if (id) cards.push({ entityKey: id, name, role, bio, img, payload });
   }
-  return out;
+  return cards;
 }
 
 function extractUploadUrl(html) {
@@ -206,7 +224,8 @@ function extractUploadUrl(html) {
   return m ? m[1] : "";
 }
 
-async function uploadPng(jar, uploadUrl, token, filename) {
+async function uploadPng(jar, uploadUrl, token, filename, pngBuffer) {
+  const fileBuf = pngBuffer || PNG;
   const boundary = `----V2LeadImg${Date.now()}`;
   const pre = Buffer.from(
     `--${boundary}\r\nContent-Disposition: form-data; name="_csrf"\r\n\r\n${token}\r\n` +
@@ -214,7 +233,7 @@ async function uploadPng(jar, uploadUrl, token, filename) {
     "utf8"
   );
   const post = Buffer.from(`\r\n--${boundary}--\r\n`, "utf8");
-  const body = Buffer.concat([pre, PNG, post]);
+  const body = Buffer.concat([pre, fileBuf, post]);
   const url = uploadUrl.startsWith("http") ? uploadUrl : `${BB}${uploadUrl}`;
   const res = await req(jar, url, {
     method: "POST",
@@ -346,15 +365,16 @@ async function main() {
 
   const editUrl = `${BB}/c/${ORG}/?website_edit=1&website_mode=draft`;
   const editPage = await follow(auth.jar, await req(auth.jar, editUrl), BB);
-  const originals = extractOriginalImages(editPage.body);
+  const cardsBefore = extractLeaderCards(editPage.body);
   const triggers = extractLeaderImageTriggers(editPage.body);
   const uploadUrl = extractUploadUrl(editPage.body);
   const listUrlMatch = String(editPage.body || "").match(/data-bb-media-list="([^"]+)"/);
   const listUrl = listUrlMatch ? listUrlMatch[1] : "";
 
-  result.originalImages = originals.map((o) => ({
+  result.originalImages = cardsBefore.map((o) => ({
     entityKey: o.entityKey,
-    srcPrefix: String(o.src).slice(0, 96),
+    name: o.name,
+    srcPrefix: String(o.img).slice(0, 120),
   }));
   result.editChrome = {
     status: editPage.status,
@@ -380,21 +400,26 @@ async function main() {
   const uploads = [];
   const saves = [];
   const targetKeys = triggers.slice(0, 3);
-  const siblingNamesBefore = {};
-
-  for (const key of targetKeys) {
-    const nameMatch = editPage.body.match(
-      new RegExp(`data-bb-leader-id="${key}"[\\s\\S]*?bb-tp-leader-card__name[^>]*>([^<]+)`, "i")
-    );
-    siblingNamesBefore[key] = nameMatch ? nameMatch[1].trim() : "";
-  }
+  const cardByKey = new Map(cardsBefore.map((c) => [c.entityKey, c]));
 
   for (let i = 0; i < targetKeys.length; i += 1) {
     const entityKey = targetKeys[i];
+    const existing = cardByKey.get(entityKey) || { payload: {}, name: "", role: "", bio: "" };
     const page = await follow(auth.jar, await req(auth.jar, editUrl), BB);
     token = csrf(page.body) || token;
     const upUrl = extractUploadUrl(page.body) || uploadUrl;
-    const uploaded = await uploadPng(auth.jar, upUrl, token, `lead-${stamp}-${i}.png`);
+    // Unique bytes per upload so CDN/storage keys stay independent (identical PNG dedupe risk).
+    const uniquePng = Buffer.concat([
+      PNG.slice(0, PNG.length - 8),
+      Buffer.from([i + 1, stamp.charCodeAt(0) || 1, stamp.charCodeAt(1) || 2, 0, 0, 0, 0, 0]),
+    ]);
+    const uploaded = await uploadPng(
+      auth.jar,
+      upUrl,
+      token,
+      `lead-${stamp}-${i}.png`,
+      uniquePng
+    );
     const media = uploaded.json.media || uploaded.json.asset || {};
     const src =
       media.publicSrc ||
@@ -404,13 +429,15 @@ async function main() {
       uploaded.json.deliveryPath ||
       "";
     const mediaId = media.id || uploaded.json.mediaId || "";
+    const storageKey = media.storageKey || "";
     uploads.push({
       entityKey,
       status: uploaded.status,
       ok: uploaded.status === 200 && Boolean(src) && Boolean(mediaId),
       mediaId,
       src,
-      srcPrefix: String(src).slice(0, 96),
+      storageKey,
+      srcMarker: mediaId ? `${mediaId}.png` : src.slice(-40),
       topLevelDeliveryPath: uploaded.json.deliveryPath || null,
       nestedPublicSrc: Boolean(media.publicSrc),
     });
@@ -421,15 +448,19 @@ async function main() {
       console.log(JSON.stringify(result, null, 2));
       process.exit(2);
     }
+    const base = existing.payload && typeof existing.payload === "object" ? existing.payload : {};
     const save = await postLeaderDraft(auth.jar, token, entityKey, {
-      displayName: leaderDisplayName(entityKey, i),
-      roleTitle: `V2 BUG14 role ${stamp} ${i}`,
-      biography: `V2 BUG14 independent pastor image ${stamp} ${i}`,
+      displayName: base.displayName || existing.name || leaderDisplayName(entityKey, i),
+      roleTitle: base.roleTitle || existing.role || `Role ${i + 1}`,
+      biography: base.biography || existing.bio || `Biography ${i + 1}`,
       imageUrl: src,
-      sortOrder: (i + 1) * 10,
-      seniorLeader: i === 0,
-      visible: true,
-      contactPublic: false,
+      sortOrder: base.sortOrder != null ? base.sortOrder : (i + 1) * 10,
+      seniorLeader: Boolean(base.seniorLeader) || i === 0,
+      visible: base.visible !== false,
+      contactPublic: Boolean(base.contactPublic),
+      email: base.email || "",
+      phone: base.phone || "",
+      socialUrl: base.socialUrl || "",
     });
     saves.push({
       entityKey,
@@ -437,7 +468,8 @@ async function main() {
       ok: save.status === 200 && save.json.ok === true,
       published: save.json.published,
       mediaId,
-      mediaMarker: mediaId || src.slice(-24),
+      mediaMarker: mediaId ? `${mediaId}.png` : src.slice(-40),
+      preservedName: base.displayName || existing.name || null,
     });
   }
   result.uploads = uploads.map((u) => ({
@@ -445,7 +477,8 @@ async function main() {
     status: u.status,
     ok: u.ok,
     mediaId: u.mediaId,
-    srcPrefix: u.srcPrefix,
+    srcMarker: u.srcMarker,
+    storageKey: u.storageKey,
     topLevelDeliveryPath: u.topLevelDeliveryPath,
     nestedPublicSrc: u.nestedPublicSrc,
   }));
@@ -460,13 +493,13 @@ async function main() {
     );
     result.contentLibrary = {
       status: listed.status,
-      ok: listed.status === 200 && listed.json.ok === true,
+      ok: listed.status === 200 && listed.json.ok === true && matched.length === uploads.length,
       usesMediaArray: Array.isArray(listed.json.media),
       matchedUploadCount: matched.length,
       sampleSrc: matched[0]
         ? String(matched[0].publicSrc || matched[0].previewUrl || matched[0].deliveryPath || "").slice(
             0,
-            96
+            140
           )
         : null,
     };
@@ -475,31 +508,33 @@ async function main() {
   }
 
   const draftPage = await follow(auth.jar, await req(auth.jar, editUrl), BB);
-  const draftMarkers = saves.map((s) => ({
-    entityKey: s.entityKey,
-    present: Boolean(s.mediaMarker) && draftPage.body.includes(s.mediaMarker),
-  }));
+  const cardsDraft = extractLeaderCards(draftPage.body);
+  const draftMarkers = saves.map((s) => {
+    const card = cardsDraft.find((c) => c.entityKey === s.entityKey);
+    return {
+      entityKey: s.entityKey,
+      present: Boolean(s.mediaMarker) && draftPage.body.includes(s.mediaMarker),
+      imgHasMarker: Boolean(card && card.img && card.img.includes(s.mediaId)),
+      namePreserved: Boolean(s.preservedName) && Boolean(card && card.name === s.preservedName),
+    };
+  });
   result.draftPreview = {
     status: draftPage.status,
     markers: draftMarkers,
-    ok: draftMarkers.every((m) => m.present),
+    ok: draftMarkers.every((m) => m.present && m.imgHasMarker),
   };
 
-  // Bug 06: other pastors still present with distinct media ids after independent edits.
-  const namesAfter = {};
-  for (const key of targetKeys) {
-    const nameMatch = draftPage.body.match(
-      new RegExp(`data-bb-leader-id="${key}"[\\s\\S]*?bb-tp-leader-card__name[^>]*>([^<]+)`, "i")
-    );
-    namesAfter[key] = nameMatch ? nameMatch[1].trim() : "";
-  }
   result.siblingPreservation = {
-    ok:
-      targetKeys.every((k) => Boolean(namesAfter[k])) &&
-      new Set(uploads.map((u) => u.mediaId).filter(Boolean)).size === targetKeys.length,
-    namesAfter,
+    namesAfter: Object.fromEntries(cardsDraft.map((c) => [c.entityKey, c.name])),
     uniqueMediaIds: new Set(uploads.map((u) => u.mediaId).filter(Boolean)).size,
   };
+  result.siblingPreservation.ok =
+    targetKeys.every((k) => {
+      const after = cardsDraft.find((c) => c.entityKey === k);
+      return Boolean(after && after.name);
+    }) &&
+    result.siblingPreservation.uniqueMediaIds === targetKeys.length &&
+    draftMarkers.every((m) => m.present);
 
   const leadershipPage = await follow(
     auth.jar,
@@ -538,7 +573,6 @@ async function main() {
     ok: saves.every((s) => again.body.includes(s.mediaMarker)),
   };
 
-  // CDN: resolve one uploaded publicSrc (absolute URL).
   let cdnOk = false;
   const sampleSrc = uploads[0] && uploads[0].src;
   if (sampleSrc) {
@@ -548,7 +582,7 @@ async function main() {
     result.cdnPersistence = {
       status: cdn.status,
       ok: cdnOk,
-      srcPrefix: String(sampleSrc).slice(0, 96),
+      srcPrefix: String(sampleSrc).slice(0, 140),
     };
   } else {
     result.cdnPersistence = { ok: false };
