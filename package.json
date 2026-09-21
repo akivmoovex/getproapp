@@ -239,6 +239,7 @@
     "activeclinic:migrate-tenant-admins": "node db/scripts/activeclinic-migrate-tenant-admins.js",
     "activeclinic:purge-testing-tenant": "node db/scripts/activeclinic-purge-testing-tenant.js",
     "activeclinic:hosted-auth-qa:testing": "scripts/local/run-with-blessboard-env.sh testing node db/scripts/activeclinic-hosted-auth-qa.js",
+    "v8:qa-tenants:provision": "scripts/local/run-with-blessboard-env.sh testing env PLATFORM_DEPLOYMENT_CODE=moovex-platform-v8-testing DEPLOYMENT_ENV=testing node db/scripts/v8-disposable-qa-tenant-provision.js",
     "test:activeclinic:testing-tenant-purge": "node --test --test-concurrency=1 tests/activeclinic-testing-tenant-purge.test.js",
     "test:activeclinic:demo-clinics-seed": "node --test --test-concurrency=1 tests/activeclinic-demo-clinics-seed.test.js",
     "test:activeclinic:qa-role-users": "node --test --test-concurrency=1 tests/activeclinic-qa-role-users.test.js",

@@ -26,7 +26,11 @@ const { RESERVED_ORGANIZATION_KEYS } = require("../repositories/activeClinicTest
 
 const TOOL = "activeclinic-hosted-auth-qa";
 const KEY_PREFIX = "ac-hqa-";
-const ALLOWED_KEY_PREFIXES = Object.freeze(["ac-hqa-", "hosted-qa-"]);
+const ALLOWED_KEY_PREFIXES = Object.freeze([
+  "ac-hqa-",
+  "hosted-qa-",
+  "ac-v8-qa-",
+]);
 
 function isHostedQaOrganizationKey(organizationKey) {
   const key = String(organizationKey || "").trim().toLowerCase();
