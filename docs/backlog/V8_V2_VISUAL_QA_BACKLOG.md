@@ -21,10 +21,15 @@ Do **not** delete or rewrite existing entries when appending later prompt work �
 | **SH15-D / SH15-M** | FAIL — plain-text deny ≠ `access-denied.ejs` | Prompt **39** | `3946db34e639` | Functional + HTML SH15 markers verified; **not** a full Stitch visual re-score |
 | **BB03-D/M – BB06-D/M** | FAIL — single-page vs 4-step wizard | Prompt **40** | `37cd39a3ba18` | Structural wizard journey verified on path-public register; **not** a full Stitch visual re-score of each step viewport |
 | Shared forms create→share→submit→review | Prior hosted journey gap (Prompt 35/37 context) | Prompt **39** | `3946db34e639` | Functional P0 journey; Form Studio Stitch density PARTIALs remain open below |
+| **BB21-D / BB21-M** | FAIL — public list `/c/:org/announcements` **404** | Prompt **42** | `ecfddf5c1d78` | Church URL page keys include `announcements`; list **301** → `/hq/announcements` **200**; detail still **200**. Not a full Stitch visual re-score |
+| **BB13-M** | FAIL — floating header / decision overlap | Prompt **42** | `ecfddf5c1d78` | Decision panel ordered first at ≤899px; actions static (no sticky cover). RBAC/actions preserved. Visual Stitch re-score still open |
+| **BB14-M** | FAIL — Save/Transfer overlap fields | Prompt **42** | `ecfddf5c1d78` | HQ sticky action bars static in document flow at ≤799px. Save/Transfer preserved. Visual Stitch re-score still open |
 
 **Still PASS (unchanged, preserve):** SH10-D / SH10-M (Prompt 37).
 
-**Not closed by 39–40:** all BLOCKED fixtures; remaining FAIL/PARTIAL listed below; BB07/BB08 visual PARTIAL polish.
+**Deferred (Prompt 42):** **AN01** / **AN04** visual polish and other non-blocking PARTIALs — remain OPEN below.
+
+**Not closed by 39–42:** fixture BLOCKED rows (except event/ministry seeds used for Flow 07 smoke); remaining FAIL/PARTIAL polish.
 
 ---
 
@@ -57,11 +62,11 @@ These are **BLOCKED** in the reconciled audit because disposable QA fixtures or 
 
 | ID | Screen ID(s) | Defect (exact audit finding) | Severity | Dependency | Status | Acceptance test |
 |----|--------------|------------------------------|----------|------------|--------|-----------------|
-| VQ-P0-001 | **BB21-D / BB21-M** | Public announcements **list** route `/c/:org/announcements` returns **404**. Only detail URL works. | high | Path-public announcements index → public list view (Stitch BB21) | OPEN | GET `/c/:org/announcements` **200**; list content matches Stitch intent; D/M hosted shots vs Stitch; detail (BB22) still works |
-| VQ-P0-002 | **BB13-M** | Floating header overlaps subtitle/content; decision UI (approve / follow-up / decline) absent. | high | Branch/HQ registration detail mobile sticky header + decision controls | OPEN | At 390px: no header/content overlap; decision controls visible and usable; shot vs Stitch BB13-M |
-| VQ-P0-003 | **BB14-M** | Save/transfer buttons overlap form fields — severe mobile layout break. | high | Member profile sticky action bar / field stacking | OPEN | At 390px: Save/Transfer do not overlap fields; shot vs Stitch BB14-M |
-| VQ-P0-004 | **AN01-D / AN01-M** | Announcement studio dashboard missing Stitch KPI cards, filters, shell, and multi-status table (AN scorer FAIL). | high | Shared Announcement Studio shell uplift **or** product-skin decision | OPEN | Hosted AN01 D/M match Stitch density/intent **or** recorded `PRODUCT_DECISION_DIFFERENCE` + inventory note |
-| VQ-P0-005 | **AN04-D / AN04-M** | Preview is an admin plain-text panel, not Stitch member-facing bulletin/hero preview (AN scorer critical FAIL). | high | Audience-facing preview chrome / PREVIEW MODE frame | OPEN | Hosted preview shows member-facing bulletin/hero (or explicit PREVIEW MODE) matching Stitch AN04 D/M |
+| VQ-P0-001 | **BB21-D / BB21-M** | Public announcements **list** route `/c/:org/announcements` returns **404**. Only detail URL works. | high | Path-public announcements index → public list view (Stitch BB21) | **CLOSED** (Prompt 42 · `ecfddf5c`) | Hosted: `/announcements` **301** → `/hq/announcements` **200**; detail **200**. Stitch visual re-score optional follow-up |
+| VQ-P0-002 | **BB13-M** | Floating header overlaps subtitle/content; decision UI (approve / follow-up / decline) absent. | high | Branch/HQ registration detail mobile sticky header + decision controls | **CLOSED** (functional · Prompt 42 · `ecfddf5c`) | Decision panel first + static actions at mobile; Approve/Follow-up/Decline preserved. Full Stitch shot re-score remains backlog polish |
+| VQ-P0-003 | **BB14-M** | Save/transfer buttons overlap form fields — severe mobile layout break. | high | Member profile sticky action bar / field stacking | **CLOSED** (functional · Prompt 42 · `ecfddf5c`) | Sticky Save/Transfer bars no longer cover fields at ≤799px. Stitch shot re-score optional |
+| VQ-P0-004 | **AN01-D / AN01-M** | Announcement studio dashboard missing Stitch KPI cards, filters, shell, and multi-status table (AN scorer FAIL). | high | Shared Announcement Studio shell uplift **or** product-skin decision | OPEN (**deferred** Prompt 42) | Hosted AN01 D/M match Stitch density/intent **or** recorded `PRODUCT_DECISION_DIFFERENCE` + inventory note |
+| VQ-P0-005 | **AN04-D / AN04-M** | Preview is an admin plain-text panel, not Stitch member-facing bulletin/hero preview (AN scorer critical FAIL). | high | Audience-facing preview chrome / PREVIEW MODE frame | OPEN (**deferred** Prompt 42) | Hosted preview shows member-facing bulletin/hero (or explicit PREVIEW MODE) matching Stitch AN04 D/M |
 
 > **Auth note:** Branch→HQ Form Studio wrong UI (**SH15**) was the audit’s authorization/UI FAIL; **closed by Prompt 39** (see closure ledger). SH14 remains a **fixture/credential** blocker (VQ-FIX-002), not a proven wrong-UI render of the designed SH14 screen.
 
@@ -130,7 +135,8 @@ These are **BLOCKED** in the reconciled audit because disposable QA fixtures or 
 |--------|------:|-------|
 | Audit baseline (Prompt 37) | PASS **2** / PARTIAL **56** / FAIL **18** / BLOCKED **8** | Locked in overnight baseline |
 | FAIL closed by 39–40 (functional, not Stitch re-score) | **10** | SH15×2 + BB03–BB06×8 |
-| Remaining open FAIL (app) | **8** | BB13-M, BB14-M, BB21×2, AN01×2, AN04×2 |
+| FAIL closed by 42 (functional, not Stitch re-score) | **4** | BB21×2 + BB13-M + BB14-M |
+| Remaining open FAIL (app) | **4** | AN01×2, AN04×2 (deferred polish) |
 | Remaining BLOCKED (fixtures) | **8** | SH02×2, SH14×2, BB09×2, BB10×2 |
 | Remaining PARTIAL | **56** | Unchanged — no PARTIAL screen fully re-scored to PASS |
 | Preserve PASS | **2** | SH10-D/M |
@@ -144,11 +150,12 @@ These are **BLOCKED** in the reconciled audit because disposable QA fixtures or 
 | Date | Prompt | Change |
 |------|--------|--------|
 | 2026-09-21 | 41 | Created backlog from Prompt 37 reconciled audit; excluded SH15 + BB03–BB06 FAILs closed by Prompts 39–40 |
+| 2026-09-21 | 42 | Closed VQ-P0-001/002/003 (BB21 list + BB13-M/BB14-M overlap) on hosted `ecfddf5c`; deferred AN01/AN04; seeded disposable event/ministry for Flow 07; 12/12 hosted smoke PASS |
 
 ---
 
 ## G. Next recommended implementation task
 
-1. **VQ-P0-001 (BB21-D/M)** — wire path-public announcements **list** (broken primary public journey).  
-2. Then **VQ-P0-002 / VQ-P0-003** (BB13-M / BB14-M mobile layout breakage).  
-3. Parallel fixture work: **VQ-FIX-003 / VQ-FIX-004** (BB09/BB10) and **VQ-FIX-001 / VQ-FIX-002** (SH02/SH14).
+1. **VQ-P0-004 / VQ-P0-005 (AN01 / AN04)** — deferred visual polish (not QA-blocking for Prompt 42).  
+2. Fixture polish: **VQ-FIX-001 / VQ-FIX-002** (SH02 empty / SH14 platform-admin).  
+3. Optional Stitch visual re-score of BB13-M / BB14-M / BB21 after functional closures.

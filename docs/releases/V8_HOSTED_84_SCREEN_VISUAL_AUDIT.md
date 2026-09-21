@@ -299,6 +299,22 @@ Primary hosted routes used (BlessBoard disposable tenant):
 
 ---
 
+## Prompt 42 follow-up (functional closures — not a full 84 re-score)
+
+**Hosted SHA:** `ecfddf5c1d78`  
+**Report:** [`V8_QA_READINESS_PROMPT42.md`](./V8_QA_READINESS_PROMPT42.md)
+
+| Screen | Prior audit | Prompt 42 |
+|--------|-------------|-----------|
+| BB21-D/M | FAIL list 404 | Functional **closed** — list redirects to primary-branch announcements |
+| BB13-M / BB14-M | FAIL overlap | Functional **closed** — mobile action stacking fixed; Stitch visual re-score still open |
+| SH15 / BB03–BB06 | Closed in 39–40 | Re-verified on hosted `ecfddf5c` |
+| AN01 / AN04 | FAIL visual | **Deferred** per Prompt 42 |
+
+Do **not** interpret this as 84/84 PASS. Baseline audit counts above remain historical until a full hosted visual re-audit.
+
+---
+
 ## Final verdict
 
 **`V8_HOSTED_84_SCREEN_VISUAL_OPEN_DEFECTS`**
