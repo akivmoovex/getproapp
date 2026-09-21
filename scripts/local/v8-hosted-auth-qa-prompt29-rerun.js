@@ -190,35 +190,44 @@ function probe(res, pathHint) {
       const stamp = Date.now().toString(36);
       const post = await follow(
         hq.jar,
-        await req(hq.jar, BB + "/hq/form-studio", {
+        await req(hq.jar, BB + "/hq/form-studio/new", {
           method: "POST",
           form: {
             _csrf: csrf(neu.body),
             title: `V8 QA Form ${stamp}`,
+            form_key: `v8qa_${stamp}`,
             category: "general",
             description: "Disposable hosted QA form",
+            field_key: "full_name",
+            field_type: "text",
+            field_label: "Full name",
+            field_required: "1",
           },
           headers: { Referer: BB + "/hq/form-studio/new" },
         }),
         BB
       );
       created = probe(post, new URL(post.url).pathname);
-      const pubPage = await req(hq.jar, post.url + (post.url.includes("publish") ? "" : "/publish"));
-      // try publish if on detail
-      const detailPath = new URL(post.url).pathname;
-      const pubGet = await req(hq.jar, BB + detailPath + "/publish");
-      if (csrf(pubGet.body) || csrf(post.body)) {
+      const detailPath = new URL(post.url).pathname.replace(/\/$/, "");
+      const formIdMatch = detailPath.match(/\/hq\/form-studio\/([0-9a-f-]{36})/i);
+      const formBase = formIdMatch
+        ? `/hq/form-studio/${formIdMatch[1]}`
+        : detailPath.replace(/\/(studio|publication|sharing|preview)$/, "");
+      const pubPage = await req(hq.jar, BB + formBase + "/publication");
+      if (csrf(pubPage.body) || csrf(post.body)) {
         const pub = await follow(
           hq.jar,
-          await req(hq.jar, BB + detailPath + "/publish", {
+          await req(hq.jar, BB + formBase + "/publish", {
             method: "POST",
-            form: { _csrf: csrf(pubGet.body) || csrf(post.body) },
-            headers: { Referer: BB + detailPath },
+            form: { _csrf: csrf(pubPage.body) || csrf(post.body) },
+            headers: { Referer: BB + formBase + "/publication" },
           }),
           BB
         );
         created.publish = probe(pub, new URL(pub.url).pathname);
-        created.publicLink = ((pub.body + post.body).match(/\/f\/[a-zA-Z0-9_-]+/) || [])[0] || null;
+        const share = await req(hq.jar, BB + formBase + "/sharing");
+        created.publicLink =
+          ((share.body + pub.body + post.body).match(/\/f\/[a-zA-Z0-9_-]+/) || [])[0] || null;
       }
     }
     out.flows["01"] = {

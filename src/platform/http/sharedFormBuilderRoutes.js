@@ -358,32 +358,15 @@ function createSharedFormBuilderRouter(deps) {
     });
   });
 
-  router.get(`${adminBasePath}/new`, async (req, res) => {
-    if (!deps.canManage(req)) {
-      return deps.renderAdmin(req, res, "access-denied", {
-        brand,
-        adminBasePath,
-        csrfToken: issueCsrf(res, req),
-        csrfField: CSRF_FIELD,
-        stitchScreen: "SH15",
-        mobile: true,
-      });
-    }
-    return deps.renderAdmin(req, res, "studio", {
-      brand,
-      adminBasePath,
-      csrfToken: issueCsrf(res, req),
-      csrfField: CSRF_FIELD,
-      form: null,
-      allowedFieldTypes: ALLOWED_FIELD_TYPES,
-      allowedCategories: ALLOWED_FORM_CATEGORIES,
-      canManage: true,
-      stitchScreen: "SH03",
-      mobile: true,
-    });
-  });
+  const FORM_ID_RE =
+    /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
-  router.post(`${adminBasePath}/new`, async (req, res) => {
+  /**
+   * Create handler shared by POST …/new and POST adminBasePath.
+   * The bare POST alias stops mistaken clients from falling through to the
+   * product foundation unmatched-route 503 ("Unavailable") catch-all.
+   */
+  async function handleCreateForm(req, res) {
     const tenant = deps.resolveTenant(req);
     if (!tenant || !deps.canManage(req)) return res.status(403).send("Forbidden");
     if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) return res.status(403).send("CSRF");
@@ -431,6 +414,44 @@ function createSharedFormBuilderRouter(deps) {
       });
     }
     return res.redirect(303, `${adminBasePath}/${created.form.id}/studio`);
+  }
+
+  router.get(`${adminBasePath}/new`, async (req, res) => {
+    if (!deps.canManage(req)) {
+      return deps.renderAdmin(req, res, "access-denied", {
+        brand,
+        adminBasePath,
+        csrfToken: issueCsrf(res, req),
+        csrfField: CSRF_FIELD,
+        stitchScreen: "SH15",
+        mobile: true,
+      });
+    }
+    return deps.renderAdmin(req, res, "studio", {
+      brand,
+      adminBasePath,
+      csrfToken: issueCsrf(res, req),
+      csrfField: CSRF_FIELD,
+      form: null,
+      allowedFieldTypes: ALLOWED_FIELD_TYPES,
+      allowedCategories: ALLOWED_FORM_CATEGORIES,
+      canManage: true,
+      stitchScreen: "SH03",
+      mobile: true,
+    });
+  });
+
+  router.post(`${adminBasePath}/new`, handleCreateForm);
+  router.post(adminBasePath, handleCreateForm);
+
+  // Canonical detail / publish entrypoints — previously unmatched → foundation 503.
+  router.get(`${adminBasePath}/:formId`, (req, res, next) => {
+    if (!FORM_ID_RE.test(String(req.params.formId || ""))) return next();
+    return res.redirect(302, `${adminBasePath}/${req.params.formId}/studio`);
+  });
+  router.get(`${adminBasePath}/:formId/publish`, (req, res, next) => {
+    if (!FORM_ID_RE.test(String(req.params.formId || ""))) return next();
+    return res.redirect(302, `${adminBasePath}/${req.params.formId}/publication`);
   });
 
   router.get(`${adminBasePath}/:formId/studio`, async (req, res) => {

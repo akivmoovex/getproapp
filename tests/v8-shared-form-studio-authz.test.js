@@ -397,12 +397,103 @@ describe("V8 shared Form Studio authorization", () => {
       .send({ [CSRF_FIELD]: pubCsrf });
     assert.ok([200, 302, 303].includes(published.status), `publish ${published.status}`);
 
+    // Detail without /studio must not fall through to foundation 503.
+    const detail = await request(app)
+      .get(`/hq/form-studio/${formId}`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie)
+      .redirects(0);
+    assert.ok([302, 303].includes(detail.status), `detail ${detail.status}`);
+    assert.match(String(detail.headers.location || ""), new RegExp(`/hq/form-studio/${formId}/studio`));
+
+    const publishGet = await request(app)
+      .get(`/hq/form-studio/${formId}/publish`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie)
+      .redirects(0);
+    assert.ok([302, 303].includes(publishGet.status), `publish GET ${publishGet.status}`);
+    assert.match(
+      String(publishGet.headers.location || ""),
+      new RegExp(`/hq/form-studio/${formId}/publication`)
+    );
+
+    const share = await request(app)
+      .get(`/hq/form-studio/${formId}/sharing`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(share.status, 200);
+    const publicPath = ((share.text || "").match(/\/f\/[a-zA-Z0-9_-]+/) || [])[0];
+    assert.ok(publicPath, "expected public /f/ path on sharing page");
+
+    const publicGet = await request(app).get(publicPath).set("Host", HOST_A);
+    assert.equal(publicGet.status, 200);
+    assert.match(publicGet.text, /Authz QA Form|Full name/i);
+    assert.doesNotMatch(publicGet.text, /Unavailable|not yet available/i);
+
+    const unpubPage = await request(app)
+      .get(`/hq/form-studio/${formId}/publication`)
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    const unpub = await request(app)
+      .post(`/hq/form-studio/${formId}/unpublish`)
+      .set("Host", HOST_A)
+      .set("Cookie", mergeCookies(cookie, unpubPage))
+      .type("form")
+      .send({ [CSRF_FIELD]: extractCsrf(unpubPage.text) });
+    assert.ok([200, 302, 303].includes(unpub.status), `unpublish ${unpub.status}`);
+
+    const publicAfter = await request(app).get(publicPath).set("Host", HOST_A);
+    assert.equal(publicAfter.status, 200);
+    assert.match(publicAfter.text, /not available|unavailable/i);
+
     const submissions = await request(app)
       .get(`/hq/form-studio/${formId}/submissions`)
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(submissions.status, 200);
     assert.doesNotMatch(submissions.text, /Access denied/i);
+  });
+
+  it("Form Studio invalid id stays controlled (not foundation 503 on studio path)", async () => {
+    requireDb();
+    const cookie = await sessionCookieFor(users.hq);
+    const bad = await request(app)
+      .get("/hq/form-studio/00000000-0000-0000-0000-000000000000/studio")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie);
+    assert.equal(bad.status, 200);
+    assert.match(bad.text, /Access denied/i);
+    assert.doesNotMatch(bad.text, /not yet available in BlessBoard V5/i);
+  });
+
+  it("POST /hq/form-studio (without /new) creates instead of 503", async () => {
+    requireDb();
+    const sessionCookie = await sessionCookieFor(users.hq);
+    const neu = await request(app)
+      .get("/hq/form-studio/new")
+      .set("Host", HOST_A)
+      .set("Cookie", sessionCookie);
+    const csrf = extractCsrf(neu.text);
+    const cookie = mergeCookies(sessionCookie, neu);
+    const create = await request(app)
+      .post("/hq/form-studio")
+      .set("Host", HOST_A)
+      .set("Cookie", cookie)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        title: "Alias Create Form",
+        category: "general",
+        field_key: ["q1"],
+        field_type: ["text"],
+        field_label: ["Q1"],
+        field_required: ["1"],
+        field_options: [""],
+      })
+      .redirects(0);
+    assert.ok([302, 303].includes(create.status), `alias create ${create.status}`);
+    assert.match(String(create.headers.location || ""), /\/hq\/form-studio\/[0-9a-f-]{36}\/studio/i);
+    assert.doesNotMatch(String(create.text || ""), /not yet available in BlessBoard V5/i);
   });
 
   it("branch admin can open branch form studio on assigned branch host context", async () => {
