@@ -244,7 +244,7 @@ async function main() {
   };
   if (!result.publish.ok) failures.push("publish");
 
-  const publicPage = await req(new Jar(), `${BB}/c/${ORG}/contact`);
+  const publicPage = await follow(new Jar(), await req(new Jar(), `${BB}/c/${ORG}/contact`), BB);
   result.publicRender = {
     status: publicPage.status,
     ok: publicPage.status === 200 && publicPage.body.includes(stamp),

@@ -15,6 +15,7 @@ const libraryModel = require("../../platform/website/libraryModel");
 const {
   hasEditableField,
   ensureProductFieldsRegistered,
+  resolveEditableField,
 } = require("../../platform/website/editableFieldSchema");
 const {
   PRODUCT_CODE,
@@ -331,7 +332,20 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         : "";
       const contentKey = String((req.body && (req.body.contentKey || req.body.key)) || "").trim();
       ensureProductFieldsRegistered(PRODUCT_CODE.BLESSBOARD);
-      if (contentKey && hasEditableField(PRODUCT_CODE.BLESSBOARD, contentKey)) {
+      const resolvedField = contentKey
+        ? resolveEditableField({
+            productCode: PRODUCT_CODE.BLESSBOARD,
+            contentKey,
+          })
+        : { ok: false };
+      const canonicalContentKey =
+        resolvedField.ok && resolvedField.field && resolvedField.field.key
+          ? String(resolvedField.field.key)
+          : contentKey;
+      if (
+        canonicalContentKey &&
+        (resolvedField.ok || hasEditableField(PRODUCT_CODE.BLESSBOARD, contentKey))
+      ) {
         const {
           resolveEngineInstance,
         } = require("../website/blessboardEngineContentService");
@@ -348,7 +362,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           organizationId: resolved.tenant.organization.id,
           instanceId: found.instance.id,
           expectedProductCode: PRODUCT_CODE.BLESSBOARD,
-          contentKey,
+          contentKey: canonicalContentKey,
           value,
           actorIdentityId: actorUserId(req),
           grantedPermissions: ["website.edit"],
@@ -363,7 +377,16 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           });
         }
         if (typeof value === "string") {
-          const locator = locatorFromContentKey(contentKey);
+          const locator =
+            (resolvedField.ok &&
+              resolvedField.field &&
+              resolvedField.field.storage && {
+                pageKey: resolvedField.field.storage.pageKey,
+                sectionKey: resolvedField.field.storage.sectionKey,
+                fieldKey: resolvedField.field.storage.fieldKey,
+              }) ||
+            locatorFromContentKey(canonicalContentKey) ||
+            locatorFromContentKey(contentKey);
           if (locator) {
             try {
               await saveInlineFieldDraft(getPool(), {
