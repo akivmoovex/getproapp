@@ -150,6 +150,15 @@ describe("v7 image editor coverage — editor wiring contract", () => {
     }
   });
 
+  it("BlessBoard home ministry cards expose Edit image with shared structured picker", () => {
+    const card = read("views/blessboard/v5/public/partials/content-card.ejs");
+    const home = read("views/blessboard/v5/public/home.ejs");
+    assert.match(home, /cardMinistry:\s*m/);
+    assert.match(card, /editLabel:\s*'Edit image'/);
+    assert.match(card, /editKind:\s*'ministry'/);
+    assert.match(card, /editDialogTitle:\s*'Edit image'/);
+  });
+
   it("ActiveClinic library placements render images and edit affordances", () => {
     const ejs = read("views/activeclinic/partials/website-library-placements.ejs");
     assert.match(ejs, /item\.image/);

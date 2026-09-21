@@ -1,25 +1,67 @@
 <%#
   Shared content card (ministry / generic).
   Locals: cardTitle, cardSummary (optional), cardImage (optional), cardHref (optional),
-          cardImageAlt (optional), cardClass (optional), cardCta (optional)
+          cardImageAlt (optional), cardClass (optional), cardCta (optional), cardIcon (optional),
+          cardMinistry (optional) — when set in website editing mode, shows Edit image
+          on the media plane using the shared structured ministry media picker.
 %>
-<% var _tag = typeof cardHref !== 'undefined' && cardHref ? 'a' : 'article'; %>
+<%
+  var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
+  var _ministry = typeof cardMinistry !== 'undefined' && cardMinistry ? cardMinistry : null;
+  var _ministryKey = _ministry && (_ministry.id || _ministry.entityKey)
+    ? String(_ministry.id || _ministry.entityKey)
+    : '';
+  var _canEditMinistryImage = Boolean(_wa && _wa.editingMode && _ministry && _ministryKey);
+  var _href = typeof cardHref !== 'undefined' && cardHref ? cardHref : '';
+  var _tag = _canEditMinistryImage ? 'article' : (_href ? 'a' : 'article');
+  var _imgSrc = typeof cardImage !== 'undefined' && cardImage ? cardImage : '';
+  if (_imgSrc && typeof presentImageSrc === 'function') {
+    _imgSrc = presentImageSrc(_imgSrc) || _imgSrc;
+  }
+  var _nameClean = String(_ministry && _ministry.name || cardTitle || '').replace(/\s*\(template example\)\s*$/i, '').trim();
+  var _summaryClean = String(_ministry && _ministry.summary || '').replace(/\s*\(template example\)\s*$/i, '').trim();
+  var _leaderClean = String(_ministry && _ministry.leaderName || '').replace(/\s*\(template example\)\s*$/i, '').trim();
+%>
 <<%= _tag %>
-  class="bb-tp-content-card<%= typeof cardClass !== 'undefined' && cardClass ? ' ' + cardClass : '' %>"
-  <% if (typeof cardHref !== 'undefined' && cardHref) { %>href="<%= cardHref %>"<% } %>
+  class="bb-tp-content-card<%= typeof cardClass !== 'undefined' && cardClass ? ' ' + cardClass : '' %><%= _canEditMinistryImage ? ' bb-tp-content-card--editable' : '' %>"
+  <% if (_tag === 'a' && _href) { %>href="<%= _href %>"<% } %>
+  <% if (_canEditMinistryImage && _ministryKey) { %>data-bb-ministry-card="1" data-bb-ministry-id="<%= _ministryKey %>"<% } %>
 >
-  <div class="bb-tp-content-card__media<%= typeof cardImage !== 'undefined' && cardImage ? ' has-media' : '' %>">
-    <% if (typeof cardImage !== 'undefined' && cardImage) { %>
+  <div class="bb-tp-content-card__media<%= _imgSrc ? ' has-media' : '' %><%= _canEditMinistryImage ? ' bb-tp-edit-media-wrap' : '' %>">
+    <% if (_imgSrc) { %>
     <img
-      src="<%= cardImage %>"
+      src="<%= _imgSrc %>"
       alt="<%= typeof cardImageAlt !== 'undefined' && cardImageAlt ? cardImageAlt : cardTitle %>"
       width="640"
       height="400"
       loading="lazy"
       decoding="async"
+      data-bb-ministry-image="1"
     />
     <% } else { %>
     <span class="material-symbols-outlined" aria-hidden="true"><%= typeof cardIcon !== 'undefined' && cardIcon ? cardIcon : 'groups' %></span>
+    <% } %>
+    <% if (_canEditMinistryImage) { %>
+    <%- include('../../partials/structured-edit-trigger', {
+      editKind: 'ministry',
+      editEntityKey: _ministryKey,
+      editLabel: 'Edit image',
+      editDialogTitle: 'Edit image',
+      editPayload: {
+        name: _nameClean,
+        summary: _summaryClean,
+        description: _ministry.description || '',
+        meetingDay: _ministry.meetingDay || '',
+        audience: _ministry.audience || '',
+        leaderName: _leaderClean,
+        contactEmail: _ministry.contactEmail || '',
+        joinUrl: _ministry.joinUrl || '',
+        imageUrl: _ministry.imageUrl || cardImage || '',
+        featured: Boolean(_ministry.featured),
+        visible: _ministry.visible !== false,
+        sortOrder: _ministry.sortOrder != null ? _ministry.sortOrder : 10
+      }
+    }) %>
     <% } %>
   </div>
   <div class="bb-tp-content-card__body">
@@ -28,7 +70,11 @@
     <p class="bb-tp-content-card__summary"><%= cardSummary %></p>
     <% } %>
     <% if (typeof cardCta !== 'undefined' && cardCta) { %>
-    <span class="bb-tp-content-card__cta"><%= cardCta %></span>
+      <% if (_canEditMinistryImage && _href) { %>
+      <a class="bb-tp-content-card__cta" href="<%= _href %>"><%= cardCta %></a>
+      <% } else { %>
+      <span class="bb-tp-content-card__cta"><%= cardCta %></span>
+      <% } %>
     <% } %>
   </div>
 </<%= _tag %>>

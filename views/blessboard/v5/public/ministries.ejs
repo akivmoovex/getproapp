@@ -98,8 +98,8 @@
       </h2>
       <ul class="bb-tp-ministry-grid bb-tp-ministry-grid--featured">
         <% featured.forEach(function (ministry, index) { %>
-        <li class="bb-tp-ministry-card" data-bb-ministry-card="1">
-          <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %>">
+        <li class="bb-tp-ministry-card" data-bb-ministry-card="1" data-bb-ministry-id="<%= String(ministry.id || ('ministry-' + ministry.name)) %>">
+          <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
             <% if (ministry.imageUrl) { %>
             <img
               src="<%= ministry.imageUrl %>"
@@ -108,9 +108,27 @@
               height="400"
               loading="<%= index === 0 ? 'eager' : 'lazy' %>"
               decoding="async"
+              data-bb-ministry-image="1"
             />
             <% } else { %>
             <span class="material-symbols-outlined bb-tp-ministry-card__fallback-icon" role="img" aria-label="<%= ministry.name %>">groups</span>
+            <% } %>
+            <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+            <%- include('../partials/structured-edit-trigger', {
+              editKind: 'ministry',
+              editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
+              editLabel: 'Edit image',
+              editDialogTitle: 'Edit image',
+              editPayload: {
+                name: String(ministry.name || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
+                summary: ministry.summary,
+                description: ministry.description,
+                meetingDay: ministry.meetingDay,
+                contactEmail: ministry.contactEmail,
+                imageUrl: ministry.imageUrl,
+                visible: true
+              }
+            }) %>
             <% } %>
           </div>
           <div class="bb-tp-ministry-card__body">
@@ -122,7 +140,7 @@
                 editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
                 editLabel: 'Edit ' + ministry.name,
                 editPayload: {
-                  name: ministry.name,
+                  name: String(ministry.name || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
                   summary: ministry.summary,
                   description: ministry.description,
                   meetingDay: ministry.meetingDay,
@@ -182,12 +200,29 @@
       <% } %>
       <ul class="bb-tp-ministry-grid">
         <% rest.forEach(function (ministry) { %>
-        <li class="bb-tp-ministry-card" data-bb-ministry-card="1">
-          <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %>">
+        <li class="bb-tp-ministry-card" data-bb-ministry-card="1" data-bb-ministry-id="<%= String(ministry.id || ('ministry-' + ministry.name)) %>">
+          <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
             <% if (ministry.imageUrl) { %>
-            <img src="<%= ministry.imageUrl %>" alt="<%= ministry.name %>" width="640" height="400" loading="lazy" decoding="async" />
+            <img src="<%= ministry.imageUrl %>" alt="<%= ministry.name %>" width="640" height="400" loading="lazy" decoding="async" data-bb-ministry-image="1" />
             <% } else { %>
             <span class="material-symbols-outlined bb-tp-ministry-card__fallback-icon" role="img" aria-label="<%= ministry.name %>">groups</span>
+            <% } %>
+            <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
+            <%- include('../partials/structured-edit-trigger', {
+              editKind: 'ministry',
+              editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
+              editLabel: 'Edit image',
+              editDialogTitle: 'Edit image',
+              editPayload: {
+                name: String(ministry.name || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
+                summary: ministry.summary,
+                description: ministry.description,
+                meetingDay: ministry.meetingDay,
+                contactEmail: ministry.contactEmail,
+                imageUrl: ministry.imageUrl,
+                visible: true
+              }
+            }) %>
             <% } %>
           </div>
           <div class="bb-tp-ministry-card__body">
@@ -199,7 +234,7 @@
                 editEntityKey: String(ministry.id || ('ministry-' + ministry.name)),
                 editLabel: 'Edit ' + ministry.name,
                 editPayload: {
-                  name: ministry.name,
+                  name: String(ministry.name || '').replace(/\s*\(template example\)\s*$/i, '').trim(),
                   summary: ministry.summary,
                   description: ministry.description,
                   meetingDay: ministry.meetingDay,

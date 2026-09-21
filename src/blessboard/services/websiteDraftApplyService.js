@@ -530,8 +530,12 @@ async function applyEntityDraft(client, draft, ctx) {
   }
 
   if (kind === "ministry") {
+    const stripTemplate = (value) =>
+      String(value || "")
+        .replace(/\s*\(template example\)\s*$/i, "")
+        .trim();
     const fields = {
-      name: payload.name || "Ministry",
+      name: stripTemplate(payload.name) || "Ministry",
       summary: payload.summary || null,
       description: payload.description || null,
       meetingDay: payload.meetingDay || null,
@@ -545,6 +549,52 @@ async function applyEntityDraft(client, draft, ctx) {
       const existing = await findFns.ministry(client, entityKey);
       if (existing && String(existing.churchId) === String(churchId)) {
         await updateFns.ministry(client, entityKey, fields);
+        return;
+      }
+    }
+    const {
+      isSoftFillEntityKey,
+      softFillItemsForKind,
+      SOFT_FILL_COLLECTIONS,
+    } = require("./websiteSoftFillCollectionService");
+    if (isSoftFillEntityKey("ministry", entityKey)) {
+      const published = await contentRepo.listMinistries(client, {
+        churchId,
+        branchId: branchId || null,
+        status: "published",
+      });
+      const norm = (name) => stripTemplate(name).toLowerCase();
+      const matched = published.find((row) => norm(row.name) === norm(fields.name));
+      if (matched) {
+        await updateFns.ministry(client, matched.id, fields);
+        return;
+      }
+      if (!published.length) {
+        const cfg = SOFT_FILL_COLLECTIONS.ministry;
+        const siblings = softFillItemsForKind("ministry", null);
+        for (const item of siblings) {
+          const siblingPayload = cfg.payloadFromItem(item);
+          const rowFields =
+            String(item.id) === entityKey
+              ? fields
+              : {
+                  name: stripTemplate(siblingPayload.name) || "Ministry",
+                  summary: siblingPayload.summary || null,
+                  description: siblingPayload.description || null,
+                  meetingDay: siblingPayload.meetingDay || null,
+                  contactEmail: siblingPayload.contactEmail || null,
+                  imageUrl: siblingPayload.imageUrl || null,
+                  sortOrder:
+                    siblingPayload.sortOrder != null ? Number(siblingPayload.sortOrder) : 0,
+                  joinPolicy: siblingPayload.joinPolicy || "request",
+                  status: "published",
+                };
+          await insertFns.ministry(client, {
+            churchId,
+            branchId: branchId || null,
+            ...rowFields,
+          });
+        }
         return;
       }
     }

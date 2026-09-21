@@ -372,7 +372,7 @@
       editPageKey: 'home',
       editSectionKey: 'ministries_intro'
     }) %>
-    <div class="bb-tp-card-grid bb-tp-card-grid--3">
+    <div class="bb-tp-card-grid bb-tp-card-grid--3" data-bb-home-ministry-cards="1">
       <% teasers.ministries.slice(0, 3).forEach(function (m) { %>
       <%- include('./partials/content-card', {
         cardTitle: m.name,
@@ -381,7 +381,8 @@
         cardImageAlt: m.name,
         cardHref: hrefFor('/ministries'),
         cardCta: 'Explore ' + m.name,
-        cardIcon: 'groups'
+        cardIcon: 'groups',
+        cardMinistry: m
       }) %>
       <% }) %>
     </div>

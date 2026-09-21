@@ -633,7 +633,8 @@
       baselineJson: JSON.stringify(cfg.payload || {}),
     };
     $("[data-bb-structured-body='1']", host).innerHTML = renderForm(current.kind, cfg.payload || {});
-    $("#bb-tp-structured-editor-title", host).textContent = titleFor(current.kind);
+    $("#bb-tp-structured-editor-title", host).textContent =
+      (cfg.dialogTitle && String(cfg.dialogTitle).trim()) || titleFor(current.kind);
     setStatus("", "");
     host.hidden = false;
     document.body.classList.add("bb-tp-structured-open");
@@ -924,6 +925,7 @@
         sectionKey: openBtn.getAttribute("data-bb-section") || "",
         payload: payload,
         op: openBtn.getAttribute("data-bb-op") || "upsert",
+        dialogTitle: openBtn.getAttribute("data-bb-dialog-title") || "",
       });
       return;
     }

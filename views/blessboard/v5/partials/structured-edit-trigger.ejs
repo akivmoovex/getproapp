@@ -8,6 +8,9 @@
   var _entity = typeof editEntityKey !== 'undefined' ? String(editEntityKey) : 'default';
   var _section = typeof editSectionKey !== 'undefined' ? String(editSectionKey) : '';
   var _label = typeof editLabel !== 'undefined' ? String(editLabel) : 'Edit';
+  var _dialogTitle = typeof editDialogTitle !== 'undefined' && editDialogTitle
+    ? String(editDialogTitle)
+    : '';
   var _payload = typeof editPayload !== 'undefined' && editPayload ? editPayload : {};
 %>
 <% if (_wa && _wa.editingMode && _kind) { %>
@@ -18,6 +21,7 @@
   data-bb-kind="<%= _kind %>"
   data-bb-entity="<%= _entity %>"
   <% if (_section) { %>data-bb-section="<%= _section %>"<% } %>
+  <% if (_dialogTitle) { %>data-bb-dialog-title="<%= _dialogTitle %>"<% } %>
   data-bb-payload="<%= JSON.stringify(_payload).replace(/"/g, '&quot;') %>"
   aria-label="<%= _label %>"
 >
