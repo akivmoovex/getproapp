@@ -4,7 +4,10 @@
   const priorAnswers = typeof answers !== 'undefined' && answers ? answers : {};
   const idem = typeof idempotencyKey !== 'undefined' ? idempotencyKey : '';
   const eventIdLocal = typeof eventId !== 'undefined' ? eventId : '';
-  const action = '/events/' + encodeURIComponent(eventIdLocal) + '/register';
+  const action =
+    typeof formAction !== 'undefined' && formAction
+      ? formAction
+      : '/events/' + encodeURIComponent(eventIdLocal) + '/register';
 %>
 <div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'BB09' %>" data-bb-activity="event" data-bb-screen-desktop="BB09-D" data-bb-screen-mobile="BB09-M">
   <div class="mx-forms-brand">BlessBoard · Event</div>

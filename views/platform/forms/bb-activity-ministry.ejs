@@ -4,7 +4,10 @@
   const priorAnswers = typeof answers !== 'undefined' && answers ? answers : {};
   const idem = typeof idempotencyKey !== 'undefined' ? idempotencyKey : '';
   const ministryIdLocal = typeof ministryId !== 'undefined' ? ministryId : '';
-  const action = '/ministries/' + encodeURIComponent(ministryIdLocal) + '/register';
+  const action =
+    typeof formAction !== 'undefined' && formAction
+      ? formAction
+      : '/ministries/' + encodeURIComponent(ministryIdLocal) + '/register';
 %>
 <div class="mx-forms-shell" data-screen="<%= typeof stitchScreen !== 'undefined' ? stitchScreen : 'BB10' %>" data-bb-activity="ministry" data-bb-screen-desktop="BB10-D" data-bb-screen-mobile="BB10-M">
   <div class="mx-forms-brand">BlessBoard · Ministry</div>

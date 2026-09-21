@@ -43,6 +43,8 @@ let org;
 let church;
 let announcementId;
 let otherOrgKey;
+let pathPublicEventId;
+let pathPublicMinistryId;
 
 function requireDb() {
   if (skipReason) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
@@ -143,6 +145,48 @@ describe("V8 QA church path-public routing", () => {
       });
       assert.equal(visitor.ok, true, visitor.reason || visitor.status);
 
+      const hqBranch = await pool.query(
+        `SELECT id FROM blessboard.branches WHERE church_id = $1 AND is_primary = true LIMIT 1`,
+        [church.id]
+      );
+      assert.ok(hqBranch.rows[0], "hq branch");
+      const eventIns = await pool.query(
+        `INSERT INTO blessboard.events (
+           church_id, branch_id, title, summary, starts_at, ends_at, timezone, location, status, capacity
+         ) VALUES (
+           $1, $2, 'Path Public QA Event', 'Disposable',
+           NOW() + interval '7 days', NOW() + interval '7 days 2 hours', 'Africa/Lusaka',
+           'Campus hall', 'published', 50
+         ) RETURNING id`,
+        [church.id, hqBranch.rows[0].id]
+      );
+      const ministryIns = await pool.query(
+        `INSERT INTO blessboard.ministries (
+           church_id, branch_id, organization_id, name, summary, status, ministry_key, ministry_type, join_policy
+         ) VALUES (
+           $1, $2, $3, 'Path Public QA Ministry', 'Disposable', 'published', $4, 'other', 'request'
+         ) RETURNING id`,
+        [church.id, hqBranch.rows[0].id, org.id, `ppm_${crypto.randomBytes(3).toString("hex")}`]
+      );
+      const eventPub = await publishActivityRegistrationForm(pool, {
+        kind: "event",
+        organizationId: org.id,
+        churchId: church.id,
+        eventId: eventIns.rows[0].id,
+        authz: async () => ({ ok: true }),
+      });
+      assert.equal(eventPub.ok, true, eventPub.reason || eventPub.status);
+      const ministryPub = await publishActivityRegistrationForm(pool, {
+        kind: "ministry",
+        organizationId: org.id,
+        churchId: church.id,
+        ministryId: ministryIns.rows[0].id,
+        authz: async () => ({ ok: true }),
+      });
+      assert.equal(ministryPub.ok, true, ministryPub.reason || ministryPub.status);
+      pathPublicEventId = eventIns.rows[0].id;
+      pathPublicMinistryId = ministryIns.rows[0].id;
+
       const hqUser = await createBlessBoardUser(pool, {
         email: `hq.${orgKey}@example.invalid`,
         displayName: "HQ",
@@ -219,6 +263,37 @@ describe("V8 QA church path-public routing", () => {
     assert.equal(visit.status, 200);
     assert.match(visit.text, /data-bb-activity="visitor"|Plan a visit|Visitor/i);
     assert.match(visit.text, new RegExp(`/c/${orgKey}/visit`));
+  });
+
+  it("serves event and ministry registration under /c/:org (not foundation 503)", async () => {
+    requireDb();
+    const eventId = pathPublicEventId;
+    const ministryId = pathPublicMinistryId;
+    assert.ok(eventId && ministryId);
+
+    const eventGet = await request(app)
+      .get(`/c/${orgKey}/events/${eventId}/register`)
+      .set("Host", HOST)
+      .set("Accept", "text/html");
+    assert.equal(eventGet.status, 200);
+    assert.doesNotMatch(eventGet.text, /not yet available in BlessBoard V5/i);
+    assert.match(eventGet.text, /data-bb-activity="event"|Event registration|Path Public QA Event/i);
+    assert.match(eventGet.text, new RegExp(`/c/${orgKey}/events/${eventId}/register`));
+
+    const ministryGet = await request(app)
+      .get(`/c/${orgKey}/ministries/${ministryId}/register`)
+      .set("Host", HOST)
+      .set("Accept", "text/html");
+    assert.equal(ministryGet.status, 200);
+    assert.doesNotMatch(ministryGet.text, /not yet available in BlessBoard V5/i);
+    assert.match(ministryGet.text, /data-bb-activity="ministry"|Ministry|Path Public QA Ministry/i);
+    assert.match(ministryGet.text, new RegExp(`/c/${orgKey}/ministries/${ministryId}/register`));
+
+    const missing = await request(app)
+      .get(`/c/${orgKey}/events/00000000-0000-0000-0000-000000000099/register`)
+      .set("Host", HOST);
+    assert.ok([404, 409].includes(missing.status));
+    assert.doesNotMatch(missing.text, /not yet available in BlessBoard V5/i);
   });
 
   it("serves public announcement detail under /c/:org/announcements/:id", async () => {

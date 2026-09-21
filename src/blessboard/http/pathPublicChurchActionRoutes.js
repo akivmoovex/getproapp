@@ -433,6 +433,182 @@ function createPathPublicChurchActionRouter(deps) {
       .catch(next);
   });
 
+  async function renderActivityResource(req, res, kind, resource) {
+    const scope = await resolveScope(req, res);
+    if (!scope) return;
+    const base = actionBase(scope.organizationKey);
+    const resourceId =
+      kind === "event"
+        ? String(resource.eventId || "")
+        : String(resource.ministryId || "");
+    if (!UUID_RE.test(resourceId)) {
+      return res
+        .status(404)
+        .type("html")
+        .send(renderControlledErrorPage(404, "Registration not found."));
+    }
+    const loaded = await getPublishedActivityForm(getPool(), {
+      kind,
+      organizationId: scope.organizationId,
+      churchId: scope.churchId,
+      eventId: resource.eventId,
+      ministryId: resource.ministryId,
+    });
+    const csrfToken = issueCsrfToken(env);
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+    const view = kind === "event" ? "bb-activity-event" : "bb-activity-ministry";
+    const formAction =
+      kind === "event"
+        ? `${base}/events/${encodeURIComponent(resourceId)}/register`
+        : `${base}/ministries/${encodeURIComponent(resourceId)}/register`;
+    const status =
+      !loaded.ok || !loaded.form
+        ? loaded.status === ACTIVITY_STATUS.POLICY
+          ? 409
+          : 404
+        : 200;
+    return res.status(status).type("html").send(
+      renderFormView(view, {
+        brand: { productName: "BlessBoard", productClass: "mx-forms--blessboard" },
+        form: loaded.form || null,
+        error:
+          !loaded.ok || !loaded.form
+            ? loaded.reason === "registration_closed" || loaded.reason === "event_closed"
+              ? "Registration is closed."
+              : "This registration form is not available."
+            : null,
+        stitchScreen: kind === "event" ? "BB09" : "BB10",
+        csrfField: CSRF_FIELD,
+        csrfToken,
+        formAction,
+        spotsRemaining: loaded.spotsRemaining || null,
+        answers: {},
+        fieldErrors: {},
+        idempotencyKey: crypto.randomBytes(12).toString("hex"),
+        kind,
+        eventId: resource.eventId || null,
+        ministryId: resource.ministryId || null,
+      })
+    );
+  }
+
+  async function postActivityResource(req, res, kind, resource) {
+    const scope = await resolveScope(req, res);
+    if (!scope) return;
+    const base = actionBase(scope.organizationKey);
+    const resourceId =
+      kind === "event"
+        ? String(resource.eventId || "")
+        : String(resource.ministryId || "");
+    if (!UUID_RE.test(resourceId)) {
+      return res.status(404).send("Not found");
+    }
+    if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+      return res.status(403).send("CSRF");
+    }
+    const loaded = await getPublishedActivityForm(getPool(), {
+      kind,
+      organizationId: scope.organizationId,
+      churchId: scope.churchId,
+      eventId: resource.eventId,
+      ministryId: resource.ministryId,
+    });
+    if (!loaded.ok || !loaded.form) {
+      return res.status(404).send("Unavailable");
+    }
+    const body = req.body || {};
+    const answers = {};
+    const fields = (loaded.form.schemaJson && loaded.form.schemaJson.fields) || [];
+    for (const field of fields) {
+      if (field.type === "checkbox") {
+        answers[field.key] =
+          body[field.key] === "true" || body[field.key] === "on" || body[field.key] === "1";
+      } else if (body[field.key] != null && body[field.key] !== "") {
+        answers[field.key] = body[field.key];
+      }
+    }
+    const submitted = await submitActivityRegistration(getPool(), {
+      kind,
+      organizationId: scope.organizationId,
+      eventId: resource.eventId,
+      publicToken: loaded.form.publicToken,
+      email: body.email || answers.email,
+      answers,
+      consentAccepted: body.consent,
+      idempotencyKey: body.idempotency_key,
+      branchId: scope.branchId,
+    });
+    const csrfToken = issueCsrfToken(env);
+    setCsrfCookie(res, csrfToken, { secure: isProduction, env, req });
+    const view = kind === "event" ? "bb-activity-event" : "bb-activity-ministry";
+    const formAction =
+      kind === "event"
+        ? `${base}/events/${encodeURIComponent(resourceId)}/register`
+        : `${base}/ministries/${encodeURIComponent(resourceId)}/register`;
+    if (!submitted.ok) {
+      const msg =
+        submitted.reason === "consent_required"
+          ? "Consent is required."
+          : submitted.reason === "duplicate_submission"
+            ? "You have already registered with this email."
+            : submitted.reason === "capacity_full"
+              ? "This registration is full."
+              : "Please check the form and try again.";
+      return res.status(submitted.status === ACTIVITY_STATUS.CONFLICT ? 409 : 400).type("html").send(
+        renderFormView(view, {
+          brand: { productName: "BlessBoard", productClass: "mx-forms--blessboard" },
+          form: loaded.form,
+          error: msg,
+          stitchScreen: kind === "event" ? "BB09" : "BB10",
+          csrfField: CSRF_FIELD,
+          csrfToken,
+          formAction,
+          spotsRemaining: loaded.spotsRemaining,
+          answers,
+          fieldErrors: {},
+          idempotencyKey: body.idempotency_key || crypto.randomBytes(12).toString("hex"),
+          kind,
+          eventId: resource.eventId || null,
+          ministryId: resource.ministryId || null,
+        })
+      );
+    }
+    return res.status(200).type("html").send(
+      renderFormView("bb-activity-thanks", {
+        brand: { productName: "BlessBoard", productClass: "mx-forms--blessboard" },
+        form: loaded.form,
+        submission: submitted.submission,
+        kind,
+        stitchScreen: kind === "event" ? "BB09" : "BB10",
+        message:
+          kind === "event"
+            ? "Thanks — your event registration was received."
+            : "Thanks — your ministry interest was received. This does not grant leadership roles.",
+      })
+    );
+  }
+
+  router.get("/c/:organizationKey/events/:eventId/register", (req, res, next) => {
+    Promise.resolve(
+      renderActivityResource(req, res, "event", { eventId: req.params.eventId })
+    ).catch(next);
+  });
+  router.post("/c/:organizationKey/events/:eventId/register", (req, res, next) => {
+    Promise.resolve(
+      postActivityResource(req, res, "event", { eventId: req.params.eventId })
+    ).catch(next);
+  });
+  router.get("/c/:organizationKey/ministries/:ministryId/register", (req, res, next) => {
+    Promise.resolve(
+      renderActivityResource(req, res, "ministry", { ministryId: req.params.ministryId })
+    ).catch(next);
+  });
+  router.post("/c/:organizationKey/ministries/:ministryId/register", (req, res, next) => {
+    Promise.resolve(
+      postActivityResource(req, res, "ministry", { ministryId: req.params.ministryId })
+    ).catch(next);
+  });
+
   router.get("/c/:organizationKey/announcements/:id", (req, res, next) => {
     Promise.resolve()
       .then(async () => {
