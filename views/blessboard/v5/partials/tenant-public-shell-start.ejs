@@ -37,7 +37,7 @@
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) { %>
   <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v2-img-editor-2" />
   <link rel="stylesheet" href="/platform/website-change-manager-ui.css?v=v2-01-cm-history-1" />
-  <link rel="stylesheet" href="/platform/website-add-section.css?v=v2-sec-mgmt-1" />
+  <link rel="stylesheet" href="/platform/website-add-section.css?v=v2-theme-infra-1" />
   <meta name="csrf-token" content="<%= websiteAdmin.csrfToken %>" />
   <% } %>
 </head>
@@ -52,6 +52,7 @@
   if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) _bodyClass += ' bb-tp-body--editing gp-website-editor-open';
   if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.previewDraftMode) _bodyClass += ' bb-tp-body--preview gp-website-preview-open';
   if (_isBranchMini) _bodyClass += ' bb-tp-body--branch';
+  if (typeof websiteThemeClass !== 'undefined' && websiteThemeClass) _bodyClass += ' ' + websiteThemeClass;
   var _stackChrome = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit;
   var _editingMode = typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode;
 %>
@@ -60,6 +61,9 @@
   data-bb-shell="tenant-public"
   data-bb-product="blessboard-v5"
   data-bb-page="<%= pageKey %>"
+  <% if (typeof websiteThemeId !== 'undefined' && websiteThemeId) { %>data-website-theme-id="<%= websiteThemeId %>"<% } %>
+  <% if (typeof websiteThemeProduct !== 'undefined' && websiteThemeProduct) { %>data-website-theme-product="<%= websiteThemeProduct %>"<% } %>
+  <% if (typeof websiteThemeLegacyFallback !== 'undefined' && websiteThemeLegacyFallback) { %>data-website-theme-legacy="1"<% } %>
   <% if (_isBranchMini) { %>data-bb-website-scope="branch"<% } else { %>data-bb-website-scope="church"<% } %>
   <% if (typeof isPreview !== 'undefined' && isPreview) { %>data-bb-preview="1"<% } %>
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>data-bb-website-editing="1"<% } %>

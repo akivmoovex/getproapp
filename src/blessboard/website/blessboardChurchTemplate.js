@@ -111,6 +111,13 @@ function registerBlessBoardWebsiteTemplate() {
         inline: false,
         description: "Accent brand colour",
       },
+      "site.theme_id": {
+        type: CONTENT_TYPES.ENUM,
+        enumValues: ["bb.default"],
+        group: "site",
+        inline: false,
+        description: "Public website theme id (BlessBoard collection only)",
+      },
       "home.hero.image": {
         type: CONTENT_TYPES.IMAGE,
         maxLen: 500,
@@ -133,6 +140,7 @@ function registerBlessBoardWebsiteTemplate() {
   registerSnapshotEditableField();
   registerLogoEditableField();
   registerBrandColorEditableFields();
+  registerThemeEditableField();
   registerSeoEditableFields();
   return registered;
 }
@@ -174,6 +182,20 @@ function registerBrandColorEditableFields() {
     storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "brand.accent_color" },
     group: "brand",
     description: "Accent brand colour",
+    inline: false,
+  });
+}
+
+function registerThemeEditableField() {
+  registerEditableField({
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    key: "site.theme_id",
+    type: CONTENT_TYPES.ENUM,
+    enumValues: ["bb.default"],
+    permission: PERMISSIONS.EDIT,
+    storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "site.theme_id" },
+    group: "site",
+    description: "Public website theme id (BlessBoard collection only)",
     inline: false,
   });
 }

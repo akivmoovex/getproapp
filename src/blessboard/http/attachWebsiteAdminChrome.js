@@ -46,6 +46,7 @@ const {
   pickHexColor,
   publicBrandStyle,
 } = require("../../platform/website/branding");
+const { loadWebsiteThemeState, presentThemeAttrs } = require("../../platform/website/websiteThemeService");
 const { PRODUCT_CODE, withEditorNavigationQuery, withoutEditorNavigationQuery, withPreviewNavigationQuery, buildPublicWebsiteUnpublishedChangesPath, buildPublicWebsiteFieldHistoryPath, buildPublicWebsiteFieldRestorePath } = require("../../platform/website/publicWebsiteUrl");
 const { getPendingChangeSummary } = require("../../platform/website/websiteChangeManagerService");
 const { websiteScopeKeyFor } = require("../../platform/website-engine/changeManagerUi");
@@ -154,6 +155,18 @@ async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
     if (brandPrimary) model.brandPrimary = brandPrimary;
     if (brandAccent) model.brandAccent = brandAccent;
     model.brandStyle = publicBrandStyle(PRODUCT_CODE.BLESSBOARD, brandPrimary, brandAccent);
+
+    const themeState = await loadWebsiteThemeState(db, {
+      organizationId,
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      instance,
+      preferDraft: mode === "draft",
+    });
+    if (themeState.ok && themeState.presentation) {
+      Object.assign(model, presentThemeAttrs(themeState.presentation));
+      model.websiteThemeDraftId = themeState.draftThemeId;
+      model.websiteThemePublishedId = themeState.publishedThemeId;
+    }
   } catch {
     /* keep default platform mark */
   }
@@ -768,6 +781,7 @@ async function attachWebsiteAdminChrome(opts) {
     buildPublicWebsiteStylesPath,
     buildPublicWebsiteSeoPath,
     buildPublicWebsiteAddSectionPath,
+    buildPublicWebsiteThemePath,
   } = require("../../platform/website/publicWebsiteUrl");
   const currentPath = String(model.path || "/");
   const orgKey =
@@ -928,6 +942,16 @@ async function attachWebsiteAdminChrome(opts) {
     pathMode && publicBase ? `${publicBase}/website/section-actions` : null;
   const addSectionUrl =
     pathMode && publicBase ? `${publicBase}/website/add-section` : null;
+  const themeUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/theme`
+      : orgKey
+        ? buildPublicWebsiteThemePath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
   const unpublishPath =
     isHqEditor && canPublishWebsite
       ? buildPublicWebsiteUnpublishPath({
@@ -1168,6 +1192,7 @@ async function attachWebsiteAdminChrome(opts) {
     csrfToken,
     csrfField: "_csrf",
     sectionActionsUrl,
+    themeUrl,
     addSectionUrl: addSectionAvailability.canAddSection ? addSectionUrl : null,
     canAddSection: addSectionAvailability.canAddSection,
     addSectionEmptyHint: addSectionAvailability.emptyHint,

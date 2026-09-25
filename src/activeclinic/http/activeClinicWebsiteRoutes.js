@@ -1413,6 +1413,71 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       return next(err);
     }
   });
+
+  app.get("/clinics/:clinicKey/website/theme", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!canEditClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const { presentThemeState } = require("../../platform/website/websiteThemeHttp");
+      const presented = await presentThemeState(getPool(), {
+        organizationId: clinic.organizationId,
+        productCode: PRODUCT_CODE.ACTIVECLINIC,
+        preferDraft: true,
+      });
+      if (!presented.ok) {
+        return json(res, presented.status || 400, { ok: false, code: presented.code || "load_failed" });
+      }
+      return json(res, 200, presented);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/website/theme", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return json(res, 403, { ok: false, code: "csrf" });
+      }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      if (!canEditClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const { saveThemeDraftHttp } = require("../../platform/website/websiteThemeHttp");
+      const body = req.body && typeof req.body === "object" ? req.body : {};
+      const saved = await saveThemeDraftHttp(getPool(), {
+        organizationId: clinic.organizationId,
+        productCode: PRODUCT_CODE.ACTIVECLINIC,
+        instance: attached.instance,
+        themeId: body.themeId || body.theme_id,
+        actorIdentityId: actorId(req),
+        grantedPermissions: grantedPermissions(req),
+        sectionTypes: body.sectionTypes,
+        imageContentKeys: body.imageContentKeys,
+      });
+      if (!saved.ok) {
+        return json(res, saved.status || 400, {
+          ok: false,
+          code: saved.code || "save_failed",
+          published: false,
+          compatibility: saved.compatibility || null,
+        });
+      }
+      return json(res, 200, saved);
+    } catch (err) {
+      return next(err);
+    }
+  });
 }
 
 module.exports = {

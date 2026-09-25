@@ -79,11 +79,11 @@ describe("V2_01 shared section management", () => {
   it("asset cache bumps reference the section-management build", () => {
     assert.match(
       read("views/blessboard/v5/partials/tenant-public-shell-start.ejs"),
-      /website-add-section\.css\?v=v2-sec-mgmt-1/
+      /website-add-section\.css\?v=v2-theme-infra-1/
     );
     assert.match(
       read("src/activeclinic/http/renderActiveClinicPublic.js"),
-      /ASSET_VERSION = "v2-sec-mgmt-1"/
+      /ASSET_VERSION = "v2-theme-infra-1"/
     );
   });
 });

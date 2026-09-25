@@ -360,6 +360,11 @@ function buildPublicWebsiteAddSectionPath(input) {
   return appendQuery(`${path}/website/add-section`, input && input.query);
 }
 
+function buildPublicWebsiteThemePath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/theme`, input && input.query) : null;
+}
+
 function buildPublicWebsiteSettingsPath(input) {
   const product = normalizeProduct((input && (input.product || input.productCode)) || "");
   const actor = String((input && input.actor) || "").trim();
@@ -665,6 +670,7 @@ module.exports = {
   buildPublicWebsiteStylesPath,
   buildPublicWebsiteSeoPath,
   buildPublicWebsiteAddSectionPath,
+  buildPublicWebsiteThemePath,
   buildPublicWebsiteSettingsPath,
   buildPublicWebsitePublishPath,
   buildPublicWebsiteUnpublishPath,

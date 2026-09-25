@@ -27,6 +27,7 @@ const {
   buildPublicWebsiteMediaPath,
   buildPublicWebsiteSectionActionsPath,
   buildPublicWebsiteAddSectionPath,
+  buildPublicWebsiteThemePath,
   buildPublicWebsiteSubmitPath,
   buildPublicWebsiteFinishEditPath,
   buildPublicWebsiteUnpublishedChangesPath,
@@ -48,6 +49,7 @@ const { websiteScopeKeyFor } = require("../../platform/website-engine/changeMana
 const {
   describeAddSectionAvailability,
 } = require("../../platform/website/sectionRegistry");
+const { loadWebsiteThemeState, presentThemeAttrs } = require("../../platform/website/websiteThemeService");
 
 function grantedPermissions(req) {
   const auth = req.activeClinicAuth;
@@ -125,6 +127,7 @@ function clinicWebsiteActionUrls(clinicKey, pageKey) {
     websiteUnpublishUrl: buildPublicWebsiteUnpublishPath(base),
     websiteSectionActionsUrl: buildPublicWebsiteSectionActionsPath(base),
     websiteAddSectionUrl: buildPublicWebsiteAddSectionPath(base),
+    websiteThemeUrl: buildPublicWebsiteThemePath(base),
     websiteStylesUrl: buildPublicWebsiteStylesPath(base),
     websiteSeoUrl: buildPublicWebsiteSeoPath(base),
     websiteSubmitUrl: buildPublicWebsiteSubmitPath(base),
@@ -404,6 +407,7 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     mediaUrl: actionUrls.websiteMediaUrl,
     csrfField: CSRF_FIELD,
     sectionActionsUrl: actionUrls.websiteSectionActionsUrl,
+    themeUrl: actionUrls.websiteThemeUrl,
     addSectionUrl: null,
     canAddSection: false,
     addSectionEmptyHint: "",
@@ -432,6 +436,24 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     : previewDraftMode
       ? presentEditorShell({ ...shellFacts, previewMode: true, editing: false })
       : null;
+
+  let websiteThemeAttrs = {};
+  try {
+    const themeState = await loadWebsiteThemeState(db, {
+      organizationId: clinic.organizationId,
+      productCode: PRODUCT_CODE.ACTIVECLINIC,
+      instance,
+      preferDraft: mode === MODE.DRAFT,
+    });
+    if (themeState.ok && themeState.presentation) {
+      websiteThemeAttrs = presentThemeAttrs(themeState.presentation);
+      websiteThemeAttrs.websiteThemeDraftId = themeState.draftThemeId;
+      websiteThemeAttrs.websiteThemePublishedId = themeState.publishedThemeId;
+    }
+  } catch {
+    /* theme presentation is optional chrome */
+  }
+
   return {
     clinic: outClinic,
     instance,
@@ -467,6 +489,7 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     websiteEditorPages: editorPages,
     editorShell,
     ...actionUrls,
+    ...websiteThemeAttrs,
   };
 }
 

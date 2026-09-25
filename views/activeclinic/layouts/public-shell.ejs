@@ -83,14 +83,18 @@
       brandStyle += "--acp-primary-hover:" + clinic.brandAccent + ";";
     }
   }
+  var themeClass = (typeof websiteThemeClass !== 'undefined' && websiteThemeClass) ? (' ' + websiteThemeClass) : '';
 %>
 <body
-  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof chrome === 'string' && chrome === 'mf-register' ? ' ac-public-body--mf-register' : '' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing gp-website-editor-open' : '' %><%= typeof websitePreviewDraftMode !== 'undefined' && websitePreviewDraftMode ? ' ac-public-body--website-preview gp-website-preview-open' : '' %>"
+  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof chrome === 'string' && chrome === 'mf-register' ? ' ac-public-body--mf-register' : '' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing gp-website-editor-open' : '' %><%= typeof websitePreviewDraftMode !== 'undefined' && websitePreviewDraftMode ? ' ac-public-body--website-preview gp-website-preview-open' : '' %><%= themeClass %>"
   data-ac-product="activeclinic"
   <% if (typeof chrome === 'string' && chrome === 'mf-register') { %>data-gp-product="activeclinic"<% } %>
   data-ac-shell="public"
   data-ac-page="<%= pageId %>"
   data-ac-public-variant="<%= shellVariant || 'platform' %>"
+  <% if (typeof websiteThemeId !== 'undefined' && websiteThemeId) { %>data-website-theme-id="<%= websiteThemeId %>"<% } %>
+  <% if (typeof websiteThemeProduct !== 'undefined' && websiteThemeProduct) { %>data-website-theme-product="<%= websiteThemeProduct %>"<% } %>
+  <% if (typeof websiteThemeLegacyFallback !== 'undefined' && websiteThemeLegacyFallback) { %>data-website-theme-legacy="1"<% } %>
   <% if (typeof chrome === "string" && chrome) { %>data-ac-public-chrome="<%= chrome %>"<% } %>
   <% if (typeof statePageId === "string" && statePageId) { %>data-ac-state="<%= statePageId %>"<% } %>
   <% if (typeof statePageId === "string" && statePageId && typeof stateKey === "string" && stateKey) { %>data-ac-state-key="<%= stateKey %>"<% } %>

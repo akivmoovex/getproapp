@@ -249,6 +249,23 @@ async function recordPublishVersionInTransaction(client, input) {
   await versionRepo.supersedePublishedVersions(client, organizationId, branchId);
   const versionNumber = await versionRepo.getNextVersionNumber(client, organizationId);
   const snapshot = await buildPublicationSnapshot(client, churchId, branchId);
+  let themeKey = snapshot.themeKey || "default";
+  try {
+    const { loadWebsiteThemeState } = require("../../platform/website/websiteThemeService");
+    const { PRODUCT_CODE } = require("../../platform/website/publicWebsiteUrl");
+    const themeState = await loadWebsiteThemeState(client, {
+      organizationId,
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      preferDraft: false,
+    });
+    if (themeState.ok && themeState.publicationThemeKey) {
+      themeKey = themeState.publicationThemeKey;
+      snapshot.themeKey = themeKey;
+      snapshot.websiteThemeId = themeState.publishedThemeId;
+    }
+  } catch {
+    /* keep legacy default theme_key */
+  }
   const changeSummary = {
     ...buildChangeSummary(snapshot, sourceType),
     publicationNote: input.publicationNote || null,
@@ -265,7 +282,7 @@ async function recordPublishVersionInTransaction(client, input) {
     churchId,
     branchId,
     versionNumber,
-    themeKey: snapshot.themeKey || "default",
+    themeKey,
     sourceType,
     sourceSubmissionId: input.sourceSubmissionId || null,
     sourceVersionId,

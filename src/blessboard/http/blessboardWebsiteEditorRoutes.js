@@ -1509,6 +1509,60 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         return next(err);
       }
     });
+
+    router.get(`${pathPrefix}/website/theme`, async (req, res, next) => {
+      try {
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const { presentThemeState } = require("../../platform/website/websiteThemeHttp");
+        const presented = await presentThemeState(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          preferDraft: true,
+        });
+        if (!presented.ok) {
+          return json(res, presented.status || 400, { ok: false, code: presented.code || "load_failed" });
+        }
+        return json(res, 200, presented);
+      } catch (err) {
+        return next(err);
+      }
+    });
+
+    router.post(`${pathPrefix}/website/theme`, express.json({ limit: "8kb" }), async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+          return json(res, 403, { ok: false, code: "csrf" });
+        }
+        if (clientTenantOverride(req.body)) {
+          return json(res, 403, { ok: false, code: "forbidden" });
+        }
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const { saveThemeDraftHttp } = require("../../platform/website/websiteThemeHttp");
+        const body = req.body && typeof req.body === "object" ? req.body : {};
+        const saved = await saveThemeDraftHttp(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          themeId: body.themeId || body.theme_id,
+          actorIdentityId: actorUserId(req),
+          grantedPermissions: ["website.edit"],
+          sectionTypes: body.sectionTypes,
+          imageContentKeys: body.imageContentKeys,
+        });
+        if (!saved.ok) {
+          return json(res, saved.status || 400, {
+            ok: false,
+            code: saved.code || "save_failed",
+            published: false,
+            compatibility: saved.compatibility || null,
+          });
+        }
+        return json(res, 200, saved);
+      } catch (err) {
+        return next(err);
+      }
+    });
   }
 
   registerSettingsAndAddSectionRoutes();
