@@ -1201,10 +1201,12 @@ async function attachWebsiteAdminChrome(opts) {
     (tenant && tenant.church && (tenant.church.displayName || tenant.church.name)) ||
     orgKey ||
     "Website";
-  const websiteName = publicBranchKey
-    ? String((model.branch && model.branch.displayName) || publicBranchKey)
-    : `${churchDisplayName} — Headquarters`;
-  const websiteScopeKind = publicBranchKey ? "branch" : "hq";
+  const websiteScopeKind =
+    websiteScopeType === "church" || websiteScopeType === "hq" ? "hq" : "branch";
+  const websiteName =
+    websiteScopeKind === "hq"
+      ? `${churchDisplayName} — Headquarters`
+      : String((model.branch && model.branch.displayName) || publicBranchKey || "Branch website");
 
   const shellFacts = {
     productCode: PRODUCT_CODE.BLESSBOARD,
