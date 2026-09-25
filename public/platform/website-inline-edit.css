@@ -1596,6 +1596,16 @@ textarea.gp-website-field-editor__input {
   background: color-mix(in srgb, var(--gp-we-primary, #175cd3) 4%, #fff);
   display: grid;
   gap: 0.65rem;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  overflow-x: hidden;
+}
+
+.gp-website-framing__head,
+.gp-website-framing__controls {
+  min-width: 0;
+  max-width: 100%;
 }
 
 .gp-website-framing__note,
@@ -1604,6 +1614,9 @@ textarea.gp-website-field-editor__input {
   font-size: 0.8rem;
   color: var(--gp-we-on-surface-variant, #667085);
   line-height: 1.35;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  max-width: 100%;
 }
 
 .gp-website-framing__modes {
@@ -1704,6 +1717,18 @@ textarea.gp-website-field-editor__input {
 
   .gp-website-field-editor__media-grid {
     grid-template-columns: 1fr;
+  }
+
+  .gp-website-field-editor__panel,
+  .gp-website-field-editor__body {
+    max-width: 100%;
+    overflow-x: hidden;
+    box-sizing: border-box;
+  }
+
+  .gp-website-field-editor__status {
+    overflow-wrap: anywhere;
+    word-break: break-word;
   }
 }
 

@@ -149,8 +149,9 @@ describe("V2_01 universal image editor UI", () => {
   });
 
   it("asset cache bumps reference the B3 editor build", () => {
-    assert.match(read("views/blessboard/v5/partials/tenant-public-shell-end.ejs"), /website-inline-edit\.js\?v=v2-img-editor-1/);
-    assert.match(read("views/blessboard/v5/partials/tenant-public-shell-start.ejs"), /website-inline-edit\.css\?v=v2-img-editor-1/);
-    assert.match(read("src/platform/website/renderWebsiteManagementPage.js"), /v2-img-editor-1/);
+    assert.match(read("views/blessboard/v5/partials/tenant-public-shell-end.ejs"), /website-inline-edit\.js\?v=v2-img-editor-2/);
+    assert.match(read("views/blessboard/v5/partials/tenant-public-shell-start.ejs"), /website-inline-edit\.css\?v=v2-img-editor-2/);
+    assert.match(read("src/platform/website/renderWebsiteManagementPage.js"), /v2-img-editor-2/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /ASSET_VERSION = "v2-img-editor-2"/);
   });
 });
