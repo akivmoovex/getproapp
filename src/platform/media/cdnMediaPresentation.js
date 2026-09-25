@@ -243,21 +243,25 @@ function presentRuntimeImageSrc(src, env, opts) {
 }
 
 /**
- * @param {unknown} value image content value ({src,alt,mediaId} | string | null)
+ * @param {unknown} value image content value ({src,alt,mediaId,placement?} | string | null)
  * @param {NodeJS.ProcessEnv} [env]
  * @param {{ storageKey?: string|null, allowMarketing?: boolean }} [opts]
- * @returns {{ src: string|null, alt: string|null, mediaId: string|null }}
+ * @returns {{ src: string|null, alt: string|null, mediaId: string|null, placement?: object|null }}
  */
 function presentImageValue(value, env, opts) {
+  const { placementFromImageValue } = require("../website/imagePlacement");
   const options = opts || {};
   if (options.storageKey) {
     const src = presentCdnUrl(options.storageKey, env);
     if (value && typeof value === "object" && !Array.isArray(value)) {
-      return {
+      const out = {
         src,
         alt: value.alt != null ? String(value.alt) : null,
         mediaId: value.mediaId || value.media_id || null,
       };
+      const placement = placementFromImageValue(value);
+      if (placement) out.placement = placement;
+      return out;
     }
     return { src, alt: null, mediaId: null };
   }
@@ -274,11 +278,14 @@ function presentImageValue(value, env, opts) {
   }
   const mediaId = value.mediaId || value.media_id || null;
   const presented = presentRuntimeImageSrc(value.src, env, options);
-  return {
+  const out = {
     src: presented,
     alt: value.alt != null ? String(value.alt) : null,
     mediaId: mediaId ? String(mediaId) : null,
   };
+  const placement = placementFromImageValue(value);
+  if (placement) out.placement = placement;
+  return out;
 }
 
 /**

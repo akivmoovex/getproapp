@@ -2,7 +2,7 @@
   Reusable ActiveClinic media render.
   Locals:
     src (required), alt, className, aspect, objectFit, objectPosition,
-    width, height, loading, decoding, fallbackSrc, decorative
+    width, height, loading, decoding, fallbackSrc, decorative, styleOverride
 %>
 <%
   const mediaSrc = typeof src === "string" ? src : "";
@@ -14,14 +14,18 @@
   const mediaDecoding = typeof decoding === "string" ? decoding : "async";
   const mediaFallback = typeof fallbackSrc === "string" ? fallbackSrc : "";
   const isDecorative = typeof decorative !== "undefined" && Boolean(decorative);
-  const styleParts = [
-    "object-fit:" + mediaFit,
-    "object-position:" + mediaPos,
-  ];
-  if (typeof aspect === "string" && aspect) {
-    styleParts.push("aspect-ratio:" + aspect);
+  const override = typeof styleOverride === "string" ? styleOverride.trim() : "";
+  let styleAttr = override;
+  if (!styleAttr) {
+    const styleParts = [
+      "object-fit:" + mediaFit,
+      "object-position:" + mediaPos,
+    ];
+    if (typeof aspect === "string" && aspect) {
+      styleParts.push("aspect-ratio:" + aspect);
+    }
+    styleAttr = styleParts.join(";");
   }
-  const styleAttr = styleParts.join(";");
 %>
 <img
   class="<%= mediaClass %>"

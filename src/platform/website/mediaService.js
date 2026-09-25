@@ -666,7 +666,7 @@ function presentWebsiteMediaForClient(instance, media, env) {
  *   value: unknown,
  *   env?: NodeJS.ProcessEnv,
  * }} input
- * @returns {Promise<{ src: string|null, alt: string|null, mediaId: string|null }>}
+ * @returns {Promise<{ src: string|null, alt: string|null, mediaId: string|null, placement?: object|null }>}
  */
 async function hydrateWebsiteImageValue(db, input) {
   const env = (input && input.env) || process.env;
@@ -705,11 +705,13 @@ async function hydrateWebsiteImageValue(db, input) {
       ? presentCdnUrl(loaded.media.storageKey, env)
       : null) ||
     websiteMediaDeliveryPath(instance, loaded.media.id);
-  return {
+  const out = {
     src: publicSrc || null,
     alt: presented.alt,
     mediaId: loaded.media.id,
   };
+  if (presented.placement) out.placement = presented.placement;
+  return out;
 }
 
 function isUnsafeImageSrc(src) {

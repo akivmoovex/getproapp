@@ -2357,3 +2357,24 @@ body.gp-website-section-menu-open .gp-website-section-menu__overlay {
   }
 }
 
+/* V2_01 shared IMAGE placement — non-destructive CSS framing */
+.gp-website-image--placed {
+  object-fit: var(--gp-img-fit, cover);
+  object-position: var(--gp-img-x, 50%) var(--gp-img-y, 50%);
+  transform: scale(var(--gp-img-zoom, 1));
+  transform-origin: var(--gp-img-x, 50%) var(--gp-img-y, 50%);
+}
+
+@media (max-width: 767px) {
+  .gp-website-image--placed {
+    object-fit: var(--gp-img-mobile-fit, var(--gp-img-fit, cover));
+    object-position: var(--gp-img-mobile-x, var(--gp-img-x, 50%))
+      var(--gp-img-mobile-y, var(--gp-img-y, 50%));
+    transform: scale(var(--gp-img-mobile-zoom, var(--gp-img-zoom, 1)));
+    transform-origin: var(--gp-img-mobile-x, var(--gp-img-x, 50%))
+      var(--gp-img-mobile-y, var(--gp-img-y, 50%));
+  }
+  .gp-website-image--placed[style*="--gp-img-mobile-aspect"] {
+    aspect-ratio: var(--gp-img-mobile-aspect);
+  }
+}

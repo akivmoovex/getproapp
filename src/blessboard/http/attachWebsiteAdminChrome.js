@@ -83,8 +83,16 @@ async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
       organizationId,
       instance,
       env,
-      value: { src: img.src || null, alt: img.alt || null, mediaId: img.mediaId || null },
+      value: {
+        src: img.src || null,
+        alt: img.alt || null,
+        mediaId: img.mediaId || null,
+        placement: img.placement || null,
+      },
     });
+    if (presentedLogo.placement || img.placement) {
+      model.websiteLogoPlacement = presentedLogo.placement || img.placement;
+    }
     if (presentedLogo.src) {
       model.websiteLogoUrl = presentedLogo.src;
       model.websiteLogoAlt = presentedLogo.alt || img.alt;
@@ -100,8 +108,15 @@ async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
       organizationId,
       instance,
       env,
-      value: { src: hero.src || null, alt: hero.alt || null, mediaId: hero.mediaId || null },
+      value: {
+        src: hero.src || null,
+        alt: hero.alt || null,
+        mediaId: hero.mediaId || null,
+        placement: hero.placement || null,
+      },
     });
+    const heroPlacement = presentedHero.placement || hero.placement || null;
+    if (heroPlacement) model.websiteHeroPlacement = heroPlacement;
     if (presentedHero.src) {
       model.websiteHeroUrl = presentedHero.src;
       model.websiteHeroAlt = presentedHero.alt || hero.alt;
@@ -125,6 +140,7 @@ async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
         heroSection.layoutMetadata = {
           ...(heroSection.layoutMetadata || {}),
           altText: hero.alt || (heroSection.layoutMetadata && heroSection.layoutMetadata.altText) || "",
+          imagePlacement: heroPlacement || undefined,
         };
       }
     } else if (presentedHero.mediaId || hero.mediaId) {

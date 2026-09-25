@@ -252,7 +252,7 @@ async function seedWebsiteContent(db, instance, entries, actorIdentityId) {
     const keyNorm = normalizeContentKey(entry.contentKey);
     if (!keyNorm.ok || !isKnownContentKey(template, keyNorm.key)) continue;
     const def = getContentKeyDef(template, keyNorm.key);
-    const validated = validateContentValue(def, entry.value);
+    const validated = validateContentValue({ ...def, key: keyNorm.key }, entry.value);
     if (!validated.ok) continue;
     const wrapped = validated.value == null ? null : JSON.stringify(wrapValue(validated.value));
     await db.query(
@@ -285,7 +285,7 @@ async function applyPublishedSnapshot(db, instance, snapshot, actorIdentityId) {
   const vis = (snapshot && snapshot.visibility) || {};
   for (const key of Object.keys(template.keys)) {
     const def = getContentKeyDef(template, key);
-    const validated = validateContentValue(def, values[key]);
+    const validated = validateContentValue({ ...def, key }, values[key]);
     const wrapped = validated.ok && validated.value != null ? JSON.stringify(wrapValue(validated.value)) : null;
     const visibility = vis[key] === "hidden" ? "hidden" : "visible";
     await db.query(
@@ -336,7 +336,7 @@ async function applyDraftSnapshot(db, instance, snapshot, actorIdentityId) {
   const vis = (snapshot && snapshot.visibility) || {};
   for (const key of Object.keys(template.keys)) {
     const def = getContentKeyDef(template, key);
-    const validated = validateContentValue(def, values[key]);
+    const validated = validateContentValue({ ...def, key }, values[key]);
     const wrapped = validated.ok && validated.value != null ? JSON.stringify(wrapValue(validated.value)) : null;
     const visibility = vis[key] === "hidden" ? "hidden" : vis[key] === "visible" ? "visible" : null;
     await db.query(
