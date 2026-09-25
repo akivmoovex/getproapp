@@ -193,6 +193,63 @@ function validateEditableValue(field, candidate) {
 }
 
 /**
+ * Read a submitted editor `value` without coercing media objects to "[object Object]".
+ * Shared WE01 clients send IMAGE as `{ mediaId, src, alt }` (or a string URL).
+ * Ownership / URL safety still run in contentTypes + mediaService.
+ *
+ * @param {object|null|undefined} body
+ * @returns {*|string}
+ */
+function readSubmittedEditableValue(body) {
+  if (!body || typeof body !== "object" || !Object.prototype.hasOwnProperty.call(body, "value")) {
+    return "";
+  }
+  const value = body.value;
+  if (value == null) return "";
+  if (typeof value === "object" && !Array.isArray(value)) return value;
+  return String(value);
+}
+
+/**
+ * Compare draft values across text and structured image payloads.
+ * @param {*} left
+ * @param {*} right
+ * @returns {boolean}
+ */
+function editableValuesEqual(left, right) {
+  if (left === right) return true;
+  if ((left == null || left === "") && (right == null || right === "")) return true;
+  if (
+    (left != null && typeof left === "object") ||
+    (right != null && typeof right === "object")
+  ) {
+    try {
+      return JSON.stringify(left ?? null) === JSON.stringify(right ?? null);
+    } catch {
+      return false;
+    }
+  }
+  return String(left) === String(right);
+}
+
+/**
+ * Persist overlay draft rows as text while keeping objects round-trippable.
+ * @param {*} value
+ * @returns {string}
+ */
+function serializeOverlayDraftValue(value) {
+  if (value == null) return "";
+  if (typeof value === "object") {
+    try {
+      return JSON.stringify(value);
+    } catch {
+      return "";
+    }
+  }
+  return String(value);
+}
+
+/**
  * @param {object} def
  * @returns {object}
  */
@@ -385,6 +442,9 @@ module.exports = {
   resolveEditableField,
   assertEditableMutation,
   validateEditableValue,
+  readSubmittedEditableValue,
+  editableValuesEqual,
+  serializeOverlayDraftValue,
   listEditableFields,
   hasEditableField,
   stableKeyFromLocator,
