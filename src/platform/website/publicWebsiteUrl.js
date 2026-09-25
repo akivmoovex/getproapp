@@ -306,6 +306,21 @@ function buildPublicWebsiteDiscardPath(input) {
   return appendQuery(`${path}/website/drafts/discard`, input && input.query);
 }
 
+function buildPublicWebsiteUnpublishedChangesPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/unpublished-changes`, input && input.query) : null;
+}
+
+function buildPublicWebsiteFieldHistoryPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/field-history`, input && input.query) : null;
+}
+
+function buildPublicWebsiteFieldRestorePath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/field-history/restore`, input && input.query) : null;
+}
+
 function buildPublicWebsiteHistoryPath(input) {
   const path = buildPublicWebsiteInstancePath(input);
   if (!path) return null;
@@ -642,6 +657,9 @@ module.exports = {
   buildPublicWebsiteSubmitPath,
   buildPublicWebsiteFinishEditPath,
   buildPublicWebsiteDiscardPath,
+  buildPublicWebsiteUnpublishedChangesPath,
+  buildPublicWebsiteFieldRestorePath,
+  buildPublicWebsiteFieldHistoryPath,
   buildPublicWebsiteHistoryPath,
   buildPublicWebsiteMediaLibraryPath,
   buildPublicWebsiteStylesPath,

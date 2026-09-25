@@ -121,28 +121,38 @@
     return String(mediaUrl).replace(/\/$/, "") + "/" + encodeURIComponent(mediaId);
   }
 
-  function markDraftSaved() {
-    var slot = document.querySelector("[data-website-engine-save-state]");
-    if (slot) slot.textContent = "Saved to draft";
+  function markDraftSaved(detail) {
+    var payload = detail && typeof detail === "object" ? detail : {};
+    document.dispatchEvent(
+      new CustomEvent("gp:website-save-success", {
+        detail: {
+          pendingChangeCount:
+            payload.pendingChangeCount != null ? Number(payload.pendingChangeCount) : undefined,
+          meaningful: payload.meaningful !== false,
+        },
+      })
+    );
     if (chrome) chrome.setAttribute("data-draft", "1");
-    var draft = document.querySelector("[data-website-engine-draft]");
-    var short = document.querySelector("[data-website-engine-draft-short]");
-    function bump(el, longForm) {
-      if (!el || !el.textContent) return;
-      var match = el.textContent.match(/Draft\s*•\s*(\d+)/);
-      if (match) {
-        var next = Number(match[1]) + 1;
-        el.textContent = longForm
-          ? "Draft • " + next + " unpublished changes"
-          : "Draft • " + next + " changes";
-        return;
-      }
-      if (/No unpublished/i.test(el.textContent)) {
-        el.textContent = longForm ? "Draft • 1 unpublished changes" : "Draft • 1 changes";
-      }
-    }
-    bump(draft, true);
-    bump(short, false);
+    // Do not locally invent pending counts — Change Manager UI uses server counts.
+  }
+
+  function markSaveStart() {
+    window.__gpCmBusy = true;
+    document.dispatchEvent(new CustomEvent("gp:website-save-start"));
+  }
+
+  function markUploadStart() {
+    window.__gpCmBusy = true;
+    document.dispatchEvent(new CustomEvent("gp:website-upload-start"));
+  }
+
+  function markSaveError(reason) {
+    window.__gpCmBusy = false;
+    document.dispatchEvent(
+      new CustomEvent("gp:website-save-error", {
+        detail: { reason: reason || "Save failed" },
+      })
+    );
   }
 
   function postJson(path, body) {
@@ -770,6 +780,21 @@
     if (placeholder) placeholder.hidden = Boolean(src);
   }
 
+  function fieldExpectedUpdatedAt(fieldEl) {
+    if (!fieldEl) return null;
+    var raw = fieldEl.getAttribute("data-website-updated-at");
+    return raw && String(raw).trim() ? String(raw).trim() : null;
+  }
+
+  function rememberFieldUpdatedAt(fieldEl, out) {
+    if (!fieldEl || !out) return;
+    var next =
+      (out.content && out.content.updatedAt) ||
+      (out.expectedUpdatedAt) ||
+      null;
+    if (next) fieldEl.setAttribute("data-website-updated-at", String(next));
+  }
+
   function saveText() {
     if (!activeField || !state || !state.text || !state.text.input) return;
     var value = state.text.input.value;
@@ -777,32 +802,45 @@
     rememberLocalDraft(contentKey, value);
     setBusy(true);
     setStatus("Saving…", false);
-    postJson(saveUrl, {
+    markSaveStart();
+    var payload = {
       contentKey: contentKey,
       value: value,
-    })
+    };
+    var expected = fieldExpectedUpdatedAt(activeField);
+    if (expected) payload.expectedUpdatedAt = expected;
+    postJson(saveUrl, payload)
       .then(function (out) {
         setBusy(false);
         if (out && out.ok && out.published === true) {
+          markSaveError("Save must not publish");
           setStatus("Save must not publish. Draft was not applied as live.", true);
           syncDirtyController();
           return;
         }
         if (out && out.ok) {
+          rememberFieldUpdatedAt(activeField, out);
           updateCanvasText(activeField, value);
           clearLocalDraft(contentKey);
-          markDraftSaved();
+          markDraftSaved({
+            pendingChangeCount: out.pendingChangeCount,
+            meaningful: true,
+          });
           closeDialog();
         } else {
-          setStatus(
-            (out && (out.reason || out.message || out.code)) || "Save failed — your changes are still here. Retry.",
-            true
-          );
+          var failReason =
+            out && out.code === "conflict"
+              ? "This field was updated elsewhere. Reload and try again."
+              : (out && (out.reason || out.message || out.code)) ||
+                "Save failed — your changes are still here. Retry.";
+          markSaveError(failReason);
+          setStatus(failReason, true);
           syncDirtyController();
         }
       })
       .catch(function () {
         setBusy(false);
+        markSaveError("Save failed");
         setStatus("Save failed — your changes are still here. Retry.", true);
         syncDirtyController();
       });
@@ -817,39 +855,59 @@
     if (imgState.progress && state.pendingFile) imgState.progress.hidden = false;
 
     if (state.pendingRemove) {
-      return postJson(saveUrl, {
+      markSaveStart();
+      var removePayload = {
         contentKey: activeField.getAttribute("data-website-key"),
         value: null,
-      })
+      };
+      var removeExpected = fieldExpectedUpdatedAt(activeField);
+      if (removeExpected) removePayload.expectedUpdatedAt = removeExpected;
+      return postJson(saveUrl, removePayload)
         .then(function (out) {
           setBusy(false);
           if (out && out.ok && out.published === true) {
+            markSaveError("Save must not publish");
             setStatus("Save must not publish. Draft was not applied as live.", true);
             syncDirtyController();
             return;
           }
           if (out && out.ok) {
+            rememberFieldUpdatedAt(activeField, out);
             updateCanvasImage(activeField, "", "", "");
-            markDraftSaved();
+            markDraftSaved({
+              pendingChangeCount: out.pendingChangeCount,
+              meaningful: true,
+            });
             closeDialog();
           } else {
-            setStatus(
-              (out && (out.reason || out.message || out.code)) || "Save failed — your changes are still here. Retry.",
-              true
-            );
+            var removeFail =
+              (out && (out.reason || out.message || out.code)) ||
+              "Save failed — your changes are still here. Retry.";
+            markSaveError(removeFail);
+            setStatus(removeFail, true);
             syncDirtyController();
           }
         })
         .catch(function () {
           setBusy(false);
+          markSaveError("Save failed");
           setStatus("Save failed — your changes are still here. Retry.", true);
           syncDirtyController();
         });
     }
 
+    if (state.pendingFile) {
+      markUploadStart();
+    } else {
+      markSaveStart();
+    }
+
     var chain = state.pendingFile
       ? uploadImage(state.pendingFile, altText, function (pct) {
           if (imgState.progress) imgState.progress.value = pct;
+        }).then(function (uploaded) {
+          markSaveStart();
+          return uploaded;
         })
       : Promise.resolve(null);
 
@@ -877,10 +935,13 @@
         if (value.src && /^(blob:|data:)/i.test(String(value.src))) {
           value.src = uploadedSrc || (value.mediaId ? mediaItemUrl(value.mediaId) : "");
         }
-        return postJson(saveUrl, {
+        var imagePayload = {
           contentKey: activeField.getAttribute("data-website-key"),
           value: value,
-        }).then(function (out) {
+        };
+        var imageExpected = fieldExpectedUpdatedAt(activeField);
+        if (imageExpected) imagePayload.expectedUpdatedAt = imageExpected;
+        return postJson(saveUrl, imagePayload).then(function (out) {
           out.uploaded = uploaded;
           out.value = value;
           return out;
@@ -890,6 +951,7 @@
         setBusy(false);
         if (imgState.progress) imgState.progress.hidden = true;
         if (out && out.ok && out.published === true) {
+          markSaveError("Save must not publish");
           setStatus("Save must not publish. Draft was not applied as live.", true);
           syncDirtyController();
           return;
@@ -911,24 +973,30 @@
           if (paintSrc && /^(blob:|data:)/i.test(String(paintSrc))) {
             paintSrc = "";
           }
+          rememberFieldUpdatedAt(activeField, out);
           updateCanvasImage(activeField, paintSrc, altText, paintMediaId);
-          markDraftSaved();
+          markDraftSaved({
+            pendingChangeCount: out.pendingChangeCount,
+            meaningful: true,
+          });
           closeDialog();
         } else {
-          setStatus(
-            (out && (out.reason || out.message || out.code)) || "Save failed — your changes are still here. Retry.",
-            true
-          );
+          var imageFail =
+            (out && (out.reason || out.message || out.code)) ||
+            "Save failed — your changes are still here. Retry.";
+          markSaveError(imageFail);
+          setStatus(imageFail, true);
           syncDirtyController();
         }
       })
       .catch(function (err) {
         setBusy(false);
         if (imgState.progress) imgState.progress.hidden = true;
-        setStatus(
-          (err && (err.reason || err.code)) || "Upload/save failed — your changes are still here. Retry.",
-          true
-        );
+        var uploadFail =
+          (err && (err.reason || err.code)) ||
+          "Upload/save failed — your changes are still here. Retry.";
+        markSaveError(uploadFail);
+        setStatus(uploadFail, true);
         syncDirtyController();
       });
   }

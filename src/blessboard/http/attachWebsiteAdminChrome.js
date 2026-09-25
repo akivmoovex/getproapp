@@ -46,7 +46,10 @@ const {
   pickHexColor,
   publicBrandStyle,
 } = require("../../platform/website/branding");
-const { PRODUCT_CODE, withEditorNavigationQuery, withoutEditorNavigationQuery, withPreviewNavigationQuery } = require("../../platform/website/publicWebsiteUrl");
+const { PRODUCT_CODE, withEditorNavigationQuery, withoutEditorNavigationQuery, withPreviewNavigationQuery, buildPublicWebsiteUnpublishedChangesPath, buildPublicWebsiteFieldHistoryPath, buildPublicWebsiteFieldRestorePath } = require("../../platform/website/publicWebsiteUrl");
+const { getPendingChangeSummary } = require("../../platform/website/websiteChangeManagerService");
+const { websiteScopeKeyFor } = require("../../platform/website-engine/changeManagerUi");
+const { PERMISSIONS } = require("../../platform/website/permissions");
 
 const EDIT_QUERY = "website_edit";
 
@@ -448,16 +451,40 @@ async function attachWebsiteAdminChrome(opts) {
   }
 
   let draftCount = 0;
+  let websiteInstanceId = null;
   let overlayMap = new Map();
   let structuredDrafts = [];
   /** @type {Record<string, string>} */
   let publishedBaselines = Object.create(null);
   try {
-    draftCount = await countAllWebsiteDrafts(db, {
-      organizationId,
-      churchId,
-      branchId: draftBranchId,
-    });
+    const engineInstance = await findBlessBoardWebsiteInstance(db, organizationId);
+    if (engineInstance && engineInstance.id) {
+      websiteInstanceId = engineInstance.id;
+      const pending = await getPendingChangeSummary(db, {
+        organizationId,
+        instanceId: websiteInstanceId,
+        grantedPermissions: [
+          PERMISSIONS.VIEW,
+          PERMISSIONS.EDIT,
+          ...(canPublishWebsite ? [PERMISSIONS.PUBLISH] : []),
+        ],
+      });
+      if (pending.ok) {
+        draftCount = Number(pending.pendingChangeCount) || 0;
+      } else {
+        draftCount = await countAllWebsiteDrafts(db, {
+          organizationId,
+          churchId,
+          branchId: draftBranchId,
+        });
+      }
+    } else {
+      draftCount = await countAllWebsiteDrafts(db, {
+        organizationId,
+        churchId,
+        branchId: draftBranchId,
+      });
+    }
     if (showDraftContent) {
       // Capture visitor-visible text before draft overlays mutate the model.
       publishedBaselines = buildDisplayBaselineMap(model.sections, model.publicContact);
@@ -855,6 +882,36 @@ async function attachWebsiteAdminChrome(opts) {
     : withEditQuery(currentPath, true);
   const discardPath =
     pathMode && publicBase ? `${publicBase}/website/drafts/discard` : null;
+  const unpublishedChangesUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/unpublished-changes`
+      : orgKey
+        ? buildPublicWebsiteUnpublishedChangesPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const fieldHistoryUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/field-history`
+      : orgKey
+        ? buildPublicWebsiteFieldHistoryPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const fieldRestoreUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/field-history/restore`
+      : orgKey
+        ? buildPublicWebsiteFieldRestorePath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
   const sectionActionsUrl =
     pathMode && publicBase ? `${publicBase}/website/section-actions` : null;
   const addSectionUrl =
@@ -1068,6 +1125,13 @@ async function attachWebsiteAdminChrome(opts) {
     hubHref: manageHref,
     draft: hasDraftChanges,
     unpublishedCount: draftCount,
+    websiteScopeKey: websiteScopeKeyFor(
+      PRODUCT_CODE.BLESSBOARD,
+      organizationId,
+      websiteInstanceId || organizationId
+    ),
+    instanceId: websiteInstanceId,
+    organizationId,
     canEdit: true,
     canPublish: canPublishWebsite,
     previewHref: draftPreviewHrefResolved,
@@ -1081,6 +1145,9 @@ async function attachWebsiteAdminChrome(opts) {
         scope: editorScope,
       }) || null,
     discardPath,
+    unpublishedChangesUrl,
+    fieldHistoryUrl,
+    fieldRestoreUrl,
     unpublishPath,
     exitHref: withEditQuery(currentPath, false),
     exitMethod: "GET",

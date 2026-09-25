@@ -70,10 +70,23 @@
   data-website-section-manifest="<%= shell.sectionManifestJson || '' %>"
   data-website-exit-href="<%= shell.exitHref || '' %>"
   data-website-max-bytes="5242880"
-  data-stitch-project="9585058196210789597"
+  data-stitch-project="<%= (shell.changeManager && shell.changeManager.stitchProjectId) || '12538817760086591589' %>"
   data-stitch-edit="WE01-01"
+  data-website-scope-key="<%= shell.websiteScopeKey || '' %>"
+  data-website-pending-count="<%= Number(shell.unpublishedCount) || 0 %>"
+  data-website-reminder-threshold="<%= (shell.changeManager && shell.changeManager.reminderThreshold) || 5 %>"
 >
-  <header class="gp-website-editor__toolbar" data-website-engine-toolbar="1" data-stitch-edit="WE01-01">
+  <header
+    class="gp-website-editor__toolbar"
+    data-website-engine-toolbar="1"
+    data-stitch-edit="WE01-01"
+    data-stitch-project="<%= (shell.changeManager && shell.changeManager.stitchProjectId) || '12538817760086591589' %>"
+    data-stitch-screen="<%= (shell.changeManager && shell.changeManager.stitchToolbarScreen) || '' %>"
+    data-website-pending-count="<%= Number(shell.unpublishedCount) || 0 %>"
+    data-website-scope-key="<%= shell.websiteScopeKey || '' %>"
+    data-website-reminder-threshold="<%= (shell.changeManager && shell.changeManager.reminderThreshold) || 5 %>"
+    data-website-can-publish="<%= shell.canPublish ? '1' : '0' %>"
+  >
     <div class="gp-website-editor__toolbar-start">
       <span class="gp-website-editor__mark" aria-hidden="true">
         <span class="material-symbols-outlined">edit_note</span>
@@ -92,6 +105,18 @@
       </span>
     </div>
     <div class="gp-website-editor__toolbar-end">
+      <% if (shell.historyHref) { %>
+      <a
+        class="gp-website-editor__icon-btn gp-website-editor__history"
+        href="<%= shell.historyHref %>"
+        data-website-engine-history="1"
+        data-website-history="1"
+        aria-label="History"
+        title="History"
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">history</span>
+      </a>
+      <% } %>
       <% if (shell.previewHref) { %>
       <a
         class="gp-website-editor__btn gp-website-editor__btn--ghost gp-website-editor__preview"
@@ -114,7 +139,13 @@
         <input type="hidden" name="<%= shell.csrfField || '_csrf' %>" value="<%= shell.csrfToken || '' %>"/>
         <input type="hidden" name="confirm_publish" value="1"/>
         <input type="hidden" name="makePublic" value="1"/>
-        <button type="submit" class="gp-website-editor__btn gp-website-editor__btn--primary" data-website-engine-publish="1" data-bb-review-publish="1"><%= labels.publish || 'Publish' %></button>
+        <button
+          type="submit"
+          class="gp-website-editor__btn gp-website-editor__btn--primary"
+          data-website-engine-publish="1"
+          data-bb-review-publish="1"
+          data-website-publish-label="1"
+        ><%= (shell.changeManager && shell.changeManager.publishLabel) || labels.publish || 'Publish' %></button>
       </form>
       <% } %>
       <div class="gp-website-editor__more" data-website-more="1" data-stitch-edit="WE01-10">
@@ -240,8 +271,49 @@
       </a>
       <% } %>
     </div>
+    <div
+      class="gp-website-editor__status-row"
+      data-website-change-manager-status="1"
+      data-stitch-screen="<%= (shell.changeManager && shell.changeManager.stitchToolbarScreen) || '' %>"
+    >
+      <button
+        type="button"
+        class="gp-website-editor__pending-pill<%= (Number(shell.unpublishedCount) || 0) > 0 ? '' : ' is-empty' %>"
+        data-website-pending-pill="1"
+        data-website-pending-count="<%= Number(shell.unpublishedCount) || 0 %>"
+        <%= (Number(shell.unpublishedCount) || 0) > 0 ? '' : 'hidden' %>
+      >
+        <span class="gp-website-editor__pending-dot" aria-hidden="true"></span>
+        <span data-website-pending-pill-label="1"><%= (shell.changeManager && shell.changeManager.pendingPillLabel) || shell.draftLabel || '' %></span>
+      </button>
+      <div
+        class="gp-website-editor__save-status"
+        data-website-save-status="1"
+        data-save-status="idle"
+        aria-live="polite"
+      >
+        <span class="material-symbols-outlined gp-website-editor__save-icon" data-website-save-icon="1" aria-hidden="true">check_circle</span>
+        <span data-website-save-status-label="1"><%= shell.saveStateLabel || '' %></span>
+      </div>
+    </div>
     <p class="gp-website-sr-only" data-website-engine-save-state="1" aria-live="polite"><%= shell.saveStateLabel || '' %></p>
   </header>
+
+  <div
+    class="gp-website-editor__nav-reminder"
+    data-website-nav-reminder="1"
+    hidden
+    role="status"
+  >
+    <span class="material-symbols-outlined" aria-hidden="true">info</span>
+    <span data-website-nav-reminder-label="1"><%= (shell.changeManager && shell.changeManager.reminder && shell.changeManager.reminder.copy && shell.changeManager.reminder.copy.compactNav) || '' %></span>
+    <% if (shell.previewHref) { %>
+    <a class="gp-website-editor__nav-reminder-link" href="<%= shell.previewHref %>" data-website-preview="1" data-website-nav-reminder-preview="1">Preview</a>
+    <% } %>
+    <button type="button" class="gp-website-editor__nav-reminder-dismiss" data-website-nav-reminder-dismiss="1" aria-label="Dismiss">
+      <span class="material-symbols-outlined" aria-hidden="true">close</span>
+    </button>
+  </div>
 
   <nav
     class="gp-website-editor__rail"

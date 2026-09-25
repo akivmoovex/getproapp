@@ -7,7 +7,6 @@
 
 const { PERMISSIONS, hasWebsitePermission } = require("./permissions");
 const instanceRepo = require("./instanceRepository");
-const contentService = require("./contentService");
 const versionService = require("./versionService");
 const { POLICY_LABELS } = require("./publishPolicy");
 const { LIFECYCLE_LABELS, LIFECYCLE_STATUS } = require("./lifecycleStatus");
@@ -412,11 +411,14 @@ async function loadWebsiteManagementSummary(db, input) {
   let productWebsiteStatus = null;
 
   if (instance) {
-    const rows = await contentService.listWebsiteContent(db, instance, organizationId);
-    const changed = rows.filter(
-      (row) => !contentService.valuesEqual(row.draftValue, row.publishedValue)
-    );
-    unpublishedCount = changed.length;
+    // Derived draft-vs-published count (Change Manager foundation) — not a save counter.
+    const changeManager = require("./websiteChangeManagerService");
+    const pending = await changeManager.compareDraftToPublished(db, {
+      organizationId,
+      instanceId: instance.id,
+      expectedProductCode: productCode,
+    });
+    unpublishedCount = pending.ok ? pending.pendingChangeCount : 0;
     unpublishedChanges = unpublishedCount > 0;
     const listed = await versionService.listWebsiteVersions(db, {
       instanceId: instance.id,

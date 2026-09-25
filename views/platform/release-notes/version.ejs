@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title><%= title %> — <%= versionId %></title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/platform/release-notes-center.css?v=<%= assetVersion %>"/>
+</head>
+<body class="rnc-body<%= printMode ? ' rnc-body--print' : '' %>" data-page="version" data-panel="<%= panel %>" data-audience="<%= audience %>">
+  <%- include('partials/header') %>
+  <main class="rnc-main">
+    <nav class="rnc-breadcrumb" aria-label="Breadcrumb">
+      <a href="/release-notes">All versions</a>
+      <span aria-hidden="true">/</span>
+      <span>Version <%= versionId %></span>
+    </nav>
+
+    <section class="rnc-hero rnc-hero--compact">
+      <p class="rnc-eyebrow"><%= audience === 'internal' ? 'Internal QA view' : 'Public sanitized view' %></p>
+      <h1>Version <%= versionId %></h1>
+      <p class="rnc-lede"><%= entry.summary %></p>
+      <dl class="rnc-kv">
+        <div><dt>Release date</dt><dd><%= entry.releaseDate || 'Not established' %></dd></div>
+        <div><dt>Products</dt><dd><%= entry.products.join(', ') %></dd></div>
+        <div><dt>Deployment</dt><dd><%= entry.deploymentStatus %></dd></div>
+        <div><dt>QA verification</dt><dd><%= entry.qaVerification %></dd></div>
+      </dl>
+    </section>
+
+    <nav class="rnc-tabs" aria-label="Version panels">
+      <a class="<%= panel === 'details' ? 'is-active' : '' %>" href="/release-notes/<%= versionId %>">Version details</a>
+      <a class="<%= panel === 'bugs' ? 'is-active' : '' %>" href="/release-notes/<%= versionId %>/bugs">Bug fixes &amp; regression</a>
+      <a class="<%= panel === 'qa' ? 'is-active' : '' %>" href="/release-notes/<%= versionId %>/qa">QA checklist</a>
+      <a class="<%= panel === 'share' ? 'is-active' : '' %>" href="/release-notes/<%= versionId %>/share">Share &amp; export</a>
+    </nav>
+
+    <%- include('partials/filters', { versionLocked: versionId }) %>
+
+    <% if (panel === 'details') { %>
+      <section class="rnc-section">
+        <h2>New features &amp; improvements</h2>
+        <% if (!entry.features.length) { %><p class="rnc-empty">No features match the current filters.</p><% } %>
+        <% entry.features.forEach(function (f) { %>
+          <article class="rnc-card" data-feature-id="<%= f.id %>">
+            <header>
+              <h3><%= f.name %></h3>
+              <p class="rnc-id"><%= f.id %></p>
+            </header>
+            <p><%= f.description %></p>
+            <dl class="rnc-kv">
+              <div><dt>Workflow</dt><dd><%= f.workflow %></dd></div>
+              <div><dt>Expected behavior</dt><dd><%= f.expectedBehavior %></dd></div>
+              <div><dt>Products</dt><dd><%= f.products.join(', ') %></dd></div>
+              <div><dt>Type</dt><dd><%= f.featureType %></dd></div>
+              <div><dt>Implementation</dt><dd><span class="rnc-pill rnc-pill--imp"><%= f.implementationStatus %></span></dd></div>
+              <div><dt>QA</dt><dd><span class="rnc-pill rnc-pill--qa"><%= f.qaStatus %></span></dd></div>
+              <% if (includeInternal && f.testCaseIds && f.testCaseIds.length) { %>
+                <div><dt>Test cases</dt><dd><%= f.testCaseIds.join(', ') %></dd></div>
+              <% } %>
+              <% if (includeInternal && f.sources && f.sources.length) { %>
+                <div><dt>Sources</dt><dd><%= f.sources.join(', ') %></dd></div>
+              <% } %>
+            </dl>
+          </article>
+        <% }) %>
+      </section>
+
+      <section class="rnc-section">
+        <h2>Known issues</h2>
+        <ul><% entry.knownIssues.forEach(function (item) { %><li><%= item %></li><% }) %></ul>
+      </section>
+      <section class="rnc-section">
+        <h2>Pending development</h2>
+        <ul><% entry.pendingDevelopment.forEach(function (item) { %><li><%= item %></li><% }) %></ul>
+      </section>
+      <section class="rnc-section">
+        <h2>Release acceptance criteria</h2>
+        <ul><% entry.acceptanceCriteria.forEach(function (item) { %><li><%= item %></li><% }) %></ul>
+      </section>
+      <% if (includeInternal && entry.documentationGaps && entry.documentationGaps.length) { %>
+        <section class="rnc-section">
+          <h2>Documentation gaps</h2>
+          <ul><% entry.documentationGaps.forEach(function (item) { %><li><%= item %></li><% }) %></ul>
+        </section>
+      <% } %>
+    <% } %>
+
+    <% if (panel === 'bugs') { %>
+      <section class="rnc-section">
+        <h2>Bug fixes and outstanding defects</h2>
+        <% if (!entry.bugs.length) { %><p class="rnc-empty">No bugs match the current filters.</p><% } %>
+        <% entry.bugs.forEach(function (b) { %>
+          <article class="rnc-card rnc-card--bug" data-bug-id="<%= b.id %>">
+            <header>
+              <h3><%= b.id %></h3>
+              <p class="rnc-id">Severity: <%= b.severity %> · <%= b.product %></p>
+            </header>
+            <dl class="rnc-kv">
+              <div><dt>Problem</dt><dd><%= b.problem %></dd></div>
+              <div><dt>Root cause</dt><dd><%= b.rootCause || 'Not confirmed' %></dd></div>
+              <div><dt>Fix</dt><dd><%= b.fix || 'None / not applied' %></dd></div>
+              <div><dt>Verification</dt><dd><span class="rnc-pill"><%= b.verificationStatus %></span></dd></div>
+              <div><dt>Outstanding</dt><dd><%= b.outstanding || '—' %></dd></div>
+              <% if (includeInternal && b.regressionTests && b.regressionTests.length) { %>
+                <div><dt>Regression tests</dt><dd><%= b.regressionTests.join(', ') %></dd></div>
+              <% } %>
+            </dl>
+          </article>
+        <% }) %>
+      </section>
+    <% } %>
+
+    <% if (panel === 'qa') { %>
+      <section class="rnc-section">
+        <h2>QA release checklist</h2>
+        <p class="rnc-note">Separate BlessBoard and ActiveClinic results are preserved per test product field. Incomplete tests remain NOT TESTED / OPEN / BLOCKED.</p>
+        <% if (!entry.qaChecklist.length) { %><p class="rnc-empty">No checklist items match filters.</p><% } %>
+        <div class="rnc-table-wrap">
+          <table class="rnc-table">
+            <thead>
+              <tr>
+                <th>Test ID</th>
+                <th>Feature/Bug</th>
+                <th>Product</th>
+                <th>Objective</th>
+                <th>Status</th>
+                <% if (includeInternal) { %><th>Evidence</th><% } %>
+              </tr>
+            </thead>
+            <tbody>
+              <% entry.qaChecklist.forEach(function (tc) { %>
+                <tr>
+                  <td><code><%= tc.id %></code></td>
+                  <td><%= tc.featureOrBugId %></td>
+                  <td><%= tc.product %></td>
+                  <td>
+                    <strong><%= tc.objective %></strong>
+                    <% if (includeInternal && tc.steps && tc.steps.length) { %>
+                      <ol class="rnc-steps"><% tc.steps.forEach(function (s) { %><li><%= s %></li><% }) %></ol>
+                      <p class="rnc-meta">Expected: <%= tc.expectedResult %></p>
+                    <% } %>
+                  </td>
+                  <td><span class="rnc-pill"><%= tc.status %></span></td>
+                  <% if (includeInternal) { %><td class="rnc-evidence"><%= tc.evidence %></td><% } %>
+                </tr>
+              <% }) %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    <% } %>
+
+    <% if (panel === 'share') { %>
+      <section class="rnc-section rnc-share">
+        <h2>Share and export</h2>
+        <p>This panel always uses the <strong>public sanitized</strong> summary. Internal evidence paths and detailed steps are withheld unless an authorized internal token is used on other panels.</p>
+        <div class="rnc-share-actions">
+          <button type="button" class="rnc-btn" data-rnc-copy>Copy shareable link</button>
+          <button type="button" class="rnc-btn rnc-btn--secondary" data-rnc-print>Print / Save as PDF</button>
+          <a class="rnc-btn rnc-btn--secondary" href="/release-notes/<%= versionId %>/print">Print layout</a>
+        </div>
+        <p class="rnc-meta" data-rnc-copy-status hidden></p>
+        <article class="rnc-card rnc-share-summary">
+          <h3>Version <%= entry.version %> — sanitized summary</h3>
+          <p><%= entry.summary %></p>
+          <h4>Features (<%= entry.features.length %>)</h4>
+          <ul>
+            <% entry.features.forEach(function (f) { %>
+              <li><strong><%= f.id %></strong> <%= f.name %> — <%= f.implementationStatus %> / <%= f.qaStatus %></li>
+            <% }) %>
+          </ul>
+          <h4>Bugs (<%= entry.bugs.length %>)</h4>
+          <ul>
+            <% entry.bugs.forEach(function (b) { %>
+              <li><strong><%= b.id %></strong> (<%= b.severity %>) — <%= b.verificationStatus %></li>
+            <% }) %>
+          </ul>
+          <p class="rnc-note">Do not paste credentials, tenant PII, patient data, or stack traces into shared summaries.</p>
+        </article>
+      </section>
+    <% } %>
+  </main>
+  <%- include('partials/footer') %>
+  <script src="/platform/release-notes-center.js?v=<%= assetVersion %>" defer></script>
+  <% if (printMode) { %><script>window.addEventListener('load', function () { window.print(); });</script><% } %>
+</body>
+</html>

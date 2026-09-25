@@ -1,0 +1,95 @@
+<%#
+  Unpublished Changes Panel (Stitch Screen 3).
+  Populated by website-change-manager-ui.js from /website/unpublished-changes.
+  Safe Revert only when discardPath is present (existing field discard).
+%>
+<%
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+  var cm = shell.changeManager || {};
+%>
+<aside
+  class="gp-cm-panel"
+  data-website-unpublished-panel="1"
+  data-stitch-project="<%= cm.stitchProjectId || '12538817760086591589' %>"
+  data-stitch-screen="<%= cm.stitchPanelScreen || 'd205f226463c4e38b797b4757338404e' %>"
+  data-website-scope-key="<%= shell.websiteScopeKey || '' %>"
+  data-website-changes-url="<%= shell.unpublishedChangesUrl || '' %>"
+  data-website-discard-url="<%= shell.discardPath || '' %>"
+  data-website-preview-href="<%= shell.previewHref || '' %>"
+  data-website-publish-path="<%= shell.canPublish ? (shell.publishPath || shell.publishHref || '') : '' %>"
+  data-website-can-publish="<%= shell.canPublish ? '1' : '0' %>"
+  data-website-can-revert="<%= shell.discardPath ? '1' : '0' %>"
+  data-website-csrf-field="<%= shell.csrfField || '_csrf' %>"
+  data-website-csrf-token="<%= shell.csrfToken || '' %>"
+  hidden
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="gp-cm-panel-title"
+>
+  <div class="gp-cm-panel__backdrop" data-website-panel-backdrop="1"></div>
+  <div class="gp-cm-panel__sheet">
+    <header class="gp-cm-panel__header">
+      <button type="button" class="gp-cm-panel__icon-btn" data-website-panel-close="1" aria-label="Close unpublished changes panel">
+        <span class="material-symbols-outlined" aria-hidden="true">close</span>
+      </button>
+      <h1 id="gp-cm-panel-title" class="gp-cm-panel__title" data-website-panel-title="1">Unpublished Changes</h1>
+      <span class="gp-cm-panel__icon-btn gp-cm-panel__icon-btn--muted" aria-hidden="true">
+        <span class="material-symbols-outlined">help_outline</span>
+      </span>
+    </header>
+
+    <section class="gp-cm-panel__banner" data-website-panel-banner="1">
+      <div class="gp-cm-panel__banner-icon" aria-hidden="true">
+        <span class="material-symbols-outlined">shield_with_heart</span>
+      </div>
+      <div>
+        <div class="gp-cm-panel__banner-meta">
+          <span class="gp-cm-panel__draft-safe">Draft Safe</span>
+          <strong>Visitors see live version</strong>
+        </div>
+        <p>
+          Edits remain completely private to your admin team. Nothing on your live website updates until you confirm publishing.
+        </p>
+      </div>
+    </section>
+
+    <div class="gp-cm-panel__body" data-website-panel-body="1">
+      <div class="gp-cm-panel__loading" data-website-panel-loading="1" hidden>Loading changes…</div>
+      <div class="gp-cm-panel__empty" data-website-panel-empty="1" hidden>
+        <span class="material-symbols-outlined" aria-hidden="true">task_alt</span>
+        <h2>No unpublished changes</h2>
+        <p>Your draft matches the live website. Edit a field to see it listed here before publishing.</p>
+      </div>
+      <div class="gp-cm-panel__groups" data-website-panel-groups="1"></div>
+    </div>
+
+    <footer class="gp-cm-panel__footer" data-website-panel-footer="1">
+      <a
+        class="gp-cm-panel__btn gp-cm-panel__btn--secondary"
+        href="<%= shell.previewHref || '#' %>"
+        data-website-panel-preview="1"
+        data-website-preview="1"
+        <%= shell.previewHref ? '' : 'hidden' %>
+      >
+        <span class="material-symbols-outlined" aria-hidden="true">visibility</span>
+        <span>Preview</span>
+      </a>
+      <% if (shell.canPublish && (shell.publishPath || shell.publishHref)) { %>
+      <form
+        method="post"
+        action="<%= shell.publishPath || shell.publishHref %>"
+        class="gp-cm-panel__publish-form"
+        data-website-panel-publish-form="1"
+        data-website-publish-confirm="1"
+      >
+        <input type="hidden" name="<%= shell.csrfField || '_csrf' %>" value="<%= shell.csrfToken || '' %>"/>
+        <input type="hidden" name="confirm_publish" value="1"/>
+        <input type="hidden" name="makePublic" value="1"/>
+        <button type="submit" class="gp-cm-panel__btn gp-cm-panel__btn--primary" data-website-panel-publish="1">
+          Publish All Changes
+        </button>
+      </form>
+      <% } %>
+    </footer>
+  </div>
+</aside>

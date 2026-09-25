@@ -29,6 +29,9 @@ const {
   buildPublicWebsiteAddSectionPath,
   buildPublicWebsiteSubmitPath,
   buildPublicWebsiteFinishEditPath,
+  buildPublicWebsiteUnpublishedChangesPath,
+  buildPublicWebsiteFieldHistoryPath,
+  buildPublicWebsiteFieldRestorePath,
   appendQuery,
 } = require("../../platform/website/publicWebsiteUrl");
 const {
@@ -41,6 +44,7 @@ const { LIFECYCLE_LABELS } = require("../../platform/website/lifecycleStatus");
 const { POLICY_LABELS } = require("../../platform/website/publishPolicy");
 const { listProductPageTypes } = require("../../platform/website-engine/productSchemaRegistry");
 const { presentEditorShell, buildEditorPages } = require("../../platform/website-engine/editorShell");
+const { websiteScopeKeyFor } = require("../../platform/website-engine/changeManagerUi");
 
 function grantedPermissions(req) {
   const auth = req.activeClinicAuth;
@@ -112,6 +116,9 @@ function clinicWebsiteActionUrls(clinicKey, pageKey) {
     websiteHistoryUrl: buildPublicWebsiteHistoryPath(base),
     websitePublishUrl: buildPublicWebsitePublishPath(base),
     websiteDiscardUrl: buildPublicWebsiteDiscardPath(base),
+    websiteUnpublishedChangesUrl: buildPublicWebsiteUnpublishedChangesPath(base),
+    websiteFieldHistoryUrl: buildPublicWebsiteFieldHistoryPath(base),
+    websiteFieldRestoreUrl: buildPublicWebsiteFieldRestorePath(base),
     websiteUnpublishUrl: buildPublicWebsiteUnpublishPath(base),
     websiteSectionActionsUrl: buildPublicWebsiteSectionActionsPath(base),
     websiteAddSectionUrl: buildPublicWebsiteAddSectionPath(base),
@@ -370,12 +377,22 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     managePagesHref: "/app/settings/website/pages",
     draft: unpublishedCount > 0,
     unpublishedCount,
+    websiteScopeKey: websiteScopeKeyFor(
+      PRODUCT_CODE.ACTIVECLINIC,
+      clinic.organizationId,
+      instance && instance.id
+    ),
+    instanceId: instance && instance.id,
+    organizationId: clinic.organizationId,
     canEdit,
     canPublish: canPublishNow,
     previewHref: actionUrls.websitePreviewUrl,
     backToEditHref: actionUrls.websiteEditUrl,
     publishPath: actionUrls.websitePublishUrl,
     discardPath: actionUrls.websiteDiscardUrl,
+    unpublishedChangesUrl: actionUrls.websiteUnpublishedChangesUrl,
+    fieldHistoryUrl: actionUrls.websiteFieldHistoryUrl,
+    fieldRestoreUrl: actionUrls.websiteFieldRestoreUrl,
     unpublishPath: canPublishNow ? actionUrls.websiteUnpublishUrl : null,
     exitHref: actionUrls.websiteFinishEditUrl,
     exitMethod: "POST",

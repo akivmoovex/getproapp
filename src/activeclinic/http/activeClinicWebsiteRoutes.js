@@ -5,6 +5,13 @@ const { validateCsrf, CSRF_FIELD, issueCsrfToken, setCsrfCookie } = require("../
 const { renderPublicPage } = require("./renderActiveClinicPublic");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const contentService = require("../../platform/website/contentService");
+const {
+  getPendingChangeSummary,
+  getUnpublishedChangesPanel,
+  getFieldHistoryRestorePanel,
+  restoreFieldRevisionToDraft,
+  revertFieldToPublished,
+} = require("../../platform/website/websiteChangeManagerService");
 const publicationService = require("../../platform/website-engine").publicationService;
 const submissionService = require("../../platform/website/submissionService");
 const mediaService = require("../../platform/website/mediaService");
@@ -47,6 +54,8 @@ const {
   buildPublicWebsiteSeoPath,
   buildPublicWebsiteMediaLibraryPath,
   appendQuery,
+  buildPublicWebsiteDiscardPath,
+  buildPublicWebsitePublishPath,
 } = require("../../platform/website/publicWebsiteUrl");
 const { renderTenantWebsiteVersionPreview } = require("../../platform/website/websiteVersionPreviewHttp");
 const {
@@ -119,6 +128,21 @@ function actorId(req) {
       req.activeClinicAuth.platformIdentity.id) ||
     null
   );
+}
+
+
+async function pendingChangeCountFor(db, organizationId, instanceId, granted) {
+  if (!organizationId || !instanceId) return undefined;
+  try {
+    const summary = await getPendingChangeSummary(db, {
+      organizationId,
+      instanceId,
+      grantedPermissions: granted || [PERMISSIONS.VIEW, PERMISSIONS.EDIT],
+    });
+    return summary.ok ? summary.pendingChangeCount : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function clientTenantOverride(body) {
@@ -195,6 +219,154 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
     }
   });
 
+
+
+  app.get("/clinics/:clinicKey/website/field-history", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!canEditClinicWebsite(req, clinic) && !canViewClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden", panel: null });
+      }
+      const contentKey = String((req.query && (req.query.contentKey || req.query.key)) || "").trim();
+      if (!contentKey) {
+        return json(res, 400, { ok: false, code: "invalid_input", panel: null });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found", panel: null });
+      }
+      const grants = grantedPermissions(req);
+      const loaded = await getFieldHistoryRestorePanel(getPool(), {
+        organizationId: clinic.organizationId,
+        instanceId: attached.instance.id,
+        contentKey,
+        grantedPermissions: grants.includes(PERMISSIONS.EDIT)
+          ? grants
+          : [...grants, PERMISSIONS.VIEW],
+        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
+      });
+      // View-only: still show panel but canEdit false inside when EDIT missing.
+      if (!loaded.ok) {
+        return json(res, loaded.code === "forbidden" ? 403 : 404, {
+          ok: false,
+          code: loaded.code,
+          panel: null,
+        });
+      }
+      return json(res, 200, {
+        ok: true,
+        contentKey: loaded.contentKey,
+        pendingChangeCount: loaded.pendingChangeCount,
+        panel: loaded.panel,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.post("/clinics/:clinicKey/website/field-history/restore", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+        return json(res, 403, { ok: false, code: "csrf", published: false });
+      }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden", published: false });
+      }
+      if (!canEditClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden", published: false });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found", published: false });
+      }
+      const restored = await restoreFieldRevisionToDraft(getPool(), {
+        organizationId: clinic.organizationId,
+        instanceId: attached.instance.id,
+        contentKey: req.body && (req.body.contentKey || req.body.key),
+        choice: req.body && req.body.choice,
+        versionId: req.body && req.body.versionId,
+        expectedUpdatedAt: req.body && req.body.expectedUpdatedAt,
+        actorIdentityId: actorId(req),
+        grantedPermissions: grantedPermissions(req),
+        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
+        env,
+      });
+      if (!restored.ok) {
+        const status = restored.code === "forbidden" ? 403 : restored.code === "conflict" ? 409 : 400;
+        return json(res, status, { ...restored, published: false });
+      }
+      return json(res, 200, restored);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/website/unpublished-changes", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!canEditClinicWebsite(req, clinic) && !canViewClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden", pendingChangeCount: 0, panel: null });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found", pendingChangeCount: 0, panel: null });
+      }
+      const canPublish = canPublishClinicWebsite(req, clinic) && !attached.websitePublishLocked;
+      const previewHref =
+        (attached.editorShell && attached.editorShell.previewHref) ||
+        buildPublicWebsitePreviewPath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: clinic.clinicKey,
+        });
+      const publishPath = canPublish
+        ? buildPublicWebsitePublishPath({
+            product: PRODUCT_CODE.ACTIVECLINIC,
+            organizationKey: clinic.clinicKey,
+          })
+        : null;
+      const discardPath = buildPublicWebsiteDiscardPath({
+        product: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: clinic.clinicKey,
+      });
+      const { buildEditorPages } = require("../../platform/website-engine/editorShell");
+      const pages = buildEditorPages({
+        productCode: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: clinic.clinicKey,
+        pageKey: "home",
+      });
+      const loaded = await getUnpublishedChangesPanel(getPool(), {
+        organizationId: clinic.organizationId,
+        instanceId: attached.instance.id,
+        grantedPermissions: grantedPermissions(req),
+        canPublish,
+        previewHref,
+        publishPath,
+        discardPath,
+        pages,
+      });
+      if (!loaded.ok) {
+        return json(res, loaded.code === "forbidden" ? 403 : 404, {
+          ok: false,
+          code: loaded.code,
+          pendingChangeCount: 0,
+          panel: null,
+        });
+      }
+      return json(res, 200, {
+        ok: true,
+        pendingChangeCount: loaded.pendingChangeCount,
+        changedKeys: loaded.changedKeys,
+        panel: loaded.panel,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
   app.post("/clinics/:clinicKey/website/drafts", async (req, res, next) => {
     try {
       const clinic = await loadClinic(req, res);
@@ -252,12 +424,19 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
             reason: savedCms.reason || null,
           });
         }
+        const pendingChangeCount = await pendingChangeCountFor(
+          getPool(),
+          clinic.organizationId,
+          attached.instance.id,
+          grantedPermissions(req)
+        );
         return json(res, 200, {
           ok: true,
           published: false,
           code: "saved_to_draft",
           content: savedCms.section || null,
           version: null,
+          pendingChangeCount,
         });
       }
       const saved = await contentService.saveWebsiteDraft(getPool(), {
@@ -269,22 +448,31 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         visibility: req.body && req.body.visibility,
         actorIdentityId: actorId(req),
         grantedPermissions: grantedPermissions(req),
+        expectedUpdatedAt: req.body && req.body.expectedUpdatedAt,
         env,
       });
       if (!saved.ok) {
         const notFound = saved.code === "tenant_mismatch" || saved.code === "media_not_found";
-        return json(res, notFound ? 404 : 400, {
+        const conflict = saved.code === "conflict";
+        return json(res, conflict ? 409 : notFound ? 404 : 400, {
           ok: false,
           code: saved.code,
           reason: saved.reason || null,
         });
       }
+      const pendingChangeCount = await pendingChangeCountFor(
+        getPool(),
+        clinic.organizationId,
+        attached.instance.id,
+        grantedPermissions(req)
+      );
       return json(res, 200, {
         ok: true,
         published: false,
         code: "saved_to_draft",
         content: saved.content,
         version: null,
+        pendingChangeCount,
       });
     } catch (err) {
       return next(err);
@@ -387,14 +575,20 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         }
         return json(res, 200, discarded);
       }
-      const discarded = await contentService.discardWebsiteDraft(getPool(), {
+      const reverted = await revertFieldToPublished(getPool(), {
         organizationId: clinic.organizationId,
         instanceId: attached.instance.id,
-        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
         contentKey: req.body && req.body.contentKey,
         actorIdentityId: actorId(req),
+        grantedPermissions: grantedPermissions(req),
+        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
       });
-      return json(res, discarded.ok ? 200 : 400, discarded);
+      return json(res, reverted.ok ? 200 : 400, {
+        ok: Boolean(reverted.ok),
+        code: reverted.ok ? "reverted" : reverted.code || "revert_failed",
+        pendingChangeCount: reverted.pendingChangeCount,
+        changedKeys: reverted.changedKeys || [],
+      });
     } catch (err) {
       return next(err);
     }

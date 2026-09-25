@@ -119,6 +119,7 @@ function renderPlatformQaLauncher(res, platform, deployment) {
   <ul>
 ${links}
   </ul>
+  <p><a href="/release-notes">Release Notes Center</a> — versions 1.0–2.01 (QA)</p>
   <p><a href="/healthz">Platform health check</a></p>
 </main>
 </body></html>`);
@@ -149,6 +150,19 @@ function createMoovexPlatformRuntimeApp(options) {
 
   const { mountHostingerMediaStatic } = require("./mountHostingerMediaStatic");
   mountHostingerMediaStatic(app, env);
+
+  // Release Notes Center assets (QA hub + shared /platform static).
+  const path = require("path");
+  const publicPlatformDir = path.join(__dirname, "../../../public/platform");
+  app.use(
+    "/platform",
+    express.static(publicPlatformDir, {
+      fallthrough: true,
+      index: false,
+      redirect: false,
+      maxAge: "1h",
+    })
+  );
 
   app.get("/healthz", (req, res) => {
     const boot = opts.boot || null;
@@ -646,6 +660,12 @@ function createMoovexPlatformRuntimeApp(options) {
       const pathName = String(req.path || "/");
       if (pathName === "/" || pathName === "") {
         return renderPlatformQaLauncher(res, platform, deployment);
+      }
+      const {
+        tryHandleReleaseNotesRequest,
+      } = require("../release-notes/attachReleaseNotesRoutes");
+      if (tryHandleReleaseNotesRequest(req, res, { env })) {
+        return undefined;
       }
       // Do not expose product operational routes on the QA hub host.
       const hubLinks = resolveQaProductLinks(deployment, platform);

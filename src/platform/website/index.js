@@ -28,6 +28,7 @@ const publicWebsiteUrl = require("./publicWebsiteUrl");
 const websiteManagementPresentation = require("./websiteManagementPresentation");
 const inlineEditorContract = require("./inlineEditorContract");
 const editableFieldSchema = require("./editableFieldSchema");
+const websiteChangeManagerService = require("./websiteChangeManagerService");
 
 module.exports = {
   ...contentTypes,
@@ -59,4 +60,5 @@ module.exports = {
   platformAdminWebsitesService: require("./platformAdminWebsitesService"),
   inlineEditorContract,
   editableFieldSchema,
+  websiteChangeManagerService,
 };

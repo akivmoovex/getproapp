@@ -11,6 +11,7 @@ const SECTION_LABELS = require("./sectionActionLabels");
 const {
   buildPublicWebsiteEditPath,
 } = require("../website/publicWebsiteUrl");
+const { applyChangeManagerToolbar, REMINDER_THRESHOLD } = require("./changeManagerUi");
 
 const LABELS = Object.freeze({
   editingWebsite: "Editing website",
@@ -214,7 +215,7 @@ function presentEditorShell(input) {
   const editing = facts.editing === true && !previewMode;
   const exitMethod = String(facts.exitMethod || "GET").toUpperCase() === "POST" ? "POST" : "GET";
 
-  return {
+  const shell = {
     productCode,
     pageKey,
     pages,
@@ -223,8 +224,11 @@ function presentEditorShell(input) {
     draft,
     draftLabel: draftStatusLabel(unpublishedCount),
     draftLabelShort: draftStatusLabelShort(unpublishedCount),
-    saveStateLabel: facts.saveStateLabel || (draft ? "Saved to draft" : "Up to date"),
+    saveStateLabel: facts.saveStateLabel || (draft ? "Drafts saved" : "Up to date"),
     unpublishedCount,
+    websiteScopeKey: facts.websiteScopeKey || null,
+    instanceId: facts.instanceId || null,
+    organizationId: facts.organizationId || null,
     canEdit: facts.canEdit === true,
     canPublish,
     previewMode,
@@ -239,6 +243,9 @@ function presentEditorShell(input) {
     hubHref: facts.hubHref || null,
     brandingHref: facts.brandingHref || null,
     managePagesHref: facts.managePagesHref || null,
+    unpublishedChangesUrl: facts.unpublishedChangesUrl || null,
+    fieldHistoryUrl: facts.fieldHistoryUrl || null,
+    fieldRestoreUrl: facts.fieldRestoreUrl || null,
     exitHref: facts.exitHref || null,
     exitMethod,
     exitAction: facts.exitAction || (exitMethod === "POST" ? facts.exitHref : null),
@@ -288,7 +295,16 @@ function presentEditorShell(input) {
       ? JSON.stringify(facts.sectionManifest).replace(/</g, "\\u003c")
       : "",
     sectionActionLabels: SECTION_LABELS,
+    publishSuccess: facts.publishSuccess === true,
+    publishSuccessUrl: facts.publishSuccessUrl || null,
   };
+
+  return applyChangeManagerToolbar(shell, {
+    unpublishedCount,
+    websiteScopeKey: shell.websiteScopeKey,
+    instanceId: shell.instanceId,
+    organizationId: shell.organizationId,
+  });
 }
 
 module.exports = {
@@ -298,4 +314,5 @@ module.exports = {
   draftStatusLabelShort,
   buildEditorPages,
   presentEditorShell,
+  REMINDER_THRESHOLD,
 };

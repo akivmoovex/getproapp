@@ -1,0 +1,79 @@
+<%#
+  Friendly Publishing Reminder (Stitch Change Manager).
+  Preview never auto-publishes. Scoped per website. No organization switcher.
+%>
+<%
+  var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
+  var cm = shell.changeManager || {};
+  var rem = cm.reminder || {};
+  var copy = rem.copy || {};
+  var threshold = Number(cm.reminderThreshold || rem.threshold || 5) || 5;
+  var count = Number(shell.unpublishedCount) || 0;
+  var previewHref = rem.previewHref || shell.previewHref || '';
+%>
+<div
+  class="gp-cm-reminder"
+  data-website-publishing-reminder="1"
+  data-stitch-project="<%= cm.stitchProjectId || '12538817760086591589' %>"
+  data-stitch-screen="<%= cm.stitchReminderScreen || '' %>"
+  data-website-scope-key="<%= rem.websiteScopeKey || shell.websiteScopeKey || '' %>"
+  data-website-reminder-threshold="<%= threshold %>"
+  data-website-reminder-dismiss-key="<%= rem.dismissTodayKey || '' %>"
+  data-website-reminder-suppress-key="<%= rem.suppressKey || '' %>"
+  data-website-pending-count="<%= count %>"
+  hidden
+  role="dialog"
+  aria-modal="true"
+  aria-labelledby="gp-cm-reminder-title"
+>
+  <div class="gp-cm-reminder__backdrop" data-website-reminder-backdrop="1"></div>
+  <div class="gp-cm-reminder__dialog">
+    <div class="gp-cm-reminder__safe">
+      <span class="material-symbols-outlined" aria-hidden="true">verified_user</span>
+      <span><%= copy.safeDraftBadge || 'BlessBoard & ActiveClinic v2.01 • SafeDraft Protection' %></span>
+    </div>
+    <div class="gp-cm-reminder__hero">
+      <div class="gp-cm-reminder__icon" aria-hidden="true">
+        <span class="material-symbols-outlined">celebration</span>
+      </div>
+      <div>
+        <h2 id="gp-cm-reminder-title" class="gp-cm-reminder__title"><%= copy.title || 'Your website is taking shape!' %></h2>
+        <div class="gp-cm-reminder__meta">
+          <span class="gp-cm-reminder__badge" data-website-reminder-pending-badge="1"><%= copy.pendingBadge || '' %></span>
+          <span class="gp-cm-reminder__meta-suffix"><%= copy.pendingBadgeSuffix || 'saved to draft' %></span>
+        </div>
+      </div>
+    </div>
+    <p class="gp-cm-reminder__body" data-website-reminder-body="1"><%= copy.body || '' %></p>
+    <div class="gp-cm-reminder__peace">
+      <span class="material-symbols-outlined" aria-hidden="true">shield_with_heart</span>
+      <p><strong>Peace of mind:</strong> <%= copy.peaceOfMind || '' %></p>
+    </div>
+    <div class="gp-cm-reminder__actions">
+      <% if (previewHref) { %>
+      <a
+        class="gp-cm-reminder__btn gp-cm-reminder__btn--primary"
+        href="<%= previewHref %>"
+        data-website-reminder-preview="1"
+        data-website-preview="1"
+      >
+        <span><%= copy.previewCta || 'Preview Changes' %></span>
+        <span class="material-symbols-outlined" aria-hidden="true">arrow_forward</span>
+      </a>
+      <% } %>
+      <button type="button" class="gp-cm-reminder__btn gp-cm-reminder__btn--secondary" data-website-reminder-keep="1">
+        <span class="material-symbols-outlined" aria-hidden="true">edit_note</span>
+        <span><%= copy.keepEditingCta || 'Keep Editing' %></span>
+      </button>
+    </div>
+    <div class="gp-cm-reminder__footer">
+      <label class="gp-cm-reminder__check">
+        <input type="checkbox" data-website-reminder-dont-today="1"/>
+        <span><%= copy.dontShowToday || "Don't show this reminder again today" %></span>
+      </label>
+      <button type="button" class="gp-cm-reminder__dismiss" data-website-reminder-dismiss="1">
+        <%= copy.dismiss || 'Dismiss' %>
+      </button>
+    </div>
+  </div>
+</div>

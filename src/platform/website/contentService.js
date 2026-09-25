@@ -447,6 +447,7 @@ function diffContentRows(rows) {
         oldVisibility: extra.oldVisibility,
         sortOrder: row.sortOrder,
         changeType: classifyDiffChange(published, draft, extra),
+        updatedAt: row.updatedAt || null,
       });
     }
   }

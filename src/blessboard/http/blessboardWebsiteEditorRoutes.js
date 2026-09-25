@@ -11,6 +11,14 @@ const multer = require("multer");
 const { validateCsrf, CSRF_FIELD } = require("../../platform/http/v5Csrf");
 const mediaService = require("../../platform/website/mediaService");
 const contentService = require("../../platform/website/contentService");
+const {
+  getPendingChangeSummary,
+  getUnpublishedChangesPanel,
+  getFieldHistoryRestorePanel,
+  restoreFieldRevisionToDraft,
+  revertFieldToPublished,
+} = require("../../platform/website/websiteChangeManagerService");
+const { PERMISSIONS: WEBSITE_PERMISSIONS } = require("../../platform/website/permissions");
 const libraryModel = require("../../platform/website/libraryModel");
 const {
   hasEditableField,
@@ -108,6 +116,21 @@ function csrfFrom(req) {
   if (body[CSRF_FIELD]) return body[CSRF_FIELD];
   if (req.headers["x-csrf-token"] != null) return String(req.headers["x-csrf-token"]);
   return "";
+}
+
+
+async function pendingChangeCountFor(db, organizationId, instanceId, granted) {
+  if (!organizationId || !instanceId) return undefined;
+  try {
+    const summary = await getPendingChangeSummary(db, {
+      organizationId,
+      instanceId,
+      grantedPermissions: granted || [WEBSITE_PERMISSIONS.VIEW, WEBSITE_PERMISSIONS.EDIT],
+    });
+    return summary.ok ? summary.pendingChangeCount : undefined;
+  } catch {
+    return undefined;
+  }
 }
 
 function clientTenantOverride(body) {
@@ -317,6 +340,170 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
     return resolved;
   }
 
+
+
+  router.get(`${pathPrefix}/website/field-history`, async (req, res, next) => {
+    try {
+      const resolved = await requireEditor(req, res, "website.edit");
+      if (!resolved) return undefined;
+      const contentKey = String((req.query && (req.query.contentKey || req.query.key)) || "").trim();
+      if (!contentKey) {
+        return json(res, 400, { ok: false, code: "invalid_input", panel: null });
+      }
+      const { resolveEngineInstance } = require("../website/blessboardEngineContentService");
+      const found = await resolveEngineInstance(getPool(), {
+        organizationId: resolved.tenant.organization.id,
+        slug: resolved.organizationKey,
+        branchId: editorBranchId(resolved),
+        actorIdentityId: actorUserId(req),
+      });
+      if (!found.ok || !found.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found", panel: null });
+      }
+      const loaded = await getFieldHistoryRestorePanel(getPool(), {
+        organizationId: resolved.tenant.organization.id,
+        instanceId: found.instance.id,
+        contentKey,
+        grantedPermissions: ["website.view", "website.edit"],
+        expectedProductCode: PRODUCT_CODE.BLESSBOARD,
+      });
+      if (!loaded.ok) {
+        return json(res, loaded.code === "forbidden" ? 403 : 404, {
+          ok: false,
+          code: loaded.code,
+          panel: null,
+        });
+      }
+      return json(res, 200, {
+        ok: true,
+        contentKey: loaded.contentKey,
+        pendingChangeCount: loaded.pendingChangeCount,
+        panel: loaded.panel,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.post(`${pathPrefix}/website/field-history/restore`, express.json({ limit: "32kb" }), async (req, res, next) => {
+    try {
+      if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+        return json(res, 403, { ok: false, code: "csrf", published: false });
+      }
+      if (clientTenantOverride(req.body)) {
+        return json(res, 403, { ok: false, code: "forbidden", published: false });
+      }
+      const resolved = await requireEditor(req, res, "website.edit");
+      if (!resolved) return undefined;
+      const contentKey = String((req.body && (req.body.contentKey || req.body.key)) || "").trim();
+      const choice = String((req.body && req.body.choice) || "").trim();
+      const { resolveEngineInstance } = require("../website/blessboardEngineContentService");
+      const found = await resolveEngineInstance(getPool(), {
+        organizationId: resolved.tenant.organization.id,
+        slug: resolved.organizationKey,
+        branchId: editorBranchId(resolved),
+        actorIdentityId: actorUserId(req),
+      });
+      if (!found.ok || !found.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found", published: false });
+      }
+      const restored = await restoreFieldRevisionToDraft(getPool(), {
+        organizationId: resolved.tenant.organization.id,
+        instanceId: found.instance.id,
+        contentKey,
+        choice,
+        versionId: req.body && req.body.versionId,
+        expectedUpdatedAt: req.body && req.body.expectedUpdatedAt,
+        actorIdentityId: actorUserId(req),
+        grantedPermissions: ["website.edit", "website.view"],
+        expectedProductCode: PRODUCT_CODE.BLESSBOARD,
+        env: getEnv(),
+      });
+      if (!restored.ok) {
+        const status =
+          restored.code === "forbidden"
+            ? 403
+            : restored.code === "conflict"
+              ? 409
+              : restored.code === "history_unavailable" || restored.code === "media_not_found"
+                ? 400
+                : 400;
+        return json(res, status, { ...restored, published: false });
+      }
+      return json(res, 200, restored);
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  router.get(`${pathPrefix}/website/unpublished-changes`, async (req, res, next) => {
+    try {
+      const resolved = await requireEditor(req, res, "website.edit");
+      if (!resolved) return undefined;
+      const {
+        resolveEngineInstance,
+      } = require("../website/blessboardEngineContentService");
+      const found = await resolveEngineInstance(getPool(), {
+        organizationId: resolved.tenant.organization.id,
+        slug: resolved.organizationKey,
+        branchId: editorBranchId(resolved),
+        actorIdentityId: actorUserId(req),
+      });
+      if (!found.ok || !found.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found", pendingChangeCount: 0, panel: null });
+      }
+      const publishAuthz = await authorize(getPool(), {
+        actor: { userId: actorUserId(req) },
+        permission: "website.publish",
+        tenantContext: resolved.tenant,
+        resourceContext: {
+          organizationId: resolved.tenant.organization.id,
+          churchId: resolved.tenant.church.id,
+          branchId: editorBranchId(resolved),
+        },
+      });
+      const canPublish = publishAuthz && publishAuthz.allowed === true;
+      const publicBase = editorPublicBase(resolved);
+      const { buildEditorPages } = require("../../platform/website-engine/editorShell");
+      const pages = buildEditorPages({
+        productCode: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: resolved.organizationKey,
+        pageKey: "home",
+        scope: editorScope(resolved),
+      });
+      const loaded = await getUnpublishedChangesPanel(getPool(), {
+        organizationId: resolved.tenant.organization.id,
+        instanceId: found.instance.id,
+        grantedPermissions: ["website.view", "website.edit", ...(canPublish ? ["website.publish"] : [])],
+        canPublish,
+        previewHref: buildPublicWebsitePreviewPath({
+          product: PRODUCT_CODE.BLESSBOARD,
+          organizationKey: resolved.organizationKey,
+          scope: editorScope(resolved),
+        }),
+        publishPath: canPublish && publicBase ? `${publicBase}/website/publish` : null,
+        discardPath: publicBase ? `${publicBase}/website/drafts/discard` : null,
+        pages,
+      });
+      if (!loaded.ok) {
+        return json(res, loaded.code === "forbidden" ? 403 : 404, {
+          ok: false,
+          code: loaded.code,
+          pendingChangeCount: 0,
+          panel: null,
+        });
+      }
+      return json(res, 200, {
+        ok: true,
+        pendingChangeCount: loaded.pendingChangeCount,
+        changedKeys: loaded.changedKeys,
+        panel: loaded.panel,
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
   router.post(`${pathPrefix}/website/drafts`, express.json({ limit: "64kb" }), async (req, res, next) => {
     try {
       if (!validateCsrf(req, csrfFrom(req), getEnv())) {
@@ -366,11 +553,13 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           value,
           actorIdentityId: actorUserId(req),
           grantedPermissions: ["website.edit"],
+          expectedUpdatedAt: req.body && req.body.expectedUpdatedAt,
           env: getEnv(),
         });
         if (!engineSaved.ok) {
           const notFound = engineSaved.code === "tenant_mismatch" || engineSaved.code === "media_not_found";
-          return json(res, notFound ? 404 : 400, {
+          const conflict = engineSaved.code === "conflict";
+          return json(res, conflict ? 409 : notFound ? 404 : 400, {
             ok: false,
             code: engineSaved.code || "save_failed",
             reason: engineSaved.reason || null,
@@ -405,12 +594,19 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
             }
           }
         }
+        const pendingChangeCount = await pendingChangeCountFor(
+          getPool(),
+          resolved.tenant.organization.id,
+          found.instance.id,
+          ["website.edit", "website.view"]
+        );
         return json(res, 200, {
           ok: true,
           published: false,
           code: "saved_to_draft",
           content: engineSaved.content || null,
           version: null,
+          pendingChangeCount,
         });
       }
       const locator = parseLocator(req.body);
@@ -449,12 +645,42 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           /* overlay dual-write is compatibility-only */
         }
       }
+      let pendingChangeCount;
+      if (engineSaved && engineSaved.content && engineSaved.content.instanceId) {
+        pendingChangeCount = await pendingChangeCountFor(
+          getPool(),
+          resolved.tenant.organization.id,
+          engineSaved.content.instanceId,
+          ["website.edit", "website.view"]
+        );
+      } else {
+        try {
+          const { resolveEngineInstance } = require("../website/blessboardEngineContentService");
+          const foundAgain = await resolveEngineInstance(getPool(), {
+            organizationId: resolved.tenant.organization.id,
+            slug: resolved.organizationKey,
+            branchId: editorBranchId(resolved),
+            actorIdentityId: actorUserId(req),
+          });
+          if (foundAgain.ok && foundAgain.instance) {
+            pendingChangeCount = await pendingChangeCountFor(
+              getPool(),
+              resolved.tenant.organization.id,
+              foundAgain.instance.id,
+              ["website.edit", "website.view"]
+            );
+          }
+        } catch {
+          pendingChangeCount = undefined;
+        }
+      }
       return json(res, 200, {
         ok: true,
         published: false,
         code: "saved_to_draft",
         content: engineSaved.content || null,
         version: null,
+        pendingChangeCount,
       });
     } catch (err) {
       return next(err);
@@ -525,6 +751,35 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         }
         const resolved = await requireEditor(req, res, "website.edit");
         if (!resolved) return undefined;
+        const contentKey = String((req.body && (req.body.contentKey || req.body.key)) || "").trim();
+        if (contentKey) {
+          const {
+            resolveEngineInstance,
+          } = require("../website/blessboardEngineContentService");
+          const found = await resolveEngineInstance(getPool(), {
+            organizationId: resolved.tenant.organization.id,
+            slug: resolved.organizationKey,
+            branchId: editorBranchId(resolved),
+            actorIdentityId: actorUserId(req),
+          });
+          if (!found.ok || !found.instance) {
+            return json(res, 404, { ok: false, code: "website_instance_not_found" });
+          }
+          const reverted = await revertFieldToPublished(getPool(), {
+            organizationId: resolved.tenant.organization.id,
+            instanceId: found.instance.id,
+            contentKey,
+            actorIdentityId: actorUserId(req),
+            grantedPermissions: ["website.edit", "website.view"],
+            expectedProductCode: PRODUCT_CODE.BLESSBOARD,
+          });
+          return json(res, reverted.ok ? 200 : 400, {
+            ok: Boolean(reverted.ok),
+            code: reverted.ok ? "reverted" : reverted.code || "revert_failed",
+            pendingChangeCount: reverted.pendingChangeCount,
+            changedKeys: reverted.changedKeys || [],
+          });
+        }
         const { discardWebsiteDrafts } = require("../services/websiteDraftPublishService");
         const result = await discardWebsiteDrafts(getPool(), {
           organizationId: resolved.tenant.organization.id,

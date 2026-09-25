@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <meta name="robots" content="noindex,nofollow"/>
+  <title><%= title %> — Overview</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com"/>
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin/>
+  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet"/>
+  <link rel="stylesheet" href="/platform/release-notes-center.css?v=<%= assetVersion %>"/>
+</head>
+<body class="rnc-body" data-page="overview" data-audience="<%= audience %>">
+  <%- include('partials/header') %>
+  <main class="rnc-main">
+    <section class="rnc-hero">
+      <p class="rnc-eyebrow">QA Release Notes Center</p>
+      <h1>Release Notes</h1>
+      <p class="rnc-lede">Evidence-backed notes for GetPro Unified Platform versions 1.0–2.01. Statuses come from repository QA documents — PASS is never invented.</p>
+      <p class="rnc-note"><%= stitchStatus %></p>
+    </section>
+
+    <%- include('partials/filters') %>
+
+    <section class="rnc-version-grid" aria-label="Versions">
+      <% versionsSummary.forEach(function (item) { %>
+        <a class="rnc-version-card" href="/release-notes/<%= encodeURIComponent(item.version) %>">
+          <h2>Version <%= item.version %></h2>
+          <% if (item.releaseDate) { %><p class="rnc-meta">Release date: <%= item.releaseDate %></p><% } else { %><p class="rnc-meta">Release date: not established</p><% } %>
+          <p><%= item.summary %></p>
+          <dl class="rnc-stats">
+            <div><dt>Features</dt><dd><%= item.featureCount %></dd></div>
+            <div><dt>Bugs</dt><dd><%= item.bugCount %></dd></div>
+            <div><dt>Open-ish</dt><dd><%= item.openBugCount %></dd></div>
+          </dl>
+          <p class="rnc-status-line"><span class="rnc-pill"><%= item.qaVerification.slice(0, 80) %><%= item.qaVerification.length > 80 ? "…" : "" %></span></p>
+        </a>
+      <% }) %>
+    </section>
+
+    <section class="rnc-legend">
+      <h2>Status legend</h2>
+      <ul>
+        <% filterOptions.statusLegend.forEach(function (s) { %>
+          <li><code><%= s %></code></li>
+        <% }) %>
+      </ul>
+    </section>
+  </main>
+  <%- include('partials/footer') %>
+  <script src="/platform/release-notes-center.js?v=<%= assetVersion %>" defer></script>
+</body>
+</html>
