@@ -6,7 +6,7 @@
 **Target deployment:** `moovex-platform-v8-testing` (neuniversity.org)  
 **Products:** BlessBoard and ActiveClinic  
 
-**Verdict:** pending hosted tip match after push (see §6)
+**Verdict:** `V2_01_RELEASE_BASELINE_PASS`
 
 ---
 
@@ -16,7 +16,7 @@
 |------|-------|
 | Local branch | `V8` (tracking `origin/V8`) |
 | Initial HEAD / `origin/V8` | `3d3c7b39287f351795d6abeaa6f4a61779369dde` |
-| Hosted V8 testing SHA (live `/healthz`) | `3d3c7b39287f` — **matched** tip |
+| Hosted V8 testing SHA (live `/healthz`) | `3d3c7b39287f` — **matched** tip at baseline |
 | Hosted deployment code | `moovex-platform-v8-testing` |
 | Hosted environment | `testing` |
 | Hosted platformLine | `v8` |
@@ -25,7 +25,7 @@
 | Media namespace | `testing-v8` |
 | `schemaCompatible` | `true` |
 
-### Hosted V8 hosts checked (read-only)
+### Hosted V8 hosts checked at baseline (read-only)
 
 | Host | `/healthz` | gitSha | deploymentCode |
 |------|------------|--------|----------------|
@@ -90,7 +90,7 @@ V7 testing (`pronline.org`, `moovex-platform-testing`) remains on `03a89106e2fe`
 
 ---
 
-## 3. Local verification (Step 3)
+## 3. Local verification
 
 | Check | Result |
 |-------|--------|
@@ -103,35 +103,38 @@ V7 testing (`pronline.org`, `moovex-platform-testing`) remains on `03a89106e2fe`
 
 ## 4. Final SHA accounting
 
-| Role | SHA |
-|------|-----|
-| Initial tip (pre-change) | `3d3c7b39287f351795d6abeaa6f4a61779369dde` |
-| Final tip (this release commit) | _filled after commit_ |
-| Hosted V8 testing after deploy | _must equal final tip prefix_ |
+| Role | Full SHA | 12-char |
+|------|----------|---------|
+| Initial tip (pre-change) | `3d3c7b39287f351795d6abeaa6f4a61779369dde` | `3d3c7b39287f` |
+| Version bump commit | `9cbfea8270788192e69285962b6e466ffecad80e` | `9cbfea827078` |
+| Hosted V8 testing after deploy | matches `9cbfea827078` on all three hosts | **yes** |
+
+Application code for Version 2.01 is commit `9cbfea8270788192e69285962b6e466ffecad80e` (pushed to `origin/V8`). Hostinger served that SHA for About verification. A follow-up docs-only commit may advance `origin/V8` beyond the verified app SHA without changing version behavior.
 
 ---
 
-## 5. Hosted verification (Step 3 continued)
-
-_Filled after Hostinger serves the final tip._
+## 5. Hosted verification (after deploy)
 
 | Check | Result |
 |-------|--------|
-| Hosted `/healthz` gitSha matches final tip | pending |
-| BB About Version 2.01 | pending |
-| AC About Version 2.01 | pending |
-| Product identity / nav / public home smoke | pending |
-| Production untouched after change | pending re-check |
+| `neuniversity.org` /healthz | `gitSha=9cbfea827078`, `moovex-platform-v8-testing`, `testing`, `v8`, identity `moovex-platform-v7`, `schemaCompatible=true` |
+| `blessboard.neuniversity.org` /healthz | same tip + profile |
+| `activeclinic.neuniversity.org` /healthz | same tip + profile |
+| BB About desktop | **200**, `data-product="BlessBoard"`, **Version 2.01**, Release 2.01, build `9cbfea827078`, `/about` nav present, no stale Version 2.0 |
+| AC About desktop | **200**, `data-product="ActiveClinic"`, **Version 2.01**, Enterprise v2.01, build `9cbfea827078`, `/about` nav present |
+| BB / AC About mobile UA | Version 2.01 + product identity + build `9cbfea827078` |
+| Public smoke | BB `/` 200, AC `/` 200, BB `/contact` 200, AC `/clinics` 200, BB+AC `/login` 200 |
+| Production after change | Still `moovex-platform-production` / `production` / `03a89106e2fe` — **untouched** |
 
 ---
 
 ## 6. Completion gate
 
-Do **not** treat this release as complete until:
+| Gate | Status |
+|------|--------|
+| `origin/V8` includes version bump | **PASS** (`9cbfea82`) |
+| Hosted V8 testing serves that commit | **PASS** (`9cbfea827078` on all three hosts) |
+| Both About pages show Version 2.01 | **PASS** |
+| Production untouched | **PASS** |
 
-1. `origin/V8` includes the version bump commit.
-2. All three V8 testing `/healthz` endpoints report that commit’s SHA (12-char prefix).
-3. Both About pages show **Version 2.01** (not 2.0).
-4. Production remains on prior SHA / `moovex-platform-production`.
-
-**Current status:** code + local tests ready; hosted tip match **pending deploy**.
+**Verdict:** `V2_01_RELEASE_BASELINE_PASS`
