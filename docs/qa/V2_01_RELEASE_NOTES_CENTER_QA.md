@@ -1,9 +1,10 @@
 # V2.01 Release Notes Center QA
 
-**Task:** `V2_01_RELEASE_NOTES_CENTER`  
+**Task:** `V2_01_RELEASE_NOTES_HOSTED_DEPLOY_AND_QA` (follow-on to `V2_01_RELEASE_NOTES_CENTER`)  
 **Date:** 2026-09-25  
 **Branch:** `V8`  
-**Deployment target:** `moovex-platform-v8-testing` (neuniversity.org)  
+**Deployment:** `moovex-platform-v8-testing` (neuniversity.org)  
+**Database:** `moovex-platform-v7` / `testing`  
 **Products:** BlessBoard, ActiveClinic, Shared GetPro Platform  
 **Priority:** P1  
 
@@ -15,166 +16,151 @@
 
 **`V2_01_RELEASE_NOTES_CENTER_QA_BLOCKED`**
 
-Local implementation and automated tests **PASS**. Hosted `/release-notes` on `https://neuniversity.org/release-notes` still returns **404** (hub-only JSON) because this tip is **not deployed**. Per task rules, a live shareable URL is **not claimed**, and final hosted acceptance is **blocked** until deploy + hosted SHA verification.
+Public Release Notes Center is **hosted and verified** on the V8 QA hub. Final PASS is **blocked** because `RELEASE_NOTES_INTERNAL_TOKEN` is **not configured** on the Hostinger V8 testing Node app — internal QA evidence unlock cannot be completed without inventing or bypassing the gate (forbidden).
+
+Public sanitized share URL is verified and safe to share with QA for non-internal content.
 
 ---
 
-## 1. Implemented functionality
+## 1. Source and deployment identity
 
-| Area | Status |
-|------|--------|
-| Canonical `docs/releases/RELEASE_NOTES.md` | Done (evidence-backed; gaps marked) |
-| Runtime catalog `releaseNotesCatalog.js` | Done — versions 1.0–2.01 |
-| Routes on platform QA hub | `/release-notes`, `/release-notes/:version`, `/bugs`, `/qa`, `/share`, `/print` |
-| Filters | Version, product, feature type, implementation status, QA status, bug severity |
-| Status taxonomy | PLANNED … RELEASED (+ UNVERIFIED / DOCUMENTATION PENDING) |
-| Public vs internal | Sanitized share; internal evidence requires `RELEASE_NOTES_INTERNAL_TOKEN` |
-| Print / PDF | Print-friendly CSS + `window.print` / `/print` (no new Node PDF service) |
-| Stitch UI | DOCUMENTATION PENDING (no Stitch project found) |
-| Hub launcher link | “Release Notes Center” on QA hub home |
-| Production isolation | Refused when `DEPLOYMENT_ENV=production` |
-| No new workers / migrations | Confirmed |
+| Item | Value |
+|------|-------|
+| Final source / `origin/V8` HEAD | `1c01649891c1a92ea46c6eb137e30d4e09422a6e` |
+| Hosted application SHA (all V8 hosts) | `1c01649891c1` |
+| Deployment code | `moovex-platform-v8-testing` |
+| Environment | `testing` |
+| Database identity | `moovex-platform-v7` / `testing` |
+| Platform line | `v8` |
+| Release Notes + Change Manager commit | `657454ac3b0abbf489679e4c482a26c39360cccb` |
+| Field-history stale-conflict fix commit | `1c01649891c1a92ea46c6eb137e30d4e09422a6e` |
+| Publish diagnostics fix commit | `45cf7648` (ancestor of tip — included) |
+| Deploy mechanism | `git push origin V8` → Hostinger git-linked app (existing approved workflow) |
 
----
-
-## 2. Files changed
-
-| Path | Change |
-|------|--------|
-| `docs/releases/RELEASE_NOTES.md` | **New** canonical notes |
-| `docs/qa/V2_01_RELEASE_NOTES_CENTER_QA.md` | **New** this report |
-| `src/platform/release-notes/releaseNotesCatalog.js` | **New** catalog |
-| `src/platform/release-notes/releaseNotesService.js` | **New** filter/sanitize/auth |
-| `src/platform/release-notes/renderReleaseNotes.js` | **New** EJS render |
-| `src/platform/release-notes/attachReleaseNotesRoutes.js` | **New** hub handler |
-| `views/platform/release-notes/*` | **New** overview / version / not-found + partials |
-| `public/platform/release-notes-center.css` | **New** |
-| `public/platform/release-notes-center.js` | **New** share/print helpers |
-| `src/platform/http/moovexPlatformRuntimeServer.js` | Hub routes + `/platform` static + hub link |
-| `tests/v2-01-release-notes-center.test.js` | **New** |
-| `scripts/v8/suite-manifest.js` | Wire test into shared-platform (+ compatibility) suites |
-
-Existing release/QA docs under `docs/releases/` and `docs/qa/` were **not** deleted or overwritten.
-
----
-
-## 3. Source documents used
-
-### Releases
-
-- `docs/releases/V2_01_RELEASE_BASELINE.md`
-- `docs/releases/V7_QA_RELEASE_NOTES_2026-09-05.md`
-- `docs/releases/V8_QA_HOMEPAGE_VERSION_2_ONLY.md`
-- `docs/releases/V8_IMPLEMENTATION_BASELINE.md`
-- `docs/releases/V8_HOSTED_END_TO_END_QA_REPORT.md`
-- `docs/releases/V8_BUG_002_SHARED_DEPLOYMENT_503.md`
-- `docs/releases/V8_P0_503_ROOT_CAUSE_AND_FIX.md`
-- Additional `docs/releases/V8_*` referenced in Version 2.0 summary
-
-### QA / ActiveClinic V1
-
-- `docs/qa/V1_3_BB_QA_RELEASE_NOTES.md`
-- `docs/qa/V1_3_AC_QA_RELEASE_NOTES.md`
-- `docs/qa/V2_01_PUBLISH_ERROR_DIAGNOSTICS_QA.md`
-- `docs/qa/V2_01_PUBLISH_LOOKUP_ROOT_CAUSE.md`
-- `docs/qa/V2_01_CHANGE_MANAGER_FOUNDATION_QA.md`
-- `docs/qa/V2_01_TOOLBAR_REMINDERS_QA.md`
-- `docs/qa/V2_01_UNPUBLISHED_CHANGES_QA.md`
-- `docs/qa/V2_01_FIELD_HISTORY_RESTORE_QA.md`
-- `docs/qa/V2_01_HOSTINGER_PROCESS_AUDIT.md`
-- `docs/qa/V2_01_HOSTINGER_WORKER_CONSOLIDATION_PLAN.md`
-- `docs/qa/V2_01_HOSTINGER_PACKAGE_A_QA.md`
-- `docs/activeclinic/release/ACTIVECLINIC_V1_RELEASE_CANDIDATE_CLOSURE.md`
-- `docs/release/V5_RELEASE_VERSIONING.md`
-- `docs/platform/V1_WEBSITE_MORNING_QA_PACK.md` (related only; not a 1.2 release note)
-
----
-
-## 4. Historical documentation gaps
-
-| Gap | Handling |
-|-----|----------|
-| Unified BB+AC Version 1.0 | DOCUMENTATION PENDING / UNVERIFIED for BB |
-| Version 1.1 packet | DOCUMENTATION PENDING |
-| Version 1.2 certified packet | DOCUMENTATION PENDING |
-| Stitch Release Notes screens | DOCUMENTATION PENDING |
-| Dedicated V2.01 robots.txt ticket | Listed separately; UNVERIFIED hosted recheck |
-| Production RELEASED cert for 2.0/2.01 | Not claimed |
-
----
-
-## 5. Local test results
-
-| Gate | Result |
-|------|--------|
-| `node --test tests/v2-01-release-notes-center.test.js` | **16/16 PASS** |
-| `node --test tests/v8-qa-homepage-v2-only.test.js` | **9/9 PASS** (no regression) |
-
-Covered: six versions, filters, public sanitize, internal token gate, production refuse, CSS asset, hub link, panels, unknown version 404.
-
----
-
-## 6. Hosted QA results
+### Pre-deploy check
 
 | Check | Result |
 |-------|--------|
-| `GET https://neuniversity.org/release-notes` | **404** `platform_qa_hub_only` — **NOT DEPLOYED** |
-| Hosted `/healthz` (pre-existing tip) | **200** `deploymentCode=moovex-platform-v8-testing` `gitSha` starts `e5bd58ad…` at probe time |
-| Local tip SHA | `e5bd58adc7cf81725ce34b463d81b8a25850f224` (+ uncommitted RNC work) |
-| Shareable live URL | **Not claimed** |
-
-After deploy, required hosted checks:
-
-1. Hub `/release-notes` → 200 HTML  
-2. `/release-notes/1.0` … `/2.01` → 200  
-3. Filters + share page sanitized  
-4. `/healthz` `gitSha` matches intended deploy SHA  
-5. Production hosts still do not expose the center (or refuse)
+| Local tip before commit | `e5bd58ad` (diagnostics only; RNC/CM uncommitted) |
+| Intended deploy includes RNC + Field History + diagnostics | **Yes** after `657454ac` / `1c016498` |
+| Production SHAs | `blessboard.com` / `activeclinic.org` remain `03a89106e2fe` / `moovex-platform-production` |
 
 ---
 
-## 7. Final commit SHA
+## 2. Internal access configuration
 
-**Pending commit** — working tree contains Release Notes Center changes on top of `e5bd58ad`. Record the commit SHA here after the operator commits, then re-verify hosted SHA.
+| Check | Result |
+|-------|--------|
+| `RELEASE_NOTES_INTERNAL_TOKEN` in local `.env` | **Absent** |
+| Token readable from Hostinger without hPanel | **No** (no Hostinger CLI/SSH in agent) |
+| Public view without token | Evidence column hidden; documentation gaps withheld; no secrets |
+| Wrong `internal_token` query value | Does **not** unlock internal sources |
+| Invented / default token | **Not used** |
 
----
+### STOP — Hostinger step required for internal QA
 
-## 8. Actual verified Release Notes URL
+In **hPanel → Websites → Node.js → `moovex-platform-v8-testing` → Environment variables**, add:
 
-**None yet (hosted 404).**  
+1. Name: `RELEASE_NOTES_INTERNAL_TOKEN`
+2. Value: a long random secret known only to authorized QA (do not commit it)
+3. Restart / redeploy the **testing** Node app only
+4. Re-open `/release-notes/2.01/qa?internal_token=<secret>` (or header `X-Release-Notes-Internal-Token`)
+5. Confirm Evidence column and source paths appear **only** with the correct token
 
-Intended after deploy:
-
-- `https://neuniversity.org/release-notes`
-
----
-
-## 9. Actual verified version-specific URLs
-
-**None yet.** Intended:
-
-- `https://neuniversity.org/release-notes/1.0`
-- `https://neuniversity.org/release-notes/1.1`
-- `https://neuniversity.org/release-notes/1.2`
-- `https://neuniversity.org/release-notes/1.3`
-- `https://neuniversity.org/release-notes/2.0`
-- `https://neuniversity.org/release-notes/2.01`
-- Plus `/bugs`, `/qa`, `/share`, `/print` suffixes
+Do **not** set this on production.
 
 ---
 
-## 10. Outstanding limitations
+## 3. Hosted Release Notes routes
 
-1. Hosted deploy required for PASS / shareable URL.  
-2. Stitch visual parity pending approved screens.  
-3. Internal QA detail requires configuring `RELEASE_NOTES_INTERNAL_TOKEN` on the testing deployment.  
-4. No DB-backed editable QA dashboard (approval required before migrations).  
-5. PDF = browser print only.  
-6. V2.01 Change Manager items remain LOCAL QA PASS until hosted deploy of those features.  
-7. Do not promote to production automatically.
+**Verified shareable overview URL:**  
+https://neuniversity.org/release-notes
+
+| Path | HTTP | Notes |
+|------|------|-------|
+| `/release-notes` | **200** | All six version cards |
+| `/release-notes/1.0` | **200** | |
+| `/release-notes/1.1` | **200** | DOCUMENTATION PENDING |
+| `/release-notes/1.2` | **200** | DOCUMENTATION PENDING |
+| `/release-notes/1.3` | **200** | |
+| `/release-notes/2.0` | **200** | |
+| `/release-notes/2.01` | **200** | About / diagnostics / Change Manager present |
+| `/release-notes/2.01/bugs` | **200** | |
+| `/release-notes/2.01/qa` | **200** | Public checklist; evidence gated |
+| `/release-notes/2.01/share` | **200** | Sanitized summary; no secrets |
+| `/release-notes/2.01/print` | **200** | Print layout |
+| `/platform/release-notes-center.css` | **200** | |
+| `/platform/release-notes-center.js` | **200** | |
+
+### Version-specific shareable URLs (verified 200)
+
+- https://neuniversity.org/release-notes/1.0
+- https://neuniversity.org/release-notes/1.1
+- https://neuniversity.org/release-notes/1.2
+- https://neuniversity.org/release-notes/1.3
+- https://neuniversity.org/release-notes/2.0
+- https://neuniversity.org/release-notes/2.01
+
+Filters: product Infrastructure vs BlessBoard changes content size as expected. Desktop + ~390px mobile viewport checked in browser (layout usable; Stitch UI still DOCUMENTATION PENDING).
+
+Production product hosts do not serve this hub center as a successful public RNC (BB production `/release-notes` → 503; AC → 404). Production deployment env remains isolated.
+
+---
+
+## 4. Field History database QA (testing DB, disposable tenants)
+
+Script: `scripts/local/v2-01-field-history-testing-db-qa.js`  
+Identity confirmed: `moovex-platform-v7` / `testing`  
+**No** `resetFoundationDatabase` against shared DB.
+
+| Case | Result |
+|------|--------|
+| Undo / currently published text restore; unrelated draft preserved; pending count | **PASS** |
+| Earlier published restore; previously_saved unavailable; auth deny; no auto-publish | **PASS** |
+| Image field currently-published restore; no auto-publish | **PASS** |
+| Tenant isolation | **PASS** |
+| Stale `expectedUpdatedAt` conflict on undo/discard | **PASS** (`conflict`) — required code fix in `1c016498` |
+
+BB+AC Change Manager JS (`website-change-manager-ui.js`) returns **200** with history markers on both V8 product hosts.
+
+---
+
+## 5. Regression
+
+| Check | Result |
+|-------|--------|
+| `npm run test:v8:hosted-smoke` (BB+AC) | **PASS** (`gitSha=1c016498…` after final deploy) |
+| BB `/about` shows 2.01 | **200** |
+| AC `/about` shows 2.01 | **200** |
+| BB/AC `/login` | **200** |
+| AC `/clinics` | **200** |
+| Hub `/` + Release Notes link | **200** |
+| Production BB/AC healthz | Untouched (`03a89106e2fe`, `moovex-platform-production`) |
+
+Publishing diagnostics remain on tip ancestry (`45cf7648`). Multi-item publish was previously HOSTED QA PASS; not re-run as a full write session in this task beyond disposable field-history publishes on throwaway tenants.
+
+---
+
+## 6. Remaining gaps
+
+1. **`RELEASE_NOTES_INTERNAL_TOKEN` missing on Hostinger** → blocks final PASS / internal evidence verification.  
+2. Stitch Release Notes screens still DOCUMENTATION PENDING.  
+3. Interactive authenticated BB/AC editor History UI click-through on hosted tenants not separately recorded (service-layer disposable QA PASS).  
+4. Docs tip may lag app SHA after this report commit.
+
+---
+
+## 7. Explicit non-actions
+
+| Action | Done? |
+|--------|-------|
+| Production deploy | **No** |
+| Invent / bypass internal token | **No** |
+| Shared DB reset/migrate | **No** |
+| Modify real customer content | **No** (disposable `fh_qa_*` tenants only) |
 
 ---
 
 ## Verdict (restated)
 
-**`V2_01_RELEASE_NOTES_CENTER_QA_BLOCKED`** — blocked on hosted deployment verification of `/release-notes`. Local suite green; evidence-only catalog in place; production unmodified.
+**`V2_01_RELEASE_NOTES_CENTER_QA_BLOCKED`** — public hosted routes and shareable URLs verified on SHA `1c016498`; blocked on missing Hostinger `RELEASE_NOTES_INTERNAL_TOKEN` for authorized internal QA unlock.

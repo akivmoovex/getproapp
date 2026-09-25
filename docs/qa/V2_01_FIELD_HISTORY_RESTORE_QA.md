@@ -8,8 +8,8 @@
 **Stitch:** [Website Change Manager](https://stitch.withgoogle.com/projects/12538817760086591589)  
 - Screen 4 Field History and Restore: `06f6fb0423eb47808b0227564ae48458`  
 
-**Local SHA (working tree base):** `e5bd58adc7cf` (`e5bd58adc7cf81725ce34b463d81b8a25850f224`)  
-**Hosted deploy of this feature:** not performed in this task  
+**Local SHA (working tree base):** `e5bd58adc7cf` (initial); **hosted deploy SHA:** `1c01649891c1`  
+**Hosted deploy of this feature:** performed 2026-09-25 on `moovex-platform-v8-testing`  
 
 **Prerequisites:**  
 - `V2_01_CHANGE_MANAGER_FOUNDATION_PASS`  
@@ -106,12 +106,12 @@ Command: `node --test tests/v2-01-field-history-restore.test.js`
 | Missing historical media marked unavailable | **PASS** |
 | No restore without edit permission | **PASS** |
 | BB+AC wiring (History control, APIs, confirm copy, 390px CSS) | **PASS** |
-| Undo/currently published restore; unrelated draft preserved; counter | **SKIP** (local foundation Postgres unavailable) |
-| Earlier published restore; previously_saved reject; auth deny; concurrency conflict | **SKIP** (local foundation Postgres unavailable) |
-| Tenant isolation; no auto-publish | **SKIP** (local foundation Postgres unavailable) |
+| Undo/currently published restore; unrelated draft preserved; counter | **SKIP** locally; **PASS** on testing DB disposable script |
+| Earlier published restore; previously_saved reject; auth deny | **SKIP** locally; **PASS** on testing DB |
+| Tenant isolation; no auto-publish | **SKIP** locally; **PASS** on testing DB |
 
 **Presentation/wiring: 5/5 PASS**  
-**Service integration: 3 SKIP** (fixture DB unavailable in this environment — same helper as foundation suite)
+**Service integration on authorized testing DB:** `scripts/local/v2-01-field-history-testing-db-qa.js` → **5/5 PASS** (identity `moovex-platform-v7` / `testing`; no shared DB reset).
 
 ---
 
@@ -119,9 +119,18 @@ Command: `node --test tests/v2-01-field-history-restore.test.js`
 
 | Check | Result |
 |-------|--------|
-| Deploy to `moovex-platform-v8-testing` | **Not performed** |
-| Production | **Untouched** |
-| BB+AC publish regression smoke (hosted) | **Not performed** |
+| Deploy to `moovex-platform-v8-testing` | **Yes** (`657454ac` feature + `1c016498` conflict guard) |
+| Hosted app SHA | `1c01649891c1` |
+| Text restore + unrelated draft + pending count | **PASS** |
+| Image field currently-published restore | **PASS** |
+| Earlier published + previously_saved unavailable + auth deny | **PASS** |
+| Tenant isolation + no auto-publish | **PASS** |
+| Stale `expectedUpdatedAt` on undo/discard | **PASS** (`conflict`) after `1c016498` |
+| BB+AC Change Manager JS hosted | **200** with history markers |
+| V8 hosted smoke | **PASS** |
+| Production | **Untouched** (`03a89106e2fe`) |
+
+Conflict-guard note: undo/currently-published initially discarded without `expectedUpdatedAt`; fixed in `1c016498`.
 
 ---
 
@@ -129,9 +138,9 @@ Command: `node --test tests/v2-01-field-history-restore.test.js`
 
 | Gap | Notes |
 |-----|-------|
-| Local/hosted DB integration run | Service tests are authored; need Postgres fixture or hosted deploy to execute |
 | Live Stitch browser pixel compare | CSS/markup parity coded; interactive visual QA not recorded |
 | Prior draft revision timeline | Intentionally unavailable until a real draft-revision store exists |
+| Authenticated editor UI click-through | Service-layer disposable tenants covered |
 
 ---
 
@@ -140,13 +149,14 @@ Command: `node --test tests/v2-01-field-history-restore.test.js`
 | Action | Done? |
 |--------|-------|
 | Production changes | **No** |
-| Hostinger deploy / restart | **No** |
+| Shared DB reset / migrate | **No** |
 | Fabricate previously-saved drafts | **No** |
 | Auto-publish on restore | **No** |
 | New migration | **No** |
+| Modify real customer content | **No** |
 
 ---
 
 ## Verdict (restated)
 
-**`V2_01_FIELD_HISTORY_RESTORE_PASS`**
+**`V2_01_FIELD_HISTORY_RESTORE_PASS`** — presentation suite green; testing-DB disposable integration **5/5 PASS**; deployed on V8 testing SHA `1c016498`; production untouched.
