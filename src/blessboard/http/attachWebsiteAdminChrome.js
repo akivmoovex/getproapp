@@ -785,6 +785,7 @@ async function attachWebsiteAdminChrome(opts) {
     buildPublicWebsiteAddSectionPath,
     buildPublicWebsiteThemePath,
     buildPublicWebsiteThemesPath,
+    buildPublicWebsiteWebsitesPath,
   } = require("../../platform/website/publicWebsiteUrl");
   const currentPath = String(model.path || "/");
   const orgKey =
@@ -965,6 +966,16 @@ async function attachWebsiteAdminChrome(opts) {
             scope: editorScope,
           })
         : null;
+  const websitesChooserUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/websites`
+      : orgKey
+        ? buildPublicWebsiteWebsitesPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
   const unpublishPath =
     isHqEditor && canPublishWebsite
       ? buildPublicWebsiteUnpublishPath({
@@ -1097,6 +1108,25 @@ async function attachWebsiteAdminChrome(opts) {
       group: "general",
     });
   }
+  const multiSiteMode = String(model.websiteMode || "") === "multi_site";
+  const activeBranchCount = Array.isArray(model.activeBranches)
+    ? model.activeBranches.length
+    : 0;
+  // HQ multi-site editors with branch mini-sites can switch; single-site / branch-only stay on one site.
+  const showChangeWebsite =
+    Boolean(websitesChooserUrl) &&
+    multiSiteMode &&
+    isHqEditor &&
+    activeBranchCount > 0;
+  if (showChangeWebsite) {
+    moreItems.push({
+      id: "change-website",
+      label: "Change Website",
+      icon: "account_tree",
+      href: websitesChooserUrl,
+      group: "general",
+    });
+  }
   if (historyHref) {
     moreItems.push({
       id: "history",
@@ -1173,6 +1203,15 @@ async function attachWebsiteAdminChrome(opts) {
     existingSectionKeys
   );
 
+  const churchDisplayName =
+    (tenant && tenant.church && (tenant.church.displayName || tenant.church.name)) ||
+    orgKey ||
+    "Website";
+  const websiteName = publicBranchKey
+    ? String((model.branch && model.branch.displayName) || publicBranchKey)
+    : `${churchDisplayName} — Headquarters`;
+  const websiteScopeKind = publicBranchKey ? "branch" : "hq";
+
   const shellFacts = {
     productCode: PRODUCT_CODE.BLESSBOARD,
     pageKey: model.pageKey,
@@ -1188,6 +1227,9 @@ async function attachWebsiteAdminChrome(opts) {
       organizationId,
       websiteInstanceId || organizationId
     ),
+    websiteName,
+    websiteScopeKind,
+    changeWebsiteHref: showChangeWebsite ? websitesChooserUrl : null,
     instanceId: websiteInstanceId,
     organizationId,
     canEdit: true,

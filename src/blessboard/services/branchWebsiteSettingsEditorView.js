@@ -8,9 +8,9 @@ const { SOURCE } = require("./resolveBranchWebsiteSettings");
 const registry = require("./websiteSettingKeyRegistry");
 
 const STATE_LABELS = Object.freeze({
-  inherited: "Inherited from church",
+  inherited: "From Headquarters",
   branch_record: "Using branch information",
-  overridden: "Overridden for this branch",
+  overridden: "Branch customization active",
   hidden: "Hidden on branch website",
   locked: "Locked by HQ policy",
   missing: "No value available",
@@ -132,12 +132,12 @@ function buildFieldViewModel(key, meta, ctx) {
   let detail = "";
   if (state === "inherited") {
     detail = ctx.parentChurchLabel
-      ? `Inherited from church: ${ctx.parentChurchLabel}`
-      : "Inherited from church";
+      ? `From Headquarters: ${ctx.parentChurchLabel}`
+      : "From Headquarters";
   } else if (state === "branch_record") {
     detail = value != null && value !== "" ? `Using branch value: ${displayValue(value)}` : "Using branch information";
   } else if (state === "overridden") {
-    detail = "This branch has a website override";
+    detail = "Branch customization active — local override replaces Headquarters for this field.";
   } else if (state === "hidden") {
     detail = "Hidden on this branch website";
   } else if (state === "locked") {
@@ -159,6 +159,13 @@ function buildFieldViewModel(key, meta, ctx) {
   const canHide = allowHide && (state === "inherited" || state === "branch_record" || state === "overridden" || state === "platform" || state === "missing");
   const canRestore = !locked && state === "hidden";
 
+  const {
+    presentInheritanceState,
+  } = require("../../platform/website/websiteInheritancePresentation");
+  const inheritance = presentInheritanceState(state, {
+    parentChurchLabel: ctx.parentChurchLabel,
+  });
+
   return {
     key,
     label: def.description || key,
@@ -166,8 +173,8 @@ function buildFieldViewModel(key, meta, ctx) {
     maxLen: def.maxLen || 200,
     enumValues: def.enumValues || null,
     state,
-    stateLabel: STATE_LABELS[state] || STATE_LABELS.missing,
-    detail,
+    stateLabel: inheritance.badgeLabel || STATE_LABELS[state] || STATE_LABELS.missing,
+    detail: inheritance.detail || detail,
     source,
     value,
     display: displayValue(value),
@@ -177,6 +184,8 @@ function buildFieldViewModel(key, meta, ctx) {
     canReset,
     canHide,
     canRestore,
+    overrideActionLabel: inheritance.primaryActionLabel || "Override for this branch",
+    resetActionLabel: inheritance.resetActionLabel || "Return to Headquarters Default",
     showBranchRecordLink: state === "branch_record" && key.startsWith("contact."),
   };
 }

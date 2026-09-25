@@ -317,7 +317,7 @@
 
         <div class="bb-hq-branch-settings__field-actions">
           <button type="submit" class="bb-hq-btn" data-bb-setting-submit="override">
-            <%= field.state === 'overridden' ? 'Save override' : 'Override for this branch' %>
+            <%= field.state === 'overridden' ? 'Save override' : (field.overrideActionLabel || 'Use a different version for this branch') %>
           </button>
         </div>
       </form>
@@ -325,13 +325,13 @@
 
       <div class="bb-hq-branch-settings__field-actions">
         <% if (field.canReset && field.state === 'overridden') { %>
-        <form method="post" action="<%= formAction %>" class="bb-hq-form bb-hq-branch-settings__inline-form" data-bb-setting-action="reset" onsubmit="return confirm('Reset this override and inherit the church default again?');">
+        <form method="post" action="<%= formAction %>" class="bb-hq-form bb-hq-branch-settings__inline-form" data-bb-setting-action="reset" onsubmit="return confirm('Return this field to the Headquarters default? The local override will be removed.');">
           <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>" />
           <input type="hidden" name="action" value="reset" />
           <input type="hidden" name="settingKey" value="<%= esc(field.key) %>" />
           <input type="hidden" name="section" value="<%= esc(sec.id) %>" />
           <% if (safeReturnTo) { %><input type="hidden" name="return_to" value="<%= esc(safeReturnTo) %>" /><% } %>
-          <button type="submit" class="bb-hq-btn bb-hq-btn--ghost" data-bb-setting-submit="reset">Reset to church default</button>
+          <button type="submit" class="bb-hq-btn bb-hq-btn--ghost" data-bb-setting-submit="reset"><%= field.resetActionLabel || 'Return to Headquarters Default' %></button>
         </form>
         <% } %>
 

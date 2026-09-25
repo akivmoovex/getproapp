@@ -1468,6 +1468,55 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
     }
   });
 
+  app.get("/clinics/:clinicKey/website/websites", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!canEditClinicWebsite(req, clinic)) {
+        return res.status(403).type("text").send("Forbidden");
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      const {
+        listActiveClinicAuthorizedWebsiteScopes,
+      } = require("../website/activeClinicAuthorizedWebsiteScopes");
+      const listed = await listActiveClinicAuthorizedWebsiteScopes({
+        db: getPool(),
+        organizationId: clinic.organizationId,
+        organizationKey: clinic.clinicKey,
+        displayName: clinic.displayName || clinic.clinicKey,
+        instance: attached && attached.instance,
+        publicationStatus: attached && attached.instance && attached.instance.status,
+        canEdit: true,
+      });
+      const csrfToken = issueCsrfToken(env);
+      setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
+      const editHref = buildPublicWebsiteEditPath({
+        product: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: clinic.clinicKey,
+      });
+      const {
+        loadWebsiteScopeListPresentation,
+        renderStandaloneWebsiteScopeListPage,
+      } = require("../../platform/website/websiteScopeHttp");
+      const presentation = loadWebsiteScopeListPresentation({
+        productCode: PRODUCT_CODE.ACTIVECLINIC,
+        siteLabel: clinic.displayName || clinic.clinicKey,
+        websites: listed.websites || [],
+        currentScopeId: "clinic",
+        backHref: editHref,
+        hierarchySupported: false,
+        hierarchyNote: listed.hierarchyNote || null,
+        csrfField: CSRF_FIELD,
+        csrfToken,
+        notice: noticeFromQuery(req.query),
+        error: errorFromQuery(req.query),
+      });
+      return res.status(200).type("html").send(renderStandaloneWebsiteScopeListPage(presentation));
+    } catch (err) {
+      return next(err);
+    }
+  });
+
   app.get("/clinics/:clinicKey/website/theme", async (req, res, next) => {
     try {
       const clinic = await loadClinic(req, res);

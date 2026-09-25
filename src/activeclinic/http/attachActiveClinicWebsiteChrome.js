@@ -29,6 +29,7 @@ const {
   buildPublicWebsiteAddSectionPath,
   buildPublicWebsiteThemePath,
   buildPublicWebsiteThemesPath,
+  buildPublicWebsiteWebsitesPath,
   buildPublicWebsiteSubmitPath,
   buildPublicWebsiteFinishEditPath,
   buildPublicWebsiteUnpublishedChangesPath,
@@ -130,6 +131,7 @@ function clinicWebsiteActionUrls(clinicKey, pageKey) {
     websiteAddSectionUrl: buildPublicWebsiteAddSectionPath(base),
     websiteThemeUrl: buildPublicWebsiteThemePath(base),
     websiteThemesUrl: buildPublicWebsiteThemesPath(base),
+    websiteWebsitesUrl: buildPublicWebsiteWebsitesPath(base),
     websiteStylesUrl: buildPublicWebsiteStylesPath(base),
     websiteSeoUrl: buildPublicWebsiteSeoPath(base),
     websiteSubmitUrl: buildPublicWebsiteSubmitPath(base),
@@ -316,6 +318,8 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
       group: "general",
     });
   }
+  // ActiveClinic: one public website per clinic org — no multi-website switcher.
+  // /website/websites still lists the single authorized clinic site when opened directly.
   moreItems.push({
     id: "history",
     label: "Version history",
@@ -399,6 +403,12 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
       clinic.organizationId,
       instance && instance.id
     ),
+    websiteName:
+      String((clinic && (clinic.displayName || clinic.name)) || "").trim() ||
+      (outClinic && outClinic.clinicKey) ||
+      "Clinic website",
+    websiteScopeKind: "clinic",
+    changeWebsiteHref: null,
     instanceId: instance && instance.id,
     organizationId: clinic.organizationId,
     canEdit,

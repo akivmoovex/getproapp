@@ -370,6 +370,11 @@ function buildPublicWebsiteThemesPath(input) {
   return path ? appendQuery(`${path}/website/themes`, input && input.query) : null;
 }
 
+function buildPublicWebsiteWebsitesPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/websites`, input && input.query) : null;
+}
+
 function buildPublicWebsiteSettingsPath(input) {
   const product = normalizeProduct((input && (input.product || input.productCode)) || "");
   const actor = String((input && input.actor) || "").trim();
@@ -677,6 +682,7 @@ module.exports = {
   buildPublicWebsiteAddSectionPath,
   buildPublicWebsiteThemePath,
   buildPublicWebsiteThemesPath,
+  buildPublicWebsiteWebsitesPath,
   buildPublicWebsiteSettingsPath,
   buildPublicWebsitePublishPath,
   buildPublicWebsiteUnpublishPath,

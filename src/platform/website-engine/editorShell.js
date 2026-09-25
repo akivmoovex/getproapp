@@ -24,12 +24,15 @@ const LABELS = Object.freeze({
   pagesHeading: "Pages",
   pageSelectorHeading: "Page Selector",
   editWebsite: "Edit website",
+  changeWebsite: "Change Website",
   discardDraft: "Discard draft changes",
   unpublishWebsite: "Unpublish website",
   keepEditing: "Keep editing",
   discardChanges: "Discard changes",
   publishConfirmTitle: "Publish website?",
   publishConfirmBody: "Your draft changes will become public. Visitors will see the updated website.",
+  publishConfirmBodyHq:
+    "Your draft changes will become public on this Headquarters website. Branches that inherit live HQ content may show these updates. Branch override content is unchanged.",
   discardConfirmTitle: "Discard draft changes?",
   discardConfirmBody:
     "Unpublished draft changes will be removed. The live published website will stay unchanged.",
@@ -38,6 +41,8 @@ const LABELS = Object.freeze({
     "The public website will be taken offline. Content and version history are preserved.",
   unsavedTitle: "Unsaved changes",
   unsavedBody: "You have unsaved changes that are not saved to draft yet.",
+  switchWebsiteWarn:
+    "You have unsaved edits on this page. Save or discard them before switching websites. Saved drafts stay on their own website.",
 });
 
 const PAGE_ICONS = Object.freeze({
@@ -215,6 +220,15 @@ function presentEditorShell(input) {
   const editing = facts.editing === true && !previewMode;
   const exitMethod = String(facts.exitMethod || "GET").toUpperCase() === "POST" ? "POST" : "GET";
 
+  const websiteName = String(facts.websiteName || "").trim();
+  const websiteScopeKind = String(facts.websiteScopeKind || "").trim().toLowerCase();
+  const isHqScope = websiteScopeKind === "hq" || websiteScopeKind === "church";
+  const publishConfirmBody =
+    facts.publishConfirmBody ||
+    (isHqScope ? LABELS.publishConfirmBodyHq : LABELS.publishConfirmBody);
+  // Toolbar title stays generic; selected website name is shown via websiteName.
+  const editingTitle = facts.editingLabel || LABELS.editingWebsite;
+
   const shell = {
     productCode,
     pageKey,
@@ -227,6 +241,9 @@ function presentEditorShell(input) {
     saveStateLabel: facts.saveStateLabel || (draft ? "Drafts saved" : "Up to date"),
     unpublishedCount,
     websiteScopeKey: facts.websiteScopeKey || null,
+    websiteName: websiteName || null,
+    websiteScopeKind: websiteScopeKind || null,
+    changeWebsiteHref: facts.changeWebsiteHref || null,
     instanceId: facts.instanceId || null,
     organizationId: facts.organizationId || null,
     canEdit: facts.canEdit === true,
@@ -254,7 +271,7 @@ function presentEditorShell(input) {
     csrfToken: facts.csrfToken || "",
     csrfField: facts.csrfField || "_csrf",
     labels: {
-      editingWebsite: LABELS.editingWebsite,
+      editingWebsite: editingTitle,
       previewingDraft: LABELS.previewingDraft,
       preview: facts.previewLabel || LABELS.preview,
       publish: facts.publishLabel || LABELS.publish,
@@ -264,18 +281,20 @@ function presentEditorShell(input) {
       pagesHeading: LABELS.pagesHeading,
       pageSelectorHeading: LABELS.pageSelectorHeading,
       editWebsite: facts.editLabel || LABELS.editWebsite,
+      changeWebsite: LABELS.changeWebsite,
       discardDraft: LABELS.discardDraft,
       unpublishWebsite: LABELS.unpublishWebsite,
       keepEditing: LABELS.keepEditing,
       discardChanges: LABELS.discardChanges,
       publishConfirmTitle: LABELS.publishConfirmTitle,
-      publishConfirmBody: LABELS.publishConfirmBody,
+      publishConfirmBody,
       discardConfirmTitle: LABELS.discardConfirmTitle,
       discardConfirmBody: LABELS.discardConfirmBody,
       unpublishConfirmTitle: LABELS.unpublishConfirmTitle,
       unpublishConfirmBody: LABELS.unpublishConfirmBody,
       unsavedTitle: LABELS.unsavedTitle,
       unsavedBody: LABELS.unsavedBody,
+      switchWebsiteWarn: LABELS.switchWebsiteWarn,
     },
     saveLabel: facts.saveLabel || "Save draft",
     publishLabel: facts.publishLabel || LABELS.publish,

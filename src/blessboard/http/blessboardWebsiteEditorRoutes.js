@@ -35,6 +35,7 @@ const {
   buildPublicWebsiteSeoPath,
   buildPublicWebsiteMediaLibraryPath,
   buildPublicWebsiteThemesPath,
+  buildPublicWebsiteWebsitesPath,
   appendQuery,
 } = require("../../platform/website/publicWebsiteUrl");
 const { authorize, listEffectivePermissions } = require("../services/blessBoardRbacAuthorizationService");
@@ -256,6 +257,14 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
 
   function scopedThemesPath(resolved) {
     return buildPublicWebsiteThemesPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: resolved.organizationKey,
+      scope: editorScope(resolved),
+    });
+  }
+
+  function scopedWebsitesPath(resolved) {
+    return buildPublicWebsiteWebsitesPath({
       product: PRODUCT_CODE.BLESSBOARD,
       organizationKey: resolved.organizationKey,
       scope: editorScope(resolved),
@@ -1556,6 +1565,53 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           error: errorFromQuery(req.query),
         });
         return res.status(200).type("html").send(renderStandaloneThemeGalleryPage(presentation));
+      } catch (err) {
+        return next(err);
+      }
+    });
+
+    router.get(`${pathPrefix}/website/websites`, async (req, res, next) => {
+      try {
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const {
+          listBlessBoardAuthorizedWebsiteScopes,
+        } = require("../website/blessboardAuthorizedWebsiteScopes");
+        const listed = await listBlessBoardAuthorizedWebsiteScopes({
+          db: getPool(),
+          tenant: resolved.tenant,
+          organizationKey: resolved.organizationKey,
+          authenticatedUser: actorUserId(req),
+          currentBranchKey: editorScope(resolved) && editorScope(resolved).branchKey,
+        });
+        if (!listed.ok && listed.code === "forbidden") {
+          return res.status(403).type("text").send("Forbidden");
+        }
+        const env = getEnv();
+        const csrfToken = issueCsrfToken(env);
+        setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
+        const {
+          loadWebsiteScopeListPresentation,
+          renderStandaloneWebsiteScopeListPage,
+        } = require("../../platform/website/websiteScopeHttp");
+        const presentation = loadWebsiteScopeListPresentation({
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          siteLabel:
+            (resolved.tenant.church && resolved.tenant.church.displayName) ||
+            resolved.organizationKey,
+          websites: listed.websites || [],
+          currentScopeId: editorBranchId(resolved)
+            ? `branch:${(editorScope(resolved) && editorScope(resolved).branchKey) || ""}`
+            : "hq",
+          backHref: scopedEditPath(resolved),
+          hierarchySupported: listed.hierarchySupported !== false,
+          hierarchyNote: listed.hierarchyNote || null,
+          csrfField: CSRF_FIELD,
+          csrfToken,
+          notice: noticeFromQuery(req.query),
+          error: errorFromQuery(req.query) || (listed.ok ? null : listed.code),
+        });
+        return res.status(200).type("html").send(renderStandaloneWebsiteScopeListPage(presentation));
       } catch (err) {
         return next(err);
       }

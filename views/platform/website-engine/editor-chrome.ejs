@@ -93,6 +93,9 @@
       </span>
       <div class="gp-website-editor__title-block">
         <span class="gp-website-editor__title"><%= labels.editingWebsite || 'Editing website' %></span>
+        <% if (shell.websiteName) { %>
+        <span class="gp-website-editor__site-name" data-website-scope-name="1"><%= shell.websiteName %></span>
+        <% } %>
         <span
           class="gp-website-editor__draft gp-website-editor__draft--mobile"
           data-website-engine-draft-short="1"
@@ -198,6 +201,7 @@
               role="menuitem"
               href="<%= item.href %>"
               data-website-more-id="<%= item.id %>"
+              <% if (item.id === 'change-website') { %>data-website-switch="1"<% } %>
             >
               <span class="material-symbols-outlined" aria-hidden="true"><%= item.icon %></span>
               <%= item.label %>
