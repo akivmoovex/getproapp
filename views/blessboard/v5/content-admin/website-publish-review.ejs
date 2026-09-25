@@ -35,7 +35,13 @@
   </header>
 
   <% if (typeof error !== 'undefined' && error) { %>
-  <div class="bb-hq-alert bb-hq-alert--error" role="alert"><%= error %></div>
+  <div
+    class="bb-hq-alert bb-hq-alert--error"
+    role="alert"
+    data-bb-publish-error="1"
+    <% if (typeof publishErrorCode !== 'undefined' && publishErrorCode) { %>data-bb-publish-error-code="<%= publishErrorCode %>"<% } %>
+    <% if (typeof publishRequestId !== 'undefined' && publishRequestId) { %>data-bb-publish-request-id="<%= publishRequestId %>"<% } %>
+  ><%= error %></div>
   <% } %>
 
   <div class="bb-publish-review__grid">

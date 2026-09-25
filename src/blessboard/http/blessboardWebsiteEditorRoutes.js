@@ -579,12 +579,27 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           mobilePreviewConfirmed: true,
           relaxPreviewRequirement: true,
           forcePublishVersion: true,
+          requestId: req.requestId || req.correlationId || null,
+          correlationId: req.correlationId || req.requestId || null,
       });
       if (String(req.headers.accept || "").includes("application/json")) {
-        return json(res, published.ok ? 200 : 400, {
+        const requestId = req.requestId || req.correlationId || null;
+        return json(res, published.ok ? 200 : published.httpStatusHint || 400, {
           ok: Boolean(published.ok),
           published: Boolean(published.ok),
-          code: published.ok ? "published" : published.reason || published.status,
+          code: published.ok
+            ? "published"
+            : published.publicCode || published.reason || published.status,
+          publicCode: published.ok
+            ? "published"
+            : published.publicCode || published.reason || published.status,
+          engineCode: published.engineCode || null,
+          failureStage: published.failureStage || null,
+          message: published.ok
+            ? "Changes published successfully."
+            : published.message || null,
+          requestId,
+          correlationId: requestId,
         });
       }
       if (!published.ok) {
@@ -595,9 +610,13 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
             published.validationErrors ||
             [],
           gaps: published.gaps || [],
-          reason: published.reason,
+          reason: published.publicCode || published.reason,
         });
-        const codeList = (codes.length ? codes : [published.reason || "publish"]).join(",");
+        const codeList = (codes.length
+          ? codes
+          : [published.publicCode || published.reason || "publish_failed"]
+        ).join(",");
+        const requestId = req.requestId || req.correlationId || "";
         const branchBase = editorPublicBase(resolved);
         if (branchBase) {
           return res.redirect(
@@ -606,13 +625,13 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
               website_edit: "1",
               website_mode: "draft",
               website_publish_error: codeList,
+              ...(requestId ? { website_publish_request_id: String(requestId).slice(0, 64) } : {}),
             })
           );
         }
-        return res.redirect(
-          303,
-          `/hq/website/publish/error?codes=${encodeURIComponent(codeList)}`
-        );
+        const qs = new URLSearchParams({ codes: codeList });
+        if (requestId) qs.set("requestId", String(requestId).slice(0, 64));
+        return res.redirect(303, `/hq/website/publish/error?${qs.toString()}`);
       }
       const publicPath = editorPublicBase(resolved);
       const successQuery = {

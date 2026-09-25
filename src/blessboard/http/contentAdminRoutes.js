@@ -2620,24 +2620,31 @@ function createContentAdminRouter(deps) {
           mobilePreviewConfirmed: true,
           deferServiceTimes: true,
           env,
+          requestId: req.requestId || req.correlationId || null,
+          correlationId: req.correlationId || req.requestId || null,
         });
 
         if (!publishResult.ok) {
-          const reason = String(publishResult.reason || "publish_failed");
+          const {
+            publicMessageForCode,
+          } = require("../services/websitePublishFailureDiagnostics");
+          const reason = String(
+            publishResult.publicCode || publishResult.reason || "publish_failed"
+          );
           const statusCode =
-            publishResult.status === "forbidden"
+            publishResult.status === "forbidden" || reason === "forbidden"
               ? 403
-              : publishResult.status === "not_ready" || reason === "no_changes"
+              : publishResult.status === "not_ready" ||
+                  reason === "no_changes" ||
+                  reason === "not_ready"
                 ? 409
-                : 500;
+                : publishResult.httpStatusHint && Number(publishResult.httpStatusHint) >= 400
+                  ? Number(publishResult.httpStatusHint)
+                  : 500;
           const message =
-            reason === "approval_required"
-              ? "These changes require approval before publication."
-              : reason === "no_changes"
-                ? "There are no draft changes to publish."
-                : reason === "not_ready" || publishResult.status === "not_ready"
-                  ? "Website is not ready to publish. Review draft changes for blocking issues."
-                  : "We could not publish these changes. Please try again.";
+            publishResult.message ||
+            publicMessageForCode(reason) ||
+            "We could not publish these changes. Please try again.";
           const validationErrors =
             (publishResult.publishResult && publishResult.publishResult.validationErrors) ||
             (publishResult.publishResult &&
@@ -2665,12 +2672,18 @@ function createContentAdminRouter(deps) {
             .map((i) => i.title || i.message)
             .filter(Boolean)
             .join("; ");
+          const requestId = req.requestId || req.correlationId || null;
           return res.status(statusCode).json({
             ok: false,
             reason,
             code: reason,
+            publicCode: reason,
+            engineCode: publishResult.engineCode || null,
+            failureStage: publishResult.failureStage || null,
             error: issueSummary ? `${message} ${issueSummary}` : message,
             message: issueSummary ? `${message} ${issueSummary}` : message,
+            requestId,
+            correlationId: requestId,
             saved: true,
             published: false,
             value: saveResult.value,
@@ -2933,25 +2946,39 @@ function createContentAdminRouter(deps) {
         return res.redirect(303, `${scope.basePath}/draft-changes`);
       }
       const errQ = String((req.query && req.query.error) || "");
+      const requestIdQ = String((req.query && req.query.requestId) || "").slice(0, 64);
+      const {
+        publicMessageForCode,
+      } = require("../services/websitePublishFailureDiagnostics");
+      let errorMessage = null;
+      if (errQ === "publish_failed") {
+        errorMessage =
+          "We could not publish these changes. Please try again. Drafts were preserved and the public website was not changed.";
+      } else if (errQ === "submit_failed") {
+        errorMessage = "Approval submission failed. Drafts were preserved — try again.";
+      } else if (errQ === "csrf") {
+        errorMessage = "Invalid or missing security token. Refresh and try again.";
+      } else if (errQ === "not_ready") {
+        errorMessage =
+          "Website is not ready to publish. Review the issues below, then try Save and Publish again.";
+      } else if (errQ === "confirm") {
+        errorMessage = "Confirm publication before continuing.";
+      } else if (errQ === "forbidden") {
+        errorMessage = "You do not have permission for that action.";
+      } else if (errQ) {
+        errorMessage = publicMessageForCode(errQ);
+      }
+      if (errorMessage && requestIdQ) {
+        errorMessage = `${errorMessage} Request ID: ${requestIdQ}`;
+      }
       const html = renderContentAdminView(
         "content-admin/website-publish-review.ejs",
         await shellLocals(req, res, {
           scope,
           review,
-          error:
-            errQ === "publish_failed"
-              ? "We could not publish these changes. Please try again. Drafts were preserved and the public website was not changed."
-              : errQ === "submit_failed"
-                ? "Approval submission failed. Drafts were preserved — try again."
-                : errQ === "csrf"
-                  ? "Invalid or missing security token. Refresh and try again."
-                  : errQ === "not_ready"
-                    ? "Website is not ready to publish. Review the issues below, then try Save and Publish again."
-                    : errQ === "confirm"
-                      ? "Confirm publication before continuing."
-                      : errQ === "forbidden"
-                        ? "You do not have permission for that action."
-                        : null,
+          error: errorMessage,
+          publishErrorCode: errQ || null,
+          publishRequestId: requestIdQ || null,
         })
       );
       return res.status(200).type("html").send(html);
@@ -3020,17 +3047,28 @@ function createContentAdminRouter(deps) {
               req.body.acknowledge_public === "on")
         ),
         env,
+        requestId: req.requestId || req.correlationId || null,
+        correlationId: req.correlationId || req.requestId || null,
       });
       if (!result.ok) {
         const code =
-          result.reason === "cross_org" || result.status === "forbidden"
+          result.reason === "cross_org" ||
+          result.status === "forbidden" ||
+          result.publicCode === "forbidden"
             ? "forbidden"
             : result.reason === "confirm_publish"
               ? "confirm"
               : result.reason === "no_changes" || result.status === "not_ready"
                 ? "not_ready"
-                : "publish_failed";
-        return res.redirect(303, `${scope.basePath}/draft-changes/publish-review?error=${code}`);
+                : String(result.publicCode || result.reason || "publish_failed");
+        const requestId = req.requestId || req.correlationId || "";
+        const qs = new URLSearchParams({ error: code });
+        if (requestId) qs.set("requestId", String(requestId).slice(0, 64));
+        if (result.engineCode) qs.set("engineCode", String(result.engineCode).slice(0, 64));
+        return res.redirect(
+          303,
+          `${scope.basePath}/draft-changes/publish-review?${qs.toString()}`
+        );
       }
       return res.redirect(303, `${scope.basePath}/draft-changes?notice=published`);
     });

@@ -76,6 +76,20 @@ const FRIENDLY_ERROR_BY_CODE = Object.freeze({
   schema_incomplete:
     "Website publication schema is incomplete. Apply pending migrations and retry.",
   lookup_error: "Publication review could not load website readiness. Try again shortly.",
+  readiness_unavailable: "Website readiness could not be evaluated. Drafts were preserved — try again shortly.",
+  authz_unavailable: "Publish permission could not be verified. Drafts were preserved — try again shortly.",
+  website_engine_publish_failed: "Publishing to the live website engine failed. Drafts were preserved — try again.",
+  website_instance_not_found: "This church website is not fully set up for publishing yet.",
+  website_publish_locked: "Publishing is locked for this website.",
+  website_policy_locked: "These changes require review before they can go live.",
+  v8_incompatible_publish: "Some draft content is not compatible with the live website format.",
+  partial_page_publish: "Not all website pages could be updated. Drafts were preserved — try again.",
+  apply_failed: "Draft changes could not be applied. Drafts were preserved — review and try again.",
+  invalid_field: "One draft field is not valid for publishing.",
+  invalid_page: "A draft targets an unknown page.",
+  invalid_section: "A draft targets an invalid section.",
+  constraint_violation: "A draft value failed a website content rule.",
+  publish_failed: "We could not publish these changes. Drafts were preserved — try again.",
 });
 
 const GAP_TO_CODE = Object.freeze({
@@ -86,6 +100,7 @@ const GAP_TO_CODE = Object.freeze({
   first_branch: "incomplete",
   website_suspended: "org_inactive",
   lookup_error: "lookup_error",
+  readiness_unavailable: "readiness_unavailable",
   public_hostname: "incomplete",
   custom_domain_entitlement: "incomplete",
 });
@@ -157,6 +172,24 @@ const ISSUE_META = Object.freeze({
     title: "Readiness check unavailable",
     explanation: "Website readiness could not be evaluated. Try again shortly.",
     fieldKey: "readiness",
+    sectionKey: null,
+  },
+  readiness_unavailable: {
+    title: "Readiness check unavailable",
+    explanation: "Website readiness could not be evaluated. Drafts were preserved — try again shortly.",
+    fieldKey: "readiness",
+    sectionKey: null,
+  },
+  website_engine_publish_failed: {
+    title: "Live website publish failed",
+    explanation: "Drafts were preserved. Retry publishing, or contact support with the request ID.",
+    fieldKey: "publish",
+    sectionKey: null,
+  },
+  apply_failed: {
+    title: "Draft apply failed",
+    explanation: "One or more drafts could not be applied. Review drafts and try again.",
+    fieldKey: "drafts",
     sectionKey: null,
   },
   validation: {
@@ -887,11 +920,15 @@ async function prepareWebsitePublishSuccess(db, opts) {
 }
 
 /**
- * @param {{ codes?: string[], liveUnchanged?: boolean, branchKey?: string|null }} opts
+ * @param {{ codes?: string[], liveUnchanged?: boolean, branchKey?: string|null, requestId?: string|null }} opts
  */
 function prepareWebsitePublishError(opts) {
   const codes = Array.isArray(opts && opts.codes) ? opts.codes : [];
   const branchKey = opts && opts.branchKey ? String(opts.branchKey) : null;
+  const requestId =
+    opts && opts.requestId != null && String(opts.requestId).trim()
+      ? String(opts.requestId).trim().slice(0, 64)
+      : null;
   const problems = messagesForCodes(codes.length ? codes : ["validation"]);
   const needsEdit = codes.some((c) =>
     ["contact", "service_times", "images", "incomplete", "draft", "conflict", "pending_review"].includes(
@@ -906,6 +943,9 @@ function prepareWebsitePublishError(opts) {
     : branchKey
       ? hqWebsiteBranchDetailsPath(branchKey) || "/hq/content"
       : "/hq/content";
+  if (requestId) {
+    problems.push(`Request ID: ${requestId}`);
+  }
   return {
     ok: true,
     status: STATUS.OK,
@@ -913,10 +953,11 @@ function prepareWebsitePublishError(opts) {
     title: needsEdit
       ? "Your website needs one more update before it can be published."
       : "Your website was not published.",
-    subtitle: "The live website has not changed.",
+    subtitle: "The live website has not changed. Drafts were preserved.",
     liveUnchanged: opts && opts.liveUnchanged !== false,
     problems,
     errorCodes: codes,
+    requestId,
     showFixProblems: needsEdit || !retrySafe,
     showTryAgain: retrySafe,
     previewPath: branchKey

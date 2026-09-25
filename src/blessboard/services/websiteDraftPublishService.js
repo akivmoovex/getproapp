@@ -6,12 +6,8 @@
 
 const fieldDraftRepo = require("../repositories/websiteInlineFieldDraftRepository");
 const structuredDraftRepo = require("../repositories/websiteStructuredDraftRepository");
-const {
-  applyWebsiteDraftsInTransaction,
-} = require("./websiteDraftApplyService");
-const {
-  publishChurchWebsite,
-} = require("./churchWebsitePublishService");
+const applySvc = require("./websiteDraftApplyService");
+const churchPublishSvc = require("./churchWebsitePublishService");
 const {
   loadWebsiteDraftPublishReview,
   resolvePublishCapability,
@@ -20,7 +16,11 @@ const approvalSettingsSvc = require("./websiteApprovalSettingsService");
 const submissionSvc = require("./websiteChangeSubmissionService");
 const auditSvc = require("./websiteAuditService");
 const { PAGE_KEY_TITLES } = require("./publicContentConstants");
-const { authorize } = require("./blessBoardRbacAuthorizationService");
+const rbacAuthz = require("./blessBoardRbacAuthorizationService");
+const {
+  buildPublishFailureResult,
+  PUBLIC_CODES,
+} = require("./websitePublishFailureDiagnostics");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -30,6 +30,10 @@ const STATUS = Object.freeze({
   LOOKUP_ERROR: "lookup_error",
   NOT_READY: "not_ready",
   NOT_FOUND: "not_found",
+  ENGINE_ERROR: "engine_error",
+  APPLY_ERROR: "apply_error",
+  PUBLISH_FAILED: "publish_failed",
+  AUTHZ_UNAVAILABLE: "authz_unavailable",
 });
 
 function synthesizeTenantContext(organizationId, churchId, tenant) {
@@ -42,7 +46,7 @@ function synthesizeTenantContext(organizationId, churchId, tenant) {
 }
 
 async function authorizeWebsitePublish(db, opts) {
-  const authz = await authorize(db, {
+  const authz = await rbacAuthz.authorize(db, {
     actor: { userId: opts.actorUserId },
     permission: "website.publish",
     tenantContext: synthesizeTenantContext(opts.organizationId, opts.churchId, opts.tenant),
@@ -182,8 +186,17 @@ async function publishWebsiteDrafts(db, opts) {
     ) {
       return { ok: false, status: STATUS.FORBIDDEN, reason: "cross_org" };
     }
-  } catch {
-    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup" };
+  } catch (err) {
+    return buildPublishFailureResult(err, {
+      operation: "publishWebsiteDrafts_org_lookup",
+      organizationId,
+      churchId,
+      branchId,
+      reasonHint: "lookup",
+      stageHint: "tenant_lookup",
+      requestId: opts.requestId,
+      correlationId: opts.correlationId,
+    });
   }
 
   // Check website.publish permission
@@ -196,8 +209,17 @@ async function publishWebsiteDrafts(db, opts) {
       branchId,
       tenant,
     });
-  } catch {
-    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "authz_check" };
+  } catch (err) {
+    return buildPublishFailureResult(err, {
+      operation: "publishWebsiteDrafts_authz",
+      organizationId,
+      churchId,
+      branchId,
+      reasonHint: "authz_check",
+      stageHint: "authorization",
+      requestId: opts.requestId,
+      correlationId: opts.correlationId,
+    });
   }
 
   const settingsLoad = await approvalSettingsSvc.loadEffectiveSettings(db, organizationId);
@@ -240,14 +262,14 @@ async function publishWebsiteDrafts(db, opts) {
 
   try {
     return await withTransaction(db, async (client) => {
-      const applied = await applyWebsiteDraftsInTransaction(client, {
+      const applied = await applySvc.applyWebsiteDraftsInTransaction(client, {
         organizationId,
         churchId,
         branchId,
       });
 
       // Existing site publish engine (joins this client TX — no nested BEGIN).
-      const published = await publishChurchWebsite(client, {
+      const published = await churchPublishSvc.publishChurchWebsite(client, {
         organizationId,
         churchId,
         branchId,
@@ -264,6 +286,8 @@ async function publishWebsiteDrafts(db, opts) {
         sourceType: opts.sourceType || "hq_edit",
         forcePublishVersion: true,
         env: opts.env,
+        requestId: opts.requestId || null,
+        correlationId: opts.correlationId || opts.requestId || null,
       });
 
       if (!published || !published.ok) {
@@ -301,22 +325,40 @@ async function publishWebsiteDrafts(db, opts) {
     });
   } catch (err) {
     if (err && err.code === "PUBLISH_FAILED") {
+      const nested = err.publishResult || {};
       return {
         ok: false,
-        status: (err.publishResult && err.publishResult.status) || STATUS.NOT_READY,
-        reason: (err.publishResult && err.publishResult.reason) || "publish_failed",
-        gaps: err.publishResult && err.publishResult.gaps,
-        publishResult: err.publishResult,
+        status: nested.status || STATUS.NOT_READY,
+        reason: nested.reason || PUBLIC_CODES.PUBLISH_FAILED,
+        publicCode: nested.publicCode || nested.reason || PUBLIC_CODES.PUBLISH_FAILED,
+        engineCode: nested.engineCode || null,
+        failureStage: nested.failureStage || "publish_church_website",
+        classification: nested.classification || null,
+        httpStatusHint: nested.httpStatusHint || null,
+        message: nested.message || null,
+        gaps: nested.gaps || null,
+        publishResult: nested,
       };
     }
     if (err && (err.code === "CROSS_ORG" || err.code === "INVALID_SCOPE")) {
-      return { ok: false, status: STATUS.FORBIDDEN, reason: "cross_org" };
+      return {
+        ok: false,
+        status: STATUS.FORBIDDEN,
+        reason: PUBLIC_CODES.FORBIDDEN,
+        publicCode: PUBLIC_CODES.FORBIDDEN,
+        failureStage: "authorization",
+        message: "You do not have permission to publish these changes.",
+      };
     }
-    return {
-      ok: false,
-      status: STATUS.LOOKUP_ERROR,
-      reason: "publish_failed",
-    };
+    return buildPublishFailureResult(err, {
+      operation: "publishWebsiteDrafts",
+      organizationId,
+      churchId,
+      branchId,
+      requestId: opts.requestId,
+      correlationId: opts.correlationId,
+      stageHint: "apply_or_publish_transaction",
+    });
   }
 }
 

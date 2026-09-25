@@ -999,10 +999,14 @@ function createChurchWebsiteAdminRouter(deps) {
       .filter(Boolean)
       .slice(0, 12);
     const branchKey = String((req.query && req.query.branch) || "").trim() || null;
+    const requestId =
+      String((req.query && req.query.requestId) || req.requestId || req.correlationId || "").trim() ||
+      null;
     const publishError = prepareWebsitePublishError({
       codes: codes.length ? codes : ["validation"],
       liveUnchanged: true,
       branchKey,
+      requestId,
     });
     const html = renderHqView(
       "hq/phase4-publish-website-error.ejs",
@@ -1110,30 +1114,35 @@ function createChurchWebsiteAdminRouter(deps) {
           body.notify_hq_team === true,
         forcePublishVersion: Boolean(branchId),
         env,
+        requestId: req.requestId || req.correlationId || null,
+        correlationId: req.correlationId || req.requestId || null,
       },
     });
     if (!result.ok) {
+      const requestId = req.requestId || req.correlationId || "";
       if (result.status === PUBLISH_STATUS.NOT_READY || result.status === PUBLISH_STATUS.INVALID_INPUT) {
         const codes = collectErrorCodes({
           errors: (result.validation && result.validation.errors) || result.validationErrors || [],
           gaps: result.gaps || [],
-          reason: result.reason,
+          reason: result.publicCode || result.reason,
         });
         if (fromConfirmation) {
           const codeList = (codes.length ? codes : ["validation"]).join(",");
-          return res.redirect(
-            303,
-            `/hq/website/publish/error?codes=${encodeURIComponent(codeList)}${
-              branchKey ? `&branch=${encodeURIComponent(branchKey)}` : ""
-            }`
-          );
+          const qs = new URLSearchParams({ codes: codeList });
+          if (branchKey) qs.set("branch", branchKey);
+          if (requestId) qs.set("requestId", String(requestId).slice(0, 64));
+          return res.redirect(303, `/hq/website/publish/error?${qs.toString()}`);
         }
-        return res.redirect(
-          303,
-          `${reviewPath}?error=not_ready`
-        );
+        const qs = new URLSearchParams({ error: "not_ready" });
+        if (requestId) qs.set("requestId", String(requestId).slice(0, 64));
+        return res.redirect(303, `${reviewPath}?${qs.toString()}`);
       }
-      return sendControlled(req, res, 503, "Website could not be published.");
+      const failCode = String(result.publicCode || result.reason || "publish_failed");
+      const qs = new URLSearchParams({ codes: failCode });
+      if (branchKey) qs.set("branch", branchKey);
+      if (requestId) qs.set("requestId", String(requestId).slice(0, 64));
+      if (result.engineCode) qs.set("engineCode", String(result.engineCode).slice(0, 64));
+      return res.redirect(303, `/hq/website/publish/error?${qs.toString()}`);
     }
     if (result.publicationVersionId) {
       const qs = `version=${encodeURIComponent(result.publicationVersionId)}${

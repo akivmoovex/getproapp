@@ -26,6 +26,10 @@ const {
   logBlessBoardEngineBridgeFailure,
   logBlessBoardEngineBridgeWarning,
 } = require("../../platform/website-engine/blessboardEngineBridgeLog");
+const {
+  buildPublishFailureResult,
+  PUBLIC_CODES,
+} = require("./websitePublishFailureDiagnostics");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -35,6 +39,10 @@ const STATUS = Object.freeze({
   FORBIDDEN: "forbidden",
   LOOKUP_ERROR: "lookup_error",
   CONFLICT: "conflict",
+  ENGINE_ERROR: "engine_error",
+  APPLY_ERROR: "apply_error",
+  PUBLISH_FAILED: "publish_failed",
+  READINESS_UNAVAILABLE: "readiness_unavailable",
 });
 
 const GAP = Object.freeze({
@@ -348,14 +356,26 @@ async function evaluatePublishReadiness(db, input) {
         domainCount: domains.length,
       };
     });
-  } catch {
+  } catch (err) {
+    const failed = buildPublishFailureResult(err, {
+      operation: "evaluatePublishReadiness",
+      organizationId: input && input.organizationId,
+      churchId: input && input.churchId,
+      reasonHint: "readiness",
+      stageHint: "readiness",
+      skipLog: false,
+    });
     return {
       ok: false,
-      status: STATUS.LOOKUP_ERROR,
+      status: STATUS.READINESS_UNAVAILABLE,
       ready: false,
       // Contract: ready === false always includes at least one gap/issue code.
-      gaps: ["lookup_error"],
-      reason: "lookup_error",
+      gaps: [PUBLIC_CODES.READINESS_UNAVAILABLE],
+      reason: PUBLIC_CODES.READINESS_UNAVAILABLE,
+      publicCode: PUBLIC_CODES.READINESS_UNAVAILABLE,
+      engineCode: failed.engineCode,
+      failureStage: failed.failureStage,
+      message: failed.message,
     };
   }
 }
@@ -897,26 +917,34 @@ async function publishChurchWebsite(db, input) {
       };
     });
   } catch (err) {
-    if (err && err.code === "PARTIAL_PAGE_PUBLISH") {
-      return {
-        ok: false,
-        status: STATUS.CONFLICT,
-        reason: "partial_page_publish",
-      };
-    }
-    logBlessBoardEngineBridgeFailure({
+    // Single structured publish_failed log (bridge already logs engine_bridge at source).
+    const failed = buildPublishFailureResult(err, {
       operation: "publishChurchWebsite",
       organizationId: requestedOrganizationId || (err && err.organizationId) || null,
-      instanceId: err && err.instanceId,
       churchId,
       branchId,
-      actorIdentityId: input && input.actorUserId,
-      actorUserId: input && input.actorUserId,
-      cmsPublicationVersionId: err && err.cmsPublicationVersionId,
-      engineCode: err && (err.engineCode || err.code),
-      errorClass: (err && (err.code || err.name)) || "Error",
+      instanceId: err && err.instanceId,
+      requestId: input && input.requestId,
+      correlationId: input && input.correlationId,
+      stageHint:
+        err && err.code === "PARTIAL_PAGE_PUBLISH"
+          ? "page_update"
+          : err && err.code === "WEBSITE_ENGINE_PUBLISH"
+            ? "engine_bridge"
+            : "publish_transaction",
+      includeStack: false,
     });
-    return { ok: false, status: STATUS.LOOKUP_ERROR, reason: "lookup_error" };
+    return {
+      ok: false,
+      status: failed.status,
+      reason: failed.reason,
+      publicCode: failed.publicCode,
+      engineCode: failed.engineCode,
+      failureStage: failed.failureStage,
+      classification: failed.classification,
+      httpStatusHint: failed.httpStatusHint,
+      message: failed.message,
+    };
   }
 }
 
