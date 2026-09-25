@@ -1109,15 +1109,9 @@ async function attachWebsiteAdminChrome(opts) {
     });
   }
   const multiSiteMode = String(model.websiteMode || "") === "multi_site";
-  const activeBranchCount = Array.isArray(model.activeBranches)
-    ? model.activeBranches.length
-    : 0;
-  // HQ multi-site editors with branch mini-sites can switch; single-site / branch-only stay on one site.
+  // multi_site already means HQ + 2+ active branches; HQ editors may switch websites.
   const showChangeWebsite =
-    Boolean(websitesChooserUrl) &&
-    multiSiteMode &&
-    isHqEditor &&
-    activeBranchCount > 0;
+    Boolean(websitesChooserUrl) && multiSiteMode && isHqEditor;
   if (showChangeWebsite) {
     moreItems.push({
       id: "change-website",
