@@ -89,6 +89,7 @@ function blessboardAddedSectionField(input) {
 
 function contentDefFromField(field) {
   return {
+    key: field.key || field.contentKey || null,
     type: field.type,
     maxLen: field.maxLen,
     maxBytes: field.maxBytes,
@@ -194,7 +195,7 @@ function validateEditableValue(field, candidate) {
 
 /**
  * Read a submitted editor `value` without coercing media objects to "[object Object]".
- * Shared WE01 clients send IMAGE as `{ mediaId, src, alt }` (or a string URL).
+ * Shared WE01 clients send IMAGE as `{ mediaId, src, alt, placement? }` (or a string URL).
  * Ownership / URL safety still run in contentTypes + mediaService.
  *
  * @param {object|null|undefined} body

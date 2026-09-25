@@ -48,21 +48,27 @@ function pickHexColor(values, key) {
   return HEX_COLOR_RE.test(text) ? text.toLowerCase() : null;
 }
 
-function imageValueFromParts(src, alt, mediaId) {
+function imageValueFromParts(src, alt, mediaId, placement) {
   const nextSrc = String(src || "").trim();
   const nextId = String(mediaId || "").trim();
   const nextAlt = String(alt || "").trim();
   if (!nextSrc && !nextId) return null;
-  return { src: nextSrc || null, alt: nextAlt || null, mediaId: nextId || null };
+  const out = { src: nextSrc || null, alt: nextAlt || null, mediaId: nextId || null };
+  if (placement && typeof placement === "object" && !Array.isArray(placement)) {
+    out.placement = placement;
+  }
+  return out;
 }
 
 function imageFromWebsiteValue(value) {
-  if (!value) return { src: "", alt: "", mediaId: "" };
-  if (typeof value === "string") return { src: value, alt: "", mediaId: "" };
+  if (!value) return { src: "", alt: "", mediaId: "", placement: null };
+  if (typeof value === "string") return { src: value, alt: "", mediaId: "", placement: null };
+  const { placementFromImageValue } = require("./imagePlacement");
   return {
     src: value.src ? String(value.src) : "",
     alt: value.alt != null ? String(value.alt) : "",
     mediaId: value.mediaId || value.media_id || "",
+    placement: placementFromImageValue(value),
   };
 }
 

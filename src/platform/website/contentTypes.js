@@ -10,6 +10,7 @@ const {
   validateEmail,
   validatePhone,
 } = require("../validation/sharedFieldValidators");
+const { validateImagePlacement } = require("./imagePlacement");
 
 const CONTENT_TYPES = Object.freeze({
   SHORT_TEXT: "short_text",
@@ -111,6 +112,21 @@ function validateContentValue(def, candidate) {
         if (alt) {
           const unsafe = rejectUnsafeText(alt);
           if (!unsafe.ok) return unsafe;
+        }
+        if (def.type === CONTENT_TYPES.IMAGE) {
+          const placementCheck = validateImagePlacement(candidate.placement, {
+            contentKey: def.key || null,
+          });
+          if (!placementCheck.ok) {
+            return { ok: false, code: placementCheck.code || "invalid_image_placement" };
+          }
+          const imageValue = {
+            src: src ? urlCheck.value : null,
+            alt: alt || null,
+            mediaId: mediaId || null,
+          };
+          if (placementCheck.value) imageValue.placement = placementCheck.value;
+          return { ok: true, value: imageValue };
         }
         return {
           ok: true,

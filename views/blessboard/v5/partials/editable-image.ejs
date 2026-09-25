@@ -1,5 +1,7 @@
 <%#
   Shared image editor trigger — Wave 2 dialog.
+  Placement (optional): non-destructive CSS crop/zoom/focal via imagePlacement.
+  Original CDN asset is never rewritten. Validation lives in imagePlacement.js.
 %>
 <%
   var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
@@ -19,6 +21,40 @@
   var _wrapExtra = typeof imageWrapClass !== 'undefined' && imageWrapClass ? ' ' + String(imageWrapClass) : '';
   var _logo = _key === 'home.logo' || _fieldKey === 'logo';
   var _label = _logo ? 'Edit logo' : 'Edit image';
+  var _placement =
+    (typeof imagePlacement !== 'undefined' && imagePlacement) ||
+    (typeof websiteHeroPlacement !== 'undefined' && _key === 'home.hero.image' && websiteHeroPlacement) ||
+    null;
+  var _imgClass = _class;
+  var _imgStyle = '';
+  if (_placement && typeof _placement === 'object') {
+    var _fit = String(_placement.fit || 'cover');
+    var _x = Number(_placement.x); if (!isFinite(_x)) _x = 50;
+    var _y = Number(_placement.y); if (!isFinite(_y)) _y = 50;
+    var _zoom = Number(_placement.zoom); if (!isFinite(_zoom)) _zoom = 1;
+    var _parts = [
+      'object-fit:' + _fit,
+      'object-position:' + _x + '% ' + _y + '%',
+      '--gp-img-fit:' + _fit,
+      '--gp-img-x:' + _x + '%',
+      '--gp-img-y:' + _y + '%',
+      '--gp-img-zoom:' + _zoom
+    ];
+    if (_placement.mobile && typeof _placement.mobile === 'object' && _key !== 'home.logo') {
+      var _mf = String(_placement.mobile.fit || _fit);
+      var _mx = Number(_placement.mobile.x); if (!isFinite(_mx)) _mx = _x;
+      var _my = Number(_placement.mobile.y); if (!isFinite(_my)) _my = _y;
+      var _mz = Number(_placement.mobile.zoom); if (!isFinite(_mz)) _mz = _zoom;
+      _parts.push('--gp-img-mobile-fit:' + _mf);
+      _parts.push('--gp-img-mobile-x:' + _mx + '%');
+      _parts.push('--gp-img-mobile-y:' + _my + '%');
+      _parts.push('--gp-img-mobile-zoom:' + _mz);
+    }
+    _imgStyle = _parts.join(';');
+    _imgClass = _class + ' gp-website-image--placed';
+  } else if (typeof imagePosition !== 'undefined' && imagePosition) {
+    _imgStyle = 'object-fit:cover;object-position:' + String(imagePosition);
+  }
 %>
 <% if (_editing) { %>
 <div
@@ -36,9 +72,9 @@
 >
   <div class="gp-website-editable__preview ac-website-editable__preview">
     <% if (_src) { %>
-    <img data-website-image="1" class="<%= _class %>" src="<%= _src %>" alt="<%= _alt %>" width="<%= _width %>" height="<%= _height %>" />
+    <img data-website-image="1" class="<%= _imgClass %>" src="<%= _src %>" alt="<%= _alt %>" width="<%= _width %>" height="<%= _height %>"<% if (_imgStyle) { %> style="<%= _imgStyle %>"<% } %> />
     <% } else { %>
-    <img data-website-image="1" class="<%= _class %>" src="" alt="<%= _alt %>" width="<%= _width %>" height="<%= _height %>" hidden />
+    <img data-website-image="1" class="<%= _imgClass %>" src="" alt="<%= _alt %>" width="<%= _width %>" height="<%= _height %>" hidden />
     <div class="bb-tp-hero__fallback" data-website-image-placeholder="1"></div>
     <% } %>
     <button type="button" class="gp-website-editable__pencil ac-website-editable__pencil" data-website-start="1" aria-label="<%= _label %>">
@@ -56,7 +92,7 @@
   </div>
 </div>
 <% } else if (_src) { %>
-<img class="<%= _class %>" src="<%= _src %>" alt="<%= _alt %>" width="<%= _width %>" height="<%= _height %>" loading="eager" decoding="async" />
+<img class="<%= _imgClass %>" src="<%= _src %>" alt="<%= _alt %>" width="<%= _width %>" height="<%= _height %>" loading="eager" decoding="async"<% if (_imgStyle) { %> style="<%= _imgStyle %>"<% } %> />
 <% } else { %>
 <div class="bb-tp-hero__fallback"></div>
 <% } %>

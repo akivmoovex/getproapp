@@ -14,6 +14,48 @@
   var displaySrc = src || placeholderSrc;
   var logo = variant === 'logo' || key === 'home.logo';
   var label = logo ? 'Edit logo' : 'Edit image';
+  var placement =
+    (typeof imagePlacement !== 'undefined' && imagePlacement) ||
+    (typeof clinic !== 'undefined' &&
+      clinic &&
+      clinic.websiteContent &&
+      clinic.websiteContent[key] &&
+      clinic.websiteContent[key].placement) ||
+    null;
+  var hasPlacement = placement && typeof placement === 'object';
+  var placedClass = imgClass;
+  var placedStyle = '';
+  if (hasPlacement) {
+    var fit = String(placement.fit || 'cover');
+    var px = Number(placement.x); if (!isFinite(px)) px = 50;
+    var py = Number(placement.y); if (!isFinite(py)) py = 50;
+    var pzoom = Number(placement.zoom); if (!isFinite(pzoom)) pzoom = 1;
+    var parts = [
+      'object-fit:' + fit,
+      'object-position:' + px + '% ' + py + '%',
+      '--gp-img-fit:' + fit,
+      '--gp-img-x:' + px + '%',
+      '--gp-img-y:' + py + '%',
+      '--gp-img-zoom:' + pzoom
+    ];
+    if (placement.mobile && typeof placement.mobile === 'object' && key !== 'home.logo') {
+      var mf = String(placement.mobile.fit || fit);
+      var mx = Number(placement.mobile.x); if (!isFinite(mx)) mx = px;
+      var my = Number(placement.mobile.y); if (!isFinite(my)) my = py;
+      var mz = Number(placement.mobile.zoom); if (!isFinite(mz)) mz = pzoom;
+      parts.push('--gp-img-mobile-fit:' + mf);
+      parts.push('--gp-img-mobile-x:' + mx + '%');
+      parts.push('--gp-img-mobile-y:' + my + '%');
+      parts.push('--gp-img-mobile-zoom:' + mz);
+    }
+    if (typeof imageAspect !== 'undefined' && imageAspect) {
+      parts.push('aspect-ratio:' + String(imageAspect));
+    } else if (!logo) {
+      parts.push('aspect-ratio:16 / 10');
+    }
+    placedStyle = parts.join(';');
+    placedClass = imgClass + ' gp-website-image--placed';
+  }
 %>
 <% if (canEdit) { %>
 <div
@@ -29,11 +71,12 @@
     <% if (displaySrc) { %>
     <img
       data-website-image="1"
-      class="<%= imgClass %>"
+      class="<%= placedClass %>"
       src="<%= displaySrc %>"
       alt="<%= alt %>"
       width="<%= imgWidth %>"
       height="<%= imgHeight %>"
+      <% if (placedStyle) { %>style="<%= placedStyle %>"<% } %>
     />
     <% } else { %>
     <div class="<%= imgClass %> ac-website-editable__empty" data-website-image="1" role="img" aria-label="<%= alt || label %>"></div>
@@ -61,13 +104,16 @@
 <%- include('./ac-media', {
   src: src,
   alt: alt,
-  className: typeof imageClassName !== 'undefined' ? imageClassName : 'ac-tenant-hero__image',
-  objectFit: 'cover',
-  objectPosition: typeof imagePosition !== 'undefined' ? imagePosition : 'center 42%',
-  aspect: '16 / 10',
+  className: placedClass || (typeof imageClassName !== 'undefined' ? imageClassName : 'ac-tenant-hero__image'),
+  objectFit: hasPlacement ? undefined : 'cover',
+  objectPosition: hasPlacement
+    ? undefined
+    : (typeof imagePosition !== 'undefined' ? imagePosition : 'center 42%'),
+  aspect: typeof imageAspect !== 'undefined' ? imageAspect : '16 / 10',
   width: 960,
   height: 600,
   loading: typeof imageLoading !== 'undefined' ? imageLoading : 'eager',
   fallbackSrc: '',
+  styleOverride: hasPlacement ? placedStyle : '',
 }) %>
 <% } %>

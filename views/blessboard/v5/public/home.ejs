@@ -142,9 +142,14 @@
         editPageKey: 'home',
         editSectionKey: 'hero',
         editFieldKey: 'image',
+        contentKey: 'home.hero.image',
         imageSrc: heroMedia,
         imageAlt: (hero && hero.layoutMetadata && hero.layoutMetadata.altText) || (publicName + ' gathering'),
-        imageClass: 'bb-tp-hero__img'
+        imageClass: 'bb-tp-hero__img',
+        imageMediaId: (typeof websiteHeroMediaId !== 'undefined' && websiteHeroMediaId) || '',
+        imagePlacement: (typeof websiteHeroPlacement !== 'undefined' && websiteHeroPlacement) ||
+          (hero && hero.layoutMetadata && hero.layoutMetadata.imagePlacement) ||
+          null
       }) %>
       <div class="bb-tp-hero__scrim"></div>
       <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
