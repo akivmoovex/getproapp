@@ -53,6 +53,7 @@ const {
   buildPublicWebsiteStylesPath,
   buildPublicWebsiteSeoPath,
   buildPublicWebsiteMediaLibraryPath,
+  buildPublicWebsiteThemesPath,
   appendQuery,
   buildPublicWebsiteDiscardPath,
   buildPublicWebsitePublishPath,
@@ -1409,6 +1410,59 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         return json(res, status, { ok: false, code: added.code || "add_failed" });
       }
       return json(res, 200, { ok: true, published: false, ...added });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
+  app.get("/clinics/:clinicKey/website/themes", async (req, res, next) => {
+    try {
+      const clinic = await loadClinic(req, res);
+      if (!clinic) return undefined;
+      if (!canEditClinicWebsite(req, clinic)) {
+        return json(res, 403, { ok: false, code: "forbidden" });
+      }
+      const attached = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      if (!attached.instance) {
+        return json(res, 404, { ok: false, code: "website_instance_not_found" });
+      }
+      const csrfToken = issueCsrfToken(env);
+      setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
+      const basePath = buildPublicOrganizationWebsitePath({
+        product: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: clinic.clinicKey,
+      });
+      const editHref = buildPublicWebsiteEditPath({
+        product: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: clinic.clinicKey,
+      });
+      const previewHrefBase = buildPublicWebsitePreviewPath({
+        product: PRODUCT_CODE.ACTIVECLINIC,
+        organizationKey: clinic.clinicKey,
+      });
+      const {
+        loadThemeGalleryPresentation,
+        renderStandaloneThemeGalleryPage,
+      } = require("../../platform/website/websiteThemeHttp");
+      const presentation = await loadThemeGalleryPresentation(getPool(), {
+        organizationId: clinic.organizationId,
+        productCode: PRODUCT_CODE.ACTIVECLINIC,
+        instance: attached.instance,
+        siteLabel: clinic.displayName || clinic.clinicKey,
+        backHref: editHref,
+        editHref,
+        previewHrefBase,
+        themeApiUrl: `${basePath}/website/theme`,
+        stylesHref: buildPublicWebsiteStylesPath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: clinic.clinicKey,
+        }),
+        csrfField: CSRF_FIELD,
+        csrfToken,
+        notice: noticeFromQuery(req.query),
+        error: errorFromQuery(req.query),
+      });
+      return res.status(200).type("html").send(renderStandaloneThemeGalleryPage(presentation));
     } catch (err) {
       return next(err);
     }

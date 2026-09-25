@@ -1,0 +1,142 @@
+<%#
+  Shared Website Theme Gallery (C2).
+  Locals: page (themeGalleryPageModel.buildThemeGalleryPageView)
+%>
+<section
+  class="gp-we-theme-gallery"
+  data-gp-website-theme-gallery="1"
+  data-gp-we-screen="theme-gallery"
+  data-product="<%= page.productCode %>"
+  data-theme-api="<%= page.themeApiUrl %>"
+  data-csrf-field="<%= page.csrfField %>"
+  data-csrf-token="<%= page.csrfToken %>"
+  data-edit-href="<%= page.editHref || '' %>"
+>
+  <header class="gp-we-theme-gallery__head">
+    <div>
+      <p class="gp-we-theme-gallery__eyebrow"><%= page.productLabel %> · Website Options</p>
+      <h1 class="gp-we-theme-gallery__title"><%= page.pageTitle %></h1>
+      <% if (page.siteLabel) { %>
+      <p class="gp-we-theme-gallery__site"><%= page.siteLabel %></p>
+      <% } %>
+    </div>
+    <% if (page.backHref) { %>
+    <a class="gp-we-history__back" href="<%= page.backHref %>"><%= page.backLabel %></a>
+    <% } %>
+  </header>
+
+  <p class="gp-we-theme-gallery__intro"><%= page.intro %></p>
+  <p class="gp-we-theme-gallery__safety" role="note"><%= page.safetyNote %></p>
+
+  <% if (page.notice) { %>
+  <p class="gp-we-theme-gallery__notice" role="status" data-theme-gallery-notice="1"><%= page.notice %></p>
+  <% } else { %>
+  <p class="gp-we-theme-gallery__notice" role="status" data-theme-gallery-notice="1" hidden></p>
+  <% } %>
+  <% if (page.error) { %>
+  <p class="gp-we-theme-gallery__error" role="alert" data-theme-gallery-error="1"><%= page.error %></p>
+  <% } else { %>
+  <p class="gp-we-theme-gallery__error" role="alert" data-theme-gallery-error="1" hidden></p>
+  <% } %>
+
+  <% if (page.singleThemeOnly) { %>
+  <p class="gp-we-theme-gallery__limit" data-theme-gallery-single="1">
+    One implemented theme is available for this product. Additional theme packs will appear here when they ship with a working renderer.
+  </p>
+  <% } %>
+
+  <div class="gp-we-theme-gallery__grid" data-theme-gallery-grid="1">
+    <% page.themes.forEach(function (theme) { %>
+    <article
+      class="gp-we-theme-card<%= theme.isDraft ? ' gp-we-theme-card--draft' : '' %><%= theme.isLive ? ' gp-we-theme-card--live' : '' %>"
+      data-theme-card="1"
+      data-theme-id="<%= theme.id %>"
+      data-theme-draft="<%= theme.isDraft ? '1' : '0' %>"
+      data-theme-live="<%= theme.isLive ? '1' : '0' %>"
+    >
+      <div
+        class="gp-we-theme-card__preview"
+        style="--theme-swatch-primary:<%= (theme.preview && theme.preview.swatchPrimary) || '#64748b' %>;--theme-swatch-accent:<%= (theme.preview && theme.preview.swatchAccent) || '#94a3b8' %>;"
+        aria-hidden="true"
+      >
+        <div class="gp-we-theme-card__preview-chrome">
+          <span></span><span></span><span></span>
+        </div>
+        <div class="gp-we-theme-card__preview-hero"></div>
+        <div class="gp-we-theme-card__preview-body">
+          <div class="gp-we-theme-card__preview-line"></div>
+          <div class="gp-we-theme-card__preview-line gp-we-theme-card__preview-line--short"></div>
+        </div>
+      </div>
+      <div class="gp-we-theme-card__body">
+        <div class="gp-we-theme-card__labels">
+          <% if (theme.isLive) { %>
+          <span class="gp-we-theme-card__badge gp-we-theme-card__badge--live">Live</span>
+          <% } %>
+          <% if (theme.isDraft) { %>
+          <span class="gp-we-theme-card__badge gp-we-theme-card__badge--draft">Draft</span>
+          <% } %>
+          <% if (theme.isDefault) { %>
+          <span class="gp-we-theme-card__badge">Default</span>
+          <% } %>
+        </div>
+        <h2 class="gp-we-theme-card__name"><%= theme.displayName %></h2>
+        <% if (theme.description) { %>
+        <p class="gp-we-theme-card__desc"><%= theme.description %></p>
+        <% } %>
+        <div class="gp-we-theme-card__actions">
+          <% if (theme.previewHref) { %>
+          <a
+            class="gp-we-history__btn gp-we-history__btn--ghost"
+            href="<%= theme.previewHref %>"
+            data-theme-preview="1"
+            target="_blank"
+            rel="noopener"
+          >Preview Theme</a>
+          <% } %>
+          <button
+            type="button"
+            class="gp-we-history__btn gp-we-history__btn--primary"
+            data-theme-select="1"
+            data-theme-id="<%= theme.id %>"
+            <%= theme.isDraft ? 'disabled aria-disabled="true"' : '' %>
+          ><%= theme.isDraft ? 'Selected in draft' : 'Select Theme' %></button>
+        </div>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+
+  <aside class="gp-we-theme-gallery__compat" data-theme-compat="1" <%= page.compatibility ? '' : 'hidden' %>>
+    <h2 class="gp-we-theme-gallery__compat-title">Compatibility review</h2>
+    <p class="gp-we-theme-gallery__compat-intro">
+      Existing content stays intact. Review flagged items before you publish.
+    </p>
+    <ul class="gp-we-theme-gallery__compat-list" data-theme-compat-list="1">
+      <% if (page.compatibility && page.compatibility.unsupportedSections) { %>
+        <% page.compatibility.unsupportedSections.forEach(function (row) { %>
+        <li data-compat-section="<%= row.type %>">Section “<%= row.type %>” is not styled by this theme — content is preserved for review.</li>
+        <% }) %>
+      <% } %>
+      <% if (page.compatibility && page.compatibility.imageFlags) { %>
+        <% page.compatibility.imageFlags.forEach(function (row) { %>
+          <% if (row.review) { %>
+          <li data-compat-image="<%= row.contentKey %>">
+            Image slot “<%= row.contentKey %>” may need framing adjustment.
+            <% if (page.editHref) { %>
+            <a href="<%= page.editHref %>">Open editor to Adjust Picture</a>
+            <% } %>
+          </li>
+          <% } %>
+        <% }) %>
+      <% } %>
+    </ul>
+  </aside>
+
+  <% if (page.stylesHref) { %>
+  <p class="gp-we-theme-gallery__secondary">
+    Advanced brand colors remain in
+    <a href="<%= page.stylesHref %>">Styles</a>.
+  </p>
+  <% } %>
+</section>

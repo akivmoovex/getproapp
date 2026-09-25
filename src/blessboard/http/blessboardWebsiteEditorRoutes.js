@@ -34,6 +34,7 @@ const {
   buildPublicWebsiteStylesPath,
   buildPublicWebsiteSeoPath,
   buildPublicWebsiteMediaLibraryPath,
+  buildPublicWebsiteThemesPath,
   appendQuery,
 } = require("../../platform/website/publicWebsiteUrl");
 const { authorize, listEffectivePermissions } = require("../services/blessBoardRbacAuthorizationService");
@@ -247,6 +248,14 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
 
   function scopedStylesPath(resolved) {
     return buildPublicWebsiteStylesPath({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey: resolved.organizationKey,
+      scope: editorScope(resolved),
+    });
+  }
+
+  function scopedThemesPath(resolved) {
+    return buildPublicWebsiteThemesPath({
       product: PRODUCT_CODE.BLESSBOARD,
       organizationKey: resolved.organizationKey,
       scope: editorScope(resolved),
@@ -1505,6 +1514,48 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           return json(res, status, { ok: false, code: added.code || "add_failed" });
         }
         return json(res, 200, { ok: true, published: false, ...added });
+      } catch (err) {
+        return next(err);
+      }
+    });
+
+    router.get(`${pathPrefix}/website/themes`, async (req, res, next) => {
+      try {
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const found = await resolveEngineInstanceForTenant(resolved);
+        if (!found.ok || !found.instance) {
+          return res.status(404).type("text").send("Website not found");
+        }
+        const env = getEnv();
+        const csrfToken = issueCsrfToken(env);
+        setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
+        const {
+          loadThemeGalleryPresentation,
+          renderStandaloneThemeGalleryPage,
+        } = require("../../platform/website/websiteThemeHttp");
+        const presentation = await loadThemeGalleryPresentation(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          instance: found.instance,
+          siteLabel:
+            (resolved.tenant.church && resolved.tenant.church.displayName) ||
+            resolved.organizationKey,
+          backHref: scopedEditPath(resolved),
+          editHref: scopedEditPath(resolved),
+          previewHrefBase: buildPublicWebsitePreviewPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: resolved.organizationKey,
+            scope: editorScope(resolved),
+          }),
+          themeApiUrl: scopedEditorActionPath(resolved, "/website/theme"),
+          stylesHref: scopedStylesPath(resolved),
+          csrfField: CSRF_FIELD,
+          csrfToken,
+          notice: noticeFromQuery(req.query),
+          error: errorFromQuery(req.query),
+        });
+        return res.status(200).type("html").send(renderStandaloneThemeGalleryPage(presentation));
       } catch (err) {
         return next(err);
       }

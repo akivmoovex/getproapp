@@ -59,6 +59,7 @@ const BLESSBOARD_THEMES = Object.freeze([
     }),
     engineTemplateId: "blessboard_church",
     isDefault: true,
+    hasWorkingRenderer: true,
     cssClass: "gp-website-theme--bb-default",
     pages: Object.freeze([
       "home",
@@ -95,6 +96,7 @@ const ACTIVECLINIC_THEMES = Object.freeze([
     }),
     engineTemplateId: "activeclinic_clinic",
     isDefault: true,
+    hasWorkingRenderer: true,
     cssClass: "gp-website-theme--ac-default",
     pages: pagesFromSectionDefs(ACTIVECLINIC_SECTION_TYPES),
     sectionTypes: sectionTypesFromDefs(ACTIVECLINIC_SECTION_TYPES),
@@ -160,7 +162,15 @@ function listThemesForProduct(productCode) {
     preview: t.preview,
     isDefault: t.isDefault === true,
     engineTemplateId: t.engineTemplateId,
+    hasWorkingRenderer: t.hasWorkingRenderer === true,
   }));
+}
+
+/**
+ * Gallery cards — only product themes with an implemented public renderer.
+ */
+function listSelectableThemesForProduct(productCode) {
+  return listThemesForProduct(productCode).filter((t) => t.hasWorkingRenderer === true);
 }
 
 function enumValuesForProduct(productCode) {
@@ -193,6 +203,7 @@ module.exports = {
   normalizeThemeId,
   getTheme,
   listThemesForProduct,
+  listSelectableThemesForProduct,
   enumValuesForProduct,
   publicationThemeKeyFor,
 };

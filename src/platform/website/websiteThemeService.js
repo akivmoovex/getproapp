@@ -15,9 +15,12 @@ const {
   normalizeThemeId,
   getTheme,
   listThemesForProduct,
+  listSelectableThemesForProduct,
   publicationThemeKeyFor,
 } = require("./themeRegistry");
 const { slotDefinition } = require("./imagePlacement");
+
+const THEME_PREVIEW_QUERY = "website_theme_preview";
 
 function grantedList(grantedPermissions) {
   return Array.isArray(grantedPermissions) ? grantedPermissions.map(String) : [];
@@ -28,6 +31,14 @@ function unwrapThemeValue(raw) {
   if (typeof raw === "string") return raw;
   if (typeof raw === "object" && raw.value != null) return String(raw.value);
   return String(raw);
+}
+
+function previewThemeIdFromInput(input) {
+  if (!input) return null;
+  if (input.previewThemeId) return String(input.previewThemeId).trim() || null;
+  const q = input.query || {};
+  const raw = q[THEME_PREVIEW_QUERY] || q.websiteThemePreview || "";
+  return String(raw).trim() || null;
 }
 
 /**
@@ -112,7 +123,16 @@ async function loadWebsiteThemeState(db, input) {
   const draftId = normalizeThemeId(draftRaw || defaultId, productCode);
   const publishedId = normalizeThemeId(publishedRaw || defaultId, productCode);
   const preferDraft = input && input.preferDraft === true;
-  const activeId = preferDraft ? draftId : publishedId;
+  let activeId = preferDraft ? draftId : publishedId;
+  let previewOnly = false;
+  const previewCandidate = previewThemeIdFromInput(input);
+  if (previewCandidate && preferDraft) {
+    const previewTheme = getTheme(previewCandidate, productCode);
+    if (previewTheme && previewTheme.hasWorkingRenderer === true) {
+      activeId = previewTheme.id;
+      previewOnly = true;
+    }
+  }
   const draftTheme = getTheme(draftId, productCode);
   const publishedTheme = getTheme(publishedId, productCode);
   const activeTheme = getTheme(activeId, productCode) || getTheme(defaultId, productCode);
@@ -122,6 +142,7 @@ async function loadWebsiteThemeState(db, input) {
     instance,
     contentKey: THEME_CONTENT_KEY,
     available: listThemesForProduct(productCode),
+    selectable: listSelectableThemesForProduct(productCode),
     draftThemeId: draftTheme ? draftTheme.id : defaultId,
     publishedThemeId: publishedTheme ? publishedTheme.id : defaultId,
     activeThemeId: activeTheme.id,
@@ -129,6 +150,8 @@ async function loadWebsiteThemeState(db, input) {
     draftTheme,
     publishedTheme,
     legacyFallback,
+    previewOnly,
+    previewThemeId: previewOnly ? activeTheme.id : null,
     publicationThemeKey: publicationThemeKeyFor(activeTheme.id, productCode),
     presentation: {
       themeId: activeTheme.id,
@@ -138,6 +161,7 @@ async function loadWebsiteThemeState(db, input) {
       engineTemplateId: activeTheme.engineTemplateId,
       isDefault: activeTheme.isDefault === true,
       legacyFallback,
+      previewOnly,
     },
   };
 }
@@ -157,6 +181,9 @@ async function saveWebsiteThemeDraft(db, input) {
   const theme = getTheme(input.themeId, productCode);
   if (!theme) {
     return { ok: false, code: "invalid_theme", published: false };
+  }
+  if (theme.hasWorkingRenderer !== true) {
+    return { ok: false, code: "theme_renderer_unavailable", published: false };
   }
   // Hard product isolation — never allow cross-product theme ids.
   if (theme.productCode !== productCode) {
@@ -205,6 +232,7 @@ function presentThemeAttrs(presentation) {
 
 module.exports = {
   THEME_CONTENT_KEY,
+  THEME_PREVIEW_QUERY,
   evaluateThemeCompatibility,
   loadWebsiteThemeState,
   saveWebsiteThemeDraft,

@@ -54,7 +54,7 @@ const { PERMISSIONS } = require("../../platform/website/permissions");
 
 const EDIT_QUERY = "website_edit";
 
-async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
+async function attachBlessBoardWebsiteBranding(db, model, tenant, mode, query) {
   if (!model) return;
   const env = process.env;
   if (!model.websiteLogoUrl) {
@@ -161,11 +161,13 @@ async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
       productCode: PRODUCT_CODE.BLESSBOARD,
       instance,
       preferDraft: mode === "draft",
+      query: query || undefined,
     });
     if (themeState.ok && themeState.presentation) {
       Object.assign(model, presentThemeAttrs(themeState.presentation));
       model.websiteThemeDraftId = themeState.draftThemeId;
       model.websiteThemePublishedId = themeState.publishedThemeId;
+      model.websiteThemePreviewOnly = themeState.previewOnly === true;
     }
   } catch {
     /* keep default platform mark */
@@ -382,7 +384,7 @@ async function attachWebsiteAdminChrome(opts) {
     req.blessBoardTenantContext = tenant;
   }
 
-  await attachBlessBoardWebsiteBranding(db, model, tenant, "live");
+  await attachBlessBoardWebsiteBranding(db, model, tenant, "live", req.query);
 
   let authz = req.blessBoardAuthorizationContext || null;
   const session =
@@ -476,7 +478,7 @@ async function attachWebsiteAdminChrome(opts) {
     "draft";
   const showDraftContent = editingMode || previewDraftMode;
   if (showDraftContent) {
-    await attachBlessBoardWebsiteBranding(db, model, tenant, "draft");
+    await attachBlessBoardWebsiteBranding(db, model, tenant, "draft", req.query);
   }
 
   let draftCount = 0;
@@ -782,6 +784,7 @@ async function attachWebsiteAdminChrome(opts) {
     buildPublicWebsiteSeoPath,
     buildPublicWebsiteAddSectionPath,
     buildPublicWebsiteThemePath,
+    buildPublicWebsiteThemesPath,
   } = require("../../platform/website/publicWebsiteUrl");
   const currentPath = String(model.path || "/");
   const orgKey =
@@ -952,6 +955,16 @@ async function attachWebsiteAdminChrome(opts) {
             scope: editorScope,
           })
         : null;
+  const themesGalleryUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/themes`
+      : orgKey
+        ? buildPublicWebsiteThemesPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
   const unpublishPath =
     isHqEditor && canPublishWebsite
       ? buildPublicWebsiteUnpublishPath({
@@ -1075,6 +1088,15 @@ async function attachWebsiteAdminChrome(opts) {
       group: "general",
     });
   }
+  if (themesGalleryUrl) {
+    moreItems.push({
+      id: "theme",
+      label: "Choose Theme",
+      icon: "style",
+      href: themesGalleryUrl,
+      group: "general",
+    });
+  }
   if (historyHref) {
     moreItems.push({
       id: "history",
@@ -1193,6 +1215,7 @@ async function attachWebsiteAdminChrome(opts) {
     csrfField: "_csrf",
     sectionActionsUrl,
     themeUrl,
+    themesGalleryUrl,
     addSectionUrl: addSectionAvailability.canAddSection ? addSectionUrl : null,
     canAddSection: addSectionAvailability.canAddSection,
     addSectionEmptyHint: addSectionAvailability.emptyHint,

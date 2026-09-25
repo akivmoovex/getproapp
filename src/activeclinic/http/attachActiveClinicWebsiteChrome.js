@@ -28,6 +28,7 @@ const {
   buildPublicWebsiteSectionActionsPath,
   buildPublicWebsiteAddSectionPath,
   buildPublicWebsiteThemePath,
+  buildPublicWebsiteThemesPath,
   buildPublicWebsiteSubmitPath,
   buildPublicWebsiteFinishEditPath,
   buildPublicWebsiteUnpublishedChangesPath,
@@ -128,6 +129,7 @@ function clinicWebsiteActionUrls(clinicKey, pageKey) {
     websiteSectionActionsUrl: buildPublicWebsiteSectionActionsPath(base),
     websiteAddSectionUrl: buildPublicWebsiteAddSectionPath(base),
     websiteThemeUrl: buildPublicWebsiteThemePath(base),
+    websiteThemesUrl: buildPublicWebsiteThemesPath(base),
     websiteStylesUrl: buildPublicWebsiteStylesPath(base),
     websiteSeoUrl: buildPublicWebsiteSeoPath(base),
     websiteSubmitUrl: buildPublicWebsiteSubmitPath(base),
@@ -305,6 +307,15 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     href: brandingHref,
     group: "general",
   });
+  if (actionUrls.websiteThemesUrl) {
+    moreItems.push({
+      id: "theme",
+      label: "Choose Theme",
+      icon: "style",
+      href: actionUrls.websiteThemesUrl,
+      group: "general",
+    });
+  }
   moreItems.push({
     id: "history",
     label: "Version history",
@@ -408,6 +419,7 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     csrfField: CSRF_FIELD,
     sectionActionsUrl: actionUrls.websiteSectionActionsUrl,
     themeUrl: actionUrls.websiteThemeUrl,
+    themesGalleryUrl: actionUrls.websiteThemesUrl,
     addSectionUrl: null,
     canAddSection: false,
     addSectionEmptyHint: "",
@@ -444,11 +456,13 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
       productCode: PRODUCT_CODE.ACTIVECLINIC,
       instance,
       preferDraft: mode === MODE.DRAFT,
+      query: req && req.query,
     });
     if (themeState.ok && themeState.presentation) {
       websiteThemeAttrs = presentThemeAttrs(themeState.presentation);
       websiteThemeAttrs.websiteThemeDraftId = themeState.draftThemeId;
       websiteThemeAttrs.websiteThemePublishedId = themeState.publishedThemeId;
+      websiteThemeAttrs.websiteThemePreviewOnly = themeState.previewOnly === true;
     }
   } catch {
     /* theme presentation is optional chrome */

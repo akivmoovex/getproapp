@@ -1,0 +1,269 @@
+.gp-we-theme-gallery {
+  max-width: 56rem;
+  margin: 0 auto;
+  padding: 1.25rem 1rem 2.5rem;
+}
+
+.gp-we-theme-gallery__head {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  align-items: flex-start;
+  margin-bottom: 0.75rem;
+}
+
+.gp-we-theme-gallery__eyebrow {
+  margin: 0;
+  font-size: 0.75rem;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #64748b;
+  font-weight: 600;
+}
+
+.gp-we-theme-gallery__title {
+  margin: 0.2rem 0 0;
+  font-size: 1.5rem;
+}
+
+.gp-we-theme-gallery__site,
+.gp-we-theme-gallery__intro,
+.gp-we-theme-gallery__safety,
+.gp-we-theme-gallery__limit,
+.gp-we-theme-gallery__secondary {
+  margin: 0.4rem 0 0;
+  color: #475569;
+  line-height: 1.45;
+}
+
+.gp-we-theme-gallery__safety {
+  background: #f8fafc;
+  border: 1px solid #e2e8f0;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.gp-we-theme-gallery__limit {
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  color: #92400e;
+  border-radius: 0.5rem;
+  padding: 0.65rem 0.75rem;
+}
+
+.gp-we-theme-gallery__notice {
+  background: #ecfdf5;
+  border: 1px solid #a7f3d0;
+  color: #065f46;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.gp-we-theme-gallery__error {
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  margin-top: 0.75rem;
+}
+
+.gp-we-theme-gallery__grid {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 1rem;
+  margin-top: 1.25rem;
+}
+
+@media (min-width: 720px) {
+  .gp-we-theme-gallery__grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gp-we-theme-card {
+    display: grid;
+    grid-template-columns: minmax(11rem, 14rem) 1fr;
+    align-items: stretch;
+  }
+}
+
+.gp-we-theme-card {
+  border: 1px solid #e2e8f0;
+  border-radius: 0.85rem;
+  background: #fff;
+  overflow: hidden;
+  box-shadow: 0 1px 2px rgba(15, 23, 42, 0.04);
+}
+
+.gp-we-theme-card--draft {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 1px rgba(59, 130, 246, 0.2);
+}
+
+.gp-we-theme-card--live {
+  border-color: #6ee7b7;
+}
+
+.gp-we-theme-card__preview {
+  background: linear-gradient(
+    160deg,
+    var(--theme-swatch-primary, #64748b) 0%,
+    var(--theme-swatch-accent, #94a3b8) 100%
+  );
+  min-height: 9.5rem;
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.gp-we-theme-card__preview-chrome {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.gp-we-theme-card__preview-chrome span {
+  width: 0.4rem;
+  height: 0.4rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.gp-we-theme-card__preview-hero {
+  flex: 1;
+  border-radius: 0.4rem;
+  background: rgba(255, 255, 255, 0.28);
+  min-height: 3.5rem;
+}
+
+.gp-we-theme-card__preview-body {
+  display: grid;
+  gap: 0.3rem;
+}
+
+.gp-we-theme-card__preview-line {
+  height: 0.35rem;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.55);
+}
+
+.gp-we-theme-card__preview-line--short {
+  width: 55%;
+}
+
+.gp-we-theme-card__body {
+  padding: 0.9rem 1rem 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.gp-we-theme-card__labels {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+
+.gp-we-theme-card__badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  text-transform: uppercase;
+  padding: 0.15rem 0.45rem;
+  border-radius: 999px;
+  background: #f1f5f9;
+  color: #334155;
+}
+
+.gp-we-theme-card__badge--live {
+  background: #d1fae5;
+  color: #065f46;
+}
+
+.gp-we-theme-card__badge--draft {
+  background: #dbeafe;
+  color: #1e40af;
+}
+
+.gp-we-theme-card__name {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.gp-we-theme-card__desc {
+  margin: 0;
+  color: #64748b;
+  font-size: 0.925rem;
+  line-height: 1.4;
+}
+
+.gp-we-theme-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  margin-top: 0.35rem;
+}
+
+.gp-we-theme-card__actions .gp-we-history__btn {
+  min-height: 2.5rem;
+}
+
+.gp-we-theme-card__actions .gp-we-history__btn:disabled {
+  opacity: 0.65;
+  cursor: default;
+}
+
+.gp-we-theme-gallery__compat {
+  margin-top: 1.25rem;
+  border: 1px solid #fde68a;
+  background: #fffbeb;
+  border-radius: 0.75rem;
+  padding: 0.85rem 1rem;
+}
+
+.gp-we-theme-gallery__compat-title {
+  margin: 0;
+  font-size: 1rem;
+}
+
+.gp-we-theme-gallery__compat-intro {
+  margin: 0.35rem 0 0.5rem;
+  color: #92400e;
+}
+
+.gp-we-theme-gallery__compat-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: #78350f;
+}
+
+.gp-we-theme-gallery__compat-list a {
+  color: #1d4ed8;
+}
+
+.gp-we-theme-gallery__secondary {
+  margin-top: 1.25rem;
+}
+
+@media (max-width: 390px) {
+  .gp-we-theme-gallery {
+    padding: 1rem 0.75rem 2rem;
+  }
+
+  .gp-we-theme-gallery__head {
+    flex-direction: column;
+  }
+
+  .gp-we-theme-card__actions {
+    flex-direction: column;
+  }
+
+  .gp-we-theme-card__actions .gp-we-history__btn {
+    width: 100%;
+    justify-content: center;
+    text-align: center;
+  }
+}
