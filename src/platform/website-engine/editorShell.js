@@ -290,6 +290,7 @@ function presentEditorShell(input) {
       facts.addSectionEmptyHint ||
       "No more section types are available for this page.",
     addSectionMemberAction: facts.addSectionMemberAction || null,
+    collectionManaged: facts.collectionManaged === true,
     sectionManifest: facts.sectionManifest || null,
     sectionManifestJson: facts.sectionManifest
       ? JSON.stringify(facts.sectionManifest).replace(/</g, "\\u003c")

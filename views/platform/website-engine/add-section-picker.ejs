@@ -6,6 +6,8 @@
   var shell = typeof editorShell !== 'undefined' && editorShell ? editorShell : {};
   var canAddSection = shell.canAddSection !== false && Boolean(shell.addSectionUrl);
   var emptyHint = shell.addSectionEmptyHint || 'No more section types are available for this page.';
+  var memberAction = shell.addSectionMemberAction || '';
+  var collectionManaged = shell.collectionManaged === true;
 %>
 <% if (canAddSection) { %>
 <div class="gp-website-add-section" data-website-add-section-host="1" hidden>
@@ -46,4 +48,13 @@
   <span class="material-symbols-outlined" aria-hidden="true">add</span>
   <span>Add section</span>
 </button>
+<% } else if (collectionManaged && (memberAction || emptyHint)) { %>
+<p
+  class="gp-website-add-section__collection-hint"
+  data-website-collection-hint="1"
+  data-website-member-action="<%= memberAction || '' %>"
+>
+  <%= emptyHint %>
+  <% if (memberAction) { %><span class="gp-website-add-section__member-action"> Use <strong><%= memberAction %></strong> on this page.</span><% } %>
+</p>
 <% } %>

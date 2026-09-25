@@ -83,3 +83,33 @@
     border-radius: 1rem 1rem 0 0;
   }
 }
+
+.gp-website-add-section__collection-hint {
+  position: fixed;
+  left: 1rem;
+  right: 1rem;
+  bottom: 5.5rem;
+  z-index: 35;
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: 12px;
+  background: #fff;
+  border: 1px solid #e2e8f0;
+  box-shadow: 0 8px 24px rgba(15, 23, 42, 0.12);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: #334155;
+  max-width: 28rem;
+}
+
+.gp-website-add-section__member-action {
+  display: inline;
+}
+
+@media (min-width: 769px) {
+  .gp-website-add-section__collection-hint {
+    left: auto;
+    right: 1rem;
+    bottom: 5.5rem;
+  }
+}

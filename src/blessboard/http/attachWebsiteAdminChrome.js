@@ -1172,6 +1172,7 @@ async function attachWebsiteAdminChrome(opts) {
     canAddSection: addSectionAvailability.canAddSection,
     addSectionEmptyHint: addSectionAvailability.emptyHint,
     addSectionMemberAction: addSectionAvailability.memberAction,
+    collectionManaged: addSectionAvailability.collectionManaged === true,
     sectionManifest,
   };
 

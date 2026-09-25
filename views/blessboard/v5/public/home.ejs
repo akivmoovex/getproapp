@@ -116,6 +116,18 @@
   }
 
   var LOCKED_HOME_SECTION_KEYS = { hero: 1, service_times: 1, services: 1, worship_times: 1 };
+  var FIXED_HOME_PREFIX_KEYS = {
+    welcome: 1,
+    welcome_home: 1,
+    about_preview: 1,
+    our_story: 1,
+    ministries_intro: 1,
+    events_intro: 1,
+    sermons_intro: 1,
+    leadership_intro: 1,
+    giving_cta: 1,
+    contact_intro: 1,
+  };
   var sortedHomeSections = (sections || [])
     .slice()
     .sort(function (a, b) {
@@ -133,6 +145,23 @@
   teaserSectionKeys.forEach(function (key) {
     if (orderedTeaserKeys.indexOf(key) < 0) orderedTeaserKeys.push(key);
   });
+  var homeMiddleRenderOrder = homeMiddleOrder.slice();
+  teaserSectionKeys.forEach(function (key) {
+    if (homeMiddleRenderOrder.indexOf(key) < 0) homeMiddleRenderOrder.push(key);
+  });
+  function isFreeformHomeSection(section) {
+    if (!section) return false;
+    var key = String(section.sectionKey || '');
+    if (!key || LOCKED_HOME_SECTION_KEYS[key] || key === 'footer' || FIXED_HOME_PREFIX_KEYS[key]) {
+      return false;
+    }
+    var type = String(section.sectionType || '').toLowerCase();
+    if (section._isDraftNew === true) return true;
+    if (type === 'plain_text' || type === 'image' || type === 'image_text' || type === 'cta') return true;
+    return /^(text|image|story|cta)_/i.test(key);
+  }
+  var editingHome =
+    typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode;
 %>
 
 <div class="bb-tp-home" data-bb-home="1" data-bb-stitch-home="phase7-v1">
@@ -368,8 +397,9 @@
   </section>
   <% } %>
 
-  <% orderedTeaserKeys.forEach(function (sectionKey) { %>
-  <% if (sectionKey === 'ministries_intro' && teasers.ministries && teasers.ministries.length) { %>
+  <% homeMiddleRenderOrder.forEach(function (sectionKey) { %>
+  <% if (sectionKey === 'welcome' || sectionKey === 'welcome_home' || sectionKey === 'about_preview' || sectionKey === 'our_story') { %>
+  <% } else if (sectionKey === 'ministries_intro' && teasers.ministries && teasers.ministries.length) { %>
   <section class="bb-tp-container bb-tp-home-teaser" data-bb-home-ministries="1" data-section="ministries_intro" aria-labelledby="bb-tp-home-ministries-heading">
     <%- include('./partials/section-heading', {
       sectionId: 'bb-tp-home-ministries-heading',
@@ -588,6 +618,51 @@
       <% } %>
     </div>
   </section>
+  <% } else { %>
+  <%
+    var freeformSec = findHomeSection(sectionKey);
+    if (isFreeformHomeSection(freeformSec) && (showSectionInPreview(freeformSec) || editingHome)) {
+  %>
+  <section
+    class="bb-tp-container bb-tp-content-block<%= freeformSec.mediaUrl || editingHome ? ' bb-tp-content-block--media' : '' %><%= freeformSec.layoutMetadata && freeformSec.layoutMetadata.layout === 'cta' ? ' bb-tp-content-block--cta' : '' %>"
+    data-bb-home-freeform="1"
+    data-section="<%= freeformSec.sectionKey %>"
+    data-website-section-key="<%= freeformSec.sectionKey %>"
+    aria-label="<%= freeformSec.heading || 'Page section' %>"
+  >
+    <%- include('./partials/content-block-media', { section: freeformSec, editPageKey: 'home' }) %>
+    <div class="bb-tp-content-block__copy">
+      <h2 class="bb-tp-section-title">
+        <%- include('../partials/editable-text', {
+          editPageKey: 'home',
+          editSectionKey: freeformSec.sectionKey,
+          editFieldKey: 'heading',
+          editValue: freeformSec.heading || '',
+          editLabel: 'Edit section heading',
+          editTag: 'span',
+          editClass: 'bb-tp-section-title',
+          editType: 'heading',
+          editMaxLength: 120,
+          editMultiline: false
+        }) %>
+      </h2>
+      <p class="bb-tp-body">
+        <%- include('../partials/editable-text', {
+          editPageKey: 'home',
+          editSectionKey: freeformSec.sectionKey,
+          editFieldKey: 'bodyText',
+          editValue: freeformSec.bodyText || '',
+          editLabel: 'Edit section body',
+          editTag: 'span',
+          editClass: 'bb-tp-body',
+          editType: 'paragraph',
+          editMaxLength: 4000,
+          editMultiline: true
+        }) %>
+      </p>
+    </div>
+  </section>
+  <% } %>
   <% } %>
   <% }); %>
 

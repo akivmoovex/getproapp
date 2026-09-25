@@ -45,6 +45,9 @@ const { POLICY_LABELS } = require("../../platform/website/publishPolicy");
 const { listProductPageTypes } = require("../../platform/website-engine/productSchemaRegistry");
 const { presentEditorShell, buildEditorPages } = require("../../platform/website-engine/editorShell");
 const { websiteScopeKeyFor } = require("../../platform/website-engine/changeManagerUi");
+const {
+  describeAddSectionAvailability,
+} = require("../../platform/website/sectionRegistry");
 
 function grantedPermissions(req) {
   const auth = req.activeClinicAuth;
@@ -401,7 +404,10 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
     mediaUrl: actionUrls.websiteMediaUrl,
     csrfField: CSRF_FIELD,
     sectionActionsUrl: actionUrls.websiteSectionActionsUrl,
-    addSectionUrl: actionUrls.websiteAddSectionUrl,
+    addSectionUrl: null,
+    canAddSection: false,
+    addSectionEmptyHint: "",
+    addSectionMemberAction: null,
     sectionManifest: websiteEdit
       ? require("../website/activeClinicSectionActionService").buildManifest(
           pageKey,
@@ -409,6 +415,18 @@ async function attachActiveClinicWebsiteLocals(db, req, clinic, options) {
         )
       : null,
   };
+  if (websiteEdit) {
+    const existingTypes = (outClinic.cmsSections || []).map((s) => String(s.type || s.id || ""));
+    const addAvail = describeAddSectionAvailability(
+      PRODUCT_CODE.ACTIVECLINIC,
+      pageKey,
+      existingTypes
+    );
+    shellFacts.addSectionUrl = addAvail.canAddSection ? actionUrls.websiteAddSectionUrl : null;
+    shellFacts.canAddSection = addAvail.canAddSection;
+    shellFacts.addSectionEmptyHint = addAvail.emptyHint;
+    shellFacts.addSectionMemberAction = addAvail.memberAction;
+  }
   const editorShell = websiteEdit
     ? presentEditorShell({ ...shellFacts, editing: true })
     : previewDraftMode
