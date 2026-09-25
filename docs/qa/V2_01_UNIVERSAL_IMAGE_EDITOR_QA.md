@@ -6,7 +6,8 @@
 **Environment:** `moovex-platform-v8-testing` (`blessboard.neuniversity.org` / `activeclinic.neuniversity.org`)  
 **Baseline (B2 functional):** `c2b862655a6b`  
 **Baseline (B2 QA tip):** `053edba2509a`  
-**B3 commits:** `aa4a35c1bb29` (Adjust Picture UI) + follow-up tip (390 overflow CSS + AC/BB cache bump + this report)  
+**B3 commits:** `aa4a35c1bb29` (Adjust Picture UI) · `0675143aaffa` (390 overflow CSS + AC/BB cache bump + this report)  
+**Final hosted SHA:** `0675143aaffa` (`0675143aaffa43a3db24dd111f6beeddcbf9d022`)  
 **Deployment identity:** `moovex-platform-v8-testing`  
 **DB identity:** `databaseIdentityExpected=moovex-platform-v7` · `databaseIdentityEnv=testing` · `mediaWriteNamespace=testing-v8`  
 **Production:** **untouched** (`blessboard.com` `/healthz` remained `03a89106e2fe` / `moovex-platform-production`)
@@ -98,8 +99,9 @@ Unrelated untracked prior QA docs preserved (not in this commit).
 
 | Step | Result |
 | --- | --- |
-| Push `V8` (Hostinger git-linked → `moovex-platform-v8-testing`) | **PASS** for `aa4a35c1bb29`; follow-up tip pushed with this report |
-| Hosted SHA before browser QA (functional UI) | **PASS** — BB/AC `/healthz` `gitSha=aa4a35c1bb29` · `deploymentCode=moovex-platform-v8-testing` |
+| Push `V8` (Hostinger git-linked → `moovex-platform-v8-testing`) | **PASS** — `aa4a35c1bb29` then `0675143aaffa` |
+| Hosted SHA before browser QA (functional UI) | **PASS** — BB/AC `aa4a35c1bb29` at interactive framing QA |
+| Final hosted tip after CSS/QA commit | **PASS** — BB/AC `0675143aaffa` · `deploymentCode=moovex-platform-v8-testing` |
 | Production `/healthz` | **Unchanged** `03a89106e2fe` / `moovex-platform-production` |
 
 ---
@@ -145,7 +147,7 @@ Graphical crop QA is based on hosted browser sessions, not backend-only tests.
 1. **Full publish + live public re-check of framing CSS** after this tip’s cache bump was not re-run end-to-end in the same session as the AC save (B2 publish/render path already PASS; B3 save/reopen PASS).  
 2. **Field-history UI click-through** for placement restore not re-exercised in browser (JSON/history infrastructure unchanged; placement rides along).  
 3. **Fresh upload + library-select path** not re-uploaded in this B3 browser pass (controls present; prior B1/B2 media ownership coverage remains).  
-4. Pre-tip AC 390 showed note truncation / mild horizontal overflow — addressed in follow-up CSS (`overflow-wrap` + containment); verify after tip SHA advances.
+4. Pre-tip AC 390 showed note truncation / mild horizontal overflow — addressed in `0675143aaffa` CSS (`overflow-wrap` + containment); hosted CSS tip confirmed serving `overflow-wrap: anywhere`.
 
 ---
 
