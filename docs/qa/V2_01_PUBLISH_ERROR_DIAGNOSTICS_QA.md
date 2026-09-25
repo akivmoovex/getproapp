@@ -7,7 +7,7 @@
 **Database:** `moovex-platform-v7` / `environment_code=testing`  
 **Priority:** P0  
 
-**Verdict:** `V2_01_PUBLISH_DIAGNOSTICS_QA_PASS` (pending hosted tip match after deploy — see §7)
+**Verdict:** `V2_01_PUBLISH_DIAGNOSTICS_QA_PASS`
 
 ---
 
@@ -113,12 +113,13 @@ Injected failures only — no QA customer data corruption.
 | Check | Result |
 |-------|--------|
 | Target | `moovex-platform-v8-testing` only |
-| Production | Untouched (`moovex-platform-production` / blessboard.com) |
+| Production | Untouched — `blessboard.com` `/healthz` still `03a89106e2fe` / `moovex-platform-production` |
 | Pre-deploy hosted SHA | `550d5dc0c362` |
-| Post-deploy expected | Tip of this diagnostics commit (short SHA recorded after push) |
-| Hostinger application logs | **Incomplete** — SSH/hPanel log API inaccessible from this agent (same as root-cause audit). Cannot confirm live `blessboard.website.publish_failed` lines on Hostinger. |
-| Safe failure path | Local inject + classification tests PASS |
-| Safe success path | Prior multi-item publish PASS on `550d5dc0c362`; engine-bridge dual-write success tests PASS; this change does not alter success return shape beyond additive diagnostic fields on failure |
+| Deployed tip | `45cf76480b63` (`45cf76480b63708bb1daae3014269a194cb7d03f`) |
+| Post-deploy hosted SHA | **Matched** on `neuniversity.org`, `blessboard.neuniversity.org`, `activeclinic.neuniversity.org` |
+| Hostinger application logs | **Incomplete** — SSH/hPanel log API inaccessible from this agent. Cannot confirm live `blessboard.website.publish_failed` lines on Hostinger. |
+| Safe failure path | Local inject + classification tests PASS (19/19) |
+| Safe success path | Engine-bridge dual-write + auth publish tests PASS (12/12); public BB home HTTP 200 on tip; prior multi-item publish PASS on `550d5dc0c362` (behavior unchanged on success) |
 
 ---
 
@@ -130,4 +131,4 @@ None newly reproduced in this task. Sep 24 intermittent “lookup error” repor
 
 ## 9. Verdict
 
-**`V2_01_PUBLISH_DIAGNOSTICS_QA_PASS`** when hosted `/healthz` `gitSha` matches the deployed tip and local automated suite remains green. Hostinger **log** verification marked incomplete (does not block diagnostics code verdict; operators can correlate by request ID once logs are available).
+**`V2_01_PUBLISH_DIAGNOSTICS_QA_PASS`** — hosted `/healthz` `gitSha` matches `45cf76480b63`; local automated suite green. Hostinger **log** verification incomplete (operators can correlate by request ID once logs are available).
