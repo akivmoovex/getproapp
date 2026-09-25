@@ -35,7 +35,7 @@
   <%- include('./head-design-system') %>
   <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=67' %>" />
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) { %>
-  <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v2-img-place-1" />
+  <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v2-img-editor-1" />
   <link rel="stylesheet" href="/platform/website-change-manager-ui.css?v=v2-01-cm-history-1" />
   <link rel="stylesheet" href="/platform/website-add-section.css?v=v2-bb-lead-sec-1" />
   <meta name="csrf-token" content="<%= websiteAdmin.csrfToken %>" />
