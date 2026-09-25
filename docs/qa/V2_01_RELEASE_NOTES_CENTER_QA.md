@@ -66,12 +66,16 @@ Includes: public sanitization, token header, `platformAdminAuthorized` Evidence 
 
 | Check | Result |
 |-------|--------|
-| Deploy tip | Record after push (see Final SHA) |
-| Hub `/release-notes` public | Expected **200** (prior PASS; re-check post-deploy) |
-| BB apex `/release-notes` public | Expected **200** after deploy (was 503 pre-change) |
-| Hosted live `platform_admin` browser login | **NOT TESTED** — V8 QA tenant fixtures lack a `platform_admin` persona (HQ/branch only). Gate verified in automated tests. |
+| Hosted SHA (hub + BB + AC V8) | `32a94e56db0d` · `moovex-platform-v8-testing` · `testing` |
+| Hub `/release-notes` public | **200** · `data-audience=public` · no Evidence column |
+| Hub `/release-notes/2.01/qa` public | **200** · sanitized |
+| BB apex `/release-notes` public | **200** · public (was 503 before this change) |
+| BB apex `/release-notes/2.01/qa` public | **200** · no Evidence |
+| BB/AC `/login` | **200** |
+| V8 hosted smoke | **PASS** |
+| Production BB | `03a89106e2fe` · `moovex-platform-production` · **untouched** |
+| Hosted live `platform_admin` browser login | **NOT TESTED** — V8 QA tenant fixtures lack a `platform_admin` persona. Authorized unlock verified in automated tests (`platformAdminAuthorized` / Evidence gate). |
 | Token auth regression | Preserved in code + unit tests |
-| Production | Untouched |
 
 ---
 
@@ -86,10 +90,13 @@ Includes: public sanitization, token header, `platformAdminAuthorized` Evidence 
 
 ## 6. Final SHA
 
-Recorded at commit time after push (application commit for this auth change).
+| Ref | SHA |
+|-----|-----|
+| Application commit | `32a94e56db0d127f13eb6a5eba24c13d84ff112b` |
+| Hosted `/healthz` | `32a94e56db0d` |
 
 ---
 
 ## Verdict (restated)
 
-**`V2_01_RELEASE_NOTES_AUTH_QA_PASS`** — session-based `platform_admin` access implemented and verified in automated tests; token path preserved; tenant roles denied; no new migrations; production untouched. Hosted live platform_admin login remains an optional follow-up persona gap, not an implementation blocker for this auth task.
+**`V2_01_RELEASE_NOTES_AUTH_QA_PASS`** — session-based `platform_admin` access implemented and verified in automated tests; token path preserved; tenant roles denied; hub + BB apex public hosted **200** on `32a94e56db0d`; no new migrations; production untouched. Hosted live platform_admin login remains an optional follow-up persona gap.
