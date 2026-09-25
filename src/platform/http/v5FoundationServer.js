@@ -490,6 +490,18 @@ function createV5FoundationApp(options) {
     })
   );
 
+  // 4d. Release Notes Center on BlessBoard apex (public + platform_admin session upgrade)
+  const {
+    createReleaseNotesMiddleware,
+  } = require("../release-notes/attachReleaseNotesRoutes");
+  app.use(
+    createReleaseNotesMiddleware({
+      env,
+      getPool,
+      isApexHost: (req) => isApexHost(req, opts),
+    })
+  );
+
   // 5. Tenant authorization context (attach only; never blocks public routes)
   app.use(
     createLoadBlessBoardAuthorizationContext({

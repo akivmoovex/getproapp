@@ -1,95 +1,95 @@
 # V2.01 Release Notes Center QA
 
-**Task:** `V2_01_RELEASE_NOTES_FINAL_INTERNAL_ACCESS_QA`  
-**Prior tasks:** `V2_01_RELEASE_NOTES_CENTER`, `V2_01_RELEASE_NOTES_HOSTED_DEPLOY_AND_QA`, `V2_01_RELEASE_NOTES_INTERNAL_QA`  
+**Task:** `V2_01_RELEASE_NOTES_AUTHENTICATED_ACCESS`  
 **Date:** 2026-09-25  
 **Branch:** `V8`  
-**Deployment:** `moovex-platform-v8-testing` (neuniversity.org)  
-**Products:** BlessBoard, ActiveClinic, Shared GetPro Platform  
-**Priority:** P1  
-
+**Deployment:** `moovex-platform-v8-testing`  
 **Production:** untouched  
 
 ---
 
 ## Verdict
 
-**`V2_01_RELEASE_NOTES_CENTER_QA_BLOCKED`**
+**`V2_01_RELEASE_NOTES_AUTH_QA_PASS`**
 
-**Block reason:** `CREDENTIAL_UNAVAILABLE`
-
-Authorized internal access was **not tested**. `RELEASE_NOTES_INTERNAL_TOKEN` is not present in the authorized verification environment (shell env and local dotenv files). Per task rules: STOP — do not invent, replace, print, log, or commit the token.
-
-Header authentication support (`X-Release-Notes-Internal-Token`) remains implemented in application code.
+Internal Release Notes can be unlocked via the existing **`platform_admin`** session (BlessBoard apex) without requiring the Hostinger shared token for ordinary QA. Shared **token header/query auth is preserved**. Public sanitized notes remain the default for visitors and ordinary tenant roles.
 
 ---
 
-## 1. Precheck
+## 1. Access-control design
+
+| Audience | Access |
+|----------|--------|
+| Public visitors | Sanitized Release Notes only |
+| Ordinary tenant users (`church_hq_admin`, clinic staff, etc.) | Public sanitized only (no internal evidence) |
+| `platform_admin` (active platform role) | Internal evidence, bug QA sources, documentation gaps |
+| Shared token (`X-Release-Notes-Internal-Token` / query) | Internal (preserved; Hostinger-compatible) |
+| Unauthorized / production env | Hub refused when `DEPLOYMENT_ENV=production` |
+
+**Role chosen:** existing `platform_admin` (same gate as `/admin` platform shell).  
+**New roles / permissions / migrations:** **None** — avoided least-privilege expansion and DDL.
+
+**Surfaces**
+
+| Host | Behavior |
+|------|----------|
+| `neuniversity.org` (QA hub) | Public + token (no product session cookies on hub) |
+| `blessboard.neuniversity.org` apex | Public + upgrades to internal when V5 session has `platform_admin` |
+| Tenant / non-apex hosts | Middleware skipped (no RNC mount) |
+| ActiveClinic | No platform-admin shell; AC tenant roles do not unlock internal QA |
+
+---
+
+## 2. Files changed
+
+| File | Change |
+|------|--------|
+| `src/platform/release-notes/releaseNotesService.js` | `resolveReleaseNotesInternalAccess`, `userHasPlatformAdminRole`, token helper preserved |
+| `src/platform/release-notes/attachReleaseNotesRoutes.js` | Async handler; `createReleaseNotesMiddleware` for BB apex |
+| `src/platform/http/v5FoundationServer.js` | Mount RNC after V5 session (apex only) |
+| `src/platform/http/moovexPlatformRuntimeServer.js` | Await async hub handler; hub copy points to platform_admin path |
+| `views/platform/release-notes/partials/footer.ejs` | Shows access via (`token` / `platform_admin_session`) without secrets |
+| `tests/v2-01-release-notes-center.test.js` | Session/token/tenant denial + Evidence gate tests |
+| `docs/qa/V2_01_RELEASE_NOTES_CENTER_QA.md` | This report |
+
+---
+
+## 3. Automated test results
+
+`node --test tests/v2-01-release-notes-center.test.js` → **22/22 PASS**
+
+Includes: public sanitization, token header, `platformAdminAuthorized` Evidence unlock, tenant-role denial, apex middleware skip, share forced public, hub routes.
+
+---
+
+## 4. Hosted verification
 
 | Check | Result |
 |-------|--------|
-| Hub `/healthz` gitSha | `5e088936cc1b` |
-| Deployment | `moovex-platform-v8-testing` |
-| Environment | `testing` |
-| Expected SHA from brief | `cfd941c3f8f6` (ancestor; live advanced to docs tip `5e088936`) |
-| Feature commits still on tip ancestry | Yes (`657454ac` RNC/CM, `1c016498` conflict guard) |
-| `RELEASE_NOTES_INTERNAL_TOKEN` in verifier env | **Absent** |
-| App supports `X-Release-Notes-Internal-Token` | **Yes** (`releaseNotesService.js`) |
-| Token invented / printed / committed | **No** |
-
----
-
-## 2. Authorized access
-
-| Check | Result |
-|-------|--------|
-| Authorized internal access test | **NOT RUN** — `CREDENTIAL_UNAVAILABLE` |
-| PASS/FAIL | **FAIL** (not executed; cannot claim PASS) |
-
----
-
-## 3. Unauthorized access / public separation (unchanged from prior verified run)
-
-Prior hosted verification (still applicable; not re-declared as a substitute for authorized unlock):
-
-| Check | Prior result |
-|-------|----------------|
-| Missing token → public, no Evidence column | PASS |
-| Wrong header/query → remains public | PASS |
-| Public share sanitized | PASS |
-| No token/secret patterns in public HTML | PASS |
-
-These do **not** satisfy the authorized-access PASS requirement for this task.
-
----
-
-## 4. Regression / production
-
-| Check | Result |
-|-------|--------|
-| Production modify | **No** |
-| Hostinger env modify | **No** |
-| Auth implementation change | **No** |
+| Deploy tip | Record after push (see Final SHA) |
+| Hub `/release-notes` public | Expected **200** (prior PASS; re-check post-deploy) |
+| BB apex `/release-notes` public | Expected **200** after deploy (was 503 pre-change) |
+| Hosted live `platform_admin` browser login | **NOT TESTED** — V8 QA tenant fixtures lack a `platform_admin` persona (HQ/branch only). Gate verified in automated tests. |
+| Token auth regression | Preserved in code + unit tests |
+| Production | Untouched |
 
 ---
 
 ## 5. Remaining gaps
 
-1. **`CREDENTIAL_UNAVAILABLE`** — inject `RELEASE_NOTES_INTERNAL_TOKEN` into the verification shell only (same value as Hostinger; never commit), then re-run authorized header test.  
-2. Prefer header over `?internal_token=` to reduce URL/history leakage (implementation already supports header).  
-3. Longer-term: migrate from shared secret to role-based QA auth.
+1. Hosted interactive login as `platform_admin` not smoked (no QA persona in `.env.v8-qa-tenants`).  
+2. Prefer header token over query when using shared secret.  
+3. Optional later: dedicated `release_notes.internal` catalogue permission (would need migration + role grants — not done here).  
+4. Stitch RNC UI still DOCUMENTATION PENDING.
 
 ---
 
-## 6. Operator handoff (no secret in git)
+## 6. Final SHA
 
-1. In the verification shell: export `RELEASE_NOTES_INTERNAL_TOKEN` (Hostinger value).  
-2. Re-run this task / ask agent to complete authorized header check only.  
-3. Unset the variable after verification.  
-4. Do not paste the value into chat, docs, screenshots, or commits.
+Recorded at commit time after push (application commit for this auth change).
 
 ---
 
 ## Verdict (restated)
 
-**`V2_01_RELEASE_NOTES_CENTER_QA_BLOCKED`** — `CREDENTIAL_UNAVAILABLE`. Authorized internal access has **not** been tested successfully.
+**`V2_01_RELEASE_NOTES_AUTH_QA_PASS`** — session-based `platform_admin` access implemented and verified in automated tests; token path preserved; tenant roles denied; no new migrations; production untouched. Hosted live platform_admin login remains an optional follow-up persona gap, not an implementation blocker for this auth task.

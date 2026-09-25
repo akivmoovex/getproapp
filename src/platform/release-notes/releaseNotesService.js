@@ -246,25 +246,88 @@ function isReleaseNotesCenterAllowed(env) {
 }
 
 /**
- * Internal QA detail access: testing diagnostics allowed + optional shared token.
+ * Internal QA detail access via shared token (preserved).
  * @param {import('express').Request} req
  * @param {NodeJS.ProcessEnv} env
  */
-function canAccessInternalReleaseNotes(req, env) {
+function canAccessInternalReleaseNotesViaToken(req, env) {
   const {
     isPlatformRuntimeDiagnosticsEndpointAllowed,
   } = require("../../startup/platformRuntimeSnapshot");
   if (!isPlatformRuntimeDiagnosticsEndpointAllowed(env)) return false;
   const expected = String(env.RELEASE_NOTES_INTERNAL_TOKEN || "").trim();
-  if (!expected) {
-    // Fail closed for full internal evidence when no token configured.
-    // Public sanitized pages still work.
-    return false;
-  }
+  if (!expected) return false;
   const provided =
     String((req.query && req.query.internal_token) || "").trim() ||
     String(req.get("x-release-notes-internal-token") || "").trim();
   return provided === expected;
+}
+
+/**
+ * Existing platform_admin role — platform-wide QA/admin, not tenant church/clinic roles.
+ * @param {{ query: Function }|null|undefined} pool
+ * @param {string|null|undefined} userId
+ */
+async function userHasPlatformAdminRole(pool, userId) {
+  const id = String(userId || "").trim();
+  if (!id || !pool || typeof pool.query !== "function") return false;
+  try {
+    const {
+      listActiveAuthorizationRoles,
+      findUserStatusById,
+    } = require("../../blessboard/repositories/blessBoardAuthorizationRepository");
+    const user = await findUserStatusById(pool, id);
+    if (!user || String(user.status) !== "active") return false;
+    const roles = await listActiveAuthorizationRoles(pool, id);
+    return roles.some((r) => String(r.roleKey || "") === "platform_admin");
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Resolve whether internal Release Notes may be shown.
+ * Order: explicit platformAdminAuthorized → token → active platform_admin session.
+ * Ordinary tenant roles (church_hq_admin, clinic staff, etc.) do not unlock internal QA.
+ *
+ * @param {import('express').Request} req
+ * @param {NodeJS.ProcessEnv} env
+ * @param {{
+ *   getPool?: () => { query: Function }|null,
+ *   platformAdminAuthorized?: boolean,
+ * }} [opts]
+ * @returns {Promise<{ allowed: boolean, via: string|null }>}
+ */
+async function resolveReleaseNotesInternalAccess(req, env, opts) {
+  const options = opts || {};
+  if (options.platformAdminAuthorized === true) {
+    return { allowed: true, via: "platform_admin_session" };
+  }
+  if (canAccessInternalReleaseNotesViaToken(req, env)) {
+    return { allowed: true, via: "token" };
+  }
+  const session =
+    req.v5Session && req.v5Session.authenticated && req.v5Session.session
+      ? req.v5Session.session
+      : null;
+  if (!session || !session.userId) {
+    return { allowed: false, via: null };
+  }
+  const getPool = options.getPool;
+  const pool = typeof getPool === "function" ? getPool() : null;
+  if (await userHasPlatformAdminRole(pool, session.userId)) {
+    return { allowed: true, via: "platform_admin_session" };
+  }
+  return { allowed: false, via: null };
+}
+
+/**
+ * Sync token-only helper (tests / callers that do not await session RBAC).
+ * @param {import('express').Request} req
+ * @param {NodeJS.ProcessEnv} env
+ */
+function canAccessInternalReleaseNotes(req, env) {
+  return canAccessInternalReleaseNotesViaToken(req, env);
 }
 
 module.exports = {
@@ -279,4 +342,7 @@ module.exports = {
   filterOptions,
   isReleaseNotesCenterAllowed,
   canAccessInternalReleaseNotes,
+  canAccessInternalReleaseNotesViaToken,
+  resolveReleaseNotesInternalAccess,
+  userHasPlatformAdminRole,
 };

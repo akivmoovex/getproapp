@@ -119,7 +119,8 @@ function renderPlatformQaLauncher(res, platform, deployment) {
   <ul>
 ${links}
   </ul>
-  <p><a href="/release-notes">Release Notes Center</a> — versions 1.0–2.01 (QA)</p>
+  <p><a href="/release-notes">Release Notes Center</a> — public sanitized notes (versions 1.0–2.01)</p>
+  <p>Internal QA evidence: sign in as <code>platform_admin</code> on BlessBoard apex, then open <code>/release-notes</code> (token header still supported on this hub).</p>
   <p><a href="/healthz">Platform health check</a></p>
 </main>
 </body></html>`);
@@ -664,19 +665,24 @@ function createMoovexPlatformRuntimeApp(options) {
       const {
         tryHandleReleaseNotesRequest,
       } = require("../release-notes/attachReleaseNotesRoutes");
-      if (tryHandleReleaseNotesRequest(req, res, { env })) {
-        return undefined;
-      }
-      // Do not expose product operational routes on the QA hub host.
-      const hubLinks = resolveQaProductLinks(deployment, platform);
-      const hubDomain =
-        (deployment && deployment.canonicalDomain) ||
-        (platform.platformLine === "v8" ? "neuniversity.org" : "pronline.org");
-      return res.status(404).json({
-        ok: false,
-        code: "platform_qa_hub_only",
-        message: `${hubDomain} is the testing QA launcher only. Use product hostnames for app routes.`,
-        links: hubLinks,
+      return Promise.resolve(
+        tryHandleReleaseNotesRequest(req, res, {
+          env,
+          getPool: opts.getPool || getPgPool,
+        })
+      ).then((handled) => {
+        if (handled) return undefined;
+        // Do not expose product operational routes on the QA hub host.
+        const hubLinks = resolveQaProductLinks(deployment, platform);
+        const hubDomain =
+          (deployment && deployment.canonicalDomain) ||
+          (platform.platformLine === "v8" ? "neuniversity.org" : "pronline.org");
+        return res.status(404).json({
+          ok: false,
+          code: "platform_qa_hub_only",
+          message: `${hubDomain} is the testing QA launcher only. Use product hostnames for app routes.`,
+          links: hubLinks,
+        });
       });
     }
 

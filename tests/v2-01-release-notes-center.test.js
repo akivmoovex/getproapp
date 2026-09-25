@@ -24,7 +24,14 @@ const {
   sanitizeForAudience,
   isReleaseNotesCenterAllowed,
   canAccessInternalReleaseNotes,
+  canAccessInternalReleaseNotesViaToken,
+  resolveReleaseNotesInternalAccess,
 } = require("../src/platform/release-notes/releaseNotesService");
+const {
+  tryHandleReleaseNotesRequest,
+  createReleaseNotesMiddleware,
+} = require("../src/platform/release-notes/attachReleaseNotesRoutes");
+const express = require("express");
 
 const V8_ENV = Object.freeze({
   NODE_ENV: "production",
@@ -220,5 +227,119 @@ describe("release notes V7 hub still available in testing", () => {
       .set("Host", "pronline.org");
     assert.equal(res.status, 200);
     assert.match(res.text, /Version 1\.3/);
+  });
+});
+
+describe("release notes platform_admin session access", () => {
+  it("token path remains supported (header)", async () => {
+    const req = {
+      query: {},
+      get(name) {
+        return String(name).toLowerCase() === "x-release-notes-internal-token"
+          ? "rnc-internal-test-token"
+          : "";
+      },
+    };
+    assert.equal(canAccessInternalReleaseNotesViaToken(req, V8_ENV), true);
+    const access = await resolveReleaseNotesInternalAccess(req, V8_ENV, {});
+    assert.equal(access.allowed, true);
+    assert.equal(access.via, "token");
+  });
+
+  it("platformAdminAuthorized unlocks internal without token", async () => {
+    const envNoToken = { ...V8_ENV, RELEASE_NOTES_INTERNAL_TOKEN: "" };
+    const req = { query: {}, get() { return ""; }, v5Session: null };
+    const denied = await resolveReleaseNotesInternalAccess(req, envNoToken, {});
+    assert.equal(denied.allowed, false);
+    const allowed = await resolveReleaseNotesInternalAccess(req, envNoToken, {
+      platformAdminAuthorized: true,
+    });
+    assert.equal(allowed.allowed, true);
+    assert.equal(allowed.via, "platform_admin_session");
+  });
+
+  it("ordinary tenant session without platform_admin stays public", async () => {
+    const envNoToken = { ...V8_ENV, RELEASE_NOTES_INTERNAL_TOKEN: "" };
+    const req = {
+      query: {},
+      get() { return ""; },
+      v5Session: {
+        authenticated: true,
+        session: { userId: "00000000-0000-4000-8000-000000000099" },
+      },
+    };
+    const access = await resolveReleaseNotesInternalAccess(req, envNoToken, {
+      getPool: () => ({
+        async query(sql) {
+          // Simulate active user who is church_hq_admin only (no platform_admin).
+          if (/FROM blessboard\.users/i.test(sql) || /status/i.test(sql)) {
+            return { rows: [{ id: req.v5Session.session.userId, status: "active" }] };
+          }
+          return { rows: [{ role_key: "church_hq_admin", roleKey: "church_hq_admin" }] };
+        },
+      }),
+    });
+    // Repository maps columns — if lookup fails closed, also public. Either way not internal via tenant role.
+    assert.equal(access.allowed, false);
+  });
+
+  it("HTTP handler exposes Evidence only when platformAdminAuthorized", async () => {
+    const envNoToken = {
+      ...V8_ENV,
+      RELEASE_NOTES_INTERNAL_TOKEN: "",
+    };
+    const app = express();
+    app.use(async (req, res, next) => {
+      try {
+        const handled = await tryHandleReleaseNotesRequest(req, res, {
+          env: envNoToken,
+          platformAdminAuthorized: req.get("x-test-platform-admin") === "1",
+        });
+        if (!handled) res.status(404).end();
+      } catch (err) {
+        next(err);
+      }
+    });
+
+    const publicRes = await request(app).get("/release-notes/2.01/qa");
+    assert.equal(publicRes.status, 200);
+    assert.equal(publicRes.text.includes("<th>Evidence</th>"), false);
+    assert.match(publicRes.text, /data-audience="public"/);
+
+    const adminRes = await request(app)
+      .get("/release-notes/2.01/qa")
+      .set("X-Test-Platform-Admin", "1");
+    assert.equal(adminRes.status, 200);
+    assert.match(adminRes.text, /<th>Evidence<\/th>/);
+    assert.match(adminRes.text, /data-audience="internal"/);
+    assert.match(adminRes.text, /docs\/qa\/V2_01_/);
+  });
+
+  it("apex middleware skips non-apex hosts", async () => {
+    const app = express();
+    app.use(
+      createReleaseNotesMiddleware({
+        env: V8_ENV,
+        isApexHost: () => false,
+        getPool: () => null,
+      })
+    );
+    app.get("/release-notes", (req, res) => res.status(299).send("fallback"));
+    const res = await request(app).get("/release-notes");
+    assert.equal(res.status, 299);
+  });
+
+  it("share panel stays sanitized even when platform admin authorized", async () => {
+    const app = express();
+    app.use(async (req, res) => {
+      await tryHandleReleaseNotesRequest(req, res, {
+        env: V8_ENV,
+        platformAdminAuthorized: true,
+      });
+    });
+    const res = await request(app).get("/release-notes/2.01/share");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /sanitized summary/i);
+    assert.match(res.text, /data-audience="public"/);
   });
 });

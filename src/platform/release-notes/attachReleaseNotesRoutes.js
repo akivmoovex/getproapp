@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * Release Notes Center request handler for the platform QA hub.
+ * Release Notes Center request handler (QA hub + BlessBoard apex).
  */
 
 const {
@@ -12,7 +12,7 @@ const {
   sanitizeForAudience,
   filterOptions,
   isReleaseNotesCenterAllowed,
-  canAccessInternalReleaseNotes,
+  resolveReleaseNotesInternalAccess,
   VERSION_ORDER,
 } = require("./releaseNotesService");
 const { renderReleaseNotesView } = require("./renderReleaseNotes");
@@ -39,7 +39,8 @@ function parseFilters(query) {
  * @param {object} [extra]
  */
 function buildLocals(req, env, extra) {
-  const includeInternal = canAccessInternalReleaseNotes(req, env);
+  const includeInternal = Boolean(extra && extra.includeInternal);
+  const accessVia = (extra && extra.accessVia) || null;
   return {
     title: "GetPro Release Notes Center",
     hubBrand: "GetPro Unified Platform",
@@ -47,22 +48,27 @@ function buildLocals(req, env, extra) {
     filterOptions: filterOptions(),
     filters: parseFilters(req.query),
     includeInternal,
+    accessVia,
     audience: includeInternal ? "internal" : "public",
     stitchStatus:
       "DOCUMENTATION PENDING — no approved Stitch Release Notes Center project found in account inventory (2026-09-25).",
-    assetVersion: "v2-01-rnc-1",
+    assetVersion: "v2-01-rnc-2",
     ...(extra || {}),
   };
 }
 
 /**
- * Handle /release-notes* on the platform QA hub.
+ * Handle /release-notes* requests.
  * @param {import('express').Request} req
  * @param {import('express').Response} res
- * @param {{ env?: NodeJS.ProcessEnv }} [opts]
- * @returns {boolean} true if handled
+ * @param {{
+ *   env?: NodeJS.ProcessEnv,
+ *   getPool?: () => { query: Function }|null,
+ *   platformAdminAuthorized?: boolean,
+ * }} [opts]
+ * @returns {Promise<boolean>} true if handled
  */
-function tryHandleReleaseNotesRequest(req, res, opts) {
+async function tryHandleReleaseNotesRequest(req, res, opts) {
   const env = (opts && opts.env) || process.env;
   const pathName = String(req.path || "");
   if (!pathName.startsWith("/release-notes")) return false;
@@ -72,9 +78,14 @@ function tryHandleReleaseNotesRequest(req, res, opts) {
     return true;
   }
 
+  const access = await resolveReleaseNotesInternalAccess(req, env, {
+    getPool: opts && opts.getPool,
+    platformAdminAuthorized: opts && opts.platformAdminAuthorized === true,
+  });
+
   if (pathName === "/release-notes" || pathName === "/release-notes/") {
     const filters = parseFilters(req.query);
-    const includeInternal = canAccessInternalReleaseNotes(req, env);
+    const includeInternal = access.allowed;
     const versions = filterCatalog(filters).map((entry) =>
       sanitizeForAudience(entry, { includeInternal })
     );
@@ -85,6 +96,8 @@ function tryHandleReleaseNotesRequest(req, res, opts) {
           page: "overview",
           versionsSummary: listVersions(),
           versions,
+          includeInternal,
+          accessVia: access.via,
         })
       )
     );
@@ -101,6 +114,7 @@ function tryHandleReleaseNotesRequest(req, res, opts) {
         buildLocals(req, env, {
           page: "not-found",
           message: "Unknown release notes path.",
+          includeInternal: false,
         })
       )
     );
@@ -115,6 +129,7 @@ function tryHandleReleaseNotesRequest(req, res, opts) {
         buildLocals(req, env, {
           page: "not-found",
           message: "Unknown release version.",
+          includeInternal: false,
         })
       )
     );
@@ -133,9 +148,7 @@ function tryHandleReleaseNotesRequest(req, res, opts) {
 
   const forcePublic =
     panel === "share" || String((req.query && req.query.public) || "") === "1";
-  const includeInternal = forcePublic
-    ? false
-    : canAccessInternalReleaseNotes(req, env);
+  const includeInternal = forcePublic ? false : access.allowed;
   const filters = { ...parseFilters(req.query), version: versionId };
   const filtered = filterCatalog(filters)[0];
   const entry = sanitizeForAudience(filtered || getVersion(versionId), {
@@ -151,6 +164,7 @@ function tryHandleReleaseNotesRequest(req, res, opts) {
         entry,
         versionId,
         includeInternal,
+        accessVia: forcePublic ? null : access.via,
         audience: includeInternal ? "internal" : "public",
         printMode:
           section === "print" ||
@@ -161,8 +175,40 @@ function tryHandleReleaseNotesRequest(req, res, opts) {
   return true;
 }
 
+/**
+ * Express middleware for BlessBoard apex (session available).
+ * @param {{
+ *   env?: NodeJS.ProcessEnv,
+ *   getPool?: () => { query: Function }|null,
+ *   isApexHost?: (req: import('express').Request) => boolean,
+ * }} [opts]
+ */
+function createReleaseNotesMiddleware(opts) {
+  const options = opts || {};
+  const env = options.env || process.env;
+  return async function releaseNotesMiddleware(req, res, next) {
+    try {
+      if (!String(req.path || "").startsWith("/release-notes")) {
+        return next();
+      }
+      if (typeof options.isApexHost === "function" && !options.isApexHost(req)) {
+        return next();
+      }
+      const handled = await tryHandleReleaseNotesRequest(req, res, {
+        env,
+        getPool: options.getPool,
+      });
+      if (handled) return undefined;
+      return next();
+    } catch (err) {
+      return next(err);
+    }
+  };
+}
+
 module.exports = {
   tryHandleReleaseNotesRequest,
+  createReleaseNotesMiddleware,
   parseFilters,
   buildLocals,
 };
