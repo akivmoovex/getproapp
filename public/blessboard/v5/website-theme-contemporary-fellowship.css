@@ -1,0 +1,115 @@
+/**
+ * BlessBoard public theme packs (C3).
+ * Scoped under body.gp-website-theme--* so bb.default stays unchanged.
+ * Visual refs: Stitch Website Change Management Screen 6 gallery
+ * (Contemporary Fellowship card — dark slate + cyan modern sanctuary).
+ */
+
+/* —— Contemporary Fellowship —— */
+body.bb-tp-body.gp-website-theme--bb-contemporary-fellowship {
+  --bb-color-primary: #06b6d4;
+  --bb-color-primary-hover: #0891b2;
+  --bb-color-primary-soft: rgba(6, 182, 212, 0.16);
+  --bb-color-primary-deep: #0e7490;
+  --bb-color-on-primary: #0f172a;
+  --bb-color-page: #0b1120;
+  --bb-color-surface: #111827;
+  --bb-color-surface-dim: #1e293b;
+  --bb-color-ink: #f8fafc;
+  --bb-color-muted: #cbd5e1;
+  --bb-color-border: rgba(148, 163, 184, 0.35);
+  --bb-color-focus-ring: rgba(6, 182, 212, 0.45);
+  --bb-gradient-page:
+    radial-gradient(1000px 480px at 10% 0%, rgba(6, 182, 212, 0.18) 0%, transparent 55%),
+    radial-gradient(900px 420px at 100% 10%, rgba(59, 130, 246, 0.12) 0%, transparent 50%),
+    linear-gradient(180deg, #0f172a 0%, #0b1120 45%, #020617 100%);
+  --bb-bg: var(--bb-color-page);
+  --bb-ink: var(--bb-color-ink);
+  --bb-violet: var(--bb-color-primary);
+  --bb-violet-deep: var(--bb-color-primary-hover);
+  background: var(--bb-gradient-page);
+  color: var(--bb-ink);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-header {
+  background: rgba(15, 23, 42, 0.92);
+  border-bottom-color: rgba(51, 65, 85, 0.9);
+  box-shadow: 0 12px 28px rgba(2, 6, 23, 0.45);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-header a,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-nav a,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-brand,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-brand__name {
+  color: #f8fafc;
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-nav a:hover,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-nav a[aria-current="page"] {
+  color: #67e8f9;
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero {
+  background: linear-gradient(135deg, #0f172a 0%, #1e293b 55%, #0a0f1d 100%);
+  color: #fff;
+  min-height: clamp(18rem, 52vw, 28rem);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__title,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__lead,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__eyebrow-desktop,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__eyebrow-mobile {
+  color: #f8fafc;
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__title-accent {
+  color: #67e8f9;
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__visual {
+  aspect-ratio: 21 / 9;
+  max-height: none;
+  border-radius: 1rem;
+  overflow: hidden;
+  box-shadow: 0 18px 40px rgba(2, 6, 23, 0.55);
+  border: 1px solid rgba(103, 232, 249, 0.25);
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__img,
+body.gp-website-theme--bb-contemporary-fellowship [data-website-image-slot="home.hero.image"] img,
+body.gp-website-theme--bb-contemporary-fellowship .gp-website-image-frame {
+  object-fit: cover;
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-btn,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-cta,
+body.gp-website-theme--bb-contemporary-fellowship a.bb-tp-btn--primary {
+  background: #06b6d4;
+  color: #0f172a;
+  border-color: #06b6d4;
+  font-weight: 700;
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-section,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-card,
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-panel {
+  background: rgba(17, 24, 39, 0.88);
+  border-color: rgba(148, 163, 184, 0.28);
+  color: #e2e8f0;
+}
+
+body.gp-website-theme--bb-contemporary-fellowship .bb-tp-footer {
+  background: #020617;
+  color: #94a3b8;
+  border-top: 1px solid rgba(51, 65, 85, 0.9);
+}
+
+@media (max-width: 390px) {
+  body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero {
+    min-height: 16rem;
+  }
+
+  body.gp-website-theme--bb-contemporary-fellowship .bb-tp-hero__visual {
+    aspect-ratio: 16 / 10;
+  }
+}

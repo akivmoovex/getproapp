@@ -54,6 +54,9 @@
   <% } %>
   <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/activeclinic/ac-public.css?v=<%= assetVersion %>"/>
+  <% if (typeof websiteThemeStylesheet !== 'undefined' && websiteThemeStylesheet) { %>
+  <link rel="stylesheet" href="<%= websiteThemeStylesheet %>"/>
+  <% } %>
   <% if (shellVariant === "platform") { %>
   <link rel="stylesheet" href="/activeclinic/acw-platform.css?v=<%= assetVersion %>"/>
   <% if (typeof chrome === 'string' && chrome === 'mf-register') { %>

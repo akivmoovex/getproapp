@@ -1,0 +1,99 @@
+/**
+ * ActiveClinic public theme packs (C3).
+ * Scoped under body.gp-website-theme--* so ac.default stays unchanged.
+ * Visual refs: Stitch Website Change Management Screen 6 gallery
+ * (Family Wellness Mint card — soft mint surfaces + #006c4a).
+ */
+
+body.ac-public-body.gp-website-theme--ac-family-wellness-mint {
+  --acp-primary: #006c4a;
+  --acp-primary-strong: #005137;
+  --acp-primary-hover: #00714e;
+  --acp-surface: #f4fdf8;
+  --acp-surface-elevated: #ffffff;
+  --acp-ink: #0f172a;
+  --acp-muted: #475569;
+  --acp-border: #a7f3d0;
+  background:
+    linear-gradient(180deg, #f4fdf8 0%, #ffffff 42%, #e8f8f0 100%);
+  color: var(--acp-ink);
+}
+
+body.gp-website-theme--ac-family-wellness-mint .ac-public-header {
+  background: rgba(244, 253, 248, 0.94);
+  border-bottom: 1px solid #a7f3d0;
+  box-shadow: 0 8px 24px rgba(0, 108, 74, 0.06);
+}
+
+body.gp-website-theme--ac-family-wellness-mint .ac-public-brand__mark {
+  background: linear-gradient(135deg, #006c4a, #68dba9);
+}
+
+body.gp-website-theme--ac-family-wellness-mint .ac-public-nav a {
+  color: #14532d;
+}
+
+body.gp-website-theme--ac-family-wellness-mint .ac-public-nav__cta,
+body.gp-website-theme--ac-family-wellness-mint .ac-public-nav__login,
+body.gp-website-theme--ac-family-wellness-mint .ac-public-btn,
+body.gp-website-theme--ac-family-wellness-mint a.ac-public-btn--primary {
+  background: #006c4a;
+  border-color: #006c4a;
+  color: #fff;
+  border-radius: 999px;
+}
+
+body.gp-website-theme--ac-family-wellness-mint .ac-public-hero {
+  background: linear-gradient(180deg, #f4fdf8 0%, #ffffff 70%);
+  border-radius: 1.25rem;
+  padding: 1.25rem;
+}
+
+body.gp-website-theme--ac-family-wellness-mint .ac-public-hero h1 {
+  color: #0f172a;
+  letter-spacing: -0.02em;
+}
+
+body.gp-website-theme--ac-family-wellness-mint .ac-public-lede {
+  color: #475569;
+}
+
+body.gp-website-theme--ac-family-wellness-mint .ac-public-card,
+body.gp-website-theme--ac-family-wellness-mint .acp-card,
+body.gp-website-theme--ac-family-wellness-mint .ac-public-panel {
+  background: #ffffff;
+  border: 1px solid #a7f3d0;
+  border-radius: 1rem;
+  box-shadow: 0 10px 28px rgba(0, 108, 74, 0.05);
+}
+
+body.gp-website-theme--ac-family-wellness-mint .ac-public-main img,
+body.gp-website-theme--ac-family-wellness-mint [data-website-image-slot] img {
+  border-radius: 0.85rem;
+}
+
+body.gp-website-theme--ac-family-wellness-mint [data-website-image-slot="home.hero.image"],
+body.gp-website-theme--ac-family-wellness-mint .ac-public-hero img {
+  aspect-ratio: 16 / 10;
+  object-fit: cover;
+  width: 100%;
+}
+
+body.gp-website-theme--ac-family-wellness-mint .ac-public-footer,
+body.gp-website-theme--ac-family-wellness-mint footer {
+  background: #e8f8f0;
+  border-top: 1px solid #a7f3d0;
+  color: #14532d;
+}
+
+@media (max-width: 390px) {
+  body.gp-website-theme--ac-family-wellness-mint .ac-public-hero {
+    padding: 0.85rem;
+    border-radius: 1rem;
+  }
+
+  body.gp-website-theme--ac-family-wellness-mint .ac-public-nav__cta,
+  body.gp-website-theme--ac-family-wellness-mint .ac-public-nav__login {
+    border-radius: 0.75rem;
+  }
+}

@@ -157,6 +157,7 @@ async function loadWebsiteThemeState(db, input) {
       themeId: activeTheme.id,
       productCode,
       cssClass: activeTheme.cssClass,
+      stylesheetHref: activeTheme.stylesheetHref || null,
       tokenPack: activeTheme.styling && activeTheme.styling.tokenPack,
       engineTemplateId: activeTheme.engineTemplateId,
       isDefault: activeTheme.isDefault === true,
@@ -226,7 +227,9 @@ function presentThemeAttrs(presentation) {
     websiteThemeId: presentation.themeId,
     websiteThemeProduct: presentation.productCode,
     websiteThemeClass: presentation.cssClass || "",
+    websiteThemeStylesheet: presentation.stylesheetHref || "",
     websiteThemeLegacyFallback: presentation.legacyFallback === true,
+    websiteThemePreviewOnly: presentation.previewOnly === true,
   };
 }
 

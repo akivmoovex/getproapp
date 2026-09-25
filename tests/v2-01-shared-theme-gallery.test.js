@@ -31,11 +31,13 @@ describe("V2_01 shared website theme gallery", () => {
   it("lists only product-filtered themes with working renderers", () => {
     const bb = listSelectableThemesForProduct(PRODUCT_CODE.BLESSBOARD);
     const ac = listSelectableThemesForProduct(PRODUCT_CODE.ACTIVECLINIC);
-    assert.equal(bb.length, 1);
-    assert.equal(ac.length, 1);
-    assert.equal(bb[0].id, BB_DEFAULT_ID);
-    assert.equal(ac[0].id, AC_DEFAULT_ID);
-    assert.equal(bb[0].hasWorkingRenderer, true);
+    assert.equal(bb.length, 2);
+    assert.equal(ac.length, 2);
+    assert.ok(bb.some((t) => t.id === BB_DEFAULT_ID));
+    assert.ok(bb.some((t) => t.id === "bb.contemporary-fellowship"));
+    assert.ok(ac.some((t) => t.id === AC_DEFAULT_ID));
+    assert.ok(ac.some((t) => t.id === "ac.family-wellness-mint"));
+    assert.equal(bb.every((t) => t.hasWorkingRenderer), true);
     assert.equal(
       listThemesForProduct(PRODUCT_CODE.BLESSBOARD).some((t) => t.id === AC_DEFAULT_ID),
       false
@@ -53,12 +55,12 @@ describe("V2_01 shared website theme gallery", () => {
       editHref: "/c/demo?website_edit=1",
       csrfToken: "tok",
     });
-    assert.equal(page.themes.length, 1);
+    assert.equal(page.themes.length, 2);
     assert.equal(page.themes[0].isDraft, true);
     assert.equal(page.themes[0].isLive, true);
     assert.match(page.themes[0].previewHref, new RegExp(THEME_PREVIEW_QUERY));
     assert.match(page.themes[0].previewHref, /website_mode=draft/);
-    assert.equal(page.singleThemeOnly, true);
+    assert.equal(page.singleThemeOnly, false);
     assert.equal(SERVICE_PREVIEW_Q, "website_theme_preview");
   });
 
@@ -92,6 +94,10 @@ describe("V2_01 shared website theme gallery", () => {
     assert.doesNotMatch(bbHtml, /ac\.default/);
     assert.match(acHtml, /ActiveClinic Classic/);
     assert.doesNotMatch(acHtml, /bb\.default/);
+    assert.match(bbHtml, /Contemporary Fellowship/);
+    assert.match(acHtml, /Family Wellness Mint/);
+    assert.doesNotMatch(bbHtml, /data-theme-gallery-single/);
+    assert.doesNotMatch(acHtml, /data-theme-gallery-single/);
     assert.match(bbHtml, /Website Options/);
     assert.match(read("public/platform/website-theme-gallery.css"), /max-width:\s*390px/);
     assert.match(read("public/platform/website-theme-gallery.js"), /themeId/);
@@ -134,9 +140,16 @@ describe("V2_01 shared website theme gallery", () => {
     assert.match(page.safetyNote, /does not rewrite/i);
   });
 
-  it("documents single-theme C2 limitation in gallery UI", () => {
+  it("documents single-theme C2 limitation in gallery UI when only one theme exists", () => {
     const tpl = read("views/platform/website/theme-gallery-page.ejs");
     assert.match(tpl, /data-theme-gallery-single/);
     assert.match(tpl, /One implemented theme/);
+    const page = buildThemeGalleryPageView({
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      themes: listSelectableThemesForProduct(PRODUCT_CODE.BLESSBOARD).slice(0, 1),
+      draftThemeId: BB_DEFAULT_ID,
+      publishedThemeId: BB_DEFAULT_ID,
+    });
+    assert.equal(page.singleThemeOnly, true);
   });
 });

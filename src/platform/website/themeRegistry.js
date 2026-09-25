@@ -1,9 +1,8 @@
 "use strict";
 
 /**
- * Shared website theme registry (C1 infrastructure).
+ * Shared website theme registry (C1 infrastructure + C3 additional themes).
  * Product-isolated collections — never cross-list BB and AC themes.
- * Visitor gallery / Stitch theme packs are out of scope for C1.
  */
 
 const { PRODUCT_CODE } = require("./publicWebsiteUrl");
@@ -16,15 +15,28 @@ const {
 const THEME_CONTENT_KEY = "site.theme_id";
 
 const BB_DEFAULT_ID = "bb.default";
+const BB_CONTEMPORARY_FELLOWSHIP_ID = "bb.contemporary-fellowship";
 const AC_DEFAULT_ID = "ac.default";
+const AC_FAMILY_WELLNESS_MINT_ID = "ac.family-wellness-mint";
 
-function slotMapFromRegistry() {
+function slotMapFromRegistry(overrides) {
   const out = {};
   for (const [key, def] of Object.entries(IMAGE_SLOT_REGISTRY)) {
+    const over = overrides && overrides[key] ? overrides[key] : null;
     out[key] = Object.freeze({
       supportsSeparateFraming: def.supportsSeparateFraming === true,
-      aspectDesktop: def.aspectDesktop == null ? null : def.aspectDesktop,
-      aspectMobile: def.aspectMobile == null ? null : def.aspectMobile,
+      aspectDesktop:
+        over && over.aspectDesktop != null
+          ? over.aspectDesktop
+          : def.aspectDesktop == null
+            ? null
+            : def.aspectDesktop,
+      aspectMobile:
+        over && over.aspectMobile != null
+          ? over.aspectMobile
+          : def.aspectMobile == null
+            ? null
+            : def.aspectMobile,
     });
   }
   return Object.freeze(out);
@@ -45,6 +57,29 @@ function sectionTypesFromDefs(defs) {
 }
 
 const SHARED_IMAGE_SLOTS = slotMapFromRegistry();
+const BB_CONTEMPORARY_IMAGE_SLOTS = slotMapFromRegistry({
+  "home.hero.image": Object.freeze({
+    aspectDesktop: "21 / 9",
+    aspectMobile: "16 / 10",
+  }),
+});
+const AC_MINT_IMAGE_SLOTS = slotMapFromRegistry({
+  "home.hero.image": Object.freeze({
+    aspectDesktop: "16 / 10",
+    aspectMobile: "4 / 3",
+  }),
+});
+
+const BB_PAGES = Object.freeze([
+  "home",
+  "about",
+  "contact",
+  "giving",
+  "leadership",
+  "ministries",
+  "events",
+  "sermons",
+]);
 
 const BLESSBOARD_THEMES = Object.freeze([
   Object.freeze({
@@ -61,20 +96,39 @@ const BLESSBOARD_THEMES = Object.freeze([
     isDefault: true,
     hasWorkingRenderer: true,
     cssClass: "gp-website-theme--bb-default",
-    pages: Object.freeze([
-      "home",
-      "about",
-      "contact",
-      "giving",
-      "leadership",
-      "ministries",
-      "events",
-      "sermons",
-    ]),
+    stylesheetHref: null,
+    pages: BB_PAGES,
     sectionTypes: sectionTypesFromDefs(BLESSBOARD_SECTION_TYPES),
     imageSlots: SHARED_IMAGE_SLOTS,
     styling: Object.freeze({
       tokenPack: "blessboard-default",
+      preservesBrandColorOverrides: true,
+    }),
+    layout: Object.freeze({
+      shell: "blessboard_tenant_public",
+    }),
+  }),
+  Object.freeze({
+    id: BB_CONTEMPORARY_FELLOWSHIP_ID,
+    productCode: PRODUCT_CODE.BLESSBOARD,
+    displayName: "Contemporary Fellowship",
+    description: "Modern dark sanctuary with cyan accents and an ultra-wide hero.",
+    preview: Object.freeze({
+      swatchPrimary: "#06b6d4",
+      swatchAccent: "#0f172a",
+      label: "Contemporary",
+    }),
+    engineTemplateId: "blessboard_church",
+    isDefault: false,
+    hasWorkingRenderer: true,
+    cssClass: "gp-website-theme--bb-contemporary-fellowship",
+    stylesheetHref:
+      "/blessboard/v5/website-theme-contemporary-fellowship.css?v=v2-theme-c3-1",
+    pages: BB_PAGES,
+    sectionTypes: sectionTypesFromDefs(BLESSBOARD_SECTION_TYPES),
+    imageSlots: BB_CONTEMPORARY_IMAGE_SLOTS,
+    styling: Object.freeze({
+      tokenPack: "blessboard-contemporary-fellowship",
       preservesBrandColorOverrides: true,
     }),
     layout: Object.freeze({
@@ -98,6 +152,7 @@ const ACTIVECLINIC_THEMES = Object.freeze([
     isDefault: true,
     hasWorkingRenderer: true,
     cssClass: "gp-website-theme--ac-default",
+    stylesheetHref: null,
     pages: pagesFromSectionDefs(ACTIVECLINIC_SECTION_TYPES),
     sectionTypes: sectionTypesFromDefs(ACTIVECLINIC_SECTION_TYPES),
     imageSlots: SHARED_IMAGE_SLOTS,
@@ -109,12 +164,40 @@ const ACTIVECLINIC_THEMES = Object.freeze([
       shell: "activeclinic_public_tenant",
     }),
   }),
+  Object.freeze({
+    id: AC_FAMILY_WELLNESS_MINT_ID,
+    productCode: PRODUCT_CODE.ACTIVECLINIC,
+    displayName: "Family Wellness Mint",
+    description: "Soft mint family-care surfaces with gentle green accents.",
+    preview: Object.freeze({
+      swatchPrimary: "#006c4a",
+      swatchAccent: "#68dba9",
+      label: "Wellness",
+    }),
+    engineTemplateId: "activeclinic_clinic",
+    isDefault: false,
+    hasWorkingRenderer: true,
+    cssClass: "gp-website-theme--ac-family-wellness-mint",
+    stylesheetHref:
+      "/activeclinic/website-theme-family-wellness-mint.css?v=v2-theme-c3-1",
+    pages: pagesFromSectionDefs(ACTIVECLINIC_SECTION_TYPES),
+    sectionTypes: sectionTypesFromDefs(ACTIVECLINIC_SECTION_TYPES),
+    imageSlots: AC_MINT_IMAGE_SLOTS,
+    styling: Object.freeze({
+      tokenPack: "activeclinic-family-wellness-mint",
+      preservesBrandColorOverrides: true,
+    }),
+    layout: Object.freeze({
+      shell: "activeclinic_public_tenant",
+    }),
+  }),
 ]);
 
-const ALL_BY_ID = Object.freeze({
-  [BB_DEFAULT_ID]: BLESSBOARD_THEMES[0],
-  [AC_DEFAULT_ID]: ACTIVECLINIC_THEMES[0],
-});
+const ALL_BY_ID = Object.freeze(
+  Object.fromEntries(
+    [...BLESSBOARD_THEMES, ...ACTIVECLINIC_THEMES].map((theme) => [theme.id, theme])
+  )
+);
 
 function normalizeProduct(productCode) {
   return String(productCode || "").trim().toLowerCase();
@@ -163,6 +246,7 @@ function listThemesForProduct(productCode) {
     isDefault: t.isDefault === true,
     engineTemplateId: t.engineTemplateId,
     hasWorkingRenderer: t.hasWorkingRenderer === true,
+    stylesheetHref: t.stylesheetHref || null,
   }));
 }
 
@@ -195,7 +279,9 @@ function publicationThemeKeyFor(themeId, productCode) {
 module.exports = {
   THEME_CONTENT_KEY,
   BB_DEFAULT_ID,
+  BB_CONTEMPORARY_FELLOWSHIP_ID,
   AC_DEFAULT_ID,
+  AC_FAMILY_WELLNESS_MINT_ID,
   BLESSBOARD_THEMES,
   ACTIVECLINIC_THEMES,
   themesForProduct,

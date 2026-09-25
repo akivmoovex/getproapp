@@ -34,6 +34,9 @@
   <% } %>
   <%- include('./head-design-system') %>
   <link rel="stylesheet" href="<%= typeof cssHref !== 'undefined' && cssHref ? cssHref : '/blessboard/v5/tenant-public.css?v=67' %>" />
+  <% if (typeof websiteThemeStylesheet !== 'undefined' && websiteThemeStylesheet) { %>
+  <link rel="stylesheet" href="<%= websiteThemeStylesheet %>" />
+  <% } %>
   <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.canEdit) { %>
   <link rel="stylesheet" href="/platform/website-inline-edit.css?v=v2-img-editor-2" />
   <link rel="stylesheet" href="/platform/website-change-manager-ui.css?v=v2-01-cm-history-1" />

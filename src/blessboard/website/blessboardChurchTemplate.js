@@ -113,7 +113,7 @@ function registerBlessBoardWebsiteTemplate() {
       },
       "site.theme_id": {
         type: CONTENT_TYPES.ENUM,
-        enumValues: ["bb.default"],
+        enumValues: ["bb.default", "bb.contemporary-fellowship"],
         group: "site",
         inline: false,
         description: "Public website theme id (BlessBoard collection only)",
@@ -191,7 +191,7 @@ function registerThemeEditableField() {
     productCode: PRODUCT_CODE.BLESSBOARD,
     key: "site.theme_id",
     type: CONTENT_TYPES.ENUM,
-    enumValues: ["bb.default"],
+    enumValues: ["bb.default", "bb.contemporary-fellowship"],
     permission: PERMISSIONS.EDIT,
     storage: { kind: STORAGE_KIND.PLATFORM_CONTENT_KEY, contentKey: "site.theme_id" },
     group: "site",

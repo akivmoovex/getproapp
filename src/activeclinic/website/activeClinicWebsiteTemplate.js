@@ -140,7 +140,7 @@ const KEYS = {
   },
   "site.theme_id": {
     type: T.ENUM,
-    enumValues: ["ac.default"],
+    enumValues: ["ac.default", "ac.family-wellness-mint"],
     group: "site",
     inline: false,
     description: "Public website theme id (ActiveClinic collection only)",
