@@ -2408,7 +2408,11 @@ function createContentAdminRouter(deps) {
           fieldKey = fieldKey || locator.fieldKey;
         }
       }
-      const newValue = body.value != null ? String(body.value) : "";
+      const {
+        readSubmittedEditableValue,
+      } = require("../../platform/website/editableFieldSchema");
+      // Preserve IMAGE objects `{ mediaId, src, alt }` — do not String() them.
+      const newValue = readSubmittedEditableValue(body);
 
       // Never trust client-provided organization / church IDs.
       if (body.organizationId || body.churchId || body.organization_id || body.church_id) {
@@ -2528,10 +2532,22 @@ function createContentAdminRouter(deps) {
         }
 
         const body = req.body && typeof req.body === "object" ? req.body : {};
-        const pageKey = String(body.pageKey || "").trim();
-        const sectionKey = String(body.sectionKey || "").trim();
-        const fieldKey = String(body.fieldKey || "").trim();
-        const newValue = body.value != null ? String(body.value) : "";
+        let pageKey = String(body.pageKey || "").trim();
+        let sectionKey = String(body.sectionKey || "").trim();
+        let fieldKey = String(body.fieldKey || "").trim();
+        if ((!pageKey || !sectionKey || !fieldKey) && (body.contentKey || body.key)) {
+          const { locatorFromContentKey } = require("../website/blessboardEngineContentService");
+          const locator = locatorFromContentKey(body.contentKey || body.key);
+          if (locator) {
+            pageKey = pageKey || locator.pageKey;
+            sectionKey = sectionKey || locator.sectionKey;
+            fieldKey = fieldKey || locator.fieldKey;
+          }
+        }
+        const {
+          readSubmittedEditableValue,
+        } = require("../../platform/website/editableFieldSchema");
+        const newValue = readSubmittedEditableValue(body);
 
         if (body.organizationId || body.churchId || body.organization_id || body.church_id) {
           return res.status(400).json({

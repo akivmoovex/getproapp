@@ -99,8 +99,9 @@ async function resolveContentPage(db, opts) {
  *   pageKey: string,
  *   sectionKey: string,
  *   fieldKey: string,
- *   newValue: string,
+ *   newValue: string|object|null,
  *   publicContact?: object|null,
+ *   grantedPermissions?: string[],
  * }} input
  */
 async function saveInlineFieldDraft(db, input) {
@@ -115,6 +116,8 @@ async function saveInlineFieldDraft(db, input) {
     assertEditableMutation,
     PRODUCT_CODE,
     ensureProductFieldsRegistered,
+    editableValuesEqual,
+    serializeOverlayDraftValue,
   } = require("../../platform/website/editableFieldSchema");
   ensureProductFieldsRegistered(PRODUCT_CODE.BLESSBOARD);
   const asserted = assertEditableMutation({
@@ -179,10 +182,40 @@ async function saveInlineFieldDraft(db, input) {
       grantedPermissions: input.grantedPermissions,
     });
     if (!engineSaved.ok && engineSaved.code !== "website_instance_not_found") {
+      if (
+        engineSaved.code === "validation_failed" ||
+        engineSaved.code === "invalid_url" ||
+        engineSaved.code === "invalid_media_url"
+      ) {
+        throw mapError(
+          "VALIDATION",
+          engineSaved.reason || "That image value is not valid.",
+          400
+        );
+      }
+      if (
+        engineSaved.code === "media_not_found" ||
+        engineSaved.code === "tenant_mismatch" ||
+        engineSaved.code === "forbidden"
+      ) {
+        throw mapError(
+          "FORBIDDEN",
+          "That media cannot be used for this website.",
+          403
+        );
+      }
       throw mapError("SAVE_FAILED", "Could not save this change. Please try again.", 500);
     }
 
-    if (String(validated.value) === String(baselinePrevious || "")) {
+    const storedValue =
+      engineSaved &&
+      engineSaved.ok &&
+      engineSaved.content &&
+      engineSaved.content.draftValue != null
+        ? engineSaved.content.draftValue
+        : validated.value;
+
+    if (editableValuesEqual(storedValue, baselinePrevious || "")) {
       if (existing) {
         await draftRepo.discardDraft(db, { id: existing.id, churchId: input.churchId });
       }
@@ -190,7 +223,7 @@ async function saveInlineFieldDraft(db, input) {
         saved: true,
         published: false,
         draftCleared: Boolean(existing),
-        value: validated.value,
+        value: storedValue,
         previousValue: baselinePrevious,
         engineStored: Boolean(engineSaved && engineSaved.ok),
       };
@@ -203,8 +236,8 @@ async function saveInlineFieldDraft(db, input) {
       pageKey,
       sectionKey,
       fieldKey,
-      previousValue: baselinePrevious,
-      newValue: validated.value,
+      previousValue: serializeOverlayDraftValue(baselinePrevious),
+      newValue: serializeOverlayDraftValue(storedValue),
       editorUserId: input.editorUserId,
     });
 
@@ -221,7 +254,7 @@ async function saveInlineFieldDraft(db, input) {
         entityId: draft.id,
         result: "success",
         before: { fieldKey, value: baselinePrevious },
-        after: { fieldKey, value: draft.newValue },
+        after: { fieldKey, value: storedValue },
         metadata: { source: "inline_text_edit", published: false },
       });
     } catch {
@@ -245,7 +278,7 @@ async function saveInlineFieldDraft(db, input) {
       published: false,
       draftCleared: false,
       draftId: draft.id,
-      value: draft.newValue,
+      value: storedValue,
       previousValue: draft.previousValue,
       updatedAt: draft.updatedAt,
     };
