@@ -1,7 +1,7 @@
 <%#
   Admin website chrome.
-  Admin view: status + Edit Website.
-  Editing mode: shared Stitch editor shell (toolbar, page rail, More, mobile nav).
+  View mode (AC parity): status + Preview + Edit Website + Website management.
+  Editing / preview mode: shared Stitch editor shell (toolbar, page rail, More, mobile nav).
   Product destinations (Features, SEO, Pages, Assets) are configured into More.
 %>
 <%
@@ -18,18 +18,30 @@
   <% } %>
 
   <% if (!wa.editingMode && !wa.previewDraftMode) { %>
-  <div class="bb-tp-admin-bar" data-bb-admin-bar="1" data-bb-admin-mode="view">
+  <div class="bb-tp-admin-bar" data-bb-admin-bar="1" data-bb-admin-mode="view" data-website-chrome="1">
     <div class="bb-tp-admin-bar__inner">
       <div class="bb-tp-admin-bar__left">
         <span class="bb-tp-admin-status bb-tp-admin-status--<%= wa.status.key %>" data-bb-website-status="<%= wa.status.key %>">
           <%= wa.status.label %>
         </span>
         <% if (wa.manageHref) { %>
-        <a class="bb-tp-admin-bar__link" href="<%= wa.manageHref %>">Website management</a>
+        <a class="bb-tp-admin-bar__link" href="<%= wa.manageHref %>" data-website-manage="1">
+          <span class="bb-tp-btn__label-full">Website management</span>
+          <span class="bb-tp-btn__label-short">Manage</span>
+        </a>
         <% } %>
       </div>
       <div class="bb-tp-admin-bar__right">
-        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-btn--touch" href="<%= wa.editHref %>" data-bb-edit-website="1">Edit Website</a>
+        <% if (wa.draftPreviewHref) { %>
+        <a class="bb-tp-btn bb-tp-btn--ghost bb-tp-btn--sm bb-tp-btn--touch" href="<%= wa.draftPreviewHref %>" data-website-preview="1" data-bb-preview-website="1">
+          <span class="bb-tp-btn__label-full">Preview</span>
+          <span class="bb-tp-btn__label-short">Preview</span>
+        </a>
+        <% } %>
+        <a class="bb-tp-btn bb-tp-btn--primary bb-tp-btn--sm bb-tp-btn--touch" href="<%= wa.editHref %>" data-bb-edit-website="1" data-website-edit-control="1">
+          <span class="bb-tp-btn__label-full">Edit Website</span>
+          <span class="bb-tp-btn__label-short">Edit</span>
+        </a>
       </div>
     </div>
   </div>

@@ -219,6 +219,21 @@ async function saveStructuredDraft(db, input) {
     // non-blocking
   }
 
+  let engineSynced = false;
+  try {
+    const { syncDraftToEngine } = require("../../platform/website-engine/blessboardBridge");
+    const synced = await syncDraftToEngine(db, {
+      organizationId: input.organizationId,
+      churchId: input.churchId,
+      branchId: input.branchId || null,
+      actorIdentityId: input.editorUserId || null,
+    });
+    engineSynced = Boolean(synced && synced.ok);
+  } catch {
+    // Engine draft sync must not block structured overlay save.
+    engineSynced = false;
+  }
+
   return {
     saved: true,
     published: false,
@@ -229,6 +244,8 @@ async function saveStructuredDraft(db, input) {
     payload: draft.payload,
     updatedAt: draft.updatedAt,
     softFillSiblings,
+    // Overlay draft is authoritative for BB preview; engine sync is best-effort for CM.
+    engineSynced,
   };
 }
 

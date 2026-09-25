@@ -17,6 +17,7 @@ const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
   buildPublicWebsiteEditPath,
+  buildPublicWebsitePreviewPath,
   buildPublicWebsiteAdminPath,
 } = require("../../platform/website/publicWebsiteUrl");
 
@@ -119,13 +120,21 @@ function resolveWebsiteActionUrls(input) {
         organizationKey: key,
         scope,
       }) || "/branch-admin/website";
+    const draftPreview =
+      buildPublicWebsitePreviewPath({
+        product: PRODUCT_CODE.BLESSBOARD,
+        organizationKey: key,
+        scope,
+      }) || null;
     return {
       serviceTimesUrl: "/branch-admin/website/service-times",
       serviceTimesLabel: "Edit service times",
+      // Canonical Branch Admin entry redirects to the actor's branch public editor.
       editWebsiteUrl: "/branch-admin/website",
       editWebsiteLabel: "Edit website",
-      previewUrl: visualEdit,
-      previewLabel: "Open website editor",
+      // Prefer draft preview (AC parity); fall back to visual editor entry.
+      previewUrl: draftPreview || visualEdit,
+      previewLabel: draftPreview ? "Preview" : "Open website editor",
       publishedWebsiteUrl: branchPublicPath,
       publishedWebsiteLabel: branchPublicPath ? "View published website" : null,
       publishWorkflowUrl: "/branch-admin/website/submit",

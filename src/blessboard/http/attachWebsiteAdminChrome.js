@@ -457,6 +457,11 @@ async function attachWebsiteAdminChrome(opts) {
   /** @type {Record<string, string>} */
   let publishedBaselines = Object.create(null);
   try {
+    const overlayAndStructuredCount = await countAllWebsiteDrafts(db, {
+      organizationId,
+      churchId,
+      branchId: draftBranchId,
+    });
     const engineInstance = await findBlessBoardWebsiteInstance(db, organizationId);
     if (engineInstance && engineInstance.id) {
       websiteInstanceId = engineInstance.id;
@@ -469,21 +474,12 @@ async function attachWebsiteAdminChrome(opts) {
           ...(canPublishWebsite ? [PERMISSIONS.PUBLISH] : []),
         ],
       });
-      if (pending.ok) {
-        draftCount = Number(pending.pendingChangeCount) || 0;
-      } else {
-        draftCount = await countAllWebsiteDrafts(db, {
-          organizationId,
-          churchId,
-          branchId: draftBranchId,
-        });
-      }
+      // Change Manager counts engine keys only. Overlay/structured drafts are
+      // still draft changes until bridged — never undercount the toolbar pill.
+      const engineCount = pending.ok ? Number(pending.pendingChangeCount) || 0 : 0;
+      draftCount = Math.max(engineCount, overlayAndStructuredCount);
     } else {
-      draftCount = await countAllWebsiteDrafts(db, {
-        organizationId,
-        churchId,
-        branchId: draftBranchId,
-      });
+      draftCount = overlayAndStructuredCount;
     }
     if (showDraftContent) {
       // Capture visitor-visible text before draft overlays mutate the model.
