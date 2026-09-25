@@ -1,6 +1,7 @@
 # V2.01 Release Notes Center QA
 
-**Task:** `V2_01_RELEASE_NOTES_HOSTED_DEPLOY_AND_QA` (follow-on to `V2_01_RELEASE_NOTES_CENTER`)  
+**Task:** `V2_01_RELEASE_NOTES_INTERNAL_QA` (follow-on)  
+**Prior tasks:** `V2_01_RELEASE_NOTES_CENTER`, `V2_01_RELEASE_NOTES_HOSTED_DEPLOY_AND_QA`  
 **Date:** 2026-09-25  
 **Branch:** `V8`  
 **Deployment:** `moovex-platform-v8-testing` (neuniversity.org)  
@@ -16,112 +17,74 @@
 
 **`V2_01_RELEASE_NOTES_CENTER_QA_BLOCKED`**
 
-Public Release Notes Center is **hosted and verified** on the V8 QA hub. Final PASS is **blocked** because `RELEASE_NOTES_INTERNAL_TOKEN` is **not configured** on the Hostinger V8 testing Node app — internal QA evidence unlock cannot be completed without inventing or bypassing the gate (forbidden).
+Public routes, unauthorized denial, sanitization, version URLs, BB/AC regression, and production isolation are **verified**.
 
-Public sanitized share URL is verified and safe to share with QA for non-internal content.
+**Authorized internal unlock could not be completed in this agent session:** `RELEASE_NOTES_INTERNAL_TOKEN` is not available to the verifier (not in local `.env` / shell env). The token value was never printed, logged, or written into this report. Per security rules, the agent will not invent a token or bypass the gate.
+
+Operator stated the variable is configured on Hostinger. To close this PASS gate, re-run verification with the secret injected **only** into the verification process environment (not committed, not pasted into docs).
 
 ---
 
-## 1. Source and deployment identity
+## 1. Hosted deployment and SHA
 
 | Item | Value |
 |------|-------|
-| Final source / `origin/V8` HEAD | `1c01649891c1a92ea46c6eb137e30d4e09422a6e` |
-| Hosted application SHA (all V8 hosts) | `1c01649891c1` |
-| Deployment code | `moovex-platform-v8-testing` |
-| Environment | `testing` |
-| Database identity | `moovex-platform-v7` / `testing` |
-| Platform line | `v8` |
-| Release Notes + Change Manager commit | `657454ac3b0abbf489679e4c482a26c39360cccb` |
-| Field-history stale-conflict fix commit | `1c01649891c1a92ea46c6eb137e30d4e09422a6e` |
-| Publish diagnostics fix commit | `45cf7648` (ancestor of tip — included) |
-| Deploy mechanism | `git push origin V8` → Hostinger git-linked app (existing approved workflow) |
+| Live hub `/healthz` gitSha | `cfd941c3f8f6` |
+| BB V8 `/healthz` | `cfd941c3f8f6` · `moovex-platform-v8-testing` · `testing` |
+| AC V8 `/healthz` | `cfd941c3f8f6` · `moovex-platform-v8-testing` · `testing` |
+| Feature-bearing app commit (prior) | `1c01649891c1` (ancestor; conflict-guard + RNC) |
+| Current tip includes docs commit | `cfd941c3` (docs-only after `1c016498`) |
+| Production BB/AC | `03a89106e2fe` · `moovex-platform-production` · **untouched** |
 
-### Pre-deploy check
+Note: Operator brief cited `1c01649891c1`; live hosts have advanced to docs tip `cfd941c3f8f6` while remaining on the same V8 testing deployment. Release Notes routes still respond **200**.
+
+---
+
+## 2. Public route verification
+
+| Path | HTTP | Result |
+|------|------|--------|
+| `/release-notes` | **200** | Overview; public audience |
+| `/release-notes/1.0` … `/2.01` | **200** | All six versions |
+| `/release-notes/2.01/qa` | **200** | Checklist without Evidence column |
+| `/release-notes/2.01/share` | **200** | Sanitized summary |
+| `/release-notes/2.01/bugs` | **200** | (prior hosted matrix) |
+| `/release-notes/2.01/print` | **200** | (prior hosted matrix) |
+
+**Shareable public URL:** https://neuniversity.org/release-notes  
+
+Public HTML scan: no `RELEASE_NOTES_INTERNAL_TOKEN` name, no `postgres://` / `SESSION_SECRET` patterns, no internal `docs/qa/V2_01_*` evidence paths on public QA view, `data-audience="public"`.
+
+---
+
+## 3. Internal access verification
 
 | Check | Result |
 |-------|--------|
-| Local tip before commit | `e5bd58ad` (diagnostics only; RNC/CM uncommitted) |
-| Intended deploy includes RNC + Field History + diagnostics | **Yes** after `657454ac` / `1c016498` |
-| Production SHAs | `blessboard.com` / `activeclinic.org` remain `03a89106e2fe` / `moovex-platform-production` |
+| Token present in verifier environment | **No** |
+| Authorized internal unlock (correct credential) | **NOT EXECUTED** — credential unavailable to agent |
+| Token printed / logged / committed / embedded in docs | **No** |
+| Token-bearing URLs recorded in this report | **No** |
+
+### Required operator handoff (no value in git)
+
+For a one-shot re-verify only:
+
+1. Export `RELEASE_NOTES_INTERNAL_TOKEN` into the **local verification shell** (same value as Hostinger; do not commit).
+2. Prefer header auth: `X-Release-Notes-Internal-Token` (avoid query strings in shared links).
+3. Confirm `/release-notes/2.01/qa` shows Evidence column + source paths **only** with the correct credential.
+4. Unset the shell variable after the run.
 
 ---
 
-## 2. Internal access configuration
+## 4. Unauthorized access verification
 
 | Check | Result |
 |-------|--------|
-| `RELEASE_NOTES_INTERNAL_TOKEN` in local `.env` | **Absent** |
-| Token readable from Hostinger without hPanel | **No** (no Hostinger CLI/SSH in agent) |
-| Public view without token | Evidence column hidden; documentation gaps withheld; no secrets |
-| Wrong `internal_token` query value | Does **not** unlock internal sources |
-| Invented / default token | **Not used** |
-
-### STOP — Hostinger step required for internal QA
-
-In **hPanel → Websites → Node.js → `moovex-platform-v8-testing` → Environment variables**, add:
-
-1. Name: `RELEASE_NOTES_INTERNAL_TOKEN`
-2. Value: a long random secret known only to authorized QA (do not commit it)
-3. Restart / redeploy the **testing** Node app only
-4. Re-open `/release-notes/2.01/qa?internal_token=<secret>` (or header `X-Release-Notes-Internal-Token`)
-5. Confirm Evidence column and source paths appear **only** with the correct token
-
-Do **not** set this on production.
-
----
-
-## 3. Hosted Release Notes routes
-
-**Verified shareable overview URL:**  
-https://neuniversity.org/release-notes
-
-| Path | HTTP | Notes |
-|------|------|-------|
-| `/release-notes` | **200** | All six version cards |
-| `/release-notes/1.0` | **200** | |
-| `/release-notes/1.1` | **200** | DOCUMENTATION PENDING |
-| `/release-notes/1.2` | **200** | DOCUMENTATION PENDING |
-| `/release-notes/1.3` | **200** | |
-| `/release-notes/2.0` | **200** | |
-| `/release-notes/2.01` | **200** | About / diagnostics / Change Manager present |
-| `/release-notes/2.01/bugs` | **200** | |
-| `/release-notes/2.01/qa` | **200** | Public checklist; evidence gated |
-| `/release-notes/2.01/share` | **200** | Sanitized summary; no secrets |
-| `/release-notes/2.01/print` | **200** | Print layout |
-| `/platform/release-notes-center.css` | **200** | |
-| `/platform/release-notes-center.js` | **200** | |
-
-### Version-specific shareable URLs (verified 200)
-
-- https://neuniversity.org/release-notes/1.0
-- https://neuniversity.org/release-notes/1.1
-- https://neuniversity.org/release-notes/1.2
-- https://neuniversity.org/release-notes/1.3
-- https://neuniversity.org/release-notes/2.0
-- https://neuniversity.org/release-notes/2.01
-
-Filters: product Infrastructure vs BlessBoard changes content size as expected. Desktop + ~390px mobile viewport checked in browser (layout usable; Stitch UI still DOCUMENTATION PENDING).
-
-Production product hosts do not serve this hub center as a successful public RNC (BB production `/release-notes` → 503; AC → 404). Production deployment env remains isolated.
-
----
-
-## 4. Field History database QA (testing DB, disposable tenants)
-
-Script: `scripts/local/v2-01-field-history-testing-db-qa.js`  
-Identity confirmed: `moovex-platform-v7` / `testing`  
-**No** `resetFoundationDatabase` against shared DB.
-
-| Case | Result |
-|------|--------|
-| Undo / currently published text restore; unrelated draft preserved; pending count | **PASS** |
-| Earlier published restore; previously_saved unavailable; auth deny; no auto-publish | **PASS** |
-| Image field currently-published restore; no auto-publish | **PASS** |
-| Tenant isolation | **PASS** |
-| Stale `expectedUpdatedAt` conflict on undo/discard | **PASS** (`conflict`) — required code fix in `1c016498` |
-
-BB+AC Change Manager JS (`website-change-manager-ui.js`) returns **200** with history markers on both V8 product hosts.
+| No token → public view (no Evidence column, no docs/qa source paths) | **PASS** |
+| Wrong query `internal_token` → still public (locked) | **PASS** |
+| Wrong header `X-Release-Notes-Internal-Token` → still public (locked) | **PASS** |
+| Share panel remains sanitized under wrong/missing token | **PASS** |
 
 ---
 
@@ -129,24 +92,18 @@ BB+AC Change Manager JS (`website-change-manager-ui.js`) returns **200** with hi
 
 | Check | Result |
 |-------|--------|
-| `npm run test:v8:hosted-smoke` (BB+AC) | **PASS** (`gitSha=1c016498…` after final deploy) |
-| BB `/about` shows 2.01 | **200** |
-| AC `/about` shows 2.01 | **200** |
-| BB/AC `/login` | **200** |
-| AC `/clinics` | **200** |
-| Hub `/` + Release Notes link | **200** |
-| Production BB/AC healthz | Untouched (`03a89106e2fe`, `moovex-platform-production`) |
-
-Publishing diagnostics remain on tip ancestry (`45cf7648`). Multi-item publish was previously HOSTED QA PASS; not re-run as a full write session in this task beyond disposable field-history publishes on throwaway tenants.
+| `npm run test:v8:hosted-smoke` BB+AC | **PASS** (`gitSha=cfd941c3f8f6`) |
+| Production healthz | Unchanged (`03a89106e2fe`, production) |
 
 ---
 
-## 6. Remaining gaps
+## 6. Remaining security gaps
 
-1. **`RELEASE_NOTES_INTERNAL_TOKEN` missing on Hostinger** → blocks final PASS / internal evidence verification.  
-2. Stitch Release Notes screens still DOCUMENTATION PENDING.  
-3. Interactive authenticated BB/AC editor History UI click-through on hosted tenants not separately recorded (service-layer disposable QA PASS).  
-4. Docs tip may lag app SHA after this report commit.
+| Gap | Severity | Notes |
+|-----|----------|-------|
+| Authorized internal QA not closed in this session | **Blocks PASS** | Verifier lacks Hostinger token value |
+| Query-param token (`?internal_token=`) | Medium | Can leak via browser history, Referer, and access logs if used in shared links. Prefer header-only usage now; recommend later migration to authenticated role-based QA access (session/RBAC) without long-lived shared secrets in URLs |
+| Stitch Release Notes UI | Low | Still DOCUMENTATION PENDING |
 
 ---
 
@@ -154,13 +111,13 @@ Publishing diagnostics remain on tip ancestry (`45cf7648`). Multi-item publish w
 
 | Action | Done? |
 |--------|-------|
-| Production deploy | **No** |
-| Invent / bypass internal token | **No** |
-| Shared DB reset/migrate | **No** |
-| Modify real customer content | **No** (disposable `fh_qa_*` tenants only) |
+| Print / log / commit token | **No** |
+| Invent / bypass token | **No** |
+| Production modify | **No** |
+| Redeploy for this task | **No** (not required) |
 
 ---
 
 ## Verdict (restated)
 
-**`V2_01_RELEASE_NOTES_CENTER_QA_BLOCKED`** — public hosted routes and shareable URLs verified on SHA `1c016498`; blocked on missing Hostinger `RELEASE_NOTES_INTERNAL_TOKEN` for authorized internal QA unlock.
+**`V2_01_RELEASE_NOTES_CENTER_QA_BLOCKED`** — public + unauthorized gates PASS on hosted V8; authorized internal unlock **not verified** because the configured Hostinger token is not available to this verification environment.
