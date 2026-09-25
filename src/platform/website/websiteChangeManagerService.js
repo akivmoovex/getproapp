@@ -425,6 +425,7 @@ async function restoreFieldRevisionToDraft(db, input) {
       contentKey,
       actorIdentityId: input.actorIdentityId || null,
       expectedProductCode: input.expectedProductCode,
+      expectedUpdatedAt: input.expectedUpdatedAt || null,
     });
     if (!discarded.ok) {
       return { ...discarded, published: false };

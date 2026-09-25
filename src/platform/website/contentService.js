@@ -225,14 +225,42 @@ async function discardWebsiteDraft(db, input) {
   }
   const keyNorm = normalizeContentKey(input.contentKey);
   if (!keyNorm.ok) return { ok: false, code: RESULT.INVALID_INPUT };
-  await db.query(
+  let expectedUpdatedAt = null;
+  if (input.expectedUpdatedAt != null && String(input.expectedUpdatedAt).trim()) {
+    const raw = input.expectedUpdatedAt;
+    if (raw instanceof Date && !Number.isNaN(raw.getTime())) {
+      expectedUpdatedAt = raw.toISOString();
+    } else {
+      const parsed = new Date(String(raw).trim());
+      expectedUpdatedAt = Number.isNaN(parsed.getTime()) ? null : parsed.toISOString();
+    }
+  }
+  const updated = await db.query(
     `UPDATE platform.website_content
         SET draft_value = published_value,
             updated_by_identity_id = $4,
             updated_at = now()
-      WHERE instance_id = $1 AND organization_id = $2 AND content_key = $3`,
-    [instance.id, organizationId, keyNorm.key, input.actorIdentityId || null]
+      WHERE instance_id = $1 AND organization_id = $2 AND content_key = $3
+        AND (
+          $5::timestamptz IS NULL
+          OR date_trunc('milliseconds', updated_at) =
+             date_trunc('milliseconds', $5::timestamptz)
+        )
+      RETURNING *`,
+    [
+      instance.id,
+      organizationId,
+      keyNorm.key,
+      input.actorIdentityId || null,
+      expectedUpdatedAt,
+    ]
   );
+  if (!updated.rowCount) {
+    if (expectedUpdatedAt) {
+      return { ok: false, code: RESULT.CONFLICT, reason: "stale_expected_updated_at" };
+    }
+    return { ok: false, code: RESULT.NOT_FOUND };
+  }
   await recordWebsiteAudit(db, {
     organizationId,
     instanceId: instance.id,
@@ -240,7 +268,7 @@ async function discardWebsiteDraft(db, input) {
     actionKey: "website.draft.discard",
     contentKey: keyNorm.key,
   });
-  return { ok: true, code: RESULT.OK };
+  return { ok: true, code: RESULT.OK, content: mapContent(updated.rows[0]) };
 }
 
 async function discardAllWebsiteDrafts(db, input) {
