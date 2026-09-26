@@ -1,0 +1,102 @@
+{
+  "task": "V2_01_SP_T7",
+  "capturedAt": "2026-09-26T08:39:51.116Z",
+  "bbHealth": {
+    "gitSha": "0d28e3289dae",
+    "deploymentCode": "moovex-platform-v8-testing"
+  },
+  "acHealth": {
+    "gitSha": "0d28e3289dae",
+    "deploymentCode": "moovex-platform-v8-testing"
+  },
+  "production": {
+    "gitSha": "03a89106e2fe",
+    "deploymentCode": "moovex-platform-production"
+  },
+  "bb": {
+    "desktop1440": {
+      "file": "docs/qa/references/v2-01-spt7-picker/bb-desktop1440-add-section-picker.png",
+      "optionCount": 4,
+      "labels": [
+        "Text block",
+        "Image",
+        "Image + Text",
+        "Call to action"
+      ],
+      "css": [
+        "https://blessboard.neuniversity.org/platform/website-add-section.css?v=v2-spt7-picker-1"
+      ],
+      "draftBadge": true,
+      "icons": 4,
+      "addActions": 4,
+      "panelHeight": 405,
+      "panelBottom": 652,
+      "viewportH": 900,
+      "hasLibraryColumn": false,
+      "viewportFits": true
+    },
+    "mobile390": {
+      "file": "docs/qa/references/v2-01-spt7-picker/bb-mobile390-add-section-picker.png",
+      "optionCount": 4,
+      "labels": [
+        "Text block",
+        "Image",
+        "Image + Text",
+        "Call to action"
+      ],
+      "css": [
+        "https://blessboard.neuniversity.org/platform/website-add-section.css?v=v2-spt7-picker-1"
+      ],
+      "draftBadge": true,
+      "icons": 4,
+      "addActions": 4,
+      "panelHeight": 386,
+      "panelBottom": 844,
+      "viewportH": 844,
+      "hasLibraryColumn": false,
+      "viewportFits": true
+    }
+  },
+  "ac": {
+    "desktop1440": {
+      "file": "docs/qa/references/v2-01-spt7-picker/ac-desktop1440-add-section-picker.png",
+      "optionCount": 3,
+      "labels": [
+        "Text",
+        "Image + Text",
+        "Call to Action"
+      ],
+      "css": [
+        "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-spt7-picker-1"
+      ],
+      "draftBadge": true,
+      "icons": 3,
+      "addActions": 3,
+      "panelHeight": 335,
+      "panelBottom": 617,
+      "viewportH": 900,
+      "hasLibraryColumn": false,
+      "viewportFits": true
+    },
+    "mobile390": {
+      "file": "docs/qa/references/v2-01-spt7-picker/ac-mobile390-add-section-picker.png",
+      "optionCount": 3,
+      "labels": [
+        "Text",
+        "Image + Text",
+        "Call to Action"
+      ],
+      "css": [
+        "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-spt7-picker-1"
+      ],
+      "draftBadge": true,
+      "icons": 3,
+      "addActions": 3,
+      "panelHeight": 323,
+      "panelBottom": 844,
+      "viewportH": 844,
+      "hasLibraryColumn": false,
+      "viewportFits": true
+    }
+  }
+}
