@@ -19,7 +19,7 @@ Overnight closed shared editor Stitch polish **SP-T2…T6 / U1-A…D**, verified
 | Identity | Value |
 | --- | --- |
 | Starting tip (master audit) | `a901751a2c3a` |
-| Final local / `origin/V8` | `9a08d5bc43b7` (this summary) |
+| Final local / `origin/V8` | `5b8b5f29c184` (this summary) |
 | Hosted BB/AC tip (post-push) | `79340398530c` · `moovex-platform-v8-testing` (docs tip before this commit; product includes SP-T6 `6dbf600e`) |
 | Production | `03a89106e2fe` · **unchouched** |
 
@@ -30,7 +30,7 @@ Overnight closed shared editor Stitch polish **SP-T2…T6 / U1-A…D**, verified
 | Surface | SHA / identity |
 | --- | --- |
 | Start (audit baseline) | `a901751a` · hosted matched |
-| End local / origin | `9a08d5bc` (match after push) |
+| End local / origin | `5b8b5f29` (match after push) |
 | End hosted BB | `79340398530c` at review close · `moovex-platform-v8-testing` · `environment=testing` · `platformLine=v8` (smoke also taken at `6dbf600e`) |
 | End hosted AC | **same** as BB |
 | DB expected | `expectedIdentityKey=moovex-platform-v7` · `expectedDatabaseEnvironment=testing` |
@@ -41,7 +41,7 @@ Overnight closed shared editor Stitch polish **SP-T2…T6 / U1-A…D**, verified
 | Production | `03a89106e2fe` · `moovex-platform-production` · `expectedDatabaseEnvironment=production` |
 
 **Commit spine (tonight, after baseline):**  
-`d2ce78f3`/`a901751a` (SP-T1 docs) → `27504439` U1-A → `076312f7` U1-B → `08c6564e` U1-C → `fb0575a8` U1-D → `2b0cabde` U1 report → `a6f9634a` AC test align → `aa12b629` AC report → `6dbf600e` SP-T6 → `79340398` BB report → `9a08d5bc` overnight summary.
+`d2ce78f3`/`a901751a` (SP-T1 docs) → `27504439` U1-A → `076312f7` U1-B → `08c6564e` U1-C → `fb0575a8` U1-D → `2b0cabde` U1 report → `a6f9634a` AC test align → `aa12b629` AC report → `6dbf600e` SP-T6 → `79340398` BB report → `9a08d5bc` overnight summary → `5b8b5f29` SHA align.
 
 ---
 
@@ -219,7 +219,7 @@ Artifact: `docs/qa/references/v2-01-overnight-final-smoke.json`
 | AC backlog closure | ActiveClinic | COMPLETE | `a6f9634a` + `aa12b629` | PASS | V8-001/002, AC-WE-OVERFLOW |
 | SP-T6 scope cards | BB (+ shared CSS) | PASS | `6dbf600e` | PASS (`v2-spt6-cards-1`) | Studio still out of scope |
 | BB backlog closure | BlessBoard | COMPLETE | `79340398` | PASS | V8-003, MEDIA/sermons design |
-| Overnight final review | Shared | COMPLETE | `9a08d5bc` | 102 pass / 3 skip / 0 fail | See §G–J |
+| Overnight final review | Shared | COMPLETE | `5b8b5f29` | 102 pass / 3 skip / 0 fail | See §G–J |
 
 ---
 
