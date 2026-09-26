@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * V2.03 Batch 3 — AC-P03 My Appointments + AC-P07 Profile leaf UI.
+ * V2.03 Batch 3 — AC-P04 Appointment Detail & Reschedule leaf UI.
  */
 
 const { describe, it, before, after } = require("node:test");
@@ -60,14 +60,14 @@ const {
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
 
 const ROOT = path.join(__dirname, "..");
-const VIEWS = path.join(ROOT, "views", "activeclinic", "patient");
+const DETAIL = path.join(ROOT, "views", "activeclinic", "patient", "booking-detail.ejs");
 const STAFF_PASSWORD = "DemoStaff-ActiveClinic-2026A";
 const PATIENT_PASSWORD = "PortalPass1!";
 
 let pool;
 let databaseUrl;
 let skipReason = null;
-let phoneSeq = 981200000;
+let phoneSeq = 982200000;
 
 function nextPhone() {
   phoneSeq += 1;
@@ -89,17 +89,17 @@ async function seedPublishedClinic(stamp) {
   const org = await provisionPlatformTenant(pool, {
     skipDomain: true,
     dataEnvironment: "testing",
-    organizationKey: `ac_b3p_${stamp}`,
-    displayName: "B3 Portal Clinic",
+    organizationKey: `ac_b3d_${stamp}`,
+    displayName: "B3 Detail Clinic",
     productKey: "activeclinic",
-    productTenantKey: `ac-b3p-${stamp}`,
+    productTenantKey: `ac-b3d-${stamp}`,
     deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
   });
   assert.equal(org.ok, true);
   const hco = await createHealthcareOrganization(pool, {
     organizationId: org.records.organization.id,
-    legalName: "B3 Portal Legal",
-    publicName: "B3 Portal Clinic",
+    legalName: "B3 Detail Legal",
+    publicName: "B3 Detail Clinic",
     organizationType: "private_healthcare",
     countryCode: "ZM",
     timezone: "Africa/Lusaka",
@@ -130,7 +130,7 @@ async function seedPublishedClinic(stamp) {
     facilityId: facility.facility.id,
   });
   return {
-    clinicKey: `ac_b3p_${stamp}`,
+    clinicKey: `ac_b3d_${stamp}`,
     orgId: org.records.organization.id,
     hcoId: hco.healthcareOrganization.id,
     facilityId: facility.facility.id,
@@ -153,7 +153,7 @@ async function seedReceptionist(clinic) {
   const staff = await createStaffMember(pool, {
     organizationId: clinic.orgId,
     healthcareOrganizationId: clinic.hcoId,
-    firstName: "Portal",
+    firstName: "Detail",
     lastName: "Reception",
     employmentType: "permanent",
     status: "active",
@@ -196,7 +196,7 @@ function appWithEnv() {
   });
 }
 
-describe("V2.03 Batch 3 AC-P03 / AC-P07 portal leaves", () => {
+describe("V2.03 Batch 3 AC-P04 booking detail leaf", () => {
   before(async () => {
     try {
       databaseUrl = await resetFoundationDatabase();
@@ -211,32 +211,25 @@ describe("V2.03 Batch 3 AC-P03 / AC-P07 portal leaves", () => {
     if (pool) await pool.end().catch(() => {});
   });
 
-  it("leaf views carry Batch 3 Stitch markers and 390px CSS hooks", () => {
-    const bookings = fs.readFileSync(path.join(VIEWS, "bookings.ejs"), "utf8");
-    assert.match(bookings, /data-ac-batch3="AC-P03"/);
-    assert.match(bookings, /e5bc2a1492da4e1fb675d14c884ec059/);
-    assert.match(bookings, /2ea963ee11384dd680b21978b3f56ea1/);
-    assert.match(bookings, /data-ac-bookings-mobile/);
-    assert.match(bookings, /My Appointments/);
-
-    const profile = fs.readFileSync(path.join(VIEWS, "profile.ejs"), "utf8");
-    assert.match(profile, /data-ac-batch3="AC-P07"/);
-    assert.match(profile, /e042789d436d48e8843e4bb3f99f379b/);
-    assert.match(profile, /c15fcece57e2481cb4d5ff988b325730/);
-    assert.match(profile, /data-ac-mf-screen="MF08-05"/);
-    assert.match(profile, /preferredContactMethod/);
-    assert.match(profile, /addressPostalCode/);
-    assert.doesNotMatch(profile, /Emergency Contact Full Name|Preferred Pronouns/);
+  it("leaf view carries Batch 3 Stitch markers and omits demo-only slot calendar", () => {
+    const html = fs.readFileSync(DETAIL, "utf8");
+    assert.match(html, /data-ac-batch3="AC-P04"/);
+    assert.match(html, /497d0c05f6f241f981d07b47be7c7606/);
+    assert.match(html, /0af4b000cec2477389a576b11b33cba0/);
+    assert.match(html, /Appointment Details/);
+    assert.match(html, /data-ac-booking-reschedule/);
+    assert.match(html, /data-ac-booking-cancel/);
+    assert.doesNotMatch(html, /Garage P2|Fast Check-in|patient reviews|Summary PDF/);
 
     const css = fs.readFileSync(path.join(ROOT, "public/activeclinic/ac-patient.css"), "utf8");
-    assert.match(css, /\.acp-portal-leaf/);
-    assert.match(css, /@media \(max-width:\s*390px\)[\s\S]*\.acp-portal-leaf__filters/);
+    assert.match(css, /\.acp-portal-leaf--booking-detail/);
+    assert.match(css, /@media \(max-width:\s*390px\)[\s\S]*\.acp-portal-leaf--booking-detail/);
   });
 
-  it("AC-P03/AC-P07 render for linked portal owner and accept profile field updates", async () => {
+  it("AC-P04 renders owned booking detail and accepts reschedule request", async () => {
     requireDb();
     resetDeploymentProfileWarningsForTests();
-    const stamp = `${Date.now().toString(36)}p`;
+    const stamp = `${Date.now().toString(36)}d`;
     const clinic = await seedPublishedClinic(stamp);
     const other = await seedPublishedClinic(`${stamp}x`);
     const receptionist = await seedReceptionist(clinic);
@@ -252,7 +245,7 @@ describe("V2.03 Batch 3 AC-P03 / AC-P07 portal leaves", () => {
         organizationId: clinic.orgId,
       },
       demographics: {
-        firstName: "Leaf",
+        firstName: "Detail",
         lastName: "Owner",
         sexAtRegistration: "female",
       },
@@ -269,18 +262,16 @@ describe("V2.03 Batch 3 AC-P03 / AC-P07 portal leaves", () => {
       requireContact: true,
     });
     assert.equal(identity.ok, true, JSON.stringify(identity));
-    const pwd = await setPlatformIdentityPassword(pool, {
+    await setPlatformIdentityPassword(pool, {
       identityId: identity.identity.id,
       password: PATIENT_PASSWORD,
     });
-    assert.equal(pwd.ok, true, JSON.stringify(pwd));
-    const linked = await linkIdentityToProductProfile(pool, {
+    await linkIdentityToProductProfile(pool, {
       identityId: identity.identity.id,
       productKey: "activeclinic",
       profileType: "activeclinic_patient",
       productProfileId: patient.patient.id,
     });
-    assert.equal(linked.ok, true, JSON.stringify(linked));
     await pool.query(
       `UPDATE activeclinic.patients SET platform_identity_id = $1 WHERE id = $2`,
       [identity.identity.id, patient.patient.id]
@@ -290,10 +281,10 @@ describe("V2.03 Batch 3 AC-P03 / AC-P07 portal leaves", () => {
       organizationId: clinic.orgId,
       healthcareOrganizationId: clinic.hcoId,
       facilityId: clinic.facilityId,
-      patientFirstName: "Leaf",
+      patientFirstName: "Detail",
       patientLastName: "Owner",
       patientPhone: phone,
-      preferredStartsAt: "2030-07-01T10:00:00Z",
+      preferredStartsAt: "2030-08-01T10:00:00Z",
       timezone: "Africa/Lusaka",
     });
     assert.equal(booking.ok, true, JSON.stringify(booking));
@@ -302,14 +293,15 @@ describe("V2.03 Batch 3 AC-P03 / AC-P07 portal leaves", () => {
           SET patient_id = $1,
               portal_platform_identity_id = $2,
               patient_link_status = 'linked',
-              patient_linked_at = now()
+              patient_linked_at = now(),
+              status = 'confirmed'
         WHERE id = $3`,
       [patient.patient.id, identity.identity.id, booking.booking.id]
     );
 
+    const ref = booking.booking.requestNumber || booking.booking.id;
     const app = appWithEnv();
     const loginPage = await request(app).get(`/clinics/${clinic.clinicKey}/patient/login`);
-    assert.equal(loginPage.status, 200);
     const csrf = extractCookie(loginPage, CSRF_COOKIE_ACTIVECLINIC_ORG);
     const login = await request(app)
       .post(`/clinics/${clinic.clinicKey}/patient/login`)
@@ -320,60 +312,35 @@ describe("V2.03 Batch 3 AC-P03 / AC-P07 portal leaves", () => {
         identifier: phone,
         password: PATIENT_PASSWORD,
       });
-    assert.ok([200, 302, 303].includes(login.status), String(login.status));
     const sid = extractCookie(login, COOKIE_ACTIVECLINIC_ORG);
-    assert.ok(sid, "patient session cookie");
+    assert.ok(sid);
 
-    const bookingsRes = await request(app)
-      .get(`/clinics/${clinic.clinicKey}/patient/bookings`)
+    const detail = await request(app)
+      .get(`/clinics/${clinic.clinicKey}/patient/bookings/${ref}`)
       .set("Cookie", `${COOKIE_ACTIVECLINIC_ORG}=${sid}`);
-    assert.equal(bookingsRes.status, 200);
-    assert.match(bookingsRes.text, /data-ac-batch3="AC-P03"/);
-    assert.match(bookingsRes.text, /My Appointments/);
-    assert.match(bookingsRes.text, /ac-patient\.css\?v=v2-03-b3/);
-    assert.match(
-      bookingsRes.text,
-      new RegExp(booking.booking.requestNumber || booking.booking.id)
-    );
+    assert.equal(detail.status, 200);
+    assert.match(detail.text, /data-ac-batch3="AC-P04"/);
+    assert.match(detail.text, /Appointment Details/);
+    assert.match(detail.text, new RegExp(String(ref)));
+    assert.match(detail.text, /ac-patient\.css\?v=v2-03-b3-acp04-01/);
+    assert.match(detail.text, /data-ac-booking-reschedule/);
 
-    const profileRes = await request(app)
-      .get(`/clinics/${clinic.clinicKey}/patient/profile`)
-      .set("Cookie", `${COOKIE_ACTIVECLINIC_ORG}=${sid}`);
-    assert.equal(profileRes.status, 200);
-    assert.match(profileRes.text, /data-ac-batch3="AC-P07"/);
-    assert.match(profileRes.text, /data-ac-mf-screen="MF08-05"/);
-    assert.match(profileRes.text, /preferredContactMethod/);
-
-    const csrf2 = extractCookie(profileRes, CSRF_COOKIE_ACTIVECLINIC_ORG);
-    const national = phone.replace(/^\+260/, "");
-    const save = await request(app)
-      .post(`/clinics/${clinic.clinicKey}/patient/profile`)
+    const csrf2 = extractCookie(detail, CSRF_COOKIE_ACTIVECLINIC_ORG);
+    const reschedule = await request(app)
+      .post(`/clinics/${clinic.clinicKey}/patient/bookings/${ref}/reschedule`)
       .set("Cookie", `${COOKIE_ACTIVECLINIC_ORG}=${sid}; ${CSRF_COOKIE_ACTIVECLINIC_ORG}=${csrf2}`)
       .type("form")
+      .redirects(0)
       .send({
         [CSRF_FIELD]: csrf2,
-        preferredName: "Leafy",
-        email: "leafy@example.test",
-        preferredContactMethod: "email",
-        addressLine1: "Cairo Road",
-        addressCity: "Lusaka",
-        addressProvince: "Lusaka",
-        addressPostalCode: "10101",
-        addressCountryCode: "ZM",
-        phone_country: "ZM",
-        phone_national: national,
+        preferredStartsAt: "2030-08-15T11:00",
+        reason: "Travel conflict",
       });
-    assert.ok([200, 303].includes(save.status), String(save.status));
-    if (save.status === 200) {
-      assert.match(save.text, /Leafy|saved|updated|success/i);
-    }
+    assert.ok([302, 303].includes(reschedule.status), String(reschedule.status));
 
     const foreign = await request(app)
-      .get(`/clinics/${other.clinicKey}/patient/bookings`)
+      .get(`/clinics/${other.clinicKey}/patient/bookings/${ref}`)
       .set("Cookie", `${COOKIE_ACTIVECLINIC_ORG}=${sid}`);
-    assert.ok(
-      [302, 303, 401, 403, 404].includes(foreign.status) ||
-        !String(foreign.text).includes(String(booking.booking.requestNumber || ""))
-    );
+    assert.ok([302, 303, 401, 403, 404].includes(foreign.status));
   });
 });

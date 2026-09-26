@@ -1,57 +1,105 @@
-<section class="ac-patient-page">
-  <header class="ac-patient-page__header">
-    <h1>Booking <%= escapeHtml(booking.requestNumber || booking.id) %></h1>
+<%
+  var statuses = bookingStatusLabels || {};
+  var ref = booking.requestNumber || booking.id || '';
+  var when = formatBookingWhen(booking.preferredStartsAt, booking.timezone);
+  var serviceLabel = booking.serviceDisplayName || booking.procedureDisplayName || booking.bookingKind || 'Visit';
+  var canRequestChanges = ['submitted_pending_confirmation', 'confirmed'].includes(booking.status);
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--booking-detail"
+  data-ac-page-section="patient-booking-detail"
+  data-ac-batch3="AC-P04"
+  data-ac-stitch="497d0c05f6f241f981d07b47be7c7606"
+  data-ac-stitch-mobile="0af4b000cec2477389a576b11b33cba0"
+>
+  <p class="ac-patient-links acp-portal-leaf__back">
+    <a href="/clinics/<%= clinicKey %>/patient/bookings">← Back to My Appointments</a>
+  </p>
+
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Patient portal</p>
+    <h1>Appointment Details &amp; Reschedule</h1>
+    <p class="acp-auth-card__lede">
+      Review this booking request and ask the clinic to cancel or reschedule. Live slot calendars, check-in, maps, and PDF downloads from Stitch demos are not available here.
+    </p>
   </header>
 
-  <dl class="ac-patient-detail">
-    <div>
-      <dt>Status</dt>
-      <dd><%= escapeHtml(bookingStatusLabels[booking.status] || booking.status || "") %></dd>
-    </div>
-    <div>
-      <dt>Type</dt>
-      <dd><%= escapeHtml(booking.bookingKind || "") %></dd>
-    </div>
-    <div>
-      <dt>Facility</dt>
-      <dd><%= escapeHtml(booking.facilityDisplayName || "") %></dd>
-    </div>
-    <% if (booking.serviceDisplayName) { %>
-    <div>
-      <dt>Service</dt>
-      <dd><%= escapeHtml(booking.serviceDisplayName) %></dd>
-    </div>
-    <% } %>
-    <% if (booking.procedureDisplayName) { %>
-    <div>
-      <dt>Procedure</dt>
-      <dd><%= escapeHtml(booking.procedureDisplayName) %></dd>
-    </div>
-    <% } %>
-    <% if (booking.staffDisplayName) { %>
-    <div>
-      <dt>Provider</dt>
-      <dd><%= escapeHtml(booking.staffDisplayName) %></dd>
-    </div>
-    <% } %>
-    <% if (booking.visitReason) { %>
-    <div>
-      <dt>Reason</dt>
-      <dd><%= escapeHtml(booking.visitReason) %></dd>
-    </div>
-    <% } %>
-    <% if (booking.preferredStartsAt) { %>
-    <div>
-      <dt>Preferred time</dt>
-      <dd><%= escapeHtml(String(booking.preferredStartsAt)) %></dd>
-    </div>
-    <% } %>
-  </dl>
+  <div class="acp-portal-leaf__detail-hero" data-ac-booking-hero="1">
+    <p class="acp-portal-leaf__ref">
+      Booking reference <strong><%= escapeHtml(ref) %></strong>
+    </p>
+    <p>
+      <span class="acp-status-badge acp-status-badge--<%= bookingStatusTone(booking.status) %>">
+        <%= escapeHtml(statuses[booking.status] || booking.status || '') %>
+      </span>
+    </p>
+  </div>
 
-  <% if (["submitted_pending_confirmation", "confirmed"].includes(booking.status)) { %>
-  <section class="ac-patient-section">
-    <h2>Request changes</h2>
-    <form method="POST" action="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(booking.requestNumber || booking.id) %>/cancel" class="ac-patient-form-inline" data-ac-shell="patient">
+  <section class="acp-portal-leaf__panel" aria-labelledby="acp-current-booking">
+    <h2 id="acp-current-booking">Current appointment</h2>
+    <dl class="ac-patient-detail acp-portal-leaf__detail">
+      <div>
+        <dt>When</dt>
+        <dd><%= escapeHtml(when || 'Time to be confirmed') %></dd>
+      </div>
+      <div>
+        <dt>Service</dt>
+        <dd><%= escapeHtml(serviceLabel) %></dd>
+      </div>
+      <div>
+        <dt>Type</dt>
+        <dd><%= escapeHtml(booking.bookingKind || 'Visit') %></dd>
+      </div>
+      <div>
+        <dt>Care provider</dt>
+        <dd><%= escapeHtml(booking.staffDisplayName || 'Clinic to assign') %></dd>
+      </div>
+      <div>
+        <dt>Facility</dt>
+        <dd><%= escapeHtml(booking.facilityDisplayName || '') %></dd>
+      </div>
+      <% if (booking.visitReason) { %>
+      <div>
+        <dt>Reason</dt>
+        <dd><%= escapeHtml(booking.visitReason) %></dd>
+      </div>
+      <% } %>
+    </dl>
+  </section>
+
+  <% if (canRequestChanges) { %>
+  <section class="acp-portal-leaf__panel acp-portal-leaf__panel--actions" aria-labelledby="acp-request-changes">
+    <h2 id="acp-request-changes">Reschedule this visit</h2>
+    <p class="ac-muted acp-portal-leaf__field-note">
+      Your request is sent to the clinic for confirmation. Available-slot calendars and instant confirmation from Stitch are not wired.
+    </p>
+    <form
+      method="POST"
+      action="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(ref) %>/reschedule"
+      class="ac-patient-form-inline acp-portal-leaf__form"
+      data-ac-shell="patient"
+      data-ac-booking-reschedule="1"
+    >
+      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+      <div class="ac-patient-field">
+        <label for="preferredStartsAt">Preferred new date and time</label>
+        <input type="datetime-local" id="preferredStartsAt" name="preferredStartsAt" required/>
+      </div>
+      <div class="ac-patient-field">
+        <label for="rescheduleReason">Reschedule reason (optional)</label>
+        <textarea id="rescheduleReason" name="reason" rows="2" maxlength="500"></textarea>
+      </div>
+      <button type="submit" class="ac-patient-btn ac-btn ac-btn--primary">Request reschedule</button>
+    </form>
+
+    <h2 class="acp-portal-leaf__subhead">Need to cancel instead?</h2>
+    <form
+      method="POST"
+      action="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(ref) %>/cancel"
+      class="ac-patient-form-inline acp-portal-leaf__form"
+      data-ac-shell="patient"
+      data-ac-booking-cancel="1"
+    >
       <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
       <div class="ac-patient-field">
         <label for="cancelReason">Cancellation reason (optional)</label>
@@ -59,22 +107,18 @@
       </div>
       <button type="submit" class="ac-patient-btn ac-patient-btn--secondary">Request cancellation</button>
     </form>
-    <form method="POST" action="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(booking.requestNumber || booking.id) %>/reschedule" class="ac-patient-form-inline" data-ac-shell="patient">
-      <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-      <div class="ac-patient-field">
-        <label for="preferredStartsAt">Preferred new date and time</label>
-        <input type="datetime-local" id="preferredStartsAt" name="preferredStartsAt"/>
-      </div>
-      <div class="ac-patient-field">
-        <label for="rescheduleReason">Reschedule reason (optional)</label>
-        <textarea id="rescheduleReason" name="reason" rows="2" maxlength="500"></textarea>
-      </div>
-      <button type="submit" class="ac-patient-btn">Request reschedule</button>
-    </form>
   </section>
+  <% } else { %>
+  <aside class="acp-portal-leaf__note" data-ac-booking-actions="unavailable">
+    <p class="ac-muted">
+      Cancel and reschedule requests are only available while this booking is pending confirmation or confirmed.
+    </p>
+  </aside>
   <% } %>
 
-  <p class="ac-patient-links">
-    <a href="/clinics/<%= clinicKey %>/patient/bookings">Back to bookings</a>
-  </p>
+  <aside class="acp-portal-leaf__note" data-ac-omitted="demo-only">
+    <p class="ac-muted">
+      Omitted demo-only Stitch blocks: live availability calendar, fast check-in / QR, exam-room countdown, provider ratings, wayfinding / parking maps, pre-visit intake instructions, Add to Calendar, and PDF / print exports.
+    </p>
+  </aside>
 </section>
