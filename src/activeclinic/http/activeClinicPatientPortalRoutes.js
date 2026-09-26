@@ -30,6 +30,10 @@ const {
   updatePatientProfile,
 } = require("../services/activeClinicPatientPortalProfileService");
 const {
+  listPatientInvoices,
+  listPatientReceipts,
+} = require("../services/activeClinicPatientPortalBillingService");
+const {
   requestPatientPasswordReset,
   resetPatientPassword,
 } = require("../services/activeClinicPatientPortalPasswordService");
@@ -861,6 +865,79 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
                 statusFilter: Object.prototype.hasOwnProperty.call(BOOKING_STATUS_LABELS, statusFilter)
                   ? statusFilter
                   : "",
+              })
+            )
+          );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // AC-P06 — patient invoices & receipts (read-only; no staff billing EJS / no pay)
+  app.get(
+    "/clinics/:clinicKey/patient/invoices",
+    loadPatientAuth,
+    requirePatientAuth,
+    async (req, res, next) => {
+      try {
+        const auth = req.activeClinicPatientAuth;
+        const clinicCtx = await resolveClinicContext(req.params.clinicKey);
+        const csrfToken = issuePageCsrf(res, env, isProduction);
+
+        if (!auth.patient || !auth.patient.id) {
+          return res
+            .status(200)
+            .type("html")
+            .send(
+              renderPatientView(
+                "patient/invoices",
+                patientViewPayload(clinicCtx || { clinicKey: req.params.clinicKey, clinic: null }, csrfToken, {
+                  patientAuth: auth,
+                  activeNav: "invoices",
+                  invoices: [],
+                  receipts: [],
+                  summary: {
+                    outstandingFormatted: "ZMW 0.00",
+                    outstandingCount: 0,
+                    invoiceCount: 0,
+                  },
+                  statusFilter: "",
+                  error: "Link a patient record to view invoices.",
+                })
+              )
+            );
+        }
+
+        const statusFilter = String((req.query && req.query.status) || "").trim();
+        const listed = await listPatientInvoices(getPool(), {
+          organizationId: auth.organization.id,
+          patientId: auth.patient.id,
+          statusFilter,
+        });
+        const receiptsListed = await listPatientReceipts(getPool(), {
+          organizationId: auth.organization.id,
+          patientId: auth.patient.id,
+        });
+
+        return res
+          .status(200)
+          .type("html")
+          .send(
+            renderPatientView(
+              "patient/invoices",
+              patientViewPayload(clinicCtx || { clinicKey: req.params.clinicKey, clinic: null }, csrfToken, {
+                patientAuth: auth,
+                activeNav: "invoices",
+                invoices: listed.ok ? listed.invoices : [],
+                receipts: receiptsListed.ok ? receiptsListed.receipts : [],
+                summary: (listed.ok && listed.summary) || {
+                  outstandingFormatted: "ZMW 0.00",
+                  outstandingCount: 0,
+                  invoiceCount: 0,
+                },
+                statusFilter:
+                  statusFilter === "outstanding" || statusFilter === "paid" ? statusFilter : "",
               })
             )
           );

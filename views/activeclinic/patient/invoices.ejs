@@ -1,0 +1,151 @@
+<%
+  var invoiceRows = Array.isArray(invoices) ? invoices : [];
+  var receiptRows = Array.isArray(receipts) ? receipts : [];
+  var billingSummary = summary || {};
+  var filter = statusFilter || '';
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--billing"
+  data-ac-page-section="patient-invoices"
+  data-ac-batch3="AC-P06"
+  data-ac-stitch="a493b33db83c4873ab2964391ee088b9"
+  data-ac-stitch-mobile="5b381b193b6643d09cbc317b55fd5f32"
+>
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Patient portal</p>
+    <h1>Invoices &amp; Receipts</h1>
+    <p class="acp-auth-card__lede">
+      Read-only statements and official receipts for your patient record at this clinic.
+      Online pay, insurance claims, auto-pay cards, and PDF export from Stitch are not available here.
+    </p>
+  </header>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="ac-patient-alert ac-patient-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <div class="acp-portal-leaf__detail-hero" data-ac-billing-summary="1">
+    <div>
+      <p class="ac-muted">Outstanding balance</p>
+      <p class="acp-portal-leaf__identity-name"><%= escapeHtml(billingSummary.outstandingFormatted || 'ZMW 0.00') %></p>
+      <p class="ac-muted">
+        <%= Number(billingSummary.outstandingCount || 0) %> invoice(s) with a balance ·
+        <%= Number(billingSummary.invoiceCount || 0) %> shown
+      </p>
+    </div>
+  </div>
+
+  <nav class="ac-patient-filters acp-portal-leaf__filters" aria-label="Filter invoices">
+    <a href="/clinics/<%= clinicKey %>/patient/invoices"<% if (!filter) { %> aria-current="true"<% } %>>All</a>
+    <a href="/clinics/<%= clinicKey %>/patient/invoices?status=outstanding"<% if (filter === 'outstanding') { %> aria-current="true"<% } %>>Outstanding</a>
+    <a href="/clinics/<%= clinicKey %>/patient/invoices?status=paid"<% if (filter === 'paid') { %> aria-current="true"<% } %>>Paid</a>
+  </nav>
+
+  <section class="acp-portal-leaf__panel" aria-labelledby="acp-invoices-heading">
+    <h2 id="acp-invoices-heading">Invoices</h2>
+    <% if (!invoiceRows.length) { %>
+    <div class="ac-patient-empty-state" data-ac-empty="invoices">
+      <p class="acp-portal-leaf__empty-title">No invoices found</p>
+      <p class="ac-patient-empty">
+        <% if (filter) { %>No invoices match this filter.<% } else { %>
+        When the clinic posts a statement to your patient record, it will appear here.
+        <% } %>
+      </p>
+    </div>
+    <% } else { %>
+    <div class="ac-patient-table-wrap ac-patients-desktop" data-ac-invoices-desktop="1">
+      <table class="ac-patient-table">
+        <thead>
+          <tr>
+            <th scope="col">Invoice</th>
+            <th scope="col">Date</th>
+            <th scope="col">Facility</th>
+            <th scope="col">Total</th>
+            <th scope="col">Balance</th>
+            <th scope="col">Status</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% invoiceRows.forEach(function (inv) { %>
+          <tr data-ac-invoice-status="<%= inv.displayStatus %>">
+            <td><%= escapeHtml(inv.invoiceNumber) %></td>
+            <td><%= escapeHtml(inv.invoiceDate ? String(inv.invoiceDate).slice(0, 10) : '') %></td>
+            <td><%= escapeHtml(inv.facilityDisplayName || '') %></td>
+            <td><%= escapeHtml(inv.totalFormatted) %></td>
+            <td><%= escapeHtml(inv.balanceFormatted) %></td>
+            <td>
+              <span class="acp-status-badge acp-status-badge--<%= inv.balanceMinor > 0 ? 'pending' : 'confirmed' %>">
+                <%= escapeHtml(inv.statusLabel) %>
+              </span>
+            </td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <ul class="ac-card-list ac-patients-mobile" data-ac-invoices-mobile="1">
+      <% invoiceRows.forEach(function (inv) { %>
+      <li class="ac-card acp-portal-leaf__card">
+        <p class="ac-card__title"><%= escapeHtml(inv.invoiceNumber) %></p>
+        <p class="ac-muted"><%= escapeHtml(inv.facilityDisplayName || '') %></p>
+        <p class="acp-portal-leaf__when"><%= escapeHtml(inv.totalFormatted) %> · Balance <%= escapeHtml(inv.balanceFormatted) %></p>
+        <p>
+          <span class="acp-status-badge acp-status-badge--<%= inv.balanceMinor > 0 ? 'pending' : 'confirmed' %>">
+            <%= escapeHtml(inv.statusLabel) %>
+          </span>
+        </p>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+  </section>
+
+  <section class="acp-portal-leaf__panel" aria-labelledby="acp-receipts-heading">
+    <h2 id="acp-receipts-heading">Receipts &amp; payment history</h2>
+    <% if (!receiptRows.length) { %>
+    <p class="ac-patient-empty" data-ac-empty="receipts">No official receipts yet.</p>
+    <% } else { %>
+    <div class="ac-patient-table-wrap ac-patients-desktop" data-ac-receipts-desktop="1">
+      <table class="ac-patient-table">
+        <thead>
+          <tr>
+            <th scope="col">Receipt</th>
+            <th scope="col">Date</th>
+            <th scope="col">Facility</th>
+            <th scope="col">Amount</th>
+            <th scope="col">Method</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% receiptRows.forEach(function (r) { %>
+          <tr>
+            <td><%= escapeHtml(r.receiptNumber) %></td>
+            <td><%= escapeHtml(r.receiptDate ? String(r.receiptDate).slice(0, 10) : '') %></td>
+            <td><%= escapeHtml(r.facilityDisplayName || '') %></td>
+            <td><%= escapeHtml(r.amountFormatted) %></td>
+            <td><%= escapeHtml(r.paymentMethod || '') %></td>
+          </tr>
+          <% }); %>
+        </tbody>
+      </table>
+    </div>
+    <ul class="ac-card-list ac-patients-mobile" data-ac-receipts-mobile="1">
+      <% receiptRows.forEach(function (r) { %>
+      <li class="ac-card acp-portal-leaf__card">
+        <p class="ac-card__title"><%= escapeHtml(r.receiptNumber) %></p>
+        <p class="acp-portal-leaf__when"><%= escapeHtml(r.amountFormatted) %></p>
+        <p class="ac-muted"><%= escapeHtml(r.facilityDisplayName || '') %> · <%= escapeHtml(r.paymentMethod || '') %></p>
+      </li>
+      <% }); %>
+    </ul>
+    <% } %>
+  </section>
+
+  <aside class="acp-portal-leaf__note" data-ac-omitted="demo-only">
+    <p class="ac-muted">
+      Omitted Stitch demo-only / staff-only: online payment CTA, insurance adjudication, saved cards / auto-pay,
+      claim numbers, PDF/export statements, and any cashier or billing ledger controls.
+      Payments continue through clinic cashier workflows — this portal does not collect money.
+    </p>
+  </aside>
+</section>

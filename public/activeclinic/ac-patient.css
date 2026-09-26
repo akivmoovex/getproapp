@@ -1213,3 +1213,14 @@ form.ac-patient-form-inline {
   padding-top: 1rem;
 }
 
+.acp-portal-leaf--billing .ac-patient-table th,
+.acp-portal-leaf--billing .ac-patient-table td {
+  vertical-align: top;
+}
+
+@media (max-width: 390px) {
+  .acp-portal-leaf--billing .acp-portal-leaf__filters a {
+    min-height: 2.75rem;
+  }
+}
+

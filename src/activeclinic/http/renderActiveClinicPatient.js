@@ -18,7 +18,7 @@ const {
 } = require("./activeClinicBookingStatusCopy");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v2-03-b3-acp04-01";
+const ASSET_VERSION = "v2-03-b3-acp06-01";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -77,6 +77,9 @@ function defaultLocals(data) {
     booking: d.booking || null,
     profile: d.profile || patient,
     statusFilter: d.statusFilter || "",
+    invoices: d.invoices || [],
+    receipts: d.receipts || [],
+    summary: d.summary || null,
     notFoundKind: d.notFoundKind || "",
     pageTitle: d.pageTitle || "Patient Portal",
     ...phoneLocals,
@@ -134,6 +137,7 @@ function renderPatientView(viewPath, data) {
     "patient/dashboard-empty": "Dashboard",
     "patient/bookings": "My bookings",
     "patient/booking-detail": "Booking detail",
+    "patient/invoices": "Invoices & receipts",
     "patient/link-guest-booking": "Link guest booking",
     "patient/profile": "Profile",
     "patient/security": "Security",

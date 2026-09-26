@@ -1,6 +1,7 @@
 <nav class="ac-patient-nav ac-patient-nav--desktop" aria-label="Patient portal" data-ac-patient-nav="desktop">
   <a href="/clinics/<%= clinicKey %>/patient"<% if (activeNav === 'dashboard') { %> aria-current="page"<% } %>>Dashboard</a>
   <a href="/clinics/<%= clinicKey %>/patient/bookings"<% if (activeNav === 'bookings') { %> aria-current="page"<% } %>>My Bookings</a>
+  <a href="/clinics/<%= clinicKey %>/patient/invoices"<% if (activeNav === 'invoices') { %> aria-current="page"<% } %>>Invoices</a>
   <a href="/clinics/<%= clinicKey %>/patient/link-guest-booking"<% if (activeNav === 'link') { %> aria-current="page"<% } %>>Link booking</a>
   <a href="/clinics/<%= clinicKey %>/patient/profile"<% if (activeNav === 'profile') { %> aria-current="page"<% } %>>Profile</a>
   <a href="/clinics/<%= clinicKey %>/patient/security"<% if (activeNav === 'security') { %> aria-current="page"<% } %>>Security</a>
@@ -18,6 +19,10 @@
   <a href="/clinics/<%= clinicKey %>/patient/bookings"<% if (activeNav === 'bookings') { %> aria-current="page"<% } %>>
     <span class="ac-patient-nav__icon" aria-hidden="true">☰</span>
     <span class="ac-patient-nav__label">Bookings</span>
+  </a>
+  <a href="/clinics/<%= clinicKey %>/patient/invoices"<% if (activeNav === 'invoices') { %> aria-current="page"<% } %>>
+    <span class="ac-patient-nav__icon" aria-hidden="true">▤</span>
+    <span class="ac-patient-nav__label">Invoices</span>
   </a>
   <a href="/clinics/<%= clinicKey %>/patient/link-guest-booking"<% if (activeNav === 'link') { %> aria-current="page"<% } %>>
     <span class="ac-patient-nav__icon" aria-hidden="true">🔗</span>
