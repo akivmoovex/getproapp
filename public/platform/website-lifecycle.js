@@ -41,6 +41,80 @@
     el.classList.toggle("is-error", Boolean(isError));
   }
 
+  function setPublishRef(ref) {
+    if (!host) return;
+    var el = host.querySelector('[data-website-lifecycle-ref="publish"]');
+    if (!el) return;
+    var value = ref != null && String(ref).trim() ? String(ref).trim().slice(0, 64) : "";
+    if (!value) {
+      el.hidden = true;
+      el.textContent = "";
+      el.removeAttribute("data-request-id");
+      return;
+    }
+    el.hidden = false;
+    el.setAttribute("data-request-id", value);
+    el.textContent = "Support reference: " + value;
+  }
+
+  function setPublishFailureActions(isFailure) {
+    if (!host) return;
+    var panel = panelEl("publish");
+    if (!panel) return;
+    var cancel = panel.querySelector("[data-website-lifecycle-cancel]");
+    var confirm = panel.querySelector('[data-website-lifecycle-confirm="publish"]');
+    if (cancel) {
+      cancel.textContent = isFailure ? "Keep Editing" : "Cancel";
+    }
+    if (confirm) {
+      var defaultLabel = confirm.getAttribute("data-default-label") || "Publish";
+      confirm.disabled = false;
+      confirm.textContent = isFailure ? "Retry publish" : defaultLabel;
+    }
+  }
+
+  /**
+   * Build friendly publish-failure copy. Never invents support IDs.
+   * Claims draft preservation / live unchanged only when the backend says so
+   * or the server message already states it.
+   */
+  function formatPublishFailure(json) {
+    var message =
+      (json && (json.message || json.reason)) ||
+      "Publishing did not complete. Nothing went live from this attempt.";
+    message = String(message).trim();
+    var parts = [message];
+    var draftPreserved = json && json.draftPreserved;
+    var liveUnchanged = json && json.liveUnchanged;
+    if (draftPreserved === true && !/draft/i.test(message)) {
+      parts.push("Your draft was preserved.");
+    }
+    if (
+      (liveUnchanged === true || draftPreserved === true) &&
+      !/visitor|live|previous version|unchanged/i.test(message)
+    ) {
+      parts.push("Visitors still see the previous live version.");
+    }
+    return parts.join(" ");
+  }
+
+  function realRequestId(json) {
+    if (!json || typeof json !== "object") return "";
+    var raw = json.requestId || json.correlationId || "";
+    raw = String(raw || "").trim();
+    return raw ? raw.slice(0, 64) : "";
+  }
+
+  function showPublishFailure(json) {
+    allowPublishSubmit = false;
+    setStatus("publish", formatPublishFailure(json), true);
+    setPublishRef(realRequestId(json));
+    setPublishFailureActions(true);
+    if (!openPanel || openPanel.getAttribute("data-website-lifecycle-panel") !== "publish") {
+      openDialog("publish");
+    }
+  }
+
   function panelEl(kind) {
     return host ? host.querySelector('[data-website-lifecycle-panel="' + kind + '"]') : null;
   }
@@ -53,6 +127,8 @@
     if (openPanel) openPanel.hidden = true;
     openPanel = null;
     pendingPublishForm = null;
+    setPublishRef("");
+    setPublishFailureActions(false);
     document.body.classList.remove("gp-website-lifecycle-open");
   }
 
@@ -65,6 +141,11 @@
     if (overlay) overlay.hidden = false;
     panel.hidden = false;
     openPanel = panel;
+    if (kind === "publish") {
+      setStatus("publish", "", false);
+      setPublishRef("");
+      setPublishFailureActions(false);
+    }
     document.body.classList.add("gp-website-lifecycle-open");
     var focusable = panel.querySelector("button, [href], input, textarea");
     if (focusable && focusable.focus) focusable.focus();
@@ -151,8 +232,12 @@
   function submitPublishForm(form) {
     if (!form) return;
     var btn = form.querySelector('[type="submit"]');
+    var confirmBtn = host && host.querySelector('[data-website-lifecycle-confirm="publish"]');
     if (btn) btn.disabled = true;
+    if (confirmBtn) confirmBtn.disabled = true;
     setStatus("publish", "Publishing…", false);
+    setPublishRef("");
+    setPublishFailureActions(false);
     var action = form.getAttribute("action") || window.location.href;
     var method = String(form.getAttribute("method") || "POST").toUpperCase();
     // Prefer urlencoded so CSRF lands in req.body (multipart FormData does not).
@@ -169,32 +254,47 @@
       redirect: "follow",
     })
       .then(function (res) {
-        if (btn) btn.disabled = false;
-        if (res.ok || (res.status >= 300 && res.status < 400)) {
-          closeDialog();
-          showToast("Published");
-          window.location.reload();
-          return;
-        }
         return res.text().then(function (text) {
+          if (btn) btn.disabled = false;
+          if (confirmBtn) confirmBtn.disabled = false;
           var json = null;
           try {
             json = JSON.parse(text);
           } catch (err) {
             json = null;
           }
-          setStatus(
-            "publish",
-            (json && (json.reason || json.code)) || "Publish failed — draft unchanged. Retry.",
-            true
-          );
-          allowPublishSubmit = false;
+          // Prefer explicit JSON contract — never toast success when ok is false.
+          if (json && typeof json.ok === "boolean") {
+            if (json.ok) {
+              closeDialog();
+              showToast("Published");
+              window.location.reload();
+              return;
+            }
+            showPublishFailure(json);
+            return;
+          }
+          if (res.ok || (res.status >= 300 && res.status < 400)) {
+            closeDialog();
+            showToast("Published");
+            window.location.reload();
+            return;
+          }
+          showPublishFailure({
+            message: "Publish failed — draft unchanged. Retry when ready.",
+            draftPreserved: true,
+            liveUnchanged: true,
+          });
         });
       })
       .catch(function () {
         if (btn) btn.disabled = false;
-        setStatus("publish", "Publish failed — check your connection and retry. Draft unchanged.", true);
-        allowPublishSubmit = false;
+        if (confirmBtn) confirmBtn.disabled = false;
+        showPublishFailure({
+          message: "Publish failed — check your connection and retry.",
+          draftPreserved: true,
+          liveUnchanged: true,
+        });
       });
   }
 
@@ -428,6 +528,8 @@
     hasLocalUnsaved: hasLocalUnsaved,
     guardNavigation: guardNavigation,
     confirmPublish: confirmPublish,
+    showPublishFailure: showPublishFailure,
+    formatPublishFailure: formatPublishFailure,
     resolveExitHref: resolveExitHref,
     exitEditingViaGuard: exitEditingViaGuard,
     openDiscardDialog: function () {

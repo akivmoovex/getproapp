@@ -693,7 +693,26 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         allowEmpty: true,
       });
       if (!published.ok) {
-        return json(res, 400, { ok: false, code: published.code });
+        const code = published.code || "publish_failed";
+        const friendly = {
+          csrf: "Your session expired. Reload the page, then try publishing again.",
+          forbidden: "You do not have permission to publish these changes.",
+          website_instance_not_found: "This clinic website is not fully set up for publishing yet.",
+          website_publish_locked: "Publishing is locked for this website. Contact an administrator.",
+          no_changes: "There are no draft changes to publish.",
+          conflict:
+            "Someone else updated this website while you were publishing. Refresh, review drafts, and try again.",
+        };
+        return json(res, 400, {
+          ok: false,
+          code,
+          publicCode: code,
+          message:
+            friendly[code] ||
+            "Publishing did not complete. Your draft was preserved — try again.",
+          draftPreserved: true,
+          liveUnchanged: true,
+        });
       }
       let availability = null;
       if (req.body && (req.body.makePublic === "1" || req.body.makePublic === true || req.body.make_public === "1")) {

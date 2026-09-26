@@ -2197,6 +2197,19 @@ body.gp-website-preview-open {
   color: var(--gp-we-error);
 }
 
+.gp-website-lifecycle__ref {
+  margin: 0;
+  padding: 4px 16px 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--gp-we-on-surface-variant);
+  word-break: break-all;
+}
+
+.gp-website-lifecycle__ref[hidden] {
+  display: none !important;
+}
+
 .gp-website-lifecycle__foot {
   display: flex;
   justify-content: flex-end;

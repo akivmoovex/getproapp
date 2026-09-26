@@ -153,12 +153,12 @@ describe("V2_01 universal image editor UI", () => {
     // CSS bumped again for history/toolbar parity (still includes image editor + E1 rules).
     assert.match(
       read("views/blessboard/v5/partials/tenant-public-shell-start.ejs"),
-      /website-inline-edit\.css\?v=v2-(?:img-editor-2|scope-e1-\d+|toolbar-parity-\d+|u1a-history-\d+|u1b-panel-\d+|u1c-dialogs-\d+)/
+      /website-inline-edit\.css\?v=v2-(?:img-editor-2|scope-e1-\d+|toolbar-parity-\d+|u1a-history-\d+|u1b-panel-\d+|u1c-dialogs-\d+|sp-vis-\d+)/
     );
     assert.match(
       read("src/platform/website/renderWebsiteManagementPage.js"),
-      /v2-(?:img-editor-2|scope-e1-\d+|toolbar-parity-\d+|u1a-history-\d+|u1b-panel-\d+|u1c-dialogs-\d+)/
+      /v2-(?:img-editor-2|scope-e1-\d+|toolbar-parity-\d+|u1a-history-\d+|u1b-panel-\d+|u1c-dialogs-\d+|sp-vis-\d+|spt7-picker-\d+)/
     );
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /ASSET_VERSION = "v2-spt7-picker-1"/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /ASSET_VERSION = "v2-sp-vis-1"/);
   });
 });

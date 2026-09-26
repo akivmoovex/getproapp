@@ -873,6 +873,14 @@
     updatePendingCount(initial);
     if (initial > 0) setSaveStatus("saved");
     else setSaveStatus("idle", "Up to date");
+    // Offer friendly reminder when the editor loads already at/above threshold
+    // (dismiss / suppress / busy gates still apply). Never auto-publish.
+    if (initial >= THRESHOLD_DEFAULT) {
+      window.setTimeout(function () {
+        openReminder(false);
+        showNavReminder();
+      }, 450);
+    }
   }
 
   if (document.readyState === "loading") {

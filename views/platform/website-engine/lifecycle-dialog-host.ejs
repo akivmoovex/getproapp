@@ -28,11 +28,21 @@
     </header>
     <p class="gp-website-lifecycle__body"><%= labels.publishConfirmBody || '' %></p>
     <p class="gp-website-lifecycle__status" data-website-lifecycle-status="publish" role="status" aria-live="polite"></p>
+    <p
+      class="gp-website-lifecycle__ref"
+      data-website-lifecycle-ref="publish"
+      hidden
+    ></p>
     <footer class="gp-website-lifecycle__foot">
       <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--ghost" data-website-lifecycle-cancel="1">
         Cancel
       </button>
-      <button type="button" class="gp-website-lifecycle__btn gp-website-lifecycle__btn--primary" data-website-lifecycle-confirm="publish">
+      <button
+        type="button"
+        class="gp-website-lifecycle__btn gp-website-lifecycle__btn--primary"
+        data-website-lifecycle-confirm="publish"
+        data-default-label="<%= labels.publish || 'Publish' %>"
+      >
         <%= labels.publish || 'Publish' %>
       </button>
     </footer>

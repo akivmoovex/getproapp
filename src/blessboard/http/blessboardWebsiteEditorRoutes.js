@@ -873,6 +873,8 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
             : published.message || null,
           requestId,
           correlationId: requestId,
+          draftPreserved: published.ok ? false : true,
+          liveUnchanged: published.ok ? false : true,
         });
       }
       if (!published.ok) {
