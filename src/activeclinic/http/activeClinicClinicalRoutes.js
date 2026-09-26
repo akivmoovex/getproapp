@@ -305,7 +305,38 @@ function registerActiveClinicClinicalRoutes(app, deps) {
               ? { type: "success", message: "Draft saved." }
               : req.query.completed === "1"
                 ? { type: "success", message: "Encounter completed." }
-                : null;
+                : req.query.signed === "1"
+                  ? { type: "success", message: "Consultation note signed." }
+                  : req.query.diagnosis_recorded === "1"
+                    ? { type: "success", message: "Diagnosis recorded." }
+                    : req.query.order_created === "1"
+                      ? { type: "success", message: "Clinical order created." }
+                      : req.query.intake_recorded === "1"
+                        ? { type: "success", message: "Nursing intake recorded." }
+                        : null;
+
+        const headerActions = [];
+        if (loaded.workspace.actions.canRecordTriage) {
+          headerActions.push({
+            href: `/app/clinical/encounter/${encounterId}/triage`,
+            label: "Triage",
+            ghost: true,
+          });
+        }
+        if (loaded.workspace.actions.canRecordVitals) {
+          headerActions.push({
+            href: `/app/clinical/encounter/${encounterId}/vitals`,
+            label: "Vitals",
+            ghost: true,
+          });
+        }
+        if (loaded.workspace.actions.canRecordDiagnosis) {
+          headerActions.push({
+            href: `/app/clinical/encounter/${encounterId}/diagnosis`,
+            label: "Diagnosis",
+            ghost: true,
+          });
+        }
 
         return renderShell(req, res, {
           activeNav: "clinical",
@@ -313,11 +344,7 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           pageHeader: {
             title: `Encounter ${loaded.workspace.encounter.encounterNumber}`,
             description: `Patient: ${loaded.workspace.encounter.patientDisplayName}`,
-            actions: [
-              { href: `/app/clinical/encounter/${encounterId}/triage`, label: "Triage", ghost: true },
-              { href: `/app/clinical/encounter/${encounterId}/vitals`, label: "Vitals", ghost: true },
-              { href: `/app/clinical/encounter/${encounterId}/diagnosis`, label: "Diagnosis", ghost: true },
-            ],
+            actions: headerActions,
           },
           breadcrumbs: [
             { label: "Home", href: "/app" },

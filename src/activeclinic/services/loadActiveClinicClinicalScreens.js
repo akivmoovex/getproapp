@@ -26,8 +26,12 @@ const {
 const STITCH = Object.freeze({
   worklistDesktop: "ae083a2bfe324046b4d9a0648c516bbd",
   worklistMobile: "f792e472b455437eb354e25d336fd869",
-  encounterDesktop: "3ea33c0c474342bbbbb307014209bfec",
-  encounterMobile: "ec4486cb5e944705bede9c3100c47e9d",
+  /** Batch 1 ACN15 Juflona pilot references (retained for dual markers). */
+  encounterDesktopBatch1: "3ea33c0c474342bbbbb307014209bfec",
+  encounterMobileBatch1: "ec4486cb5e944705bede9c3100c47e9d",
+  /** Batch 2 AC-B2-06 frozen Stitch project 7300898757945019896. */
+  encounterDesktop: "b3d1767822e74ccd844a04947266f4c3",
+  encounterMobile: "f0a06faaa89b4ded8506f3fc67cdfa77",
   followUpDesktop: "0c83bbfc71b94c2f958931693345d1db",
   followUpMobile: "362b305120114a5cac2ac38622a148f8",
 });
@@ -156,11 +160,35 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
     [input.encounterId]
   );
 
-  const draftNote =
+  const draftRow =
     consultationRes.rows.find((n) => n.status === "draft") || null;
+  const draftNote = draftRow || null;
+
+  const ordersRes = await db.query(
+    `SELECT o.id, o.order_type, o.order_details, o.instructions, o.status,
+            o.created_at, s.display_name AS ordered_by_staff_display_name
+       FROM activeclinic.clinical_orders o
+       LEFT JOIN activeclinic.staff_members s ON s.id = o.ordered_by_staff_id
+      WHERE o.encounter_id = $1
+        AND o.organization_id = $2
+        AND o.facility_id = $3
+      ORDER BY o.created_at DESC
+      LIMIT 50`,
+    [
+      input.encounterId,
+      input.auth.organization.id,
+      input.auth.selectedFacility.id,
+    ]
+  );
+
   const canRecord = await hasPerm(db, input.auth, PERM.CONSULTATION_RECORD);
   const canSign = await hasPerm(db, input.auth, PERM.CONSULTATION_SIGN);
   const canManage = await hasPerm(db, input.auth, PERM.MANAGE);
+  const canTriage = await hasPerm(db, input.auth, PERM.TRIAGE);
+  const canDiagnosis = await hasPerm(db, input.auth, PERM.DIAGNOSIS_RECORD);
+  const canOrder = await hasPerm(db, input.auth, PERM.ORDER_CREATE);
+  const encounterOpen = encounter.encounter.status === "open";
+  const eid = input.encounterId;
 
   return {
     ok: true,
@@ -172,16 +200,35 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
       consultationNotes: consultationRes.rows || [],
       draftNote,
       diagnoses: diagnosesRes.rows || [],
+      orders: ordersRes.rows || [],
       stitch: {
         desktop: STITCH.encounterDesktop,
         mobile: STITCH.encounterMobile,
+        batch1Desktop: STITCH.encounterDesktopBatch1,
+        batch1Mobile: STITCH.encounterMobileBatch1,
+      },
+      links: {
+        encounter: `/app/clinical/encounter/${eid}`,
+        triage: `/app/clinical/encounter/${eid}/triage`,
+        vitals: `/app/clinical/encounter/${eid}/vitals`,
+        diagnosis: `/app/clinical/encounter/${eid}/diagnosis`,
+        nursing: `/app/clinical/encounter/${eid}/nursing-intake`,
+        orderPrescription: `/app/clinical/encounter/${eid}/order/prescription`,
+        orderLab: `/app/clinical/encounter/${eid}/order/lab`,
+        orderRadiology: `/app/clinical/encounter/${eid}/order/radiology`,
+        patient: encounter.encounter.patientNumber
+          ? `/app/patients/${encodeURIComponent(encounter.encounter.patientNumber)}`
+          : null,
       },
       actions: {
-        canRecordDraft: canRecord && encounter.encounter.status === "open",
+        canRecordDraft: canRecord && encounterOpen,
         canSignConsultation: canSign && !!draftNote,
-        canCompleteEncounter:
-          canManage && canRecord && encounter.encounter.status === "open",
-        canCloseEncounter: canManage && encounter.encounter.status === "open",
+        canCompleteEncounter: canManage && canRecord && encounterOpen,
+        canCloseEncounter: canManage && encounterOpen,
+        canRecordTriage: canTriage && encounterOpen,
+        canRecordVitals: canTriage && encounterOpen,
+        canRecordDiagnosis: canDiagnosis && encounterOpen,
+        canCreateOrder: canOrder && encounterOpen,
       },
     },
   };

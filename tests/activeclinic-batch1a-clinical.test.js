@@ -230,7 +230,9 @@ describe("ActiveClinic V2.03 ACN14–16 clinical", () => {
       path.join(ROOT, "views/activeclinic/app/consultation-workspace-content.ejs"),
       "utf8"
     );
-    assert.match(encounter, /data-ac-stitch="ACN15"/);
+    assert.match(encounter, /data-ac-stitch="AC-B2-06"/);
+    assert.match(encounter, /data-ac-batch1="ACN15"/);
+    assert.match(encounter, /b3d1767822e74ccd844a04947266f4c3/);
     assert.match(encounter, /Save draft/);
     assert.match(encounter, /Complete encounter/);
     assert.match(encounter, /not a prescribing engine/);
@@ -397,7 +399,8 @@ describe("ActiveClinic V2.03 ACN14–16 clinical", () => {
       .get(`/app/clinical/encounter/${started.encounter.id}`)
       .set("Cookie", clinCookie);
     assert.equal(encAllowed.status, 200);
-    assert.match(encAllowed.text, /data-ac-stitch="ACN15"/);
+    assert.match(encAllowed.text, /data-ac-stitch="AC-B2-06"/);
+    assert.match(encAllowed.text, /data-ac-batch1="ACN15"/);
     assert.match(encAllowed.text, /Restricted clinical narrative/);
 
     // Cross-tenant: reception of another clinic cannot open clinician encounter by id

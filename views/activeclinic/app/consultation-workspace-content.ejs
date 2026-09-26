@@ -4,120 +4,355 @@
   var triage = workspace.triage || null;
   var draft = workspace.draftNote || null;
   var diagnoses = workspace.diagnoses || [];
+  var orders = workspace.orders || [];
   var actions = workspace.actions || {};
+  var links = workspace.links || {};
   var stitch = workspace.stitch || {};
   var vitals = workspace.vitals || [];
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+
+  function draftField(snake, camel) {
+    if (!draft) return '';
+    if (draft[snake] != null && draft[snake] !== '') return draft[snake];
+    if (camel && draft[camel] != null && draft[camel] !== '') return draft[camel];
+    return '';
+  }
+
+  function triageField(snake) {
+    if (!triage) return '';
+    return triage[snake] != null ? triage[snake] : '';
+  }
+
+  function formatVitalValue(obs) {
+    if (!obs) return '—';
+    if (obs.observationType === 'blood_pressure' && obs.systolic && obs.diastolic) {
+      return obs.systolic + '/' + obs.diastolic + (obs.unit ? ' ' + obs.unit : ' mmHg');
+    }
+    if (obs.valueNumeric != null && obs.valueNumeric !== '') {
+      return String(obs.valueNumeric) + (obs.unit ? ' ' + obs.unit : '');
+    }
+    return obs.valueText || '—';
+  }
+
+  function vitalLabel(type) {
+    var map = {
+      blood_pressure: 'Blood pressure',
+      heart_rate: 'Heart rate',
+      respiratory_rate: 'Respiratory rate',
+      temperature: 'Temperature',
+      oxygen_saturation: 'SpO₂',
+      weight: 'Weight',
+      height: 'Height',
+      pain_score: 'Pain score'
+    };
+    return map[type] || String(type || 'Observation').replace(/_/g, ' ');
+  }
+
+  var latestByType = {};
+  vitals.forEach(function (obs) {
+    if (!obs || !obs.observationType) return;
+    if (!latestByType[obs.observationType]) latestByType[obs.observationType] = obs;
+  });
+  var vitalTypes = ['blood_pressure', 'heart_rate', 'temperature', 'oxygen_saturation', 'respiratory_rate', 'weight', 'height', 'pain_score'];
+  var vitalCards = [];
+  vitalTypes.forEach(function (t) {
+    if (latestByType[t]) vitalCards.push(latestByType[t]);
+  });
+  Object.keys(latestByType).forEach(function (t) {
+    if (vitalTypes.indexOf(t) === -1) vitalCards.push(latestByType[t]);
+  });
+
+  var chiefComplaint = draftField('subjective_text', 'subjectiveText') || triageField('chief_complaint') || '';
+  var historyText = draftField('history_text', 'historyText');
+  var observations = draftField('objective_text', 'objectiveText');
+  var diagnosisText = draftField('assessment_text', 'assessmentText');
+  var treatmentPlan = draftField('plan_text', 'planText');
+  var medication = draftField('medication_text', 'medicationText');
+  var followUp = draftField('follow_up_plan_text', 'followUpPlanText');
+  var referral = draftField('referral_text', 'referralText');
+  var statusTone = encounter.status === 'completed' || encounter.status === 'closed'
+    ? 'success'
+    : (encounter.status === 'open' ? 'info' : 'neutral');
 %>
 <section
-  class="ac-batch1a ac-workspace ac-clinical-encounter"
+  class="ac-batch1a ac-workspace ac-clinical-encounter ac-clinical-encounter--b2"
   data-ac-page-section="clinical-encounter"
-  data-ac-stitch="ACN15"
-  data-ac-stitch-desktop="<%= stitch.desktop || '3ea33c0c474342bbbbb307014209bfec' %>"
-  data-ac-stitch-mobile="<%= stitch.mobile || 'ec4486cb5e944705bede9c3100c47e9d' %>"
+  data-ac-stitch="AC-B2-06"
+  data-ac-batch1="ACN15"
+  data-ac-stitch-desktop="<%= stitch.desktop || 'b3d1767822e74ccd844a04947266f4c3' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'f0a06faaa89b4ded8506f3fc67cdfa77' %>"
+  data-ac-stitch-batch1-desktop="<%= stitch.batch1Desktop || '3ea33c0c474342bbbbb307014209bfec' %>"
+  data-ac-stitch-batch1-mobile="<%= stitch.batch1Mobile || 'ec4486cb5e944705bede9c3100c47e9d' %>"
   data-ac-encounter-status="<%= encounter.status || '' %>"
   data-ac-draft-protection="1"
 >
-  <section class="ac-clinical-banner ac-workspace-section">
-    <h2 class="ac-patient-banner__name"><%= encounter.patientDisplayName %></h2>
-    <p class="ac-muted"><%= encounter.patientNumber %> · <%= encounter.encounterNumber %> · <%= encounter.encounterType %></p>
-    <p>
-      <span class="ac-status" data-ac-status="<%= encounter.status %>"><%= encounter.status %></span>
-      <% if (draft) { %>
-      <span class="ac-status" data-ac-status="draft">Draft note v<%= draft.version %></span>
-      <% } %>
-    </p>
-    <p class="ac-muted ac-sr-only">Restricted clinical notes — reception and finance cannot access this workspace.</p>
-  </section>
+  <header class="ac-clinical-encounter__banner" data-ac-encounter-banner="1">
+    <div class="ac-clinical-encounter__banner-main">
+      <p class="ac-muted">
+        <a href="/app/clinical">Back to clinical worklist</a>
+      </p>
+      <div class="ac-clinical-encounter__identity">
+        <h2 class="ac-clinical-encounter__patient">
+          <% if (links.patient) { %>
+          <a href="<%= links.patient %>"><%= encounter.patientDisplayName || 'Patient' %></a>
+          <% } else { %>
+          <%= encounter.patientDisplayName || 'Patient' %>
+          <% } %>
+        </h2>
+        <%- include('../../platform/partials/gp-ops-status-badge', {
+          label: encounter.status || 'unknown',
+          tone: statusTone
+        }) %>
+        <% if (draft) { %>
+        <%- include('../../platform/partials/gp-ops-status-badge', {
+          label: 'Draft note v' + draft.version,
+          tone: 'warning'
+        }) %>
+        <% } %>
+      </div>
+      <p class="ac-muted ac-clinical-encounter__meta">
+        <%= encounter.patientNumber || '' %>
+        <% if (encounter.encounterNumber) { %> · <%= encounter.encounterNumber %><% } %>
+        <% if (encounter.encounterType) { %> · <%= encounter.encounterType %><% } %>
+      </p>
+      <p class="ac-muted ac-sr-only">Restricted clinical notes — reception and finance cannot access this workspace.</p>
+    </div>
+  </header>
 
-  <% if (triage) { %>
-  <section class="ac-panel ac-workspace-section">
-    <h2 class="ac-panel__title">Triage snapshot</h2>
-    <p><strong>Chief complaint:</strong> <%= triage.chief_complaint %></p>
-    <% if (triage.triage_category) { %>
-    <p><strong>Category:</strong> <span class="ac-status"><%= triage.triage_category %></span></p>
-    <% } %>
-  </section>
-  <% } %>
-
-  <section class="ac-panel ac-workspace-section">
-    <h2 class="ac-panel__title">Observations &amp; vitals</h2>
-    <% if (!vitals.length) { %>
-    <p class="ac-muted">No vitals recorded yet.</p>
-    <% } else { %>
-    <p class="ac-muted"><%= vitals.length %> observation(s) on file for this encounter.</p>
-    <% } %>
-  </section>
-
-  <% if (diagnoses.length) { %>
-  <section class="ac-panel ac-workspace-section">
-    <h2 class="ac-panel__title">Recorded diagnoses</h2>
-    <ul>
-      <% diagnoses.forEach(function (d) { %>
-      <li><%= d.diagnosis_text %> <span class="ac-muted">(<%= d.diagnosis_type %> · <%= d.certainty %>)</span></li>
-      <% }) %>
-    </ul>
-    <p class="ac-muted">Manual clinical documentation only — no ICD automation.</p>
-  </section>
-  <% } %>
+  <nav class="ac-clinical-encounter__steps ac-clinical-mobile" aria-label="Encounter workflow steps" data-ac-encounter-steps="1">
+    <a class="ac-clinical-encounter__step" href="#ac-enc-vitals">1. Vitals</a>
+    <a class="ac-clinical-encounter__step" href="#ac-enc-subjective">2. Subjective</a>
+    <a class="ac-clinical-encounter__step" href="#ac-enc-objective">3. Objective</a>
+    <a class="ac-clinical-encounter__step" href="#ac-enc-assessment">4. Assessment</a>
+    <a class="ac-clinical-encounter__step" href="#ac-enc-orders">5. Orders</a>
+  </nav>
 
   <% if (actions.canRecordDraft) { %>
   <form
-    class="ac-panel ac-workspace-section"
+    class="ac-clinical-encounter__form"
     method="post"
     action="/app/clinical/encounter/<%= encounter.id %>/consultation"
     data-ac-form="clinical-encounter-draft"
     data-ac-unsaved-guard="1"
   >
-    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+    <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
     <% if (draft) { %>
     <input type="hidden" name="version" value="<%= draft.version %>" />
     <% } %>
     <input type="hidden" name="encounter_version" value="<%= encounter.version %>" />
 
-    <h2 class="ac-panel__title">Clinical encounter documentation</h2>
-    <p class="ac-muted">Save draft protects in-progress notes with optimistic versioning. Complete encounter closes the visit.</p>
-
-    <div class="ac-field">
-      <label class="ac-label" for="chief_complaint">1. Chief complaint</label>
-      <textarea class="ac-input" id="chief_complaint" name="chief_complaint" rows="3" maxlength="8000"><%= (draft && draft.subjective_text) || (triage && triage.chief_complaint) || '' %></textarea>
-    </div>
-    <div class="ac-field">
-      <label class="ac-label" for="history_text">2. History</label>
-      <textarea class="ac-input" id="history_text" name="history_text" rows="3" maxlength="8000"><%= (draft && draft.history_text) || '' %></textarea>
-    </div>
-    <div class="ac-field">
-      <label class="ac-label" for="observations">3. Observations</label>
-      <textarea class="ac-input" id="observations" name="observations" rows="3" maxlength="8000"><%= (draft && draft.objective_text) || '' %></textarea>
-    </div>
-    <div class="ac-field">
-      <label class="ac-label" for="diagnosis">4. Diagnosis</label>
-      <textarea class="ac-input" id="diagnosis" name="diagnosis" rows="3" maxlength="8000"><%= (draft && draft.assessment_text) || '' %></textarea>
-    </div>
-    <div class="ac-field">
-      <label class="ac-label" for="treatment_plan">5. Treatment plan</label>
-      <textarea class="ac-input" id="treatment_plan" name="treatment_plan" rows="3" maxlength="8000"><%= (draft && draft.plan_text) || '' %></textarea>
-    </div>
-    <div class="ac-field">
-      <label class="ac-label" for="medication">6. Medication <span class="ac-muted">(documented plan only — not a prescribing engine)</span></label>
-      <textarea class="ac-input" id="medication" name="medication" rows="2" maxlength="4000"><%= (draft && draft.medication_text) || '' %></textarea>
-    </div>
-    <div class="ac-field">
-      <label class="ac-label" for="follow_up">7. Follow-up</label>
-      <textarea class="ac-input" id="follow_up" name="follow_up" rows="2" maxlength="4000"><%= (draft && draft.follow_up_plan_text) || '' %></textarea>
-    </div>
-    <div class="ac-field">
-      <label class="ac-label" for="follow_up_due_at">Follow-up due date <span class="ac-muted">(optional)</span></label>
-      <input class="ac-input" type="date" id="follow_up_due_at" name="follow_up_due_at" />
-    </div>
-    <div class="ac-field">
-      <label class="ac-label" for="referral">8. Referral</label>
-      <textarea class="ac-input" id="referral" name="referral" rows="2" maxlength="4000"><%= (draft && draft.referral_text) || '' %></textarea>
+    <div class="ac-clinical-encounter__toolbar" data-ac-encounter-toolbar="1">
+      <p class="ac-muted ac-clinical-encounter__toolbar-hint">Save draft protects in-progress notes with optimistic versioning.</p>
+      <div class="ac-form-actions ac-form-actions--wrap">
+        <button type="submit" name="intent" value="save_draft" class="ac-btn ac-btn--ghost" data-ac-action="save-draft">Save draft</button>
+        <% if (actions.canCompleteEncounter) { %>
+        <button
+          type="submit"
+          name="intent"
+          value="complete"
+          class="ac-btn"
+          formaction="/app/clinical/encounter/<%= encounter.id %>/complete"
+          data-ac-action="complete-encounter"
+        >Complete encounter</button>
+        <% } %>
+      </div>
     </div>
 
-    <div class="ac-form-actions">
-      <button type="submit" name="intent" value="save_draft" class="ac-btn ac-btn--ghost">Save draft</button>
+    <div class="ac-clinical-encounter__layout">
+      <aside class="ac-clinical-encounter__context" data-ac-encounter-context="1">
+        <article class="ac-panel" id="ac-enc-vitals" data-ac-encounter-card="vitals">
+          <div class="ac-clinical-encounter__card-head">
+            <h2 class="ac-panel__title">Baseline triage vitals</h2>
+            <% if (actions.canRecordVitals) { %>
+            <a class="ac-clinical-encounter__text-link" href="<%= links.vitals %>">Add / update vitals</a>
+            <% } %>
+          </div>
+          <% if (!vitalCards.length) { %>
+          <p class="ac-muted">No vitals recorded yet.</p>
+          <% } else { %>
+          <div class="ac-clinical-encounter__vitals-grid">
+            <% vitalCards.forEach(function (obs) { %>
+            <div class="ac-clinical-encounter__vital" data-ac-vital-type="<%= obs.observationType %>">
+              <p class="ac-clinical-encounter__vital-label"><%= vitalLabel(obs.observationType) %></p>
+              <p class="ac-clinical-encounter__vital-value"><%= formatVitalValue(obs) %></p>
+              <% if (obs.recordedByStaffDisplayName) { %>
+              <p class="ac-muted ac-clinical-encounter__vital-meta"><%= obs.recordedByStaffDisplayName %></p>
+              <% } %>
+            </div>
+            <% }) %>
+          </div>
+          <% } %>
+        </article>
+
+        <article class="ac-panel" data-ac-encounter-card="intake">
+          <div class="ac-clinical-encounter__card-head">
+            <h2 class="ac-panel__title">Chief complaint &amp; intake</h2>
+            <% if (actions.canRecordTriage) { %>
+            <a class="ac-clinical-encounter__text-link" href="<%= links.triage %>">Open triage</a>
+            <% } %>
+          </div>
+          <% if (triage && triage.triage_category) { %>
+          <p><span class="ac-muted">Category:</span>
+            <%- include('../../platform/partials/gp-ops-status-badge', {
+              label: triage.triage_category,
+              tone: 'info'
+            }) %>
+          </p>
+          <% } %>
+          <% if (triage && triage.pain_level != null && triage.pain_level !== '') { %>
+          <p><span class="ac-muted">Pain:</span> <%= triage.pain_level %></p>
+          <% } %>
+          <div class="ac-field">
+            <label class="ac-label" for="chief_complaint">Chief complaint</label>
+            <textarea class="ac-input" id="chief_complaint" name="chief_complaint" rows="3" maxlength="8000"><%= chiefComplaint %></textarea>
+          </div>
+          <% if (triage && triage.allergies_reported) { %>
+          <p class="ac-clinical-encounter__callout" data-ac-allergy="1"><strong>Allergies:</strong> <%= triage.allergies_reported %></p>
+          <% } %>
+          <% if (triage && triage.current_medications_reported) { %>
+          <p class="ac-muted"><strong>Reported meds:</strong> <%= triage.current_medications_reported %></p>
+          <% } %>
+        </article>
+
+        <article class="ac-panel" data-ac-encounter-card="problems">
+          <div class="ac-clinical-encounter__card-head">
+            <h2 class="ac-panel__title">Active problem list</h2>
+            <% if (actions.canRecordDiagnosis) { %>
+            <a class="ac-clinical-encounter__text-link" href="<%= links.diagnosis %>">+ Add diagnosis</a>
+            <% } %>
+          </div>
+          <% if (!diagnoses.length) { %>
+          <p class="ac-muted">No structured diagnoses recorded yet.</p>
+          <% } else { %>
+          <ul class="ac-clinical-encounter__problem-list">
+            <% diagnoses.forEach(function (d) { %>
+            <li>
+              <strong><%= d.diagnosis_text || d.diagnosisText %></strong>
+              <span class="ac-muted">(<%= d.diagnosis_type || d.diagnosisType %> · <%= d.certainty %>)</span>
+            </li>
+            <% }) %>
+          </ul>
+          <% } %>
+          <p class="ac-muted">Manual clinical documentation only — no ICD automation.</p>
+        </article>
+
+        <% if (triage && triage.medical_history_summary) { %>
+        <article class="ac-panel" data-ac-encounter-card="history-summary">
+          <h2 class="ac-panel__title">Relevant history</h2>
+          <p><%= triage.medical_history_summary %></p>
+        </article>
+        <% } %>
+      </aside>
+
+      <div class="ac-clinical-encounter__main" data-ac-encounter-documentation="1">
+        <article class="ac-panel" id="ac-enc-subjective" data-ac-encounter-card="subjective">
+          <div class="ac-clinical-encounter__card-head">
+            <span class="ac-clinical-encounter__soap" aria-hidden="true">S</span>
+            <h2 class="ac-panel__title">Subjective — history of present illness</h2>
+          </div>
+          <div class="ac-field">
+            <label class="ac-label" for="history_text">Clinical narrative / HPI</label>
+            <textarea class="ac-input" id="history_text" name="history_text" rows="5" maxlength="8000"><%= historyText %></textarea>
+          </div>
+        </article>
+
+        <article class="ac-panel" id="ac-enc-objective" data-ac-encounter-card="objective">
+          <div class="ac-clinical-encounter__card-head">
+            <span class="ac-clinical-encounter__soap" aria-hidden="true">O</span>
+            <h2 class="ac-panel__title">Objective — physical examination</h2>
+          </div>
+          <div class="ac-field">
+            <label class="ac-label" for="observations">Observations</label>
+            <textarea class="ac-input" id="observations" name="observations" rows="5" maxlength="8000"><%= observations %></textarea>
+          </div>
+        </article>
+
+        <article class="ac-panel" id="ac-enc-assessment" data-ac-encounter-card="assessment">
+          <div class="ac-clinical-encounter__card-head">
+            <span class="ac-clinical-encounter__soap" aria-hidden="true">A</span>
+            <h2 class="ac-panel__title">Assessment &amp; clinical diagnosis</h2>
+          </div>
+          <div class="ac-field">
+            <label class="ac-label" for="diagnosis">Diagnostic impression</label>
+            <textarea class="ac-input" id="diagnosis" name="diagnosis" rows="4" maxlength="8000"><%= diagnosisText %></textarea>
+          </div>
+          <% if (actions.canRecordDiagnosis) { %>
+          <p class="ac-muted"><a href="<%= links.diagnosis %>">Record structured diagnosis</a> (existing diagnosis entry flow).</p>
+          <% } %>
+        </article>
+
+        <article class="ac-panel" data-ac-encounter-card="plan">
+          <div class="ac-clinical-encounter__card-head">
+            <span class="ac-clinical-encounter__soap" aria-hidden="true">P</span>
+            <h2 class="ac-panel__title">Plan &amp; patient instructions</h2>
+          </div>
+          <div class="ac-field">
+            <label class="ac-label" for="treatment_plan">Treatment plan</label>
+            <textarea class="ac-input" id="treatment_plan" name="treatment_plan" rows="4" maxlength="8000"><%= treatmentPlan %></textarea>
+          </div>
+          <div class="ac-field">
+            <label class="ac-label" for="medication">Medication <span class="ac-muted">(documented plan only — not a prescribing engine)</span></label>
+            <textarea class="ac-input" id="medication" name="medication" rows="2" maxlength="4000"><%= medication %></textarea>
+          </div>
+          <div class="ac-field">
+            <label class="ac-label" for="follow_up">Follow-up</label>
+            <textarea class="ac-input" id="follow_up" name="follow_up" rows="2" maxlength="4000"><%= followUp %></textarea>
+          </div>
+          <div class="ac-field">
+            <label class="ac-label" for="follow_up_due_at">Follow-up due date <span class="ac-muted">(optional)</span></label>
+            <input class="ac-input" type="date" id="follow_up_due_at" name="follow_up_due_at" />
+          </div>
+          <div class="ac-field">
+            <label class="ac-label" for="referral">Referral</label>
+            <textarea class="ac-input" id="referral" name="referral" rows="2" maxlength="4000"><%= referral %></textarea>
+          </div>
+        </article>
+
+        <article class="ac-panel" id="ac-enc-orders" data-ac-encounter-card="orders">
+          <div class="ac-clinical-encounter__card-head">
+            <h2 class="ac-panel__title">Clinical orders &amp; interventions</h2>
+            <% if (orders.length) { %>
+            <span class="ac-muted"><%= orders.length %> on file</span>
+            <% } %>
+          </div>
+          <% if (actions.canCreateOrder) { %>
+          <div class="ac-form-actions ac-form-actions--wrap" data-ac-order-affordances="1">
+            <a class="ac-btn ac-btn--ghost" href="<%= links.orderPrescription %>">Add prescription / Rx</a>
+            <a class="ac-btn ac-btn--ghost" href="<%= links.orderLab %>">Order diagnostics / lab</a>
+            <a class="ac-btn ac-btn--ghost" href="<%= links.orderRadiology %>">Order radiology</a>
+          </div>
+          <% } else { %>
+          <p class="ac-muted">Order creation is not available for your role on this encounter.</p>
+          <% } %>
+          <% if (!orders.length) { %>
+          <p class="ac-muted">No clinical orders queued for this encounter yet.</p>
+          <% } else { %>
+          <ul class="ac-clinical-encounter__order-list">
+            <% orders.forEach(function (o) { %>
+            <li>
+              <strong><%= o.order_type %></strong>
+              <span class="ac-muted">· <%= o.status %></span>
+              <% if (o.ordered_by_staff_display_name) { %>
+              <span class="ac-muted">· <%= o.ordered_by_staff_display_name %></span>
+              <% } %>
+            </li>
+            <% }) %>
+          </ul>
+          <% } %>
+        </article>
+      </div>
+    </div>
+
+    <div class="ac-clinical-encounter__footer-actions ac-clinical-mobile" data-ac-encounter-mobile-actions="1">
+      <button type="submit" name="intent" value="save_draft" class="ac-btn">Save draft</button>
       <% if (actions.canCompleteEncounter) { %>
-      <button type="submit" name="intent" value="complete" class="ac-btn" formaction="/app/clinical/encounter/<%= encounter.id %>/complete">Complete encounter</button>
+      <button
+        type="submit"
+        name="intent"
+        value="complete"
+        class="ac-btn ac-btn--ghost"
+        formaction="/app/clinical/encounter/<%= encounter.id %>/complete"
+      >Complete</button>
       <% } %>
     </div>
   </form>
@@ -135,9 +370,54 @@
       });
     })();
   </script>
-  <% } else if (encounter.status === 'open') { %>
-  <div class="ac-panel">
-    <p class="ac-muted">You can view this encounter but do not have permission to edit clinical notes.</p>
+  <% } else { %>
+  <div class="ac-clinical-encounter__layout ac-clinical-encounter__layout--readonly">
+    <aside class="ac-clinical-encounter__context">
+      <article class="ac-panel" id="ac-enc-vitals">
+        <h2 class="ac-panel__title">Baseline triage vitals</h2>
+        <% if (!vitalCards.length) { %>
+        <p class="ac-muted">No vitals recorded yet.</p>
+        <% } else { %>
+        <div class="ac-clinical-encounter__vitals-grid">
+          <% vitalCards.forEach(function (obs) { %>
+          <div class="ac-clinical-encounter__vital">
+            <p class="ac-clinical-encounter__vital-label"><%= vitalLabel(obs.observationType) %></p>
+            <p class="ac-clinical-encounter__vital-value"><%= formatVitalValue(obs) %></p>
+          </div>
+          <% }) %>
+        </div>
+        <% } %>
+      </article>
+      <% if (diagnoses.length) { %>
+      <article class="ac-panel">
+        <h2 class="ac-panel__title">Recorded diagnoses</h2>
+        <ul>
+          <% diagnoses.forEach(function (d) { %>
+          <li><%= d.diagnosis_text %> <span class="ac-muted">(<%= d.diagnosis_type %> · <%= d.certainty %>)</span></li>
+          <% }) %>
+        </ul>
+      </article>
+      <% } %>
+    </aside>
+    <div class="ac-clinical-encounter__main">
+      <article class="ac-panel">
+        <% if (encounter.status === 'open') { %>
+        <p class="ac-muted">You can view this encounter but do not have permission to edit clinical notes.</p>
+        <% } else { %>
+        <p class="ac-muted">This encounter is <%= encounter.status %>. Documentation is read-only.</p>
+        <% } %>
+        <% if (draft || (workspace.consultationNotes && workspace.consultationNotes.length)) { %>
+        <% var note = draft || workspace.consultationNotes[0]; %>
+        <dl class="ac-dl">
+          <div><dt>Chief complaint</dt><dd><%= note.subjective_text || note.subjectiveText || '—' %></dd></div>
+          <div><dt>History</dt><dd><%= note.history_text || note.historyText || '—' %></dd></div>
+          <div><dt>Observations</dt><dd><%= note.objective_text || note.objectiveText || '—' %></dd></div>
+          <div><dt>Assessment</dt><dd><%= note.assessment_text || note.assessmentText || '—' %></dd></div>
+          <div><dt>Plan</dt><dd><%= note.plan_text || note.planText || '—' %></dd></div>
+        </dl>
+        <% } %>
+      </article>
+    </div>
   </div>
   <% } %>
 </section>

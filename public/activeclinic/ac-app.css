@@ -3508,3 +3508,253 @@ body.ac-app-body .ac-code {
   border: 1px solid var(--ac-border, #e2e8f0);
   font-size: 0.8rem;
 }
+
+/* ==========================================================================
+   V2.03 Batch 2 — AC-B2-06 Clinical Encounter
+   ========================================================================== */
+body.ac-app-body .ac-clinical-encounter--b2 {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+body.ac-app-body .ac-clinical-encounter__banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-4);
+  border: 1px solid var(--ac-border, #e5e7eb);
+  border-radius: var(--ac-radius-card, 12px);
+  background: var(--ac-surface, #fff);
+}
+
+body.ac-app-body .ac-clinical-encounter__identity {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.75rem;
+}
+
+body.ac-app-body .ac-clinical-encounter__patient {
+  margin: 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ac-ink, #111827);
+}
+
+body.ac-app-body .ac-clinical-encounter__patient a {
+  color: inherit;
+  text-decoration: none;
+}
+body.ac-app-body .ac-clinical-encounter__patient a:hover {
+  color: var(--ac-primary, #2563eb);
+  text-decoration: underline;
+}
+
+body.ac-app-body .ac-clinical-encounter__meta {
+  margin: 0.35rem 0 0;
+}
+
+body.ac-app-body .ac-clinical-encounter__steps {
+  display: none;
+  gap: 0.4rem;
+  overflow-x: auto;
+  padding-bottom: 0.15rem;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.ac-app-body .ac-clinical-encounter__step {
+  flex: 0 0 auto;
+  padding: 0.4rem 0.75rem;
+  border-radius: 999px;
+  border: 1px solid var(--ac-border, #e5e7eb);
+  background: var(--ac-surface, #fff);
+  color: var(--ac-ink, #111827);
+  font-size: 0.78rem;
+  font-weight: 600;
+  text-decoration: none;
+  white-space: nowrap;
+}
+body.ac-app-body .ac-clinical-encounter__step:hover {
+  border-color: var(--ac-primary, #2563eb);
+  color: var(--ac-primary, #2563eb);
+}
+
+body.ac-app-body .ac-clinical-encounter__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-3) var(--ac-space-4);
+  border: 1px solid var(--ac-border, #e5e7eb);
+  border-radius: var(--ac-radius-card, 12px);
+  background: var(--ac-surface, #fff);
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+body.ac-app-body .ac-clinical-encounter__toolbar-hint {
+  margin: 0;
+  max-width: 28rem;
+  font-size: 0.85rem;
+}
+
+body.ac-app-body .ac-clinical-encounter__layout {
+  display: grid;
+  gap: var(--ac-space-4);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 2fr);
+  align-items: start;
+}
+
+body.ac-app-body .ac-clinical-encounter__context,
+body.ac-app-body .ac-clinical-encounter__main {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+body.ac-app-body .ac-clinical-encounter__card-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem 0.75rem;
+  margin-bottom: var(--ac-space-3);
+  padding-bottom: var(--ac-space-2);
+  border-bottom: 1px solid var(--ac-border, #e5e7eb);
+}
+
+body.ac-app-body .ac-clinical-encounter__card-head .ac-panel__title {
+  margin: 0;
+}
+
+body.ac-app-body .ac-clinical-encounter__text-link {
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--ac-primary, #2563eb);
+  text-decoration: none;
+}
+body.ac-app-body .ac-clinical-encounter__text-link:hover {
+  text-decoration: underline;
+}
+
+body.ac-app-body .ac-clinical-encounter__soap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 0.35rem;
+  background: var(--ac-primary, #2563eb);
+  color: #fff;
+  font-size: 0.75rem;
+  font-weight: 700;
+}
+
+body.ac-app-body .ac-clinical-encounter__vitals-grid {
+  display: grid;
+  gap: 0.5rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.ac-app-body .ac-clinical-encounter__vital {
+  padding: 0.65rem 0.75rem;
+  border: 1px solid var(--ac-border, #e5e7eb);
+  border-radius: 0.5rem;
+  background: var(--ac-bg-page, #f8fafc);
+}
+
+body.ac-app-body .ac-clinical-encounter__vital-label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--ac-muted, #6b7280);
+  text-transform: capitalize;
+}
+
+body.ac-app-body .ac-clinical-encounter__vital-value {
+  margin: 0.2rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--ac-ink, #111827);
+}
+
+body.ac-app-body .ac-clinical-encounter__vital-meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.72rem;
+}
+
+body.ac-app-body .ac-clinical-encounter__problem-list,
+body.ac-app-body .ac-clinical-encounter__order-list {
+  margin: 0;
+  padding-left: 1.1rem;
+  display: grid;
+  gap: 0.4rem;
+}
+
+body.ac-app-body .ac-clinical-encounter__callout {
+  margin: 0.75rem 0 0;
+  padding: 0.65rem 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--ac-danger, #dc2626) 35%, transparent);
+  background: var(--ac-status-danger-bg, #fef2f2);
+  color: var(--ac-danger, #dc2626);
+  font-size: 0.9rem;
+}
+
+body.ac-app-body .ac-clinical-encounter__footer-actions {
+  display: none;
+}
+
+@media (max-width: 900px) {
+  body.ac-app-body .ac-clinical-encounter__layout {
+    grid-template-columns: 1fr;
+  }
+
+  body.ac-app-body .ac-clinical-encounter__steps {
+    display: flex;
+  }
+
+  body.ac-app-body .ac-clinical-encounter__toolbar {
+    position: static;
+  }
+
+  body.ac-app-body .ac-clinical-encounter__toolbar .ac-form-actions {
+    display: none;
+  }
+
+  body.ac-app-body .ac-clinical-encounter__footer-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    position: sticky;
+    bottom: calc(var(--ac-staff-bottom-nav-h, 64px) + 0.5rem);
+    z-index: 2;
+    padding: 0.75rem;
+    border: 1px solid var(--ac-border, #e5e7eb);
+    border-radius: var(--ac-radius-card, 12px);
+    background: color-mix(in srgb, var(--ac-surface, #fff) 92%, transparent);
+    backdrop-filter: blur(8px);
+  }
+
+  body.ac-app-body .ac-clinical-encounter__footer-actions .ac-btn {
+    flex: 1 1 auto;
+  }
+
+  body.ac-app-body .ac-clinical-encounter__vitals-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 390px) {
+  body.ac-app-body .ac-clinical-encounter__vitals-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  body.ac-app-body .ac-clinical-encounter__banner {
+    padding: var(--ac-space-3);
+  }
+}
