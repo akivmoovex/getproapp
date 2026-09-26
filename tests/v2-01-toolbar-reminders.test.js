@@ -48,7 +48,9 @@ describe("V2.01 Change Manager toolbar + reminders", () => {
     assert.equal(pendingChangesPillLabel(1), "1 unpublished change");
     assert.equal(pendingChangesPillLabel(5), "5 unpublished changes");
     assert.equal(publishButtonLabel(0, "Publish"), "Publish");
-    assert.equal(publishButtonLabel(5, "Publish"), "Publish (5)");
+    assert.equal(publishButtonLabel(5, "Publish"), "Publish Changes (5)");
+    assert.equal(publishButtonLabel(5, "Publish Changes (5)"), "Publish Changes (5)");
+    assert.doesNotMatch(publishButtonLabel(3, "Publish"), /auto-?save/i);
   });
 
   it("uses reminder threshold of five meaningful unpublished changes", () => {
@@ -125,11 +127,11 @@ describe("V2.01 Change Manager toolbar + reminders", () => {
       instanceId: "inst-ac",
     });
     assert.equal(allowed.changeManager.showPublish, true);
-    assert.equal(allowed.changeManager.publishLabel, "Publish (2)");
+    assert.equal(allowed.changeManager.publishLabel, "Publish Changes (2)");
     // Idempotent when toolbar helper is applied twice.
     assert.equal(
       applyChangeManagerToolbar(allowed).changeManager.publishLabel,
-      "Publish (2)"
+      "Publish Changes (2)"
     );
   });
 
@@ -187,9 +189,24 @@ describe("V2.01 Change Manager toolbar + reminders", () => {
     assert.match(css, /max-width:\s*430px/);
     assert.match(css, /#004357/);
     assert.match(css, /#ffdcc3/);
+    assert.match(css, /\.gp-website-editable__history\s*\{[\s\S]*?min-height:\s*var\(--gp-website-touch/);
+    assert.match(css, /status-row:not\(:has\(\[data-website-pending-pill\]/);
+    assert.doesNotMatch(css, /Autosaved|auto-save/i);
     assert.equal(STITCH_PROJECT_ID, "12538817760086591589");
     assert.equal(STITCH_TOOLBAR_SCREEN, "863c719271a242e696406112b9f80ee9");
     assert.equal(STITCH_REMINDER_SCREEN, "d9f101c607e3469b84fdbcdcd6d0c062");
+  });
+
+  it("keeps mobile toolbar and field History controls at ≥44px touch targets", () => {
+    const inline = read("public/platform/website-inline-edit.css");
+    const cm = read("public/platform/website-change-manager-ui.css");
+    assert.match(inline, /--gp-website-touch:\s*2\.75rem/);
+    assert.doesNotMatch(
+      inline,
+      /\.gp-website-editor__icon-btn,[\s\S]{0,80}\.gp-website-editor__preview\s*\{[\s\S]{0,120}width:\s*32px/
+    );
+    assert.match(cm, /\.gp-website-editable__history\s*\{[\s\S]*?right:\s*calc\(var\(--gp-website-touch/);
+    assert.match(cm, /\.gp-website-editor__pending-pill\s*\{[\s\S]*?min-height:\s*var\(--gp-website-touch/);
   });
 
   it("returns pendingChangeCount from BB and AC draft save routes", () => {

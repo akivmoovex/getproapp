@@ -28,7 +28,7 @@ const {
 const { cdnMarketingAsset } = require("../../platform/media/cdnMediaPresentation");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v2-theme-c3-1";
+const ASSET_VERSION = "v2-toolbar-parity-1";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)

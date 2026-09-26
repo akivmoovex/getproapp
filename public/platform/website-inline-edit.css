@@ -692,15 +692,24 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  align-content: center;
   gap: 0.5rem;
-  height: var(--gp-we-toolbar-h);
+  /* Allow status-row wrap without clipping; --gp-we-toolbar-h expands when pills show. */
+  height: auto;
   min-height: var(--gp-we-toolbar-h);
   padding: 0 16px;
   padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: 0;
   background: var(--gp-we-toolbar-bg);
   border-bottom: 1px solid var(--gp-we-outline-variant);
   box-sizing: border-box;
   color: var(--gp-we-primary);
+}
+
+/* When pending/save pills are visible, reserve a second toolbar band for them. */
+body.gp-website-editor-open:has([data-website-pending-pill]:not([hidden])),
+body.gp-website-editor-open:has([data-website-save-status]:not([hidden]):not([data-save-status="idle"])) {
+  --gp-we-toolbar-h: 96px;
 }
 
 .gp-website-editor__toolbar-start,
@@ -790,8 +799,8 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-height: 40px;
-  min-width: 40px;
+  min-height: var(--gp-website-touch);
+  min-width: var(--gp-website-touch);
   padding: 8px 16px;
   border-radius: 8px;
   border: 0;
@@ -831,10 +840,10 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
 }
 
 .gp-website-editor__icon-btn {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
+  width: var(--gp-website-touch);
+  height: var(--gp-website-touch);
+  min-width: var(--gp-website-touch);
+  min-height: var(--gp-website-touch);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1075,22 +1084,29 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
   }
 
   .gp-website-editor__btn--primary {
-    padding: 6px 12px;
-    min-height: 36px;
+    padding: 8px 12px;
+    min-height: var(--gp-website-touch);
+    font-size: 0.8125rem;
+    font-weight: 600;
   }
 
+  /* Keep ≥44px touch targets on 390px — do not shrink below --gp-website-touch. */
   .gp-website-editor__icon-btn,
   .gp-website-editor__preview {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
+    width: var(--gp-website-touch);
+    height: var(--gp-website-touch);
+    min-width: var(--gp-website-touch);
+    min-height: var(--gp-website-touch);
     padding: 0;
   }
 
+  .gp-website-editor__toolbar-end {
+    gap: 4px;
+  }
+
   .gp-website-editor__toolbar {
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
   }
 
   .gp-website-editor__mobile-nav {
@@ -1349,7 +1365,8 @@ body.gp-website-editor-open .gp-website-editable__display {
   z-index: var(--gp-we-z-editable-affordance);
   pointer-events: auto;
   min-height: var(--gp-website-touch);
-  padding-right: calc(var(--gp-website-touch) + 0.25rem);
+  /* Room for History + pencil cluster without covering field text. */
+  padding-right: calc((var(--gp-website-touch) * 2) + 0.5rem);
   box-sizing: border-box;
   cursor: pointer;
 }
@@ -2137,7 +2154,9 @@ body.gp-website-lifecycle-open {
   /* Top-right pencils sit under the fixed editor toolbar after scroll-into-view;
      mirror textarea placement at bottom-right on narrow viewports. */
   body.gp-website-editor-open .gp-website-editable[data-website-type="text"] .gp-website-editable__pencil,
-  body.gp-website-editor-open .ac-website-editable[data-website-type="text"] .ac-website-editable__pencil {
+  body.gp-website-editor-open .ac-website-editable[data-website-type="text"] .ac-website-editable__pencil,
+  body.gp-website-editor-open .gp-website-editable[data-website-type="text"] .gp-website-editable__history,
+  body.gp-website-editor-open .ac-website-editable[data-website-type="text"] .gp-website-editable__history {
     top: auto;
     bottom: 0.25rem;
   }

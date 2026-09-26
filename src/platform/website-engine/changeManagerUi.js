@@ -39,7 +39,9 @@ function publishButtonLabel(unpublishedCount, baseLabel) {
   let base = String(baseLabel || "Publish").trim() || "Publish";
   // Idempotent when applyChangeManagerToolbar runs more than once.
   base = base.replace(/\s*\(\d+\)\s*$/, "").trim() || "Publish";
-  if (n < 1) return base;
+  if (n < 1) return base === "Publish Changes" ? "Publish" : base;
+  // Match final Stitch toolbar verb when there is something to publish — not autosave.
+  if (/^publish$/i.test(base)) base = "Publish Changes";
   return `${base} (${n})`;
 }
 

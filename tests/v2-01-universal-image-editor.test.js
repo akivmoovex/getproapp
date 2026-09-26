@@ -150,15 +150,15 @@ describe("V2_01 universal image editor UI", () => {
 
   it("asset cache bumps reference the B3 editor build", () => {
     assert.match(read("views/blessboard/v5/partials/tenant-public-shell-end.ejs"), /website-inline-edit\.js\?v=v2-img-editor-2/);
-    // CSS bumped again for E1 HQ/branch scope site-name styles (still includes image editor rules).
+    // CSS bumped again for toolbar/pencil parity (still includes image editor + E1 rules).
     assert.match(
       read("views/blessboard/v5/partials/tenant-public-shell-start.ejs"),
-      /website-inline-edit\.css\?v=v2-(?:img-editor-2|scope-e1-\d+)/
+      /website-inline-edit\.css\?v=v2-(?:img-editor-2|scope-e1-\d+|toolbar-parity-\d+)/
     );
     assert.match(
       read("src/platform/website/renderWebsiteManagementPage.js"),
-      /v2-(?:img-editor-2|scope-e1-\d+)/
+      /v2-(?:img-editor-2|scope-e1-\d+|toolbar-parity-\d+)/
     );
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /ASSET_VERSION = "v2-theme-c3-1"/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /ASSET_VERSION = "v2-toolbar-parity-1"/);
   });
 });
