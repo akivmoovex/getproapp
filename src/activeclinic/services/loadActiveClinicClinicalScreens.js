@@ -34,6 +34,9 @@ const STITCH = Object.freeze({
   encounterMobile: "f0a06faaa89b4ded8506f3fc67cdfa77",
   followUpDesktop: "0c83bbfc71b94c2f958931693345d1db",
   followUpMobile: "362b305120114a5cac2ac38622a148f8",
+  /** Batch 3 ACN20 — presentation over pending_referral follow-up items. */
+  referralDesktop: "9afe2826b316421e81d56d98364e1fbf",
+  referralMobile: "43fabf392a204db68bd229e2acc51926",
 });
 
 function actorFromAuth(auth) {
@@ -296,6 +299,81 @@ async function loadActiveClinicFollowUpWorklistScreen(db, input) {
   };
 }
 
+/**
+ * ACN20 Referral Management — presentation leaf over ACN16 pending_referral items.
+ * Does not invent a second referral case workflow or Draft/Sent/Accepted machine.
+ */
+async function loadActiveClinicReferralWorklistScreen(db, input) {
+  if (!input.auth.selectedFacility) {
+    return { ok: false, code: RESULT.FACILITY_NOT_FOUND, referrals: null };
+  }
+
+  const statusFilter = String((input.query && input.query.status) || "").trim();
+  const listArgs = {
+    organizationId: input.auth.organization.id,
+    healthcareOrganizationId: input.auth.healthcareOrganization.id,
+    facilityId: input.auth.selectedFacility.id,
+    actor: actorFromAuth(input.auth),
+    body: {},
+    query: input.query || {},
+    itemType: "pending_referral",
+  };
+
+  if (statusFilter === "all") {
+    listArgs.includeCompleted = true;
+  } else if (statusFilter && STATUSES.includes(statusFilter)) {
+    listArgs.status = statusFilter;
+  }
+
+  const listed = await listClinicalFollowUpItems(db, listArgs);
+  if (!listed.ok) {
+    return { ok: false, code: listed.code, referrals: null };
+  }
+
+  const items = listed.items;
+  const openCount = items.filter(
+    (i) => i.status !== "completed" && i.status !== "cancelled"
+  ).length;
+  const doneCount = items.filter((i) => i.status === "completed").length;
+
+  return {
+    ok: true,
+    code: RESULT.OK,
+    referrals: {
+      facilityDisplayName: input.auth.selectedFacility.displayName,
+      items,
+      counts: {
+        open: openCount,
+        completed: doneCount,
+        total: items.length,
+      },
+      filters: {
+        status: statusFilter,
+      },
+      options: {
+        statuses: [
+          { value: "", label: "Open statuses" },
+          ...STATUSES.filter((s) => !["completed", "cancelled"].includes(s)).map((s) => ({
+            value: s,
+            label: STATUS_LABELS[s],
+          })),
+          { value: "completed", label: STATUS_LABELS.completed },
+          { value: "all", label: "All" },
+        ],
+      },
+      stitch: {
+        desktop: STITCH.referralDesktop,
+        mobile: STITCH.referralMobile,
+      },
+      actions: {
+        canUpdate: await hasPerm(db, input.auth, PERM.CONSULTATION_RECORD),
+      },
+      classification: "B",
+      sourceWorkflow: "ACN16_pending_referral",
+    },
+  };
+}
+
 async function loadActiveClinicTriageAssessmentScreen(db, input) {
   if (!input.auth.selectedFacility) {
     return { ok: false, code: RESULT.FACILITY_NOT_FOUND, triage: null };
@@ -449,6 +527,7 @@ module.exports = {
   loadActiveClinicClinicalQueueScreen,
   loadActiveClinicConsultationWorkspaceScreen,
   loadActiveClinicFollowUpWorklistScreen,
+  loadActiveClinicReferralWorklistScreen,
   loadActiveClinicTriageAssessmentScreen,
   loadActiveClinicVitalSignsEntryScreen,
   loadActiveClinicClinicalAlertScreen,

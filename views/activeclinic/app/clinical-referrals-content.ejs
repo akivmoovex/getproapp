@@ -1,0 +1,150 @@
+<%
+  var referrals = (pageData && pageData.referrals) || {};
+  var items = referrals.items || [];
+  var counts = referrals.counts || {};
+  var filters = referrals.filters || {};
+  var options = referrals.options || {};
+  var stitch = referrals.stitch || {};
+  var actions = referrals.actions || {};
+%>
+<section
+  class="ac-batch1a ac-clinical-leaf ac-clinical-referrals"
+  data-ac-page-section="clinical-referrals"
+  data-ac-batch3="ACN20"
+  data-ac-stitch="ACN20"
+  data-ac-stitch-desktop="<%= stitch.desktop || '9afe2826b316421e81d56d98364e1fbf' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '43fabf392a204db68bd229e2acc51926' %>"
+  data-ac-source-workflow="<%= referrals.sourceWorkflow || 'ACN16_pending_referral' %>"
+  data-ac-classification="<%= referrals.classification || 'B' %>"
+>
+  <header class="ac-clinical-leaf__banner">
+    <div>
+      <p class="ac-clinical-leaf__eyebrow">Clinical · Referrals</p>
+      <p class="ac-clinical-leaf__patient">Referral Management</p>
+      <p class="ac-clinical-leaf__meta">
+        Facility-scoped pending referral follow-up items. Same ACN16 workflow — not a separate referral case system.
+      </p>
+    </div>
+    <div class="ac-clinical-leaf__banner-actions">
+      <a class="ac-btn ac-btn--ghost" href="/app/clinical/follow-up">Full follow-up worklist</a>
+    </div>
+  </header>
+
+  <div class="ac-metric-grid" data-ac-referral-metrics="1">
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Open</p><p class="ac-stat-card__value"><%= counts.open || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Completed</p><p class="ac-stat-card__value"><%= counts.completed || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Showing</p><p class="ac-stat-card__value"><%= counts.total || 0 %></p></article>
+  </div>
+
+  <form class="ac-panel ac-filter-bar" method="get" action="/app/clinical/referrals" data-ac-referral-filters="1">
+    <div class="ac-field">
+      <label class="ac-label" for="status">Status</label>
+      <select class="ac-select" id="status" name="status">
+        <% (options.statuses || []).forEach(function (s) { %>
+        <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Filter</button>
+      <a class="ac-btn ac-btn--ghost" href="/app/clinical/referrals">Clear</a>
+    </div>
+  </form>
+
+  <% if (!items.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'clinical-referrals-empty',
+      title: 'No pending referral items',
+      description: 'Referral follow-up items appear here when clinicians record referral text on encounter completion. Outbound referral orders, destination facilities, and HL7 transmit from Stitch are not available.'
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-clinical-leaf__desktop" data-ac-referrals-desktop="1">
+    <table class="ac-table" data-ac-table="clinical-referrals">
+      <caption class="ac-sr-only">Pending referral follow-up items</caption>
+      <thead>
+        <tr>
+          <th scope="col">Patient</th>
+          <th scope="col">Title / reason</th>
+          <th scope="col">Urgency</th>
+          <th scope="col">Due</th>
+          <th scope="col">Owner</th>
+          <th scope="col">Status</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(function (item) { %>
+        <tr data-ac-referral-status="<%= item.status %>" data-ac-followup-type="pending_referral">
+          <td>
+            <%= item.patientDisplayName %>
+            <div class="ac-muted"><%= item.patientNumber %></div>
+            <% if (item.encounterId) { %>
+            <div class="ac-muted">
+              <a href="/app/clinical/encounter/<%= item.encounterId %>">Open encounter</a>
+            </div>
+            <% } %>
+          </td>
+          <td>
+            <strong><%= item.title %></strong>
+            <% if (item.reason) { %><div class="ac-muted"><%= item.reason.length > 140 ? item.reason.slice(0, 140) + '…' : item.reason %></div><% } %>
+          </td>
+          <td><%= item.urgency || 'routine' %></td>
+          <td><%= item.dueAt ? new Date(item.dueAt).toLocaleDateString() : '—' %></td>
+          <td><%= item.ownerDisplayName || item.originatingDisplayName || '—' %></td>
+          <td><span class="ac-status" data-ac-status="<%= item.status %>"><%= item.statusLabel %></span></td>
+          <td>
+            <% if (actions.canUpdate && item.status !== 'completed' && item.status !== 'cancelled') { %>
+            <form method="post" action="/app/clinical/follow-up/<%= item.id %>/status" class="ac-inline-form">
+              <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+              <input type="hidden" name="version" value="<%= item.version %>" />
+              <input type="hidden" name="status" value="completed" />
+              <input type="hidden" name="return_to" value="/app/clinical/referrals" />
+              <button type="submit" class="ac-btn ac-btn--ghost ac-btn--table">Mark done</button>
+            </form>
+            <% } else { %>—<% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="ac-card-list ac-clinical-leaf__mobile" data-ac-referrals-mobile="1">
+    <% items.forEach(function (item) { %>
+    <li class="ac-card ac-clinical-leaf__card">
+      <p class="ac-card__title"><%= item.title %></p>
+      <p class="ac-muted"><%= item.patientDisplayName %> · <%= item.patientNumber %></p>
+      <% if (item.reason) { %><p class="ac-muted"><%= item.reason.length > 100 ? item.reason.slice(0, 100) + '…' : item.reason %></p><% } %>
+      <p>
+        <span class="ac-status" data-ac-status="<%= item.status %>"><%= item.statusLabel %></span>
+        · <%= item.urgency || 'routine' %>
+        · Due <%= item.dueAt ? new Date(item.dueAt).toLocaleDateString() : '—' %>
+      </p>
+      <% if (item.encounterId) { %>
+      <p class="ac-muted"><a href="/app/clinical/encounter/<%= item.encounterId %>">Open encounter</a></p>
+      <% } %>
+      <% if (actions.canUpdate && item.status !== 'completed' && item.status !== 'cancelled') { %>
+      <form method="post" action="/app/clinical/follow-up/<%= item.id %>/status" class="ac-inline-form">
+        <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+        <input type="hidden" name="version" value="<%= item.version %>" />
+        <input type="hidden" name="status" value="completed" />
+        <input type="hidden" name="return_to" value="/app/clinical/referrals" />
+        <button type="submit" class="ac-btn ac-btn--ghost">Mark done</button>
+      </form>
+      <% } %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <aside class="ac-clinical-leaf__note ac-panel" data-ac-omitted="demo-only">
+    <p class="ac-muted">
+      Omitted Stitch demo-only / contradictory CRM: Draft→Sent→Accepted machine, New Outbound Referral orders,
+      destination facility / specialist directory, HL7 Direct transmit, pre-authorization, REF packet numbers,
+      PDF / print packet, and transmission audit timeline. Status vocabulary remains ACN16 follow-up statuses.
+    </p>
+  </aside>
+</section>

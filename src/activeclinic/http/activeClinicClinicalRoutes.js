@@ -32,6 +32,7 @@ const {
   loadActiveClinicClinicalAlertScreen,
   loadActiveClinicOrderFormScreen,
   loadActiveClinicFollowUpWorklistScreen,
+  loadActiveClinicReferralWorklistScreen,
   actorFromAuth,
 } = require("../services/loadActiveClinicClinicalScreens");
 const {
@@ -892,6 +893,52 @@ function registerActiveClinicClinicalRoutes(app, deps) {
     }
   );
 
+  // ACN20 referral presentation — filtered view of ACN16 pending_referral items
+  app.get(
+    "/app/clinical/referrals",
+    requireAuth,
+    requirePermission(PERM.VIEW),
+    requireDepartment("clinical"),
+    async (req, res, next) => {
+      try {
+        const loaded = await loadActiveClinicReferralWorklistScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          query: req.query,
+        });
+        if (!loaded.ok) {
+          return res.status(403).type("html").send(
+            renderSimpleState(
+              "Referral worklist unavailable",
+              mapClinicalError(loaded.code),
+              { status: 403, linkHref: "/app/clinical/follow-up", linkLabel: "Back to follow-up" }
+            )
+          );
+        }
+        return renderShell(req, res, {
+          activeNav: "clinical_follow_up",
+          content: "app/clinical-referrals-content.ejs",
+          pageHeader: {
+            title: "Referral Management",
+            description: `Pending referral follow-up items at ${loaded.referrals.facilityDisplayName}`,
+            actions: [
+              { href: "/app/clinical/follow-up", label: "Full follow-up", ghost: true },
+              { href: "/app/clinical", label: "Clinical worklist", ghost: true },
+            ],
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Clinical", href: "/app/clinical" },
+            { label: "Follow-up", href: "/app/clinical/follow-up" },
+            { label: "Referrals" },
+          ],
+          pageData: { referrals: loaded.referrals },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
   app.post(
     "/app/clinical/follow-up/:itemId/status",
     requireAuth,
@@ -922,7 +969,10 @@ function registerActiveClinicClinicalRoutes(app, deps) {
             })
           );
         }
-        return res.redirect(303, "/app/clinical/follow-up?ok=1");
+        const returnTo = String((req.body && req.body.return_to) || "").trim();
+        const safeReturn =
+          returnTo === "/app/clinical/referrals" ? "/app/clinical/referrals?ok=1" : "/app/clinical/follow-up?ok=1";
+        return res.redirect(303, safeReturn);
       } catch (err) {
         return next(err);
       }

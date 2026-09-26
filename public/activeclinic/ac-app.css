@@ -4251,3 +4251,29 @@ body.ac-app-body .ac-clinical-leaf .ac-card-list__meta {
     justify-content: center;
   }
 }
+
+/* ACN20 referral presentation leaf (pending_referral subset of ACN16) */
+body.ac-app-body .ac-clinical-referrals .ac-clinical-leaf__note {
+  margin-top: 0.25rem;
+  padding: 0.85rem 1rem;
+}
+
+body.ac-app-body .ac-clinical-referrals .ac-clinical-leaf__card {
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ac-border, #e5e7eb);
+  border-radius: var(--ac-radius-card, 12px);
+  background: #fff;
+  display: grid;
+  gap: 0.35rem;
+}
+
+@media (max-width: 390px) {
+  body.ac-app-body .ac-clinical-referrals .ac-filter-bar {
+    display: grid;
+    gap: 0.65rem;
+  }
+
+  body.ac-app-body .ac-clinical-referrals .ac-form-actions .ac-btn {
+    min-height: var(--ac-touch-min, 44px);
+  }
+}
