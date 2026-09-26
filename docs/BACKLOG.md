@@ -105,14 +105,19 @@ POST-V2.03. Documentation/backlog only during V2.03 QA freeze.
 
 ### EPIC — V10 BB/AC Platform Consolidation
 
-Deferred cross-product infrastructure consolidation. **Documentation/backlog only** until V2.03 batches are reconciled and a clean V10 checkpoint exists.
+Deferred cross-product infrastructure consolidation. PC00/PC01 characterization + dependency inversion are underway on V10; further extraction stays gated so V2.03 batches are not disturbed.
 
 - **Authoritative detail:** [`docs/v2.03/V2_03_PLATFORM_CONSOLIDATION_BACKLOG.md`](./v2.03/V2_03_PLATFORM_CONSOLIDATION_BACKLOG.md)
-- **Audit baseline:** `AUDIT_BASELINE_2026_09_26`
+- **Audit baseline:** `AUDIT_BASELINE_2026_09_27_PC01` (40 → **33** after PC03)
 - **Principle:** Platform owns mechanisms; products own domain semantics (`product → platform`)
-- **Workstreams:** PLATFORM-CONSOLIDATION-00 … 12 (P0 characterization + dependency inversion first)
-- **Do not start** large refactors while V2.03 Batch 1/2/3 still modify the same V10 surface
-- **Immediate guardrail:** do not place new generic cross-product infrastructure under `src/activeclinic/` or `src/blessboard/` merely because that product needs it first
+- **Workstreams:** PLATFORM-CONSOLIDATION-00 … 12
+  - **00 PASS** — characterization (`PLATFORM_CONSOLIDATION_CHARACTERIZATION_PASS`)
+  - **01 PASS** — dependency direction (`PLATFORM_PRODUCT_DEPENDENCY_DIRECTION_PASS`); class-E allowlist remains
+  - **02–03 PASS** — registration drafts + verification adapters (`SHARED_REGISTRATION_DRAFT_PASS`, `SHARED_VERIFICATION_INFRA_PASS`)
+  - **04–05 PASS** — phone UI + email transport (`PLATFORM_PHONE_INFRA_PASS`, `PLATFORM_EMAIL_TRANSPORT_PASS`)
+  - **06 PASS** — schema ownership plan + guard (`PLATFORM_SCHEMA_OWNERSHIP_PASS`; no history rewrite)
+- **Evidence:** [`docs/qa/V10_PC03_PLATFORM_PRODUCT_DEPENDENCY_DIRECTION.md`](./qa/V10_PC03_PLATFORM_PRODUCT_DEPENDENCY_DIRECTION.md), [`docs/qa/V10_PC04_SHARED_REGISTRATION_VERIFICATION.md`](./qa/V10_PC04_SHARED_REGISTRATION_VERIFICATION.md), [`docs/qa/V10_PC05_PLATFORM_PHONE_EMAIL_OWNERSHIP.md`](./qa/V10_PC05_PLATFORM_PHONE_EMAIL_OWNERSHIP.md), [`docs/qa/V10_PC06_PLATFORM_SCHEMA_OWNERSHIP.md`](./qa/V10_PC06_PLATFORM_SCHEMA_OWNERSHIP.md)
+- **Immediate guardrail:** do not place new generic cross-product infrastructure under `src/activeclinic/` or `src/blessboard/` merely because that product needs it first; new `src/platform` → product requires must go through contracts/registration or the documented E allowlist
 
 Related evidence (not duplicated here):
 

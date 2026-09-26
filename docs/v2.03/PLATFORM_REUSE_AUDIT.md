@@ -130,6 +130,15 @@ Audit Batch 1 ActiveClinic code against existing BlessBoard and platform primiti
 
 ---
 
-## 8. Final marker
+## 8. Related backlog (future)
+
+Broader BB/AC duplication consolidation (beyond this Batch 1 reuse pass) is tracked separately and must not start while V2.03 batches still share the V10 implementation surface:
+
+- [`docs/v2.03/V2_03_PLATFORM_CONSOLIDATION_BACKLOG.md`](./V2_03_PLATFORM_CONSOLIDATION_BACKLOG.md)
+- Index entry: [`docs/BACKLOG.md`](../BACKLOG.md) (Platform consolidation)
+
+---
+
+## 9. Final marker
 
 **`V2_03_PLATFORM_REUSE_PASS`**

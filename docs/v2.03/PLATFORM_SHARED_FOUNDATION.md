@@ -148,3 +148,13 @@ These gaps are why the verdict is **COMPLETE_WITH_GAPS** rather than a blanket P
 **`V2_03_PLATFORM_FOUNDATION_COMPLETE_WITH_GAPS`**
 
 Shared technical foundation for Batch 1 is in place on `V10` with reuse-first RBAC/audit/validation, new job/preference/history/list/timeline/UI primitives, focused tests, and explicit product-boundary gaps documented above.
+
+---
+
+## 9. Related backlog (future)
+
+Further BB/AC platform consolidation (dependency inversion, website HTTP, phone/email ownership, publish/CMS convergence) is recorded as deferred work — **not** part of this foundation pass:
+
+- [`docs/v2.03/V2_03_PLATFORM_CONSOLIDATION_BACKLOG.md`](./V2_03_PLATFORM_CONSOLIDATION_BACKLOG.md)
+- Index entry: [`docs/BACKLOG.md`](../BACKLOG.md) (Platform consolidation)
+
