@@ -40,7 +40,7 @@ describe("blessboard QA role users spec", () => {
         roleCategory: "platform",
         isActive: true,
       }),
-      "SYSTEM_ONLY"
+      "HUMAN_ASSIGNABLE"
     );
     for (const key of NON_HUMAN_ASSIGNABLE_ROLE_KEYS) {
       assert.equal(
@@ -69,13 +69,16 @@ describe("blessboard QA role users spec", () => {
     );
   });
 
-  it("maps branch roles to branch_admin baseline and HQ roles to church_hq_admin", () => {
+  it("maps branch/HQ catalogue roles without legacy companions", () => {
     const branch = resolveQaAssignmentPlan("branch_pastor", "branch");
-    assert.equal(branch.legacyRoleKey, "branch_admin");
+    assert.equal(branch.legacyRoleKey, null);
     assert.equal(branch.catalogueScopeType, "branch");
     const finance = resolveQaAssignmentPlan("finance_director", "finance");
-    assert.equal(finance.legacyRoleKey, "church_hq_admin");
+    assert.equal(finance.legacyRoleKey, null);
     assert.equal(finance.catalogueScopeType, "church");
+    const orgAdmin = resolveQaAssignmentPlan("organisation_administrator", "organisation");
+    assert.equal(orgAdmin.legacyRoleKey, null);
+    assert.equal(orgAdmin.catalogueScopeType, "organisation");
   });
 
   it("uses deterministic QA emails and Zambia phones that normalize", () => {

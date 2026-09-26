@@ -10,8 +10,8 @@ const crypto = require("crypto");
 const { recordAuditEventSafe } = require("./auditEventService");
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 const {
-  authorize,
-} = require("../../blessboard/services/blessBoardRbacAuthorizationService");
+  assertPlatformCataloguePermission,
+} = require("../rbac/platformAdminAuthorization");
 const {
   platformAdminRequestPasswordReset,
   STATUS: RESET_STATUS,
@@ -92,39 +92,17 @@ async function assertPlatformPermission(db, actorUserId, permissionKey) {
   if (!UUID_RE.test(userId)) {
     return { ok: false, status: STATUS.FORBIDDEN, reason: "unauthenticated" };
   }
-  const decision = await authorize(db, {
-    actor: { userId },
-    permission: permissionKey,
-    tenantContext: {
-      organizationId: null,
-      churchId: null,
-      primaryBranchId: null,
-    },
-    resourceContext: {
-      organizationId: null,
-      churchId: null,
-      branchId: null,
-    },
+  const gate = await assertPlatformCataloguePermission(db, userId, permissionKey, {
+    FORBIDDEN: STATUS.FORBIDDEN,
+    LOOKUP_ERROR: STATUS.LOOKUP_ERROR || "lookup_error",
   });
-  if (decision && decision.allowed === true) {
-    return { ok: true };
-  }
-  const roles = await db.query(
-    `SELECT 1
-       FROM blessboard.user_roles
-      WHERE user_id = $1
-        AND role_key = 'platform_admin'
-        AND status = 'active'
-      LIMIT 1`,
-    [userId]
-  );
-  if (roles.rows[0]) {
-    return { ok: true };
-  }
+  if (gate.ok) return { ok: true };
   return {
     ok: false,
-    status: STATUS.FORBIDDEN,
-    reason: (decision && decision.reasonCode) || "forbidden",
+    status: gate.status === (STATUS.LOOKUP_ERROR || "lookup_error")
+      ? (STATUS.LOOKUP_ERROR || STATUS.FORBIDDEN)
+      : STATUS.FORBIDDEN,
+    reason: gate.reason || "forbidden",
   };
 }
 

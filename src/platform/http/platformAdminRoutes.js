@@ -1125,14 +1125,19 @@ function createPlatformAdminRouter(deps) {
         return sendControlled(req, res, 401, "Sign-in is required.");
       }
 
-      const roles = await listActiveAuthorizationRolesFn(pool, session.userId);
-      const isPlatformAdmin = roles.some((r) => r.roleKey === "platform_admin");
+      const {
+        hasActivePlatformAdministratorAssignment,
+      } = require("../rbac/platformAdminAuthorization");
+      const hasPlatformAdminFn =
+        typeof deps.hasActivePlatformAdministratorAssignment === "function"
+          ? deps.hasActivePlatformAdministratorAssignment
+          : hasActivePlatformAdministratorAssignment;
+      const isPlatformAdmin = await hasPlatformAdminFn(pool, session.userId);
       if (!isPlatformAdmin) {
         authLog.logAuthEvent(req, "platform_admin_denied", {
           outcome: "denied",
-          failureCategory: "missing_platform_admin_role",
+          failureCategory: "missing_platform_administrator_catalogue_role",
           sessionFound: true,
-          roleKeys: roles,
         });
         return sendControlled(req, res, 403, "You do not have access to platform administration.");
       }
@@ -1142,12 +1147,12 @@ function createPlatformAdminRouter(deps) {
         authorized: true,
         userId: session.userId,
         displayName: session.user && session.user.displayName ? session.user.displayName : "",
-        roleLabel: formatRoleLabel("platform_admin"),
+        roleLabel: formatRoleLabel("platform_administrator"),
       };
       authLog.logAuthEvent(req, "platform_admin_authorized", {
         outcome: "ok",
         sessionFound: true,
-        roleKeys: ["platform_admin"],
+        roleKeys: ["platform_administrator"],
       });
       return next();
     } catch (err) {

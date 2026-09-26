@@ -2,39 +2,14 @@
 
 /**
  * BlessBoard RBAC repository — catalogue + assignments + events.
+ * Catalogue reads delegate to platform-owned primitives (same blessboard.* tables).
+ * Assignment / login behavior remains BlessBoard-owned.
  */
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-function mapPermission(row) {
-  if (!row) return null;
-  return {
-    id: row.id,
-    permissionKey: row.permission_key,
-    resourceKey: row.resource_key,
-    actionKey: row.action_key,
-    displayName: row.display_name,
-    description: row.description || null,
-    sensitivity: row.sensitivity,
-    isSystem: row.is_system === true,
-    isActive: row.is_active === true,
-  };
-}
-
-function mapRole(row) {
-  if (!row) return null;
-  return {
-    id: row.id,
-    roleKey: row.role_key,
-    displayName: row.display_name,
-    description: row.description || null,
-    roleCategory: row.role_category,
-    isSystem: row.is_system === true,
-    isSensitive: row.is_sensitive === true,
-    isActive: row.is_active === true,
-  };
-}
+const platformCatalog = require("../../platform/rbac/platformRbacCatalogRepository");
 
 function mapAssignment(row) {
   if (!row) return null;
@@ -66,15 +41,7 @@ function mapAssignment(row) {
  * @param {string} permissionKey
  */
 async function findPermissionByKey(client, permissionKey) {
-  const r = await client.query(
-    `SELECT id, permission_key, resource_key, action_key, display_name, description,
-            sensitivity, is_system, is_active
-       FROM blessboard.permissions
-      WHERE permission_key = $1
-      LIMIT 1`,
-    [permissionKey]
-  );
-  return mapPermission(r.rows[0] || null);
+  return platformCatalog.findPermissionByKey(client, permissionKey);
 }
 
 /**
@@ -82,15 +49,7 @@ async function findPermissionByKey(client, permissionKey) {
  * @param {string} roleKey
  */
 async function findRoleByKey(client, roleKey) {
-  const r = await client.query(
-    `SELECT id, role_key, display_name, description, role_category,
-            is_system, is_sensitive, is_active
-       FROM blessboard.roles
-      WHERE role_key = $1
-      LIMIT 1`,
-    [roleKey]
-  );
-  return mapRole(r.rows[0] || null);
+  return platformCatalog.findRoleByKey(client, roleKey);
 }
 
 /**
@@ -98,16 +57,7 @@ async function findRoleByKey(client, roleKey) {
  * @param {string} roleId
  */
 async function listPermissionKeysForRoleId(client, roleId) {
-  const r = await client.query(
-    `SELECT p.permission_key
-       FROM blessboard.role_permissions rp
-       JOIN blessboard.permissions p ON p.id = rp.permission_id
-      WHERE rp.role_id = $1
-        AND p.is_active = true
-      ORDER BY p.permission_key`,
-    [roleId]
-  );
-  return r.rows.map((row) => row.permission_key);
+  return platformCatalog.listPermissionKeysForRoleId(client, roleId);
 }
 
 /**
@@ -121,7 +71,8 @@ async function listActiveAssignmentsForUser(client, userId, organizationId) {
   let orgClause = "";
   if (organizationId && UUID_RE.test(organizationId)) {
     params.push(organizationId);
-    orgClause = ` AND a.organization_id = $2`;
+    // Platform-scoped assignments are deployment-wide; include them for any org.
+    orgClause = ` AND (a.organization_id = $2 OR a.scope_type = 'platform')`;
   }
   const r = await client.query(
     `SELECT a.id, a.user_id, a.organization_id, a.church_id, a.role_id,
@@ -294,17 +245,7 @@ async function insertAssignmentEvent(client, input) {
  * @param {string[]} roleIds
  */
 async function listPermissionKeysForRoleIds(client, roleIds) {
-  if (!roleIds || !roleIds.length) return [];
-  const r = await client.query(
-    `SELECT DISTINCT p.permission_key
-       FROM blessboard.role_permissions rp
-       JOIN blessboard.permissions p ON p.id = rp.permission_id
-      WHERE rp.role_id = ANY($1::uuid[])
-        AND p.is_active = true
-      ORDER BY p.permission_key`,
-    [roleIds]
-  );
-  return r.rows.map((row) => row.permission_key);
+  return platformCatalog.listPermissionKeysForRoleIds(client, roleIds);
 }
 
 module.exports = {

@@ -213,7 +213,7 @@ function createAnnouncementAdminRouter(deps) {
     const roleKeys = ((authzCtx && authzCtx.effectiveRoles) || []).map((r) =>
       r && r.roleKey ? String(r.roleKey) : ""
     );
-    const isPlatformAdmin = roleKeys.includes("platform_admin");
+    const isPlatformAdmin = roleKeys.includes("platform_administrator");
     const testingPlatformAdminPublishBanner = Boolean(
       productPolicy.showTestingPlatformAdminPublishBanner && isPlatformAdmin
     );

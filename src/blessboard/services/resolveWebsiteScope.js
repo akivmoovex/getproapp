@@ -114,24 +114,27 @@ function classifyEditorRoles(roles, ids) {
   const assignedBranchIds = [];
   for (const role of roles || []) {
     const key = String(role.roleKey || "");
-    if (key === "platform_admin") {
+    if (key === "platform_administrator") {
       isPlatform = true;
       continue;
     }
-    if (key === "church_hq_admin") {
+    if (
+      key === "organisation_administrator" ||
+      key === "church_system_administrator"
+    ) {
       if (
-        uuidEqual(role.organizationId, ids.organizationId) &&
-        uuidEqual(role.churchId, ids.churchId)
+        (!role.organizationId || uuidEqual(role.organizationId, ids.organizationId)) &&
+        (!role.churchId || uuidEqual(role.churchId, ids.churchId))
       ) {
         isHq = true;
       }
       continue;
     }
-    if (key === "branch_admin") {
+    if (key === "branch_administrator" || key === "branch_pastor") {
       if (
         role.branchId &&
-        uuidEqual(role.organizationId, ids.organizationId) &&
-        uuidEqual(role.churchId, ids.churchId)
+        (!role.organizationId || uuidEqual(role.organizationId, ids.organizationId)) &&
+        (!role.churchId || uuidEqual(role.churchId, ids.churchId))
       ) {
         assignedBranchIds.push(String(role.branchId));
       }

@@ -153,7 +153,7 @@ function resolvePublishCapability(opts) {
   }
 
   // actorRole used only for audit labels if provided
-  if (actorRole === "church_hq_admin" || actorRole === "platform_admin" || !actorRole) {
+  if (actorRole === "organisation_administrator" || actorRole === "church_system_administrator" || actorRole === "platform_administrator" || !actorRole) {
     const hqDirect =
       !settings ||
       settings.hqDirectPublishEnabled !== false;
@@ -173,7 +173,7 @@ function resolvePublishCapability(opts) {
     };
   }
 
-  if (actorRole === "branch_admin") {
+  if (actorRole === "branch_administrator" || actorRole === "branch_pastor") {
     const resolved = approvalSettingsSvc.resolveBranchEditMode(settings || {});
     if (resolved.mode === "draft_only") {
       return {

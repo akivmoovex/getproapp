@@ -73,7 +73,7 @@ function resolveWebsiteActionUrls(input) {
   const orgPath = platformAdminOrgPath(key);
   const paPreview = platformAdminWebsitePreviewPath(key);
 
-  if (actor === "platform_admin") {
+  if (actor === "platform_administrator") {
     return {
       // Cross-tenant editing via /hq is unsupported without secure impersonation.
       serviceTimesUrl: null,
@@ -104,7 +104,7 @@ function resolveWebsiteActionUrls(input) {
     };
   }
 
-  if (actor === "branch_admin") {
+  if (actor === "branch_administrator") {
     const branchKey = String((input && input.branchKey) || "").trim();
     const scope = branchKey ? { kind: "branch", branchKey } : null;
     const branchPublicPath = branchKey

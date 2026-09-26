@@ -124,12 +124,10 @@ function evaluateDelegationMatrix(actorRoleKeys, targetRoleKey, targetPerms) {
   const isAuditorTarget = target === "auditor" || perms.includes("audit.view");
 
   const isBranchAdminOnly =
-    (actors.has("branch_administrator") || actors.has("branch_admin")) &&
+    actors.has("branch_administrator") &&
     ![
       "organisation_administrator",
       "church_system_administrator",
-      "church_hq_admin",
-      "platform_admin",
       "platform_administrator",
     ].some((k) => actors.has(k));
 
@@ -144,34 +142,33 @@ function evaluateDelegationMatrix(actorRoleKeys, targetRoleKey, targetPerms) {
     }
   }
 
-  if (actors.has("ministry_leader") && !actors.has("organisation_administrator") && !actors.has("church_hq_admin")) {
+  const isOrgAdmin =
+    actors.has("organisation_administrator") ||
+    actors.has("church_system_administrator") ||
+    actors.has("platform_administrator");
+
+  if (actors.has("ministry_leader") && !isOrgAdmin) {
     if (isFinanceTarget || isPastoralTarget || isAuditorTarget || isExportTarget || isRoleAdminTarget) {
       return "excessive_delegation";
     }
   }
 
-  if (actors.has("finance_director") && !actors.has("organisation_administrator") && !actors.has("church_hq_admin")) {
+  if (actors.has("finance_director") && !isOrgAdmin) {
     if (isPastoralTarget) return "excessive_delegation";
   }
 
   if (
     (actors.has("branch_pastor") || actors.has("minister")) &&
-    !actors.has("organisation_administrator") &&
-    !actors.has("church_system_administrator") &&
-    !actors.has("church_hq_admin")
+    !isOrgAdmin
   ) {
     if (isFinanceTarget && !actors.has("role_administrator")) return "excessive_delegation";
   }
 
-  if (actors.has("website_publisher") && !actors.has("organisation_administrator") && !actors.has("church_hq_admin")) {
+  if (actors.has("website_publisher") && !isOrgAdmin) {
     if (isFinanceTarget) return "excessive_delegation";
   }
 
-  if (
-    actors.has("communications_officer") &&
-    !actors.has("organisation_administrator") &&
-    !actors.has("church_hq_admin")
-  ) {
+  if (actors.has("communications_officer") && !isOrgAdmin) {
     if (isExportTarget) return "excessive_delegation";
   }
 
@@ -489,31 +486,23 @@ async function createRoleAssignment(db, input) {
         actorUserId,
         scope.organizationId
       );
-      const authzRepo = require("../repositories/blessBoardAuthorizationRepository");
-      const legacyRoles = await authzRepo.listActiveAuthorizationRoles(client, actorUserId);
-      const actorRoleKeys = [
-        ...actorAssignments.map((a) => a.roleKey),
-        ...legacyRoles.map((r) => r.roleKey),
-      ];
+      const actorRoleKeys = actorAssignments.map((a) => a.roleKey);
       const matrixDenial = evaluateDelegationMatrix(actorRoleKeys, role.roleKey, rolePerms);
       if (matrixDenial) {
         return { ok: false, status: STATUS.FORBIDDEN, assignment: null, reason: matrixDenial };
       }
 
-      const hasOrgWideAdmin =
-        actorAssignments.some((a) =>
-          ["organisation_administrator", "church_system_administrator", "platform_administrator"].includes(
-            String(a.roleKey || "")
-          )
-        ) ||
-        legacyRoles.some((r) =>
-          ["church_hq_admin", "platform_admin"].includes(String(r.roleKey || ""))
-        );
+      const hasOrgWideAdmin = actorAssignments.some((a) =>
+        [
+          "organisation_administrator",
+          "church_system_administrator",
+          "platform_administrator",
+        ].includes(String(a.roleKey || ""))
+      );
       const branchOnlyActor =
         !hasOrgWideAdmin &&
         actorAssignments.length > 0 &&
-        actorAssignments.every((a) => String(a.scopeType) === "branch") &&
-        !legacyRoles.some((r) => r.roleKey === "church_hq_admin" || r.roleKey === "platform_admin");
+        actorAssignments.every((a) => String(a.scopeType) === "branch");
 
       if (
         branchOnlyActor &&

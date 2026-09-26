@@ -2,15 +2,12 @@
 
 /**
  * Central BlessBoard RBAC authorization service.
- * Combines new assignments + legacy user_roles compatibility bundles.
+ * Catalogue user_role_assignments only — no legacy user_roles permission unions.
  * Deny by default. Trusted session/tenant context only.
  */
 
 const authzRepo = require("../repositories/blessBoardAuthorizationRepository");
 const rbacRepo = require("../repositories/blessBoardRbacRepository");
-const {
-  mapLegacyRolesToPermissionGrants,
-} = require("../rbac/legacyCompatibilityPermissions");
 
 const REASON = Object.freeze({
   ALLOWED: "RBAC_ALLOWED",
@@ -396,44 +393,10 @@ async function authorize(db, input) {
       }
     }
 
-    // 2) Legacy compatibility (active user_roles only)
-    const legacyRoles = await authzRepo.listActiveAuthorizationRoles(db, actorUserId);
-    const legacyGrants = mapLegacyRolesToPermissionGrants(legacyRoles).filter(
-      (g) => g.permissionKey === permissionKey
-    );
-
-    for (const grant of legacyGrants) {
-      const scoped = {
-        scopeType: grant.scopeType,
-        organizationId: grant.organizationId,
-        churchId: grant.churchId,
-        branchId: grant.branchId,
-        scopeId: grant.branchId || grant.churchId || grant.organizationId,
-      };
-      if (!grantMatchesScope(scoped, target)) continue;
-      matched.push({
-        assignmentId: null,
-        roleKey: grant.legacyRoleKey,
-        scopeType: grant.scopeType,
-        scopeId: scoped.scopeId,
-        source: "legacy_compatibility",
-      });
-    }
-
-    if (matched.length) {
-      return decision({
-        allowed: true,
-        reasonCode: REASON.ALLOWED,
-        permission: permissionKey,
-        matchedAssignments: matched,
-        evaluatedScopes,
-      });
-    }
-
-    const denyReason =
-      legacyGrants.length || scopedAssignments.length
-        ? REASON.SCOPE_MISMATCH
-        : REASON.PERMISSION_DENIED;
+    // Legacy user_roles compatibility bundles removed (V2.02 catalogue-only).
+    const denyReason = scopedAssignments.length
+      ? REASON.SCOPE_MISMATCH
+      : REASON.PERMISSION_DENIED;
 
     if (perm.sensitivity === "sensitive" || perm.sensitivity === "highly_sensitive") {
       // Caller may audit; keep payload free of secrets.
@@ -540,7 +503,6 @@ async function listEffectivePermissions(db, input) {
     const set = new Set();
 
     const assignments = await rbacRepo.listActiveAssignmentsForUser(db, actorUserId, organizationId);
-    let hasScopedCatalogue = false;
     for (const assignment of assignments) {
       if (isExpired(assignment.expiresAt, now)) continue;
       const grant = {
@@ -551,30 +513,8 @@ async function listEffectivePermissions(db, input) {
         scopeId: assignment.scopeId,
       };
       if (!grantMatchesScope(grant, target)) continue;
-      hasScopedCatalogue = true;
       const keys = await rbacRepo.listPermissionKeysForRoleId(db, assignment.roleId);
       for (const k of keys) set.add(k);
-    }
-
-    const legacyRoles = await authzRepo.listActiveAuthorizationRoles(db, actorUserId);
-    for (const g of mapLegacyRolesToPermissionGrants(legacyRoles)) {
-      const scoped = {
-        scopeType: g.scopeType,
-        organizationId: g.organizationId,
-        churchId: g.churchId,
-        branchId: g.branchId,
-      };
-      if (!grantMatchesScope(scoped, target)) continue;
-      // Mirror authorize(): catalogue-scoped actors do not inherit publication
-      // authority from the legacy login baseline alone.
-      if (
-        hasScopedCatalogue &&
-        isWebsitePublicationPermission(g.permissionKey) &&
-        !set.has(g.permissionKey)
-      ) {
-        continue;
-      }
-      set.add(g.permissionKey);
     }
 
     return {

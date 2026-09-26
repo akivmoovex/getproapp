@@ -81,8 +81,19 @@ describe("release notes catalog", () => {
     assert.equal(about.qaStatus, "HOSTED QA PASS");
     const p1 = v.features.find((f) => f.id === "F-2.02-P1-GATE-01");
     assert.equal(p1.qaStatus, "HOSTED QA PASS");
+    const rbac = v.features.find((f) => f.id === "F-2.02-RBAC-01");
+    assert.ok(rbac);
+    assert.equal(rbac.qaStatus, "LOCAL QA PASS");
     assert.ok(v.bugs.some((b) => b.id === "BUG-2.02-RC-MEDIA-PLACE"));
     assert.ok(v.bugs.some((b) => b.id === "BUG-2.02-BB-THEME-503"));
+    assert.ok(v.architectureWork);
+    assert.equal(v.architectureWork.title, "V2.02 architecture work in V9");
+    assert.match(v.architectureWork.items.join(" "), /RBAC consolidation/i);
+    assert.match(v.architectureWork.items.join(" "), /LOCAL QA PASS|CONVERGED/i);
+    assert.ok(!/under development/i.test(v.architectureWork.items.join(" ")));
+    assert.ok(!/RELEASED TO PRODUCTION/i.test(v.architectureWork.items.join(" ")));
+    assert.match(v.pendingDevelopment.join(" "), /Phase F|Hosted V9 smoke|user_roles/i);
+    assert.ok(!/under development until dedicated QA/i.test(v.pendingDevelopment.join(" ")));
   });
 
   it("does not invent full release PASS for 2.01", () => {
@@ -300,15 +311,19 @@ describe("release notes platform_admin session access", () => {
     const access = await resolveReleaseNotesInternalAccess(req, envNoToken, {
       getPool: () => ({
         async query(sql) {
-          // Simulate active user who is church_hq_admin only (no platform_admin).
-          if (/FROM blessboard\.users/i.test(sql) || /status/i.test(sql)) {
+          const text = String(sql || "");
+          // Catalogue PA gate — no platform_administrator assignment for ordinary tenant.
+          if (/user_role_assignments/i.test(text) || /platform_administrator/i.test(text)) {
+            return { rows: [] };
+          }
+          if (/FROM blessboard\.users/i.test(text) || /status/i.test(text)) {
             return { rows: [{ id: req.v5Session.session.userId, status: "active" }] };
           }
+          // Legacy/display leftovers must not unlock internal notes.
           return { rows: [{ role_key: "church_hq_admin", roleKey: "church_hq_admin" }] };
         },
       }),
     });
-    // Repository maps columns — if lookup fails closed, also public. Either way not internal via tenant role.
     assert.equal(access.allowed, false);
   });
 

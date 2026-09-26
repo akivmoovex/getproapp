@@ -252,6 +252,7 @@ describe("Phase2 056 security — CSRF on duplicate decision POST", () => {
       isApexHost: () => true,
       findUserStatusById: async () => ({ id: ADMIN_ID, status: "active" }),
       listActiveAuthorizationRoles: async () => [{ roleKey: "platform_admin" }],
+      hasActivePlatformAdministratorAssignment: async () => true,
       recordDuplicateMatchReviewDecision: async () => {
         decisionCalls += 1;
         return { ok: true, status: "ok" };

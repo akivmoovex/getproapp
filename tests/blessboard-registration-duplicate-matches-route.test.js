@@ -239,6 +239,9 @@ function buildApp(overrides = {}) {
     listActiveAuthorizationRoles:
       overrides.listActiveAuthorizationRoles ||
       (async () => [{ roleKey: "platform_admin" }]),
+    hasActivePlatformAdministratorAssignment:
+      overrides.hasActivePlatformAdministratorAssignment ||
+      (async () => true),
     loadRegistrationDuplicateMatchesForAdmin: listFn,
     loadRegistrationDuplicateComparisonForAdmin: compareFn,
     log: () => {},
@@ -421,6 +424,7 @@ describe("GET duplicate matches routes (Prompt 049)", () => {
   it("rejects missing platform admin role", async () => {
     const { app, state } = buildApp({
       listActiveAuthorizationRoles: async () => [{ roleKey: "church_admin" }],
+      hasActivePlatformAdministratorAssignment: async () => false,
     });
     const res = await request(app)
       .get(`/admin/registration-applications/${APP_ID}/duplicates`)

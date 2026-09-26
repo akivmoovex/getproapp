@@ -172,7 +172,7 @@ describe("BB-BUG-001 P0 BlessBoard publish authorization", () => {
         });
       }
 
-      // Authorized publisher: legacy HQ only (no catalogue restriction).
+      // Authorized publisher: catalogue HQ admin (V2.02 catalogue-only authz).
       users.hq = await makeUser("p0-hq@example.test", "HQ Publisher", orgA.id);
       assert.equal(
         (
@@ -186,37 +186,15 @@ describe("BB-BUG-001 P0 BlessBoard publish authorization", () => {
         true
       );
 
-      // Restricted: QA-style dual role — legacy login baseline + website_editor.
+      // Restricted editor: website_editor only (must not also hold HQ admin).
       users.editor = await makeUser("p0-editor@example.test", "Restricted Editor", orgA.id);
-      assert.equal(
-        (
-          await assignBlessBoardRole(pool, {
-            email: "p0-editor@example.test",
-            organizationKey: "p0pub-a",
-            roleKey: "church_hq_admin",
-            churchKey: "p0pub-a",
-          })
-        ).ok,
-        true
-      );
       await assignCatalogue(users.editor.user.id, "website_editor", {
         scopeType: "church",
         scopeId: churchA.id,
       });
 
-      // Authorized catalogue publisher + legacy baseline.
+      // Authorized catalogue publisher (website_publisher grants website.publish).
       users.publisher = await makeUser("p0-publisher@example.test", "Catalogue Publisher", orgA.id);
-      assert.equal(
-        (
-          await assignBlessBoardRole(pool, {
-            email: "p0-publisher@example.test",
-            organizationKey: "p0pub-a",
-            roleKey: "church_hq_admin",
-            churchKey: "p0pub-a",
-          })
-        ).ok,
-        true
-      );
       await assignCatalogue(users.publisher.user.id, "website_publisher", {
         scopeType: "church",
         scopeId: churchA.id,
@@ -278,7 +256,7 @@ describe("BB-BUG-001 P0 BlessBoard publish authorization", () => {
     if (pool) await pool.end().catch(() => {});
   });
 
-  it("authorize: dual-role website_editor cannot website.publish; legacy HQ and publisher can", async () => {
+  it("authorize: website_editor cannot website.publish; HQ and publisher can", async () => {
     skipIfNeeded();
     const tenant = {
       resolved: true,

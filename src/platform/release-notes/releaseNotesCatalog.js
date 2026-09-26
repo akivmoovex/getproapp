@@ -85,6 +85,7 @@ const VERSION_ORDER = Object.freeze(["1.0", "1.1", "1.2", "1.3", "2.0", "2.01", 
  * @property {string[]} pendingDevelopment
  * @property {string[]} knownIssues
  * @property {string[]} documentationGaps
+ * @property {{ title: string, body: string, items: string[] } | null} [architectureWork]
  * @property {ReleaseFeature[]} features
  * @property {ReleaseBug[]} bugs
  * @property {QaTestCase[]} qaChecklist
@@ -1439,22 +1440,26 @@ const VERSIONS = Object.freeze([
   Object.freeze({
     version: "2.02",
     summary:
-      "V8 tip labeled product Version 2.02. Continues the shared WE01 website editor line with overnight SP-T1–T7 and U1-A–D polish, SP-VIS reminder/publish-failure UX, image placement + Universal Image Editor, theme gallery with alternate theme switching, BB HQ/branch website scope cards, and AC single-clinic website card. P1 blockers RC-MEDIA-PLACE and BB-THEME-503 fixed and retested 34/0/0 PASS on moovex-platform-v8-testing. Shared security and publish authorization PASS; AC booking FIXED_PASS. Not a production RELEASED certificate.",
+      "Branch V9 carries product Version 2.02. Shared WE01 editor line includes SP-T1–T7 and U1-A–D polish, SP-VIS reminder/publish-failure UX, image placement + Universal Image Editor / Adjust Picture, theme gallery with alternate theme switching, BB HQ/branch website scope cards, and AC single-clinic website card. P1 blockers RC-MEDIA-PLACE and BB-THEME-503 fixed and retested 34/0/0 PASS on moovex-platform-v8-testing. Shared security and publish authorization PASS; AC booking FIXED_PASS. V9 shared RBAC foundation is LOCAL QA PASS / CONVERGED (catalogue-only) — not a production RELEASED certificate.",
     releaseDate: "2026-09-26",
     products: [PRODUCTS.BB, PRODUCTS.AC, PRODUCTS.SHARED],
     deploymentStatus:
-      "TESTING target moovex-platform-v8-testing. Features listed below are hosted-verified on V8 testing. Production remains on older RC — do not treat this label as production promotion.",
+      "TESTING lineage from moovex-platform-v8-testing, continued on git branch V9. Editor/security/booking claims below were hosted-verified on V8 testing. Shared RBAC catalogue work is local-QA verified on V9 (not yet a hosted V9 RBAC deploy claim). Production remains on older RC — do not treat this label as production promotion.",
     qaVerification:
-      "P1 blocker retest HOSTED QA PASS (34/0/0). RC-MEDIA-PLACE PASS; BB-THEME-503 PASS. Shared security + publish authorization PASS. AC booking FIXED_PASS. Not a full production RELEASED claim.",
+      "P1 blocker retest HOSTED QA PASS (34/0/0). RC-MEDIA-PLACE PASS; BB-THEME-503 PASS. Shared security + publish authorization PASS. AC booking FIXED_PASS. Shared RBAC: V2_02_SHARED_RBAC_CONVERGED + V2_02_RC_READY (LOCAL QA PASS) — catalogue-only BB/AC/PA; not production RELEASED; Phase F relocate and user_roles display cutover remain deferred.",
     acceptanceCriteria: [
-      "About shows 2.02 on BB+AC V8 testing after deploy",
+      "About shows 2.02 on BB+AC after deploy of this tip",
       "Release Notes Center lists version 2.02 for BlessBoard and ActiveClinic contexts",
       "P1 blockers RC-MEDIA-PLACE and BB-THEME-503 remain PASS on testing tip",
       "AC facility websites and network-wide publish remain NOT SUPPORTED",
-      "No claim of production promotion, HOST-PKG-A closure, or backup verification",
+      "Shared RBAC claims limited to LOCAL QA PASS / CONVERGED catalogue-only — no production promote claim",
+      "No claim of HOST-PKG-A closure or backup verification",
     ],
     pendingDevelopment: [
-      "Production RC promotion of placement + theme/websites packages",
+      "Hosted V9 smoke deploy of the catalogue-only RBAC tip (migrations 114–116 + assignment backfill)",
+      "Phase F physical relocate of roles/permissions tables to platform.*",
+      "Display/directory dual-read cutover off blessboard.user_roles (INSERT already frozen)",
+      "Production RC promotion of placement + theme/websites + RBAC packages",
       "HOST-PKG-A Hostinger www Node binding (ops — still blocked)",
       "BACKUP-PROD-VERIFY restore drill",
       "AC facility public websites / HQ→facility inheritance (NOT SUPPORTED)",
@@ -1466,10 +1471,19 @@ const VERSIONS = Object.freeze([
       "HOST-PKG-A remains BLOCKED_HOSTINGER_BACKEND",
       "Backup restore evidence UNKNOWN",
       "Stitch marketing mockups remain richer than CSS-pack alternate themes (visual gap)",
+      "Hosted moovex-platform-v8-testing tip may lag uncommitted V9 RBAC until explicit deploy",
     ],
     documentationGaps: [
       "Production cutover packet for 2.02 not opened in this task",
     ],
+    architectureWork: Object.freeze({
+      title: "V2.02 architecture work in V9",
+      body:
+        "Branch V9 continues Version 2.02 with inherited, hosted-verified editor and security work from V8, plus shared RBAC catalogue consolidation verified by dedicated V2.02 QA on V9. Remaining soak and relocate items stay deferred — this is not a production RELEASED claim.",
+      items: [
+        "Shared RBAC consolidation on V9: LOCAL QA PASS / CONVERGED (catalogue-only foundation for BB, ActiveClinic, and platform administration). Auth no longer falls through to legacy user_roles. Not production-migrated; Phase F table relocate and display dual-read cutover remain deferred.",
+      ],
+    }),
     features: [
       Object.freeze({
         id: "F-2.02-ABOUT-01",
@@ -1646,18 +1660,44 @@ const VERSIONS = Object.freeze([
         publicSafe: true,
       }),
       Object.freeze({
+        id: "F-2.02-RBAC-01",
+        name: "Shared catalogue-only RBAC (V9)",
+        description:
+          "Platform-owned RBAC catalogue primitives; BlessBoard catalogue-only login/authorize; platform_administrator catalogue gate; ActiveClinic patient.create catalogue alignment; legacy user_roles removed from authorization (INSERT frozen). LOCAL QA PASS / CONVERGED — not production-migrated.",
+        workflow: "Review V2.02 RBAC QA chain + final regression matrix",
+        expectedBehavior:
+          "BB/AC/PA authorize via catalogue assignments + permissions; website_editor cannot publish; patient.create limited to owner families; no legacy auth fallthrough",
+        products: [PRODUCTS.SHARED, PRODUCTS.BB, PRODUCTS.AC],
+        featureType: "security",
+        implementationStatus: STATUS.IMPLEMENTED,
+        qaStatus: STATUS.LOCAL_QA_PASS,
+        testCaseIds: ["TC-2.02-RBAC-01"],
+        sources: [
+          "docs/qa/V2_02_SHARED_RBAC_FINAL_REGRESSION.md",
+          "docs/qa/V2_02_RELEASE_CANDIDATE_REVIEW.md",
+          "docs/qa/V2_02_LEGACY_RBAC_REMOVAL_QA.md",
+          "docs/qa/V2_02_BB_CATALOGUE_ONLY_RBAC_QA.md",
+          "docs/qa/V2_02_PLATFORM_ADMIN_RBAC_QA.md",
+          "docs/qa/V2_02_AC_RBAC_ALIGNMENT_QA.md",
+        ],
+        publicSafe: true,
+      }),
+      Object.freeze({
         id: "F-2.02-LIMITS-01",
         name: "Explicit non-claims for 2.02",
         description:
-          "Does not claim production promotion, HOST-PKG-A closure, backup verification, AC facility websites, extra theme packs beyond the two alternate CSS packs, or deferred backlog items.",
-        workflow: "Read release notes pending/known sections",
+          "Does not claim production promotion, HOST-PKG-A closure, backup verification, AC facility websites, extra theme packs beyond the two alternate CSS packs, Phase F physical catalogue relocate, or hosted V9 RBAC deploy until that smoke is recorded. Shared RBAC is claimed only as LOCAL QA PASS / CONVERGED.",
+        workflow: "Read release notes architecture / pending / known sections",
         expectedBehavior: "Limitations explicit; no invented RELEASED-to-production status",
         products: [PRODUCTS.SHARED, PRODUCTS.BB, PRODUCTS.AC],
         featureType: "documentation",
         implementationStatus: STATUS.IMPLEMENTED,
-        qaStatus: STATUS.HOSTED_QA_PASS,
+        qaStatus: STATUS.LOCAL_QA_PASS,
         testCaseIds: ["TC-2.02-LIMITS-01"],
-        sources: ["docs/qa/V2_02_VERSION_RELEASE_NOTES_QA.md"],
+        sources: [
+          "docs/qa/V2_02_VERSION_RELEASE_NOTES_QA.md",
+          "docs/qa/V2_02_VERSION_RELEASE_NOTES_FINAL_QA.md",
+        ],
         publicSafe: true,
       }),
     ],
@@ -1702,12 +1742,39 @@ const VERSIONS = Object.freeze([
         id: "TC-2.02-ABOUT-01",
         featureOrBugId: "F-2.02-ABOUT-01",
         product: PRODUCTS.SHARED,
-        objective: "About shows 2.02 on V8 BB+AC",
+        objective: "About shows 2.02 on V9 BB+AC",
         prerequisites: "Deploy with VERSION_BASE_V8=2.02",
         steps: ["GET blessboard /about", "GET activeclinic /about"],
         expectedResult: "Version 2.02 visible; build SHA separate; V7 unchanged",
         status: STATUS.HOSTED_QA_PASS,
         evidence: "docs/qa/V2_02_VERSION_RELEASE_NOTES_QA.md",
+      }),
+      Object.freeze({
+        id: "TC-2.02-ARCH-V9-01",
+        featureOrBugId: "F-2.02-RBAC-01",
+        product: PRODUCTS.SHARED,
+        objective: "V2.02 architecture work in V9 section; RBAC LOCAL QA PASS / CONVERGED only",
+        prerequisites: "Catalog 2.02 with architectureWork after dedicated RBAC QA",
+        steps: [
+          "Open /release-notes/2.02 details panel",
+          "Confirm section title V2.02 architecture work in V9",
+          "Confirm shared RBAC claimed as LOCAL QA PASS / CONVERGED catalogue-only",
+          "Confirm no production RELEASED claim for RBAC",
+        ],
+        expectedResult: "Section visible; RBAC not over-claimed as production RELEASED",
+        status: STATUS.LOCAL_QA_PASS,
+        evidence: "docs/qa/V2_02_VERSION_RELEASE_NOTES_FINAL_QA.md",
+      }),
+      Object.freeze({
+        id: "TC-2.02-RBAC-01",
+        featureOrBugId: "F-2.02-RBAC-01",
+        product: PRODUCTS.SHARED,
+        objective: "Shared RBAC final regression CONVERGED recorded",
+        prerequisites: "V2_02_SHARED_RBAC_FINAL_REGRESSION.md",
+        steps: ["Confirm CONVERGED verdict", "Confirm no production promote"],
+        expectedResult: "LOCAL QA PASS / CONVERGED; prod untouched",
+        status: STATUS.LOCAL_QA_PASS,
+        evidence: "docs/qa/V2_02_SHARED_RBAC_FINAL_REGRESSION.md",
       }),
       Object.freeze({
         id: "TC-2.02-EDITOR-01",
@@ -1817,7 +1884,7 @@ const VERSIONS = Object.freeze([
         steps: ["Read pendingDevelopment and knownIssues", "Confirm no production RELEASED claim"],
         expectedResult: "Limitations explicit",
         status: STATUS.HOSTED_QA_PASS,
-        evidence: "docs/qa/V2_02_VERSION_RELEASE_NOTES_QA.md",
+        evidence: "docs/qa/V2_02_VERSION_RELEASE_NOTES_FINAL_QA.md",
       }),
       Object.freeze({
         id: "TC-2.02-RNC-01",
@@ -1831,8 +1898,8 @@ const VERSIONS = Object.freeze([
           "GET activeclinic /release-notes/2.02",
         ],
         expectedResult: "200; 2.02 content; product context preserved",
-        status: STATUS.HOSTED_QA_PASS,
-        evidence: "docs/qa/V2_02_VERSION_RELEASE_NOTES_QA.md",
+        status: STATUS.LOCAL_QA_PASS,
+        evidence: "docs/qa/V2_02_VERSION_RELEASE_NOTES_FINAL_QA.md",
       }),
     ],
     sources: [
@@ -1847,6 +1914,9 @@ const VERSIONS = Object.freeze([
       "docs/qa/V2_01_SHARED_HQ_BRANCH_WEBSITE_QA.md",
       "docs/qa/V2_01_UNIVERSAL_IMAGE_EDITOR_QA.md",
       "docs/qa/V2_02_VERSION_RELEASE_NOTES_QA.md",
+      "docs/qa/V2_02_VERSION_RELEASE_NOTES_FINAL_QA.md",
+      "docs/qa/V2_02_SHARED_RBAC_FINAL_REGRESSION.md",
+      "docs/qa/V2_02_RELEASE_CANDIDATE_REVIEW.md",
     ],
   }),
 ]);

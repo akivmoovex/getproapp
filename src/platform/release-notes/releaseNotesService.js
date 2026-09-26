@@ -217,6 +217,15 @@ function sanitizeForAudience(entry, opts) {
     documentationGaps: includeInternal
       ? entry.documentationGaps.map(scrub)
       : [],
+    architectureWork: entry.architectureWork
+      ? {
+          title: scrub(entry.architectureWork.title),
+          body: scrub(entry.architectureWork.body || ""),
+          items: Array.isArray(entry.architectureWork.items)
+            ? entry.architectureWork.items.map(scrub)
+            : [],
+        }
+      : null,
     features,
     bugs,
     qaChecklist,
@@ -292,7 +301,7 @@ function canAccessInternalReleaseNotesViaToken(req, env) {
 }
 
 /**
- * Existing platform_admin role — platform-wide QA/admin, not tenant church/clinic roles.
+ * Catalogue platform_administrator — platform-wide QA/admin, not tenant church/clinic roles.
  * @param {{ query: Function }|null|undefined} pool
  * @param {string|null|undefined} userId
  */
@@ -301,13 +310,14 @@ async function userHasPlatformAdminRole(pool, userId) {
   if (!id || !pool || typeof pool.query !== "function") return false;
   try {
     const {
-      listActiveAuthorizationRoles,
       findUserStatusById,
     } = require("../../blessboard/repositories/blessBoardAuthorizationRepository");
+    const {
+      hasActivePlatformAdministratorAssignment,
+    } = require("../rbac/platformAdminAuthorization");
     const user = await findUserStatusById(pool, id);
     if (!user || String(user.status) !== "active") return false;
-    const roles = await listActiveAuthorizationRoles(pool, id);
-    return roles.some((r) => String(r.roleKey || "") === "platform_admin");
+    return hasActivePlatformAdministratorAssignment(pool, id);
   } catch {
     return false;
   }
@@ -315,7 +325,7 @@ async function userHasPlatformAdminRole(pool, userId) {
 
 /**
  * Resolve whether internal Release Notes may be shown.
- * Order: explicit platformAdminAuthorized → token → active platform_admin session.
+ * Order: explicit platformAdminAuthorized → token → active platform_administrator session.
  * Ordinary tenant roles (church_hq_admin, clinic staff, etc.) do not unlock internal QA.
  *
  * @param {import('express').Request} req

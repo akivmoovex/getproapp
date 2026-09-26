@@ -2,7 +2,7 @@
 
 /**
  * Read-only BlessBoard authorization queries (UUID-scoped).
- * No writes. Caller supplies a pool/client.
+ * Catalogue assignments only (V2.02) — does not read blessboard.user_roles.
  */
 
 /**
@@ -22,26 +22,45 @@ async function findUserStatusById(client, userId) {
 }
 
 /**
- * Active roles only. Returns compact mapped objects (not raw row dumps for callers).
+ * Active catalogue role assignments for authorization (not legacy user_roles).
+ * Maps scope_type/scope_id onto organizationId / churchId / branchId.
+ *
  * @param {{ query: Function }} client
  * @param {string} userId
  */
 async function listActiveAuthorizationRoles(client, userId) {
   const r = await client.query(
-    `SELECT role_key, organization_id, church_id, branch_id, status
-       FROM blessboard.user_roles
-      WHERE user_id = $1
-        AND status = 'active'
-      ORDER BY role_key, organization_id`,
+    `SELECT r.role_key,
+            a.organization_id,
+            a.church_id,
+            a.scope_type,
+            a.scope_id,
+            a.status
+       FROM blessboard.user_role_assignments a
+       INNER JOIN blessboard.roles r ON r.id = a.role_id AND r.is_active = true
+      WHERE a.user_id = $1
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND (a.expires_at IS NULL OR a.expires_at > now())
+      ORDER BY r.role_key, a.organization_id NULLS LAST`,
     [userId]
   );
-  return r.rows.map((row) => ({
-    roleKey: row.role_key,
-    organizationId: row.organization_id,
-    churchId: row.church_id,
-    branchId: row.branch_id,
-    status: row.status,
-  }));
+  return r.rows.map((row) => {
+    const scopeType = String(row.scope_type || "");
+    let branchId = null;
+    let churchId = row.church_id || null;
+    if (scopeType === "branch") {
+      branchId = row.scope_id || null;
+    }
+    return {
+      roleKey: row.role_key,
+      organizationId: row.organization_id,
+      churchId,
+      branchId,
+      scopeType,
+      status: row.status,
+    };
+  });
 }
 
 /**

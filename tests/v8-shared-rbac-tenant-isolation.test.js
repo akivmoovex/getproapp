@@ -222,26 +222,19 @@ describe("V8 shared RBAC — decisions and platform admin least privilege", () =
     );
   });
 
-  it("disables platform_admin permission fallthrough on V8 by default", () => {
+  it("permanently disables platform_admin permission fallthrough (V2.02)", () => {
     assert.equal(allowPlatformAdminPermissionFallthrough(V8_ENV), false);
-    assert.equal(allowPlatformAdminPermissionFallthrough(V7_ENV), true);
+    assert.equal(allowPlatformAdminPermissionFallthrough(V7_ENV), false);
     assert.equal(
       allowPlatformAdminPermissionFallthrough({
         ...V8_ENV,
         PLATFORM_ADMIN_PERMISSION_FALLTHROUGH: "1",
       }),
-      true
-    );
-    assert.equal(
-      allowPlatformAdminPermissionFallthrough({
-        ...V7_ENV,
-        PLATFORM_ADMIN_PERMISSION_FALLTHROUGH: "0",
-      }),
       false
     );
   });
 
-  it("evaluatePlatformAdminPermission denies V8 fallthrough without catalogue grant", async () => {
+  it("evaluatePlatformAdminPermission denies without catalogue grant (no legacy fallthrough)", async () => {
     const pool = {
       async query() {
         return { rows: [{ "?column?": 1 }] };
@@ -260,14 +253,14 @@ describe("V8 shared RBAC — decisions and platform admin least privilege", () =
     assert.equal(denied.allowed, false);
     assert.equal(denied.reasonCode, REASON.PERMISSION_DENIED);
 
-    const allowedLegacy = await evaluatePlatformAdminPermission(pool, {
+    const deniedV7 = await evaluatePlatformAdminPermission(pool, {
       actorUserId: "user-1",
       permissionKey: "platform.roles.view",
       env: V7_ENV,
       authorize,
     });
-    assert.equal(allowedLegacy.allowed, true);
-    assert.equal(allowedLegacy._internal.legacyPlatformAdminFallthrough, true);
+    assert.equal(deniedV7.allowed, false);
+    assert.equal(deniedV7._internal, null);
 
     const catalogue = await evaluatePlatformAdminPermission(pool, {
       actorUserId: "user-1",
@@ -459,7 +452,7 @@ describe("V8 shared RBAC — website tenancy + BB authorize wiring", () => {
     );
     assert.equal(threw.reasonCode, REASON.LOOKUP_ERROR);
 
-    const roleLookupFail = await evaluatePlatformAdminPermission(
+    const deniedNoFallthrough = await evaluatePlatformAdminPermission(
       {
         async query() {
           throw new Error("db down");
@@ -472,7 +465,21 @@ describe("V8 shared RBAC — website tenancy + BB authorize wiring", () => {
         authorize: async () => ({ allowed: false }),
       }
     );
-    assert.equal(roleLookupFail.reasonCode, REASON.LOOKUP_ERROR);
+    assert.equal(deniedNoFallthrough.reasonCode, REASON.PERMISSION_DENIED);
+
+    const catalogueLookupFail = await evaluatePlatformAdminPermission(
+      {
+        async query() {
+          throw new Error("db down");
+        },
+      },
+      {
+        actorUserId: "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa",
+        permissionKey: "platform.roles.view",
+        env: V8_ENV,
+      }
+    );
+    assert.equal(catalogueLookupFail.reasonCode, REASON.LOOKUP_ERROR);
   });
 
   it("reject middleware returns HTML for forged ids when Accept is html", async () => {

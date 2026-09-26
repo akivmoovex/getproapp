@@ -22,15 +22,16 @@ const {
 const rbacRepo = require("../src/blessboard/repositories/blessBoardRbacRepository");
 const giving = require("../src/blessboard/services/givingService");
 const welfare = require("../src/blessboard/services/welfareCareService");
-const {
-  PLATFORM_ADMIN_PERMISSIONS,
-  CHURCH_HQ_ADMIN_PERMISSIONS,
-  BRANCH_ADMIN_PERMISSIONS,
-} = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
 const { ERROR_CODES } = require("../src/blessboard/services/financeSeparation");
 const { makeResolvedTenantContext } = require("./helpers/blessboardV5Fixtures");
 
 const PASSWORD = "correct-horse-battery-staple";
+
+async function cataloguePermissionKeys(pool, roleKey) {
+  const role = await rbacRepo.findRoleByKey(pool, roleKey);
+  assert.ok(role, roleKey);
+  return rbacRepo.listPermissionKeysForRoleId(pool, role.id);
+}
 
 describe("blessboard finance role separation", () => {
   let pool;
@@ -292,8 +293,11 @@ describe("blessboard finance role separation", () => {
     return submitted.entry;
   }
 
-  it("legacy PA excludes Finance transaction permissions; HQ retains temporary giving ops", () => {
+  it("platform administrator excludes Finance transaction permissions; HQ retains temporary giving ops", async () => {
     requireDb();
+    const paKeys = await cataloguePermissionKeys(pool, "platform_administrator");
+    const hqKeys = await cataloguePermissionKeys(pool, "organisation_administrator");
+    const baKeys = await cataloguePermissionKeys(pool, "branch_administrator");
     for (const key of [
       "giving.record",
       "giving.approve",
@@ -302,14 +306,14 @@ describe("blessboard finance role separation", () => {
       "finance.bank_details.view",
       "finance.welfare_disbursement.record",
     ]) {
-      assert.ok(!PLATFORM_ADMIN_PERMISSIONS.includes(key), key);
+      assert.ok(!paKeys.includes(key), key);
     }
-    assert.ok(CHURCH_HQ_ADMIN_PERMISSIONS.includes("giving.approve"));
-    assert.ok(CHURCH_HQ_ADMIN_PERMISSIONS.includes("finance.transactions.approve"));
-    assert.ok(!CHURCH_HQ_ADMIN_PERMISSIONS.includes("finance.data.export"));
-    assert.ok(!CHURCH_HQ_ADMIN_PERMISSIONS.includes("finance.bank_details.view"));
-    assert.ok(BRANCH_ADMIN_PERMISSIONS.includes("giving.record"));
-    assert.ok(!BRANCH_ADMIN_PERMISSIONS.includes("giving.approve"));
+    assert.ok(hqKeys.includes("giving.approve"));
+    assert.ok(hqKeys.includes("finance.transactions.approve"));
+    assert.ok(!hqKeys.includes("finance.data.export"));
+    assert.ok(!hqKeys.includes("finance.bank_details.view"));
+    assert.ok(baKeys.includes("giving.record"));
+    assert.ok(!baKeys.includes("giving.approve"));
   });
 
   it("Finance Officer can create and submit; cannot approve", async () => {

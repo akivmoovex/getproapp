@@ -444,10 +444,17 @@ function createContentAdminRouter(deps) {
     const roleKeys = new Set(
       ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
     );
-    if (roleKeys.has("platform_admin")) return "platform_admin";
-    if (roleKeys.has("church_hq_admin")) return "church_hq_admin";
-    if (roleKeys.has("branch_admin")) return "branch_admin";
-    return variant === "hq" ? "church_hq_admin" : "branch_admin";
+    if (roleKeys.has("platform_administrator")) return "platform_administrator";
+    if (
+      roleKeys.has("organisation_administrator") ||
+      roleKeys.has("church_system_administrator")
+    ) {
+      return "organisation_administrator";
+    }
+    if (roleKeys.has("branch_administrator") || roleKeys.has("branch_pastor")) {
+      return "branch_administrator";
+    }
+    return variant === "hq" ? "organisation_administrator" : "branch_administrator";
   }
 
   function sendMissingContentTenantContext(req, res) {
@@ -2008,7 +2015,7 @@ function createContentAdminRouter(deps) {
             organizationId: tenant.organization.id,
             branchId: scope.branchId || null,
             actorUserId: session && session.userId ? session.userId : null,
-            actorRole: variant === "hq" ? "church_hq_admin" : "branch_admin",
+            actorRole: variant === "hq" ? "organisation_administrator" : "branch_administrator",
             actionType: "draft_saved",
             pageKey: req.params.pageKey,
             sectionKey: req.params.sectionKey,
@@ -2056,7 +2063,7 @@ function createContentAdminRouter(deps) {
         churchId: scope.churchId,
         branchId,
         actorUserId: userId,
-        actorRole: variant === "hq" ? "church_hq_admin" : "branch_admin",
+        actorRole: variant === "hq" ? "organisation_administrator" : "branch_administrator",
         pageKey: req.params.pageKey,
         sectionKey: req.params.sectionKey,
         resolution,
@@ -2835,9 +2842,9 @@ function createContentAdminRouter(deps) {
       const roleKeys = new Set(
         ((authzCtx && authzCtx.effectiveRoles) || []).map((r) => String(r.roleKey || ""))
       );
-      if (roleKeys.has("platform_admin")) return "platform_admin";
-      if (roleKeys.has("church_hq_admin")) return "church_hq_admin";
-      if (roleKeys.has("branch_admin")) return "branch_admin";
+      if (roleKeys.has("platform_administrator")) return "platform_administrator";
+      if (roleKeys.has("organisation_administrator") || roleKeys.has("church_system_administrator")) return "organisation_administrator";
+      if (roleKeys.has("branch_administrator") || roleKeys.has("branch_pastor")) return "branch_administrator";
       return null;
     }
 

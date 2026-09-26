@@ -41,6 +41,18 @@
     <%- include('partials/filters', { versionLocked: versionId }) %>
 
     <% if (panel === 'details') { %>
+      <% if (entry.architectureWork && entry.architectureWork.title) { %>
+      <section class="rnc-section" data-architecture-work="v9">
+        <h2><%= entry.architectureWork.title %></h2>
+        <% if (entry.architectureWork.body) { %><p><%= entry.architectureWork.body %></p><% } %>
+        <% if (entry.architectureWork.items && entry.architectureWork.items.length) { %>
+          <ul>
+            <% entry.architectureWork.items.forEach(function (item) { %><li><%= item %></li><% }) %>
+          </ul>
+        <% } %>
+      </section>
+      <% } %>
+
       <section class="rnc-section">
         <h2>New features &amp; improvements</h2>
         <% if (!entry.features.length) { %><p class="rnc-empty">No features match the current filters.</p><% } %>

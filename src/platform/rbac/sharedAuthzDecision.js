@@ -5,10 +5,6 @@
  * Product catalogues and evaluators stay product-owned; this layer standardizes outcomes.
  */
 
-const {
-  isV8Deployment,
-} = require("../config/v8DeploymentIsolation");
-
 const REASON = Object.freeze({
   ALLOWED: "RBAC_ALLOWED",
   UNAUTHENTICATED: "RBAC_UNAUTHENTICATED",
@@ -76,24 +72,18 @@ function mapAuthzDecisionToHttp(decision, opts) {
 }
 
 /**
- * Platform-admin catalogue permission fallthrough via legacy `platform_admin` role.
- * V8 defaults to least privilege (no fallthrough). V7 keeps fallthrough for compat
- * unless PLATFORM_ADMIN_PERMISSION_FALLTHROUGH is explicitly set.
+ * Legacy platform_admin permission fallthrough is permanently disabled (V2.02).
+ * Platform ops require catalogue `platform_administrator` + `platform.*` permissions.
+ * Kept as an exported predicate for callers/tests that still probe the flag.
  *
  * @param {NodeJS.ProcessEnv} [env]
  */
-function allowPlatformAdminPermissionFallthrough(env) {
-  const source = env || process.env;
-  const explicit = String(source.PLATFORM_ADMIN_PERMISSION_FALLTHROUGH || "")
-    .trim()
-    .toLowerCase();
-  if (explicit === "1" || explicit === "true" || explicit === "yes") return true;
-  if (explicit === "0" || explicit === "false" || explicit === "no") return false;
-  return !isV8Deployment(source);
+function allowPlatformAdminPermissionFallthrough(_env) {
+  return false;
 }
 
 /**
- * Evaluate a platform-admin catalogue permission with optional legacy fallthrough.
+ * Evaluate a platform-admin catalogue permission (no legacy user_roles fallthrough).
  *
  * @param {{ query: Function }} pool
  * @param {{
@@ -104,107 +94,68 @@ function allowPlatformAdminPermissionFallthrough(env) {
  * }} input
  */
 async function evaluatePlatformAdminPermission(pool, input) {
-  const actorUserId = String((input && input.actorUserId) || "").trim();
-  const permissionKey = String((input && input.permissionKey) || "").trim();
-  if (!actorUserId || !permissionKey || !pool || typeof pool.query !== "function") {
-    return authzDecision({
-      allowed: false,
-      reasonCode: REASON.UNAUTHENTICATED,
-      httpStatus: 403,
-      productKey: "platform",
-      permission: permissionKey || null,
-    });
-  }
+  const {
+    authorizePlatformCataloguePermission,
+  } = require("./platformAdminAuthorization");
 
-  const authorize =
-    typeof input.authorize === "function"
-      ? input.authorize
-      : require("../../blessboard/services/blessBoardRbacAuthorizationService").authorize;
-
-  let decision;
-  try {
-    decision = await authorize(pool, {
-      actor: { userId: actorUserId },
-      permission: permissionKey,
-      tenantContext: {
-        organizationId: null,
-        churchId: null,
-        primaryBranchId: null,
-      },
-      resourceContext: {
-        organizationId: null,
-        churchId: null,
-        branchId: null,
-      },
-    });
-  } catch {
-    return authzDecision({
-      allowed: false,
-      reasonCode: REASON.LOOKUP_ERROR,
-      httpStatus: 503,
-      productKey: "platform",
-      permission: permissionKey,
-    });
-  }
-
-  if (decision && decision.allowed === true) {
-    return authzDecision({
-      allowed: true,
-      reasonCode: REASON.ALLOWED,
-      permission: permissionKey,
-      productKey: "platform",
-      matchedAssignments: decision.matchedAssignments,
-      evaluatedScopes: decision.evaluatedScopes,
-    });
-  }
-
-  if (!allowPlatformAdminPermissionFallthrough(input.env || process.env)) {
-    return authzDecision({
-      allowed: false,
-      reasonCode: REASON.PERMISSION_DENIED,
-      permission: permissionKey,
-      productKey: "platform",
-      httpStatus: 403,
-      message: "Catalogue permission required (platform_admin fallthrough disabled).",
-    });
-  }
-
-  try {
-    const roles = await pool.query(
-      `SELECT 1
-         FROM blessboard.user_roles
-        WHERE user_id = $1
-          AND role_key = 'platform_admin'
-          AND status = 'active'
-        LIMIT 1`,
-      [actorUserId]
-    );
-    if (roles.rows[0]) {
+  // Optional inject for unit tests that stub the catalogue path.
+  if (typeof input.authorize === "function") {
+    const actorUserId = String((input && input.actorUserId) || "").trim();
+    const permissionKey = String((input && input.permissionKey) || "").trim();
+    if (!actorUserId || !permissionKey || !pool || typeof pool.query !== "function") {
       return authzDecision({
-        allowed: true,
-        reasonCode: REASON.ALLOWED,
-        permission: permissionKey,
+        allowed: false,
+        reasonCode: REASON.UNAUTHENTICATED,
+        httpStatus: 403,
         productKey: "platform",
-        _internal: { legacyPlatformAdminFallthrough: true },
+        permission: permissionKey || null,
       });
     }
-  } catch {
-    return authzDecision({
-      allowed: false,
-      reasonCode: REASON.LOOKUP_ERROR,
-      httpStatus: 503,
-      productKey: "platform",
-      permission: permissionKey,
-    });
+    try {
+      const decision = await input.authorize(pool, {
+        actor: { userId: actorUserId },
+        permission: permissionKey,
+        tenantContext: {
+          organizationId: null,
+          churchId: null,
+          primaryBranchId: null,
+        },
+        resourceContext: {
+          organizationId: null,
+          churchId: null,
+          branchId: null,
+        },
+      });
+      if (decision && decision.allowed === true) {
+        return authzDecision({
+          allowed: true,
+          reasonCode: REASON.ALLOWED,
+          permission: permissionKey,
+          productKey: "platform",
+          matchedAssignments: decision.matchedAssignments,
+          evaluatedScopes: decision.evaluatedScopes,
+        });
+      }
+      return authzDecision({
+        allowed: false,
+        reasonCode: REASON.PERMISSION_DENIED,
+        permission: permissionKey,
+        productKey: "platform",
+        httpStatus: 403,
+        message: "Catalogue permission required (legacy platform_admin fallthrough removed).",
+      });
+    } catch {
+      return authzDecision({
+        allowed: false,
+        reasonCode: REASON.LOOKUP_ERROR,
+        httpStatus: 503,
+        productKey: "platform",
+        permission: permissionKey,
+      });
+    }
   }
 
-  return authzDecision({
-    allowed: false,
-    reasonCode: REASON.PERMISSION_DENIED,
-    permission: permissionKey,
-    productKey: "platform",
-    httpStatus: 403,
-  });
+  return authorizePlatformCataloguePermission(pool, input);
 }
 
 module.exports = {

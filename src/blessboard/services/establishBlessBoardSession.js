@@ -3,12 +3,17 @@
 /**
  * Shared V5 session establishment after identity is already trusted
  * (password verified, or post-provision auto-login).
- * Does not invent a second session format — uses createV5Session.
+ * Login eligibility: catalogue user_role_assignments (+ optional member scope).
+ * Does not depend on blessboard.user_roles.
  */
 
 const repo = require("../repositories/blessBoardAuthRepository");
 const memberRepo = require("../repositories/memberIdentityRepository");
 const { createV5Session } = require("../../platform/session/createV5Session");
+const {
+  listCatalogueLoginRolesForUser,
+  preferCatalogueSessionRole,
+} = require("./blessBoardCatalogueLogin");
 
 const STATUS = Object.freeze({
   AUTHENTICATED: "authenticated",
@@ -19,6 +24,8 @@ const STATUS = Object.freeze({
 });
 
 /**
+ * @deprecated Legacy helper retained for callers that still pass role arrays.
+ * Platform_admin org bypass removed — catalogue platform_administrator is org-agnostic via preferCatalogueSessionRole.
  * @param {Array<{ role_key: string, organization_id: string, church_id: string | null, branch_id: string | null }>} roles
  * @param {string | null} requireOrganizationId
  */
@@ -26,33 +33,17 @@ function rolesApplicableToOrganization(roles, requireOrganizationId) {
   if (!requireOrganizationId) return roles;
   const orgId = String(requireOrganizationId);
   return (roles || []).filter((r) => {
-    if (String(r.role_key) === "platform_admin") return true;
+    const key = String(r.role_key || "");
+    if (key === "platform_administrator") return true;
     return String(r.organization_id || "") === orgId;
   });
 }
 
 /**
- * Prefer HQ / branch / platform roles scoped to the required organization when present.
- * @param {Array<{ role_key: string, organization_id: string, church_id: string | null, branch_id: string | null }>} roles
- * @param {string | null} requireOrganizationId
+ * @deprecated Prefer preferCatalogueSessionRole. Kept for test/compat imports.
  */
 function preferSessionRole(roles, requireOrganizationId) {
-  const list = rolesApplicableToOrganization(roles, requireOrganizationId);
-  if (!list.length) return null;
-  if (requireOrganizationId) {
-    const orgId = String(requireOrganizationId);
-    const scoped =
-      list.find((r) => r.role_key === "church_hq_admin" && String(r.organization_id) === orgId) ||
-      list.find((r) => r.role_key === "branch_admin" && String(r.organization_id) === orgId) ||
-      list.find((r) => r.role_key === "platform_admin") ||
-      list[0];
-    return scoped;
-  }
-  return (
-    list.find((r) => r.role_key === "church_hq_admin") ||
-    list.find((r) => r.role_key === "branch_admin") ||
-    list[0]
-  );
+  return preferCatalogueSessionRole(roles, requireOrganizationId);
 }
 
 /**
@@ -87,6 +78,7 @@ async function resolveMemberScopeForOrganization(client, userId, organizationId)
         branch_id: row.branch_id,
         role_key: "member",
         memberId: member.id,
+        source: "member",
       };
     }
   }
@@ -157,8 +149,12 @@ async function establishBlessBoardSession(db, input) {
       };
     }
 
-    const roles = await repo.listActiveRolesForUser(client, user.id);
-    const applicable = rolesApplicableToOrganization(roles, requireOrganizationId);
+    const catalogueRoles = await listCatalogueLoginRolesForUser(
+      client,
+      user.id,
+      requireOrganizationId
+    );
+    const applicable = rolesApplicableToOrganization(catalogueRoles, requireOrganizationId);
     let memberScope = null;
     if (requireOrganizationId) {
       memberScope = await resolveMemberScopeForOrganization(client, user.id, requireOrganizationId);
@@ -174,7 +170,8 @@ async function establishBlessBoardSession(db, input) {
       };
     }
 
-    const preferred = preferSessionRole(roles, requireOrganizationId) || memberScope;
+    const preferred =
+      preferCatalogueSessionRole(applicable, requireOrganizationId) || memberScope;
     if (!preferred) {
       await client.query("ROLLBACK");
       return {
@@ -214,6 +211,8 @@ async function establishBlessBoardSession(db, input) {
       organizationId: r.organization_id,
       churchId: r.church_id,
       branchId: r.branch_id,
+      scopeType: r.scope_type || null,
+      source: r.source || "catalogue",
     }));
     if (memberScope) {
       rolePayload.push({
@@ -221,6 +220,7 @@ async function establishBlessBoardSession(db, input) {
         organizationId: memberScope.organization_id,
         churchId: memberScope.church_id,
         branchId: memberScope.branch_id,
+        source: "member",
       });
     }
 
@@ -237,6 +237,7 @@ async function establishBlessBoardSession(db, input) {
         status: user.status,
       },
       roles: rolePayload,
+      preferredRoleKey: preferred.role_key,
     };
   } catch {
     try {

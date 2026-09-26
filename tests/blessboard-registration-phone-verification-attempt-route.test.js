@@ -107,6 +107,9 @@ function buildApp(overrides = {}) {
     listActiveAuthorizationRoles:
       overrides.listActiveAuthorizationRoles ||
       (async () => [{ roleKey: "platform_admin" }]),
+    hasActivePlatformAdministratorAssignment:
+      overrides.hasActivePlatformAdministratorAssignment ||
+      (async () => true),
     findRegistrationApplicationById: findFn,
     recordPhoneVerificationAttempt: recordFn,
     log: () => {},
@@ -280,6 +283,7 @@ describe("POST phone-verification attempts route (Prompt 030)", () => {
   it("rejects missing platform admin role", async () => {
     const { app, state } = buildApp({
       listActiveAuthorizationRoles: async () => [{ roleKey: "church_admin" }],
+      hasActivePlatformAdministratorAssignment: async () => false,
     });
     const res = await postAttempt(app, baseBody());
     assert.equal(res.status, 403);

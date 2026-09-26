@@ -81,6 +81,9 @@ function buildApp(overrides = {}) {
     listActiveAuthorizationRoles:
       overrides.listActiveAuthorizationRoles ||
       (async () => [{ roleKey: "platform_admin" }]),
+    hasActivePlatformAdministratorAssignment:
+      overrides.hasActivePlatformAdministratorAssignment ||
+      (async () => true),
     findRegistrationApplicationById:
       overrides.findRegistrationApplicationById ||
       (async () => ({
@@ -194,6 +197,7 @@ describe("POST email-verification resend route (Prompt 039)", () => {
   it("rejects missing platform admin role", async () => {
     const { app, state } = buildApp({
       listActiveAuthorizationRoles: async () => [{ roleKey: "church_admin" }],
+      hasActivePlatformAdministratorAssignment: async () => false,
     });
     const res = await postResend(app);
     assert.equal(res.status, 403);

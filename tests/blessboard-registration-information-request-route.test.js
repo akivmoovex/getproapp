@@ -121,6 +121,9 @@ function buildApp(overrides = {}) {
     listActiveAuthorizationRoles:
       overrides.listActiveAuthorizationRoles ||
       (async () => [{ roleKey: "platform_admin" }]),
+    hasActivePlatformAdministratorAssignment:
+      overrides.hasActivePlatformAdministratorAssignment ||
+      (async () => true),
     findRegistrationApplicationById: findFn,
     recordInformationRequest: recordFn,
     updateApplicationSupportFollowUp: followUpFn,
@@ -199,6 +202,7 @@ describe("POST request-information route (Prompt 064)", () => {
     const { app } = buildApp({
       unauthenticated: true,
       listActiveAuthorizationRoles: async () => [],
+      hasActivePlatformAdministratorAssignment: async () => false,
     });
     const res = await postRequest(app);
     assert.ok([303, 401, 403].includes(res.status));
@@ -211,6 +215,7 @@ describe("POST request-information route (Prompt 064)", () => {
     const { app } = buildApp({
       nonAdmin: true,
       listActiveAuthorizationRoles: async () => [{ roleKey: "member" }],
+      hasActivePlatformAdministratorAssignment: async () => false,
     });
     const res = await postRequest(app);
     assert.ok([303, 401, 403].includes(res.status));

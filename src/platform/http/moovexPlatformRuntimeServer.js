@@ -126,7 +126,7 @@ function renderPlatformQaLauncher(res, platform, deployment) {
   <ul>
 ${links}
   </ul>
-  <p><a href="/release-notes">Release Notes Center</a> — public sanitized notes (versions 1.0–2.01)</p>
+  <p><a href="/release-notes">Release Notes Center</a> — public sanitized notes (versions 1.0–2.02)</p>
   <p>Product notes: ${productNoteLinks} (same center; host defaults product filter).</p>
   <p>Internal QA evidence: sign in as <code>platform_admin</code> on BlessBoard apex, then open <code>/release-notes</code> (token header still supported on this hub).</p>
   <p><a href="/healthz">Platform health check</a></p>

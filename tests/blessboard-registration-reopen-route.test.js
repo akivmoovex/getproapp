@@ -77,6 +77,9 @@ function buildApp(overrides = {}) {
     listActiveAuthorizationRoles:
       overrides.listActiveAuthorizationRoles ||
       (async () => [{ roleKey: "platform_admin" }]),
+    hasActivePlatformAdministratorAssignment:
+      overrides.hasActivePlatformAdministratorAssignment ||
+      (async () => true),
     reopenRegistrationApplication: reopenFn,
     log: () => {},
   });
@@ -174,6 +177,7 @@ describe("POST /admin/registration-applications/:id/reopen (Prompt 071)", () => 
     const nonAdmin = buildApp({
       nonAdmin: true,
       listActiveAuthorizationRoles: async () => [{ roleKey: "church_admin" }],
+      hasActivePlatformAdministratorAssignment: async () => false,
     });
     const denied = await postReopen(nonAdmin.app, {
       reopen_reason: "Clarifying documents received",

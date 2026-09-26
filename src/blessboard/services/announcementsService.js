@@ -181,9 +181,20 @@ function mapDbError(err) {
  */
 function evaluateAnnouncementCapability(effectiveRoles, scope, productPolicy, action) {
   const roles = effectiveRoles || [];
-  const hasHq = roles.some((r) => r.roleKey === "church_hq_admin");
-  const hasBranch = roles.some((r) => r.roleKey === "branch_admin");
-  const hasPlatform = roles.some((r) => r.roleKey === "platform_admin");
+  const hasHq = roles.some(
+    (r) =>
+      r.roleKey === "organisation_administrator" ||
+      r.roleKey === "church_system_administrator"
+  );
+  const hasBranch = roles.some(
+    (r) =>
+      r.roleKey === "branch_administrator" ||
+      r.roleKey === "branch_pastor" ||
+      r.roleKey === "communications_officer"
+  );
+  const hasPlatform = roles.some(
+    (r) => r.roleKey === "platform_administrator"
+  );
   const policy = { ...DEFAULT_PRODUCT_POLICY, ...(productPolicy || {}) };
 
   if (action === "read") {
@@ -278,10 +289,16 @@ async function authorizeActor(client, input) {
     // Platform default: may draft (manage) but not publish unless product policy allows.
     if (permission === "announcements.publish") {
       const policy = { ...DEFAULT_PRODUCT_POLICY, ...(input.productPolicy || {}) };
-      const authzRepo = require("../repositories/blessBoardAuthorizationRepository");
-      const roles = await authzRepo.listActiveAuthorizationRoles(client, input.actorUserId);
-      const isPlatform = roles.some((r) => String(r.roleKey) === "platform_admin");
-      const isHq = roles.some((r) => String(r.roleKey) === "church_hq_admin");
+      const {
+        listCatalogueLoginRolesForUser: listRoles,
+      } = require("./blessBoardCatalogueLogin");
+      const roles = await listRoles(client, input.actorUserId, null);
+      const isPlatform = roles.some((r) => String(r.role_key) === "platform_administrator");
+      const isHq = roles.some(
+        (r) =>
+          String(r.role_key) === "organisation_administrator" ||
+          String(r.role_key) === "church_system_administrator"
+      );
       if (isPlatform && !isHq && !policy.allowPlatformAdminPublish) {
         return {
           ok: false,
@@ -301,10 +318,16 @@ async function authorizeActor(client, input) {
 
   if (permission === "announcements.publish") {
     const policy = { ...DEFAULT_PRODUCT_POLICY, ...(input.productPolicy || {}) };
-    const authzRepo = require("../repositories/blessBoardAuthorizationRepository");
-    const roles = await authzRepo.listActiveAuthorizationRoles(client, input.actorUserId);
-    const isPlatform = roles.some((r) => String(r.roleKey) === "platform_admin");
-    const isHq = roles.some((r) => String(r.roleKey) === "church_hq_admin");
+    const {
+      listCatalogueLoginRolesForUser,
+    } = require("./blessBoardCatalogueLogin");
+    const roles = await listCatalogueLoginRolesForUser(client, input.actorUserId, null);
+    const isPlatform = roles.some((r) => String(r.role_key) === "platform_administrator");
+    const isHq = roles.some(
+      (r) =>
+        String(r.role_key) === "organisation_administrator" ||
+        String(r.role_key) === "church_system_administrator"
+    );
     if (isPlatform && !isHq && !policy.allowPlatformAdminPublish) {
       return {
         ok: false,

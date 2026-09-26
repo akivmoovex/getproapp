@@ -61,8 +61,8 @@ function safePlatformAdminNextPath(raw) {
  */
 function hasPlatformAdminRole(roles) {
   return (roles || []).some((r) => {
-    if (typeof r === "string") return r === "platform_admin";
-    return String(r.roleKey || r.role_key || "") === "platform_admin";
+    const key = typeof r === "string" ? r : String(r.roleKey || r.role_key || "");
+    return key === "platform_administrator";
   });
 }
 
@@ -104,8 +104,11 @@ function safeHqNextPath(raw) {
  */
 function hasChurchHqAdminRole(roles) {
   return (roles || []).some((r) => {
-    if (typeof r === "string") return r === "church_hq_admin";
-    return String(r.roleKey || r.role_key || "") === "church_hq_admin";
+    const key = typeof r === "string" ? r : String(r.roleKey || r.role_key || "");
+    return (
+      key === "organisation_administrator" ||
+      key === "church_system_administrator"
+    );
   });
 }
 
@@ -115,8 +118,8 @@ function hasChurchHqAdminRole(roles) {
  */
 function hasBranchAdminRole(roles) {
   return (roles || []).some((r) => {
-    if (typeof r === "string") return r === "branch_admin";
-    return String(r.roleKey || r.role_key || "") === "branch_admin";
+    const key = typeof r === "string" ? r : String(r.roleKey || r.role_key || "");
+    return key === "branch_administrator" || key === "branch_pastor";
   });
 }
 
@@ -185,13 +188,24 @@ function defaultTenantPostLoginPath(roles) {
   );
   const unique = [...new Set(keys.filter(Boolean))];
   const staffOrMember = unique.filter((k) =>
-    ["church_hq_admin", "branch_admin", "member", "platform_admin"].includes(k)
+    [
+      "organisation_administrator",
+      "church_system_administrator",
+      "branch_administrator",
+      "branch_pastor",
+      "member",
+      "platform_administrator",
+    ].includes(k)
   );
   if (staffOrMember.length > 1) return "/account";
-  if (unique.includes("church_hq_admin") || unique.includes("platform_admin")) {
+  if (
+    unique.includes("organisation_administrator") ||
+    unique.includes("church_system_administrator") ||
+    unique.includes("platform_administrator")
+  ) {
     return "/hq";
   }
-  if (unique.includes("branch_admin")) {
+  if (unique.includes("branch_administrator") || unique.includes("branch_pastor")) {
     return "/branch-admin";
   }
   if (unique.includes("member")) {

@@ -29,12 +29,7 @@ const {
   STATUS: ASSIGN_STATUS,
 } = require("../src/blessboard/services/blessBoardRoleAssignmentService");
 const rbacRepo = require("../src/blessboard/repositories/blessBoardRbacRepository");
-const {
-  PLATFORM_ADMIN_PERMISSIONS,
-  CHURCH_HQ_ADMIN_PERMISSIONS,
-  BRANCH_ADMIN_PERMISSIONS,
-  permissionsForLegacyRoleKey,
-} = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
+const { permissionsForLegacyRoleKey } = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
 const { makeResolvedTenantContext } = require("./helpers/blessboardV5Fixtures");
 
 describe("blessboard RBAC foundation", () => {
@@ -498,8 +493,10 @@ describe("blessboard RBAC foundation", () => {
   describe("sensitive permissions", () => {
     it("broad standard role does not receive sensitive permission", async () => {
       requireDb();
-      assert.ok(!BRANCH_ADMIN_PERMISSIONS.includes("giving.approve"));
-      assert.ok(!BRANCH_ADMIN_PERMISSIONS.includes("roles.assign_sensitive"));
+      const baRole = await rbacRepo.findRoleByKey(pool, "branch_administrator");
+      const baKeys = await rbacRepo.listPermissionKeysForRoleId(pool, baRole.id);
+      assert.ok(!baKeys.includes("giving.approve"));
+      assert.ok(!baKeys.includes("roles.assign_sensitive"));
       const result = await authorize(pool, {
         actor: { userId: actorBa.id },
         permission: "giving.approve",
@@ -544,15 +541,25 @@ describe("blessboard RBAC foundation", () => {
     });
   });
 
-  describe("legacy compatibility", () => {
-    it("active legacy roles retain documented bundles; inactive grant nothing", async () => {
+  describe("catalogue compatibility (legacy bundles removed)", () => {
+    it("catalogue roles grant documented permissions; revoked assignment grants nothing", async () => {
       requireDb();
-      assert.ok(PLATFORM_ADMIN_PERMISSIONS.includes("audit.view"));
-      assert.ok(!PLATFORM_ADMIN_PERMISSIONS.includes("data.export"));
-      assert.ok(CHURCH_HQ_ADMIN_PERMISSIONS.includes("giving.approve"));
-      assert.ok(BRANCH_ADMIN_PERMISSIONS.includes("giving.record"));
-      assert.ok(!BRANCH_ADMIN_PERMISSIONS.includes("giving.approve"));
       assert.deepEqual(permissionsForLegacyRoleKey("unknown"), []);
+      assert.deepEqual(permissionsForLegacyRoleKey("branch_admin"), []);
+
+      const paRole = await rbacRepo.findRoleByKey(pool, "platform_administrator");
+      const paKeys = await rbacRepo.listPermissionKeysForRoleId(pool, paRole.id);
+      assert.ok(paKeys.includes("audit.view") || paKeys.includes("platform.audit.view"));
+      assert.ok(!paKeys.includes("data.export"));
+
+      const hqRole = await rbacRepo.findRoleByKey(pool, "organisation_administrator");
+      const hqKeys = await rbacRepo.listPermissionKeysForRoleId(pool, hqRole.id);
+      assert.ok(hqKeys.includes("giving.approve"));
+
+      const baRole = await rbacRepo.findRoleByKey(pool, "branch_administrator");
+      const baKeys = await rbacRepo.listPermissionKeysForRoleId(pool, baRole.id);
+      assert.ok(baKeys.includes("giving.record") || baKeys.includes("giving.submit"));
+      assert.ok(!baKeys.includes("giving.approve"));
 
       const pa = await authorize(pool, {
         actor: { userId: actorPa.id },
@@ -575,11 +582,14 @@ describe("blessboard RBAC foundation", () => {
       });
       assert.equal(ba.allowed, true);
 
-      // Suspend legacy BA role
+      // Revoke catalogue BA assignment (legacy user_roles no longer authorizes)
       await pool.query(
-        `UPDATE blessboard.user_roles SET status = 'suspended', updated_at = now()
-          WHERE user_id = $1 AND role_key = 'branch_admin'`,
-        [actorBa.id]
+        `UPDATE blessboard.user_role_assignments
+            SET status = 'revoked', revoked_at = now(), updated_at = now()
+          WHERE user_id = $1
+            AND status = 'active'
+            AND role_id = $2`,
+        [actorBa.id, baRole.id]
       );
       try {
         const suspended = await authorize(pool, {
@@ -590,9 +600,11 @@ describe("blessboard RBAC foundation", () => {
         assert.equal(suspended.allowed, false);
       } finally {
         await pool.query(
-          `UPDATE blessboard.user_roles SET status = 'active', updated_at = now()
-            WHERE user_id = $1 AND role_key = 'branch_admin'`,
-          [actorBa.id]
+          `UPDATE blessboard.user_role_assignments
+              SET status = 'active', revoked_at = NULL, updated_at = now()
+            WHERE user_id = $1
+              AND role_id = $2`,
+          [actorBa.id, baRole.id]
         );
       }
 

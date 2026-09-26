@@ -81,7 +81,7 @@ function reminderCopy(unpublishedCount) {
     dismiss: "Dismiss",
     compactNav:
       `${n} unpublished changes — preview when you are ready. Publishing is never automatic.`,
-    safeDraftBadge: "BlessBoard & ActiveClinic v2.01 • SafeDraft Protection",
+    safeDraftBadge: "BlessBoard & ActiveClinic v2.02 • SafeDraft Protection",
   };
 }
 

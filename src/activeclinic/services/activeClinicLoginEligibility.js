@@ -27,9 +27,6 @@ const {
   isIdentityUsable,
   mapIdentity,
 } = require("../../platform/services/platformIdentityService");
-const {
-  listActiveAuthorizationRoles,
-} = require("../../blessboard/repositories/blessBoardAuthorizationRepository");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -334,8 +331,10 @@ async function resolveLinkedPlatformAdmin(db, platformIdentityId) {
   if (!user || String(user.status || "") !== "active") {
     return { ok: false, isPlatformAdmin: false };
   }
-  const roles = await listActiveAuthorizationRoles(db, user.id);
-  const isPlatformAdmin = (roles || []).some((r) => r.roleKey === "platform_admin");
+  const {
+    hasActivePlatformAdministratorAssignment,
+  } = require("../../platform/rbac/platformAdminAuthorization");
+  const isPlatformAdmin = await hasActivePlatformAdministratorAssignment(db, user.id);
   return {
     ok: isPlatformAdmin,
     isPlatformAdmin,

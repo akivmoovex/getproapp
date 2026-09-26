@@ -111,6 +111,9 @@ function buildApp(overrides = {}) {
     listActiveAuthorizationRoles:
       overrides.listActiveAuthorizationRoles ||
       (async () => [{ roleKey: "platform_admin" }]),
+    hasActivePlatformAdministratorAssignment:
+      overrides.hasActivePlatformAdministratorAssignment ||
+      (async () => true),
     rejectRegistrationApplication: rejectFn,
     rejectRegistrationOptions: overrides.rejectRegistrationOptions,
     log: () => {},
@@ -247,6 +250,7 @@ describe("POST reject route (Prompt 069)", () => {
     const { app } = buildApp({
       unauthenticated: true,
       listActiveAuthorizationRoles: async () => [],
+      hasActivePlatformAdministratorAssignment: async () => false,
     });
     const res = await postReject(app, baseBody());
     assert.ok([303, 401, 403].includes(res.status));
@@ -259,6 +263,7 @@ describe("POST reject route (Prompt 069)", () => {
     const { app } = buildApp({
       nonAdmin: true,
       listActiveAuthorizationRoles: async () => [{ roleKey: "member" }],
+      hasActivePlatformAdministratorAssignment: async () => false,
     });
     const res = await postReject(app, baseBody());
     assert.ok([303, 401, 403].includes(res.status));
@@ -481,6 +486,7 @@ describe("GET reject / rejected routes (Phase 5)", () => {
       env: ENV,
       findUserStatusById: async () => ({ id: ADMIN_ID, status: "active" }),
       listActiveAuthorizationRoles: async () => [{ roleKey: "platform_admin" }],
+      hasActivePlatformAdministratorAssignment: async () => true,
       getRegistrationApplicationDetail: async () => detail,
       loadRegistrationDuplicateMatchesForAdmin: async () => ({
         ok: true,

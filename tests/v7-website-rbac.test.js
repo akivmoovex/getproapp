@@ -70,7 +70,6 @@ const rbacRepo = require("../src/blessboard/repositories/blessBoardRbacRepositor
 const {
   authorize,
 } = require("../src/blessboard/services/blessBoardRbacAuthorizationService");
-const { PLATFORM_ADMIN_PERMISSIONS: LEGACY_PA } = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const AC_PASSWORD = "clinic-admin-pass-12";
@@ -99,10 +98,10 @@ describe("v7 website RBAC — contract", () => {
     assert.equal(hasWebsitePermission(PLATFORM_ADMIN_PERMISSIONS, PERMISSIONS.TAKE_OFFLINE), true);
     assert.equal(canViewWebsiteAdmin(["website.view"]), true);
     assert.equal(canViewWebsiteAdmin(["website.edit"]), true);
-    assert.ok(LEGACY_PA.includes("website.suspend"));
-    assert.ok(LEGACY_PA.includes("website.restore"));
-    assert.ok(LEGACY_PA.includes("website.take_offline"));
-    assert.ok(LEGACY_PA.includes("website.approve"));
+    assert.ok(PLATFORM_ADMIN_PERMISSIONS.includes(PERMISSIONS.SUSPEND));
+    assert.ok(PLATFORM_ADMIN_PERMISSIONS.includes(PERMISSIONS.RESTORE));
+    assert.ok(PLATFORM_ADMIN_PERMISSIONS.includes(PERMISSIONS.TAKE_OFFLINE));
+    assert.ok(PLATFORM_ADMIN_PERMISSIONS.includes(PERMISSIONS.APPROVE));
     assert.equal(hasWebsitePermission(PLATFORM_ADMIN_PERMISSIONS, PERMISSIONS.APPROVE), true);
   });
 });

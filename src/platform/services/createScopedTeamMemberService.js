@@ -296,12 +296,17 @@ async function createScopedTeamMember(db, input) {
 
         const LEGACY_BOOTSTRAP = new Set(["church_hq_admin", "branch_admin"]);
         let roleMetaRow = null;
+        let catalogueRoleKey = roleKey;
         if (LEGACY_BOOTSTRAP.has(roleKey)) {
+          catalogueRoleKey =
+            roleKey === "branch_admin" ? "branch_administrator" : "organisation_administrator";
           roleMetaRow = {
-            role_key: roleKey,
+            role_key: catalogueRoleKey,
             display_name:
-              roleKey === "branch_admin" ? "Branch Administrator" : "Organisation Administrator",
-            description: "Legacy bootstrap staff role",
+              catalogueRoleKey === "branch_administrator"
+                ? "Branch Administrator"
+                : "Organisation Administrator",
+            description: "Catalogue staff role (legacy invite key normalized)",
             role_category: "Administration",
             is_sensitive: false,
             is_active: true,
@@ -319,14 +324,19 @@ async function createScopedTeamMember(db, input) {
             return { ok: false, status: STATUS.INVALID_INPUT, reason: "role" };
           }
           roleMetaRow = roleMeta.rows[0];
+          catalogueRoleKey = String(roleMetaRow.role_key);
         }
-        if (roleKey === "platform_administrator" || roleKey === "platform_admin") {
+        if (
+          catalogueRoleKey === "platform_administrator" ||
+          roleKey === "platform_admin" ||
+          roleKey === "platform_administrator"
+        ) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.FORBIDDEN, reason: "platform_scope_forbidden" };
         }
 
         const sensitive =
-          Boolean(roleMetaRow.is_sensitive) || HIGHLY_SENSITIVE.includes(roleKey);
+          Boolean(roleMetaRow.is_sensitive) || HIGHLY_SENSITIVE.includes(catalogueRoleKey);
         if (sensitive && !assignmentReason) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.INVALID_INPUT, reason: "reason_required" };
@@ -390,7 +400,11 @@ async function createScopedTeamMember(db, input) {
             : null;
         // Member without staff phone binding — caller may choose link flow; still allow invite.
 
-        const bootstrapRole = placement === "branch" ? "branch_admin" : "church_hq_admin";
+        // Invite stores the catalogue role directly (no legacy user_roles bootstrap).
+        const inviteRoleKey =
+          placement === "branch" && catalogueRoleKey === "organisation_administrator"
+            ? "branch_administrator"
+            : catalogueRoleKey;
         const depCode = await resolveDeploymentCodeForOrg(
           client,
           organizationId,
@@ -405,7 +419,7 @@ async function createScopedTeamMember(db, input) {
           email: email || undefined,
           phoneNormalized: phoneNorm,
           phoneDisplay: phoneDisp,
-          roleKey: bootstrapRole,
+          roleKey: inviteRoleKey,
           displayName,
           branchId: placement === "branch" ? branchId : null,
           env: input.env,
@@ -464,9 +478,19 @@ async function createScopedTeamMember(db, input) {
           throw err;
         }
 
-        // RBAC catalogue role (in addition to legacy bootstrap invite role).
-        const scopeType = placement === "branch" ? "branch" : "church";
-        const scopeId = placement === "branch" ? branchId : churchId;
+        // Catalogue assignment at invite time (login eligible after user activates).
+        const scopeType =
+          placement === "branch"
+            ? "branch"
+            : catalogueRoleKey === "organisation_administrator"
+              ? "organisation"
+              : "church";
+        const scopeId =
+          placement === "branch"
+            ? branchId
+            : catalogueRoleKey === "organisation_administrator"
+              ? organizationId
+              : churchId;
         const tenantContext = {
           resolved: true,
           organization: { id: organizationId },
@@ -477,42 +501,35 @@ async function createScopedTeamMember(db, input) {
         };
 
         let rbacAssignment = null;
-        if (roleKey !== "church_hq_admin" && roleKey !== "branch_admin") {
-          // Map legacy-looking keys to RBAC keys when needed
-          const rbacKey =
-            roleKey === "branch_administrator" || roleKey === "church_system_administrator"
-              ? roleKey
-              : roleKey;
-          const assigned = await createRoleAssignment(client, {
-            actorUserId,
-            userId,
-            roleKey: rbacKey,
-            organizationId,
-            churchId: placement === "hq" ? churchId : churchId,
-            scopeType,
-            scopeId,
-            assignmentOrigin: "manual",
-            assignmentReason: assignmentReason || `Assigned via team invite (${placement})`,
-            expiresAt,
-            tenantContext,
-            actorChurchId: churchId,
-            forbidPlatformScope: true,
-          });
-          if (!assigned.ok && assigned.reason !== "duplicate") {
-            await client.query("ROLLBACK");
-            return {
-              ok: false,
-              status:
-                assigned.status === "forbidden"
-                  ? STATUS.FORBIDDEN
-                  : assigned.status === "invalid_input"
-                    ? STATUS.INVALID_INPUT
-                    : STATUS.LOOKUP_ERROR,
-              reason: assigned.reason || "role_assignment_failed",
-            };
-          }
-          rbacAssignment = assigned.assignment || null;
+        const assigned = await createRoleAssignment(client, {
+          actorUserId,
+          userId,
+          roleKey: catalogueRoleKey,
+          organizationId,
+          churchId,
+          scopeType,
+          scopeId,
+          assignmentOrigin: "manual",
+          assignmentReason: assignmentReason || `Assigned via team invite (${placement})`,
+          expiresAt,
+          tenantContext,
+          actorChurchId: churchId,
+          forbidPlatformScope: true,
+        });
+        if (!assigned.ok && assigned.reason !== "duplicate") {
+          await client.query("ROLLBACK");
+          return {
+            ok: false,
+            status:
+              assigned.status === "forbidden"
+                ? STATUS.FORBIDDEN
+                : assigned.status === "invalid_input"
+                  ? STATUS.INVALID_INPUT
+                  : STATUS.LOOKUP_ERROR,
+            reason: assigned.reason || "role_assignment_failed",
+          };
         }
+        rbacAssignment = assigned.assignment || null;
 
         const auditKey =
           placement === "branch" ? "branch.user.invited" : "church.user.invited";

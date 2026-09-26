@@ -21,7 +21,6 @@ const {
   qaDisplayName,
 } = require("./blessBoardQaRoleUsersSpec");
 const { createBlessBoardUser, BCRYPT_ROUNDS } = require("./createBlessBoardUser");
-const { assignBlessBoardRole } = require("./assignBlessBoardRole");
 const { resetBlessBoardUserPassword } = require("./resetBlessBoardUserPassword");
 const { authenticateBlessBoardUser } = require("./authenticateBlessBoardUser");
 const { normalizeRegistrationPhone } = require("./normalizeRegistrationPhone");
@@ -317,9 +316,12 @@ async function verifyLogin(db, { email, phone, password, deploymentCode, organiz
   );
   const passwordOk = await bcrypt.compare(password, emailUser.password_hash);
   const wrongRejected = !(await bcrypt.compare(`${password}x`, emailUser.password_hash));
-  const roles = await authRepo.listActiveRolesForUser(db, emailUser.id);
+  const {
+    listCatalogueLoginRolesForUser,
+  } = require("./blessBoardCatalogueLogin");
+  const roles = await listCatalogueLoginRolesForUser(db, emailUser.id, organizationId || null);
   const applicable = roles.filter((r) => {
-    if (String(r.role_key) === "platform_admin") return true;
+    if (String(r.role_key) === "platform_administrator") return true;
     if (!organizationId) return true;
     return String(r.organization_id || "") === String(organizationId);
   });
@@ -732,28 +734,10 @@ async function seedBlessBoardQaRoleUsers(db, options = {}) {
       report.phonesAssigned += 1;
     }
 
-    // Baseline legacy role
-    const assignInput = {
-      email,
-      organizationKey: DEMO_ORGANIZATION_KEY,
-      roleKey: plan.legacyRoleKey,
-      churchKey: plan.legacyRoleKey === "platform_admin" ? null : DEMO_CHURCH_KEY,
-      branchKey: plan.legacyRoleKey === "branch_admin" ? plan.branchKey : null,
-      dryRun: false,
-    };
-    const legacyAssign = await assignBlessBoardRole(db, assignInput, {
-      manageTransaction: true,
-    });
-    if (!legacyAssign.ok && legacyAssign.status !== "already_assigned") {
-      return {
-        ok: false,
-        code: "legacy_role_assign_failed",
-        message: legacyAssign.message || legacyAssign.status,
-        failedRole: role.roleKey,
-      };
-    }
+    // Catalogue assignment only — no blessboard.user_roles companion (V2.02).
 
     let scopeId = null;
+    if (plan.catalogueScopeType === "platform") scopeId = null;
     if (plan.catalogueScopeType === "church") scopeId = demo.church.id;
     if (plan.catalogueScopeType === "organisation") scopeId = demo.org.id;
     if (plan.catalogueScopeType === "branch") {
@@ -771,7 +755,7 @@ async function seedBlessBoardQaRoleUsers(db, options = {}) {
       userId: user.id,
       organizationId: demo.org.id,
       churchId: demo.church.id,
-      roleKey: role.roleKey,
+      roleKey: plan.catalogueRoleKey || role.roleKey,
       scopeType: plan.catalogueScopeType,
       scopeId,
       actorUserId,

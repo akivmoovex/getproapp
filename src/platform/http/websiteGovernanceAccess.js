@@ -8,9 +8,11 @@
  */
 
 const {
-  listActiveAuthorizationRoles,
   findUserStatusById,
 } = require("../../blessboard/repositories/blessBoardAuthorizationRepository");
+const {
+  hasActivePlatformAdministratorAssignment,
+} = require("../rbac/platformAdminAuthorization");
 const { PERMISSIONS, PLATFORM_ADMIN_PERMISSIONS } = require("../website/permissions");
 const { formatRoleLabel } = require("../../blessboard/http/renderTenantLandingPage");
 
@@ -140,7 +142,6 @@ function createRequireWebsiteGovernanceAccess(deps) {
       }
 
       const findUser = findUserStatusByIdFn || findUserStatusById;
-      const listRoles = listActiveAuthorizationRolesFn || listActiveAuthorizationRoles;
       const user = await findUser(pool, session.userId);
       if (!user || String(user.status) !== "active") {
         if (shouldRedirectUnauthenticatedToLogin && shouldRedirectUnauthenticatedToLogin(req)) {
@@ -149,8 +150,10 @@ function createRequireWebsiteGovernanceAccess(deps) {
         return sendControlled(req, res, 401, "Sign-in is required.");
       }
 
-      const roles = await listRoles(pool, session.userId);
-      const isPlatformAdmin = (roles || []).some((r) => r.roleKey === "platform_admin");
+      const isPlatformAdmin = await hasActivePlatformAdministratorAssignment(
+        pool,
+        session.userId
+      );
       const displayName =
         session.user && session.user.displayName ? session.user.displayName : "";
 
@@ -161,8 +164,8 @@ function createRequireWebsiteGovernanceAccess(deps) {
           userId: session.userId,
           platformIdentityId: session.platformIdentityId || null,
           displayName,
-          roleLabel: formatRoleLabel("platform_admin"),
-          actorRole: "platform_admin",
+          roleLabel: formatRoleLabel("platform_administrator"),
+          actorRole: "platform_administrator",
           permissions: PLATFORM_ADMIN_PERMISSIONS,
           websiteGovernanceOnly: false,
           websiteGovernanceScope: "platform",

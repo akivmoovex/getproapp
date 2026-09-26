@@ -79,11 +79,12 @@ const MINIMAL_AC = {
 let pool;
 let databaseUrl;
 let skipReason = null;
-let phoneSeq = 26097000000;
+let phoneSeq = 0;
 
 function nextPhone() {
+  // ZM E.164: +260 + (95|96|97|76|77) + 7 digits (see phoneRulesService).
   phoneSeq += 1;
-  return `+${phoneSeq}`;
+  return `+26097${String(1000000 + phoneSeq).slice(-7)}`;
 }
 
 async function seedTenant(key) {

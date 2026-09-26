@@ -30,6 +30,7 @@ const {
   FINANCE_SUPERVISOR,
   AUDITOR,
   STAFF_ROLE,
+  WEBSITE_EDITOR,
   ACTIVECLINIC_ROLE_CATALOGUE,
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
 
@@ -117,17 +118,24 @@ const MUST_HAVE = Object.freeze({
     "activeclinic.staff.assign_access",
     "activeclinic.staff.manage_credentials",
     "activeclinic.audit.view",
+    "activeclinic.patient.create",
   ],
   [NETWORK_ADMIN]: [
     "activeclinic.organization.manage",
     "activeclinic.staff.manage_credentials",
     "activeclinic.audit.view",
+    "activeclinic.patient.create",
   ],
   [FACILITY_ADMIN]: [
     "activeclinic.access",
     "activeclinic.facility.update",
     "activeclinic.staff.assign_access",
     "activeclinic.appointment.manage_schedule",
+  ],
+  [CLINIC_MANAGER]: [
+    "activeclinic.patient.create",
+    "activeclinic.patient.view",
+    "activeclinic.audit.view",
   ],
   [RECEPTIONIST]: [
     "activeclinic.patient.create",
@@ -173,6 +181,22 @@ const MUST_HAVE = Object.freeze({
   [AUDITOR]: ["activeclinic.audit.view", "activeclinic.billing.reports.view"],
   [STAFF_ROLE]: ["activeclinic.access", "activeclinic.facility.view"],
 });
+
+/** Roles that must not receive patient.create (V2.02 alignment). */
+const PATIENT_CREATE_FORBIDDEN = Object.freeze([
+  FACILITY_ADMIN,
+  NURSE,
+  CLINICIAN,
+  PHARMACIST,
+  LAB_TECHNICIAN,
+  RADIOLOGY_STAFF,
+  BILLING_OFFICER,
+  CASHIER,
+  FINANCE_SUPERVISOR,
+  AUDITOR,
+  STAFF_ROLE,
+  WEBSITE_EDITOR,
+]);
 
 const AUDITOR_FORBIDDEN_WRITES = Object.freeze([
   "activeclinic.patient.create",
@@ -269,6 +293,34 @@ describe("ActiveClinic RBAC role matrix (088)", () => {
       for (const key of keys) {
         assert.equal(perms.includes(key), false, `${roleKey} must not have ${key}`);
       }
+    }
+  });
+
+  it("patient.create is limited to approved reception/clinical/management families", async (t) => {
+    if (!requireDb(t)) return;
+    const {
+      auditActiveClinicPatientCreateGrants,
+      PATIENT_CREATE_ALLOWED_ROLE_KEYS,
+    } = require("../src/platform/rbac");
+    const audit = await auditActiveClinicPatientCreateGrants(pool);
+    assert.equal(audit.ok, true, `violations=${audit.violations} missing=${audit.missing}`);
+    assert.deepEqual(
+      [...audit.roleKeys].sort(),
+      [...PATIENT_CREATE_ALLOWED_ROLE_KEYS].sort()
+    );
+    for (const roleKey of PATIENT_CREATE_FORBIDDEN) {
+      const perms = await permissionsForRole(roleKey);
+      assert.equal(
+        perms.includes("activeclinic.patient.create"),
+        false,
+        `${roleKey} must not have patient.create`
+      );
+    }
+    // Clinical staff retain view without create
+    for (const roleKey of [NURSE, CLINICIAN]) {
+      const perms = await permissionsForRole(roleKey);
+      assert.ok(perms.includes("activeclinic.patient.view"), `${roleKey} keeps view`);
+      assert.equal(perms.includes("activeclinic.patient.create"), false);
     }
   });
 
