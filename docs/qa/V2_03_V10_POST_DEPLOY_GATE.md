@@ -244,6 +244,76 @@ A focused engineering fix was applied afterward:
 | Root cause | `renderSimpleState` returns HTML string; ACN18 called it as if it ended `res` |
 | Fix | `sendSimpleState` / `sendDocumentNotFound` + update/finalize 404 on scoped miss |
 | Local regression | Batch 1+2+3 **84 pass / 0 fail** (includes hang-detection HTTP test) |
-| Hosted re-gate | **Not yet run** — requires commit + deploy of fix tip |
+| Hosted re-gate | **PASS** on `b8c18c3ded98` — see Attempt 3 below |
 
 Do not treat Attempt 2 as a historical pass.
+
+---
+
+## Attempt 3 — Post-fix hosted verification (PASS)
+
+| Field | Value |
+|-------|--------|
+| **When** | 2026-09-27 |
+| **Expected / observed SHA** | `b8c18c3ded9892aa318ae6e029600aa34ff4941b` (`b8c18c3ded98` on AC/BB healthz) |
+| **Verdict** | **`V2_03_FINAL_RELEASE_GATE_PASS`** |
+| **Mode** | VERIFY ONLY — no app/DB/migrate/commit/push/redeploy/prod |
+
+### Alignment
+
+| Surface | SHA | Result |
+|---------|-----|--------|
+| Local `HEAD` | `b8c18c3ded9892aa318ae6e029600aa34ff4941b` | PASS |
+| `origin/V10` | `b8c18c3ded9892aa318ae6e029600aa34ff4941b` | PASS (`0 0`) |
+| AC pronline | `b8c18c3ded98` | PASS |
+| BB pronline | `b8c18c3ded98` | PASS |
+| AC/BB production | `03a89106e2fe` / `moovex-platform-production` | untouched |
+
+Env: `moovex-platform-testing` / `testing` / DB `moovex-platform-v7` / `testing`. Migrations 036–042 APPLIED (read-only).
+
+### ACN18 hosted blocker retest (mandatory)
+
+Previous failure: forged/cross-patient detail → **no bytes ~40s**.
+
+| Case | Result | Timing |
+|------|--------|--------|
+| Valid own detail | **200** | ~468–516ms |
+| Nonexistent ID | **404** | ~274–284ms |
+| Cross-patient (doc under forged patient UUID path) | **404**, no PHI | ~274–290ms |
+| Unauthorized (facility_admin / receptionist) | **403**, no PHI | ~271–285ms |
+| Edit missing / cross-patient | **404** | ~275–283ms |
+| POST update cross-patient | **404**, doc unchanged | ~280ms |
+| POST finalize cross-patient | **404**, doc unchanged | ~269ms |
+| List invalid patient / new missing patient | **404** | ~264–269ms |
+
+**HANG_COUNT: 0.** Response completion **PASS**. PHI leak **NO**.
+
+Valid workflow (list / new / create / own detail / edit / finalize / final read-only) **PASS**. Nurse view 200 / create 403. Public CMS **NO**; binary deferred.
+
+**ACN18_RELEASE_BLOCKER_RESOLVED: YES**
+
+### Targeted + regression
+
+| Area | Result |
+|------|--------|
+| ACN27 rooms / RBAC / forged room | PASS |
+| AC-P05 explicit release / portal / forged summary / no `consultation_notes` | PASS |
+| B1+B2+B3 representative staff + portal smoke | PASS (no unexpected 404/500) |
+| Six Stitch screens + 390 overflow | PASS; primary CTAs ≥44px (ACN18 Add Document / View Document = 44) |
+| unresolved A / B | **0 / 0** |
+| BlessBoard home/login / no AC leak | PASS |
+
+### Intentional gaps (still non-blocking)
+
+Unchanged ACN18 / AC-P05 / ACN27 deferred list from Attempt 2.
+
+### Change inventory (Attempt 3)
+
+| Item | Value |
+|------|-------|
+| Application code | **NO** |
+| Database | **NO** |
+| Production | **NO** |
+| QA docs updated | YES (this file + hang-fix doc) — **no app commit for docs** |
+
+**READY FOR V2.03 QA RELEASE HANDOFF: YES**

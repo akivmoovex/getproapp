@@ -57,3 +57,64 @@ POST-V1 unless shared subdivision infrastructure is already nearly available.
 Track remaining shared-engine / legacy CMS projection debt across ActiveClinic and BlessBoard where tenant website content still flows through parallel paths (legacy inline fields, structured drafts, platform.website_content). Goal: one authoritative projection per surface without breaking tenant publish flows.
 
 POST-V1. Do not block Platform 02 deployment.
+
+Complementary (do not start during active V2.03 batch implementation): full BB/AC platform consolidation epic — see **Platform consolidation** below and `docs/v2.03/V2_03_PLATFORM_CONSOLIDATION_BACKLOG.md`.
+
+## ActiveClinic V2.03 post-MVP gaps (NOT V2.03 QA blockers)
+
+Frozen QA candidate: `b8c18c3ded9892aa318ae6e029600aa34ff4941b`. See `docs/qa/V2_03_QA_RELEASE_HANDOFF.md` and `docs/v2.03/ACTIVECLINIC_BATCH3_OPEN_DECISIONS.md`.
+
+### AC-V203-ACN18 — Clinical document private binaries
+
+- Private clinical object storage (not website/CMS/CDN media)
+- Attachment upload/download with audit
+- E-sign, DICOM/HL7, advanced versioning
+
+Gap marker today: `BINARY_ATTACHMENT_DEFERRED_PRIVATE_STORAGE_REQUIRED`.
+
+### AC-V203-ACP05 — Visit summary PDF & release evolution
+
+- Patient-safe PDF / private storage
+- Re-release / versioning
+- Stronger booking↔encounter linkage
+- Automatic patient instructions from chart
+- Patient-view audit stream
+- ACN18 → patient release bridge
+
+Gap marker today: `VISIT_SUMMARY_PDF_DEFERRED_PRIVATE_STORAGE_REQUIRED`.
+
+### AC-V203-ACN27 — Rooms operational depth
+
+- Occupancy / current-use engine
+- IoT
+- Equipment inventory
+- Room scheduling
+- Bed management
+
+### AC-V203-PHI-STORE — Private PHI object storage (architecture)
+
+Future **platform / ActiveClinic** private PHI storage workstream for clinical documents, visit-summary PDFs, and related binaries.
+
+- Must be private, tenant-scoped, audited
+- **Must not** reuse website media, CMS media, public CDN, or BlessBoard media paths for clinical PHI
+- Coordinates ACN18 binary gap + AC-P05 PDF gap without mixing product CMS engines
+
+POST-V2.03. Documentation/backlog only during V2.03 QA freeze.
+
+## Platform consolidation
+
+### EPIC — V10 BB/AC Platform Consolidation
+
+Deferred cross-product infrastructure consolidation. **Documentation/backlog only** until V2.03 batches are reconciled and a clean V10 checkpoint exists.
+
+- **Authoritative detail:** [`docs/v2.03/V2_03_PLATFORM_CONSOLIDATION_BACKLOG.md`](./v2.03/V2_03_PLATFORM_CONSOLIDATION_BACKLOG.md)
+- **Audit baseline:** `AUDIT_BASELINE_2026_09_26`
+- **Principle:** Platform owns mechanisms; products own domain semantics (`product → platform`)
+- **Workstreams:** PLATFORM-CONSOLIDATION-00 … 12 (P0 characterization + dependency inversion first)
+- **Do not start** large refactors while V2.03 Batch 1/2/3 still modify the same V10 surface
+- **Immediate guardrail:** do not place new generic cross-product infrastructure under `src/activeclinic/` or `src/blessboard/` merely because that product needs it first
+
+Related evidence (not duplicated here):
+
+- [`docs/v2.03/PLATFORM_SHARED_FOUNDATION.md`](./v2.03/PLATFORM_SHARED_FOUNDATION.md)
+- [`docs/v2.03/PLATFORM_REUSE_AUDIT.md`](./v2.03/PLATFORM_REUSE_AUDIT.md)

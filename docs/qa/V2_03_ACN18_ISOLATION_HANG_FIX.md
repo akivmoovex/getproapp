@@ -145,3 +145,21 @@ Database / migrations: **unchanged** (still through `042` on testing).
 ## Follow-up outside this fix
 
 Redeploy expected tip to pronline and re-run the V10 final hosted gate. Attempt 1 (SHA lag) and Attempt 2 (this hang) remain historically blocked in `docs/qa/V2_03_V10_POST_DEPLOY_GATE.md`.
+
+---
+
+## Hosted verification (2026-09-27) — Attempt 3
+
+| Field | Value |
+|-------|--------|
+| **Deployed SHA** | `b8c18c3ded9892aa318ae6e029600aa34ff4941b` (`b8c18c3ded98`) |
+| **AC / BB hosted** | both match |
+| **Original hang** | **GONE** — nonexistent/cross-patient detail complete in ~270–290ms with HTTP **404** |
+| **Valid own** | HTTP **200** ~0.5s |
+| **Mutating cross-patient update/finalize** | HTTP **404**; document unchanged; no PHI |
+| **Unauthorized roles** | HTTP **403**; completes; no PHI |
+| **HANG_COUNT** | **0** |
+| **ACN18_RELEASE_BLOCKER_RESOLVED** | **YES** |
+| **Final release gate** | `V2_03_FINAL_RELEASE_GATE_PASS` (see post-deploy gate Attempt 3) |
+
+Historical sequence preserved: (1) `d5bb8204` blocked on hang → (2) root cause + `b8c18c3d` fix → (3) hosted verification pass.
