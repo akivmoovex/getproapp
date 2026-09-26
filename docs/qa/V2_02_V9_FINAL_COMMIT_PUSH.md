@@ -1,9 +1,17 @@
 # V2.02 V9 Final Commit + Push
 
 **Task:** `V2_02_V9_FINAL_COMMIT_PUSH`  
-**Date:** 2026-09-26T12:15:00Z  
+**Date:** 2026-09-26T12:16:30Z  
 **Branch:** `V9`  
 **Production:** **DO NOT TOUCH**
+
+---
+
+## Verdict
+
+### **`V2_02_V9_FINAL_PUSH_PASS`**
+
+Complete tested V2.02 shared-RBAC state is committed and pushed to `origin/V9`. `HEAD == origin/V9`. V8 unchanged. Production untouched. Residual porcelain is **excluded-only** (V2.01 / Finder duplicates / temp scripts) — zero remaining V2.02 impl/migrations/tests/QA docs uncommitted.
 
 ---
 
@@ -12,56 +20,79 @@
 | Check | Value |
 | --- | --- |
 | Branch | `V9` |
-| HEAD | `fd2d6f8abf98d063ef0d0e25182130d1b7f193b2` |
-| `origin/V9` | `b186991d7db5334bfaa235f8a0ecf37428ea4a5a` |
+| HEAD (pre) | `fd2d6f8abf98d063ef0d0e25182130d1b7f193b2` |
+| `origin/V9` (pre) | `b186991d7db5334bfaa235f8a0ecf37428ea4a5a` |
 | `origin/V8` | `b186991d7db5334bfaa235f8a0ecf37428ea4a5a` |
-| Ahead/behind | 2 ahead / 0 behind |
-| Dirty entries | 317 |
-| V8 baseline | Unchanged at `b186991d` |
-| Production | Untouched (no prod push/deploy) |
-
-Already on local tip (unpushed): Phase A `117` + `v2-02-phase-a` test (`5140acc4`); RBAC completion QA (`fd2d6f8a`).
+| Ahead (pre) | 2 |
+| Dirty (pre) | 317 |
 
 ---
 
-## Classification summary
+## Classification
 
 | Class | Action |
 | --- | --- |
-| **INCLUDE_V2_02** | Commit + push (impl, migrations 114–116, tests, RN/views, V2.02/V9 QA docs) |
-| **QA_DOC_ONLY** | Include when V2.02/V9 release evidence; exclude V2.01 backlog/refs |
-| **UNRELATED** | Leave untracked (V2.01 docs, Finder `* 2.*` duplicates, prior refs) |
-| **GENERATED_EVIDENCE** | Leave untracked (`scripts/local/_tmp_*`, screenshot trees) |
+| **INCLUDE_V2_02** | Committed (87 paths in finalize commit) |
+| **QA_DOC_ONLY** | V2.02 / V9 bootstrap docs included; V2.01 excluded |
+| **UNRELATED** | Left untracked |
+| **GENERATED_EVIDENCE** | Left untracked (`_tmp_*`, v2-01 reference trees) |
+
+### Included (finalize commit highlights)
+
+- Migrations `114`, `115`, `116` (invite catalogue roles, AC `patient.create`, freeze `user_roles`)
+- Platform RBAC modules + BB catalogue login
+- Auth path updates (BB/AC/PA) + release-notes catalog/views
+- Tests `v2-02-*` + related RBAC/publish/registration suite updates
+- All `docs/qa/V2_02_*.md` + `V9_BRANCH_BOOTSTRAP.md` + this report
 
 ### Excluded (not committed)
 
-- All `* 2.*` / `* 2/` Finder duplicates (~197)
-- `docs/qa/V2_01_*` and `docs/qa/references/v2-01-*`
-- `scripts/local/_tmp_v2_01_*` and `_tmp_v2_02_version_release_notes_qa.js`
-- Other non-V2.02 untracked local artifacts
+- ~197 Finder `* 2.*` duplicates  
+- `docs/qa/V2_01_*`, `docs/qa/references/v2-01-*`  
+- `scripts/local/_tmp_v2_01_*`, `_tmp_v2_02_version_release_notes_qa.js`  
+- Other non-V2.02 local artifacts  
 
 ---
 
-## Actions
+## Commits on `origin/V9` since V8
 
-1. Stage INCLUDE_V2_02 paths only.  
-2. Commit: finalize shared RBAC + release candidate packaging.  
-3. Push `V9` → `origin`.  
-4. Verify HEAD ≡ `origin/V9`; V8 unchanged; production untouched.
-
-*(Results filled after push below.)*
-
----
-
-## Post-push results
-
-| Field | Value |
+| SHA | Subject |
 | --- | --- |
-| **Verdict** | _pending_ |
-| Final V9 SHA | _pending_ |
-| `origin/V9` SHA | _pending_ |
-| Commit(s) created | _pending_ |
-| Working tree (V2.02 intended) | _pending_ |
-| Porcelain residual | EXCLUDED only (expected) |
-| V8 unchanged | _pending_ |
+| `5140acc4` | Add V2.02 Phase A backfill from legacy user_roles to catalogue assignments. |
+| `fd2d6f8a` | Document V2.02 shared RBAC completion and Phase A backfill. |
+| **`c86c0ea2`** | **Finalize V2.02 shared RBAC and release candidate.** |
+
+Range: `origin/V8..origin/V9` = **3 commits**.
+
+---
+
+## Post-push verification
+
+| Check | Result |
+| --- | --- |
+| Final V9 SHA / `HEAD` | `c86c0ea2ee13a078d5b72ed877106890e1d1f64b` |
+| `origin/V9` | `c86c0ea2ee13a078d5b72ed877106890e1d1f64b` |
+| `HEAD == origin/V9` | **YES** |
+| Unpushed commits | **0** |
+| V2.02 intended paths dirty | **0** |
+| Full porcelain residual | 231 (EXCLUDED only) |
+| `origin/V8` | `b186991d7db5334bfaa235f8a0ecf37428ea4a5a` **UNCHANGED** |
 | Production touched | **NO** |
+| Merge to V8 | **NO** |
+
+---
+
+## Return token
+
+```
+V2_02_V9_FINAL_PUSH_PASS
+final_v9_sha=c86c0ea2ee13a078d5b72ed877106890e1d1f64b
+origin_v9_sha=c86c0ea2ee13a078d5b72ed877106890e1d1f64b
+origin_v8_sha=b186991d7db5334bfaa235f8a0ecf37428ea4a5a
+commits_created=c86c0ea2
+commits_v8_to_v9=3
+excluded=V2_01_docs_refs_tmp_scripts_finder_duplicates
+working_tree_v202_clean=YES
+porcelain_residual=EXCLUDED_ONLY
+prod_untouched=YES
+```
