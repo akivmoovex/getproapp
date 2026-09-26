@@ -122,15 +122,24 @@ function registerActiveClinicFacilityRoutes(app, deps) {
           query: req.query || {},
         });
         const canCreate = list.actions && list.actions.canCreate;
+        const headerActions = [];
+        if (canCreate) {
+          headerActions.push({ label: "Add facility", href: "/app/facilities/new" });
+        }
+        if (list.actions && list.actions.canManageDepartments) {
+          headerActions.push({
+            label: "Departments",
+            href: "/app/settings/clinic-setup/departments",
+            ghost: true,
+          });
+        }
         return await renderShell(req, res, {
           activeNav: "facilities",
           content: "app/facilities-list-content.ejs",
           pageHeader: {
             title: "Facilities",
             description: "Healthcare facilities in this organization.",
-            actions: canCreate
-              ? [{ label: "Add facility", href: "/app/facilities/new" }]
-              : [],
+            actions: headerActions,
           },
           breadcrumbs: [
             { label: "Home", href: "/app" },

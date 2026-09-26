@@ -217,6 +217,9 @@ async function loadActiveClinicFacilitiesListScreen(db, input) {
     }
   }
 
+  const activeCount = items.filter((f) => f.status === "active").length;
+  const primaryCount = items.filter((f) => f.isPrimary).length;
+
   return {
     ok: true,
     facilities: items,
@@ -231,9 +234,20 @@ async function loadActiveClinicFacilitiesListScreen(db, input) {
       types: FACILITY_TYPES.map((t) => ({ value: t, label: facilityTypeLabel(t) })),
       statuses: STATUSES.map((s) => ({ value: s, label: facilityStatusLabel(s) })),
     },
+    metrics: {
+      total: items.length,
+      activeCount,
+      primaryCount,
+    },
     actions: {
       canCreate,
+      canManageDepartments: hasPerm(perms, "activeclinic.departments.manage"),
       createHref: canCreate ? "/app/facilities/new" : null,
+      departmentsHref: "/app/settings/clinic-setup/departments",
+    },
+    stitch: {
+      desktop: "fb88329aa6af454a8e7b6675c6070b78",
+      mobile: "4c70614fd2534fa3a5baee0f61f1f964",
     },
     emptyMode,
   };

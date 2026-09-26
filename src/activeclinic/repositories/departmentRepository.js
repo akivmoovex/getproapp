@@ -46,7 +46,14 @@ async function findDepartmentByFacilityAndKey(db, { facilityId, departmentKey, o
 
 async function listDepartmentsByFacility(db, { facilityId, organizationId, status }) {
   const params = [facilityId, organizationId];
-  let sql = `SELECT d.*, f.display_name AS facility_display_name, f.facility_key
+  let sql = `SELECT d.*,
+                    f.display_name AS facility_display_name,
+                    f.facility_key,
+                    f.city AS facility_city,
+                    f.district AS facility_district,
+                    f.province AS facility_province,
+                    f.country_code AS facility_country_code,
+                    f.address_line_1 AS facility_address_line_1
                FROM activeclinic.departments d
                JOIN activeclinic.facilities f ON f.id = d.facility_id
               WHERE d.facility_id = $1 AND d.organization_id = $2`;
@@ -61,7 +68,14 @@ async function listDepartmentsByFacility(db, { facilityId, organizationId, statu
 
 async function listDepartmentsByOrganization(db, { organizationId, facilityId, status }) {
   const params = [organizationId];
-  let sql = `SELECT d.*, f.display_name AS facility_display_name, f.facility_key
+  let sql = `SELECT d.*,
+                    f.display_name AS facility_display_name,
+                    f.facility_key,
+                    f.city AS facility_city,
+                    f.district AS facility_district,
+                    f.province AS facility_province,
+                    f.country_code AS facility_country_code,
+                    f.address_line_1 AS facility_address_line_1
                FROM activeclinic.departments d
                JOIN activeclinic.facilities f ON f.id = d.facility_id
               WHERE d.organization_id = $1`;

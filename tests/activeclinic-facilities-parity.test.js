@@ -271,9 +271,9 @@ describe("ActiveClinic facilities management parity (AC-V6-S03)", () => {
     const list = await request(app).get("/app/facilities").set("Cookie", cookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-ac-page-section="facilities-list"/);
-    assert.match(list.text, /data-ac-visual="stitch-gap"/);
+    assert.match(list.text, /data-ac-stitch="AC-B2-10"/);
     assert.match(list.text, /data-ac-table="facilities"/);
-    assert.match(list.text, /data-ac-mobile-list="facilities"/);
+    assert.match(list.text, /data-ac-mobile-list="facilities"|data-ac-cards="facilities"/);
     assert.match(list.text, /Main Hospital/);
     assert.match(list.text, /Clinic A/);
     assert.match(list.text, /data-ac-facility-primary="1"/);

@@ -49,6 +49,20 @@ const { getPlatformDeploymentCode } = require("../../platform/config/platformDep
 const { readV5SessionCookie } = require("../../platform/session/v5SessionCookie");
 const { hashSessionToken } = require("../../platform/session/sessionToken");
 
+function departmentsRedirect(req, opts) {
+  const params = new URLSearchParams();
+  const facility = String(
+    (req.body && req.body.return_facility) ||
+      (req.query && req.query.facility) ||
+      ""
+  ).trim();
+  if (facility) params.set("facility", facility);
+  if (opts && opts.ok) params.set("ok", "1");
+  if (opts && opts.err) params.set("err", String(opts.err));
+  const qs = params.toString();
+  return `/app/settings/clinic-setup/departments${qs ? `?${qs}` : ""}`;
+}
+
 function departmentErrorMessage(code) {
   switch (code) {
     case DEPT_RESULT.ACCESS_DENIED:
@@ -682,6 +696,7 @@ function registerActiveClinicSettingsRoutes(app, deps) {
       try {
         const loaded = await loadDepartmentsSettingsScreen(getPool(), {
           auth: req.activeClinicAuth,
+          query: req.query || {},
         });
         if (!loaded.ok) {
           return denyPage(
@@ -691,13 +706,26 @@ function registerActiveClinicSettingsRoutes(app, deps) {
             departmentErrorMessage(loaded.code)
           );
         }
+        const page = loaded.departmentsPage || {};
+        const canManage = page.actions && page.actions.canManage;
         return await renderShell(req, res, {
           activeNav: "settings",
           content: "app/settings-departments-content.ejs",
           pageHeader: {
-            title: "Departments",
-            description: "Clinic Setup — configure operational departments per facility.",
-            actions: [],
+            title: "Departments & Facilities",
+            description:
+              "Configure operational departments and status per facility. Facilities remain a separate catalogue.",
+            actions: canManage
+              ? [
+                  {
+                    label: "Add department",
+                    href: "#ac-dept-add-drawer",
+                  },
+                  ...(page.actions && page.actions.canViewFacilities
+                    ? [{ label: "Manage facilities", href: "/app/facilities", ghost: true }]
+                    : []),
+                ]
+              : [],
           },
           breadcrumbs: [
             { label: "Home", href: "/app" },
@@ -705,7 +733,7 @@ function registerActiveClinicSettingsRoutes(app, deps) {
             { label: "Clinic Setup" },
             { label: "Departments" },
           ],
-          pageData: { departmentsPage: loaded.departmentsPage },
+          pageData: { departmentsPage: page },
           flash: req.query.ok
             ? { type: "success", message: "Department configuration saved." }
             : req.query.err
@@ -740,10 +768,10 @@ function registerActiveClinicSettingsRoutes(app, deps) {
         if (!result.ok) {
           return res.redirect(
             303,
-            `/app/settings/clinic-setup/departments?err=${encodeURIComponent(result.result)}`
+            departmentsRedirect(req, { err: result.result })
           );
         }
-        return res.redirect(303, "/app/settings/clinic-setup/departments?ok=1");
+        return res.redirect(303, departmentsRedirect(req, { ok: true }));
       } catch (err) {
         return next(err);
       }
@@ -769,10 +797,10 @@ function registerActiveClinicSettingsRoutes(app, deps) {
         if (!result.ok) {
           return res.redirect(
             303,
-            `/app/settings/clinic-setup/departments?err=${encodeURIComponent(result.result)}`
+            departmentsRedirect(req, { err: result.result })
           );
         }
-        return res.redirect(303, "/app/settings/clinic-setup/departments?ok=1");
+        return res.redirect(303, departmentsRedirect(req, { ok: true }));
       } catch (err) {
         return next(err);
       }
@@ -798,10 +826,10 @@ function registerActiveClinicSettingsRoutes(app, deps) {
         if (!result.ok) {
           return res.redirect(
             303,
-            `/app/settings/clinic-setup/departments?err=${encodeURIComponent(result.result)}`
+            departmentsRedirect(req, { err: result.result })
           );
         }
-        return res.redirect(303, "/app/settings/clinic-setup/departments?ok=1");
+        return res.redirect(303, departmentsRedirect(req, { ok: true }));
       } catch (err) {
         return next(err);
       }
@@ -827,10 +855,10 @@ function registerActiveClinicSettingsRoutes(app, deps) {
         if (!result.ok) {
           return res.redirect(
             303,
-            `/app/settings/clinic-setup/departments?err=${encodeURIComponent(result.result)}`
+            departmentsRedirect(req, { err: result.result })
           );
         }
-        return res.redirect(303, "/app/settings/clinic-setup/departments?ok=1");
+        return res.redirect(303, departmentsRedirect(req, { ok: true }));
       } catch (err) {
         return next(err);
       }

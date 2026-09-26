@@ -95,6 +95,18 @@ const UUID_RE =
 
 const KEY_RE = /^[a-z][a-z0-9_]{0,63}$/;
 
+function facilityLocationFromDeptRow(row) {
+  if (!row) return null;
+  const parts = [
+    row.facility_address_line_1,
+    row.facility_city,
+    row.facility_district,
+    row.facility_province,
+    row.facility_country_code,
+  ].filter(Boolean);
+  return parts.length ? parts.join(", ") : null;
+}
+
 function mapDepartment(row) {
   if (!row) return null;
   return {
@@ -110,6 +122,7 @@ function mapDepartment(row) {
     updatedAt: row.updated_at,
     facilityDisplayName: row.facility_display_name || null,
     facilityKey: row.facility_key || null,
+    locationSummary: facilityLocationFromDeptRow(row),
     typeLabel: DEPARTMENT_TYPE_LABELS[row.department_type] || row.department_type,
     moduleLabel: MODULE_BY_TYPE[row.department_type] || null,
     moduleHref: MODULE_HREF_BY_TYPE[row.department_type] || null,
