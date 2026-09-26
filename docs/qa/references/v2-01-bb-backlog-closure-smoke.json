@@ -1,0 +1,135 @@
+{
+  "org": "bb-v8qa-mub23a6v6a6b",
+  "checks": [
+    {
+      "id": "register-church",
+      "status": 200,
+      "ok": true,
+      "len": 40927
+    },
+    {
+      "id": "directory",
+      "status": 200,
+      "ok": true,
+      "len": 24547
+    },
+    {
+      "id": "login",
+      "status": 200,
+      "ok": true,
+      "len": 165910
+    },
+    {
+      "id": "directory-nav",
+      "directoryStatus": 200,
+      "sample": "/c/demo-church/hq",
+      "followStatus": 200,
+      "title": "QA-SEO-e4dfd0 BlessBoard"
+    },
+    {
+      "id": "public/home",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "public/about",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "public/leadership",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "public/ministries",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "public/sermons",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "public/giving",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "public/contact",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "public/events",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "V1.3-about-data-draft",
+      "loggedIn": true,
+      "status": 200,
+      "dataDraft": "1",
+      "hasEditorChrome": true,
+      "note": "Expect data-draft=1 under website_mode=draft when drafts exist OR editor marks draft mode"
+    },
+    {
+      "id": "leadership-edit",
+      "status": 200,
+      "ok": true,
+      "pencils": 10,
+      "hints": true
+    },
+    {
+      "id": "ministries-edit",
+      "status": 200,
+      "ok": true,
+      "pencils": 10,
+      "hints": true
+    },
+    {
+      "id": "sermons-edit",
+      "status": 200,
+      "ok": true,
+      "pencils": 10,
+      "hints": true
+    },
+    {
+      "id": "giving-edit",
+      "status": 200,
+      "ok": true,
+      "pencils": 31,
+      "hints": true
+    },
+    {
+      "id": "contact-edit",
+      "status": 200,
+      "ok": true,
+      "pencils": 23,
+      "hints": true
+    },
+    {
+      "id": "scopes-try",
+      "status": 503,
+      "ok": false,
+      "pencils": 0,
+      "hints": false
+    },
+    {
+      "id": "website-management",
+      "status": "not_found_common_paths"
+    }
+  ],
+  "healthz": {
+    "gitSha": "aa12b6296b9f",
+    "deploymentCode": "moovex-platform-v8-testing",
+    "schemaCompatible": true
+  },
+  "spt6": {
+    "commit": "6dbf600e0a5b",
+    "css": "v2-spt6-cards-1",
+    "websitesPath": "/c/{org}/website/websites"
+  },
+  "productTip": "6dbf600e0a5b"
+}
