@@ -29,9 +29,10 @@ Does not change V7 identity uniqueness or existing `phone_verified_at` / `email_
 
 ## API surface
 
-- `src/platform/verification/sharedVerificationService.js`
-- BB: `src/blessboard/services/blessBoardSharedVerification.js`
-- AC: `src/activeclinic/services/activeClinicSharedVerification.js`
+- `src/platform/verification/sharedVerificationService.js` — shared OTP challenge engine
+- `src/platform/verification/createProductVerificationAdapter.js` — parameterized productKey + subjectKind factory
+- BB thin adapter: `src/blessboard/services/blessBoardSharedVerification.js` (`blessboard_user`)
+- AC thin adapter: `src/activeclinic/services/activeClinicSharedVerification.js` (`platform_identity`)
 
 ## Tests
 

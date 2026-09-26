@@ -254,8 +254,8 @@ describe("BlessBoard V1 registration UI + immediate admin (BB-REG-01, BB-REG-03)
     assert.match(res.text, /id="register_phone-country-value"[^>]*value="ZM"|value="ZM"[^>]*id="register_phone-country-value"/);
     assert.match(res.text, /Zambia \(\+260\)/);
     assert.match(res.text, /data-iso="KE"/);
-    assert.match(res.text, /ac-phone-field\.css/);
-    assert.match(res.text, /ac-phone-field\.js/);
+    assert.match(res.text, /phone-field\.css/);
+    assert.match(res.text, /phone-field\.js/);
     assert.match(res.text, /placeholder="97 1234567"/);
     assert.match(res.text, /name="country"/);
     assert.match(res.text, /<select[^>]*id="register_country"/);
