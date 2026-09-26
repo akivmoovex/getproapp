@@ -1,0 +1,396 @@
+{
+  "prod": {
+    "ok": true,
+    "mode": "moovex-platform-runtime",
+    "deploymentCode": "moovex-platform-production",
+    "environment": "production",
+    "productSelection": "hostname",
+    "expectedIdentityKey": "moovex-platform-v7",
+    "expectedDatabaseEnvironment": "production",
+    "gitSha": "03a89106e2fe",
+    "schemaCompatible": true,
+    "schemaCompatibility": {
+      "compatible": true,
+      "code": "ok",
+      "capability": null,
+      "missing": [],
+      "checks": [
+        {
+          "key": "platform.website_content",
+          "label": "Website content table",
+          "ok": true,
+          "remediation": "Apply db/migrations/platform/027_website_engine.sql"
+        },
+        {
+          "key": "platform.website_versions",
+          "label": "Website versioning",
+          "ok": true,
+          "remediation": "Apply db/migrations/platform/027_website_engine.sql"
+        },
+        {
+          "key": "website_instances.publish_policy.TENANT_PUBLISH",
+          "label": "TENANT_PUBLISH policy",
+          "ok": true,
+          "remediation": "Apply db/migrations/platform/031_website_tenant_publish_policy.sql"
+        },
+        {
+          "key": "activeclinic.clinic_registration_applications.canonical_statuses",
+          "label": "ActiveClinic registration lifecycle",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/030_clinic_registration_canonical_lifecycle.sql"
+        },
+        {
+          "key": "blessboard.platform_church_registration_applications.canonical_statuses",
+          "label": "BlessBoard registration lifecycle",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/098_church_registration_canonical_lifecycle.sql"
+        },
+        {
+          "key": "blessboard.permissions.website_core",
+          "label": "Website RBAC permissions",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/093_website_engine_permissions.sql and 094_website_moderation_permissions.sql"
+        },
+        {
+          "key": "activeclinic_organization_admin.website_core",
+          "label": "Organization admin website grants",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/095_website_org_admin_publish.sql"
+        },
+        {
+          "key": "activeclinic.clinic_registration_applications.provision_stage",
+          "label": "ActiveClinic provision-stage columns",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/026_clinic_registration_provisioning.sql and 031_clinic_registration_provision_stage.sql"
+        },
+        {
+          "key": "activeclinic.clinic_registration_applications.terms_version",
+          "label": "ActiveClinic registration Terms acceptance columns",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/033_clinic_registration_terms_acceptance.sql"
+        },
+        {
+          "key": "blessboard.platform_church_registration_applications.provision_stage",
+          "label": "BlessBoard provision-stage columns",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/027_foundation_schema_and_status.sql and 099_church_registration_provision_stage.sql"
+        },
+        {
+          "key": "activeclinic.core_product_tables",
+          "label": "ActiveClinic product tables",
+          "ok": true,
+          "remediation": "Apply pending db/migrations/activeclinic/*.sql"
+        },
+        {
+          "key": "activeclinic.healthcare_organizations.website_published",
+          "label": "Clinic website_published column",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/019_public_website_and_booking.sql"
+        },
+        {
+          "key": "activeclinic.appointment_service_types.public_website_visible",
+          "label": "Service public_website_visible column",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/034_service_website_visibility.sql"
+        },
+        {
+          "key": "platform.schema_migrations.v7_required",
+          "label": "Required V7 migrations applied",
+          "ok": true,
+          "remediation": null
+        }
+      ]
+    }
+  },
+  "bb": {
+    "ok": true,
+    "mode": "moovex-platform-runtime",
+    "deploymentCode": "moovex-platform-v8-testing",
+    "environment": "testing",
+    "platformLine": "v8",
+    "productSelection": "hostname",
+    "expectedIdentityKey": "moovex-platform-v7",
+    "expectedDatabaseEnvironment": "testing",
+    "sessionCookieName": "moovex_platform_v8_testing_sid",
+    "mediaWriteNamespace": "testing-v8",
+    "jobsEnabled": false,
+    "apexDomains": [
+      "neuniversity.org",
+      "www.neuniversity.org",
+      "blessboard.neuniversity.org",
+      "activeclinic.neuniversity.org"
+    ],
+    "gitSha": "6dbf600e0a5b",
+    "schemaCompatible": true,
+    "schemaCompatibility": {
+      "compatible": true,
+      "code": "ok",
+      "capability": null,
+      "missing": [],
+      "checks": [
+        {
+          "key": "platform.website_content",
+          "label": "Website content table",
+          "ok": true,
+          "remediation": "Apply db/migrations/platform/027_website_engine.sql"
+        },
+        {
+          "key": "platform.website_versions",
+          "label": "Website versioning",
+          "ok": true,
+          "remediation": "Apply db/migrations/platform/027_website_engine.sql"
+        },
+        {
+          "key": "website_instances.publish_policy.TENANT_PUBLISH",
+          "label": "TENANT_PUBLISH policy",
+          "ok": true,
+          "remediation": "Apply db/migrations/platform/031_website_tenant_publish_policy.sql"
+        },
+        {
+          "key": "activeclinic.clinic_registration_applications.canonical_statuses",
+          "label": "ActiveClinic registration lifecycle",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/030_clinic_registration_canonical_lifecycle.sql"
+        },
+        {
+          "key": "blessboard.platform_church_registration_applications.canonical_statuses",
+          "label": "BlessBoard registration lifecycle",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/098_church_registration_canonical_lifecycle.sql"
+        },
+        {
+          "key": "blessboard.permissions.website_core",
+          "label": "Website RBAC permissions",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/093_website_engine_permissions.sql and 094_website_moderation_permissions.sql"
+        },
+        {
+          "key": "activeclinic_organization_admin.website_core",
+          "label": "Organization admin website grants",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/095_website_org_admin_publish.sql"
+        },
+        {
+          "key": "activeclinic.clinic_registration_applications.provision_stage",
+          "label": "ActiveClinic provision-stage columns",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/026_clinic_registration_provisioning.sql and 031_clinic_registration_provision_stage.sql"
+        },
+        {
+          "key": "activeclinic.clinic_registration_applications.terms_version",
+          "label": "ActiveClinic registration Terms acceptance columns",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/033_clinic_registration_terms_acceptance.sql"
+        },
+        {
+          "key": "blessboard.platform_church_registration_applications.provision_stage",
+          "label": "BlessBoard provision-stage columns",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/027_foundation_schema_and_status.sql and 099_church_registration_provision_stage.sql"
+        },
+        {
+          "key": "activeclinic.core_product_tables",
+          "label": "ActiveClinic product tables",
+          "ok": true,
+          "remediation": "Apply pending db/migrations/activeclinic/*.sql"
+        },
+        {
+          "key": "activeclinic.healthcare_organizations.website_published",
+          "label": "Clinic website_published column",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/019_public_website_and_booking.sql"
+        },
+        {
+          "key": "activeclinic.appointment_service_types.public_website_visible",
+          "label": "Service public_website_visible column",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/034_service_website_visibility.sql"
+        },
+        {
+          "key": "platform.schema_migrations.v7_required",
+          "label": "Required V7 migrations applied",
+          "ok": true,
+          "remediation": null
+        }
+      ]
+    }
+  },
+  "ac": {
+    "ok": true,
+    "mode": "moovex-platform-runtime",
+    "deploymentCode": "moovex-platform-v8-testing",
+    "environment": "testing",
+    "platformLine": "v8",
+    "productSelection": "hostname",
+    "expectedIdentityKey": "moovex-platform-v7",
+    "expectedDatabaseEnvironment": "testing",
+    "sessionCookieName": "moovex_platform_v8_testing_sid",
+    "mediaWriteNamespace": "testing-v8",
+    "jobsEnabled": false,
+    "apexDomains": [
+      "neuniversity.org",
+      "www.neuniversity.org",
+      "blessboard.neuniversity.org",
+      "activeclinic.neuniversity.org"
+    ],
+    "gitSha": "6dbf600e0a5b",
+    "schemaCompatible": true,
+    "schemaCompatibility": {
+      "compatible": true,
+      "code": "ok",
+      "capability": null,
+      "missing": [],
+      "checks": [
+        {
+          "key": "platform.website_content",
+          "label": "Website content table",
+          "ok": true,
+          "remediation": "Apply db/migrations/platform/027_website_engine.sql"
+        },
+        {
+          "key": "platform.website_versions",
+          "label": "Website versioning",
+          "ok": true,
+          "remediation": "Apply db/migrations/platform/027_website_engine.sql"
+        },
+        {
+          "key": "website_instances.publish_policy.TENANT_PUBLISH",
+          "label": "TENANT_PUBLISH policy",
+          "ok": true,
+          "remediation": "Apply db/migrations/platform/031_website_tenant_publish_policy.sql"
+        },
+        {
+          "key": "activeclinic.clinic_registration_applications.canonical_statuses",
+          "label": "ActiveClinic registration lifecycle",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/030_clinic_registration_canonical_lifecycle.sql"
+        },
+        {
+          "key": "blessboard.platform_church_registration_applications.canonical_statuses",
+          "label": "BlessBoard registration lifecycle",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/098_church_registration_canonical_lifecycle.sql"
+        },
+        {
+          "key": "blessboard.permissions.website_core",
+          "label": "Website RBAC permissions",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/093_website_engine_permissions.sql and 094_website_moderation_permissions.sql"
+        },
+        {
+          "key": "activeclinic_organization_admin.website_core",
+          "label": "Organization admin website grants",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/095_website_org_admin_publish.sql"
+        },
+        {
+          "key": "activeclinic.clinic_registration_applications.provision_stage",
+          "label": "ActiveClinic provision-stage columns",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/026_clinic_registration_provisioning.sql and 031_clinic_registration_provision_stage.sql"
+        },
+        {
+          "key": "activeclinic.clinic_registration_applications.terms_version",
+          "label": "ActiveClinic registration Terms acceptance columns",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/033_clinic_registration_terms_acceptance.sql"
+        },
+        {
+          "key": "blessboard.platform_church_registration_applications.provision_stage",
+          "label": "BlessBoard provision-stage columns",
+          "ok": true,
+          "remediation": "Apply db/migrations/blessboard/027_foundation_schema_and_status.sql and 099_church_registration_provision_stage.sql"
+        },
+        {
+          "key": "activeclinic.core_product_tables",
+          "label": "ActiveClinic product tables",
+          "ok": true,
+          "remediation": "Apply pending db/migrations/activeclinic/*.sql"
+        },
+        {
+          "key": "activeclinic.healthcare_organizations.website_published",
+          "label": "Clinic website_published column",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/019_public_website_and_booking.sql"
+        },
+        {
+          "key": "activeclinic.appointment_service_types.public_website_visible",
+          "label": "Service public_website_visible column",
+          "ok": true,
+          "remediation": "Apply db/migrations/activeclinic/034_service_website_visibility.sql"
+        },
+        {
+          "key": "platform.schema_migrations.v7_required",
+          "label": "Required V7 migrations applied",
+          "ok": true,
+          "remediation": null
+        }
+      ]
+    }
+  },
+  "flows": [
+    {
+      "id": "bb-public-hq",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "bb-directory",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "bb-edit",
+      "status": 200,
+      "ok": true,
+      "toolbar": true,
+      "css_u1": true
+    },
+    {
+      "id": "bb-websites",
+      "status": 200,
+      "ok": true,
+      "scope": true,
+      "css_spt6": true
+    },
+    {
+      "id": "bb-themes",
+      "status": 200,
+      "ok": true,
+      "gallery": true
+    },
+    {
+      "id": "ac-directory",
+      "status": 200,
+      "ok": true,
+      "cards": true
+    },
+    {
+      "id": "ac-clinic",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "ac-edit",
+      "status": 200,
+      "ok": true,
+      "toolbar": true
+    },
+    {
+      "id": "ac-contact-get",
+      "status": 200,
+      "ok": true,
+      "csrf": true
+    }
+  ],
+  "identity": {
+    "local_matches_origin": true,
+    "bb_ac_sha_match": true,
+    "prod_untouched": true,
+    "prod_code": "moovex-platform-production",
+    "test_code": "moovex-platform-v8-testing",
+    "schema_bb": true,
+    "schema_ac": true,
+    "schema_prod": true
+  }
+}
