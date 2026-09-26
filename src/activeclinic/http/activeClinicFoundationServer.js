@@ -227,6 +227,18 @@ function createActiveClinicFoundationApp(options) {
   );
   app.use(createAuthenticatedResponseNoStoreMiddleware());
 
+  // Release Notes Center on ActiveClinic product host (public sanitized + token;
+  // platform_admin session upgrade uses the same shared resolver as BlessBoard).
+  const {
+    createReleaseNotesMiddleware,
+  } = require("../../platform/release-notes/attachReleaseNotesRoutes");
+  app.use(
+    createReleaseNotesMiddleware({
+      env,
+      getPool,
+    })
+  );
+
   app.use(createLoadActiveClinicProductContext({ getPool, env }));
 
   // Load both staff and patient auth contexts

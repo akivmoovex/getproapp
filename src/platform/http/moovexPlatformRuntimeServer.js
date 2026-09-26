@@ -96,6 +96,13 @@ function renderPlatformQaLauncher(res, platform, deployment) {
   const hubDomain =
     (deployment && deployment.canonicalDomain) ||
     (isV8 ? "neuniversity.org" : "pronline.org");
+  const productNoteLinks = resolveQaProductLinks(deployment, platform)
+    .map((item) => {
+      const href = String(item.href || "").replace(/\/?$/, "/release-notes");
+      const label = String(item.label || "").replace(/\s+V2\.0$/, "");
+      return `<a href="${href}">${label}</a>`;
+    })
+    .join(" · ");
   return res.status(200).type("html").send(`<!DOCTYPE html>
 <html lang="en"><head><meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
@@ -120,6 +127,7 @@ function renderPlatformQaLauncher(res, platform, deployment) {
 ${links}
   </ul>
   <p><a href="/release-notes">Release Notes Center</a> — public sanitized notes (versions 1.0–2.01)</p>
+  <p>Product notes: ${productNoteLinks} (same center; host defaults product filter).</p>
   <p>Internal QA evidence: sign in as <code>platform_admin</code> on BlessBoard apex, then open <code>/release-notes</code> (token header still supported on this hub).</p>
   <p><a href="/healthz">Platform health check</a></p>
 </main>

@@ -114,6 +114,13 @@
             <span class="material-symbols-outlined" aria-hidden="true">info</span>
             Dynamic versioning data injected automatically from Git deployment pipeline.
           </p>
+          <% if (envIsTesting) { %>
+          <p>
+            <span class="material-symbols-outlined" aria-hidden="true">description</span>
+            <a href="/release-notes">ActiveClinic Release Notes</a>
+            · Testing hub only (sanitized public notes).
+          </p>
+          <% } %>
         </footer>
       </div>
     </section>

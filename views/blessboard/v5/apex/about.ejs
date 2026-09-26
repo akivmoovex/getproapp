@@ -138,6 +138,14 @@
             <span class="material-symbols-outlined" aria-hidden="true">terminal</span>
             Version and build hashes are injected dynamically at deployment time.
           </p>
+          <% if (envIsTesting) { %>
+          <p class="bb-about-v11__pipeline-note">
+            <span class="material-symbols-outlined" aria-hidden="true">description</span>
+            <a href="/release-notes">BlessBoard Release Notes</a>
+            <span aria-hidden="true">·</span>
+            Testing hub only (sanitized public notes).
+          </p>
+          <% } %>
         </footer>
       </div>
     </section>

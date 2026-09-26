@@ -1,9 +1,10 @@
 "use strict";
 
 /**
- * Release Notes Center request handler (QA hub + BlessBoard apex).
+ * Release Notes Center request handler (QA hub + BlessBoard/ActiveClinic apex).
  */
 
+const { resolveHostname } = require("../host");
 const {
   listVersions,
   getVersion,
@@ -14,22 +15,64 @@ const {
   isReleaseNotesCenterAllowed,
   resolveReleaseNotesInternalAccess,
   VERSION_ORDER,
+  PRODUCTS,
 } = require("./releaseNotesService");
 const { renderReleaseNotesView } = require("./renderReleaseNotes");
+
+/**
+ * Host-based product context for BB / AC apex Release Notes.
+ * Explicit ?product= wins. ?all_products=1 clears the default on product hosts.
+ * @param {import('express').Request} req
+ * @returns {{ product: string, productContext: string|null, hostDefaultApplied: boolean }}
+ */
+function resolveRequestProductFilter(req) {
+  const q = (req && req.query) || {};
+  if (String(q.all_products || "") === "1") {
+    return { product: "", productContext: null, hostDefaultApplied: false };
+  }
+  if (Object.prototype.hasOwnProperty.call(q, "product")) {
+    const product = String(q.product || "").trim();
+    return { product, productContext: product || null, hostDefaultApplied: false };
+  }
+  const host = String(resolveHostname(req) || "")
+    .trim()
+    .toLowerCase()
+    .split(":")[0];
+  if (host.startsWith("blessboard.")) {
+    return {
+      product: PRODUCTS.BB,
+      productContext: PRODUCTS.BB,
+      hostDefaultApplied: true,
+    };
+  }
+  if (host.startsWith("activeclinic.")) {
+    return {
+      product: PRODUCTS.AC,
+      productContext: PRODUCTS.AC,
+      hostDefaultApplied: true,
+    };
+  }
+  return { product: "", productContext: null, hostDefaultApplied: false };
+}
 
 /**
  * @param {import('express').Request} req
  * @returns {object}
  */
-function parseFilters(query) {
+function parseFilters(query, req) {
   const q = query || {};
+  const resolved = resolveRequestProductFilter(
+    req || { query: q, get() { return ""; }, headers: {}, hostname: "" }
+  );
   return {
     version: q.version || "",
-    product: q.product || "",
+    product: resolved.product,
     featureType: q.featureType || "",
     implementationStatus: q.implementationStatus || "",
     qaStatus: q.qaStatus || "",
     severity: q.severity || "",
+    productContext: resolved.productContext,
+    hostDefaultApplied: resolved.hostDefaultApplied,
   };
 }
 
@@ -41,18 +84,25 @@ function parseFilters(query) {
 function buildLocals(req, env, extra) {
   const includeInternal = Boolean(extra && extra.includeInternal);
   const accessVia = (extra && extra.accessVia) || null;
+  const productContext =
+    (extra && extra.productContext) ||
+    (extra && extra.filters && extra.filters.productContext) ||
+    null;
   return {
-    title: "GetPro Release Notes Center",
+    title: productContext
+      ? `${productContext} Release Notes`
+      : "GetPro Release Notes Center",
     hubBrand: "GetPro Unified Platform",
     versionOrder: VERSION_ORDER,
     filterOptions: filterOptions(),
-    filters: parseFilters(req.query),
+    filters: parseFilters(req.query, req),
     includeInternal,
     accessVia,
     audience: includeInternal ? "internal" : "public",
+    productContext,
     stitchStatus:
       "DOCUMENTATION PENDING — no approved Stitch Release Notes Center project found in account inventory (2026-09-25).",
-    assetVersion: "v2-01-rnc-2",
+    assetVersion: "v2-01-rnc-3",
     ...(extra || {}),
   };
 }
@@ -84,7 +134,7 @@ async function tryHandleReleaseNotesRequest(req, res, opts) {
   });
 
   if (pathName === "/release-notes" || pathName === "/release-notes/") {
-    const filters = parseFilters(req.query);
+    const filters = parseFilters(req.query, req);
     const includeInternal = access.allowed;
     const versions = filterCatalog(filters).map((entry) =>
       sanitizeForAudience(entry, { includeInternal })
@@ -96,8 +146,10 @@ async function tryHandleReleaseNotesRequest(req, res, opts) {
           page: "overview",
           versionsSummary: listVersions(),
           versions,
+          filters,
           includeInternal,
           accessVia: access.via,
+          productContext: filters.productContext,
         })
       )
     );
@@ -149,7 +201,7 @@ async function tryHandleReleaseNotesRequest(req, res, opts) {
   const forcePublic =
     panel === "share" || String((req.query && req.query.public) || "") === "1";
   const includeInternal = forcePublic ? false : access.allowed;
-  const filters = { ...parseFilters(req.query), version: versionId };
+  const filters = { ...parseFilters(req.query, req), version: versionId };
   const filtered = filterCatalog(filters)[0];
   const entry = sanitizeForAudience(filtered || getVersion(versionId), {
     includeInternal,
@@ -163,9 +215,11 @@ async function tryHandleReleaseNotesRequest(req, res, opts) {
         panel,
         entry,
         versionId,
+        filters,
         includeInternal,
         accessVia: forcePublic ? null : access.via,
         audience: includeInternal ? "internal" : "public",
+        productContext: filters.productContext,
         printMode:
           section === "print" ||
           String((req.query && req.query.print) || "") === "1",
@@ -176,7 +230,7 @@ async function tryHandleReleaseNotesRequest(req, res, opts) {
 }
 
 /**
- * Express middleware for BlessBoard apex (session available).
+ * Express middleware for BlessBoard / ActiveClinic product hosts (session available).
  * @param {{
  *   env?: NodeJS.ProcessEnv,
  *   getPool?: () => { query: Function }|null,
@@ -211,4 +265,5 @@ module.exports = {
   createReleaseNotesMiddleware,
   parseFilters,
   buildLocals,
+  resolveRequestProductFilter,
 };

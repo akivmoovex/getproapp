@@ -2,11 +2,21 @@
   <div class="rnc-header__inner">
     <a class="rnc-brand" href="/release-notes">
       <span class="rnc-brand__name">GetPro</span>
-      <span class="rnc-brand__sub">Release Notes Center</span>
+      <span class="rnc-brand__sub"><%= typeof productContext !== 'undefined' && productContext ? (productContext + " Release Notes") : "Release Notes Center" %></span>
     </a>
     <nav class="rnc-header__nav" aria-label="Primary">
-      <a href="/">QA Hub</a>
+      <a href="/"><%= typeof productContext !== 'undefined' && productContext ? "Home" : "QA Hub" %></a>
       <a href="/release-notes">Overview</a>
+      <% if (typeof productContext === 'undefined' || !productContext) { %>
+        <a href="/release-notes?product=BlessBoard">BlessBoard</a>
+        <a href="/release-notes?product=ActiveClinic">ActiveClinic</a>
+      <% } else if (productContext === "BlessBoard") { %>
+        <a href="/release-notes?all_products=1">All products</a>
+        <a href="/release-notes?product=ActiveClinic">ActiveClinic</a>
+      <% } else if (productContext === "ActiveClinic") { %>
+        <a href="/release-notes?all_products=1">All products</a>
+        <a href="/release-notes?product=BlessBoard">BlessBoard</a>
+      <% } %>
       <a href="/healthz">Health</a>
     </nav>
   </div>

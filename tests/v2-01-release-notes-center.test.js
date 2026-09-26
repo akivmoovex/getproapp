@@ -76,16 +76,32 @@ describe("release notes catalog", () => {
     const v = getVersion("2.01");
     assert.ok(!/FULL RELEASE PASS|RELEASED TO PRODUCTION/i.test(v.qaVerification));
     const cm = v.features.find((f) => f.id === "F-2.01-CM-TOOLBAR-01");
-    assert.equal(cm.qaStatus, "LOCAL QA PASS");
+    assert.equal(cm.qaStatus, "HOSTED QA PASS");
     const about = v.features.find((f) => f.id === "F-2.01-ABOUT-01");
     assert.equal(about.qaStatus, "HOSTED QA PASS");
+    const finalQa = v.features.find((f) => f.id === "F-2.01-EDITOR-FINAL-01");
+    assert.equal(finalQa.qaStatus, "HOSTED QA PASS");
+    const p2 = v.features.find((f) => f.id === "F-2.01-P2-GAPS-01");
+    assert.equal(p2.qaStatus, "HOSTED QA PASS");
+    assert.match(v.pendingDevelopment.join(" "), /facility websites|NOT SUPPORTED/i);
   });
 
-  it("filters by product and preserves BB vs AC tests", () => {
+  it("filters by product and includes Shared with BB/AC", () => {
     const bb = filterCatalog({ version: "2.01", product: "BlessBoard" })[0];
-    assert.ok(bb.qaChecklist.every((t) => t.product === "BlessBoard"));
+    assert.ok(
+      bb.qaChecklist.every(
+        (t) => t.product === "BlessBoard" || t.product === "Shared GetPro Platform"
+      )
+    );
+    assert.ok(bb.features.some((f) => f.id === "F-2.01-BB-INLINE-01"));
+    assert.ok(bb.features.some((f) => f.id === "F-2.01-EDITOR-FINAL-01"));
     const ac = filterCatalog({ version: "2.01", product: "ActiveClinic" })[0];
-    assert.ok(ac.qaChecklist.every((t) => t.product === "ActiveClinic"));
+    assert.ok(
+      ac.qaChecklist.every(
+        (t) => t.product === "ActiveClinic" || t.product === "Shared GetPro Platform"
+      )
+    );
+    assert.ok(!ac.features.some((f) => f.id === "F-2.01-BB-INLINE-01"));
   });
 
   it("sanitizes public share by withholding internal evidence", () => {
@@ -341,5 +357,63 @@ describe("release notes platform_admin session access", () => {
     assert.equal(res.status, 200);
     assert.match(res.text, /sanitized summary/i);
     assert.match(res.text, /data-audience="public"/);
+  });
+});
+
+describe("release notes product hosts", () => {
+  it("defaults BlessBoard product context from host", async () => {
+    const app = express();
+    app.use(async (req, res) => {
+      await tryHandleReleaseNotesRequest(req, res, { env: V8_ENV });
+    });
+    const res = await request(app)
+      .get("/release-notes/2.01")
+      .set("Host", "blessboard.neuniversity.org");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /BlessBoard Release Notes/);
+    assert.match(res.text, /Shared website editor/);
+    assert.match(res.text, /F-2\.01-BB-INLINE-01/);
+    assert.doesNotMatch(res.text, /F-2\.01-INFRA-PKGA-01/);
+  });
+
+  it("defaults ActiveClinic product context from host", async () => {
+    const app = express();
+    app.use(async (req, res) => {
+      await tryHandleReleaseNotesRequest(req, res, { env: V8_ENV });
+    });
+    const res = await request(app)
+      .get("/release-notes")
+      .set("Host", "activeclinic.neuniversity.org");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /ActiveClinic Release Notes/);
+  });
+
+  it("all_products=1 clears host default", async () => {
+    const app = express();
+    app.use(async (req, res) => {
+      await tryHandleReleaseNotesRequest(req, res, { env: V8_ENV });
+    });
+    const res = await request(app)
+      .get("/release-notes/2.01")
+      .query({ all_products: "1" })
+      .set("Host", "blessboard.neuniversity.org");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /Hostinger/);
+  });
+
+  it("ActiveClinic foundation serves /release-notes", async () => {
+    const {
+      createActiveClinicFoundationApp,
+    } = require("../src/activeclinic/http/activeClinicFoundationServer");
+    const app = createActiveClinicFoundationApp({
+      env: V8_ENV,
+      getPool: () => null,
+      allowPlatformRuntimeChild: true,
+    });
+    const res = await request(app)
+      .get("/release-notes")
+      .set("Host", "activeclinic.neuniversity.org");
+    assert.equal(res.status, 200);
+    assert.match(res.text, /Release Notes/);
   });
 });

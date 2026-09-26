@@ -76,9 +76,37 @@ function filterCatalog(filters) {
     let qaChecklist = entry.qaChecklist.slice();
 
     if (product) {
-      features = features.filter((item) => item.products.includes(product));
-      bugs = bugs.filter((item) => item.product === product);
-      qaChecklist = qaChecklist.filter((item) => item.product === product);
+      // Product hosts show that product plus Shared GetPro Platform notes.
+      // Do not pull in the other product's product-specific rows just because
+      // they also list Shared as a secondary tag.
+      const includeShared =
+        product === PRODUCTS.BB || product === PRODUCTS.AC;
+      const otherProduct =
+        product === PRODUCTS.BB
+          ? PRODUCTS.AC
+          : product === PRODUCTS.AC
+            ? PRODUCTS.BB
+            : null;
+      const matchesFeatureProducts = (products) => {
+        if (products.includes(product)) return true;
+        if (!includeShared || !products.includes(PRODUCTS.SHARED)) return false;
+        if (
+          otherProduct &&
+          products.includes(otherProduct) &&
+          !products.includes(product)
+        ) {
+          return false;
+        }
+        return true;
+      };
+      const matchesSingleProduct = (value) =>
+        value === product ||
+        (includeShared && value === PRODUCTS.SHARED);
+      features = features.filter((item) => matchesFeatureProducts(item.products));
+      bugs = bugs.filter((item) => matchesSingleProduct(item.product));
+      qaChecklist = qaChecklist.filter((item) =>
+        matchesSingleProduct(item.product)
+      );
     }
     if (featureType) {
       features = features.filter((item) => item.featureType === featureType);
