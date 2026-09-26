@@ -669,7 +669,13 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       const clinic = await loadClinic(req, res);
       if (!clinic) return undefined;
       if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
-        return json(res, 403, { ok: false, code: "csrf" });
+        return json(res, 403, {
+          ok: false,
+          code: "csrf",
+          message: "Your session expired. Reload the page, then try publishing again.",
+          draftPreserved: true,
+          liveUnchanged: true,
+        });
       }
       if (clientTenantOverride(req.body)) {
         return json(res, 403, { ok: false, code: "forbidden" });

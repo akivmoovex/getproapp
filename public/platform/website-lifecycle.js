@@ -79,13 +79,29 @@
    * or the server message already states it.
    */
   function formatPublishFailure(json) {
-    var message =
-      (json && (json.message || json.reason)) ||
-      "Publishing did not complete. Nothing went live from this attempt.";
+    var code = json && (json.publicCode || json.code);
+    code = code != null ? String(code) : "";
+    var message = (json && (json.message || json.reason)) || "";
+    if (!message) {
+      if (code === "csrf") {
+        message = "Your session expired. Reload the page, then try publishing again.";
+      } else if (code === "forbidden") {
+        message = "You do not have permission to publish these changes.";
+      } else if (code) {
+        message = "Publishing did not complete. Nothing went live from this attempt.";
+      } else {
+        message = "Publishing did not complete. Nothing went live from this attempt.";
+      }
+    }
     message = String(message).trim();
     var parts = [message];
     var draftPreserved = json && json.draftPreserved;
     var liveUnchanged = json && json.liveUnchanged;
+    // CSRF / forbidden failures never apply a publish TX — safe to state draft/live unchanged.
+    if (draftPreserved == null && (code === "csrf" || code === "forbidden")) {
+      draftPreserved = true;
+      liveUnchanged = true;
+    }
     if (draftPreserved === true && !/draft/i.test(message)) {
       parts.push("Your draft was preserved.");
     }

@@ -829,7 +829,13 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
     try {
       if (!validateCsrf(req, csrfFrom(req), getEnv())) {
         if (String(req.headers.accept || "").includes("application/json")) {
-          return json(res, 403, { ok: false, code: "csrf" });
+          return json(res, 403, {
+            ok: false,
+            code: "csrf",
+            message: "Your session expired. Reload the page, then try publishing again.",
+            draftPreserved: true,
+            liveUnchanged: true,
+          });
         }
         return res.status(403).type("text").send("Invalid CSRF token");
       }
