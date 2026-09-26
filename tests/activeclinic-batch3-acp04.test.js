@@ -34,6 +34,9 @@ const {
 } = require("../src/platform/config/deploymentProfiles");
 const { CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 const {
+  ASSET_VERSION: PATIENT_ASSET_VERSION,
+} = require("../src/activeclinic/http/renderActiveClinicPatient");
+const {
   createPlatformIdentity,
 } = require("../src/platform/services/platformIdentityService");
 const {
@@ -322,7 +325,11 @@ describe("V2.03 Batch 3 AC-P04 booking detail leaf", () => {
     assert.match(detail.text, /data-ac-batch3="AC-P04"/);
     assert.match(detail.text, /Appointment Details/);
     assert.match(detail.text, new RegExp(String(ref)));
-    assert.match(detail.text, /ac-patient\.css\?v=v2-03-b3-acp04-01/);
+    // Canonical portal stamp lives in renderActiveClinicPatient (tip: AC-P06 bump).
+    assert.ok(
+      detail.text.includes(`ac-patient.css?v=${PATIENT_ASSET_VERSION}`),
+      `expected portal CSS stamp ${PATIENT_ASSET_VERSION}`
+    );
     assert.match(detail.text, /data-ac-booking-reschedule/);
 
     const csrf2 = extractCookie(detail, CSRF_COOKIE_ACTIVECLINIC_ORG);
