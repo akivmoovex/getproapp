@@ -62,6 +62,9 @@ const {
   resetDeploymentProfileWarningsForTests,
 } = require("../src/platform/config/deploymentProfiles");
 const { CSRF_FIELD, issueCsrfToken } = require("../src/platform/http/v5Csrf");
+const {
+  SHELL_ASSET_VERSION,
+} = require("../src/activeclinic/services/buildActiveClinicShellViewModel");
 
 const PASSWORD = "activeclinic-pass-12";
 const MINIMAL_AC = Object.freeze({
@@ -316,7 +319,10 @@ describe("V2.03 Batch 3 ACN20 referral presentation leaf", () => {
     assert.equal(list.status, 200);
     assert.match(list.text, /data-ac-batch3="ACN20"/);
     assert.match(list.text, /Cardiac rehab referral/);
-    assert.match(list.text, /ac-app\.css\?v=v2-03-b3-acn20-01/);
+    assert.ok(
+      list.text.includes(`ac-app.css?v=${SHELL_ASSET_VERSION}`),
+      `expected shell CSS stamp ${SHELL_ASSET_VERSION}`
+    );
     assert.doesNotMatch(list.text, /Foreign referral/);
 
     const followUp = await request(app)

@@ -35,6 +35,9 @@ const {
 } = require("../src/platform/config/deploymentProfiles");
 const { CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 const {
+  ASSET_VERSION: PATIENT_ASSET_VERSION,
+} = require("../src/activeclinic/http/renderActiveClinicPatient");
+const {
   createPlatformIdentity,
 } = require("../src/platform/services/platformIdentityService");
 const {
@@ -393,7 +396,10 @@ describe("V2.03 Batch 3 AC-P06 portal invoices leaf", () => {
     assert.match(invoicesRes.text, /Invoices &amp; Receipts|Invoices & Receipts/);
     assert.match(invoicesRes.text, new RegExp(invoice.invoice.invoiceNumber));
     assert.match(invoicesRes.text, /Portal visible consult|ZMW 250/);
-    assert.match(invoicesRes.text, /ac-patient\.css\?v=v2-03-b3-acp06-01/);
+    assert.ok(
+      invoicesRes.text.includes(`ac-patient.css?v=${PATIENT_ASSET_VERSION}`),
+      `expected portal CSS stamp ${PATIENT_ASSET_VERSION}`
+    );
     assert.doesNotMatch(invoicesRes.text, /Foreign secret invoice|Collect payment|data-ac-stitch="AC-B2-09"/);
     assert.doesNotMatch(invoicesRes.text, new RegExp(String(foreignInvoice.invoice.id)));
 
