@@ -2495,3 +2495,159 @@ body.ac-app-body .ac-billing-corrections .ac-list-card {
 
 
 
+
+/* ==========================================================================
+   V2.03 Batch 1A — Services / Practitioners (ACN02–ACN05)
+   Stitch project 12134201997833374170 — desktop 1440 + mobile 390
+   ========================================================================== */
+body.ac-app-body .ac-batch1a {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+body.ac-app-body .ac-batch1a__toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+}
+body.ac-app-body .ac-batch1a__toolbar .ac-filter-bar {
+  flex: 1 1 28rem;
+  margin: 0;
+}
+body.ac-app-body .ac-filter-bar__grid--services,
+body.ac-app-body .ac-filter-bar__grid--practitioners {
+  grid-template-columns: repeat(auto-fit, minmax(9.5rem, 1fr));
+}
+body.ac-app-body .ac-batch1a__guardrail {
+  margin: 0;
+  padding: 0.75rem 1rem;
+  border-radius: var(--ac-radius);
+  border: 1px solid var(--ac-border);
+  background: var(--ac-surface-muted, #f8fafc);
+  color: var(--ac-muted);
+  font-size: 0.9rem;
+  line-height: 1.45;
+}
+body.ac-app-body .ac-batch1a__section {
+  display: grid;
+  gap: var(--ac-space-3);
+}
+body.ac-app-body .ac-batch1a__section-title {
+  margin: 0;
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+body.ac-app-body .ac-batch1a__form .ac-form-grid {
+  display: grid;
+  gap: var(--ac-space-3);
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+body.ac-app-body .ac-batch1a__form .ac-field--full,
+body.ac-app-body .ac-batch1a__form .ac-field--checks {
+  grid-column: 1 / -1;
+}
+body.ac-app-body .ac-batch1a__check-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.45rem;
+}
+body.ac-app-body .ac-batch1a__chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-top: 0.35rem;
+}
+body.ac-app-body .ac-batch1a__chip {
+  display: inline-flex;
+  padding: 0.15rem 0.5rem;
+  border-radius: 999px;
+  border: 1px solid var(--ac-border);
+  background: var(--ac-surface);
+  font-size: 0.75rem;
+}
+body.ac-app-body .ac-batch1a__profile-head {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+}
+body.ac-app-body .ac-batch1a__profile-name {
+  margin: 0 0 0.25rem;
+  font-size: 1.35rem;
+}
+body.ac-app-body .ac-batch1a__blocks {
+  list-style: none;
+  margin: var(--ac-space-3) 0 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+body.ac-app-body .ac-batch1a__block {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.75rem 1rem;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius);
+  background: var(--ac-surface);
+}
+body.ac-app-body .ac-batch1a__footnote {
+  margin: 0;
+  font-size: 0.85rem;
+}
+body.ac-app-body .ac-batch1a__mobile {
+  display: none;
+}
+body.ac-app-body .ac-batch1a-card {
+  display: grid;
+  gap: 0.35rem;
+  padding: 0.9rem 1rem;
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius);
+  background: var(--ac-surface);
+}
+body.ac-app-body .ac-batch1a-card__title {
+  font-weight: 700;
+  color: var(--ac-primary);
+  text-decoration: none;
+}
+body.ac-app-body .ac-batch1a-card__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+}
+body.ac-app-body .ac-pagination {
+  display: flex;
+  align-items: center;
+  gap: var(--ac-space-3);
+}
+
+@media (max-width: 720px) {
+  body.ac-app-body .ac-batch1a__desktop {
+    display: none;
+  }
+  body.ac-app-body .ac-batch1a__mobile {
+    display: grid;
+    gap: 0.75rem;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+  }
+  body.ac-app-body .ac-batch1a__form .ac-form-grid {
+    grid-template-columns: 1fr;
+  }
+  body.ac-app-body .ac-batch1a__toolbar {
+    flex-direction: column;
+  }
+  body.ac-app-body .ac-batch1a__toolbar > .ac-btn {
+    width: 100%;
+    justify-content: center;
+  }
+}

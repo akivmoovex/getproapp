@@ -1,0 +1,155 @@
+<%
+  var catalogue = (pageData && pageData.catalogue) || {};
+  var services = catalogue.services || [];
+  var filters = catalogue.filters || {};
+  var filterOptions = catalogue.filterOptions || {};
+  var stats = catalogue.stats || {};
+  var canEdit = catalogue.canEdit === true;
+  var page = catalogue.page || {};
+%>
+<section
+  class="ac-batch1a ac-services-catalogue"
+  data-ac-page-section="services-catalogue"
+  data-ac-stitch="ACN02"
+  data-ac-visual="stitch-acn02"
+>
+  <div class="ac-stats-grid" data-ac-services-stats="1">
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Total Active Services</p>
+      <p class="ac-stat-card__value"><%= stats.active != null ? stats.active : 0 %></p>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Online Bookable</p>
+      <p class="ac-stat-card__value"><%= stats.bookable != null ? stats.bookable : 0 %></p>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Inactive Services</p>
+      <p class="ac-stat-card__value"><%= stats.inactive != null ? stats.inactive : 0 %></p>
+    </article>
+  </div>
+
+  <div class="ac-batch1a__toolbar">
+    <form class="ac-panel ac-filter-bar" method="get" action="/app/services" data-ac-services-filters="1">
+      <div class="ac-filter-bar__grid ac-filter-bar__grid--services">
+        <div>
+          <label class="ac-label" for="services_search">Search</label>
+          <input class="ac-input" id="services_search" name="q" type="search" value="<%= filters.q || '' %>" placeholder="Service name or key" autocomplete="off"/>
+        </div>
+        <div>
+          <label class="ac-label" for="services_status">Status</label>
+          <select class="ac-select" id="services_status" name="status">
+            <option value="">All statuses</option>
+            <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Active</option>
+            <option value="inactive" <%= filters.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
+          </select>
+        </div>
+        <div>
+          <label class="ac-label" for="services_facility">Location</label>
+          <select class="ac-select" id="services_facility" name="facility">
+            <option value="">All locations</option>
+            <% (filterOptions.facilities || []).forEach(function (f) { %>
+            <option value="<%= f.value %>" <%= filters.facility === f.value ? 'selected' : '' %>><%= f.label %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div>
+          <label class="ac-label" for="services_bookable">Booking</label>
+          <select class="ac-select" id="services_bookable" name="bookable">
+            <option value="">All</option>
+            <option value="1" <%= filters.bookable === '1' || filters.bookable === 'true' ? 'selected' : '' %>>Online bookable</option>
+          </select>
+        </div>
+        <div class="ac-filter-bar__checks">
+          <button type="submit" class="ac-btn">Apply</button>
+          <% if (filters.q || filters.status || filters.facility || filters.bookable) { %>
+          <a class="ac-btn ac-btn--ghost" href="/app/services">Clear</a>
+          <% } %>
+        </div>
+      </div>
+    </form>
+    <% if (canEdit) { %>
+    <a class="ac-btn" href="/app/services/new" data-ac-action="add-service">Add service</a>
+    <% } %>
+  </div>
+
+  <% if (!services.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'services-none',
+      title: 'No services configured yet',
+      description: 'Add clinical services with duration, pricing, locations, and assigned practitioners.',
+      primaryAction: canEdit ? { href: '/app/services/new', label: 'Add service' } : null
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-batch1a__desktop" data-ac-table="services">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th scope="col">Service</th>
+          <th scope="col">Duration</th>
+          <th scope="col">Price</th>
+          <th scope="col">Practitioners</th>
+          <th scope="col">Booking</th>
+          <th scope="col">Status</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% services.forEach(function (svc) { %>
+        <tr data-ac-service-row="<%= svc.id %>">
+          <td>
+            <a href="/app/services/<%= encodeURIComponent(svc.id) %>/edit"><%= svc.name %></a>
+            <% if (svc.description) { %><div class="ac-muted" style="font-size:.85rem"><%= svc.description %></div><% } %>
+          </td>
+          <td><%= svc.defaultDurationMinutes %> min</td>
+          <td><%= svc.priceDisplay || '—' %></td>
+          <td>
+            <% if (svc.practitioners && svc.practitioners.length) { %>
+            <%= svc.practitioners.map(function (p) { return p.displayName; }).join(', ') %>
+            <% } else { %>
+            <span class="ac-muted">Unassigned</span>
+            <% } %>
+          </td>
+          <td>
+            <% if (svc.publicBookable) { %>
+            <span class="ac-badge ac-badge--active">Online bookable</span>
+            <% } else { %>
+            <span class="ac-badge">Internal only</span>
+            <% } %>
+          </td>
+          <td>
+            <span class="ac-badge <%= svc.active ? 'ac-badge--active' : 'ac-badge--inactive' %>"><%= svc.active ? 'Active' : 'Inactive' %></span>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="ac-list ac-list--mobile-only ac-batch1a__mobile" data-ac-services-cards="1">
+    <% services.forEach(function (svc) { %>
+    <li class="ac-card ac-batch1a-card" data-ac-service-card="<%= svc.id %>">
+      <a class="ac-batch1a-card__title" href="/app/services/<%= encodeURIComponent(svc.id) %>/edit"><%= svc.name %></a>
+      <p class="ac-muted"><%= svc.defaultDurationMinutes %> min · <%= svc.priceDisplay || 'No price' %></p>
+      <div class="ac-batch1a-card__meta">
+        <span class="ac-badge <%= svc.active ? 'ac-badge--active' : 'ac-badge--inactive' %>"><%= svc.active ? 'Active' : 'Inactive' %></span>
+        <% if (svc.publicBookable) { %><span class="ac-badge ac-badge--active">Bookable</span><% } %>
+      </div>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <% if (page && page.totalPages > 1) { %>
+  <nav class="ac-pagination" aria-label="Services pages">
+    <% if (page.hasPrev) { %><a class="ac-btn ac-btn--ghost" href="/app/services?page=<%= page.page - 1 %>">Previous</a><% } %>
+    <span class="ac-muted">Page <%= page.page %> of <%= page.totalPages %></span>
+    <% if (page.hasNext) { %><a class="ac-btn ac-btn--ghost" href="/app/services?page=<%= page.page + 1 %>">Next</a><% } %>
+  </nav>
+  <% } %>
+
+  <p class="ac-muted ac-batch1a__footnote">
+    Consultation fees are stored on the operations service catalogue. Billing charge catalogue items remain available under Billing for invoice line items.
+  </p>
+</section>

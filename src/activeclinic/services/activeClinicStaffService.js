@@ -68,6 +68,12 @@ const UUID_RE =
 
 function mapStaff(row) {
   if (!row) return null;
+  let specialties = [];
+  if (Array.isArray(row.specialties_json)) {
+    specialties = row.specialties_json;
+  } else if (row.specialties_json && typeof row.specialties_json === "object") {
+    specialties = Array.isArray(row.specialties_json) ? row.specialties_json : [];
+  }
   return {
     id: row.id,
     organizationId: row.organization_id,
@@ -87,6 +93,14 @@ function mapStaff(row) {
     status: row.status,
     startDate: row.start_date || null,
     endDate: row.end_date || null,
+    credentialsText: row.credentials_text || null,
+    licenseNumber: row.license_number || null,
+    specialties,
+    publicBookable: row.public_bookable === true,
+    publicProfileEnabled: row.public_profile_enabled === true,
+    publicDisplayName: row.public_display_name || null,
+    publicTitle: row.public_title || null,
+    publicBio: row.public_bio || null,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -574,6 +588,44 @@ async function updateStaffMemberProfile(db, input) {
       patch.emailNormalized = email.normalized;
       patch.emailDisplay = email.display;
     }
+  }
+
+  // Practitioner profile fields (ACN05) — do not grant application RBAC.
+  if (Object.prototype.hasOwnProperty.call(src, "credentialsText")) {
+    patch.credentialsText = src.credentialsText
+      ? String(src.credentialsText).trim().slice(0, 500)
+      : null;
+  }
+  if (Object.prototype.hasOwnProperty.call(src, "licenseNumber")) {
+    patch.licenseNumber = src.licenseNumber
+      ? String(src.licenseNumber).trim().slice(0, 80)
+      : null;
+  }
+  if (Object.prototype.hasOwnProperty.call(src, "specialties")) {
+    patch.specialties = Array.isArray(src.specialties)
+      ? src.specialties.map((s) => String(s).trim()).filter(Boolean).slice(0, 20)
+      : [];
+  }
+  if (typeof src.publicBookable === "boolean") {
+    patch.publicBookable = src.publicBookable;
+  }
+  if (typeof src.publicProfileEnabled === "boolean") {
+    patch.publicProfileEnabled = src.publicProfileEnabled;
+  }
+  if (Object.prototype.hasOwnProperty.call(src, "publicDisplayName")) {
+    patch.publicDisplayName = src.publicDisplayName
+      ? String(src.publicDisplayName).trim().slice(0, 200)
+      : null;
+  }
+  if (Object.prototype.hasOwnProperty.call(src, "publicTitle")) {
+    patch.publicTitle = src.publicTitle
+      ? String(src.publicTitle).trim().slice(0, 120)
+      : null;
+  }
+  if (Object.prototype.hasOwnProperty.call(src, "publicBio")) {
+    patch.publicBio = src.publicBio
+      ? String(src.publicBio).trim().slice(0, 2000)
+      : null;
   }
 
   const row = await repo.updateStaffMember(db, {

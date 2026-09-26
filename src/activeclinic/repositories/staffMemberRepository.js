@@ -139,6 +139,14 @@ async function updateStaffMember(db, input) {
             start_date = COALESCE($15, start_date),
             end_date = COALESCE($16, end_date),
             platform_identity_id = COALESCE($17, platform_identity_id),
+            credentials_text = CASE WHEN $18::boolean THEN $19 ELSE credentials_text END,
+            license_number = CASE WHEN $20::boolean THEN $21 ELSE license_number END,
+            specialties_json = CASE WHEN $22::boolean THEN $23::jsonb ELSE specialties_json END,
+            public_bookable = COALESCE($24, public_bookable),
+            public_profile_enabled = COALESCE($25, public_profile_enabled),
+            public_display_name = CASE WHEN $26::boolean THEN $27 ELSE public_display_name END,
+            public_title = CASE WHEN $28::boolean THEN $29 ELSE public_title END,
+            public_bio = CASE WHEN $30::boolean THEN $31 ELSE public_bio END,
             updated_at = now()
       WHERE id = $1 AND organization_id = $2
       RETURNING *`,
@@ -160,6 +168,30 @@ async function updateStaffMember(db, input) {
       p.startDate !== undefined ? p.startDate : null,
       p.endDate !== undefined ? p.endDate : null,
       p.platformIdentityId !== undefined ? p.platformIdentityId : null,
+      Object.prototype.hasOwnProperty.call(p, "credentialsText"),
+      p.credentialsText == null || String(p.credentialsText).trim() === ""
+        ? null
+        : String(p.credentialsText).trim().slice(0, 500),
+      Object.prototype.hasOwnProperty.call(p, "licenseNumber"),
+      p.licenseNumber == null || String(p.licenseNumber).trim() === ""
+        ? null
+        : String(p.licenseNumber).trim().slice(0, 80),
+      Object.prototype.hasOwnProperty.call(p, "specialties"),
+      JSON.stringify(Array.isArray(p.specialties) ? p.specialties : []),
+      typeof p.publicBookable === "boolean" ? p.publicBookable : null,
+      typeof p.publicProfileEnabled === "boolean" ? p.publicProfileEnabled : null,
+      Object.prototype.hasOwnProperty.call(p, "publicDisplayName"),
+      p.publicDisplayName == null || String(p.publicDisplayName).trim() === ""
+        ? null
+        : String(p.publicDisplayName).trim(),
+      Object.prototype.hasOwnProperty.call(p, "publicTitle"),
+      p.publicTitle == null || String(p.publicTitle).trim() === ""
+        ? null
+        : String(p.publicTitle).trim(),
+      Object.prototype.hasOwnProperty.call(p, "publicBio"),
+      p.publicBio == null || String(p.publicBio).trim() === ""
+        ? null
+        : String(p.publicBio).trim(),
     ]
   );
   return result.rows[0] || null;

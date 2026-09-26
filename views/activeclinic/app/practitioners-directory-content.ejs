@@ -1,0 +1,155 @@
+<%
+  var directory = (pageData && pageData.directory) || {};
+  var practitioners = directory.practitioners || [];
+  var filters = directory.filters || {};
+  var stats = directory.stats || {};
+  var canEdit = directory.canEdit === true;
+  var canInvite = directory.canInvite === true;
+  var page = directory.page || {};
+  var rbacGuardrail = directory.rbacGuardrail || '';
+%>
+<section
+  class="ac-batch1a ac-practitioners-directory"
+  data-ac-page-section="practitioners-directory"
+  data-ac-stitch="ACN04"
+  data-ac-visual="stitch-acn04"
+>
+  <% if (rbacGuardrail) { %>
+  <p class="ac-batch1a__guardrail" data-ac-rbac-guardrail="1" role="note"><%= rbacGuardrail %></p>
+  <% } %>
+
+  <div class="ac-stats-grid" data-ac-practitioners-stats="1">
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Total Practitioners</p>
+      <p class="ac-stat-card__value"><%= stats.total != null ? stats.total : 0 %></p>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Active</p>
+      <p class="ac-stat-card__value"><%= stats.active != null ? stats.active : 0 %></p>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Publicly Bookable</p>
+      <p class="ac-stat-card__value"><%= stats.publicBookable != null ? stats.publicBookable : 0 %></p>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">On Leave</p>
+      <p class="ac-stat-card__value"><%= stats.onLeave != null ? stats.onLeave : 0 %></p>
+    </article>
+  </div>
+
+  <div class="ac-batch1a__toolbar">
+    <form class="ac-panel ac-filter-bar" method="get" action="/app/practitioners" data-ac-practitioners-filters="1">
+      <div class="ac-filter-bar__grid ac-filter-bar__grid--practitioners">
+        <div>
+          <label class="ac-label" for="prac_search">Search</label>
+          <input class="ac-input" id="prac_search" name="q" type="search" value="<%= filters.q || '' %>" placeholder="Name, specialty, or license" autocomplete="off"/>
+        </div>
+        <div>
+          <label class="ac-label" for="prac_status">Status</label>
+          <select class="ac-select" id="prac_status" name="status">
+            <option value="">All statuses</option>
+            <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Active</option>
+            <option value="invited" <%= filters.status === 'invited' ? 'selected' : '' %>>Invited</option>
+            <option value="suspended" <%= filters.status === 'suspended' ? 'selected' : '' %>>Suspended</option>
+          </select>
+        </div>
+        <div>
+          <label class="ac-label" for="prac_specialty">Specialty</label>
+          <input class="ac-input" id="prac_specialty" name="specialty" type="text" value="<%= filters.specialty || '' %>" placeholder="e.g. Paediatrics"/>
+        </div>
+        <div>
+          <label class="ac-label" for="prac_public">Public</label>
+          <select class="ac-select" id="prac_public" name="public">
+            <option value="">All</option>
+            <option value="1" <%= filters.public === '1' ? 'selected' : '' %>>Publicly bookable</option>
+          </select>
+        </div>
+        <div class="ac-filter-bar__checks">
+          <button type="submit" class="ac-btn">Apply</button>
+          <% if (filters.q || filters.status || filters.specialty || filters.public) { %>
+          <a class="ac-btn ac-btn--ghost" href="/app/practitioners">Clear</a>
+          <% } %>
+        </div>
+      </div>
+    </form>
+    <% if (canInvite) { %>
+    <a class="ac-btn" href="/app/staff/invite">Invite practitioner</a>
+    <% } %>
+  </div>
+
+  <% if (!practitioners.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'practitioners-none',
+      title: 'No practitioners found',
+      description: 'Invite clinical staff, then configure credentials and availability from their practitioner profile.',
+      primaryAction: canInvite ? { href: '/app/staff/invite', label: 'Invite practitioner' } : null
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-batch1a__desktop" data-ac-table="practitioners">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th scope="col">Practitioner</th>
+          <th scope="col">Credentials &amp; Specialty</th>
+          <th scope="col">Locations</th>
+          <th scope="col">Weekly Availability</th>
+          <th scope="col">Public Visibility</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% practitioners.forEach(function (p) { %>
+        <tr data-ac-practitioner-row="<%= p.id %>">
+          <td>
+            <a href="/app/practitioners/<%= encodeURIComponent(p.id) %>"><%= p.displayName %></a>
+            <% if (p.jobTitle) { %><div class="ac-muted" style="font-size:.85rem"><%= p.jobTitle %></div><% } %>
+            <% if (p.onLeave) { %><span class="ac-badge ac-badge--warning">On leave</span><% } %>
+          </td>
+          <td>
+            <% if (p.credentialsText || p.licenseNumber) { %>
+            <div><%= p.credentialsText || '' %><% if (p.licenseNumber) { %> · <%= p.licenseNumber %><% } %></div>
+            <% } %>
+            <% if (p.specialties && p.specialties.length) { %>
+            <div class="ac-batch1a__chips">
+              <% p.specialties.forEach(function (s) { %><span class="ac-batch1a__chip"><%= s %></span><% }) %>
+            </div>
+            <% } else if (!p.credentialsText && !p.licenseNumber) { %>
+            <span class="ac-muted">Not set</span>
+            <% } %>
+          </td>
+          <td>
+            <% if (p.locations && p.locations.length) { %>
+            <%= p.locations.map(function (l) { return l.label; }).join(', ') %>
+            <% } else { %>
+            <span class="ac-muted">Unassigned</span>
+            <% } %>
+          </td>
+          <td><%= p.weeklySummary || 'No weekly hours set' %></td>
+          <td><%= p.publicVisibilityLabel || 'Internal only' %></td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="ac-list ac-list--mobile-only ac-batch1a__mobile" data-ac-practitioners-cards="1">
+    <% practitioners.forEach(function (p) { %>
+    <li class="ac-card ac-batch1a-card" data-ac-practitioner-card="<%= p.id %>">
+      <a class="ac-batch1a-card__title" href="/app/practitioners/<%= encodeURIComponent(p.id) %>"><%= p.displayName %></a>
+      <p class="ac-muted"><%= p.jobTitle || 'Practitioner' %> · <%= p.publicVisibilityLabel || 'Internal only' %></p>
+      <p class="ac-muted"><%= p.weeklySummary || 'No weekly hours set' %></p>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+
+  <% if (page && page.totalPages > 1) { %>
+  <nav class="ac-pagination" aria-label="Practitioners pages">
+    <% if (page.hasPrev) { %><a class="ac-btn ac-btn--ghost" href="/app/practitioners?page=<%= page.page - 1 %>">Previous</a><% } %>
+    <span class="ac-muted">Page <%= page.page %> of <%= page.totalPages %></span>
+    <% if (page.hasNext) { %><a class="ac-btn ac-btn--ghost" href="/app/practitioners?page=<%= page.page + 1 %>">Next</a><% } %>
+  </nav>
+  <% } %>
+</section>

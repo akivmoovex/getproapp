@@ -110,6 +110,22 @@ const NAV_ITEMS = Object.freeze([
     group: "operations",
   },
   {
+    key: "services",
+    label: "Services",
+    href: "/app/services",
+    anyOf: ["website.view", "website.edit"],
+    icon: "medical_services",
+    group: "operations",
+  },
+  {
+    key: "practitioners",
+    label: "Practitioners",
+    href: "/app/practitioners",
+    permission: "activeclinic.staff.view",
+    icon: "stethoscope",
+    group: "operations",
+  },
+  {
     key: "staff",
     label: "Staff",
     href: "/app/staff",

@@ -9,8 +9,9 @@ async function insertServiceType(db, row) {
     `INSERT INTO activeclinic.appointment_service_types (
        organization_id, healthcare_organization_id, service_key, display_name,
        description, default_duration_minutes, requires_assigned_staff, status,
-       public_summary, public_bookable, public_website_visible
-     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11)
+       public_summary, public_bookable, public_website_visible,
+       amount_minor, currency_code, follow_up_amount_minor, buffer_minutes, facility_id
+     ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16)
      RETURNING *`,
     [
       row.organizationId,
@@ -24,6 +25,11 @@ async function insertServiceType(db, row) {
       row.publicSummary || null,
       row.publicBookable === true,
       row.publicWebsiteVisible === true,
+      row.amountMinor != null ? Number(row.amountMinor) : null,
+      row.currencyCode || null,
+      row.followUpAmountMinor != null ? Number(row.followUpAmountMinor) : null,
+      row.bufferMinutes != null ? Number(row.bufferMinutes) : null,
+      row.facilityId || null,
     ]
   );
   return result.rows[0];
@@ -40,6 +46,11 @@ async function updateServiceType(db, input) {
             public_summary = CASE WHEN $10::boolean THEN $11 ELSE public_summary END,
             public_bookable = COALESCE($12, public_bookable),
             public_website_visible = COALESCE($13, public_website_visible),
+            amount_minor = CASE WHEN $14::boolean THEN $15 ELSE amount_minor END,
+            currency_code = CASE WHEN $16::boolean THEN $17 ELSE currency_code END,
+            follow_up_amount_minor = CASE WHEN $18::boolean THEN $19 ELSE follow_up_amount_minor END,
+            buffer_minutes = CASE WHEN $20::boolean THEN $21 ELSE buffer_minutes END,
+            facility_id = CASE WHEN $22::boolean THEN $23 ELSE facility_id END,
             updated_at = now()
       WHERE id = $1
         AND organization_id = $2
@@ -63,6 +74,24 @@ async function updateServiceType(db, input) {
         : String(input.publicSummary).trim(),
       typeof input.publicBookable === "boolean" ? input.publicBookable : null,
       typeof input.publicWebsiteVisible === "boolean" ? input.publicWebsiteVisible : null,
+      Object.prototype.hasOwnProperty.call(input, "amountMinor"),
+      input.amountMinor == null || input.amountMinor === ""
+        ? null
+        : Number(input.amountMinor),
+      Object.prototype.hasOwnProperty.call(input, "currencyCode"),
+      input.currencyCode == null || String(input.currencyCode).trim() === ""
+        ? null
+        : String(input.currencyCode).trim().toUpperCase().slice(0, 3),
+      Object.prototype.hasOwnProperty.call(input, "followUpAmountMinor"),
+      input.followUpAmountMinor == null || input.followUpAmountMinor === ""
+        ? null
+        : Number(input.followUpAmountMinor),
+      Object.prototype.hasOwnProperty.call(input, "bufferMinutes"),
+      input.bufferMinutes == null || input.bufferMinutes === ""
+        ? null
+        : Number(input.bufferMinutes),
+      Object.prototype.hasOwnProperty.call(input, "facilityId"),
+      input.facilityId || null,
     ]
   );
   return result.rows[0] || null;

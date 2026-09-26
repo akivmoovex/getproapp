@@ -372,6 +372,51 @@ function calculateOrganizationSetupState(input) {
     );
   }
 
+  if (input.serviceCounts && typeof input.serviceCounts === "object") {
+    const activeServices = Number(input.serviceCounts.active) || 0;
+    items.push(
+      setupItem({
+        key: "clinical_services",
+        label:
+          activeServices > 0
+            ? "Review clinical services & pricing"
+            : "Configure clinical services & pricing",
+        complete: activeServices > 0,
+        classification: SETUP_CLASSIFICATION.RECOMMENDED,
+        destinationUrl: "/app/services",
+        description:
+          activeServices > 0
+            ? `${activeServices} active service${activeServices === 1 ? "" : "s"} configured with duration and pricing.`
+            : "Add at least one active bookable clinical service with duration and pricing.",
+        currentState: `${activeServices}_active`,
+        actionPermissions: ["website.view", "website.edit"],
+      })
+    );
+  }
+
+  if (input.practitionerCounts && typeof input.practitionerCounts === "object") {
+    const configured = Number(input.practitionerCounts.configured) || 0;
+    const activePractitioners = Number(input.practitionerCounts.active) || 0;
+    items.push(
+      setupItem({
+        key: "practitioners",
+        label:
+          configured > 0
+            ? "Review practitioners & availability"
+            : "Configure practitioners & availability",
+        complete: configured > 0,
+        classification: SETUP_CLASSIFICATION.RECOMMENDED,
+        destinationUrl: "/app/practitioners",
+        description:
+          configured > 0
+            ? `${configured} practitioner profile${configured === 1 ? "" : "s"} with credentials, specialties, or weekly availability.`
+            : "Add credentials, specialties, or weekly availability for at least one active practitioner.",
+        currentState: `${configured}_configured_${activePractitioners}_active`,
+        actionPermissions: ["activeclinic.staff.view", "activeclinic.staff.update"],
+      })
+    );
+  }
+
   if (input.staffCounts && typeof input.staffCounts === "object") {
     const active = Number(input.staffCounts.active) || 0;
     const invited = Number(input.staffCounts.invited) || 0;
@@ -558,20 +603,72 @@ async function loadOrganizationClinicSetup(db, input) {
   }
 
   let staffCounts = input.staffCounts || null;
+  let members = null;
   if (!staffCounts) {
     if (input.staffMembers && Array.isArray(input.staffMembers)) {
+      members = input.staffMembers;
       staffCounts = {
         active: input.staffMembers.filter((s) => s.status === "active").length,
         invited: input.staffMembers.filter((s) => s.status === "invited").length,
       };
     } else {
       const listed = await listStaffMembersByOrganization(db, { organizationId });
-      const members = listed.ok ? listed.staffMembers || [] : [];
+      members = listed.ok ? listed.staffMembers || [] : [];
       staffCounts = {
         active: members.filter((s) => s.status === "active").length,
         invited: members.filter((s) => s.status === "invited").length,
       };
     }
+  } else if (input.staffMembers && Array.isArray(input.staffMembers)) {
+    members = input.staffMembers;
+  }
+
+  let serviceCounts = input.serviceCounts || null;
+  if (!serviceCounts && hco && hco.id) {
+    const appointmentRepo = require("../repositories/appointmentRepository");
+    const serviceRows = await appointmentRepo.listServiceTypesByOrg(db, {
+      organizationId,
+      healthcareOrganizationId: hco.id,
+      includeInactive: true,
+    });
+    serviceCounts = {
+      total: serviceRows.length,
+      active: serviceRows.filter((r) => r.status === "active").length,
+    };
+  }
+
+  let practitionerCounts = input.practitionerCounts || null;
+  if (!practitionerCounts) {
+    if (!members) {
+      const listed = await listStaffMembersByOrganization(db, { organizationId });
+      members = listed.ok ? listed.staffMembers || [] : [];
+    }
+    const activeMembers = members.filter((s) => s.status === "active");
+    let configured = 0;
+    const configRepo = require("../repositories/servicePractitionerConfigRepository");
+    for (const member of activeMembers) {
+      const hasProfile =
+        Boolean(member.credentialsText) ||
+        Boolean(member.licenseNumber) ||
+        (Array.isArray(member.specialties) && member.specialties.length > 0) ||
+        member.publicBookable === true;
+      if (hasProfile) {
+        configured += 1;
+        continue;
+      }
+      if (hco && hco.id) {
+        const weekly = await configRepo.listWeeklyAvailability(db, {
+          organizationId,
+          healthcareOrganizationId: hco.id,
+          staffMemberId: member.id,
+        });
+        if (weekly && weekly.length > 0) configured += 1;
+      }
+    }
+    practitionerCounts = {
+      active: activeMembers.length,
+      configured,
+    };
   }
 
   const website = await loadWebsiteSetupFacts(
@@ -586,6 +683,8 @@ async function loadOrganizationClinicSetup(db, input) {
     hasActiveAdministrator: hasAdmin,
     primaryDepartments,
     staffCounts,
+    serviceCounts,
+    practitionerCounts,
     website,
     clinicKey: website.clinicKey,
   });

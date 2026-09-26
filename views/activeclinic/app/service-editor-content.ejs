@@ -1,0 +1,129 @@
+<%
+  var editor = (pageData && pageData.editor) || {};
+  var service = editor.service || {};
+  var assigned = Array.isArray(editor.assignedStaffIds) ? editor.assignedStaffIds : [];
+  var assignedSet = new Set(assigned.map(String));
+  var facilities = editor.facilities || [];
+  var staffOptions = editor.staffOptions || [];
+  var canEdit = editor.canEdit === true;
+  var mode = editor.mode === 'create' ? 'create' : 'edit';
+  var action = mode === 'create'
+    ? '/app/services'
+    : ('/app/services/' + encodeURIComponent(service.id || ''));
+  var priceMajor = service.amountMinor != null
+    ? (Number(service.amountMinor) / 100).toFixed(2)
+    : '';
+  var followUpMajor = service.followUpAmountMinor != null
+    ? (Number(service.followUpAmountMinor) / 100).toFixed(2)
+    : '';
+%>
+<section
+  class="ac-batch1a ac-service-editor"
+  data-ac-page-section="service-editor"
+  data-ac-stitch="ACN03"
+  data-ac-visual="stitch-acn03"
+  data-ac-editor-mode="<%= mode %>"
+>
+  <form class="ac-form ac-batch1a__form" method="post" action="<%= action %>" data-ac-service-form="1"<%= canEdit ? '' : ' data-ac-readonly="1"' %>>
+    <%- include('../partials/ac-csrf-field') %>
+
+    <article class="ac-panel ac-batch1a__section">
+      <h2 class="ac-batch1a__section-title">Service identity</h2>
+      <div class="ac-form-grid">
+        <div class="ac-field">
+          <label class="ac-label" for="svc_name">Service name <span class="ac-req">*</span></label>
+          <input class="ac-input" id="svc_name" name="displayName" type="text" required maxlength="120" value="<%= service.name || '' %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="svc_duration">Duration (minutes) <span class="ac-req">*</span></label>
+          <input class="ac-input" id="svc_duration" name="defaultDurationMinutes" type="number" min="5" max="480" required value="<%= service.defaultDurationMinutes || 30 %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field ac-field--full">
+          <label class="ac-label" for="svc_description">Description</label>
+          <textarea class="ac-input" id="svc_description" name="description" rows="3" maxlength="500" <%= canEdit ? '' : 'readonly' %>><%= service.description || '' %></textarea>
+        </div>
+      </div>
+    </article>
+
+    <article class="ac-panel ac-batch1a__section">
+      <h2 class="ac-batch1a__section-title">Pricing (ZMW)</h2>
+      <div class="ac-form-grid">
+        <div class="ac-field">
+          <label class="ac-label" for="svc_price">Standard patient price</label>
+          <input class="ac-input" id="svc_price" name="priceMajor" type="number" min="0" step="0.01" value="<%= priceMajor %>" <%= canEdit ? '' : 'readonly' %>/>
+          <p class="ac-muted">Tax inclusive where applicable.</p>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="svc_followup">Follow-up price</label>
+          <input class="ac-input" id="svc_followup" name="followUpPriceMajor" type="number" min="0" step="0.01" value="<%= followUpMajor %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="svc_currency">Currency</label>
+          <input class="ac-input" id="svc_currency" name="currencyCode" type="text" maxlength="3" value="<%= service.currencyCode || 'ZMW' %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="svc_buffer">Buffer (minutes)</label>
+          <input class="ac-input" id="svc_buffer" name="bufferMinutes" type="number" min="0" max="120" value="<%= service.bufferMinutes != null ? service.bufferMinutes : '' %>" <%= canEdit ? '' : 'readonly' %>/>
+        </div>
+      </div>
+    </article>
+
+    <article class="ac-panel ac-batch1a__section">
+      <h2 class="ac-batch1a__section-title">Location &amp; availability</h2>
+      <div class="ac-form-grid">
+        <div class="ac-field">
+          <label class="ac-label" for="svc_facility">Primary location</label>
+          <select class="ac-select" id="svc_facility" name="facilityId" <%= canEdit ? '' : 'disabled' %>>
+            <option value="">Any / unset</option>
+            <% facilities.forEach(function (f) { %>
+            <option value="<%= f.id %>" <%= service.facilityId === f.id ? 'selected' : '' %>><%= f.label %></option>
+            <% }) %>
+          </select>
+        </div>
+        <div class="ac-field">
+          <label class="ac-label" for="svc_status">Active status</label>
+          <select class="ac-select" id="svc_status" name="status" <%= canEdit ? '' : 'disabled' %>>
+            <option value="active" <%= service.active !== false ? 'selected' : '' %>>Active</option>
+            <option value="inactive" <%= service.active === false ? 'selected' : '' %>>Inactive</option>
+          </select>
+        </div>
+        <div class="ac-field ac-field--checks">
+          <label class="ac-check">
+            <input type="checkbox" name="publicBookable" value="1" <%= service.publicBookable ? 'checked' : '' %> <%= canEdit ? '' : 'disabled' %>/>
+            Available for online booking
+          </label>
+          <label class="ac-check">
+            <input type="checkbox" name="publicWebsiteVisible" value="1" <%= service.publicWebsiteVisible ? 'checked' : '' %> <%= canEdit ? '' : 'disabled' %>/>
+            Visible on public website
+          </label>
+        </div>
+      </div>
+    </article>
+
+    <article class="ac-panel ac-batch1a__section">
+      <h2 class="ac-batch1a__section-title">Assigned practitioners</h2>
+      <p class="ac-muted">Assigning practitioners does not grant application login or roles.</p>
+      <% if (!staffOptions.length) { %>
+      <p class="ac-muted">No active staff available. Invite practitioners first.</p>
+      <% } else { %>
+      <ul class="ac-batch1a__check-list">
+        <% staffOptions.forEach(function (s) { %>
+        <li>
+          <label class="ac-check">
+            <input type="checkbox" name="staffMemberIds" value="<%= s.id %>" <%= assignedSet.has(String(s.id)) ? 'checked' : '' %> <%= canEdit ? '' : 'disabled' %>/>
+            <%= s.displayName %><% if (s.jobTitle) { %> <span class="ac-muted">— <%= s.jobTitle %></span><% } %>
+          </label>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </article>
+
+    <div class="ac-form-actions">
+      <a class="ac-btn ac-btn--ghost" href="/app/services">Cancel</a>
+      <% if (canEdit) { %>
+      <button type="submit" class="ac-btn"><%= mode === 'create' ? 'Create service' : 'Save service' %></button>
+      <% } %>
+    </div>
+  </form>
+</section>
