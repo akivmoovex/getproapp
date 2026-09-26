@@ -1,0 +1,156 @@
+<%
+  var catalogue = (pageData && pageData.catalogue) || {};
+  var patient = catalogue.patient || {};
+  var documents = catalogue.documents || [];
+  var filters = catalogue.filters || {};
+  var filterOptions = catalogue.filterOptions || {};
+  var types = filterOptions.types || [];
+  var statuses = filterOptions.statuses || [];
+  var canCreate = catalogue.canCreate === true;
+  var stitch = catalogue.stitch || {};
+  var backHref = catalogue.backHref || '/app/clinical';
+  var patientLabel = patient.displayName || [patient.firstName, patient.lastName].filter(Boolean).join(' ') || 'Patient';
+  var patientNumber = patient.patientNumber || '';
+  var listAction = '/app/clinical/patients/' + encodeURIComponent(patient.id || '') + '/documents';
+%>
+<section
+  class="ac-clinical-docs ac-ops-queue"
+  data-ac-page-section="clinical-documents-list"
+  data-ac-stitch="ACN18"
+  data-ac-stitch-desktop="<%= stitch.desktop || '9b5d55cc2e8445f5bf97ef98f00cf8d3' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'ee65f85e2f484eb9b147dc06c97949ad' %>"
+  data-ac-binary-attachments="deferred"
+>
+  <header class="ac-ops-queue__header ac-clinical-docs__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Active patient</p>
+      <h2 class="ac-ops-queue__title">Clinical Documents</h2>
+      <p class="ac-muted">
+        <span data-ac-patient-name="1"><%= patientLabel %></span>
+        <% if (patientNumber) { %>
+          · <span data-ac-patient-number="1"><%= patientNumber %></span>
+        <% } %>
+      </p>
+    </div>
+    <div class="ac-clinical-docs__header-actions">
+      <% if (canCreate) { %>
+      <a
+        class="ac-btn ac-btn--primary"
+        href="<%= listAction %>/new<%= filters.encounter ? ('?encounter=' + encodeURIComponent(filters.encounter)) : '' %>"
+        data-ac-action="add-document"
+      >Add Document</a>
+      <% } %>
+      <a class="ac-btn ac-btn--ghost" href="<%= backHref %>" data-ac-action="back-clinical">Back to Clinical Encounter</a>
+    </div>
+  </header>
+
+  <%- include('../../platform/partials/gp-ops-filter-bar', {
+    action: listAction,
+    method: 'get',
+    q: filters.q || '',
+    qName: 'q',
+    submitLabel: 'Search',
+    filtersHtml:
+      (filters.encounter
+        ? '<input type="hidden" name="encounter" value="' + filters.encounter + '" />'
+        : '') +
+      '<label class="gp-ops-filter-bar__field"><span class="gp-ops-visually-hidden">Type</span>' +
+      '<select class="gp-ops-input" name="type"><option value="">All types</option>' +
+      types.map(function (t) {
+        return '<option value="' + t.value + '"' + (filters.type === t.value ? ' selected' : '') + '>' + t.label + '</option>';
+      }).join('') +
+      '</select></label>' +
+      '<label class="gp-ops-filter-bar__field"><span class="gp-ops-visually-hidden">Status</span>' +
+      '<select class="gp-ops-input" name="status"><option value="">All statuses</option>' +
+      statuses.map(function (s) {
+        return '<option value="' + s.value + '"' + (filters.status === s.value ? ' selected' : '') + '>' + s.label + '</option>';
+      }).join('') +
+      '</select></label>'
+  }) %>
+
+  <% if (!documents.length) { %>
+  <div class="ac-empty-state" data-ac-empty="clinical-documents">
+    <p class="ac-empty-state__title">No clinical documents yet</p>
+    <p class="ac-muted">Create a draft clinical note, certificate, or referral for this patient.</p>
+    <% if (canCreate) { %>
+    <a class="ac-btn ac-btn--primary" href="<%= listAction %>/new">Add Document</a>
+    <% } %>
+  </div>
+  <% } else { %>
+
+  <div class="ac-clinical-docs__desktop gp-ops-table-wrap" data-ac-docs-desktop="1">
+    <table class="gp-ops-table">
+      <thead>
+        <tr>
+          <th>Document title &amp; type</th>
+          <th>Encounter / date</th>
+          <th>Created by</th>
+          <th>Status</th>
+          <th>Updated</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% documents.forEach(function (doc) { %>
+        <tr data-ac-document-row="1" data-status="<%= doc.status %>">
+          <td>
+            <a href="<%= listAction %>/<%= encodeURIComponent(doc.id) %>" class="ac-clinical-docs__title-link">
+              <%= doc.title %>
+            </a>
+            <div class="ac-muted ac-clinical-docs__type"><%= doc.documentTypeLabel %></div>
+          </td>
+          <td>
+            <%= doc.encounterNumber || '—' %>
+            <% if (doc.documentDate) { %>
+              <div class="ac-muted"><%= String(doc.documentDate).slice(0, 10) %></div>
+            <% } %>
+          </td>
+          <td><%= doc.createdByName || '—' %></td>
+          <td>
+            <span class="gp-ops-status gp-ops-status--<%= doc.status === 'final' ? 'success' : 'warning' %>" data-ac-doc-status="<%= doc.status %>">
+              <%= doc.statusLabel %>
+            </span>
+          </td>
+          <td><%= doc.updatedAt ? new Date(doc.updatedAt).toLocaleString() : '—' %></td>
+          <td class="ac-clinical-docs__actions">
+            <a class="ac-btn ac-btn--ghost ac-btn--sm" href="<%= listAction %>/<%= encodeURIComponent(doc.id) %>">View</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="ac-clinical-docs__mobile" data-ac-docs-mobile="1">
+    <% documents.forEach(function (doc) { %>
+    <article class="ac-clinical-docs__card ac-panel" data-ac-document-card="1" data-status="<%= doc.status %>">
+      <div class="ac-clinical-docs__card-top">
+        <div>
+          <h3 class="ac-clinical-docs__card-title"><%= doc.title %></h3>
+          <p class="ac-muted"><%= doc.documentTypeLabel %></p>
+        </div>
+        <span class="gp-ops-status gp-ops-status--<%= doc.status === 'final' ? 'success' : 'warning' %>">
+          <%= doc.statusLabel %>
+        </span>
+      </div>
+      <p class="ac-muted">
+        <%= doc.encounterNumber || 'No encounter' %>
+        · <%= doc.createdByName || '—' %>
+      </p>
+      <div class="ac-clinical-docs__card-actions">
+        <a class="ac-btn ac-btn--primary ac-btn--sm" href="<%= listAction %>/<%= encodeURIComponent(doc.id) %>">View Document</a>
+        <% if (doc.isDraft && canCreate) { %>
+        <a class="ac-btn ac-btn--ghost ac-btn--sm" href="<%= listAction %>/<%= encodeURIComponent(doc.id) %>/edit">Edit Draft</a>
+        <% } %>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+
+  <% if (catalogue.binaryAttachmentsDeferred) { %>
+  <p class="ac-muted ac-clinical-docs__storage-note" data-ac-storage-gap="1">
+    File attachments are not available yet — private clinical storage is required before PHI binaries can be uploaded.
+  </p>
+  <% } %>
+</section>

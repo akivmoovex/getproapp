@@ -219,6 +219,11 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
         orderPrescription: `/app/clinical/encounter/${eid}/order/prescription`,
         orderLab: `/app/clinical/encounter/${eid}/order/lab`,
         orderRadiology: `/app/clinical/encounter/${eid}/order/radiology`,
+        documents: encounter.encounter.patientId
+          ? `/app/clinical/patients/${encodeURIComponent(
+              encounter.encounter.patientId
+            )}/documents?encounter=${encodeURIComponent(eid)}`
+          : null,
         patient: encounter.encounter.patientNumber
           ? `/app/patients/${encodeURIComponent(encounter.encounter.patientNumber)}`
           : null,

@@ -90,6 +90,9 @@
     <div class="ac-clinical-encounter__banner-main">
       <p class="ac-muted">
         <a href="/app/clinical">Back to clinical worklist</a>
+        <% if (links.documents) { %>
+        · <a href="<%= links.documents %>" data-ac-action="clinical-documents">Clinical Documents</a>
+        <% } %>
       </p>
       <div class="ac-clinical-encounter__identity">
         <h2 class="ac-clinical-encounter__patient">
