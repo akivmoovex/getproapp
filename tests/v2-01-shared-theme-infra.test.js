@@ -184,7 +184,7 @@ describe("V2_01 shared website theme infrastructure", () => {
     );
     assert.match(
       read("src/activeclinic/http/renderActiveClinicPublic.js"),
-      /ASSET_VERSION = "v2-u1a-history-1"/
+      /ASSET_VERSION = "v2-u1b-panel-1"/
     );
   });
 });

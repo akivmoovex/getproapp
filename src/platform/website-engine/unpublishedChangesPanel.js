@@ -220,6 +220,12 @@ function presentUnpublishedChangesPanel(input) {
     visitorsLine: "Visitors see live version",
     reassurance:
       "Edits remain completely private to your admin team. Nothing on your live website updates until you confirm publishing.",
+    statusReadyLabel: "Ready for public visitors",
+    statusPendingLabel: empty
+      ? "0 pending edits"
+      : pendingChangeCount === 1
+        ? "1 pending edit verified"
+        : `${pendingChangeCount} pending edits verified`,
     groups,
     items,
     canPublish,

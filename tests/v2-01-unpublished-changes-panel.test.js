@@ -77,6 +77,8 @@ describe("V2.01 Unpublished Changes Panel", () => {
     assert.equal(about.changeCount, 1);
     assert.match(panel.title, /Unpublished Changes \(3\)/);
     assert.equal(panel.publishLabel, "Publish All (3) Changes");
+    assert.equal(panel.statusReadyLabel, "Ready for public visitors");
+    assert.equal(panel.statusPendingLabel, "3 pending edits verified");
   });
 
   it("presents readable live-vs-draft text and image previews", () => {
@@ -218,6 +220,8 @@ describe("V2.01 Unpublished Changes Panel", () => {
     assert.match(panelEjs, /data-website-unpublished-panel/);
     assert.match(panelEjs, /Draft Safe/);
     assert.match(panelEjs, /Visitors see live version/);
+    assert.match(panelEjs, /data-website-panel-status/);
+    assert.match(panelEjs, /Ready for public visitors/);
     assert.doesNotMatch(panelEjs, /org-switcher|select-organization/i);
     assert.match(overlays, /unpublished-changes-panel/);
 
@@ -225,7 +229,9 @@ describe("V2.01 Unpublished Changes Panel", () => {
     assert.match(js, /data-website-pending-pill/);
     assert.match(js, /Preview Full Context/);
     assert.match(js, /data-website-panel-revert/);
+    assert.match(js, /statusPendingLabel/);
     assert.match(css, /gp-cm-panel/);
+    assert.match(css, /gp-cm-panel__status/);
     assert.match(css, /max-width:\s*430px/);
 
     assert.match(bbRoutes, /website\/unpublished-changes/);

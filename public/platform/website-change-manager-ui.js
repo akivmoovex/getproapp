@@ -329,6 +329,9 @@
     var publishBtn = $("[data-website-panel-publish]", root);
     var preview = $("[data-website-panel-preview]", root);
     var footer = $("[data-website-panel-footer]", root);
+    var statusEl = $("[data-website-panel-status]", root);
+    var statusReady = $("[data-website-panel-status-ready]", root);
+    var statusPending = $("[data-website-panel-status-pending]", root);
     if (loading) loading.hidden = true;
     if (title) title.textContent = panel.title || "Unpublished Changes";
     if (preview) {
@@ -347,7 +350,22 @@
       if (form) form.hidden = !panel.showPublish;
     }
     if (footer) footer.hidden = panel.empty && !panel.showPreview;
-    if (emptyEl) emptyEl.hidden = !panel.empty;
+    if (statusEl) {
+      statusEl.hidden = Boolean(panel.empty);
+      if (!panel.empty) {
+        if (statusReady && panel.statusReadyLabel) statusReady.textContent = panel.statusReadyLabel;
+        if (statusPending && panel.statusPendingLabel) statusPending.textContent = panel.statusPendingLabel;
+      }
+    }
+    if (emptyEl) {
+      emptyEl.hidden = !panel.empty;
+      if (panel.empty) {
+        var emptyTitle = emptyEl.querySelector("h2");
+        var emptyBody = emptyEl.querySelector("p");
+        if (emptyTitle && panel.emptyTitle) emptyTitle.textContent = panel.emptyTitle;
+        if (emptyBody && panel.emptyBody) emptyBody.textContent = panel.emptyBody;
+      }
+    }
     if (!groupsEl) return;
     if (panel.empty) {
       groupsEl.innerHTML = "";
