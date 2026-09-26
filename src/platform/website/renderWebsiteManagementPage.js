@@ -7,7 +7,7 @@ const path = require("path");
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "platform");
 const TEMPLATE = path.join(VIEWS_ROOT, "website", "management-page.ejs");
 
-const INLINE_EDIT_STYLESHEET = "/platform/website-inline-edit.css?v=v2-toolbar-parity-2";
+const INLINE_EDIT_STYLESHEET = "/platform/website-inline-edit.css?v=v2-u1a-history-1";
 
 let cachedSource = null;
 

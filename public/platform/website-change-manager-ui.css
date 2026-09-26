@@ -1099,6 +1099,21 @@ body.gp-website-editor-open .ac-website-editable[data-website-type="textarea"] .
   color: var(--gp-cm-muted);
 }
 
+.gp-cm-history__choice-preview {
+  margin: 0.55rem 0 0;
+  padding: 0.55rem 0.7rem;
+  border-radius: 0.55rem;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  color: #0f172a;
+  font-size: 0.86rem;
+  font-style: normal;
+  line-height: 1.35;
+  max-height: 4.2rem;
+  overflow: hidden;
+  word-break: break-word;
+}
+
 .gp-cm-history__footer {
   display: grid;
   gap: 0.35rem;
@@ -1153,11 +1168,33 @@ html.gp-cm-history-open {
 @media (max-width: 430px) {
   .gp-cm-history__sheet {
     width: 100%;
+    max-height: min(92vh, 44rem);
     border-radius: 1.1rem 1.1rem 0 0;
+    display: flex;
+    flex-direction: column;
+  }
+
+  .gp-cm-history__body {
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .gp-cm-history__title {
+    font-size: 1.05rem;
+    line-height: 1.25;
+    padding-right: 0.35rem;
+  }
+
+  .gp-cm-history__choice-preview {
+    font-size: 0.82rem;
+    max-height: 3.6rem;
   }
 
   .gp-cm-history__confirm {
     font-size: 0.84rem;
     padding-inline: 0.65rem;
+    min-height: 2.75rem;
   }
 }

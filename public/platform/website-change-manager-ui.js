@@ -614,7 +614,11 @@
     var confirm = $("[data-website-history-confirm]", root);
     var loading = $("[data-website-history-loading]", root);
     if (loading) loading.hidden = true;
-    if (title) title.textContent = panel.contentKey ? "History · " + panel.contentKey : "Field History";
+    if (title) {
+      title.textContent =
+        panel.title ||
+        (panel.fieldLabel ? "Field History: " + panel.fieldLabel : "Field History");
+    }
     if (confirm) {
       confirm.disabled = true;
       confirm.textContent = panel.confirmLabel || "Restore This Version to Draft (Does Not Publish)";
@@ -681,7 +685,13 @@
         escapeHtml(choice.subtitle || "") +
         "</span><em>" +
         escapeHtml(choice.detail || choice.unavailableReason || "") +
-        "</em></div></button>";
+        "</em>" +
+        (choice.previewQuote
+          ? '<blockquote class="gp-cm-history__choice-preview">' +
+            escapeHtml(choice.previewQuote) +
+            "</blockquote>"
+          : "") +
+        "</div></button>";
     });
     choicesEl.innerHTML = html;
   }

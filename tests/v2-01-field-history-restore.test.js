@@ -73,6 +73,9 @@ describe("V2.01 Field History and Restore — presentation", () => {
     assert.equal(panel.stitchScreenId, STITCH_HISTORY_SCREEN);
     assert.equal(panel.hasPendingChanges, true);
     assert.match(panel.confirmLabel, /Does Not Publish/i);
+    assert.equal(panel.fieldLabel, "Title");
+    assert.match(panel.title, /Field History:\s*Title/);
+    assert.ok(!/\./.test(panel.title.replace("Field History: ", "")) || panel.title.includes("Title"));
 
     const byChoice = Object.fromEntries(panel.choices.map((c) => [c.choice === CHOICE.EARLIER_PUBLISHED ? c.id : c.choice, c]));
     assert.equal(byChoice[CHOICE.UNDO_CURRENT_EDIT].restorable, true);
@@ -83,8 +86,33 @@ describe("V2.01 Field History and Restore — presentation", () => {
     assert.ok(byChoice["earlier_published:v-old"]);
     assert.equal(byChoice["earlier_published:v-old"].restorable, true);
     assert.equal(byChoice["earlier_published:v-old"].preview.text, "Earlier copy");
+    assert.equal(byChoice["earlier_published:v-old"].previewQuote, "Earlier copy");
+    assert.equal(byChoice[CHOICE.CURRENT_DRAFT].previewQuote, "Draft copy");
+    assert.equal(byChoice[CHOICE.CURRENTLY_PUBLISHED].previewQuote, "Live copy");
     assert.equal(panel.draftPreview.text, "Draft copy");
     assert.equal(panel.publishedPreview.text, "Live copy");
+  });
+
+  it("humanizes raw content keys when template label is absent", () => {
+    const panel = presentFieldHistoryRestore({
+      canEdit: true,
+      history: {
+        contentKey: "home.hero.eyebrow",
+        contentType: CONTENT_TYPES.SHORT_TEXT,
+        supportsFieldHistory: true,
+        entries: [],
+      },
+      row: {
+        contentKey: "home.hero.eyebrow",
+        contentType: CONTENT_TYPES.SHORT_TEXT,
+        draftValue: "Welcome",
+        publishedValue: "Hello",
+        updatedAt: "2026-09-25T12:00:00Z",
+      },
+    });
+    assert.equal(panel.fieldLabel, "Eyebrow");
+    assert.equal(panel.title, "Field History: Eyebrow");
+    assert.ok(!panel.title.includes("home.hero"));
   });
 
   it("never fabricates previously saved draft history", () => {
@@ -184,7 +212,12 @@ describe("V2.01 Field History and Restore — presentation", () => {
     assert.doesNotMatch(histEjs, /confirm_publish|makePublic/);
     assert.match(js, /openFieldHistory/);
     assert.match(js, /expectedUpdatedAt/);
+    assert.match(js, /Field History:/);
+    assert.match(js, /previewQuote/);
+    assert.match(js, /gp-cm-history__choice-preview/);
+    assert.doesNotMatch(js, /History · /);
     assert.match(css, /gp-cm-history/);
+    assert.match(css, /gp-cm-history__choice-preview/);
     assert.match(css, /max-width:\s*430px/);
     assert.match(bbRoutes, /field-history\/restore/);
     assert.match(bbRoutes, /restoreFieldRevisionToDraft/);

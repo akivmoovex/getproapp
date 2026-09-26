@@ -9,6 +9,7 @@
 const { CONTENT_TYPES } = require("../website/contentTypes");
 const { presentValue } = require("../website/reviewDiff");
 const contentService = require("../website/contentService");
+const { getContentKeyDef } = require("../website/templateRegistry");
 
 const STITCH_PROJECT_ID = "12538817760086591589";
 const STITCH_HISTORY_SCREEN = "06f6fb0423eb47808b0227564ae48458";
@@ -26,6 +27,44 @@ function formatPublishedAt(value) {
   const d = value instanceof Date ? value : new Date(value);
   if (Number.isNaN(d.getTime())) return null;
   return d.toISOString().replace("T", " ").slice(0, 16) + " UTC";
+}
+
+function humanizeContentKey(contentKey) {
+  const parts = String(contentKey || "")
+    .split(".")
+    .filter(Boolean);
+  const raw = parts.slice(2).join(".") || parts[parts.length - 1] || contentKey || "Field";
+  return String(raw)
+    .replace(/[._-]+/g, " ")
+    .replace(/\b\w/g, (c) => c.toUpperCase());
+}
+
+/**
+ * Prefer template description/label; never surface raw dotted keys in the sheet title.
+ */
+function resolveFieldLabel(input, contentKey) {
+  const explicit = input && input.fieldLabel != null ? String(input.fieldLabel).trim() : "";
+  if (explicit && explicit !== contentKey) return explicit;
+  const template = input && input.template;
+  if (template && contentKey) {
+    const def = getContentKeyDef(template, contentKey);
+    if (def && (def.description || def.label)) {
+      return String(def.description || def.label).trim();
+    }
+  }
+  return humanizeContentKey(contentKey);
+}
+
+function previewQuote(preview) {
+  if (!preview) return "";
+  if (preview.isMedia) {
+    if (preview.src) return "Image attached";
+    if (preview.text) return String(preview.text).slice(0, 120);
+    return preview.empty ? "(empty)" : "";
+  }
+  const text = String(preview.text || "").trim();
+  if (!text) return preview.empty ? "(empty)" : "";
+  return text.length > 140 ? text.slice(0, 137) + "…" : text;
 }
 
 function previewFor(value, contentType) {
@@ -59,6 +98,7 @@ function presentFieldHistoryRestore(input) {
   const row = (input && input.row) || null;
   const canEdit = input && input.canEdit === true;
   const contentKey = String(history.contentKey || (row && row.contentKey) || "").trim();
+  const fieldLabel = resolveFieldLabel(input, contentKey);
   const contentType =
     history.contentType || (row && row.contentType) || CONTENT_TYPES.SHORT_TEXT;
   const supports = history.supportsFieldHistory !== false;
@@ -92,6 +132,7 @@ function presentFieldHistoryRestore(input) {
       label: "Current Draft (Unpublished)",
       subtitle: "Current Working Draft",
       detail: "Currently active on your editor canvas",
+      previewQuote: previewQuote(draftPreview),
       available: true,
       restorable: false,
       active: true,
@@ -109,6 +150,7 @@ function presentFieldHistoryRestore(input) {
     detail: hasPending
       ? "Discards the unpublished draft for this field only"
       : "No unpublished edit to undo",
+    previewQuote: hasPending ? previewQuote(publishedPreview) : "",
     available: hasPending && supports,
     restorable: hasPending && supports && canEdit,
     unavailableReason: hasPending
@@ -126,6 +168,7 @@ function presentFieldHistoryRestore(input) {
     label: "Previously saved",
     subtitle: "Prior draft revision",
     detail: "Prior draft history is not available for this field",
+    previewQuote: "",
     available: false,
     restorable: false,
     unavailableReason:
@@ -142,6 +185,7 @@ function presentFieldHistoryRestore(input) {
     detail: publishedValue == null && !hasPending
       ? "No published value yet"
       : "Published value visitors see now",
+    previewQuote: previewQuote(publishedPreview),
     available: supports && (publishedValue != null || hasPending || row != null),
     restorable: canEdit && supports,
     unavailableReason: supports
@@ -165,6 +209,7 @@ function presentFieldHistoryRestore(input) {
       label: "Earlier published version",
       subtitle: entry.versionNumber != null ? `Version ${entry.versionNumber}` : "Earlier publish",
       detail: formatPublishedAt(entry.publishedAt) || "Earlier published snapshot",
+      previewQuote: previewQuote(preview),
       available: supports && mediaOk,
       restorable: canEdit && supports && mediaOk,
       unavailableReason: !supports
@@ -184,6 +229,8 @@ function presentFieldHistoryRestore(input) {
     stitchProjectId: STITCH_PROJECT_ID,
     stitchScreenId: STITCH_HISTORY_SCREEN,
     contentKey,
+    fieldLabel,
+    title: fieldLabel ? `Field History: ${fieldLabel}` : "Field History",
     contentType,
     supportsFieldHistory: supports,
     canEdit,
@@ -211,5 +258,8 @@ module.exports = {
   CHOICE,
   presentFieldHistoryRestore,
   previewFor,
+  previewQuote,
   formatPublishedAt,
+  humanizeContentKey,
+  resolveFieldLabel,
 };

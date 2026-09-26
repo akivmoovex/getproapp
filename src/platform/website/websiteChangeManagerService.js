@@ -365,12 +365,16 @@ async function getFieldHistoryRestorePanel(db, input) {
       };
     }
   }
+  const template = instance
+    ? getWebsiteTemplate(instance.templateId, instance.templateVersion)
+    : null;
   const { presentFieldHistoryRestore } = require("../website-engine/fieldHistoryRestore");
   const panel = presentFieldHistoryRestore({
     history,
     row: history.row,
     canEdit,
     mediaAvailability,
+    template,
   });
   return {
     ok: true,
