@@ -860,7 +860,7 @@ html.gp-cm-panel-open {
   }
 }
 
-/* Field History entry — cluster left of pencil; ≥44px touch; never covers mid-field text. */
+/* Field History entry — cluster left of pencil; ≥44px touch; stay inside field box. */
 .gp-website-editable__history {
   position: absolute;
   top: 0.25rem;
@@ -882,6 +882,42 @@ html.gp-cm-panel-open {
   cursor: pointer;
   pointer-events: auto;
   box-sizing: border-box;
+}
+
+/* Narrow/hero overlays: stack History above pencil on the same right edge to avoid viewport clip. */
+@media (max-width: 767px) {
+  body.gp-website-editor-open .gp-website-editable__history {
+    right: 0.25rem;
+    top: auto;
+    bottom: calc(var(--gp-website-touch, 2.75rem) + 0.35rem);
+  }
+
+  body.gp-website-editor-open .gp-website-editable[data-website-type="text"] .gp-website-editable__pencil,
+  body.gp-website-editor-open .ac-website-editable[data-website-type="text"] .ac-website-editable__pencil,
+  body.gp-website-editor-open .gp-website-editable[data-website-type="text"] .gp-website-editable__history,
+  body.gp-website-editor-open .ac-website-editable[data-website-type="text"] .gp-website-editable__history {
+    /* Keep shared bottom-right stack (history above pencil). */
+    right: 0.25rem;
+  }
+
+  body.gp-website-editor-open .gp-website-editable[data-website-type="text"] .gp-website-editable__history,
+  body.gp-website-editor-open .ac-website-editable[data-website-type="text"] .gp-website-editable__history {
+    bottom: calc(var(--gp-website-touch, 2.75rem) + 0.35rem);
+    top: auto;
+  }
+
+  body.gp-website-editor-open .gp-website-editable[data-website-type="text"] .gp-website-editable__pencil,
+  body.gp-website-editor-open .ac-website-editable[data-website-type="text"] .ac-website-editable__pencil {
+    bottom: 0.25rem;
+    top: auto;
+  }
+
+  body.gp-website-editor-open .gp-website-editable__display,
+  body.gp-website-editor-open .ac-website-editable__display {
+    min-width: calc(var(--gp-website-touch) + 0.5rem);
+    padding-right: calc(var(--gp-website-touch) + 0.35rem);
+    padding-bottom: calc((var(--gp-website-touch) * 2) + 0.5rem);
+  }
 }
 
 .gp-website-editable__history .material-symbols-outlined {
