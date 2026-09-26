@@ -1905,6 +1905,93 @@ textarea.gp-website-field-editor__input {
   }
 }
 
+/* U1-C: densify Edit Content / Adjust Picture sheets at ~390 without losing Save/Cancel */
+@media (max-width: 430px) {
+  .gp-website-field-editor {
+    padding: 0;
+  }
+
+  .gp-website-field-editor__panel {
+    max-height: min(92vh, calc(100dvh - var(--gp-we-toolbar-h, 3.5rem) - 0.5rem));
+    border-radius: 14px 14px 0 0;
+    overflow-x: hidden;
+  }
+
+  .gp-website-field-editor__head {
+    padding: 10px 12px 6px;
+    gap: 0.5rem;
+  }
+
+  .gp-website-field-editor__title {
+    font-size: 0.98rem;
+    line-height: 1.25;
+  }
+
+  .gp-website-field-editor__body {
+    padding: 0 12px 6px;
+    overflow-x: hidden;
+  }
+
+  .gp-website-field-editor__section {
+    margin-bottom: 0.7rem;
+  }
+
+  .gp-website-field-editor__label {
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .gp-website-field-editor__input {
+    padding: 0.55rem 0.65rem;
+    font-size: 1rem; /* avoid iOS zoom */
+  }
+
+  textarea.gp-website-field-editor__input {
+    min-height: 5.25rem;
+  }
+
+  .gp-website-field-editor__status {
+    padding: 0 12px 6px;
+    font-size: 0.75rem;
+  }
+
+  .gp-website-field-editor__foot {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 0.45rem;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 2;
+  }
+
+  .gp-website-field-editor__btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+  }
+
+  .gp-website-framing {
+    padding: 0.55rem;
+  }
+
+  .gp-website-framing__stage--desktop,
+  .gp-website-framing__stage--mobile {
+    max-height: 9.5rem;
+  }
+
+  .gp-website-framing__controls {
+    gap: 0.4rem;
+  }
+
+  .gp-website-field-editor__media-actions {
+    gap: 0.4rem;
+  }
+
+  .gp-website-field-editor__preview-wrap {
+    max-height: 9rem;
+  }
+}
+
 body.gp-website-field-editor-open .bb-tp-main,
 body.gp-website-field-editor-open .ac-public-main,
 body.gp-website-field-editor-open .gp-website-chrome-stack {
