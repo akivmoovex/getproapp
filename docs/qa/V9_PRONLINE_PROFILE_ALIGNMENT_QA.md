@@ -14,7 +14,7 @@
 
 Pronline keeps existing deployment code **`moovex-platform-testing`** (no invented V9 code). Profile **`platformLine`** elevated to **`v8`** so About uses product **Version 2.02**, while domains, cookies, DB identity (`moovex-platform-v7` / `testing`), and `mediaWriteNamespace=testing` stay on the historical pronline testing app. Neuniversity remains **`moovex-platform-v8-testing`** (domain-isolated).
 
-**Hosted confirmed** on `d05f93ee8d0b`: BB+AC About **2.02**, `/healthz` `platformLine=v8`, identity testing. Production untouched.
+**Hosted confirmed** on `3a9fa6f71ad7` (alignment tip; prior smoke `d05f93ee8d0b`): BB+AC About **2.02**, `/healthz` `platformLine=v8`, identity testing. Production untouched.
 
 ---
 
@@ -64,7 +64,7 @@ Unit: **50/50 PASS** (`v8-deployment-profile`, `v8-about-version-2`, `v8-environ
 | --- | --- |
 | BB `/about` → 2.02 | **PASS** (`Version 2.02` / `Release 2.02`) |
 | AC `/about` → 2.02 | **PASS** (`Version 2.02`) |
-| `/healthz` | **PASS** `gitSha=d05f93ee8d0b` · `platformLine=v8` · `moovex-platform-testing` · identity `moovex-platform-v7` / `testing` |
+| `/healthz` | **PASS** `gitSha=3a9fa6f71ad7` · `platformLine=v8` · `moovex-platform-testing` · identity `moovex-platform-v7` / `testing` |
 | BB+AC public `/` + `/login` | **PASS** HTTP 200 |
 | Cross-product host isolation | **PASS** unit + live BB≠AC shell |
 | Production unchanged | **YES** — no prod deploy; `origin/V7-first-production` still `03a89106…`; neuniversity still `b186991d` / `moovex-platform-v8-testing` |
@@ -80,7 +80,7 @@ V9_PRONLINE_PROFILE_ALIGNMENT_PASS
 deployment_code=moovex-platform-testing
 platformLine=v8
 about=2.02
-healthz_sha=d05f93ee8d0b
+healthz_sha=3a9fa6f71ad7
 db_identity=moovex-platform-v7/testing
 prod_untouched=YES
 ```
