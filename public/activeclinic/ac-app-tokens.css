@@ -1,0 +1,92 @@
+/**
+ * ActiveClinic V2.03 authenticated staff app tokens (canonical).
+ *
+ * Source of truth for staff chrome / Batch 1 ODS / Batch 2 operational screens:
+ * - Batch 1 Operational Design System: projects/12134201997833374170 (frozen palette)
+ * - Batch 2 operational screens reuse the same coherent V2.03 staff blue system
+ *   (#2563EB family). Approximate Batch 2 slate values (#0F172A / #64748B / #E2E8F0)
+ *   normalize here to ODS neutrals (#111827 / #6B7280 / #E5E7EB).
+ *
+ * Public/portal teal (--acp-*) remains in ac-tokens.css and is untouched.
+ * Loaded by staff app-shell after ac-tokens.css; consumed by ac-app.css + gp-ops overrides.
+ */
+:root {
+  /* —— Semantic aliases (V2.03 shared) —— */
+  --ac-primary: #2563eb;
+  --ac-primary-dark: #1d4ed8;
+  --ac-primary-light: #eff6ff;
+  --ac-text-primary: #111827;
+  --ac-text-secondary: #6b7280;
+  --ac-border: #e5e7eb;
+  --ac-surface: #ffffff;
+  --ac-background: #f8fafc;
+  --ac-success: #16a34a;
+  --ac-warning: #d97706;
+  --ac-danger: #dc2626;
+  --ac-info: #2563eb;
+  --ac-disabled: #9ca3af;
+
+  /* —— Staff app aliases (existing --ac-* consumers) —— */
+  --ac-bg: var(--ac-background);
+  --ac-bg-page: var(--ac-background);
+  --ac-bg-subtle: var(--ac-primary-light);
+  --ac-bg-muted: #f3f4f6;
+  --ac-ink: var(--ac-text-primary);
+  --ac-text-ink: var(--ac-text-primary);
+  --ac-muted: var(--ac-text-secondary);
+  --ac-text-muted: var(--ac-text-secondary);
+  --ac-text-subtle: var(--ac-text-secondary);
+  --ac-border-subtle: var(--ac-border);
+  --ac-border-strong: var(--ac-border);
+  --ac-primary-2: var(--ac-primary-dark);
+  --ac-primary-soft: var(--ac-primary-light);
+  --ac-primary-strong: var(--ac-primary-dark);
+  --ac-teal: #0f766e;
+  --ac-teal-soft: #f0fdfa;
+  --ac-focus: var(--ac-primary);
+  --ac-color-primary: var(--ac-primary);
+
+  /* —— Status (authenticated) —— */
+  --ac-status-success: #16a34a;
+  --ac-status-success-bg: #f0fdf4;
+  --ac-status-warning: #d97706;
+  --ac-status-warning-bg: #fffbeb;
+  --ac-status-danger: #dc2626;
+  --ac-status-danger-bg: #fef2f2;
+  --ac-status-info: var(--ac-info);
+  --ac-status-info-bg: var(--ac-primary-light);
+  --ac-status-neutral: var(--ac-text-secondary);
+  --ac-status-neutral-bg: #f3f4f6;
+  --ac-status-pending: var(--ac-warning);
+  --ac-status-pending-bg: var(--ac-status-warning-bg);
+  --ac-success-bg: var(--ac-status-success-bg);
+  --ac-warning-bg: var(--ac-status-warning-bg);
+  --ac-danger-bg: var(--ac-status-danger-bg);
+
+  /* —— Chrome metrics —— */
+  --ac-radius: 8px;
+  --ac-radius-sm: 8px;
+  --ac-radius-lg: 12px;
+  --ac-radius-pill: 999px;
+  --ac-radius-card: 12px;
+  --ac-shadow: 0 1px 2px rgba(17, 24, 39, 0.06), 0 8px 24px rgba(17, 24, 39, 0.04);
+  --ac-shadow-sm: 0 1px 2px rgba(17, 24, 39, 0.05);
+  --ac-shadow-card: var(--ac-shadow-sm);
+  --ac-staff-sidebar-w: 256px;
+  --ac-staff-topbar-h: 56px;
+  --ac-staff-bottom-nav-h: 64px;
+  --ac-touch-min: 44px;
+  --ac-sidebar-w: var(--ac-staff-sidebar-w);
+  --ac-content-max: 72rem;
+  --ac-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
+  --ac-touch: max(var(--ac-control-h, 2.75rem), var(--ac-touch-min));
+
+  /* —— gp-ops overrides (staff brand) —— */
+  --gp-ops-primary: var(--ac-primary);
+  --gp-ops-primary-hover: var(--ac-primary-dark);
+  --gp-ops-border: var(--ac-border);
+  --gp-ops-text: var(--ac-text-primary);
+  --gp-ops-muted: var(--ac-text-secondary);
+  --gp-ops-canvas: var(--ac-background);
+  --gp-ops-surface: var(--ac-surface);
+}

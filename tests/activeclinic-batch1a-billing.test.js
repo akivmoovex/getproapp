@@ -233,14 +233,11 @@ describe("ActiveClinic V2.03 ACN21–23 billing", () => {
   it("wires Stitch ACN21–23 markers and Receipt (not Statutory)", () => {
     const billingRoutes = read("src/activeclinic/http/activeClinicBillingRoutes.js");
     const cashierRoutes = read("src/activeclinic/http/activeClinicCashierRoutes.js");
-    assert.match(billingRoutes, /c479c86234b840419e821c2c48329f4e/);
-    assert.match(billingRoutes, /40fcc3c9e03e42a68e2cadbd5c1a7685/);
-    assert.match(billingRoutes, /9f422c33e30c450e9502126ba4012585/);
-    assert.match(billingRoutes, /3735516f4ecb4624ac715c6f77e7810b/);
-    assert.match(billingRoutes, /08ed6ee0d02447bca5e94698080bca4f/);
-    assert.match(cashierRoutes, /a9654729a9a44e17832910a41f0154de/);
-    assert.match(cashierRoutes, /8ca889a31c4e4ec1858c4dd4efc62731/);
-    assert.match(cashierRoutes, /914eee2a18f64fac81d2f0f69adc0cc8/);
+    assert.match(billingRoutes, /0886c0c2471d4744aa0101aed17abd22/);
+    assert.match(billingRoutes, /3af2006929ff463eaea366b3e5086091/);
+    assert.match(billingRoutes, /25af03d4c3724841a33fb03415ec1b4d/);
+    assert.match(cashierRoutes, /9288cc1e473941f4905d69b2393f066b/);
+    assert.match(cashierRoutes, /9d872ffd29954df9affe648916b2497f/);
     assert.match(cashierRoutes, /normalizePaymentMethod/);
     assert.doesNotMatch(read("views/activeclinic/app/cashier-receipt-content.ejs"), /Statutory/);
     assert.match(read("views/activeclinic/app/cashier-receipt-content.ejs"), />Receipt</);

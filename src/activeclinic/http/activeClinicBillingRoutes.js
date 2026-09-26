@@ -481,7 +481,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
               : null,
             pendingCharges,
             stitch: {
-              desktop: "08ed6ee0d02447bca5e94698080bca4f",
+              desktop: "25af03d4c3724841a33fb03415ec1b4d",
               mobile: "",
             },
           },
@@ -735,8 +735,8 @@ function registerActiveClinicBillingRoutes(app, deps) {
             stitch: errorCode
               ? { desktop: "b1a8b1855b9b4e268cd42359707d292e" }
               : {
-                  desktop: "9f422c33e30c450e9502126ba4012585",
-                  mobile: "3735516f4ecb4624ac715c6f77e7810b",
+                  desktop: "25af03d4c3724841a33fb03415ec1b4d",
+                  mobile: "",
                 },
           },
         });
@@ -910,8 +910,8 @@ function registerActiveClinicBillingRoutes(app, deps) {
             invoices,
             capabilities: { canCreateInvoice },
             stitch: {
-              desktop: "c479c86234b840419e821c2c48329f4e",
-              mobile: "40fcc3c9e03e42a68e2cadbd5c1a7685",
+              desktop: "0886c0c2471d4744aa0101aed17abd22",
+              mobile: "3af2006929ff463eaea366b3e5086091",
             },
           },
         });

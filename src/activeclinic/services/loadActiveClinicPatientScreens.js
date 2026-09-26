@@ -51,9 +51,15 @@ const STATUS_LABELS = Object.freeze({
 });
 
 const STITCH = Object.freeze({
-  /** V2.03 Batch 2 Patients List (project 7300898757945019896) */
+  /**
+   * Canonical /app/patients visual target = Batch 2 AC-B2-02
+   * (project 7300898757945019896). Batch 1 ACN10 functionality retained
+   * via data-ac-batch1 + loaders; ODS IDs kept for reference only.
+   */
   listDesktop: "04c24f7dd1d847e494733d32becc9534",
   listMobile: "ccb2201ff02641e199f1a58481fb2cc4",
+  listDesktopOds: "d6fa60ee647a44949449f163990a3e1f",
+  listMobileOds: "580bd1e41bf1439e97587ee3accb8b30",
   /** Batch 1 ACN11 profile — Batch 2 Stitch profile screen is ABSENT */
   profileDesktop: "63b85a8c28b84e9e81db2930c93c1217",
   profileMobile: "147ab133a55f41e6afc6faf3010f03e3",

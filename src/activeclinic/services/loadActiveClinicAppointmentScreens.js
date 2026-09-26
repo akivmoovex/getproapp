@@ -37,8 +37,14 @@ const STITCH = Object.freeze({
   /** V2.03 Batch 2 Appointments workspace */
   listDesktop: "6bf6da61f93a4e12972d7c3ab649549c",
   listMobile: "b7ccd0f78b8a491580554999c8d1e1b9",
+  /**
+   * Canonical appointment detail visual target = Batch 2 AC-B2-05
+   * (project 7300898757945019896). Batch 1 ACN08 lifecycle/RBAC retained
+   * via data-ac-batch1 + services; ODS desktop ID kept for reference only.
+   */
   detailDesktop: "abc9994a9cff42568c7d7ddb4bf905a4",
   detailMobile: "2621d93473ab4a79a5280f9a036a2209",
+  detailDesktopOds: "1ec9b9f67d9746ebbbf331cd2ecf2a04",
   /** Calendar remains Batch 1A ACN06 chrome within appointments workspace */
   calendarDesktop: "3c1a421cf1e140e9affe193071c8f80a",
   calendarMobile: "c36313bff4274c72b341c38cdfafbc35",

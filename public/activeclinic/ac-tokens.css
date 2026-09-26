@@ -8,7 +8,7 @@
  *  2) Public+portal teal system (--acp-*) — Stitch project 17813606734422395399
  *  3) Typography scale for public/portal
  *
- * Authenticated app indigo tokens remain in ac-app.css (--ac-*).
+ * Authenticated staff app brand tokens live in ac-app-tokens.css (V2.03 canonical).
  * Staff auth navy tokens remain in ac-auth.css (--ac-auth-*).
  */
 :root {

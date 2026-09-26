@@ -12,6 +12,8 @@
   data-ac-page-section="services-catalogue"
   data-ac-stitch="ACN02"
   data-ac-visual="stitch-acn02"
+  data-ac-stitch-desktop="f963c18596564e258d930e279be50c09"
+  data-ac-stitch-mobile="60da9b7d0cad445284cb35a5605e1076"
 >
   <div class="ac-stats-grid" data-ac-services-stats="1">
     <article class="ac-stat-card">
@@ -19,11 +21,11 @@
       <p class="ac-stat-card__value"><%= stats.active != null ? stats.active : 0 %></p>
     </article>
     <article class="ac-stat-card">
-      <p class="ac-stat-card__label">Online Bookable</p>
+      <p class="ac-stat-card__label">Online Bookable (Public App)</p>
       <p class="ac-stat-card__value"><%= stats.bookable != null ? stats.bookable : 0 %></p>
     </article>
     <article class="ac-stat-card">
-      <p class="ac-stat-card__label">Inactive Services</p>
+      <p class="ac-stat-card__label">Suspended / Inactive</p>
       <p class="ac-stat-card__value"><%= stats.inactive != null ? stats.inactive : 0 %></p>
     </article>
   </div>
@@ -33,12 +35,12 @@
       <div class="ac-filter-bar__grid ac-filter-bar__grid--services">
         <div>
           <label class="ac-label" for="services_search">Search</label>
-          <input class="ac-input" id="services_search" name="q" type="search" value="<%= filters.q || '' %>" placeholder="Service name or key" autocomplete="off"/>
+          <input class="ac-input" id="services_search" name="q" type="search" value="<%= filters.q || '' %>" placeholder="Search by service name..." autocomplete="off"/>
         </div>
         <div>
           <label class="ac-label" for="services_status">Status</label>
           <select class="ac-select" id="services_status" name="status">
-            <option value="">All statuses</option>
+            <option value="">All Statuses</option>
             <option value="active" <%= filters.status === 'active' ? 'selected' : '' %>>Active</option>
             <option value="inactive" <%= filters.status === 'inactive' ? 'selected' : '' %>>Inactive</option>
           </select>
@@ -46,7 +48,7 @@
         <div>
           <label class="ac-label" for="services_facility">Location</label>
           <select class="ac-select" id="services_facility" name="facility">
-            <option value="">All locations</option>
+            <option value="">All Locations</option>
             <% (filterOptions.facilities || []).forEach(function (f) { %>
             <option value="<%= f.value %>" <%= filters.facility === f.value ? 'selected' : '' %>><%= f.label %></option>
             <% }) %>
@@ -61,15 +63,16 @@
         </div>
         <div class="ac-filter-bar__checks">
           <button type="submit" class="ac-btn">Apply</button>
-          <% if (filters.q || filters.status || filters.facility || filters.bookable) { %>
-          <a class="ac-btn ac-btn--ghost" href="/app/services">Clear</a>
-          <% } %>
+          <a class="ac-btn ac-btn--ghost" href="/app/services">Reset Filters</a>
         </div>
       </div>
     </form>
-    <% if (canEdit) { %>
-    <a class="ac-btn" href="/app/services/new" data-ac-action="add-service">Add service</a>
-    <% } %>
+    <div class="ac-batch1a__chip-row">
+      <a class="ac-btn ac-btn--ghost" href="/app/data" data-ac-action="export-catalogue">Export Catalogue (CSV)</a>
+      <% if (canEdit) { %>
+      <a class="ac-btn" href="/app/services/new" data-ac-action="add-service">+ Add New Service</a>
+      <% } %>
+    </div>
   </div>
 
   <% if (!services.length) { %>
@@ -79,7 +82,7 @@
       marker: 'services-none',
       title: 'No services configured yet',
       description: 'Add clinical services with duration, pricing, locations, and assigned practitioners.',
-      primaryAction: canEdit ? { href: '/app/services/new', label: 'Add service' } : null
+      primaryAction: canEdit ? { href: '/app/services/new', label: 'Add New Service' } : null
     }
   }) %>
   <% } else { %>
@@ -87,39 +90,34 @@
     <table class="ac-table">
       <thead>
         <tr>
-          <th scope="col">Service</th>
-          <th scope="col">Duration</th>
-          <th scope="col">Price</th>
-          <th scope="col">Practitioners</th>
-          <th scope="col">Booking</th>
           <th scope="col">Status</th>
+          <th scope="col">Service Details</th>
+          <th scope="col">Duration</th>
+          <th scope="col">Consultation Fee</th>
+          <th scope="col">Booking Channel</th>
         </tr>
       </thead>
       <tbody>
         <% services.forEach(function (svc) { %>
         <tr data-ac-service-row="<%= svc.id %>">
           <td>
+            <span class="ac-badge <%= svc.active ? 'ac-badge--active' : 'ac-badge--inactive' %>"><%= svc.active ? 'Active' : 'Inactive' %></span>
+          </td>
+          <td>
             <a href="/app/services/<%= encodeURIComponent(svc.id) %>/edit"><%= svc.name %></a>
+            <% if (svc.serviceKey) { %><div class="ac-batch1a__chips"><span class="ac-batch1a__chip"><%= svc.serviceKey %></span></div><% } %>
             <% if (svc.description) { %><div class="ac-muted" style="font-size:.85rem"><%= svc.description %></div><% } %>
           </td>
-          <td><%= svc.defaultDurationMinutes %> min</td>
+          <td><%= svc.defaultDurationMinutes %> mins</td>
           <td><%= svc.priceDisplay || '—' %></td>
           <td>
-            <% if (svc.practitioners && svc.practitioners.length) { %>
-            <%= svc.practitioners.map(function (p) { return p.displayName; }).join(', ') %>
-            <% } else { %>
-            <span class="ac-muted">Unassigned</span>
-            <% } %>
-          </td>
-          <td>
             <% if (svc.publicBookable) { %>
-            <span class="ac-badge ac-badge--active">Online bookable</span>
+            <span class="ac-badge ac-badge--teal">Available Online</span>
+            <% } else if (svc.active) { %>
+            <span class="ac-badge ac-badge--walkin">Walk-in Only</span>
             <% } else { %>
-            <span class="ac-badge">Internal only</span>
+            <span class="ac-badge ac-badge--inactive">Disabled</span>
             <% } %>
-          </td>
-          <td>
-            <span class="ac-badge <%= svc.active ? 'ac-badge--active' : 'ac-badge--inactive' %>"><%= svc.active ? 'Active' : 'Inactive' %></span>
           </td>
         </tr>
         <% }) %>
@@ -131,10 +129,16 @@
     <% services.forEach(function (svc) { %>
     <li class="ac-card ac-batch1a-card" data-ac-service-card="<%= svc.id %>">
       <a class="ac-batch1a-card__title" href="/app/services/<%= encodeURIComponent(svc.id) %>/edit"><%= svc.name %></a>
-      <p class="ac-muted"><%= svc.defaultDurationMinutes %> min · <%= svc.priceDisplay || 'No price' %></p>
+      <p class="ac-muted"><%= svc.defaultDurationMinutes %> mins · <%= svc.priceDisplay || 'No price' %></p>
       <div class="ac-batch1a-card__meta">
         <span class="ac-badge <%= svc.active ? 'ac-badge--active' : 'ac-badge--inactive' %>"><%= svc.active ? 'Active' : 'Inactive' %></span>
-        <% if (svc.publicBookable) { %><span class="ac-badge ac-badge--active">Bookable</span><% } %>
+        <% if (svc.publicBookable) { %>
+        <span class="ac-badge ac-badge--teal">Available Online</span>
+        <% } else if (svc.active) { %>
+        <span class="ac-badge ac-badge--walkin">Walk-in Only</span>
+        <% } else { %>
+        <span class="ac-badge ac-badge--inactive">Disabled</span>
+        <% } %>
       </div>
     </li>
     <% }) %>
@@ -149,7 +153,7 @@
   </nav>
   <% } %>
 
-  <p class="ac-muted ac-batch1a__footnote">
+  <p class="ac-flash ac-flash--info ac-batch1a__footnote" role="note">
     Consultation fees are stored on the operations service catalogue. Billing charge catalogue items remain available under Billing for invoice line items.
   </p>
 </section>

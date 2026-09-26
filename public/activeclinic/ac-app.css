@@ -1,56 +1,8 @@
-/* ActiveClinic authenticated application shell (V2.03 Batch 2). Product-isolated.
-   Frozen Batch 2 tokens + Stitch staff chrome (256/56 desktop, 56/64 mobile). */
-:root {
-  --ac-bg: #f8fafc;
-  --ac-bg-page: #f8fafc;
-  --ac-bg-subtle: #eff6ff;
-  --ac-bg-muted: #e2e8f0;
-  --ac-surface: #ffffff;
-  --ac-ink: #0f172a;
-  --ac-text-ink: #0f172a;
-  --ac-muted: #64748b;
-  --ac-text-muted: #64748b;
-  --ac-text-subtle: #64748b;
-  --ac-border: #e2e8f0;
-  --ac-border-subtle: #e2e8f0;
-  --ac-border-strong: #cbd5e1;
-  --ac-primary: #2563eb;
-  --ac-primary-2: #1d4ed8;
-  --ac-primary-soft: #eff6ff;
-  --ac-primary-strong: #1d4ed8;
-  --ac-teal: #006a6a;
-  --ac-focus: #2563eb;
-  --ac-success: var(--ac-status-success);
-  --ac-success-bg: var(--ac-status-success-bg);
-  --ac-warning: var(--ac-status-warning);
-  --ac-warning-bg: var(--ac-status-warning-bg);
-  --ac-danger: var(--ac-status-danger);
-  --ac-danger-bg: var(--ac-status-danger-bg);
-  --ac-radius: 8px;
-  --ac-radius-sm: 8px;
-  --ac-radius-lg: 12px;
-  --ac-radius-pill: 999px;
-  --ac-radius-card: 12px;
-  --ac-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
-  --ac-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
-  --ac-shadow-card: var(--ac-shadow-sm);
-  --ac-staff-sidebar-w: 256px;
-  --ac-staff-topbar-h: 56px;
-  --ac-staff-bottom-nav-h: 64px;
-  --ac-touch-min: 44px;
-  --ac-sidebar-w: var(--ac-staff-sidebar-w);
-  --ac-content-max: 72rem;
-  --ac-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
-  --ac-touch: max(var(--ac-control-h, 2.75rem), var(--ac-touch-min));
-  --ac-color-primary: var(--ac-primary);
-  --gp-ops-primary: #2563eb;
-  --gp-ops-primary-hover: #1d4ed8;
-  --gp-ops-border: #e2e8f0;
-  --gp-ops-text: #0f172a;
-  --gp-ops-muted: #64748b;
-  --gp-ops-canvas: #f8fafc;
-  --gp-ops-surface: #ffffff;
-}
+/* ActiveClinic authenticated application shell (V2.03 shared).
+   Tokens: public/activeclinic/ac-app-tokens.css (canonical authenticated palette).
+   Shell chrome: Batch 2 staff shell as AC shared (256/56 desktop, 56/64 mobile).
+   Screen packs: .ac-batch1a* and .ac-*--b2 may remain temporarily. */
+/* Tokens live in ac-app-tokens.css — do not redeclare :root brand colours here. */
 
 *,
 *::before,
@@ -174,8 +126,8 @@ body.ac-app-body h3 {
 .ac-nav a[aria-current="page"],
 .ac-nav-item.is-active,
 .ac-nav-item[aria-current="page"] {
-  background: var(--ac-primary-soft);
-  color: var(--ac-primary-strong);
+  background: var(--ac-teal-soft);
+  color: var(--ac-teal);
 }
 .ac-nav a:focus-visible,
 .ac-btn:focus-visible,
@@ -301,6 +253,15 @@ button:focus-visible {
   color: var(--ac-primary);
   border: 1px solid var(--ac-border);
 }
+.ac-btn--secondary {
+  background: var(--ac-teal-soft);
+  color: var(--ac-teal);
+  border: 1px solid color-mix(in srgb, var(--ac-teal) 25%, transparent);
+}
+.ac-btn--secondary:hover {
+  background: #ccfbf1;
+  color: var(--ac-teal);
+}
 .ac-btn--danger { background: var(--ac-danger); }
 
 .ac-flash {
@@ -309,12 +270,12 @@ button:focus-visible {
   margin: 0 0 var(--ac-space-4);
   font-size: 0.95rem;
 }
-.ac-flash--success { background: var(--ac-success-bg); color: var(--ac-success); border: 1px solid #abefc6; }
-.ac-flash--warning { background: var(--ac-warning-bg); color: var(--ac-warning); border: 1px solid #fedf89; }
+.ac-flash--success { background: var(--ac-success-bg); color: var(--ac-success); border: 1px solid #bbf7d0; }
+.ac-flash--warning { background: var(--ac-warning-bg); color: var(--ac-warning); border: 1px solid #fde68a; }
 .ac-flash--info {
-  background: #eff8ff;
-  color: #175cd3;
-  border: 1px solid #b2ddff;
+  background: var(--ac-primary-soft);
+  color: var(--ac-primary-2);
+  border: 1px solid #bfdbfe;
 }
 
 .ac-inline-state .ac-actions-row {
@@ -368,15 +329,17 @@ button:focus-visible {
   background: #eef2f3;
   color: var(--ac-muted);
 }
-.ac-badge--active { background: var(--ac-success-bg); color: var(--ac-success); }
-.ac-badge--success { background: var(--ac-success-bg); color: var(--ac-success); }
-.ac-badge--warning { background: var(--ac-warning-bg); color: var(--ac-warning); }
-.ac-badge--danger { background: var(--ac-danger-bg); color: var(--ac-danger); }
-.ac-badge--invited { background: #eff8ff; color: #175cd3; }
-.ac-badge--planned { background: #eff8ff; color: #175cd3; }
+.ac-badge--active { background: var(--ac-success-bg); color: var(--ac-success); border: 1px solid #bbf7d0; }
+.ac-badge--success { background: var(--ac-success-bg); color: var(--ac-success); border: 1px solid #bbf7d0; }
+.ac-badge--warning { background: var(--ac-warning-bg); color: var(--ac-warning); border: 1px solid #fde68a; }
+.ac-badge--danger { background: var(--ac-danger-bg); color: var(--ac-danger); border: 1px solid #fecaca; }
+.ac-badge--invited { background: var(--ac-primary-soft); color: var(--ac-primary-2); border: 1px solid #bfdbfe; }
+.ac-badge--planned { background: var(--ac-primary-soft); color: var(--ac-primary-2); border: 1px solid #bfdbfe; }
 .ac-badge--suspended,
-.ac-badge--archived { background: var(--ac-danger-bg); color: var(--ac-danger); }
-.ac-badge--inactive { background: var(--ac-warning-bg); color: var(--ac-warning); }
+.ac-badge--archived { background: var(--ac-danger-bg); color: var(--ac-danger); border: 1px solid #fecaca; }
+.ac-badge--inactive { background: var(--ac-status-neutral-bg); color: var(--ac-status-neutral); border: 1px solid var(--ac-border); }
+.ac-badge--teal { background: var(--ac-teal-soft); color: var(--ac-teal); border: 1px solid #99f6e4; }
+.ac-badge--walkin { background: var(--ac-warning-bg); color: var(--ac-warning); border: 1px solid #fde68a; }
 
 .ac-empty {
   text-align: center;
@@ -726,8 +689,9 @@ body.ac-drawer-open .ac-drawer {
 }
 .ac-staff-bottom-nav__item.is-active,
 .ac-staff-bottom-nav__item[aria-current="page"] {
-  color: var(--ac-primary);
+  color: var(--ac-teal);
   font-weight: 600;
+  box-shadow: inset 0 2px 0 0 var(--ac-teal);
 }
 .ac-breadcrumbs--header { margin: 0; }
 .ac-breadcrumbs-mobile { display: block; }
@@ -1979,7 +1943,8 @@ body.ac-app-body .ac-money--lg { font-size: 1.5rem; }
   body.ac-app-body .ac-drawer .ac-nav-item[aria-current="page"],
   body.ac-app-body .ac-drawer .ac-nav a.is-active,
   body.ac-app-body .ac-drawer .ac-nav a[aria-current="page"] {
-    background: color-mix(in srgb, var(--ac-primary) 14%, #fff);
+    background: var(--ac-teal-soft);
+    color: var(--ac-teal);
   }
 
   body.ac-app-body .ac-page-header {

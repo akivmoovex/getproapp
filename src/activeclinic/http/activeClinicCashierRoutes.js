@@ -636,8 +636,8 @@ function registerActiveClinicCashierRoutes(app, deps) {
             error: errorCode,
             idempotencyKey: randomUUID(),
             stitch: {
-              desktop: "a9654729a9a44e17832910a41f0154de",
-              mobile: "8ca889a31c4e4ec1858c4dd4efc62731",
+              desktop: "9288cc1e473941f4905d69b2393f066b",
+              mobile: "9d872ffd29954df9affe648916b2497f",
             },
           },
         });
@@ -894,8 +894,8 @@ function registerActiveClinicCashierRoutes(app, deps) {
               },
             },
             stitch: {
-              desktop: "914eee2a18f64fac81d2f0f69adc0cc8",
-              mobile: "",
+              desktop: "9288cc1e473941f4905d69b2393f066b",
+              mobile: "9d872ffd29954df9affe648916b2497f",
             },
             success: req.query.success === "1",
           },

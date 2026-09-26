@@ -249,15 +249,19 @@ describe("ActiveClinic V2.03 Batch 2 staff shell", () => {
   });
 
   it("CSS freezes Batch 2 shell dimensions and primary token", () => {
+    const tokens = fs.readFileSync(
+      path.join(__dirname, "../public/activeclinic/ac-app-tokens.css"),
+      "utf8"
+    );
     const css = fs.readFileSync(
       path.join(__dirname, "../public/activeclinic/ac-app.css"),
       "utf8"
     );
-    assert.match(css, /--ac-staff-sidebar-w:\s*256px/);
-    assert.match(css, /--ac-staff-topbar-h:\s*56px/);
-    assert.match(css, /--ac-staff-bottom-nav-h:\s*64px/);
-    assert.match(css, /--ac-touch-min:\s*44px/);
-    assert.match(css, /--ac-primary:\s*#2563eb/i);
+    assert.match(tokens, /--ac-staff-sidebar-w:\s*256px/);
+    assert.match(tokens, /--ac-staff-topbar-h:\s*56px/);
+    assert.match(tokens, /--ac-staff-bottom-nav-h:\s*64px/);
+    assert.match(tokens, /--ac-touch-min:\s*44px/);
+    assert.match(tokens, /--ac-primary:\s*#2563eb/i);
     assert.match(css, /\.ac-staff-bottom-nav/);
   });
 

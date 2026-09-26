@@ -432,6 +432,7 @@ describe("ActiveClinic V2.03 ACN10–13 patient & reception", () => {
     const list = await request(app).get("/app/patients").set("Cookie", cookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-ac-stitch="AC-B2-02"/);
+    assert.match(list.text, /data-ac-batch1="ACN10"/);
     assert.match(list.text, /04c24f7dd1d847e494733d32becc9534/);
 
     const profile = await request(app)
