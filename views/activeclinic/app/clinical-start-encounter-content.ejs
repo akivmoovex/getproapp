@@ -8,8 +8,11 @@
     
     <div class="ac-field">
       <label for="patient_id">Patient ID *</label>
-      <input type="text" id="patient_id" name="patient_id" value="<%= pageData.values.patientId || '' %>" required />
+      <input type="text" id="patient_id" name="patient_id" value="<%= (pageData.values && pageData.values.patientId) || '' %>" required />
     </div>
+    <% if (pageData.values && pageData.values.appointmentId) { %>
+    <input type="hidden" name="appointment_id" value="<%= pageData.values.appointmentId %>" />
+    <% } %>
     
     <div class="ac-field">
       <label for="encounter_type">Encounter type</label>

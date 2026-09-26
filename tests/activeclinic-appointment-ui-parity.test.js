@@ -305,7 +305,7 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
       .set("Cookie", adminCookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-ac-page-section="appointment-list"/);
-    assert.match(list.text, /data-ac-stitch-desktop="284e9f8cd6804b0eb0f50574e2f571d6"/);
+    assert.match(list.text, /data-ac-stitch="AC-B2-04"|data-ac-stitch-desktop="6bf6da61f93a4e12972d7c3ab649549c"/);
     assert.match(list.text, /data-ac-table="appointments"/);
     assert.match(list.text, /data-ac-card-list="appointments"/);
     assert.match(list.text, /data-ac-status-summary="appointments"/);
@@ -326,7 +326,7 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
       .set("Cookie", adminCookie);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-ac-status-history/);
-    assert.match(detail.text, /Mark arrived|Mark no-show|Cancel appointment/);
+    assert.match(detail.text, /Check-in|Mark arrived|No-show|Cancel/);
 
     const csrfDenied = await request(app)
       .post(`/app/appointments/${booked.appointment.id}/check-in`)

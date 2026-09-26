@@ -3319,3 +3319,176 @@ body.ac-app-body .ac-patients-card__cta {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   V2.03 Batch 2 — AC-B2-04 / AC-B2-05 Appointments workspace
+   ========================================================================== */
+body.ac-app-body .ac-appointments--b2 {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+body.ac-app-body .ac-appointments-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+}
+
+body.ac-app-body .ac-appointments-toolbar__kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body.ac-app-body .ac-appointments-toolbar__count {
+  margin: 0.15rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+}
+
+body.ac-app-body .ac-appointments-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+body.ac-app-body .ac-appointments-summary {
+  display: grid;
+  gap: var(--ac-space-3);
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+body.ac-app-body .ac-appointments-summary__links {
+  margin: 0;
+}
+
+body.ac-app-body .ac-appointments-card {
+  display: grid;
+  gap: 0.75rem;
+}
+
+body.ac-app-body .ac-appointments-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+body.ac-app-body .ac-appointments-card__time {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 700;
+  color: var(--ac-primary, #2563eb);
+}
+
+body.ac-app-body .ac-appointments-card__facts {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+body.ac-app-body .ac-appointments-card__facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+body.ac-app-body .ac-appointments-card__facts dt {
+  color: var(--ac-muted);
+  font-weight: 600;
+}
+
+body.ac-app-body .ac-appointments-card__facts dd {
+  margin: 0;
+  font-weight: 600;
+}
+
+body.ac-app-body .ac-appointments-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--ac-touch-min, 44px);
+  padding-top: 0.45rem;
+  border-top: 1px solid var(--ac-border);
+  font-weight: 700;
+  color: var(--ac-primary, #2563eb);
+  text-decoration: none;
+}
+
+body.ac-app-body .ac-appointment-detail--b2 {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+body.ac-app-body .ac-appointment-detail__banner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+  padding: var(--ac-space-4);
+  background: var(--ac-surface, #fff);
+  border: 1px solid var(--ac-border);
+  border-radius: var(--ac-radius-lg, 0.75rem);
+}
+
+body.ac-app-body .ac-appointment-detail__title {
+  margin: 0.25rem 0;
+  font-size: 1.45rem;
+  font-weight: 700;
+}
+
+body.ac-app-body .ac-appointment-detail__layout {
+  display: grid;
+  gap: var(--ac-space-4);
+  grid-template-columns: minmax(0, 1fr) minmax(14rem, 18rem);
+  align-items: start;
+}
+
+body.ac-app-body .ac-appointment-detail__main,
+body.ac-app-body .ac-appointment-detail__aside {
+  display: grid;
+  gap: var(--ac-space-4);
+  min-width: 0;
+}
+
+body.ac-app-body .ac-appointment-actions__stack {
+  display: grid;
+  gap: 0.5rem;
+}
+
+body.ac-app-body .ac-appointment-actions__stack .ac-btn,
+body.ac-app-body .ac-appointment-actions__stack .ac-inline-form {
+  width: 100%;
+}
+
+body.ac-app-body .ac-appointment-actions__stack .ac-inline-form .ac-btn {
+  width: 100%;
+}
+
+@media (max-width: 1099px) {
+  body.ac-app-body .ac-appointments-summary {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  body.ac-app-body .ac-appointment-detail__layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 390px) {
+  body.ac-app-body .ac-appointments-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+  body.ac-app-body .ac-appointments-toolbar__actions .ac-btn,
+  body.ac-app-body .ac-appointment-actions__stack .ac-btn {
+    min-height: var(--ac-touch-min, 44px);
+  }
+  body.ac-app-body .ac-filter-bar__grid--appointments {
+    grid-template-columns: 1fr;
+  }
+}

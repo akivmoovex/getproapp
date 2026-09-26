@@ -34,12 +34,15 @@ const {
 } = require("./activeClinicStaffService");
 
 const STITCH = Object.freeze({
-  listDesktop: "284e9f8cd6804b0eb0f50574e2f571d6",
-  listMobile: "480ecaba5258423e8711b1fdd2f39e1b",
+  /** V2.03 Batch 2 Appointments workspace */
+  listDesktop: "6bf6da61f93a4e12972d7c3ab649549c",
+  listMobile: "b7ccd0f78b8a491580554999c8d1e1b9",
+  detailDesktop: "abc9994a9cff42568c7d7ddb4bf905a4",
+  detailMobile: "2621d93473ab4a79a5280f9a036a2209",
+  /** Calendar remains Batch 1A ACN06 chrome within appointments workspace */
   calendarDesktop: "3c1a421cf1e140e9affe193071c8f80a",
   calendarMobile: "c36313bff4274c72b341c38cdfafbc35",
   bookDesktop: "c1e205c9ebd84f7a8f67d21681230d83",
-  detailDesktop: "1ec9b9f67d9746ebbbf331cd2ecf2a04",
   bookingQueueDesktop: "41394d581882437b80e941cebefbb95f",
   confirmationDesktop: "327422c1b36747039e4026a17c5a2f33",
   cancelDesktop: "b27eafc25bad4006868f3932d08bfed5",
@@ -49,6 +52,9 @@ const STITCH = Object.freeze({
   missedDesktop: "7d37e069c7644e7cb4c9b72349a0ccf7",
   scheduleDesktop: "fd009ceba70f40b2ae1755b94220c64b",
 });
+
+const ENCOUNTER_MANAGE = "activeclinic.encounter.manage";
+const ENCOUNTER_VIEW = "activeclinic.encounter.view";
 
 function hasPerm(perms, key) {
   return Array.isArray(perms) ? perms.includes(key) : false;
@@ -247,6 +253,7 @@ async function loadActiveClinicAppointmentListScreen(db, input) {
     arrived: 0,
     waiting: 0,
     with_practitioner: 0,
+    completed: 0,
     no_show: 0,
     cancelled: 0,
   };
@@ -255,6 +262,10 @@ async function loadActiveClinicAppointmentListScreen(db, input) {
       statusSummary[appointment.status] += 1;
     }
   }
+  // Presentation aliases used by list chrome (map to real statuses only).
+  statusSummary.scheduled = statusSummary.requested + statusSummary.confirmed;
+  statusSummary.checked_in = statusSummary.arrived + statusSummary.waiting;
+  statusSummary.in_progress = statusSummary.with_practitioner;
   const facilities = await loadFacilityOptions(db, auth);
   const services = await listAppointmentServiceTypes(db, {
     organizationId: auth.organization.id,
@@ -309,6 +320,7 @@ async function loadActiveClinicAppointmentListScreen(db, input) {
         scheduleHref: "/app/appointments/schedule",
       },
       stitch: {
+        code: "AC-B2-04",
         desktop: STITCH.listDesktop,
         mobile: STITCH.listMobile,
         shared: STITCH.sharedStates,
@@ -404,9 +416,11 @@ async function loadActiveClinicAppointmentCalendarScreen(db, input) {
       agendaDay,
       blockCount: (blocks || []).length,
       stitch: {
+        code: "AC-B2-04",
         desktop: STITCH.calendarDesktop,
         mobile: STITCH.calendarMobile,
         listAlt: STITCH.listDesktop,
+        batch1: "ACN06",
       },
     },
   };
@@ -614,6 +628,19 @@ async function loadActiveClinicAppointmentDetailScreen(db, input) {
     hasPerm(perms, PERM.UPDATE) && nextStatuses.includes("completed");
   const canNoShow =
     hasPerm(perms, PERM.UPDATE) && nextStatuses.includes("no_show");
+  const canStartEncounter =
+    (hasPerm(perms, ENCOUNTER_MANAGE) || hasPerm(perms, ENCOUNTER_VIEW)) &&
+    Boolean(enriched.patientId) &&
+    ["arrived", "waiting", "with_practitioner"].includes(status);
+  const startEncounterHref = canStartEncounter
+    ? `/app/clinical/start-encounter?patient_id=${encodeURIComponent(
+        enriched.patientId
+      )}&appointment_id=${encodeURIComponent(appointmentId)}`
+    : null;
+  const patientHref =
+    enriched.patient && enriched.patient.patientNumber
+      ? `/app/patients/${encodeURIComponent(enriched.patient.patientNumber)}`
+      : null;
 
   const lifecycle = LIFECYCLE_ORDER.map((key) => ({
     key,
@@ -623,6 +650,21 @@ async function loadActiveClinicAppointmentDetailScreen(db, input) {
       (status === "cancelled" && key === "requested") ||
       (status === "no_show" && ["requested", "confirmed"].includes(key)),
     current: key === status,
+  }));
+
+  const timelineEntries = (detail.statusEvents || []).map((e) => ({
+    at: e.createdAt
+      ? new Date(e.createdAt).toISOString()
+      : "",
+    title: STATUS_LABELS[e.toStatus] || e.toStatus,
+    summary: [
+      e.fromStatus ? `from ${STATUS_LABELS[e.fromStatus] || e.fromStatus}` : null,
+      e.reasonCode || null,
+    ]
+      .filter(Boolean)
+      .join(" · "),
+    actorLabel: null,
+    kind: e.toStatus || "status",
   }));
 
   return {
@@ -639,6 +681,7 @@ async function loadActiveClinicAppointmentDetailScreen(db, input) {
           ? new Date(e.createdAt).toISOString().replace("T", " ").slice(0, 16)
           : "",
       })),
+      timelineEntries,
       reminders: reminders.map((r) => ({
         channel: r.preferred_channel,
         scheduledFor: r.scheduled_for,
@@ -654,11 +697,18 @@ async function loadActiveClinicAppointmentDetailScreen(db, input) {
         canWithPractitioner,
         canComplete,
         canNoShow,
+        canStartEncounter,
+        startEncounterHref,
+        patientHref,
         editHref: `/app/appointments/${appointmentId}/reschedule`,
         cancelHref: `/app/appointments/${appointmentId}/cancel`,
+        listHref: "/app/appointments",
+        calendarHref: "/app/appointments/calendar",
       },
       stitch: {
+        code: "AC-B2-05",
         desktop: STITCH.detailDesktop,
+        mobile: STITCH.detailMobile,
         cancel: STITCH.cancelDesktop,
         missed: STITCH.missedDesktop,
         confirmation: STITCH.confirmationDesktop,

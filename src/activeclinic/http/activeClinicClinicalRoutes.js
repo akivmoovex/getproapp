@@ -191,7 +191,13 @@ function registerActiveClinicClinicalRoutes(app, deps) {
             { label: "Clinical", href: "/app/clinical" },
             { label: "Start encounter" },
           ],
-          pageData: { values: {}, error: null },
+          pageData: {
+            values: {
+              patientId: String((req.query && req.query.patient_id) || "").trim(),
+              appointmentId: String((req.query && req.query.appointment_id) || "").trim(),
+            },
+            error: null,
+          },
         });
       } catch (err) {
         return next(err);

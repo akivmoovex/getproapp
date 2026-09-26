@@ -8,8 +8,31 @@
   var stitch = list.stitch || {};
   var statusSummary = list.statusSummary || {};
 %>
-<section class="ac-appointments" data-ac-page-section="appointment-list" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>" data-ac-stitch-shared="<%= stitch.shared || '' %>">
-  <form class="ac-panel ac-filter-bar" method="get" action="/app/appointments" data-ac-appointment-filters="1">
+<section
+  class="ac-appointments ac-appointments--b2"
+  data-ac-page-section="appointment-list"
+  data-ac-stitch="AC-B2-04"
+  data-ac-stitch-desktop="<%= stitch.desktop || '6bf6da61f93a4e12972d7c3ab649549c' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'b7ccd0f78b8a491580554999c8d1e1b9' %>"
+  data-ac-stitch-shared="<%= stitch.shared || '' %>"
+>
+  <header class="ac-appointments-toolbar" data-ac-appointments-toolbar="1">
+    <div>
+      <p class="ac-appointments-toolbar__kicker ac-muted">Scheduling</p>
+      <p class="ac-appointments-toolbar__count" data-ac-result-count="<%= list.resultCount != null ? list.resultCount : 0 %>">
+        <%= list.resultCount != null ? list.resultCount : 0 %> appointment<%= (list.resultCount === 1) ? '' : 's' %>
+      </p>
+    </div>
+    <div class="ac-appointments-toolbar__actions">
+      <a class="ac-btn ac-btn--ghost" href="<%= actions.calendarHref || '/app/appointments/calendar' %>">Calendar</a>
+      <a class="ac-btn ac-btn--ghost" href="<%= actions.scheduleHref || '/app/appointments/schedule' %>">Schedule</a>
+      <% if (actions.canCreate) { %>
+      <a class="ac-btn" href="<%= actions.createHref || '/app/appointments/new' %>" data-ac-appointments-action="book">+ New Appt</a>
+      <% } %>
+    </div>
+  </header>
+
+  <form class="ac-panel ac-filter-bar gp-ops-filter-bar" method="get" action="/app/appointments" data-ac-appointment-filters="1" data-gp-ops="filter-bar" role="search">
     <div class="ac-filter-bar__grid ac-filter-bar__grid--appointments">
       <div>
         <label class="ac-label" for="appt_date">From date</label>
@@ -38,7 +61,7 @@
         </select>
       </div>
       <div>
-        <label class="ac-label" for="appt_staff">Staff</label>
+        <label class="ac-label" for="appt_staff">Provider</label>
         <select class="ac-select" id="appt_staff" name="staff">
           <option value="">Any</option>
           <% (filterOptions.staff || []).forEach(function (s) { %>
@@ -46,9 +69,17 @@
           <% }) %>
         </select>
       </div>
+      <div>
+        <label class="ac-label" for="appt_service">Service</label>
+        <select class="ac-select" id="appt_service" name="service">
+          <option value="">Any</option>
+          <% (filterOptions.services || []).forEach(function (s) { %>
+          <option value="<%= s.value %>" <%= filters.serviceTypeId === s.value ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
       <div class="ac-filter-bar__checks">
         <button type="submit" class="ac-btn">Filter</button>
-        <a class="ac-btn ac-btn--ghost" href="<%= actions.calendarHref || '/app/appointments/calendar' %>">Calendar</a>
         <% if (filters.active) { %>
         <a class="ac-btn ac-btn--ghost" href="/app/appointments">Clear</a>
         <% } %>
@@ -56,24 +87,17 @@
     </div>
   </form>
 
-  <div class="ac-panel" data-ac-status-summary="appointments">
-    <h2 class="ac-panel__title">Status summary</h2>
-    <dl class="ac-dl ac-dl--compact">
-      <div><dt>Scheduled</dt><dd><%= statusSummary.scheduled || 0 %></dd></div>
-      <div><dt>Confirmed</dt><dd><%= statusSummary.confirmed || 0 %></dd></div>
-      <div><dt>Checked in</dt><dd><%= statusSummary.checked_in || 0 %></dd></div>
-      <div><dt>No-show</dt><dd><%= statusSummary.no_show || 0 %></dd></div>
-      <div><dt>Cancelled</dt><dd><%= statusSummary.cancelled || 0 %></dd></div>
-    </dl>
-    <div class="ac-form-actions">
-      <a class="ac-btn ac-btn--ghost" href="<%= actions.missedHref || '/app/appointments/missed' %>">Missed appointments</a>
-      <a class="ac-btn ac-btn--ghost" href="<%= actions.scheduleHref || '/app/appointments/schedule' %>">Doctor schedule</a>
-    </div>
+  <div class="ac-appointments-summary" data-ac-status-summary="appointments">
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Scheduled</p><p class="ac-stat-card__value"><%= statusSummary.scheduled || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Confirmed</p><p class="ac-stat-card__value"><%= statusSummary.confirmed || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Checked in</p><p class="ac-stat-card__value"><%= statusSummary.checked_in || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">In progress</p><p class="ac-stat-card__value"><%= statusSummary.in_progress || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">No-show</p><p class="ac-stat-card__value"><%= statusSummary.no_show || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Cancelled</p><p class="ac-stat-card__value"><%= statusSummary.cancelled || 0 %></p></article>
   </div>
-
-  <% if (list.resultCount != null && !emptyMode) { %>
-  <p class="ac-muted" data-ac-result-count="<%= list.resultCount %>"><%= list.resultCount %> appointment<%= list.resultCount === 1 ? '' : 's' %></p>
-  <% } %>
+  <p class="ac-appointments-summary__links">
+    <a class="ac-btn ac-btn--ghost" href="<%= actions.missedHref || '/app/appointments/missed' %>">Missed appointments</a>
+  </p>
 
   <% if (emptyMode === 'none') { %>
   <%- include('../partials/ac-inline-state', {
@@ -93,59 +117,93 @@
       stateKey: 'no_results',
       marker: 'appointments-filtered',
       title: 'No appointments match these filters',
-      description: 'Try a different facility, status, or date range.',
+      description: 'Try a different facility, status, provider, or date range.',
       secondaryAction: { href: '/app/appointments', label: 'Clear filters' }
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap ac-appointments-desktop" data-ac-table="appointments">
-    <table class="ac-table">
-      <caption class="ac-sr-only">Appointments</caption>
-      <thead>
-        <tr>
-          <th scope="col">When</th>
-          <th scope="col">Patient</th>
-          <th scope="col">Service</th>
-          <th scope="col">Facility</th>
-          <th scope="col">Staff</th>
-          <th scope="col">Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% appointments.forEach(function (a) { %>
-        <tr>
-          <td>
-            <a href="/app/appointments/<%= a.id %>"><%= a.when.dateLabel %></a>
-            <div class="ac-muted"><%= a.when.timeLabel %></div>
-          </td>
-          <td>
-            <% if (a.patient) { %>
-            <a href="/app/patients/<%= encodeURIComponent(a.patient.patientNumber) %>"><%= a.patient.displayName %></a>
-            <div class="ac-muted"><%= a.patient.patientNumber %></div>
-            <% } else { %>—<% } %>
-          </td>
-          <td><%= (a.service && a.service.displayName) || '—' %></td>
-          <td><%= (a.facility && a.facility.displayName) || '—' %></td>
-          <td><%= (a.assignedStaff && a.assignedStaff.displayName) || '—' %></td>
-          <td><span class="ac-status" data-ac-status="<%= a.status %>"><%= a.statusLabel %></span></td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
+  <div class="ac-panel ac-table-wrap ac-appointments-desktop gp-ops-table-wrap" data-ac-table="appointments" data-gp-ops="table">
+    <div class="gp-ops-table-scroll">
+      <table class="ac-table gp-ops-table">
+        <caption class="ac-sr-only">Appointments</caption>
+        <thead>
+          <tr>
+            <th scope="col">When</th>
+            <th scope="col">Patient</th>
+            <th scope="col">Service</th>
+            <th scope="col">Provider</th>
+            <th scope="col">Facility</th>
+            <th scope="col">Status</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% appointments.forEach(function (a) { %>
+          <tr data-ac-appointment-row="<%= a.id %>">
+            <td>
+              <a href="/app/appointments/<%= a.id %>"><%= a.when.dateLabel %></a>
+              <div class="ac-muted"><%= a.when.timeLabel %></div>
+            </td>
+            <td>
+              <% if (a.patient) { %>
+              <a href="/app/patients/<%= encodeURIComponent(a.patient.patientNumber) %>"><%= a.patient.displayName %></a>
+              <div class="ac-muted"><%= a.patient.patientNumber %></div>
+              <% } else { %>—<% } %>
+            </td>
+            <td><%= (a.service && a.service.displayName) || '—' %></td>
+            <td><%= (a.assignedStaff && a.assignedStaff.displayName) || '—' %></td>
+            <td><%= (a.facility && a.facility.displayName) || '—' %></td>
+            <td>
+              <%- include('../../platform/partials/gp-ops-status-badge', {
+                label: a.statusLabel || a.status,
+                tone: a.status === 'confirmed' || a.status === 'completed' ? 'success'
+                  : (a.status === 'arrived' || a.status === 'waiting' ? 'info'
+                  : (a.status === 'cancelled' || a.status === 'no_show' ? 'danger'
+                  : (a.status === 'with_practitioner' ? 'warning' : 'neutral')))
+              }) %>
+            </td>
+            <td>
+              <a class="ac-btn ac-btn--ghost" href="/app/appointments/<%= a.id %>">Open</a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
   </div>
-  <div class="ac-appointments-mobile ac-card-list" data-ac-card-list="appointments">
+
+  <ul class="ac-appointments-mobile ac-card-list" data-ac-card-list="appointments" aria-label="Appointments">
     <% appointments.forEach(function (a) { %>
-    <article class="ac-card">
-      <h3 class="ac-card__title"><a href="/app/appointments/<%= a.id %>"><%= (a.patient && a.patient.displayName) || 'Appointment' %></a></h3>
-      <dl class="ac-dl ac-dl--compact">
-        <div><dt>When</dt><dd><%= a.when.dateLabel %> · <%= a.when.timeLabel %></dd></div>
+    <li class="ac-card ac-appointments-card">
+      <div class="ac-appointments-card__head">
+        <div>
+          <p class="ac-appointments-card__time"><%= a.when.timeLabel %></p>
+          <p class="ac-card__title"><%= (a.patient && a.patient.displayName) || 'Appointment' %></p>
+          <% if (a.patient) { %>
+          <p class="ac-muted"><%= a.patient.patientNumber %></p>
+          <% } %>
+        </div>
+        <%- include('../../platform/partials/gp-ops-status-badge', {
+          label: a.statusLabel || a.status,
+          tone: a.status === 'confirmed' || a.status === 'completed' ? 'success'
+            : (a.status === 'arrived' || a.status === 'waiting' ? 'info'
+            : (a.status === 'cancelled' || a.status === 'no_show' ? 'danger'
+            : (a.status === 'with_practitioner' ? 'warning' : 'neutral')))
+        }) %>
+      </div>
+      <dl class="ac-appointments-card__facts">
+        <div><dt>When</dt><dd><%= a.when.dateLabel %></dd></div>
         <div><dt>Service</dt><dd><%= (a.service && a.service.displayName) || '—' %></dd></div>
+        <div><dt>Provider</dt><dd><%= (a.assignedStaff && a.assignedStaff.displayName) || '—' %></dd></div>
         <div><dt>Facility</dt><dd><%= (a.facility && a.facility.displayName) || '—' %></dd></div>
-        <div><dt>Status</dt><dd><span class="ac-status" data-ac-status="<%= a.status %>"><%= a.statusLabel %></span></dd></div>
       </dl>
-    </article>
+      <a class="ac-appointments-card__cta" href="/app/appointments/<%= a.id %>">
+        Open appointment
+        <span aria-hidden="true">›</span>
+      </a>
+    </li>
     <% }) %>
-  </div>
+  </ul>
   <% } %>
   <p class="ac-sr-only">This view does not include clinical diagnoses or clinical notes.</p>
 </section>

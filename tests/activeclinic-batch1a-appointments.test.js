@@ -96,7 +96,8 @@ const STITCH = Object.freeze({
   calendarDesktop: "3c1a421cf1e140e9affe193071c8f80a",
   calendarMobile: "c36313bff4274c72b341c38cdfafbc35",
   bookDesktop: "c1e205c9ebd84f7a8f67d21681230d83",
-  detailDesktop: "1ec9b9f67d9746ebbbf331cd2ecf2a04",
+  detailDesktop: "abc9994a9cff42568c7d7ddb4bf905a4",
+  listDesktop: "6bf6da61f93a4e12972d7c3ab649549c",
   bookingQueueDesktop: "41394d581882437b80e941cebefbb95f",
 });
 
@@ -283,7 +284,8 @@ describe("ActiveClinic V2.03 ACN06–09 appointments", () => {
       path.join(ROOT, "views/activeclinic/app/appointment-detail-content.ejs"),
       "utf8"
     );
-    assert.match(detail, /data-ac-stitch="ACN08"/);
+    assert.match(detail, /data-ac-stitch="AC-B2-05"/);
+    assert.match(detail, /data-ac-batch1="ACN08"/);
     assert.match(detail, /data-ac-lifecycle/);
 
     const requests = fs.readFileSync(
@@ -628,7 +630,7 @@ describe("ActiveClinic V2.03 ACN06–09 appointments", () => {
       .get(`/app/appointments/${created.appointment.id}`)
       .set("Cookie", cookie);
     assert.equal(detail.status, 200);
-    assert.match(detail.text, /data-ac-stitch="ACN08"/);
+    assert.match(detail.text, /data-ac-stitch="AC-B2-05"/);
     assert.match(detail.text, new RegExp(STITCH.detailDesktop));
     assert.match(detail.text, /data-ac-lifecycle/);
     assert.match(detail.text, /Confirmed|Mark arrived/);
