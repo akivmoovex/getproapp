@@ -1,0 +1,69 @@
+{
+  "orgKey": "ac-v8-qa-mub23a6v6a6b",
+  "checks": [
+    {
+      "id": "BUG-006",
+      "title": "Directory\u2192clinic",
+      "directoryStatus": 200,
+      "cardAttr": true,
+      "follow": "/clinics/ac-v8-qa-mub23a6v6a6b",
+      "followStatus": 200,
+      "followOk": true
+    },
+    {
+      "id": "BUG-001-inquiry",
+      "title": "Clinic inquiry submit",
+      "getStatus": 200,
+      "postStatus": 200,
+      "finalUrl": "https://activeclinic.neuniversity.org/clinics/ac-v8-qa-mub23a6v6a6b/contact/success",
+      "success": true,
+      "noPhiLeak": true
+    },
+    {
+      "id": "BUG-001-booking",
+      "title": "Booking entry",
+      "status": 200,
+      "wizard": true,
+      "hasCsrf": true
+    },
+    {
+      "id": "BUG-004",
+      "title": "Doctors public",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "BUG-003",
+      "title": "Services public",
+      "status": 200,
+      "ok": true
+    },
+    {
+      "id": "V8-001-surface",
+      "title": "Forgot password page",
+      "status": 200,
+      "hasForm": true,
+      "note": "Live SMTP delivery remains OPEN (V8-001); page reachable"
+    },
+    {
+      "id": "BUG-002",
+      "title": "Staff invitation UI",
+      "loginReached": true,
+      "inviteStatus": 200,
+      "inviteUi": true,
+      "whatsappShare": false
+    },
+    {
+      "id": "BUG-009",
+      "title": "Clinic registration surface",
+      "status": 200,
+      "ok": true,
+      "note": "Uniqueness covered by v7-shared-phone-identity local suite; no second provision write this run"
+    }
+  ],
+  "healthz": {
+    "gitSha": "2b0cabde4a92",
+    "deploymentCode": "moovex-platform-v8-testing",
+    "schemaCompatible": true
+  }
+}
