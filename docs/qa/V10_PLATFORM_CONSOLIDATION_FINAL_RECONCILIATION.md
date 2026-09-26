@@ -16,9 +16,9 @@
 ## Git / release candidate state
 
 ```text
-HEAD:        85a72524fd4442eafb577c362abaed274cf0680a
+HEAD:        0da86d42510ca7ca6a447ba89c5b31f11bbbef17
 ORIGIN/V10:  b8c18c3ded9892aa318ae6e029600aa34ff4941b
-AHEAD:       9
+AHEAD:        0da86d42510ca7ca6a447ba89c5b31f11bbbef17
 BEHIND:      0
 ```
 
