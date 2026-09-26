@@ -3,88 +3,127 @@
   var a = detail.appointment || {};
   var actions = detail.actions || {};
   var events = detail.statusEvents || [];
+  var lifecycle = detail.lifecycle || [];
   var reminders = detail.reminders || [];
   var stitch = detail.stitch || {};
   var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
-<section class="ac-appointment-detail" data-ac-page-section="appointment-detail" data-ac-stitch-cancel="<%= stitch.cancel || '' %>" data-ac-stitch-missed="<%= stitch.missed || '' %>" data-ac-stitch-confirmation="<%= stitch.confirmation || '' %>">
+<section
+  class="ac-batch1a ac-appointment-detail"
+  data-ac-page-section="appointment-detail"
+  data-ac-stitch="ACN08"
+  data-ac-stitch-desktop="<%= stitch.desktop || '' %>"
+  data-ac-status="<%= a.status || '' %>"
+>
   <div class="ac-panel">
-    <h2 class="ac-panel__title">Appointment</h2>
-    <dl class="ac-dl">
-      <div><dt>Status</dt><dd><span class="ac-status" data-ac-status="<%= a.status %>"><%= a.statusLabel || a.status %></span></dd></div>
-      <div><dt>When</dt><dd><%= (a.when && a.when.dateLabel) || '' %> · <%= (a.when && a.when.timeLabel) || '' %></dd></div>
-      <div><dt>Timezone</dt><dd><%= a.timezone || '—' %></dd></div>
+    <div class="ac-batch1a__profile-head">
       <div>
-        <dt>Patient</dt>
-        <dd>
-          <% if (a.patient) { %>
-          <a href="/app/patients/<%= encodeURIComponent(a.patient.patientNumber) %>"><%= a.patient.displayName %></a>
-          (<%= a.patient.patientNumber %>)
-          <% } else { %>—<% } %>
-        </dd>
+        <h2 class="ac-batch1a__section-title">Appointment</h2>
+        <p class="ac-muted"><%= (a.when && a.when.dateLabel) || '' %> · <%= (a.when && a.when.timeLabel) || '' %></p>
       </div>
-      <div><dt>Facility</dt><dd><%= (a.facility && a.facility.displayName) || '—' %></dd></div>
+      <span class="ac-status" data-ac-status="<%= a.status %>"><%= a.statusLabel || a.status %></span>
+    </div>
+
+    <ol class="ac-lifecycle" data-ac-lifecycle="1" aria-label="Appointment status lifecycle">
+      <% lifecycle.forEach(function (step) { %>
+      <li class="ac-lifecycle__step<%= step.current ? ' is-current' : '' %><%= step.reached ? ' is-reached' : '' %>" data-ac-lifecycle-step="<%= step.key %>">
+        <span class="ac-lifecycle__dot" aria-hidden="true"></span>
+        <span class="ac-lifecycle__label"><%= step.label %></span>
+      </li>
+      <% }) %>
+    </ol>
+
+    <dl class="ac-dl">
+      <div><dt>Patient</dt><dd>
+        <% if (a.patient) { %>
+        <a href="/app/patients/<%= encodeURIComponent(a.patient.patientNumber) %>"><%= a.patient.displayName %></a>
+        (<%= a.patient.patientNumber %>)
+        <% } else { %>—<% } %>
+      </dd></div>
+      <div><dt>Location</dt><dd><%= (a.facility && a.facility.displayName) || '—' %></dd></div>
       <div><dt>Service</dt><dd><%= (a.service && a.service.displayName) || '—' %></dd></div>
-      <div><dt>Assigned staff</dt><dd><%= (a.assignedStaff && a.assignedStaff.displayName) || 'Unassigned' %></dd></div>
-      <div><dt>Administrative note</dt><dd><%= a.schedulingNote || '—' %></dd></div>
+      <div><dt>Practitioner</dt><dd><%= (a.assignedStaff && a.assignedStaff.displayName) || 'Unassigned' %></dd></div>
+      <div><dt>Note</dt><dd><%= a.schedulingNote || '—' %></dd></div>
       <% if (a.cancellationReason) { %>
       <div><dt>Cancellation reason</dt><dd><%= a.cancellationReason %></dd></div>
       <% } %>
     </dl>
   </div>
 
-  <div class="ac-panel">
-    <h2 class="ac-panel__title">Reminder metadata</h2>
-    <% if (!reminders.length) { %>
-    <p class="ac-muted">No reminder requested.</p>
-    <% } else { %>
-    <ul>
-      <% reminders.forEach(function (r) { %>
-      <li><%= r.channel %> · <%= r.deliveryState %> (never marked sent)</li>
-      <% }) %>
-    </ul>
-    <% } %>
+  <div class="ac-panel ac-appointment-actions" data-ac-appointment-actions="1">
+    <h2 class="ac-batch1a__section-title">Actions</h2>
+    <div class="ac-form-actions ac-form-actions--wrap">
+      <% if (actions.canConfirm) { %>
+      <form method="post" action="/app/appointments/<%= a.id %>/confirm" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn">Confirm</button>
+      </form>
+      <% } %>
+      <% if (actions.canCheckIn) { %>
+      <form method="post" action="/app/appointments/<%= a.id %>/check-in" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn">Mark arrived</button>
+      </form>
+      <% } %>
+      <% if (actions.canWaiting) { %>
+      <form method="post" action="/app/appointments/<%= a.id %>/waiting" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn">Waiting</button>
+      </form>
+      <% } %>
+      <% if (actions.canWithPractitioner) { %>
+      <form method="post" action="/app/appointments/<%= a.id %>/with-practitioner" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn">With practitioner</button>
+      </form>
+      <% } %>
+      <% if (actions.canComplete) { %>
+      <form method="post" action="/app/appointments/<%= a.id %>/complete" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn">Complete</button>
+      </form>
+      <% } %>
+      <% if (actions.canEdit) { %>
+      <a class="ac-btn ac-btn--ghost" href="<%= actions.editHref %>">Reschedule</a>
+      <% } %>
+      <% if (actions.canNoShow) { %>
+      <form method="post" action="/app/appointments/<%= a.id %>/no-show" class="ac-inline-form">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+        <button type="submit" class="ac-btn ac-btn--ghost">No-show</button>
+      </form>
+      <% } %>
+      <% if (actions.canCancel) { %>
+      <a class="ac-btn ac-btn--danger" href="<%= actions.cancelHref %>">Cancel</a>
+      <% } %>
+    </div>
   </div>
 
   <div class="ac-panel">
-    <h2 class="ac-panel__title">Status history</h2>
+    <h2 class="ac-batch1a__section-title">Audit trail &amp; status history</h2>
     <% if (!events.length) { %>
     <p class="ac-muted">No events yet.</p>
     <% } else { %>
     <ol class="ac-timeline" data-ac-status-history="1">
       <% events.forEach(function (e) { %>
       <li>
-        <span class="ac-status" data-ac-status="<%= e.toStatus %>"><%= e.toStatus %></span>
-        <% if (e.fromStatus) { %> from <%= e.fromStatus %><% } %>
+        <strong><%= e.toStatusLabel || e.toStatus %></strong>
+        <% if (e.fromStatusLabel) { %> <span class="ac-muted">from <%= e.fromStatusLabel %></span><% } %>
         <% if (e.reasonCode) { %> · <%= e.reasonCode %><% } %>
+        <% if (e.createdAtLabel) { %> · <span class="ac-muted"><%= e.createdAtLabel %></span><% } %>
       </li>
       <% }) %>
     </ol>
     <% } %>
   </div>
 
-  <div class="ac-panel ac-appointment-actions" data-ac-appointment-actions="1">
-    <h2 class="ac-panel__title">Actions</h2>
-    <div class="ac-form-actions">
-      <% if (actions.canEdit) { %>
-      <a class="ac-btn" href="<%= actions.editHref %>">Reschedule appointment</a>
-      <% } %>
-      <% if (actions.canCheckIn) { %>
-      <form method="post" action="/app/appointments/<%= a.id %>/check-in" class="ac-inline-form">
-        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
-        <button type="submit" class="ac-btn">Check in</button>
-      </form>
-      <% } %>
-      <% if (actions.canNoShow) { %>
-      <form method="post" action="/app/appointments/<%= a.id %>/no-show" class="ac-inline-form">
-        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
-        <button type="submit" class="ac-btn ac-btn--ghost">Mark no-show</button>
-      </form>
-      <% } %>
-      <% if (actions.canCancel) { %>
-      <a class="ac-btn ac-btn--danger" href="<%= actions.cancelHref %>">Cancel appointment</a>
-      <% } %>
-    </div>
+  <% if (reminders.length) { %>
+  <div class="ac-panel">
+    <h2 class="ac-batch1a__section-title">Reminder metadata</h2>
+    <ul>
+      <% reminders.forEach(function (r) { %>
+      <li><%= r.channel %> · <%= r.deliveryState %></li>
+      <% }) %>
+    </ul>
   </div>
-  <p class="ac-sr-only">This page does not create encounters or show clinical diagnoses.</p>
+  <% } %>
 </section>

@@ -46,6 +46,10 @@ const {
   rescheduleAppointment,
   cancelAppointment,
   checkInAppointment,
+  confirmAppointment,
+  markWaitingAppointment,
+  markWithPractitionerAppointment,
+  completeAppointment,
   markNoShowAppointment,
   RESULT: APPT_RESULT,
   PERM,
@@ -839,6 +843,35 @@ function registerActiveClinicAppointmentRoutes(app, deps) {
     requireAuth,
     requirePermission(PERM.CHECK_IN),
     (req, res, next) => postStatusAction(req, res, next, checkInAppointment)
+  );
+
+  app.post(
+    "/app/appointments/:appointmentId/confirm",
+    requireAuth,
+    requirePermission(PERM.UPDATE),
+    (req, res, next) => postStatusAction(req, res, next, confirmAppointment)
+  );
+
+  app.post(
+    "/app/appointments/:appointmentId/waiting",
+    requireAuth,
+    requirePermission(PERM.CHECK_IN),
+    (req, res, next) => postStatusAction(req, res, next, markWaitingAppointment)
+  );
+
+  app.post(
+    "/app/appointments/:appointmentId/with-practitioner",
+    requireAuth,
+    requirePermission(PERM.UPDATE),
+    (req, res, next) =>
+      postStatusAction(req, res, next, markWithPractitionerAppointment)
+  );
+
+  app.post(
+    "/app/appointments/:appointmentId/complete",
+    requireAuth,
+    requirePermission(PERM.UPDATE),
+    (req, res, next) => postStatusAction(req, res, next, completeAppointment)
   );
 
   app.post(

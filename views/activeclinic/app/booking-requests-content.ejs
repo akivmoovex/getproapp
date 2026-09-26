@@ -1,38 +1,121 @@
 <%
   var list = (pageData && pageData.bookingRequests) || {};
   var bookings = list.bookings || [];
+  var linkageBookings = list.linkageBookings || [];
   var actions = list.actions || {};
+  var stitch = list.stitch || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
-<section class="ac-panel" data-ac-page-section="booking-requests">
-  <p class="ac-muted">Public bookings remain valid while clinic patient identity is unresolved. Phone matches are candidates only — never auto-linked.</p>
+<section
+  class="ac-batch1a ac-booking-requests"
+  data-ac-page-section="booking-requests"
+  data-ac-stitch="ACN09"
+  data-ac-stitch-desktop="<%= stitch.desktop || '' %>"
+>
+  <p class="ac-muted">Public bookings stay valid until confirmed, declined, or cancelled. Confirming creates a clinic appointment after patient linkage.</p>
+
+  <div class="ac-stats-grid">
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Queue</p>
+      <p class="ac-stat-card__value"><%= bookings.length %></p>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Need patient link</p>
+      <p class="ac-stat-card__value"><%= linkageBookings.length %></p>
+    </article>
+  </div>
+
   <% if (!bookings.length) { %>
   <%- include('../partials/ac-inline-state', {
     inlineState: {
       stateKey: 'empty',
       marker: 'booking-requests',
-      title: 'No unresolved booking links',
-      description: 'Public bookings stay valid until clinic patient identity is resolved. Nothing is waiting.'
+      title: 'No booking requests waiting',
+      description: 'New public /book submissions appear here for confirm, reschedule, or decline.'
     }
   }) %>
   <% } else { %>
-  <ul class="ac-list" data-ac-booking-request-list="1">
+  <div class="ac-panel ac-table-wrap ac-batch1a__desktop" data-ac-table="booking-requests">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th scope="col">Request &amp; age</th>
+          <th scope="col">Patient</th>
+          <th scope="col">Requested slot</th>
+          <th scope="col">Status</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% bookings.forEach(function (b) { %>
+        <tr data-ac-booking-row="<%= b.id %>">
+          <td>
+            <a href="<%= b.reviewHref %>"><%= b.requestNumber %></a>
+            <div class="ac-muted"><%= b.ageHours %>h · <%= b.bookingKind %></div>
+          </td>
+          <td><%= b.patientFirstName %> <%= b.patientLastName %></td>
+          <td><%= b.preferredStartsAt || 'Flexible / unset' %></td>
+          <td><span class="ac-badge"><%= b.statusLabel || b.status %></span></td>
+          <td class="ac-batch1a__row-actions">
+            <% if (actions.canConfirm) { %>
+            <form method="post" action="/app/booking-requests/<%= encodeURIComponent(b.id) %>/confirm" class="ac-inline-form">
+              <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+              <button type="submit" class="ac-btn">Confirm</button>
+            </form>
+            <% } %>
+            <% if (actions.canDecline) { %>
+            <form method="post" action="/app/booking-requests/<%= encodeURIComponent(b.id) %>/reschedule" class="ac-inline-form">
+              <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+              <input type="hidden" name="startsAt" value="<%= b.preferredStartsAt || '' %>"/>
+              <button type="submit" class="ac-btn ac-btn--ghost">Reschedule</button>
+            </form>
+            <form method="post" action="/app/booking-requests/<%= encodeURIComponent(b.id) %>/decline" class="ac-inline-form">
+              <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+              <input class="ac-input" name="declineReason" type="text" required minlength="3" placeholder="Decline reason" aria-label="Decline reason"/>
+              <button type="submit" class="ac-btn ac-btn--ghost">Decline</button>
+            </form>
+            <% } %>
+            <a class="ac-btn ac-btn--ghost" href="<%= b.reviewHref %>">Review</a>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <ul class="ac-list ac-list--mobile-only ac-batch1a__mobile" data-ac-booking-cards="1">
     <% bookings.forEach(function (b) { %>
-    <li class="ac-list__item" data-ac-link-status="<%= b.patientLinkStatus %>">
-      <div>
-        <strong><%= b.requestNumber %></strong>
-        <span class="ac-muted"><%= b.bookingKind %></span>
-        <span class="ac-status"><%= b.linkStatusLabel %></span>
+    <li class="ac-card ac-batch1a-card" data-ac-booking-card="<%= b.id %>">
+      <a class="ac-batch1a-card__title" href="<%= b.reviewHref %>"><%= b.requestNumber %></a>
+      <p class="ac-muted"><%= b.patientFirstName %> <%= b.patientLastName %> · <%= b.statusLabel %></p>
+      <p class="ac-muted"><%= b.preferredStartsAt || 'Flexible' %> · <%= b.ageHours %>h old</p>
+      <div class="ac-batch1a-card__meta">
+        <% if (actions.canConfirm) { %>
+        <form method="post" action="/app/booking-requests/<%= encodeURIComponent(b.id) %>/confirm">
+          <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+          <button type="submit" class="ac-btn">Confirm</button>
+        </form>
+        <% } %>
       </div>
-      <div class="ac-muted">
-        <%= b.patientFirstName %> <%= b.patientLastName %>
-        <% if (b.patientMatchCount) { %> · <%= b.patientMatchCount %> candidate(s)<% } %>
-      </div>
-      <a class="ac-btn ac-btn--ghost" href="/app/booking-requests/<%= encodeURIComponent(b.id) %>">Review</a>
     </li>
     <% }) %>
   </ul>
   <% } %>
-  <% if (!actions.canLink) { %>
-  <p class="ac-muted">Patient search permission is required to resolve linkage.</p>
+
+  <% if (linkageBookings.length) { %>
+  <div class="ac-panel">
+    <h2 class="ac-batch1a__section-title">Patient linkage still required</h2>
+    <ul class="ac-list" data-ac-booking-link-list="1">
+      <% linkageBookings.forEach(function (b) { %>
+      <li class="ac-list__item" data-ac-link-status="<%= b.patientLinkStatus %>">
+        <div>
+          <strong><%= b.requestNumber %></strong>
+          <span class="ac-status"><%= b.linkStatusLabel %></span>
+        </div>
+        <a class="ac-btn ac-btn--ghost" href="/app/booking-requests/<%= encodeURIComponent(b.id) %>">Link patient</a>
+      </li>
+      <% }) %>
+    </ul>
+  </div>
   <% } %>
 </section>

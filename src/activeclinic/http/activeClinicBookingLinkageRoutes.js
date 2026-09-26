@@ -32,7 +32,17 @@ const {
   createPatientFromBookingAndLink,
   RESULT: LINK_RESULT,
 } = require("../services/activeClinicBookingPatientLinkageService");
+const {
+  listBookingRequestQueue,
+  confirmBookingRequest,
+  declineBookingRequest,
+  proposeBookingReschedule,
+  RESULT: TRIAGE_RESULT,
+} = require("../services/activeClinicBookingRequestTriageService");
 const { PERM } = require("../services/activeClinicPatientService");
+const {
+  PERM: APPT_PERM,
+} = require("../services/activeClinicAppointmentService");
 const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const UUID_RE =
@@ -41,6 +51,7 @@ const UUID_RE =
 function mapLinkError(code) {
   switch (code) {
     case LINK_RESULT.ACCESS_DENIED:
+    case TRIAGE_RESULT.ACCESS_DENIED:
       return "You do not have permission to resolve patient linkage.";
     case LINK_RESULT.NOT_FOUND:
       return "Booking request not found.";
@@ -56,6 +67,16 @@ function mapLinkError(code) {
       return "That identifier already belongs to another patient.";
     case LINK_RESULT.OVERRIDE_DENIED:
       return "You cannot override the duplicate warning.";
+    case TRIAGE_RESULT.PATIENT_REQUIRED:
+      return "Link a clinic patient before confirming this booking request.";
+    case TRIAGE_RESULT.COLLISION:
+      return "That slot conflicts with another appointment or blocked time.";
+    case TRIAGE_RESULT.DECLINE_REASON_REQUIRED:
+      return "Enter a decline reason (at least 3 characters).";
+    case TRIAGE_RESULT.INVALID_STATUS:
+      return "This booking request cannot be updated in its current status.";
+    case TRIAGE_RESULT.SERVICE_REQUIRED:
+      return "A clinical service is required before confirmation.";
     default:
       return "Unable to update booking patient linkage.";
   }
@@ -112,34 +133,61 @@ function registerActiveClinicBookingLinkageRoutes(app, deps) {
   app.get(
     "/app/booking-requests",
     requireAuth,
-    requirePermission(PERM.SEARCH),
+    requirePermission([PERM.SEARCH, APPT_PERM.VIEW, "activeclinic.reception.view"]),
     async (req, res, next) => {
       try {
-        const loaded = await loadBookingRequestsReviewScreen(getPool(), {
-          auth: req.activeClinicAuth,
+        const auth = req.activeClinicAuth;
+        const queue = await listBookingRequestQueue(getPool(), {
+          organizationId: auth.organization.id,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+          actor: actorFromAuth(auth),
+          query: req.query,
+          staffId: req.query.staff || null,
+          status: req.query.status || null,
         });
-        if (!loaded.ok) {
-          return renderSimpleState(res, {
-            status: 403,
-            state: "access-denied",
-            linkHref: "/app",
-            linkLabel: "Back to dashboard",
-          });
-        }
+        const linkage = await loadBookingRequestsReviewScreen(getPool(), {
+          auth,
+        });
         return await renderShell(req, res, {
-          activeNav: "reception",
+          activeNav: "booking_requests",
           content: "app/booking-requests-content.ejs",
           pageHeader: {
-            title: "Booking patient linkage",
-            description: "Resolve clinic patient records for public booking requests.",
-            actions: [],
+            title: "Booking Requests",
+            description:
+              "Triage public booking requests: confirm, propose a reschedule, or decline with a reason.",
+            actions: [
+              { href: "/app/appointments/calendar", label: "Appointment calendar" },
+              { href: "/app/appointments/new", label: "New appointment" },
+            ],
           },
           breadcrumbs: [
             { label: "Home", href: "/app" },
-            { label: "Reception", href: "/app/reception" },
             { label: "Booking requests" },
           ],
-          pageData: { bookingRequests: loaded.list },
+          flash:
+            req.query.ok === "confirmed"
+              ? { type: "success", message: "Booking confirmed and appointment created." }
+              : req.query.ok === "declined"
+                ? { type: "success", message: "Booking request declined." }
+                : req.query.ok === "reschedule"
+                  ? { type: "success", message: "Reschedule proposed." }
+                  : req.query.err
+                    ? { type: "error", message: mapLinkError(req.query.err) }
+                    : null,
+          pageData: {
+            bookingRequests: {
+              bookings: queue.ok ? queue.bookings : [],
+              linkageBookings: linkage.ok ? linkage.list.bookings : [],
+              actions: {
+                canLink: linkage.ok ? linkage.list.actions.canLink : false,
+                canCreate: linkage.ok ? linkage.list.actions.canCreate : false,
+                canConfirm: (auth.permissions || []).includes(APPT_PERM.CREATE),
+                canDecline: (auth.permissions || []).includes(APPT_PERM.UPDATE),
+              },
+              stitch: { desktop: "41394d581882437b80e941cebefbb95f" },
+            },
+            csrfField: CSRF_FIELD,
+          },
         });
       } catch (err) {
         return next(err);
@@ -312,6 +360,108 @@ function registerActiveClinicBookingLinkageRoutes(app, deps) {
           303,
           `/app/patients/${encodeURIComponent(created.patient.patientNumber)}`
         );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/booking-requests/:bookingId/confirm",
+    requireAuth,
+    requirePermission(APPT_PERM.CREATE),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("text").send("CSRF validation failed.");
+        }
+        const auth = req.activeClinicAuth;
+        const bookingId = String(req.params.bookingId || "").trim();
+        const result = await confirmBookingRequest(getPool(), {
+          organizationId: auth.organization.id,
+          bookingId,
+          actor: actorFromAuth(auth),
+          body: req.body,
+          startsAt: req.body.startsAt || req.body.preferred_starts_at,
+          endsAt: req.body.endsAt || req.body.preferred_ends_at,
+          assignedStaffId: req.body.assignedStaffId || null,
+          schedulingNote: req.body.schedulingNote || null,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
+        });
+        if (!result.ok) {
+          return res.redirect(
+            303,
+            `/app/booking-requests?err=${encodeURIComponent(result.code)}`
+          );
+        }
+        return res.redirect(
+          303,
+          `/app/appointments/${encodeURIComponent(result.appointment.id)}?ok=1`
+        );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/booking-requests/:bookingId/decline",
+    requireAuth,
+    requirePermission(APPT_PERM.UPDATE),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("text").send("CSRF validation failed.");
+        }
+        const auth = req.activeClinicAuth;
+        const result = await declineBookingRequest(getPool(), {
+          organizationId: auth.organization.id,
+          bookingId: req.params.bookingId,
+          actor: actorFromAuth(auth),
+          body: req.body,
+          declineReason: req.body.declineReason || req.body.reason,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
+        });
+        if (!result.ok) {
+          return res.redirect(
+            303,
+            `/app/booking-requests?err=${encodeURIComponent(result.code)}`
+          );
+        }
+        return res.redirect(303, "/app/booking-requests?ok=declined");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/booking-requests/:bookingId/reschedule",
+    requireAuth,
+    requirePermission(APPT_PERM.UPDATE),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("text").send("CSRF validation failed.");
+        }
+        const auth = req.activeClinicAuth;
+        const result = await proposeBookingReschedule(getPool(), {
+          organizationId: auth.organization.id,
+          bookingId: req.params.bookingId,
+          actor: actorFromAuth(auth),
+          body: req.body,
+          startsAt: req.body.startsAt || req.body.preferred_starts_at,
+          endsAt: req.body.endsAt || req.body.preferred_ends_at,
+          note: req.body.note || req.body.reason,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
+        });
+        if (!result.ok) {
+          return res.redirect(
+            303,
+            `/app/booking-requests?err=${encodeURIComponent(result.code)}`
+          );
+        }
+        return res.redirect(303, "/app/booking-requests?ok=reschedule");
       } catch (err) {
         return next(err);
       }

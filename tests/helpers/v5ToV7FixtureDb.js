@@ -238,8 +238,8 @@ async function seedActiveClinicV6Source(pool, passwords) {
     `INSERT INTO activeclinic.appointments
        (id, organization_id, healthcare_organization_id, facility_id, patient_id, service_type_id,
         assigned_staff_id, starts_at, ends_at, timezone, status, created_by_staff_id, updated_by_staff_id)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Africa/Lusaka', 'scheduled', $7, $7),
-            ($10, $2, $3, $4, $11, $12, $7, $8, $9, 'Africa/Lusaka', 'scheduled', $7, $7)
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'Africa/Lusaka', 'confirmed', $7, $7),
+            ($10, $2, $3, $4, $11, $12, $7, $8, $9, 'Africa/Lusaka', 'confirmed', $7, $7)
      ON CONFLICT (id) DO NOTHING`,
     [
       IDS.acAppt1,

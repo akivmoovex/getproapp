@@ -146,7 +146,7 @@ async function insertAppointment(db, row) {
       row.startsAt,
       row.endsAt,
       row.timezone,
-      row.status || "scheduled",
+      row.status || "confirmed",
       row.schedulingNote || null,
       row.rescheduledFromAppointmentId || null,
       row.createdByStaffId || null,
@@ -216,7 +216,9 @@ async function findStaffCollision(db, input) {
       WHERE organization_id = $1
         AND healthcare_organization_id = $2
         AND assigned_staff_id = $3
-        AND status IN ('scheduled', 'confirmed', 'checked_in', 'in_progress')
+        AND status IN (
+          'requested', 'confirmed', 'arrived', 'waiting', 'with_practitioner'
+        )
         AND starts_at < $5
         AND ends_at > $4
         AND ($6::uuid IS NULL OR id <> $6)
@@ -230,7 +232,54 @@ async function findStaffCollision(db, input) {
       input.excludeAppointmentId || null,
     ]
   );
-  return result.rows[0] || null;
+  if (result.rows[0]) return { ...result.rows[0], kind: "appointment" };
+
+  try {
+    const blocked = await db.query(
+      `SELECT id FROM activeclinic.staff_availability_blocks
+        WHERE organization_id = $1
+          AND healthcare_organization_id = $2
+          AND staff_member_id = $3
+          AND status = 'active'
+          AND starts_at < $5
+          AND ends_at > $4
+        LIMIT 1`,
+      [
+        input.organizationId,
+        input.healthcareOrganizationId,
+        input.assignedStaffId,
+        input.startsAt,
+        input.endsAt,
+      ]
+    );
+    if (blocked.rows[0]) return { ...blocked.rows[0], kind: "blocked" };
+  } catch (_err) {
+    // Table may be absent before Batch1A migration 036 — appointment collision still applies.
+  }
+  return null;
+}
+
+async function listAvailabilityBlocksInRange(db, input) {
+  const params = [input.organizationId, input.healthcareOrganizationId, input.startsFrom, input.startsTo];
+  let staffSql = "";
+  if (input.staffMemberId) {
+    params.push(input.staffMemberId);
+    staffSql = ` AND staff_member_id = $${params.length}`;
+  }
+  const result = await db.query(
+    `SELECT *
+       FROM activeclinic.staff_availability_blocks
+      WHERE organization_id = $1
+        AND healthcare_organization_id = $2
+        AND status = 'active'
+        AND starts_at < $4
+        AND ends_at > $3
+        ${staffSql}
+      ORDER BY starts_at ASC
+      LIMIT 200`,
+    params
+  );
+  return result.rows;
 }
 
 async function listAppointmentsByOrg(db, input) {
@@ -358,6 +407,7 @@ module.exports = {
   findAppointmentByOrgAndId,
   updateAppointmentByOrgAndId,
   findStaffCollision,
+  listAvailabilityBlocksInRange,
   listAppointmentsByOrg,
   insertStatusEvent,
   listStatusEvents,

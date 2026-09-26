@@ -250,7 +250,7 @@ describe("ActiveClinic appointment foundation (AC-V6-C03)", () => {
       reminderChannel: "sms",
     });
     assert.equal(created.ok, true, JSON.stringify(created));
-    assert.equal(created.appointment.status, "scheduled");
+    assert.equal(created.appointment.status, "confirmed");
     assert.equal(created.appointment.timezone, "Africa/Lusaka");
 
     const detail = await getAppointmentDetail(pool, {
@@ -297,7 +297,7 @@ describe("ActiveClinic appointment foundation (AC-V6-C03)", () => {
       actor,
     });
     assert.equal(checked.ok, true);
-    assert.equal(checked.appointment.status, "checked_in");
+    assert.equal(checked.appointment.status, "arrived");
 
     const cancelled = await cancelAppointment(pool, {
       organizationId: tenant.orgId,
@@ -306,7 +306,7 @@ describe("ActiveClinic appointment foundation (AC-V6-C03)", () => {
       actor,
       reason: "patient_request",
     });
-    // checked_in -> cancelled is allowed
+    // arrived -> cancelled is allowed
     assert.equal(cancelled.ok, true, JSON.stringify(cancelled));
 
     const reminders = await pool.query(

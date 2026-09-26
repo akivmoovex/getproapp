@@ -309,7 +309,7 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
     assert.match(list.text, /data-ac-table="appointments"/);
     assert.match(list.text, /data-ac-card-list="appointments"/);
     assert.match(list.text, /data-ac-status-summary="appointments"/);
-    assert.match(list.text, /Ann Appt|Consultation|Africa\/Lusaka|Scheduled/);
+    assert.match(list.text, /Ann Appt|Consultation|Africa\/Lusaka|Confirmed/);
     assert.doesNotMatch(list.text, /\b(prescription|pharmacy stock|lab result)\b/i);
 
     const calendar = await request(app)
@@ -326,7 +326,7 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
       .set("Cookie", adminCookie);
     assert.equal(detail.status, 200);
     assert.match(detail.text, /data-ac-status-history/);
-    assert.match(detail.text, /Check in|Mark no-show|Cancel appointment/);
+    assert.match(detail.text, /Mark arrived|Mark no-show|Cancel appointment/);
 
     const csrfDenied = await request(app)
       .post(`/app/appointments/${booked.appointment.id}/check-in`)
@@ -346,7 +346,7 @@ describe("ActiveClinic appointment UI parity (AC-V6-C04)", () => {
     const afterCheck = await request(app)
       .get(`/app/appointments/${booked.appointment.id}`)
       .set("Cookie", adminCookie);
-    assert.match(afterCheck.text, /checked_in|Checked in/i);
+    assert.match(afterCheck.text, /arrived|Arrived/i);
 
     const { cookie: noshowCookie, csrf: noshowCsrf } = withCsrf(adminCookie);
     // need a fresh scheduled appt for no-show

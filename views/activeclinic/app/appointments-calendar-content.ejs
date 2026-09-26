@@ -1,14 +1,44 @@
 <%
   var calendar = (pageData && pageData.calendar) || {};
   var days = calendar.days || [];
+  var agendaDay = calendar.agendaDay || { dayKey: '', appointments: [], blocks: [] };
   var filters = calendar.filters || {};
   var filterOptions = calendar.filterOptions || {};
   var actions = calendar.actions || {};
   var emptyMode = calendar.emptyMode;
   var stitch = calendar.stitch || {};
+  var view = calendar.view || 'week';
+  var stats = calendar.statusSummary || {};
 %>
-<section class="ac-appointment-calendar" data-ac-page-section="appointment-calendar" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>" data-ac-stitch-list-alt="<%= stitch.listAlt || '' %>">
+<section
+  class="ac-batch1a ac-appointment-calendar"
+  data-ac-page-section="appointment-calendar"
+  data-ac-stitch="ACN06"
+  data-ac-stitch-desktop="<%= stitch.desktop || '' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '' %>"
+  data-ac-calendar-view="<%= view %>"
+>
+  <div class="ac-batch1a__toolbar">
+    <div class="ac-batch1a__chip-row">
+      <a class="ac-btn <%= view === 'week' ? '' : 'ac-btn--ghost' %>" href="/app/appointments/calendar?view=week">Weekly view</a>
+      <a class="ac-btn <%= view === 'day' ? '' : 'ac-btn--ghost' %>" href="/app/appointments/calendar?view=day&amp;date=<%= encodeURIComponent(filters.date || '') %>">Day agenda</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/booking-requests">Booking requests</a>
+      <% if (actions.canCreate) { %>
+      <a class="ac-btn" href="/app/appointments/new" data-ac-action="create-appointment">+ Create appointment</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/practitioners">+ Block time / leave</a>
+      <% } %>
+    </div>
+  </div>
+
+  <div class="ac-stats-grid" data-ac-calendar-stats="1">
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Confirmed</p><p class="ac-stat-card__value"><%= stats.confirmed || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Arrived</p><p class="ac-stat-card__value"><%= stats.arrived || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Waiting</p><p class="ac-stat-card__value"><%= stats.waiting || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">With Practitioner</p><p class="ac-stat-card__value"><%= stats.with_practitioner || 0 %></p></article>
+  </div>
+
   <form class="ac-panel ac-filter-bar" method="get" action="/app/appointments/calendar" data-ac-appointment-calendar-filters="1">
+    <input type="hidden" name="view" value="<%= view %>"/>
     <div class="ac-filter-bar__grid ac-filter-bar__grid--appointments">
       <div>
         <label class="ac-label" for="cal_date">From date</label>
@@ -19,7 +49,7 @@
         <input class="ac-input" id="cal_date_to" name="date_to" type="date" value="<%= filters.dateTo || '' %>"/>
       </div>
       <div>
-        <label class="ac-label" for="cal_facility">Facility</label>
+        <label class="ac-label" for="cal_facility">Location</label>
         <select class="ac-select" id="cal_facility" name="facility">
           <option value="">All authorized</option>
           <% (filterOptions.facilities || []).forEach(function (f) { %>
@@ -28,9 +58,27 @@
         </select>
       </div>
       <div>
+        <label class="ac-label" for="cal_staff">Practitioner</label>
+        <select class="ac-select" id="cal_staff" name="staff">
+          <option value="">All practitioners</option>
+          <% (filterOptions.staff || []).forEach(function (s) { %>
+          <option value="<%= s.value %>" <%= filters.assignedStaffId === s.value ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
+        <label class="ac-label" for="cal_service">Service</label>
+        <select class="ac-select" id="cal_service" name="service">
+          <option value="">All services</option>
+          <% (filterOptions.services || []).forEach(function (s) { %>
+          <option value="<%= s.value %>" <%= filters.serviceTypeId === s.value ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div>
         <label class="ac-label" for="cal_status">Status</label>
         <select class="ac-select" id="cal_status" name="status">
-          <option value="">All</option>
+          <option value="">All statuses</option>
           <% (filterOptions.statuses || []).forEach(function (s) { %>
           <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
           <% }) %>
@@ -38,52 +86,71 @@
       </div>
       <div class="ac-filter-bar__checks">
         <button type="submit" class="ac-btn">Apply</button>
-        <a class="ac-btn ac-btn--ghost" href="/app/appointments">List view</a>
+        <a class="ac-btn ac-btn--ghost" href="/app/appointments/calendar">Clear</a>
       </div>
     </div>
   </form>
 
-  <% if (emptyMode) { %>
+  <% if (emptyMode && !days.length) { %>
   <%- include('../partials/ac-inline-state', {
     inlineState: {
       stateKey: emptyMode === 'filtered' ? 'no_results' : 'empty',
       marker: 'appointments-calendar-empty',
       title: 'No appointments in this calendar range',
-      description: 'Counts are based on real bookings only.',
+      description: 'Counts are based on real bookings only. Blocked leave periods still appear when configured.',
       primaryAction: actions.canCreate
-        ? { href: '/app/appointments/new', label: 'Book appointment' }
+        ? { href: '/app/appointments/new', label: 'Create appointment' }
         : null,
       secondaryAction: { href: '/app/appointments', label: 'Open list' }
     }
   }) %>
-  <% } else { %>
-  <div class="ac-calendar-days ac-calendar-days--desktop" data-ac-calendar="desktop">
+  <% } %>
+
+  <div class="ac-calendar-days ac-calendar-days--desktop ac-batch1a__desktop" data-ac-calendar="desktop">
     <% days.forEach(function (day) { %>
     <section class="ac-panel ac-calendar-day" aria-labelledby="day-<%= day.dayKey %>">
-      <h2 class="ac-calendar-day__title" id="day-<%= day.dayKey %>"><%= day.dayKey %> <span class="ac-muted">(<%= day.count %>)</span></h2>
+      <h2 class="ac-calendar-day__title" id="day-<%= day.dayKey %>">
+        <%= day.dayKey %>
+        <span class="ac-muted">(<%= day.count %> booked<% if (day.blockedCount) { %>, <%= day.blockedCount %> blocked<% } %>)</span>
+      </h2>
       <ul class="ac-calendar-day__list">
+        <% (day.blocks || []).forEach(function (b) { %>
+        <li class="ac-calendar-block" data-ac-block="<%= b.id %>">
+          <span class="ac-badge ac-badge--warning">Blocked</span>
+          <%= b.label %>
+        </li>
+        <% }) %>
         <% day.appointments.forEach(function (a) { %>
-        <li>
+        <li data-ac-appointment="<%= a.id %>">
           <a href="/app/appointments/<%= a.id %>"><%= a.when.timeLabel %> · <%= (a.patient && a.patient.displayName) || 'Patient' %></a>
           <span class="ac-status" data-ac-status="<%= a.status %>"><%= a.statusLabel %></span>
+          <% if (a.assignedStaff) { %><span class="ac-muted"><%= a.assignedStaff.displayName %></span><% } %>
         </li>
         <% }) %>
       </ul>
     </section>
     <% }) %>
   </div>
-  <div class="ac-calendar-days--mobile ac-card-list" data-ac-calendar="mobile">
-    <p class="ac-muted">Mobile uses a day list instead of a dense desktop grid.</p>
-    <% days.forEach(function (day) { %>
-    <article class="ac-card">
-      <h3 class="ac-card__title"><%= day.dayKey %> · <%= day.count %> booking<%= day.count === 1 ? '' : 's' %></h3>
+
+  <div class="ac-calendar-days--mobile ac-batch1a__mobile" data-ac-calendar="mobile" data-ac-agenda-day="<%= agendaDay.dayKey %>">
+    <article class="ac-panel ac-agenda-day">
+      <h2 class="ac-calendar-day__title"><%= agendaDay.dayKey || 'Today' %> · single-day agenda</h2>
+      <p class="ac-muted"><%= agendaDay.count || 0 %> appointment<%= (agendaDay.count === 1) ? '' : 's' %><% if (agendaDay.blockedCount) { %> · <%= agendaDay.blockedCount %> blocked<% } %></p>
       <ul class="ac-calendar-day__list">
-        <% day.appointments.forEach(function (a) { %>
-        <li><a href="/app/appointments/<%= a.id %>"><%= a.when.timeLabel %> · <%= (a.patient && a.patient.displayName) || 'Patient' %> · <%= a.statusLabel %></a></li>
+        <% (agendaDay.blocks || []).forEach(function (b) { %>
+        <li class="ac-calendar-block"><span class="ac-badge ac-badge--warning">Blocked</span> <%= b.label %></li>
         <% }) %>
+        <% (agendaDay.appointments || []).forEach(function (a) { %>
+        <li>
+          <a href="/app/appointments/<%= a.id %>"><%= a.when.timeLabel %> · <%= (a.patient && a.patient.displayName) || 'Patient' %></a>
+          <span class="ac-status" data-ac-status="<%= a.status %>"><%= a.statusLabel %></span>
+        </li>
+        <% }) %>
+        <% if (!(agendaDay.appointments || []).length && !(agendaDay.blocks || []).length) { %>
+        <li class="ac-muted">No appointments on this day.</li>
+        <% } %>
       </ul>
+      <p class="ac-muted">Tap an appointment to open detail (ACN08).</p>
     </article>
-    <% }) %>
   </div>
-  <% } %>
 </section>

@@ -60,11 +60,55 @@ const PERM = Object.freeze({
 });
 
 const ACTIVE_BOOKING = Object.freeze([
-  "scheduled",
+  "requested",
   "confirmed",
-  "checked_in",
-  "in_progress",
+  "arrived",
+  "waiting",
+  "with_practitioner",
 ]);
+
+/** Canonical ACN06–ACN08 lifecycle statuses (Stitch). */
+const APPOINTMENT_STATUSES = Object.freeze({
+  REQUESTED: "requested",
+  CONFIRMED: "confirmed",
+  ARRIVED: "arrived",
+  WAITING: "waiting",
+  WITH_PRACTITIONER: "with_practitioner",
+  COMPLETED: "completed",
+  CANCELLED: "cancelled",
+  NO_SHOW: "no_show",
+});
+
+const STATUS_LABELS = Object.freeze({
+  requested: "Requested",
+  confirmed: "Confirmed",
+  arrived: "Arrived",
+  waiting: "Waiting",
+  with_practitioner: "With Practitioner",
+  completed: "Completed",
+  cancelled: "Cancelled",
+  no_show: "No-show",
+});
+
+const LIFECYCLE_ORDER = Object.freeze([
+  "requested",
+  "confirmed",
+  "arrived",
+  "waiting",
+  "with_practitioner",
+  "completed",
+]);
+
+const ALLOWED_TRANSITIONS = Object.freeze({
+  requested: ["confirmed", "cancelled", "no_show"],
+  confirmed: ["arrived", "waiting", "cancelled", "no_show"],
+  arrived: ["waiting", "with_practitioner", "cancelled", "no_show"],
+  waiting: ["with_practitioner", "cancelled", "no_show"],
+  with_practitioner: ["completed", "cancelled"],
+  completed: [],
+  cancelled: [],
+  no_show: [],
+});
 
 const UUID_RE =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
@@ -435,17 +479,19 @@ async function createAppointment(db, input) {
         startsAt,
         endsAt,
         timezone: tz.value,
-        status: "scheduled",
+        status: input.initialStatus === "requested" ? "requested" : "confirmed",
         schedulingNote: input.schedulingNote || null,
         createdByStaffId: actor.staffMemberId,
         updatedByStaffId: actor.staffMemberId,
       });
+      const createdStatus =
+        input.initialStatus === "requested" ? "requested" : "confirmed";
       await repo.insertStatusEvent(client, {
         organizationId,
         healthcareOrganizationId,
         appointmentId: row.id,
         fromStatus: null,
-        toStatus: "scheduled",
+        toStatus: createdStatus,
         reasonCode: "created",
         actorStaffId: actor.staffMemberId,
       });
@@ -469,7 +515,7 @@ async function createAppointment(db, input) {
         outcome: "success",
         metadata: {
           facility_key: facility.facility.facilityKey,
-          status: "scheduled",
+          status: createdStatus,
         },
       });
       await client.query("COMMIT");
@@ -579,7 +625,7 @@ async function appendAppointmentStatusEvent(db, input) {
 
   let permissionKey = PERM.UPDATE;
   if (toStatus === "cancelled") permissionKey = PERM.CANCEL;
-  if (toStatus === "checked_in") permissionKey = PERM.CHECK_IN;
+  if (toStatus === "arrived" || toStatus === "waiting") permissionKey = PERM.CHECK_IN;
 
   const authz = await authorize(db, {
     organizationId: input.organizationId,
@@ -589,18 +635,7 @@ async function appendAppointmentStatusEvent(db, input) {
   });
   if (!authz.ok) return { ok: false, code: authz.code, appointment: null };
 
-  const allowed = {
-    requested: [],
-    scheduled: ["confirmed", "checked_in", "cancelled", "no_show", "rescheduled"],
-    confirmed: ["checked_in", "cancelled", "no_show", "rescheduled"],
-    checked_in: ["in_progress", "completed", "cancelled", "no_show"],
-    in_progress: ["completed", "cancelled"],
-    completed: [],
-    cancelled: [],
-    no_show: [],
-    rescheduled: [],
-  };
-  if (!(allowed[fromStatus] || []).includes(toStatus)) {
+  if (!(ALLOWED_TRANSITIONS[fromStatus] || []).includes(toStatus)) {
     return { ok: false, code: RESULT.INVALID_TRANSITION, appointment: detail.appointment };
   }
 
@@ -660,7 +695,26 @@ async function cancelAppointment(db, input) {
 }
 
 async function checkInAppointment(db, input) {
-  return appendAppointmentStatusEvent(db, { ...input, toStatus: "checked_in" });
+  return appendAppointmentStatusEvent(db, { ...input, toStatus: "arrived" });
+}
+
+async function markWaitingAppointment(db, input) {
+  return appendAppointmentStatusEvent(db, { ...input, toStatus: "waiting" });
+}
+
+async function markWithPractitionerAppointment(db, input) {
+  return appendAppointmentStatusEvent(db, {
+    ...input,
+    toStatus: "with_practitioner",
+  });
+}
+
+async function completeAppointment(db, input) {
+  return appendAppointmentStatusEvent(db, { ...input, toStatus: "completed" });
+}
+
+async function confirmAppointment(db, input) {
+  return appendAppointmentStatusEvent(db, { ...input, toStatus: "confirmed" });
 }
 
 async function markNoShowAppointment(db, input) {
@@ -765,13 +819,13 @@ async function updateAppointment(db, input) {
 }
 
 /**
- * Creates a replacement appointment and marks the prior row rescheduled
+ * Creates a replacement appointment and cancels the prior row
  * in one transaction (no orphan bookings).
  */
 async function rescheduleAppointment(db, input) {
   const detail = await getAppointmentDetail(db, input);
   if (!detail.ok) return detail;
-  if (!["scheduled", "confirmed"].includes(detail.appointment.status)) {
+  if (!["requested", "confirmed", "arrived"].includes(detail.appointment.status)) {
     return { ok: false, code: RESULT.INVALID_TRANSITION, appointment: detail.appointment };
   }
 
@@ -821,7 +875,8 @@ async function rescheduleAppointment(db, input) {
         healthcareOrganizationId: input.healthcareOrganizationId,
         expectedVersion: detail.appointment.version,
         patch: {
-          status: "rescheduled",
+          status: "cancelled",
+          cancellationReason: "rescheduled",
           updatedByStaffId: input.actor.staffMemberId,
           version: detail.appointment.version + 1,
         },
@@ -835,7 +890,7 @@ async function rescheduleAppointment(db, input) {
         healthcareOrganizationId: input.healthcareOrganizationId,
         appointmentId: detail.appointment.id,
         fromStatus: detail.appointment.status,
-        toStatus: "rescheduled",
+        toStatus: "cancelled",
         reasonCode: "rescheduled",
         actorStaffId: input.actor.staffMemberId,
       });
@@ -845,16 +900,13 @@ async function rescheduleAppointment(db, input) {
         healthcareOrganizationId: input.healthcareOrganizationId,
         facilityId,
         patientId: detail.appointment.patientId,
-        serviceTypeId: detail.appointment.serviceTypeId,
+        serviceTypeId: input.serviceTypeId || detail.appointment.serviceTypeId,
         assignedStaffId,
         startsAt,
         endsAt,
         timezone: tz.value,
-        status: "scheduled",
-        schedulingNote:
-          input.schedulingNote !== undefined
-            ? input.schedulingNote
-            : detail.appointment.schedulingNote,
+        status: "confirmed",
+        schedulingNote: input.schedulingNote || detail.appointment.schedulingNote,
         rescheduledFromAppointmentId: detail.appointment.id,
         createdByStaffId: input.actor.staffMemberId,
         updatedByStaffId: input.actor.staffMemberId,
@@ -864,9 +916,8 @@ async function rescheduleAppointment(db, input) {
         healthcareOrganizationId: input.healthcareOrganizationId,
         appointmentId: row.id,
         fromStatus: null,
-        toStatus: "scheduled",
+        toStatus: "confirmed",
         reasonCode: "rescheduled_from",
-        note: `from:${detail.appointment.id}`,
         actorStaffId: input.actor.staffMemberId,
       });
       await recordAuditEventSafe(client, {
@@ -877,7 +928,7 @@ async function rescheduleAppointment(db, input) {
         entityType: "appointment",
         entityId: row.id,
         outcome: "success",
-        metadata: { reason_code: "rescheduled" },
+        metadata: { reason_code: "rescheduled", prior_id: detail.appointment.id },
       });
       await client.query("COMMIT");
       return { ok: true, code: RESULT.OK, appointment: mapAppointment(row) };
@@ -934,6 +985,11 @@ async function listAvailableAppointmentSlots(db, input) {
 module.exports = {
   RESULT,
   PERM,
+  ACTIVE_BOOKING,
+  APPOINTMENT_STATUSES,
+  STATUS_LABELS,
+  LIFECYCLE_ORDER,
+  ALLOWED_TRANSITIONS,
   createAppointmentServiceType,
   updateAppointmentServiceType,
   listAppointmentServiceTypes,
@@ -944,6 +1000,10 @@ module.exports = {
   appendAppointmentStatusEvent,
   cancelAppointment,
   checkInAppointment,
+  confirmAppointment,
+  markWaitingAppointment,
+  markWithPractitionerAppointment,
+  completeAppointment,
   markNoShowAppointment,
   rescheduleAppointment,
   listAvailableAppointmentSlots,

@@ -2651,3 +2651,71 @@ body.ac-app-body .ac-pagination {
     justify-content: center;
   }
 }
+
+/* ==========================================================================
+   V2.03 ACN06–ACN09 appointments / booking requests
+   ========================================================================== */
+body.ac-app-body .ac-lifecycle {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  list-style: none;
+  margin: 0 0 var(--ac-space-4);
+  padding: 0;
+}
+body.ac-app-body .ac-lifecycle__step {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  color: var(--ac-muted);
+  font-size: 0.85rem;
+}
+body.ac-app-body .ac-lifecycle__step.is-reached { color: var(--ac-text); }
+body.ac-app-body .ac-lifecycle__step.is-current {
+  color: var(--ac-primary);
+  font-weight: 700;
+}
+body.ac-app-body .ac-lifecycle__dot {
+  width: 0.55rem;
+  height: 0.55rem;
+  border-radius: 50%;
+  background: var(--ac-border);
+}
+body.ac-app-body .ac-lifecycle__step.is-reached .ac-lifecycle__dot,
+body.ac-app-body .ac-lifecycle__step.is-current .ac-lifecycle__dot {
+  background: var(--ac-primary);
+}
+body.ac-app-body .ac-calendar-block {
+  background: var(--ac-warning-bg, #fff7ed);
+  border-radius: var(--ac-radius);
+  padding: 0.35rem 0.5rem;
+}
+body.ac-app-body .ac-batch1a__chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+body.ac-app-body .ac-batch1a__row-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  align-items: center;
+}
+body.ac-app-body .ac-form-actions--wrap {
+  flex-wrap: wrap;
+}
+body.ac-app-body .ac-status[data-ac-status="requested"] { color: #b45309; }
+body.ac-app-body .ac-status[data-ac-status="confirmed"] { color: var(--ac-success); }
+body.ac-app-body .ac-status[data-ac-status="arrived"],
+body.ac-app-body .ac-status[data-ac-status="waiting"] { color: #1d4ed8; }
+body.ac-app-body .ac-status[data-ac-status="with_practitioner"] { color: #7c3aed; }
+body.ac-app-body .ac-status[data-ac-status="cancelled"],
+body.ac-app-body .ac-status[data-ac-status="no_show"] { color: var(--ac-danger); }
+
+@media (max-width: 720px) {
+  body.ac-app-body .ac-appointment-calendar .ac-batch1a__desktop { display: none; }
+  body.ac-app-body .ac-appointment-calendar .ac-batch1a__mobile { display: block; }
+}
+@media (min-width: 721px) {
+  body.ac-app-body .ac-appointment-calendar .ac-batch1a__mobile { display: none; }
+}

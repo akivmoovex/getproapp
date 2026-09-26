@@ -7,11 +7,15 @@
   var review = form.review === true;
   var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
 %>
-<section class="ac-appointment-form" data-ac-page-section="appointment-<%= form.mode || 'create' %>" data-ac-appointment-step="<%= review ? 'review' : 'edit' %>" data-ac-stitch-book="<%= stitch.book || '' %>" data-ac-stitch-review="<%= stitch.review || '' %>" data-ac-stitch-reschedule-desktop="<%= stitch.rescheduleDesktop || '' %>" data-ac-stitch-reschedule-mobile="<%= stitch.rescheduleMobile || '' %>">
+<section class="ac-appointment-form" data-ac-page-section="appointment-<%= form.mode || 'create' %>" data-ac-appointment-step="<%= review ? 'review' : 'edit' %>" data-ac-screen="<%= form.mode === 'create' ? 'ACN07' : '' %>" data-ac-stitch-book="<%= stitch.book || '' %>" data-ac-stitch-review="<%= stitch.review || '' %>" data-ac-stitch-reschedule-desktop="<%= stitch.rescheduleDesktop || '' %>" data-ac-stitch-reschedule-mobile="<%= stitch.rescheduleMobile || '' %>">
   <% if (form.error) { %>
   <div class="ac-alert ac-alert--error" role="alert" tabindex="-1" data-ac-error-summary="1"><%= form.error %></div>
   <% } %>
-  <% if (form.slotCheck && form.slotCheck.slots && !form.slotCheck.slots.length) { %>
+  <% if (form.slotCheck && form.slotCheck.kind === 'blocked') { %>
+  <div class="ac-alert ac-alert--error" role="alert">Selected time overlaps blocked time for the assigned staff.</div>
+  <% } else if (form.slotCheck && form.slotCheck.kind === 'appointment') { %>
+  <div class="ac-alert ac-alert--error" role="alert">Selected time conflicts with an existing appointment (double-booking protection).</div>
+  <% } else if (form.slotCheck && form.slotCheck.slots && !form.slotCheck.slots.length) { %>
   <div class="ac-alert ac-alert--error" role="alert">Selected time is not available for the assigned staff.</div>
   <% } %>
 

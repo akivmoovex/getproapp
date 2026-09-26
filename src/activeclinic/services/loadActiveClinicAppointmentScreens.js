@@ -12,6 +12,9 @@ const {
   listAvailableAppointmentSlots,
   RESULT: APPT_RESULT,
   PERM,
+  STATUS_LABELS,
+  LIFECYCLE_ORDER,
+  ALLOWED_TRANSITIONS,
 } = require("./activeClinicAppointmentService");
 const appointmentRepo = require("../repositories/appointmentRepository");
 const {
@@ -30,22 +33,14 @@ const {
   listStaffMembersByFacility,
 } = require("./activeClinicStaffService");
 
-const STATUS_LABELS = Object.freeze({
-  scheduled: "Scheduled",
-  confirmed: "Confirmed",
-  checked_in: "Checked in",
-  in_progress: "In progress",
-  completed: "Completed",
-  cancelled: "Cancelled",
-  no_show: "No-show",
-  rescheduled: "Rescheduled",
-});
-
 const STITCH = Object.freeze({
   listDesktop: "284e9f8cd6804b0eb0f50574e2f571d6",
   listMobile: "480ecaba5258423e8711b1fdd2f39e1b",
-  calendarDesktop: "0fca19f233af43c49966e7eb62bccb02",
-  bookDesktop: "a99c6ac04cf24f2c8ca349715c1829dc",
+  calendarDesktop: "3c1a421cf1e140e9affe193071c8f80a",
+  calendarMobile: "c36313bff4274c72b341c38cdfafbc35",
+  bookDesktop: "c1e205c9ebd84f7a8f67d21681230d83",
+  detailDesktop: "1ec9b9f67d9746ebbbf331cd2ecf2a04",
+  bookingQueueDesktop: "41394d581882437b80e941cebefbb95f",
   confirmationDesktop: "327422c1b36747039e4026a17c5a2f33",
   cancelDesktop: "b27eafc25bad4006868f3932d08bfed5",
   rescheduleDesktop: "da39a3945ace4fac85cb12bd86f0cdc2",
@@ -247,9 +242,11 @@ async function loadActiveClinicAppointmentListScreen(db, input) {
       })
     : listed;
   const statusSummary = {
-    scheduled: 0,
+    requested: 0,
     confirmed: 0,
-    checked_in: 0,
+    arrived: 0,
+    waiting: 0,
+    with_practitioner: 0,
     no_show: 0,
     cancelled: 0,
   };
@@ -321,30 +318,94 @@ async function loadActiveClinicAppointmentListScreen(db, input) {
 }
 
 async function loadActiveClinicAppointmentCalendarScreen(db, input) {
-  const listResult = await loadActiveClinicAppointmentListScreen(db, input);
+  const query = { ...(input.query || {}) };
+  const view = String(query.view || "week").toLowerCase() === "day" ? "day" : "week";
+  // Mobile agenda defaults to a single day when date_to is absent.
+  if (view === "day" && query.date && !query.date_to) {
+    query.date_to = query.date;
+  } else if (!query.date_to && !query.date) {
+    const today = new Date();
+    const monday = new Date(today);
+    const day = monday.getUTCDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    monday.setUTCDate(monday.getUTCDate() + diff);
+    query.date = monday.toISOString().slice(0, 10);
+    const friday = new Date(monday);
+    friday.setUTCDate(monday.getUTCDate() + 4);
+    query.date_to = friday.toISOString().slice(0, 10);
+  }
+
+  const listResult = await loadActiveClinicAppointmentListScreen(db, {
+    ...input,
+    query,
+  });
   if (!listResult.ok) return listResult;
+
+  const blocks = await appointmentRepo.listAvailabilityBlocksInRange(db, {
+    organizationId: input.auth.organization.id,
+    healthcareOrganizationId: input.auth.healthcareOrganization.id,
+    startsFrom: listResult.list.filters.startsFrom,
+    startsTo: listResult.list.filters.startsTo,
+    staffMemberId: listResult.list.filters.assignedStaffId || null,
+  }).catch(() => []);
+
   const byDay = {};
   for (const a of listResult.list.appointments) {
     const key = a.when.dayKey || "unknown";
-    if (!byDay[key]) byDay[key] = [];
-    byDay[key].push(a);
+    if (!byDay[key]) byDay[key] = { appointments: [], blocks: [] };
+    byDay[key].appointments.push(a);
   }
+  for (const block of blocks || []) {
+    const start = new Date(block.starts_at);
+    const key = Number.isNaN(start.getTime())
+      ? "unknown"
+      : start.toISOString().slice(0, 10);
+    if (!byDay[key]) byDay[key] = { appointments: [], blocks: [] };
+    byDay[key].blocks.push({
+      id: block.id,
+      kind: block.block_kind,
+      reason: block.reason,
+      startsAt: block.starts_at,
+      endsAt: block.ends_at,
+      staffMemberId: block.staff_member_id,
+      label: `BLOCKED: ${block.reason || block.block_kind || "Unavailable"}`,
+    });
+  }
+
   const days = Object.keys(byDay)
     .sort()
     .map((dayKey) => ({
       dayKey,
-      count: byDay[dayKey].length,
-      appointments: byDay[dayKey],
+      count: byDay[dayKey].appointments.length,
+      blockedCount: byDay[dayKey].blocks.length,
+      appointments: byDay[dayKey].appointments,
+      blocks: byDay[dayKey].blocks,
     }));
+
+  const focusDate =
+    listResult.list.filters.date ||
+    (days[0] && days[0].dayKey) ||
+    new Date().toISOString().slice(0, 10);
+  const agendaDay = days.find((d) => d.dayKey === focusDate) || {
+    dayKey: focusDate,
+    count: 0,
+    blockedCount: 0,
+    appointments: [],
+    blocks: [],
+  };
+
   return {
     ok: true,
     code: APPT_RESULT.OK,
     calendar: {
       ...listResult.list,
+      view,
       days,
+      agendaDay,
+      blockCount: (blocks || []).length,
       stitch: {
         desktop: STITCH.calendarDesktop,
-        mobile: STITCH.listMobile,
+        mobile: STITCH.calendarMobile,
         listAlt: STITCH.listDesktop,
       },
     },
@@ -535,35 +596,69 @@ async function loadActiveClinicAppointmentDetailScreen(db, input) {
   });
   const perms = auth.permissions || [];
   const status = detail.appointment.status;
+  const nextStatuses = ALLOWED_TRANSITIONS[status] || [];
   const canEdit =
-    hasPerm(perms, PERM.UPDATE) && ["scheduled", "confirmed"].includes(status);
+    hasPerm(perms, PERM.UPDATE) &&
+    ["requested", "confirmed"].includes(status);
   const canCancel =
-    hasPerm(perms, PERM.CANCEL) &&
-    ["scheduled", "confirmed", "checked_in"].includes(status);
+    hasPerm(perms, PERM.CANCEL) && nextStatuses.includes("cancelled");
+  const canConfirm =
+    hasPerm(perms, PERM.UPDATE) && nextStatuses.includes("confirmed");
   const canCheckIn =
-    hasPerm(perms, PERM.CHECK_IN) && ["scheduled", "confirmed"].includes(status);
+    hasPerm(perms, PERM.CHECK_IN) && nextStatuses.includes("arrived");
+  const canWaiting =
+    hasPerm(perms, PERM.CHECK_IN) && nextStatuses.includes("waiting");
+  const canWithPractitioner =
+    hasPerm(perms, PERM.UPDATE) && nextStatuses.includes("with_practitioner");
+  const canComplete =
+    hasPerm(perms, PERM.UPDATE) && nextStatuses.includes("completed");
   const canNoShow =
-    hasPerm(perms, PERM.UPDATE) && ["scheduled", "confirmed"].includes(status);
+    hasPerm(perms, PERM.UPDATE) && nextStatuses.includes("no_show");
+
+  const lifecycle = LIFECYCLE_ORDER.map((key) => ({
+    key,
+    label: STATUS_LABELS[key] || key,
+    reached:
+      LIFECYCLE_ORDER.indexOf(key) <= LIFECYCLE_ORDER.indexOf(status) ||
+      (status === "cancelled" && key === "requested") ||
+      (status === "no_show" && ["requested", "confirmed"].includes(key)),
+    current: key === status,
+  }));
 
   return {
     ok: true,
     detail: {
       appointment: enriched,
-      statusEvents: detail.statusEvents || [],
+      statusEvents: (detail.statusEvents || []).map((e) => ({
+        ...e,
+        toStatusLabel: STATUS_LABELS[e.toStatus] || e.toStatus,
+        fromStatusLabel: e.fromStatus
+          ? STATUS_LABELS[e.fromStatus] || e.fromStatus
+          : null,
+        createdAtLabel: e.createdAt
+          ? new Date(e.createdAt).toISOString().replace("T", " ").slice(0, 16)
+          : "",
+      })),
       reminders: reminders.map((r) => ({
         channel: r.preferred_channel,
         scheduledFor: r.scheduled_for,
         deliveryState: r.delivery_state,
       })),
+      lifecycle,
       actions: {
         canEdit,
         canCancel,
+        canConfirm,
         canCheckIn,
+        canWaiting,
+        canWithPractitioner,
+        canComplete,
         canNoShow,
         editHref: `/app/appointments/${appointmentId}/reschedule`,
         cancelHref: `/app/appointments/${appointmentId}/cancel`,
       },
       stitch: {
+        desktop: STITCH.detailDesktop,
         cancel: STITCH.cancelDesktop,
         missed: STITCH.missedDesktop,
         confirmation: STITCH.confirmationDesktop,

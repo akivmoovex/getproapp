@@ -238,7 +238,7 @@ async function checkInScheduledPatient(db, input) {
     return { ok: false, code: RESULT.APPOINTMENT_NOT_FOUND, arrival: null };
   }
 
-  if (!["scheduled", "confirmed"].includes(appointment.status)) {
+  if (!["requested", "confirmed"].includes(appointment.status)) {
     return { ok: false, code: RESULT.INVALID_STATUS, arrival: null };
   }
 
@@ -262,7 +262,7 @@ async function checkInScheduledPatient(db, input) {
         healthcareOrganizationId,
         expectedVersion: appointment.version,
         patch: {
-          status: "checked_in",
+          status: "arrived",
           updatedByStaffId: actor.staffMemberId,
           version: appointment.version + 1,
         },
@@ -272,7 +272,7 @@ async function checkInScheduledPatient(db, input) {
         healthcareOrganizationId,
         appointmentId: appointment.id,
         fromStatus: appointment.status,
-        toStatus: "checked_in",
+        toStatus: "arrived",
         reasonCode: "reception_check_in",
         actorStaffId: actor.staffMemberId,
       });
