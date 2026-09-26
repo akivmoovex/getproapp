@@ -71,7 +71,7 @@ describe("ActiveClinic Pass 7 mobile patterns", () => {
     assert.match(app, /Pass 7 — authenticated mobile shell/);
 
     const phone = fs.readFileSync(
-      path.join(__dirname, "..", "public", "activeclinic", "ac-phone-field.css"),
+      path.join(__dirname, "..", "public", "platform", "phone-field.css"),
       "utf8"
     );
     assert.match(phone, /max-width:\s*430px/);

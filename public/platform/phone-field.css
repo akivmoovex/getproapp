@@ -1,4 +1,4 @@
-/* Compatibility shim — source of truth: public/platform/phone-field.css */
+/* Platform PhoneField (country + national). Canonical: /platform/phone-field.css */
 .ac-sr-only {
   position: absolute;
   width: 1px;

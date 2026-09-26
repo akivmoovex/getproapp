@@ -94,8 +94,8 @@ describe("ActiveClinic Phase 8 mobile hardening", () => {
   });
 
   it("ships PhoneField bottom sheet, wrap, and 360-safe row", () => {
-    const css = read("public/activeclinic/ac-phone-field.css");
-    const js = read("public/activeclinic/ac-phone-field.js");
+    const css = read("public/platform/phone-field.css");
+    const js = read("public/platform/phone-field.js");
     assert.match(css, /ac-phone-field__backdrop/);
     assert.match(css, /overflow-wrap:\s*anywhere/);
     assert.match(css, /max-width:\s*430px/);

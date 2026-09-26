@@ -51,9 +51,9 @@ describe("ActiveClinic Phase 9 accessibility", () => {
     assert.match(field, /role="listbox"/);
     assert.match(field, /aria-haspopup="dialog"/);
     assert.match(field, /span class="ac-sr-only"> required/);
-    const js = read("public/activeclinic/ac-phone-field.js");
+    const js = read("public/platform/phone-field.js");
     assert.match(js, /trapOpenPopover|trapTab/);
-    const css = read("public/activeclinic/ac-phone-field.css");
+    const css = read("public/platform/phone-field.css");
     assert.match(css, /:focus-visible/);
     assert.doesNotMatch(css, /outline:\s*none/);
   });

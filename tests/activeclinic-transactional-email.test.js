@@ -849,8 +849,13 @@ describe("ActiveClinic transactional email workflows", () => {
       path.join(__dirname, "..", "src/activeclinic/services/activeClinicEmailDelivery.js"),
       "utf8"
     );
-    assert.match(delivery, /adapter_not_enabled/);
-    assert.match(delivery, /Resend available for production/);
+    const transport = fs.readFileSync(
+      path.join(__dirname, "..", "src/platform/email/outboundEmailTransport.js"),
+      "utf8"
+    );
+    assert.match(transport, /adapter_not_enabled/);
+    assert.match(transport, /Resend available for production/);
+    assert.match(delivery, /platform\/email\/outboundEmailTransport/);
     assert.match(settings, /resolveOutboundEmailStatus/);
     assert.doesNotMatch(
       settings,

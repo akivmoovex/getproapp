@@ -1,6 +1,7 @@
 /**
- * Compatibility shim for legacy /activeclinic/ac-phone-field.js.
- * Source of truth: public/platform/phone-field.js — do not diverge.
+ * Platform PhoneField — searchable country picker + national number.
+ * Canonical asset: /platform/phone-field.js (legacy /activeclinic/ac-phone-field.js is a shim).
+ * Progressive enhancement; server always re-normalizes.
  */
 (function () {
   "use strict";

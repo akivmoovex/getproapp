@@ -74,7 +74,7 @@ const CLIENT_JS = [
   "public/activeclinic/ac-public.js",
   "public/activeclinic/ac-patient.js",
   "public/activeclinic/ac-auth.js",
-  "public/activeclinic/ac-phone-field.js",
+  "public/platform/phone-field.js",
   "public/activeclinic/ac-shell-nav.js",
 ];
 
@@ -84,7 +84,7 @@ const SHELL_ASSETS = [
   "public/activeclinic/ac-patient.css",
   "public/activeclinic/ac-auth.css",
   "public/activeclinic/ac-app.css",
-  "public/activeclinic/ac-phone-field.css",
+  "public/platform/phone-field.css",
   "public/activeclinic/assets/platform/home-hero.jpg",
   "public/activeclinic/assets/clinic-hero-default.jpg",
   "public/activeclinic/assets/doctors/doctor-fallback.svg",
