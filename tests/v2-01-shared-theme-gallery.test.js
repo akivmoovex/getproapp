@@ -89,8 +89,8 @@ describe("V2_01 shared website theme gallery", () => {
     const acHtml = renderWebsiteThemeGalleryPage(acPage);
     assert.match(bbHtml, /data-gp-website-theme-gallery/);
     assert.match(bbHtml, /BlessBoard Classic/);
-    assert.match(bbHtml, /Preview Theme/);
-    assert.match(bbHtml, /Selected in draft|Select Theme/);
+    assert.match(bbHtml, /Preview/);
+    assert.match(bbHtml, /Selected in draft|Choose for draft/);
     assert.doesNotMatch(bbHtml, /ac\.default/);
     assert.match(acHtml, /ActiveClinic Classic/);
     assert.doesNotMatch(acHtml, /bb\.default/);
@@ -99,8 +99,9 @@ describe("V2_01 shared website theme gallery", () => {
     assert.doesNotMatch(bbHtml, /data-theme-gallery-single/);
     assert.doesNotMatch(acHtml, /data-theme-gallery-single/);
     assert.match(bbHtml, /Website Options/);
-    assert.match(read("public/platform/website-theme-gallery.css"), /max-width:\s*390px/);
+    assert.match(read("public/platform/website-theme-gallery.css"), /max-width:\s*430px/);
     assert.match(read("public/platform/website-theme-gallery.js"), /themeId/);
+    assert.match(read("src/platform/website/renderWebsiteThemeGallery.js"), /v2-u1d-gallery-1/);
   });
 
   it("wires gallery routes and Choose Theme menu for BB and AC", () => {

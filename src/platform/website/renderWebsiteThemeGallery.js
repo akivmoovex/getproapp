@@ -6,7 +6,7 @@ const path = require("path");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "platform");
 const TEMPLATE = path.join(VIEWS_ROOT, "website", "theme-gallery-page.ejs");
-const THEME_GALLERY_STYLESHEET = "/platform/website-theme-gallery.css?v=v2-theme-gallery-1";
+const THEME_GALLERY_STYLESHEET = "/platform/website-theme-gallery.css?v=v2-u1d-gallery-1";
 const THEME_GALLERY_SCRIPT = "/platform/website-theme-gallery.js?v=v2-theme-gallery-1";
 
 let cachedSource = null;

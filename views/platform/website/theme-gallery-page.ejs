@@ -92,7 +92,7 @@
             data-theme-preview="1"
             target="_blank"
             rel="noopener"
-          >Preview Theme</a>
+          >Preview</a>
           <% } %>
           <button
             type="button"
@@ -100,7 +100,7 @@
             data-theme-select="1"
             data-theme-id="<%= theme.id %>"
             <%= theme.isDraft ? 'disabled aria-disabled="true"' : '' %>
-          ><%= theme.isDraft ? 'Selected in draft' : 'Select Theme' %></button>
+          ><%= theme.isDraft ? 'Selected in draft' : 'Choose for draft' %></button>
         </div>
       </div>
     </article>
