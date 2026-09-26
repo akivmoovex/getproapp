@@ -1412,9 +1412,10 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
       .set("Cookie", cookie);
     assert.equal(editPage.status, 200);
     assert.match(editPage.text, re(photoSrc));
+    assert.match(editPage.text, re(photoMediaId));
 
-    // Save without image fields (empty body keys) must keep the existing photo.
-    const saved = await request(app)
+    // Empty image fields match the shared "Remove image" client path and must clear the overlay.
+    const cleared = await request(app)
       .post(`/app/settings/website/catalogue/doctors/${staffId}/edit`)
       .set("Cookie", mergeCookies(cookie, editPage))
       .type("form")
@@ -1430,7 +1431,37 @@ describe("v7 website public catalogue", { timeout: 180000 }, () => {
         imageAlt: "",
       })
       .redirects(0);
-    assert.equal(saved.status, 303);
+    assert.equal(cleared.status, 303);
+
+    await publishWebsite(clinic);
+
+    const clearedList = await request(app).get(`/clinics/${clinic.slug}/doctors`);
+    assert.equal(clearedList.status, 200);
+    assert.match(clearedList.text, re(name));
+    assert.doesNotMatch(clearedList.text, re(photoMediaId));
+
+    // Re-save with the prior media id (normal edit form submit) restores the public photo.
+    const restoredEdit = await request(app)
+      .get(`/app/settings/website/catalogue/doctors/${staffId}/edit`)
+      .set("Cookie", cookie);
+    assert.equal(restoredEdit.status, 200);
+    const restored = await request(app)
+      .post(`/app/settings/website/catalogue/doctors/${staffId}/edit`)
+      .set("Cookie", mergeCookies(cookie, restoredEdit))
+      .type("form")
+      .send({
+        [CSRF_FIELD]: extractCsrf(restoredEdit),
+        publicDisplayName: name,
+        specialty: "Dermatologist",
+        biography: "Photo profile biography.",
+        publicWebsiteVisible: "1",
+        status: "active",
+        imageMediaId: photoMediaId,
+        imageSrc: photoSrc,
+        imageAlt: "Portrait of clinic doctor",
+      })
+      .redirects(0);
+    assert.equal(restored.status, 303);
 
     await publishWebsite(clinic);
 
