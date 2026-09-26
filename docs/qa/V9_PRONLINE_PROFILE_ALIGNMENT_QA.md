@@ -10,11 +10,11 @@
 
 ## Verdict
 
-### **`V9_PRONLINE_PROFILE_ALIGNMENT_PASS`** *(code + unit)* / hosted confirm below
+### **`V9_PRONLINE_PROFILE_ALIGNMENT_PASS`**
 
 Pronline keeps existing deployment code **`moovex-platform-testing`** (no invented V9 code). Profile **`platformLine`** elevated to **`v8`** so About uses product **Version 2.02**, while domains, cookies, DB identity (`moovex-platform-v7` / `testing`), and `mediaWriteNamespace=testing` stay on the historical pronline testing app. Neuniversity remains **`moovex-platform-v8-testing`** (domain-isolated).
 
-Hosted About **2.02** requires Hostinger Deploy/Restart of the pronline Node app onto this commit (GitHub push alone is not instant).
+**Hosted confirmed** on `d05f93ee8d0b`: BB+AC About **2.02**, `/healthz` `platformLine=v8`, identity testing. Production untouched.
 
 ---
 
@@ -60,22 +60,27 @@ Unit: **50/50 PASS** (`v8-deployment-profile`, `v8-about-version-2`, `v8-environ
 
 ## Hosted verification
 
-*(Filled after push / operator restart.)*
-
 | Check | Result |
 | --- | --- |
-| BB `/about` → 2.02 | _pending_ |
-| AC `/about` → 2.02 | _pending_ |
-| `/healthz` platformLine | _pending_ |
-| BB+AC public `/` + `/login` | _pending_ |
-| Cross-product host isolation | Unit PASS; live smoke _pending_ |
-| Production unchanged | **YES** (no prod deploy) |
+| BB `/about` → 2.02 | **PASS** (`Version 2.02` / `Release 2.02`) |
+| AC `/about` → 2.02 | **PASS** (`Version 2.02`) |
+| `/healthz` | **PASS** `gitSha=d05f93ee8d0b` · `platformLine=v8` · `moovex-platform-testing` · identity `moovex-platform-v7` / `testing` |
+| BB+AC public `/` + `/login` | **PASS** HTTP 200 |
+| Cross-product host isolation | **PASS** unit + live BB≠AC shell |
+| Production unchanged | **YES** — no prod deploy; `origin/V7-first-production` still `03a89106…`; neuniversity still `b186991d` / `moovex-platform-v8-testing` |
+
+**Note:** Live SHA is alignment tip `d05f93ee…` (descendant of freeze `v2.02` / `3b94485c`). Freeze tag was not retargeted.
 
 ---
 
-## Operator action (Hostinger)
+## Return token
 
-1. Ensure pronline Node app Git branch = **`V9`**.  
-2. **Deploy / Restart** after this commit lands on `origin/V9`.  
-3. Do **not** set `PLATFORM_DEPLOYMENT_CODE=moovex-platform-v8-testing` on pronline.  
-4. Do **not** change production apps.
+```
+V9_PRONLINE_PROFILE_ALIGNMENT_PASS
+deployment_code=moovex-platform-testing
+platformLine=v8
+about=2.02
+healthz_sha=d05f93ee8d0b
+db_identity=moovex-platform-v7/testing
+prod_untouched=YES
+```
