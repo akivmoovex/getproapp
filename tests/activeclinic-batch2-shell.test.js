@@ -262,13 +262,20 @@ describe("ActiveClinic V2.03 Batch 2 staff shell", () => {
     assert.match(tokens, /--ac-staff-bottom-nav-h:\s*64px/);
     assert.match(tokens, /--ac-touch-min:\s*44px/);
     assert.match(tokens, /--ac-primary:\s*#2563eb/i);
+    assert.match(tokens, /--gp-ops-radius:\s*8px/);
+    assert.match(tokens, /--gp-ops-radius-lg:\s*12px/);
+    assert.match(tokens, /--gp-ops-font:\s*var\(--ac-font\)/);
     assert.match(css, /\.ac-staff-bottom-nav/);
     assert.match(css, /\.ac-nav-item\.is-active[\s\S]*?color:\s*var\(--ac-primary\)/);
     assert.match(css, /\.ac-btn[\s\S]*?border-radius:\s*var\(--ac-radius/);
-    assert.match(
-      fs.readFileSync(path.join(__dirname, "../public/platform/gp-ops-shared.css"), "utf8"),
-      /--gp-ops-radius:\s*8px/
+    const gpOps = fs.readFileSync(
+      path.join(__dirname, "../public/platform/gp-ops-shared.css"),
+      "utf8"
     );
+    // Shared defaults stay product-neutral; AC radii/font live in ac-app-tokens.
+    assert.match(gpOps, /--gp-ops-radius:\s*0\.5rem/);
+    assert.doesNotMatch(gpOps, /--gp-ops-font:\s*Inter/);
+    assert.match(gpOps, /\.gp-ops-badge--accent[\s\S]*?color:\s*var\(--gp-ops-primary\)/);
   });
 
   it("authorized role renders desktop shell chrome, search, check-in, and facility context", async () => {

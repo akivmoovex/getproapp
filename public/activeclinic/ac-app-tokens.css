@@ -81,7 +81,7 @@
   --ac-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
   --ac-touch: max(var(--ac-control-h, 2.75rem), var(--ac-touch-min));
 
-  /* —— gp-ops overrides (staff brand) —— */
+  /* —— gp-ops overrides (AC staff brand; keep BB themes out of gp-ops defaults) —— */
   --gp-ops-primary: var(--ac-primary);
   --gp-ops-primary-hover: var(--ac-primary-dark);
   --gp-ops-border: var(--ac-border);
@@ -89,4 +89,7 @@
   --gp-ops-muted: var(--ac-text-secondary);
   --gp-ops-canvas: var(--ac-background);
   --gp-ops-surface: var(--ac-surface);
+  --gp-ops-radius: 8px;
+  --gp-ops-radius-lg: 12px;
+  --gp-ops-font: var(--ac-font);
 }

@@ -1,6 +1,7 @@
 /**
  * Shared ops UI primitives for BlessBoard + ActiveClinic.
- * Structural only — products override --gp-ops-* tokens for brand color.
+ * Structural only — products override --gp-ops-* for brand, radius, and font.
+ * Do not bake ActiveClinic Stitch or BlessBoard violet into these defaults.
  */
 
 :root {
@@ -9,15 +10,15 @@
   --gp-ops-border: #e5e7eb;
   --gp-ops-text: #111827;
   --gp-ops-muted: #6b7280;
+  /* Neutral fallback primary; products must override (AC: #2563eb, BB: #6C5CE7). */
   --gp-ops-primary: #2563eb;
   --gp-ops-primary-hover: #1d4ed8;
-  /* Align with AC frozen staff radii (Stitch rounded-lg / rounded-xl) */
-  --gp-ops-radius: 8px;
-  --gp-ops-radius-lg: 12px;
+  --gp-ops-radius: 0.5rem;
+  --gp-ops-radius-lg: 0.75rem;
   --gp-ops-space-sm: 0.5rem;
   --gp-ops-space-md: 1rem;
   --gp-ops-space-lg: 1.5rem;
-  --gp-ops-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
+  --gp-ops-font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
 }
 
 .gp-ops-visually-hidden {
@@ -134,11 +135,17 @@
   background: currentColor;
 }
 
-.gp-ops-badge--info { background: #eff6ff; color: #2563eb; }
+.gp-ops-badge--info {
+  background: color-mix(in srgb, var(--gp-ops-primary) 12%, #fff);
+  color: var(--gp-ops-primary);
+}
 .gp-ops-badge--success { background: #f0fdf4; color: #16a34a; }
 .gp-ops-badge--warning { background: #fffbeb; color: #d97706; }
 .gp-ops-badge--danger { background: #fef2f2; color: #dc2626; }
-.gp-ops-badge--accent { background: #eff6ff; color: #2563eb; }
+.gp-ops-badge--accent {
+  background: color-mix(in srgb, var(--gp-ops-primary) 12%, #fff);
+  color: var(--gp-ops-primary);
+}
 
 .gp-ops-table-wrap {
   background: var(--gp-ops-surface);
