@@ -585,4 +585,225 @@ describe("ActiveClinic V2.03 ACN18 Clinical Documents", () => {
       .set("Cookie", adminCookie);
     assert.equal(adminDeny.status, 403);
   });
+
+  it("HTTP document detail/edit/update/finalize complete for own, missing, cross-patient, cross-tenant, unauthorized", async () => {
+    requireDb();
+    const SECRET_TITLE = "PHI-SECRET-TITLE-SHOULD-NOT-LEAK";
+    const SECRET_BODY = "PHI-SECRET-BODY-SHOULD-NOT-LEAK";
+
+    const clinic = await provisionClinic("hangfix", [RECEPTIONIST, CLINICIAN]);
+    const other = await provisionClinic("hangOther", [RECEPTIONIST, CLINICIAN]);
+
+    const patientA = await registerActiveClinicPatient(pool, {
+      organizationId: clinic.organizationId,
+      healthcareOrganizationId: clinic.hcoId,
+      facilityId: clinic.facilityId,
+      actor: clinic.actor,
+      demographics: { firstName: "Hang", lastName: "Alpha" },
+      registrationMethod: "walk_in",
+    });
+    const patientB = await registerActiveClinicPatient(pool, {
+      organizationId: clinic.organizationId,
+      healthcareOrganizationId: clinic.hcoId,
+      facilityId: clinic.facilityId,
+      actor: clinic.actor,
+      demographics: { firstName: "Hang", lastName: "Beta" },
+      registrationMethod: "walk_in",
+    });
+    assert.equal(patientA.ok, true);
+    assert.equal(patientB.ok, true);
+
+    const doc = await createClinicalDocument(pool, {
+      organizationId: clinic.organizationId,
+      patientId: patientA.patient.id,
+      facilityId: clinic.facilityId,
+      documentType: "clinical_note",
+      title: SECRET_TITLE,
+      bodyText: SECRET_BODY,
+      actor: clinic.actor,
+    });
+    assert.equal(doc.ok, true);
+
+    const app = createActiveClinicFoundationApp({
+      getPool: () => pool,
+      env: MINIMAL_AC,
+      isProduction: false,
+    });
+    const cookie = await sessionCookie(clinic.identityId, clinic.organizationId);
+    const otherCookie = await sessionCookie(other.identityId, other.organizationId);
+
+    const HANG_MS = 4000;
+    async function mustComplete(label, reqPromise) {
+      let timer;
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                `${label}: HTTP response did not complete within ${HANG_MS}ms (open response hang)`
+              )
+            ),
+          HANG_MS
+        );
+      });
+      try {
+        return await Promise.race([reqPromise, timeout]);
+      } finally {
+        clearTimeout(timer);
+      }
+    }
+
+    function assertNoPhi(res) {
+      assert.doesNotMatch(String(res.text || ""), new RegExp(SECRET_TITLE));
+      assert.doesNotMatch(String(res.text || ""), new RegExp(SECRET_BODY));
+      assert.doesNotMatch(String(res.headers.location || ""), new RegExp(SECRET_TITLE));
+    }
+
+    const ownPath = `/app/clinical/patients/${encodeURIComponent(
+      patientA.patient.id
+    )}/documents/${encodeURIComponent(doc.document.id)}`;
+    const missingPath = `/app/clinical/patients/${encodeURIComponent(
+      patientA.patient.id
+    )}/documents/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee`;
+    const crossPatientPath = `/app/clinical/patients/${encodeURIComponent(
+      patientB.patient.id
+    )}/documents/${encodeURIComponent(doc.document.id)}`;
+    const crossTenantPath = `/app/clinical/patients/${encodeURIComponent(
+      patientA.patient.id
+    )}/documents/${encodeURIComponent(doc.document.id)}`;
+    const malformedPath = `/app/clinical/patients/${encodeURIComponent(
+      patientA.patient.id
+    )}/documents/not-a-uuid`;
+
+    const own = await mustComplete(
+      "own detail",
+      request(app).get(ownPath).set("Cookie", cookie)
+    );
+    assert.equal(own.status, 200);
+    assert.match(own.text, new RegExp(SECRET_TITLE));
+
+    const missing = await mustComplete(
+      "nonexistent detail",
+      request(app).get(missingPath).set("Cookie", cookie)
+    );
+    assert.equal(missing.status, 404);
+    assertNoPhi(missing);
+    assert.match(missing.text, /Document was not found|Document not found/i);
+
+    const crossPatient = await mustComplete(
+      "cross-patient detail",
+      request(app).get(crossPatientPath).set("Cookie", cookie)
+    );
+    assert.equal(crossPatient.status, 404);
+    assertNoPhi(crossPatient);
+
+    const crossTenant = await mustComplete(
+      "cross-tenant detail",
+      request(app).get(crossTenantPath).set("Cookie", otherCookie)
+    );
+    // Other tenant session: patient not in org → 404 (or authz denial). Must complete.
+    assert.ok([403, 404].includes(crossTenant.status), `status=${crossTenant.status}`);
+    assertNoPhi(crossTenant);
+
+    const malformed = await mustComplete(
+      "malformed document id",
+      request(app).get(malformedPath).set("Cookie", cookie)
+    );
+    assert.equal(malformed.status, 404);
+    assertNoPhi(malformed);
+
+    const missingEdit = await mustComplete(
+      "nonexistent edit",
+      request(app).get(`${missingPath}/edit`).set("Cookie", cookie)
+    );
+    assert.equal(missingEdit.status, 404);
+    assertNoPhi(missingEdit);
+
+    const crossEdit = await mustComplete(
+      "cross-patient edit",
+      request(app).get(`${crossPatientPath}/edit`).set("Cookie", cookie)
+    );
+    assert.equal(crossEdit.status, 404);
+    assertNoPhi(crossEdit);
+
+    const { cookie: postCookie, csrf } = withCsrf(cookie);
+    const crossUpdate = await mustComplete(
+      "cross-patient update",
+      request(app)
+        .post(crossPatientPath)
+        .set("Cookie", postCookie)
+        .type("form")
+        .send({
+          [CSRF_FIELD]: csrf,
+          document_type: "clinical_note",
+          title: "Hijack attempt",
+          body_text: "should not write",
+          intent: "draft",
+        })
+    );
+    assert.equal(crossUpdate.status, 404);
+    assertNoPhi(crossUpdate);
+
+    const { cookie: finCookie, csrf: finCsrf } = withCsrf(cookie);
+    const crossFinalize = await mustComplete(
+      "cross-patient finalize",
+      request(app)
+        .post(`${crossPatientPath}/finalize`)
+        .set("Cookie", finCookie)
+        .type("form")
+        .send({ [CSRF_FIELD]: finCsrf })
+    );
+    assert.equal(crossFinalize.status, 404);
+    assertNoPhi(crossFinalize);
+
+    // Unauthorized role must complete (403) without hanging
+    const desk = await provisionClinic("hangDesk", [RECEPTIONIST]);
+    const deskPatient = await registerActiveClinicPatient(pool, {
+      organizationId: desk.organizationId,
+      healthcareOrganizationId: desk.hcoId,
+      facilityId: desk.facilityId,
+      actor: desk.actor,
+      demographics: { firstName: "Desk", lastName: "Hang" },
+      registrationMethod: "walk_in",
+    });
+    assert.equal(deskPatient.ok, true);
+    const deskCookie = await sessionCookie(desk.identityId, desk.organizationId);
+    const unauthorized = await mustComplete(
+      "unauthorized list",
+      request(app)
+        .get(
+          `/app/clinical/patients/${encodeURIComponent(deskPatient.patient.id)}/documents`
+        )
+        .set("Cookie", deskCookie)
+    );
+    // desk clinic list under wrong org cookie from other app instance — use desk's own path with desk cookie on shared app is wrong org.
+    // Re-hit with a desk-only identity against clinic patient's docs using desk session on same app fails org scope.
+    assert.ok([403, 404].includes(unauthorized.status));
+
+    const deskOnlyApp = createActiveClinicFoundationApp({
+      getPool: () => pool,
+      env: MINIMAL_AC,
+      isProduction: false,
+    });
+    const deskDeny = await mustComplete(
+      "unauthorized role detail",
+      request(deskOnlyApp)
+        .get(
+          `/app/clinical/patients/${encodeURIComponent(deskPatient.patient.id)}/documents/aaaaaaaa-bbbb-4ccc-8ddd-eeeeeeeeeeee`
+        )
+        .set("Cookie", deskCookie)
+    );
+    assert.equal(deskDeny.status, 403);
+    assertNoPhi(deskDeny);
+
+    // Prove document unchanged after cross-patient mutate attempts
+    const still = await getClinicalDocument(pool, {
+      organizationId: clinic.organizationId,
+      documentId: doc.document.id,
+      patientId: patientA.patient.id,
+    });
+    assert.equal(still.ok, true);
+    assert.equal(still.document.title, SECRET_TITLE);
+    assert.equal(still.document.status, "draft");
+  });
 });

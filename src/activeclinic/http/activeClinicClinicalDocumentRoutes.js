@@ -118,6 +118,37 @@ function typeOptions() {
   }));
 }
 
+/**
+ * renderSimpleState returns an HTML string — it does not write to `res`.
+ * Callers must send it explicitly or the HTTP request never terminates.
+ */
+function sendSimpleState(res, opts) {
+  const status = Number(opts && opts.status) || 404;
+  const title = (opts && opts.title) || "Not found";
+  const message = (opts && opts.message) || "Not found.";
+  return res
+    .status(status)
+    .type("html")
+    .send(
+      renderSimpleState(title, message, {
+        state: status === 404 ? "not-found" : "error",
+        linkHref: (opts && opts.linkHref) || "/app/clinical",
+        linkLabel: (opts && opts.linkLabel) || "Back to clinical",
+      })
+    );
+}
+
+/** Non-enumerating document miss (missing / cross-patient / wrong org). */
+function sendDocumentNotFound(res, listBase) {
+  return sendSimpleState(res, {
+    status: 404,
+    title: "Document not found",
+    message: errorMessageForCode(RESULT.NOT_FOUND),
+    linkHref: listBase || "/app/clinical",
+    linkLabel: "Back to documents",
+  });
+}
+
 function statusOptions() {
   return STATUSES.map((value) => ({
     value,
@@ -182,7 +213,7 @@ function registerActiveClinicClinicalDocumentRoutes(app, deps) {
         const organizationId = authOrgId(auth);
         const patientId = String(req.params.patientId || "");
         if (!UUID_RE.test(patientId)) {
-          return renderSimpleState(res, {
+          return sendSimpleState(res, {
             status: 404,
             title: "Patient not found",
             message: "That patient could not be found.",
@@ -201,7 +232,7 @@ function registerActiveClinicClinicalDocumentRoutes(app, deps) {
           q: req.query.q || null,
         });
         if (!listed.ok) {
-          return renderSimpleState(res, {
+          return sendSimpleState(res, {
             status: listed.code === RESULT.PATIENT_NOT_FOUND ? 404 : 400,
             title: "Documents unavailable",
             message: errorMessageForCode(listed.code),
@@ -279,7 +310,7 @@ function registerActiveClinicClinicalDocumentRoutes(app, deps) {
         const organizationId = authOrgId(auth);
         const patientId = String(req.params.patientId || "");
         if (!UUID_RE.test(patientId)) {
-          return renderSimpleState(res, {
+          return sendSimpleState(res, {
             status: 404,
             title: "Patient not found",
             message: "That patient could not be found.",
@@ -292,7 +323,7 @@ function registerActiveClinicClinicalDocumentRoutes(app, deps) {
           patientId,
         });
         if (!got.ok) {
-          return renderSimpleState(res, {
+          return sendSimpleState(res, {
             status: 404,
             title: "Patient not found",
             message: errorMessageForCode(RESULT.PATIENT_NOT_FOUND),
@@ -451,13 +482,7 @@ function registerActiveClinicClinicalDocumentRoutes(app, deps) {
           patientId,
         });
         if (!loaded.ok) {
-          return renderSimpleState(res, {
-            status: 404,
-            title: "Document not found",
-            message: errorMessageForCode(loaded.code),
-            linkHref: listBase,
-            linkLabel: "Back to documents",
-          });
+          return sendDocumentNotFound(res, listBase);
         }
         const canEdit = loaded.document.isDraft && hasPerm(auth, PERM.CREATE);
         const canFinalize =
@@ -522,13 +547,7 @@ function registerActiveClinicClinicalDocumentRoutes(app, deps) {
           patientId,
         });
         if (!loaded.ok) {
-          return renderSimpleState(res, {
-            status: 404,
-            title: "Document not found",
-            message: errorMessageForCode(loaded.code),
-            linkHref: listBase,
-            linkLabel: "Back to documents",
-          });
+          return sendDocumentNotFound(res, listBase);
         }
         if (!loaded.document.isDraft) {
           return res.redirect(
@@ -613,6 +632,12 @@ function registerActiveClinicClinicalDocumentRoutes(app, deps) {
         });
 
         if (!updated.ok) {
+          if (
+            updated.code === RESULT.NOT_FOUND ||
+            updated.code === RESULT.PATIENT_NOT_FOUND
+          ) {
+            return sendDocumentNotFound(res, listBase);
+          }
           if (updated.code === RESULT.FINAL_IMMUTABLE) {
             return res.redirect(
               303,
@@ -683,17 +708,28 @@ function registerActiveClinicClinicalDocumentRoutes(app, deps) {
         const organizationId = authOrgId(auth);
         const patientId = String(req.params.patientId || "");
         const documentId = String(req.params.documentId || "");
-        await finalizeClinicalDocument(getPool(), {
+        const listBase = `/app/clinical/patients/${encodeURIComponent(patientId)}/documents`;
+        const finalized = await finalizeClinicalDocument(getPool(), {
           organizationId,
           documentId,
           patientId,
           actor: actorFromAuth(auth),
         });
+        if (!finalized.ok) {
+          if (
+            finalized.code === RESULT.NOT_FOUND ||
+            finalized.code === RESULT.PATIENT_NOT_FOUND
+          ) {
+            return sendDocumentNotFound(res, listBase);
+          }
+          return res.redirect(
+            303,
+            `${listBase}/${encodeURIComponent(documentId)}`
+          );
+        }
         return res.redirect(
           303,
-          `/app/clinical/patients/${encodeURIComponent(patientId)}/documents/${encodeURIComponent(
-            documentId
-          )}?ok=1`
+          `${listBase}/${encodeURIComponent(documentId)}?ok=1`
         );
       } catch (err) {
         return next(err);
