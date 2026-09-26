@@ -38,9 +38,9 @@ describe("blessboard v5 frontend assets — includes and cache busting", () => {
     assert.match(start, new RegExp(`apex-auth\\.css\\?v=${VERSIONS.apexAuthShell}`));
     assert.match(start, new RegExp(`apex\\.css\\?v=${VERSIONS.apex}`));
     assert.match(start, /activeNav === 'register-church'/);
-    assert.match(start, /ac-phone-field\.css\?v=bb-reg-1/);
+    assert.match(start, /phone-field\.css\?v=bb-reg-1/);
     const end = read("views/blessboard/v5/partials/apex-shell-end.ejs");
-    assert.match(end, /ac-phone-field\.js\?v=bb-reg-1/);
+    assert.match(end, /phone-field\.js\?v=bb-reg-1/);
     const login = read("views/blessboard/v5/apex/login.ejs");
     assert.match(login, new RegExp(`apex-auth\\.css\\?v=${VERSIONS.apexAuthLogin}`));
     assert.match(login, new RegExp(`tenant-auth\\.css\\?v=${VERSIONS.tenantAuthLogin}`));

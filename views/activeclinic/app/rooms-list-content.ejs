@@ -106,8 +106,9 @@
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap ac-rooms__desktop" data-ac-table="rooms">
-    <table class="ac-table">
+  <div class="ac-panel ac-table-wrap ac-rooms__desktop gp-ops-table-wrap ac-ops-queue__desktop" data-ac-table="rooms" data-gp-ops="table">
+    <div class="gp-ops-table-scroll">
+    <table class="ac-table gp-ops-table">
       <thead>
         <tr>
           <th scope="col">Status</th>
@@ -141,6 +142,7 @@
         <% }) %>
       </tbody>
     </table>
+    </div>
   </div>
 
   <div class="ac-rooms__mobile" data-ac-rooms-mobile="1">

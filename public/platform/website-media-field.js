@@ -15,10 +15,36 @@
   };
 
   function csrfToken() {
+    if (window.GpOpsFetch && typeof window.GpOpsFetch.csrfToken === "function") {
+      return window.GpOpsFetch.csrfToken();
+    }
     var meta = document.querySelector('meta[name="csrf-token"]');
     if (meta && meta.getAttribute("content")) return meta.getAttribute("content");
     var input = document.querySelector('input[name="_csrf"]');
     return input ? input.value : "";
+  }
+
+  function appendCsrf(fd) {
+    if (window.GpOpsFetch && typeof window.GpOpsFetch.appendCsrf === "function") {
+      return window.GpOpsFetch.appendCsrf(fd);
+    }
+    fd.append("_csrf", csrfToken());
+    return fd;
+  }
+
+  function csrfHeaders(extra) {
+    if (window.GpOpsFetch && typeof window.GpOpsFetch.csrfHeaders === "function") {
+      return window.GpOpsFetch.csrfHeaders(extra);
+    }
+    var headers = { Accept: "application/json", "X-CSRF-Token": csrfToken() };
+    if (extra && typeof extra === "object") {
+      for (var key in extra) {
+        if (Object.prototype.hasOwnProperty.call(extra, key) && extra[key] != null) {
+          headers[key] = extra[key];
+        }
+      }
+    }
+    return headers;
   }
 
   function validateFile(file) {
@@ -93,7 +119,7 @@
         reject({ ok: false, code: "network_error" });
       };
       var fd = new FormData();
-      fd.append("_csrf", csrfToken());
+      appendCsrf(fd);
       fd.append("file", file);
       fd.append("altText", altText || "");
       fd.append("mediaKind", "image");
@@ -115,7 +141,7 @@
     grid.textContent = "Loading…";
     fetch(url, {
       credentials: "same-origin",
-      headers: { Accept: "application/json", "X-CSRF-Token": csrfToken() },
+      headers: csrfHeaders(),
     })
       .then(function (res) {
         return res.json();

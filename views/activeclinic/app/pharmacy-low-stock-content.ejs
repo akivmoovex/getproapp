@@ -11,18 +11,17 @@
   </div>
 
   <% if (!items.length) { %>
-  <%- include('../partials/ac-inline-state', {
-    inlineState: {
-      stateKey: 'empty',
-      marker: 'low-stock-empty',
-      title: 'No low stock items',
-      description: 'All items are above reorder levels.',
-      secondaryAction: { href: '/app/pharmacy/inventory', label: 'View inventory' }
-    }
+  <%- include('../../platform/partials/gp-ops-empty-state', {
+    title: 'No low stock items',
+    body: 'All items are above reorder levels.',
+    actionHref: '/app/pharmacy/inventory',
+    actionLabel: 'View inventory',
+    className: 'ac-panel'
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap ac-desktop-table">
-    <table class="ac-table">
+  <div class="ac-panel ac-table-wrap ac-desktop-table gp-ops-table-wrap" data-gp-ops="table" data-ac-table="pharmacy-low-stock">
+    <div class="gp-ops-table-scroll">
+    <table class="ac-table gp-ops-table">
       <caption class="ac-sr-only">Low Stock Items</caption>
       <thead>
         <tr>
@@ -45,6 +44,7 @@
         <% }) %>
       </tbody>
     </table>
+    </div>
   </div>
   <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="pharmacy-low-stock">
     <% items.forEach(function (item) { %>
