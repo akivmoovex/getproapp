@@ -11,6 +11,9 @@
       <div><dt>Patient</dt><dd><a href="/app/billing/patients/<%= invoice.patientNumber %>"><%= invoice.patientName %></a> · <%= invoice.patientNumber %></dd></div>
       <div><dt>Invoice date</dt><dd><%= invoice.invoice_date %></dd></div>
       <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= invoice.status %>"><%= invoice.status %></span></dd></div>
+      <div><dt>Total</dt><dd class="ac-money"><strong><%= invoice.totalAmountFormatted %></strong></dd></div>
+      <div><dt>Paid</dt><dd class="ac-money"><%= invoice.paidAmountFormatted %></dd></div>
+      <div><dt>Balance</dt><dd class="ac-money"><%= invoice.balanceFormatted %></dd></div>
     </dl>
   </article>
 
@@ -26,7 +29,7 @@
             <th>#</th>
             <th>Description</th>
             <th>Quantity</th>
-            <th data-col="amount">Unit amount</th>
+            <th data-col="amount">Unit price</th>
             <th data-col="amount">Line total</th>
           </tr>
         </thead>
@@ -52,9 +55,23 @@
             <td class="ac-money"><%= invoice.taxAmountFormatted %></td>
           </tr>
           <% } %>
+          <% if (parseInt(invoice.adjustment_minor || 0) !== 0) { %>
+          <tr>
+            <td colspan="4" class="ac-table__total-label">Adjustment</td>
+            <td class="ac-money"><%= invoice.adjustmentFormatted %></td>
+          </tr>
+          <% } %>
           <tr>
             <td colspan="4" class="ac-table__total-label"><strong>Total</strong></td>
             <td class="ac-money"><strong><%= invoice.totalAmountFormatted %></strong></td>
+          </tr>
+          <tr>
+            <td colspan="4" class="ac-table__total-label">Paid</td>
+            <td class="ac-money"><%= invoice.paidAmountFormatted %></td>
+          </tr>
+          <tr>
+            <td colspan="4" class="ac-table__total-label"><strong>Balance</strong></td>
+            <td class="ac-money"><strong><%= invoice.balanceFormatted %></strong></td>
           </tr>
         </tfoot>
       </table>
@@ -67,9 +84,16 @@
           <p><strong><%= line.lineTotalFormatted %></strong></p>
         </li>
         <% }) %>
+        <% if (parseInt(invoice.adjustment_minor || 0) !== 0) { %>
+        <li class="ac-card">
+          <p class="ac-card__title">Adjustment</p>
+          <p class="ac-money"><%= invoice.adjustmentFormatted %></p>
+        </li>
+        <% } %>
         <li class="ac-card">
           <p class="ac-card__title">Total</p>
           <p><strong class="ac-money ac-money--lg"><%= invoice.totalAmountFormatted %></strong></p>
+          <p class="ac-muted">Paid <%= invoice.paidAmountFormatted %> · Balance <%= invoice.balanceFormatted %></p>
         </li>
       </ul>
     <% } %>

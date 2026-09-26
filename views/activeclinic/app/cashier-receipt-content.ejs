@@ -1,27 +1,63 @@
 <%
   var receipt = (pageData && pageData.receipt) || {};
+  var clinic = receipt.clinic || {};
+  var invoices = receipt.invoices || [];
   var stitch = (pageData && pageData.stitch) || {};
   var success = (pageData && pageData.success) || false;
 %>
-<section class="ac-cashier-receipt" data-ac-page-section="cashier-receipt" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+<section class="ac-cashier-receipt" data-ac-page-section="cashier-receipt" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <style>
+    @media print {
+      .ac-page-header, .ac-shell-nav, .ac-form-actions, .ac-flash, .ac-btn { display: none !important; }
+      .ac-receipt { box-shadow: none !important; border: none !important; }
+    }
+  </style>
+
   <% if (success) { %>
   <p class="ac-flash ac-flash--success" role="status">Payment recorded successfully.</p>
   <% } %>
 
   <article class="ac-panel ac-receipt">
-    <h2 class="ac-receipt__title">Payment Receipt</h2>
+    <header class="ac-receipt__clinic">
+      <h2 class="ac-receipt__title">Receipt</h2>
+      <% if (clinic.name) { %>
+      <p class="ac-receipt__clinic-name"><strong><%= clinic.name %></strong></p>
+      <% } %>
+      <% if (clinic.address) { %>
+      <p class="ac-muted"><%= clinic.address %></p>
+      <% } %>
+      <% if (clinic.phone) { %>
+      <p class="ac-muted"><%= clinic.phone %></p>
+      <% } %>
+    </header>
+
     <p class="ac-receipt__number"><strong>Receipt #<%= receipt.receiptNumber %></strong></p>
 
     <dl class="ac-dl">
-      <div><dt>Receipt date</dt><dd><%= receipt.receiptDate %></dd></div>
-      <div><dt>Amount paid</dt><dd class="ac-money ac-money--lg"><strong><%= receipt.amountFormatted %></strong></dd></div>
-      <div><dt>Payment method</dt><dd><%= receipt.paymentMethod %></dd></div>
+      <div><dt>Date</dt><dd><%= receipt.paymentDate || receipt.receiptDate %></dd></div>
+      <div><dt>Amount</dt><dd class="ac-money ac-money--lg"><strong><%= receipt.amountFormatted %></strong></dd></div>
+      <div><dt>Method</dt><dd><%= receipt.paymentMethodLabel || receipt.paymentMethod %></dd></div>
+      <% if (receipt.referenceNumber) { %>
+      <div><dt>Reference</dt><dd><%= receipt.referenceNumber %></dd></div>
+      <% } %>
       <div><dt>Payment number</dt><dd><%= receipt.paymentNumber %></dd></div>
-      <div><dt>Patient</dt><dd><%= receipt.issuedToPatientName %> · <%= receipt.patientNumber %></dd></div>
+      <div><dt>Patient</dt><dd><%= receipt.issuedToPatientName || receipt.patientName %> · <%= receipt.patientNumber %></dd></div>
+      <% if (invoices.length) { %>
+      <div><dt>Invoice<%= invoices.length > 1 ? 's' : '' %></dt>
+        <dd>
+          <% invoices.forEach(function (inv, idx) { %>
+            <%= inv.invoiceNumber %> (<%= inv.allocatedFormatted %>)<%= idx < invoices.length - 1 ? '; ' : '' %>
+          <% }) %>
+        </dd>
+      </div>
+      <% } %>
+      <% if (receipt.recordedByName) { %>
+      <div><dt>Recorded by</dt><dd><%= receipt.recordedByName %></dd></div>
+      <% } %>
     </dl>
 
     <div class="ac-form-actions">
-      <button type="button" class="ac-btn" onclick="window.print()">Print receipt</button>
+      <button type="button" class="ac-btn" onclick="window.print()">Print</button>
       <a href="/app/cashier/payment" class="ac-btn ac-btn--ghost">Record another payment</a>
       <a href="/app/cashier" class="ac-btn ac-btn--ghost">Back to cashier</a>
     </div>

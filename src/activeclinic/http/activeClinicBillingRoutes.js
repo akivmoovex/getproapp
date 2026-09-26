@@ -26,6 +26,9 @@ const {
   getChargeCatalogItemById,
   createInvoice,
   addCatalogItemToDraftInvoice,
+  addCustomLineToDraftInvoice,
+  setDraftInvoiceAdjustment,
+  attachInvoicePaidBalances,
   postInvoice,
   listPaymentHistory,
   voidInvoice,
@@ -477,7 +480,10 @@ function registerActiveClinicBillingRoutes(app, deps) {
                 }
               : null,
             pendingCharges,
-            stitch: { desktop: "08ed6ee0d02447bca5e94698080bca4f" },
+            stitch: {
+              desktop: "08ed6ee0d02447bca5e94698080bca4f",
+              mobile: "",
+            },
           },
         });
       } catch (err) {
@@ -539,6 +545,18 @@ function registerActiveClinicBillingRoutes(app, deps) {
           return res.redirect(303, `/app/billing/invoices/new?error=${result.result}`);
         }
 
+        const adjustmentMinor = parseMoneyInput(req.body.adjustment || "0");
+        if (adjustmentMinor !== null && adjustmentMinor !== 0) {
+          await setDraftInvoiceAdjustment({
+            pool: getPool(),
+            tenantId: auth.tenantId,
+            facilityId: facility.id,
+            staffId: auth.staff.id,
+            invoiceId: result.invoice.id,
+            adjustmentMinor,
+          });
+        }
+
         return res.redirect(303, `/app/billing/invoices/${result.invoice.id}`);
       } catch (err) {
         return next(err);
@@ -560,13 +578,18 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const auth = req.activeClinicAuth;
         const pool = getPool();
 
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
+
         const invoiceResult = await pool.query(
           `SELECT i.*, p.first_name, p.last_name, p.patient_number
            FROM activeclinic.invoices i
            JOIN activeclinic.patients p ON i.patient_id = p.id
-           WHERE i.id = $1 AND i.tenant_id = $2
+           WHERE i.id = $1 AND i.tenant_id = $2 AND i.facility_id = $3
            LIMIT 1`,
-          [req.params.invoiceId, auth.tenantId]
+          [req.params.invoiceId, auth.tenantId, facility.id]
         );
 
         if (invoiceResult.rows.length === 0) {
@@ -574,6 +597,12 @@ function registerActiveClinicBillingRoutes(app, deps) {
         }
 
         const invoice = invoiceResult.rows[0];
+
+        const [enriched] = await attachInvoicePaidBalances(pool, {
+          tenantId: auth.tenantId,
+          facilityId: invoice.facility_id,
+          invoices: [invoice],
+        });
 
         const linesResult = await pool.query(
           `SELECT * FROM activeclinic.invoice_lines
@@ -671,6 +700,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
           pageData: {
             invoice: {
               ...invoice,
+              ...enriched,
               totalAmountFormatted: formatMoney(
                 parseInt(invoice.total_amount_minor, 10),
                 invoice.currency_code
@@ -681,6 +711,18 @@ function registerActiveClinicBillingRoutes(app, deps) {
               ),
               taxAmountFormatted: formatMoney(
                 parseInt(invoice.tax_amount_minor, 10),
+                invoice.currency_code
+              ),
+              adjustmentFormatted: formatMoney(
+                parseInt(invoice.adjustment_minor || 0, 10),
+                invoice.currency_code
+              ),
+              paidAmountFormatted: formatMoney(
+                (enriched && enriched.paidMinor) || 0,
+                invoice.currency_code
+              ),
+              balanceFormatted: formatMoney(
+                (enriched && enriched.balanceMinor) || 0,
                 invoice.currency_code
               ),
               patientName: `${invoice.first_name} ${invoice.last_name}`,
@@ -824,10 +866,22 @@ function registerActiveClinicBillingRoutes(app, deps) {
           [auth.tenantId, facility.id]
         );
 
-        const invoices = invoicesResult.rows.map((inv) => ({
+        const withBalances = await attachInvoicePaidBalances(pool, {
+          tenantId: auth.tenantId,
+          facilityId: facility.id,
+          invoices: invoicesResult.rows,
+        });
+
+        const invoices = withBalances.map((inv) => ({
           ...inv,
           totalAmountFormatted: formatMoney(
             parseInt(inv.total_amount_minor, 10),
+            inv.currency_code
+          ),
+          paidAmountFormatted: formatMoney(inv.paidMinor || 0, inv.currency_code),
+          balanceFormatted: formatMoney(inv.balanceMinor || 0, inv.currency_code),
+          adjustmentFormatted: formatMoney(
+            parseInt(inv.adjustment_minor || 0, 10),
             inv.currency_code
           ),
           patientName: `${inv.first_name} ${inv.last_name}`,
@@ -2237,17 +2291,35 @@ function registerActiveClinicBillingRoutes(app, deps) {
         const facility = auth.selectedFacility;
         if (!facility) return res.redirect(303, "/app/select-facility");
         const ids = financeIdsFromAuth(auth);
-        const catalogItemId = String(req.body.catalog_item_id || "").trim();
+        const lineType = String(req.body.line_type || "catalog").trim().toLowerCase();
         const quantity = parseInt(req.body.quantity || "1", 10);
-        const result = await addCatalogItemToDraftInvoice({
-          pool: getPool(),
-          tenantId: ids.tenantId,
-          facilityId: facility.id,
-          staffId: ids.staffId,
-          invoiceId: req.params.invoiceId,
-          catalogItemId,
-          quantity,
-        });
+
+        let result;
+        if (lineType === "custom") {
+          const unitAmountMinor = parseMoneyInput(req.body.unit_price || "0");
+          result = await addCustomLineToDraftInvoice({
+            pool: getPool(),
+            tenantId: ids.tenantId,
+            facilityId: facility.id,
+            staffId: ids.staffId,
+            invoiceId: req.params.invoiceId,
+            description: String(req.body.description || "").trim(),
+            quantity,
+            unitAmountMinor: unitAmountMinor == null ? -1 : unitAmountMinor,
+          });
+        } else {
+          const catalogItemId = String(req.body.catalog_item_id || "").trim();
+          result = await addCatalogItemToDraftInvoice({
+            pool: getPool(),
+            tenantId: ids.tenantId,
+            facilityId: facility.id,
+            staffId: ids.staffId,
+            invoiceId: req.params.invoiceId,
+            catalogItemId,
+            quantity,
+          });
+        }
+
         if (result.result !== BILLING_RESULT.OK) {
           return res.redirect(
             303,

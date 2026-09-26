@@ -25,7 +25,9 @@
               <th>Invoice number</th>
               <th>Patient</th>
               <th>Date</th>
-              <th data-col="amount">Amount</th>
+              <th data-col="amount">Total</th>
+              <th data-col="amount">Paid</th>
+              <th data-col="amount">Balance</th>
               <th>Status</th>
             </tr>
           </thead>
@@ -36,6 +38,8 @@
               <td><%= inv.patientName %> · <%= inv.patient_number %></td>
               <td><%= inv.invoice_date %></td>
               <td class="ac-money"><%= inv.totalAmountFormatted %></td>
+              <td class="ac-money"><%= inv.paidAmountFormatted %></td>
+              <td class="ac-money"><%= inv.balanceFormatted %></td>
               <td><span class="ac-status" data-status="<%= inv.status %>"><%= inv.status %></span></td>
             </tr>
             <% }) %>
@@ -49,6 +53,7 @@
             <p class="ac-card__title"><%= inv.invoice_number %></p>
             <p class="ac-muted"><%= inv.patientName %> · <%= inv.patient_number %></p>
             <p><strong class="ac-money"><%= inv.totalAmountFormatted %></strong> · <%= inv.invoice_date %></p>
+            <p class="ac-muted">Paid <%= inv.paidAmountFormatted %> · Balance <%= inv.balanceFormatted %></p>
             <p><span class="ac-status" data-status="<%= inv.status %>"><%= inv.status %></span></p>
           </a>
         </li>

@@ -3,7 +3,7 @@
   var pendingCharges = (pageData && pageData.pendingCharges) || [];
   var stitch = (pageData && pageData.stitch) || {};
 %>
-<section class="ac-invoice-create" data-ac-page-section="invoice-create" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+<section class="ac-invoice-create" data-ac-page-section="invoice-create" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
   <form method="post" action="/app/billing/invoices" class="ac-panel" data-ac-loading="1">
     <%- include('../partials/ac-csrf-field') %>
 
@@ -37,6 +37,12 @@
               <span><%= c.description %> — <%= c.totalAmountFormatted %></span>
             </label>
           <% }) %>
+        </div>
+
+        <div class="ac-field">
+          <label class="ac-label" for="adjustment">Adjustment (ZMW)</label>
+          <input class="ac-input" id="adjustment" name="adjustment" inputmode="decimal" pattern="-?[0-9]+(\.[0-9]{1,2})?" value="0.00" placeholder="e.g. -10.00 for discount" />
+          <p class="ac-hint">Optional. Negative values reduce the invoice total.</p>
         </div>
 
         <div class="ac-form-actions">

@@ -45,6 +45,7 @@ const {
   RESULT: BILLING_RESULT,
   PAYMENT_METHOD,
   PERM: BILLING_PERM,
+  normalizePaymentMethod,
 } = require("../services/activeClinicBillingService");
 const billingOps = require("../services/activeClinicBillingOpsService");
 const { formatMoney, parseMoneyInput } = require("../services/formatMoney");
@@ -548,23 +549,21 @@ function registerActiveClinicCashierRoutes(app, deps) {
           facilityId: facility.id,
           staffId: auth.staff.id,
         });
-
-        if (sessionResult.result !== CASHIER_RESULT.OK) {
-          return res.redirect(303, "/app/cashier/open");
-        }
+        const session =
+          sessionResult.result === CASHIER_RESULT.OK ? sessionResult.session : null;
 
         const invoiceId = req.query.invoice || null;
         let invoice = null;
+        const pool = getPool();
 
         if (invoiceId) {
-          const pool = getPool();
           const invoiceResult = await pool.query(
             `SELECT i.*, p.first_name, p.last_name, p.patient_number
              FROM activeclinic.invoices i
              JOIN activeclinic.patients p ON i.patient_id = p.id
-             WHERE i.id = $1 AND i.tenant_id = $2
+             WHERE i.id = $1 AND i.tenant_id = $2 AND i.facility_id = $3
              LIMIT 1`,
-            [invoiceId, auth.tenantId]
+            [invoiceId, auth.tenantId, facility.id]
           );
 
           if (invoiceResult.rows.length > 0) {
@@ -608,12 +607,16 @@ function registerActiveClinicCashierRoutes(app, deps) {
           }
         }
 
+        const errorCode = String(req.query.error || "").trim() || null;
+        const today = new Date().toISOString().slice(0, 10);
+
         return await renderShell(req, res, {
           activeNav: "cashier",
           content: "app/cashier-payment-content.ejs",
           pageHeader: {
             title: "Record payment",
-            description: "Collect cash payment from patient.",
+            description:
+              "Record cash or externally completed Bank / Mobile Money payments. No payment gateway.",
             actions: [],
           },
           breadcrumbs: [
@@ -621,12 +624,20 @@ function registerActiveClinicCashierRoutes(app, deps) {
             { label: "Record payment" },
           ],
           pageData: {
-            session: sessionResult.session,
+            session,
             invoice,
+            recordingUser: {
+              name: [auth.staff.firstName || auth.staff.first_name, auth.staff.lastName || auth.staff.last_name]
+                .filter(Boolean)
+                .join(" ")
+                .trim() || "Cashier",
+            },
+            defaultPaymentDate: today,
+            error: errorCode,
             idempotencyKey: randomUUID(),
             stitch: {
-              desktop: "2d81fb326b6644bbb11cabd7a8156e6e",
-              mobile: "3c8ce685b0d14b74a04e1127e341f004",
+              desktop: "a9654729a9a44e17832910a41f0154de",
+              mobile: "8ca889a31c4e4ec1858c4dd4efc62731",
             },
           },
         });
@@ -653,19 +664,29 @@ function registerActiveClinicCashierRoutes(app, deps) {
           return res.redirect(303, "/app/select-facility");
         }
 
-        const sessionResult = await getCurrentCashierSession({
-          pool: getPool(),
-          tenantId: auth.tenantId,
-          facilityId: facility.id,
-          staffId: auth.staff.id,
-        });
+        const method = normalizePaymentMethod(req.body.payment_method);
+        if (!method) {
+          return res.redirect(303, "/app/cashier/payment?error=unsupported_payment_method");
+        }
 
-        if (sessionResult.result !== CASHIER_RESULT.OK) {
-          return res.redirect(303, "/app/cashier/open");
+        let cashierSessionId = null;
+        if (method === PAYMENT_METHOD.CASH) {
+          const sessionResult = await getCurrentCashierSession({
+            pool: getPool(),
+            tenantId: auth.tenantId,
+            facilityId: facility.id,
+            staffId: auth.staff.id,
+          });
+          if (sessionResult.result !== CASHIER_RESULT.OK) {
+            return res.redirect(303, "/app/cashier/open?return=/app/cashier/payment");
+          }
+          cashierSessionId = sessionResult.session.id;
         }
 
         const patientNumber = String(req.body.patient_number || "").trim();
         const amountMinor = parseMoneyInput(req.body.amount || "0");
+        const referenceNumber = String(req.body.reference || req.body.reference_number || "").trim() || null;
+        const paymentDate = String(req.body.payment_date || "").trim() || null;
 
         if (!patientNumber || amountMinor === null || amountMinor <= 0) {
           return res.redirect(303, "/app/cashier/payment?error=invalid_input");
@@ -688,9 +709,36 @@ function registerActiveClinicCashierRoutes(app, deps) {
         const invoiceAllocations = [];
         const invoiceId = req.body.invoice_id || null;
         if (invoiceId) {
+          const remainingResult = await pool.query(
+            `SELECT (i.total_amount_minor
+                      - COALESCE(alloc.paid_minor, 0)
+                      - COALESCE(cn.credit_minor, 0))::bigint AS remaining_minor
+               FROM activeclinic.invoices i
+               LEFT JOIN (
+                 SELECT invoice_id, SUM(allocated_amount_minor)::bigint AS paid_minor
+                   FROM activeclinic.payment_allocations
+                  GROUP BY invoice_id
+               ) alloc ON alloc.invoice_id = i.id
+               LEFT JOIN (
+                 SELECT invoice_id, SUM(amount_minor)::bigint AS credit_minor
+                   FROM activeclinic.credit_notes
+                  WHERE status = 'posted'
+                  GROUP BY invoice_id
+               ) cn ON cn.invoice_id = i.id
+              WHERE i.id = $1 AND i.tenant_id = $2 AND i.facility_id = $3`,
+            [invoiceId, auth.tenantId, facility.id]
+          );
+          if (!remainingResult.rows.length) {
+            return res.redirect(303, "/app/cashier/payment?error=invoice_not_found");
+          }
+          const remainingMinor = parseInt(remainingResult.rows[0].remaining_minor, 10);
+          if (remainingMinor <= 0) {
+            return res.redirect(303, "/app/cashier/payment?error=insufficient_balance");
+          }
+          // Clamp allocation to remaining; excess stays unapplied (overpayment rule).
           invoiceAllocations.push({
             invoiceId,
-            amountMinor,
+            amountMinor: Math.min(amountMinor, remainingMinor),
           });
         }
 
@@ -701,28 +749,32 @@ function registerActiveClinicCashierRoutes(app, deps) {
           staffId: auth.staff.id,
           patientId,
           amountMinor,
-          paymentMethod: PAYMENT_METHOD.CASH,
-          referenceNumber: null,
+          paymentMethod: method,
+          referenceNumber,
           notes: String(req.body.notes || "").trim() || null,
-          cashierSessionId: sessionResult.session.id,
+          cashierSessionId,
           invoiceAllocations,
           idempotencyKey: String(req.body.idempotency_key || "").trim() || null,
+          paymentDate,
         });
 
         if (result.result === BILLING_RESULT.DUPLICATE_SUBMISSION && result.receiptNumber) {
           return res.redirect(
             303,
-            `/app/cashier/payment/completed?receipt=${encodeURIComponent(result.receiptNumber)}&amount=${result.payment.amountMinor}`
+            `/app/cashier/receipt/${encodeURIComponent(result.receiptNumber)}?success=1`
           );
         }
 
         if (result.result !== BILLING_RESULT.CREATED) {
-          return res.redirect(303, `/app/cashier/payment?error=${result.result}`);
+          const q = result.reason
+            ? `${result.result}&reason=${encodeURIComponent(result.reason)}`
+            : result.result;
+          return res.redirect(303, `/app/cashier/payment?error=${q}`);
         }
 
         return res.redirect(
           303,
-          `/app/cashier/payment/completed?receipt=${encodeURIComponent(result.receiptNumber)}&amount=${result.payment.amountMinor}`
+          `/app/cashier/receipt/${encodeURIComponent(result.receiptNumber)}?success=1`
         );
       } catch (err) {
         return next(err);
@@ -742,18 +794,31 @@ function registerActiveClinicCashierRoutes(app, deps) {
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
+        const facility = auth.selectedFacility;
+        if (!facility) {
+          return res.redirect(303, "/app/select-facility");
+        }
         const pool = getPool();
 
         const receiptResult = await pool.query(
           `SELECT r.*, py.payment_number, py.amount_minor as payment_amount_minor,
-                  py.payment_method, py.payment_date, p.first_name, p.last_name,
-                  p.patient_number
+                  py.payment_method, py.payment_date, py.reference_number,
+                  py.received_by_staff_id,
+                  p.first_name, p.last_name, p.patient_number,
+                  f.display_name AS facility_name,
+                  f.address_line_1, f.address_line_2, f.city, f.phone_display,
+                  sm.first_name AS recorder_first_name,
+                  sm.last_name AS recorder_last_name
            FROM activeclinic.receipts r
            JOIN activeclinic.payments py ON r.payment_id = py.id
            JOIN activeclinic.patients p ON py.patient_id = p.id
-           WHERE r.receipt_number = $1 AND r.tenant_id = $2
+           JOIN activeclinic.facilities f ON r.facility_id = f.id
+           LEFT JOIN activeclinic.staff_members sm ON py.received_by_staff_id = sm.id
+           WHERE r.receipt_number = $1
+             AND r.tenant_id = $2
+             AND r.facility_id = $3
            LIMIT 1`,
-          [req.params.receiptNumber, auth.tenantId]
+          [req.params.receiptNumber, auth.tenantId, facility.id]
         );
 
         if (receiptResult.rows.length === 0) {
@@ -761,6 +826,29 @@ function registerActiveClinicCashierRoutes(app, deps) {
         }
 
         const rec = receiptResult.rows[0];
+
+        const allocResult = await pool.query(
+          `SELECT i.invoice_number, pa.allocated_amount_minor, i.currency_code
+             FROM activeclinic.payment_allocations pa
+             JOIN activeclinic.invoices i ON pa.invoice_id = i.id
+            WHERE pa.payment_id = $1
+            ORDER BY i.invoice_number`,
+          [rec.payment_id]
+        );
+        const invoices = allocResult.rows.map((row) => ({
+          invoiceNumber: row.invoice_number,
+          allocatedFormatted: formatMoney(
+            parseInt(row.allocated_amount_minor, 10),
+            row.currency_code
+          ),
+        }));
+
+        const methodLabels = {
+          cash: "Cash",
+          bank_transfer: "Bank",
+          mobile_money: "Mobile Money",
+          card: "Card",
+        };
 
         return await renderShell(req, res, {
           activeNav: "cashier",
@@ -777,7 +865,8 @@ function registerActiveClinicCashierRoutes(app, deps) {
           pageData: {
             receipt: {
               receiptNumber: rec.receipt_number,
-              receiptDate: rec.receipt_date,
+              receiptDate: rec.receipt_date || rec.payment_date,
+              paymentDate: rec.payment_date,
               amountMinor: parseInt(rec.amount_minor, 10),
               amountFormatted: formatMoney(
                 parseInt(rec.amount_minor, 10),
@@ -786,10 +875,28 @@ function registerActiveClinicCashierRoutes(app, deps) {
               issuedToPatientName: rec.issued_to_patient_name,
               paymentNumber: rec.payment_number,
               paymentMethod: rec.payment_method,
+              paymentMethodLabel:
+                methodLabels[rec.payment_method] || rec.payment_method,
+              referenceNumber: rec.reference_number,
               patientNumber: rec.patient_number,
               patientName: `${rec.first_name} ${rec.last_name}`,
+              recordedByName: [rec.recorder_first_name, rec.recorder_last_name]
+                .filter(Boolean)
+                .join(" ")
+                .trim(),
+              invoices,
+              clinic: {
+                name: rec.facility_name,
+                address: [rec.address_line_1, rec.address_line_2, rec.city]
+                  .filter(Boolean)
+                  .join(", "),
+                phone: rec.phone_display,
+              },
             },
-            stitch: { desktop: "914eee2a18f64fac81d2f0f69adc0cc8" },
+            stitch: {
+              desktop: "914eee2a18f64fac81d2f0f69adc0cc8",
+              mobile: "",
+            },
             success: req.query.success === "1",
           },
         });

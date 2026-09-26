@@ -1,10 +1,17 @@
 <%
-  var session = (pageData && pageData.session) || {};
+  var session = (pageData && pageData.session) || null;
   var invoice = (pageData && pageData.invoice) || null;
   var stitch = (pageData && pageData.stitch) || {};
+  var recordingUser = (pageData && pageData.recordingUser) || {};
+  var defaultPaymentDate = (pageData && pageData.defaultPaymentDate) || '';
+  var error = (pageData && pageData.error) || null;
   var defaultAmountMinor = (invoice && (invoice.remainingMinor != null ? invoice.remainingMinor : invoice.totalAmountMinor)) || 0;
 %>
 <section class="ac-cashier-payment" data-ac-page-section="cashier-payment" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <% if (error) { %>
+  <div class="ac-panel ac-alert ac-alert--error" role="alert">Unable to record payment (<%= error %>).</div>
+  <% } %>
+
   <form method="post" action="/app/cashier/payment" class="ac-panel" data-ac-loading="1">
     <%- include('../partials/ac-csrf-field') %>
     <% if (pageData && pageData.idempotencyKey) { %>
@@ -15,7 +22,7 @@
       <input type="hidden" name="invoice_id" value="<%= invoice.id %>" />
       <article class="ac-field-group">
         <p class="ac-label">Invoice</p>
-        <p><strong><%= invoice.invoiceNumber %></strong> · <%= invoice.patientName %> · <%= invoice.totalAmountFormatted %></p>
+        <p><strong><%= invoice.invoiceNumber %></strong> · <%= invoice.patientName %> · balance <%= invoice.totalAmountFormatted %></p>
       </article>
     <% } %>
 
@@ -27,17 +34,45 @@
     <div class="ac-field">
       <label class="ac-label" for="amount">Payment amount (ZMW) *</label>
       <input class="ac-input" id="amount" name="amount" required inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" value="<%= invoice ? (defaultAmountMinor / 100).toFixed(2) : '' %>" placeholder="e.g., 100.00" />
+      <p class="ac-hint">Partial payments are allowed. Amount above invoice balance is kept as unapplied.</p>
     </div>
 
     <div class="ac-field">
-      <p class="ac-label">Payment method</p>
-      <div class="ac-payment-methods">
+      <label class="ac-label" for="payment_date">Payment date *</label>
+      <input class="ac-input" id="payment_date" name="payment_date" type="date" required value="<%= defaultPaymentDate %>" />
+    </div>
+
+    <fieldset class="ac-field">
+      <legend class="ac-label">Payment method *</legend>
+      <div class="ac-payment-methods" role="radiogroup">
         <label class="ac-payment-method">
-          <input type="radio" name="payment_method" value="cash" checked />
+          <input type="radio" name="payment_method" value="cash" <%= session ? 'checked' : '' %> data-ac-pay-method="cash" <%= session ? '' : 'disabled' %> />
           <span>Cash</span>
         </label>
+        <label class="ac-payment-method">
+          <input type="radio" name="payment_method" value="bank" <%= !session ? 'checked' : '' %> data-ac-pay-method="bank" />
+          <span>Bank</span>
+        </label>
+        <label class="ac-payment-method">
+          <input type="radio" name="payment_method" value="mobile_money" data-ac-pay-method="mobile_money" />
+          <span>Mobile Money</span>
+        </label>
       </div>
-      <p class="ac-hint">Only cash payments are supported in the current session.</p>
+      <% if (!session) { %>
+      <p class="ac-hint">Open a cashier session to record cash. Bank and Mobile Money record externally completed payments (no gateway).</p>
+      <% } else { %>
+      <p class="ac-hint">Cash requires an open session. Bank and Mobile Money record externally completed payments (no gateway).</p>
+      <% } %>
+    </fieldset>
+
+    <div class="ac-field" data-ac-external-ref <%= session ? 'hidden' : '' %>>
+      <label class="ac-label" for="reference">Reference *</label>
+      <input class="ac-input" id="reference" name="reference" maxlength="100" placeholder="Bank / Mobile Money reference" <%= session ? '' : 'required' %> />
+    </div>
+
+    <div class="ac-field">
+      <p class="ac-label">Recording user</p>
+      <p><strong><%= recordingUser.name || 'Cashier' %></strong></p>
     </div>
 
     <div class="ac-field">
@@ -50,9 +85,25 @@
       <a href="/app/cashier" class="ac-btn ac-btn--ghost">Cancel</a>
     </div>
   </form>
-
-  <aside class="ac-product-note" role="note">
-    <h3 class="ac-product-note__title">Non-cash payment methods</h3>
-    <p class="ac-muted">Card, mobile money, and bank transfer payments require external integration (not yet connected). Contact finance team to verify non-cash payments manually.</p>
-  </aside>
 </section>
+<script>
+(function () {
+  var form = document.querySelector('.ac-cashier-payment form');
+  if (!form) return;
+  var radios = form.querySelectorAll('[data-ac-pay-method]');
+  var refWrap = form.querySelector('[data-ac-external-ref]');
+  var refInput = form.querySelector('#reference');
+  function sync() {
+    var selected = form.querySelector('input[name="payment_method"]:checked');
+    var method = selected ? selected.value : 'cash';
+    var external = method === 'bank' || method === 'mobile_money';
+    if (refWrap) refWrap.hidden = !external;
+    if (refInput) {
+      refInput.required = external;
+      if (!external) refInput.value = '';
+    }
+  }
+  radios.forEach(function (r) { r.addEventListener('change', sync); });
+  sync();
+})();
+</script>

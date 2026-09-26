@@ -16,32 +16,76 @@
   <form method="post" action="/app/billing/invoices/<%= invoice.id %>/items/new" class="ac-panel" data-ac-loading="1">
     <%- include('../partials/ac-csrf-field') %>
 
-    <% if (catalogItems.length === 0) { %>
-      <p class="ac-muted">No active catalog items. Add charges to the catalog first.</p>
-      <div class="ac-form-actions">
-        <a href="/app/billing/catalog/new" class="ac-btn">Add catalog item</a>
-        <a href="/app/billing/invoices/<%= invoice.id %>" class="ac-btn ac-btn--ghost">Back to invoice</a>
+    <fieldset class="ac-field">
+      <legend class="ac-label">Item type *</legend>
+      <div class="ac-payment-methods" role="radiogroup">
+        <label class="ac-payment-method">
+          <input type="radio" name="line_type" value="catalog" checked data-ac-line-type="catalog" />
+          <span>Service (catalog)</span>
+        </label>
+        <label class="ac-payment-method">
+          <input type="radio" name="line_type" value="custom" data-ac-line-type="custom" />
+          <span>Custom item</span>
+        </label>
       </div>
-    <% } else { %>
-      <div class="ac-field">
-        <label class="ac-label" for="catalog_item_id">Catalog item *</label>
-        <select class="ac-input" id="catalog_item_id" name="catalog_item_id" required>
+    </fieldset>
+
+    <div class="ac-field" data-ac-line-panel="catalog">
+      <label class="ac-label" for="catalog_item_id">Catalog service</label>
+      <% if (catalogItems.length === 0) { %>
+        <p class="ac-muted">No active catalog items. Use a custom item or add to the catalog first.</p>
+      <% } else { %>
+        <select class="ac-input" id="catalog_item_id" name="catalog_item_id">
           <option value="">Select a service or charge</option>
           <% catalogItems.forEach(function (item) { %>
           <option value="<%= item.id %>"><%= item.name %> — <%= item.amountFormatted %></option>
           <% }) %>
         </select>
-      </div>
+      <% } %>
+    </div>
 
-      <div class="ac-field">
-        <label class="ac-label" for="quantity">Quantity *</label>
-        <input class="ac-input" id="quantity" name="quantity" type="number" min="1" value="1" required />
-      </div>
+    <div class="ac-field" data-ac-line-panel="custom" hidden>
+      <label class="ac-label" for="description">Custom description *</label>
+      <input class="ac-input" id="description" name="description" maxlength="200" placeholder="e.g. Private room surcharge" />
+    </div>
 
-      <div class="ac-form-actions">
-        <button type="submit" class="ac-btn">Add to invoice</button>
-        <a href="/app/billing/invoices/<%= invoice.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
-      </div>
-    <% } %>
+    <div class="ac-field" data-ac-line-panel="custom" hidden>
+      <label class="ac-label" for="unit_price">Unit price (ZMW) *</label>
+      <input class="ac-input" id="unit_price" name="unit_price" inputmode="decimal" pattern="[0-9]+(\.[0-9]{1,2})?" placeholder="e.g. 50.00" />
+    </div>
+
+    <div class="ac-field">
+      <label class="ac-label" for="quantity">Quantity *</label>
+      <input class="ac-input" id="quantity" name="quantity" type="number" min="1" value="1" required />
+    </div>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Add to invoice</button>
+      <a href="/app/billing/invoices/<%= invoice.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
+    </div>
   </form>
 </section>
+<script>
+(function () {
+  var form = document.querySelector('.ac-invoice-add-item form');
+  if (!form) return;
+  var radios = form.querySelectorAll('[data-ac-line-type]');
+  var panels = form.querySelectorAll('[data-ac-line-panel]');
+  function sync() {
+    var selected = form.querySelector('input[name="line_type"]:checked');
+    var type = selected ? selected.value : 'catalog';
+    panels.forEach(function (panel) {
+      var show = panel.getAttribute('data-ac-line-panel') === type;
+      panel.hidden = !show;
+    });
+    var catalog = form.querySelector('#catalog_item_id');
+    var desc = form.querySelector('#description');
+    var unit = form.querySelector('#unit_price');
+    if (catalog) catalog.required = type === 'catalog';
+    if (desc) desc.required = type === 'custom';
+    if (unit) unit.required = type === 'custom';
+  }
+  radios.forEach(function (r) { r.addEventListener('change', sync); });
+  sync();
+})();
+</script>

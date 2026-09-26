@@ -114,15 +114,82 @@ async function lockInvoiceRemaining(client, { tenantId, facilityId, invoiceId })
   );
   if (!inv.rows.length) return { ok: false, result: RESULT.NOT_FOUND };
   const row = inv.rows[0];
+  const paidMinor = parseInt(row.paid_minor, 10);
+  const creditMinor = parseInt(row.credit_minor, 10);
   const remainingMinor =
-    parseInt(row.total_amount_minor, 10) -
-    parseInt(row.paid_minor, 10) -
-    parseInt(row.credit_minor, 10);
+    parseInt(row.total_amount_minor, 10) - paidMinor - creditMinor;
   return {
     ok: true,
     invoice: row,
+    paidMinor,
+    creditMinor,
     remainingMinor,
   };
+}
+
+/**
+ * Compute paid / balance for invoice rows (list/detail). Never joins clinical tables.
+ */
+async function attachInvoicePaidBalances(pool, { tenantId, facilityId, invoices }) {
+  const list = Array.isArray(invoices) ? invoices : [];
+  if (!list.length) return [];
+  const ids = list.map((inv) => inv.id).filter(Boolean);
+  const bal = await pool.query(
+    `SELECT i.id,
+            COALESCE(alloc.paid_minor, 0)::bigint AS paid_minor,
+            COALESCE(cn.credit_minor, 0)::bigint AS credit_minor,
+            i.total_amount_minor
+       FROM activeclinic.invoices i
+       LEFT JOIN (
+         SELECT invoice_id, SUM(allocated_amount_minor)::bigint AS paid_minor
+           FROM activeclinic.payment_allocations
+          GROUP BY invoice_id
+       ) alloc ON alloc.invoice_id = i.id
+       LEFT JOIN (
+         SELECT invoice_id, SUM(amount_minor)::bigint AS credit_minor
+           FROM activeclinic.credit_notes
+          WHERE status = 'posted'
+          GROUP BY invoice_id
+       ) cn ON cn.invoice_id = i.id
+      WHERE i.tenant_id = $1
+        AND i.facility_id = $2
+        AND i.id = ANY($3::uuid[])`,
+    [tenantId, facilityId, ids]
+  );
+  const byId = new Map();
+  for (const row of bal.rows) {
+    const paidMinor = parseInt(row.paid_minor, 10);
+    const creditMinor = parseInt(row.credit_minor, 10);
+    const totalMinor = parseInt(row.total_amount_minor, 10);
+    byId.set(row.id, {
+      paidMinor,
+      creditMinor,
+      balanceMinor: totalMinor - paidMinor - creditMinor,
+    });
+  }
+  return list.map((inv) => {
+    const money = byId.get(inv.id) || {
+      paidMinor: 0,
+      creditMinor: 0,
+      balanceMinor: parseInt(inv.total_amount_minor || inv.totalAmountMinor || 0, 10),
+    };
+    return { ...inv, ...money };
+  });
+}
+
+const SUPPORTED_EXTERNAL_PAYMENT_METHODS = Object.freeze([
+  PAYMENT_METHOD.BANK_TRANSFER,
+  PAYMENT_METHOD.MOBILE_MONEY,
+]);
+
+function normalizePaymentMethod(raw) {
+  const value = String(raw || "").trim().toLowerCase();
+  if (value === "bank" || value === "bank_transfer") return PAYMENT_METHOD.BANK_TRANSFER;
+  if (value === "mobile" || value === "mobile_money" || value === "momo") {
+    return PAYMENT_METHOD.MOBILE_MONEY;
+  }
+  if (value === "cash") return PAYMENT_METHOD.CASH;
+  return null;
 }
 
 // ============================================================================
@@ -624,6 +691,7 @@ async function recordPayment({
   cashierSessionId = null,
   invoiceAllocations = [],
   idempotencyKey = null,
+  paymentDate = null,
 }) {
   const denied = await assertPerm(pool, {
     tenantId,
@@ -633,22 +701,54 @@ async function recordPayment({
   });
   if (denied) return denied;
 
-  if (!patientId || amountMinor <= 0 || !paymentMethod) {
+  const method = normalizePaymentMethod(paymentMethod) || paymentMethod;
+  if (!patientId || amountMinor <= 0 || !method) {
     return { result: RESULT.INVALID_INPUT };
   }
 
-  if (paymentMethod === PAYMENT_METHOD.CASH && !cashierSessionId) {
+  // Product UI: Cash / Bank / Mobile Money. Card remains allowed for legacy
+  // external recording (no gateway); session rules match non-cash methods.
+  const allowed = new Set([
+    PAYMENT_METHOD.CASH,
+    PAYMENT_METHOD.BANK_TRANSFER,
+    PAYMENT_METHOD.MOBILE_MONEY,
+    PAYMENT_METHOD.CARD,
+  ]);
+  if (!allowed.has(method)) {
+    return { result: RESULT.INVALID_INPUT, reason: "unsupported_payment_method" };
+  }
+
+  if (method === PAYMENT_METHOD.CASH && !cashierSessionId) {
     return { result: RESULT.SESSION_REQUIRED };
+  }
+  // External methods must not attach a cashier session (DB check constraint).
+  const sessionId = method === PAYMENT_METHOD.CASH ? cashierSessionId : null;
+
+  if (
+    (method === PAYMENT_METHOD.BANK_TRANSFER ||
+      method === PAYMENT_METHOD.MOBILE_MONEY) &&
+    !(referenceNumber && String(referenceNumber).trim())
+  ) {
+    return { result: RESULT.INVALID_INPUT, reason: "reference_required" };
+  }
+
+  let paymentDateValue = null;
+  if (paymentDate) {
+    const text = String(paymentDate).trim();
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(text)) {
+      return { result: RESULT.INVALID_INPUT, reason: "payment_date_invalid" };
+    }
+    paymentDateValue = text;
   }
 
   const client = await pool.connect();
   try {
     await client.query("BEGIN");
 
-    if (paymentMethod === PAYMENT_METHOD.CASH) {
+    if (method === PAYMENT_METHOD.CASH) {
       const sessionResult = await client.query(
         `SELECT status FROM activeclinic.cashier_sessions WHERE id = $1 AND tenant_id = $2`,
-        [cashierSessionId, tenantId]
+        [sessionId, tenantId]
       );
       if (sessionResult.rows.length === 0 || sessionResult.rows[0].status !== "open") {
         await client.query("ROLLBACK");
@@ -679,22 +779,23 @@ async function recordPayment({
 
     const paymentResult = await client.query(
       `INSERT INTO activeclinic.payments (
-        tenant_id, facility_id, patient_id, payment_number, amount_minor,
+        tenant_id, facility_id, patient_id, payment_number, payment_date, amount_minor,
         currency_code, payment_method, reference_number, notes,
         cashier_session_id, received_by_staff_id, idempotency_key
-      ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+      ) VALUES ($1, $2, $3, $4, COALESCE($5::date, CURRENT_DATE), $6, $7, $8, $9, $10, $11, $12, $13)
       RETURNING *`,
       [
         tenantId,
         facilityId,
         patientId,
         paymentNumber,
+        paymentDateValue,
         amountMinor,
         "ZMW",
-        paymentMethod,
-        referenceNumber,
+        method,
+        referenceNumber ? String(referenceNumber).trim().slice(0, 100) : null,
         notes,
-        cashierSessionId,
+        sessionId,
         staffId,
         idempotencyKey,
       ]
@@ -759,12 +860,12 @@ async function recordPayment({
       [tenantId, facilityId, paymentId, receiptNumber, amountMinor, "ZMW", patientName, staffId]
     );
 
-    if (cashierSessionId) {
+    if (sessionId) {
       await client.query(
         `INSERT INTO activeclinic.cashier_session_events (
           session_id, event_type, event_data, created_by_staff_id
         ) VALUES ($1, $2, $3, $4)`,
-        [cashierSessionId, "payment_received", { paymentId, amountMinor }, staffId]
+        [sessionId, "payment_received", { paymentId, amountMinor }, staffId]
       );
     }
 
@@ -776,13 +877,14 @@ async function recordPayment({
     eventType: "activeclinic.billing.payment_recorded",
     resourceType: "payment",
     resourceId: paymentId,
-    metadata: { paymentNumber, patientId, amountMinor, paymentMethod },
-  });
+    metadata: { paymentNumber, patientId, amountMinor, paymentMethod: method },
+    });
 
     return {
       result: RESULT.CREATED,
       payment: mapPayment(paymentResult.rows[0]),
       receiptNumber,
+      unappliedMinor: amountMinor - allocatedTotal,
     };
   } catch (err) {
     await client.query("ROLLBACK");
@@ -1415,6 +1517,205 @@ async function addCatalogItemToDraftInvoice({
       metadata: { catalogItemId, quantity: qty, lineNumber },
     });
 
+    return { result: RESULT.OK, invoice: mapInvoice(updated.rows[0]) };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Add a custom (non-catalog) line to a draft invoice — qty × unit price.
+ */
+async function addCustomLineToDraftInvoice({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  invoiceId,
+  description,
+  quantity = 1,
+  unitAmountMinor,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.INVOICE_CREATE,
+  });
+  if (denied) return denied;
+
+  const desc = String(description || "").trim().slice(0, 200);
+  const qty = parseInt(quantity, 10);
+  const unit = parseInt(unitAmountMinor, 10);
+  if (!invoiceId || !desc || !(qty > 0) || !(unit >= 0)) {
+    return { result: RESULT.INVALID_INPUT };
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const invRes = await client.query(
+      `SELECT * FROM activeclinic.invoices
+        WHERE id = $1 AND tenant_id = $2 AND facility_id = $3
+        FOR UPDATE`,
+      [invoiceId, tenantId, facilityId]
+    );
+    if (!invRes.rows.length) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.NOT_FOUND };
+    }
+    const invoice = invRes.rows[0];
+    if (invoice.status !== INVOICE_STATUS.DRAFT && invoice.status !== INVOICE_STATUS.PENDING) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.IMMUTABLE, reason: "invoice_not_draft" };
+    }
+
+    const subtotalMinor = unit * qty;
+    const taxAmountMinor = 0;
+    const totalMinor = subtotalMinor;
+
+    const chargeRes = await client.query(
+      `INSERT INTO activeclinic.patient_charges (
+         tenant_id, facility_id, patient_id, catalogue_item_id,
+         charge_type, description, unit_amount_minor, quantity,
+         subtotal_minor, tax_amount_minor, total_amount_minor,
+         currency_code, status, charged_by_staff_id
+       ) VALUES ($1, $2, $3, NULL, 'custom', $4, $5, $6, $7, $8, $9, 'ZMW', 'invoiced', $10)
+       RETURNING *`,
+      [
+        tenantId,
+        facilityId,
+        invoice.patient_id,
+        desc,
+        unit,
+        qty,
+        subtotalMinor,
+        taxAmountMinor,
+        totalMinor,
+        staffId,
+      ]
+    );
+    const charge = chargeRes.rows[0];
+    const lineCount = await client.query(
+      `SELECT COALESCE(MAX(line_number), 0) AS max_line
+         FROM activeclinic.invoice_lines WHERE invoice_id = $1`,
+      [invoiceId]
+    );
+    const lineNumber = parseInt(lineCount.rows[0].max_line, 10) + 1;
+    await client.query(
+      `INSERT INTO activeclinic.invoice_lines (
+         invoice_id, charge_id, line_number, description, quantity,
+         unit_amount_minor, subtotal_minor, tax_amount_minor, line_total_minor, currency_code
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, 'ZMW')`,
+      [
+        invoiceId,
+        charge.id,
+        lineNumber,
+        desc,
+        qty,
+        unit,
+        subtotalMinor,
+        taxAmountMinor,
+        totalMinor,
+      ]
+    );
+
+    const nextSubtotal = parseInt(invoice.subtotal_minor, 10) + subtotalMinor;
+    const nextTax = parseInt(invoice.tax_amount_minor, 10) + taxAmountMinor;
+    const nextTotal = nextSubtotal + nextTax + parseInt(invoice.adjustment_minor, 10);
+    const updated = await client.query(
+      `UPDATE activeclinic.invoices
+          SET subtotal_minor = $1,
+              tax_amount_minor = $2,
+              total_amount_minor = $3,
+              updated_by_staff_id = $4,
+              updated_at = now()
+        WHERE id = $5
+        RETURNING *`,
+      [nextSubtotal, nextTax, nextTotal, staffId, invoiceId]
+    );
+    await client.query("COMMIT");
+    await writeFinanceAudit(pool, {
+      tenantId,
+      staffId,
+      eventType: "activeclinic.billing.invoice_custom_item_added",
+      resourceType: "invoice",
+      resourceId: invoiceId,
+      metadata: { description: desc, quantity: qty, unitAmountMinor: unit },
+    });
+    return { result: RESULT.OK, invoice: mapInvoice(updated.rows[0]) };
+  } catch (err) {
+    await client.query("ROLLBACK");
+    throw err;
+  } finally {
+    client.release();
+  }
+}
+
+/**
+ * Set draft invoice adjustment (minor units; can be negative discount).
+ */
+async function setDraftInvoiceAdjustment({
+  pool,
+  tenantId,
+  facilityId,
+  staffId,
+  invoiceId,
+  adjustmentMinor,
+}) {
+  const denied = await assertPerm(pool, {
+    tenantId,
+    facilityId,
+    staffId,
+    permissionKey: PERM.INVOICE_CREATE,
+  });
+  if (denied) return denied;
+
+  const adj = parseInt(adjustmentMinor, 10);
+  if (!invoiceId || Number.isNaN(adj)) {
+    return { result: RESULT.INVALID_INPUT };
+  }
+
+  const client = await pool.connect();
+  try {
+    await client.query("BEGIN");
+    const invRes = await client.query(
+      `SELECT * FROM activeclinic.invoices
+        WHERE id = $1 AND tenant_id = $2 AND facility_id = $3
+        FOR UPDATE`,
+      [invoiceId, tenantId, facilityId]
+    );
+    if (!invRes.rows.length) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.NOT_FOUND };
+    }
+    const invoice = invRes.rows[0];
+    if (invoice.status !== INVOICE_STATUS.DRAFT && invoice.status !== INVOICE_STATUS.PENDING) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.IMMUTABLE, reason: "invoice_not_draft" };
+    }
+    const nextTotal =
+      parseInt(invoice.subtotal_minor, 10) +
+      parseInt(invoice.tax_amount_minor, 10) +
+      adj;
+    if (nextTotal < 0) {
+      await client.query("ROLLBACK");
+      return { result: RESULT.INVALID_INPUT, reason: "total_negative" };
+    }
+    const updated = await client.query(
+      `UPDATE activeclinic.invoices
+          SET adjustment_minor = $1,
+              total_amount_minor = $2,
+              updated_by_staff_id = $3,
+              updated_at = now()
+        WHERE id = $4
+        RETURNING *`,
+      [adj, nextTotal, staffId, invoiceId]
+    );
+    await client.query("COMMIT");
     return { result: RESULT.OK, invoice: mapInvoice(updated.rows[0]) };
   } catch (err) {
     await client.query("ROLLBACK");
@@ -2134,6 +2435,11 @@ module.exports = {
   createPatientCharge,
   createInvoice,
   addCatalogItemToDraftInvoice,
+  addCustomLineToDraftInvoice,
+  setDraftInvoiceAdjustment,
+  attachInvoicePaidBalances,
+  normalizePaymentMethod,
+  SUPPORTED_EXTERNAL_PAYMENT_METHODS,
   postInvoice,
   recordPayment,
   listPaymentHistory,
