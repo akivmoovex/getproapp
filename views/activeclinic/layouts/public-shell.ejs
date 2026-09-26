@@ -54,6 +54,9 @@
   <% } %>
   <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/activeclinic/ac-public.css?v=<%= assetVersion %>"/>
+  <% if (typeof websiteThemeStylesheet !== 'undefined' && websiteThemeStylesheet) { %>
+  <link rel="stylesheet" href="<%= websiteThemeStylesheet %>"/>
+  <% } %>
   <% if (shellVariant === "platform") { %>
   <link rel="stylesheet" href="/activeclinic/acw-platform.css?v=<%= assetVersion %>"/>
   <% if (typeof chrome === 'string' && chrome === 'mf-register') { %>
@@ -68,6 +71,7 @@
   <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=<%= assetVersion %>"/>
   <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
   <link rel="stylesheet" href="/platform/website-inline-edit.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/website-change-manager-ui.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/platform/website-add-section.css?v=<%= assetVersion %>"/>
   <meta name="csrf-token" content="<%= csrfToken %>"/>
   <% } %>
@@ -82,14 +86,18 @@
       brandStyle += "--acp-primary-hover:" + clinic.brandAccent + ";";
     }
   }
+  var themeClass = (typeof websiteThemeClass !== 'undefined' && websiteThemeClass) ? (' ' + websiteThemeClass) : '';
 %>
 <body
-  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof chrome === 'string' && chrome === 'mf-register' ? ' ac-public-body--mf-register' : '' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing gp-website-editor-open' : '' %><%= typeof websitePreviewDraftMode !== 'undefined' && websitePreviewDraftMode ? ' ac-public-body--website-preview gp-website-preview-open' : '' %>"
+  class="ac-public-body <%= shellVariant === 'tenant' ? 'ac-public--tenant' : 'ac-public--platform' %><%= typeof chrome === 'string' && chrome === 'mf-register' ? ' ac-public-body--mf-register' : '' %><%= typeof websiteCanEdit !== 'undefined' && websiteCanEdit ? ' ac-public-body--website-can-edit' : '' %><%= typeof websiteEdit !== 'undefined' && websiteEdit ? ' ac-public-body--website-editing gp-website-editor-open' : '' %><%= typeof websitePreviewDraftMode !== 'undefined' && websitePreviewDraftMode ? ' ac-public-body--website-preview gp-website-preview-open' : '' %><%= themeClass %>"
   data-ac-product="activeclinic"
   <% if (typeof chrome === 'string' && chrome === 'mf-register') { %>data-gp-product="activeclinic"<% } %>
   data-ac-shell="public"
   data-ac-page="<%= pageId %>"
   data-ac-public-variant="<%= shellVariant || 'platform' %>"
+  <% if (typeof websiteThemeId !== 'undefined' && websiteThemeId) { %>data-website-theme-id="<%= websiteThemeId %>"<% } %>
+  <% if (typeof websiteThemeProduct !== 'undefined' && websiteThemeProduct) { %>data-website-theme-product="<%= websiteThemeProduct %>"<% } %>
+  <% if (typeof websiteThemeLegacyFallback !== 'undefined' && websiteThemeLegacyFallback) { %>data-website-theme-legacy="1"<% } %>
   <% if (typeof chrome === "string" && chrome) { %>data-ac-public-chrome="<%= chrome %>"<% } %>
   <% if (typeof statePageId === "string" && statePageId) { %>data-ac-state="<%= statePageId %>"<% } %>
   <% if (typeof statePageId === "string" && statePageId && typeof stateKey === "string" && stateKey) { %>data-ac-state-key="<%= stateKey %>"<% } %>
@@ -132,6 +140,7 @@
   <% if (typeof websiteCanEdit !== 'undefined' && websiteCanEdit) { %>
   <script src="/platform/website-lifecycle.js?v=<%= assetVersion %>" defer></script>
   <script src="/platform/website-inline-edit.js?v=<%= assetVersion %>" defer></script>
+  <script src="/platform/website-change-manager-ui.js?v=<%= assetVersion %>" defer></script>
   <script src="/platform/website-section-actions.js?v=<%= assetVersion %>" defer></script>
   <script src="/platform/website-add-section.js?v=<%= assetVersion %>" defer></script>
   <script src="/platform/website-editor-mobile.js?v=<%= assetVersion %>" defer></script>

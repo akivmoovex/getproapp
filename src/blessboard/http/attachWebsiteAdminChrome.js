@@ -46,11 +46,15 @@ const {
   pickHexColor,
   publicBrandStyle,
 } = require("../../platform/website/branding");
-const { PRODUCT_CODE, withEditorNavigationQuery, withoutEditorNavigationQuery, withPreviewNavigationQuery } = require("../../platform/website/publicWebsiteUrl");
+const { loadWebsiteThemeState, presentThemeAttrs } = require("../../platform/website/websiteThemeService");
+const { PRODUCT_CODE, withEditorNavigationQuery, withoutEditorNavigationQuery, withPreviewNavigationQuery, buildPublicWebsiteUnpublishedChangesPath, buildPublicWebsiteFieldHistoryPath, buildPublicWebsiteFieldRestorePath } = require("../../platform/website/publicWebsiteUrl");
+const { getPendingChangeSummary } = require("../../platform/website/websiteChangeManagerService");
+const { websiteScopeKeyFor } = require("../../platform/website-engine/changeManagerUi");
+const { PERMISSIONS } = require("../../platform/website/permissions");
 
 const EDIT_QUERY = "website_edit";
 
-async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
+async function attachBlessBoardWebsiteBranding(db, model, tenant, mode, query) {
   if (!model) return;
   const env = process.env;
   if (!model.websiteLogoUrl) {
@@ -151,6 +155,20 @@ async function attachBlessBoardWebsiteBranding(db, model, tenant, mode) {
     if (brandPrimary) model.brandPrimary = brandPrimary;
     if (brandAccent) model.brandAccent = brandAccent;
     model.brandStyle = publicBrandStyle(PRODUCT_CODE.BLESSBOARD, brandPrimary, brandAccent);
+
+    const themeState = await loadWebsiteThemeState(db, {
+      organizationId,
+      productCode: PRODUCT_CODE.BLESSBOARD,
+      instance,
+      preferDraft: mode === "draft",
+      query: query || undefined,
+    });
+    if (themeState.ok && themeState.presentation) {
+      Object.assign(model, presentThemeAttrs(themeState.presentation));
+      model.websiteThemeDraftId = themeState.draftThemeId;
+      model.websiteThemePublishedId = themeState.publishedThemeId;
+      model.websiteThemePreviewOnly = themeState.previewOnly === true;
+    }
   } catch {
     /* keep default platform mark */
   }
@@ -366,7 +384,7 @@ async function attachWebsiteAdminChrome(opts) {
     req.blessBoardTenantContext = tenant;
   }
 
-  await attachBlessBoardWebsiteBranding(db, model, tenant, "live");
+  await attachBlessBoardWebsiteBranding(db, model, tenant, "live", req.query);
 
   let authz = req.blessBoardAuthorizationContext || null;
   const session =
@@ -460,20 +478,40 @@ async function attachWebsiteAdminChrome(opts) {
     "draft";
   const showDraftContent = editingMode || previewDraftMode;
   if (showDraftContent) {
-    await attachBlessBoardWebsiteBranding(db, model, tenant, "draft");
+    await attachBlessBoardWebsiteBranding(db, model, tenant, "draft", req.query);
   }
 
   let draftCount = 0;
+  let websiteInstanceId = null;
   let overlayMap = new Map();
   let structuredDrafts = [];
   /** @type {Record<string, string>} */
   let publishedBaselines = Object.create(null);
   try {
-    draftCount = await countAllWebsiteDrafts(db, {
+    const overlayAndStructuredCount = await countAllWebsiteDrafts(db, {
       organizationId,
       churchId,
       branchId: draftBranchId,
     });
+    const engineInstance = await findBlessBoardWebsiteInstance(db, organizationId);
+    if (engineInstance && engineInstance.id) {
+      websiteInstanceId = engineInstance.id;
+      const pending = await getPendingChangeSummary(db, {
+        organizationId,
+        instanceId: websiteInstanceId,
+        grantedPermissions: [
+          PERMISSIONS.VIEW,
+          PERMISSIONS.EDIT,
+          ...(canPublishWebsite ? [PERMISSIONS.PUBLISH] : []),
+        ],
+      });
+      // Change Manager counts engine keys only. Overlay/structured drafts are
+      // still draft changes until bridged — never undercount the toolbar pill.
+      const engineCount = pending.ok ? Number(pending.pendingChangeCount) || 0 : 0;
+      draftCount = Math.max(engineCount, overlayAndStructuredCount);
+    } else {
+      draftCount = overlayAndStructuredCount;
+    }
     if (showDraftContent) {
       // Capture visitor-visible text before draft overlays mutate the model.
       publishedBaselines = buildDisplayBaselineMap(model.sections, model.publicContact);
@@ -549,6 +587,18 @@ async function attachWebsiteAdminChrome(opts) {
         if (model.homeDemoFallback) {
           model.homeDemoFallback = {
             ...model.homeDemoFallback,
+            heroMediaUrl: model._draftHeroMediaUrl,
+          };
+        }
+        if (model.aboutDemoFallback) {
+          model.aboutDemoFallback = {
+            ...model.aboutDemoFallback,
+            heroMediaUrl: model._draftHeroMediaUrl,
+          };
+        }
+        if (model.contactDemoFallback) {
+          model.contactDemoFallback = {
+            ...model.contactDemoFallback,
             heroMediaUrl: model._draftHeroMediaUrl,
           };
         }
@@ -640,21 +690,34 @@ async function attachWebsiteAdminChrome(opts) {
             model.aboutDemoFallback = thawDemoFallback(model.aboutDemoFallback);
             const valuesHeading = overlayMap.get("values::heading");
             if (valuesHeading !== undefined) model.aboutDemoFallback.valuesHeading = valuesHeading;
-            const galleryHeading = overlayMap.get("gallery::heading");
-            if (galleryHeading !== undefined) model.aboutDemoFallback.galleryHeading = galleryHeading;
+            const galleryGridHeading = overlayMap.get("gallery_heading::heading");
+            if (galleryGridHeading !== undefined) model.aboutDemoFallback.galleryHeading = galleryGridHeading;
             applySoftSection(model.aboutDemoFallback, "visitor_cta", "visitorCtaHeading", "visitorCtaBody");
             const visitorBtn = overlayMap.get("visitor_cta::buttonText");
             if (visitorBtn !== undefined) model.aboutDemoFallback.visitorCtaButtonText = visitorBtn;
-            ["beliefs", "community", "mission", "vision", "story"].forEach((key) => {
+            ["beliefs", "community", "mission", "vision", "story", "lifeTogether"].forEach((key) => {
               const block = model.aboutDemoFallback[key];
               if (!block || typeof block !== "object") return;
-              const h = overlayMap.get(`${key}::heading`);
-              const b = overlayMap.get(`${key}::bodyText`);
-              if (h !== undefined || b !== undefined) {
+              const sectionKey =
+                key === "lifeTogether"
+                  ? block.sectionKey === "gallery"
+                    ? "gallery"
+                    : "life_together"
+                  : key;
+              const h = overlayMap.get(`${sectionKey}::heading`);
+              const b = overlayMap.get(`${sectionKey}::bodyText`);
+              // Legacy Life Together key "gallery" plus canonical life_together.
+              const hLegacy =
+                key === "lifeTogether" ? overlayMap.get("gallery::heading") : undefined;
+              const bLegacy =
+                key === "lifeTogether" ? overlayMap.get("gallery::bodyText") : undefined;
+              const nextHeading = h !== undefined ? h : hLegacy !== undefined ? hLegacy : block.heading;
+              const nextBody = b !== undefined ? b : bLegacy !== undefined ? bLegacy : block.bodyText;
+              if (h !== undefined || b !== undefined || hLegacy !== undefined || bLegacy !== undefined) {
                 model.aboutDemoFallback[key] = {
                   ...block,
-                  heading: h !== undefined ? h : block.heading,
-                  bodyText: b !== undefined ? b : block.bodyText,
+                  heading: nextHeading,
+                  bodyText: nextBody,
                 };
               }
             });
@@ -720,6 +783,9 @@ async function attachWebsiteAdminChrome(opts) {
     buildPublicWebsiteStylesPath,
     buildPublicWebsiteSeoPath,
     buildPublicWebsiteAddSectionPath,
+    buildPublicWebsiteThemePath,
+    buildPublicWebsiteThemesPath,
+    buildPublicWebsiteWebsitesPath,
   } = require("../../platform/website/publicWebsiteUrl");
   const currentPath = String(model.path || "/");
   const orgKey =
@@ -846,10 +912,70 @@ async function attachWebsiteAdminChrome(opts) {
     : withEditQuery(currentPath, true);
   const discardPath =
     pathMode && publicBase ? `${publicBase}/website/drafts/discard` : null;
+  const unpublishedChangesUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/unpublished-changes`
+      : orgKey
+        ? buildPublicWebsiteUnpublishedChangesPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const fieldHistoryUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/field-history`
+      : orgKey
+        ? buildPublicWebsiteFieldHistoryPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const fieldRestoreUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/field-history/restore`
+      : orgKey
+        ? buildPublicWebsiteFieldRestorePath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
   const sectionActionsUrl =
     pathMode && publicBase ? `${publicBase}/website/section-actions` : null;
   const addSectionUrl =
     pathMode && publicBase ? `${publicBase}/website/add-section` : null;
+  const themeUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/theme`
+      : orgKey
+        ? buildPublicWebsiteThemePath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const themesGalleryUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/themes`
+      : orgKey
+        ? buildPublicWebsiteThemesPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
+  const websitesChooserUrl =
+    pathMode && publicBase
+      ? `${publicBase}/website/websites`
+      : orgKey
+        ? buildPublicWebsiteWebsitesPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: orgKey,
+            scope: editorScope,
+          })
+        : null;
   const unpublishPath =
     isHqEditor && canPublishWebsite
       ? buildPublicWebsiteUnpublishPath({
@@ -973,6 +1099,28 @@ async function attachWebsiteAdminChrome(opts) {
       group: "general",
     });
   }
+  if (themesGalleryUrl) {
+    moreItems.push({
+      id: "theme",
+      label: "Choose Theme",
+      icon: "style",
+      href: themesGalleryUrl,
+      group: "general",
+    });
+  }
+  const multiSiteMode = String(model.websiteMode || "") === "multi_site";
+  // multi_site already means HQ + 2+ active branches; HQ editors may switch websites.
+  const showChangeWebsite =
+    Boolean(websitesChooserUrl) && multiSiteMode && isHqEditor;
+  if (showChangeWebsite) {
+    moreItems.push({
+      id: "change-website",
+      label: "Change Website",
+      icon: "account_tree",
+      href: websitesChooserUrl,
+      group: "general",
+    });
+  }
   if (historyHref) {
     moreItems.push({
       id: "history",
@@ -1037,6 +1185,29 @@ async function attachWebsiteAdminChrome(opts) {
     ? buildBlessBoardSectionManifest(model.pageKey, model.sections, structuredDrafts)
     : null;
 
+  const {
+    describeAddSectionAvailability,
+  } = require("../../platform/website/sectionRegistry");
+  const existingSectionKeys = (model.sections || [])
+    .map((s) => String((s && (s.sectionKey || s.sectionType)) || ""))
+    .filter(Boolean);
+  const addSectionAvailability = describeAddSectionAvailability(
+    PRODUCT_CODE.BLESSBOARD,
+    model.pageKey,
+    existingSectionKeys
+  );
+
+  const churchDisplayName =
+    (tenant && tenant.church && (tenant.church.displayName || tenant.church.name)) ||
+    orgKey ||
+    "Website";
+  const websiteScopeKind =
+    websiteScopeType === "church" || websiteScopeType === "hq" ? "hq" : "branch";
+  const websiteName =
+    websiteScopeKind === "hq"
+      ? `${churchDisplayName} — Headquarters`
+      : String((model.branch && model.branch.displayName) || publicBranchKey || "Branch website");
+
   const shellFacts = {
     productCode: PRODUCT_CODE.BLESSBOARD,
     pageKey: model.pageKey,
@@ -1047,6 +1218,16 @@ async function attachWebsiteAdminChrome(opts) {
     hubHref: manageHref,
     draft: hasDraftChanges,
     unpublishedCount: draftCount,
+    websiteScopeKey: websiteScopeKeyFor(
+      PRODUCT_CODE.BLESSBOARD,
+      organizationId,
+      websiteInstanceId || organizationId
+    ),
+    websiteName,
+    websiteScopeKind,
+    changeWebsiteHref: showChangeWebsite ? websitesChooserUrl : null,
+    instanceId: websiteInstanceId,
+    organizationId,
     canEdit: true,
     canPublish: canPublishWebsite,
     previewHref: draftPreviewHrefResolved,
@@ -1060,6 +1241,9 @@ async function attachWebsiteAdminChrome(opts) {
         scope: editorScope,
       }) || null,
     discardPath,
+    unpublishedChangesUrl,
+    fieldHistoryUrl,
+    fieldRestoreUrl,
     unpublishPath,
     exitHref: withEditQuery(currentPath, false),
     exitMethod: "GET",
@@ -1068,7 +1252,13 @@ async function attachWebsiteAdminChrome(opts) {
     csrfToken,
     csrfField: "_csrf",
     sectionActionsUrl,
-    addSectionUrl,
+    themeUrl,
+    themesGalleryUrl,
+    addSectionUrl: addSectionAvailability.canAddSection ? addSectionUrl : null,
+    canAddSection: addSectionAvailability.canAddSection,
+    addSectionEmptyHint: addSectionAvailability.emptyHint,
+    addSectionMemberAction: addSectionAvailability.memberAction,
+    collectionManaged: addSectionAvailability.collectionManaged === true,
     sectionManifest,
   };
 
@@ -1136,7 +1326,7 @@ async function attachWebsiteAdminChrome(opts) {
     },
   };
 
-  model.cssHref = "/blessboard/v5/tenant-public.css?v=60";
+  model.cssHref = "/blessboard/v5/tenant-public.css?v=67";
 
   return model;
 }

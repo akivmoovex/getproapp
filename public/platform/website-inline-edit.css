@@ -692,15 +692,24 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  align-content: center;
   gap: 0.5rem;
-  height: var(--gp-we-toolbar-h);
+  /* Allow status-row wrap without clipping; --gp-we-toolbar-h expands when pills show. */
+  height: auto;
   min-height: var(--gp-we-toolbar-h);
   padding: 0 16px;
   padding-top: env(safe-area-inset-top, 0px);
+  padding-bottom: 0;
   background: var(--gp-we-toolbar-bg);
   border-bottom: 1px solid var(--gp-we-outline-variant);
   box-sizing: border-box;
   color: var(--gp-we-primary);
+}
+
+/* When pending/save pills are visible, reserve a second toolbar band for them. */
+body.gp-website-editor-open:has([data-website-pending-pill]:not([hidden])),
+body.gp-website-editor-open:has([data-website-save-status]:not([hidden]):not([data-save-status="idle"])) {
+  --gp-we-toolbar-h: 96px;
 }
 
 .gp-website-editor__toolbar-start,
@@ -733,6 +742,18 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
   font-weight: 600;
   color: var(--gp-we-on-surface);
   white-space: nowrap;
+}
+
+.gp-website-editor__site-name {
+  display: block;
+  font-size: 0.78rem;
+  font-weight: 500;
+  color: var(--gp-we-on-surface-variant);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 18rem;
+  line-height: 1.2;
 }
 
 .gp-website-editor__title-block {
@@ -778,8 +799,8 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
   align-items: center;
   justify-content: center;
   gap: 4px;
-  min-height: 40px;
-  min-width: 40px;
+  min-height: var(--gp-website-touch);
+  min-width: var(--gp-website-touch);
   padding: 8px 16px;
   border-radius: 8px;
   border: 0;
@@ -819,10 +840,10 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
 }
 
 .gp-website-editor__icon-btn {
-  width: 40px;
-  height: 40px;
-  min-width: 40px;
-  min-height: 40px;
+  width: var(--gp-website-touch);
+  height: var(--gp-website-touch);
+  min-width: var(--gp-website-touch);
+  min-height: var(--gp-website-touch);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1057,23 +1078,35 @@ html:has(body.gp-website-editor-open.bb-tp-body--editing) {
     font-size: 0.9rem;
   }
 
-  .gp-website-editor__btn--primary {
-    padding: 6px 12px;
-    min-height: 36px;
+  .gp-website-editor__site-name {
+    max-width: 11rem;
+    font-size: 0.72rem;
   }
 
+  .gp-website-editor__btn--primary {
+    padding: 8px 12px;
+    min-height: var(--gp-website-touch);
+    font-size: 0.8125rem;
+    font-weight: 600;
+  }
+
+  /* Keep ≥44px touch targets on 390px — do not shrink below --gp-website-touch. */
   .gp-website-editor__icon-btn,
   .gp-website-editor__preview {
-    width: 32px;
-    height: 32px;
-    min-width: 32px;
-    min-height: 32px;
+    width: var(--gp-website-touch);
+    height: var(--gp-website-touch);
+    min-width: var(--gp-website-touch);
+    min-height: var(--gp-website-touch);
     padding: 0;
   }
 
+  .gp-website-editor__toolbar-end {
+    gap: 4px;
+  }
+
   .gp-website-editor__toolbar {
-    padding-left: max(16px, env(safe-area-inset-left, 0px));
-    padding-right: max(16px, env(safe-area-inset-right, 0px));
+    padding-left: max(12px, env(safe-area-inset-left, 0px));
+    padding-right: max(12px, env(safe-area-inset-right, 0px));
   }
 
   .gp-website-editor__mobile-nav {
@@ -1332,7 +1365,9 @@ body.gp-website-editor-open .gp-website-editable__display {
   z-index: var(--gp-we-z-editable-affordance);
   pointer-events: auto;
   min-height: var(--gp-website-touch);
-  padding-right: calc(var(--gp-website-touch) + 0.25rem);
+  /* Room for History + pencil cluster without covering field text or overflowing left. */
+  min-width: calc((var(--gp-website-touch) * 2) + 0.75rem);
+  padding-right: calc((var(--gp-website-touch) * 2) + 0.5rem);
   box-sizing: border-box;
   cursor: pointer;
 }
@@ -1870,6 +1905,93 @@ textarea.gp-website-field-editor__input {
   }
 }
 
+/* U1-C: densify Edit Content / Adjust Picture sheets at ~390 without losing Save/Cancel */
+@media (max-width: 430px) {
+  .gp-website-field-editor {
+    padding: 0;
+  }
+
+  .gp-website-field-editor__panel {
+    max-height: min(92vh, calc(100dvh - var(--gp-we-toolbar-h, 3.5rem) - 0.5rem));
+    border-radius: 14px 14px 0 0;
+    overflow-x: hidden;
+  }
+
+  .gp-website-field-editor__head {
+    padding: 10px 12px 6px;
+    gap: 0.5rem;
+  }
+
+  .gp-website-field-editor__title {
+    font-size: 0.98rem;
+    line-height: 1.25;
+  }
+
+  .gp-website-field-editor__body {
+    padding: 0 12px 6px;
+    overflow-x: hidden;
+  }
+
+  .gp-website-field-editor__section {
+    margin-bottom: 0.7rem;
+  }
+
+  .gp-website-field-editor__label {
+    margin-bottom: 0.25rem;
+    font-size: 0.75rem;
+  }
+
+  .gp-website-field-editor__input {
+    padding: 0.55rem 0.65rem;
+    font-size: 1rem; /* avoid iOS zoom */
+  }
+
+  textarea.gp-website-field-editor__input {
+    min-height: 5.25rem;
+  }
+
+  .gp-website-field-editor__status {
+    padding: 0 12px 6px;
+    font-size: 0.75rem;
+  }
+
+  .gp-website-field-editor__foot {
+    display: grid;
+    grid-template-columns: 1fr 1.35fr;
+    gap: 0.45rem;
+    padding: 10px 12px calc(10px + env(safe-area-inset-bottom, 0px));
+    z-index: 2;
+  }
+
+  .gp-website-field-editor__btn {
+    width: 100%;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0 0.75rem;
+  }
+
+  .gp-website-framing {
+    padding: 0.55rem;
+  }
+
+  .gp-website-framing__stage--desktop,
+  .gp-website-framing__stage--mobile {
+    max-height: 9.5rem;
+  }
+
+  .gp-website-framing__controls {
+    gap: 0.4rem;
+  }
+
+  .gp-website-field-editor__media-actions {
+    gap: 0.4rem;
+  }
+
+  .gp-website-field-editor__preview-wrap {
+    max-height: 9rem;
+  }
+}
+
 body.gp-website-field-editor-open .bb-tp-main,
 body.gp-website-field-editor-open .ac-public-main,
 body.gp-website-field-editor-open .gp-website-chrome-stack {
@@ -2075,6 +2197,19 @@ body.gp-website-preview-open {
   color: var(--gp-we-error);
 }
 
+.gp-website-lifecycle__ref {
+  margin: 0;
+  padding: 4px 16px 0;
+  font-size: 0.75rem;
+  line-height: 1.35;
+  color: var(--gp-we-on-surface-variant);
+  word-break: break-all;
+}
+
+.gp-website-lifecycle__ref[hidden] {
+  display: none !important;
+}
+
 .gp-website-lifecycle__foot {
   display: flex;
   justify-content: flex-end;
@@ -2117,12 +2252,19 @@ body.gp-website-lifecycle-open {
 }
 
 @media (max-width: 767px) {
-  /* Top-right pencils sit under the fixed editor toolbar after scroll-into-view;
-     mirror textarea placement at bottom-right on narrow viewports. */
+  /* Bottom-right stack: History above pencil — avoids toolbar occlusion and left overflow. */
   body.gp-website-editor-open .gp-website-editable[data-website-type="text"] .gp-website-editable__pencil,
   body.gp-website-editor-open .ac-website-editable[data-website-type="text"] .ac-website-editable__pencil {
     top: auto;
     bottom: 0.25rem;
+    right: 0.25rem;
+  }
+
+  body.gp-website-editor-open .gp-website-editable[data-website-type="text"] .gp-website-editable__history,
+  body.gp-website-editor-open .ac-website-editable[data-website-type="text"] .gp-website-editable__history {
+    top: auto;
+    bottom: calc(var(--gp-website-touch) + 0.35rem);
+    right: 0.25rem;
   }
 
   body.gp-website-editor-open.bb-tp-body--editing {

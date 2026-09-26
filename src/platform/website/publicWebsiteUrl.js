@@ -37,6 +37,18 @@ function normalizeOrganizationKey(organizationKey) {
     .toLowerCase();
 }
 
+/** Canonical public organization / clinic key shape (matches provision ORG_KEY_RE). */
+const PUBLIC_ORGANIZATION_KEY_RE = /^[a-z][a-z0-9_-]{0,63}$/;
+
+/**
+ * True when a key is safe to place in /clinics/:key or /c/:key public URLs.
+ * Rejects path segments like `.` / `..` and any non-slug characters.
+ */
+function isPublicOrganizationKey(organizationKey) {
+  const key = normalizeOrganizationKey(organizationKey);
+  return Boolean(key) && PUBLIC_ORGANIZATION_KEY_RE.test(key);
+}
+
 function publicWebsitePathPrefix(product) {
   return PRODUCT_PUBLIC_PREFIX[normalizeProduct(product)] || null;
 }
@@ -155,7 +167,7 @@ function buildPublicOrganizationWebsitePath(input) {
   const product = normalizeProduct((input && (input.product || input.productCode)) || "");
   const organizationKey = normalizeOrganizationKey(input && input.organizationKey);
   const prefix = publicWebsitePathPrefix(product);
-  if (!prefix || !organizationKey) return null;
+  if (!prefix || !organizationKey || !isPublicOrganizationKey(organizationKey)) return null;
 
   const scope = input && input.scope;
   const branchKey =
@@ -294,6 +306,21 @@ function buildPublicWebsiteDiscardPath(input) {
   return appendQuery(`${path}/website/drafts/discard`, input && input.query);
 }
 
+function buildPublicWebsiteUnpublishedChangesPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/unpublished-changes`, input && input.query) : null;
+}
+
+function buildPublicWebsiteFieldHistoryPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/field-history`, input && input.query) : null;
+}
+
+function buildPublicWebsiteFieldRestorePath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/field-history/restore`, input && input.query) : null;
+}
+
 function buildPublicWebsiteHistoryPath(input) {
   const path = buildPublicWebsiteInstancePath(input);
   if (!path) return null;
@@ -331,6 +358,21 @@ function buildPublicWebsiteAddSectionPath(input) {
   const path = buildPublicWebsiteInstancePath(input);
   if (!path) return null;
   return appendQuery(`${path}/website/add-section`, input && input.query);
+}
+
+function buildPublicWebsiteThemePath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/theme`, input && input.query) : null;
+}
+
+function buildPublicWebsiteThemesPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/themes`, input && input.query) : null;
+}
+
+function buildPublicWebsiteWebsitesPath(input) {
+  const path = buildPublicWebsiteInstancePath(input);
+  return path ? appendQuery(`${path}/website/websites`, input && input.query) : null;
 }
 
 function buildPublicWebsiteSettingsPath(input) {
@@ -444,6 +486,7 @@ function canonicalPublicWebsiteRedirect(product, reqPath, options) {
     if (mapped) organizationKey = normalizeOrganizationKey(mapped) || organizationKey;
   }
   if (!organizationKey) return null;
+  if (!isPublicOrganizationKey(organizationKey)) return null;
   segments[0] = encodeURIComponent(organizationKey);
 
   if (productCode === PRODUCT_CODE.BLESSBOARD && segments[1] === "branches" && segments[2]) {
@@ -582,8 +625,8 @@ function buildPublicWebsitePagePaths(input) {
  */
 function attachClinicPublicWebsitePaths(clinic) {
   if (!clinic || typeof clinic !== "object") return clinic;
-  const organizationKey = String(clinic.clinicKey || clinic.organizationKey || "").trim();
-  if (!organizationKey) return clinic;
+  const organizationKey = normalizeOrganizationKey(clinic.clinicKey || clinic.organizationKey || "");
+  if (!isPublicOrganizationKey(organizationKey)) return clinic;
   const publicPagePaths =
     clinic.publicPagePaths ||
     buildPublicWebsitePagePaths({
@@ -593,6 +636,7 @@ function attachClinicPublicWebsitePaths(clinic) {
   if (!publicPagePaths) return clinic;
   return {
     ...clinic,
+    clinicKey: organizationKey,
     publicBasePath: clinic.publicBasePath || publicPagePaths.home,
     publicPagePaths,
   };
@@ -603,7 +647,9 @@ module.exports = {
   PRODUCT_PUBLIC_PREFIX,
   PRODUCT_PUBLIC_ALIAS_PREFIX,
   PRODUCT_WEBSITE_SETTINGS_PATH,
+  PUBLIC_ORGANIZATION_KEY_RE,
   normalizeOrganizationKey,
+  isPublicOrganizationKey,
   publicWebsitePathPrefix,
   publicWebsiteAliasPathPrefix,
   publicOriginForProduct,
@@ -626,11 +672,17 @@ module.exports = {
   buildPublicWebsiteSubmitPath,
   buildPublicWebsiteFinishEditPath,
   buildPublicWebsiteDiscardPath,
+  buildPublicWebsiteUnpublishedChangesPath,
+  buildPublicWebsiteFieldRestorePath,
+  buildPublicWebsiteFieldHistoryPath,
   buildPublicWebsiteHistoryPath,
   buildPublicWebsiteMediaLibraryPath,
   buildPublicWebsiteStylesPath,
   buildPublicWebsiteSeoPath,
   buildPublicWebsiteAddSectionPath,
+  buildPublicWebsiteThemePath,
+  buildPublicWebsiteThemesPath,
+  buildPublicWebsiteWebsitesPath,
   buildPublicWebsiteSettingsPath,
   buildPublicWebsitePublishPath,
   buildPublicWebsiteUnpublishPath,

@@ -138,6 +138,13 @@ const KEYS = {
     inline: false,
     description: "Accent brand colour",
   },
+  "site.theme_id": {
+    type: T.ENUM,
+    enumValues: ["ac.default", "ac.family-wellness-mint"],
+    group: "site",
+    inline: false,
+    description: "Public website theme id (ActiveClinic collection only)",
+  },
   "header.show_logo": { type: T.BOOLEAN, group: "header", description: "Show logo in header" },
   "header.show_nav": { type: T.BOOLEAN, group: "header", description: "Show navigation in header" },
   "header.show_phone": { type: T.BOOLEAN, group: "header", description: "Show phone in header" },
