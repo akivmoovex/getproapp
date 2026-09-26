@@ -1,13 +1,18 @@
 <section
-  class="ac-patient-page acp-mf08"
+  class="ac-patient-page acp-mf08 acp-portal-leaf acp-portal-leaf--profile"
   data-ac-page-section="patient-profile"
   data-ac-mf-family="MF08"
   data-ac-mf-screen="MF08-05"
+  data-ac-batch3="AC-P07"
+  data-ac-stitch="e042789d436d48e8843e4bb3f99f379b"
+  data-ac-stitch-mobile="c15fcece57e2481cb4d5ff988b325730"
 >
-  <header class="ac-patient-page__header">
-    <p class="acp-mf08__kicker">Patient portal</p>
-    <h1>Your profile</h1>
-    <p class="acp-auth-card__lede">Update contact details the clinic already uses for this portal. Clinical history, insurance, and medical records are not collected here.</p>
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Your profile</p>
+    <h1>Profile &amp; Contact Details</h1>
+    <p class="acp-auth-card__lede">
+      Update contact details the clinic already uses for this portal. Clinical history, insurance, emergency contacts, and medical records are not collected here.
+    </p>
   </header>
 
   <% if (error) { %>
@@ -17,62 +22,132 @@
   <div class="ac-patient-alert ac-patient-alert--success" role="status"><%= success %></div>
   <% } %>
 
-  <form method="POST" action="/clinics/<%= clinicKey %>/patient/profile" class="acp-mf08-card" data-ac-shell="patient" data-ac-loading="1">
-    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
-    <p class="ac-patient-meta">
-      <strong>Legal name:</strong>
-      <%= escapeHtml(profile.firstName || "") %> <%= escapeHtml(profile.lastName || "") %>
-      (cannot be changed here)
+  <div class="acp-portal-leaf__identity" data-ac-profile-identity="1">
+    <p class="acp-portal-leaf__identity-name">
+      <%= escapeHtml(profile.firstName || '') %> <%= escapeHtml(profile.lastName || '') %>
     </p>
-    <div class="ac-patient-field">
-      <label for="preferredName">Preferred name</label>
-      <input type="text" id="preferredName" name="preferredName" value="<%= escapeHtml(profile.preferredName || "") %>" autocomplete="nickname"/>
-    </div>
-    <div class="ac-patient-field">
-      <%- include('../partials/phone-field', {
-        id: 'phone',
-        label: 'Phone',
-        required: false,
-        defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
-        selectedCountry: (typeof phoneCountry !== 'undefined' && phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
-        nationalValue: (typeof phoneNational !== 'undefined' && phoneNational) || '',
-        e164Value: (profile && (profile.phoneNormalized || profile.phoneDisplay)) || '',
-        countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
-        phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
-        showLegacyHidden: false,
-        hint: 'Changing phone updates your patient contact record. Login identity rules may still require clinic verification.'
-      }) %>
-    </div>
-    <div class="ac-patient-field">
-      <label for="email">Email</label>
-      <input type="email" id="email" name="email" value="<%= escapeHtml(profile.emailDisplay || "") %>" autocomplete="email"/>
-    </div>
+    <p class="ac-muted">
+      <% if (profile.patientNumber) { %>Patient #<%= escapeHtml(profile.patientNumber) %> · <% } %>
+      Legal name cannot be changed here
+    </p>
+  </div>
+
+  <form
+    method="POST"
+    action="/clinics/<%= clinicKey %>/patient/profile"
+    class="acp-mf08-card acp-portal-leaf__form"
+    data-ac-shell="patient"
+    data-ac-loading="1"
+    data-ac-profile-form="1"
+  >
+    <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
+
     <fieldset class="acp-mf08-fieldset">
-      <legend>Address</legend>
+      <legend>1. Personal &amp; preferred information</legend>
       <div class="ac-patient-field">
-        <label for="addressLine1">Address line 1</label>
-        <input type="text" id="addressLine1" name="addressLine1" value="<%= escapeHtml(profile.addressLine1 || "") %>" autocomplete="address-line1"/>
+        <label for="preferredName">Preferred name</label>
+        <input
+          type="text"
+          id="preferredName"
+          name="preferredName"
+          value="<%= escapeHtml(profile.preferredName || '') %>"
+          autocomplete="nickname"
+        />
+      </div>
+      <p class="ac-muted acp-portal-leaf__field-note">
+        Pronouns and preferred language from Stitch are not stored on the patient record yet.
+      </p>
+    </fieldset>
+
+    <fieldset class="acp-mf08-fieldset">
+      <legend>2. Contact details &amp; preferences</legend>
+      <div class="ac-patient-field">
+        <%- include('../partials/phone-field', {
+          id: 'phone',
+          label: 'Mobile phone',
+          required: false,
+          defaultCountry: (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+          selectedCountry: (typeof phoneCountry !== 'undefined' && phoneCountry) || (typeof defaultPhoneCountry !== 'undefined' && defaultPhoneCountry) || 'ZM',
+          nationalValue: (typeof phoneNational !== 'undefined' && phoneNational) || '',
+          e164Value: (profile && (profile.phoneNormalized || profile.phoneDisplay)) || '',
+          countries: (typeof phoneCountries !== 'undefined' && phoneCountries) || [],
+          phoneValidationRelaxed: typeof phoneValidationRelaxed !== 'undefined' && phoneValidationRelaxed,
+          showLegacyHidden: false,
+          hint: 'Changing phone updates your patient contact record. Login identity rules may still require clinic verification.'
+        }) %>
       </div>
       <div class="ac-patient-field">
-        <label for="addressLine2">Address line 2</label>
-        <input type="text" id="addressLine2" name="addressLine2" value="<%= escapeHtml(profile.addressLine2 || "") %>" autocomplete="address-line2"/>
+        <label for="email">Primary email</label>
+        <input
+          type="email"
+          id="email"
+          name="email"
+          value="<%= escapeHtml(profile.emailDisplay || '') %>"
+          autocomplete="email"
+        />
+      </div>
+      <div class="ac-patient-field">
+        <label for="preferredContactMethod">Preferred contact method</label>
+        <select id="preferredContactMethod" name="preferredContactMethod">
+          <%
+            var method = profile.preferredContactMethod || 'phone';
+            var methods = [
+              { value: 'phone', label: 'Voice call' },
+              { value: 'sms', label: 'SMS' },
+              { value: 'email', label: 'Email' },
+              { value: 'none', label: 'No preference' }
+            ];
+            methods.forEach(function (m) {
+          %>
+          <option value="<%= m.value %>" <%= method === m.value ? 'selected' : '' %>><%= m.label %></option>
+          <% }); %>
+        </select>
+      </div>
+    </fieldset>
+
+    <fieldset class="acp-mf08-fieldset">
+      <legend>3. Residential &amp; postal address</legend>
+      <div class="ac-patient-field">
+        <label for="addressLine1">Address line 1</label>
+        <input type="text" id="addressLine1" name="addressLine1" value="<%= escapeHtml(profile.addressLine1 || '') %>" autocomplete="address-line1"/>
+      </div>
+      <div class="ac-patient-field">
+        <label for="addressLine2">Apartment, suite, or landmark</label>
+        <input type="text" id="addressLine2" name="addressLine2" value="<%= escapeHtml(profile.addressLine2 || '') %>" autocomplete="address-line2"/>
       </div>
       <div class="acp-mf08-grid">
         <div class="ac-patient-field">
           <label for="addressCity">City</label>
-          <input type="text" id="addressCity" name="addressCity" value="<%= escapeHtml(profile.addressCity || "") %>" autocomplete="address-level2"/>
+          <input type="text" id="addressCity" name="addressCity" value="<%= escapeHtml(profile.addressCity || '') %>" autocomplete="address-level2"/>
         </div>
         <div class="ac-patient-field">
-          <label for="addressProvince">Province</label>
-          <input type="text" id="addressProvince" name="addressProvince" value="<%= escapeHtml(profile.addressProvince || "") %>" autocomplete="address-level1"/>
+          <label for="addressProvince">Province / state</label>
+          <input type="text" id="addressProvince" name="addressProvince" value="<%= escapeHtml(profile.addressProvince || '') %>" autocomplete="address-level1"/>
+        </div>
+      </div>
+      <div class="acp-mf08-grid">
+        <div class="ac-patient-field">
+          <label for="addressPostalCode">Postal code</label>
+          <input type="text" id="addressPostalCode" name="addressPostalCode" value="<%= escapeHtml(profile.addressPostalCode || '') %>" autocomplete="postal-code"/>
+        </div>
+        <div class="ac-patient-field">
+          <label for="addressCountryCode">Country</label>
+          <input type="text" id="addressCountryCode" name="addressCountryCode" maxlength="2" value="<%= escapeHtml(profile.addressCountryCode || 'ZM') %>" autocomplete="country"/>
         </div>
       </div>
     </fieldset>
-    <button type="submit" class="ac-patient-btn ac-btn ac-btn--primary" data-loading="Saving…">Update profile</button>
+
+    <p class="ac-muted acp-portal-leaf__field-note" data-ac-omitted="emergency-contact">
+      Emergency contact fields from Stitch are not persisted on the patient portal profile model.
+    </p>
+
+    <button type="submit" class="ac-patient-btn ac-btn ac-btn--primary" data-loading="Saving…">Save profile</button>
   </form>
 
   <p class="ac-patient-links">
     <a href="/clinics/<%= clinicKey %>/patient/verify-phone">Request phone verification (no SMS code)</a>
+    ·
+    <a href="/clinics/<%= clinicKey %>/patient/security">Security</a>
     ·
     <a href="/clinics/<%= clinicKey %>/patient">Back to dashboard</a>
   </p>

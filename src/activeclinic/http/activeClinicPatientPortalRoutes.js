@@ -1107,6 +1107,9 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
           addressLine2: req.body.addressLine2,
           addressCity: req.body.addressCity,
           addressProvince: req.body.addressProvince,
+          addressPostalCode: req.body.addressPostalCode,
+          addressCountryCode: req.body.addressCountryCode,
+          preferredContactMethod: req.body.preferredContactMethod,
           country: String((req.body && req.body.phone_country) || "ZM").trim().toUpperCase() || "ZM",
         });
 

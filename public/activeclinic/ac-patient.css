@@ -1064,3 +1064,97 @@ form.ac-patient-form-inline {
 }
 
 
+/* ------------------------------------------------------------------ */
+/* V2.03 Batch 3 AC-P03 / AC-P07 portal leaves                         */
+/* ------------------------------------------------------------------ */
+
+.acp-portal-leaf__header {
+  margin-bottom: 1rem;
+}
+
+.acp-portal-leaf__kicker {
+  margin: 0 0 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--acp-primary-strong, var(--acp-primary));
+}
+
+.acp-portal-leaf__filters {
+  margin-bottom: 1rem;
+}
+
+.acp-portal-leaf__empty-title {
+  margin: 0 0 0.35rem;
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--acp-ink);
+}
+
+.acp-portal-leaf__when {
+  margin: 0.15rem 0 0;
+  font-weight: 600;
+  color: var(--acp-ink);
+}
+
+.acp-portal-leaf__note {
+  margin-top: 1.25rem;
+  padding: 0.75rem 0.9rem;
+  border: 1px solid var(--acp-border);
+  border-radius: var(--ac-radius-lg, 12px);
+  background: var(--acp-surface);
+}
+
+.acp-portal-leaf__identity {
+  margin: 0 0 1rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--acp-border);
+  border-radius: var(--ac-radius-lg, 12px);
+  background: var(--acp-surface);
+}
+
+.acp-portal-leaf__identity-name {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+  color: var(--acp-ink);
+}
+
+.acp-portal-leaf__field-note {
+  margin: 0.35rem 0 0.75rem;
+  font-size: 0.8rem;
+}
+
+.acp-portal-leaf__form .ac-patient-btn {
+  min-height: 2.75rem;
+}
+
+.acp-portal-leaf--bookings .ac-patient-table th,
+.acp-portal-leaf--bookings .ac-patient-table td {
+  vertical-align: top;
+}
+
+@media (max-width: 390px) {
+  .acp-portal-leaf__filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+
+  .acp-portal-leaf__filters a {
+    min-height: 2.75rem;
+    display: inline-flex;
+    align-items: center;
+  }
+
+  .acp-portal-leaf__form .ac-patient-btn,
+  .acp-portal-leaf--bookings .ac-patient-btn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .acp-portal-leaf__card {
+    border-radius: 12px;
+  }
+}

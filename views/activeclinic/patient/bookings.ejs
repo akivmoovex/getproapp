@@ -1,50 +1,76 @@
-<section class="ac-patient-page">
-  <header class="ac-patient-page__header">
-    <h1>My bookings</h1>
+<%
+  var list = Array.isArray(bookings) ? bookings : [];
+  var filter = statusFilter || '';
+  var statuses = bookingStatusLabels || {};
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--bookings"
+  data-ac-page-section="patient-my-appointments"
+  data-ac-batch3="AC-P03"
+  data-ac-stitch="e5bc2a1492da4e1fb675d14c884ec059"
+  data-ac-stitch-mobile="2ea963ee11384dd680b21978b3f56ea1"
+>
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Patient portal</p>
+    <h1>My Appointments</h1>
+    <p class="acp-auth-card__lede">
+      Booking requests and appointments linked to your portal account. Visit summaries and lab notes shown in Stitch demos are not available here.
+    </p>
   </header>
 
-  <div class="ac-patient-filters" role="navigation" aria-label="Filter bookings by status">
-    <a href="/clinics/<%= clinicKey %>/patient/bookings"<% if (!statusFilter) { %> aria-current="true"<% } %>>All</a>
-    <% Object.keys(bookingStatusLabels).forEach(function(statusKey) { %>
-    <a href="/clinics/<%= clinicKey %>/patient/bookings?status=<%= encodeURIComponent(statusKey) %>"
-       <% if (statusFilter === statusKey) { %> aria-current="true"<% } %>>
-      <%= bookingStatusLabels[statusKey] %>
-    </a>
+  <nav class="ac-patient-filters acp-portal-leaf__filters" aria-label="Filter appointments by status">
+    <a href="/clinics/<%= clinicKey %>/patient/bookings"<% if (!filter) { %> aria-current="true"<% } %>>All</a>
+    <% Object.keys(statuses).forEach(function (statusKey) { %>
+    <a
+      href="/clinics/<%= clinicKey %>/patient/bookings?status=<%= encodeURIComponent(statusKey) %>"
+      <% if (filter === statusKey) { %> aria-current="true"<% } %>
+    ><%= statuses[statusKey] %></a>
     <% }); %>
-  </div>
+  </nav>
 
-  <% if (!bookings || !bookings.length) { %>
-  <div class="ac-patient-empty-state acp-empty-state">
+  <% if (!list.length) { %>
+  <div class="ac-patient-empty-state acp-empty-state" data-ac-empty="bookings">
+    <p class="acp-portal-leaf__empty-title">No appointments found</p>
     <p class="ac-patient-empty">
-      <% if (statusFilter) { %>
-      No bookings with status “<%= escapeHtml(bookingStatusLabels[statusFilter] || statusFilter) %>”.
+      <% if (filter) { %>
+      No bookings with status “<%= escapeHtml(statuses[filter] || filter) %>”.
       <% } else { %>
-      No bookings found.
+      When you request a visit, it will appear here with status and preferred time.
       <% } %>
+    </p>
+    <p class="ac-patient-links">
+      <a class="ac-patient-btn ac-btn ac-btn--primary" href="/clinics/<%= clinicKey %>/book">Book a visit</a>
     </p>
   </div>
   <% } else { %>
-  <div class="ac-patient-table-wrap ac-patients-desktop">
+  <div class="ac-patient-table-wrap ac-patients-desktop" data-ac-bookings-desktop="1">
     <table class="ac-patient-table">
       <thead>
         <tr>
+          <th scope="col">When</th>
+          <th scope="col">Service</th>
+          <th scope="col">Clinician</th>
           <th scope="col">Reference</th>
-          <th scope="col">Type</th>
           <th scope="col">Status</th>
         </tr>
       </thead>
       <tbody>
-        <% bookings.forEach(function(b) { %>
+        <% list.forEach(function (b) {
+          var when = formatBookingWhen(b.preferredStartsAt, b.timezone);
+          var serviceLabel = b.serviceDisplayName || b.procedureDisplayName || b.bookingKind || 'Visit';
+        %>
         <tr>
+          <td><%= escapeHtml(when || 'Time to be confirmed') %></td>
+          <td><%= escapeHtml(serviceLabel) %></td>
+          <td><%= escapeHtml(b.staffDisplayName || 'Clinic to assign') %></td>
           <td>
             <a href="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(b.requestNumber || b.id) %>">
               <%= escapeHtml(b.requestNumber || b.id) %>
             </a>
           </td>
-          <td><%= escapeHtml(b.bookingKind || "") %></td>
           <td>
-            <span class="acp-status-badge acp-status-badge--<%= String(b.status || '').replace(/_/g, '-') %>">
-              <%= escapeHtml(bookingStatusLabels[b.status] || b.status || "") %>
+            <span class="acp-status-badge acp-status-badge--<%= bookingStatusTone(b.status) %>">
+              <%= escapeHtml(statuses[b.status] || b.status || '') %>
             </span>
           </td>
         </tr>
@@ -52,15 +78,21 @@
       </tbody>
     </table>
   </div>
-  <ul class="ac-card-list ac-patients-mobile ac-patient-booking-cards">
-    <% bookings.forEach(function(b) { %>
-    <li class="ac-card">
+
+  <ul class="ac-card-list ac-patients-mobile ac-patient-booking-cards" data-ac-bookings-mobile="1">
+    <% list.forEach(function (b) {
+      var when = formatBookingWhen(b.preferredStartsAt, b.timezone);
+      var serviceLabel = b.serviceDisplayName || b.procedureDisplayName || b.bookingKind || 'Visit';
+    %>
+    <li class="ac-card acp-portal-leaf__card">
       <a class="ac-card__link" href="/clinics/<%= clinicKey %>/patient/bookings/<%= escapeHtml(b.requestNumber || b.id) %>">
-        <p class="ac-card__title"><%= escapeHtml(b.requestNumber || b.id) %></p>
-        <p class="ac-muted"><%= escapeHtml(b.bookingKind || "") %></p>
+        <p class="ac-card__title"><%= escapeHtml(serviceLabel) %></p>
+        <p class="acp-portal-leaf__when"><%= escapeHtml(when || 'Time to be confirmed') %></p>
+        <p class="ac-muted"><%= escapeHtml(b.staffDisplayName || 'Clinic to assign') %></p>
+        <p class="ac-muted"><%= escapeHtml(b.requestNumber || b.id) %></p>
         <p>
-          <span class="acp-status-badge acp-status-badge--<%= String(b.status || '').replace(/_/g, '-') %>">
-            <%= escapeHtml(bookingStatusLabels[b.status] || b.status || "") %>
+          <span class="acp-status-badge acp-status-badge--<%= bookingStatusTone(b.status) %>">
+            <%= escapeHtml(statuses[b.status] || b.status || '') %>
           </span>
         </p>
       </a>
@@ -68,6 +100,12 @@
     <% }); %>
   </ul>
   <% } %>
+
+  <aside class="acp-portal-leaf__note" data-ac-omitted="demo-only">
+    <p class="ac-muted">
+      Omitted demo-only Stitch blocks: schedule calendar widget, visit summaries, lab notes, and policy FAQ. Cancel/reschedule remain on each booking detail.
+    </p>
+  </aside>
 
   <p class="ac-patient-links">
     <a href="/clinics/<%= clinicKey %>/patient">Back to dashboard</a>
