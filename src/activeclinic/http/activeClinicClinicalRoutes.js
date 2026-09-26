@@ -482,13 +482,20 @@ function registerActiveClinicClinicalRoutes(app, deps) {
         return renderShell(req, res, {
           activeNav: "clinical",
           content: "app/vital-signs-entry-content.ejs",
-          pageHeader: { title: "Vital signs entry" },
+          pageHeader: {
+            title: "Vitals & Observations",
+            description: "Record encounter vitals. One observation per save.",
+          },
           breadcrumbs: [
             { label: "Home", href: "/app" },
             { label: "Clinical", href: "/app/clinical" },
             { label: "Encounter", href: `/app/clinical/encounter/${encounterId}` },
             { label: "Vitals" },
           ],
+          flash:
+            req.query && req.query.recorded === "1"
+              ? { type: "success", message: "Observation recorded." }
+              : null,
           pageData: { vitals: loaded.vitals },
         });
       } catch (err) {
@@ -526,18 +533,35 @@ function registerActiveClinicClinicalRoutes(app, deps) {
         });
 
         if (!result.ok) {
+          const reloaded = await loadActiveClinicVitalSignsEntryScreen(getPool(), {
+            auth,
+            encounterId,
+            values: req.body,
+            error: mapClinicalError(result.code),
+          });
           return renderShell(req, res, {
             activeNav: "clinical",
             content: "app/vital-signs-entry-content.ejs",
             status: 400,
-            pageHeader: { title: "Vital signs entry" },
+            pageHeader: {
+              title: "Vitals & Observations",
+              description: "Record encounter vitals. One observation per save.",
+            },
+            breadcrumbs: [
+              { label: "Home", href: "/app" },
+              { label: "Clinical", href: "/app/clinical" },
+              { label: "Encounter", href: `/app/clinical/encounter/${encounterId}` },
+              { label: "Vitals" },
+            ],
             pageData: {
-              vitals: {
-                encounter: { id: encounterId },
-                observations: [],
-                values: req.body,
-                error: mapClinicalError(result.code),
-              },
+              vitals: reloaded.ok
+                ? reloaded.vitals
+                : {
+                    encounter: { id: encounterId },
+                    observations: [],
+                    values: req.body,
+                    error: mapClinicalError(result.code),
+                  },
             },
           });
         }
@@ -969,7 +993,11 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           );
         }
 
-        const titles = { lab: "Laboratory request", prescription: "Prescription", radiology: "Radiology request" };
+        const titles = {
+          lab: "Laboratory request",
+          prescription: "Prescription Editor",
+          radiology: "Radiology request",
+        };
         const contents = {
           lab: "app/create-laboratory-request-content.ejs",
           prescription: "app/create-prescription-content.ejs",
@@ -979,7 +1007,13 @@ function registerActiveClinicClinicalRoutes(app, deps) {
         return renderShell(req, res, {
           activeNav: "clinical",
           content: contents[orderType],
-          pageHeader: { title: titles[orderType] },
+          pageHeader: {
+            title: titles[orderType],
+            description:
+              orderType === "prescription"
+                ? "Manual prescription order for pharmacy handoff."
+                : undefined,
+          },
           breadcrumbs: [
             { label: "Home", href: "/app" },
             { label: "Clinical", href: "/app/clinical" },
@@ -1023,6 +1057,40 @@ function registerActiveClinicClinicalRoutes(app, deps) {
         });
 
         if (!result.ok) {
+          if (orderType === "prescription") {
+            const reloaded = await loadActiveClinicOrderFormScreen(getPool(), {
+              auth,
+              encounterId,
+              orderType,
+              values: req.body,
+              error: mapClinicalError(result.code),
+            });
+            return renderShell(req, res, {
+              activeNav: "clinical",
+              content: "app/create-prescription-content.ejs",
+              status: 400,
+              pageHeader: {
+                title: "Prescription Editor",
+                description: "Manual prescription order for pharmacy handoff.",
+              },
+              breadcrumbs: [
+                { label: "Home", href: "/app" },
+                { label: "Clinical", href: "/app/clinical" },
+                { label: "Encounter", href: `/app/clinical/encounter/${encounterId}` },
+                { label: "Prescription Editor" },
+              ],
+              pageData: {
+                orderForm: reloaded.ok
+                  ? reloaded.orderForm
+                  : {
+                      encounter: { id: encounterId },
+                      orderType: "prescription",
+                      values: req.body,
+                      error: mapClinicalError(result.code),
+                    },
+              },
+            });
+          }
           return res.status(400).type("html").send(
             renderSimpleState("Order creation failed", mapClinicalError(result.code), { status: 400 })
           );

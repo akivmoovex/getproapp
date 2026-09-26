@@ -1,89 +1,188 @@
-<div data-ac-stitch="dede5e72277d413497e1f870f6b4a0e1" data-ac-screen="vital-signs-entry">
-  <section class="ac-panel ac-form-section">
-    <h2>Recent observations</h2>
-    <% if (pageData.vitals.observations.length === 0) { %>
-    <p class="ac-empty">No vitals recorded yet.</p>
-    <% } else { %>
-    <div class="ac-table-wrap">
-    <table class="ac-table">
-      <thead>
-        <tr>
-          <th>Type</th>
-          <th>Value</th>
-          <th>Observed</th>
-          <th>Recorded by</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% pageData.vitals.observations.forEach(function (obs) { %>
-        <tr>
-          <td><%= obs.observationType %></td>
-          <td>
-            <% if (obs.observationType === 'blood_pressure' && obs.systolic && obs.diastolic) { %>
-              <%= obs.systolic %>/<%= obs.diastolic %> <%= obs.unit || 'mmHg' %>
-            <% } else if (obs.valueNumeric) { %>
-              <%= obs.valueNumeric %> <%= obs.unit || '' %>
-            <% } else { %>
-              <%= obs.valueText || '—' %>
-            <% } %>
-          </td>
-          <td><%= new Date(obs.observedAt).toLocaleString() %></td>
-          <td><%= obs.recordedByStaffDisplayName %></td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
-    </div>
-    <% } %>
-  </section>
+<%
+  var vitals = (pageData && pageData.vitals) || {};
+  var encounter = vitals.encounter || {};
+  var observations = vitals.observations || [];
+  var values = vitals.values || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var encounterId = encounter.id || '';
+  var backHref = encounterId ? ('/app/clinical/encounter/' + encounterId) : '/app/clinical';
 
-  <section class="ac-panel ac-form-section">
-    <h2>Record new observation</h2>
-    <% if (pageData.vitals.error) { %>
-    <p class="ac-error"><%= pageData.vitals.error %></p>
-    <% } %>
-    
-    <form method="post" action="/app/clinical/encounter/<%= pageData.vitals.encounter.id %>/vitals">
-      <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
-      
-      <div class="ac-field">
-        <label for="observation_type">Observation type *</label>
-        <select id="observation_type" name="observation_type" required>
-          <option value="">Select type</option>
-          <option value="blood_pressure">Blood pressure</option>
-          <option value="heart_rate">Heart rate</option>
-          <option value="respiratory_rate">Respiratory rate</option>
-          <option value="temperature">Temperature</option>
-          <option value="oxygen_saturation">Oxygen saturation</option>
-          <option value="weight">Weight</option>
-          <option value="height">Height</option>
-        </select>
+  function obsLabel(type) {
+    var map = {
+      blood_pressure: 'Blood pressure',
+      heart_rate: 'Heart rate',
+      respiratory_rate: 'Respiratory rate',
+      temperature: 'Temperature',
+      oxygen_saturation: 'Oxygen saturation (SpO₂)',
+      weight: 'Weight',
+      height: 'Height',
+      bmi: 'BMI',
+      other: 'Other'
+    };
+    return map[type] || String(type || 'Observation').replace(/_/g, ' ');
+  }
+
+  function formatObs(obs) {
+    if (!obs) return '—';
+    if (obs.observationType === 'blood_pressure' && obs.systolic && obs.diastolic) {
+      return obs.systolic + '/' + obs.diastolic + (obs.unit ? ' ' + obs.unit : ' mmHg');
+    }
+    if (obs.valueNumeric != null && obs.valueNumeric !== '') {
+      return String(obs.valueNumeric) + (obs.unit ? ' ' + obs.unit : '');
+    }
+    return obs.valueText || '—';
+  }
+
+  var selectedType = values.observation_type || '';
+%>
+<section
+  class="ac-clinical-leaf ac-vitals-leaf"
+  data-ac-page-section="vitals-observations"
+  data-ac-screen="vital-signs-entry"
+  data-ac-batch3="ACN17"
+  data-ac-stitch="e4dc47dcc41a411184e987308aedc943"
+  data-ac-stitch-mobile="c8552b6186d4428283b31d7b875005d6"
+  data-ac-stitch-legacy="dede5e72277d413497e1f870f6b4a0e1"
+>
+  <header class="ac-clinical-leaf__banner" data-ac-leaf-banner="1">
+    <div class="ac-clinical-leaf__identity">
+      <p class="ac-clinical-leaf__eyebrow">Vitals &amp; observations</p>
+      <h2 class="ac-clinical-leaf__patient"><%= encounter.patientDisplayName || 'Patient' %></h2>
+      <p class="ac-clinical-leaf__meta">
+        <% if (encounter.patientNumber) { %>MRN <%= encounter.patientNumber %> · <% } %>
+        Encounter <%= encounter.encounterNumber || encounterId %>
+        <% if (encounter.status) { %> · <span class="gp-ops-badge gp-ops-badge--info"><%= encounter.status %></span><% } %>
+      </p>
+    </div>
+    <div class="ac-clinical-leaf__banner-actions">
+      <a class="ac-btn ac-btn--ghost" href="<%= backHref %>">Return to encounter</a>
+    </div>
+  </header>
+
+  <div class="ac-clinical-leaf__layout">
+    <section class="ac-panel ac-clinical-leaf__main" data-ac-vitals-form="1">
+      <div class="ac-clinical-leaf__card-head">
+        <h3 class="ac-panel__title">Record current observation</h3>
+        <p class="ac-muted">One observation per save. Soft range guidance only — no automatic escalation.</p>
       </div>
-      
-      <div class="ac-field">
-        <label for="value_numeric">Numeric value</label>
-        <input type="number" step="0.01" id="value_numeric" name="value_numeric" />
+
+      <% if (vitals.error) { %>
+      <p class="ac-error" role="alert"><%= vitals.error %></p>
+      <% } %>
+      <% if (typeof flash !== 'undefined' && flash && flash.message) { %>
+      <p class="ac-notice" role="status"><%= flash.message %></p>
+      <% } %>
+
+      <form
+        class="ac-clinical-leaf__form ac-form-grid"
+        method="post"
+        action="/app/clinical/encounter/<%= encounterId %>/vitals"
+        data-ac-vitals-submit="1"
+      >
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+
+        <div class="ac-field ac-field--full">
+          <label for="observation_type">Observation type *</label>
+          <select id="observation_type" name="observation_type" required data-ac-vitals-type="1">
+            <option value="">Select type</option>
+            <option value="blood_pressure" <%= selectedType === 'blood_pressure' ? 'selected' : '' %>>Blood pressure</option>
+            <option value="heart_rate" <%= selectedType === 'heart_rate' ? 'selected' : '' %>>Heart rate</option>
+            <option value="respiratory_rate" <%= selectedType === 'respiratory_rate' ? 'selected' : '' %>>Respiratory rate</option>
+            <option value="temperature" <%= selectedType === 'temperature' ? 'selected' : '' %>>Body temperature</option>
+            <option value="oxygen_saturation" <%= selectedType === 'oxygen_saturation' ? 'selected' : '' %>>Oxygen saturation (SpO₂)</option>
+            <option value="weight" <%= selectedType === 'weight' ? 'selected' : '' %>>Weight</option>
+            <option value="height" <%= selectedType === 'height' ? 'selected' : '' %>>Height</option>
+            <option value="bmi" <%= selectedType === 'bmi' ? 'selected' : '' %>>BMI</option>
+            <option value="other" <%= selectedType === 'other' ? 'selected' : '' %>>Other</option>
+          </select>
+        </div>
+
+        <div class="ac-field">
+          <label for="systolic">Systolic (BP)</label>
+          <input type="number" id="systolic" name="systolic" inputmode="numeric" min="0" max="300" value="<%= values.systolic || '' %>" placeholder="e.g. 120" />
+          <p class="ac-field__hint">Typical resting 90–120</p>
+        </div>
+
+        <div class="ac-field">
+          <label for="diastolic">Diastolic (BP)</label>
+          <input type="number" id="diastolic" name="diastolic" inputmode="numeric" min="0" max="200" value="<%= values.diastolic || '' %>" placeholder="e.g. 80" />
+          <p class="ac-field__hint">Typical resting 60–80</p>
+        </div>
+
+        <div class="ac-field">
+          <label for="value_numeric">Numeric value</label>
+          <input type="number" step="0.01" id="value_numeric" name="value_numeric" inputmode="decimal" value="<%= values.value_numeric || '' %>" />
+        </div>
+
+        <div class="ac-field">
+          <label for="unit">Unit</label>
+          <input type="text" id="unit" name="unit" maxlength="20" value="<%= values.unit || '' %>" placeholder="bpm, °C, %, kg, cm…" />
+        </div>
+
+        <div class="ac-field ac-field--full">
+          <label for="value_text">Text value (optional)</label>
+          <input type="text" id="value_text" name="value_text" maxlength="200" value="<%= values.value_text || '' %>" placeholder="Free-text when numeric is not enough" />
+        </div>
+
+        <div class="ac-clinical-leaf__actions ac-field--full">
+          <button type="submit" class="ac-btn ac-btn--primary" data-ac-touch="1">Save observation</button>
+          <a class="ac-btn ac-btn--ghost" href="<%= backHref %>">Cancel</a>
+        </div>
+      </form>
+
+      <p class="ac-clinical-leaf__footnote ac-muted">
+        Pain score and multi-vital batch commit remain outside this leaf (triage / product gaps). Observations are immutable; corrections use a new row.
+      </p>
+    </section>
+
+    <aside class="ac-panel ac-clinical-leaf__side" data-ac-vitals-log="1">
+      <div class="ac-clinical-leaf__card-head">
+        <h3 class="ac-panel__title">Observation log</h3>
+        <p class="ac-muted">Encounter history (newest first).</p>
       </div>
-      
-      <div class="ac-field">
-        <label for="unit">Unit</label>
-        <input type="text" id="unit" name="unit" placeholder="e.g. bpm, °C, kg" />
+
+      <% if (observations.length === 0) { %>
+      <div class="gp-ops-empty" data-ac-empty="vitals">
+        <p class="gp-ops-empty__title">No vitals recorded yet</p>
+        <p class="gp-ops-empty__body">Record the first observation for this encounter.</p>
       </div>
-      
-      <div class="ac-field">
-        <label for="systolic">Systolic (for BP)</label>
-        <input type="number" id="systolic" name="systolic" />
+      <% } else { %>
+      <div class="ac-table-wrap ac-clinical-leaf__desktop" data-ac-vitals-desktop="1">
+        <table class="ac-table gp-ops-table">
+          <thead>
+            <tr>
+              <th>Type</th>
+              <th>Value</th>
+              <th>Observed</th>
+              <th>Recorded by</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% observations.forEach(function (obs) { %>
+            <tr>
+              <td><%= obsLabel(obs.observationType) %></td>
+              <td><%= formatObs(obs) %></td>
+              <td><%= obs.observedAt ? new Date(obs.observedAt).toLocaleString() : '—' %></td>
+              <td><%= obs.recordedByStaffDisplayName || '—' %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
       </div>
-      
-      <div class="ac-field">
-        <label for="diastolic">Diastolic (for BP)</label>
-        <input type="number" id="diastolic" name="diastolic" />
-      </div>
-      
-      <div class="ac-actions">
-        <button type="submit" class="ac-btn">Record observation</button>
-        <a href="/app/clinical/encounter/<%= pageData.vitals.encounter.id %>" class="ac-btn ac-btn--ghost">Back to encounter</a>
-      </div>
-    </form>
-  </section>
-</div>
+
+      <ul class="ac-card-list ac-clinical-leaf__mobile" data-ac-vitals-mobile="1">
+        <% observations.forEach(function (obs) { %>
+        <li class="ac-card-list__item">
+          <p class="ac-card-list__title"><%= obsLabel(obs.observationType) %></p>
+          <p class="ac-card-list__value"><%= formatObs(obs) %></p>
+          <p class="ac-card-list__meta">
+            <%= obs.observedAt ? new Date(obs.observedAt).toLocaleString() : '—' %>
+            · <%= obs.recordedByStaffDisplayName || '—' %>
+          </p>
+        </li>
+        <% }) %>
+      </ul>
+      <% } %>
+    </aside>
+  </div>
+</section>

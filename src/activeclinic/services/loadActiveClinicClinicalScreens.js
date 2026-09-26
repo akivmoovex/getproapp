@@ -363,6 +363,11 @@ async function loadActiveClinicVitalSignsEntryScreen(db, input) {
       observations: vitalsRes.observations || [],
       values: input.values || {},
       error: input.error || null,
+      stitch: {
+        desktop: "e4dc47dcc41a411184e987308aedc943",
+        mobile: "c8552b6186d4428283b31d7b875005d6",
+        code: "ACN17",
+      },
     },
   };
 }
@@ -417,14 +422,23 @@ async function loadActiveClinicOrderFormScreen(db, input) {
     return { ok: false, code: encounter.code, orderForm: null };
   }
 
+  const orderType = input.orderType || "lab";
   return {
     ok: true,
     code: RESULT.OK,
     orderForm: {
       encounter: encounter.encounter,
-      orderType: input.orderType || "lab",
+      orderType,
       values: input.values || {},
       error: input.error || null,
+      stitch:
+        orderType === "prescription"
+          ? {
+              desktop: "47c5eb28d5e1482e9dd0c2f2cbee7b59",
+              mobile: "5e5048f347414e53af6e8a86aa83fba7",
+              code: "ACN19",
+            }
+          : null,
     },
   };
 }

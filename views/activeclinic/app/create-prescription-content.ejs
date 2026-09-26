@@ -1,41 +1,128 @@
-<div data-ac-stitch="ee9bf2322b924cd79e86619a4635f702" data-ac-screen="create-prescription">
-  <p class="ac-notice"><strong>Note:</strong> No auto-prescribing. Clinician manually enters medication details. No drug interaction checking (marked PRODUCT_DECISION / blocked advanced).</p>
-  
-  <% if (pageData.orderForm.error) { %>
-  <p class="ac-error"><%= pageData.orderForm.error %></p>
-  <% } %>
-  
-  <form method="post" action="/app/clinical/encounter/<%= pageData.orderForm.encounter.id %>/order/prescription">
-    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
-    
-    <div class="ac-field">
-      <label for="drug_name">Drug name *</label>
-      <input type="text" id="drug_name" name="drug_name" required />
+<%
+  var orderForm = (pageData && pageData.orderForm) || {};
+  var encounter = orderForm.encounter || {};
+  var values = orderForm.values || {};
+  var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
+  var encounterId = encounter.id || '';
+  var backHref = encounterId ? ('/app/clinical/encounter/' + encounterId) : '/app/clinical';
+%>
+<section
+  class="ac-clinical-leaf ac-rx-leaf"
+  data-ac-page-section="prescription-editor"
+  data-ac-screen="create-prescription"
+  data-ac-batch3="ACN19"
+  data-ac-stitch="47c5eb28d5e1482e9dd0c2f2cbee7b59"
+  data-ac-stitch-mobile="5e5048f347414e53af6e8a86aa83fba7"
+  data-ac-stitch-legacy="ee9bf2322b924cd79e86619a4635f702"
+>
+  <header class="ac-clinical-leaf__banner" data-ac-leaf-banner="1">
+    <div class="ac-clinical-leaf__identity">
+      <p class="ac-clinical-leaf__eyebrow">Prescription editor</p>
+      <h2 class="ac-clinical-leaf__patient"><%= encounter.patientDisplayName || 'Patient' %></h2>
+      <p class="ac-clinical-leaf__meta">
+        <% if (encounter.patientNumber) { %>MRN <%= encounter.patientNumber %> · <% } %>
+        Encounter <%= encounter.encounterNumber || encounterId %>
+        <% if (encounter.status) { %> · <span class="gp-ops-badge gp-ops-badge--info"><%= encounter.status %></span><% } %>
+      </p>
     </div>
-    
-    <div class="ac-field">
-      <label for="dose">Dose *</label>
-      <input type="text" id="dose" name="dose" required placeholder="e.g. 500mg" />
+    <div class="ac-clinical-leaf__banner-actions">
+      <a class="ac-btn ac-btn--ghost" href="<%= backHref %>">Cancel / return</a>
     </div>
-    
-    <div class="ac-field">
-      <label for="frequency">Frequency *</label>
-      <input type="text" id="frequency" name="frequency" required placeholder="e.g. twice daily" />
-    </div>
-    
-    <div class="ac-field">
-      <label for="duration">Duration *</label>
-      <input type="text" id="duration" name="duration" required placeholder="e.g. 7 days" />
-    </div>
-    
-    <div class="ac-field">
-      <label for="instructions">Additional instructions</label>
-      <textarea id="instructions" name="instructions" rows="3" placeholder="e.g. Take with food"></textarea>
-    </div>
-    
-    <div class="ac-actions">
-      <button type="submit" class="ac-btn">Create prescription</button>
-      <a href="/app/clinical/encounter/<%= pageData.orderForm.encounter.id %>" class="ac-btn ac-btn--ghost">Cancel</a>
-    </div>
-  </form>
-</div>
+  </header>
+
+  <div class="ac-clinical-leaf__layout ac-clinical-leaf__layout--rx">
+    <section class="ac-panel ac-clinical-leaf__main" data-ac-rx-form="1">
+      <div class="ac-clinical-leaf__card-head">
+        <h3 class="ac-panel__title">New prescription order</h3>
+        <p class="ac-muted">Manual entry only. No drug-interaction checking or auto-prescribe.</p>
+      </div>
+
+      <p class="ac-notice" data-ac-rx-guardrail="1">
+        <strong>Product guardrail:</strong> Clinician enters medication details manually. CDS / interaction alerts and multi-line drafts in Stitch are intentionally omitted.
+      </p>
+
+      <% if (orderForm.error) { %>
+      <p class="ac-error" role="alert"><%= orderForm.error %></p>
+      <% } %>
+
+      <form
+        class="ac-clinical-leaf__form ac-form-grid"
+        method="post"
+        action="/app/clinical/encounter/<%= encounterId %>/order/prescription"
+        data-ac-rx-submit="1"
+      >
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+
+        <div class="ac-field ac-field--full">
+          <label for="drug_name">Medication / active compound *</label>
+          <input
+            type="text"
+            id="drug_name"
+            name="drug_name"
+            required
+            maxlength="200"
+            value="<%= values.drug_name || '' %>"
+            placeholder="e.g. Amoxicillin"
+            autocomplete="off"
+          />
+        </div>
+
+        <div class="ac-field">
+          <label for="dose">Strength / dose *</label>
+          <input type="text" id="dose" name="dose" required maxlength="100" value="<%= values.dose || '' %>" placeholder="e.g. 500mg" />
+        </div>
+
+        <div class="ac-field">
+          <label for="route">Route</label>
+          <input type="text" id="route" name="route" maxlength="80" value="<%= values.route || '' %>" placeholder="e.g. Oral (PO)" />
+        </div>
+
+        <div class="ac-field">
+          <label for="frequency">Frequency *</label>
+          <input type="text" id="frequency" name="frequency" required maxlength="100" value="<%= values.frequency || '' %>" placeholder="e.g. twice daily" />
+        </div>
+
+        <div class="ac-field">
+          <label for="duration">Duration *</label>
+          <input type="text" id="duration" name="duration" required maxlength="100" value="<%= values.duration || '' %>" placeholder="e.g. 7 days" />
+        </div>
+
+        <div class="ac-field">
+          <label for="quantity">Dispense quantity</label>
+          <input type="text" id="quantity" name="quantity" maxlength="80" value="<%= values.quantity || '' %>" placeholder="e.g. 14 tablets" />
+        </div>
+
+        <div class="ac-field">
+          <label for="refills">Refills</label>
+          <input type="text" id="refills" name="refills" maxlength="40" value="<%= values.refills || '' %>" placeholder="e.g. 0" />
+        </div>
+
+        <div class="ac-field ac-field--full">
+          <label for="instructions">Patient SIG / pharmacy label instructions</label>
+          <textarea id="instructions" name="instructions" rows="3" maxlength="2000" placeholder="e.g. Take with food"><%= values.instructions || '' %></textarea>
+        </div>
+
+        <div class="ac-clinical-leaf__actions ac-field--full">
+          <button type="submit" class="ac-btn ac-btn--primary" data-ac-touch="1">Save prescription order</button>
+          <a class="ac-btn ac-btn--ghost" href="<%= backHref %>">Discard</a>
+        </div>
+      </form>
+    </section>
+
+    <aside class="ac-panel ac-clinical-leaf__side" data-ac-rx-summary="1">
+      <div class="ac-clinical-leaf__card-head">
+        <h3 class="ac-panel__title">Order summary</h3>
+        <p class="ac-muted">Stored as a clinical prescription order for pharmacy handoff.</p>
+      </div>
+      <ul class="ac-clinical-leaf__summary-list">
+        <li><span>Patient</span><strong><%= encounter.patientDisplayName || '—' %></strong></li>
+        <li><span>Encounter</span><strong><%= encounter.encounterNumber || encounterId || '—' %></strong></li>
+        <li><span>Order type</span><strong>Prescription</strong></li>
+        <li><span>Safety checks</span><strong>Manual clinician verification</strong></li>
+      </ul>
+      <p class="ac-clinical-leaf__footnote ac-muted">
+        Catalogue search, EPCS, allergy CDS, and multi-medication draft cards from Stitch are not implemented — existing JSON order payload only.
+      </p>
+    </aside>
+  </div>
+</section>

@@ -70,12 +70,12 @@ const EXPECTED = [
   ["consultation-workspace-content.ejs", "3ea33c0c474342bbbbb307014209bfec"],
   ["clinical-follow-up-content.ejs", "0c83bbfc71b94c2f958931693345d1db"],
   ["create-laboratory-request-content.ejs", "969bbfbdf9634dbc8af598ec2277e92f"],
-  ["create-prescription-content.ejs", "ee9bf2322b924cd79e86619a4635f702"],
+  ["create-prescription-content.ejs", "47c5eb28d5e1482e9dd0c2f2cbee7b59"],
   ["create-radiology-request-content.ejs", "bc4ffd8f0e8c44f48f38cc15a069656a"],
   ["diagnosis-entry-content.ejs", "33a522e2f4eb45c9bdbede9ba34e0bee"],
   ["nursing-intake-content.ejs", "7959616d1673403ba3bf6ff71d18a77b"],
   ["triage-assessment-content.ejs", "3c8f7b43b7984718acf661e381c1e6f7"],
-  ["vital-signs-entry-content.ejs", "dede5e72277d413497e1f870f6b4a0e1"],
+  ["vital-signs-entry-content.ejs", "e4dc47dcc41a411184e987308aedc943"],
 ];
 
 let pool;
