@@ -236,6 +236,8 @@ describe("ActiveClinic V2.03 ACN21–23 billing", () => {
     assert.match(billingRoutes, /0886c0c2471d4744aa0101aed17abd22/);
     assert.match(billingRoutes, /3af2006929ff463eaea366b3e5086091/);
     assert.match(billingRoutes, /25af03d4c3724841a33fb03415ec1b4d/);
+    assert.match(billingRoutes, /29257b0d01c64fa4896a369efd3f6417/);
+    assert.match(billingRoutes, /24632347e4ab4c89937b611457d94730/);
     assert.match(cashierRoutes, /9288cc1e473941f4905d69b2393f066b/);
     assert.match(cashierRoutes, /9d872ffd29954df9affe648916b2497f/);
     assert.match(cashierRoutes, /normalizePaymentMethod/);

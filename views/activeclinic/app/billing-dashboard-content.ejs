@@ -2,36 +2,75 @@
   var dash = (pageData && pageData.dashboard) || {};
   var unpaid = dash.unpaidInvoices || {};
   var todayPayments = dash.todayPayments || {};
+  var activeInvoices = dash.activeInvoices || {};
   var caps = (pageData && pageData.capabilities) || {};
   var stitch = (pageData && pageData.stitch) || {};
 %>
-<section class="ac-billing-dashboard" data-ac-page-section="billing-dashboard" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
-  <article class="ac-panel">
-    <header class="ac-section-header">
-      <h2 class="ac-dashboard__card-title">Billing overview</h2>
-    </header>
-    <p class="ac-dashboard__lead">Revenue, invoices, and outstanding balances.</p>
-  </article>
+<section
+  class="ac-billing-dashboard ac-billing-workspace--b2 ac-ops-queue"
+  data-ac-page-section="billing-dashboard"
+  data-ac-stitch="AC-B2-09"
+  data-ac-stitch-desktop="<%= stitch.desktop || '29257b0d01c64fa4896a369efd3f6417' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '24632347e4ab4c89937b611457d94730' %>"
+  data-ac-stitch-batch1-desktop="<%= stitch.batch1Desktop || 'ece0b9d1d9384f5d8c1e3b944f122e47' %>"
+  data-ac-stitch-batch1-mobile="<%= stitch.batch1Mobile || '649bd7649ebf4c6eb787612f844a637e' %>"
+>
+  <header class="ac-ops-queue__header ac-billing-workspace__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Operational management</p>
+      <h2 class="ac-ops-queue__title">Billing &amp; invoices workspace</h2>
+      <p class="ac-muted">
+        <% if (activeInvoices.count != null) { %><%= activeInvoices.count %> active invoices · <% } %>
+        Review unpaid balances and today's collections.
+      </p>
+    </div>
+    <div class="ac-billing-workspace__header-actions">
+      <% if (caps.canCreateInvoice) { %>
+      <a class="ac-btn ac-btn--primary" href="/app/billing/invoices/new">New invoice</a>
+      <% } %>
+      <a class="ac-btn ac-btn--ghost" href="/app/billing/invoices">All invoices</a>
+      <% if (caps.canOpenCashier) { %>
+      <a class="ac-btn ac-btn--ghost" href="/app/cashier">Open cashier</a>
+      <% } %>
+    </div>
+  </header>
 
-  <div class="ac-dashboard__summaries ac-metric-grid">
+  <div class="ac-dashboard__summaries ac-metric-grid" data-ac-billing-metrics="1">
     <article class="ac-panel ac-stat-card">
-      <p class="ac-stat-card__label">Unpaid invoices</p>
-      <p class="ac-stat-card__value"><%= unpaid.count || 0 %></p>
-      <p class="ac-muted ac-money"><%= unpaid.totalFormatted || 'ZMW 0.00' %> outstanding</p>
+      <p class="ac-stat-card__label">Unpaid &amp; due</p>
+      <p class="ac-stat-card__value ac-money"><%= unpaid.totalFormatted || 'ZMW 0.00' %></p>
+      <p class="ac-muted"><%= unpaid.count || 0 %> invoices</p>
       <a class="ac-stat-card__link" href="/app/billing/invoices?status=unpaid">View unpaid</a>
     </article>
 
     <article class="ac-panel ac-stat-card">
-      <p class="ac-stat-card__label">Today's payments</p>
-      <p class="ac-stat-card__value"><%= todayPayments.count || 0 %></p>
-      <p class="ac-muted ac-money"><%= todayPayments.totalFormatted || 'ZMW 0.00' %> collected</p>
+      <p class="ac-stat-card__label">Collected / settled today</p>
+      <p class="ac-stat-card__value ac-money"><%= todayPayments.totalFormatted || 'ZMW 0.00' %></p>
+      <p class="ac-muted"><%= todayPayments.count || 0 %> payments</p>
       <% if (caps.canOpenCashier) { %>
       <a class="ac-stat-card__link" href="/app/cashier">Open cashier</a>
       <% } else { %>
       <a class="ac-stat-card__link" href="/app/billing/payments/history">Payment history</a>
       <% } %>
     </article>
+
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Active invoices</p>
+      <p class="ac-stat-card__value"><%= activeInvoices.count || 0 %></p>
+      <p class="ac-muted">Draft, pending, and posted</p>
+      <a class="ac-stat-card__link" href="/app/billing/invoices">Browse invoices</a>
+    </article>
   </div>
+
+  <% if (caps.canOpenCashier || caps.canCollectPayment) { %>
+  <p class="ac-billing-workspace__sod ac-muted" role="note">
+    Payment collection stays on the cashier desk. Billing invoice actions remain limited to your role permissions.
+  </p>
+  <% } else { %>
+  <p class="ac-billing-workspace__sod ac-muted" role="note">
+    You can view invoices and balances. Collecting payments requires cashier payment permissions.
+  </p>
+  <% } %>
 
   <article class="ac-panel">
     <header class="ac-section-header">

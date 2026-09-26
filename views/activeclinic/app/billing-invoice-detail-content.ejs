@@ -2,19 +2,39 @@
   var invoice = (pageData && pageData.invoice) || {};
   var lines = (pageData && pageData.lines) || [];
   var stitch = (pageData && pageData.stitch) || {};
+  var caps = (pageData && pageData.capabilities) || {};
 %>
-<section class="ac-invoice-detail" data-ac-page-section="invoice-detail" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+<section
+  class="ac-invoice-detail ac-billing-workspace--b2"
+  data-ac-page-section="invoice-detail"
+  data-ac-stitch="AC-B2-09"
+  data-ac-batch1="ACN22"
+  data-ac-stitch-desktop="<%= stitch.desktop || '29257b0d01c64fa4896a369efd3f6417' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '24632347e4ab4c89937b611457d94730' %>"
+  data-ac-stitch-batch1-desktop="<%= stitch.batch1Desktop || '25af03d4c3724841a33fb03415ec1b4d' %>"
+>
   <article class="ac-panel">
-    <h2 class="ac-dashboard__card-title">Invoice details</h2>
+    <div class="ac-invoice-detail__head">
+      <h2 class="ac-dashboard__card-title">Invoice details</h2>
+      <%- include('../../platform/partials/gp-ops-status-badge', {
+        label: invoice.paymentStatusLabel || invoice.status,
+        tone: invoice.paymentTone || 'neutral'
+      }) %>
+    </div>
     <dl class="ac-invoice-detail__summary">
       <div><dt>Invoice number</dt><dd><strong><%= invoice.invoice_number %></strong></dd></div>
       <div><dt>Patient</dt><dd><a href="/app/billing/patients/<%= invoice.patientNumber %>"><%= invoice.patientName %></a> · <%= invoice.patientNumber %></dd></div>
       <div><dt>Invoice date</dt><dd><%= invoice.invoice_date %></dd></div>
-      <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= invoice.status %>"><%= invoice.status %></span></dd></div>
+      <div><dt>Lifecycle status</dt><dd><span class="ac-status" data-status="<%= invoice.status %>"><%= invoice.status %></span></dd></div>
       <div><dt>Total</dt><dd class="ac-money"><strong><%= invoice.totalAmountFormatted %></strong></dd></div>
       <div><dt>Paid</dt><dd class="ac-money"><%= invoice.paidAmountFormatted %></dd></div>
       <div><dt>Balance</dt><dd class="ac-money"><%= invoice.balanceFormatted %></dd></div>
     </dl>
+    <% if (caps.canCollectPayment && invoice.status === 'posted' && (invoice.balanceMinor || 0) > 0) { %>
+    <p class="ac-invoice-detail__collect">
+      <a class="ac-btn ac-btn--primary" href="/app/cashier/payment?invoice=<%= invoice.id %>">Collect payment</a>
+    </p>
+    <% } %>
   </article>
 
   <article class="ac-panel ac-panel--table">
@@ -22,8 +42,8 @@
     <% if (lines.length === 0) { %>
       <p class="ac-muted">No line items.</p>
     <% } else { %>
-      <div class="ac-table-wrap">
-      <table class="ac-table ac-invoice-desktop">
+      <div class="ac-table-wrap ac-invoice-desktop">
+      <table class="ac-table">
         <thead>
           <tr>
             <th>#</th>

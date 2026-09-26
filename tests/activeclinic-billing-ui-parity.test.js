@@ -308,7 +308,9 @@ describe("ActiveClinic P07 Billing & Cashier UI", () => {
     it("should include stitch IDs in billing dashboard", async () => {
       const res = await makeAuthRequest("get", "/app/billing");
       expect(res.status).toBe(200);
-      expect(res.text).toContain('data-ac-stitch-desktop="ece0b9d1d9384f5d8c1e3b944f122e47"');
+      expect(res.text).toContain('data-ac-stitch="AC-B2-09"');
+      expect(res.text).toContain('data-ac-stitch-desktop="29257b0d01c64fa4896a369efd3f6417"');
+      expect(res.text).toContain("ece0b9d1d9384f5d8c1e3b944f122e47");
     });
 
     it("should include stitch IDs in cashier dashboard", async () => {

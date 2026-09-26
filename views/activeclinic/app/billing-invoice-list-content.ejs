@@ -2,63 +2,144 @@
   var invoices = (pageData && pageData.invoices) || [];
   var caps = (pageData && pageData.capabilities) || {};
   var stitch = (pageData && pageData.stitch) || {};
+  var statusTabs = (pageData && pageData.statusTabs) || [];
+  var q = (pageData && pageData.q) || '';
+  var statusKey = (pageData && pageData.statusKey) || 'all';
+  var searchFilters = '<input type="hidden" name="status" value="' + String(statusKey).replace(/"/g, '&quot;') + '" />';
 %>
-<section class="ac-invoice-list" data-ac-page-section="invoice-list" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
-  <article class="ac-panel ac-panel--table">
-    <% if (invoices.length === 0) { %>
-      <%- include('../partials/ac-inline-state', {
-        inlineState: {
-          stateKey: 'empty',
-          marker: 'invoices-empty',
-          title: 'No invoices yet',
-          description: 'Create patient invoices from charges.',
-          primaryAction: caps.canCreateInvoice
-            ? { href: '/app/billing/invoices/new', label: 'Create invoice' }
-            : null
-        }
-      }) %>
-    <% } else { %>
-      <div class="ac-table-wrap ac-desktop-table">
-        <table class="ac-table">
-          <thead>
-            <tr>
-              <th>Invoice number</th>
-              <th>Patient</th>
-              <th>Date</th>
-              <th data-col="amount">Total</th>
-              <th data-col="amount">Paid</th>
-              <th data-col="amount">Balance</th>
-              <th>Status</th>
-            </tr>
-          </thead>
-          <tbody>
-            <% invoices.forEach(function (inv) { %>
-            <tr>
-              <td><a href="/app/billing/invoices/<%= inv.id %>"><%= inv.invoice_number %></a></td>
-              <td><%= inv.patientName %> · <%= inv.patient_number %></td>
-              <td><%= inv.invoice_date %></td>
-              <td class="ac-money"><%= inv.totalAmountFormatted %></td>
-              <td class="ac-money"><%= inv.paidAmountFormatted %></td>
-              <td class="ac-money"><%= inv.balanceFormatted %></td>
-              <td><span class="ac-status" data-status="<%= inv.status %>"><%= inv.status %></span></td>
-            </tr>
-            <% }) %>
-          </tbody>
-        </table>
+<section
+  class="ac-invoice-list ac-billing-workspace--b2 ac-ops-queue"
+  data-ac-page-section="invoice-list"
+  data-ac-stitch="AC-B2-09"
+  data-ac-batch1="ACN21"
+  data-ac-stitch-desktop="<%= stitch.desktop || '29257b0d01c64fa4896a369efd3f6417' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '24632347e4ab4c89937b611457d94730' %>"
+  data-ac-stitch-batch1-desktop="<%= stitch.batch1Desktop || '0886c0c2471d4744aa0101aed17abd22' %>"
+  data-ac-stitch-batch1-mobile="<%= stitch.batch1Mobile || '3af2006929ff463eaea366b3e5086091' %>"
+>
+  <header class="ac-ops-queue__header ac-billing-workspace__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Revenue cycle</p>
+      <h2 class="ac-ops-queue__title">Billing &amp; invoices</h2>
+      <p class="ac-muted">Search, filter, and open patient invoices for this facility.</p>
+    </div>
+    <div class="ac-billing-workspace__header-actions">
+      <% if (caps.canCreateInvoice) { %>
+      <a class="ac-btn ac-btn--primary" href="/app/billing/invoices/new">Create invoice</a>
+      <% } %>
+      <% if (caps.canOpenCashier) { %>
+      <a class="ac-btn ac-btn--ghost" href="/app/cashier">Open cashier</a>
+      <% } %>
+      <a class="ac-btn ac-btn--ghost" href="/app/billing">Billing hub</a>
+    </div>
+  </header>
+
+  <%- include('../../platform/partials/gp-ops-filter-bar', {
+    action: '/app/billing/invoices',
+    method: 'get',
+    q: q,
+    qName: 'q',
+    submitLabel: 'Search',
+    filtersHtml: searchFilters
+  }) %>
+
+  <% if (statusTabs.length) { %>
+  <%- include('../../platform/partials/gp-ops-status-tabs', {
+    tabs: statusTabs,
+    ariaLabel: 'Invoice payment status filters'
+  }) %>
+  <% } %>
+
+  <% if (invoices.length === 0) { %>
+    <%- include('../partials/ac-inline-state', {
+      inlineState: {
+        stateKey: 'empty',
+        marker: 'invoices-empty',
+        title: q || statusKey !== 'all' ? 'No matching invoices' : 'No invoices yet',
+        description: q || statusKey !== 'all'
+          ? 'Try a different search or payment status filter.'
+          : 'Create patient invoices from charges.',
+        primaryAction: caps.canCreateInvoice
+          ? { href: '/app/billing/invoices/new', label: 'Create invoice' }
+          : null
+      }
+    }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-desktop-table gp-ops-table-wrap ac-ops-queue__desktop" data-gp-ops="table" data-ac-table="invoices">
+    <div class="gp-ops-table-scroll">
+      <table class="ac-table gp-ops-table">
+        <caption class="ac-sr-only">Invoices</caption>
+        <thead>
+          <tr>
+            <th scope="col">Invoice # &amp; date</th>
+            <th scope="col">Patient</th>
+            <th scope="col">Service</th>
+            <th scope="col" data-col="amount">Total</th>
+            <th scope="col" data-col="amount">Paid &amp; balance</th>
+            <th scope="col">Payment status</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% invoices.forEach(function (inv) { %>
+          <tr data-ac-invoice-id="<%= inv.id %>" data-payment-status="<%= inv.paymentStatusKey %>">
+            <td>
+              <a href="/app/billing/invoices/<%= inv.id %>"><strong><%= inv.invoice_number %></strong></a>
+              <div class="ac-muted"><%= inv.invoice_date %></div>
+            </td>
+            <td>
+              <%= inv.patientName %>
+              <div class="ac-muted"><%= inv.patient_number %></div>
+            </td>
+            <td><%= inv.serviceSummary || '—' %></td>
+            <td class="ac-money"><%= inv.totalAmountFormatted %></td>
+            <td>
+              <div class="ac-money">Paid <%= inv.paidAmountFormatted %></div>
+              <div class="ac-muted ac-money">Balance <%= inv.balanceFormatted %></div>
+            </td>
+            <td>
+              <%- include('../../platform/partials/gp-ops-status-badge', {
+                label: inv.paymentStatusLabel || inv.status,
+                tone: inv.paymentTone || 'neutral'
+              }) %>
+            </td>
+            <td>
+              <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/billing/invoices/<%= inv.id %>">View</a>
+              <% if (caps.canCollectPayment && inv.canCollect) { %>
+              <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/cashier/payment?invoice=<%= inv.id %>">Collect payment</a>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <ul class="ac-card-list ac-mobile-table-cards ac-ops-queue__mobile ac-billing-invoice-cards" data-ac-cards="invoices">
+    <% invoices.forEach(function (inv) { %>
+    <li class="ac-card ac-mobile-record-card ac-ops-queue-card" data-ac-invoice-id="<%= inv.id %>">
+      <a class="ac-card__link" href="/app/billing/invoices/<%= inv.id %>">
+        <div class="ac-ops-queue-card__head">
+          <p class="ac-card__title"><%= inv.invoice_number %></p>
+          <%- include('../../platform/partials/gp-ops-status-badge', {
+            label: inv.paymentStatusLabel || inv.status,
+            tone: inv.paymentTone || 'neutral'
+          }) %>
+        </div>
+        <p class="ac-muted"><%= inv.patientName %> · <%= inv.patient_number %></p>
+        <p class="ac-muted"><%= inv.serviceSummary || '—' %> · <%= inv.invoice_date %></p>
+        <p><strong class="ac-money"><%= inv.totalAmountFormatted %></strong></p>
+        <p class="ac-muted">Paid <%= inv.paidAmountFormatted %> · Balance <%= inv.balanceFormatted %></p>
+      </a>
+      <div class="ac-ops-queue-card__actions">
+        <a class="ac-btn ac-btn--ghost" href="/app/billing/invoices/<%= inv.id %>">View</a>
+        <% if (caps.canCollectPayment && inv.canCollect) { %>
+        <a class="ac-btn ac-btn--ghost" href="/app/cashier/payment?invoice=<%= inv.id %>">Collect payment</a>
+        <% } %>
       </div>
-      <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="invoices">
-        <% invoices.forEach(function (inv) { %>
-        <li class="ac-card ac-mobile-record-card">
-          <a class="ac-card__link" href="/app/billing/invoices/<%= inv.id %>">
-            <p class="ac-card__title"><%= inv.invoice_number %></p>
-            <p class="ac-muted"><%= inv.patientName %> · <%= inv.patient_number %></p>
-            <p><strong class="ac-money"><%= inv.totalAmountFormatted %></strong> · <%= inv.invoice_date %></p>
-            <p class="ac-muted">Paid <%= inv.paidAmountFormatted %> · Balance <%= inv.balanceFormatted %></p>
-            <p><span class="ac-status" data-status="<%= inv.status %>"><%= inv.status %></span></p>
-          </a>
-        </li>
-        <% }) %>
-      </ul>
-    <% } %>
-  </article>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
 </section>

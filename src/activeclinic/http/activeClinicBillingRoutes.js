@@ -45,6 +45,80 @@ const {
   hasFinancePermission,
 } = require("../services/activeClinicFinanceAuthz");
 
+/** Batch 2 Stitch AC-B2-09 (canonical pair from frozen map). */
+const STITCH_B2_09 = Object.freeze({
+  desktop: "29257b0d01c64fa4896a369efd3f6417",
+  mobile: "24632347e4ab4c89937b611457d94730",
+});
+/** Batch 1 ACN21–23 markers retained for dual regression. */
+const STITCH_ACN21_LIST = Object.freeze({
+  desktop: "0886c0c2471d4744aa0101aed17abd22",
+  mobile: "3af2006929ff463eaea366b3e5086091",
+});
+const STITCH_ACN22_DETAIL = "25af03d4c3724841a33fb03415ec1b4d";
+
+const INVOICE_LIST_STATUS_KEYS = Object.freeze([
+  "all",
+  "unpaid",
+  "partial",
+  "paid",
+  "draft",
+  "posted",
+  "void",
+]);
+
+function deriveInvoicePaymentPresentation(inv) {
+  const status = String((inv && inv.status) || "").toLowerCase();
+  const paidMinor = parseInt((inv && inv.paidMinor) || 0, 10) || 0;
+  const balanceMinor = parseInt((inv && inv.balanceMinor) || 0, 10) || 0;
+  if (status === "void") {
+    return { paymentStatusKey: "void", paymentStatusLabel: "Voided", paymentTone: "danger" };
+  }
+  if (status === "draft" || status === "pending") {
+    return { paymentStatusKey: "draft", paymentStatusLabel: "Draft", paymentTone: "neutral" };
+  }
+  if (status === "posted") {
+    if (balanceMinor <= 0) {
+      return {
+        paymentStatusKey: "paid",
+        paymentStatusLabel: "Paid in full",
+        paymentTone: "success",
+      };
+    }
+    if (paidMinor > 0) {
+      return {
+        paymentStatusKey: "partial",
+        paymentStatusLabel: "Partially paid",
+        paymentTone: "warning",
+      };
+    }
+    return {
+      paymentStatusKey: "unpaid",
+      paymentStatusLabel: "Unpaid",
+      paymentTone: "danger",
+    };
+  }
+  return {
+    paymentStatusKey: status || "unknown",
+    paymentStatusLabel: status || "Unknown",
+    paymentTone: "neutral",
+  };
+}
+
+function matchesInvoiceListFilter(inv, statusKey) {
+  const key = statusKey || "all";
+  if (key === "all") return true;
+  const status = String(inv.status || "").toLowerCase();
+  const presentation = deriveInvoicePaymentPresentation(inv);
+  if (key === "draft") return status === "draft" || status === "pending";
+  if (key === "posted") return status === "posted";
+  if (key === "void") return status === "void";
+  if (key === "unpaid" || key === "partial" || key === "paid") {
+    return presentation.paymentStatusKey === key;
+  }
+  return true;
+}
+
 function registerActiveClinicBillingRoutes(app, deps) {
   const getPool = deps.getPool;
   const env = deps.env;
@@ -96,6 +170,14 @@ function registerActiveClinicBillingRoutes(app, deps) {
           [auth.tenantId, facility.id, today]
         );
 
+        const activeInvoicesResult = await pool.query(
+          `SELECT COUNT(*)::int AS count
+             FROM activeclinic.invoices
+            WHERE tenant_id = $1 AND facility_id = $2
+              AND status IN ('draft', 'pending', 'posted')`,
+          [auth.tenantId, facility.id]
+        );
+
         const perms = auth.permissions || [];
         const capabilities = {
           canManageCatalog: hasFinancePermission(perms, BILLING_PERM.CATALOG_MANAGE),
@@ -112,6 +194,8 @@ function registerActiveClinicBillingRoutes(app, deps) {
             "activeclinic.billing.reports.view"
           ),
           canOpenCashier: hasFinancePermission(perms, "activeclinic.cashier.open_session"),
+          canCollectPayment: hasFinancePermission(perms, BILLING_PERM.PAYMENT_COLLECT),
+          canCreateInvoice: hasFinancePermission(perms, BILLING_PERM.INVOICE_CREATE),
           canCharge: hasFinancePermission(perms, BILLING_PERM.BILLING_CHARGE),
           canAmend: hasFinancePermission(perms, BILLING_PERM.INVOICE_AMEND),
           canOverride: hasFinancePermission(perms, BILLING_PERM.PRICE_OVERRIDE),
@@ -132,25 +216,40 @@ function registerActiveClinicBillingRoutes(app, deps) {
               parseInt(todayPaymentsResult.rows[0].total, 10)
             ),
           },
+          activeInvoices: {
+            count: parseInt(activeInvoicesResult.rows[0].count, 10) || 0,
+          },
         };
+
+        const headerActions = [];
+        if (capabilities.canCreateInvoice) {
+          headerActions.push({
+            label: "New invoice",
+            href: "/app/billing/invoices/new",
+          });
+        }
+        headerActions.push({ label: "Invoices", href: "/app/billing/invoices" });
+        if (capabilities.canManageCatalog) {
+          headerActions.push({ label: "Charge catalog", href: "/app/billing/catalog" });
+        }
 
         return await renderShell(req, res, {
           activeNav: "billing",
           content: "app/billing-dashboard-content.ejs",
           pageHeader: {
-            title: "Billing dashboard",
-            description: "Overview of billing operations and financials.",
-            actions: [
-              { label: "Charge catalog", href: "/app/billing/catalog" },
-            ],
+            title: "Billing & Invoices",
+            description: "Operational billing workspace for invoices and collections.",
+            actions: headerActions,
           },
           breadcrumbs: [{ label: "Home", href: "/app" }, { label: "Billing" }],
           pageData: {
             dashboard,
             capabilities,
             stitch: {
-              desktop: "ece0b9d1d9384f5d8c1e3b944f122e47",
-              mobile: "649bd7649ebf4c6eb787612f844a637e",
+              desktop: STITCH_B2_09.desktop,
+              mobile: STITCH_B2_09.mobile,
+              batch1Desktop: "ece0b9d1d9384f5d8c1e3b944f122e47",
+              batch1Mobile: "649bd7649ebf4c6eb787612f844a637e",
             },
           },
         });
@@ -625,6 +724,10 @@ function registerActiveClinicBillingRoutes(app, deps) {
 
         const actions = [];
         const perms = auth.permissions || [];
+        const balanceMinor =
+          (enriched && typeof enriched.balanceMinor === "number"
+            ? enriched.balanceMinor
+            : parseInt((enriched && enriched.balanceMinor) || 0, 10)) || 0;
         if (
           (invoice.status === "draft" || invoice.status === "pending") &&
           hasFinancePermission(perms, BILLING_PERM.INVOICE_POST)
@@ -636,10 +739,11 @@ function registerActiveClinicBillingRoutes(app, deps) {
         }
         if (
           invoice.status === "posted" &&
+          balanceMinor > 0 &&
           hasFinancePermission(perms, BILLING_PERM.PAYMENT_COLLECT)
         ) {
           actions.push({
-            label: "Record payment",
+            label: "Collect payment",
             href: `/app/cashier/payment?invoice=${invoice.id}`,
           });
         }
@@ -680,6 +784,11 @@ function registerActiveClinicBillingRoutes(app, deps) {
           access_denied: "You do not have permission for this action.",
         };
 
+        const paymentPresentation = deriveInvoicePaymentPresentation({
+          ...invoice,
+          ...enriched,
+        });
+
         return await renderShell(req, res, {
           activeNav: "billing",
           content: errorCode
@@ -689,7 +798,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
             title: errorCode ? "Invoice error" : `Invoice ${invoice.invoice_number}`,
             description: errorCode
               ? "An error occurred while processing this invoice."
-              : `Status: ${invoice.status}`,
+              : `Status: ${invoice.status} · ${paymentPresentation.paymentStatusLabel}`,
             actions,
           },
           breadcrumbs: [
@@ -701,6 +810,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
             invoice: {
               ...invoice,
               ...enriched,
+              ...paymentPresentation,
               totalAmountFormatted: formatMoney(
                 parseInt(invoice.total_amount_minor, 10),
                 invoice.currency_code
@@ -729,14 +839,22 @@ function registerActiveClinicBillingRoutes(app, deps) {
               patientNumber: invoice.patient_number,
             },
             lines,
+            capabilities: {
+              canCollectPayment: hasFinancePermission(
+                perms,
+                BILLING_PERM.PAYMENT_COLLECT
+              ),
+            },
             error: errorCode
               ? errorMessages[errorCode] || `Error: ${errorCode}`
               : null,
             stitch: errorCode
               ? { desktop: "b1a8b1855b9b4e268cd42359707d292e" }
               : {
-                  desktop: "25af03d4c3724841a33fb03415ec1b4d",
-                  mobile: "",
+                  desktop: STITCH_B2_09.desktop,
+                  mobile: STITCH_B2_09.mobile,
+                  batch1Desktop: STITCH_ACN22_DETAIL,
+                  batch1Mobile: "",
                 },
           },
         });
@@ -839,7 +957,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
   );
 
   // ========================================================================
-  // INVOICE LIST
+  // INVOICE LIST (AC-B2-09)
   // ========================================================================
 
   app.get(
@@ -856,14 +974,44 @@ function registerActiveClinicBillingRoutes(app, deps) {
         }
 
         const pool = getPool();
+        const qRaw = String(req.query.q || "").trim();
+        const q = qRaw.slice(0, 120);
+        const statusRaw = String(req.query.status || "all")
+          .trim()
+          .toLowerCase();
+        const statusKey = INVOICE_LIST_STATUS_KEYS.includes(statusRaw)
+          ? statusRaw
+          : "all";
+
+        const params = [auth.tenantId, facility.id];
+        let searchSql = "";
+        if (q) {
+          params.push(`%${q.replace(/[%_\\]/g, "")}%`);
+          searchSql = ` AND (
+            i.invoice_number ILIKE $${params.length}
+            OR p.patient_number ILIKE $${params.length}
+            OR CONCAT(p.first_name, ' ', p.last_name) ILIKE $${params.length}
+            OR COALESCE(fl.description, '') ILIKE $${params.length}
+          )`;
+        }
+
         const invoicesResult = await pool.query(
-          `SELECT i.*, p.first_name, p.last_name, p.patient_number
-           FROM activeclinic.invoices i
-           JOIN activeclinic.patients p ON i.patient_id = p.id
-           WHERE i.tenant_id = $1 AND i.facility_id = $2
-           ORDER BY i.invoice_date DESC, i.created_at DESC
-           LIMIT 100`,
-          [auth.tenantId, facility.id]
+          `SELECT i.*, p.first_name, p.last_name, p.patient_number,
+                  fl.description AS service_summary
+             FROM activeclinic.invoices i
+             JOIN activeclinic.patients p ON i.patient_id = p.id
+             LEFT JOIN LATERAL (
+               SELECT description
+                 FROM activeclinic.invoice_lines il
+                WHERE il.invoice_id = i.id
+                ORDER BY il.line_number ASC
+                LIMIT 1
+             ) fl ON true
+            WHERE i.tenant_id = $1 AND i.facility_id = $2
+            ${searchSql}
+            ORDER BY i.invoice_date DESC, i.created_at DESC
+            LIMIT 200`,
+          params
         );
 
         const withBalances = await attachInvoicePaidBalances(pool, {
@@ -872,35 +1020,97 @@ function registerActiveClinicBillingRoutes(app, deps) {
           invoices: invoicesResult.rows,
         });
 
-        const invoices = withBalances.map((inv) => ({
-          ...inv,
-          totalAmountFormatted: formatMoney(
-            parseInt(inv.total_amount_minor, 10),
-            inv.currency_code
-          ),
-          paidAmountFormatted: formatMoney(inv.paidMinor || 0, inv.currency_code),
-          balanceFormatted: formatMoney(inv.balanceMinor || 0, inv.currency_code),
-          adjustmentFormatted: formatMoney(
-            parseInt(inv.adjustment_minor || 0, 10),
-            inv.currency_code
-          ),
-          patientName: `${inv.first_name} ${inv.last_name}`,
+        const mapped = withBalances.map((inv) => {
+          const presentation = deriveInvoicePaymentPresentation(inv);
+          return {
+            ...inv,
+            ...presentation,
+            totalAmountFormatted: formatMoney(
+              parseInt(inv.total_amount_minor, 10),
+              inv.currency_code
+            ),
+            paidAmountFormatted: formatMoney(inv.paidMinor || 0, inv.currency_code),
+            balanceFormatted: formatMoney(inv.balanceMinor || 0, inv.currency_code),
+            adjustmentFormatted: formatMoney(
+              parseInt(inv.adjustment_minor || 0, 10),
+              inv.currency_code
+            ),
+            patientName: `${inv.first_name} ${inv.last_name}`,
+            serviceSummary: inv.service_summary || "—",
+            canCollect:
+              inv.status === "posted" &&
+              (parseInt(inv.balanceMinor, 10) || 0) > 0,
+          };
+        });
+
+        const statusCounts = {
+          all: mapped.length,
+          unpaid: 0,
+          partial: 0,
+          paid: 0,
+          draft: 0,
+          posted: 0,
+          void: 0,
+        };
+        for (const inv of mapped) {
+          const st = String(inv.status || "").toLowerCase();
+          if (st === "draft" || st === "pending") statusCounts.draft += 1;
+          if (st === "posted") statusCounts.posted += 1;
+          if (st === "void") statusCounts.void += 1;
+          if (inv.paymentStatusKey === "unpaid") statusCounts.unpaid += 1;
+          if (inv.paymentStatusKey === "partial") statusCounts.partial += 1;
+          if (inv.paymentStatusKey === "paid") statusCounts.paid += 1;
+        }
+
+        const invoices = mapped.filter((inv) =>
+          matchesInvoiceListFilter(inv, statusKey)
+        );
+
+        const qParam = q ? `&q=${encodeURIComponent(q)}` : "";
+        const statusTabs = [
+          { key: "all", label: "All", count: statusCounts.all },
+          { key: "unpaid", label: "Unpaid", count: statusCounts.unpaid },
+          { key: "partial", label: "Partially paid", count: statusCounts.partial },
+          { key: "paid", label: "Settled / paid", count: statusCounts.paid },
+          { key: "draft", label: "Draft", count: statusCounts.draft },
+          { key: "void", label: "Void", count: statusCounts.void },
+        ].map((tab) => ({
+          ...tab,
+          active: tab.key === statusKey,
+          href: `/app/billing/invoices?status=${tab.key}${qParam}`,
         }));
 
         const canCreateInvoice = hasFinancePermission(
           auth.permissions,
           BILLING_PERM.INVOICE_CREATE
         );
+        const canCollectPayment = hasFinancePermission(
+          auth.permissions,
+          BILLING_PERM.PAYMENT_COLLECT
+        );
+        const canOpenCashier = hasFinancePermission(
+          auth.permissions,
+          "activeclinic.cashier.open_session"
+        );
+
+        const headerActions = [];
+        if (canCreateInvoice) {
+          headerActions.push({
+            label: "Create invoice",
+            href: "/app/billing/invoices/new",
+          });
+        }
+        if (canOpenCashier) {
+          headerActions.push({ label: "Open cashier", href: "/app/cashier" });
+        }
 
         return await renderShell(req, res, {
           activeNav: "billing",
           content: "app/billing-invoice-list-content.ejs",
           pageHeader: {
             title: "Invoices",
-            description: "Patient invoices and billing records.",
-            actions: canCreateInvoice
-              ? [{ label: "Create invoice", href: "/app/billing/invoices/new" }]
-              : [],
+            description: "Patient invoices, balances, and payment status.",
+            actions: headerActions,
           },
           breadcrumbs: [
             { label: "Billing", href: "/app/billing" },
@@ -908,10 +1118,20 @@ function registerActiveClinicBillingRoutes(app, deps) {
           ],
           pageData: {
             invoices,
-            capabilities: { canCreateInvoice },
+            q,
+            statusKey,
+            statusTabs,
+            statusCounts,
+            capabilities: {
+              canCreateInvoice,
+              canCollectPayment,
+              canOpenCashier,
+            },
             stitch: {
-              desktop: "0886c0c2471d4744aa0101aed17abd22",
-              mobile: "3af2006929ff463eaea366b3e5086091",
+              desktop: STITCH_B2_09.desktop,
+              mobile: STITCH_B2_09.mobile,
+              batch1Desktop: STITCH_ACN21_LIST.desktop,
+              batch1Mobile: STITCH_ACN21_LIST.mobile,
             },
           },
         });
