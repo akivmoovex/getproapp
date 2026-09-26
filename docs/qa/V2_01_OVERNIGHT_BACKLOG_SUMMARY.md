@@ -51,7 +51,7 @@ Overnight closed shared editor Stitch polish **SP-T2…T6 / U1-A…D**, verified
 | --- | --- |
 | V8 testing hosts healthy | **PASS** (BB=AC SHA, schema OK) |
 | Express www→apex 301 ≠ PID retirement | Confirmed prior infra report |
-| **HOST-PKG-A** www Node unbind | **OPEN / BLOCKED** — needs hPanel |
+| **HOST-PKG-A** www Node hypothesis | **OPEN / BLOCKED_HOSTINGER_BACKEND** — no customer hPanel unbind; backend inspection required |
 | **HOST-CONSOL** single-PID merge | **OPEN / UNVERIFIED** |
 | Production backup/restore | **UNKNOWN** (requirements only) |
 | Website/media infra debt on tip | **NO_CHANGE_REQUIRED** (prior FIXED_VERIFIED) |
@@ -134,7 +134,7 @@ Artifact: `docs/qa/references/v2-01-overnight-final-smoke.json`
 
 | ID | Status | Notes |
 | --- | --- | --- |
-| **HOST-PKG-A** | OPEN / BLOCKED | hPanel www unbind |
+| **HOST-PKG-A** | OPEN / **BLOCKED_HOSTINGER_BACKEND** | www mapping not customer-visible; Hostinger backend required |
 | **HOST-CONSOL** | OPEN / UNVERIFIED | Do not assume multi-domain = one PID |
 
 ### P1
@@ -170,7 +170,8 @@ Artifact: `docs/qa/references/v2-01-overnight-final-smoke.json`
 
 | Item | Blocker |
 | --- | --- |
-| HOST-PKG-A / Package B | Hostinger hPanel / owner approval |
+| HOST-PKG-A | Hostinger **backend/engineering** (no hPanel www unbind available) |
+| HOST-PKG-B | Hostinger hPanel / owner approval (separate) |
 | HOST-CONSOL | Hostinger topology proof / support |
 | V8-002 / V8-003 | Product policy decision |
 | V2-MEDIA-01 + BB sermons/giving/contact redesign | Privacy review + design gate |
@@ -182,7 +183,7 @@ Artifact: `docs/qa/references/v2-01-overnight-final-smoke.json`
 ## I. Production release prerequisites
 
 1. **Do not promote** V8 testing → production based on editor QA alone.  
-2. Close or accept **HOST-PKG-A** NPROC risk with measured PID matrix.  
+2. Close or accept **HOST-PKG-A** only with Hostinger backend mapping (PIDs alone are not proof).  
 3. Explicit go/no-go on **V8-001** email and policy items **V8-002/003**.  
 4. Confirm production backup/restore runbook (currently UNKNOWN).  
 5. Re-run full product smoke on a **single** promoted SHA (BB+AC) after freeze.  
@@ -192,7 +193,7 @@ Artifact: `docs/qa/references/v2-01-overnight-final-smoke.json`
 
 ## J. Exact next recommended tasks
 
-1. **Ops:** HOST-PKG-A www unbind + PID before/after (human).  
+1. **Ops:** HOST-PKG-A → Hostinger backend escalation (no hPanel www unbind).  
 2. **Shared UI:** SP-T7 Add Section picker polish (small).  
 3. **Shared UI:** SP-VIS-REMINDER (≥5 pending) then SP-VIS-PUBFAIL (safe fail).  
 4. **Optional:** AC-WE-OVERFLOW chrome while editing.  
@@ -208,7 +209,7 @@ Artifact: `docs/qa/references/v2-01-overnight-final-smoke.json`
 | --- | --- | --- | --- | --- | --- |
 | V2_01_MASTER_BACKLOG_AUDIT | Shared | COMPLETE | docs @ `a901751a` era | — | Living backlog |
 | V2_01_SHARED_SECURITY_IDENTITY | Shared | NO_CHANGE_REQUIRED | — | Verified prior tip | V8-001/002/003 not P0 |
-| V2_01_PLATFORM_INFRA_BACKLOG | Shared | COMPLETE (audit) | — | Read-only | HOST-PKG-A BLOCKED |
+| V2_01_PLATFORM_INFRA_BACKLOG | Shared | COMPLETE (audit) | — | Read-only | HOST-PKG-A BLOCKED_HOSTINGER_BACKEND |
 | V2_01_SHARED_WEBSITE_INFRA_DEBT | Shared | NO_CHANGE_REQUIRED | — | Tip healthy | AC-WEBSITE-01 deferred |
 | SP-T1 toolbar | Shared | FIXED_VERIFIED | `d2ce78f3` | PASS | AC residual overflow |
 | U1-A / SP-T2 Field History | Shared | PASS | `27504439` | PASS @ tip | Minor label polish |

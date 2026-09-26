@@ -1,21 +1,21 @@
-# HOST-PKG-A — Hostinger internal escalation (ready to send)
+# HOST-PKG-A — Hostinger backend escalation (ready to send)
 
 **Date:** 2026-09-26  
-**Ticket:** Package A — www Node vhost / runtime binding review  
+**Status:** `HOST_PKG_A_BLOCKED_HOSTINGER_BACKEND`  
 **Account home (from app runtime cwd):** `/home/u549637099`  
 **Plan:** Cloud Startup  
-**Scope:** Testing hostnames only — **not** production app code or DB  
+**Scope:** Testing hostnames — **not** production app code or DB  
 
-**How to send:** Hostinger hPanel → **Support** → New request. Paste the block under “Ticket body” below. Attach optional PID matrix notes if useful.
+**How to send:** Hostinger hPanel → **Support** → New request. Paste “Ticket body” below.
 
-**Cursor / engineering agent cannot open this ticket** (no Hostinger support or hPanel credentials in this environment). Owner must submit.
+**Note:** Customer hPanel/DNS do **not** expose www separately; hostname→runtime mapping is **not customer-visible**. This ticket requests **internal backend/engineering** inspection. There is **no** owner “unbind www in hPanel” step.
 
 ---
 
 ## Ticket subject
 
 ```text
-Cloud Startup — confirm Node.js vhost/runtime binding for www vs apex (neuniversity.org / pronline.org); remove www-only Node binding if separate
+Cloud Startup — internal Node.js vhost/runtime mapping for www vs apex (neuniversity.org / pronline.org)
 ```
 
 ---
@@ -23,13 +23,19 @@ Cloud Startup — confirm Node.js vhost/runtime binding for www vs apex (neunive
 ## Ticket body (paste)
 
 ```text
-Please escalate this to the team that can inspect Node.js virtual-host and
-runtime bindings on my Cloud Startup account.
+Please escalate to the team that can inspect Node.js virtual-host and
+runtime bindings on my Cloud Startup account (customer panel cannot see this).
 
 Account home (observed from Node app cwd): /home/u549637099
-Plan: Cloud Startup (Max Processes / NPROC ceiling 200)
+Plan: Cloud Startup
 
-I need an INTERNAL RUNTIME MAPPING review for these hostnames only:
+Customer-surface facts already confirmed on our side:
+- www is not exposed separately in hPanel or DNS for these sites.
+- Hostname-to-runtime/vhost mapping is not customer-visible.
+- Therefore we cannot perform a customer “unbind www from Node” action.
+- We need Hostinger backend/engineering confirmation of the runtime map.
+
+Please review INTERNAL bindings for:
 
   - neuniversity.org
   - www.neuniversity.org
@@ -48,77 +54,56 @@ Please confirm:
    process, PID, or NPROC allocation on this plan.
 
 4. If a separate www runtime binding exists, please remove ONLY that www
-   Node.js binding while keeping the apex Node.js application ACTIVE:
+   Node.js binding while keeping the apex Node.js applications ACTIVE:
      - Keep: neuniversity.org Node app
      - Keep: pronline.org Node app
-     - Remove only: www → Node binding (if present)
+     - Remove only: www-only Node binding (if present)
 
-5. If possible, configure the www → apex redirect at the web-server /
-   platform layer (LiteSpeed / hPanel Redirects / equivalent) so the
-   redirect does NOT invoke Node.js.
+5. If possible, configure www → apex redirect at the web-server/platform
+   layer so the redirect does not invoke Node.js.
 
-6. Please provide the before/after expected Node worker or NPROC effect
-   (even if approximate).
+6. Please provide the before/after expected Node worker or NPROC effect.
 
-Important constraints:
+Constraints:
 - Do NOT remove or modify the apex Node.js applications.
 - Do NOT change production application code or database settings.
-- Do NOT touch production TLDs (e.g. blessboard.com / activeclinic.org)
-  as part of this request.
-- I need confirmation of the INTERNAL runtime mapping, not only DNS or
-  HTTP redirect behavior. Application-layer 301s already exist for hub
-  paths; that alone is not sufficient evidence that www has no Node worker.
+- Do NOT touch production TLDs (blessboard.com / activeclinic.org) for this.
+- We need INTERNAL runtime mapping, not only DNS or HTTP redirect behavior.
+  Application-layer 301s already exist for some hub paths; that is not proof
+  that www has (or lacks) a Node worker.
 
-Observed application diagnostics baseline (external; for correlation only —
-  we understand PIDs alone do not prove separate www workers):
-- Total distinct testing Node PIDs recently observed: 10
-- www.neuniversity.org previously observed sticky app PID: 3464039
-- www.pronline.org previously observed sticky app PID: 215891
-- Both www hosts returned HTTP 200 JSON from /__platform/runtime (Node app
-  diagnostics) in addition to apex, which is why we suspect separate
-  per-hostname lsnode/vhost workers.
+External app diagnostics (correlation ONLY — we understand PIDs alone do
+not prove separate www workers):
+- Distinct testing Node PIDs recently observed: 10
+- www.neuniversity.org example sticky app diagnostic PID: 3464039
+- www.pronline.org example sticky app diagnostic PID: 215891
+- Both www hosts returned HTTP 200 JSON from app /__platform/runtime in
+  past probes; please confirm whether that implies a www vhost worker.
 
 Please reply with:
-A) Runtime/vhost mapping for the four hostnames above
-B) Whether www was unbound from Node (yes/no each)
-C) Where www→apex redirect is now handled (edge vs Node)
+A) Runtime/vhost mapping for the four hostnames
+B) Whether any www-only Node binding was removed (yes/no each)
+C) Where www→apex redirect is handled after any change (edge vs Node)
 D) Expected worker/NPROC effect before vs after
-E) Any screenshot or process snapshot you can share for Max Processes
+E) Any process/NPROC snapshot you can share
 ```
 
 ---
 
-## Optional attachments for the ticket
+## After Hostinger replies
 
-1. `docs/qa/V2_01_HOST_PKG_A_CLOSURE.md` — target state + owner steps  
-2. `docs/qa/V2_01_HOST_PKG_A_POST_OWNER_VERIFICATION.md` — latest probe: www still sticky Node  
+Engineering re-probes public health/runtime for correlation and updates verification docs.  
+Do **not** claim NPROC savings unless Hostinger states the effect.
 
----
-
-## After Hostinger replies — engineering re-verify
-
-Re-run probes from Package A verification:
-
-```bash
-curl -sSI https://www.neuniversity.org/ | head -20
-curl -sSI https://www.pronline.org/ | head -20
-# Expect: no sticky Node JSON PID on www runtime (or non-app response)
-curl -sS https://www.neuniversity.org/__platform/runtime || echo NO_APP_RUNTIME
-curl -sS https://www.pronline.org/__platform/runtime || echo NO_APP_RUNTIME
-curl -sS https://blessboard.neuniversity.org/healthz
-curl -sS https://activeclinic.neuniversity.org/healthz
-curl -sS https://blessboard.com/healthz   # must stay 03a89106e2fe / production
-```
-
-Then reopen task `V2_01_HOST_PKG_A_POST_OWNER_VERIFICATION` targeting verdict **`HOST_PKG_A_CLOSED`**.
+Production check (read-only): `blessboard.com` `/healthz` must remain `moovex-platform-production`.
 
 ---
 
-## Explicit non-actions for Hostinger (repeat)
+## Explicit non-actions
 
 | Do not | Why |
 | --- | --- |
-| Stop / delete apex Node apps | Breaks V8/V7 testing hubs |
-| Change production Node apps / DB env | Out of scope |
-| Unbind `blessboard.*` / `activeclinic.*` | Product QA hosts |
-| Rely on Express-only redirect as the fix | Does not retire www workers |
+| Ask owner to unbind www in hPanel | Not available / not exposed |
+| Stop apex Node apps | Breaks testing hubs |
+| Change production Node apps / DB | Out of scope |
+| Treat Express 301 as Package A closure | Insufficient / not worker proof |

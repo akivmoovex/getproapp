@@ -16,7 +16,7 @@
 | Task | Priority | Status | SHA | Hosted QA | Owner action | Remaining gap |
 | --- | --- | --- | --- | --- | --- | --- |
 | Overnight U1 / SP-T1–T6 + AC/BB closures | P1–P2 | **COMPLETE / PASS** | through `6dbf600e`–`79340398` | PASS | None | Living backlog polish only |
-| **HOST-PKG-A** www Node unbind | **P0** ops | **READY_FOR_OWNER_ACTION** | defined @ `79cb11fa` | Pre-change PID baseline | **hPanel:** redirect + unbind www only | Not closed until PID/NPROC verify |
+| **HOST-PKG-A** www Node hypothesis | **P0** ops | **BLOCKED_HOSTINGER_BACKEND** | status @ closure + verification | PID probes correlation only | **Hostinger backend** ticket — **no** hPanel unbind | Per-www worker ownership UNKNOWN |
 | **HOST-CONSOL** multi-host one PID | P0 | OPEN / UNVERIFIED | — | — | Hostinger support question | Do not assume one Web App = one PID |
 | **SP-T7** Add Section picker | P2 | **PASS** | `0d28e328` | PASS BB+AC 1440/390 | None | No Section Library (intentional) |
 | **SP-VIS-REMINDER** + **PUBFAIL** | P2 | **PASS** | `a1bcaf48` (+ CSRF copy `f1c2b565`) | PASS reminder + CSRF fail | None for UX close | Optional happy-path publish smoke |
@@ -39,12 +39,12 @@
 
 ---
 
-## 2. Infrastructure requiring owner / Hostinger
+## 2. Infrastructure requiring Hostinger backend (not hPanel unbind)
 
-- **HOST-PKG-A:** exact steps in `V2_01_HOST_PKG_A_CLOSURE.md` — hPanel 301 + **unbind** `www.neuniversity.org` / `www.pronline.org`; idle ≥60m; re-probe PIDs; NPROC screenshots before claiming savings.  
-- **HOST-CONSOL:** support question only — multi-domain ≠ one `lsnode` PID.  
-- **HOST-NPROC-BASELINE / SSH ps:** owner panel or support.  
-- **No** Express redirect / blind `.htaccess` as Package A fix.
+- **HOST-PKG-A:** `BLOCKED_HOSTINGER_BACKEND` — www not separately exposed in hPanel/DNS; hostname→runtime mapping not customer-visible; per-www worker ownership **UNKNOWN**; PID probes are not proof. Escalate via `V2_01_HOST_PKG_A_HOSTINGER_ESCALATION.md`. **Do not** instruct owner to unbind www in hPanel.  
+- **HOST-CONSOL:** support/backend question — multi-domain ≠ one `lsnode` PID until proven.  
+- **HOST-NPROC-BASELINE:** optional owner Resource Usage screenshots (measurement only).  
+- **No** Express redirect / blind `.htaccess` as a Package A “fix.”
 
 ---
 
@@ -73,7 +73,7 @@ Fill owner tables in `V2_01_V8_002_V8_003_POLICY_DECISION.md` before any code.
 ## 5. Production prerequisites
 
 1. Do **not** promote from editor QA alone.  
-2. Close or accept **HOST-PKG-A** with measured PID/NPROC.  
+2. Resolve or accept **HOST-PKG-A** only after Hostinger backend mapping (or formal accept UNKNOWN worker risk).  
 3. Owner go/no-go on **V8-001** email and **V8-002/003** policy.  
 4. Confirm production backup/restore evidence.  
 5. Freeze + single-SHA BB+AC smoke on testing before cutover.  
@@ -83,4 +83,4 @@ Fill owner tables in `V2_01_V8_002_V8_003_POLICY_DECISION.md` before any code.
 
 ## Bottom line
 
-Post-overnight **editor** gaps SP-T7 and SP-VIS are **PASS** on V8 testing. **HOST-PKG-A** and **V8-002/003** await owner action/decision. **Not production-ready.**
+Post-overnight **editor** gaps SP-T7 and SP-VIS are **PASS** on V8 testing. **HOST-PKG-A** is **BLOCKED_HOSTINGER_BACKEND** (no hPanel unbind). **V8-002/003** await owner policy decision. **Not production-ready.**
