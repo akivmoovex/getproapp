@@ -838,15 +838,36 @@ async function searchActiveClinicPatients(db, input) {
     offset,
   });
 
-  const canViewDob = (authz.permissions || []).includes(PERM.VIEW);
+  let total = rows.length;
+  try {
+    total = await patientRepo.countPatientsByOrg(db, {
+      organizationId,
+      healthcareOrganizationId,
+      patientNumber: input.patientNumber || null,
+      nameQuery: nameQuery || null,
+      phoneNormalized,
+      phoneDigitsPartial,
+      dateOfBirth: input.dateOfBirth || null,
+      status: input.status || null,
+      includeArchived: input.includeArchived === true,
+      excludeDeceased: input.excludeDeceased === true,
+      identifierType,
+      identifierValueNormalized,
+      facilityIds,
+    });
+  } catch {
+    total = offset + rows.length;
+  }
+
+  const canViewDemographics = (authz.permissions || []).includes(PERM.VIEW);
   const results = rows.map((row) =>
     toPatientSearchSummary(mapPatient(row), {
-      includeDob: canViewDob,
-      includeSex: false,
+      includeDob: canViewDemographics,
+      includeSex: canViewDemographics,
     })
   );
 
-  return { ok: true, code: RESULT.OK, results, limit, offset };
+  return { ok: true, code: RESULT.OK, results, limit, offset, total };
 }
 
 async function updateActiveClinicPatient(db, input) {

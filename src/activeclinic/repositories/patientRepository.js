@@ -278,11 +278,11 @@ async function updatePatientByOrgAndId(db, input) {
 }
 
 /**
- * Scoped search with explicit limit/offset. Callers must enforce authz.
- * @param {{ query: Function }} db
+ * Shared WHERE for patient directory search/count. Callers enforce authz.
  * @param {object} input
+ * @returns {{ whereSql: string, params: any[], nextIndex: number }}
  */
-async function searchPatientsByOrg(db, input) {
+function buildPatientSearchWhere(input) {
   const params = [input.organizationId, input.healthcareOrganizationId];
   const where = [
     "p.organization_id = $1",
@@ -299,7 +299,6 @@ async function searchPatientsByOrg(db, input) {
     params.push(input.phoneNormalized);
   }
   if (input.phoneDigitsPartial) {
-    // Match stored E.164 by digit substring (supports 970000001 / 097… / +260…)
     where.push(
       `regexp_replace(COALESCE(p.phone_normalized, ''), '\\D', '', 'g') LIKE $${i++}`
     );
@@ -347,19 +346,47 @@ async function searchPatientsByOrg(db, input) {
     params.push(input.facilityIds);
   }
 
+  return { whereSql: where.join(" AND "), params, nextIndex: i };
+}
+
+/**
+ * Scoped search with explicit limit/offset. Callers must enforce authz.
+ * @param {{ query: Function }} db
+ * @param {object} input
+ */
+async function searchPatientsByOrg(db, input) {
+  const built = buildPatientSearchWhere(input);
   const limit = Math.min(Math.max(Number(input.limit) || 25, 1), 100);
   const offset = Math.max(Number(input.offset) || 0, 0);
+  const params = built.params.slice();
+  let i = built.nextIndex;
   params.push(limit, offset);
 
   const result = await db.query(
     `SELECT p.*
        FROM activeclinic.patients p
-      WHERE ${where.join(" AND ")}
+      WHERE ${built.whereSql}
       ORDER BY p.last_name ASC, p.first_name ASC, p.patient_number ASC
       LIMIT $${i++} OFFSET $${i++}`,
     params
   );
   return result.rows;
+}
+
+/**
+ * Count matching patients for directory pagination.
+ * @param {{ query: Function }} db
+ * @param {object} input
+ */
+async function countPatientsByOrg(db, input) {
+  const built = buildPatientSearchWhere(input);
+  const result = await db.query(
+    `SELECT COUNT(*)::int AS total
+       FROM activeclinic.patients p
+      WHERE ${built.whereSql}`,
+    built.params
+  );
+  return (result.rows[0] && result.rows[0].total) || 0;
 }
 
 /**
@@ -431,5 +458,6 @@ module.exports = {
   allocatePatientNumberSequence,
   updatePatientByOrgAndId,
   searchPatientsByOrg,
+  countPatientsByOrg,
   findDuplicateCandidates,
 };

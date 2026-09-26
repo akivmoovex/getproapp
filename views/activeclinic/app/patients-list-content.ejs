@@ -6,16 +6,50 @@
   var actions = list.actions || {};
   var emptyMode = list.emptyMode;
   var stitch = list.stitch || {};
+  var pagination = list.pagination || null;
+  var unsupportedColumns = Array.isArray(list.unsupportedStitchColumns)
+    ? list.unsupportedStitchColumns
+    : [];
+  var unsupportedFilters = Array.isArray(list.unsupportedStitchFilters)
+    ? list.unsupportedStitchFilters
+    : [];
 %>
-<section class="ac-batch1a ac-patients" data-ac-page-section="patient-list" data-ac-stitch="ACN10" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
-  <form class="ac-panel ac-filter-bar" method="get" action="/app/patients" data-ac-patient-filters="1">
+<section
+  class="ac-batch1a ac-patients ac-patients--b2"
+  data-ac-page-section="patient-list"
+  data-ac-stitch="AC-B2-02"
+  data-ac-batch1="ACN10"
+  data-ac-stitch-desktop="<%= stitch.desktop || '04c24f7dd1d847e494733d32becc9534' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'ccb2201ff02641e199f1a58481fb2cc4' %>"
+>
+  <header class="ac-patients-toolbar" data-ac-patients-toolbar="1">
+    <div class="ac-patients-toolbar__copy">
+      <p class="ac-patients-toolbar__kicker ac-muted">Directory</p>
+      <% if (list.resultCount != null && !emptyMode) { %>
+      <p class="ac-patients-toolbar__count" data-ac-result-count="<%= list.resultCount %>">
+        <%= list.resultCount %> patient<%= list.resultCount === 1 ? '' : 's' %>
+      </p>
+      <% } else { %>
+      <p class="ac-patients-toolbar__count ac-muted">Patient directory</p>
+      <% } %>
+    </div>
+    <div class="ac-patients-toolbar__actions">
+      <% if (actions.canCreate) { %>
+      <a class="ac-btn" href="<%= actions.createHref || '/app/patients/new' %>" data-ac-patients-action="register">+ Add Patient</a>
+      <% } else if (actions.canQuickRegister) { %>
+      <a class="ac-btn" href="<%= actions.quickRegisterHref || '/app/patients/quick-register' %>" data-ac-patients-action="quick-register">Quick Register</a>
+      <% } %>
+    </div>
+  </header>
+
+  <form class="ac-panel ac-filter-bar gp-ops-filter-bar" method="get" action="/app/patients" data-ac-patient-filters="1" data-gp-ops="filter-bar" role="search">
     <div class="ac-filter-bar__grid ac-filter-bar__grid--patients">
       <div>
         <label class="ac-label" for="patient_search">Name</label>
         <input class="ac-input" id="patient_search" name="q" type="search" value="<%= filters.q || '' %>" placeholder="First or last name" autocomplete="off"/>
       </div>
       <div>
-        <label class="ac-label" for="patient_number">Patient number</label>
+        <label class="ac-label" for="patient_number">Patient ID</label>
         <input class="ac-input" id="patient_number" name="patient_number" value="<%= filters.patientNumber || '' %>" autocomplete="off"/>
       </div>
       <div>
@@ -30,7 +64,7 @@
       <div>
         <label class="ac-label" for="patient_status">Status</label>
         <select class="ac-select" id="patient_status" name="status">
-          <option value="">All (except archived)</option>
+          <option value="">All Statuses</option>
           <% (filterOptions.statuses || []).forEach(function (s) { %>
           <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
           <% }) %>
@@ -53,10 +87,6 @@
       </div>
     </div>
   </form>
-
-  <% if (list.resultCount != null && !emptyMode) { %>
-  <p class="ac-muted" data-ac-result-count="<%= list.resultCount %>"><%= list.resultCount %> patient<%= list.resultCount === 1 ? '' : 's' %></p>
-  <% } %>
 
   <% if (emptyMode === 'none') { %>
   <%- include('../partials/ac-inline-state', {
@@ -83,42 +113,115 @@
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap ac-patients-desktop" data-ac-table="patients">
-    <table class="ac-table">
-      <caption class="ac-sr-only">Patient search results</caption>
-      <thead>
-        <tr>
-          <th scope="col">Patient number</th>
-          <th scope="col">Name</th>
-          <th scope="col">Age</th>
-          <th scope="col">Phone</th>
-          <th scope="col">Status</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% patients.forEach(function (p) { %>
-        <tr>
-          <td><a href="/app/patients/<%= encodeURIComponent(p.patientNumber) %>"><%= p.patientNumber %></a></td>
-          <td><%= p.displayName %></td>
-          <td><%= p.approximateAge || '—' %></td>
-          <td><%= p.phoneMasked || '—' %></td>
-          <td><span class="ac-status" data-status="<%= p.status %>"><%= p.status %></span></td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
+  <div class="ac-panel ac-table-wrap ac-patients-desktop gp-ops-table-wrap" data-ac-table="patients" data-gp-ops="table">
+    <div class="gp-ops-table-scroll">
+      <table class="ac-table gp-ops-table">
+        <caption class="ac-sr-only">Patient search results</caption>
+        <thead>
+          <tr>
+            <th scope="col">Patient name &amp; demographic</th>
+            <th scope="col">Patient identifier</th>
+            <th scope="col">Contact</th>
+            <th scope="col">Status</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% patients.forEach(function (p) { %>
+          <tr data-ac-patient-row="<%= p.patientNumber %>">
+            <td>
+              <div class="ac-patients-namecell">
+                <span class="ac-patients-avatar" aria-hidden="true"><%= p.initials || '?' %></span>
+                <div>
+                  <a class="ac-patients-namecell__name" href="<%= p.href || ('/app/patients/' + encodeURIComponent(p.patientNumber)) %>"><%= p.displayName %></a>
+                  <p class="ac-muted ac-patients-namecell__meta">
+                    <%= p.approximateAge ? (p.approximateAge + 'y') : '—' %>
+                    <% if (p.sexShort) { %> · <%= p.sexShort %><% } %>
+                    <% if (p.dateOfBirth) { %> · DOB <%= p.dateOfBirth %><% } %>
+                  </p>
+                </div>
+              </div>
+            </td>
+            <td>
+              <a href="<%= p.href || ('/app/patients/' + encodeURIComponent(p.patientNumber)) %>"><%= p.patientNumber %></a>
+            </td>
+            <td><%= p.phoneMasked || '—' %></td>
+            <td>
+              <%- include('../../platform/partials/gp-ops-status-badge', {
+                label: p.statusLabel || p.status,
+                tone: p.status === 'active' ? 'success'
+                  : (p.status === 'inactive' ? 'warning'
+                  : (p.status === 'deceased' || p.status === 'archived' ? 'danger' : 'neutral'))
+              }) %>
+            </td>
+            <td class="ac-patients-actions">
+              <a class="ac-btn ac-btn--ghost ac-patients-actions__open" href="<%= p.href || ('/app/patients/' + encodeURIComponent(p.patientNumber)) %>">Open</a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
   </div>
-  <ul class="ac-card-list ac-patients-mobile" data-ac-cards="patients">
+
+  <ul class="ac-card-list ac-patients-mobile" data-ac-cards="patients" aria-label="Patient directory list">
     <% patients.forEach(function (p) { %>
-    <li class="ac-card">
-      <a class="ac-card__link" href="/app/patients/<%= encodeURIComponent(p.patientNumber) %>">
-        <p class="ac-card__title"><%= p.displayName %></p>
-        <p class="ac-muted"><span class="ac-card__label">Number</span> <%= p.patientNumber %></p>
-        <p class="ac-muted"><span class="ac-card__label">Age</span> <%= p.approximateAge || '—' %> · <span class="ac-card__label">Phone</span> <%= p.phoneMasked || '—' %></p>
-        <p><span class="ac-status" data-status="<%= p.status %>"><%= p.status %></span></p>
+    <li class="ac-card ac-patients-card">
+      <div class="ac-patients-card__head">
+        <span class="ac-patients-avatar" aria-hidden="true"><%= p.initials || '?' %></span>
+        <div class="ac-patients-card__identity">
+          <p class="ac-card__title"><%= p.displayName %></p>
+          <p class="ac-muted">
+            <%= p.approximateAge ? (p.approximateAge + 'y') : '—' %>
+            <% if (p.sexShort) { %> · <%= p.sexShort %><% } %>
+          </p>
+          <p class="ac-patients-card__mrn"><%= p.patientNumber %></p>
+        </div>
+        <%- include('../../platform/partials/gp-ops-status-badge', {
+          label: p.statusLabel || p.status,
+          tone: p.status === 'active' ? 'success'
+            : (p.status === 'inactive' ? 'warning'
+            : (p.status === 'deceased' || p.status === 'archived' ? 'danger' : 'neutral'))
+        }) %>
+      </div>
+      <dl class="ac-patients-card__facts">
+        <% if (p.dateOfBirth) { %>
+        <div><dt>DOB</dt><dd><%= p.dateOfBirth %></dd></div>
+        <% } %>
+        <div><dt>Phone</dt><dd><%= p.phoneMasked || '—' %></dd></div>
+      </dl>
+      <a class="ac-patients-card__cta" href="<%= p.href || ('/app/patients/' + encodeURIComponent(p.patientNumber)) %>">
+        View chart
+        <span aria-hidden="true">›</span>
       </a>
     </li>
     <% }) %>
   </ul>
+
+  <% if (pagination && pagination.totalPages > 1) { %>
+  <%- include('../../platform/partials/gp-ops-pagination', {
+    page: pagination.page,
+    totalPages: pagination.totalPages,
+    baseHref: pagination.baseHref || '/app/patients',
+    query: pagination.query || {},
+    label: 'Patient directory pages'
+  }) %>
+  <% } %>
+  <% } %>
+
+  <% if (unsupportedColumns.length || unsupportedFilters.length) { %>
+  <div
+    class="ac-sr-only"
+    data-ac-unsupported-registry="1"
+    data-ac-patients-unsupported="1"
+    aria-hidden="true"
+  >
+    <% unsupportedColumns.forEach(function (col) { %>
+    <span data-ac-unsupported="<%= col.key %>" data-ac-unsupported-reason="<%= col.reason %>"><%= col.label %></span>
+    <% }) %>
+    <% unsupportedFilters.forEach(function (key) { %>
+    <span data-ac-unsupported-filter="<%= key %>"><%= key %></span>
+    <% }) %>
+  </div>
   <% } %>
 </section>

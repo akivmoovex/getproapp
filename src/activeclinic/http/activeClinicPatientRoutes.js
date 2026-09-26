@@ -212,13 +212,13 @@ function registerActiveClinicPatientRoutes(app, deps) {
           content: "app/patients-list-content.ejs",
           pageHeader: {
             title: "Patients",
-            description: "Search and register patients in this healthcare organization.",
+            description: "Search and open patients in this healthcare organization.",
             actions: (() => {
               const acts = [];
               if (loaded.list.actions.canCreate) {
                 acts.push({
                   href: "/app/patients/new",
-                  label: "Register patient",
+                  label: "+ Add Patient",
                   primary: true,
                 });
               } else if (loaded.list.actions.canQuickRegister) {

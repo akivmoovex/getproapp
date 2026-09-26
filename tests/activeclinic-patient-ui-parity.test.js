@@ -232,8 +232,8 @@ describe("ActiveClinic patient UI parity (AC-V6-C02)", () => {
     const list = await request(app).get("/app/patients").set("Cookie", cookie);
     assert.equal(list.status, 200);
     assert.match(list.text, /data-ac-page-section="patient-list"/);
-    assert.match(list.text, /data-ac-stitch-desktop=/);
-    assert.match(list.text, /Register patient/);
+    assert.match(list.text, /data-ac-stitch="AC-B2-02"|data-ac-stitch-desktop=/);
+    assert.match(list.text, /\+ Add Patient|Register patient|Quick Register/);
     assert.doesNotMatch(list.text, /diagnosis|prescription|laboratory/i);
 
     const post = withCsrf(cookie);

@@ -41,6 +41,7 @@ const {
   buildPhoneFieldLocals,
   splitE164ForForm,
 } = require("./activeClinicPhoneFieldLocals");
+const { parseListQuery } = require("../../platform/http/listQuery");
 
 const STATUS_LABELS = Object.freeze({
   active: "Active",
@@ -50,11 +51,45 @@ const STATUS_LABELS = Object.freeze({
 });
 
 const STITCH = Object.freeze({
-  listDesktop: "d6fa60ee647a44949449f163990a3e1f",
-  listMobile: "580bd1e41bf1439e97587ee3accb8b30",
+  /** V2.03 Batch 2 Patients List (project 7300898757945019896) */
+  listDesktop: "04c24f7dd1d847e494733d32becc9534",
+  listMobile: "ccb2201ff02641e199f1a58481fb2cc4",
+  /** Batch 1 ACN11 profile — Batch 2 Stitch profile screen is ABSENT */
   profileDesktop: "63b85a8c28b84e9e81db2930c93c1217",
   profileMobile: "147ab133a55f41e6afc6faf3010f03e3",
 });
+
+const SEX_SHORT = Object.freeze({
+  male: "M",
+  female: "F",
+  intersex: "I",
+  unknown: "U",
+  not_recorded: "—",
+});
+
+function patientInitials(displayName) {
+  const parts = String(displayName || "")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+  if (!parts.length) return "?";
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return `${parts[0][0] || ""}${parts[parts.length - 1][0] || ""}`.toUpperCase();
+}
+
+function presentListPatient(row) {
+  const displayName = row.displayName || "";
+  const sex = row.sexAtRegistration || null;
+  return {
+    ...row,
+    displayName,
+    initials: patientInitials(displayName),
+    statusLabel: STATUS_LABELS[row.status] || row.status,
+    sexShort: sex ? SEX_SHORT[sex] || null : null,
+    sexLabel: sex ? SEX_LABELS[sex] || sex : null,
+    href: `/app/patients/${encodeURIComponent(row.patientNumber)}`,
+  };
+}
 
 const SEX_LABELS = Object.freeze({
   male: "Male",
@@ -304,8 +339,15 @@ async function loadActiveClinicPatientListScreen(db, input) {
     return { ok: false, code: PATIENT_RESULT.ACCESS_DENIED };
   }
 
+  const listQuery = parseListQuery(query, {
+    defaultLimit: 25,
+    maxLimit: 50,
+    searchKeys: ["q"],
+    filterKeys: ["patient_number", "phone", "dob", "date_of_birth", "status", "facility"],
+  });
+
   const filters = {
-    q: String(query.q || "").trim(),
+    q: listQuery.q || String(query.q || "").trim(),
     patientNumber: String(query.patient_number || "").trim(),
     phone: String(query.phone || "").trim(),
     dateOfBirth: String(query.dob || query.date_of_birth || "").trim(),
@@ -338,24 +380,39 @@ async function loadActiveClinicPatientListScreen(db, input) {
       null,
     dateOfBirth: filters.dateOfBirth || null,
     status: filters.status || null,
-    limit: 50,
-    offset: 0,
+    limit: listQuery.limit,
+    offset: listQuery.offset,
   };
 
   const listed = await searchActiveClinicPatients(db, searchInput);
   let results = [];
   let emptyMode = null;
+  let total = 0;
   if (!listed.ok && listed.code === "query_too_short") {
     emptyMode = "query_too_short";
   } else if (!listed.ok) {
     return { ok: false, code: listed.code };
   } else {
-    results = listed.results || [];
+    results = (listed.results || []).map(presentListPatient);
+    total = Number(listed.total);
+    if (!Number.isFinite(total) || total < 0) total = results.length;
     if (!results.length && filters.active) emptyMode = "filtered";
     else if (!results.length) emptyMode = "none";
   }
 
   const facilities = await loadFacilityOptions(db, auth);
+  const page = listQuery.page;
+  const limit = listQuery.limit;
+  const totalPages = Math.max(1, Math.ceil(total / limit) || 1);
+  const paginationQuery = {
+    q: filters.q || undefined,
+    patient_number: filters.patientNumber || undefined,
+    phone: filters.phone || undefined,
+    dob: filters.dateOfBirth || undefined,
+    status: filters.status || undefined,
+    facility: filters.facilityId || undefined,
+    limit: String(limit),
+  };
 
   return {
     ok: true,
@@ -366,7 +423,16 @@ async function loadActiveClinicPatientListScreen(db, input) {
         statuses: STATUSES.map((s) => ({ value: s, label: STATUS_LABELS[s] || s })),
         facilities: facilities.map((f) => ({ value: f.id, label: f.displayName })),
       },
-      resultCount: results.length,
+      resultCount: emptyMode ? 0 : total,
+      page,
+      limit,
+      totalPages,
+      pagination: {
+        page,
+        totalPages,
+        baseHref: "/app/patients",
+        query: paginationQuery,
+      },
       emptyMode,
       actions: {
         canCreate: hasPerm(perms, PERM.CREATE),
@@ -375,7 +441,31 @@ async function loadActiveClinicPatientListScreen(db, input) {
         createHref: "/app/patients/new",
         quickRegisterHref: "/app/patients/quick-register",
       },
+      unsupportedStitchColumns: [
+        {
+          key: "primary_care_provider",
+          label: "Primary Care Provider",
+          reason: "No PCP assignment on patient directory search results.",
+        },
+        {
+          key: "last_visit",
+          label: "Last Visit",
+          reason: "Visit history is not aggregated on the patient list.",
+        },
+        {
+          key: "next_appointment",
+          label: "Next Appointment",
+          reason: "Upcoming appointment is not joined into directory search.",
+        },
+      ],
+      unsupportedStitchFilters: [
+        "provider",
+        "age_band",
+        "recency",
+        "import_export",
+      ],
       stitch: {
+        code: "AC-B2-02",
         desktop: STITCH.listDesktop,
         mobile: STITCH.listMobile,
       },
@@ -618,6 +708,9 @@ async function loadActiveClinicPatientProfileScreen(db, input) {
       stitch: {
         desktop: STITCH.profileDesktop,
         mobile: STITCH.profileMobile,
+        batch2: "absent",
+        batch2Note:
+          "AC-B2-03 Patient Profile is absent from Batch 2 Stitch project 7300898757945019896; keep ACN11 functional profile.",
       },
       ...buildPhoneFieldLocals({
         clinicDefaultCountry:

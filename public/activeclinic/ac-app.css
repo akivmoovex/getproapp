@@ -3165,3 +3165,157 @@ body.ac-app-body .ac-dashboard-activity a:hover {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   V2.03 Batch 2 — AC-B2-02 Patients List
+   ========================================================================== */
+body.ac-app-body .ac-patients--b2 {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+body.ac-app-body .ac-patients-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+}
+
+body.ac-app-body .ac-patients-toolbar__kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+body.ac-app-body .ac-patients-toolbar__count {
+  margin: 0.15rem 0 0;
+  font-size: 1.05rem;
+  font-weight: 600;
+  color: var(--ac-ink, #0f172a);
+}
+
+body.ac-app-body .ac-patients-toolbar__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+body.ac-app-body .ac-patients-namecell {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+}
+
+body.ac-app-body .ac-patients-avatar {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.5rem;
+  height: 2.5rem;
+  border-radius: 999px;
+  background: var(--gp-ops-canvas, #f8fafc);
+  border: 1px solid var(--ac-border, #e2e8f0);
+  color: var(--ac-primary, #2563eb);
+  font-size: 0.75rem;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+
+body.ac-app-body .ac-patients-namecell__name {
+  font-weight: 700;
+  color: var(--ac-ink, #0f172a);
+  text-decoration: none;
+}
+
+body.ac-app-body .ac-patients-namecell__name:hover {
+  color: var(--ac-primary, #2563eb);
+}
+
+body.ac-app-body .ac-patients-namecell__meta {
+  margin: 0.2rem 0 0;
+  font-size: 0.8125rem;
+}
+
+body.ac-app-body .ac-patients-actions__open {
+  min-height: var(--ac-touch-min, 44px);
+}
+
+body.ac-app-body .ac-patients-card {
+  display: grid;
+  gap: 0.75rem;
+  padding: 0.9rem 1rem;
+  border-radius: 0.75rem;
+}
+
+body.ac-app-body .ac-patients-card__head {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.65rem;
+}
+
+body.ac-app-body .ac-patients-card__identity {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+body.ac-app-body .ac-patients-card__mrn {
+  margin: 0.25rem 0 0;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--ac-muted, #64748b);
+}
+
+body.ac-app-body .ac-patients-card__facts {
+  display: grid;
+  gap: 0.35rem;
+  margin: 0;
+}
+
+body.ac-app-body .ac-patients-card__facts > div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  font-size: 0.85rem;
+}
+
+body.ac-app-body .ac-patients-card__facts dt {
+  color: var(--ac-muted, #64748b);
+  font-weight: 600;
+}
+
+body.ac-app-body .ac-patients-card__facts dd {
+  margin: 0;
+  font-weight: 600;
+  color: var(--ac-ink, #0f172a);
+}
+
+body.ac-app-body .ac-patients-card__cta {
+  display: inline-flex;
+  align-items: center;
+  justify-content: space-between;
+  min-height: var(--ac-touch-min, 44px);
+  padding: 0.35rem 0;
+  font-weight: 700;
+  color: var(--ac-primary, #2563eb);
+  text-decoration: none;
+  border-top: 1px solid var(--ac-border, #e2e8f0);
+}
+
+@media (max-width: 390px) {
+  body.ac-app-body .ac-patients--b2 {
+    gap: var(--ac-space-3);
+  }
+  body.ac-app-body .ac-patients-toolbar__actions .ac-btn,
+  body.ac-app-body .ac-filter-bar__checks .ac-btn {
+    min-height: var(--ac-touch-min, 44px);
+  }
+  body.ac-app-body .ac-patients-card {
+    padding: 0.85rem 0.9rem;
+  }
+  body.ac-app-body .ac-filter-bar__grid--patients {
+    grid-template-columns: 1fr;
+  }
+}
