@@ -1,11 +1,17 @@
 "use strict";
 
 /**
- * CSV helpers for member import.
- * - Flexible header aliases
- * - Ignores organisation/tenant selectors from CSV
- * - Formula-injection safe error export cells
+ * BlessBoard member-import CSV mapping.
+ * Platform owns parse/escape/normalize; product owns aliases + domain classification.
  */
+
+const {
+  parseCsvText,
+  normalizeHeader,
+  stripFormulaInjection,
+  escapeCsvCell,
+  rowsToCsv,
+} = require("../platform/jobs/dataJobFileValidation");
 
 const FORBIDDEN_TENANT_HEADERS = new Set([
   "organization_id",
@@ -34,14 +40,6 @@ const HEADER_ALIASES = {
   external_key: ["external_key", "external_id", "row_key", "import_key"],
 };
 
-function normalizeHeader(raw) {
-  return String(raw || "")
-    .replace(/^\uFEFF/, "")
-    .trim()
-    .toLowerCase()
-    .replace(/[\s-]+/g, "_");
-}
-
 function mapHeader(normalized) {
   if (FORBIDDEN_TENANT_HEADERS.has(normalized)) {
     return { kind: "forbidden_tenant", header: normalized };
@@ -51,92 +49,7 @@ function mapHeader(normalized) {
       return { kind: "field", field };
     }
   }
-  return { kind: "unknown", header: normalized };
-}
-
-/**
- * Minimal RFC4180-style CSV parse (UTF-8 text).
- * @param {string} text
- * @returns {{ headers: string[], rows: string[][] }}
- */
-function parseCsvText(text) {
-  const input = String(text || "").replace(/^\uFEFF/, "");
-  if (!input.trim()) {
-    return { headers: [], rows: [] };
-  }
-
-  const rows = [];
-  let row = [];
-  let cell = "";
-  let inQuotes = false;
-
-  for (let i = 0; i < input.length; i += 1) {
-    const ch = input[i];
-    const next = input[i + 1];
-    if (inQuotes) {
-      if (ch === '"' && next === '"') {
-        cell += '"';
-        i += 1;
-      } else if (ch === '"') {
-        inQuotes = false;
-      } else {
-        cell += ch;
-      }
-      continue;
-    }
-    if (ch === '"') {
-      inQuotes = true;
-      continue;
-    }
-    if (ch === ",") {
-      row.push(cell);
-      cell = "";
-      continue;
-    }
-    if (ch === "\n") {
-      row.push(cell);
-      rows.push(row);
-      row = [];
-      cell = "";
-      continue;
-    }
-    if (ch === "\r") {
-      continue;
-    }
-    cell += ch;
-  }
-  row.push(cell);
-  if (row.length > 1 || String(row[0] || "").trim() !== "") {
-    rows.push(row);
-  }
-
-  if (!rows.length) return { headers: [], rows: [] };
-  const headers = rows[0].map((h) => String(h || "").trim());
-  return { headers, rows: rows.slice(1) };
-}
-
-function stripFormulaInjection(value) {
-  const s = String(value == null ? "" : value);
-  if (/^[=+\-@\t\r]/.test(s)) {
-    return `'${s}`;
-  }
-  return s;
-}
-
-function escapeCsvCell(value) {
-  const safe = stripFormulaInjection(value);
-  if (/[",\n\r]/.test(safe)) {
-    return `"${safe.replace(/"/g, '""')}"`;
-  }
-  return safe;
-}
-
-function rowsToCsv(headers, dataRows) {
-  const lines = [headers.map(escapeCsvCell).join(",")];
-  for (const r of dataRows) {
-    lines.push(headers.map((h) => escapeCsvCell(r[h] != null ? r[h] : "")).join(","));
-  }
-  return `${lines.join("\n")}\n`;
+  return { kind: "ignored", header: normalized };
 }
 
 function classifyMemberType(raw) {

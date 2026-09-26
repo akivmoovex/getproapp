@@ -30,6 +30,9 @@ const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
 const {
+  assertStatusTransition,
+} = require("../../platform/history/statusHistory");
+const {
   normalizeTimezone,
 } = require("./normalizeActiveClinicContact");
 
@@ -635,7 +638,7 @@ async function appendAppointmentStatusEvent(db, input) {
   });
   if (!authz.ok) return { ok: false, code: authz.code, appointment: null };
 
-  if (!(ALLOWED_TRANSITIONS[fromStatus] || []).includes(toStatus)) {
+  if (!assertStatusTransition(fromStatus, toStatus, ALLOWED_TRANSITIONS).ok) {
     return { ok: false, code: RESULT.INVALID_TRANSITION, appointment: detail.appointment };
   }
 

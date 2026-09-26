@@ -29,6 +29,9 @@ const { recordAuditEventSafe } = require("../../platform/services/auditEventServ
 const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
+const {
+  assertStatusTransition,
+} = require("../../platform/history/statusHistory");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -626,7 +629,7 @@ async function appendQueueStatusEvent(db, input) {
     left_before_service: [],
     transferred: [],
   };
-  if (!(allowed[fromStatus] || []).includes(toStatus)) {
+  if (!assertStatusTransition(fromStatus, toStatus, allowed).ok) {
     return { ok: false, code: RESULT.INVALID_TRANSITION, queueEntry: detail.queueEntry };
   }
 

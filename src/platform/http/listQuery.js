@@ -10,6 +10,27 @@ const MAX_PAGE_SIZE = 100;
 const MAX_SEARCH_LEN = 120;
 
 /**
+ * Clamp a limit to [1, maxLimit] with a default when invalid.
+ * @param {unknown} raw
+ * @param {{ defaultLimit?: number, maxLimit?: number }} [opts]
+ * @returns {number}
+ */
+function clampLimit(raw, opts) {
+  const options = opts || {};
+  const maxLimit = Math.min(
+    Math.max(Number(options.maxLimit) || MAX_PAGE_SIZE, 1),
+    MAX_PAGE_SIZE
+  );
+  const defaultLimit = Math.min(
+    Math.max(Number(options.defaultLimit) || DEFAULT_PAGE_SIZE, 1),
+    maxLimit
+  );
+  const n = Number(raw);
+  if (!Number.isFinite(n) || n < 1) return defaultLimit;
+  return Math.min(Math.floor(n), maxLimit);
+}
+
+/**
  * @param {object} [query]
  * @param {{
  *   defaultLimit?: number,
@@ -42,9 +63,10 @@ function parseListQuery(query, opts) {
   let page = Math.floor(Number(query && query.page));
   if (!Number.isFinite(page) || page < 1) page = 1;
 
-  let limit = Math.floor(Number(query && (query.limit || query.pageSize)));
-  if (!Number.isFinite(limit) || limit < 1) limit = defaultLimit;
-  if (limit > maxLimit) limit = maxLimit;
+  const limit = clampLimit(query && (query.limit || query.pageSize), {
+    defaultLimit,
+    maxLimit,
+  });
 
   const searchKeys = Array.isArray(options.searchKeys)
     ? options.searchKeys
@@ -215,6 +237,7 @@ module.exports = {
   DEFAULT_PAGE_SIZE,
   MAX_PAGE_SIZE,
   MAX_SEARCH_LEN,
+  clampLimit,
   parseListQuery,
   sanitizeSearchQuery,
   pickAllowedFilters,

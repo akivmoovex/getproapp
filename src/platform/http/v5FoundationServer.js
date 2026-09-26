@@ -935,6 +935,10 @@ function createV5FoundationApp(options) {
     variant: "branch",
   });
   const {
+    registerBlessBoardDataJobAdapters,
+  } = require("../../blessboard/services/blessboardDataJobAdapters");
+  registerBlessBoardDataJobAdapters();
+  const {
     createMembershipWorkflowAdminRouter,
   } = require("../../blessboard/http/membershipWorkflowAdminRoutes");
   app.use(

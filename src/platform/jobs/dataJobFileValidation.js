@@ -53,7 +53,7 @@ function parseCsvText(text) {
     }
   }
   row.push(cell);
-  if (row.length > 1 || (row.length === 1 && row[0] !== "")) {
+  if (row.length > 1 || String(row[0] || "").trim() !== "") {
     rows.push(row);
   }
 
@@ -177,30 +177,50 @@ function validateImportFile(input) {
 }
 
 /**
+ * Guard spreadsheet formula injection on export cells.
+ * @param {unknown} value
+ * @returns {string}
+ */
+function stripFormulaInjection(value) {
+  const s = String(value == null ? "" : value);
+  if (/^[=+\-@\t\r]/.test(s)) {
+    return `'${s}`;
+  }
+  return s;
+}
+
+/**
+ * Escape one CSV cell (quotes + formula guard).
+ * @param {unknown} value
+ * @returns {string}
+ */
+function escapeCsvCell(value) {
+  const safe = stripFormulaInjection(value);
+  if (/[",\n\r]/.test(safe)) {
+    return `"${safe.replace(/"/g, '""')}"`;
+  }
+  return safe;
+}
+
+/**
  * Build a CSV string from headers + row objects/arrays.
  */
 function buildCsvText(headers, rows) {
   const cols = Array.isArray(headers) ? headers.map(String) : [];
-  const escape = (value) => {
-    const text = value == null ? "" : String(value);
-    if (/[",\n\r]/.test(text)) {
-      return `"${text.replace(/"/g, '""')}"`;
-    }
-    // Formula-injection guard for export privacy surfaces
-    if (/^[=+\-@]/.test(text)) {
-      return `'${text}`;
-    }
-    return text;
-  };
-  const lines = [cols.map(escape).join(",")];
+  const lines = [cols.map(escapeCsvCell).join(",")];
   for (const row of rows || []) {
     if (Array.isArray(row)) {
-      lines.push(row.map(escape).join(","));
+      lines.push(row.map(escapeCsvCell).join(","));
     } else {
-      lines.push(cols.map((h) => escape(row[h])).join(","));
+      lines.push(cols.map((h) => escapeCsvCell(row[h])).join(","));
     }
   }
   return `${lines.join("\n")}\n`;
+}
+
+/** Alias used by BlessBoard member import error exports (object rows). */
+function rowsToCsv(headers, dataRows) {
+  return buildCsvText(headers, dataRows);
 }
 
 module.exports = {
@@ -209,5 +229,8 @@ module.exports = {
   parseCsvText,
   normalizeHeader,
   validateImportFile,
+  stripFormulaInjection,
+  escapeCsvCell,
   buildCsvText,
+  rowsToCsv,
 };

@@ -8,6 +8,7 @@
 
 const { rejectForgedTenantIdentifiers } = require("../../platform/rbac/sharedTenantScope");
 const { parseListQuery, buildListPageResult } = require("../../platform/http/listQuery");
+const { formatMoneyMinor } = require("../../platform/money/formatMoney");
 const { validateRequired, validateText } = require("../../platform/validation");
 const appointmentRepo = require("../repositories/appointmentRepository");
 const configRepo = require("../repositories/servicePractitionerConfigRepository");
@@ -58,15 +59,6 @@ function assertTrusted(input) {
     return { ok: false, code: RESULT.FORGED_TENANT, httpStatus: 403, forged };
   }
   return { ok: true, organizationId: orgId };
-}
-
-function formatMoneyMinor(amountMinor, currencyCode) {
-  if (amountMinor == null || amountMinor === "") return null;
-  const n = Number(amountMinor);
-  if (!Number.isFinite(n)) return null;
-  const major = (n / 100).toFixed(2);
-  const code = currencyCode || "ZMW";
-  return { amountMinor: Math.round(n), currencyCode: code, display: `${code} ${major}` };
 }
 
 function mapServiceRow(row, assignments) {
