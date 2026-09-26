@@ -153,6 +153,9 @@ describe("V2_01 shared HQ/branch website management", () => {
       read("src/activeclinic/http/activeClinicWebsiteRoutes.js"),
       /website\/websites/
     );
+    const hqAdmin = read("src/blessboard/http/churchWebsiteAdminRoutes.js");
+    assert.match(hqAdmin, /\/hq\/website\/websites/);
+    assert.match(hqAdmin, /buildPublicWebsiteWebsitesPath/);
     assert.match(
       read("src/blessboard/http/attachWebsiteAdminChrome.js"),
       /Change Website/

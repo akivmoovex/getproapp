@@ -114,6 +114,10 @@ describe("V2_01 shared website theme gallery", () => {
     assert.match(read("src/blessboard/http/attachWebsiteAdminChrome.js"), /Choose Theme/);
     assert.match(read("src/activeclinic/http/attachActiveClinicWebsiteChrome.js"), /Choose Theme/);
     assert.match(read("src/platform/website/publicWebsiteUrl.js"), /buildPublicWebsiteThemesPath/);
+    const hqAdmin = read("src/blessboard/http/churchWebsiteAdminRoutes.js");
+    assert.match(hqAdmin, /\/hq\/website\/themes/);
+    assert.match(hqAdmin, /buildPublicWebsiteThemesPath/);
+    assert.match(hqAdmin, /res\.redirect\(303,\s*target\)/);
   });
 
   it("keeps theme selection draft-only and supports authorized preview query overlay", () => {

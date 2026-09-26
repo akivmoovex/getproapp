@@ -52,6 +52,8 @@ const {
   PRODUCT_CODE,
   buildPublicWebsiteEditPath,
   buildPublicWebsitePreviewPath,
+  buildPublicWebsiteThemesPath,
+  buildPublicWebsiteWebsitesPath,
 } = require("../../platform/website/publicWebsiteUrl");
 const {
   BRANDING_KEYS,
@@ -567,6 +569,41 @@ function createChurchWebsiteAdminRouter(deps) {
         foundationGaps: [],
       });
     }
+  });
+
+  /**
+   * Canonical theme gallery + website-scope pages live on WE01 path URLs
+   * (`/c/:org/.../website/themes|websites`). Apex `/hq/website/themes|websites`
+   * previously fell through to the V5 unavailable catch-all (BB-THEME-503).
+   */
+  function resolveHqWebsitePathRedirectTarget(req, builder) {
+    const tenant = resolveTenantForAuthorization(req);
+    const organizationKey =
+      (tenant &&
+        tenant.organization &&
+        (tenant.organization.key || tenant.organization.organizationKey)) ||
+      null;
+    if (!organizationKey) return null;
+    return builder({
+      product: PRODUCT_CODE.BLESSBOARD,
+      organizationKey,
+    });
+  }
+
+  router.get("/hq/website/themes", rejectApex, gateHq, (req, res) => {
+    const target = resolveHqWebsitePathRedirectTarget(req, buildPublicWebsiteThemesPath);
+    if (!target) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+    return res.redirect(303, target);
+  });
+
+  router.get("/hq/website/websites", rejectApex, gateHq, (req, res) => {
+    const target = resolveHqWebsitePathRedirectTarget(req, buildPublicWebsiteWebsitesPath);
+    if (!target) {
+      return sendControlled(req, res, 403, "You do not have access to this site.");
+    }
+    return res.redirect(303, target);
   });
 
   function brandingErrorMessage(code) {
