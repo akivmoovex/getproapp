@@ -35,9 +35,9 @@ Exact V9 tip at freeze time is recorded as the Version **2.02** release candidat
 | --- | --- |
 | **VERSION** | `2.02` |
 | **BRANCH** | `V9` |
-| **FINAL SHA** (commit) | `03844c12100665abb48d5a4d2c60f8138fa4ee8f` |
-| **TAG** | `v2.02` (annotated) → commit `03844c12100665abb48d5a4d2c60f8138fa4ee8f` |
-| Tag object | `3044eb27bb76a034cf8a665c305dda4bb4dc3674` |
+| **FINAL SHA** (commit) | `3b94485ce72bdb8c7f4d6d692033ab080ae51bf3` |
+| **TAG** | `v2.02` (annotated) → commit `3b94485ce72bdb8c7f4d6d692033ab080ae51bf3` |
+| Tag object | `f2d1778d0466d42d43ff75cf2de1d8740bdd50d5` |
 | **V8 SHA** | `b186991d7db5334bfaa235f8a0ecf37428ea4a5a` (unchanged) |
 | **PRODUCTION SHA** | `origin/V7-first-production` = `03a89106e2fef8a93e31015d160acf73ab59fd40` (untouched); `origin/main` = `0120e1c8bba4747433b6053ccdfbb888027a91ad` (untouched) |
 
@@ -110,7 +110,7 @@ Tagging practice: repository already uses RC tags (`v1.0.0-rc1`). Tag `v2.02` cr
 ```
 VERSION: 2.02
 BRANCH: V9
-FINAL SHA: 03844c12100665abb48d5a4d2c60f8138fa4ee8f
+FINAL SHA: 3b94485ce72bdb8c7f4d6d692033ab080ae51bf3
 TAG: v2.02
 V8 SHA: b186991d7db5334bfaa235f8a0ecf37428ea4a5a
 PRODUCTION SHA: 03a89106e2fef8a93e31015d160acf73ab59fd40 (V7-first-production; untouched)
