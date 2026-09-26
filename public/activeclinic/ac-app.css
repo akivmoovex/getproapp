@@ -2509,6 +2509,12 @@ body.ac-app-body .ac-receipt__title {
   font-weight: 700;
   color: var(--ac-ink);
 }
+body.ac-app-body .ac-receipt__clinic {
+  margin-bottom: 0.75rem;
+}
+body.ac-app-body .ac-receipt__clinic-name {
+  margin: 0.15rem 0;
+}
 body.ac-app-body .ac-receipt__number {
   margin: 0 0 1rem;
   font-size: 0.9rem;
@@ -2897,4 +2903,265 @@ body.ac-app-body .ac-clinical-encounter [data-ac-draft-protection] .ac-form-acti
 }
 body.ac-app-body .ac-clinical-queue [data-ac-worklist-bucket] {
   margin-bottom: var(--ac-space-4);
+}
+
+/* ==========================================================================
+   V2.03 Batch 2 — AC-B2-01 Staff Dashboard
+   ========================================================================== */
+body.ac-app-body[data-ac-page="home"] .ac-page-header h1 {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+body.ac-app-body .ac-dashboard--b2 {
+  display: grid;
+  gap: var(--ac-space-5, 1.25rem);
+}
+
+body.ac-app-body .ac-dashboard-hero {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--ac-space-4);
+  padding: var(--ac-space-4) var(--ac-space-5);
+  background: var(--ac-surface, #fff);
+  border: 1px solid var(--ac-border, #e2e8f0);
+  border-radius: var(--ac-radius-lg, 0.75rem);
+  box-shadow: var(--ac-shadow-sm, 0 1px 2px rgba(15, 23, 42, 0.04));
+}
+
+body.ac-app-body .ac-dashboard-hero__title-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.65rem 0.85rem;
+}
+
+body.ac-app-body .ac-dashboard-hero__greeting {
+  margin: 0;
+  font-size: var(--ac-text-headline-lg, 1.75rem);
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  color: var(--ac-ink, #0f172a);
+  line-height: 1.25;
+}
+
+body.ac-app-body .ac-dashboard-hero__date {
+  margin: 0.35rem 0 0;
+  font-size: 0.875rem;
+}
+
+body.ac-app-body .ac-dashboard-hero__meta {
+  margin: 0.45rem 0 0;
+  font-size: 0.9rem;
+}
+
+body.ac-app-body .ac-dashboard-hero__job {
+  margin: 0.2rem 0 0;
+  font-size: 0.85rem;
+}
+
+body.ac-app-body .ac-dashboard-hero__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+body.ac-app-body .ac-dashboard-quick {
+  min-height: var(--ac-touch-min, 44px);
+}
+
+body.ac-app-body .ac-dashboard__console {
+  padding: 0.75rem 1rem;
+  background: var(--gp-ops-canvas, #f8fafc);
+  border: 1px solid var(--ac-border, #e2e8f0);
+  border-radius: var(--ac-radius, 0.5rem);
+}
+
+body.ac-app-body .ac-dashboard__console-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1.15rem;
+}
+
+body.ac-app-body .ac-dashboard__console a {
+  color: var(--ac-primary, #2563eb);
+  font-weight: 600;
+  text-decoration: none;
+  font-size: 0.875rem;
+}
+
+body.ac-app-body .ac-dashboard-kpi {
+  display: grid;
+  gap: var(--ac-space-4);
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+}
+
+body.ac-app-body .ac-dashboard-kpi__card {
+  display: flex;
+  flex-direction: column;
+  min-height: 7.5rem;
+}
+
+body.ac-app-body .ac-dashboard-kpi__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+body.ac-app-body .ac-dashboard-kpi__head .material-symbols-outlined,
+body.ac-app-body .ac-dashboard-kpi__head svg {
+  color: var(--ac-muted, #64748b);
+  flex-shrink: 0;
+}
+
+body.ac-app-body .ac-dashboard-kpi__hint {
+  margin: 0;
+  font-size: 0.6875rem;
+  line-height: 1.35;
+}
+
+body.ac-app-body .ac-dashboard-layout {
+  display: grid;
+  gap: var(--ac-space-4);
+  grid-template-columns: minmax(0, 1fr) minmax(16rem, 22rem);
+  align-items: start;
+}
+
+body.ac-app-body .ac-dashboard-layout__main,
+body.ac-app-body .ac-dashboard-layout__aside {
+  display: grid;
+  gap: var(--ac-space-4);
+  min-width: 0;
+}
+
+body.ac-app-body .ac-dashboard-today {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+body.ac-app-body .ac-dashboard-panel__link {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  color: var(--ac-primary, #2563eb);
+  text-decoration: none;
+  white-space: nowrap;
+}
+
+body.ac-app-body .ac-dashboard-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.35rem;
+}
+
+body.ac-app-body .ac-dashboard-list li a {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.75rem;
+  min-height: var(--ac-touch-min, 44px);
+  padding: 0.45rem 0.35rem;
+  border-radius: var(--ac-radius, 0.5rem);
+  text-decoration: none;
+  color: inherit;
+}
+
+body.ac-app-body .ac-dashboard-list li a:hover {
+  background: var(--gp-ops-canvas, #f8fafc);
+}
+
+body.ac-app-body .ac-dashboard-list__title {
+  font-weight: 600;
+  font-size: 0.9rem;
+  color: var(--ac-ink, #0f172a);
+}
+
+body.ac-app-body .ac-dashboard-activity {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.75rem;
+}
+
+body.ac-app-body .ac-dashboard-activity li {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem 0.65rem;
+  font-size: 0.875rem;
+}
+
+body.ac-app-body .ac-dashboard-activity a {
+  color: var(--ac-ink, #0f172a);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+body.ac-app-body .ac-dashboard-activity a:hover {
+  color: var(--ac-primary, #2563eb);
+}
+
+@media (max-width: 1099px) {
+  body.ac-app-body .ac-dashboard-layout {
+    grid-template-columns: 1fr;
+  }
+  body.ac-app-body .ac-dashboard-kpi {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 767px) {
+  body.ac-app-body .ac-dashboard-hero {
+    padding: var(--ac-space-4);
+  }
+  body.ac-app-body .ac-dashboard-hero__greeting {
+    font-size: 1.35rem;
+  }
+  body.ac-app-body .ac-dashboard-hero__actions {
+    width: 100%;
+  }
+  body.ac-app-body .ac-dashboard-hero__actions .ac-btn {
+    flex: 1 1 calc(50% - 0.5rem);
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (max-width: 390px) {
+  body.ac-app-body .ac-dashboard--b2 {
+    gap: var(--ac-space-3);
+  }
+  body.ac-app-body .ac-dashboard-kpi {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: var(--ac-space-3);
+  }
+  body.ac-app-body .ac-dashboard-kpi__card {
+    min-height: 6.25rem;
+    padding: 0.85rem 0.9rem;
+  }
+  body.ac-app-body .ac-dashboard-kpi .ac-stat-card__value {
+    font-size: 1.5rem;
+  }
+  body.ac-app-body .ac-dashboard-hero__greeting {
+    font-size: 1.25rem;
+  }
+  body.ac-app-body .ac-action-grid {
+    grid-template-columns: 1fr;
+  }
 }

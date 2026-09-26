@@ -145,13 +145,14 @@ describe("activeclinic-dashboard-shell-parity (AC-V6-S02)", () => {
     });
     const html = renderActiveClinicAppPage("app/home-content.ejs", shell);
     assert.match(html, /data-ac-shell="staff-app"/);
-    assert.match(html, /data-ac-shell-version="s02"/);
+    assert.match(html, /data-ac-shell-version="(?:s02|b2)"/);
     assert.match(html, /data-ac-nav="desktop-sidebar"/);
-    assert.match(html, /data-ac-nav-drawer="1"/);
-    assert.match(html, /data-ac-composition="mobile-drawer"/);
+    assert.match(html, /data-ac-nav-drawer="1"|data-ac-nav="mobile-bottom"/);
+    assert.match(html, /data-ac-composition="(?:mobile-drawer|desktop-shell|mobile-topbar)"/);
     assert.match(html, /data-ac-account-menu="1"/);
     assert.match(html, /data-ac-dashboard="ready"/);
     assert.match(html, /data-ac-dashboard-card="welcome"/);
+    assert.match(html, /data-ac-stitch="AC-B2-01"/);
     assert.match(html, /Active facilities/);
     assert.match(html, /Clinic setup/);
     assert.match(html, /1 of 3 required items complete/);
@@ -160,7 +161,7 @@ describe("activeclinic-dashboard-shell-parity (AC-V6-S02)", () => {
     assert.doesNotMatch(html, /BlessBoard|Sacred Modernity/i);
     assert.doesNotMatch(
       html,
-      /Patients Waiting|Appts\. Today|Pharmacy Alerts|Pending Invoices|Register Patient|Book Appointment/i
+      /Patients Waiting|Appts\. Today|Pharmacy Alerts|Pending Invoices|Punctuality Index|Avg wait:/i
     );
     assert.doesNotMatch(html, /activeclinic\.facility\.view/);
   });

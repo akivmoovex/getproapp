@@ -1,8 +1,14 @@
 <%
   var dash = (pageData && pageData.dashboard) || {};
   var welcome = dash.welcome || {};
+  var greeting = dash.greeting || ('Welcome, ' + (welcome.staffDisplayName || 'Staff'));
+  var dateLine = dash.dateLine || '';
+  var operationalStatus = dash.operationalStatus || null;
   var summaries = dash.summaries || {};
   var metrics = Array.isArray(dash.metrics) ? dash.metrics : [];
+  var kpiCards = Array.isArray(dash.kpiCards) && dash.kpiCards.length
+    ? dash.kpiCards
+    : metrics;
   var clinicSetup = dash.clinicSetup || null;
   var sessionTasks = Array.isArray(dash.sessionTasks) ? dash.sessionTasks : [];
   var tasks = dash.setupTasks || [];
@@ -10,6 +16,12 @@
   var sections = Array.isArray(dash.sections) ? dash.sections : [];
   var notices = dash.notices || [];
   var mode = dash.mode || 'ready';
+  var stitch = dash.stitch || {};
+  var queuePreview = Array.isArray(dash.queuePreview) ? dash.queuePreview : [];
+  var upcomingPreview = Array.isArray(dash.upcomingPreview) ? dash.upcomingPreview : [];
+  var openEncounterPreview = Array.isArray(dash.openEncounterPreview) ? dash.openEncounterPreview : [];
+  var recentActivity = Array.isArray(dash.recentActivity) ? dash.recentActivity : [];
+  var unsupportedPanels = Array.isArray(dash.unsupportedStitchPanels) ? dash.unsupportedStitchPanels : [];
   var setupPresentation = clinicSetup && clinicSetup.presentation
     ? clinicSetup.presentation
     : (tasks.length ? 'incomplete' : 'hidden');
@@ -31,85 +43,97 @@
   var adminSection = sections.find(function (s) {
     return s.key === 'administration';
   });
+
+  function formatApptTime(iso) {
+    if (!iso) return '';
+    try {
+      var d = new Date(iso);
+      if (isNaN(d.getTime())) return '';
+      return d.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+    } catch (e) {
+      return '';
+    }
+  }
 %>
-<section class="ac-dashboard" data-ac-page-section="home" data-ac-dashboard="<%= mode %>">
-  <article class="ac-panel ac-dashboard__welcome" data-ac-dashboard-card="welcome">
-    <h2 class="ac-dashboard__card-title">Welcome</h2>
-    <p class="ac-dashboard__lead">
-      <strong><%= welcome.staffDisplayName || shell.staff.displayName %></strong>
-      <% if (welcome.jobTitle) { %><span class="ac-muted"> · <%= welcome.jobTitle %></span><% } %>
-    </p>
-    <dl class="ac-dl">
-      <div>
-        <dt>Organization</dt>
-        <dd><%= welcome.organizationName || '' %></dd>
+<section
+  class="ac-dashboard ac-dashboard--b2"
+  data-ac-page-section="home"
+  data-ac-dashboard="<%= mode %>"
+  data-ac-stitch="AC-B2-01"
+  data-ac-stitch-desktop="<%= stitch.desktop || 'ed2ef3ac64d44c398f177d1b58ffc430' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '2cb0ef951e1e40418cc7272d1392b26d' %>"
+>
+  <header class="ac-dashboard-hero" data-ac-dashboard-card="welcome">
+    <div class="ac-dashboard-hero__text">
+      <div class="ac-dashboard-hero__title-row">
+        <h2 class="ac-dashboard-hero__greeting" data-ac-dashboard-greeting="1"><%= greeting %></h2>
+        <% if (operationalStatus) { %>
+        <%- include('../../platform/partials/gp-ops-status-badge', {
+          label: operationalStatus.label,
+          tone: operationalStatus.tone === 'success' ? 'success'
+            : (operationalStatus.tone === 'warning' ? 'warning'
+            : (operationalStatus.tone === 'info' ? 'info' : 'neutral'))
+        }) %>
+        <% } %>
       </div>
-      <div>
-        <dt>Facility context</dt>
-        <dd><%= welcome.facilityName || welcome.scopeLabel || 'Not selected' %></dd>
-      </div>
-      <div>
-        <dt>Access</dt>
-        <dd><%= welcome.roleSummary || shell.roleSummary || 'Staff' %></dd>
-      </div>
-      <% if (organizationConsole && organizationConsole.publicPath) { %>
-      <div data-ac-console-public-url="1">
-        <dt>Public URL</dt>
-        <dd>
-          <% if (organizationConsole.websiteHref) { %>
-          <a href="<%= organizationConsole.websiteHref %>"><%= organizationConsole.publicPath %></a>
-          <% } else { %>
-          <%= organizationConsole.publicPath %>
-          <% } %>
-        </dd>
-      </div>
+      <% if (dateLine) { %>
+      <p class="ac-dashboard-hero__date ac-muted" data-ac-dashboard-date="1"><%= dateLine %></p>
       <% } %>
-      <% if (organizationConsole && organizationConsole.onboardingStatus) { %>
-      <div data-ac-console-onboarding="<%= organizationConsole.onboardingStatus %>">
-        <dt>Setup</dt>
-        <dd>
-          <% if (organizationConsole.onboardingStatus === 'onboarding_required') { %>
-            Required setup is incomplete
-            <% if (organizationConsole.onboardingHref) { %>
-            · <a href="<%= organizationConsole.onboardingHref %>">Continue setup</a>
-            <% } %>
-          <% } else if (organizationConsole.onboardingStatus === 'recommended') { %>
-            Required setup is complete
-            <% if (organizationConsole.onboardingHref) { %>
-            · <a href="<%= organizationConsole.onboardingHref %>">Open setup checklist</a>
-            <% } %>
-          <% } else { %>
-            Organization setup complete
-          <% } %>
-        </dd>
-      </div>
+      <p class="ac-dashboard-hero__meta ac-muted">
+        <%= welcome.organizationName || '' %>
+        <% if (welcome.facilityName) { %> · <%= welcome.facilityName %><% } %>
+        <% if (welcome.roleSummary) { %> · <%= welcome.roleSummary %><% } %>
+      </p>
+      <% if (welcome.jobTitle) { %>
+      <p class="ac-muted ac-dashboard-hero__job"><%= welcome.jobTitle %></p>
       <% } %>
-    </dl>
-    <% if (organizationConsole) { %>
-    <nav class="ac-dashboard__console" data-ac-organization-console="1" aria-label="Organization administration">
-      <ul class="ac-dashboard__console-list">
-        <% if (organizationConsole.organizationHref) { %>
-        <li><a href="<%= organizationConsole.organizationHref %>" data-ac-console-link="organization">Organization profile</a></li>
-        <% } %>
-        <% if (organizationConsole.websiteHref) { %>
-        <li><a href="<%= organizationConsole.websiteHref %>" data-ac-console-link="website">Website</a></li>
-        <% } %>
-        <% if (organizationConsole.staffHref) { %>
-        <li><a href="<%= organizationConsole.staffHref %>" data-ac-console-link="staff">Staff</a></li>
-        <% } %>
-        <% if (organizationConsole.accessHref) { %>
-        <li><a href="<%= organizationConsole.accessHref %>" data-ac-console-link="access">Roles &amp; access</a></li>
-        <% } %>
-        <% if (organizationConsole.facilitiesHref) { %>
-        <li><a href="<%= organizationConsole.facilitiesHref %>" data-ac-console-link="facilities">Facilities</a></li>
-        <% } %>
-        <% if (organizationConsole.settingsHref) { %>
-        <li><a href="<%= organizationConsole.settingsHref %>" data-ac-console-link="settings">Settings</a></li>
-        <% } %>
-      </ul>
-    </nav>
+    </div>
+    <% if (actions.length) { %>
+    <div class="ac-dashboard-hero__actions" data-ac-dashboard-card="quick-actions">
+      <% actions.slice(0, 4).forEach(function (action) { %>
+      <a
+        class="ac-btn<%= action.primary ? '' : ' ac-btn--ghost' %> ac-dashboard-quick"
+        href="<%= action.href %>"
+        <% if (action.key) { %>data-ac-dashboard-tile="<%= action.key %>"<% } %>
+      ><%= action.label %></a>
+      <% }) %>
+    </div>
     <% } %>
-  </article>
+  </header>
+
+  <% if (organizationConsole) { %>
+  <nav class="ac-dashboard__console" data-ac-organization-console="1" aria-label="Organization administration">
+    <ul class="ac-dashboard__console-list">
+      <% if (organizationConsole.organizationHref) { %>
+      <li><a href="<%= organizationConsole.organizationHref %>" data-ac-console-link="organization">Organization profile</a></li>
+      <% } %>
+      <% if (organizationConsole.websiteHref) { %>
+      <li><a href="<%= organizationConsole.websiteHref %>" data-ac-console-link="website">Website</a></li>
+      <% } %>
+      <% if (organizationConsole.staffHref) { %>
+      <li><a href="<%= organizationConsole.staffHref %>" data-ac-console-link="staff">Staff</a></li>
+      <% } %>
+      <% if (organizationConsole.accessHref) { %>
+      <li><a href="<%= organizationConsole.accessHref %>" data-ac-console-link="access">Roles &amp; access</a></li>
+      <% } %>
+      <% if (organizationConsole.facilitiesHref) { %>
+      <li><a href="<%= organizationConsole.facilitiesHref %>" data-ac-console-link="facilities">Facilities</a></li>
+      <% } %>
+      <% if (organizationConsole.settingsHref) { %>
+      <li><a href="<%= organizationConsole.settingsHref %>" data-ac-console-link="settings">Settings</a></li>
+      <% } %>
+      <% if (organizationConsole.publicPath) { %>
+      <li data-ac-console-public-url="1">
+        <% if (organizationConsole.websiteHref) { %>
+        <a href="<%= organizationConsole.websiteHref %>"><%= organizationConsole.publicPath %></a>
+        <% } else { %>
+        <span class="ac-muted"><%= organizationConsole.publicPath %></span>
+        <% } %>
+      </li>
+      <% } %>
+    </ul>
+  </nav>
+  <% } %>
 
   <% if (mode === 'empty') { %>
   <%- include('../partials/ac-inline-state', {
@@ -127,40 +151,48 @@
   }) %>
   <% } %>
 
-  <% if (metrics.length || summaries.facilities || summaries.staff || summaries.invitations) { %>
-  <div class="ac-dashboard__summaries ac-grid" data-ac-dashboard-card="summaries">
-    <% if (metrics.length) { %>
-      <% metrics.forEach(function (metric) { %>
-      <article class="ac-panel ac-stat-card" data-ac-dashboard-metric="<%= metric.key %>">
+  <% if (kpiCards.length) { %>
+  <div class="ac-dashboard-kpi ac-metric-grid" data-ac-dashboard-card="kpi">
+    <% kpiCards.forEach(function (metric) { %>
+    <article class="ac-stat-card ac-dashboard-kpi__card" data-ac-dashboard-metric="<%= metric.key %>">
+      <div class="ac-dashboard-kpi__head">
         <p class="ac-stat-card__label"><%= metric.label %></p>
-        <p class="ac-stat-card__value"><%= metric.value %></p>
-        <% if (metric.href) { %>
-        <a class="ac-stat-card__link" href="<%= metric.href %>"><%= metric.key === 'facilities' ? 'View facilities' : (metric.key === 'invitations' ? 'Open staff' : 'View staff') %></a>
+        <% if (metric.icon) { %>
+        <%- include('../partials/nav-icon', { name: metric.icon }) %>
         <% } %>
-      </article>
-      <% }) %>
-    <% } else { %>
-      <% if (summaries.facilities) { %>
-      <article class="ac-panel ac-stat-card">
-        <p class="ac-stat-card__label"><%= summaries.facilities.label %></p>
-        <p class="ac-stat-card__value"><%= summaries.facilities.value %></p>
-        <a class="ac-stat-card__link" href="<%= summaries.facilities.href %>">View facilities</a>
-      </article>
+      </div>
+      <p class="ac-stat-card__value"><%= metric.value %></p>
+      <% if (metric.hint) { %>
+      <p class="ac-dashboard-kpi__hint ac-muted"><%= metric.hint %></p>
       <% } %>
-      <% if (summaries.staff) { %>
-      <article class="ac-panel ac-stat-card">
-        <p class="ac-stat-card__label"><%= summaries.staff.label %></p>
-        <p class="ac-stat-card__value"><%= summaries.staff.value %></p>
-        <a class="ac-stat-card__link" href="<%= summaries.staff.href %>">View staff</a>
-      </article>
+      <% if (metric.href) { %>
+      <a class="ac-stat-card__link" href="<%= metric.href %>">Open</a>
       <% } %>
-      <% if (summaries.invitations) { %>
-      <article class="ac-panel ac-stat-card">
-        <p class="ac-stat-card__label"><%= summaries.invitations.label %></p>
-        <p class="ac-stat-card__value"><%= summaries.invitations.value %></p>
-        <a class="ac-stat-card__link" href="<%= summaries.invitations.href %>">Open staff</a>
-      </article>
-      <% } %>
+    </article>
+    <% }) %>
+  </div>
+  <% } else if (summaries.facilities || summaries.staff || summaries.invitations) { %>
+  <div class="ac-dashboard-kpi ac-metric-grid" data-ac-dashboard-card="summaries">
+    <% if (summaries.facilities) { %>
+    <article class="ac-stat-card" data-ac-dashboard-metric="facilities">
+      <p class="ac-stat-card__label"><%= summaries.facilities.label %></p>
+      <p class="ac-stat-card__value"><%= summaries.facilities.value %></p>
+      <a class="ac-stat-card__link" href="<%= summaries.facilities.href %>">View facilities</a>
+    </article>
+    <% } %>
+    <% if (summaries.staff) { %>
+    <article class="ac-stat-card" data-ac-dashboard-metric="staff">
+      <p class="ac-stat-card__label"><%= summaries.staff.label %></p>
+      <p class="ac-stat-card__value"><%= summaries.staff.value %></p>
+      <a class="ac-stat-card__link" href="<%= summaries.staff.href %>">View staff</a>
+    </article>
+    <% } %>
+    <% if (summaries.invitations) { %>
+    <article class="ac-stat-card" data-ac-dashboard-metric="invitations">
+      <p class="ac-stat-card__label"><%= summaries.invitations.label %></p>
+      <p class="ac-stat-card__value"><%= summaries.invitations.value %></p>
+      <a class="ac-stat-card__link" href="<%= summaries.invitations.href %>">Open staff</a>
+    </article>
     <% } %>
   </div>
   <% } %>
@@ -174,103 +206,210 @@
   </p>
   <% } %>
 
-  <% if (setupPresentation === 'incomplete') { %>
-  <article class="ac-panel ac-clinic-setup" data-ac-dashboard-card="clinic-setup" data-ac-clinic-setup="incomplete">
-    <h2 class="ac-dashboard__card-title">Clinic setup</h2>
-    <% if (requiredTotal > 0) { %>
-    <p class="ac-clinic-setup__progress"><%= requiredComplete %> of <%= requiredTotal %> required items complete</p>
-    <% } %>
-    <ul class="ac-checklist">
-      <% setupIncomplete.forEach(function (item) { %>
-      <li data-ac-setup-item="<%= item.key %>" data-ac-setup-class="<%= item.classification || '' %>">
-        <span class="ac-checklist__mark" aria-hidden="true">○</span>
-        <% if (item.destinationUrl) { %>
-          <a href="<%= item.destinationUrl %>"><%= item.label %></a>
-        <% } else { %>
-          <span><%= item.label %></span>
+  <div class="ac-dashboard-layout">
+    <div class="ac-dashboard-layout__main">
+      <% if (setupPresentation === 'incomplete') { %>
+      <article class="ac-panel ac-clinic-setup" data-ac-dashboard-card="clinic-setup" data-ac-clinic-setup="incomplete">
+        <h2 class="ac-dashboard__card-title">Clinic setup</h2>
+        <% if (requiredTotal > 0) { %>
+        <p class="ac-clinic-setup__progress"><%= requiredComplete %> of <%= requiredTotal %> required items complete</p>
         <% } %>
-      </li>
-      <% }) %>
-    </ul>
-  </article>
-  <% } else if (setupPresentation === 'recommended') { %>
-  <article class="ac-panel ac-clinic-setup ac-clinic-setup--compact" data-ac-dashboard-card="clinic-setup" data-ac-clinic-setup="recommended">
-    <h2 class="ac-dashboard__card-title">Clinic setup</h2>
-    <p class="ac-clinic-setup__progress">Required setup is complete. Recommended next steps:</p>
-    <p class="ac-clinic-setup__progress"><a href="/app/onboarding">Open setup checklist</a></p>
-    <ul class="ac-checklist">
-      <% setupRecommended.forEach(function (item) { %>
-      <li data-ac-setup-item="<%= item.key %>" data-ac-setup-class="<%= item.classification || '' %>">
-        <span class="ac-checklist__mark" aria-hidden="true">○</span>
-        <% if (item.destinationUrl) { %>
-          <a href="<%= item.destinationUrl %>"><%= item.label %></a>
-        <% } else { %>
-          <span><%= item.label %></span>
+        <ul class="ac-checklist">
+          <% setupIncomplete.forEach(function (item) { %>
+          <li data-ac-setup-item="<%= item.key %>" data-ac-setup-class="<%= item.classification || '' %>">
+            <span class="ac-checklist__mark" aria-hidden="true">○</span>
+            <% if (item.destinationUrl) { %>
+              <a href="<%= item.destinationUrl %>"><%= item.label %></a>
+            <% } else { %>
+              <span><%= item.label %></span>
+            <% } %>
+          </li>
+          <% }) %>
+        </ul>
+      </article>
+      <% } else if (setupPresentation === 'recommended') { %>
+      <article class="ac-panel ac-clinic-setup ac-clinic-setup--compact" data-ac-dashboard-card="clinic-setup" data-ac-clinic-setup="recommended">
+        <h2 class="ac-dashboard__card-title">Clinic setup</h2>
+        <p class="ac-clinic-setup__progress">Required setup is complete. Recommended next steps:</p>
+        <p class="ac-clinic-setup__progress"><a href="/app/onboarding">Open setup checklist</a></p>
+        <ul class="ac-checklist">
+          <% setupRecommended.forEach(function (item) { %>
+          <li data-ac-setup-item="<%= item.key %>" data-ac-setup-class="<%= item.classification || '' %>">
+            <span class="ac-checklist__mark" aria-hidden="true">○</span>
+            <% if (item.destinationUrl) { %>
+              <a href="<%= item.destinationUrl %>"><%= item.label %></a>
+            <% } else { %>
+              <span><%= item.label %></span>
+            <% } %>
+          </li>
+          <% }) %>
+        </ul>
+      </article>
+      <% } else if (setupPresentation === 'complete') { %>
+      <p class="ac-clinic-setup ac-clinic-setup--done" data-ac-dashboard-card="clinic-setup" data-ac-clinic-setup="complete">
+        Clinic setup complete.
+        <% if (clinicSetup && clinicSetup.settingsHref) { %>
+          <a href="<%= clinicSetup.settingsHref %>">Settings</a>
         <% } %>
-      </li>
-      <% }) %>
-    </ul>
-  </article>
-  <% } else if (setupPresentation === 'complete') { %>
-  <p class="ac-clinic-setup ac-clinic-setup--done" data-ac-dashboard-card="clinic-setup" data-ac-clinic-setup="complete">
-    Clinic setup complete.
-    <% if (clinicSetup && clinicSetup.settingsHref) { %>
-      <a href="<%= clinicSetup.settingsHref %>">Settings</a>
-    <% } %>
-  </p>
-  <% } %>
+      </p>
+      <% } %>
 
-  <% if (primarySections.length) { %>
-  <article class="ac-panel" data-ac-dashboard-card="primary-work">
-    <header class="ac-section-header">
-      <h2 class="ac-dashboard__card-title">My work</h2>
-    </header>
-    <div class="ac-dashboard__sections">
-      <% primarySections.forEach(function (section) { %>
-      <div class="ac-dashboard__section" data-ac-dashboard-section="<%= section.key %>">
-        <h3 class="ac-dashboard__section-title"><%= section.title %></h3>
-        <div class="ac-action-grid">
-          <% section.items.forEach(function (item) { %>
+      <% if (queuePreview.length || upcomingPreview.length || openEncounterPreview.length) { %>
+      <div class="ac-dashboard-today" data-ac-dashboard-card="today-workflow">
+        <% if (queuePreview.length) { %>
+        <article class="ac-panel" data-ac-dashboard-panel="queue">
+          <header class="ac-section-header">
+            <h2 class="ac-dashboard__card-title">Patient operational queue</h2>
+            <a class="ac-dashboard-panel__link" href="/app/reception">Open reception</a>
+          </header>
+          <ul class="ac-dashboard-list">
+            <% queuePreview.forEach(function (item) { %>
+            <li>
+              <a href="<%= item.href %>">
+                <span class="ac-dashboard-list__title"><%= item.label %></span>
+                <span class="ac-status" data-ac-status="<%= item.status %>"><%= item.status %></span>
+              </a>
+            </li>
+            <% }) %>
+          </ul>
+        </article>
+        <% } %>
+
+        <% if (upcomingPreview.length) { %>
+        <article class="ac-panel" data-ac-dashboard-panel="upcoming">
+          <header class="ac-section-header">
+            <h2 class="ac-dashboard__card-title">Upcoming appointments</h2>
+            <a class="ac-dashboard-panel__link" href="/app/appointments">Open appointments</a>
+          </header>
+          <ul class="ac-dashboard-list">
+            <% upcomingPreview.forEach(function (item) { %>
+            <li>
+              <a href="<%= item.href %>">
+                <span class="ac-dashboard-list__title"><%= formatApptTime(item.startsAt) || 'Appointment' %></span>
+                <span class="ac-status" data-ac-status="<%= item.status %>"><%= item.status %></span>
+              </a>
+            </li>
+            <% }) %>
+          </ul>
+        </article>
+        <% } %>
+
+        <% if (openEncounterPreview.length) { %>
+        <article class="ac-panel" data-ac-dashboard-panel="encounters">
+          <header class="ac-section-header">
+            <h2 class="ac-dashboard__card-title">Open encounters</h2>
+            <a class="ac-dashboard-panel__link" href="/app/clinical">Open clinical</a>
+          </header>
+          <ul class="ac-dashboard-list">
+            <% openEncounterPreview.forEach(function (item) { %>
+            <li>
+              <a href="<%= item.href %>">
+                <span class="ac-dashboard-list__title"><%= item.label %></span>
+                <span class="ac-status" data-ac-status="<%= item.status %>"><%= item.status %></span>
+              </a>
+            </li>
+            <% }) %>
+          </ul>
+        </article>
+        <% } %>
+      </div>
+      <% } %>
+
+      <% if (primarySections.length) { %>
+      <article class="ac-panel" data-ac-dashboard-card="primary-work">
+        <header class="ac-section-header">
+          <h2 class="ac-dashboard__card-title">Today's workflow</h2>
+        </header>
+        <div class="ac-dashboard__sections">
+          <% primarySections.forEach(function (section) { %>
+          <div class="ac-dashboard__section" data-ac-dashboard-section="<%= section.key %>">
+            <h3 class="ac-dashboard__section-title"><%= section.title %></h3>
+            <div class="ac-action-grid">
+              <% section.items.forEach(function (item) { %>
+                <a class="ac-action-card" href="<%= item.href %>" data-ac-dashboard-tile="<%= item.key %>">
+                  <span class="ac-action-title"><%= item.label %></span>
+                  <span class="ac-action-description"><%= item.description || 'Open module' %></span>
+                </a>
+              <% }) %>
+            </div>
+          </div>
+          <% }) %>
+        </div>
+      </article>
+      <% } %>
+
+      <% if (adminSection && adminSection.items && adminSection.items.length) { %>
+      <article class="ac-panel" data-ac-dashboard-card="administration">
+        <header class="ac-section-header">
+          <h2 class="ac-dashboard__card-title">Administration</h2>
+        </header>
+        <div class="ac-action-grid" data-ac-dashboard-section="administration">
+          <% adminSection.items.forEach(function (item) { %>
             <a class="ac-action-card" href="<%= item.href %>" data-ac-dashboard-tile="<%= item.key %>">
               <span class="ac-action-title"><%= item.label %></span>
-              <span class="ac-action-description">Open module</span>
+              <span class="ac-action-description"><%= item.description || 'Open settings area' %></span>
             </a>
           <% }) %>
         </div>
-      </div>
-      <% }) %>
+      </article>
+      <% } else if (!primarySections.length && actions.length) { %>
+      <article class="ac-panel" data-ac-dashboard-card="actions">
+        <header class="ac-section-header">
+          <h2 class="ac-dashboard__card-title">Quick actions</h2>
+        </header>
+        <div class="ac-action-grid">
+          <% actions.forEach(function (action) { %>
+            <a class="ac-action-card" href="<%= action.href %>"<% if (action.key) { %> data-ac-dashboard-tile="<%= action.key %>"<% } %>>
+              <span class="ac-action-title"><%= action.label %></span>
+              <span class="ac-action-description">Continue</span>
+            </a>
+          <% }) %>
+        </div>
+      </article>
+      <% } %>
     </div>
-  </article>
-  <% } %>
 
-  <% if (adminSection && adminSection.items && adminSection.items.length) { %>
-  <article class="ac-panel" data-ac-dashboard-card="administration">
-    <header class="ac-section-header">
-      <h2 class="ac-dashboard__card-title">Administration</h2>
-    </header>
-    <div class="ac-action-grid" data-ac-dashboard-section="administration">
-      <% adminSection.items.forEach(function (item) { %>
-        <a class="ac-action-card" href="<%= item.href %>" data-ac-dashboard-tile="<%= item.key %>">
-          <span class="ac-action-title"><%= item.label %></span>
-          <span class="ac-action-description">Open settings area</span>
-        </a>
-      <% }) %>
-    </div>
-  </article>
-  <% } else if (!primarySections.length && actions.length) { %>
-  <article class="ac-panel" data-ac-dashboard-card="actions">
-    <header class="ac-section-header">
-      <h2 class="ac-dashboard__card-title">Quick actions</h2>
-    </header>
-    <div class="ac-action-grid">
-      <% actions.forEach(function (action) { %>
-        <a class="ac-action-card" href="<%= action.href %>"<% if (action.key) { %> data-ac-dashboard-tile="<%= action.key %>"<% } %>>
-          <span class="ac-action-title"><%= action.label %></span>
-          <span class="ac-action-description">Continue</span>
-        </a>
-      <% }) %>
-    </div>
-  </article>
+    <aside class="ac-dashboard-layout__aside">
+      <% if (recentActivity.length) { %>
+      <article class="ac-panel" data-ac-dashboard-card="recent-activity">
+        <header class="ac-section-header">
+          <h2 class="ac-dashboard__card-title">Recent activity</h2>
+        </header>
+        <ul class="ac-dashboard-activity">
+          <% recentActivity.forEach(function (item) { %>
+          <li data-ac-activity="<%= item.key %>">
+            <%- include('../../platform/partials/gp-ops-status-badge', {
+              label: item.badgeLabel || item.tone || 'Update',
+              tone: item.tone === 'success' ? 'success' : (item.tone === 'warning' ? 'warning' : 'info')
+            }) %>
+            <% if (item.href) { %>
+            <a href="<%= item.href %>"><%= item.title %></a>
+            <% } else { %>
+            <span><%= item.title %></span>
+            <% } %>
+          </li>
+          <% }) %>
+        </ul>
+      </article>
+      <% } %>
+    </aside>
+  </div>
+
+  <% if (unsupportedPanels.length) { %>
+  <div
+    class="ac-sr-only"
+    data-ac-dashboard-card="unsupported-stitch"
+    data-ac-unsupported-registry="1"
+    aria-hidden="true"
+  >
+    <% unsupportedPanels.forEach(function (panel) { %>
+    <span
+      data-ac-unsupported="<%= panel.key %>"
+      data-ac-unsupported-reason="<%= panel.reason %>"
+      <% if (panel.href) { %>data-ac-unsupported-href="<%= panel.href %>"<% } %>
+    ><%= panel.label %></span>
+    <% }) %>
+  </div>
   <% } %>
 
   <% notices.forEach(function (note) { %>

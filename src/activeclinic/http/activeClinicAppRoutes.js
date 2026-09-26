@@ -251,7 +251,14 @@ function registerActiveClinicAppRoutes(app, deps) {
           actions.push({ label: first.label, href: first.href });
         }
       }
-      shellBase.pageHeader.actions = actions;
+      shellBase.pageHeader = {
+        title: dashboard.greeting || "Home",
+        description:
+          dashboard.dateLine ||
+          (dashboard.welcome && dashboard.welcome.scopeLabel) ||
+          "Staff operational dashboard",
+        actions,
+      };
       shellBase.pageData = { dashboard };
       const html = renderActiveClinicAppPage("app/home-content.ejs", shellBase);
       return res.status(200).type("html").send(html);
