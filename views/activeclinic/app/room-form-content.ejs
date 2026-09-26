@@ -1,0 +1,104 @@
+<%
+  var mode = (pageData && pageData.mode) || 'create';
+  var form = (pageData && pageData.form) || {};
+  var facilities = (pageData && pageData.facilities) || [];
+  var departments = (pageData && pageData.departments) || [];
+  var typeOptions = (pageData && pageData.typeOptions) || [];
+  var statusOptions = (pageData && pageData.statusOptions) || [];
+  var stitch = (pageData && pageData.stitch) || {};
+  var error = pageData && pageData.error;
+  var facilityLocked = pageData && pageData.facilityLocked === true;
+  var roomId = pageData && pageData.roomId;
+  var action = mode === 'edit'
+    ? ('/app/rooms/' + encodeURIComponent(roomId))
+    : '/app/rooms';
+  var csrfName = (typeof csrfField !== 'undefined' && csrfField) || '_csrf';
+%>
+<section
+  class="ac-rooms ac-rooms-form ac-batch1a"
+  data-ac-page-section="room-form"
+  data-ac-stitch="ACN27"
+  data-ac-stitch-desktop="<%= stitch.desktop || 'b8f071b326234022afb3eecc665be9bc' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '74a8167ce99e45388a7dd1fbe9a92a88' %>"
+  data-ac-room-mode="<%= mode %>"
+>
+  <% if (error) { %>
+  <div class="ac-alert ac-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <form class="ac-panel ac-batch1a__form" method="post" action="<%= action %>" data-ac-room-form="1">
+    <input type="hidden" name="<%= csrfName %>" value="<%= typeof csrfToken !== 'undefined' ? csrfToken : '' %>"/>
+
+    <div class="ac-form-grid">
+      <div class="ac-field">
+        <label class="ac-label" for="room_facility">Facility <span aria-hidden="true">*</span></label>
+        <% if (facilityLocked) { %>
+        <input type="hidden" name="facility_id" value="<%= form.facilityId || '' %>"/>
+        <input class="ac-input" id="room_facility" type="text" value="<%
+          var fl = facilities.filter(function (f) { return f.value === form.facilityId; })[0];
+        %><%= fl ? fl.label : (form.facilityId || '') %>" disabled/>
+        <% } else { %>
+        <select class="ac-select" id="room_facility" name="facility_id" required>
+          <option value="">Select facility</option>
+          <% facilities.forEach(function (f) { %>
+          <option value="<%= f.value %>" <%= form.facilityId === f.value ? 'selected' : '' %>><%= f.label %></option>
+          <% }) %>
+        </select>
+        <% } %>
+      </div>
+
+      <div class="ac-field">
+        <label class="ac-label" for="room_department">Department (optional)</label>
+        <select class="ac-select" id="room_department" name="department_id">
+          <option value="">Unassigned</option>
+          <% departments.forEach(function (d) { %>
+          <option value="<%= d.value %>" <%= form.departmentId === d.value ? 'selected' : '' %>><%= d.label %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="ac-field">
+        <label class="ac-label" for="room_name">Room name <span aria-hidden="true">*</span></label>
+        <input class="ac-input" id="room_name" name="display_name" type="text" maxlength="120" required value="<%= form.displayName || '' %>" autocomplete="off"/>
+      </div>
+
+      <div class="ac-field">
+        <label class="ac-label" for="room_code">Room code <span aria-hidden="true">*</span></label>
+        <input class="ac-input" id="room_code" name="room_code" type="text" maxlength="64" required value="<%= form.roomCode || '' %>" autocomplete="off" placeholder="e.g. RM-CLN-101"/>
+      </div>
+
+      <div class="ac-field">
+        <label class="ac-label" for="room_type">Room type <span aria-hidden="true">*</span></label>
+        <select class="ac-select" id="room_type" name="room_type" required>
+          <% typeOptions.forEach(function (t) { %>
+          <option value="<%= t.value %>" <%= form.roomType === t.value ? 'selected' : '' %>><%= t.label %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="ac-field">
+        <label class="ac-label" for="room_status">Status <span aria-hidden="true">*</span></label>
+        <select class="ac-select" id="room_status" name="status" required>
+          <% statusOptions.forEach(function (s) { %>
+          <option value="<%= s.value %>" <%= form.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+          <% }) %>
+        </select>
+      </div>
+
+      <div class="ac-field">
+        <label class="ac-label" for="room_floor">Floor / Area</label>
+        <input class="ac-input" id="room_floor" name="floor_area" type="text" maxlength="120" value="<%= form.floorArea || '' %>" placeholder="e.g. Floor 1, Pod A"/>
+      </div>
+
+      <div class="ac-field ac-field--full">
+        <label class="ac-label" for="room_description">Description</label>
+        <textarea class="ac-input" id="room_description" name="description" rows="3" maxlength="500"><%= form.description || '' %></textarea>
+      </div>
+    </div>
+
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn ac-btn--primary"><%= mode === 'edit' ? 'Save room' : 'Create room' %></button>
+      <a class="ac-btn ac-btn--ghost" href="<%= mode === 'edit' ? ('/app/rooms/' + encodeURIComponent(roomId)) : '/app/rooms' %>">Cancel</a>
+    </div>
+  </form>
+</section>

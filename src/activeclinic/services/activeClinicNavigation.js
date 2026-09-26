@@ -187,6 +187,19 @@ const NAV_ITEMS = Object.freeze([
     group: "management",
   },
   {
+    key: "rooms",
+    label: "Rooms & Spaces",
+    href: "/app/rooms",
+    // ACN27: view uses facility.view; nav entry for managers mirrors B2-10 admin set.
+    anyOf: [
+      "activeclinic.facility.create",
+      "activeclinic.facility.update",
+      "activeclinic.facility.archive",
+    ],
+    icon: "meeting_room",
+    group: "management",
+  },
+  {
     key: "performance",
     label: "Performance",
     href: "/app/performance",

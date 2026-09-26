@@ -267,6 +267,10 @@ function createActiveClinicFoundationApp(options) {
   registerActiveClinicAppRoutes(app, { getPool, env, isProduction });
   registerActiveClinicLifecycleRoutes(app, { getPool, env, isProduction });
   registerActiveClinicFacilityRoutes(app, { getPool, env, isProduction });
+  const {
+    registerActiveClinicRoomRoutes,
+  } = require("./activeClinicRoomRoutes");
+  registerActiveClinicRoomRoutes(app, { getPool, env, isProduction });
   registerActiveClinicStaffRoutes(app, { getPool, env, isProduction });
   const {
     registerActiveClinicOpsConfigRoutes,

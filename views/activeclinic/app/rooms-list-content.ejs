@@ -1,0 +1,168 @@
+<%
+  var catalogue = (pageData && pageData.catalogue) || {};
+  var rooms = catalogue.rooms || [];
+  var filters = catalogue.filters || {};
+  var filterOptions = catalogue.filterOptions || {};
+  var metrics = catalogue.metrics || {};
+  var canManage = catalogue.canManage === true;
+  var stitch = catalogue.stitch || {};
+  var facilityLabel = catalogue.facilityLabel || 'Facility';
+  var facilities = filterOptions.facilities || [];
+  var departments = filterOptions.departments || [];
+  var types = filterOptions.types || [];
+  var statuses = filterOptions.statuses || [];
+%>
+<section
+  class="ac-rooms ac-ops-queue"
+  data-ac-page-section="rooms-list"
+  data-ac-stitch="ACN27"
+  data-ac-stitch-desktop="<%= stitch.desktop || 'b8f071b326234022afb3eecc665be9bc' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '74a8167ce99e45388a7dd1fbe9a92a88' %>"
+>
+  <header class="ac-ops-queue__header ac-rooms__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Facility spaces</p>
+      <h2 class="ac-ops-queue__title">Rooms &amp; Spaces</h2>
+      <p class="ac-muted">Physical rooms inside <%= facilityLabel %>. Facilities and departments stay under Facilities (B2-10).</p>
+    </div>
+    <div class="ac-rooms__header-actions">
+      <% if (canManage) { %>
+      <a
+        class="ac-btn ac-btn--primary"
+        href="/app/rooms/new<%= filters.facility ? ('?facility=' + encodeURIComponent(filters.facility)) : '' %>"
+        data-ac-action="add-room"
+      >Add Room</a>
+      <% } %>
+      <a class="ac-btn ac-btn--ghost" href="/app/facilities">Facilities</a>
+    </div>
+  </header>
+
+  <div class="ac-dashboard__summaries ac-metric-grid" data-ac-room-metrics="1">
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Total rooms</p>
+      <p class="ac-stat-card__value"><%= metrics.total || 0 %></p>
+    </article>
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Available</p>
+      <p class="ac-stat-card__value"><%= metrics.available || 0 %></p>
+    </article>
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Unavailable</p>
+      <p class="ac-stat-card__value"><%= metrics.unavailable || 0 %></p>
+    </article>
+    <article class="ac-panel ac-stat-card">
+      <p class="ac-stat-card__label">Inactive</p>
+      <p class="ac-stat-card__value"><%= metrics.inactive || 0 %></p>
+    </article>
+  </div>
+
+  <%- include('../../platform/partials/gp-ops-filter-bar', {
+    action: '/app/rooms',
+    method: 'get',
+    q: filters.q || '',
+    qName: 'q',
+    submitLabel: 'Search',
+    filtersHtml:
+      '<label class="gp-ops-filter-bar__field"><span class="gp-ops-visually-hidden">Facility</span>' +
+      '<select class="gp-ops-input" name="facility"><option value="">All facilities</option>' +
+      facilities.map(function (f) {
+        return '<option value="' + f.value + '"' + (filters.facility === f.value ? ' selected' : '') + '>' + f.label + '</option>';
+      }).join('') +
+      '</select></label>' +
+      '<label class="gp-ops-filter-bar__field"><span class="gp-ops-visually-hidden">Department</span>' +
+      '<select class="gp-ops-input" name="department"><option value="">All departments</option>' +
+      departments.map(function (d) {
+        return '<option value="' + d.value + '"' + (filters.department === d.value ? ' selected' : '') + '>' + d.label + '</option>';
+      }).join('') +
+      '</select></label>' +
+      '<label class="gp-ops-filter-bar__field"><span class="gp-ops-visually-hidden">Type</span>' +
+      '<select class="gp-ops-input" name="type"><option value="">All types</option>' +
+      types.map(function (t) {
+        return '<option value="' + t.value + '"' + (filters.type === t.value ? ' selected' : '') + '>' + t.label + '</option>';
+      }).join('') +
+      '</select></label>' +
+      '<label class="gp-ops-filter-bar__field"><span class="gp-ops-visually-hidden">Status</span>' +
+      '<select class="gp-ops-input" name="status"><option value="">All statuses</option>' +
+      statuses.map(function (s) {
+        return '<option value="' + s.value + '"' + (filters.status === s.value ? ' selected' : '') + '>' + s.label + '</option>';
+      }).join('') +
+      '</select></label>'
+  }) %>
+
+  <% if (!rooms.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'rooms-none',
+      title: 'No rooms configured yet',
+      description: 'Add consultation, exam, triage, or treatment rooms for this facility.',
+      primaryAction: canManage
+        ? {
+            href: '/app/rooms/new' + (filters.facility ? ('?facility=' + encodeURIComponent(filters.facility)) : ''),
+            label: 'Add Room'
+          }
+        : null,
+      secondaryAction: { href: '/app/rooms', label: 'Clear filters' }
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap ac-rooms__desktop" data-ac-table="rooms">
+    <table class="ac-table">
+      <thead>
+        <tr>
+          <th scope="col">Status</th>
+          <th scope="col">Room</th>
+          <th scope="col">Type</th>
+          <th scope="col">Department</th>
+          <th scope="col">Floor / Area</th>
+          <th scope="col"><span class="gp-ops-visually-hidden">Actions</span></th>
+        </tr>
+      </thead>
+      <tbody>
+        <% rooms.forEach(function (room) { %>
+        <tr data-ac-room-row="<%= room.id %>">
+          <td>
+            <span class="ac-badge ac-badge--room-<%= room.status %>"><%= room.statusLabel %></span>
+          </td>
+          <td>
+            <a href="/app/rooms/<%= encodeURIComponent(room.id) %>"><%= room.displayName %></a>
+            <div class="ac-rooms__code"><%= room.roomCode %></div>
+          </td>
+          <td><%= room.roomTypeLabel %></td>
+          <td><%= room.departmentDisplayName || '—' %></td>
+          <td><%= room.floorArea || '—' %></td>
+          <td class="ac-rooms__actions">
+            <a class="ac-btn ac-btn--ghost ac-btn--compact" href="/app/rooms/<%= encodeURIComponent(room.id) %>">View</a>
+            <% if (canManage) { %>
+            <a class="ac-btn ac-btn--ghost ac-btn--compact" href="/app/rooms/<%= encodeURIComponent(room.id) %>/edit">Edit</a>
+            <% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="ac-rooms__mobile" data-ac-rooms-mobile="1">
+    <% rooms.forEach(function (room) { %>
+    <article class="ac-panel ac-rooms__card" data-ac-room-card="<%= room.id %>">
+      <div class="ac-rooms__card-top">
+        <span class="ac-badge ac-badge--room-<%= room.status %>"><%= room.statusLabel %></span>
+        <span class="ac-rooms__code"><%= room.roomCode %></span>
+      </div>
+      <h3 class="ac-rooms__card-title">
+        <a href="/app/rooms/<%= encodeURIComponent(room.id) %>"><%= room.displayName %></a>
+      </h3>
+      <p class="ac-muted"><%= room.roomTypeLabel %><% if (room.departmentDisplayName) { %> · <%= room.departmentDisplayName %><% } %></p>
+      <% if (room.floorArea) { %><p class="ac-muted"><%= room.floorArea %></p><% } %>
+      <div class="ac-rooms__card-actions">
+        <a class="ac-btn ac-btn--ghost" href="/app/rooms/<%= encodeURIComponent(room.id) %>">View</a>
+        <% if (canManage) { %>
+        <a class="ac-btn" href="/app/rooms/<%= encodeURIComponent(room.id) %>/edit">Edit</a>
+        <% } %>
+      </div>
+    </article>
+    <% }) %>
+  </div>
+  <% } %>
+</section>

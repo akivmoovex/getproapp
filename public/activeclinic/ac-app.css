@@ -4277,3 +4277,143 @@ body.ac-app-body .ac-clinical-referrals .ac-clinical-leaf__card {
     min-height: var(--ac-touch-min, 44px);
   }
 }
+
+/* ==========================================================================
+   V2.03 ACN27 Rooms & Spaces (frozen V2.03 tokens — no MD3 import)
+   ========================================================================== */
+body.ac-app-body .ac-rooms__header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-3);
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--ac-space-4);
+}
+body.ac-app-body .ac-rooms__header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+}
+body.ac-app-body .ac-rooms__code {
+  font-size: 0.8125rem;
+  color: var(--ac-text-secondary, #6b7280);
+  font-family: var(--ac-font, Inter, sans-serif);
+}
+body.ac-app-body .ac-rooms__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  justify-content: flex-end;
+}
+body.ac-app-body .ac-badge--room-available {
+  background: var(--ac-primary-light, #eff6ff);
+  color: var(--ac-primary-dark, #1d4ed8);
+}
+body.ac-app-body .ac-badge--room-unavailable {
+  background: #fff7ed;
+  color: #c2410c;
+}
+body.ac-app-body .ac-badge--room-inactive {
+  background: #f3f4f6;
+  color: var(--ac-text-secondary, #6b7280);
+}
+body.ac-app-body .ac-rooms__mobile {
+  display: none;
+  gap: var(--ac-space-3);
+}
+body.ac-app-body .ac-rooms__card {
+  display: grid;
+  gap: var(--ac-space-2);
+  border-radius: 12px;
+  border: 1px solid var(--ac-border, #e5e7eb);
+  background: var(--ac-surface, #ffffff);
+  padding: var(--ac-space-4);
+}
+body.ac-app-body .ac-rooms__card-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--ac-space-2);
+}
+body.ac-app-body .ac-rooms__card-title {
+  margin: 0;
+  font-size: 1.05rem;
+  color: var(--ac-text, #111827);
+}
+body.ac-app-body .ac-rooms__card-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+}
+body.ac-app-body .ac-rooms__card-actions .ac-btn {
+  min-height: 44px;
+}
+body.ac-app-body .ac-rooms-detail__card {
+  border-radius: 12px;
+  border: 1px solid var(--ac-border, #e5e7eb);
+  background: var(--ac-surface, #ffffff);
+  padding: var(--ac-space-5);
+}
+body.ac-app-body .ac-rooms-detail__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+  align-items: center;
+  margin-bottom: var(--ac-space-2);
+}
+body.ac-app-body .ac-rooms-detail__title {
+  margin: 0 0 var(--ac-space-4);
+  color: var(--ac-text, #111827);
+}
+body.ac-app-body .ac-rooms-detail__dl {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--ac-space-3);
+  margin: 0 0 var(--ac-space-4);
+}
+body.ac-app-body .ac-rooms-detail__dl dt {
+  font-size: 0.75rem;
+  color: var(--ac-text-secondary, #6b7280);
+  margin: 0 0 0.15rem;
+}
+body.ac-app-body .ac-rooms-detail__dl dd {
+  margin: 0;
+  color: var(--ac-text, #111827);
+}
+body.ac-app-body .ac-rooms-detail__full {
+  grid-column: 1 / -1;
+}
+body.ac-app-body .ac-rooms-detail__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+}
+body.ac-app-body .ac-rooms-form .ac-form-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--ac-space-2);
+  margin-top: var(--ac-space-4);
+}
+body.ac-app-body .ac-rooms-form .ac-btn {
+  min-height: 44px;
+}
+
+@media (max-width: 720px) {
+  body.ac-app-body .ac-rooms__desktop {
+    display: none;
+  }
+  body.ac-app-body .ac-rooms__mobile {
+    display: grid;
+  }
+  body.ac-app-body .ac-rooms-detail__dl {
+    grid-template-columns: 1fr;
+  }
+  body.ac-app-body .ac-rooms__header-actions {
+    width: 100%;
+  }
+  body.ac-app-body .ac-rooms__header-actions .ac-btn {
+    flex: 1 1 auto;
+    justify-content: center;
+    min-height: 44px;
+  }
+}
