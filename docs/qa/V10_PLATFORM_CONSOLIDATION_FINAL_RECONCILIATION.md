@@ -16,13 +16,13 @@
 ## Git / release candidate state
 
 ```text
-HEAD:        0da86d42510ca7ca6a447ba89c5b31f11bbbef17
+HEAD:        e84180b20fec64c92fbe1b44f28322a5bfea9e5b
 ORIGIN/V10:  b8c18c3ded9892aa318ae6e029600aa34ff4941b
-AHEAD:        0da86d42510ca7ca6a447ba89c5b31f11bbbef17
+AHEAD:       10
 BEHIND:      0
 ```
 
-Includes: 1 pre-existing V2.03 freeze commit + **8 consolidation commits** (PC03–PC09 code/docs + PC01–PC14 evidence). **Not pushed.**
+Includes: 1 pre-existing V2.03 freeze commit + consolidation commits (PC03–PC09 + PC01–PC14 evidence). **Not pushed.**
 
 Working tree still dirty with Finder `* 2.*` junk and unrelated V2.01 QA artifacts — **excluded** from consolidation commits.
 
