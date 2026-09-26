@@ -6,7 +6,7 @@ const path = require("path");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "platform");
 const TEMPLATE = path.join(VIEWS_ROOT, "website", "website-scope-list-page.ejs");
-const WEBSITE_SCOPE_STYLESHEET = "/platform/website-scope-list.css?v=v2-scope-e1-1";
+const WEBSITE_SCOPE_STYLESHEET = "/platform/website-scope-list.css?v=v2-spt6-cards-1";
 
 let cachedSource = null;
 

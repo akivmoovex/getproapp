@@ -143,6 +143,8 @@ describe("V2_01 shared HQ/branch website management", () => {
   it("wires shared list page, CSS, routes, and chrome", () => {
     assert.match(read("views/platform/website/website-scope-list-page.ejs"), /data-gp-website-scope-list/);
     assert.match(read("public/platform/website-scope-list.css"), /gp-we-scope-card/);
+    assert.match(read("public/platform/website-scope-list.css"), /max-width:\s*640px/);
+    assert.match(read("src/platform/website/renderWebsiteScopeList.js"), /v2-spt6-cards-1/);
     assert.match(
       read("src/blessboard/http/blessboardWebsiteEditorRoutes.js"),
       /website\/websites/
