@@ -3492,3 +3492,54 @@ body.ac-app-body .ac-appointment-actions__stack .ac-inline-form .ac-btn {
     grid-template-columns: 1fr;
   }
 }
+
+/* ==========================================================================
+   V2.03 ACN25 — Clinic performance dashboard
+   ========================================================================== */
+body.ac-app-body .ac-performance {
+  display: grid;
+  gap: 1rem;
+}
+body.ac-app-body .ac-performance__kpis {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+@media (min-width: 900px) {
+  body.ac-app-body .ac-performance__kpis {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+@media (min-width: 1200px) {
+  body.ac-app-body .ac-performance__kpis {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+  }
+}
+body.ac-app-body .ac-kpi__label {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ac-muted);
+}
+body.ac-app-body .ac-kpi__value {
+  margin: 0.35rem 0 0;
+  font-size: 1.55rem;
+  font-weight: 700;
+  color: var(--ac-ink);
+}
+body.ac-app-body .ac-data-centre,
+body.ac-app-body .ac-data-job-result {
+  display: grid;
+  gap: 1rem;
+}
+body.ac-app-body .ac-code {
+  overflow: auto;
+  max-height: 18rem;
+  padding: 0.75rem 1rem;
+  border-radius: 0.5rem;
+  background: var(--gp-ops-canvas, #f8fafc);
+  border: 1px solid var(--ac-border, #e2e8f0);
+  font-size: 0.8rem;
+}

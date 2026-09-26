@@ -42,6 +42,9 @@ function registerDataJobAdapter(adapter) {
     productCode,
     entityKey,
     jobKinds,
+    requiredHeaders: Array.isArray(src.requiredHeaders)
+      ? src.requiredHeaders.map(String)
+      : [],
     previewImport: typeof src.previewImport === "function" ? src.previewImport : null,
     commitImport: typeof src.commitImport === "function" ? src.commitImport : null,
     buildExport: typeof src.buildExport === "function" ? src.buildExport : null,

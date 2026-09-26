@@ -1,0 +1,48 @@
+<%
+  var job = (pageData && pageData.job) || {};
+  var events = (pageData && pageData.events) || [];
+  var success = (pageData && pageData.success) || null;
+  var stitch = (pageData && pageData.stitch) || {};
+  var summary = job.resultSummary || {};
+%>
+<section class="ac-data-job-result" data-ac-page-section="data-job-result" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
+  <% if (success) { %>
+  <p class="ac-flash ac-flash--success" role="status">Job completed (<%= success %>).</p>
+  <% } %>
+
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Job <%= job.id %></h2>
+    <dl class="ac-dl">
+      <div><dt>Kind</dt><dd><%= job.jobKind %></dd></div>
+      <div><dt>Entity</dt><dd><%= job.entityKey %></dd></div>
+      <div><dt>Status</dt><dd><span class="ac-status" data-status="<%= job.status %>"><%= job.status %></span></dd></div>
+      <div><dt>Dry run</dt><dd><%= job.dryRun ? 'yes' : 'no' %></dd></div>
+    </dl>
+    <% if (summary && Object.keys(summary).length) { %>
+    <h3 class="ac-dashboard__card-title">Result</h3>
+    <pre class="ac-code"><%= JSON.stringify(summary, null, 2) %></pre>
+    <% } %>
+    <div class="ac-form-actions">
+      <% if (job.outputFileRef) { %>
+      <a class="ac-btn" href="/app/data/jobs/<%= job.id %>/download">Download</a>
+      <% } %>
+      <a class="ac-btn ac-btn--ghost" href="/app/data">Back to centre</a>
+    </div>
+  </article>
+
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Lifecycle</h2>
+    <% if (!events.length) { %>
+      <p class="ac-muted">No events.</p>
+    <% } else { %>
+      <ol class="ac-card-list">
+        <% events.forEach(function (e) { %>
+        <li class="ac-card">
+          <p><strong><%= e.fromStatus || '—' %></strong> → <strong><%= e.toStatus %></strong></p>
+          <p class="ac-muted"><%= e.note || '' %> · <%= e.createdAt %></p>
+        </li>
+        <% }) %>
+      </ol>
+    <% } %>
+  </article>
+</section>

@@ -33,6 +33,8 @@ const MODULE_DEPARTMENT_REQUIREMENTS = Object.freeze({
   cashier: "billing",
   staff: null,
   facilities: null,
+  performance: null,
+  data: null,
   access: null,
   settings: null,
 });

@@ -1,0 +1,111 @@
+<%
+  var stitch = (pageData && pageData.stitch) || {};
+  var metrics = (pageData && pageData.metrics) || {};
+  var filters = (pageData && pageData.filters) || {};
+  var options = (pageData && pageData.filterOptions) || {};
+  var popular = (pageData && pageData.popularServices) || [];
+  var facilities = options.facilities || [];
+  var practitioners = options.practitioners || [];
+%>
+<section class="ac-performance" data-ac-page-section="performance-dashboard" data-ac-stitch="ACN25" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <form method="get" action="/app/performance" class="ac-panel ac-performance__filters">
+    <div class="ac-p07-filter-bar">
+      <div class="ac-field">
+        <label class="ac-label" for="from">From</label>
+        <input class="ac-input" id="from" name="from" type="date" value="<%= filters.from || '' %>" />
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="to">To</label>
+        <input class="ac-input" id="to" name="to" type="date" value="<%= filters.to || '' %>" />
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="practitioner">Practitioner</label>
+        <select class="ac-input" id="practitioner" name="practitioner">
+          <option value="">All practitioners</option>
+          <% practitioners.forEach(function (p) { %>
+          <option value="<%= p.id %>" <%= filters.practitionerId === p.id ? 'selected' : '' %>><%= p.displayName %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="location">Location</label>
+        <select class="ac-input" id="location" name="location" disabled>
+          <% facilities.forEach(function (f) { %>
+          <option value="<%= f.id %>" <%= filters.facilityId === f.id ? 'selected' : '' %>><%= f.displayName %></option>
+          <% }) %>
+        </select>
+        <p class="ac-hint">Metrics stay scoped to your selected facility.</p>
+      </div>
+      <div class="ac-form-actions">
+        <button type="submit" class="ac-btn">Apply filters</button>
+      </div>
+    </div>
+  </form>
+
+  <div class="ac-performance__kpis" role="list">
+    <article class="ac-panel ac-kpi" role="listitem">
+      <p class="ac-kpi__label">Appointments</p>
+      <p class="ac-kpi__value"><%= metrics.appointments || 0 %></p>
+    </article>
+    <article class="ac-panel ac-kpi" role="listitem">
+      <p class="ac-kpi__label">Completed</p>
+      <p class="ac-kpi__value"><%= metrics.completed || 0 %></p>
+    </article>
+    <article class="ac-panel ac-kpi" role="listitem">
+      <p class="ac-kpi__label">Cancellations</p>
+      <p class="ac-kpi__value"><%= metrics.cancellations || 0 %></p>
+    </article>
+    <article class="ac-panel ac-kpi" role="listitem">
+      <p class="ac-kpi__label">No-shows</p>
+      <p class="ac-kpi__value"><%= metrics.noShows || 0 %></p>
+    </article>
+    <article class="ac-panel ac-kpi" role="listitem">
+      <p class="ac-kpi__label">Avg wait (min)</p>
+      <p class="ac-kpi__value"><%= metrics.avgWaitMinutes || 0 %></p>
+      <p class="ac-muted">n=<%= metrics.waitSamples || 0 %></p>
+    </article>
+    <article class="ac-panel ac-kpi" role="listitem">
+      <p class="ac-kpi__label">Revenue</p>
+      <% if (metrics.canViewRevenue) { %>
+      <p class="ac-kpi__value ac-money"><%= metrics.revenueFormatted || '—' %></p>
+      <% } else { %>
+      <p class="ac-kpi__value">Restricted</p>
+      <p class="ac-muted">Billing report permission required</p>
+      <% } %>
+    </article>
+  </div>
+
+  <article class="ac-panel ac-panel--table">
+    <h2 class="ac-dashboard__card-title">Popular services</h2>
+    <% if (!popular.length) { %>
+      <p class="ac-muted">No bookings in this range.</p>
+    <% } else { %>
+      <div class="ac-table-wrap ac-desktop-table">
+        <table class="ac-table">
+          <thead>
+            <tr>
+              <th>Service</th>
+              <th>Bookings</th>
+            </tr>
+          </thead>
+          <tbody>
+            <% popular.forEach(function (s) { %>
+            <tr>
+              <td><%= s.name %></td>
+              <td><%= s.count %></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+      <ul class="ac-card-list ac-mobile-table-cards">
+        <% popular.forEach(function (s) { %>
+        <li class="ac-card">
+          <p class="ac-card__title"><%= s.name %></p>
+          <p><strong><%= s.count %></strong> bookings</p>
+        </li>
+        <% }) %>
+      </ul>
+    <% } %>
+  </article>
+</section>

@@ -25,6 +25,13 @@ const {
   getDataJobAdapter,
 } = require("./dataJobAdapters");
 const repo = require("./dataJobRepository");
+const {
+  validateImportFile,
+} = require("./dataJobFileValidation");
+const {
+  putArtifact,
+  getArtifact,
+} = require("./dataJobArtifactStore");
 
 const JOB_TRANSITIONS = Object.freeze({
   "*": ["queued"],
@@ -255,6 +262,301 @@ async function listOrganizationDataJobs(db, input) {
   return { ok: true, code: "ok", jobs, total, limit, offset };
 }
 
+/**
+ * Validate file + run product previewImport adapter (dry-run).
+ */
+async function previewDataJobImport(db, input) {
+  const created = await createDataJob(db, {
+    ...input,
+    jobKind: "import",
+    dryRun: true,
+  });
+  if (!created.ok) return created;
+
+  const adapter = getDataJobAdapter(created.job.productCode, created.job.entityKey);
+  if (!adapter || typeof adapter.previewImport !== "function") {
+    await transitionDataJob(db, {
+      trusted: input.trusted,
+      jobId: created.job.id,
+      toStatus: "failed",
+      actorIdentityId: input.actorIdentityId || null,
+      note: "No import preview adapter registered",
+      resultSummary: { error: "adapter_missing" },
+    });
+    return { ok: false, code: "adapter_missing", job: created.job };
+  }
+
+  await transitionDataJob(db, {
+    trusted: input.trusted,
+    jobId: created.job.id,
+    toStatus: "validating",
+    actorIdentityId: input.actorIdentityId || null,
+    note: "Validating import file",
+  });
+
+  const validated = validateImportFile({
+    buffer: input.buffer,
+    text: input.text,
+    filename: input.filename,
+    maxBytes: input.maxBytes,
+    maxRows: input.maxRows,
+    requiredHeaders: input.requiredHeaders || adapter.requiredHeaders || [],
+  });
+  if (!validated.ok) {
+    await transitionDataJob(db, {
+      trusted: input.trusted,
+      jobId: created.job.id,
+      toStatus: "failed",
+      actorIdentityId: input.actorIdentityId || null,
+      note: validated.code,
+      resultSummary: validated,
+      errorReportRef: putArtifact(created.job.id, {
+        organizationId: created.job.organizationId,
+        filename: "import-errors.json",
+        contentType: "application/json",
+        body: JSON.stringify(validated, null, 2),
+      }),
+    });
+    return { ok: false, code: validated.code, jobId: created.job.id, validation: validated };
+  }
+
+  await transitionDataJob(db, {
+    trusted: input.trusted,
+    jobId: created.job.id,
+    toStatus: "running",
+    actorIdentityId: input.actorIdentityId || null,
+    note: "Building import preview",
+  });
+
+  let preview;
+  try {
+    preview = await adapter.previewImport({
+      db,
+      job: created.job,
+      trusted: input.trusted,
+      headers: validated.headers,
+      rows: validated.rows,
+      filename: validated.filename,
+    });
+  } catch (err) {
+    await transitionDataJob(db, {
+      trusted: input.trusted,
+      jobId: created.job.id,
+      toStatus: "failed",
+      actorIdentityId: input.actorIdentityId || null,
+      note: "preview_failed",
+      resultSummary: { error: String(err && err.message ? err.message : err) },
+    });
+    throw err;
+  }
+
+  const summary = {
+    filename: validated.filename,
+    rowCount: validated.rowCount,
+    preview: preview || {},
+  };
+  const next = await transitionDataJob(db, {
+    trusted: input.trusted,
+    jobId: created.job.id,
+    toStatus: "succeeded",
+    actorIdentityId: input.actorIdentityId || null,
+    note: "Import preview completed",
+    progress: { stage: "preview" },
+    resultSummary: summary,
+  });
+  return {
+    ok: true,
+    code: "ok",
+    job: next.job,
+    preview: summary.preview,
+    validation: {
+      filename: validated.filename,
+      rowCount: validated.rowCount,
+      headers: validated.headers,
+    },
+  };
+}
+
+/**
+ * Commit a previously previewed import (or inline commit when dryRun=false).
+ */
+async function commitDataJobImport(db, input) {
+  const scope = assertTrustedJobScope(input);
+  if (!scope.ok) return scope;
+  const jobId = String(input.jobId || "").trim();
+  if (!jobId) return { ok: false, code: "invalid_job_id" };
+
+  const existing = await repo.findDataJobById(db, {
+    organizationId: scope.organizationId,
+    jobId,
+  });
+  if (!existing) return { ok: false, code: "not_found", httpStatus: 404 };
+  if (existing.jobKind !== "import") {
+    return { ok: false, code: "invalid_job_kind" };
+  }
+
+  const adapter = getDataJobAdapter(existing.productCode, existing.entityKey);
+  if (!adapter || typeof adapter.commitImport !== "function") {
+    return { ok: false, code: "adapter_missing" };
+  }
+
+  const previewRows =
+    (existing.resultSummary &&
+      existing.resultSummary.preview &&
+      existing.resultSummary.preview.acceptedRows) ||
+    input.acceptedRows ||
+    [];
+
+  // Re-open a commit job from succeeded preview → running.
+  // Preview jobs end in succeeded; create a sibling commit job for audit clarity.
+  const commitJob = await createDataJob(db, {
+    trusted: input.trusted,
+    productCode: existing.productCode,
+    entityKey: existing.entityKey,
+    jobKind: "import",
+    dryRun: false,
+    actorIdentityId: input.actorIdentityId || null,
+    inputFileRef: existing.inputFileRef,
+    body: input.body,
+    query: input.query,
+  });
+  if (!commitJob.ok) return commitJob;
+
+  await transitionDataJob(db, {
+    trusted: input.trusted,
+    jobId: commitJob.job.id,
+    toStatus: "running",
+    actorIdentityId: input.actorIdentityId || null,
+    note: `Commit from preview ${existing.id}`,
+  });
+
+  let result;
+  try {
+    result = await adapter.commitImport({
+      db,
+      job: commitJob.job,
+      previewJob: existing,
+      trusted: input.trusted,
+      acceptedRows: previewRows,
+    });
+  } catch (err) {
+    await transitionDataJob(db, {
+      trusted: input.trusted,
+      jobId: commitJob.job.id,
+      toStatus: "failed",
+      actorIdentityId: input.actorIdentityId || null,
+      note: "commit_failed",
+      resultSummary: { error: String(err && err.message ? err.message : err) },
+    });
+    throw err;
+  }
+
+  const next = await transitionDataJob(db, {
+    trusted: input.trusted,
+    jobId: commitJob.job.id,
+    toStatus: "succeeded",
+    actorIdentityId: input.actorIdentityId || null,
+    note: "Import commit completed",
+    resultSummary: result || {},
+  });
+  return { ok: true, code: "ok", job: next.job, result: result || {}, previewJobId: existing.id };
+}
+
+/**
+ * Run product buildExport adapter and attach downloadable artifact.
+ */
+async function runDataJobExport(db, input) {
+  const created = await createDataJob(db, {
+    ...input,
+    jobKind: "export",
+    dryRun: false,
+  });
+  if (!created.ok) return created;
+
+  const adapter = getDataJobAdapter(created.job.productCode, created.job.entityKey);
+  if (!adapter || typeof adapter.buildExport !== "function") {
+    await transitionDataJob(db, {
+      trusted: input.trusted,
+      jobId: created.job.id,
+      toStatus: "failed",
+      actorIdentityId: input.actorIdentityId || null,
+      note: "No export adapter registered",
+      resultSummary: { error: "adapter_missing" },
+    });
+    return { ok: false, code: "adapter_missing", job: created.job };
+  }
+
+  await transitionDataJob(db, {
+    trusted: input.trusted,
+    jobId: created.job.id,
+    toStatus: "running",
+    actorIdentityId: input.actorIdentityId || null,
+    note: "Building export",
+  });
+
+  let built;
+  try {
+    built = await adapter.buildExport({
+      db,
+      job: created.job,
+      trusted: input.trusted,
+      filters: input.filters || {},
+    });
+  } catch (err) {
+    await transitionDataJob(db, {
+      trusted: input.trusted,
+      jobId: created.job.id,
+      toStatus: "failed",
+      actorIdentityId: input.actorIdentityId || null,
+      note: "export_failed",
+      resultSummary: { error: String(err && err.message ? err.message : err) },
+    });
+    throw err;
+  }
+
+  const csv = built && built.csv != null ? String(built.csv) : "";
+  const filename =
+    (built && built.filename) || `${created.job.entityKey.replace(/\./g, "-")}-export.csv`;
+  const outputFileRef = putArtifact(created.job.id, {
+    organizationId: created.job.organizationId,
+    filename,
+    contentType: "text/csv; charset=utf-8",
+    body: csv,
+  });
+
+  const next = await transitionDataJob(db, {
+    trusted: input.trusted,
+    jobId: created.job.id,
+    toStatus: "succeeded",
+    actorIdentityId: input.actorIdentityId || null,
+    note: "Export completed",
+    outputFileRef,
+    resultSummary: {
+      rowCount: built && built.rowCount != null ? built.rowCount : null,
+      filename,
+      privacy: (built && built.privacy) || "facility_scoped",
+    },
+  });
+  return { ok: true, code: "ok", job: next.job, filename, rowCount: built && built.rowCount };
+}
+
+async function downloadDataJobArtifact(db, input) {
+  const scope = assertTrustedJobScope(input);
+  if (!scope.ok) return scope;
+  const jobId = String(input.jobId || "").trim();
+  if (!jobId) return { ok: false, code: "invalid_job_id" };
+  const job = await repo.findDataJobById(db, {
+    organizationId: scope.organizationId,
+    jobId,
+  });
+  if (!job) return { ok: false, code: "not_found", httpStatus: 404 };
+  const artifact = getArtifact(jobId, scope.organizationId);
+  if (!artifact) {
+    return { ok: false, code: "artifact_expired", httpStatus: 410 };
+  }
+  return { ok: true, code: "ok", job, artifact };
+}
+
 module.exports = {
   JOB_TRANSITIONS,
   assertTrustedJobScope,
@@ -262,4 +564,8 @@ module.exports = {
   transitionDataJob,
   getDataJob,
   listOrganizationDataJobs,
+  previewDataJobImport,
+  commitDataJobImport,
+  runDataJobExport,
+  downloadDataJobArtifact,
 };

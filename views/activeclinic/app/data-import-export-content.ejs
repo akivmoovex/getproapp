@@ -1,0 +1,158 @@
+<%
+  var stitch = (pageData && pageData.stitch) || {};
+  var caps = (pageData && pageData.capabilities) || {};
+  var importTypes = (pageData && pageData.importTypes) || [];
+  var exportTypes = (pageData && pageData.exportTypes) || [];
+  var jobs = (pageData && pageData.jobs) || [];
+  var flash = (pageData && pageData.flash) || {};
+  var preview = (pageData && pageData.preview) || null;
+%>
+<section class="ac-data-centre" data-ac-page-section="data-import-export" data-ac-stitch="ACN26" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+  <% if (flash.error) { %>
+  <div class="ac-panel ac-alert ac-alert--error" role="alert">Unable to complete request (<%= flash.error %>).</div>
+  <% } %>
+  <% if (flash.success) { %>
+  <p class="ac-flash ac-flash--success" role="status"><%= flash.success %></p>
+  <% } %>
+
+  <% if (preview) { %>
+  <article class="ac-panel">
+    <h2 class="ac-dashboard__card-title">Validation preview</h2>
+    <p class="ac-muted">File <%= (preview.validation && preview.validation.filename) || '' %> · <%= (preview.validation && preview.validation.rowCount) || 0 %> rows</p>
+    <dl class="ac-dl">
+      <div><dt>Accepted</dt><dd><%= (preview.preview && preview.preview.acceptedCount) || 0 %></dd></div>
+      <div><dt>Errors</dt><dd><%= (preview.preview && preview.preview.errorCount) || 0 %></dd></div>
+      <div><dt>Warnings</dt><dd><%= (preview.preview && preview.preview.warningCount) || 0 %></dd></div>
+    </dl>
+
+    <% if (preview.preview && preview.preview.errors && preview.preview.errors.length) { %>
+    <h3 class="ac-dashboard__card-title">Errors</h3>
+    <ul class="ac-card-list">
+      <% preview.preview.errors.forEach(function (e) { %>
+      <li class="ac-card">Line <%= e.line %>: <%= e.message %> (<%= e.code %>)</li>
+      <% }) %>
+    </ul>
+    <% } %>
+
+    <% if (preview.preview && preview.preview.warnings && preview.preview.warnings.length) { %>
+    <h3 class="ac-dashboard__card-title">Warnings</h3>
+    <ul class="ac-card-list">
+      <% preview.preview.warnings.forEach(function (w) { %>
+      <li class="ac-card">Line <%= w.line %>: <%= w.message %></li>
+      <% }) %>
+    </ul>
+    <% } %>
+
+    <% if (preview.preview && preview.preview.sample && preview.preview.sample.length) { %>
+    <h3 class="ac-dashboard__card-title">Sample accepted rows</h3>
+    <div class="ac-table-wrap">
+      <table class="ac-table">
+        <thead><tr><th>Code</th><th>Name</th><th>Amount (minor)</th></tr></thead>
+        <tbody>
+          <% preview.preview.sample.forEach(function (r) { %>
+          <tr><td><%= r.code %></td><td><%= r.name %></td><td><%= r.amountMinor %></td></tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+
+    <% if (preview.preview && preview.preview.acceptedCount > 0 && !(preview.preview.errorCount > 0)) { %>
+    <form method="post" action="/app/data/import/confirm" class="ac-form-actions" data-ac-loading="1">
+      <%- include('../partials/ac-csrf-field') %>
+      <input type="hidden" name="job_id" value="<%= preview.jobId %>" />
+      <button type="submit" class="ac-btn">Confirm import</button>
+      <a href="/app/data" class="ac-btn ac-btn--ghost">Cancel</a>
+    </form>
+    <% } else { %>
+    <div class="ac-form-actions">
+      <a href="/app/data" class="ac-btn ac-btn--ghost">Back</a>
+    </div>
+    <% } %>
+  </article>
+  <% } else { %>
+
+  <% if (caps.canImport) { %>
+  <form method="post" action="/app/data/import/preview" enctype="multipart/form-data" class="ac-panel" data-ac-loading="1">
+    <%- include('../partials/ac-csrf-field') %>
+    <h2 class="ac-dashboard__card-title">Import setup data</h2>
+    <p class="ac-muted">Workflow: select type → upload → validate → preview → confirm. No payment gateway or clinical import.</p>
+    <div class="ac-field">
+      <label class="ac-label" for="entity_key_import">Type *</label>
+      <select class="ac-input" id="entity_key_import" name="entity_key" required>
+        <% importTypes.forEach(function (t) { %>
+        <option value="<%= t.entityKey %>"><%= t.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="file">CSV file *</label>
+      <input class="ac-input" id="file" name="file" type="file" accept=".csv,text/csv" required />
+      <p class="ac-hint">Required headers for catalogue: code, name, amount. Max 2&nbsp;MB / 5,000 rows.</p>
+    </div>
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Upload &amp; validate</button>
+    </div>
+  </form>
+  <% } %>
+
+  <% if (caps.canExport) { %>
+  <form method="post" action="/app/data/export" class="ac-panel" data-ac-loading="1">
+    <%- include('../partials/ac-csrf-field') %>
+    <h2 class="ac-dashboard__card-title">Export</h2>
+    <p class="ac-muted">Facility-scoped exports. Patient exports exclude clinical narratives and national IDs.</p>
+    <div class="ac-field">
+      <label class="ac-label" for="entity_key_export">Type *</label>
+      <select class="ac-input" id="entity_key_export" name="entity_key" required>
+        <% exportTypes.forEach(function (t) { %>
+        <option value="<%= t.entityKey %>"><%= t.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="from">From (optional)</label>
+      <input class="ac-input" id="from" name="from" type="date" />
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="to">To (optional)</label>
+      <input class="ac-input" id="to" name="to" type="date" />
+    </div>
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Export CSV</button>
+    </div>
+  </form>
+  <% } %>
+
+  <article class="ac-panel ac-panel--table">
+    <h2 class="ac-dashboard__card-title">Recent jobs</h2>
+    <% if (!jobs.length) { %>
+      <p class="ac-muted">No import/export jobs yet.</p>
+    <% } else { %>
+      <div class="ac-table-wrap">
+        <table class="ac-table">
+          <thead>
+            <tr>
+              <th>When</th>
+              <th>Kind</th>
+              <th>Entity</th>
+              <th>Status</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody>
+            <% jobs.forEach(function (j) { %>
+            <tr>
+              <td><%= j.createdAt %></td>
+              <td><%= j.jobKind %></td>
+              <td><%= j.entityKey %></td>
+              <td><span class="ac-status" data-status="<%= j.status %>"><%= j.status %></span></td>
+              <td><a href="/app/data/jobs/<%= j.id %>">Open</a></td>
+            </tr>
+            <% }) %>
+          </tbody>
+        </table>
+      </div>
+    <% } %>
+  </article>
+  <% } %>
+</section>

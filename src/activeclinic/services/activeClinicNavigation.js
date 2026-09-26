@@ -187,6 +187,22 @@ const NAV_ITEMS = Object.freeze([
     group: "management",
   },
   {
+    key: "performance",
+    label: "Performance",
+    href: "/app/performance",
+    permission: "activeclinic.performance.view",
+    icon: "monitoring",
+    group: "management",
+  },
+  {
+    key: "data",
+    label: "Import & export",
+    href: "/app/data",
+    anyOf: ["activeclinic.data.import", "activeclinic.data.export"],
+    icon: "import_export",
+    group: "management",
+  },
+  {
     key: "access",
     label: "Roles & access",
     href: "/app/access",

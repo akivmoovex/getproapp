@@ -297,6 +297,10 @@ function createActiveClinicFoundationApp(options) {
   registerActiveClinicDiagnosticsRoutes(app, { getPool, env, isProduction });
   registerActiveClinicBillingRoutes(app, { getPool, env, isProduction });
   registerActiveClinicCashierRoutes(app, { getPool, env, isProduction });
+  const {
+    registerActiveClinicManagementDataRoutes,
+  } = require("./activeClinicManagementDataRoutes");
+  registerActiveClinicManagementDataRoutes(app, { getPool, env, isProduction });
   registerActiveClinicStaffAdminRoutes(app, { getPool, env, isProduction });
 
   app.get("/healthz", (req, res) => {
