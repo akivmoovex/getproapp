@@ -48,6 +48,29 @@
     loadTypes();
   }
 
+  function escapeHtml(value) {
+    return String(value == null ? "" : value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;");
+  }
+
+  function iconForType(item) {
+    var type = String((item && item.type) || "").toLowerCase();
+    var kind = String((item && item.kind) || "").toLowerCase();
+    var layout = String((item && item.layout) || "").toLowerCase();
+    var label = String((item && item.label) || "").toLowerCase();
+    if (layout === "cta" || type === "cta" || /call to action/.test(label)) return "campaign";
+    if (type === "image" || kind === "image") return "image";
+    if (type === "image_text" || kind === "image_text") return "view_agenda";
+    if (type === "services") return "medical_services";
+    if (type === "doctors") return "stethoscope";
+    if (type === "hours") return "schedule";
+    if (type === "contact") return "call";
+    return "notes";
+  }
+
   function renderTypes(items) {
     if (!list) return;
     list.innerHTML = "";
@@ -65,13 +88,24 @@
       btn.type = "button";
       btn.className = "gp-website-add-section__option";
       btn.setAttribute("data-website-add-section-type", item.type);
+      var desc =
+        (item.description || "") + (item.singleton ? " (one per page)" : "");
+      var label = item.label || item.type;
+      btn.setAttribute("aria-label", "Add " + label + " section");
       btn.innerHTML =
+        '<span class="gp-website-add-section__option-icon" aria-hidden="true">' +
+        '<span class="material-symbols-outlined">' +
+        iconForType(item) +
+        "</span></span>" +
+        '<span class="gp-website-add-section__option-body">' +
         "<strong>" +
-        (item.label || item.type) +
+        escapeHtml(label) +
         "</strong><span>" +
-        (item.description || "") +
-        (item.singleton ? " (one per page)" : "") +
-        "</span>";
+        escapeHtml(desc) +
+        "</span></span>" +
+        '<span class="gp-website-add-section__option-action" aria-hidden="true">' +
+        '<span class="material-symbols-outlined">add</span>' +
+        "<span>Add</span></span>";
       btn.addEventListener("click", function () {
         addSection(item.type);
       });

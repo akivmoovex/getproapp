@@ -159,6 +159,6 @@ describe("V2_01 universal image editor UI", () => {
       read("src/platform/website/renderWebsiteManagementPage.js"),
       /v2-(?:img-editor-2|scope-e1-\d+|toolbar-parity-\d+|u1a-history-\d+|u1b-panel-\d+|u1c-dialogs-\d+)/
     );
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /ASSET_VERSION = "v2-u1c-dialogs-1"/);
+    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /ASSET_VERSION = "v2-spt7-picker-1"/);
   });
 });
