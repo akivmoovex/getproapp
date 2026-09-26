@@ -25,6 +25,7 @@ const {
   renderActiveClinicAppPage,
 } = require("./renderActiveClinicShell");
 const {
+  loadActiveClinicDiagnosticsHubScreen,
   loadActiveClinicLaboratoryDashboardScreen,
   loadActiveClinicLaboratoryQueueScreen,
   loadActiveClinicLaboratoryWorklistScreen,
@@ -134,6 +135,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
   }
 
   // Laboratory dashboard
+  // Diagnostics hub (Batch 2 AC-B2-08)
   app.get(
     "/app/diagnostics",
     requireAuth,
@@ -142,6 +144,22 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
     async (req, res, next) => {
       try {
         const auth = req.activeClinicAuth;
+        const showLaboratory = canViewLaboratory(auth);
+        const showRadiology = canViewRadiology(auth);
+        const loaded = await loadActiveClinicDiagnosticsHubScreen(getPool(), {
+          auth,
+          showLaboratory,
+          showRadiology,
+        });
+        if (!loaded.ok) {
+          return res.status(403).type("html").send(
+            renderSimpleState(
+              "Diagnostics unavailable",
+              mapDiagnosticsError(loaded.code),
+              { status: 403, linkHref: "/app", linkLabel: "Back home" }
+            )
+          );
+        }
         return await renderShell(req, res, {
           activeNav: "diagnostics",
           content: "app/diagnostics-hub-content.ejs",
@@ -156,10 +174,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
             { label: "Diagnostics" },
           ],
           pageData: {
-            hub: {
-              showLaboratory: canViewLaboratory(auth),
-              showRadiology: canViewRadiology(auth),
-            },
+            hub: loaded.hub,
           },
         });
       } catch (err) {
@@ -221,6 +236,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
       try {
         const loaded = await loadActiveClinicLaboratoryQueueScreen(getPool(), {
           auth: req.activeClinicAuth,
+          query: req.query,
         });
         if (!loaded.ok) {
           return res.status(403).type("html").send(
@@ -769,6 +785,7 @@ function registerActiveClinicDiagnosticsRoutes(app, deps) {
       try {
         const loaded = await loadActiveClinicRadiologyQueueScreen(getPool(), {
           auth: req.activeClinicAuth,
+          query: req.query,
         });
         if (!loaded.ok) {
           return res.status(403).type("html").send(

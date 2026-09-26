@@ -1,53 +1,116 @@
-<div data-ac-stitch="1fa6c921703145af96e47f7344b6cb62" data-ac-screen="radiology-queue">
-  <% if (pageData.queue.requests.length === 0) { %>
+<%
+  var queue = (pageData && pageData.queue) || {};
+  var requests = queue.requests || [];
+  var statusTabs = queue.statusTabs || [];
+  var stitch = queue.stitch || {};
+  var currentStatus = queue.currentStatus || 'open';
+  var q = queue.q || '';
+  var searchFilters = '<input type="hidden" name="status" value="' + String(currentStatus).replace(/"/g, '&quot;') + '" />';
+%>
+<section
+  class="ac-diagnostics-rad-queue ac-diagnostics-queue--b2 ac-ops-queue"
+  data-ac-stitch="AC-B2-08"
+  data-ac-screen="radiology-queue"
+  data-ac-modality="radiology"
+  data-ac-stitch-desktop="<%= stitch.desktop || '07d08d75a44248acab897adb33254426' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'f092ae1348084d1bb41b689d34c86f16' %>"
+>
+  <header class="ac-ops-queue__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Radiology queue</p>
+      <h2 class="ac-ops-queue__title">Imaging orders</h2>
+      <p class="ac-muted"><%= queue.facilityDisplayName || '' %></p>
+    </div>
+    <a class="ac-btn ac-btn--ghost" href="/app/diagnostics/radiology">Radiology dashboard</a>
+  </header>
+
+  <%- include('../../platform/partials/gp-ops-filter-bar', {
+    action: '/app/diagnostics/radiology/queue',
+    method: 'get',
+    q: q,
+    qName: 'q',
+    submitLabel: 'Search',
+    filtersHtml: searchFilters
+  }) %>
+
+  <% if (statusTabs.length) { %>
+  <%- include('../../platform/partials/gp-ops-status-tabs', {
+    tabs: statusTabs,
+    ariaLabel: 'Radiology status filters'
+  }) %>
+  <% } %>
+
+  <% if (!requests.length) { %>
   <%- include('../partials/ac-inline-state', {
     inlineState: {
       stateKey: 'empty',
       marker: 'radiology-queue-empty',
-      title: 'No pending radiology requests',
-      description: 'New imaging orders from clinical encounters will appear here.'
+      title: 'No radiology requests',
+      description: 'No imaging orders match this filter.'
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap ac-desktop-table">
-    <table class="ac-table">
-      <thead>
-        <tr>
-          <th>Request #</th>
-          <th>Patient</th>
-          <th>Study type</th>
-          <th>Urgency</th>
-          <th>Status</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% pageData.queue.requests.forEach(function (req) { %>
-        <tr>
-          <td><%= req.requestNumber %></td>
-          <td><%= req.patientDisplayName %></td>
-          <td><%= req.studyType %></td>
-          <td><%= req.urgency %></td>
-          <td><span class="ac-status" data-ac-status="<%= req.status %>"><%= req.status %></span></td>
-          <td>
-            <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/diagnostics/radiology/request/<%= req.id %>/report">Report</a>
-          </td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
+  <div class="ac-panel ac-table-wrap ac-desktop-table gp-ops-table-wrap ac-ops-queue__desktop" data-gp-ops="table">
+    <div class="gp-ops-table-scroll">
+      <table class="ac-table gp-ops-table">
+        <thead>
+          <tr>
+            <th>Order # / Priority</th>
+            <th>Patient</th>
+            <th>Study / modality</th>
+            <th>Ordering clinician</th>
+            <th>Status</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% requests.forEach(function (req) { %>
+          <tr>
+            <td>
+              <strong><%= req.requestNumber %></strong>
+              <div class="ac-muted"><%= req.urgency || '—' %></div>
+            </td>
+            <td>
+              <%= req.patientDisplayName %>
+              <% if (req.patientNumber) { %><div class="ac-muted"><%= req.patientNumber %></div><% } %>
+            </td>
+            <td>
+              <%= req.studyType %>
+              <% if (req.studyDescription) { %><div class="ac-muted"><%= req.studyDescription %></div><% } %>
+            </td>
+            <td><%= req.orderingClinicianDisplayName || '—' %></td>
+            <td>
+              <%- include('../../platform/partials/gp-ops-status-badge', {
+                label: req.status,
+                tone: req.status === 'verified' ? 'success'
+                  : (req.status === 'in_progress' || req.status === 'completed' ? 'warning' : 'info')
+              }) %>
+            </td>
+            <td>
+              <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/diagnostics/radiology/request/<%= req.id %>/report">Report</a>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
   </div>
-  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="radiology-queue">
-    <% pageData.queue.requests.forEach(function (req) { %>
-    <li class="ac-card ac-mobile-record-card">
+  <ul class="ac-card-list ac-mobile-table-cards ac-ops-queue__mobile" data-ac-cards="radiology-queue">
+    <% requests.forEach(function (req) { %>
+    <li class="ac-card ac-mobile-record-card ac-ops-queue-card">
       <a class="ac-card__link" href="/app/diagnostics/radiology/request/<%= req.id %>/report">
-        <p class="ac-card__title"><%= req.requestNumber %></p>
-        <p class="ac-muted"><%= req.patientDisplayName %></p>
+        <div class="ac-ops-queue-card__head">
+          <p class="ac-card__title"><%= req.requestNumber %></p>
+          <%- include('../../platform/partials/gp-ops-status-badge', {
+            label: req.status,
+            tone: req.status === 'verified' ? 'success' : 'info'
+          }) %>
+        </div>
+        <p class="ac-muted"><%= req.patientDisplayName %><% if (req.patientNumber) { %> · <%= req.patientNumber %><% } %></p>
         <p class="ac-muted"><%= req.studyType %> · <%= req.urgency %></p>
-        <p><span class="ac-status" data-ac-status="<%= req.status %>"><%= req.status %></span></p>
       </a>
     </li>
     <% }) %>
   </ul>
   <% } %>
-</div>
+</section>

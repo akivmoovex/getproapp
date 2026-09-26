@@ -15,6 +15,7 @@ const {
   getInventoryBatchById,
   listStockMovementsForBatch,
   listPrescriptionQueue,
+  countPrescriptionsByStatus,
   getPrescriptionById,
   RESULT: PHARM_RESULT,
   PERM,
@@ -39,7 +40,9 @@ const PRESCRIPTION_STATUS_LABELS = Object.freeze({
 });
 
 const STITCH = Object.freeze({
-  dashboardDesktop: "4d83f5c845ae4d91b805a1dfd6a7268d",
+  /** Batch 2 AC-B2-07 pharmacy workspace (project 7300898757945019896). */
+  dashboardDesktop: "a587c5c7bb87492fa7eb986bcd843a39",
+  dashboardMobile: "e1162b521dcf45e98692799923ab42ca",
   catalogueDesktop: "b5e534cf921d460c9774c2772ab688e9",
   medicineDetailDesktop: "20a62e6f34ef422b8262750b0fe9788a",
   addMedicineDesktop: "83495a7aea6547ce873af695fcb5f604",
@@ -49,8 +52,8 @@ const STITCH = Object.freeze({
   selectBatchDesktop: "a7649e64ba1e4eee8ca0bcb6a54594bd",
   lowStockDesktop: "553dd601642d41abb89cf4c7127c221a",
   expiryAlertsDesktop: "fcba0b2ed1334eacad9647e597f66959",
-  prescriptionQueueDesktop: "5472760fda8148cf8611564236ae2247",
-  prescriptionQueueMobile: "322c2b620c8e4b248fa5620881555d8b",
+  prescriptionQueueDesktop: "a587c5c7bb87492fa7eb986bcd843a39",
+  prescriptionQueueMobile: "e1162b521dcf45e98692799923ab42ca",
   prescriptionDetailDesktop: "2da2d7b7cd734161a9f8257c2256c6f3",
   prescriptionDetailMobile: "4f369d10d5654e68bf5a5c45d8ef7d78",
   dispenseDesktop: "e4d4e37c175a458d9004e1240395ba63",
@@ -93,7 +96,7 @@ async function loadActiveClinicPharmacyDashboardScreen(db, input) {
     return { ok: false, code: "facility_required", dashboard: null };
   }
 
-  const [pendingQueue, lowStock, expiringBatches] = await Promise.all([
+  const [pendingQueue, lowStock, expiringBatches, statusCounts] = await Promise.all([
     listPrescriptionQueue(db, {
       staffId: auth.staffMember.id,
       organizationId: auth.organization.id,
@@ -110,7 +113,19 @@ async function loadActiveClinicPharmacyDashboardScreen(db, input) {
       organizationId: auth.organization.id,
       facilityId: selectedFacility.id,
     }),
+    countPrescriptionsByStatus(db, {
+      staffId: auth.staffMember.id,
+      organizationId: auth.organization.id,
+      facilityId: selectedFacility.id,
+    }),
   ]);
+
+  const counts = (statusCounts.ok && statusCounts.counts) || {};
+  const totalOpen =
+    (counts.pending || 0) +
+    (counts.in_preparation || 0) +
+    (counts.ready_for_collection || 0) +
+    (counts.partially_dispensed || 0);
 
   return {
     ok: true,
@@ -120,6 +135,11 @@ async function loadActiveClinicPharmacyDashboardScreen(db, input) {
         pendingPrescriptions: (pendingQueue.ok && pendingQueue.prescriptions.length) || 0,
         lowStockCount: (lowStock.ok && lowStock.lowStockItems.length) || 0,
         expiringBatchesCount: (expiringBatches.ok && expiringBatches.expiringBatches.length) || 0,
+        statusCounts: counts,
+        totalOpen,
+        readyForCollection: counts.ready_for_collection || 0,
+        inPreparation: counts.in_preparation || 0,
+        dispensed: counts.dispensed || 0,
       },
       actions: {
         canViewPharmacy: hasPerm(perms, PERM.PHARMACY_VIEW),
@@ -129,6 +149,7 @@ async function loadActiveClinicPharmacyDashboardScreen(db, input) {
       },
       stitch: {
         desktop: STITCH.dashboardDesktop,
+        mobile: STITCH.dashboardMobile,
       },
     },
   };
@@ -326,21 +347,70 @@ async function loadActiveClinicPharmacyPrescriptionQueueScreen(db, input) {
   }
 
   const status = (query && query.status) || "pending";
+  const q = String((query && query.q) || "").trim();
   const listed = await listPrescriptionQueue(db, {
     staffId: auth.staffMember.id,
     organizationId: auth.organization.id,
     facilityId: selectedFacility.id,
     status,
+    q,
   });
 
   if (!listed.ok) {
     return { ok: false, code: listed.result, prescriptionQueue: null };
   }
 
+  const counted = await countPrescriptionsByStatus(db, {
+    staffId: auth.staffMember.id,
+    organizationId: auth.organization.id,
+    facilityId: selectedFacility.id,
+  });
+  const counts = (counted.ok && counted.counts) || {};
+  const totalAll = Object.keys(counts).reduce((sum, key) => sum + (counts[key] || 0), 0);
+
   const prescriptions = listed.prescriptions.map((p) => ({
     ...p,
     statusLabel: PRESCRIPTION_STATUS_LABELS[p.status] || p.status,
   }));
+
+  const statusTabs = [
+    { key: "all", label: "All", href: "/app/pharmacy/queue?status=all", count: totalAll, active: status === "all" },
+    {
+      key: "pending",
+      label: "Pending review",
+      href: "/app/pharmacy/queue?status=pending",
+      count: counts.pending || 0,
+      active: status === "pending",
+    },
+    {
+      key: "in_preparation",
+      label: "Ready to fill",
+      href: "/app/pharmacy/queue?status=in_preparation",
+      count: counts.in_preparation || 0,
+      active: status === "in_preparation",
+    },
+    {
+      key: "ready_for_collection",
+      label: "Ready pickup",
+      href: "/app/pharmacy/queue?status=ready_for_collection",
+      count: counts.ready_for_collection || 0,
+      active: status === "ready_for_collection",
+    },
+    {
+      key: "dispensed",
+      label: "Dispensed",
+      href: "/app/pharmacy/queue?status=dispensed",
+      count: counts.dispensed || 0,
+      active: status === "dispensed",
+    },
+    {
+      key: "partially_dispensed",
+      label: "Partial",
+      href: "/app/pharmacy/queue?status=partially_dispensed",
+      count: counts.partially_dispensed || 0,
+      active: status === "partially_dispensed",
+    },
+  ];
 
   return {
     ok: true,
@@ -348,6 +418,9 @@ async function loadActiveClinicPharmacyPrescriptionQueueScreen(db, input) {
       prescriptions,
       facility: selectedFacility,
       currentStatus: status,
+      q,
+      statusCounts: counts,
+      statusTabs,
       actions: {
         canViewPharmacy: hasPerm(perms, PERM.PHARMACY_VIEW),
         canDispense: hasPerm(perms, PERM.PHARMACY_DISPENSE),

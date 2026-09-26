@@ -3758,3 +3758,77 @@ body.ac-app-body .ac-clinical-encounter__footer-actions {
     padding: var(--ac-space-3);
   }
 }
+
+/* ==========================================================================
+   V2.03 Batch 2 — AC-B2-07 / AC-B2-08 operational queues
+   ========================================================================== */
+body.ac-app-body .ac-ops-queue {
+  display: grid;
+  gap: var(--ac-space-4);
+}
+
+body.ac-app-body .ac-ops-queue__header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--ac-space-3);
+}
+
+body.ac-app-body .ac-ops-queue__kicker {
+  margin: 0;
+  font-size: 0.72rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--ac-muted, #6b7280);
+}
+
+body.ac-app-body .ac-ops-queue__title {
+  margin: 0.2rem 0 0;
+  font-size: 1.35rem;
+  font-weight: 700;
+  color: var(--ac-ink, #111827);
+}
+
+body.ac-app-body .ac-ops-queue-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+}
+
+body.ac-app-body .ac-ops-queue-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  padding: 0 0.85rem 0.85rem;
+}
+
+@media (max-width: 720px) {
+  body.ac-app-body .ac-ops-queue__desktop,
+  body.ac-app-body .ac-pharmacy-queue--b2 .ac-desktop-table,
+  body.ac-app-body .ac-diagnostics-queue--b2 .ac-desktop-table {
+    display: none;
+  }
+  body.ac-app-body .ac-ops-queue__mobile,
+  body.ac-app-body .ac-pharmacy-queue--b2 .ac-mobile-table-cards,
+  body.ac-app-body .ac-diagnostics-queue--b2 .ac-mobile-table-cards {
+    display: grid;
+  }
+}
+
+@media (min-width: 721px) {
+  body.ac-app-body .ac-ops-queue__mobile,
+  body.ac-app-body .ac-pharmacy-queue--b2 .ac-mobile-table-cards,
+  body.ac-app-body .ac-diagnostics-queue--b2 .ac-mobile-table-cards {
+    display: none;
+  }
+}
+
+@media (max-width: 390px) {
+  body.ac-app-body .ac-ops-queue__header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

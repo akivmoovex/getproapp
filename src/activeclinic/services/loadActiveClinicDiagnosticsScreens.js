@@ -6,6 +6,11 @@
 
 const { RESULT: DIAGNOSTICS_RESULT } = require("./activeClinicDiagnosticsService");
 
+const STITCH_B2 = Object.freeze({
+  diagnosticsDesktop: "07d08d75a44248acab897adb33254426",
+  diagnosticsMobile: "f092ae1348084d1bb41b689d34c86f16",
+});
+
 function actorFromAuth(auth) {
   return {
     staffId: auth.staff.id,
@@ -13,6 +18,92 @@ function actorFromAuth(auth) {
     organizationId: auth.organization.id,
     healthcareOrganizationId: auth.healthcareOrganization.id,
   };
+}
+
+async function loadLabStatusCounts(client, auth) {
+  const statsRes = await client.query(
+    `SELECT status, COUNT(*)::int AS count
+       FROM activeclinic.laboratory_requests
+      WHERE facility_id = $1
+        AND organization_id = $2
+        AND healthcare_organization_id = $3
+      GROUP BY status`,
+    [auth.selectedFacility.id, auth.organization.id, auth.healthcareOrganization.id]
+  );
+  const stats = {
+    pending_collection: 0,
+    collected: 0,
+    received: 0,
+    processing: 0,
+    verified: 0,
+    total: 0,
+  };
+  for (const row of statsRes.rows) {
+    stats.total += row.count;
+    if (Object.prototype.hasOwnProperty.call(stats, row.status)) {
+      stats[row.status] = row.count;
+    }
+  }
+  return stats;
+}
+
+async function loadRadStatusCounts(client, auth) {
+  const statsRes = await client.query(
+    `SELECT status, COUNT(*)::int AS count
+       FROM activeclinic.radiology_requests
+      WHERE facility_id = $1
+        AND organization_id = $2
+        AND healthcare_organization_id = $3
+      GROUP BY status`,
+    [auth.selectedFacility.id, auth.organization.id, auth.healthcareOrganization.id]
+  );
+  const stats = {
+    pending: 0,
+    in_progress: 0,
+    completed: 0,
+    verified: 0,
+    total: 0,
+  };
+  for (const row of statsRes.rows) {
+    stats.total += row.count;
+    if (Object.prototype.hasOwnProperty.call(stats, row.status)) {
+      stats[row.status] = row.count;
+    }
+  }
+  return stats;
+}
+
+/**
+ * Batch 2 diagnostics hub — permission-gated lab/radiology KPIs only.
+ */
+async function loadActiveClinicDiagnosticsHubScreen(pool, params) {
+  const { auth, showLaboratory, showRadiology } = params;
+  if (!auth.selectedFacility) {
+    return { ok: false, code: DIAGNOSTICS_RESULT.FACILITY_NOT_FOUND };
+  }
+
+  const client = await pool.connect();
+  try {
+    const hub = {
+      showLaboratory: !!showLaboratory,
+      showRadiology: !!showRadiology,
+      laboratory: null,
+      radiology: null,
+      stitch: {
+        desktop: STITCH_B2.diagnosticsDesktop,
+        mobile: STITCH_B2.diagnosticsMobile,
+      },
+    };
+    if (showLaboratory) {
+      hub.laboratory = await loadLabStatusCounts(client, auth);
+    }
+    if (showRadiology) {
+      hub.radiology = await loadRadStatusCounts(client, auth);
+    }
+    return { ok: true, hub };
+  } finally {
+    client.release();
+  }
 }
 
 /**
@@ -27,34 +118,23 @@ async function loadActiveClinicLaboratoryDashboardScreen(pool, params) {
 
   const client = await pool.connect();
   try {
-    // Count pending, processing, verified requests
-    const statsRes = await client.query(
-      `SELECT status, COUNT(*) as count
-       FROM activeclinic.laboratory_requests
-       WHERE facility_id = $1
-         AND organization_id = $2
-         AND healthcare_organization_id = $3
-       GROUP BY status`,
-      [auth.selectedFacility.id, auth.organization.id, auth.healthcareOrganization.id]
-    );
-
-    const stats = {
-      pending_collection: 0,
-      processing: 0,
-      verified: 0,
-    };
-
-    for (const row of statsRes.rows) {
-      if (row.status === "pending_collection") stats.pending_collection = parseInt(row.count, 10);
-      if (row.status === "processing") stats.processing = parseInt(row.count, 10);
-      if (row.status === "verified") stats.verified = parseInt(row.count, 10);
-    }
+    const stats = await loadLabStatusCounts(client, auth);
 
     return {
       ok: true,
       dashboard: {
-        facilityDisplayName: auth.selectedFacility.name,
-        stats,
+        facilityDisplayName:
+          (auth.selectedFacility.displayName || auth.selectedFacility.name) || "",
+        stats: {
+          pending_collection: stats.pending_collection,
+          processing: stats.processing,
+          verified: stats.verified,
+          total: stats.total,
+        },
+        stitch: {
+          desktop: STITCH_B2.diagnosticsDesktop,
+          mobile: STITCH_B2.diagnosticsMobile,
+        },
       },
     };
   } finally {
@@ -66,32 +146,112 @@ async function loadActiveClinicLaboratoryDashboardScreen(pool, params) {
  * Load laboratory request queue screen
  */
 async function loadActiveClinicLaboratoryQueueScreen(pool, params) {
-  const { auth } = params;
+  const { auth, query } = params;
 
   if (!auth.selectedFacility) {
     return { ok: false, code: DIAGNOSTICS_RESULT.FACILITY_NOT_FOUND };
   }
 
+  const status = String((query && query.status) || "open").trim() || "open";
+  const q = String((query && query.q) || "").trim().slice(0, 120);
   const client = await pool.connect();
   try {
+    const paramsSql = [
+      auth.selectedFacility.id,
+      auth.organization.id,
+      auth.healthcareOrganization.id,
+    ];
+    let where = `lr.facility_id = $1
+         AND lr.organization_id = $2
+         AND lr.healthcare_organization_id = $3`;
+    if (status === "open") {
+      where += ` AND lr.status IN ('pending_collection', 'collected', 'received', 'processing')`;
+    } else if (status !== "all") {
+      paramsSql.push(status);
+      where += ` AND lr.status = $${paramsSql.length}`;
+    }
+    if (q) {
+      paramsSql.push(`%${q.replace(/[%_]/g, "")}%`);
+      where += ` AND (
+        lr.request_number ILIKE $${paramsSql.length}
+        OR lr.test_panel_name ILIKE $${paramsSql.length}
+        OR (p.first_name || ' ' || p.last_name) ILIKE $${paramsSql.length}
+        OR COALESCE(p.patient_number, '') ILIKE $${paramsSql.length}
+      )`;
+    }
+
     const requestsRes = await client.query(
       `SELECT lr.id, lr.request_number, lr.test_panel_name, lr.urgency,
-              lr.status, lr.requested_at,
-              p.first_name || ' ' || p.last_name as patient_display_name
+              lr.status, lr.requested_at, p.patient_number,
+              p.first_name || ' ' || p.last_name as patient_display_name,
+              sm.display_name AS ordering_clinician_display_name
        FROM activeclinic.laboratory_requests lr
        INNER JOIN activeclinic.patients p ON lr.patient_id = p.id
-       WHERE lr.facility_id = $1
-         AND lr.organization_id = $2
-         AND lr.healthcare_organization_id = $3
-         AND lr.status IN ('pending_collection', 'collected', 'received', 'processing')
-       ORDER BY lr.urgency DESC, lr.requested_at`,
-      [auth.selectedFacility.id, auth.organization.id, auth.healthcareOrganization.id]
+       LEFT JOIN activeclinic.staff_members sm ON lr.requested_by_staff_id = sm.id
+       WHERE ${where}
+       ORDER BY lr.urgency DESC, lr.requested_at
+       LIMIT 200`,
+      paramsSql
     );
+
+    const counts = await loadLabStatusCounts(client, auth);
+    const openCount =
+      (counts.pending_collection || 0) +
+      (counts.collected || 0) +
+      (counts.received || 0) +
+      (counts.processing || 0);
+
+    const statusTabs = [
+      {
+        key: "open",
+        label: "Open queue",
+        href: "/app/diagnostics/laboratory/queue?status=open",
+        count: openCount,
+        active: status === "open",
+      },
+      {
+        key: "pending_collection",
+        label: "Pending collection",
+        href: "/app/diagnostics/laboratory/queue?status=pending_collection",
+        count: counts.pending_collection || 0,
+        active: status === "pending_collection",
+      },
+      {
+        key: "processing",
+        label: "In analysis",
+        href: "/app/diagnostics/laboratory/queue?status=processing",
+        count: counts.processing || 0,
+        active: status === "processing",
+      },
+      {
+        key: "verified",
+        label: "Verified",
+        href: "/app/diagnostics/laboratory/queue?status=verified",
+        count: counts.verified || 0,
+        active: status === "verified",
+      },
+      {
+        key: "all",
+        label: "All",
+        href: "/app/diagnostics/laboratory/queue?status=all",
+        count: counts.total || 0,
+        active: status === "all",
+      },
+    ];
 
     return {
       ok: true,
       queue: {
-        facilityDisplayName: auth.selectedFacility.name,
+        facilityDisplayName:
+          (auth.selectedFacility.displayName || auth.selectedFacility.name) || "",
+        currentStatus: status,
+        q,
+        statusTabs,
+        modality: "laboratory",
+        stitch: {
+          desktop: STITCH_B2.diagnosticsDesktop,
+          mobile: STITCH_B2.diagnosticsMobile,
+        },
         requests: requestsRes.rows.map((r) => ({
           id: r.id,
           requestNumber: r.request_number,
@@ -99,6 +259,8 @@ async function loadActiveClinicLaboratoryQueueScreen(pool, params) {
           urgency: r.urgency,
           status: r.status,
           patientDisplayName: r.patient_display_name,
+          patientNumber: r.patient_number || null,
+          orderingClinicianDisplayName: r.ordering_clinician_display_name || null,
           requestedAt: r.requested_at,
         })),
       },
@@ -410,33 +572,23 @@ async function loadActiveClinicRadiologyDashboardScreen(pool, params) {
 
   const client = await pool.connect();
   try {
-    const statsRes = await client.query(
-      `SELECT status, COUNT(*) as count
-       FROM activeclinic.radiology_requests
-       WHERE facility_id = $1
-         AND organization_id = $2
-         AND healthcare_organization_id = $3
-       GROUP BY status`,
-      [auth.selectedFacility.id, auth.organization.id, auth.healthcareOrganization.id]
-    );
-
-    const stats = {
-      pending: 0,
-      in_progress: 0,
-      verified: 0,
-    };
-
-    for (const row of statsRes.rows) {
-      if (row.status === "pending") stats.pending = parseInt(row.count, 10);
-      if (row.status === "in_progress") stats.in_progress = parseInt(row.count, 10);
-      if (row.status === "verified") stats.verified = parseInt(row.count, 10);
-    }
+    const stats = await loadRadStatusCounts(client, auth);
 
     return {
       ok: true,
       dashboard: {
-        facilityDisplayName: auth.selectedFacility.name,
-        stats,
+        facilityDisplayName:
+          (auth.selectedFacility.displayName || auth.selectedFacility.name) || "",
+        stats: {
+          pending: stats.pending,
+          in_progress: stats.in_progress,
+          verified: stats.verified,
+          total: stats.total,
+        },
+        stitch: {
+          desktop: STITCH_B2.diagnosticsDesktop,
+          mobile: STITCH_B2.diagnosticsMobile,
+        },
       },
     };
   } finally {
@@ -448,32 +600,110 @@ async function loadActiveClinicRadiologyDashboardScreen(pool, params) {
  * Load radiology request queue screen
  */
 async function loadActiveClinicRadiologyQueueScreen(pool, params) {
-  const { auth } = params;
+  const { auth, query } = params;
 
   if (!auth.selectedFacility) {
     return { ok: false, code: DIAGNOSTICS_RESULT.FACILITY_NOT_FOUND };
   }
 
+  const status = String((query && query.status) || "open").trim() || "open";
+  const q = String((query && query.q) || "").trim().slice(0, 120);
   const client = await pool.connect();
   try {
+    const paramsSql = [
+      auth.selectedFacility.id,
+      auth.organization.id,
+      auth.healthcareOrganization.id,
+    ];
+    let where = `rr.facility_id = $1
+         AND rr.organization_id = $2
+         AND rr.healthcare_organization_id = $3`;
+    if (status === "open") {
+      where += ` AND rr.status IN ('pending', 'in_progress', 'completed')`;
+    } else if (status !== "all") {
+      paramsSql.push(status);
+      where += ` AND rr.status = $${paramsSql.length}`;
+    }
+    if (q) {
+      paramsSql.push(`%${q.replace(/[%_]/g, "")}%`);
+      where += ` AND (
+        rr.request_number ILIKE $${paramsSql.length}
+        OR COALESCE(rr.study_type, '') ILIKE $${paramsSql.length}
+        OR COALESCE(rr.study_description, '') ILIKE $${paramsSql.length}
+        OR (p.first_name || ' ' || p.last_name) ILIKE $${paramsSql.length}
+        OR COALESCE(p.patient_number, '') ILIKE $${paramsSql.length}
+      )`;
+    }
+
     const requestsRes = await client.query(
       `SELECT rr.id, rr.request_number, rr.study_type, rr.study_description,
-              rr.urgency, rr.status, rr.requested_at,
-              p.first_name || ' ' || p.last_name as patient_display_name
+              rr.urgency, rr.status, rr.requested_at, p.patient_number,
+              p.first_name || ' ' || p.last_name as patient_display_name,
+              sm.display_name AS ordering_clinician_display_name
        FROM activeclinic.radiology_requests rr
        INNER JOIN activeclinic.patients p ON rr.patient_id = p.id
-       WHERE rr.facility_id = $1
-         AND rr.organization_id = $2
-         AND rr.healthcare_organization_id = $3
-         AND rr.status IN ('pending', 'in_progress', 'completed')
-       ORDER BY rr.urgency DESC, rr.requested_at`,
-      [auth.selectedFacility.id, auth.organization.id, auth.healthcareOrganization.id]
+       LEFT JOIN activeclinic.staff_members sm ON rr.requested_by_staff_id = sm.id
+       WHERE ${where}
+       ORDER BY rr.urgency DESC, rr.requested_at
+       LIMIT 200`,
+      paramsSql
     );
+
+    const counts = await loadRadStatusCounts(client, auth);
+    const openCount =
+      (counts.pending || 0) + (counts.in_progress || 0) + (counts.completed || 0);
+
+    const statusTabs = [
+      {
+        key: "open",
+        label: "Open queue",
+        href: "/app/diagnostics/radiology/queue?status=open",
+        count: openCount,
+        active: status === "open",
+      },
+      {
+        key: "pending",
+        label: "Pending intake",
+        href: "/app/diagnostics/radiology/queue?status=pending",
+        count: counts.pending || 0,
+        active: status === "pending",
+      },
+      {
+        key: "in_progress",
+        label: "In progress",
+        href: "/app/diagnostics/radiology/queue?status=in_progress",
+        count: counts.in_progress || 0,
+        active: status === "in_progress",
+      },
+      {
+        key: "verified",
+        label: "Verified",
+        href: "/app/diagnostics/radiology/queue?status=verified",
+        count: counts.verified || 0,
+        active: status === "verified",
+      },
+      {
+        key: "all",
+        label: "All",
+        href: "/app/diagnostics/radiology/queue?status=all",
+        count: counts.total || 0,
+        active: status === "all",
+      },
+    ];
 
     return {
       ok: true,
       queue: {
-        facilityDisplayName: auth.selectedFacility.name,
+        facilityDisplayName:
+          (auth.selectedFacility.displayName || auth.selectedFacility.name) || "",
+        currentStatus: status,
+        q,
+        statusTabs,
+        modality: "radiology",
+        stitch: {
+          desktop: STITCH_B2.diagnosticsDesktop,
+          mobile: STITCH_B2.diagnosticsMobile,
+        },
         requests: requestsRes.rows.map((r) => ({
           id: r.id,
           requestNumber: r.request_number,
@@ -482,6 +712,8 @@ async function loadActiveClinicRadiologyQueueScreen(pool, params) {
           urgency: r.urgency,
           status: r.status,
           patientDisplayName: r.patient_display_name,
+          patientNumber: r.patient_number || null,
+          orderingClinicianDisplayName: r.ordering_clinician_display_name || null,
           requestedAt: r.requested_at,
         })),
       },
@@ -618,6 +850,7 @@ async function loadActiveClinicCriticalResultAlertScreen(pool, params) {
 }
 
 module.exports = {
+  loadActiveClinicDiagnosticsHubScreen,
   loadActiveClinicLaboratoryDashboardScreen,
   loadActiveClinicLaboratoryQueueScreen,
   loadActiveClinicLaboratoryWorklistScreen,
@@ -631,4 +864,5 @@ module.exports = {
   loadActiveClinicEnterRadiologyReportScreen,
   loadActiveClinicCriticalResultAlertScreen,
   actorFromAuth,
+  STITCH_B2,
 };

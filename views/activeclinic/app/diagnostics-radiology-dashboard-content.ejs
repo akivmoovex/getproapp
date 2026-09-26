@@ -1,16 +1,35 @@
-<div data-ac-stitch="65286a85cc674df097dedf0890378a29" data-ac-screen="radiology-dashboard">
-  <div class="ac-metric-grid ac-stats">
+<%
+  var dashboard = (pageData && pageData.dashboard) || {};
+  var stats = dashboard.stats || {};
+  var stitch = dashboard.stitch || {};
+%>
+<section
+  class="ac-diagnostics-rad-dashboard ac-ops-queue"
+  data-ac-stitch="AC-B2-08"
+  data-ac-screen="radiology-dashboard"
+  data-ac-modality="radiology"
+  data-ac-stitch-desktop="<%= stitch.desktop || '07d08d75a44248acab897adb33254426' %>"
+>
+  <header class="ac-ops-queue__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Radiology</p>
+      <h2 class="ac-ops-queue__title">Radiology dashboard</h2>
+      <p class="ac-muted"><%= dashboard.facilityDisplayName || '' %></p>
+    </div>
+    <a class="ac-btn" href="/app/diagnostics/radiology/queue">Open queue</a>
+  </header>
+  <div class="ac-metric-grid ac-stats" data-ac-diagnostics-metrics="radiology">
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Pending</p>
-      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.pending %></p>
+      <p class="ac-stat-card__value ac-stat-value"><%= stats.pending || 0 %></p>
     </article>
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">In progress</p>
-      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.in_progress %></p>
+      <p class="ac-stat-card__value ac-stat-value"><%= stats.in_progress || 0 %></p>
     </article>
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Verified</p>
-      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.verified %></p>
+      <p class="ac-stat-card__value ac-stat-value"><%= stats.verified || 0 %></p>
     </article>
   </div>
-</div>
+</section>

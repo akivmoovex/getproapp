@@ -5,47 +5,83 @@
   var stitch = dashboard.stitch || {};
   var facility = dashboard.facility || {};
 %>
-<section class="ac-pharmacy-dashboard" data-ac-page-section="pharmacy-dashboard" data-ac-stitch-desktop="<%= stitch.desktop || '' %>">
-  <div class="ac-panel">
-    <header class="ac-section-header">
-      <h2 class="ac-dashboard__card-title">Pharmacy overview</h2>
-    </header>
-    <p class="ac-muted">Pharmacy dashboard for <%= facility.displayName || 'this facility' %>.</p>
-  </div>
+<section
+  class="ac-pharmacy-dashboard ac-pharmacy-dashboard--b2 ac-ops-queue"
+  data-ac-page-section="pharmacy-dashboard"
+  data-ac-stitch="AC-B2-07"
+  data-ac-stitch-desktop="<%= stitch.desktop || 'a587c5c7bb87492fa7eb986bcd843a39' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'e1162b521dcf45e98692799923ab42ca' %>"
+>
+  <header class="ac-ops-queue__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Pharmacy &amp; prescriptions</p>
+      <h2 class="ac-ops-queue__title">Pharmacy workspace</h2>
+      <p class="ac-muted">Operational overview for <%= facility.displayName || 'this facility' %>.</p>
+    </div>
+    <% if (actions.canViewPharmacy) { %>
+    <div class="ac-form-actions ac-form-actions--wrap">
+      <a class="ac-btn" href="/app/pharmacy/queue">Open prescription queue</a>
+      <% if (actions.canViewInventory) { %>
+      <a class="ac-btn ac-btn--ghost" href="/app/pharmacy/inventory">Inventory</a>
+      <% } %>
+    </div>
+    <% } %>
+  </header>
 
   <div class="ac-metric-grid" data-ac-pharmacy-metrics="1">
-      <div class="ac-stat-card">
-        <div class="ac-stat-label">Pending prescriptions</div>
-        <div class="ac-stat-value"><%= stats.pendingPrescriptions || 0 %></div>
-        <% if (actions.canViewPharmacy) { %>
-        <a href="/app/pharmacy/queue" class="ac-stat-link">View queue</a>
-        <% } %>
-      </div>
-      <div class="ac-stat-card">
-        <div class="ac-stat-label">Low stock items</div>
-        <div class="ac-stat-value"><%= stats.lowStockCount || 0 %></div>
-        <% if (actions.canViewInventory) { %>
-        <a href="/app/pharmacy/alerts/low-stock" class="ac-stat-link">View alerts</a>
-        <% } %>
-      </div>
-      <div class="ac-stat-card">
-        <div class="ac-stat-label">Expiring batches (90 days)</div>
-        <div class="ac-stat-value"><%= stats.expiringBatchesCount || 0 %></div>
-        <% if (actions.canViewInventory) { %>
-        <a href="/app/pharmacy/alerts/expiry" class="ac-stat-link">View alerts</a>
-        <% } %>
-      </div>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Pending review</p>
+      <p class="ac-stat-card__value"><%= stats.pendingPrescriptions || 0 %></p>
+      <% if (actions.canViewPharmacy) { %>
+      <a class="ac-stat-card__link" href="/app/pharmacy/queue?status=pending">View queue</a>
+      <% } %>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">In preparation</p>
+      <p class="ac-stat-card__value"><%= stats.inPreparation || 0 %></p>
+      <% if (actions.canViewPharmacy) { %>
+      <a class="ac-stat-card__link" href="/app/pharmacy/queue?status=in_preparation">View queue</a>
+      <% } %>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Ready for pickup</p>
+      <p class="ac-stat-card__value"><%= stats.readyForCollection || 0 %></p>
+      <% if (actions.canViewPharmacy) { %>
+      <a class="ac-stat-card__link" href="/app/pharmacy/queue?status=ready_for_collection">View queue</a>
+      <% } %>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Dispensed</p>
+      <p class="ac-stat-card__value"><%= stats.dispensed || 0 %></p>
+      <% if (actions.canViewPharmacy) { %>
+      <a class="ac-stat-card__link" href="/app/pharmacy/queue?status=dispensed">View queue</a>
+      <% } %>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Low stock items</p>
+      <p class="ac-stat-card__value"><%= stats.lowStockCount || 0 %></p>
+      <% if (actions.canViewInventory) { %>
+      <a class="ac-stat-card__link" href="/app/pharmacy/alerts/low-stock">View alerts</a>
+      <% } %>
+    </article>
+    <article class="ac-stat-card">
+      <p class="ac-stat-card__label">Expiring batches (90d)</p>
+      <p class="ac-stat-card__value"><%= stats.expiringBatchesCount || 0 %></p>
+      <% if (actions.canViewInventory) { %>
+      <a class="ac-stat-card__link" href="/app/pharmacy/alerts/expiry">View alerts</a>
+      <% } %>
+    </article>
   </div>
 
   <div class="ac-panel">
     <header class="ac-section-header">
-      <h3>Quick actions</h3>
+      <h3 class="ac-panel__title">Quick actions</h3>
     </header>
     <div class="ac-action-grid">
       <% if (actions.canViewPharmacy) { %>
       <a href="/app/pharmacy/queue" class="ac-action-card">
         <div class="ac-action-title">Prescription queue</div>
-        <div class="ac-action-description">View and process prescriptions</div>
+        <div class="ac-action-description">Review, fill, and dispense prescriptions</div>
       </a>
       <% } %>
       <% if (actions.canViewInventory) { %>

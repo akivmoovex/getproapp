@@ -700,7 +700,26 @@ async function listPrescriptionQueue(pool, input) {
     return { ok: false, result: RESULT.ACCESS_DENIED };
   }
 
-  const statusFilter = status || "pending";
+  const statusFilter =
+    status === "all" || status === "*" ? null : status || "pending";
+  const q = String(input.q || "")
+    .trim()
+    .slice(0, 120);
+  const params = [facilityId];
+  let where = "pp.facility_id = $1";
+  if (statusFilter) {
+    params.push(statusFilter);
+    where += ` AND pp.status = $${params.length}`;
+  }
+  if (q) {
+    params.push(`%${q.replace(/[%_]/g, "")}%`);
+    where += ` AND (
+      pp.prescription_number ILIKE $${params.length}
+      OR COALESCE(p.patient_number, '') ILIKE $${params.length}
+      OR COALESCE(p.first_name || ' ' || p.last_name, p.first_name, p.last_name, '') ILIKE $${params.length}
+      OR COALESCE(sm.display_name, '') ILIKE $${params.length}
+    )`;
+  }
 
   const result = await pool.query(
     `SELECT pp.*,
@@ -712,15 +731,48 @@ async function listPrescriptionQueue(pool, input) {
      JOIN activeclinic.patients p ON pp.patient_id = p.id
      LEFT JOIN activeclinic.staff_members sm ON pp.prescriber_staff_id = sm.id
      LEFT JOIN activeclinic.encounters e ON pp.encounter_id = e.id
-     WHERE pp.facility_id = $1
-       AND pp.status = $2
-     ORDER BY pp.priority DESC, pp.created_at ASC`,
-    [facilityId, statusFilter]
+     WHERE ${where}
+     ORDER BY pp.priority DESC, pp.created_at ASC
+     LIMIT 200`,
+    params
   );
 
   const prescriptions = result.rows.map(mapPharmacyPrescription);
 
   return { ok: true, result: RESULT.OK, prescriptions };
+}
+
+/**
+ * Facility prescription status counts for queue KPIs/tabs.
+ * Permission: activeclinic.pharmacy.view
+ */
+async function countPrescriptionsByStatus(pool, input) {
+  const { staffId, organizationId, facilityId } = input;
+  if (!staffId || !organizationId || !facilityId) {
+    return { ok: false, result: RESULT.INVALID_INPUT, counts: {} };
+  }
+  const authResult = await authorizeStaffPermission(pool, {
+    organizationId,
+    staffMemberId: staffId,
+    permissionKey: PERM.PHARMACY_VIEW,
+    facilityId: input.facilityId || null,
+  });
+  if (!authResult.ok) {
+    return { ok: false, result: RESULT.ACCESS_DENIED, counts: {} };
+  }
+  const result = await pool.query(
+    `SELECT status, COUNT(*)::int AS total
+       FROM activeclinic.pharmacy_prescriptions
+      WHERE facility_id = $1
+        AND organization_id = $2
+      GROUP BY status`,
+    [facilityId, organizationId]
+  );
+  const counts = {};
+  for (const row of result.rows) {
+    counts[row.status] = row.total;
+  }
+  return { ok: true, result: RESULT.OK, counts };
 }
 
 /**
@@ -1291,6 +1343,7 @@ module.exports = {
   getInventoryBatchById,
   listStockMovementsForBatch,
   listPrescriptionQueue,
+  countPrescriptionsByStatus,
   getPrescriptionById,
   dispensePrescription,
   createPharmacyPrescription,

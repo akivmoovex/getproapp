@@ -2,32 +2,68 @@
   var hub = (pageData && pageData.hub) || {};
   var showLaboratory = hub.showLaboratory !== false;
   var showRadiology = hub.showRadiology !== false;
+  var lab = hub.laboratory || null;
+  var rad = hub.radiology || null;
+  var stitch = hub.stitch || {};
 %>
-<section class="ac-diagnostics-hub" data-ac-page-section="diagnostics-hub" data-ac-visual="stitch-aligned">
-  <div class="ac-panel">
-    <header class="ac-section-header">
-      <h2 class="ac-dashboard__card-title" style="margin-top:0">Diagnostics</h2>
-    </header>
-    <p class="ac-muted">
-      Open the diagnostic workflows you are authorized to use for the selected facility.
-    </p>
-    <% if (!showLaboratory && !showRadiology) { %>
-    <p class="ac-muted" data-ac-diagnostics-empty="1">No diagnostic modules are available for your account.</p>
-    <% } else { %>
-    <div class="ac-action-grid" data-ac-diagnostics-hub="1">
-      <% if (showLaboratory) { %>
-      <a class="ac-action-card" href="/app/diagnostics/laboratory" data-ac-diagnostics-card="laboratory" data-ac-diagnostics-link="laboratory">
-        <span class="ac-action-title">Laboratory</span>
-        <span class="ac-action-description">Queues, specimens, and laboratory results</span>
-      </a>
-      <% } %>
-      <% if (showRadiology) { %>
-      <a class="ac-action-card" href="/app/diagnostics/radiology" data-ac-diagnostics-card="radiology" data-ac-diagnostics-link="radiology">
-        <span class="ac-action-title">Radiology</span>
-        <span class="ac-action-description">Imaging queues and radiology reports</span>
-      </a>
-      <% } %>
+<section
+  class="ac-diagnostics-hub ac-diagnostics-hub--b2 ac-ops-queue"
+  data-ac-page-section="diagnostics-hub"
+  data-ac-stitch="AC-B2-08"
+  data-ac-stitch-desktop="<%= stitch.desktop || '07d08d75a44248acab897adb33254426' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'f092ae1348084d1bb41b689d34c86f16' %>"
+>
+  <header class="ac-ops-queue__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Diagnostics &amp; imaging</p>
+      <h2 class="ac-ops-queue__title">Diagnostics workspace</h2>
+      <p class="ac-muted">Open the diagnostic workflows you are authorized to use.</p>
     </div>
+  </header>
+
+  <% if (!showLaboratory && !showRadiology) { %>
+  <p class="ac-muted" data-ac-diagnostics-empty="1">No diagnostic modules are available for your account.</p>
+  <% } else { %>
+  <div class="ac-metric-grid" data-ac-diagnostics-metrics="1">
+    <% if (showLaboratory && lab) { %>
+    <article class="ac-stat-card" data-ac-diagnostics-metric="lab-pending">
+      <p class="ac-stat-card__label">Lab pending collection</p>
+      <p class="ac-stat-card__value"><%= lab.pending_collection || 0 %></p>
+      <a class="ac-stat-card__link" href="/app/diagnostics/laboratory/queue?status=pending_collection">Open lab queue</a>
+    </article>
+    <article class="ac-stat-card" data-ac-diagnostics-metric="lab-processing">
+      <p class="ac-stat-card__label">Lab in analysis</p>
+      <p class="ac-stat-card__value"><%= lab.processing || 0 %></p>
+      <a class="ac-stat-card__link" href="/app/diagnostics/laboratory/queue?status=processing">Open lab queue</a>
+    </article>
+    <% } %>
+    <% if (showRadiology && rad) { %>
+    <article class="ac-stat-card" data-ac-diagnostics-metric="rad-pending">
+      <p class="ac-stat-card__label">Radiology pending</p>
+      <p class="ac-stat-card__value"><%= rad.pending || 0 %></p>
+      <a class="ac-stat-card__link" href="/app/diagnostics/radiology/queue?status=pending">Open radiology queue</a>
+    </article>
+    <article class="ac-stat-card" data-ac-diagnostics-metric="rad-progress">
+      <p class="ac-stat-card__label">Radiology in progress</p>
+      <p class="ac-stat-card__value"><%= rad.in_progress || 0 %></p>
+      <a class="ac-stat-card__link" href="/app/diagnostics/radiology/queue?status=in_progress">Open radiology queue</a>
+    </article>
     <% } %>
   </div>
+
+  <div class="ac-action-grid" data-ac-diagnostics-hub="1">
+    <% if (showLaboratory) { %>
+    <a class="ac-action-card" href="/app/diagnostics/laboratory" data-ac-diagnostics-card="laboratory" data-ac-diagnostics-link="laboratory">
+      <span class="ac-action-title">Laboratory</span>
+      <span class="ac-action-description">Queues, specimens, and laboratory results<% if (lab) { %> · <%= lab.total || 0 %> orders<% } %></span>
+    </a>
+    <% } %>
+    <% if (showRadiology) { %>
+    <a class="ac-action-card" href="/app/diagnostics/radiology" data-ac-diagnostics-card="radiology" data-ac-diagnostics-link="radiology">
+      <span class="ac-action-title">Radiology</span>
+      <span class="ac-action-description">Imaging queues and radiology reports<% if (rad) { %> · <%= rad.total || 0 %> orders<% } %></span>
+    </a>
+    <% } %>
+  </div>
+  <% } %>
 </section>

@@ -1,16 +1,35 @@
-<div data-ac-stitch="5b7b36f6af3b4735a81cca8cea77ee99" data-ac-screen="laboratory-dashboard">
-  <div class="ac-metric-grid ac-stats">
+<%
+  var dashboard = (pageData && pageData.dashboard) || {};
+  var stats = dashboard.stats || {};
+  var stitch = dashboard.stitch || {};
+%>
+<section
+  class="ac-diagnostics-lab-dashboard ac-ops-queue"
+  data-ac-stitch="AC-B2-08"
+  data-ac-screen="laboratory-dashboard"
+  data-ac-modality="laboratory"
+  data-ac-stitch-desktop="<%= stitch.desktop || '07d08d75a44248acab897adb33254426' %>"
+>
+  <header class="ac-ops-queue__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Laboratory</p>
+      <h2 class="ac-ops-queue__title">Laboratory dashboard</h2>
+      <p class="ac-muted"><%= dashboard.facilityDisplayName || '' %></p>
+    </div>
+    <a class="ac-btn" href="/app/diagnostics/laboratory/queue">Open queue</a>
+  </header>
+  <div class="ac-metric-grid ac-stats" data-ac-diagnostics-metrics="laboratory">
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Pending collection</p>
-      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.pending_collection %></p>
+      <p class="ac-stat-card__value ac-stat-value"><%= stats.pending_collection || 0 %></p>
     </article>
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Processing</p>
-      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.processing %></p>
+      <p class="ac-stat-card__value ac-stat-value"><%= stats.processing || 0 %></p>
     </article>
     <article class="ac-stat-card ac-stat">
       <p class="ac-stat-card__label ac-stat-label">Verified</p>
-      <p class="ac-stat-card__value ac-stat-value"><%= pageData.dashboard.stats.verified %></p>
+      <p class="ac-stat-card__value ac-stat-value"><%= stats.verified || 0 %></p>
     </article>
   </div>
-</div>
+</section>

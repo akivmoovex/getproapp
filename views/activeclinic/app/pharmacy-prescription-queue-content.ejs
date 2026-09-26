@@ -5,21 +5,42 @@
   var currentStatus = prescriptionQueue.currentStatus || 'pending';
   var actions = prescriptionQueue.actions || {};
   var stitch = prescriptionQueue.stitch || {};
+  var statusTabs = prescriptionQueue.statusTabs || [];
+  var q = prescriptionQueue.q || '';
+  var searchAction = '/app/pharmacy/queue';
+  var searchFilters = '<input type="hidden" name="status" value="' + String(currentStatus).replace(/"/g, '&quot;') + '" />';
 %>
-<section class="ac-pharmacy-prescription-queue" data-ac-page-section="pharmacy-prescription-queue" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
-  <div class="ac-panel">
-    <p class="ac-muted">Prescription queue for <%= facility.displayName || 'this facility' %>.</p>
-  </div>
-
-  <div class="ac-panel">
-    <div class="ac-filter-tabs">
-      <a href="/app/pharmacy/queue?status=pending" class="ac-filter-tab <%= currentStatus === 'pending' ? 'ac-filter-tab--active' : '' %>">Pending</a>
-      <a href="/app/pharmacy/queue?status=in_preparation" class="ac-filter-tab <%= currentStatus === 'in_preparation' ? 'ac-filter-tab--active' : '' %>">In Preparation</a>
-      <a href="/app/pharmacy/queue?status=ready_for_collection" class="ac-filter-tab <%= currentStatus === 'ready_for_collection' ? 'ac-filter-tab--active' : '' %>">Ready</a>
-      <a href="/app/pharmacy/queue?status=dispensed" class="ac-filter-tab <%= currentStatus === 'dispensed' ? 'ac-filter-tab--active' : '' %>">Dispensed</a>
-      <a href="/app/pharmacy/queue?status=partially_dispensed" class="ac-filter-tab <%= currentStatus === 'partially_dispensed' ? 'ac-filter-tab--active' : '' %>">Partially Dispensed</a>
+<section
+  class="ac-pharmacy-prescription-queue ac-pharmacy-queue--b2 ac-ops-queue"
+  data-ac-page-section="pharmacy-prescription-queue"
+  data-ac-stitch="AC-B2-07"
+  data-ac-stitch-desktop="<%= stitch.desktop || 'a587c5c7bb87492fa7eb986bcd843a39' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'e1162b521dcf45e98692799923ab42ca' %>"
+>
+  <header class="ac-ops-queue__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Pharmacy queue</p>
+      <h2 class="ac-ops-queue__title">Prescriptions</h2>
+      <p class="ac-muted">Queue for <%= facility.displayName || 'this facility' %>.</p>
     </div>
-  </div>
+    <a class="ac-btn ac-btn--ghost" href="/app/pharmacy">Pharmacy hub</a>
+  </header>
+
+  <%- include('../../platform/partials/gp-ops-filter-bar', {
+    action: searchAction,
+    method: 'get',
+    q: q,
+    qName: 'q',
+    submitLabel: 'Search',
+    filtersHtml: searchFilters
+  }) %>
+
+  <% if (statusTabs.length) { %>
+  <%- include('../../platform/partials/gp-ops-status-tabs', {
+    tabs: statusTabs,
+    ariaLabel: 'Prescription status filters'
+  }) %>
+  <% } %>
 
   <% if (!prescriptions.length) { %>
   <%- include('../partials/ac-inline-state', {
@@ -27,49 +48,83 @@
       stateKey: 'empty',
       marker: 'prescription-queue-empty',
       title: 'No prescriptions',
-      description: `No prescriptions with status "${currentStatus}".`,
+      description: 'No prescriptions match this filter.',
       secondaryAction: { href: '/app/pharmacy', label: 'Back to pharmacy' }
     }
   }) %>
   <% } else { %>
-  <div class="ac-panel ac-table-wrap ac-desktop-table">
-    <table class="ac-table">
-      <caption class="ac-sr-only">Prescription Queue</caption>
-      <thead>
-        <tr>
-          <th scope="col">Prescription #</th>
-          <th scope="col">Patient</th>
-          <th scope="col">Prescriber</th>
-          <th scope="col">Priority</th>
-          <th scope="col">Status</th>
-          <th scope="col">Created</th>
-          <th scope="col" class="ac-sr-only">Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% prescriptions.forEach(function (rx) { %>
-        <tr data-ac-prescription-id="<%= rx.id %>">
-          <td><strong><%= rx.prescriptionNumber %></strong></td>
-          <td><%= rx.patientDisplayName || '—' %></td>
-          <td><%= rx.prescriberStaffDisplayName || '—' %></td>
-          <td><span class="ac-priority" data-ac-priority="<%= rx.priority %>"><%= rx.priority %></span></td>
-          <td><span class="ac-status" data-ac-status="<%= rx.status %>"><%= rx.statusLabel %></span></td>
-          <td><%= rx.createdAt ? new Date(rx.createdAt).toLocaleDateString() : '—' %></td>
-          <td><a href="/app/pharmacy/prescriptions/<%= rx.id %>" class="ac-link">View</a></td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
+  <div class="ac-panel ac-table-wrap ac-desktop-table gp-ops-table-wrap ac-ops-queue__desktop" data-gp-ops="table" data-ac-table="pharmacy-queue">
+    <div class="gp-ops-table-scroll">
+      <table class="ac-table gp-ops-table">
+        <caption class="ac-sr-only">Prescription Queue</caption>
+        <thead>
+          <tr>
+            <th scope="col">Rx # / Priority</th>
+            <th scope="col">Patient</th>
+            <th scope="col">Prescriber</th>
+            <th scope="col">Status</th>
+            <th scope="col">Created</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% prescriptions.forEach(function (rx) { %>
+          <tr data-ac-prescription-id="<%= rx.id %>">
+            <td>
+              <strong><%= rx.prescriptionNumber %></strong>
+              <div class="ac-muted"><%= rx.priority || '—' %></div>
+            </td>
+            <td>
+              <%= rx.patientDisplayName || '—' %>
+              <% if (rx.patientNumber) { %>
+              <div class="ac-muted"><%= rx.patientNumber %></div>
+              <% } %>
+            </td>
+            <td><%= rx.prescriberStaffDisplayName || '—' %></td>
+            <td>
+              <%- include('../../platform/partials/gp-ops-status-badge', {
+                label: rx.statusLabel || rx.status,
+                tone: rx.status === 'dispensed' ? 'success'
+                  : (rx.status === 'ready_for_collection' ? 'info'
+                  : (rx.status === 'cancelled' ? 'danger'
+                  : (rx.status === 'in_preparation' || rx.status === 'partially_dispensed' ? 'warning' : 'neutral')))
+              }) %>
+            </td>
+            <td><%= rx.createdAt ? new Date(rx.createdAt).toLocaleDateString() : '—' %></td>
+            <td>
+              <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/pharmacy/prescriptions/<%= rx.id %>">View</a>
+              <% if (actions.canDispense && (rx.status === 'pending' || rx.status === 'in_preparation' || rx.status === 'ready_for_collection' || rx.status === 'partially_dispensed')) { %>
+              <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/pharmacy/prescriptions/<%= rx.id %>/dispense">Dispense</a>
+              <% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
   </div>
-  <ul class="ac-card-list ac-mobile-table-cards" data-ac-cards="prescription-queue">
+
+  <ul class="ac-card-list ac-mobile-table-cards ac-ops-queue__mobile" data-ac-cards="prescription-queue">
     <% prescriptions.forEach(function (rx) { %>
-    <li class="ac-card ac-mobile-record-card">
+    <li class="ac-card ac-mobile-record-card ac-ops-queue-card">
       <a class="ac-card__link" href="/app/pharmacy/prescriptions/<%= rx.id %>">
-        <p class="ac-card__title"><%= rx.prescriptionNumber %></p>
-        <p class="ac-muted"><%= rx.patientDisplayName || '—' %></p>
-        <p class="ac-muted"><%= rx.prescriberStaffDisplayName || '—' %> · <%= rx.priority %></p>
-        <p><span class="ac-status" data-ac-status="<%= rx.status %>"><%= rx.statusLabel %></span></p>
+        <div class="ac-ops-queue-card__head">
+          <p class="ac-card__title"><%= rx.prescriptionNumber %></p>
+          <%- include('../../platform/partials/gp-ops-status-badge', {
+            label: rx.statusLabel || rx.status,
+            tone: rx.status === 'dispensed' ? 'success'
+              : (rx.status === 'ready_for_collection' ? 'info'
+              : (rx.status === 'cancelled' ? 'danger' : 'neutral'))
+          }) %>
+        </div>
+        <p class="ac-muted"><%= rx.patientDisplayName || '—' %><% if (rx.patientNumber) { %> · <%= rx.patientNumber %><% } %></p>
+        <p class="ac-muted"><%= rx.prescriberStaffDisplayName || '—' %> · <%= rx.priority || '—' %></p>
       </a>
+      <% if (actions.canDispense && (rx.status === 'pending' || rx.status === 'in_preparation' || rx.status === 'ready_for_collection' || rx.status === 'partially_dispensed')) { %>
+      <div class="ac-ops-queue-card__actions">
+        <a class="ac-btn ac-btn--ghost" href="/app/pharmacy/prescriptions/<%= rx.id %>/dispense">Dispense</a>
+      </div>
+      <% } %>
     </li>
     <% }) %>
   </ul>
