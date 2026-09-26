@@ -18,7 +18,7 @@ const {
 } = require("./activeClinicBookingStatusCopy");
 
 const VIEWS_ROOT = path.join(__dirname, "..", "..", "..", "views", "activeclinic");
-const ASSET_VERSION = "v2-03-b3-acp06-01";
+const ASSET_VERSION = "v2-03-b3-acp05-01";
 
 function escapeHtml(value) {
   return String(value == null ? "" : value)
@@ -80,6 +80,12 @@ function defaultLocals(data) {
     invoices: d.invoices || [],
     receipts: d.receipts || [],
     summary: d.summary || null,
+    visitSummaries: d.visitSummaries || [],
+    visitSummary: d.visitSummary || null,
+    snapshot: d.snapshot || null,
+    stitch: d.stitch || null,
+    pdfDeferred: d.pdfDeferred === true,
+    visitSummaryLink: d.visitSummaryLink || null,
     notFoundKind: d.notFoundKind || "",
     pageTitle: d.pageTitle || "Patient Portal",
     ...phoneLocals,
@@ -138,6 +144,8 @@ function renderPatientView(viewPath, data) {
     "patient/bookings": "My bookings",
     "patient/booking-detail": "Booking detail",
     "patient/invoices": "Invoices & receipts",
+    "patient/visit-summaries": "Visit Summaries",
+    "patient/visit-summary": "Visit Summary",
     "patient/link-guest-booking": "Link guest booking",
     "patient/profile": "Profile",
     "patient/security": "Security",

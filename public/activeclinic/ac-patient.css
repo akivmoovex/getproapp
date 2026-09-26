@@ -1224,3 +1224,60 @@ form.ac-patient-form-inline {
   }
 }
 
+/* AC-P05 — released visit summary (patient portal) */
+.acp-portal-leaf--visit-summary .acp-visit-summary__toolbar,
+.acp-portal-leaf--visit-summaries .acp-portal-leaf__cards {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.acp-portal-leaf--visit-summary .acp-visit-summary__toolbar {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  margin-bottom: 1rem;
+}
+
+.acp-portal-leaf--visit-summary .acp-portal-leaf__panel {
+  margin-bottom: 1rem;
+}
+
+.acp-portal-leaf--visit-summary .acp-portal-leaf__panel ul {
+  margin: 0;
+  padding-left: 1.25rem;
+}
+
+.acp-portal-leaf--visit-summaries .acp-portal-leaf__card .ac-card__title {
+  margin: 0 0 0.25rem;
+  font-weight: 600;
+}
+
+@media (max-width: 390px) {
+  .acp-portal-leaf--visit-summary .acp-visit-summary__toolbar,
+  .acp-portal-leaf--visit-summary .ac-patient-btn,
+  .acp-portal-leaf--visit-summaries .ac-card__link {
+    min-height: 2.75rem;
+  }
+
+  .acp-portal-leaf--visit-summary .acp-visit-summary__toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}
+
+@media print {
+  .ac-patient-nav,
+  .acp-portal-leaf__back,
+  .acp-visit-summary__toolbar,
+  [data-ac-pdf-deferred-note] {
+    display: none !important;
+  }
+
+  .acp-portal-leaf--visit-summary .acp-portal-leaf__panel {
+    break-inside: avoid;
+    box-shadow: none;
+    border: 1px solid #ccc;
+  }
+}
+

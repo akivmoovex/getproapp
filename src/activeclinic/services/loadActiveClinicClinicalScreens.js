@@ -22,6 +22,9 @@ const {
 const {
   authorizeStaffPermission,
 } = require("./activeClinicAuthorizationService");
+const {
+  PERM: VISIT_SUMMARY_PERM,
+} = require("./activeClinicVisitSummaryReleaseService");
 
 const STITCH = Object.freeze({
   worklistDesktop: "ae083a2bfe324046b4d9a0648c516bbd",
@@ -190,6 +193,11 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
   const canTriage = await hasPerm(db, input.auth, PERM.TRIAGE);
   const canDiagnosis = await hasPerm(db, input.auth, PERM.DIAGNOSIS_RECORD);
   const canOrder = await hasPerm(db, input.auth, PERM.ORDER_CREATE);
+  const canReleaseVisitSummary = await hasPerm(
+    db,
+    input.auth,
+    VISIT_SUMMARY_PERM.RELEASE
+  );
   const encounterOpen = encounter.encounter.status === "open";
   const eid = input.encounterId;
 
@@ -224,6 +232,7 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
               encounter.encounter.patientId
             )}/documents?encounter=${encodeURIComponent(eid)}`
           : null,
+        visitSummaryRelease: `/app/clinical/encounter/${eid}/visit-summary/release`,
         patient: encounter.encounter.patientNumber
           ? `/app/patients/${encodeURIComponent(encounter.encounter.patientNumber)}`
           : null,
@@ -237,6 +246,7 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
         canRecordVitals: canTriage && encounterOpen,
         canRecordDiagnosis: canDiagnosis && encounterOpen,
         canCreateOrder: canOrder && encounterOpen,
+        canReleaseVisitSummary,
       },
     },
   };

@@ -14,7 +14,7 @@
     <p class="acp-portal-leaf__kicker">Patient portal</p>
     <h1>My Appointments</h1>
     <p class="acp-auth-card__lede">
-      Booking requests and appointments linked to your portal account. Visit summaries and lab notes shown in Stitch demos are not available here.
+      Booking requests and appointments linked to your portal account. A visit summary link appears only after your clinician has released one for that visit date.
     </p>
   </header>
 
@@ -52,6 +52,7 @@
           <th scope="col">Clinician</th>
           <th scope="col">Reference</th>
           <th scope="col">Status</th>
+          <th scope="col">Summary</th>
         </tr>
       </thead>
       <tbody>
@@ -72,6 +73,13 @@
             <span class="acp-status-badge acp-status-badge--<%= bookingStatusTone(b.status) %>">
               <%= escapeHtml(statuses[b.status] || b.status || '') %>
             </span>
+          </td>
+          <td>
+            <% if (b.visitSummaryLink) { %>
+            <a class="ac-patient-btn ac-btn ac-btn--ghost" href="<%= b.visitSummaryLink %>" data-ac-action="view-visit-summary">View Visit Summary</a>
+            <% } else { %>
+            <span class="ac-muted">—</span>
+            <% } %>
           </td>
         </tr>
         <% }); %>
@@ -96,6 +104,11 @@
           </span>
         </p>
       </a>
+      <% if (b.visitSummaryLink) { %>
+      <p class="acp-portal-leaf__card-actions">
+        <a class="ac-patient-btn ac-btn ac-btn--primary" href="<%= b.visitSummaryLink %>" data-ac-action="view-visit-summary">View Visit Summary</a>
+      </p>
+      <% } %>
     </li>
     <% }); %>
   </ul>
@@ -103,7 +116,7 @@
 
   <aside class="acp-portal-leaf__note" data-ac-omitted="demo-only">
     <p class="ac-muted">
-      Omitted demo-only Stitch blocks: schedule calendar widget, visit summaries, lab notes, and policy FAQ. Cancel/reschedule remain on each booking detail.
+      Omitted demo-only Stitch blocks: schedule calendar widget, lab notes, and policy FAQ. Visit summaries appear only after clinician release.
     </p>
   </aside>
 

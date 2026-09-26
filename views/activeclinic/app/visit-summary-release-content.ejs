@@ -1,0 +1,102 @@
+<%
+  var catalogue = (pageData && pageData.catalogue) || {};
+  var encounter = catalogue.encounter || {};
+  var projection = catalogue.projection || {};
+  var alreadyReleased = catalogue.alreadyReleased === true;
+  var existingRelease = catalogue.existingRelease || null;
+  var formAction = catalogue.formAction || '#';
+  var cancelHref = catalogue.cancelHref || '/app/clinical';
+  var error = catalogue.error || null;
+  var csrfName = (typeof csrfField !== 'undefined' && csrfField) || '_csrf';
+  var csrfValue = typeof csrfToken !== 'undefined' ? csrfToken : '';
+%>
+<section
+  class="ac-visit-summary-release ac-ops-queue"
+  data-ac-page-section="visit-summary-release"
+  data-ac-batch3="AC-P05"
+  data-ac-release-preview="1"
+>
+  <header class="ac-ops-queue__header">
+    <div>
+      <p class="ac-ops-queue__kicker">Patient portal release</p>
+      <h2 class="ac-ops-queue__title">Release visit summary</h2>
+      <p class="ac-muted">
+        Patient: <%= encounter.patientDisplayName || '—' %>
+        <% if (encounter.patientNumber) { %> · <%= encounter.patientNumber %><% } %>
+        <% if (encounter.encounterNumber) { %> · <%= encounter.encounterNumber %><% } %>
+      </p>
+    </div>
+  </header>
+
+  <% if (error) { %>
+  <div class="ac-alert ac-alert--error" role="alert"><%= error %></div>
+  <% } %>
+
+  <% if (alreadyReleased && existingRelease) { %>
+  <div class="ac-alert ac-alert--success" role="status" data-ac-already-released="1">
+    Already released on <%= existingRelease.releasedAt ? new Date(existingRelease.releasedAt).toLocaleString() : '' %>.
+    Snapshots are immutable for MVP — re-release is not available.
+  </div>
+  <p><a class="ac-btn ac-btn--ghost" href="<%= cancelHref %>">Back to encounter</a></p>
+  <% } else { %>
+
+  <p class="ac-muted" data-ac-release-warning="1">
+    Only the fields below become patient-visible. Raw consultation notes, vitals, triage, and ACN18 documents are never released automatically.
+  </p>
+
+  <form class="ac-panel ac-visit-summary-release__form" method="post" action="<%= formAction %>" data-ac-release-form="1">
+    <input type="hidden" name="<%= csrfName %>" value="<%= csrfValue %>" />
+
+    <label class="ac-field">
+      <span class="ac-field__label">Care provider (patient-facing)</span>
+      <input class="ac-input" type="text" name="practitioner_display_name" maxlength="200" value="<%= projection.practitionerDisplayName || '' %>" />
+    </label>
+
+    <label class="ac-field">
+      <span class="ac-field__label">Service label</span>
+      <input class="ac-input" type="text" name="service_label" maxlength="200" value="<%= projection.serviceLabel || '' %>" />
+    </label>
+
+    <label class="ac-field">
+      <span class="ac-field__label">Reason for visit</span>
+      <textarea class="ac-input" name="reason_for_visit" rows="3" maxlength="2000"><%= projection.reasonForVisit || '' %></textarea>
+    </label>
+
+    <label class="ac-field">
+      <span class="ac-field__label">Assessment / summary</span>
+      <textarea class="ac-input" name="assessment_summary" rows="4" maxlength="2000"><%= projection.assessmentSummary || '' %></textarea>
+    </label>
+
+    <label class="ac-field">
+      <span class="ac-field__label">Treatment / care provided</span>
+      <textarea class="ac-input" name="care_provided" rows="4" maxlength="2000"><%= projection.careProvided || '' %></textarea>
+    </label>
+
+    <label class="ac-field">
+      <span class="ac-field__label">Patient instructions</span>
+      <textarea class="ac-input" name="patient_instructions" rows="3" maxlength="2000"><%= projection.patientInstructions || '' %></textarea>
+    </label>
+
+    <label class="ac-field">
+      <span class="ac-field__label">Follow-up</span>
+      <textarea class="ac-input" name="follow_up" rows="3" maxlength="2000"><%= projection.followUp || '' %></textarea>
+    </label>
+
+    <% if (projection.medications && projection.medications.length) { %>
+    <div class="ac-field">
+      <span class="ac-field__label">Medications (from signed note / prescriptions — included as projected)</span>
+      <ul>
+        <% projection.medications.forEach(function (m) { %>
+        <li><%= m.name %><% if (m.instructions) { %>: <%= m.instructions %><% } %></li>
+        <% }); %>
+      </ul>
+    </div>
+    <% } %>
+
+    <div class="ac-form-actions">
+      <a class="ac-btn ac-btn--ghost" href="<%= cancelHref %>">Cancel</a>
+      <button class="ac-btn ac-btn--primary" type="submit" data-ac-action="release-to-patient">Release to Patient</button>
+    </div>
+  </form>
+  <% } %>
+</section>

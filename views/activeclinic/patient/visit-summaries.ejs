@@ -1,0 +1,45 @@
+<%
+  var list = Array.isArray(visitSummaries) ? visitSummaries : [];
+  var stitch = stitch || {};
+%>
+<section
+  class="ac-patient-page acp-portal-leaf acp-portal-leaf--visit-summaries"
+  data-ac-page-section="patient-visit-summaries"
+  data-ac-batch3="AC-P05"
+  data-ac-stitch="<%= stitch.desktop || 'cd4b21d6860843c6b6862f92326857af' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '5df55128997f4b9b916852f26b972bb5' %>"
+  data-ac-visit-summary-desktop="1"
+  data-ac-visit-summary-mobile="1"
+>
+  <header class="ac-patient-page__header acp-portal-leaf__header">
+    <p class="acp-portal-leaf__kicker">Patient portal</p>
+    <h1>Visit Summaries</h1>
+    <p class="acp-auth-card__lede">
+      Summaries appear here only after your clinician explicitly releases them. Unreleased clinical notes are never shown.
+    </p>
+  </header>
+
+  <% if (typeof error !== 'undefined' && error) { %>
+  <div class="ac-alert ac-alert--error" role="alert"><%= escapeHtml(error) %></div>
+  <% } %>
+
+  <% if (!list.length) { %>
+  <div class="ac-patient-empty-state" data-ac-empty="visit-summaries">
+    <p>No released visit summaries yet.</p>
+  </div>
+  <% } else { %>
+  <ul class="ac-card-list acp-portal-leaf__cards" data-ac-visit-summary-list="1">
+    <% list.forEach(function (item) {
+      var snap = item.snapshot || {};
+    %>
+    <li class="ac-card acp-portal-leaf__card">
+      <a class="ac-card__link" href="/clinics/<%= clinicKey %>/patient/visit-summaries/<%= encodeURIComponent(item.id) %>">
+        <p class="ac-card__title"><%= escapeHtml(snap.serviceLabel || 'Visit summary') %></p>
+        <p class="ac-muted"><%= escapeHtml(snap.visitDate || '') %> · <%= escapeHtml(snap.facilityDisplayName || item.facilityDisplayName || '') %></p>
+        <p class="ac-muted"><%= escapeHtml(snap.practitionerDisplayName || '') %></p>
+      </a>
+    </li>
+    <% }); %>
+  </ul>
+  <% } %>
+</section>

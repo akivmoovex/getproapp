@@ -116,6 +116,16 @@
   </aside>
   <% } %>
 
+  <% if (typeof visitSummaryLink !== 'undefined' && visitSummaryLink) { %>
+  <section class="acp-portal-leaf__panel" data-ac-visit-summary-link="1" aria-labelledby="acp-visit-summary">
+    <h2 id="acp-visit-summary">Visit summary</h2>
+    <p class="ac-muted">Your clinician has released a patient visit summary for this visit date.</p>
+    <p>
+      <a class="ac-patient-btn ac-btn ac-btn--primary" href="<%= visitSummaryLink %>" data-ac-action="view-visit-summary">View Visit Summary</a>
+    </p>
+  </section>
+  <% } %>
+
   <aside class="acp-portal-leaf__note" data-ac-omitted="demo-only">
     <p class="ac-muted">
       Omitted demo-only Stitch blocks: live availability calendar, fast check-in / QR, exam-room countdown, provider ratings, wayfinding / parking maps, pre-visit intake instructions, Add to Calendar, and PDF / print exports.

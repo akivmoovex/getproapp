@@ -93,6 +93,9 @@
         <% if (links.documents) { %>
         · <a href="<%= links.documents %>" data-ac-action="clinical-documents">Clinical Documents</a>
         <% } %>
+        <% if (actions.canReleaseVisitSummary && links.visitSummaryRelease) { %>
+        · <a href="<%= links.visitSummaryRelease %>" data-ac-action="release-visit-summary">Release visit summary</a>
+        <% } %>
       </p>
       <div class="ac-clinical-encounter__identity">
         <h2 class="ac-clinical-encounter__patient">

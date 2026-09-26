@@ -34,6 +34,10 @@ const {
   listPatientReceipts,
 } = require("../services/activeClinicPatientPortalBillingService");
 const {
+  registerVisitSummaryPatientRoutes,
+  findReleaseLinkedToBooking,
+} = require("./activeClinicVisitSummaryPatientRoutes");
+const {
   requestPatientPasswordReset,
   resetPatientPassword,
 } = require("../services/activeClinicPatientPortalPasswordService");
@@ -852,6 +856,29 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
         }
 
         const csrfToken = issuePageCsrf(res, env, isProduction);
+
+        if (
+          auth.patient &&
+          auth.patient.id &&
+          auth.organization &&
+          auth.organization.id &&
+          bookings.length
+        ) {
+          for (const b of bookings) {
+            const linked = await findReleaseLinkedToBooking(getPool(), {
+              organizationId: auth.organization.id,
+              patientId: auth.patient.id,
+              preferredStartsAt: b.preferredStartsAt,
+            });
+            b.visitSummaryLink =
+              linked.ok && linked.release
+                ? `/clinics/${req.params.clinicKey}/patient/visit-summaries/${encodeURIComponent(
+                    linked.release.id
+                  )}`
+                : null;
+          }
+        }
+
         return res
           .status(200)
           .type("html")
@@ -947,6 +974,18 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
     }
   );
 
+  registerVisitSummaryPatientRoutes(app, {
+    getPool,
+    env,
+    isProduction,
+    loadPatientAuth,
+    requirePatientAuth,
+    resolveClinicContext,
+    issuePageCsrf,
+    renderPatientView,
+    patientViewPayload,
+  });
+
   app.get(
     "/clinics/:clinicKey/patient/bookings/:reference",
     loadPatientAuth,
@@ -981,6 +1020,27 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
 
         const clinicCtx = await resolveClinicContext(req.params.clinicKey);
         const csrfToken = issuePageCsrf(res, env, isProduction);
+
+        let visitSummaryLink = null;
+        if (
+          auth.patient &&
+          auth.patient.id &&
+          auth.organization &&
+          auth.organization.id &&
+          booking.booking
+        ) {
+          const linked = await findReleaseLinkedToBooking(getPool(), {
+            organizationId: auth.organization.id,
+            patientId: auth.patient.id,
+            preferredStartsAt: booking.booking.preferredStartsAt,
+          });
+          if (linked.ok && linked.release) {
+            visitSummaryLink = `/clinics/${req.params.clinicKey}/patient/visit-summaries/${encodeURIComponent(
+              linked.release.id
+            )}`;
+          }
+        }
+
         return res
           .status(200)
           .type("html")
@@ -991,6 +1051,7 @@ function registerActiveClinicPatientPortalRoutes(app, deps) {
                 patientAuth: auth,
                 activeNav: "bookings",
                 booking: booking.booking,
+                visitSummaryLink,
               })
             )
           );
