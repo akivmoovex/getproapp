@@ -10,7 +10,6 @@
  */
 
 const { assertWebsiteAction, PERMISSIONS } = require("./permissionHooks");
-const { PRODUCT_CODE } = require("./productSchemaRegistry");
 
 const ACTION = Object.freeze({
   PUBLISH: "publish",
@@ -27,32 +26,6 @@ const STAGE = Object.freeze({
 /** @type {Map<string, {publish?: Function, unpublish?: Function, restore?: Function}>} */
 const OVERRIDES = new Map();
 
-const BUILTIN = Object.freeze({
-  [PRODUCT_CODE.BLESSBOARD]: Object.freeze({
-    publish: (db, request) =>
-      require("../../blessboard/services/churchWebsitePublishService").publishChurchWebsite(
-        db,
-        request
-      ),
-    unpublish: (db, request) =>
-      require("../../blessboard/services/churchWebsitePublishService").unpublishChurchWebsite(
-        db,
-        request
-      ),
-    restore: (db, request) =>
-      require("../../blessboard/services/websitePublicationVersionService").createRestoredDraft(
-        db,
-        request
-      ),
-  }),
-  [PRODUCT_CODE.ACTIVECLINIC]: Object.freeze({
-    publish: (db, request) =>
-      require("../website/publicationService").publishWebsiteDraft(db, request),
-    unpublish: (db, request) =>
-      require("../website/publicationService").unpublishWebsite(db, request),
-  }),
-});
-
 /**
  * @param {string} productCode
  * @param {{publish?: Function, unpublish?: Function, restore?: Function}} handlers
@@ -66,7 +39,7 @@ function registerProductLifecycle(productCode, handlers) {
 
 function resolveProductLifecycle(productCode) {
   const key = String(productCode || "").trim();
-  return { ...(BUILTIN[key] || {}), ...(OVERRIDES.get(key) || {}) };
+  return { ...(OVERRIDES.get(key) || {}) };
 }
 
 function defaultGrantsFor(action) {

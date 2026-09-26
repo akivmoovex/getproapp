@@ -7,6 +7,7 @@
  */
 
 const { PRODUCT_CODE } = require("../publicWebsiteUrl");
+const { getSectionActionService } = require("../../contracts/productRuntimeRegistry");
 const { PERMISSIONS, hasWebsitePermission } = require("../permissions");
 const {
   listAddableSectionTypes,
@@ -110,18 +111,9 @@ async function manageWebsiteSection(db, input) {
   }
 
   // Product adapters handle hide/show/restore/move via existing action services.
-  if (productCode === PRODUCT_CODE.BLESSBOARD) {
-    const bb = require("../../../blessboard/website/blessboardSectionActionService");
-    const result = await bb.applySectionAction(db, {
-      ...src,
-      action,
-      pageKey,
-    });
-    return { ...result, published: false };
-  }
-  if (productCode === PRODUCT_CODE.ACTIVECLINIC) {
-    const ac = require("../../../activeclinic/website/activeClinicSectionActionService");
-    const result = await ac.applySectionAction(db, {
+  const actions = getSectionActionService(productCode);
+  if (actions && typeof actions.applySectionAction === "function") {
+    const result = await actions.applySectionAction(db, {
       ...src,
       action,
       pageKey,
@@ -194,7 +186,10 @@ async function updateSection(db, input) {
   }
 
   if (input.productCode === PRODUCT_CODE.BLESSBOARD) {
-    const bb = require("../../../blessboard/website/blessboardSectionActionService");
+    const bb = getSectionActionService(PRODUCT_CODE.BLESSBOARD);
+    if (!bb || typeof bb.updateSectionContent !== "function") {
+      return { ok: false, code: RESULT.INVALID_PRODUCT, published: false };
+    }
     return bb.updateSectionContent(db, {
       ...input,
       heading: content.payload.heading,
@@ -203,10 +198,13 @@ async function updateSection(db, input) {
     });
   }
   if (input.productCode === PRODUCT_CODE.ACTIVECLINIC) {
-    const cmsService = require("../../../activeclinic/website/clinicWebsiteCmsService");
+    const ac = getSectionActionService(PRODUCT_CODE.ACTIVECLINIC);
+    if (!ac || typeof ac.updateSection !== "function") {
+      return { ok: false, code: RESULT.INVALID_PRODUCT, published: false };
+    }
     const sectionId = String(input.sectionId || input.sectionKey || "").trim();
     if (!sectionId) return { ok: false, code: RESULT.INVALID_INPUT, published: false };
-    const updated = await cmsService.updateSection(db, {
+    const updated = await ac.updateSection(db, {
       organizationId: input.organizationId,
       instanceId: input.instanceId,
       clinicId: input.clinicId,
@@ -226,15 +224,11 @@ async function updateSection(db, input) {
 }
 
 async function removeSection(db, input) {
-  if (input.productCode === PRODUCT_CODE.BLESSBOARD) {
-    const bb = require("../../../blessboard/website/blessboardSectionActionService");
-    return bb.applySectionAction(db, { ...input, action: "remove" });
+  const actions = getSectionActionService(input.productCode);
+  if (!actions || typeof actions.applySectionAction !== "function") {
+    return { ok: false, code: RESULT.INVALID_PRODUCT, published: false };
   }
-  if (input.productCode === PRODUCT_CODE.ACTIVECLINIC) {
-    const ac = require("../../../activeclinic/website/activeClinicSectionActionService");
-    return ac.applySectionAction(db, { ...input, action: "remove" });
-  }
-  return { ok: false, code: RESULT.INVALID_PRODUCT, published: false };
+  return actions.applySectionAction(db, { ...input, action: "remove" });
 }
 
 async function reorderSection(db, input) {
@@ -242,23 +236,15 @@ async function reorderSection(db, input) {
   if (!orderCheck.ok) {
     return { ok: false, code: RESULT.INVALID_INPUT, error: orderCheck.error, published: false };
   }
-  if (input.productCode === PRODUCT_CODE.BLESSBOARD) {
-    const bb = require("../../../blessboard/website/blessboardSectionActionService");
-    return bb.applySectionAction(db, {
-      ...input,
-      action: "reorder",
-      order: orderCheck.order,
-    });
+  const actions = getSectionActionService(input.productCode);
+  if (!actions || typeof actions.applySectionAction !== "function") {
+    return { ok: false, code: RESULT.INVALID_PRODUCT, published: false };
   }
-  if (input.productCode === PRODUCT_CODE.ACTIVECLINIC) {
-    const ac = require("../../../activeclinic/website/activeClinicSectionActionService");
-    return ac.applySectionAction(db, {
-      ...input,
-      action: "reorder",
-      order: orderCheck.order,
-    });
-  }
-  return { ok: false, code: RESULT.INVALID_PRODUCT, published: false };
+  return actions.applySectionAction(db, {
+    ...input,
+    action: "reorder",
+    order: orderCheck.order,
+  });
 }
 
 module.exports = {

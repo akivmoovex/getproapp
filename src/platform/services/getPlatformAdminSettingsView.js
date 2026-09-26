@@ -17,18 +17,14 @@ const {
 const { getPlatformDeploymentCode } = require("../config/platformDeploymentCode");
 const { SESSION_TTL_MS } = require("../session/sessionToken");
 const { MAX_AGE_SECONDS: SUPPORT_MAX_AGE_SECONDS } = require("../http/supportContextCookie");
-const { INVITE_TTL_MS } = require("../../blessboard/services/inviteBlessBoardStaff");
-const { resolveOtpProvider } = require("../../blessboard/services/otp/otpProviders");
-const { DEFAULT_COUNTRY: PHONE_DEFAULT_COUNTRY } = require("../../blessboard/services/normalizeBlessBoardPhone");
-const {
-  ORGANIZATION_RESERVED_SLUGS,
-  BRANCH_HOST_RESERVED_SLUGS,
-} = require("../../church/platformProvisioningValidation");
 const {
   identityTableExists,
   readIdentityRow,
 } = require("../../../db/scripts/lib/databaseIdentity");
-const { resolveOutboundEmailStatus } = require("../../activeclinic/services/activeClinicEmailDelivery");
+const {
+  getPlatformAdminSettingsContrib,
+  resolveOutboundEmailStatusSafe,
+} = require("../contracts/productRuntimeRegistry");
 
 const STATUS = Object.freeze({
   OK: "ok",
@@ -90,6 +86,11 @@ function providerStatusLabel(configured, reason) {
 
 function resolveSmsStatus(env) {
   const e = env || process.env;
+  const contrib = getPlatformAdminSettingsContrib() || {};
+  const resolveOtpProvider =
+    typeof contrib.resolveOtpProvider === "function"
+      ? contrib.resolveOtpProvider
+      : () => ({ name: "unknown" });
   const otp = resolveOtpProvider(e);
   const name = String((otp && otp.name) || "unknown");
   if (name === "test") {
@@ -102,7 +103,7 @@ function resolveSmsStatus(env) {
 }
 
 function resolveEmailStatus(env) {
-  return resolveOutboundEmailStatus(env);
+  return resolveOutboundEmailStatusSafe(env);
 }
 
 function resolveWhatsAppStatus() {
@@ -191,6 +192,16 @@ async function getPlatformAdminSettingsView(db, env) {
       migrationCount = null;
       latestMigration = null;
     }
+
+    const contrib = getPlatformAdminSettingsContrib() || {};
+    const resolveOtpProvider =
+      typeof contrib.resolveOtpProvider === "function"
+        ? contrib.resolveOtpProvider
+        : () => ({ name: "unknown" });
+    const PHONE_DEFAULT_COUNTRY = contrib.phoneDefaultCountry || "ZM";
+    const ORGANIZATION_RESERVED_SLUGS = contrib.organizationReservedSlugs || new Set();
+    const BRANCH_HOST_RESERVED_SLUGS = contrib.branchHostReservedSlugs || new Set();
+    const INVITE_TTL_MS = Number(contrib.inviteTtlMs) || 7 * 24 * 60 * 60 * 1000;
 
     const otpProvider = resolveOtpProvider(e);
     const otpName = String((otpProvider && otpProvider.name) || "unknown");

@@ -20,6 +20,8 @@ const {
 assertDeploymentProfileOrExit();
 assertAuthoritativeProfileRuntimePairingOrExit();
 
+require("./src/startup/ensureProductPlatformContracts").ensureProductPlatformContracts();
+
 const {
   isPgConfigured,
   logPgStartupDiagnostics,

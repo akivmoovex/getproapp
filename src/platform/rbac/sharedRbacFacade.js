@@ -28,10 +28,17 @@ const {
  * }} input
  */
 async function authorizeBlessBoard(db, input) {
-  const {
-    authorize,
-    REASON: BB_REASON,
-  } = require("../../blessboard/services/blessBoardRbacAuthorizationService");
+  const { getRbacAuthorizer } = require("../contracts/productRuntimeRegistry");
+  const authorize = getRbacAuthorizer("blessboard");
+  if (typeof authorize !== "function") {
+    return authzDecision({
+      allowed: false,
+      reasonCode: REASON.LOOKUP_ERROR,
+      httpStatus: 503,
+      productKey: "blessboard",
+      permission: input && input.permissionKey,
+    });
+  }
 
   const tenant = input && input.tenant;
   const resource =
@@ -65,6 +72,14 @@ async function authorizeBlessBoard(db, input) {
     resourceContext: resource,
   });
 
+  const BB_REASON = Object.freeze({
+    ALLOWED: "RBAC_ALLOWED",
+    PERMISSION_DENIED: "RBAC_PERMISSION_DENIED",
+    UNAUTHENTICATED: "RBAC_UNAUTHENTICATED",
+    INACTIVE_USER: "RBAC_INACTIVE_USER",
+    LOOKUP_ERROR: "RBAC_LOOKUP_ERROR",
+  });
+
   return authzDecision({
     allowed: result.allowed,
     reasonCode: result.reasonCode || (result.allowed ? BB_REASON.ALLOWED : BB_REASON.PERMISSION_DENIED),
@@ -95,9 +110,17 @@ async function authorizeBlessBoard(db, input) {
  * }} input
  */
 async function authorizeActiveClinic(db, input) {
-  const {
-    authorizeStaffPermission,
-  } = require("../../activeclinic/services/activeClinicAuthorizationService");
+  const { getRbacAuthorizer } = require("../contracts/productRuntimeRegistry");
+  const authorizeStaffPermission = getRbacAuthorizer("activeclinic");
+  if (typeof authorizeStaffPermission !== "function") {
+    return authzDecision({
+      allowed: false,
+      reasonCode: REASON.LOOKUP_ERROR,
+      httpStatus: 503,
+      productKey: "activeclinic",
+      permission: input && input.permissionKey,
+    });
+  }
 
   const scope = assertActiveClinicAuthScope(
     (input && input.claimed) || null,

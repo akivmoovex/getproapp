@@ -24,14 +24,8 @@ const {
 } = require("./tenantHealthSummary");
 
 function getAdapter(productCode) {
-  const product = String(productCode || "");
-  if (product === constants.PRODUCT.ACTIVECLINIC) {
-    return require("../../activeclinic/registration/activeClinicRegistrationAdapter");
-  }
-  if (product === constants.PRODUCT.BLESSBOARD) {
-    return require("../../blessboard/registration/blessboardChurchRegistrationAdapter");
-  }
-  return null;
+  const { getRegistrationAdapter } = require("../contracts/productRuntimeRegistry");
+  return getRegistrationAdapter(productCode);
 }
 
 async function submitProductRegistration(db, input) {
@@ -65,4 +59,8 @@ module.exports = {
   ...require("./registrationSuccessPresentation"),
   ...require("./registrationCountrySelection"),
   ...require("./registrationRenderLocals"),
+  createSignedRegistrationDraftCookie: require("./signedRegistrationDraftCookie")
+    .createSignedRegistrationDraftCookie,
+  DEFAULT_REGISTRATION_DRAFT_MAX_AGE_MS: require("./signedRegistrationDraftCookie")
+    .DEFAULT_MAX_AGE_MS,
 };

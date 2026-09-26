@@ -6,10 +6,7 @@ const {
   isSingletonViolation,
 } = require("./sectionRegistry");
 const { PRODUCT_CODE } = require("./publicWebsiteUrl");
-const { saveStructuredDraft } = require("../../blessboard/services/websiteStructuredDraftService");
-const contentRepo = require("../../blessboard/repositories/publicContentRepository");
-const cmsService = require("../../activeclinic/website/clinicWebsiteCmsService");
-const { pageIdFor } = require("../../activeclinic/website/activeClinicSectionActionService");
+const { getWebsiteAddSectionHandler } = require("../contracts/productRuntimeRegistry");
 const { allocateStableSectionId } = require("./sections/sectionOrdering");
 const { validateSectionContent } = require("./sections/sectionValidation");
 const { PERMISSIONS, hasWebsitePermission } = require("./permissions");
@@ -21,29 +18,19 @@ function requireEdit(input) {
   return { ok: true };
 }
 
-async function listBlessBoardExistingSectionKeys(db, input) {
-  const pageKey = String(input.pageKey || "home").trim() || "home";
-  const page = await contentRepo.findPageByScope(db, {
-    churchId: input.churchId,
-    branchId: input.branchId || null,
-    pageKey,
-  });
-  if (!page) return [];
-  const sections = await contentRepo.listSectionsForPage(db, page.id, {});
-  return (sections || []).map((s) => String(s.sectionKey || s.sectionType || ""));
-}
-
-async function listActiveClinicExistingSectionTypes(db, input) {
-  const pageId = pageIdFor(input.pageKey);
-  const listed = await cmsService.listSections(db, {
-    organizationId: input.organizationId,
-    instanceId: input.instanceId,
-    clinicId: input.clinicId,
-    pageId,
-    grantedPermissions: input.grantedPermissions,
-  });
-  if (!listed.ok) return [];
-  return (listed.sections || []).map((s) => String(s.type));
+async function listExistingForProduct(db, input, productCode) {
+  const handler = getWebsiteAddSectionHandler(productCode);
+  if (!handler) return [];
+  if (productCode === PRODUCT_CODE.BLESSBOARD && typeof handler.listExistingSectionKeys === "function") {
+    return handler.listExistingSectionKeys(db, input);
+  }
+  if (
+    productCode === PRODUCT_CODE.ACTIVECLINIC &&
+    typeof handler.listExistingSectionTypes === "function"
+  ) {
+    return handler.listExistingSectionTypes(db, input);
+  }
+  return [];
 }
 
 async function listAddableSections(db, input) {
@@ -51,12 +38,7 @@ async function listAddableSections(db, input) {
   if (!gate.ok) return gate;
   const productCode = String(input.productCode || "").trim().toLowerCase();
   const pageKey = String(input.pageKey || "home").trim() || "home";
-  let existing = [];
-  if (productCode === PRODUCT_CODE.BLESSBOARD) {
-    existing = await listBlessBoardExistingSectionKeys(db, input);
-  } else if (productCode === PRODUCT_CODE.ACTIVECLINIC) {
-    existing = await listActiveClinicExistingSectionTypes(db, input);
-  }
+  const existing = await listExistingForProduct(db, input, productCode);
   return {
     ok: true,
     sections: listAddableSectionTypes(productCode, pageKey, existing),
@@ -78,11 +60,16 @@ async function listAddableSections(db, input) {
 }
 
 async function addBlessBoardSection(db, input) {
+  const handler = getWebsiteAddSectionHandler(PRODUCT_CODE.BLESSBOARD);
+  if (!handler || typeof handler.saveStructuredDraft !== "function" || !handler.contentRepo) {
+    return { ok: false, code: "invalid_product", published: false };
+  }
+  const { saveStructuredDraft, contentRepo } = handler;
   const pageKey = String(input.pageKey || "home").trim() || "home";
   const type = String(input.type || "").trim();
   const def = resolveSectionTypeDefinition(PRODUCT_CODE.BLESSBOARD, type, pageKey);
   if (!def) return { ok: false, code: "invalid_section_type", published: false };
-  const existing = await listBlessBoardExistingSectionKeys(db, input);
+  const existing = await listExistingForProduct(db, input, PRODUCT_CODE.BLESSBOARD);
   if (isSingletonViolation(PRODUCT_CODE.BLESSBOARD, type, existing)) {
     return { ok: false, code: "singleton_exists", published: false };
   }
@@ -138,11 +125,16 @@ async function addBlessBoardSection(db, input) {
 }
 
 async function addActiveClinicSection(db, input) {
+  const handler = getWebsiteAddSectionHandler(PRODUCT_CODE.ACTIVECLINIC);
+  if (!handler || !handler.cmsService || typeof handler.pageIdFor !== "function") {
+    return { ok: false, code: "invalid_product", published: false };
+  }
+  const { cmsService, pageIdFor } = handler;
   const pageKey = String(input.pageKey || "home").trim() || "home";
   const type = String(input.type || "").trim();
   const def = resolveSectionTypeDefinition(PRODUCT_CODE.ACTIVECLINIC, type, pageKey);
   if (!def) return { ok: false, code: "invalid_section_type", published: false };
-  const existing = await listActiveClinicExistingSectionTypes(db, input);
+  const existing = await listExistingForProduct(db, input, PRODUCT_CODE.ACTIVECLINIC);
   if (isSingletonViolation(PRODUCT_CODE.ACTIVECLINIC, type, existing)) {
     return { ok: false, code: "singleton_exists", published: false };
   }

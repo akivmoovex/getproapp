@@ -167,6 +167,7 @@ function escapeHtml(value) {
  */
 function createActiveClinicFoundationApp(options) {
   const opts = options || {};
+  require("../../startup/ensureProductPlatformContracts").ensureProductPlatformContracts();
   const getPool = typeof opts.getPool === "function" ? opts.getPool : getPgPool;
   const env = opts.env || process.env;
   const isProduction = String(env.NODE_ENV || "") === "production";

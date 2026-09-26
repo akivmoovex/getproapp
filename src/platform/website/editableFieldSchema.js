@@ -449,13 +449,8 @@ function hasEditableField(productCode, key) {
 }
 
 function ensureProductFieldsRegistered(productCode) {
-  const code = String(productCode || "").trim();
-  if (code === PRODUCT_CODE.ACTIVECLINIC) {
-    require("../../activeclinic/website/activeClinicWebsiteTemplate").registerActiveClinicWebsiteTemplate();
-  } else if (code === PRODUCT_CODE.BLESSBOARD) {
-    require("../../blessboard/services/websiteInlineEditableFields");
-    require("../../blessboard/website/blessboardChurchTemplate").registerBlessBoardWebsiteTemplate();
-  }
+  const { runWebsiteFieldRegistrar } = require("../contracts/productRuntimeRegistry");
+  runWebsiteFieldRegistrar(productCode);
 }
 
 module.exports = {

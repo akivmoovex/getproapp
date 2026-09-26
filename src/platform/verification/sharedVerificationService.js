@@ -20,13 +20,7 @@ const {
   recordVerificationDelivery,
   peekVerificationCode,
 } = require("./verificationTestingOutbox");
-const { normalizeEmail } = require("../../blessboard/services/createBlessBoardUser");
-const {
-  normalizeBlessBoardPhone,
-} = require("../../blessboard/services/normalizeBlessBoardPhone");
-const {
-  normalizeActiveClinicPhone,
-} = require("../../activeclinic/services/normalizeActiveClinicContact");
+const { getIdentityNormalizers } = require("../contracts/productRuntimeRegistry");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -121,6 +115,12 @@ function maskIdentifier(channel, identifier) {
 
 function normalizeIdentifier(channel, raw, opts) {
   if (channel === CHANNEL.EMAIL) {
+    const productKey = (opts && opts.productKey) || "blessboard";
+    const norms = getIdentityNormalizers(productKey) || getIdentityNormalizers("blessboard");
+    const normalizeEmail =
+      norms && typeof norms.normalizeEmail === "function"
+        ? norms.normalizeEmail
+        : (v) => String(v || "").trim().toLowerCase();
     const email = normalizeEmail(raw);
     if (!email || !/^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/.test(email)) {
       return { ok: false, reason: "email" };
@@ -129,16 +129,14 @@ function normalizeIdentifier(channel, raw, opts) {
   }
   if (channel === CHANNEL.PHONE) {
     const productKey = opts && opts.productKey;
-    if (productKey === "activeclinic") {
-      const phone = normalizeActiveClinicPhone(raw, {
-        country: opts && opts.country,
-      });
-      if (!phone.ok) return { ok: false, reason: "phone" };
-      return { ok: true, normalized: phone.normalized };
+    const key = productKey === "activeclinic" ? "activeclinic" : "blessboard";
+    const norms = getIdentityNormalizers(key);
+    if (!norms || typeof norms.normalizePhone !== "function") {
+      return { ok: false, reason: "phone" };
     }
-    const phone = normalizeBlessBoardPhone(raw, {
+    const phone = norms.normalizePhone(raw, {
       country: opts && opts.country,
-      defaultCountry: "ZM",
+      defaultCountry: key === "blessboard" ? "ZM" : undefined,
     });
     if (!phone.ok) return { ok: false, reason: "phone", message: phone.error };
     return { ok: true, normalized: phone.normalized };

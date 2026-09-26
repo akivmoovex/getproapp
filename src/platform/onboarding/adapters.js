@@ -1,16 +1,9 @@
 "use strict";
 
-const { PRODUCT } = require("./constants");
+const { getOnboardingAdapter: getRegisteredOnboardingAdapter } = require("../contracts/productRuntimeRegistry");
 
 function getOnboardingAdapter(productCode) {
-  const product = String(productCode || "");
-  if (product === PRODUCT.ACTIVECLINIC) {
-    return require("../../activeclinic/onboarding/activeClinicOnboardingAdapter");
-  }
-  if (product === PRODUCT.BLESSBOARD) {
-    return require("../../blessboard/onboarding/blessboardOnboardingAdapter");
-  }
-  return null;
+  return getRegisteredOnboardingAdapter(productCode);
 }
 
 module.exports = {

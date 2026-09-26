@@ -348,6 +348,7 @@ function clientIp(req) {
  * }} [options]
  */
 function createV5FoundationApp(options) {
+  require("../../startup/ensureProductPlatformContracts").ensureProductPlatformContracts();
   const {
     registerBlessBoardWebsiteTemplate,
   } = require("../../blessboard/website/blessboardChurchTemplate");
