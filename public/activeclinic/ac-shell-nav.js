@@ -1,6 +1,7 @@
 /**
- * ActiveClinic shell mobile drawer (AC-V6-10).
+ * ActiveClinic shell mobile drawer (V2.03 Batch 2).
  * Escape closes, backdrop closes, focus trap, body scroll lock.
+ * Supports multiple [data-ac-nav-toggle] controls (header + bottom More).
  */
 (function () {
   "use strict";
@@ -20,17 +21,21 @@
   }
 
   function init() {
-    var toggle = document.querySelector("[data-ac-nav-toggle]");
+    var toggles = Array.prototype.slice.call(
+      document.querySelectorAll("[data-ac-nav-toggle]")
+    );
     var drawer = document.querySelector("[data-ac-nav-drawer]");
     var backdrop = document.querySelector("[data-ac-nav-backdrop]");
     var live = document.getElementById("ac-shell-nav-live");
-    if (!toggle || !drawer) return;
+    if (!toggles.length || !drawer) return;
 
     var lastFocus = null;
 
     function setOpen(open) {
       document.body.classList.toggle("ac-drawer-open", open);
-      toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      toggles.forEach(function (toggle) {
+        toggle.setAttribute("aria-expanded", open ? "true" : "false");
+      });
       drawer.setAttribute("aria-hidden", open ? "false" : "true");
       if (backdrop) backdrop.hidden = !open;
       if (live) live.textContent = open ? "Navigation menu opened" : "Navigation menu closed";
@@ -47,9 +52,11 @@
       return window.matchMedia(DESKTOP_MQ).matches;
     }
 
-    toggle.addEventListener("click", function () {
-      if (isDesktop()) return;
-      setOpen(!document.body.classList.contains("ac-drawer-open"));
+    toggles.forEach(function (toggle) {
+      toggle.addEventListener("click", function () {
+        if (isDesktop()) return;
+        setOpen(!document.body.classList.contains("ac-drawer-open"));
+      });
     });
 
     var closeBtn = document.querySelector("[data-ac-nav-close]");

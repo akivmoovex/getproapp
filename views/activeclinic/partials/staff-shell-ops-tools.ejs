@@ -1,0 +1,62 @@
+<%#
+  Desktop operational bar tools: global patient search (when authorized),
+  notifications presentation (no fake route), user account menu.
+  Locals: shell
+%>
+<%
+  var s = typeof shell !== 'undefined' && shell ? shell : {};
+  var csrf = s.csrf || { token: '', field: '_csrf' };
+  var account = s.accountMenu || {};
+  var searchEnabled = s.globalSearchEnabled === true;
+%>
+<% if (searchEnabled) { %>
+<form class="ac-desktop-header__search" method="get" action="/app/patients" role="search" data-ac-shell-search="1">
+  <label class="ac-sr-only" for="ac-shell-patient-search">Search patients</label>
+  <input
+    id="ac-shell-patient-search"
+    class="ac-shell-search"
+    type="search"
+    name="q"
+    placeholder="Search patient name, ID, or phone…"
+    autocomplete="off"
+  />
+</form>
+<% } else { %>
+<div class="ac-desktop-header__search ac-desktop-header__search--disabled" data-ac-shell-search="0" aria-hidden="true"></div>
+<% } %>
+
+<div class="ac-desktop-header__right" data-ac-shell-ops-tools="1">
+  <details class="ac-shell-notifications" data-ac-shell-notifications="1" data-ac-notifications-route="none">
+    <summary class="ac-icon-btn ac-shell-notifications__toggle" aria-label="Notifications">
+      <%- include('nav-icon', { name: 'notifications' }) %>
+      <span class="ac-sr-only">Notifications</span>
+    </summary>
+    <div class="ac-shell-notifications__panel" role="status">
+      <p class="ac-shell-notifications__title">Notifications</p>
+      <p class="ac-muted ac-shell-notifications__empty">No new notifications.</p>
+    </div>
+  </details>
+
+  <details class="ac-header-account" data-ac-account-menu="desktop">
+    <summary>
+      <span class="ac-account__avatar" aria-hidden="true"><%= (account.staffDisplayName || 'A').charAt(0) %></span>
+      <span class="ac-account__meta">
+        <span class="ac-account__name"><%= account.staffDisplayName || 'Staff' %></span>
+        <span class="ac-account__role"><%= account.roleLabel || account.jobTitle || 'Staff' %></span>
+      </span>
+    </summary>
+    <div class="ac-account__menu">
+      <a href="<%= account.changePasswordHref || '/account/change-password' %>">Change password</a>
+      <% if (s.canSwitchOrganization) { %>
+      <a href="<%= account.selectOrganizationHref || '/app/select-organization' %>">Switch organization</a>
+      <% } %>
+      <% if (s.canSwitchFacility || (s.availableFacilities && s.availableFacilities.length > 1)) { %>
+      <a href="<%= account.selectFacilityHref || '/app/select-facility' %>">Switch facility</a>
+      <% } %>
+      <form method="post" action="<%= account.logoutAction || '/logout' %>">
+        <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>" />
+        <button type="submit">Sign out</button>
+      </form>
+    </div>
+  </details>
+</div>

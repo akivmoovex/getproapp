@@ -5,6 +5,7 @@
   var csrf = s.csrf || { token: '', field: '_csrf' };
   var account = s.accountMenu || {};
   var isMobile = typeof mobile !== 'undefined' && mobile;
+  var checkIn = s.checkInAction || (s.navigation && s.navigation.checkInAction) || null;
   if (!groups.length && nav.length) {
     groups = [{ key: 'all', label: 'Menu', items: nav }];
   }
@@ -36,6 +37,18 @@
 <% } %>
 <% if (s.canSwitchOrganization) { %>
   <a class="ac-context-link" href="/app/select-organization" data-ac-org-switcher="1">Switch organization</a>
+<% } %>
+
+<% if (checkIn && checkIn.href) { %>
+  <a
+    class="ac-btn ac-sidebar-checkin"
+    href="<%= checkIn.href %>"
+    data-ac-shell-checkin="1"
+    data-ac-permission="<%= checkIn.permission || 'activeclinic.reception.check_in' %>"
+  >
+    <%- include('nav-icon', { name: 'person_add' }) %>
+    <span><%= checkIn.label || 'Check-in Patient' %></span>
+  </a>
 <% } %>
 
 <nav

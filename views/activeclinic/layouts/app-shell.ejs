@@ -6,23 +6,23 @@
   <title><%= (pageHeader && pageHeader.title) || 'ActiveClinic' %> · ActiveClinic</title>
   <meta name="robots" content="noindex, nofollow" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
+  <link rel="stylesheet" href="/platform/gp-ops-shared.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'gp-ops-1' %>" />
   <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's02-1' %>" />
   <link rel="stylesheet" href="/activeclinic/ac-app.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 's02-1' %>" />
   <link rel="stylesheet" href="/activeclinic/ac-urp.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'urp-1' %>" />
   <link rel="stylesheet" href="/activeclinic/ac-phone-field.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'phone-1' %>" />
   <link rel="stylesheet" href="/activeclinic/website-cms.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'mw-1' %>" />
   <link rel="stylesheet" href="/platform/website-media-field.css?v=<%= (typeof assetVersion !== 'undefined' && assetVersion) || (shell && shell.assetVersion) || 'mw-media-1' %>" />
-  <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet" />
-  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0" rel="stylesheet" />
 </head>
 <body
   class="ac-app-body<% if ((typeof websiteCmsShell !== 'undefined' && websiteCmsShell) || (shell && shell.websiteCmsShell) || (shell && shell.pageData && shell.pageData.cmsNav)) { %> ac-app-body--mw<% } %>"
   data-ac-product="activeclinic"
   data-ac-shell="staff-app"
   data-ac-page="<%= activeNav || 'home' %>"
-  data-ac-shell-version="s02"
+  data-ac-shell-version="<%= (shell && shell.shellChrome && shell.shellChrome.version) || 'b2' %>"
+  data-ac-shell-batch="2"
 >
   <a class="ac-skip" href="#ac-main">Skip to content</a>
   <div id="ac-shell-nav-live" class="ac-sr-only" aria-live="polite" aria-atomic="true"></div>
@@ -42,7 +42,7 @@
           aria-controls="ac-nav-drawer"
           aria-label="Open navigation menu"
         >
-          <span aria-hidden="true">☰</span>
+          <%- include('../partials/nav-icon', { name: 'menu' }) %>
           <span class="ac-sr-only">Menu</span>
         </button>
         <div class="ac-topbar__context">
@@ -54,59 +54,21 @@
             <% } %>
           </div>
         </div>
-        <details class="ac-topbar-account" data-ac-account-menu="mobile">
-          <summary class="ac-icon-btn" aria-label="Account menu"><%= ((shell && shell.accountMenu && shell.accountMenu.staffDisplayName) || 'A').charAt(0) %></summary>
-          <div class="ac-topbar-account__menu">
-            <p class="ac-muted" style="margin:0 0 .5rem;font-size:.85rem"><%= shell && shell.accountMenu && shell.accountMenu.staffDisplayName %></p>
-            <a href="/account/change-password">Change password</a>
-            <form method="post" action="/logout">
-              <input type="hidden" name="<%= (shell && shell.csrf && shell.csrf.field) || '_csrf' %>" value="<%= (shell && shell.csrf && shell.csrf.token) || '' %>" />
-              <button type="submit">Sign out</button>
-            </form>
-          </div>
-        </details>
-      </header>
-
-      <header class="ac-desktop-header" data-ac-nav="desktop-header">
-        <div class="ac-desktop-header__left">
-          <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs && breadcrumbs.length) { %>
-          <nav class="ac-desktop-header__crumbs" aria-label="Breadcrumb">
-            <ol class="ac-breadcrumbs ac-breadcrumbs--header">
-              <% breadcrumbs.forEach(function (crumb) { %>
-              <li>
-                <% if (crumb.href) { %><a href="<%= crumb.href %>"><%= crumb.label %></a><% } else { %><%= crumb.label %><% } %>
-              </li>
-              <% }) %>
-            </ol>
-          </nav>
-          <% } else { %>
-          <p class="ac-desktop-header__context ac-muted">
-            <%= (shell && shell.healthcareOrganization && shell.healthcareOrganization.publicName) || '' %>
-            <% if (shell && shell.selectedFacility) { %> · <%= shell.selectedFacility.displayName %><% } %>
-          </p>
+        <div class="ac-topbar__actions">
+          <% if (shell && shell.globalSearchEnabled) { %>
+          <a
+            class="ac-icon-btn"
+            href="/app/patients"
+            data-ac-shell-search-mobile="1"
+            aria-label="Search patients"
+          >
+            <%- include('../partials/nav-icon', { name: 'search' }) %>
+          </a>
           <% } %>
-        </div>
-        <form class="ac-desktop-header__search" method="get" action="/app/patients" role="search" data-ac-shell-search="1">
-          <label class="ac-sr-only" for="ac-shell-patient-search">Search patients</label>
-          <input
-            id="ac-shell-patient-search"
-            class="ac-shell-search"
-            type="search"
-            name="q"
-            placeholder="Search patient name, ID, or phone…"
-            autocomplete="off"
-          />
-        </form>
-        <div class="ac-desktop-header__right" data-ac-account-menu="desktop">
-          <details class="ac-header-account">
-            <summary>
-              <span class="ac-account__avatar" aria-hidden="true"><%= ((shell && shell.accountMenu && shell.accountMenu.staffDisplayName) || 'A').charAt(0) %></span>
-              <span class="ac-account__meta">
-                <span class="ac-account__name"><%= shell && shell.accountMenu && shell.accountMenu.staffDisplayName %></span>
-                <span class="ac-account__role"><%= (shell && shell.accountMenu && (shell.accountMenu.roleLabel || shell.accountMenu.jobTitle)) || 'Staff' %></span>
-              </span>
-            </summary>
-            <div class="ac-account__menu">
+          <details class="ac-topbar-account" data-ac-account-menu="mobile">
+            <summary class="ac-icon-btn" aria-label="Account menu"><%= ((shell && shell.accountMenu && shell.accountMenu.staffDisplayName) || 'A').charAt(0) %></summary>
+            <div class="ac-topbar-account__menu">
+              <p class="ac-muted" style="margin:0 0 .5rem;font-size:.85rem"><%= shell && shell.accountMenu && shell.accountMenu.staffDisplayName %></p>
               <a href="/account/change-password">Change password</a>
               <% if (shell && shell.canSwitchOrganization) { %>
               <a href="/app/select-organization">Switch organization</a>
@@ -121,6 +83,28 @@
             </div>
           </details>
         </div>
+      </header>
+
+      <header class="ac-desktop-header" data-ac-nav="desktop-header" data-ac-composition="desktop-topbar">
+        <div class="ac-desktop-header__left">
+          <% if (typeof breadcrumbs !== 'undefined' && breadcrumbs && breadcrumbs.length) { %>
+          <nav class="ac-desktop-header__crumbs" aria-label="Breadcrumb">
+            <ol class="ac-breadcrumbs ac-breadcrumbs--header">
+              <% breadcrumbs.forEach(function (crumb) { %>
+              <li>
+                <% if (crumb.href) { %><a href="<%= crumb.href %>"><%= crumb.label %></a><% } else { %><%= crumb.label %><% } %>
+              </li>
+              <% }) %>
+            </ol>
+          </nav>
+          <% } else { %>
+          <p class="ac-desktop-header__context ac-muted" data-ac-facility-context="desktop-header">
+            <%= (shell && shell.healthcareOrganization && shell.healthcareOrganization.publicName) || '' %>
+            <% if (shell && shell.selectedFacility) { %> · <%= shell.selectedFacility.displayName %><% } %>
+          </p>
+          <% } %>
+        </div>
+        <%- include('../partials/staff-shell-ops-tools', { shell: typeof shell !== 'undefined' ? shell : null }) %>
       </header>
 
       <main id="ac-main" class="ac-content" tabindex="-1">
@@ -170,6 +154,8 @@
       </main>
     </div>
   </div>
+
+  <%- include('../partials/staff-mobile-bottom-nav', { shell: typeof shell !== 'undefined' ? shell : null }) %>
 
   <div class="ac-drawer-backdrop" data-ac-nav-backdrop="1" hidden></div>
   <div

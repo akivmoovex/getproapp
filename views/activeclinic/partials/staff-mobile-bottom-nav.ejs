@@ -1,0 +1,40 @@
+<%#
+  Batch 2 staff mobile bottom navigation.
+  Locals: shell (uses shell.mobileBottomNav — real RBAC-filtered routes only).
+%>
+<%
+  var s = typeof shell !== 'undefined' && shell ? shell : {};
+  var tabs = Array.isArray(s.mobileBottomNav) ? s.mobileBottomNav : [];
+%>
+<nav
+  class="ac-staff-bottom-nav"
+  data-ac-nav="mobile-bottom"
+  data-ac-composition="mobile-bottom-nav"
+  aria-label="Primary mobile"
+>
+  <div class="ac-staff-bottom-nav__inner">
+    <% tabs.forEach(function (item) { %>
+    <a
+      href="<%= item.href %>"
+      class="ac-staff-bottom-nav__item<%= item.current ? ' is-active' : '' %>"
+      <% if (item.current) { %>aria-current="page"<% } %>
+      data-ac-nav-key="<%= item.key %>"
+      data-ac-mobile-tab="1"
+    >
+      <%- include('nav-icon', { name: item.icon }) %>
+      <span class="ac-staff-bottom-nav__label"><%= item.shortLabel || item.label %></span>
+    </a>
+    <% }) %>
+    <button
+      type="button"
+      class="ac-staff-bottom-nav__item ac-staff-bottom-nav__item--more"
+      data-ac-nav-toggle="1"
+      data-ac-mobile-tab="more"
+      aria-controls="ac-nav-drawer"
+      aria-label="More navigation"
+    >
+      <%- include('nav-icon', { name: 'menu' }) %>
+      <span class="ac-staff-bottom-nav__label">More</span>
+    </button>
+  </div>
+</nav>
