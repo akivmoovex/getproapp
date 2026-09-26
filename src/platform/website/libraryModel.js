@@ -3,10 +3,14 @@
 /**
  * Shared content/media library model for the V7 website engine.
  *
- * Storage stays product-owned: ActiveClinic reads platform.website_media and
- * BlessBoard reads blessboard.media_assets. Each product adapts its rows into
- * one canonical card shape here, so search, type filtering, empty states and
- * the rendered UI behave identically without duplicating either store.
+ * Website-engine storage is platform-owned: both BlessBoard and ActiveClinic
+ * read/write `platform.website_media` through `mediaService` (+ Hostinger bytes).
+ * This module only adapts rows into one canonical card shape so search, type
+ * filtering, empty states and rendered UI behave identically.
+ *
+ * BlessBoard operational church media (`blessboard.media_assets` via
+ * `src/blessboard/media/*`) is a separate product-domain store for classic CMS /
+ * announcements / forms — not the shared website-engine library.
  *
  * Normalising is also the tenant-safety boundary: internal columns
  * (storage keys, content hashes, organization and instance ids) are dropped so

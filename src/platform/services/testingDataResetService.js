@@ -8,7 +8,9 @@
 const crypto = require("crypto");
 const { isTestingDataMaintenanceAllowed } = require("../config/testingDataMaintenance");
 const { checkDatabaseIdentity } = require("../../../db/scripts/lib/databaseIdentity");
-const { createMediaStorage } = require("../../blessboard/media/storage/createMediaStorage");
+const {
+  createBlessBoardOperationalMediaStorage,
+} = require("../contracts/productRuntimeRegistry");
 const { recordAuditEventSafe } = require("./auditEventService");
 const repo = require("../repositories/testingDataResetRepository");
 
@@ -646,8 +648,8 @@ async function cleanupMediaFiles(env, mediaObjects) {
   if (!mediaObjects || !mediaObjects.length) {
     return { attempted: 0, deleted: 0, failed: 0, skippedRemote: false, warnings: [] };
   }
-  const storage = createMediaStorage(env);
-  if (storage.kind !== "local") {
+  const storage = createBlessBoardOperationalMediaStorage(env);
+  if (!storage || storage.kind !== "local") {
     return {
       attempted: mediaObjects.length,
       deleted: 0,
