@@ -7,8 +7,8 @@
 **Production:** **untouched** — do not promote
 
 **Application / functional commit (hosted validation):** `2c58a9fbdec2` (`2c58a9fbdec2dac4a7604f946e7e8e9fcb2d0200`)  
-**Release tip under test (includes this QA doc):** `67d17d8af5d9` (`67d17d8af5d9…`)  
-**Note:** Tip is ahead of the functional RNC commit by this documentation commit only — expected, not a mismatch blocker.
+**Release tip under test (includes this QA doc):** `b75fe5b11cd8`  
+**Note:** Tip is ahead of the functional RNC commit by documentation commits only — expected, not a mismatch blocker.
 
 ---
 
@@ -104,7 +104,7 @@ Hosted `/healthz` on hub + BB + AC: `gitSha=2c58a9fbdec2` · `deploymentCode=moo
 
 `node --test tests/v2-01-release-notes-center.test.js` → **26/26 PASS**
 
-### Hosted validation (functional tip `2c58a9fbdec2`; current tip `67d17d8af5d9` docs-only ahead)
+### Hosted validation (functional tip `2c58a9fbdec2`; current tip docs-only ahead)
 
 Scripted checks: **32/32 PASS** covering hub/BB/AC routes, product context, 66/66 + 48/48 content, limitations, public sanitization, unauthorized Evidence deny, About links, login 200, CSS, production SHA unchanged.
 
@@ -121,7 +121,7 @@ Internal token / live `platform_admin` browser unlock: covered by automated suit
 | Ref | Value |
 | --- | --- |
 | Functional / validated commit | `2c58a9fbdec2dac4a7604f946e7e8e9fcb2d0200` |
-| Hosted tip (this QA doc) | `67d17d8af5d9` |
+| Hosted tip (QA report docs) | `b75fe5b11cd8` (and any identical docs-only follow-ups) |
 | Deployment | `moovex-platform-v8-testing` |
 | Production | `03a89106e2fe` / `moovex-platform-production` (**untouched**) |
 
