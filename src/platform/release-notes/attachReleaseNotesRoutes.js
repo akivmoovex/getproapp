@@ -102,7 +102,7 @@ function buildLocals(req, env, extra) {
     productContext,
     stitchStatus:
       "DOCUMENTATION PENDING — no approved Stitch Release Notes Center project found in account inventory (2026-09-25).",
-    assetVersion: "v2-01-rnc-3",
+    assetVersion: "v2-02-rnc-1",
     ...(extra || {}),
   };
 }

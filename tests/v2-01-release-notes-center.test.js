@@ -62,14 +62,27 @@ function hubApp(env) {
 }
 
 describe("release notes catalog", () => {
-  it("lists all six versions", () => {
-    assert.deepEqual(VERSION_ORDER, ["1.0", "1.1", "1.2", "1.3", "2.0", "2.01"]);
-    assert.equal(listVersions().length, 6);
+  it("lists all seven versions", () => {
+    assert.deepEqual(VERSION_ORDER, ["1.0", "1.1", "1.2", "1.3", "2.0", "2.01", "2.02"]);
+    assert.equal(listVersions().length, 7);
   });
 
   it("marks 1.1 and 1.2 documentation gaps", () => {
     assert.match(getVersion("1.1").qaVerification, /DOCUMENTATION PENDING/);
     assert.match(getVersion("1.2").qaVerification, /DOCUMENTATION PENDING/);
+  });
+
+  it("does not invent full release PASS for 2.02", () => {
+    const v = getVersion("2.02");
+    assert.ok(v);
+    assert.ok(!/RELEASED TO PRODUCTION|FULL RELEASE PASS/i.test(v.qaVerification));
+    assert.ok(!/production promotion/i.test(v.deploymentStatus) || /do not treat/i.test(v.deploymentStatus));
+    const about = v.features.find((f) => f.id === "F-2.02-ABOUT-01");
+    assert.equal(about.qaStatus, "HOSTED QA PASS");
+    const p1 = v.features.find((f) => f.id === "F-2.02-P1-GATE-01");
+    assert.equal(p1.qaStatus, "HOSTED QA PASS");
+    assert.ok(v.bugs.some((b) => b.id === "BUG-2.02-RC-MEDIA-PLACE"));
+    assert.ok(v.bugs.some((b) => b.id === "BUG-2.02-BB-THEME-503"));
   });
 
   it("does not invent full release PASS for 2.01", () => {
