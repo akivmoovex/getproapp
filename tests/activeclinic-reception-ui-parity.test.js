@@ -298,7 +298,7 @@ describe("ActiveClinic reception UI parity (AC-V6-C05)", () => {
       .set("Cookie", adminCookieWithFacility);
     assert.equal(queueList.status, 200);
     assert.match(queueList.text, /data-ac-page-section="reception-queue"/);
-    assert.match(queueList.text, /data-ac-stitch-desktop="8b7173ba4ff94eb2a7d7e548b5f7253d"/);
+    assert.match(queueList.text, /data-ac-stitch-desktop="4bdf5a39d81043e1bd9488caa0833048"/);
     // Empty queue shows empty state, not table
     assert.match(queueList.text, /data-ac-card-list="reception-queue"|No patients in queue/);
 

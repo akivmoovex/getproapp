@@ -11,6 +11,10 @@
 async function insertPatient(db, row) {
   const registrationStatus =
     row.registrationStatus === "incomplete" ? "incomplete" : "complete";
+  const clinicFields =
+    row.clinicFields && typeof row.clinicFields === "object"
+      ? row.clinicFields
+      : {};
   const result = await db.query(
     `INSERT INTO activeclinic.patients (
        organization_id, healthcare_organization_id, patient_number,
@@ -20,10 +24,13 @@ async function insertPatient(db, row) {
        phone_normalized, phone_display, email_normalized, email_display,
        address_line_1, address_line_2, city, district, province,
        country_code, postal_code, preferred_contact_method, allow_admin_reminders,
+       next_of_kin_full_name, next_of_kin_relationship,
+       next_of_kin_phone_display, next_of_kin_phone_normalized,
+       clinic_fields_json,
        status, registration_status, created_by_staff_id, updated_by_staff_id
      ) VALUES (
        $1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,$12,$13,$14,$15,$16,$17,$18,$19,$20,
-       $21,$22,$23,$24,$25,$26,$27,$28,$29
+       $21,$22,$23,$24,$25,$26,$27,$28,$29,$30::jsonb,$31,$32,$33,$34
      )
      RETURNING *`,
     [
@@ -52,6 +59,11 @@ async function insertPatient(db, row) {
       row.postalCode,
       row.preferredContactMethod,
       row.allowAdminReminders,
+      row.nextOfKinFullName || null,
+      row.nextOfKinRelationship || null,
+      row.nextOfKinPhoneDisplay || null,
+      row.nextOfKinPhoneNormalized || null,
+      JSON.stringify(clinicFields),
       row.status || "active",
       registrationStatus,
       row.createdByStaffId,
@@ -203,6 +215,28 @@ async function updatePatientByOrgAndId(db, input) {
   }
   if (Object.prototype.hasOwnProperty.call(patch, "allowAdminReminders")) {
     set("allow_admin_reminders", patch.allowAdminReminders);
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "nextOfKinFullName")) {
+    set("next_of_kin_full_name", patch.nextOfKinFullName);
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "nextOfKinRelationship")) {
+    set("next_of_kin_relationship", patch.nextOfKinRelationship);
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "nextOfKinPhoneDisplay")) {
+    set("next_of_kin_phone_display", patch.nextOfKinPhoneDisplay);
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "nextOfKinPhoneNormalized")) {
+    set("next_of_kin_phone_normalized", patch.nextOfKinPhoneNormalized);
+  }
+  if (Object.prototype.hasOwnProperty.call(patch, "clinicFields")) {
+    set(
+      "clinic_fields_json",
+      JSON.stringify(
+        patch.clinicFields && typeof patch.clinicFields === "object"
+          ? patch.clinicFields
+          : {}
+      )
+    );
   }
   if (Object.prototype.hasOwnProperty.call(patch, "status")) set("status", patch.status);
   if (Object.prototype.hasOwnProperty.call(patch, "deceasedAt")) {

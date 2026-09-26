@@ -5,7 +5,7 @@
   var csrf = (shell && shell.csrf) || { field: '_csrf', token: '' };
   var stitch = profile.stitch || {};
 %>
-<section class="ac-patient-profile" data-ac-page-section="patient-profile" data-ac-patient-status="<%= patient.status || '' %>" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
+<section class="ac-batch1a ac-patient-profile" data-ac-page-section="patient-profile" data-ac-stitch="ACN11" data-ac-patient-status="<%= patient.status || '' %>" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>">
   <header class="ac-patient-banner" data-ac-patient-banner="1">
     <h2 class="ac-patient-banner__name"><%= patient.displayName %></h2>
     <p class="ac-muted">
@@ -128,6 +128,94 @@
         }) %>
       </div>
       <button type="submit" class="ac-btn">Add emergency contact</button>
+    </form>
+    <% } %>
+  </div>
+
+  <div class="ac-panel" data-ac-next-of-kin="1">
+    <h2 class="ac-dashboard__card-title">Next of kin</h2>
+    <% if (profile.emergencyHidden) { %>
+    <p class="ac-muted">Next of kin requires sensitive-contact permission.</p>
+    <% } else { %>
+    <dl class="ac-dl">
+      <div><dt>Name</dt><dd><%= patient.nextOfKinFullName || '—' %></dd></div>
+      <div><dt>Relationship</dt><dd><%= patient.nextOfKinRelationship || '—' %></dd></div>
+      <div><dt>Phone</dt><dd><%= patient.nextOfKinPhoneDisplay || '—' %></dd></div>
+    </dl>
+    <% } %>
+  </div>
+
+  <div class="ac-panel" data-ac-consent-ledger="1">
+    <h2 class="ac-dashboard__card-title">Consent</h2>
+    <p class="ac-muted">Clinical / administrative consents for this clinic only. Distinct from website registration terms.</p>
+    <% if (!(profile.consents || []).length) { %>
+    <p class="ac-muted">No consents recorded yet.</p>
+    <% } else { %>
+    <div class="ac-table-wrap">
+      <table class="ac-table" data-ac-table="patient-consents">
+        <thead>
+          <tr>
+            <th scope="col">Type</th>
+            <th scope="col">Status</th>
+            <th scope="col">Date</th>
+            <th scope="col">Method</th>
+            <th scope="col">Version</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% (profile.consents || []).forEach(function (c) { %>
+          <tr data-ac-consent-status="<%= c.status %>">
+            <td><%= c.consentTypeLabel %></td>
+            <td><span class="ac-status" data-ac-status="<%= c.status %>"><%= c.statusLabel %></span></td>
+            <td><%= c.grantedAt ? String(c.grantedAt).replace('T',' ').slice(0,16) : (c.withdrawnAt ? String(c.withdrawnAt).replace('T',' ').slice(0,16) : '—') %></td>
+            <td><%= c.captureMethodLabel %></td>
+            <td><%= c.consentVersion %></td>
+            <td>
+              <% if (actions.canManageConsent && c.status === 'granted') { %>
+              <form method="post" action="/app/patients/<%= encodeURIComponent(patient.patientNumber) %>/consents/<%= c.id %>/withdraw" class="ac-inline-form">
+                <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+                <input class="ac-input" name="withdrawal_reason" type="text" required minlength="3" placeholder="Withdrawal reason" aria-label="Withdrawal reason"/>
+                <button type="submit" class="ac-btn ac-btn--ghost">Withdraw</button>
+              </form>
+              <% } else if (c.withdrawalReason) { %>
+              <span class="ac-muted"><%= c.withdrawalReason %></span>
+              <% } else { %>—<% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+    <% if (actions.canManageConsent) { %>
+    <form method="post" action="/app/patients/<%= encodeURIComponent(patient.patientNumber) %>/consents" class="ac-inline-form" data-ac-consent-grant="1">
+      <input type="hidden" name="<%= csrf.field %>" value="<%= csrf.token %>"/>
+      <div class="ac-field">
+        <label class="ac-label" for="consent_type">Consent type</label>
+        <select class="ac-select" id="consent_type" name="consent_type" required>
+          <% ((profile.consentOptions && profile.consentOptions.types) || []).forEach(function (t) { %>
+          <option value="<%= t.value %>"><%= t.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="capture_method">Capture method</label>
+        <select class="ac-select" id="capture_method" name="capture_method" required>
+          <% ((profile.consentOptions && profile.consentOptions.methods) || []).forEach(function (m) { %>
+          <option value="<%= m.value %>"><%= m.label %></option>
+          <% }) %>
+        </select>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="consent_version">Version</label>
+        <input class="ac-input" id="consent_version" name="consent_version" required maxlength="40" value="1.0"/>
+      </div>
+      <div class="ac-field">
+        <label class="ac-label" for="consent_note">Note <span class="ac-muted">(optional)</span></label>
+        <input class="ac-input" id="consent_note" name="note" maxlength="500"/>
+      </div>
+      <button type="submit" class="ac-btn">Record consent</button>
     </form>
     <% } %>
   </div>

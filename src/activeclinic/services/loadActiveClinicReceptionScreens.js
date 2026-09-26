@@ -40,9 +40,10 @@ const QUEUE_STATUS_LABELS = Object.freeze({
 });
 
 const STITCH = Object.freeze({
-  queueDesktop: "8b7173ba4ff94eb2a7d7e548b5f7253d",
-  queueMobile: "73499b0dfef446c99a908b1cc56252a5",
-  checkInDesktop: "9284064428f443b1a3a1504054827d91",
+  queueDesktop: "4bdf5a39d81043e1bd9488caa0833048",
+  queueMobile: "a21f9b37a2ca4939948bf39a86a5df90",
+  checkInDesktop: "ed27c2dfb6474a139b126c5bd57e0869",
+  checkInMobile: "a2900a9ef33247d8817fe801f4a06fd5",
   walkInDesktop: "305d90143b0e4381b112bf6eb113f1c2",
   calledDesktop: "8dca6dbd36b840928e73d6674bbcb3ea",
   didNotRespondDesktop: "f7841548662446cfa8d70d0772d3fa9f",
@@ -95,6 +96,13 @@ async function enrichQueueEntries(db, auth, entries) {
   const hcoId = auth.healthcareOrganization.id;
   const patientIds = [...new Set(entries.map((e) => e.patientId))];
   const servicePointIds = [...new Set(entries.map((e) => e.servicePointId))];
+  const appointmentIds = [
+    ...new Set(entries.map((e) => e.appointmentId).filter(Boolean)),
+  ];
+  const arrivalIds = [...new Set(entries.map((e) => e.arrivalId).filter(Boolean))];
+  const staffIds = [
+    ...new Set(entries.map((e) => e.servingStaffId).filter(Boolean)),
+  ];
 
   const patients = {};
   for (const id of patientIds) {
@@ -123,12 +131,109 @@ async function enrichQueueEntries(db, auth, entries) {
     if (sp) servicePoints[spId] = mapServicePoint(sp);
   }
 
-  return entries.map((e) => ({
-    ...e,
-    statusLabel: QUEUE_STATUS_LABELS[e.status] || e.status,
-    patient: patients[e.patientId] || null,
-    servicePoint: servicePoints[e.servicePointId] || null,
-  }));
+  const arrivals = {};
+  for (const arrivalId of arrivalIds) {
+    const row = await receptionRepo.findReceptionArrivalById(db, {
+      id: arrivalId,
+      organizationId: orgId,
+      healthcareOrganizationId: hcoId,
+    });
+    if (row) {
+      arrivals[arrivalId] = {
+        id: row.id,
+        arrivedAt: row.arrived_at,
+        arrivalSource: row.arrival_source,
+        // Administrative check-in note only — never clinical encounter notes.
+        checkInNote: row.check_in_note || null,
+      };
+    }
+  }
+
+  const appointments = {};
+  for (const appointmentId of appointmentIds) {
+    const detail = await getAppointmentDetail(db, {
+      organizationId: orgId,
+      healthcareOrganizationId: hcoId,
+      appointmentId,
+      actor: actorFromAuth(auth),
+    });
+    if (detail.ok) {
+      appointments[appointmentId] = {
+        id: detail.appointment.id,
+        status: detail.appointment.status,
+        serviceTypeId: detail.appointment.serviceTypeId,
+        assignedStaffId: detail.appointment.assignedStaffId,
+      };
+    }
+  }
+
+  const serviceNames = {};
+  const staffNames = {};
+  for (const appt of Object.values(appointments)) {
+    if (appt.serviceTypeId && !serviceNames[appt.serviceTypeId]) {
+      const svc = await db.query(
+        `SELECT display_name FROM activeclinic.appointment_service_types
+          WHERE id = $1 AND organization_id = $2 AND healthcare_organization_id = $3
+          LIMIT 1`,
+        [appt.serviceTypeId, orgId, hcoId]
+      );
+      serviceNames[appt.serviceTypeId] = svc.rows[0]
+        ? svc.rows[0].display_name
+        : null;
+    }
+    if (appt.assignedStaffId) staffIds.push(appt.assignedStaffId);
+  }
+  for (const staffId of [...new Set(staffIds)]) {
+    const staff = await db.query(
+      `SELECT first_name, last_name, display_name FROM activeclinic.staff_members
+        WHERE id = $1 AND organization_id = $2 LIMIT 1`,
+      [staffId, orgId]
+    );
+    if (staff.rows[0]) {
+      const s = staff.rows[0];
+      staffNames[staffId] =
+        s.display_name ||
+        [s.first_name, s.last_name].filter(Boolean).join(" ") ||
+        "Practitioner";
+    }
+  }
+
+  const now = Date.now();
+  return entries.map((e) => {
+    const arrival = arrivals[e.arrivalId] || null;
+    const appointment = e.appointmentId ? appointments[e.appointmentId] || null : null;
+    const arrivedAt = arrival && arrival.arrivedAt ? new Date(arrival.arrivedAt) : null;
+    const waitingMinutes =
+      arrivedAt && !Number.isNaN(arrivedAt.getTime())
+        ? Math.max(0, Math.floor((now - arrivedAt.getTime()) / 60000))
+        : null;
+    const practitionerId =
+      e.servingStaffId || (appointment && appointment.assignedStaffId) || null;
+    // Explicitly omit clinical notes / encounter content from reception payloads.
+    const { patientNote: _omitClinicalNote, ...safeEntry } = e;
+    return {
+      ...safeEntry,
+      statusLabel: QUEUE_STATUS_LABELS[e.status] || e.status,
+      patient: patients[e.patientId] || null,
+      servicePoint: servicePoints[e.servicePointId] || null,
+      destination: servicePoints[e.servicePointId]
+        ? servicePoints[e.servicePointId].displayName
+        : null,
+      arrival,
+      arrivedAtLabel: arrivedAt
+        ? arrivedAt.toISOString().replace("T", " ").slice(0, 16)
+        : "—",
+      waitingMinutes,
+      waitingDurationLabel:
+        waitingMinutes == null ? "—" : `${waitingMinutes} min`,
+      serviceName:
+        appointment && appointment.serviceTypeId
+          ? serviceNames[appointment.serviceTypeId] || "—"
+          : "—",
+      practitionerName: practitionerId ? staffNames[practitionerId] || "—" : "—",
+      patientNote: null,
+    };
+  });
 }
 
 async function loadActiveClinicReceptionQueueScreen(db, input) {
@@ -182,7 +287,7 @@ async function loadActiveClinicReceptionQueueScreen(db, input) {
 }
 
 async function loadActiveClinicReceptionCheckInScreen(db, input) {
-  const { auth, appointmentId, error } = input;
+  const { auth, appointmentId, error, query } = input;
   const perms = auth.permissions || [];
   const selectedFacility = auth.selectedFacility;
   if (!selectedFacility || !selectedFacility.id) {
@@ -190,30 +295,107 @@ async function loadActiveClinicReceptionCheckInScreen(db, input) {
   }
 
   let appointment = null;
-  if (appointmentId) {
+  let lookupCandidates = [];
+  const lookupQ = String((query && (query.q || query.patient_number || query.appointment_id)) || "").trim();
+
+  if (appointmentId || (query && query.appointment_id)) {
+    const id = appointmentId || String(query.appointment_id).trim();
     const detail = await getAppointmentDetail(db, {
       organizationId: auth.organization.id,
       healthcareOrganizationId: auth.healthcareOrganization.id,
-      appointmentId,
+      appointmentId: id,
       actor: actorFromAuth(auth),
     });
-    if (detail.ok) {
-      // Enrich appointment with patient data
+    if (detail.ok && detail.appointment.facilityId === selectedFacility.id) {
       const patient = await getPatientByOrgAndId(db, {
         organizationId: auth.organization.id,
         healthcareOrganizationId: auth.healthcareOrganization.id,
         patientId: detail.appointment.patientId,
       });
+      let practitionerName = null;
+      if (detail.appointment.assignedStaffId) {
+        const staff = await db.query(
+          `SELECT first_name, last_name, display_name FROM activeclinic.staff_members
+            WHERE id = $1 AND organization_id = $2 LIMIT 1`,
+          [detail.appointment.assignedStaffId, auth.organization.id]
+        );
+        if (staff.rows[0]) {
+          practitionerName =
+            staff.rows[0].display_name ||
+            [staff.rows[0].first_name, staff.rows[0].last_name]
+              .filter(Boolean)
+              .join(" ");
+        }
+      }
+      let serviceName = null;
+      if (detail.appointment.serviceTypeId) {
+        const svc = await db.query(
+          `SELECT display_name FROM activeclinic.appointment_service_types
+            WHERE id = $1 AND organization_id = $2 LIMIT 1`,
+          [detail.appointment.serviceTypeId, auth.organization.id]
+        );
+        serviceName = svc.rows[0] ? svc.rows[0].display_name : null;
+      }
       appointment = {
         ...detail.appointment,
-        patient: patient.ok && patient.patient ? {
-          id: patient.patient.id,
-          patientNumber: patient.patient.patientNumber,
-          displayName: formatPatientDisplayName(patient.patient),
-        } : null,
+        patient: patient.ok && patient.patient
+          ? {
+              id: patient.patient.id,
+              patientNumber: patient.patient.patientNumber,
+              displayName: formatPatientDisplayName(patient.patient),
+            }
+          : null,
         statusLabel: detail.appointment.status,
+        practitionerName,
+        serviceName,
       };
     }
+  } else if (lookupQ) {
+    const listed = await db.query(
+      `SELECT a.id, a.status, a.starts_at, a.assigned_staff_id, a.service_type_id,
+              p.patient_number, p.first_name, p.last_name, p.preferred_name,
+              st.display_name AS service_name
+         FROM activeclinic.appointments a
+         INNER JOIN activeclinic.patients p
+           ON p.id = a.patient_id
+          AND p.organization_id = a.organization_id
+         LEFT JOIN activeclinic.appointment_service_types st
+           ON st.id = a.service_type_id
+        WHERE a.organization_id = $1
+          AND a.healthcare_organization_id = $2
+          AND a.facility_id = $3
+          AND a.status IN ('requested', 'confirmed')
+          AND (
+            a.id::text = $4
+            OR p.patient_number ILIKE $5
+            OR p.phone_normalized ILIKE $5
+            OR (p.first_name || ' ' || p.last_name) ILIKE $5
+          )
+        ORDER BY a.starts_at ASC
+        LIMIT 15`,
+      [
+        auth.organization.id,
+        auth.healthcareOrganization.id,
+        selectedFacility.id,
+        lookupQ,
+        `%${lookupQ.replace(/%/g, "")}%`,
+      ]
+    );
+    lookupCandidates = listed.rows.map((row) => ({
+      id: row.id,
+      status: row.status,
+      startsAt: row.starts_at,
+      serviceName: row.service_name || "—",
+      patient: {
+        patientNumber: row.patient_number,
+        displayName: formatPatientDisplayName({
+          firstName: row.first_name,
+          lastName: row.last_name,
+          preferredName: row.preferred_name,
+        }),
+      },
+      selectHref: `/app/reception/check-in?appointment_id=${encodeURIComponent(row.id)}`,
+    }));
   }
 
   const servicePoints = await receptionRepo.listServicePointsByFacility(db, {
@@ -227,6 +409,8 @@ async function loadActiveClinicReceptionCheckInScreen(db, input) {
     ok: true,
     checkIn: {
       appointment,
+      lookupQ,
+      lookupCandidates,
       facility: selectedFacility,
       servicePoints: servicePoints.map(mapServicePoint),
       error: error || null,
@@ -235,6 +419,7 @@ async function loadActiveClinicReceptionCheckInScreen(db, input) {
       },
       stitch: {
         desktop: STITCH.checkInDesktop,
+        mobile: STITCH.checkInMobile,
       },
     },
   };

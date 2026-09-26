@@ -41,16 +41,85 @@ const {
   normalizeEmergencyContactInput,
 } = require("./activeClinicPatientValidation");
 const {
+  normalizeActiveClinicPhone,
+} = require("./normalizeActiveClinicContact");
+const {
+  formatPatientDisplayName,
+  formatApproximateAge,
+  maskPhone,
+  maskEmail,
+  maskIdentifier,
+} = require("./patientPrivacyHelpers");
+
+function normalizeClinicFields(raw) {
+  if (raw == null || raw === "") return {};
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+        ? parsed
+        : {};
+    } catch (_err) {
+      return {};
+    }
+  }
+  if (typeof raw === "object" && !Array.isArray(raw)) {
+    const out = {};
+    for (const [key, value] of Object.entries(raw)) {
+      const k = String(key || "").trim().slice(0, 64);
+      if (!k) continue;
+      if (value == null || value === "") continue;
+      out[k] = String(value).trim().slice(0, 200);
+    }
+    return out;
+  }
+  return {};
+}
+
+function normalizeNextOfKin(raw) {
+  const src = raw && typeof raw === "object" ? raw : {};
+  const fullName = src.fullName || src.nextOfKinFullName || null;
+  const relationship = src.relationship || src.nextOfKinRelationship || null;
+  const name =
+    fullName == null || String(fullName).trim() === ""
+      ? null
+      : String(fullName).trim().slice(0, 120);
+  const rel =
+    relationship == null || String(relationship).trim() === ""
+      ? null
+      : String(relationship).trim().slice(0, 80);
+  let phoneNormalized = null;
+  let phoneDisplay = null;
+  const hasPhone =
+    (src.phone != null && String(src.phone).trim() !== "") ||
+    (src.phoneNational != null && String(src.phoneNational).trim() !== "") ||
+    (src.nextOfKinPhone != null && String(src.nextOfKinPhone).trim() !== "");
+  if (hasPhone) {
+    const phone = normalizeActiveClinicPhone({
+      phone: src.phone || src.nextOfKinPhone,
+      phoneCountry: src.phoneCountry || null,
+      phoneNational: src.phoneNational || null,
+    });
+    if (!phone.ok) return { ok: false, code: phone.code };
+    phoneNormalized = phone.normalized;
+    phoneDisplay = phone.display;
+  }
+  return {
+    ok: true,
+    value: {
+      nextOfKinFullName: name,
+      nextOfKinRelationship: rel,
+      nextOfKinPhoneDisplay: phoneDisplay,
+      nextOfKinPhoneNormalized: phoneNormalized,
+    },
+  };
+}
+
+const {
   findPotentialPatientDuplicates,
   findIdentifierConflict,
 } = require("./activeClinicPatientDuplicateService");
-const {
-  toPatientSearchSummary,
-  formatPatientDisplayName,
-  maskIdentifier,
-  maskPhone,
-  maskEmail,
-} = require("./patientPrivacyHelpers");
+const { toPatientSearchSummary } = require("./patientPrivacyHelpers");
 
 const RESULT = Object.freeze({
   OK: "ok",
@@ -127,6 +196,14 @@ function mapPatient(row) {
     postalCode: row.postal_code || null,
     preferredContactMethod: row.preferred_contact_method || null,
     allowAdminReminders: row.allow_admin_reminders,
+    nextOfKinFullName: row.next_of_kin_full_name || null,
+    nextOfKinRelationship: row.next_of_kin_relationship || null,
+    nextOfKinPhoneDisplay: row.next_of_kin_phone_display || null,
+    nextOfKinPhoneNormalized: row.next_of_kin_phone_normalized || null,
+    clinicFields:
+      row.clinic_fields_json && typeof row.clinic_fields_json === "object"
+        ? row.clinic_fields_json
+        : {},
     status: row.status,
     registrationStatus: row.registration_status || "complete",
     deceasedAt: row.deceased_at || null,
@@ -438,6 +515,13 @@ async function registerActiveClinicPatient(db, input) {
             ? "incomplete"
             : "complete";
 
+        const nextOfKin = normalizeNextOfKin(input.nextOfKin || {});
+        if (!nextOfKin.ok) {
+          await client.query("ROLLBACK");
+          return { ok: false, code: nextOfKin.code, patient: null };
+        }
+        const clinicFields = normalizeClinicFields(input.clinicFields || input.clinic_fields);
+
         const row = await patientRepo.insertPatient(client, {
           organizationId,
           healthcareOrganizationId,
@@ -445,6 +529,8 @@ async function registerActiveClinicPatient(db, input) {
           ...demographics.value,
           ...contacts.value,
           ...address.value,
+          ...nextOfKin.value,
+          clinicFields,
           status: "active",
           registrationStatus,
           createdByStaffId: actor.staffMemberId,
@@ -856,6 +942,20 @@ async function updateActiveClinicPatient(db, input) {
     if (!address.ok) return { ok: false, code: address.code, patient: null };
     Object.assign(patch, address.value);
     fieldKeys.push("address");
+  }
+
+  if (input.nextOfKin) {
+    const nextOfKin = normalizeNextOfKin(input.nextOfKin);
+    if (!nextOfKin.ok) return { ok: false, code: nextOfKin.code, patient: null };
+    Object.assign(patch, nextOfKin.value);
+    fieldKeys.push("next_of_kin");
+  }
+
+  if (input.clinicFields != null || input.clinic_fields != null) {
+    patch.clinicFields = normalizeClinicFields(
+      input.clinicFields != null ? input.clinicFields : input.clinic_fields
+    );
+    fieldKeys.push("clinic_fields");
   }
 
   if (

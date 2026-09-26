@@ -13,6 +13,13 @@ const {
   RESULT: PATIENT_RESULT,
   PERM,
 } = require("./activeClinicPatientService");
+const {
+  listPatientConsents,
+  TYPE_LABELS: CONSENT_TYPE_LABELS,
+  METHOD_LABELS: CONSENT_METHOD_LABELS,
+  CONSENT_TYPES,
+  CAPTURE_METHODS,
+} = require("./activeClinicPatientConsentService");
 const registrationRepo = require("../repositories/patientRegistrationRepository");
 const {
   listFacilitiesByOrganization,
@@ -40,6 +47,13 @@ const STATUS_LABELS = Object.freeze({
   inactive: "Inactive",
   deceased: "Deceased",
   archived: "Archived",
+});
+
+const STITCH = Object.freeze({
+  listDesktop: "d6fa60ee647a44949449f163990a3e1f",
+  listMobile: "580bd1e41bf1439e97587ee3accb8b30",
+  profileDesktop: "63b85a8c28b84e9e81db2930c93c1217",
+  profileMobile: "147ab133a55f41e6afc6faf3010f03e3",
 });
 
 const SEX_LABELS = Object.freeze({
@@ -163,6 +177,13 @@ function parsePatientFormBody(body) {
     emergencyPhoneCountry: String(body.emergency_phone_country || "").trim().toUpperCase(),
     emergencyPhoneNational: String(body.emergency_phone_national || "").trim(),
     emergencyEmail: String(body.emergency_email || "").trim(),
+    nextOfKinFullName: String(body.next_of_kin_full_name || "").trim(),
+    nextOfKinRelationship: String(body.next_of_kin_relationship || "").trim(),
+    nextOfKinPhone: String(body.next_of_kin_phone || "").trim(),
+    clinicFields: {
+      insurance: String(body.clinic_field_insurance || "").trim(),
+      referral_source: String(body.clinic_field_referral || "").trim(),
+    },
     duplicateOverride: bool(body.duplicate_override),
     duplicateOverrideReason: String(body.duplicate_override_reason || "").trim(),
     step: String(body.step || "edit").trim(),
@@ -241,6 +262,15 @@ function buildRegistrationPayload(values, auth) {
       countryCode: values.countryCode || null,
       postalCode: values.postalCode || null,
     },
+    nextOfKin: {
+      fullName: values.nextOfKinFullName || null,
+      relationship: values.nextOfKinRelationship || null,
+      phone: values.nextOfKinPhone || null,
+      clinicDefaultCountry:
+        (auth.healthcareOrganization && auth.healthcareOrganization.countryCode) ||
+        null,
+    },
+    clinicFields: values.clinicFields || {},
     identifiers,
     emergencyContacts,
     registrationMethod: values.registrationMethod || "walk_in",
@@ -346,8 +376,8 @@ async function loadActiveClinicPatientListScreen(db, input) {
         quickRegisterHref: "/app/patients/quick-register",
       },
       stitch: {
-        desktop: "5a6728d97b674200823562bb015e10ed",
-        mobile: "58bd5e04f71340ff8d067721eb5562d4",
+        desktop: STITCH.listDesktop,
+        mobile: STITCH.listMobile,
       },
     },
   };
@@ -493,6 +523,21 @@ async function loadActiveClinicPatientProfileScreen(db, input) {
     includeInactive: true,
   });
 
+  let consents = [];
+  try {
+    const consentList = await listPatientConsents(db, {
+      organizationId: auth.organization.id,
+      healthcareOrganizationId: auth.healthcareOrganization.id,
+      patientId: patient.id,
+      actor: actorFromAuth(auth),
+      facilityId: auth.selectedFacility && auth.selectedFacility.id,
+      body: {},
+    });
+    if (consentList.ok) consents = consentList.consents;
+  } catch (_err) {
+    consents = [];
+  }
+
   const facilities = await loadFacilityOptions(db, auth);
   const facilityName = (id) => {
     const f = facilities.find((x) => String(x.id) === String(id));
@@ -521,10 +566,27 @@ async function loadActiveClinicPatientProfileScreen(db, input) {
           ? patient.emailDisplay
           : maskEmail(patient.emailNormalized),
         showAddress: canSensitive,
+        nextOfKinFullName: canSensitive ? patient.nextOfKinFullName : null,
+        nextOfKinRelationship: canSensitive ? patient.nextOfKinRelationship : null,
+        nextOfKinPhoneDisplay: canSensitive
+          ? patient.nextOfKinPhoneDisplay
+          : maskPhone(patient.nextOfKinPhoneNormalized),
+        clinicFields: patient.clinicFields || {},
       },
       identifiers: identifiers.ok ? identifiers.identifiers : [],
       emergencyContacts: emergency.ok ? emergency.contacts : [],
       emergencyHidden: !canSensitive,
+      consents,
+      consentOptions: {
+        types: CONSENT_TYPES.map((v) => ({
+          value: v,
+          label: CONSENT_TYPE_LABELS[v] || v,
+        })),
+        methods: CAPTURE_METHODS.map((v) => ({
+          value: v,
+          label: CONSENT_METHOD_LABELS[v] || v,
+        })),
+      },
       registrations: registrations.map((r) => ({
         id: r.id,
         facilityName: facilityName(r.facility_id),
@@ -548,13 +610,14 @@ async function loadActiveClinicPatientProfileScreen(db, input) {
           hasPerm(perms, PERM.ARCHIVE) && patient.status !== "deceased",
         canManageIdentifiers: canManageId,
         canManageEmergency: hasPerm(perms, PERM.UPDATE) && canSensitive,
+        canManageConsent: hasPerm(perms, PERM.UPDATE),
         canPrintCard: hasPerm(perms, PERM.VIEW),
         editHref: `/app/patients/${encodeURIComponent(patient.patientNumber)}/edit`,
         printCardHref: `/app/patients/${encodeURIComponent(patient.patientNumber)}/print-card`,
       },
       stitch: {
-        desktop: "1a15f0bf4e564c4993ca33aa2d578a58",
-        mobile: "99eb441b48a24fa19855e76669c0da86",
+        desktop: STITCH.profileDesktop,
+        mobile: STITCH.profileMobile,
       },
       ...buildPhoneFieldLocals({
         clinicDefaultCountry:

@@ -14,7 +14,7 @@
     else if (e.status === "serving") servingCount += 1;
   });
 %>
-<section class="ac-reception" data-ac-page-section="reception-queue" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>"<% if (pageData && pageData.stale) { %> data-ac-stitch-stale="bf9b846da6174bf995793b09e869cd30"<% } %>>
+<section class="ac-batch1a ac-reception" data-ac-page-section="reception-queue" data-ac-stitch="ACN13" data-ac-stitch-desktop="<%= stitch.desktop || '' %>" data-ac-stitch-mobile="<%= stitch.mobile || '' %>"<% if (pageData && pageData.stale) { %> data-ac-stitch-stale="bf9b846da6174bf995793b09e869cd30"<% } %>>
   <% if (pageData && pageData.stale) { %>
   <div class="ac-panel ac-flash ac-flash--warning" data-ac-stale-warning="1" role="alert">
     <p>Queue data changed while you were working. Refresh the list before taking another action.</p>
@@ -58,9 +58,12 @@
         <tr>
           <th scope="col">Queue #</th>
           <th scope="col">Patient</th>
-          <th scope="col">Service point</th>
+          <th scope="col">Arrived</th>
+          <th scope="col">Waiting</th>
+          <th scope="col">Service</th>
+          <th scope="col">Destination</th>
+          <th scope="col">Practitioner</th>
           <th scope="col">Status</th>
-          <th scope="col">Room</th>
           <th scope="col">Actions</th>
         </tr>
       </thead>
@@ -74,9 +77,12 @@
             <div class="ac-muted"><%= e.patient.patientNumber %></div>
             <% } else { %>—<% } %>
           </td>
-          <td><%= (e.servicePoint && e.servicePoint.displayName) || '—' %></td>
+          <td><%= e.arrivedAtLabel || '—' %></td>
+          <td><%= e.waitingDurationLabel || '—' %></td>
+          <td><%= e.serviceName || '—' %></td>
+          <td><%= e.destination || (e.servicePoint && e.servicePoint.displayName) || '—' %></td>
+          <td><%= e.practitionerName || '—' %></td>
           <td><span class="ac-status" data-ac-status="<%= e.status %>"><%= e.statusLabel %></span></td>
-          <td><%= e.assignedRoom || '—' %></td>
           <td><a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/reception/queue/<%= e.id %>">View</a></td>
         </tr>
         <% }) %>

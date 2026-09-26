@@ -239,6 +239,7 @@ function registerActiveClinicReceptionRoutes(app, deps) {
         const loaded = await loadActiveClinicReceptionCheckInScreen(getPool(), {
           auth: req.activeClinicAuth,
           appointmentId,
+          query: req.query,
         });
         if (!loaded.ok) {
           return res.status(403).type("html").send(

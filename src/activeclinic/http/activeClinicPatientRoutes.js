@@ -45,6 +45,10 @@ const {
   CREATION_MODES,
 } = require("../services/activeClinicPatientService");
 const {
+  grantPatientConsent,
+  withdrawPatientConsent,
+} = require("../services/activeClinicPatientConsentService");
+const {
   CODE_ACTIVECLINIC_ORG_V6,
 } = require("../../platform/config/deploymentProfiles");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
@@ -995,6 +999,98 @@ function registerActiveClinicPatientRoutes(app, deps) {
         return res.redirect(
           303,
           `/app/patients/${encodeURIComponent(req.params.patientNumber)}?ok=1`
+        );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/patients/:patientNumber/consents",
+    requireAuth,
+    requirePermission(PERM.UPDATE),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const auth = req.activeClinicAuth;
+        const existing = await resolvePatientForActor(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          patientNumber: req.params.patientNumber,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+          actor: actor(auth),
+        });
+        if (!existing.ok) return res.status(404).send("Not found");
+        const granted = await grantPatientConsent(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          patientId: existing.patient.id,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+          actor: actor(auth),
+          body: req.body,
+          consentType: req.body.consent_type,
+          captureMethod: req.body.capture_method,
+          consentVersion: req.body.consent_version || "1.0",
+          note: req.body.note || null,
+          status: "granted",
+          deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+        });
+        if (!granted.ok) {
+          return res.redirect(
+            303,
+            `/app/patients/${encodeURIComponent(req.params.patientNumber)}?consent_error=1`
+          );
+        }
+        return res.redirect(
+          303,
+          `/app/patients/${encodeURIComponent(req.params.patientNumber)}?ok=consent`
+        );
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/patients/:patientNumber/consents/:consentId/withdraw",
+    requireAuth,
+    requirePermission(PERM.UPDATE),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body && req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const auth = req.activeClinicAuth;
+        const existing = await resolvePatientForActor(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          patientNumber: req.params.patientNumber,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+          actor: actor(auth),
+        });
+        if (!existing.ok) return res.status(404).send("Not found");
+        const withdrawn = await withdrawPatientConsent(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          consentId: req.params.consentId,
+          facilityId: auth.selectedFacility && auth.selectedFacility.id,
+          actor: actor(auth),
+          body: req.body,
+          withdrawalReason: req.body.withdrawal_reason,
+          deploymentCode: CODE_ACTIVECLINIC_ORG_V6,
+        });
+        if (!withdrawn.ok) {
+          return res.redirect(
+            303,
+            `/app/patients/${encodeURIComponent(req.params.patientNumber)}?consent_error=1`
+          );
+        }
+        return res.redirect(
+          303,
+          `/app/patients/${encodeURIComponent(req.params.patientNumber)}?ok=withdrawn`
         );
       } catch (err) {
         return next(err);

@@ -2719,3 +2719,13 @@ body.ac-app-body .ac-status[data-ac-status="no_show"] { color: var(--ac-danger);
 @media (min-width: 721px) {
   body.ac-app-body .ac-appointment-calendar .ac-batch1a__mobile { display: none; }
 }
+
+/* ==========================================================================
+   V2.03 ACN10–ACN13 patient directory / consent / reception
+   ========================================================================== */
+body.ac-app-body .ac-patient-profile [data-ac-consent-ledger] .ac-table {
+  margin-bottom: var(--ac-space-4);
+}
+body.ac-app-body .ac-reception [data-ac-queue-status] .ac-muted {
+  font-size: 0.85rem;
+}

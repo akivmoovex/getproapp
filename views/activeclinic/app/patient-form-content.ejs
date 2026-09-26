@@ -227,6 +227,30 @@
       <input class="ac-input" id="country_code" name="country_code" maxlength="2" value="<%= values.countryCode || '' %>" placeholder="ZM"/>
     </div>
 
+    <h3 class="ac-dashboard__card-title">Next of kin</h3>
+    <div class="ac-field">
+      <label class="ac-label" for="next_of_kin_full_name">Full name <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" id="next_of_kin_full_name" name="next_of_kin_full_name" maxlength="120" value="<%= values.nextOfKinFullName || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="next_of_kin_relationship">Relationship</label>
+      <input class="ac-input" id="next_of_kin_relationship" name="next_of_kin_relationship" maxlength="80" value="<%= values.nextOfKinRelationship || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="next_of_kin_phone">Phone</label>
+      <input class="ac-input" id="next_of_kin_phone" name="next_of_kin_phone" inputmode="tel" value="<%= values.nextOfKinPhone || '' %>"/>
+    </div>
+
+    <h3 class="ac-dashboard__card-title">Clinic-specific</h3>
+    <div class="ac-field">
+      <label class="ac-label" for="clinic_field_insurance">Insurance / plan note</label>
+      <input class="ac-input" id="clinic_field_insurance" name="clinic_field_insurance" maxlength="200" value="<%= (values.clinicFields && values.clinicFields.insurance) || '' %>"/>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="clinic_field_referral">Referral source</label>
+      <input class="ac-input" id="clinic_field_referral" name="clinic_field_referral" maxlength="200" value="<%= (values.clinicFields && values.clinicFields.referral_source) || '' %>"/>
+    </div>
+
     </div>
 
     <% if (mode === 'create' || mode === 'quick_create') { %>
