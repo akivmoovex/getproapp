@@ -263,6 +263,12 @@ describe("ActiveClinic V2.03 Batch 2 staff shell", () => {
     assert.match(tokens, /--ac-touch-min:\s*44px/);
     assert.match(tokens, /--ac-primary:\s*#2563eb/i);
     assert.match(css, /\.ac-staff-bottom-nav/);
+    assert.match(css, /\.ac-nav-item\.is-active[\s\S]*?color:\s*var\(--ac-primary\)/);
+    assert.match(css, /\.ac-btn[\s\S]*?border-radius:\s*var\(--ac-radius/);
+    assert.match(
+      fs.readFileSync(path.join(__dirname, "../public/platform/gp-ops-shared.css"), "utf8"),
+      /--gp-ops-radius:\s*8px/
+    );
   });
 
   it("authorized role renders desktop shell chrome, search, check-in, and facility context", async () => {

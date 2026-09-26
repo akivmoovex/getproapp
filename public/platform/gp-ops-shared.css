@@ -11,12 +11,13 @@
   --gp-ops-muted: #6b7280;
   --gp-ops-primary: #2563eb;
   --gp-ops-primary-hover: #1d4ed8;
-  --gp-ops-radius: 0.25rem;
-  --gp-ops-radius-lg: 0.5rem;
+  /* Align with AC frozen staff radii (Stitch rounded-lg / rounded-xl) */
+  --gp-ops-radius: 8px;
+  --gp-ops-radius-lg: 12px;
   --gp-ops-space-sm: 0.5rem;
   --gp-ops-space-md: 1rem;
   --gp-ops-space-lg: 1.5rem;
-  --gp-ops-font: system-ui, -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  --gp-ops-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
 }
 
 .gp-ops-visually-hidden {
@@ -137,7 +138,7 @@
 .gp-ops-badge--success { background: #f0fdf4; color: #16a34a; }
 .gp-ops-badge--warning { background: #fffbeb; color: #d97706; }
 .gp-ops-badge--danger { background: #fef2f2; color: #dc2626; }
-.gp-ops-badge--accent { background: #f5f3ff; color: #7c3aed; }
+.gp-ops-badge--accent { background: #eff6ff; color: #2563eb; }
 
 .gp-ops-table-wrap {
   background: var(--gp-ops-surface);
@@ -274,6 +275,7 @@
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
+  min-height: 2.5rem;
   padding: 0.4rem 0.75rem;
   border-radius: 999px;
   border: 1px solid var(--gp-ops-border, #e5e7eb);
@@ -342,5 +344,9 @@
     overflow-x: auto;
     -webkit-overflow-scrolling: touch;
     padding-bottom: 0.15rem;
+  }
+
+  .gp-ops-status-tabs__tab {
+    min-height: 44px;
   }
 }
