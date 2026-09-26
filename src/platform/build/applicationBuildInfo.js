@@ -5,12 +5,13 @@
  * Reuses the same short Git SHA source as /healthz (readGitShaShort).
  * Does not shell out to git on each call beyond the existing env/.git HEAD read.
  *
- * V7 (pronline / production line):
+ * V7 (production catalogue profile / legacy non-v8 platformLine):
  *   productVersion  → "1.3"   (human product label)
  *   versionBase     → "1.03"  (system version prefix)
  *   version         → "1.03.<12-char deployed SHA>" or "1.03.(unavailable)"
  *
- * V8 (neuniversity / platformLine=v8):
+ * V8 platform line (neuniversity moovex-platform-v8-testing AND V9 pronline
+ * moovex-platform-testing with platformLine=v8):
  *   productVersion  → "2.02"
  *   versionBase     → "2.02"
  *   version         → "2.02" (Git SHA is shown separately as `build`; no invented build number)

@@ -1,8 +1,8 @@
 "use strict";
 
 /**
- * V8-BUG-001 / V2.02 — About pages show Version 2.02 + real Git build on V8;
- * V7 continues to show 1.03.<sha> / Release 1.3.
+ * V8-BUG-001 / V2.02 — About pages show Version 2.02 + real Git build on V8 line
+ * (neuniversity + V9 pronline testing). Production catalogue profile keeps 1.3.
  */
 
 const path = require("path");
@@ -25,6 +25,7 @@ const {
 const {
   CODE_MOOVEX_PLATFORM_V8_TESTING,
   CODE_MOOVEX_PLATFORM_TESTING,
+  CODE_MOOVEX_PLATFORM_PRODUCTION,
   MOOVEX_PLATFORM_IDENTITY_KEY,
 } = require("../src/platform/config/deploymentProfiles");
 const churchRoutes = require("../src/routes/church");
@@ -39,14 +40,26 @@ const V8_ENV_BASE = Object.freeze({
   DATABASE_IDENTITY_ENV: "testing",
 });
 
-const V7_ENV_BASE = Object.freeze({
+/** Pronline testing (V9) — same deployment code, V8 platform line → About 2.02. */
+const PRONLINE_V9_ENV_BASE = Object.freeze({
   NODE_ENV: "production",
   DEPLOYMENT_ENV: "testing",
   PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING,
   DATABASE_URL: "postgres://unused/local",
-  SESSION_SECRET: "v7-about-version-test-secret-0123456789abcdef",
+  SESSION_SECRET: "v9-pronline-about-version-test-secret-0123456789ab",
   DATABASE_IDENTITY_EXPECTED: MOOVEX_PLATFORM_IDENTITY_KEY,
   DATABASE_IDENTITY_ENV: "testing",
+});
+
+/** Production catalogue profile retains V7 About scheme (1.3). */
+const PRODUCTION_V7_ENV_BASE = Object.freeze({
+  NODE_ENV: "production",
+  DEPLOYMENT_ENV: "production",
+  PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_PRODUCTION,
+  DATABASE_URL: "postgres://unused/local",
+  SESSION_SECRET: "v7-about-version-test-secret-0123456789abcdef",
+  DATABASE_IDENTITY_EXPECTED: MOOVEX_PLATFORM_IDENTITY_KEY,
+  DATABASE_IDENTITY_ENV: "production",
 });
 
 function makeBlessBoardApexApp(envOverrides) {
@@ -90,11 +103,14 @@ describe("V8 About Version 2.02", () => {
     assert.equal(PRODUCT_VERSION_V8, "2.02");
 
     const v8 = resolveVersionScheme(V8_ENV_BASE);
-    const v7 = resolveVersionScheme(V7_ENV_BASE);
+    const pronline = resolveVersionScheme(PRONLINE_V9_ENV_BASE);
+    const production = resolveVersionScheme(PRODUCTION_V7_ENV_BASE);
     assert.equal(v8.platformLine, "v8");
     assert.equal(v8.productVersion, "2.02");
-    assert.equal(v7.platformLine, "v7");
-    assert.equal(v7.productVersion, "1.3");
+    assert.equal(pronline.platformLine, "v8");
+    assert.equal(pronline.productVersion, "2.02");
+    assert.equal(production.platformLine, "v7");
+    assert.equal(production.productVersion, "1.3");
   });
 
   it("formats V8 About metadata as Version 2.02 with separate Git build (shared for BB/AC)", () => {
@@ -113,10 +129,10 @@ describe("V8 About Version 2.02", () => {
     assert.equal(info.version.includes(info.build), false);
   });
 
-  it("preserves V7 1.03.<sha> compound format for backward compatibility", () => {
+  it("preserves production 1.03.<sha> compound format for backward compatibility", () => {
     const sha = "03a89106e2feabcd";
     const info = getApplicationBuildInfo({
-      env: { ...V7_ENV_BASE, GETPRO_GIT_SHA: sha },
+      env: { ...PRODUCTION_V7_ENV_BASE, GETPRO_GIT_SHA: sha },
     });
     assert.equal(info.platformLine, "v7");
     assert.equal(info.productVersion, "1.3");
@@ -124,6 +140,19 @@ describe("V8 About Version 2.02", () => {
     assert.equal(info.version, `1.03.${sha.slice(0, 12)}`);
     assert.equal(info.build, sha.slice(0, 12));
     assert.equal(info.productVersionLabel, "Version 1.3");
+  });
+
+  it("pronline moovex-platform-testing (V9) About scheme is Version 2.02", () => {
+    const sha = "2ff400a24a677d";
+    const info = getApplicationBuildInfo({
+      env: { ...PRONLINE_V9_ENV_BASE, GETPRO_GIT_SHA: sha },
+    });
+    assert.equal(info.platformLine, "v8");
+    assert.equal(info.productVersion, "2.02");
+    assert.equal(info.versionBase, "2.02");
+    assert.equal(info.version, "2.02");
+    assert.equal(info.productVersionLabel, "Version 2.02");
+    assert.equal(info.build, sha.slice(0, 12));
   });
 
   it("does not invent a Git SHA when metadata is missing on V8", () => {

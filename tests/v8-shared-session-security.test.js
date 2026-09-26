@@ -74,10 +74,10 @@ const V8_ENV = Object.freeze({
 });
 
 describe("V8 shared session security — cookie / secret isolation", () => {
-  it("uses distinct cookie names for V7 vs V8 profiles", () => {
+  it("uses distinct cookie names for pronline testing vs neuniversity V8 profiles", () => {
     const v7 = describeSessionCookieIsolation(V7_ENV);
     const v8 = describeSessionCookieIsolation(V8_ENV);
-    assert.equal(v7.platformLine, "v7");
+    assert.equal(v7.platformLine, "v8");
     assert.equal(v8.platformLine, "v8");
     assert.notEqual(v7.sessionCookieName, v8.sessionCookieName);
     assert.notEqual(v7.csrfCookieName, v8.csrfCookieName);

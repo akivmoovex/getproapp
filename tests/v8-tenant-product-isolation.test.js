@@ -225,7 +225,7 @@ describe("V8 cross-product tenant isolation", () => {
     assert.equal(enrolment.organizationProduct.productKey, "blessboard");
   });
 
-  it("V8 hosts are not accepted on V7 testing deployment and vice versa", () => {
+  it("neuniversity and pronline testing profiles reject each other's hosts", () => {
     const v8Profile = getDeploymentProfile({
       PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_V8_TESTING,
       DEPLOYMENT_ENV: "testing",
@@ -240,10 +240,14 @@ describe("V8 cross-product tenant isolation", () => {
       isV8Deployment({ PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_V8_TESTING }),
       true
     );
+    // V9: pronline testing reuses V8 platform line (About 2.02) under a separate deployment code.
     assert.equal(
       isV8Deployment({ PLATFORM_DEPLOYMENT_CODE: CODE_MOOVEX_PLATFORM_TESTING }),
-      false
+      true
     );
+    assert.equal(v8Profile.platformLine, "v8");
+    assert.equal(v7Profile.platformLine, "v8");
+    assert.notEqual(v8Profile.sessionCookieName, v7Profile.sessionCookieName);
 
     for (const host of V8_HOSTS) {
       const resolved = resolveCanonicalHost(host);
@@ -254,7 +258,7 @@ describe("V8 cross-product tenant isolation", () => {
       assert.equal(
         assertHostnameAllowedForDeployment(v7Profile, site).ok,
         false,
-        `V7 must reject ${host}`
+        `pronline testing must reject ${host}`
       );
     }
     for (const host of V7_TESTING_HOSTS) {
@@ -266,7 +270,7 @@ describe("V8 cross-product tenant isolation", () => {
       assert.equal(
         assertHostnameAllowedForDeployment(v8Profile, site).ok,
         false,
-        `V8 must reject ${host}`
+        `neuniversity V8 must reject ${host}`
       );
     }
   });
@@ -281,6 +285,6 @@ describe("V8 cross-product tenant isolation", () => {
     assert.equal(bbV8.site.productKey, "blessboard");
     assert.equal(acV8.site.productKey, "activeclinic");
     assert.equal(bbV8.site.platformLine, "v8");
-    assert.equal(bbV7.site.platformLine, "v7");
+    assert.equal(bbV7.site.platformLine, "v8");
   });
 });

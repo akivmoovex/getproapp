@@ -94,11 +94,11 @@ describe("V8 deployment profile", () => {
     assert.match(String(reject.message), /neuniversity\.org/);
   });
 
-  it("V7 profile accepts BASE_DOMAIN=pronline.org and is unchanged", () => {
+  it("pronline moovex-platform-testing accepts BASE_DOMAIN=pronline.org with V8 platform line (V9)", () => {
     const profile = getDeploymentProfile(V7_ENV);
     assert.equal(profile.deploymentCode, CODE_MOOVEX_PLATFORM_TESTING);
     assert.equal(profile.canonicalDomain, "pronline.org");
-    assert.equal(profile.platformLine, "v7");
+    assert.equal(profile.platformLine, "v8");
     assert.equal(profile.mediaWriteNamespace, "testing");
     assert.equal(profile.sessionCookieName, "moovex_platform_testing_sid");
     assert.ok(profile.apexDomains.includes("blessboard.pronline.org"));
@@ -107,6 +107,7 @@ describe("V8 deployment profile", () => {
 
     const compat = validateAuthoritativeProfileCompatibility(V7_ENV);
     assert.equal(compat.ok, true, compat.message);
+    assert.equal(isV8Deployment(V7_ENV), true);
 
     const rejectV8Base = validateAuthoritativeProfileCompatibility({
       ...V7_ENV,
@@ -116,7 +117,7 @@ describe("V8 deployment profile", () => {
     assert.equal(rejectV8Base.code, "base_domain_conflict");
   });
 
-  it("V7 profile rejects V8 hosts; V8 profile rejects V7 hosts", () => {
+  it("neuniversity V8 profile rejects pronline hosts; pronline testing rejects neuniversity hosts", () => {
     const v8OnPronline = resolvePlatformRequestContext({
       env: V8_ENV,
       hostname: "blessboard.pronline.org",

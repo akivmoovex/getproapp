@@ -82,7 +82,7 @@ describe("V8 environment isolation", () => {
     });
     assert.ok(v7);
     assert.ok(v8);
-    assert.equal(v7.platformLine, "v7");
+    assert.equal(v7.platformLine, "v8");
     assert.equal(v8.platformLine, "v8");
     assert.ok(v7.apexDomains.includes("blessboard.pronline.org"));
     assert.ok(v7.apexDomains.includes("activeclinic.pronline.org"));
@@ -94,6 +94,7 @@ describe("V8 environment isolation", () => {
     assert.notEqual(v8.sessionCookieName, v7.sessionCookieName);
     assert.equal(v8.jobsEnabled, false);
     assert.equal(v8.mediaWriteNamespace, "testing-v8");
+    assert.equal(v7.mediaWriteNamespace, "testing");
     assert.equal(v8.expectedIdentityKey, MOOVEX_PLATFORM_IDENTITY_KEY);
     assert.ok(DEPLOYMENT_PROFILES[CODE_MOOVEX_PLATFORM_V8_TESTING]);
     assert.ok(DEPLOYMENT_PROFILES[CODE_MOOVEX_PLATFORM_PRODUCTION]);
@@ -110,14 +111,14 @@ describe("V8 environment isolation", () => {
     assert.equal(ac8.site.productKey, "activeclinic");
     assert.equal(ac8.site.platformLine, "v8");
     assert.equal(bb7.site.productKey, "blessboard");
-    assert.equal(bb7.site.platformLine, "v7");
+    assert.equal(bb7.site.platformLine, "v8");
     assert.equal(ac7.site.productKey, "activeclinic");
-    assert.equal(ac7.site.platformLine, "v7");
+    assert.equal(ac7.site.platformLine, "v8");
     for (const h of V8_HOSTS) {
       assert.ok(CANONICAL_HOST_REGISTRY[h], h);
     }
     for (const h of V7_TESTING_HOSTS) {
-      assert.equal(CANONICAL_HOST_REGISTRY[h].platformLine, "v7");
+      assert.equal(CANONICAL_HOST_REGISTRY[h].platformLine, "v8");
     }
   });
 

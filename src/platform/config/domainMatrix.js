@@ -119,7 +119,7 @@ const V8_TESTING_NAMESPACE = "neuniversity.org";
 
 const HOSTINGER_DEPLOYMENT_CODES = Object.freeze([
   Object.freeze({
-    hostingerApp: "Moovex platform testing (preferred V7)",
+    hostingerApp: "Moovex platform testing (pronline.org — V9 / platformLine v8)",
     deploymentCode: "moovex-platform-testing",
   }),
   Object.freeze({

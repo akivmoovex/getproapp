@@ -410,8 +410,13 @@ const PROFILE_MOOVEX_ORG_PRODUCTION = defineProfile({
 });
 
 /**
- * Unified Moovex platform runtimes — environment only; product from hostname allowlist.
- * Shared identity_key moovex-platform-v7; testing vs production are separate DBs.
+ * Unified Moovex platform testing on pronline.org — environment only; product from hostname.
+ * Shared identity_key moovex-platform-v7 / testing DB (same as V8 neuniversity testing).
+ *
+ * Branch V9 / product Version 2.02: reuses the V8 *platform line* (About 2.02) without a
+ * separate deployment-code invention. Domains, cookies, and mediaWriteNamespace stay on the
+ * historical pronline testing app (`moovex-platform-testing`). Do NOT point this profile at
+ * neuniversity.org (that remains `moovex-platform-v8-testing`).
  */
 const PROFILE_MOOVEX_PLATFORM_TESTING = defineProfile({
   deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
@@ -451,10 +456,10 @@ const PROFILE_MOOVEX_PLATFORM_TESTING = defineProfile({
     "netraz.pronline.org",
     "moovex.pronline.org",
   ]),
-  brandSubtitle: "Testing Platform",
+  brandSubtitle: "V9 Testing",
   brandSubtitleVariant: "demo",
   defaultCountry: "ZM",
-  platformLine: "v7",
+  platformLine: "v8",
   mediaWriteNamespace: "testing",
   isolationNamespace: "v7-testing",
 });
