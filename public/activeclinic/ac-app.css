@@ -1,44 +1,55 @@
-/* ActiveClinic authenticated application shell (AC-V6-10 / V7 Pass 3). Product-isolated.
-   Tokens aligned to Stitch P01 Shared Application Shell (project 12272131183982732110). */
+/* ActiveClinic authenticated application shell (V2.03 Batch 2). Product-isolated.
+   Frozen Batch 2 tokens + Stitch staff chrome (256/56 desktop, 56/64 mobile). */
 :root {
-  --ac-bg: #f7f9fb;
-  --ac-bg-page: #f7f9fb;
-  --ac-bg-subtle: #f2f4f6;
-  --ac-bg-muted: #eceef0;
+  --ac-bg: #f8fafc;
+  --ac-bg-page: #f8fafc;
+  --ac-bg-subtle: #eff6ff;
+  --ac-bg-muted: #e2e8f0;
   --ac-surface: #ffffff;
-  --ac-ink: #191c1e;
-  --ac-text-ink: #191c1e;
-  --ac-muted: #434653;
-  --ac-text-muted: #434653;
-  --ac-text-subtle: #434653;
+  --ac-ink: #0f172a;
+  --ac-text-ink: #0f172a;
+  --ac-muted: #64748b;
+  --ac-text-muted: #64748b;
+  --ac-text-subtle: #64748b;
   --ac-border: #e2e8f0;
   --ac-border-subtle: #e2e8f0;
-  --ac-border-strong: #c3c6d5;
-  --ac-primary: #003c90;
-  --ac-primary-2: #0f52ba;
-  --ac-primary-soft: #d9e2ff;
-  --ac-primary-strong: #001945;
+  --ac-border-strong: #cbd5e1;
+  --ac-primary: #2563eb;
+  --ac-primary-2: #1d4ed8;
+  --ac-primary-soft: #eff6ff;
+  --ac-primary-strong: #1d4ed8;
   --ac-teal: #006a6a;
-  --ac-focus: #003c90;
+  --ac-focus: #2563eb;
   --ac-success: var(--ac-status-success);
   --ac-success-bg: var(--ac-status-success-bg);
   --ac-warning: var(--ac-status-warning);
   --ac-warning-bg: var(--ac-status-warning-bg);
   --ac-danger: var(--ac-status-danger);
   --ac-danger-bg: var(--ac-status-danger-bg);
-  --ac-radius: var(--ac-card-radius, 8px);
-  --ac-radius-sm: var(--ac-card-radius, 8px);
-  --ac-radius-lg: var(--ac-card-radius, 8px);
+  --ac-radius: 8px;
+  --ac-radius-sm: 8px;
+  --ac-radius-lg: 12px;
   --ac-radius-pill: 999px;
-  --ac-radius-card: var(--ac-radius);
-  --ac-shadow: 0 1px 2px rgba(25, 28, 30, 0.06), 0 8px 24px rgba(25, 28, 30, 0.04);
-  --ac-shadow-sm: 0 1px 2px rgba(25, 28, 30, 0.05);
+  --ac-radius-card: 12px;
+  --ac-shadow: 0 1px 2px rgba(15, 23, 42, 0.06), 0 8px 24px rgba(15, 23, 42, 0.04);
+  --ac-shadow-sm: 0 1px 2px rgba(15, 23, 42, 0.05);
   --ac-shadow-card: var(--ac-shadow-sm);
-  --ac-sidebar-w: 16.5rem;
+  --ac-staff-sidebar-w: 256px;
+  --ac-staff-topbar-h: 56px;
+  --ac-staff-bottom-nav-h: 64px;
+  --ac-touch-min: 44px;
+  --ac-sidebar-w: var(--ac-staff-sidebar-w);
   --ac-content-max: 72rem;
   --ac-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
-  --ac-touch: var(--ac-control-h, 2.75rem);
+  --ac-touch: max(var(--ac-control-h, 2.75rem), var(--ac-touch-min));
   --ac-color-primary: var(--ac-primary);
+  --gp-ops-primary: #2563eb;
+  --gp-ops-primary-hover: #1d4ed8;
+  --gp-ops-border: #e2e8f0;
+  --gp-ops-text: #0f172a;
+  --gp-ops-muted: #64748b;
+  --gp-ops-canvas: #f8fafc;
+  --gp-ops-surface: #ffffff;
 }
 
 *,
@@ -589,13 +600,15 @@ body.ac-drawer-open .ac-drawer {
   align-items: center;
   justify-content: space-between;
   gap: var(--ac-space-4);
-  padding: 0.75rem var(--ac-space-5);
+  padding: 0 var(--ac-space-5);
   background: rgba(255,255,255,0.96);
   border-bottom: 1px solid var(--ac-border);
   position: sticky;
   top: 0;
   z-index: 15;
-  min-height: 4rem;
+  min-height: var(--ac-staff-topbar-h, 56px);
+  height: var(--ac-staff-topbar-h, 56px);
+  box-sizing: border-box;
 }
 .ac-desktop-header__left { min-width: 0; flex: 0 1 16rem; }
 .ac-desktop-header__search {
@@ -603,12 +616,22 @@ body.ac-drawer-open .ac-drawer {
   max-width: 28rem;
   margin: 0 auto;
 }
+.ac-desktop-header__search--disabled {
+  visibility: hidden;
+  pointer-events: none;
+}
+.ac-desktop-header__right {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex: 0 0 auto;
+}
 .ac-shell-search {
   width: 100%;
   min-height: 2.5rem;
   border: 1px solid var(--ac-border);
-  border-radius: var(--ac-radius-pill);
-  padding: 0.55rem 1rem 0.55rem 1.1rem;
+  border-radius: 8px;
+  padding: 0.45rem 0.9rem;
   font: inherit;
   background: var(--ac-bg-subtle);
   color: var(--ac-ink);
@@ -618,6 +641,93 @@ body.ac-drawer-open .ac-drawer {
   outline-offset: 1px;
   background: #fff;
   border-color: var(--ac-primary);
+}
+.ac-shell-notifications { position: relative; }
+.ac-shell-notifications > summary { list-style: none; }
+.ac-shell-notifications > summary::-webkit-details-marker { display: none; }
+.ac-shell-notifications__panel {
+  position: absolute;
+  right: 0;
+  top: calc(100% + 0.35rem);
+  min-width: 16rem;
+  padding: 0.85rem 1rem;
+  border: 1px solid var(--ac-border);
+  border-radius: 12px;
+  background: #fff;
+  box-shadow: var(--ac-shadow);
+  z-index: 30;
+}
+.ac-shell-notifications__title {
+  margin: 0 0 0.35rem;
+  font-weight: 600;
+  font-size: 0.875rem;
+}
+.ac-shell-notifications__empty { margin: 0; font-size: 0.8125rem; }
+.ac-sidebar-checkin {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  width: 100%;
+  min-height: 48px;
+  border-radius: 8px;
+  text-decoration: none;
+}
+.ac-sidebar-checkin .ac-nav-icon { color: inherit; }
+.ac-topbar__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+}
+
+/* Batch 2 staff mobile bottom navigation */
+.ac-staff-bottom-nav {
+  display: none;
+}
+.ac-staff-bottom-nav__inner {
+  display: flex;
+  align-items: stretch;
+  justify-content: space-around;
+  min-height: var(--ac-staff-bottom-nav-h, 64px);
+  padding: 0 0.25rem env(safe-area-inset-bottom, 0);
+  background: var(--ac-surface);
+  border-top: 1px solid var(--ac-border);
+  box-shadow: 0 -2px 10px rgba(15, 23, 42, 0.06);
+}
+.ac-staff-bottom-nav__item {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.15rem;
+  min-width: 0;
+  min-height: var(--ac-touch-min, 44px);
+  padding: 0.35rem 0.15rem;
+  border: 0;
+  background: transparent;
+  color: var(--ac-muted);
+  text-decoration: none;
+  font: inherit;
+  font-weight: 500;
+  cursor: pointer;
+}
+.ac-staff-bottom-nav__item .ac-nav-icon {
+  width: 1.375rem;
+  height: 1.375rem;
+}
+.ac-staff-bottom-nav__label {
+  font-size: 0.6875rem;
+  line-height: 1;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.ac-staff-bottom-nav__item.is-active,
+.ac-staff-bottom-nav__item[aria-current="page"] {
+  color: var(--ac-primary);
+  font-weight: 600;
 }
 .ac-breadcrumbs--header { margin: 0; }
 .ac-breadcrumbs-mobile { display: block; }
@@ -1786,19 +1896,29 @@ body.ac-app-body .ac-money--lg { font-size: 1.5rem; }
   body.ac-app-body .ac-clinical-desktop { display: block; }
 }
 
-/* ===== Pass 7 — authenticated mobile shell ===== */
+/* ===== Pass 7 / Batch 2 — authenticated mobile shell ===== */
 @media (max-width: 899px) {
   body.ac-app-body {
     --ac-gutter: 1rem;
     overflow-x: clip;
   }
 
+  body.ac-app-body .ac-app {
+    grid-template-columns: minmax(0, 1fr);
+    min-height: 100dvh;
+  }
+
   body.ac-app-body .ac-content {
-    padding: 1rem var(--ac-gutter) calc(1.5rem + env(safe-area-inset-bottom, 0px));
+    padding: 1rem var(--ac-gutter) calc(var(--ac-staff-bottom-nav-h, 64px) + 1.25rem + env(safe-area-inset-bottom, 0px));
+    max-width: 100%;
+    overflow-x: clip;
   }
 
   body.ac-app-body .ac-topbar {
-    min-height: 3.5rem;
+    display: flex;
+    min-height: var(--ac-staff-topbar-h, 56px);
+    height: var(--ac-staff-topbar-h, 56px);
+    box-sizing: border-box;
     padding-inline: 0.65rem;
     gap: 0.5rem;
   }
@@ -1808,12 +1928,38 @@ body.ac-app-body .ac-money--lg { font-size: 1.5rem; }
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
-    max-width: 46vw;
+    max-width: 42vw;
+  }
+
+  body.ac-app-body .ac-topbar__context {
+    min-width: 0;
+    flex: 1 1 auto;
   }
 
   body.ac-app-body .ac-icon-btn {
-    min-width: 2.75rem;
-    min-height: 2.75rem;
+    min-width: var(--ac-touch-min, 44px);
+    min-height: var(--ac-touch-min, 44px);
+    border-radius: 8px;
+  }
+
+  body.ac-app-body .ac-staff-bottom-nav {
+    display: block;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    z-index: 25;
+  }
+
+  body.ac-app-body .ac-desktop-header {
+    display: none !important;
+  }
+
+  body.ac-app-body .ac-page-header,
+  body.ac-app-body .ac-panel,
+  body.ac-app-body .ac-table-wrap,
+  body.ac-app-body .ac-filter-bar {
+    max-width: 100%;
   }
 
   body.ac-app-body .ac-drawer {
@@ -1870,6 +2016,16 @@ body.ac-app-body .ac-money--lg { font-size: 1.5rem; }
 
   body.ac-app-body .ac-btn {
     min-height: 2.75rem;
+  }
+}
+
+@media (min-width: 900px) {
+  body.ac-app-body .ac-staff-bottom-nav {
+    display: none !important;
+  }
+  body.ac-app-body .ac-sidebar {
+    width: var(--ac-staff-sidebar-w, 256px);
+    flex: 0 0 var(--ac-staff-sidebar-w, 256px);
   }
 }
 
@@ -2728,4 +2884,17 @@ body.ac-app-body .ac-patient-profile [data-ac-consent-ledger] .ac-table {
 }
 body.ac-app-body .ac-reception [data-ac-queue-status] .ac-muted {
   font-size: 0.85rem;
+}
+
+/* ==========================================================================
+   V2.03 ACN14–ACN16 clinical worklist / encounter / follow-up
+   ========================================================================== */
+body.ac-app-body .ac-clinical-encounter [data-ac-draft-protection] .ac-form-actions {
+  position: sticky;
+  bottom: 0;
+  background: var(--ac-surface, #fff);
+  padding: var(--ac-space-3) 0;
+}
+body.ac-app-body .ac-clinical-queue [data-ac-worklist-bucket] {
+  margin-bottom: var(--ac-space-4);
 }

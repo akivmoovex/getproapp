@@ -1,58 +1,168 @@
-<div class="ac-clinical-queue" data-ac-stitch="b8d47f05a83c4959ac2d3d6ca83c7dfb" data-ac-screen="clinical-queue" data-ac-page-section="clinical-queue">
-  <% const clinicalQueue = (pageData && pageData.queue) || {}; %>
-  <% const encounters = Array.isArray(clinicalQueue.encounters) ? clinicalQueue.encounters : []; %>
-  <div class="ac-metric-grid">
-    <article class="ac-stat-card">
-      <p class="ac-stat-card__label">Open encounters</p>
-      <p class="ac-stat-card__value"><%= encounters.length %></p>
-    </article>
+<%
+  var queue = (pageData && pageData.queue) || {};
+  var worklist = queue.worklist || {};
+  var waiting = worklist.waiting || [];
+  var current = worklist.current || [];
+  var upcoming = worklist.upcoming || [];
+  var followUp = worklist.followUp || [];
+  var incomplete = worklist.incompleteEncounters || [];
+  var today = worklist.todayPatients || [];
+  var stitch = queue.stitch || {};
+  var actions = queue.actions || {};
+%>
+<section
+  class="ac-batch1a ac-clinical-queue"
+  data-ac-page-section="practitioner-worklist"
+  data-ac-stitch="ACN14"
+  data-ac-stitch-desktop="<%= stitch.desktop || 'ae083a2bfe324046b4d9a0648c516bbd' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'f792e472b455437eb354e25d336fd869' %>"
+>
+  <div class="ac-metric-grid" data-ac-worklist-metrics="1">
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Today</p><p class="ac-stat-card__value"><%= today.length %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Waiting</p><p class="ac-stat-card__value"><%= waiting.length %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Current</p><p class="ac-stat-card__value"><%= current.length %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Upcoming</p><p class="ac-stat-card__value"><%= upcoming.length %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Follow-up</p><p class="ac-stat-card__value"><%= followUp.length %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Incomplete</p><p class="ac-stat-card__value"><%= incomplete.length %></p></article>
   </div>
-  <% if (encounters.length === 0) { %>
-  <%- include('../partials/ac-inline-state', {
-    inlineState: {
-      stateKey: 'empty',
-      marker: 'clinical-queue-empty',
-      title: 'No open encounters',
-      description: 'Start a new encounter to begin clinical workflow for a patient.'
-    }
-  }) %>
-  <% } else { %>
-  <div class="ac-panel ac-table-wrap ac-clinical-desktop">
-    <table class="ac-table">
-      <thead>
-        <tr>
-          <th>Encounter #</th>
-          <th>Patient</th>
-          <th>Opened</th>
-          <th>Opened by</th>
-          <th>Actions</th>
-        </tr>
-      </thead>
-      <tbody>
-        <% encounters.forEach(function (enc) { %>
-        <tr>
-          <td><a href="/app/clinical/encounter/<%= enc.id %>"><%= enc.encounterNumber %></a></td>
-          <td><%= enc.patientDisplayName %> (<%= enc.patientNumber %>)</td>
-          <td><%= new Date(enc.openedAt).toLocaleString() %></td>
-          <td><%= enc.openedByStaffDisplayName %></td>
-          <td>
-            <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/clinical/encounter/<%= enc.id %>">View</a>
-          </td>
-        </tr>
-        <% }) %>
-      </tbody>
-    </table>
+
+  <div class="ac-form-actions">
+    <% if (actions.canStartEncounter) { %>
+    <a class="ac-btn" href="/app/clinical/start-encounter">Start encounter</a>
+    <% } %>
+    <a class="ac-btn ac-btn--ghost" href="/app/clinical/follow-up">Follow-up worklist</a>
   </div>
-  <ul class="ac-card-list ac-clinical-mobile">
-    <% encounters.forEach(function (enc) { %>
-    <li class="ac-card ac-mobile-record-card">
-      <a class="ac-card__link" href="/app/clinical/encounter/<%= enc.id %>">
-        <p class="ac-card__title"><%= enc.encounterNumber %></p>
-        <p class="ac-muted"><%= enc.patientDisplayName %> · <%= enc.patientNumber %></p>
-        <p class="ac-muted"><%= new Date(enc.openedAt).toLocaleString() %></p>
-      </a>
-    </li>
-    <% }) %>
-  </ul>
+
+  <% if (current.length) { %>
+  <div class="ac-panel" data-ac-worklist-bucket="current">
+    <h2 class="ac-panel__title">Current encounter</h2>
+    <ul class="ac-card-list">
+      <% current.forEach(function (enc) { %>
+      <li class="ac-card">
+        <h3 class="ac-card__title"><a href="/app/clinical/encounter/<%= enc.id %>"><%= enc.patientDisplayName %></a></h3>
+        <p class="ac-muted"><%= enc.encounterNumber %> · <%= enc.patientNumber %></p>
+        <a class="ac-btn ac-btn--ghost" href="/app/clinical/encounter/<%= enc.id %>">Resume / complete</a>
+      </li>
+      <% }) %>
+    </ul>
+  </div>
   <% } %>
-</div>
+
+  <div class="ac-panel" data-ac-worklist-bucket="waiting">
+    <h2 class="ac-panel__title">Waiting</h2>
+    <% if (!waiting.length) { %>
+    <p class="ac-muted">No patients waiting in queue.</p>
+    <% } else { %>
+    <div class="ac-table-wrap">
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th scope="col">Queue #</th>
+            <th scope="col">Patient</th>
+            <th scope="col">Arrived</th>
+            <th scope="col">Service</th>
+            <th scope="col">Status</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% waiting.forEach(function (row) { %>
+          <tr>
+            <td><%= row.queueNumber %></td>
+            <td><%= row.patientDisplayName %><div class="ac-muted"><%= row.patientNumber %></div></td>
+            <td><%= row.arrivedAt ? new Date(row.arrivedAt).toLocaleTimeString() : '—' %></td>
+            <td><%= row.serviceName || '—' %></td>
+            <td><span class="ac-status"><%= row.queueStatus %></span></td>
+            <td>
+              <% if (actions.canStartEncounter) { %>
+              <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/clinical/start-encounter?patient_number=<%= encodeURIComponent(row.patientNumber) %>">Start encounter</a>
+              <% } else { %>—<% } %>
+            </td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="ac-panel" data-ac-worklist-bucket="upcoming">
+    <h2 class="ac-panel__title">Upcoming today</h2>
+    <% if (!upcoming.length) { %>
+    <p class="ac-muted">No upcoming appointments later today.</p>
+    <% } else { %>
+    <ul class="ac-card-list">
+      <% upcoming.forEach(function (row) { %>
+      <li class="ac-card">
+        <p class="ac-card__title"><%= row.patientDisplayName %></p>
+        <p class="ac-muted"><%= row.patientNumber %> · <%= row.serviceName || 'Appointment' %> · <%= row.startsAt ? new Date(row.startsAt).toLocaleTimeString() : '' %></p>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+
+  <div class="ac-panel" data-ac-worklist-bucket="follow-up">
+    <h2 class="ac-panel__title">Follow-up</h2>
+    <% if (!followUp.length) { %>
+    <p class="ac-muted">No follow-up items due in the next 14 days.</p>
+    <% } else { %>
+    <ul class="ac-card-list">
+      <% followUp.forEach(function (row) { %>
+      <li class="ac-card">
+        <p class="ac-card__title"><%= row.patientDisplayName %></p>
+        <p class="ac-muted"><%= row.title %> · <%= row.urgency %><% if (row.dueAt) { %> · due <%= new Date(row.dueAt).toLocaleDateString() %><% } %></p>
+        <a class="ac-btn ac-btn--ghost" href="/app/clinical/follow-up">Open worklist</a>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+
+  <div class="ac-panel" data-ac-worklist-bucket="incomplete">
+    <h2 class="ac-panel__title">Incomplete encounters</h2>
+    <% if (!incomplete.length) { %>
+    <p class="ac-muted">No open encounters with unsigned draft notes.</p>
+    <% } else { %>
+    <div class="ac-table-wrap">
+      <table class="ac-table">
+        <thead>
+          <tr>
+            <th scope="col">Encounter #</th>
+            <th scope="col">Patient</th>
+            <th scope="col">Opened</th>
+            <th scope="col">Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          <% incomplete.forEach(function (enc) { %>
+          <tr>
+            <td><a href="/app/clinical/encounter/<%= enc.id %>"><%= enc.encounterNumber %></a></td>
+            <td><%= enc.patientDisplayName %><div class="ac-muted"><%= enc.patientNumber %></div></td>
+            <td><%= enc.openedAt ? new Date(enc.openedAt).toLocaleString() : '—' %></td>
+            <td><a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/clinical/encounter/<%= enc.id %>">Complete draft</a></td>
+          </tr>
+          <% }) %>
+        </tbody>
+      </table>
+    </div>
+    <% } %>
+  </div>
+
+  <div class="ac-panel" data-ac-worklist-bucket="today">
+    <h2 class="ac-panel__title">Today's patients</h2>
+    <% if (!today.length) { %>
+    <p class="ac-muted">No appointments scheduled for today.</p>
+    <% } else { %>
+    <p class="ac-muted" data-ac-result-count="<%= today.length %>"><%= today.length %> appointment<%= today.length === 1 ? '' : 's' %> today</p>
+    <ul class="ac-card-list ac-clinical-mobile">
+      <% today.forEach(function (row) { %>
+      <li class="ac-card">
+        <p class="ac-card__title"><%= row.patientDisplayName %></p>
+        <p class="ac-muted"><%= row.patientNumber %> · <%= row.status %> · <%= row.startsAt ? new Date(row.startsAt).toLocaleTimeString() : '' %></p>
+      </li>
+      <% }) %>
+    </ul>
+    <% } %>
+  </div>
+</section>

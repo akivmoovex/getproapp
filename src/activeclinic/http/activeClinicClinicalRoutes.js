@@ -31,6 +31,7 @@ const {
   loadActiveClinicVitalSignsEntryScreen,
   loadActiveClinicClinicalAlertScreen,
   loadActiveClinicOrderFormScreen,
+  loadActiveClinicFollowUpWorklistScreen,
   actorFromAuth,
 } = require("../services/loadActiveClinicClinicalScreens");
 const {
@@ -44,9 +45,13 @@ const {
   createClinicalOrder,
   raiseClinicalAlert,
   closeEncounter,
+  completeEncounterWorkspace,
   RESULT: CLINICAL_RESULT,
   PERM,
 } = require("../services/activeClinicClinicalService");
+const {
+  updateClinicalFollowUpStatus,
+} = require("../services/activeClinicClinicalFollowUpService");
 const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 
 const UUID_RE =
@@ -145,11 +150,14 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           activeNav: "clinical",
           content: "app/clinical-queue-content.ejs",
           pageHeader: {
-            title: "Clinical queue",
-            description: `Open encounters at ${loaded.queue.facilityDisplayName}`,
-            actions: loaded.queue.actions.canStartEncounter
-              ? [{ href: "/app/clinical/start-encounter", label: "Start encounter" }]
-              : [],
+            title: "Practitioner worklist",
+            description: `Today's patients and clinical queues at ${loaded.queue.facilityDisplayName}`,
+            actions: [
+              ...(loaded.queue.actions.canStartEncounter
+                ? [{ href: "/app/clinical/start-encounter", label: "Start encounter" }]
+                : []),
+              { href: "/app/clinical/follow-up", label: "Follow-up", ghost: true },
+            ],
           },
           breadcrumbs: [
             { label: "Home", href: "/app" },
@@ -288,8 +296,10 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           req.query.started === "1"
             ? { type: "success", message: "Encounter started." }
             : req.query.updated === "1"
-              ? { type: "success", message: "Encounter updated." }
-              : null;
+              ? { type: "success", message: "Draft saved." }
+              : req.query.completed === "1"
+                ? { type: "success", message: "Encounter completed." }
+                : null;
 
         return renderShell(req, res, {
           activeNav: "clinical",
@@ -298,12 +308,9 @@ function registerActiveClinicClinicalRoutes(app, deps) {
             title: `Encounter ${loaded.workspace.encounter.encounterNumber}`,
             description: `Patient: ${loaded.workspace.encounter.patientDisplayName}`,
             actions: [
-              { href: `/app/clinical/encounter/${encounterId}/triage`, label: "Triage" },
-              { href: `/app/clinical/encounter/${encounterId}/vitals`, label: "Vitals" },
-              { href: `/app/clinical/encounter/${encounterId}/nursing-intake`, label: "Nursing intake", ghost: true },
+              { href: `/app/clinical/encounter/${encounterId}/triage`, label: "Triage", ghost: true },
+              { href: `/app/clinical/encounter/${encounterId}/vitals`, label: "Vitals", ghost: true },
               { href: `/app/clinical/encounter/${encounterId}/diagnosis`, label: "Diagnosis", ghost: true },
-              { href: `/app/clinical/encounter/${encounterId}/order/prescription`, label: "New prescription", ghost: true },
-              { href: `/app/clinical/encounter/${encounterId}/order/lab`, label: "Lab order", ghost: true },
             ],
           },
           breadcrumbs: [
@@ -708,11 +715,16 @@ function registerActiveClinicClinicalRoutes(app, deps) {
           facilityId: auth.selectedFacility.id,
           encounterId,
           noteType: req.body.note_type || "consultation",
-          subjectiveText: String(req.body.subjective_text || "").trim() || null,
-          objectiveText: String(req.body.objective_text || "").trim() || null,
-          assessmentText: String(req.body.assessment_text || "").trim() || null,
-          planText: String(req.body.plan_text || "").trim() || null,
+          chiefComplaint: String(req.body.chief_complaint || req.body.subjective_text || "").trim() || null,
+          observations: String(req.body.observations || req.body.objective_text || "").trim() || null,
+          diagnosis: String(req.body.diagnosis || req.body.assessment_text || "").trim() || null,
+          treatmentPlan: String(req.body.treatment_plan || req.body.plan_text || "").trim() || null,
+          historyText: String(req.body.history_text || "").trim() || null,
+          medicationText: String(req.body.medication || "").trim() || null,
+          followUpPlanText: String(req.body.follow_up || "").trim() || null,
+          referralText: String(req.body.referral || "").trim() || null,
           additionalNotes: String(req.body.additional_notes || "").trim() || null,
+          version: req.body.version ? Number(req.body.version) : undefined,
           actor: actor(auth),
           deploymentCode: requirePlatformDeploymentCode(env).code,
         });
@@ -724,6 +736,136 @@ function registerActiveClinicClinicalRoutes(app, deps) {
         }
 
         return res.redirect(303, `/app/clinical/encounter/${encounterId}?updated=1`);
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // Complete encounter (save draft + close)
+  app.post(
+    "/app/clinical/encounter/:encounterId/complete",
+    requireAuth,
+    requirePermission(PERM.MANAGE),
+    requireDepartment("clinical"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const encounterId = String(req.params.encounterId || "");
+        const auth = req.activeClinicAuth;
+        const result = await completeEncounterWorkspace(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: auth.selectedFacility.id,
+          encounterId,
+          noteType: "consultation",
+          chiefComplaint: String(req.body.chief_complaint || "").trim() || null,
+          observations: String(req.body.observations || "").trim() || null,
+          diagnosis: String(req.body.diagnosis || "").trim() || null,
+          treatmentPlan: String(req.body.treatment_plan || "").trim() || null,
+          historyText: String(req.body.history_text || "").trim() || null,
+          medicationText: String(req.body.medication || "").trim() || null,
+          followUpPlanText: String(req.body.follow_up || "").trim() || null,
+          referralText: String(req.body.referral || "").trim() || null,
+          followUpDueAt: String(req.body.follow_up_due_at || "").trim() || null,
+          createFollowUp: !!(
+            String(req.body.follow_up || "").trim() ||
+            String(req.body.referral || "").trim() ||
+            String(req.body.follow_up_due_at || "").trim()
+          ),
+          version: req.body.version ? Number(req.body.version) : undefined,
+          encounterVersion: req.body.encounter_version
+            ? Number(req.body.encounter_version)
+            : undefined,
+          actor: actor(auth),
+          deploymentCode: requirePlatformDeploymentCode(env).code,
+        });
+        if (!result.ok) {
+          return res.status(400).type("html").send(
+            renderSimpleState("Complete failed", mapClinicalError(result.code), { status: 400 })
+          );
+        }
+        return res.redirect(303, "/app/clinical?completed=1");
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  // ACN16 follow-up worklist
+  app.get(
+    "/app/clinical/follow-up",
+    requireAuth,
+    requirePermission(PERM.VIEW),
+    requireDepartment("clinical"),
+    async (req, res, next) => {
+      try {
+        const loaded = await loadActiveClinicFollowUpWorklistScreen(getPool(), {
+          auth: req.activeClinicAuth,
+          query: req.query,
+        });
+        if (!loaded.ok) {
+          return res.status(403).type("html").send(
+            renderSimpleState(
+              "Follow-up worklist unavailable",
+              mapClinicalError(loaded.code),
+              { status: 403, linkHref: "/app/clinical", linkLabel: "Back to clinical" }
+            )
+          );
+        }
+        return renderShell(req, res, {
+          activeNav: "clinical",
+          content: "app/clinical-follow-up-content.ejs",
+          pageHeader: {
+            title: "Follow-up worklist",
+            description: `Due reviews, missed appointments, referrals, and incomplete notes at ${loaded.followUp.facilityDisplayName}`,
+          },
+          breadcrumbs: [
+            { label: "Home", href: "/app" },
+            { label: "Clinical", href: "/app/clinical" },
+            { label: "Follow-up" },
+          ],
+          pageData: { followUp: loaded.followUp },
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  app.post(
+    "/app/clinical/follow-up/:itemId/status",
+    requireAuth,
+    requirePermission(PERM.CONSULTATION_RECORD),
+    requireDepartment("clinical"),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, req.body[CSRF_FIELD], env)) {
+          return res.status(403).type("html").send("CSRF validation failed");
+        }
+        const auth = req.activeClinicAuth;
+        const updated = await updateClinicalFollowUpStatus(getPool(), {
+          organizationId: auth.organization.id,
+          healthcareOrganizationId: auth.healthcareOrganization.id,
+          facilityId: auth.selectedFacility.id,
+          itemId: req.params.itemId,
+          status: req.body.status,
+          version: req.body.version ? Number(req.body.version) : undefined,
+          note: req.body.note || null,
+          actor: actor(auth),
+          body: req.body,
+          deploymentCode: requirePlatformDeploymentCode(env).code,
+        });
+        if (!updated.ok) {
+          return res.status(400).type("html").send(
+            renderSimpleState("Follow-up update failed", mapClinicalError(updated.code), {
+              status: 400,
+            })
+          );
+        }
+        return res.redirect(303, "/app/clinical/follow-up?ok=1");
       } catch (err) {
         return next(err);
       }

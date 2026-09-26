@@ -321,20 +321,20 @@ describe("ActiveClinic permission-aware navigation (Prompt 8)", () => {
         scopeType: "facility",
         facilityId: ac.facilityAId,
         required: ["home", "patients", "appointments", "reception", "settings"],
-        forbidden: ["clinical", "pharmacy", "diagnostics", "cashier", "access", "facilities", "website"],
+        forbidden: ["clinical", "clinical_follow_up", "pharmacy", "diagnostics", "cashier", "access", "facilities", "website"],
       },
       {
         roleKey: NURSE,
         scopeType: "facility",
         facilityId: ac.facilityAId,
-        required: ["home", "patients", "appointments", "reception", "clinical", "settings"],
+        required: ["home", "patients", "appointments", "reception", "clinical", "clinical_follow_up", "settings"],
         forbidden: ["pharmacy", "billing", "cashier", "access", "diagnostics", "website"],
       },
       {
         roleKey: CLINICIAN,
         scopeType: "facility",
         facilityId: ac.facilityAId,
-        required: ["home", "patients", "appointments", "clinical", "settings"],
+        required: ["home", "patients", "appointments", "clinical", "clinical_follow_up", "settings"],
         forbidden: ["pharmacy", "diagnostics", "cashier", "access", "reception"],
       },
       {
@@ -342,28 +342,28 @@ describe("ActiveClinic permission-aware navigation (Prompt 8)", () => {
         scopeType: "facility",
         facilityId: ac.facilityAId,
         required: ["home", "patients", "pharmacy", "settings"],
-        forbidden: ["clinical", "diagnostics", "cashier", "access", "reception"],
+        forbidden: ["clinical", "clinical_follow_up", "diagnostics", "cashier", "access", "reception"],
       },
       {
         roleKey: LAB_TECHNICIAN,
         scopeType: "facility",
         facilityId: ac.facilityAId,
         required: ["home", "patients", "diagnostics", "settings"],
-        forbidden: ["clinical", "pharmacy", "cashier", "access", "reception"],
+        forbidden: ["clinical", "clinical_follow_up", "pharmacy", "cashier", "access", "reception"],
       },
       {
         roleKey: RADIOLOGY_STAFF,
         scopeType: "facility",
         facilityId: ac.facilityAId,
         required: ["home", "patients", "diagnostics", "settings"],
-        forbidden: ["clinical", "pharmacy", "cashier", "access"],
+        forbidden: ["clinical", "clinical_follow_up", "pharmacy", "cashier", "access"],
       },
       {
         roleKey: BILLING_OFFICER,
         scopeType: "facility",
         facilityId: ac.facilityAId,
         required: ["home", "patients", "billing", "settings"],
-        forbidden: ["clinical", "pharmacy", "diagnostics", "cashier", "access"],
+        forbidden: ["clinical", "clinical_follow_up", "pharmacy", "diagnostics", "cashier", "access"],
       },
       {
         roleKey: CASHIER,
@@ -371,7 +371,7 @@ describe("ActiveClinic permission-aware navigation (Prompt 8)", () => {
         facilityId: ac.facilityAId,
         required: ["home", "cashier", "billing", "settings"],
         forbidden: [
-          "clinical",
+          "clinical", "clinical_follow_up",
           "pharmacy",
           "diagnostics",
           "access",
@@ -385,7 +385,7 @@ describe("ActiveClinic permission-aware navigation (Prompt 8)", () => {
         scopeType: "facility",
         facilityId: ac.facilityAId,
         required: ["home", "patients", "billing", "cashier", "settings"],
-        forbidden: ["clinical", "pharmacy", "diagnostics", "access"],
+        forbidden: ["clinical", "clinical_follow_up", "pharmacy", "diagnostics", "access"],
       },
       {
         roleKey: AUDITOR,
@@ -442,7 +442,7 @@ describe("ActiveClinic permission-aware navigation (Prompt 8)", () => {
         scopeType: "facility",
         facilityId: ac.facilityAId,
         required: ["home", "settings"],
-        forbidden: ["patients", "clinical", "facilities", "access", "diagnostics"],
+        forbidden: ["patients", "clinical", "clinical_follow_up", "facilities", "access", "diagnostics"],
       },
     ];
 

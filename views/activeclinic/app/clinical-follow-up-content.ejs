@@ -1,0 +1,106 @@
+<%
+  var followUp = (pageData && pageData.followUp) || {};
+  var items = followUp.items || [];
+  var counts = followUp.counts || {};
+  var filters = followUp.filters || {};
+  var options = followUp.options || {};
+  var stitch = followUp.stitch || {};
+  var actions = followUp.actions || {};
+%>
+<section
+  class="ac-batch1a ac-clinical-follow-up"
+  data-ac-page-section="clinical-follow-up"
+  data-ac-stitch="ACN16"
+  data-ac-stitch-desktop="<%= stitch.desktop || '0c83bbfc71b94c2f958931693345d1db' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || '362b305120114a5cac2ac38622a148f8' %>"
+>
+  <div class="ac-metric-grid" data-ac-followup-metrics="1">
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Due review</p><p class="ac-stat-card__value"><%= counts.due_review || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Missed appointments</p><p class="ac-stat-card__value"><%= counts.missed_appointment || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Pending referrals</p><p class="ac-stat-card__value"><%= counts.pending_referral || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Incomplete notes</p><p class="ac-stat-card__value"><%= counts.incomplete_notes || 0 %></p></article>
+    <article class="ac-stat-card"><p class="ac-stat-card__label">Outstanding actions</p><p class="ac-stat-card__value"><%= counts.outstanding_action || 0 %></p></article>
+  </div>
+
+  <form class="ac-panel ac-filter-bar" method="get" action="/app/clinical/follow-up" data-ac-followup-filters="1">
+    <div class="ac-field">
+      <label class="ac-label" for="item_type">Type</label>
+      <select class="ac-select" id="item_type" name="item_type">
+        <option value="">All types</option>
+        <% (options.types || []).forEach(function (t) { %>
+        <option value="<%= t.value %>" <%= filters.itemType === t.value ? 'selected' : '' %>><%= t.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="status">Status</label>
+      <select class="ac-select" id="status" name="status">
+        <option value="">Open statuses</option>
+        <% (options.statuses || []).forEach(function (s) { %>
+        <option value="<%= s.value %>" <%= filters.status === s.value ? 'selected' : '' %>><%= s.label %></option>
+        <% }) %>
+      </select>
+    </div>
+    <div class="ac-form-actions">
+      <button type="submit" class="ac-btn">Filter</button>
+      <a class="ac-btn ac-btn--ghost" href="/app/clinical/follow-up">Clear</a>
+      <a class="ac-btn ac-btn--ghost" href="/app/clinical">Back to worklist</a>
+    </div>
+  </form>
+
+  <% if (!items.length) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'clinical-follow-up-empty',
+      title: 'No follow-up items',
+      description: 'Due reviews, missed appointments, referrals, and incomplete notes appear here.'
+    }
+  }) %>
+  <% } else { %>
+  <div class="ac-panel ac-table-wrap">
+    <table class="ac-table" data-ac-table="clinical-follow-up">
+      <caption class="ac-sr-only">Clinical follow-up worklist</caption>
+      <thead>
+        <tr>
+          <th scope="col">Patient</th>
+          <th scope="col">Type</th>
+          <th scope="col">Title / reason</th>
+          <th scope="col">Due</th>
+          <th scope="col">Owner</th>
+          <th scope="col">Status</th>
+          <th scope="col">Actions</th>
+        </tr>
+      </thead>
+      <tbody>
+        <% items.forEach(function (item) { %>
+        <tr data-ac-followup-type="<%= item.itemType %>" data-ac-followup-status="<%= item.status %>">
+          <td>
+            <%= item.patientDisplayName %>
+            <div class="ac-muted"><%= item.patientNumber %></div>
+          </td>
+          <td><%= item.itemTypeLabel %></td>
+          <td>
+            <strong><%= item.title %></strong>
+            <% if (item.reason) { %><div class="ac-muted"><%= item.reason.length > 120 ? item.reason.slice(0, 120) + '…' : item.reason %></div><% } %>
+          </td>
+          <td><%= item.dueAt ? new Date(item.dueAt).toLocaleDateString() : '—' %></td>
+          <td><%= item.ownerDisplayName || '—' %></td>
+          <td><span class="ac-status" data-ac-status="<%= item.status %>"><%= item.statusLabel %></span></td>
+          <td>
+            <% if (actions.canUpdate && item.status !== 'completed') { %>
+            <form method="post" action="/app/clinical/follow-up/<%= item.id %>/status" class="ac-inline-form">
+              <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+              <input type="hidden" name="version" value="<%= item.version %>" />
+              <input type="hidden" name="status" value="completed" />
+              <button type="submit" class="ac-btn ac-btn--ghost ac-btn--table">Mark done</button>
+            </form>
+            <% } else { %>—<% } %>
+          </td>
+        </tr>
+        <% }) %>
+      </tbody>
+    </table>
+  </div>
+  <% } %>
+</section>

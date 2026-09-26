@@ -66,8 +66,9 @@ const MINIMAL_AC = Object.freeze({
 const VIEWS_DIR = path.join(__dirname, "..", "views", "activeclinic", "app");
 const EXPECTED = [
   ["clinical-escalation-alert-content.ejs", "99757cfd7d3747d490f00ac342faa519"],
-  ["clinical-queue-content.ejs", "b8d47f05a83c4959ac2d3d6ca83c7dfb"],
-  ["consultation-workspace-content.ejs", "5e4dbc7265ad4e17b060b1f641996db3"],
+  ["clinical-queue-content.ejs", "ae083a2bfe324046b4d9a0648c516bbd"],
+  ["consultation-workspace-content.ejs", "3ea33c0c474342bbbbb307014209bfec"],
+  ["clinical-follow-up-content.ejs", "0c83bbfc71b94c2f958931693345d1db"],
   ["create-laboratory-request-content.ejs", "969bbfbdf9634dbc8af598ec2277e92f"],
   ["create-prescription-content.ejs", "ee9bf2322b924cd79e86619a4635f702"],
   ["create-radiology-request-content.ejs", "bc4ffd8f0e8c44f48f38cc15a069656a"],

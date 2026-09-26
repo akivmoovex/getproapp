@@ -1,16 +1,36 @@
 "use strict";
 
 /**
- * ActiveClinic P04 clinical screen loaders.
+ * ActiveClinic clinical screen loaders (ACN14–16 + legacy triage/vitals surfaces).
  */
 
 const {
   listOpenEncounters,
+  listPractitionerWorklist,
   getEncounterById,
   listVitalSignsForEncounter,
-  listActiveAlertsForFacility,
   RESULT,
+  PERM,
 } = require("./activeClinicClinicalService");
+const {
+  listClinicalFollowUpItems,
+  ITEM_TYPES,
+  STATUSES,
+  TYPE_LABELS,
+  STATUS_LABELS,
+} = require("./activeClinicClinicalFollowUpService");
+const {
+  authorizeStaffPermission,
+} = require("./activeClinicAuthorizationService");
+
+const STITCH = Object.freeze({
+  worklistDesktop: "ae083a2bfe324046b4d9a0648c516bbd",
+  worklistMobile: "f792e472b455437eb354e25d336fd869",
+  encounterDesktop: "3ea33c0c474342bbbbb307014209bfec",
+  encounterMobile: "ec4486cb5e944705bede9c3100c47e9d",
+  followUpDesktop: "0c83bbfc71b94c2f958931693345d1db",
+  followUpMobile: "362b305120114a5cac2ac38622a148f8",
+});
 
 function actorFromAuth(auth) {
   return {
@@ -22,15 +42,26 @@ function actorFromAuth(auth) {
   };
 }
 
+async function hasPerm(db, auth, permissionKey) {
+  const authz = await authorizeStaffPermission(db, {
+    organizationId: auth.organization.id,
+    staffMemberId: auth.staffMember.id,
+    platformIdentityId: auth.platformIdentity && auth.platformIdentity.id,
+    permissionKey,
+    facilityId: auth.selectedFacility ? auth.selectedFacility.id : null,
+  });
+  return authz.ok === true;
+}
+
 /**
- * Load clinical queue screen (list of open encounters).
+ * ACN14 Practitioner worklist (replaces flat open-encounter queue presentation).
  */
 async function loadActiveClinicClinicalQueueScreen(db, input) {
   if (!input.auth.selectedFacility) {
     return { ok: false, code: RESULT.FACILITY_NOT_FOUND, queue: null };
   }
 
-  const listed = await listOpenEncounters(db, {
+  const listed = await listPractitionerWorklist(db, {
     organizationId: input.auth.organization.id,
     healthcareOrganizationId: input.auth.healthcareOrganization.id,
     facilityId: input.auth.selectedFacility.id,
@@ -41,21 +72,35 @@ async function loadActiveClinicClinicalQueueScreen(db, input) {
     return { ok: false, code: listed.code, queue: null };
   }
 
+  // Keep flat encounters for older consumers / empty-state counts.
+  const openListed = await listOpenEncounters(db, {
+    organizationId: input.auth.organization.id,
+    healthcareOrganizationId: input.auth.healthcareOrganization.id,
+    facilityId: input.auth.selectedFacility.id,
+    actor: actorFromAuth(input.auth),
+  });
+
   return {
     ok: true,
     code: RESULT.OK,
     queue: {
       facilityDisplayName: input.auth.selectedFacility.displayName,
-      encounters: listed.encounters,
+      encounters: openListed.ok ? openListed.encounters : [],
+      worklist: listed.worklist,
+      stitch: {
+        desktop: STITCH.worklistDesktop,
+        mobile: STITCH.worklistMobile,
+      },
       actions: {
-        canStartEncounter: true,
+        canStartEncounter: await hasPerm(db, input.auth, PERM.MANAGE),
+        canOpenFollowUp: true,
       },
     },
   };
 }
 
 /**
- * Load consultation workspace screen.
+ * ACN15 Clinical encounter workspace.
  */
 async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
   if (!input.auth.selectedFacility) {
@@ -102,15 +147,6 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
     [input.encounterId]
   );
 
-  const ordersRes = await db.query(
-    `SELECT o.*, s.display_name AS ordered_by_staff_display_name
-       FROM activeclinic.clinical_orders o
-       LEFT JOIN activeclinic.staff_members s ON s.id = o.ordered_by_staff_id
-      WHERE o.encounter_id = $1
-      ORDER BY o.created_at DESC`,
-    [input.encounterId]
-  );
-
   const diagnosesRes = await db.query(
     `SELECT d.*, s.display_name AS recorded_by_staff_display_name
        FROM activeclinic.clinical_diagnoses d
@@ -120,6 +156,12 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
     [input.encounterId]
   );
 
+  const draftNote =
+    consultationRes.rows.find((n) => n.status === "draft") || null;
+  const canRecord = await hasPerm(db, input.auth, PERM.CONSULTATION_RECORD);
+  const canSign = await hasPerm(db, input.auth, PERM.CONSULTATION_SIGN);
+  const canManage = await hasPerm(db, input.auth, PERM.MANAGE);
+
   return {
     ok: true,
     code: RESULT.OK,
@@ -128,24 +170,85 @@ async function loadActiveClinicConsultationWorkspaceScreen(db, input) {
       triage: triageRes.rows.length > 0 ? triageRes.rows[0] : null,
       vitals: vitalsRes.observations || [],
       consultationNotes: consultationRes.rows || [],
-      orders: ordersRes.rows || [],
+      draftNote,
       diagnoses: diagnosesRes.rows || [],
+      stitch: {
+        desktop: STITCH.encounterDesktop,
+        mobile: STITCH.encounterMobile,
+      },
       actions: {
-        canRecordTriage: true,
-        canRecordVitals: true,
-        canDraftConsultation: true,
-        canSignConsultation: true,
-        canCreateOrder: true,
-        canRecordDiagnosis: true,
-        canCloseEncounter: encounter.encounter.status === "open",
+        canRecordDraft: canRecord && encounter.encounter.status === "open",
+        canSignConsultation: canSign && !!draftNote,
+        canCompleteEncounter:
+          canManage && canRecord && encounter.encounter.status === "open",
+        canCloseEncounter: canManage && encounter.encounter.status === "open",
       },
     },
   };
 }
 
 /**
- * Load triage assessment screen.
+ * ACN16 Follow-up worklist.
  */
+async function loadActiveClinicFollowUpWorklistScreen(db, input) {
+  if (!input.auth.selectedFacility) {
+    return { ok: false, code: RESULT.FACILITY_NOT_FOUND, followUp: null };
+  }
+
+  const listed = await listClinicalFollowUpItems(db, {
+    organizationId: input.auth.organization.id,
+    healthcareOrganizationId: input.auth.healthcareOrganization.id,
+    facilityId: input.auth.selectedFacility.id,
+    actor: actorFromAuth(input.auth),
+    body: {},
+    query: input.query || {},
+    itemType: input.query && input.query.item_type,
+    status: input.query && input.query.status,
+    ownerStaffId: input.query && input.query.owner_staff_id,
+  });
+  if (!listed.ok) {
+    return { ok: false, code: listed.code, followUp: null };
+  }
+
+  const counts = {
+    due_review: 0,
+    missed_appointment: 0,
+    pending_referral: 0,
+    incomplete_notes: 0,
+    outstanding_action: 0,
+  };
+  for (const item of listed.items) {
+    if (counts[item.itemType] != null) counts[item.itemType] += 1;
+  }
+
+  return {
+    ok: true,
+    code: RESULT.OK,
+    followUp: {
+      facilityDisplayName: input.auth.selectedFacility.displayName,
+      items: listed.items,
+      counts,
+      filters: {
+        itemType: (input.query && input.query.item_type) || "",
+        status: (input.query && input.query.status) || "",
+      },
+      options: {
+        types: ITEM_TYPES.map((t) => ({ value: t, label: TYPE_LABELS[t] })),
+        statuses: STATUSES.filter((s) => !["completed", "cancelled"].includes(s)).map(
+          (s) => ({ value: s, label: STATUS_LABELS[s] })
+        ),
+      },
+      stitch: {
+        desktop: STITCH.followUpDesktop,
+        mobile: STITCH.followUpMobile,
+      },
+      actions: {
+        canUpdate: await hasPerm(db, input.auth, PERM.CONSULTATION_RECORD),
+      },
+    },
+  };
+}
+
 async function loadActiveClinicTriageAssessmentScreen(db, input) {
   if (!input.auth.selectedFacility) {
     return { ok: false, code: RESULT.FACILITY_NOT_FOUND, triage: null };
@@ -180,9 +283,6 @@ async function loadActiveClinicTriageAssessmentScreen(db, input) {
   };
 }
 
-/**
- * Load vital signs entry screen.
- */
 async function loadActiveClinicVitalSignsEntryScreen(db, input) {
   if (!input.auth.selectedFacility) {
     return { ok: false, code: RESULT.FACILITY_NOT_FOUND, vitals: null };
@@ -220,13 +320,14 @@ async function loadActiveClinicVitalSignsEntryScreen(db, input) {
   };
 }
 
-/**
- * Load clinical escalation alert screen.
- */
 async function loadActiveClinicClinicalAlertScreen(db, input) {
   if (!input.auth.selectedFacility) {
     return { ok: false, code: RESULT.FACILITY_NOT_FOUND, alerts: null };
   }
+
+  const {
+    listActiveAlertsForFacility,
+  } = require("./activeClinicClinicalService");
 
   const listed = await listActiveAlertsForFacility(db, {
     organizationId: input.auth.organization.id,
@@ -252,9 +353,6 @@ async function loadActiveClinicClinicalAlertScreen(db, input) {
   };
 }
 
-/**
- * Load order form screens (lab/prescription/radiology).
- */
 async function loadActiveClinicOrderFormScreen(db, input) {
   if (!input.auth.selectedFacility) {
     return { ok: false, code: RESULT.FACILITY_NOT_FOUND, orderForm: null };
@@ -277,7 +375,7 @@ async function loadActiveClinicOrderFormScreen(db, input) {
     code: RESULT.OK,
     orderForm: {
       encounter: encounter.encounter,
-      orderType: input.orderType,
+      orderType: input.orderType || "lab",
       values: input.values || {},
       error: input.error || null,
     },
@@ -285,11 +383,13 @@ async function loadActiveClinicOrderFormScreen(db, input) {
 }
 
 module.exports = {
+  STITCH,
+  actorFromAuth,
   loadActiveClinicClinicalQueueScreen,
   loadActiveClinicConsultationWorkspaceScreen,
+  loadActiveClinicFollowUpWorklistScreen,
   loadActiveClinicTriageAssessmentScreen,
   loadActiveClinicVitalSignsEntryScreen,
   loadActiveClinicClinicalAlertScreen,
   loadActiveClinicOrderFormScreen,
-  actorFromAuth,
 };

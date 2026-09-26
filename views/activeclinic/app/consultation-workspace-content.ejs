@@ -1,91 +1,143 @@
-<div data-ac-stitch="5e4dbc7265ad4e17b060b1f641996db3" data-ac-screen="consultation-workspace" class="ac-workspace">
+<%
+  var workspace = (pageData && pageData.workspace) || {};
+  var encounter = workspace.encounter || {};
+  var triage = workspace.triage || null;
+  var draft = workspace.draftNote || null;
+  var diagnoses = workspace.diagnoses || [];
+  var actions = workspace.actions || {};
+  var stitch = workspace.stitch || {};
+  var vitals = workspace.vitals || [];
+%>
+<section
+  class="ac-batch1a ac-workspace ac-clinical-encounter"
+  data-ac-page-section="clinical-encounter"
+  data-ac-stitch="ACN15"
+  data-ac-stitch-desktop="<%= stitch.desktop || '3ea33c0c474342bbbbb307014209bfec' %>"
+  data-ac-stitch-mobile="<%= stitch.mobile || 'ec4486cb5e944705bede9c3100c47e9d' %>"
+  data-ac-encounter-status="<%= encounter.status || '' %>"
+  data-ac-draft-protection="1"
+>
   <section class="ac-clinical-banner ac-workspace-section">
-    <h2 class="ac-patient-banner__name"><%= pageData.workspace.encounter.patientDisplayName %></h2>
-    <p class="ac-muted"><%= pageData.workspace.encounter.patientNumber %> · <%= pageData.workspace.encounter.encounterNumber %> · <%= pageData.workspace.encounter.encounterType %></p>
-    <p><span class="ac-status" data-ac-status="<%= pageData.workspace.encounter.status %>"><%= pageData.workspace.encounter.status %></span></p>
+    <h2 class="ac-patient-banner__name"><%= encounter.patientDisplayName %></h2>
+    <p class="ac-muted"><%= encounter.patientNumber %> · <%= encounter.encounterNumber %> · <%= encounter.encounterType %></p>
+    <p>
+      <span class="ac-status" data-ac-status="<%= encounter.status %>"><%= encounter.status %></span>
+      <% if (draft) { %>
+      <span class="ac-status" data-ac-status="draft">Draft note v<%= draft.version %></span>
+      <% } %>
+    </p>
+    <p class="ac-muted ac-sr-only">Restricted clinical notes — reception and finance cannot access this workspace.</p>
   </section>
 
-  <% if (pageData.workspace.triage) { %>
-  <section class="ac-panel ac-form-section ac-workspace-section">
-    <h2>Triage</h2>
-    <p><strong>Chief complaint:</strong> <%= pageData.workspace.triage.chief_complaint %></p>
-    <% if (pageData.workspace.triage.triage_category) { %>
-    <p><strong>Category:</strong> <span class="ac-status"><%= pageData.workspace.triage.triage_category %></span></p>
+  <% if (triage) { %>
+  <section class="ac-panel ac-workspace-section">
+    <h2 class="ac-panel__title">Triage snapshot</h2>
+    <p><strong>Chief complaint:</strong> <%= triage.chief_complaint %></p>
+    <% if (triage.triage_category) { %>
+    <p><strong>Category:</strong> <span class="ac-status"><%= triage.triage_category %></span></p>
     <% } %>
-    <p><a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/clinical/encounter/<%= pageData.workspace.encounter.id %>/triage">View/edit triage</a></p>
   </section>
   <% } %>
 
-  <section class="ac-panel ac-form-section ac-workspace-section">
-    <h2>Vital signs</h2>
-    <% if (pageData.workspace.vitals.length === 0) { %>
-    <p class="ac-empty">No vitals recorded. <a href="/app/clinical/encounter/<%= pageData.workspace.encounter.id %>/vitals">Record vitals</a></p>
+  <section class="ac-panel ac-workspace-section">
+    <h2 class="ac-panel__title">Observations &amp; vitals</h2>
+    <% if (!vitals.length) { %>
+    <p class="ac-muted">No vitals recorded yet.</p>
     <% } else { %>
-    <p><%= pageData.workspace.vitals.length %> observation(s) recorded. <a class="ac-btn ac-btn--ghost ac-btn--table" href="/app/clinical/encounter/<%= pageData.workspace.encounter.id %>/vitals">View vitals</a></p>
+    <p class="ac-muted"><%= vitals.length %> observation(s) on file for this encounter.</p>
     <% } %>
   </section>
 
-  <section class="ac-panel ac-form-section ac-workspace-section">
-    <h2>Consultation notes</h2>
-    <% if (pageData.workspace.consultationNotes.length === 0) { %>
-    <p class="ac-empty">No consultation notes.</p>
-    <% } else { %>
-    <% pageData.workspace.consultationNotes.forEach(function (note) { %>
-    <div class="ac-consultation-note">
-      <p><strong>Status:</strong> <span class="ac-status"><%= note.status %></span></p>
-      <% if (note.subjective_text) { %>
-      <p><strong>Subjective:</strong> <%= note.subjective_text.substring(0, 200) %><%= note.subjective_text.length > 200 ? '...' : '' %></p>
-      <% } %>
-    </div>
-    <% }) %>
-    <% } %>
-
-    <form method="post" action="/app/clinical/encounter/<%= pageData.workspace.encounter.id %>/consultation">
-      <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
-      <div class="ac-soap-grid">
-        <div class="ac-field">
-          <label for="subjective_text">Subjective</label>
-          <textarea id="subjective_text" name="subjective_text" rows="3"></textarea>
-        </div>
-        <div class="ac-field">
-          <label for="objective_text">Objective</label>
-          <textarea id="objective_text" name="objective_text" rows="3"></textarea>
-        </div>
-        <div class="ac-field">
-          <label for="assessment_text">Assessment</label>
-          <textarea id="assessment_text" name="assessment_text" rows="3"></textarea>
-        </div>
-        <div class="ac-field">
-          <label for="plan_text">Plan</label>
-          <textarea id="plan_text" name="plan_text" rows="3"></textarea>
-        </div>
-      </div>
-      <button type="submit" class="ac-btn">Save draft</button>
-    </form>
-  </section>
-
-  <section class="ac-panel ac-form-section ac-workspace-section">
-    <h2>Orders</h2>
-    <% if (pageData.workspace.orders.length === 0) { %>
-    <p class="ac-empty">No orders.</p>
-    <% } else { %>
-    <ul class="ac-order-list">
-      <% pageData.workspace.orders.forEach(function (order) { %>
-      <li><%= order.order_type %> · <span class="ac-status"><%= order.status %></span></li>
+  <% if (diagnoses.length) { %>
+  <section class="ac-panel ac-workspace-section">
+    <h2 class="ac-panel__title">Recorded diagnoses</h2>
+    <ul>
+      <% diagnoses.forEach(function (d) { %>
+      <li><%= d.diagnosis_text %> <span class="ac-muted">(<%= d.diagnosis_type %> · <%= d.certainty %>)</span></li>
       <% }) %>
     </ul>
-    <% } %>
+    <p class="ac-muted">Manual clinical documentation only — no ICD automation.</p>
   </section>
-
-  <% if (pageData.workspace.actions.canCloseEncounter) { %>
-  <form class="ac-panel ac-form-section" method="post" action="/app/clinical/encounter/<%= pageData.workspace.encounter.id %>/close">
-    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
-    <input type="hidden" name="version" value="<%= pageData.workspace.encounter.version %>" />
-    <div class="ac-field">
-      <label for="closure_note">Closure note (optional)</label>
-      <textarea id="closure_note" name="closure_note" rows="2"></textarea>
-    </div>
-    <button type="submit" class="ac-btn">Close encounter</button>
-  </form>
   <% } %>
-</div>
+
+  <% if (actions.canRecordDraft) { %>
+  <form
+    class="ac-panel ac-workspace-section"
+    method="post"
+    action="/app/clinical/encounter/<%= encounter.id %>/consultation"
+    data-ac-form="clinical-encounter-draft"
+    data-ac-unsaved-guard="1"
+  >
+    <input type="hidden" name="<%= shell.csrf.field %>" value="<%= shell.csrf.token %>" />
+    <% if (draft) { %>
+    <input type="hidden" name="version" value="<%= draft.version %>" />
+    <% } %>
+    <input type="hidden" name="encounter_version" value="<%= encounter.version %>" />
+
+    <h2 class="ac-panel__title">Clinical encounter documentation</h2>
+    <p class="ac-muted">Save draft protects in-progress notes with optimistic versioning. Complete encounter closes the visit.</p>
+
+    <div class="ac-field">
+      <label class="ac-label" for="chief_complaint">1. Chief complaint</label>
+      <textarea class="ac-input" id="chief_complaint" name="chief_complaint" rows="3" maxlength="8000"><%= (draft && draft.subjective_text) || (triage && triage.chief_complaint) || '' %></textarea>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="history_text">2. History</label>
+      <textarea class="ac-input" id="history_text" name="history_text" rows="3" maxlength="8000"><%= (draft && draft.history_text) || '' %></textarea>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="observations">3. Observations</label>
+      <textarea class="ac-input" id="observations" name="observations" rows="3" maxlength="8000"><%= (draft && draft.objective_text) || '' %></textarea>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="diagnosis">4. Diagnosis</label>
+      <textarea class="ac-input" id="diagnosis" name="diagnosis" rows="3" maxlength="8000"><%= (draft && draft.assessment_text) || '' %></textarea>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="treatment_plan">5. Treatment plan</label>
+      <textarea class="ac-input" id="treatment_plan" name="treatment_plan" rows="3" maxlength="8000"><%= (draft && draft.plan_text) || '' %></textarea>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="medication">6. Medication <span class="ac-muted">(documented plan only — not a prescribing engine)</span></label>
+      <textarea class="ac-input" id="medication" name="medication" rows="2" maxlength="4000"><%= (draft && draft.medication_text) || '' %></textarea>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="follow_up">7. Follow-up</label>
+      <textarea class="ac-input" id="follow_up" name="follow_up" rows="2" maxlength="4000"><%= (draft && draft.follow_up_plan_text) || '' %></textarea>
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="follow_up_due_at">Follow-up due date <span class="ac-muted">(optional)</span></label>
+      <input class="ac-input" type="date" id="follow_up_due_at" name="follow_up_due_at" />
+    </div>
+    <div class="ac-field">
+      <label class="ac-label" for="referral">8. Referral</label>
+      <textarea class="ac-input" id="referral" name="referral" rows="2" maxlength="4000"><%= (draft && draft.referral_text) || '' %></textarea>
+    </div>
+
+    <div class="ac-form-actions">
+      <button type="submit" name="intent" value="save_draft" class="ac-btn ac-btn--ghost">Save draft</button>
+      <% if (actions.canCompleteEncounter) { %>
+      <button type="submit" name="intent" value="complete" class="ac-btn" formaction="/app/clinical/encounter/<%= encounter.id %>/complete">Complete encounter</button>
+      <% } %>
+    </div>
+  </form>
+  <script>
+    (function () {
+      var form = document.querySelector('[data-ac-unsaved-guard="1"]');
+      if (!form) return;
+      var dirty = false;
+      form.addEventListener('input', function () { dirty = true; });
+      form.addEventListener('submit', function () { dirty = false; });
+      window.addEventListener('beforeunload', function (event) {
+        if (!dirty) return;
+        event.preventDefault();
+        event.returnValue = '';
+      });
+    })();
+  </script>
+  <% } else if (encounter.status === 'open') { %>
+  <div class="ac-panel">
+    <p class="ac-muted">You can view this encounter but do not have permission to edit clinical notes.</p>
+  </div>
+  <% } %>
+</section>

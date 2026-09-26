@@ -138,6 +138,10 @@ function mapConsultationNote(row) {
     assessmentText: row.assessment_text || null,
     planText: row.plan_text || null,
     additionalNotes: row.additional_notes || null,
+    historyText: row.history_text || null,
+    medicationText: row.medication_text || null,
+    followUpPlanText: row.follow_up_plan_text || null,
+    referralText: row.referral_text || null,
     status: row.status,
     signedAt: row.signed_at || null,
     signedByStaffId: row.signed_by_staff_id || null,
@@ -148,6 +152,13 @@ function mapConsultationNote(row) {
     createdByStaffDisplayName: row.created_by_staff_display_name || null,
     signedByStaffDisplayName: row.signed_by_staff_display_name || null,
   };
+}
+
+function trimClinicalText(raw, maxLen) {
+  if (raw == null) return null;
+  const text = String(raw).trim();
+  if (!text) return null;
+  return text.slice(0, maxLen);
 }
 
 function mapClinicalOrder(row) {
@@ -847,12 +858,44 @@ async function recordConsultationNote(db, input) {
 
   let row;
   if (existing.rows.length === 0) {
+    const subjectiveText = trimClinicalText(
+      input.subjectiveText != null ? input.subjectiveText : input.chiefComplaint,
+      8000
+    );
+    const objectiveText = trimClinicalText(
+      input.objectiveText != null ? input.objectiveText : input.observations,
+      8000
+    );
+    const assessmentText = trimClinicalText(
+      input.assessmentText != null ? input.assessmentText : input.diagnosis,
+      8000
+    );
+    const planText = trimClinicalText(
+      input.planText != null ? input.planText : input.treatmentPlan,
+      8000
+    );
+    const historyText = trimClinicalText(input.historyText || input.history, 8000);
+    const medicationText = trimClinicalText(
+      input.medicationText || input.medication,
+      4000
+    );
+    const followUpPlanText = trimClinicalText(
+      input.followUpPlanText || input.followUp,
+      4000
+    );
+    const referralText = trimClinicalText(
+      input.referralText || input.referral,
+      4000
+    );
+    const additionalNotes = trimClinicalText(input.additionalNotes, 8000);
+
     row = await db.query(
       `INSERT INTO activeclinic.consultation_notes (
          organization_id, healthcare_organization_id, facility_id, encounter_id, patient_id,
          note_type, subjective_text, objective_text, assessment_text, plan_text,
-         additional_notes, created_by_staff_id
-       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+         additional_notes, history_text, medication_text, follow_up_plan_text, referral_text,
+         created_by_staff_id
+       ) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
        RETURNING *`,
       [
         input.organizationId,
@@ -861,11 +904,15 @@ async function recordConsultationNote(db, input) {
         input.encounterId,
         encounter.encounter.patientId,
         input.noteType || "consultation",
-        input.subjectiveText || null,
-        input.objectiveText || null,
-        input.assessmentText || null,
-        input.planText || null,
-        input.additionalNotes || null,
+        subjectiveText,
+        objectiveText,
+        assessmentText,
+        planText,
+        additionalNotes,
+        historyText,
+        medicationText,
+        followUpPlanText,
+        referralText,
         input.actor.staffMemberId,
       ]
     );
@@ -888,6 +935,8 @@ async function recordConsultationNote(db, input) {
       return { ok: false, code: RESULT.CANNOT_EDIT_SIGNED, consultation: null };
     }
 
+    const expectedVersion =
+      input.version != null ? Number(input.version) : existing.rows[0].version;
     row = await db.query(
       `UPDATE activeclinic.consultation_notes
           SET subjective_text = $1,
@@ -895,18 +944,39 @@ async function recordConsultationNote(db, input) {
               assessment_text = $3,
               plan_text = $4,
               additional_notes = $5,
-              version = version + 1
-        WHERE id = $6
-          AND version = $7
+              history_text = $6,
+              medication_text = $7,
+              follow_up_plan_text = $8,
+              referral_text = $9,
+              version = version + 1,
+              updated_at = now()
+        WHERE id = $10
+          AND version = $11
        RETURNING *`,
       [
-        input.subjectiveText || null,
-        input.objectiveText || null,
-        input.assessmentText || null,
-        input.planText || null,
-        input.additionalNotes || null,
+        trimClinicalText(
+          input.subjectiveText != null ? input.subjectiveText : input.chiefComplaint,
+          8000
+        ),
+        trimClinicalText(
+          input.objectiveText != null ? input.objectiveText : input.observations,
+          8000
+        ),
+        trimClinicalText(
+          input.assessmentText != null ? input.assessmentText : input.diagnosis,
+          8000
+        ),
+        trimClinicalText(
+          input.planText != null ? input.planText : input.treatmentPlan,
+          8000
+        ),
+        trimClinicalText(input.additionalNotes, 8000),
+        trimClinicalText(input.historyText || input.history, 8000),
+        trimClinicalText(input.medicationText || input.medication, 4000),
+        trimClinicalText(input.followUpPlanText || input.followUp, 4000),
+        trimClinicalText(input.referralText || input.referral, 4000),
         existing.rows[0].id,
-        existing.rows[0].version,
+        expectedVersion,
       ]
     );
 
@@ -1367,11 +1437,273 @@ async function closeEncounter(db, input) {
   return { ok: true, code: RESULT.OK, encounter: mapEncounter(row.rows[0]) };
 }
 
+/**
+ * ACN14 practitioner worklist buckets (facility-scoped clinical view).
+ */
+async function listPractitionerWorklist(db, input) {
+  const authz = await authorizeStaffPermission(db, {
+    organizationId: input.organizationId,
+    staffMemberId: input.actor.staffMemberId,
+    platformIdentityId: input.actor.platformIdentityId,
+    permissionKey: PERM.VIEW,
+    facilityId: input.facilityId,
+  });
+  if (!authz.ok) {
+    return { ok: false, code: RESULT.ACCESS_DENIED, worklist: null };
+  }
+
+  const staffId = input.actor.staffMemberId;
+  const facilityId = input.facilityId;
+  const organizationId = input.organizationId;
+
+  const openEncounters = await db.query(
+    `SELECT e.*,
+            (p.first_name || ' ' || p.last_name) AS patient_display_name,
+            p.patient_number,
+            s.display_name AS opened_by_staff_display_name,
+            EXISTS (
+              SELECT 1 FROM activeclinic.consultation_notes cn
+               WHERE cn.encounter_id = e.id AND cn.status = 'draft'
+            ) AS has_draft_note
+       FROM activeclinic.encounters e
+       JOIN activeclinic.patients p ON p.id = e.patient_id
+       JOIN activeclinic.staff_members s ON s.id = e.opened_by_staff_id
+      WHERE e.facility_id = $1
+        AND e.organization_id = $2
+        AND e.status = 'open'
+      ORDER BY e.opened_at ASC
+      LIMIT 100`,
+    [facilityId, organizationId]
+  );
+
+  const waitingQueue = await db.query(
+    `SELECT q.id AS queue_entry_id,
+            q.queue_number,
+            q.status AS queue_status,
+            q.created_at AS arrived_at,
+            q.patient_id,
+            (p.first_name || ' ' || p.last_name) AS patient_display_name,
+            p.patient_number,
+            q.appointment_id,
+            a.starts_at AS appointment_starts_at,
+            a.status AS appointment_status,
+            st.display_name AS service_name
+       FROM activeclinic.queue_entries q
+       JOIN activeclinic.patients p ON p.id = q.patient_id
+       LEFT JOIN activeclinic.appointments a ON a.id = q.appointment_id
+       LEFT JOIN activeclinic.appointment_service_types st ON st.id = a.service_type_id
+      WHERE q.facility_id = $1
+        AND q.organization_id = $2
+        AND q.status IN ('waiting', 'called')
+      ORDER BY q.created_at ASC
+      LIMIT 50`,
+    [facilityId, organizationId]
+  );
+
+  const upcoming = await db.query(
+    `SELECT a.id,
+            a.starts_at,
+            a.ends_at,
+            a.status,
+            a.patient_id,
+            (p.first_name || ' ' || p.last_name) AS patient_display_name,
+            p.patient_number,
+            st.display_name AS service_name,
+            a.assigned_staff_id
+       FROM activeclinic.appointments a
+       JOIN activeclinic.patients p ON p.id = a.patient_id
+       LEFT JOIN activeclinic.appointment_service_types st ON st.id = a.service_type_id
+      WHERE a.facility_id = $1
+        AND a.organization_id = $2
+        AND a.starts_at::date = (timezone('UTC', now()))::date
+        AND a.status IN ('scheduled', 'confirmed', 'arrived', 'waiting')
+        AND ($3::uuid IS NULL OR a.assigned_staff_id = $3 OR a.assigned_staff_id IS NULL)
+      ORDER BY a.starts_at ASC
+      LIMIT 50`,
+    [facilityId, organizationId, staffId]
+  );
+
+  const followUpsDue = await db.query(
+    `SELECT f.id,
+            f.item_type,
+            f.title,
+            f.status,
+            f.due_at,
+            f.urgency,
+            f.patient_id,
+            (p.first_name || ' ' || p.last_name) AS patient_display_name,
+            p.patient_number
+       FROM activeclinic.clinical_follow_up_items f
+       JOIN activeclinic.patients p ON p.id = f.patient_id
+      WHERE f.facility_id = $1
+        AND f.organization_id = $2
+        AND f.status NOT IN ('completed', 'cancelled')
+        AND (f.due_at IS NULL OR f.due_at::date <= (timezone('UTC', now()))::date + interval '14 days')
+      ORDER BY f.due_at ASC NULLS LAST
+      LIMIT 50`,
+    [facilityId, organizationId]
+  );
+
+  const mappedOpen = openEncounters.rows.map((row) => ({
+    ...mapEncounter(row),
+    hasDraftNote: row.has_draft_note === true,
+    bucket: row.has_draft_note ? "incomplete" : "current",
+  }));
+
+  const current = mappedOpen.filter((e) => e.bucket === "current");
+  const incomplete = mappedOpen.filter((e) => e.bucket === "incomplete");
+
+  return {
+    ok: true,
+    code: RESULT.OK,
+    worklist: {
+      todayPatients: upcoming.rows.map((row) => ({
+        appointmentId: row.id,
+        patientId: row.patient_id,
+        patientDisplayName: row.patient_display_name,
+        patientNumber: row.patient_number,
+        startsAt: row.starts_at,
+        endsAt: row.ends_at,
+        status: row.status,
+        serviceName: row.service_name || null,
+        assignedStaffId: row.assigned_staff_id || null,
+      })),
+      waiting: waitingQueue.rows.map((row) => ({
+        queueEntryId: row.queue_entry_id,
+        queueNumber: row.queue_number,
+        queueStatus: row.queue_status,
+        arrivedAt: row.arrived_at,
+        patientId: row.patient_id,
+        patientDisplayName: row.patient_display_name,
+        patientNumber: row.patient_number,
+        appointmentId: row.appointment_id || null,
+        appointmentStartsAt: row.appointment_starts_at || null,
+        serviceName: row.service_name || null,
+      })),
+      current,
+      upcoming: upcoming.rows
+        .filter((row) => {
+          const starts = row.starts_at ? new Date(row.starts_at).getTime() : 0;
+          return starts > Date.now();
+        })
+        .map((row) => ({
+          appointmentId: row.id,
+          patientId: row.patient_id,
+          patientDisplayName: row.patient_display_name,
+          patientNumber: row.patient_number,
+          startsAt: row.starts_at,
+          status: row.status,
+          serviceName: row.service_name || null,
+        })),
+      followUp: followUpsDue.rows.map((row) => ({
+        id: row.id,
+        itemType: row.item_type,
+        title: row.title,
+        status: row.status,
+        dueAt: row.due_at,
+        urgency: row.urgency,
+        patientId: row.patient_id,
+        patientDisplayName: row.patient_display_name,
+        patientNumber: row.patient_number,
+      })),
+      incompleteEncounters: incomplete,
+      openEncounters: mappedOpen,
+    },
+  };
+}
+
+/**
+ * ACN15 Complete Encounter: persist draft, optionally sign, close.
+ */
+async function completeEncounterWorkspace(db, input) {
+  const draft = await recordConsultationNote(db, input);
+  if (!draft.ok) {
+    return { ok: false, code: draft.code, encounter: null, consultation: null };
+  }
+
+  let consultation = draft.consultation;
+  const canSign = await authorizeStaffPermission(db, {
+    organizationId: input.organizationId,
+    staffMemberId: input.actor.staffMemberId,
+    platformIdentityId: input.actor.platformIdentityId,
+    permissionKey: PERM.CONSULTATION_SIGN,
+    facilityId: input.facilityId,
+  });
+  if (canSign.ok && consultation && consultation.status === "draft") {
+    const signed = await signConsultationNote(db, {
+      ...input,
+      consultationNoteId: consultation.id,
+      version: consultation.version,
+    });
+    if (signed.ok) consultation = signed.consultation;
+  }
+
+  if (input.createFollowUp === true || input.followUpDueAt || input.followUpPlanText) {
+    const {
+      createClinicalFollowUpItem,
+    } = require("./activeClinicClinicalFollowUpService");
+    await createClinicalFollowUpItem(db, {
+      organizationId: input.organizationId,
+      healthcareOrganizationId: input.healthcareOrganizationId,
+      facilityId: input.facilityId,
+      patientId: draft.consultation
+        ? draft.consultation.patientId
+        : input.patientId,
+      encounterId: input.encounterId,
+      actor: input.actor,
+      body: {},
+      itemType: input.referralText || input.referral ? "pending_referral" : "due_review",
+      title: trimClinicalText(input.followUpTitle, 200) || "Clinical follow-up",
+      reason:
+        trimClinicalText(input.followUpPlanText || input.followUp, 2000) ||
+        trimClinicalText(input.referralText || input.referral, 2000),
+      dueAt: input.followUpDueAt || null,
+      urgency: input.followUpUrgency || "routine",
+      ownerStaffId: input.actor.staffMemberId,
+    });
+  }
+
+  const enc = await getEncounterById(db, input);
+  if (!enc.ok) {
+    return { ok: false, code: enc.code, encounter: null, consultation };
+  }
+
+  const closed = await closeEncounter(db, {
+    organizationId: input.organizationId,
+    healthcareOrganizationId: input.healthcareOrganizationId,
+    facilityId: input.facilityId,
+    encounterId: input.encounterId,
+    actor: input.actor,
+    deploymentCode: input.deploymentCode,
+    closureNote: input.closureNote || "Completed from clinical encounter workspace",
+    version:
+      input.encounterVersion != null
+        ? Number(input.encounterVersion)
+        : enc.encounter.version,
+  });
+  if (!closed.ok) {
+    return {
+      ok: false,
+      code: closed.code,
+      encounter: null,
+      consultation,
+    };
+  }
+
+  return {
+    ok: true,
+    code: RESULT.OK,
+    encounter: closed.encounter,
+    consultation,
+  };
+}
+
 module.exports = {
   RESULT,
   PERM,
   startEncounter,
   listOpenEncounters,
+  listPractitionerWorklist,
   getEncounterById,
   recordTriageAssessment,
   recordVitalSignObservation,
@@ -1386,4 +1718,5 @@ module.exports = {
   raiseClinicalAlert,
   listActiveAlertsForFacility,
   closeEncounter,
+  completeEncounterWorkspace,
 };

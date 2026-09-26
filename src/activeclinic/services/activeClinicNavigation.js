@@ -21,6 +21,38 @@ const NAV_GROUPS = Object.freeze([
   { key: "management", label: "Management" },
 ]);
 
+/** Persistent Check-in CTA (Batch 2 shell) — real reception route only. */
+const CHECK_IN_PERMISSION = "activeclinic.reception.check_in";
+const CHECK_IN_HREF = "/app/reception/check-in";
+const PATIENT_SEARCH_PERMISSION = "activeclinic.patient.search";
+
+/**
+ * Preferred order for mobile bottom tabs (real registry keys only).
+ * Filled from authorized nav items; remainder stay in the drawer via More.
+ */
+const MOBILE_BOTTOM_NAV_ORDER = Object.freeze([
+  "home",
+  "patients",
+  "appointments",
+  "clinical",
+  "reception",
+  "pharmacy",
+  "billing",
+]);
+
+const MOBILE_BOTTOM_SHORT_LABELS = Object.freeze({
+  home: "Home",
+  patients: "Patients",
+  appointments: "Appts",
+  clinical: "Clinical",
+  reception: "Queue",
+  pharmacy: "Pharmacy",
+  billing: "Billing",
+  diagnostics: "Dx",
+  cashier: "Cashier",
+  settings: "Settings",
+});
+
 const NAV_ITEMS = Object.freeze([
   {
     key: "home",
@@ -72,6 +104,14 @@ const NAV_ITEMS = Object.freeze([
     group: "daily_work",
   },
   {
+    key: "clinical_follow_up",
+    label: "Follow-up",
+    href: "/app/clinical/follow-up",
+    permission: "activeclinic.encounter.view",
+    icon: "event_repeat",
+    group: "daily_work",
+  },
+  {
     key: "pharmacy",
     label: "Pharmacy",
     href: "/app/pharmacy",
@@ -114,7 +154,7 @@ const NAV_ITEMS = Object.freeze([
     label: "Services",
     href: "/app/services",
     anyOf: ["website.view", "website.edit"],
-    icon: "medical_services",
+    icon: "catalog",
     group: "operations",
   },
   {
@@ -182,6 +222,54 @@ function itemIsVisible(item, permissionSet) {
 }
 
 /**
+ * Persistent Check-in Patient CTA for Batch 2 shell. Real route only.
+ * @param {string[]|Set<string>} permissions
+ * @returns {{ href: string, label: string, permission: string }|null}
+ */
+function buildCheckInShellAction(permissions) {
+  const set =
+    permissions instanceof Set
+      ? permissions
+      : new Set(Array.isArray(permissions) ? permissions : []);
+  if (!set.has(CHECK_IN_PERMISSION)) return null;
+  return {
+    href: CHECK_IN_HREF,
+    label: "Check-in Patient",
+    permission: CHECK_IN_PERMISSION,
+  };
+}
+
+/**
+ * @param {Array<object>} visibleNavItems — already permission + department filtered
+ * @param {string|null} [activeKey]
+ * @returns {Array<object>}
+ */
+function buildMobileBottomNavItems(visibleNavItems, activeKey) {
+  const byKey = new Map(
+    (Array.isArray(visibleNavItems) ? visibleNavItems : []).map((item) => [
+      item.key,
+      item,
+    ])
+  );
+  const picked = [];
+  for (const key of MOBILE_BOTTOM_NAV_ORDER) {
+    if (picked.length >= 4) break;
+    const item = byKey.get(key);
+    if (!item) continue;
+    picked.push({
+      key: item.key,
+      label: item.label,
+      shortLabel: MOBILE_BOTTOM_SHORT_LABELS[item.key] || item.label,
+      href: item.href,
+      icon: item.icon,
+      current: activeKey != null && item.key === activeKey,
+      permission: item.permission || null,
+    });
+  }
+  return picked;
+}
+
+/**
  * @param {string[]} permissions
  * @param {string} [activeKey]
  * @param {{ activeDepartmentTypes?: Set<string>|string[]|null }} [options]
@@ -210,12 +298,17 @@ function buildActiveClinicNavigation(permissions, activeKey, options) {
     items: items.filter((item) => item.group === g.key),
   })).filter((g) => g.items.length > 0);
 
+  const mobileBottom = buildMobileBottomNavItems(items, activeKey);
+
   return {
     items,
     groups,
     desktop: items,
     mobile: items,
+    mobileBottom,
     activeKey: activeKey || null,
+    checkInAction: buildCheckInShellAction(set),
+    globalSearchEnabled: set.has(PATIENT_SEARCH_PERMISSION),
   };
 }
 
@@ -226,11 +319,14 @@ function matchActiveNavKey(pathname) {
   if (path.startsWith("/app/appointments")) return "appointments";
   if (path.startsWith("/app/reception")) return "reception";
   if (path.startsWith("/app/booking-requests")) return "booking_requests";
+  if (path.startsWith("/app/clinical/follow-up")) return "clinical_follow_up";
   if (path.startsWith("/app/clinical")) return "clinical";
   if (path.startsWith("/app/pharmacy")) return "pharmacy";
   if (path.startsWith("/app/diagnostics")) return "diagnostics";
   if (path.startsWith("/app/billing")) return "billing";
   if (path.startsWith("/app/cashier")) return "cashier";
+  if (path.startsWith("/app/services")) return "services";
+  if (path.startsWith("/app/practitioners")) return "practitioners";
   if (path.startsWith("/app/staff")) return "staff";
   if (path.startsWith("/app/facilities")) return "facilities";
   if (path.startsWith("/app/access")) return "access";
@@ -245,7 +341,13 @@ function matchActiveNavKey(pathname) {
 module.exports = {
   NAV_ITEMS,
   NAV_GROUPS,
+  CHECK_IN_PERMISSION,
+  CHECK_IN_HREF,
+  PATIENT_SEARCH_PERMISSION,
+  MOBILE_BOTTOM_NAV_ORDER,
   buildActiveClinicNavigation,
+  buildCheckInShellAction,
+  buildMobileBottomNavItems,
   matchActiveNavKey,
   itemIsVisible,
 };

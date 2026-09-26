@@ -29,7 +29,7 @@ const {
   loadActiveDepartmentTypeSet,
 } = require("./activeClinicModuleAvailability");
 
-const SHELL_ASSET_VERSION = "v2-03-patient-reception-01";
+const SHELL_ASSET_VERSION = "v2-03-batch2-shell-01";
 
 /**
  * @param {{ query: Function }} db
@@ -179,6 +179,19 @@ async function buildActiveClinicShellViewModel(db, input) {
     // Set|null — dashboard/nav department gates; null when no facility selected.
     activeDepartmentTypes,
     navigation,
+    checkInAction: navigation.checkInAction || null,
+    globalSearchEnabled: navigation.globalSearchEnabled === true,
+    mobileBottomNav: Array.isArray(navigation.mobileBottom)
+      ? navigation.mobileBottom
+      : [],
+    shellChrome: {
+      version: "b2",
+      sidebarWidthPx: 256,
+      topBarHeightPx: 56,
+      mobileHeaderHeightPx: 56,
+      mobileBottomNavHeightPx: 64,
+      touchTargetMinPx: 44,
+    },
     breadcrumbs: Array.isArray(input.breadcrumbs) ? input.breadcrumbs : [],
     pageHeader: input.pageHeader || {
       title: "ActiveClinic",
