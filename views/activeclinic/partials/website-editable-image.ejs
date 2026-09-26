@@ -14,6 +14,8 @@
   var displaySrc = src || placeholderSrc;
   var logo = variant === 'logo' || key === 'home.logo';
   var label = logo ? 'Edit logo' : 'Edit image';
+  var slotSeparate = logo || key === 'seo.image' ? '0' : '1';
+  var placementAttr = '';
   var placement =
     (typeof imagePlacement !== 'undefined' && imagePlacement) ||
     (typeof clinic !== 'undefined' &&
@@ -55,6 +57,11 @@
     }
     placedStyle = parts.join(';');
     placedClass = imgClass + ' gp-website-image--placed';
+    try {
+      placementAttr = JSON.stringify(placement).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    } catch (_pe) {
+      placementAttr = '';
+    }
   }
 %>
 <% if (canEdit) { %>
@@ -66,6 +73,8 @@
   data-website-variant="<%= logo ? 'logo' : 'image' %>"
   data-website-label="<%= label %>"
   data-website-media-id="<%= mediaId %>"
+  data-website-slot-separate="<%= slotSeparate %>"
+  <% if (placementAttr) { %>data-website-image-placement="<%= placementAttr %>"<% } %>
 >
   <div class="gp-website-editable__preview ac-website-editable__preview">
     <% if (displaySrc) { %>
@@ -88,6 +97,15 @@
       aria-label="<%= label %>"
     >
       <span class="material-symbols-outlined" aria-hidden="true"><%= logo ? 'badge' : 'image' %></span>
+    </button>
+    <button
+      type="button"
+      class="gp-website-editable__history"
+      data-website-field-history-open="1"
+      aria-label="Field history"
+      title="History"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">history</span>
     </button>
   </div>
 </div>

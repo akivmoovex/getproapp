@@ -21,6 +21,8 @@
   var _wrapExtra = typeof imageWrapClass !== 'undefined' && imageWrapClass ? ' ' + String(imageWrapClass) : '';
   var _logo = _key === 'home.logo' || _fieldKey === 'logo';
   var _label = _logo ? 'Edit logo' : 'Edit image';
+  var _slotSeparate = _logo || _key === 'seo.image' ? '0' : '1';
+  var _placementAttr = '';
   var _placement =
     (typeof imagePlacement !== 'undefined' && imagePlacement) ||
     (typeof websiteHeroPlacement !== 'undefined' && _key === 'home.hero.image' && websiteHeroPlacement) ||
@@ -52,6 +54,11 @@
     }
     _imgStyle = _parts.join(';');
     _imgClass = _class + ' gp-website-image--placed';
+    try {
+      _placementAttr = JSON.stringify(_placement).replace(/&/g, '&amp;').replace(/"/g, '&quot;');
+    } catch (_pe) {
+      _placementAttr = '';
+    }
   } else if (typeof imagePosition !== 'undefined' && imagePosition) {
     _imgStyle = 'object-fit:cover;object-position:' + String(imagePosition);
   }
@@ -66,6 +73,8 @@
   data-website-variant="<%= _logo ? 'logo' : 'image' %>"
   data-website-label="<%= _label %>"
   data-website-media-id="<%= _mediaId %>"
+  data-website-slot-separate="<%= _slotSeparate %>"
+  <% if (_placementAttr) { %>data-website-image-placement="<%= _placementAttr %>"<% } %>
   data-bb-page="<%= _pageKey %>"
   data-bb-section="<%= _sectionKey %>"
   data-bb-field="<%= _fieldKey %>"
@@ -79,6 +88,15 @@
     <% } %>
     <button type="button" class="gp-website-editable__pencil ac-website-editable__pencil" data-website-start="1" aria-label="<%= _label %>">
       <span class="material-symbols-outlined" aria-hidden="true"><%= _logo ? 'badge' : 'image' %></span>
+    </button>
+    <button
+      type="button"
+      class="gp-website-editable__history"
+      data-website-field-history-open="1"
+      aria-label="Field history"
+      title="History"
+    >
+      <span class="material-symbols-outlined" aria-hidden="true">history</span>
     </button>
   </div>
 </div>
