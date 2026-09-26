@@ -2,14 +2,34 @@
 
 const multer = require("multer");
 const { validateCsrf, CSRF_FIELD, issueCsrfToken, setCsrfCookie } = require("../../platform/http/v5Csrf");
+const {
+  json,
+  clientTenantOverride,
+  pendingChangeCountFor,
+  createWebsiteMediaUpload,
+  statusForDraftSaveFailure,
+} = require("../../platform/website/http/websiteEditorHttpUtils");
+const {
+  handleSaveGenericDraft,
+  handleGetFieldHistory,
+  handleRestoreFieldHistory,
+  handleGetUnpublishedChangesPanel,
+  sendStylesEditorPage,
+  saveStylesEditorDraft,
+  sendSeoEditorPage,
+  saveSeoEditorDraft,
+  handleListAddableSectionTypes,
+  handleAddWebsiteSection,
+  handleGetThemeState,
+  handleSaveThemeDraft,
+  sendThemeGalleryPage,
+  noticeFromQuery,
+  errorFromQuery,
+} = require("../../platform/website/http/websiteEditorSharedOperations");
 const { renderPublicPage } = require("./renderActiveClinicPublic");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const contentService = require("../../platform/website/contentService");
 const {
-  getPendingChangeSummary,
-  getUnpublishedChangesPanel,
-  getFieldHistoryRestorePanel,
-  restoreFieldRevisionToDraft,
   revertFieldToPublished,
 } = require("../../platform/website/websiteChangeManagerService");
 const publicationService = require("../../platform/website-engine").publicationService;
@@ -66,8 +86,6 @@ const {
   renderStandaloneSeoPage,
   saveStylesDraft,
   saveSeoDraft,
-  noticeFromQuery,
-  errorFromQuery,
 } = require("../../platform/website/websiteSettingsHttp");
 const {
   listAddableSections,
@@ -86,18 +104,6 @@ function websiteEditorPageKeyFromRequest(req, clinicKey) {
   return match ? match.key : "home";
 }
 
-function json(res, status, body) {
-  const req = res && res.req;
-  if (req) {
-    const { ensureCorrelationId } = require("../../platform/http/sharedApiError");
-    const correlationId = ensureCorrelationId(req, res);
-    const payload = body && typeof body === "object" ? { ...body } : { ok: false };
-    if (payload.requestId == null) payload.requestId = correlationId;
-    if (payload.correlationId == null) payload.correlationId = correlationId;
-    return res.status(status).json(payload);
-  }
-  return res.status(status).json(body);
-}
 
 function wantsHtml(req) {
   return Boolean(
@@ -132,45 +138,9 @@ function actorId(req) {
 }
 
 
-async function pendingChangeCountFor(db, organizationId, instanceId, granted) {
-  if (!organizationId || !instanceId) return undefined;
-  try {
-    const summary = await getPendingChangeSummary(db, {
-      organizationId,
-      instanceId,
-      grantedPermissions: granted || [PERMISSIONS.VIEW, PERMISSIONS.EDIT],
-    });
-    return summary.ok ? summary.pendingChangeCount : undefined;
-  } catch {
-    return undefined;
-  }
-}
 
-function clientTenantOverride(body) {
-  if (!body || typeof body !== "object") return false;
-  return Boolean(
-    body.organizationId ||
-      body.organization_id ||
-      body.instanceId ||
-      body.instance_id ||
-      body.product ||
-      body.productCode
-  );
-}
 
-const mediaUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: mediaService.MAX_BYTES, files: 1 },
-  fileFilter(_req, file, cb) {
-    const mime = String((file && file.mimetype) || "").toLowerCase();
-    if (mime && mime !== "application/octet-stream" && !mediaService.ALLOWED_IMAGE_MIME.has(mime)) {
-      const err = new Error("unsafe_media_type");
-      err.code = mediaService.RESULT.UNSAFE_TYPE;
-      return cb(err);
-    }
-    cb(null, true);
-  },
-});
+const mediaUpload = createWebsiteMediaUpload();
 
 function registerActiveClinicWebsiteRoutes(app, deps) {
   const getPool = deps.getPool;
@@ -238,29 +208,19 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         return json(res, 404, { ok: false, code: "website_instance_not_found", panel: null });
       }
       const grants = grantedPermissions(req);
-      const loaded = await getFieldHistoryRestorePanel(getPool(), {
-        organizationId: clinic.organizationId,
-        instanceId: attached.instance.id,
-        contentKey,
-        grantedPermissions: grants.includes(PERMISSIONS.EDIT)
-          ? grants
-          : [...grants, PERMISSIONS.VIEW],
-        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
-      });
-      // View-only: still show panel but canEdit false inside when EDIT missing.
-      if (!loaded.ok) {
-        return json(res, loaded.code === "forbidden" ? 403 : 404, {
-          ok: false,
-          code: loaded.code,
-          panel: null,
-        });
-      }
-      return json(res, 200, {
-        ok: true,
-        contentKey: loaded.contentKey,
-        pendingChangeCount: loaded.pendingChangeCount,
-        panel: loaded.panel,
-      });
+      const result = await handleGetFieldHistory(
+        {
+          db: getPool(),
+          organizationId: clinic.organizationId,
+          instanceId: attached.instance.id,
+          productCode: PRODUCT_CODE.ACTIVECLINIC,
+          grantedPermissions: grants.includes(PERMISSIONS.EDIT)
+            ? grants
+            : [...grants, PERMISSIONS.VIEW],
+        },
+        contentKey
+      );
+      return json(res, result.status, result.body);
     } catch (err) {
       return next(err);
     }
@@ -283,23 +243,19 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!attached.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found", published: false });
       }
-      const restored = await restoreFieldRevisionToDraft(getPool(), {
-        organizationId: clinic.organizationId,
-        instanceId: attached.instance.id,
-        contentKey: req.body && (req.body.contentKey || req.body.key),
-        choice: req.body && req.body.choice,
-        versionId: req.body && req.body.versionId,
-        expectedUpdatedAt: req.body && req.body.expectedUpdatedAt,
-        actorIdentityId: actorId(req),
-        grantedPermissions: grantedPermissions(req),
-        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
-        env,
-      });
-      if (!restored.ok) {
-        const status = restored.code === "forbidden" ? 403 : restored.code === "conflict" ? 409 : 400;
-        return json(res, status, { ...restored, published: false });
-      }
-      return json(res, 200, restored);
+      const result = await handleRestoreFieldHistory(
+        {
+          db: getPool(),
+          env,
+          organizationId: clinic.organizationId,
+          instanceId: attached.instance.id,
+          productCode: PRODUCT_CODE.ACTIVECLINIC,
+          actorIdentityId: actorId(req),
+          grantedPermissions: grantedPermissions(req),
+        },
+        req.body
+      );
+      return json(res, result.status, result.body);
     } catch (err) {
       return next(err);
     }
@@ -339,30 +295,16 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         organizationKey: clinic.clinicKey,
         pageKey: "home",
       });
-      const loaded = await getUnpublishedChangesPanel(getPool(), {
-        organizationId: clinic.organizationId,
-        instanceId: attached.instance.id,
-        grantedPermissions: grantedPermissions(req),
-        canPublish,
-        previewHref,
-        publishPath,
-        discardPath,
-        pages,
-      });
-      if (!loaded.ok) {
-        return json(res, loaded.code === "forbidden" ? 403 : 404, {
-          ok: false,
-          code: loaded.code,
-          pendingChangeCount: 0,
-          panel: null,
-        });
-      }
-      return json(res, 200, {
-        ok: true,
-        pendingChangeCount: loaded.pendingChangeCount,
-        changedKeys: loaded.changedKeys,
-        panel: loaded.panel,
-      });
+      const result = await handleGetUnpublishedChangesPanel(
+        {
+          db: getPool(),
+          organizationId: clinic.organizationId,
+          instanceId: attached.instance.id,
+          grantedPermissions: grantedPermissions(req),
+        },
+        { canPublish, previewHref, publishPath, discardPath, pages }
+      );
+      return json(res, result.status, result.body);
     } catch (err) {
       return next(err);
     }
@@ -1237,13 +1179,11 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!attached.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found" });
       }
-      const csrfToken = issueCsrfToken(env);
-      setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
-      const basePath = buildPublicOrganizationWebsitePath({
-        product: PRODUCT_CODE.ACTIVECLINIC,
-        organizationKey: clinic.clinicKey,
-      });
-      const presentation = await loadStylesPresentation(getPool(), {
+      return sendStylesEditorPage({
+        db: getPool(),
+        env,
+        req,
+        res,
         organizationId: clinic.organizationId,
         productCode: PRODUCT_CODE.ACTIVECLINIC,
         siteLabel: clinic.displayName || clinic.clinicKey,
@@ -1251,17 +1191,15 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
           product: PRODUCT_CODE.ACTIVECLINIC,
           organizationKey: clinic.clinicKey,
         }),
-        saveAction: `${basePath}/website/styles`,
+        saveAction: `${buildPublicOrganizationWebsitePath({
+          product: PRODUCT_CODE.ACTIVECLINIC,
+          organizationKey: clinic.clinicKey,
+        })}/website/styles`,
         mediaLibraryHref: buildPublicWebsiteMediaLibraryPath({
           product: PRODUCT_CODE.ACTIVECLINIC,
           organizationKey: clinic.clinicKey,
         }),
-        csrfField: CSRF_FIELD,
-        csrfToken,
-        notice: noticeFromQuery(req.query),
-        error: errorFromQuery(req.query),
       });
-      return res.status(200).type("html").send(renderStandaloneStylesPage(presentation));
     } catch (err) {
       return next(err);
     }
@@ -1451,8 +1389,6 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!attached.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found" });
       }
-      const csrfToken = issueCsrfToken(env);
-      setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
       const basePath = buildPublicOrganizationWebsitePath({
         product: PRODUCT_CODE.ACTIVECLINIC,
         organizationKey: clinic.clinicKey,
@@ -1465,11 +1401,11 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         product: PRODUCT_CODE.ACTIVECLINIC,
         organizationKey: clinic.clinicKey,
       });
-      const {
-        loadThemeGalleryPresentation,
-        renderStandaloneThemeGalleryPage,
-      } = require("../../platform/website/websiteThemeHttp");
-      const presentation = await loadThemeGalleryPresentation(getPool(), {
+      return sendThemeGalleryPage({
+        db: getPool(),
+        env,
+        req,
+        res,
         organizationId: clinic.organizationId,
         productCode: PRODUCT_CODE.ACTIVECLINIC,
         instance: attached.instance,
@@ -1482,12 +1418,7 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
           product: PRODUCT_CODE.ACTIVECLINIC,
           organizationKey: clinic.clinicKey,
         }),
-        csrfField: CSRF_FIELD,
-        csrfToken,
-        notice: noticeFromQuery(req.query),
-        error: errorFromQuery(req.query),
       });
-      return res.status(200).type("html").send(renderStandaloneThemeGalleryPage(presentation));
     } catch (err) {
       return next(err);
     }

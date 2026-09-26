@@ -8,14 +8,35 @@
 
 const express = require("express");
 const multer = require("multer");
+const {
+  json,
+  csrfFrom,
+  clientTenantOverride,
+  pendingChangeCountFor,
+  createWebsiteMediaUpload,
+  statusForDraftSaveFailure,
+} = require("../../platform/website/http/websiteEditorHttpUtils");
+const {
+  handleSaveGenericDraft,
+  handleGetFieldHistory,
+  handleRestoreFieldHistory,
+  handleGetUnpublishedChangesPanel,
+  sendStylesEditorPage,
+  saveStylesEditorDraft,
+  sendSeoEditorPage,
+  saveSeoEditorDraft,
+  handleListAddableSectionTypes,
+  handleAddWebsiteSection,
+  handleGetThemeState,
+  handleSaveThemeDraft,
+  sendThemeGalleryPage,
+  noticeFromQuery,
+  errorFromQuery,
+} = require("../../platform/website/http/websiteEditorSharedOperations");
 const { validateCsrf, CSRF_FIELD } = require("../../platform/http/v5Csrf");
 const mediaService = require("../../platform/website/mediaService");
 const contentService = require("../../platform/website/contentService");
 const {
-  getPendingChangeSummary,
-  getUnpublishedChangesPanel,
-  getFieldHistoryRestorePanel,
-  restoreFieldRevisionToDraft,
   revertFieldToPublished,
 } = require("../../platform/website/websiteChangeManagerService");
 const { PERMISSIONS: WEBSITE_PERMISSIONS } = require("../../platform/website/permissions");
@@ -55,14 +76,10 @@ const { HISTORY_STYLESHEET } = require("../../platform/website/renderWebsiteHist
 const { LIBRARY_STYLESHEET } = require("../../platform/website/renderWebsiteLibrary");
 const { renderTenantWebsiteVersionPreview } = require("../../platform/website/websiteVersionPreviewHttp");
 const {
-  loadStylesPresentation,
   loadSeoPresentation,
-  renderStandaloneStylesPage,
   renderStandaloneSeoPage,
-  saveStylesDraft,
   saveSeoDraft,
-  noticeFromQuery,
-  errorFromQuery,
+  saveStylesDraft,
 } = require("../../platform/website/websiteSettingsHttp");
 const {
   listAddableSections,
@@ -87,65 +104,7 @@ const { getBlessBoardCatalogueContext } = require("../services/getBlessBoardCata
 const { buildBlessBoardTenantContext } = require("./buildBlessBoardTenantContext");
 const { normalizeOrganizationKey } = require("../services/organizationKey");
 
-function json(res, status, body) {
-  const req = res && res.req;
-  if (req) {
-    return jsonWithCorrelation(req, res, status, body);
-  }
-  return res.status(status).json(body);
-}
-
-/**
- * Safe JSON API response with correlation id (additive; keeps caller body shape).
- * @param {import('express').Request} req
- * @param {import('express').Response} res
- * @param {number} status
- * @param {object} body
- */
-function jsonWithCorrelation(req, res, status, body) {
-  const {
-    ensureCorrelationId,
-  } = require("../../platform/http/sharedApiError");
-  const correlationId = ensureCorrelationId(req, res);
-  const payload = body && typeof body === "object" ? { ...body } : { ok: false };
-  if (payload.requestId == null) payload.requestId = correlationId;
-  if (payload.correlationId == null) payload.correlationId = correlationId;
-  return res.status(status).json(payload);
-}
-
-function csrfFrom(req) {
-  const body = req.body && typeof req.body === "object" ? req.body : {};
-  if (body[CSRF_FIELD]) return body[CSRF_FIELD];
-  if (req.headers["x-csrf-token"] != null) return String(req.headers["x-csrf-token"]);
-  return "";
-}
-
-
-async function pendingChangeCountFor(db, organizationId, instanceId, granted) {
-  if (!organizationId || !instanceId) return undefined;
-  try {
-    const summary = await getPendingChangeSummary(db, {
-      organizationId,
-      instanceId,
-      grantedPermissions: granted || [WEBSITE_PERMISSIONS.VIEW, WEBSITE_PERMISSIONS.EDIT],
-    });
-    return summary.ok ? summary.pendingChangeCount : undefined;
-  } catch {
-    return undefined;
-  }
-}
-
-function clientTenantOverride(body) {
-  if (!body || typeof body !== "object") return false;
-  return Boolean(
-    body.organizationId ||
-      body.organization_id ||
-      body.instanceId ||
-      body.instance_id ||
-      body.product ||
-      body.productCode
-  );
-}
+const mediaUpload = createWebsiteMediaUpload();
 
 function actorUserId(req) {
   return req.v5Session && req.v5Session.session && req.v5Session.session.userId
@@ -167,20 +126,6 @@ function parseLocator(body) {
   }
   return null;
 }
-
-const mediaUpload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: mediaService.MAX_BYTES, files: 1 },
-  fileFilter(_req, file, cb) {
-    const mime = String((file && file.mimetype) || "").toLowerCase();
-    if (mime && mime !== "application/octet-stream" && !mediaService.ALLOWED_IMAGE_MIME.has(mime)) {
-      const err = new Error("unsafe_media_type");
-      err.code = mediaService.RESULT.UNSAFE_TYPE;
-      return cb(err);
-    }
-    cb(null, true);
-  },
-});
 
 /**
  * @param {{
@@ -378,26 +323,17 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       if (!found.ok || !found.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found", panel: null });
       }
-      const loaded = await getFieldHistoryRestorePanel(getPool(), {
-        organizationId: resolved.tenant.organization.id,
-        instanceId: found.instance.id,
-        contentKey,
-        grantedPermissions: ["website.view", "website.edit"],
-        expectedProductCode: PRODUCT_CODE.BLESSBOARD,
-      });
-      if (!loaded.ok) {
-        return json(res, loaded.code === "forbidden" ? 403 : 404, {
-          ok: false,
-          code: loaded.code,
-          panel: null,
-        });
-      }
-      return json(res, 200, {
-        ok: true,
-        contentKey: loaded.contentKey,
-        pendingChangeCount: loaded.pendingChangeCount,
-        panel: loaded.panel,
-      });
+      const result = await handleGetFieldHistory(
+        {
+          db: getPool(),
+          organizationId: resolved.tenant.organization.id,
+          instanceId: found.instance.id,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          grantedPermissions: ["website.view", "website.edit"],
+        },
+        contentKey
+      );
+      return json(res, result.status, result.body);
     } catch (err) {
       return next(err);
     }
@@ -413,8 +349,6 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       }
       const resolved = await requireEditor(req, res, "website.edit");
       if (!resolved) return undefined;
-      const contentKey = String((req.body && (req.body.contentKey || req.body.key)) || "").trim();
-      const choice = String((req.body && req.body.choice) || "").trim();
       const { resolveEngineInstance } = require("../website/blessboardEngineContentService");
       const found = await resolveEngineInstance(getPool(), {
         organizationId: resolved.tenant.organization.id,
@@ -425,30 +359,19 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       if (!found.ok || !found.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found", published: false });
       }
-      const restored = await restoreFieldRevisionToDraft(getPool(), {
-        organizationId: resolved.tenant.organization.id,
-        instanceId: found.instance.id,
-        contentKey,
-        choice,
-        versionId: req.body && req.body.versionId,
-        expectedUpdatedAt: req.body && req.body.expectedUpdatedAt,
-        actorIdentityId: actorUserId(req),
-        grantedPermissions: ["website.edit", "website.view"],
-        expectedProductCode: PRODUCT_CODE.BLESSBOARD,
-        env: getEnv(),
-      });
-      if (!restored.ok) {
-        const status =
-          restored.code === "forbidden"
-            ? 403
-            : restored.code === "conflict"
-              ? 409
-              : restored.code === "history_unavailable" || restored.code === "media_not_found"
-                ? 400
-                : 400;
-        return json(res, status, { ...restored, published: false });
-      }
-      return json(res, 200, restored);
+      const result = await handleRestoreFieldHistory(
+        {
+          db: getPool(),
+          env: getEnv(),
+          organizationId: resolved.tenant.organization.id,
+          instanceId: found.instance.id,
+          productCode: PRODUCT_CODE.BLESSBOARD,
+          actorIdentityId: actorUserId(req),
+          grantedPermissions: ["website.edit", "website.view"],
+        },
+        req.body
+      );
+      return json(res, result.status, result.body);
     } catch (err) {
       return next(err);
     }
@@ -489,34 +412,30 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         pageKey: "home",
         scope: editorScope(resolved),
       });
-      const loaded = await getUnpublishedChangesPanel(getPool(), {
-        organizationId: resolved.tenant.organization.id,
-        instanceId: found.instance.id,
-        grantedPermissions: ["website.view", "website.edit", ...(canPublish ? ["website.publish"] : [])],
-        canPublish,
-        previewHref: buildPublicWebsitePreviewPath({
-          product: PRODUCT_CODE.BLESSBOARD,
-          organizationKey: resolved.organizationKey,
-          scope: editorScope(resolved),
-        }),
-        publishPath: canPublish && publicBase ? `${publicBase}/website/publish` : null,
-        discardPath: publicBase ? `${publicBase}/website/drafts/discard` : null,
-        pages,
-      });
-      if (!loaded.ok) {
-        return json(res, loaded.code === "forbidden" ? 403 : 404, {
-          ok: false,
-          code: loaded.code,
-          pendingChangeCount: 0,
-          panel: null,
-        });
-      }
-      return json(res, 200, {
-        ok: true,
-        pendingChangeCount: loaded.pendingChangeCount,
-        changedKeys: loaded.changedKeys,
-        panel: loaded.panel,
-      });
+      const result = await handleGetUnpublishedChangesPanel(
+        {
+          db: getPool(),
+          organizationId: resolved.tenant.organization.id,
+          instanceId: found.instance.id,
+          grantedPermissions: [
+            "website.view",
+            "website.edit",
+            ...(canPublish ? ["website.publish"] : []),
+          ],
+        },
+        {
+          canPublish,
+          previewHref: buildPublicWebsitePreviewPath({
+            product: PRODUCT_CODE.BLESSBOARD,
+            organizationKey: resolved.organizationKey,
+            scope: editorScope(resolved),
+          }),
+          publishPath: canPublish && publicBase ? `${publicBase}/website/publish` : null,
+          discardPath: publicBase ? `${publicBase}/website/drafts/discard` : null,
+          pages,
+        }
+      );
+      return json(res, result.status, result.body);
     } catch (err) {
       return next(err);
     }
@@ -1359,11 +1278,11 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         if (!found.ok || !found.instance) {
           return res.status(404).type("text").send("Website not found");
         }
-        const env = getEnv();
-        const csrfToken = issueCsrfToken(env);
-        setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
-        const basePath = editorPublicBase(resolved);
-        const presentation = await loadStylesPresentation(getPool(), {
+        return sendStylesEditorPage({
+          db: getPool(),
+          env: getEnv(),
+          req,
+          res,
           organizationId: resolved.tenant.organization.id,
           productCode: PRODUCT_CODE.BLESSBOARD,
           siteLabel:
@@ -1372,12 +1291,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           backHref: scopedEditPath(resolved),
           saveAction: scopedEditorActionPath(resolved, "/website/styles"),
           mediaLibraryHref: scopedMediaLibraryPath(resolved),
-          csrfField: CSRF_FIELD,
-          csrfToken,
-          notice: noticeFromQuery(req.query),
-          error: errorFromQuery(req.query),
         });
-        return res.status(200).type("html").send(renderStandaloneStylesPage(presentation));
       } catch (err) {
         return next(err);
       }
@@ -1544,14 +1458,11 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         if (!found.ok || !found.instance) {
           return res.status(404).type("text").send("Website not found");
         }
-        const env = getEnv();
-        const csrfToken = issueCsrfToken(env);
-        setCsrfCookie(res, csrfToken, { secure: String(env.NODE_ENV || "") === "production", env, req });
-        const {
-          loadThemeGalleryPresentation,
-          renderStandaloneThemeGalleryPage,
-        } = require("../../platform/website/websiteThemeHttp");
-        const presentation = await loadThemeGalleryPresentation(getPool(), {
+        return sendThemeGalleryPage({
+          db: getPool(),
+          env: getEnv(),
+          req,
+          res,
           organizationId: resolved.tenant.organization.id,
           productCode: PRODUCT_CODE.BLESSBOARD,
           instance: found.instance,
@@ -1567,12 +1478,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           }),
           themeApiUrl: scopedEditorActionPath(resolved, "/website/theme"),
           stylesHref: scopedStylesPath(resolved),
-          csrfField: CSRF_FIELD,
-          csrfToken,
-          notice: noticeFromQuery(req.query),
-          error: errorFromQuery(req.query),
         });
-        return res.status(200).type("html").send(renderStandaloneThemeGalleryPage(presentation));
       } catch (err) {
         return next(err);
       }
