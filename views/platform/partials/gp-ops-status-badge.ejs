@@ -1,0 +1,13 @@
+<%#
+  Shared status badge. Locals: label, tone (neutral|info|success|warning|danger|accent)
+%>
+<%
+  var _label = typeof label !== 'undefined' && label ? String(label) : '';
+  var _tone = typeof tone !== 'undefined' && tone ? String(tone) : 'neutral';
+%>
+<% if (_label) { %>
+<span class="gp-ops-badge gp-ops-badge--<%= _tone %>" data-gp-ops="status-badge">
+  <span class="gp-ops-badge__dot" aria-hidden="true"></span>
+  <%= _label %>
+</span>
+<% } %>

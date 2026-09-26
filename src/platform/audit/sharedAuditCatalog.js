@@ -43,6 +43,14 @@ const SHARED_AUDIT_ACTION = Object.freeze({
   REGISTRATION_APPROVED: "registration.approved",
   REGISTRATION_REJECTED: "registration.rejected",
   REGISTRATION_PROVISIONED: "registration.provisioning_completed",
+
+  // V2.03 shared foundation
+  DATA_JOB_CREATED: "data_job.created",
+  DATA_JOB_STATUS_CHANGED: "data_job.status_changed",
+  DATA_JOB_FAILED: "data_job.failed",
+  POLICY_ACCEPTED: "policy.accepted",
+  COMMUNICATION_PREFERENCE_UPDATED: "communication_preference.updated",
+  NOTIFICATION_DISPATCHED: "notification.dispatched",
 });
 
 const SHARED_AUDIT_ENTITY = Object.freeze({
@@ -57,6 +65,10 @@ const SHARED_AUDIT_ENTITY = Object.freeze({
   APPLICATION: "application",
   FACILITY: "facility",
   BRANCH: "branch",
+  DATA_JOB: "data_job",
+  POLICY_ACCEPTANCE: "policy_acceptance",
+  COMMUNICATION_PREFERENCE: "communication_preference",
+  NOTIFICATION: "notification",
 });
 
 const SHARED_AUDIT_OUTCOME = Object.freeze({

@@ -1,0 +1,38 @@
+<%#
+  Shared responsive table shell.
+  Locals: caption, headers (string[]), rowsHtml (trusted <tr> markup), emptyTitle, emptyBody, className
+%>
+<%
+  var _caption = typeof caption !== 'undefined' ? caption : '';
+  var _headers = Array.isArray(headers) ? headers : [];
+  var _cls = 'gp-ops-table-wrap' + (typeof className !== 'undefined' && className ? ' ' + className : '');
+  var _hasRows = typeof rowsHtml !== 'undefined' && rowsHtml && String(rowsHtml).trim();
+%>
+<div class="<%= _cls %>" data-gp-ops="table">
+  <% if (_hasRows) { %>
+  <div class="gp-ops-table-scroll">
+    <table class="gp-ops-table">
+      <% if (_caption) { %><caption class="gp-ops-table__caption"><%= _caption %></caption><% } %>
+      <% if (_headers.length) { %>
+      <thead>
+        <tr>
+          <% _headers.forEach(function (h) { %>
+          <th scope="col"><%= h %></th>
+          <% }) %>
+        </tr>
+      </thead>
+      <% } %>
+      <tbody>
+        <%- rowsHtml %>
+      </tbody>
+    </table>
+  </div>
+  <% } else { %>
+  <%- include('./gp-ops-empty-state', {
+    title: typeof emptyTitle !== 'undefined' ? emptyTitle : 'No rows',
+    body: typeof emptyBody !== 'undefined' ? emptyBody : '',
+    actionHref: typeof emptyActionHref !== 'undefined' ? emptyActionHref : null,
+    actionLabel: typeof emptyActionLabel !== 'undefined' ? emptyActionLabel : null
+  }) %>
+  <% } %>
+</div>

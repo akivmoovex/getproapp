@@ -1,0 +1,21 @@
+<%#
+  Shared filter / search bar shell.
+  Locals: action, method, q, qName, filtersHtml (trusted), submitLabel
+%>
+<%
+  var _action = typeof action !== 'undefined' && action ? action : '';
+  var _method = typeof method !== 'undefined' && method ? method : 'get';
+  var _qName = typeof qName !== 'undefined' && qName ? qName : 'q';
+  var _q = typeof q !== 'undefined' && q ? String(q) : '';
+  var _submit = typeof submitLabel !== 'undefined' && submitLabel ? submitLabel : 'Search';
+%>
+<form class="gp-ops-filter-bar" method="<%= _method %>" action="<%= _action %>" data-gp-ops="filter-bar" role="search">
+  <label class="gp-ops-filter-bar__search">
+    <span class="gp-ops-visually-hidden">Search</span>
+    <input class="gp-ops-input" type="search" name="<%= _qName %>" value="<%= _q %>" placeholder="Search" />
+  </label>
+  <% if (typeof filtersHtml !== 'undefined' && filtersHtml) { %>
+  <div class="gp-ops-filter-bar__filters"><%- filtersHtml %></div>
+  <% } %>
+  <button class="gp-ops-btn gp-ops-btn--secondary" type="submit"><%= _submit %></button>
+</form>
