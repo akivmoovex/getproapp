@@ -7,6 +7,10 @@
 const COLS = `id, deployment_code, organization_id, church_id, branch_id, facility_id, product_code,
   actor_user_id, action_key, entity_type, entity_id, outcome, metadata_json, created_at`;
 
+// REMOVE_AFTER_PRODUCTION_CANONICAL_MIGRATION — DBCL08 D1:
+// Production platform ledger stops at 035; facility_id/product_code arrive in 037.
+// Fresh + QA already have both columns. Keep pre-037 INSERT/SELECT until production
+// receives canonical migrate/reset (PL12 currently BLOCKED).
 const COLS_LEGACY = `id, deployment_code, organization_id, church_id, branch_id,
   actor_user_id, action_key, entity_type, entity_id, outcome, metadata_json, created_at`;
 
@@ -55,7 +59,7 @@ async function insertAuditEvent(client, fields) {
     );
     return mapEvent(rows[0]);
   } catch (err) {
-    // Pre-037 schema: facility_id / product_code columns absent — preserve V7 writers.
+    // REMOVE_AFTER_PRODUCTION_CANONICAL_MIGRATION — DBCL08 D1 (pre-037 writers).
     if (!err || err.code !== "42703") throw err;
     const { rows } = await client.query(
       `INSERT INTO platform.audit_events
@@ -165,8 +169,8 @@ async function listAuditEvents(client, opts) {
     );
     rows = result.rows;
   } catch (err) {
+    // REMOVE_AFTER_PRODUCTION_CANONICAL_MIGRATION — DBCL08 D1 (pre-037 readers).
     if (!err || err.code !== "42703") throw err;
-    // Drop additive filters/columns when migrating mid-suite against pre-037 schema.
     const legacyParams = [opts.organizationId];
     let legacyWhere = `organization_id = $1`;
     if (opts.churchId) {

@@ -72,7 +72,7 @@ function sanitizeQ(raw) {
 
 function deploymentCode(env) {
   const id = getPlatformDeploymentCode(env || process.env);
-  return id && id.ok ? id.code : "blessboard-org-v5";
+  return id && id.ok ? id.code : "blessboard-org-staging";
 }
 
 function normalizeOrgKey(raw) {
@@ -199,6 +199,28 @@ async function resolveOrganizationFilter(client, filters) {
   return null;
 }
 
+function primaryRolePriority(roleKey) {
+  const rk = String(roleKey || "").toLowerCase();
+  if (rk === "platform_admin") return 0;
+  if (rk === "church_hq_admin") return 1;
+  return 2;
+}
+
+function pickPrimaryRbacAssignment(rows) {
+  if (!rows || !rows.length) return null;
+  let best = rows[0];
+  let bestPri = primaryRolePriority(best.role_key);
+  for (let idx = 1; idx < rows.length; idx += 1) {
+    const row = rows[idx];
+    const pri = primaryRolePriority(row.role_key);
+    if (pri < bestPri) {
+      best = row;
+      bestPri = pri;
+    }
+  }
+  return best;
+}
+
 function mapStaffUserRow(row) {
   return {
     userId: String(row.user_id),
@@ -216,9 +238,7 @@ function mapStaffUserRow(row) {
     branchId: row.branch_id != null ? String(row.branch_id) : null,
     branchKey: row.branch_key != null ? String(row.branch_key) : null,
     branchName: row.branch_name != null ? String(row.branch_name) : null,
-    legacyRoles: Array.isArray(row.legacy_roles)
-      ? row.legacy_roles.filter(Boolean)
-      : [],
+    legacyRoles: [],
     rbacRoles: Array.isArray(row.rbac_roles) ? row.rbac_roles.filter(Boolean) : [],
   };
 }
@@ -286,12 +306,9 @@ async function listPlatformUsers(db, input) {
 
     where.push(`(
       EXISTS (
-        SELECT 1 FROM blessboard.user_roles ur0
-         WHERE ur0.user_id = u.id AND ur0.status = 'active'
-      )
-      OR EXISTS (
         SELECT 1 FROM blessboard.user_role_assignments ura0
          WHERE ura0.user_id = u.id AND ura0.status = 'active' AND ura0.revoked_at IS NULL
+           AND (ura0.expires_at IS NULL OR ura0.expires_at > now())
       )
       OR EXISTS (
         SELECT 1 FROM blessboard.user_invitations ui0
@@ -315,10 +332,6 @@ async function listPlatformUsers(db, input) {
     if (orgId) {
       where.push(`(
         EXISTS (
-          SELECT 1 FROM blessboard.user_roles ur
-           WHERE ur.user_id = u.id AND ur.organization_id = $${i} AND ur.status = 'active'
-        )
-        OR EXISTS (
           SELECT 1 FROM blessboard.user_role_assignments ura
            WHERE ura.user_id = u.id AND ura.organization_id = $${i}
              AND ura.status = 'active' AND ura.revoked_at IS NULL
@@ -333,48 +346,30 @@ async function listPlatformUsers(db, input) {
       i += 1;
     }
     if (f.churchId) {
-      where.push(`(
-        EXISTS (
-          SELECT 1 FROM blessboard.user_roles ur
-           WHERE ur.user_id = u.id AND ur.church_id = $${i} AND ur.status = 'active'
-        )
-        OR EXISTS (
+      where.push(`EXISTS (
           SELECT 1 FROM blessboard.user_role_assignments ura
            WHERE ura.user_id = u.id AND ura.church_id = $${i}
              AND ura.status = 'active' AND ura.revoked_at IS NULL
-        )
-      )`);
+        )`);
       params.push(f.churchId);
       i += 1;
     }
     if (f.branchId) {
-      where.push(`(
-        EXISTS (
-          SELECT 1 FROM blessboard.user_roles ur
-           WHERE ur.user_id = u.id AND ur.branch_id = $${i} AND ur.status = 'active'
-        )
-        OR EXISTS (
+      where.push(`EXISTS (
           SELECT 1 FROM blessboard.user_role_assignments ura
            WHERE ura.user_id = u.id AND ura.scope_type = 'branch' AND ura.scope_id = $${i}
              AND ura.status = 'active' AND ura.revoked_at IS NULL
-        )
-      )`);
+        )`);
       params.push(f.branchId);
       i += 1;
     }
     if (f.roleKey) {
-      where.push(`(
-        EXISTS (
-          SELECT 1 FROM blessboard.user_roles ur
-           WHERE ur.user_id = u.id AND ur.role_key = $${i} AND ur.status = 'active'
-        )
-        OR EXISTS (
+      where.push(`EXISTS (
           SELECT 1 FROM blessboard.user_role_assignments ura
           JOIN blessboard.roles r ON r.id = ura.role_id
            WHERE ura.user_id = u.id AND r.role_key = $${i}
              AND ura.status = 'active' AND ura.revoked_at IS NULL
-        )
-      )`);
+        )`);
       params.push(f.roleKey);
       i += 1;
     }
@@ -401,34 +396,38 @@ async function listPlatformUsers(db, input) {
                 ELSE 'none'
               END AS invitation_state,
               (
-                SELECT ur.organization_id FROM blessboard.user_roles ur
-                 WHERE ur.user_id = u.id AND ur.status = 'active'
-                 ORDER BY CASE ur.role_key
+                SELECT ura.organization_id
+                  FROM blessboard.user_role_assignments ura
+                  JOIN blessboard.roles r ON r.id = ura.role_id
+                 WHERE ura.user_id = u.id AND ura.status = 'active' AND ura.revoked_at IS NULL
+                   AND (ura.expires_at IS NULL OR ura.expires_at > now())
+                 ORDER BY CASE r.role_key
                    WHEN 'platform_admin' THEN 0
                    WHEN 'church_hq_admin' THEN 1
-                   ELSE 2 END, ur.created_at ASC
+                   ELSE 2 END, ura.created_at ASC
                  LIMIT 1
               ) AS organization_id,
               (
-                SELECT ur.church_id FROM blessboard.user_roles ur
-                 WHERE ur.user_id = u.id AND ur.status = 'active'
-                 ORDER BY CASE ur.role_key
+                SELECT ura.church_id
+                  FROM blessboard.user_role_assignments ura
+                  JOIN blessboard.roles r ON r.id = ura.role_id
+                 WHERE ura.user_id = u.id AND ura.status = 'active' AND ura.revoked_at IS NULL
+                   AND (ura.expires_at IS NULL OR ura.expires_at > now())
+                 ORDER BY CASE r.role_key
                    WHEN 'platform_admin' THEN 0
                    WHEN 'church_hq_admin' THEN 1
-                   ELSE 2 END, ur.created_at ASC
+                   ELSE 2 END, ura.created_at ASC
                  LIMIT 1
               ) AS church_id,
               (
-                SELECT ur.branch_id FROM blessboard.user_roles ur
-                 WHERE ur.user_id = u.id AND ur.status = 'active' AND ur.branch_id IS NOT NULL
-                 ORDER BY ur.created_at ASC
+                SELECT ura.scope_id
+                  FROM blessboard.user_role_assignments ura
+                 WHERE ura.user_id = u.id AND ura.status = 'active' AND ura.revoked_at IS NULL
+                   AND ura.scope_type = 'branch' AND ura.scope_id IS NOT NULL
+                   AND (ura.expires_at IS NULL OR ura.expires_at > now())
+                 ORDER BY ura.created_at ASC
                  LIMIT 1
               ) AS branch_id,
-              COALESCE((
-                SELECT array_agg(DISTINCT ur.role_key ORDER BY ur.role_key)
-                  FROM blessboard.user_roles ur
-                 WHERE ur.user_id = u.id AND ur.status = 'active'
-              ), ARRAY[]::text[]) AS legacy_roles,
               COALESCE((
                 SELECT array_agg(DISTINCT r.role_key ORDER BY r.role_key)
                   FROM blessboard.user_role_assignments ura
@@ -574,28 +573,18 @@ async function getPlatformUserDetail(db, input) {
       return { ok: false, status: STATUS.NOT_FOUND, reason: "not_found", user: null };
     }
     const u = userRes.rows[0];
-    const legacy = await db.query(
-      `SELECT ur.role_key, ur.status, ur.organization_id, ur.church_id, ur.branch_id,
-              o.organization_key, o.display_name AS organization_name,
-              c.church_key, c.display_name AS church_name,
-              b.branch_key, b.display_name AS branch_name
-         FROM blessboard.user_roles ur
-         LEFT JOIN platform.organizations o ON o.id = ur.organization_id
-         LEFT JOIN blessboard.churches c ON c.id = ur.church_id
-         LEFT JOIN blessboard.branches b ON b.id = ur.branch_id
-        WHERE ur.user_id = $1 AND ur.status = 'active'
-        ORDER BY ur.role_key ASC`,
-      [userId]
-    );
     const rbac = await db.query(
       `SELECT r.role_key, ura.status, ura.scope_type, ura.scope_id, ura.organization_id,
               ura.church_id, ura.expires_at, ura.assignment_origin,
               o.organization_key, o.display_name AS organization_name,
-              c.church_key, c.display_name AS church_name
+              c.church_key, c.display_name AS church_name,
+              b.id AS branch_id, b.branch_key, b.display_name AS branch_name
          FROM blessboard.user_role_assignments ura
          JOIN blessboard.roles r ON r.id = ura.role_id
          LEFT JOIN platform.organizations o ON o.id = ura.organization_id
          LEFT JOIN blessboard.churches c ON c.id = ura.church_id
+         LEFT JOIN blessboard.branches b
+           ON b.id = CASE WHEN ura.scope_type = 'branch' THEN ura.scope_id ELSE NULL END
         WHERE ura.user_id = $1 AND ura.status = 'active' AND ura.revoked_at IS NULL
         ORDER BY r.role_key ASC`,
       [userId]
@@ -611,14 +600,9 @@ async function getPlatformUserDetail(db, input) {
       [u.email_normalized]
     );
 
-    const primaryOrg =
-      (legacy.rows[0] && legacy.rows[0].organization_id) ||
-      (rbac.rows[0] && rbac.rows[0].organization_id) ||
-      null;
-    const primaryChurch =
-      (legacy.rows[0] && legacy.rows[0].church_id) ||
-      (rbac.rows[0] && rbac.rows[0].church_id) ||
-      null;
+    const primaryAssignment = pickPrimaryRbacAssignment(rbac.rows);
+    const primaryOrg = primaryAssignment ? primaryAssignment.organization_id : null;
+    const primaryChurch = primaryAssignment ? primaryAssignment.church_id : null;
 
     const sessions = await db.query(
       `SELECT COUNT(*)::int AS count
@@ -649,19 +633,6 @@ async function getPlatformUserDetail(db, input) {
         new Date(u.sign_in_locked_until).getTime() > Date.now(),
       activeSessionCount: Number(sessions.rows[0] && sessions.rows[0].count) || 0,
       invitationState: String(u.invitation_state || "none"),
-      legacyAssignments: legacy.rows.map((r) => ({
-        roleKey: r.role_key,
-        status: r.status,
-        organizationId: r.organization_id,
-        organizationKey: r.organization_key,
-        organizationName: r.organization_name,
-        churchId: r.church_id,
-        churchKey: r.church_key,
-        churchName: r.church_name,
-        branchId: r.branch_id,
-        branchKey: r.branch_key,
-        branchName: r.branch_name,
-      })),
       rbacAssignments: rbac.rows.map((r) => ({
         roleKey: r.role_key,
         status: r.status,
@@ -673,6 +644,9 @@ async function getPlatformUserDetail(db, input) {
         churchId: r.church_id,
         churchKey: r.church_key,
         churchName: r.church_name,
+        branchId: r.branch_id,
+        branchKey: r.branch_key,
+        branchName: r.branch_name,
         expiresAt: r.expires_at,
         assignmentOrigin: r.assignment_origin,
       })),

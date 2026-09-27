@@ -192,7 +192,7 @@ describe("blessboard HQ/branch phone-first team member creation (10H)", () => {
     });
     assert.equal(created.ok, true, created.reason || created.message);
     assert.equal(created.placement, "hq");
-    assert.equal(created.scopeType, "church");
+    assert.equal(created.scopeType, "organisation");
     assert.equal(created.emailDisplay, null);
     assert.ok(created.invitationUrl);
     assert.ok(created.whatsappUrl);
@@ -200,9 +200,12 @@ describe("blessboard HQ/branch phone-first team member creation (10H)", () => {
     assert.ok(created.invitationUrl.includes("token="));
 
     const role = await pool.query(
-      `SELECT branch_id, role_key FROM blessboard.user_roles
-        WHERE user_id = $1 AND organization_id = $2 AND role_key = 'church_hq_admin'
-        ORDER BY created_at DESC LIMIT 1`,
+      `SELECT CASE WHEN a.scope_type = 'branch' THEN a.scope_id ELSE NULL END AS branch_id,
+              r.role_key
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1 AND a.organization_id = $2 AND r.role_key = 'organisation_administrator'
+        ORDER BY a.created_at DESC LIMIT 1`,
       [created.userId, org.id]
     );
     // Role is assigned on accept; invite creates pending user.
@@ -410,6 +413,7 @@ describe("blessboard HQ/branch phone-first team member creation (10H)", () => {
     const accepted = await acceptInvitation(pool, {
       token: created.rawToken,
       password: PASSWORD,
+      passwordConfirm: PASSWORD,
     });
     assert.equal(accepted.ok, true, accepted.message || accepted.reason);
 
@@ -432,6 +436,7 @@ describe("blessboard HQ/branch phone-first team member creation (10H)", () => {
     const reuse = await acceptInvitation(pool, {
       token: created.rawToken,
       password: PASSWORD,
+      passwordConfirm: PASSWORD,
     });
     assert.equal(reuse.ok, false);
     assert.ok(

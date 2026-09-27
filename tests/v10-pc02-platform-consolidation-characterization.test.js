@@ -532,7 +532,7 @@ describe("PC02 BB/AC — website editor route surface inventory", () => {
 });
 
 describe("PC02 BB/AC — phone asset ownership (platform-owned)", () => {
-  it("documents platform SoT with product include + legacy AC asset shims", () => {
+  it("documents platform SoT with product include; legacy AC phone assets removed (PL06)", () => {
     const platformPartial = read("views/platform/partials/phone-field.ejs");
     const bbPartial = read("views/blessboard/v5/partials/phone-field.ejs");
     const acPartial = read("views/activeclinic/partials/phone-field.ejs");
@@ -542,11 +542,8 @@ describe("PC02 BB/AC — phone asset ownership (platform-owned)", () => {
     assert.match(acPartial, /platform\/partials\/phone-field/);
     assert.equal(fs.existsSync(path.join(ROOT, "public/platform/phone-field.js")), true);
     assert.equal(fs.existsSync(path.join(ROOT, "public/platform/phone-field.css")), true);
-    // Legacy URLs remain for transition
-    assert.equal(fs.existsSync(path.join(ROOT, "public/activeclinic/ac-phone-field.js")), true);
-    assert.equal(fs.existsSync(path.join(ROOT, "public/activeclinic/ac-phone-field.css")), true);
-    const acJsShim = read("public/activeclinic/ac-phone-field.js");
-    assert.match(acJsShim, /Compatibility shim|Source of truth/i);
+    assert.equal(fs.existsSync(path.join(ROOT, "public/activeclinic/ac-phone-field.js")), false);
+    assert.equal(fs.existsSync(path.join(ROOT, "public/activeclinic/ac-phone-field.css")), false);
   });
 });
 

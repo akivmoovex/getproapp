@@ -349,19 +349,20 @@ describe("automatic Foundation registration", () => {
     assert.notEqual(sub.rows[0].status, "trialing");
 
     const roles = await pool.query(
-      `SELECT ur.role_key
-         FROM blessboard.user_roles ur
+      `SELECT r.role_key
+         FROM blessboard.user_role_assignments ur
+         JOIN blessboard.roles r ON r.id = ur.role_id
          JOIN blessboard.users u ON u.id = ur.user_id
          JOIN platform.organizations o ON o.id = ur.organization_id
         WHERE o.organization_key = $1
           AND lower(u.email_normalized) = lower($2)
           AND ur.status = 'active'
-        ORDER BY ur.role_key`,
+        ORDER BY r.role_key`,
       [orgKey, body.email]
     );
     assert.ok(roles.rowCount >= 1);
     const roleKeys = roles.rows.map((r) => r.role_key);
-    assert.ok(roleKeys.includes("church_hq_admin"));
+    assert.ok(roleKeys.includes("organisation_administrator"));
 
     const sessions = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.deployment_sessions

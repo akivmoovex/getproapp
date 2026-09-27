@@ -8,7 +8,7 @@
 const repo = require("../repositories/platformChurchRegistrationRepository");
 const {
   normalizeOrganizationKey,
-} = require("./organizationKey");
+} = require("../../platform/organization/organizationKey");
 const { publicChurchHomePath } = require("../urls/churchUrlHelper");
 const {
   resolveWebsiteActionUrls,

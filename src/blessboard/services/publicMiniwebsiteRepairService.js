@@ -17,7 +17,7 @@ const {
 } = require("./churchWebsitePublishService");
 const settingsRepo = require("../repositories/blessBoardSettingsRepository");
 const { PUBLIC_PAGE_KEYS } = require("./publicContentConstants");
-const { normalizeOrganizationKey } = require("./organizationKey");
+const { normalizeOrganizationKey } = require("../../platform/organization/organizationKey");
 const { publicChurchHomePath } = require("../urls/churchUrlHelper");
 
 const STATUS = Object.freeze({

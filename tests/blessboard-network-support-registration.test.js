@@ -281,7 +281,7 @@ describe("Network support-contact registration", () => {
     assert.ok(subCount.rows[0].n >= 0);
 
     const roleCount = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.user_roles ur
+      `SELECT COUNT(*)::int AS n FROM blessboard.user_role_assignments ur
         JOIN blessboard.users u ON u.id = ur.user_id
        WHERE lower(u.email_normalized) = lower($1)`,
       [body.email]

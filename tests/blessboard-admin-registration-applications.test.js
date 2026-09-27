@@ -141,7 +141,7 @@ describe("platform-admin registration applications (Phase 5)", () => {
         consent_terms: true,
       });
       await appRepo.updateApplicationProvisioningState(pool, fixtures.dupApp.id, {
-        applicationStatus: "duplicate_review",
+        applicationStatus: "review_required",
         provisioningStatus: "not_started",
       });
 
@@ -308,7 +308,7 @@ describe("platform-admin registration applications (Phase 5)", () => {
     assert.match(reportedRes.text, /data-bb-pa-registration-applications="1"/);
 
     const filtered = await request(app)
-      .get("/admin/registration-applications?application_status=duplicate_review")
+      .get("/admin/registration-applications?application_status=review_required")
       .set("Host", "blessboard.org")
       .set("Cookie", cookie);
     assert.equal(filtered.status, 200);

@@ -165,7 +165,7 @@ describe("blessboard auth schema", () => {
     );
   });
 
-  it("role scope rules and ownership triggers", async () => {
+  it("V2.02 freeze blocks user_roles INSERT; catalogue assignments remain writable", async () => {
     requireDb();
     const user = await pool.query(
       `INSERT INTO blessboard.users
@@ -180,87 +180,25 @@ describe("blessboard auth schema", () => {
         pool.query(
           `INSERT INTO blessboard.user_roles
              (user_id, organization_id, role_key, status)
-           VALUES ($1, $2, 'superuser', 'active')`,
+           VALUES ($1, $2, 'platform_admin', 'active')`,
           [userId, org.id]
         ),
-      /check|violates/i
+      /frozen|user_roles/i
     );
 
-    await pool.query(
-      `INSERT INTO blessboard.user_roles
-         (user_id, organization_id, role_key, status)
-       VALUES ($1, $2, 'platform_admin', 'active')`,
-      [userId, org.id]
+    const role = await pool.query(
+      `SELECT id FROM blessboard.roles WHERE role_key = 'organisation_administrator' LIMIT 1`
     );
-
-    await assert.rejects(
-      () =>
-        pool.query(
-          `INSERT INTO blessboard.user_roles
-             (user_id, organization_id, church_id, role_key, status)
-           VALUES ($1, $2, $3, 'platform_admin', 'active')`,
-          [userId, org.id, churchId]
-        ),
-      /check|violates|scope/i
+    assert.equal(role.rowCount, 1);
+    const assigned = await pool.query(
+      `INSERT INTO blessboard.user_role_assignments
+         (user_id, organization_id, church_id, role_id, scope_type, scope_id,
+          status, assignment_origin)
+       VALUES ($1, $2, $3, $4, 'church', $3, 'active', 'manual')
+       RETURNING id, status`,
+      [userId, org.id, churchId, role.rows[0].id]
     );
-
-    await assert.rejects(
-      () =>
-        pool.query(
-          `INSERT INTO blessboard.user_roles
-             (user_id, organization_id, role_key, status)
-           VALUES ($1, $2, 'church_hq_admin', 'active')`,
-          [userId, org.id]
-        ),
-      /check|violates|scope/i
-    );
-
-    await pool.query(
-      `INSERT INTO blessboard.user_roles
-         (user_id, organization_id, church_id, role_key, status)
-       VALUES ($1, $2, $3, 'church_hq_admin', 'active')`,
-      [userId, org.id, churchId]
-    );
-
-    await assert.rejects(
-      () =>
-        pool.query(
-          `INSERT INTO blessboard.user_roles
-             (user_id, organization_id, church_id, role_key, status)
-           VALUES ($1, $2, $3, 'branch_admin', 'active')`,
-          [userId, org.id, churchId]
-        ),
-      /check|violates|scope/i
-    );
-
-    await pool.query(
-      `INSERT INTO blessboard.user_roles
-         (user_id, organization_id, church_id, branch_id, role_key, status)
-       VALUES ($1, $2, $3, $4, 'branch_admin', 'active')`,
-      [userId, org.id, churchId, branchId]
-    );
-
-    const otherOrg = await provisionPlatformTenant(pool, {
-      organizationKey: "other-auth-org",
-      displayName: "Other",
-      legalName: null,
-      dataEnvironment: "testing",
-      productKey: "blessboard",
-      productTenantKey: "other-auth-org",
-      hostname: "other-auth.blessboard.test",
-      domainType: "canonical",
-      deploymentCode: "blessboard-org-staging",
-      isPrimary: true,
-    });
-    await assert.rejects(
-      () =>
-        pool.query(
-          `INSERT INTO blessboard.user_roles
-             (user_id, organization_id, church_id, role_key, status)
-           VALUES ($1, $2, $3, 'church_hq_admin', 'active')`,
-          [userId, otherOrg.records.organization.id, churchId]
-        ),
-      /belong|integrity|violates/i
-    );
+    assert.equal(assigned.rowCount, 1);
+    assert.equal(assigned.rows[0].status, "active");
   });
 });

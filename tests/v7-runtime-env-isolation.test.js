@@ -22,6 +22,7 @@ const {
 const {
   provisionBlessBoardChurch,
 } = require("../src/blessboard/services/provisionBlessBoardChurch");
+const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const {
   createMoovexPlatformRuntimeApp,
   buildDefaultProductApps,
@@ -320,11 +321,16 @@ describe("BlessBoard auth matrix vs process.env", () => {
          RETURNING id`,
         [QA_EMAIL, hash, QA_PHONE]
       );
-      await pool.query(
-        `INSERT INTO blessboard.user_roles
-           (user_id, organization_id, church_id, role_key, status)
-         VALUES ($1, $2, $3, 'church_hq_admin', 'active')`,
-        [user.rows[0].id, org.id, church.id]
+      assert.equal(
+        (
+          await assignBlessBoardRole(pool, {
+            email: QA_EMAIL,
+            organizationKey: "demo-church",
+            churchKey: "demo-church",
+            roleKey: "church_hq_admin",
+          })
+        ).ok,
+        true
       );
       app = makeUnifiedRuntime(() => pool);
       csrfCookieName = getCsrfCookieName(UNIFIED_ENV);

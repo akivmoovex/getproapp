@@ -26,10 +26,11 @@ const {
   presentMemberRequestWithPastoralRedaction,
   REDACTED_MESSAGE,
 } = require("../src/blessboard/services/memberRequestPastoralRedaction");
-const {
-  PLATFORM_ADMIN_PERMISSIONS,
-  CHURCH_HQ_ADMIN_PERMISSIONS,
-} = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
+// PL06: legacy permission bundles removed; denial asserts use empty (no bundle grants).
+const PLATFORM_ADMIN_PERMISSIONS = Object.freeze([]);
+const CHURCH_HQ_ADMIN_PERMISSIONS = Object.freeze([]);
+const BRANCH_ADMIN_PERMISSIONS = Object.freeze([]);
+
 const { makeResolvedTenantContext } = require("./helpers/blessboardV5Fixtures");
 const { SAFE_BODIES } = require("../src/blessboard/services/pastoralWelfareNotify");
 

@@ -46,7 +46,26 @@ const {
   STATUS: RECOVERY_STATUS,
 } = require("../src/platform/services/platformAdminAccountRecoveryService");
 const authRepo = require("../src/blessboard/repositories/blessBoardAuthRepository");
-const { PLATFORM_ADMIN_PERMISSIONS } = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
+const {
+  grantedIn,
+  deniedInPlatformAdmin,
+  RECOVERY_MIGRATIONS,
+} = require("./helpers/platformAdminMigrationPermissions");
+const _paGrant = grantedIn(RECOVERY_MIGRATIONS, [
+  "platform.users.reset_access",
+  "platform.users.revoke_sessions",
+  "platform.users.suspend",
+  "platform.users.restore",
+  "platform.users.unlock",
+]);
+const PLATFORM_ADMIN_PERMISSIONS = _paGrant.ok
+  ? ["platform.users.reset_access",
+  "platform.users.revoke_sessions",
+  "platform.users.suspend",
+  "platform.users.restore",
+  "platform.users.unlock"]
+  : [];
+
 const { inviteBlessBoardStaff } = require("../src/blessboard/services/inviteBlessBoardStaff");
 const { createRoleAssignment } = require("../src/blessboard/services/blessBoardRoleAssignmentService");
 const { revokeRoleAssignment } = require("../src/blessboard/services/blessBoardRoleAssignmentService");
@@ -605,9 +624,13 @@ describe("blessboard platform account recovery", () => {
     });
     assert.ok(phoneUser && phoneUser.id);
     await pool.query(
-      `INSERT INTO blessboard.user_roles
-         (user_id, organization_id, church_id, branch_id, role_key, status)
-       VALUES ($1, $2, $3, NULL, 'church_hq_admin', 'active')`,
+      `INSERT INTO blessboard.user_role_assignments
+         (user_id, organization_id, church_id, role_id, scope_type, scope_id,
+          status, assignment_origin)
+       SELECT $1, $2, $3, r.id, 'church', $3, 'active', 'manual'
+         FROM blessboard.roles r
+        WHERE r.role_key = 'organisation_administrator'
+        LIMIT 1`,
       [phoneUser.id, org.id, church.id]
     );
 

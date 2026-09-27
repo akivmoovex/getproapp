@@ -27,7 +27,6 @@ const LIFECYCLE = Object.freeze({
   ACTIVE: "active",
   ONBOARDING: "onboarding",
   REVIEW_REQUIRED: "review_required",
-  APPROVED: "approved",
   REJECTED: "rejected",
   SUSPENDED: "suspended",
   PROVISION_FAILED: "provision_failed",

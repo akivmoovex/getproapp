@@ -3,6 +3,10 @@
 // Legacy GetPro / BlessBoard V4 HTTP server (unchanged behavior).
 // Loaded only when V5 foundation mode is inactive (see server.js).
 // Bootstrap, DB presence, and production env gates already ran in server.js.
+//
+// DBCL09: KEEP — ACTIVE. Exact consumer: server.js unprofiled bootstrap
+// (`else if (!runtimeMode) require("./server.legacy")`). Not ZERO_CONSUMER.
+// Do not delete until missing PLATFORM_DEPLOYMENT_CODE is fail-closed by product decision.
 
 const path = require("path");
 const express = require("express");

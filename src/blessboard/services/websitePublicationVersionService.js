@@ -2084,15 +2084,23 @@ async function restoreAndPublishCurrentVersion(db, opts) {
     allowSystemActor: !versionRepo.isUuid(opts.actorUserId),
   });
   if (!restored.ok) return restored;
-  const { publishChurchWebsite } = require("./churchWebsitePublishService");
-  const published = await publishChurchWebsite(db, {
-    churchId,
-    organizationId,
-    confirmPublish: true,
-    forcePublishVersion: true,
-    deferServiceTimes: true,
-    actorUserId: opts.actorUserId || null,
-    env: opts.env,
+  const {
+    publish: publishProductWebsite,
+    PERMISSIONS: WEBSITE_PUBLISH_PERMISSIONS,
+  } = require("../../platform/website/publicationOrchestrator");
+  const { PRODUCT } = require("../../platform/registration/constants");
+  const published = await publishProductWebsite(db, {
+    productCode: PRODUCT.BLESSBOARD,
+    grantedPermissions: [WEBSITE_PUBLISH_PERMISSIONS.PUBLISH],
+    request: {
+      churchId,
+      organizationId,
+      confirmPublish: true,
+      forcePublishVersion: true,
+      deferServiceTimes: true,
+      actorUserId: opts.actorUserId || null,
+      env: opts.env,
+    },
   });
 
   // Contract: mint a NEW current published version. If the publish TX returned ok

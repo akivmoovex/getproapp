@@ -431,17 +431,12 @@ async function loadWebsiteManagementSummary(db, input) {
   }
 
   if (productCode === PRODUCT_CODE.ACTIVECLINIC) {
-    try {
-      const hco = await db.query(
-        `SELECT website_published FROM activeclinic.healthcare_organizations
-          WHERE organization_id = $1 LIMIT 1`,
-        [organizationId]
-      );
-      availabilityPublished = Boolean(hco.rows[0] && hco.rows[0].website_published === true);
-    } catch (err) {
-      const message = err && err.message ? String(err.message) : "";
-      if (!/website_published/i.test(message) && err && err.code !== "42703") throw err;
-    }
+    const hco = await db.query(
+      `SELECT website_published FROM activeclinic.healthcare_organizations
+        WHERE organization_id = $1 LIMIT 1`,
+      [organizationId]
+    );
+    availabilityPublished = Boolean(hco.rows[0] && hco.rows[0].website_published === true);
   }
 
   if (productCode === PRODUCT_CODE.BLESSBOARD) {

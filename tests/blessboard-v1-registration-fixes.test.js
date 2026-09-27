@@ -332,19 +332,20 @@ describe("BlessBoard V1 registration UI + immediate admin (BB-REG-01, BB-REG-03)
     assert.notEqual(org.rows[0].organization_key, key);
 
     const roles = await pool.query(
-      `SELECT ur.role_key, ur.organization_id
-         FROM blessboard.user_roles ur
+      `SELECT r.role_key, ur.organization_id
+         FROM blessboard.user_role_assignments ur
+         JOIN blessboard.roles r ON r.id = ur.role_id
          JOIN blessboard.users u ON u.id = ur.user_id
         WHERE lower(u.email_normalized) = lower($1)
           AND ur.status = 'active'`,
       [body.email]
     );
-    assert.ok(roles.rows.some((r) => r.role_key === "church_hq_admin"));
+    assert.ok(roles.rows.some((r) => r.role_key === "organisation_administrator"));
     assert.ok(roles.rows.every((r) => r.organization_id === organizationId));
 
     const otherOrgs = await pool.query(
       `SELECT COUNT(*)::int AS n
-         FROM blessboard.user_roles ur
+         FROM blessboard.user_role_assignments ur
          JOIN blessboard.users u ON u.id = ur.user_id
         WHERE lower(u.email_normalized) = lower($1)
           AND ur.organization_id <> $2`,

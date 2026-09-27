@@ -116,7 +116,7 @@ async function setOrganizationSupportRequested(db, input) {
           lastActivityAt: new Date().toISOString(),
         });
         await recordAuditEventSafe(client, {
-          deploymentCode: input.deploymentCode || "blessboard-org-v5",
+          deploymentCode: input.deploymentCode || "blessboard-org-staging",
           organizationId: resolved.organizationId,
           actorUserId,
           outcome: "success",
@@ -207,7 +207,7 @@ async function setOrganizationNextFollowUp(db, input) {
           lastActivityAt: new Date().toISOString(),
         });
         await recordAuditEventSafe(client, {
-          deploymentCode: input.deploymentCode || "blessboard-org-v5",
+          deploymentCode: input.deploymentCode || "blessboard-org-staging",
           organizationId: resolved.organizationId,
           actorUserId,
           outcome: "success",
@@ -313,7 +313,7 @@ async function overrideOrganizationOnboardingStatus(db, input) {
         }
         await repo.updateOrganizationOnboarding(client, resolved.organizationId, patch);
         await recordAuditEventSafe(client, {
-          deploymentCode: input.deploymentCode || "blessboard-org-v5",
+          deploymentCode: input.deploymentCode || "blessboard-org-staging",
           organizationId: resolved.organizationId,
           actorUserId,
           outcome: "success",
@@ -385,7 +385,7 @@ async function updateOrganizationFollowUpStatus(db, input) {
           lastActivityAt: new Date().toISOString(),
         });
         await recordAuditEventSafe(client, {
-          deploymentCode: input.deploymentCode || "blessboard-org-v5",
+          deploymentCode: input.deploymentCode || "blessboard-org-staging",
           organizationId: resolved.organizationId,
           actorUserId,
           outcome: "success",
@@ -465,7 +465,7 @@ async function assignOrganizationSupport(db, input) {
           lastActivityAt: new Date().toISOString(),
         });
         await recordAuditEventSafe(client, {
-          deploymentCode: input.deploymentCode || "blessboard-org-v5",
+          deploymentCode: input.deploymentCode || "blessboard-org-staging",
           organizationId: resolved.organizationId,
           actorUserId,
           outcome: "success",

@@ -168,7 +168,7 @@ describe("registration onboarding analytics (Prompt 27)", () => {
         role_in_church: "Administrator",
         selected_plan: "growth",
         consent_terms: true,
-        application_status: "duplicate_review",
+        application_status: "review_required",
         risk_decision: "review_required",
         risk_reason_codes: ["duplicate_email"],
       });

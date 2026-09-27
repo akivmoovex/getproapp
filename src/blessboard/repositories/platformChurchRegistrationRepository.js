@@ -331,7 +331,7 @@ async function findRecentRegistrationDuplicate(client, opts) {
         AND lower(church_name) = lower($2)
         AND created_at >= now() - ($3::int * interval '1 minute')
         AND (
-          application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning', 'active')
+          application_status IN ('submitted', 'review_required', 'provisioning', 'active')
           OR status = 'pending'
         )
       ORDER BY created_at DESC
@@ -527,8 +527,8 @@ async function countPending(pool) {
   const r = await pool.query(
     `SELECT COUNT(*)::int AS count
        FROM ${TARGET_RELATION}
-      WHERE application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning')
-         OR (status = 'pending' AND application_status NOT IN ('closed', 'rejected', 'cancelled'))`
+      WHERE application_status IN ('submitted', 'review_required', 'provisioning')
+         OR (status = 'pending' AND application_status NOT IN ('rejected', 'active'))`
   );
   return r.rows[0]?.count || 0;
 }
@@ -668,11 +668,8 @@ const APPLICATION_STATUSES = Object.freeze([
   "review_required",
   "active",
   "rejected",
-  "cancelled",
   "suspended",
   "provision_failed",
-  "duplicate_review",
-  "closed",
 ]);
 const PROVISIONING_STATUSES = Object.freeze([
   "not_started",
@@ -1065,7 +1062,7 @@ function buildRegistrationListWhere(filters) {
   }
   if (filters.requiresReview === true) {
     clauses.push(`(
-      a.application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning')
+      a.application_status IN ('submitted', 'review_required', 'provisioning')
       OR a.provisioning_status = 'provisioning_failed'
       OR ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE
       OR ${EFFECTIVE_FOLLOW_UP_SQL} IN (
@@ -1078,16 +1075,16 @@ function buildRegistrationListWhere(filters) {
       a.organization_id IS NULL
       AND a.provisioning_status IS DISTINCT FROM 'provisioned'
       AND a.provisioning_status IS DISTINCT FROM 'provisioning_failed'
-      AND a.application_status IN ('submitted', 'duplicate_review', 'review_required')
+      AND a.application_status IN ('submitted', 'review_required')
       AND COALESCE(a.selected_plan, '') IS DISTINCT FROM 'network'
       AND ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = FALSE
     )`);
   } else if (filters.queue === "phase5_new") {
     // Residual Phase 5 “New” badge: not Rejected, not Approved, not Needs Information.
     clauses.push(`(
-      a.application_status NOT IN ('rejected', 'cancelled')
+      a.application_status IS DISTINCT FROM 'rejected'
       AND a.provisioning_status IS DISTINCT FROM 'provisioned'
-      AND NOT (a.application_status IN ('closed', 'active') AND a.organization_id IS NOT NULL)
+      AND NOT (a.application_status = 'active' AND a.organization_id IS NOT NULL)
       AND ${EFFECTIVE_FOLLOW_UP_SQL} NOT IN ('awaiting_customer', 'needs_help', 'self_onboarding')
     )`);
   } else if (filters.queue === "provisioning_failed") {
@@ -1096,7 +1093,7 @@ function buildRegistrationListWhere(filters) {
     clauses.push(`(
       a.organization_id IS NULL
       AND a.provisioning_status IS DISTINCT FROM 'provisioned'
-      AND a.application_status NOT IN ('rejected', 'cancelled')
+      AND a.application_status IS DISTINCT FROM 'rejected'
       AND (
         a.selected_plan = 'network'
         OR ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE
@@ -1108,7 +1105,7 @@ function buildRegistrationListWhere(filters) {
     clauses.push(`(
       a.organization_id IS NULL
       AND a.provisioning_status IS DISTINCT FROM 'provisioned'
-      AND a.application_status NOT IN ('rejected', 'cancelled')
+      AND a.application_status IS DISTINCT FROM 'rejected'
       AND (
         a.selected_plan = 'network'
         OR ${EFFECTIVE_SUPPORT_REQUESTED_SQL} = TRUE
@@ -1118,16 +1115,16 @@ function buildRegistrationListWhere(filters) {
   } else if (filters.queue === "provisioned") {
     clauses.push(`(
       a.provisioning_status = 'provisioned'
-      OR (a.application_status IN ('closed', 'active') AND a.organization_id IS NOT NULL)
+      OR (a.application_status = 'active' AND a.organization_id IS NOT NULL)
     )`);
   } else if (filters.queue === "rejected") {
-    clauses.push(`a.application_status IN ('rejected', 'cancelled')`);
+    clauses.push(`a.application_status = 'rejected'`);
   }
   if (filters.overdueFollowUp === true) {
     clauses.push(`(
       ${EFFECTIVE_NEXT_FOLLOW_UP_SQL} IS NOT NULL
       AND ${EFFECTIVE_NEXT_FOLLOW_UP_SQL} < now()
-      AND a.application_status NOT IN ('rejected', 'cancelled', 'closed', 'active')
+      AND a.application_status NOT IN ('rejected', 'active')
       AND (${ACTIVE_FOLLOW_UP_SQL})
     )`);
   }
@@ -2396,9 +2393,12 @@ async function listActivePlatformAdministrators(client) {
   const r = await client.query(
     `SELECT DISTINCT u.id, u.display_name, u.email_normalized
        FROM blessboard.users u
-       INNER JOIN blessboard.user_roles ur ON ur.user_id = u.id
-      WHERE ur.role_key = 'platform_admin'
-        AND ur.status = 'active'
+       INNER JOIN blessboard.user_role_assignments a ON a.user_id = u.id
+       INNER JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE r.role_key = 'platform_administrator'
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND (a.expires_at IS NULL OR a.expires_at > now())
         AND u.status = 'active'
       ORDER BY u.display_name ASC, u.email_normalized ASC`
   );
@@ -2739,11 +2739,18 @@ async function loadOrganizationOnboardingFacts(client, input = {}) {
        ) svc ON TRUE
        LEFT JOIN LATERAL (
          SELECT MAX(u.last_login_at) AS church_admin_last_login_at
-           FROM blessboard.user_roles ur
-           INNER JOIN blessboard.users u ON u.id = ur.user_id
-          WHERE ur.organization_id = o.id
-            AND ur.status = 'active'
-            AND ur.role_key IN ('church_hq_admin', 'branch_admin')
+           FROM blessboard.user_role_assignments a
+           INNER JOIN blessboard.roles r ON r.id = a.role_id
+           INNER JOIN blessboard.users u ON u.id = a.user_id
+          WHERE a.organization_id = o.id
+            AND a.status = 'active'
+            AND a.revoked_at IS NULL
+            AND (a.expires_at IS NULL OR a.expires_at > now())
+            AND r.role_key IN (
+              'organisation_administrator',
+              'church_system_administrator',
+              'branch_administrator'
+            )
             AND u.status = 'active'
        ) login_stats ON TRUE
        LEFT JOIN LATERAL (

@@ -69,7 +69,7 @@ const RATE_MAX_INVITE = 5;
 
 function deploymentCode(env) {
   const id = getPlatformDeploymentCode(env || process.env);
-  return id && id.ok ? id.code : "blessboard-org-v5";
+  return id && id.ok ? id.code : "blessboard-org-staging";
 }
 
 async function withClient(db, fn) {
@@ -287,11 +287,22 @@ async function resendInvitation(db, input) {
       displayName = pending.rows[0].display_name || displayName;
     } else {
       const scope = await client.query(
-        `SELECT organization_id, church_id, branch_id, role_key
-           FROM blessboard.user_roles
-          WHERE user_id = $1
-            AND role_key IN ('church_hq_admin', 'branch_admin')
-          ORDER BY CASE WHEN status = 'active' THEN 0 ELSE 1 END, created_at DESC
+        `SELECT a.organization_id,
+                a.church_id,
+                CASE WHEN a.scope_type = 'branch' THEN a.scope_id ELSE NULL END AS branch_id,
+                CASE
+                  WHEN r.role_key = 'branch_administrator' THEN 'branch_admin'
+                  ELSE 'church_hq_admin'
+                END AS role_key
+           FROM blessboard.user_role_assignments a
+           JOIN blessboard.roles r ON r.id = a.role_id
+          WHERE a.user_id = $1
+            AND r.role_key IN (
+              'organisation_administrator',
+              'church_system_administrator',
+              'branch_administrator'
+            )
+          ORDER BY CASE WHEN a.status = 'active' THEN 0 ELSE 1 END, a.created_at DESC
           LIMIT 1`,
         [user.id]
       );

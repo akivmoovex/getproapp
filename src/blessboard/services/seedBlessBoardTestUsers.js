@@ -86,7 +86,7 @@ const FIXTURE = Object.freeze({
   campusBranchName: "Demo Church Lusaka",
   hostname: "demo-church.blessboard.test",
   productTenantKey: "demo-church",
-  deploymentCode: "blessboard-org-v5",
+  deploymentCode: "blessboard-org-staging",
   planKey: "growth",
 });
 
@@ -205,7 +205,7 @@ function evaluateTestUserEnvironment(env) {
       status: STATUS.REFUSED_ENVIRONMENT,
       message: "refused_environment",
       detail:
-        "Require NODE_ENV=test, DEPLOYMENT_ENV=testing (or PLATFORM_DEPLOYMENT_CODE=blessboard-org-v5), or BLESSBOARD_ALLOW_TEST_USERS=true.",
+        "Require NODE_ENV=test, DEPLOYMENT_ENV=testing (or PLATFORM_DEPLOYMENT_CODE=blessboard-org-staging), or BLESSBOARD_ALLOW_TEST_USERS=true.",
     };
   }
 

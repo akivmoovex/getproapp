@@ -245,7 +245,7 @@ async function markReviewRequiredAdapter(db, input) {
             last_provision_error = $2,
             updated_at = now()
       WHERE id = $1
-        AND status IN ('submitted', 'pending_review', 'review_required', 'provisioning')`,
+        AND status IN ('submitted', 'review_required', 'provisioning')`,
     [input.application.id, String(input.reason || "review_required").slice(0, 500)]
   );
   await appendReviewEvent(db, {
@@ -382,7 +382,7 @@ async function markLifecycle(db, input) {
               provisioning_status = 'in_progress',
               updated_at = now()
         WHERE id = $1
-          AND status IN ('submitted', 'pending_review', 'review_required', 'provisioning')`,
+          AND status IN ('submitted', 'review_required', 'provisioning')`,
       [input.application.id]
     );
     return { ok: true };
@@ -398,7 +398,7 @@ async function markLifecycle(db, input) {
               last_provision_stage = NULL,
               updated_at = now()
         WHERE id = $1
-          AND status IN ('submitted', 'pending_review', 'review_required', 'provisioning', 'approved', 'active', 'provision_failed')`,
+          AND status IN ('submitted', 'review_required', 'provisioning', 'active', 'provision_failed')`,
       [input.application.id, websiteId || null]
     );
     return { ok: true };

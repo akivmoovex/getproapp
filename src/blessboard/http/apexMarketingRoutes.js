@@ -344,7 +344,7 @@ function createApexMarketingRouter(deps) {
     typeof deps.consumeVerificationToken === "function"
       ? deps.consumeVerificationToken
       : consumeVerificationToken;
-  const deploymentCode = String(env.PLATFORM_DEPLOYMENT_CODE || "blessboard-org-v5")
+  const deploymentCode = String(env.PLATFORM_DEPLOYMENT_CODE || "blessboard-org-staging")
     .trim()
     .toLowerCase();
   // Derive from authoritative deployment profile / DEPLOYMENT_ENV — never fall

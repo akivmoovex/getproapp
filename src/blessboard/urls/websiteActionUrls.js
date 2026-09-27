@@ -6,7 +6,7 @@
  * HQ / branch use session-scoped tenant admin surfaces.
  */
 
-const { normalizeOrganizationKey } = require("../services/organizationKey");
+const { normalizeOrganizationKey } = require("../../platform/organization/organizationKey");
 const {
   publicChurchHomePath,
   hqPreviewPagePath,

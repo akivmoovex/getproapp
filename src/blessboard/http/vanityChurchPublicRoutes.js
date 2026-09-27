@@ -17,7 +17,7 @@ const {
   normalizeVanityOrganizationKey,
   VANITY_ORGANIZATION_KEYS,
 } = require("../services/organizationKeyCompat");
-const { isReservedOrganizationKey } = require("../services/organizationKey");
+const { isReservedOrganizationKey } = require("../../platform/organization/organizationKey");
 const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,

@@ -69,35 +69,63 @@ describe("authorizeBlessBoardTenantAccess unit", () => {
     const otherChurch = "44444444-4444-4444-4444-444444444444";
 
     const platform = evaluateRoleGrants(
-      [{ roleKey: "platform_admin", organizationId: org, churchId: null, branchId: null }],
+      [{ roleKey: "platform_administrator", organizationId: org, churchId: null, branchId: null }],
       { organizationId: "99999999-9999-9999-9999-999999999999", churchId: church, branchId: branch },
       { branchBelongsToChurch: true }
     );
     assert.equal(platform.length, 1);
 
     const hqOk = evaluateRoleGrants(
-      [{ roleKey: "church_hq_admin", organizationId: org, churchId: church, branchId: null }],
+      [
+        {
+          roleKey: "organisation_administrator",
+          organizationId: org,
+          churchId: church,
+          branchId: null,
+        },
+      ],
       { organizationId: org, churchId: church, branchId: branch },
       { branchBelongsToChurch: true }
     );
     assert.equal(hqOk.length, 1);
 
     const hqOther = evaluateRoleGrants(
-      [{ roleKey: "church_hq_admin", organizationId: org, churchId: church, branchId: null }],
+      [
+        {
+          roleKey: "organisation_administrator",
+          organizationId: org,
+          churchId: church,
+          branchId: null,
+        },
+      ],
       { organizationId: org, churchId: otherChurch, branchId: branch },
       { branchBelongsToChurch: true }
     );
     assert.equal(hqOther.length, 0);
 
     const branchOk = evaluateRoleGrants(
-      [{ roleKey: "branch_admin", organizationId: org, churchId: church, branchId: branch }],
+      [
+        {
+          roleKey: "branch_administrator",
+          organizationId: org,
+          churchId: church,
+          branchId: branch,
+        },
+      ],
       { organizationId: org, churchId: church, branchId: branch },
       { branchBelongsToChurch: true }
     );
     assert.equal(branchOk.length, 1);
 
     const branchOther = evaluateRoleGrants(
-      [{ roleKey: "branch_admin", organizationId: org, churchId: church, branchId: branch }],
+      [
+        {
+          roleKey: "branch_administrator",
+          organizationId: org,
+          churchId: church,
+          branchId: branch,
+        },
+      ],
       {
         organizationId: org,
         churchId: church,
@@ -111,7 +139,7 @@ describe("authorizeBlessBoardTenantAccess unit", () => {
     const byName = evaluateRoleGrants(
       [
         {
-          roleKey: "church_hq_admin",
+          roleKey: "organisation_administrator",
           organizationId: "demo-church",
           churchId: "Demo Church",
           branchId: null,
@@ -331,8 +359,12 @@ describe("blessboard tenant authorization http", () => {
         "inactive@example.org",
       ]);
       await pool.query(
-        `UPDATE blessboard.user_roles SET status = 'suspended'
-           WHERE user_id = $1`,
+        `UPDATE blessboard.user_role_assignments
+            SET status = 'revoked',
+                revoked_at = now(),
+                revocation_reason = 'authz_fixture_suspend',
+                updated_at = now()
+           WHERE user_id = $1 AND status = 'active'`,
         [users.suspendedRole.id]
       );
 
@@ -394,7 +426,7 @@ describe("blessboard tenant authorization http", () => {
     assert.equal(a.status, 200);
     assert.match(a.text, /Authenticated<\/dt><dd>yes/);
     assert.match(a.text, /Authorized<\/dt><dd>yes/);
-    assert.match(a.text, /Platform admin/);
+    assert.match(a.text, /platform administrator/i);
     assert.match(a.text, new RegExp(CHURCH_A_NAME));
     assert.doesNotMatch(a.text, new RegExp(orgA.id, "i"));
     assert.doesNotMatch(a.text, new RegExp(churchA.id, "i"));
@@ -416,14 +448,14 @@ describe("blessboard tenant authorization http", () => {
       .set("Host", TENANT_A_HOST)
       .set("Cookie", cookie);
     assert.equal(own.status, 200);
-    assert.match(own.text, /Church HQ admin/);
+    assert.match(own.text, /organisation administrator|church system administrator|Church HQ admin/i);
 
     const other = await request(app)
       .get("/tenant-access-check")
       .set("Host", TENANT_B_HOST)
       .set("Cookie", cookie);
     assert.equal(other.status, 403);
-    assert.doesNotMatch(other.text, /authz-b|Church HQ admin|unauthorized_role/i);
+    assert.doesNotMatch(other.text, /authz-b|organisation administrator|Church HQ admin|unauthorized_role/i);
   });
 
   it("branch_admin may access assigned branch; rejected for another branch", async () => {
@@ -434,7 +466,7 @@ describe("blessboard tenant authorization http", () => {
       .set("Host", TENANT_A_HOST)
       .set("Cookie", primaryCookie);
     assert.equal(primary.status, 200);
-    assert.match(primary.text, /Branch admin/);
+    assert.match(primary.text, /branch administrator|Branch admin/i);
 
     const campusCookie = await sessionCookieFor(users.campus, { branchId: campusBranchA.id });
     const campusOnPrimary = await request(app)
@@ -626,7 +658,11 @@ describe("blessboard tenant authorization http", () => {
     assert.equal(result.context.authorized, true);
     assert.equal(result.context.churchId, churchA.id);
     assert.ok(Array.isArray(result.context.effectiveRoles));
-    assert.equal(result.context.effectiveRoles[0].roleKey, "church_hq_admin");
+    assert.ok(
+      ["organisation_administrator", "church_system_administrator"].includes(
+        result.context.effectiveRoles[0].roleKey
+      )
+    );
     assert.equal(Object.prototype.hasOwnProperty.call(result.context, "password_hash"), false);
   });
 

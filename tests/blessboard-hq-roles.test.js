@@ -330,8 +330,13 @@ describe("blessboard hq role management", () => {
   it("revokes role, records audit, and enforces stale authorization", async () => {
     requireDb();
     const listed = await pool.query(
-      `SELECT id FROM blessboard.user_roles
-        WHERE user_id = $1 AND role_key = 'branch_admin' AND status = 'active'
+      `SELECT a.id
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1
+          AND r.role_key = 'branch_administrator'
+          AND a.status = 'active'
+          AND a.revoked_at IS NULL
         LIMIT 1`,
       [users.target.id]
     );
@@ -469,8 +474,12 @@ describe("blessboard hq role management", () => {
   it("rejects cross-church revoke via church scope", async () => {
     requireDb();
     const role = await pool.query(
-      `SELECT id FROM blessboard.user_roles
-        WHERE user_id = $1 AND church_id = $2 AND status = 'active'
+      `SELECT a.id
+         FROM blessboard.user_role_assignments a
+        WHERE a.user_id = $1
+          AND a.church_id = $2
+          AND a.status = 'active'
+          AND a.revoked_at IS NULL
         LIMIT 1`,
       [users.otherChurch.id, churchB.id]
     );

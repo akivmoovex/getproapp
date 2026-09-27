@@ -33,7 +33,22 @@ const {
   MAX_LIMIT,
   ALLOWED_LIMITS,
 } = require("../src/platform/services/platformAdminDirectoryService");
-const { PLATFORM_ADMIN_PERMISSIONS } = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
+const {
+  grantedIn,
+  deniedInPlatformAdmin,
+  DIRECTORY_MIGRATIONS,
+} = require("./helpers/platformAdminMigrationPermissions");
+const _paGrant = grantedIn(DIRECTORY_MIGRATIONS, [
+  "platform.users.view",
+  "platform.members.search",
+  "platform.members.view_support_profile",
+]);
+const PLATFORM_ADMIN_PERMISSIONS = _paGrant.ok
+  ? ["platform.users.view",
+  "platform.members.search",
+  "platform.members.view_support_profile"]
+  : [];
+
 const { PLATFORM_ADMIN_NAV } = require("../src/platform/http/platformAdminNav");
 
 const IDENTITY_KEY = "blessboard-platform-v5";

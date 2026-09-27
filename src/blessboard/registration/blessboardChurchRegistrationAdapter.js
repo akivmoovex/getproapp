@@ -335,7 +335,7 @@ async function provision(db, input) {
           require("../../church/orgDataEnvironment").resolveRegistrationDataEnvironment(input.env, {
             deploymentCode: input.deploymentCode,
           }),
-        deploymentCode: input.deploymentCode || "blessboard-org-v5",
+        deploymentCode: input.deploymentCode || "blessboard-org-staging",
         env: input.env || null,
       },
     },
@@ -423,8 +423,6 @@ async function markLifecycle(db, input) {
       organizationId: input.organizationId || undefined,
       provisionedAt: new Date().toISOString(),
       clearFailureMetadata: true,
-      // Legacy column CHECK allows only pending/contacted/closed.
-      legacyStatus: "closed",
     });
     return { ok: true };
   }

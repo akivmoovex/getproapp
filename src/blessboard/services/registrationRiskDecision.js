@@ -9,7 +9,7 @@ const {
   resolveCallingCode,
   DUPLICATE_PHONE_MESSAGE,
 } = require("./normalizeRegistrationPhone");
-const { isReservedOrganizationKey } = require("./organizationKey");
+const { isReservedOrganizationKey } = require("../../platform/organization/organizationKey");
 
 const RISK_DECISIONS = Object.freeze({
   ALLOW: "allow",
@@ -197,7 +197,7 @@ async function findSimilarOrganizationMatch(db, opts) {
         AND lower(city) = $2
         AND lower(country) = $3
         AND (
-          application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning')
+          application_status IN ('submitted', 'review_required', 'provisioning')
           OR provisioning_status IN ('provisioning', 'provisioned', 'provisioning_failed')
         )
         ${excludeSql}
@@ -267,7 +267,7 @@ async function findOccupyingPhoneMatch(db, contactPhoneNormalized) {
        FROM ${TARGET_RELATION}
       WHERE contact_phone_normalized = $1
         AND (
-          application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning')
+          application_status IN ('submitted', 'review_required', 'provisioning')
           OR provisioning_status IN ('provisioning', 'provisioned', 'provisioning_failed')
         )
       ORDER BY created_at DESC

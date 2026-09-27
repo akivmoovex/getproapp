@@ -2,7 +2,7 @@
 
 /**
  * HQ staff-access presentation: list, detail, role catalogue, access audit.
- * Uses RBAC assignments + legacy user_roles display (no silent conversion).
+ * Uses blessboard.user_role_assignments (+ roles join) only; legacy user_roles dual-read removed.
  */
 
 const rbacRepo = require("../repositories/blessBoardRbacRepository");
@@ -10,9 +10,6 @@ const {
   listEffectivePermissions,
   authorize,
 } = require("./blessBoardRbacAuthorizationService");
-const {
-  permissionsForLegacyRoleKey,
-} = require("../rbac/legacyCompatibilityPermissions");
 const {
   HIGHLY_SENSITIVE_ROLE_KEYS,
   isHighlySensitiveRole,
@@ -140,66 +137,43 @@ async function loadStaffAccessStats(client, organizationId, churchId) {
   const users = await client.query(
     `SELECT COUNT(DISTINCT u.id)::int AS cnt
        FROM blessboard.users u
-      WHERE (
-          EXISTS (
-            SELECT 1 FROM blessboard.user_roles ur
-             WHERE ur.user_id = u.id
-               AND ur.organization_id = $1
-               AND ur.status = 'active'
-               AND (ur.church_id IS NULL OR ur.church_id = $2)
-          )
-          OR EXISTS (
+      WHERE EXISTS (
             SELECT 1 FROM blessboard.user_role_assignments a
              WHERE a.user_id = u.id
                AND a.organization_id = $1
                AND (a.church_id IS NULL OR a.church_id = $2)
-          )
-        )`,
+               AND a.status = 'active'
+               AND a.revoked_at IS NULL
+          )`,
     [organizationId, churchId]
   );
   const churchAdmins = await client.query(
-    `SELECT COUNT(DISTINCT uid)::int AS cnt FROM (
-       SELECT ur.user_id AS uid
-         FROM blessboard.user_roles ur
-         JOIN blessboard.users u ON u.id = ur.user_id
-        WHERE ur.organization_id = $1 AND ur.church_id = $2
-          AND ur.role_key = 'church_hq_admin' AND ur.status = 'active'
-          AND u.status IN ('active', 'invited')
-       UNION
-       SELECT a.user_id
+    `SELECT COUNT(DISTINCT a.user_id)::int AS cnt
          FROM blessboard.user_role_assignments a
          JOIN blessboard.roles r ON r.id = a.role_id
          JOIN blessboard.users u ON u.id = a.user_id
         WHERE a.organization_id = $1
           AND a.status = 'active'
+          AND a.revoked_at IS NULL
           AND (a.expires_at IS NULL OR a.expires_at > now())
           AND r.role_key IN ('organisation_administrator', 'church_system_administrator')
           AND a.scope_type IN ('organisation', 'church')
           AND (a.church_id IS NULL OR a.church_id = $2)
-          AND u.status IN ('active', 'invited')
-     ) t`,
+          AND u.status IN ('active', 'invited')`,
     [organizationId, churchId]
   );
   const branchAdmins = await client.query(
-    `SELECT COUNT(DISTINCT uid)::int AS cnt FROM (
-       SELECT ur.user_id AS uid
-         FROM blessboard.user_roles ur
-         JOIN blessboard.users u ON u.id = ur.user_id
-        WHERE ur.organization_id = $1 AND ur.church_id = $2
-          AND ur.role_key = 'branch_admin' AND ur.status = 'active'
-          AND u.status IN ('active', 'invited')
-       UNION
-       SELECT a.user_id
+    `SELECT COUNT(DISTINCT a.user_id)::int AS cnt
          FROM blessboard.user_role_assignments a
          JOIN blessboard.roles r ON r.id = a.role_id
          JOIN blessboard.users u ON u.id = a.user_id
         WHERE a.organization_id = $1
           AND a.status = 'active'
+          AND a.revoked_at IS NULL
           AND (a.expires_at IS NULL OR a.expires_at > now())
           AND r.role_key = 'branch_administrator'
           AND (a.church_id IS NULL OR a.church_id = $2)
-          AND u.status IN ('active', 'invited')
-     ) t`,
+          AND u.status IN ('active', 'invited')`,
     [organizationId, churchId]
   );
   const pending = await client.query(
@@ -301,20 +275,13 @@ async function listStaffAccess(db, input) {
 
       const params = [organizationId, churchId];
       let where = `
-        (
-          EXISTS (
-            SELECT 1 FROM blessboard.user_roles ur
-             WHERE ur.user_id = u.id
-               AND ur.organization_id = $1
-               AND ur.status = 'active'
-               AND (ur.church_id IS NULL OR ur.church_id = $2)
-          )
-          OR EXISTS (
-            SELECT 1 FROM blessboard.user_role_assignments a
-             WHERE a.user_id = u.id
-               AND a.organization_id = $1
-               AND (a.church_id IS NULL OR a.church_id = $2)
-          )
+        EXISTS (
+          SELECT 1 FROM blessboard.user_role_assignments a
+           WHERE a.user_id = u.id
+             AND a.organization_id = $1
+             AND (a.church_id IS NULL OR a.church_id = $2)
+             AND a.status = 'active'
+             AND a.revoked_at IS NULL
         )
       `;
       if (q) {
@@ -336,33 +303,21 @@ async function listStaffAccess(db, input) {
       }
       if (branchId && UUID_RE.test(branchId)) {
         params.push(branchId);
-        where += ` AND (
-          EXISTS (
-            SELECT 1 FROM blessboard.user_roles ur2
-             WHERE ur2.user_id = u.id AND ur2.organization_id = $1
-               AND ur2.branch_id = $${params.length} AND ur2.status = 'active'
-          )
-          OR EXISTS (
-            SELECT 1 FROM blessboard.user_role_assignments a2
-             WHERE a2.user_id = u.id AND a2.organization_id = $1
-               AND a2.scope_type = 'branch' AND a2.scope_id = $${params.length}
-          )
+        where += ` AND EXISTS (
+          SELECT 1 FROM blessboard.user_role_assignments a2
+           WHERE a2.user_id = u.id AND a2.organization_id = $1
+             AND a2.scope_type = 'branch' AND a2.scope_id = $${params.length}
+             AND a2.status = 'active' AND a2.revoked_at IS NULL
         )`;
       }
       if (roleKey) {
         params.push(roleKey);
-        where += ` AND (
-          EXISTS (
-            SELECT 1 FROM blessboard.user_roles ur3
-             WHERE ur3.user_id = u.id AND ur3.organization_id = $1
-               AND ur3.role_key = $${params.length} AND ur3.status = 'active'
-          )
-          OR EXISTS (
-            SELECT 1 FROM blessboard.user_role_assignments a3
-            JOIN blessboard.roles r3 ON r3.id = a3.role_id
-             WHERE a3.user_id = u.id AND a3.organization_id = $1
-               AND r3.role_key = $${params.length}
-          )
+        where += ` AND EXISTS (
+          SELECT 1 FROM blessboard.user_role_assignments a3
+          JOIN blessboard.roles r3 ON r3.id = a3.role_id
+           WHERE a3.user_id = u.id AND a3.organization_id = $1
+             AND r3.role_key = $${params.length}
+             AND a3.status = 'active' AND a3.revoked_at IS NULL
         )`;
       }
       if (statusFilter === "expired" || statusFilter === "revoked") {
@@ -418,36 +373,16 @@ async function listStaffAccess(db, input) {
           row.id,
           organizationId
         );
-        const legacy = await client.query(
-          `SELECT ur.id, ur.role_key, ur.branch_id, ur.church_id, ur.status, ur.created_at,
-                  b.display_name AS branch_display_name, b.branch_key
-             FROM blessboard.user_roles ur
-             LEFT JOIN blessboard.branches b ON b.id = ur.branch_id
-            WHERE ur.user_id = $1 AND ur.organization_id = $2 AND ur.status = 'active'
-              AND (ur.church_id IS NULL OR ur.church_id = $3)
-            ORDER BY ur.created_at DESC`,
-          [row.id, organizationId, churchId]
-        );
 
-        let activeRoles = [
-          ...assignments
-            .filter((a) => a.status === "active" && (!a.expiresAt || new Date(a.expiresAt) > new Date()))
-            .map((a) => ({
-              roleKey: a.roleKey,
-              source: "rbac",
-              scopeType: a.scopeType,
-              sensitive: a.isSensitiveRole,
-              expiresAt: a.expiresAt,
-            })),
-          ...legacy.rows.map((l) => ({
-            roleKey: l.role_key,
-            source: "legacy",
-            scopeType: l.branch_id ? "branch" : "church",
-            sensitive: true,
-            expiresAt: null,
-            branchDisplayName: l.branch_display_name,
-          })),
-        ];
+        let activeRoles = assignments
+          .filter((a) => a.status === "active" && (!a.expiresAt || new Date(a.expiresAt) > new Date()))
+          .map((a) => ({
+            roleKey: a.roleKey,
+            source: "rbac",
+            scopeType: a.scopeType,
+            sensitive: a.isSensitiveRole,
+            expiresAt: a.expiresAt,
+          }));
 
         if (sensitivity === "sensitive") {
           activeRoles = activeRoles.filter((x) => x.sensitive);
@@ -493,7 +428,6 @@ async function listStaffAccess(db, input) {
             ...r,
             displayName: friendlyRoleLabel(r.roleKey),
           })),
-          hasLegacy: legacy.rows.length > 0,
           hasExpired: assignments.some(
             (a) =>
               a.status === "expired" ||
@@ -548,9 +482,6 @@ async function getStaffAccessDetail(db, input) {
       // Conceal users with no org relationship.
       const linked = await client.query(
         `SELECT 1 WHERE EXISTS (
-           SELECT 1 FROM blessboard.user_roles ur
-            WHERE ur.user_id = $1 AND ur.organization_id = $2
-         ) OR EXISTS (
            SELECT 1 FROM blessboard.user_role_assignments a
             WHERE a.user_id = $1 AND a.organization_id = $2
          )`,
@@ -584,31 +515,6 @@ async function getStaffAccessDetail(db, input) {
         } else if (a.status === "active") active.push(item);
       }
 
-      const legacyR = await client.query(
-        `SELECT ur.id, ur.role_key, ur.branch_id, ur.church_id, ur.status, ur.created_at,
-                b.display_name AS branch_display_name, b.branch_key
-           FROM blessboard.user_roles ur
-           LEFT JOIN blessboard.branches b ON b.id = ur.branch_id
-          WHERE ur.user_id = $1 AND ur.organization_id = $2 AND ur.status = 'active'
-            AND (ur.church_id IS NULL OR ur.church_id = $3)
-          ORDER BY ur.created_at DESC`,
-        [userId, organizationId, churchId]
-      );
-      const legacyRoles = legacyR.rows.map((row) => ({
-        id: row.id,
-        roleKey: row.role_key,
-        branchId: row.branch_id,
-        churchId: row.church_id,
-        status: row.status,
-        createdAt: row.created_at,
-        branchDisplayName: row.branch_display_name,
-        branchKey: row.branch_key,
-        label: "Legacy compatibility",
-        displayName: friendlyRoleLabel(row.role_key),
-        permissions: permissionsForLegacyRoleKey(row.role_key).slice(),
-        scopeType: row.branch_id ? "branch" : row.role_key === "platform_admin" ? "platform" : "church",
-      }));
-
       const events = await client.query(
         `SELECT e.id, e.assignment_id, e.event_key, e.previous_status, e.new_status,
                 e.reason, e.metadata_json, e.created_at, e.actor_user_id
@@ -638,12 +544,6 @@ async function getStaffAccessDetail(db, input) {
             source = "rbac_role_assignment";
             sourceRole = a.roleKey;
             break;
-          }
-        }
-        for (const leg of legacyRoles) {
-          if (leg.permissions.includes(pk)) {
-            source = sourceRole ? "multiple_role_combination" : "legacy_compatibility";
-            sourceRole = sourceRole || leg.roleKey;
           }
         }
         grouped[mod].push({
@@ -685,7 +585,6 @@ async function getStaffAccessDetail(db, input) {
           lastLoginAt: user.last_login_at || null,
           lastActiveLabel: formatRelativeTime(user.last_login_at) || "Never",
         },
-        legacyRoles,
         activeAssignments: active,
         expiredAssignments: expired,
         revokedAssignments: revoked,
@@ -1011,15 +910,10 @@ async function findUserInOrganisation(db, input) {
                   u.phone_normalized, u.phone_display
              FROM blessboard.users u
             WHERE u.email_normalized = $1
-              AND (
-                EXISTS (
-                  SELECT 1 FROM blessboard.user_roles ur
-                   WHERE ur.user_id = u.id AND ur.organization_id = $2
-                )
-                OR EXISTS (
-                  SELECT 1 FROM blessboard.user_role_assignments a
-                   WHERE a.user_id = u.id AND a.organization_id = $2
-                )
+              AND EXISTS (
+                SELECT 1 FROM blessboard.user_role_assignments a
+                 WHERE a.user_id = u.id AND a.organization_id = $2
+                   AND a.status = 'active' AND a.revoked_at IS NULL
               )
             LIMIT 1`,
           [email, organizationId]

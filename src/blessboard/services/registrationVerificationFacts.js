@@ -286,17 +286,17 @@ function computeApprovalEligible(app) {
   if (app.provisioningStatus === "provisioned") return false;
   if (!app.contactEmail) return false;
   if (isNetworkPlanSelection(app.selectedPlan)) {
-    if (["rejected", "cancelled"].includes(app.applicationStatus)) return false;
+    if (app.applicationStatus === "rejected") return false;
     return (
       app.followUpStatus === "approved_for_provision" ||
       app.followUpStatus === "qualified"
     );
   }
-  if (["rejected", "cancelled", "closed", "active"].includes(app.applicationStatus)) return false;
+  if (["rejected", "active"].includes(app.applicationStatus)) return false;
   if (app.provisioningStatus === "provisioning_failed") {
     return false;
   }
-  return ["submitted", "duplicate_review", "review_required", "provisioning"].includes(app.applicationStatus);
+  return ["submitted", "review_required", "provisioning"].includes(app.applicationStatus);
 }
 
 /**
@@ -308,7 +308,7 @@ function computeProvisioningPrerequisites(app) {
     return { ok: true, reason: "already_provisioned" };
   }
   if (isNetworkPlanSelection(app.selectedPlan)) {
-    if (["rejected", "cancelled"].includes(app.applicationStatus)) {
+    if (app.applicationStatus === "rejected") {
       return { ok: false, reason: "not_eligible" };
     }
     if (
@@ -319,10 +319,10 @@ function computeProvisioningPrerequisites(app) {
     }
     return { ok: true, reason: "network_ready" };
   }
-  if (["rejected", "cancelled", "closed"].includes(app.applicationStatus)) {
+  if (["rejected", "active"].includes(app.applicationStatus)) {
     return { ok: false, reason: "not_eligible" };
   }
-  if (!["submitted", "duplicate_review", "review_required"].includes(app.applicationStatus)) {
+  if (!["submitted", "review_required"].includes(app.applicationStatus)) {
     if (app.provisioningStatus === "provisioning_failed") {
       return { ok: false, reason: "retry_review_required" };
     }
@@ -880,7 +880,7 @@ async function buildSupportedFacts(app, deps, checkedAt) {
 
   // 10. duplicate_review_evidence
   {
-    const inDuplicateReview = app.applicationStatus === "duplicate_review";
+    const inDuplicateReview = app.applicationStatus === "review_required";
     const reviewActions = (app.reviewEvents || []).filter(
       (e) =>
         e &&

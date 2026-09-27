@@ -41,15 +41,10 @@ const APPLICATION_STATUSES = Object.freeze([
   "rejected",
   "suspended",
   "provision_failed",
-  "pending_review",
-  "approved",
-  "withdrawn",
-  "duplicate",
 ]);
 
 const REVIEW_HOLD_STATUSES = Object.freeze([
   "submitted",
-  "pending_review",
   "review_required",
 ]);
 
@@ -317,7 +312,7 @@ async function deliverInformationRequestedEmail(client, input) {
 }
 
 /**
- * Record an information request. Application status stays pending_review.
+ * Record an information request. Application status stays on the review-hold axis.
  * Follow-up becomes awaiting_customer. Email is attempted after the request is recorded.
  */
 async function requestClinicRegistrationInformation(db, input) {
@@ -391,7 +386,7 @@ async function requestClinicRegistrationInformation(db, input) {
 }
 
 /**
- * Mark requested information as returned. Status stays pending_review.
+ * Mark requested information as returned. Status stays on the review-hold axis.
  * Follow-up becomes returned_for_review (normal review queue).
  */
 async function markClinicRegistrationInformationReturned(db, input) {
@@ -522,7 +517,7 @@ function normalizeFilter(raw, allowed, fallback) {
  */
 async function listClinicRegistrationApplications(db, filters) {
   const src = filters && typeof filters === "object" ? filters : {};
-  const status = normalizeFilter(src.status, APPLICATION_STATUSES, "pending_review");
+  const status = normalizeFilter(src.status, APPLICATION_STATUSES);
   const followUpStatus = normalizeFilter(src.followUpStatus, FOLLOW_UP_STATUSES, "all");
   const provisioningStatus = normalizeFilter(
     src.provisioningStatus,
@@ -540,10 +535,6 @@ async function listClinicRegistrationApplications(db, filters) {
       WHERE (
             $1 = 'all'
             OR status = $1
-            OR ($1 = 'pending_review' AND status IN ('review_required', 'pending_review', 'submitted'))
-            OR ($1 = 'review_required' AND status IN ('review_required', 'pending_review'))
-            OR ($1 = 'approved' AND status IN ('approved', 'active'))
-            OR ($1 = 'active' AND status IN ('approved', 'active'))
           )
         AND ($2 = 'all' OR follow_up_status = $2)
         AND ($3 = 'all' OR provisioning_status = $3)

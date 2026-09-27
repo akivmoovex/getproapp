@@ -136,7 +136,7 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
     assert.equal(counts.domains, 0);
     assert.equal(counts.subs, 1);
     assert.equal(counts.onboarding, 1);
-    assert.equal(counts.draft_pages + counts.published_pages, 8);
+    assert.equal(counts.draft_pages + counts.published_pages, 9);
 
     const appRow = await appRepo.findApplicationById(pool, app.id);
     assert.equal(appRow.application_status, "active");
@@ -145,14 +145,16 @@ describe("provisionRegisteredBlessBoardChurch orchestrator", () => {
     assert.ok(appRow.provisioned_at);
 
     const roles = await pool.query(
-      `SELECT role_key FROM blessboard.user_roles
-        WHERE user_id = $1 AND organization_id = $2 AND status = 'active'
-        ORDER BY role_key`,
+      `SELECT r.role_key
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1 AND a.organization_id = $2 AND a.status = 'active'
+        ORDER BY r.role_key`,
       [result.records.administratorUserId, result.records.organizationId]
     );
     assert.deepEqual(
       roles.rows.map((r) => r.role_key),
-      ["branch_admin", "church_hq_admin"]
+      ["branch_administrator", "organisation_administrator"]
     );
 
     const plan = await pool.query(

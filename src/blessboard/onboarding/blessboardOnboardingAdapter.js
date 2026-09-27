@@ -32,9 +32,11 @@ async function countActiveStaffRoles(db, organizationId) {
   try {
     const r = await db.query(
       `SELECT COUNT(*)::int AS n
-         FROM blessboard.user_roles
-        WHERE organization_id = $1
-          AND revoked_at IS NULL`,
+         FROM blessboard.user_role_assignments a
+        WHERE a.organization_id = $1
+          AND a.status = 'active'
+          AND a.revoked_at IS NULL
+          AND (a.expires_at IS NULL OR a.expires_at > now())`,
       [organizationId]
     );
     return Number(r.rows[0] && r.rows[0].n) || 0;

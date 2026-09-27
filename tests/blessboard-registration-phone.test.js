@@ -331,7 +331,7 @@ describe("blessboard registration phone uniqueness", () => {
     });
     await pool.query(
       `UPDATE blessboard.platform_church_registration_applications
-          SET application_status = 'closed',
+          SET application_status = 'active',
               provisioning_status = 'not_started',
               updated_at = now()
         WHERE id = $1`,

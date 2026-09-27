@@ -118,18 +118,7 @@ function projectApplicantStatus(application, informationRequest) {
     explanation = GENERIC_REJECTION;
     nextAction = "If your circumstances have changed, you may start a new clinic registration.";
     rejectionMessage = GENERIC_REJECTION;
-  } else if (applicationStatus === "withdrawn") {
-    publicState = PUBLIC_STATE.WITHDRAWN;
-    label = "Withdrawn";
-    explanation = "This application was withdrawn and is no longer under review.";
-    nextAction = "If you still want to join ActiveClinic, start a new clinic registration.";
-  } else if (applicationStatus === "duplicate") {
-    publicState = PUBLIC_STATE.DUPLICATE_RECORDED;
-    label = "Already recorded";
-    explanation =
-      "This application is recorded against an existing submission. The original remains in review.";
-    nextAction = "Use this same application number to check the original submission, or wait for review.";
-  } else if (applicationStatus === "approved" || applicationStatus === "active") {
+  } else if (applicationStatus === "active") {
     if (provisioning === "failed") {
       publicState = PUBLIC_STATE.APPROVED_SETUP_ATTENTION;
       label = "Approved — setup needs attention";

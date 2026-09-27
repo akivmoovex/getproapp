@@ -39,7 +39,24 @@ const {
   getSupportStatus,
   SUPPORT_TTL_MS,
 } = require("../src/platform/services/platformSupportModeService");
-const { PLATFORM_ADMIN_PERMISSIONS } = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
+const {
+  grantedIn,
+  deniedInPlatformAdmin,
+  SUPPORT_MIGRATIONS,
+} = require("./helpers/platformAdminMigrationPermissions");
+const _paGrant = grantedIn(SUPPORT_MIGRATIONS, [
+  "platform.support.enter_hq",
+  "platform.support.enter_branch",
+  "platform.support.exit",
+  "platform.support.view_status",
+]);
+const PLATFORM_ADMIN_PERMISSIONS = _paGrant.ok
+  ? ["platform.support.enter_hq",
+  "platform.support.enter_branch",
+  "platform.support.exit",
+  "platform.support.view_status"]
+  : [];
+
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";

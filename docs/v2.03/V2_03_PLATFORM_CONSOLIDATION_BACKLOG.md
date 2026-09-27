@@ -5,13 +5,15 @@
 | **Doc ID** | `V2_03_PLATFORM_CONSOLIDATION_BACKLOG` |
 | **Epic** | V10 BB/AC Platform Consolidation |
 | **Branch** | `V10` |
-| **Status** | BACKLOG — NOT STARTED |
-| **Implementation** | Documentation only — no architecture changes in this commit |
+| **Status** | **`COMPLETE_WITH_P2_P3_DEBT`** (PC25 handoff 2026-09-27) |
+| **Implementation** | Workstreams 00–12 + PC13–PC24 complete; residual P2/P3 only — see PC25 |
 | **Audit baseline** | `AUDIT_BASELINE_2026_09_26` (initial); recalculated `AUDIT_BASELINE_2026_09_27_PC01` |
 | **Canonical index** | [`docs/BACKLOG.md`](../BACKLOG.md) (Platform Consolidation section) |
-| **Evidence** | BB / AC Platform Duplication Audit (2026-09-26); [`docs/qa/V10_PC01_CONSOLIDATION_PREFLIGHT.md`](../qa/V10_PC01_CONSOLIDATION_PREFLIGHT.md) |
-| **PC01 preflight** | **`V10_PC01_CONSOLIDATION_PREFLIGHT_PASS`** (2026-09-27) — characterization may proceed; architecture extraction not started |
+| **Evidence** | BB / AC Platform Duplication Audit (2026-09-26); PC01–PC25 under `docs/qa/` |
+| **PC01 preflight** | **`V10_PC01_CONSOLIDATION_PREFLIGHT_PASS`** (2026-09-27) |
 | **PC02 characterization** | **`PLATFORM_CONSOLIDATION_CHARACTERIZATION_PASS`** — evidence [`docs/qa/V10_PC02_PLATFORM_CONSOLIDATION_CHARACTERIZATION.md`](../qa/V10_PC02_PLATFORM_CONSOLIDATION_CHARACTERIZATION.md) |
+| **PC25 handoff** | **`V10_PC25_RESIDUAL_BACKLOG_HANDOFF`** — [`docs/qa/V10_PC25_RESIDUAL_BACKLOG_HANDOFF.md`](../qa/V10_PC25_RESIDUAL_BACKLOG_HANDOFF.md) |
+| **Next activity** | **V2.03 QA** — `NEXT_MAJOR_CONSOLIDATION_EPIC_REQUIRED: NO` |
 
 ---
 
@@ -291,6 +293,52 @@ Repository hygiene (`PLATFORM-CONSOLIDATION-12`) may be scheduled separately and
 | — | PC22 residual P2 architecture audit | — | **COMPLETE** (`V10_RESIDUAL_P2_ARCHITECTURE_AUDIT_COMPLETE`) | — |
 | — | PC23 V2.03 post-consolidation QA readiness | — | **READY_WITH_P2_GAPS** (`V2_03_POST_CONSOLIDATION_QA_READY_WITH_P2_GAPS`) | — |
 | — | PC24 final clean checkpoint | — | **COMPLETE** (`V10_FINAL_CLEAN_CHECKPOINT` · `QA_HANDOFF_READY: YES`) | — |
+| — | PC25 residual backlog handoff | — | **COMPLETE** (`COMPLETE_WITH_P2_P3_DEBT`) | — |
+
+---
+
+## Residual debt after epic close (PC25)
+
+**Authority:** [`docs/qa/V10_PC25_RESIDUAL_BACKLOG_HANDOFF.md`](../qa/V10_PC25_RESIDUAL_BACKLOG_HANDOFF.md) · evidence [`docs/qa/V10_PC22_RESIDUAL_P2_ARCHITECTURE_AUDIT.md`](../qa/V10_PC22_RESIDUAL_P2_ARCHITECTURE_AUDIT.md).
+
+### Completed (do not re-open as unfinished consolidation)
+
+Registration consolidation · verification consolidation · phone ownership · email transport · media SoT · website editor shared kit · publication orchestrator/adapters · CMS shared helpers · architecture guardrails · cross-product dependency removal · Finder cleanup to proven-safe limit (`* 2.*` files = 0).
+
+### P2 open (optional / evidence-gated)
+
+| ID | Item |
+|----|------|
+| R-P2-01 | Class-E composition-root shrink **only** after genuine mechanism lift (no bulk count program) |
+| R-P2-02 | Editor route thinning for **truly generic** handlers only |
+| R-P2-03 | Classic CMS route/service retirement after parity proof |
+| R-P2-04 | Publish/CMS compatibility shim retirement after consumer proof |
+| R-P2-05 | Minor test-contract pins (PC23 PRE_EXISTING / TEST_DEBT) |
+
+### P3 open (on-touch / shim)
+
+| ID | Item |
+|----|------|
+| R-P3-01 | gp-ops hybrid adoption on-touch |
+| R-P3-02 | Phone legacy `/activeclinic/ac-phone-field.*` URL retirement |
+| R-P3-03 | Thin org-key / deploymentEnv re-export retirement after import-graph proof |
+| R-P3-04 | Finder stitch design-reference dirs (`* 2` / `* 3`) — not runtime debt |
+| R-P3-05 | Engine projection `23514` soft-savepoint residual (on-touch) |
+
+**Finder UNIQUE_REQUIRED / MIGRATION_SENSITIVE / UNKNOWN runtime forks:** **0** (PC20–PC21).
+
+### Not consolidation debt
+
+BB navigation/theme/domain · AC navigation/theme/clinical domain · product RBAC catalogues · tenant topology semantics · product URLs/shell composition.
+
+```text
+P0_OPEN: 0
+P1_OPEN: 0
+P2_OPEN: 5
+P3_OPEN: 5
+NEXT_MAJOR_CONSOLIDATION_EPIC_REQUIRED: NO
+Recommended next activity: V2.03 QA
+```
 
 ---
 
@@ -847,6 +895,14 @@ Do not duplicate those documents here — this backlog holds actionable consolid
 
 ```text
 V10_PLATFORM_CONSOLIDATION_BACKLOG_RECORDED
-IMPLEMENTATION_STARTED: NO
-APPLICATION_CODE_CHANGED: NO
+V10_PLATFORM_CONSOLIDATION_EPIC: COMPLETE_WITH_P2_P3_DEBT
+IMPLEMENTATION_STARTED: YES
+APPLICATION_CODE_CHANGED: YES (PC03–PC21; PC22–PC25 documentation / packaging)
+P0_OPEN: 0
+P1_OPEN: 0
+P2_OPEN: 5
+P3_OPEN: 5
+NEXT_MAJOR_CONSOLIDATION_EPIC_REQUIRED: NO
+Recommended next activity: V2.03 QA
+PC25_HANDOFF: docs/qa/V10_PC25_RESIDUAL_BACKLOG_HANDOFF.md
 ```

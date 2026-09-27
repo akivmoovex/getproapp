@@ -385,7 +385,7 @@ async function acceptGrowthTrialOffer(db, input) {
     String((input && input.deploymentCode) || "").trim() ||
     (() => {
       const d = getPlatformDeploymentCode(input && input.env);
-      return d && d.ok ? d.code : "blessboard-org-v5";
+      return d && d.ok ? d.code : "blessboard-org-staging";
     })();
 
   if (!UUID_RE.test(organizationId) || !UUID_RE.test(actorUserId)) {

@@ -27,6 +27,7 @@ const {
   linkMemberToUser,
 } = require("../src/blessboard/services/memberRegistrationService");
 const authRepo = require("../src/blessboard/repositories/blessBoardAuthRepository");
+const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const DEPLOYMENT = "blessboard-org-staging";
@@ -145,11 +146,16 @@ describe("blessboard phone-first forms and search (11C)", () => {
         [HASH]
       );
       actorId = actor.rows[0].id;
-      await pool.query(
-        `INSERT INTO blessboard.user_roles
-           (user_id, organization_id, church_id, branch_id, role_key, status)
-         VALUES ($1, $2, $3, NULL, 'church_hq_admin', 'active')`,
-        [actorId, org.id, church.id]
+      assert.equal(
+        (
+          await assignBlessBoardRole(pool, {
+            email: "actor-11c@example.test",
+            organizationKey: "phone-forms-11c",
+            churchKey: "phone-forms-11c",
+            roleKey: "church_hq_admin",
+          })
+        ).ok,
+        true
       );
     });
 

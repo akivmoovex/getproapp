@@ -502,26 +502,35 @@ function createWebsitePublicationVersionAdminRouter(deps) {
         selectedPageKeys = (prepared.pageOptions || []).map((p) => p.key);
       }
 
-      const result = await versionSvc.createRestoredDraft(getPool(), {
-        organizationId: tenant.organization.id,
-        churchId,
-        versionId: req.params.versionId,
-        actorUserId: userId,
-        restorationReason: body.restoration_reason || body.reason,
-        selectedPageKeys,
-        restoreTheme:
-          body.keep_current_theme !== "1" &&
-          body.keep_current_theme !== "on" &&
-          (body.restore_theme === "1" ||
-            body.restore_theme === "on" ||
-            body.restore_theme == null),
-        restoreNavigation:
-          body.keep_current_navigation !== "1" &&
-          body.keep_current_navigation !== "on" &&
-          (body.restore_navigation === "1" ||
-            body.restore_navigation === "on" ||
-            body.restore_navigation == null),
-        confirmed: body.confirm_restore === "1" || body.confirm_restore === "on",
+      const {
+        restore: restoreProductWebsite,
+        PERMISSIONS: WEBSITE_RESTORE_PERMISSIONS,
+      } = require("../../platform/website/publicationOrchestrator");
+      const { PRODUCT } = require("../../platform/registration/constants");
+      const result = await restoreProductWebsite(getPool(), {
+        productCode: PRODUCT.BLESSBOARD,
+        grantedPermissions: [WEBSITE_RESTORE_PERMISSIONS.RESTORE],
+        request: {
+          organizationId: tenant.organization.id,
+          churchId,
+          versionId: req.params.versionId,
+          actorUserId: userId,
+          restorationReason: body.restoration_reason || body.reason,
+          selectedPageKeys,
+          restoreTheme:
+            body.keep_current_theme !== "1" &&
+            body.keep_current_theme !== "on" &&
+            (body.restore_theme === "1" ||
+              body.restore_theme === "on" ||
+              body.restore_theme == null),
+          restoreNavigation:
+            body.keep_current_navigation !== "1" &&
+            body.keep_current_navigation !== "on" &&
+            (body.restore_navigation === "1" ||
+              body.restore_navigation === "on" ||
+              body.restore_navigation == null),
+          confirmed: body.confirm_restore === "1" || body.confirm_restore === "on",
+        },
       });
 
       if (!result.ok) {

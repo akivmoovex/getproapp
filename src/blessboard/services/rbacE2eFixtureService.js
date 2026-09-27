@@ -320,7 +320,7 @@ async function assertTestingIdentity(pool, opts) {
        FROM platform.deployments
       WHERE deployment_code = $1
       LIMIT 1`,
-    [process.env.PLATFORM_DEPLOYMENT_CODE || "blessboard-org-v5"]
+    [process.env.PLATFORM_DEPLOYMENT_CODE || "blessboard-org-staging"]
   );
   const deployment = dep.rows[0] || null;
   if (
@@ -1021,8 +1021,13 @@ async function verifyRbacE2eFixtures(pool, opts) {
     }
     if (persona.legacy && userOk) {
       const legacy = await pool.query(
-        `SELECT 1 FROM blessboard.user_roles
-          WHERE user_id = $1 AND role_key = 'church_hq_admin' AND status = 'active'
+        `SELECT 1
+           FROM blessboard.user_role_assignments a
+           JOIN blessboard.roles r ON r.id = a.role_id
+          WHERE a.user_id = $1
+            AND a.status = 'active'
+            AND a.revoked_at IS NULL
+            AND r.role_key IN ('organisation_administrator', 'church_system_administrator')
           LIMIT 1`,
         [u.rows[0].id]
       );

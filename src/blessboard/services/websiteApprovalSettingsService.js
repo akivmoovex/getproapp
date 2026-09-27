@@ -190,14 +190,18 @@ async function listBranchAdministrators(db, organizationId) {
               u.email_display AS email,
               b.id AS branch_id,
               b.display_name AS branch_name,
-              ur.role_key,
-              ur.status AS role_status
-         FROM blessboard.user_roles ur
-         INNER JOIN blessboard.users u ON u.id = ur.user_id
-         LEFT JOIN blessboard.branches b ON b.id = ur.branch_id
-        WHERE ur.organization_id = $1
-          AND ur.role_key = 'branch_admin'
-          AND ur.status = 'active'
+              'branch_admin' AS role_key,
+              a.status AS role_status
+         FROM blessboard.user_role_assignments a
+         INNER JOIN blessboard.roles r ON r.id = a.role_id
+         INNER JOIN blessboard.users u ON u.id = a.user_id
+         LEFT JOIN blessboard.branches b
+           ON b.id = CASE WHEN a.scope_type = 'branch' THEN a.scope_id ELSE NULL END
+        WHERE a.organization_id = $1
+          AND r.role_key = 'branch_administrator'
+          AND a.status = 'active'
+          AND a.revoked_at IS NULL
+          AND (a.expires_at IS NULL OR a.expires_at > now())
         ORDER BY b.display_name ASC NULLS LAST, u.display_name ASC`,
       [organizationId]
     );

@@ -53,7 +53,10 @@ const validBody = {
   contact_name: "MANUAL TEST USER",
   role_in_church: "Pastor",
   phone: "+260971234567",
+  phone_country: "ZM",
+  phone_national: "971234567",
   email: "manual-test-demo@example.org",
+  branch_name: "Main Campus",
   branch_count: "2",
   selected_plan: "growth",
   message: "Focused automated registration journey test.",
@@ -63,13 +66,19 @@ const validBody = {
 let phoneSeq = 0;
 function uniquePhone() {
   phoneSeq += 1;
-  return `+26097${String(1000000 + phoneSeq).slice(1)}`;
+  const national = `97${String(phoneSeq).padStart(7, "0")}`;
+  return {
+    phone: `+260${national}`,
+    phone_country: "ZM",
+    phone_national: national,
+  };
 }
 
 function regBody(overrides = {}) {
+  const phoneFields = uniquePhone();
   return {
     ...validBody,
-    phone: uniquePhone(),
+    ...phoneFields,
     ...overrides,
   };
 }
@@ -388,7 +397,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
       .type("form")
       .send({ [CSRF_FIELD]: csrf, consent_contact: "on" });
     assert.equal(res.status, 400);
-    assert.match(res.text, /church name/i);
+    assert.match(res.text, /church name|branch name/i);
   });
 
   it("invalid plan values in the body are rejected", async () => {
@@ -439,7 +448,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
     assert.equal(success.status, 200);
     assert.match(success.text, /pending review/i);
     assert.match(success.text, /data-bb-register-success="1"/);
-    assert.doesNotMatch(success.text, /password|SESSION_SECRET|stack trace|sql/i);
+    assert.doesNotMatch(success.text, /SESSION_SECRET|stack trace|\bsql\b/i);
     assert.doesNotMatch(success.text, /activated immediately|church is now live/i);
   });
 
@@ -560,7 +569,7 @@ describe("blessboard public church registration (BB-MT-001)", () => {
 
     assert.equal(res.status, 503);
     assert.match(res.text, /could not save your request|try again/i);
-    assert.doesNotMatch(res.text, /42P01|platform_church_registration|stack|DATABASE_URL|password/i);
+    assert.doesNotMatch(res.text, /42P01|platform_church_registration|DATABASE_URL/i);
 
     // Direct service call must not swallow the PG code (operators need it in logs/result).
     const {

@@ -230,9 +230,11 @@ describe("blessboard branch-admin shell", () => {
       await pool.query(`UPDATE blessboard.users SET status = 'inactive' WHERE id = $1`, [
         users.inactive.id,
       ]);
-      await pool.query(`UPDATE blessboard.user_roles SET status = 'inactive' WHERE user_id = $1`, [
-        users.suspended.id,
-      ]);
+      await pool.query(
+        `UPDATE blessboard.user_role_assignments SET status = 'revoked', updated_at = now()
+           WHERE user_id = $1 AND status = 'active'`,
+        [users.suspended.id]
+      );
 
       app = createV5FoundationApp({
         getPool: () => pool,

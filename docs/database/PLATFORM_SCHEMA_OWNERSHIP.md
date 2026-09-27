@@ -93,6 +93,21 @@ Outcome marker for this pass: `PLATFORM_SCHEMA_OWNERSHIP_PASS` (plan established
 
 ---
 
+## 4b. V10 PL07 fresh-install path (strategy B)
+
+Fresh empty databases use the **same ordered migration files** (no squash). Historical exceptions still apply so catalogue DML and product schemas reach V2.03; they do **not** authorize new cross-product DDL:
+
+| Fresh-path guarantee | Enforcement |
+|----------------------|-------------|
+| No BB migration `CREATE`/`ALTER` of `activeclinic.*` objects | `scanCrossSchemaDdlSmells()` in `canonicalMigrationBaseline.js` |
+| No AC migration `CREATE` of `platform.*` schema objects (except historical `035` allowlist) | same |
+| New AC RBAC → `activeclinic/` | PC06 forward rule + ownership audit orphans = 0 |
+| Ceiling recorded after migrate | `CANONICAL_CEILING` + `verifyCanonicalFreshSchema` |
+
+Ephemeral dry-run: `npm run db:canonical-fresh-bootstrap` (never QA/prod).
+
+---
+
 ## 5. Operator checklist for new migrations
 
 1. Pick folder by **product ownership of the change**, not by which schema you `INSERT` into.

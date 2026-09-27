@@ -1,6 +1,6 @@
 /**
  * Platform PhoneField — searchable country picker + national number.
- * Canonical asset: /platform/phone-field.js (legacy /activeclinic/ac-phone-field.js is a shim).
+ * Canonical asset: /platform/phone-field.js
  * Progressive enhancement; server always re-normalizes.
  */
 (function () {

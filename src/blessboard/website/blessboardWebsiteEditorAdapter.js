@@ -14,8 +14,8 @@
  * - pathPrefix + HQ/branch public scope (church-wide vs branch key)
  * - BlessBoard RBAC (`website.edit` / `website.publish`) via catalogue authorize
  * - Engine instance resolve (branchId null for HQ)
- * - Dual-write overlay for classic inline drafts (compatibility)
- * - Church publish via `publishChurchWebsite` (no AC unpublish/submit)
+ * - Engine-primary field saves; classic overlay dual-write retained until PL06 public projection
+ * - Church publish via platform `publicationOrchestrator` + BB governance adapter
  * - Publication governance: `blessboardPublicationGovernanceAdapter` (PC10)
  * - Media-library / websites scope listing for BB tenants
  *

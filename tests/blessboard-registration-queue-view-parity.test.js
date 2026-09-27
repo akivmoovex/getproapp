@@ -229,7 +229,7 @@ describe("registration queue view parity (no Postgres)", () => {
           contactName: "Ada",
           contactPhone: "+254700000001",
           createdAt: "2026-07-02T00:00:00.000Z",
-          applicationStatus: "closed",
+          applicationStatus: "active",
           provisioningStatus: "provisioned",
           organizationKey: "approved-church-key",
           operatorQueue: "provisioned",

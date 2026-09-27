@@ -529,19 +529,13 @@ async function loadWebsiteSetupFacts(db, organizationId, clinicKey) {
     organizationId,
     productCode: "activeclinic",
   });
-  let published = false;
-  try {
-    const hcoRow = await db.query(
-      `SELECT website_published FROM activeclinic.healthcare_organizations
-        WHERE organization_id = $1
-        LIMIT 1`,
-      [organizationId]
-    );
-    published = Boolean(hcoRow.rows[0] && hcoRow.rows[0].website_published === true);
-  } catch (err) {
-    const message = err && err.message ? String(err.message) : "";
-    if (!/website_published/i.test(message) && err && err.code !== "42703") throw err;
-  }
+  const hcoRow = await db.query(
+    `SELECT website_published FROM activeclinic.healthcare_organizations
+      WHERE organization_id = $1
+      LIMIT 1`,
+    [organizationId]
+  );
+  const published = Boolean(hcoRow.rows[0] && hcoRow.rows[0].website_published === true);
   let latestSubmissionStatus = null;
   if (instance) {
     const listed = await submissionService.listWebsiteSubmissions(db, {

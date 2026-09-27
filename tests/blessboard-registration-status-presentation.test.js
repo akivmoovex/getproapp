@@ -33,10 +33,12 @@ describe("registrationStatusPresentation mappings", () => {
   it("maps every application status", () => {
     const expected = {
       submitted: "Submitted",
-      duplicate_review: "Duplicate review",
+      review_required: "Review required",
+      provisioning: "Provisioning",
+      active: "Active",
       rejected: "Rejected",
-      cancelled: "Cancelled",
-      closed: "Closed",
+      provision_failed: "Provision failed",
+      suspended: "Suspended",
     };
     for (const [value, label] of Object.entries(expected)) {
       const st = api.presentApplicationStatus(value);
@@ -156,12 +158,12 @@ describe("pa-registration-status-chip partial", () => {
   it("renders accessible visible labels for known statuses", () => {
     const html = renderChip({
       statusKind: "application",
-      statusValue: "duplicate_review",
+      statusValue: "review_required",
     });
     assert.match(html, /data-bb-pa-reg-status="1"/);
     assert.match(html, /data-bb-pa-reg-status-known="1"/);
     assert.match(html, /bb-pa-chip--warn/);
-    assert.match(html, />Duplicate review</);
+    assert.match(html, />Review required</);
     assert.doesNotMatch(html, /material-symbols-outlined/);
   });
 

@@ -47,7 +47,7 @@ const {
 } = require("../src/activeclinic/services/activeClinicEmailDelivery");
 const {
   RESEND_EMAILS_URL,
-} = require("../src/activeclinic/services/activeClinicEmailResendAdapter");
+} = require("../src/platform/email/resendEmailAdapter");
 const {
   buildInformationRequestedMessage,
   buildReadyToSignInMessage,

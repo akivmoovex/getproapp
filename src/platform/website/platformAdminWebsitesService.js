@@ -39,8 +39,10 @@ const {
   restoreAndPublishCurrentVersion,
 } = require("../../blessboard/services/websitePublicationVersionService");
 const {
-  unpublishChurchWebsite,
-} = require("../../blessboard/services/churchWebsitePublishService");
+  unpublish: unpublishProductWebsite,
+  PERMISSIONS: WEBSITE_PUBLISH_PERMISSIONS,
+} = require("./publicationOrchestrator");
+const { PRODUCT } = require("../registration/constants");
 const {
   resolveApprovedVersions,
   reviewStatusForVersion,
@@ -615,11 +617,15 @@ async function applyPlatformAdminWebsiteAction(db, input) {
       });
     }
     if (churchId) {
-      return unpublishChurchWebsite(db, {
-        churchId,
-        organizationId: organization.id,
-        actorUserId: actorIdentityId,
-        env: input.env,
+      return unpublishProductWebsite(db, {
+        productCode: PRODUCT.BLESSBOARD,
+        grantedPermissions: [WEBSITE_PUBLISH_PERMISSIONS.PUBLISH],
+        request: {
+          churchId,
+          organizationId: organization.id,
+          actorUserId: actorIdentityId,
+          env: input.env,
+        },
       });
     }
     return { ok: false, code: "not_found" };

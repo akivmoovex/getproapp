@@ -94,15 +94,17 @@ const {
   saveInlineFieldDraft,
 } = require("../services/websiteInlineDraftService");
 const {
-  publishChurchWebsite,
-} = require("../services/churchWebsitePublishService");
+  publish: publishProductWebsite,
+  PERMISSIONS: WEBSITE_PUBLISH_PERMISSIONS,
+} = require("../../platform/website/publicationOrchestrator");
+const { PRODUCT } = require("../../platform/registration/constants");
 const {
   findOrganizationByKey,
   findBranchByChurchAndKey,
 } = require("../repositories/blessBoardCatalogueRepository");
 const { getBlessBoardCatalogueContext } = require("../services/getBlessBoardCatalogueContext");
 const { buildBlessBoardTenantContext } = require("./buildBlessBoardTenantContext");
-const { normalizeOrganizationKey } = require("../services/organizationKey");
+const { normalizeOrganizationKey } = require("../../platform/organization/organizationKey");
 
 const mediaUpload = createWebsiteMediaUpload();
 
@@ -502,6 +504,8 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
             reason: engineSaved.reason || null,
           });
         }
+        // Engine is primary write; classic overlay dual-write remains until public
+        // projection is fully engine-sourced (PL06). Required for live public parity today.
         if (typeof value === "string") {
           const locator =
             (resolvedField.ok &&
@@ -767,7 +771,10 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       }
       const resolved = await requireEditor(req, res, "website.publish");
       if (!resolved) return undefined;
-      const published = await publishChurchWebsite(getPool(), {
+      const published = await publishProductWebsite(getPool(), {
+        productCode: PRODUCT.BLESSBOARD,
+        grantedPermissions: [WEBSITE_PUBLISH_PERMISSIONS.PUBLISH],
+        request: {
           churchId: resolved.tenant.church.id,
           organizationId: resolved.tenant.organization.id,
           branchId: editorBranchId(resolved),
@@ -779,6 +786,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           forcePublishVersion: true,
           requestId: req.requestId || req.correlationId || null,
           correlationId: req.correlationId || req.requestId || null,
+        },
       });
       if (String(req.headers.accept || "").includes("application/json")) {
         const requestId = req.requestId || req.correlationId || null;

@@ -105,21 +105,21 @@ POST-V2.03. Documentation/backlog only during V2.03 QA freeze.
 
 ### EPIC — V10 BB/AC Platform Consolidation
 
-Deferred cross-product infrastructure consolidation. PC00/PC01 characterization + dependency inversion are underway on V10; further extraction stays gated so V2.03 batches are not disturbed.
+**Status:** **`COMPLETE_WITH_P2_P3_DEBT`** (PC25 · 2026-09-27). **Next activity: V2.03 QA** after pre-live PL chain. No further major consolidation epic required.
 
 - **Authoritative detail:** [`docs/v2.03/V2_03_PLATFORM_CONSOLIDATION_BACKLOG.md`](./v2.03/V2_03_PLATFORM_CONSOLIDATION_BACKLOG.md)
-- **Audit baseline:** `AUDIT_BASELINE_2026_09_27_PC01` (40 → **33** after PC03)
+- **Handoff:** [`docs/qa/V10_PC25_RESIDUAL_BACKLOG_HANDOFF.md`](./qa/V10_PC25_RESIDUAL_BACKLOG_HANDOFF.md)
+- **Checkpoint:** [`docs/qa/V10_PC24_FINAL_CLEAN_CHECKPOINT.md`](./qa/V10_PC24_FINAL_CLEAN_CHECKPOINT.md) (`QA_HANDOFF_READY: YES`)
+- **Pre-live PL09:** [`docs/qa/V10_PL09_FRESH_DB_BOOTSTRAP.md`](./qa/V10_PL09_FRESH_DB_BOOTSTRAP.md) — `V10_FRESH_DB_BOOTSTRAP_PASS` · **`QA_RESET_AUTHORIZED: YES`**
+- **Pre-live PL10:** [`docs/qa/V10_PL10_QA_CANONICAL_RESET.md`](./qa/V10_PL10_QA_CANONICAL_RESET.md) — **`V10_QA_CANONICAL_RESET_PASS`** (testing/QA only; production untouched)
+- **Pre-live PL11:** [`docs/qa/V10_PL11_FRESH_QA_V203_REGRESSION.md`](./qa/V10_PL11_FRESH_QA_V203_REGRESSION.md) — **`V10_FRESH_QA_V203_PASS_WITH_P2_GAPS`** (P0/P1 **0**)
+- **Pre-live PL12:** [`docs/qa/V10_PL12_PRODUCTION_RESET_GATE.md`](./qa/V10_PL12_PRODUCTION_RESET_GATE.md) — **`V10_PRODUCTION_RESET_BLOCKED`** (read-only; no prod reset)
+- **Pre-live PL14:** [`docs/qa/V10_PL14_CANONICAL_PLATFORM_CLOSURE.md`](./qa/V10_PL14_CANONICAL_PLATFORM_CLOSURE.md) — **`CANONICAL_READY_WITH_RESIDUAL_DEBT`** · next: **V2.03 QA / RELEASE HANDOFF**
 - **Principle:** Platform owns mechanisms; products own domain semantics (`product → platform`)
-- **Workstreams:** PLATFORM-CONSOLIDATION-00 … 12
-  - **00 PASS** — characterization (`PLATFORM_CONSOLIDATION_CHARACTERIZATION_PASS`)
-  - **01 PASS** — dependency direction (`PLATFORM_PRODUCT_DEPENDENCY_DIRECTION_PASS`); class-E allowlist remains
-  - **02–03 PASS** — registration drafts + verification adapters (`SHARED_REGISTRATION_DRAFT_PASS`, `SHARED_VERIFICATION_INFRA_PASS`)
-  - **04–05 PASS** — phone UI + email transport (`PLATFORM_PHONE_INFRA_PASS`, `PLATFORM_EMAIL_TRANSPORT_PASS`)
-  - **06 PASS** — schema ownership plan + guard (`PLATFORM_SCHEMA_OWNERSHIP_PASS`; no history rewrite)
-- **Evidence:** [`docs/qa/V10_PC03_PLATFORM_PRODUCT_DEPENDENCY_DIRECTION.md`](./qa/V10_PC03_PLATFORM_PRODUCT_DEPENDENCY_DIRECTION.md), [`docs/qa/V10_PC04_SHARED_REGISTRATION_VERIFICATION.md`](./qa/V10_PC04_SHARED_REGISTRATION_VERIFICATION.md), [`docs/qa/V10_PC05_PLATFORM_PHONE_EMAIL_OWNERSHIP.md`](./qa/V10_PC05_PLATFORM_PHONE_EMAIL_OWNERSHIP.md), [`docs/qa/V10_PC06_PLATFORM_SCHEMA_OWNERSHIP.md`](./qa/V10_PC06_PLATFORM_SCHEMA_OWNERSHIP.md)
-- **Immediate guardrail:** do not place new generic cross-product infrastructure under `src/activeclinic/` or `src/blessboard/` merely because that product needs it first; new `src/platform` → product requires must go through contracts/registration or the documented E allowlist
-- **PC23 (2026-09-27):** `V2_03_POST_CONSOLIDATION_QA_READY_WITH_P2_GAPS` — evidence [`docs/qa/V10_PC23_V2_03_POST_CONSOLIDATION_QA_READINESS.md`](./qa/V10_PC23_V2_03_POST_CONSOLIDATION_QA_READINESS.md)
-- **PC24 (2026-09-27):** `V10_FINAL_CLEAN_CHECKPOINT` · `QA_HANDOFF_READY: YES` — evidence [`docs/qa/V10_PC24_FINAL_CLEAN_CHECKPOINT.md`](./qa/V10_PC24_FINAL_CLEAN_CHECKPOINT.md)
+- **Completed:** registration · verification · phone · email · media SoT · editor shared kit · publication orchestrator · CMS helpers · architecture guardrails · cross-product zero · Finder proven-safe cleanup
+- **Open:** P0 **0** · P1 **0** · P2 **5** · P3 **5** (optional/on-touch only — Class-E on-touch lifts, editor/CMS/publish shim retirement, gp-ops/phone shims, stitch Finder dirs, test-contract pins)
+- **Not consolidation debt:** BB/AC navigation/theme/domain, product RBAC catalogues, tenant topology, product URLs/shells
+- **Guardrail (permanent):** do not place new generic cross-product infrastructure under `src/activeclinic/` or `src/blessboard/` merely because that product needs it first; new `src/platform` → product requires must go through contracts/registration or the documented Class-E allowlist
 
 Related evidence (not duplicated here):
 

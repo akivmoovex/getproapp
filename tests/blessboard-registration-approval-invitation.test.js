@@ -385,11 +385,13 @@ describe("registration approval without password (Prompt 49)", () => {
     assert.equal(user.rows[0].has_password, true);
 
     const roles = await pool.query(
-      `SELECT role_key FROM blessboard.user_roles
-        WHERE user_id = $1 AND organization_id = $2 AND status = 'active'`,
+      `SELECT r.role_key
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1 AND a.organization_id = $2 AND a.status = 'active'`,
       [approved.records.administratorUserId, approved.records.organizationId]
     );
-    assert.ok(roles.rows.some((r) => r.role_key === "church_hq_admin"));
+    assert.ok(roles.rows.some((r) => r.role_key === "organisation_administrator"));
   });
 
   it("10–11. Existing user password hash unchanged and linked safely", async () => {

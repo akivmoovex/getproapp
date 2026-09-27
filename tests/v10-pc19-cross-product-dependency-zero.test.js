@@ -85,7 +85,7 @@ describe("PC19 cross-product dependency zero", () => {
     assert.deepEqual(offenders, []);
   });
 
-  it("AC uses platform deploymentEnv; church blessBoardEnv re-exports mode helpers", () => {
+  it("AC and orgDataEnvironment use platform deploymentEnv; blessBoardEnv re-exports mode helpers", () => {
     const acPublic = fs.readFileSync(
       path.join(ROOT, "src/activeclinic/http/activeClinicPublicRoutes.js"),
       "utf8"
@@ -97,10 +97,16 @@ describe("PC19 cross-product dependency zero", () => {
       ),
       "utf8"
     );
+    const orgData = fs.readFileSync(
+      path.join(ROOT, "src/church/orgDataEnvironment.js"),
+      "utf8"
+    );
     assert.match(acPublic, /platform\/config\/deploymentEnv/);
     assert.match(acAdmin, /platform\/config\/deploymentEnv/);
+    assert.match(orgData, /platform\/config\/deploymentEnv/);
     assert.doesNotMatch(acPublic, /church\/blessBoardEnv/);
     assert.doesNotMatch(acAdmin, /church\/blessBoardEnv/);
+    assert.doesNotMatch(orgData, /require\(["']\.\/blessBoardEnv["']\)/);
 
     const churchEnv = fs.readFileSync(
       path.join(ROOT, "src/church/blessBoardEnv.js"),

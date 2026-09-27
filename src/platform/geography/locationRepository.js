@@ -4,24 +4,6 @@ const { normalizeLocationName, canonicalLocationName } = require("./locationNorm
 
 /**
  * @param {{ query: Function }} db
- */
-async function tableExists(db) {
-  try {
-    const r = await db.query(
-      `SELECT 1
-         FROM information_schema.tables
-        WHERE table_schema = 'platform'
-          AND table_name = 'geographic_locations'
-        LIMIT 1`
-    );
-    return Boolean(r.rows[0]);
-  } catch {
-    return false;
-  }
-}
-
-/**
- * @param {{ query: Function }} db
  * @param {{ countryCode: string, query: string, limit?: number }} input
  */
 async function searchLocations(db, input) {
@@ -33,8 +15,8 @@ async function searchLocations(db, input) {
   if (!countryCode || !/^[A-Z]{2}$/.test(countryCode)) {
     return [];
   }
-  if (!(await tableExists(db))) return [];
 
+  // DBCL08 D7: platform.geographic_locations is required (platform/034) on fresh, QA, and production.
   const params = [countryCode];
   let where = `country_code = $1 AND approval_status IN ('approved', 'pending')`;
   if (q) {
@@ -76,7 +58,7 @@ async function findLocationByIdForCountry(db, input) {
   const countryCode = String((input && input.countryCode) || "")
     .trim()
     .toUpperCase();
-  if (!id || !countryCode || !(await tableExists(db))) return null;
+  if (!id || !countryCode) return null;
   const r = await db.query(
     `SELECT id, country_code, name, normalized_name, province_region, source, approval_status
        FROM platform.geographic_locations
@@ -116,7 +98,7 @@ async function upsertLocationByName(db, input) {
     .toUpperCase();
   const name = canonicalLocationName(input && input.name);
   const normalized = normalizeLocationName(name);
-  if (!countryCode || !normalized || !(await tableExists(db))) {
+  if (!countryCode || !normalized) {
     return null;
   }
   const provinceRegion = input && input.provinceRegion
@@ -157,7 +139,6 @@ async function upsertLocationByName(db, input) {
  * @param {{ query: Function }} db
  */
 async function seedZambiaLocations(db) {
-  if (!(await tableExists(db))) return { ok: false, reason: "table_missing" };
   const { listZambiaSeedCities } = require("./zambiaCatalog");
   for (const city of listZambiaSeedCities()) {
     await upsertLocationByName(db, {
@@ -172,7 +153,6 @@ async function seedZambiaLocations(db) {
 }
 
 module.exports = {
-  tableExists,
   searchLocations,
   findLocationByIdForCountry,
   upsertLocationByName,

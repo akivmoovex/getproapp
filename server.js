@@ -120,6 +120,7 @@ if (runtimeMode === RUNTIME_V5_FOUNDATION || runtimeMode === "legacy-redirect" |
     });
 } else if (!runtimeMode) {
   // Unprofiled GetPro / transitional: full legacy application.
+  // DBCL09: ACTIVE consumer — KEEP server.legacy.js until unset PLATFORM_DEPLOYMENT_CODE is fail-closed.
   require("./server.legacy");
 } else {
   // eslint-disable-next-line no-console

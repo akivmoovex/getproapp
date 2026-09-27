@@ -29,7 +29,6 @@ const {
   STATUS: ASSIGN_STATUS,
 } = require("../src/blessboard/services/blessBoardRoleAssignmentService");
 const rbacRepo = require("../src/blessboard/repositories/blessBoardRbacRepository");
-const { permissionsForLegacyRoleKey } = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
 const { makeResolvedTenantContext } = require("./helpers/blessboardV5Fixtures");
 
 describe("blessboard RBAC foundation", () => {
@@ -544,8 +543,6 @@ describe("blessboard RBAC foundation", () => {
   describe("catalogue compatibility (legacy bundles removed)", () => {
     it("catalogue roles grant documented permissions; revoked assignment grants nothing", async () => {
       requireDb();
-      assert.deepEqual(permissionsForLegacyRoleKey("unknown"), []);
-      assert.deepEqual(permissionsForLegacyRoleKey("branch_admin"), []);
 
       const paRole = await rbacRepo.findRoleByKey(pool, "platform_administrator");
       const paKeys = await rbacRepo.listPermissionKeysForRoleId(pool, paRole.id);

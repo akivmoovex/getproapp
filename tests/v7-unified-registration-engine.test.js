@@ -188,27 +188,27 @@ describe("V7 unified registration engine", () => {
       LIFECYCLE.REVIEW_REQUIRED
     );
     assert.equal(
-      toCanonicalLifecycle(PRODUCT.ACTIVECLINIC, { status: "pending_review" }),
-      LIFECYCLE.REVIEW_REQUIRED
-    );
-    assert.equal(
-      toCanonicalLifecycle(PRODUCT.BLESSBOARD, { application_status: "duplicate_review" }),
-      LIFECYCLE.REVIEW_REQUIRED
+      toCanonicalLifecycle(PRODUCT.ACTIVECLINIC, { status: "submitted" }),
+      LIFECYCLE.SUBMITTED
     );
     assert.equal(
       toCanonicalLifecycle(PRODUCT.BLESSBOARD, { application_status: "review_required" }),
       LIFECYCLE.REVIEW_REQUIRED
     );
     assert.equal(
+      toCanonicalLifecycle(PRODUCT.BLESSBOARD, { application_status: "submitted" }),
+      LIFECYCLE.SUBMITTED
+    );
+    assert.equal(
       toCanonicalLifecycle(PRODUCT.ACTIVECLINIC, {
-        status: "approved",
+        status: "active",
         provisioning_status: "provisioned",
       }),
       LIFECYCLE.ACTIVE
     );
     assert.equal(
       toCanonicalLifecycle(PRODUCT.BLESSBOARD, {
-        application_status: "closed",
+        application_status: "active",
         provisioning_status: "provisioned",
         organization_id: "00000000-0000-4000-8000-000000000001",
       }),
@@ -694,14 +694,22 @@ describe("V7 unified registration engine", () => {
     );
   });
 
-  it("hardening 4-5: legacy pending_review and duplicate_review still read as review_required", () => {
+  it("hardening 4-5: DBCL07 historical aliases are not mapped via statusCompatibility", () => {
     assert.equal(
       toCanonicalLifecycle(PRODUCT.ACTIVECLINIC, { status: "pending_review" }),
-      LIFECYCLE.REVIEW_REQUIRED
+      LIFECYCLE.SUBMITTED
     );
     assert.equal(
       toCanonicalLifecycle(PRODUCT.BLESSBOARD, { application_status: "duplicate_review" }),
-      LIFECYCLE.REVIEW_REQUIRED
+      LIFECYCLE.SUBMITTED
+    );
+    assert.equal(
+      toCanonicalLifecycle(PRODUCT.ACTIVECLINIC, { status: "approved" }),
+      LIFECYCLE.SUBMITTED
+    );
+    assert.equal(
+      toCanonicalLifecycle(PRODUCT.BLESSBOARD, { application_status: "closed" }),
+      LIFECYCLE.SUBMITTED
     );
   });
 
@@ -918,16 +926,16 @@ describe("V7 unified registration engine", () => {
     assert.equal(churchRow.rows[0].application_status, "review_required");
   });
 
-  it("hardening 21-23: unified queue shows canonical state for new and legacy rows", async () => {
+  it("hardening 21-23: unified queue shows canonical state for review_required rows", async () => {
     if (!requireDb()) return;
     const clinic = await submitAndProvisionClinicRegistration(pool, clinicPayload());
     const church = await submitChurch(churchBody({ selected_plan: "network" }));
     await pool.query(
-      `UPDATE activeclinic.clinic_registration_applications SET status = 'pending_review' WHERE id = $1`,
+      `UPDATE activeclinic.clinic_registration_applications SET status = 'review_required' WHERE id = $1`,
       [clinic.application.id]
     );
     await pool.query(
-      `UPDATE blessboard.platform_church_registration_applications SET application_status = 'duplicate_review' WHERE id = $1`,
+      `UPDATE blessboard.platform_church_registration_applications SET application_status = 'review_required' WHERE id = $1`,
       [church.application.id]
     );
     const held = await listUnifiedRegistrations(pool, { lifecycle: "review_required", limit: 200 });
@@ -937,8 +945,8 @@ describe("V7 unified registration engine", () => {
     assert.ok(churchHeld);
     assert.equal(clinicHeld.canonicalLifecycle, LIFECYCLE.REVIEW_REQUIRED);
     assert.equal(churchHeld.canonicalLifecycle, LIFECYCLE.REVIEW_REQUIRED);
-    assert.equal(clinicHeld.storedStatus, "pending_review");
-    assert.equal(churchHeld.storedStatus, "duplicate_review");
+    assert.equal(clinicHeld.storedStatus, "review_required");
+    assert.equal(churchHeld.storedStatus, "review_required");
   });
 
   it("architecture: HTTP wrappers invoke the shared orchestrator, not an independent provisioner", async () => {

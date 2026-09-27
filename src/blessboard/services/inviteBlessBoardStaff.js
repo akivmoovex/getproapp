@@ -196,7 +196,7 @@ async function ensureCatalogueAssignmentOnAccept(client, input) {
   const assignment = await rbacRepo.insertAssignment(client, {
     userId: input.userId,
     organizationId: input.organizationId,
-    churchId: scope.churchId || input.churchId || null,
+    churchId: scope.churchId,
     roleId: role.id,
     scopeType: scope.scopeType,
     scopeId: scope.scopeId,

@@ -50,7 +50,7 @@ async function recordBlessBoardAudit(db, input) {
         const id = getPlatformDeploymentCode(input.env || process.env);
         return id && id.ok ? id.code : null;
       })() ||
-      "blessboard-org-v5";
+      "blessboard-org-staging";
     return await recordAuditEventSafe(client, {
       deploymentCode: deploymentIdentity,
       organizationId,

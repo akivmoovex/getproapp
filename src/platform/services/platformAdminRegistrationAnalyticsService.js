@@ -147,7 +147,7 @@ function mapAnalyticsMetrics(raw, window) {
         available: true,
         label: "Review-required count",
         definition:
-          "Applications created in the window with application_status=duplicate_review or risk_decision=review_required.",
+          "Applications created in the window with application_status=review_required or risk_decision=review_required.",
         value: Number(raw.reviewRequired) || 0,
       },
       networkContactRequests: {

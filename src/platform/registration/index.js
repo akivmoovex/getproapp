@@ -8,7 +8,6 @@ const { submitPlatformRegistration, resolvePlatformRegistrationReview } = requir
 const { initializeOrganizationWebsite } = require("./initializeOrganizationWebsite");
 const { ACTION: LIFECYCLE_AUDIT_ACTION, recordLifecycleAudit } = require("./lifecycleAudit");
 const { listUnifiedRegistrations } = require("./unifiedRegistrationQueue");
-const statusCompatibility = require("./statusCompatibility");
 const provisioningStages = require("./provisioningStages");
 const {
   inspectOrganizationProvisioningCompleteness,
@@ -46,7 +45,6 @@ module.exports = {
   initializeOrganizationWebsite,
   LIFECYCLE_AUDIT_ACTION,
   recordLifecycleAudit,
-  ...statusCompatibility,
   ...provisioningStages,
   inspectOrganizationProvisioningCompleteness,
   resumeOrganizationProvisioning,

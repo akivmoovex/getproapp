@@ -48,6 +48,7 @@ const {
   createActiveClinicFoundationApp,
 } = require("../src/activeclinic/http/activeClinicFoundationServer");
 const { createBlessBoardUser } = require("../src/blessboard/services/createBlessBoardUser");
+const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const identityRepo = require("../src/platform/repositories/platformIdentityRepository");
 const {
   CODE_ACTIVECLINIC_ORG_V6,
@@ -394,10 +395,15 @@ describe("ActiveClinic ACW08 shared authentication", () => {
       userId: bb.user.id,
       identityId: identity.identity.id,
     });
-    await pool.query(
-      `INSERT INTO blessboard.user_roles (user_id, organization_id, role_key, status)
-       VALUES ($1, $2, 'platform_admin', 'active')`,
-      [bb.user.id, org.orgId]
+    assert.equal(
+      (
+        await assignBlessBoardRole(pool, {
+          email,
+          organizationKey: org.orgKey,
+          roleKey: "platform_admin",
+        })
+      ).ok,
+      true
     );
 
     const auth = await authenticateActiveClinicIdentity(pool, {

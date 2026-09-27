@@ -179,6 +179,7 @@ describe("blessboard staff invitation and activation", () => {
     const accepted = await acceptInvitation(pool, {
       token: invited.rawToken,
       password: "new-password-ok",
+      passwordConfirm: "new-password-ok",
     });
     assert.equal(accepted.ok, true, accepted.reason || accepted.message);
 
@@ -189,8 +190,10 @@ describe("blessboard staff invitation and activation", () => {
     assert.ok(after.rows[0].password_hash);
 
     const role = await pool.query(
-      `SELECT role_key, status FROM blessboard.user_roles
-        WHERE user_id = $1 AND organization_id = $2 AND role_key = 'church_hq_admin'`,
+      `SELECT r.role_key, a.status
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1 AND a.organization_id = $2 AND r.role_key = 'organisation_administrator'`,
       [accepted.user.id, org.id]
     );
     assert.equal(role.rows[0].status, "active");
@@ -218,7 +221,7 @@ describe("blessboard staff invitation and activation", () => {
     assert.equal(invited.ok, true, invited.reason);
 
     const beforeRoles = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.user_roles WHERE user_id = $1`,
+      `SELECT COUNT(*)::int AS n FROM blessboard.user_role_assignments WHERE user_id = $1`,
       [other.user.id]
     );
 
@@ -226,7 +229,7 @@ describe("blessboard staff invitation and activation", () => {
     assert.equal(accepted.ok, true, accepted.message);
 
     const afterRoles = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.user_roles WHERE user_id = $1 AND status = 'active'`,
+      `SELECT COUNT(*)::int AS n FROM blessboard.user_role_assignments WHERE user_id = $1 AND status = 'active'`,
       [other.user.id]
     );
     assert.equal(afterRoles.rows[0].n, beforeRoles.rows[0].n + 1);
@@ -270,6 +273,7 @@ describe("blessboard staff invitation and activation", () => {
     const neu = await acceptInvitation(pool, {
       token: second.rawToken,
       password: "resend-password",
+      passwordConfirm: "resend-password",
     });
     assert.equal(neu.ok, true, neu.message);
   });
@@ -277,9 +281,13 @@ describe("blessboard staff invitation and activation", () => {
   it("4. user/staff limit enforced", async () => {
     requireDb();
     const staffCount = await pool.query(
-      `SELECT COUNT(DISTINCT user_id)::int AS n FROM blessboard.user_roles
-        WHERE organization_id = $1 AND status = 'active'
-          AND role_key IN ('platform_admin', 'church_hq_admin', 'branch_admin')`,
+      `SELECT COUNT(DISTINCT a.user_id)::int AS n
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.organization_id = $1 AND a.status = 'active'
+          AND r.role_key IN (
+            'platform_administrator', 'organisation_administrator', 'branch_administrator'
+          )`,
       [org.id]
     );
     const pending = await pool.query(
@@ -324,9 +332,13 @@ describe("blessboard staff invitation and activation", () => {
   it("5. concurrent invitations cannot exceed limit", async () => {
     requireDb();
     const staffCount = await pool.query(
-      `SELECT COUNT(DISTINCT user_id)::int AS n FROM blessboard.user_roles
-        WHERE organization_id = $1 AND status = 'active'
-          AND role_key IN ('platform_admin', 'church_hq_admin', 'branch_admin')`,
+      `SELECT COUNT(DISTINCT a.user_id)::int AS n
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.organization_id = $1 AND a.status = 'active'
+          AND r.role_key IN (
+            'platform_administrator', 'organisation_administrator', 'branch_administrator'
+          )`,
       [org.id]
     );
     const pending = await pool.query(
@@ -438,6 +450,7 @@ describe("blessboard staff invitation and activation", () => {
     const expired = await acceptInvitation(pool, {
       token: invited.rawToken,
       password: "expire-password",
+      passwordConfirm: "expire-password",
     });
     assert.equal(expired.ok, false);
     assert.equal(expired.status, INVITE_STATUS.EXPIRED);
@@ -455,11 +468,13 @@ describe("blessboard staff invitation and activation", () => {
     const first = await acceptInvitation(pool, {
       token: once.rawToken,
       password: "once-password1",
+      passwordConfirm: "once-password1",
     });
     assert.equal(first.ok, true, first.message);
     const second = await acceptInvitation(pool, {
       token: once.rawToken,
       password: "once-password2",
+      passwordConfirm: "once-password2",
     });
     assert.equal(second.ok, false);
   });
@@ -486,6 +501,7 @@ describe("blessboard staff invitation and activation", () => {
     const accept = await acceptInvitation(pool, {
       token: invited.rawToken,
       password: "revoke-password",
+      passwordConfirm: "revoke-password",
     });
     assert.equal(accept.ok, false);
   });
@@ -510,6 +526,7 @@ describe("blessboard staff invitation and activation", () => {
     const blocked = await acceptInvitation(pool, {
       token: invited.rawToken,
       password: "suspended-password",
+      passwordConfirm: "suspended-password",
     });
     assert.equal(blocked.ok, false);
     assert.equal(blocked.status, INVITE_STATUS.ORG_INACTIVE);
@@ -549,6 +566,7 @@ describe("blessboard staff invitation and activation", () => {
     await acceptInvitation(pool, {
       token: invited.rawToken,
       password: "audit-password",
+      passwordConfirm: "audit-password",
     });
 
     const created = await pool.query(

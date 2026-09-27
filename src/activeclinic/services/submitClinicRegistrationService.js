@@ -30,7 +30,7 @@ async function markReviewRequired(db, applicationId, reason, actorIdentityId) {
             last_provision_error = $2,
             updated_at = now()
       WHERE id = $1
-        AND status IN ('submitted', 'pending_review', 'review_required', 'provisioning')`,
+        AND status IN ('submitted', 'review_required', 'provisioning')`,
     [applicationId, String(reason || "review_required").slice(0, 500)]
   );
   await appendReviewEvent(db, {
@@ -203,7 +203,7 @@ async function submitAndProvisionClinicRegistration(db, input) {
 
 function isReviewHoldStatus(status) {
   const value = String(status || "");
-  return value === "pending_review" || value === "review_required" || value === "submitted";
+  return value === "review_required" || value === "submitted";
 }
 
 module.exports = {

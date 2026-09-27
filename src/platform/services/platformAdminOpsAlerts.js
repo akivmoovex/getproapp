@@ -242,7 +242,7 @@ async function collectRegistrationOpsAlertCandidates(db, opts = {}) {
         WHERE a.selected_plan = 'network'
           AND COALESCE(a.support_requested, false) = TRUE
           AND a.organization_id IS NULL
-          AND a.application_status IN ('submitted', 'duplicate_review', 'review_required')
+          AND a.application_status IN ('submitted', 'review_required')
         ORDER BY a.created_at DESC
         LIMIT $1`,
       [perSource]
@@ -258,7 +258,7 @@ async function collectRegistrationOpsAlertCandidates(db, opts = {}) {
           AND a.provisioning_status <> 'provisioned'
           AND (
             a.risk_decision = 'review_required'
-            OR a.application_status = 'duplicate_review'
+            OR a.application_status = 'review_required'
           )
         ORDER BY COALESCE(a.risk_decided_at, a.updated_at, a.created_at) DESC
         LIMIT $1`,

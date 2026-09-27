@@ -128,30 +128,49 @@ async function listUsersWithBlessBoardRoles(db) {
             u.phone_normalized, u.phone_display, u.phone_country_code,
             u.password_change_required, u.sign_in_locked_until,
             COALESCE(
-              (SELECT array_agg(DISTINCT ur.role_key ORDER BY ur.role_key)
-                 FROM blessboard.user_roles ur
-                WHERE ur.user_id = u.id AND ur.status = 'active'),
-              ARRAY[]::text[]
-            ) AS legacy_roles,
-            COALESCE(
               (SELECT array_agg(DISTINCT r.role_key ORDER BY r.role_key)
                  FROM blessboard.user_role_assignments ura
                  JOIN blessboard.roles r ON r.id = ura.role_id
                 WHERE ura.user_id = u.id
                   AND ura.status = 'active'
-                  AND ura.revoked_at IS NULL),
+                  AND ura.revoked_at IS NULL
+                  AND (ura.expires_at IS NULL OR ura.expires_at > now())
+                  AND r.is_active = true),
               ARRAY[]::text[]
             ) AS catalogue_roles
        FROM blessboard.users u
       WHERE u.id IN (
-              SELECT user_id FROM blessboard.user_roles WHERE status = 'active'
-              UNION
               SELECT user_id FROM blessboard.user_role_assignments
                WHERE status = 'active' AND revoked_at IS NULL
             )
       ORDER BY u.email_normalized`
   );
   return r.rows;
+}
+
+function legacyRoleKeysFromCatalogue(catalogueRoles) {
+  const keys = new Set();
+  for (const k of catalogueRoles || []) {
+    if (k === "platform_administrator") keys.add("platform_admin");
+    if (k === "organisation_administrator" || k === "church_system_administrator") {
+      keys.add("church_hq_admin");
+    }
+    if (k === "branch_administrator") keys.add("branch_admin");
+  }
+  return [...keys];
+}
+
+function userHasLegacyLoginRole(user, legacyRoleKey) {
+  const catalogue = user.catalogue_roles || [];
+  if (legacyRoleKey === "platform_admin") return catalogue.includes("platform_administrator");
+  if (legacyRoleKey === "church_hq_admin") {
+    return (
+      catalogue.includes("organisation_administrator") ||
+      catalogue.includes("church_system_administrator")
+    );
+  }
+  if (legacyRoleKey === "branch_admin") return catalogue.includes("branch_administrator");
+  return catalogue.includes(legacyRoleKey);
 }
 
 function validateQaPassword(password) {
@@ -507,7 +526,7 @@ async function seedBlessBoardQaRoleUsers(db, options = {}) {
       email: user.email_normalized,
       displayName: user.display_name,
       status: user.status,
-      legacyRoles: user.legacy_roles || [],
+      legacyRoles: legacyRoleKeysFromCatalogue(user.catalogue_roles),
       catalogueRoles: user.catalogue_roles || [],
       previousPhone: user.phone_normalized || null,
       phone: user.phone_normalized || null,
@@ -538,11 +557,9 @@ async function seedBlessBoardQaRoleUsers(db, options = {}) {
       row.phoneAction = "assign";
       report.phonesAssigned += 1;
       if (!dryRun) {
-        // Prefer demo-church org for staff phone registry when user has a role there;
-        // otherwise first legacy org from user_roles.
         const orgRow = await db.query(
-          `SELECT organization_id FROM blessboard.user_roles
-            WHERE user_id = $1 AND status = 'active'
+          `SELECT organization_id FROM blessboard.user_role_assignments
+            WHERE user_id = $1 AND status = 'active' AND revoked_at IS NULL
             ORDER BY CASE WHEN organization_id = $2 THEN 0 ELSE 1 END
             LIMIT 1`,
           [user.id, demo.org.id]
@@ -557,8 +574,9 @@ async function seedBlessBoardQaRoleUsers(db, options = {}) {
       }
     } else if (row.phoneAction === "normalize" && !dryRun) {
       const orgRow = await db.query(
-        `SELECT organization_id FROM blessboard.user_roles
-          WHERE user_id = $1 AND status = 'active' LIMIT 1`,
+        `SELECT organization_id FROM blessboard.user_role_assignments
+          WHERE user_id = $1 AND status = 'active' AND revoked_at IS NULL
+          LIMIT 1`,
         [user.id]
       );
       const organizationId = (orgRow.rows[0] && orgRow.rows[0].organization_id) || demo.org.id;
@@ -605,12 +623,12 @@ async function seedBlessBoardQaRoleUsers(db, options = {}) {
     }
 
     if (!dryRun && row.passwordReset === "reset" && row.phone) {
-      const isPlatform = (user.legacy_roles || []).includes("platform_admin");
+      const isPlatform = userHasLegacyLoginRole(user, "platform_admin");
       let orgForLogin = null;
       if (!isPlatform) {
         const orgRow = await db.query(
-          `SELECT organization_id FROM blessboard.user_roles
-            WHERE user_id = $1 AND status = 'active'
+          `SELECT organization_id FROM blessboard.user_role_assignments
+            WHERE user_id = $1 AND status = 'active' AND revoked_at IS NULL
             ORDER BY CASE WHEN organization_id = $2 THEN 0 ELSE 1 END
             LIMIT 1`,
           [user.id, demo.org.id]
@@ -816,7 +834,7 @@ async function seedBlessBoardQaRoleUsers(db, options = {}) {
   // Coverage matrix
   for (const legacy of LEGACY_LOGIN_ROLES) {
     const holders = existingRoleUsers.filter((u) =>
-      (u.legacy_roles || []).includes(legacy.roleKey)
+      userHasLegacyLoginRole(u, legacy.roleKey)
     );
     const qa = holders[0] || null;
     const matchedExisting = report.existingUsers.find(

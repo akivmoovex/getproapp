@@ -267,19 +267,19 @@ async function findSoftTwinClinicRegistrationApplication(db, opts) {
             clinic_name, contact_email_normalized, contact_phone_normalized,
             clinic_admin_staff_id, created_at
        FROM activeclinic.clinic_registration_applications
-      WHERE status NOT IN ('rejected', 'withdrawn')
+      WHERE status IS DISTINCT FROM 'rejected'
         AND lower(trim(clinic_name)) = lower(trim($1))
         AND (
           ($2::text IS NOT NULL AND contact_email_normalized = $2)
           OR ($3::text IS NOT NULL AND contact_phone_normalized = $3)
         )
         AND (
-          status IN ('active', 'approved', 'provisioning', 'provision_failed', 'review_required', 'submitted', 'pending_review')
+          status IN ('active', 'provisioning', 'provision_failed', 'review_required', 'submitted')
           OR created_at > now() - make_interval(mins => $4::int)
         )
       ORDER BY
         CASE
-          WHEN status IN ('active', 'approved') THEN 0
+          WHEN status = 'active' THEN 0
           WHEN organization_id IS NOT NULL THEN 1
           ELSE 2
         END,

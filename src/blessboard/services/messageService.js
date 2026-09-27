@@ -317,16 +317,28 @@ async function resolveAudienceMembers(client, { churchId, audiences }) {
     }
 
     if (a.audienceType === "roles" && a.roleKey) {
-      // Roles map to users with user_roles; link to members via members.user_id.
+      // Roles map to catalogue assignments; link to members via members.user_id.
+      const rawKey = String(a.roleKey || "").trim().toLowerCase();
+      const catalogueKeys =
+        rawKey === "branch_admin"
+          ? ["branch_administrator"]
+          : rawKey === "church_hq_admin"
+            ? ["organisation_administrator", "church_system_administrator"]
+            : rawKey === "platform_admin"
+              ? ["platform_administrator"]
+              : [rawKey];
       const result = await client.query(
         `SELECT m.id, m.status
            FROM blessboard.members m
-           INNER JOIN blessboard.user_roles ur ON ur.user_id = m.user_id
+           INNER JOIN blessboard.user_role_assignments a ON a.user_id = m.user_id
+           INNER JOIN blessboard.roles r ON r.id = a.role_id
           WHERE m.church_id = $1
-            AND ur.church_id = $1
-            AND ur.role_key = $2
-            AND ur.status = 'active'`,
-        [churchId, a.roleKey]
+            AND (a.church_id IS NULL OR a.church_id = $1)
+            AND r.role_key = ANY($2::text[])
+            AND a.status = 'active'
+            AND a.revoked_at IS NULL
+            AND (a.expires_at IS NULL OR a.expires_at > now())`,
+        [churchId, catalogueKeys]
       );
       for (const row of result.rows) {
         if (row.status === "active") memberIds.add(row.id);

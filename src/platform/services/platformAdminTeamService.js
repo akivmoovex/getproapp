@@ -54,7 +54,7 @@ const EMAIL_RE = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/i;
 
 function deploymentCode(env) {
   const id = getPlatformDeploymentCode(env || process.env);
-  return id && id.ok ? id.code : "blessboard-org-v5";
+  return id && id.ok ? id.code : "blessboard-org-staging";
 }
 
 function buildTenantContext(org) {

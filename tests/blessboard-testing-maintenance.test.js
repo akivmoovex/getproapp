@@ -489,8 +489,10 @@ describe("blessboard testing maintenance http + reset", () => {
     assert.equal(paUserRow.rows[0].status, "active");
 
     const paRole = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.user_roles
-        WHERE user_id = $1 AND role_key = 'platform_admin' AND status = 'active'`,
+      `SELECT COUNT(*)::int AS n
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1 AND r.role_key = 'platform_administrator' AND a.status = 'active'`,
       [paUser.id]
     );
     assert.equal(paRole.rows[0].n, 1);
@@ -513,8 +515,10 @@ describe("blessboard testing maintenance http + reset", () => {
     assert.ok(migrations.rows[0].n > 0);
 
     const tenantRoles = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.user_roles
-        WHERE role_key = 'church_hq_admin'`
+      `SELECT COUNT(*)::int AS n
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE r.role_key = 'organisation_administrator'`
     );
     assert.equal(tenantRoles.rows[0].n, 0);
 
@@ -522,7 +526,7 @@ describe("blessboard testing maintenance http + reset", () => {
     const orphan = await pool.query(
       `SELECT COUNT(*)::int AS n FROM blessboard.users u
         WHERE email_normalized = 'tenant-maint@example.org'
-          AND NOT EXISTS (SELECT 1 FROM blessboard.user_roles ur WHERE ur.user_id = u.id)`
+          AND NOT EXISTS (SELECT 1 FROM blessboard.user_role_assignments ur WHERE ur.user_id = u.id)`
     );
     assert.ok(orphan.rows[0].n >= 0);
     assert.ok(result.orphanTenantIdentities >= 0);

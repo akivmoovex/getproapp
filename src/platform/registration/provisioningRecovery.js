@@ -276,12 +276,19 @@ async function inspectBlessBoard(db, organizationId, application) {
   if (admin) {
     role = await queryOne(
       db,
-      `SELECT id
-         FROM blessboard.user_roles
-        WHERE user_id = $1
-          AND organization_id = $2
-          AND role_key IN ('church_hq_admin', 'branch_admin')
-          AND status = 'active'
+      `SELECT a.id
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1
+          AND a.organization_id = $2
+          AND r.role_key IN (
+            'organisation_administrator',
+            'church_system_administrator',
+            'branch_administrator'
+          )
+          AND a.status = 'active'
+          AND a.revoked_at IS NULL
+          AND (a.expires_at IS NULL OR a.expires_at > now())
         LIMIT 1`,
       [admin.id, organizationId]
     );
@@ -403,7 +410,7 @@ function isRetryablePartialProvision(productCode, row) {
   if (!row) return false;
   const provisioning = String(row.provisioning_status || "");
   const status = String(row.status || row.application_status || "");
-  if (status === "rejected" || status === "withdrawn" || status === "cancelled") {
+  if (status === "rejected") {
     return false;
   }
   if (provisioning === "provisioned" && row.organization_id) return false;
@@ -477,7 +484,7 @@ async function resumeOrganizationProvisioning(db, input) {
           type: (input.actor && input.actor.kind) || "platform_admin",
           source: "provisioning_recovery",
           dataEnvironment: input.dataEnvironment || "testing",
-          deploymentCode: input.deploymentCode || "blessboard-org-v5",
+          deploymentCode: input.deploymentCode || "blessboard-org-staging",
         },
       },
       { allowRetry: true }

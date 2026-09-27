@@ -33,7 +33,12 @@ const {
   revertFieldToPublished,
 } = require("../../platform/website/websiteChangeManagerService");
 const publicationService = require("../../platform/website-engine").publicationService;
+const {
+  publish: publishProductWebsite,
+  unpublish: unpublishProductWebsite,
+} = require("../../platform/website/publicationOrchestrator");
 const submissionService = require("../../platform/website/submissionService");
+const { PRODUCT } = require("../../platform/registration/constants");
 const mediaService = require("../../platform/website/mediaService");
 const libraryModel = require("../../platform/website/libraryModel");
 const instanceRepo = require("../../platform/website/instanceRepository");
@@ -632,13 +637,18 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (attached.instance.publishLocked) {
         return json(res, 403, { ok: false, code: "website_publish_locked" });
       }
-      const published = await publicationService.publishWebsiteDraft(getPool(), {
-        organizationId: clinic.organizationId,
-        instanceId: attached.instance.id,
-        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
-        actorIdentityId: actorId(req),
-        grantedPermissions: grantedPermissions(req),
-        allowEmpty: true,
+      const grants = grantedPermissions(req);
+      const published = await publishProductWebsite(getPool(), {
+        productCode: PRODUCT.ACTIVECLINIC,
+        grantedPermissions: grants,
+        request: {
+          organizationId: clinic.organizationId,
+          instanceId: attached.instance.id,
+          expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
+          actorIdentityId: actorId(req),
+          grantedPermissions: grants,
+          allowEmpty: true,
+        },
       });
       if (!published.ok) {
         const code = published.code || "publish_failed";
@@ -718,13 +728,18 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
       if (!attached.instance) {
         return json(res, 404, { ok: false, code: "website_instance_not_found" });
       }
-      const unpublished = await publicationService.unpublishWebsite(getPool(), {
-        organizationId: clinic.organizationId,
-        instanceId: attached.instance.id,
-        expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
-        actorIdentityId: actorId(req),
-        grantedPermissions: grantedPermissions(req),
-        reason: "tenant_unpublish",
+      const grants = grantedPermissions(req);
+      const unpublished = await unpublishProductWebsite(getPool(), {
+        productCode: PRODUCT.ACTIVECLINIC,
+        grantedPermissions: grants,
+        request: {
+          organizationId: clinic.organizationId,
+          instanceId: attached.instance.id,
+          expectedProductCode: PRODUCT_CODE.ACTIVECLINIC,
+          actorIdentityId: actorId(req),
+          grantedPermissions: grants,
+          reason: "tenant_unpublish",
+        },
       });
       if (!unpublished.ok) {
         return json(res, 400, { ok: false, code: unpublished.code });

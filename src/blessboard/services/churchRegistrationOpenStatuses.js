@@ -5,7 +5,6 @@ const OPEN_CHURCH_APPLICATION_STATUSES = Object.freeze([
   "submitted",
   "provisioning",
   "review_required",
-  "duplicate_review",
 ]);
 
 function isOpenChurchApplicationStatus(status) {

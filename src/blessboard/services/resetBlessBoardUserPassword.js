@@ -73,7 +73,7 @@ function validateResetInput(input) {
     passwordPolicyOk = false;
   }
 
-  const deploymentCode = String(raw.deploymentCode || "blessboard-org-v5")
+  const deploymentCode = String(raw.deploymentCode || "blessboard-org-staging")
     .trim()
     .toLowerCase();
 

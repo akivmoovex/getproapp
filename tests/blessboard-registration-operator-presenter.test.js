@@ -20,7 +20,7 @@ describe("registration operator presenter", () => {
   it("1. auto-provisioned Foundation displays Provisioned", () => {
     const view = presentRegistrationOperatorView({
       selected_plan: "foundation",
-      application_status: "closed",
+      application_status: "active",
       provisioning_status: "provisioned",
       organization_key: "grace-chapel",
     });
@@ -33,7 +33,7 @@ describe("registration operator presenter", () => {
   it("2. auto-provisioned Growth displays Provisioned with Growth Trial", () => {
     const view = presentRegistrationOperatorView({
       selected_plan: "growth",
-      application_status: "closed",
+      application_status: "active",
       provisioning_status: "provisioned",
       organization_key: "growth-church",
       subscriptionStatus: "trialing",
@@ -43,10 +43,10 @@ describe("registration operator presenter", () => {
     assert.equal(view.queue, QUEUES.PROVISIONED);
   });
 
-  it("3. Foundation duplicate review displays Needs review", () => {
+  it("3. Foundation review_required displays Needs review", () => {
     const view = presentRegistrationOperatorView({
       selected_plan: "foundation",
-      application_status: "duplicate_review",
+      application_status: "review_required",
       provisioning_status: "not_started",
     });
     assert.equal(view.displayStatus, DISPLAY.NEEDS_REVIEW);
@@ -107,7 +107,7 @@ describe("registration operator presenter", () => {
         row: {
           id: "11111111-1111-4111-8111-111111111111",
           selected_plan: "foundation",
-          application_status: "duplicate_review",
+          application_status: "review_required",
           provisioning_status: "not_started",
         },
         label: "Review",
@@ -139,7 +139,7 @@ describe("registration operator presenter", () => {
         row: {
           id: "44444444-4444-4444-8444-444444444444",
           selected_plan: "foundation",
-          application_status: "closed",
+          application_status: "active",
           provisioning_status: "provisioned",
           organization_key: "demo-org",
         },
@@ -161,11 +161,11 @@ describe("registration operator presenter", () => {
   it("14. raw internal statuses are not used as the primary UI label", () => {
     const view = presentRegistrationOperatorView({
       selected_plan: "foundation",
-      application_status: "duplicate_review",
+      application_status: "review_required",
       provisioning_status: "not_started",
       follow_up_status: "validation_in_progress",
     });
-    assert.notEqual(view.displayStatus, "duplicate_review");
+    assert.notEqual(view.displayStatus, "review_required");
     assert.notEqual(view.displayStatus, "not_started");
     assert.notEqual(view.displayStatus, "validation_in_progress");
   });

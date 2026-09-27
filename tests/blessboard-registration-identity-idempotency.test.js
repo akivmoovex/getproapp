@@ -158,9 +158,11 @@ describe("BlessBoard registration identity conflict / idempotency", () => {
     assert.equal(await countUsersByEmail(email), 1);
 
     const roles = await pool.query(
-      `SELECT organization_id, role_key FROM blessboard.user_roles
-        WHERE user_id = $1 AND status = 'active' AND role_key = 'church_hq_admin'
-        ORDER BY organization_id`,
+      `SELECT a.organization_id, r.role_key
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1 AND a.status = 'active' AND r.role_key = 'organisation_administrator'
+        ORDER BY a.organization_id`,
       [userId]
     );
     assert.equal(roles.rowCount, 2);

@@ -47,7 +47,7 @@ const HIGHLY_SENSITIVE = Object.freeze([
 
 function deploymentCode(env) {
   const id = getPlatformDeploymentCode(env || process.env);
-  return id && id.ok ? id.code : "blessboard-org-v5";
+  return id && id.ok ? id.code : "blessboard-org-staging";
 }
 
 async function resolveDeploymentCodeForOrg(client, organizationId, env, explicit) {
@@ -491,6 +491,8 @@ async function createScopedTeamMember(db, input) {
             : catalogueRoleKey === "organisation_administrator"
               ? organizationId
               : churchId;
+        const assignmentChurchId =
+          scopeType === "organisation" || scopeType === "platform" ? null : churchId;
         const tenantContext = {
           resolved: true,
           organization: { id: organizationId },
@@ -501,35 +503,41 @@ async function createScopedTeamMember(db, input) {
         };
 
         let rbacAssignment = null;
-        const assigned = await createRoleAssignment(client, {
-          actorUserId,
-          userId,
-          roleKey: catalogueRoleKey,
-          organizationId,
-          churchId,
-          scopeType,
-          scopeId,
-          assignmentOrigin: "manual",
-          assignmentReason: assignmentReason || `Assigned via team invite (${placement})`,
-          expiresAt,
-          tenantContext,
-          actorChurchId: churchId,
-          forbidPlatformScope: true,
-        });
-        if (!assigned.ok && assigned.reason !== "duplicate") {
-          await client.query("ROLLBACK");
-          return {
-            ok: false,
-            status:
-              assigned.status === "forbidden"
-                ? STATUS.FORBIDDEN
-                : assigned.status === "invalid_input"
-                  ? STATUS.INVALID_INPUT
-                  : STATUS.LOOKUP_ERROR,
-            reason: assigned.reason || "role_assignment_failed",
-          };
+        // Platform-admin invites are already gated by platform.roles.assign_*;
+        // do not re-run church HQ createRoleAssignment (excessive_delegation on PA).
+        // Catalogue grant is applied on invitation accept.
+        const actorSource = String(input.actorSource || "");
+        if (actorSource !== "platform_admin") {
+          const assigned = await createRoleAssignment(client, {
+            actorUserId,
+            userId,
+            roleKey: catalogueRoleKey,
+            organizationId,
+            churchId: assignmentChurchId,
+            scopeType,
+            scopeId,
+            assignmentOrigin: "manual",
+            assignmentReason: assignmentReason || `Assigned via team invite (${placement})`,
+            expiresAt,
+            tenantContext,
+            actorChurchId: churchId,
+            forbidPlatformScope: true,
+          });
+          if (!assigned.ok && assigned.reason !== "duplicate") {
+            await client.query("ROLLBACK");
+            return {
+              ok: false,
+              status:
+                assigned.status === "forbidden"
+                  ? STATUS.FORBIDDEN
+                  : assigned.status === "invalid_input"
+                    ? STATUS.INVALID_INPUT
+                    : STATUS.LOOKUP_ERROR,
+              reason: assigned.reason || "role_assignment_failed",
+            };
+          }
+          rbacAssignment = assigned.assignment || null;
         }
-        rbacAssignment = assigned.assignment || null;
 
         const auditKey =
           placement === "branch" ? "branch.user.invited" : "church.user.invited";

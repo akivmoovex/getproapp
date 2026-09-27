@@ -9,7 +9,7 @@
  */
 
 const { TIER_PLAN_CODES } = require("../../church/platformPricingContent");
-const { normalizeOrganizationKey, resolveBaseOrganizationKey } = require("./organizationKey");
+const { normalizeOrganizationKey, resolveBaseOrganizationKey } = require("../../platform/organization/organizationKey");
 const { normalizeRegistrationPhone } = require("./normalizeRegistrationPhone");
 const { prepareBranchDisplayName } = require("./normalizeBranchDisplayName");
 const {

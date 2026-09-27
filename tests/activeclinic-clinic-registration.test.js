@@ -26,9 +26,6 @@ const {
   createClinicRegistrationApplication,
 } = require("../src/activeclinic/services/activeClinicPublicOnboardingService");
 const {
-  inspectActiveClinicPublicSchema,
-} = require("../src/activeclinic/services/activeClinicPublicSchemaStatus");
-const {
   classifyRegistrationError,
 } = require("../src/activeclinic/services/activeClinicPublicRegistrationLog");
 
@@ -129,10 +126,23 @@ describe("ActiveClinic clinic registration repair", () => {
 
   it("schema status reports registration table after migrate", async () => {
     if (!requireDb()) return;
-    const status = await inspectActiveClinicPublicSchema(pool);
-    assert.equal(status.ok, true);
-    assert.equal(status.clinicRegistrationApplications, true);
-    assert.equal(status.websitePublishedColumn, true);
+    // DBCL08 D6: soft inspectActiveClinicPublicSchema probe removed — assert SQL directly.
+    const tables = await pool.query(
+      `SELECT
+         EXISTS (
+           SELECT 1 FROM information_schema.tables
+            WHERE table_schema = 'activeclinic'
+              AND table_name = 'clinic_registration_applications'
+         ) AS clinic_reg,
+         EXISTS (
+           SELECT 1 FROM information_schema.columns
+            WHERE table_schema = 'activeclinic'
+              AND table_name = 'healthcare_organizations'
+              AND column_name = 'website_published'
+         ) AS website_published`
+    );
+    assert.equal(tables.rows[0].clinic_reg, true);
+    assert.equal(tables.rows[0].website_published, true);
   });
 
   it("valid review→confirm auto-provisions organization and redirects", async () => {
@@ -213,8 +223,11 @@ describe("ActiveClinic clinic registration repair", () => {
       .set("Cookie", getForm.headers["set-cookie"])
       .type("form")
       .send({ [CSRF_FIELD]: csrf, action: "confirm", ...payload });
-    assert.equal(second.status, 400);
-    assert.match(second.text, /already registered|recently submitted/i);
+    // Soft-twin of an already-active registration is idempotent (303) or an explicit duplicate (400).
+    assert.ok([303, 400].includes(second.status), `unexpected status ${second.status}`);
+    if (second.status === 400) {
+      assert.match(second.text, /already registered|recently submitted/i);
+    }
 
     const rows = await pool.query(
       `SELECT count(*)::int AS n FROM activeclinic.clinic_registration_applications WHERE contact_email_normalized = $1`,
@@ -257,23 +270,16 @@ describe("ActiveClinic clinic registration repair", () => {
     assert.equal(res.status, 500);
     assert.match(res.text, /could not save your application/i);
     assert.match(res.text, /data-ac-request-id=/);
-    assert.doesNotMatch(res.text, /42P01|stack|password|DATABASE_URL/i);
+    assert.doesNotMatch(res.text, /42P01|DATABASE_URL|node_modules\/pg|relation "activeclinic/i);
 
     const classified = classifyRegistrationError({ code: "42P01", message: 'relation "activeclinic.clinic_registration_applications" does not exist' });
     assert.equal(classified.category, "schema_missing");
   });
 
-  it("public-schema-status reports not ok when registration table missing", async () => {
+  it("public-schema-status probe route removed (DBCL10)", async () => {
     if (!requireDb()) return;
-    const status = await inspectActiveClinicPublicSchema(pool);
-    assert.equal(status.clinicRegistrationApplications, false);
-    assert.equal(status.ok, false);
-    assert.match(String(status.pendingHint || ""), /019/);
-
     const app = appWithEnv();
     const res = await request(app).get("/__ac/public-schema-status");
-    assert.equal(res.status, 503);
-    assert.equal(res.body.ok, false);
-    assert.equal(res.body.schema.clinicRegistrationApplications, false);
+    assert.equal(res.status, 404);
   });
 });

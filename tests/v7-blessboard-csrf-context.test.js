@@ -22,6 +22,7 @@ const {
 const {
   provisionBlessBoardChurch,
 } = require("../src/blessboard/services/provisionBlessBoardChurch");
+const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const {
   createMoovexPlatformRuntimeApp,
@@ -179,11 +180,16 @@ describe("BlessBoard CSRF request-scoped configuration", () => {
         [QA_EMAIL, hash]
       );
       hqUserId = hq.rows[0].id;
-      await pool.query(
-        `INSERT INTO blessboard.user_roles
-           (user_id, organization_id, church_id, role_key, status)
-         VALUES ($1, $2, $3, 'church_hq_admin', 'active')`,
-        [hqUserId, orgId, churchId]
+      assert.equal(
+        (
+          await assignBlessBoardRole(pool, {
+            email: QA_EMAIL,
+            organizationKey: "demo-church",
+            churchKey: "demo-church",
+            roleKey: "church_hq_admin",
+          })
+        ).ok,
+        true
       );
       const ba = await pool.query(
         `INSERT INTO blessboard.users
@@ -194,11 +200,17 @@ describe("BlessBoard CSRF request-scoped configuration", () => {
         [hash]
       );
       branchUserId = ba.rows[0].id;
-      await pool.query(
-        `INSERT INTO blessboard.user_roles
-           (user_id, organization_id, church_id, branch_id, role_key, status)
-         VALUES ($1, $2, $3, $4, 'branch_admin', 'active')`,
-        [branchUserId, orgId, churchId, branchId]
+      assert.equal(
+        (
+          await assignBlessBoardRole(pool, {
+            email: "ba.csrf@demo-church.example.test",
+            organizationKey: "demo-church",
+            churchKey: "demo-church",
+            branchKey: "hq",
+            roleKey: "branch_admin",
+          })
+        ).ok,
+        true
       );
       const mem = await pool.query(
         `INSERT INTO blessboard.users

@@ -77,11 +77,11 @@ function assertBehavior(mod, label) {
 }
 
 describe("PC18 organization key lift", () => {
-  it("characterizes platform organizationKey as SoT with BB re-export parity", () => {
+  it("characterizes platform organizationKey as SoT; BB runtime callers import platform (PL06)", () => {
     const platformPath = path.join(ROOT, "src/platform/organization/organizationKey.js");
     const bbPath = path.join(ROOT, "src/blessboard/services/organizationKey.js");
     assert.equal(fs.existsSync(platformPath), true, "platform organizationKey missing");
-    assert.equal(fs.existsSync(bbPath), true, "BB organizationKey shim missing");
+    assert.equal(fs.existsSync(bbPath), true, "BB organizationKey thin re-export missing");
 
     const platform = require("../src/platform/organization/organizationKey");
     const bb = require("../src/blessboard/services/organizationKey");
@@ -90,11 +90,17 @@ describe("PC18 organization key lift", () => {
     assertBehavior(platform, "platform");
     assertBehavior(bb, "blessboard");
 
-    // Same function identities via re-export (or deep-equal behavior if copied).
     assert.equal(bb.slugifyOrganizationKey, platform.slugifyOrganizationKey);
     assert.equal(bb.normalizeOrganizationKey, platform.normalizeOrganizationKey);
     assert.equal(bb.resolveBaseOrganizationKey, platform.resolveBaseOrganizationKey);
     assert.equal(bb.withOrganizationKeySuffix, platform.withOrganizationKeySuffix);
+
+    const editor = fs.readFileSync(
+      path.join(ROOT, "src/blessboard/http/blessboardWebsiteEditorRoutes.js"),
+      "utf8"
+    );
+    assert.match(editor, /platform\/organization\/organizationKey/);
+    assert.doesNotMatch(editor, /services\/organizationKey/);
   });
 
   it("AC clinic approval and platform allocator consume platform, not BB", () => {

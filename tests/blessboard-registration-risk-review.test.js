@@ -403,7 +403,7 @@ describe("registration risk review (Prompt 18)", () => {
              WHERE c.organization_id = $1) AS branches,
            (SELECT COUNT(*)::int FROM platform.website_instances
              WHERE organization_id = $1 AND product_code = 'blessboard' AND status <> 'archived') AS websites,
-           (SELECT COUNT(*)::int FROM blessboard.user_roles
+           (SELECT COUNT(*)::int FROM blessboard.user_role_assignments
              WHERE organization_id = $1 AND status = 'active') AS active_roles`,
         [orgId]
       );

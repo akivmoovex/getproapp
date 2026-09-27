@@ -112,11 +112,16 @@ describe("blessboard phone-first authentication (11E)", () => {
         [hash]
       );
       phoneUserId = phoneUser.rows[0].id;
+      const hqRole = await pool.query(
+        `SELECT id FROM blessboard.roles WHERE role_key = 'organisation_administrator' LIMIT 1`
+      );
+      assert.equal(hqRole.rowCount, 1);
       await pool.query(
-        `INSERT INTO blessboard.user_roles
-           (user_id, organization_id, church_id, role_key, status)
-         VALUES ($1, $2, $3, 'church_hq_admin', 'active')`,
-        [phoneUserId, org.id, church.id]
+        `INSERT INTO blessboard.user_role_assignments
+           (user_id, organization_id, church_id, role_id, scope_type, scope_id,
+            status, assignment_origin)
+         VALUES ($1, $2, $3, $4, 'church', $3, 'active', 'manual')`,
+        [phoneUserId, org.id, church.id, hqRole.rows[0].id]
       );
       await pool.query(
         `INSERT INTO blessboard.organization_staff_phones
@@ -134,10 +139,11 @@ describe("blessboard phone-first authentication (11E)", () => {
       );
       emailOnlyId = emailOnly.rows[0].id;
       await pool.query(
-        `INSERT INTO blessboard.user_roles
-           (user_id, organization_id, church_id, role_key, status)
-         VALUES ($1, $2, $3, 'church_hq_admin', 'active')`,
-        [emailOnlyId, org.id, church.id]
+        `INSERT INTO blessboard.user_role_assignments
+           (user_id, organization_id, church_id, role_id, scope_type, scope_id,
+            status, assignment_origin)
+         VALUES ($1, $2, $3, $4, 'church', $3, 'active', 'manual')`,
+        [emailOnlyId, org.id, church.id, hqRole.rows[0].id]
       );
     });
 

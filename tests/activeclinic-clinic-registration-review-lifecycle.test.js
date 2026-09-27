@@ -350,7 +350,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
     assert.match(success.text, /Your clinic is ready|review required/i);
 
     const queue = await listClinicRegistrationApplications(pool, {
-      status: "pending_review",
+      status: "submitted",
       q: payload.contactEmail,
     });
     const listed = queue.applications.find((a) => a.id === created.id);
@@ -440,6 +440,8 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
       applicationId: created.id,
       dataEnvironment: "testing",
       deploymentCode: CODE_MOOVEX_PLATFORM_TESTING,
+      actorKind: "platform_admin",
+      acknowledgeExistingIdentity: true,
     });
     assert.equal(approved.ok, true, JSON.stringify(approved));
     const identities = await pool.query(
@@ -581,7 +583,7 @@ describe("ActiveClinic clinic registration review lifecycle", () => {
     const pa = await loginPa();
     const cookie = cookieHeader({ [UNIFIED_SID]: pa.sid });
     const queue = await request(app)
-      .get(`/admin/clinic-registrations?status=pending_review&follow_up_status=awaiting_customer`)
+      .get(`/admin/clinic-registrations?status=submitted&follow_up_status=awaiting_customer`)
       .set("Host", BB_HOST)
       .set("Cookie", cookie);
     assert.equal(queue.status, 200);

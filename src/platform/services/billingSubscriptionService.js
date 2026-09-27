@@ -62,7 +62,7 @@ const UUID_RE =
 
 function deploymentCode(env) {
   const id = getPlatformDeploymentCode(env || process.env);
-  return id && id.ok ? id.code : "blessboard-org-v5";
+  return id && id.ok ? id.code : "blessboard-org-staging";
 }
 
 async function withClient(db, fn) {

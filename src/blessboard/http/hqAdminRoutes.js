@@ -786,7 +786,7 @@ function createHqAdminRouter(deps) {
       const accepted = await acceptGrowthTrialOffer(getPool(), {
         organizationId: tenant.organization.id,
         actorUserId: session.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
         env,
       });
       if (!accepted.ok) {

@@ -177,7 +177,7 @@ describe("V7 Platform Admin tenant health", () => {
     const css = readRel("public/blessboard/v5/platform-admin.css");
     assert.match(css, /\.bb-pa-tenant-health__dl/);
     const shell = readRel("views/blessboard/v5/partials/platform-admin-shell-start.ejs");
-    assert.match(shell, /platform-admin.css\?v=62/);
+    assert.match(shell, /platform-admin\.css\?v=63/);
 
     const routes = readRel("src/platform/http/platformAdminRoutes.js");
     assert.match(routes, /\/admin\/organizations\/:organizationKey\/retry-provision/);

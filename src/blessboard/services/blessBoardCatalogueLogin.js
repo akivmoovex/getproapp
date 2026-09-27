@@ -206,10 +206,11 @@ function defaultScopeForCatalogueRole(catalogueRoleKey, scope) {
     return { scopeType: "platform", scopeId: null, churchId: null };
   }
   if (key === "organisation_administrator") {
+    // organisation scope forbids church_id (user_role_assignments_organisation_scope).
     return {
       scopeType: "organisation",
       scopeId: scope.organizationId,
-      churchId: scope.churchId || null,
+      churchId: null,
     };
   }
   if (key === "church_system_administrator") {

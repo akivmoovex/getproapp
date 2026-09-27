@@ -101,18 +101,18 @@ describe("ActiveClinic applicant status projection", () => {
       application_number: "AC-TEST-1",
       clinic_name: "Demo",
       created_at: "2026-08-17T00:00:00.000Z",
-      status: "pending_review",
+      status: "submitted",
       follow_up_status: "none",
       provisioning_status: "not_started",
     }, null);
     assert.equal(pending.publicState, PUBLIC_STATE.UNDER_REVIEW);
-    assert.equal(pending.stored.applicationStatus, "pending_review");
+    assert.equal(pending.stored.applicationStatus, "submitted");
 
     const waiting = projectApplicantStatus({
       application_number: "AC-TEST-1",
       clinic_name: "Demo",
       created_at: "2026-08-17T00:00:00.000Z",
-      status: "pending_review",
+      status: "submitted",
       follow_up_status: "awaiting_customer",
       provisioning_status: "not_started",
     }, { body: "Please send a licence copy.", createdAt: "2026-08-17T12:00:00.000Z" });
@@ -124,7 +124,7 @@ describe("ActiveClinic applicant status projection", () => {
       application_number: "AC-TEST-1",
       clinic_name: "Demo",
       created_at: "2026-08-17T00:00:00.000Z",
-      status: "pending_review",
+      status: "submitted",
       follow_up_status: "returned_for_review",
       provisioning_status: "not_started",
     }, null);
@@ -134,7 +134,7 @@ describe("ActiveClinic applicant status projection", () => {
       application_number: "AC-TEST-1",
       clinic_name: "Demo",
       created_at: "2026-08-17T00:00:00.000Z",
-      status: "approved",
+      status: "active",
       follow_up_status: "none",
       provisioning_status: "in_progress",
     }, null);
@@ -145,7 +145,7 @@ describe("ActiveClinic applicant status projection", () => {
       application_number: "AC-TEST-1",
       clinic_name: "Demo",
       created_at: "2026-08-17T00:00:00.000Z",
-      status: "approved",
+      status: "active",
       follow_up_status: "none",
       provisioning_status: "website_pending",
     }, null);
@@ -157,7 +157,7 @@ describe("ActiveClinic applicant status projection", () => {
       application_number: "AC-TEST-1",
       clinic_name: "Demo",
       created_at: "2026-08-17T00:00:00.000Z",
-      status: "approved",
+      status: "active",
       follow_up_status: "none",
       provisioning_status: "failed",
     }, null);
@@ -168,7 +168,7 @@ describe("ActiveClinic applicant status projection", () => {
       application_number: "AC-TEST-1",
       clinic_name: "Demo",
       created_at: "2026-08-17T00:00:00.000Z",
-      status: "approved",
+      status: "active",
       follow_up_status: "none",
       provisioning_status: "provisioned",
     }, null);
@@ -188,7 +188,7 @@ describe("ActiveClinic applicant status projection", () => {
     assert.equal(rejected.rejectionMessage, GENERIC_REJECTION);
     assert.doesNotMatch(rejected.explanation, new RegExp(INTERNAL_REJECTION));
 
-    const withdrawn = projectApplicantStatus({
+    const unknownLegacy = projectApplicantStatus({
       application_number: "AC-TEST-1",
       clinic_name: "Demo",
       created_at: "2026-08-17T00:00:00.000Z",
@@ -196,18 +196,7 @@ describe("ActiveClinic applicant status projection", () => {
       follow_up_status: "none",
       provisioning_status: "not_started",
     }, null);
-    assert.equal(withdrawn.publicState, PUBLIC_STATE.WITHDRAWN);
-
-    const duplicate = projectApplicantStatus({
-      application_number: "AC-TEST-1",
-      clinic_name: "Demo",
-      created_at: "2026-08-17T00:00:00.000Z",
-      status: "duplicate",
-      follow_up_status: "none",
-      provisioning_status: "not_started",
-    }, null);
-    assert.equal(duplicate.publicState, PUBLIC_STATE.DUPLICATE_RECORDED);
-    assert.match(duplicate.label, /Already recorded/i);
+    assert.equal(unknownLegacy.publicState, PUBLIC_STATE.UNDER_REVIEW);
   });
 });
 
@@ -533,7 +522,7 @@ describe("ActiveClinic applicant status lookup", () => {
     }
   });
 
-  it("rejected status uses a generic public message; withdrawn is distinct", async () => {
+  it("rejected status uses a generic public message", async () => {
     requireDb();
     const rejectedApp = await createPending();
     const rejected = await rejectClinicRegistration(pool, {
@@ -548,28 +537,6 @@ describe("ActiveClinic applicant status lookup", () => {
     assert.match(rejectedLookup.text, /data-ac-public-status="rejected"/);
     assert.match(rejectedLookup.text, new RegExp(GENERIC_REJECTION.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
     assert.doesNotMatch(rejectedLookup.text, new RegExp(INTERNAL_REJECTION));
-
-    const withdrawnApp = await createPending();
-    await pool.query(
-      `UPDATE activeclinic.clinic_registration_applications SET status = 'withdrawn' WHERE id = $1`,
-      [withdrawnApp.created.id]
-    );
-    const withdrawnLookup = await postLookup({
-      applicationNumber: withdrawnApp.created.applicationNumber,
-      contactEmail: withdrawnApp.payload.contactEmail,
-    });
-    assert.match(withdrawnLookup.text, /data-ac-public-status="withdrawn"/);
-
-    const duplicateApp = await createPending();
-    await pool.query(
-      `UPDATE activeclinic.clinic_registration_applications SET status = 'duplicate' WHERE id = $1`,
-      [duplicateApp.created.id]
-    );
-    const duplicateLookup = await postLookup({
-      applicationNumber: duplicateApp.created.applicationNumber,
-      contactEmail: duplicateApp.payload.contactEmail,
-    });
-    assert.match(duplicateLookup.text, /data-ac-public-status="duplicate_recorded"/);
 
     const service = await lookupClinicRegistrationApplicantStatus(pool, {
       applicationNumber: rejectedApp.created.applicationNumber,

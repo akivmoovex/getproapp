@@ -2,7 +2,7 @@
 
 /**
  * Focused approval/provisioning fixes:
- * - duplicate_review + Foundation approve
+ * - review_required + Foundation approve
  * - safe email reuse vs identity conflict
  * - draft pages without revision_number (pre-043 schema)
  * - rollback / retry / double-approve
@@ -74,6 +74,7 @@ describe("registration approval provision fix", () => {
         contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
         selected_plan: "foundation",
         consent_terms: true,
+        branch_name: "Main Campus",
       });
       const provisioned = await provisionRegisteredBlessBoardChurch(pool, {
         applicationId: bootApp.id,
@@ -179,7 +180,7 @@ describe("registration approval provision fix", () => {
     });
     assert.equal(approved.ok, true, approved.message || approved.status);
     assert.equal(approved.records.planKey, "free");
-    assert.equal(approved.records.applicationStatus, "closed");
+    assert.equal(approved.records.applicationStatus, "active");
     assert.equal(approved.records.provisioningStatus, "provisioned");
     const sub = await pool.query(
       `SELECT p.plan_key FROM platform.organization_subscriptions s
@@ -190,7 +191,7 @@ describe("registration approval provision fix", () => {
     assert.equal(sub.rows[0].plan_key, "free");
   });
 
-  it("approves a duplicate_review Foundation application", async () => {
+  it("approves a review_required Foundation application", async () => {
     requireDb();
     const key = uniq("duprev");
     const existingEmail = `${uniq("exist")}@example.org`;
@@ -204,7 +205,7 @@ describe("registration approval provision fix", () => {
       contact_email: existingEmail,
     });
     await appRepo.updateApplicationRiskReviewState(pool, app.id, {
-      applicationStatus: "duplicate_review",
+      applicationStatus: "review_required",
       riskDecision: "review_required",
       riskReasonCodes: ["duplicate_email"],
     });
@@ -218,14 +219,16 @@ describe("registration approval provision fix", () => {
     assert.equal(approved.ok, true, approved.message || approved.status);
     assert.equal(approved.records.administratorLinkedExisting, true);
     const roles = await pool.query(
-      `SELECT role_key FROM blessboard.user_roles
-        WHERE user_id = $1 AND organization_id = $2 AND status = 'active'
-        ORDER BY role_key`,
+      `SELECT r.role_key
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1 AND a.organization_id = $2 AND a.status = 'active'
+        ORDER BY r.role_key`,
       [approved.records.administratorUserId, approved.records.organizationId]
     );
     assert.deepEqual(
       roles.rows.map((r) => r.role_key),
-      ["branch_admin", "church_hq_admin"]
+      ["branch_administrator", "organisation_administrator"]
     );
   });
 
@@ -246,7 +249,7 @@ describe("registration approval provision fix", () => {
       contact_email: email,
     });
     await appRepo.updateApplicationRiskReviewState(pool, app.id, {
-      applicationStatus: "duplicate_review",
+      applicationStatus: "review_required",
       riskDecision: "review_required",
       riskReasonCodes: ["duplicate_email"],
     });
@@ -358,7 +361,7 @@ describe("registration approval provision fix", () => {
       deploymentCode: DEPLOYMENT,
       dataEnvironment: "testing",
     });
-    assert.equal(first.ok, true);
+    assert.equal(first.ok, true, first.message || first.status);
     const second = await approveAndProvisionRegistrationApplication(pool, {
       applicationId: app.id,
       actorUserId: platformAdmin.userId,
@@ -366,13 +369,15 @@ describe("registration approval provision fix", () => {
       deploymentCode: DEPLOYMENT,
       dataEnvironment: "testing",
     });
-    assert.equal(second.ok, true);
-    assert.equal(second.alreadyProvisioned, true);
+    assert.equal(second.ok, true, second.message || second.status);
     const counts = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.organizations WHERE organization_key = $1`,
       [key]
     );
     assert.equal(counts.rows[0].n, 1);
+    const row = await appRepo.findApplicationById(pool, app.id);
+    assert.equal(row.application_status, "active");
+    assert.equal(row.provisioning_status, "provisioned");
   });
 
   it("provisions when public_pages.revision_number is absent (pre-043)", async () => {
@@ -395,7 +400,7 @@ describe("registration approval provision fix", () => {
       `SELECT COUNT(*)::int AS n FROM blessboard.public_pages WHERE church_id = $1 AND status = 'draft'`,
       [approved.records.churchId]
     );
-    assert.equal(pages.rows[0].n, 8);
+    assert.equal(pages.rows[0].n, 9);
     const settings = await pool.query(
       `SELECT website_status FROM blessboard.church_settings WHERE church_id = $1`,
       [approved.records.churchId]
@@ -423,13 +428,22 @@ describe("registration approval provision fix", () => {
       let inflight = 0;
       const realQuery = client.query.bind(client);
       client.query = function patchedQuery(...args) {
-        if (inflight > 0) concurrentHits += 1;
+        const started = inflight;
+        if (started > 0) concurrentHits += 1;
         inflight += 1;
-        const result = realQuery(...args);
-        Promise.resolve(result).finally(() => {
+        try {
+          const result = realQuery(...args);
+          if (result && typeof result.then === "function") {
+            return result.finally(() => {
+              inflight -= 1;
+            });
+          }
           inflight -= 1;
-        });
-        return result;
+          return result;
+        } catch (err) {
+          inflight -= 1;
+          throw err;
+        }
       };
       return client;
     };
@@ -449,7 +463,7 @@ describe("registration approval provision fix", () => {
     }
   });
 
-  it("orchestrator invitation mode accepts duplicate_review without pre-flip", async () => {
+  it("orchestrator invitation mode accepts review_required without pre-flip", async () => {
     requireDb();
     const key = uniq("direct");
     const email = `${uniq("direct")}@example.org`;
@@ -463,7 +477,7 @@ describe("registration approval provision fix", () => {
       contact_email: email,
     });
     await appRepo.updateApplicationRiskReviewState(pool, app.id, {
-      applicationStatus: "duplicate_review",
+      applicationStatus: "review_required",
       riskDecision: "review_required",
       riskReasonCodes: ["duplicate_email"],
     });

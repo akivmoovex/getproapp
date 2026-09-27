@@ -918,7 +918,7 @@ function registerActiveClinicPublicRoutes(app, deps) {
             });
             const existingStatus = result.application && result.application.status;
             const dupMessage =
-              existingStatus === "approved"
+              existingStatus === "active"
                 ? "A clinic is already registered with this email or phone."
                 : "An application with this email or phone was recently submitted. A second copy was not created.";
             return res.status(400).type("html").send(renderPublicView("public/register-clinic", withRegisterLocals(req, {

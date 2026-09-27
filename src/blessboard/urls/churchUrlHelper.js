@@ -5,7 +5,7 @@
  * Does not invent unsupported wildcard hosts.
  */
 
-const { normalizeOrganizationKey } = require("../services/organizationKey");
+const { normalizeOrganizationKey } = require("../../platform/organization/organizationKey");
 const { normalizeBranchKey } = require("../services/listBlessBoardBranches");
 const { PUBLIC_PAGE_KEYS } = require("../services/publicContentConstants");
 const {

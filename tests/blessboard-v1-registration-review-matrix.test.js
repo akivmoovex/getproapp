@@ -311,7 +311,7 @@ describe("BlessBoard V1 registration review matrix", () => {
     assert.notEqual(orgA.organization_id, orgB.organization_id);
 
     const cross = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.user_roles
+      `SELECT COUNT(*)::int AS n FROM blessboard.user_role_assignments
         WHERE user_id = $1 AND organization_id = $2 AND status = 'active'`,
       [orgA.user_id, orgB.organization_id]
     );

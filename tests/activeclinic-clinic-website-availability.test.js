@@ -28,6 +28,7 @@ const {
 } = require("../src/activeclinic/http/activeClinicFoundationServer");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { createBlessBoardUser } = require("../src/blessboard/services/createBlessBoardUser");
+const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { CSRF_FIELD, getCsrfCookieName } = require("../src/platform/http/v5Csrf");
@@ -332,10 +333,15 @@ describe("clinic website availability", () => {
       displayName: "Platform Admin",
     });
     assert.equal(paUser.ok, true, JSON.stringify(paUser));
-    await pool.query(
-      `INSERT INTO blessboard.user_roles (user_id, organization_id, role_key, status)
-       VALUES ($1, $2, 'platform_admin', 'active')`,
-      [paUser.user.id, orgId]
+    assert.equal(
+      (
+        await assignBlessBoardRole(pool, {
+          email: `pa-${stamp}@example.org`,
+          organizationKey: orgKey,
+          roleKey: "platform_admin",
+        })
+      ).ok,
+      true
     );
     const session = await createV5Session(pool, {
       deploymentCode: CODE_ORG_STAGING,

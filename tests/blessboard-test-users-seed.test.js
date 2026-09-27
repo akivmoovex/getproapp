@@ -294,7 +294,7 @@ describe("blessboard test-users seed service + access", () => {
         WHERE email_normalized LIKE '%@example.test'`
     );
     const rolesBefore = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.user_roles ur
+      `SELECT COUNT(*)::int AS n FROM blessboard.user_role_assignments ur
          JOIN blessboard.users u ON u.id = ur.user_id
         WHERE u.email_normalized LIKE '%@example.test'`
     );
@@ -308,7 +308,7 @@ describe("blessboard test-users seed service + access", () => {
         WHERE email_normalized LIKE '%@example.test'`
     );
     const rolesAfter = await pool.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.user_roles ur
+      `SELECT COUNT(*)::int AS n FROM blessboard.user_role_assignments ur
          JOIN blessboard.users u ON u.id = ur.user_id
         WHERE u.email_normalized LIKE '%@example.test'`
     );

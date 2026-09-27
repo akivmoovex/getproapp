@@ -327,76 +327,15 @@ async function registerWebsiteMedia(db, input) {
       [...baseParams, storageProvider, payloadBuffer]
     );
   } catch (err) {
-    if (!err || err.code !== "42703") {
-      if (storageProvider === PROVIDER_HOSTINGER && storage && storageKey) {
-        try {
-          await storage.deleteMedia({ storageKey });
-        } catch {
-          /* orphan cleanup later */
-        }
-      }
-      throw err;
-    }
-    // Pre-035 schema: no storage_provider column — keep database payload path.
+    // Hostinger object already written — delete orphan on any DB failure.
     if (storageProvider === PROVIDER_HOSTINGER && storage && storageKey) {
       try {
         await storage.deleteMedia({ storageKey });
       } catch {
-        /* ignore */
+        /* orphan cleanup later */
       }
-      storageProvider = PROVIDER_DATABASE;
-      storageKey =
-        input.storageKey ||
-        `website/${organizationId}/${instance.id}/${mediaId}-${filename}`;
-      payloadBuffer = buffer || null;
     }
-    try {
-      rows = await db.query(
-        `INSERT INTO platform.website_media (
-           id, organization_id, instance_id, uploader_identity_id, media_kind,
-           original_filename, storage_key, mime_type, size_bytes, alt_text, external_url, status, sha256,
-           payload_bytes
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,$11,'active',$12,$13)
-         RETURNING *`,
-        [
-          mediaId,
-          organizationId,
-          instance.id,
-          input.actorIdentityId || null,
-          kind,
-          filename,
-          storageKey,
-          mime || "application/octet-stream",
-          sizeBytes,
-          input.altText || null,
-          input.externalUrl || null,
-          sha256,
-          payloadBuffer,
-        ]
-      );
-    } catch (err2) {
-      if (!err2 || err2.code !== "42703") throw err2;
-      rows = await db.query(
-        `INSERT INTO platform.website_media (
-           organization_id, instance_id, uploader_identity_id, media_kind,
-           original_filename, storage_key, mime_type, size_bytes, alt_text, external_url, status, sha256
-         ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10,'active',$11)
-         RETURNING *`,
-        [
-          organizationId,
-          instance.id,
-          input.actorIdentityId || null,
-          kind,
-          filename,
-          storageKey,
-          mime || "application/octet-stream",
-          sizeBytes,
-          input.altText || null,
-          input.externalUrl || null,
-          sha256,
-        ]
-      );
-    }
+    throw err;
   }
   const media = mapMedia(rows.rows[0]);
   if (storageProvider === PROVIDER_HOSTINGER && storageKey) {
@@ -414,58 +353,30 @@ async function registerWebsiteMedia(db, input) {
 }
 
 async function getWebsiteMedia(db, input) {
-  let rows;
-  try {
-    rows = await db.query(
-      `SELECT id, organization_id, instance_id, uploader_identity_id, media_kind,
-              original_filename, storage_key, storage_provider, mime_type, size_bytes, width_px, height_px,
-              alt_text, external_url, status, sha256, created_at
-         FROM platform.website_media
-        WHERE id = $1 AND organization_id = $2
-        LIMIT 1`,
-      [input.mediaId, input.organizationId]
-    );
-  } catch (err) {
-    if (!err || err.code !== "42703") throw err;
-    rows = await db.query(
-      `SELECT id, organization_id, instance_id, uploader_identity_id, media_kind,
-              original_filename, storage_key, mime_type, size_bytes, width_px, height_px,
-              alt_text, external_url, status, sha256, created_at
-         FROM platform.website_media
-        WHERE id = $1 AND organization_id = $2
-        LIMIT 1`,
-      [input.mediaId, input.organizationId]
-    );
-  }
+  const rows = await db.query(
+    `SELECT id, organization_id, instance_id, uploader_identity_id, media_kind,
+            original_filename, storage_key, storage_provider, mime_type, size_bytes, width_px, height_px,
+            alt_text, external_url, status, sha256, created_at
+       FROM platform.website_media
+      WHERE id = $1 AND organization_id = $2
+      LIMIT 1`,
+    [input.mediaId, input.organizationId]
+  );
   const media = mapMedia(rows.rows[0] || null);
   if (!media) return { ok: false, code: RESULT.NOT_FOUND, media: null };
   return { ok: true, media };
 }
 
 async function getWebsiteMediaById(db, mediaId) {
-  let rows;
-  try {
-    rows = await db.query(
-      `SELECT id, organization_id, instance_id, uploader_identity_id, media_kind,
-              original_filename, storage_key, storage_provider, mime_type, size_bytes, width_px, height_px,
-              alt_text, external_url, status, sha256, created_at
-         FROM platform.website_media
-        WHERE id = $1
-        LIMIT 1`,
-      [mediaId]
-    );
-  } catch (err) {
-    if (!err || err.code !== "42703") throw err;
-    rows = await db.query(
-      `SELECT id, organization_id, instance_id, uploader_identity_id, media_kind,
-              original_filename, storage_key, mime_type, size_bytes, width_px, height_px,
-              alt_text, external_url, status, sha256, created_at
-         FROM platform.website_media
-        WHERE id = $1
-        LIMIT 1`,
-      [mediaId]
-    );
-  }
+  const rows = await db.query(
+    `SELECT id, organization_id, instance_id, uploader_identity_id, media_kind,
+            original_filename, storage_key, storage_provider, mime_type, size_bytes, width_px, height_px,
+            alt_text, external_url, status, sha256, created_at
+       FROM platform.website_media
+      WHERE id = $1
+      LIMIT 1`,
+    [mediaId]
+  );
   const media = mapMedia(rows.rows[0] || null);
   if (!media) return { ok: false, code: RESULT.NOT_FOUND, media: null };
   return { ok: true, media };
@@ -473,66 +384,48 @@ async function getWebsiteMediaById(db, mediaId) {
 
 async function getWebsiteMediaPayload(db, input) {
   const env = (input && input.env) || process.env;
-  try {
-    let rows;
-    try {
-      rows = await db.query(
-        `SELECT payload_bytes, mime_type, original_filename, status, organization_id,
-                storage_provider, storage_key
-           FROM platform.website_media
-          WHERE id = $1 AND organization_id = $2
-          LIMIT 1`,
-        [input.mediaId, input.organizationId]
-      );
-    } catch (err) {
-      if (!err || err.code !== "42703") throw err;
-      rows = await db.query(
-        `SELECT payload_bytes, mime_type, original_filename, status, organization_id
-           FROM platform.website_media
-          WHERE id = $1 AND organization_id = $2
-          LIMIT 1`,
-        [input.mediaId, input.organizationId]
-      );
-    }
-    const row = rows.rows[0];
-    if (!row || row.status !== "active") {
+  const rows = await db.query(
+    `SELECT payload_bytes, mime_type, original_filename, status, organization_id,
+            storage_provider, storage_key
+       FROM platform.website_media
+      WHERE id = $1 AND organization_id = $2
+      LIMIT 1`,
+    [input.mediaId, input.organizationId]
+  );
+  const row = rows.rows[0];
+  if (!row || row.status !== "active") {
+    return { ok: false, code: RESULT.NOT_FOUND, buffer: null, mimeType: null };
+  }
+  if (row.payload_bytes) {
+    return {
+      ok: true,
+      buffer: row.payload_bytes,
+      mimeType: row.mime_type,
+      filename: row.original_filename,
+      storageProvider: String(row.storage_provider || PROVIDER_DATABASE),
+    };
+  }
+  const provider = String(row.storage_provider || PROVIDER_DATABASE);
+  if (provider === PROVIDER_HOSTINGER && row.storage_key) {
+    const { storage } = resolveMediaStorage(env);
+    if (!storage) {
       return { ok: false, code: RESULT.NOT_FOUND, buffer: null, mimeType: null };
     }
-    if (row.payload_bytes) {
+    try {
+      const buffer = await storage.readMedia(row.storage_key);
       return {
         ok: true,
-        buffer: row.payload_bytes,
+        buffer,
         mimeType: row.mime_type,
         filename: row.original_filename,
-        storageProvider: String(row.storage_provider || PROVIDER_DATABASE),
+        storageProvider: PROVIDER_HOSTINGER,
       };
-    }
-    const provider = String(row.storage_provider || PROVIDER_DATABASE);
-    if (provider === PROVIDER_HOSTINGER && row.storage_key) {
-      const { storage } = resolveMediaStorage(env);
-      if (!storage) {
-        return { ok: false, code: RESULT.NOT_FOUND, buffer: null, mimeType: null };
-      }
-      try {
-        const buffer = await storage.readMedia(row.storage_key);
-        return {
-          ok: true,
-          buffer,
-          mimeType: row.mime_type,
-          filename: row.original_filename,
-          storageProvider: PROVIDER_HOSTINGER,
-        };
-      } catch {
-        return { ok: false, code: RESULT.NOT_FOUND, buffer: null, mimeType: null };
-      }
-    }
-    return { ok: false, code: RESULT.NOT_FOUND, buffer: null, mimeType: null };
-  } catch (err) {
-    if (err && err.code === "42703") {
+    } catch {
+      // Hostinger/network/storage read failure — not a schema-lag path.
       return { ok: false, code: RESULT.NOT_FOUND, buffer: null, mimeType: null };
     }
-    throw err;
   }
+  return { ok: false, code: RESULT.NOT_FOUND, buffer: null, mimeType: null };
 }
 
 async function listWebsiteMedia(db, input) {

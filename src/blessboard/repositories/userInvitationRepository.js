@@ -208,11 +208,19 @@ async function countPendingNewStaffSeats(client, organizationId) {
         AND i.expires_at > now()
         AND NOT EXISTS (
           SELECT 1
-            FROM blessboard.user_roles ur
-            INNER JOIN blessboard.users u ON u.id = ur.user_id
-           WHERE ur.organization_id = i.organization_id
-             AND ur.status = 'active'
-             AND ur.role_key IN ('platform_admin', 'church_hq_admin', 'branch_admin')
+            FROM blessboard.user_role_assignments a
+            INNER JOIN blessboard.roles r ON r.id = a.role_id
+            INNER JOIN blessboard.users u ON u.id = a.user_id
+           WHERE a.organization_id = i.organization_id
+             AND a.status = 'active'
+             AND a.revoked_at IS NULL
+             AND (a.expires_at IS NULL OR a.expires_at > now())
+             AND r.role_key IN (
+               'platform_administrator',
+               'organisation_administrator',
+               'church_system_administrator',
+               'branch_administrator'
+             )
              AND u.email_normalized = i.email_normalized
         )`,
     [organizationId]

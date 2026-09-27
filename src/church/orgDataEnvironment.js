@@ -81,7 +81,7 @@ function isReportAggregateEnvironment(orgOrEnv) {
  */
 function isPublicDirectoryEnvironment(orgOrEnv, appEnv) {
   const env = getDataEnvironment(orgOrEnv);
-  const { isTestingDeployment } = require("./blessBoardEnv");
+  const { isTestingDeployment } = require("../platform/config/deploymentEnv");
   if (isTestingDeployment(appEnv)) {
     return PUBLIC_DIRECTORY_ENVIRONMENTS_TESTING.includes(env);
   }
@@ -90,7 +90,7 @@ function isPublicDirectoryEnvironment(orgOrEnv, appEnv) {
 
 /** Environments allowed in the public directory for the current deployment mode. */
 function publicDirectoryEnvironmentsForDeployment(appEnv) {
-  const { isTestingDeployment } = require("./blessBoardEnv");
+  const { isTestingDeployment } = require("../platform/config/deploymentEnv");
   return isTestingDeployment(appEnv)
     ? PUBLIC_DIRECTORY_ENVIRONMENTS_TESTING
     : PUBLIC_DIRECTORY_ENVIRONMENTS;
@@ -126,7 +126,7 @@ function isNonProductionEnvironment(orgOrEnv) {
  * @returns {"production"|"testing"|"pilot"|"demo"}
  */
 function resolveRegistrationDataEnvironment(env, opts = {}) {
-  const { getDeploymentEnvMode } = require("./blessBoardEnv");
+  const { getDeploymentEnvMode } = require("../platform/config/deploymentEnv");
   const mode = getDeploymentEnvMode(env);
   const explicitRaw = String(
     (opts && opts.explicit != null ? opts.explicit : "") ||
@@ -189,7 +189,7 @@ function sqlPublicDirectoryEnvironmentFilter(alias = "o", appEnv) {
  * Testing/dev deployments show demo-named tenants unchanged.
  */
 function sqlPublicDirectoryProductionDemoNameExclusion(appEnv) {
-  const { isProductionDeployment } = require("./blessBoardEnv");
+  const { isProductionDeployment } = require("../platform/config/deploymentEnv");
   if (!isProductionDeployment(appEnv)) {
     return "TRUE";
   }

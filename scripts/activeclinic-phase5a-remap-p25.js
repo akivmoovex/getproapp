@@ -304,7 +304,7 @@ const NEW_SCREENS = [
       "partials/phone-field.ejs",
       "partials/sms-honesty-note.ejs",
     ],
-    client_js: ["public/activeclinic/ac-public.js", "public/activeclinic/ac-phone-field.js"],
+    client_js: ["public/activeclinic/ac-public.js", "public/platform/phone-field.js"],
     implementation_substance: "FUNCTIONAL",
     notes: "Phase 5A patient details step",
   },

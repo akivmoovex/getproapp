@@ -209,7 +209,7 @@ async function recordClinicLifecycle(client, app, input, organizationId, actionK
 
 async function maybeSendReadyToSignInEmail(client, input) {
   const app = input.application;
-  if (!app || (String(app.status) !== "approved" && String(app.status) !== "active")) {
+  if (!app || String(app.status) !== "active") {
     return { skipped: true };
   }
   const provisioning = String(app.provisioning_status || "");
@@ -387,10 +387,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
     const app = await loadApplication(client, applicationId);
     if (!app) return { ok: false, code: RESULT.NOT_FOUND };
 
-    if (
-      (app.status === "approved" || app.status === "active") &&
-      app.organization_id
-    ) {
+    if (app.status === "active" && app.organization_id) {
       const completeness = await inspectOrganizationProvisioningCompleteness(client, {
         productCode: "activeclinic",
         organizationId: app.organization_id,
@@ -423,7 +420,7 @@ async function approveAndProvisionClinicRegistration(db, input) {
       }
     }
 
-    if (app.status === "rejected" || app.status === "withdrawn") {
+    if (app.status === "rejected") {
       return { ok: false, code: RESULT.NOT_ELIGIBLE, application: app };
     }
 
@@ -1210,7 +1207,6 @@ async function rejectClinicRegistration(db, input) {
       return { ok: true, code: RESULT.ALREADY_REJECTED, application: app };
     }
     if (
-      app.status !== "pending_review" &&
       app.status !== "review_required" &&
       app.status !== "submitted" &&
       app.status !== "provisioning"

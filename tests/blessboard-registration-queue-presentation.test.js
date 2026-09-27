@@ -10,12 +10,12 @@ const { describe, it } = require("node:test");
 const api = require("../src/blessboard/services/registrationQueuePresentation");
 
 describe("registrationQueuePresentation Phase 5 status mapping", () => {
-  it("maps rejected and cancelled to Rejected", () => {
+  it("maps rejected to Rejected", () => {
     assert.equal(api.presentPhase5QueueStatus({ applicationStatus: "rejected" }).label, "Rejected");
-    assert.equal(api.presentPhase5QueueStatus({ application_status: "cancelled" }).key, "rejected");
+    assert.equal(api.presentPhase5QueueStatus({ application_status: "rejected" }).key, "rejected");
   });
 
-  it("maps provisioned (and closed+org) to Approved without requiring approved enum", () => {
+  it("maps provisioned or active to Approved without requiring approved enum", () => {
     const provisioned = api.presentPhase5QueueStatus({
       applicationStatus: "submitted",
       provisioningStatus: "provisioned",
@@ -24,12 +24,12 @@ describe("registrationQueuePresentation Phase 5 status mapping", () => {
     assert.equal(provisioned.key, "approved");
     assert.match(provisioned.chipClass, /bb-pa-chip--ok/);
 
-    const closedLinked = api.presentPhase5QueueStatus({
-      application_status: "closed",
+    const activeLinked = api.presentPhase5QueueStatus({
+      application_status: "active",
       provisioning_status: "not_started",
       organization_key: "grace-church",
     });
-    assert.equal(closedLinked.label, "Approved");
+    assert.equal(activeLinked.label, "Approved");
   });
 
   it("maps awaiting_customer follow-up to Needs Information", () => {
@@ -42,7 +42,7 @@ describe("registrationQueuePresentation Phase 5 status mapping", () => {
     assert.equal(st.key, "needs_information");
   });
 
-  it("maps submitted / duplicate_review / network paths to New", () => {
+  it("maps submitted / review_required / network paths to New", () => {
     assert.equal(
       api.presentPhase5QueueStatus({
         applicationStatus: "submitted",
@@ -52,7 +52,7 @@ describe("registrationQueuePresentation Phase 5 status mapping", () => {
     );
     assert.equal(
       api.presentPhase5QueueStatus({
-        application_status: "duplicate_review",
+        application_status: "review_required",
         provisioning_status: "not_started",
       }).label,
       "New"

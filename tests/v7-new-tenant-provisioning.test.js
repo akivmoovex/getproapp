@@ -422,14 +422,16 @@ describe("v7 new tenant provisioning audit", () => {
     assert.equal(admin.rows[0].status, "active");
 
     const roles = await pool.query(
-      `SELECT role_key FROM blessboard.user_roles
-        WHERE user_id = $1 AND organization_id = $2 AND status = 'active'
-        ORDER BY role_key`,
+      `SELECT r.role_key
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1 AND a.organization_id = $2 AND a.status = 'active'
+        ORDER BY r.role_key`,
       [adminUserId, organizationId]
     );
     const roleKeys = roles.rows.map((row) => row.role_key);
-    assert.ok(roleKeys.includes("church_hq_admin"));
-    assert.ok(roleKeys.includes("branch_admin"));
+    assert.ok(roleKeys.includes("organisation_administrator"));
+    assert.ok(roleKeys.includes("branch_administrator"));
 
     const churches = await pool.query(
       `SELECT id FROM blessboard.churches WHERE organization_id = $1`,

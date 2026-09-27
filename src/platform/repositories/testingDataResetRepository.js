@@ -50,12 +50,15 @@ const ORGANIZATION_SCOPED_TABLES = Object.freeze([
  */
 async function listPlatformAdminPreserveSet(client) {
   const users = await client.query(
-    `SELECT DISTINCT u.id AS user_id, ur.organization_id
+    `SELECT DISTINCT u.id AS user_id, a.organization_id
        FROM blessboard.users u
-       INNER JOIN blessboard.user_roles ur
-         ON ur.user_id = u.id
-        AND ur.role_key = 'platform_admin'
-        AND ur.status = 'active'
+       INNER JOIN blessboard.user_role_assignments a
+         ON a.user_id = u.id
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+       INNER JOIN blessboard.roles r
+         ON r.id = a.role_id
+        AND r.role_key = 'platform_administrator'
       WHERE u.status = 'active'`
   );
   const userIds = [...new Set(users.rows.map((r) => String(r.user_id)))];
@@ -188,11 +191,13 @@ async function countResettableCategories(client, preserve) {
     `SELECT COUNT(*)::int AS n FROM blessboard.user_invitations`
   );
   const tenantRoles = await client.query(
-    `SELECT COUNT(*)::int AS n FROM blessboard.user_roles ur
-      INNER JOIN platform.organizations o ON o.id = ur.organization_id
-     WHERE ur.role_key <> 'platform_admin'
+    `SELECT COUNT(*)::int AS n FROM blessboard.user_role_assignments a
+      INNER JOIN blessboard.roles r ON r.id = a.role_id
+      INNER JOIN platform.organizations o ON o.id = a.organization_id
+     WHERE r.role_key <> 'platform_administrator'
+       AND a.status = 'active'
        AND o.test_cleanup_eligible = true
-       AND NOT (ur.organization_id = ANY($1::uuid[]))`,
+       AND NOT (a.organization_id = ANY($1::uuid[]))`,
     [preserveOrgIds]
   );
   const media = await client.query(
@@ -239,8 +244,12 @@ async function countResettableCategories(client, preserve) {
     [preserveUserIds]
   );
   const preservedAdminRoles = await client.query(
-    `SELECT COUNT(*)::int AS n FROM blessboard.user_roles
-      WHERE role_key = 'platform_admin' AND status = 'active'`
+    `SELECT COUNT(*)::int AS n
+       FROM blessboard.user_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE r.role_key = 'platform_administrator'
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL`
   );
   const plans = await client.query(`SELECT COUNT(*)::int AS n FROM platform.plans`);
   const identities = await client.query(
@@ -990,10 +999,13 @@ async function verifyPreservedFoundation(client, preserve) {
       failures.push("platform_admin_user_missing");
     }
     const roles = await client.query(
-      `SELECT COUNT(*)::int AS n FROM blessboard.user_roles
-        WHERE user_id = ANY($1::uuid[])
-          AND role_key = 'platform_admin'
-          AND status = 'active'`,
+      `SELECT COUNT(*)::int AS n
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = ANY($1::uuid[])
+          AND r.role_key = 'platform_administrator'
+          AND a.status = 'active'
+          AND a.revoked_at IS NULL`,
       [preserve.preserveUserIds]
     );
     if (roles.rows[0].n < 1) failures.push("platform_admin_role_missing");
@@ -1024,7 +1036,7 @@ async function countOrphanTenantIdentities(client, preserveUserIds) {
        FROM blessboard.users u
       WHERE NOT (u.id = ANY($1::uuid[]))
         AND NOT EXISTS (
-          SELECT 1 FROM blessboard.user_roles ur WHERE ur.user_id = u.id
+          SELECT 1 FROM blessboard.user_role_assignments a WHERE a.user_id = u.id
         )`,
     [preserveUserIds]
   );

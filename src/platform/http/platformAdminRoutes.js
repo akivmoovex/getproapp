@@ -1696,7 +1696,7 @@ function createPlatformAdminRouter(deps) {
             decision,
             reason,
             actorUserId: req.platformAdminContext.userId,
-            deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+            deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
           }
         );
 
@@ -1738,7 +1738,7 @@ function createPlatformAdminRouter(deps) {
         applicationId: id,
         followUpStatus: req.body && req.body.follow_up_status,
         actorUserId: req.platformAdminContext.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         let error = "follow_up_failed";
@@ -1769,7 +1769,7 @@ function createPlatformAdminRouter(deps) {
         applicationId: id,
         supportUserId: rawSupport === "" || rawSupport == null ? null : rawSupport,
         actorUserId: req.platformAdminContext.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         let error = "assign_failed";
@@ -1804,7 +1804,7 @@ function createPlatformAdminRouter(deps) {
         note: req.body && req.body.note,
         followUpStatus: req.body && req.body.follow_up_status,
         nextFollowUpAt: req.body && req.body.next_follow_up_at,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         let error = "contact_failed";
@@ -2276,7 +2276,7 @@ function createPlatformAdminRouter(deps) {
             notifyApplicant: parsed.input.notifyApplicant,
             deploymentCode: (() => {
               const deployment = getPlatformDeploymentCode(env);
-              return deployment && deployment.ok ? deployment.code : "blessboard-org-v5";
+              return deployment && deployment.ok ? deployment.code : "blessboard-org-staging";
             })(),
           },
           typeof deps.rejectRegistrationOptions === "object" && deps.rejectRegistrationOptions
@@ -2454,7 +2454,7 @@ function createPlatformAdminRouter(deps) {
           applicationId: id,
           actorUserId: req.platformAdminContext.userId,
           organizationKey: req.body && req.body.organization_key,
-          deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+          deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
           dataEnvironment: "testing",
           requestId,
         });
@@ -2527,8 +2527,8 @@ function createPlatformAdminRouter(deps) {
           applicationId: id.slice(0, 36),
           failureStage: "route_handler",
           failureCategory:
-            err && (err.code === "42703" || err.code === "42P01")
-              ? "schema_mismatch"
+            err && err.code === "42P01"
+              ? "undefined_table"
               : "internal_error",
           pgCode: err && err.code != null ? String(err.code).slice(0, 32) : null,
           requestId: requestId != null ? String(requestId).slice(0, 64) : null,
@@ -2554,7 +2554,7 @@ function createPlatformAdminRouter(deps) {
       const result = await markNetworkValidationComplete(getPool(), {
         applicationId: id,
         actorUserId: req.platformAdminContext.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         let error = "follow_up_failed";
@@ -2585,7 +2585,7 @@ function createPlatformAdminRouter(deps) {
         applicationId: id,
         actorUserId: req.platformAdminContext.userId,
         organizationKey: req.body && req.body.organization_key,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
         dataEnvironment: "testing",
       });
       if (!result.ok) {
@@ -2649,7 +2649,7 @@ function createPlatformAdminRouter(deps) {
         applicationId: id,
         actorUserId: req.platformAdminContext.userId,
         organizationKey: req.body && req.body.organization_key,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         let error = "link_failed";
@@ -3112,18 +3112,30 @@ function createPlatformAdminRouter(deps) {
       if (churchScope) {
         try {
           const staffRows = await getPool().query(
-            `SELECT ur.user_id, ur.role_key, ur.status AS role_status,
+            `SELECT a.user_id,
+                    CASE
+                      WHEN r.role_key = 'branch_administrator' THEN 'branch_admin'
+                      ELSE 'church_hq_admin'
+                    END AS role_key,
+                    a.status AS role_status,
                     u.email_display, u.email_normalized, u.display_name,
                     u.status AS user_status,
                     (u.password_hash IS NOT NULL) AS has_usable_password,
                     u.password_changed_at, u.last_login_at
-               FROM blessboard.user_roles ur
-               INNER JOIN blessboard.users u ON u.id = ur.user_id
-              WHERE ur.organization_id = $1
-                AND ur.church_id = $2
-                AND ur.status = 'active'
-                AND ur.role_key IN ('church_hq_admin', 'branch_admin')
-              ORDER BY ur.role_key ASC, u.display_name ASC NULLS LAST
+               FROM blessboard.user_role_assignments a
+               INNER JOIN blessboard.roles r ON r.id = a.role_id
+               INNER JOIN blessboard.users u ON u.id = a.user_id
+              WHERE a.organization_id = $1
+                AND (a.church_id IS NULL OR a.church_id = $2)
+                AND a.status = 'active'
+                AND a.revoked_at IS NULL
+                AND (a.expires_at IS NULL OR a.expires_at > now())
+                AND r.role_key IN (
+                  'organisation_administrator',
+                  'church_system_administrator',
+                  'branch_administrator'
+                )
+              ORDER BY role_key ASC, u.display_name ASC NULLS LAST
               LIMIT 50`,
             [churchScope.organizationId, churchScope.churchId]
           );
@@ -3643,12 +3655,19 @@ function createPlatformAdminRouter(deps) {
       const membership = await getPool().query(
         `SELECT u.id, u.email_normalized, u.status, u.password_hash IS NOT NULL AS has_password
            FROM blessboard.users u
-           INNER JOIN blessboard.user_roles ur ON ur.user_id = u.id
+           INNER JOIN blessboard.user_role_assignments a ON a.user_id = u.id
+           INNER JOIN blessboard.roles r ON r.id = a.role_id
           WHERE u.id = $1
-            AND ur.organization_id = $2
-            AND ur.church_id = $3
-            AND ur.status = 'active'
-            AND ur.role_key IN ('church_hq_admin', 'branch_admin')
+            AND a.organization_id = $2
+            AND (a.church_id IS NULL OR a.church_id = $3)
+            AND a.status = 'active'
+            AND a.revoked_at IS NULL
+            AND (a.expires_at IS NULL OR a.expires_at > now())
+            AND r.role_key IN (
+              'organisation_administrator',
+              'church_system_administrator',
+              'branch_administrator'
+            )
           LIMIT 1`,
         [userId, String(scopeRow.rows[0].organization_id), String(scopeRow.rows[0].church_id)]
       );
@@ -3708,7 +3727,7 @@ function createPlatformAdminRouter(deps) {
         organizationKey,
         supportRequested: raw === "1" || raw === "true",
         actorUserId: req.platformAdminContext.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         let error = "support_request_failed";
@@ -3742,7 +3761,7 @@ function createPlatformAdminRouter(deps) {
         nextFollowUpAt: clear ? null : req.body && req.body.next_follow_up_at,
         clear,
         actorUserId: req.platformAdminContext.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         let error = "follow_up_schedule_failed";
@@ -3778,7 +3797,7 @@ function createPlatformAdminRouter(deps) {
         organizationKey,
         followUpStatus: req.body && req.body.follow_up_status,
         actorUserId: req.platformAdminContext.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         let error = "follow_up_failed";
@@ -3811,7 +3830,7 @@ function createPlatformAdminRouter(deps) {
         organizationKey,
         supportUserId: rawSupport === "" || rawSupport == null ? null : rawSupport,
         actorUserId: req.platformAdminContext.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         let error = "assign_failed";
@@ -3845,7 +3864,7 @@ function createPlatformAdminRouter(deps) {
         onboardingStatus: req.body && req.body.onboarding_status,
         reason: req.body && req.body.reason,
         actorUserId: req.platformAdminContext.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         let error = "onboarding_status_failed";
@@ -3880,7 +3899,7 @@ function createPlatformAdminRouter(deps) {
       const result = await createGrowthTrialOffer(getPool(), {
         organizationId,
         actorUserId: req.platformAdminContext.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         return res.redirect(303, `${detailPath}?error=growth_trial_offer_failed#pa-org-growth-trial`);
@@ -3910,7 +3929,7 @@ function createPlatformAdminRouter(deps) {
       const result = await cancelGrowthTrialOffer(getPool(), {
         organizationId,
         actorUserId: req.platformAdminContext.userId,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         return res.redirect(303, `${detailPath}?error=growth_trial_cancel_failed#pa-org-growth-trial`);
@@ -3945,7 +3964,7 @@ function createPlatformAdminRouter(deps) {
         organizationId,
         actorUserId: req.platformAdminContext.userId,
         reason: req.body && req.body.exception_reason,
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
       });
       if (!result.ok) {
         const error =
@@ -4218,7 +4237,7 @@ function createPlatformAdminRouter(deps) {
         confirmChecked,
         previewToken,
         sessionSecret,
-        deploymentCode: deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment.ok ? deployment.code : "blessboard-org-staging",
         keepSessionId: session && session.id ? session.id : null,
         dryRun: false,
       });

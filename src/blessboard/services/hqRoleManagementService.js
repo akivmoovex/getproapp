@@ -2,11 +2,14 @@
 
 /**
  * HQ-scoped staff role list / assign / revoke for fixed V5 roles only.
- * Assignable: church_hq_admin, branch_admin. Never platform_admin via this path.
+ * Assignable: church_hq_admin, branch_admin (mapped to catalogue assignments).
+ * platform_admin is forbidden on this path. Catalogue ura writes only (DBCL06).
  */
 
 const repo = require("../repositories/blessBoardAuthRepository");
+const rbacRepo = require("../repositories/blessBoardRbacRepository");
 const { normalizeEmail } = require("./createBlessBoardUser");
+const { assignBlessBoardRole } = require("./assignBlessBoardRole");
 const {
   evaluateStaffAccountLimit,
   STATUS: ENT_STATUS,
@@ -219,9 +222,10 @@ async function assignHqChurchRole(db, input) {
         }
 
         const existingStaff = await client.query(
-          `SELECT 1 FROM blessboard.user_roles
-            WHERE user_id = $1 AND organization_id = $2 AND status = 'active'
-              AND role_key IN ('platform_admin', 'church_hq_admin', 'branch_admin')
+          `SELECT 1 FROM blessboard.user_role_assignments a
+            WHERE a.user_id = $1 AND a.organization_id = $2 AND a.status = 'active'
+              AND a.revoked_at IS NULL
+              AND (a.expires_at IS NULL OR a.expires_at > now())
             LIMIT 1`,
           [user.id, organizationId]
         );
@@ -253,16 +257,54 @@ async function assignHqChurchRole(db, input) {
           return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: "entitlement" };
         }
 
-        let roleRow;
-        let outcome = "assigned";
-        if (existing) {
-          if (String(existing.status) === "active") {
-            await client.query("COMMIT");
+        if (existing && String(existing.status) === "active") {
+          await client.query("COMMIT");
+          return {
+            ok: true,
+            status: STATUS.OK,
+            role: mapRoleRow({
+              ...existing,
+              email_display: user.email_display,
+              user_display_name: user.display_name,
+              user_status: user.status,
+            }),
+            alreadyAssigned: true,
+          };
+        }
+
+        const assigned = await assignBlessBoardRole(
+          client,
+          {
+            email,
+            organizationKey,
+            churchKey,
+            branchKey: branchKey || null,
+            roleKey,
+          },
+          { manageTransaction: false }
+        );
+        if (!assigned.ok) {
+          await client.query("ROLLBACK");
+          if (/limit_exceeded/i.test(String(assigned.message || ""))) {
+            return {
+              ok: false,
+              status: STATUS.LIMIT_EXCEEDED,
+              role: null,
+              reason: "max_staff_accounts",
+            };
+          }
+          if (assigned.status === "already_assigned" || assigned.message === "already_assigned") {
             return {
               ok: true,
               status: STATUS.OK,
               role: mapRoleRow({
-                ...existing,
+                id: assigned.role && assigned.role.id,
+                user_id: user.id,
+                organization_id: organizationId,
+                church_id: churchId,
+                branch_id: branchId,
+                role_key: roleKey,
+                status: "active",
                 email_display: user.email_display,
                 user_display_name: user.display_name,
                 user_status: user.status,
@@ -270,17 +312,25 @@ async function assignHqChurchRole(db, input) {
               alreadyAssigned: true,
             };
           }
-          roleRow = await repo.updateRoleStatus(client, existing.id, "active");
-          outcome = "reactivated";
-        } else {
-          roleRow = await repo.insertRole(client, {
-            userId: user.id,
-            organizationId,
-            churchId,
-            branchId,
-            roleKey,
-          });
+          return {
+            ok: false,
+            status: STATUS.LOOKUP_ERROR,
+            role: null,
+            reason: assigned.message || "assign_failed",
+          };
         }
+
+        const outcome =
+          existing && String(existing.status) !== "active" ? "reactivated" : "assigned";
+        const roleRow = {
+          id: assigned.role.id,
+          user_id: user.id,
+          organization_id: organizationId,
+          church_id: churchId,
+          branch_id: branchId,
+          role_key: roleKey,
+          status: "active",
+        };
 
         await recordBlessBoardAudit(client, {
           organizationId,
@@ -288,7 +338,7 @@ async function assignHqChurchRole(db, input) {
           branchId,
           actorUserId,
           actionKey: "role.assigned",
-          entityType: "user_role",
+          entityType: "user_role_assignment",
           entityId: roleRow.id,
           outcome: "success",
           metadata: {
@@ -373,7 +423,7 @@ async function revokeHqChurchRole(db, input) {
         }
         if (
           String(existing.organization_id) !== organizationId ||
-          String(existing.church_id) !== churchId
+          (existing.church_id != null && String(existing.church_id) !== churchId)
         ) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.FORBIDDEN, role: null, reason: "cross_church" };
@@ -396,8 +446,9 @@ async function revokeHqChurchRole(db, input) {
             organizationId,
             churchId,
             userId: existing.user_id,
-            excludeLegacyRoleId: roleId,
-            grant: { roleKey: "church_hq_admin", scopeType: "church" },
+            excludeAssignmentId: roleId,
+            roleKey: String(existing.catalogue_role_key || "organisation_administrator"),
+            scopeType: existing.scope_type || "church",
           });
           if (!lastAdmin.ok) {
             await client.query("ROLLBACK");
@@ -410,14 +461,27 @@ async function revokeHqChurchRole(db, input) {
           }
         }
 
-        const roleRow = await repo.updateRoleStatus(client, roleId, "inactive");
+        const revoked = await rbacRepo.revokeAssignment(client, {
+          assignmentId: roleId,
+          revokedByUserId: actorUserId,
+          revocationReason: "hq_role_revoke",
+        });
+        if (!revoked) {
+          await client.query("ROLLBACK");
+          return { ok: false, status: STATUS.NOT_FOUND, role: null, reason: "role" };
+        }
+
+        const roleRow = {
+          ...existing,
+          status: "inactive",
+        };
         await recordBlessBoardAudit(client, {
           organizationId,
           churchId,
           branchId: existing.branch_id,
           actorUserId,
           actionKey: "role.revoked",
-          entityType: "user_role",
+          entityType: "user_role_assignment",
           entityId: roleId,
           outcome: "success",
           metadata: {

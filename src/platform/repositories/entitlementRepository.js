@@ -346,14 +346,28 @@ async function countActiveBranchesForOrganization(client, organizationId, option
   return Number(rows[0].n) || 0;
 }
 
+/** Catalogue staff roles that consume a staff seat (V2.02 / V10 canonical). */
+const STAFF_CATALOGUE_ROLE_KEYS = Object.freeze([
+  "platform_administrator",
+  "organisation_administrator",
+  "church_system_administrator",
+  "branch_administrator",
+]);
+
+/**
+ * Active staff seats from catalogue assignments (canonical).
+ * Frozen blessboard.user_roles is not the seat source of truth.
+ */
 async function countStaffAccountsForOrganization(client, organizationId) {
   const { rows } = await client.query(
-    `SELECT COUNT(DISTINCT ur.user_id)::int AS n
-       FROM blessboard.user_roles ur
-      WHERE ur.organization_id = $1
-        AND ur.status = 'active'
-        AND ur.role_key IN ('platform_admin', 'church_hq_admin', 'branch_admin')`,
-    [organizationId]
+    `SELECT COUNT(DISTINCT a.user_id)::int AS n
+       FROM blessboard.user_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE a.organization_id = $1
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND r.role_key = ANY($2::text[])`,
+    [organizationId, STAFF_CATALOGUE_ROLE_KEYS.slice()]
   );
   return Number(rows[0].n) || 0;
 }
@@ -372,24 +386,27 @@ async function countStaffSeatsIncludingPendingInvites(client, organizationId) {
         AND i.expires_at > now()
         AND NOT EXISTS (
           SELECT 1
-            FROM blessboard.user_roles ur
-            INNER JOIN blessboard.users u ON u.id = ur.user_id
-           WHERE ur.organization_id = i.organization_id
-             AND ur.status = 'active'
-             AND ur.role_key IN ('platform_admin', 'church_hq_admin', 'branch_admin')
+            FROM blessboard.user_role_assignments a
+            JOIN blessboard.roles r ON r.id = a.role_id
+            JOIN blessboard.users u ON u.id = a.user_id
+           WHERE a.organization_id = i.organization_id
+             AND a.status = 'active'
+             AND a.revoked_at IS NULL
+             AND r.role_key = ANY($2::text[])
              AND u.email_normalized = i.email_normalized
         )`,
-    [organizationId]
+    [organizationId, STAFF_CATALOGUE_ROLE_KEYS.slice()]
   );
   return active + (Number(rows[0].n) || 0);
 }
 
 async function countUsersForOrganization(client, organizationId) {
   const { rows } = await client.query(
-    `SELECT COUNT(DISTINCT ur.user_id)::int AS n
-       FROM blessboard.user_roles ur
-      WHERE ur.organization_id = $1
-        AND ur.status = 'active'`,
+    `SELECT COUNT(DISTINCT a.user_id)::int AS n
+       FROM blessboard.user_role_assignments a
+      WHERE a.organization_id = $1
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL`,
     [organizationId]
   );
   return Number(rows[0].n) || 0;
@@ -408,10 +425,11 @@ async function countUserSeatsIncludingPendingInvites(client, organizationId) {
         AND i.expires_at > now()
         AND NOT EXISTS (
           SELECT 1
-            FROM blessboard.user_roles ur
-            INNER JOIN blessboard.users u ON u.id = ur.user_id
-           WHERE ur.organization_id = i.organization_id
-             AND ur.status = 'active'
+            FROM blessboard.user_role_assignments a
+            JOIN blessboard.users u ON u.id = a.user_id
+           WHERE a.organization_id = i.organization_id
+             AND a.status = 'active'
+             AND a.revoked_at IS NULL
              AND u.email_normalized = i.email_normalized
         )`,
     [organizationId]

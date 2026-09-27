@@ -627,7 +627,7 @@ async function setOrganizationEntitlementOverride(db, input) {
       });
       const deployment = getPlatformDeploymentCode(input.env || process.env);
       await recordAuditEventSafe(client, {
-        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-v5",
+        deploymentCode: deployment && deployment.ok ? deployment.code : "blessboard-org-staging",
         organizationId,
         actorUserId: input.createdByUserId || null,
         actionKey: "entitlement.override.set",

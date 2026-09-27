@@ -7,7 +7,11 @@
 const fieldDraftRepo = require("../repositories/websiteInlineFieldDraftRepository");
 const structuredDraftRepo = require("../repositories/websiteStructuredDraftRepository");
 const applySvc = require("./websiteDraftApplyService");
-const churchPublishSvc = require("./churchWebsitePublishService");
+const {
+  publish: publishProductWebsite,
+  PERMISSIONS: WEBSITE_PUBLISH_PERMISSIONS,
+} = require("../../platform/website/publicationOrchestrator");
+const { PRODUCT } = require("../../platform/registration/constants");
 const {
   loadWebsiteDraftPublishReview,
   resolvePublishCapability,
@@ -154,7 +158,7 @@ async function discardWebsiteDrafts(db, opts) {
 }
 
 /**
- * HQ / trusted-branch publish: apply drafts + existing publishChurchWebsite in one TX.
+ * HQ / trusted-branch publish: apply drafts + canonical publicationOrchestrator in one TX.
  */
 async function publishWebsiteDrafts(db, opts) {
   const organizationId = opts.organizationId;
@@ -268,26 +272,30 @@ async function publishWebsiteDrafts(db, opts) {
         branchId,
       });
 
-      // Existing site publish engine (joins this client TX — no nested BEGIN).
-      const published = await churchPublishSvc.publishChurchWebsite(client, {
-        organizationId,
-        churchId,
-        branchId,
-        actorUserId,
-        confirmPublish: true,
-        // Draft republish defaults to deferring service-times (first-publish gap).
-        // Callers may still force false for full readiness checks.
-        deferServiceTimes: opts.deferServiceTimes !== false,
-        mobilePreviewConfirmed:
-          Boolean(opts.mobilePreviewConfirmed) ||
-          Boolean(opts.confirmPublish === true || opts.confirmPublish === "1"),
-        relaxPreviewRequirement: true,
-        publicationNote: opts.publicationNote || "Published from website draft review",
-        sourceType: opts.sourceType || "hq_edit",
-        forcePublishVersion: true,
-        env: opts.env,
-        requestId: opts.requestId || null,
-        correlationId: opts.correlationId || opts.requestId || null,
+      // Canonical publish (joins this client TX — no nested BEGIN).
+      const published = await publishProductWebsite(client, {
+        productCode: PRODUCT.BLESSBOARD,
+        grantedPermissions: [WEBSITE_PUBLISH_PERMISSIONS.PUBLISH],
+        request: {
+          organizationId,
+          churchId,
+          branchId,
+          actorUserId,
+          confirmPublish: true,
+          // Draft republish defaults to deferring service-times (first-publish gap).
+          // Callers may still force false for full readiness checks.
+          deferServiceTimes: opts.deferServiceTimes !== false,
+          mobilePreviewConfirmed:
+            Boolean(opts.mobilePreviewConfirmed) ||
+            Boolean(opts.confirmPublish === true || opts.confirmPublish === "1"),
+          relaxPreviewRequirement: true,
+          publicationNote: opts.publicationNote || "Published from website draft review",
+          sourceType: opts.sourceType || "hq_edit",
+          forcePublishVersion: true,
+          env: opts.env,
+          requestId: opts.requestId || null,
+          correlationId: opts.correlationId || opts.requestId || null,
+        },
       });
 
       if (!published || !published.ok) {

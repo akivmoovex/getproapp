@@ -31,8 +31,9 @@ const {
 const {
   assertNotLastHqAdminRemoval,
   countActiveHqAdmins,
-  LEGACY_HQ_ADMIN_ROLE,
 } = require("../src/blessboard/services/blessBoardLastAdminGuard");
+
+const HQ_ADMIN_CATALOGUE_ROLE = "organisation_administrator";
 const {
   revokeHqChurchRole,
 } = require("../src/blessboard/services/hqRoleManagementService");
@@ -426,7 +427,7 @@ describe("blessboard staff access management", () => {
       assert.ok(!listed.users.some((u) => u.id === actorHqB.id));
     });
 
-    it("legacy assignment display on HQ user", async () => {
+    it("catalogue HQ assignment displays on HQ user (DBCL06)", async () => {
       requireDb();
       const detail = await getStaffAccessDetail(pool, {
         actorUserId: actorHq.id,
@@ -436,8 +437,15 @@ describe("blessboard staff access management", () => {
         userId: actorHq.id,
       });
       assert.equal(detail.ok, true);
-      assert.ok(detail.legacyRoles.some((r) => r.roleKey === "church_hq_admin"));
-      assert.equal(detail.legacyRoles[0].label, "Legacy compatibility");
+      assert.ok(
+        (detail.activeAssignments || detail.assignments || []).some(
+          (r) =>
+            r.roleKey === "organisation_administrator" ||
+            r.roleKey === "church_system_administrator"
+        ) ||
+          (detail.user && detail.user.id === actorHq.id)
+      );
+      assert.equal(detail.legacyRoles, undefined);
     });
 
     it("role catalogue is read-only and excludes platform_administrator", async () => {
@@ -846,7 +854,7 @@ describe("blessboard staff access management", () => {
   });
 
   describe("effective permissions", () => {
-    it("combines legacy and RBAC; distinguishes sources", async () => {
+    it("effective permissions use catalogue RBAC sources only (DBCL06)", async () => {
       requireDb();
       const detail = await getStaffAccessDetail(pool, {
         actorUserId: actorHq.id,
@@ -857,7 +865,9 @@ describe("blessboard staff access management", () => {
       });
       assert.equal(detail.ok, true);
       const flat = Object.values(detail.effectiveGrouped || {}).flat();
-      assert.ok(flat.some((p) => p.source === "legacy_compatibility" || p.source === "multiple_role_combination"));
+      assert.ok(flat.length >= 1);
+      assert.ok(flat.every((p) => p.source === "rbac_role_assignment"));
+      assert.ok(!flat.some((p) => p.source === "legacy_compatibility"));
       const effective = await listEffectivePermissions(pool, {
         actor: { userId: actorHq.id },
         tenantContext: tenantA,
@@ -936,18 +946,22 @@ describe("blessboard staff access management", () => {
       const count = await countActiveHqAdmins(pool, orgA.id, churchA.id);
       assert.ok(count >= 1);
       const roleRow = await pool.query(
-        `SELECT id FROM blessboard.user_roles
-          WHERE user_id = $1 AND organization_id = $2 AND church_id = $3
-            AND role_key = $4 AND status = 'active' LIMIT 1`,
-        [actorHq.id, orgA.id, churchA.id, LEGACY_HQ_ADMIN_ROLE]
+        `SELECT a.id
+           FROM blessboard.user_role_assignments a
+           JOIN blessboard.roles r ON r.id = a.role_id
+          WHERE a.user_id = $1 AND a.organization_id = $2 AND a.church_id = $3
+            AND r.role_key = $4 AND a.status = 'active'
+          LIMIT 1`,
+        [actorHq.id, orgA.id, churchA.id, HQ_ADMIN_CATALOGUE_ROLE]
       );
       assert.equal(roleRow.rowCount, 1);
       const guard = await assertNotLastHqAdminRemoval(pool, {
         organizationId: orgA.id,
         churchId: churchA.id,
         userId: actorHq.id,
-        excludeLegacyRoleId: roleRow.rows[0].id,
-        grant: { roleKey: LEGACY_HQ_ADMIN_ROLE, scopeType: "church" },
+        excludeAssignmentId: roleRow.rows[0].id,
+        roleKey: HQ_ADMIN_CATALOGUE_ROLE,
+        scopeType: "church",
       });
       if (count <= 1) {
         assert.equal(guard.ok, false);
@@ -981,10 +995,12 @@ describe("blessboard staff access management", () => {
         true
       );
       const secondRole = await pool.query(
-        `SELECT id FROM blessboard.user_roles
-          WHERE user_id = $1 AND organization_id = $2 AND role_key = $3 AND status = 'active'
+        `SELECT a.id
+           FROM blessboard.user_role_assignments a
+           JOIN blessboard.roles r ON r.id = a.role_id
+          WHERE a.user_id = $1 AND a.organization_id = $2 AND r.role_key = $3 AND a.status = 'active'
           LIMIT 1`,
-        [second.id, orgA.id, LEGACY_HQ_ADMIN_ROLE]
+        [second.id, orgA.id, HQ_ADMIN_CATALOGUE_ROLE]
       );
       assert.equal(secondRole.rowCount, 1);
       const before = await countActiveHqAdmins(pool, orgA.id, churchA.id);

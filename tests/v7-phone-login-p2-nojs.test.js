@@ -36,6 +36,7 @@ const {
 } = require("../src/activeclinic/services/activeClinicAuthorizationService");
 const { linkIdentityToProductProfile } = require("../src/platform/services/identityProductProfileService");
 const { provisionBlessBoardChurch } = require("../src/blessboard/services/provisionBlessBoardChurch");
+const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { createActiveClinicFoundationApp } = require("../src/activeclinic/http/activeClinicFoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
@@ -242,10 +243,16 @@ describe("v7 phone login P2", () => {
            RETURNING id`,
           [email, hash, PHONE_E164]
         );
-        await pool.query(
-          `INSERT INTO blessboard.user_roles (user_id, organization_id, church_id, role_key, status)
-           VALUES ($1, $2, $3, 'church_hq_admin', 'active')`,
-          [user.rows[0].id, prov.records.organization.id, ch.records.church.id]
+        assert.equal(
+          (
+            await assignBlessBoardRole(pool, {
+              email,
+              organizationKey: "p2-nojs-bb",
+              churchKey: "p2-nojs-bb",
+              roleKey: "church_hq_admin",
+            })
+          ).ok,
+          true
         );
         app = createV5FoundationApp({
           getPool: () => pool,

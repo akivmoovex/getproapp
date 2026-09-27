@@ -740,28 +740,12 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         throw new OrchestratorError(STATUS.PROVISIONING_IN_PROGRESS, "provisioning_in_progress");
       }
 
-      // Admin invitation approval may proceed from duplicate_review after explicit approve.
-      // Self-service password provisioning still holds duplicate_review for operator review.
-      if (
-        (application.application_status === "duplicate_review" ||
-          application.application_status === "review_required") &&
-        !administratorViaInvitation
-      ) {
+      // review_required holds self-service provisioning until operator / invitation approve.
+      if (application.application_status === "review_required" && !administratorViaInvitation) {
         throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review");
       }
 
-      if (
-        application.application_status === "rejected" ||
-        application.application_status === "cancelled"
-      ) {
-        throw new OrchestratorError(STATUS.APPLICATION_NOT_ELIGIBLE, "application_not_eligible");
-      }
-
-      if (
-        (application.application_status === "closed" || application.application_status === "active") &&
-        application.provisioning_status !== "provisioned" &&
-        !(allowRetry && (application.organization_id || application.provisioning_status === "provisioning_failed"))
-      ) {
+      if (application.application_status === "rejected") {
         throw new OrchestratorError(STATUS.APPLICATION_NOT_ELIGIBLE, "application_not_eligible");
       }
 
@@ -770,13 +754,13 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       }
 
       const eligibleStatuses = administratorViaInvitation
-        ? ["submitted", "duplicate_review", "review_required", "provisioning"]
+        ? ["submitted", "review_required", "provisioning"]
         : ["submitted", "provisioning"];
       if (
         !eligibleStatuses.includes(String(application.application_status || "")) &&
         !(application.provisioning_status === "provisioning_failed" && allowRetry)
       ) {
-        // Allow submitted (+ duplicate_review for admin invitation) + failed-with-retry.
+        // Allow submitted (+ review_required for admin invitation) + failed-with-retry.
         if (application.provisioning_status !== "not_started") {
           throw new OrchestratorError(STATUS.APPLICATION_NOT_ELIGIBLE, "application_not_eligible");
         }
@@ -866,6 +850,11 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
       existingUser = resolvedAdmin.user || null;
 
       if (resolvedAdmin.action === ADMIN_IDENTITY_ACTION.REJECT_SUSPENDED) {
+        if (administratorViaInvitation) {
+          throw new OrchestratorError(STATUS.IDENTITY_CONFLICT, "identity_conflict", {
+            diagnostics: identityResolutionDiagnostics,
+          });
+        }
         duplicateReview = true;
         throw new OrchestratorError(STATUS.DUPLICATE_EMAIL_REVIEW, "duplicate_email_review", {
           diagnostics: identityResolutionDiagnostics,
@@ -920,7 +909,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
                 organizationId: orgId,
                 provisionedAt: new Date().toISOString(),
                 clearFailureMetadata: true,
-                legacyStatus: "closed",
+
               });
               application.provisioning_status = "provisioned";
               application.application_status = "active";
@@ -1482,7 +1471,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
         provisionedAt: provisionedAt.toISOString(),
         clearFailureMetadata: true,
         // Legacy status column CHECK: pending | contacted | closed.
-        legacyStatus: "closed",
+
       });
 
       provisioningStage = "write_success_audits";
@@ -1565,7 +1554,7 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
 
     if (err && err.status === STATUS.DUPLICATE_EMAIL_REVIEW && duplicateReview) {
       // Duplicate review was committed inside the outer TX before throw — TX rolls back!
-      // Must persist duplicate_review AFTER rollback.
+      // Must persist review_required AFTER rollback.
       logRegistrationTrace(
         null,
         {
@@ -1728,7 +1717,9 @@ async function provisionRegisteredBlessBoardChurch(db, input, options = {}) {
 
     failureDetail = sanitizeErrorDetail(err && err.message);
     const pgCode = diagnostics.postgresCode;
-    const schemaMismatch = pgCode === "42703" || pgCode === "42P01";
+    // DBCL08 D5: registration schema proven on fresh/QA/production — do not soft-map
+    // 42703 column-lag to DATABASE_CONFLICT. Keep 42P01 (undefined_table) only.
+    const schemaMismatch = pgCode === "42P01";
     failureCode = schemaMismatch ? STATUS.DATABASE_CONFLICT : STATUS.INTERNAL_ERROR;
     logRegistrationTrace(
       null,

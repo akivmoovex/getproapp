@@ -40,7 +40,8 @@ describe("PC11 platform CMS convergence", () => {
     assert.equal(ac.classicCmsProductCode(), "activeclinic");
     assert.equal(typeof bb.folderNoticeMessage, "function");
     assert.equal(typeof ac.folderNoticeMessage, "function");
-    assert.equal(typeof ac.reorderByIds, "function");
+    // PL05: ordered-list helpers are platform-direct (not re-exported on AC adapter).
+    assert.equal(typeof ac.reorderByIds, "undefined");
     const folderHttp = read("src/platform/website/http/websiteCmsFolderHttp.js");
     const ordered = read("src/platform/website/cmsOrderedListDraft.js");
     assert.doesNotMatch(folderHttp, /productCode\s*===\s*['\"]blessboard['\"]/);

@@ -354,9 +354,9 @@ async function runGrowthTrialExpiryBatch(db, input = {}) {
   const dryRun = input.dryRun !== false;
   const limit = clampInt(input.limit, DEFAULT_BATCH_LIMIT, 1, MAX_BATCH_LIMIT);
   const graceDays = clampInt(input.graceDays, DEFAULT_GRACE_DAYS, MIN_GRACE_DAYS, MAX_GRACE_DAYS);
-  const deploymentCode = String(input.deploymentCode || "blessboard-org-v5")
+  const deploymentCode = String(input.deploymentCode || "blessboard-org-staging")
     .trim()
-    .toLowerCase() || "blessboard-org-v5";
+    .toLowerCase() || "blessboard-org-staging";
 
   const summary = emptySummary(dryRun);
   summary.limit = limit;

@@ -6,6 +6,8 @@
 
 const { describe, it, before, after } = require("node:test");
 const assert = require("node:assert/strict");
+const fs = require("node:fs");
+const path = require("node:path");
 
 const {
   resetFoundationDatabase,
@@ -43,10 +45,11 @@ const {
   createDepartment,
   addDepartmentMember,
 } = require("../src/blessboard/services/memberJourneyDomainService");
-const {
-  PLATFORM_ADMIN_PERMISSIONS,
-  BRANCH_ADMIN_PERMISSIONS,
-} = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
+// PL06: legacy permission bundles removed; denial asserts use empty (no bundle grants).
+const PLATFORM_ADMIN_PERMISSIONS = Object.freeze([]);
+const CHURCH_HQ_ADMIN_PERMISSIONS = Object.freeze([]);
+const BRANCH_ADMIN_PERMISSIONS = Object.freeze([]);
+
 const { makeResolvedTenantContext } = require("./helpers/blessboardV5Fixtures");
 
 describe("blessboard member journey foundation", () => {
@@ -815,11 +818,19 @@ describe("blessboard member journey foundation", () => {
       assert.equal(pastoral.reasonCode, REASON.PERMISSION_UNKNOWN);
     });
 
-    it("branch_admin compatibility is minimal for journey", () => {
-      assert.ok(BRANCH_ADMIN_PERMISSIONS.includes("journey_handovers.submit"));
-      assert.ok(!BRANCH_ADMIN_PERMISSIONS.includes("journey_handovers.accept"));
-      assert.ok(!BRANCH_ADMIN_PERMISSIONS.includes("cells.members.assign"));
-      assert.ok(!BRANCH_ADMIN_PERMISSIONS.includes("classes.completion.approve"));
+    it("branch_administrator catalogue is minimal for journey (PL06)", () => {
+      const mig = fs.readFileSync(
+        path.join(
+          __dirname,
+          "../db/migrations/blessboard/062_member_journey_rbac_scopes_permissions.sql"
+        ),
+        "utf8"
+      );
+      const branchBlock = mig.split("branch_administrator")[1] || "";
+      assert.match(branchBlock, /journey_handovers\.submit/);
+      assert.doesNotMatch(branchBlock.slice(0, 800), /journey_handovers\.accept/);
+      assert.doesNotMatch(branchBlock.slice(0, 800), /cells\.members\.assign/);
+      assert.doesNotMatch(branchBlock.slice(0, 800), /classes\.completion\.approve/);
     });
   });
 });

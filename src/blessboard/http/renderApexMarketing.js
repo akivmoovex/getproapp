@@ -33,7 +33,7 @@ const {
 const {
   RESERVED_ORGANIZATION_KEYS,
   resolveBaseOrganizationKey,
-} = require("../services/organizationKey");
+} = require("../../platform/organization/organizationKey");
 const {
   buildRegistrationSuccessViewModel,
 } = require("../../platform/registration/registrationSuccessPresentation");

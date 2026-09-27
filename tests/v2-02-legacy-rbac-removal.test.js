@@ -62,15 +62,14 @@ describe("V2.02 legacy RBAC removal — authorization surfaces", () => {
     assert.equal(/FROM\s+blessboard\.user_roles/i.test(src), false);
   });
 
-  it("legacyCompatibilityPermissions is a no-op stub", () => {
-    const {
-      LEGACY_BUNDLES,
-      mapLegacyRolesToPermissionGrants,
-      permissionsForLegacyRoleKey,
-    } = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
-    assert.deepEqual(Object.keys(LEGACY_BUNDLES), []);
-    assert.deepEqual(mapLegacyRolesToPermissionGrants([{ roleKey: "platform_admin" }]), []);
-    assert.deepEqual(permissionsForLegacyRoleKey("church_hq_admin"), []);
+  it("legacyCompatibilityPermissions stub is removed (PL06)", () => {
+    const stub = path.join(ROOT, "src/blessboard/rbac/legacyCompatibilityPermissions.js");
+    assert.equal(fs.existsSync(stub), false);
+    const staffAccess = fs.readFileSync(
+      path.join(ROOT, "src/blessboard/services/staffAccessService.js"),
+      "utf8"
+    );
+    assert.doesNotMatch(staffAccess, /legacyCompatibilityPermissions/);
   });
 
   it("authorizeBlessBoardTenantAccess evaluates catalogue role keys only", () => {

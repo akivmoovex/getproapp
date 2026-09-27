@@ -180,6 +180,30 @@ function createFoundationPool(connectionString) {
 }
 
 /**
+ * Drop an ephemeral foundation database by URL (best-effort).
+ * Only names matching the foundation test prefix (or legacy shared name) are allowed.
+ * @param {string} connectionString
+ */
+async function dropFoundationDatabaseByUrl(connectionString) {
+  const dbName = parseDatabaseNameFromUrl(connectionString);
+  if (!dbName) return;
+  assertSafeDbName(dbName);
+  const allowed =
+    dbName === FOUNDATION_DB_NAME || dbName.startsWith(FOUNDATION_DB_NAME_PREFIX);
+  if (!allowed) {
+    throw new Error("refusing to drop non-foundation database name");
+  }
+  const client = new Client({ connectionString: adminConnectionString() });
+  await client.connect();
+  try {
+    await dropDatabaseByName(client, dbName);
+    createdDatabases.delete(dbName);
+  } finally {
+    await client.end();
+  }
+}
+
+/**
  * Explicit skip reason for node:test when foundation setup cannot run locally.
  * Prefer this over opaque "setup failed" so CI reports stay actionable.
  * @param {string} detail
@@ -199,6 +223,7 @@ module.exports = {
   foundationDatabaseUrl,
   resetFoundationDatabase,
   dropFoundationSchemas,
+  dropFoundationDatabaseByUrl,
   createFoundationPool,
   cleanupCreatedFoundationDatabases,
   foundationDbUnavailableSkipReason,

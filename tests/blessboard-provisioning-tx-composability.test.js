@@ -310,7 +310,7 @@ describe("blessboard provisioning transaction composability", () => {
          (SELECT COUNT(*)::int FROM blessboard.branches b
             JOIN blessboard.churches c ON c.id = b.church_id WHERE c.organization_id = $1) AS branches,
          (SELECT COUNT(*)::int FROM blessboard.users WHERE email_normalized = $2) AS users,
-         (SELECT COUNT(*)::int FROM blessboard.user_roles ur
+         (SELECT COUNT(*)::int FROM blessboard.user_role_assignments ur
             JOIN blessboard.users u ON u.id = ur.user_id
            WHERE u.email_normalized = $2 AND ur.organization_id = $1) AS roles,
          (SELECT COUNT(*)::int FROM platform.organization_subscriptions

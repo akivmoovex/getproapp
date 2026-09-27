@@ -98,8 +98,7 @@ function logRegistrationDbError(req, err) {
       : repo.TARGET_TABLE;
   const isSchemaMismatch =
     pgCode === "schema_mismatch" ||
-    (err && err.name === "PublicRegistrationSchemaMismatchError") ||
-    pgCode === "42703";
+    (err && err.name === "PublicRegistrationSchemaMismatchError");
   const missingColumns = Array.isArray(err && err.missingColumns)
     ? err.missingColumns.map((c) => String(c).slice(0, 64)).slice(0, 40)
     : null;

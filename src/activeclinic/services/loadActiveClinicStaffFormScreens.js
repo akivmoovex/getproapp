@@ -164,7 +164,7 @@ function validateStaffFormValues(values, opts) {
     errors.push("Last name is required.");
   }
   // Split phone UI submits phone_country + phone_national; legacy hidden `phone`
-  // is intentionally cleared by ac-phone-field.js. Validate via the shared
+  // is intentionally cleared by platform phone-field.js. Validate via the shared
   // normalizer so a filled national number is never treated as "required".
   const phoneCheck = normalizeActiveClinicPhone({
     phone: values.phone || null,

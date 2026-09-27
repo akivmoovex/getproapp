@@ -9,7 +9,7 @@ const { loadTenantPublicPageModel, KIND } = require("./loadTenantPublicPageModel
 const { renderTenantPublicPage } = require("./renderTenantPublicPage");
 const { renderControlledErrorPage } = require("./renderTenantLandingPage");
 const { renderWebsiteSetupPage } = require("./renderWebsiteSetupPage");
-const { normalizeOrganizationKey, isReservedOrganizationKey } = require("../services/organizationKey");
+const { normalizeOrganizationKey, isReservedOrganizationKey } = require("../../platform/organization/organizationKey");
 const {
   legacyOrganizationKeyRedirectTarget,
   legacyBranchKeyRedirectTarget,

@@ -54,10 +54,10 @@ function followUpOf(row) {
  * Derive Phase 5 queue badge from canonical status combinations.
  *
  * Mapping (presentation only):
- * - Rejected: application_status in (rejected, cancelled)
- * - Approved: provisioning_status = provisioned, OR application_status = closed with linked org
+ * - Rejected: application_status = rejected
+ * - Approved: provisioning_status = provisioned, OR application_status = active
  * - Needs Information: follow_up_status in (awaiting_customer, needs_help, self_onboarding)
- * - New: all other non-terminal queue states (submitted, duplicate_review, network validation,
+ * - New: all other non-terminal queue states (submitted, review_required, network validation,
  *   ready for approval, provisioning, provisioning_failed, etc.)
  *
  * @param {object|null|undefined} row — list row (camelCase or snake_case)
@@ -75,20 +75,12 @@ function presentPhase5QueueStatus(row) {
     .trim()
     .toLowerCase();
   const follow = followUpOf(row);
-  const orgKey =
-    row && (row.organization_key || row.organizationKey)
-      ? String(row.organization_key || row.organizationKey).trim()
-      : "";
-  const orgId =
-    row && (row.organization_id || row.organizationId)
-      ? String(row.organization_id || row.organizationId).trim()
-      : "";
 
   let key = PHASE5_VISIBLE.NEW;
 
-  if (app === "rejected" || app === "cancelled") {
+  if (app === "rejected") {
     key = PHASE5_VISIBLE.REJECTED;
-  } else if (prov === "provisioned" || app === "active" || (app === "closed" && (orgKey || orgId))) {
+  } else if (prov === "provisioned" || app === "active") {
     key = PHASE5_VISIBLE.APPROVED;
   } else if (
     follow === "awaiting_customer" ||
@@ -555,7 +547,7 @@ function presentSuggestedOrganizationKeyPreview(churchName) {
     const {
       slugifyOrganizationKey,
       normalizeOrganizationKey,
-    } = require("./organizationKey");
+    } = require("../../platform/organization/organizationKey");
     const {
       PRODUCT_CODE,
       buildPublicOrganizationWebsitePath,

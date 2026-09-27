@@ -51,7 +51,30 @@ const {
   restoreSignIn,
 } = require("../src/platform/services/platformAdminAccountRecoveryService");
 const { authenticateBlessBoardUser } = require("../src/blessboard/services/authenticateBlessBoardUser");
-const { PLATFORM_ADMIN_PERMISSIONS } = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
+const {
+  grantedIn,
+  deniedInPlatformAdmin,
+  IA_MIGRATIONS,
+} = require("./helpers/platformAdminMigrationPermissions");
+const _paGrant = grantedIn(IA_MIGRATIONS, [
+  "platform.users.invite",
+  "platform.users.reset_access",
+  "platform.users.revoke_sessions",
+  "platform.users.suspend",
+  "platform.users.restore",
+  "platform.support.enter_hq",
+  "platform.support.exit",
+]);
+const PLATFORM_ADMIN_PERMISSIONS = _paGrant.ok
+  ? ["platform.users.invite",
+  "platform.users.reset_access",
+  "platform.users.revoke_sessions",
+  "platform.users.suspend",
+  "platform.users.restore",
+  "platform.support.enter_hq",
+  "platform.support.exit"]
+  : [];
+
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";

@@ -46,8 +46,10 @@ describe("PC07 shared website editor HTTP architecture", () => {
     assert.match(ac, /\/website\/submit/);
     assert.match(ac, /\/website\/edit-session\/finish/);
     assert.doesNotMatch(bb, /\/website\/unpublish(?![a-zA-Z-])/);
-    assert.match(bb, /publishChurchWebsite/);
-    assert.match(ac, /publishWebsiteDraft/);
+    assert.match(bb, /publicationOrchestrator/);
+    assert.match(ac, /publicationOrchestrator/);
+    assert.doesNotMatch(bb, /require\([^\)]*churchWebsitePublishService/);
+    assert.doesNotMatch(ac, /publicationService\.publishWebsiteDraft/);
   });
 
   it("product adapter responsibility modules exist", () => {

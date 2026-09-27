@@ -62,9 +62,11 @@
     "test:v8:rbac-isolation": "node --test --test-concurrency=1 tests/v8-shared-rbac-tenant-isolation.test.js",
     "test:v8:website-sections": "node --test --test-concurrency=1 tests/v8-shared-website-sections.test.js",
     "db:bootstrap:foundation": "node db/scripts/bootstrap-foundation.js",
+    "db:canonical-fresh-bootstrap": "node db/scripts/canonical-fresh-bootstrap.js",
     "db:verify:foundation": "node db/scripts/verify-foundation.js",
     "test:db:foundation": "node --test tests/db-foundation.test.js",
     "test:db:bootstrap-foundation": "node --test tests/db-bootstrap-foundation.test.js",
+    "test:db:canonical-migration-baseline": "node --test --test-concurrency=1 tests/v10-pl07-canonical-migration-baseline.test.js",
     "test:platform:resolution": "node --test tests/platform-hostname-resolution.test.js",
     "test:platform:http-context": "node --test tests/platform-host-context-middleware.test.js",
     "test:platform:host-comparison": "node --test tests/platform-host-comparison.test.js",
@@ -268,7 +270,8 @@
     "test": "NODE_ENV=test node --test \"tests/**/*.test.js\"",
     "storybook": "storybook dev -p 6006",
     "build-storybook": "storybook build -o storybook-static",
-    "test:blessboard:growth-trial-offer": "node --test --test-concurrency=1 tests/blessboard-growth-trial-offer.test.js"
+    "test:blessboard:growth-trial-offer": "node --test --test-concurrency=1 tests/blessboard-growth-trial-offer.test.js",
+    "db:qa:canonical-reset": "scripts/local/run-with-blessboard-env.sh testing node db/scripts/v10-qa-canonical-reset.js"
   },
   "keywords": [],
   "author": "",

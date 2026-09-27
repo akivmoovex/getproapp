@@ -36,7 +36,26 @@ const {
   listOrganizationTeam,
   getOrganizationTeamMember,
 } = require("../src/platform/services/platformAdminTeamService");
-const { PLATFORM_ADMIN_PERMISSIONS } = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
+const {
+  grantedIn,
+  deniedInPlatformAdmin,
+  TEAM_MIGRATIONS,
+} = require("./helpers/platformAdminMigrationPermissions");
+const _paGrant = grantedIn(TEAM_MIGRATIONS, [
+  "platform.users.invite",
+  "platform.roles.view",
+  "platform.roles.assign_standard",
+  "platform.roles.assign_sensitive",
+  "platform.roles.revoke",
+]);
+const PLATFORM_ADMIN_PERMISSIONS = _paGrant.ok
+  ? ["platform.users.invite",
+  "platform.roles.view",
+  "platform.roles.assign_standard",
+  "platform.roles.assign_sensitive",
+  "platform.roles.revoke"]
+  : [];
+
 
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "correct-horse-battery-staple";
@@ -337,9 +356,12 @@ describe("blessboard platform team management", () => {
     });
     assert.equal(invited.ok, true, invited.reason);
     const role = await pool.query(
-      `SELECT role_key, branch_id FROM blessboard.user_roles
-        WHERE user_id = $1 AND organization_id = $2 AND status = 'active'
-          AND role_key = 'branch_admin'`,
+      `SELECT r.role_key,
+              CASE WHEN a.scope_type = 'branch' THEN a.scope_id ELSE NULL END AS branch_id
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.user_id = $1 AND a.organization_id = $2 AND a.status = 'active'
+          AND r.role_key = 'branch_administrator'`,
       [invited.userId, orgA.id]
     );
     // Role is assigned on invitation accept; pending invite should target branch.
@@ -349,12 +371,14 @@ describe("blessboard platform team management", () => {
         ORDER BY created_at DESC LIMIT 1`
     );
     if (inv.rows[0]) {
-      assert.equal(inv.rows[0].role_key, "branch_admin");
+      assert.ok(
+        ["branch_admin", "branch_administrator"].includes(String(inv.rows[0].role_key))
+      );
       assert.equal(String(inv.rows[0].branch_id), String(campusA.id));
     } else if (role.rows[0]) {
       assert.equal(String(role.rows[0].branch_id), String(campusA.id));
     } else {
-      assert.fail("expected pending invitation or branch_admin role");
+      assert.fail("expected pending invitation or branch_administrator role");
     }
   });
 

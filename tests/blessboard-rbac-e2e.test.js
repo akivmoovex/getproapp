@@ -55,10 +55,11 @@ const pastoral = require("../src/blessboard/services/pastoralCareService");
 const welfare = require("../src/blessboard/services/welfareCareService");
 const giving = require("../src/blessboard/services/givingService");
 const { makeResolvedTenantContext } = require("./helpers/blessboardV5Fixtures");
-const {
-  PLATFORM_ADMIN_PERMISSIONS,
-  CHURCH_HQ_ADMIN_PERMISSIONS,
-} = require("../src/blessboard/rbac/legacyCompatibilityPermissions");
+// PL06: legacy permission bundles removed; denial asserts use empty (no bundle grants).
+const PLATFORM_ADMIN_PERMISSIONS = Object.freeze([]);
+const CHURCH_HQ_ADMIN_PERMISSIONS = Object.freeze([]);
+const BRANCH_ADMIN_PERMISSIONS = Object.freeze([]);
+
 
 const PASSWORD = "Correct-Horse-Battery-Staple-9!";
 const IDENTITY_KEY = "blessboard-platform-v5";
@@ -396,6 +397,7 @@ describe("blessboard rbac e2e (prompt 8)", () => {
       firstName: "E2E",
       lastName: "Journey",
       email: "rbac-e2e-journey@example.test",
+      phone: "+260971119901",
       sourceType: "evangelism",
       membershipInterest: "member",
     });

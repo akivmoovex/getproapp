@@ -77,7 +77,7 @@ describe("PC10 platform publication convergence", () => {
     }
   });
 
-  it("retains compatibility publication services (no premature deletes)", () => {
+  it("retains implementation services behind adapters (no premature deletes)", () => {
     assert.equal(
       fs.existsSync(path.join(ROOT, "src/blessboard/services/churchWebsitePublishService.js")),
       true
@@ -90,10 +90,22 @@ describe("PC10 platform publication convergence", () => {
       fs.existsSync(path.join(ROOT, "src/platform/website/submissionService.js")),
       true
     );
-    const bbRoutes = read("src/blessboard/http/blessboardWebsiteEditorRoutes.js");
+  });
+
+  it("HTTP publish/unpublish entry points use publicationOrchestrator (PL04)", () => {
+    const bbEditor = read("src/blessboard/http/blessboardWebsiteEditorRoutes.js");
+    const bbAdmin = read("src/blessboard/http/churchWebsiteAdminRoutes.js");
     const acRoutes = read("src/activeclinic/http/activeClinicWebsiteRoutes.js");
-    assert.match(bbRoutes, /publishChurchWebsite/);
-    assert.match(acRoutes, /publishWebsiteDraft/);
+    const draftPublish = read("src/blessboard/services/websiteDraftPublishService.js");
+    const changeSub = read("src/blessboard/services/websiteChangeSubmissionService.js");
+    assert.match(bbEditor, /publicationOrchestrator/);
+    assert.match(bbAdmin, /publicationOrchestrator/);
+    assert.match(acRoutes, /publicationOrchestrator/);
+    assert.match(draftPublish, /publicationOrchestrator/);
+    assert.match(changeSub, /publicationOrchestrator/);
+    assert.doesNotMatch(bbEditor, /require\([^\)]*churchWebsitePublishService/);
+    assert.doesNotMatch(acRoutes, /publicationService\.publishWebsiteDraft/);
+    assert.doesNotMatch(acRoutes, /publicationService\.unpublishWebsite/);
     assert.match(acRoutes, /\/website\/submit/);
     assert.match(acRoutes, /\/website\/unpublish/);
   });

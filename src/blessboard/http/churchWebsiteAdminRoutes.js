@@ -24,17 +24,13 @@ const {
   GAP,
 } = require("../services/churchWebsitePublishService");
 const {
-  publishWebsite: publishProductWebsite,
-  unpublishWebsite: unpublishProductWebsite,
-} = require("../../platform/website-engine/lifecycleOrchestrator");
-const {
+  publish: publishProductWebsite,
+  unpublish: unpublishProductWebsite,
   PERMISSIONS: WEBSITE_PERMISSIONS,
-} = require("../../platform/website-engine/permissionHooks");
-const {
-  PRODUCT_CODE: WEBSITE_ENGINE_PRODUCT_CODE,
-} = require("../../platform/website-engine/productSchemaRegistry");
+} = require("../../platform/website/publicationOrchestrator");
+const { PRODUCT } = require("../../platform/registration/constants");
 
-const WEBSITE_PRODUCT_CODE = WEBSITE_ENGINE_PRODUCT_CODE.BLESSBOARD;
+const WEBSITE_PRODUCT_CODE = PRODUCT.BLESSBOARD;
 const {
   loadHqWebsiteOverview,
 } = require("../services/websiteOverviewService");

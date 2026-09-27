@@ -129,9 +129,11 @@ function logVerificationFailure(message, err, logFn) {
  */
 function logRegistrationApprovalFailure(fields, err) {
   const pgCode = err && err.code != null ? String(err.code).slice(0, 32) : null;
+  // DBCL08 D5: registration tables/columns proven on fresh/QA/production — do not
+  // soft-map 42703 to schema_mismatch lag. Keep 42P01 as undefined_table signal only.
   const category =
-    pgCode === "42703" || pgCode === "42P01"
-      ? "schema_mismatch"
+    pgCode === "42P01"
+      ? "undefined_table"
       : pgCode
         ? "database_error"
         : "internal_error";
@@ -172,7 +174,8 @@ function logRegistrationApprovalFailure(fields, err) {
 
 function classifyApprovalCaughtError(err) {
   const pgCode = err && err.code != null ? String(err.code) : "";
-  if (pgCode === "42703" || pgCode === "42P01") {
+  // DBCL08 D5: no 42703→schema_mismatch soft map (canonical registration schema present).
+  if (pgCode === "42P01") {
     return { status: STATUS.LOOKUP_ERROR, message: "schema_mismatch" };
   }
   return { status: STATUS.LOOKUP_ERROR, message: "lookup_error" };
@@ -987,9 +990,7 @@ function deriveWorkflowStatus(row) {
   if (follow === "needs_help" || follow === "self_onboarding") follow = "awaiting_customer";
 
   if (app === "rejected") return "rejected";
-  if (app === "cancelled") return "closed";
-  if (prov === "provisioned") return "approved";
-  if (app === "closed") return "closed";
+  if (prov === "provisioned" || app === "active") return "approved";
   if (TERMINAL_FOLLOW_UP.includes(String(row.follow_up_status || ""))) return "closed";
   if (follow && repo.WORKFLOW_STATUSES.includes(follow)) return follow;
   if (follow === "contacted") return "contacted";
@@ -1017,13 +1018,13 @@ function computeSupportPriority(row) {
     nextAt &&
     !Number.isNaN(nextAt.getTime()) &&
     nextAt.getTime() < Date.now() &&
-    !["rejected", "cancelled", "closed"].includes(app) &&
+    !["rejected", "active"].includes(app) &&
     !TERMINAL_FOLLOW_UP.includes(follow);
 
   if (prov === "provisioning_failed") {
     return { rank: 0, key: "critical", label: "Critical" };
   }
-  if (app === "duplicate_review" || overdue) {
+  if (app === "review_required" || overdue) {
     return { rank: 1, key: "high", label: "High" };
   }
   if (
@@ -1059,7 +1060,7 @@ function needsAttention(row) {
   const prov = String(row.provisioning_status || "");
   const follow = String(row.follow_up_status || "");
   if (Boolean(row.support_requested)) return true;
-  if (app === "submitted" || app === "duplicate_review" || app === "review_required" || app === "provisioning") return true;
+  if (app === "submitted" || app === "review_required" || app === "provisioning") return true;
   if (prov === "provisioning_failed") return true;
   if (
     follow === "new" ||
@@ -1562,12 +1563,12 @@ async function getRegistrationApplicationDetail(db, applicationId, env, options 
       linkOrganizationAvailable:
         !organizationId &&
         String(row.provisioning_status || "") !== "provisioned" &&
-        !["rejected", "cancelled"].includes(String(row.application_status || "")),
+        String(row.application_status || "") !== "rejected",
       riskReviewActionsAvailable:
         !organizationId &&
         String(row.provisioning_status || "") !== "provisioned" &&
         String(row.provisioning_status || "") !== "provisioning_failed" &&
-        ["submitted", "duplicate_review", "review_required", "provisioning"].includes(String(row.application_status || "")) &&
+        ["submitted", "review_required", "provisioning"].includes(String(row.application_status || "")) &&
         !isNetworkPlanSelection(row.selected_plan),
       networkApproveAvailable:
         !organizationId &&
@@ -1576,7 +1577,7 @@ async function getRegistrationApplicationDetail(db, applicationId, env, options 
         ["approved_for_provision", "qualified"].includes(
           String(row.follow_up_status || "")
         ) &&
-        !["rejected", "cancelled"].includes(String(row.application_status || "")),
+        String(row.application_status || "") !== "rejected",
       markValidationCompleteAvailable:
         !organizationId &&
         isNetworkPlanSelection(row.selected_plan) &&
@@ -1584,12 +1585,12 @@ async function getRegistrationApplicationDetail(db, applicationId, env, options 
         !["approved_for_provision", "qualified"].includes(
           String(row.follow_up_status || "")
         ) &&
-        !["rejected", "cancelled", "closed"].includes(String(row.application_status || "")),
+        !["rejected", "active"].includes(String(row.application_status || "")),
       retryProvisionAvailable: retryAllowed,
       rejectActionsAvailable:
         !organizationId &&
         String(row.provisioning_status || "") !== "provisioned" &&
-        ["submitted", "duplicate_review", "review_required", "provisioning"].includes(String(row.application_status || "")),
+        ["submitted", "review_required", "provisioning"].includes(String(row.application_status || "")),
       reviewEvents,
       operatorView: presentRegistrationOperatorView({
         ...row,
@@ -1653,7 +1654,7 @@ async function getRegistrationApplicationDetail(db, applicationId, env, options 
       contactOutcomes: repo.CONTACT_OUTCOMES,
       deploymentCode: (() => {
         const d = getPlatformDeploymentCode(env || process.env);
-        return d && d.ok ? d.code : "blessboard-org-v5";
+        return d && d.ok ? d.code : "blessboard-org-staging";
       })(),
     };
   } catch {
@@ -1750,7 +1751,7 @@ async function updateRegistrationFollowUpStatus(db, input) {
           lastActivityAt: new Date().toISOString(),
         });
         await recordAuditEventSafe(client, {
-          deploymentCode: input.deploymentCode || "blessboard-org-v5",
+          deploymentCode: input.deploymentCode || "blessboard-org-staging",
           organizationId,
           actorUserId,
           outcome: "success",
@@ -1865,7 +1866,7 @@ async function assignRegistrationSupport(db, input) {
         });
 
         await recordAuditEventSafe(client, {
-          deploymentCode: input.deploymentCode || "blessboard-org-v5",
+          deploymentCode: input.deploymentCode || "blessboard-org-staging",
           organizationId,
           actorUserId,
           outcome: "success",
@@ -2046,7 +2047,7 @@ async function addRegistrationSupportContact(db, input) {
         });
 
         await recordAuditEventSafe(client, {
-          deploymentCode: input.deploymentCode || "blessboard-org-v5",
+          deploymentCode: input.deploymentCode || "blessboard-org-staging",
           organizationId,
           actorUserId,
           outcome: "success",
@@ -2243,7 +2244,7 @@ async function rejectRegistrationApplication(db, input, options = {}) {
           await client.query("COMMIT");
           return { ok: true, status: STATUS.OK, alreadyRejected: true };
         }
-        if (!["submitted", "duplicate_review", "review_required", "provisioning"].includes(appStatus)) {
+        if (!["submitted", "review_required", "provisioning"].includes(appStatus)) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
         }
@@ -2311,7 +2312,7 @@ async function rejectRegistrationApplication(db, input, options = {}) {
         });
         if (app.organization_id) {
           await recordLifecycleAudit(client, {
-            deploymentCode: input.deploymentCode || "blessboard-org-v5",
+            deploymentCode: input.deploymentCode || "blessboard-org-staging",
             organizationId: app.organization_id,
             actorUserId: platformAdminUserId,
             actionKey: LIFECYCLE_ACTION.REJECTED,
@@ -2494,7 +2495,7 @@ async function approveAndProvisionRegistrationApplication(db, input) {
     organizationKey = keyResult.value;
   }
 
-  const deploymentCode = (input && input.deploymentCode) || "blessboard-org-v5";
+  const deploymentCode = (input && input.deploymentCode) || "blessboard-org-staging";
   const dataEnvironment =
     (input && input.dataEnvironment) ||
     require("../../church/orgDataEnvironment").resolveRegistrationDataEnvironment(input && input.env, {
@@ -2556,7 +2557,7 @@ async function approveAndProvisionRegistrationApplication(db, input) {
             };
           }
           const netAppStatus = String(app.application_status || "");
-          if (netAppStatus === "rejected" || netAppStatus === "cancelled") {
+          if (netAppStatus === "rejected") {
             await client.query("ROLLBACK");
             return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
           }
@@ -2565,16 +2566,14 @@ async function approveAndProvisionRegistrationApplication(db, input) {
           const incompleteRetry =
             String(app.provisioning_status) === "provisioning_failed" ||
             (app.organization_id && String(app.provisioning_status) !== "provisioned");
-          if (appStatus === "rejected" || appStatus === "cancelled") {
+          if (appStatus === "rejected") {
             await client.query("ROLLBACK");
             return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
           }
-          if (appStatus === "closed" && !incompleteRetry) {
-            await client.query("ROLLBACK");
-            return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
-          }
+          // active + provisioned is handled by the alreadyProvisioned completeness branch above.
+          // active with incomplete provisioning remains retryable via incompleteRetry.
           if (
-            !["submitted", "duplicate_review", "review_required", "provisioning", "provision_failed", "active"].includes(appStatus) &&
+            !["submitted", "review_required", "provisioning", "provision_failed", "active"].includes(appStatus) &&
             !incompleteRetry
           ) {
             await client.query("ROLLBACK");
@@ -2785,7 +2784,7 @@ async function linkRegistrationApplicationToOrganization(db, input) {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "already_linked" };
         }
-        if (["rejected", "cancelled"].includes(String(app.application_status || ""))) {
+        if (String(app.application_status || "") === "rejected") {
           await client.query("ROLLBACK");
           return { ok: false, status: STATUS.NOT_ELIGIBLE, message: "not_eligible" };
         }
@@ -2822,7 +2821,7 @@ async function linkRegistrationApplicationToOrganization(db, input) {
         });
 
         await recordAuditEventSafe(client, {
-          deploymentCode: input.deploymentCode || "blessboard-org-v5",
+          deploymentCode: input.deploymentCode || "blessboard-org-staging",
           organizationId,
           actorUserId,
           outcome: "success",

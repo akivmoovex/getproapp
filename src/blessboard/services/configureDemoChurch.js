@@ -33,7 +33,11 @@ const settingsRepo = require("../repositories/blessBoardSettingsRepository");
 const scopeSettingsRepo = require("../repositories/websiteScopeSettingsRepository");
 const registry = require("./websiteSettingKeyRegistry");
 const { saveHomeServiceTimes } = require("./homeServiceTimesService");
-const { publishChurchWebsite } = require("./churchWebsitePublishService");
+const {
+  publish: publishProductWebsite,
+  PERMISSIONS: WEBSITE_PUBLISH_PERMISSIONS,
+} = require("../../platform/website/publicationOrchestrator");
+const { PRODUCT } = require("../../platform/registration/constants");
 const { updateChurchSettings } = require("./blessBoardSettingsService");
 
 const STATUS = Object.freeze({
@@ -677,28 +681,38 @@ async function clearDemoChurchPublishBlockers(db, organizationId) {
 }
 
 async function publishScope(db, { organizationId, churchId, branchId, actorUserId }) {
-  return publishChurchWebsite(db, {
-    organizationId,
-    churchId,
-    branchId: branchId || null,
-    actorUserId,
-    confirmPublish: true,
-    relaxPreviewRequirement: true,
-    forcePublishVersion: true,
-    deferServiceTimes: true,
-    mobilePreviewConfirmed: true,
+  return publishProductWebsite(db, {
+    productCode: PRODUCT.BLESSBOARD,
+    grantedPermissions: [WEBSITE_PUBLISH_PERMISSIONS.PUBLISH],
+    request: {
+      organizationId,
+      churchId,
+      branchId: branchId || null,
+      actorUserId,
+      confirmPublish: true,
+      relaxPreviewRequirement: true,
+      forcePublishVersion: true,
+      deferServiceTimes: true,
+      mobilePreviewConfirmed: true,
+    },
   });
 }
 
 async function reassignBranchAdmin(db, { organizationId, fromBranchId, toBranchId }) {
   if (!fromBranchId || !toBranchId || fromBranchId === toBranchId) return { ok: true, updated: 0 };
   const { rowCount } = await db.query(
-    `UPDATE blessboard.user_roles
-        SET branch_id = $3, updated_at = now()
-      WHERE organization_id = $1
-        AND branch_id = $2
-        AND role_key = 'branch_admin'
-        AND status = 'active'`,
+    `UPDATE blessboard.user_role_assignments a
+        SET scope_id = $3,
+            church_id = COALESCE(a.church_id, (SELECT church_id FROM blessboard.branches WHERE id = $3)),
+            updated_at = now()
+       FROM blessboard.roles r
+      WHERE a.role_id = r.id
+        AND a.organization_id = $1
+        AND a.scope_type = 'branch'
+        AND a.scope_id = $2
+        AND r.role_key = 'branch_administrator'
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL`,
     [organizationId, fromBranchId, toBranchId]
   );
   return { ok: true, updated: rowCount || 0 };

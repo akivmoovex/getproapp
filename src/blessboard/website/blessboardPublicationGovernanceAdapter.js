@@ -14,8 +14,9 @@
  * absorb ActiveClinic submit/unpublish clinic workflows.
  *
  * Compatibility: `churchWebsitePublishService` and
- * `websitePublicationVersionService` remain the implementation surface;
- * HTTP routes may keep calling them directly.
+ * `websitePublicationVersionService` remain the **implementation** surface.
+ * HTTP and product workflow entry points must call platform
+ * `publicationOrchestrator` (registered handlers) — not the services directly.
  */
 
 const { PRODUCT } = require("../../platform/registration/constants");

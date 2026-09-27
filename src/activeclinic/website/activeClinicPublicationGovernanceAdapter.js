@@ -12,9 +12,10 @@
  * restore-live, audit/moderation, and authorizeWebsiteAction inside
  * publicationService / submissionService.
  *
- * Compatibility: routes may keep calling publicationService /
- * submissionService directly; lifecycle registration goes through this
- * adapter.
+ * Compatibility: publicationService / submissionService remain the
+ * **implementation** surface. HTTP publish/unpublish/restore must enter via
+ * platform `publicationOrchestrator`. Submit (AC-only) may call
+ * submissionService (or adapter.submit) — not merged with BB governance.
  */
 
 const { PRODUCT } = require("../../platform/registration/constants");

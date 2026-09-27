@@ -30,7 +30,6 @@ const DUPLICATE_PHONE_MESSAGE =
  */
 const PHONE_UNIQUENESS_APPLICATION_STATUSES = Object.freeze([
   "submitted",
-  "duplicate_review",
   "review_required",
   "provisioning",
   "active",
@@ -89,7 +88,7 @@ function normalizeRegistrationPhone(phone, countryOrOptions) {
 function phoneUniquenessSqlPredicate(alias) {
   const a = alias ? `${alias}.` : "";
   return `(
-    ${a}application_status IN ('submitted', 'duplicate_review', 'review_required', 'provisioning', 'active')
+    ${a}application_status IN ('submitted', 'review_required', 'provisioning', 'active')
     OR ${a}provisioning_status IN ('provisioning', 'provisioned', 'provisioning_failed')
   )`;
 }

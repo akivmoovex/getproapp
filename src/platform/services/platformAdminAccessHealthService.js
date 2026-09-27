@@ -60,14 +60,11 @@ async function getPlatformAccessHealth(db, input) {
          FROM blessboard.users u
         WHERE u.status = 'active'
           AND NOT EXISTS (
-            SELECT 1 FROM blessboard.user_roles ur
-             WHERE ur.user_id = u.id AND ur.status = 'active'
-          )
-          AND NOT EXISTS (
             SELECT 1 FROM blessboard.user_role_assignments ura
              WHERE ura.user_id = u.id
                AND ura.status = 'active'
                AND ura.revoked_at IS NULL
+               AND (ura.expires_at IS NULL OR ura.expires_at > now())
           )`
     );
     checks.push({
@@ -120,41 +117,17 @@ async function getPlatformAccessHealth(db, input) {
       href: "/admin/users",
     });
 
-    // Legacy-only users (best effort)
-    const legacyOnlyRes = await db.query(
-      `SELECT COUNT(DISTINCT ur.user_id)::int AS count
-         FROM blessboard.user_roles ur
-        WHERE ur.status = 'active'
-          AND NOT EXISTS (
-            SELECT 1 FROM blessboard.user_role_assignments ura
-             WHERE ura.user_id = ur.user_id
-               AND ura.status = 'active'
-               AND ura.revoked_at IS NULL
-          )`
-    );
-    checks.push({
-      key: "legacyOnlyUsers",
-      label: "Users with legacy roles only (no RBAC assignments)",
-      count: Number(legacyOnlyRes.rows[0] && legacyOnlyRes.rows[0].count) || 0,
-      href: "/admin/users",
-    });
-
     // Suspended users with active assignments
     const suspendedActiveRes = await db.query(
       `SELECT COUNT(DISTINCT u.id)::int AS count
          FROM blessboard.users u
         WHERE u.status = 'suspended'
-          AND (
-            EXISTS (
-              SELECT 1 FROM blessboard.user_roles ur
-               WHERE ur.user_id = u.id AND ur.status = 'active'
-            )
-            OR EXISTS (
-              SELECT 1 FROM blessboard.user_role_assignments ura
-               WHERE ura.user_id = u.id
-                 AND ura.status = 'active'
-                 AND ura.revoked_at IS NULL
-            )
+          AND EXISTS (
+            SELECT 1 FROM blessboard.user_role_assignments ura
+             WHERE ura.user_id = u.id
+               AND ura.status = 'active'
+               AND ura.revoked_at IS NULL
+               AND (ura.expires_at IS NULL OR ura.expires_at > now())
           )`
     );
     checks.push({

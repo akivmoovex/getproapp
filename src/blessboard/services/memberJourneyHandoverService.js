@@ -257,7 +257,7 @@ async function createJourneyContact(db, input) {
           actorUserId,
         ]
       );
-      const contact = ins.rows[0];
+      const row = ins.rows[0];
       await recordBlessBoardAudit(client, {
         organizationId,
         churchId,
@@ -265,7 +265,7 @@ async function createJourneyContact(db, input) {
         actorUserId,
         actionKey: "journey.contact.created",
         entityType: "journey_contact",
-        entityId: contact.id,
+        entityId: row.id,
         outcome: "success",
         metadata: { source_type: sourceType, branch_id: branchId },
       });
@@ -273,11 +273,11 @@ async function createJourneyContact(db, input) {
         ok: true,
         status: STATUS.OK,
         contact: {
-          id: contact.id,
-          firstName: contact.first_name,
-          lastName: contact.last_name,
-          status: contact.status,
-          memberId: contact.member_id,
+          id: row.id,
+          firstName: row.first_name,
+          lastName: row.last_name,
+          status: row.status,
+          memberId: row.member_id,
         },
       };
     });

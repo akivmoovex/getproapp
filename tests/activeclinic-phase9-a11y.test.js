@@ -44,7 +44,9 @@ describe("ActiveClinic Phase 9 accessibility", () => {
   });
 
   it("PhoneField associates labels, required, errors, and uses a dialog picker", () => {
-    const field = read("views/activeclinic/partials/phone-field.ejs");
+    const acInclude = read("views/activeclinic/partials/phone-field.ejs");
+    assert.match(acInclude, /platform\/partials\/phone-field/);
+    const field = read("views/platform/partials/phone-field.ejs");
     assert.match(field, /aria-required="true"/);
     assert.match(field, /aria-describedby=/);
     assert.match(field, /role="dialog"/);

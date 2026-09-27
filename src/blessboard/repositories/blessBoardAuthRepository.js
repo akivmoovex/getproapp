@@ -3,59 +3,9 @@
 /**
  * BlessBoard auth repository helpers (parameterized SQL).
  *
- * Core SELECT stays compatible with migrations through 072. Columns introduced
- * in 073+ (phone_verified_at, phone_country_code, preferred_*) are attached
- * when present so testing DBs that lag migrations do not break auth/recovery.
+ * V10 canonical: phone_verified_at / phone_country_code / preferred_* are required
+ * columns (blessboard/073+). No information_schema probe or lag SELECT.
  */
-
-/** @type {string|null} */
-let usersOptionalPhoneSelectSql = null;
-/** @type {Promise<string>|null} */
-let usersOptionalPhoneSelectPromise = null;
-
-/**
- * @param {{ query: Function }} client
- * @returns {Promise<string>}
- */
-async function resolveUsersOptionalPhoneSelect(client) {
-  if (usersOptionalPhoneSelectSql != null) return usersOptionalPhoneSelectSql;
-  if (!usersOptionalPhoneSelectPromise) {
-    usersOptionalPhoneSelectPromise = (async () => {
-      try {
-        const r = await client.query(
-          `SELECT column_name
-             FROM information_schema.columns
-            WHERE table_schema = 'blessboard'
-              AND table_name = 'users'
-              AND column_name = ANY($1::text[])`,
-          [
-            [
-              "phone_country_code",
-              "phone_verified_at",
-              "preferred_login_identifier",
-              "preferred_contact_channel",
-            ],
-          ]
-        );
-        const present = new Set(r.rows.map((row) => String(row.column_name)));
-        const parts = [];
-        for (const col of [
-          "phone_country_code",
-          "phone_verified_at",
-          "preferred_login_identifier",
-          "preferred_contact_channel",
-        ]) {
-          if (present.has(col)) parts.push(col);
-        }
-        usersOptionalPhoneSelectSql = parts.length ? `, ${parts.join(", ")}` : "";
-      } catch {
-        usersOptionalPhoneSelectSql = "";
-      }
-      return usersOptionalPhoneSelectSql;
-    })();
-  }
-  return usersOptionalPhoneSelectPromise;
-}
 
 /**
  * @param {{ query: Function }} client
@@ -64,13 +14,14 @@ async function resolveUsersOptionalPhoneSelect(client) {
  * @param {{ orderLimitSql?: string }} [opts]
  */
 async function selectUserRow(client, whereSql, params, opts = {}) {
-  const optional = await resolveUsersOptionalPhoneSelect(client);
   const orderLimitSql = opts.orderLimitSql || "LIMIT 1";
   const r = await client.query(
     `SELECT id, email_normalized, email_display, password_hash, status, display_name,
             created_at, updated_at, password_changed_at, last_login_at,
             password_change_required, sign_in_locked_until,
-            phone_normalized, phone_display${optional}
+            phone_normalized, phone_display,
+            phone_country_code, phone_verified_at,
+            preferred_login_identifier, preferred_contact_channel
        FROM blessboard.users
       WHERE ${whereSql}
       ${orderLimitSql}`,
@@ -159,19 +110,75 @@ async function activateUserWithPassword(client, userId, fields) {
   return r.rows[0] || null;
 }
 
+/** Catalogue role_key → legacy display key (HQ / seed compatibility). */
+const CATALOGUE_TO_LEGACY_ROLE = Object.freeze({
+  platform_administrator: "platform_admin",
+  organisation_administrator: "church_hq_admin",
+  church_system_administrator: "church_hq_admin",
+  branch_administrator: "branch_admin",
+});
+
+const LEGACY_TO_CATALOGUE_ROLE_KEYS = Object.freeze({
+  platform_admin: ["platform_administrator"],
+  church_hq_admin: ["organisation_administrator", "church_system_administrator"],
+  branch_admin: ["branch_administrator"],
+});
+
+function legacyRoleKeyForCatalogue(catalogueKey) {
+  return CATALOGUE_TO_LEGACY_ROLE[String(catalogueKey || "")] || String(catalogueKey || "");
+}
+
+function catalogueRoleKeysForInput(roleKey) {
+  const key = String(roleKey || "")
+    .trim()
+    .toLowerCase();
+  if (LEGACY_TO_CATALOGUE_ROLE_KEYS[key]) return LEGACY_TO_CATALOGUE_ROLE_KEYS[key];
+  return key ? [key] : [];
+}
+
+function mapAssignmentRowToLegacyShape(row) {
+  if (!row) return null;
+  const catalogueKey = String(row.role_key || "");
+  const branchId =
+    row.scope_type === "branch" && row.scope_id
+      ? row.scope_id
+      : row.branch_id || null;
+  return {
+    id: row.id,
+    user_id: row.user_id,
+    organization_id: row.organization_id,
+    church_id: row.church_id || null,
+    branch_id: branchId,
+    role_key: legacyRoleKeyForCatalogue(catalogueKey),
+    catalogue_role_key: catalogueKey,
+    status: row.status,
+    created_at: row.created_at || null,
+    updated_at: row.updated_at || null,
+    scope_type: row.scope_type || null,
+    scope_id: row.scope_id || null,
+  };
+}
+
 /**
+ * Active catalogue assignments shaped like legacy user_roles rows (display keys).
  * @param {{ query: Function }} client
  * @param {string} userId
  */
 async function listActiveRolesForUser(client, userId) {
   const r = await client.query(
-    `SELECT id, user_id, organization_id, church_id, branch_id, role_key, status
-       FROM blessboard.user_roles
-      WHERE user_id = $1 AND status = 'active'
-      ORDER BY role_key, organization_id`,
+    `SELECT a.id, a.user_id, a.organization_id, a.church_id, a.scope_type, a.scope_id,
+            a.status, a.created_at, a.updated_at, r.role_key
+       FROM blessboard.user_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE a.user_id = $1
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND (a.expires_at IS NULL OR a.expires_at > now())
+        AND r.is_active = true
+      ORDER BY r.role_key, a.organization_id`,
     [userId]
   );
-  return r.rows;
+  return r.rows.map(mapAssignmentRowToLegacyShape);
 }
 
 /**
@@ -221,6 +228,7 @@ async function findBranchByChurchAndKey(client, churchId, branchKey) {
 }
 
 /**
+ * Find a catalogue assignment by legacy or catalogue role key + scope.
  * @param {{ query: Function }} client
  * @param {{
  *   userId: string,
@@ -231,86 +239,51 @@ async function findBranchByChurchAndKey(client, churchId, branchKey) {
  * }} fields
  */
 async function findRole(client, fields) {
+  const catalogueKeys = catalogueRoleKeysForInput(fields.roleKey);
+  if (!catalogueKeys.length) return null;
+  const branchId = fields.branchId || null;
+  const churchId = fields.churchId || null;
   const r = await client.query(
-    `SELECT id, user_id, organization_id, church_id, branch_id, role_key, status
-       FROM blessboard.user_roles
-      WHERE user_id = $1
-        AND organization_id = $2
-        AND role_key = $3
-        AND church_id IS NOT DISTINCT FROM $4
-        AND branch_id IS NOT DISTINCT FROM $5
+    `SELECT a.id, a.user_id, a.organization_id, a.church_id, a.scope_type, a.scope_id,
+            a.status, a.created_at, a.updated_at, r.role_key
+       FROM blessboard.user_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE a.user_id = $1
+        AND a.organization_id = $2
+        AND r.role_key = ANY($3::text[])
+        AND a.church_id IS NOT DISTINCT FROM $4
+        AND (
+          ($5::uuid IS NULL AND a.scope_type <> 'branch')
+          OR (a.scope_type = 'branch' AND a.scope_id IS NOT DISTINCT FROM $5)
+        )
+      ORDER BY CASE WHEN a.status = 'active' THEN 0 ELSE 1 END, a.created_at DESC
       LIMIT 1`,
-    [
-      fields.userId,
-      fields.organizationId,
-      fields.roleKey,
-      fields.churchId,
-      fields.branchId,
-    ]
+    [fields.userId, fields.organizationId, catalogueKeys, churchId, branchId]
   );
-  return r.rows[0] || null;
+  return mapAssignmentRowToLegacyShape(r.rows[0] || null);
 }
 
 /**
- * @param {{ query: Function }} client
- * @param {{
- *   userId: string,
- *   organizationId: string,
- *   churchId: string | null,
- *   branchId: string | null,
- *   roleKey: string
- * }} fields
- */
-async function insertRole(client, fields) {
-  const r = await client.query(
-    `INSERT INTO blessboard.user_roles
-       (user_id, organization_id, church_id, branch_id, role_key, status)
-     VALUES ($1, $2, $3, $4, $5, 'active')
-     RETURNING id, user_id, organization_id, church_id, branch_id, role_key, status`,
-    [
-      fields.userId,
-      fields.organizationId,
-      fields.churchId,
-      fields.branchId,
-      fields.roleKey,
-    ]
-  );
-  return r.rows[0];
-}
-
-/**
+ * Load catalogue assignment by id (HQ revoke / detail).
  * @param {{ query: Function }} client
  * @param {string} roleId
  */
 async function findRoleById(client, roleId) {
   const r = await client.query(
-    `SELECT id, user_id, organization_id, church_id, branch_id, role_key, status, created_at, updated_at
-       FROM blessboard.user_roles
-      WHERE id = $1
+    `SELECT a.id, a.user_id, a.organization_id, a.church_id, a.scope_type, a.scope_id,
+            a.status, a.created_at, a.updated_at, r.role_key
+       FROM blessboard.user_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE a.id = $1
       LIMIT 1`,
     [roleId]
   );
-  return r.rows[0] || null;
+  return mapAssignmentRowToLegacyShape(r.rows[0] || null);
 }
 
 /**
- * @param {{ query: Function }} client
- * @param {string} roleId
- * @param {string} status
- */
-async function updateRoleStatus(client, roleId, status) {
-  const r = await client.query(
-    `UPDATE blessboard.user_roles
-        SET status = $2, updated_at = now()
-      WHERE id = $1
-      RETURNING id, user_id, organization_id, church_id, branch_id, role_key, status`,
-    [roleId, status]
-  );
-  return r.rows[0] || null;
-}
-
-/**
- * Active church-scoped staff roles (HQ + branch admin). Never returns platform_admin.
+ * Active church-scoped staff assignments (HQ + branch admin). Never returns platform_admin.
+ * Rows use legacy display role_key (church_hq_admin / branch_admin) for HQ UI.
  * @param {{ query: Function }} client
  * @param {{ churchId: string, organizationId: string, q?: string | null, roleKey?: string | null, limit?: number, offset?: number }} filters
  */
@@ -324,8 +297,16 @@ async function listChurchStaffRoles(client, filters) {
   const params = [organizationId, churchId];
   let roleClause = "";
   if (roleKey === "church_hq_admin" || roleKey === "branch_admin") {
-    params.push(roleKey);
-    roleClause = ` AND ur.role_key = $${params.length}`;
+    const keys = catalogueRoleKeysForInput(roleKey);
+    params.push(keys);
+    roleClause = ` AND r.role_key = ANY($${params.length}::text[])`;
+  } else {
+    params.push([
+      "organisation_administrator",
+      "church_system_administrator",
+      "branch_administrator",
+    ]);
+    roleClause = ` AND r.role_key = ANY($${params.length}::text[])`;
   }
   let searchClause = "";
   if (q) {
@@ -343,23 +324,33 @@ async function listChurchStaffRoles(client, filters) {
   const offsetIdx = params.length;
 
   const { rows } = await client.query(
-    `SELECT ur.id, ur.user_id, ur.organization_id, ur.church_id, ur.branch_id,
-            ur.role_key, ur.status, ur.created_at, ur.updated_at,
+    `SELECT a.id, a.user_id, a.organization_id, a.church_id,
+            CASE WHEN a.scope_type = 'branch' THEN a.scope_id ELSE NULL END AS branch_id,
+            CASE
+              WHEN r.role_key = 'branch_administrator' THEN 'branch_admin'
+              ELSE 'church_hq_admin'
+            END AS role_key,
+            a.status, a.created_at, a.updated_at,
             u.email_display, u.email_normalized, u.display_name AS user_display_name, u.status AS user_status,
             (u.password_hash IS NOT NULL) AS has_usable_password,
             u.password_changed_at,
             b.branch_key, b.display_name AS branch_display_name,
             COUNT(*) OVER()::int AS total_count
-       FROM blessboard.user_roles ur
-       INNER JOIN blessboard.users u ON u.id = ur.user_id
-       LEFT JOIN blessboard.branches b ON b.id = ur.branch_id
-      WHERE ur.organization_id = $1
-        AND ur.church_id = $2
-        AND ur.status = 'active'
-        AND ur.role_key IN ('church_hq_admin', 'branch_admin')
+       FROM blessboard.user_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+       INNER JOIN blessboard.users u ON u.id = a.user_id
+       LEFT JOIN blessboard.branches b
+         ON b.id = CASE WHEN a.scope_type = 'branch' THEN a.scope_id ELSE NULL END
+      WHERE a.organization_id = $1
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND (a.expires_at IS NULL OR a.expires_at > now())
+        AND r.is_active = true
+        AND a.scope_type IN ('organisation', 'church', 'branch')
+        AND (a.church_id IS NULL OR a.church_id = $2)
         ${roleClause}
         ${searchClause}
-      ORDER BY ur.role_key ASC, u.display_name ASC NULLS LAST, u.email_normalized ASC
+      ORDER BY role_key ASC, u.display_name ASC NULLS LAST, u.email_normalized ASC
       LIMIT $${limitIdx} OFFSET $${offsetIdx}`,
     params
   );
@@ -374,13 +365,24 @@ async function listChurchStaffRoles(client, filters) {
 async function countActiveChurchStaffRoles(client, churchId, organizationId) {
   const { rows } = await client.query(
     `SELECT
-        COUNT(*) FILTER (WHERE role_key = 'church_hq_admin')::int AS hq_admins,
-        COUNT(*) FILTER (WHERE role_key = 'branch_admin')::int AS branch_admins
-       FROM blessboard.user_roles
-      WHERE organization_id = $1
-        AND church_id = $2
-        AND status = 'active'
-        AND role_key IN ('church_hq_admin', 'branch_admin')`,
+        COUNT(*) FILTER (
+          WHERE r.role_key IN ('organisation_administrator', 'church_system_administrator')
+        )::int AS hq_admins,
+        COUNT(*) FILTER (WHERE r.role_key = 'branch_administrator')::int AS branch_admins
+       FROM blessboard.user_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE a.organization_id = $1
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND (a.expires_at IS NULL OR a.expires_at > now())
+        AND r.is_active = true
+        AND a.scope_type IN ('organisation', 'church', 'branch')
+        AND (a.church_id IS NULL OR a.church_id = $2)
+        AND r.role_key IN (
+          'organisation_administrator',
+          'church_system_administrator',
+          'branch_administrator'
+        )`,
     [organizationId, churchId]
   );
   return {
@@ -564,7 +566,7 @@ async function clearPasswordRecoveryFlags(client, userId) {
 }
 
 /**
- * Read-only platform_admin role inventory (no secrets).
+ * Read-only platform_administrator inventory (no secrets).
  * @param {{ query: Function }} client
  */
 async function listPlatformAdministrators(client) {
@@ -574,31 +576,38 @@ async function listPlatformAdministrators(client) {
         u.display_name,
         u.email_normalized,
         u.status AS account_status,
-        ur.role_key AS role_code,
-        ur.status AS role_status,
+        'platform_admin' AS role_code,
+        a.status AS role_status,
         u.created_at,
         u.last_login_at
        FROM blessboard.users u
-       INNER JOIN blessboard.user_roles ur ON ur.user_id = u.id
-      WHERE ur.role_key = 'platform_admin'
+       INNER JOIN blessboard.user_role_assignments a ON a.user_id = u.id
+       INNER JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE r.role_key = 'platform_administrator'
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND (a.expires_at IS NULL OR a.expires_at > now())
       ORDER BY u.created_at ASC`
   );
   return r.rows;
 }
 
 /**
- * Prefer an active platform_admin org scope for audit; else any active role org.
+ * Prefer an active platform_administrator org scope for audit; else any active assignment org.
  * @param {{ query: Function }} client
  * @param {string} userId
  */
 async function findAuditOrganizationIdForUser(client, userId) {
   const r = await client.query(
-    `SELECT organization_id
-       FROM blessboard.user_roles
-      WHERE user_id = $1
-        AND status = 'active'
-      ORDER BY CASE WHEN role_key = 'platform_admin' THEN 0 ELSE 1 END,
-               created_at ASC
+    `SELECT a.organization_id
+       FROM blessboard.user_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE a.user_id = $1
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND (a.expires_at IS NULL OR a.expires_at > now())
+      ORDER BY CASE WHEN r.role_key = 'platform_administrator' THEN 0 ELSE 1 END,
+               a.created_at ASC
       LIMIT 1`,
     [userId]
   );
@@ -612,10 +621,13 @@ async function findAuditOrganizationIdForUser(client, userId) {
 async function userHasActivePlatformAdminRole(client, userId) {
   const r = await client.query(
     `SELECT 1
-       FROM blessboard.user_roles
-      WHERE user_id = $1
-        AND role_key = 'platform_admin'
-        AND status = 'active'
+       FROM blessboard.user_role_assignments a
+       JOIN blessboard.roles r ON r.id = a.role_id
+      WHERE a.user_id = $1
+        AND r.role_key = 'platform_administrator'
+        AND a.status = 'active'
+        AND a.revoked_at IS NULL
+        AND (a.expires_at IS NULL OR a.expires_at > now())
       LIMIT 1`,
     [userId]
   );
@@ -638,8 +650,6 @@ module.exports = {
   findBranchByChurchAndKey,
   findRole,
   findRoleById,
-  insertRole,
-  updateRoleStatus,
   listChurchStaffRoles,
   countActiveChurchStaffRoles,
   touchLastLogin,

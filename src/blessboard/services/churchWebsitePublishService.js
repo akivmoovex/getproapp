@@ -17,7 +17,7 @@ const {
 const { recordAuditEventSafe } = require("../../platform/services/auditEventService");
 const { getPlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
 const { PUBLIC_PAGE_KEYS, PAGE_KEY_TITLES } = require("./publicContentConstants");
-const { normalizeOrganizationKey } = require("./organizationKey");
+const { normalizeOrganizationKey } = require("../../platform/organization/organizationKey");
 const {
   PRODUCT_CODE,
   buildPublicOrganizationWebsitePath,
@@ -105,7 +105,7 @@ async function withTransaction(db, fn) {
 
 function deploymentCode(env) {
   const id = getPlatformDeploymentCode(env || process.env);
-  return id && id.ok ? id.code : "blessboard-org-v5";
+  return id && id.ok ? id.code : "blessboard-org-staging";
 }
 
 /**

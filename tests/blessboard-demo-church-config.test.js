@@ -273,10 +273,13 @@ describe("configure demo church (foundation db)", () => {
     assert.equal(church.rows[0].church_key, TO_KEY);
 
     const roles = await pool.query(
-      `SELECT role_key, status FROM blessboard.user_roles WHERE organization_id = $1 AND user_id = $2`,
+      `SELECT r.role_key, a.status
+         FROM blessboard.user_role_assignments a
+         JOIN blessboard.roles r ON r.id = a.role_id
+        WHERE a.organization_id = $1 AND a.user_id = $2`,
       [organizationId, actorUserId]
     );
-    assert.equal(roles.rows[0].role_key, "church_hq_admin");
+    assert.equal(roles.rows[0].role_key, "organisation_administrator");
     assert.equal(roles.rows[0].status, "active");
 
     const branches = await pool.query(
