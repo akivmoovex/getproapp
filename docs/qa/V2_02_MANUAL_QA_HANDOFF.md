@@ -11,8 +11,17 @@
 |---|---|
 | BRANCH | `V10` |
 | PRE_FREEZE_HEAD | `c1a3911ae515121396ba5ec4b6e89f80ecc10121` |
-| QA_CANDIDATE_SHA | *(filled after commit)* |
+| QA_CANDIDATE_SHA | `c73dd9b27fef0ee7483d708e2d9e8b56532221e4` |
+| WORKTREE_AFTER_FREEZE | DIRTY — unrelated/pre-existing files intentionally excluded |
 | PRODUCTION_STATUS | **UNTOUCHED** — no deploy, no production DB/env writes |
+
+### Files committed (44)
+
+Application + V2.02 tests/docs for announcements, sermon date, and Universal Image Editor structured framing/placement. See freeze commit `c73dd9b2`.
+
+### Files excluded (left dirty)
+
+`package.json`, `.gitignore`, `.c8rc.json`, V2.01/V2.03 docs & references, `tests/v203-*`, `scripts/analyze-test-coverage.js`, and pre-existing test-only churn (`blessboard-public-pages`, `branch-admin-shell`, `v7-blessboard-publish-engine-bridge`, `v2-01-bb-inline-editor-parity`, `v2-01-field-history-restore`).
 
 ---
 
