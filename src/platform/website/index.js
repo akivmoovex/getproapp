@@ -21,6 +21,8 @@ const productWebsiteDefaults = require("./productWebsiteDefaults");
 const moderationEventService = require("./moderationEventService");
 const lifecycleService = require("./lifecycleService");
 const publicationService = require("./publicationService");
+const publicationOrchestrator = require("./publicationOrchestrator");
+const publicationTransaction = require("./publicationTransaction");
 const recentChangesService = require("./recentChangesService");
 const websiteGovernanceService = require("./websiteGovernanceService");
 const editSessionService = require("./editSessionService");
@@ -29,6 +31,7 @@ const websiteManagementPresentation = require("./websiteManagementPresentation")
 const inlineEditorContract = require("./inlineEditorContract");
 const editableFieldSchema = require("./editableFieldSchema");
 const websiteChangeManagerService = require("./websiteChangeManagerService");
+const cmsOrderedListDraft = require("./cmsOrderedListDraft");
 
 module.exports = {
   ...contentTypes,
@@ -52,6 +55,8 @@ module.exports = {
   moderationEventService,
   lifecycleService,
   publicationService,
+  publicationOrchestrator,
+  publicationTransaction,
   recentChangesService,
   websiteGovernanceService,
   editSessionService,
@@ -61,4 +66,5 @@ module.exports = {
   inlineEditorContract,
   editableFieldSchema,
   websiteChangeManagerService,
+  cmsOrderedListDraft,
 };

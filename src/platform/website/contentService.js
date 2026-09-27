@@ -213,6 +213,41 @@ async function saveWebsiteDraft(db, input) {
   return { ok: true, code: RESULT.OK, content: mapContent(rows.rows[0]) };
 }
 
+/**
+ * Persist multiple draft keys sequentially through saveWebsiteDraft.
+ * Stops on first failure. Product adapters supply keys/values; this helper
+ * owns only the batch loop + shared authorization/validation path.
+ *
+ * @param {object} db
+ * @param {{
+ *   organizationId: string,
+ *   instanceId: string,
+ *   entries: Array<{ contentKey: string, value: unknown, visibility?: string }>,
+ *   actorIdentityId?: string|null,
+ *   grantedPermissions?: string[],
+ *   expectedProductCode?: string,
+ *   env?: object,
+ * }} input
+ */
+async function saveWebsiteDraftEntries(db, input) {
+  const entries = Array.isArray(input && input.entries) ? input.entries : [];
+  const results = [];
+  for (let i = 0; i < entries.length; i += 1) {
+    const entry = entries[i];
+    if (!entry || entry.contentKey == null) continue;
+    const saved = await saveWebsiteDraft(db, {
+      ...input,
+      contentKey: entry.contentKey,
+      value: entry.value,
+      visibility: entry.visibility,
+      expectedUpdatedAt: entry.expectedUpdatedAt,
+    });
+    if (!saved.ok) return saved;
+    results.push(saved);
+  }
+  return { ok: true, results };
+}
+
 async function discardWebsiteDraft(db, input) {
   const organizationId = String((input && input.organizationId) || "");
   const instance = await instanceRepo.findWebsiteInstanceById(db, input.instanceId, organizationId);
@@ -525,6 +560,7 @@ module.exports = {
   listWebsiteContent,
   getWebsiteContentRow,
   saveWebsiteDraft,
+  saveWebsiteDraftEntries,
   discardWebsiteDraft,
   discardAllWebsiteDrafts,
   seedWebsiteContent,

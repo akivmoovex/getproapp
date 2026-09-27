@@ -9,6 +9,7 @@
 const instanceRepo = require("../website/instanceRepository");
 const contentService = require("../website/contentService");
 const publicationService = require("../website/publicationService");
+const { runSoftSavepoint } = require("../website/publicationTransaction");
 const { SNAPSHOT_KEY } = require("./productSchemaRegistry");
 const {
   ensureBlessBoardWebsiteInstance,
@@ -219,12 +220,14 @@ async function publishFromLegacy(db, input) {
           const {
             projectPublishedSeoToBranchScope,
           } = require("../../blessboard/website/blessboardEngineSeo");
-          await projectPublishedSeoToBranchScope(db, {
-            organizationId: resolved.instance.organizationId,
-            churchId: String(input.churchId),
-            branchId: String(primaryBranchId),
-            instance: resolved.instance,
-            actorUserId: input.actorUserId || input.actorIdentityId || null,
+          await runSoftSavepoint(db, "bb_engine_seo_project", async () => {
+            await projectPublishedSeoToBranchScope(db, {
+              organizationId: resolved.instance.organizationId,
+              churchId: String(input.churchId),
+              branchId: String(primaryBranchId),
+              instance: resolved.instance,
+              actorUserId: input.actorUserId || input.actorIdentityId || null,
+            });
           });
         }
       } catch {

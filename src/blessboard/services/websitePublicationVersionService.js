@@ -2090,16 +2090,86 @@ async function restoreAndPublishCurrentVersion(db, opts) {
     organizationId,
     confirmPublish: true,
     forcePublishVersion: true,
+    deferServiceTimes: true,
     actorUserId: opts.actorUserId || null,
     env: opts.env,
   });
+
+  // Contract: mint a NEW current published version. If the publish TX returned ok
+  // but left the draft restoration pending (engine projection aborted the TX),
+  // mint the version explicitly without re-entering the engine bridge.
+  let publication = published || null;
+  let current = await versionRepo.getCurrentPublishedVersion(db, organizationId);
+  const pendingAfter = await versionRepo.getLatestDraftRestoration(
+    db,
+    organizationId,
+    historical.branchId || null
+  );
+  const needsExplicitMint =
+    pendingAfter &&
+    pendingAfter.sourceType === "content_restoration" &&
+    String(pendingAfter.sourceVersionId) === String(versionId);
+  if (needsExplicitMint) {
+    try {
+      publication = await withTransaction(db, async (client) => {
+        const version = await recordPublishVersionInTransaction(client, {
+          organizationId,
+          churchId,
+          branchId: historical.branchId || null,
+          actorUserId: opts.actorUserId || null,
+          publishedAt: new Date().toISOString(),
+          sourceType: "content_restoration",
+        });
+        return {
+          ok: true,
+          status: STATUS.OK,
+          publicationVersionId: version && version.id,
+          publicationVersionNumber: version && version.versionNumber,
+          alreadyPublished: true,
+          restoredExplicitMint: true,
+        };
+      });
+      current = await versionRepo.getCurrentPublishedVersion(
+        db,
+        organizationId,
+        historical.branchId || null
+      );
+    } catch (mintErr) {
+      return {
+        ok: false,
+        status: STATUS.LOOKUP_ERROR,
+        reason: "restore_version_mint_failed",
+        restoredFrom: historical,
+        publication: published || null,
+        draft: restored,
+        mintError: mintErr && mintErr.message ? String(mintErr.message) : null,
+      };
+    }
+  }
+
   return {
-    ok: Boolean(published && published.ok),
-    status: published && published.status ? published.status : STATUS.LOOKUP_ERROR,
-    reason: published && published.reason ? published.reason : null,
+    ok: Boolean(
+      publication &&
+        publication.ok &&
+        current &&
+        current.id &&
+        String(current.id) !== String(versionId)
+    ),
+    status:
+      publication && publication.status
+        ? publication.status
+        : STATUS.LOOKUP_ERROR,
+    reason:
+      publication &&
+      publication.ok &&
+      current &&
+      String(current.id) !== String(versionId)
+        ? publication.reason || null
+        : (publication && publication.reason) || "restore_did_not_mint_new_version",
     restoredFrom: historical,
-    publication: published || null,
+    publication: publication || null,
     draft: restored,
+    currentVersionId: current && current.id,
   };
 }
 

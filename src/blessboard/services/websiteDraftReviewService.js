@@ -152,8 +152,15 @@ function resolvePublishCapability(opts) {
     };
   }
 
-  // actorRole used only for audit labels if provided
-  if (actorRole === "organisation_administrator" || actorRole === "church_system_administrator" || actorRole === "platform_administrator" || !actorRole) {
+  // actorRole selects HQ vs branch governance path only (authz already gated by
+  // website.publish). Accept legacy chrome/test labels alongside catalogue keys.
+  const isHqPublisher =
+    !actorRole ||
+    actorRole === "organisation_administrator" ||
+    actorRole === "church_system_administrator" ||
+    actorRole === "platform_administrator" ||
+    actorRole === "church_hq_admin";
+  if (isHqPublisher) {
     const hqDirect =
       !settings ||
       settings.hqDirectPublishEnabled !== false;
@@ -173,7 +180,11 @@ function resolvePublishCapability(opts) {
     };
   }
 
-  if (actorRole === "branch_administrator" || actorRole === "branch_pastor") {
+  if (
+    actorRole === "branch_administrator" ||
+    actorRole === "branch_pastor" ||
+    actorRole === "branch_admin"
+  ) {
     const resolved = approvalSettingsSvc.resolveBranchEditMode(settings || {});
     if (resolved.mode === "draft_only") {
       return {

@@ -8,6 +8,7 @@
 const contentService = require("../../platform/website/contentService");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const mediaService = require("../../platform/website/mediaService");
+const { reorderByIds, removeById } = require("../../platform/website/cmsOrderedListDraft");
 const { PERMISSIONS, hasWebsitePermission } = require("../../platform/website/permissions");
 const {
   CMS_KEYS,
@@ -172,15 +173,17 @@ async function saveSiteSettings(db, input, entries) {
   if (!edit.ok) return edit;
   const loaded = await loadInstance(db, input);
   if (!loaded.ok) return loaded;
-  const saveInput = { ...input, instanceId: loaded.instance.id };
   const list = Array.isArray(entries) ? entries : [];
-  for (let i = 0; i < list.length; i += 1) {
-    const entry = list[i];
-    if (!entry || !entry.key) continue;
-    const saved = await saveKey(db, saveInput, entry.key, entry.value);
-    if (!saved.ok) return saved;
-  }
-  return { ok: true };
+  return contentService.saveWebsiteDraftEntries(db, {
+    organizationId: loaded.organizationId,
+    instanceId: loaded.instance.id,
+    expectedProductCode: "activeclinic",
+    actorIdentityId: input.actorIdentityId || null,
+    grantedPermissions: granted(input),
+    entries: list
+      .filter((entry) => entry && entry.key)
+      .map((entry) => ({ contentKey: entry.key, value: entry.value })),
+  });
 }
 
 async function ensureCmsSeeded(db, input) {
@@ -382,7 +385,7 @@ async function deletePage(db, input) {
   if (current.kind !== PAGE_KIND.CUSTOM || current.locked === true) {
     return { ok: false, code: RESULT.LOCKED };
   }
-  const pages = seeded.pages.filter((page) => page.id !== current.id);
+  const pages = removeById(seeded.pages, current.id);
   const blocks = seeded.blocks.filter((block) => block.page_id !== current.id);
   const savedPages = await saveKey(db, { ...input, instanceId: seeded.instance.id }, CMS_KEYS.PAGES, pages);
   if (!savedPages.ok) return savedPages;
@@ -398,18 +401,7 @@ async function reorderPages(db, input) {
   if (!seeded.ok) return seeded;
   const ids = Array.isArray(input.pageIds) ? input.pageIds.map(String) : [];
   if (!ids.length) return { ok: false, code: RESULT.INVALID_INPUT };
-  const byId = new Map(seeded.pages.map((page) => [page.id, page]));
-  const ordered = [];
-  ids.forEach((id, index) => {
-    const page = byId.get(id);
-    if (page) {
-      ordered.push({ ...page, sort_order: String(index) });
-      byId.delete(id);
-    }
-  });
-  byId.forEach((page) => {
-    ordered.push({ ...page, sort_order: String(ordered.length) });
-  });
+  const ordered = reorderByIds(seeded.pages, ids);
   const saved = await saveKey(db, { ...input, instanceId: seeded.instance.id }, CMS_KEYS.PAGES, ordered);
   if (!saved.ok) return saved;
   return { ok: true, pages: ordered };
@@ -494,7 +486,7 @@ async function deleteSection(db, input) {
   const current = seeded.sections.find((section) => section.id === input.sectionId);
   if (!current) return { ok: false, code: RESULT.NOT_FOUND };
   if (current.locked === true) return { ok: false, code: RESULT.LOCKED };
-  const sections = seeded.sections.filter((section) => section.id !== current.id);
+  const sections = removeById(seeded.sections, current.id);
   const saved = await saveKey(db, { ...input, instanceId: seeded.instance.id }, CMS_KEYS.SECTIONS, sections);
   if (!saved.ok) return saved;
   return { ok: true, sections };
@@ -509,18 +501,7 @@ async function reorderSections(db, input) {
   const ids = Array.isArray(input.sectionIds) ? input.sectionIds.map(String) : [];
   const others = seeded.sections.filter((section) => section.page_id !== pageId);
   const pageSections = seeded.sections.filter((section) => section.page_id === pageId);
-  const byId = new Map(pageSections.map((section) => [section.id, section]));
-  const ordered = [];
-  ids.forEach((id, index) => {
-    const section = byId.get(id);
-    if (section) {
-      ordered.push({ ...section, sort_order: String(index) });
-      byId.delete(id);
-    }
-  });
-  byId.forEach((section) => {
-    ordered.push({ ...section, sort_order: String(ordered.length) });
-  });
+  const ordered = reorderByIds(pageSections, ids);
   const sections = others.concat(ordered);
   const saved = await saveKey(db, { ...input, instanceId: seeded.instance.id }, CMS_KEYS.SECTIONS, sections);
   if (!saved.ok) return saved;
@@ -628,7 +609,7 @@ async function deleteBlock(db, input) {
   if (!seeded.ok) return seeded;
   const current = seeded.blocks.find((block) => block.id === input.blockId);
   if (!current) return { ok: false, code: RESULT.NOT_FOUND };
-  const blocks = seeded.blocks.filter((block) => block.id !== current.id);
+  const blocks = removeById(seeded.blocks, current.id);
   const saved = await saveKey(db, { ...input, instanceId: seeded.instance.id }, CMS_KEYS.BLOCKS, blocks);
   if (!saved.ok) return saved;
   return { ok: true, blocks };
@@ -643,18 +624,7 @@ async function reorderBlocks(db, input) {
   const ids = Array.isArray(input.blockIds) ? input.blockIds.map(String) : [];
   const others = seeded.blocks.filter((block) => block.page_id !== pageId);
   const pageBlocks = seeded.blocks.filter((block) => block.page_id === pageId);
-  const byId = new Map(pageBlocks.map((block) => [block.id, block]));
-  const ordered = [];
-  ids.forEach((id, index) => {
-    const block = byId.get(id);
-    if (block) {
-      ordered.push({ ...block, sort_order: String(index) });
-      byId.delete(id);
-    }
-  });
-  byId.forEach((block) => {
-    ordered.push({ ...block, sort_order: String(ordered.length) });
-  });
+  const ordered = reorderByIds(pageBlocks, ids);
   const blocks = others.concat(ordered);
   const saved = await saveKey(db, { ...input, instanceId: seeded.instance.id }, CMS_KEYS.BLOCKS, blocks);
   if (!saved.ok) return saved;

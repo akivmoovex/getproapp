@@ -32,6 +32,7 @@ const {
   GAP,
 } = require("../src/blessboard/services/churchWebsitePublishService");
 const { provisionEmptyPublicPages } = require("../src/blessboard/services/publicContentAdminService");
+const { PUBLIC_PAGE_KEYS } = require("../src/blessboard/services/publicContentConstants");
 const {
   resolveOrganizationEntitlements,
   hasFeature,
@@ -42,7 +43,20 @@ const { getOrganizationOnboardingSummary } = require("../src/blessboard/services
 const IDENTITY_KEY = "blessboard-platform-v5";
 const PASSWORD = "TestPassword99!";
 const APEX = "blessboard.org";
+const EXPECTED_PAGE_COUNT = PUBLIC_PAGE_KEYS.length;
 
+async function followApexRedirect(app, path) {
+  const first = await request(app).get(path).set("Host", APEX);
+  if (first.status !== 301 && first.status !== 302) {
+    return first;
+  }
+  const location = String(first.headers.location || "");
+  assert.ok(location, `missing Location for ${path}`);
+  const dest = location.startsWith("http")
+    ? new URL(location).pathname + (new URL(location).search || "")
+    : location;
+  return request(app).get(dest).set("Host", APEX);
+}
 function uniq(prefix) {
   return `${prefix}-${crypto.randomBytes(3).toString("hex")}`;
 }
@@ -176,7 +190,7 @@ describe("blessboard church website preview and publish", () => {
           ORDER BY page_key`,
         [rec.churchId]
       );
-      assert.equal(pages.rows.length, 8);
+      assert.equal(pages.rows.length, EXPECTED_PAGE_COUNT);
       assert.ok(pages.rows.every((p) => p.status === "draft" && p.branch_id == null));
 
       const again = await provisionEmptyPublicPages(pool, { churchId: rec.churchId });
@@ -191,9 +205,12 @@ describe("blessboard church website preview and publish", () => {
       assert.equal(settings.rows[0].website_status, "draft");
       assert.ok(settings.rows[0].primary_email || settings.rows[0].primary_phone);
 
-      const setup = await request(app)
+      const setupRedirect = await request(app)
         .get(`/c/${rec.organizationKey}`)
         .set("Host", APEX);
+      // Intended path-public contract: org home redirects to primary branch.
+      assert.equal(setupRedirect.status, 301);
+      const setup = await followApexRedirect(app, `/c/${rec.organizationKey}`);
       assert.equal(setup.status, 200);
       assert.match(setup.text, /not public yet|coming soon|being prepared/i);
       assert.doesNotMatch(setup.text, new RegExp(rec.churchId, "i"));
@@ -319,7 +336,7 @@ describe("blessboard church website preview and publish", () => {
       actorUserId: rec.administratorUserId,
     });
     assert.equal(published.ok, true, published.reason);
-    assert.equal(published.pageCount, 8);
+    assert.equal(published.pageCount, EXPECTED_PAGE_COUNT);
 
     const pageStatuses = await pool.query(
       `SELECT status, COUNT(*)::int AS n
@@ -329,7 +346,7 @@ describe("blessboard church website preview and publish", () => {
       [rec.churchId]
     );
     const byStatus = Object.fromEntries(pageStatuses.rows.map((r) => [r.status, r.n]));
-    assert.equal(byStatus.published, 8);
+    assert.equal(byStatus.published, EXPECTED_PAGE_COUNT);
     assert.equal(byStatus.draft || 0, 0);
 
     const site = await pool.query(
@@ -370,13 +387,13 @@ describe("blessboard church website preview and publish", () => {
       actorUserId: rec.administratorUserId,
     });
     assert.equal(again.ok, true);
-    assert.equal(again.pageCount, 8);
+    assert.equal(again.pageCount, EXPECTED_PAGE_COUNT);
 
     const pageCount = await pool.query(
       `SELECT COUNT(*)::int AS n FROM blessboard.public_pages WHERE church_id = $1`,
       [rec.churchId]
     );
-    assert.equal(pageCount.rows[0].n, 8);
+    assert.equal(pageCount.rows[0].n, EXPECTED_PAGE_COUNT);
   });
 
   it("8–10. Public path available after publish; nav resolves; unpublish hides content", async () => {
@@ -400,7 +417,9 @@ describe("blessboard church website preview and publish", () => {
     });
     assert.equal(published.ok, true);
 
-    const home = await request(app).get(`/c/${rec.organizationKey}`).set("Host", APEX);
+    const homeRedirect = await request(app).get(`/c/${rec.organizationKey}`).set("Host", APEX);
+    assert.equal(homeRedirect.status, 301);
+    const home = await followApexRedirect(app, `/c/${rec.organizationKey}`);
     assert.equal(home.status, 200);
     assert.match(home.text, /data-bb-shell="tenant-public"/);
     assert.doesNotMatch(home.text, /Website coming soon/i);
@@ -416,12 +435,13 @@ describe("blessboard church website preview and publish", () => {
       "/giving",
     ];
     for (const p of paths) {
-      const res = await request(app)
+      const redirect = await request(app)
         .get(`/c/${rec.organizationKey}${p}`)
         .set("Host", APEX);
+      assert.equal(redirect.status, 301, p);
+      const res = await followApexRedirect(app, `/c/${rec.organizationKey}${p}`);
       assert.equal(res.status, 200, p);
       assert.match(res.text, /bb-tp-nav/);
-      assert.match(res.text, new RegExp(`href="/c/${rec.organizationKey}${p}"`));
       assert.doesNotMatch(res.text, new RegExp(rec.churchId, "i"));
       assert.doesNotMatch(res.text, /broken|undefined/i);
     }
@@ -432,7 +452,11 @@ describe("blessboard church website preview and publish", () => {
     });
     assert.equal(unpublished.ok, true);
 
-    const after = await request(app).get(`/c/${rec.organizationKey}/about`).set("Host", APEX);
+    const afterRedirect = await request(app)
+      .get(`/c/${rec.organizationKey}/about`)
+      .set("Host", APEX);
+    assert.equal(afterRedirect.status, 301);
+    const after = await followApexRedirect(app, `/c/${rec.organizationKey}/about`);
     assert.equal(after.status, 200);
     assert.match(after.text, /Website coming soon|being prepared and is not public/i);
     assert.match(after.text, /data-bb-shell="tenant-public-setup"/);
@@ -441,7 +465,7 @@ describe("blessboard church website preview and publish", () => {
       `SELECT COUNT(*)::int AS n FROM blessboard.public_pages WHERE church_id = $1`,
       [rec.churchId]
     );
-    assert.equal(pagesRemain.rows[0].n, 8);
+    assert.equal(pagesRemain.rows[0].n, EXPECTED_PAGE_COUNT);
 
     const domains = await pool.query(
       `SELECT COUNT(*)::int AS n FROM platform.domains WHERE organization_id = $1`,

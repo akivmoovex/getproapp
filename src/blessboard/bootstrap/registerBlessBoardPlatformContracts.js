@@ -16,7 +16,9 @@ const {
   registerPlatformAdminSettingsContrib,
   registerBlessBoardOperationalMediaStorageFactory,
 } = require("../../platform/contracts/productRuntimeRegistry");
-const { registerProductLifecycle } = require("../../platform/website-engine/lifecycleOrchestrator");
+const {
+  registerPublicationGovernance,
+} = require("../../platform/website/publicationOrchestrator");
 const { PRODUCT } = require("../../platform/registration/constants");
 
 const registrationAdapter = require("../registration/blessboardChurchRegistrationAdapter");
@@ -31,13 +33,7 @@ const { normalizeEmail } = require("../services/createBlessBoardUser");
 const {
   normalizeBlessBoardPhone,
 } = require("../services/normalizeBlessBoardPhone");
-const {
-  publishChurchWebsite,
-  unpublishChurchWebsite,
-} = require("../services/churchWebsitePublishService");
-const {
-  createRestoredDraft,
-} = require("../services/websitePublicationVersionService");
+const blessboardPublicationGovernanceAdapter = require("../website/blessboardPublicationGovernanceAdapter");
 const { INVITE_TTL_MS } = require("../services/inviteBlessBoardStaff");
 const { resolveOtpProvider } = require("../services/otp/otpProviders");
 const { DEFAULT_COUNTRY: PHONE_DEFAULT_COUNTRY } = require("../services/normalizeBlessBoardPhone");
@@ -82,11 +78,12 @@ function registerBlessBoardPlatformContracts() {
     normalizePhone: normalizeBlessBoardPhone,
   });
 
-  registerProductLifecycle(PRODUCT.BLESSBOARD, {
-    publish: (db, request) => publishChurchWebsite(db, request),
-    unpublish: (db, request) => unpublishChurchWebsite(db, request),
-    restore: (db, request) => createRestoredDraft(db, request),
-  });
+  // PC10: BB governance adapter owns HQ/branch/multi-site rules; platform
+  // publicationOrchestrator owns authz gate + dispatch.
+  registerPublicationGovernance(
+    PRODUCT.BLESSBOARD,
+    blessboardPublicationGovernanceAdapter.lifecycleHandlers()
+  );
 
   registerPlatformAdminSettingsContrib({
     inviteTtlMs: INVITE_TTL_MS,

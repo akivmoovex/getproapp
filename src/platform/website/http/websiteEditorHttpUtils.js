@@ -92,6 +92,17 @@ function createWebsiteMediaUpload() {
   });
 }
 
+/**
+ * True only when the client explicitly prefers HTML (CMS library browser
+ * navigation). JSON remains the default when Accept is absent or non-HTML.
+ * @param {import('express').Request} req
+ * @returns {boolean}
+ */
+function wantsHtml(req) {
+  const accept = String((req && req.headers && req.headers.accept) || "");
+  return accept.toLowerCase().includes("text/html");
+}
+
 module.exports = {
   CSRF_FIELD,
   json,
@@ -102,4 +113,5 @@ module.exports = {
   statusForDraftSaveFailure,
   statusForFieldRestoreFailure,
   createWebsiteMediaUpload,
+  wantsHtml,
 };

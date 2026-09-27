@@ -15,9 +15,10 @@ const {
   registerIdentityNormalizers,
   registerOutboundEmailStatusResolver,
 } = require("../../platform/contracts/productRuntimeRegistry");
-const { registerProductLifecycle } = require("../../platform/website-engine/lifecycleOrchestrator");
+const {
+  registerPublicationGovernance,
+} = require("../../platform/website/publicationOrchestrator");
 const { PRODUCT } = require("../../platform/registration/constants");
-const publicationService = require("../../platform/website/publicationService");
 
 const registrationAdapter = require("../registration/activeClinicRegistrationAdapter");
 const onboardingAdapter = require("../onboarding/activeClinicOnboardingAdapter");
@@ -34,6 +35,7 @@ const {
 const {
   resolveOutboundEmailStatus,
 } = require("../services/activeClinicEmailDelivery");
+const activeClinicPublicationGovernanceAdapter = require("../website/activeClinicPublicationGovernanceAdapter");
 
 function registerActiveClinicPlatformContracts() {
   registerRegistrationAdapter(PRODUCT.ACTIVECLINIC, registrationAdapter);
@@ -85,10 +87,13 @@ function registerActiveClinicPlatformContracts() {
     normalizePhone: normalizeActiveClinicPhone,
   });
 
-  registerProductLifecycle(PRODUCT.ACTIVECLINIC, {
-    publish: (db, request) => publicationService.publishWebsiteDraft(db, request),
-    unpublish: (db, request) => publicationService.unpublishWebsite(db, request),
-  });
+  // PC10: AC governance adapter owns clinic submit/unpublish/publish policy;
+  // platform publicationOrchestrator owns authz gate + dispatch. Submit stays
+  // on the adapter (AC workflow) — not forced onto BB.
+  registerPublicationGovernance(
+    PRODUCT.ACTIVECLINIC,
+    activeClinicPublicationGovernanceAdapter.lifecycleHandlers()
+  );
 
   registerOutboundEmailStatusResolver(resolveOutboundEmailStatus);
 

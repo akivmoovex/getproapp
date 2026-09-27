@@ -13,6 +13,11 @@ const {
   renderWebsiteLibrary,
   LIBRARY_STYLESHEET,
 } = require("../../platform/website/renderWebsiteLibrary");
+const {
+  folderNoticeMessage,
+  folderRedirect: redirectToMediaFolder,
+} = require("../website/blessboardClassicCmsAdapter");
+const { wantsHtml } = require("../../platform/website/http/websiteEditorHttpUtils");
 const express = require("express");
 
 const {
@@ -169,35 +174,6 @@ function renderContentAdminView(relativePath, data) {
   const filename = path.join(VIEWS_ROOT, relativePath);
   const source = fs.readFileSync(filename, "utf8");
   return ejs.render(source, data, { filename });
-}
-
-/** Map a shared media-folder result code to admin-facing copy. */
-function folderNoticeMessage(code) {
-  const key = String(code || "").trim();
-  if (!key) return null;
-  const messages = {
-    folder_created: "Folder created.",
-    folder_renamed: "Folder renamed.",
-    folder_deleted: "Folder deleted. Its files moved to Unfiled.",
-    media_moved: "File moved.",
-    [mediaFoldersService.RESULT.NAME_TAKEN]: "A folder with that name already exists.",
-    [mediaFoldersService.RESULT.INVALID_INPUT]: "Enter a folder name of up to 80 characters.",
-    [mediaFoldersService.RESULT.FOLDER_NOT_FOUND]: "That folder no longer exists.",
-    [mediaFoldersService.RESULT.MEDIA_NOT_FOUND]: "That file no longer exists.",
-    [mediaFoldersService.RESULT.LIMIT_REACHED]: "You have reached the folder limit.",
-    [mediaFoldersService.RESULT.TENANT_MISMATCH]: "That folder is not available.",
-  };
-  return messages[key] || null;
-}
-
-/**
- * True only when the client explicitly prefers HTML, so JSON stays the default
- * for the media picker and any caller that sends no Accept header.
- * @param {import('express').Request} req
- */
-function wantsHtml(req) {
-  const accept = String((req && req.headers && req.headers.accept) || "");
-  return accept.toLowerCase().includes("text/html");
 }
 
 /**
@@ -1047,11 +1023,11 @@ function createContentAdminRouter(deps) {
     // Folder routes precede "/media/:assetId/..." so "folders" and "move" are
     // never captured as an asset id.
     function folderRedirect(res, base, code, folder) {
-      const params = [];
-      if (folder) params.push(`folder=${encodeURIComponent(folder)}`);
-      if (code) params.push(`folderNotice=${encodeURIComponent(code)}`);
-      const query = params.length ? `?${params.join("&")}` : "";
-      return res.redirect(303, `${base}/media${query}`);
+      return redirectToMediaFolder(res, {
+        mediaPath: `${base}/media`,
+        code,
+        folderId: folder,
+      });
     }
 
     function folderCsrfOk(req, res) {

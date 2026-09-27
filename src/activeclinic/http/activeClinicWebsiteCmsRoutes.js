@@ -27,6 +27,10 @@ const {
   renderWebsiteLibrary,
   LIBRARY_STYLESHEET,
 } = require("../../platform/website/renderWebsiteLibrary");
+const {
+  folderNoticeMessage,
+  folderRedirect: redirectToMediaFolder,
+} = require("../website/activeClinicCmsAdapter");
 const instanceRepo = require("../../platform/website/instanceRepository");
 const {
   PRODUCT_CODE,
@@ -724,25 +728,6 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
     }
   );
 
-  /** Map a folder result code to visitor-facing copy. */
-  function folderNoticeMessage(code) {
-    const key = String(code || "").trim();
-    if (!key) return null;
-    const messages = {
-      folder_created: "Folder created.",
-      folder_renamed: "Folder renamed.",
-      folder_deleted: "Folder deleted. Its files moved to Unfiled.",
-      media_moved: "File moved.",
-      [mediaFoldersService.RESULT.NAME_TAKEN]: "A folder with that name already exists.",
-      [mediaFoldersService.RESULT.INVALID_INPUT]: "Enter a folder name of up to 80 characters.",
-      [mediaFoldersService.RESULT.FOLDER_NOT_FOUND]: "That folder no longer exists.",
-      [mediaFoldersService.RESULT.MEDIA_NOT_FOUND]: "That file no longer exists.",
-      [mediaFoldersService.RESULT.LIMIT_REACHED]: "You have reached the folder limit.",
-      [mediaFoldersService.RESULT.TENANT_MISMATCH]: "That folder is not available.",
-    };
-    return messages[key] || null;
-  }
-
   async function renderMediaPage(req, res, selectedId) {
     const input = cmsInput(req);
     const seeded = await cmsService.ensureCmsSeeded(getPool(), input);
@@ -852,11 +837,11 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
   // Folder routes are registered before "/media/:mediaId" so "folders" and
   // "move" are never captured as a media id.
   function folderRedirect(res, code, folder) {
-    const params = [];
-    if (folder) params.push(`folder=${encodeURIComponent(folder)}`);
-    if (code) params.push(`folderNotice=${encodeURIComponent(code)}`);
-    const query = params.length ? `?${params.join("&")}` : "";
-    return res.redirect(303, `/app/settings/website/media${query}`);
+    return redirectToMediaFolder(res, {
+      mediaPath: "/app/settings/website/media",
+      code,
+      folderId: folder,
+    });
   }
 
   app.post(

@@ -27,6 +27,9 @@ const {
   logBlessBoardEngineBridgeWarning,
 } = require("../../platform/website-engine/blessboardEngineBridgeLog");
 const {
+  runSoftSavepoint,
+} = require("../../platform/website/publicationTransaction");
+const {
   buildPublishFailureResult,
   PUBLIC_CODES,
 } = require("./websitePublishFailureDiagnostics");
@@ -877,19 +880,36 @@ async function publishChurchWebsite(db, input) {
             cmsPublicationVersionId: publicationVersion && publicationVersion.id,
           });
         }
-        try {
-          const {
-            projectPublishedFieldsToPages,
-          } = require("../website/blessboardEngineContentService");
-          await projectPublishedFieldsToPages(client, {
-            organizationId: inner.organizationId,
-            churchId,
-            branchId,
-            slug: inner.organizationKey,
-          });
-        } catch {
-          // Projection is compatibility for public_pages; engine publish already committed in this TX.
-        }
+        // Compatibility projection must not abort the outer publish TX. Soft
+        // savepoint is the platform publication boundary (PC10 / PC10C).
+        await runSoftSavepoint(
+          client,
+          "bb_publish_engine_project",
+          async () => {
+            const {
+              projectPublishedFieldsToPages,
+            } = require("../website/blessboardEngineContentService");
+            await projectPublishedFieldsToPages(client, {
+              organizationId: inner.organizationId,
+              churchId,
+              branchId,
+              slug: inner.organizationKey,
+            });
+          },
+          {
+            onError: (projectErr) => {
+              logBlessBoardEngineBridgeWarning({
+                operation: "projectPublishedFieldsToPages",
+                organizationId: inner.organizationId,
+                churchId,
+                branchId,
+                engineCode: projectErr && projectErr.code,
+                errorClass:
+                  (projectErr && (projectErr.code || projectErr.name)) || "Error",
+              });
+            },
+          }
+        );
       } catch (versionErr) {
         // Version history is required for Phase3 — fail the publish TX.
         throw versionErr;
@@ -1206,34 +1226,34 @@ async function publishInitialFoundationWebsite(client, input) {
       seedEngine = true;
     }
     if (seedEngine) {
-      await client.query("SAVEPOINT unpublished_engine_seed");
-      try {
-        const {
-          seedUnpublishedEngineContent,
-        } = require("../website/blessboardEngineContentService");
-        await seedUnpublishedEngineContent(client, {
-          organizationId,
-          churchId,
-          slug: keyNorm.key,
-          actorIdentityId: (input && input.actorUserId) || null,
-        });
-        await client.query("RELEASE SAVEPOINT unpublished_engine_seed");
-      } catch (seedErr) {
-        try {
-          await client.query("ROLLBACK TO SAVEPOINT unpublished_engine_seed");
-        } catch {
-          /* Engine seed must not abort registration. */
+      await runSoftSavepoint(
+        client,
+        "unpublished_engine_seed",
+        async () => {
+          const {
+            seedUnpublishedEngineContent,
+          } = require("../website/blessboardEngineContentService");
+          await seedUnpublishedEngineContent(client, {
+            organizationId,
+            churchId,
+            slug: keyNorm.key,
+            actorIdentityId: (input && input.actorUserId) || null,
+          });
+        },
+        {
+          onError: (seedErr) => {
+            logBlessBoardEngineBridgeWarning({
+              operation: "seedUnpublishedEngineContent",
+              organizationId,
+              churchId,
+              actorIdentityId: input && input.actorUserId,
+              actorUserId: input && input.actorUserId,
+              engineCode: seedErr && seedErr.code,
+              errorClass: (seedErr && (seedErr.code || seedErr.name)) || "Error",
+            });
+          },
         }
-        logBlessBoardEngineBridgeWarning({
-          operation: "seedUnpublishedEngineContent",
-          organizationId,
-          churchId,
-          actorIdentityId: input && input.actorUserId,
-          actorUserId: input && input.actorUserId,
-          engineCode: seedErr && seedErr.code,
-          errorClass: (seedErr && (seedErr.code || seedErr.name)) || "Error",
-        });
-      }
+      );
     }
     return {
       ok: true,

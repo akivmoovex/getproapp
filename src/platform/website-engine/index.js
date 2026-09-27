@@ -13,6 +13,7 @@ const hubActions = require("./hubActions");
 const editorShell = require("./editorShell");
 const blessboardBridge = require("./blessboardBridge");
 const lifecycleOrchestrator = require("./lifecycleOrchestrator");
+const publicationOrchestrator = require("../website/publicationOrchestrator");
 
 module.exports = {
   ...website,
@@ -22,10 +23,11 @@ module.exports = {
   editorShell,
   blessboardBridge,
   lifecycleOrchestrator,
+  publicationOrchestrator,
   // Canonical lifecycle entry points. Named distinctly so they never shadow the
   // lower-level src/platform/website/ primitives re-exported above.
-  publishProductWebsite: lifecycleOrchestrator.publishWebsite,
-  unpublishProductWebsite: lifecycleOrchestrator.unpublishWebsite,
-  restoreProductWebsiteVersion: lifecycleOrchestrator.restoreWebsiteVersion,
+  publishProductWebsite: publicationOrchestrator.publish,
+  unpublishProductWebsite: publicationOrchestrator.unpublish,
+  restoreProductWebsiteVersion: publicationOrchestrator.restore,
   SNAPSHOT_KEY: productSchemaRegistry.SNAPSHOT_KEY,
 };

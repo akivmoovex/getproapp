@@ -16,12 +16,14 @@
  * - Engine instance resolve (branchId null for HQ)
  * - Dual-write overlay for classic inline drafts (compatibility)
  * - Church publish via `publishChurchWebsite` (no AC unpublish/submit)
+ * - Publication governance: `blessboardPublicationGovernanceAdapter` (PC10)
  * - Media-library / websites scope listing for BB tenants
  *
  * Platform handlers own (shared):
  * - CSRF/tenant-override guards helpers
  * - Generic draft save error mapping + pending change counts
  * - Field-history restore / styles-seo-theme-add-section operations
+ * - Publication orchestration authz gate + soft savepoints (PC10)
  */
 
 const { PRODUCT_CODE } = require("../../platform/website/publicWebsiteUrl");
