@@ -12,15 +12,24 @@
 
 ---
 
-## 1. HEAD before packaging
+## 1. HEAD before / after packaging
 
 ```text
 HEAD (before):   816eee3c34a9b0625956fcdaa758dda8afef22ec
                  docs: correct PC14 reconciliation ahead/behind fields
+HEAD (after):    5d8c3ee0c5abb06ac238667e295d6e3fe7519aea
+                 Document V10 PC10–PC15 evidence and PC17 freeze checkpoint.
 ORIGIN/V10:      b8c18c3ded9892aa318ae6e029600aa34ff4941b
 AHEAD (before):  11
+AHEAD (after):   15  (+4 packaging commits; not pushed)
 BEHIND:          0
 BRANCH:          V10
+
+Packaging commits:
+  debcefff  Converge platform publication orchestration and classic CMS helpers (PC10–PC11).
+  4367e76d  Remove identical Finder duplicate files from the repository (PC12).
+  e5ba70ba  Add platform architecture dependency-direction guardrails (PC15).
+  bdbf38d3  Document V10 PC10–PC15 evidence and PC17 freeze checkpoint.
 ```
 
 ---
