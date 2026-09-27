@@ -131,10 +131,13 @@ Packaging commits (oldest → newest):
   f9e35d28  Remove Finder STALE_FORK duplicates after PC20 triage (PC21).
   3c38f20e  Document V10 PC18–PC24 evidence and final clean checkpoint.
   b164c963  docs: record PC24 packaging commit SHAs on final checkpoint.
+  a8299d48  docs: finalize PC24 checkpoint HEAD and ahead counts.
 
-HEAD (after):             b164c9630614423072577690c0aae4ceafa7dff2
-AHEAD (after):            22
+HEAD (after):             a8299d48d274780243531373be335bd3f83175dd
+AHEAD (after):            23
 BEHIND:                   0
+
+Tip may advance by one docs-only sync commit after this section is recorded; use `git rev-parse HEAD` on V10.
 ```
 
 ---
