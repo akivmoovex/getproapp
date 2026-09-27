@@ -27,10 +27,11 @@ Packaging commits (oldest → newest):
   4367e76d  Remove identical Finder duplicate files from the repository (PC12).
   e5ba70ba  Add platform architecture dependency-direction guardrails (PC15).
   bdbf38d3  Document V10 PC10–PC15 evidence and PC17 freeze checkpoint.
-  (+ tip)   docs: record PC17 packaging commit SHAs on checkpoint.
+  f71af1f0  docs: record PC17 packaging commit SHAs on checkpoint.
+  08570e81  docs: clarify PC17 checkpoint HEAD before/after packaging fields.
 
-HEAD (after):    git rev-parse HEAD on branch V10 after the commits above
-AHEAD (after):   16 vs origin/V10 (not pushed)
+HEAD (after):    see `git rev-parse HEAD` on V10 after packaging (includes this document)
+AHEAD (after):   origin/V10..HEAD — not pushed
 ```
 
 ---
