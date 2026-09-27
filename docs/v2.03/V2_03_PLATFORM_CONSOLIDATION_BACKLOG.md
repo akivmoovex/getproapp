@@ -276,11 +276,14 @@ Repository hygiene (`PLATFORM-CONSOLIDATION-12`) may be scheduled separately and
 | PLATFORM-CONSOLIDATION-07 | Shared website editor HTTP layer | P2 | **PASS** | Medium |
 | PLATFORM-CONSOLIDATION-08 | Media infrastructure consolidation | P2 | **PASS** | Medium |
 | PLATFORM-CONSOLIDATION-09 | Shared operations UI primitives | P2 | **PASS** | Low–Med |
-| PLATFORM-CONSOLIDATION-10 | Website publishing convergence | P3 | **BLOCKED** (baselines) | **HIGH** |
-| PLATFORM-CONSOLIDATION-11 | Classic CMS convergence | P3 | **BLOCKED** (PC10) | **HIGH** |
-| PLATFORM-CONSOLIDATION-12 | Repository hygiene (`* 2.*` junk) | P2 | **BLOCKED** (PC11 / waived scheduling) | Low (isolated) |
-| — | PC13 final technical verification | — | **BLOCKED** (PC10–12) | — |
-| — | PC14 final reconciliation | — | **COMPLETE** (gaps retained) | — |
+| PLATFORM-CONSOLIDATION-10 | Website publishing convergence | P3 | **PASS** (`PLATFORM_PUBLICATION_CONVERGENCE_PASS`) | **HIGH** |
+| PLATFORM-CONSOLIDATION-11 | Classic CMS convergence | P3 | **PASS** (`PLATFORM_CMS_CONVERGENCE_PASS`) | **HIGH** |
+| PLATFORM-CONSOLIDATION-12 | Repository hygiene (`* 2.*` junk) | P2 | **PASS** (`REPOSITORY_DUPLICATE_FILE_HYGIENE_PASS`) | Low (isolated) |
+| — | PC13 final technical verification | — | **PASS** (`V10_PLATFORM_CONSOLIDATION_REGRESSION_PASS`) | — |
+| — | PC14 final reconciliation | — | **COMPLETE_WITH_GAPS** (this cycle) | — |
+| — | PC15 architecture guardrails | — | **PASS** (`V10_PLATFORM_ARCHITECTURE_GUARDRAILS_PASS`) | — |
+| — | PC16 closure audit | — | **COMPLETE** (read-only) | — |
+| — | PC17 freeze/package checkpoint | — | **READY** (`V10_CLEAN_CHECKPOINT_CREATED: YES`) | — |
 
 ---
 
@@ -640,9 +643,9 @@ See also: [`docs/v2.03/PLATFORM_SHARED_FOUNDATION.md`](./PLATFORM_SHARED_FOUNDAT
 | Field | Value |
 |-------|--------|
 | **Priority** | P3 |
-| **Status** | **BLOCKED** |
+| **Status** | **PASS** (`PLATFORM_PUBLICATION_CONVERGENCE_PASS`) |
 | **Risk** | **HIGH** |
-| **Evidence** | `docs/qa/V10_PC10_PUBLICATION_CONVERGENCE_BLOCKED.md` |
+| **Evidence** | `docs/qa/V10_PC10_PLATFORM_PUBLICATION_CONVERGENCE.md` (supersedes blocked doc) |
 
 Audit found divergent publishing paths:
 
@@ -681,11 +684,15 @@ Must **NOT** begin before:
 
 **2026-09-27:** Gate stop — named baselines absent / BB publish suites failing. No convergence code. See blocked evidence.
 
-Required outcome (when unblocked):
+**2026-09-27 (later):** PC10A–D unblocked; resume delivered platform `publicationOrchestrator` + BB/AC governance adapters. Evidence: `docs/qa/V10_PC10_PLATFORM_PUBLICATION_CONVERGENCE.md`.
+
+Required outcome:
 
 ```text
 PLATFORM_PUBLICATION_CONVERGENCE_PASS
 ```
+
+Achieved.
 
 ---
 
@@ -694,9 +701,9 @@ PLATFORM_PUBLICATION_CONVERGENCE_PASS
 | Field | Value |
 |-------|--------|
 | **Priority** | P3 |
-| **Status** | **BLOCKED** (prerequisite PC10 PASS missing) |
+| **Status** | **PASS** (`PLATFORM_CMS_CONVERGENCE_PASS`) |
 | **Risk** | **HIGH** |
-| **Evidence** | `docs/qa/V10_PC11_CMS_CONVERGENCE_BLOCKED.md` |
+| **Evidence** | `docs/qa/V10_PC11_CMS_CONVERGENCE.md` |
 
 Review overlap between:
 
@@ -731,11 +738,15 @@ Keep:
 
 **2026-09-27:** Gate stop — PC10 is `PLATFORM_PUBLICATION_CONVERGENCE_BLOCKED`. No CMS convergence code.
 
+**2026-09-27 (later):** PC10 PASS unlocked PC11. Evidence: `docs/qa/V10_PC11_CMS_CONVERGENCE.md` → `PLATFORM_CMS_CONVERGENCE_PASS`.
+
 Required outcome (when unblocked):
 
 ```text
 PLATFORM_CMS_CONVERGENCE_PASS
 ```
+
+Achieved.
 
 Related: `AC-WEBSITE-01` in [`docs/BACKLOG.md`](../BACKLOG.md) (legacy projection debt — complementary, not a substitute).
 
@@ -746,12 +757,14 @@ Related: `AC-WEBSITE-01` in [`docs/BACKLOG.md`](../BACKLOG.md) (legacy projectio
 | Field | Value |
 |-------|--------|
 | **Priority** | P2 |
-| **Status** | **BLOCKED** (prerequisite PC11 PASS missing; may be waived for isolated scheduling) |
-| **Evidence** | `docs/qa/V10_PC12_REPOSITORY_HYGIENE_BLOCKED.md` |
+| **Status** | **PASS** (`REPOSITORY_DUPLICATE_FILE_HYGIENE_PASS`) |
+| **Evidence** | `docs/qa/V10_PC12_REPOSITORY_DUPLICATE_FILE_HYGIENE.md` |
 
 Audit identified approximately **543** Finder `* 2.*` duplicate/noise files (`AUDIT_BASELINE_2026_09_26` — recalculate).
 
 **2026-09-27:** Gate stop under user prerequisite PC11 PASS (PC11 blocked). No inventory/deletes. Backlog still allows **separate** scheduling if owner explicitly waives PC11.
+
+**2026-09-27 (later):** PC11 PASS unlocked PC12. Evidence: `docs/qa/V10_PC12_REPOSITORY_DUPLICATE_FILE_HYGIENE.md` → `REPOSITORY_DUPLICATE_FILE_HYGIENE_PASS` (641 identical junk removed; 127 content-differing retained).
 
 Handle repository hygiene **separately** from architecture refactoring.
 
@@ -766,11 +779,13 @@ First:
 
 Then perform cleanup in an isolated change.
 
-Required outcome (when unblocked):
+Required outcome:
 
 ```text
 REPOSITORY_DUPLICATE_FILE_HYGIENE_PASS
 ```
+
+Achieved (identical junk removed; content-differing forks retained as accidental debt).
 
 ---
 
