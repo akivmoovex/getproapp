@@ -1,0 +1,35 @@
+---
+description: V10 PC17–PC25 sequential execution — stop gates, ownership, no deploy
+alwaysApply: true
+---
+
+# V10 PC17–PC25 execution rule
+
+Execute **strictly sequentially**. Do not skip forward after **BLOCKED**.
+
+## STOP immediately on
+
+- P0/P1 regression
+- authorization widening
+- tenant isolation failure
+- migration uncertainty
+- cross-product dependency that cannot be safely separated
+- unresolved merge conflict
+- failed prerequisite
+
+## Hard denials
+
+- Do **not** deploy production
+- Do **not** modify production DB
+- Do **not** force-push
+- Do **not** rewrite applied migration history
+- Do **not** refactor merely to improve duplication percentages
+
+## Ownership
+
+- **Platform** owns mechanisms
+- **BlessBoard** and **ActiveClinic** own semantics
+
+## Post-PC24 priority
+
+After PC24, prioritize **V2.03 QA** over additional architecture cleanup.

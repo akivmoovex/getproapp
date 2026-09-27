@@ -118,6 +118,8 @@ Deferred cross-product infrastructure consolidation. PC00/PC01 characterization 
   - **06 PASS** — schema ownership plan + guard (`PLATFORM_SCHEMA_OWNERSHIP_PASS`; no history rewrite)
 - **Evidence:** [`docs/qa/V10_PC03_PLATFORM_PRODUCT_DEPENDENCY_DIRECTION.md`](./qa/V10_PC03_PLATFORM_PRODUCT_DEPENDENCY_DIRECTION.md), [`docs/qa/V10_PC04_SHARED_REGISTRATION_VERIFICATION.md`](./qa/V10_PC04_SHARED_REGISTRATION_VERIFICATION.md), [`docs/qa/V10_PC05_PLATFORM_PHONE_EMAIL_OWNERSHIP.md`](./qa/V10_PC05_PLATFORM_PHONE_EMAIL_OWNERSHIP.md), [`docs/qa/V10_PC06_PLATFORM_SCHEMA_OWNERSHIP.md`](./qa/V10_PC06_PLATFORM_SCHEMA_OWNERSHIP.md)
 - **Immediate guardrail:** do not place new generic cross-product infrastructure under `src/activeclinic/` or `src/blessboard/` merely because that product needs it first; new `src/platform` → product requires must go through contracts/registration or the documented E allowlist
+- **PC23 (2026-09-27):** `V2_03_POST_CONSOLIDATION_QA_READY_WITH_P2_GAPS` — evidence [`docs/qa/V10_PC23_V2_03_POST_CONSOLIDATION_QA_READINESS.md`](./qa/V10_PC23_V2_03_POST_CONSOLIDATION_QA_READINESS.md)
+- **PC24 (2026-09-27):** `V10_FINAL_CLEAN_CHECKPOINT` · `QA_HANDOFF_READY: YES` — evidence [`docs/qa/V10_PC24_FINAL_CLEAN_CHECKPOINT.md`](./qa/V10_PC24_FINAL_CLEAN_CHECKPOINT.md)
 
 Related evidence (not duplicated here):
 

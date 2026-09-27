@@ -284,6 +284,13 @@ Repository hygiene (`PLATFORM-CONSOLIDATION-12`) may be scheduled separately and
 | — | PC15 architecture guardrails | — | **PASS** (`V10_PLATFORM_ARCHITECTURE_GUARDRAILS_PASS`) | — |
 | — | PC16 closure audit | — | **COMPLETE** (read-only) | — |
 | — | PC17 freeze/package checkpoint | — | **READY** (`V10_CLEAN_CHECKPOINT_CREATED: YES`) | — |
+| — | PC18 organization key lift | — | **PASS** (`PLATFORM_ORGANIZATION_KEY_LIFT_PASS`) | — |
+| — | PC19 cross-product dependency zero | — | **PASS** (`CROSS_PRODUCT_DEPENDENCY_ZERO_PASS`) | — |
+| — | PC20 Finder fork triage | — | **COMPLETE** (`FINDER_FORK_TRIAGE_COMPLETE`) | — |
+| — | PC21 safe Finder cleanup | — | **PASS** (`FINDER_RESIDUAL_SAFE_CLEANUP_PASS`) | — |
+| — | PC22 residual P2 architecture audit | — | **COMPLETE** (`V10_RESIDUAL_P2_ARCHITECTURE_AUDIT_COMPLETE`) | — |
+| — | PC23 V2.03 post-consolidation QA readiness | — | **READY_WITH_P2_GAPS** (`V2_03_POST_CONSOLIDATION_QA_READY_WITH_P2_GAPS`) | — |
+| — | PC24 final clean checkpoint | — | **COMPLETE** (`V10_FINAL_CLEAN_CHECKPOINT` · `QA_HANDOFF_READY: YES`) | — |
 
 ---
 
