@@ -21,6 +21,7 @@
     "lint:css-boundaries": "node scripts/check-css-boundaries.js",
     "lint:css-boundaries:baseline": "node scripts/check-css-boundaries.js --json > .css-boundaries-baseline.json",
     "lint:css-boundaries:ci": "node scripts/check-css-boundaries.js --compare-baseline .css-boundaries-baseline.json",
+    "test:architecture": "node scripts/architecture/dependencyDirection.js && node --test --test-concurrency=1 tests/v10-pc15-architecture-guardrails.test.js tests/v10-pc03-platform-product-dependency-direction.test.js",
     "test:ui": "playwright test",
     "test:ui:update": "playwright test --update-snapshots",
     "test:e2e:foundation": "playwright test --config=playwright.foundation.config.cjs",

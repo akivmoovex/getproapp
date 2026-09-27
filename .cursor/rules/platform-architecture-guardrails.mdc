@@ -1,0 +1,44 @@
+---
+description: Platform vs product architecture — search platform first; no cross-product implementation requires
+alwaysApply: true
+---
+
+# Platform architecture guardrails (V10 PC15)
+
+## Before creating product-local infrastructure
+
+Search for an existing mechanism in:
+
+1. `src/platform`
+2. `views/platform`
+3. `public/platform`
+4. The **other** product (`src/blessboard` or `src/activeclinic`) — only to reuse **platform** patterns, never to copy product domain code across products
+
+Then decide:
+
+| Need | Own in |
+|------|--------|
+| **Generic mechanism** (draft persistence, media storage, auth session, publish TX, folders, HTTP utils, validation primitives) | **Platform** + product **adapter** / bootstrap registration |
+| **Domain semantics** (section catalogues, templates, clinical/pastoral workflows, product UX copy, HQ/branch or clinic governance rules) | **Product** |
+
+## Dependency direction
+
+**DENY** (enforced by `npm run test:architecture`):
+
+- `src/platform` → `src/blessboard` / `src/church` / `src/activeclinic` implementation (except Class E allowlist)
+- `src/blessboard` → `src/activeclinic` implementation
+- `src/activeclinic` → `src/blessboard` / `src/church` implementation (except documented exceptions)
+
+**ALLOW**:
+
+- Product → platform
+- Product bootstrap/adapters registering into `productRuntimeRegistry` / publication lifecycle / field registrars
+
+## Do NOT force
+
+- Shared themes, navigation chrome, or domain catalogues across BlessBoard and ActiveClinic
+- Identical BB/AC publication or CMS workflows
+
+## Exceptions
+
+Allowlists live in `scripts/architecture/dependencyDirectionAllowlists.js`. New exceptions require a debt note — do not expand casually.
