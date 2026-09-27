@@ -1,0 +1,1396 @@
+{
+  "marker": "V203_HOSTED_CRITICAL_VERIFICATION_PASS",
+  "expectedSha": "039ad22193c97759ce9bd5ca73fe56b0e38886ab",
+  "preflight": {
+    "expectedSha": "039ad22193c97759ce9bd5ca73fe56b0e38886ab",
+    "acSha": "039ad22193c9",
+    "bbSha": "039ad22193c9",
+    "acDeploy": "moovex-platform-testing",
+    "bbDeploy": "moovex-platform-testing",
+    "acEnv": "testing",
+    "bbEnv": "testing",
+    "acIdentity": "moovex-platform-v7",
+    "bbIdentity": "moovex-platform-v7",
+    "acDbEnv": "testing",
+    "bbDbEnv": "testing",
+    "acSchema": true,
+    "bbSchema": true,
+    "prodDeploy": "moovex-platform-production",
+    "prodSha": "03a89106e2fe",
+    "prodUntouched": true
+  },
+  "migrationCeiling": {
+    "activeclinic": "042",
+    "blessboard": "118",
+    "getpro": "001",
+    "ngo": "001",
+    "platform": "043",
+    "seeds": "009"
+  },
+  "passCount": 79,
+  "failCount": 0,
+  "failures": [],
+  "results": [
+    {
+      "product": "PLATFORM",
+      "route": "preflight SHA/env/identity",
+      "url": "/healthz",
+      "status": 200,
+      "expected": "sha=039ad22193c9; moovex-platform-testing/testing; moovex-platform-v7",
+      "actual": "{\"expectedSha\":\"039ad22193c97759ce9bd5ca73fe56b0e38886ab\",\"acSha\":\"039ad22193c9\",\"bbSha\":\"039ad22193c9\",\"acDeploy\":\"moovex-platform-testing\",\"bbDeploy\":\"moovex-platform-testing\",\"acEnv\":\"testing\",\"bbEnv\":\"testing\",\"acIdentity\":\"moovex-platform-v7\",\"bbIdentity\":\"moovex-platform-v7\",\"acDbEnv\":\"testing\",\"bbDbEnv\":\"testing\",\"acSchema\":true,\"bbSchema\":true,\"prodDeploy\":\"moovex-platform-production\",\"prodSha\":\"03a89106e2fe\",\"prodUntouched\":true}",
+      "requestId": null,
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "migration ceiling",
+      "url": "platform.schema_migrations",
+      "status": 200,
+      "expected": "{\"platform\":\"043\",\"blessboard\":\"118\",\"activeclinic\":\"042\",\"getpro\":\"001\",\"ngo\":\"001\"}",
+      "actual": "{\"activeclinic\":\"042\",\"blessboard\":\"118\",\"getpro\":\"001\",\"ngo\":\"001\",\"platform\":\"043\",\"seeds\":\"009\"}",
+      "requestId": null,
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "AC health/startup",
+      "url": "https://activeclinic.pronline.org/healthz",
+      "finalUrl": "https://activeclinic.pronline.org/healthz",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "6b98b7459629a27da55954f8",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/healthz",
+          "status": 200,
+          "loc": null,
+          "requestId": "6b98b7459629a27da55954f8"
+        }
+      ]
+    },
+    {
+      "product": "PLATFORM",
+      "route": "BB health/startup",
+      "url": "https://blessboard.pronline.org/healthz",
+      "finalUrl": "https://blessboard.pronline.org/healthz",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "6a6c5a9bb9f44e0c710631fa",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/healthz",
+          "status": 200,
+          "loc": null,
+          "requestId": "6a6c5a9bb9f44e0c710631fa"
+        }
+      ]
+    },
+    {
+      "product": "PLATFORM",
+      "route": "AC home",
+      "url": "https://activeclinic.pronline.org/",
+      "finalUrl": "https://activeclinic.pronline.org/",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=ActiveClinic",
+      "requestId": "36cbe1c555c34d3c8c53d206",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/",
+          "status": 200,
+          "loc": null,
+          "requestId": "36cbe1c555c34d3c8c53d206"
+        }
+      ]
+    },
+    {
+      "product": "PLATFORM",
+      "route": "BB home",
+      "url": "https://blessboard.pronline.org/",
+      "finalUrl": "https://blessboard.pronline.org/",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Home · BlessBoard",
+      "requestId": "553ab9cf3e2b0fa0d0836080",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/",
+          "status": 200,
+          "loc": null,
+          "requestId": "553ab9cf3e2b0fa0d0836080"
+        }
+      ]
+    },
+    {
+      "product": "PLATFORM",
+      "route": "AC login",
+      "url": "https://activeclinic.pronline.org/login",
+      "finalUrl": "https://activeclinic.pronline.org/login",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Sign in · ActiveClinic",
+      "requestId": "2d8bb978d80b18a1358488fd",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/login",
+          "status": 200,
+          "loc": null,
+          "requestId": "2d8bb978d80b18a1358488fd"
+        }
+      ]
+    },
+    {
+      "product": "PLATFORM",
+      "route": "BB login",
+      "url": "https://blessboard.pronline.org/login",
+      "finalUrl": "https://blessboard.pronline.org/login",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Sign in · BlessBoard",
+      "requestId": "9a47261b73766156e09f4b26",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/login",
+          "status": 200,
+          "loc": null,
+          "requestId": "9a47261b73766156e09f4b26"
+        }
+      ]
+    },
+    {
+      "product": "PLATFORM",
+      "route": "static /activeclinic/ac-tokens.css",
+      "url": "https://activeclinic.pronline.org/activeclinic/ac-tokens.css?v=v2-sp-vis-1",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "0c5ff374d5336f462b2e0a90",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "static /activeclinic/ac-public.css",
+      "url": "https://activeclinic.pronline.org/activeclinic/ac-public.css?v=v2-sp-vis-1",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "ac30deb5298a894bc7c0c206",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "static /activeclinic/acw-platform.css",
+      "url": "https://activeclinic.pronline.org/activeclinic/acw-platform.css?v=v2-sp-vis-1",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "a510c2b87e5044cbffc66bf7",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "static /platform/phone-field.css",
+      "url": "https://activeclinic.pronline.org/platform/phone-field.css?v=v2-sp-vis-1",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "3a046173ba01f199227eb2f0",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "static /activeclinic/ac-a11y.js",
+      "url": "https://activeclinic.pronline.org/activeclinic/ac-a11y.js?v=v2-sp-vis-1",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "fc2f0002ca0599b890d92691",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "static /activeclinic/ac-public.js",
+      "url": "https://activeclinic.pronline.org/activeclinic/ac-public.js?v=v2-sp-vis-1",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "85377d38780464e46446ce9d",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "static /blessboard/v5/design-tokens.css",
+      "url": "https://blessboard.pronline.org/blessboard/v5/design-tokens.css?v=7",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "67b44d1873ecaecaaa4b36c6",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "static /blessboard/v5/design-system.css",
+      "url": "https://blessboard.pronline.org/blessboard/v5/design-system.css?v=7",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "b196229fcf76756798d4713c",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "static /blessboard/v5/apex.css",
+      "url": "https://blessboard.pronline.org/blessboard/v5/apex.css?v=25",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "08f3e20311427e60566346d8",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "static /blessboard/v5/design-system.js",
+      "url": "https://blessboard.pronline.org/blessboard/v5/design-system.js?v=3",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "3c60564930cb2d595fe79ccd",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "static /blessboard/v5/apex.js",
+      "url": "https://blessboard.pronline.org/blessboard/v5/apex.js?v=4",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "bb4023ac95bd212c102988bb",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "AC CSRF basics",
+      "url": "https://activeclinic.pronline.org/login",
+      "status": 200,
+      "expected": "csrf cookie+field",
+      "actual": "present",
+      "requestId": "12805a026caa68736af28412",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "BB CSRF basics",
+      "url": "https://blessboard.pronline.org/login",
+      "status": 200,
+      "expected": "csrf cookie+field",
+      "actual": "present",
+      "requestId": "62210756af91413dcf9ef789",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "AC",
+      "route": "clinics directory",
+      "url": "https://activeclinic.pronline.org/clinics",
+      "finalUrl": "https://activeclinic.pronline.org/clinics",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Find a Clinic · ActiveClinic",
+      "requestId": "b24e553f88ad0485d5d1788c",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/clinics",
+          "status": 200,
+          "loc": null,
+          "requestId": "b24e553f88ad0485d5d1788c"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "public clinic",
+      "url": "https://activeclinic.pronline.org/clinics/activeclinic-demo",
+      "finalUrl": "https://activeclinic.pronline.org/clinics/activeclinic-demo",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=ActiveClinic Demo Centre · ActiveClinic",
+      "requestId": "ee4a96956e29d33cfb33ee7f",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/clinics/activeclinic-demo",
+          "status": 200,
+          "loc": null,
+          "requestId": "ee4a96956e29d33cfb33ee7f"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "booking entry",
+      "url": "https://activeclinic.pronline.org/clinics/activeclinic-demo/book",
+      "finalUrl": "https://activeclinic.pronline.org/clinics/activeclinic-demo/book",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=ActiveClinic",
+      "requestId": "374d4df3b1ac53fda8b00484",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/clinics/activeclinic-demo/book",
+          "status": 200,
+          "loc": null,
+          "requestId": "374d4df3b1ac53fda8b00484"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "patient portal login",
+      "url": "https://activeclinic.pronline.org/clinics/activeclinic-demo/patient/login",
+      "finalUrl": "https://activeclinic.pronline.org/clinics/activeclinic-demo/patient/login",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Sign in · Patient Portal",
+      "requestId": "8856248f6111cf8f76b3e8cc",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/clinics/activeclinic-demo/patient/login",
+          "status": 200,
+          "loc": null,
+          "requestId": "8856248f6111cf8f76b3e8cc"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "registration entry",
+      "url": "https://activeclinic.pronline.org/register-clinic",
+      "finalUrl": "https://activeclinic.pronline.org/register-clinic",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Register your clinic · ActiveClinic",
+      "requestId": "b23867546770ece3981dd2ef",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/register-clinic",
+          "status": 200,
+          "loc": null,
+          "requestId": "b23867546770ece3981dd2ef"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "registration entry",
+      "url": "https://blessboard.pronline.org/register-church",
+      "finalUrl": "https://blessboard.pronline.org/register-church",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Register Your Church · BlessBoard",
+      "requestId": "8c13dfadc0059193517a236e",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/register-church",
+          "status": 200,
+          "loc": null,
+          "requestId": "8c13dfadc0059193517a236e"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "public church",
+      "url": "https://blessboard.pronline.org/c/demo-church/hq",
+      "finalUrl": "https://blessboard.pronline.org/c/demo-church/hq",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Demo Church · Coming soon",
+      "requestId": "9e0c7c1674c37582d9d4999c",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/c/demo-church/hq",
+          "status": 200,
+          "loc": null,
+          "requestId": "9e0c7c1674c37582d9d4999c"
+        }
+      ]
+    },
+    {
+      "product": "PLATFORM",
+      "route": "AC host rejects BB church chrome",
+      "url": "https://activeclinic.pronline.org/c/demo-church",
+      "finalUrl": "https://activeclinic.pronline.org/clinics/demo-church",
+      "status": 404,
+      "expected": "no BB chrome; no 500/schema",
+      "actual": "status 404 leaked=false",
+      "requestId": "0182bdff990c08d7a5d114c7",
+      "ok": true,
+      "notes": null
+    },
+    {
+      "product": "PLATFORM",
+      "route": "BB host rejects AC clinic chrome",
+      "url": "https://blessboard.pronline.org/clinics/activeclinic-demo",
+      "finalUrl": "https://blessboard.pronline.org/clinics/activeclinic-demo",
+      "status": 503,
+      "expected": "no AC chrome; no 500/schema (V5 stub 503 on unimplemented foreign path allowed for isolation)",
+      "actual": "status 503 leaked=false stub=true",
+      "requestId": "b11a8d1f25dfeb5657a89ede",
+      "ok": true,
+      "notes": "isolation_ok_v5_stub"
+    },
+    {
+      "product": "AC",
+      "route": "POST /login",
+      "url": "https://activeclinic.pronline.org/login",
+      "status": 303,
+      "expected": "303/302 + session",
+      "actual": "status 303 loc=/app sid=true",
+      "requestId": "6fc58614a7be8abfd61a83b2",
+      "ok": true,
+      "notes": null,
+      "id": "demo_clinician@demo.activeclinic.example"
+    },
+    {
+      "product": "AC",
+      "route": "POST /login",
+      "url": "https://activeclinic.pronline.org/login",
+      "status": 303,
+      "expected": "303/302 + session",
+      "actual": "status 303 loc=/app sid=true",
+      "requestId": "8c1c29c973f0eb65d6d4f6ea",
+      "ok": true,
+      "notes": null,
+      "id": "demo_receptionist@demo.activeclinic.example"
+    },
+    {
+      "product": "AC",
+      "route": "POST /login",
+      "url": "https://activeclinic.pronline.org/login",
+      "status": 303,
+      "expected": "303/302 + session",
+      "actual": "status 303 loc=/app sid=true",
+      "requestId": "318accc2f63e7f699d2735f4",
+      "ok": true,
+      "notes": null,
+      "id": "demo_facility_admin@demo.activeclinic.example"
+    },
+    {
+      "product": "AC",
+      "route": "POST /login",
+      "url": "https://activeclinic.pronline.org/login",
+      "status": 303,
+      "expected": "303/302 + session",
+      "actual": "status 303 loc=/app sid=true",
+      "requestId": "bd1e23fd32846b6aa44dd940",
+      "ok": true,
+      "notes": null,
+      "id": "demo_organization_admin@demo.activeclinic.example"
+    },
+    {
+      "product": "AC",
+      "route": "POST /login",
+      "url": "https://activeclinic.pronline.org/login",
+      "status": 303,
+      "expected": "303/302 + session",
+      "actual": "status 303 loc=/app sid=true",
+      "requestId": "94800f9c3db2b78173928cdd",
+      "ok": true,
+      "notes": null,
+      "id": "demo_pharmacist@demo.activeclinic.example"
+    },
+    {
+      "product": "AC",
+      "route": "POST /login",
+      "url": "https://activeclinic.pronline.org/login",
+      "status": 303,
+      "expected": "303/302 + session",
+      "actual": "status 303 loc=/app sid=true",
+      "requestId": "b58b0996725a8e854786615f",
+      "ok": true,
+      "notes": null,
+      "id": "demo_lab_technician@demo.activeclinic.example"
+    },
+    {
+      "product": "AC",
+      "route": "POST /login",
+      "url": "https://activeclinic.pronline.org/login",
+      "status": 303,
+      "expected": "303/302 + session",
+      "actual": "status 303 loc=/app sid=true",
+      "requestId": "7f9dd9ae920c47891bb681c8",
+      "ok": true,
+      "notes": null,
+      "id": "demo_billing_officer@demo.activeclinic.example"
+    },
+    {
+      "product": "AC",
+      "route": "POST /login",
+      "url": "https://activeclinic.pronline.org/login",
+      "status": 303,
+      "expected": "303/302 + session",
+      "actual": "status 303 loc=/app sid=true",
+      "requestId": "813b7b80ee1b71978828f7b4",
+      "ok": true,
+      "notes": null,
+      "id": "demo_cashier@demo.activeclinic.example"
+    },
+    {
+      "product": "AC",
+      "route": "/app",
+      "url": "https://activeclinic.pronline.org/app",
+      "finalUrl": "https://activeclinic.pronline.org/app",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Good evening, Demo Clinician · ActiveClinic",
+      "requestId": "e807ff12b8a8312dce9ca9f6",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app",
+          "status": 200,
+          "loc": null,
+          "requestId": "e807ff12b8a8312dce9ca9f6"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/patients",
+      "url": "https://activeclinic.pronline.org/app/patients",
+      "finalUrl": "https://activeclinic.pronline.org/app/patients",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Patients · ActiveClinic",
+      "requestId": "e3c7084403840bbacc0f593b",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/patients",
+          "status": 200,
+          "loc": null,
+          "requestId": "e3c7084403840bbacc0f593b"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/appointments",
+      "url": "https://activeclinic.pronline.org/app/appointments",
+      "finalUrl": "https://activeclinic.pronline.org/app/appointments",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Appointments · ActiveClinic",
+      "requestId": "cc74ae0481788cba1f2bf449",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/appointments",
+          "status": 200,
+          "loc": null,
+          "requestId": "cc74ae0481788cba1f2bf449"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/appointments/calendar",
+      "url": "https://activeclinic.pronline.org/app/appointments/calendar",
+      "finalUrl": "https://activeclinic.pronline.org/app/appointments/calendar",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Appointment calendar · ActiveClinic",
+      "requestId": "7435737464b577cf99f8fd91",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/appointments/calendar",
+          "status": 200,
+          "loc": null,
+          "requestId": "7435737464b577cf99f8fd91"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/clinical",
+      "url": "https://activeclinic.pronline.org/app/clinical",
+      "finalUrl": "https://activeclinic.pronline.org/app/clinical",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Practitioner worklist · ActiveClinic",
+      "requestId": "2aae35d6779a58a479e1b228",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/clinical",
+          "status": 200,
+          "loc": null,
+          "requestId": "2aae35d6779a58a479e1b228"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/clinical/follow-up",
+      "url": "https://activeclinic.pronline.org/app/clinical/follow-up",
+      "finalUrl": "https://activeclinic.pronline.org/app/clinical/follow-up",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Follow-up worklist · ActiveClinic",
+      "requestId": "44a773ba302d4d7759ef638c",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/clinical/follow-up",
+          "status": 200,
+          "loc": null,
+          "requestId": "44a773ba302d4d7759ef638c"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/clinical/referrals",
+      "url": "https://activeclinic.pronline.org/app/clinical/referrals",
+      "finalUrl": "https://activeclinic.pronline.org/app/clinical/referrals",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Referral Management · ActiveClinic",
+      "requestId": "70a410503eebd45fad4e5e66",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/clinical/referrals",
+          "status": 200,
+          "loc": null,
+          "requestId": "70a410503eebd45fad4e5e66"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/facilities",
+      "url": "https://activeclinic.pronline.org/app/facilities",
+      "finalUrl": "https://activeclinic.pronline.org/app/facilities",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Facilities · ActiveClinic",
+      "requestId": "76ed76bc0fe0c2be6001964f",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/facilities",
+          "status": 200,
+          "loc": null,
+          "requestId": "76ed76bc0fe0c2be6001964f"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/reception",
+      "url": "https://activeclinic.pronline.org/app/reception",
+      "finalUrl": "https://activeclinic.pronline.org/app/reception",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Reception queue · ActiveClinic",
+      "requestId": "ad0ffca46ec436bb09eef3bc",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/reception",
+          "status": 200,
+          "loc": null,
+          "requestId": "ad0ffca46ec436bb09eef3bc"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/reception/check-in",
+      "url": "https://activeclinic.pronline.org/app/reception/check-in",
+      "finalUrl": "https://activeclinic.pronline.org/app/reception/check-in",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Check in scheduled patient · ActiveClinic",
+      "requestId": "a9ddc714e68d0ceab9320fa0",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/reception/check-in",
+          "status": 200,
+          "loc": null,
+          "requestId": "a9ddc714e68d0ceab9320fa0"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/appointments/new",
+      "url": "https://activeclinic.pronline.org/app/appointments/new",
+      "finalUrl": "https://activeclinic.pronline.org/app/appointments/new",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Book appointment · ActiveClinic",
+      "requestId": "c2d4df259b95586029ffba12",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/appointments/new",
+          "status": 200,
+          "loc": null,
+          "requestId": "c2d4df259b95586029ffba12"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/booking-requests",
+      "url": "https://activeclinic.pronline.org/app/booking-requests",
+      "finalUrl": "https://activeclinic.pronline.org/app/booking-requests",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Booking Requests · ActiveClinic",
+      "requestId": "5b5e9bc3feb00ebcd153c4c7",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/booking-requests",
+          "status": 200,
+          "loc": null,
+          "requestId": "5b5e9bc3feb00ebcd153c4c7"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/services",
+      "url": "https://activeclinic.pronline.org/app/services",
+      "finalUrl": "https://activeclinic.pronline.org/app/services",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Services &amp; Pricing Catalogue · ActiveClinic",
+      "requestId": "f6b98b2d85f264e01d54b47e",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/services",
+          "status": 200,
+          "loc": null,
+          "requestId": "f6b98b2d85f264e01d54b47e"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/practitioners",
+      "url": "https://activeclinic.pronline.org/app/practitioners",
+      "finalUrl": "https://activeclinic.pronline.org/app/practitioners",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Practitioners Directory · ActiveClinic",
+      "requestId": "59f80d9143e4a0b96a77febe",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/practitioners",
+          "status": 200,
+          "loc": null,
+          "requestId": "59f80d9143e4a0b96a77febe"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/onboarding",
+      "url": "https://activeclinic.pronline.org/app/onboarding",
+      "finalUrl": "https://activeclinic.pronline.org/app/onboarding",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Welcome to ActiveClinic · ActiveClinic",
+      "requestId": "a201fd7507980fa8bcfb4f2e",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/onboarding",
+          "status": 200,
+          "loc": null,
+          "requestId": "a201fd7507980fa8bcfb4f2e"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/rooms",
+      "url": "https://activeclinic.pronline.org/app/rooms",
+      "finalUrl": "https://activeclinic.pronline.org/app/rooms",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Rooms &amp; Spaces · ActiveClinic",
+      "requestId": "363ed07cbc7dda14262f8703",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/rooms",
+          "status": 200,
+          "loc": null,
+          "requestId": "363ed07cbc7dda14262f8703"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/performance",
+      "url": "https://activeclinic.pronline.org/app/performance",
+      "finalUrl": "https://activeclinic.pronline.org/app/performance",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Clinic performance · ActiveClinic",
+      "requestId": "995e908233ef23237d1c7a31",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/performance",
+          "status": 200,
+          "loc": null,
+          "requestId": "995e908233ef23237d1c7a31"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/data",
+      "url": "https://activeclinic.pronline.org/app/data",
+      "finalUrl": "https://activeclinic.pronline.org/app/data",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Import &amp; export · ActiveClinic",
+      "requestId": "619f5025c7e4e491c6963688",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/data",
+          "status": 200,
+          "loc": null,
+          "requestId": "619f5025c7e4e491c6963688"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/settings/website",
+      "url": "https://activeclinic.pronline.org/app/settings/website",
+      "finalUrl": "https://activeclinic.pronline.org/app/settings/website",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Website Management Hub · ActiveClinic",
+      "requestId": "4bbda23bee808676e80fdfa3",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/settings/website",
+          "status": 200,
+          "loc": null,
+          "requestId": "4bbda23bee808676e80fdfa3"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/settings/website/pages",
+      "url": "https://activeclinic.pronline.org/app/settings/website/pages",
+      "finalUrl": "https://activeclinic.pronline.org/app/settings/website/pages",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Pages · ActiveClinic",
+      "requestId": "e65ee6dbc7f6601b87a1e942",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/settings/website/pages",
+          "status": 200,
+          "loc": null,
+          "requestId": "e65ee6dbc7f6601b87a1e942"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/settings/website/media",
+      "url": "https://activeclinic.pronline.org/app/settings/website/media",
+      "finalUrl": "https://activeclinic.pronline.org/app/settings/website/media",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Media library · ActiveClinic",
+      "requestId": "ab384b6cccd84645c1484e21",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/settings/website/media",
+          "status": 200,
+          "loc": null,
+          "requestId": "ab384b6cccd84645c1484e21"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/clinics/activeclinic-demo?website_edit=1",
+      "url": "https://activeclinic.pronline.org/clinics/activeclinic-demo?website_edit=1",
+      "finalUrl": "https://activeclinic.pronline.org/clinics/activeclinic-demo?website_edit=1",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=ActiveClinic Demo Centre · ActiveClinic",
+      "requestId": "b896a2b3140cde3398fb5efa",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/clinics/activeclinic-demo?website_edit=1",
+          "status": 200,
+          "loc": null,
+          "requestId": "b896a2b3140cde3398fb5efa"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/clinics/activeclinic-demo/website/preview",
+      "url": "https://activeclinic.pronline.org/clinics/activeclinic-demo/website/preview",
+      "finalUrl": "https://activeclinic.pronline.org/clinics/activeclinic-demo?website_mode=draft",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=ActiveClinic Demo Centre · ActiveClinic",
+      "requestId": "0365732b2dcaceb634df0f39",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/clinics/activeclinic-demo/website/preview",
+          "status": 303,
+          "loc": "/clinics/activeclinic-demo?website_mode=draft",
+          "requestId": "2917ed00c1a6bb49248746fa"
+        },
+        {
+          "url": "https://activeclinic.pronline.org/clinics/activeclinic-demo?website_mode=draft",
+          "status": 200,
+          "loc": null,
+          "requestId": "0365732b2dcaceb634df0f39"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/pharmacy",
+      "url": "https://activeclinic.pronline.org/app/pharmacy",
+      "finalUrl": "https://activeclinic.pronline.org/app/pharmacy",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Pharmacy · ActiveClinic",
+      "requestId": "aec0f8c449033751c6090031",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/pharmacy",
+          "status": 200,
+          "loc": null,
+          "requestId": "aec0f8c449033751c6090031"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/diagnostics",
+      "url": "https://activeclinic.pronline.org/app/diagnostics",
+      "finalUrl": "https://activeclinic.pronline.org/app/diagnostics",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Diagnostics · ActiveClinic",
+      "requestId": "e2376ea1db2e7238a7fb351e",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/diagnostics",
+          "status": 200,
+          "loc": null,
+          "requestId": "e2376ea1db2e7238a7fb351e"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/billing/invoices",
+      "url": "https://activeclinic.pronline.org/app/billing/invoices",
+      "finalUrl": "https://activeclinic.pronline.org/app/billing/invoices",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Invoices · ActiveClinic",
+      "requestId": "8034525877b0dd893076b266",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/billing/invoices",
+          "status": 200,
+          "loc": null,
+          "requestId": "8034525877b0dd893076b266"
+        }
+      ]
+    },
+    {
+      "product": "AC",
+      "route": "/app/cashier/payment",
+      "url": "https://activeclinic.pronline.org/app/cashier/payment",
+      "finalUrl": "https://activeclinic.pronline.org/app/cashier/payment",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Record payment · ActiveClinic",
+      "requestId": "fe58ff561a6afc77836085ae",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://activeclinic.pronline.org/app/cashier/payment",
+          "status": 200,
+          "loc": null,
+          "requestId": "fe58ff561a6afc77836085ae"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "POST /login",
+      "url": "https://blessboard.pronline.org/login",
+      "status": 303,
+      "expected": "303/302 + session",
+      "actual": "status 303 loc=/hq sid=true",
+      "requestId": "cdbb8d175bb72987855d9045",
+      "ok": true,
+      "notes": null,
+      "id": "qa.organisation_administrator@demo-church.example.test"
+    },
+    {
+      "product": "BB",
+      "route": "POST /login",
+      "url": "https://blessboard.pronline.org/login",
+      "status": 303,
+      "expected": "303/302 + session",
+      "actual": "status 303 loc=/branch-admin sid=true",
+      "requestId": "f71791c73b0f4a7c4e785819",
+      "ok": true,
+      "notes": null,
+      "id": "qa.branch_administrator@demo-church.example.test"
+    },
+    {
+      "product": "BB",
+      "route": "/hq",
+      "url": "https://blessboard.pronline.org/hq",
+      "finalUrl": "https://blessboard.pronline.org/hq",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Church HQ · Demo Church",
+      "requestId": "785d425e85ba33452d149b06",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/hq",
+          "status": 200,
+          "loc": null,
+          "requestId": "785d425e85ba33452d149b06"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "/hq/members",
+      "url": "https://blessboard.pronline.org/hq/members",
+      "finalUrl": "https://blessboard.pronline.org/hq/members",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Member directory · Demo Church",
+      "requestId": "3aebaba0b4a4865e1e27ab9c",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/hq/members",
+          "status": 200,
+          "loc": null,
+          "requestId": "3aebaba0b4a4865e1e27ab9c"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "/hq/website",
+      "url": "https://blessboard.pronline.org/hq/website",
+      "finalUrl": "https://blessboard.pronline.org/hq/website",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Website · Demo Church",
+      "requestId": "0f577a2569a55c27867ece82",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/hq/website",
+          "status": 200,
+          "loc": null,
+          "requestId": "0f577a2569a55c27867ece82"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "/hq/content",
+      "url": "https://blessboard.pronline.org/hq/content",
+      "finalUrl": "https://blessboard.pronline.org/hq/content",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Website content · Demo Church",
+      "requestId": "ee6a6766e69bd748512fbf61",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/hq/content",
+          "status": 200,
+          "loc": null,
+          "requestId": "ee6a6766e69bd748512fbf61"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "/hq/content/media",
+      "url": "https://blessboard.pronline.org/hq/content/media",
+      "finalUrl": "https://blessboard.pronline.org/hq/content/media",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200",
+      "requestId": "89b52492357fe45bbda4e4fd",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/hq/content/media",
+          "status": 200,
+          "loc": null,
+          "requestId": "89b52492357fe45bbda4e4fd"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "/hq/website/publish/review",
+      "url": "https://blessboard.pronline.org/hq/website/publish/review",
+      "finalUrl": "https://blessboard.pronline.org/hq/website/publish/review",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Publish Website Changes · Demo Church",
+      "requestId": "7124d7440889be8fc6928b89",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/hq/website/publish/review",
+          "status": 200,
+          "loc": null,
+          "requestId": "7124d7440889be8fc6928b89"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "/hq/website/version-history",
+      "url": "https://blessboard.pronline.org/hq/website/version-history",
+      "finalUrl": "https://blessboard.pronline.org/hq/website/version-history",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Website Version History · Demo Church",
+      "requestId": "489cbb533cb53cf6786c0376",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/hq/website/version-history",
+          "status": 200,
+          "loc": null,
+          "requestId": "489cbb533cb53cf6786c0376"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "/c/demo-church/hq",
+      "url": "https://blessboard.pronline.org/c/demo-church/hq",
+      "finalUrl": "https://blessboard.pronline.org/c/demo-church/hq",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Demo Church · Coming soon",
+      "requestId": "98fcc0d7010a50464874c24b",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/c/demo-church/hq",
+          "status": 200,
+          "loc": null,
+          "requestId": "98fcc0d7010a50464874c24b"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "/c/demo-church/hq?website_edit=1",
+      "url": "https://blessboard.pronline.org/c/demo-church/hq?website_edit=1",
+      "finalUrl": "https://blessboard.pronline.org/c/demo-church/hq?website_edit=1",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Demo Church",
+      "requestId": "cf4a1f2a54f5835891419832",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/c/demo-church/hq?website_edit=1",
+          "status": 200,
+          "loc": null,
+          "requestId": "cf4a1f2a54f5835891419832"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "website preview",
+      "url": "https://blessboard.pronline.org/c/demo-church/hq/website/preview",
+      "finalUrl": "https://blessboard.pronline.org/c/demo-church/hq?website_mode=draft",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Demo Church",
+      "requestId": "04099e9e27408a983c8842a9",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/c/demo-church/hq/website/preview",
+          "status": 303,
+          "loc": "/c/demo-church/hq?website_mode=draft",
+          "requestId": "65eb3f96bc50aeddef52c812"
+        },
+        {
+          "url": "https://blessboard.pronline.org/c/demo-church/hq?website_mode=draft",
+          "status": 200,
+          "loc": null,
+          "requestId": "04099e9e27408a983c8842a9"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "/branch-admin",
+      "url": "https://blessboard.pronline.org/branch-admin",
+      "finalUrl": "https://blessboard.pronline.org/branch-admin",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Branch admin · Demo Church",
+      "requestId": "2508e31c1efa8259c05d3c2e",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/branch-admin",
+          "status": 200,
+          "loc": null,
+          "requestId": "2508e31c1efa8259c05d3c2e"
+        }
+      ]
+    },
+    {
+      "product": "BB",
+      "route": "branch public/edit",
+      "url": "https://blessboard.pronline.org/c/demo-church/demo-church-lusaka?website_edit=1",
+      "finalUrl": "https://blessboard.pronline.org/c/demo-church/demo-church-lusaka?website_edit=1",
+      "status": 200,
+      "expected": "200",
+      "actual": "status 200 title=Demo Church Lusaka",
+      "requestId": "147a204947acf7a6ef4a40e6",
+      "ok": true,
+      "notes": null,
+      "chain": [
+        {
+          "url": "https://blessboard.pronline.org/c/demo-church/demo-church-lusaka?website_edit=1",
+          "status": 200,
+          "loc": null,
+          "requestId": "147a204947acf7a6ef4a40e6"
+        }
+      ]
+    }
+  ]
+}

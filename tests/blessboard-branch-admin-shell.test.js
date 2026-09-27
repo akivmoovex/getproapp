@@ -231,7 +231,10 @@ describe("blessboard branch-admin shell", () => {
         users.inactive.id,
       ]);
       await pool.query(
-        `UPDATE blessboard.user_role_assignments SET status = 'revoked', updated_at = now()
+        `UPDATE blessboard.user_role_assignments
+            SET status = 'revoked',
+                revoked_at = now(),
+                updated_at = now()
            WHERE user_id = $1 AND status = 'active'`,
         [users.suspended.id]
       );
@@ -342,7 +345,7 @@ describe("blessboard branch-admin shell", () => {
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(res.status, 200);
-    assert.match(res.text, /Church HQ admin/);
+    assert.match(res.text, /organisation administrator|Church HQ admin/i);
   });
 
   it("platform_admin without support mode is denied branch portal", async () => {

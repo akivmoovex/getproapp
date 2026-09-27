@@ -60,7 +60,7 @@ describe("V2_01 BB inline editor parity — static", () => {
       resolveWebsiteActionUrls,
     } = require("../src/blessboard/urls/websiteActionUrls");
     const urls = resolveWebsiteActionUrls({
-      actor: "branch_admin",
+      actor: "branch_administrator",
       organizationKey: "demo3",
       branchKey: "main",
     });

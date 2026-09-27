@@ -220,8 +220,9 @@ describe("V2.01 Field History and Restore — presentation", () => {
     assert.match(css, /gp-cm-history__choice-preview/);
     assert.match(css, /max-width:\s*430px/);
     assert.match(bbRoutes, /field-history\/restore/);
-    assert.match(bbRoutes, /restoreFieldRevisionToDraft/);
+    assert.match(bbRoutes, /handleRestoreFieldHistory|restoreFieldRevisionToDraft/);
     assert.match(acRoutes, /field-history\/restore/);
+    assert.match(acRoutes, /handleRestoreFieldHistory|restoreFieldRevisionToDraft/);
     assert.match(acRoutes, /expectedUpdatedAt/);
     assert.match(inline, /expectedUpdatedAt/);
     assert.equal(typeof changeManager.restoreFieldRevisionToDraft, "function");

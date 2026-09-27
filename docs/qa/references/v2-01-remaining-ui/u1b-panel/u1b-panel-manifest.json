@@ -1,0 +1,339 @@
+{
+  "task": "U1-B",
+  "expectSha": "076312f7",
+  "stamp": "U1B muhox0eb",
+  "hosted": {
+    "bb": {
+      "gitSha": "076312f7dd10",
+      "deploymentCode": "moovex-platform-v8-testing",
+      "schemaCompatible": true
+    },
+    "ac": {
+      "gitSha": "076312f7dd10",
+      "deploymentCode": "moovex-platform-v8-testing",
+      "schemaCompatible": true
+    },
+    "prod": {
+      "gitSha": "03a89106e2fe",
+      "deploymentCode": "moovex-platform-production"
+    }
+  },
+  "cases": [
+    {
+      "tag": "bb-desktop1440-empty",
+      "width": 1440,
+      "height": 900,
+      "mode": "empty",
+      "how": "api",
+      "seed": null,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1b-panel/bb-desktop1440-empty.png",
+      "metrics": {
+        "title": "Unpublished Changes",
+        "emptyVisible": true,
+        "emptyTitle": "No unpublished changes",
+        "emptyBody": "Your draft matches the live website. Edit a field to see it listed here before publishing.",
+        "groupCount": 0,
+        "groupLabels": [],
+        "itemCount": 0,
+        "statusVisible": false,
+        "statusText": "Ready for public visitors 0 pending edits",
+        "publishLabel": "Publish All Changes",
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-u1b-panel-1",
+          "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1b-panel-1"
+        ],
+        "sheetW": 448,
+        "overflowX": false
+      }
+    },
+    {
+      "tag": "bb-desktop1440-populated",
+      "width": 1440,
+      "height": 900,
+      "mode": "populated",
+      "how": "pill",
+      "seed": [
+        {
+          "contentKey": "home.hero.heading",
+          "status": 200,
+          "ok": true,
+          "pending": 1
+        },
+        {
+          "contentKey": "home.hero.subheading",
+          "status": 400,
+          "ok": false
+        }
+      ],
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1b-panel/bb-desktop1440-populated.png",
+      "metrics": {
+        "title": "Unpublished Changes (1)",
+        "emptyVisible": false,
+        "emptyTitle": "No unpublished changes",
+        "emptyBody": "Your draft matches the live website. Edit a field to see it listed here before publishing.",
+        "groupCount": 1,
+        "groupLabels": [
+          {
+            "page": "Home",
+            "count": "1 change"
+          }
+        ],
+        "itemCount": 1,
+        "statusVisible": true,
+        "statusText": "Ready for public visitors 1 pending edit verified",
+        "publishLabel": "Publish All (1) Changes",
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-u1b-panel-1",
+          "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1b-panel-1"
+        ],
+        "sheetW": 448,
+        "overflowX": false
+      }
+    },
+    {
+      "tag": "bb-mobile390-empty",
+      "width": 390,
+      "height": 844,
+      "mode": "empty",
+      "how": "api",
+      "seed": null,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1b-panel/bb-mobile390-empty.png",
+      "metrics": {
+        "title": "Unpublished Changes (1)",
+        "emptyVisible": false,
+        "emptyTitle": "No unpublished changes",
+        "emptyBody": "Your draft matches the live website. Edit a field to see it listed here before publishing.",
+        "groupCount": 1,
+        "groupLabels": [
+          {
+            "page": "Home",
+            "count": "1 change"
+          }
+        ],
+        "itemCount": 1,
+        "statusVisible": true,
+        "statusText": "Ready for public visitors 1 pending edit verified",
+        "publishLabel": "Publish All (1) Changes",
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-u1b-panel-1",
+          "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1b-panel-1"
+        ],
+        "sheetW": 390,
+        "overflowX": false
+      }
+    },
+    {
+      "tag": "bb-mobile390-populated",
+      "width": 390,
+      "height": 844,
+      "mode": "populated",
+      "how": "pill",
+      "seed": [
+        {
+          "contentKey": "home.hero.heading",
+          "status": 200,
+          "ok": true,
+          "pending": 1
+        },
+        {
+          "contentKey": "home.hero.subheading",
+          "status": 400,
+          "ok": false
+        }
+      ],
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1b-panel/bb-mobile390-populated.png",
+      "metrics": {
+        "title": "Unpublished Changes (1)",
+        "emptyVisible": false,
+        "emptyTitle": "No unpublished changes",
+        "emptyBody": "Your draft matches the live website. Edit a field to see it listed here before publishing.",
+        "groupCount": 1,
+        "groupLabels": [
+          {
+            "page": "Home",
+            "count": "1 change"
+          }
+        ],
+        "itemCount": 1,
+        "statusVisible": true,
+        "statusText": "Ready for public visitors 1 pending edit verified",
+        "publishLabel": "Publish All (1) Changes",
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-u1b-panel-1",
+          "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1b-panel-1"
+        ],
+        "sheetW": 390,
+        "overflowX": false
+      }
+    },
+    {
+      "tag": "ac-desktop1440-empty",
+      "width": 1440,
+      "height": 900,
+      "mode": "empty",
+      "how": "api",
+      "seed": null,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1b-panel/ac-desktop1440-empty.png",
+      "metrics": {
+        "title": "Unpublished Changes",
+        "emptyVisible": true,
+        "emptyTitle": "No unpublished changes",
+        "emptyBody": "Your draft matches the live website. Edit a field to see it listed here before publishing.",
+        "groupCount": 0,
+        "groupLabels": [],
+        "itemCount": 0,
+        "statusVisible": false,
+        "statusText": "Ready for public visitors 0 pending edits",
+        "publishLabel": "Publish All Changes",
+        "css": [
+          "https://activeclinic.neuniversity.org/activeclinic/ac-tokens.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-public.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-phone-field.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-u1b-panel-1"
+        ],
+        "sheetW": 448,
+        "overflowX": false
+      }
+    },
+    {
+      "tag": "ac-desktop1440-populated",
+      "width": 1440,
+      "height": 900,
+      "mode": "populated",
+      "how": "pill",
+      "seed": [
+        {
+          "contentKey": "home.hero.title",
+          "status": 200,
+          "ok": true,
+          "pending": 1
+        },
+        {
+          "contentKey": "home.hero.subtitle",
+          "status": 200,
+          "ok": true,
+          "pending": 2
+        }
+      ],
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1b-panel/ac-desktop1440-populated.png",
+      "metrics": {
+        "title": "Unpublished Changes (2)",
+        "emptyVisible": false,
+        "emptyTitle": "No unpublished changes",
+        "emptyBody": "Your draft matches the live website. Edit a field to see it listed here before publishing.",
+        "groupCount": 1,
+        "groupLabels": [
+          {
+            "page": "Home",
+            "count": "2 changes"
+          }
+        ],
+        "itemCount": 2,
+        "statusVisible": true,
+        "statusText": "Ready for public visitors 2 pending edits verified",
+        "publishLabel": "Publish All (2) Changes",
+        "css": [
+          "https://activeclinic.neuniversity.org/activeclinic/ac-tokens.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-public.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-phone-field.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-u1b-panel-1"
+        ],
+        "sheetW": 448,
+        "overflowX": false
+      }
+    },
+    {
+      "tag": "ac-mobile390-empty",
+      "width": 390,
+      "height": 844,
+      "mode": "empty",
+      "how": "api",
+      "seed": null,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1b-panel/ac-mobile390-empty.png",
+      "metrics": {
+        "title": "Unpublished Changes (2)",
+        "emptyVisible": false,
+        "emptyTitle": "No unpublished changes",
+        "emptyBody": "Your draft matches the live website. Edit a field to see it listed here before publishing.",
+        "groupCount": 1,
+        "groupLabels": [
+          {
+            "page": "Home",
+            "count": "2 changes"
+          }
+        ],
+        "itemCount": 2,
+        "statusVisible": true,
+        "statusText": "Ready for public visitors 2 pending edits verified",
+        "publishLabel": "Publish All (2) Changes",
+        "css": [
+          "https://activeclinic.neuniversity.org/activeclinic/ac-tokens.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-public.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-phone-field.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-u1b-panel-1"
+        ],
+        "sheetW": 390,
+        "overflowX": false
+      }
+    },
+    {
+      "tag": "ac-mobile390-populated",
+      "width": 390,
+      "height": 844,
+      "mode": "populated",
+      "how": "pill",
+      "seed": [
+        {
+          "contentKey": "home.hero.title",
+          "status": 200,
+          "ok": true,
+          "pending": 2
+        },
+        {
+          "contentKey": "home.hero.subtitle",
+          "status": 200,
+          "ok": true,
+          "pending": 2
+        }
+      ],
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1b-panel/ac-mobile390-populated.png",
+      "metrics": {
+        "title": "Unpublished Changes (2)",
+        "emptyVisible": false,
+        "emptyTitle": "No unpublished changes",
+        "emptyBody": "Your draft matches the live website. Edit a field to see it listed here before publishing.",
+        "groupCount": 1,
+        "groupLabels": [
+          {
+            "page": "Home",
+            "count": "2 changes"
+          }
+        ],
+        "itemCount": 2,
+        "statusVisible": true,
+        "statusText": "Ready for public visitors 2 pending edits verified",
+        "publishLabel": "Publish All (2) Changes",
+        "css": [
+          "https://activeclinic.neuniversity.org/activeclinic/ac-tokens.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-public.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-phone-field.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1b-panel-1",
+          "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-u1b-panel-1"
+        ],
+        "sheetW": 390,
+        "overflowX": false
+      }
+    }
+  ],
+  "stitchRefs": {
+    "desktop": "docs/qa/references/v2-01-stitch-parity/stitch/s3-simple-review-states-desktop__33660fcf.png",
+    "mobile": "docs/qa/references/v2-01-stitch-parity/stitch/s3-unpublished-panel-mobile__d205f226.png"
+  }
+}

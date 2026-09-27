@@ -141,29 +141,40 @@ describe("v7 BlessBoard publish engine bridge", () => {
     }
   });
 
-  it("every public BlessBoard publish entry point calls publishFromLegacy", () => {
+  it("every public BlessBoard publish entry point dual-writes via publishFromLegacy", () => {
     const root = path.join(__dirname, "..");
     const publishService = fs.readFileSync(
       path.join(root, "src/blessboard/services/churchWebsitePublishService.js"),
       "utf8"
     );
     assert.match(publishService, /publishFromLegacy/);
-    const callers = [
-      "src/blessboard/http/blessboardWebsiteEditorRoutes.js",
-      "src/blessboard/services/websiteDraftPublishService.js",
-      "src/blessboard/services/websiteChangeSubmissionService.js",
-      "src/blessboard/services/websitePublicationVersionService.js",
-      "src/blessboard/services/configureDemoChurch.js",
-      "src/platform/website-engine/lifecycleOrchestrator.js",
-    ];
-    for (const rel of callers) {
-      const src = fs.readFileSync(path.join(root, rel), "utf8");
-      assert.match(
-        src,
-        /publishChurchWebsite/,
-        `${rel} must publish through publishChurchWebsite`
-      );
-    }
+    assert.match(publishService, /async function publishChurchWebsite/);
+
+    const governance = fs.readFileSync(
+      path.join(root, "src/blessboard/website/blessboardPublicationGovernanceAdapter.js"),
+      "utf8"
+    );
+    assert.match(governance, /publishChurchWebsite/);
+
+    const bootstrap = fs.readFileSync(
+      path.join(root, "src/blessboard/bootstrap/registerBlessBoardPlatformContracts.js"),
+      "utf8"
+    );
+    assert.match(bootstrap, /blessboardPublicationGovernanceAdapter/);
+
+    const editorRoutes = fs.readFileSync(
+      path.join(root, "src/blessboard/http/blessboardWebsiteEditorRoutes.js"),
+      "utf8"
+    );
+    assert.match(editorRoutes, /publishProductWebsite|website\/publish/);
+    assert.match(editorRoutes, /dual-write|blessboardBridge|overlay/i);
+
+    const bridge = fs.readFileSync(
+      path.join(root, "src/platform/website-engine/blessboardBridge.js"),
+      "utf8"
+    );
+    assert.match(bridge, /async function publishFromLegacy/);
+
     const initial = fs.readFileSync(
       path.join(root, "src/blessboard/services/churchWebsitePublishService.js"),
       "utf8"

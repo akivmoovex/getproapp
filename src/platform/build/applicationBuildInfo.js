@@ -10,11 +10,11 @@
  *   versionBase     → "1.03"  (system version prefix)
  *   version         → "1.03.<12-char deployed SHA>" or "1.03.(unavailable)"
  *
- * V8 platform line (neuniversity moovex-platform-v8-testing AND V9 pronline
+ * V8 platform line (neuniversity moovex-platform-v8-testing AND V9/V10 pronline
  * moovex-platform-testing with platformLine=v8):
- *   productVersion  → "2.02"
- *   versionBase     → "2.02"
- *   version         → "2.02" (Git SHA is shown separately as `build`; no invented build number)
+ *   productVersion  → "2.03"
+ *   versionBase     → "2.03"
+ *   version         → "2.03" (Git SHA is shown separately as `build`; no invented build number)
  */
 
 const { readGitShaShort } = require("../../startup/startupProcessMarker");
@@ -27,9 +27,9 @@ const VERSION_BASE_V7 = "1.03";
 /** Human product version label for V7 release 1.3. */
 const PRODUCT_VERSION_V7 = "1.3";
 
-/** System / product version for V8 (GetPro V2.02 line). */
-const VERSION_BASE_V8 = "2.02";
-const PRODUCT_VERSION_V8 = "2.02";
+/** System / product version for V8 (GetPro V2.03 line). */
+const VERSION_BASE_V8 = "2.03";
+const PRODUCT_VERSION_V8 = "2.03";
 
 /**
  * Backward-compatible aliases — default to V7 so existing imports keep working.

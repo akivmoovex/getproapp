@@ -1,0 +1,105 @@
+{
+  "checkpoint": "U1-A",
+  "gitSha": "27504439770e",
+  "acSha": "27504439770e",
+  "productionSha": "03a89106e2fe",
+  "productionDeployment": "moovex-platform-production",
+  "cache": "v2-u1a-history-1",
+  "stitch": {
+    "desktop": "3d0ca359954840aab5b4f4d4587af5ca",
+    "mobile": "06f6fb0423eb47808b0227564ae48458"
+  },
+  "cases": [
+    {
+      "tag": "bb-desktop1440-field-history",
+      "width": 1440,
+      "height": 900,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1a-history/bb-desktop1440-field-history.png",
+      "metrics": {
+        "title": "Field History: Short eyebrow label",
+        "previewCount": 2,
+        "previews": [
+          "Welcome to V8 QA Church mub23a6v6a6b",
+          "(empty)"
+        ],
+        "hasRawKey": false,
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-u1a-history-1",
+          "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1a-history-1"
+        ],
+        "sheetH": 704
+      },
+      "opened": true
+    },
+    {
+      "tag": "bb-mobile390-field-history",
+      "width": 390,
+      "height": 844,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1a-history/bb-mobile390-field-history.png",
+      "metrics": {
+        "title": "Field History: Bodytext",
+        "previewCount": 1,
+        "previews": [
+          "(empty)"
+        ],
+        "hasRawKey": false,
+        "css": [
+          "https://blessboard.neuniversity.org/platform/website-inline-edit.css?v=v2-u1a-history-1",
+          "https://blessboard.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1a-history-1"
+        ],
+        "sheetH": 691.15625
+      },
+      "opened": true
+    },
+    {
+      "tag": "ac-desktop1440-field-history",
+      "width": 1440,
+      "height": 900,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1a-history/ac-desktop1440-field-history.png",
+      "metrics": {
+        "title": "Field History: Clinic logo",
+        "previewCount": 2,
+        "previews": [
+          "Image attached",
+          "(empty)"
+        ],
+        "hasRawKey": false,
+        "css": [
+          "https://activeclinic.neuniversity.org/activeclinic/ac-tokens.css?v=v2-u1a-history-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-public.css?v=v2-u1a-history-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-phone-field.css?v=v2-u1a-history-1",
+          "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-u1a-history-1",
+          "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1a-history-1",
+          "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-u1a-history-1"
+        ],
+        "sheetH": 704
+      },
+      "opened": true
+    },
+    {
+      "tag": "ac-mobile390-field-history",
+      "width": 390,
+      "height": 844,
+      "shot": "docs/qa/references/v2-01-remaining-ui/u1a-history/ac-mobile390-field-history.png",
+      "metrics": {
+        "title": "Field History: Clinic logo",
+        "previewCount": 2,
+        "previews": [
+          "Image attached",
+          "(empty)"
+        ],
+        "hasRawKey": false,
+        "css": [
+          "https://activeclinic.neuniversity.org/activeclinic/ac-tokens.css?v=v2-u1a-history-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-public.css?v=v2-u1a-history-1",
+          "https://activeclinic.neuniversity.org/activeclinic/ac-phone-field.css?v=v2-u1a-history-1",
+          "https://activeclinic.neuniversity.org/platform/website-inline-edit.css?v=v2-u1a-history-1",
+          "https://activeclinic.neuniversity.org/platform/website-change-manager-ui.css?v=v2-u1a-history-1",
+          "https://activeclinic.neuniversity.org/platform/website-add-section.css?v=v2-u1a-history-1"
+        ],
+        "sheetH": 704
+      },
+      "opened": true
+    }
+  ]
+}
