@@ -130,12 +130,11 @@ Packaging commits (oldest → newest):
   f7e7c605  Lift organization key and zero cross-product requires (PC18–PC19).
   f9e35d28  Remove Finder STALE_FORK duplicates after PC20 triage (PC21).
   3c38f20e  Document V10 PC18–PC24 evidence and final clean checkpoint.
+  b164c963  docs: record PC24 packaging commit SHAs on final checkpoint.
 
-HEAD (after docs commit): 3c38f20eb3d1d3b9a958e0ad375b093e6714e467
-AHEAD (after docs):       21
+HEAD (after):             b164c9630614423072577690c0aae4ceafa7dff2
+AHEAD (after):            22
 BEHIND:                   0
-
-Note: tip may advance by one SHA if this finalize docs commit is appended.
 ```
 
 ---
