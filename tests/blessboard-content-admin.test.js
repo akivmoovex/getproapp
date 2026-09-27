@@ -760,7 +760,7 @@ describe("blessboard content admin", () => {
     assert.match(listed.res.text, /data-bb-sermons-editors="1"/);
     assert.match(listed.res.text, /data-bb-sermons-media-link="1"/);
     assert.match(listed.res.text, /data-bb-sermons-resource-link="1"/);
-    assert.match(listed.res.text, /name="preached_at"[^>]*value="2026-03-20T09:30:00\.000Z"|value="2026-03-20T09:30:00\.000Z"/);
+    assert.match(listed.res.text, /name="preached_at"[^>]*value="2026-03-20"|value="2026-03-20"/);
 
     const searched = await authedGet("/branch-admin/content/sermons?q=Grace", HOST_A, users.branchA);
     assert.match(searched.res.text, /Living Hope Teaching/);

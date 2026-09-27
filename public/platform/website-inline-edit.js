@@ -433,8 +433,30 @@
     }
   }
 
+  /**
+   * Shared mount API for Universal Image Editor framing.
+   * Inline editable-image and structured/entity surfaces both call openFraming.
+   * Framing algorithms stay here — products must not reimplement zoom/move/fit/fill.
+   */
+  function exportUniversalImageEditorApi(openFramingFn) {
+    window.GpUniversalImageEditor = {
+      version: 1,
+      hasFramingMount: typeof openFramingFn === "function",
+      openFraming: openFramingFn || function () {
+        return { ok: false, reason: "editor_host_missing" };
+      },
+      applyPlacementToElement: applyPlacementToElement,
+      serializePlacementForSave: serializePlacementForSave,
+      clonePlacement: clonePlacement,
+      defaultFrame: defaultFrame,
+    };
+  }
+
   var host = document.querySelector("[data-website-field-editor]");
-  if (!host) return;
+  if (!host) {
+    exportUniversalImageEditorApi(null);
+    return;
+  }
 
   var overlay = host.querySelector("[data-website-field-editor-overlay]");
   var panel = host.querySelector("[data-website-field-editor-panel]");
@@ -1259,6 +1281,15 @@
   }
 
   function saveImage() {
+    if (state && state.externalMount) {
+      var allowSeparate =
+        (state.image && state.image.allowSeparate) || Boolean(state.externalMount.allowSeparateFraming);
+      var savedPlacement = serializePlacementForSave(state.placement, allowSeparate);
+      var onApply = state.externalMount.onApply;
+      closeDialog();
+      if (typeof onApply === "function") onApply(savedPlacement);
+      return;
+    }
     if (!activeField || !state || !state.image) return;
     var imgState = state.image;
     var altText = imgState.altInput ? imgState.altInput.value : "";
@@ -1430,6 +1461,94 @@
       });
   }
 
+  /**
+   * Open Adjust Picture framing for non-inline mounts (structured / entity).
+   * Reuses the same framing sheet + algorithms as editable-image.
+   *
+   * @param {{
+   *   src: string,
+   *   placement?: object|null,
+   *   allowSeparateFraming?: boolean,
+   *   contentKey?: string,
+   *   title?: string,
+   *   trigger?: Element|null,
+   *   onApply?: function(object|null): void,
+   *   onCancel?: function(): void,
+   * }} opts
+   */
+  function openExternalFraming(opts) {
+    opts = opts || {};
+    var src = String(opts.src || "").trim();
+    if (!src) return { ok: false, reason: "image_required" };
+    if (isOpen()) return { ok: false, reason: "editor_busy" };
+
+    lastTrigger = opts.trigger || null;
+    setStatus("", false);
+
+    var fake = document.createElement("div");
+    fake.setAttribute("data-website-type", "image");
+    fake.setAttribute("data-website-key", String(opts.contentKey || "structured.image"));
+    fake.setAttribute(
+      "data-website-slot-separate",
+      opts.allowSeparateFraming === true ? "1" : "0"
+    );
+    if (opts.placement && typeof opts.placement === "object") {
+      try {
+        fake.setAttribute("data-website-image-placement", JSON.stringify(opts.placement));
+      } catch (e) {
+        /* ignore */
+      }
+    }
+    var canvasImg = document.createElement("img");
+    canvasImg.setAttribute("data-website-image", "1");
+    canvasImg.setAttribute("src", src);
+    canvasImg.setAttribute("alt", String(opts.alt || ""));
+    fake.appendChild(canvasImg);
+
+    activeField = fake;
+    state = {
+      kind: "image",
+      pendingFile: null,
+      pendingMediaId: null,
+      pendingObjectUrl: null,
+      pendingRemove: false,
+      placement: null,
+      originalPlacement: null,
+      frameMode: "desktop",
+      framingOpen: false,
+      externalMount: {
+        onApply: typeof opts.onApply === "function" ? opts.onApply : null,
+        onCancel: typeof opts.onCancel === "function" ? opts.onCancel : null,
+        allowSeparateFraming: opts.allowSeparateFraming === true,
+      },
+    };
+
+    if (titleEl) titleEl.textContent = opts.title || "Adjust Picture";
+    state.image = buildImageBody(fake);
+
+    // Framing-only surface: hide replace/library/remove/alt — Adjust Picture is the job.
+    bodyEl.querySelectorAll(".gp-website-field-editor__media-actions label").forEach(function (el) {
+      el.hidden = true;
+    });
+    bodyEl.querySelectorAll("[data-website-library], [data-website-remove-image]").forEach(function (el) {
+      el.hidden = true;
+    });
+    bodyEl.querySelectorAll(".gp-website-field-editor__media-grid, .gp-website-field-editor__alt").forEach(
+      function (el) {
+        el.hidden = true;
+      }
+    );
+    var adjustBtn = bodyEl.querySelector("[data-website-adjust]");
+    if (adjustBtn) {
+      adjustBtn.hidden = false;
+      adjustBtn.click();
+    }
+
+    installDirtyTracking();
+    openDialog();
+    return { ok: true };
+  }
+
   function save() {
     if (!state) return;
     if (state.kind === "image") saveImage();
@@ -1445,15 +1564,20 @@
   }
 
   function cancel() {
+    function finishCancel() {
+      var onCancel = state && state.externalMount && state.externalMount.onCancel;
+      closeDialog();
+      if (typeof onCancel === "function") onCancel();
+    }
     if (
       isLocallyDirty() &&
       window.GpWebsiteLifecycle &&
       typeof window.GpWebsiteLifecycle.guardNavigation === "function"
     ) {
-      window.GpWebsiteLifecycle.guardNavigation(closeDialog);
+      window.GpWebsiteLifecycle.guardNavigation(finishCancel);
       return;
     }
-    closeDialog();
+    finishCancel();
   }
 
   if (saveBtn) saveBtn.addEventListener("click", save);
@@ -1489,4 +1613,6 @@
       });
     }
   });
+
+  exportUniversalImageEditorApi(openExternalFraming);
 })();

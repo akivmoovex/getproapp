@@ -150,6 +150,7 @@
               scripture: featured.scripture,
               mediaUrl: featured.mediaUrl,
               imageUrl: featured.imageUrl,
+                placement: featured.imagePlacement || featured.placement || null,
               featured: true,
               visible: true
             }
@@ -171,6 +172,7 @@
                 scripture: featured.scripture,
                 mediaUrl: featured.mediaUrl,
                 imageUrl: featured.imageUrl,
+                placement: featured.imagePlacement || featured.placement || null,
                 featured: true,
                 visible: true
               }
@@ -273,7 +275,8 @@
             <% if (!sermon.imageUrl) { %>role="img" aria-label="<%= thumbLabel %>"<% } %>
           >
             <% if (sermon.imageUrl) { %>
-            <img src="<%= sermon.imageUrl %>" alt="<%= thumbLabel %>" width="400" height="240" loading="lazy" decoding="async" data-bb-sermon-image="1" />
+            <% var __sps = typeof presentImagePlacementStyle === 'function' ? presentImagePlacementStyle(sermon.imagePlacement || sermon.placement || null) : { className: '', style: '' }; %>
+            <img class="<%= __sps.className || '' %>" src="<%= sermon.imageUrl %>" alt="<%= thumbLabel %>" width="400" height="240" loading="lazy" decoding="async" data-bb-sermon-image="1"<% if (__sps.style) { %> style="<%= __sps.style %>"<% } %> />
             <% } else { %>
             <span class="material-symbols-outlined bb-tp-sermon-card__fallback-icon" aria-hidden="true">menu_book</span>
             <% } %>
@@ -288,6 +291,7 @@
                 scripture: sermon.scripture,
                 mediaUrl: sermon.mediaUrl,
                 imageUrl: sermon.imageUrl,
+                placement: sermon.imagePlacement || sermon.placement || null,
                 featured: false,
                 visible: true
               }
@@ -309,6 +313,7 @@
                   scripture: sermon.scripture,
                   mediaUrl: sermon.mediaUrl,
                   imageUrl: sermon.imageUrl,
+                placement: sermon.imagePlacement || sermon.placement || null,
                   featured: false,
                   visible: true
                 }

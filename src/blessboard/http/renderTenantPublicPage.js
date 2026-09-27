@@ -34,6 +34,10 @@ function renderView(relativePath, data) {
     {
       presentImageSrc: (src) => presentRuntimeImageSrc(src, process.env) || "",
       cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, process.env) || "",
+      presentImagePlacementStyle: (placement, opts) => {
+        const { renderPlacementStyle } = require("../../platform/website/imagePlacement");
+        return renderPlacementStyle(placement, opts || {});
+      },
     },
     data || {}
   );

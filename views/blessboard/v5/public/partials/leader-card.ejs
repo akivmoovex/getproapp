@@ -14,6 +14,11 @@
   if (_img && typeof presentImageSrc === 'function') {
     _img = presentImageSrc(_img) || null;
   }
+  var _placement = (leader && (leader.imagePlacement || leader.placement)) || null;
+  var _ps =
+    typeof presentImagePlacementStyle === 'function'
+      ? presentImagePlacementStyle(_placement)
+      : { className: '', style: '' };
   var _wa = typeof websiteAdmin !== 'undefined' && websiteAdmin ? websiteAdmin : null;
   var _leaderKey = leader && (leader.id || leader.entityKey)
     ? String(leader.id || leader.entityKey)
@@ -37,6 +42,7 @@
   <div class="bb-tp-leader-card__media<%= _img ? ' has-media' : ' is-fallback' %><%= _canEdit ? ' bb-tp-edit-media-wrap' : '' %>">
     <% if (_img) { %>
     <img
+      class="<%= _ps.className || '' %>"
       src="<%= _img %>"
       alt="<%= leader.templateExample ? 'Template portrait' : leader.displayName %>"
       width="<%= _featured ? 480 : 400 %>"
@@ -44,6 +50,7 @@
       loading="<%= _featured ? 'eager' : 'lazy' %>"
       decoding="async"
       data-bb-leader-image="1"
+      <% if (_ps.style) { %>style="<%= _ps.style %>"<% } %>
     />
     <% } else { %>
     <div class="bb-tp-avatar<%= _featured ? ' bb-tp-avatar--xl' : '' %>" role="img" aria-label="<%= leader.displayName %>">
@@ -59,6 +66,7 @@
         roleTitle: _roleClean,
         biography: _bioClean,
         imageUrl: leader.imageUrl || '',
+        placement: _placement,
         sortOrder: leader.sortOrder != null ? leader.sortOrder : 10,
         seniorLeader: Boolean(_featured || leader.seniorLeader),
         visible: leader.visible !== false,

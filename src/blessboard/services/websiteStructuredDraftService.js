@@ -603,6 +603,7 @@ function applyStructuredDraftsToModel(model, drafts) {
         roleTitle: p.roleTitle,
         biography: p.biography,
         imageUrl: presentDraftImageUrl(p.imageUrl),
+        imagePlacement: p.placement || p.imagePlacement || null,
         sortOrder: p.sortOrder || 0,
         status: p.status,
         seniorLeader: p.seniorLeader,
@@ -620,6 +621,7 @@ function applyStructuredDraftsToModel(model, drafts) {
           roleTitle: p.roleTitle,
           biography: p.biography,
           imageUrl: presentDraftImageUrl(p.imageUrl),
+          imagePlacement: p.placement || p.imagePlacement || null,
           sortOrder: p.sortOrder || 0,
         })),
       };
@@ -636,6 +638,7 @@ function applyStructuredDraftsToModel(model, drafts) {
         meetingDay: p.meetingDay,
         contactEmail: p.contactEmail,
         imageUrl: presentDraftImageUrl(p.imageUrl),
+        imagePlacement: p.placement || p.imagePlacement || null,
         sortOrder: p.sortOrder || 0,
         featured: p.featured,
         visible: p.visible !== false,
@@ -652,6 +655,7 @@ function applyStructuredDraftsToModel(model, drafts) {
           name: p.name,
           summary: p.summary,
           imageUrl: presentDraftImageUrl(p.imageUrl),
+          imagePlacement: p.placement || p.imagePlacement || null,
         })),
       };
     }
@@ -668,6 +672,7 @@ function applyStructuredDraftsToModel(model, drafts) {
       location: p.location,
       registrationUrl: p.registrationUrl,
       imageUrl: presentDraftImageUrl(p.imageUrl),
+      imagePlacement: p.placement || p.imagePlacement || null,
       featured: p.featured,
       visible: p.visible !== false,
       organizer: p.organizer,
@@ -700,6 +705,7 @@ function applyStructuredDraftsToModel(model, drafts) {
       mediaUrl: presentDraftImageUrl(p.mediaUrl),
       resourceUrl: p.resourceUrl,
       imageUrl: presentDraftImageUrl(p.imageUrl),
+      imagePlacement: p.placement || p.imagePlacement || null,
       featured: p.featured,
       visible: p.visible !== false,
       series: p.series,

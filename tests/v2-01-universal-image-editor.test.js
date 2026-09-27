@@ -149,7 +149,7 @@ describe("V2_01 universal image editor UI", () => {
   });
 
   it("asset cache bumps reference the B3 editor build", () => {
-    assert.match(read("views/blessboard/v5/partials/tenant-public-shell-end.ejs"), /website-inline-edit\.js\?v=v2-img-editor-2/);
+    assert.match(read("views/blessboard/v5/partials/tenant-public-shell-end.ejs"), /website-inline-edit\.js\?v=v2-img-editor-3/);
     // CSS bumped again for history/toolbar parity (still includes image editor + E1 rules).
     assert.match(
       read("views/blessboard/v5/partials/tenant-public-shell-start.ejs"),

@@ -231,7 +231,7 @@
               editEntityKey: 'about-story',
               editSectionKey: 'story',
               editLabel: 'Edit story image',
-              editPayload: { imageUrl: storyMedia[0] || '', altText: 'Life at ' + publicName, focal: 'center' }
+              editPayload: { imageUrl: storyMedia[0] || '', altText: 'Life at ' + publicName, focal: 'center', placement: (storySection && storySection.layoutMetadata && storySection.layoutMetadata.imagePlacement) || null }
             }) %>
           </div>
           <% } %>
@@ -434,7 +434,7 @@
             editEntityKey: 'about-community',
             editSectionKey: 'community',
             editLabel: 'Edit neighbourhood image',
-            editPayload: { imageUrl: (communitySection && communitySection.mediaUrl) || '', altText: (communitySection && communitySection.layoutMetadata && communitySection.layoutMetadata.altText) || '', focal: 'center' }
+            editPayload: { imageUrl: (communitySection && communitySection.mediaUrl) || '', altText: (communitySection && communitySection.layoutMetadata && communitySection.layoutMetadata.altText) || '', focal: (communitySection && communitySection.layoutMetadata && communitySection.layoutMetadata.focal) || 'center', placement: (communitySection && communitySection.layoutMetadata && communitySection.layoutMetadata.imagePlacement) || null }
           }) %>
         </div>
         <% } %>
@@ -462,9 +462,14 @@
       <% if (!gallerySlots.length && typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { gallerySlots = ['', '', '']; } %>
       <% gallerySlots.forEach(function (url, idx) { %>
       <% var galleryKey = 'gallery_' + (idx + 1); %>
+      <% var gallerySec = (typeof sections !== 'undefined' && Array.isArray(sections))
+        ? sections.find(function (s) { return s && String(s.sectionKey) === galleryKey; })
+        : null; %>
+      <% var galleryPlacement = (gallerySec && gallerySec.layoutMetadata && gallerySec.layoutMetadata.imagePlacement) || null; %>
+      <% var galleryPs = typeof presentImagePlacementStyle === 'function' ? presentImagePlacementStyle(galleryPlacement) : { className: '', style: '' }; %>
       <li>
         <% if (url) { %>
-        <img src="<%= url %>" alt="Community moment <%= idx + 1 %> at <%= publicName %>" width="640" height="480" loading="lazy" decoding="async" />
+        <img class="<%= galleryPs.className || '' %>" src="<%= url %>" alt="Community moment <%= idx + 1 %> at <%= publicName %>" width="640" height="480" loading="lazy" decoding="async"<% if (galleryPs.style) { %> style="<%= galleryPs.style %>"<% } %> />
         <% } %>
         <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
         <div class="bb-tp-edit-media-wrap">
@@ -473,7 +478,7 @@
             editEntityKey: 'about-' + galleryKey,
             editSectionKey: galleryKey,
             editLabel: 'Edit gallery image ' + (idx + 1),
-            editPayload: { imageUrl: url || '', altText: 'Community moment ' + (idx + 1) + ' at ' + publicName, focal: 'center' }
+            editPayload: { imageUrl: url || '', altText: 'Community moment ' + (idx + 1) + ' at ' + publicName, focal: 'center', placement: galleryPlacement }
           }) %>
         </div>
         <% if (idx < 3) { %>
@@ -523,7 +528,8 @@
           editPayload: {
             imageUrl: (lifeTogetherSection && lifeTogetherSection.mediaUrl) || '',
             altText: (lifeTogetherSection && lifeTogetherSection.layoutMetadata && lifeTogetherSection.layoutMetadata.altText) || 'Life together',
-            focal: 'center'
+            focal: (lifeTogetherSection && lifeTogetherSection.layoutMetadata && lifeTogetherSection.layoutMetadata.focal) || 'center',
+            placement: (lifeTogetherSection && lifeTogetherSection.layoutMetadata && lifeTogetherSection.layoutMetadata.imagePlacement) || null
           }
         }) %>
       </div>
@@ -584,7 +590,8 @@
           editPayload: {
             imageUrl: (visitorSection && visitorSection.mediaUrl) || '',
             altText: (visitorSection && visitorSection.layoutMetadata && visitorSection.layoutMetadata.altText) || 'Visit on Sunday',
-            focal: 'center'
+            focal: (visitorSection && visitorSection.layoutMetadata && visitorSection.layoutMetadata.focal) || 'center',
+            placement: (visitorSection && visitorSection.layoutMetadata && visitorSection.layoutMetadata.imagePlacement) || null
           }
         }) %>
       </div>
@@ -636,7 +643,7 @@
             editEntityKey: 'about-' + (section.sectionKey || 'block'),
             editSectionKey: section.sectionKey || 'generic',
             editLabel: 'Edit section image',
-            editPayload: { imageUrl: section.mediaUrl || '', altText: (section.layoutMetadata && section.layoutMetadata.altText) || '', focal: 'center' }
+            editPayload: { imageUrl: section.mediaUrl || '', altText: (section.layoutMetadata && section.layoutMetadata.altText) || '', focal: (section.layoutMetadata && section.layoutMetadata.focal) || 'center', placement: (section.layoutMetadata && section.layoutMetadata.imagePlacement) || null }
           }) %>
         </div>
         <% } %>

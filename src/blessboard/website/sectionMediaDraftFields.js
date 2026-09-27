@@ -35,13 +35,20 @@ function resolveSectionMediaFromDraft(input) {
       payload.imageUrl != null && String(payload.imageUrl).trim()
         ? String(payload.imageUrl).trim()
         : null;
+    const placement =
+      payload.placement !== undefined
+        ? payload.placement
+        : existingLayout.imagePlacement != null
+          ? existingLayout.imagePlacement
+          : null;
     return {
       mediaUrl: imageUrl,
       layoutPatch: {
         mediaKind: "image",
         altText: payload.altText != null ? payload.altText : null,
         focal: payload.focal != null ? payload.focal : null,
-        fit: payload.fit != null ? payload.fit : null,
+        fit: payload.fit != null ? payload.fit : placement && placement.fit ? placement.fit : null,
+        imagePlacement: placement,
         videoUrl: null,
         videoTitle: null,
         previousVideoUrl:

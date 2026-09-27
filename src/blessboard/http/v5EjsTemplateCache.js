@@ -41,6 +41,10 @@ function renderV5Ejs(relativePath, data) {
       deploymentBrand: resolveDeploymentBrand(),
       cdnAsset: (publicPath) => cdnMarketingAsset(publicPath, process.env) || "",
       presentImageSrc: (src) => presentRuntimeImageSrc(src, process.env) || "",
+      presentImagePlacementStyle: (placement, opts) => {
+        const { renderPlacementStyle } = require("../../platform/website/imagePlacement");
+        return renderPlacementStyle(placement, opts || {});
+      },
     },
     data || {}
   );

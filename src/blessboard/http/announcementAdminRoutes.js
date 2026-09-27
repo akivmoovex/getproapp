@@ -40,6 +40,13 @@ const {
 const { createMediaUploadService } = require("../media/mediaUploadService");
 const { sendPrivateMediaDownload } = require("./sendPrivateMediaDownload");
 const {
+  createBlessBoardMediaUploadMulter,
+  requireMediaUploadsEnabled,
+  createMulterSingleMiddleware,
+  respondWithMediaUpload,
+  VISIBILITY,
+} = require("./blessBoardMediaUploadHttp");
+const {
   listBlessBoardBranches,
   resolveBlessBoardBranchForChurch,
   STATUS: BRANCH_STATUS,
@@ -185,6 +192,14 @@ function createAnnouncementAdminRouter(deps) {
     getPool,
     scopeMode: variant === "hq" ? "church" : undefined,
   });
+  // Attachment upload uses manage capability — not website.edit and not view-only.
+  const requireManage = createRequireBlessBoardPermission("announcements.manage", null, {
+    getPool,
+    scopeMode: variant === "hq" ? "church" : undefined,
+  });
+  const upload = createBlessBoardMediaUploadMulter(env);
+  const multerSingle = createMulterSingleMiddleware(upload);
+  const requireUploadsEnabled = requireMediaUploadsEnabled(env);
 
   const rejectApex = createRejectApex({
     isApexHost,
@@ -206,6 +221,17 @@ function createAnnouncementAdminRouter(deps) {
       return;
     }
     return requireAccess(req, res, next);
+  }
+
+  function gateManage(req, res, next) {
+    if (
+      !requireSession(req, res, {
+        loginNext: req.originalUrl || loginNextDefault,
+      })
+    ) {
+      return;
+    }
+    return requireManage(req, res, next);
   }
 
   async function shellLocals(req, res, extra) {
@@ -349,9 +375,13 @@ function createAnnouncementAdminRouter(deps) {
   }
 
   function mediaUploadUrlForScope(scope) {
-    if (variant === "branch") return "/branch-admin/content/media/upload";
-    if (scope && scope.branchKey) return `/hq/content/b/${scope.branchKey}/media/upload`;
-    return "/hq/content/media/upload";
+    // Purpose-scoped announcement attachment upload (announcements.manage + private).
+    // Does not use generic /content/media/upload (website.edit).
+    if (variant === "branch") return "/branch-admin/announcements/media/upload";
+    if (scope && scope.branchKey) {
+      return `/hq/announcements/b/${scope.branchKey}/media/upload`;
+    }
+    return "/hq/announcements/media/upload";
   }
 
   function editorScopeExtras(scope, isBranchScoped) {
@@ -393,6 +423,28 @@ function createAnnouncementAdminRouter(deps) {
   }
 
   function registerRoutes(mountPrefix, isBranchScoped) {
+    // Must register before /:id so "media" is not captured as an announcement id.
+    router.post(
+      `${mountPrefix}/media/upload`,
+      rejectApex,
+      gateManage,
+      requireUploadsEnabled,
+      multerSingle,
+      async (req, res) => {
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+        return respondWithMediaUpload(req, res, {
+          getPool,
+          mediaService,
+          env,
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          uploadedByUserId: scope.actorUserId,
+          forceVisibility: VISIBILITY.PRIVATE,
+        });
+      }
+    );
+
     router.get(mountPrefix, rejectApex, gate, async (req, res) => {
       const scope = await resolveScope(req, res);
       if (!scope) return;

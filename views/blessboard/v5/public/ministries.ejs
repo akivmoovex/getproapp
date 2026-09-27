@@ -124,6 +124,7 @@
                 meetingDay: ministry.meetingDay,
                 contactEmail: ministry.contactEmail,
                 imageUrl: ministry.imageUrl,
+                placement: ministry.imagePlacement || ministry.placement || null,
                 visible: true
               }
             }) %>
@@ -144,6 +145,7 @@
                   meetingDay: ministry.meetingDay,
                   contactEmail: ministry.contactEmail,
                   imageUrl: ministry.imageUrl,
+                placement: ministry.imagePlacement || ministry.placement || null,
                   visible: true
                 }
               }) %>
@@ -201,7 +203,8 @@
         <li class="bb-tp-ministry-card" data-bb-ministry-card="1" data-bb-ministry-id="<%= String(ministry.id || ('ministry-' + ministry.name)) %>">
           <div class="bb-tp-ministry-card__media<%= ministry.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
             <% if (ministry.imageUrl) { %>
-            <img src="<%= ministry.imageUrl %>" alt="<%= ministry.name %>" width="640" height="400" loading="lazy" decoding="async" data-bb-ministry-image="1" />
+            <% var __mps = typeof presentImagePlacementStyle === 'function' ? presentImagePlacementStyle(ministry.imagePlacement || ministry.placement || null) : { className: '', style: '' }; %>
+            <img class="<%= __mps.className || '' %>" src="<%= ministry.imageUrl %>" alt="<%= ministry.name %>" width="640" height="400" loading="lazy" decoding="async" data-bb-ministry-image="1"<% if (__mps.style) { %> style="<%= __mps.style %>"<% } %> />
             <% } else { %>
             <span class="material-symbols-outlined bb-tp-ministry-card__fallback-icon" role="img" aria-label="<%= ministry.name %>">groups</span>
             <% } %>
@@ -216,6 +219,7 @@
                 meetingDay: ministry.meetingDay,
                 contactEmail: ministry.contactEmail,
                 imageUrl: ministry.imageUrl,
+                placement: ministry.imagePlacement || ministry.placement || null,
                 visible: true
               }
             }) %>
@@ -236,6 +240,7 @@
                   meetingDay: ministry.meetingDay,
                   contactEmail: ministry.contactEmail,
                   imageUrl: ministry.imageUrl,
+                placement: ministry.imagePlacement || ministry.placement || null,
                   visible: true
                 }
               }) %>

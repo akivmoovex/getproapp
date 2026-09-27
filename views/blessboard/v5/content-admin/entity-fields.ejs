@@ -170,10 +170,12 @@
 
 <% if (entityKind === 'sermons') { %>
   <%
-    function isoSermonField(snake, camel) {
+    function dateSermonField(snake, camel) {
       var v = val(snake, camel, '');
-      if (v && typeof v === 'object' && v.toISOString) return v.toISOString();
-      return v;
+      if (v && typeof v === 'object' && v.toISOString) return v.toISOString().slice(0, 10);
+      var s = String(v == null ? '' : v).trim();
+      if (/^\d{4}-\d{2}-\d{2}/.test(s)) return s.slice(0, 10);
+      return '';
     }
   %>
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_sermon_heading" data-bb-sermons-section="details">
@@ -194,8 +196,8 @@
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_preached_heading" data-bb-sermons-section="schedule">
     <h3 id="<%= mode %>_preached_heading" class="bb-ba-entities-form__section-title">Preached date</h3>
     <div class="bb-ba-field">
-      <label for="<%= mode %>_preached_at">Preached at (ISO datetime)</label>
-      <input id="<%= mode %>_preached_at" name="preached_at" type="text" required value="<%= isoSermonField('preached_at', 'preachedAt') %>" placeholder="2026-07-18T10:00:00Z" autocomplete="off" data-bb-sermons-field="preached_at" />
+      <label for="<%= mode %>_preached_at">Preached date</label>
+      <input id="<%= mode %>_preached_at" name="preached_at" type="date" required value="<%= dateSermonField('preached_at', 'preachedAt') %>" autocomplete="off" data-bb-sermons-field="preached_at" />
     </div>
   </section>
   <section class="bb-ba-entities-form__section" aria-labelledby="<%= mode %>_media_heading" data-bb-sermons-section="media">

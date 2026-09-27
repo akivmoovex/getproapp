@@ -233,6 +233,15 @@ function sanitizeLayoutMetadata(meta) {
   }
   if (meta.focal != null) out.focal = String(meta.focal).slice(0, 32);
   if (meta.fit != null) out.fit = String(meta.fit).slice(0, 32);
+  if (meta.imagePlacement != null && typeof meta.imagePlacement === "object" && !Array.isArray(meta.imagePlacement)) {
+    try {
+      const { validateImagePlacement } = require("../../platform/website/imagePlacement");
+      const checked = validateImagePlacement(meta.imagePlacement);
+      if (checked.ok && checked.value) out.imagePlacement = checked.value;
+    } catch {
+      /* keep public render resilient if placement module unavailable */
+    }
+  }
   if (meta.videoUrl != null) out.videoUrl = String(meta.videoUrl).slice(0, 500);
   if (meta.videoTitle != null) {
     out.videoTitle = normalizePlainTextEntities(meta.videoTitle).slice(0, 120);
@@ -1158,6 +1167,28 @@ async function loadTenantPublicPageModel(db, input) {
     entitiesEmptyMessage = "Giving options will appear here when published.";
   }
 
+  // Attach published entity image placement from page.layout_metadata (no entity-column migration).
+  {
+    const { attachEntityImagePlacements } = require("../website/entityImagePlacement");
+    const pageLayout =
+      pageResult.page && pageResult.page.layoutMetadata && typeof pageResult.page.layoutMetadata === "object"
+        ? pageResult.page.layoutMetadata
+        : null;
+    const kindForPage =
+      pageKey === "leadership"
+        ? "leader"
+        : pageKey === "ministries"
+          ? "ministry"
+          : pageKey === "events"
+            ? "event"
+            : pageKey === "sermons"
+              ? "sermon"
+              : null;
+    if (kindForPage && entities.length) {
+      entities = attachEntityImagePlacements(entities, pageLayout, kindForPage);
+    }
+  }
+
   let homeTeasers = {
     ministries: [],
     leaders: [],
@@ -1311,6 +1342,44 @@ async function loadTenantPublicPageModel(db, input) {
       mapSermon
     );
     homeTeasers.sermons = (sermons.items || []).slice(0, 1);
+
+    // Placement lives on each collection page's layout_metadata — attach for home teasers.
+    try {
+      const { attachEntityImagePlacements } = require("../website/entityImagePlacement");
+      const contentRepo = require("../repositories/publicContentRepository");
+      async function layoutFor(pk) {
+        const page = await contentRepo.findPageByScope(db, {
+          churchId,
+          branchId: contentBranchId || null,
+          pageKey: pk,
+        });
+        return page && page.layoutMetadata && typeof page.layoutMetadata === "object"
+          ? page.layoutMetadata
+          : null;
+      }
+      homeTeasers.leaders = attachEntityImagePlacements(
+        homeTeasers.leaders,
+        await layoutFor("leadership"),
+        "leader"
+      );
+      homeTeasers.ministries = attachEntityImagePlacements(
+        homeTeasers.ministries,
+        await layoutFor("ministries"),
+        "ministry"
+      );
+      homeTeasers.events = attachEntityImagePlacements(
+        homeTeasers.events,
+        await layoutFor("events"),
+        "event"
+      );
+      homeTeasers.sermons = attachEntityImagePlacements(
+        homeTeasers.sermons,
+        await layoutFor("sermons"),
+        "sermon"
+      );
+    } catch {
+      /* keep teasers without placement if lookup fails */
+    }
   }
 
   const dataEnvironment = tenant.church.dataEnvironment || null;

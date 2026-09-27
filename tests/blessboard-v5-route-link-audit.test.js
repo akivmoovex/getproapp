@@ -202,6 +202,7 @@ function collectRegisteredPathPatterns() {
       { method: "get", suffix: "" },
       { method: "get", suffix: "/new" },
       { method: "post", suffix: "" },
+      { method: "post", suffix: "/media/upload" },
       { method: "get", suffix: "/:id" },
       { method: "get", suffix: "/:id/edit" },
       { method: "get", suffix: "/:id/preview" },

@@ -18,6 +18,11 @@
   if (_imgSrc && typeof presentImageSrc === 'function') {
     _imgSrc = presentImageSrc(_imgSrc) || _imgSrc;
   }
+  var _placement = (_ministry && (_ministry.imagePlacement || _ministry.placement)) || null;
+  var _ps =
+    typeof presentImagePlacementStyle === 'function'
+      ? presentImagePlacementStyle(_placement)
+      : { className: '', style: '' };
   var _nameClean = String(_ministry && _ministry.name || cardTitle || '').replace(/\s*\(template example\)\s*$/i, '').trim();
   var _summaryClean = String(_ministry && _ministry.summary || '').replace(/\s*\(template example\)\s*$/i, '').trim();
   var _leaderClean = String(_ministry && _ministry.leaderName || '').replace(/\s*\(template example\)\s*$/i, '').trim();
@@ -30,6 +35,7 @@
   <div class="bb-tp-content-card__media<%= _imgSrc ? ' has-media' : '' %><%= _canEditMinistryImage ? ' bb-tp-edit-media-wrap' : '' %>">
     <% if (_imgSrc) { %>
     <img
+      class="<%= _ps.className || '' %>"
       src="<%= _imgSrc %>"
       alt="<%= typeof cardImageAlt !== 'undefined' && cardImageAlt ? cardImageAlt : cardTitle %>"
       width="640"
@@ -37,6 +43,7 @@
       loading="lazy"
       decoding="async"
       data-bb-ministry-image="1"
+      <% if (_ps.style) { %>style="<%= _ps.style %>"<% } %>
     />
     <% } else { %>
     <span class="material-symbols-outlined" aria-hidden="true"><%= typeof cardIcon !== 'undefined' && cardIcon ? cardIcon : 'groups' %></span>
@@ -55,6 +62,7 @@
         contactEmail: _ministry.contactEmail || '',
         joinUrl: _ministry.joinUrl || '',
         imageUrl: _ministry.imageUrl || cardImage || '',
+        placement: _placement,
         featured: Boolean(_ministry.featured),
         visible: _ministry.visible !== false,
         sortOrder: _ministry.sortOrder != null ? _ministry.sortOrder : 10

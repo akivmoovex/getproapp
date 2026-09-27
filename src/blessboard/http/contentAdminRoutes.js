@@ -62,10 +62,14 @@ const {
   CSRF_FIELD,
   validateCsrf,
 } = require("../../platform/http/v5Csrf");
-const multer = require("multer");
 const { createMediaUploadService, STATUS: MEDIA_STATUS } = require("../media/mediaUploadService");
-const { areMediaUploadsEnabled } = require("../config/mediaUploadsEnabled");
-const { MAX_ANY_BYTES, VISIBILITY } = require("../media/mediaConstants");
+const { VISIBILITY } = require("../media/mediaConstants");
+const {
+  createBlessBoardMediaUploadMulter,
+  requireMediaUploadsEnabled,
+  createMulterSingleMiddleware,
+  respondWithMediaUpload,
+} = require("./blessBoardMediaUploadHttp");
 const {
   provisionEmptyPublicPages,
   listAdminPages,
@@ -327,6 +331,9 @@ function errorMessage(reason, conflict) {
   if (reason === "published_requires_draft") {
     return "This content is live. Save your change as a draft, then publish it from the website page.";
   }
+  if (reason === "preached_at") {
+    return "Enter a valid preached date.";
+  }
   return "Please check the form and try again.";
 }
 
@@ -352,10 +359,9 @@ function createContentAdminRouter(deps) {
   const formClass = variant === "hq" ? "bb-hq-form" : "bb-ba-form";
   const loginNextDefault = variant === "hq" ? "/hq/content" : "/branch-admin/content";
 
-  const upload = multer({
-    storage: multer.memoryStorage(),
-    limits: { fileSize: MAX_ANY_BYTES, files: 1 },
-  });
+  const upload = createBlessBoardMediaUploadMulter(env);
+  const multerSingle = createMulterSingleMiddleware(upload);
+  const requireUploadsEnabled = requireMediaUploadsEnabled(env);
 
   const router = express.Router();
   const resolveAssignedBranchContext = createAssignedBranchResourceContextResolver({ getPool });
@@ -856,84 +862,25 @@ function createContentAdminRouter(deps) {
   function registerRoutes(mountPrefix, resolveScope) {
     const p = mountPrefix.replace(/\/$/, "");
 
-    function multerSingle(req, res, next) {
-      upload.single("file")(req, res, (err) => {
-        if (!err) return next();
-        if (err instanceof multer.MulterError && err.code === "LIMIT_FILE_SIZE") {
-          return res.status(400).json({ ok: false, reason: "size_limit" });
-        }
-        return res.status(400).json({ ok: false, reason: "upload_error" });
-      });
-    }
-
+    // Generic website content upload — still requires website.edit via gateContent.
     router.post(
       `${p}/media/upload`,
       rejectApex,
       gateContent,
-      (req, res, next) => {
-        if (!areMediaUploadsEnabled(env)) {
-          return res.status(403).json({ ok: false, reason: "media_uploads_disabled" });
-        }
-        return next();
-      },
+      requireUploadsEnabled,
       multerSingle,
       async (req, res) => {
-      const scope = await resolveScope(req, res);
-      if (!scope) return;
-      const submitted =
-        (req.body && req.body[CSRF_FIELD]) ||
-        (req.headers["x-csrf-token"] != null ? String(req.headers["x-csrf-token"]) : "");
-      if (!validateCsrf(req, submitted, env)) {
-        return res.status(403).json({ ok: false, reason: "csrf" });
-      }
-      if (!req.file || !req.file.buffer) {
-        return res.status(400).json({ ok: false, reason: "empty_file" });
-      }
-      const session = req.v5Session && req.v5Session.session;
-      const visibility =
-        String((req.body && req.body.visibility) || VISIBILITY.PUBLIC).toLowerCase() ===
-        VISIBILITY.PRIVATE
-          ? VISIBILITY.PRIVATE
-          : VISIBILITY.PUBLIC;
-
-      const result = await mediaService.uploadMediaAsset(getPool(), {
-        churchId: scope.churchId,
-        branchId: scope.branchId,
-        uploadedByUserId: session && session.userId,
-        buffer: req.file.buffer,
-        originalFilename: req.file.originalname,
-        claimedMime: req.file.mimetype,
-        visibility,
-      });
-
-      if (!result.ok) {
-        const status =
-          result.status === MEDIA_STATUS.FORBIDDEN
-            ? 403
-            : result.status === MEDIA_STATUS.CONFLICT
-              ? 409
-              : result.status === MEDIA_STATUS.STORAGE_ERROR
-                ? 503
-                : 400;
-        const cleanup =
-          result.status === MEDIA_STATUS.STORAGE_ERROR || result.reason === "upload_failed";
-        return res.status(status).json({
-          ok: false,
-          reason: result.reason || "upload_failed",
-          cleanup: cleanup ? "removed" : null,
+        const scope = await resolveScope(req, res);
+        if (!scope) return;
+        const session = req.v5Session && req.v5Session.session;
+        return respondWithMediaUpload(req, res, {
+          getPool,
+          mediaService,
+          env,
+          churchId: scope.churchId,
+          branchId: scope.branchId,
+          uploadedByUserId: session && session.userId,
         });
-      }
-
-      return res.status(200).json({
-        ok: true,
-        assetId: result.asset.id,
-        deliveryPath: result.deliveryPath,
-        mimeType: result.asset.mimeType,
-        sizeBytes: result.asset.sizeBytes,
-        visibility: result.asset.visibility,
-        originalFilename: result.asset.originalFilename,
-        deduped: Boolean(result.deduped),
-      });
       }
     );
 

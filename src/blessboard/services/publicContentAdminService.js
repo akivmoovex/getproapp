@@ -818,6 +818,67 @@ function buildEventFields(raw, { partial }) {
   return { ok: true, fields };
 }
 
+/**
+ * Canonical sermon preached_at contract (REQUIRED on create).
+ * Accepts browser `type=date` (YYYY-MM-DD) and existing ISO datetimes.
+ * Rejects locale slash formats, empty, whitespace, and impossible calendar dates
+ * before they reach PostgreSQL.
+ *
+ * @param {unknown} raw
+ * @param {{ required?: boolean }} [opts]
+ * @returns {{ ok: true, value: string|null } | { ok: false, reason: string }}
+ */
+function normalizeSermonPreachedAt(raw, opts) {
+  const required = !(opts && opts.required === false);
+  if (raw == null) {
+    return required
+      ? { ok: false, reason: "preached_at" }
+      : { ok: true, value: null };
+  }
+  if (raw instanceof Date) {
+    if (Number.isNaN(raw.getTime())) {
+      return { ok: false, reason: "preached_at" };
+    }
+    return { ok: true, value: raw.toISOString() };
+  }
+  const s = String(raw).trim();
+  if (!s) {
+    return required
+      ? { ok: false, reason: "preached_at" }
+      : { ok: true, value: null };
+  }
+  // Locale formats (e.g. 18/07/2026, 07/18/2026) are never accepted.
+  if (s.includes("/")) {
+    return { ok: false, reason: "preached_at" };
+  }
+
+  const dateOnly = /^(\d{4})-(\d{2})-(\d{2})$/.exec(s);
+  if (dateOnly) {
+    const year = Number(dateOnly[1]);
+    const month = Number(dateOnly[2]);
+    const day = Number(dateOnly[3]);
+    const utc = new Date(Date.UTC(year, month - 1, day));
+    if (
+      utc.getUTCFullYear() !== year ||
+      utc.getUTCMonth() !== month - 1 ||
+      utc.getUTCDate() !== day
+    ) {
+      return { ok: false, reason: "preached_at" };
+    }
+    return { ok: true, value: utc.toISOString() };
+  }
+
+  // Back-compat: full ISO-8601 datetime (must include date + time separator).
+  if (!/^\d{4}-\d{2}-\d{2}T/.test(s)) {
+    return { ok: false, reason: "preached_at" };
+  }
+  const parsed = new Date(s);
+  if (Number.isNaN(parsed.getTime())) {
+    return { ok: false, reason: "preached_at" };
+  }
+  return { ok: true, value: parsed.toISOString() };
+}
+
 function buildSermonFields(raw, { partial }) {
   const fields = {};
   if (!partial || raw.title !== undefined) {
@@ -833,8 +894,13 @@ function buildSermonFields(raw, { partial }) {
     else if (!partial) return { ok: false, reason: "speaker_name" };
   }
   if (!partial || raw.preachedAt !== undefined) {
-    if (raw.preachedAt == null && !partial) return { ok: false, reason: "preached_at" };
-    if (raw.preachedAt != null) fields.preachedAt = raw.preachedAt;
+    // Create: required. Update: when provided, must be a valid non-empty date.
+    const normalized = normalizeSermonPreachedAt(raw.preachedAt, {
+      required: !partial || raw.preachedAt !== undefined,
+    });
+    if (!normalized.ok) return normalized;
+    if (normalized.value != null) fields.preachedAt = normalized.value;
+    else if (!partial) return { ok: false, reason: "preached_at" };
   }
   if (raw.summary !== undefined) {
     const n = plainText(raw.summary, "summary", { required: false, max: 5000 });
@@ -1045,6 +1111,7 @@ module.exports = {
   isEditorFormWrite,
   PUBLIC_PAGE_KEYS,
   httpsMediaUrl,
+  normalizeSermonPreachedAt,
   buildLeaderFields,
   buildMinistryFields,
   buildEventFields,

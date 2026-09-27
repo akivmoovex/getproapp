@@ -95,6 +95,11 @@
     '';
   var welcomeMedia = welcomeSection && welcomeSection.mediaUrl ? welcomeSection.mediaUrl : null;
   var welcomeMediaAlt = (welcomeSection && welcomeSection.layoutMetadata && welcomeSection.layoutMetadata.altText) || '';
+  var welcomePlacement = (welcomeSection && welcomeSection.layoutMetadata && welcomeSection.layoutMetadata.imagePlacement) || null;
+  var welcomePs =
+    typeof presentImagePlacementStyle === 'function'
+      ? presentImagePlacementStyle(welcomePlacement)
+      : { className: '', style: '' };
 
   var aboutHeading =
     (aboutPreviewSection && aboutPreviewSection.heading) ||
@@ -362,7 +367,7 @@
   <% if (welcomeMedia || (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode)) { %>
       <div class="bb-tp-home-welcome__media">
         <% if (welcomeMedia) { %>
-        <img class="bb-tp-media" src="<%= welcomeMedia %>" alt="<%= welcomeMediaAlt %>" width="800" height="600" loading="lazy" decoding="async" />
+        <img class="bb-tp-media<%= welcomePs.className ? ' ' + welcomePs.className : '' %>" src="<%= welcomeMedia %>" alt="<%= welcomeMediaAlt %>" width="800" height="600" loading="lazy" decoding="async"<% if (welcomePs.style) { %> style="<%= welcomePs.style %>"<% } %> />
         <% } %>
         <% if (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) { %>
         <div class="bb-tp-edit-media-wrap">
@@ -371,7 +376,7 @@
             editEntityKey: 'home-welcome',
             editSectionKey: 'welcome',
             editLabel: 'Edit welcome image',
-            editPayload: { imageUrl: welcomeMedia || '', altText: welcomeMediaAlt, focal: 'center' }
+            editPayload: { imageUrl: welcomeMedia || '', altText: welcomeMediaAlt, focal: (welcomeSection && welcomeSection.layoutMetadata && welcomeSection.layoutMetadata.focal) || 'center', placement: welcomePlacement }
           }) %>
         </div>
         <% } %>
@@ -476,6 +481,7 @@
               location: event.location,
               registrationUrl: event.registrationUrl,
               imageUrl: event.imageUrl || '',
+              placement: event.imagePlacement || event.placement || null,
               timezone: event.timezone,
               featured: Boolean(event.featured),
               visible: event.visible !== false
@@ -514,7 +520,8 @@
     <article class="bb-tp-sermon-feature" data-bb-sermon-feature="1" data-bb-sermon-id="<%= sermon.id || '' %>">
       <div class="bb-tp-sermon-feature__media<%= sermon.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
         <% if (sermon.imageUrl) { %>
-        <img src="<%= sermon.imageUrl %>" alt="<%= sermon.title %>" width="800" height="450" loading="lazy" decoding="async" data-bb-sermon-image="1" />
+        <% var __hsps = typeof presentImagePlacementStyle === 'function' ? presentImagePlacementStyle(sermon.imagePlacement || sermon.placement || null) : { className: '', style: '' }; %>
+        <img class="<%= __hsps.className || '' %>" src="<%= sermon.imageUrl %>" alt="<%= sermon.title %>" width="800" height="450" loading="lazy" decoding="async" data-bb-sermon-image="1"<% if (__hsps.style) { %> style="<%= __hsps.style %>"<% } %> />
         <span class="bb-tp-sermon-feature__play material-symbols-outlined" aria-hidden="true">play_arrow</span>
         <% } else { %>
         <span class="material-symbols-outlined" aria-hidden="true">menu_book</span>
@@ -530,6 +537,7 @@
             scripture: sermon.scripture || '',
             mediaUrl: sermon.mediaUrl || '',
             imageUrl: sermon.imageUrl || '',
+            placement: sermon.imagePlacement || sermon.placement || null,
             featured: true,
             visible: true
           }

@@ -152,7 +152,8 @@ function validateVideoUrl(raw) {
 }
 
 /**
- * Focal position for fit (no true crop pipeline).
+ * Focal position for fit (no true crop pipeline). Kept for backward compat.
+ * Prefer placement (Universal Image Editor) when present.
  * @param {unknown} raw
  */
 function validateFocal(raw) {
@@ -173,6 +174,28 @@ function validateFocal(raw) {
     return { ok: false, error: "Choose a valid focal position." };
   }
   return { ok: true, value };
+}
+
+/**
+ * Optional Universal Image Editor placement (platform schema).
+ * @param {unknown} raw
+ * @param {{ contentKey?: string|null }} [opts]
+ */
+function validateOptionalPlacement(raw, opts) {
+  if (raw == null || raw === "") return { ok: true, value: null };
+  if (typeof raw === "string") {
+    try {
+      raw = JSON.parse(raw);
+    } catch {
+      return { ok: false, error: "Image framing is invalid." };
+    }
+  }
+  const { validateImagePlacement } = require("../../platform/website/imagePlacement");
+  const checked = validateImagePlacement(raw, opts || {});
+  if (!checked.ok) {
+    return { ok: false, error: "Image framing is invalid." };
+  }
+  return { ok: true, value: checked.value };
 }
 
 /**
@@ -271,13 +294,18 @@ function validateStructuredPayload(kind, payload, op) {
     }
     const focal = validateFocal(body.focal);
     if (!focal.ok) return focal;
+    const placement = validateOptionalPlacement(body.placement);
+    if (!placement.ok) return placement;
     return {
       ok: true,
       payload: {
         imageUrl: url.value,
         altText: alt.value,
         focal: focal.value,
-        fit: body.fit === "contain" ? "contain" : "cover",
+        fit:
+          (placement.value && placement.value.fit) ||
+          (body.fit === "contain" ? "contain" : "cover"),
+        placement: placement.value,
       },
     };
   }
@@ -325,6 +353,8 @@ function validateStructuredPayload(kind, payload, op) {
   if (kind === "leader") {
     const image = validateImageUrl(body.imageUrl);
     if (!image.ok) return image;
+    const placement = validateOptionalPlacement(body.placement);
+    if (!placement.ok) return placement;
     const built = contentAdmin.buildLeaderFields(
       {
         displayName: body.displayName || body.fullName || body.name,
@@ -366,6 +396,7 @@ function validateStructuredPayload(kind, payload, op) {
       payload: {
         ...built.fields,
         imageUrl: image.value || null,
+        placement: placement.value,
         email: email.value || null,
         phone: phone.value || null,
         socialUrl: socialUrl || null,
@@ -379,6 +410,8 @@ function validateStructuredPayload(kind, payload, op) {
   if (kind === "ministry") {
     const image = validateImageUrl(body.imageUrl);
     if (!image.ok) return image;
+    const placement = validateOptionalPlacement(body.placement);
+    if (!placement.ok) return placement;
     const built = contentAdmin.buildMinistryFields(
       {
         name: body.name || body.ministryName,
@@ -416,6 +449,7 @@ function validateStructuredPayload(kind, payload, op) {
       payload: {
         ...built.fields,
         imageUrl: image.value || null,
+        placement: placement.value,
         audience: sanitizePlain(body.audience || body.intendedAudience, 120).value || null,
         leaderName: sanitizePlain(body.leaderName || body.ministryLeader, 120).value || null,
         joinUrl: joinUrl || null,
@@ -428,6 +462,8 @@ function validateStructuredPayload(kind, payload, op) {
   if (kind === "event") {
     const image = validateImageUrl(body.imageUrl || body.coverImage);
     if (!image.ok) return image;
+    const placement = validateOptionalPlacement(body.placement);
+    if (!placement.ok) return placement;
     const built = contentAdmin.buildEventFields(
       {
         title: body.title || body.eventTitle,
@@ -464,6 +500,7 @@ function validateStructuredPayload(kind, payload, op) {
       payload: {
         ...built.fields,
         imageUrl: image.value || null,
+        placement: placement.value,
         organizer: sanitizePlain(body.organizer, 120).value || null,
         featured: Boolean(body.featured),
         visible: !(body.visible === false || body.hidden === true),
@@ -490,11 +527,15 @@ function validateStructuredPayload(kind, payload, op) {
         safeMedia = asHttps.value;
       }
     }
+    const preachedRaw =
+      body.preachedAt != null && String(body.preachedAt).trim() !== ""
+        ? body.preachedAt
+        : body.date;
     const built = contentAdmin.buildSermonFields(
       {
         title: body.title || body.sermonTitle,
         speakerName: body.speakerName || body.speaker,
-        preachedAt: body.preachedAt || body.date,
+        preachedAt: preachedRaw,
         summary: summaryParts.join(". "),
         status:
           body.visible === false || body.hidden === true
@@ -504,10 +545,15 @@ function validateStructuredPayload(kind, payload, op) {
       { partial: false }
     );
     if (!built.ok) {
+      if (built.reason === "preached_at") {
+        return { ok: false, error: "Enter a valid preached date." };
+      }
       return { ok: false, error: "Check the sermon fields and try again." };
     }
     const thumb = validateImageUrl(body.thumbnailUrl || body.imageUrl || body.thumbnail);
     if (!thumb.ok) return thumb;
+    const placement = validateOptionalPlacement(body.placement);
+    if (!placement.ok) return placement;
     return {
       ok: true,
       payload: {
@@ -516,6 +562,7 @@ function validateStructuredPayload(kind, payload, op) {
         scripture: sanitizePlain(body.scripture, 120).value || null,
         series: sanitizePlain(body.series, 64).value || null,
         imageUrl: thumb.value || null,
+        placement: placement.value,
         featured: Boolean(body.featured),
         visible: !(body.visible === false || body.hidden === true),
       },

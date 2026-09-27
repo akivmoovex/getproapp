@@ -215,7 +215,8 @@
         <li class="bb-tp-event-card" data-bb-event-item="1" data-bb-event-id="<%= String(event.id || ('event-' + event.title)) %>">
           <div class="bb-tp-event-card__media<%= event.imageUrl ? '' : ' is-fallback' %><%= (typeof websiteAdmin !== 'undefined' && websiteAdmin && websiteAdmin.editingMode) ? ' bb-tp-edit-media-wrap' : '' %>">
             <% if (event.imageUrl) { %>
-            <img src="<%= event.imageUrl %>" alt="<%= event.title %>" width="400" height="240" loading="lazy" decoding="async" data-bb-event-image="1" />
+            <% var __eps = typeof presentImagePlacementStyle === 'function' ? presentImagePlacementStyle(event.imagePlacement || event.placement || null) : { className: '', style: '' }; %>
+            <img class="<%= __eps.className || '' %>" src="<%= event.imageUrl %>" alt="<%= event.title %>" width="400" height="240" loading="lazy" decoding="async" data-bb-event-image="1"<% if (__eps.style) { %> style="<%= __eps.style %>"<% } %> />
             <% } else { %>
             <span class="material-symbols-outlined" aria-hidden="true">event</span>
             <% } %>
@@ -241,6 +242,7 @@
                 location: event.location,
                 registrationUrl: event.registrationUrl,
                 imageUrl: event.imageUrl,
+                placement: event.imagePlacement || event.placement || null,
                 timezone: event.timezone,
                 featured: false,
                 visible: true
@@ -264,6 +266,7 @@
                   location: event.location,
                   registrationUrl: event.registrationUrl,
                   imageUrl: event.imageUrl,
+                placement: event.imagePlacement || event.placement || null,
                   timezone: event.timezone,
                   featured: false,
                   visible: true

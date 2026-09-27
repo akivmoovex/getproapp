@@ -226,6 +226,9 @@ async function applyStructuredDraft(client, draft, ctx) {
           videoUrl: null,
           videoTitle: null,
           mediaKind: null,
+          focal: null,
+          fit: null,
+          imagePlacement: null,
         }),
       });
       if (!updated.section) throw mapError("APPLY_FAILED", "Could not clear media.");
@@ -421,6 +424,42 @@ async function applyStructuredDraft(client, draft, ctx) {
   }
 
   await applyEntityDraft(client, draft, ctx);
+  if (
+    draft.draftKind === "leader" ||
+    draft.draftKind === "ministry" ||
+    draft.draftKind === "event" ||
+    draft.draftKind === "sermon"
+  ) {
+    await persistEntityPlacementFromDraft(client, draft, ctx);
+  }
+}
+
+async function persistEntityPlacementFromDraft(client, draft, ctx) {
+  if (!draft || draft.payload === undefined) return;
+  if (draft.op === "remove") return;
+  // placement:undefined means leave existing map entry alone.
+  if (!Object.prototype.hasOwnProperty.call(draft.payload || {}, "placement")) return;
+  const { churchId, branchId } = ctx;
+  const kind = draft.draftKind;
+  const entityKey = String(draft.entityKey || "");
+  if (!entityKey) return;
+  const pageKey =
+    kind === "leader"
+      ? "leadership"
+      : kind === "ministry"
+        ? "ministries"
+        : kind === "event"
+          ? "events"
+          : "sermons";
+  const page = await ensurePage(client, { churchId, branchId, pageKey });
+  const { mergeEntityImagePlacement } = require("../website/entityImagePlacement");
+  const nextLayout = mergeEntityImagePlacement(
+    page.layoutMetadata,
+    kind,
+    entityKey,
+    draft.payload.placement
+  );
+  await contentRepo.updatePage(client, page.id, { layoutMetadata: nextLayout });
 }
 
 async function applyEntityDraft(client, draft, ctx) {
