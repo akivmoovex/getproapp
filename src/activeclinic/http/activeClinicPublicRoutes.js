@@ -45,7 +45,7 @@ const {
 } = require("../../platform/registration/registrationRenderLocals");
 const { CONSENT_FIELD } = require("../../platform/registration/registrationConsent");
 const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
-const { getDeploymentEnvMode } = require("../../church/blessBoardEnv");
+const { getDeploymentEnvMode } = require("../../platform/config/deploymentEnv");
 const { resolveHostname } = require("../../platform/host");
 const {
   lookupClinicRegistrationApplicantStatus,

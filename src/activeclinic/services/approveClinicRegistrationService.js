@@ -75,7 +75,7 @@ const UUID_RE =
 
 /** @deprecated Use allocateUniqueOrganizationKey — kept for legacy tests only. */
 function slugFromClinicName(name) {
-  const { resolveBaseOrganizationKey } = require("../../blessboard/services/organizationKey");
+  const { resolveBaseOrganizationKey } = require("../../platform/organization/organizationKey");
   return resolveBaseOrganizationKey(name || "clinic").key || "clinic";
 }
 

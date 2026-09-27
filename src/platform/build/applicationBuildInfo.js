@@ -18,7 +18,7 @@
  */
 
 const { readGitShaShort } = require("../../startup/startupProcessMarker");
-const { getDeploymentEnvMode } = require("../../church/blessBoardEnv");
+const { getDeploymentEnvMode } = require("../config/deploymentEnv");
 const { isV8Deployment } = require("../config/v8DeploymentIsolation");
 
 /** System version base for V7 release 1.3 (About / diagnostics). */

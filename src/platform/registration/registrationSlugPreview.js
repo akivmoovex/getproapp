@@ -4,7 +4,7 @@
  * Shared BlessBoard registration website URL preview (server + browser mirror).
  */
 
-const { resolveBaseOrganizationKey } = require("../../blessboard/services/organizationKey");
+const { resolveBaseOrganizationKey } = require("../organization/organizationKey");
 const { resolveBaseBranchKey } = require("../../blessboard/services/branchKey");
 const { publicBranchHomePath } = require("../../blessboard/urls/churchUrlHelper");
 const {

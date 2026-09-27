@@ -36,24 +36,17 @@ const PLATFORM_PRODUCT_REQUIRE_ALLOWLIST = Object.freeze([
   "services/authTransferService.js",
   "registration/provisioningRecovery.js",
   "registration/registrationSlugPreview.js",
-  "organization/allocateUniqueOrganizationKey.js",
   "release-notes/releaseNotesService.js",
   "config/v5EnvValidation.js",
   "host.js",
-  "build/applicationBuildInfo.js",
 ]);
 
 /**
- * Cross-product edges that remain until the shared helper is platform-owned.
+ * Cross-product edges (BB↔AC / AC→church implementation).
+ * PC19 target: empty — products must not hard-require each other's implementation.
  * Keys: "sourceRelPath|requiredModuleSubstring"
  */
-const CROSS_PRODUCT_REQUIRE_ALLOWLIST = Object.freeze([
-  // AC clinic approval reuses BB organization_key normalizer (debt: move to platform).
-  "activeclinic/services/approveClinicRegistrationService.js|blessboard/services/organizationKey",
-  // AC routes still read shared env helper living under legacy church/ (debt).
-  "activeclinic/http/activeClinicPublicRoutes.js|church/blessBoardEnv",
-  "activeclinic/http/activeClinicPlatformAdminClinicRegistrationRoutes.js|church/blessBoardEnv",
-]);
+const CROSS_PRODUCT_REQUIRE_ALLOWLIST = Object.freeze([]);
 
 module.exports = {
   PLATFORM_PRODUCT_REQUIRE_ALLOWLIST,

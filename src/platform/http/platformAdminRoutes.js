@@ -3399,7 +3399,7 @@ function createPlatformAdminRouter(deps) {
       const rawKey = String((req.params && req.params.organizationKey) || "")
         .trim()
         .toLowerCase();
-      const { normalizeOrganizationKey } = require("../../blessboard/services/organizationKey");
+      const { normalizeOrganizationKey } = require("../organization/organizationKey");
       const keyNorm = normalizeOrganizationKey(rawKey);
       if (!keyNorm.ok) {
         return sendControlled(req, res, 404, "This organization could not be found.");

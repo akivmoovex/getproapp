@@ -19,7 +19,7 @@ const {
   addClinicRegistrationReviewNote,
 } = require("../services/clinicRegistrationReviewService");
 const { requirePlatformDeploymentCode } = require("../../platform/config/platformDeploymentCode");
-const { getDeploymentEnvMode } = require("../../church/blessBoardEnv");
+const { getDeploymentEnvMode } = require("../../platform/config/deploymentEnv");
 const { PRODUCT } = require("../../platform/registration/constants");
 const { loadTenantHealthSummary } = require("../../platform/registration/tenantHealthSummary");
 

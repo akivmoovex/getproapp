@@ -52,7 +52,8 @@ describe("PC15 architecture guardrails", () => {
   it("cross-product scan reports zero unexplained edges", () => {
     const cross = scanCrossProduct();
     assert.equal(cross.ok, true, formatOffenders(cross.offenders));
-    assert.ok(CROSS_PRODUCT_REQUIRE_ALLOWLIST.length >= 1);
+    // PC19: no documented AC↔BB/church implementation exceptions remain.
+    assert.equal(CROSS_PRODUCT_REQUIRE_ALLOWLIST.length, 0);
   });
 
   it("documents developer search rule for platform-first infrastructure", () => {

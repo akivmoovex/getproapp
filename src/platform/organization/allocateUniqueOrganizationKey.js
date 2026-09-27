@@ -8,7 +8,7 @@ const {
   normalizeOrganizationKey,
   resolveBaseOrganizationKey,
   withOrganizationKeySuffix,
-} = require("../../blessboard/services/organizationKey");
+} = require("./organizationKey");
 
 class OrganizationKeyAllocationError extends Error {
   constructor(code, message) {
