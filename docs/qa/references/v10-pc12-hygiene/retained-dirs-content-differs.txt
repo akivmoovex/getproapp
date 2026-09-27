@@ -1,0 +1,3 @@
+design-reference/stitch-screens/church-flow/01-public-website/01-public-home-desktop 2
+design-reference/stitch-screens/church-flow/01-public-website/01-public-home-mobile 2
+design-reference/stitch-screens/church-flow/01-public-website/01-public-home-mobile 3
