@@ -630,6 +630,93 @@ describe("ActiveClinic finance SoD RBAC (Prompt 10)", () => {
     }
   });
 
+  it("rejects foreign-tenant patientId on charge/invoice/payment (SEC-AC-BILLING-FOREIGN-PATIENT)", async () => {
+    requireDb();
+    const stamp = `${Date.now().toString(36)}fp`;
+    const acA = await seedTenant(stamp, "fpa");
+    const acB = await seedTenant(`${stamp}b`, "fpb");
+    const billingA = await seedRoleUser(acA, {
+      firstName: "Ba",
+      roles: [{ roleKey: BILLING_OFFICER }],
+    });
+    const financeA = await seedRoleUser(acA, {
+      firstName: "Fa",
+      roles: [{ roleKey: FINANCE_SUPERVISOR }],
+    });
+    const billingB = await seedRoleUser(acB, {
+      firstName: "Bb",
+      roles: [{ roleKey: BILLING_OFFICER }],
+    });
+    const { patientId: foreignPatientId } = await seedPatient(acB);
+    const { patientId: ownPatientId } = await seedPatient(acA);
+
+    const foreignCharge = await createPatientCharge({
+      pool,
+      tenantId: acA.orgId,
+      facilityId: acA.facilityId,
+      staffId: billingA.staffMemberId,
+      patientId: foreignPatientId,
+      chargeType: "consultation",
+      description: "Foreign patient",
+      unitAmountMinor: 1000,
+      quantity: 1,
+    });
+    assert.equal(foreignCharge.result, BILLING_RESULT.NOT_FOUND);
+    assert.equal(foreignCharge.reason, "patient");
+
+    const foreignInvoice = await createInvoice({
+      pool,
+      tenantId: acA.orgId,
+      facilityId: acA.facilityId,
+      staffId: billingA.staffMemberId,
+      patientId: foreignPatientId,
+      // Non-empty chargeIds so patient isolation runs before charge lookup.
+      chargeIds: [crypto.randomUUID()],
+    });
+    assert.equal(foreignInvoice.result, BILLING_RESULT.NOT_FOUND);
+    assert.equal(foreignInvoice.reason, "patient");
+
+    // Finance supervisor can record external payments; still must not accept foreign patients.
+    const foreignPay = await recordPayment({
+      pool,
+      tenantId: acA.orgId,
+      facilityId: acA.facilityId,
+      staffId: financeA.staffMemberId,
+      patientId: foreignPatientId,
+      amountMinor: 500,
+      paymentMethod: PAYMENT_METHOD.CARD,
+    });
+    assert.equal(foreignPay.result, BILLING_RESULT.NOT_FOUND);
+    assert.equal(foreignPay.reason, "patient");
+
+    const ownCharge = await createPatientCharge({
+      pool,
+      tenantId: acA.orgId,
+      facilityId: acA.facilityId,
+      staffId: billingA.staffMemberId,
+      patientId: ownPatientId,
+      chargeType: "consultation",
+      description: "Own patient",
+      unitAmountMinor: 1000,
+      quantity: 1,
+    });
+    assert.equal(ownCharge.result, BILLING_RESULT.CREATED);
+
+    // Same-tenant control for B remains writable.
+    const ownB = await createPatientCharge({
+      pool,
+      tenantId: acB.orgId,
+      facilityId: acB.facilityId,
+      staffId: billingB.staffMemberId,
+      patientId: foreignPatientId,
+      chargeType: "consultation",
+      description: "Own B",
+      unitAmountMinor: 500,
+      quantity: 1,
+    });
+    assert.equal(ownB.result, BILLING_RESULT.CREATED);
+  });
+
   it("cross-tenant payment/invoice and foreign facility session denied", async () => {
     requireDb();
     const stamp = `${Date.now().toString(36)}x`;

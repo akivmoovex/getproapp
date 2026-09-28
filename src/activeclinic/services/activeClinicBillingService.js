@@ -57,6 +57,26 @@ async function assertPerm(pool, params) {
   return null;
 }
 
+/**
+ * Tenant isolation: patient rows are organization-scoped; billing writes must
+ * refuse foreign patient IDs even when the actor is authorized in their own tenant.
+ */
+async function assertPatientInTenant(poolOrClient, { tenantId, patientId }) {
+  if (!tenantId || !patientId) {
+    return { result: RESULT.INVALID_INPUT, reason: "patient" };
+  }
+  const found = await poolOrClient.query(
+    `SELECT id FROM activeclinic.patients
+      WHERE id = $1 AND organization_id = $2
+      LIMIT 1`,
+    [patientId, tenantId]
+  );
+  if (found.rows.length === 0) {
+    return { result: RESULT.NOT_FOUND, reason: "patient" };
+  }
+  return null;
+}
+
 async function writeFinanceAudit(pool, params) {
   await recordAuditEventSafe(pool, {
     deploymentCode: params.deploymentCode || CODE_ACTIVECLINIC_ORG_V6,
@@ -363,6 +383,9 @@ async function createPatientCharge({
     return { result: RESULT.INVALID_INPUT };
   }
 
+  const foreignPatient = await assertPatientInTenant(pool, { tenantId, patientId });
+  if (foreignPatient) return foreignPatient;
+
   if (catalogueItemId) {
     const catalog = await pool.query(
       `SELECT amount_minor FROM activeclinic.charge_catalogue_items
@@ -483,6 +506,9 @@ async function createInvoice({
   if (!patientId || chargeIds.length === 0) {
     return { result: RESULT.INVALID_INPUT };
   }
+
+  const foreignPatient = await assertPatientInTenant(pool, { tenantId, patientId });
+  if (foreignPatient) return foreignPatient;
 
   const client = await pool.connect();
   try {
@@ -705,6 +731,9 @@ async function recordPayment({
   if (!patientId || amountMinor <= 0 || !method) {
     return { result: RESULT.INVALID_INPUT };
   }
+
+  const foreignPatient = await assertPatientInTenant(pool, { tenantId, patientId });
+  if (foreignPatient) return foreignPatient;
 
   // Product UI: Cash / Bank / Mobile Money. Card remains allowed for legacy
   // external recording (no gateway); session rules match non-cash methods.
