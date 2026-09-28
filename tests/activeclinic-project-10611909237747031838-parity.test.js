@@ -35,10 +35,19 @@ describe("project 10611909237747031838 parity matrix", () => {
     assert.equal(matrix.summary.screens95Plus, matrix.summary.canonicalApplicable);
   });
 
-  it("asset versions reflect project 106 closure bump", () => {
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-proj106-p7/);
-    assert.match(read("src/activeclinic/services/buildActiveClinicShellViewModel.js"), /v7-proj106-2/);
-    assert.match(read("src/activeclinic/http/renderActiveClinicPatient.js"), /v7-proj106-pt1/);
+  it("asset versions reflect current public/shell/patient render bumps", () => {
+    assert.match(
+      read("src/activeclinic/http/renderActiveClinicPublic.js"),
+      /ASSET_VERSION\s*=\s*"v2-sp-vis-1"/
+    );
+    assert.match(
+      read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
+      /SHELL_ASSET_VERSION\s*=\s*"v2-03-acn18-01"/
+    );
+    assert.match(
+      read("src/activeclinic/http/renderActiveClinicPatient.js"),
+      /ASSET_VERSION\s*=\s*"v2-03-b3-acp05-01"/
+    );
   });
 
   it("primary accounting is non-overlapping and sums to 108", () => {

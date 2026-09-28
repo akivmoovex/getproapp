@@ -81,13 +81,17 @@ describe("activeclinic MW Stitch parity chrome", () => {
     assert.match(publish, />Publish All Changes</);
     assert.match(publish, />Preview Site</);
     assert.match(publish, /Unpublished Changes/);
-    assert.match(publish, /onsubmit="return confirm\(/);
+    assert.match(publish, /data-ac-mw-publish-form="1"/);
+    assert.match(publish, /data-ac-website-action="publish"/);
+    assert.match(read("public/activeclinic/website-cms.js"), /Publish this website\?/);
     assert.doesNotMatch(publish, /name="publishNote"/);
 
     const history = read("views/activeclinic/tenant/website-history.ejs");
-    assert.match(history, />Version History</);
-    assert.match(history, /Restore as new draft/);
-    assert.match(history, /method="post"/);
+    assert.match(history, /historyHtml/);
+    assert.match(history, /historyStylesheet|historyScript/);
+    assert.match(read("views/platform/website/history.ejs"), /Version history|history\.pageTitle/i);
+    assert.match(read("src/platform/website/historyModel.js"), /Restore as new draft/);
+    assert.match(read("src/platform/website/historyModel.js"), /method="post"|restoreConfirmAction/);
   });
 
   it("tenant home uses Stitch section labels without fake listing badges", () => {
@@ -133,9 +137,12 @@ describe("activeclinic MW Stitch parity chrome", () => {
     assert.match(css, /\.ac-mw-editor__rail-link[\s\S]{0,180}min-height:\s*2\.75rem/);
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
-      /v7-urp-1/
+      /SHELL_ASSET_VERSION\s*=\s*"v2-03-acn18-01"/
     );
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-proj106-p7/);
+    assert.match(
+      read("src/activeclinic/http/renderActiveClinicPublic.js"),
+      /ASSET_VERSION\s*=\s*"v2-sp-vis-1"/
+    );
     const shell = read("views/activeclinic/layouts/app-shell.ejs");
     assert.match(shell, /ac-app-body--mw/);
     assert.match(shell, /Material\+Symbols\+Outlined/);

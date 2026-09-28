@@ -68,7 +68,7 @@ describe("ActiveClinic Pass 7 mobile patterns", () => {
       path.join(__dirname, "..", "public", "activeclinic", "ac-app.css"),
       "utf8"
     );
-    assert.match(app, /Pass 7 — authenticated mobile shell/);
+    assert.match(app, /Pass 7.*authenticated mobile shell/);
 
     const phone = fs.readFileSync(
       path.join(__dirname, "..", "public", "platform", "phone-field.css"),

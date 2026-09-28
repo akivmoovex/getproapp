@@ -30,6 +30,10 @@ const {
   resetDeploymentProfileWarningsForTests,
 } = require("../src/platform/config/deploymentProfiles");
 const { CSRF_FIELD } = require("../src/platform/http/v5Csrf");
+
+const {
+  zmPhoneFormFields,
+} = require("./helpers/zmPhoneFormFields");
 const {
   createPlatformIdentity,
 } = require("../src/platform/services/platformIdentityService");
@@ -387,7 +391,7 @@ describe("ActiveClinic Patient Portal (P27)", () => {
       .type("form")
       .send({
         [CSRF_FIELD]: csrf,
-        phone,
+        ...zmPhoneFormFields(phone),
         password: "GuestPass12!",
         guestToken: token,
         firstName: "Guest",

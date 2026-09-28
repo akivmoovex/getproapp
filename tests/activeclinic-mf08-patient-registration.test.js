@@ -57,6 +57,10 @@ const {
 } = require("../src/platform/config/deploymentProfiles");
 const { CSRF_FIELD } = require("../src/platform/http/v5Csrf");
 
+const {
+  zmPhoneFormFields,
+} = require("./helpers/zmPhoneFormFields");
+
 const ROOT = path.join(__dirname, "..");
 const PORTAL_PASSWORD = "PatientPass12";
 const STAFF_PASSWORD = "DemoStaff-ActiveClinic-2026A";
@@ -299,7 +303,7 @@ describe("ActiveClinic MF08 patient registration chrome", () => {
         [CSRF_FIELD]: csrf,
         firstName: "No",
         lastName: "Match",
-        phone: nextPhone(),
+        ...zmPhoneFormFields(nextPhone()),
         password: PORTAL_PASSWORD,
       });
     assert.equal(noMatch.status, 400);
@@ -313,7 +317,7 @@ describe("ActiveClinic MF08 patient registration chrome", () => {
         [CSRF_FIELD]: csrf,
         firstName: unlinked.firstName,
         lastName: unlinked.lastName,
-        phone: unlinked.phone,
+        ...zmPhoneFormFields(unlinked.phone),
         password: PORTAL_PASSWORD,
       });
     assert.equal(created.status, 303);
@@ -327,7 +331,7 @@ describe("ActiveClinic MF08 patient registration chrome", () => {
         [CSRF_FIELD]: csrf,
         firstName: unlinked.firstName,
         lastName: unlinked.lastName,
-        phone: unlinked.phone,
+        ...zmPhoneFormFields(unlinked.phone),
         password: PORTAL_PASSWORD,
       });
     assert.equal(duplicate.status, 400);
@@ -438,7 +442,7 @@ describe("ActiveClinic MF08 patient registration chrome", () => {
       .type("form")
       .send({
         [CSRF_FIELD]: csrf,
-        phone: unlinked.phone,
+        ...zmPhoneFormFields(unlinked.phone),
         password: PORTAL_PASSWORD,
         guestToken: booking.booking.accessToken,
         firstName: unlinked.firstName,
