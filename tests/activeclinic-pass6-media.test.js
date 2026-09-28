@@ -11,7 +11,6 @@ const {
   resolveDirectoryCardImage,
   enrichPublicLocals,
   DOCTOR_FALLBACK,
-  CLINIC_DEFAULT,
   PLATFORM_HERO,
 } = require("../src/activeclinic/services/activeClinicPublicMediaService");
 
@@ -23,24 +22,28 @@ describe("ActiveClinic Pass 6 public media", () => {
     const mwansa = resolveDoctorPhoto("dr-julflona-mwansa");
     const nurse = resolveDoctorPhoto("nurse-julflona-tembo");
     assert.equal(banda.isFallback, false);
-    assert.match(banda.src, /dr-julflona-banda\.jpg$/);
+    assert.match(String(banda.src || ""), /dr-julflona-banda\.jpg/);
     assert.equal(mwansa.isFallback, false);
-    assert.match(mwansa.src, /dr-julflona-mwansa\.jpg$/);
+    assert.match(String(mwansa.src || ""), /dr-julflona-mwansa\.jpg/);
     assert.equal(nurse.isFallback, true);
-    assert.equal(nurse.src, DOCTOR_FALLBACK);
+    // Runtime srcs are CDN-presented; fallback still resolves from the canonical asset path.
+    assert.match(String(nurse.src || ""), /doctor-fallback\.svg/);
+    assert.match(DOCTOR_FALLBACK, /doctor-fallback\.svg$/);
   });
 
   it("uses julflona hero for julflona clinic only", () => {
     const juflona = resolveClinicHero({ clinicKey: "julflona-clinic" });
     const other = resolveClinicHero({ clinicKey: "some-other-clinic" });
-    assert.match(juflona.src, /julflona-hero\.jpg$/);
-    assert.equal(other.src, CLINIC_DEFAULT);
+    assert.match(String(juflona.src || ""), /julflona-hero\.jpg/);
+    // Non-demo clinics do not inherit a hardcoded local tenant default.
+    assert.equal(other.src, null);
+    assert.equal(other.isFallback, true);
   });
 
   it("does not force julflona hero onto every directory card", () => {
     const a = resolveDirectoryCardImage({ clinicKey: "alpha-clinic" }, 0);
     const b = resolveDirectoryCardImage({ clinicKey: "julflona-clinic" }, 0);
-    assert.match(b.src, /julflona-hero\.jpg$/);
+    assert.match(String(b.src || ""), /julflona-hero\.jpg/);
     assert.notEqual(a.src, b.src);
   });
 
@@ -51,8 +54,9 @@ describe("ActiveClinic Pass 6 public media", () => {
       profile: { staffKey: "dr-julflona-banda", displayName: "Dr. Julflona Banda" },
     });
     assert.equal(locals.profiles[0].photoUrl, locals.profile.photoUrl);
-    assert.match(locals.clinic.websiteHeroUrl, /julflona-hero\.jpg$/);
-    assert.equal(locals.platformHero.src, PLATFORM_HERO);
+    assert.match(String(locals.clinic.websiteHeroUrl || ""), /julflona-hero\.jpg/);
+    assert.match(String(locals.platformHero.src || ""), /home-hero\.jpg/);
+    assert.match(PLATFORM_HERO, /home-hero\.jpg$/);
   });
 
   it("ships priority asset files on disk", () => {

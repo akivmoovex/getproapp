@@ -147,23 +147,27 @@
   </form>
 
   <% if (emptyMode === 'none') { %>
-  <div class="ac-urp-table-wrap">
-    <div class="ac-urp-empty" data-ac-empty="access-none">
-      <h3>No staff access records yet</h3>
-      <p class="ac-urp-muted">Invite staff from the directory, then assign ActiveClinic roles here.</p>
-      <% if (actions.staffDirectoryHref) { %>
-      <p><a class="ac-urp-btn ac-urp-btn--ghost" href="<%= actions.staffDirectoryHref %>">Open staff directory</a></p>
-      <% } %>
-    </div>
-  </div>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'access-none',
+      title: 'No staff access records yet',
+      description: 'Invite staff from the directory, then assign ActiveClinic roles here.',
+      primaryAction: actions.staffDirectoryHref
+        ? { href: actions.staffDirectoryHref, label: 'Open staff directory' }
+        : null,
+    }
+  }) %>
   <% } else if (emptyMode === 'filtered') { %>
-  <div class="ac-urp-table-wrap">
-    <div class="ac-urp-empty" data-ac-empty="access-filtered">
-      <h3>No staff match these filters</h3>
-      <p class="ac-urp-muted">Try different search terms, or clear filters to see all staff you can manage.</p>
-      <p><a class="ac-urp-btn ac-urp-btn--ghost" href="/app/access?tab=staff">Clear filters</a></p>
-    </div>
-  </div>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'no_results',
+      marker: 'access-filtered',
+      title: 'No staff match these filters',
+      description: 'Try different search terms, or clear filters to see all staff you can manage.',
+      primaryAction: { href: '/app/access?tab=staff', label: 'Clear filters' },
+    }
+  }) %>
   <% } else if (viewMode === 'assignments') { %>
   <div class="ac-urp-table-wrap ac-table-wrap" data-ac-access-table="1">
     <table class="ac-urp-table ac-table">

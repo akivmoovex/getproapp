@@ -33,6 +33,21 @@
     <a class="ac-btn ac-btn--ghost" href="/app/clinical/follow-up">Follow-up worklist</a>
   </div>
 
+  <% var queueEmpty = !(waiting.length || current.length || upcoming.length || followUp.length || incomplete.length || today.length); %>
+  <% if (queueEmpty) { %>
+  <%- include('../partials/ac-inline-state', {
+    inlineState: {
+      stateKey: 'empty',
+      marker: 'clinical-queue-empty',
+      title: 'No patients in your clinical queue',
+      description: 'Waiting, current, and upcoming worklists will appear here as patients arrive.',
+      primaryAction: actions.canStartEncounter
+        ? { href: '/app/clinical/start-encounter', label: 'Start encounter' }
+        : null,
+    }
+  }) %>
+  <% } else { %>
+
   <% if (current.length) { %>
   <div class="ac-panel" data-ac-worklist-bucket="current">
     <h2 class="ac-panel__title">Current encounter</h2>
@@ -165,4 +180,5 @@
     </ul>
     <% } %>
   </div>
+  <% } %>
 </section>

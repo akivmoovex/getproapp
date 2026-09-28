@@ -511,7 +511,16 @@ describe("ActiveClinic logout after switch", () => {
     );
     assert.match(ac, /app\.get\("\/logout"/);
     assert.match(ac, /app\.post\("\/logout"/);
-    assert.match(ac, /terminateV5BrowserSession/);
+    // AC logout goes through shared platform session security (no product-local terminate).
+    assert.match(ac, /logoutAuthenticatedBrowserSession/);
+    assert.match(ac, /sharedSessionSecurity/);
     assert.doesNotMatch(ac, /status\(403\)\.send\("Forbidden"\)/);
+
+    const shared = fs.readFileSync(
+      path.join(__dirname, "../src/platform/session/sharedSessionSecurity.js"),
+      "utf8"
+    );
+    assert.match(shared, /terminateV5BrowserSession/);
+    assert.match(shared, /logoutAuthenticatedBrowserSession/);
   });
 });
