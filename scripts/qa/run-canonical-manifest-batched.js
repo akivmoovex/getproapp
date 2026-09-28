@@ -58,12 +58,11 @@ function runBatch(files, batchIdx, logPath) {
           DB_SSL: process.env.DB_SSL || "false",
           ALLOW_PROD_DB: "",
           FORCE_COLOR: "0",
-          // Explicit local admin URL — avoid ambiguous empty-user / peer paths.
-          FOUNDATION_ADMIN_DATABASE_URL:
-            process.env.FOUNDATION_ADMIN_DATABASE_URL ||
-            `postgresql://${encodeURIComponent(
-              process.env.USER || require("os").userInfo().username
-            )}@127.0.0.1:5432/postgres`,
+          // Prefer caller-provided admin URL; otherwise let localPostgresAdmin
+          // choose the canonical Unix-socket local default.
+          ...(process.env.FOUNDATION_ADMIN_DATABASE_URL
+            ? { FOUNDATION_ADMIN_DATABASE_URL: process.env.FOUNDATION_ADMIN_DATABASE_URL }
+            : {}),
         },
         stdio: ["ignore", "pipe", "pipe"],
       }

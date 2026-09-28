@@ -49,13 +49,28 @@ function parsePgUrl(connectionString) {
 function assertLocalNonProductionAdminUrl(connectionString, opts = {}) {
   const parsed = parsePgUrl(connectionString);
   const allowDb = opts.allowDatabaseNames || ["postgres"];
+  let socketHost = null;
+  try {
+    const u = new URL(String(connectionString).replace(/^postgresql:/i, "postgres:"));
+    socketHost = u.searchParams.get("host");
+  } catch {
+    socketHost = null;
+  }
+  const unixSocket =
+    Boolean(socketHost) &&
+    (socketHost === "/tmp" ||
+      socketHost.startsWith("/tmp/") ||
+      socketHost.includes("Postgres") ||
+      socketHost.startsWith("/var/") ||
+      socketHost.startsWith("/private/tmp"));
 
-  if (!LOCAL_HOSTS.has(parsed.hostname)) {
+  if (unixSocket) {
+    // Unix socket URLs often have empty hostname / default port — still local-only.
+  } else if (!LOCAL_HOSTS.has(parsed.hostname)) {
     throw new Error(
       `PRODUCTION_DB_GUARD: refusing non-local PostgreSQL host for test admin (${parsed.hostname || "empty"})`
     );
-  }
-  if (String(parsed.port) !== "5432") {
+  } else if (String(parsed.port) !== "5432") {
     throw new Error(
       `PRODUCTION_DB_GUARD: refusing non-default local PostgreSQL port for test admin (${parsed.port})`
     );
@@ -103,16 +118,21 @@ function localOsUser() {
 }
 
 /**
- * Default local admin URL. Prefer explicit OS user + 127.0.0.1 so node-pg does not
- * depend on ambiguous peer/trust socket behavior that overnight runs hit via
- * `postgresql://localhost:5432/postgres` under some Postgres.app hba states.
+ * Default local admin URL. Prefer Unix-socket peer/trust via host=/tmp
+ * (inet_server_addr null). Postgres.app intermittently returns XX000
+ * "rejected trust authentication" for rapid TCP connects under batched
+ * node:test churn; socket query avoids that path while remaining local-only.
+ *
+ * WHATWG URL requires a hostname token, so we keep 127.0.0.1 as a placeholder
+ * and override with ?host=/tmp for node-pg.
  */
 function defaultLocalAdminConnectionString() {
   const user = localOsUser();
+  const q = "host=%2Ftmp";
   if (user) {
-    return `postgresql://${encodeURIComponent(user)}@127.0.0.1:5432/postgres`;
+    return `postgresql://${encodeURIComponent(user)}@127.0.0.1/postgres?${q}`;
   }
-  return "postgresql://127.0.0.1:5432/postgres";
+  return `postgresql://127.0.0.1/postgres?${q}`;
 }
 
 /**
@@ -141,8 +161,24 @@ function localDatabaseUrlForName(dbName, adminUrl) {
     throw new Error("unsafe local database name");
   }
   const admin = adminUrl || resolveLocalAdminConnectionString();
-  const parsed = assertLocalNonProductionAdminUrl(admin);
-  const user = parsed.username || localOsUser();
+  assertLocalNonProductionAdminUrl(admin, {
+    allowDatabaseNames: ["postgres"],
+  });
+  const user = parsePgUrl(admin).username || localOsUser();
+  let socketDir = null;
+  try {
+    const u = new URL(String(admin).replace(/^postgresql:/i, "postgres:"));
+    socketDir = u.searchParams.get("host");
+  } catch {
+    socketDir = null;
+  }
+  if (socketDir && socketDir.startsWith("/")) {
+    const q = `host=${encodeURIComponent(socketDir)}`;
+    if (user) {
+      return `postgresql://${encodeURIComponent(user)}@127.0.0.1/${name}?${q}`;
+    }
+    return `postgresql://127.0.0.1/${name}?${q}`;
+  }
   if (user) {
     return `postgresql://${encodeURIComponent(user)}@127.0.0.1:5432/${name}`;
   }
