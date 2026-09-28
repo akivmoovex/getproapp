@@ -196,32 +196,36 @@ async function assignBlessBoardRole(db, input, options) {
       });
     }
 
-    const existingStaff = await client.query(
-      `SELECT 1 FROM blessboard.user_role_assignments a
-        WHERE a.user_id = $1 AND a.organization_id = $2 AND a.status = 'active'
-          AND a.revoked_at IS NULL
-        LIMIT 1`,
-      [user.id, organization.id]
-    );
-    const { evaluateStaffAccountLimit, STATUS: ENT_STATUS } = require("../../platform/services/entitlementService");
-    const staffGate = await evaluateStaffAccountLimit(client, {
-      organizationId: organization.id,
-      countsAsNewStaff: existingStaff.rows.length === 0,
-      countsAsNewUser: existingStaff.rows.length === 0,
-    });
-    if (!staffGate.ok) {
-      const message =
-        staffGate.status === ENT_STATUS.LIMIT_EXCEEDED
-          ? `limit_exceeded:${staffGate.reason}`
-          : staffGate.status === ENT_STATUS.SUBSCRIPTION_INACTIVE
-            ? "subscription_inactive"
-            : "entitlement_denied";
-      return abort({
-        ok: false,
-        status: STATUS.ROLE_CONFLICT,
-        message,
-        role: null,
+    // Platform-scoped administrators are not tenant staff seats — do not apply
+    // organisation subscription / seat gates to platform_administrator grants.
+    if (req.roleKey !== "platform_administrator") {
+      const existingStaff = await client.query(
+        `SELECT 1 FROM blessboard.user_role_assignments a
+          WHERE a.user_id = $1 AND a.organization_id = $2 AND a.status = 'active'
+            AND a.revoked_at IS NULL
+          LIMIT 1`,
+        [user.id, organization.id]
+      );
+      const { evaluateStaffAccountLimit, STATUS: ENT_STATUS } = require("../../platform/services/entitlementService");
+      const staffGate = await evaluateStaffAccountLimit(client, {
+        organizationId: organization.id,
+        countsAsNewStaff: existingStaff.rows.length === 0,
+        countsAsNewUser: existingStaff.rows.length === 0,
       });
+      if (!staffGate.ok) {
+        const message =
+          staffGate.status === ENT_STATUS.LIMIT_EXCEEDED
+            ? `limit_exceeded:${staffGate.reason}`
+            : staffGate.status === ENT_STATUS.SUBSCRIPTION_INACTIVE
+              ? "subscription_inactive"
+              : "entitlement_denied";
+        return abort({
+          ok: false,
+          status: STATUS.ROLE_CONFLICT,
+          message,
+          role: null,
+        });
+      }
     }
 
     let churchId = null;

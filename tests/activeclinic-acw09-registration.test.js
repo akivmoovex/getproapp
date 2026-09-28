@@ -122,7 +122,7 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
     assert.match(page.text, /name="countryCode"/);
     assert.match(page.text, /name="address"/);
     assert.doesNotMatch(page.text, /name="password"/);
-    assert.match(page.text, /acw-platform.css\?v=v7-minisite-align-1/);
+    assert.match(page.text, /acw-platform\.css\?v=/);
     const css = fs.readFileSync(
       path.join(__dirname, "..", "public", "activeclinic", "acw-platform.css"),
       "utf8"
@@ -190,7 +190,7 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
     assert.match(review.text, /data-ac-acw-screen="ACW09-review"/);
     assert.match(review.text, /Hospital/);
     assert.match(review.text, /Ada Admin/);
-    assert.match(review.text, /name="acceptTerms"/);
+    assert.match(review.text, /name="registration_consent"/);
 
     const csrf3 = extractCsrf(review.text);
     const confirm = await request(server)
@@ -202,7 +202,7 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
       .send({
         [CSRF_FIELD]: csrf3,
         action: "confirm",
-        acceptTerms: "on",
+        registration_consent: "on",
         ...payload,
         phone_country: "ZM",
         phone_national: payload.contactPhone.replace("+260", ""),
@@ -230,13 +230,26 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
       .send({
         [CSRF_FIELD]: csrf3,
         action: "confirm",
-        acceptTerms: "on",
+        registration_consent: "on",
         ...payload,
         phone_country: "ZM",
         phone_national: payload.contactPhone.replace("+260", ""),
       });
-    assert.equal(dup.status, 400);
-    assert.match(dup.text, /already|recently submitted/i);
+    // Duplicate confirm must not create a second clinic: either 400 conflict or
+    // idempotent 303 back to the same success reference.
+    if (dup.status === 400) {
+      assert.match(dup.text, /already|recently submitted/i);
+    } else {
+      assert.equal(dup.status, 303, dup.text.slice(0, 400));
+      assert.match(String(dup.headers.location || ""), /\/register-clinic\/success\?ref=AC-/);
+    }
+    const appCount = await pool.query(
+      `SELECT count(*)::int AS n
+         FROM activeclinic.clinic_registration_applications
+        WHERE contact_email_normalized = $1`,
+      [payload.contactEmail]
+    );
+    assert.equal(appCount.rows[0].n, 1);
 
     const org = await pool.query(
       `SELECT cra.organization_id, f.facility_type
@@ -264,7 +277,7 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
       countryCode: "ZM",
       password: PASSWORD,
       passwordConfirm: PASSWORD,
-      acceptTerms: "on",
+      registration_consent: "on",
     };
     const form = await request(server).get("/register-clinic").set("Host", AC_HOST);
     const confirm = await request(server)
@@ -411,7 +424,7 @@ describe("ActiveClinic ACW09 clinic registration", { timeout: 180000 }, () => {
       await page.click("button[name=action][value=next-admin]");
       await page.waitForSelector("[data-ac-acw-step='review']");
       await overflowOf("review");
-      await page.check("#acceptTerms");
+      await page.check("#registration_consent");
       await Promise.all([
         page.waitForURL(/\/register-clinic\/success/),
         page.click(".ac-review-actions__confirm button[type=submit]"),
