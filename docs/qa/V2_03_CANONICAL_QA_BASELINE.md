@@ -20,7 +20,7 @@ V2_03_CANONICAL_QA_BASELINE_READY
 |--|--|
 | CANONICAL_BRANCH | `V10` |
 | CANONICAL_WORKTREE | `getpro` (`/Users/akivsolomon/Documents/DocumentsAkiv/Akiv/Dev/CursorProjects/getpro`) |
-| CANONICAL_SHA | _(filled after checkpoint commit)_ |
+| CANONICAL_SHA | `13f0dac4762b387c6b91260eb8bceebb27cf5076` |
 | Pre-commit HEAD | `1e4251291c9f7440c6138a8ff6cec17478583eb4` |
 
 ### Worktree inventory (pre-integration)
@@ -213,7 +213,7 @@ EXPECTED_COMPARABLE_RESIDUAL_FAILURES≈315
 
 ```text
 CANONICAL_BRANCH=V10
-CANONICAL_SHA=<post-commit>
+CANONICAL_SHA=13f0dac4762b387c6b91260eb8bceebb27cf5076
 CANONICAL_WORKTREE=getpro
 
 RC01_INCLUDED=YES
