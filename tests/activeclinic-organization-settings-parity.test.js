@@ -331,7 +331,8 @@ describe("ActiveClinic organization settings parity (AC-V6-S07)", () => {
     assert.equal(noCsrf.status, 403);
 
     const csrf = issueCsrfToken(MINIMAL_AC);
-    const badType = await request(app)
+    // Foreign organization_id must not be writable — tenant isolation wins over field validation.
+    const crossTenant = await request(app)
       .post("/app/settings/organization")
       .set("Cookie", `${cookie}; ${CSRF_COOKIE_ACTIVECLINIC_ORG}=${csrf}`)
       .type("form")
@@ -344,6 +345,21 @@ describe("ActiveClinic organization settings parity (AC-V6-S07)", () => {
         timezone: "Africa/Lusaka",
         status: "archived",
         organization_id: other.orgId,
+      });
+    assert.equal(crossTenant.status, 403);
+
+    const csrfBadType = issueCsrfToken(MINIMAL_AC);
+    const badType = await request(app)
+      .post("/app/settings/organization")
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE_ACTIVECLINIC_ORG}=${csrfBadType}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrfBadType,
+        public_name: "Updated Clinic",
+        legal_name: "Updated Legal",
+        organization_type: "not_a_real_type",
+        country_code: "ZM",
+        timezone: "Africa/Lusaka",
       });
     assert.equal(badType.status, 400);
     assert.match(badType.text, /approved organization type|fix the following/i);
