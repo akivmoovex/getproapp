@@ -18,6 +18,7 @@ const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
+const { nextZmNational } = require("./helpers/zmPhoneFormFields");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const {
   generatePublicRegistrationReference,
@@ -165,7 +166,7 @@ describe("BB-REG-07 BlessBoard registration success screen", () => {
     const csrf = extractCsrfToken(getRes.text);
     const csrfCookie = extractCookie(getRes, CSRF_COOKIE);
     const stamp = uniq("bbreg07");
-    const phoneTail = String(1000000 + Math.floor(Math.random() * 8000000)).slice(-7);
+    const phoneTail = nextZmNational();
     const body = {
       church_name: `Success Church ${stamp}`,
       country: "ZM",

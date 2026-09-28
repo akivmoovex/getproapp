@@ -1,5 +1,7 @@
 "use strict";
 
+const { nextZmNational } = require("./helpers/zmPhoneFormFields");
+
 const {
   createChurchRegistrationApplication,
 } = require("./helpers/blessboardChurchRegistrationFixture");
@@ -271,9 +273,7 @@ describe("blessboard home service times (Prompt 50)", () => {
 
   async function insertApplication(overrides = {}) {
     const key = uniq(overrides.prefix || "st");
-    const phoneTail = String(1000000 + (Date.now() % 1000000) + Math.floor(Math.random() * 900)).slice(
-      -7
-    );
+    const phoneTail = nextZmNational(Date.now());
     return appRepo.createApplication(pool, {
       church_name: overrides.church_name || `ST Church ${key}`,
       country: "Kenya",
@@ -342,9 +342,7 @@ describe("blessboard home service times (Prompt 50)", () => {
   it("5: Network approve path provisions the same home content foundation", async () => {
     requireDb();
     const key = uniq("net");
-    const phoneTail = String(1000000 + (Date.now() % 1000000) + Math.floor(Math.random() * 900)).slice(
-      -7
-    );
+    const phoneTail = nextZmNational(Date.now());
     const appRow = await createChurchRegistrationApplication(pool, {
       church_name: `Network ${key}`,
       country: "Kenya",

@@ -1,8 +1,9 @@
 "use strict";
 
 /**
- * Shared phone form helpers for ActiveClinic patient-portal tests.
+ * Shared phone form helpers for ActiveClinic / BlessBoard registration tests.
  * V7 register/login phone fields are phone_country + phone_national (not E.164 `phone`).
+ * Zambia mobiles are 9 national digits starting with 9 (typically 97…).
  */
 
 function zmNationalFromE164(phone) {
@@ -15,14 +16,22 @@ function zmNationalFromE164(phone) {
   return digits;
 }
 
+function nextZmNational(seed) {
+  const n = Number(seed);
+  const base = Number.isFinite(n) ? n : Date.now() + Math.floor(Math.random() * 1e6);
+  return `97${String(1000000 + (Math.abs(base) % 8999999)).slice(-7)}`;
+}
+
 function zmPhoneFormFields(phoneE164OrNational) {
+  const national = zmNationalFromE164(phoneE164OrNational);
   return {
     phone_country: "ZM",
-    phone_national: zmNationalFromE164(phoneE164OrNational),
+    phone_national: national.length === 9 ? national : nextZmNational(national),
   };
 }
 
 module.exports = {
   zmNationalFromE164,
+  nextZmNational,
   zmPhoneFormFields,
 };

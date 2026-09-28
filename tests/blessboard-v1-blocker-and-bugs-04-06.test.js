@@ -18,6 +18,7 @@ const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
+const { nextZmNational } = require("./helpers/zmPhoneFormFields");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
 const { createV5Session } = require("../src/platform/session/createV5Session");
@@ -138,7 +139,7 @@ describe("BlessBoard V1 blocker + bugs 04–06", () => {
     const csrf = extractCsrfToken(getRes.text);
     const csrfCookie = extractCookie(getRes, CSRF_COOKIE);
     const stamp = uniq("bbv1b");
-    const phoneTail = String(1000000 + Math.floor(Math.random() * 8000000)).slice(-7);
+    const phoneTail = nextZmNational();
     const body = {
       church_name: `Grace Community ${stamp}`,
       country: "ZM",
@@ -437,7 +438,8 @@ describe("BlessBoard V1 blocker + bugs 04–06", () => {
     const edit = await request(app)
       .get(`/c/${organizationKey}?website_edit=1&website_mode=draft`)
       .set("Host", APEX)
-      .set("Cookie", cookie);
+      .set("Cookie", cookie)
+      .redirects(1);
     assert.equal(edit.status, 200, edit.text && edit.text.slice(0, 400));
     assert.match(edit.text, /data-website-key="home.logo"/);
     assert.match(edit.text, /data-website-type="image"/);
@@ -500,11 +502,15 @@ describe("BlessBoard V1 blocker + bugs 04–06", () => {
     const preview = await request(app)
       .get(`/c/${organizationKey}?website_mode=draft`)
       .set("Host", APEX)
-      .set("Cookie", cookie);
+      .set("Cookie", cookie)
+      .redirects(1);
     assert.equal(preview.status, 200);
     assert.match(preview.text, new RegExp(mediaId));
 
-    const publicBefore = await request(app).get(`/c/${organizationKey}`).set("Host", APEX);
+    const publicBefore = await request(app)
+      .get(`/c/${organizationKey}`)
+      .set("Host", APEX)
+      .redirects(1);
     assert.doesNotMatch(publicBefore.text, new RegExp(mediaId));
 
     await acknowledgeWebsitePreview(pool, {

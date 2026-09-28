@@ -22,6 +22,7 @@ const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
+const { nextZmNational } = require("./helpers/zmPhoneFormFields");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
 const { ENV_KEY } = require("../src/blessboard/config/instantFreeProvisioningEnabled");
@@ -189,9 +190,7 @@ describe("Network support-contact registration", () => {
 
   function networkBody(overrides = {}) {
     const key = uniq("net");
-    const phoneTail = String(1000000 + (Date.now() % 1000000) + Math.floor(Math.random() * 900)).slice(
-      -7
-    );
+    const phoneTail = nextZmNational(Date.now());
     return {
       church_name: `Network Church ${key}`,
       country: "Kenya",
@@ -435,7 +434,7 @@ describe("Network support-contact registration", () => {
     assert.equal(mapPublicPlanToOrchestratorPlanKey("growth"), "growth");
 
     const freeKey = uniq("free");
-    const phoneTail = String(1000000 + Math.floor(Math.random() * 9000000)).slice(-7);
+    const phoneTail = nextZmNational();
     const freeBody = {
       church_name: `Keep Free ${freeKey}`,
       country: "Kenya",
@@ -463,7 +462,7 @@ describe("Network support-contact registration", () => {
     assertChurchReadySuccessRedirect(freeRes.headers.location);
 
     const growthKey = uniq("growth");
-    const gPhone = String(1000000 + Math.floor(Math.random() * 9000000)).slice(-7);
+    const gPhone = nextZmNational();
     const growthBody = {
       church_name: `Keep Growth ${growthKey}`,
       country: "Kenya",

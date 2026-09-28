@@ -23,6 +23,7 @@ const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
+const { nextZmNational } = require("./helpers/zmPhoneFormFields");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
 const {
@@ -123,7 +124,7 @@ describe("BlessBoard V1 registration review matrix", () => {
 
   function formBody(overrides = {}) {
     const stamp = uniq("mx");
-    const phoneTail = String(1000000 + Math.floor(Math.random() * 8000000)).slice(-7);
+    const phoneTail = nextZmNational();
     return {
       church_name: `Matrix Chapel ${stamp}`,
       country: "ZM",

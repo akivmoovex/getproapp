@@ -1,5 +1,7 @@
 "use strict";
 
+const { nextZmNational } = require("./helpers/zmPhoneFormFields");
+
 const {
   createChurchRegistrationApplication,
 } = require("./helpers/blessboardChurchRegistrationFixture");
@@ -153,7 +155,7 @@ describe("registration public miniwebsite provision", () => {
 
   async function insertFoundationApp(overrides = {}) {
     const key = uniq("mwapp");
-    const phoneTail = String(Date.now() + Math.floor(Math.random() * 9000)).slice(-7);
+    const phoneTail = nextZmNational(Date.now());
     return appRepo.createApplication(pool, {
       church_name: overrides.church_name || `Grace Community ${key}`,
       country: overrides.country || "Kenya",

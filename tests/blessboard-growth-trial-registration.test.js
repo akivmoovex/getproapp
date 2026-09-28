@@ -21,6 +21,7 @@ const { migrate } = require("../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
+const { nextZmNational } = require("./helpers/zmPhoneFormFields");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { assertChurchReadySuccessRedirect } = require("./helpers/blessboardRegistrationSuccess");
 const { ENV_KEY } = require("../src/blessboard/config/instantFreeProvisioningEnabled");
@@ -132,9 +133,7 @@ describe("automatic Growth trial registration", () => {
 
   function growthBody(overrides = {}) {
     const key = uniq("growth");
-    const phoneTail = String(1000000 + (Date.now() % 1000000) + Math.floor(Math.random() * 900)).slice(
-      -7
-    );
+    const phoneTail = nextZmNational(Date.now());
     return {
       church_name: `Growth Trial Church ${key}`,
       country: "Kenya",
