@@ -225,7 +225,11 @@ describe("ActiveClinic public clinic onboarding", () => {
     assert.doesNotMatch(page.text, /name="password"/);
     const login = await request(app).get("/login").set("Host", AC_HOST);
     assert.equal(login.status, 200);
-    assert.match(login.text, /Email address or phone number|Phone number or email|Email or phone number/);
+    // V7 Stitch login uses Email|Phone identifier tabs (not a combined single-field label).
+    assert.match(login.text, /data-gp-auth-id-tab="email"/);
+    assert.match(login.text, /data-gp-auth-id-tab="phone"/);
+    assert.match(login.text, /<label for="login_email">Email address<\/label>/);
+    assert.match(login.text, /Phone number/);
     assert.match(login.text, /href="\/register-clinic"/);
   });
 
@@ -402,13 +406,29 @@ describe("ActiveClinic public clinic onboarding", () => {
     };
     const first = await submitClinic(payload);
     assert.equal(first.confirm.status, 303);
-    const second = await submitClinic({
+
+    // Same phone + different clinic without the existing password must not
+    // silently provision another clinic (ack / sign-in required).
+    const blocked = await submitClinic({
       ...payload,
       clinicName: `Dup Clinic B ${stamp}`,
       contactEmail: `other-${stamp}@clinic.example`,
+      password: "wrong-password-not-matching",
+      passwordConfirm: "wrong-password-not-matching",
     });
-    assert.equal(second.confirm.status, 400);
-    assert.match(second.confirm.text, /email or phone/i);
+    assert.equal(blocked.confirm.status, 400);
+    assert.match(
+      blocked.confirm.text,
+      /already registered|already exists|password does not match|email or phone/i
+    );
+
+    // Matching password may reuse the identity for a distinct second clinic.
+    const reused = await submitClinic({
+      ...payload,
+      clinicName: `Dup Clinic C ${stamp}`,
+      contactEmail: `other-c-${stamp}@clinic.example`,
+    });
+    assert.equal(reused.confirm.status, 303);
 
     const row = await pool.query(
       `SELECT id FROM activeclinic.clinic_registration_applications WHERE contact_email_normalized = $1`,

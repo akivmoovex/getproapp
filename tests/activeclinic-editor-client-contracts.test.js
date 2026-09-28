@@ -36,7 +36,9 @@ describe("ActiveClinic editor client contracts", () => {
     const js = read("public/platform/website-lifecycle.js");
     assert.match(js, /new URLSearchParams\(new FormData\(form\)\)/);
     assert.match(js, /application\/x-www-form-urlencoded/);
-    assert.match(js, /Publish failed — check your connection and retry\. Draft unchanged\./);
+    // Platform lifecycle splits HTTP vs network failure copy (Wave 3 contract).
+    assert.match(js, /Publish failed — check your connection and retry\./);
+    assert.match(js, /Publish failed — draft unchanged\. Retry when ready\./);
     assert.match(js, /beforeunload/);
   });
 
