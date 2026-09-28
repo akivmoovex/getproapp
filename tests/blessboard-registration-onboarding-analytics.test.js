@@ -152,10 +152,16 @@ describe("registration onboarding analytics (Prompt 27)", () => {
         follow_up_status: "contact_pending",
       });
       fixtures.networkAppId = networkApp.id;
+      // Keep created_at and first_contacted_at inside the half-open UTC calendar
+      // window used by analytics ([start, start-of-tomorrow-UTC)). Near UTC
+      // midnight, created_at + 2h can land on the next UTC day and drop out of
+      // the median cohort while still counting as a network contact request.
       await pool.query(
         `UPDATE blessboard.platform_church_registration_applications
-            SET first_contacted_at = created_at + interval '2 hours',
-                last_contacted_at = created_at + interval '2 hours'
+            SET created_at = now() - interval '1 day',
+                updated_at = now() - interval '1 day',
+                first_contacted_at = (now() - interval '1 day') + interval '2 hours',
+                last_contacted_at = (now() - interval '1 day') + interval '2 hours'
           WHERE id = $1`,
         [networkApp.id]
       );
