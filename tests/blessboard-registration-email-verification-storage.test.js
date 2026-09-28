@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 034 — registration email verification token storage (migration + repository).
  */
@@ -65,7 +69,7 @@ describe("registration email verification storage (Prompt 034)", () => {
       adminUser = created.user;
 
       const phone = randomPhone();
-      application = await repo.createApplication(pool, {
+      application = await createChurchRegistrationApplication(pool, {
         church_name: "Email Verify Church",
         country: "Zambia",
         city: "Lusaka",

@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 18 — lightweight deterministic registration risk review.
  */
@@ -99,15 +103,15 @@ describe("registration risk review (Prompt 18)", () => {
       });
       assert.equal(user.ok, true, user.message);
       // Bootstrap org so platform_admin role can attach.
-      const bootstrapApp = await appRepo.createApplication(pool, {
+      const bootstrapApp = await createChurchRegistrationApplication(pool, {
         church_name: `Risk PA Church ${key}`,
         country: "Kenya",
         city: "Nairobi",
         contact_name: "Risk PA",
         contact_email: `${uniq("riskboot")}@example.org`,
-        contact_phone: `+2547${String(Date.now()).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
-        role_in_church: "Administrator",
+        contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                role_in_church: "Administrator",
         selected_plan: "foundation",
         consent_terms: true,
       });
@@ -178,7 +182,8 @@ describe("registration risk review (Prompt 18)", () => {
       city: "Nairobi",
       contact_name: "Risk Admin",
       role_in_church: "Administrator",
-      phone: `+2547${phoneTail}`,
+      phone_country: "KE",
+      phone_national: `7${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
       email: `${key}@example.org`,
       selected_plan: "foundation",
       organization_key: key,
@@ -345,15 +350,15 @@ describe("registration risk review (Prompt 18)", () => {
   }
 
   async function seedPriorRejection(email) {
-    const prior = await appRepo.createApplication(pool, {
+    const prior = await createChurchRegistrationApplication(pool, {
       church_name: `Prior Reject ${uniq("pr")}`,
       country: "Kenya",
       city: "Kisumu",
       contact_name: "Prior",
       contact_email: email,
-      contact_phone: `+2547${String(Date.now()).slice(-7)}`,
-      contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
-      role_in_church: "Administrator",
+      contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+            role_in_church: "Administrator",
       selected_plan: "foundation",
       consent_terms: true,
     });

@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Public miniwebsite after registration approval:
  * - unique organization_key allocation (+ reserved / collision)
@@ -93,15 +97,15 @@ describe("registration public miniwebsite provision", () => {
       });
       assert.equal(user.ok, true, user.message);
 
-      const bootApp = await appRepo.createApplication(pool, {
+      const bootApp = await createChurchRegistrationApplication(pool, {
         church_name: `MW PA Church ${key}`,
         country: "Kenya",
         city: "Nairobi",
         contact_name: "PA",
         contact_email: `${uniq("boot")}@example.org`,
-        contact_phone: `+2547${String(Date.now()).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
-        selected_plan: "foundation",
+        contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                selected_plan: "foundation",
         consent_terms: true,
       });
       const provisioned = await provisionRegisteredBlessBoardChurch(pool, {
@@ -222,7 +226,7 @@ describe("registration public miniwebsite provision", () => {
     assert.ok(pages.rows.every((r) => r.status === "draft"));
 
     const publicRes = await request(app)
-      .get(`/c/${expectedBase}`)
+      .get(`/c/${expectedBase}`).redirects(1)
       .set("Host", APEX);
     assert.equal(publicRes.status, 200);
     assert.match(publicRes.text, /not public yet/i);
@@ -249,7 +253,7 @@ describe("registration public miniwebsite provision", () => {
     });
     assert.equal(published.ok, true, JSON.stringify(published));
 
-    const live = await request(app).get(`/c/${expectedBase}`).set("Host", APEX);
+    const live = await request(app).get(`/c/${expectedBase}`).redirects(1).set("Host", APEX);
     assert.equal(live.status, 200);
     assert.doesNotMatch(live.text, /not public yet/i);
     assert.match(live.text, /Grace Community Church/i);
@@ -378,7 +382,7 @@ describe("registration public miniwebsite provision", () => {
       [approved.records.organizationId]
     );
 
-    const res = await request(app).get(`/c/${key}`).set("Host", APEX);
+    const res = await request(app).get(`/c/${key}`).redirects(1).set("Host", APEX);
     assert.equal(res.status, 404);
   });
 
@@ -405,8 +409,8 @@ describe("registration public miniwebsite provision", () => {
     assert.equal(a.ok, true);
     assert.equal(b.ok, true);
 
-    const resA = await request(app).get(`/c/${keyA}`).set("Host", APEX);
-    const resB = await request(app).get(`/c/${keyB}`).set("Host", APEX);
+    const resA = await request(app).get(`/c/${keyA}`).redirects(1).set("Host", APEX);
+    const resB = await request(app).get(`/c/${keyB}`).redirects(1).set("Host", APEX);
     assert.equal(resA.status, 200);
     assert.equal(resB.status, 200);
     assert.match(resA.text, /Iso Alpha/i);
@@ -467,7 +471,7 @@ describe("registration public miniwebsite provision", () => {
     });
     assert.equal(approved.ok, true, approved.message || approved.status);
 
-    const setupRes = await request(app).get(`/c/${key}`).set("Host", APEX);
+    const setupRes = await request(app).get(`/c/${key}`).redirects(1).set("Host", APEX);
     assert.equal(setupRes.status, 200);
     assert.match(setupRes.text, /not public yet/i);
 
@@ -485,7 +489,7 @@ describe("registration public miniwebsite provision", () => {
     assert.equal(applied.ok, true, applied.reason);
     assert.equal(applied.after.websiteStatus, "draft");
 
-    const stillSetup = await request(app).get(`/c/${key}`).set("Host", APEX);
+    const stillSetup = await request(app).get(`/c/${key}`).redirects(1).set("Host", APEX);
     assert.match(stillSetup.text, /not public yet/i);
   });
 
@@ -560,7 +564,7 @@ describe("registration public miniwebsite provision", () => {
     assert.equal(welcomeAfter.rows[0].heading, welcomeBefore.rows[0].heading);
     assert.equal(welcomeAfter.rows[0].body_text, welcomeBefore.rows[0].body_text);
 
-    const live = await request(app).get(`/c/${key}`).set("Host", APEX);
+    const live = await request(app).get(`/c/${key}`).redirects(1).set("Host", APEX);
     assert.equal(live.status, 200);
     assert.doesNotMatch(live.text, /not public yet/i);
     assert.match(live.text, /RepairLive/i);

@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 047 — registration duplicate match storage (migration + repository).
  * PostgreSQL-gated: skips honestly when local DB is unavailable.
@@ -57,7 +61,7 @@ describe("registration duplicate match storage (Prompt 047)", () => {
       adminUser = created.user;
 
       const phoneA = randomPhone();
-      application = await repo.createApplication(pool, {
+      application = await createChurchRegistrationApplication(pool, {
         church_name: "Duplicate Subject Church",
         country: "Zambia",
         city: "Lusaka",
@@ -72,7 +76,7 @@ describe("registration duplicate match storage (Prompt 047)", () => {
       assert.ok(application && application.id);
 
       const phoneB = randomPhone();
-      otherApplication = await repo.createApplication(pool, {
+      otherApplication = await createChurchRegistrationApplication(pool, {
         church_name: "Duplicate Candidate Church",
         country: "Zambia",
         city: "Ndola",

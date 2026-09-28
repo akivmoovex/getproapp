@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 50 — home service times provisioning, HQ editor, public render.
  */
@@ -276,9 +280,9 @@ describe("blessboard home service times (Prompt 50)", () => {
       city: "Nairobi",
       contact_name: overrides.contact_name || "Ada Admin",
       contact_email: overrides.contact_email || `${key}@example.org`,
-      contact_phone: `+2547${phoneTail}`,
-      contact_phone_normalized: `+2547${phoneTail}`,
-      selected_plan: overrides.selected_plan || "foundation",
+      contact_phone: `+2547${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+            selected_plan: overrides.selected_plan || "foundation",
       consent_terms: true,
       branch_name: "Main Campus",
       ...(overrides.extra || {}),
@@ -341,15 +345,15 @@ describe("blessboard home service times (Prompt 50)", () => {
     const phoneTail = String(1000000 + (Date.now() % 1000000) + Math.floor(Math.random() * 900)).slice(
       -7
     );
-    const appRow = await appRepo.createApplication(pool, {
+    const appRow = await createChurchRegistrationApplication(pool, {
       church_name: `Network ${key}`,
       country: "Kenya",
       city: "Nairobi",
       contact_name: "Net Admin",
       contact_email: `${key}@example.org`,
-      contact_phone: `+2547${phoneTail}`,
-      contact_phone_normalized: `+2547${phoneTail}`,
-      role_in_church: "Administrator",
+      contact_phone: `+2547${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+            role_in_church: "Administrator",
       selected_plan: "network",
       support_requested: true,
       follow_up_status: "validation_pending",

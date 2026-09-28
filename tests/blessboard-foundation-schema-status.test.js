@@ -146,10 +146,10 @@ describe("blessboard foundation schema status (027)", () => {
     requireDb();
     const inserted = await pool.query(
       `INSERT INTO blessboard.platform_church_registration_applications (
-         status, church_name, country, city, contact_name, contact_email, contact_phone,
+         status, church_name, branch_name, country, city, contact_name, contact_email, contact_phone,
          consent_terms, selected_plan
        ) VALUES (
-         'pending', 'Schema Test Church', 'Kenya', 'Nairobi', 'Ada Admin',
+         'pending', 'Schema Test Church', 'Headquarters', 'Kenya', 'Nairobi', 'Ada Admin',
          'schema-test-' || gen_random_uuid()::text || '@example.org', '+254700000001',
          true, 'foundation'
        )
@@ -429,10 +429,10 @@ describe("blessboard foundation schema status (027)", () => {
 
       const inserted = await upgradePool.query(
         `INSERT INTO blessboard.platform_church_registration_applications (
-           status, church_name, country, city, contact_name, contact_email, contact_phone,
+           status, church_name, branch_name, country, city, contact_name, contact_email, contact_phone,
            consent_terms, selected_plan
          ) VALUES (
-           'pending', 'Upgrade Church', 'Kenya', 'Nairobi', 'Up Admin',
+           'pending', 'Upgrade Church', 'Headquarters', 'Kenya', 'Nairobi', 'Up Admin',
            'upgrade-' || gen_random_uuid()::text || '@example.org', '+254700000099',
            true, 'foundation'
          )
@@ -440,10 +440,10 @@ describe("blessboard foundation schema status (027)", () => {
       );
       const closed = await upgradePool.query(
         `INSERT INTO blessboard.platform_church_registration_applications (
-           status, church_name, country, city, contact_name, contact_email, contact_phone,
+           status, church_name, branch_name, country, city, contact_name, contact_email, contact_phone,
            consent_terms, selected_plan
          ) VALUES (
-           'closed', 'Closed Church', 'Kenya', 'Mombasa', 'Cl Admin',
+           'closed', 'Closed Church', 'Headquarters', 'Kenya', 'Mombasa', 'Cl Admin',
            'closed-' || gen_random_uuid()::text || '@example.org', '+254700000098',
            true, 'foundation'
          )

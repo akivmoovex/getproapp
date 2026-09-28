@@ -11,6 +11,10 @@ const bcrypt = require("bcryptjs");
 const { migrate } = require("../../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../../db/scripts/lib/databaseIdentity");
 const { DEFAULT_PUBLIC_BUCKET } = require("../../src/blessboard/media/mediaConstants");
+const {
+  resolveLocalAdminConnectionString,
+  localDatabaseUrlForName,
+} = require("./localPostgresAdmin");
 
 const SRC_DB = "blessboard_v5_to_v7_src";
 const TGT_DB = "moovex_v7_migration_tgt";
@@ -40,15 +44,11 @@ const IDS = Object.freeze({
 });
 
 function adminConnectionString() {
-  return (
-    process.env.FOUNDATION_ADMIN_DATABASE_URL ||
-    process.env.DATABASE_URL_ADMIN ||
-    "postgresql://localhost:5432/postgres"
-  );
+  return resolveLocalAdminConnectionString();
 }
 
 function urlFor(dbName) {
-  return `postgresql://localhost:5432/${dbName}`;
+  return localDatabaseUrlForName(dbName, adminConnectionString());
 }
 
 async function recreateDatabase(dbName) {

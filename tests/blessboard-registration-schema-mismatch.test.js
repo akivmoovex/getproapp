@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 073 — public registration schema mismatch (RETURNING/SELECT vs hosted columns).
  */
@@ -290,7 +294,7 @@ describe("public registration schema mismatch (Prompt 073)", () => {
   it("existing registration fields remain readable after public write", async () => {
     requireDb();
     const phone = randomPhone();
-    const created = await repo.createApplication(pool, {
+    const created = await createChurchRegistrationApplication(pool, {
       church_name: "Schema Intact Church",
       country: "Kenya",
       city: "Nairobi",

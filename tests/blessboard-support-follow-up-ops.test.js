@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 26 — customer support follow-up operations.
  */
@@ -106,7 +110,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
 
       const bootKey = uniq("p26boot");
       const bootPhone = randomPhone();
-      const bootApp = await appRepo.createApplication(pool, {
+      const bootApp = await createChurchRegistrationApplication(pool, {
         church_name: `P26 Bootstrap ${bootKey}`,
         country: "Kenya",
         city: "Nairobi",
@@ -211,7 +215,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
     if (skipIfNeeded()) return;
     const key = uniq("p26net");
     const phone = randomPhone();
-    const networkApp = await appRepo.createApplication(pool, {
+    const networkApp = await createChurchRegistrationApplication(pool, {
       church_name: `Network Support ${key}`,
       country: "Kenya",
       city: "Nairobi",
@@ -294,7 +298,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
     if (skipIfNeeded()) return;
     const key = uniq("p26rev");
     const phone = randomPhone();
-    const held = await appRepo.createApplication(pool, {
+    const held = await createChurchRegistrationApplication(pool, {
       church_name: `Review Hold ${key}`,
       country: "Kenya",
       city: "Kisumu",
@@ -343,7 +347,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
     if (skipIfNeeded()) return;
     const key = uniq("p26rej");
     const phone = randomPhone();
-    const held = await appRepo.createApplication(pool, {
+    const held = await createChurchRegistrationApplication(pool, {
       church_name: `Reject Keep ${key}`,
       country: "Kenya",
       city: "Mombasa",
@@ -377,7 +381,7 @@ describe("customer support follow-up operations (Prompt 26)", () => {
     if (skipIfNeeded()) return;
     const key = uniq("p26retry");
     const phone = randomPhone();
-    const held = await appRepo.createApplication(pool, {
+    const held = await createChurchRegistrationApplication(pool, {
       church_name: `Retry Church ${key}`,
       country: "Kenya",
       city: "Nakuru",

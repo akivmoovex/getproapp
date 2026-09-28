@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Phase 5 — platform-admin registration applications list/detail/follow-up.
  */
@@ -88,7 +92,7 @@ describe("platform-admin registration applications (Phase 5)", () => {
 
       // Provision a disposable Free church via orchestrator for write tests.
       const key = uniq("regadmin");
-      const application = await appRepo.createApplication(pool, {
+      const application = await createChurchRegistrationApplication(pool, {
         church_name: `Reg Admin Church ${key}`,
         country: "Kenya",
         city: "Nairobi",
@@ -117,7 +121,7 @@ describe("platform-admin registration applications (Phase 5)", () => {
       fixtures.organizationKey = provisioned.records.organizationKey;
 
       // Unprovisioned submitted application (read-only fixture).
-      fixtures.submittedApp = await appRepo.createApplication(pool, {
+      fixtures.submittedApp = await createChurchRegistrationApplication(pool, {
         church_name: "Submitted Enquiry Church",
         country: "Zambia",
         city: "Lusaka",
@@ -130,7 +134,7 @@ describe("platform-admin registration applications (Phase 5)", () => {
       });
 
       // Duplicate-review fixture
-      fixtures.dupApp = await appRepo.createApplication(pool, {
+      fixtures.dupApp = await createChurchRegistrationApplication(pool, {
         church_name: "Duplicate Review Church",
         country: "Kenya",
         city: "Mombasa",
@@ -146,7 +150,7 @@ describe("platform-admin registration applications (Phase 5)", () => {
       });
 
       // Provisioning-failed fixture
-      fixtures.failedApp = await appRepo.createApplication(pool, {
+      fixtures.failedApp = await createChurchRegistrationApplication(pool, {
         church_name: "Failed Provision Church",
         country: "Kenya",
         city: "Kisumu",

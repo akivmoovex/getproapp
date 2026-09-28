@@ -47,4 +47,5 @@ media/testing/
 media/production/
 
 # V8 / c8 / V2.03 coverage reports (npm run test:v8:coverage, test:coverage*)
-coverage/
+# Root-only: do not ignore scripts/coverage/ harness sources.
+/coverage/

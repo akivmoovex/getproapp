@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 19 — internal platform-admin registration operations alerts (derived).
  */
@@ -75,15 +79,15 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
       users.hq = await makeUser(`${uniq("ops-hq")}@example.org`, "Ops HQ Admin");
 
       const foundationKey = uniq("opsfound");
-      const foundationApp = await appRepo.createApplication(pool, {
+      const foundationApp = await createChurchRegistrationApplication(pool, {
         church_name: `Ops Foundation ${foundationKey}`,
         country: "Kenya",
         city: "Nairobi",
         contact_name: "Ops Found Admin",
         contact_email: `${foundationKey}@example.org`,
-        contact_phone: `+2547${String(Date.now()).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
-        role_in_church: "Administrator",
+        contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                role_in_church: "Administrator",
         selected_plan: "foundation",
         consent_terms: true,
         risk_decision: "allow",
@@ -128,15 +132,15 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
       );
 
       const growthKey = uniq("opsgrow");
-      const growthApp = await appRepo.createApplication(pool, {
+      const growthApp = await createChurchRegistrationApplication(pool, {
         church_name: `Ops Growth ${growthKey}`,
         country: "Kenya",
         city: "Kisumu",
         contact_name: "Ops Growth Admin",
         contact_email: `${growthKey}@example.org`,
-        contact_phone: `+2547${String(Date.now() + 3).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now() + 3).slice(-7)}`,
-        role_in_church: "Administrator",
+        contact_phone: `+2547${String(String(Date.now() + 3).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now() + 3).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                role_in_church: "Administrator",
         selected_plan: "growth",
         consent_terms: true,
       });
@@ -174,7 +178,7 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
 
       // Grace org: separate Growth past_due.
       const graceKey = uniq("opsgrace");
-      const graceApp = await appRepo.createApplication(pool, {
+      const graceApp = await createChurchRegistrationApplication(pool, {
         church_name: `Ops Grace ${graceKey}`,
         country: "Zambia",
         city: "Lusaka",
@@ -182,7 +186,7 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
         contact_email: `${graceKey}@example.org`,
         contact_phone: `+26097${String(Date.now()).slice(-7)}`,
         contact_phone_normalized: `+26097${String(Date.now()).slice(-7)}`,
-        role_in_church: "Administrator",
+                role_in_church: "Administrator",
         selected_plan: "growth",
         consent_terms: true,
       });
@@ -242,30 +246,30 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
       }
 
       // Network contact request.
-      fixtures.networkApp = await appRepo.createApplication(pool, {
+      fixtures.networkApp = await createChurchRegistrationApplication(pool, {
         church_name: `Ops Network ${uniq("net")}`,
         country: "Kenya",
         city: "Mombasa",
         contact_name: "Network Contact",
         contact_email: `${uniq("net")}@example.org`,
-        contact_phone: `+2547${String(Date.now() + 9).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now() + 9).slice(-7)}`,
-        selected_plan: "network",
+        contact_phone: `+2547${String(String(Date.now() + 9).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now() + 9).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                selected_plan: "network",
         support_requested: true,
         follow_up_status: "new",
         consent_terms: true,
       });
 
       // Registration requires review.
-      fixtures.reviewApp = await appRepo.createApplication(pool, {
+      fixtures.reviewApp = await createChurchRegistrationApplication(pool, {
         church_name: `Ops Review ${uniq("rev")}`,
         country: "Kenya",
         city: "Nakuru",
         contact_name: "Review Contact",
         contact_email: `${uniq("rev")}@example.org`,
-        contact_phone: `+2547${String(Date.now() + 11).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now() + 11).slice(-7)}`,
-        selected_plan: "foundation",
+        contact_phone: `+2547${String(String(Date.now() + 11).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now() + 11).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                selected_plan: "foundation",
         application_status: "duplicate_review",
         risk_decision: "review_required",
         risk_reason_codes: ["similar_organization"],
@@ -274,15 +278,15 @@ describe("platform-admin registration ops alerts (Prompt 19)", () => {
       });
 
       // Provisioning failed.
-      fixtures.failedApp = await appRepo.createApplication(pool, {
+      fixtures.failedApp = await createChurchRegistrationApplication(pool, {
         church_name: `Ops Failed ${uniq("fail")}`,
         country: "Kenya",
         city: "Eldoret",
         contact_name: "Failed Contact",
         contact_email: `${uniq("fail")}@example.org`,
-        contact_phone: `+2547${String(Date.now() + 13).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now() + 13).slice(-7)}`,
-        selected_plan: "foundation",
+        contact_phone: `+2547${String(String(Date.now() + 13).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now() + 13).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                selected_plan: "foundation",
         consent_terms: true,
       });
       await appRepo.updateApplicationProvisioningState(pool, fixtures.failedApp.id, {

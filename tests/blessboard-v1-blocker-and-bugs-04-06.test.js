@@ -208,6 +208,7 @@ describe("BlessBoard V1 blocker + bugs 04–06", () => {
         city: "Lusaka",
         contact_name: "Pastor",
         role_in_church: "Pastor",
+        branch_name: "HQ Campus",
         email: "g@example.org",
         phone_country: "ZM",
         phone_national: "971234567",

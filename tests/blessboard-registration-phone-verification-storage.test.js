@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 026 — registration phone verification attempt storage (migration + repository).
  */
@@ -58,7 +62,7 @@ describe("registration phone verification storage (Prompt 026)", () => {
       adminUser = created.user;
 
       const phone = randomPhone();
-      application = await repo.createApplication(pool, {
+      application = await createChurchRegistrationApplication(pool, {
         church_name: "Phone Verify Church",
         country: "Zambia",
         city: "Lusaka",
@@ -284,7 +288,7 @@ describe("registration phone verification storage (Prompt 026)", () => {
     const phoneA = randomPhone();
     const phoneB = randomPhone();
     const phoneC = randomPhone();
-    const multiApp = await repo.createApplication(pool, {
+    const multiApp = await createChurchRegistrationApplication(pool, {
       church_name: "Multi Attempt Church",
       country: "Zambia",
       city: "Ndola",
@@ -420,7 +424,7 @@ describe("registration phone verification storage (Prompt 026)", () => {
   it("returns empty array when no attempts exist", async (t) => {
     if (!requireDb(t)) return;
     const phone = randomPhone();
-    const emptyApp = await repo.createApplication(pool, {
+    const emptyApp = await createChurchRegistrationApplication(pool, {
       church_name: "Empty Attempts Church",
       country: "Zambia",
       city: "Kitwe",

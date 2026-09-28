@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 27 — privacy-safe registration and onboarding analytics.
  */
@@ -81,7 +85,7 @@ describe("registration onboarding analytics (Prompt 27)", () => {
 
       const bootKey = uniq("p27boot");
       const bootPhone = randomPhone();
-      const bootApp = await appRepo.createApplication(pool, {
+      const bootApp = await createChurchRegistrationApplication(pool, {
         church_name: `P27 Bootstrap ${bootKey}`,
         country: "Kenya",
         city: "Nairobi",
@@ -133,7 +137,7 @@ describe("registration onboarding analytics (Prompt 27)", () => {
 
       // Seed analytics fixtures inside the default 7-day window.
       const netPhone = randomPhone();
-      const networkApp = await appRepo.createApplication(pool, {
+      const networkApp = await createChurchRegistrationApplication(pool, {
         church_name: `P27 Network ${uniq("net")}`,
         country: "Kenya",
         city: "Kisumu",
@@ -157,7 +161,7 @@ describe("registration onboarding analytics (Prompt 27)", () => {
       );
 
       const reviewPhone = randomPhone();
-      await appRepo.createApplication(pool, {
+      await createChurchRegistrationApplication(pool, {
         church_name: `P27 Review ${uniq("rev")}`,
         country: "Kenya",
         city: "Mombasa",
@@ -174,7 +178,7 @@ describe("registration onboarding analytics (Prompt 27)", () => {
       });
 
       const failPhone = randomPhone();
-      const failApp = await appRepo.createApplication(pool, {
+      const failApp = await createChurchRegistrationApplication(pool, {
         church_name: `P27 Fail ${uniq("fail")}`,
         country: "Kenya",
         city: "Nakuru",
@@ -220,7 +224,7 @@ describe("registration onboarding analytics (Prompt 27)", () => {
       // Growth trial start in window (bootstrap may already be free — add growth trial org).
       const growthKey = uniq("p27g");
       const growthPhone = randomPhone();
-      const growthApp = await appRepo.createApplication(pool, {
+      const growthApp = await createChurchRegistrationApplication(pool, {
         church_name: `P27 Growth ${growthKey}`,
         country: "Kenya",
         city: "Eldoret",
@@ -278,7 +282,7 @@ describe("registration onboarding analytics (Prompt 27)", () => {
 
       // Outside-window submission (should not count in 7-day aggregates for submissions).
       const oldPhone = randomPhone();
-      const oldApp = await appRepo.createApplication(pool, {
+      const oldApp = await createChurchRegistrationApplication(pool, {
         church_name: `P27 Old ${uniq("old")}`,
         country: "Kenya",
         city: "Kericho",

@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 048 — duplicate match query integration (PostgreSQL-gated).
  */
@@ -64,7 +68,7 @@ describe("registration duplicate match query integration (Prompt 048)", () => {
       // (platform_church_reg_apps_phone_normalized_active_uidx). Overlap via church name.
       const phoneSubject = randomPhone();
       const phoneCandidate = randomPhone();
-      subjectApp = await repo.createApplication(pool, {
+      subjectApp = await createChurchRegistrationApplication(pool, {
         church_name: "Query Subject Church",
         country: "Zambia",
         city: "Lusaka",
@@ -78,7 +82,7 @@ describe("registration duplicate match query integration (Prompt 048)", () => {
       });
       assert.ok(subjectApp && subjectApp.id);
 
-      candidateApp = await repo.createApplication(pool, {
+      candidateApp = await createChurchRegistrationApplication(pool, {
         church_name: "Query Subject Church",
         country: "Zambia",
         city: "Lusaka",

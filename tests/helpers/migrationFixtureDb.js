@@ -8,20 +8,20 @@
 const { Pool, Client } = require("pg");
 const { migrate } = require("../../db/scripts/lib/migrator");
 const { ensureDatabaseIdentity } = require("../../db/scripts/lib/databaseIdentity");
+const {
+  resolveLocalAdminConnectionString,
+  localDatabaseUrlForName,
+} = require("./localPostgresAdmin");
 
 const SRC_DB = "blessboard_v4_migration_src";
 const TGT_DB = "blessboard_v5_migration_tgt";
 
 function adminConnectionString() {
-  return (
-    process.env.FOUNDATION_ADMIN_DATABASE_URL ||
-    process.env.DATABASE_URL_ADMIN ||
-    "postgresql://localhost:5432/postgres"
-  );
+  return resolveLocalAdminConnectionString();
 }
 
 function urlFor(dbName) {
-  return `postgresql://localhost:5432/${dbName}`;
+  return localDatabaseUrlForName(dbName, adminConnectionString());
 }
 
 async function recreateDatabase(dbName) {

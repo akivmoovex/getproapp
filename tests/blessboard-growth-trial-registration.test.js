@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Automatic Growth trial registration (Prompt 08).
  */
@@ -137,7 +141,8 @@ describe("automatic Growth trial registration", () => {
       city: "Nairobi",
       contact_name: "Growth Admin",
       role_in_church: "Administrator",
-      phone: `+2547${phoneTail}`,
+      phone_country: "KE",
+      phone_national: `7${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
       email: `${key}@example.org`,
       selected_plan: "growth",
       organization_key: key,
@@ -246,7 +251,8 @@ describe("automatic Growth trial registration", () => {
       city: "Mombasa",
       contact_name: "Clock Admin",
       contact_email: `${stamp}@example.org`,
-      contact_phone: `+2547${String(2000000 + (Date.now() % 1000000)).slice(0, 7)}`,
+      contact_phone: `+2547${String(String(2000000 + (Date.now() % 1000000)).slice(0, 7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(2000000 + (Date.now() % 1000000)).slice(0, 7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
       role_in_church: "Pastor",
       selected_plan: "growth",
       consent_terms: true,
@@ -293,13 +299,14 @@ describe("automatic Growth trial registration", () => {
   it("Growth entitlements resolve during trial; expired trial is not entitled", async () => {
     requireDb();
     const stamp = uniq("ent");
-    const appRow = await appRepo.createApplication(pool, {
+    const appRow = await createChurchRegistrationApplication(pool, {
       church_name: `Ent Growth ${stamp}`,
       country: "Kenya",
       city: "Kisumu",
       contact_name: "Ent Admin",
       contact_email: `${stamp}@example.org`,
-      contact_phone: `+2547${String(3000000 + (Date.now() % 1000000)).slice(0, 7)}`,
+      contact_phone: `+2547${String(String(3000000 + (Date.now() % 1000000)).slice(0, 7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(3000000 + (Date.now() % 1000000)).slice(0, 7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
       selected_plan: "growth",
       consent_terms: true,
     });
@@ -342,13 +349,14 @@ describe("automatic Growth trial registration", () => {
   it("Foundation still creates active free without trial ends_at", async () => {
     requireDb();
     const stamp = uniq("free");
-    const appRow = await appRepo.createApplication(pool, {
+    const appRow = await createChurchRegistrationApplication(pool, {
       church_name: `Foundation Still ${stamp}`,
       country: "Zambia",
       city: "Lusaka",
       contact_name: "Free Admin",
       contact_email: `${stamp}@example.org`,
       contact_phone: `+26097${String(4000000 + (Date.now() % 1000000)).slice(0, 7)}`,
+        contact_phone_normalized: `+26097${String(4000000 + (Date.now() % 1000000)).slice(0, 7)}`,
       selected_plan: "foundation",
       consent_terms: true,
     });
@@ -478,13 +486,14 @@ describe("automatic Growth trial registration", () => {
   it("admin screens show Growth trial status and dates; V4 trial tables untouched", async () => {
     requireDb();
     const stamp = uniq("adm");
-    const appRow = await appRepo.createApplication(pool, {
+    const appRow = await createChurchRegistrationApplication(pool, {
       church_name: `Admin Growth ${stamp}`,
       country: "Kenya",
       city: "Nakuru",
       contact_name: "Admin Growth",
       contact_email: `${stamp}@example.org`,
-      contact_phone: `+2547${String(5000000 + (Date.now() % 1000000)).slice(0, 7)}`,
+      contact_phone: `+2547${String(String(5000000 + (Date.now() % 1000000)).slice(0, 7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(5000000 + (Date.now() % 1000000)).slice(0, 7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
       selected_plan: "growth",
       consent_terms: true,
     });

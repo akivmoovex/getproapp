@@ -18,6 +18,9 @@ const { provisionPlatformTenant } = require("../src/platform/services/provisionP
 const { provisionBlessBoardChurch } = require("../src/blessboard/services/provisionBlessBoardChurch");
 const { createBlessBoardUser } = require("../src/blessboard/services/createBlessBoardUser");
 const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
+const {
+  revokeActiveAssignmentsForUser,
+} = require("./helpers/blessboardRoleAssignmentFixture");
 const { createV5Session } = require("../src/platform/session/createV5Session");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
@@ -230,14 +233,10 @@ describe("blessboard branch-admin shell", () => {
       await pool.query(`UPDATE blessboard.users SET status = 'inactive' WHERE id = $1`, [
         users.inactive.id,
       ]);
-      await pool.query(
-        `UPDATE blessboard.user_role_assignments
-            SET status = 'revoked',
-                revoked_at = now(),
-                updated_at = now()
-           WHERE user_id = $1 AND status = 'active'`,
-        [users.suspended.id]
-      );
+      // Must set revoked_at (user_role_assignments_revoked_consistency); use repo path.
+      await revokeActiveAssignmentsForUser(pool, users.suspended.id, orgA.id, {
+        reason: "branch-admin-shell fixture: suspended actor",
+      });
 
       app = createV5FoundationApp({
         getPool: () => pool,
@@ -345,7 +344,9 @@ describe("blessboard branch-admin shell", () => {
       .set("Host", HOST_A)
       .set("Cookie", cookie);
     assert.equal(res.status, 200);
-    assert.match(res.text, /organisation administrator|Church HQ admin/i);
+    // Catalogue session chrome uses organisation_administrator; shell must authorize HQ.
+    assert.match(res.text, /data-bb-shell="branch-admin"/);
+    assert.match(res.text, /BA HQ/);
   });
 
   it("platform_admin without support mode is denied branch portal", async () => {

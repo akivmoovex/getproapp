@@ -488,6 +488,8 @@ describe("ActiveClinic finance SoD RBAC (Prompt 10)", () => {
       patientId,
       amountMinor: 2000,
       paymentMethod: PAYMENT_METHOD.MOBILE_MONEY,
+      // MOBILE_MONEY / BANK_TRANSFER require a non-empty reference (product contract).
+      referenceNumber: `MM-${stamp}`,
     });
     assert.equal(pay2.result, BILLING_RESULT.CREATED);
     const reverse = await reversePayment({

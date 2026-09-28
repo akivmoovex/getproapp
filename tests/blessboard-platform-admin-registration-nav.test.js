@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Phase2 Batch 1 — Platform Admin Church Registrations navigation alignment.
  * Focused: single nav item, href, active state on list/detail, no duplicates, auth gate.
@@ -222,7 +226,7 @@ describe("platform-admin registration nav HTTP", () => {
       users.member = await makeUser("reg-nav-member@example.org", "Reg Nav Member");
 
       const key = uniq("regnav");
-      const application = await appRepo.createApplication(pool, {
+      const application = await createChurchRegistrationApplication(pool, {
         church_name: `Reg Nav Church ${key}`,
         country: "Kenya",
         city: "Nairobi",
@@ -249,7 +253,7 @@ describe("platform-admin registration nav HTTP", () => {
       fixtures.organizationKey = provisioned.records.organizationKey;
       fixtures.organizationId = provisioned.records.organizationId;
 
-      fixtures.submittedApp = await appRepo.createApplication(pool, {
+      fixtures.submittedApp = await createChurchRegistrationApplication(pool, {
         church_name: "Nav Alignment Enquiry Church",
         country: "Zambia",
         city: "Lusaka",

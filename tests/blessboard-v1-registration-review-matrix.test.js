@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * BlessBoard V1 registration review matrix:
  * Foundation/Growth auto-provision; URL collisions suffix; retries are idempotent;
@@ -126,6 +130,7 @@ describe("BlessBoard V1 registration review matrix", () => {
       city: "Kitwe",
       contact_name: "Matrix Admin",
       role_in_church: "Pastor",
+      branch_name: "HQ Campus",
       phone_country: "ZM",
       phone_national: phoneTail,
       email: `${stamp}@example.org`,
@@ -247,15 +252,15 @@ describe("BlessBoard V1 registration review matrix", () => {
     requireDb();
     const app = makeApp();
     const email = `${uniq("risk")}@example.org`;
-    const prior = await appRepo.createApplication(pool, {
+    const prior = await createChurchRegistrationApplication(pool, {
       church_name: `Prior Reject ${uniq("pr")}`,
       country: "ZM",
       city: "Kabwe",
       contact_name: "Prior",
       contact_email: email,
       contact_phone: `+26097${String(Date.now()).slice(-7)}`,
-      contact_phone_normalized: `+26097${String(Date.now()).slice(-7)}`,
-      role_in_church: "Pastor",
+        contact_phone_normalized: `+26097${String(Date.now()).slice(-7)}`,
+            role_in_church: "Pastor",
       selected_plan: "foundation",
       consent_terms: true,
     });

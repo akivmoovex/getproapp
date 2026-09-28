@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Testing-only platform-admin maintenance / data reset.
  * Destructive tests use ephemeral Postgres only — never hosted DATABASE_URL.
@@ -176,7 +180,7 @@ describe("blessboard testing maintenance http + reset", () => {
         churchKey: "wipe-me-org",
       });
 
-      await regRepo.createApplication(pool, {
+      await createChurchRegistrationApplication(pool, {
         church_name: "Maint Reg Church",
         country: "ZM",
         city: "Lusaka",
@@ -437,7 +441,7 @@ describe("blessboard testing maintenance http + reset", () => {
   it("12–20. full reset preserves PA/plans/identity and removes tenant org data", async () => {
     requireDb();
     // Re-seed a registration so clear_all has work to do
-    await regRepo.createApplication(pool, {
+    await createChurchRegistrationApplication(pool, {
       church_name: "Maint Reg Church 2",
       country: "ZM",
       city: "Lusaka",
@@ -544,7 +548,7 @@ describe("blessboard testing maintenance http + reset", () => {
 
   it("22–23. Foundation and Growth registration rows can be created after reset", async () => {
     requireDb();
-    const foundation = await regRepo.createApplication(pool, {
+    const foundation = await createChurchRegistrationApplication(pool, {
       church_name: "Post Reset Foundation",
       country: "ZM",
       city: "Lusaka",
@@ -560,7 +564,7 @@ describe("blessboard testing maintenance http + reset", () => {
     });
     assert.ok(foundation && foundation.id);
 
-    const growth = await regRepo.createApplication(pool, {
+    const growth = await createChurchRegistrationApplication(pool, {
       church_name: "Post Reset Growth",
       country: "ZM",
       city: "Ndola",

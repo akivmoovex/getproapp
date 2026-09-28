@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Church administrator invitation delivery + password reset token lifecycle.
  */
@@ -117,7 +121,7 @@ describe("invitation delivery and password reset", () => {
       platformAdmin = adminCreated.user;
 
       const key = uniq("invorg");
-      const application = await appRepo.createApplication(pool, {
+      const application = await createChurchRegistrationApplication(pool, {
         church_name: `Invite Reset Church ${key}`,
         country: "Kenya",
         city: "Nairobi",

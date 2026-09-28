@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 48 — Foundation/Growth exception approve + Network validation/org create.
  * Covers cases 8–13, 18–20 (idempotency, trial, Network gates, CSRF, auth, maintenance).
@@ -96,15 +100,15 @@ describe("registration operator approval (Prompt 48)", () => {
       });
       assert.equal(user.ok, true, user.message || JSON.stringify(user));
 
-      const bootstrapApp = await appRepo.createApplication(pool, {
+      const bootstrapApp = await createChurchRegistrationApplication(pool, {
         church_name: `Operator PA Church ${key}`,
         country: "Kenya",
         city: "Nairobi",
         contact_name: "Operator PA",
         contact_email: `${uniq("opaboot")}@example.org`,
-        contact_phone: `+2547${String(Date.now()).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
-        role_in_church: "Administrator",
+        contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                role_in_church: "Administrator",
         selected_plan: "foundation",
         consent_terms: true,
       });
@@ -181,7 +185,8 @@ describe("registration operator approval (Prompt 48)", () => {
       city: "Lusaka",
       contact_name: "Foundation Admin",
       role_in_church: "Administrator",
-      phone: `+26097${String(Date.now()).slice(-7)}`,
+      phone_country: "ZM",
+      phone_national: `97${String(Date.now()).slice(-7)}`,
       email: `${key}@example.org`,
       selected_plan: "foundation",
       organization_key: key,
@@ -201,7 +206,8 @@ describe("registration operator approval (Prompt 48)", () => {
       city: "Nairobi",
       contact_name: "Growth Admin",
       role_in_church: "Administrator",
-      phone: `+2547${String(Date.now()).slice(-7)}`,
+      phone_country: "KE",
+      phone_national: `7${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
       email: `${key}@example.org`,
       selected_plan: "growth",
       organization_key: key,
@@ -224,7 +230,8 @@ describe("registration operator approval (Prompt 48)", () => {
       city: "Nairobi",
       contact_name: "Network Contact",
       role_in_church: "Administrator",
-      phone: `+2547${phoneTail}`,
+      phone_country: "KE",
+      phone_national: `7${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
       email: `${key}@example.org`,
       selected_plan: "network",
       branch_name: "Main Campus",
@@ -241,7 +248,8 @@ describe("registration operator approval (Prompt 48)", () => {
     const body = growthBody({
       organization_key: key,
       country: "Kenya",
-      phone: `+26097${String(Date.now()).slice(-7)}`,
+      phone_country: "ZM",
+      phone_national: `97${String(Date.now()).slice(-7)}`,
       email: `${key}@example.org`,
       church_name: `Growth Review ${key}`,
       city: `GCity-${key}`,
@@ -278,7 +286,8 @@ describe("registration operator approval (Prompt 48)", () => {
     const body = freeBody({
       organization_key: key,
       country: "Kenya",
-      phone: `+26097${String(Date.now()).slice(-7)}`,
+      phone_country: "ZM",
+      phone_national: `97${String(Date.now()).slice(-7)}`,
       email: `${key}@example.org`,
       church_name: `Idem Foundation ${key}`,
       city: `IdemCity-${key}`,

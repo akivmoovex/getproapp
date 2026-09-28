@@ -390,12 +390,12 @@ describe("blessboard testing organization purge", () => {
     // Registration application linked to org.
     await pool.query(
       `INSERT INTO blessboard.platform_church_registration_applications
-         (church_name, country, city, contact_name, contact_email, contact_phone,
+         (church_name, branch_name, country, city, contact_name, contact_email, contact_phone,
           contact_phone_normalized, selected_plan, consent_terms, risk_decision,
           risk_reason_codes, risk_decided_at, organization_id, status,
           application_status, provisioning_status, provisioned_at)
        VALUES
-         ('Rich Purge Org', 'ZM', 'Lusaka', 'Rich', 'rich-reg@example.org', '+260971000099',
+         ('Rich Purge Org', 'Headquarters', 'ZM', 'Lusaka', 'Rich', 'rich-reg@example.org', '+260971000099',
           '+260971000099', 'foundation', true, 'allow', ARRAY[]::text[], now(), $1, 'closed',
           'closed', 'provisioned', now())`,
       [rich.orgId]

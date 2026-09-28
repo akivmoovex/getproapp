@@ -25,7 +25,9 @@ const { createV5Session } = require("../src/platform/session/createV5Session");
 const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
 const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
 const { CSRF_FIELD } = require("../src/platform/http/v5Csrf");
-const rbacRepo = require("../src/blessboard/repositories/blessBoardRbacRepository");
+const {
+  ensureCatalogueAssignment,
+} = require("./helpers/blessboardRoleAssignmentFixture");
 const {
   createLoadBlessBoardAuthorizationContext,
   emptyAuthzContext,
@@ -99,18 +101,14 @@ function extractCsrf(html) {
 }
 
 async function assignCatalogue(userId, roleKey, scope) {
-  const role = await rbacRepo.findRoleByKey(pool, roleKey);
-  assert.ok(role && role.id, `missing role ${roleKey}`);
-  return rbacRepo.insertAssignment(pool, {
-    userId,
-    organizationId: scope.organizationId,
-    churchId: scope.churchId || null,
-    roleId: role.id,
-    scopeType: scope.scopeType,
-    scopeId: scope.scopeId,
+  // Idempotent: assignBlessBoardRole may already have created the same active scope
+  // (user_role_assignments_active_scope_uidx). Never broaden roles here.
+  const result = await ensureCatalogueAssignment(pool, userId, roleKey, {
+    ...scope,
     assignmentOrigin: "manual",
     assignmentReason: "form studio authz qa",
   });
+  return result.assignment;
 }
 
 describe("V8 shared Form Studio authorization", () => {

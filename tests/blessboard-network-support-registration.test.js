@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Network support-contact registration (Prompt 09).
  * No automatic tenant/subscription; platform-admin queue visibility.
@@ -99,15 +103,15 @@ describe("Network support-contact registration", () => {
       assert.equal(admin.ok, true, admin.message);
 
       const key = uniq("netfix");
-      const application = await appRepo.createApplication(pool, {
+      const application = await createChurchRegistrationApplication(pool, {
         church_name: `Network Fixture Church ${key}`,
         country: "Kenya",
         city: "Nairobi",
         contact_name: "Fixture Contact",
         contact_email: `${key}@example.org`,
-        contact_phone: `+2547${String(Date.now()).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
-        role_in_church: "Administrator",
+        contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                role_in_church: "Administrator",
         selected_plan: "foundation",
         consent_terms: true,
       });
@@ -194,7 +198,8 @@ describe("Network support-contact registration", () => {
       city: "Nairobi",
       contact_name: "Network Contact",
       role_in_church: "Administrator",
-      phone: `+2547${phoneTail}`,
+      phone_country: "KE",
+      phone_national: `7${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
       email: `${key}@example.org`,
       selected_plan: "network",
       branch_name: "Main Campus",
@@ -437,7 +442,8 @@ describe("Network support-contact registration", () => {
       city: "Nairobi",
       contact_name: "Free Admin",
       role_in_church: "Administrator",
-      phone: `+2547${phoneTail}`,
+      phone_country: "KE",
+      phone_national: `7${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
       email: `${freeKey}@example.org`,
       selected_plan: "foundation",
       organization_key: freeKey,
@@ -464,7 +470,8 @@ describe("Network support-contact registration", () => {
       city: "Nairobi",
       contact_name: "Growth Admin",
       role_in_church: "Administrator",
-      phone: `+2547${gPhone}`,
+      phone_country: "KE",
+      phone_national: `7${String(gPhone).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
       email: `${growthKey}@example.org`,
       selected_plan: "growth",
       organization_key: growthKey,

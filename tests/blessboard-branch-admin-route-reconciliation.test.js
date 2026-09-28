@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Classic /branch-admin dashboard + module reconciliation (V5 Foundation).
  * Phase 6 /branch/* is a separate church vertical — must not be the apex redirect target.
@@ -153,15 +157,15 @@ describe("branch-admin route reconciliation (apex runtime)", () => {
       const branchEmail = `br-${orgKey}@example.org`;
       const memberEmail = `mem-${orgKey}@example.org`;
 
-      const bootApp = await appRepo.createApplication(pool, {
+      const bootApp = await createChurchRegistrationApplication(pool, {
         church_name: `BA Rec Church ${orgKey}`,
         country: "Kenya",
         city: "Nairobi",
         contact_name: "HQ",
         contact_email: `${uniq("boot")}@example.org`,
-        contact_phone: `+2547${String(Date.now()).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
-        selected_plan: "foundation",
+        contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                selected_plan: "foundation",
         consent_terms: true,
       });
       const provisioned = await provisionRegisteredBlessBoardChurch(pool, {

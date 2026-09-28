@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Phase 6 — platform-admin organization onboarding summary, filters, and support ops.
  */
@@ -93,7 +97,7 @@ describe("platform-admin organization onboarding support (Phase 6)", () => {
       users.member = await makeUser("ob-member@example.org", "Onboard Member");
 
       const key = uniq("obadmin");
-      const application = await appRepo.createApplication(pool, {
+      const application = await createChurchRegistrationApplication(pool, {
         church_name: `Onboard Admin Church ${key}`,
         country: "Kenya",
         city: "Nairobi",

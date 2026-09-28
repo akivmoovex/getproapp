@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 11 — registration operations in existing platform-admin screens.
  */
@@ -115,7 +119,7 @@ describe("platform-admin registration operations (Prompt 11)", () => {
 
       // Foundation registration (provisioned)
       const foundationKey = uniq("opsfound");
-      const foundationApp = await appRepo.createApplication(pool, {
+      const foundationApp = await createChurchRegistrationApplication(pool, {
         church_name: `Foundation Ops Church ${foundationKey}`,
         country: "Kenya",
         city: "Nairobi",
@@ -192,7 +196,7 @@ describe("platform-admin registration operations (Prompt 11)", () => {
       fixtures.graceDeadline = graceEnd.toISOString().slice(0, 10);
 
       // Network support-contact application
-      const networkApp = await appRepo.createApplication(pool, {
+      const networkApp = await createChurchRegistrationApplication(pool, {
         church_name: "Network Support Ops Church",
         country: "Uganda",
         city: "Kampala",

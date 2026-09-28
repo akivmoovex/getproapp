@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 49 — platform-admin approval without password; invitation-based admin setup.
  */
@@ -95,15 +99,15 @@ describe("registration approval without password (Prompt 49)", () => {
       });
       assert.equal(user.ok, true, user.message);
 
-      const bootstrapApp = await appRepo.createApplication(pool, {
+      const bootstrapApp = await createChurchRegistrationApplication(pool, {
         church_name: `P49 PA Church ${key}`,
         country: "Kenya",
         city: "Nairobi",
         contact_name: "PA",
         contact_email: `${uniq("p49boot")}@example.org`,
-        contact_phone: `+2547${String(Date.now()).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
-        role_in_church: "Administrator",
+        contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                role_in_church: "Administrator",
         selected_plan: "foundation",
         consent_terms: true,
       });
@@ -173,7 +177,8 @@ describe("registration approval without password (Prompt 49)", () => {
       city: "Lusaka",
       contact_name: "Foundation Admin",
       role_in_church: "Administrator",
-      phone: `+26097${String(Date.now()).slice(-7)}`,
+      phone_country: "ZM",
+      phone_national: `97${String(Date.now()).slice(-7)}`,
       email: `${key}@example.org`,
       selected_plan: "foundation",
       organization_key: key,
@@ -193,7 +198,8 @@ describe("registration approval without password (Prompt 49)", () => {
       city: "Nairobi",
       contact_name: "Growth Admin",
       role_in_church: "Administrator",
-      phone: `+2547${String(Date.now()).slice(-7)}`,
+      phone_country: "KE",
+      phone_national: `7${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
       email: `${key}@example.org`,
       selected_plan: "growth",
       organization_key: key,
@@ -210,7 +216,8 @@ describe("registration approval without password (Prompt 49)", () => {
     const body = freeBody({
       organization_key: key,
       country: "Kenya",
-      phone: `+26097${String(Date.now()).slice(-7)}`,
+      phone_country: "ZM",
+      phone_national: `97${String(Date.now()).slice(-7)}`,
       email: `${key}@example.org`,
       church_name: `Held ${key}`,
       city: `City-${key}`,
@@ -267,7 +274,8 @@ describe("registration approval without password (Prompt 49)", () => {
     const body = growthBody({
       organization_key: key,
       country: "Kenya",
-      phone: `+26097${String(Date.now() + 1).slice(-7)}`,
+      phone_country: "ZM",
+      phone_national: `97${String(Date.now() + 1).slice(-7)}`,
       email: `${key}@example.org`,
       church_name: `Growth Held ${key}`,
       city: `G-${key}`,
@@ -308,15 +316,15 @@ describe("registration approval without password (Prompt 49)", () => {
     const phoneTail = String(1000000 + (Date.now() % 1000000) + Math.floor(Math.random() * 900)).slice(
       -7
     );
-    const app = await appRepo.createApplication(pool, {
+    const app = await createChurchRegistrationApplication(pool, {
       church_name: `Network ${key}`,
       country: "Kenya",
       city: "Nairobi",
       contact_name: "Net Admin",
       contact_email: `${key}@example.org`,
-      contact_phone: `+2547${phoneTail}`,
-      contact_phone_normalized: `+2547${phoneTail}`,
-      role_in_church: "Administrator",
+      contact_phone: `+2547${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+            role_in_church: "Administrator",
       selected_plan: "network",
       support_requested: true,
       follow_up_status: "validation_pending",
@@ -414,7 +422,8 @@ describe("registration approval without password (Prompt 49)", () => {
       organization_key: key,
       email: existingEmail,
       country: "Kenya",
-      phone: `+26097${String(Date.now() + 9).slice(-7)}`,
+      phone_country: "ZM",
+      phone_national: `97${String(Date.now() + 9).slice(-7)}`,
       church_name: `Link Org ${key}`,
       city: `L-${key}`,
     });

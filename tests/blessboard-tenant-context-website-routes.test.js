@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Tenant context / apex navigation for HQ and branch-admin.
  */
@@ -125,15 +129,15 @@ describe("tenant context apex HQ and branch-admin", () => {
       });
       assert.equal(hqUser.ok, true, hqUser.message);
 
-      const bootApp = await appRepo.createApplication(pool, {
+      const bootApp = await createChurchRegistrationApplication(pool, {
         church_name: `Ctx Church ${orgKey}`,
         country: "Kenya",
         city: "Nairobi",
         contact_name: "HQ",
         contact_email: `${uniq("boot")}@example.org`,
-        contact_phone: `+2547${String(Date.now()).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
-        selected_plan: "foundation",
+        contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                selected_plan: "foundation",
         consent_terms: true,
       });
       const provisioned = await provisionRegisteredBlessBoardChurch(pool, {

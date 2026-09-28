@@ -10,6 +10,11 @@
 
 const crypto = require("crypto");
 const { Pool, Client } = require("pg");
+const {
+  resolveLocalAdminConnectionString,
+  localDatabaseUrlForName,
+  assertLocalNonProductionAdminUrl,
+} = require("./localPostgresAdmin");
 
 /** Legacy shared name (docs / env examples). Prefer unique names from resetFoundationDatabase(). */
 const FOUNDATION_DB_NAME = "blessboard_foundation_test";
@@ -22,12 +27,8 @@ let cleanupRegistered = false;
 let adminChain = Promise.resolve();
 
 function adminConnectionString() {
-  // Local maintenance DB only — no secrets in repo; user/peer auth for Postgres.app.
-  return (
-    process.env.FOUNDATION_ADMIN_DATABASE_URL ||
-    process.env.DATABASE_URL_ADMIN ||
-    "postgresql://localhost:5432/postgres"
-  );
+  // Canonical local Postgres.app admin URL (production-guarded).
+  return resolveLocalAdminConnectionString();
 }
 
 /**
@@ -64,12 +65,21 @@ function allocateFoundationDbName() {
 
 function foundationDatabaseUrl(dbName) {
   if (dbName) {
-    return `postgresql://localhost:5432/${assertSafeDbName(dbName)}`;
+    return localDatabaseUrlForName(assertSafeDbName(dbName), adminConnectionString());
   }
   if (process.env.FOUNDATION_DATABASE_URL && String(process.env.FOUNDATION_DATABASE_URL).trim()) {
-    return String(process.env.FOUNDATION_DATABASE_URL).trim();
+    const fixed = String(process.env.FOUNDATION_DATABASE_URL).trim();
+    // Ephemeral/app DB URLs must still be local — reuse host/port checks via admin parse.
+    assertLocalNonProductionAdminUrl(adminConnectionString());
+    const hostOk = /@(127\.0\.0\.1|localhost|\[::1\]):5432\//i.test(fixed) ||
+      /^postgres(ql)?:\/\/(127\.0\.0\.1|localhost|\[::1\]):5432\//i.test(fixed) ||
+      /^postgres(ql)?:\/\/[^/@]+@(127\.0\.0\.1|localhost|\[::1\]):5432\//i.test(fixed);
+    if (!hostOk) {
+      throw new Error("PRODUCTION_DB_GUARD: FOUNDATION_DATABASE_URL must target local 127.0.0.1:5432");
+    }
+    return fixed;
   }
-  return `postgresql://localhost:5432/${FOUNDATION_DB_NAME}`;
+  return localDatabaseUrlForName(FOUNDATION_DB_NAME, adminConnectionString());
 }
 
 /**

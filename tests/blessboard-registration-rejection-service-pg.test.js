@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Phase2 Prompt 068 — rejection service PostgreSQL-backed tests (skips when DB unavailable).
  */
@@ -77,7 +81,7 @@ describe("rejectRegistrationApplication PostgreSQL (Prompt 068)", () => {
     if (!requireDb(t)) return;
 
     const phone = randomPhone();
-    const app = await repo.createApplication(pool, {
+    const app = await createChurchRegistrationApplication(pool, {
       church_name: `Reject Upgrade ${uniq("church")}`,
       country: "Zambia",
       city: "Lusaka",
@@ -140,7 +144,7 @@ describe("rejectRegistrationApplication PostgreSQL (Prompt 068)", () => {
     if (!requireDb(t)) return;
 
     const phone = randomPhone();
-    const app = await repo.createApplication(pool, {
+    const app = await createChurchRegistrationApplication(pool, {
       church_name: `Legacy Reject ${uniq("church")}`,
       country: "Zambia",
       city: "Ndola",

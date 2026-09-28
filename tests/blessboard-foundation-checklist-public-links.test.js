@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Foundation checklist Preview/Publish link destinations and completion gates.
  */
@@ -207,15 +211,15 @@ describe("foundation checklist integration (platform admin)", () => {
       });
       assert.equal(user.ok, true, user.message);
 
-      const bootApp = await appRepo.createApplication(pool, {
+      const bootApp = await createChurchRegistrationApplication(pool, {
         church_name: `Chk PA ${key}`,
         country: "Kenya",
         city: "Nairobi",
         contact_name: "PA",
         contact_email: `${uniq("boot")}@example.org`,
-        contact_phone: `+2547${String(Date.now()).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now()).slice(-7)}`,
-        selected_plan: "foundation",
+        contact_phone: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                selected_plan: "foundation",
         consent_terms: true,
       });
       const provisioned = await provisionRegisteredBlessBoardChurch(pool, {
@@ -250,9 +254,9 @@ describe("foundation checklist integration (platform admin)", () => {
         city: "Nairobi",
         contact_name: "Admin",
         contact_email: `${uniq("adm")}@example.org`,
-        contact_phone: `+2547${String(Date.now() + 1).slice(-7)}`,
-        contact_phone_normalized: `+2547${String(Date.now() + 1).slice(-7)}`,
-        selected_plan: "foundation",
+        contact_phone: `+2547${String(String(Date.now() + 1).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+        contact_phone_normalized: `+2547${String(String(Date.now() + 1).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                selected_plan: "foundation",
         consent_terms: true,
         branch_name: "Main",
       });
@@ -338,7 +342,7 @@ describe("foundation checklist integration (platform admin)", () => {
     assert.doesNotMatch(preview.text, /Chk PA/i);
 
     const publicRes = await request(app)
-      .get(`/c/${church.organizationKey}`)
+      .get(`/c/${church.organizationKey}`).redirects(1)
       .set("Host", APEX);
     assert.equal(publicRes.status, 200);
     assert.match(publicRes.text, /Checklist Church/i);
@@ -369,7 +373,7 @@ describe("foundation checklist integration (platform admin)", () => {
       [church.organizationId]
     );
     const publicRes = await request(app)
-      .get(`/c/${church.organizationKey}`)
+      .get(`/c/${church.organizationKey}`).redirects(1)
       .set("Host", APEX);
     assert.equal(publicRes.status, 404);
 

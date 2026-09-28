@@ -1,5 +1,9 @@
 "use strict";
 
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
 /**
  * Prompt 062 — registration application communications + rejection metadata storage.
  * PostgreSQL-gated: skips honestly when local DB is unavailable.
@@ -62,7 +66,7 @@ describe("registration application communications storage (Prompt 062)", () => {
       adminUser = created.user;
 
       const phone = randomPhone();
-      application = await repo.createApplication(pool, {
+      application = await createChurchRegistrationApplication(pool, {
         church_name: "Communications Test Church",
         country: "Zambia",
         city: "Lusaka",
@@ -351,7 +355,7 @@ describe("registration application communications storage (Prompt 062)", () => {
     assert.ok(notes.every((row) => row.communication_type === "internal_note"));
 
     const emptyPhone = randomPhone();
-    const otherApp = await repo.createApplication(pool, {
+    const otherApp = await createChurchRegistrationApplication(pool, {
       church_name: "Empty Comm Church",
       country: "Zambia",
       city: "Kitwe",
