@@ -104,67 +104,44 @@ function runBatch(files, batchIdx, logPath, baseEnv) {
   });
 }
 
-function waitForAdminReady(env, logPath) {
-  return new Promise((resolve) => {
-    const started = Date.now();
-    const probe = `
-      const { Client } = require('pg');
-      const { resolveLocalAdminConnectionString } = require('./tests/helpers/localPostgresAdmin');
-      (async () => {
-        const url = resolveLocalAdminConnectionString();
-        let last = null;
-        for (let i = 0; i < 20; i++) {
-          const c = new Client({ connectionString: url });
-          try {
-            await c.connect();
-            await c.query('SELECT 1');
-            await c.end();
-            process.exit(0);
-          } catch (e) {
-            last = e;
-            try { await c.end(); } catch {}
-            await new Promise((r) => setTimeout(r, Math.min(2000, 100 * 2 ** i)));
-          }
-        }
-        console.error('ADMIN_NOT_READY', last && last.message);
-        process.exit(2);
-      })();
-    `;
-    const child = spawn(process.execPath, ["-e", probe], {
-      cwd: ROOT,
-      env,
-      stdio: ["ignore", "pipe", "pipe"],
-    });
-    let err = "";
-    child.stderr.on("data", (c) => {
-      err += c.toString("utf8");
-    });
-    child.on("close", (code) => {
-      const line = `[phase-b] admin_ready code=${code} waitMs=${Date.now() - started} ${err.trim()}\n`;
-      fs.appendFileSync(logPath, line);
-      resolve(code === 0);
-    });
-  });
-}
-
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const files = readManifest();
   const logPath = path.join(OUT_DIR, "canonical-batched.log");
   const metaPath = path.join(OUT_DIR, "canonical-batched-meta.json");
-  fs.writeFileSync(logPath, "");
-  const meta = {
-    startedAt: new Date().toISOString(),
-    testFiles: files.length,
-    batchSize: BATCH_SIZE,
-    coverage: false,
-    batches: [],
-  };
+  const resumeFrom = Math.max(1, Number(process.env.BATCH_RESUME_FROM || 1));
+  const append = resumeFrom > 1 || process.env.BATCH_APPEND === "1";
+
+  let meta;
+  if (append && fs.existsSync(metaPath)) {
+    meta = JSON.parse(fs.readFileSync(metaPath, "utf8"));
+    meta.resumedAt = new Date().toISOString();
+    meta.resumeFrom = resumeFrom;
+    fs.appendFileSync(
+      logPath,
+      `\n[phase-b] RESUME ${meta.resumedAt} from_batch=${resumeFrom} files=${files.length} batchSize=${BATCH_SIZE} coverage=NO\n`
+    );
+  } else {
+    fs.writeFileSync(logPath, "");
+    meta = {
+      startedAt: new Date().toISOString(),
+      testFiles: files.length,
+      batchSize: BATCH_SIZE,
+      coverage: false,
+      batches: [],
+    };
+    fs.appendFileSync(
+      logPath,
+      `[phase-b] START ${meta.startedAt} files=${files.length} batchSize=${BATCH_SIZE} coverage=NO\n`
+    );
+  }
   fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
-  fs.appendFileSync(
-    logPath,
-    `[phase-b] START ${meta.startedAt} files=${files.length} batchSize=${BATCH_SIZE} coverage=NO\n`
-  );
+
+  const startDelay = Number(process.env.BATCH_START_DELAY_MS || 0);
+  if (startDelay > 0) {
+    fs.appendFileSync(logPath, `[phase-b] start_delay_ms=${startDelay}\n`);
+    await new Promise((r) => setTimeout(r, startDelay));
+  }
 
   const baseEnv = {
     ...process.env,
@@ -181,17 +158,14 @@ async function main() {
     delete baseEnv.FOUNDATION_ADMIN_DATABASE_URL;
   }
 
-  for (let i = 0; i < files.length; i += BATCH_SIZE) {
-    const ready = await waitForAdminReady(baseEnv, logPath);
-    if (!ready) {
-      fs.appendFileSync(logPath, `[phase-b] BLOCKED admin not ready before batch ${Math.floor(i / BATCH_SIZE) + 1}\n`);
-      meta.blockedAt = new Date().toISOString();
-      fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
-      process.exit(3);
-    }
+  const startOffset = (resumeFrom - 1) * BATCH_SIZE;
+  for (let i = startOffset; i < files.length; i += BATCH_SIZE) {
+    const batchIdx = Math.floor(i / BATCH_SIZE) + 1;
     const slice = files.slice(i, i + BATCH_SIZE);
-    const entry = await runBatch(slice, Math.floor(i / BATCH_SIZE) + 1, logPath, baseEnv);
+    const entry = await runBatch(slice, batchIdx, logPath, baseEnv);
+    meta.batches = (meta.batches || []).filter((b) => b.batchIdx !== batchIdx);
     meta.batches.push(entry);
+    meta.batches.sort((a, b) => a.batchIdx - b.batchIdx);
     fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
     // Brief pause so Postgres.app can release sockets between process batches.
     if (i + BATCH_SIZE < files.length) {
