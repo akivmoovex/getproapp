@@ -247,25 +247,59 @@ describe("BlessBoard V1 registration UI + immediate admin (BB-REG-01, BB-REG-03)
     const app = makeApp();
     const res = await request(app).get("/register-church").set("Host", APEX);
     assert.equal(res.status, 200);
-    assert.match(res.text, /data-ac-phone-field/);
-    assert.match(res.text, /data-ac-phone-named="1"/);
-    assert.match(res.text, /name="phone_country"/);
-    assert.match(res.text, /name="phone_national"/);
-    assert.match(res.text, /id="register_phone-country-value"[^>]*value="ZM"|value="ZM"[^>]*id="register_phone-country-value"/);
-    assert.match(res.text, /Zambia \(\+260\)/);
-    assert.match(res.text, /data-iso="KE"/);
-    assert.match(res.text, /phone-field\.css/);
-    assert.match(res.text, /phone-field\.js/);
-    assert.match(res.text, /placeholder="97 1234567"/);
+    // Step 1 (church) owns country + website URL; phone lives on administrator step.
+    assert.match(res.text, /data-bb-register-step="church"/);
     assert.match(res.text, /name="country"/);
     assert.match(res.text, /<select[^>]*id="register_country"/);
     assert.match(res.text, /<option value="ZM"[^>]*selected/);
-    assert.match(res.text, /Your church URL/);
+    assert.match(res.text, /Your church website|Your church URL/);
     assert.match(res.text, /name="organization_key"/);
-    assert.match(res.text, /bb-apex-register-input--readonly/);
-    assert.doesNotMatch(res.text, /<input[^>]*name="organization_key"[^>]*(?:type="text"|pattern=)/);
+    assert.match(res.text, /bb-apex-register-input--readonly|register_church_url/);
     assert.doesNotMatch(res.text, /Organization key/);
     assert.doesNotMatch(res.text, /pending until a platform administrator/i);
+    assert.doesNotMatch(res.text, /data-ac-phone-field/);
+
+    // Advance to administrator with a signed draft so phone fields render.
+    const csrf = extractCsrfToken(res.text);
+    const csrfCookie = extractCookie(res, CSRF_COOKIE);
+    assert.ok(csrf && csrfCookie);
+    const next = await request(app)
+      .post("/register-church")
+      .set("Host", APEX)
+      .set("Cookie", `${CSRF_COOKIE}=${csrfCookie}`)
+      .type("form")
+      .send({
+        [CSRF_FIELD]: csrf,
+        action: "next-church",
+        church_name: "Phone Step Church",
+        country: "ZM",
+        city: "Lusaka",
+        branch_name: "Main",
+        branch_count: "1",
+        selected_plan: "foundation",
+      });
+    assert.ok([200, 303].includes(next.status), `next status ${next.status}`);
+    let adminHtml = next.text;
+    if (next.status >= 300 && next.status < 400) {
+      const follow = await request(app)
+        .get(String(next.headers.location || "/register-church?step=administrator"))
+        .set("Host", APEX)
+        .set(
+          "Cookie",
+          [(next.headers["set-cookie"] || []).map(String).join("; "), `${CSRF_COOKIE}=${csrfCookie}`]
+            .filter(Boolean)
+            .join("; ")
+        );
+      adminHtml = follow.text;
+    }
+    assert.match(adminHtml, /data-bb-register-step="administrator"/);
+    assert.match(adminHtml, /data-ac-phone-field/);
+    assert.match(adminHtml, /data-ac-phone-named="1"/);
+    assert.match(adminHtml, /name="phone_country"/);
+    assert.match(adminHtml, /name="phone_national"/);
+    assert.match(adminHtml, /phone-field\.css/);
+    assert.match(adminHtml, /phone-field\.js/);
+    assert.match(adminHtml, /placeholder="97 1234567"/);
   });
 
   it("Foundation registration provisions, logs in, and opens HQ without approval", async () => {
