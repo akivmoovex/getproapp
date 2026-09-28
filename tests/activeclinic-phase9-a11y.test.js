@@ -34,12 +34,21 @@ describe("ActiveClinic Phase 9 accessibility", () => {
       assert.match(html, new RegExp(row[2]), row[0]);
       assert.match(html, /ac-a11y\.js/, row[0]);
     });
-    assert.match(read("src/activeclinic/http/renderActiveClinicPublic.js"), /v7-proj106-p7/);
-    assert.match(read("src/activeclinic/http/renderActiveClinicPatient.js"), /v7-proj106-pt1/);
-    assert.match(read("src/activeclinic/http/renderActiveClinicAuth.js"), /v7-v1-login-1/);
+    assert.match(
+      read("src/activeclinic/http/renderActiveClinicPublic.js"),
+      /ASSET_VERSION\s*=\s*"v2-sp-vis-1"/
+    );
+    assert.match(
+      read("src/activeclinic/http/renderActiveClinicPatient.js"),
+      /ASSET_VERSION\s*=\s*"v2-03-b3-acp05-01"/
+    );
+    assert.match(
+      read("src/activeclinic/http/renderActiveClinicAuth.js"),
+      /ASSET_VERSION\s*=\s*"v7-login-stitch-parity-1"/
+    );
     assert.match(
       read("src/activeclinic/services/buildActiveClinicShellViewModel.js"),
-      /v7-proj106-2/
+      /SHELL_ASSET_VERSION\s*=\s*"v2-03-acn18-01"/
     );
   });
 

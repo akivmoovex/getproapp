@@ -40,6 +40,23 @@ const REQUIRED_DEPLOYMENTS = Object.freeze([
   "blessboard-com-production",
   "blessboard-org-staging",
 ]);
+/** Seed catalogue may include unified Hostinger / legacy rows beyond the three required. */
+const ALLOWED_SEED_DEPLOYMENTS = Object.freeze([
+  ...REQUIRED_DEPLOYMENTS,
+  "activeclinic-org-production",
+  "activeclinic-pronline-testing",
+  "blessboard-com-v4",
+  "blessboard-org-v5",
+  "blessboard-pronline-testing",
+  "getpro-pronline-testing",
+  "getproapp-org-production",
+  "moovex-org-production",
+  "moovex-platform-production",
+  "moovex-platform-testing",
+  "moovex-platform-v8-testing",
+  "netraz-org-production",
+  "netraz-pronline-testing",
+]);
 const REQUIRED_PRODUCTS = Object.freeze(["activeclinic", "blessboard", "getpro", "ngo"]);
 const FORBIDDEN_PUBLIC_TABLES = Object.freeze(["tenants", "session"]);
 const PRODUCT_SCHEMAS = Object.freeze(["blessboard", "activeclinic", "getpro", "ngo"]);
@@ -252,8 +269,8 @@ async function verifyFoundation(pool, opts = {}) {
       if (!details.deployments.includes(code)) failures.push(`missing_deployment:${code}`);
     }
     if (details.deployments.length !== REQUIRED_DEPLOYMENTS.length) {
-      // allow only the expected two for foundation seeds
-      const unexpected = details.deployments.filter((c) => !REQUIRED_DEPLOYMENTS.includes(c));
+      // Seeds intentionally insert unified Hostinger + legacy codes beyond the three required.
+      const unexpected = details.deployments.filter((c) => !ALLOWED_SEED_DEPLOYMENTS.includes(c));
       if (unexpected.length) failures.push(`unexpected_deployments:${unexpected.join(",")}`);
     }
   } catch (err) {
@@ -320,6 +337,7 @@ module.exports = {
   REQUIRED_SCHEMAS,
   REQUIRED_PLATFORM_TABLES,
   REQUIRED_DEPLOYMENTS,
+  ALLOWED_SEED_DEPLOYMENTS,
   REQUIRED_PRODUCTS,
   FORBIDDEN_PUBLIC_TABLES,
   PRODUCT_SCHEMAS,
