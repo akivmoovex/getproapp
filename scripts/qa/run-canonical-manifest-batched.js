@@ -137,6 +137,10 @@ async function main() {
     const entry = await runBatch(slice, Math.floor(i / BATCH_SIZE) + 1, logPath);
     meta.batches.push(entry);
     fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+    // Brief pause so Postgres.app can release sockets between process batches.
+    if (i + BATCH_SIZE < files.length) {
+      await new Promise((r) => setTimeout(r, Number(process.env.BATCH_PAUSE_MS || 400)));
+    }
   }
 
   meta.finishedAt = new Date().toISOString();

@@ -134,20 +134,44 @@ function registerCleanup() {
  * Drop and recreate an ephemeral foundation test database (empty).
  * Returns a connection URL unique to this call (unless FOUNDATION_DATABASE_URL is set).
  */
-async function resetFoundationDatabase() {
-  const run = async () => {
-    const adminUrl = adminConnectionString();
+async function connectAdminClient(adminUrl, attempts = 8) {
+  let lastErr = null;
+  for (let i = 0; i < attempts; i += 1) {
     const client = new Client({ connectionString: adminUrl });
     try {
       await client.connect();
+      return client;
     } catch (err) {
+      lastErr = err;
+      try {
+        await client.end();
+      } catch {
+        /* ignore */
+      }
       const code = err && err.code ? String(err.code) : "";
       const msg = err && err.message ? String(err.message) : String(err);
-      // Preserve the real driver message; never invent auth prose.
-      throw new Error(
-        `foundation admin connect failed${code ? ` [${code}]` : ""}: ${msg}`
-      );
+      // Postgres.app intermittently returns XX000 "rejected trust authentication"
+      // under rapid CREATE DATABASE / connect churn. Retry with backoff.
+      const retryable =
+        code === "XX000" ||
+        code === "53300" ||
+        /rejected "trust" authentication/i.test(msg) ||
+        /too many clients/i.test(msg) ||
+        /remaining connection slots/i.test(msg);
+      if (!retryable || i === attempts - 1) break;
+      const delayMs = Math.min(2000, 50 * 2 ** i);
+      await new Promise((r) => setTimeout(r, delayMs));
     }
+  }
+  const code = lastErr && lastErr.code ? String(lastErr.code) : "";
+  const msg = lastErr && lastErr.message ? String(lastErr.message) : String(lastErr);
+  throw new Error(`foundation admin connect failed${code ? ` [${code}]` : ""}: ${msg}`);
+}
+
+async function resetFoundationDatabase() {
+  const run = async () => {
+    const adminUrl = adminConnectionString();
+    const client = await connectAdminClient(adminUrl);
     try {
       const fixedUrl =
         process.env.FOUNDATION_DATABASE_URL && String(process.env.FOUNDATION_DATABASE_URL).trim()
