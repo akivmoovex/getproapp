@@ -36,34 +36,26 @@ function readManifest() {
   return files;
 }
 
-function runBatch(files, batchIdx, logPath) {
+function runBatch(files, batchIdx, logPath, baseEnv) {
   return new Promise((resolve) => {
     const started = Date.now();
     const header = `\n===== BATCH ${batchIdx} files=${files.length} start=${new Date().toISOString()} =====\n`;
     fs.appendFileSync(logPath, header);
     process.stdout.write(header);
 
+    const env = { ...baseEnv };
+    // Never inherit a stale TCP admin URL from the parent shell.
+    if (!process.env.FOUNDATION_ADMIN_DATABASE_URL) {
+      delete env.FOUNDATION_ADMIN_DATABASE_URL;
+      delete env.DATABASE_URL_ADMIN;
+    }
+
     const child = spawn(
       process.execPath,
       ["--test", "--test-concurrency=1", "--test-reporter=tap", ...files],
       {
         cwd: ROOT,
-        env: {
-          ...process.env,
-          NODE_ENV: "test",
-          USER: process.env.USER || require("os").userInfo().username,
-          LOGNAME: process.env.LOGNAME || process.env.USER,
-          DB_HOST: process.env.DB_HOST || "127.0.0.1",
-          DB_PORT: process.env.DB_PORT || "5432",
-          DB_SSL: process.env.DB_SSL || "false",
-          ALLOW_PROD_DB: "",
-          FORCE_COLOR: "0",
-          // Prefer caller-provided admin URL; otherwise let localPostgresAdmin
-          // choose the canonical Unix-socket local default.
-          ...(process.env.FOUNDATION_ADMIN_DATABASE_URL
-            ? { FOUNDATION_ADMIN_DATABASE_URL: process.env.FOUNDATION_ADMIN_DATABASE_URL }
-            : {}),
-        },
+        env,
         stdio: ["ignore", "pipe", "pipe"],
       }
     );
@@ -112,6 +104,49 @@ function runBatch(files, batchIdx, logPath) {
   });
 }
 
+function waitForAdminReady(env, logPath) {
+  return new Promise((resolve) => {
+    const started = Date.now();
+    const probe = `
+      const { Client } = require('pg');
+      const { resolveLocalAdminConnectionString } = require('./tests/helpers/localPostgresAdmin');
+      (async () => {
+        const url = resolveLocalAdminConnectionString();
+        let last = null;
+        for (let i = 0; i < 20; i++) {
+          const c = new Client({ connectionString: url });
+          try {
+            await c.connect();
+            await c.query('SELECT 1');
+            await c.end();
+            process.exit(0);
+          } catch (e) {
+            last = e;
+            try { await c.end(); } catch {}
+            await new Promise((r) => setTimeout(r, Math.min(2000, 100 * 2 ** i)));
+          }
+        }
+        console.error('ADMIN_NOT_READY', last && last.message);
+        process.exit(2);
+      })();
+    `;
+    const child = spawn(process.execPath, ["-e", probe], {
+      cwd: ROOT,
+      env,
+      stdio: ["ignore", "pipe", "pipe"],
+    });
+    let err = "";
+    child.stderr.on("data", (c) => {
+      err += c.toString("utf8");
+    });
+    child.on("close", (code) => {
+      const line = `[phase-b] admin_ready code=${code} waitMs=${Date.now() - started} ${err.trim()}\n`;
+      fs.appendFileSync(logPath, line);
+      resolve(code === 0);
+    });
+  });
+}
+
 async function main() {
   fs.mkdirSync(OUT_DIR, { recursive: true });
   const files = readManifest();
@@ -131,9 +166,31 @@ async function main() {
     `[phase-b] START ${meta.startedAt} files=${files.length} batchSize=${BATCH_SIZE} coverage=NO\n`
   );
 
+  const baseEnv = {
+    ...process.env,
+    NODE_ENV: "test",
+    USER: process.env.USER || require("os").userInfo().username,
+    LOGNAME: process.env.LOGNAME || process.env.USER,
+    DB_HOST: process.env.DB_HOST || "127.0.0.1",
+    DB_PORT: process.env.DB_PORT || "5432",
+    DB_SSL: process.env.DB_SSL || "false",
+    ALLOW_PROD_DB: "",
+    FORCE_COLOR: "0",
+  };
+  if (!process.env.FOUNDATION_ADMIN_DATABASE_URL) {
+    delete baseEnv.FOUNDATION_ADMIN_DATABASE_URL;
+  }
+
   for (let i = 0; i < files.length; i += BATCH_SIZE) {
+    const ready = await waitForAdminReady(baseEnv, logPath);
+    if (!ready) {
+      fs.appendFileSync(logPath, `[phase-b] BLOCKED admin not ready before batch ${Math.floor(i / BATCH_SIZE) + 1}\n`);
+      meta.blockedAt = new Date().toISOString();
+      fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
+      process.exit(3);
+    }
     const slice = files.slice(i, i + BATCH_SIZE);
-    const entry = await runBatch(slice, Math.floor(i / BATCH_SIZE) + 1, logPath);
+    const entry = await runBatch(slice, Math.floor(i / BATCH_SIZE) + 1, logPath, baseEnv);
     meta.batches.push(entry);
     fs.writeFileSync(metaPath, JSON.stringify(meta, null, 2));
     // Brief pause so Postgres.app can release sockets between process batches.
