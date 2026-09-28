@@ -45,17 +45,25 @@ function runBatch(files, batchIdx, logPath) {
 
     const child = spawn(
       process.execPath,
-      ["--test", "--test-concurrency=1", "--test-reporter=tap", ...files.map((f) => path.join(ROOT, f))],
+      ["--test", "--test-concurrency=1", "--test-reporter=tap", ...files],
       {
         cwd: ROOT,
         env: {
           ...process.env,
           NODE_ENV: "test",
+          USER: process.env.USER || require("os").userInfo().username,
+          LOGNAME: process.env.LOGNAME || process.env.USER,
           DB_HOST: process.env.DB_HOST || "127.0.0.1",
           DB_PORT: process.env.DB_PORT || "5432",
           DB_SSL: process.env.DB_SSL || "false",
           ALLOW_PROD_DB: "",
           FORCE_COLOR: "0",
+          // Explicit local admin URL — avoid ambiguous empty-user / peer paths.
+          FOUNDATION_ADMIN_DATABASE_URL:
+            process.env.FOUNDATION_ADMIN_DATABASE_URL ||
+            `postgresql://${encodeURIComponent(
+              process.env.USER || require("os").userInfo().username
+            )}@127.0.0.1:5432/postgres`,
         },
         stdio: ["ignore", "pipe", "pipe"],
       }

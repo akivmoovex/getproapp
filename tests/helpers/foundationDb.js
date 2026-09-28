@@ -138,7 +138,16 @@ async function resetFoundationDatabase() {
   const run = async () => {
     const adminUrl = adminConnectionString();
     const client = new Client({ connectionString: adminUrl });
-    await client.connect();
+    try {
+      await client.connect();
+    } catch (err) {
+      const code = err && err.code ? String(err.code) : "";
+      const msg = err && err.message ? String(err.message) : String(err);
+      // Preserve the real driver message; never invent auth prose.
+      throw new Error(
+        `foundation admin connect failed${code ? ` [${code}]` : ""}: ${msg}`
+      );
+    }
     try {
       const fixedUrl =
         process.env.FOUNDATION_DATABASE_URL && String(process.env.FOUNDATION_DATABASE_URL).trim()
