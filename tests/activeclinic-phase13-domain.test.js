@@ -395,7 +395,7 @@ describe("ActiveClinic Phase 13 domain integrity", () => {
     });
     assert.equal(refund.result, BILLING_RESULT.OK);
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = billingOps.businessCalendarDate();
     const summary = await billingOps.getRevenueReportSummary(pool, {
       tenantId: ac.orgId,
       facilityId: ac.facilityId,

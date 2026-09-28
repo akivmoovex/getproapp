@@ -2244,7 +2244,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
         if (!facility) {
           return res.redirect(303, "/app/select-facility?return=/app/billing/reports/revenue");
         }
-        const today = new Date().toISOString().slice(0, 10);
+        const today = billingOps.businessCalendarDate();
         const dateFrom = String(req.query.from || today).slice(0, 10);
         const dateTo = String(req.query.to || today).slice(0, 10);
         const result = await billingOps.getRevenueReportSummary(getPool(), {
@@ -2312,7 +2312,7 @@ function registerActiveClinicBillingRoutes(app, deps) {
             "/app/select-facility?return=/app/billing/reports/revenue/detailed"
           );
         }
-        const today = new Date().toISOString().slice(0, 10);
+        const today = billingOps.businessCalendarDate();
         const dateFrom = String(req.query.from || today).slice(0, 10);
         const dateTo = String(req.query.to || today).slice(0, 10);
         const result = await billingOps.getRevenueReportDetailed(getPool(), {

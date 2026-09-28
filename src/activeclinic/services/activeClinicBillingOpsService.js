@@ -1476,8 +1476,20 @@ async function getRefundReceipt(pool, input) {
 // REVENUE REPORTS
 // ============================================================================
 
+/**
+ * Business calendar YYYY-MM-DD in the process local timezone.
+ * Matches PostgreSQL DATE / CURRENT_DATE used by invoice_date, payment_date,
+ * and refund_date defaults (not UTC via toISOString).
+ */
+function businessCalendarDate(now = new Date()) {
+  const y = now.getFullYear();
+  const m = String(now.getMonth() + 1).padStart(2, "0");
+  const d = String(now.getDate()).padStart(2, "0");
+  return `${y}-${m}-${d}`;
+}
+
 function parseDateRange(input) {
-  const today = new Date().toISOString().slice(0, 10);
+  const today = businessCalendarDate();
   const dateFrom = input.dateFrom || input.from || today;
   const dateTo = input.dateTo || input.to || today;
   if (!/^\d{4}-\d{2}-\d{2}$/.test(dateFrom) || !/^\d{4}-\d{2}-\d{2}$/.test(dateTo)) {
@@ -1676,4 +1688,6 @@ module.exports = {
   getRefundReceipt,
   getRevenueReportSummary,
   getRevenueReportDetailed,
+  businessCalendarDate,
+  parseDateRange,
 };

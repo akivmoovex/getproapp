@@ -656,7 +656,7 @@ describe("ActiveClinic Phase 4 billing ops", () => {
     const { patientId } = await seedPatient(ac);
     await seedPostedInvoice(ac, billing.staffMemberId, patientId, 7000);
 
-    const today = new Date().toISOString().slice(0, 10);
+    const today = billingOps.businessCalendarDate();
     const denied = await billingOps.getRevenueReportSummary(pool, {
       tenantId: ac.orgId,
       facilityId: ac.facilityId,
@@ -686,5 +686,51 @@ describe("ActiveClinic Phase 4 billing ops", () => {
     });
     assert.equal(detailed.result, billingOps.RESULT.OK);
     assert.ok(detailed.invoices.length >= 1);
+  });
+
+  it("revenue aggregates isolate by facility and tenant", async () => {
+    requireDb();
+    const stamp = `${Date.now().toString(36)}iso`;
+    const acA = await seedTenant(`${stamp}a`, "iso-a");
+    const acB = await seedTenant(`${stamp}b`, "iso-b");
+    const billingA = await seedRoleUser(acA, {
+      roles: [{ roleKey: BILLING_OFFICER }],
+    });
+    const billingB = await seedRoleUser(acB, {
+      roles: [{ roleKey: BILLING_OFFICER }],
+    });
+    const { patientId: patientA } = await seedPatient(acA);
+    const { patientId: patientB } = await seedPatient(acB);
+    await seedPostedInvoice(acA, billingA.staffMemberId, patientA, 9000);
+    await seedPostedInvoice(acB, billingB.staffMemberId, patientB, 11000);
+
+    const today = billingOps.businessCalendarDate();
+    const summaryA = await billingOps.getRevenueReportSummary(pool, {
+      tenantId: acA.orgId,
+      facilityId: acA.facilityId,
+      staffId: billingA.staffMemberId,
+      dateFrom: today,
+      dateTo: today,
+    });
+    const summaryB = await billingOps.getRevenueReportSummary(pool, {
+      tenantId: acB.orgId,
+      facilityId: acB.facilityId,
+      staffId: billingB.staffMemberId,
+      dateFrom: today,
+      dateTo: today,
+    });
+    assert.equal(summaryA.result, billingOps.RESULT.OK);
+    assert.equal(summaryB.result, billingOps.RESULT.OK);
+    assert.equal(summaryA.summary.postedInvoices.totalMinor, 9000);
+    assert.equal(summaryB.summary.postedInvoices.totalMinor, 11000);
+
+    const leaked = await billingOps.getRevenueReportSummary(pool, {
+      tenantId: acA.orgId,
+      facilityId: acB.facilityId,
+      staffId: billingA.staffMemberId,
+      dateFrom: today,
+      dateTo: today,
+    });
+    assert.notEqual(leaked.result, billingOps.RESULT.OK);
   });
 });
