@@ -91,11 +91,11 @@ const MINIMAL_AC = {
 let pool;
 let databaseUrl;
 let skipReason = null;
-let phoneSeq = 27088000000;
+let phoneSeq = 890000000;
 
 function nextPhone() {
   phoneSeq += 1;
-  return `+${phoneSeq}`;
+  return `+2609${String(phoneSeq).slice(-8)}`;
 }
 
 async function seedTenant(key) {

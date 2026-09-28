@@ -66,11 +66,12 @@ const {
 const PASSWORD = "DemoStaff-ActiveClinic-2026A";
 let pool;
 let skipReason = null;
-let phoneSeq = 26097110000;
+let phoneSeq = 890000000;
 
 function nextPhone() {
   phoneSeq += 1;
-  return `+${phoneSeq}`;
+  // Valid ZM mobile E.164: +260 + 9XXXXXXXX (platform PhoneNumberService).
+  return `+2609${String(phoneSeq).slice(-8)}`;
 }
 
 async function seedTenant(key) {
