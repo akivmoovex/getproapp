@@ -32,6 +32,7 @@ const inlineEditorContract = require("./inlineEditorContract");
 const editableFieldSchema = require("./editableFieldSchema");
 const websiteChangeManagerService = require("./websiteChangeManagerService");
 const cmsOrderedListDraft = require("./cmsOrderedListDraft");
+const presentation = require("./presentation");
 
 module.exports = {
   ...contentTypes,
@@ -67,4 +68,5 @@ module.exports = {
   editableFieldSchema,
   websiteChangeManagerService,
   cmsOrderedListDraft,
+  presentation,
 };
