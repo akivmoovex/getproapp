@@ -15,12 +15,14 @@ const collectionPresentation = require("./collectionPresentation");
 const componentContracts = require("./componentContracts");
 const fieldKeyResolver = require("./fieldKeyResolver");
 const adapters = require("./adapters");
+const componentLibrary = require("./componentLibrary");
 
 const PHASE = Object.freeze({
-  id: "v2_04_phase_1",
-  name: "platform_website_presentation_foundation",
+  id: "v2_04_phase_2",
+  name: "platform_website_presentation_component_library",
   wiredToPublicRender: false,
   wiredToEditorMutation: false,
+  componentLibraryAvailable: true,
 });
 
 module.exports = {
@@ -34,4 +36,5 @@ module.exports = {
   ...componentContracts,
   ...fieldKeyResolver,
   ...adapters,
+  ...componentLibrary,
 };

@@ -1,0 +1,17 @@
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+  var url = m.url || '';
+%>
+<section class="gp-website-pc gp-website-pc--video<%= extraClass %>" data-gp-website-component="video">
+  <% if (m.title) { %><h2 class="gp-website-pc__title"><%= m.title %></h2><% } %>
+  <% if (url) { %>
+  <div class="gp-website-pc__video-frame">
+    <a class="gp-website-pc__link" href="<%= url %>" rel="noopener noreferrer" target="_blank">Watch video</a>
+    <% if (m.poster) {
+      var posterSrc = typeof m.poster === 'string' ? m.poster : (m.poster.src || '');
+      if (posterSrc) { %><img class="gp-website-pc__img" src="<%= posterSrc %>" alt="<%= m.title || '' %>" /><% }
+    } %>
+  </div>
+  <% } %>
+</section>

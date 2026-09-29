@@ -1,0 +1,30 @@
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var editMap = (typeof edit !== 'undefined' && edit && edit.keys) ? edit.keys : {};
+  var canEdit = typeof editEnabled !== 'undefined' && editEnabled;
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+%>
+<footer class="gp-website-pc gp-website-pc--footer<%= extraClass %>" data-gp-website-component="footer">
+  <% if (m.tagline || (canEdit && editMap.tagline)) { %>
+  <%- include('./editable-field', {
+    editEnabled: canEdit && !!editMap.tagline,
+    contentKey: editMap.tagline || '',
+    value: m.tagline || '',
+    tag: 'p',
+    className: 'gp-website-pc__lead',
+    fieldType: 'short_text',
+    label: 'Edit footer tagline'
+  }) %>
+  <% } %>
+  <% if (m.legal || (canEdit && editMap.legal)) { %>
+  <%- include('./editable-field', {
+    editEnabled: canEdit && !!editMap.legal,
+    contentKey: editMap.legal || '',
+    value: m.legal || '',
+    tag: 'p',
+    className: 'gp-website-pc__muted',
+    fieldType: 'long_text',
+    label: 'Edit footer legal'
+  }) %>
+  <% } %>
+</footer>

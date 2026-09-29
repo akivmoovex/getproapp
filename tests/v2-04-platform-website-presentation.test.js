@@ -16,7 +16,8 @@ describe("V2.04 platform website presentation foundation", () => {
     assert.ok(websiteIndex.presentation);
     assert.equal(websiteIndex.presentation.PHASE.wiredToPublicRender, false);
     assert.equal(websiteIndex.presentation.PHASE.wiredToEditorMutation, false);
-    assert.equal(presentation.PHASE.id, "v2_04_phase_1");
+    assert.ok(String(presentation.PHASE.id).startsWith("v2_04_phase_"));
+    assert.equal(presentation.PHASE.wiredToPublicRender, false);
   });
 
   it("defines exactly 18 universal presentation fields with BB/AC maps", () => {

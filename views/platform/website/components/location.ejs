@@ -1,0 +1,25 @@
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var editMap = (typeof edit !== 'undefined' && edit && edit.keys) ? edit.keys : {};
+  var canEdit = typeof editEnabled !== 'undefined' && editEnabled;
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+%>
+<section class="gp-website-pc gp-website-pc--location<%= extraClass %>" data-gp-website-component="location">
+  <% if (m.heading) { %><h2 class="gp-website-pc__title"><%= m.heading %></h2><% } %>
+  <% if (m.address || (canEdit && editMap.address)) { %>
+  <%- include('./editable-field', {
+    editEnabled: canEdit && !!editMap.address,
+    contentKey: editMap.address || '',
+    value: m.address || '',
+    tag: 'p',
+    className: 'gp-website-pc__body',
+    fieldType: 'long_text',
+    label: 'Edit address'
+  }) %>
+  <% } %>
+  <% if (m.landmark) { %><p class="gp-website-pc__muted"><%= m.landmark %></p><% } %>
+  <% if (m.directions) { %><p class="gp-website-pc__body"><%= m.directions %></p><% } %>
+  <% if (m.mapUrl) { %>
+  <a class="gp-website-pc__link" href="<%= m.mapUrl %>" rel="noopener noreferrer" target="_blank">View map</a>
+  <% } %>
+</section>

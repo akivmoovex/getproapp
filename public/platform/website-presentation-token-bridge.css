@@ -1,0 +1,41 @@
+/**
+ * Maps existing product semantic theme tokens → platform --gp-website-* tokens.
+ * Scoped by product body class so BB tokens never apply under AC shells and vice versa.
+ * No raw product hex values.
+ */
+
+/* BlessBoard public / tenant website shells */
+body.bb-tp-body,
+body.church-body,
+body.bb-public-body {
+  --gp-website-color-text: var(--bb-color-ink, inherit);
+  --gp-website-color-muted: var(--bb-color-muted, inherit);
+  --gp-website-color-primary: var(--bb-color-primary, currentColor);
+  --gp-website-color-primary-contrast: var(--bb-color-on-primary, #fff);
+  --gp-website-color-surface: var(--bb-color-surface, transparent);
+  --gp-website-color-surface-elevated: var(--bb-color-surface-elevated, var(--bb-color-surface, transparent));
+  --gp-website-color-border: var(--bb-color-border, currentColor);
+  --gp-website-font-family: var(--bb-font-sans, inherit);
+  --gp-website-radius: var(--bb-radius, 0.5rem);
+  --gp-website-space: var(--bb-space-4, 1rem);
+  --gp-website-shadow: var(--bb-shadow, none);
+  --gp-website-max-width: var(--bb-max, 72rem);
+}
+
+/* ActiveClinic public / tenant website shells */
+body.ac-public-body,
+body.ac-tenant-body,
+body.ac-app-body {
+  --gp-website-color-text: var(--ac-color-text, var(--color-text, inherit));
+  --gp-website-color-muted: var(--ac-color-muted, var(--color-text-muted, inherit));
+  --gp-website-color-primary: var(--ac-color-primary, var(--color-brand-primary, currentColor));
+  --gp-website-color-primary-contrast: var(--ac-color-on-primary, #fff);
+  --gp-website-color-surface: var(--ac-color-surface, var(--color-surface, transparent));
+  --gp-website-color-surface-elevated: var(--ac-color-surface-elevated, var(--color-surface-elevated, transparent));
+  --gp-website-color-border: var(--ac-color-border, var(--color-border, currentColor));
+  --gp-website-font-family: var(--ac-font-sans, inherit);
+  --gp-website-radius: var(--ac-radius, 0.5rem);
+  --gp-website-space: var(--ac-space-4, 1rem);
+  --gp-website-shadow: var(--ac-shadow, none);
+  --gp-website-max-width: var(--ac-max-width, 72rem);
+}

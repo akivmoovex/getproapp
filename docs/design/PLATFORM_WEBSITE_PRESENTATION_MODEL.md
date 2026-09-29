@@ -2,14 +2,15 @@
 
 | Field | Value |
 |---|---|
-| **VERSION** | 2.04 Phase 1 |
-| **STATUS** | FOUNDATION (contracts only) |
-| **CODE** | `src/platform/website/presentation/` |
+| **VERSION** | 2.04 Phase 2 |
+| **STATUS** | COMPONENT LIBRARY (opt-in; not wired to live product templates) |
+| **CODE** | `src/platform/website/presentation/` + `views/platform/website/components/` |
 | **AUDIT** | `docs/qa/V2_04_AC_WEBSITE_PLATFORM_REUSE_AUDIT.md` |
 | **WIRED_TO_PUBLIC_RENDER** | **NO** |
 | **WIRED_TO_EDITOR_MUTATION** | **NO** |
+| **COMPONENT_LIBRARY** | **YES** (`PHASE.componentLibraryAvailable`) |
 
-This document defines the **canonical website presentation architecture** shared by BlessBoard and ActiveClinic. Phase 1 ships contracts, vocabulary, and adapters only. It does **not** change rendered public websites or editor mutation paths.
+This document defines the **canonical website presentation architecture** shared by BlessBoard and ActiveClinic. Phase 1 shipped contracts/vocabulary/adapters. Phase 2 adds reusable presentation components (EJS + token CSS + render helper) without replacing live BB/AC public templates.
 
 ---
 
@@ -196,11 +197,35 @@ When implementing Stitch screens (Phase 3), bind UI slots to:
 
 ---
 
+## Phase 2 — shared presentation component library
+
+| Asset | Path |
+|---|---|
+| Partials | `views/platform/website/components/*.ejs` (18 + editable-field/image) |
+| Render helper | `presentation/componentLibrary.js` → `renderPresentationComponent` |
+| Component CSS | `public/platform/website-presentation-components.css` (`--gp-website-*` only) |
+| Token bridge | `public/platform/website-presentation-token-bridge.css` (scoped BB/AC body classes) |
+
+Library component ids: `hero`, `section_header`, `rich_text`, `image_text`, `cta`, `person_card`, `person_grid`, `collection_card`, `collection_grid`, `contact`, `hours`, `location`, `gallery`, `video`, `announcement`, `navigation`, `footer`, `seo`.
+
+Editable hooks use shared WE01 attributes (`data-website-inline`, `data-website-key`, …) and **one** editor engine: `public/platform/website-inline-edit.js`.
+
+**Live product templates are not replaced in Phase 2.** Opt-in includes come later (AC Stitch redesign / BB alignment).
+
+Duplication measurement (Phase 2):
+
+- Shared components created: **18**
+- BB/AC product-specific component logic removed: **0** (templates retained by design)
+- Shareable component coverage vs audit list (19 incl. Event=NO): **18/19 ≈ 95%**
+
+---
+
 ## Module map
 
 | File | Role |
 |---|---|
 | `presentation/componentTypes.js` | Type enum |
+| `presentation/componentLibrary.js` | Phase 2 render registry |
 | `presentation/universalFieldVocabulary.js` | 18 Class A fields |
 | `presentation/legacyFieldMap.js` | 25 Class D maps |
 | `presentation/componentContracts.js` | Shape contracts + Class B concepts |

@@ -1,0 +1,26 @@
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var editMap = (typeof edit !== 'undefined' && edit && edit.keys) ? edit.keys : {};
+  var canEdit = typeof editEnabled !== 'undefined' && editEnabled;
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+%>
+<section class="gp-website-pc gp-website-pc--rich-text<%= extraClass %>" data-gp-website-component="rich_text">
+  <% if (m.heading || (canEdit && editMap.heading)) { %>
+  <%- include('./editable-field', {
+    editEnabled: canEdit && !!editMap.heading,
+    contentKey: editMap.heading || '',
+    value: m.heading || '',
+    tag: 'h2',
+    className: 'gp-website-pc__title',
+    fieldType: 'short_text'
+  }) %>
+  <% } %>
+  <%- include('./editable-field', {
+    editEnabled: canEdit && !!editMap.body,
+    contentKey: editMap.body || '',
+    value: m.body || '',
+    tag: 'p',
+    className: 'gp-website-pc__body',
+    fieldType: 'long_text'
+  }) %>
+</section>

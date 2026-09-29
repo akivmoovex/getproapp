@@ -1,0 +1,17 @@
+<%#
+  Navigation presentation list — chrome/styling remains product-owned when opted in.
+%>
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var items = Array.isArray(m.items) ? m.items.filter(function (i) { return !i || i.visible !== false; }) : [];
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+%>
+<nav class="gp-website-pc gp-website-pc--navigation<%= extraClass %>" data-gp-website-component="navigation" aria-label="Site">
+  <ul class="gp-website-pc__nav-list">
+    <% items.forEach(function (item) { %>
+    <li class="gp-website-pc__nav-item">
+      <a class="gp-website-pc__nav-link" href="<%= item.href || '#' %>"><%= item.label %></a>
+    </li>
+    <% }) %>
+  </ul>
+</nav>

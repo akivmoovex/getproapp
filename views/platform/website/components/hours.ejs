@@ -1,0 +1,32 @@
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var editMap = (typeof edit !== 'undefined' && edit && edit.keys) ? edit.keys : {};
+  var canEdit = typeof editEnabled !== 'undefined' && editEnabled;
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+  var rows = Array.isArray(m.rows) ? m.rows.filter(function (r) { return !r || r.enabled !== false; }) : [];
+%>
+<section class="gp-website-pc gp-website-pc--hours<%= extraClass %>" data-gp-website-component="hours">
+  <% if (m.heading) { %><h2 class="gp-website-pc__title"><%= m.heading %></h2><% } %>
+  <% if (m.text || (canEdit && editMap.text)) { %>
+  <%- include('./editable-field', {
+    editEnabled: canEdit && !!editMap.text,
+    contentKey: editMap.text || '',
+    value: m.text || '',
+    tag: 'p',
+    className: 'gp-website-pc__body',
+    fieldType: 'long_text',
+    label: 'Edit hours'
+  }) %>
+  <% } %>
+  <% if (rows.length) { %>
+  <ul class="gp-website-pc__hours-list">
+    <% rows.forEach(function (row) { %>
+    <li class="gp-website-pc__hours-row">
+      <span class="gp-website-pc__hours-label"><%= row.label || row.days || '' %></span>
+      <span class="gp-website-pc__hours-time"><%= [row.open, row.close].filter(Boolean).join(' – ') %></span>
+      <% if (row.note) { %><span class="gp-website-pc__hours-note"><%= row.note %></span><% } %>
+    </li>
+    <% }) %>
+  </ul>
+  <% } %>
+</section>

@@ -1,0 +1,250 @@
+/**
+ * Platform website presentation components (V2.04 Phase 2).
+ * Uses only --gp-website-* semantic tokens. Product shells map theme tokens
+ * via website-presentation-token-bridge.css. No product hex. No product token names here.
+ */
+
+.gp-website-pc {
+  /* Consumes --gp-website-* set by product token bridge; no product hex here. */
+  box-sizing: border-box;
+  color: var(--gp-website-color-text, inherit);
+  font-family: var(--gp-website-font-family, inherit);
+}
+
+.gp-website-pc *,
+.gp-website-pc *::before,
+.gp-website-pc *::after {
+  box-sizing: border-box;
+}
+
+.gp-website-pc__title {
+  margin: 0 0 calc(var(--gp-website-space, 1rem) * 0.5);
+  font-size: 1.75rem;
+  line-height: 1.2;
+  color: var(--gp-website-color-text, inherit);
+}
+
+.gp-website-pc__lead,
+.gp-website-pc__body {
+  margin: 0 0 var(--gp-website-space, 1rem);
+  line-height: 1.55;
+  color: var(--gp-website-color-text, inherit);
+}
+
+.gp-website-pc__muted,
+.gp-website-pc__eyebrow,
+.gp-website-pc__eyebrow-text {
+  margin: 0 0 calc(var(--gp-website-space, 1rem) * 0.35);
+  color: var(--gp-website-color-muted, inherit);
+  font-size: 0.875rem;
+}
+
+.gp-website-pc__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: calc(var(--gp-website-space, 1rem) * 0.75);
+}
+
+.gp-website-pc__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.6rem 1.1rem;
+  border-radius: var(--gp-website-radius, 0.5rem);
+  text-decoration: none;
+  font: inherit;
+  font-weight: 600;
+}
+
+.gp-website-pc__btn--primary {
+  background: var(--gp-website-color-primary, currentColor);
+  color: var(--gp-website-color-primary-contrast, #fff);
+}
+
+.gp-website-pc__btn--secondary {
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  color: var(--gp-website-color-text, inherit);
+  background: var(--gp-website-color-surface, transparent);
+}
+
+.gp-website-pc__link {
+  color: var(--gp-website-color-primary, currentColor);
+  text-decoration: underline;
+}
+
+.gp-website-pc__img {
+  display: block;
+  width: 100%;
+  height: auto;
+  border-radius: var(--gp-website-radius, 0.5rem);
+  object-fit: cover;
+}
+
+.gp-website-pc__img--avatar,
+.gp-website-pc__img-placeholder--avatar {
+  aspect-ratio: 1 / 1;
+  border-radius: 999px;
+}
+
+.gp-website-pc__img-placeholder {
+  min-height: 8rem;
+  border-radius: var(--gp-website-radius, 0.5rem);
+  background: var(--gp-website-color-surface-elevated, transparent);
+  border: 1px dashed var(--gp-website-color-border, currentColor);
+}
+
+.gp-website-pc--hero {
+  display: grid;
+  gap: calc(var(--gp-website-space, 1rem) * 1.5);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .gp-website-pc--hero {
+    grid-template-columns: 1.1fr 0.9fr;
+  }
+}
+
+.gp-website-pc--image-text {
+  display: grid;
+  gap: calc(var(--gp-website-space, 1rem) * 1.25);
+  align-items: center;
+}
+
+@media (min-width: 768px) {
+  .gp-website-pc--image-text {
+    grid-template-columns: 1fr 1fr;
+  }
+  .gp-website-pc--image-end .gp-website-pc__media {
+    order: 2;
+  }
+}
+
+.gp-website-pc--cta {
+  padding: calc(var(--gp-website-space, 1rem) * 1.5);
+  background: var(--gp-website-color-surface-elevated, transparent);
+  border-radius: var(--gp-website-radius, 0.5rem);
+  box-shadow: var(--gp-website-shadow, none);
+}
+
+.gp-website-pc__grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--gp-website-space, 1rem);
+  grid-template-columns: repeat(auto-fill, minmax(14rem, 1fr));
+}
+
+.gp-website-pc--person-card,
+.gp-website-pc--collection-card {
+  display: flex;
+  flex-direction: column;
+  gap: calc(var(--gp-website-space, 1rem) * 0.75);
+  padding: var(--gp-website-space, 1rem);
+  background: var(--gp-website-color-surface, transparent);
+  border: 1px solid var(--gp-website-color-border, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+}
+
+.gp-website-pc--person-card.is-featured,
+.gp-website-pc--collection-card.is-featured {
+  border-color: var(--gp-website-color-primary, currentColor);
+}
+
+.gp-website-pc__person-name,
+.gp-website-pc__card-title {
+  margin: 0;
+  font-size: 1.125rem;
+}
+
+.gp-website-pc__person-title,
+.gp-website-pc__person-subtitle,
+.gp-website-pc__card-subtitle,
+.gp-website-pc__person-description,
+.gp-website-pc__card-description {
+  margin: 0.25rem 0 0;
+  color: var(--gp-website-color-muted, inherit);
+}
+
+.gp-website-pc__facts {
+  margin: 0;
+}
+
+.gp-website-pc__fact {
+  display: grid;
+  gap: 0.15rem;
+  margin: 0 0 0.75rem;
+}
+
+.gp-website-pc__fact dt {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--gp-website-color-muted, inherit);
+}
+
+.gp-website-pc__fact dd {
+  margin: 0;
+}
+
+.gp-website-pc__hours-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.gp-website-pc__hours-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem 1rem;
+  padding: 0.4rem 0;
+  border-bottom: 1px solid var(--gp-website-color-border, currentColor);
+}
+
+.gp-website-pc__gallery-grid {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: var(--gp-website-space, 1rem);
+  grid-template-columns: repeat(auto-fill, minmax(10rem, 1fr));
+}
+
+.gp-website-pc__nav-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem 1.25rem;
+}
+
+.gp-website-pc__nav-link {
+  color: var(--gp-website-color-text, inherit);
+  text-decoration: none;
+}
+
+.gp-website-pc__nav-link:hover,
+.gp-website-pc__nav-link:focus-visible {
+  color: var(--gp-website-color-primary, currentColor);
+}
+
+.gp-website-pc--footer {
+  padding-top: calc(var(--gp-website-space, 1rem) * 1.5);
+  border-top: 1px solid var(--gp-website-color-border, currentColor);
+}
+
+.gp-website-pc--announcement {
+  padding: var(--gp-website-space, 1rem);
+  border-left: 4px solid var(--gp-website-color-primary, currentColor);
+  background: var(--gp-website-color-surface-elevated, transparent);
+  border-radius: var(--gp-website-radius, 0.5rem);
+}
+
+.gp-website-pc__empty {
+  padding: var(--gp-website-space, 1rem);
+  border: 1px dashed var(--gp-website-color-border, currentColor);
+  border-radius: var(--gp-website-radius, 0.5rem);
+}
