@@ -220,6 +220,24 @@ Duplication measurement (Phase 2):
 
 ---
 
+## Phase 3A — ActiveClinic presentation adapter
+
+| Asset | Path |
+|---|---|
+| Adapter | `src/activeclinic/website/activeClinicWebsitePresentationAdapter.js` |
+| Entry | `buildActiveClinicWebsitePresentation(input)` |
+
+Maps already-resolved AC content + catalogue rows → platform presentation DTOs:
+
+- branding, hero, about (image_text), contact, hours, location, navigation, SEO, footer, social, promo CTA
+- doctors → `PersonPresentation` collection (`sourceDomain: doctor`)
+- services → offering `CollectionPresentation` (`sourceDomain: clinical_service`)
+- testimonials / FAQ collections
+
+**Rules:** adapter never queries AC tables; platform components never import AC repositories; product-specific keys (`book.*`, `patient.*`, `pricing.*`, …) stay in `productSpecific`; `wiredToPublicRender: false` (no visual change in 3A).
+
+---
+
 ## Module map
 
 | File | Role |
