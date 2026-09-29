@@ -33,6 +33,7 @@ const editableFieldSchema = require("./editableFieldSchema");
 const websiteChangeManagerService = require("./websiteChangeManagerService");
 const cmsOrderedListDraft = require("./cmsOrderedListDraft");
 const presentation = require("./presentation");
+const websiteMediaEditingContract = require("./websiteMediaEditingContract");
 
 module.exports = {
   ...contentTypes,
@@ -69,4 +70,5 @@ module.exports = {
   websiteChangeManagerService,
   cmsOrderedListDraft,
   presentation,
+  websiteMediaEditingContract,
 };

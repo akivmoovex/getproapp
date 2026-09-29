@@ -3,9 +3,8 @@
 /**
  * V2.02 Universal Image Editor — coverage contract.
  *
- * Category-A slots must reach the platform Adjust Picture / framing surface.
- * Structured BB mounts that only offer replace are EXPECTED to fail until the
- * platform extraction fix lands. Application code must not be changed to green this.
+ * Category-A slots must reach the platform Adjust Picture / framing surface
+ * (inline, structured openFraming, or CMS media-field).
  */
 
 const { describe, it } = require("node:test");
