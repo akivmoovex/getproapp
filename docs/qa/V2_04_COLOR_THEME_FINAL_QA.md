@@ -152,14 +152,15 @@ Representative shells and `head-platform-colors.ejs` present; colors stylesheet 
 
 ## 15. Hosted verification
 
-Gate attempted **V4 → testing-only** promote. Agent has no Hostinger hPanel/SSH/API; GitHub push does not switch the testing Node app off the configured **V10** Git branch. Visual smoke was **stopped** per stale-SHA rule.
+**PREVIOUS:** `BLOCKED_STALE_V10`. **RETRY** (`HOSTED_COLOR_THEME_QA_RETRY`): identity re-probed; still V10 — smoke **not** resumed.
 
 | Host | HTTP | environment | branch | displayLabel | gitSha (12) |
 | --- | ---: | --- | --- | --- | --- |
 | `https://blessboard.pronline.org/healthz` | 200 | testing | **V10** | **V10 testing** | **`05b2afe1caff`** |
 | `https://activeclinic.pronline.org/healthz` | 200 | testing | **V10** | **V10 testing** | **`05b2afe1caff`** |
 
-`check-hosted-testing-sha --expected-sha c2a94cc2…` → **DEPLOY_DRIFT** on both hosts.
+`check-hosted-testing-sha --expected-sha 2a4e36e9…` → **DEPLOY_DRIFT** on both hosts.  
+`CURRENT_ORIGIN_V4_SHA=2a4e36e9705005ff23dd5fe67ef435244a353d5a` · `POST_CANDIDATE_APPLICATION_CHANGES=0`.
 
 | Field | Value |
 | --- | --- |
@@ -168,11 +169,12 @@ Gate attempted **V4 → testing-only** promote. Agent has no Hostinger hPanel/SS
 | BB/AC HOSTED_LABEL | V10 testing |
 | BB/AC HOSTED_SHA | `05b2afe1caff` |
 | SHA_PARITY | PASS (identical, wrong tip) |
-| THEME_CANDIDATE_PRESENT | **FAIL** |
+| HOSTED_V4_IDENTITY | **FAIL** |
+| HOSTED_THEME_CANDIDATE_PRESENT | **FAIL** |
 | HOSTED_ROUTE_HEALTH / theme load / BB·AC smoke / isolation / responsive | **SKIPPED** (stale deploy) |
 | HOSTED_QA | **`HOSTED_DEPLOYMENT_STALE`** |
 
-Operator resume steps: `docs/qa/V2_04_COLOR_THEME_HOSTED_QA.md` §4–§8.
+Operator resume: `docs/qa/V2_04_COLOR_THEME_HOSTED_QA.md`.
 
 ## 16. Production safety
 

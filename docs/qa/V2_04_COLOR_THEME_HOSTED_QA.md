@@ -2,27 +2,32 @@
 
 **Status:** `HOSTED_DEPLOYMENT_STALE` · `V2_04_COLOR_THEME_HOSTED_QA_BLOCKED`  
 **Version:** 2.04  
-**Gate:** `HOSTED_COLOR_THEME_QA`  
+**Gate:** `HOSTED_COLOR_THEME_QA_RETRY`  
 **Branch (local):** V4  
 **Date:** 2026-09-29  
 **Production:** UNTOUCHED  
 
+### Attempt log
+
+| Attempt | Gate | Result |
+| --- | --- | --- |
+| PREVIOUS | `HOSTED_COLOR_THEME_QA` | **`BLOCKED_STALE_V10`** (`05b2afe1caff` / V10 testing) |
+| RETRY | `HOSTED_COLOR_THEME_QA_RETRY` | **`HOSTED_DEPLOYMENT_STALE`** — still `05b2afe1caff` / V10 testing; smoke **not** run |
+
 ## 1. Objective
 
-Promote `origin/V4` HEAD to **testing only** (`moovex-platform-testing` / pronline.org), then run narrow BB + AC hosted color-theme verification.
+Verify operator testing-only Hostinger deploy switched hosted identity from V10 → V4, then resume hosted BB + AC color-theme smoke only.
 
-This gate did **not** modify color architecture, database, migrations, V10, or production.
+Verification only: **no** deploy, restart, env change, DB change, or application code change.
 
 ## 2. Pre-deploy local verification
 
 | Check | Result |
 | --- | --- |
 | `BRANCH` | **V4** |
-| `LOCAL_V4_HEAD` | `c2a94cc2f13b503aebb8416d4f0836c23e7b9bca` |
-| `origin/V4` | `c2a94cc2f13b503aebb8416d4f0836c23e7b9bca` |
-| `HEAD == origin/V4` | **PASS** |
+| `LOCAL_V4_HEAD` / `origin/V4` (retry) | `2a4e36e9705005ff23dd5fe67ef435244a353d5a` |
 | Theme candidate ancestor `19c116d9…` | **PASS** (`THEME_CANDIDATE_ANCESTOR=PASS`) |
-| Post-candidate delta | **docs only** → `docs/qa/V2_04_COLOR_THEME_FINAL_QA.md` |
+| Post-candidate delta | **docs only** → FINAL + HOSTED QA |
 | `POST_CANDIDATE_APPLICATION_CHANGES` | **0** |
 
 ### Lightweight guards (re-confirmed)
@@ -45,7 +50,8 @@ Prior local final QA remains authoritative (`LOCAL_RELEASE_READINESS=PASS`).
 | Deployment | `moovex-platform-testing` |
 | Environment | `testing` |
 | Domain family | pronline.org |
-| Expected deploy SHA | `c2a94cc2f13b503aebb8416d4f0836c23e7b9bca` (hosted 12: `c2a94cc2f13b`) |
+| Expected deploy SHA | `2a4e36e9705005ff23dd5fe67ef435244a353d5a` (hosted 12: `2a4e36e97050`) |
+| Theme candidate (ancestor) | `19c116d90a9fcbbc3dd8314fed48b83c11505947` |
 | Required branch identity | `GETPRO_GIT_BRANCH=V4` → labels **V4 testing** |
 
 No changes were made to `DATABASE_URL`, DB identity, session secrets, media storage, or production configuration.
@@ -67,12 +73,23 @@ This environment has **no Hostinger hPanel / SSH / API deploy credentials**. The
 
 ```bash
 node scripts/check-hosted-testing-sha.js \
-  --expected-sha c2a94cc2f13b503aebb8416d4f0836c23e7b9bca
+  --expected-sha 2a4e36e9705005ff23dd5fe67ef435244a353d5a
 ```
 
-Expect both healthz hosts: `gitSha=c2a94cc2f13b`, `branch=V4`, `displayLabel=V4 testing`, `environment=testing`, `deploymentCode=moovex-platform-testing`.
+Expect both healthz hosts: `gitSha=2a4e36e97050`, `branch=V4`, `displayLabel=V4 testing`, `environment=testing`, `deploymentCode=moovex-platform-testing`.
 
-## 5. Hosted build identity (current — stale)
+## 5. Hosted build identity
+
+### 5a. Previous attempt (BLOCKED_STALE_V10)
+
+Expected tip at first gate: `c2a94cc2f13b`. Observed both products: branch **V10**, label **V10 testing**, SHA **`05b2afe1caff`**.
+
+### 5b. Retry identity probe (2026-09-29)
+
+`CURRENT_ORIGIN_V4_SHA=2a4e36e9705005ff23dd5fe67ef435244a353d5a`  
+`THEME_CANDIDATE_ANCESTOR=PASS` · `POST_CANDIDATE_APPLICATION_CHANGES=0` (docs only: FINAL + HOSTED QA).
+
+Read-only `/healthz` on retry:
 
 Read-only `/healthz` after pre-deploy checks:
 
@@ -81,7 +98,7 @@ Read-only `/healthz` after pre-deploy checks:
 | `https://blessboard.pronline.org/healthz` | 200 | testing | moovex-platform-testing | **V10** | **V10 testing** | **`05b2afe1caff`** |
 | `https://activeclinic.pronline.org/healthz` | 200 | testing | moovex-platform-testing | **V10** | **V10 testing** | **`05b2afe1caff`** |
 
-`deploy:check-testing-sha` / `node scripts/check-hosted-testing-sha.js --expected-sha c2a94cc2…` → **`ok: false`**, classification **`DEPLOY_DRIFT`** on both hosts.
+`node scripts/check-hosted-testing-sha.js --expected-sha 2a4e36e9…` → **`ok: false`**, classification **`DEPLOY_DRIFT`** on both hosts.
 
 | Field | BB | AC |
 | --- | --- | --- |
@@ -89,17 +106,18 @@ Read-only `/healthz` after pre-deploy checks:
 | `HOSTED_LABEL` | V10 testing | V10 testing |
 | `HOSTED_SHA` | `05b2afe1caff` | `05b2afe1caff` |
 | `ENVIRONMENT` | testing | testing |
-| `THEME_CANDIDATE_PRESENT` | **FAIL** (deployed tip predates / is not V4 candidate line) | same |
+| `HOSTED_THEME_CANDIDATE_PRESENT` | **FAIL** | **FAIL** |
 
 | Gate field | Result |
 | --- | --- |
 | `BB_HOSTED_SHA` | `05b2afe1caff` |
 | `AC_HOSTED_SHA` | `05b2afe1caff` |
-| `SHA_PARITY` | **PASS** (both identical, but **wrong** tip) |
-| `DEPLOYED_SHA` | `05b2afe1caff` (**stale** vs expected `c2a94cc2f13b`) |
+| `SHA_PARITY` | **PASS** (identical wrong tip) |
+| `HOSTED_V4_IDENTITY` | **FAIL** |
+| `DEPLOYED_SHA` | `05b2afe1caff` (**stale** vs expected `2a4e36e97050`) |
 | `HOSTED_DEPLOYMENT_STALE` | **YES** |
 
-Per gate rules §8: **STOP visual QA** when hosted SHA remains `05b2afe1caff`.
+Per retry gate §4: **STOP** — do not run visual smoke while V10 / `05b2afe1caff` remains.
 
 ## 6. Skipped hosted smoke (blocked by stale deploy)
 
@@ -135,13 +153,13 @@ Read-only production `/healthz` (no deploy/restart/DB/media mutation):
 | --- | --- |
 | `LOCAL_RELEASE_READINESS` | **PASS** |
 | `HOSTED_RELEASE_READINESS` | **FAIL** (`HOSTED_DEPLOYMENT_STALE`) |
-| `HOSTED_BRANCH` expected V4 | **FAIL** (observed V10) |
+| `HOSTED_V4_IDENTITY` | **FAIL** (observed V10) |
 | `HOSTED_SHA` matches `origin/V4` | **FAIL** |
 | Final | **`V2_04_COLOR_THEME_HOSTED_QA_BLOCKED`** |
 
 ### Resume after operator deploy
 
-1. Confirm healthz identity matches §4 expectations.  
-2. Resume gate from §8 onward (route health → theme stylesheet → BB/AC smoke → isolation → responsive → logs).  
+1. Confirm both healthz hosts: `branch=V4`, `displayLabel=V4 testing`, `gitSha=2a4e36e97050` (or later docs-only descendant of theme candidate).  
+2. Resume route health → theme stylesheet → BB/AC smoke → isolation → responsive → logs.  
 3. Update this file + `V2_04_COLOR_THEME_FINAL_QA.md` with PASS evidence.  
-4. Docs-only commit: `docs(v2.04): record hosted color theme QA`.
+4. Docs-only commit: `docs(v2.04): record successful hosted theme QA`.
