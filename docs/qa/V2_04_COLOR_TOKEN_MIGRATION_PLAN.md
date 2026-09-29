@@ -16,6 +16,8 @@ Use the **same git-tracked scanner** as Batches 1–2 for all subsequent batches
 | After Batch 2 | **1152** |
 | After Batch 3 | **1055** |
 | After Batch 4 | **592** |
+| Correction gate | **592** |
+| After Batch 5 | **426** |
 
 Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree boundary). Keep it only as historical context — do not use it as the migration baseline.
 
@@ -100,8 +102,9 @@ Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree bo
 
 | Field | Detail |
 | --- | --- |
-| Affected files | `website-inline-edit.css`, `website-change-manager-ui.css`, `website-history.css`, `website-add-section.css`, `website-media-field.css`, `website-theme-gallery.css`, `website-scope-list.css` |
-| Approx hard-coded locations | ~120–160 |
+| Affected files | `website-inline-edit.css`, `website-change-manager-ui.css`, `website-history.css`, `website-add-section.css`, `website-media-field.css`, `website-theme-gallery.css`, `website-scope-list.css`, `website-styles.css`, `website-version-preview.css`, admin content-report chrome |
+| Status | **COMPLETE** — see `docs/qa/V2_04_COLOR_MIGRATION_BATCH_5.md` |
+| Measured locations migrated | 166 (592 → 426); 4 tenant branding placeholders retained |
 | Risk | MEDIUM — editor chrome; must respect `data-product` brand |
 | Visual QA | BB + AC website edit mode, dialogs, history, media field |
 | BB/AC regression | Editor open/save chrome both products |

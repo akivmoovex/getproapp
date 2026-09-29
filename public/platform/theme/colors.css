@@ -369,6 +369,30 @@
   --badge-neutral-bg: var(--color-surface-subtle);
   --badge-neutral-text: var(--color-text-secondary);
   --badge-neutral-border: var(--color-border-default);
+
+  /* —— Website editor chrome (shared BB + AC editor UI) ——
+   * Prefer these for pencil/toolbar/overlay/selection chrome.
+   * Brand-aware values resolve through --color-brand-* / data-product.
+   * Do NOT use for tenant website content presentation colors.
+   */
+  --editor-toolbar-bg: var(--color-surface);
+  --editor-toolbar-border: var(--color-border-default);
+  --editor-toolbar-text: var(--color-text-primary);
+  --editor-control-bg: var(--color-surface);
+  --editor-control-text: var(--color-text-primary);
+  --editor-control-border: var(--color-border-default);
+  --editor-control-hover-bg: var(--color-brand-primary-light);
+  --editor-selection-border: var(--color-brand-primary);
+  --editor-hover-border: var(--color-brand-primary);
+  --editor-edit-control-bg: var(--color-brand-primary);
+  --editor-edit-control-text: var(--color-brand-on-primary);
+  --editor-canvas-bg: var(--color-background);
+  --editor-rail-bg: var(--color-brand-primary-light);
+  --editor-overlay-bg: var(--modal-overlay);
+  --editor-muted-text: var(--color-text-secondary);
+  --editor-outline: var(--color-border-strong);
+  --editor-preview-banner-bg: var(--color-text-primary);
+  --editor-preview-banner-text: var(--color-text-inverse);
 }
 
 /* =========================================================

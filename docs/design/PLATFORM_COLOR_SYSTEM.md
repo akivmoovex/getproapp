@@ -113,6 +113,9 @@ Preferred API for UI:
 - Tables: `--table-*`
 - Modals: `--modal-*`
 - Badges: `--badge-success-*` … map to semantic states
+- **Website editor chrome:** `--editor-toolbar-*`, `--editor-control-*`, `--editor-selection-border`, `--editor-hover-border`, `--editor-edit-control-*`, `--editor-canvas-bg`, `--editor-rail-bg`, `--editor-overlay-bg`, `--editor-muted-text`, `--editor-outline`, `--editor-preview-banner-*`
+
+Editor chrome is shared across BlessBoard and ActiveClinic. Brand-aware controls resolve through `--color-brand-*` / `data-product`. Do **not** tokenize tenant website content presentation colors as editor tokens.
 
 ## 8. Naming conventions
 

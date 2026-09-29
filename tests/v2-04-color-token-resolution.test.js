@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * V2.04 correction gate — token resolution hygiene for completed Batch 1–4 surfaces.
+ * V2.04 correction gate — token resolution hygiene for completed Batch 1–5 surfaces.
  * Detects undefined color token refs, circular chains, and product-domain leakage.
  */
 
@@ -36,6 +36,16 @@ const COMPLETED_SCOPE = [
   "public/blessboard/v5/media-picker.css",
   "public/blessboard/v5/bb-urp.css",
   "public/church/church.css",
+  // Batch 5 — website editor chrome
+  "public/platform/website-inline-edit.css",
+  "public/platform/website-change-manager-ui.css",
+  "public/platform/website-theme-gallery.css",
+  "public/platform/website-history.css",
+  "public/platform/website-scope-list.css",
+  "public/platform/website-media-field.css",
+  "public/platform/website-styles.css",
+  "public/platform/website-add-section.css",
+  "public/platform/website-version-preview.css",
 ];
 
 const TOKEN_DEFINITION_FILES = [
@@ -109,7 +119,19 @@ const NON_COLOR_PREFIXES = [
   "text-md",
   "text-lg",
   "text-xl",
+  "gp-website-touch",
+  "gp-website-chrome",
+  "gp-keyboard",
+  "gp-we-toolbar-h",
+  "gp-we-rail-w",
+  "gp-we-z-",
 ];
+
+/** Intentionally optional / runtime-set (theme cards, tenant overrides). */
+const INTENTIONALLY_OPTIONAL = new Set([
+  "theme-swatch-primary",
+  "theme-swatch-accent",
+]);
 
 const AC_DOMAIN = new Set([
   "status-appointment-requested",
@@ -154,12 +176,13 @@ function collectDefs(files) {
 }
 
 function isLikelyColorToken(name) {
+  if (INTENTIONALLY_OPTIONAL.has(name)) return false;
   if (NON_COLOR_PREFIXES.some((p) => name === p || name.startsWith(p))) return false;
   if (/^(space|radius|shadow|font|type|typo|z-|duration|ease|motion|opacity|gap|size|width|height)/.test(name)) {
     return false;
   }
   return (
-    /^(color-|palette-|status-|brand-|btn-|button-|flash-|wf-|badge-|nav-|modal-|input-|card-|table-|product-|gp-ops-|ac-|bb-|church-|urp-|surface|muted|primary-)/.test(
+    /^(color-|palette-|status-|brand-|btn-|button-|flash-|wf-|badge-|nav-|modal-|input-|card-|table-|product-|gp-ops-|gp-we-|gp-cm-|editor-|ac-|bb-|church-|urp-|surface|muted|primary-)/.test(
       name
     ) ||
     /(color|bg|background|border|fill|stroke|text|surface|ink|accent|primary|danger|warning|success|info|focus|scrim|overlay|tint|status|palette|brand|canvas|outline|link|alert|badge)/i.test(

@@ -26,23 +26,23 @@
 .gp-we-seo__intro,
 .gp-we-seo__scope {
   margin: 0.25rem 0 0;
-  color: #475569;
+  color: var(--color-text-secondary);
 }
 
 .gp-we-styles__notice,
 .gp-we-seo__notice {
-  background: #ecfdf5;
-  border: 1px solid #a7f3d0;
-  color: #065f46;
+  background: var(--color-success-bg);
+  border: 1px solid var(--color-success-border);
+  color: var(--color-success-text);
   padding: 0.65rem 0.75rem;
   border-radius: 0.5rem;
 }
 
 .gp-we-styles__error,
 .gp-we-seo__error {
-  background: #fef2f2;
-  border: 1px solid #fecaca;
-  color: #991b1b;
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
+  color: var(--color-danger-text);
   padding: 0.65rem 0.75rem;
   border-radius: 0.5rem;
 }
@@ -65,7 +65,7 @@
 .gp-we-styles__hex {
   width: 100%;
   box-sizing: border-box;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--editor-outline);
   border-radius: 0.5rem;
   padding: 0.55rem 0.65rem;
   font: inherit;
@@ -81,7 +81,7 @@
   width: 3rem;
   height: 2.5rem;
   padding: 0;
-  border: 1px solid #cbd5e1;
+  border: 1px solid var(--editor-outline);
   border-radius: 0.5rem;
 }
 
@@ -90,13 +90,13 @@
 .gp-we-seo__counter {
   margin: 0.35rem 0 0;
   font-size: 0.875rem;
-  color: #64748b;
+  color: var(--color-text-muted);
 }
 
 .gp-we-seo__scope-tag {
   font-size: 0.75rem;
   font-weight: 500;
-  color: #6366f1;
+  color: var(--color-brand-primary);
   margin-left: 0.35rem;
 }
 

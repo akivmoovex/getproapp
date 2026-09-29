@@ -1,9 +1,9 @@
 .gp-we-version-preview {
-  background: #1e1b4b;
-  color: #f8fafc;
+  background: var(--editor-preview-banner-bg);
+  color: var(--color-background);
   padding: 0.75rem 1rem;
   font-size: 0.9rem;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+  border-bottom: 1px solid color-mix(in srgb, var(--color-text-inverse) 12%, transparent);
 }
 
 .gp-we-version-preview__inner {
@@ -27,7 +27,7 @@
 }
 
 .gp-we-version-preview__live {
-  color: #86efac;
+  color: var(--color-success);
   font-weight: 600;
 }
 

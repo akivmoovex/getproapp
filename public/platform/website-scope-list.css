@@ -17,7 +17,7 @@
   font-size: 0.75rem;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-weight: 600;
 }
 
@@ -30,29 +30,29 @@
 .gp-we-scope-list__intro,
 .gp-we-scope-list__hierarchy {
   margin: 0.4rem 0 0;
-  color: #475569;
+  color: var(--color-text-secondary);
   line-height: 1.45;
 }
 
 .gp-we-scope-list__safety {
   margin: 0.75rem 0 0;
-  background: #f8fafc;
-  border: 1px solid #e2e8f0;
+  background: var(--color-background);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;
   padding: 0.65rem 0.75rem;
-  color: #475569;
+  color: var(--color-text-secondary);
   line-height: 1.45;
 }
 
 .gp-we-scope-list__notice {
   margin: 0.75rem 0 0;
-  color: #0f766e;
+  color: var(--color-brand-primary);
 }
 
 .gp-we-scope-list__error,
 .gp-we-scope-list__empty {
   margin: 0.75rem 0 0;
-  color: #b91c1c;
+  color: var(--color-danger-text);
 }
 
 .gp-we-scope-list__grid {
@@ -63,20 +63,20 @@
 }
 
 .gp-we-scope-card {
-  border: 1px solid #e2e8f0;
+  border: 1px solid var(--color-border-default);
   border-radius: 1rem;
-  background: #fff;
+  background: var(--color-surface);
   padding: 1rem 1.05rem 1.05rem;
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
   min-height: 11.25rem;
-  box-shadow: 0 2px 8px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 2px 8px color-mix(in srgb, var(--color-text-primary) 6%, transparent);
 }
 
 .gp-we-scope-card--current {
-  border-color: #3b82f6;
-  box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.22), 0 4px 14px rgba(15, 23, 42, 0.07);
+  border-color: var(--color-brand-primary);
+  box-shadow: 0 0 0 2px var(--color-focus-ring), 0 4px 14px color-mix(in srgb, var(--color-text-primary) 6%, transparent);
 }
 
 .gp-we-scope-card__meta {
@@ -102,18 +102,18 @@
 }
 
 .gp-we-scope-card__kind {
-  background: #eef2ff;
-  color: #3730a3;
+  background: var(--color-brand-primary-light);
+  color: var(--color-brand-primary);
 }
 
 .gp-we-scope-card__pub {
-  background: #ecfdf5;
-  color: #047857;
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
 }
 
 .gp-we-scope-card__current {
-  background: #dbeafe;
-  color: #1e40af;
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
 }
 
 .gp-we-scope-card__name {
@@ -125,7 +125,7 @@
 .gp-we-scope-card__pending,
 .gp-we-scope-card__inherit {
   margin: 0;
-  color: #64748b;
+  color: var(--color-text-muted);
   font-size: 0.88rem;
   line-height: 1.4;
 }
@@ -153,19 +153,19 @@
 }
 
 .gp-we-scope-card__btn--primary {
-  background: #0f172a;
-  color: #fff;
+  background: var(--color-text-primary);
+  color: var(--color-text-inverse);
 }
 
 .gp-we-scope-card__btn--ghost {
-  background: #fff;
-  border-color: #cbd5e1;
-  color: #0f172a;
+  background: var(--color-surface);
+  border-color: var(--editor-outline);
+  color: var(--color-text-primary);
 }
 
 .gp-we-scope-card__link {
   font-size: 0.85rem;
-  color: #475569;
+  color: var(--color-text-secondary);
   min-height: 2.5rem;
   display: inline-flex;
   align-items: center;
