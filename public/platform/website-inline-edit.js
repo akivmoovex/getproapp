@@ -1220,13 +1220,36 @@
     return raw && String(raw).trim() ? String(raw).trim() : null;
   }
 
+  function normalizeUpdatedAtToken(value) {
+    if (value == null) return null;
+    if (value instanceof Date && !isNaN(value.getTime())) return value.toISOString();
+    var text = String(value).trim();
+    if (!text) return null;
+    var parsed = new Date(text);
+    return isNaN(parsed.getTime()) ? text : parsed.toISOString();
+  }
+
+  function applyFieldUpdatedAt(fieldEl, token) {
+    if (!fieldEl || !token) return;
+    var normalized = normalizeUpdatedAtToken(token);
+    if (!normalized) return;
+    var contentKey = fieldEl.getAttribute("data-website-key");
+    if (contentKey) {
+      document.querySelectorAll('[data-website-key="' + contentKey + '"]').forEach(function (el) {
+        el.setAttribute("data-website-updated-at", normalized);
+      });
+      return;
+    }
+    fieldEl.setAttribute("data-website-updated-at", normalized);
+  }
+
   function rememberFieldUpdatedAt(fieldEl, out) {
     if (!fieldEl || !out) return;
     var next =
       (out.content && out.content.updatedAt) ||
       (out.expectedUpdatedAt) ||
       null;
-    if (next) fieldEl.setAttribute("data-website-updated-at", String(next));
+    applyFieldUpdatedAt(fieldEl, next);
   }
 
   function saveText() {

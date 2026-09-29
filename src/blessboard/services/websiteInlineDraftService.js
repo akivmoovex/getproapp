@@ -167,20 +167,32 @@ async function saveInlineFieldDraft(db, input) {
     const baselinePrevious =
       existing && existing.previousValue != null ? existing.previousValue : previousValue;
 
-    const {
-      saveFieldDraft,
-    } = require("../website/blessboardEngineContentService");
-    const engineSaved = await saveFieldDraft(db, {
-      organizationId: input.organizationId,
-      churchId: input.churchId,
-      branchId: input.branchId || null,
-      pageKey,
-      sectionKey,
-      fieldKey,
-      value: validated.value,
-      actorIdentityId: input.editorUserId || null,
-      grantedPermissions: input.grantedPermissions,
-    });
+    let engineSaved = null;
+    if (input.skipEngineWrite === true) {
+      engineSaved = {
+        ok: true,
+        content:
+          input.engineContent && typeof input.engineContent === "object"
+            ? input.engineContent
+            : null,
+      };
+    } else {
+      const {
+        saveFieldDraft,
+      } = require("../website/blessboardEngineContentService");
+      engineSaved = await saveFieldDraft(db, {
+        organizationId: input.organizationId,
+        churchId: input.churchId,
+        branchId: input.branchId || null,
+        pageKey,
+        sectionKey,
+        fieldKey,
+        value: validated.value,
+        actorIdentityId: input.editorUserId || null,
+        grantedPermissions: input.grantedPermissions,
+        expectedUpdatedAt: input.expectedUpdatedAt || null,
+      });
+    }
     if (!engineSaved.ok && engineSaved.code !== "website_instance_not_found") {
       if (
         engineSaved.code === "validation_failed" ||

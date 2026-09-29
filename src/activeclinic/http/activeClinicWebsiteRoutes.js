@@ -416,11 +416,21 @@ function registerActiveClinicWebsiteRoutes(app, deps) {
         attached.instance.id,
         grantedPermissions(req)
       );
+      let responseContent = saved.content;
+      if (saved.content && saved.content.contentKey) {
+        const fresh = await contentService.getWebsiteContentRow(
+          getPool(),
+          attached.instance.id,
+          clinic.organizationId,
+          saved.content.contentKey
+        );
+        if (fresh) responseContent = fresh;
+      }
       return json(res, 200, {
         ok: true,
         published: false,
         code: "saved_to_draft",
-        content: saved.content,
+        content: responseContent,
         version: null,
         pendingChangeCount,
       });

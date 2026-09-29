@@ -65,6 +65,16 @@ async function handleSaveGenericDraft(session, body) {
       },
     };
   }
+  let responseContent = saved.content;
+  if (saved.content && saved.content.contentKey) {
+    const fresh = await contentService.getWebsiteContentRow(
+      session.db,
+      session.instanceId,
+      session.organizationId,
+      saved.content.contentKey
+    );
+    if (fresh) responseContent = fresh;
+  }
   const pendingChangeCount = await pendingChangeCountFor(
     session.db,
     session.organizationId,
@@ -78,7 +88,7 @@ async function handleSaveGenericDraft(session, body) {
       ok: true,
       published: false,
       code: "saved_to_draft",
-      content: saved.content,
+      content: responseContent,
       version: null,
       pendingChangeCount,
     },

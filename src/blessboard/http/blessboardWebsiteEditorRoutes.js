@@ -539,6 +539,8 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
                 fieldKey: locator.fieldKey,
                 newValue: value,
                 grantedPermissions: ["website.edit"],
+                skipEngineWrite: true,
+                engineContent: engineSaved.content || null,
               });
             } catch {
               /* overlay dual-write is compatibility-only */
@@ -551,11 +553,21 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           found.instance.id,
           ["website.edit", "website.view"]
         );
+        let responseContent = engineSaved.content || null;
+        if (responseContent && canonicalContentKey) {
+          const fresh = await contentService.getWebsiteContentRow(
+            getPool(),
+            found.instance.id,
+            resolved.tenant.organization.id,
+            canonicalContentKey
+          );
+          if (fresh) responseContent = fresh;
+        }
         return json(res, 200, {
           ok: true,
           published: false,
           code: "saved_to_draft",
-          content: engineSaved.content || null,
+          content: responseContent,
           version: null,
           pendingChangeCount,
         });
@@ -574,6 +586,7 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         value,
         actorIdentityId: actorUserId(req),
         grantedPermissions: ["website.edit"],
+        expectedUpdatedAt: req.body && req.body.expectedUpdatedAt,
         slug: resolved.organizationKey,
       });
       if (!engineSaved.ok && engineSaved.code !== "website_instance_not_found") {
@@ -591,6 +604,8 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
             fieldKey: locator.fieldKey,
             newValue: value,
             grantedPermissions: ["website.edit"],
+            skipEngineWrite: true,
+            engineContent: engineSaved && engineSaved.content ? engineSaved.content : null,
           });
         } catch {
           /* overlay dual-write is compatibility-only */
@@ -625,11 +640,22 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
           pendingChangeCount = undefined;
         }
       }
+      let responseContent =
+        engineSaved && engineSaved.content ? engineSaved.content : null;
+      if (responseContent && engineSaved.content && engineSaved.content.contentKey) {
+        const fresh = await contentService.getWebsiteContentRow(
+          getPool(),
+          engineSaved.content.instanceId,
+          resolved.tenant.organization.id,
+          engineSaved.content.contentKey
+        );
+        if (fresh) responseContent = fresh;
+      }
       return json(res, 200, {
         ok: true,
         published: false,
         code: "saved_to_draft",
-        content: engineSaved.content || null,
+        content: responseContent,
         version: null,
         pendingChangeCount,
       });
