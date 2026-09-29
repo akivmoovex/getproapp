@@ -35,7 +35,7 @@ body.ac-public--platform .ac-public-nav a {
 }
 
 body.ac-public--platform .ac-public-nav__login {
-  background: #fff;
+  background: var(--acp-surface);
   color: var(--acp-navy) !important;
   border: 1px solid var(--acp-border);
   border-radius: 0.5rem;
@@ -115,7 +115,7 @@ body.ac-public--platform .ac-public-drawer__close {
   margin: 0 0 0.75rem;
   padding: 0.25rem 0.7rem;
   border-radius: 999px;
-  background: #e5eeff;
+  background: var(--color-brand-primary-light);
   color: var(--acp-primary-strong);
   font-size: 0.8rem;
   font-weight: 600;
@@ -148,7 +148,7 @@ body.ac-public--platform .ac-public-drawer__close {
   border-radius: 1rem;
   overflow: hidden;
   min-height: 14rem;
-  background: #dce9ff;
+  background: var(--color-brand-primary-light);
 }
 
 .acw-hero__media img,
@@ -164,7 +164,7 @@ body.ac-public--platform .ac-public-drawer__close {
   left: 1rem;
   right: 1rem;
   bottom: 1rem;
-  background: rgba(255, 255, 255, 0.94);
+  background: color-mix(in srgb, var(--acp-surface) 94%, transparent);
   border: 1px solid var(--acp-border);
   border-radius: 0.75rem;
   padding: 0.85rem 1rem;
@@ -177,7 +177,7 @@ body.ac-public--platform .ac-public-drawer__close {
 }
 
 .acw-section--band {
-  background: #eff4ff;
+  background: var(--color-brand-primary-light);
   max-width: none;
   padding-left: 0;
   padding-right: 0;
@@ -210,7 +210,7 @@ body.ac-public--platform .ac-public-drawer__close {
 }
 
 .acw-card {
-  background: #fff;
+  background: var(--acp-surface);
   border: 1px solid var(--acp-border);
   border-radius: 1rem;
   padding: 1.25rem;
@@ -234,19 +234,19 @@ body.ac-public--platform .ac-public-drawer__close {
 
 .acw-pillar--featured {
   background: var(--acp-primary-strong);
-  color: #fff;
+  color: var(--color-text-inverse);
   border-color: transparent;
 }
 
 .acw-pillar--featured p,
 .acw-pillar--featured h3 {
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 .acw-search {
   display: grid;
   gap: 0.75rem;
-  background: #fff;
+  background: var(--acp-surface);
   border: 1px solid var(--acp-border);
   border-radius: 1rem;
   padding: 1rem;
@@ -278,7 +278,7 @@ body.ac-public--platform .ac-public-drawer__close {
 }
 
 .acw-clinic-card {
-  background: #fff;
+  background: var(--acp-surface);
   border: 1px solid var(--acp-border);
   border-radius: 1rem;
   padding: 1.1rem;
@@ -310,7 +310,7 @@ body.ac-public--platform .ac-public-drawer__close {
   display: inline-flex;
   padding: 0.2rem 0.55rem;
   border-radius: 999px;
-  background: #e5eeff;
+  background: var(--color-brand-primary-light);
   color: var(--acp-navy);
   font-size: 0.75rem;
   font-weight: 600;
@@ -318,24 +318,24 @@ body.ac-public--platform .ac-public-drawer__close {
 
 .acw-cta-band {
   background: var(--acp-primary-strong);
-  color: #fff;
+  color: var(--color-text-inverse);
   text-align: center;
 }
 
 .acw-cta-band p {
-  color: rgba(255, 255, 255, 0.88);
+  color: color-mix(in srgb, var(--color-text-inverse) 88%, transparent);
 }
 
 .acw-cta-band .ac-btn--secondary,
 .acw-cta-band .ac-btn--ghost {
-  background: #fff;
+  background: var(--acp-surface);
   color: var(--acp-primary-strong);
 }
 
 body.ac-public--platform .ac-public-footer {
-  background: #e7eeff;
-  color: #3d4947;
-  border-top: 1px solid #bcc9c6;
+  background: var(--color-brand-primary-light);
+  color: var(--acp-muted);
+  border-top: 1px solid var(--acp-border);
 }
 
 body.ac-public--platform .ac-public-footer a,
@@ -343,11 +343,11 @@ body.ac-public--platform .ac-public-footer h3,
 body.ac-public--platform .ac-public-footer h4,
 body.ac-public--platform .ac-public-footer strong,
 body.ac-public--platform .ac-public-footer p {
-  color: #111c2d;
+  color: var(--acp-ink);
 }
 
 body.ac-public--platform .ac-public-footer a {
-  color: #3d4947;
+  color: var(--acp-muted);
 }
 
 body.ac-public--platform .ac-public-footer a:hover {
@@ -359,7 +359,7 @@ body.ac-public--platform .acw-footer__copy,
 body.ac-public--platform .acw-footer__tagline,
 body.ac-public--platform .acw-footer__governance,
 body.ac-public--platform .acw-footer__locale {
-  color: #3d4947;
+  color: var(--acp-muted);
 }
 
 .acw-contact {
@@ -377,7 +377,7 @@ body.ac-public--platform .acw-footer__locale {
   --acw-contact-border: #bcc9c6;
   --acw-contact-muted: #3d4947;
   --acw-contact-on: #111c2d;
-  background: #f8fafc;
+  background: var(--acp-bg);
 }
 
 .acw-contact-wrap {
@@ -388,7 +388,7 @@ body.ac-public--platform .acw-footer__locale {
 }
 
 .acw-contact-hero {
-  background: #fff;
+  background: var(--acp-surface);
   border-bottom: 1px solid color-mix(in srgb, var(--acw-contact-border) 60%, transparent);
   padding: 2.5rem 0 2.25rem;
 }
@@ -400,8 +400,8 @@ body.ac-public--platform .acw-footer__locale {
   margin: 0 0 1rem;
   padding: 0.35rem 0.75rem;
   border-radius: 999px;
-  background: #eef2f1;
-  color: var(--acp-primary, #006a6a);
+  background: var(--acp-surface-low);
+  color: var(--acp-primary);
   font-size: 0.75rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -412,7 +412,7 @@ body.ac-public--platform .acw-footer__locale {
   width: 0.5rem;
   height: 0.5rem;
   border-radius: 999px;
-  background: var(--acp-primary-strong, #004f56);
+  background: var(--acp-primary-strong);
 }
 
 .acw-contact-hero h1 {
@@ -495,7 +495,7 @@ body.ac-public--platform .acw-footer__locale {
   padding: 0.7rem 0.9rem;
   border: 1px solid var(--acw-contact-border);
   border-radius: 0.65rem;
-  background: #fbfcfc;
+  background: var(--acp-bg);
   color: var(--acw-contact-on);
   font: inherit;
 }
@@ -510,8 +510,8 @@ body.ac-public--platform .acw-footer__locale {
 .acw-contact-form textarea:focus,
 .acw-contact-phone__row:focus-within {
   outline: none;
-  border-color: var(--acp-primary, #006a6a);
-  box-shadow: 0 0 0 1px var(--acp-primary, #006a6a);
+  border-color: var(--acp-primary);
+  box-shadow: 0 0 0 1px var(--acp-primary);
 }
 
 .acw-contact-phone__optional {
@@ -525,7 +525,7 @@ body.ac-public--platform .acw-footer__locale {
   overflow: hidden;
   border: 1px solid var(--acw-contact-border);
   border-radius: 0.65rem;
-  background: #fbfcfc;
+  background: var(--acp-bg);
 }
 
 .acw-contact-phone__prefix {
@@ -533,7 +533,7 @@ body.ac-public--platform .acw-footer__locale {
   align-items: center;
   padding: 0 0.9rem;
   border-right: 1px solid var(--acw-contact-border);
-  background: #eef2f1;
+  background: var(--acp-surface-low);
   color: var(--acw-contact-muted);
   font-weight: 600;
   white-space: nowrap;
@@ -599,7 +599,7 @@ body.ac-public--platform .acw-footer__locale {
 
 .acw-contact-form__note .material-symbols-outlined {
   font-size: 1rem;
-  color: var(--acp-primary, #006a6a);
+  color: var(--acp-primary);
 }
 
 .acw-contact-help h2 {
@@ -622,7 +622,7 @@ body.ac-public--platform .acw-footer__locale {
 }
 
 .acw-contact-help__card:hover {
-  border-color: var(--acp-primary, #006a6a);
+  border-color: var(--acp-primary);
 }
 
 .acw-contact-help__icon {
@@ -633,8 +633,8 @@ body.ac-public--platform .acw-footer__locale {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 0.65rem;
-  background: #eef2f1;
-  color: var(--acp-primary, #006a6a);
+  background: var(--acp-surface-low);
+  color: var(--acp-primary);
 }
 
 .acw-contact-help__card h3 {
@@ -654,7 +654,7 @@ body.ac-public--platform .acw-footer__locale {
   display: inline-flex;
   align-items: center;
   gap: 0.25rem;
-  color: var(--acp-primary, #006a6a);
+  color: var(--acp-primary);
   font-weight: 700;
   text-decoration: none;
 }
@@ -674,7 +674,7 @@ body.ac-public--platform .acw-footer__locale {
 }
 
 .acw-contact-help__notice .material-symbols-outlined {
-  color: #b3261e;
+  color: var(--color-danger-text);
   flex: 0 0 auto;
 }
 
@@ -693,7 +693,7 @@ body.ac-public--platform .acw-footer__locale {
 
 .acw-contact-process {
   padding: 2.75rem 0;
-  background: #fff;
+  background: var(--acp-surface);
   border-top: 1px solid color-mix(in srgb, var(--acw-contact-border) 60%, transparent);
   border-bottom: 1px solid color-mix(in srgb, var(--acw-contact-border) 60%, transparent);
 }
@@ -741,8 +741,8 @@ body.ac-public--platform .acw-footer__locale {
   height: 2.5rem;
   margin-bottom: 0.85rem;
   border-radius: 999px;
-  background: var(--acp-primary, #006a6a);
-  color: #fff;
+  background: var(--acp-primary);
+  color: var(--color-text-inverse);
   font-weight: 700;
 }
 
@@ -766,7 +766,7 @@ body.ac-public--platform .acw-footer__locale {
   margin-top: auto !important;
   padding-top: 0.75rem;
   border-top: 1px solid color-mix(in srgb, var(--acw-contact-border) 40%, transparent);
-  color: var(--acp-primary, #006a6a) !important;
+  color: var(--acp-primary) !important;
   font-size: 0.8rem !important;
   font-weight: 600;
 }
@@ -866,7 +866,7 @@ body.ac-public--platform .acw-footer__locale {
 .acw-form .ac-public-field-error,
 .acw-contact-form .ac-public-error,
 .acw-contact-form .ac-public-field-error {
-  color: #93000a;
+  color: var(--color-danger-text);
 }
 
 /* —— MF03 registration wizard (scoped; does not restyle marketing ACW pages) —— */
@@ -876,7 +876,7 @@ body.ac-public-body--mf-register {
   --acp-border: #e2e8f0;
   --acp-muted: #3d4947;
   background: var(--acp-bg);
-  color: #111c2d;
+  color: var(--acp-ink);
   min-height: 100dvh;
   display: flex;
   flex-direction: column;
@@ -894,8 +894,8 @@ body.ac-public-body--mf-register .ac-public-main {
   justify-content: space-between;
   min-height: 4rem;
   padding: 0 1rem;
-  background: #f9f9ff;
-  border-bottom: 1px solid #bcc9c6;
+  background: var(--acp-bg);
+  border-bottom: 1px solid var(--acp-border);
 }
 
 .acw-mf-reg-topbar__brand {
@@ -934,8 +934,8 @@ body.ac-public-body--mf-register .ac-public-main {
   justify-content: space-between;
   padding: 1.5rem 1rem;
   margin-top: auto;
-  background: #f0f3ff;
-  border-top: 1px solid #bcc9c6;
+  background: var(--color-brand-primary-light);
+  border-top: 1px solid var(--acp-border);
   font-size: 0.875rem;
 }
 
@@ -951,7 +951,7 @@ body.ac-public-body--mf-register .ac-public-main {
 }
 
 .acw-mf-reg-footer__nav a {
-  color: #565e74;
+  color: var(--acp-muted);
   text-decoration: none;
 }
 
@@ -962,7 +962,7 @@ body.ac-public-body--mf-register .ac-public-main {
 
 .acw-mf-reg-footer__copy {
   margin: 0;
-  color: #565e74;
+  color: var(--acp-muted);
 }
 
 .acw-register {
@@ -989,7 +989,7 @@ body.ac-public-body--mf-register .ac-public-main {
 }
 
 .acw-register__aside {
-  background: linear-gradient(180deg, #f7f8fc 0%, #ffffff 100%);
+  background: linear-gradient(180deg, var(--acp-bg) 0%, var(--acp-surface) 100%);
   border: 1px solid var(--acp-border);
   border-radius: calc(var(--acp-radius) + 4px);
   padding: 1.5rem;
@@ -1046,10 +1046,10 @@ body.ac-public-body--mf-register .ac-public-main {
   left: 0;
   right: 0;
   top: calc(100% + 0.25rem);
-  background: #fff;
+  background: var(--acp-surface);
   border: 1px solid var(--acp-border);
   border-radius: var(--acp-radius);
-  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.12);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-text-primary) 12%, transparent);
   max-height: 14rem;
   overflow: auto;
 }
@@ -1141,7 +1141,7 @@ body.ac-public-body--mf-register .ac-public-main {
 .acw-register-progress__track {
   width: 100%;
   height: 0.5rem;
-  background: #dee8ff;
+  background: var(--color-brand-primary-light);
   border-radius: 999px;
   overflow: hidden;
 }
@@ -1153,10 +1153,10 @@ body.ac-public-body--mf-register .ac-public-main {
 }
 
 .acw-register__card {
-  background: #fff;
+  background: var(--acp-surface);
   border: 1px solid var(--acp-border);
   border-radius: 0.5rem;
-  box-shadow: 0 2px 4px rgba(15, 23, 42, 0.05);
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
   padding: 1.5rem;
   margin-bottom: 1.25rem;
 }
@@ -1192,7 +1192,7 @@ body.ac-public-body--mf-register .ac-public-main {
   border-radius: 0.5rem;
   padding: 0.7rem 0.85rem;
   font: inherit;
-  background: #fff;
+  background: var(--acp-surface);
 }
 
 .acw-register .ac-public-form .ac-form-field input:focus,
@@ -1200,7 +1200,7 @@ body.ac-public-body--mf-register .ac-public-main {
 .acw-register .ac-public-form textarea:focus {
   outline: none;
   border-color: var(--acp-primary);
-  box-shadow: 0 0 0 3px rgba(0, 104, 95, 0.12);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 .acw-register .ac-form-field--error input,
@@ -1224,7 +1224,7 @@ body.ac-public-body--mf-register .ac-public-main {
   left: 0.75rem;
   top: 50%;
   transform: translateY(-50%);
-  color: #6d7a77;
+  color: var(--color-text-muted);
   font-size: 1.25rem;
   pointer-events: none;
 }
@@ -1259,7 +1259,7 @@ body.ac-public-body--mf-register .ac-public-main {
   height: 2.5rem;
   border: 0;
   background: transparent;
-  color: #6d7a77;
+  color: var(--color-text-muted);
   cursor: pointer;
   border-radius: 0.4rem;
 }
@@ -1277,7 +1277,7 @@ body.ac-public-body--mf-register .ac-public-main {
   margin-bottom: 1.25rem;
   border: 1px solid var(--acp-border);
   border-radius: 0.5rem;
-  background: #f9f9ff;
+  background: var(--acp-bg);
   font-size: 0.875rem;
   color: var(--acp-muted);
 }
@@ -1289,7 +1289,7 @@ body.ac-public-body--mf-register .ac-public-main {
 .acw-register__policy-title {
   margin: 0 0 0.25rem;
   font-weight: 600;
-  color: #111c2d;
+  color: var(--acp-ink);
 }
 
 .acw-register__policy p {
@@ -1341,7 +1341,7 @@ body.ac-public-body--mf-register .ac-public-main {
 .acw-register .ac-btn--primary {
   background: var(--acp-primary);
   border-color: var(--acp-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 .acw-register .ac-btn--primary:hover {
@@ -1349,8 +1349,8 @@ body.ac-public-body--mf-register .ac-public-main {
 }
 
 .acw-register .ac-btn--secondary {
-  background: #fff;
-  color: #565e74;
+  background: var(--acp-surface);
+  color: var(--acp-muted);
   border: 1px solid var(--acp-border);
 }
 
@@ -1420,7 +1420,7 @@ body.ac-public-body--mf-register .ac-public-main {
   font-weight: 500;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #565e74;
+  color: var(--acp-muted);
 }
 
 .acw-register-review__dl dd {
@@ -1441,7 +1441,7 @@ body.ac-public-body--mf-register .ac-public-main {
   display: flex;
   align-items: center;
   justify-content: center;
-  background: rgba(107, 216, 203, 0.2);
+  background: color-mix(in srgb, var(--acp-primary) 20%, transparent);
   color: var(--acp-primary);
 }
 
@@ -1512,9 +1512,9 @@ body.ac-public-body--mf-register .ac-public-main {
     flex-direction: column-reverse;
     margin: 0 -1.5rem -1.5rem;
     padding: 1rem 1rem calc(1rem + env(safe-area-inset-bottom, 0px));
-    background: #fff;
+    background: var(--acp-surface);
     border-top: 1px solid var(--acp-border);
-    box-shadow: 0 -10px 25px rgba(15, 23, 42, 0.05);
+    box-shadow: 0 -10px 25px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
   }
 
   .acw-register__actions .ac-btn,
@@ -1649,7 +1649,7 @@ body.ac-public--platform .ac-public-brand__deploy {
   font-weight: 600;
   letter-spacing: 0.02em;
   line-height: 1.2;
-  color: var(--acp-muted, #64748b);
+  color: var(--acp-muted);
   text-transform: none;
 }
 
@@ -1689,24 +1689,24 @@ body.ac-public--platform .ac-public-brand__icon {
   width: 3rem;
   height: 3rem;
   border-radius: 0.5rem;
-  background: #d8e3fb;
-  color: #3d4947;
+  background: var(--color-brand-primary-light);
+  color: var(--acp-muted);
   margin-bottom: 1rem;
 }
 
 .acw-icon-box--primary {
   background: var(--acp-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 .acw-icon-box--secondary {
-  background: #dae2fd;
-  color: #5c647a;
+  background: var(--color-brand-primary-light);
+  color: var(--acp-muted);
 }
 
 .acw-icon-box--tertiary {
-  background: #727577;
-  color: #fff;
+  background: var(--color-text-muted);
+  color: var(--color-text-inverse);
 }
 
 .acw-social-proof {
@@ -1715,7 +1715,7 @@ body.ac-public--platform .ac-public-brand__icon {
   gap: 1rem;
   margin-top: 1.5rem;
   padding-top: 1.5rem;
-  border-top: 1px solid #d8e3fb;
+  border-top: 1px solid var(--color-brand-primary-light);
 }
 
 .acw-social-proof p {
@@ -1723,7 +1723,7 @@ body.ac-public--platform .ac-public-brand__icon {
   display: flex;
   flex-direction: column;
   font-size: 0.875rem;
-  color: #3d4947;
+  color: var(--acp-muted);
 }
 
 .acw-avatars {
@@ -1734,30 +1734,30 @@ body.ac-public--platform .ac-public-brand__icon {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 999px;
-  border: 2px solid #fff;
+  border: 2px solid var(--acp-surface);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   font-size: 0.75rem;
   font-weight: 600;
   margin-left: -0.75rem;
-  background: #6bd8cb;
-  color: #005049;
+  background: var(--acp-primary-soft);
+  color: var(--acp-primary-strong);
 }
 
 .acw-avatar:first-child {
   margin-left: 0;
-  background: #6bd8cb;
+  background: var(--acp-primary-soft);
 }
 
 .acw-avatar:nth-child(2) {
-  background: #bec6e0;
-  color: #3f465c;
+  background: var(--acp-surface-low);
+  color: var(--acp-muted);
 }
 
 .acw-avatar:nth-child(3) {
-  background: #c4c7c9;
-  color: #444749;
+  background: var(--acp-border);
+  color: var(--acp-muted);
 }
 
 .acw-hero__panel {
@@ -1770,8 +1770,8 @@ body.ac-public--platform .ac-public-brand__icon {
   width: 3rem;
   height: 3rem;
   border-radius: 999px;
-  background: #89f5e7;
-  color: #005049;
+  background: var(--acp-primary-soft);
+  color: var(--acp-primary-strong);
   display: inline-flex;
   align-items: center;
   justify-content: center;
@@ -1785,7 +1785,7 @@ body.ac-public--platform .ac-public-brand__icon {
 
 .acw-badge {
   margin-left: auto;
-  background: rgba(107, 216, 203, 0.2);
+  background: color-mix(in srgb, var(--acp-primary) 20%, transparent);
   color: var(--acp-primary-strong);
   border-radius: 0.25rem;
   padding: 0.25rem 0.5rem;
@@ -1819,7 +1819,7 @@ body.ac-public--platform .ac-public-brand__icon {
 .acw-trust-label {
   text-align: center;
   margin: 2rem 0 0.75rem;
-  color: #3d4947;
+  color: var(--acp-muted);
   font-weight: 600;
 }
 
@@ -1831,7 +1831,7 @@ body.ac-public--platform .ac-public-brand__icon {
   list-style: none;
   margin: 0 0 1.5rem;
   padding: 0;
-  color: #565e74;
+  color: var(--acp-muted);
   font-weight: 600;
 }
 
@@ -1896,11 +1896,11 @@ body.ac-public--platform .ac-public-brand__icon {
   font-weight: 600;
   letter-spacing: 0;
   text-transform: none;
-  color: #111c2d;
+  color: var(--acp-ink);
 }
 
 .acw-footer__col a {
-  color: #3d4947;
+  color: var(--acp-muted);
   text-decoration: none;
   font-size: 0.9375rem;
   line-height: 1.45;
@@ -1910,7 +1910,7 @@ body.ac-public--platform .ac-public-brand__icon {
 .acw-footer__col a:hover,
 .acw-footer__col a:focus-visible,
 .acw-footer__col a[aria-current="page"] {
-  color: var(--acp-primary-strong, #004f56);
+  color: var(--acp-primary-strong);
   text-decoration: underline;
 }
 
@@ -1919,12 +1919,12 @@ body.ac-public--platform .ac-public-brand__icon {
   margin: 0;
   font-size: 0.9375rem;
   line-height: 1.5;
-  color: #3d4947;
+  color: var(--acp-muted);
   max-width: 22rem;
 }
 
 .acw-footer__meta {
-  border-top: 1px solid color-mix(in srgb, #bcc9c6 40%, transparent);
+  border-top: 1px solid color-mix(in srgb, var(--acp-border) 40%, transparent);
   padding: 1rem 1.25rem;
 }
 
@@ -1944,7 +1944,7 @@ body.ac-public--platform .ac-public-brand__icon {
   margin: 0;
   font-size: 0.75rem;
   line-height: 1.4;
-  color: #3d4947;
+  color: var(--acp-muted);
 }
 
 .acw-split {
@@ -2004,7 +2004,7 @@ body.ac-public--platform .ac-public-brand__icon {
 }
 
 [data-ac-acw-screen="ACW02"] .acw-directory-hero {
-  background: #eff4ff;
+  background: var(--color-brand-primary-light);
   padding: 2.25rem 1.25rem 1.5rem;
 }
 
@@ -2055,7 +2055,7 @@ body.ac-public--platform .ac-public-brand__icon {
   display: flex;
   align-items: center;
   gap: 0.4rem;
-  background: #fff;
+  background: var(--acp-surface);
   border: 1px solid var(--acp-border);
   border-radius: 0.5rem;
   padding: 0 0.65rem;
@@ -2082,7 +2082,7 @@ body.ac-public--platform .ac-public-brand__icon {
 
 [data-ac-acw-screen="ACW02"] .acw-search__control:focus-within {
   border-color: var(--acp-primary);
-  box-shadow: 0 0 0 3px rgba(13, 148, 136, 0.18);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 [data-ac-acw-screen="ACW02"] .acw-search__submit {
@@ -2103,7 +2103,7 @@ body.ac-public--platform .ac-public-brand__icon {
   min-height: var(--acp-touch);
   border: 1px solid var(--acp-border);
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--acp-surface);
   color: var(--acp-navy);
   cursor: pointer;
 }
@@ -2132,7 +2132,7 @@ body.ac-public--platform .ac-public-brand__icon {
   padding: 0.35rem 0.75rem;
   border: 1px solid var(--acp-border);
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--acp-surface);
   color: var(--acp-navy);
   font: inherit;
   font-weight: 600;
@@ -2183,7 +2183,7 @@ body.ac-public--platform .ac-public-brand__icon {
   width: 2.75rem;
   height: 2.75rem;
   border-radius: 0.5rem;
-  background: #e5eeff;
+  background: var(--color-brand-primary-light);
   color: var(--acp-primary-strong);
   display: inline-flex;
   align-items: center;
@@ -2251,7 +2251,7 @@ body.ac-public--platform .ac-public-brand__icon {
   min-height: var(--acp-touch);
   border: 1px solid var(--acp-border);
   border-radius: 0.5rem;
-  background: #fff;
+  background: var(--acp-surface);
   color: var(--acp-navy);
   font-weight: 600;
   text-decoration: none;
@@ -2336,27 +2336,27 @@ body.ac-public--platform .ac-public-brand__icon {
 }
 .acw-register__card {
   border-radius: var(--ac-card-radius, 8px);
-  box-shadow: 0 1px 2px rgba(25, 28, 30, 0.06), 0 8px 24px rgba(25, 28, 30, 0.04);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-text-primary) 6%, transparent), 0 8px 24px color-mix(in srgb, var(--color-text-primary) 6%, transparent);
 }
 .acw-register-progress__track {
   height: 0.35rem;
-  background: #eceef0;
+  background: var(--acp-surface-low);
 }
 .acw-register-progress__fill {
-  background: var(--acp-primary, #003c90);
+  background: var(--acp-primary);
 }
 .acw-register .ac-form-checkbox {
   padding: 0.85rem 1rem;
-  border: 1px solid var(--acp-border, #c3c6d5);
+  border: 1px solid var(--acp-border);
   border-radius: var(--ac-card-radius, 8px);
-  background: #f7f9fb;
+  background: var(--acp-bg);
 }
 .acw-register-review {
   gap: 1.25rem;
 }
 .acw-register-review__dl > div {
   padding: 0.65rem 0;
-  border-bottom: 1px solid #eceef0;
+  border-bottom: 1px solid var(--acp-surface-low);
 }
 .acw-register-success-tile {
   border-radius: var(--ac-card-radius, 8px);
@@ -2381,13 +2381,13 @@ body.ac-public--platform .ac-public-brand__icon {
 [data-ac-acw-screen="ACW02"] .acw-directory-card,
 [data-ac-acw-screen="ACW02"] .acw-clinic-card {
   border-radius: var(--ac-card-radius, 8px);
-  box-shadow: 0 1px 2px rgba(25, 28, 30, 0.06);
+  box-shadow: 0 1px 2px color-mix(in srgb, var(--color-text-primary) 6%, transparent);
 }
 [data-ac-acw-screen="ACW02"] .acw-directory-card__image,
 [data-ac-acw-screen="ACW02"] .acw-clinic-card__image {
   aspect-ratio: 16 / 10;
   object-fit: cover;
-  background: #eceef0;
+  background: var(--acp-surface-low);
 }
 [data-ac-acw-screen="ACW02"] .acw-search {
   gap: 0.75rem;
@@ -2448,7 +2448,7 @@ body.ac-public--platform .ac-public-brand__icon {
   margin: 0 0 0.75rem;
   padding: 0.2rem 0.65rem;
   border-radius: 999px;
-  border: 1px solid #c3c0ff;
+  border: 1px solid var(--acp-outline);
   background: var(--ac-about-surface-low);
   color: var(--ac-about-secondary);
   font-size: 0.6875rem;
@@ -2476,7 +2476,7 @@ body.ac-public--platform .ac-public-brand__icon {
 }
 
 [data-ac-acw-screen="ACW06"] .ac-about-v11__env-dot--testing {
-  background: #d97706;
+  background: var(--color-warning);
 }
 
 [data-ac-acw-screen="ACW06"] .ac-about-v11__hero h1 {
@@ -2500,10 +2500,10 @@ body.ac-public--platform .ac-public-brand__icon {
 [data-ac-acw-screen="ACW06"] .ac-about-v11__cap-card,
 [data-ac-acw-screen="ACW06"] .ac-about-v11__support-bar,
 [data-ac-acw-screen="ACW06"] .ac-about-v11__governance {
-  border: 1px solid rgba(198, 198, 205, 0.55);
+  border: 1px solid color-mix(in srgb, var(--acp-border) 50%, transparent);
   border-radius: 0.75rem;
   background: var(--ac-about-card);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.04);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
 }
 
 [data-ac-acw-screen="ACW06"] .ac-about-v11__intro-card {
@@ -2607,7 +2607,7 @@ body.ac-public--platform .ac-public-brand__icon {
   gap: 0.25rem;
   padding: 0.15rem 0.55rem;
   border-radius: 999px;
-  border: 1px solid #c3c0ff;
+  border: 1px solid var(--acp-outline);
   background: var(--ac-about-card);
   color: var(--ac-about-primary);
   font-size: 0.6875rem;
@@ -2638,7 +2638,7 @@ body.ac-public--platform .ac-public-brand__icon {
 [data-ac-acw-screen="ACW06"] .ac-about-v11__meta-tile {
   padding: 0.9rem 1rem;
   border-radius: 0.5rem;
-  border: 1px solid rgba(198, 198, 205, 0.45);
+  border: 1px solid color-mix(in srgb, var(--acp-border) 50%, transparent);
   background: var(--ac-about-surface-low);
   min-width: 0;
 }
@@ -2681,7 +2681,7 @@ body.ac-public--platform .ac-public-brand__icon {
   }
 
   [data-ac-acw-screen="ACW06"] .ac-about-v11__meta-value--version {
-    color: #16a34a;
+    color: var(--color-success-text);
   }
 }
 
@@ -2721,7 +2721,7 @@ body.ac-public--platform .ac-public-brand__icon {
 
 [data-ac-acw-screen="ACW06"] .ac-about-v11__system-foot {
   padding: 0.9rem 1.15rem 1.15rem;
-  border-top: 1px solid rgba(198, 198, 205, 0.45);
+  border-top: 1px solid color-mix(in srgb, var(--acp-border) 50%, transparent);
 }
 
 [data-ac-acw-screen="ACW06"] .ac-about-v11__system-foot p {
@@ -2795,7 +2795,7 @@ body.ac-public--platform .ac-public-brand__icon {
   gap: 0.5rem;
   margin-top: 0.85rem;
   padding-top: 0.75rem;
-  border-top: 1px solid rgba(198, 198, 205, 0.45);
+  border-top: 1px solid color-mix(in srgb, var(--acp-border) 50%, transparent);
   font-size: 0.6875rem;
   color: var(--ac-about-tertiary);
   text-transform: uppercase;
@@ -2867,7 +2867,7 @@ body.ac-public--platform .ac-public-brand__icon {
   align-items: center;
   gap: 0.65rem;
   padding: 0.9rem 1rem;
-  border-top: 1px solid rgba(198, 198, 205, 0.35);
+  border-top: 1px solid color-mix(in srgb, var(--acp-border) 50%, transparent);
   color: var(--ac-about-primary);
   text-decoration: none;
   font-size: 0.875rem;
@@ -2887,7 +2887,7 @@ body.ac-public--platform .ac-public-brand__icon {
   margin: 0;
   padding: 0.85rem 1rem;
   border-radius: 0.75rem;
-  background: rgba(79, 70, 229, 0.08);
+  background: color-mix(in srgb, var(--color-brand-primary) 8%, transparent);
   color: var(--ac-about-primary);
   font-size: 0.8125rem;
   font-weight: 600;

@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * V2.04 correction gate — token resolution hygiene for completed Batch 1–5 surfaces.
+ * V2.04 correction gate — token resolution hygiene for completed Batch 1–6 surfaces.
  * Detects undefined color token refs, circular chains, and product-domain leakage.
  */
 
@@ -46,6 +46,11 @@ const COMPLETED_SCOPE = [
   "public/platform/website-styles.css",
   "public/platform/website-add-section.css",
   "public/platform/website-version-preview.css",
+  // Batch 6 — ActiveClinic public
+  "public/activeclinic/ac-public.css",
+  "public/activeclinic/acw-platform.css",
+  "public/activeclinic/ac-patient.css",
+  "public/activeclinic/website-theme-family-wellness-mint.css",
 ];
 
 const TOKEN_DEFINITION_FILES = [

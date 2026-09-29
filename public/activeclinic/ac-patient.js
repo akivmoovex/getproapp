@@ -16,9 +16,9 @@
         requiredInputs.forEach(function (input) {
           if (!input.value.trim()) {
             valid = false;
-            input.style.borderColor = "#e53e3e";
+            input.style.borderColor = "var(--acp-error)";
           } else {
-            input.style.borderColor = "#cbd5e0";
+            input.style.borderColor = "var(--acp-border)";
           }
         });
 

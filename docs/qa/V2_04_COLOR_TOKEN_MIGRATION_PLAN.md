@@ -18,6 +18,7 @@ Use the **same git-tracked scanner** as Batches 1–2 for all subsequent batches
 | After Batch 4 | **592** |
 | Correction gate | **592** |
 | After Batch 5 | **426** |
+| After Batch 6 | **321** |
 
 Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree boundary). Keep it only as historical context — do not use it as the migration baseline.
 
@@ -115,10 +116,11 @@ Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree bo
 
 | Field | Detail |
 | --- | --- |
-| Affected files | `ac-public.css`, `acw-platform.css`, `ac-patient.css`, website theme CSS |
-| Approx hard-coded locations | ~120–160 |
+| Affected files | `ac-public.css`, `acw-platform.css`, `ac-patient.css`, `website-theme-family-wellness-mint.css`, patient print/JS chrome |
+| Status | **COMPLETE** — see `docs/qa/V2_04_COLOR_MIGRATION_BATCH_6.md` |
+| Measured locations migrated | 105 (426 → 321) |
 | Risk | MEDIUM–HIGH — marketing + booking + portal |
-| Visual QA | Platform home, tenant mini-site, patient portal; **teal** brand retained |
+| Visual QA | Platform home, tenant mini-site, patient portal; **teal** brand retained via `data-surface="public"` |
 | BB/AC regression | AC public/patient; BB smoke |
 
 ---
