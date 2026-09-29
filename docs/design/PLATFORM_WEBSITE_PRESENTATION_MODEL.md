@@ -2,18 +2,20 @@
 
 | Field | Value |
 |---|---|
-| **VERSION** | 2.04 Overnight Step 5 |
-| **STATUS** | PLATFORM ADMIN WEBSITE GOVERNANCE CONSOLE COMPLETE |
+| **VERSION** | 2.04 Overnight Step 6 |
+| **STATUS** | AC STITCH WEBSITE CONTRACT READY (no app wiring) |
 | **STEP_1** | **PASS** (canonical contracts + vocabulary) |
 | **STEP_2** | **PASS** (18 shared presentation components) |
 | **STEP_3** | **PASS** (`activeClinicWebsitePresentationAdapter.js`) |
 | **STEP_4** | **PASS** (`websiteMediaEditingContract.js` — shared media + UIE) |
 | **STEP_5** | **PASS** (`platformAdminWebsiteConsoleContract.js`) |
+| **STEP_6** | **PASS** (`docs/design/ACTIVECLINIC_STITCH_WEBSITE_CONTRACT.md`) |
 | **CODE** | `src/platform/website/presentation/` |
 | **COMPONENTS** | `views/platform/website/components/` (18 shared primitives) |
 | **AC_ADAPTER** | `src/activeclinic/website/activeClinicWebsitePresentationAdapter.js` |
 | **MEDIA_CONTRACT** | `src/platform/website/websiteMediaEditingContract.js` |
 | **PA_CONSOLE** | `src/platform/website/platformAdminWebsitesService.js` |
+| **STITCH_CONTRACT** | `docs/design/ACTIVECLINIC_STITCH_WEBSITE_CONTRACT.md` |
 | **AUDIT** | `docs/qa/V2_04_AC_WEBSITE_PLATFORM_REUSE_AUDIT.md` |
 | **COMPONENT_SHAREABILITY_BEFORE** | **74%** (audit 14/19 candidates) |
 | **COMPONENT_SHAREABILITY_AFTER** | **89%** (17/19 with shared presentation coverage) |
