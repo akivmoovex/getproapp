@@ -25,9 +25,9 @@
   margin: 0 0 1rem;
   border-radius: 1rem;
   overflow: hidden;
-  box-shadow: var(--bb-shadow-sm, 0 2px 4px rgba(0, 0, 0, 0.05));
-  border: 1px solid var(--bb-color-border, #d1dce0);
-  background: #fff;
+  box-shadow: 0 2px 4px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-surface);
   transform: rotate(3deg);
 }
 
@@ -48,7 +48,7 @@
   top: 50%;
   transform: translateY(-50%);
   font-size: 1.25rem;
-  color: var(--bb-color-muted, #44474e);
+  color: var(--color-text-secondary);
   pointer-events: none;
   line-height: 1;
 }
@@ -67,15 +67,15 @@
   gap: 0.5rem;
   margin: 1.25rem 0 0;
   padding-top: 1rem;
-  border-top: 1px solid var(--bb-color-border, #d1dce0);
-  color: var(--bb-color-muted, #44474e);
+  border-top: 1px solid var(--color-border-default);
+  color: var(--color-text-secondary);
   font-size: 0.88rem;
   line-height: 1.45;
 }
 
 .bb-auth-footnote .material-symbols-outlined {
   font-size: 1.15rem;
-  color: var(--bb-color-primary, #6c5ce7);
+  color: var(--color-brand-primary);
   flex-shrink: 0;
   margin-top: 0.1rem;
 }
@@ -83,7 +83,7 @@
 .bb-auth-field__error {
   margin: 0.35rem 0 0;
   font-size: 0.88rem;
-  color: var(--bb-auth-err, #b3261e);
+  color: var(--color-danger-text);
 }
 
 .bb-auth-error__list {
@@ -98,36 +98,36 @@
 }
 
 .bb-auth-error--throttled {
-  border-color: #f9db8d;
-  background: #fffbeb;
-  color: #92400e;
+  border-color: var(--color-warning-border);
+  background: var(--color-warning-bg);
+  color: var(--color-warning-text);
 }
 
 .bb-auth-error--expired {
-  border-color: #c7d2fe;
-  background: #eef2ff;
-  color: #3730a3;
+  border-color: var(--color-info-border);
+  background: var(--color-info-bg);
+  color: var(--color-info-text);
 }
 
 .bb-auth-error--consumed {
-  border-color: #fbcfe8;
-  background: #fdf2f8;
-  color: #9d174d;
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
 }
 
 .bb-auth-error--unauthorized {
-  border-color: #fecdd3;
-  background: #fff1f2;
-  color: #9f1239;
+  border-color: var(--color-danger-border);
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
 }
 
 .bb-auth-success {
   margin: 0 0 1rem;
   padding: 0.75rem 0.9rem;
   border-radius: 8px;
-  border: 1px solid #a7f3d0;
-  background: #ecfdf5;
-  color: #065f46;
+  border: 1px solid var(--color-success-border);
+  background: var(--color-success-bg);
+  color: var(--color-success-text);
   font-size: 0.95rem;
 }
 
@@ -158,8 +158,8 @@
     padding: 3rem;
     border: 0;
     border-radius: 0;
-    border-right: 1px solid var(--bb-color-border, #d1dce0);
-    background: #f2f3f9;
+    border-right: 1px solid var(--color-border-default);
+    background: var(--color-surface-subtle);
     box-shadow: none;
   }
 
@@ -223,10 +223,10 @@ body[data-bb-page="auth-error"] .bb-auth-error {
 }
 
 .bb-apex-account__card {
-  background: var(--bb-color-surface, #fff);
-  border: 1px solid var(--bb-color-border, #d1dce0);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-default);
   border-radius: var(--bb-radius, 1rem);
-  box-shadow: var(--bb-shadow-md, 0 10px 30px rgba(108, 92, 231, 0.08));
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-brand-primary) 12%, transparent);
   padding: 1.85rem 1.5rem;
 }
 
@@ -237,8 +237,8 @@ body[data-bb-page="auth-error"] .bb-auth-error {
   width: 3.25rem;
   height: 3.25rem;
   border-radius: 999px;
-  background: rgba(108, 92, 231, 0.12);
-  color: var(--bb-color-primary, #6c5ce7);
+  background: var(--color-brand-primary-light);
+  color: var(--color-brand-primary);
   margin-bottom: 1rem;
 }
 
@@ -250,32 +250,32 @@ body[data-bb-page="auth-error"] .bb-auth-error {
   margin: 0 0 0.35rem;
   font-size: clamp(1.5rem, 3vw, 1.85rem);
   letter-spacing: -0.02em;
-  color: var(--bb-color-primary, #6c5ce7);
+  color: var(--color-brand-primary);
 }
 
 .bb-apex-account__lead {
   margin: 0 0 1.25rem;
-  color: var(--bb-color-muted, #5c5668);
+  color: var(--color-text-secondary);
 }
 
 .bb-apex-account__identity {
   margin: 0 0 1.25rem;
   padding: 1rem 1.1rem;
-  border-radius: var(--bb-radius-sm, 0.5rem);
-  background: var(--bb-color-page, #fbf9f6);
-  border: 1px solid var(--bb-color-border, #d1dce0);
+  border-radius: var(--bb-radius-sm);
+  background: var(--color-background);
+  border: 1px solid var(--color-border-default);
 }
 
 .bb-apex-account__name {
   margin: 0 0 0.65rem;
   font-size: 1.2rem;
   font-weight: 700;
-  color: var(--bb-color-ink, #1a1c1e);
+  color: var(--color-text-primary);
 }
 
 .bb-apex-account__roles {
   margin: 0;
-  color: var(--bb-color-muted, #44474e);
+  color: var(--color-text-secondary);
 }
 
 .bb-apex-account__badges {
@@ -298,13 +298,13 @@ body[data-bb-page="auth-error"] .bb-auth-error {
   gap: 0.85rem;
   align-items: flex-start;
   padding: 0.95rem 1rem;
-  border-radius: var(--bb-radius-sm, 0.5rem);
-  border: 1px solid var(--bb-color-border, #d1dce0);
-  background: #fff;
+  border-radius: var(--bb-radius-sm);
+  border: 1px solid var(--color-border-default);
+  background: var(--color-surface);
 }
 
 .bb-apex-account__access-icon {
-  color: var(--bb-color-primary, #6c5ce7);
+  color: var(--color-brand-primary);
   font-size: 1.35rem;
   margin-top: 0.1rem;
 }
@@ -315,24 +315,24 @@ body[data-bb-page="auth-error"] .bb-auth-error {
   font-weight: 600;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: var(--bb-color-muted, #44474e);
+  color: var(--color-text-secondary);
 }
 
 .bb-apex-account__access-body {
   margin: 0;
   font-size: 1.02rem;
-  color: var(--bb-color-ink, #1a1c1e);
+  color: var(--color-text-primary);
   font-weight: 600;
 }
 
 .bb-apex-account__note {
   margin: 0 0 1.25rem;
   font-size: 0.92rem;
-  color: var(--bb-color-muted, #5c5668);
+  color: var(--color-text-secondary);
 }
 
 .bb-apex-account__note a {
-  color: var(--bb-color-primary, #6c5ce7);
+  color: var(--color-brand-primary);
   font-weight: 600;
   text-decoration: none;
 }
@@ -343,7 +343,7 @@ body[data-bb-page="auth-error"] .bb-auth-error {
 }
 
 .bb-apex-account__note a:focus-visible {
-  outline: 2px solid var(--bb-color-primary, #6c5ce7);
+  outline: 2px solid var(--color-brand-primary);
   outline-offset: 2px;
 }
 

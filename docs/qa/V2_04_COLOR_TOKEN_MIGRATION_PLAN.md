@@ -4,7 +4,18 @@
 **Base:** V10 (`05b2afe1caffaee8238cb0d4b3a6fb2f8f8a43d7` at foundation start)  
 **Audit:** `docs/qa/V2_04_GUI_COLOR_THEME_AUDIT.md`  
 **Foundation:** `src/platform/ui/theme/colors.css`  
-**Status:** Batches **NOT EXECUTED** in the foundation prompt — planning only.
+
+## Authoritative comparable migration baseline
+
+Use the **same git-tracked scanner** as Batches 1–2 for all subsequent batches:
+
+| Checkpoint | Hard-coded file×color locations |
+| --- | --- |
+| Theme foundation (comparable) | **1291** |
+| After Batch 1 | **1223** |
+| After Batch 2 | **1152** |
+
+Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree boundary). Keep it only as historical context — do not use it as the migration baseline.
 
 ## Goals
 
@@ -13,14 +24,14 @@
 - Preserve ActiveClinic dual surface (public teal vs staff blue).
 - Avoid repository-wide find/replace.
 
-## Inventory reminder (audit)
+## Inventory reminder (audit — historical)
 
 | Metric | Count |
 | --- | --- |
 | BB unique colors | 398 |
 | AC unique colors | 208 |
 | Shared/platform unique | 230 |
-| Hard-coded file×color locations | ~1123 |
+| Hard-coded file×color locations (historical audit) | 1123 (NON-COMPARABLE) |
 | Semantic drift groups | 16 |
 
 ---
@@ -30,7 +41,8 @@
 | Field | Detail |
 | --- | --- |
 | Affected files | `public/platform/gp-ops-shared.css`, `gp-auth-reg.css`, `forms-builder.css`, `announcements.css`, `phone-field.css`, `website-*.css` (shared chrome only), `public/design-system.css` (aliases only if safe) |
-| Approx hard-coded locations | ~150–220 unique file×color pairs |
+| Status | **COMPLETE** — see `docs/qa/V2_04_COLOR_MIGRATION_BATCH_1.md` |
+| Measured locations migrated | 68 (1291 → 1223) |
 | Risk | MEDIUM — shared by BB+AC; regressions affect both products |
 | Visual QA | Auth chrome, ops cards/tables, forms studio, announcements, website editor chrome on both products |
 | BB/AC regression | Smoke login + one ops list + one form builder page per product |
@@ -44,7 +56,8 @@
 | Field | Detail |
 | --- | --- |
 | Affected files | `public/platform/gp-auth-reg.css`, `registration-ux.css`, BB `apex-auth.css` / `tenant-auth.css`, AC `ac-auth.css`, related EJS shells |
-| Approx hard-coded locations | ~80–120 |
+| Status | **COMPLETE** — see `docs/qa/V2_04_COLOR_MIGRATION_BATCH_2.md` |
+| Measured locations migrated | 71 (1223 → 1152) |
 | Risk | HIGH — security-critical UX; first impression |
 | Visual QA | BB apex login/register; AC auth login/register; identifier tabs; error/success flashes |
 | BB/AC regression | Full auth path smoke both products (desktop + mobile) |

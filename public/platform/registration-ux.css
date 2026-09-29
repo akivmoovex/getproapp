@@ -23,7 +23,7 @@
 }
 
 .gp-registration-consent.is-error .gp-registration-consent__label {
-  color: #b42318;
+  color: var(--color-danger-text);
 }
 
 .gp-registration-consent__label {
@@ -40,16 +40,16 @@
 
 .gp-registration-consent__error {
   margin: 0.5rem 0 0;
-  color: #b42318;
+  color: var(--color-danger-text);
   font-size: 0.875rem;
 }
 
 .gp-registration-password-rules {
   margin: 0.75rem 0 0;
   padding: 0.75rem 0.85rem;
-  border: 1px solid rgba(16, 24, 40, 0.12);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;
-  background: rgba(16, 24, 40, 0.02);
+  background: var(--color-surface-subtle);
 }
 
 .gp-registration-password-rules__title {
@@ -70,7 +70,7 @@
   gap: 0.45rem;
   font-size: 0.875rem;
   line-height: 1.4;
-  color: rgba(16, 24, 40, 0.72);
+  color: var(--color-text-secondary);
 }
 
 .gp-registration-password-rules__item + .gp-registration-password-rules__item {
@@ -78,11 +78,11 @@
 }
 
 .gp-registration-password-rules__item.is-met {
-  color: #027a48;
+  color: var(--color-success-text);
 }
 
 .gp-registration-password-rules__item.is-unmet {
-  color: rgba(16, 24, 40, 0.72);
+  color: var(--color-text-secondary);
 }
 
 .gp-registration-password-rules__item.is-met .gp-registration-password-rules__mark::before {
@@ -93,15 +93,15 @@
   margin: 0.35rem 0 0;
   font-size: 0.875rem;
   line-height: 1.4;
-  color: rgba(16, 24, 40, 0.72);
+  color: var(--color-text-secondary);
 }
 
 .gp-registration-password-confirm-status.is-met {
-  color: #027a48;
+  color: var(--color-success-text);
 }
 
 .gp-registration-password-confirm-status.is-unmet {
-  color: #b42318;
+  color: var(--color-danger-text);
 }
 
 .gp-registration-password-row,
@@ -143,10 +143,10 @@
   left: 0;
   right: 0;
   top: calc(100% + 0.25rem);
-  background: #fff;
-  border: 1px solid rgba(16, 24, 40, 0.12);
+  background: var(--card-bg);
+  border: 1px solid var(--color-border-default);
   border-radius: 0.5rem;
-  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.12);
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-text-primary) 12%, transparent);
   max-height: 14rem;
   overflow: auto;
 }
@@ -165,11 +165,16 @@
 
 .gp-location-option:hover,
 .gp-location-option:focus {
-  background: rgba(108, 92, 231, 0.08);
+  background: var(--color-brand-primary-light);
   outline: none;
+}
+
+.gp-location-option:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 .gp-location-option--add {
   font-weight: 600;
-  color: #6c5ce7;
+  color: var(--color-link);
 }

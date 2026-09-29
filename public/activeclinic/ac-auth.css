@@ -1,28 +1,28 @@
 /* ActiveClinic authentication surfaces (AC-V6-S01). Product-isolated; does not alter BlessBoard. */
 :root {
-  /* Auth palette aligned to ActiveClinic public teal system (--acp-* in ac-tokens.css) */
-  --ac-auth-bg: var(--acp-bg, #f8f9ff);
-  --ac-auth-surface: var(--acp-surface, #ffffff);
-  --ac-auth-surface-low: var(--acp-surface-low, #f1f4f6);
-  --ac-auth-ink: var(--acp-ink, #181c1e);
-  --ac-auth-muted: var(--acp-muted, #3e494a);
-  --ac-auth-border: var(--acp-border, #c4c7c9);
-  --ac-auth-outline: var(--acp-outline, #bac6ec);
-  --ac-auth-primary: var(--acp-primary, #006068);
-  --ac-auth-primary-hover: var(--acp-primary-hover, #0f766e);
-  --ac-auth-primary-container: var(--acp-primary-strong, #004f56);
-  --ac-auth-on-primary: #ffffff;
-  --ac-auth-secondary: var(--acp-primary-strong, #004f56);
-  --ac-auth-focus: var(--acp-focus, var(--acp-primary, #006068));
-  --ac-auth-danger: var(--ac-status-danger);
-  --ac-auth-danger-bg: var(--ac-status-danger-bg);
-  --ac-auth-success: var(--ac-status-success);
-  --ac-auth-success-bg: var(--ac-status-success-bg);
-  --ac-auth-warning: var(--ac-status-warning);
-  --ac-auth-warning-bg: var(--ac-status-warning-bg);
+  /* Auth palette → V2.04 brand / semantic tokens (public surface teal via data-product) */
+  --ac-auth-bg: var(--color-background);
+  --ac-auth-surface: var(--color-surface);
+  --ac-auth-surface-low: var(--color-surface-subtle);
+  --ac-auth-ink: var(--color-text-primary);
+  --ac-auth-muted: var(--color-text-secondary);
+  --ac-auth-border: var(--color-border-default);
+  --ac-auth-outline: var(--color-border-strong);
+  --ac-auth-primary: var(--color-brand-primary);
+  --ac-auth-primary-hover: var(--color-brand-primary-hover);
+  --ac-auth-primary-container: var(--color-brand-primary-active);
+  --ac-auth-on-primary: var(--color-brand-on-primary);
+  --ac-auth-secondary: var(--color-brand-primary-active);
+  --ac-auth-focus: var(--color-focus);
+  --ac-auth-danger: var(--color-danger-text);
+  --ac-auth-danger-bg: var(--color-danger-bg);
+  --ac-auth-success: var(--color-success-text);
+  --ac-auth-success-bg: var(--color-success-bg);
+  --ac-auth-warning: var(--color-warning-text);
+  --ac-auth-warning-bg: var(--color-warning-bg);
   --ac-auth-radius: var(--ac-card-radius, 8px);
   --ac-auth-radius-sm: var(--ac-control-radius, 2px);
-  --ac-auth-shadow: 0 1px 2px rgba(25, 28, 30, 0.06);
+  --ac-auth-shadow: 0 1px 2px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
   --ac-auth-gutter: var(--ac-space-4, 1rem);
   --ac-auth-stack-sm: var(--ac-space-2, 0.5rem);
   --ac-auth-stack-md: var(--ac-space-4, 1rem);
@@ -254,8 +254,8 @@ body.ac-auth-body {
   justify-content: space-between;
   gap: var(--ac-auth-stack-lg);
   padding: 3rem;
-  background: #00796b; /* Stitch brand-activeclinic */
-  color: #e7fff8;
+  background: var(--color-brand-primary); /* Stitch brand-activeclinic → brand token */
+  color: var(--color-brand-primary-light);
   border-right: 0;
   position: relative;
   overflow: hidden;
@@ -274,7 +274,7 @@ body.ac-auth-body {
   right: 0;
   width: 24rem;
   height: 24rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--color-surface) 5%, transparent);
   filter: blur(48px);
   transform: translate(30%, -50%);
 }
@@ -284,7 +284,7 @@ body.ac-auth-body {
   left: 0;
   width: 20rem;
   height: 20rem;
-  background: rgba(0, 0, 0, 0.1);
+  background: color-mix(in srgb, var(--color-text-primary) 10%, transparent);
   filter: blur(48px);
   transform: translate(-25%, 30%);
 }
@@ -311,8 +311,8 @@ body.ac-auth-body {
   width: 2.25rem;
   height: 2.25rem;
   border-radius: 0.35rem;
-  background: rgba(255, 255, 255, 0.16);
-  color: #e7fff8;
+  background: color-mix(in srgb, var(--color-surface) 16%, transparent);
+  color: var(--color-brand-primary-light);
   flex-shrink: 0;
 }
 
@@ -326,7 +326,7 @@ body.ac-auth-body {
   margin: 0;
   font-size: 1.25rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--color-text-inverse);
   letter-spacing: -0.01em;
 }
 
@@ -335,7 +335,7 @@ body.ac-auth-body {
   font-size: 1.5rem;
   font-weight: 700;
   letter-spacing: -0.02em;
-  color: #ffffff;
+  color: var(--color-text-inverse);
   position: relative;
   z-index: 1;
 }
@@ -344,7 +344,7 @@ body.ac-auth-body {
   margin: var(--ac-auth-stack-sm) 0 0;
   font-size: 0.875rem;
   line-height: 1.4;
-  color: rgba(231, 255, 248, 0.85);
+  color: color-mix(in srgb, var(--color-brand-primary-light) 85%, transparent);
 }
 
 .ac-auth-brand-panel__features {
@@ -364,7 +364,7 @@ body.ac-auth-body {
   align-items: start;
   font-size: 0.875rem;
   line-height: 1.45;
-  color: rgba(231, 255, 248, 0.9);
+  color: color-mix(in srgb, var(--color-brand-primary-light) 90%, transparent);
 }
 
 .ac-auth-brand-panel__feature-body {
@@ -376,18 +376,18 @@ body.ac-auth-body {
 .ac-auth-brand-panel__feature-title {
   display: block;
   font-weight: 700;
-  color: #ffffff;
+  color: var(--color-text-inverse);
   font-size: 0.95rem;
 }
 
 .ac-auth-brand-panel__feature-text {
   display: block;
-  color: rgba(231, 255, 248, 0.85);
+  color: color-mix(in srgb, var(--color-brand-primary-light) 85%, transparent);
   font-size: 0.875rem;
 }
 
 .ac-auth-brand-panel__features .material-symbols-outlined {
-  color: #ffffff;
+  color: var(--color-text-inverse);
   font-size: 1.25rem;
 }
 
@@ -396,16 +396,16 @@ body.ac-auth-body {
   align-items: flex-start;
   gap: 0.75rem;
   padding: 1rem;
-  background: rgba(0, 0, 0, 0.18);
-  border: 1px solid rgba(255, 255, 255, 0.18);
+  background: color-mix(in srgb, var(--color-text-primary) 18%, transparent);
+  border: 1px solid color-mix(in srgb, var(--color-surface) 18%, transparent);
   border-radius: var(--ac-auth-radius);
   position: relative;
   z-index: 1;
-  color: #e7fff8;
+  color: var(--color-brand-primary-light);
 }
 
 .ac-auth-secure-note__icon {
-  color: #a7f3d0;
+  color: var(--color-success-border);
   flex-shrink: 0;
   margin-top: 0.125rem;
 }
@@ -422,14 +422,14 @@ body.ac-auth-body {
   margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
-  color: #ffffff;
+  color: var(--color-text-inverse);
 }
 
 .ac-auth-secure-note p {
   margin: 0.25rem 0 0;
   font-size: 0.75rem;
   line-height: 1.35;
-  color: rgba(231, 255, 248, 0.85);
+  color: color-mix(in srgb, var(--color-brand-primary-light) 85%, transparent);
 }
 
 .ac-auth-form-panel {
@@ -524,21 +524,21 @@ body.ac-auth-body {
 }
 
 .ac-auth-alert--error {
-  background: var(--ac-auth-danger-bg);
-  color: #93000a;
-  border: 1px solid #ffb4ab;
+  background: var(--color-danger-bg);
+  color: var(--color-danger-text);
+  border: 1px solid var(--color-danger-border);
 }
 
 .ac-auth-alert--success {
   background: var(--ac-auth-success-bg);
   color: var(--ac-auth-success);
-  border: 1px solid #abefc6;
+  border: 1px solid var(--color-success-border);
 }
 
 .ac-auth-alert--warning {
   background: var(--ac-auth-warning-bg);
   color: var(--ac-auth-warning);
-  border: 1px solid #fedf89;
+  border: 1px solid var(--color-warning-border);
 }
 
 .ac-auth-field {
@@ -611,7 +611,7 @@ body.ac-auth-body {
 .ac-auth-select:focus {
   outline: none;
   border-color: var(--ac-auth-primary);
-  box-shadow: 0 0 0 2px rgba(29, 89, 193, 0.35);
+  box-shadow: 0 0 0 2px var(--color-focus-ring);
 }
 
 .ac-auth-input[aria-invalid="true"] {
@@ -619,7 +619,7 @@ body.ac-auth-body {
 }
 
 .ac-auth-input[aria-invalid="true"]:focus {
-  box-shadow: 0 0 0 2px rgba(186, 26, 26, 0.3);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-danger) 30%, transparent);
 }
 
 .ac-auth-field-error {
@@ -638,7 +638,7 @@ body.ac-auth-body {
 
 .ac-auth-phone:focus-within {
   border-color: var(--ac-auth-primary);
-  box-shadow: 0 0 0 2px rgba(29, 89, 193, 0.35);
+  box-shadow: 0 0 0 2px var(--color-focus-ring);
 }
 
 .ac-auth-phone__prefix {
@@ -827,7 +827,7 @@ body.ac-auth-body {
 .ac-auth-org-option:has(input:checked),
 .ac-auth-org-option:focus-within {
   border-color: var(--ac-auth-primary);
-  box-shadow: 0 0 0 2px rgba(29, 89, 193, 0.25);
+  box-shadow: 0 0 0 2px var(--color-focus-ring);
 }
 
 .ac-auth-org-option input {
@@ -910,8 +910,8 @@ body.ac-auth-body {
 .ac-auth-field .ac-phone-field__input {
   min-height: 2.75rem;
   border-radius: 12px;
-  border: 1px solid rgba(26, 43, 47, 0.16);
-  background: #fff;
+  border: 1px solid var(--color-border-default);
+  background: var(--color-surface);
   font: inherit;
 }
 .ac-auth-field .ac-label {
@@ -940,7 +940,7 @@ body.ac-auth-body {
   max-width: 26rem;
   margin: 0 auto;
   border-radius: 1.25rem;
-  box-shadow: 0 12px 40px rgba(0, 31, 35, 0.08);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
 }
 
 .ac-auth-card--acw08 .ac-auth-form-panel {
@@ -1139,7 +1139,7 @@ body.ac-auth-body {
 .ac-auth-clinic-card:hover,
 .ac-auth-clinic-card:focus-visible {
   border-color: var(--ac-auth-primary);
-  box-shadow: 0 0 0 2px rgba(13, 148, 136, 0.2);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--color-brand-primary) 20%, transparent);
   outline: none;
 }
 
@@ -1190,7 +1190,7 @@ body.ac-auth-body {
   align-items: center;
   justify-content: center;
   padding: 1.25rem;
-  background: rgba(247, 249, 251, 0.96);
+  background: color-mix(in srgb, var(--color-background) 96%, transparent);
 }
 
 .ac-auth-signing-in[hidden] {
@@ -1251,7 +1251,7 @@ body.ac-auth-body[data-ac-composition="mf02-disabled"] {
   margin: 0 auto;
   border-radius: var(--ac-auth-radius);
   border: 1px solid var(--ac-auth-border);
-  box-shadow: 0 12px 40px rgba(11, 28, 48, 0.08);
+  box-shadow: 0 12px 40px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
   padding: var(--ac-space-6, 2rem) var(--ac-space-5, 1.5rem) 1.75rem;
   background: var(--ac-auth-surface);
 }
@@ -1383,7 +1383,7 @@ body.ac-auth-body[data-ac-composition="mf02-disabled"] {
   font-size: 0.75rem;
   font-weight: 600;
   color: var(--ac-auth-primary);
-  background: rgba(13, 148, 136, 0.1);
+  background: color-mix(in srgb, var(--color-brand-primary) 10%, transparent);
   border-radius: 999px;
   padding: 0.15rem 0.55rem;
 }
@@ -1402,7 +1402,7 @@ body.ac-auth-body[data-ac-composition="mf02-disabled"] {
 }
 
 .ac-auth-state-icon--reset {
-  background: rgba(13, 148, 136, 0.12);
+  background: color-mix(in srgb, var(--color-brand-primary) 12%, transparent);
   color: var(--ac-auth-primary);
 }
 
@@ -1420,7 +1420,7 @@ body.ac-auth-body[data-ac-composition="mf02-disabled"] {
 .ac-auth-input:focus,
 .ac-auth-select:focus,
 .ac-auth-phone:focus-within {
-  box-shadow: 0 0 0 3px rgba(0, 60, 144, 0.22);
+  box-shadow: 0 0 0 3px var(--color-focus-ring);
 }
 
 @media (min-width: 768px) {

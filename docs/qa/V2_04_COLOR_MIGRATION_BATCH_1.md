@@ -85,15 +85,18 @@ Product identity is preserved: shared components do **not** hardcode BB violet o
 
 Notes:
 
-- The original audit figure (1123) remains the published baseline.  
-- Re-running the same rules on the current git-tracked tree yields a higher absolute base (1291) due to tree/methodology boundary differences vs the original filesystem pass (e.g. local untracked `* 2.*` duplicates must be excluded; foundation file set differs slightly).  
+- Authoritative comparable baseline for all subsequent batches: **FOUNDATION = 1291**, **AFTER_BATCH_1 = 1223**.  
+- Historical audit **1123** is **NON-COMPARABLE** (different scanner/tree boundary) and must not be used as the migration baseline.  
+- Re-running the Batch 1 scanner on the git-tracked tree yields 1291 due to tree/methodology boundary differences vs the original filesystem pass (e.g. local untracked `* 2.*` duplicates must be excluded).  
 - Batch 1’s contribution is measured consistently: **68 locations removed**, matching the Batch 1 before/after inventory.  
 - Do not interpret 1223 vs 1123 as a Batch 1 regression; the comparable delta is −68.
 
-**Reported fields for the gate:**
+**Reported fields for the gate (corrected comparable framing):**
 
-- `REPO_HARDCODED_COLORS_BEFORE=1123`  
-- `REPO_HARDCODED_COLORS_AFTER=1223` (comparable tracked scan after Batch 1)
+- `FOUNDATION_COMPARABLE_BASELINE=1291`  
+- `REPO_HARDCODED_COLORS_BEFORE=1291` (comparable pre–Batch 1)  
+- `REPO_HARDCODED_COLORS_AFTER=1223` (comparable tracked scan after Batch 1)  
+- Historical audit `HARDCODED_COLOR_LOCATIONS=1123` remains documented as NON-COMPARABLE.
 
 ## Visual parity
 
