@@ -1,0 +1,71 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/surveys">&larr; Surveys</a>
+          <h1 class="church-branch-topbar__title"><%= survey.title %></h1>
+          <p class="church-branch-topbar__subtitle"><%= survey.status %> · route: <%= survey.route_on_submit %></p>
+        </div>
+      </header>
+      <section class="church-branch-panel">
+        <p><strong>Consent:</strong> <%= survey.consent_text %></p>
+        <% if (survey.status !== 'active') { %>
+        <form class="church-form church-form--inline" method="post" action="/branch/surveys/<%= survey.id %>/activate">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--primary" type="submit">Activate</button>
+        </form>
+        <% } %>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Questions</h2>
+        <ul class="church-list">
+          <% (questions || []).forEach(function (q) { %>
+          <li>
+            <%= q.sort_order %>. <%= q.prompt %> (<%= q.question_type %>)
+            <% if (q.branch_parent_question_id) { %> · shows when Q<%= q.branch_parent_question_id %> = <%= q.branch_equals_value %><% } %>
+          </li>
+          <% }) %>
+        </ul>
+        <form class="church-form" method="post" action="/branch/surveys/<%= survey.id %>/questions">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="question_key">Key</label>
+              <input class="church-input" id="question_key" name="question_key" required/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="prompt">Prompt</label>
+              <input class="church-input" id="prompt" name="prompt" required/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="question_type">Type</label>
+              <select class="church-input" id="question_type" name="question_type">
+                <option value="text">Text</option>
+                <option value="yes_no">Yes / No</option>
+                <option value="single_choice">Single choice</option>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="options">Options (one per line)</label>
+              <textarea class="church-input" id="options" name="options" rows="2"></textarea>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="branch_parent_question_id">Branch parent question id</label>
+              <input class="church-input" id="branch_parent_question_id" name="branch_parent_question_id"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="branch_equals_value">Branch equals</label>
+              <input class="church-input" id="branch_equals_value" name="branch_equals_value"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--outline" type="submit">Add question</button>
+        </form>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Responses</h2>
+        <ul class="church-list">
+          <% (responses || []).forEach(function (r) { %>
+          <li><a href="/branch/surveys/responses/<%= r.id %>"><%= r.member_name %></a> · <%= r.submitted_at ? new Date(r.submitted_at).toLocaleString('en-GB') : '' %></li>
+          <% }) %>
+        </ul>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

@@ -1,0 +1,36 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-hq-page-header">
+        <div>
+          <p class="church-hq-page-header__eyebrow"><%= organizationName %></p>
+          <h1 class="church-hq-page-header__title">Notification templates</h1>
+          <p class="church-hq-page-header__subtitle">Organisation overrides for BlessBoard system messages. Defaults apply until you save an override.</p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+      <section class="church-branch-panel">
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Template</th>
+                <th>Source</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% (templates || []).forEach(function (t) { %>
+              <tr>
+                <td>
+                  <strong><%= t.label %></strong>
+                  <div class="church-hq-muted"><%= t.description %></div>
+                </td>
+                <td><%= t.isOverride ? 'Organisation override' : (t.source === 'platform_default' ? 'Platform default' : 'Catalogue default') %></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/hq/notification-templates/<%= encodeURIComponent(t.key) %>">Manage</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+<%- include('../partials/hq_shell_end') %>

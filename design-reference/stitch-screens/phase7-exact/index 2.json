@@ -1,0 +1,101 @@
+[
+  {
+    "screenId": "a68314c0d6a34e0a824ad1a2b309c4ad",
+    "title": "Phase 7 - Church Website Events - Desktop",
+    "deviceType": "DESKTOP",
+    "width": 2560,
+    "height": 5342,
+    "label": "events-desktop",
+    "png": "/Users/akivsolomon/Documents/DocumentsAkiv/Akiv/Dev/CursorProjects/getpro/design-reference/stitch-screens/phase7-exact/events-desktop/events-desktop.png",
+    "pngBytes": 106677,
+    "htmlBytes": 31669
+  },
+  {
+    "screenId": "d85d37f3bba84ac48d8d3f24b01b2010",
+    "title": "Phase 7 - Church Website Sermons - Desktop",
+    "deviceType": "DESKTOP",
+    "width": 2560,
+    "height": 5694,
+    "label": "sermons-desktop",
+    "png": "/Users/akivsolomon/Documents/DocumentsAkiv/Akiv/Dev/CursorProjects/getpro/design-reference/stitch-screens/phase7-exact/sermons-desktop/sermons-desktop.png",
+    "pngBytes": 87881,
+    "htmlBytes": 29450
+  },
+  {
+    "screenId": "28ba746495424a66a10cf5fb11916dec",
+    "title": "Phase 7 - Church Website Contact - Desktop",
+    "deviceType": "DESKTOP",
+    "width": 2560,
+    "height": 3612,
+    "label": "contact-desktop",
+    "png": "/Users/akivsolomon/Documents/DocumentsAkiv/Akiv/Dev/CursorProjects/getpro/design-reference/stitch-screens/phase7-exact/contact-desktop/contact-desktop.png",
+    "pngBytes": 48537,
+    "htmlBytes": 22417
+  },
+  {
+    "screenId": "5a52a893e0414bf6962a0c078808d124",
+    "title": "Phase 7 - Church Website Ministries - Desktop",
+    "deviceType": "DESKTOP",
+    "width": 2560,
+    "height": 4690,
+    "label": "ministries-desktop",
+    "png": "/Users/akivsolomon/Documents/DocumentsAkiv/Akiv/Dev/CursorProjects/getpro/design-reference/stitch-screens/phase7-exact/ministries-desktop/ministries-desktop.png",
+    "pngBytes": 115268,
+    "htmlBytes": 23234
+  },
+  {
+    "screenId": "4d525f9fbba9482f91fadc28ef650d13",
+    "title": "Phase 7 - Church Website Leadership - Desktop",
+    "deviceType": "DESKTOP",
+    "width": 2560,
+    "height": 7830,
+    "label": "leadership-desktop",
+    "png": "/Users/akivsolomon/Documents/DocumentsAkiv/Akiv/Dev/CursorProjects/getpro/design-reference/stitch-screens/phase7-exact/leadership-desktop/leadership-desktop.png",
+    "pngBytes": 49655,
+    "htmlBytes": 23255
+  },
+  {
+    "screenId": "e4fe61fbb9eb4b0987ca150d078aa76c",
+    "title": "Phase 7 - Church Website Giving - Desktop",
+    "deviceType": "DESKTOP",
+    "width": 2560,
+    "height": 6574,
+    "label": "giving-desktop",
+    "png": "/Users/akivsolomon/Documents/DocumentsAkiv/Akiv/Dev/CursorProjects/getpro/design-reference/stitch-screens/phase7-exact/giving-desktop/giving-desktop.png",
+    "pngBytes": 50583,
+    "htmlBytes": 24498
+  },
+  {
+    "screenId": "b82eb087d4b84242aabead19c08eb717",
+    "title": "Phase 7 - Church Website Home - Mobile",
+    "deviceType": "MOBILE",
+    "width": 780,
+    "height": 10222,
+    "label": "home-mobile",
+    "png": "/Users/akivsolomon/Documents/DocumentsAkiv/Akiv/Dev/CursorProjects/getpro/design-reference/stitch-screens/phase7-exact/home-mobile/home-mobile.png",
+    "pngBytes": 22085,
+    "htmlBytes": 26055
+  },
+  {
+    "screenId": "3736c7550483404282d5ba9914962c40",
+    "title": "Phase 7 - Church Website About - Desktop",
+    "deviceType": "DESKTOP",
+    "width": 2560,
+    "height": 9306,
+    "label": "about-desktop",
+    "png": "/Users/akivsolomon/Documents/DocumentsAkiv/Akiv/Dev/CursorProjects/getpro/design-reference/stitch-screens/phase7-exact/about-desktop/about-desktop.png",
+    "pngBytes": 68953,
+    "htmlBytes": 24656
+  },
+  {
+    "screenId": "25de9fa64884455b993abb051adb0d8a",
+    "title": "Phase 7 - Church Website Home - Desktop",
+    "deviceType": "DESKTOP",
+    "width": 2560,
+    "height": 10094,
+    "label": "home-desktop",
+    "png": "/Users/akivsolomon/Documents/DocumentsAkiv/Akiv/Dev/CursorProjects/getpro/design-reference/stitch-screens/phase7-exact/home-desktop/home-desktop.png",
+    "pngBytes": 61455,
+    "htmlBytes": 29618
+  }
+]

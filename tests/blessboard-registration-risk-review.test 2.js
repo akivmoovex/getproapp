@@ -1,0 +1,617 @@
+"use strict";
+
+const {
+  createChurchRegistrationApplication,
+} = require("./helpers/blessboardChurchRegistrationFixture");
+
+/**
+ * Prompt 18 — lightweight deterministic registration risk review.
+ */
+
+const assert = require("node:assert/strict");
+const { describe, it, before, after } = require("node:test");
+const request = require("supertest");
+const crypto = require("crypto");
+
+const {
+  resetFoundationDatabase,
+  createFoundationPool,
+} = require("./helpers/foundationDb");
+const { migrate } = require("../db/scripts/lib/migrator");
+const { ensureDatabaseIdentity } = require("../db/scripts/lib/databaseIdentity");
+const { createV5FoundationApp } = require("../src/platform/http/v5FoundationServer");
+const { CSRF_FIELD, CSRF_COOKIE } = require("../src/platform/http/v5Csrf");
+const { DEFAULT_V5_COOKIE } = require("../src/platform/session/v5SessionCookie");
+const { createV5Session } = require("../src/platform/session/createV5Session");
+const { createBlessBoardUser } = require("../src/blessboard/services/createBlessBoardUser");
+const { assignBlessBoardRole } = require("../src/blessboard/services/assignBlessBoardRole");
+const { provisionRegisteredBlessBoardChurch } = require("../src/blessboard/services/provisionRegisteredBlessBoardChurch");
+const appRepo = require("../src/blessboard/repositories/platformChurchRegistrationRepository");
+const {
+  submitInstantFreeChurchRegistration,
+  DUPLICATE_REVIEW_MESSAGE,
+  PUBLIC_REJECT_MESSAGE,
+} = require("../src/blessboard/services/platformChurchRegistrationService");
+const {
+  validatePlatformChurchRegistration,
+} = require("../src/blessboard/services/platformChurchRegistrationValidation");
+const {
+  RISK_DECISIONS,
+  RISK_REASON_CODES,
+  ALLOWED_REASON_CODE_SET,
+  filterAllowlistedReasonCodes,
+  decideFromReasonCodes,
+  hasCountryPhoneMismatch,
+  evaluateRegistrationRisk,
+  PUBLIC_REVIEW_MESSAGE,
+} = require("../src/blessboard/services/registrationRiskDecision");
+const {
+  approveAndProvisionRegistrationApplication,
+  rejectRegistrationApplication,
+  getRegistrationApplicationDetail,
+} = require("../src/blessboard/services/registrationApplicationsAdminService");
+
+const IDENTITY_KEY = "blessboard-platform-v5";
+const PASSWORD = "TestPassword99!";
+const APEX = "blessboard.org";
+
+function uniq(prefix) {
+  return `${prefix}-${crypto.randomBytes(3).toString("hex")}`;
+}
+
+function extractCookie(res, name) {
+  const raw = res.headers["set-cookie"];
+  const list = Array.isArray(raw) ? raw : raw ? [raw] : [];
+  for (const line of list) {
+    if (String(line).startsWith(`${name}=`)) {
+      return String(line).split(";")[0].slice(name.length + 1);
+    }
+  }
+  return null;
+}
+
+function extractCsrfToken(html) {
+  const m = String(html || "").match(
+    new RegExp(`name="${CSRF_FIELD}"[^>]*value="([^"]+)"|value="([^"]+)"[^>]*name="${CSRF_FIELD}"`)
+  );
+  return (m && (m[1] || m[2])) || null;
+}
+
+describe("registration risk review (Prompt 18)", () => {
+  let pool;
+  let skipSuite = false;
+  let skipReason = "";
+  let platformAdmin = null;
+
+  before(async () => {
+    try {
+      const databaseUrl = await resetFoundationDatabase();
+      pool = createFoundationPool(databaseUrl);
+      await migrate({ connectionString: databaseUrl });
+      await ensureDatabaseIdentity(pool, {
+        connectionString: databaseUrl,
+        identityKey: IDENTITY_KEY,
+        environmentCode: "testing",
+      });
+
+      const key = uniq("riskpa");
+      const email = `${key}@example.org`;
+      const user = await createBlessBoardUser(pool, {
+        email,
+        password: PASSWORD,
+        displayName: "Risk Platform Admin",
+      });
+      assert.equal(user.ok, true, user.message);
+      // Bootstrap org so platform_admin role can attach.
+      const bootstrapApp = await createChurchRegistrationApplication(pool, {
+        church_name: `Risk PA Church ${key}`,
+        country: "Kenya",
+        city: "Nairobi",
+        contact_name: "Risk PA",
+        contact_email: `${uniq("riskboot")}@example.org`,
+        contact_phone: `+2547${String(Date.now()).slice(-8).padStart(8, "0")}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+                role_in_church: "Administrator",
+        selected_plan: "foundation",
+        consent_terms: true,
+      });
+      const provisioned = await provisionRegisteredBlessBoardChurch(pool, {
+        applicationId: bootstrapApp.id,
+        administratorPassword: PASSWORD,
+        requestedOrganizationKey: key,
+        actorContext: {
+          type: "test",
+          source: "prompt18",
+          dataEnvironment: "testing",
+          deploymentCode: "blessboard-org-staging",
+        },
+      });
+      assert.equal(provisioned.ok, true, provisioned.message || provisioned.status);
+      assert.equal(
+        (
+          await assignBlessBoardRole(pool, {
+            email,
+            organizationKey: provisioned.records.organizationKey,
+            roleKey: "platform_admin",
+          })
+        ).ok,
+        true
+      );
+      platformAdmin = {
+        userId: user.user.id,
+        email,
+        organizationId: provisioned.records.organizationId,
+        organizationKey: provisioned.records.organizationKey,
+      };
+    } catch (err) {
+      skipSuite = true;
+      skipReason = err && err.message ? err.message : String(err);
+    }
+  });
+
+  after(async () => {
+    if (pool) await pool.end().catch(() => {});
+  });
+
+  function requireDb() {
+    if (skipSuite) assert.fail(`Local PostgreSQL unavailable: ${skipReason}`);
+  }
+
+  function makeApp(envExtra = {}) {
+    return createV5FoundationApp({
+      env: {
+        NODE_ENV: "test",
+        BLESSBOARD_TENANT_ROUTING_MODE: "off",
+        PLATFORM_DEPLOYMENT_CODE: "blessboard-org-staging",
+        SESSION_SECRET: "test-session-secret-at-least-32-chars!!",
+        SESSION_COOKIE_NAME: DEFAULT_V5_COOKIE,
+        ...envExtra,
+      },
+      getPool: () => pool,
+    });
+  }
+
+  function freeBody(overrides = {}) {
+    const key = uniq("risk");
+    const phoneTail = String(1000000 + (Date.now() % 1000000) + Math.floor(Math.random() * 900)).slice(
+      -7
+    );
+    return {
+      church_name: `Risk Review Church ${key}`,
+      country: "Kenya",
+      city: "Nairobi",
+      contact_name: "Risk Admin",
+      role_in_church: "Administrator",
+      phone_country: "KE",
+      phone_national: `7${String(phoneTail).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+      email: `${key}@example.org`,
+      selected_plan: "foundation",
+      organization_key: key,
+      password: PASSWORD,
+      password_confirm: PASSWORD,
+      branch_name: "HQ",
+      consent_contact: "on",
+      ...overrides,
+    };
+  }
+
+  function validateBody(body) {
+    return validatePlatformChurchRegistration(body, { instantFreeEnabled: true });
+  }
+
+  it("reason codes are allowlisted; unknown codes are dropped", () => {
+    assert.ok(ALLOWED_REASON_CODE_SET.has(RISK_REASON_CODES.DUPLICATE_PHONE));
+    assert.deepEqual(filterAllowlistedReasonCodes(["duplicate_phone", "ai_score", "CLEAN"]), [
+      "duplicate_phone",
+    ]);
+    assert.equal(decideFromReasonCodes(["similar_organization"]), RISK_DECISIONS.ALLOW);
+    assert.equal(decideFromReasonCodes(["duplicate_email"]), RISK_DECISIONS.ALLOW);
+    assert.equal(decideFromReasonCodes(["country_phone_mismatch"]), RISK_DECISIONS.ALLOW);
+    assert.equal(decideFromReasonCodes(["ip_velocity"]), RISK_DECISIONS.REVIEW_REQUIRED);
+    assert.equal(decideFromReasonCodes(["prior_rejection"]), RISK_DECISIONS.REVIEW_REQUIRED);
+    assert.equal(decideFromReasonCodes(["duplicate_phone"]), RISK_DECISIONS.REJECT);
+    assert.equal(decideFromReasonCodes([]), RISK_DECISIONS.ALLOW);
+    assert.equal(hasCountryPhoneMismatch("Kenya", "+254712345678"), false);
+    assert.equal(hasCountryPhoneMismatch("Kenya", "+260971234567"), true);
+  });
+
+  it("1. clean registration is allowed and provisions", async () => {
+    requireDb();
+    const body = freeBody();
+    const validation = validateBody(body);
+    assert.equal(validation.ok, true);
+    const result = await submitInstantFreeChurchRegistration(pool, { ip: "203.0.113.10" }, validation, {
+      dataEnvironment: "testing",
+      deploymentCode: "blessboard-org-staging",
+    });
+    assert.equal(result.ok, true, result.error || result.code);
+    assert.equal(result.riskDecision, RISK_DECISIONS.ALLOW);
+    assert.equal(result.provision && result.provision.ok, true);
+    const row = await appRepo.findApplicationById(pool, result.application.id);
+    assert.equal(row.risk_decision, "allow");
+    assert.equal(row.provisioning_status, "provisioned");
+    assert.ok(["submitted", "closed", "active"].includes(String(row.application_status)));
+    assert.ok(row.organization_id);
+  });
+
+  it("2. confirmed duplicate phone is blocked (reject, no provision)", async () => {
+    requireDb();
+    const phoneNational = `7${String(Date.now()).slice(-8).padStart(8, "0")}`;
+    const first = freeBody({
+      phone_country: "KE",
+      phone_national: phoneNational,
+      email: `${uniq("dup1")}@example.org`,
+      organization_key: uniq("d1"),
+    });
+    const firstVal = validateBody(first);
+    assert.equal(firstVal.ok, true, firstVal.error || firstVal.field);
+    const firstResult = await submitInstantFreeChurchRegistration(pool, { ip: "203.0.113.11" }, firstVal);
+    assert.equal(firstResult.ok, true, firstResult.error);
+
+    const second = freeBody({
+      phone_country: "KE",
+      phone_national: phoneNational,
+      email: `${uniq("dup2")}@example.org`,
+      organization_key: uniq("d2"),
+      church_name: `Other Church ${uniq("x")}`,
+    });
+    const secondVal = validateBody(second);
+    assert.equal(secondVal.ok, true, secondVal.error || secondVal.field);
+    const secondResult = await submitInstantFreeChurchRegistration(pool, { ip: "203.0.113.12" }, secondVal);
+    assert.equal(secondResult.ok, false);
+    assert.equal(secondResult.code, "duplicate_registration_phone");
+    assert.equal(secondResult.riskDecision, RISK_DECISIONS.REJECT);
+    assert.equal(secondResult.field, "phone");
+    assert.doesNotMatch(String(secondResult.error || ""), /risk|fraud|velocity|reason_code/i);
+    const churches = await pool.query(
+      `SELECT COUNT(*)::int AS n FROM blessboard.churches c
+         JOIN platform.organizations o ON o.id = c.organization_id
+        WHERE o.organization_key = $1`,
+      [second.organization_key]
+    );
+    assert.equal(churches.rows[0].n, 0);
+  });
+
+  it("3. similar organization names alone never auto-reject", async () => {
+    requireDb();
+    const sharedName = `Same Name Chapel ${uniq("nm")}`;
+    const first = freeBody({
+      church_name: sharedName,
+      city: "Nairobi",
+      country: "Kenya",
+      email: `${uniq("nm1")}@example.org`,
+      organization_key: uniq("nm1"),
+    });
+    const firstResult = await submitInstantFreeChurchRegistration(
+      pool,
+      { ip: "203.0.113.20" },
+      validateBody(first)
+    );
+    assert.equal(firstResult.ok, true, firstResult.error);
+
+    // Same name, different city → allow (name alone is not enough for review).
+    const second = freeBody({
+      church_name: sharedName,
+      city: "Mombasa",
+      country: "Kenya",
+      email: `${uniq("nm2")}@example.org`,
+      organization_key: uniq("nm2"),
+    });
+    const risk = await evaluateRegistrationRisk(pool, {
+      data: validateBody(second).data,
+      sourceIp: "203.0.113.21",
+    });
+    assert.notEqual(risk.decision, RISK_DECISIONS.REJECT);
+    assert.ok(!risk.reasonCodes.includes(RISK_REASON_CODES.SIMILAR_ORGANIZATION));
+
+    // Same name + city + country is a uniqueness conflict, not Platform Admin review.
+    const third = freeBody({
+      church_name: sharedName,
+      city: "Nairobi",
+      country: "Kenya",
+      email: `${uniq("nm3")}@example.org`,
+      organization_key: uniq("nm3"),
+    });
+    const thirdResult = await submitInstantFreeChurchRegistration(
+      pool,
+      { ip: "203.0.113.22" },
+      validateBody(third)
+    );
+    assert.equal(thirdResult.ok, false);
+    assert.notEqual(thirdResult.review, true);
+    assert.notEqual(thirdResult.code, "review_required");
+    assert.equal(thirdResult.field, "church_name");
+    assert.equal(thirdResult.httpStatus, 400);
+  });
+
+  it("4. orphan existing identity with matching password auto-provisions (no PA review)", async () => {
+    requireDb();
+    const email = `${uniq("exist")}@example.org`;
+    const existing = await createBlessBoardUser(pool, {
+      email,
+      password: PASSWORD,
+      displayName: "Existing User",
+    });
+    assert.equal(existing.ok, true);
+
+    const body = freeBody({ email, organization_key: uniq("exu") });
+    const result = await submitInstantFreeChurchRegistration(
+      pool,
+      { ip: "203.0.113.30" },
+      validateBody(body)
+    );
+    assert.equal(result.ok, true, result.error || result.code);
+    assert.notEqual(result.review, true);
+    assert.ok(result.records && result.records.organizationId);
+    const row = await appRepo.findApplicationById(pool, result.application.id);
+    assert.equal(row.provisioning_status, "provisioned");
+    assert.ok(row.organization_id);
+  });
+
+  async function markApplicationRejected(applicationId) {
+    await pool.query(
+      `UPDATE blessboard.platform_church_registration_applications
+          SET application_status = 'rejected'
+        WHERE id = $1`,
+      [applicationId]
+    );
+  }
+
+  async function seedPriorRejection(email) {
+    const prior = await createChurchRegistrationApplication(pool, {
+      church_name: `Prior Reject ${uniq("pr")}`,
+      country: "Kenya",
+      city: "Kisumu",
+      contact_name: "Prior",
+      contact_email: email,
+      contact_phone: `+2547${String(Date.now()).slice(-8).padStart(8, "0")}`,
+        contact_phone_normalized: `+2547${String(String(Date.now()).slice(-7)).replace(/\D/g,"").padStart(8,"0").slice(-8)}`,
+            role_in_church: "Administrator",
+      selected_plan: "foundation",
+      consent_terms: true,
+    });
+    await markApplicationRejected(prior.id);
+    return prior;
+  }
+
+  it("5. admin approval provisions once (idempotent)", async () => {
+    requireDb();
+    const key = uniq("appr");
+    const email = `${uniq("appr")}@example.org`;
+    await seedPriorRejection(email);
+
+    const body = freeBody({
+      organization_key: key,
+      email,
+      church_name: `Approve Me Church ${key}`,
+      city: `City-${key}`,
+    });
+    const held = await submitInstantFreeChurchRegistration(
+      pool,
+      { ip: "203.0.113.40" },
+      validateBody(body)
+    );
+    assert.equal(held.review, true, held.error || held.code);
+    assert.equal(held.application.organization_id, null);
+
+    const approved = await approveAndProvisionRegistrationApplication(pool, {
+      applicationId: held.application.id,
+      actorUserId: platformAdmin.userId,
+      organizationKey: key,
+      deploymentCode: "blessboard-org-staging",
+      dataEnvironment: "testing",
+    });
+    assert.equal(approved.ok, true, approved.message || approved.status);
+    assert.equal(Boolean(approved.alreadyProvisioned), false);
+    assert.ok(approved.records && approved.records.organizationId);
+
+    const orgId = approved.records.organizationId;
+    async function tenantShape() {
+      const r = await pool.query(
+        `SELECT
+           (SELECT COUNT(*)::int FROM platform.organizations WHERE id = $1) AS orgs,
+           (SELECT COUNT(*)::int FROM blessboard.churches WHERE organization_id = $1) AS churches,
+           (SELECT COUNT(*)::int FROM blessboard.branches b
+              JOIN blessboard.churches c ON c.id = b.church_id
+             WHERE c.organization_id = $1) AS branches,
+           (SELECT COUNT(*)::int FROM platform.website_instances
+             WHERE organization_id = $1 AND product_code = 'blessboard' AND status <> 'archived') AS websites,
+           (SELECT COUNT(*)::int FROM blessboard.user_role_assignments
+             WHERE organization_id = $1 AND status = 'active') AS active_roles`,
+        [orgId]
+      );
+      return r.rows[0];
+    }
+    const afterFirst = await tenantShape();
+    assert.equal(afterFirst.orgs, 1);
+    assert.equal(afterFirst.churches, 1);
+    assert.equal(afterFirst.branches, 1);
+    assert.equal(afterFirst.websites, 1);
+
+    const again = await approveAndProvisionRegistrationApplication(pool, {
+      applicationId: held.application.id,
+      actorUserId: platformAdmin.userId,
+      organizationKey: key,
+      deploymentCode: "blessboard-org-staging",
+    });
+    assert.equal(again.ok, true, again.message || again.status);
+    const afterSecond = await tenantShape();
+    assert.deepEqual(afterSecond, afterFirst);
+    // Invitation-mode tenants are complete for org/website/church, but HQ roles
+    // are assigned on invite accept. Completeness may therefore be false and the
+    // second call re-enters the orchestrator. The tenant shape must stay unique.
+    assert.equal(afterSecond.orgs, 1);
+    assert.equal(afterSecond.websites, 1);
+
+    const audits = await pool.query(
+      `SELECT action_key, outcome FROM platform.audit_events
+        WHERE organization_id = $1 AND action_key = 'registration.application_approved'`,
+      [approved.records.organizationId]
+    );
+    assert.ok(audits.rows.length >= 1);
+  });
+
+  it("6. admin rejection does not provision", async () => {
+    requireDb();
+    const key = uniq("rej");
+    const email = `${uniq("rej")}@example.org`;
+    await seedPriorRejection(email);
+    const heldBody = freeBody({
+      organization_key: key,
+      email,
+      church_name: `Reject Me ${key}`,
+      city: `RejectCity-${key}`,
+    });
+    const held = await submitInstantFreeChurchRegistration(
+      pool,
+      { ip: "203.0.113.50" },
+      validateBody(heldBody)
+    );
+    assert.equal(held.review, true);
+
+    const rejected = await rejectRegistrationApplication(pool, {
+      applicationId: held.application.id,
+      actorUserId: platformAdmin.userId,
+      reason: "Unable to verify church leadership details",
+    });
+    assert.equal(rejected.ok, true);
+
+    const row = await appRepo.findApplicationById(pool, held.application.id);
+    assert.equal(row.application_status, "rejected");
+    assert.equal(row.organization_id, null);
+    assert.equal(row.provisioning_status, "not_started");
+    assert.ok(String(row.rejection_reason || "").includes("Unable to verify"));
+
+    const approveAfter = await approveAndProvisionRegistrationApplication(pool, {
+      applicationId: held.application.id,
+      actorUserId: platformAdmin.userId,
+      organizationKey: key,
+    });
+    assert.equal(approveAfter.ok, false);
+    assert.equal(approveAfter.status, "not_eligible");
+  });
+
+  it("7–8. public HTTP responses stay neutral; admin detail shows allowlisted reasons", async () => {
+    requireDb();
+    const app = makeApp({});
+    const email = `${uniq("http2")}@example.org`;
+    await seedPriorRejection(email);
+
+    const secondBody = freeBody({
+      church_name: `HTTP Fresh ${uniq("http")}`,
+      city: "Ndola",
+      country: "Zambia",
+      email,
+      organization_key: uniq("http2"),
+      phone_country: "ZM",
+      phone_national: `96${String(Date.now()).slice(-7).padStart(7, "0")}`,
+    });
+    const page2 = await request(app).get("/register-church?plan=foundation").set("Host", APEX);
+    const csrf2 = extractCsrfToken(page2.text);
+    const cookie2 = extractCookie(page2, CSRF_COOKIE);
+    const res2 = await request(app)
+      .post("/register-church")
+      .set("Host", APEX)
+      .set("Cookie", `${CSRF_COOKIE}=${cookie2}`)
+      .type("form")
+      .send({ ...secondBody, [CSRF_FIELD]: csrf2 });
+    assert.equal(res2.status, 303);
+    assert.equal(res2.headers.location, "/register-church?review=1");
+    assert.doesNotMatch(String(res2.headers.location), /\/register-church\/success/);
+    assert.doesNotMatch(String(res2.headers.location), /prior_rejection|risk|fraud/i);
+
+    const reviewPage = await request(app)
+      .get("/register-church?review=1")
+      .set("Host", APEX);
+    assert.equal(reviewPage.status, 200);
+    assert.match(reviewPage.text, /short review|BlessBoard will assist/i);
+    assert.doesNotMatch(reviewPage.text, /similar_organization|ip_velocity|risk_decision|fraud score/i);
+
+    const held = await pool.query(
+      `SELECT id FROM blessboard.platform_church_registration_applications
+        WHERE lower(contact_email) = lower($1)
+        ORDER BY created_at DESC`,
+      [secondBody.email]
+    );
+    const detail = await getRegistrationApplicationDetail(pool, held.rows[0].id);
+    assert.equal(detail.ok, true);
+    assert.ok(detail.application.riskReasonLabels.some((r) => r.code === "prior_rejection"));
+  });
+
+  it("9–10. authorization and CSRF protect review mutations; audit on approve", async () => {
+    requireDb();
+    const app = makeApp({});
+    const key = uniq("csrf");
+    const email = `${uniq("csrf")}@example.org`;
+    await seedPriorRejection(email);
+    const heldBody = freeBody({
+      organization_key: key,
+      email,
+      church_name: `CSRF Hold ${key}`,
+      city: `CsrfCity-${key}`,
+    });
+    const held = await submitInstantFreeChurchRegistration(
+      pool,
+      { ip: "203.0.113.60" },
+      validateBody(heldBody)
+    );
+    assert.equal(held.review, true);
+
+    // Unauthenticated → redirect away from admin.
+    const unauth = await request(app)
+      .post(`/admin/registration-applications/${held.application.id}/reject`)
+      .set("Host", APEX)
+      .type("form")
+      .send({ rejection_reason: "nope", [CSRF_FIELD]: "bad" });
+    assert.ok([302, 303, 401, 403].includes(unauth.status));
+
+    const session = await createV5Session(pool, {
+      userId: platformAdmin.userId,
+      deploymentCode: "blessboard-org-staging",
+      organizationId: platformAdmin.organizationId,
+      churchId: null,
+      branchId: null,
+    });
+    assert.equal(session.ok, true);
+    const cookie = `${DEFAULT_V5_COOKIE}=${session.rawToken}`;
+
+    const detailGet = await request(app)
+      .get(`/admin/registration-applications/${held.application.id}`)
+      .set("Host", APEX)
+      .set("Cookie", cookie);
+    assert.equal(detailGet.status, 200);
+    assert.match(detailGet.text, /data-bb-pa-approve-form="1"/);
+    assert.match(detailGet.text, /data-bb-pa-reject-form="1"/);
+    const csrfCookie = extractCookie(detailGet, CSRF_COOKIE);
+    const csrf = extractCsrfToken(detailGet.text);
+
+    const badCsrf = await request(app)
+      .post(`/admin/registration-applications/${held.application.id}/reject`)
+      .set("Host", APEX)
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrfCookie}`)
+      .type("form")
+      .send({ rejection_reason: "Should fail CSRF", [CSRF_FIELD]: "not-valid" });
+    assert.equal(badCsrf.status, 303);
+    assert.match(String(badCsrf.headers.location), /error=csrf/);
+
+    const rejectOk = await request(app)
+      .post(`/admin/registration-applications/${held.application.id}/reject`)
+      .set("Host", APEX)
+      .set("Cookie", `${cookie}; ${CSRF_COOKIE}=${csrfCookie}`)
+      .type("form")
+      .send({ rejection_reason: "Operator rejection after review", [CSRF_FIELD]: csrf });
+    assert.equal(rejectOk.status, 303);
+    assert.match(String(rejectOk.headers.location), /\/rejected\?notice=application_rejected/);
+
+    const row = await appRepo.findApplicationById(pool, held.application.id);
+    assert.equal(row.application_status, "rejected");
+    assert.ok(Array.isArray(row.review_events));
+    assert.ok(row.review_events.some((e) => e && e.action === "reject"));
+  });
+
+  it("public reject message does not expose risk logic", async () => {
+    assert.equal(PUBLIC_REJECT_MESSAGE.includes("fraud"), false);
+    assert.equal(PUBLIC_REJECT_MESSAGE.includes("risk"), false);
+    assert.equal(DUPLICATE_REVIEW_MESSAGE, PUBLIC_REVIEW_MESSAGE);
+  });
+});

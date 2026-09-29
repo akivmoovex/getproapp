@@ -1,0 +1,100 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/groups">&larr; Groups</a>
+          <h1 class="church-branch-topbar__title"><%= group.name %></h1>
+          <p class="church-branch-topbar__subtitle"><%= group.status %> · <%= group.active_count || 0 %> members</p>
+        </div>
+      </header>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Leaders</h2>
+        <ul class="church-list">
+          <% (leaders || []).forEach(function (l) { %>
+          <li><%= l.member_name || l.admin_name %> (<%= l.role_label %>)</li>
+          <% }) %>
+        </ul>
+        <form class="church-form" method="post" action="/branch/groups/<%= group.id %>/leaders">
+          <%- include('../partials/csrf_field') %>
+          <select class="church-input" name="member_id">
+            <% (members || []).forEach(function (m) { %><option value="<%= m.id %>"><%= m.full_name %></option><% }) %>
+          </select>
+          <button class="church-btn church-btn--outline" type="submit">Add leader</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Membership</h2>
+        <ul class="church-list">
+          <% (memberships || []).forEach(function (m) { %>
+          <li><%= m.member_name %> · <%= m.status %></li>
+          <% }) %>
+        </ul>
+        <% if (group.status === 'active') { %>
+        <form class="church-form" method="post" action="/branch/groups/<%= group.id %>/transfer">
+          <%- include('../partials/csrf_field') %>
+          <select class="church-input" name="member_id">
+            <% (memberships || []).filter(function(m){return m.status==='active';}).forEach(function (m) { %>
+            <option value="<%= m.member_id %>"><%= m.member_name %></option>
+            <% }) %>
+          </select>
+          <select class="church-input" name="to_group_id">
+            <% (allGroups || []).filter(function(g){return g.id!==group.id;}).forEach(function (g) { %>
+            <option value="<%= g.id %>"><%= g.name %></option>
+            <% }) %>
+          </select>
+          <button class="church-btn church-btn--outline" type="submit">Transfer</button>
+        </form>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Recurring meetings</h2>
+        <form class="church-form" method="post" action="/branch/groups/<%= group.id %>/meetings">
+          <%- include('../partials/csrf_field') %>
+          <input class="church-input" name="starts_at" type="datetime-local" required/>
+          <input class="church-input" name="recurring_weeks" type="number" min="1" max="52" value="4" placeholder="Weeks"/>
+          <button class="church-btn church-btn--outline" type="submit">Schedule</button>
+        </form>
+        <ul class="church-list">
+          <% (meetings || []).forEach(function (mt) { %>
+          <li>
+            <%= new Date(mt.starts_at).toLocaleString('en-GB') %>
+            <form class="church-form church-form--inline" method="post" action="/branch/groups/<%= group.id %>/meetings/<%= mt.id %>/attendance">
+              <%- include('../partials/csrf_field') %>
+              <select class="church-input" name="member_id">
+                <% (memberships || []).filter(function(m){return m.status==='active';}).forEach(function (m) { %>
+                <option value="<%= m.member_id %>"><%= m.member_name %></option>
+                <% }) %>
+              </select>
+              <button class="church-btn church-btn--ghost" type="submit">Mark present</button>
+            </form>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Notes</h2>
+        <ul class="church-list">
+          <% (notes || []).forEach(function (n) { %>
+          <li><strong><%= n.author_name || 'Admin' %></strong>: <%= n.note_body %></li>
+          <% }) %>
+        </ul>
+        <form class="church-form" method="post" action="/branch/groups/<%= group.id %>/notes">
+          <%- include('../partials/csrf_field') %>
+          <textarea class="church-input" name="note_body" rows="2" required></textarea>
+          <button class="church-btn church-btn--outline" type="submit">Add note</button>
+        </form>
+      </section>
+
+      <% if (group.status === 'active') { %>
+      <section class="church-branch-panel">
+        <form class="church-form" method="post" action="/branch/groups/<%= group.id %>/close">
+          <%- include('../partials/csrf_field') %>
+          <input class="church-input" name="closure_reason" placeholder="Closure reason"/>
+          <button class="church-btn church-btn--ghost" type="submit">Close group (retain history)</button>
+        </form>
+      </section>
+      <% } %>
+<%- include('../partials/branch_admin_shell_end') %>

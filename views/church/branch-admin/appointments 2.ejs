@@ -1,0 +1,144 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Appointments</h1>
+          <p class="church-branch-topbar__subtitle">Availability, leave, booking, and reminders</p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Booking settings</h2>
+        <form class="church-form" method="post" action="/branch/appointments/settings">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="default_duration_minutes">Duration (minutes)</label>
+              <input class="church-input" id="default_duration_minutes" name="default_duration_minutes" type="number" value="<%= settings.default_duration_minutes %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="buffer_minutes">Buffer (minutes)</label>
+              <input class="church-input" id="buffer_minutes" name="buffer_minutes" type="number" value="<%= settings.buffer_minutes %>"/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="reminder_hours_before">Reminder (hours before)</label>
+              <input class="church-input" id="reminder_hours_before" name="reminder_hours_before" type="number" value="<%= settings.reminder_hours_before %>"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Save settings</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Minister availability (recurring)</h2>
+        <form class="church-form" method="post" action="/branch/appointments/availability">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="minister_admin_id">Minister</label>
+              <select class="church-input" id="minister_admin_id" name="minister_admin_id" required>
+                <% (ministers || []).forEach(function (m) { %><option value="<%= m.id %>"><%= m.full_name %></option><% }) %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="day_of_week">Day (0=Sun)</label>
+              <input class="church-input" id="day_of_week" name="day_of_week" type="number" min="0" max="6" value="1" required/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="start_time">Start</label>
+              <input class="church-input" id="start_time" name="start_time" type="time" value="09:00" required/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="end_time">End</label>
+              <input class="church-input" id="end_time" name="end_time" type="time" value="12:00" required/>
+            </div>
+          </div>
+          <input type="hidden" name="is_recurring" value="1"/>
+          <button class="church-btn church-btn--outline" type="submit">Add recurring slot</button>
+        </form>
+        <ul class="church-list">
+          <% (availability || []).forEach(function (a) { %>
+          <li><%= a.minister_name %> · day <%= a.day_of_week %> · <%= a.start_time %>–<%= a.end_time %></li>
+          <% }) %>
+        </ul>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Leave</h2>
+        <form class="church-form" method="post" action="/branch/appointments/leave">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="leave_minister">Minister</label>
+              <select class="church-input" id="leave_minister" name="minister_admin_id" required>
+                <% (ministers || []).forEach(function (m) { %><option value="<%= m.id %>"><%= m.full_name %></option><% }) %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="starts_at">Starts</label>
+              <input class="church-input" id="starts_at" name="starts_at" type="datetime-local" required/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="ends_at">Ends</label>
+              <input class="church-input" id="ends_at" name="ends_at" type="datetime-local" required/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="reason">Reason</label>
+              <input class="church-input" id="reason" name="reason"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--outline" type="submit">Add leave</button>
+        </form>
+        <ul class="church-list">
+          <% (leave || []).forEach(function (l) { %>
+          <li><%= l.minister_name %> · <%= new Date(l.starts_at).toLocaleString('en-GB') %> – <%= new Date(l.ends_at).toLocaleString('en-GB') %></li>
+          <% }) %>
+        </ul>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Book appointment</h2>
+        <form class="church-form" method="post" action="/branch/appointments/book">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="book_member">Member</label>
+              <select class="church-input" id="book_member" name="member_id" required>
+                <% (members || []).forEach(function (m) { %><option value="<%= m.id %>"><%= m.full_name %></option><% }) %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="book_minister">Minister</label>
+              <select class="church-input" id="book_minister" name="minister_admin_id" required>
+                <% (ministers || []).forEach(function (m) { %><option value="<%= m.id %>"><%= m.full_name %></option><% }) %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="book_starts">Starts</label>
+              <input class="church-input" id="book_starts" name="starts_at" type="datetime-local" required/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="purpose">Purpose (schedule metadata)</label>
+              <input class="church-input" id="purpose" name="purpose" placeholder="Pastoral visit"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Book</button>
+        </form>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Upcoming</h2>
+        <form class="church-form church-form--inline" method="post" action="/branch/appointments/process-reminders">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--ghost" type="submit">Process due reminders</button>
+        </form>
+        <ul class="church-list">
+          <% (appointments || []).forEach(function (a) { %>
+          <li>
+            <a href="/branch/appointments/<%= a.id %>"><%= a.member_name %> with <%= a.minister_name %></a>
+            · <%= new Date(a.starts_at).toLocaleString('en-GB') %> · <%= a.status %>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

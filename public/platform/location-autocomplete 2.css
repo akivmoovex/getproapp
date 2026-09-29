@@ -1,0 +1,42 @@
+/* Shared platform town/city autocomplete listbox (BlessBoard + ActiveClinic). */
+
+.gp-location-field {
+  position: relative;
+}
+
+.gp-location-listbox {
+  position: absolute;
+  z-index: 20;
+  left: 0;
+  right: 0;
+  top: calc(100% + 0.25rem);
+  background: #fff;
+  border: 1px solid rgba(16, 24, 40, 0.12);
+  border-radius: 0.5rem;
+  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.12);
+  max-height: 14rem;
+  overflow: auto;
+}
+
+.gp-location-option {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: 0;
+  background: transparent;
+  padding: 0.65rem 0.85rem;
+  cursor: pointer;
+  font: inherit;
+  color: inherit;
+}
+
+.gp-location-option:hover,
+.gp-location-option:focus {
+  background: rgba(108, 92, 231, 0.08);
+  outline: none;
+}
+
+.gp-location-option--add {
+  font-weight: 600;
+  color: #6c5ce7;
+}

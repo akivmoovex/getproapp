@@ -1,0 +1,31 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/attendance/check-in">&larr; Check-in</a>
+          <h1 class="church-branch-topbar__title">Check-in report</h1>
+          <p class="church-branch-topbar__subtitle"><%= fromDate %> to <%= toDate %></p>
+        </div>
+      </header>
+      <section class="church-branch-panel">
+        <form class="church-form church-form--inline" method="get" action="/branch/attendance/check-in/report">
+          <div class="church-field">
+            <label class="church-label" for="from">From</label>
+            <input class="church-input" id="from" name="from" type="date" value="<%= fromDate %>"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="to">To</label>
+            <input class="church-input" id="to" name="to" type="date" value="<%= toDate %>"/>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Update</button>
+        </form>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Summary</h2>
+        <dl class="church-branch-dl">
+          <div><dt>Sessions</dt><dd><%= summary.session_count %></dd></div>
+          <div><dt>Member check-ins</dt><dd><%= summary.member_check_ins %></dd></div>
+          <div><dt>Visitor check-ins</dt><dd><%= summary.visitor_check_ins %></dd></div>
+        </dl>
+        <p class="church-branch-hint">Aggregate headcount records remain on the <a href="/branch/attendance">attendance tracker</a> for monthly reporting.</p>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

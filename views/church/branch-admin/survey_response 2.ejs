@@ -1,0 +1,22 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/surveys">&larr; Surveys</a>
+          <h1 class="church-branch-topbar__title"><%= session.survey_title %></h1>
+          <p class="church-branch-topbar__subtitle"><%= session.member_name %></p>
+        </div>
+      </header>
+      <section class="church-branch-panel">
+        <% if (session.sensitivity === 'sensitive') { %>
+        <p class="muted">Sensitive · authorised audience: <%= session.authorised_audience %></p>
+        <% } %>
+        <ul class="church-list">
+          <% (answers || []).forEach(function (a) { %>
+          <li><strong><%= a.prompt %></strong>: <%= a.answer_text %></li>
+          <% }) %>
+        </ul>
+        <% if (session.linked_prayer_request_id) { %><p>Linked prayer request #<%= session.linked_prayer_request_id %></p><% } %>
+        <% if (session.linked_pastoral_case_id) { %><p>Linked care case #<%= session.linked_pastoral_case_id %></p><% } %>
+        <% if (session.linked_appointment_id) { %><p>Linked appointment #<%= session.linked_appointment_id %></p><% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

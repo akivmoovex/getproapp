@@ -1,0 +1,117 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Offline attendance</h1>
+          <p class="church-branch-topbar__subtitle">Queue check-ins while offline, then sync when reconnected · <%= churchName %></p>
+        </div>
+        <a class="church-btn church-btn--outline" href="/branch/attendance/check-in">Live check-in</a>
+      </header>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Queue status</h2>
+        <div class="church-branch-stats">
+          <article class="church-branch-stat-card"><span class="church-branch-stat-card__label">Pending</span><strong class="church-branch-stat-card__value"><%= (queueCounts && queueCounts.pending) || 0 %></strong></article>
+          <article class="church-branch-stat-card"><span class="church-branch-stat-card__label">Synced</span><strong class="church-branch-stat-card__value"><%= (queueCounts && queueCounts.synced) || 0 %></strong></article>
+          <article class="church-branch-stat-card"><span class="church-branch-stat-card__label">Conflicts</span><strong class="church-branch-stat-card__value"><%= ((queueCounts && queueCounts.conflict) || 0) + ((queueCounts && queueCounts.review_required) || 0) %></strong></article>
+          <article class="church-branch-stat-card"><span class="church-branch-stat-card__label">Failed</span><strong class="church-branch-stat-card__value"><%= (queueCounts && queueCounts.failed) || 0 %></strong></article>
+        </div>
+        <form class="church-form church-form--inline" method="post" action="/branch/attendance-offline/retry">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--primary" type="submit">Retry failed items</button>
+        </form>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Sync offline batch</h2>
+        <p class="church-branch-panel__hint">Each item must include trusted branch context from this session. Use stable <code>client_item_id</code> values to prevent duplicate execution.</p>
+        <form class="church-form" method="post" action="/branch/attendance-offline/sync" id="offline_sync_form">
+          <%- include('../partials/csrf_field') %>
+          <input type="hidden" name="items[0][client_item_id]" id="offline_client_item_id"/>
+          <input type="hidden" name="items[0][service_session_id]" id="offline_session_id"/>
+          <input type="hidden" name="items[0][member_id]" id="offline_member_id"/>
+          <input type="hidden" name="items[0][check_in_kind]" value="member"/>
+          <input type="hidden" name="items[0][captured_at_client]" id="offline_captured_at"/>
+          <input type="hidden" name="items[0][capture_source]" id="offline_capture_source"/>
+          <div class="church-field">
+            <label class="church-label" for="offline_session_select">Service session ID</label>
+            <input class="church-input" id="offline_session_select" type="number" min="1" placeholder="Open session ID from check-in screen"/>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="offline_member_select">Member ID</label>
+            <input class="church-input" id="offline_member_select" type="number" min="1"/>
+          </div>
+          <button class="church-btn church-btn--outline" type="button" id="offline_queue_btn">Queue locally &amp; sync</button>
+        </form>
+      </section>
+      <% if ((recentQueue || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Recent queue items</h2>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Client ID</th><th>Status</th><th>Captured</th><th>Source</th><th>Conflict</th></tr></thead>
+            <tbody>
+              <% recentQueue.forEach(function (q) { %>
+              <tr>
+                <td><code><%= q.client_item_id %></code></td>
+                <td><%= q.sync_status %></td>
+                <td><%= q.captured_at_client ? new Date(q.captured_at_client).toLocaleString('en-GB') : '—' %></td>
+                <td><%= q.capture_source || '—' %></td>
+                <td><%= q.conflict_reason || '—' %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <% } %>
+      <script>
+      (function () {
+        var KEY = 'bb_offline_attendance_v1';
+        function loadQueue() {
+          try { return JSON.parse(localStorage.getItem(KEY) || '[]'); } catch (e) { return []; }
+        }
+        function saveQueue(items) {
+          localStorage.setItem(KEY, JSON.stringify(items));
+        }
+        function uuid() {
+          return 'off_' + Date.now().toString(36) + '_' + Math.random().toString(36).slice(2, 10);
+        }
+        var btn = document.getElementById('offline_queue_btn');
+        if (!btn) return;
+        btn.addEventListener('click', function () {
+          var sessionId = Number(document.getElementById('offline_session_select').value);
+          var memberId = Number(document.getElementById('offline_member_select').value);
+          if (!sessionId || !memberId) { alert('Enter session and member IDs.'); return; }
+          var item = {
+            client_item_id: uuid(),
+            service_session_id: sessionId,
+            member_id: memberId,
+            check_in_kind: 'member',
+            captured_at_client: new Date().toISOString(),
+            capture_source: 'browser-local-' + (navigator.userAgent || 'unknown').slice(0, 40)
+          };
+          var queue = loadQueue();
+          if (queue.some(function (q) { return q.client_item_id === item.client_item_id; })) {
+            alert('Duplicate local queue item.');
+            return;
+          }
+          queue.push(item);
+          saveQueue(queue);
+          document.getElementById('offline_client_item_id').value = item.client_item_id;
+          document.getElementById('offline_session_id').value = String(item.service_session_id);
+          document.getElementById('offline_member_id').value = String(item.member_id);
+          document.getElementById('offline_captured_at').value = item.captured_at_client;
+          document.getElementById('offline_capture_source').value = item.capture_source;
+          document.getElementById('offline_sync_form').submit();
+        });
+        window.addEventListener('online', function () {
+          var queue = loadQueue();
+          if (!queue.length) return;
+          var next = queue[0];
+          document.getElementById('offline_client_item_id').value = next.client_item_id;
+          document.getElementById('offline_session_id').value = String(next.service_session_id);
+          document.getElementById('offline_member_id').value = String(next.member_id || '');
+          document.getElementById('offline_captured_at').value = next.captured_at_client;
+          document.getElementById('offline_capture_source').value = next.capture_source;
+        });
+      })();
+      </script>
+<%- include('../partials/branch_admin_shell_end') %>

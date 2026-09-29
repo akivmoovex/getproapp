@@ -1,0 +1,1499 @@
+"use strict";
+
+/**
+ * Growth scheduled HQ broadcast workflow.
+ * Channels: in_app + recorded email (no WhatsApp/SMS/new provider).
+ * Foundation: immediate in-app publish only (no scheduled external broadcast).
+ */
+
+const auditLogsRepo = require("../../db/pg/church/auditLogsRepo");
+const hqBroadcastsRepo = require("../../db/pg/church/hqBroadcastsRepo");
+const hqAdminsRepo = require("../../db/pg/church/hqAdminsRepo");
+const organizationsRepo = require("../../db/pg/church/organizationsRepo");
+const communicationPoliciesRepo = require("../../db/pg/church/communicationPoliciesRepo");
+const {
+  safeBroadcastEmailSubject,
+  broadcastStatusLabel,
+} = require("../../church/hqBroadcastValidation");
+const {
+  isInQuietHours,
+  nextQuietHoursEnd,
+  validateQuietHoursPolicyBody,
+} = require("../../church/broadcastQuietHours");
+const { hasEntitlement, getOrganisationPlan } = require("./churchEntitlementService");
+const churchPackageUsageService = require("./churchPackageUsageService");
+const {
+  isOrganizationStatusEligibleForGrowthJobs,
+  sanitizeJobPauseReason,
+} = require("../../church/growthScheduledJobGate");
+
+const WORKFLOW_STATUSES = Object.freeze([
+  "draft",
+  "preview",
+  "audience_estimate",
+  "approval",
+  "scheduled",
+  "processing",
+  "published",
+  "partially_failed",
+  "failed",
+  "cancelled",
+  "paused_no_entitlement",
+  "paused_organization_inactive",
+]);
+
+function jobKeyForBroadcast(broadcastId, publishAt) {
+  const when = publishAt instanceof Date ? publishAt : new Date(publishAt || Date.now());
+  return `sched_broadcast:${broadcastId}:${when.toISOString()}`;
+}
+
+function parseChannels(broadcast) {
+  const raw = broadcast && broadcast.delivery_channels;
+  if (Array.isArray(raw)) return raw.map(String);
+  if (typeof raw === "string") {
+    try {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed.map(String);
+    } catch {
+      /* ignore */
+    }
+  }
+  return ["in_app"];
+}
+
+async function assertCanScheduleExternalBroadcast(pool, organizationId) {
+  const plan = await getOrganisationPlan(pool, organizationId);
+  if (!plan) {
+    const err = new Error("Organisation not found.");
+    err.code = "ORG_NOT_FOUND";
+    throw err;
+  }
+  if (!hasEntitlement(plan, "broadcasts.scheduled")) {
+    const err = new Error(
+      "Scheduled external broadcasts require Growth. Foundation may publish in-app announcements immediately only."
+    );
+    err.code = "FOUNDATION_SCHEDULE_FORBIDDEN";
+    throw err;
+  }
+  const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+  await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
+    organizationId,
+    flagKey: "broadcasts_scheduled",
+    plan,
+  });
+  return plan;
+}
+
+/**
+ * Resolve authorised recipients at send time (tenant-scoped, consent-aware).
+ * @returns {Promise<Array<{recipient_type:string,recipient_id:number,email:string|null,consent:boolean,branch_id:number|null}>>}
+ */
+async function resolveAudienceRecipients(pool, organizationId, broadcast) {
+  const audience = String(broadcast.audience || "members");
+  const recipients = [];
+
+  if (audience === "selected_recipients") {
+    return resolveSelectedRecipientsBatched(pool, organizationId, broadcast.id);
+  }
+
+  if (audience === "ministry") {
+    const r = await pool.query(
+      `SELECT DISTINCT m.id AS recipient_id, m.email, m.communication_consent, m.branch_id
+       FROM public.church_hq_broadcast_ministry_targets t
+       INNER JOIN public.church_member_ministries mm
+         ON mm.ministry_id = t.ministry_id AND mm.organization_id = t.organization_id
+       INNER JOIN public.church_members m ON m.id = mm.member_id AND m.organization_id = t.organization_id
+       WHERE t.broadcast_id = $1 AND t.organization_id = $2
+         AND mm.status = 'active' AND m.status = 'verified'`,
+      [broadcast.id, organizationId]
+    );
+    for (const row of r.rows) {
+      recipients.push({
+        recipient_type: "member",
+        recipient_id: row.recipient_id,
+        email: row.email || null,
+        consent: row.communication_consent !== false,
+        branch_id: row.branch_id,
+      });
+    }
+    return dedupeRecipients(recipients);
+  }
+
+  if (audience === "department") {
+    const r = await pool.query(
+      `SELECT DISTINCT m.id AS recipient_id, m.email, m.communication_consent, m.branch_id
+       FROM public.church_hq_broadcast_department_targets t
+       INNER JOIN public.church_departments d ON d.id = t.department_id AND d.organization_id = t.organization_id
+       INNER JOIN public.church_members m ON m.branch_id = d.branch_id AND m.organization_id = t.organization_id
+       WHERE t.broadcast_id = $1 AND t.organization_id = $2 AND m.status = 'verified'`,
+      [broadcast.id, organizationId]
+    );
+    for (const row of r.rows) {
+      recipients.push({
+        recipient_type: "member",
+        recipient_id: row.recipient_id,
+        email: row.email || null,
+        consent: row.communication_consent !== false,
+        branch_id: row.branch_id,
+      });
+    }
+    return dedupeRecipients(recipients);
+  }
+
+  if (audience === "event") {
+    const r = await pool.query(
+      `SELECT DISTINCT m.id AS recipient_id, m.email, m.communication_consent, m.branch_id
+       FROM public.church_hq_broadcast_event_targets t
+       INNER JOIN public.church_events e ON e.id = t.event_id AND e.organization_id = t.organization_id
+       INNER JOIN public.church_members m ON m.branch_id = e.branch_id AND m.organization_id = t.organization_id
+       WHERE t.broadcast_id = $1 AND t.organization_id = $2 AND m.status = 'verified'`,
+      [broadcast.id, organizationId]
+    );
+    for (const row of r.rows) {
+      recipients.push({
+        recipient_type: "member",
+        recipient_id: row.recipient_id,
+        email: row.email || null,
+        consent: row.communication_consent !== false,
+        branch_id: row.branch_id,
+      });
+    }
+    return dedupeRecipients(recipients);
+  }
+
+  const branchIds = await hqBroadcastsRepo.resolveBroadcastTargetBranchIds(pool, organizationId, broadcast);
+
+  if (audience === "public") {
+    // Public sites: in-app visibility only (no email fan-out).
+    return branchIds.map((branch_id) => ({
+      recipient_type: "public_branch",
+      recipient_id: branch_id,
+      email: null,
+      consent: true,
+      branch_id,
+    }));
+  }
+
+  if (audience === "branch_admins") {
+    if (!branchIds.length) return [];
+    const r = await pool.query(
+      `SELECT id, email, communication_consent, branch_id
+       FROM public.church_branch_admins
+       WHERE organization_id = $1 AND branch_id = ANY($2::bigint[]) AND status = 'active'`,
+      [organizationId, branchIds]
+    );
+    return r.rows.map((row) => ({
+      recipient_type: "branch_admin",
+      recipient_id: row.id,
+      email: row.email || null,
+      consent: row.communication_consent !== false,
+      branch_id: row.branch_id,
+    }));
+  }
+
+  if (audience === "leaders") {
+    if (!branchIds.length) return [];
+    const r = await pool.query(
+      `SELECT id, email, communication_consent, branch_id
+       FROM public.church_ministry_leaders
+       WHERE organization_id = $1 AND branch_id = ANY($2::bigint[]) AND status = 'active'`,
+      [organizationId, branchIds]
+    );
+    return r.rows.map((row) => ({
+      recipient_type: "leader",
+      recipient_id: row.id,
+      email: row.email || null,
+      consent: row.communication_consent !== false,
+      branch_id: row.branch_id,
+    }));
+  }
+
+  // members / all_logged_in
+  if (!branchIds.length) return [];
+  const r = await pool.query(
+    `SELECT id, email, communication_consent, branch_id
+     FROM public.church_members
+     WHERE organization_id = $1 AND branch_id = ANY($2::bigint[]) AND status = 'verified'`,
+    [organizationId, branchIds]
+  );
+  return r.rows.map((row) => ({
+    recipient_type: "member",
+    recipient_id: row.id,
+    email: row.email || null,
+    consent: row.communication_consent !== false,
+    branch_id: row.branch_id,
+  }));
+}
+
+async function resolveOneRecipient(pool, organizationId, recipientType, recipientId) {
+  const map = await batchResolveRecipientsByType(pool, organizationId, {
+    [recipientType]: [Number(recipientId)],
+  });
+  return map.get(`${recipientType}:${Number(recipientId)}`) || null;
+}
+
+/**
+ * Batch-validate recipient IDs by type (IN / ANY). Organization-scoped only.
+ * @returns {Promise<Map<string, object>>} key = `${type}:${id}`
+ */
+async function batchResolveRecipientsByType(pool, organizationId, groups) {
+  const map = new Map();
+  const memberIds = (groups.member || []).map(Number).filter((id) => Number.isFinite(id) && id > 0);
+  const branchAdminIds = (groups.branch_admin || [])
+    .map(Number)
+    .filter((id) => Number.isFinite(id) && id > 0);
+  const hqAdminIds = (groups.hq_admin || []).map(Number).filter((id) => Number.isFinite(id) && id > 0);
+  const leaderIds = (groups.leader || []).map(Number).filter((id) => Number.isFinite(id) && id > 0);
+
+  if (memberIds.length) {
+    const r = await pool.query(
+      `SELECT id, email, communication_consent, branch_id
+       FROM public.church_members
+       WHERE organization_id = $1 AND id = ANY($2::bigint[]) AND status = 'verified'`,
+      [organizationId, memberIds]
+    );
+    for (const row of r.rows) {
+      map.set(`member:${row.id}`, {
+        recipient_type: "member",
+        recipient_id: row.id,
+        email: row.email || null,
+        consent: row.communication_consent !== false,
+        branch_id: row.branch_id,
+        authorised: true,
+      });
+    }
+  }
+  if (branchAdminIds.length) {
+    const r = await pool.query(
+      `SELECT id, email, communication_consent, branch_id
+       FROM public.church_branch_admins
+       WHERE organization_id = $1 AND id = ANY($2::bigint[]) AND status = 'active'`,
+      [organizationId, branchAdminIds]
+    );
+    for (const row of r.rows) {
+      map.set(`branch_admin:${row.id}`, {
+        recipient_type: "branch_admin",
+        recipient_id: row.id,
+        email: row.email || null,
+        consent: row.communication_consent !== false,
+        branch_id: row.branch_id,
+        authorised: true,
+      });
+    }
+  }
+  if (hqAdminIds.length) {
+    const r = await pool.query(
+      `SELECT id, email, communication_consent
+       FROM public.church_hq_admins
+       WHERE organization_id = $1 AND id = ANY($2::bigint[]) AND status = 'active'`,
+      [organizationId, hqAdminIds]
+    );
+    for (const row of r.rows) {
+      map.set(`hq_admin:${row.id}`, {
+        recipient_type: "hq_admin",
+        recipient_id: row.id,
+        email: row.email || null,
+        consent: row.communication_consent !== false,
+        branch_id: null,
+        authorised: true,
+      });
+    }
+  }
+  if (leaderIds.length) {
+    const r = await pool.query(
+      `SELECT id, email, communication_consent, branch_id
+       FROM public.church_ministry_leaders
+       WHERE organization_id = $1 AND id = ANY($2::bigint[]) AND status = 'active'`,
+      [organizationId, leaderIds]
+    );
+    for (const row of r.rows) {
+      map.set(`leader:${row.id}`, {
+        recipient_type: "leader",
+        recipient_id: row.id,
+        email: row.email || null,
+        consent: row.communication_consent !== false,
+        branch_id: row.branch_id,
+        authorised: true,
+      });
+    }
+  }
+  return map;
+}
+
+/**
+ * Selected recipients: load listed IDs, then batch-validate with IN joins.
+ * Unauthorised / cross-tenant IDs remain in the list so the send path can record skips.
+ */
+async function resolveSelectedRecipientsBatched(pool, organizationId, broadcastId) {
+  const listed = await pool.query(
+    `SELECT recipient_type, recipient_id
+     FROM public.church_hq_broadcast_selected_recipients
+     WHERE broadcast_id = $1 AND organization_id = $2`,
+    [broadcastId, organizationId]
+  );
+  const groups = { member: [], branch_admin: [], hq_admin: [], leader: [] };
+  for (const row of listed.rows) {
+    const type = String(row.recipient_type || "");
+    if (groups[type]) groups[type].push(Number(row.recipient_id));
+  }
+  const authorised = await batchResolveRecipientsByType(pool, organizationId, groups);
+  const recipients = [];
+  for (const row of listed.rows) {
+    const key = `${row.recipient_type}:${Number(row.recipient_id)}`;
+    const auth = authorised.get(key);
+    if (auth) {
+      recipients.push(auth);
+    } else {
+      recipients.push({
+        recipient_type: row.recipient_type,
+        recipient_id: Number(row.recipient_id),
+        email: null,
+        consent: true,
+        branch_id: null,
+        authorised: false,
+      });
+    }
+  }
+  return dedupeRecipients(recipients);
+}
+
+function dedupeRecipients(list) {
+  const seen = new Set();
+  const out = [];
+  for (const r of list) {
+    const key = `${r.recipient_type}:${r.recipient_id}`;
+    if (seen.has(key)) continue;
+    seen.add(key);
+    out.push(r);
+  }
+  return out;
+}
+
+async function setWorkflowStatus(pool, broadcastId, organizationId, status, extra = {}) {
+  const r = await pool.query(
+    `UPDATE public.church_hq_broadcasts
+     SET status = $3,
+         audience_estimate_json = COALESCE($4::jsonb, audience_estimate_json),
+         approved_at = COALESCE($5, approved_at),
+         approved_by_hq_admin_id = COALESCE($6, approved_by_hq_admin_id),
+         cancelled_at = COALESCE($7, cancelled_at),
+         job_key = COALESCE($8, job_key),
+         last_error = $9,
+         delivery_channels = COALESCE($10::jsonb, delivery_channels),
+         updated_at = now()
+     WHERE id = $1 AND organization_id = $2
+     RETURNING *`,
+    [
+      broadcastId,
+      organizationId,
+      status,
+      extra.audience_estimate_json ? JSON.stringify(extra.audience_estimate_json) : null,
+      extra.approved_at || null,
+      extra.approved_by_hq_admin_id || null,
+      extra.cancelled_at || null,
+      extra.job_key || null,
+      extra.last_error != null ? String(extra.last_error).slice(0, 1000) : null,
+      extra.delivery_channels ? JSON.stringify(extra.delivery_channels) : null,
+    ]
+  );
+  return r.rows[0] || null;
+}
+
+/**
+ * Pause a scheduled broadcast due to entitlement or org status gate.
+ * Idempotent: if already paused with the same status, no-op (no duplicate audit).
+ *
+ * @param {import("pg").Pool} pool
+ * @param {object} broadcast - Broadcast row
+ * @param {object} opts
+ * @param {string} opts.status - Target pause status: 'paused_no_entitlement' | 'paused_organization_inactive'
+ * @param {string} opts.reason - Human-readable reason (will be sanitized)
+ * @param {string|null} [opts.packageCode] - Current package code
+ * @param {string|null} [opts.organizationStatus] - Current org status
+ */
+async function pauseScheduledBroadcastForGate(pool, broadcast, opts) {
+  const { status, reason, packageCode, organizationStatus } = opts;
+  const previousStatus = broadcast.status;
+
+  // Only pause if currently in a runnable state
+  if (!["scheduled", "approval", "processing", "partially_failed", "failed"].includes(previousStatus)) {
+    return { paused: false, reason: "not_in_runnable_state", previousStatus };
+  }
+
+  // If already paused with same status, skip (idempotent)
+  if (previousStatus === status) {
+    return { paused: false, reason: "already_paused", previousStatus };
+  }
+
+  const sanitizedReason = sanitizeJobPauseReason(reason);
+  const now = new Date();
+
+  const updated = await pool.query(
+    `UPDATE public.church_hq_broadcasts
+     SET status = $3,
+         pause_reason = $4,
+         paused_at = $5,
+         last_error = $6,
+         updated_at = now()
+     WHERE id = $1 AND organization_id = $2
+       AND status IN ('scheduled', 'approval', 'processing', 'partially_failed', 'failed')
+     RETURNING *`,
+    [
+      broadcast.id,
+      broadcast.organization_id,
+      status,
+      sanitizedReason,
+      now.toISOString(),
+      sanitizedReason,
+    ]
+  );
+
+  if (!updated.rows[0]) {
+    return { paused: false, reason: "concurrent_update", previousStatus };
+  }
+
+  const auditAction =
+    status === "paused_no_entitlement"
+      ? "hq_broadcast_paused_no_entitlement"
+      : "hq_broadcast_paused_organization_inactive";
+
+  await auditLogsRepo.insertAuditLog(pool, {
+    organization_id: broadcast.organization_id,
+    branch_id: null,
+    actor_type: "system",
+    actor_id: null,
+    action: auditAction,
+    entity_type: "hq_broadcast",
+    entity_id: broadcast.id,
+    target_label: broadcast.title,
+    metadata_json: {
+      organization_id: broadcast.organization_id,
+      broadcast_id: broadcast.id,
+      previous_status: previousStatus,
+      new_status: status,
+      reason: sanitizedReason,
+      package_code: packageCode || null,
+      organization_status: organizationStatus || null,
+    },
+  });
+
+  return {
+    paused: true,
+    broadcast: updated.rows[0],
+    previousStatus,
+    newStatus: status,
+  };
+}
+
+async function moveToPreview(pool, broadcastId, organizationId) {
+  const broadcast = await hqBroadcastsRepo.findBroadcastByIdForOrganization(pool, broadcastId, organizationId);
+  if (!broadcast || !["draft", "preview"].includes(broadcast.status)) {
+    const err = new Error("Broadcast must be a draft to open preview.");
+    err.code = "INVALID_STATUS";
+    throw err;
+  }
+  return setWorkflowStatus(pool, broadcastId, organizationId, "preview");
+}
+
+async function computeAndStoreAudienceEstimate(pool, broadcastId, organizationId) {
+  const broadcast = await hqBroadcastsRepo.findBroadcastByIdForOrganization(pool, broadcastId, organizationId);
+  if (!broadcast || !["draft", "preview", "audience_estimate", "approval"].includes(broadcast.status)) {
+    const err = new Error("Broadcast is not ready for audience estimate.");
+    err.code = "INVALID_STATUS";
+    throw err;
+  }
+  const estimate = await hqBroadcastsRepo.estimateBroadcastAudience(pool, organizationId, broadcast);
+  return setWorkflowStatus(pool, broadcastId, organizationId, "audience_estimate", {
+    audience_estimate_json: { ...estimate, computed_at: new Date().toISOString() },
+  });
+}
+
+async function submitForApproval(pool, broadcastId, organizationId) {
+  let broadcast = await hqBroadcastsRepo.findBroadcastByIdForOrganization(pool, broadcastId, organizationId);
+  if (!broadcast) {
+    const err = new Error("Broadcast not found.");
+    err.code = "NOT_FOUND";
+    throw err;
+  }
+  if (!broadcast.audience_estimate_json) {
+    broadcast = await computeAndStoreAudienceEstimate(pool, broadcastId, organizationId);
+  }
+  return setWorkflowStatus(pool, broadcastId, organizationId, "approval");
+}
+
+/**
+ * Approve publish confirmation.
+ * Growth + future publish_at → scheduled (may include email).
+ * Immediate → process now (in_app; email only when Growth + email channel).
+ */
+async function approveBroadcast(pool, opts) {
+  const {
+    broadcastId,
+    organizationId,
+    hqAdminId,
+    at = new Date(),
+    forceSchedule = null,
+  } = opts;
+  const broadcast = await hqBroadcastsRepo.findBroadcastByIdForOrganization(pool, broadcastId, organizationId);
+  if (!broadcast) {
+    const err = new Error("Broadcast not found.");
+    err.code = "NOT_FOUND";
+    throw err;
+  }
+  if (!["draft", "preview", "audience_estimate", "approval"].includes(broadcast.status)) {
+    const err = new Error("Broadcast cannot be approved from its current status.");
+    err.code = "INVALID_STATUS";
+    throw err;
+  }
+
+  const publishAt = broadcast.publish_at ? new Date(broadcast.publish_at) : at;
+  const isFuture = publishAt.getTime() > at.getTime() + 2 * 60 * 1000;
+  const schedule = forceSchedule != null ? Boolean(forceSchedule) : isFuture;
+
+  let channels = parseChannels(broadcast);
+  if (schedule || channels.includes("email")) {
+    await assertCanScheduleExternalBroadcast(pool, organizationId);
+    if (!channels.includes("email") && schedule) {
+      channels = ["in_app", "email"];
+    }
+  } else {
+    // Foundation / immediate: in-app only
+    channels = ["in_app"];
+  }
+
+  if (!broadcast.audience_estimate_json) {
+    const estimate = await hqBroadcastsRepo.estimateBroadcastAudience(pool, organizationId, broadcast);
+    await setWorkflowStatus(pool, broadcastId, organizationId, broadcast.status, {
+      audience_estimate_json: { ...estimate, computed_at: new Date().toISOString() },
+    });
+  }
+
+  await auditLogsRepo.insertAuditLog(pool, {
+    organization_id: organizationId,
+    branch_id: null,
+    actor_type: "hq_admin",
+    actor_id: hqAdminId || null,
+    action: "hq_broadcast_approved",
+    entity_type: "hq_broadcast",
+    entity_id: broadcastId,
+    target_label: broadcast.title,
+    metadata_json: {
+      publish_at: publishAt.toISOString(),
+      schedule,
+      channels,
+      estimate: broadcast.audience_estimate_json || null,
+    },
+  });
+
+  if (schedule) {
+    const jobKey = jobKeyForBroadcast(broadcastId, publishAt);
+    const scheduled = await setWorkflowStatus(pool, broadcastId, organizationId, "scheduled", {
+      approved_at: at,
+      approved_by_hq_admin_id: hqAdminId || null,
+      job_key: jobKey,
+      delivery_channels: channels,
+      last_error: null,
+    });
+    await pool.query(
+      `UPDATE public.church_hq_broadcasts SET publish_at = $2 WHERE id = $1 AND organization_id = $3`,
+      [broadcastId, publishAt.toISOString(), organizationId]
+    );
+    return { outcome: "scheduled", broadcast: scheduled || broadcast };
+  }
+
+  await setWorkflowStatus(pool, broadcastId, organizationId, "approval", {
+    approved_at: at,
+    approved_by_hq_admin_id: hqAdminId || null,
+    delivery_channels: channels,
+  });
+  const result = await processBroadcastDelivery(pool, broadcastId, organizationId, { at });
+  return { outcome: result.outcome, broadcast: result.broadcast, ...result };
+}
+
+async function cancelScheduledBroadcast(pool, broadcastId, organizationId, hqAdminId) {
+  const broadcast = await hqBroadcastsRepo.findBroadcastByIdForOrganization(pool, broadcastId, organizationId);
+  if (!broadcast) {
+    const err = new Error("Broadcast not found.");
+    err.code = "NOT_FOUND";
+    throw err;
+  }
+  if (!["scheduled", "approval", "preview", "audience_estimate"].includes(broadcast.status)) {
+    const err = new Error("Only scheduled or awaiting-approval broadcasts can be cancelled.");
+    err.code = "INVALID_STATUS";
+    throw err;
+  }
+  const cancelled = await setWorkflowStatus(pool, broadcastId, organizationId, "cancelled", {
+    cancelled_at: new Date(),
+    last_error: null,
+  });
+  await auditLogsRepo.insertAuditLog(pool, {
+    organization_id: organizationId,
+    branch_id: null,
+    actor_type: "hq_admin",
+    actor_id: hqAdminId || null,
+    action: "hq_broadcast_cancelled",
+    entity_type: "hq_broadcast",
+    entity_id: broadcastId,
+    target_label: broadcast.title,
+    metadata_json: { previous_status: broadcast.status },
+  });
+  return cancelled;
+}
+
+async function insertDelivery(pool, row) {
+  try {
+    const r = await pool.query(
+      `INSERT INTO public.church_hq_broadcast_deliveries (
+         organization_id, broadcast_id, channel, recipient_type, recipient_id,
+         recipient_email, status, idempotency_key, error_message, delivered_at
+       ) VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9,$10)
+       ON CONFLICT (idempotency_key) DO NOTHING
+       RETURNING *`,
+      [
+        row.organization_id,
+        row.broadcast_id,
+        row.channel,
+        row.recipient_type,
+        row.recipient_id,
+        row.recipient_email || null,
+        row.status,
+        row.idempotency_key,
+        row.error_message || null,
+        row.status === "delivered" ? new Date().toISOString() : null,
+      ]
+    );
+    return r.rows[0] || null;
+  } catch (err) {
+    if (err && err.code === "23505") return null;
+    throw err;
+  }
+}
+
+/**
+ * Process a broadcast to in_app (+ optional recorded email). Idempotent via delivery keys + job_key.
+ */
+async function processBroadcastDelivery(pool, broadcastId, organizationId, opts = {}) {
+  const at = opts.at instanceof Date ? opts.at : new Date();
+  const broadcast = await hqBroadcastsRepo.findBroadcastByIdForOrganization(pool, broadcastId, organizationId);
+  if (!broadcast) {
+    return { outcome: "not_found" };
+  }
+
+  const runnableStatuses = ["scheduled", "approval", "processing", "partially_failed", "failed"];
+  if (!runnableStatuses.includes(broadcast.status)) {
+    if (
+      broadcast.status === "paused_no_entitlement" ||
+      broadcast.status === "paused_organization_inactive"
+    ) {
+      return { outcome: broadcast.status, broadcast };
+    }
+    if (broadcast.status === "published" || broadcast.status === "cancelled") {
+      return { outcome: "duplicate_job", broadcast };
+    }
+    return { outcome: "invalid_status", broadcast };
+  }
+
+  const channelsEarly = parseChannels(broadcast);
+  // Growth-only scheduled / external paths require broadcasts.scheduled.
+  // Foundation immediate in-app publish (approval→publish, in_app only) must remain allowed.
+  const requiresScheduledEntitlement =
+    broadcast.status === "scheduled" ||
+    broadcast.status === "partially_failed" ||
+    broadcast.status === "failed" ||
+    channelsEarly.includes("email") ||
+    opts.requireScheduledEntitlement === true;
+
+  // Organization must be active for any automated or immediate delivery.
+  const org = await organizationsRepo.findOrganizationById(pool, organizationId);
+  if (!org || !isOrganizationStatusEligibleForGrowthJobs(org.status)) {
+    const pauseResult = await pauseScheduledBroadcastForGate(pool, broadcast, {
+      status: "paused_organization_inactive",
+      reason: org
+        ? `Organization status is ${org.status}; broadcasts require active status.`
+        : "Organization not found.",
+      organizationStatus: org ? org.status : null,
+    });
+    return {
+      outcome: "paused_organization_inactive",
+      broadcast: pauseResult.broadcast || broadcast,
+      paused: pauseResult.paused,
+    };
+  }
+
+  let plan = opts.plan || null;
+  if (requiresScheduledEntitlement) {
+    plan = plan || (await getOrganisationPlan(pool, organizationId, { organization: org }));
+    if (!plan || !hasEntitlement(plan, "broadcasts.scheduled")) {
+      const pauseResult = await pauseScheduledBroadcastForGate(pool, broadcast, {
+        status: "paused_no_entitlement",
+        reason: "Scheduled broadcasts require Growth. Organization does not have broadcasts.scheduled entitlement.",
+        packageCode: plan ? plan.packageCode : null,
+        organizationStatus: org.status,
+      });
+      return {
+        outcome: "paused_no_entitlement",
+        broadcast: pauseResult.broadcast || broadcast,
+        paused: pauseResult.paused,
+      };
+    }
+  } else if (!plan && channelsEarly.includes("email")) {
+    plan = await getOrganisationPlan(pool, organizationId, { organization: org });
+  }
+
+  // Claim processing (prevent duplicate concurrent jobs).
+  if (broadcast.status === "scheduled" || broadcast.status === "approval" || broadcast.status === "partially_failed" || broadcast.status === "failed") {
+    const claim = await pool.query(
+      `UPDATE public.church_hq_broadcasts
+       SET status = 'processing', updated_at = now(), last_error = NULL
+       WHERE id = $1 AND organization_id = $2
+         AND status IN ('scheduled', 'approval', 'partially_failed', 'failed')
+       RETURNING *`,
+      [broadcastId, organizationId]
+    );
+    if (!claim.rows[0] && broadcast.status !== "processing") {
+      return { outcome: "duplicate_job", broadcast };
+    }
+  } else if (broadcast.status === "processing" && !opts.retry) {
+    return { outcome: "duplicate_job", broadcast };
+  } else if (broadcast.status === "published") {
+    return { outcome: "duplicate_job", broadcast };
+  }
+
+  // Parse channels (Growth scheduled path already gated; Foundation in-app continues).
+  const channels = channelsEarly;
+
+  const recipients = await resolveAudienceRecipients(pool, organizationId, broadcast);
+  const emailSubject = safeBroadcastEmailSubject(org && org.name, broadcast.category);
+  const audience = String(broadcast.audience || "members");
+  // Set-based audience queries already hydrated live rows; selected uses batch IN validation.
+  const needsSendTimeReauth = audience === "selected_recipients";
+
+  let authorisedList = recipients;
+  if (needsSendTimeReauth) {
+    // Already batch-validated in resolveSelectedRecipientsBatched (authorised flag).
+    authorisedList = recipients;
+  } else {
+    // Mark set-based rows as authorised (live JOIN/SELECT already applied status filters).
+    authorisedList = recipients.map((rec) =>
+      rec.recipient_type === "public_branch" || rec.authorised === false
+        ? rec
+        : { ...rec, authorised: rec.authorised !== false }
+    );
+  }
+
+  let delivered = 0;
+  let failed = 0;
+  let skipped = 0;
+
+  // Classify recipients once (no per-recipient SQL).
+  const emailEligible = [];
+  for (const rec of authorisedList) {
+    const stillAuth =
+      rec.recipient_type === "public_branch"
+        ? rec
+        : rec.authorised === false
+          ? null
+          : rec;
+
+    if (!stillAuth) {
+      for (const channel of channels) {
+        const inserted = await insertDelivery(pool, {
+          organization_id: organizationId,
+          broadcast_id: broadcastId,
+          channel,
+          recipient_type: rec.recipient_type,
+          recipient_id: rec.recipient_id,
+          status: "skipped_unauthorised",
+          idempotency_key: `bcast:${broadcastId}:${channel}:${rec.recipient_type}:${rec.recipient_id}`,
+          error_message: "Permission removed or recipient deleted before send.",
+        });
+        if (inserted) skipped += 1;
+      }
+      continue;
+    }
+
+    if (channels.includes("in_app")) {
+      const key = `bcast:${broadcastId}:in_app:${stillAuth.recipient_type}:${stillAuth.recipient_id}`;
+      const inserted = await insertDelivery(pool, {
+        organization_id: organizationId,
+        broadcast_id: broadcastId,
+        channel: "in_app",
+        recipient_type: stillAuth.recipient_type,
+        recipient_id: stillAuth.recipient_id,
+        recipient_email: stillAuth.email,
+        status: "delivered",
+        idempotency_key: key,
+      });
+      if (inserted) delivered += 1;
+    }
+
+    if (channels.includes("email")) {
+      const key = `bcast:${broadcastId}:email:${stillAuth.recipient_type}:${stillAuth.recipient_id}`;
+      if (!stillAuth.consent) {
+        const inserted = await insertDelivery(pool, {
+          organization_id: organizationId,
+          broadcast_id: broadcastId,
+          channel: "email",
+          recipient_type: stillAuth.recipient_type,
+          recipient_id: stillAuth.recipient_id,
+          recipient_email: stillAuth.email,
+          status: "skipped_consent",
+          idempotency_key: key,
+          error_message: "Communication consent not granted.",
+        });
+        if (inserted) skipped += 1;
+        continue;
+      }
+      if (!stillAuth.email) {
+        const inserted = await insertDelivery(pool, {
+          organization_id: organizationId,
+          broadcast_id: broadcastId,
+          channel: "email",
+          recipient_type: stillAuth.recipient_type,
+          recipient_id: stillAuth.recipient_id,
+          status: "skipped_unauthorised",
+          idempotency_key: key,
+          error_message: "No email address.",
+        });
+        if (inserted) skipped += 1;
+        continue;
+      }
+      emailEligible.push({ stillAuth, key });
+    }
+  }
+
+  if (channels.includes("email") && emailEligible.length) {
+    // Skip quota for deliveries already recorded (idempotent retry).
+    const existingKeys = await pool.query(
+      `SELECT idempotency_key, status
+       FROM public.church_hq_broadcast_deliveries
+       WHERE broadcast_id = $1 AND organization_id = $2 AND channel = 'email'
+         AND idempotency_key = ANY($3::text[])`,
+      [broadcastId, organizationId, emailEligible.map((e) => e.key)]
+    );
+    const alreadyDelivered = new Set(
+      existingKeys.rows.filter((r) => r.status === "delivered").map((r) => r.idempotency_key)
+    );
+    const toSend = emailEligible.filter((e) => !alreadyDelivered.has(e.key));
+    for (const e of emailEligible) {
+      if (alreadyDelivered.has(e.key)) {
+        // Prior successful delivery — do not re-charge quota.
+        continue;
+      }
+    }
+
+    let reservation = {
+      reserved: 0,
+      usageMonth: null,
+      exempt: false,
+    };
+    if (toSend.length) {
+      if (!plan) {
+        plan = await getOrganisationPlan(pool, organizationId, { organization: org });
+      }
+      reservation = await churchPackageUsageService.reserveExternalEmailSends(pool, {
+        organizationId,
+        category: "hq_broadcast",
+        count: toSend.length,
+        at,
+        plan,
+        organization: org,
+        actorType: "system",
+        actorId: null,
+      });
+    }
+
+    let slotsLeft = reservation.reserved || 0;
+
+    for (const { stillAuth, key } of toSend) {
+      if (slotsLeft <= 0) {
+        const inserted = await insertDelivery(pool, {
+          organization_id: organizationId,
+          broadcast_id: broadcastId,
+          channel: "email",
+          recipient_type: stillAuth.recipient_type,
+          recipient_id: stillAuth.recipient_id,
+          recipient_email: stillAuth.email,
+          status: "skipped_quota",
+          idempotency_key: key,
+          error_message: "Monthly external email limit reached for this organisation package.",
+        });
+        if (inserted) skipped += 1;
+        continue;
+      }
+
+      slotsLeft -= 1;
+      try {
+        const inserted = await insertDelivery(pool, {
+          organization_id: organizationId,
+          broadcast_id: broadcastId,
+          channel: "email",
+          recipient_type: stillAuth.recipient_type,
+          recipient_id: stillAuth.recipient_id,
+          recipient_email: stillAuth.email,
+          status: "delivered",
+          idempotency_key: key,
+        });
+        if (inserted) {
+          delivered += 1;
+          void emailSubject;
+        } else {
+          // Conflict: another worker already delivered — release this reserved slot.
+          await churchPackageUsageService.releaseExternalEmailSends(pool, {
+            organizationId,
+            usageMonth: reservation.usageMonth,
+            count: 1,
+            exempt: reservation.exempt,
+          });
+        }
+      } catch (err) {
+        await churchPackageUsageService.releaseExternalEmailSends(pool, {
+          organizationId,
+          usageMonth: reservation.usageMonth,
+          count: 1,
+          exempt: reservation.exempt,
+        });
+        const inserted = await insertDelivery(pool, {
+          organization_id: organizationId,
+          broadcast_id: broadcastId,
+          channel: "email",
+          recipient_type: stillAuth.recipient_type,
+          recipient_id: stillAuth.recipient_id,
+          recipient_email: stillAuth.email,
+          status: "failed",
+          idempotency_key: key,
+          error_message: String(err.message || "email failed").slice(0, 500),
+        });
+        failed += 1;
+        void inserted;
+      }
+    }
+
+    if (slotsLeft > 0) {
+      await churchPackageUsageService.releaseExternalEmailSends(pool, {
+        organizationId,
+        usageMonth: reservation.usageMonth,
+        count: slotsLeft,
+        exempt: reservation.exempt,
+      });
+    }
+  }
+
+  let finalStatus = "published";
+  if (failed > 0 && delivered === 0) finalStatus = "failed";
+  else if (failed > 0 || (skipped > 0 && channels.includes("email") && delivered === 0 && failed === 0 && recipients.length)) {
+    // partial: some email/in_app delivered, some failed
+    if (failed > 0 && delivered > 0) finalStatus = "partially_failed";
+    else if (failed > 0) finalStatus = "failed";
+    else finalStatus = "published";
+  }
+
+  // Force partial when mix of delivered and failed
+  if (delivered > 0 && failed > 0) finalStatus = "partially_failed";
+  if (delivered === 0 && failed === 0 && recipients.length === 0) finalStatus = "published";
+
+  const updated = await pool.query(
+    `UPDATE public.church_hq_broadcasts
+     SET status = $3,
+         publish_at = COALESCE(publish_at, $4),
+         last_error = $5,
+         updated_at = now()
+     WHERE id = $1 AND organization_id = $2
+     RETURNING *`,
+    [
+      broadcastId,
+      organizationId,
+      finalStatus,
+      at.toISOString(),
+      failed ? `${failed} delivery failure(s)` : null,
+    ]
+  );
+
+  await auditLogsRepo.insertAuditLog(pool, {
+    organization_id: organizationId,
+    branch_id: null,
+    actor_type: "system",
+    actor_id: null,
+    action: "hq_broadcast_delivery_completed",
+    entity_type: "hq_broadcast",
+    entity_id: broadcastId,
+    target_label: broadcast.title,
+    metadata_json: {
+      outcome: finalStatus,
+      delivered,
+      failed,
+      skipped,
+      channels,
+      email_subject: emailSubject,
+    },
+  });
+
+  return {
+    outcome: finalStatus,
+    broadcast: updated.rows[0],
+    delivered,
+    failed,
+    skipped,
+    emailSubject,
+  };
+}
+
+/**
+ * Retry failed email deliveries only; never duplicate successful idempotency keys.
+ */
+async function retryFailedDeliveries(pool, broadcastId, organizationId) {
+  const broadcast = await hqBroadcastsRepo.findBroadcastByIdForOrganization(pool, broadcastId, organizationId);
+  if (!broadcast) {
+    const err = new Error("Broadcast not found.");
+    err.code = "NOT_FOUND";
+    throw err;
+  }
+  if (!["partially_failed", "failed"].includes(broadcast.status)) {
+    const err = new Error("Only failed or partially failed broadcasts can be retried.");
+    err.code = "INVALID_STATUS";
+    throw err;
+  }
+
+  // Gate check: org must be active
+  const org = await organizationsRepo.findOrganizationById(pool, organizationId);
+  if (!org || !isOrganizationStatusEligibleForGrowthJobs(org.status)) {
+    const err = new Error(
+      org
+        ? `Organization status is ${org.status}. Retry requires active organization.`
+        : "Organization not found."
+    );
+    err.code = "ORG_INACTIVE";
+    err.organizationStatus = org ? org.status : null;
+    throw err;
+  }
+
+  // Gate check: must have entitlement
+  const plan = await getOrganisationPlan(pool, organizationId);
+  if (!plan || !hasEntitlement(plan, "broadcasts.scheduled")) {
+    const err = new Error(
+      "Scheduled broadcasts require Growth. Organization does not have broadcasts.scheduled entitlement."
+    );
+    err.code = "ENTITLEMENT_REQUIRED";
+    err.packageCode = plan ? plan.packageCode : null;
+    throw err;
+  }
+
+  const failed = await pool.query(
+    `SELECT * FROM public.church_hq_broadcast_deliveries
+     WHERE broadcast_id = $1 AND organization_id = $2 AND status = 'failed'`,
+    [broadcastId, organizationId]
+  );
+
+  let delivered = 0;
+  let stillFailed = 0;
+  const at = new Date();
+
+  const groups = { member: [], branch_admin: [], hq_admin: [], leader: [] };
+  for (const row of failed.rows) {
+    const type = String(row.recipient_type || "");
+    if (groups[type]) groups[type].push(Number(row.recipient_id));
+  }
+  const authMap = await batchResolveRecipientsByType(pool, organizationId, groups);
+
+  const retryable = [];
+  for (const row of failed.rows) {
+    const stillAuth = authMap.get(`${row.recipient_type}:${Number(row.recipient_id)}`);
+    if (!stillAuth || !stillAuth.consent || !stillAuth.email) {
+      await pool.query(
+        `UPDATE public.church_hq_broadcast_deliveries
+         SET status = 'skipped_unauthorised',
+             error_message = 'Recipient no longer authorised or consented.',
+             delivered_at = NULL
+         WHERE id = $1`,
+        [row.id]
+      );
+      continue;
+    }
+    retryable.push({ row, stillAuth });
+  }
+
+  let reservation = { reserved: 0, usageMonth: null, exempt: false };
+  if (retryable.length) {
+    reservation = await churchPackageUsageService.reserveExternalEmailSends(pool, {
+      organizationId,
+      category: "hq_broadcast",
+      count: retryable.length,
+      at,
+      plan,
+      organization: org,
+    });
+  }
+
+  let slotsLeft = reservation.reserved || 0;
+  for (const { row, stillAuth } of retryable) {
+    if (slotsLeft <= 0) {
+      stillFailed += 1;
+      continue;
+    }
+    slotsLeft -= 1;
+    try {
+      await pool.query(
+        `UPDATE public.church_hq_broadcast_deliveries
+         SET status = 'delivered',
+             recipient_email = $2,
+             error_message = NULL,
+             delivered_at = now()
+         WHERE id = $1 AND status = 'failed'`,
+        [row.id, stillAuth.email]
+      );
+      delivered += 1;
+    } catch (err) {
+      await churchPackageUsageService.releaseExternalEmailSends(pool, {
+        organizationId,
+        usageMonth: reservation.usageMonth,
+        count: 1,
+        exempt: reservation.exempt,
+      });
+      await pool.query(
+        `UPDATE public.church_hq_broadcast_deliveries
+         SET error_message = $2
+         WHERE id = $1`,
+        [row.id, String(err.message || "retry failed").slice(0, 500)]
+      );
+      stillFailed += 1;
+    }
+  }
+  if (slotsLeft > 0) {
+    await churchPackageUsageService.releaseExternalEmailSends(pool, {
+      organizationId,
+      usageMonth: reservation.usageMonth,
+      count: slotsLeft,
+      exempt: reservation.exempt,
+    });
+  }
+  stillFailed = retryable.length - delivered;
+
+  // Remaining failed?
+  const rem = await pool.query(
+    `SELECT COUNT(*)::int AS c FROM public.church_hq_broadcast_deliveries
+     WHERE broadcast_id = $1 AND organization_id = $2 AND status = 'failed'`,
+    [broadcastId, organizationId]
+  );
+  const remaining = rem.rows[0] ? rem.rows[0].c : 0;
+  const finalStatus = remaining > 0 ? (delivered > 0 ? "partially_failed" : "failed") : "published";
+  await pool.query(
+    `UPDATE public.church_hq_broadcasts SET status = $3, last_error = $4, updated_at = now()
+     WHERE id = $1 AND organization_id = $2`,
+    [broadcastId, organizationId, finalStatus, remaining ? `${remaining} remaining failure(s)` : null]
+  );
+
+  await auditLogsRepo.insertAuditLog(pool, {
+    organization_id: organizationId,
+    branch_id: null,
+    actor_type: "system",
+    actor_id: null,
+    action: "hq_broadcast_delivery_retried",
+    entity_type: "hq_broadcast",
+    entity_id: broadcastId,
+    target_label: broadcast.title,
+    metadata_json: { delivered, stillFailed, remaining, finalStatus },
+  });
+
+  return { outcome: finalStatus, delivered, stillFailed, remaining };
+}
+
+async function processDueScheduledBroadcasts(pool, opts = {}) {
+  const at = opts.at instanceof Date ? opts.at : new Date();
+  const limit = Math.min(Math.max(Number(opts.limit) || 25, 1), 100);
+  const due = await pool.query(
+    `SELECT b.id, b.organization_id, b.delivery_channels, b.title, b.status
+     FROM public.church_hq_broadcasts b
+     WHERE b.status = 'scheduled'
+       AND b.publish_at IS NOT NULL
+       AND b.publish_at <= $1
+     ORDER BY b.publish_at ASC, b.id ASC
+     LIMIT $2`,
+    [at.toISOString(), limit]
+  );
+  const processed = [];
+  for (const row of due.rows) {
+    // Check organization status first
+    const org = await organizationsRepo.findOrganizationById(pool, row.organization_id);
+    if (!org || !isOrganizationStatusEligibleForGrowthJobs(org.status)) {
+      const pauseResult = await pauseScheduledBroadcastForGate(pool, row, {
+        status: "paused_organization_inactive",
+        reason: org
+          ? `Organization status is ${org.status}; scheduled broadcasts require active status.`
+          : "Organization not found.",
+        organizationStatus: org ? org.status : null,
+      });
+      processed.push({
+        broadcastId: row.id,
+        organizationId: row.organization_id,
+        outcome: "paused_organization_inactive",
+        paused: pauseResult.paused,
+      });
+      continue;
+    }
+
+    // Check entitlement
+    const plan = await getOrganisationPlan(pool, row.organization_id);
+    if (!plan || !hasEntitlement(plan, "broadcasts.scheduled")) {
+      const pauseResult = await pauseScheduledBroadcastForGate(pool, row, {
+        status: "paused_no_entitlement",
+        reason: "Scheduled broadcasts require Growth. Organization does not have broadcasts.scheduled entitlement.",
+        packageCode: plan ? plan.packageCode : null,
+        organizationStatus: org.status,
+      });
+      processed.push({
+        broadcastId: row.id,
+        organizationId: row.organization_id,
+        outcome: "paused_no_entitlement",
+        paused: pauseResult.paused,
+      });
+      continue;
+    }
+
+    try {
+      const churchPilotFeatureFlagService = require("./churchPilotFeatureFlagService");
+      await churchPilotFeatureFlagService.assertPilotFeatureAvailable(pool, {
+        organizationId: row.organization_id,
+        flagKey: "broadcasts_scheduled",
+        at,
+      });
+    } catch (err) {
+      processed.push({
+        broadcastId: row.id,
+        organizationId: row.organization_id,
+        outcome: "skipped_pilot_flag",
+        error: err && err.message,
+      });
+      continue;
+    }
+
+    const channels = parseChannels(row);
+    if (channels.includes("email")) {
+      const policy = await communicationPoliciesRepo.getCommunicationPolicy(
+        pool,
+        row.organization_id
+      );
+      if (policy && isInQuietHours(at, policy, policy.timezone)) {
+        const resumeAt = nextQuietHoursEnd(at, policy, policy.timezone);
+        if (resumeAt && resumeAt.getTime() > at.getTime()) {
+          await pool.query(
+            `UPDATE public.church_hq_broadcasts
+             SET publish_at = $2, updated_at = now(),
+                 last_error = 'Deferred for quiet hours'
+             WHERE id = $1 AND organization_id = $3 AND status = 'scheduled'`,
+            [row.id, resumeAt.toISOString(), row.organization_id]
+          );
+          processed.push({
+            broadcastId: row.id,
+            organizationId: row.organization_id,
+            outcome: "deferred_quiet_hours",
+            resumeAt: resumeAt.toISOString(),
+          });
+          continue;
+        }
+      }
+    }
+
+    const result = await processBroadcastDelivery(pool, row.id, row.organization_id, { at });
+    processed.push({
+      broadcastId: row.id,
+      organizationId: row.organization_id,
+      ...result,
+    });
+  }
+  return { at: at.toISOString(), processed, count: processed.length };
+}
+
+async function listScheduledBroadcasts(pool, organizationId) {
+  const r = await pool.query(
+    `SELECT * FROM public.church_hq_broadcasts
+     WHERE organization_id = $1
+       AND status IN ('scheduled', 'processing', 'approval', 'audience_estimate', 'preview', 'partially_failed', 'failed', 'cancelled', 'paused_no_entitlement', 'paused_organization_inactive')
+     ORDER BY COALESCE(publish_at, updated_at) DESC, id DESC
+     LIMIT 100`,
+    [organizationId]
+  );
+  return r.rows;
+}
+
+async function listDeliveries(pool, broadcastId, organizationId, opts = {}) {
+  const {
+    parseAdminListPageParams,
+    buildAdminListPageResult,
+  } = require("../../church/adminListPagination");
+  const parsed = parseAdminListPageParams(
+    { page: opts.page, limit: opts.limit },
+    { defaultLimit: 50, maxLimit: 100 }
+  );
+
+  const countR = await pool.query(
+    `SELECT COUNT(*)::int AS n FROM public.church_hq_broadcast_deliveries
+     WHERE broadcast_id = $1 AND organization_id = $2`,
+    [broadcastId, organizationId]
+  );
+  const total = Number(countR.rows[0] && countR.rows[0].n) || 0;
+  const meta = buildAdminListPageResult({
+    page: parsed.page,
+    limit: parsed.limit,
+    total,
+  });
+
+  const rows = await pool.query(
+    `SELECT * FROM public.church_hq_broadcast_deliveries
+     WHERE broadcast_id = $1 AND organization_id = $2
+     ORDER BY id ASC
+     LIMIT $3 OFFSET $4`,
+    [broadcastId, organizationId, meta.limit, meta.offset]
+  );
+
+  return {
+    rows: rows.rows,
+    page: meta.page,
+    limit: meta.limit,
+    total: meta.total,
+    totalPages: meta.totalPages,
+    from: meta.from,
+    to: meta.to,
+    hasPrev: meta.hasPrev,
+    hasNext: meta.hasNext,
+    hasMore: meta.hasNext,
+  };
+}
+
+/**
+ * Recorded test delivery to the requesting HQ admin (quota metered; no SMTP).
+ */
+async function testBroadcastDelivery(pool, opts) {
+  const {
+    broadcastId,
+    organizationId,
+    hqAdminId,
+    at = new Date(),
+  } = opts;
+  await assertCanScheduleExternalBroadcast(pool, organizationId);
+
+  const broadcast = await hqBroadcastsRepo.findBroadcastByIdForOrganization(
+    pool,
+    broadcastId,
+    organizationId
+  );
+  if (!broadcast) {
+    const err = new Error("Broadcast not found.");
+    err.code = "NOT_FOUND";
+    throw err;
+  }
+
+  const admin = await hqAdminsRepo.findHqAdminById(pool, hqAdminId);
+  if (
+    !admin ||
+    Number(admin.organization_id) !== Number(organizationId) ||
+    admin.status !== "active" ||
+    !admin.email
+  ) {
+    const err = new Error("Test delivery is only allowed to an active HQ admin with an email.");
+    err.code = "FORBIDDEN";
+    throw err;
+  }
+  if (admin.communication_consent === false) {
+    const err = new Error("Your communication consent is off; enable consent to receive a test delivery.");
+    err.code = "CONSENT_REQUIRED";
+    throw err;
+  }
+
+  const org = await organizationsRepo.findOrganizationById(pool, organizationId);
+  const subject = safeBroadcastEmailSubject(org && org.name, broadcast.category);
+
+  await churchPackageUsageService.recordExternalEmailSend(pool, {
+    organizationId,
+    category: "hq_broadcast_test",
+    count: 1,
+    at,
+    actorType: "hq_admin",
+    actorId: hqAdminId,
+  });
+
+  const delivery = await communicationPoliciesRepo.insertBroadcastTestDelivery(pool, {
+    organization_id: organizationId,
+    broadcast_id: broadcastId,
+    recipient_hq_admin_id: hqAdminId,
+    recipient_email: String(admin.email).trim().toLowerCase(),
+    subject_rendered: subject,
+    channels_json: ["email"],
+    requested_by_hq_admin_id: hqAdminId,
+  });
+
+  await auditLogsRepo.insertAuditLog(pool, {
+    organization_id: organizationId,
+    branch_id: null,
+    actor_type: "hq_admin",
+    actor_id: hqAdminId,
+    action: "hq_broadcast_test_sent",
+    entity_type: "hq_broadcast",
+    entity_id: broadcastId,
+    target_label: broadcast.title,
+    metadata_json: {
+      test_delivery_id: delivery.id,
+      email_subject: subject,
+      recorded_only: true,
+    },
+  });
+
+  return { delivery, subject, recordedOnly: true };
+}
+
+async function getQuietHoursPolicy(pool, organizationId) {
+  return communicationPoliciesRepo.getCommunicationPolicy(pool, organizationId);
+}
+
+async function saveQuietHoursPolicy(pool, organizationId, hqAdminId, body) {
+  await assertCanScheduleExternalBroadcast(pool, organizationId);
+  const validation = validateQuietHoursPolicyBody(body);
+  if (!validation.ok) {
+    const err = new Error(validation.error);
+    err.code = "VALIDATION";
+    throw err;
+  }
+  const saved = await communicationPoliciesRepo.upsertCommunicationPolicy(
+    pool,
+    organizationId,
+    validation.data,
+    hqAdminId
+  );
+  await auditLogsRepo.insertAuditLog(pool, {
+    organization_id: organizationId,
+    branch_id: null,
+    actor_type: "hq_admin",
+    actor_id: hqAdminId,
+    action: "hq_communication_quiet_hours_updated",
+    entity_type: "organization_communication_policy",
+    entity_id: organizationId,
+    target_label: "quiet_hours",
+    metadata_json: validation.data,
+  });
+  return saved;
+}
+
+module.exports = {
+  WORKFLOW_STATUSES,
+  jobKeyForBroadcast,
+  assertCanScheduleExternalBroadcast,
+  resolveAudienceRecipients,
+  batchResolveRecipientsByType,
+  resolveSelectedRecipientsBatched,
+  moveToPreview,
+  computeAndStoreAudienceEstimate,
+  submitForApproval,
+  approveBroadcast,
+  cancelScheduledBroadcast,
+  pauseScheduledBroadcastForGate,
+  processBroadcastDelivery,
+  retryFailedDeliveries,
+  processDueScheduledBroadcasts,
+  listScheduledBroadcasts,
+  listDeliveries,
+  testBroadcastDelivery,
+  getQuietHoursPolicy,
+  saveQuietHoursPolicy,
+  safeBroadcastEmailSubject,
+  broadcastStatusLabel,
+  parseChannels,
+};

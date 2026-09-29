@@ -1,0 +1,53 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Member lookup</h1>
+          <p class="church-branch-topbar__subtitle">Search members across all branches · <%= organizationName %></p>
+        </div>
+        <a class="church-btn church-btn--outline" href="/hq/branches">Branch registry</a>
+      </header>
+      <% if (notice) { %>
+      <div class="church-branch-panel church-branch-panel--notice" role="status"><%= notice %></div>
+      <% } %>
+      <form class="church-form church-form--inline" method="get" action="/hq/members">
+        <div class="church-field church-field--grow">
+          <label class="church-label" for="q">Search</label>
+          <input class="church-input" id="q" name="q" type="search" value="<%= searchQuery || '' %>" placeholder="Name, email, or phone" required/>
+        </div>
+        <button class="church-btn church-btn--primary" type="submit">Search</button>
+      </form>
+      <section class="church-branch-panel">
+        <% if (!searchQuery) { %>
+        <p class="church-branch-empty">Enter a name, email, or phone number to search across branches.</p>
+        <% } else if ((members || []).length === 0) { %>
+        <p class="church-branch-empty">No members match &ldquo;<%= searchQuery %>&rdquo;.</p>
+        <% } else { %>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead>
+              <tr>
+                <th>Member</th>
+                <th>Branch</th>
+                <th>Status</th>
+                <th></th>
+              </tr>
+            </thead>
+            <tbody>
+              <% members.forEach(function (m) { %>
+              <tr>
+                <td>
+                  <strong><%= m.full_name %></strong>
+                  <% if (m.email) { %><br/><%= m.email %><% } %>
+                  <% if (m.phone) { %><br/><%= m.phone %><% } %>
+                </td>
+                <td><%= m.branch_name %></td>
+                <td><span class="church-status-chip church-status-chip--<%= m.status === 'verified' ? 'verified' : 'pending' %>"><%= memberStatusLabel(m.status) %></span></td>
+                <td><a class="church-btn church-btn--ghost church-btn--sm" href="/hq/members/<%= m.id %>">View</a></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+        <% } %>
+      </section>
+<%- include('../partials/hq_shell_end') %>

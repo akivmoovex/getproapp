@@ -1,0 +1,132 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <h1 class="church-branch-topbar__title">Attendance rules</h1>
+          <p class="church-branch-topbar__subtitle">Exemptions, absence thresholds, and cross-branch settings · <%= churchName %></p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-branch-panel church-branch-panel--notice" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-branch-panel church-branch-panel--error" role="alert"><%= error %></div><% } %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Branch rules</h2>
+        <form class="church-form" method="post" action="/branch/attendance-rules">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-field">
+            <label class="church-label" for="absence_threshold_weeks">Absence threshold (weeks)</label>
+            <input class="church-input" id="absence_threshold_weeks" name="absence_threshold_weeks" type="number" min="1" max="52" value="<%= rulesForm.absence_threshold_weeks != null ? rulesForm.absence_threshold_weeks : '' %>" placeholder="Leave blank to disable"/>
+          </div>
+          <label class="church-checkbox">
+            <input type="checkbox" name="allow_multiple_services_per_day" value="1" <%= rulesForm.allow_multiple_services_per_day !== false ? 'checked' : '' %>/>
+            Allow multiple service check-ins per day
+          </label>
+          <label class="church-checkbox">
+            <input type="checkbox" name="cross_branch_guest_enabled" value="1" <%= rulesForm.cross_branch_guest_enabled ? 'checked' : '' %>/>
+            Allow authorised guest check-in from other branches
+          </label>
+          <button class="church-btn church-btn--primary" type="submit">Save rules</button>
+        </form>
+      </section>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Add exemption</h2>
+        <form class="church-form" method="post" action="/branch/attendance-rules/exemptions">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-field">
+            <label class="church-label" for="exemption_member_id">Member</label>
+            <select class="church-input" id="exemption_member_id" name="member_id" required>
+              <option value="">Select member…</option>
+              <% (members || []).forEach(function (m) { %>
+              <option value="<%= m.id %>"><%= m.full_name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="exemption_reason">Reason</label>
+            <input class="church-input" id="exemption_reason" name="reason" required/>
+          </div>
+          <div class="church-form church-form--inline">
+            <div class="church-field">
+              <label class="church-label" for="effective_from">From</label>
+              <input class="church-input" id="effective_from" name="effective_from" type="date" required/>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="effective_to">To (optional)</label>
+              <input class="church-input" id="effective_to" name="effective_to" type="date"/>
+            </div>
+          </div>
+          <button class="church-btn church-btn--outline" type="submit">Add exemption</button>
+        </form>
+      </section>
+      <% if ((exemptions || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Active exemptions</h2>
+        <ul class="church-member-list">
+          <% exemptions.forEach(function (e) { %>
+          <li class="church-member-list__item"><strong><%= e.member_full_name %></strong> · <%= e.reason %> · from <%= e.effective_from %></li>
+          <% }); %>
+        </ul>
+      </section>
+      <% } %>
+      <% if ((absenceFlags || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Members over absence threshold</h2>
+        <ul class="church-member-list">
+          <% absenceFlags.forEach(function (m) { %>
+          <li class="church-member-list__item"><%= m.full_name %> · last check-in: <%= m.last_check_in_at ? new Date(m.last_check_in_at).toLocaleDateString('en-GB') : 'never' %></li>
+          <% }); %>
+        </ul>
+      </section>
+      <% } %>
+      <% if ((reviewQueue || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Review required</h2>
+        <ul class="church-member-list">
+          <% reviewQueue.forEach(function (c) { %>
+          <li class="church-member-list__item">Check-in #<%= c.id %> · <%= c.member_full_name || c.visitor_name || 'Visitor' %> · <%= c.method %></li>
+          <% }); %>
+        </ul>
+      </section>
+      <% } %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Cross-branch check-in comparison · <%= periodLabel %></h2>
+        <div class="church-branch-table-wrap">
+          <table class="church-branch-table">
+            <thead><tr><th>Branch</th><th>Member check-ins</th><th>Visitors</th><th>Sessions</th></tr></thead>
+            <tbody>
+              <% (crossBranchComparison || []).forEach(function (row) { %>
+              <tr>
+                <td><%= row.branch_name %></td>
+                <td><%= row.member_check_ins %></td>
+                <td><%= row.visitor_check_ins %></td>
+                <td><%= row.session_count %></td>
+              </tr>
+              <% }); %>
+            </tbody>
+          </table>
+        </div>
+      </section>
+      <% if (rulesForm.cross_branch_guest_enabled && (siblingBranches || []).length > 0) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Authorise cross-branch guest</h2>
+        <form class="church-form" method="post" action="/branch/attendance-rules/cross-branch-auth">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-field">
+            <label class="church-label" for="auth_member_id">Member (home branch)</label>
+            <select class="church-input" id="auth_member_id" name="member_id" required>
+              <% (members || []).forEach(function (m) { %>
+              <option value="<%= m.id %>"><%= m.full_name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <div class="church-field">
+            <label class="church-label" for="guest_branch_id">May check in at</label>
+            <select class="church-input" id="guest_branch_id" name="guest_branch_id" required>
+              <% siblingBranches.forEach(function (b) { %>
+              <option value="<%= b.id %>"><%= b.name %></option>
+              <% }); %>
+            </select>
+          </div>
+          <button class="church-btn church-btn--outline" type="submit">Authorise guest</button>
+        </form>
+      </section>
+      <% } %>
+<%- include('../partials/branch_admin_shell_end') %>

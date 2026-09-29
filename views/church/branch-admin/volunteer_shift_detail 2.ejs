@@ -1,0 +1,37 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/volunteer-scheduling">&larr; Volunteer scheduling</a>
+          <h1 class="church-branch-topbar__title"><%= shift.title || shift.role_name %></h1>
+          <p class="church-branch-topbar__subtitle"><%= new Date(shift.starts_at).toLocaleString('en-GB') %> – <%= new Date(shift.ends_at).toLocaleString('en-GB') %></p>
+        </div>
+      </header>
+      <section class="church-branch-panel">
+        <form class="church-form" method="post" action="/branch/volunteer-scheduling/shifts/<%= shift.id %>/assign">
+          <%- include('../partials/csrf_field') %>
+          <select class="church-input" name="member_id" required>
+            <% (members || []).forEach(function (m) { %><option value="<%= m.id %>"><%= m.full_name %></option><% }) %>
+          </select>
+          <button class="church-btn church-btn--primary" type="submit">Assign</button>
+        </form>
+        <ul class="church-list">
+          <% (assignments || []).forEach(function (a) { %>
+          <li>
+            <%= a.member_name %> · <%= a.status %>
+            <% if (a.status === 'assigned') { %>
+            <form class="church-form church-form--inline" method="post" action="/branch/volunteer-scheduling/assignments/<%= a.id %>/confirm">
+              <%- include('../partials/csrf_field') %>
+              <button class="church-btn church-btn--outline" type="submit">Confirm</button>
+            </form>
+            <% } %>
+            <% if (a.status === 'assigned' || a.status === 'confirmed') { %>
+            <form class="church-form church-form--inline" method="post" action="/branch/volunteer-scheduling/assignments/<%= a.id %>/complete">
+              <%- include('../partials/csrf_field') %>
+              <button class="church-btn church-btn--ghost" type="submit">Complete</button>
+            </form>
+            <% } %>
+          </li>
+          <% }) %>
+        </ul>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

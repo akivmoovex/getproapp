@@ -1,0 +1,35 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/event-logistics">&larr; Event logistics</a>
+          <h1 class="church-branch-topbar__title"><%= form.title %></h1>
+          <p class="church-branch-topbar__subtitle">Conditional questions and consent</p>
+        </div>
+      </header>
+      <section class="church-branch-panel">
+        <p><strong>Consent:</strong> <%= form.consent_text || '—' %></p>
+        <ul class="church-list">
+          <% (questions || []).forEach(function (q) { %>
+          <li>
+            <%= q.sort_order %>. <%= q.prompt %> (<%= q.question_type %>)
+            <% if (q.branch_parent_question_id) { %> · when Q<%= q.branch_parent_question_id %> = <%= q.branch_equals_value %><% } %>
+          </li>
+          <% }) %>
+        </ul>
+        <form class="church-form" method="post" action="/branch/event-logistics/forms/<%= form.id %>/questions">
+          <%- include('../partials/csrf_field') %>
+          <input class="church-input" name="question_key" placeholder="key" required/>
+          <input class="church-input" name="prompt" placeholder="Prompt" required/>
+          <select class="church-input" name="question_type">
+            <option value="text">Text</option>
+            <option value="yes_no">Yes / No</option>
+            <option value="single_choice">Single choice</option>
+            <option value="file_note">File note (metadata only)</option>
+          </select>
+          <textarea class="church-input" name="options" rows="2" placeholder="Options (one per line)"></textarea>
+          <input class="church-input" name="branch_parent_question_id" placeholder="Branch parent question id"/>
+          <input class="church-input" name="branch_equals_value" placeholder="Branch equals value"/>
+          <button class="church-btn church-btn--outline" type="submit">Add question</button>
+        </form>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>

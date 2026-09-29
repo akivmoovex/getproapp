@@ -1,0 +1,12 @@
+<section class="church-alert church-alert--info" role="status" data-pilot-feature-locked>
+  <h2 class="church-branch-panel__title"><%= packageFeatureUi.feature.name %></h2>
+  <p>
+    This capability is included in your package but is not enabled for your organisation
+    under the current pilot feature flag.
+  </p>
+  <% if (packageFeatureUi.pilotReason) { %>
+  <p class="church-muted"><%= packageFeatureUi.pilotReason %></p>
+  <% } %>
+  <p class="church-muted">Contact BlessBoard platform support if you need this pilot enabled.</p>
+  <p><a class="church-btn church-btn--ghost" href="<%= packageFeatureUi.accountPath %>">Back to account</a></p>
+</section>

@@ -1,0 +1,60 @@
+<%- include('../partials/hq_shell_start') %>
+      <header class="church-hq-page-header">
+        <div>
+          <a class="church-branch-back" href="/hq/notification-templates">&larr; Back to templates</a>
+          <h1 class="church-hq-page-header__title"><%= template.label %></h1>
+          <p class="church-hq-page-header__subtitle"><%= template.description %></p>
+        </div>
+      </header>
+      <% if (notice) { %><div class="church-alert church-alert--success" role="status"><%= notice %></div><% } %>
+      <% if (error) { %><div class="church-alert church-alert--error" role="alert"><%= error %></div><% } %>
+
+      <section class="church-branch-panel">
+        <p class="church-branch-panel__hint">Allowed merge fields: <%= (template.mergeFields || []).map(function (f) { return '{{' + f + '}}'; }).join(', ') %>. Passwords and tokens are never allowed.</p>
+        <p class="church-branch-panel__hint">Source: <%= template.isOverride ? 'Organisation override' : (template.source === 'platform_default' ? 'Platform default' : 'Catalogue default') %></p>
+        <form method="post" action="/hq/notification-templates/<%= encodeURIComponent(template.key) %>" class="church-form">
+          <%- include('../partials/csrf_field') %>
+          <label class="church-field">
+            <span class="church-field__label">Subject</span>
+            <input class="church-input" name="subject_template" type="text" maxlength="200" required value="<%= form.subject_template || '' %>"/>
+          </label>
+          <label class="church-field">
+            <span class="church-field__label">Plain-text body</span>
+            <textarea class="church-input church-input--textarea" name="body_text_template" rows="10" required><%= form.body_text_template || '' %></textarea>
+          </label>
+          <label class="church-field">
+            <span class="church-field__label">Safe HTML body (optional)</span>
+            <textarea class="church-input church-input--textarea" name="body_html_template" rows="10" placeholder="Optional: p, br, strong, em, a[https] only"><%= form.body_html_template || '' %></textarea>
+          </label>
+          <div class="church-branch-actions">
+            <button class="church-btn church-btn--primary" type="submit">Save override</button>
+            <button
+              class="church-btn church-btn--ghost"
+              type="submit"
+              formaction="/hq/notification-templates/<%= encodeURIComponent(template.key) %>/preview"
+            >Preview</button>
+          </div>
+        </form>
+        <form method="post" action="/hq/notification-templates/<%= encodeURIComponent(template.key) %>/test-send" class="church-form" style="margin-top:0.75rem;">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--ghost" type="submit">Record test delivery to my HQ email</button>
+        </form>
+        <% if (template.isOverride) { %>
+        <form method="post" action="/hq/notification-templates/<%= encodeURIComponent(template.key) %>/restore" class="church-form" style="margin-top:0.5rem;">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--outline" type="submit">Restore default</button>
+        </form>
+        <% } %>
+      </section>
+
+      <% if (preview) { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Preview</h2>
+        <dl class="church-branch-dl">
+          <div><dt>Subject</dt><dd><%= preview.subject %></dd></div>
+          <div><dt>Plain text</dt><dd><pre class="church-audit-metadata"><%= preview.bodyText %></pre></dd></div>
+          <div><dt>Safe HTML</dt><dd><%- preview.bodyHtml || '—' %></dd></div>
+        </dl>
+      </section>
+      <% } %>
+<%- include('../partials/hq_shell_end') %>

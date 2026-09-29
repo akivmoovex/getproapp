@@ -1,0 +1,149 @@
+<%- include('../partials/branch_admin_shell_start') %>
+      <header class="church-branch-topbar">
+        <div>
+          <a class="church-branch-back" href="/branch/pastoral-cases">&larr; Pastoral cases</a>
+          <h1 class="church-branch-topbar__title"><%= pastoralCase.title %></h1>
+          <p class="church-branch-topbar__subtitle"><%= pastoralCase.member_name %></p>
+        </div>
+      </header>
+      <% if (notice) { %>
+      <div class="church-alert church-alert--success" role="status"><%= notice %></div>
+      <% } %>
+      <% if (error) { %>
+      <div class="church-alert church-alert--error" role="alert"><%= error %></div>
+      <% } %>
+      <section class="church-branch-panel">
+        <dl class="church-branch-dl">
+          <div><dt>Status</dt><dd><%= pastoralCaseStatusLabel(pastoralCase.status) %></dd></div>
+          <div><dt>Assignee</dt><dd><%= pastoralCase.assigned_admin_name || '—' %></dd></div>
+          <div><dt>Due date</dt><dd><%= pastoralCase.due_date || '—' %></dd></div>
+          <div><dt>Next action</dt><dd><%= pastoralCase.next_action || '—' %></dd></div>
+          <div><dt>Opened</dt><dd><%= new Date(pastoralCase.created_at).toLocaleString('en-GB') %></dd></div>
+        </dl>
+        <% if (pastoralCase.summary) { %>
+        <div class="church-branch-review-note"><strong>Summary</strong><p><%= pastoralCase.summary %></p></div>
+        <% } %>
+        <% if (pastoralCase.outcome) { %>
+        <div class="church-branch-review-note"><strong>Outcome</strong><p><%= pastoralCase.outcome %></p></div>
+        <% } %>
+        <% if (growthAutomation && pastoralCase.opened_by_automation) { %>
+        <p class="muted">Automated recommendation · Risk: <%= pastoralCase.risk_level || 'standard' %></p>
+        <% } %>
+      </section>
+
+      <% if (typeof growthAutomation !== 'undefined' && growthAutomation && pastoralCase.status !== 'closed') { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Growth case management</h2>
+        <% if (pastoralCase.status === 'pending_supervisor_ack') { %>
+        <form class="church-form" method="post" action="/branch/pastoral-cases/<%= pastoralCase.id %>/supervisor-ack">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--primary" type="submit">Supervisor acknowledge</button>
+        </form>
+        <% } %>
+        <% if (pastoralCase.status === 'paused') { %>
+        <form class="church-form" method="post" action="/branch/pastoral-cases/<%= pastoralCase.id %>/resume">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--outline" type="submit">Resume case</button>
+        </form>
+        <% } else if (pastoralCase.status !== 'pending_supervisor_ack') { %>
+        <form class="church-form church-form--inline" method="post" action="/branch/pastoral-cases/<%= pastoralCase.id %>/reassign">
+          <%- include('../partials/csrf_field') %>
+          <select class="church-input" name="assigned_admin_id" required>
+            <% (pastoralAdmins || []).forEach(function (a) { %>
+            <option value="<%= a.id %>"><%= a.full_name %></option>
+            <% }); %>
+          </select>
+          <button class="church-btn church-btn--outline" type="submit">Reassign</button>
+        </form>
+        <form class="church-form" method="post" action="/branch/pastoral-cases/<%= pastoralCase.id %>/escalate">
+          <%- include('../partials/csrf_field') %>
+          <button class="church-btn church-btn--outline" type="submit">Escalate</button>
+        </form>
+        <form class="church-form" method="post" action="/branch/pastoral-cases/<%= pastoralCase.id %>/pause">
+          <%- include('../partials/csrf_field') %>
+          <input class="church-input" name="pause_reason" placeholder="Pause reason"/>
+          <button class="church-btn church-btn--ghost" type="submit">Pause</button>
+        </form>
+        <% } %>
+      </section>
+      <% } %>
+
+      <% if (pastoralCase.status !== 'closed' && pastoralCase.status !== 'paused' && pastoralCase.status !== 'pending_supervisor_ack') { %>
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Record contact attempt</h2>
+        <form class="church-form" method="post" action="/branch/pastoral-cases/<%= pastoralCase.id %>/follow-up">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-form-grid">
+            <div class="church-field">
+              <label class="church-label" for="contact_attempt">Contact attempt</label>
+              <select class="church-input" id="contact_attempt" name="contact_attempt" required>
+                <% contactAttempts.forEach(function (c) { %>
+                <option value="<%= c.value %>"><%= c.label %></option>
+                <% }); %>
+              </select>
+            </div>
+            <div class="church-field">
+              <label class="church-label" for="due_date">Next due date</label>
+              <input class="church-input" id="due_date" name="due_date" type="date"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="outcome">Outcome</label>
+              <input class="church-input" id="outcome" name="outcome" type="text" required/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="next_action">Next action</label>
+              <input class="church-input" id="next_action" name="next_action" type="text"/>
+            </div>
+            <div class="church-field church-field--full">
+              <label class="church-label" for="notes">Notes</label>
+              <textarea class="church-input church-input--textarea" id="notes" name="notes" rows="3"></textarea>
+            </div>
+          </div>
+          <button class="church-btn church-btn--primary" type="submit">Save follow-up</button>
+        </form>
+        <form class="church-form church-form--spaced" method="post" action="/branch/pastoral-cases/<%= pastoralCase.id %>/close">
+          <%- include('../partials/csrf_field') %>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="outcome_close">Case outcome</label>
+            <input class="church-input" id="outcome_close" name="outcome" type="text" required/>
+          </div>
+          <div class="church-field church-field--full">
+            <label class="church-label" for="closure_reason">Closure reason</label>
+            <textarea class="church-input church-input--textarea" id="closure_reason" name="closure_reason" rows="2"></textarea>
+          </div>
+          <button class="church-btn church-btn--outline" type="submit">Close case</button>
+        </form>
+      </section>
+      <% } %>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Follow-up history</h2>
+        <% if ((followUps || []).length === 0) { %>
+        <p class="church-branch-empty">No follow-ups recorded yet.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% followUps.forEach(function (f) { %>
+          <li class="church-member-list__item">
+            <strong><%= f.contact_attempt %></strong> · <%= new Date(f.recorded_at).toLocaleString('en-GB') %>
+            <p>Outcome: <%= f.outcome %></p>
+            <% if (f.next_action) { %><p>Next: <%= f.next_action %></p><% } %>
+            <% if (f.notes) { %><p><%= f.notes %></p><% } %>
+          </li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+
+      <section class="church-branch-panel">
+        <h2 class="church-branch-panel__title">Audit history</h2>
+        <% if ((auditHistory || []).length === 0) { %>
+        <p class="church-branch-empty">No audit entries yet.</p>
+        <% } else { %>
+        <ul class="church-member-list">
+          <% auditHistory.forEach(function (a) { %>
+          <li class="church-member-list__item"><%= a.action %> · <%= new Date(a.created_at).toLocaleString('en-GB') %></li>
+          <% }); %>
+        </ul>
+        <% } %>
+      </section>
+<%- include('../partials/branch_admin_shell_end') %>
