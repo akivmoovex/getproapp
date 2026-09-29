@@ -338,7 +338,7 @@ button:focus-visible {
 .ac-badge--suspended,
 .ac-badge--archived { background: var(--ac-danger-bg); color: var(--ac-danger); border: 1px solid var(--color-danger-border); }
 .ac-badge--inactive { background: var(--ac-status-neutral-bg); color: var(--ac-status-neutral); border: 1px solid var(--ac-border); }
-.ac-badge--teal { background: var(--ac-teal-soft); color: var(--ac-teal); border: 1px solid var(--color-brand-accent); }
+.ac-badge--teal { background: color-mix(in srgb, var(--color-brand-accent) 12%, var(--color-surface)); color: var(--color-brand-accent); border: 1px solid var(--color-brand-accent); }
 .ac-badge--walkin { background: var(--ac-warning-bg); color: var(--ac-warning); border: 1px solid var(--color-warning-border); }
 
 .ac-empty {
@@ -2949,7 +2949,7 @@ body.ac-app-body .ac-dashboard-quick {
 
 body.ac-app-body .ac-dashboard__console {
   padding: 0.75rem 1rem;
-  background: var(--gp-ops-canvas);
+  background: var(--color-background);
   border: 1px solid var(--ac-border);
   border-radius: var(--ac-radius, 0.5rem);
 }
@@ -3049,7 +3049,7 @@ body.ac-app-body .ac-dashboard-list li a {
 }
 
 body.ac-app-body .ac-dashboard-list li a:hover {
-  background: var(--gp-ops-canvas);
+  background: var(--color-background);
 }
 
 body.ac-app-body .ac-dashboard-list__title {
@@ -3183,7 +3183,7 @@ body.ac-app-body .ac-patients-avatar {
   width: 2.5rem;
   height: 2.5rem;
   border-radius: 999px;
-  background: var(--gp-ops-canvas);
+  background: var(--color-background);
   border: 1px solid var(--ac-border);
   color: var(--ac-primary);
   font-size: 0.75rem;
@@ -3506,7 +3506,7 @@ body.ac-app-body .ac-code {
   max-height: 18rem;
   padding: 0.75rem 1rem;
   border-radius: 0.5rem;
-  background: var(--gp-ops-canvas);
+  background: var(--color-background);
   border: 1px solid var(--ac-border);
   font-size: 0.8rem;
 }

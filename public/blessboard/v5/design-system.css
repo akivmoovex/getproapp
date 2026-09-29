@@ -1319,7 +1319,7 @@ html.bb-ds-modal-open body {
 .bb-shell-burger:hover,
 .bb-shell-burger:focus-visible {
   background: var(--bb-color-primary-soft, #efeaff);
-  color: var(--bb-violet, #6c5ce7);
+  color: var(--bb-color-primary);
   outline: none;
 }
 .bb-shell-burger:focus-visible {

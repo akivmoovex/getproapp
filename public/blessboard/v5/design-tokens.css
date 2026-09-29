@@ -63,7 +63,10 @@
     color-mix(in srgb, var(--color-brand-primary) 22%, var(--color-surface))
   );
 
-  /* —— Legacy aliases (existing shells) —— */
+  /*
+   * @deprecated Appearance-named aliases — keep for Batch 7 public CSS + unmigrated shells.
+   * Completed Batch 4 consumers use --bb-color-primary / --color-brand-primary.
+   */
   --bb-violet: var(--bb-color-primary);
   --bb-violet-deep: var(--bb-color-primary-hover);
   --bb-getpro: var(--bb-color-accent);
@@ -144,7 +147,8 @@
   --bb-shadow-sm: 0 2px 4px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
   --bb-shadow-md: 0 10px 30px color-mix(in srgb, var(--color-brand-primary) 8%, transparent);
   --bb-shadow: var(--bb-shadow-md);
-  --bb-shadow-focus: 0 0 0 4px var(--bb-color-focus-ring);
+  /* Focus ring shadow → platform semantic (avoid bb-color-* indirection) */
+  --bb-shadow-focus: 0 0 0 4px var(--color-focus-ring);
 
   /* —— Controls —— */
   --bb-control-h: 3rem; /* 48 */
@@ -176,18 +180,19 @@
   --product-link: var(--color-brand-primary);
 
   /*
-   * Domain publication / lifecycle aliases (generic platform semantics).
-   * Prefer these over raw HEX in admin CSS when meaning is stable.
+   * Publication / lifecycle aliases → canonical component badge tokens.
+   * Prefer --badge-success|warning|neutral-* in new CSS; keep these for
+   * Batch 5 editor publish/draft semantics if product copy wants domain names.
    */
-  --status-published-bg: var(--color-success-bg);
-  --status-published-text: var(--color-success-text);
-  --status-published-border: var(--color-success-border);
-  --status-draft-bg: var(--color-warning-bg);
-  --status-draft-text: var(--color-warning-text);
-  --status-draft-border: var(--color-warning-border);
-  --status-inactive-bg: var(--color-surface-subtle);
-  --status-inactive-text: var(--color-text-secondary);
-  --status-inactive-border: var(--color-border-default);
+  --status-published-bg: var(--badge-success-bg);
+  --status-published-text: var(--badge-success-text);
+  --status-published-border: var(--badge-success-border);
+  --status-draft-bg: var(--badge-warning-bg);
+  --status-draft-text: var(--badge-warning-text);
+  --status-draft-border: var(--badge-warning-border);
+  --status-inactive-bg: var(--badge-neutral-bg);
+  --status-inactive-text: var(--badge-neutral-text);
+  --status-inactive-border: var(--badge-neutral-border);
 }
 
 @media (max-width: 767px) {

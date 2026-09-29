@@ -120,6 +120,10 @@ Preferred API for UI:
 - `--color-*` — platform semantic + brand
 - `--button-*` / `--input-*` / `--card-*` / `--nav-*` / `--table-*` / `--modal-*` / `--badge-*` — component layer
 - Avoid product-prefixed new names (`--bb-*`, `--ac-*`) for **new** shared UI; keep legacy product files until migration batches complete
+- Avoid appearance-named application tokens (`--bb-violet`, `--ac-teal`). Prefer `--color-brand-primary` / `--bb-color-primary` / `--ac-brand-accent`. Hue-named **compat aliases** may remain until Batches 5–8 finish.
+- Publication lifecycle aliases (`--status-published|draft|inactive-*`) resolve to `--badge-success|warning|neutral-*`. Prefer badge tokens in new CSS.
+
+Correction-gate validation: `tests/v2-04-color-token-resolution.test.js` (undefined color refs, circular chains, product-domain leakage).
 
 ## 9. Accessibility rules
 
