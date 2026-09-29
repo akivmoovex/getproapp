@@ -39,6 +39,16 @@ const BATCH_DIR = path.join(REPORTS_DIR, "batches");
 const MANIFEST_PATH = path.join(BATCH_DIR, "manifest.txt");
 const PROGRESS_PATH = path.join(BATCH_DIR, "progress.json");
 const RUN_LOG_PATH = path.join(BATCH_DIR, "run.log");
+const BATCH_VALIDATION_PATH = path.join(BATCH_DIR, "batch-validation.json");
+/** Authoritative V2.03 green-suite SoT (865 files). */
+const CANONICAL_MANIFEST = path.join(
+  ROOT,
+  "docs/qa/manifests/V2_03_CANONICAL_TEST_MANIFEST.txt"
+);
+const COVERAGE_INPUT_FINGERPRINT = path.join(
+  ROOT,
+  "docs/qa/manifests/V2_03_COVERAGE_INPUT_FINGERPRINT.json"
+);
 
 const OVERALL_INCLUDE = Object.freeze([
   "src/**",
@@ -99,6 +109,100 @@ function sha256Text(text) {
   return crypto.createHash("sha256").update(text).digest("hex");
 }
 
+function sha256File(absPath) {
+  return crypto.createHash("sha256").update(fs.readFileSync(absPath)).digest("hex");
+}
+
+function wantCoverageFingerprintPath(rel) {
+  const fingerprintRel = "docs/qa/manifests/V2_03_COVERAGE_INPUT_FINGERPRINT.json";
+  if (rel === fingerprintRel) return false;
+  if (rel.startsWith("tests/__screenshots__/") || rel.startsWith("tests/__image_snapshots__/")) {
+    return false;
+  }
+  if (rel.startsWith("src/") || rel.startsWith("tests/")) return true;
+  if (
+    rel === "server.js" ||
+    rel === "index.js" ||
+    rel === ".c8rc.json" ||
+    rel === "docs/qa/manifests/V2_03_CANONICAL_TEST_MANIFEST.txt"
+  ) {
+    return true;
+  }
+  return false;
+}
+
+/** Working-tree fingerprint matching docs/qa/manifests/V2_03_COVERAGE_INPUT_FINGERPRINT.json */
+function computeCoverageTreeFingerprint() {
+  const { execFileSync } = require("child_process");
+  const rows = new Map();
+  const tracked = execFileSync("git", ["ls-files", "-z"], { cwd: ROOT })
+    .toString("utf8")
+    .split("\0")
+    .filter(Boolean);
+  for (const rel of tracked) {
+    if (!wantCoverageFingerprintPath(rel)) continue;
+    const abs = path.join(ROOT, rel);
+    if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) continue;
+    rows.set(rel, `${rel}:${sha256File(abs)}`);
+  }
+  const porcelain = execFileSync("git", ["status", "--porcelain"], { cwd: ROOT }).toString("utf8");
+  for (const line of porcelain.split(/\r?\n/)) {
+    if (!line.startsWith("?? ")) continue;
+    const rel = line.slice(3);
+    if (!wantCoverageFingerprintPath(rel)) continue;
+    const abs = path.join(ROOT, rel);
+    if (!fs.existsSync(abs) || !fs.statSync(abs).isFile()) continue;
+    rows.set(rel, `${rel}:${sha256File(abs)}`);
+  }
+  const ordered = [...rows.values()].sort();
+  return {
+    treeFingerprint: sha256Text(`${ordered.join("\n")}`),
+    treeFileCount: ordered.length,
+  };
+}
+
+function assertCoverageInputFingerprint() {
+  if (!fs.existsSync(COVERAGE_INPUT_FINGERPRINT)) {
+    throw new Error(
+      `MISSING_COVERAGE_INPUT_FINGERPRINT ${COVERAGE_INPUT_FINGERPRINT} — re-freeze green state first`
+    );
+  }
+  const frozen = JSON.parse(fs.readFileSync(COVERAGE_INPUT_FINGERPRINT, "utf8"));
+  const { execFileSync } = require("child_process");
+  const head = execFileSync("git", ["rev-parse", "HEAD"], { cwd: ROOT }).toString("utf8").trim();
+  const manifestSha = sha256File(CANONICAL_MANIFEST);
+  const { treeFingerprint, treeFileCount } = computeCoverageTreeFingerprint();
+  const mismatches = [];
+  if (frozen.COVERAGE_MANIFEST_SHA !== manifestSha) {
+    mismatches.push(`MANIFEST ${manifestSha} != frozen ${frozen.COVERAGE_MANIFEST_SHA}`);
+  }
+  if (frozen.TREE_FINGERPRINT !== treeFingerprint) {
+    mismatches.push(
+      `TREE ${treeFingerprint} != frozen ${frozen.TREE_FINGERPRINT} (files=${treeFileCount})`
+    );
+  }
+  if (mismatches.length) {
+    const err = new Error(
+      `COVERAGE_INPUT_FINGERPRINT_MISMATCH\n${mismatches.join("\n")}\n` +
+        `Re-run post-billing green freeze before coverage.`
+    );
+    err.code = "COVERAGE_INPUT_FINGERPRINT_MISMATCH";
+    throw err;
+  }
+  if (frozen.COVERAGE_INPUT_SHA !== head) {
+    process.stderr.write(
+      `[v203-batched] WARN coverage HEAD drifted (${head.slice(0, 12)} vs frozen ` +
+        `${String(frozen.COVERAGE_INPUT_SHA).slice(0, 12)}) but TREE+MANIFEST match — continuing\n`
+    );
+  }
+  return {
+    head,
+    manifestSha,
+    treeFingerprint,
+    frozenMarker: frozen.GREEN_GATE_MARKER || null,
+  };
+}
+
 function chunk(arr, size) {
   const batches = [];
   for (let i = 0; i < arr.length; i += size) {
@@ -114,11 +218,18 @@ function parseArgs(argv) {
     stallMs: DEFAULT_STALL_MS,
     batchWallMs: DEFAULT_BATCH_WALL_MS,
     reportOnly: false,
+    /** Abort authoritative baseline if any batch reports FAIL≠0. */
+    requireGreen: true,
+    /** Prefer canonical 865-file manifest (default). Use --glob-manifest for legacy glob. */
+    useCanonicalManifest: true,
   };
   for (let i = 0; i < argv.length; i += 1) {
     const a = argv[i];
     if (a === "--resume") opts.resume = true;
     else if (a === "--report-only") opts.reportOnly = true;
+    else if (a === "--allow-fail") opts.requireGreen = false;
+    else if (a === "--glob-manifest") opts.useCanonicalManifest = false;
+    else if (a === "--canonical-manifest") opts.useCanonicalManifest = true;
     else if (a.startsWith("--batch-size=")) {
       opts.batchSize = Math.max(1, Number(a.slice("--batch-size=".length)) || DEFAULT_BATCH_SIZE);
     } else if (a === "--batch-size") {
@@ -131,6 +242,26 @@ function parseArgs(argv) {
     }
   }
   return opts;
+}
+
+function readCanonicalManifestFiles() {
+  if (!fs.existsSync(CANONICAL_MANIFEST)) {
+    throw new Error(`MISSING_CANONICAL_MANIFEST ${CANONICAL_MANIFEST}`);
+  }
+  const files = fs
+    .readFileSync(CANONICAL_MANIFEST, "utf8")
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
+  if (files.length !== 865) {
+    throw new Error(`EXPECTED_865_GOT_${files.length}`);
+  }
+  for (const rel of files) {
+    if (!fs.existsSync(path.join(ROOT, rel))) {
+      throw new Error(`MISSING_TEST_FILE ${rel}`);
+    }
+  }
+  return files;
 }
 
 function emptyCounts() {
@@ -252,10 +383,13 @@ function runSpawn(cmd, args, { logFile, stallMs, wallMs, label }) {
   });
 }
 
-function buildManifest(batchSize) {
-  const files = expandTestGlob();
+function buildManifest(batchSize, { useCanonicalManifest = true } = {}) {
+  const files = useCanonicalManifest ? readCanonicalManifestFiles() : expandTestGlob();
   const body = files.join("\n") + (files.length ? "\n" : "");
   const sha = sha256Text(body);
+  const canonicalSourceSha = useCanonicalManifest
+    ? sha256Text(fs.readFileSync(CANONICAL_MANIFEST))
+    : null;
   fs.mkdirSync(BATCH_DIR, { recursive: true });
   fs.writeFileSync(MANIFEST_PATH, body);
   const batches = chunk(files, batchSize).map((filesInBatch, idx) => ({
@@ -263,7 +397,21 @@ function buildManifest(batchSize) {
     index: idx,
     files: filesInBatch,
   }));
-  return { files, sha, batches };
+  return {
+    files,
+    sha,
+    batches,
+    source: useCanonicalManifest ? "canonical-865" : "glob-tests",
+    canonicalSourceSha,
+  };
+}
+
+function countV8Artifacts() {
+  try {
+    return fs.readdirSync(TEMP_DIR).filter((n) => n.endsWith(".json")).length;
+  } catch {
+    return 0;
+  }
 }
 
 function loadProgress() {
@@ -331,6 +479,7 @@ async function finalReport(c8) {
     "--reporter=json",
     "--reporter=json-summary",
     "--reporter=lcov",
+    "--reporter=html",
     "--merge-async",
   ];
   logLine("final c8 report --merge-async …");
@@ -506,6 +655,19 @@ async function main(argv) {
     return 1;
   }
 
+  if (!opts.reportOnly) {
+    try {
+      const fp = assertCoverageInputFingerprint();
+      process.stdout.write(
+        `[v203-batched] coverage input fingerprint OK head=${fp.head.slice(0, 12)} ` +
+          `tree=${fp.treeFingerprint.slice(0, 12)} marker=${fp.frozenMarker || "n/a"}\n`
+      );
+    } catch (err) {
+      process.stderr.write(`[v203-batched] ${err && err.message ? err.message : err}\n`);
+      return 2;
+    }
+  }
+
   fs.mkdirSync(BATCH_DIR, { recursive: true });
   fs.mkdirSync(REPORTS_DIR, { recursive: true });
   fs.mkdirSync(TEMP_DIR, { recursive: true });
@@ -514,16 +676,23 @@ async function main(argv) {
   }
 
   const started = Date.now();
-  const { files, sha, batches } = buildManifest(opts.batchSize);
+  const { files, sha, batches, source, canonicalSourceSha } = buildManifest(
+    opts.batchSize,
+    { useCanonicalManifest: opts.useCanonicalManifest }
+  );
   logLine(
-    `manifest files=${files.length} batchSize=${opts.batchSize} batches=${batches.length} sha=${sha.slice(0, 12)}`
+    `manifest source=${source} files=${files.length} batchSize=${opts.batchSize} ` +
+      `batches=${batches.length} sha=${sha.slice(0, 12)} ` +
+      `canonicalSourceSha=${canonicalSourceSha ? canonicalSourceSha.slice(0, 12) : "n/a"}`
   );
 
   let progress = {
     version: 1,
     provider: "c8",
     runner: "node --test (batched)",
+    manifestSource: source,
     manifestSha: sha,
+    canonicalSourceSha,
     batchSize: opts.batchSize,
     totalFiles: files.length,
     totalBatches: batches.length,
@@ -533,6 +702,9 @@ async function main(argv) {
     completedBatchIds: [],
     failedBatches: [],
     hungBatches: [],
+    batchValidation: [],
+    requireGreen: opts.requireGreen,
+    greenSuitePreserved: true,
     currentBatch: null,
     status: "running",
     counts: emptyCounts(),
@@ -542,7 +714,12 @@ async function main(argv) {
   if (opts.resume) {
     const prev = loadProgress();
     if (prev && prev.manifestSha === sha) {
-      progress = { ...prev, status: "running" };
+      progress = {
+        ...prev,
+        status: "running",
+        requireGreen: opts.requireGreen,
+        batchValidation: Array.isArray(prev.batchValidation) ? prev.batchValidation : [],
+      };
       logLine(
         `resume completed=${progress.completedBatchIds.length}/${batches.length}`
       );
@@ -566,6 +743,7 @@ async function main(argv) {
 
       progress.currentBatch = batch.id;
       writeJson(PROGRESS_PATH, progress);
+      const v8Before = countV8Artifacts();
 
       const result = await runBatch(c8, batch, {
         clean: useClean,
@@ -573,27 +751,91 @@ async function main(argv) {
         batchWallMs: opts.batchWallMs,
       });
       executedInThisProcess += 1;
+      const v8After = countV8Artifacts();
 
       addCounts(progress.counts, result.counts);
+      const batchFail = Number(result.counts.fail) || 0;
+      const validation = {
+        BATCH_ID: batch.id,
+        FILES: batch.files.length,
+        PASS: result.counts.pass,
+        FAIL: batchFail,
+        SKIP: result.counts.skip,
+        EXIT_CODE: result.code,
+        V8_ARTIFACTS: Math.max(0, v8After - (useClean ? 0 : v8Before)),
+        V8_ARTIFACTS_TOTAL: v8After,
+        DURATION: result.durationMs,
+        MERGED: "PENDING",
+        KILLED: result.killed || null,
+        FIRST: batch.files[0],
+        LAST: batch.files[batch.files.length - 1],
+      };
+      progress.batchValidation = (progress.batchValidation || []).filter(
+        (b) => b.BATCH_ID !== batch.id
+      );
+      progress.batchValidation.push(validation);
+      writeJson(BATCH_VALIDATION_PATH, {
+        updatedAt: new Date().toISOString(),
+        batches: progress.batchValidation,
+      });
+
       if (result.killed) {
         progress.hungBatches.push({
           id: batch.id,
           reason: result.killed,
           lastFiles: batch.files.slice(-3),
         });
+        progress.greenSuitePreserved = false;
       }
       if (result.code !== 0 && !result.killed) {
         progress.failedBatches.push({ id: batch.id, code: result.code });
       }
+      if (batchFail > 0 || result.killed) {
+        progress.greenSuitePreserved = false;
+      }
+
       // Checkpoint even on test failures so resume skips finished batches.
-      // Hung batches are also marked complete so the rest of the suite can finish.
+      // Hung batches are also marked complete so the rest of the suite can finish
+      // unless --require-green (default) aborts the authoritative baseline.
       progress.completedBatchIds.push(batch.id);
       progress.currentBatch = null;
       writeJson(PROGRESS_PATH, progress);
+
+      if (opts.requireGreen && (batchFail > 0 || result.killed)) {
+        progress.status = "blocked_green_suite";
+        progress.blockedReason =
+          batchFail > 0
+            ? `BATCH_${batch.id}_FAIL=${batchFail}`
+            : `BATCH_${batch.id}_KILLED=${result.killed}`;
+        progress.finishedAt = new Date().toISOString();
+        writeJson(PROGRESS_PATH, progress);
+        logLine(
+          `BLOCKED green-suite coverage: ${progress.blockedReason} — not emitting authoritative baseline`
+        );
+        return 2;
+      }
     }
   }
 
   const reportResult = await finalReport(c8);
+  // Mark all completed batches as merged into the shared temp → final report.
+  if (Array.isArray(progress.batchValidation)) {
+    for (const row of progress.batchValidation) {
+      row.MERGED = reportResult.code === 0 ? "YES" : "NO";
+    }
+    writeJson(BATCH_VALIDATION_PATH, {
+      updatedAt: new Date().toISOString(),
+      allBatchesMerged: reportResult.code === 0,
+      batches: progress.batchValidation,
+    });
+  }
+
+  // Normalize artifact names expected by Phase D gate.
+  const jsonFinal = path.join(REPORTS_DIR, "coverage-final.json");
+  const jsonAlt = path.join(REPORTS_DIR, "coverage.json");
+  if (!fs.existsSync(jsonFinal) && fs.existsSync(jsonAlt)) {
+    fs.copyFileSync(jsonAlt, jsonFinal);
+  }
   const summaryPath = path.join(REPORTS_DIR, "coverage-summary.json");
   let summary = null;
   if (fs.existsSync(summaryPath)) {
