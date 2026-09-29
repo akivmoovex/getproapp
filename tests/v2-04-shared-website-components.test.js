@@ -205,7 +205,7 @@ describe("V2.04 shared website presentation component library", () => {
     assert.equal(presentation.findThemeTokenLeaks(componentCss, "blessboard").length, 0);
   });
 
-  it("does not wire components into live public product templates yet", () => {
+  it("does not wire platform PHASE into all public templates (AC R01–R03 use AC page builder)", () => {
     assert.equal(presentation.PHASE.wiredToPublicRender, false);
     assert.equal(presentation.PHASE.step1Prerequisite, "PASS");
     assert.equal(presentation.PHASE.componentLibraryAvailable, true);

@@ -1,71 +1,67 @@
-<section class="ac-public-section ac-tenant-directory" data-ac-page-section="tenant-services">
-  <header class="ac-tenant-page-header">
-    <h1><%- include('../partials/website-editable-field', { contentKey: 'services.page_title', fieldValue: clinic.servicesPageTitle || 'Services', fieldType: 'short_text' }) %></h1>
-    <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'services.intro', fieldValue: clinic.servicesIntro || ('Care offerings published by ' + clinic.publicName + '.'), fieldType: 'long_text' }) %></p>
-  </header>
-  <% const serviceList = Array.isArray(services) ? services : []; %>
-  <% const procedureList = Array.isArray(procedures) ? procedures : []; %>
-  <% const editingServices = typeof websiteEdit !== 'undefined' && websiteEdit; %>
-  <% const servicesReturnTo = '/clinics/' + clinic.clinicKey + '/services?website_edit=1&website_mode=draft'; %>
+<%#
+  AC-MW-R03 Our Services — Stitch Batch 2.
+  Canonical AC service catalogue via CollectionPresentation; no second services store.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+  const editingServices = typeof websiteEdit !== 'undefined' && websiteEdit;
+  const serviceList = Array.isArray(services) ? services : [];
+  const procedureList = Array.isArray(procedures) ? procedures : [];
+  const servicesReturnTo = '/clinics/' + clinic.clinicKey + '/services?website_edit=1&website_mode=draft';
+%>
+<section class="ac-stitch-page ac-stitch-page--r03 ac-public-section" data-ac-page-section="tenant-services" data-ac-stitch-screen="R03">
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header || '' %>
+  </div>
+
   <% if (!serviceList.length && !procedureList.length) { %>
   <div class="ac-public-empty" data-ac-empty="services" data-ac-state-key="empty">
-    <h2><%- include('../partials/website-editable-field', { contentKey: 'services.empty_heading', fieldValue: clinic.servicesEmptyHeading || 'Service listings are not available yet', fieldType: 'short_text' }) %></h2>
-    <p><%- include('../partials/website-editable-field', { contentKey: 'services.empty_body', fieldValue: clinic.servicesEmptyBody || 'This clinic has not published service listings yet.', fieldType: 'long_text' }) %></p>
+    <%- html.empty || '' %>
     <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=services', label: 'Manage public catalogue', note: 'Create and publish clinic services from the shared public catalogue.', manageKind: 'services' }) %>
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.home) || ('/clinics/' + clinic.clinicKey) %>">Back to clinic home</a></p>
   </div>
   <% } %>
-  <% if (serviceList.length) { %>
-  <h2 class="acp-section-title">Consultations</h2>
-  <ul class="ac-service-cards">
+
+  <% if (serviceList.length && html.services) { %>
+  <div class="ac-stitch-section ac-stitch-section--services-grid" data-ac-services-grid="1">
+    <%- html.services %>
+  </div>
+  <% if (editingServices) { %>
+  <ul class="ac-service-editor-links" hidden>
     <% serviceList.forEach(function(s) { %>
     <% const serviceEditHref = s.editHref || (s.id ? ('/app/settings/website/catalogue/services/' + encodeURIComponent(s.id) + '/edit') : ''); %>
-    <li class="ac-service-card" data-ac-service-card="1"<%= s.id ? (' data-ac-service-id="' + s.id + '"') : '' %><%= s.serviceKey ? (' data-ac-service-key="' + s.serviceKey + '"') : '' %>>
-      <a class="ac-service-card__link" href="/clinics/<%= clinic.clinicKey %>/services/<%= s.serviceKey %>">
-        <span class="ac-service-card__icon" aria-hidden="true">
-          <img src="<%= s.iconUrl || (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/icons/general.svg') : '') %>" alt="" width="28" height="28" loading="lazy"/>
-        </span>
-        <h3 class="ac-service-card__name"><%= s.displayName %></h3>
-        <% if (s.summary) { %>
-        <p class="ac-service-card__summary"><%= s.summary.length > 140 ? s.summary.slice(0, 140) + "…" : s.summary %></p>
-        <% } %>
-        <span class="ac-service-card__cta">View details</span>
-      </a>
-      <% if (editingServices && serviceEditHref) { %>
-      <p class="ac-service-card__editor">
-        <a
-          class="ac-btn ac-btn--secondary ac-btn--pill"
-          href="<%= serviceEditHref %>?returnTo=<%= encodeURIComponent(servicesReturnTo) %>"
-          data-ac-edit-service="1"
-        >Edit service</a>
-      </p>
-      <% } %>
+    <% if (serviceEditHref) { %>
+    <li>
+      <a
+        class="ac-btn ac-btn--secondary ac-btn--pill"
+        href="<%= serviceEditHref %>?returnTo=<%= encodeURIComponent(servicesReturnTo) %>"
+        data-ac-edit-service="1"
+        data-ac-service-id="<%= s.id || '' %>"
+      >Edit <%= s.displayName || 'service' %></a>
     </li>
+    <% } %>
     <% }) %>
   </ul>
   <% } %>
-  <% if (procedureList.length) { %>
-  <h2 class="acp-section-title">Procedures &amp; diagnostics</h2>
-  <ul class="ac-service-cards">
-    <% procedureList.forEach(function(p) { %>
-    <li class="ac-service-card">
-      <a class="ac-service-card__link" href="/clinics/<%= clinic.clinicKey %>/procedures/<%= p.procedureKey %>">
-        <span class="ac-service-card__icon" aria-hidden="true">
-          <img src="<%= p.iconUrl || (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/icons/procedure.svg') : '') %>" alt="" width="28" height="28" loading="lazy"/>
-        </span>
-        <h3 class="ac-service-card__name"><%= p.displayName %></h3>
-        <% if (p.summary) { %>
-        <p class="ac-service-card__summary"><%= p.summary.length > 140 ? p.summary.slice(0, 140) + "…" : p.summary %></p>
-        <% } %>
-        <span class="ac-service-card__cta">View details</span>
-      </a>
-    </li>
-    <% }) %>
-  </ul>
   <% } %>
+
+  <% if (procedureList.length && html.procedures) { %>
+  <div class="ac-stitch-section ac-stitch-section--procedures">
+    <%- html.proceduresHeading || '' %>
+    <%- html.procedures %>
+  </div>
+  <% } %>
+
   <% if (serviceList.length || procedureList.length) { %>
-  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=services', label: 'Manage public catalogue', note: 'Edit service details and images in the shared public catalogue. Optional Content Library overrides remain available for advanced placements.', manageKind: 'services' }) %>
+  <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=services', label: 'Manage public catalogue', note: 'Edit service details and images in the shared public catalogue.', manageKind: 'services' }) %>
   <% } %>
-  <p class="ac-public-note"><a href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.pricing) || ('/clinics/' + clinic.clinicKey + '/pricing') %>">Pricing information</a> · Fees are shown only when configured by the clinic.</p>
+
+  <% if (html.cta) { %>
+  <div class="ac-stitch-section ac-stitch-section--cta">
+    <%- html.cta %>
+  </div>
+  <% } %>
+
   <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_services', librarySkipTypes: [] }) %>
 </section>

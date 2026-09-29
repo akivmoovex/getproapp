@@ -83,6 +83,10 @@ const {
   resolveClinicOrRespond,
 } = require("./activeClinicPublicRespond");
 const { attachActiveClinicWebsiteLocals, canEditClinicWebsite } = require("./attachActiveClinicWebsiteChrome");
+const {
+  buildActiveClinicStitchPublicPage,
+  isStitchPublicTemplate,
+} = require("../website/activeClinicStitchPublicPages");
 const { buildActiveClinicPublicSeo } = require("../website/activeClinicPublicSeo");
 const { resolvePublicPricingDisplay } = require("../website/publicPricingDisplay");
 const cmsService = require("../website/clinicWebsiteCmsService");
@@ -373,6 +377,29 @@ function registerActiveClinicPublicRoutes(app, deps) {
           presented && presented.websiteContent ? presented.websiteContent["insurance.intro"] : null,
         pageVisible: presented ? presented.showPricing !== false : true,
       });
+    }
+    if (isStitchPublicTemplate(template)) {
+      const doctorsForPage =
+        extras.profiles ||
+        presented.doctors ||
+        [];
+      const servicesForPage =
+        extras.services ||
+        presented.services ||
+        [];
+      const proceduresForPage = extras.procedures || [];
+      extras.websitePresentation = buildActiveClinicStitchPublicPage({
+        template,
+        clinic: presented,
+        doctors: doctorsForPage,
+        services: servicesForPage,
+        procedures: proceduresForPage,
+        websiteEdit: Boolean(website.websiteEdit),
+        navItems: website.clinicWebsiteNav && website.clinicWebsiteNav.desktop,
+      });
+      extras.websitePresentationWired = Boolean(
+        extras.websitePresentation && extras.websitePresentation.wired
+      );
     }
     const pageTitle =
       extras.pageTitle ||

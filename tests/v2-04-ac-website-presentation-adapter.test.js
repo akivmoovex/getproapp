@@ -116,10 +116,11 @@ function sampleClinic() {
 }
 
 describe("V2.04 ActiveClinic website presentation adapter", () => {
-  it("requires Step 1 + Step 2 and stays unwired to public render/editor mutation", () => {
+  it("requires Step 1 + Step 2 and wires Batch 2 public screens only", () => {
     assert.equal(adapter.STEP.step1Prerequisite, "PASS");
     assert.equal(adapter.STEP.step2Prerequisite, "PASS");
-    assert.equal(adapter.STEP.wiredToPublicRender, false);
+    assert.equal(adapter.STEP.wiredToPublicRender, true);
+    assert.deepEqual(adapter.STEP.wiredPublicScreens, ["R01", "R02", "R03"]);
     assert.equal(adapter.STEP.wiredToEditorMutation, false);
     assert.equal(presentation.PHASE.step1Prerequisite, "PASS");
     assert.equal(presentation.PHASE.componentLibraryAvailable, true);
@@ -133,7 +134,7 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
     assert.doesNotMatch(src, /require\(["'].*repositories/);
     assert.doesNotMatch(src, /\.query\(/);
     assert.match(src, /platform\/website\/presentation/);
-    assert.match(src, /wiredToPublicRender: false/);
+    assert.match(src, /wiredToPublicRender: true/);
   });
 
   it("maps all 18 universal fields from AC content + clinic fallbacks", () => {
@@ -224,7 +225,7 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
     });
 
     assert.equal(bundle.ok, true, JSON.stringify(bundle.failed));
-    assert.equal(bundle.wiredToPublicRender, false);
+    assert.equal(bundle.wiredToPublicRender, true);
     assert.equal(bundle.wiredToEditorMutation, false);
     assert.equal(bundle.step.id, "v2_04_overnight_step_3");
     assert.equal(bundle.metrics.universalFieldsMapped, 18);
@@ -275,12 +276,17 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
     assert.equal(presentation.assertDomainBoundary("clinical_service", "ministry").ok, false);
   });
 
-  it("does not alter live AC public templates (visual regression guard)", () => {
+  it("Batch 2 wires R01–R03 through presentation HTML without embedding platform partial paths", () => {
     const doctors = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/doctors.ejs"), "utf8");
     const home = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/home.ejs"), "utf8");
+    const about = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/about.ejs"), "utf8");
+    const services = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/services.ejs"), "utf8");
     assert.doesNotMatch(doctors, /activeClinicWebsitePresentationAdapter/);
     assert.doesNotMatch(home, /buildActiveClinicWebsitePresentation/);
-    assert.doesNotMatch(home, /platform\/website\/components\/hero/);
+    assert.match(home, /data-ac-stitch-screen="R01"/);
+    assert.match(about, /data-ac-stitch-screen="R02"/);
+    assert.match(services, /data-ac-stitch-screen="R03"/);
+    assert.match(home, /websitePresentation/);
   });
 
   it("preserves the single WE01 editor engine (editor regression guard)", () => {

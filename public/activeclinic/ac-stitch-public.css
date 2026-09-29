@@ -1,0 +1,65 @@
+/**
+ * ActiveClinic Stitch public foundation (Batch 2 R01–R03).
+ * Layout composition around shared --gp-website-* components.
+ * Product tokens enter only via the platform token bridge on body.ac-public-body.
+ * No product hex here.
+ */
+
+.ac-stitch-page {
+  width: min(100% - 2rem, var(--gp-website-max-width, 72rem));
+  margin: 0 auto;
+  padding: calc(var(--gp-website-space, 1rem) * 1.25) 0 calc(var(--gp-website-space, 1rem) * 2);
+  display: grid;
+  gap: calc(var(--gp-website-space, 1rem) * 1.75);
+}
+
+.ac-stitch-section {
+  min-width: 0;
+}
+
+.ac-stitch-section--hero .gp-website-pc--hero {
+  padding: calc(var(--gp-website-space, 1rem) * 0.5) 0;
+}
+
+.ac-stitch-section--trust .gp-website-pc--fact-strip {
+  margin: 0;
+}
+
+.ac-stitch-section--conversion .gp-website-pc--cta,
+.ac-stitch-section--cta .gp-website-pc--cta,
+.ac-stitch-section--promo .gp-website-pc--cta {
+  text-align: center;
+}
+
+.ac-stitch-section--visit {
+  display: grid;
+  gap: var(--gp-website-space, 1rem);
+}
+
+.ac-stitch-page--r03 .ac-service-editor-links {
+  list-style: none;
+  margin: 0.75rem 0 0;
+  padding: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+@media (min-width: 768px) {
+  .ac-stitch-section--visit {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+}
+
+@media (max-width: 390px) {
+  .ac-stitch-page {
+    width: calc(100% - 1.25rem);
+    gap: calc(var(--gp-website-space, 1rem) * 1.25);
+    padding-top: var(--gp-website-space, 1rem);
+  }
+
+  .ac-stitch-section--visit {
+    grid-template-columns: 1fr;
+  }
+}

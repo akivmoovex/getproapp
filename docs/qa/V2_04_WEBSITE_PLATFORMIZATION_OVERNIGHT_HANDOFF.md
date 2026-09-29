@@ -121,6 +121,21 @@ Primitives: hero, section_header, rich_text, image_text, cta, person_card, perso
 Person path: AC Doctor → adapter → PersonPresentation (portrait, dual CTA, badges when data exists) → shared person_card.  
 Service path: AC Service → adapter → CollectionPresentation (icon tile) → shared collection_card/grid.
 
+### Batch 2 — public foundation R01–R03
+
+| Metric | Value |
+|---|---|
+| **BATCH** | **2** |
+| **R01_HOME** | **PASS** (desktop + 390px shared implementation) |
+| **R02_ABOUT** | **PASS** |
+| **R03_SERVICES** | **PASS** |
+| **SHARED_COMPONENT_REUSE** | **PASS** |
+| **AC_DOMAIN_DATA_REUSE** | **PASS** (no demo medical hard-coding; catalogue remains canonical) |
+| **INLINE_EDIT_COMPATIBILITY** | **PASS** (WE01 keys on hero/about/services intros) |
+| **ROUTE_HEALTH** | **PASS** (existing `/clinics/:clinicKey`, `/about`, `/services`) |
+| Module | `src/activeclinic/website/activeClinicStitchPublicPages.js` |
+| CSS | `public/activeclinic/ac-stitch-public.css` + presentation bridge on tenant shell |
+
 ---
 
 ## 6. AC adapters created
@@ -132,7 +147,7 @@ Service path: AC Service → adapter → CollectionPresentation (icon tile) → 
 | Maps | branding, nav, hero, about, contact, hours, location, social, SEO, footer, promo |
 | Collections | doctors→Person, services→Collection, testimonials, FAQ, gallery |
 | Universal fields mapped | **18/18** |
-| Public templates | **unchanged** (`wiredToPublicRender: false`) |
+| Public templates | **R01–R03 wired** (`wiredToPublicRender: true` for home/about/services; remaining screens opt-in later) |
 
 ---
 
@@ -205,7 +220,22 @@ THEME_ISOLATION=PASS
 FINAL=V2_04_AC_STITCH_BATCH_1_PASS
 ```
 
-Next: Batch 2+ page wiring against frozen 38 physical / 20 logical Stitch screens (no new engines).
+```
+BATCH=2
+R01_DESKTOP=PASS
+R01_MOBILE=PASS
+R02_DESKTOP=PASS
+R02_MOBILE=PASS
+R03_DESKTOP=PASS
+R03_MOBILE=PASS
+SHARED_COMPONENT_REUSE=PASS
+AC_DOMAIN_DATA_REUSE=PASS
+INLINE_EDIT_COMPATIBILITY=PASS
+ROUTE_HEALTH=PASS
+FINAL=V2_04_AC_STITCH_BATCH_2_PASS
+```
+
+Next: Batch 3+ remaining public / editor / hub screens against frozen 38 physical designs (no new engines).
 
 ---
 
@@ -268,9 +298,9 @@ Architecture QA (Step 7): AC↔BB coupling = 0; presentation→domain = 0; engin
 
 ## 15. Recommended next action
 
-1. Push `V4` (Batch 1 shared component parity + prior foundation).
+1. Push `V4` (Batch 2 R01–R03 public foundation + prior batches).
 2. Hosted QA on neuniversity **when deliberately scheduled** — register new application candidate SHA after green QA (replaces historical `4d602f9c…` for website work).
-3. Continue **Stitch Batch 2+** page wiring per contract — presentation opt-in; keep WE01 = 1; no new engines.
+3. Continue **Stitch Batch 3+** (doctors, service detail, contact/location, editor, hubs) — presentation opt-in; keep WE01 = 1; no new engines.
 4. Keep production / pronline **untouched**.
 
 ---

@@ -33,13 +33,14 @@ const {
 
 const PRODUCT_CODE = "activeclinic";
 
-/** Overnight Step 3 gate metadata (adapter available; public render unwired). */
+/** Overnight Step 3 + Batch 2: adapter available; R01–R03 public pages wired. */
 const STEP = Object.freeze({
   id: "v2_04_overnight_step_3",
   name: "activeclinic_website_presentation_adapter",
   step1Prerequisite: "PASS",
   step2Prerequisite: "PASS",
-  wiredToPublicRender: false,
+  wiredToPublicRender: true,
+  wiredPublicScreens: Object.freeze(["R01", "R02", "R03"]),
   wiredToEditorMutation: false,
 });
 
@@ -118,18 +119,28 @@ function adaptActiveClinicHero(input) {
   const content = contentBag(clinic, input && input.content);
   const operational = asObject(clinic.operational || (input && input.operational));
   const name = operational.clinic_name || clinic.publicName || "clinic";
+  const paths = asObject(clinic.publicPagePaths);
+  const bookUrl =
+    paths.book ||
+    (clinic.publicBasePath ? `${clinic.publicBasePath}/book` : clinic.clinicKey ? `/clinics/${clinic.clinicKey}/book` : "#");
+  const contactUrl =
+    paths.contact ||
+    (clinic.publicBasePath ? `${clinic.publicBasePath}/contact` : clinic.clinicKey ? `/clinics/${clinic.clinicKey}/contact` : "#");
+  const phone = clinic.publicPhoneDisplay || clinic.headerPhone || pick(content, "contact.phone", null);
   const model = {
     eyebrow: pick(content, "home.hero.eyebrow", clinic.heroEyebrow || clinic.websiteTagline),
     title: pick(content, "home.hero.title", clinic.heroTitle || `Welcome to ${name}`),
     subtitle: pick(content, "home.hero.subtitle", clinic.heroSubtitle || clinic.websiteAbout),
     image: imageOrNull(pick(content, "home.hero.image", clinic.websiteHeroUrl)),
-    primaryCta: clinic.publicBookingEnabled
-      ? {
-          label: "Book Appointment",
-          url: (clinic.publicPagePaths && clinic.publicPagePaths.book) || "#",
-        }
-      : null,
-    secondaryCta: null,
+    primaryCta: {
+      label:
+        pick(content, "home.hero.button_label", null) ||
+        (clinic.publicBookingEnabled ? "Book Appointment" : "Request Appointment"),
+      url: bookUrl,
+    },
+    secondaryCta: phone
+      ? { label: String(phone), url: `tel:${String(phone).replace(/[^\d+]/g, "")}` }
+      : { label: "Contact the clinic", url: contactUrl },
   };
   return validatePresentationComponent(PRESENTATION_COMPONENT_TYPES.HERO, model);
 }
@@ -312,6 +323,14 @@ function adaptActiveClinicNavigation(input) {
  */
 function adaptActiveClinicDoctorToPerson(doctor, opts) {
   const row = asObject(doctor);
+  const clinicKey = opts && opts.clinicKey ? opts.clinicKey : null;
+  const profileHref =
+    row.profileHref ||
+    row.href ||
+    (clinicKey && row.staffKey ? `/clinics/${clinicKey}/doctors/${row.staffKey}` : null);
+  const bookingUrl =
+    row.bookingUrl ||
+    (clinicKey && row.staffKey ? `/clinics/${clinicKey}/book?doctor=${encodeURIComponent(row.staffKey)}` : null);
   return adaptDoctorToPersonPresentation(
     {
       id: row.id,
@@ -332,9 +351,9 @@ function adaptActiveClinicDoctorToPerson(doctor, opts) {
       displayOrder: row.displayOrder,
       public_profile_enabled: true,
       visible: row.visible !== false,
-      ctaUrl: row.profileHref || row.href || null,
+      ctaUrl: profileHref,
       ctaLabel: row.ctaLabel || null,
-      bookingUrl: row.bookingUrl || null,
+      bookingUrl,
       bookingLabel: row.bookingLabel || null,
       // Never invent clinical credentials — only pass through when domain supplies them.
       badges: row.badges || row.qualifications || row.credentials || null,
@@ -349,6 +368,11 @@ function adaptActiveClinicDoctorToPerson(doctor, opts) {
  */
 function adaptActiveClinicServiceToCard(service, opts) {
   const row = asObject(service);
+  const clinicKey = opts && opts.clinicKey ? opts.clinicKey : null;
+  const detailHref =
+    row.href ||
+    row.detailHref ||
+    (clinicKey && row.serviceKey ? `/clinics/${clinicKey}/services/${row.serviceKey}` : null);
   return adaptServiceToOfferingCard(
     {
       id: row.id,
@@ -365,8 +389,8 @@ function adaptActiveClinicServiceToCard(service, opts) {
       featured: row.featured === true,
       sort_order: row.sortOrder != null ? row.sortOrder : row.displayOrder,
       visible: row.visible !== false,
-      ctaUrl: row.href || row.detailHref || null,
-      detailHref: row.detailHref || row.href || null,
+      ctaUrl: detailHref,
+      detailHref,
       bookingUrl: row.bookingUrl || null,
       bookingLabel: row.bookingLabel || null,
       ctaLabel: row.ctaLabel || "Learn more",
@@ -386,7 +410,7 @@ function adaptActiveClinicDoctorsCollection(input) {
 
   const items = [];
   for (const doctor of doctors) {
-    const person = adaptActiveClinicDoctorToPerson(doctor);
+    const person = adaptActiveClinicDoctorToPerson(doctor, { clinicKey: clinic.clinicKey });
     if (person.ok) items.push(person.value);
   }
 
@@ -414,7 +438,7 @@ function adaptActiveClinicServicesCollection(input) {
 
   const items = [];
   for (const service of services) {
-    const card = adaptActiveClinicServiceToCard(service);
+    const card = adaptActiveClinicServiceToCard(service, { clinicKey: clinic.clinicKey });
     if (card.ok) items.push(card.value);
   }
 
@@ -672,7 +696,8 @@ function buildActiveClinicWebsitePresentation(input) {
     ok: failed.length === 0,
     productCode: PRODUCT_CODE,
     step: STEP,
-    wiredToPublicRender: false,
+    wiredToPublicRender: true,
+    wiredPublicScreens: STEP.wiredPublicScreens,
     wiredToEditorMutation: false,
     components,
     collections,

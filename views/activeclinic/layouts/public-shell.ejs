@@ -52,6 +52,11 @@
   <% } %>
   <link rel="stylesheet" href="/activeclinic/ac-tokens.css?v=<%= assetVersion %>"/>
   <link rel="stylesheet" href="/activeclinic/ac-public.css?v=<%= assetVersion %>"/>
+  <% if (shellVariant === 'tenant') { %>
+  <link rel="stylesheet" href="/platform/website-presentation-token-bridge.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/platform/website-presentation-components.css?v=<%= assetVersion %>"/>
+  <link rel="stylesheet" href="/activeclinic/ac-stitch-public.css?v=<%= assetVersion %>"/>
+  <% } %>
   <% if (typeof websiteThemeStylesheet !== 'undefined' && websiteThemeStylesheet) { %>
   <link rel="stylesheet" href="<%= websiteThemeStylesheet %>"/>
   <% } %>
