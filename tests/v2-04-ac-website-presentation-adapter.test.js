@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * V2.04 Phase 3A — ActiveClinic website presentation adapter.
+ * V2.04 Overnight Step 3 — ActiveClinic website presentation adapter.
  * Pure unit tests; no DB; does not change public render paths.
  */
 
@@ -116,6 +116,17 @@ function sampleClinic() {
 }
 
 describe("V2.04 ActiveClinic website presentation adapter", () => {
+  it("requires Step 1 + Step 2 and stays unwired to public render/editor mutation", () => {
+    assert.equal(adapter.STEP.step1Prerequisite, "PASS");
+    assert.equal(adapter.STEP.step2Prerequisite, "PASS");
+    assert.equal(adapter.STEP.wiredToPublicRender, false);
+    assert.equal(adapter.STEP.wiredToEditorMutation, false);
+    assert.equal(presentation.PHASE.step1Prerequisite, "PASS");
+    assert.equal(presentation.PHASE.componentLibraryAvailable, true);
+    assert.equal(presentation.SHARED_COMPONENT_COUNT, 18);
+    assert.equal(presentation.SHARED_EDITOR_ENGINE_COUNT, 1);
+  });
+
   it("does not import DB or visibility domain loaders (platform never queries AC tables)", () => {
     const src = fs.readFileSync(ADAPTER_FILE, "utf8");
     assert.doesNotMatch(src, /activeClinicPublicVisibilityService/);
@@ -200,8 +211,10 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
 
     assert.equal(bundle.ok, true, JSON.stringify(bundle.failed));
     assert.equal(bundle.wiredToPublicRender, false);
+    assert.equal(bundle.wiredToEditorMutation, false);
+    assert.equal(bundle.step.id, "v2_04_overnight_step_3");
     assert.equal(bundle.metrics.universalFieldsMapped, 18);
-    assert.ok(bundle.metrics.collectionsAdapted >= 4);
+    assert.ok(bundle.metrics.collectionsAdapted >= 5);
     assert.equal(bundle.metrics.doctorPersonAdapter, true);
     assert.equal(bundle.metrics.serviceCollectionAdapter, true);
     assert.ok(bundle.metrics.productSpecificFieldsPreserved >= 3);
@@ -220,10 +233,27 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
     assert.equal(bundle.components.navigation.ok, true);
     assert.equal(bundle.components.seo.ok, true);
     assert.equal(bundle.components.footer.ok, true);
+    assert.equal(bundle.components.social.ok, true);
+    assert.equal(bundle.components.gallery.ok, true);
     assert.equal(bundle.collections.doctors.value.items[0].name, "Dr Ada");
     assert.equal(bundle.collections.services.value.items[0].title, "Dental");
     assert.equal(bundle.collections.faq.value.items[0].title, "Do you take walk-ins?");
     assert.equal(bundle.collections.testimonials.value.items[0].description, "Great care");
+  });
+
+  it("adapts gallery rows into shared gallery presentation without querying media tables", () => {
+    const gallery = adapter.adaptActiveClinicGallery({
+      clinic: sampleClinic(),
+      gallery: [
+        { image: { src: "/g1.jpg" }, caption: "Lobby" },
+        { src: "/g2.jpg", alt: "Reception" },
+      ],
+    });
+    assert.equal(gallery.ok, true, gallery.code);
+    assert.equal(gallery.value.items.length, 2);
+    const html = presentation.renderPresentationComponent("gallery", gallery.value);
+    assert.equal(html.ok, true);
+    assert.match(html.html, /Lobby/);
   });
 
   it("keeps doctor/pastor domain boundary intact", () => {
@@ -239,10 +269,21 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
     assert.doesNotMatch(home, /platform\/website\/components\/hero/);
   });
 
+  it("preserves the single WE01 editor engine (editor regression guard)", () => {
+    const inlineEdit = path.join(ROOT, "public/platform/website-inline-edit.js");
+    assert.ok(fs.existsSync(inlineEdit));
+    assert.equal(presentation.SHARED_EDITOR_ENGINE_COUNT, 1);
+    const editorAdapter = fs.readFileSync(
+      path.join(ROOT, "src/activeclinic/website/activeClinicWebsiteEditorAdapter.js"),
+      "utf8"
+    );
+    assert.doesNotMatch(editorAdapter, /buildActiveClinicWebsitePresentation/);
+    assert.doesNotMatch(fs.readFileSync(ADAPTER_FILE, "utf8"), /website-inline-edit\.js/);
+  });
+
   it("does not modify BlessBoard website sources", () => {
     const adapterDir = fs.readdirSync(path.join(ROOT, "src/activeclinic/website"));
     assert.ok(adapterDir.includes("activeClinicWebsitePresentationAdapter.js"));
-    // Sanity: no new BB presentation adapter in this phase scope
     const bbWebsite = path.join(ROOT, "src/blessboard/website");
     if (fs.existsSync(bbWebsite)) {
       const names = fs.readdirSync(bbWebsite);

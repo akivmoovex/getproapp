@@ -2,11 +2,14 @@
 
 | Field | Value |
 |---|---|
-| **VERSION** | 2.04 Overnight Step 2 |
-| **STATUS** | SHARED PRESENTATION COMPONENTS (opt-in library; public render unwired) |
+| **VERSION** | 2.04 Overnight Step 3 |
+| **STATUS** | AC PRESENTATION ADAPTER (unwired; public render unchanged) |
 | **STEP_1** | **PASS** (canonical contracts + vocabulary) |
+| **STEP_2** | **PASS** (18 shared presentation components) |
+| **STEP_3** | **PASS** (`activeClinicWebsitePresentationAdapter.js`) |
 | **CODE** | `src/platform/website/presentation/` |
 | **COMPONENTS** | `views/platform/website/components/` (18 shared primitives) |
+| **AC_ADAPTER** | `src/activeclinic/website/activeClinicWebsitePresentationAdapter.js` |
 | **AUDIT** | `docs/qa/V2_04_AC_WEBSITE_PLATFORM_REUSE_AUDIT.md` |
 | **COMPONENT_SHAREABILITY_BEFORE** | **74%** (audit 14/19 candidates) |
 | **COMPONENT_SHAREABILITY_AFTER** | **89%** (17/19 with shared presentation coverage) |
@@ -245,19 +248,34 @@ Live product templates are **not** replaced by overnight Step 2. Appearance unch
 | `presentation/fieldKeyResolver.js` | Key bag mapping |
 | `presentation/adapters.js` | Domain → presentation helpers |
 | `presentation/index.js` | Public barrel (`PHASE` flag) |
+| `activeclinic/website/activeClinicWebsitePresentationAdapter.js` | AC domain → presentation bundle (Step 3) |
 
 Exported as `require("…/platform/website").presentation`.
 
+### ActiveClinic adapter (Step 3)
+
+Maps branding, navigation, hero, about, contact, hours, location, social, SEO, footer, promo CTA, plus shareable collections:
+
+| Collection | Presentation |
+|---|---|
+| Doctors | `PersonPresentation` / person grid |
+| Services | `CollectionPresentation` offering cards |
+| Testimonials | quote collection |
+| FAQ | FAQ collection |
+| Gallery | gallery component |
+
+Platform components never query AC tables. Appointments, clinical behavior, doctor/service domain rules, facility, and patient flows stay product-owned. Public templates remain unwired (`wiredToPublicRender: false`).
+
 ---
 
-## Regression policy (Step 2)
+## Regression policy (Step 3)
 
-Because `PHASE.wiredToPublicRender === false` and no live product templates are required to change:
+Because adapters stay unwired to public EJS and editor mutation:
 
-- **BB_THEME = PASS** (token bridge maps `--bb-*` → `--gp-website-*`; BB templates untouched)
-- **AC_THEME = PASS** (token bridge maps `--ac-*` → `--gp-website-*`; AC templates untouched)
-- **SHARED_EDITOR_REGRESSION = PASS** (WE01 remains the single editor)
-- **TOKEN_LEAKS = 0** in `website-presentation-components.css`
+- **AC_VISUAL_REGRESSION = PASS** (tenant templates unchanged)
+- **AC_EDITOR_REGRESSION = PASS** (WE01 singular; editor adapter untouched)
+- **AC_DOMAIN_BOUNDARIES = PASS** (doctor ≠ pastor; service ≠ ministry)
+- **BB_THEME / AC_THEME** unchanged from Step 2
 
 ---
 
@@ -265,3 +283,4 @@ Because `PHASE.wiredToPublicRender === false` and no live product templates are 
 
 - `tests/v2-04-platform-website-presentation.test.js` — contracts, vocabulary, adapters
 - `tests/v2-04-shared-website-components.test.js` — 18 partials, render, person/collection, theme leaks, editor singularity
+- `tests/v2-04-ac-website-presentation-adapter.test.js` — AC adapter, universal fields, collections, domain boundaries, visual/editor guards

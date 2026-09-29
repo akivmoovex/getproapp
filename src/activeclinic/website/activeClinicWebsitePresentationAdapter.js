@@ -1,11 +1,13 @@
 "use strict";
 
 /**
- * ActiveClinic → platform website presentation adapter (V2.04 Phase 3A).
+ * ActiveClinic → platform website presentation adapter (V2.04 Overnight Step 3).
  *
  * Maps already-resolved AC website content + public catalogue rows into
  * platform presentation DTOs. Does NOT query ActiveClinic domain tables.
- * Does NOT wire into public EJS render paths (no visual change in 3A).
+ * Does NOT wire into public EJS render paths (visual output unchanged).
+ *
+ * Prerequisites: Overnight Step 1 (presentation model) + Step 2 (shared components) PASS.
  *
  * Flow:
  *   AC DOMAIN (product-owned loaders)
@@ -30,6 +32,16 @@ const {
 } = presentation;
 
 const PRODUCT_CODE = "activeclinic";
+
+/** Overnight Step 3 gate metadata (adapter available; public render unwired). */
+const STEP = Object.freeze({
+  id: "v2_04_overnight_step_3",
+  name: "activeclinic_website_presentation_adapter",
+  step1Prerequisite: "PASS",
+  step2Prerequisite: "PASS",
+  wiredToPublicRender: false,
+  wiredToEditorMutation: false,
+});
 
 /** Product-specific content keys that must remain AC-owned (Class C). */
 const PRODUCT_SPECIFIC_CONTENT_KEYS = Object.freeze([
@@ -470,6 +482,42 @@ function adaptActiveClinicFaqCollection(input) {
   });
 }
 
+/**
+ * Gallery presentation from already-resolved gallery rows / content (no DB).
+ * Shareable audit candidate — presentation only; media stays on platform media engine.
+ */
+function adaptActiveClinicGallery(input) {
+  const clinic = asObject(input && input.clinic);
+  const content = contentBag(clinic, input && input.content);
+  const rows = Array.isArray(input && input.gallery)
+    ? input.gallery
+    : Array.isArray(clinic.gallery)
+      ? clinic.gallery
+      : Array.isArray(content["about.gallery"])
+        ? content["about.gallery"]
+        : Array.isArray(content["home.gallery"])
+          ? content["home.gallery"]
+          : [];
+  const items = rows
+    .map((row, index) => {
+      const image = imageOrNull(
+        row && (row.image || row.src || row.url || (typeof row === "string" ? row : null))
+      );
+      if (!image) return null;
+      return {
+        image,
+        caption: row && (row.caption || row.alt || row.title) ? String(row.caption || row.alt || row.title) : null,
+        displayOrder: row && row.displayOrder != null ? Number(row.displayOrder) : index,
+        visibility: !(row && row.visibility === false),
+      };
+    })
+    .filter(Boolean);
+  return validatePresentationComponent(PRESENTATION_COMPONENT_TYPES.GALLERY, {
+    heading: pick(content, "about.gallery_heading", clinic.galleryHeading || null),
+    items,
+  });
+}
+
 function adaptActiveClinicPromoCta(input) {
   const clinic = asObject(input && input.clinic);
   const content = contentBag(clinic, input && input.content);
@@ -575,6 +623,7 @@ function buildActiveClinicWebsitePresentation(input) {
   const services = adaptActiveClinicServicesCollection(opts);
   const testimonials = adaptActiveClinicTestimonialsCollection(opts);
   const faq = adaptActiveClinicFaqCollection(opts);
+  const gallery = adaptActiveClinicGallery(opts);
   const promo = adaptActiveClinicPromoCta(opts);
 
   const universal = countMappedUniversalFields(content, clinic);
@@ -585,6 +634,7 @@ function buildActiveClinicWebsitePresentation(input) {
     services,
     testimonials,
     faq,
+    gallery,
   };
   const collectionsAdapted = Object.values(collections).filter((c) => c && c.ok).length;
 
@@ -604,6 +654,7 @@ function buildActiveClinicWebsitePresentation(input) {
     services,
     testimonials,
     faq,
+    gallery,
   };
 
   const failed = Object.entries(components)
@@ -613,7 +664,9 @@ function buildActiveClinicWebsitePresentation(input) {
   return {
     ok: failed.length === 0,
     productCode: PRODUCT_CODE,
+    step: STEP,
     wiredToPublicRender: false,
+    wiredToEditorMutation: false,
     components,
     collections,
     universalFields: universal,
@@ -634,6 +687,7 @@ function buildActiveClinicWebsitePresentation(input) {
 
 module.exports = {
   PRODUCT_CODE,
+  STEP,
   PRODUCT_SPECIFIC_CONTENT_KEYS,
   adaptActiveClinicBranding,
   adaptActiveClinicHero,
@@ -651,6 +705,7 @@ module.exports = {
   adaptActiveClinicServicesCollection,
   adaptActiveClinicTestimonialsCollection,
   adaptActiveClinicFaqCollection,
+  adaptActiveClinicGallery,
   adaptActiveClinicPromoCta,
   countMappedUniversalFields,
   buildActiveClinicWebsitePresentation,
