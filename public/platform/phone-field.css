@@ -1,4 +1,6 @@
-/* Platform PhoneField (country + national). Canonical: /platform/phone-field.css */
+/* Platform PhoneField (country + national). Canonical: /platform/phone-field.css
+ * Colors: V2.04 platform semantic / component tokens (product-agnostic).
+ */
 .ac-sr-only {
   position: absolute;
   width: 1px;
@@ -45,17 +47,29 @@
   width: 100%;
   min-height: var(--ac-control-h, var(--ac-touch, 2.75rem));
   padding: 0.5rem 0.65rem;
-  border: 1px solid var(--acp-border, var(--ac-border, #d5e0e3));
+  border: 1px solid var(--input-border);
   border-radius: var(--ac-radius-md, 10px);
-  background: var(--acp-surface, var(--ac-surface, #fff));
-  color: var(--acp-ink, var(--ac-ink, #1a2b2f));
+  background: var(--input-bg);
+  color: var(--input-text);
   font: inherit;
   cursor: pointer;
 }
 
+.ac-phone-field__country-btn:hover {
+  border-color: var(--input-border-hover);
+}
+
 .ac-phone-field__country-btn:focus-visible {
-  outline: 3px solid var(--acp-focus, var(--ac-focus, #006068));
+  outline: 3px solid var(--input-border-focus);
   outline-offset: 2px;
+  box-shadow: 0 0 0 3px var(--input-focus-ring);
+}
+
+.ac-phone-field__country-btn:disabled {
+  background: var(--input-disabled-bg);
+  color: var(--input-disabled-text);
+  border-color: var(--color-disabled-border);
+  cursor: not-allowed;
 }
 
 .ac-phone-field__flag {
@@ -98,7 +112,7 @@
 }
 
 .ac-phone-field__input.is-invalid {
-  border-color: var(--ac-danger, #b42318);
+  border-color: var(--color-danger);
 }
 
 .ac-phone-field__backdrop {
@@ -116,10 +130,11 @@
   flex-direction: column;
   gap: 0.35rem;
   padding: 0.5rem;
-  border: 1px solid var(--acp-border, var(--ac-border, #d5e0e3));
+  border: 1px solid var(--card-border);
   border-radius: var(--ac-radius-md, 12px);
-  background: var(--acp-surface, var(--ac-surface, #fff));
-  box-shadow: var(--ac-shadow-sm, 0 12px 28px rgba(15, 40, 45, 0.12));
+  background: var(--card-bg);
+  /* JUSTIFIED_DECORATIVE: elevation uses text color mix */
+  box-shadow: 0 12px 28px color-mix(in srgb, var(--color-text-primary) 12%, transparent);
 }
 
 .ac-phone-field__popover[hidden],
@@ -159,14 +174,15 @@
 
 .ac-phone-field__option:hover,
 .ac-phone-field__option:focus-visible {
-  background: rgba(0, 60, 144, 0.08);
-  outline: 3px solid var(--acp-focus, var(--ac-focus, #006068));
+  background: var(--color-brand-primary-light);
+  outline: 3px solid var(--color-focus);
   outline-offset: -2px;
 }
 
 .ac-phone-field__option.is-selected {
-  background: rgba(0, 60, 144, 0.12);
+  background: color-mix(in srgb, var(--color-brand-primary) 14%, var(--color-surface));
   font-weight: 600;
+  color: var(--color-brand-primary);
 }
 
 .ac-phone-field__option-flag {
@@ -181,26 +197,26 @@
 }
 
 .ac-phone-field__option-code {
-  color: var(--ac-muted, #5b6d72);
+  color: var(--color-text-muted);
   white-space: nowrap;
 }
 
 .ac-phone-field__mode-hint {
   margin: 0.35rem 0 0;
   font-size: 0.8rem;
-  color: var(--ac-warning, #b54708);
+  color: var(--color-warning-text);
 }
 
 .ac-phone-field__hint,
 .ac-hint {
   margin: 0.35rem 0 0;
   font-size: 0.85rem;
-  color: var(--ac-muted, #5b6d72);
+  color: var(--color-text-muted);
 }
 
 .ac-field-error {
   margin: 0.35rem 0 0;
-  color: var(--ac-danger, #b42318);
+  color: var(--color-danger-text);
   font-size: 0.875rem;
 }
 
@@ -226,7 +242,7 @@ body.ac-phone-sheet-open {
     position: fixed;
     inset: 0;
     z-index: 79;
-    background: rgba(11, 28, 48, 0.42);
+    background: var(--modal-overlay);
   }
 
   .ac-phone-field__popover {

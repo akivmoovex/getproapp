@@ -1,13 +1,14 @@
 /* GetPro Release Notes Center — platform QA hub */
 :root {
-  --rnc-ink: #102a43;
-  --rnc-muted: #486581;
-  --rnc-surface: #f5f7fa;
-  --rnc-card: #ffffff;
-  --rnc-line: #d9e2ec;
-  --rnc-accent: #0b6e4f;
-  --rnc-accent-2: #c05621;
-  --rnc-warn: #b44d12;
+  /* Compatibility aliases → V2.04 semantic / brand tokens */
+  --rnc-ink: var(--color-text-primary);
+  --rnc-muted: var(--color-text-muted);
+  --rnc-surface: var(--color-background);
+  --rnc-card: var(--color-surface);
+  --rnc-line: var(--color-border-default);
+  --rnc-accent: var(--color-brand-primary);
+  --rnc-accent-2: var(--color-brand-accent-readable);
+  --rnc-warn: var(--color-warning-text);
   --rnc-radius: 12px;
   --rnc-font: "Hanken Grotesk", "Segoe UI", sans-serif;
 }
@@ -18,15 +19,15 @@ body.rnc-body {
   font-family: var(--rnc-font);
   color: var(--rnc-ink);
   background:
-    radial-gradient(1200px 500px at 10% -10%, rgba(11, 110, 79, 0.12), transparent 60%),
-    radial-gradient(900px 400px at 100% 0%, rgba(192, 86, 33, 0.10), transparent 55%),
+    radial-gradient(1200px 500px at 10% -10%, var(--color-brand-primary-light), transparent 60%),
+    radial-gradient(900px 400px at 100% 0%, color-mix(in srgb, var(--color-brand-accent-readable) 12%, transparent), transparent 55%),
     var(--rnc-surface);
   line-height: 1.5;
 }
 
 .rnc-header {
   border-bottom: 1px solid var(--rnc-line);
-  background: rgba(255,255,255,0.86);
+  background: color-mix(in srgb, var(--color-surface) 86%, transparent);
   backdrop-filter: blur(8px);
   position: sticky;
   top: 0;
@@ -80,7 +81,7 @@ body.rnc-body {
   padding: 0.45rem 0.55rem;
   border-radius: 8px;
   border: 1px solid var(--rnc-line);
-  background: #fff;
+  background: var(--color-surface);
   color: var(--rnc-ink);
 }
 .rnc-filters__actions { margin-top: 0.85rem; display: flex; gap: 0.6rem; flex-wrap: wrap; }
@@ -92,14 +93,14 @@ body.rnc-body {
   border: 0;
   border-radius: 999px;
   padding: 0.55rem 1rem;
-  background: var(--rnc-accent);
-  color: #fff;
+  background: var(--button-primary-bg);
+  color: var(--button-primary-text);
   font: inherit;
   font-weight: 600;
   text-decoration: none;
   cursor: pointer;
 }
-.rnc-btn--secondary { background: #fff; color: var(--rnc-ink); border: 1px solid var(--rnc-line); }
+.rnc-btn--secondary { background: var(--button-secondary-bg); color: var(--button-secondary-text); border: 1px solid var(--button-secondary-border); }
 
 .rnc-version-grid {
   display: grid;
@@ -116,7 +117,7 @@ body.rnc-body {
   padding: 1rem 1.05rem;
   transition: border-color 0.15s ease, transform 0.15s ease;
 }
-.rnc-version-card:hover { border-color: #9fb3c8; transform: translateY(-1px); }
+.rnc-version-card:hover { border-color: var(--color-border-strong); transform: translateY(-1px); }
 .rnc-version-card h2 { margin: 0 0 0.35rem; font-size: 1.2rem; }
 .rnc-meta { color: var(--rnc-muted); font-size: 0.85rem; }
 .rnc-stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.4rem; margin: 0.8rem 0; }
@@ -127,15 +128,15 @@ body.rnc-body {
   display: inline-block;
   padding: 0.15rem 0.5rem;
   border-radius: 999px;
-  background: #e6fffa;
-  color: #03543f;
+  background: var(--badge-success-bg);
+  color: var(--badge-success-text);
   font-size: 0.75rem;
   font-weight: 600;
   max-width: 100%;
   overflow-wrap: anywhere;
 }
 .rnc-legend ul { display: flex; flex-wrap: wrap; gap: 0.45rem; padding: 0; list-style: none; }
-.rnc-legend li { background: #fff; border: 1px solid var(--rnc-line); border-radius: 8px; padding: 0.25rem 0.5rem; }
+.rnc-legend li { background: var(--color-surface); border: 1px solid var(--rnc-line); border-radius: 8px; padding: 0.25rem 0.5rem; }
 
 .rnc-breadcrumb { display: flex; gap: 0.45rem; align-items: center; margin-bottom: 0.75rem; color: var(--rnc-muted); font-size: 0.9rem; }
 .rnc-breadcrumb a { color: var(--rnc-accent); }
@@ -144,13 +145,13 @@ body.rnc-body {
   text-decoration: none;
   color: var(--rnc-muted);
   border: 1px solid var(--rnc-line);
-  background: #fff;
+  background: var(--color-surface);
   border-radius: 999px;
   padding: 0.4rem 0.8rem;
   font-weight: 600;
   font-size: 0.88rem;
 }
-.rnc-tabs a.is-active { background: var(--rnc-ink); color: #fff; border-color: var(--rnc-ink); }
+.rnc-tabs a.is-active { background: var(--nav-active-text); color: var(--button-primary-text); border-color: var(--nav-active-text); }
 
 .rnc-section { margin: 1.4rem 0; }
 .rnc-section h2 { margin: 0 0 0.7rem; font-size: 1.25rem; }
@@ -169,10 +170,10 @@ body.rnc-body {
 .rnc-kv dd { margin: 0; overflow-wrap: anywhere; }
 .rnc-empty { color: var(--rnc-muted); }
 
-.rnc-table-wrap { overflow-x: auto; border: 1px solid var(--rnc-line); border-radius: var(--rnc-radius); background: #fff; }
+.rnc-table-wrap { overflow-x: auto; border: 1px solid var(--rnc-line); border-radius: var(--rnc-radius); background: var(--table-bg); }
 .rnc-table { width: 100%; border-collapse: collapse; font-size: 0.9rem; }
 .rnc-table th, .rnc-table td { padding: 0.65rem 0.7rem; border-bottom: 1px solid var(--rnc-line); text-align: left; vertical-align: top; }
-.rnc-table th { background: #f0f4f8; font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
+.rnc-table th { background: var(--table-header-bg); color: var(--table-header-text); font-size: 0.78rem; text-transform: uppercase; letter-spacing: 0.04em; }
 .rnc-steps { margin: 0.4rem 0 0; padding-left: 1.1rem; }
 .rnc-evidence { font-size: 0.8rem; color: var(--rnc-muted); max-width: 16rem; overflow-wrap: anywhere; }
 
@@ -198,6 +199,6 @@ body.rnc-body {
   .rnc-tabs,
   .rnc-share-actions,
   .rnc-btn { display: none !important; }
-  body.rnc-body { background: #fff; }
+  body.rnc-body { background: var(--color-surface); }
   .rnc-card, .rnc-version-card { break-inside: avoid; }
 }

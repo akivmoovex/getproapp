@@ -1,4 +1,6 @@
-/* Shared platform town/city autocomplete listbox (BlessBoard + ActiveClinic). */
+/* Shared platform town/city autocomplete listbox (BlessBoard + ActiveClinic).
+ * Colors: V2.04 platform semantic / brand tokens.
+ */
 
 .gp-location-field {
   position: relative;
@@ -10,10 +12,11 @@
   left: 0;
   right: 0;
   top: calc(100% + 0.25rem);
-  background: #fff;
-  border: 1px solid rgba(16, 24, 40, 0.12);
+  background: var(--card-bg);
+  border: 1px solid var(--card-border);
   border-radius: 0.5rem;
-  box-shadow: 0 10px 30px rgba(16, 24, 40, 0.12);
+  /* JUSTIFIED_DECORATIVE: elevation */
+  box-shadow: 0 10px 30px color-mix(in srgb, var(--color-text-primary) 12%, transparent);
   max-height: 14rem;
   overflow: auto;
 }
@@ -27,16 +30,25 @@
   padding: 0.65rem 0.85rem;
   cursor: pointer;
   font: inherit;
-  color: inherit;
+  color: var(--card-text);
 }
 
 .gp-location-option:hover,
 .gp-location-option:focus {
-  background: rgba(108, 92, 231, 0.08);
+  background: var(--color-brand-primary-light);
   outline: none;
+}
+
+.gp-location-option:focus-visible {
+  outline: 2px solid var(--color-focus);
+  outline-offset: -2px;
 }
 
 .gp-location-option--add {
   font-weight: 600;
-  color: #6c5ce7;
+  color: var(--color-link);
+}
+
+.gp-location-option--add:hover {
+  color: var(--color-link-hover);
 }

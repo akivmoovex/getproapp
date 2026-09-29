@@ -1,24 +1,22 @@
 :root {
-  --mx-ann-bg: #f6f7fb;
-  --mx-ann-surface: #ffffff;
-  --mx-ann-ink: #0f172a;
-  --mx-ann-muted: #64748b;
-  --mx-ann-border: #e2e8f0;
-  --mx-ann-accent: #0f766e;
-  --mx-ann-accent-soft: #ccfbf1;
-  --mx-ann-danger: #b91c1c;
+  /* Compatibility aliases → V2.04 semantic / brand tokens */
+  --mx-ann-bg: var(--color-background);
+  --mx-ann-surface: var(--color-surface);
+  --mx-ann-ink: var(--color-text-primary);
+  --mx-ann-muted: var(--color-text-muted);
+  --mx-ann-border: var(--color-border-default);
+  --mx-ann-accent: var(--color-brand-primary);
+  --mx-ann-accent-soft: var(--color-brand-primary-light);
+  --mx-ann-danger: var(--color-danger);
   --mx-ann-radius: 14px;
   --mx-ann-font: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
 }
 
-.mx-ann--blessboard {
-  --mx-ann-accent: #6c5ce7;
-  --mx-ann-accent-soft: #ede9fe;
-}
-
+/* Product classes inherit brand from data-product; keep explicit aliases for clarity */
+.mx-ann--blessboard,
 .mx-ann--activeclinic {
-  --mx-ann-accent: #0f766e;
-  --mx-ann-accent-soft: #ccfbf1;
+  --mx-ann-accent: var(--color-brand-primary);
+  --mx-ann-accent-soft: var(--color-brand-primary-light);
 }
 
 .mx-ann {
@@ -89,7 +87,7 @@
 
 .mx-ann-btn--primary {
   background: var(--mx-ann-accent);
-  color: #fff;
+  color: var(--button-primary-text);
 }
 
 .mx-ann-btn--ghost {
@@ -100,7 +98,7 @@
 
 .mx-ann-btn--danger {
   background: var(--mx-ann-danger);
-  color: #fff;
+  color: var(--button-primary-text);
 }
 
 .mx-ann-panel {
@@ -121,8 +119,8 @@
 }
 
 .mx-ann-banner--error {
-  background: #fef2f2;
-  border-color: #fecaca;
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
   color: var(--mx-ann-danger);
 }
 
@@ -145,15 +143,15 @@
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  background: #e2e8f0;
+  background: var(--badge-neutral-bg);
   text-transform: lowercase;
 }
 
-.mx-ann-badge--draft { background: #e2e8f0; }
-.mx-ann-badge--scheduled { background: #fef3c7; }
-.mx-ann-badge--published { background: #dcfce7; }
-.mx-ann-badge--expired { background: #fee2e2; }
-.mx-ann-badge--archived { background: #e5e7eb; }
+.mx-ann-badge--draft { background: var(--badge-neutral-bg); color: var(--badge-neutral-text); }
+.mx-ann-badge--scheduled { background: var(--badge-warning-bg); color: var(--badge-warning-text); }
+.mx-ann-badge--published { background: var(--badge-success-bg); color: var(--badge-success-text); }
+.mx-ann-badge--expired { background: var(--badge-danger-bg); color: var(--badge-danger-text); }
+.mx-ann-badge--archived { background: var(--badge-neutral-bg); color: var(--badge-neutral-text); }
 
 .mx-ann-muted { color: var(--mx-ann-muted); font-size: 0.85rem; }
 .mx-ann-empty { color: var(--mx-ann-muted); margin: 0.5rem 0; }
@@ -179,7 +177,7 @@
   border: 1px solid var(--mx-ann-border);
   border-radius: 10px;
   font: inherit;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .mx-ann-textarea { min-height: 9rem; resize: vertical; }

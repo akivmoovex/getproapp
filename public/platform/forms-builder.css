@@ -1,24 +1,21 @@
 :root {
-  --mx-forms-bg: #f6f7fb;
-  --mx-forms-surface: #ffffff;
-  --mx-forms-ink: #0f172a;
-  --mx-forms-muted: #64748b;
-  --mx-forms-border: #e2e8f0;
-  --mx-forms-accent: #0f766e;
-  --mx-forms-accent-soft: #ccfbf1;
-  --mx-forms-danger: #b91c1c;
+  /* Compatibility aliases → V2.04 semantic / brand tokens */
+  --mx-forms-bg: var(--color-background);
+  --mx-forms-surface: var(--color-surface);
+  --mx-forms-ink: var(--color-text-primary);
+  --mx-forms-muted: var(--color-text-muted);
+  --mx-forms-border: var(--color-border-default);
+  --mx-forms-accent: var(--color-brand-primary);
+  --mx-forms-accent-soft: var(--color-brand-primary-light);
+  --mx-forms-danger: var(--color-danger);
   --mx-forms-radius: 14px;
   --mx-forms-font: "Hanken Grotesk", "Segoe UI", system-ui, sans-serif;
 }
 
-.mx-forms--blessboard {
-  --mx-forms-accent: #6c5ce7;
-  --mx-forms-accent-soft: #ede9fe;
-}
-
+.mx-forms--blessboard,
 .mx-forms--activeclinic {
-  --mx-forms-accent: #0f766e;
-  --mx-forms-accent-soft: #ccfbf1;
+  --mx-forms-accent: var(--color-brand-primary);
+  --mx-forms-accent-soft: var(--color-brand-primary-light);
 }
 
 .mx-forms {
@@ -96,7 +93,7 @@
 .mx-forms-nav a.is-active {
   background: var(--mx-forms-accent);
   border-color: transparent;
-  color: #fff;
+  color: var(--button-primary-text);
 }
 
 .mx-forms-btn--ghost {
@@ -165,9 +162,9 @@
   color: var(--mx-forms-accent);
 }
 
-.mx-forms-badge--draft { background: #f1f5f9; color: #475569; }
-.mx-forms-badge--published { background: #dcfce7; color: #166534; }
-.mx-forms-badge--archived { background: #fee2e2; color: #991b1b; }
+.mx-forms-badge--draft { background: var(--badge-neutral-bg); color: var(--badge-neutral-text); }
+.mx-forms-badge--published { background: var(--badge-success-bg); color: var(--badge-success-text); }
+.mx-forms-badge--archived { background: var(--badge-danger-bg); color: var(--badge-danger-text); }
 
 .mx-forms label {
   display: block;
@@ -188,7 +185,7 @@
   border-radius: 10px;
   padding: 0.65rem 0.75rem;
   font: inherit;
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .mx-forms-field-row {
@@ -196,7 +193,7 @@
   border-radius: 12px;
   padding: 0.75rem;
   margin-bottom: 0.65rem;
-  background: #fcfcfd;
+  background: var(--color-surface-subtle);
 }
 
 .mx-forms-palette button {
@@ -209,9 +206,9 @@
   border-radius: 12px;
   padding: 0.85rem 1rem;
   margin-bottom: 1rem;
-  background: #fff7ed;
-  border: 1px solid #fed7aa;
-  color: #9a3412;
+  background: var(--color-warning-bg);
+  border: 1px solid var(--color-warning-border);
+  color: var(--color-warning-text);
 }
 
 .mx-forms-alert--info {
@@ -221,8 +218,8 @@
 }
 
 .mx-forms-alert--danger {
-  background: #fef2f2;
-  border-color: #fecaca;
+  background: var(--color-danger-bg);
+  border-color: var(--color-danger-border);
   color: var(--mx-forms-danger);
 }
 
@@ -236,7 +233,7 @@
   max-width: 100%;
   border-radius: 12px;
   border: 1px solid var(--mx-forms-border);
-  background: #fff;
+  background: var(--color-surface);
 }
 
 .mx-forms-matrix {
@@ -414,7 +411,7 @@
 .mx-forms-shell--bb-membership .mx-forms-chip.is-active {
   background: var(--mx-forms-accent);
   border-color: var(--mx-forms-accent);
-  color: #fff;
+  color: var(--button-primary-text);
 }
 .mx-forms-shell--bb-membership .mx-forms-card--membership {
   padding: 1rem;
@@ -458,7 +455,7 @@
   padding: 0.75rem 0.85rem;
   border: 1px solid var(--mx-forms-border);
   border-radius: 12px;
-  background: #fafbff;
+  background: var(--color-surface-subtle);
 }
 .mx-forms-shell--bb-membership .mx-forms-step.is-on {
   border-color: color-mix(in srgb, var(--mx-forms-accent) 35%, var(--mx-forms-border));
@@ -486,7 +483,7 @@
 .mx-forms-btn--danger {
   background: var(--mx-forms-danger);
   border-color: var(--mx-forms-danger);
-  color: #fff;
+  color: var(--button-primary-text);
 }
 
 @media (max-width: 799px) {
@@ -554,9 +551,9 @@
   font-weight: 700;
   letter-spacing: 0.06em;
   text-transform: uppercase;
-  color: #991b1b;
-  background: #fef2f2;
-  border: 1px solid #fecaca;
+  color: var(--color-danger-text);
+  background: var(--color-danger-bg);
+  border: 1px solid var(--color-danger-border);
   border-radius: 999px;
   padding: 0.28rem 0.7rem;
 }

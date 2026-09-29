@@ -12,8 +12,23 @@
   --gp-auth-reg-input-h: 3rem;
   --gp-auth-reg-radius: 0.5rem;
   --gp-auth-reg-radius-lg: 0.75rem;
-  --gp-auth-reg-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+  --gp-auth-reg-shadow: 0 8px 24px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
   --gp-auth-reg-font: "Public Sans", "Hanken Grotesk", Inter, system-ui, sans-serif;
+  /* Default auth chrome → V2.04 semantic (product themes override) */
+  --gp-auth-primary: var(--color-brand-primary);
+  --gp-auth-primary-strong: var(--color-brand-primary-active);
+  --gp-auth-primary-hover: var(--color-brand-primary-hover);
+  --gp-auth-bg: var(--color-background);
+  --gp-auth-surface: var(--color-surface);
+  --gp-auth-border: var(--color-border-default);
+  --gp-auth-muted: var(--color-text-secondary);
+  --gp-auth-text: var(--color-text-primary);
+  --gp-auth-focus: var(--color-focus);
+  --gp-auth-id-tabs-bg: var(--color-surface-subtle);
+  --gp-auth-id-tabs-border: var(--color-border-default);
+  --gp-reg-aside-bg-top: var(--color-surface-subtle);
+  --gp-reg-aside-bg-bottom: var(--color-surface);
+  --gp-reg-stepper-track: var(--color-surface-subtle);
 }
 
 /* —— Identifier tabs (Email | Phone) —— Stitch: full-width segmented control —— */
@@ -24,8 +39,8 @@
   padding: 0.25rem;
   margin: 0 0 1.5rem;
   border-radius: 0.5rem;
-  background: var(--gp-auth-id-tabs-bg, #eef2f4);
-  border: 1px solid var(--gp-auth-id-tabs-border, #c4c7c9);
+  background: var(--gp-auth-id-tabs-bg);
+  border: 1px solid var(--gp-auth-id-tabs-border);
   box-sizing: border-box;
 }
 
@@ -34,7 +49,7 @@
   flex: 1 1 0;
   border: 0;
   background: transparent;
-  color: var(--gp-auth-muted, #3e494a);
+  color: var(--gp-auth-muted);
   font: inherit;
   font-size: 0.875rem;
   font-weight: 600;
@@ -51,13 +66,13 @@
 }
 
 .gp-auth-id-tabs__btn[aria-selected="true"] {
-  background: var(--gp-auth-surface, #fff);
-  color: var(--gp-auth-primary, #006068);
-  box-shadow: 0 1px 3px rgba(15, 23, 42, 0.08);
+  background: var(--gp-auth-surface);
+  color: var(--gp-auth-primary);
+  box-shadow: 0 1px 3px color-mix(in srgb, var(--color-text-primary) 10%, transparent);
 }
 
 .gp-auth-id-tabs__btn:focus-visible {
-  outline: 2px solid var(--gp-auth-focus, var(--gp-auth-primary, #006068));
+  outline: 2px solid var(--gp-auth-focus, var(--gp-auth-primary));
   outline-offset: 2px;
 }
 
@@ -85,8 +100,8 @@
 }
 
 .gp-reg__aside {
-  background: linear-gradient(180deg, var(--gp-reg-aside-bg-top, #f7f8fc) 0%, var(--gp-reg-aside-bg-bottom, #fff) 100%);
-  border: 1px solid var(--gp-auth-border, #c4c7c9);
+  background: linear-gradient(180deg, var(--gp-reg-aside-bg-top) 0%, var(--gp-reg-aside-bg-bottom) 100%);
+  border: 1px solid var(--gp-auth-border);
   border-radius: var(--gp-auth-reg-radius-lg);
   padding: 1.5rem;
 }
@@ -96,8 +111,8 @@
 }
 
 .gp-reg__card {
-  background: var(--gp-auth-surface, #fff);
-  border: 1px solid var(--gp-auth-border, #c4c7c9);
+  background: var(--gp-auth-surface);
+  border: 1px solid var(--gp-auth-border);
   border-radius: var(--gp-auth-reg-radius-lg);
   box-shadow: var(--gp-auth-reg-shadow);
   padding: 1.5rem;
@@ -135,13 +150,13 @@
   left: calc(50% + 1.1rem);
   right: calc(-50% + 1.1rem);
   height: 2px;
-  background: var(--gp-reg-stepper-track, #eef2f4);
+  background: var(--gp-reg-stepper-track);
   z-index: 0;
 }
 
 .gp-reg__stepper-step--done:not(:last-child)::after,
 .gp-reg__stepper-step--active:not(:last-child)::after {
-  background: var(--gp-auth-primary, #006068);
+  background: var(--gp-auth-primary);
 }
 
 .gp-reg__stepper-step__marker {
@@ -153,9 +168,9 @@
   width: 2.2rem;
   height: 2.2rem;
   border-radius: 999px;
-  border: 2px solid var(--gp-reg-stepper-track, #eef2f4);
-  background: var(--gp-auth-surface, #fff);
-  color: var(--gp-auth-muted, #3e494a);
+  border: 2px solid var(--gp-reg-stepper-track);
+  background: var(--gp-auth-surface);
+  color: var(--gp-auth-muted);
   font-size: 0.875rem;
   font-weight: 700;
   line-height: 1;
@@ -166,26 +181,26 @@
 }
 
 .gp-reg__stepper-step--active .gp-reg__stepper-step__marker {
-  border-color: var(--gp-auth-primary, #006068);
-  background: var(--gp-auth-primary, #006068);
-  color: #fff;
+  border-color: var(--gp-auth-primary);
+  background: var(--gp-auth-primary);
+  color: var(--button-primary-text);
 }
 
 .gp-reg__stepper-step--done .gp-reg__stepper-step__marker {
-  border-color: var(--gp-auth-primary, #006068);
-  background: var(--gp-auth-primary, #006068);
-  color: #fff;
+  border-color: var(--gp-auth-primary);
+  background: var(--gp-auth-primary);
+  color: var(--button-primary-text);
 }
 
 .gp-reg__stepper-step__label {
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--gp-auth-muted, #3e494a);
+  color: var(--gp-auth-muted);
   line-height: 1.25;
 }
 
 .gp-reg__stepper-step--active .gp-reg__stepper-step__label {
-  color: var(--gp-auth-primary, #006068);
+  color: var(--gp-auth-primary);
 }
 
 .gp-reg__stepper-step__label--short {
@@ -209,14 +224,14 @@
 .gp-reg__stepper-track {
   height: 0.35rem;
   border-radius: 999px;
-  background: var(--gp-reg-stepper-track, #eef2f4);
+  background: var(--gp-reg-stepper-track);
   overflow: hidden;
   margin: 0.5rem 0 0;
 }
 
 .gp-reg__stepper-fill {
   height: 100%;
-  background: var(--gp-auth-primary, #006068);
+  background: var(--gp-auth-primary);
   border-radius: inherit;
   transition: width 0.2s ease;
 }
@@ -225,7 +240,7 @@
   margin: 0;
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--gp-auth-muted, #3e494a);
+  color: var(--gp-auth-muted);
 }
 
 .gp-reg__header h1 {
@@ -236,7 +251,7 @@
 
 .gp-reg__lede {
   margin: 0 0 1.25rem;
-  color: var(--gp-auth-muted, #3e494a);
+  color: var(--gp-auth-muted);
   line-height: 1.55;
 }
 
@@ -255,41 +270,49 @@
   align-items: start;
   font-size: 0.9rem;
   line-height: 1.45;
-  color: var(--gp-auth-muted, #3e494a);
+  color: var(--gp-auth-muted);
 }
 
 .gp-reg__feature-list .material-symbols-outlined {
-  color: var(--gp-auth-primary, #006068);
+  color: var(--gp-auth-primary);
   font-size: 1.25rem;
 }
 
-/* Product themes */
-body[data-gp-product="activeclinic"] {
-  --gp-auth-primary: var(--acp-primary, #006068);
-  --gp-auth-primary-strong: var(--acp-primary-strong, #004f56);
-  --gp-auth-primary-hover: var(--acp-primary-hover, #0f766e);
-  --gp-auth-bg: var(--acp-bg, #f8f9ff);
-  --gp-auth-surface: var(--acp-surface, #fff);
-  --gp-auth-border: var(--acp-border, #c4c7c9);
-  --gp-auth-muted: var(--acp-muted, #3e494a);
-  --gp-auth-focus: var(--acp-focus, var(--acp-primary, #006068));
-  --gp-auth-id-tabs-bg: #e8f4f5;
-  --gp-auth-id-tabs-border: #b8d4d6;
-  --gp-reg-aside-bg-top: #f0fafb;
+/* Product themes — brand via V2.04 tokens (data-gp-product / data-product) */
+body[data-gp-product="activeclinic"],
+body[data-product="activeclinic"] {
+  --gp-auth-primary: var(--color-brand-primary);
+  --gp-auth-primary-strong: var(--color-brand-primary-active);
+  --gp-auth-primary-hover: var(--color-brand-primary-hover);
+  --gp-auth-bg: var(--color-background);
+  --gp-auth-surface: var(--color-surface);
+  --gp-auth-border: var(--color-border-default);
+  --gp-auth-muted: var(--color-text-secondary);
+  --gp-auth-text: var(--color-text-primary);
+  --gp-auth-focus: var(--color-focus);
+  --gp-auth-id-tabs-bg: var(--color-brand-primary-light);
+  --gp-auth-id-tabs-border: var(--color-border-strong);
+  --gp-reg-aside-bg-top: var(--color-brand-primary-light);
+  --gp-reg-aside-bg-bottom: var(--color-surface);
+  --gp-reg-stepper-track: var(--color-surface-subtle);
 }
 
-body[data-gp-product="blessboard"] {
-  --gp-auth-primary: var(--bb-color-primary, #6c5ce7);
-  --gp-auth-primary-strong: var(--bb-color-primary-deep, #3d348b);
-  --gp-auth-primary-hover: var(--bb-color-primary-hover, #5341cd);
-  --gp-auth-bg: var(--bb-color-page, #fbf9f6);
-  --gp-auth-surface: #fff;
-  --gp-auth-border: var(--bb-color-border, #d1dce0);
-  --gp-auth-muted: var(--bb-color-muted, #44474e);
-  --gp-auth-focus: var(--bb-color-primary, #6c5ce7);
-  --gp-auth-id-tabs-bg: #f0ecff;
-  --gp-auth-id-tabs-border: #d5ccf5;
-  --gp-reg-aside-bg-top: #f7f4ff;
+body[data-gp-product="blessboard"],
+body[data-product="blessboard"] {
+  --gp-auth-primary: var(--color-brand-primary);
+  --gp-auth-primary-strong: var(--color-brand-primary-active);
+  --gp-auth-primary-hover: var(--color-brand-primary-hover);
+  --gp-auth-bg: var(--color-background);
+  --gp-auth-surface: var(--color-surface);
+  --gp-auth-border: var(--color-border-default);
+  --gp-auth-muted: var(--color-text-secondary);
+  --gp-auth-text: var(--color-text-primary);
+  --gp-auth-focus: var(--color-focus);
+  --gp-auth-id-tabs-bg: var(--color-brand-primary-light);
+  --gp-auth-id-tabs-border: var(--color-border-strong);
+  --gp-reg-aside-bg-top: var(--color-brand-primary-light);
+  --gp-reg-aside-bg-bottom: var(--color-surface);
+  --gp-reg-stepper-track: var(--color-surface-subtle);
 }
 
 @media (max-width: 390px) {
@@ -308,10 +331,10 @@ body[data-gp-product="blessboard"] {
 
 .gp-reg-review__card,
 .bb-apex-register-review__card {
-  border: 1px solid var(--gp-auth-border, #c4c7c9);
+  border: 1px solid var(--gp-auth-border);
   border-radius: var(--gp-auth-reg-radius-lg, 0.75rem);
   padding: 1rem 1.25rem;
-  background: var(--gp-auth-surface, #fff);
+  background: var(--gp-auth-surface);
 }
 
 .gp-reg-review__head,
@@ -336,7 +359,7 @@ body[data-gp-product="blessboard"] {
 .bb-apex-register-review__edit {
   font-size: 0.875rem;
   font-weight: 600;
-  color: var(--gp-auth-primary, #006068);
+  color: var(--gp-auth-primary);
   text-decoration: none;
 }
 
@@ -356,7 +379,7 @@ body[data-gp-product="blessboard"] {
 .gp-reg-review__dl dt,
 .bb-apex-register-review__dl dt {
   margin: 0;
-  color: var(--gp-auth-muted, #3e494a);
+  color: var(--gp-auth-muted);
   font-size: 0.875rem;
 }
 
@@ -374,8 +397,8 @@ body[data-gp-product="blessboard"] {
 @media (min-width: 960px) {
   .gp-auth-feature-panel {
     display: block;
-    background: linear-gradient(165deg, var(--gp-reg-aside-bg-top, #f7f4ff) 0%, var(--gp-auth-surface, #fff) 72%);
-    border: 1px solid var(--gp-auth-border, #c4c7c9);
+    background: linear-gradient(165deg, var(--gp-reg-aside-bg-top) 0%, var(--gp-auth-surface) 72%);
+    border: 1px solid var(--gp-auth-border);
     border-radius: var(--gp-auth-reg-radius-lg, 0.75rem);
     padding: 2rem 1.75rem;
     min-height: 100%;
@@ -387,8 +410,8 @@ body[data-gp-product="blessboard"] {
 
   .gp-auth-feature-panel__icon {
     font-size: 2.5rem;
-    color: var(--gp-auth-primary, #6c5ce7);
-    background: color-mix(in srgb, var(--gp-auth-primary, #6c5ce7) 12%, transparent);
+    color: var(--gp-auth-primary);
+    background: color-mix(in srgb, var(--gp-auth-primary) 12%, transparent);
     border-radius: 1rem;
     padding: 0.65rem;
   }
@@ -398,12 +421,12 @@ body[data-gp-product="blessboard"] {
     font-size: 1.75rem;
     line-height: 1.2;
     font-weight: 700;
-    color: var(--gp-auth-text, #1a1c1e);
+    color: var(--gp-auth-text);
   }
 
   .gp-auth-feature-panel__lead {
     margin: 0 0 1.25rem;
-    color: var(--gp-auth-muted, #44474e);
+    color: var(--gp-auth-muted);
     line-height: 1.55;
     font-size: 1rem;
   }
@@ -422,7 +445,7 @@ body[data-gp-product="blessboard"] {
     gap: 0.6rem;
     align-items: start;
     font-size: 0.9rem;
-    color: var(--gp-auth-muted, #44474e);
+    color: var(--gp-auth-muted);
     line-height: 1.45;
   }
 
@@ -436,19 +459,19 @@ body[data-gp-product="blessboard"] {
     display: block;
     font-size: 1rem;
     font-weight: 700;
-    color: var(--gp-auth-text, #1a1c1e);
+    color: var(--gp-auth-text);
     line-height: 1.25;
   }
 
   .gp-auth-feature-panel__item-text {
     display: block;
     font-size: 0.875rem;
-    color: var(--gp-auth-muted, #44474e);
+    color: var(--gp-auth-muted);
     line-height: 1.45;
   }
 
   .gp-auth-feature-panel__list .material-symbols-outlined {
-    color: var(--gp-auth-primary, #6c5ce7);
+    color: var(--gp-auth-primary);
     font-size: 1.2rem;
   }
 }
@@ -470,13 +493,13 @@ body[data-gp-product="blessboard"] {
     margin: 0 0 1.25rem;
     padding: 1rem 1.1rem;
     border-radius: var(--gp-auth-reg-radius-lg, 0.75rem);
-    background: color-mix(in srgb, var(--gp-auth-primary, #6c5ce7) 8%, var(--gp-auth-surface, #fff));
-    border: 1px solid color-mix(in srgb, var(--gp-auth-primary, #6c5ce7) 18%, var(--gp-auth-border, #d1dce0));
+    background: color-mix(in srgb, var(--gp-auth-primary) 8%, var(--gp-auth-surface));
+    border: 1px solid color-mix(in srgb, var(--gp-auth-primary) 18%, var(--gp-auth-border));
   }
 
   .gp-auth-feature-panel__mobile-icon .material-symbols-outlined {
     font-size: 1.75rem;
-    color: var(--gp-auth-primary, #6c5ce7);
+    color: var(--gp-auth-primary);
   }
 
   .gp-auth-feature-panel__mobile-title {
@@ -489,7 +512,7 @@ body[data-gp-product="blessboard"] {
   .gp-auth-feature-panel__mobile-lead {
     margin: 0;
     font-size: 0.875rem;
-    color: var(--gp-auth-muted, #44474e);
+    color: var(--gp-auth-muted);
     line-height: 1.45;
   }
 
@@ -521,7 +544,7 @@ body[data-gp-product="blessboard"] {
 
 .gp-reg__form-lede {
   margin: 0 0 1.25rem;
-  color: var(--gp-auth-muted, #3e494a);
+  color: var(--gp-auth-muted);
   line-height: 1.55;
   font-size: 0.95rem;
 }
@@ -530,11 +553,11 @@ body[data-gp-product="blessboard"] {
   margin: 1rem 0 0;
   text-align: center;
   font-size: 0.9rem;
-  color: var(--gp-auth-muted, #44474e);
+  color: var(--gp-auth-muted);
 }
 
 .bb-auth-register-hint a {
-  color: var(--gp-auth-primary, #6c5ce7);
+  color: var(--gp-auth-primary);
   font-weight: 600;
   text-decoration: none;
 }
