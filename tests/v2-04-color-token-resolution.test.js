@@ -51,6 +51,10 @@ const COMPLETED_SCOPE = [
   "public/activeclinic/acw-platform.css",
   "public/activeclinic/ac-patient.css",
   "public/activeclinic/website-theme-family-wellness-mint.css",
+  // Batch 7 — BlessBoard public
+  "public/blessboard/v5/apex.css",
+  "public/blessboard/v5/tenant-public.css",
+  "public/blessboard/v5/website-theme-contemporary-fellowship.css",
 ];
 
 const TOKEN_DEFINITION_FILES = [

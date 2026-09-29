@@ -146,6 +146,7 @@
   --bb-radius-pill: 999px;
   --bb-shadow-sm: 0 2px 4px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
   --bb-shadow-md: 0 10px 30px color-mix(in srgb, var(--color-brand-primary) 8%, transparent);
+  --bb-shadow-lg: 0 16px 40px color-mix(in srgb, var(--color-text-primary) 10%, transparent);
   --bb-shadow: var(--bb-shadow-md);
   /* Focus ring shadow → platform semantic (avoid bb-color-* indirection) */
   --bb-shadow-focus: 0 0 0 4px var(--color-focus-ring);

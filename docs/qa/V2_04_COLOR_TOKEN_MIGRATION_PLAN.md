@@ -19,6 +19,7 @@ Use the **same git-tracked scanner** as Batches 1–2 for all subsequent batches
 | Correction gate | **592** |
 | After Batch 5 | **426** |
 | After Batch 6 | **321** |
+| After Batch 7 | **171** |
 
 Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree boundary). Keep it only as historical context — do not use it as the migration baseline.
 
@@ -129,10 +130,11 @@ Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree bo
 
 | Field | Detail |
 | --- | --- |
-| Affected files | `apex.css`, `tenant-public.css`, BB website theme CSS, remaining `church.css` public marketing |
-| Approx hard-coded locations | ~150–200 |
+| Affected files | `apex.css`, `tenant-public.css`, `website-theme-contemporary-fellowship.css`, `design-tokens.css` (`--bb-shadow-lg`) |
+| Status | **COMPLETE** — see `docs/qa/V2_04_COLOR_MIGRATION_BATCH_7.md` |
+| Measured locations migrated | 150 (321 → 171) |
 | Risk | MEDIUM–HIGH — apex marketing + tenant public |
-| Visual QA | Apex home/pricing/about; tenant public home; Stitch parity spot-checks |
+| Visual QA | Apex home/pricing/about; tenant public home; **violet** brand retained via `data-product="blessboard"` |
 | BB/AC regression | BB public; AC smoke |
 
 ---
@@ -141,8 +143,8 @@ Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree bo
 
 | Field | Detail |
 | --- | --- |
-| Affected files | Residual SVG fills, rare JS style literals, dark-theme leftovers, dead aliases |
-| Approx hard-coded locations | Remainder toward ~0 meaningful UI literals |
+| Affected files | Residual SVG fills, rare JS style literals, `public/styles.css`, admin/field-agent views, dark-theme leftovers, dead aliases |
+| Approx hard-coded locations | **146** cleanup + **25** out-of-scope/justified (post–Batch 7 rescan → **171** total remaining) |
 | Risk | LOW–MEDIUM |
 | Visual QA | Spot-check previously migrated surfaces; grep gate for new HEX in `public/**/*.css` (allowlist token files) |
 | BB/AC regression | Full smoke both products |
