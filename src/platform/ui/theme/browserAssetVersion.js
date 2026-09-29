@@ -10,7 +10,7 @@
  *
  * Do not generate per-request timestamps. Do not set max-age to zero.
  */
-const V204_BROWSER_ASSET_VERSION = "v204-qa-2";
+const V204_BROWSER_ASSET_VERSION = "v204-qa-3";
 
 module.exports = {
   V204_BROWSER_ASSET_VERSION,

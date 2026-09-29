@@ -6,6 +6,7 @@ const { isZambiaCountryCode, listZambiaProvinces } = require("./zambiaCatalog");
 
 /**
  * Resolve submitted city/location for registration.
+ * Free-text cities remain valid (legacy + non-catalogue countries).
  * @param {{ query: Function }} db
  * @param {{
  *   countryCode: string,
@@ -88,54 +89,103 @@ function validateProvinceForCountry(countryCode, province) {
 
 const AUTOCOMPLETE_MAX_QUERY_LEN = 80;
 const AUTOCOMPLETE_MAX_RESULTS = 12;
+const AUTOCOMPLETE_MIN_QUERY_LEN = 1;
 
 /**
  * Parse and validate autocomplete query parameters.
  * @param {{ countryCode?: string, query?: string, limit?: number }} input
  */
 function parseLocationAutocompleteInput(input) {
-  const countryCode = String((input && input.countryCode) || "ZM")
+  const countryCode = String((input && input.countryCode) || "")
     .trim()
     .toUpperCase();
+  if (!countryCode) {
+    return { ok: false, code: "missing_country", results: [], catalogueEnabled: false };
+  }
   if (!/^[A-Z]{2}$/.test(countryCode)) {
-    return { ok: false, code: "invalid_country", results: [] };
+    return { ok: false, code: "invalid_country", results: [], catalogueEnabled: false };
   }
   const rawQuery = String((input && input.query) || "").trim();
   if (!rawQuery) {
-    return { ok: true, countryCode, query: "", results: [], limit: 0 };
+    return {
+      ok: true,
+      countryCode,
+      query: "",
+      results: [],
+      limit: 0,
+      catalogueEnabled: null,
+    };
   }
+  // Truncate overlong queries (parameterized LIKE); do not reject registration UX.
   const query = rawQuery.slice(0, AUTOCOMPLETE_MAX_QUERY_LEN);
-  if (query.length < 1) {
-    return { ok: true, countryCode, query: "", results: [], limit: 0 };
+  if (query.length < AUTOCOMPLETE_MIN_QUERY_LEN) {
+    return {
+      ok: true,
+      countryCode,
+      query: "",
+      results: [],
+      limit: 0,
+      catalogueEnabled: null,
+    };
   }
   const limit = Math.min(
     Math.max(Number(input && input.limit) || AUTOCOMPLETE_MAX_RESULTS, 1),
     25
   );
-  return { ok: true, countryCode, query, limit };
+  return { ok: true, countryCode, query, limit, catalogueEnabled: null };
 }
 
 /**
+ * Country-scoped city autocomplete against platform.geographic_locations.
+ * Non-catalogue countries return catalogueEnabled=false and empty results
+ * (registration still accepts manual city text).
+ *
  * @param {{ query: Function }} db
  * @param {{ countryCode?: string, query?: string, limit?: number }} input
  */
 async function autocompleteLocations(db, input) {
   const parsed = parseLocationAutocompleteInput(input);
   if (!parsed.ok) return parsed;
-  if (!parsed.query) {
-    return { ok: true, countryCode: parsed.countryCode, results: [] };
+
+  const catalogueEnabled = await locationRepo.isCityCatalogueEnabled(db, parsed.countryCode);
+  if (!catalogueEnabled) {
+    return {
+      ok: true,
+      countryCode: parsed.countryCode,
+      catalogueEnabled: false,
+      results: [],
+    };
   }
+
+  if (!parsed.query) {
+    return {
+      ok: true,
+      countryCode: parsed.countryCode,
+      catalogueEnabled: true,
+      results: [],
+    };
+  }
+
   const results = await locationRepo.searchLocations(db, {
     countryCode: parsed.countryCode,
     query: parsed.query,
     limit: parsed.limit,
   });
-  return { ok: true, countryCode: parsed.countryCode, results };
+  return {
+    ok: true,
+    countryCode: parsed.countryCode,
+    catalogueEnabled: true,
+    results,
+  };
 }
 
 module.exports = {
   searchLocations: locationRepo.searchLocations,
   seedZambiaLocations: locationRepo.seedZambiaLocations,
+  seedCityCatalogue: locationRepo.seedCityCatalogue,
+  getCityCatalogueStats: locationRepo.getCityCatalogueStats,
+  getGeographicCountry: locationRepo.getGeographicCountry,
+  isCityCatalogueEnabled: locationRepo.isCityCatalogueEnabled,
   resolveRegistrationLocation,
   persistRegistrationLocation,
   validateProvinceForCountry,
@@ -147,4 +197,5 @@ module.exports = {
   normalizeLocationName,
   AUTOCOMPLETE_MAX_QUERY_LEN,
   AUTOCOMPLETE_MAX_RESULTS,
+  AUTOCOMPLETE_MIN_QUERY_LEN,
 };

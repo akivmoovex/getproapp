@@ -24,6 +24,7 @@ const REQUIRED_PLATFORM_TABLES = Object.freeze([
   "deployment_sessions",
   "deployments",
   "domains",
+  "geographic_countries",
   "geographic_locations",
   "identities",
   "identity_action_token_rate_limits",

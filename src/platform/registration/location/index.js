@@ -12,7 +12,8 @@
  * - address / address_line_1 (optional street address; product-specific)
  *
  * Browser UI: public/platform/location-autocomplete.js + gp-location-field partial.
- * Autocomplete API: GET /api/locations/autocomplete
+ * Autocomplete API: GET /api/locations/cities (alias: /api/locations/autocomplete)
+ * Catalogue: platform.geographic_countries + platform.geographic_locations
  */
 
 const locationService = require("../../geography/locationService");
@@ -57,6 +58,9 @@ module.exports = {
   validateProvinceForCountry: locationService.validateProvinceForCountry,
   autocompleteLocations: locationService.autocompleteLocations,
   parseLocationAutocompleteInput: locationService.parseLocationAutocompleteInput,
+  isCityCatalogueEnabled: locationService.isCityCatalogueEnabled,
+  seedCityCatalogue: locationService.seedCityCatalogue,
+  getCityCatalogueStats: locationService.getCityCatalogueStats,
   canonicalLocationName: locationService.canonicalLocationName,
   normalizeLocationName: locationService.normalizeLocationName,
 };

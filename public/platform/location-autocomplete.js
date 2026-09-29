@@ -103,10 +103,14 @@
       cityInput.setAttribute("aria-activedescendant", optionId(activeIndex));
     }
 
-    function renderResults(items, query) {
+    function renderResults(items, query, catalogueEnabled) {
       listbox.innerHTML = "";
       results = items.slice();
       activeIndex = -1;
+      if (catalogueEnabled === false) {
+        closeList();
+        return;
+      }
       if (!results.length && allowCustom && query.length >= 1) {
         var add = document.createElement("button");
         add.type = "button";
@@ -116,6 +120,9 @@
         add.dataset.addName = query;
         add.textContent = 'Add "' + query + '"';
         listbox.appendChild(add);
+      } else if (!results.length) {
+        closeList();
+        return;
       } else {
         results.forEach(function (item, idx) {
           var btn = document.createElement("button");
@@ -126,7 +133,7 @@
           btn.dataset.index = String(idx);
           btn.dataset.id = item.id || "";
           btn.dataset.name = item.name || "";
-          btn.textContent = item.name;
+          btn.textContent = item.label || item.name || "";
           listbox.appendChild(btn);
         });
         if (allowCustom && query.length >= 1) {
@@ -172,7 +179,7 @@
       }
       var countryCode = String(country.value || "ZM").toUpperCase();
       fetch(
-        "/api/locations/autocomplete?country=" +
+        "/api/locations/cities?country=" +
           encodeURIComponent(countryCode) +
           "&q=" +
           encodeURIComponent(q),
@@ -182,7 +189,11 @@
           return res.json();
         })
         .then(function (payload) {
-          renderResults((payload && payload.results) || [], q);
+          var enabled =
+            !payload || payload.catalogueEnabled == null
+              ? true
+              : Boolean(payload.catalogueEnabled);
+          renderResults((payload && payload.results) || [], q, enabled);
         })
         .catch(function () {
           closeList();
