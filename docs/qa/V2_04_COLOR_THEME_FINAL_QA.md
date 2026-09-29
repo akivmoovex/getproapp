@@ -1,20 +1,23 @@
 # V2.04 Color Theme — Final QA Gate
 
-**Status:** LOCAL QA PASS · HOSTED PENDING  
+**Status:** LOCAL QA PASS · HOSTED BLOCKED (`HOSTED_DEPLOYMENT_STALE`)  
 **Branch:** V4  
-**Candidate SHA:** `19c116d90a9fcbbc3dd8314fed48b83c11505947`  
+**Theme candidate SHA:** `19c116d90a9fcbbc3dd8314fed48b83c11505947`  
+**Local V4 HEAD (pre-deploy / docs tip):** `c2a94cc2f13b503aebb8416d4f0836c23e7b9bca`  
 **Date:** 2026-09-29  
 **Production:** UNTOUCHED  
+**Hosted report:** `docs/qa/V2_04_COLOR_THEME_HOSTED_QA.md`
 
 ## 1. Candidate identity
 
 | Field | Value |
 | --- | --- |
 | Branch | V4 |
-| HEAD | `19c116d90a9fcbbc3dd8314fed48b83c11505947` |
-| origin/V4 | `19c116d90a9fcbbc3dd8314fed48b83c11505947` |
-| Frozen color tip | Same (Batch 8 freeze + accidental-duplicate cleanup) |
-| Worktree | Clean of intended changes (local `* 2.*` junk untracked only) |
+| Theme candidate (frozen color tip) | `19c116d90a9fcbbc3dd8314fed48b83c11505947` |
+| Local / origin/V4 HEAD | `c2a94cc2f13b503aebb8416d4f0836c23e7b9bca` |
+| Theme candidate ancestor of HEAD | **PASS** |
+| Post-candidate application changes | **0** (docs-only delta: this FINAL QA file) |
+| Worktree | Clean of intended app changes |
 
 ## 2. Frozen color architecture
 
@@ -149,47 +152,47 @@ Representative shells and `head-platform-colors.ejs` present; colors stylesheet 
 
 ## 15. Hosted verification
 
-Read-only `/healthz` against testing hosts (no deploy, no mutation):
+Gate attempted **V4 → testing-only** promote. Agent has no Hostinger hPanel/SSH/API; GitHub push does not switch the testing Node app off the configured **V10** Git branch. Visual smoke was **stopped** per stale-SHA rule.
 
-| Host | HTTP | environment | branch | gitSha (12) |
-| --- | ---: | --- | --- | --- |
-| `https://blessboard.pronline.org/healthz` | 200 | testing | **V10** | `05b2afe1caff` |
-| `https://activeclinic.pronline.org/healthz` | 200 | testing | **V10** | `05b2afe1caff` |
+| Host | HTTP | environment | branch | displayLabel | gitSha (12) |
+| --- | ---: | --- | --- | --- | --- |
+| `https://blessboard.pronline.org/healthz` | 200 | testing | **V10** | **V10 testing** | **`05b2afe1caff`** |
+| `https://activeclinic.pronline.org/healthz` | 200 | testing | **V10** | **V10 testing** | **`05b2afe1caff`** |
 
-**Hosted SHA does not match V4 candidate `19c116d9…`.**
+`check-hosted-testing-sha --expected-sha c2a94cc2…` → **DEPLOY_DRIFT** on both hosts.
 
 | Field | Value |
 | --- | --- |
 | HOSTED_ENVIRONMENT | testing (`moovex-platform-testing`) |
-| HOSTED_BRANCH | V10 |
-| HOSTED_SHA | `05b2afe1caff` (≠ candidate) |
-| HOSTED_BB_THEME_SMOKE | **PENDING** |
-| HOSTED_AC_THEME_SMOKE | **PENDING** |
-| HOSTED_QA | **BLOCKED_NOT_DEPLOYED** (stale relative to V4 candidate) |
+| BB/AC HOSTED_BRANCH | V10 |
+| BB/AC HOSTED_LABEL | V10 testing |
+| BB/AC HOSTED_SHA | `05b2afe1caff` |
+| SHA_PARITY | PASS (identical, wrong tip) |
+| THEME_CANDIDATE_PRESENT | **FAIL** |
+| HOSTED_ROUTE_HEALTH / theme load / BB·AC smoke / isolation / responsive | **SKIPPED** (stale deploy) |
+| HOSTED_QA | **`HOSTED_DEPLOYMENT_STALE`** |
 
-Production `/healthz` was not used for this gate; production remains untouched.
+Operator resume steps: `docs/qa/V2_04_COLOR_THEME_HOSTED_QA.md` §4–§8.
 
 ## 16. Production safety
 
-No production deploy, restart, DB migration, or media mutation performed.
+No production deploy, restart, DB migration, or media mutation performed. Production healthz still `environment=production`, `deploymentCode=moovex-platform-production`, `gitSha=03a89106e2fe`.
 
 `PRODUCTION=UNTOUCHED`
 
 ## 17. Remaining issues
 
-1. **Hosted testing still serves V10** — must deploy V4 candidate before claiming hosted theme QA pass.  
-2. Full interactive pixel walkthrough of every BB/AC screen awaits that hosted (or equivalent local) runtime.  
-3. Local app server was not running during this gate; visual QA relied on automated Chromium minisite checks + static/token evidence.
-
-None of the above are P0/P1 architecture defects in the frozen commit itself.
+1. **Hosted testing still serves V10 `05b2afe1caff`** — operator must set testing Git branch + `GETPRO_GIT_BRANCH=V4`, Deploy/Restart testing only, then re-run hosted smoke against `c2a94cc2f13b`.  
+2. Hosted BB/AC theme smoke, brand isolation, responsive smoke, and log review remain blocked until that deploy.  
+3. No application defect found in the V4 candidate line; blocker is **deployment identity**, not color architecture.
 
 ## 18. Final release verdict
 
 | Gate | Result |
 | --- | --- |
 | LOCAL_RELEASE_READINESS | **PASS** |
-| HOSTED_RELEASE_READINESS | **PENDING** |
+| HOSTED_RELEASE_READINESS | **FAIL** (`HOSTED_DEPLOYMENT_STALE`) |
 
-**FINAL = `V2_04_COLOR_THEME_LOCAL_QA_PASS_HOSTED_PENDING`**
+**FINAL = `V2_04_COLOR_THEME_HOSTED_QA_BLOCKED`**
 
-V4 color freeze is a valid **local QA / release candidate**. It is **not** yet fully hosted-QA-ready until testing is updated to SHA `19c116d90a9fcbbc3dd8314fed48b83c11505947` (or a deliberate descendant) and hosted BB/AC smoke repeats.
+V4 color freeze remains a valid **local QA / release candidate**. Full V2.04 hosted color-theme final QA does **not** pass until testing serves `origin/V4` HEAD and hosted smokes are recorded.
