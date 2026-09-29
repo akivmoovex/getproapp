@@ -12,8 +12,8 @@
 | **AUTHORITATIVE_DESIGN** | **YES** — this project is the visual source of truth for the AC website redesign |
 | **PRIOR_AUDIT** | `docs/qa/V2_04_AC_WEBSITE_PLATFORM_REUSE_AUDIT.md` |
 | **PRESENTATION_MODEL** | `docs/design/PLATFORM_WEBSITE_PRESENTATION_MODEL.md` |
-| **APPLICATION_CANDIDATE** | `4d602f9c715fa6e0ad0c9b5a8999911e123d0582` (unchanged by this docs commit) |
-| **MODE** | READ-ONLY mapping (docs only) |
+| **APPLICATION_CANDIDATE** | `2448e4609a2ab6d246d26a90a3323ea6dec1b277` (V2.04 Stitch + release hardening; supersedes `4d602f9c…`) |
+| **MODE** | Mapping retained; implementation Batches 1–6 + overnight audit **PASS** |
 
 **Stitch is the visual source of truth.** Implementation must reproduce text, layout, spacing, typography, imagery, component hierarchy, and responsive behavior while preserving platform architecture (presentation model, WE01 editor, `platform.website_*` lifecycle, media engine).
 
