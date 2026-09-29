@@ -111,8 +111,26 @@ describe("shared media folders — input handling", () => {
 
   it("whitelists asset tables per product and never trusts caller input", () => {
     assert.deepEqual(Object.keys(folders.PRODUCT_SOURCES).sort(), ["activeclinic", "blessboard"]);
-    assert.equal(folders.PRODUCT_SOURCES.activeclinic.table, "platform.website_media");
-    assert.equal(folders.PRODUCT_SOURCES.blessboard.table, "blessboard.media_assets");
+    assert.equal(
+      folders.PRODUCT_SOURCES.activeclinic[folders.MEDIA_SURFACE.WEBSITE].table,
+      "platform.website_media"
+    );
+    assert.equal(
+      folders.PRODUCT_SOURCES.blessboard[folders.MEDIA_SURFACE.WEBSITE].table,
+      "platform.website_media"
+    );
+    assert.equal(
+      folders.PRODUCT_SOURCES.blessboard[folders.MEDIA_SURFACE.OPERATIONAL].table,
+      "blessboard.media_assets"
+    );
+    assert.equal(
+      folders.sourceFor("blessboard", folders.MEDIA_SURFACE.WEBSITE).table,
+      "platform.website_media"
+    );
+    assert.equal(
+      folders.sourceFor("blessboard", folders.MEDIA_SURFACE.OPERATIONAL).table,
+      "blessboard.media_assets"
+    );
 
     const source = readRepoFile("src/platform/website/mediaFoldersService.js");
     // Table and column names may only come from the frozen map.
@@ -596,15 +614,27 @@ describe("shared media folders — database behaviour", () => {
 describe("shared media folders — product wiring", () => {
   it("both products use the one shared service", () => {
     const ac = readRepoFile("src/activeclinic/http/activeClinicWebsiteCmsRoutes.js");
-    const bb = readRepoFile("src/blessboard/http/contentAdminRoutes.js");
-    for (const source of [ac, bb]) {
+    const bbOps = readRepoFile("src/blessboard/http/contentAdminRoutes.js");
+    const bbWeb = readRepoFile("src/blessboard/http/blessboardWebsiteEditorRoutes.js");
+    for (const source of [ac, bbOps, bbWeb]) {
       assert.ok(source.includes('require("../../platform/website/mediaFoldersService")'));
       assert.ok(source.includes("mediaFoldersService.loadFolderContext"));
+    }
+    for (const source of [ac, bbOps, bbWeb]) {
       assert.ok(source.includes("mediaFoldersService.createFolder"));
       assert.ok(source.includes("mediaFoldersService.renameFolder"));
       assert.ok(source.includes("mediaFoldersService.deleteFolder"));
       assert.ok(source.includes("mediaFoldersService.moveMediaToFolder"));
     }
+  });
+
+  it("website surfaces use platform.website_media; BB operational keeps media_assets", () => {
+    const ac = readRepoFile("src/activeclinic/http/activeClinicWebsiteCmsRoutes.js");
+    const bbOps = readRepoFile("src/blessboard/http/contentAdminRoutes.js");
+    const bbWeb = readRepoFile("src/blessboard/http/blessboardWebsiteEditorRoutes.js");
+    assert.ok(ac.includes("MEDIA_SURFACE.WEBSITE"));
+    assert.ok(bbWeb.includes("MEDIA_SURFACE.WEBSITE"));
+    assert.ok(bbOps.includes("MEDIA_SURFACE.OPERATIONAL"));
   });
 
   it("folder routes are registered before the media id routes that would shadow them", () => {
@@ -624,6 +654,10 @@ describe("shared media folders — product wiring", () => {
       bb.indexOf("`${p}/media/folders`") < bb.indexOf("`${p}/media/:assetId/archive`"),
       "'folders' must not be captured as an asset id"
     );
+
+    const bbWeb = readRepoFile("src/blessboard/http/blessboardWebsiteEditorRoutes.js");
+    assert.ok(bbWeb.includes("/website/media/folders"));
+    assert.ok(bbWeb.includes("/website/media/move"));
   });
 
   it("every folder mutation is a CSRF-protected POST", () => {
@@ -641,6 +675,10 @@ describe("shared media folders — product wiring", () => {
     const bbFolders = bb.slice(bb.indexOf("`${p}/media/folders`"));
     assert.equal((bbFolders.match(/folderCsrfOk\(req, res\)/g) || []).length >= 4, true);
     assert.ok(!/router\.get\(`\$\{p\}\/media\/folders/.test(bb), "no GET mutations");
+
+    const bbWeb = readRepoFile("src/blessboard/http/blessboardWebsiteEditorRoutes.js");
+    const webFolders = bbWeb.slice(bbWeb.indexOf("/website/media/folders"));
+    assert.equal((webFolders.match(/validateCsrf\(req/g) || []).length >= 4, true);
   });
 
   it("asset row mappers expose folderId so the rail can filter", () => {

@@ -93,7 +93,7 @@ describe("v7 image editor coverage — editor wiring contract", () => {
     assert.doesNotMatch(js, /Image URL or media path|type="url"[^>]*data-website-image-url/);
   });
 
-  it("shared platform media field exposes upload, library, replace, and remove actions", () => {
+  it("shared platform media field exposes upload, library, replace, remove, and Adjust Picture", () => {
     const field = read("views/platform/website/partials/media-field.ejs");
     const picker = read("views/platform/website/partials/media-picker-dialog.ejs");
     const js = read("public/platform/website-media-field.js");
@@ -101,11 +101,14 @@ describe("v7 image editor coverage — editor wiring contract", () => {
     assert.match(field, /Choose from Content Library/);
     assert.match(field, /Replace image/);
     assert.match(field, /Remove image/);
+    assert.match(field, /Adjust Picture/);
+    assert.match(field, /data-gp-we-media-adjust/);
     assert.match(picker, /Upload from computer/);
     assert.match(picker, /Content Library/);
     assert.match(js, /data-gp-we-media-file/);
     assert.match(js, /uploadFile/);
     assert.match(js, /FormData/);
+    assert.match(js, /openFraming/);
   });
 
   it("ActiveClinic CMS media field reuses the shared platform partial", () => {

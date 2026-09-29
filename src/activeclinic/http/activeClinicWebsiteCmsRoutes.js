@@ -23,6 +23,7 @@ const contentService = require("../../platform/website/contentService");
 const mediaService = require("../../platform/website/mediaService");
 const libraryModel = require("../../platform/website/libraryModel");
 const mediaFoldersService = require("../../platform/website/mediaFoldersService");
+const { parseFormImagePlacement } = require("../../platform/website/imagePlacement");
 const {
   renderWebsiteLibrary,
   LIBRARY_STYLESHEET,
@@ -748,6 +749,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
     // Shared media folders, keyed by organization for both products.
     const folderContext = await mediaFoldersService.loadFolderContext(getPool(), {
       product: PRODUCT_CODE.ACTIVECLINIC,
+      surface: mediaFoldersService.MEDIA_SURFACE.WEBSITE,
       scopeId: input.organizationId,
     });
 
@@ -928,6 +930,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
         const folderId = req.body && req.body.folderId;
         const moved = await mediaFoldersService.moveMediaToFolder(getPool(), {
           product: PRODUCT_CODE.ACTIVECLINIC,
+          surface: mediaFoldersService.MEDIA_SURFACE.WEBSITE,
           scopeId: input.organizationId,
           mediaId: req.body && req.body.mediaId,
           folderId,
@@ -1092,13 +1095,32 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
             error: slugErrorMessage("invalid_hex"),
           });
         }
+        const logoPlacement = parseFormImagePlacement(
+          req.body && req.body.logoPlacementJson,
+          { contentKey: "home.logo" }
+        );
+        const heroPlacement = parseFormImagePlacement(
+          req.body && req.body.heroPlacementJson,
+          { contentKey: "home.hero.image" }
+        );
+        if (!logoPlacement.ok || !heroPlacement.ok) {
+          return await renderSettingsPage(req, res, {
+            keys: cmsService.SETTINGS_KEYS.branding,
+            content: "app/website-cms-branding.ejs",
+            cmsActive: "branding",
+            title: "Branding Settings",
+            description: "Logo, colours, and cover image.",
+            error: "Image framing could not be saved. Adjust the picture again.",
+          });
+        }
         const saved = await cmsService.saveSiteSettings(getPool(), cmsInput(req), [
           {
             key: "home.logo",
             value: cmsService.imageValueFromParts(
               req.body && req.body.logoSrc,
               req.body && req.body.logoAlt,
-              req.body && req.body.logoMediaId
+              req.body && req.body.logoMediaId,
+              logoPlacement.value
             ),
           },
           { key: "brand.primary_color", value: primary.value },
@@ -1108,7 +1130,8 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
             value: cmsService.imageValueFromParts(
               req.body && req.body.heroSrc,
               req.body && req.body.heroAlt,
-              req.body && req.body.heroMediaId
+              req.body && req.body.heroMediaId,
+              heroPlacement.value
             ),
           },
         ]);
@@ -1260,6 +1283,9 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
   );
 
   function libraryFormFields(body) {
+    const placement = parseFormImagePlacement(body && body.imagePlacementJson, {
+      contentKey: "cms.library.image",
+    });
     return {
       type: body && body.type,
       websiteOnly: body && body.websiteOnly,
@@ -1279,6 +1305,7 @@ function registerActiveClinicWebsiteCmsRoutes(app, deps) {
       imageSrc: body && body.imageSrc,
       imageAlt: body && body.imageAlt,
       imageMediaId: body && body.imageMediaId,
+      imagePlacement: placement.ok ? placement.value : null,
     };
   }
 

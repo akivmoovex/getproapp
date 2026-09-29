@@ -96,7 +96,10 @@
         altLabel: "Image description",
         mediaId: (item.image && item.image.mediaId) || "",
         src: (item.image && item.image.src) || "",
-        alt: (item.image && item.image.alt) || ""
+        alt: (item.image && item.image.alt) || "",
+        placementName: "imagePlacementJson",
+        placement: (item.image && item.image.placement) || null,
+        contentKey: "cms.library.image"
       }
     }) %>
     <% if (cms.canEdit) { %>

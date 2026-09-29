@@ -922,6 +922,7 @@ function createContentAdminRouter(deps) {
       // Shared media folders, keyed by the organization that owns this church.
       const folderContext = await mediaFoldersService.loadFolderContext(getPool(), {
         product: "blessboard",
+        surface: mediaFoldersService.MEDIA_SURFACE.OPERATIONAL,
         scopeId: scope.churchId,
       });
 
@@ -1053,6 +1054,7 @@ function createContentAdminRouter(deps) {
       const folderId = req.body && req.body.folderId;
       const moved = await mediaFoldersService.moveMediaToFolder(getPool(), {
         product: "blessboard",
+        surface: mediaFoldersService.MEDIA_SURFACE.OPERATIONAL,
         scopeId: scope.churchId,
         mediaId: req.body && req.body.mediaId,
         folderId,

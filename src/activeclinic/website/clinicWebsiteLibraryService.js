@@ -78,11 +78,18 @@ function normalizeImage(raw) {
   const src = String((raw && raw.src) || "").trim();
   const mediaId = String((raw && raw.mediaId) || "").trim();
   if (!src && !mediaId) return null;
-  return {
+  const out = {
     src,
     alt: String((raw && raw.alt) || "").trim(),
     mediaId,
   };
+  const placementRaw = raw && (raw.placement || raw.imagePlacement);
+  if (placementRaw && typeof placementRaw === "object" && !Array.isArray(placementRaw)) {
+    const { validateImagePlacement } = require("../../platform/website/imagePlacement");
+    const checked = validateImagePlacement(placementRaw, { contentKey: "cms.library.image" });
+    if (checked.ok && checked.value) out.placement = checked.value;
+  }
+  return out;
 }
 
 function normalizeItem(raw, index) {
@@ -604,7 +611,8 @@ function itemFromForm(body, operational) {
   const image = cmsService.imageValueFromParts(
     body && (body.imageSrc || (body.image && body.image.src)),
     body && (body.imageAlt || (body.image && body.image.alt)),
-    body && (body.imageMediaId || (body.image && body.image.mediaId))
+    body && (body.imageMediaId || (body.image && body.image.mediaId)),
+    body && (body.imagePlacement || (body.image && body.image.placement) || null)
   );
   const featured = boolValue(body && body.featured, false) === true;
   if (type === "faq" && (!title || !bodyText)) {
@@ -681,7 +689,12 @@ async function updateLibraryItem(db, input) {
         input.image !== undefined
           ? normalizeImage(input.image)
           : input.imageSrc !== undefined || input.imageMediaId !== undefined
-            ? cmsService.imageValueFromParts(input.imageSrc, input.imageAlt, input.imageMediaId)
+            ? cmsService.imageValueFromParts(
+                input.imageSrc,
+                input.imageAlt,
+                input.imageMediaId,
+                input.imagePlacement || null
+              )
             : current.image,
       visible: boolValue(input.visible, false),
       featured: boolValue(input.featured, false) === true,
@@ -857,7 +870,12 @@ async function upsertOperationalOverlay(db, input) {
       : input.image !== undefined
         ? normalizeImage(input.image)
         : input.imageSrc !== undefined || input.imageMediaId !== undefined
-          ? cmsService.imageValueFromParts(input.imageSrc, input.imageAlt, input.imageMediaId)
+          ? cmsService.imageValueFromParts(
+              input.imageSrc,
+              input.imageAlt,
+              input.imageMediaId,
+              input.imagePlacement || null
+            )
           : existing
             ? existing.image
             : null;

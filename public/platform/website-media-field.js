@@ -69,6 +69,7 @@
     var preview = field.querySelector("[data-gp-we-media-preview]");
     var empty = field.querySelector("[data-gp-we-media-preview-empty]");
     var removeBtn = field.querySelector("[data-gp-we-media-remove]");
+    var adjustBtn = field.querySelector("[data-gp-we-media-adjust]");
     var uploadLabel = field.querySelector("[data-gp-we-media-upload-label]");
     var src = item.previewUrl || item.publicSrc || item.src || "";
     if (idInput) idInput.value = item.id || item.mediaId || "";
@@ -90,6 +91,7 @@
     }
     if (empty) empty.hidden = Boolean(src);
     if (removeBtn) removeBtn.hidden = !src;
+    if (adjustBtn) adjustBtn.hidden = !src;
     if (uploadLabel) uploadLabel.textContent = src ? "Replace image" : "Upload from computer";
   }
 
@@ -97,6 +99,53 @@
     applySelection(field, { id: "", src: "", altText: "" });
     var altInput = field.querySelector("[data-gp-we-media-alt]");
     if (altInput) altInput.value = "";
+    var placementInput = field.querySelector("[data-gp-we-media-placement]");
+    if (placementInput) {
+      placementInput.value = "";
+      placementInput.dispatchEvent(new Event("input", { bubbles: true }));
+    }
+  }
+
+  function openFramingEditor(field, trigger) {
+    var srcInput = field.querySelector("[data-gp-we-media-src]");
+    var altInput = field.querySelector("[data-gp-we-media-alt]");
+    var placementInput = field.querySelector("[data-gp-we-media-placement]");
+    var preview = field.querySelector("[data-gp-we-media-preview]");
+    var status = field.querySelector("[data-gp-we-media-status]");
+    var src = (srcInput && srcInput.value) || (preview && preview.getAttribute("src")) || "";
+    if (!src) {
+      setStatus(status, "Upload or choose an image before adjusting.", true);
+      return;
+    }
+    var api = window.GpUniversalImageEditor;
+    if (!api || typeof api.openFraming !== "function") {
+      setStatus(status, "Image framing is unavailable. Reload the page.", true);
+      return;
+    }
+    var placement = null;
+    if (placementInput && placementInput.value) {
+      try {
+        placement = JSON.parse(placementInput.value);
+      } catch (err) {
+        placement = null;
+      }
+    }
+    api.openFraming({
+      src: src,
+      alt: altInput ? altInput.value : "",
+      placement: placement,
+      contentKey: field.getAttribute("data-gp-we-media-slot") || "cms.block.image",
+      allowSeparateFraming: field.getAttribute("data-gp-we-media-slot-separate") !== "0",
+      title: "Adjust Picture",
+      trigger: trigger || null,
+      onApply: function (nextPlacement) {
+        if (placementInput) {
+          placementInput.value = nextPlacement ? JSON.stringify(nextPlacement) : "";
+          placementInput.dispatchEvent(new Event("input", { bubbles: true }));
+        }
+        setStatus(status, "Picture adjusted. Save to keep this change in draft.", false);
+      },
+    });
   }
 
   function uploadFile(url, file, altText, onProgress) {
@@ -255,6 +304,13 @@
       removeBtn.addEventListener("click", function () {
         clearSelection(field);
         setStatus(status, "Image removed. Save to keep this change in draft.", false);
+      });
+    }
+
+    var adjustBtn = field.querySelector("[data-gp-we-media-adjust]");
+    if (adjustBtn && field.getAttribute("data-gp-we-media-framing") === "1") {
+      adjustBtn.addEventListener("click", function () {
+        openFramingEditor(field, adjustBtn);
       });
     }
   });

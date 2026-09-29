@@ -34,25 +34,73 @@ const UNFILED_KEY = "unfiled";
 const ALL_KEY = "all";
 
 /**
- * Asset tables are whitelisted per product. Table and column names are only
- * ever read from this frozen map, never built from caller input.
+ * Media surfaces:
+ *   website     — shared website engine store (platform.website_media) for BB + AC
+ *   operational — BlessBoard church operational media (blessboard.media_assets)
+ *
+ * Website folders always use the platform website media table. Operational
+ * BlessBoard content-admin libraries keep media_assets (domain-specific).
+ */
+const MEDIA_SURFACE = Object.freeze({
+  WEBSITE: "website",
+  OPERATIONAL: "operational",
+});
+
+const WEBSITE_MEDIA_SOURCE = Object.freeze({
+  table: "platform.website_media",
+  scopeColumn: "organization_id",
+  surface: MEDIA_SURFACE.WEBSITE,
+});
+
+const BLESSBOARD_OPERATIONAL_SOURCE = Object.freeze({
+  table: "blessboard.media_assets",
+  scopeColumn: "church_id",
+  surface: MEDIA_SURFACE.OPERATIONAL,
+});
+
+/**
+ * Asset tables are whitelisted per product + surface. Table and column names
+ * are only ever read from this frozen map, never built from caller input.
  */
 const PRODUCT_SOURCES = Object.freeze({
   activeclinic: Object.freeze({
-    table: "platform.website_media",
-    scopeColumn: "organization_id",
+    [MEDIA_SURFACE.WEBSITE]: WEBSITE_MEDIA_SOURCE,
+    // ActiveClinic has no separate operational media folder store.
+    [MEDIA_SURFACE.OPERATIONAL]: WEBSITE_MEDIA_SOURCE,
   }),
   blessboard: Object.freeze({
-    table: "blessboard.media_assets",
-    scopeColumn: "church_id",
+    [MEDIA_SURFACE.WEBSITE]: WEBSITE_MEDIA_SOURCE,
+    [MEDIA_SURFACE.OPERATIONAL]: BLESSBOARD_OPERATIONAL_SOURCE,
   }),
 });
 
-function sourceFor(product) {
+/**
+ * @param {string} product
+ * @param {string} [surface]
+ * @returns {string}
+ */
+function resolveMediaSurface(product, surface) {
+  const raw = String(surface || "").trim().toLowerCase();
+  if (raw === MEDIA_SURFACE.WEBSITE || raw === MEDIA_SURFACE.OPERATIONAL) return raw;
+  // Defaults preserve prior callers: AC website CMS → website; BB content-admin → operational.
+  return String(product || "").trim().toLowerCase() === "activeclinic"
+    ? MEDIA_SURFACE.WEBSITE
+    : MEDIA_SURFACE.OPERATIONAL;
+}
+
+/**
+ * @param {string} product
+ * @param {string} [surface]
+ * @returns {{ table: string, scopeColumn: string, surface: string }|null}
+ */
+function sourceFor(product, surface) {
   const key = String(product || "").trim().toLowerCase();
-  return Object.prototype.hasOwnProperty.call(PRODUCT_SOURCES, key)
+  const productMap = Object.prototype.hasOwnProperty.call(PRODUCT_SOURCES, key)
     ? PRODUCT_SOURCES[key]
     : null;
+  if (!productMap) return null;
+  const resolved = resolveMediaSurface(key, surface);
+  return productMap[resolved] || null;
 }
 
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -96,7 +144,7 @@ function mapFolder(row) {
  * @returns {Promise<{ ok: boolean, code?: string, organizationId?: string }>}
  */
 async function resolveOrganizationId(db, input) {
-  const source = sourceFor(input && input.product);
+  const source = sourceFor(input && input.product, input && input.surface);
   if (!source) return { ok: false, code: RESULT.UNSUPPORTED_PRODUCT };
   const scopeId = uuidOrNull(input && input.scopeId);
   if (!scopeId) return { ok: false, code: RESULT.INVALID_INPUT };
@@ -247,7 +295,8 @@ async function deleteFolder(db, input) {
  * @param {{ product: string, scopeId: string, mediaId: string, folderId: string|null }} input
  */
 async function moveMediaToFolder(db, input) {
-  const source = sourceFor(input && input.product);
+  const surface = resolveMediaSurface(input && input.product, input && input.surface);
+  const source = sourceFor(input && input.product, surface);
   if (!source) return { ok: false, code: RESULT.UNSUPPORTED_PRODUCT };
 
   const scopeId = uuidOrNull(input && input.scopeId);
@@ -264,6 +313,7 @@ async function moveMediaToFolder(db, input) {
     const resolved = await resolveOrganizationId(db, {
       product: input.product,
       scopeId,
+      surface,
     });
     if (!resolved.ok) return { ok: false, code: resolved.code };
     const folder = await getFolder(db, {
@@ -285,7 +335,7 @@ async function moveMediaToFolder(db, input) {
     [mediaId, scopeId, folderId]
   );
   if (!rows.length) return { ok: false, code: RESULT.MEDIA_NOT_FOUND };
-  return { ok: true, mediaId: rows[0].id, folderId: rows[0].folder_id };
+  return { ok: true, mediaId: rows[0].id, folderId: rows[0].folder_id, surface };
 }
 
 /**
@@ -296,7 +346,7 @@ async function moveMediaToFolder(db, input) {
  * @param {{ product: string, scopeId: string }} input
  */
 async function folderCounts(db, input) {
-  const source = sourceFor(input && input.product);
+  const source = sourceFor(input && input.product, input && input.surface);
   if (!source) return { ok: false, code: RESULT.UNSUPPORTED_PRODUCT, counts: {} };
   const scopeId = uuidOrNull(input && input.scopeId);
   if (!scopeId) return { ok: false, code: RESULT.INVALID_INPUT, counts: {} };
@@ -345,7 +395,12 @@ module.exports = {
   MAX_FOLDERS_PER_ORGANIZATION,
   UNFILED_KEY,
   ALL_KEY,
+  MEDIA_SURFACE,
+  WEBSITE_MEDIA_SOURCE,
+  BLESSBOARD_OPERATIONAL_SOURCE,
   PRODUCT_SOURCES,
+  resolveMediaSurface,
+  sourceFor,
   normalizeFolderName,
   resolveOrganizationId,
   listFolders,

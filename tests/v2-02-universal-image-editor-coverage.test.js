@@ -168,6 +168,22 @@ function categoryAFramingReachable(slot) {
     };
   }
 
+  if (slot.mount === MOUNT.CMS_MEDIA_FIELD) {
+    const field = read("views/platform/website/partials/media-field.ejs");
+    const js = read("public/platform/website-media-field.js");
+    const acField = read("views/activeclinic/partials/website-cms-media-field.ejs");
+    const wired =
+      field.includes("data-gp-we-media-adjust") &&
+      field.includes("Adjust Picture") &&
+      js.includes("openFraming") &&
+      js.includes("GpUniversalImageEditor") &&
+      acField.includes("framingEnabled");
+    if (!wired) {
+      return { ok: false, detail: "CMS media-field missing Adjust Picture / openFraming wiring" };
+    }
+    return { ok: true, detail: "cms_media_field + shared openFraming" };
+  }
+
   return { ok: false, detail: `unsupported mount for category A: ${slot.mount}` };
 }
 

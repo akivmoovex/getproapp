@@ -69,6 +69,11 @@ const {
   renderStandaloneHistoryPage,
 } = require("../../platform/website/websiteHistoryHttp");
 const { buildMediaPageView } = require("../../platform/website/mediaPageModel");
+const mediaFoldersService = require("../../platform/website/mediaFoldersService");
+const {
+  folderNoticeMessage,
+  folderRedirect,
+} = require("../../platform/website/http/websiteCmsFolderHttp");
 const {
   renderWebsiteMediaPageSection,
   MEDIA_PAGE_SCRIPT,
@@ -1281,11 +1286,17 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         organizationId: resolved.tenant.organization.id,
         instanceId: found.instance.id,
       });
+      const folderContext = await mediaFoldersService.loadFolderContext(getPool(), {
+        product: PRODUCT_CODE.BLESSBOARD,
+        surface: mediaFoldersService.MEDIA_SURFACE.WEBSITE,
+        scopeId: resolved.tenant.organization.id,
+      });
       const items = libraryModel.normalizeLibraryItems(listed.media || [], (row) => {
         const delivered = mediaService.presentWebsiteMediaForClient(found.instance, row);
         return {
           previewUrl: delivered.publicSrc,
           detailsUrl: basePath ? `${basePath}?media=${encodeURIComponent(row.id)}` : null,
+          folderId: row.folderId || row.folder_id || null,
         };
       });
       const page = buildMediaPageView({
@@ -1300,8 +1311,18 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
         canUpload: true,
         q: req.query && req.query.q,
         kind: req.query && req.query.type,
+        folder: req.query && req.query.folder,
         csrfField: CSRF_FIELD,
         csrfToken,
+        foldersEnabled: true,
+        canManageFolders: true,
+        folders: folderContext.folders || [],
+        folderCounts: folderContext.counts || {},
+        folderCreateAction: scopedEditorActionPath(resolved, "/website/media/folders"),
+        folderRenameAction: scopedEditorActionPath(resolved, "/website/media/folders/rename"),
+        folderDeleteAction: scopedEditorActionPath(resolved, "/website/media/folders/delete"),
+        moveAction: scopedEditorActionPath(resolved, "/website/media/move"),
+        folderNotice: folderNoticeMessage(req.query && req.query.folderNotice),
       });
       const bodyHtml = renderWebsiteMediaPageSection(page);
       return res.status(200).type("html").send(
@@ -1320,6 +1341,141 @@ function attachBlessBoardWebsiteEditorRoutes(router, opts) {
       return next(err);
     }
   });
+
+  router.post(
+    `${pathPrefix}/website/media/folders`,
+    express.urlencoded({ extended: false }),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+          return json(res, 403, { ok: false, code: "csrf" });
+        }
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const created = await mediaFoldersService.createFolder(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          name: req.body && req.body.name,
+          actorIdentityId: actorUserId(req),
+        });
+        if (!created.ok) {
+          return folderRedirect(res, {
+            mediaPath: scopedMediaLibraryPath(resolved),
+            code: created.code,
+            folderId: null,
+          });
+        }
+        return folderRedirect(res, {
+          mediaPath: scopedMediaLibraryPath(resolved),
+          code: "folder_created",
+          folderId: created.folder.id,
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    `${pathPrefix}/website/media/folders/rename`,
+    express.urlencoded({ extended: false }),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+          return json(res, 403, { ok: false, code: "csrf" });
+        }
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const folderId = req.body && req.body.folderId;
+        const renamed = await mediaFoldersService.renameFolder(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          folderId,
+          name: req.body && req.body.name,
+        });
+        if (!renamed.ok) {
+          return folderRedirect(res, {
+            mediaPath: scopedMediaLibraryPath(resolved),
+            code: renamed.code,
+            folderId,
+          });
+        }
+        return folderRedirect(res, {
+          mediaPath: scopedMediaLibraryPath(resolved),
+          code: "folder_renamed",
+          folderId: renamed.folder.id,
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    `${pathPrefix}/website/media/folders/delete`,
+    express.urlencoded({ extended: false }),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+          return json(res, 403, { ok: false, code: "csrf" });
+        }
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const removed = await mediaFoldersService.deleteFolder(getPool(), {
+          organizationId: resolved.tenant.organization.id,
+          folderId: req.body && req.body.folderId,
+        });
+        if (!removed.ok) {
+          return folderRedirect(res, {
+            mediaPath: scopedMediaLibraryPath(resolved),
+            code: removed.code,
+            folderId: null,
+          });
+        }
+        return folderRedirect(res, {
+          mediaPath: scopedMediaLibraryPath(resolved),
+          code: "folder_deleted",
+          folderId: null,
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
+
+  router.post(
+    `${pathPrefix}/website/media/move`,
+    express.urlencoded({ extended: false }),
+    async (req, res, next) => {
+      try {
+        if (!validateCsrf(req, csrfFrom(req), getEnv())) {
+          return json(res, 403, { ok: false, code: "csrf" });
+        }
+        const resolved = await requireEditor(req, res, "website.edit");
+        if (!resolved) return undefined;
+        const folderId = req.body && req.body.folderId;
+        const moved = await mediaFoldersService.moveMediaToFolder(getPool(), {
+          product: PRODUCT_CODE.BLESSBOARD,
+          surface: mediaFoldersService.MEDIA_SURFACE.WEBSITE,
+          scopeId: resolved.tenant.organization.id,
+          mediaId: req.body && req.body.mediaId,
+          folderId,
+        });
+        if (!moved.ok) {
+          return folderRedirect(res, {
+            mediaPath: scopedMediaLibraryPath(resolved),
+            code: moved.code,
+            folderId,
+          });
+        }
+        return folderRedirect(res, {
+          mediaPath: scopedMediaLibraryPath(resolved),
+          code: "media_moved",
+          folderId: moved.folderId,
+        });
+      } catch (err) {
+        return next(err);
+      }
+    }
+  );
 
   function registerSettingsAndAddSectionRoutes() {
     router.get(`${pathPrefix}/website/styles`, async (req, res, next) => {

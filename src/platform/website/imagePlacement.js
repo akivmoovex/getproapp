@@ -56,6 +56,21 @@ const IMAGE_SLOT_REGISTRY = Object.freeze({
     aspectDesktop: null,
     aspectMobile: null,
   }),
+  "cms.block.image": Object.freeze({
+    supportsSeparateFraming: true,
+    aspectDesktop: null,
+    aspectMobile: null,
+  }),
+  "cms.library.image": Object.freeze({
+    supportsSeparateFraming: true,
+    aspectDesktop: null,
+    aspectMobile: null,
+  }),
+  "cms.section.image": Object.freeze({
+    supportsSeparateFraming: true,
+    aspectDesktop: null,
+    aspectMobile: null,
+  }),
 });
 
 const DEFAULT_SLOT = Object.freeze({
@@ -279,6 +294,28 @@ function objectPositionFromPlacement(placement, fallback) {
   return `${checked.value.x}% ${checked.value.y}%`;
 }
 
+/**
+ * Parse a CMS/form placement payload (JSON string or object) into a validated
+ * placement value. Empty input clears placement.
+ * @param {unknown} raw
+ * @param {{ contentKey?: string }|null} [opts]
+ * @returns {{ ok: boolean, value: object|null, code?: string }}
+ */
+function parseFormImagePlacement(raw, opts) {
+  if (raw == null) return { ok: true, value: null };
+  const text = typeof raw === "string" ? raw.trim() : "";
+  if (typeof raw === "string" && !text) return { ok: true, value: null };
+  let parsed = raw;
+  if (typeof raw === "string") {
+    try {
+      parsed = JSON.parse(text);
+    } catch (_err) {
+      return { ok: false, code: "invalid_image_placement", value: null };
+    }
+  }
+  return validateImagePlacement(parsed, opts || {});
+}
+
 module.exports = {
   PLACEMENT_VERSION,
   IMAGE_SLOT_REGISTRY,
@@ -288,6 +325,7 @@ module.exports = {
   FOCAL_MAX,
   slotDefinition,
   validateImagePlacement,
+  parseFormImagePlacement,
   placementFromImageValue,
   renderPlacementStyle,
   objectPositionFromPlacement,

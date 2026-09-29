@@ -31,7 +31,10 @@
           altLabel: "Logo description",
           mediaId: logo.mediaId || "",
           src: logo.src || "",
-          alt: logo.alt || ""
+          alt: logo.alt || "",
+          placementName: "logoPlacementJson",
+          placement: logo.placement || null,
+          contentKey: "home.logo"
         }
       }) %>
       <label data-ac-mw-color="1">
@@ -58,7 +61,10 @@
           altLabel: "Cover image description",
           mediaId: hero.mediaId || "",
           src: hero.src || "",
-          alt: hero.alt || ""
+          alt: hero.alt || "",
+          placementName: "heroPlacementJson",
+          placement: hero.placement || null,
+          contentKey: "home.hero.image"
         }
       }) %>
       <div class="ac-mw-actions">
