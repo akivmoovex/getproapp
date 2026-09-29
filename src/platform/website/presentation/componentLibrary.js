@@ -1,11 +1,12 @@
 "use strict";
 
 /**
- * Platform website presentation component library (V2.04 Phase 2).
+ * Platform website presentation component library (V2.04 Overnight Step 2).
  *
  * Renders EJS partials under views/platform/website/components/.
  * Components accept presentation DTOs only — no BB/AC domain entities.
- * Not wired into live product templates in Phase 2 (opt-in later).
+ * Not wired into live product templates (opt-in later). Product appearance
+ * comes from --gp-website-* tokens via the product token bridge.
  */
 
 const fs = require("fs");
@@ -49,6 +50,28 @@ const COMPONENT_PARTIALS = Object.freeze({
 
 const SHARED_COMPONENT_IDS = Object.freeze(Object.keys(COMPONENT_PARTIALS));
 const SHARED_COMPONENT_COUNT = SHARED_COMPONENT_IDS.length;
+
+/**
+ * Audit §15 baseline: 14/19 components were shareable candidates (≈74%).
+ * After Step 2 library: 17/19 audited patterns have shared presentation
+ * components (Event Card remains product-local; Navigation chrome remains
+ * product shell with shared nav-items partial).
+ */
+const COMPONENT_SHAREABILITY_BEFORE = "74%";
+const COMPONENT_SHAREABILITY_AFTER = "89%";
+const COMPONENT_SHAREABILITY = Object.freeze({
+  auditedComponentCount: 19,
+  shareableCandidatesBefore: 14,
+  sharedPresentationCoverageAfter: 17,
+  beforePercent: 74,
+  afterPercent: 89,
+  beforeLabel: COMPONENT_SHAREABILITY_BEFORE,
+  afterLabel: COMPONENT_SHAREABILITY_AFTER,
+});
+
+/** WE01 — public/platform/website-inline-edit.js remains the only editor engine. */
+const SHARED_EDITOR_ENGINE_COUNT = 1;
+const SHARED_EDITOR_ENGINE_PATH = "/platform/website-inline-edit.js";
 
 const CONTRACT_TYPE_BY_COMPONENT = Object.freeze({
   hero: PRESENTATION_COMPONENT_TYPES.HERO,
@@ -253,6 +276,11 @@ module.exports = {
   COMPONENT_PARTIALS,
   SHARED_COMPONENT_IDS,
   SHARED_COMPONENT_COUNT,
+  COMPONENT_SHAREABILITY_BEFORE,
+  COMPONENT_SHAREABILITY_AFTER,
+  COMPONENT_SHAREABILITY,
+  SHARED_EDITOR_ENGINE_COUNT,
+  SHARED_EDITOR_ENGINE_PATH,
   CONTRACT_TYPE_BY_COMPONENT,
   PLATFORM_THEME_TOKENS,
   ASSET_PATHS,

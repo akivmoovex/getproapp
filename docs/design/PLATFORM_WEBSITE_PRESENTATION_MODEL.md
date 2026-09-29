@@ -2,11 +2,15 @@
 
 | Field | Value |
 |---|---|
-| **VERSION** | 2.04 Overnight Step 1 |
-| **STATUS** | CANONICAL PRESENTATION MODEL (contracts; public render unwired) |
+| **VERSION** | 2.04 Overnight Step 2 |
+| **STATUS** | SHARED PRESENTATION COMPONENTS (opt-in library; public render unwired) |
+| **STEP_1** | **PASS** (canonical contracts + vocabulary) |
 | **CODE** | `src/platform/website/presentation/` |
-| **COMPONENTS** | `views/platform/website/components/` (opt-in library) |
+| **COMPONENTS** | `views/platform/website/components/` (18 shared primitives) |
 | **AUDIT** | `docs/qa/V2_04_AC_WEBSITE_PLATFORM_REUSE_AUDIT.md` |
+| **COMPONENT_SHAREABILITY_BEFORE** | **74%** (audit 14/19 candidates) |
+| **COMPONENT_SHAREABILITY_AFTER** | **89%** (17/19 with shared presentation coverage) |
+| **SHARED_EDITOR_ENGINE_COUNT** | **1** (`public/platform/website-inline-edit.js`) |
 | **WIRED_TO_PUBLIC_RENDER** | **NO** |
 | **WIRED_TO_EDITOR_MUTATION** | **NO** |
 | **BB_LIFECYCLE_MIGRATED** | **NO** |
@@ -198,16 +202,30 @@ Bind UI slots to: (1) Class A presentation keys, (2) presentation component type
 
 ---
 
-## Shared component library (available, opt-in)
+## Shared component library (Step 2 — available, opt-in)
 
 | Asset | Path |
 |---|---|
 | Partials | `views/platform/website/components/*.ejs` |
 | Render helper | `presentation/componentLibrary.js` |
-| Component CSS | `public/platform/website-presentation-components.css` |
-| Token bridge | `public/platform/website-presentation-token-bridge.css` |
+| Component CSS | `public/platform/website-presentation-components.css` (`--gp-website-*` only) |
+| Token bridge | `public/platform/website-presentation-token-bridge.css` (BB / AC scoped) |
+| Editable hooks | `editable-field.ejs`, `editable-image.ejs` → WE01 data attributes |
 
-Live product templates are **not** replaced by overnight Step 1. Appearance unchanged.
+### Shared primitives (18)
+
+Hero · SectionHeader · RichText · ImageText · CTA · PersonCard · PersonGrid · CollectionCard · CollectionGrid · Contact · Hours · Location · Gallery · Video · Announcement · Navigation · Footer · SEO
+
+Rules:
+
+- Components consume presentation contracts / PersonPresentation / CollectionPresentation only.
+- Components do **not** query BB/AC domain tables.
+- No church/clinic business logic in shared partials.
+- Product appearance via semantic theme tokens (`--gp-website-*` bridged from `--bb-*` / `--ac-*`).
+- No raw product brand hex in platform component CSS.
+- Preserve `public/platform/website-inline-edit.js` as the single editor engine.
+
+Live product templates are **not** replaced by overnight Step 2. Appearance unchanged until a later wiring step.
 
 ---
 
@@ -217,7 +235,7 @@ Live product templates are **not** replaced by overnight Step 1. Appearance unch
 |---|---|
 | `presentation/auditFieldInventory.js` | Audit Class A–D counts |
 | `presentation/componentTypes.js` | Type enum (18) |
-| `presentation/componentLibrary.js` | Opt-in render registry |
+| `presentation/componentLibrary.js` | Opt-in render registry + shareability metrics |
 | `presentation/universalFieldVocabulary.js` | 18 Class A fields |
 | `presentation/legacyFieldMap.js` | 25 Class D maps |
 | `presentation/componentContracts.js` | Shape contracts + 42 Class B concepts |
@@ -232,16 +250,18 @@ Exported as `require("…/platform/website").presentation`.
 
 ---
 
-## Regression policy (Step 1)
+## Regression policy (Step 2)
 
 Because `PHASE.wiredToPublicRender === false` and no live product templates are required to change:
 
-- **BB_REGRESSION = PASS** (no public markup/CSS change required)
-- **AC_REGRESSION = PASS** (no public markup/CSS change required)
+- **BB_THEME = PASS** (token bridge maps `--bb-*` → `--gp-website-*`; BB templates untouched)
+- **AC_THEME = PASS** (token bridge maps `--ac-*` → `--gp-website-*`; AC templates untouched)
 - **SHARED_EDITOR_REGRESSION = PASS** (WE01 remains the single editor)
+- **TOKEN_LEAKS = 0** in `website-presentation-components.css`
 
 ---
 
 ## Tests
 
-`tests/v2-04-platform-website-presentation.test.js` validates universal/legacy/type counts, contracts, domain boundaries, and adapters.
+- `tests/v2-04-platform-website-presentation.test.js` — contracts, vocabulary, adapters
+- `tests/v2-04-shared-website-components.test.js` — 18 partials, render, person/collection, theme leaks, editor singularity

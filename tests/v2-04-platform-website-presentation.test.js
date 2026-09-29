@@ -12,12 +12,14 @@ const presentation = require("../src/platform/website/presentation");
 const websiteIndex = require("../src/platform/website");
 
 describe("V2.04 platform website presentation foundation", () => {
-  it("exports presentation from platform website barrel and marks Step 1 unwired", () => {
+  it("exports presentation from platform website barrel and marks Step 2 unwired", () => {
     assert.ok(websiteIndex.presentation);
     assert.equal(websiteIndex.presentation.PHASE.wiredToPublicRender, false);
     assert.equal(websiteIndex.presentation.PHASE.wiredToEditorMutation, false);
-    assert.ok(String(presentation.PHASE.id).startsWith("v2_04_"));
+    assert.equal(presentation.PHASE.step1Prerequisite, "PASS");
+    assert.equal(presentation.PHASE.id, "v2_04_overnight_step_2");
     assert.equal(presentation.PHASE.wiredToPublicRender, false);
+    assert.equal(presentation.PHASE.componentLibraryAvailable, true);
   });
 
   it("records the audit field inventory (18/42/175/25)", () => {

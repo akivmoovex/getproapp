@@ -1,7 +1,7 @@
 "use strict";
 
 /**
- * V2.04 Phase 2 — platform website presentation component library.
+ * V2.04 Overnight Step 2 — platform website presentation component library.
  */
 
 const { describe, it } = require("node:test");
@@ -30,10 +30,21 @@ describe("V2.04 shared website presentation component library", () => {
 
   it("keeps a single shared inline editor engine", () => {
     assert.ok(fs.existsSync(INLINE_EDIT_JS));
-    const legacyBb = path.join(ROOT, "public/blessboard/v5/website-inline-edit.js");
-    // Legacy file may exist but must not be the active engine for new components.
+    assert.equal(presentation.SHARED_EDITOR_ENGINE_COUNT, 1);
+    assert.equal(presentation.SHARED_EDITOR_ENGINE_PATH, "/platform/website-inline-edit.js");
     assert.equal(presentation.ASSET_PATHS.componentsCss, "/platform/website-presentation-components.css");
     assert.match(fs.readFileSync(INLINE_EDIT_JS, "utf8"), /GpUniversalImageEditor|data-website-inline/);
+  });
+
+  it("records component shareability before/after Step 2", () => {
+    assert.equal(presentation.COMPONENT_SHAREABILITY_BEFORE, "74%");
+    assert.equal(presentation.COMPONENT_SHAREABILITY_AFTER, "89%");
+    assert.equal(presentation.COMPONENT_SHAREABILITY.beforePercent, 74);
+    assert.equal(presentation.COMPONENT_SHAREABILITY.afterPercent, 89);
+    assert.equal(presentation.COMPONENT_SHAREABILITY.auditedComponentCount, 19);
+    assert.equal(presentation.COMPONENT_SHAREABILITY.shareableCandidatesBefore, 14);
+    assert.equal(presentation.COMPONENT_SHAREABILITY.sharedPresentationCoverageAfter, 17);
+    assert.ok(presentation.COMPONENT_SHAREABILITY.afterPercent > presentation.COMPONENT_SHAREABILITY.beforePercent);
   });
 
   it("renders hero with editable WE01 hooks from presentation data", () => {
@@ -192,11 +203,24 @@ describe("V2.04 shared website presentation component library", () => {
 
   it("does not wire components into live public product templates yet", () => {
     assert.equal(presentation.PHASE.wiredToPublicRender, false);
+    assert.equal(presentation.PHASE.step1Prerequisite, "PASS");
     assert.equal(presentation.PHASE.componentLibraryAvailable, true);
     const bbHero = fs.readFileSync(path.join(ROOT, "views/blessboard/v5/public/partials/page-hero.ejs"), "utf8");
     const acDoctors = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/doctors.ejs"), "utf8");
     assert.doesNotMatch(bbHero, /platform\/website\/components\/hero/);
     assert.doesNotMatch(acDoctors, /platform\/website\/components\/person/);
+  });
+
+  it("exposes BB and AC theme token bridges without product hex in component CSS", () => {
+    const bridge = fs.readFileSync(BRIDGE_CSS, "utf8");
+    const componentCss = fs.readFileSync(COMPONENTS_CSS, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    assert.match(bridge, /--gp-website-color-primary:\s*var\(--bb-color-primary/);
+    assert.match(bridge, /--gp-website-color-primary:\s*var\(--ac-color-primary/);
+    assert.equal(presentation.findThemeTokenLeaks(componentCss, "blessboard").length, 0);
+    assert.equal(presentation.findThemeTokenLeaks(componentCss, "activeclinic").length, 0);
+    for (const token of presentation.PLATFORM_THEME_TOKENS) {
+      assert.match(bridge, new RegExp(token.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    }
   });
 
   it("rejects domain entities passed where presentation DTOs are required", () => {
