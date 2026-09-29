@@ -12,12 +12,22 @@ const presentation = require("../src/platform/website/presentation");
 const websiteIndex = require("../src/platform/website");
 
 describe("V2.04 platform website presentation foundation", () => {
-  it("exports presentation from platform website barrel and marks Phase 1 unwired", () => {
+  it("exports presentation from platform website barrel and marks Step 1 unwired", () => {
     assert.ok(websiteIndex.presentation);
     assert.equal(websiteIndex.presentation.PHASE.wiredToPublicRender, false);
     assert.equal(websiteIndex.presentation.PHASE.wiredToEditorMutation, false);
-    assert.ok(String(presentation.PHASE.id).startsWith("v2_04_phase_"));
+    assert.ok(String(presentation.PHASE.id).startsWith("v2_04_"));
     assert.equal(presentation.PHASE.wiredToPublicRender, false);
+  });
+
+  it("records the audit field inventory (18/42/175/25)", () => {
+    assert.deepEqual(presentation.AUDIT_FIELD_INVENTORY, {
+      universal: 18,
+      componentSemantic: 42,
+      productSpecific: 175,
+      legacyDuplicates: 25,
+    });
+    assert.equal(presentation.AUDIT_FIELD_TOTAL, 260);
   });
 
   it("defines exactly 18 universal presentation fields with BB/AC maps", () => {
@@ -132,7 +142,11 @@ describe("V2.04 platform website presentation foundation", () => {
   });
 
   it("maps Class B semantic concepts onto presentation components", () => {
-    assert.ok(presentation.COMPONENT_SEMANTIC_CONCEPT_COUNT >= 40);
+    assert.equal(presentation.COMPONENT_SEMANTIC_CONCEPT_COUNT, 42);
+    assert.equal(
+      presentation.COMPONENT_SEMANTIC_CONCEPT_COUNT,
+      presentation.AUDIT_FIELD_INVENTORY.componentSemantic
+    );
     assert.ok(presentation.COMPONENT_SEMANTIC_CONCEPTS.some((c) => c.concept === "person_card"));
     assert.ok(presentation.COMPONENT_SEMANTIC_CONCEPTS.some((c) => c.concept === "offering_card"));
     assert.ok(presentation.COMPONENT_SEMANTIC_CONCEPTS.some((c) => c.concept === "social_links"));

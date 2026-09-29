@@ -170,7 +170,6 @@ const COMPONENT_SEMANTIC_CONCEPTS = Object.freeze([
   Object.freeze({ concept: "promo_heading", component: PRESENTATION_COMPONENT_TYPES.CTA, field: "heading" }),
   Object.freeze({ concept: "promo_body", component: PRESENTATION_COMPONENT_TYPES.CTA, field: "body" }),
   Object.freeze({ concept: "cms_pages", component: PRESENTATION_COMPONENT_TYPES.NAVIGATION, field: "items" }),
-  Object.freeze({ concept: "cms_sections", component: PRESENTATION_COMPONENT_TYPES.RICH_TEXT, field: null }),
   Object.freeze({ concept: "cms_section_heading", component: PRESENTATION_COMPONENT_TYPES.SECTION_HEADING, field: "title" }),
   Object.freeze({ concept: "cms_section_body", component: PRESENTATION_COMPONENT_TYPES.RICH_TEXT, field: "body" }),
   Object.freeze({ concept: "cms_section_image", component: PRESENTATION_COMPONENT_TYPES.IMAGE_TEXT, field: "image" }),

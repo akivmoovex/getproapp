@@ -2,33 +2,46 @@
 
 | Field | Value |
 |---|---|
-| **VERSION** | 2.04 Phase 2 |
-| **STATUS** | COMPONENT LIBRARY (opt-in; not wired to live product templates) |
-| **CODE** | `src/platform/website/presentation/` + `views/platform/website/components/` |
+| **VERSION** | 2.04 Overnight Step 1 |
+| **STATUS** | CANONICAL PRESENTATION MODEL (contracts; public render unwired) |
+| **CODE** | `src/platform/website/presentation/` |
+| **COMPONENTS** | `views/platform/website/components/` (opt-in library) |
 | **AUDIT** | `docs/qa/V2_04_AC_WEBSITE_PLATFORM_REUSE_AUDIT.md` |
 | **WIRED_TO_PUBLIC_RENDER** | **NO** |
 | **WIRED_TO_EDITOR_MUTATION** | **NO** |
-| **COMPONENT_LIBRARY** | **YES** (`PHASE.componentLibraryAvailable`) |
+| **BB_LIFECYCLE_MIGRATED** | **NO** |
+| **PRODUCTION** | **UNTOUCHED** |
 
-This document defines the **canonical website presentation architecture** shared by BlessBoard and ActiveClinic. Phase 1 shipped contracts/vocabulary/adapters. Phase 2 adds reusable presentation components (EJS + token CSS + render helper) without replacing live BB/AC public templates.
+This document is the **canonical website presentation architecture** shared by BlessBoard and ActiveClinic.
 
----
-
-## Target flow
+Architecture:
 
 ```
-DOMAIN DATA
+PRODUCT DOMAIN
     ↓
 PRODUCT ADAPTER
     ↓
 PLATFORM PRESENTATION MODEL
     ↓
-SHARED COMPONENTS          ← Phase 2+
+SHARED COMPONENT
     ↓
-SHARED EDITOR (WE01)       ← already exists; not rewired in Phase 1
-    ↓
-PRODUCT-THEMED WEBSITE
+SHARED EDITOR (WE01)
 ```
+
+**Do not merge domain entities.** Doctor ≠ Pastor. Service ≠ Ministry. Share presentation DTOs only.
+
+---
+
+## Audit field inventory
+
+| Class | Count | Treatment |
+|---|---|---|
+| **A — Universal** | **18** | Mapped to presentation keys (`universalFieldVocabulary.js`) |
+| **B — Component / product-semantic** | **42** | Mapped onto presentation components (`componentContracts.js`) |
+| **C — Product-specific** | **175** | Preserved product-owned; land in adapter `unmapped` / product bags |
+| **D — Legacy duplicates** | **25** | Documented in `legacyFieldMap.js` — **not migrated overnight** |
+
+Constant: `AUDIT_FIELD_INVENTORY` in `auditFieldInventory.js`.
 
 ---
 
@@ -87,13 +100,13 @@ Canonical **presentation keys** (platform vocabulary):
 Helpers: `universalFieldVocabulary.js`, `fieldKeyResolver.js`  
 (`mapUniversalContentToPresentation`, `mapPresentationToProductStorage`).
 
-**Phase 1 does not rewrite storage.** Product keys remain authoritative in `platform.website_content` / BB settings.
+**Storage is not rewritten.** Product keys remain authoritative in `platform.website_content` / BB settings.
 
 ---
 
-## Component / product-semantic concepts (Class B)
+## Component / product-semantic concepts (Class B) — 42
 
-`COMPONENT_SEMANTIC_CONCEPTS` in `componentContracts.js` maps ~42 audited Class B concepts onto presentation components (nav labels, visibility, CTA chrome, person/offering cards, CMS section fields, hours/address, social links, collection mechanics, etc.).
+`COMPONENT_SEMANTIC_CONCEPTS` maps the audited Class B concepts onto presentation components (nav, visibility, CTA chrome, person/offering cards, CMS section fields, hours/address, social, collection mechanics, gallery/video/announcement chrome, etc.).
 
 Collection presentation contract (`collectionPresentation.js`):
 
@@ -112,21 +125,21 @@ Platform-owned item fields: image, title, subtitle, description, CTA, displayOrd
 
 ---
 
-## Product-specific fields (Class C)
+## Product-specific fields (Class C) — 175
 
-~175 audited concepts remain **product-owned** (giving, sermons, events, booking, patient info, insurance, pricing, theology copy, etc.). They must not be forced into universal keys.
+Audited product-owned concepts remain **product-local** (giving, sermons, events, booking, patient info, insurance, pricing, theology copy, etc.). They must not be forced into universal keys.
 
 Unmapped content from `mapUniversalContentToPresentation` lands in `unmapped` for adapters to handle locally.
 
 ---
 
-## Legacy duplicates (Class D) — mapped, not removed
+## Legacy duplicates (Class D) — 25 mapped, not removed
 
 `legacyFieldMap.js` documents **25** legacy/duplicate entries (Stage-1 coarse blobs, `identity.hero_*`, contact dual paths, `seo.noindex`, gallery aliases, AC seed examples, naming aliases).
 
 Status values: `alias` | `overlap` | `seed_overlay` | `coarse_blob` | `retain`.
 
-**Do not delete these keys in Phase 1.**
+**Do not delete or migrate these keys overnight.**
 
 ---
 
@@ -170,71 +183,31 @@ Adapters (presentation only):
 1. Products read domain data; adapters emit presentation DTOs.
 2. Platform validates DTOs; it does not own pastoral or clinical tables.
 3. `sourceDomain` / `sourceId` are opaque metadata for debugging — never used as a shared primary key across products.
-4. Phase 1 adapters are **not** called from public EJS / resolver paths.
+4. Presentation adapters are **not** required on live public EJS / resolver paths until a later wiring step.
 5. Prefer WE01 + existing `editableFieldSchema` for mutations until a later phase introduces presentation write-backs.
 
 ---
 
 ## Stitch integration rules
 
-Stitch **may** design:
+Stitch **may** design layout, responsive variants, typography, spacing, and editor chrome.
 
-- Layout, responsive variants, typography, spacing
-- Component visual states (default / empty / editing)
-- Editor affordance chrome
+Stitch **must not** define DB schema, draft/publish, authz, versioning, media persistence, or merged domain catalogues.
 
-Stitch **must not** define:
-
-- Database schema, draft/publish, authz, versioning
-- Media persistence, content storage, platform APIs
-- Merged domain catalogues (doctors+pastors, etc.)
-
-When implementing Stitch screens (Phase 3), bind UI slots to:
-
-1. Universal presentation keys (Class A)
-2. Presentation component types (this doc)
-3. Product adapters for Class B/C semantics
+Bind UI slots to: (1) Class A presentation keys, (2) presentation component types, (3) product adapters for Class B/C.
 
 ---
 
-## Phase 2 — shared presentation component library
+## Shared component library (available, opt-in)
 
 | Asset | Path |
 |---|---|
-| Partials | `views/platform/website/components/*.ejs` (18 + editable-field/image) |
-| Render helper | `presentation/componentLibrary.js` → `renderPresentationComponent` |
-| Component CSS | `public/platform/website-presentation-components.css` (`--gp-website-*` only) |
-| Token bridge | `public/platform/website-presentation-token-bridge.css` (scoped BB/AC body classes) |
+| Partials | `views/platform/website/components/*.ejs` |
+| Render helper | `presentation/componentLibrary.js` |
+| Component CSS | `public/platform/website-presentation-components.css` |
+| Token bridge | `public/platform/website-presentation-token-bridge.css` |
 
-Library component ids: `hero`, `section_header`, `rich_text`, `image_text`, `cta`, `person_card`, `person_grid`, `collection_card`, `collection_grid`, `contact`, `hours`, `location`, `gallery`, `video`, `announcement`, `navigation`, `footer`, `seo`.
-
-Editable hooks use shared WE01 attributes (`data-website-inline`, `data-website-key`, …) and **one** editor engine: `public/platform/website-inline-edit.js`.
-
-**Live product templates are not replaced in Phase 2.** Opt-in includes come later (AC Stitch redesign / BB alignment).
-
-Duplication measurement (Phase 2):
-
-- Shared components created: **18**
-- BB/AC product-specific component logic removed: **0** (templates retained by design)
-- Shareable component coverage vs audit list (19 incl. Event=NO): **18/19 ≈ 95%**
-
----
-
-## Phase 3A — ActiveClinic presentation adapter
-
-| Asset | Path |
-|---|---|
-| Adapter | `src/activeclinic/website/activeClinicWebsitePresentationAdapter.js` |
-| Entry | `buildActiveClinicWebsitePresentation(input)` |
-
-Maps already-resolved AC content + catalogue rows → platform presentation DTOs:
-
-- branding, hero, about (image_text), contact, hours, location, navigation, SEO, footer, social, promo CTA
-- doctors → `PersonPresentation` collection (`sourceDomain: doctor`)
-- services → offering `CollectionPresentation` (`sourceDomain: clinical_service`)
-- testimonials / FAQ collections
-
-**Rules:** adapter never queries AC tables; platform components never import AC repositories; product-specific keys (`book.*`, `patient.*`, `pricing.*`, …) stay in `productSpecific`; `wiredToPublicRender: false` (no visual change in 3A).
+Live product templates are **not** replaced by overnight Step 1. Appearance unchanged.
 
 ---
 
@@ -242,11 +215,12 @@ Maps already-resolved AC content + catalogue rows → platform presentation DTOs
 
 | File | Role |
 |---|---|
-| `presentation/componentTypes.js` | Type enum |
-| `presentation/componentLibrary.js` | Phase 2 render registry |
+| `presentation/auditFieldInventory.js` | Audit Class A–D counts |
+| `presentation/componentTypes.js` | Type enum (18) |
+| `presentation/componentLibrary.js` | Opt-in render registry |
 | `presentation/universalFieldVocabulary.js` | 18 Class A fields |
 | `presentation/legacyFieldMap.js` | 25 Class D maps |
-| `presentation/componentContracts.js` | Shape contracts + Class B concepts |
+| `presentation/componentContracts.js` | Shape contracts + 42 Class B concepts |
 | `presentation/personPresentation.js` | Person DTO |
 | `presentation/collectionPresentation.js` | Collection DTO |
 | `presentation/domainBoundaries.js` | Forbidden merges |
@@ -258,26 +232,16 @@ Exported as `require("…/platform/website").presentation`.
 
 ---
 
-## Visual / editor regression policy (Phase 1)
+## Regression policy (Step 1)
 
-Because `PHASE.wiredToPublicRender === false` and no product templates were changed:
+Because `PHASE.wiredToPublicRender === false` and no live product templates are required to change:
 
-- **BB_VISUAL_REGRESSION = PASS** (no public markup/CSS change)
-- **AC_VISUAL_REGRESSION = PASS** (no public markup/CSS change)
-- **SHARED_EDITOR_REGRESSION = PASS** (WE01 assets untouched)
-
-Later phases that wire presentation into renderers must add explicit visual parity checks.
+- **BB_REGRESSION = PASS** (no public markup/CSS change required)
+- **AC_REGRESSION = PASS** (no public markup/CSS change required)
+- **SHARED_EDITOR_REGRESSION = PASS** (WE01 remains the single editor)
 
 ---
 
 ## Tests
 
-`tests/v2-04-platform-website-presentation.test.js` validates:
-
-- Universal field count and BB/AC maps
-- Legacy map count
-- Component type contracts
-- Person/collection validation
-- Domain boundary enforcement
-- Adapter helpers
-- Phase unwired flags
+`tests/v2-04-platform-website-presentation.test.js` validates universal/legacy/type counts, contracts, domain boundaries, and adapters.

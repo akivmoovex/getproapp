@@ -16,10 +16,15 @@ const componentContracts = require("./componentContracts");
 const fieldKeyResolver = require("./fieldKeyResolver");
 const adapters = require("./adapters");
 const componentLibrary = require("./componentLibrary");
+const auditFieldInventory = require("./auditFieldInventory");
 
+/**
+ * Overnight Step 1 / V2.04 presentation foundation.
+ * Contracts + vocabulary + optional component library. Not wired into live render.
+ */
 const PHASE = Object.freeze({
-  id: "v2_04_phase_2",
-  name: "platform_website_presentation_component_library",
+  id: "v2_04_overnight_step_1",
+  name: "platform_website_presentation_model",
   wiredToPublicRender: false,
   wiredToEditorMutation: false,
   componentLibraryAvailable: true,
@@ -27,6 +32,7 @@ const PHASE = Object.freeze({
 
 module.exports = {
   PHASE,
+  ...auditFieldInventory,
   ...componentTypes,
   ...universalFieldVocabulary,
   ...legacyFieldMap,
