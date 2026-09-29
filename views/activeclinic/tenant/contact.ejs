@@ -1,14 +1,23 @@
-<section class="ac-public-section acp-page" data-ac-page-section="tenant-contact">
-  <header class="acp-page-hero acp-page-hero--compact">
-    <p class="ac-public-eyebrow"><%- include('../partials/website-editable-field', { contentKey: 'contact.eyebrow', fieldValue: clinic.contactEyebrow || 'Contact', fieldType: 'short_text' }) %></p>
-    <h1><%- include('../partials/website-editable-field', { contentKey: 'contact.page_title', fieldValue: clinic.contactPageTitle || ('Contact ' + clinic.publicName), fieldType: 'short_text' }) %></h1>
-    <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'contact.intro', fieldValue: clinic.contactIntro || 'Send a message to the clinic. Staff review inquiries during business hours — this form does not send SMS or email confirmation.', fieldType: 'long_text' }) %></p>
-  </header>
+<%#
+  AC-MW-R07 Contact — Stitch Batch 3.
+  Canonical facility/contact facts via shared contact/location/hours; existing inquiry form.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+  const fd = formData || {};
+  const verr = (typeof validationErrors === 'object' && validationErrors) ? validationErrors : {};
+  const overlayPhone = clinic.websiteContent && clinic.websiteContent['contact.phone'] ? clinic.websiteContent['contact.phone'] : '';
+  const overlayEmail = clinic.websiteContent && clinic.websiteContent['contact.email'] ? clinic.websiteContent['contact.email'] : '';
+%>
+<section class="ac-stitch-page ac-stitch-page--r07 ac-public-section acp-page" data-ac-page-section="tenant-contact" data-ac-stitch-screen="R07">
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header || '' %>
+  </div>
 
-  <div class="acp-contact-layout">
+  <div class="acp-contact-layout ac-stitch-contact-layout">
     <div class="acp-contact-layout__main">
       <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
-      <% const fd = formData || {}; const verr = (typeof validationErrors === 'object' && validationErrors) ? validationErrors : {}; %>
       <form method="post" action="/clinics/<%= clinic.clinicKey %>/contact" class="ac-public-form acp-contact-form" data-ac-loading="1">
         <input type="hidden" name="<%= csrfField %>" value="<%= csrfToken %>"/>
         <div class="acp-field<%= verr.senderName ? ' acp-field--error' : '' %>">
@@ -45,36 +54,27 @@
       </form>
       <p class="ac-public-note">Submitting stores your inquiry for the clinic. This form does not send SMS or email confirmation.</p>
     </div>
-    <aside class="acp-contact-aside">
+    <aside class="acp-contact-aside ac-stitch-section ac-stitch-section--contact-aside">
       <h2><%- include('../partials/website-editable-field', { contentKey: 'contact.aside_heading', fieldValue: clinic.contactAsideHeading || 'Clinic contact', fieldType: 'short_text' }) %></h2>
-      <% const overlayPhone = clinic.websiteContent && clinic.websiteContent['contact.phone'] ? clinic.websiteContent['contact.phone'] : ''; %>
-      <% const overlayEmail = clinic.websiteContent && clinic.websiteContent['contact.email'] ? clinic.websiteContent['contact.email'] : ''; %>
-      <% const livePhone = clinic.publicPhoneDisplay || overlayPhone; %>
-      <% const liveEmail = clinic.publicEmailDisplay || overlayEmail; %>
+      <%- html.contact || '' %>
+      <%- html.location || '' %>
+      <%- html.hours || '' %>
       <% if (typeof websiteEdit !== 'undefined' && websiteEdit) { %>
       <div class="ac-website-overlay-edit" data-ac-website-overlay="contact">
         <h3>Website contact overlay</h3>
-        <p class="ac-website-overlay-note">Used on the public site when operations phone or email is not published. Saving here does not change clinic operations records, and does not publish.</p>
+        <p class="ac-website-overlay-note">Used on the public site when operations phone or email is not published. Saving here does not change clinic operations records, and does not publish. Facility address remains authoritative.</p>
         <ul class="ac-public-list">
           <li>Phone: <%- include('../partials/website-editable-field', { contentKey: 'contact.phone', fieldValue: overlayPhone, fieldType: 'phone' }) %></li>
           <li>Email: <%- include('../partials/website-editable-field', { contentKey: 'contact.email', fieldValue: overlayEmail, fieldType: 'email' }) %></li>
         </ul>
-        <% if (clinic.publicPhoneDisplay || clinic.publicEmailDisplay) { %>
-        <p class="ac-public-muted">Public listing currently uses operations contact details.</p>
-        <% } %>
         <%- include('../partials/website-operational-affordance', { href: '/app/settings/organization', label: 'Manage clinic contact details', manageKind: 'contact' }) %>
       </div>
-      <% } else if (livePhone || liveEmail) { %>
-      <ul class="ac-public-list">
-        <% if (livePhone) { %><li>Phone: <%= livePhone %></li><% } %>
-        <% if (liveEmail) { %><li>Email: <%= liveEmail %></li><% } %>
-      </ul>
-      <% } else { %>
-      <p class="ac-public-muted">Public phone and email are not published. Use this form to reach the clinic.</p>
       <% } %>
-      <p class="ac-public-actions">
-        <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/location">Location &amp; hours</a>
-      </p>
+      <% if (html.cta) { %>
+      <div class="ac-stitch-section ac-stitch-section--cta">
+        <%- html.cta %>
+      </div>
+      <% } %>
     </aside>
   </div>
 </section>

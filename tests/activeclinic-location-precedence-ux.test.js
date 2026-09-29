@@ -138,11 +138,18 @@ describe("ActiveClinic location precedence UX", () => {
 
   it("home and footer keep facility address authoritative", () => {
     const clinic = clinicWithFacilityAndNote();
-    const home = render(HOME_VIEW, { clinic, websiteEdit: false });
-    assert.match(home, /data-ac-facility-address="1"/);
+    const {
+      buildActiveClinicStitchPublicPage,
+    } = require("../src/activeclinic/website/activeClinicStitchPublicPages");
+    const websitePresentation = buildActiveClinicStitchPublicPage({
+      template: "tenant/home",
+      clinic,
+    });
+    const home = render(HOME_VIEW, { clinic, websiteEdit: false, websitePresentation });
     assert.match(home, /100 Independence Avenue/);
-    assert.match(home, /data-ac-location-note="1"/);
-    assert.match(home, /Blue gate opposite the filling station/);
+    assert.match(websitePresentation.html.location || websitePresentation.html.contact || "", /100 Independence Avenue/);
+    assert.match(websitePresentation.html.location || "", /Blue gate opposite the filling station/);
+    assert.doesNotMatch(websitePresentation.html.contact || "", /Blue gate opposite the filling station/);
 
     const footer = render(FOOTER_VIEW, { clinic, websiteEdit: false });
     assert.match(footer, /data-ac-facility-address="1"/);

@@ -95,12 +95,25 @@ function sampleClinic() {
 }
 
 describe("V2.04 AC Stitch Batch 2 public foundation", () => {
-  it("wires only R01–R03 templates", () => {
+  it("wires R01–R08 templates", () => {
     assert.equal(isStitchPublicTemplate("tenant/home"), true);
     assert.equal(isStitchPublicTemplate("tenant/about"), true);
     assert.equal(isStitchPublicTemplate("tenant/services"), true);
-    assert.equal(isStitchPublicTemplate("tenant/doctors"), false);
-    assert.deepEqual(Object.values(WIRED_TEMPLATES).sort(), ["R01", "R02", "R03"]);
+    assert.equal(isStitchPublicTemplate("tenant/doctors"), true);
+    assert.equal(isStitchPublicTemplate("tenant/doctor-profile"), true);
+    assert.equal(isStitchPublicTemplate("tenant/service-detail"), true);
+    assert.equal(isStitchPublicTemplate("tenant/contact"), true);
+    assert.equal(isStitchPublicTemplate("booking/consultation-type"), true);
+    assert.deepEqual(Object.values(WIRED_TEMPLATES).sort(), [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R06",
+      "R07",
+      "R08",
+    ]);
   });
 
   it("R01 homepage renders shared hero, trust, services, doctors, CTA from domain data", () => {

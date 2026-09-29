@@ -1,6 +1,16 @@
+<%#
+  AC-MW-R08 Appointment Booking Entry — Stitch Batch 3.
+  Presentation chrome only around the EXISTING consultation booking wizard.
+  Do not invent a second booking engine.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+%>
 <section
-  class="ac-public-section ac-booking-wizard acp-booking-shell acp-mf10"
+  class="ac-stitch-page ac-stitch-page--r08 ac-public-section ac-booking-wizard acp-booking-shell acp-mf10"
   data-ac-page-section="booking-consultation-type"
+  data-ac-stitch-screen="R08"
   data-ac-mf-family="MF10"
   data-ac-mf-screen="MF10-01"
 >
@@ -9,14 +19,12 @@
   <% } %>
   <div class="acp-booking-layout">
     <div class="acp-booking-layout__main">
-      <header class="acp-booking-header">
-        <p class="acp-mf10__kicker">Book an appointment</p>
-        <h1>Select service</h1>
-        <p><%- include('../partials/website-editable-field', { contentKey: 'book.intro', fieldValue: (typeof clinic !== 'undefined' && clinic && clinic.bookIntro) || 'Choose the type of care you need. The clinic will confirm your appointment — this is not an automatic booking.', fieldType: 'long_text' }) %></p>
+      <div class="ac-stitch-section ac-stitch-section--header acp-booking-header">
+        <%- html.header || '' %>
         <% if (typeof bookingIntroOnly !== 'undefined' && bookingIntroOnly) { %>
         <p class="ac-public-note">Online booking is off for visitors. This intro is website copy only — saving it does not enable bookings or publish the site.</p>
         <% } %>
-      </header>
+      </div>
       <% if (typeof error === 'string' && error) { %><div class="ac-public-error" role="alert"><%= error %></div><% } %>
       <% if (validationErrors && Object.keys(validationErrors).length) { %>
       <div class="ac-public-error" role="alert">
@@ -63,6 +71,11 @@
       <p class="ac-public-actions">
         <a class="ac-btn ac-btn--secondary" href="/clinics/<%= clinic.clinicKey %>/contact">Contact page</a>
       </p>
+      <% } %>
+      <% if (html.cta) { %>
+      <div class="ac-stitch-section ac-stitch-section--cta">
+        <%- html.cta %>
+      </div>
       <% } %>
     </div>
     <%- include('../partials/booking-summary', { draft: typeof draft !== 'undefined' ? draft : null }) %>

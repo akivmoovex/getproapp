@@ -1,62 +1,55 @@
-<section class="ac-public-section ac-tenant-directory" data-ac-page-section="tenant-doctors">
-  <header class="ac-tenant-page-header">
-    <h1><%- include('../partials/website-editable-field', { contentKey: 'doctors.page_title', fieldValue: clinic.doctorsPageTitle || 'Our Doctors', fieldType: 'short_text' }) %></h1>
-    <p class="ac-public-lede"><%- include('../partials/website-editable-field', { contentKey: 'doctors.intro', fieldValue: clinic.doctorsIntro || ('Clinicians with profiles published by ' + clinic.publicName + '.'), fieldType: 'long_text' }) %></p>
-  </header>
-  <% const list = Array.isArray(profiles) ? profiles : []; %>
-  <% const editingDoctors = typeof websiteEdit !== 'undefined' && websiteEdit; %>
-  <% const doctorsReturnTo = '/clinics/' + clinic.clinicKey + '/doctors?website_edit=1&website_mode=draft'; %>
+<%#
+  AC-MW-R04 Meet Our Doctors — Stitch Batch 3.
+  AC Doctor domain → PersonPresentation → shared person_grid. No parallel doctor CMS.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+  const list = Array.isArray(profiles) ? profiles : [];
+  const editingDoctors = typeof websiteEdit !== 'undefined' && websiteEdit;
+  const doctorsReturnTo = '/clinics/' + clinic.clinicKey + '/doctors?website_edit=1&website_mode=draft';
+%>
+<section class="ac-stitch-page ac-stitch-page--r04 ac-public-section" data-ac-page-section="tenant-doctors" data-ac-stitch-screen="R04">
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header || '' %>
+  </div>
+
   <% if (!list.length) { %>
   <div class="ac-public-empty" data-ac-empty="doctors" data-ac-state-key="empty">
-    <h2><%- include('../partials/website-editable-field', { contentKey: 'doctors.empty_heading', fieldValue: clinic.doctorsEmptyHeading || 'Doctor listings are not available yet', fieldType: 'short_text' }) %></h2>
-    <p><%- include('../partials/website-editable-field', { contentKey: 'doctors.empty_body', fieldValue: clinic.doctorsEmptyBody || 'This clinic has not published doctor listings yet.', fieldType: 'long_text' }) %></p>
+    <%- html.empty || '' %>
     <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=doctors', label: 'Manage public doctors', note: 'Publish clinician profiles from the public catalogue. Photos use the shared media picker.', manageKind: 'doctors' }) %>
     <p><a class="ac-btn ac-btn--secondary ac-btn--pill" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.home) || ('/clinics/' + clinic.clinicKey) %>">Back to clinic home</a></p>
   </div>
-  <% } else { %>
-  <ul class="ac-doctor-cards acp-doctor-grid">
+  <% } else if (html.doctors) { %>
+  <div class="ac-stitch-section ac-stitch-section--doctors-grid" data-ac-doctors-grid="1">
+    <%- html.doctors %>
+  </div>
+  <% if (editingDoctors) { %>
+  <ul class="ac-doctor-editor-links" hidden>
     <% list.forEach(function(d) { %>
     <% const doctorEditHref = d.editHref || (d.id ? ('/app/settings/website/catalogue/doctors/' + encodeURIComponent(d.id) + '/edit') : ''); %>
-    <li class="ac-doctor-card acp-doctor-card<%= d.photoIsFallback ? ' ac-doctor-card--fallback' : '' %>"<%= d.photoIsFallback ? ' data-ac-asset-gap="doctor-photo"' : '' %> data-ac-doctor-card="1"<%= d.id ? (' data-ac-doctor-id="' + d.id + '"') : '' %><%= d.staffKey ? (' data-ac-doctor-key="' + d.staffKey + '"') : '' %>>
-      <div class="ac-doctor-card__media<%= d.photoIsFallback ? '' : ' ac-doctor-card__media--photo' %>">
-        <%- include('../partials/ac-media', {
-          src: d.photoUrl || (typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/doctors/doctor-fallback.svg') : '')),
-          alt: d.photoIsFallback ? '' : ('Portrait of ' + (d.displayName || 'clinician')),
-          decorative: Boolean(d.photoIsFallback),
-          className: d.photoIsFallback ? 'ac-doctor-card__photo ac-doctor-card__photo--fallback' : 'ac-doctor-card__photo',
-          objectFit: 'cover',
-          objectPosition: d.photoObjectPosition || 'center 20%',
-          width: 640,
-          height: 480,
-          loading: 'lazy',
-          fallbackSrc: typeof doctorFallbackUrl === 'string' ? doctorFallbackUrl : (typeof cdnAsset==='function' ? cdnAsset('/activeclinic/assets/doctors/doctor-fallback.svg') : ''),
-        }) %>
-      </div>
-      <div class="ac-doctor-card__body">
-        <h2 class="ac-doctor-card__name"><%= d.displayName %></h2>
-        <% if (d.title) { %><p class="ac-doctor-card__title"><%= d.title %></p><% } %>
-        <% if (d.specialty || d.departmentName) { %>
-        <p class="ac-doctor-card__tags">
-          <% if (d.specialty) { %><span class="ac-doctor-card__tag"><%= d.specialty %></span><% } %>
-          <% if (d.departmentName) { %><span class="ac-doctor-card__tag"><%= d.departmentName %></span><% } %>
-        </p>
-        <% } %>
-        <div class="ac-doctor-card__actions">
-          <a class="ac-btn ac-btn--primary ac-btn--block" href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.book) || ('/clinics/' + clinic.clinicKey + '/book') %>"><%= clinic.publicBookingEnabled ? "Book appointment" : "Request appointment" %></a>
-          <a class="ac-btn ac-btn--secondary ac-btn--block" href="/clinics/<%= clinic.clinicKey %>/doctors/<%= d.staffKey %>">View profile</a>
-          <% if (editingDoctors && doctorEditHref) { %>
-          <a
-            class="ac-btn ac-btn--secondary ac-btn--block"
-            href="<%= doctorEditHref %>?returnTo=<%= encodeURIComponent(doctorsReturnTo) %>"
-            data-ac-edit-doctor="1"
-          >Edit doctor profile</a>
-          <% } %>
-        </div>
-      </div>
+    <% if (doctorEditHref) { %>
+    <li>
+      <a
+        class="ac-btn ac-btn--secondary ac-btn--pill"
+        href="<%= doctorEditHref %>?returnTo=<%= encodeURIComponent(doctorsReturnTo) %>"
+        data-ac-edit-doctor="1"
+        data-ac-doctor-id="<%= d.id || '' %>"
+        data-ac-doctor-key="<%= d.staffKey || '' %>"
+      >Edit <%= d.displayName || 'doctor' %></a>
     </li>
+    <% } %>
     <% }) %>
   </ul>
+  <% } %>
   <%- include('../partials/website-operational-affordance', { href: '/app/settings/website/catalogue?tab=doctors', label: 'Manage public doctors', note: 'Visibility is controlled in the public catalogue. Profile photos use Upload from computer or Choose from Content Library on each doctor profile.', manageKind: 'doctors' }) %>
   <% } %>
+
+  <% if (html.cta) { %>
+  <div class="ac-stitch-section ac-stitch-section--cta">
+    <%- html.cta %>
+  </div>
+  <% } %>
+
   <%- include('../partials/website-library-placements', { libraryPageId: 'tpl_doctors', librarySkipTypes: [] }) %>
 </section>

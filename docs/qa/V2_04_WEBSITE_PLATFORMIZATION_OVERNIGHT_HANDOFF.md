@@ -147,7 +147,7 @@ Service path: AC Service → adapter → CollectionPresentation (icon tile) → 
 | Maps | branding, nav, hero, about, contact, hours, location, social, SEO, footer, promo |
 | Collections | doctors→Person, services→Collection, testimonials, FAQ, gallery |
 | Universal fields mapped | **18/18** |
-| Public templates | **R01–R03 wired** (`wiredToPublicRender: true` for home/about/services; remaining screens opt-in later) |
+| Public templates | **R01–R08 wired** (`wiredToPublicRender: true` for home/about/services/doctors/doctor-profile/service-detail/contact/booking entry; remaining screens opt-in later) |
 
 ---
 
@@ -235,7 +235,23 @@ ROUTE_HEALTH=PASS
 FINAL=V2_04_AC_STITCH_BATCH_2_PASS
 ```
 
-Next: Batch 3+ remaining public / editor / hub screens against frozen 38 physical designs (no new engines).
+```
+BATCH=3
+R04=PASS
+R05=PASS
+R06=PASS
+R07=PASS
+R08=PASS
+DOCTOR_PRESENTATION_MODEL=PASS
+SERVICE_PRESENTATION_MODEL=PASS
+BOOKING_ENGINE_REUSED=PASS
+CONTACT_CANONICAL_DATA=PASS
+DESKTOP_MOBILE_SHARED=PASS
+TESTS=PASS
+FINAL=V2_04_AC_STITCH_BATCH_3_PASS
+```
+
+Next: Batch 4+ remaining public / editor / hub screens against frozen 38 physical designs (no new engines).
 
 ---
 

@@ -39,6 +39,24 @@ const {
 const { renderPublicView } = require("./renderActiveClinicPublic");
 const { resolveClinicOrRespond, sendClinicResolveFailure } = require("./activeClinicPublicRespond");
 const { attachActiveClinicWebsiteLocals } = require("./attachActiveClinicWebsiteChrome");
+const { buildActiveClinicStitchPublicPage } = require("../website/activeClinicStitchPublicPages");
+
+function withBookingEntryPresentation(locals) {
+  const clinic = locals && locals.clinic ? locals.clinic : {};
+  const services = Array.isArray(locals && locals.services) ? locals.services : [];
+  const websitePresentation = buildActiveClinicStitchPublicPage({
+    template: "booking/consultation-type",
+    clinic,
+    services,
+    websiteEdit: Boolean(locals && locals.websiteEdit),
+    navItems: locals && locals.clinicWebsiteNav && locals.clinicWebsiteNav.desktop,
+  });
+  return {
+    ...locals,
+    websitePresentation,
+    websitePresentationWired: Boolean(websitePresentation && websitePresentation.wired),
+  };
+}
 
 function wizardLocals(extra) {
   return {
@@ -133,7 +151,7 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
       }
       if (!clinic.publicBookingEnabled && website.websiteEdit) {
         const csrfToken = issuePageCsrf(res, env, isProduction);
-        return res.status(200).type("html").send(renderPublicView("booking/consultation-type", wizardLocals({
+        return res.status(200).type("html").send(renderPublicView("booking/consultation-type", withBookingEntryPresentation(wizardLocals({
           csrfToken,
           ...website,
           clinic: mergedClinic,
@@ -141,7 +159,7 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
           services: [],
           wizardStep: 1,
           bookingIntroOnly: true,
-        })));
+        }))));
       }
       if (!clinic.primaryFacilityId) {
         return res.status(400).type("html").send("<h1>Booking Not Available</h1><p>No bookable facility is configured.</p>");
@@ -188,14 +206,14 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
         healthcareOrganizationId: clinic.healthcareOrganizationId,
       });
       const csrfToken = issuePageCsrf(res, env, isProduction);
-      return res.status(200).type("html").send(renderPublicView("booking/consultation-type", wizardLocals({
+      return res.status(200).type("html").send(renderPublicView("booking/consultation-type", withBookingEntryPresentation(wizardLocals({
         csrfToken,
         ...website,
         clinic: mergedClinic,
         draft,
         services: servicesResult.services || [],
         wizardStep: 1,
-      })));
+      }))));
     } catch (err) {
       return next(err);
     }
@@ -223,10 +241,10 @@ function registerActiveClinicPublicBookingRoutes(app, deps) {
           organizationId: clinic.organizationId,
           healthcareOrganizationId: clinic.healthcareOrganizationId,
         });
-        return res.status(403).type("html").send(renderPublicView("booking/consultation-type", wizardLocals({
+        return res.status(403).type("html").send(renderPublicView("booking/consultation-type", withBookingEntryPresentation(wizardLocals({
           csrfToken, clinic, draft: readBookingDraft(req, env, clinicKey) || emptyConsultationDraft(clinicKey),
           services: servicesResult.services || [], wizardStep: 1, error: "Your session expired. Please try again.",
-        })));
+        }))));
       }
 
       const wizardAction = String((req.body && req.body.wizardAction) || "").trim();

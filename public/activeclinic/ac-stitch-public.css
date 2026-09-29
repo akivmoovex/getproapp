@@ -1,5 +1,5 @@
 /**
- * ActiveClinic Stitch public foundation (Batch 2 R01–R03).
+ * ActiveClinic Stitch public pages (Batch 2–3: R01–R08).
  * Layout composition around shared --gp-website-* components.
  * Product tokens enter only via the platform token bridge on body.ac-public-body.
  * No product hex here.
@@ -11,6 +11,8 @@
   padding: calc(var(--gp-website-space, 1rem) * 1.25) 0 calc(var(--gp-website-space, 1rem) * 2);
   display: grid;
   gap: calc(var(--gp-website-space, 1rem) * 1.75);
+  min-width: 0;
+  overflow-x: clip;
 }
 
 .ac-stitch-section {
@@ -36,7 +38,8 @@
   gap: var(--gp-website-space, 1rem);
 }
 
-.ac-stitch-page--r03 .ac-service-editor-links {
+.ac-stitch-page--r03 .ac-service-editor-links,
+.ac-stitch-page--r04 .ac-doctor-editor-links {
   list-style: none;
   margin: 0.75rem 0 0;
   padding: 0;
@@ -45,9 +48,53 @@
   gap: 0.5rem;
 }
 
+.ac-stitch-page--r05 .ac-stitch-section--person-detail .gp-website-pc--person-card {
+  display: grid;
+  gap: calc(var(--gp-website-space, 1rem) * 1.25);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+}
+
+.ac-stitch-page--r05 .gp-website-pc__person-media--portrait {
+  max-width: 20rem;
+}
+
+.ac-stitch-page--r06 .ac-stitch-section--service-detail .gp-website-pc--collection-card {
+  max-width: 40rem;
+}
+
+.ac-stitch-contact-layout {
+  display: grid;
+  gap: calc(var(--gp-website-space, 1rem) * 1.5);
+  min-width: 0;
+}
+
+.ac-stitch-page--r07 .ac-stitch-section--contact-aside {
+  display: grid;
+  gap: var(--gp-website-space, 1rem);
+  min-width: 0;
+}
+
+.ac-stitch-page--r08 .acp-booking-layout {
+  min-width: 0;
+}
+
+.ac-stitch-page--r08 .ac-stitch-section--header .gp-website-pc--section-header {
+  margin-bottom: var(--gp-website-space, 1rem);
+}
+
 @media (min-width: 768px) {
   .ac-stitch-section--visit {
     grid-template-columns: repeat(3, minmax(0, 1fr));
+    align-items: start;
+  }
+
+  .ac-stitch-page--r05 .ac-stitch-section--person-detail .gp-website-pc--person-card {
+    grid-template-columns: minmax(12rem, 18rem) minmax(0, 1fr);
+  }
+
+  .ac-stitch-contact-layout {
+    grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
     align-items: start;
   }
 }
@@ -59,7 +106,8 @@
     padding-top: var(--gp-website-space, 1rem);
   }
 
-  .ac-stitch-section--visit {
+  .ac-stitch-section--visit,
+  .ac-stitch-contact-layout {
     grid-template-columns: 1fr;
   }
 }

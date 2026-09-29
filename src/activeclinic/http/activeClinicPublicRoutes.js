@@ -394,6 +394,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
         doctors: doctorsForPage,
         services: servicesForPage,
         procedures: proceduresForPage,
+        profile: extras.profile || null,
+        service: extras.service || null,
+        serviceKind: extras.serviceKind || null,
         websiteEdit: Boolean(website.websiteEdit),
         navItems: website.clinicWebsiteNav && website.clinicWebsiteNav.desktop,
       });

@@ -116,11 +116,20 @@ function sampleClinic() {
 }
 
 describe("V2.04 ActiveClinic website presentation adapter", () => {
-  it("requires Step 1 + Step 2 and wires Batch 2 public screens only", () => {
+  it("requires Step 1 + Step 2 and wires Batch 2–3 public screens", () => {
     assert.equal(adapter.STEP.step1Prerequisite, "PASS");
     assert.equal(adapter.STEP.step2Prerequisite, "PASS");
     assert.equal(adapter.STEP.wiredToPublicRender, true);
-    assert.deepEqual(adapter.STEP.wiredPublicScreens, ["R01", "R02", "R03"]);
+    assert.deepEqual(adapter.STEP.wiredPublicScreens, [
+      "R01",
+      "R02",
+      "R03",
+      "R04",
+      "R05",
+      "R06",
+      "R07",
+      "R08",
+    ]);
     assert.equal(adapter.STEP.wiredToEditorMutation, false);
     assert.equal(presentation.PHASE.step1Prerequisite, "PASS");
     assert.equal(presentation.PHASE.componentLibraryAvailable, true);
@@ -276,17 +285,27 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
     assert.equal(presentation.assertDomainBoundary("clinical_service", "ministry").ok, false);
   });
 
-  it("Batch 2 wires R01–R03 through presentation HTML without embedding platform partial paths", () => {
+  it("Batch 2–3 wire R01–R08 through presentation HTML without embedding platform partial paths", () => {
     const doctors = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/doctors.ejs"), "utf8");
     const home = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/home.ejs"), "utf8");
     const about = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/about.ejs"), "utf8");
     const services = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/services.ejs"), "utf8");
+    const doctorProfile = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/doctor-profile.ejs"), "utf8");
+    const serviceDetail = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/service-detail.ejs"), "utf8");
+    const contact = fs.readFileSync(path.join(ROOT, "views/activeclinic/tenant/contact.ejs"), "utf8");
+    const booking = fs.readFileSync(path.join(ROOT, "views/activeclinic/booking/consultation-type.ejs"), "utf8");
     assert.doesNotMatch(doctors, /activeClinicWebsitePresentationAdapter/);
     assert.doesNotMatch(home, /buildActiveClinicWebsitePresentation/);
     assert.match(home, /data-ac-stitch-screen="R01"/);
     assert.match(about, /data-ac-stitch-screen="R02"/);
     assert.match(services, /data-ac-stitch-screen="R03"/);
+    assert.match(doctors, /data-ac-stitch-screen="R04"/);
+    assert.match(doctorProfile, /data-ac-stitch-screen="R05"/);
+    assert.match(serviceDetail, /data-ac-stitch-screen="R06"/);
+    assert.match(contact, /data-ac-stitch-screen="R07"/);
+    assert.match(booking, /data-ac-stitch-screen="R08"/);
     assert.match(home, /websitePresentation/);
+    assert.match(doctors, /websitePresentation/);
   });
 
   it("preserves the single WE01 editor engine (editor regression guard)", () => {
