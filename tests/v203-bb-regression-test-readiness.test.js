@@ -245,7 +245,11 @@ function walkJsFiles(absDir, out = []) {
     if (ent.name === "node_modules" || ent.name === ".git") continue;
     const full = path.join(absDir, ent.name);
     if (ent.isDirectory()) walkJsFiles(full, out);
-    else if (ent.isFile() && ent.name.endsWith(".js")) out.push(full);
+    else if (ent.isFile() && ent.name.endsWith(".js")) {
+      // Skip Finder "foo 2.js" duplicate artifacts — not product runtime.
+      if (/\s\d+\.js$/i.test(ent.name)) continue;
+      out.push(full);
+    }
   }
   return out;
 }

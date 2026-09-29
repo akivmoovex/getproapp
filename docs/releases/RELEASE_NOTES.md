@@ -2,9 +2,9 @@
 
 **Center route (after deploy):** `/release-notes` on the testing QA hub  
 **Catalog source of truth (runtime):** `src/platform/release-notes/releaseNotesCatalog.js`  
-**Branch:** `V10` (current product line 2.03)  
-**Last audit:** 2026-09-28  
-**Latest packet:** [`V2_03_RELEASE_NOTES.md`](./V2_03_RELEASE_NOTES.md)  
+**Branch:** `V4` (current product line **2.04**)  
+**Last audit:** 2026-09-30  
+**Latest packet:** [`V2_04_RELEASE_NOTES.md`](./V2_04_RELEASE_NOTES.md)  
 **Rule:** Evidence only — no invented PASS / RELEASED. Incomplete history → `UNVERIFIED` or `DOCUMENTATION PENDING`.
 
 Related existing packets are **not deleted**. This file is the index + structured summary.
@@ -41,7 +41,7 @@ Related existing packets are **not deleted**. This file is the index + structure
 | Path | Purpose |
 |------|---------|
 | `/release-notes` | Overview + filters |
-| `/release-notes/:version` | Version details (`1.0` … `2.03`) |
+| `/release-notes/:version` | Version details (`1.0` … `2.04`) |
 | `/release-notes/:version/bugs` | Bugs & regression |
 | `/release-notes/:version/qa` | QA checklist |
 | `/release-notes/:version/share` | Public sanitized share summary |
@@ -396,6 +396,26 @@ TESTING target `moovex-platform-v8-testing`. Production untouched in V2.01 task 
 - `docs/qa/V2_01_HOSTINGER_WORKER_CONSOLIDATION_PLAN.md`
 - `docs/qa/V2_01_HOSTINGER_PACKAGE_A_QA.md`
 - `docs/qa/V2_01_RELEASE_NOTES_CENTER_QA.md`
+
+---
+
+## Version 2.04
+
+### Summary
+
+Platform semantic colors, shared Country+City registration, website platformization, and ActiveClinic Stitch public/hub redesign (R01–R12, E01–E02, H01–H06) on branch **V4**. About Version **2.04**. Production untouched; hosted deploy pending.
+
+### Products
+
+ActiveClinic, BlessBoard, Shared GetPro Platform.
+
+### Packet
+
+[`V2_04_RELEASE_NOTES.md`](./V2_04_RELEASE_NOTES.md) · catalog version `2.04`
+
+### Deployment status
+
+TESTING candidate after operator deploy. **NEUNIVERSITY_DEPLOYMENT=PENDING**. **PRODUCTION=UNTOUCHED**. Pronline V10 preserved.
 
 ---
 
