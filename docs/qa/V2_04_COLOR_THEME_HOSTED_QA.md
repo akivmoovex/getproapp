@@ -1,18 +1,8 @@
 # V2.04 Color Theme — Hosted QA Gate
 
-**Status:** `HOSTED_DEPLOYMENT_STALE` · `V2_04_COLOR_THEME_HOSTED_QA_BLOCKED`  
-**Version:** 2.04  
-**Gate:** `HOSTED_COLOR_THEME_QA_RETRY`  
-**Branch (local):** V4  
-**Date:** 2026-09-29  
-**Production:** UNTOUCHED  
-
-### Attempt log
-
-| Attempt | Gate | Result |
-| --- | --- | --- |
-| PREVIOUS | `HOSTED_COLOR_THEME_QA` | **`BLOCKED_STALE_V10`** (`05b2afe1caff` / V10 testing) |
-| RETRY | `HOSTED_COLOR_THEME_QA_RETRY` | **`HOSTED_DEPLOYMENT_STALE`** — still `05b2afe1caff` / V10 testing; smoke **not** run |
+**Status:** AC alias scope hotfix landed · **hosted re-smoke pending neuniversity redeploy**  
+**Gate:** `FINAL_HOSTED_COLOR_THEME_SMOKE` (blocked on AC violet leak at `e06631f39027`)  
+**Hotfix:** `docs/qa/V2_04_AC_THEME_ALIAS_SCOPE_HOTFIX.md`
 
 ## 1. Objective
 

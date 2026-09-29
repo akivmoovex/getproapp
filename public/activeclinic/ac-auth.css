@@ -1,5 +1,12 @@
 /* ActiveClinic authentication surfaces (AC-V6-S01). Product-isolated; does not alter BlessBoard. */
-:root {
+
+/*
+ * Auth color aliases must be product-scoped. Declaring them on :root freezes
+ * var(--color-brand-primary) to the platform violet default before
+ * data-product="activeclinic" applies on <body>.
+ */
+body.ac-auth-body[data-product="activeclinic"],
+[data-product="activeclinic"].ac-auth-body {
   /* Auth palette → V2.04 brand / semantic tokens (public surface teal via data-product) */
   --ac-auth-bg: var(--color-background);
   --ac-auth-surface: var(--color-surface);

@@ -3,7 +3,11 @@
  *
  * Color values bridge to V2.04 platform semantic / brand tokens
  * (`src/platform/ui/theme/colors.css`), resolving through
- * [data-product="blessboard"]. Non-color metrics remain local.
+ * [data-product="blessboard"]. Non-color metrics remain on :root.
+ *
+ * Color aliases are product-scoped. Custom properties inherit computed
+ * values; a :root alias of var(--color-brand-primary) freezes the
+ * platform default and would not follow a future product override.
  *
  * Stitch refs retained for layout/type scale only.
  */
@@ -11,6 +15,75 @@
 :root {
   color-scheme: light;
 
+  /* —— Typography (Stitch Hanken Grotesk scale) —— */
+  --bb-font-sans: "Hanken Grotesk", system-ui, sans-serif;
+  --bb-font-weight-regular: 400;
+  --bb-font-weight-medium: 500;
+  --bb-font-weight-semibold: 600;
+  --bb-font-weight-bold: 700;
+  /* Stitch: H1 Hero 64 / H2 Section 40 / H3 Subhead 28 */
+  --bb-text-hero: 4rem; /* 64px — Stitch H1 */
+  --bb-text-h1: 2.5rem; /* 40px — Stitch H2 */
+  --bb-text-h2: 1.75rem; /* 28px — Stitch H3 */
+  --bb-text-h3: 1.25rem; /* 20px — in-page titles */
+  --bb-text-body-lg: 1.125rem; /* 18px */
+  --bb-text-body: 1rem; /* 16px */
+  --bb-text-label: 0.875rem; /* 14px */
+  --bb-text-caption: 0.75rem; /* 12px — badges */
+  --bb-leading-tight: 1.2;
+  --bb-leading-snug: 1.3;
+  --bb-leading-normal: 1.5;
+  --bb-leading-relaxed: 1.6;
+
+  /* —— Spacing (4px base: 4–128) —— */
+  --bb-space-1: 0.25rem; /* 4 */
+  --bb-space-2: 0.5rem; /* 8 */
+  --bb-space-3: 1rem; /* 16 */
+  --bb-space-4: 1.5rem; /* 24 */
+  --bb-space-5: 2rem; /* 32 */
+  --bb-space-6: 3rem; /* 48 */
+  --bb-space-7: 4rem; /* 64 */
+  --bb-space-8: 6rem; /* 96 */
+  --bb-space-9: 8rem; /* 128 */
+
+  /* —— Layout (Stitch: container-max 1280 · header h-20 · section 56–64) —— */
+  --bb-max: 80rem; /* 1280px — Stitch max-w-7xl; audit prefers 1120–1200 (accepted) */
+  --bb-max-narrow: 40rem; /* forms / auth */
+  --bb-gutter: 2rem; /* 32 desktop */
+  --bb-gutter-mobile: 1rem; /* 16 — mobile header gutter */
+  --bb-section: 4rem; /* 64px section rhythm (within 56–72) */
+  --bb-section-desktop: 4rem; /* 64px — was 80px; keep standard band, not 80–96 ocean */
+  --bb-header-h: 5rem; /* 80px Stitch desktop/mobile header (h-20) */
+  --bb-header-h-compact: 4.5rem;
+  --bb-sidebar-w: 16.5rem; /* portal desktop sidebar */
+  --bb-shell-content-max: 64rem; /* HQ + branch-admin main column cap (narrower than public --bb-max) */
+  --bb-drawer-w: 22rem;
+
+  /* —— Radii —— */
+  --bb-radius: 1rem; /* 16 — buttons, cards, inputs (Stitch) */
+  --bb-radius-sm: 0.5rem; /* 8 — icon buttons, chips */
+  --bb-radius-md: 0.75rem; /* intermediate cards / marketing tiles */
+  --bb-radius-pill: 999px;
+
+  /* —— Controls —— */
+  --bb-control-h: 3rem; /* 48 */
+  --bb-icon-size: 1.5rem; /* 24 */
+  --bb-touch-min: 2.75rem; /* 44 */
+
+  /* —— Z-index —— */
+  --bb-z-header: 40;
+  --bb-z-drawer: 70;
+  --bb-z-modal: 80;
+  --bb-z-toast: 90;
+
+  /* —— Breakpoints (documented; media queries use literals) —— */
+  --bb-bp-md: 768px;
+  --bb-bp-lg: 900px;
+}
+
+[data-product="blessboard"],
+[data-bb-product],
+[data-gp-product="blessboard"] {
   /* —— Brand → platform —— */
   --bb-color-primary: var(--color-brand-primary);
   --bb-color-primary-hover: var(--color-brand-primary-hover);
@@ -90,78 +163,12 @@
   --preview-primary: var(--color-brand-primary);
   --preview-accent: var(--color-brand-accent);
 
-  /* —— Typography (Stitch Hanken Grotesk scale) —— */
-  --bb-font-sans: "Hanken Grotesk", system-ui, sans-serif;
-  --bb-font-weight-regular: 400;
-  --bb-font-weight-medium: 500;
-  --bb-font-weight-semibold: 600;
-  --bb-font-weight-bold: 700;
-  /* Stitch: H1 Hero 64 / H2 Section 40 / H3 Subhead 28 */
-  --bb-text-hero: 4rem; /* 64px — Stitch H1 */
-  --bb-text-h1: 2.5rem; /* 40px — Stitch H2 */
-  --bb-text-h2: 1.75rem; /* 28px — Stitch H3 */
-  --bb-text-h3: 1.25rem; /* 20px — in-page titles */
-  --bb-text-body-lg: 1.125rem; /* 18px */
-  --bb-text-body: 1rem; /* 16px */
-  --bb-text-label: 0.875rem; /* 14px */
-  --bb-text-caption: 0.75rem; /* 12px — badges */
-  --bb-leading-tight: 1.2;
-  --bb-leading-snug: 1.3;
-  --bb-leading-normal: 1.5;
-  --bb-leading-relaxed: 1.6;
-
-  /* —— Spacing (4px base: 4–128) —— */
-  --bb-space-1: 0.25rem; /* 4 */
-  --bb-space-2: 0.5rem; /* 8 */
-  --bb-space-3: 1rem; /* 16 */
-  --bb-space-4: 1.5rem; /* 24 */
-  --bb-space-5: 2rem; /* 32 */
-  --bb-space-6: 3rem; /* 48 */
-  --bb-space-7: 4rem; /* 64 */
-  --bb-space-8: 6rem; /* 96 */
-  --bb-space-9: 8rem; /* 128 */
-
-  /* —— Layout (Stitch: container-max 1280 · header h-20 · section 56–64) —— */
-  --bb-max: 80rem; /* 1280px — Stitch max-w-7xl; audit prefers 1120–1200 (accepted) */
-  --bb-max-narrow: 40rem; /* forms / auth */
-  --bb-gutter: 2rem; /* 32 desktop */
-  --bb-gutter-mobile: 1rem; /* 16 — mobile header gutter */
-  --bb-section: 4rem; /* 64px section rhythm (within 56–72) */
-  --bb-section-desktop: 4rem; /* 64px — was 80px; keep standard band, not 80–96 ocean */
-  --bb-header-h: 5rem; /* 80px Stitch desktop/mobile header (h-20) */
-  --bb-header-h-compact: 4.5rem;
-  --bb-sidebar-w: 16.5rem; /* portal desktop sidebar */
-  --bb-shell-content-max: 64rem; /* HQ + branch-admin main column cap (narrower than public --bb-max) */
-  --bb-drawer-w: 22rem;
-
-  /* —— Radii & shadows —— */
-  --bb-radius: 1rem; /* 16 — buttons, cards, inputs (Stitch) */
-  --bb-radius-sm: 0.5rem; /* 8 — icon buttons, chips */
-  --bb-radius-md: 0.75rem; /* intermediate cards / marketing tiles */
-  --bb-radius-pill: 999px;
+  /* —— Shadows mixing product brand/text —— */
   --bb-shadow-sm: 0 2px 4px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
   --bb-shadow-md: 0 10px 30px color-mix(in srgb, var(--color-brand-primary) 8%, transparent);
   --bb-shadow-lg: 0 16px 40px color-mix(in srgb, var(--color-text-primary) 10%, transparent);
   --bb-shadow: var(--bb-shadow-md);
-  /* Focus ring shadow → platform semantic (avoid bb-color-* indirection) */
   --bb-shadow-focus: 0 0 0 4px var(--color-focus-ring);
-
-  /* —— Controls —— */
-  --bb-control-h: 3rem; /* 48 */
-  --bb-icon-size: 1.5rem; /* 24 */
-  --bb-touch-min: 2.75rem; /* 44 */
-
-  /* —— Z-index —— */
-  --bb-z-header: 40;
-  --bb-z-drawer: 70;
-  --bb-z-modal: 80;
-  --bb-z-toast: 90;
-
-  /* —— Breakpoints (documented; media queries use literals) —— */
-  /* Public/marketing: 0–767 / 768+ · shell drawer/nav: 899/900 · portal grids often 699/700 */
-  /* Satellite: 800 (filters), 960 (editors), 1100+ (wide cards), 1200/1440 (marketing) */
-  --bb-bp-md: 768px;
-  --bb-bp-lg: 900px;
 
   /* —— Cross-platform semantic aliases (product UI surfaces) —— */
   --product-primary: var(--color-brand-primary);
@@ -174,12 +181,6 @@
   --product-border: var(--color-border-default);
   --product-focus: var(--color-focus-ring);
   --product-link: var(--color-brand-primary);
-
-  /*
-   * Publication / lifecycle aliases → canonical component badge tokens.
-   * Prefer --badge-success|warning|neutral-* in new CSS; keep these for
-   * Batch 5 editor publish/draft semantics if product copy wants domain names.
-   */
 }
 
 @media (max-width: 767px) {

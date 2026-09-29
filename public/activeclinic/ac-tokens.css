@@ -21,8 +21,7 @@
   --ac-status-danger-bg: var(--color-danger-bg);
   --ac-status-info: var(--color-info-text);
   --ac-status-info-bg: var(--color-info-bg);
-  --ac-status-neutral: var(--color-text-secondary);
-  --ac-status-neutral-bg: var(--color-surface-subtle);
+  /* Neutral status + shadows rebind under product scope (see below). */
   --ac-status-pending: var(--color-warning-text);
   --ac-status-pending-bg: var(--color-warning-bg);
 
@@ -58,10 +57,6 @@
   --ac-radius-xl: 1.75rem;
   --ac-radius-pill: 999px;
 
-  /* —— Shared elevation —— */
-  --ac-shadow-sm: 0 8px 24px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
-  --ac-shadow-md: 0 12px 28px color-mix(in srgb, var(--color-text-primary) 12%, transparent);
-
   /* —— Shared z-index —— */
   --ac-z-sticky: 50;
   --ac-z-drawer: 80;
@@ -82,25 +77,7 @@
      --ac-bp-wide: 1440px;
   */
 
-  /* —— Public / tenant / portal teal system → V2.04 brand (data-surface=public) ——
-   * Tenant shells may override --acp-primary* at runtime from clinic branding.
-   */
-  --acp-primary: var(--color-brand-primary);
-  --acp-primary-strong: var(--color-brand-primary-active);
-  --acp-primary-hover: var(--color-brand-primary-hover);
-  --acp-primary-soft: var(--color-brand-primary-light);
-  --acp-navy: var(--color-brand-accent);
-  --acp-ink: var(--color-text-primary);
-  --acp-muted: var(--color-text-secondary);
-  --acp-surface: var(--color-surface);
-  --acp-surface-low: var(--color-surface-subtle);
-  --acp-surface-elevated: var(--color-surface-elevated);
-  --acp-bg: var(--color-background);
-  --acp-border: var(--color-border-default);
-  --acp-outline: var(--color-border-strong);
-  --acp-focus: var(--color-focus);
-  --acp-error: var(--color-danger-text);
-  --acp-error-bg: var(--color-danger-bg);
+  /* —— Public layout metrics (non-color; safe on :root) —— */
   --acp-radius: 0.5rem;
   --acp-radius-lg: 0.5rem;
   --acp-radius-xl: 0.5rem;
@@ -142,8 +119,52 @@
   --acp-leading-tight: 1.25;
   --acp-leading-display: 2.5rem;
   --acp-leading-body: 1.5;
+}
 
-  /* —— Cross-platform semantic aliases (product UI surfaces) —— */
+/*
+ * Product-scoped color aliases.
+ * Must NOT live on :root — custom properties inherit computed values, so a
+ * :root alias of var(--color-brand-primary) freezes the platform violet default
+ * and ignores data-product="activeclinic" brand overrides on <body>.
+ */
+[data-product="activeclinic"],
+[data-ac-product="activeclinic"],
+[data-gp-product="activeclinic"],
+[data-ac-shell],
+body.ac-app-body,
+body.ac-auth-body,
+body.ac-public-body,
+.ac-public-body,
+.ac-auth-body,
+.ac-app-body {
+  /* Public / tenant / portal brand bridge → V2.04 (tenant may override --acp-primary*) */
+  --acp-primary: var(--color-brand-primary);
+  --acp-primary-strong: var(--color-brand-primary-active);
+  --acp-primary-hover: var(--color-brand-primary-hover);
+  --acp-primary-soft: var(--color-brand-primary-light);
+  --acp-navy: var(--color-brand-accent);
+  --acp-ink: var(--color-text-primary);
+  --acp-muted: var(--color-text-secondary);
+  --acp-surface: var(--color-surface);
+  --acp-surface-low: var(--color-surface-subtle);
+  --acp-surface-elevated: var(--color-surface-elevated);
+  --acp-bg: var(--color-background);
+  --acp-border: var(--color-border-default);
+  --acp-outline: var(--color-border-strong);
+  --acp-focus: var(--color-focus);
+  --acp-error: var(--color-danger-text);
+  --acp-error-bg: var(--color-danger-bg);
+
+  /* Shadows that mix product text color */
+  --ac-shadow-sm: 0 8px 24px color-mix(in srgb, var(--color-text-primary) 8%, transparent);
+  --ac-shadow-md: 0 12px 28px color-mix(in srgb, var(--color-text-primary) 12%, transparent);
+  --acp-shadow-sm: var(--ac-shadow-sm);
+
+  /* Neutral status that follows product text/surface */
+  --ac-status-neutral: var(--color-text-secondary);
+  --ac-status-neutral-bg: var(--color-surface-subtle);
+
+  /* Cross-platform semantic aliases */
   --product-primary: var(--color-brand-primary);
   --product-primary-strong: var(--color-brand-primary-active);
   --product-primary-hover: var(--color-brand-primary-hover);

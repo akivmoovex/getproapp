@@ -5,10 +5,50 @@
  * Brand resolves via [data-product="activeclinic"][data-surface="staff"]
  * (and data-ac-shell="staff-app") in src/platform/ui/theme/colors.css.
  *
+ * Color aliases are product-scoped (not :root). Custom properties inherit
+ * computed values; a :root alias of var(--color-brand-primary) would freeze
+ * the platform violet default instead of staff blue / public teal.
+ *
  * Public/portal teal (--acp-*) remains in ac-tokens.css and is untouched.
  * Loaded by staff app-shell after platform colors + ac-tokens.css.
  */
 :root {
+  /* —— Chrome metrics (non-color; safe on :root) —— */
+  --ac-radius: 8px;
+  --ac-radius-sm: 8px;
+  --ac-radius-lg: 12px;
+  --ac-radius-pill: 999px;
+  --ac-radius-card: 12px;
+  --ac-staff-sidebar-w: 256px;
+  --ac-staff-topbar-h: 56px;
+  --ac-staff-bottom-nav-h: 64px;
+  --ac-touch-min: 44px;
+  --ac-sidebar-w: var(--ac-staff-sidebar-w);
+  --ac-content-max: 72rem;
+  --ac-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
+  --ac-touch: max(var(--ac-control-h, 2.75rem), var(--ac-touch-min));
+  --gp-ops-radius: 8px;
+  --gp-ops-radius-lg: 12px;
+  --gp-ops-font: var(--ac-font);
+
+  /*
+   * Website CMS preview chrome — must keep public teal while staff shell is blue.
+   * Literal palette refs (not brand aliases) so staff scope cannot freeze them.
+   */
+  --ac-website-preview-primary: var(--palette-teal-700);
+  --ac-website-preview-accent: var(--palette-teal-600);
+
+  /*
+   * Distinct clinical cue (not brand primary / not danger). Literal only in this alias bridge.
+   */
+  --status-encounter-with-practitioner: #7c3aed;
+}
+
+[data-product="activeclinic"],
+[data-ac-product="activeclinic"],
+[data-gp-product="activeclinic"],
+[data-ac-shell="staff-app"],
+body.ac-app-body {
   /* —— Brand / surfaces —— */
   --ac-primary: var(--color-brand-primary);
   --ac-primary-dark: var(--color-brand-primary-hover);
@@ -68,37 +108,15 @@
 
   /*
    * Domain appointment / encounter status (not generic success/danger).
-   * with_practitioner uses a distinct violet cue retained for workflow recognition.
    */
   --status-appointment-requested: var(--color-warning-text);
   --status-appointment-waiting: var(--color-brand-primary);
-  /* Distinct clinical cue (not brand primary / not danger). Literal only in this alias bridge. */
-  --status-encounter-with-practitioner: #7c3aed;
 
-  /*
-   * Website CMS preview chrome — must keep public teal while staff shell is blue.
-   */
-  --ac-website-preview-primary: var(--palette-teal-700);
-  --ac-website-preview-accent: var(--palette-teal-600);
-
-  /* —— Chrome metrics (non-color) —— */
-  --ac-radius: 8px;
-  --ac-radius-sm: 8px;
-  --ac-radius-lg: 12px;
-  --ac-radius-pill: 999px;
-  --ac-radius-card: 12px;
+  /* —— Shadows mixing product text —— */
   --ac-shadow: 0 1px 2px color-mix(in srgb, var(--color-text-primary) 6%, transparent),
     0 8px 24px color-mix(in srgb, var(--color-text-primary) 4%, transparent);
   --ac-shadow-sm: 0 1px 2px color-mix(in srgb, var(--color-text-primary) 5%, transparent);
   --ac-shadow-card: var(--ac-shadow-sm);
-  --ac-staff-sidebar-w: 256px;
-  --ac-staff-topbar-h: 56px;
-  --ac-staff-bottom-nav-h: 64px;
-  --ac-touch-min: 44px;
-  --ac-sidebar-w: var(--ac-staff-sidebar-w);
-  --ac-content-max: 72rem;
-  --ac-font: Inter, "Hanken Grotesk", Segoe UI, system-ui, sans-serif;
-  --ac-touch: max(var(--ac-control-h, 2.75rem), var(--ac-touch-min));
 
   /* —— gp-ops overrides (AC staff brand) —— */
   --gp-ops-primary: var(--color-brand-primary);
@@ -108,7 +126,4 @@
   --gp-ops-muted: var(--color-text-secondary);
   --gp-ops-canvas: var(--color-background);
   --gp-ops-surface: var(--color-surface);
-  --gp-ops-radius: 8px;
-  --gp-ops-radius-lg: 12px;
-  --gp-ops-font: var(--ac-font);
 }
