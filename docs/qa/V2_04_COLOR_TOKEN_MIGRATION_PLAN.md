@@ -14,6 +14,7 @@ Use the **same git-tracked scanner** as Batches 1–2 for all subsequent batches
 | Theme foundation (comparable) | **1291** |
 | After Batch 1 | **1223** |
 | After Batch 2 | **1152** |
+| After Batch 3 | **1055** |
 
 Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree boundary). Keep it only as historical context — do not use it as the migration baseline.
 
@@ -69,7 +70,8 @@ Historical audit value **1123** is **NON-COMPARABLE** (different scanner/tree bo
 | Field | Detail |
 | --- | --- |
 | Affected files | `public/activeclinic/ac-app.css`, `ac-app-tokens.css` (alias bridge), `ac-urp.css`, `website-cms.css` (staff CMS) |
-| Approx hard-coded locations | ~200–250 |
+| Status | **COMPLETE** — see `docs/qa/V2_04_COLOR_MIGRATION_BATCH_3.md` |
+| Measured locations migrated | 97 (1152 → 1055) |
 | Risk | HIGH — daily clinical ops UI |
 | Visual QA | Shell, dashboard, patients list, appointments, billing entry points; confirm **blue** staff brand retained |
 | BB/AC regression | AC staff only for this batch; BB smoke still green |
