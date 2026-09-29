@@ -1,31 +1,47 @@
-<% var page = typeof customPage !== "undefined" && customPage ? customPage : {}; var blocks = Array.isArray(pageBlocks) ? pageBlocks : []; %>
-<section class="ac-public-section ac-tenant-custom-page" data-ac-page-section="tenant-custom-page" data-ac-custom-page="<%= page.slug || '' %>">
-  <% if (page.title) { %><h1><%= page.title %></h1><% } %>
-  <% if (!blocks.length) { %>
-    <p class="ac-public-muted">This page has no published content yet.</p>
-  <% } %>
-  <% blocks.forEach(function (block) { %>
-  <% var libraryItem = null; %>
-  <% if (block.type === "library") { %>
-    <% libraryItem = ((clinic && clinic.cmsLibrary) || []).find(function (item) { return item && item.id === block.library_item_id; }) || null; %>
-  <% } %>
-  <% if (!(block.type === "library" && libraryItem && libraryItem.visible === false)) { %>
-  <div class="ac-tenant-block" data-ac-block-type="<%= block.type %>">
-    <% var heading = libraryItem ? libraryItem.title : block.heading; %>
-    <% var body = libraryItem ? (libraryItem.body || libraryItem.summary) : block.body; %>
-    <% var attribution = libraryItem ? libraryItem.attribution : ""; %>
-    <% if ((block.type === "heading" || heading) && heading) { %>
-    <h2><%= heading %></h2>
-    <% } %>
-    <% if ((libraryItem && libraryItem.image && libraryItem.image.src) || (block.image && block.image.src)) { %>
-    <p><img src="<%= (libraryItem && libraryItem.image && libraryItem.image.src) || block.image.src %>" alt="<%= (libraryItem && libraryItem.image && libraryItem.image.alt) || (block.image && block.image.alt) || '' %>"/></p>
-    <% } %>
-    <% if (body) { %><p><%= body %></p><% } %>
-    <% if (attribution) { %><p class="ac-public-muted"><%= attribution %></p><% } %>
-    <% if (block.button_label && block.button_url) { %>
-    <p><a class="ac-btn ac-btn--primary ac-btn--pill" href="<%= block.button_url %>"><%= block.button_label %></a></p>
-    <% } %>
+<%#
+  AC-MW-R12 Canonical Modular Content Page — Stitch Batch 4.
+  Proof of shared platform component composition. No R12-specific framework.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+  const modules = Array.isArray(html.modules) ? html.modules : [];
+  const page = typeof customPage !== 'undefined' && customPage ? customPage : {};
+%>
+<section
+  class="ac-stitch-page ac-stitch-page--r12 ac-public-section ac-tenant-custom-page"
+  data-ac-page-section="tenant-custom-page"
+  data-ac-stitch-screen="R12"
+  data-ac-custom-page="<%= page.slug || '' %>"
+  data-ac-modular-page="1"
+>
+  <% if (html.header) { %>
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header %>
   </div>
   <% } %>
+
+  <% if (!modules.length && html.empty) { %>
+  <div class="ac-public-empty" data-ac-empty="custom-page">
+    <%- html.empty %>
+  </div>
+  <% } %>
+
+  <% modules.forEach(function (mod) { %>
+  <div class="ac-stitch-section ac-stitch-section--module" data-ac-module-component="<%= mod.component || '' %>" data-ac-module-id="<%= mod.id || '' %>">
+    <%- mod.html || '' %>
+  </div>
   <% }) %>
+
+  <% if (html.contact) { %>
+  <div class="ac-stitch-section ac-stitch-section--contact">
+    <%- html.contact %>
+  </div>
+  <% } %>
+
+  <% if (html.cta) { %>
+  <div class="ac-stitch-section ac-stitch-section--cta">
+    <%- html.cta %>
+  </div>
+  <% } %>
 </section>

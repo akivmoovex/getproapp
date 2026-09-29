@@ -1,7 +1,48 @@
-<article class="ac-public-section" data-ac-page-section="tenant-patient-information">
-  <h1><%- include('../partials/website-editable-field', { contentKey: 'patient.info_title', fieldValue: clinic.patientInformationTitle || 'Patient information', fieldType: 'short_text' }) %></h1>
-  <div class="ac-public-prose acp-prose-card">
-    <%- include('../partials/website-editable-field', { contentKey: 'patient.info_body', fieldValue: clinic.patientInformationBody || 'Please bring a valid identity document to your visit when required by the clinic. Online appointment requests are subject to clinic confirmation.', fieldType: 'long_text' }) %>
+<%#
+  AC-MW-R11 Patient Info & Guidance — Stitch Batch 4.
+  Flexible composition from shared rich_text / checklist / FAQ / image_text / announcement / CTA.
+  Does not hard-code Stitch sample patient guidance as platform logic.
+%>
+<%
+  const stitch = typeof websitePresentation !== 'undefined' && websitePresentation ? websitePresentation : null;
+  const html = stitch && stitch.html ? stitch.html : {};
+%>
+<article class="ac-stitch-page ac-stitch-page--r11 ac-public-section" data-ac-page-section="tenant-patient-information" data-ac-stitch-screen="R11">
+  <div class="ac-stitch-section ac-stitch-section--header">
+    <%- html.header || '' %>
   </div>
-  <p><a href="<%= (clinic.publicPagePaths && clinic.publicPagePaths.book) || ('/clinics/' + clinic.clinicKey + '/book') %>">Request an appointment</a></p>
+
+  <% if (html.announcement) { %>
+  <div class="ac-stitch-section ac-stitch-section--announcement">
+    <%- html.announcement %>
+  </div>
+  <% } %>
+
+  <div class="ac-stitch-section ac-stitch-section--rich-text ac-public-prose">
+    <%- html.body || '' %>
+  </div>
+
+  <% if (html.checklist) { %>
+  <div class="ac-stitch-section ac-stitch-section--checklist">
+    <%- html.checklist %>
+  </div>
+  <% } %>
+
+  <% if (html.imageText) { %>
+  <div class="ac-stitch-section ac-stitch-section--image-text">
+    <%- html.imageText %>
+  </div>
+  <% } %>
+
+  <% if (html.faq) { %>
+  <div class="ac-stitch-section ac-stitch-section--faq" aria-label="Patient FAQ">
+    <%- html.faq %>
+  </div>
+  <% } %>
+
+  <% if (html.cta) { %>
+  <div class="ac-stitch-section ac-stitch-section--cta">
+    <%- html.cta %>
+  </div>
+  <% } %>
 </article>

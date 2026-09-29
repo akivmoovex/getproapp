@@ -1,5 +1,5 @@
 /**
- * ActiveClinic Stitch public pages (Batch 2–3: R01–R08).
+ * ActiveClinic Stitch public pages (Batch 2–4: R01–R12).
  * Layout composition around shared --gp-website-* components.
  * Product tokens enter only via the platform token bridge on body.ac-public-body.
  * No product hex here.
@@ -83,6 +83,27 @@
   margin-bottom: var(--gp-website-space, 1rem);
 }
 
+.ac-stitch-page--r09 .ac-location-list,
+.ac-stitch-page--r10 .gp-website-pc__gallery-grid {
+  min-width: 0;
+}
+
+.ac-stitch-page--r10 .gp-website-pc__gallery-item img,
+.ac-stitch-page--r12 .gp-website-pc__gallery-item img {
+  width: 100%;
+  height: auto;
+  display: block;
+  max-width: 100%;
+}
+
+.ac-stitch-page--r11 .ac-stitch-section--faq .gp-website-pc__faq-item summary {
+  cursor: pointer;
+}
+
+.ac-stitch-page--r12 .ac-stitch-section--module {
+  min-width: 0;
+}
+
 @media (min-width: 768px) {
   .ac-stitch-section--visit {
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -97,6 +118,12 @@
     grid-template-columns: minmax(0, 1.2fr) minmax(0, 0.8fr);
     align-items: start;
   }
+
+  .ac-stitch-page--r09 .ac-location-list {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(16rem, 1fr));
+    gap: var(--gp-website-space, 1rem);
+  }
 }
 
 @media (max-width: 390px) {
@@ -107,7 +134,8 @@
   }
 
   .ac-stitch-section--visit,
-  .ac-stitch-contact-layout {
+  .ac-stitch-contact-layout,
+  .ac-stitch-page--r09 .ac-location-list {
     grid-template-columns: 1fr;
   }
 }

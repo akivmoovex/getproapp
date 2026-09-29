@@ -33,14 +33,27 @@ const {
 
 const PRODUCT_CODE = "activeclinic";
 
-/** Overnight Step 3 + Batches 2–3: adapter available; R01–R08 public pages wired. */
+/** Overnight Step 3 + Batches 2–4: adapter available; R01–R12 public pages wired. */
 const STEP = Object.freeze({
   id: "v2_04_overnight_step_3",
   name: "activeclinic_website_presentation_adapter",
   step1Prerequisite: "PASS",
   step2Prerequisite: "PASS",
   wiredToPublicRender: true,
-  wiredPublicScreens: Object.freeze(["R01", "R02", "R03", "R04", "R05", "R06", "R07", "R08"]),
+  wiredPublicScreens: Object.freeze([
+    "R01",
+    "R02",
+    "R03",
+    "R04",
+    "R05",
+    "R06",
+    "R07",
+    "R08",
+    "R09",
+    "R10",
+    "R11",
+    "R12",
+  ]),
   wiredToEditorMutation: false,
 });
 

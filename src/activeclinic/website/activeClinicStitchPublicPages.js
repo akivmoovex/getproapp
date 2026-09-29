@@ -1,11 +1,11 @@
 "use strict";
 
 /**
- * ActiveClinic Stitch public page presentation (R01–R08).
+ * ActiveClinic Stitch public page presentation (R01–R12).
  *
  * Builds validated platform presentation DTOs + rendered shared-component HTML
  * from already-resolved clinic/domain locals. Does not invent clinical copy.
- * Does not create a second services/doctors store or booking engine.
+ * Does not create a second services/doctors store, booking engine, or gallery upload engine.
  */
 
 const presentation = require("../../platform/website/presentation");
@@ -26,6 +26,10 @@ const WIRED_TEMPLATES = Object.freeze({
   "tenant/service-detail": "R06",
   "tenant/contact": "R07",
   "booking/consultation-type": "R08",
+  "tenant/location": "R09",
+  "tenant/gallery": "R10",
+  "tenant/patient-information": "R11",
+  "tenant/custom-page": "R12",
 });
 
 const EDIT_KEYS = Object.freeze({
@@ -61,7 +65,21 @@ const EDIT_KEYS = Object.freeze({
   bookIntro: {
     lead: "book.intro",
   },
+  locationIntro: {
+    eyebrow: "location.eyebrow",
+    title: "location.page_title",
+    lead: "location.intro",
+  },
+  galleryIntro: {
+    title: "about.gallery_heading",
+  },
+  patientInfo: {
+    heading: "patient.info_title",
+    body: "patient.info_body",
+  },
 });
+
+const GALLERY_PAGE_SLUGS = Object.freeze(["gallery", "environment", "clinic-environment"]);
 
 function asObject(value) {
   return value && typeof value === "object" && !Array.isArray(value) ? value : {};
@@ -79,6 +97,8 @@ function clinicPaths(clinic) {
     location: pages.location || (base ? `${base}/location` : "#"),
     book: pages.book || (base ? `${base}/book` : "#"),
     pricing: pages.pricing || (base ? `${base}/pricing` : "#"),
+    patientInformation: pages.patientInformation || (base ? `${base}/patient-information` : "#"),
+    gallery: pages.gallery || (base ? `${base}/p/gallery` : "#"),
   };
 }
 
@@ -256,6 +276,249 @@ function withEdit(editEnabled, keys) {
   };
 }
 
+function buildFacilityDataList(clinic) {
+  const facilities = Array.isArray(clinic.facilities) ? clinic.facilities : [];
+  if (!facilities.length) return null;
+  const rows = [];
+  facilities.forEach((facility, index) => {
+    if (!facility) return;
+    const bits = [
+      facility.addressLine1,
+      facility.addressLine2,
+      facility.city,
+      facility.district,
+      facility.province,
+      facility.postalCode,
+      facility.countryCode || facility.country,
+    ].filter(Boolean);
+    const label = facility.displayName
+      ? `${facility.displayName}${facility.isPrimary ? " (Primary)" : ""}`
+      : `Facility ${index + 1}`;
+    rows.push({
+      label,
+      value: bits.length ? bits.join(", ") : "Address not configured.",
+      href: null,
+      displayOrder: index,
+    });
+    if (facility.phoneDisplay) {
+      rows.push({
+        label: `${label} phone`,
+        value: String(facility.phoneDisplay),
+        href: `tel:${String(facility.phoneDisplay).replace(/[^\d+]/g, "")}`,
+        displayOrder: index + 0.1,
+      });
+    }
+  });
+  if (!rows.length) return null;
+  return validatePresentationComponent(PRESENTATION_COMPONENT_TYPES.DATA_LIST, {
+    heading: "Facilities",
+    rows,
+    emptyState: null,
+  });
+}
+
+function contentArray(clinic, key) {
+  const bag = asObject(clinic.websiteContent);
+  const value = bag[key];
+  return Array.isArray(value) ? value : [];
+}
+
+function resolveGalleryRows(clinic, opts) {
+  if (Array.isArray(opts && opts.gallery) && opts.gallery.length) return opts.gallery;
+  if (Array.isArray(clinic.gallery) && clinic.gallery.length) return clinic.gallery;
+  const fromBlocks = [];
+  const blocks = Array.isArray(opts && opts.pageBlocks) ? opts.pageBlocks : [];
+  const library = Array.isArray(clinic.cmsLibrary) ? clinic.cmsLibrary : [];
+  for (const block of blocks) {
+    if (!block) continue;
+    if (block.type === "image" && block.image) {
+      fromBlocks.push({ image: block.image, caption: block.heading || block.caption || null });
+      continue;
+    }
+    if (block.type === "library") {
+      const item = library.find((row) => row && row.id === block.library_item_id);
+      if (item && item.image) {
+        fromBlocks.push({
+          image: item.image,
+          caption: item.title || item.caption || null,
+        });
+      }
+    }
+  }
+  if (fromBlocks.length) return fromBlocks;
+  return contentArray(clinic, "about.gallery").concat(contentArray(clinic, "home.gallery"));
+}
+
+/**
+ * Map CMS custom-page blocks → shared presentation HTML modules (R12).
+ * No R12-specific component framework — only platform shared components.
+ */
+function composeModularPageModules(input) {
+  const clinic = asObject(input && input.clinic);
+  const paths = clinicPaths(clinic);
+  const page = asObject(input && input.customPage);
+  const blocks = Array.isArray(input && input.pageBlocks) ? input.pageBlocks : [];
+  const library = Array.isArray(clinic.cmsLibrary) ? clinic.cmsLibrary : [];
+  const editEnabled = Boolean(input && input.websiteEdit);
+  const modules = [];
+
+  if (page.title || page.hero_image || page.heroImage) {
+    const heroResult = validatePresentationComponent(PRESENTATION_COMPONENT_TYPES.HERO, {
+      eyebrow: page.eyebrow || null,
+      title: page.title || clinic.publicName || "Clinic page",
+      subtitle: page.summary || page.meta_description || null,
+      image: page.hero_image || page.heroImage || null,
+      primaryCta: page.primary_cta_label
+        ? { label: page.primary_cta_label, url: page.primary_cta_url || paths.contact }
+        : null,
+      secondaryCta: null,
+    });
+    if (heroResult.ok) {
+      modules.push({
+        id: "hero",
+        component: "hero",
+        html: renderOk("hero", heroResult.value),
+      });
+    }
+  }
+
+  const galleryImages = [];
+
+  blocks.forEach((block, index) => {
+    if (!block) return;
+    let libraryItem = null;
+    if (block.type === "library") {
+      libraryItem = library.find((item) => item && item.id === block.library_item_id) || null;
+      if (libraryItem && libraryItem.visible === false) return;
+    }
+    const heading = libraryItem ? libraryItem.title : block.heading;
+    const body = libraryItem ? libraryItem.body || libraryItem.summary : block.body;
+    const image = (libraryItem && libraryItem.image) || block.image || null;
+    const type = String(block.type || "text");
+
+    if (type === "heading" && heading) {
+      modules.push({
+        id: `heading-${index}`,
+        component: "section_header",
+        html: renderOk("section_header", { title: heading, lead: body || null }),
+      });
+      return;
+    }
+
+    if (type === "text" || (type === "library" && libraryItem && libraryItem.type === "faq")) {
+      if (libraryItem && libraryItem.type === "faq") {
+        const faqHtml = renderOk("faq_list", {
+          heading: heading || "Questions",
+          lead: null,
+          items: [
+            {
+              question: libraryItem.title || heading || "Question",
+              answer: body || "",
+              displayOrder: index,
+              visibility: true,
+            },
+          ],
+        });
+        if (faqHtml) modules.push({ id: `faq-${index}`, component: "faq_list", html: faqHtml });
+        return;
+      }
+      const rich = renderOk("rich_text", { heading: heading || null, body: body || "" });
+      if (rich) modules.push({ id: `text-${index}`, component: "rich_text", html: rich });
+      return;
+    }
+
+    if (type === "image_text" || (type === "library" && image && body)) {
+      const imageText = renderOk("image_text", {
+        heading: heading || null,
+        body: body || null,
+        image: image || null,
+        imagePosition: "start",
+        cta: null,
+      });
+      if (imageText) modules.push({ id: `image-text-${index}`, component: "image_text", html: imageText });
+      return;
+    }
+
+    if (type === "image" && image) {
+      galleryImages.push({ image, caption: heading || block.caption || null, displayOrder: index });
+      return;
+    }
+
+    if (type === "buttons" || (block.button_label && block.button_url)) {
+      const cta = renderOk("cta", {
+        heading: heading || null,
+        body: body || null,
+        primaryCta: {
+          label: block.button_label || "Learn more",
+          url: block.button_url || paths.contact,
+        },
+        secondaryCta: null,
+      });
+      if (cta) modules.push({ id: `cta-${index}`, component: "cta", html: cta });
+      return;
+    }
+
+    if (type === "video" && (block.video_url || block.url)) {
+      const video = renderOk("video", {
+        title: heading || null,
+        url: block.video_url || block.url,
+        poster: image || block.poster || null,
+      });
+      if (video) modules.push({ id: `video-${index}`, component: "video", html: video });
+      return;
+    }
+
+    if (type === "library" && libraryItem) {
+      if (libraryItem.type === "testimonial") {
+        const quote = renderOk("rich_text", {
+          heading: libraryItem.attribution || heading || "Patient feedback",
+          body: body || "",
+        });
+        if (quote) modules.push({ id: `quote-${index}`, component: "rich_text", html: quote });
+        return;
+      }
+      const card = renderOk("collection_card", {
+        cardKind: "generic",
+        layoutVariant: "list",
+        intro: null,
+        emptyState: null,
+        manageHref: null,
+        items: [
+          {
+            kind: "generic",
+            title: heading || "Content",
+            subtitle: libraryItem.attribution || null,
+            description: body || null,
+            image: image || null,
+            cta: null,
+            visibility: true,
+            displayOrder: index,
+          },
+        ],
+      });
+      if (card) modules.push({ id: `card-${index}`, component: "collection_card", html: card });
+    }
+  });
+
+  if (galleryImages.length) {
+    const gallery = validatePresentationComponent(PRESENTATION_COMPONENT_TYPES.GALLERY, {
+      heading: "Gallery",
+      items: galleryImages.map((row, i) => ({
+        image: row.image,
+        caption: row.caption,
+        displayOrder: row.displayOrder != null ? row.displayOrder : i,
+        visibility: true,
+      })),
+    });
+    if (gallery.ok) {
+      modules.push({ id: "gallery", component: "gallery", html: renderOk("gallery", gallery.value) });
+    }
+  }
+
+  void editEnabled;
+  return modules;
+}
+
 /**
  * @param {{
  *   template: string,
@@ -266,6 +529,9 @@ function withEdit(editEnabled, keys) {
  *   profile?: object|null,
  *   service?: object|null,
  *   serviceKind?: string|null,
+ *   gallery?: object[],
+ *   customPage?: object|null,
+ *   pageBlocks?: object[],
  *   websiteEdit?: boolean,
  *   navItems?: object[],
  * }} input
@@ -295,12 +561,19 @@ function buildActiveClinicStitchPublicPage(input) {
   const profile = opts.profile && typeof opts.profile === "object" ? opts.profile : null;
   const serviceDetail = opts.service && typeof opts.service === "object" ? opts.service : null;
   const serviceKind = opts.serviceKind ? String(opts.serviceKind) : null;
+  const customPage = opts.customPage && typeof opts.customPage === "object" ? opts.customPage : null;
+  const pageBlocks = Array.isArray(opts.pageBlocks) ? opts.pageBlocks : [];
+  const galleryRows = resolveGalleryRows(clinic, {
+    gallery: opts.gallery,
+    pageBlocks,
+  });
 
   const bundleInput = {
     clinic,
     doctors,
     services,
     navItems: opts.navItems,
+    gallery: galleryRows,
   };
 
   const branding = adapter.adaptActiveClinicBranding(bundleInput);
@@ -318,8 +591,10 @@ function buildActiveClinicStitchPublicPage(input) {
   const doctorsCollection = adapter.adaptActiveClinicDoctorsCollection(bundleInput);
   const servicesCollection = adapter.adaptActiveClinicServicesCollection(bundleInput);
   const faqCollection = adapter.adaptActiveClinicFaqCollection(bundleInput);
+  const gallery = adapter.adaptActiveClinicGallery(bundleInput);
   const trust = buildTrustFactStrip(clinic, hours, contact, paths);
   const missionStrip = buildAboutMissionStrip(clinic, clinic.websiteContent);
+  const facilityList = buildFacilityDataList(clinic);
 
   const html = {};
   const sections = {};
@@ -667,6 +942,235 @@ function buildActiveClinicStitchPublicPage(input) {
     });
   }
 
+  if (screenId === "R09") {
+    sections.facilities = facilityList;
+    sections.location = location;
+    sections.hours = hours;
+    sections.contact = contact;
+    sections.gallery = gallery;
+    sections.servicesPreview = limitCollection(servicesCollection, 4);
+    html.header = renderOk(
+      "section_header",
+      {
+        eyebrow: clinic.locationEyebrow || "Visit us",
+        title: clinic.locationPageTitle || "Facilities & clinic info",
+        lead: clinic.locationIntro || null,
+      },
+      withEdit(editEnabled, EDIT_KEYS.locationIntro)
+    );
+    html.facilities = facilityList && facilityList.ok ? renderOk("data_list", facilityList.value) : "";
+    html.location = location && location.ok ? renderOk("location", location.value) : "";
+    html.hours = hours && hours.ok ? renderOk("hours", hours.value) : "";
+    html.contact = contact && contact.ok ? renderOk("contact", contact.value) : "";
+    html.gallery =
+      gallery && gallery.ok && gallery.value.items && gallery.value.items.length
+        ? renderOk("gallery", gallery.value)
+        : "";
+    html.services =
+      sections.servicesPreview && sections.servicesPreview.ok && sections.servicesPreview.value.items.length
+        ? renderOk("collection_grid", sections.servicesPreview.value)
+        : "";
+    html.empty = !(Array.isArray(clinic.facilities) && clinic.facilities.length)
+      ? renderOk("section_header", {
+          title: "Location details are not published yet",
+          lead: "This clinic has not published facility addresses yet.",
+        })
+      : "";
+    html.cta = renderOk("cta", {
+      heading: "Need directions or a visit?",
+      body: null,
+      primaryCta: { label: "Contact clinic", url: paths.contact },
+      secondaryCta: {
+        label: clinic.publicBookingEnabled ? "Book Appointment" : "Request Appointment",
+        url: paths.book,
+      },
+    });
+  }
+
+  if (screenId === "R10") {
+    sections.gallery = gallery;
+    html.header = renderOk(
+      "section_header",
+      {
+        title: clinic.galleryHeading || (customPage && customPage.title) || "Clinic environment",
+        lead: clinic.galleryIntro || (customPage && customPage.summary) || null,
+      },
+      withEdit(editEnabled, EDIT_KEYS.galleryIntro)
+    );
+    html.gallery =
+      gallery && gallery.ok && gallery.value.items && gallery.value.items.length
+        ? renderOk("gallery", gallery.value)
+        : "";
+    html.empty = !(gallery && gallery.ok && gallery.value.items && gallery.value.items.length)
+      ? renderOk("section_header", {
+          title: "Gallery photos are not published yet",
+          lead: "Clinic environment images use the shared website media library when published.",
+        })
+      : "";
+    html.cta = renderOk("cta", {
+      heading: "Plan a visit",
+      body: null,
+      primaryCta: { label: "Location & hours", url: paths.location },
+      secondaryCta: { label: "Contact clinic", url: paths.contact },
+    });
+  }
+
+  if (screenId === "R11") {
+    const content = asObject(clinic.websiteContent);
+    const title = clinic.patientInformationTitle || content["patient.info_title"] || "Patient information";
+    const body = clinic.patientInformationBody || content["patient.info_body"] || null;
+    const checklist = Array.isArray(content["patient.checklist"])
+      ? content["patient.checklist"]
+      : Array.isArray(clinic.patientChecklist)
+        ? clinic.patientChecklist
+        : [];
+    const patientFaq = Array.isArray(content["patient.faq"])
+      ? content["patient.faq"]
+      : Array.isArray(clinic.patientFaq)
+        ? clinic.patientFaq
+        : [];
+    const announcementRaw = content["patient.announcement"] || clinic.patientAnnouncement || null;
+    const guidanceImage = content["patient.image"] || clinic.patientGuidanceImage || null;
+
+    html.header = renderOk(
+      "section_header",
+      {
+        eyebrow: content["patient.eyebrow"] || clinic.patientEyebrow || "Guidance",
+        title,
+        lead: null,
+      },
+      withEdit(editEnabled, { title: "patient.info_title" })
+    );
+    html.body = renderOk(
+      "rich_text",
+      { heading: null, body: body || "" },
+      withEdit(editEnabled, { body: "patient.info_body" })
+    );
+
+    if (checklist.length) {
+      const rows = checklist
+        .map((item, index) => {
+          if (item == null) return null;
+          if (typeof item === "string") {
+            return { label: `Step ${index + 1}`, value: item, displayOrder: index };
+          }
+          if (typeof item === "object") {
+            const label = item.label || item.title || `Step ${index + 1}`;
+            const value = item.value || item.body || item.text || "";
+            if (!value) return null;
+            return { label: String(label), value: String(value), displayOrder: index };
+          }
+          return null;
+        })
+        .filter(Boolean);
+      if (rows.length) {
+        html.checklist = renderOk("data_list", {
+          heading: content["patient.checklist_heading"] || "Before you visit",
+          rows,
+          emptyState: null,
+        });
+      } else {
+        html.checklist = "";
+      }
+    } else {
+      html.checklist = "";
+    }
+
+    if (patientFaq.length) {
+      html.faq = renderOk("faq_list", {
+        heading: content["patient.faq_heading"] || "Common questions",
+        lead: null,
+        items: patientFaq.map((item, index) => ({
+          question: item.question || item.title,
+          answer: item.answer || item.body || item.description,
+          displayOrder: index,
+          visibility: item.visibility !== false,
+        })),
+      });
+    } else {
+      html.faq = "";
+    }
+
+    if (guidanceImage || content["patient.image_text_body"]) {
+      html.imageText = renderOk("image_text", {
+        heading: content["patient.image_text_heading"] || null,
+        body: content["patient.image_text_body"] || null,
+        image: guidanceImage,
+        imagePosition: "start",
+        cta: null,
+      });
+    } else {
+      html.imageText = "";
+    }
+
+    if (announcementRaw) {
+      const ann =
+        typeof announcementRaw === "string"
+          ? { title: null, body: announcementRaw }
+          : asObject(announcementRaw);
+      html.announcement = renderOk("announcement", {
+        title: ann.title || "Please note",
+        body: ann.body || ann.text || null,
+        cta: ann.cta || null,
+        visibility: true,
+        displayOrder: 0,
+      });
+    } else {
+      html.announcement = "";
+    }
+
+    html.cta = renderOk("cta", {
+      heading: clinic.publicBookingEnabled ? "Ready to book?" : "Need help?",
+      body: null,
+      primaryCta: {
+        label: clinic.publicBookingEnabled ? "Book Appointment" : "Request Appointment",
+        url: paths.book,
+      },
+      secondaryCta: { label: "Contact clinic", url: paths.contact },
+    });
+  }
+
+  if (screenId === "R12") {
+    const modules = composeModularPageModules({
+      clinic,
+      customPage,
+      pageBlocks,
+      websiteEdit: editEnabled,
+    });
+    sections.modules = modules;
+    html.modules = modules;
+    html.header =
+      customPage && customPage.title && !modules.some((m) => m.component === "hero")
+        ? renderOk("section_header", {
+            title: customPage.title,
+            lead: customPage.summary || customPage.meta_description || null,
+          })
+        : "";
+    if (!modules.length && !(customPage && customPage.title)) {
+      html.empty = renderOk("section_header", {
+        title: "This page has no published content yet",
+        lead: "Compose this page from shared website components in the clinic website editor.",
+      });
+    } else {
+      html.empty = "";
+    }
+    const contactModule = contact && contact.ok ? renderOk("contact", contact.value) : "";
+    if (contactModule && !modules.some((m) => m.component === "contact")) {
+      html.contact = contactModule;
+    } else {
+      html.contact = "";
+    }
+    html.cta = renderOk("cta", {
+      heading: "Questions?",
+      body: null,
+      primaryCta: { label: "Contact clinic", url: paths.contact },
+      secondaryCta: {
+        label: clinic.publicBookingEnabled ? "Book Appointment" : "Request Appointment",
+        url: paths.book,
+      },
+    });
+  }
+
   return {
     ok: true,
     wired: true,
@@ -679,10 +1183,19 @@ function buildActiveClinicStitchPublicPage(input) {
     html,
     editEnabled,
     metrics: {
-      sharedComponentsUsed: Object.values(html).filter((chunk) => chunk && String(chunk).includes("data-gp-website-component")).length,
+      sharedComponentsUsed: Object.values(html).filter((chunk) => {
+        if (!chunk) return false;
+        if (typeof chunk === "string") return chunk.includes("data-gp-website-component");
+        if (Array.isArray(chunk)) {
+          return chunk.some((mod) => mod && String(mod.html || "").includes("data-gp-website-component"));
+        }
+        return false;
+      }).length,
       doctorsCount: doctors.length,
       servicesCount: services.length,
       proceduresCount: procedures.length,
+      galleryCount: galleryRows.length,
+      moduleCount: Array.isArray(html.modules) ? html.modules.length : 0,
     },
   };
 }
@@ -691,9 +1204,15 @@ function isStitchPublicTemplate(template) {
   return Boolean(WIRED_TEMPLATES[String(template || "")]);
 }
 
+function isGalleryPageSlug(slug) {
+  return GALLERY_PAGE_SLUGS.includes(String(slug || "").trim().toLowerCase());
+}
+
 module.exports = {
   WIRED_TEMPLATES,
   EDIT_KEYS,
+  GALLERY_PAGE_SLUGS,
   isStitchPublicTemplate,
+  isGalleryPageSlug,
   buildActiveClinicStitchPublicPage,
 };

@@ -96,6 +96,10 @@ describe("V2.04 AC Stitch Batch 3 domain public pages", () => {
       "R06",
       "R07",
       "R08",
+      "R09",
+      "R10",
+      "R11",
+      "R12",
     ]);
   });
 

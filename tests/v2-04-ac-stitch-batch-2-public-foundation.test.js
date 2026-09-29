@@ -95,7 +95,7 @@ function sampleClinic() {
 }
 
 describe("V2.04 AC Stitch Batch 2 public foundation", () => {
-  it("wires R01–R08 templates", () => {
+  it("wires R01–R12 templates", () => {
     assert.equal(isStitchPublicTemplate("tenant/home"), true);
     assert.equal(isStitchPublicTemplate("tenant/about"), true);
     assert.equal(isStitchPublicTemplate("tenant/services"), true);
@@ -104,6 +104,10 @@ describe("V2.04 AC Stitch Batch 2 public foundation", () => {
     assert.equal(isStitchPublicTemplate("tenant/service-detail"), true);
     assert.equal(isStitchPublicTemplate("tenant/contact"), true);
     assert.equal(isStitchPublicTemplate("booking/consultation-type"), true);
+    assert.equal(isStitchPublicTemplate("tenant/location"), true);
+    assert.equal(isStitchPublicTemplate("tenant/gallery"), true);
+    assert.equal(isStitchPublicTemplate("tenant/patient-information"), true);
+    assert.equal(isStitchPublicTemplate("tenant/custom-page"), true);
     assert.deepEqual(Object.values(WIRED_TEMPLATES).sort(), [
       "R01",
       "R02",
@@ -113,6 +117,10 @@ describe("V2.04 AC Stitch Batch 2 public foundation", () => {
       "R06",
       "R07",
       "R08",
+      "R09",
+      "R10",
+      "R11",
+      "R12",
     ]);
   });
 

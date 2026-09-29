@@ -116,7 +116,7 @@ function sampleClinic() {
 }
 
 describe("V2.04 ActiveClinic website presentation adapter", () => {
-  it("requires Step 1 + Step 2 and wires Batch 2–3 public screens", () => {
+  it("requires Step 1 + Step 2 and wires Batch 2–4 public screens", () => {
     assert.equal(adapter.STEP.step1Prerequisite, "PASS");
     assert.equal(adapter.STEP.step2Prerequisite, "PASS");
     assert.equal(adapter.STEP.wiredToPublicRender, true);
@@ -129,6 +129,10 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
       "R06",
       "R07",
       "R08",
+      "R09",
+      "R10",
+      "R11",
+      "R12",
     ]);
     assert.equal(adapter.STEP.wiredToEditorMutation, false);
     assert.equal(presentation.PHASE.step1Prerequisite, "PASS");

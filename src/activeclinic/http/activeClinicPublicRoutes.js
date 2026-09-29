@@ -86,6 +86,8 @@ const { attachActiveClinicWebsiteLocals, canEditClinicWebsite } = require("./att
 const {
   buildActiveClinicStitchPublicPage,
   isStitchPublicTemplate,
+  isGalleryPageSlug,
+  GALLERY_PAGE_SLUGS,
 } = require("../website/activeClinicStitchPublicPages");
 const { buildActiveClinicPublicSeo } = require("../website/activeClinicPublicSeo");
 const { resolvePublicPricingDisplay } = require("../website/publicPricingDisplay");
@@ -397,6 +399,9 @@ function registerActiveClinicPublicRoutes(app, deps) {
         profile: extras.profile || null,
         service: extras.service || null,
         serviceKind: extras.serviceKind || null,
+        gallery: extras.gallery || null,
+        customPage: extras.customPage || null,
+        pageBlocks: extras.pageBlocks || [],
         websiteEdit: Boolean(website.websiteEdit),
         navItems: website.clinicWebsiteNav && website.clinicWebsiteNav.desktop,
       });
@@ -1495,6 +1500,31 @@ function registerActiveClinicPublicRoutes(app, deps) {
     }
   });
 
+  // R10: prefer CMS page slug (/p/gallery) over inventing a parallel gallery engine.
+  // Thin alias keeps a stable public URL while reusing the same gallery presentation.
+  app.get("/clinics/:clinicKey/gallery", async (req, res, next) => {
+    try {
+      const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
+      if (!clinic) return undefined;
+      const website = await attachActiveClinicWebsiteLocals(getPool(), req, clinic);
+      const pages = (website.clinic && website.clinic.cmsPages) || [];
+      const allowDraft =
+        canEditClinicWebsite(req, clinic) &&
+        (String(req.query.website_mode || "") === "draft" || String(req.query.website_edit || "") === "1");
+      const cmsPage = allowDraft
+        ? GALLERY_PAGE_SLUGS.map((slug) => cmsService.findDraftCustomPageBySlug(pages, slug)).find(Boolean)
+        : GALLERY_PAGE_SLUGS.map((slug) => cmsService.findCustomPageBySlug(pages, slug)).find(Boolean);
+      if (cmsPage && cmsPage.slug) {
+        return res.redirect(302, `/clinics/${clinic.clinicKey}/p/${encodeURIComponent(cmsPage.slug)}`);
+      }
+      return renderTenantView(req, res, clinic, "tenant/gallery", {
+        pageTitle: (website.clinic && website.clinic.galleryHeading) || "Clinic environment",
+      });
+    } catch (err) {
+      return next(err);
+    }
+  });
+
   app.get("/clinics/:clinicKey/patient-information", async (req, res, next) => {
     try {
       const clinic = await resolveClinicOrRespond(getPool, req, res, respondDeps);
@@ -1720,6 +1750,14 @@ function registerActiveClinicPublicRoutes(app, deps) {
         );
       }
       const pageBlocks = blocks.filter((block) => block && block.page_id === page.id);
+      if (isGalleryPageSlug(page.slug)) {
+        return renderTenantView(req, res, clinic, "tenant/gallery", {
+          customPage: page,
+          pageBlocks,
+          pageTitle: page.meta_title || page.title || "Clinic environment",
+          metaDescription: page.meta_description || "",
+        });
+      }
       return renderTenantView(req, res, clinic, "tenant/custom-page", {
         customPage: page,
         pageBlocks,
