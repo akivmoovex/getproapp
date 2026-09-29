@@ -953,3 +953,99 @@
     justify-content: center;
   }
 }
+
+/* V2.04 Batch 6 — H01–H06 390px companions (responsive; no desktop table squeeze) */
+@media (max-width: 390px) {
+  .ac-mw[data-ac-stitch-screen],
+  .ac-mw[data-ac-stitch-hub] {
+    overflow-x: clip;
+    max-width: 100%;
+    min-width: 0;
+    padding-inline: 0.75rem;
+  }
+  .ac-mw-hub-metrics,
+  .ac-mw-hub-tiles {
+    grid-template-columns: 1fr;
+    gap: 0.65rem;
+  }
+  .ac-mw-hub-metric,
+  .ac-mw-hub-tile {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+  .ac-mw-hub-chips {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem;
+  }
+  .ac-mw-hub-quick__row {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+    width: 100%;
+  }
+  .ac-mw-hub-quick__row .ac-mw-btn,
+  .ac-mw-hub-quick__row form,
+  .ac-mw-hub-quick__row form button {
+    width: 100%;
+  }
+  /* H02 pages: stack card body + actions; never force a 3-col table */
+  .ac-mw[data-ac-stitch-screen="H02"] .ac-mw-card {
+    grid-template-columns: 1fr;
+    align-items: stretch;
+  }
+  .ac-mw[data-ac-stitch-screen="H02"] .ac-mw-card .ac-mw-actions {
+    width: 100%;
+  }
+  .ac-mw[data-ac-stitch-screen="H02"] .ac-mw-card .ac-mw-actions .ac-mw-btn,
+  .ac-mw[data-ac-stitch-screen="H02"] .ac-mw-card .ac-mw-actions button {
+    flex: 1 1 auto;
+  }
+  /* H03 brand: form above preview, full-width controls */
+  .ac-mw[data-ac-stitch-screen="H03"] .ac-mw-brand-layout {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .ac-mw[data-ac-stitch-screen="H03"] .ac-mw-color {
+    width: 100%;
+  }
+  .ac-mw[data-ac-stitch-screen="H03"] input[type="text"],
+  .ac-mw[data-ac-stitch-screen="H03"] input[type="color"] {
+    max-width: 100%;
+  }
+  /* H04 media: single-column asset cards */
+  .ac-mw[data-ac-stitch-screen="H04"] .gp-lib__grid {
+    grid-template-columns: 1fr;
+  }
+  .ac-mw[data-ac-stitch-screen="H04"] .ac-mw-dialog {
+    width: calc(100vw - 1rem);
+    max-width: calc(100vw - 1rem);
+  }
+  /* H05 history: platform history list, no horizontal scroll */
+  .ac-mw[data-ac-stitch-screen="H05"],
+  .ac-mw[data-ac-stitch-screen="H05"] .gp-we-history {
+    overflow-x: clip;
+    max-width: 100%;
+  }
+  .ac-mw[data-ac-stitch-screen="H05"] .gp-we-history__row,
+  .ac-mw[data-ac-stitch-screen="H05"] .gp-website-lifecycle__actions {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 0.5rem;
+  }
+  /* H06 settings: stacked form fields */
+  .ac-mw[data-ac-stitch-screen="H06"] .ac-mw-form label,
+  .ac-mw[data-ac-stitch-screen="H06"] .ac-mw-form input,
+  .ac-mw[data-ac-stitch-screen="H06"] .ac-mw-form textarea {
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+  }
+  .ac-mw-editor__top-actions {
+    width: 100%;
+    margin-left: 0;
+  }
+  .ac-mw-editor__ghost,
+  .ac-mw-editor__publish {
+    flex: 1 1 auto;
+  }
+}

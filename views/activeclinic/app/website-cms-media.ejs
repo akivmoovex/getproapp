@@ -1,9 +1,19 @@
 <% var cms = (pageData && pageData.cms) || {}; var media = cms.media || []; var selected = cms.selected || null; var selectMode = cms.selectMode === true; %>
 <% if (cms.libraryStylesheet) { %><link rel="stylesheet" href="<%= cms.libraryStylesheet %>"/><% } %>
-<section class="ac-mw" data-ac-page-section="website-media" data-ac-mw-screen="<%= selectMode ? 'select-media' : 'media' %>">
+<section
+  class="ac-mw"
+  data-ac-page-section="website-media"
+  data-ac-mw-screen="<%= selectMode ? 'select-media' : 'media' %>"
+  data-ac-stitch-screen="H04"
+  data-ac-stitch-screen-mobile="H04-M"
+  data-ac-shared-media-engine="1"
+>
   <%- include('../partials/website-cms-nav') %>
   <div class="ac-mw-head">
-    <div></div>
+    <div>
+      <h2>Media Library</h2>
+      <p class="ac-mw-muted">Shared platform media library. Desktop and mobile show the same assets.</p>
+    </div>
     <% if (cms.canUpload && !selectMode) { %>
     <button type="button" class="ac-mw-btn ac-mw-btn--primary" data-ac-mw-open="ac-mw-upload-media">Upload Media</button>
     <% } %>

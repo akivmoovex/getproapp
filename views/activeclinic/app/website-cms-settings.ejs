@@ -6,12 +6,18 @@
   var error = cms.error || "";
   var saved = cms.saved === true;
 %>
-<section class="ac-mw" data-ac-page-section="website-settings" data-ac-mw-screen="MW08-01">
+<section
+  class="ac-mw"
+  data-ac-page-section="website-settings"
+  data-ac-mw-screen="MW08-01"
+  data-ac-stitch-screen="H06"
+  data-ac-stitch-screen-mobile="H06-M"
+>
   <%- include('../partials/website-cms-nav') %>
   <div class="ac-mw-head">
     <div>
-      <h2>Website Settings</h2>
-      <p class="ac-mw-muted">Name, contact, and opening information visitors see on your clinic website. This does not change clinic records used for appointments.</p>
+      <h2>Website Settings &amp; Configuration</h2>
+      <p class="ac-mw-muted">Name, contact, and opening information visitors see on your clinic website. This does not change clinic records used for appointments. Related: <a href="/app/settings/website/seo">SEO</a>, <a href="/app/settings/website/chrome">Header &amp; Footer</a>.</p>
     </div>
   </div>
   <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
@@ -38,6 +44,12 @@
         <% } %>
       </p>
       <p class="ac-mw-hint">Assigned by ActiveClinic. Domain setup is not changed here.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="custom_domain">Custom domain purchase/management from Stitch is not wired — Platform Admin / infrastructure owns domains.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="ssl_certificate">SSL certificate controls are not wired — TLS is platform infrastructure.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="maintenance_mode">Maintenance mode is not wired — use publish / unpublish for public availability.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="website_timezone">Website timezone is not wired here — timezone lives on organization / facility settings.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="website_language">Website language switcher is not wired — no multi-language website model.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="analytics_embed">Analytics / pixel embeds are not wired in website settings.</p>
     </div>
     <label>
       Phone

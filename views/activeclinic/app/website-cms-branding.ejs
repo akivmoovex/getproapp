@@ -9,12 +9,18 @@
   var accent = values["brand.accent_color"] || "";
   var previewName = cms.clinicName || "Your clinic";
 %>
-<section class="ac-mw" data-ac-page-section="website-branding" data-ac-mw-screen="MW08-02">
+<section
+  class="ac-mw"
+  data-ac-page-section="website-branding"
+  data-ac-mw-screen="MW08-02"
+  data-ac-stitch-screen="H03"
+  data-ac-stitch-screen-mobile="H03-M"
+>
   <%- include('../partials/website-cms-nav') %>
   <div class="ac-mw-head">
     <div>
-      <h2>Branding Settings</h2>
-      <p class="ac-mw-muted">Logo, colours, and optional cover image. The preview updates as you change these fields. Save as a draft, then publish when ready.</p>
+      <h2>Brand &amp; Appearance</h2>
+      <p class="ac-mw-muted">Logo, brand colours, and optional cover image via the shared media library. Colours map to semantic brand tokens — not a separate theme engine. Save as a draft, then publish when ready.</p>
     </div>
   </div>
   <% if (error) { %><p class="ac-mw-error" role="alert"><%= error %></p><% } %>
@@ -51,7 +57,12 @@
           <input type="text" name="accentColor" maxlength="7" value="<%= accent %>" placeholder="#0f766e" data-ac-mw-color-text autocomplete="off"/>
         </span>
       </label>
-      <p class="ac-mw-hint">Use a 6-digit colour such as #006068. Leave blank to keep the ActiveClinic default teal.</p>
+      <p class="ac-mw-hint">Use a 6-digit colour such as #006068. Leave blank to keep the ActiveClinic default teal. These set <code>brand.primary_color</code> / <code>brand.accent_color</code> only.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="favicon_app_icon">Favicon / app icon from Stitch is not wired — no favicon field in the website vocabulary. Use logo media for brand mark.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="header_style_mode">Header style modes (sticky / docked) are not wired. Header visibility is edited under Header &amp; Footer.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="booking_gateway_engine">External booking gateway pickers (HotDoc / HealthEngine) are not wired here.</p>
+      <p class="ac-mw-hint" data-ac-stitch-not-wired="accreditation_badges">Accreditation badge pickers are not wired — no badge catalogue in website content.</p>
+      <p class="ac-mw-hint">Social links are edited under <a href="/app/settings/website/chrome">Header &amp; Footer</a> (existing chrome fields).</p>
       <p class="ac-mw-form__legend">Cover / hero image (optional)</p>
       <%- include('../partials/website-cms-media-field', {
         mediaField: {

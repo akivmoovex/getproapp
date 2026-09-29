@@ -22,6 +22,9 @@
   data-ac-website-hub="1"
   data-ac-mw-screen="MW10-01"
   data-ac-mw-screen-mobile="MW10-02"
+  data-ac-stitch-screen="H01"
+  data-ac-stitch-screen-mobile="H01-M"
+  data-ac-stitch-hub="1"
 >
   <%- include('../partials/website-cms-nav') %>
   <% if (!website.liveAvailable) { %>
@@ -186,10 +189,28 @@
   </div>
 
   <h3 class="ac-mw-hub-access__title">Manage your website</h3>
-  <div class="ac-mw-hub-tiles">
-    <a class="ac-mw-hub-tile" href="/app/settings/website/pages" data-ac-website-action="pages">
+  <div class="ac-mw-hub-tiles" data-ac-stitch-hub-tiles="H01">
+    <a class="ac-mw-hub-tile" href="/app/settings/website/pages" data-ac-website-action="pages" data-ac-stitch-hub-link="H02">
       <h3>Pages</h3>
       <p>Add, hide, or update the pages on your clinic website.</p>
+    </a>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/branding" data-ac-website-action="branding" data-ac-stitch-hub-link="H03">
+      <h3>Brand &amp; Appearance</h3>
+      <p>Update logo, colours, and the look of your site.</p>
+    </a>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/media" data-ac-website-action="media" data-ac-stitch-hub-link="H04">
+      <h3>Media Library</h3>
+      <p>Upload and reuse photos for your website.</p>
+    </a>
+    <% if (actions.history) { %>
+    <a class="ac-mw-hub-tile" href="<%= actions.history %>" data-ac-website-action="history" data-ac-stitch-hub-link="H05">
+      <h3>Version History</h3>
+      <p>Review past versions and restore a previous draft.</p>
+    </a>
+    <% } %>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/settings" data-ac-website-action="settings" data-ac-stitch-hub-link="H06">
+      <h3>Website Settings</h3>
+      <p>Name, contact details, and opening information.</p>
     </a>
     <a class="ac-mw-hub-tile" href="/app/settings/website/sections" data-ac-website-action="sections">
       <h3>Sections</h3>
@@ -199,21 +220,13 @@
       <h3>Page Builder</h3>
       <p>Arrange headings, text, images, and buttons on a page.</p>
     </a>
-    <a class="ac-mw-hub-tile" href="/app/settings/website/media" data-ac-website-action="media">
-      <h3>Media</h3>
-      <p>Upload and reuse photos for your website.</p>
-    </a>
     <a class="ac-mw-hub-tile" href="/app/settings/website/navigation" data-ac-website-action="navigation">
       <h3>Navigation</h3>
       <p>Control the links in your website menu.</p>
     </a>
-    <a class="ac-mw-hub-tile" href="/app/settings/website/branding" data-ac-website-action="branding">
-      <h3>Branding</h3>
-      <p>Update logo, colours, and the look of your site.</p>
-    </a>
-    <a class="ac-mw-hub-tile" href="/app/settings/website/settings" data-ac-website-action="settings">
-      <h3>Website Settings</h3>
-      <p>Name, contact details, and opening information.</p>
+    <a class="ac-mw-hub-tile" href="/app/settings/website/chrome" data-ac-website-action="chrome">
+      <h3>Header &amp; Footer</h3>
+      <p>Logo visibility, contact row, social links, and footer note.</p>
     </a>
     <a class="ac-mw-hub-tile" href="/app/settings/website/seo" data-ac-website-action="seo">
       <h3>SEO &amp; Social</h3>
@@ -227,11 +240,5 @@
       <h3>Content Library</h3>
       <p>Reuse website copy, photos, and placements. Show or hide doctors and services in Public Catalogue.</p>
     </a>
-    <% if (actions.history) { %>
-    <a class="ac-mw-hub-tile" href="<%= actions.history %>" data-ac-website-action="history">
-      <h3>Version History</h3>
-      <p>Review past versions and restore a previous draft.</p>
-    </a>
-    <% } %>
   </div>
 </section>

@@ -92,7 +92,7 @@ Do **not** invent a second draft/publish/version/editor engine.
 | **MISSING_PLANNED_SCREENS** | **2**: planned **Pricing (R09)**; planned **Offline/suspended status shell (R12)** — Stitch R12 is modular CMS instead |
 | **RENUMBERING** | Stitch R04=Doctors list, R05=Doctor profile, R06=Service detail, R07=Contact, R09=Facilities (≠ audit table order) |
 | **MISSING_DESKTOP** | R04 Doctors, R05 Doctor profile, R06 Service detail, R07 Contact, R08 Booking — **mobile-only in Stitch**; implement as responsive variants of same components |
-| **MISSING_MOBILE_HUB** | H01–H06 have **no** mobile companions; use responsive hub templates |
+| **MISSING_MOBILE_HUB** | H01–H06 now have Stitch mobile companions; implement as responsive hub templates (Batch 6) |
 | **DESIGN_SYSTEM_ASSET** | One `DESIGN_SYSTEM_INSTANCE` on canvas (not a product screen) |
 
 ---
@@ -275,14 +275,25 @@ Extension complete = Stitch pencil affordance chrome + mobile editor density on 
 
 | Stitch | Route | Service / mechanism | Gap |
 |---|---|---|---|
-| H01 Hub | `/app/settings/website` | `websiteManagementPresentation` + AC settings | Visual tile parity |
-| H02 Pages | `/app/settings/website/pages` | CMS pages | Visual parity |
-| H03 Brand | `/app/settings/website/branding` (+ themes) | branding + theme | Visual parity |
-| H04 Media | `/app/settings/website/media` | mediaService + folders | Visual parity |
-| H05 History | website history routes | versionService | Visual parity |
-| H06 Settings | `/settings`, `/seo`, `/chrome` | seoModel / chrome | Visual consolidation |
+| H01 Hub | `/app/settings/website` | `websiteManagementPresentation` + AC settings | **Batch 6 PASS** — stitch markers + hub tiles |
+| H02 Pages | `/app/settings/website/pages` | CMS page inventory (singular) | **Batch 6 PASS** |
+| H03 Brand | `/app/settings/website/branding` | `brand.*` + shared media logo/hero | **Batch 6 PASS** (favicon / header modes / badges NOT_WIRED) |
+| H04 Media | `/app/settings/website/media` | `mediaService.registerWebsiteMedia` (count=1) | **Batch 6 PASS** |
+| H05 History | `/clinics/:clinicKey/website/history` | `versionService` + restore-as-new | **Batch 6 PASS** |
+| H06 Settings | `/app/settings/website/settings` (+ seo/chrome) | existing content keys | **Batch 6 PASS** (domain/SSL/maintenance/tz/lang/analytics NOT_WIRED) |
 
-No new lifecycle services.
+Contract module: `src/activeclinic/website/activeClinicStitchWebsiteHub.js`  
+Tests: `tests/v2-04-ac-stitch-batch-6-website-hub.test.js`  
+**UNWIRED_STITCH_CONTROLS = 10** · **PLATFORM_ADMIN_SEPARATION = YES** · No new lifecycle services.
+
+Mobile: Stitch now includes H01–H06 mobile companions; implemented as responsive `@media (max-width: 390px)` on the same templates (no second hub).
+
+| Gate | Batch 6 |
+|---|---|
+| **HUB_DESKTOP** | **PASS** |
+| **HUB_MOBILE_390** | **PASS** |
+| **SHARED_MEDIA_ENGINE** | **PASS** |
+| **VERSION_ENGINE_REUSED** | **PASS** |
 
 ---
 
@@ -316,7 +327,7 @@ Prefer existing `/clinics/:clinicKey…` and `/app/settings/website…` routes. 
 |---|---|
 | **DESKTOP_MOBILE_SHARED_COMPONENTS** | **YES** |
 
-Mobile companions and mobile-only public screens share the same presentation components with responsive CSS. Do **not** duplicate page implementations. Hub screens: responsive from desktop Stitch (no mobile Stitch yet).
+Mobile companions and mobile-only public screens share the same presentation components with responsive CSS. Do **not** duplicate page implementations. Hub screens H01–H06: Stitch D+M companions → same templates + `@media (max-width: 390px)` in `website-cms.css` (Batch 6).
 
 ---
 
