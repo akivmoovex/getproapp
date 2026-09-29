@@ -71,4 +71,5 @@ module.exports = {
   cmsOrderedListDraft,
   presentation,
   websiteMediaEditingContract,
+  platformAdminWebsiteConsoleContract: require("./platformAdminWebsiteConsoleContract"),
 };

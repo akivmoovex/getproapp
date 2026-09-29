@@ -946,4 +946,6 @@ module.exports = {
   applyPlatformAdminWebsiteAction,
   buildActionUrls,
   buildVersionDiff,
+  listWebsiteMediaAdminRows,
+  buildWebsiteDiagnostics,
 };

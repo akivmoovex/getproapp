@@ -127,6 +127,7 @@
     <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-changes" data-action-change-summary="1">View change summary</a>
     <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-history" data-action-history="1">View history</a>
     <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-audit" data-action-audit="1">Audit events</a>
+    <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-moderation" data-action-moderation="1">Moderation</a>
     <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-media" data-action-media="1">Media usage</a>
     <a class="bb-pa-btn bb-pa-btn--ghost" href="#website-diagnostics" data-action-diagnostics="1">Diagnostics</a>
   </p>
@@ -267,6 +268,30 @@
         <td><%= ev.actorLabel || '—' %></td>
         <td><%= ev.actionKey || '—' %></td>
         <td><%= ev.contentKey || '—' %></td>
+      </tr>
+      <% }) %>
+    </tbody>
+  </table>
+
+  <h2 id="website-moderation">Moderation status</h2>
+  <% var mods = typeof moderationEvents !== 'undefined' && moderationEvents ? moderationEvents : []; %>
+  <table class="bb-pa-table" data-website-moderation-events="1">
+    <thead>
+      <tr>
+        <th>When</th>
+        <th>Action</th>
+        <th>Reason / notes</th>
+      </tr>
+    </thead>
+    <tbody>
+      <% if (!mods.length) { %>
+      <tr><td colspan="3">No moderation events recorded yet.</td></tr>
+      <% } %>
+      <% mods.forEach(function (ev) { %>
+      <tr>
+        <td><%= ev.createdAt || ev.created_at || '—' %></td>
+        <td><%= ev.actionKey || ev.action_key || '—' %></td>
+        <td><%= ev.notes || ev.reason || ev.notePublic || '—' %></td>
       </tr>
       <% }) %>
     </tbody>
