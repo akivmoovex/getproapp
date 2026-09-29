@@ -17,9 +17,9 @@ const BRIDGE_CSS = path.join(ROOT, "public/platform/website-presentation-token-b
 const INLINE_EDIT_JS = path.join(ROOT, "public/platform/website-inline-edit.js");
 
 describe("V2.04 shared website presentation component library", () => {
-  it("registers 18 shared components with on-disk partials", () => {
-    assert.equal(presentation.SHARED_COMPONENT_COUNT, 18);
-    assert.equal(presentation.listSharedComponents().length, 18);
+  it("registers 23 shared components with on-disk partials", () => {
+    assert.equal(presentation.SHARED_COMPONENT_COUNT, 23);
+    assert.equal(presentation.listSharedComponents().length, 23);
     for (const id of presentation.SHARED_COMPONENT_IDS) {
       const file = presentation.partialPath(id);
       assert.ok(file && fs.existsSync(file), `missing partial for ${id}`);
@@ -36,15 +36,19 @@ describe("V2.04 shared website presentation component library", () => {
     assert.match(fs.readFileSync(INLINE_EDIT_JS, "utf8"), /GpUniversalImageEditor|data-website-inline/);
   });
 
-  it("records component shareability before/after Step 2", () => {
+  it("records component shareability before/after Step 2 and Batch 1", () => {
     assert.equal(presentation.COMPONENT_SHAREABILITY_BEFORE, "74%");
-    assert.equal(presentation.COMPONENT_SHAREABILITY_AFTER, "89%");
+    assert.equal(presentation.COMPONENT_SHAREABILITY_AFTER, "100%");
     assert.equal(presentation.COMPONENT_SHAREABILITY.beforePercent, 74);
-    assert.equal(presentation.COMPONENT_SHAREABILITY.afterPercent, 89);
+    assert.equal(presentation.COMPONENT_SHAREABILITY.afterPercent, 100);
     assert.equal(presentation.COMPONENT_SHAREABILITY.auditedComponentCount, 19);
     assert.equal(presentation.COMPONENT_SHAREABILITY.shareableCandidatesBefore, 14);
-    assert.equal(presentation.COMPONENT_SHAREABILITY.sharedPresentationCoverageAfter, 17);
+    assert.equal(presentation.COMPONENT_SHAREABILITY.sharedPresentationCoverageAfter, 19);
     assert.ok(presentation.COMPONENT_SHAREABILITY.afterPercent > presentation.COMPONENT_SHAREABILITY.beforePercent);
+    assert.equal(presentation.BATCH_1_COMPONENT_PARITY.newSharedComponents, 5);
+    assert.equal(presentation.BATCH_1_COMPONENT_PARITY.newAcOnlyComponents, 0);
+    assert.equal(presentation.BATCH_1_COMPONENT_PARITY.sharedComponentsExtended, 4);
+    assert.equal(presentation.BATCH_1_COMPONENT_PARITY.desktopMobileShared, true);
   });
 
   it("renders hero with editable WE01 hooks from presentation data", () => {
@@ -230,5 +234,132 @@ describe("V2.04 shared website presentation component library", () => {
       staffId: "1",
     });
     assert.equal(bad.ok, false);
+  });
+
+  it("Batch 1: person card renders portrait, badges, and dual CTAs from adapters", () => {
+    const doctor = presentation.adaptDoctorToPersonPresentation({
+      id: "D-batch1",
+      public_display_name: "Dr Ada",
+      public_title: "General Practitioner",
+      subtitle: "Family medicine",
+      public_bio: "Experienced clinician",
+      ctaUrl: "/doctors/ada",
+      bookingUrl: "/book?doctor=ada",
+      qualifications: ["MBBS"],
+    });
+    const html = presentation.renderPresentationComponent("person_card", doctor.value);
+    assert.equal(html.ok, true, html.message);
+    assert.match(html.html, /data-gp-media-variant="portrait"/);
+    assert.match(html.html, /View Profile/);
+    assert.match(html.html, /Book Appointment/);
+    assert.match(html.html, /MBBS/);
+    assert.doesNotMatch(html.html, /MD \(invented\)|fake credential/i);
+  });
+
+  it("Batch 1: service card renders icon tile variant", () => {
+    const service = presentation.adaptServiceToOfferingCard({
+      id: "S-batch1",
+      display_name: "Dental",
+      public_summary: "Dental care",
+      iconUrl: "/icons/dental.svg",
+      ctaUrl: "/services/dental",
+    });
+    const card = presentation.renderPresentationComponent("collection_card", {
+      cardKind: "offering",
+      items: [service.value],
+    });
+    assert.equal(card.ok, true, card.message);
+    assert.match(card.html, /data-gp-media-variant="icon"/);
+    assert.match(card.html, /gp-website-pc__img--icon/);
+    assert.match(card.html, /Dental/);
+  });
+
+  it("Batch 1: new shared Stitch families render without AC-only partials", () => {
+    const samples = {
+      fact_strip: {
+        heading: "Quick info",
+        items: [
+          { label: "Open", value: "Today 8–6" },
+          { label: "Phone", value: "+1 555", href: "tel:+1555" },
+        ],
+      },
+      stepper: {
+        heading: "Care journey",
+        steps: [
+          { title: "Book", body: "Choose a slot" },
+          { title: "Visit", body: "Arrive prepared" },
+        ],
+      },
+      faq_list: {
+        heading: "FAQ",
+        items: [{ question: "Insurance?", answer: "Call us" }],
+      },
+      settings_shell: {
+        title: "Website hub",
+        activeKey: "media",
+        navItems: [
+          { key: "media", label: "Media", href: "/media", description: "Library" },
+          { key: "branding", label: "Brand", href: "/branding" },
+        ],
+        actions: [{ label: "Publish", url: "/publish" }],
+      },
+      data_list: {
+        heading: "Clinic facts",
+        rows: [{ label: "Email", value: "care@example.test", href: "mailto:care@example.test" }],
+      },
+    };
+    for (const [id, model] of Object.entries(samples)) {
+      const rendered = presentation.renderPresentationComponent(id, model);
+      assert.equal(rendered.ok, true, `${id}: ${rendered.code} ${rendered.message || ""}`);
+      assert.match(rendered.html, new RegExp(`data-gp-website-component="${id}"`));
+    }
+  });
+
+  it("Batch 1: desktop and 390px share one component CSS (no mobile duplicate partials)", () => {
+    const css = fs.readFileSync(COMPONENTS_CSS, "utf8");
+    assert.match(css, /@media \(max-width:\s*390px\)/);
+    assert.doesNotMatch(css, /person-card-mobile|collection-card-mobile/);
+    assert.equal(fs.existsSync(path.join(ROOT, "views/platform/website/components/person-card-mobile.ejs")), false);
+    assert.equal(fs.existsSync(path.join(ROOT, "views/platform/website/components/fact-strip-mobile.ejs")), false);
+  });
+
+  it("Batch 1: BB pastor still renders on shared person card (regression)", () => {
+    const pastor = presentation.adaptLeaderToPersonPresentation({
+      id: "L-reg",
+      displayName: "Pastor Jane",
+      roleTitle: "Lead Pastor",
+      biography: "Serves the church",
+      seniorLeader: true,
+    });
+    const ministry = presentation.adaptMinistryToOfferingCard({
+      id: "M-reg",
+      name: "Youth",
+      summary: "Youth ministry",
+      joinUrl: "/join",
+    });
+    const pastorHtml = presentation.renderPresentationComponent("person_card", pastor.value);
+    const ministryHtml = presentation.renderPresentationComponent("collection_card", {
+      cardKind: "offering",
+      items: [ministry.value],
+    });
+    assert.equal(pastorHtml.ok, true);
+    assert.equal(ministryHtml.ok, true);
+    assert.match(pastorHtml.html, /Pastor Jane/);
+    assert.match(pastorHtml.html, /data-gp-source-domain="pastor_leader"/);
+    assert.match(ministryHtml.html, /Youth/);
+    assert.match(ministryHtml.html, /data-gp-source-domain="ministry"/);
+    assert.doesNotMatch(pastorHtml.html, /Book Appointment/);
+  });
+
+  it("Batch 1: theme isolation keeps AC primary on token bridge without BB leakage", () => {
+    const bridge = fs.readFileSync(BRIDGE_CSS, "utf8");
+    const componentCss = fs.readFileSync(COMPONENTS_CSS, "utf8").replace(/\/\*[\s\S]*?\*\//g, "");
+    assert.match(bridge, /body\.ac-public-body[\s\S]*--gp-website-color-primary:\s*var\(--ac-color-primary/);
+    assert.match(bridge, /body\.bb-tp-body[\s\S]*--gp-website-color-primary:\s*var\(--bb-color-primary/);
+    assert.doesNotMatch(componentCss, /#006068|#6[cC]5[cC][eE]7/);
+    assert.doesNotMatch(componentCss, /--bb-/);
+    assert.doesNotMatch(componentCss, /--ac-/);
+    assert.equal(presentation.findThemeTokenLeaks(componentCss, "activeclinic").length, 0);
+    assert.equal(presentation.findThemeTokenLeaks(componentCss, "blessboard").length, 0);
   });
 });

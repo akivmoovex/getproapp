@@ -133,14 +133,17 @@ describe("V2.04 platform website presentation foundation", () => {
     );
   });
 
-  it("exposes 18 shared presentation component types with contracts", () => {
-    assert.equal(presentation.PRESENTATION_COMPONENT_TYPE_LIST.length, 18);
+  it("exposes 18 core presentation types plus Batch 1 Stitch families", () => {
+    assert.equal(presentation.CORE_PRESENTATION_COMPONENT_TYPE_COUNT, 18);
+    assert.equal(presentation.PRESENTATION_COMPONENT_TYPE_LIST.length, 23);
     const types = presentation.listPresentationComponentTypes();
-    assert.equal(types.length, 18);
+    assert.equal(types.length, 23);
     for (const type of presentation.PRESENTATION_COMPONENT_TYPE_LIST) {
       assert.ok(presentation.COMPONENT_CONTRACTS[type], `missing contract for ${type}`);
       assert.equal(presentation.isPresentationComponentType(type), true);
     }
+    assert.equal(presentation.isPresentationComponentType("fact_strip"), true);
+    assert.equal(presentation.isPresentationComponentType("settings_shell"), true);
   });
 
   it("maps Class B semantic concepts onto presentation components", () => {
@@ -178,6 +181,26 @@ describe("V2.04 platform website presentation foundation", () => {
       announcement: { title: "Notice", body: "Details", visibility: true },
       seo: { title: "Site", description: "Desc", robots: "index", sitemapInclude: true },
       footer: { tagline: "Care", legal: "Not medical advice", showContact: true },
+      fact_strip: {
+        heading: "At a glance",
+        items: [{ label: "Phone", value: "+1 555", displayOrder: 1 }],
+      },
+      stepper: {
+        heading: "Your visit",
+        steps: [{ title: "Book", body: "Choose a time", displayOrder: 1 }],
+      },
+      faq_list: {
+        heading: "FAQ",
+        items: [{ question: "Do you take walk-ins?", answer: "Yes", displayOrder: 1 }],
+      },
+      settings_shell: {
+        title: "Website",
+        navItems: [{ key: "branding", label: "Branding", href: "/branding" }],
+      },
+      data_list: {
+        heading: "Details",
+        rows: [{ label: "Phone", value: "+1 555" }],
+      },
     };
 
     for (const [type, payload] of Object.entries(samples)) {
@@ -256,6 +279,50 @@ describe("V2.04 platform website presentation foundation", () => {
       false
     );
     assert.equal(presentation.assertDomainBoundary("sermon", "clinical_content").ok, false);
+  });
+
+  it("adapts doctor with dual CTAs and badges only when data exists", () => {
+    const doctor = presentation.adaptDoctorToPersonPresentation({
+      id: "D2",
+      public_display_name: "Dr Ada",
+      public_title: "General Practitioner",
+      subtitle: "Family medicine",
+      public_bio: "Family medicine",
+      ctaUrl: "/doctors/ada",
+      bookingUrl: "/book?doctor=ada",
+      qualifications: ["MBBS", "MRCGP"],
+      sort_order: 1,
+    });
+    assert.equal(doctor.ok, true);
+    assert.equal(doctor.value.cta.label, "View Profile");
+    assert.equal(doctor.value.secondaryCta.label, "Book Appointment");
+    assert.equal(doctor.value.mediaVariant, "portrait");
+    assert.equal(doctor.value.badges.length, 2);
+    assert.equal(doctor.value.badges[0].label, "MBBS");
+
+    const bare = presentation.adaptDoctorToPersonPresentation({
+      id: "D3",
+      public_display_name: "Dr Bo",
+      public_title: "GP",
+    });
+    assert.equal(bare.ok, true);
+    assert.equal(bare.value.badges.length, 0);
+    assert.equal(bare.value.cta, null);
+  });
+
+  it("adapts clinical service with icon tile media variant", () => {
+    const service = presentation.adaptServiceToOfferingCard({
+      id: "S2",
+      display_name: "Dental",
+      public_summary: "Dental care",
+      iconUrl: "/icons/dental.svg",
+      ctaUrl: "/services/dental",
+      bookingUrl: "/book?service=dental",
+    });
+    assert.equal(service.ok, true);
+    assert.equal(service.value.mediaVariant, "icon");
+    assert.equal(service.value.cta.label, "Learn more");
+    assert.equal(service.value.secondaryCta.label, "Book");
   });
 
   it("keeps collection presentation ordered and visible by default", () => {

@@ -123,7 +123,7 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
     assert.equal(adapter.STEP.wiredToEditorMutation, false);
     assert.equal(presentation.PHASE.step1Prerequisite, "PASS");
     assert.equal(presentation.PHASE.componentLibraryAvailable, true);
-    assert.equal(presentation.SHARED_COMPONENT_COUNT, 18);
+    assert.equal(presentation.SHARED_COMPONENT_COUNT, 23);
     assert.equal(presentation.SHARED_EDITOR_ENGINE_COUNT, 1);
   });
 
@@ -154,6 +154,9 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
       bio: "Experienced clinician",
       photoUrl: "/media/ada.jpg",
       featured: true,
+      profileHref: "/doctors/ada",
+      bookingUrl: "/book?doctor=ada",
+      qualifications: ["MBBS"],
     });
     assert.equal(person.ok, true);
     assert.equal(person.value.name, "Dr Ada");
@@ -161,10 +164,16 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
     assert.equal(person.value.subtitle, "Family medicine");
     assert.equal(person.value.sourceDomain, "doctor");
     assert.equal(person.value.sourceProduct, "activeclinic");
+    assert.equal(person.value.cta.label, "View Profile");
+    assert.equal(person.value.secondaryCta.label, "Book Appointment");
+    assert.equal(person.value.badges[0].label, "MBBS");
+    assert.equal(person.value.mediaVariant, "portrait");
 
     const html = presentation.renderPresentationComponent("person_card", person.value);
     assert.equal(html.ok, true);
     assert.match(html.html, /Dr Ada/);
+    assert.match(html.html, /View Profile/);
+    assert.match(html.html, /Book Appointment/);
     assert.doesNotMatch(html.html, /staff_members|public_profile_enabled/i);
   });
 
@@ -175,21 +184,26 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
       displayName: "Dental",
       summary: "Dental care",
       iconUrl: "/media/dental.png",
+      detailHref: "/services/dental",
+      bookingUrl: "/book?service=dental",
     });
     assert.equal(card.ok, true);
     assert.equal(card.value.title, "Dental");
     assert.equal(card.value.sourceDomain, "clinical_service");
+    assert.equal(card.value.mediaVariant, "icon");
+    assert.equal(card.value.secondaryCta.label, "Book");
 
     const collection = adapter.adaptActiveClinicServicesCollection({
       clinic: sampleClinic(),
       services: [
-        { id: "1", displayName: "Dental", summary: "Teeth" },
+        { id: "1", displayName: "Dental", summary: "Teeth", iconUrl: "/i.svg" },
         { id: "2", displayName: "Physio", summary: "Rehab" },
       ],
     });
     assert.equal(collection.ok, true);
     assert.equal(collection.value.items.length, 2);
     assert.equal(collection.value.cardKind, "offering");
+    assert.equal(collection.value.items[0].mediaVariant, "icon");
   });
 
   it("builds full presentation bundle with shareable collections and preserved product fields", () => {

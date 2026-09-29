@@ -9,11 +9,12 @@
  * These helpers are NOT wired into public website render paths in Phase 1.
  */
 
-const { createPersonPresentation } = require("./personPresentation");
+const { createPersonPresentation, PERSON_MEDIA_VARIANTS } = require("./personPresentation");
 const {
   validateCollectionCardPresentation,
   validateCollectionPresentation,
   COLLECTION_CARD_KINDS,
+  COLLECTION_MEDIA_VARIANTS,
 } = require("./collectionPresentation");
 const { assertDomainBoundary } = require("./domainBoundaries");
 const { validatePresentationComponent } = require("./componentContracts");
@@ -24,6 +25,18 @@ const {
   resolveToPresentationKey,
 } = require("./fieldKeyResolver");
 
+function normalizeBadgeList(raw) {
+  if (raw == null) return [];
+  if (Array.isArray(raw)) return raw;
+  if (typeof raw === "string") {
+    return raw
+      .split(/[|,;/]/)
+      .map((part) => part.trim())
+      .filter(Boolean);
+  }
+  return [];
+}
+
 /**
  * Map a pastor/leader-like domain record into PersonPresentation.
  * @param {object} leader
@@ -31,6 +44,7 @@ const {
  */
 function adaptLeaderToPersonPresentation(leader, opts) {
   const row = leader && typeof leader === "object" ? leader : {};
+  const badges = normalizeBadgeList(row.badges || row.credentials);
   return createPersonPresentation({
     image: row.imageUrl != null ? row.imageUrl : row.image != null ? row.image : null,
     name: row.displayName || row.name || "",
@@ -41,6 +55,9 @@ function adaptLeaderToPersonPresentation(leader, opts) {
       row.socialUrl || row.ctaUrl
         ? { label: row.ctaLabel || null, url: row.socialUrl || row.ctaUrl || null }
         : null,
+    secondaryCta: null,
+    badges,
+    mediaVariant: PERSON_MEDIA_VARIANTS.AVATAR,
     displayOrder: row.sortOrder != null ? row.sortOrder : row.displayOrder,
     visibility: row.visible !== false && row.status !== "hidden",
     featured: row.seniorLeader === true || row.featured === true,
@@ -52,20 +69,44 @@ function adaptLeaderToPersonPresentation(leader, opts) {
 
 /**
  * Map a doctor/clinician public profile into PersonPresentation.
+ * Supports Stitch dual CTAs (View Profile + Book Appointment) and badges only when data exists.
  * @param {object} doctor
  * @param {{ productCode?: string }} [opts]
  */
 function adaptDoctorToPersonPresentation(doctor, opts) {
   const row = doctor && typeof doctor === "object" ? doctor : {};
+  const profileUrl = row.ctaUrl || row.profileHref || row.href || null;
+  const bookingUrl = row.bookingUrl || null;
+  const badges = normalizeBadgeList(
+    row.badges || row.qualifications || row.credentials || row.credentialLabels
+  );
+
+  let cta = null;
+  let secondaryCta = null;
+  if (profileUrl && bookingUrl) {
+    cta = { label: row.ctaLabel || "View Profile", url: profileUrl };
+    secondaryCta = { label: row.bookingLabel || "Book Appointment", url: bookingUrl };
+  } else if (profileUrl) {
+    cta = { label: row.ctaLabel || "View Profile", url: profileUrl };
+  } else if (bookingUrl) {
+    cta = { label: row.bookingLabel || row.ctaLabel || "Book Appointment", url: bookingUrl };
+  }
+
   return createPersonPresentation({
     image: row.photoUrl != null ? row.photoUrl : row.image != null ? row.image : null,
     name: row.public_display_name || row.displayName || row.name || row.title || "",
-    title: row.public_title != null ? row.public_title : row.roleTitle != null ? row.roleTitle : row.summary,
+    title:
+      row.public_title != null
+        ? row.public_title
+        : row.roleTitle != null
+          ? row.roleTitle
+          : row.summary,
     subtitle: row.subtitle != null ? row.subtitle : null,
     description: row.public_bio != null ? row.public_bio : row.body != null ? row.body : row.bio,
-    cta: row.ctaUrl || row.bookingUrl
-      ? { label: row.ctaLabel || "Book", url: row.ctaUrl || row.bookingUrl }
-      : null,
+    cta,
+    secondaryCta,
+    badges,
+    mediaVariant: PERSON_MEDIA_VARIANTS.PORTRAIT,
     displayOrder: row.sort_order != null ? row.sort_order : row.displayOrder,
     visibility: row.public_profile_enabled !== false && row.visible !== false,
     featured: row.featured === true,
@@ -87,6 +128,7 @@ function adaptMinistryToOfferingCard(ministry, opts) {
     subtitle: row.audience || row.subtitle || null,
     description: row.summary || row.description || null,
     cta: row.joinUrl ? { label: row.joinLabel || "Join", url: row.joinUrl } : null,
+    mediaVariant: COLLECTION_MEDIA_VARIANTS.IMAGE,
     displayOrder: row.sortOrder != null ? row.sortOrder : row.displayOrder,
     visibility: row.visible !== false && row.status !== "hidden",
     featured: row.featured === true,
@@ -97,19 +139,38 @@ function adaptMinistryToOfferingCard(ministry, opts) {
 }
 
 /**
- * Map clinical service → offering collection card.
+ * Map clinical service → offering collection card (icon tile when icon supplied).
  */
 function adaptServiceToOfferingCard(service, opts) {
   const row = service && typeof service === "object" ? service : {};
+  const icon = row.iconUrl != null ? row.iconUrl : row.icon != null ? row.icon : null;
+  const image = row.image != null ? row.image : icon;
+  const detailHref = row.ctaUrl || row.detailHref || row.href || null;
+  const bookingUrl = row.bookingUrl || null;
+
+  let cta = null;
+  let secondaryCta = null;
+  if (detailHref && bookingUrl) {
+    cta = { label: row.ctaLabel || "Learn more", url: detailHref };
+    secondaryCta = { label: row.bookingLabel || "Book", url: bookingUrl };
+  } else if (detailHref || bookingUrl) {
+    cta = {
+      label: row.ctaLabel || (bookingUrl && !detailHref ? "Book" : "Learn more"),
+      url: detailHref || bookingUrl,
+    };
+  }
+
   return validateCollectionCardPresentation({
     kind: COLLECTION_CARD_KINDS.OFFERING,
-    image: row.iconUrl != null ? row.iconUrl : row.image,
+    image,
+    icon,
     title: row.display_name || row.name || row.title || "",
     subtitle: row.subtitle || null,
     description: row.public_summary || row.summary || row.body || null,
-    cta: row.ctaUrl || row.bookingUrl
-      ? { label: row.ctaLabel || "Learn more", url: row.ctaUrl || row.bookingUrl }
-      : null,
+    cta,
+    secondaryCta,
+    detailHref,
+    mediaVariant: icon ? COLLECTION_MEDIA_VARIANTS.ICON : COLLECTION_MEDIA_VARIANTS.IMAGE,
     displayOrder: row.sort_order != null ? row.sort_order : row.displayOrder,
     visibility: row.visible !== false,
     featured: row.featured === true,

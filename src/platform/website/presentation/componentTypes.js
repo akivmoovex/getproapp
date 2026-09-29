@@ -24,7 +24,16 @@ const PRESENTATION_COMPONENT_TYPES = Object.freeze({
   ANNOUNCEMENT: "announcement",
   SEO: "seo",
   FOOTER: "footer",
+  /** V2.04 Batch 1 — Stitch design-family parity (shared, not product-local). */
+  FACT_STRIP: "fact_strip",
+  STEPPER: "stepper",
+  FAQ_LIST: "faq_list",
+  SETTINGS_SHELL: "settings_shell",
+  DATA_LIST: "data_list",
 });
+
+/** Original overnight Step 2 core contracts (18). */
+const CORE_PRESENTATION_COMPONENT_TYPE_COUNT = 18;
 
 const PRESENTATION_COMPONENT_TYPE_SET = new Set(Object.values(PRESENTATION_COMPONENT_TYPES));
 
@@ -38,5 +47,6 @@ module.exports = {
   PRESENTATION_COMPONENT_TYPES,
   PRESENTATION_COMPONENT_TYPE_SET,
   PRESENTATION_COMPONENT_TYPE_LIST,
+  CORE_PRESENTATION_COMPONENT_TYPE_COUNT,
   isPresentationComponentType,
 };

@@ -96,12 +96,30 @@ AC DOMAIN ─→ AC ADAPTER ─┘
 | Gate | Status |
 |---|---|
 | **SHARED_COMPONENT_LIBRARY** | **PASS** |
-| Count | **18** primitives under `views/platform/website/components/` |
-| CSS | `website-presentation-components.css` (`--gp-website-*` only) |
-| Bridge | `website-presentation-token-bridge.css` (BB/AC scoped) |
+| Count | **23** primitives under `views/platform/website/components/` (18 core + 5 Batch 1 Stitch families) |
+| CSS | `website-presentation-components.css` (`--gp-website-*` only; 390px responsive via shared CSS) |
+| Bridge | `website-presentation-token-bridge.css` (BB/AC scoped; AC primary → teal `#006068` via product tokens) |
 | Registry | `presentation/componentLibrary.js` |
 
-Primitives: hero, section_header, rich_text, image_text, cta, person_card, person_grid, collection_card, collection_grid, contact, hours, location, gallery, video, announcement, navigation, footer, seo (+ editable-field / editable-image hooks).
+Primitives: hero, section_header, rich_text, image_text, cta, person_card, person_grid, collection_card, collection_grid, contact, hours, location, gallery, video, announcement, navigation, footer, seo, **fact_strip**, **stepper**, **faq_list**, **settings_shell**, **data_list** (+ editable-field / editable-image hooks).
+
+### Batch 1 — shared component parity (Stitch implementation)
+
+| Metric | Value |
+|---|---|
+| **BATCH** | **1** |
+| **SHARED_COMPONENT_PARITY** | **PASS** |
+| **EXISTING_COMPONENTS_REUSED** | **14** (design families mapped to existing library) |
+| **SHARED_COMPONENTS_EXTENDED** | **4** (person, collection/service, navigation, theme/responsive CSS) |
+| **NEW_SHARED_COMPONENTS** | **5** (fact_strip, stepper, faq_list, settings_shell, data_list) |
+| **NEW_AC_ONLY_COMPONENTS** | **0** |
+| **DESKTOP_MOBILE_SHARED** | **PASS** |
+| **BB_COMPONENT_REGRESSION** | **PASS** |
+| **THEME_ISOLATION** | **PASS** |
+| **Pages implemented** | **NO** (library parity only; public templates still unwired) |
+
+Person path: AC Doctor → adapter → PersonPresentation (portrait, dual CTA, badges when data exists) → shared person_card.  
+Service path: AC Service → adapter → CollectionPresentation (icon tile) → shared collection_card/grid.
 
 ---
 
@@ -164,11 +182,30 @@ Stitch must not invent persistence, publish, authz, or duplicate WE01.
 | Metric | Before | After |
 |---|---|---|
 | **FIELDS_SHAREABLE_AT_PLATFORM** | 35% | **35%** (Class C untouched) |
-| **COMPONENTS_SHAREABLE_AT_PLATFORM** | 74% | **89%** |
+| **COMPONENTS_SHAREABLE_AT_PLATFORM** | 74% | **100%** (Batch 1 Stitch family parity) |
 | **EDITOR_LOGIC_SHAREABLE_AT_PLATFORM** | 85% | **85%** |
 | **LIFECYCLE_LOGIC_SHAREABLE_AT_PLATFORM** | 70% | **70%** (BB dual-path untouched) |
 
-Primary overnight win: **component shareability 74% → 89%**.
+Primary overnight win: **component shareability 74% → 89%**. Batch 1 Stitch parity raised coverage to **100%** of audited design patterns (23 shared primitives; still unwired to live pages).
+
+---
+
+## 15b. Stitch Batch 1 status
+
+```
+BATCH=1
+SHARED_COMPONENT_PARITY=PASS
+EXISTING_COMPONENTS_REUSED=14
+SHARED_COMPONENTS_EXTENDED=4
+NEW_SHARED_COMPONENTS=5
+NEW_AC_ONLY_COMPONENTS=0
+DESKTOP_MOBILE_SHARED=PASS
+BB_COMPONENT_REGRESSION=PASS
+THEME_ISOLATION=PASS
+FINAL=V2_04_AC_STITCH_BATCH_1_PASS
+```
+
+Next: Batch 2+ page wiring against frozen 38 physical / 20 logical Stitch screens (no new engines).
 
 ---
 
@@ -231,9 +268,9 @@ Architecture QA (Step 7): AC↔BB coupling = 0; presentation→domain = 0; engin
 
 ## 15. Recommended next action
 
-1. Push `V4` (application tip `7ae344fb` + docs).
+1. Push `V4` (Batch 1 shared component parity + prior foundation).
 2. Hosted QA on neuniversity **when deliberately scheduled** — register new application candidate SHA after green QA (replaces historical `4d602f9c…` for website work).
-3. Begin **Stitch Batch 1** per `ACTIVECLINIC_STITCH_WEBSITE_CONTRACT.md` / implementation prompts — presentation wiring only; no new engines.
+3. Continue **Stitch Batch 2+** page wiring per contract — presentation opt-in; keep WE01 = 1; no new engines.
 4. Keep production / pronline **untouched**.
 
 ---

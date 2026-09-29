@@ -25,12 +25,21 @@ const COLLECTION_LAYOUT_VARIANTS = Object.freeze({
   CAROUSEL: "carousel",
 });
 
+const COLLECTION_MEDIA_VARIANTS = Object.freeze({
+  IMAGE: "image",
+  ICON: "icon",
+});
+
 const COLLECTION_CARD_FIELDS = Object.freeze([
   "image",
+  "icon",
   "title",
   "subtitle",
   "description",
   "cta",
+  "secondaryCta",
+  "detailHref",
+  "mediaVariant",
   "displayOrder",
   "visibility",
   "featured",
@@ -100,16 +109,49 @@ function validateCollectionCardPresentation(raw) {
     };
   }
 
+  let secondaryCta = null;
+  if (raw.secondaryCta != null) {
+    if (typeof raw.secondaryCta !== "object" || Array.isArray(raw.secondaryCta)) {
+      return { ok: false, code: "invalid_collection_card_secondary_cta" };
+    }
+    secondaryCta = {
+      label:
+        raw.secondaryCta.label == null
+          ? null
+          : String(raw.secondaryCta.label).trim().slice(0, 80) || null,
+      url:
+        raw.secondaryCta.url == null
+          ? null
+          : String(raw.secondaryCta.url).trim().slice(0, 500) || null,
+    };
+  }
+
+  let mediaVariant = COLLECTION_MEDIA_VARIANTS.IMAGE;
+  if (raw.mediaVariant != null && raw.mediaVariant !== "") {
+    const variant = String(raw.mediaVariant).trim();
+    if (!Object.values(COLLECTION_MEDIA_VARIANTS).includes(variant)) {
+      return { ok: false, code: "invalid_collection_media_variant" };
+    }
+    mediaVariant = variant;
+  } else if (raw.icon != null && raw.image == null) {
+    mediaVariant = COLLECTION_MEDIA_VARIANTS.ICON;
+  }
+
   return {
     ok: true,
     value: {
       kind,
       image: raw.image == null ? null : raw.image,
+      icon: raw.icon == null ? null : raw.icon,
       title,
       subtitle: raw.subtitle == null ? null : String(raw.subtitle).trim().slice(0, 200) || null,
       description:
         raw.description == null ? null : String(raw.description).trim().slice(0, 4000) || null,
       cta,
+      secondaryCta,
+      detailHref:
+        raw.detailHref == null ? null : String(raw.detailHref).trim().slice(0, 500) || null,
+      mediaVariant,
       displayOrder,
       visibility: raw.visibility === false ? false : true,
       featured: raw.featured === true,
@@ -198,6 +240,7 @@ function validateCollectionPresentation(raw) {
 module.exports = {
   COLLECTION_CARD_KINDS,
   COLLECTION_LAYOUT_VARIANTS,
+  COLLECTION_MEDIA_VARIANTS,
   COLLECTION_CARD_FIELDS,
   validateCollectionCardPresentation,
   validateCollectionPresentation,

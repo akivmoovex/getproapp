@@ -7,31 +7,46 @@
   if (p.visibility === false) { /* hidden */ } else {
   var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
   var featured = p.featured === true;
+  var mediaVariant = p.mediaVariant === 'portrait' ? 'portrait' : 'avatar';
   var imgSrc = '';
   if (typeof p.image === 'string') imgSrc = p.image;
   else if (p.image && p.image.src) imgSrc = String(p.image.src);
+  var badges = Array.isArray(p.badges) ? p.badges : [];
 %>
 <article
-  class="gp-website-pc gp-website-pc--person-card<%= featured ? ' is-featured' : '' %><%= extraClass %>"
+  class="gp-website-pc gp-website-pc--person-card gp-website-pc--person-<%= mediaVariant %><%= featured ? ' is-featured' : '' %><%= extraClass %>"
   data-gp-website-component="person_card"
+  data-gp-media-variant="<%= mediaVariant %>"
   <% if (p.sourceDomain) { %>data-gp-source-domain="<%= p.sourceDomain %>"<% } %>
   <% if (p.sourceId) { %>data-gp-source-id="<%= p.sourceId %>"<% } %>
 >
-  <div class="gp-website-pc__person-media<%= imgSrc ? '' : ' is-empty' %>">
+  <div class="gp-website-pc__person-media gp-website-pc__person-media--<%= mediaVariant %><%= imgSrc ? '' : ' is-empty' %>">
     <% if (imgSrc) { %>
-    <img class="gp-website-pc__img gp-website-pc__img--avatar" src="<%= imgSrc %>" alt="<%= p.name || '' %>" />
+    <img class="gp-website-pc__img gp-website-pc__img--<%= mediaVariant %>" src="<%= imgSrc %>" alt="<%= p.name || '' %>" />
     <% } else { %>
-    <div class="gp-website-pc__img-placeholder gp-website-pc__img-placeholder--avatar" aria-hidden="true"></div>
+    <div class="gp-website-pc__img-placeholder gp-website-pc__img-placeholder--<%= mediaVariant %>" aria-hidden="true"></div>
     <% } %>
   </div>
   <div class="gp-website-pc__person-body">
     <h3 class="gp-website-pc__person-name"><%= p.name %></h3>
     <% if (p.title) { %><p class="gp-website-pc__person-title"><%= p.title %></p><% } %>
     <% if (p.subtitle) { %><p class="gp-website-pc__person-subtitle"><%= p.subtitle %></p><% } %>
-    <% if (p.description) { %><p class="gp-website-pc__person-description"><%= p.description %></p><% } %>
-    <% if (p.cta && p.cta.label) { %>
-    <a class="gp-website-pc__link" href="<%= p.cta.url || '#' %>"><%= p.cta.label %></a>
+    <% if (badges.length) { %>
+    <ul class="gp-website-pc__badges" aria-label="Credentials">
+      <% badges.forEach(function (badge) { %>
+      <li class="gp-website-pc__badge<%= badge.tone ? (' gp-website-pc__badge--' + badge.tone) : '' %>"><%= badge.label %></li>
+      <% }) %>
+    </ul>
     <% } %>
+    <% if (p.description) { %><p class="gp-website-pc__person-description"><%= p.description %></p><% } %>
+    <div class="gp-website-pc__actions gp-website-pc__actions--person">
+      <% if (p.cta && p.cta.label) { %>
+      <a class="gp-website-pc__btn gp-website-pc__btn--secondary" href="<%= p.cta.url || '#' %>"><%= p.cta.label %></a>
+      <% } %>
+      <% if (p.secondaryCta && p.secondaryCta.label) { %>
+      <a class="gp-website-pc__btn gp-website-pc__btn--primary" href="<%= p.secondaryCta.url || '#' %>"><%= p.secondaryCta.label %></a>
+      <% } %>
+    </div>
   </div>
 </article>
 <% } %>

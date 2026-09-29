@@ -1,0 +1,21 @@
+<%#
+  FAQ / checklist accordion — shared desktop+mobile.
+  Locals: model, editEnabled, edit, className
+%>
+<%
+  var m = typeof model !== 'undefined' && model ? model : {};
+  var items = Array.isArray(m.items) ? m.items.filter(function (i) { return !i || i.visibility !== false; }) : [];
+  var extraClass = typeof className !== 'undefined' && className ? (' ' + className) : '';
+%>
+<section class="gp-website-pc gp-website-pc--faq-list<%= extraClass %>" data-gp-website-component="faq_list">
+  <% if (m.heading) { %><h2 class="gp-website-pc__title"><%= m.heading %></h2><% } %>
+  <% if (m.lead) { %><p class="gp-website-pc__lead"><%= m.lead %></p><% } %>
+  <div class="gp-website-pc__faq-items">
+    <% items.forEach(function (item) { %>
+    <details class="gp-website-pc__faq-item">
+      <summary class="gp-website-pc__faq-question"><%= item.question %></summary>
+      <% if (item.answer) { %><div class="gp-website-pc__faq-answer"><%= item.answer %></div><% } %>
+    </details>
+    <% }) %>
+  </div>
+</section>

@@ -40,7 +40,7 @@ const COMPONENT_CONTRACTS = Object.freeze({
   }),
   [PRESENTATION_COMPONENT_TYPES.NAVIGATION]: Object.freeze({
     type: PRESENTATION_COMPONENT_TYPES.NAVIGATION,
-    fields: Object.freeze(["items"]),
+    fields: Object.freeze(["brandName", "logo", "primaryCta", "items"]),
     itemFields: Object.freeze(["key", "label", "href", "visible", "displayOrder"]),
   }),
   [PRESENTATION_COMPONENT_TYPES.HERO]: Object.freeze({
@@ -79,6 +79,9 @@ const COMPONENT_CONTRACTS = Object.freeze({
       "subtitle",
       "description",
       "cta",
+      "secondaryCta",
+      "badges",
+      "mediaVariant",
       "displayOrder",
       "visibility",
       "featured",
@@ -141,6 +144,31 @@ const COMPONENT_CONTRACTS = Object.freeze({
   [PRESENTATION_COMPONENT_TYPES.FOOTER]: Object.freeze({
     type: PRESENTATION_COMPONENT_TYPES.FOOTER,
     fields: Object.freeze(["tagline", "legal", "showContact"]),
+  }),
+  [PRESENTATION_COMPONENT_TYPES.FACT_STRIP]: Object.freeze({
+    type: PRESENTATION_COMPONENT_TYPES.FACT_STRIP,
+    fields: Object.freeze(["heading", "items", "layoutVariant"]),
+    itemFields: Object.freeze(["label", "value", "icon", "href", "displayOrder"]),
+  }),
+  [PRESENTATION_COMPONENT_TYPES.STEPPER]: Object.freeze({
+    type: PRESENTATION_COMPONENT_TYPES.STEPPER,
+    fields: Object.freeze(["heading", "lead", "steps"]),
+    itemFields: Object.freeze(["title", "body", "displayOrder"]),
+  }),
+  [PRESENTATION_COMPONENT_TYPES.FAQ_LIST]: Object.freeze({
+    type: PRESENTATION_COMPONENT_TYPES.FAQ_LIST,
+    fields: Object.freeze(["heading", "lead", "items"]),
+    itemFields: Object.freeze(["question", "answer", "displayOrder", "visibility"]),
+  }),
+  [PRESENTATION_COMPONENT_TYPES.SETTINGS_SHELL]: Object.freeze({
+    type: PRESENTATION_COMPONENT_TYPES.SETTINGS_SHELL,
+    fields: Object.freeze(["title", "lead", "navItems", "actions", "activeKey"]),
+    itemFields: Object.freeze(["key", "label", "href", "description", "displayOrder"]),
+  }),
+  [PRESENTATION_COMPONENT_TYPES.DATA_LIST]: Object.freeze({
+    type: PRESENTATION_COMPONENT_TYPES.DATA_LIST,
+    fields: Object.freeze(["heading", "rows", "emptyState"]),
+    itemFields: Object.freeze(["label", "value", "href", "displayOrder"]),
   }),
 });
 
@@ -248,7 +276,18 @@ function validateNavigation(raw) {
     });
   }
   items.sort((a, b) => a.displayOrder - b.displayOrder);
-  return { ok: true, value: { type: PRESENTATION_COMPONENT_TYPES.NAVIGATION, items } };
+  const primaryCta = optionalCta(raw.primaryCta);
+  if (!primaryCta.ok) return primaryCta;
+  return {
+    ok: true,
+    value: {
+      type: PRESENTATION_COMPONENT_TYPES.NAVIGATION,
+      brandName: asTrimmedString(raw.brandName, 120),
+      logo: raw.logo == null ? null : raw.logo,
+      primaryCta: primaryCta.value,
+      items,
+    },
+  };
 }
 
 function validateSectionHeading(raw) {
@@ -486,6 +525,185 @@ function validateFooter(raw) {
   };
 }
 
+function validateFactStrip(raw) {
+  if (!raw || typeof raw !== "object") return { ok: false, code: "invalid_fact_strip" };
+  if (!Array.isArray(raw.items)) return { ok: false, code: "invalid_fact_strip_items" };
+  const layoutVariant = String(raw.layoutVariant || "row").trim();
+  if (layoutVariant !== "row" && layoutVariant !== "grid") {
+    return { ok: false, code: "invalid_fact_strip_layout" };
+  }
+  const items = [];
+  for (let i = 0; i < raw.items.length; i += 1) {
+    const item = raw.items[i];
+    if (!item || typeof item !== "object") return { ok: false, code: "invalid_fact_strip_item" };
+    const label = asTrimmedString(item.label, 80);
+    const value = asTrimmedString(item.value, 200);
+    if (!label && !value) return { ok: false, code: "invalid_fact_strip_item" };
+    items.push({
+      label,
+      value,
+      icon: item.icon == null ? null : item.icon,
+      href: asTrimmedString(item.href, 500),
+      displayOrder: Number.isFinite(Number(item.displayOrder))
+        ? Math.floor(Number(item.displayOrder))
+        : i,
+    });
+  }
+  items.sort((a, b) => a.displayOrder - b.displayOrder);
+  return {
+    ok: true,
+    value: {
+      type: PRESENTATION_COMPONENT_TYPES.FACT_STRIP,
+      heading: asTrimmedString(raw.heading, 160),
+      layoutVariant,
+      items,
+    },
+  };
+}
+
+function validateStepper(raw) {
+  if (!raw || typeof raw !== "object") return { ok: false, code: "invalid_stepper" };
+  if (!Array.isArray(raw.steps) || raw.steps.length === 0) {
+    return { ok: false, code: "invalid_stepper_steps" };
+  }
+  const steps = [];
+  for (let i = 0; i < raw.steps.length; i += 1) {
+    const step = raw.steps[i];
+    if (!step || typeof step !== "object") return { ok: false, code: "invalid_stepper_step" };
+    const title = asTrimmedString(step.title, 120);
+    if (!title) return { ok: false, code: "invalid_stepper_title" };
+    steps.push({
+      title,
+      body: asTrimmedString(step.body, 800),
+      displayOrder: Number.isFinite(Number(step.displayOrder))
+        ? Math.floor(Number(step.displayOrder))
+        : i,
+    });
+  }
+  steps.sort((a, b) => a.displayOrder - b.displayOrder);
+  return {
+    ok: true,
+    value: {
+      type: PRESENTATION_COMPONENT_TYPES.STEPPER,
+      heading: asTrimmedString(raw.heading, 160),
+      lead: asTrimmedString(raw.lead, 800),
+      steps,
+    },
+  };
+}
+
+function validateFaqList(raw) {
+  if (!raw || typeof raw !== "object") return { ok: false, code: "invalid_faq_list" };
+  if (!Array.isArray(raw.items)) return { ok: false, code: "invalid_faq_list_items" };
+  const items = [];
+  for (let i = 0; i < raw.items.length; i += 1) {
+    const item = raw.items[i];
+    if (!item || typeof item !== "object") return { ok: false, code: "invalid_faq_item" };
+    const question = asTrimmedString(item.question || item.title, 240);
+    if (!question) return { ok: false, code: "invalid_faq_question" };
+    items.push({
+      question,
+      answer: asTrimmedString(item.answer || item.description || item.body, 4000),
+      displayOrder: Number.isFinite(Number(item.displayOrder))
+        ? Math.floor(Number(item.displayOrder))
+        : i,
+      visibility: item.visibility === false ? false : true,
+    });
+  }
+  items.sort((a, b) => a.displayOrder - b.displayOrder);
+  return {
+    ok: true,
+    value: {
+      type: PRESENTATION_COMPONENT_TYPES.FAQ_LIST,
+      heading: asTrimmedString(raw.heading, 160),
+      lead: asTrimmedString(raw.lead, 800),
+      items,
+    },
+  };
+}
+
+function validateSettingsShell(raw) {
+  if (!raw || typeof raw !== "object") return { ok: false, code: "invalid_settings_shell" };
+  if (!Array.isArray(raw.navItems)) return { ok: false, code: "invalid_settings_nav" };
+  const navItems = [];
+  for (let i = 0; i < raw.navItems.length; i += 1) {
+    const item = raw.navItems[i];
+    if (!item || typeof item !== "object") return { ok: false, code: "invalid_settings_nav_item" };
+    const label = asTrimmedString(item.label, 80);
+    if (!label) return { ok: false, code: "invalid_settings_nav_label" };
+    navItems.push({
+      key: asTrimmedString(item.key, 80) || `item-${i}`,
+      label,
+      href: asTrimmedString(item.href, 500),
+      description: asTrimmedString(item.description, 240),
+      displayOrder: Number.isFinite(Number(item.displayOrder))
+        ? Math.floor(Number(item.displayOrder))
+        : i,
+    });
+  }
+  navItems.sort((a, b) => a.displayOrder - b.displayOrder);
+  const actions = [];
+  if (raw.actions != null) {
+    if (!Array.isArray(raw.actions)) return { ok: false, code: "invalid_settings_actions" };
+    for (const action of raw.actions) {
+      const cta = optionalCta(action);
+      if (!cta.ok) return cta;
+      if (cta.value) actions.push(cta.value);
+    }
+  }
+  return {
+    ok: true,
+    value: {
+      type: PRESENTATION_COMPONENT_TYPES.SETTINGS_SHELL,
+      title: asTrimmedString(raw.title, 160),
+      lead: asTrimmedString(raw.lead, 800),
+      activeKey: asTrimmedString(raw.activeKey, 80),
+      navItems,
+      actions,
+    },
+  };
+}
+
+function validateDataList(raw) {
+  if (!raw || typeof raw !== "object") return { ok: false, code: "invalid_data_list" };
+  if (!Array.isArray(raw.rows)) return { ok: false, code: "invalid_data_list_rows" };
+  const rows = [];
+  for (let i = 0; i < raw.rows.length; i += 1) {
+    const row = raw.rows[i];
+    if (!row || typeof row !== "object") return { ok: false, code: "invalid_data_list_row" };
+    const label = asTrimmedString(row.label, 120);
+    if (!label) return { ok: false, code: "invalid_data_list_label" };
+    rows.push({
+      label,
+      value: asTrimmedString(row.value, 500),
+      href: asTrimmedString(row.href, 500),
+      displayOrder: Number.isFinite(Number(row.displayOrder))
+        ? Math.floor(Number(row.displayOrder))
+        : i,
+    });
+  }
+  rows.sort((a, b) => a.displayOrder - b.displayOrder);
+  let emptyState = null;
+  if (raw.emptyState != null) {
+    if (typeof raw.emptyState !== "object" || Array.isArray(raw.emptyState)) {
+      return { ok: false, code: "invalid_data_list_empty" };
+    }
+    emptyState = {
+      heading: asTrimmedString(raw.emptyState.heading, 160),
+      body: asTrimmedString(raw.emptyState.body, 800),
+    };
+  }
+  return {
+    ok: true,
+    value: {
+      type: PRESENTATION_COMPONENT_TYPES.DATA_LIST,
+      heading: asTrimmedString(raw.heading, 160),
+      rows,
+      emptyState,
+    },
+  };
+}
+
 const VALIDATORS = Object.freeze({
   [PRESENTATION_COMPONENT_TYPES.BRANDING]: validateBranding,
   [PRESENTATION_COMPONENT_TYPES.NAVIGATION]: validateNavigation,
@@ -505,6 +723,11 @@ const VALIDATORS = Object.freeze({
   [PRESENTATION_COMPONENT_TYPES.ANNOUNCEMENT]: validateAnnouncement,
   [PRESENTATION_COMPONENT_TYPES.SEO]: validateSeo,
   [PRESENTATION_COMPONENT_TYPES.FOOTER]: validateFooter,
+  [PRESENTATION_COMPONENT_TYPES.FACT_STRIP]: validateFactStrip,
+  [PRESENTATION_COMPONENT_TYPES.STEPPER]: validateStepper,
+  [PRESENTATION_COMPONENT_TYPES.FAQ_LIST]: validateFaqList,
+  [PRESENTATION_COMPONENT_TYPES.SETTINGS_SHELL]: validateSettingsShell,
+  [PRESENTATION_COMPONENT_TYPES.DATA_LIST]: validateDataList,
 });
 
 /**

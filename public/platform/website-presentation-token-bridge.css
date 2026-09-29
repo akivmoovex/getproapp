@@ -2,6 +2,10 @@
  * Maps existing product semantic theme tokens → platform --gp-website-* tokens.
  * Scoped by product body class so BB tokens never apply under AC shells and vice versa.
  * No raw product hex values.
+ *
+ * ActiveClinic primary brand (#006068 / palette-teal-700) resolves via product theme:
+ *   body.ac-* → --ac-color-primary → --color-brand-primary → --palette-teal-700
+ * BlessBoard primary remains product --bb-color-primary (violet) under body.bb-*.
  */
 
 /* BlessBoard public / tenant website shells */

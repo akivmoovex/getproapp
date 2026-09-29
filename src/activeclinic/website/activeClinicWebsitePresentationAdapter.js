@@ -335,6 +335,10 @@ function adaptActiveClinicDoctorToPerson(doctor, opts) {
       ctaUrl: row.profileHref || row.href || null,
       ctaLabel: row.ctaLabel || null,
       bookingUrl: row.bookingUrl || null,
+      bookingLabel: row.bookingLabel || null,
+      // Never invent clinical credentials — only pass through when domain supplies them.
+      badges: row.badges || row.qualifications || row.credentials || null,
+      qualifications: row.qualifications || null,
     },
     { productCode: PRODUCT_CODE, ...(opts || {}) }
   );
@@ -355,13 +359,16 @@ function adaptActiveClinicServiceToCard(service, opts) {
       public_summary: row.summary || row.public_summary || row.description,
       summary: row.summary,
       body: row.body,
-      iconUrl: row.iconUrl || row.image,
-      image: row.iconUrl || row.image,
+      iconUrl: row.iconUrl || null,
+      icon: row.iconUrl || row.icon || null,
+      image: row.image || row.iconUrl || null,
       featured: row.featured === true,
       sort_order: row.sortOrder != null ? row.sortOrder : row.displayOrder,
       visible: row.visible !== false,
       ctaUrl: row.href || row.detailHref || null,
+      detailHref: row.detailHref || row.href || null,
       bookingUrl: row.bookingUrl || null,
+      bookingLabel: row.bookingLabel || null,
       ctaLabel: row.ctaLabel || "Learn more",
     },
     { productCode: PRODUCT_CODE, ...(opts || {}) }

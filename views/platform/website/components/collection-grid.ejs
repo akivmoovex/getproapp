@@ -18,22 +18,36 @@
   <% } else { %>
   <ul class="gp-website-pc__grid">
     <% items.forEach(function (item) {
+      var mediaVariant = item.mediaVariant === 'icon' ? 'icon' : 'image';
       var imgSrc = '';
       if (typeof item.image === 'string') imgSrc = item.image;
       else if (item.image && item.image.src) imgSrc = String(item.image.src);
+      var iconSrc = '';
+      if (typeof item.icon === 'string') iconSrc = item.icon;
+      else if (item.icon && item.icon.src) iconSrc = String(item.icon.src);
+      if (mediaVariant === 'icon' && !iconSrc && imgSrc) iconSrc = imgSrc;
     %>
     <li class="gp-website-pc__grid-item">
-      <article class="gp-website-pc gp-website-pc--collection-card<%= item.featured ? ' is-featured' : '' %>" data-gp-card-kind="<%= item.kind || c.cardKind || 'generic' %>">
-        <div class="gp-website-pc__card-media<%= imgSrc ? '' : ' is-empty' %>">
-          <% if (imgSrc) { %><img class="gp-website-pc__img" src="<%= imgSrc %>" alt="<%= item.title || '' %>" /><% } %>
+      <article class="gp-website-pc gp-website-pc--collection-card gp-website-pc--media-<%= mediaVariant %><%= item.featured ? ' is-featured' : '' %>" data-gp-card-kind="<%= item.kind || c.cardKind || 'generic' %>" data-gp-media-variant="<%= mediaVariant %>">
+        <div class="gp-website-pc__card-media gp-website-pc__card-media--<%= mediaVariant %><%= (imgSrc || iconSrc) ? '' : ' is-empty' %>">
+          <% if (mediaVariant === 'icon' && iconSrc) { %>
+          <img class="gp-website-pc__img gp-website-pc__img--icon" src="<%= iconSrc %>" alt="" />
+          <% } else if (imgSrc) { %>
+          <img class="gp-website-pc__img" src="<%= imgSrc %>" alt="<%= item.title || '' %>" />
+          <% } %>
         </div>
         <div class="gp-website-pc__card-body">
           <h3 class="gp-website-pc__card-title"><%= item.title || item.name %></h3>
-          <% if (item.subtitle || item.title && item.name) { %><p class="gp-website-pc__card-subtitle"><%= item.subtitle || item.title %></p><% } %>
+          <% if (item.subtitle) { %><p class="gp-website-pc__card-subtitle"><%= item.subtitle %></p><% } %>
           <% if (item.description) { %><p class="gp-website-pc__card-description"><%= item.description %></p><% } %>
-          <% if (item.cta && item.cta.label) { %>
-          <a class="gp-website-pc__link" href="<%= item.cta.url || '#' %>"><%= item.cta.label %></a>
-          <% } %>
+          <div class="gp-website-pc__actions">
+            <% if (item.cta && item.cta.label) { %>
+            <a class="gp-website-pc__link" href="<%= item.cta.url || item.detailHref || '#' %>"><%= item.cta.label %></a>
+            <% } %>
+            <% if (item.secondaryCta && item.secondaryCta.label) { %>
+            <a class="gp-website-pc__btn gp-website-pc__btn--primary" href="<%= item.secondaryCta.url || '#' %>"><%= item.secondaryCta.label %></a>
+            <% } %>
+          </div>
         </div>
       </article>
     </li>
