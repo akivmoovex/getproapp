@@ -134,7 +134,7 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
       "R11",
       "R12",
     ]);
-    assert.equal(adapter.STEP.wiredToEditorMutation, false);
+    assert.equal(adapter.STEP.wiredToEditorMutation, true);
     assert.equal(presentation.PHASE.step1Prerequisite, "PASS");
     assert.equal(presentation.PHASE.componentLibraryAvailable, true);
     assert.equal(presentation.SHARED_COMPONENT_COUNT, 23);
@@ -239,7 +239,7 @@ describe("V2.04 ActiveClinic website presentation adapter", () => {
 
     assert.equal(bundle.ok, true, JSON.stringify(bundle.failed));
     assert.equal(bundle.wiredToPublicRender, true);
-    assert.equal(bundle.wiredToEditorMutation, false);
+    assert.equal(bundle.wiredToEditorMutation, true);
     assert.equal(bundle.step.id, "v2_04_overnight_step_3");
     assert.equal(bundle.metrics.universalFieldsMapped, 18);
     assert.ok(bundle.metrics.collectionsAdapted >= 5);

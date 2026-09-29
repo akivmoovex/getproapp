@@ -77,6 +77,14 @@ const EDIT_KEYS = Object.freeze({
     heading: "patient.info_title",
     body: "patient.info_body",
   },
+  contactFacts: {
+    intro: "contact.intro",
+    phone: "contact.phone",
+    email: "contact.email",
+  },
+  hoursFacts: {
+    text: "location.hours",
+  },
 });
 
 const GALLERY_PAGE_SLUGS = Object.freeze(["gallery", "environment", "clinic-environment"]);
@@ -653,9 +661,14 @@ function buildActiveClinicStitchPublicPage(input) {
     html.promo = promo && promo.ok && (clinic.showPromo || editEnabled)
       ? renderOk("cta", promo.value, withEdit(editEnabled, EDIT_KEYS.promo))
       : "";
-    html.contact = contact && contact.ok ? renderOk("contact", contact.value) : "";
+    html.contact = contact && contact.ok
+      ? renderOk("contact", contact.value, withEdit(editEnabled, EDIT_KEYS.contactFacts))
+      : "";
+    // Facility address is authoritative — do not attach location.address WE01 on the facility line.
     html.location = location && location.ok ? renderOk("location", location.value) : "";
-    html.hours = hours && hours.ok ? renderOk("hours", hours.value) : "";
+    html.hours = hours && hours.ok
+      ? renderOk("hours", hours.value, withEdit(editEnabled, EDIT_KEYS.hoursFacts))
+      : "";
     if (faqCollection && faqCollection.ok && faqCollection.value.items.length) {
       html.faq = renderOk("faq_list", {
         heading: clinic.faqHeading || faqCollection.value.intro || "Questions",
@@ -698,7 +711,9 @@ function buildActiveClinicStitchPublicPage(input) {
       ? renderOk("image_text", about.value, withEdit(editEnabled, EDIT_KEYS.about))
       : "";
     html.mission = missionStrip && missionStrip.ok ? renderOk("fact_strip", missionStrip.value) : "";
-    html.contact = contact && contact.ok ? renderOk("contact", contact.value) : "";
+    html.contact = contact && contact.ok
+      ? renderOk("contact", contact.value, withEdit(editEnabled, EDIT_KEYS.contactFacts))
+      : "";
     html.cta = sections.cta && sections.cta.ok ? renderOk("cta", sections.cta.value) : "";
   }
 
@@ -907,9 +922,13 @@ function buildActiveClinicStitchPublicPage(input) {
       },
       withEdit(editEnabled, EDIT_KEYS.contactIntro)
     );
-    html.contact = contact && contact.ok ? renderOk("contact", contact.value) : "";
+    html.contact = contact && contact.ok
+      ? renderOk("contact", contact.value, withEdit(editEnabled, EDIT_KEYS.contactFacts))
+      : "";
     html.location = location && location.ok ? renderOk("location", location.value) : "";
-    html.hours = hours && hours.ok ? renderOk("hours", hours.value) : "";
+    html.hours = hours && hours.ok
+      ? renderOk("hours", hours.value, withEdit(editEnabled, EDIT_KEYS.hoursFacts))
+      : "";
     html.cta = renderOk("cta", {
       heading: "Visit us",
       body: null,
@@ -960,8 +979,12 @@ function buildActiveClinicStitchPublicPage(input) {
     );
     html.facilities = facilityList && facilityList.ok ? renderOk("data_list", facilityList.value) : "";
     html.location = location && location.ok ? renderOk("location", location.value) : "";
-    html.hours = hours && hours.ok ? renderOk("hours", hours.value) : "";
-    html.contact = contact && contact.ok ? renderOk("contact", contact.value) : "";
+    html.hours = hours && hours.ok
+      ? renderOk("hours", hours.value, withEdit(editEnabled, EDIT_KEYS.hoursFacts))
+      : "";
+    html.contact = contact && contact.ok
+      ? renderOk("contact", contact.value, withEdit(editEnabled, EDIT_KEYS.contactFacts))
+      : "";
     html.gallery =
       gallery && gallery.ok && gallery.value.items && gallery.value.items.length
         ? renderOk("gallery", gallery.value)

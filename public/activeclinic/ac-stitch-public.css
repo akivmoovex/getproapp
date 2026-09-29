@@ -139,3 +139,35 @@
     grid-template-columns: 1fr;
   }
 }
+
+/* —— Batch 5 E01/E02: WE01 affordances on the same public stitch components —— */
+
+body.ac-public-body--website-editing .ac-stitch-page {
+  overflow-x: clip;
+}
+
+body.ac-public-body--website-editing .ac-stitch-section .gp-website-editable__display {
+  max-width: 100%;
+}
+
+body.ac-public-body--website-editing .gp-website-editor-host[data-ac-stitch-editor="E01"] {
+  /* Desktop chrome host; mobile density uses shared website-inline-edit.css bottom sheet. */
+}
+
+@media (max-width: 390px) {
+  body.ac-public-body--website-editing .gp-website-editor-host[data-ac-stitch-editor-mobile="E02"] {
+    /* Marker for E02 mobile inline mode — shared engine, densified sheet styles. */
+  }
+
+  body.ac-public-body--website-editing .ac-stitch-page .gp-website-editable__pencil,
+  body.ac-public-body--website-editing .ac-stitch-page .ac-website-editable__pencil {
+    min-width: var(--gp-website-touch, 2.75rem);
+    min-height: var(--gp-website-touch, 2.75rem);
+  }
+
+  body.ac-public-body--website-editing .gp-website-field-editor__panel {
+    width: 100%;
+    max-width: 100vw;
+    overflow-x: hidden;
+  }
+}

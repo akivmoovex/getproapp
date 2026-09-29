@@ -264,10 +264,10 @@ One upload / library / replace / remove / alt / persistence path. No product upl
 
 | Gate | Value |
 |---|---|
-| **STITCH_EDITOR_MAPPING** | **EXTENSION_REQUIRED** |
+| **STITCH_EDITOR_MAPPING** | **PASS** |
 | **SHARED_EDITOR_ENGINE_COUNT** | **1** |
 
-Extension = Stitch pencil affordance chrome + mobile editor density — **not** a new engine.
+Extension complete = Stitch pencil affordance chrome + mobile editor density on WE01 — **not** a new engine.
 
 ---
 

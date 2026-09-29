@@ -1,6 +1,7 @@
 /**
- * Shared website field editor (ActiveClinic + BlessBoard) — Wave 2.
- * Pencil → Stitch dialog (desktop) / bottom sheet (mobile) → Save draft (never publish).
+ * Shared website field editor (ActiveClinic + BlessBoard) — Wave 2 / V2.04 Batch 5.
+ * Pencil → Stitch dialog (desktop E01) / bottom sheet (mobile E02) → Save draft (never publish).
+ * SHARED_EDITOR_ENGINE_COUNT must remain 1 — do not add a product-local editor.
  */
 (function () {
   function bindEditorShell() {

@@ -263,7 +263,7 @@ describe("V2.04 AC Stitch Batch 2 public foundation", () => {
     assert.match(routes, /\/clinics\/:clinicKey\/services/);
     assert.doesNotMatch(routes, /\/clinics\/:clinicKey\/stitch-home/);
     assert.equal(presentation.SHARED_EDITOR_ENGINE_COUNT, 1);
-    assert.equal(adapter.STEP.wiredToEditorMutation, false);
+    assert.equal(adapter.STEP.wiredToEditorMutation, true);
   });
 
   it("keeps BB shared person/collection rendering intact", () => {

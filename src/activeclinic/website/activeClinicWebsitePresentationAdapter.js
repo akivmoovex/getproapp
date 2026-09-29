@@ -33,7 +33,7 @@ const {
 
 const PRODUCT_CODE = "activeclinic";
 
-/** Overnight Step 3 + Batches 2–4: adapter available; R01–R12 public pages wired. */
+/** Overnight Step 3 + Batches 2–5: adapter available; R01–R12 public + WE01 editor hooks wired. */
 const STEP = Object.freeze({
   id: "v2_04_overnight_step_3",
   name: "activeclinic_website_presentation_adapter",
@@ -54,7 +54,7 @@ const STEP = Object.freeze({
     "R11",
     "R12",
   ]),
-  wiredToEditorMutation: false,
+  wiredToEditorMutation: true,
 });
 
 /** Product-specific content keys that must remain AC-owned (Class C). */
@@ -711,7 +711,7 @@ function buildActiveClinicWebsitePresentation(input) {
     step: STEP,
     wiredToPublicRender: true,
     wiredPublicScreens: STEP.wiredPublicScreens,
-    wiredToEditorMutation: false,
+    wiredToEditorMutation: true,
     components,
     collections,
     universalFields: universal,
